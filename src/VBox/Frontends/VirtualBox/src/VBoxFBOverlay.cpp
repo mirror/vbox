@@ -4351,7 +4351,9 @@ int VBoxQGLOverlay::onVHWACommand(struct VBOXVHWACMD * pCmd)
         }
         case VBOXVHWACMD_TYPE_QUERY_INFO1:
         {
+#ifdef RT_STRICT
             VBOXVHWACMD_QUERYINFO1 * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO1);
+#endif
             Assert(pBody->u.in.guestVersion.maj == VBOXVHWA_VERSION_MAJ);
             Assert(pBody->u.in.guestVersion.min == VBOXVHWA_VERSION_MIN);
             Assert(pBody->u.in.guestVersion.bld == VBOXVHWA_VERSION_BLD);
@@ -5036,7 +5038,7 @@ void VBoxVHWACommandElementProcessor::setNotifyObject(QObject *pNotifyObject)
         m_pNotifyObject = pNotifyObject;
 
         VBoxVHWACommandElement *pCur;
-        RTListForEach(&mCommandList, pCur, VBoxVHWACommandElement, ListNode)
+        RTListForEachCpp(&mCommandList, pCur, VBoxVHWACommandElement, ListNode)
         {
             ++cEventsNeeded;
         }
@@ -5116,7 +5118,7 @@ VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::getCmd()
         return NULL;
     }
 
-    pEl = RTListGetFirst(&mCommandList, VBoxVHWACommandElement, ListNode);
+    pEl = RTListGetFirstCpp(&mCommandList, VBoxVHWACommandElement, ListNode);
     if (pEl)
     {
         RTListNodeRemove(&pEl->ListNode);
@@ -5154,7 +5156,7 @@ void VBoxVHWACommandElementProcessor::reset(CDisplay *pDisplay)
 
     RTCritSectLeave(&mCritSect);
 
-    RTListForEachSafe(&mCommandList, pCur, pNext, VBoxVHWACommandElement, ListNode)
+    RTListForEachSafeCpp(&mCommandList, pCur, pNext, VBoxVHWACommandElement, ListNode)
     {
         switch(pCur->type())
         {
@@ -5282,7 +5284,7 @@ void VBoxVHWACommandElementProcessor::saveExec (struct SSMHANDLE * pSSM, void *p
     rc = SSMR3PutBool(pSSM, true);         AssertRC(rc);
 
     VBoxVHWACommandElement *pCur;
-    RTListForEach(&mCommandList, pCur, VBoxVHWACommandElement, ListNode)
+    RTListForEachCpp(&mCommandList, pCur, VBoxVHWACommandElement, ListNode)
     {
         rc = SSMR3PutU32(pSSM, pCur->type());         AssertRC(rc);
 
