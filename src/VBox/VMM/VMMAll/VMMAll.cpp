@@ -70,6 +70,8 @@ static DECLCALLBACK(size_t) vmmFormatTypeVmCpuSet(PFNRTSTROUTPUT pfnOutput, void
                                                   int cchWidth, int cchPrecision, unsigned fFlags,
                                                   void *pvUser)
 {
+    NOREF(pszType); NOREF(cchWidth); NOREF(cchPrecision); NOREF(fFlags);
+
     PCVMCPUSET  pSet   = (PCVMCPUSET)pvValue;
     uint32_t    cCpus  = 0;
     uint32_t    iCpu   = RT_ELEMENTS(pSet->au32Bitmap) * 32;
