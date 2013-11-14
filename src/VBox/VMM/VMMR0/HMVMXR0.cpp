@@ -6869,38 +6869,34 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     }
 
     /* Delivery pending debug exception if the guest is single-stepping. Evaluate and set the BS bit. */
-    int rc2 = VINF_SUCCESS;
-    if (   fBlockSti
-        || fBlockMovSS)
+    if (   !pVCpu->hm.s.fSingleInstruction
+        && !DBGFIsStepping(pVCpu))
     {
-        if (   !pVCpu->hm.s.fSingleInstruction
-            && !DBGFIsStepping(pVCpu))
+        int rc2 = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+        AssertRCReturn(rc2, rc2);
+        if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
         {
-            Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS);
-            if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
-            {
-                /*
-                 * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD,
-                 * VMX_EXIT_MTF, VMX_EXIT_APIC_WRITE and VMX_EXIT_VIRTUALIZED_EOI.
-                 * See Intel spec. 27.3.4 "Saving Non-Register State".
-                 */
-                rc2 = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
-                AssertRCReturn(rc, rc);
-            }
+            /*
+             * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD,
+             * VMX_EXIT_MTF, VMX_EXIT_APIC_WRITE and VMX_EXIT_VIRTUALIZED_EOI.
+             * See Intel spec. 27.3.4 "Saving Non-Register State".
+             */
+            rc2 = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+            AssertRCReturn(rc2, rc2);
         }
-        else
-        {
-            /* We are single-stepping in the hypervisor debugger, clear interrupt inhibition as setting the BS bit would mean
-               delivering a #DB to the guest upon VM-entry when it shouldn't be. */
-            uIntrState = 0;
-        }
+    }
+    else
+    {
+        /* We are single-stepping in the hypervisor debugger, clear interrupt inhibition as setting the BS bit would mean
+           delivering a #DB to the guest upon VM-entry when it shouldn't be. */
+        uIntrState = 0;
     }
 
     /*
      * There's no need to clear the VM entry-interruption information field here if we're not injecting anything.
      * VT-x clears the valid bit on every VM-exit. See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
      */
-    rc2 = hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
+    int rc2 = hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
     AssertRC(rc2);
 
     Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET);
