@@ -1538,7 +1538,7 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd, uint32_t
 /**/
 static int vboxVBVAExHSProcessorAcquire(struct VBVAEXHOSTCONTEXT *pCmdVbva)
 {
-    Assert(pCmdVbva->u32State == VBVAEXHOSTCONTEXT_STATE_STOPPED);
+    Assert(pCmdVbva->u32State != VBVAEXHOSTCONTEXT_STATE_STOPPED);
 
     uint32_t oldState;
     if (!ASMAtomicReadU32(&pCmdVbva->u32Pause))
