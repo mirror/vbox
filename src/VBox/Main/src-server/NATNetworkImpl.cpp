@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <string>
 #include "NetworkServiceRunner.h"
 #include "DHCPServerImpl.h"
 #include "NATNetworkImpl.h"
@@ -869,10 +870,10 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
 
     if (!m->fEnabled) return S_OK;
 
-    m->NATRunner.setOption(NETCFG_NETNAME, mName, true);
-    m->NATRunner.setOption(NETCFG_TRUNKTYPE, Utf8Str(aTrunkType), true);
-    m->NATRunner.setOption(NETCFG_IPADDRESS, m->IPv4Gateway, true);
-    m->NATRunner.setOption(NETCFG_NETMASK, m->IPv4NetworkMask, true);
+    m->NATRunner.setOption(NetworkServiceRunner::kNsrKeyNetwork, Utf8Str(mName).c_str());
+    m->NATRunner.setOption(NetworkServiceRunner::kNsrKeyTrunkType, Utf8Str(aTrunkType).c_str());
+    m->NATRunner.setOption(NetworkServiceRunner::kNsrIpAddress, Utf8Str(m->IPv4Gateway).c_str());
+    m->NATRunner.setOption(NetworkServiceRunner::kNsrIpNetmask, Utf8Str(m->IPv4NetworkMask).c_str());
 
     /* No portforwarding rules from command-line, all will be fetched via API */
 

@@ -42,6 +42,10 @@ class DHCPServerRunner: public NetworkServiceRunner
 public:
     DHCPServerRunner():NetworkServiceRunner(DHCP_EXECUTABLE_NAME){}
     virtual ~DHCPServerRunner(){};
+
+    static const std::string kDsrKeyGateway;
+    static const std::string kDsrKeyLowerIp;
+    static const std::string kDsrKeyUpperIp;
 };
 
 /**

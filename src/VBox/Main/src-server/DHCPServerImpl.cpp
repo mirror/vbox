@@ -17,6 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <string>
 #include "NetworkServiceRunner.h"
 #include "DHCPServerImpl.h"
 #include "AutoCaller.h"
@@ -31,6 +32,10 @@
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
+const std::string DHCPServerRunner::kDsrKeyGateway = "--gateway";
+const std::string DHCPServerRunner::kDsrKeyLowerIp = "--lower-ip";
+const std::string DHCPServerRunner::kDsrKeyUpperIp = "--upper-ip";
+
 
 DHCPServer::DHCPServer()
     : mVirtualBox(NULL)
@@ -470,13 +475,13 @@ STDMETHODIMP DHCPServer::Start(IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BSTR
         return S_OK;
 
     /* Commmon Network Settings */
-    m.dhcp.setOption(NETCFG_NETNAME, Utf8Str(aNetworkName), true);
+    m.dhcp.setOption(NetworkServiceRunner::kNsrKeyNetwork, Utf8Str(aNetworkName).c_str());
 
     Bstr tmp(aTrunkName);
 
     if (!tmp.isEmpty())
-        m.dhcp.setOption(NETCFG_TRUNKNAME, Utf8Str(tmp), true);
-    m.dhcp.setOption(NETCFG_TRUNKTYPE, Utf8Str(aTrunkType), true);
+        m.dhcp.setOption(NetworkServiceRunner::kNsrTrunkName, Utf8Str(tmp).c_str());
+    m.dhcp.setOption(NetworkServiceRunner::kNsrKeyTrunkType, Utf8Str(aTrunkType).c_str());
 
     /* XXX: should this MAC default initialization moved to NetworkServiceRunner? */
     char strMAC[32];
@@ -486,9 +491,11 @@ STDMETHODIMP DHCPServer::Start(IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BSTR
                  guid.raw()->au8[0],
                  guid.raw()->au8[1],
                  guid.raw()->au8[2]);
-    m.dhcp.setOption(NETCFG_MACADDRESS, strMAC, true);
-    m.dhcp.setOption(NETCFG_IPADDRESS,  Utf8Str(m.IPAddress), true);
-    m.dhcp.setOption(NETCFG_NETMASK, Utf8Str(m.GlobalDhcpOptions[DhcpOpt_SubnetMask]), true);
+    m.dhcp.setOption(NetworkServiceRunner::kNsrMacAddress, strMAC);
+    m.dhcp.setOption(NetworkServiceRunner::kNsrIpAddress,  Utf8Str(m.IPAddress).c_str());
+    m.dhcp.setOption(NetworkServiceRunner::kNsrIpNetmask, Utf8Str(m.GlobalDhcpOptions[DhcpOpt_SubnetMask]).c_str());
+    m.dhcp.setOption(DHCPServerRunner::kDsrKeyLowerIp, Utf8Str(m.lowerIP).c_str());
+    m.dhcp.setOption(DHCPServerRunner::kDsrKeyUpperIp, Utf8Str(m.upperIP).c_str());
 
     /* XXX: This parameters Dhcp Server will fetch via API */
     return RT_FAILURE(m.dhcp.start()) ? E_FAIL : S_OK;
