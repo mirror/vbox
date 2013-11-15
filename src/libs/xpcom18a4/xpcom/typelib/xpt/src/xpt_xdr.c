@@ -143,7 +143,7 @@ XPT_HashTableDestroy(XPTHashTable *table) {
 static void *
 XPT_HashTableAdd(XPTHashTable *table, void *key, void *value) {
     XPTHashRecord **bucketloc = table->buckets +
-        (((PRUint32)key) % XPT_HASHSIZE);
+        (((PRUint32)(uintptr_t)key) % XPT_HASHSIZE);
     XPTHashRecord *bucket;
 
     while (*bucketloc != NULL)
@@ -159,7 +159,7 @@ XPT_HashTableAdd(XPTHashTable *table, void *key, void *value) {
 
 static void *
 XPT_HashTableLookup(XPTHashTable *table, void *key) {
-    XPTHashRecord *bucket = table->buckets[(PRUint32)key % XPT_HASHSIZE];
+    XPTHashRecord *bucket = table->buckets[(PRUint32)(uintptr_t)key % XPT_HASHSIZE];
     while (bucket != NULL) {
         if (bucket->key == key)
             return bucket->value;
@@ -483,27 +483,27 @@ XPT_DoCString(XPTArena *arena, XPTCursor *cursor, char **identp)
 XPT_PUBLIC_API(PRUint32)
 XPT_GetOffsetForAddr(XPTCursor *cursor, void *addr)
 {
-    return (PRUint32)XPT_HashTableLookup(cursor->state->pool->offset_map, addr);
+    return (PRUint32)(uintptr_t)XPT_HashTableLookup(cursor->state->pool->offset_map, addr);
 }
 
 XPT_PUBLIC_API(PRBool)
 XPT_SetOffsetForAddr(XPTCursor *cursor, void *addr, PRUint32 offset)
 {
     return XPT_HashTableAdd(cursor->state->pool->offset_map,
-                            addr, (void *)offset) != NULL;
+                            addr, (void *)(uintptr_t)offset) != NULL;
 }
 
 XPT_PUBLIC_API(PRBool)
 XPT_SetAddrForOffset(XPTCursor *cursor, PRUint32 offset, void *addr)
 {
     return XPT_HashTableAdd(cursor->state->pool->offset_map,
-                            (void *)offset, addr) != NULL;
+                            (void *)(uintptr_t)offset, addr) != NULL;
 }
 
 XPT_PUBLIC_API(void *)
 XPT_GetAddrForOffset(XPTCursor *cursor, PRUint32 offset)
 {
-    return XPT_HashTableLookup(cursor->state->pool->offset_map, (void *)offset);
+    return XPT_HashTableLookup(cursor->state->pool->offset_map, (void *)(uintptr_t)offset);
 }
 
 /* Used by XPT_PREAMBLE_NO_ALLOC. */

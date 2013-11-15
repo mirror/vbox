@@ -397,7 +397,7 @@ nsFastLoadService::ComputeChecksum(nsIFile* aFile,
 #ifndef VBOX
     mChecksumTable.Put(&key, NS_INT32_TO_PTR(checksum));
 #else /* VBOX */
-    mChecksumTable.Put(&key, (void *)checksum);
+    mChecksumTable.Put(&key, (void *)(uintptr_t)checksum);
 #endif /* VBOX */
     *aChecksum = checksum;
     return NS_OK;
@@ -424,7 +424,7 @@ nsFastLoadService::CacheChecksum(nsIFile* aFile, nsIObjectOutputStream *aStream)
 #ifndef VBOX
     mChecksumTable.Put(&key, NS_INT32_TO_PTR(checksum));
 #else /* VBOX */
-    mChecksumTable.Put(&key, (void *)checksum);
+    mChecksumTable.Put(&key, (void *)(uintptr_t)checksum);
 #endif /* VBOX */
     return NS_OK;
 }
