@@ -349,7 +349,7 @@ static void suplibHardenedPrintStrN(const char *pch, size_t cch)
     DWORD cbWrittenIgn;
     WriteFile(GetStdHandle(STD_ERROR_HANDLE), pch, (DWORD)cch, &cbWrittenIgn, NULL);
 #else
-    write(2, pch, cch);
+    (void)write(2, pch, cch);
 #endif
 }
 
