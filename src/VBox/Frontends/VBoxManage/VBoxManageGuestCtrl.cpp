@@ -62,11 +62,9 @@
 
 using namespace com;
 
-/** Set by the signal handler. */
-static volatile bool         g_fGuestCtrlCanceled = false;
-/** Our global session object which is also used in the
- *  signal handler to abort operations properly. */
-static ComPtr<IGuestSession> g_pGuestSession = NULL;
+/** Set by the signal handler when current guest control
+ *  action shall be aborted. */
+static volatile bool g_fGuestCtrlCanceled = false;
 
 /**
  * Listener declarations.
@@ -402,8 +400,6 @@ static BOOL WINAPI guestCtrlSignalHandler(DWORD dwCtrlType)
         case CTRL_CLOSE_EVENT:
         case CTRL_C_EVENT:
             ASMAtomicWriteBool(&g_fGuestCtrlCanceled, true);
-            if (!g_pGuestSession.isNull())
-                g_pGuestSession->Close();
             fEventHandled = TRUE;
             break;
         default:
@@ -418,15 +414,13 @@ static BOOL WINAPI guestCtrlSignalHandler(DWORD dwCtrlType)
  * Signal handler that sets g_fGuestCtrlCanceled.
  *
  * This can be executed on any thread in the process, on Windows it may even be
- * a thread dedicated to delivering this signal.  Do not doing anything
+ * a thread dedicated to delivering this signal.  Don't do anything
  * unnecessary here.
  */
 static void guestCtrlSignalHandler(int iSignal)
 {
     NOREF(iSignal);
     ASMAtomicWriteBool(&g_fGuestCtrlCanceled, true);
-    if (!g_pGuestSession.isNull())
-        g_pGuestSession->Close();
 }
 #endif
 
@@ -726,11 +720,14 @@ static void ctrlUninitVM(PGCTLCMDCTX pCtx, uint32_t uFlags)
             else if (   (pCtx->uFlags & CTLCMDCTX_FLAGS_SESSION_DETACH)
                      && pCtx->fVerbose)
                 RTPrintf("Guest session detached\n");
-
+#ifdef DEBUG
+            ULONG cRefs = pCtx->pGuestSession->AddRef();
+            RTPrintf("cRefs=%RU32\n", cRefs - 1);
+            pCtx->pGuestSession->Release();
+#endif
             pCtx->pGuestSession.setNull();
         }
 
-        g_pGuestSession.setNull();
         if (pCtx->handlerArg.session)
             CHECK_ERROR(pCtx->handlerArg.session, UnlockMachine());
 
@@ -991,10 +988,6 @@ static RTEXITCODE ctrlInitVM(HandlerArg *pArg,
             if (   SUCCEEDED(rc)
                 && !(uFlags & CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER))
             {
-                /* Add session to global for being accessible by the
-                 * signal handler. */
-                g_pGuestSession = pCtx->pGuestSession;
-
                 ctrlSignalHandlerInstall();
             }
 
@@ -1340,7 +1333,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
             {
                 cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
                 CHECK_ERROR_BREAK(pProcess, WaitForArray(ComSafeArrayAsInParam(aWaitFlags),
-                                                         cMsTimeLeft, &waitResult));
+                                                         500 /* ms */, &waitResult));
                 switch (waitResult)
                 {
                     case ProcessWaitResult_Start:
@@ -1373,6 +1366,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
                         fReadStdOut = fReadStdErr = true;
                         break;
                     }
+                    case ProcessWaitResult_Timeout:
+                        /* Fall through is intentional. */
                     default:
                         /* Ignore all other results, let the timeout expire */
                         break;
@@ -1466,6 +1461,13 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
          * access and/or kill detached guest process lateron.
          */
         fCloseSession = !fDetached;
+
+        /* 
+         * If execution was aborted from the host side (signal handler), 
+         * close the guest session in any case. 
+         */ 
+        if (g_fGuestCtrlCanceled)
+            fCloseSession = true;
     }
     else /* Close session on error. */
         fCloseSession = true;
@@ -3725,7 +3727,6 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlSessionClose(PGCTLCMDCTX pCtx)
 
     HRESULT rc = S_OK;
 
-    ComPtr<IGuestSession> pSession;
     do
     {
         bool fSessionFound = false;
@@ -3737,7 +3738,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlSessionClose(PGCTLCMDCTX pCtx)
 
         for (size_t i = 0; i < cSessions; i++)
         {
-            pSession = collSessions[i];
+            ComPtr<IGuestSession> pSession = collSessions[i];
             Assert(!pSession.isNull());
 
             ULONG uID; /* Session ID */
@@ -3768,7 +3769,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlSessionClose(PGCTLCMDCTX pCtx)
                 if (pCtx->fVerbose)
                     RTPrintf("Guest session successfully closed\n");
 
-                pSession->Release();
+                pSession.setNull();
             }
         }
 
