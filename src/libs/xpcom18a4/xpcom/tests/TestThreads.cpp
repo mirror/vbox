@@ -215,7 +215,7 @@ static int StressNSPR(int loops, int threads)
 
         for (k = 0; k < threads; k++) {
             array[k] = PR_CreateThread(PR_USER_THREAD,
-                                       threadProc, (void*) k,
+                                       threadProc, (void*)(uintptr_t)k,
                                        PR_PRIORITY_NORMAL,
                                        PR_GLOBAL_THREAD,
                                        PR_JOINABLE_THREAD,

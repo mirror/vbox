@@ -103,7 +103,7 @@ PL_DHashGetKeyStub(PLDHashTable *table, PLDHashEntryHdr *entry)
 PR_IMPLEMENT(PLDHashNumber)
 PL_DHashVoidPtrKeyStub(PLDHashTable *table, const void *key)
 {
-    return (PLDHashNumber)key >> 2;
+    return (PLDHashNumber)(uintptr_t)key >> 2;
 }
 
 PR_IMPLEMENT(PRBool)
