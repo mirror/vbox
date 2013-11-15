@@ -1,11 +1,9 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachine class declaration
+ * VBox Qt GUI - UIMachine class declaration.
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -86,5 +84,5 @@ private:
     friend class UISession;
 };
 
-#endif // __UIMachine_h__
+#endif /* !__UIMachine_h__ */
 
