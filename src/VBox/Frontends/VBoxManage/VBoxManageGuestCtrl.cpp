@@ -720,11 +720,7 @@ static void ctrlUninitVM(PGCTLCMDCTX pCtx, uint32_t uFlags)
             else if (   (pCtx->uFlags & CTLCMDCTX_FLAGS_SESSION_DETACH)
                      && pCtx->fVerbose)
                 RTPrintf("Guest session detached\n");
-#ifdef DEBUG
-            ULONG cRefs = pCtx->pGuestSession->AddRef();
-            RTPrintf("cRefs=%RU32\n", cRefs - 1);
-            pCtx->pGuestSession->Release();
-#endif
+
             pCtx->pGuestSession.setNull();
         }
 
