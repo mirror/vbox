@@ -86,6 +86,7 @@ public:
     static Utf8Str  guestErrorToString(int guestRc);
     int             onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int             onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int             onRemove(void);
     int             openFile(uint32_t uTimeoutMS, int *pGuestRc);
     int             readData(uint32_t uSize, uint32_t uTimeoutMS, void* pvData, uint32_t cbData, uint32_t* pcbRead);
     int             readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS, void* pvData, size_t cbData, size_t* pcbRead);

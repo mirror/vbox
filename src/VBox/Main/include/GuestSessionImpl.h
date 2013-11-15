@@ -364,6 +364,7 @@ public:
     ULONG                   getId(void) { return mData.mSession.mID; }
     static Utf8Str          guestErrorToString(int guestRc);
     HRESULT                 isReadyExternal(void);
+    int                     onRemove(void);
     int                     onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int                     startSessionInternal(int *pGuestRc);
     int                     startSessionAsync(void);
