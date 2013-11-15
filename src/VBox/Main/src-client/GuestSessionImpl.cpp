@@ -1,4 +1,3 @@
-
 /* $Id$ */
 /** @file
  * VirtualBox Main - Guest session handling.
@@ -115,14 +114,14 @@ public:
                 Assert(!mSession.isNull());
                 int rc2 = mSession->signalWaitEvent(aType, aEvent);
 #ifdef DEBUG_andy
-                LogFlowFunc(("Signalling events of type=%ld, session=%p resulted in rc=%Rrc\n",
+                LogFlowFunc(("Signalling events of type=%RU32, session=%p resulted in rc=%Rrc\n",
                              aType, mSession, rc2));
 #endif
                 break;
             }
 
             default:
-                AssertMsgFailed(("Unhandled event %ld\n", aType));
+                AssertMsgFailed(("Unhandled event %RU32\n", aType));
                 break;
         }
 
@@ -273,54 +272,58 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
  */
 void GuestSession::uninit(void)
 {
-    LogFlowThisFuncEnter();
-
     /* Enclose the state transition Ready->InUninit->NotReady. */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
+    LogFlowThisFuncEnter();
+
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-    LogFlowThisFunc(("Closing directories (%RU64 total)\n",
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+
+    LogFlowThisFunc(("Closing directories (%zu total)\n",
                      mData.mDirectories.size()));
     for (SessionDirectories::iterator itDirs = mData.mDirectories.begin();
          itDirs != mData.mDirectories.end(); ++itDirs)
     {
-        itDirs->second->Release();
+        Assert(mData.mNumObjects);
+        mData.mNumObjects--;
+        itDirs->second->onRemove();
+        itDirs->second->uninit();
     }
     mData.mDirectories.clear();
 
-    LogFlowThisFunc(("Closing files (%RU64 total)\n",
+    LogFlowThisFunc(("Closing files (%zu total)\n",
                      mData.mFiles.size()));
     for (SessionFiles::iterator itFiles = mData.mFiles.begin();
          itFiles != mData.mFiles.end(); ++itFiles)
     {
-        itFiles->second->Release();
+        Assert(mData.mNumObjects);
+        mData.mNumObjects--;
+        itFiles->second->onRemove();
+        itFiles->second->uninit();
     }
     mData.mFiles.clear();
 
-    LogFlowThisFunc(("Closing processes (%RU64 total)\n",
+    LogFlowThisFunc(("Closing processes (%zu total)\n",
                      mData.mProcesses.size()));
     for (SessionProcesses::iterator itProcs = mData.mProcesses.begin();
          itProcs != mData.mProcesses.end(); ++itProcs)
     {
-        itProcs->second->Release();
+        Assert(mData.mNumObjects);
+        mData.mNumObjects--;
+        itProcs->second->onRemove();
+        itProcs->second->uninit();
     }
     mData.mProcesses.clear();
 
-    LogFlowThisFunc(("mNumObjects=%RU32\n", mData.mNumObjects));
+    AssertMsg(mData.mNumObjects == 0, 
+              ("mNumObjects=%RU32 when it should be 0\n", mData.mNumObjects));
 
     baseUninit();
-
-    if (!mEventSource.isNull())
-    {
-        mEventSource->UnregisterListener(mLocalListener);
-
-        mLocalListener.setNull();
-        unconst(mEventSource).setNull();
-    }
 #endif /* VBOX_WITH_GUEST_CONTROL */
     LogFlowFuncLeaveRC(rc);
 }
@@ -660,7 +663,7 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
 
     if (mData.mStatus != GuestSessionStatus_Started)
     {
-        LogFlowThisFunc(("Session ID=%RU32 not started (anymore), status now is: %ld\n",
+        LogFlowThisFunc(("Session ID=%RU32 not started (anymore), status now is: %RU32\n",
                          mData.mSession.mID, mData.mStatus));
         return VINF_SUCCESS;
     }
@@ -720,8 +723,14 @@ int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode
     try
     {
         /* Construct arguments. */
-        if (uFlags & DirectoryCreateFlag_Parents)
-            procInfo.mArguments.push_back(Utf8Str("--parents")); /* We also want to create the parent directories. */
+        if (uFlags)
+        {
+            if (uFlags & DirectoryCreateFlag_Parents)
+                procInfo.mArguments.push_back(Utf8Str("--parents")); /* We also want to create the parent directories. */
+            else
+                vrc = VERR_INVALID_PARAMETER;
+        }
+        
         if (uMode)
         {
             procInfo.mArguments.push_back(Utf8Str("--mode")); /* Set the creation mode. */
@@ -779,25 +788,39 @@ int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    for (SessionDirectories::iterator itDirs = mData.mDirectories.begin();
-         itDirs != mData.mDirectories.end(); ++itDirs)
+    int rc = VERR_NOT_FOUND;
+
+    SessionDirectories::iterator itDirs = mData.mDirectories.begin();
+    while (itDirs != mData.mDirectories.end())
     {
         if (pDirectory == itDirs->second)
         {
+            /* Make sure to consume the pointer before the one of the
+             * iterator gets released. */
+            ComObjPtr<GuestDirectory> pDir = pDirectory;
+
             Bstr strName;
             HRESULT hr = itDirs->second->COMGETTER(DirectoryName)(strName.asOutParam());
             ComAssertComRC(hr);
 
             Assert(mData.mDirectories.size());
-            LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %ld directories)\n",
-                         Utf8Str(strName).c_str(), mData.mSession.mID, mData.mDirectories.size() - 1));
-
+            Assert(mData.mNumObjects);
+            LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %zu processes, %ld objects)\n",
+                         Utf8Str(strName).c_str(), mData.mSession.mID, mData.mDirectories.size() - 1, mData.mNumObjects - 1));
+ 
+            rc = pDirectory->onRemove();
             mData.mDirectories.erase(itDirs);
-            return VINF_SUCCESS;
+            mData.mNumObjects--;
+
+            pDir.setNull();
+            break;
         }
+
+        itDirs++;
     }
 
-    return VERR_NOT_FOUND;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 int GuestSession::directoryRemoveInternal(const Utf8Str &strPath, uint32_t uFlags,
@@ -1170,8 +1193,10 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    for (SessionFiles::iterator itFiles = mData.mFiles.begin();
-         itFiles != mData.mFiles.end(); ++itFiles)
+    int rc = VERR_NOT_FOUND;    
+
+    SessionFiles::iterator itFiles = mData.mFiles.begin();
+    while (itFiles != mData.mFiles.end())
     {
         if (pFile == itFiles->second)
         {
@@ -1187,9 +1212,7 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
             LogFlowThisFunc(("Removing guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
                              Utf8Str(strName).c_str(), mData.mSession.mID, mData.mFiles.size() - 1, mData.mNumObjects - 1));
 
-            pFile->cancelWaitEvents();
-            pFile->Release();
-
+            rc = pFile->onRemove();
             mData.mFiles.erase(itFiles);
             mData.mNumObjects--;
 
@@ -1197,11 +1220,15 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
 
             fireGuestFileRegisteredEvent(mEventSource, this, pCurFile,
                                          false /* Unregistered */);
-            return VINF_SUCCESS;
+            pCurFile.setNull();            
+            break;
         }
+
+        itFiles++;
     }
 
-    return VERR_NOT_FOUND;
+    LogFlowFuncLeaveRC(rc);
+    return rc;    
 }
 
 int GuestSession::fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
@@ -1486,6 +1513,34 @@ HRESULT GuestSession::isReadyExternal(void)
     return S_OK;
 }
 
+/**
+ * Called by IGuest right before this session gets removed from 
+ * the public session list. 
+ */
+int GuestSession::onRemove(void)
+{
+    LogFlowThisFuncEnter();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int vrc = VINF_SUCCESS;
+
+    /* 
+     * Note: The event source stuff holds references to this object,
+     *       so make sure that this is cleaned up *before* calling uninit.
+     */
+    if (!mEventSource.isNull())
+    {
+        mEventSource->UnregisterListener(mLocalListener);
+
+        mLocalListener.setNull();
+        unconst(mEventSource).setNull();
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
 /** No locking! */
 int GuestSession::onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
@@ -1755,35 +1810,40 @@ int GuestSession::processRemoveFromList(GuestProcess *pProcess)
     HRESULT hr = pProcess->COMGETTER(PID)(&uPID);
     ComAssertComRC(hr);
 
-    LogFlowFunc(("Closing process (PID=%RU32) ...\n", uPID));
+    LogFlowFunc(("Removing process (PID=%RU32) ...\n", uPID));
 
     SessionProcesses::iterator itProcs = mData.mProcesses.begin();
     while (itProcs != mData.mProcesses.end())
     {
         if (pProcess == itProcs->second)
         {
-            /* Make sure to consume the pointer before the one of thfe
+#ifdef DEBUG_andy
+            ULONG cRefs = pProcess->AddRef();
+            Assert(cRefs >= 2);
+            LogFlowFunc(("pProcess=%p, cRefs=%RU32\n", pProcess, cRefs - 1));
+            pProcess->Release();
+#endif
+            /* Make sure to consume the pointer before the one of the
              * iterator gets released. */
-            ComObjPtr<GuestProcess> pCurProcess = pProcess;
+            ComObjPtr<GuestProcess> pProc = pProcess;
 
-            hr = pCurProcess->COMGETTER(PID)(&uPID);
+            hr = pProc->COMGETTER(PID)(&uPID);
             ComAssertComRC(hr);
 
+            Assert(mData.mProcesses.size());
             Assert(mData.mNumObjects);
-            LogFlowFunc(("Removing process ID=%RU32 (Session: %RU32), guest PID=%RU32 (now total %ld processes, %ld objects)\n",
+            LogFlowFunc(("Removing process ID=%RU32 (Session: %RU32), guest PID=%RU32 (now total %zu processes, %RU32 objects)\n",
                          pProcess->getObjectID(), mData.mSession.mID, uPID, mData.mProcesses.size() - 1, mData.mNumObjects - 1));
 
-            pProcess->cancelWaitEvents();
-            pProcess->Release();
-
+            rc = pProcess->onRemove();
             mData.mProcesses.erase(itProcs);
             mData.mNumObjects--;
 
             alock.release(); /* Release lock before firing off event. */
 
-            fireGuestProcessRegisteredEvent(mEventSource, this /* Session */, pCurProcess,
+            fireGuestProcessRegisteredEvent(mEventSource, this /* Session */, pProc,
                                             uPID, false /* Process unregistered */);
-            rc = VINF_SUCCESS;
+            pProc.setNull();
             break;
         }
 
@@ -1899,8 +1959,10 @@ int GuestSession::processCreateExInteral(GuestProcessStartupInfo &procInfo, ComO
         mData.mNumObjects++;
         Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-        LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32 (now total %ld processes, %ld objects)\n",
+        LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32 (now total %zu processes, %ld objects)\n",
                      mData.mSession.mID, uNewProcessID, mData.mProcesses.size(), mData.mNumObjects));
+
+        alock.release(); /* Release lock before firing off event. */
 
         fireGuestProcessRegisteredEvent(mEventSource, this /* Session */, pProcess,
                                         0 /* PID */, true /* Process registered */);
@@ -1992,7 +2054,7 @@ HRESULT GuestSession::setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
 /* Does not do locking; caller is responsible for that! */
 int GuestSession::setSessionStatus(GuestSessionStatus_T sessionStatus, int sessionRc)
 {
-    LogFlowThisFunc(("oldStatus=%ld, newStatus=%ld, sessionRc=%Rrc\n",
+    LogFlowThisFunc(("oldStatus=%RU32, newStatus=%RU32, sessionRc=%Rrc\n",
                      mData.mStatus, sessionStatus, sessionRc));
 
     if (sessionStatus == GuestSessionStatus_Error)
@@ -2177,7 +2239,7 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
                 break;
 
             default:
-                AssertMsgFailed(("Unhandled session status %ld\n", mData.mStatus));
+                AssertMsgFailed(("Unhandled session status %RU32\n", mData.mStatus));
                 return VERR_NOT_IMPLEMENTED;
         }
     }
@@ -2207,12 +2269,12 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
                 break;
 
             default:
-                AssertMsgFailed(("Unhandled session status %ld\n", mData.mStatus));
+                AssertMsgFailed(("Unhandled session status %RU32\n", mData.mStatus));
                 return VERR_NOT_IMPLEMENTED;
         }
     }
 
-    LogFlowThisFunc(("sessionStatus=%ld, sessionRc=%Rrc, waitResult=%ld\n",
+    LogFlowThisFunc(("sessionStatus=%RU32, sessionRc=%Rrc, waitResult=%RU32\n",
                      mData.mStatus, mData.mRC, waitResult));
 
     /* No waiting needed? Return immediately using the last set error. */
@@ -2317,7 +2379,7 @@ int GuestSession::waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlag
         if (pGuestRc)
             *pGuestRc = (int)lGuestRc;
 
-        LogFlowThisFunc(("Status changed event for session ID=%RU32, new status is: %ld (%Rrc)\n",
+        LogFlowThisFunc(("Status changed event for session ID=%RU32, new status is: %RU32 (%Rrc)\n",
                          mData.mSession.mID, sessionStatus,
                          RT_SUCCESS((int)lGuestRc) ? VINF_SUCCESS : (int)lGuestRc));
     }
@@ -2519,7 +2581,8 @@ STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode,
         switch (rc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::setErrorExternal(this, guestRc);
+                /** @todo Handle VERR_NOT_EQUAL (meaning process exit code <> 0). */
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Could not create directory"));
                 break;
 
             case VERR_INVALID_PARAMETER:
@@ -2528,10 +2591,6 @@ STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode,
 
             case VERR_BROKEN_PIPE:
                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Unexpectedly aborted"));
-               break;
-
-            case VERR_CANT_CREATE:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Could not create directory"));
                break;
 
             default:

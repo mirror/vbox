@@ -1,4 +1,3 @@
-
 /* $Id$ */
 /** @file
  * VirtualBox Main - Guest process handling.
@@ -117,14 +116,14 @@ public:
                 Assert(!mProcess.isNull());
                 int rc2 = mProcess->signalWaitEvent(aType, aEvent);
 #ifdef DEBUG
-                LogFlowThisFunc(("Signalling events of type=%ld, pProcess=%p resulted in rc=%Rrc\n",
+                LogFlowThisFunc(("Signalling events of type=%RU32, pProcess=%p resulted in rc=%Rrc\n",
                                  aType, &mProcess, rc2));
 #endif
                 break;
             }
 
             default:
-                AssertMsgFailed(("Unhandled event %ld\n", aType));
+                AssertMsgFailed(("Unhandled event %RU32\n", aType));
                 break;
         }
 
@@ -255,17 +254,16 @@ int GuestProcess::init(Console *aConsole, GuestSession *aSession,
 
 /**
  * Uninitializes the instance.
- * Called from FinalRelease().
+ * Called from FinalRelease() or IGuestSession::uninit().
  */
 void GuestProcess::uninit(void)
 {
-    LogFlowThisFuncEnter();
-
     /* Enclose the state transition Ready->InUninit->NotReady. */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
+#ifdef VBOX_WITH_GUEST_CONTROL
     LogFlowThisFunc(("mCmd=%s, PID=%RU32\n",
                      mData.mProcess.mCommand.c_str(), mData.mPID));
 
@@ -275,20 +273,11 @@ void GuestProcess::uninit(void)
     /* Note: Don't return here yet; first uninit all other stuff in
      *       case of failure. */
 
-#ifdef VBOX_WITH_GUEST_CONTROL
     baseUninit();
-
-    if (!mEventSource.isNull())
-    {
-        mEventSource->UnregisterListener(mLocalListener);
-
-        mLocalListener.setNull();
-        unconst(mEventSource).setNull();
-    }
-#endif
 
     LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n",
                      vrc, guestRc));
+#endif
 }
 
 // implementation of public getters/setters for attributes
@@ -825,7 +814,7 @@ int GuestProcess::onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUE
             }
         }
 
-        LogFlowThisFunc(("Got rc=%Rrc, procSts=%ld, procRc=%Rrc\n",
+        LogFlowThisFunc(("Got rc=%Rrc, procSts=%RU32, procRc=%Rrc\n",
                          vrc, procStatus, procRc));
 
         /* Set the process status. */
@@ -868,6 +857,34 @@ int GuestProcess::onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
 
         fireGuestProcessOutputEvent(mEventSource, mSession, this,
                                     mData.mPID, dataCb.uHandle, dataCb.cbData, ComSafeArrayAsInParam(data));
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+/**
+ * Called by IGuestSession right before this process gets 
+ * removed from the public process list. 
+ */
+int GuestProcess::onRemove(void)
+{
+    LogFlowThisFuncEnter();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int vrc = VINF_SUCCESS;
+
+    /* 
+     * Note: The event source stuff holds references to this object,
+     *       so make sure that this is cleaned up *before* calling uninit().
+     */
+    if (!mEventSource.isNull())
+    {
+        mEventSource->UnregisterListener(mLocalListener);
+
+        mLocalListener.setNull();
+        unconst(mEventSource).setNull();
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -961,7 +978,7 @@ int GuestProcess::setProcessStatus(ProcessStatus_T procStatus, int procRc)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("oldStatus=%ld, newStatus=%ld, procRc=%Rrc\n",
+    LogFlowThisFunc(("oldStatus=%RU32, newStatus=%RU32, procRc=%Rrc\n",
                      mData.mStatus, procStatus, procRc));
 
     if (procStatus == ProcessStatus_Error)
@@ -1235,51 +1252,52 @@ int GuestProcess::terminateProcess(uint32_t uTimeoutMS, int *pGuestRc)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mData.mStatus != ProcessStatus_Started)
-    {
-        LogFlowThisFunc(("Process not started state (state is %ld), skipping termination\n",
-                         mData.mStatus));
-        return VINF_SUCCESS; /* Nothing to do (anymore). */
-    }
-
     int vrc = VINF_SUCCESS;
 
-    AssertPtr(mSession);
-    /* Note: VBox < 4.3 (aka protocol version 1) does not
-     *       support this, so just skip. */
-    if (mSession->getProtocolVersion() < 2)
-        vrc = VERR_NOT_SUPPORTED;
-
-    if (RT_SUCCESS(vrc))
+    if (mData.mStatus != ProcessStatus_Started)
     {
-        GuestWaitEvent *pEvent = NULL;
-        GuestEventTypes eventTypes;
-        try
-        {
-            eventTypes.push_back(VBoxEventType_OnGuestProcessStateChanged);
+        LogFlowThisFunc(("Process not in started state (state is %RU32), skipping termination\n",
+                         mData.mStatus));
+    }
+    else
+    {
+        AssertPtr(mSession);
+        /* Note: VBox < 4.3 (aka protocol version 1) does not
+         *       support this, so just skip. */
+        if (mSession->getProtocolVersion() < 2)
+            vrc = VERR_NOT_SUPPORTED;
 
-            vrc = registerWaitEvent(eventTypes, &pEvent);
-        }
-        catch (std::bad_alloc)
-        {
-            vrc = VERR_NO_MEMORY;
-        }
-
-        if (RT_FAILURE(vrc))
-            return vrc;
-
-        VBOXHGCMSVCPARM paParms[4];
-        int i = 0;
-        paParms[i++].setUInt32(pEvent->ContextID());
-        paParms[i++].setUInt32(mData.mPID);
-
-        alock.release(); /* Drop the write lock before sending. */
-
-        vrc = sendCommand(HOST_EXEC_TERMINATE, i, paParms);
         if (RT_SUCCESS(vrc))
-            vrc = waitForStatusChange(pEvent, uTimeoutMS,
-                                      NULL /* ProcessStatus */, pGuestRc);
-        unregisterWaitEvent(pEvent);
+        {
+            GuestWaitEvent *pEvent = NULL;
+            GuestEventTypes eventTypes;
+            try
+            {
+                eventTypes.push_back(VBoxEventType_OnGuestProcessStateChanged);
+
+                vrc = registerWaitEvent(eventTypes, &pEvent);
+            }
+            catch (std::bad_alloc)
+            {
+                vrc = VERR_NO_MEMORY;
+            }
+
+            if (RT_FAILURE(vrc))
+                return vrc;
+
+            VBOXHGCMSVCPARM paParms[4];
+            int i = 0;
+            paParms[i++].setUInt32(pEvent->ContextID());
+            paParms[i++].setUInt32(mData.mPID);
+
+            alock.release(); /* Drop the write lock before sending. */
+
+            vrc = sendCommand(HOST_EXEC_TERMINATE, i, paParms);
+            if (RT_SUCCESS(vrc))
+                vrc = waitForStatusChange(pEvent, uTimeoutMS,
+                                          NULL /* ProcessStatus */, pGuestRc);
+            unregisterWaitEvent(pEvent);
+        }
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -1336,7 +1354,7 @@ ProcessWaitResult_T GuestProcess::waitFlagsToResultEx(uint32_t fWaitFlags,
                     break;
 
                 default:
-                    AssertMsgFailed(("Unhandled old status %ld before new status 'started'\n",
+                    AssertMsgFailed(("Unhandled old status %RU32 before new status 'started'\n",
                                      oldStatus));
                     waitResult = ProcessWaitResult_Start;
                     break;
@@ -1380,7 +1398,7 @@ ProcessWaitResult_T GuestProcess::waitFlagsToResultEx(uint32_t fWaitFlags,
     }
 
 #ifdef DEBUG
-    LogFlowFunc(("oldStatus=%ld, newStatus=%ld, fWaitFlags=0x%x, waitResult=%ld\n",
+    LogFlowFunc(("oldStatus=%RU32, newStatus=%RU32, fWaitFlags=0x%x, waitResult=%RU32\n",
                  oldStatus, newStatus, fWaitFlags, waitResult));
 #endif
     return waitResult;
@@ -1477,7 +1495,7 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS,
             waitResult = waitFlagsToResultEx(fWaitFlags, curStatus, newStatus,
                                              mData.mProcess.mFlags, mSession->getProtocolVersion());
 #ifdef DEBUG
-            LogFlowThisFunc(("Got new status change: fWaitFlags=0x%x, newStatus=%ld, waitResult=%ld\n",
+            LogFlowThisFunc(("Got new status change: fWaitFlags=0x%x, newStatus=%RU32, waitResult=%RU32\n",
                              fWaitFlags, newStatus, waitResult));
 #endif
             if (ProcessWaitResult_None != waitResult) /* We got a waiting result. */
@@ -1491,7 +1509,7 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS,
 
     unregisterWaitEvent(pEvent);
 
-    LogFlowThisFunc(("Returned waitResult=%ld, newStatus=%ld, rc=%Rrc\n",
+    LogFlowThisFunc(("Returned waitResult=%RU32, newStatus=%RU32, rc=%Rrc\n",
                      waitResult, newStatus, vrc));
     return vrc;
 }
@@ -1859,8 +1877,8 @@ STDMETHODIMP GuestProcess::Terminate(void)
         }
     }
 
-    /* Remove the process from our internal session list. Only an API client
-     * now may hold references to it. */
+    /* Remove process from guest session list. Now only API clients
+     * still can hold references to it. */
     AssertPtr(mSession);
     mSession->processRemoveFromList(this);
 
@@ -2015,7 +2033,8 @@ STDMETHODIMP GuestProcess::WriteArray(ULONG aHandle, ComSafeArrayIn(ProcessInput
 ///////////////////////////////////////////////////////////////////////////////
 
 GuestProcessTool::GuestProcessTool(void)
-    : pSession(NULL)
+    : pSession(NULL),
+      pProcess(NULL)
 {
 }
 
@@ -2040,8 +2059,9 @@ int GuestProcessTool::Init(GuestSession *pGuestSession, const GuestProcessStartu
 
     int vrc = pSession->processCreateExInteral(mStartupInfo, pProcess);
     if (RT_SUCCESS(vrc))
-        vrc = fAsync ? pProcess->startProcessAsync() : pProcess->startProcess(30 * 1000 /* 30s timeout */,
-                                                                              pGuestRc);
+        vrc = fAsync 
+            ? pProcess->startProcessAsync() 
+            : pProcess->startProcess(30 * 1000 /* 30s timeout */, pGuestRc);
 
     if (   RT_SUCCESS(vrc)
         && !fAsync
@@ -2090,14 +2110,14 @@ bool GuestProcessTool::IsRunning(void)
     HRESULT hr = pProcess->COMGETTER(Status(&procStatus));
     Assert(SUCCEEDED(hr));
 
-    if (   procStatus != ProcessStatus_Started
-        && procStatus != ProcessStatus_Paused
-        && procStatus != ProcessStatus_Terminating)
+    if (   procStatus == ProcessStatus_Started
+        || procStatus == ProcessStatus_Paused
+        || procStatus == ProcessStatus_Terminating)
     {
-        return false;
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 /* static */
@@ -2146,6 +2166,8 @@ int GuestProcessTool::RunEx(      GuestSession            *pGuestSession,
 
         Assert(RT_SUCCESS(guestRc));
         guestRc = procTool.TerminatedOk(NULL /* Exit code */);
+        if (RT_FAILURE(guestRc))
+            vrc = VERR_GSTCTL_GUEST_ERROR;                        
         if (pGuestRc)
             *pGuestRc = guestRc;
     }
@@ -2299,7 +2321,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBlkO
                 break;
 
             default:
-                AssertReleaseMsgFailed(("Unhandled process wait result %ld\n", waitRes));
+                AssertReleaseMsgFailed(("Unhandled process wait result %RU32\n", waitRes));
                 break;
         }
 
@@ -2367,7 +2389,10 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBlkO
 #undef UPDATE_AND_CHECK_ELAPSED_TIME
 #undef GET_REMAINING_TIME
 
-    LogFlowThisFunc(("Loop ended with rc=%Rrc, guestRc=%Rrc, waitRes=%ld\n",
+    if (RT_FAILURE(guestRc))
+        vrc = VERR_GSTCTL_GUEST_ERROR;
+
+    LogFlowThisFunc(("Loop ended with rc=%Rrc, guestRc=%Rrc, waitRes=%RU32\n",
                      vrc, guestRc, waitRes));
     if (pGuestRc)
         *pGuestRc = guestRc;
@@ -2384,11 +2409,6 @@ int GuestProcessTool::Terminate(uint32_t uTimeoutMS, int *pGuestRc)
     if (!pProcess.isNull())
     {
         rc = pProcess->terminateProcess(uTimeoutMS, pGuestRc);
-
-        Assert(pSession);
-        int rc2 = pSession->processRemoveFromList(pProcess);
-        AssertRC(rc2);
-
         pProcess.setNull();
     }
     else

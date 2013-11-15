@@ -1,4 +1,3 @@
-
 /* $Id$ */
 /** @file
  * VirtualBox Main - Guest file handling.
@@ -78,14 +77,14 @@ public:
                 Assert(!mFile.isNull());
                 int rc2 = mFile->signalWaitEvent(aType, aEvent);
 #ifdef DEBUG_andy
-                LogFlowFunc(("Signalling events of type=%ld, file=%p resulted in rc=%Rrc\n",
+                LogFlowFunc(("Signalling events of type=%RU32, file=%p resulted in rc=%Rrc\n",
                              aType, mFile, rc2));
 #endif
                 break;
             }
 
             default:
-                AssertMsgFailed(("Unhandled event %ld\n", aType));
+                AssertMsgFailed(("Unhandled event %RU32\n", aType));
                 break;
         }
 
@@ -224,25 +223,16 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession,
  */
 void GuestFile::uninit(void)
 {
-    LogFlowThisFuncEnter();
-
     /* Enclose the state transition Ready->InUninit->NotReady. */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
+    LogFlowThisFuncEnter();
+
 #ifdef VBOX_WITH_GUEST_CONTROL
     baseUninit();
-
-    if (!mEventSource.isNull())
-    {
-        mEventSource->UnregisterListener(mLocalListener);
-
-        mLocalListener.setNull();
-        unconst(mEventSource).setNull();
-    }
 #endif
-
     LogFlowThisFuncLeave();
 }
 
@@ -711,6 +701,34 @@ int GuestFile::onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTR
     return vrc;
 }
 
+/**
+ * Called by IGuestSession right before this file gets removed 
+ * from the public file list. 
+ */
+int GuestFile::onRemove(void)
+{
+    LogFlowThisFuncEnter();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int vrc = VINF_SUCCESS;
+
+    /* 
+     * Note: The event source stuff holds references to this object,
+     *       so make sure that this is cleaned up *before* calling uninit().
+     */
+    if (!mEventSource.isNull())
+    {
+        mEventSource->UnregisterListener(mLocalListener);
+
+        mLocalListener.setNull();
+        unconst(mEventSource).setNull();
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
 int GuestFile::openFile(uint32_t uTimeoutMS, int *pGuestRc)
 {
     LogFlowThisFuncEnter();
@@ -943,7 +961,7 @@ int GuestFile::setFileStatus(FileStatus_T fileStatus, int fileRc)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("oldStatus=%ld, newStatus=%ld, fileRc=%Rrc\n",
+    LogFlowThisFunc(("oldStatus=%RU32, newStatus=%RU32, fileRc=%Rrc\n",
                      mData.mStatus, fileStatus, fileRc));
 
 #ifdef VBOX_STRICT

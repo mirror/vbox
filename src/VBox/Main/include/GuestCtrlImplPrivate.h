@@ -638,6 +638,8 @@ public:
 
 protected:
 
+    virtual int onRemove(void) = 0;
+
     /** Callback dispatcher -- must be implemented by the actual object. */
     virtual int callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb) = 0;
 

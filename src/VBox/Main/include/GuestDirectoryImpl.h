@@ -63,6 +63,7 @@ public:
      * @{ */
     int            callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     static Utf8Str guestErrorToString(int guestRc);
+    int            onRemove(void);
     static HRESULT setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     /** @}  */
 
