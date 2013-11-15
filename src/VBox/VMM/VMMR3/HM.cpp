@@ -1634,6 +1634,7 @@ VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
     pVCpu->hm.s.fActive            = false;
     pVCpu->hm.s.Event.fPending     = false;
     pVCpu->hm.s.vmx.fWasInRealMode = true;
+    pVCpu->hm.s.vmx.u64MsrApicBase = 0;
 
     /* Reset the contents of the read cache. */
     PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
