@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineLogicSeamless class declaration
+ * VBox Qt GUI - UIMachineLogicSeamless class declaration.
  */
 
 /*
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineLogicSeamless_h__
-#define __UIMachineLogicSeamless_h__
+#ifndef ___UIMachineLogicSeamless_h___
+#define ___UIMachineLogicSeamless_h___
 
 /* Local includes: */
 #include "UIMachineLogic.h"
@@ -59,12 +57,14 @@ private:
 
     /* Prepare helpers: */
     void prepareActionGroups();
+    void prepareActionConnections();
     void prepareMachineWindows();
     void prepareMenu();
 
     /* Cleanup helpers: */
     //void cleanupMenu() {}
     void cleanupMachineWindows();
+    void cleanupActionConnections();
     void cleanupActionGroups();
 
     /* Variables: */
@@ -76,5 +76,5 @@ private:
     friend class UIMachineViewSeamless;
 };
 
-#endif // __UIMachineLogicSeamless_h__
+#endif /* !___UIMachineLogicSeamless_h___ */
 

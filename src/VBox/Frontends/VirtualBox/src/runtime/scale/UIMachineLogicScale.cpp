@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineLogicScale class implementation
+ * VBox Qt GUI - UIMachineLogicScale class implementation.
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -72,6 +70,20 @@ void UIMachineLogicScale::prepareActionGroups()
     }
 }
 
+void UIMachineLogicScale::prepareActionConnections()
+{
+    /* Call to base-class: */
+    UIMachineLogic::prepareActionConnections();
+
+    /* "View" actions connections: */
+    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
+            uisession(), SLOT(sltChangeVisualStateToNormal()));
+    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+            uisession(), SLOT(sltChangeVisualStateToFullscreen()));
+    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
+            uisession(), SLOT(sltChangeVisualStateToSeamless()));
+}
+
 void UIMachineLogicScale::prepareMachineWindows()
 {
     /* Do not create machine-window(s) if they created already: */
@@ -109,6 +121,21 @@ void UIMachineLogicScale::cleanupMachineWindows()
     /* Cleanup machine-window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
+}
+
+void UIMachineLogicScale::cleanupActionConnections()
+{
+    /* "View" actions disconnections: */
+    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
+               uisession(), SLOT(sltChangeVisualStateToNormal()));
+    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+               uisession(), SLOT(sltChangeVisualStateToFullscreen()));
+    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
+               uisession(), SLOT(sltChangeVisualStateToSeamless()));
+
+    /* Call to base-class: */
+    UIMachineLogic::cleanupActionConnections();
+
 }
 
 void UIMachineLogicScale::cleanupActionGroups()

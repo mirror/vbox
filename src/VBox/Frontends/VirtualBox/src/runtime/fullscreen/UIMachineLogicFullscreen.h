@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineLogicFullscreen class declaration
+ * VBox Qt GUI - UIMachineLogicFullscreen class declaration.
  */
 
 /*
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineLogicFullscreen_h__
-#define __UIMachineLogicFullscreen_h__
+#ifndef ___UIMachineLogicFullscreen_h___
+#define ___UIMachineLogicFullscreen_h___
 
 /* Local includes: */
 #include "UIMachineLogic.h"
@@ -60,6 +58,7 @@ private:
 
     /* Prepare helpers: */
     void prepareActionGroups();
+    void prepareActionConnections();
 #ifdef Q_WS_MAC
     void prepareOtherConnections();
 #endif /* Q_WS_MAC */
@@ -72,6 +71,7 @@ private:
 #ifdef Q_WS_MAC
     //void cleanupOtherConnections() {}
 #endif /* Q_WS_MAC */
+    void cleanupActionConnections();
     void cleanupActionGroups();
 
 #ifdef Q_WS_MAC
@@ -87,5 +87,5 @@ private:
     friend class UIMachineViewFullscreen;
 };
 
-#endif // __UIMachineLogicFullscreen_h__
+#endif /* !___UIMachineLogicFullscreen_h___ */
 

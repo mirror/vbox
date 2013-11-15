@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UISession stuff implementation
+ * VBox Qt GUI - UISession class implementation.
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -498,6 +496,11 @@ bool UISession::isVisualStateAllowedScale() const
     return m_pMachine->isVisualStateAllowedScale();
 }
 
+void UISession::changeVisualState(UIVisualStateType visualStateType)
+{
+    m_pMachine->asyncChangeVisualState(visualStateType);
+}
+
 bool UISession::setPause(bool fOn)
 {
     CConsole console = session().GetConsole();
@@ -642,6 +645,38 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
         else
             msgCenter().cannotMountGuestAdditions(machine.GetName());
     }
+}
+
+void UISession::sltChangeVisualStateToNormal()
+{
+    /* Reset requests: */
+    setSeamlessModeRequested(false);
+    /* Request change: */
+    m_pMachine->asyncChangeVisualState(UIVisualStateType_Normal);
+}
+
+void UISession::sltChangeVisualStateToFullscreen()
+{
+    /* Reset requests: */
+    setSeamlessModeRequested(false);
+    /* Request change: */
+    m_pMachine->asyncChangeVisualState(UIVisualStateType_Fullscreen);
+}
+
+void UISession::sltChangeVisualStateToSeamless()
+{
+    /* Reset requests: */
+    setSeamlessModeRequested(false);
+    /* Request change: */
+    m_pMachine->asyncChangeVisualState(UIVisualStateType_Seamless);
+}
+
+void UISession::sltChangeVisualStateToScale()
+{
+    /* Reset requests: */
+    setSeamlessModeRequested(false);
+    /* Request change: */
+    m_pMachine->asyncChangeVisualState(UIVisualStateType_Scale);
 }
 
 void UISession::sltCloseRuntimeUI()
