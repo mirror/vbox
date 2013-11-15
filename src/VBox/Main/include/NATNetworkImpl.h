@@ -48,7 +48,7 @@ class NATNetworkServiceRunner: public NetworkServiceRunner
 {
 public:
     NATNetworkServiceRunner(): NetworkServiceRunner(NATSR_EXECUTABLE_NAME){}
-    virtual ~NATNetworkServiceRunner(){}
+    ~NATNetworkServiceRunner(){}
 };
 
 class ATL_NO_VTABLE NATNetwork :

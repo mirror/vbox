@@ -14,49 +14,67 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+#include <map>
+#include <string>
 #include "NetworkServiceRunner.h"
 #include <iprt/process.h>
 #include <iprt/param.h>
 #include <iprt/env.h>
 
-struct ARGDEF
+
+const std::string NetworkServiceRunner::kNsrKeyName = "--name";
+const std::string NetworkServiceRunner::kNsrKeyNetwork = "--network";
+const std::string NetworkServiceRunner::kNsrKeyTrunkType = "--trunk-type";
+const std::string NetworkServiceRunner::kNsrTrunkName = "--trunk-name";
+const std::string NetworkServiceRunner::kNsrMacAddress = "--mac-address";
+const std::string NetworkServiceRunner::kNsrIpAddress = "--ip-address";
+const std::string NetworkServiceRunner::kNsrIpNetmask = "--netmask";
+
+struct NetworkServiceRunner::Data
 {
-    NETCFG Type;
-    const char * Name;
+    Data(const char* aProcName):mProcName(aProcName), mProcess(NIL_RTPROCESS){}
+    const char *mProcName;
+    RTPROCESS mProcess;
+    std::map<std::string, std::string> mOptions;
 };
 
-static const ARGDEF g_aArgDefs[] =
+NetworkServiceRunner::NetworkServiceRunner(const char *aProcName)
 {
-    {NETCFG_NAME, "--name"},
-    {NETCFG_NETNAME, "--network"},
-    {NETCFG_TRUNKTYPE, "--trunk-type"},
-    {NETCFG_TRUNKNAME, "--trunk-name"},
-    {NETCFG_MACADDRESS, "--mac-address"},
-    {NETCFG_IPADDRESS, "--ip-address"},
-    {NETCFG_VERBOSE, "--verbose"},
-    {NETCFG_NETMASK, "--netmask"},
-};
-
-static const ARGDEF * getArgDef(NETCFG type)
-{
-    for (unsigned i = 0; i < RT_ELEMENTS(g_aArgDefs); i++)
-        if (g_aArgDefs[i].Type == type)
-            return &g_aArgDefs[i];
-
-    return NULL;
+    m = new NetworkServiceRunner::Data(aProcName);
+    
 }
+
+
+NetworkServiceRunner::~NetworkServiceRunner()
+{
+    stop();
+    delete m;
+    m = NULL;
+}
+
+
+int NetworkServiceRunner::setOption(const std::string& key, const std::string& val)
+{
+    m->mOptions.insert(std::map<std::string, std::string>::value_type(key, val));
+    return VINF_SUCCESS;
+}
+
 
 void NetworkServiceRunner::detachFromServer()
 {
-    mProcess = NIL_RTPROCESS;
+    m->mProcess = NIL_RTPROCESS;
 }
+
 
 int NetworkServiceRunner::start()
 {
     if (isRunning())
         return VINF_ALREADY_INITIALIZED;
 
-    const char * args[NETCFG_NOTOPT_MAXVAL * 2];
+    const char * args[10*2];
+
+    AssertReturn(m->mOptions.size() < 10, VERR_INTERNAL_ERROR);
 
     /* get the path to the executable */
     char exePathBuf[RTPATH_MAX];
@@ -68,58 +86,52 @@ int NetworkServiceRunner::start()
     if (suffix)
     {
         suffix++;
-        strcpy(suffix, mProcName);
+        strcpy(suffix, m->mProcName);
     }
 
     int index = 0;
 
     args[index++] = exePath;
 
-    for (unsigned i = 0; i < NETCFG_NOTOPT_MAXVAL; i++)
+    std::map<std::string, std::string>::const_iterator it;
+    for(it = m->mOptions.begin(); it != m->mOptions.end(); ++it)
     {
-        if (mOptionEnabled[i])
-        {
-            const ARGDEF *pArgDef = getArgDef((NETCFG)i);
-            if (!pArgDef)
-                continue;
-            args[index++] = pArgDef->Name;
-
-            if (mOptions[i].length())
-                args[index++] = mOptions[i].c_str();  // value
-        }
+        args[index++] = it->first.c_str();
+        args[index++] = it->second.c_str();
     }
 
     args[index++] = NULL;
 
-    int rc = RTProcCreate(suffix ? exePath : mProcName, args, RTENV_DEFAULT, 0, &mProcess);
+    int rc = RTProcCreate(suffix ? exePath : m->mProcName, args, RTENV_DEFAULT, 0, &m->mProcess);
     if (RT_FAILURE(rc))
-        mProcess = NIL_RTPROCESS;
+        m->mProcess = NIL_RTPROCESS;
 
     return rc;
 }
+
 
 int NetworkServiceRunner::stop()
 {
     if (!isRunning())
         return VINF_OBJECT_DESTROYED;
 
-    int rc = RTProcTerminate(mProcess);
-    RTProcWait(mProcess, RTPROCWAIT_FLAGS_BLOCK, NULL);
-    mProcess = NIL_RTPROCESS;
+    int rc = RTProcTerminate(m->mProcess);
+    RTProcWait(m->mProcess, RTPROCWAIT_FLAGS_BLOCK, NULL);
+    m->mProcess = NIL_RTPROCESS;
     return rc;
 }
 
 bool NetworkServiceRunner::isRunning()
 {
-    if (mProcess == NIL_RTPROCESS)
+    if (m->mProcess == NIL_RTPROCESS)
         return false;
 
     RTPROCSTATUS status;
-    int rc = RTProcWait(mProcess, RTPROCWAIT_FLAGS_NOBLOCK, &status);
+    int rc = RTProcWait(m->mProcess, RTPROCWAIT_FLAGS_NOBLOCK, &status);
 
     if (rc == VERR_PROCESS_RUNNING)
         return true;
 
-    mProcess = NIL_RTPROCESS;
+    m->mProcess = NIL_RTPROCESS;
     return false;
 }
