@@ -6501,6 +6501,8 @@ static DECLCALLBACK(int) e1kR3SetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
             if (STATUS & STATUS_LU)
                 e1kR3LinkDownTemp(pThis);
             break;
+        default:
+            ;
     }
     return VINF_SUCCESS;
 }
