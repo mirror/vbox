@@ -222,9 +222,6 @@ static void VBoxServiceLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmP
  */
 int VBoxServiceLogCreate(const char *pszLogFile)
 {
-    if (!pszLogFile) /* No logging wanted? Take a shortcut. */
-        return VINF_SUCCESS;
-
     /* Create release logger (stdout + file). */
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
