@@ -43,6 +43,32 @@ bool UIMachineLogicNormal::checkAvailability()
     return true;
 }
 
+void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
+{
+    /* Do not try to change visual-state type if machine was not started yet: */
+    if (!uisession()->isRunning() && !uisession()->isPaused())
+        return;
+
+    /* Check requested visual-state types: */
+    switch (uisession()->requestedVisualState())
+    {
+        /* If 'seamless' visual-state type is requested: */
+        case UIVisualStateType_Seamless:
+        {
+            /* And supported: */
+            if (uisession()->isGuestSupportsSeamless())
+            {
+                LogRel(("UIMachineLogicNormal: Going 'seamless' as requested...\n"));
+                uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
+                uisession()->changeVisualState(UIVisualStateType_Seamless);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
 void UIMachineLogicNormal::sltPrepareNetworkAdaptersMenu()
 {
     QMenu *menu = qobject_cast<QMenu*>(sender());

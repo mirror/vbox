@@ -108,6 +108,21 @@ void UIMachineLogicSeamless::notifyAbout3DOverlayVisibilityChange(bool)
     }
 }
 
+void UIMachineLogicSeamless::sltCheckForRequestedVisualStateType()
+{
+    /* Do not try to change visual-state type if machine was not started yet: */
+    if (!uisession()->isRunning() && !uisession()->isPaused())
+        return;
+
+    /* If 'seamless' visual-state type is no more supported: */
+    if (!uisession()->isGuestSupportsSeamless())
+    {
+        LogRel(("UIMachineLogicSeamless: Leaving 'seamless' as it is no more supported...\n"));
+        uisession()->setRequestedVisualState(UIVisualStateType_Seamless);
+        uisession()->changeVisualState(UIVisualStateType_Normal);
+    }
+}
+
 void UIMachineLogicSeamless::sltMachineStateChanged()
 {
     /* Call to base-class: */
@@ -244,7 +259,7 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
 
 void UIMachineLogicSeamless::cleanupActionConnections()
 {
-    /* "View" actions connections: */
+    /* "View" actions disconnections: */
     disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
                uisession(), SLOT(sltChangeVisualStateToNormal()));
     disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),

@@ -47,6 +47,9 @@ protected:
 
 private slots:
 
+    /** Checks if some visual-state type was requested. */
+    void sltCheckForRequestedVisualStateType();
+
     /* Handler: Console callback stuff: */
     void sltMachineStateChanged();
 

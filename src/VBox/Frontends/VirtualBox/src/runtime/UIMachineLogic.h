@@ -99,6 +99,9 @@ public:
 
 protected slots:
 
+    /** Checks if some visual-state type was requested. */
+    virtual void sltCheckForRequestedVisualStateType() {}
+
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();
     virtual void sltAdditionsStateChanged();
@@ -171,9 +174,6 @@ protected:
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
 private slots:
-
-    /* Mode request watch dog: */
-    void sltCheckRequestedModes();
 
     /* "Machine" menu functionality: */
     void sltToggleGuestAutoresize(bool fEnabled);

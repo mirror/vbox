@@ -248,7 +248,7 @@ void UIMachine::loadMachineSettings()
 
     /* Load extra-data settings: */
     {
-        /* Machine while saving own settings will save "yes" only for current
+        /* Machine while saving own settings will save "on" only for current
          * visual representation mode if its differs from normal mode of course.
          * But user can alter extra data manually in machine xml file and set there
          * more than one visual representation mode flags. Shame on such user!
@@ -277,7 +277,7 @@ void UIMachine::loadMachineSettings()
                 fIsSomeExtendedModeChosen = true;
                 /* We can't enter seamless mode initially,
                  * so we should ask ui-session for that: */
-                uisession()->setSeamlessModeRequested(true);
+                uisession()->setRequestedVisualState(UIVisualStateType_Seamless);
             }
         }
 
@@ -302,17 +302,36 @@ void UIMachine::saveMachineSettings()
 
     /* Save extra-data settings: */
     {
-        /* Set 'scale' flag: */
-        machine.SetExtraData(GUI_Scale, m_pVisualState &&
-                             m_pVisualState->visualStateType() == UIVisualStateType_Scale ? "on" : QString());
-
-        /* Set 'seamless' flag: */
-        machine.SetExtraData(GUI_Seamless, m_pVisualState &&
-                             m_pVisualState->visualStateType() == UIVisualStateType_Seamless ? "on" : QString());
-
-        /* Set 'fullscreen' flag: */
-        machine.SetExtraData(GUI_Fullscreen, m_pVisualState &&
-                             m_pVisualState->visualStateType() == UIVisualStateType_Fullscreen ? "on" : QString());
+        /* Prepare extra-data values: */
+        QString strFullscreenRequested;
+        QString strSeamlessRequested;
+        QString strScaleRequested;
+        /* Check if some state was requested: */
+        if (uisession()->requestedVisualState() != UIVisualStateType_Invalid)
+        {
+            switch (uisession()->requestedVisualState())
+            {
+                case UIVisualStateType_Fullscreen: strFullscreenRequested = "on"; break;
+                case UIVisualStateType_Seamless: strSeamlessRequested = "on"; break;
+                case UIVisualStateType_Scale: strScaleRequested = "on"; break;
+                default: break;
+            }
+        }
+        /* Check if some state still exists: */
+        else if (m_pVisualState)
+        {
+            switch (m_pVisualState->visualStateType())
+            {
+                case UIVisualStateType_Fullscreen: strFullscreenRequested = "on"; break;
+                case UIVisualStateType_Seamless: strSeamlessRequested = "on"; break;
+                case UIVisualStateType_Scale: strScaleRequested = "on"; break;
+                default: break;
+            }
+        }
+        /* Rewrite extra-data values: */
+        machine.SetExtraData(GUI_Fullscreen, strFullscreenRequested);
+        machine.SetExtraData(GUI_Seamless, strSeamlessRequested);
+        machine.SetExtraData(GUI_Scale, strScaleRequested);
     }
 }
 
