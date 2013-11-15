@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineLogic class implementation
+ * VBox Qt GUI - UIMachineLogic class implementation.
  */
 
 /*
@@ -248,6 +246,8 @@ void UIMachineLogic::cleanup()
     /* Cleanup handlers: */
     cleanupHandlers();
 
+    /* Cleanup action connections: */
+    cleanupActionConnections();
     /* Cleanup action groups: */
     cleanupActionGroups();
 }

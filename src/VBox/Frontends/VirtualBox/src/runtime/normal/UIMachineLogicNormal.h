@@ -1,11 +1,9 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineLogicNormal class declaration
+ * VBox Qt GUI - UIMachineLogicNormal class declaration.
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineLogicNormal_h__
-#define __UIMachineLogicNormal_h__
+#ifndef ___UIMachineLogicNormal_h___
+#define ___UIMachineLogicNormal_h___
 
 /* Local includes: */
 #include "UIMachineLogic.h"
@@ -51,11 +49,11 @@ private:
 
     /* Cleanup helpers: */
     void cleanupMachineWindows();
-    //void cleanupActionConnections() {}
+    void cleanupActionConnections();
 
     /* Friend classes: */
     friend class UIMachineLogic;
 };
 
-#endif // __UIMachineLogicNormal_h__
+#endif /* !___UIMachineLogicNormal_h___ */
 

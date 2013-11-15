@@ -1,11 +1,9 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UISession class declaration
+ * VBox Qt GUI - UISession class declaration.
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIConsole_h___
-#define ___UIConsole_h___
+#ifndef ___UISession_h___
+#define ___UISession_h___
 
 /* Qt includes: */
 #include <QObject>
@@ -124,6 +122,8 @@ public:
     bool isVisualStateAllowedFullscreen() const;
     bool isVisualStateAllowedSeamless() const;
     bool isVisualStateAllowedScale() const;
+    /** Requests visual-state change. */
+    void changeVisualState(UIVisualStateType visualStateType);
 
     bool isSaved() const { return machineState() == KMachineState_Saved; }
     bool isTurnedOff() const { return machineState() == KMachineState_PoweredOff ||
@@ -235,6 +235,15 @@ public slots:
     void sltInstallGuestAdditionsFrom(const QString &strSource);
 
 private slots:
+
+    /** Requests visual-state change to 'normal' (window). */
+    void sltChangeVisualStateToNormal();
+    /** Requests visual-state change to 'fullscreen'. */
+    void sltChangeVisualStateToFullscreen();
+    /** Requests visual-state change to 'seamless'. */
+    void sltChangeVisualStateToSeamless();
+    /** Requests visual-state change to 'scale'. */
+    void sltChangeVisualStateToScale();
 
     /* Handler: Close Runtime UI stuff: */
     void sltCloseRuntimeUI();
@@ -378,4 +387,5 @@ private:
     friend class UIConsoleEventHandler;
 };
 
-#endif // !___UIConsole_h___
+#endif /* !___UISession_h___ */
+

@@ -1,11 +1,9 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Global declarations and functions
+ * VBox Qt GUI - UIDefs namespace and other global declarations.
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIDefs_h__
-#define __UIDefs_h__
+#ifndef ___UIDefs_h___
+#define ___UIDefs_h___
 
 /* Qt includes: */
 #include <QEvent>
@@ -273,6 +271,7 @@ enum UIVisualStateType
     UIVisualStateType_Scale      = RT_BIT(3),
     UIVisualStateType_All        = 0xFF
 };
+Q_DECLARE_METATYPE(UIVisualStateType);
 
 /* Details element type: */
 enum DetailsElementType
@@ -359,5 +358,5 @@ enum MachineCloseAction
 };
 Q_DECLARE_METATYPE(MachineCloseAction);
 
-#endif // __UIDefs_h__
+#endif /* !___UIDefs_h___ */
 

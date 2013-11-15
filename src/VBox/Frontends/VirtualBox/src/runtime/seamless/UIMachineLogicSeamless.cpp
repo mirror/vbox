@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineLogicSeamless class implementation
+ * VBox Qt GUI - UIMachineLogicSeamless class implementation.
  */
 
 /*
@@ -179,6 +177,20 @@ void UIMachineLogicSeamless::prepareActionGroups()
     }
 }
 
+void UIMachineLogicSeamless::prepareActionConnections()
+{
+    /* Call to base-class: */
+    UIMachineLogic::prepareActionConnections();
+
+    /* "View" actions connections: */
+    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
+            uisession(), SLOT(sltChangeVisualStateToNormal()));
+    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+            uisession(), SLOT(sltChangeVisualStateToFullscreen()));
+    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
+            uisession(), SLOT(sltChangeVisualStateToScale()));
+}
+
 void UIMachineLogicSeamless::prepareMachineWindows()
 {
     /* Do not create machine-window(s) if they created already: */
@@ -228,6 +240,20 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
     /* Cleanup machine-window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
+}
+
+void UIMachineLogicSeamless::cleanupActionConnections()
+{
+    /* "View" actions connections: */
+    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
+               uisession(), SLOT(sltChangeVisualStateToNormal()));
+    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+               uisession(), SLOT(sltChangeVisualStateToFullscreen()));
+    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
+               uisession(), SLOT(sltChangeVisualStateToScale()));
+
+    /* Call to base-class: */
+    UIMachineLogic::cleanupActionConnections();
 }
 
 void UIMachineLogicSeamless::cleanupActionGroups()
