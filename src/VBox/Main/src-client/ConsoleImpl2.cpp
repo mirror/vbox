@@ -115,6 +115,10 @@
 # endif
 #endif /* VBOX_WITH_NETFLT */
 
+#include <string>
+/* XXX: We don't need class declared in NetworkServiceRunner, this file included because of 
+ * mcrodefintions TRUNKTYPE_*
+ */
 #include "NetworkServiceRunner.h"
 #include "BusAssignmentManager.h"
 #ifdef VBOX_WITH_EXTPACK
