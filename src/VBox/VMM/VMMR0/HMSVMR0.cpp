@@ -1652,7 +1652,7 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     AssertPtr(pVCpu);
     Assert(pVM->hm.s.svm.fSupported);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    NOREF(pCpu);
+    NOREF(pVM); NOREF(pCpu);
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
     Assert(VMCPU_HMCF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
@@ -2254,7 +2254,7 @@ DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, PSVMEVENT pEvent, RTGCUINT
  */
 DECLINLINE(void) hmR0SvmInjectEventVmcb(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx, PSVMEVENT pEvent)
 {
-    NOREF(pCtx);
+    NOREF(pVCpu); NOREF(pCtx);
 
     pVmcb->ctrl.EventInject.u = pEvent->u;
     STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[pEvent->n.u8Vector & MASK_INJECT_IRQ_STAT]);
@@ -2565,6 +2565,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /* Update the guest interrupt shadow in the VMCB. */
     pVmcb->ctrl.u64IntShadow = !!fIntShadow;
+    NOREF(fBlockInt);
 }
 
 
@@ -2580,12 +2581,13 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PCPUMCTX pCtx)
 {
+    NOREF(pCtx);
     HMSVM_ASSERT_PREEMPT_SAFE();
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
     if (rcVMRun == VERR_SVM_INVALID_GUEST_STATE)
     {
-        HMDumpRegs(pVM, pVCpu, pCtx);
+        HMDumpRegs(pVM, pVCpu, pCtx); NOREF(pVM);
 #ifdef VBOX_STRICT
         Log4(("ctrl.u64VmcbCleanBits             %#RX64\n",   pVmcb->ctrl.u64VmcbCleanBits));
         Log4(("ctrl.u16InterceptRdCRx            %#x\n",      pVmcb->ctrl.u16InterceptRdCRx));
@@ -2701,7 +2703,9 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("guest.u64BR_TO                    %#RX64\n",   pVmcb->guest.u64BR_TO));
         Log4(("guest.u64LASTEXCPFROM             %#RX64\n",   pVmcb->guest.u64LASTEXCPFROM));
         Log4(("guest.u64LASTEXCPTO               %#RX64\n",   pVmcb->guest.u64LASTEXCPTO));
-#endif
+#else
+        NOREF(pVmcb);
+#endif  /* VBOX_STRICT */
     }
     else
         Log4(("hmR0SvmReportWorldSwitchError: rcVMRun=%d\n", rcVMRun));
@@ -3550,7 +3554,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
             HMSVM_ASSERT_PREEMPT_CPUID(); \
     } while (0)
 #else   /* Release builds */
-# define HMSVM_VALIDATE_EXIT_HANDLER_PARAMS() do { } while (0)
+# define HMSVM_VALIDATE_EXIT_HANDLER_PARAMS() do { NOREF(pVCpu); NOREF(pCtx); NOREF(pSvmTransient); } while (0)
 #endif
 
 
@@ -3955,6 +3959,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
         }
     }
     Assert(rc == VINF_SUCCESS || rc == VINF_HM_DOUBLE_FAULT || rc == VINF_EM_RESET);
+    NOREF(pCtx);
     return rc;
 }
 
