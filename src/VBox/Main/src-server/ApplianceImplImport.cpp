@@ -3025,6 +3025,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
                         LogWarning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
                                     oit->first.c_str(), vmNameEntry->strOvf.c_str()));
+                        NOREF(vmNameEntry);
                         ++oit;
                         continue;
                     }
@@ -3510,8 +3511,9 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
             if (!vsdeTargetHD)
             {
                 /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
-                LogWarning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n", 
+                LogWarning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
                             oit->first.c_str(), vmNameEntry->strOvf.c_str()));
+                NOREF(vmNameEntry);
                 ++oit;
                 continue;
             }
@@ -3584,7 +3586,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                         }
                     }
                     if (!vsdeTargetHD)
-                        /* 
+                        /*
                          * in this case it's an error because something wrong with OVF description file.
                          * May be VB imports OVA package with wrong file sequence inside the archive.
                          */
