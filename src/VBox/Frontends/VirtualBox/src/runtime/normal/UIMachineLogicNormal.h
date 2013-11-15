@@ -35,6 +35,9 @@ protected:
 
 private slots:
 
+    /** Checks if some visual-state type was requested. */
+    void sltCheckForRequestedVisualStateType();
+
     /* Windowed mode functionality: */
     void sltPrepareNetworkAdaptersMenu();
     void sltPrepareSharedFoldersMenu();

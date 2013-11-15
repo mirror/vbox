@@ -124,6 +124,10 @@ public:
     bool isVisualStateAllowedScale() const;
     /** Requests visual-state change. */
     void changeVisualState(UIVisualStateType visualStateType);
+    /** Requests visual-state to be entered when possible. */
+    void setRequestedVisualState(UIVisualStateType visualStateType) { m_requestedVisualStateType = visualStateType; }
+    /** Returns requested visual-state to be entered when possible. */
+    UIVisualStateType requestedVisualState() const { return m_requestedVisualStateType; }
 
     bool isSaved() const { return machineState() == KMachineState_Saved; }
     bool isTurnedOff() const { return machineState() == KMachineState_PoweredOff ||
@@ -141,7 +145,6 @@ public:
     bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
     bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRuntimeMediumsChanging; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
-    bool isSeamlessModeRequested() const { return m_fIsSeamlessModeRequested; }
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
 
     /* Guest additions state getters: */
@@ -171,7 +174,6 @@ public:
     bool unpause() { return setPause(false); }
     bool setPause(bool fOn);
     void setGuestResizeIgnored(bool fIsGuestResizeIgnored) { m_fIsGuestResizeIgnored = fIsGuestResizeIgnored; }
-    void setSeamlessModeRequested(bool fIsSeamlessModeRequested) { m_fIsSeamlessModeRequested = fIsSeamlessModeRequested; }
     void setAutoCaptureDisabled(bool fIsAutoCaptureDisabled) { m_fIsAutoCaptureDisabled = fIsAutoCaptureDisabled; }
     void forgetPreviousMachineState() { m_machineStatePrevious = m_machineState; }
 
@@ -323,6 +325,12 @@ private:
     KMachineState m_machineState;
     QCursor m_cursor;
 
+    /** @name Visual-state configuration variables.
+     ** @{ */
+    /** Determines which visual-state should be entered when possible. */
+    UIVisualStateType m_requestedVisualStateType;
+    /** @} */
+
 #if defined(Q_WS_WIN)
     HCURSOR m_alphaCursor;
 #endif
@@ -357,7 +365,6 @@ private:
     bool m_fIsFirstTimeStarted : 1;
     bool m_fIsIgnoreRuntimeMediumsChanging : 1;
     bool m_fIsGuestResizeIgnored : 1;
-    bool m_fIsSeamlessModeRequested : 1;
     bool m_fIsAutoCaptureDisabled : 1;
     bool m_fReconfigurable : 1;
 

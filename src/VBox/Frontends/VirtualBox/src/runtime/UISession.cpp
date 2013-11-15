@@ -123,6 +123,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_pMenuPool(0)
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(session().GetMachine().GetState())
+    , m_requestedVisualStateType(UIVisualStateType_Invalid)
 #ifdef Q_WS_WIN
     , m_alphaCursor(0)
 #endif /* Q_WS_WIN */
@@ -137,7 +138,6 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_fIsFirstTimeStarted(false)
     , m_fIsIgnoreRuntimeMediumsChanging(false)
     , m_fIsGuestResizeIgnored(false)
-    , m_fIsSeamlessModeRequested(false)
     , m_fIsAutoCaptureDisabled(false)
     , m_fReconfigurable(false)
     /* Guest additions flags: */
@@ -650,7 +650,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 void UISession::sltChangeVisualStateToNormal()
 {
     /* Reset requests: */
-    setSeamlessModeRequested(false);
+    setRequestedVisualState(UIVisualStateType_Invalid);
     /* Request change: */
     m_pMachine->asyncChangeVisualState(UIVisualStateType_Normal);
 }
@@ -658,7 +658,7 @@ void UISession::sltChangeVisualStateToNormal()
 void UISession::sltChangeVisualStateToFullscreen()
 {
     /* Reset requests: */
-    setSeamlessModeRequested(false);
+    setRequestedVisualState(UIVisualStateType_Invalid);
     /* Request change: */
     m_pMachine->asyncChangeVisualState(UIVisualStateType_Fullscreen);
 }
@@ -666,7 +666,7 @@ void UISession::sltChangeVisualStateToFullscreen()
 void UISession::sltChangeVisualStateToSeamless()
 {
     /* Reset requests: */
-    setSeamlessModeRequested(false);
+    setRequestedVisualState(UIVisualStateType_Invalid);
     /* Request change: */
     m_pMachine->asyncChangeVisualState(UIVisualStateType_Seamless);
 }
@@ -674,7 +674,7 @@ void UISession::sltChangeVisualStateToSeamless()
 void UISession::sltChangeVisualStateToScale()
 {
     /* Reset requests: */
-    setSeamlessModeRequested(false);
+    setRequestedVisualState(UIVisualStateType_Invalid);
     /* Request change: */
     m_pMachine->asyncChangeVisualState(UIVisualStateType_Scale);
 }
