@@ -1272,7 +1272,7 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
                         rc = DBGCCmdHlpPrintf(pCmdHlp, "         %4d: %s\n", Line.uLineNo - cBefore - 1, szLine);
                         szLine[0] = '\0';
-                        fgets(szLine, sizeof(szLine), phFile);
+                        (void)fgets(szLine, sizeof(szLine), phFile);
                         cLines++;
                     }
                     /* print the actual line */
