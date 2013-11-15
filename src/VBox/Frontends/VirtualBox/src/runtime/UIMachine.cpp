@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachine class implementation
+ * VBox Qt GUI - UIMachine class implementation.
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,9 +14,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
-/* Global includes: */
-#include <QTimer>
 
 /* Local includes: */
 #include "VBoxGlobal.h"
@@ -179,32 +174,7 @@ public:
 
     /* Constructor: */
     UIVisualStateFullscreen(QObject *pParent, UISession *pSession)
-        : UIVisualState(pParent, pSession)
-    {
-        /* This visual state should take care of own action: */
-        QAction *pActionFullscreen = gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen);
-        if (!pActionFullscreen->isChecked())
-        {
-            pActionFullscreen->blockSignals(true);
-            pActionFullscreen->setChecked(true);
-            QTimer::singleShot(0, pActionFullscreen, SLOT(sltUpdate()));
-            pActionFullscreen->blockSignals(false);
-        }
-    }
-
-    /* Destructor: */
-    virtual ~UIVisualStateFullscreen()
-    {
-        /* This visual state should take care of own action: */
-        QAction *pActionFullscreen = gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen);
-        if (pActionFullscreen->isChecked())
-        {
-            pActionFullscreen->blockSignals(true);
-            pActionFullscreen->setChecked(false);
-            QTimer::singleShot(0, pActionFullscreen, SLOT(sltUpdate()));
-            pActionFullscreen->blockSignals(false);
-        }
-    }
+        : UIVisualState(pParent, pSession) {}
 
 private slots:
 
@@ -243,32 +213,7 @@ public:
 
     /* Constructor: */
     UIVisualStateSeamless(QObject *pParent, UISession *pSession)
-        : UIVisualState(pParent, pSession)
-    {
-        /* This visual state should take care of own action: */
-        QAction *pActionSeamless = gActionPool->action(UIActionIndexRuntime_Toggle_Seamless);
-        if (!pActionSeamless->isChecked())
-        {
-            pActionSeamless->blockSignals(true);
-            pActionSeamless->setChecked(true);
-            QTimer::singleShot(0, pActionSeamless, SLOT(sltUpdate()));
-            pActionSeamless->blockSignals(false);
-        }
-    }
-
-    /* Destructor: */
-    virtual ~UIVisualStateSeamless()
-    {
-        /* This visual state should take care of own action: */
-        QAction *pActionSeamless = gActionPool->action(UIActionIndexRuntime_Toggle_Seamless);
-        if (pActionSeamless->isChecked())
-        {
-            pActionSeamless->blockSignals(true);
-            pActionSeamless->setChecked(false);
-            QTimer::singleShot(0, pActionSeamless, SLOT(sltUpdate()));
-            pActionSeamless->blockSignals(false);
-        }
-    }
+        : UIVisualState(pParent, pSession) {}
 
 private slots:
 
@@ -307,32 +252,7 @@ public:
 
     /* Constructor: */
     UIVisualStateScale(QObject *pParent, UISession *pSession)
-        : UIVisualState(pParent, pSession)
-    {
-        /* This visual state should take care of own action: */
-        QAction *pActionScale = gActionPool->action(UIActionIndexRuntime_Toggle_Scale);
-        if (!pActionScale->isChecked())
-        {
-            pActionScale->blockSignals(true);
-            pActionScale->setChecked(true);
-            QTimer::singleShot(0, pActionScale, SLOT(sltUpdate()));
-            pActionScale->blockSignals(false);
-        }
-    }
-
-    /* Destructor: */
-    virtual ~UIVisualStateScale()
-    {
-        /* This visual state should take care of own action: */
-        QAction *pActionScale = gActionPool->action(UIActionIndexRuntime_Toggle_Scale);
-        if (pActionScale->isChecked())
-        {
-            pActionScale->blockSignals(true);
-            pActionScale->setChecked(false);
-            QTimer::singleShot(0, pActionScale, SLOT(sltUpdate()));
-            pActionScale->blockSignals(false);
-        }
-    }
+        : UIVisualState(pParent, pSession) {}
 
 private slots:
 
@@ -497,8 +417,7 @@ UIMachineLogic* UIMachine::machineLogic() const
 {
     if (m_pVisualState && m_pVisualState->machineLogic())
         return m_pVisualState->machineLogic();
-    else
-        return 0;
+    return 0;
 }
 
 void UIMachine::loadMachineSettings()

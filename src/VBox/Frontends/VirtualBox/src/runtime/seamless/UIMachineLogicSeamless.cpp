@@ -163,12 +163,20 @@ void UIMachineLogicSeamless::prepareActionGroups()
 
     /* Guest auto-resize isn't allowed in seamless: */
     gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setVisible(false);
-
     /* Adjust-window isn't allowed in seamless: */
     gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(false);
-
     /* Disable mouse-integration isn't allowed in seamless: */
     gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration)->setVisible(false);
+
+    /* Take care of view-action toggle state: */
+    UIAction *pActionSeamless = gActionPool->action(UIActionIndexRuntime_Toggle_Seamless);
+    if (!pActionSeamless->isChecked())
+    {
+        pActionSeamless->blockSignals(true);
+        pActionSeamless->setChecked(true);
+        pActionSeamless->blockSignals(false);
+        pActionSeamless->update();
+    }
 }
 
 void UIMachineLogicSeamless::prepareMachineWindows()
@@ -224,16 +232,24 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
 
 void UIMachineLogicSeamless::cleanupActionGroups()
 {
-    /* Call to base-class: */
-    UIMachineLogic::cleanupActionGroups();
+    /* Take care of view-action toggle state: */
+    UIAction *pActionSeamless = gActionPool->action(UIActionIndexRuntime_Toggle_Seamless);
+    if (pActionSeamless->isChecked())
+    {
+        pActionSeamless->blockSignals(true);
+        pActionSeamless->setChecked(false);
+        pActionSeamless->blockSignals(false);
+        pActionSeamless->update();
+    }
 
     /* Reenable guest-autoresize action: */
     gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setVisible(true);
-
     /* Reenable adjust-window action: */
     gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(true);
-
     /* Reenable mouse-integration action: */
     gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration)->setVisible(true);
+
+    /* Call to base-class: */
+    UIMachineLogic::cleanupActionGroups();
 }
 

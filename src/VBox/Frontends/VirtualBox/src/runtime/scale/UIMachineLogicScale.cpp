@@ -58,9 +58,18 @@ void UIMachineLogicScale::prepareActionGroups()
 
     /* Guest auto-resize isn't allowed in scale-mode: */
     gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setVisible(false);
-
     /* Adjust-window isn't allowed in scale-mode: */
     gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(false);
+
+    /* Take care of view-action toggle state: */
+    UIAction *pActionScale = gActionPool->action(UIActionIndexRuntime_Toggle_Scale);
+    if (!pActionScale->isChecked())
+    {
+        pActionScale->blockSignals(true);
+        pActionScale->setChecked(true);
+        pActionScale->blockSignals(false);
+        pActionScale->update();
+    }
 }
 
 void UIMachineLogicScale::prepareMachineWindows()
@@ -104,13 +113,22 @@ void UIMachineLogicScale::cleanupMachineWindows()
 
 void UIMachineLogicScale::cleanupActionGroups()
 {
-    /* Call to base-class: */
-    UIMachineLogic::cleanupActionGroups();
+    /* Take care of view-action toggle state: */
+    UIAction *pActionScale = gActionPool->action(UIActionIndexRuntime_Toggle_Scale);
+    if (pActionScale->isChecked())
+    {
+        pActionScale->blockSignals(true);
+        pActionScale->setChecked(false);
+        pActionScale->blockSignals(false);
+        pActionScale->update();
+    }
 
     /* Reenable guest-autoresize action: */
     gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setVisible(true);
-
     /* Reenable adjust-window action: */
     gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(true);
+
+    /* Call to base-class: */
+    UIMachineLogic::cleanupActionGroups();
 }
 
