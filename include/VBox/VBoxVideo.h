@@ -1577,6 +1577,9 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
 #define VBOXCMDVBVA_OPTYPE_PAGING_TRANSFER              4
 /* allocation paging fill request */
 #define VBOXCMDVBVA_OPTYPE_PAGING_FILL                  5
+/* same as VBOXCMDVBVA_OPTYPE_NOP, but contains VBOXCMDVBVA_HDR data */
+#define VBOXCMDVBVA_OPTYPE_NOPCMD                       6
+
 /* nop - is a one-bit command. The buffer size to skip is determined by VBVA buffer size */
 #define VBOXCMDVBVA_OPTYPE_NOP                          0x80
 

@@ -4969,6 +4969,7 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
     vbvaTimerCb(pThis);
 #endif
 
+    vboxCmdVBVACmdTimer(pThis);
 }
 
 
