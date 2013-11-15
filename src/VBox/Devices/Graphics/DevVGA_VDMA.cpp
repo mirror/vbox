@@ -27,6 +27,16 @@
 
 #include <VBox/VBoxVideo3D.h>
 
+#ifdef DEBUG_misha
+#define WARN_BP() do { AssertFailed(); } while (0)
+#else
+#define WARN_BP() do { } while (0)
+#endif
+#define WARN(_msg) do { \
+        LogRel(_msg); \
+        WARN_BP(); \
+    } while (0)
+
 #ifdef VBOX_VDMA_WITH_WORKERTHREAD
 typedef enum
 {
@@ -80,10 +90,63 @@ typedef struct VBOXVDMAPIPE_CMD_POOL
 } VBOXVDMAPIPE_CMD_POOL, *PVBOXVDMAPIPE_CMD_POOL;
 #endif
 
+
+/* state transformations:
+ *
+ *   submitter   |    processor
+ *   STOPPED
+ *      |
+ *      |
+ *      >
+ *  LISTENING   --->  PROCESSING
+ *      ^               _/
+ *      |             _/
+ *      |           _/
+ *      |         _/
+ *      |       _/
+ *      |     _/
+ *      |    /
+ *      <   >
+ *     PAUSED
+ *
+ *  */
+#define VBVAEXHOSTCONTEXT_STATE_STOPPED        0
+#define VBVAEXHOSTCONTEXT_STATE_LISTENING      1
+#define VBVAEXHOSTCONTEXT_STATE_PROCESSING     2
+#define VBVAEXHOSTCONTEXT_STATE_PAUSED         3
+
+typedef struct VBVAEXHOSTCONTEXT
+{
+    VBVABUFFER *pVBVA;
+    uint32_t cbCurData;
+    volatile uint32_t u32State;
+    volatile uint32_t u32Pause;
+    volatile uint32_t u32cOtherCommands;
+} VBVAEXHOSTCONTEXT;
+
+/* VBoxVBVAExHP**, i.e. processor functions, can NOT be called concurrently with each other,
+ * but can be called with other VBoxVBVAExS** (submitter) functions except Init/Start/Term aparently.
+ * Can only be called be the processor, i.e. the entity that acquired the processor state by direct or indirect call to the VBoxVBVAExHSCheckCommands
+ * see mor edetailed comments in headers for function definitions */
+static bool VBoxVBVAExHPCmdCheckRelease(struct VBVAEXHOSTCONTEXT *pCmdVbva);
+static int VBoxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppCmd, uint32_t *pcbCmd);
+
+/* VBoxVBVAExHP**, i.e. processor functions, can NOT be called concurrently with each other,
+/* can be called concurrently with istelf as well as with other VBoxVBVAEx** functions except Init/Start/Term aparently */
+static int VBoxVBVAExHSCheckCommands(struct VBVAEXHOSTCONTEXT *pCmdVbva);
+
+static void VBoxVBVAExHSInit(struct VBVAEXHOSTCONTEXT *pCmdVbva);
+static int VBoxVBVAExHSEnable(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVABUFFER *pVBVA);
+static int VBoxVBVAExHSDisable(struct VBVAEXHOSTCONTEXT *pCmdVbva);
+static void VBoxVBVAExHSTerm(struct VBVAEXHOSTCONTEXT *pCmdVbva);
+static int VBoxVBVAExHSSaveState(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t* pu8VramBase, PSSMHANDLE pSSM);
+static int VBoxVBVAExHSLoadState(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t* pu8VramBase, PSSMHANDLE pSSM, uint32_t u32Version);
+
 typedef struct VBOXVDMAHOST
 {
     PHGSMIINSTANCE pHgsmi;
     PVGASTATE pVGAState;
+    VBVAEXHOSTCONTEXT CmdVbva;
 #ifdef VBOX_VDMA_WITH_WATCHDOG
     PTMTIMERR3 WatchDogTimer;
 #endif
@@ -207,9 +270,89 @@ static int vboxVDMACrCtlPost(PVGASTATE pVGAState, PVBOXVDMACMD_CHROMIUM_CTL pCmd
     return rc;
 }
 
+static void vboxVDMACrCmdNotifyPerform(struct VBOXVDMAHOST *pVdma)
+{
+    PVGASTATE pVGAState = pVdma->pVGAState;
+    pVGAState->pDrv->pfnCrCmdNotifyCmds(pVGAState->pDrv);
+}
+
+/*
+ * @returns
+ *
+ */
+static int vboxVDMACrCmdPreprocess(struct VBOXVDMAHOST *pVdma, uint8_t* pu8Cmd, uint32_t cbCmd)
+{
+    if (*pu8Cmd == VBOXCMDVBVA_OPTYPE_NOP)
+        return VINF_EOF;
+
+    PVBOXCMDVBVA_HDR pCmd = (PVBOXCMDVBVA_HDR)pu8Cmd;
+
+    /* check if the command is cancelled */
+    if (!ASMAtomicCmpXchgU8(&pCmd->u8State, VBOXCMDVBVA_STATE_IN_PROGRESS, VBOXCMDVBVA_STATE_SUBMITTED))
+    {
+        Assert(pCmd->u8State == VBOXCMDVBVA_STATE_CANCELLED);
+        return VINF_EOF;
+    }
+
+    /* come commands can be handled right away? */
+    switch (pCmd->u8OpCode)
+    {
+        case VBOXCMDVBVA_OPTYPE_NOPCMD:
+            pCmd->i8Result = 0;
+            return VINF_EOF;
+        default:
+            return VINF_SUCCESS;
+    }
+}
+
 static DECLCALLBACK(int) vboxVDMACrCmdCltCmdGet(HVBOXCRCMDCLT hClt, PVBOXCMDVBVA_HDR *ppNextCmd, uint32_t *pcbNextCmd)
 {
-    return VERR_NOT_IMPLEMENTED;
+    struct VBOXVDMAHOST *pVdma = hClt;
+
+    VBoxVBVAExHPCmdCheckRelease(&pVdma->CmdVbva);
+
+    uint32_t cbCmd;
+    uint8_t *pu8Cmd;
+
+    for(;;)
+    {
+        int rc = VBoxVBVAExHPCmdGet(&pVdma->CmdVbva, &pu8Cmd, &cbCmd);
+        switch (rc)
+        {
+            case VINF_SUCCESS:
+            {
+                rc = vboxVDMACrCmdPreprocess(pVdma, pu8Cmd, cbCmd);
+                switch (rc)
+                {
+                    case VINF_SUCCESS:
+                        *ppNextCmd = (PVBOXCMDVBVA_HDR)pu8Cmd;
+                        *pcbNextCmd = cbCmd;
+                        return VINF_SUCCESS;
+                    case VINF_EOF:
+                        continue;
+                    default:
+                        Assert(!RT_FAILURE(rc));
+                        return RT_FAILURE(rc) ? rc : VERR_INTERNAL_ERROR;
+                }
+                break;
+            }
+            case VINF_EOF:
+                return VINF_EOF;
+            case VINF_PERMISSION_DENIED:
+                /* processing was paused, processing state was released, only VBoxVBVAExHS*** calls are now allowed */
+                return VINF_EOF;
+            case VINF_INTERRUPTED:
+                /* command processing was interrupted, processor state remains set. client can process any commands */
+                vboxVDMACrCmdNotifyPerform(pVdma);
+                return VINF_EOF;
+            default:
+                Assert(!RT_FAILURE(rc));
+                return RT_FAILURE(rc) ? rc : VERR_INTERNAL_ERROR;
+        }
+    }
+
+    WARN(("Warning: vboxVDMACrCmdCltCmdGet unexpected state\n"));
+    return VERR_INTERNAL_ERROR;
 }
 
 static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
@@ -1170,6 +1313,7 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
 # endif
 #endif
                 pVGAState->pVdma = pVdma;
+                VBoxVBVAExHSInit(&pVdma->CmdVbva);
 #ifdef VBOX_WITH_CRHGSMI
                 int rcIgnored = vboxVDMACrCtlHgsmiSetup(pVdma); NOREF(rcIgnored); /** @todo is this ignoring intentional? */
 #endif
@@ -1196,6 +1340,7 @@ int vboxVDMADestruct(struct VBOXVDMAHOST *pVdma)
     /* @todo: implement*/
     AssertBreakpoint();
 #endif
+    VBoxVBVAExHSTerm(&pVdma->CmdVbva);
     RTMemFree(pVdma);
     return VINF_SUCCESS;
 }
@@ -1388,4 +1533,402 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd, uint32_t
     int tmpRc = VBoxSHGSMICommandComplete (pIns, pCmd);
     AssertRC(tmpRc);
 #endif
+}
+
+/**/
+static int vboxVBVAExHSProcessorAcquire(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    Assert(pCmdVbva->u32State == VBVAEXHOSTCONTEXT_STATE_STOPPED);
+
+    uint32_t oldState;
+    if (!ASMAtomicReadU32(&pCmdVbva->u32Pause))
+    {
+        if (ASMAtomicCmpXchgExU32(&pCmdVbva->u32State, VBVAEXHOSTCONTEXT_STATE_PROCESSING, VBVAEXHOSTCONTEXT_STATE_LISTENING, &oldState))
+            return VINF_SUCCESS;
+        return oldState == VBVAEXHOSTCONTEXT_STATE_PROCESSING ? VERR_SEM_BUSY : VERR_INVALID_STATE;
+    }
+    return VERR_INVALID_STATE;
+}
+
+static bool vboxVBVAExHPCheckPause(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    Assert(pCmdVbva->u32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
+
+    if (!ASMAtomicReadU32(&pCmdVbva->u32Pause))
+        return false;
+
+    ASMAtomicWriteU32(&pCmdVbva->u32State, VBVAEXHOSTCONTEXT_STATE_PAUSED);
+    return true;
+}
+
+static bool vboxVBVAExHPCheckOtherCommands(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    Assert(pCmdVbva->u32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
+
+    return !!ASMAtomicUoReadU32(&pCmdVbva->u32cOtherCommands);
+}
+
+static void vboxVBVAExHPProcessorRelease(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    Assert(pCmdVbva->u32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
+
+    if (!vboxVBVAExHPCheckPause(pCmdVbva))
+        ASMAtomicWriteU32(&pCmdVbva->u32State, VBVAEXHOSTCONTEXT_STATE_LISTENING);
+    else
+        ASMAtomicWriteU32(&pCmdVbva->u32State, VBVAEXHOSTCONTEXT_STATE_PAUSED);
+}
+
+static void vboxVBVAExHPHgEventSet(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    Assert(pCmdVbva->u32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
+
+    ASMAtomicOrU32(&pCmdVbva->pVBVA->hostFlags.u32HostEvents, VBVA_F_STATE_PROCESSING);
+}
+
+static void vboxVBVAExHPHgEventClear(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    Assert(pCmdVbva->u32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
+
+    ASMAtomicAndU32(&pCmdVbva->pVBVA->hostFlags.u32HostEvents, ~VBVA_F_STATE_PROCESSING);
+}
+
+static bool vboxVBVAExHPCmdCheckRelease(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    if (!pCmdVbva->cbCurData)
+        return false;
+
+    VBVABUFFER *pVBVA = pCmdVbva->pVBVA;
+    pVBVA->off32Data = (pVBVA->off32Data + pCmdVbva->cbCurData) % pVBVA->cbData;
+
+    pVBVA->indexRecordFirst = (pVBVA->indexRecordFirst + 1) % RT_ELEMENTS(pVBVA->aRecords);
+
+    pCmdVbva->cbCurData = 0;
+
+    return true;
+}
+
+static int vboxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppCmd, uint32_t *pcbCmd)
+{
+    Assert(pCmdVbva->u32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
+
+    VBVABUFFER *pVBVA = pCmdVbva->pVBVA;
+
+    uint32_t indexRecordFirst = pVBVA->indexRecordFirst;
+    uint32_t indexRecordFree = pVBVA->indexRecordFree;
+
+    Log(("first = %d, free = %d\n",
+                   indexRecordFirst, indexRecordFree));
+
+    if (indexRecordFirst == indexRecordFree)
+    {
+        /* No records to process. Return without assigning output variables. */
+        return VINF_EOF;
+    }
+
+    uint32_t cbRecordCurrent = ASMAtomicReadU32(&pVBVA->aRecords[indexRecordFirst].cbRecord);
+
+    uint32_t cbRecord = cbRecordCurrent & ~VBVA_F_RECORD_PARTIAL;
+
+    /* A new record need to be processed. */
+    if (cbRecordCurrent & VBVA_F_RECORD_PARTIAL)
+    {
+        Assert(cbRecord == 0);
+        /* the record is being recorded, try again */
+        return VINF_TRY_AGAIN;
+    }
+
+    if (!cbRecord)
+    {
+        /* the record is being recorded, try again */
+        return VINF_TRY_AGAIN;
+    }
+
+    /* we should not get partial commands here actually */
+    Assert(cbRecord);
+
+    /* The size of largest contiguous chunk in the ring biffer. */
+    uint32_t u32BytesTillBoundary = pVBVA->cbData - pVBVA->off32Data;
+
+    /* The pointer to data in the ring buffer. */
+    uint8_t *pSrc = &pVBVA->au8Data[pVBVA->off32Data];
+
+    /* Fetch or point the data. */
+    if (u32BytesTillBoundary >= cbRecord)
+    {
+        /* The command does not cross buffer boundary. Return address in the buffer. */
+        *ppCmd = pSrc;
+        *pcbCmd = cbRecord;
+        pCmdVbva->cbCurData = cbRecord;
+        return VINF_SUCCESS;
+    }
+
+    LogRel(("CmdVbva: cross-bound writes unsupported\n"));
+    return VERR_INVALID_STATE;
+}
+
+/* Resumes command processing
+ * @returns - same as VBoxVBVAExHSCheckCommands
+ */
+static int vboxVBVAExHSResume(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    Assert(pCmdVbva->u32State != VBVAEXHOSTCONTEXT_STATE_STOPPED);
+
+    ASMAtomicWriteU32(&pCmdVbva->u32State, VBVAEXHOSTCONTEXT_STATE_LISTENING);
+
+    return VBoxVBVAExHSCheckCommands(pCmdVbva);
+}
+
+/* pause the command processing. this will make the processor stop the command processing and release the processing state
+ * to resume the command processing the vboxVBVAExHSResume must be called */
+static void vboxVBVAExHSPause(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    Assert(pCmdVbva->u32State != VBVAEXHOSTCONTEXT_STATE_STOPPED);
+
+    Assert(!pCmdVbva->u32Pause);
+
+    ASMAtomicWriteU32(&pCmdVbva->u32Pause, 1);
+
+    for(;;)
+    {
+        if (ASMAtomicCmpXchgU32(&pCmdVbva->u32State, VBVAEXHOSTCONTEXT_STATE_PAUSED, VBVAEXHOSTCONTEXT_STATE_LISTENING))
+            break;
+
+        if (ASMAtomicReadU32(&pCmdVbva->u32State) == VBVAEXHOSTCONTEXT_STATE_PAUSED)
+            break;
+
+        RTThreadSleep(2);
+    }
+
+    pCmdVbva->u32Pause = 0;
+}
+
+/* releases (completed) the command previously acquired by VBoxVBVAExHCmdGet
+ * for convenience can be called if no command is currently acquired
+ * in that case it will do nothing and return false.
+ * if the completion notification is needed returns true. */
+static bool VBoxVBVAExHPCmdCheckRelease(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    Assert(pCmdVbva->u32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
+
+    return vboxVBVAExHPCmdCheckRelease(pCmdVbva);
+}
+
+/*
+ * @returns
+ *  VINF_SUCCESS - new command is obtained
+ *  VINF_EOF - processor has completed all commands and release the processing state, only VBoxVBVAExHS*** calls are now allowed
+ *  VINF_PERMISSION_DENIED - processing was paused, processing state was released, only VBoxVBVAExHS*** calls are now allowed
+ *  VINF_INTERRUPTED - command processing was interrupted, processor state remains set. client can process any commands,
+ *                     and call VBoxVBVAExHPCmdGet again for further processing
+ *  VERR_** - error happened, most likely guest corrupted VBVA data
+ *
+ */
+static int VBoxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppCmd, uint32_t *pcbCmd)
+{
+    Assert(pCmdVbva->u32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
+
+    for(;;)
+    {
+        if (vboxVBVAExHPCheckPause(pCmdVbva))
+            return VINF_PERMISSION_DENIED;
+        if (vboxVBVAExHPCheckOtherCommands(pCmdVbva))
+            return VINF_INTERRUPTED;
+
+        int rc = vboxVBVAExHPCmdGet(pCmdVbva, ppCmd, pcbCmd);
+        switch (rc)
+        {
+            case VINF_SUCCESS:
+                return VINF_SUCCESS;
+            case VINF_EOF:
+                vboxVBVAExHPHgEventClear(pCmdVbva);
+                vboxVBVAExHPProcessorRelease(pCmdVbva);
+                /* we need to prevent racing between us clearing the flag and command check/submission thread, i.e.
+                 * 1. we check the queue -> and it is empty
+                 * 2. submitter adds command to the queue
+                 * 3. submitter checks the "processing" -> and it is true , thus it does not submit a notification
+                 * 4. we clear the "processing" state
+                 * 5. ->here we need to re-check the queue state to ensure we do not leak the notification of the above command
+                 * 6. if the queue appears to be not-empty set the "processing" state back to "true"
+                 **/
+                if (VBoxVBVAExHSCheckCommands(pCmdVbva) == VINF_SUCCESS)
+                    continue;
+                return VINF_EOF;
+            case VINF_TRY_AGAIN:
+                RTThreadSleep(1);
+                continue;
+            default:
+                /* this is something really unexpected, i.e. most likely guest has written something incorrect to the VBVA buffer */
+                if (RT_FAILURE(rc))
+                    return rc;
+
+                WARN(("Warning: vboxVBVAExHCmdGet returned unexpected success status %d\n", rc));
+                return VERR_INTERNAL_ERROR;
+        }
+    }
+
+    WARN(("Warning: VBoxVBVAExHCmdGet unexpected state\n"));
+    return VERR_INTERNAL_ERROR;
+}
+
+/* Checks whether the new commands are ready for processing
+ * @returns
+ *   VINF_SUCCESS - there are commands are in a queue, and the given thread is now the processor (i.e. typically it would delegate processing to a worker thread)
+ *   VINF_EOF - no commands in a queue
+ *   VINF_ALREADY_INITIALIZED - another thread already processing the commands
+ *   VERR_INVALID_STATE - the VBVA is paused or pausing */
+static int VBoxVBVAExHSCheckCommands(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    if (ASMAtomicUoReadU32(&pCmdVbva->u32State) == VBVAEXHOSTCONTEXT_STATE_STOPPED)
+        return VINF_EOF;
+
+    int rc = vboxVBVAExHSProcessorAcquire(pCmdVbva);
+    if (RT_SUCCESS(rc))
+    {
+        /* we are the processor now */
+        VBVABUFFER *pVBVA = pCmdVbva->pVBVA;
+
+        uint32_t indexRecordFirst = pVBVA->indexRecordFirst;
+        uint32_t indexRecordFree = pVBVA->indexRecordFree;
+
+        if (indexRecordFirst != indexRecordFree)
+        {
+            vboxVBVAExHPHgEventSet(pCmdVbva);
+            return VINF_SUCCESS;
+        }
+
+        vboxVBVAExHPProcessorRelease(pCmdVbva);
+        return VINF_EOF;
+    }
+    if (rc == VERR_SEM_BUSY)
+        return VINF_ALREADY_INITIALIZED;
+    Assert(rc == VERR_INVALID_STATE);
+    return VERR_INVALID_STATE;
+}
+
+static void VBoxVBVAExHSInit(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    memset(pCmdVbva, 0, sizeof (*pCmdVbva));
+}
+
+static int VBoxVBVAExHSEnable(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVABUFFER *pVBVA)
+{
+    if (ASMAtomicUoReadU32(&pCmdVbva->u32State) != VBVAEXHOSTCONTEXT_STATE_STOPPED)
+        return VINF_ALREADY_INITIALIZED;
+
+    pCmdVbva->pVBVA = pVBVA;
+    pCmdVbva->pVBVA->hostFlags.u32HostEvents = 0;
+    ASMAtomicWriteU32(&pCmdVbva->u32State, VBVAEXHOSTCONTEXT_STATE_LISTENING);
+    return VINF_SUCCESS;
+}
+
+static int VBoxVBVAExHSDisable(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    if (ASMAtomicUoReadU32(&pCmdVbva->u32State) == VBVAEXHOSTCONTEXT_STATE_STOPPED)
+        return VINF_SUCCESS;
+
+    /* ensure no commands pending and one tries to submit them */
+    int rc = vboxVBVAExHSProcessorAcquire(pCmdVbva);
+    if (RT_SUCCESS(rc))
+    {
+        pCmdVbva->pVBVA->hostFlags.u32HostEvents = 0;
+        memset(pCmdVbva, 0, sizeof (*pCmdVbva));
+        return VINF_SUCCESS;
+    }
+    return VERR_INVALID_STATE;
+}
+
+static void VBoxVBVAExHSTerm(struct VBVAEXHOSTCONTEXT *pCmdVbva)
+{
+    /* ensure the processor is stopped */
+    if (ASMAtomicUoReadU32(&pCmdVbva->u32State) == VBVAEXHOSTCONTEXT_STATE_STOPPED)
+        return;
+
+    /* ensure no one tries to submit the command */
+    vboxVBVAExHSPause(pCmdVbva);
+    pCmdVbva->pVBVA->hostFlags.u32HostEvents = 0;
+    memset(pCmdVbva, 0, sizeof (*pCmdVbva));
+}
+
+/* Saves state
+ * @returns - same as VBoxVBVAExHSCheckCommands, or failure on load state fail
+ */
+static int VBoxVBVAExHSSaveState(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t* pu8VramBase, PSSMHANDLE pSSM)
+{
+    int rc;
+    if (ASMAtomicUoReadU32(&pCmdVbva->u32State) != VBVAEXHOSTCONTEXT_STATE_STOPPED)
+    {
+        vboxVBVAExHSPause(pCmdVbva);
+        rc = SSMR3PutU32(pSSM, (uint32_t)(((uint8_t*)pCmdVbva->pVBVA) - pu8VramBase));
+        AssertRCReturn(rc, rc);
+        return vboxVBVAExHSResume(pCmdVbva);
+    }
+
+    rc = SSMR3PutU32(pSSM, 0xffffffff);
+    AssertRCReturn(rc, rc);
+
+    return VINF_EOF;
+}
+
+/* Loads state
+ * @returns - same as VBoxVBVAExHSCheckCommands, or failure on load state fail
+ */
+static int VBoxVBVAExHSLoadState(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t* pu8VramBase, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    uint32_t u32;
+    int rc = SSMR3GetU32(pSSM, &u32);
+    AssertRCReturn(rc, rc);
+    if (u32 != 0xffffffff)
+    {
+        VBVABUFFER *pVBVA = (VBVABUFFER*)pu8VramBase + u32;
+        rc = VBoxVBVAExHSEnable(pCmdVbva, pVBVA);
+        AssertRCReturn(rc, rc);
+        return VBoxVBVAExHSCheckCommands(pCmdVbva);
+    }
+
+    return VINF_EOF;
+}
+
+int vboxCmdVBVAEnable(PVGASTATE pVGAState, VBVABUFFER *pVBVA)
+{
+    struct VBOXVDMAHOST *pVdma = pVGAState->pVdma;
+    return VBoxVBVAExHSEnable(&pVdma->CmdVbva, pVBVA);
+}
+
+int vboxCmdVBVADisable(PVGASTATE pVGAState)
+{
+    struct VBOXVDMAHOST *pVdma = pVGAState->pVdma;
+    return VBoxVBVAExHSDisable(&pVdma->CmdVbva);
+}
+
+static int vboxCmdVBVACmdSubmitPerform(PVGASTATE pVGAState)
+{
+    struct VBOXVDMAHOST *pVdma = pVGAState->pVdma;
+    int rc = VBoxVBVAExHSCheckCommands(&pVdma->CmdVbva);
+    switch (rc)
+    {
+        case VINF_SUCCESS:
+            return pVGAState->pDrv->pfnCrCmdNotifyCmds(pVGAState->pDrv);
+        case VINF_ALREADY_INITIALIZED:
+        case VINF_EOF:
+        case VERR_INVALID_STATE:
+            return VINF_SUCCESS;
+        default:
+            Assert(!RT_FAILURE(rc));
+            return RT_FAILURE(rc) ? rc : VERR_INTERNAL_ERROR;
+    }
+}
+
+int vboxCmdVBVACmdSubmit(PVGASTATE pVGAState)
+{
+    return vboxCmdVBVACmdSubmitPerform(pVGAState);
+}
+
+int vboxCmdVBVACmdFlush(PVGASTATE pVGAState)
+{
+    return vboxCmdVBVACmdSubmitPerform(pVGAState);
+}
+
+void vboxCmdVBVACmdTimer(PVGASTATE pVGAState)
+{
+    vboxCmdVBVACmdSubmitPerform(pVGAState);
 }

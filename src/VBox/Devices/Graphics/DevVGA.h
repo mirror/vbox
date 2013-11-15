@@ -551,6 +551,12 @@ int vboxVDMASaveStateExecPrep(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM);
 int vboxVDMASaveStateExecDone(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM);
 # endif /* VBOX_WITH_VDMA */
 
+int vboxCmdVBVAEnable(PVGASTATE pVGAState, VBVABUFFER *pVBVA);
+int vboxCmdVBVADisable(PVGASTATE pVGAState);
+int vboxCmdVBVACmdSubmit(PVGASTATE pVGAState);
+int vboxCmdVBVACmdFlush(PVGASTATE pVGAState);
+void vboxCmdVBVACmdTimer(PVGASTATE pVGAState);
+
 #endif /* VBOX_WITH_HGSMI */
 
 #ifndef VBOX
