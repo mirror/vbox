@@ -303,6 +303,7 @@ int SessionTaskCopyTo::Run(void)
     }
     else
     {
+        rc = VINF_SUCCESS;
         pFile = mSourceFile;
         /* Size + offset are optional. */
     }
