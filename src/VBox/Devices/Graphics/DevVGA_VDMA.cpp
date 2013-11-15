@@ -1627,15 +1627,14 @@ static int vboxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppCm
 
     uint32_t cbRecordCurrent = ASMAtomicReadU32(&pVBVA->aRecords[indexRecordFirst].cbRecord);
 
-    uint32_t cbRecord = cbRecordCurrent & ~VBVA_F_RECORD_PARTIAL;
-
     /* A new record need to be processed. */
     if (cbRecordCurrent & VBVA_F_RECORD_PARTIAL)
     {
-        Assert(cbRecord == 0);
         /* the record is being recorded, try again */
         return VINF_TRY_AGAIN;
     }
+
+    uint32_t cbRecord = cbRecordCurrent & ~VBVA_F_RECORD_PARTIAL;
 
     if (!cbRecord)
     {
