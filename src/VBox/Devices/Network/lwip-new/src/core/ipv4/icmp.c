@@ -64,6 +64,12 @@
 
 static void icmp_send_response(struct pbuf *p, u8_t type, u8_t code);
 
+#if LWIP_CONNECTION_PROXY
+static ping_proxy_fn ping_proxy_accept_callback;
+static void* ping_proxy_accept_arg;
+#endif
+
+
 /**
  * Processes ICMP input packets, called from ip_input().
  *
@@ -246,6 +252,97 @@ memerr:
   return;
 #endif /* LWIP_ICMP_ECHO_CHECK_INPUT_PBUF_LEN */
 }
+
+#if LWIP_CONNECTION_PROXY
+
+void
+ping_proxy_accept(ping_proxy_fn callback, void *arg)
+{
+  ping_proxy_accept_callback = callback;
+  ping_proxy_accept_arg = arg;
+}
+
+
+/**
+ * Proxy ICMP input packets, called from ip_input().
+ *
+ * @param p the icmp echo request packet, p->payload pointing to the icmp header
+ * @param inp the netif on which this packet was received
+ */
+void
+icmp_proxy_input(struct pbuf *p, struct netif *inp)
+{
+  u8_t type, code;
+
+  ICMP_STATS_INC(icmp.recv);
+  snmp_inc_icmpinmsgs();
+
+  if (p->tot_len < 4) {         /* type(1), code(1), checksum(2) */
+    LWIP_DEBUGF(ICMP_DEBUG,
+      ("icmp_proxy_input: short ICMP (%"U16_F" bytes) received\n",
+       p->tot_len));
+    goto lenerr;
+  }
+
+  if (inet_chksum_pbuf(p) != 0) {
+    LWIP_DEBUGF(ICMP_DEBUG, ("icmp_proxy_input: bad checksum\n"));
+    pbuf_free(p);
+    ICMP_STATS_INC(icmp.chkerr);
+    snmp_inc_icmpinerrors();
+    return;
+  }
+
+  type = *((u8_t *)p->payload);
+  code = *(((u8_t *)p->payload)+1);
+  switch (type) {
+
+  case ICMP_ER:
+    /* ignore silently */
+    pbuf_free(p);
+    break;
+
+  case ICMP_DUR:
+    /* TODO: anything useful we can do? */
+    pbuf_free(p);
+    break;
+
+  case ICMP_ECHO:
+    if (code != 0) {
+      goto proterr;
+    }
+    if (p->tot_len < 8) {
+      goto lenerr;
+    }
+
+    if (ping_proxy_accept_callback != NULL) {
+      (*ping_proxy_accept_callback)(ping_proxy_accept_arg, p);
+    }
+    break;
+
+  default:
+    goto proterr;
+  }
+  return;
+
+ lenerr:  
+  ICMP_STATS_INC(icmp.lenerr);
+  goto drop;
+
+ proterr:
+  LWIP_DEBUGF(ICMP_DEBUG,
+              ("icmp_proxy_input: ICMP type %"S16_F" code %"S16_F
+               " not supported.\n",
+               (s16_t)type, (s16_t)code));
+  ICMP_STATS_INC(icmp.proterr);
+  goto drop;
+
+ drop:
+  pbuf_free(p);
+  ICMP_STATS_INC(icmp.drop);
+  snmp_inc_icmpinerrors();
+  return;
+}
+#endif /* LWIP_CONNECTION_PROXY */
 
 /**
  * Send an icmp 'destination unreachable' packet, called from ip_input() if

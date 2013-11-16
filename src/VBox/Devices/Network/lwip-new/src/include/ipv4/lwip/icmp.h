@@ -45,6 +45,8 @@
 extern "C" {
 #endif
 
+#define ICMP_HLEN 8
+
 #define ICMP_ER   0    /* echo reply */
 #define ICMP_DUR  3    /* destination unreachable */
 #define ICMP_SQ   4    /* source quench */
@@ -103,8 +105,16 @@ PACK_STRUCT_END
 #if LWIP_ICMP /* don't build if not configured for use in lwipopts.h */
 
 void icmp_input(struct pbuf *p, struct netif *inp);
+#if LWIP_CONNECTION_PROXY
+void icmp_proxy_input(struct pbuf *p, struct netif *inp);
+#endif
 void icmp_dest_unreach(struct pbuf *p, enum icmp_dur_type t);
 void icmp_time_exceeded(struct pbuf *p, enum icmp_te_type t);
+
+#if LWIP_CONNECTION_PROXY
+typedef void (*ping_proxy_fn)(void *arg, struct pbuf *p);
+void ping_proxy_accept(ping_proxy_fn callback, void *arg);
+#endif
 
 #endif /* LWIP_ICMP */
 

@@ -614,6 +614,12 @@ ip_input(struct pbuf *p, struct netif *inp)
 
     switch (IPH_PROTO(iphdr)) {
 
+#if LWIP_ICMP
+    case IP_PROTO_ICMP:
+      icmp_proxy_input(p, inp);
+      break;
+#endif
+
 #if LWIP_UDP
     case IP_PROTO_UDP:
 #if LWIP_UDPLITE
