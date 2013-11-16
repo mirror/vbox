@@ -285,6 +285,10 @@ STDMETHODIMP DHCPServer::AddGlobalOption(DhcpOpt_T aOption, IN_BSTR aValue)
     m.GlobalDhcpOptions.insert(
       DhcpOptValuePair(aOption, Utf8Str(aValue)));
 
+    /* Indirect way to understand that we're on NAT network */
+    if (aOption == DhcpOpt_Router)
+        m.dhcp.setOption(NetworkServiceRunner::kNsrKeyNeedMain, "on");
+
     alock.release();
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);

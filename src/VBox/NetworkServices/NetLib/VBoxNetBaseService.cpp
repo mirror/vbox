@@ -85,6 +85,7 @@ static RTGETOPTDEF g_aGetOptDef[] =
     { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
     { "--netmask",        'm',   RTGETOPT_REQ_IPV4ADDR },
     { "--verbose",        'v',   RTGETOPT_REQ_NOTHING },
+    { "--need-main",      'M',   RTGETOPT_REQ_BOOL },
 };
 
 
@@ -101,13 +102,10 @@ VBoxNetBaseService::VBoxNetBaseService()
     m_cVerbosity            = 0;
     m_Name                  = "VBoxNetNAT";
     m_Network               = "intnet";
+    m_fNeedMain             = false;
 
     for(unsigned int i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
         m_vecOptionDefs.push_back(&g_aGetOptDef[i]);
-
-    HRESULT hrc = virtualbox.createLocalObject(CLSID_VirtualBox);
-    if (FAILED(hrc))
-        RTMsgError("Failed to create the VirtualBox object!");
 }
 
 
@@ -139,6 +137,15 @@ VBoxNetBaseService::~VBoxNetBaseService()
 
 int VBoxNetBaseService::init()
 {
+    if (m_fNeedMain)
+    {
+        HRESULT hrc = com::Initialize();
+        AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+        hrc = virtualbox.createLocalObject(CLSID_VirtualBox);
+        AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -221,6 +228,10 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
             case 'V': // --version (missed)
                 RTPrintf("%sr%u\n", RTBldCfgVersion(), RTBldCfgRevision());
                 return 1;
+
+            case 'M': // --need-main
+                m_fNeedMain = true;
+                break;
 
             case 'h': // --help (missed)
                 RTPrintf("%s Version %sr%u\n"

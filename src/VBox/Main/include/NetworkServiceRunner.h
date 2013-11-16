@@ -47,6 +47,7 @@ public:
     static const std::string kNsrMacAddress;
     static const std::string kNsrIpAddress;
     static const std::string kNsrIpNetmask;
+    static const std::string kNsrKeyNeedMain;
 
 private:
     struct Data;
