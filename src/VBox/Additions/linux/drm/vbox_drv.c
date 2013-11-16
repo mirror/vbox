@@ -60,86 +60,89 @@ module_param_named(modeset, vbox_modeset, int, 0400);
 
 static struct drm_driver driver;
 
-static DEFINE_PCI_DEVICE_TABLE(pciidlist) = {
-	{0x80ee, 0xbeef, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0},
-	{0, 0, 0},
+static DEFINE_PCI_DEVICE_TABLE(pciidlist) =
+{
+    {0x80ee, 0xbeef, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0},
+    {0, 0, 0},
 };
 
 MODULE_DEVICE_TABLE(pci, pciidlist);
 
 static int vbox_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
-	return drm_get_pci_dev(pdev, ent, &driver);
+    return drm_get_pci_dev(pdev, ent, &driver);
 }
 
 
-static void
-vbox_pci_remove(struct pci_dev *pdev)
+static void vbox_pci_remove(struct pci_dev *pdev)
 {
-	struct drm_device *dev = pci_get_drvdata(pdev);
+    struct drm_device *dev = pci_get_drvdata(pdev);
 
-	drm_put_dev(dev);
+    drm_put_dev(dev);
 }
 
 
-static struct pci_driver vbox_pci_driver = {
-	.name = DRIVER_NAME,
-	.id_table = pciidlist,
-	.probe = vbox_pci_probe,
-	.remove = vbox_pci_remove,
+static struct pci_driver vbox_pci_driver =
+{
+    .name = DRIVER_NAME,
+    .id_table = pciidlist,
+    .probe = vbox_pci_probe,
+    .remove = vbox_pci_remove,
 };
 
-static const struct file_operations vbox_fops = {
-	.owner = THIS_MODULE,
-	.open = drm_open,
-	.release = drm_release,
-	.unlocked_ioctl = drm_ioctl,
-	.mmap = vbox_mmap,
-	.poll = drm_poll,
-	.fasync = drm_fasync,
+static const struct file_operations vbox_fops =
+{
+    .owner = THIS_MODULE,
+    .open = drm_open,
+    .release = drm_release,
+    .unlocked_ioctl = drm_ioctl,
+    .mmap = vbox_mmap,
+    .poll = drm_poll,
+    .fasync = drm_fasync,
 #ifdef CONFIG_COMPAT
-	.compat_ioctl = drm_compat_ioctl,
+    .compat_ioctl = drm_compat_ioctl,
 #endif
-	.read = drm_read,
+    .read = drm_read,
 };
 
-static struct drm_driver driver = {
-	.driver_features = DRIVER_USE_MTRR | DRIVER_MODESET | DRIVER_GEM,
-	.dev_priv_size = 0,
+static struct drm_driver driver =
+{
+    .driver_features = DRIVER_USE_MTRR | DRIVER_MODESET | DRIVER_GEM,
+    .dev_priv_size = 0,
 
-	.load = vbox_driver_load,
-	.unload = vbox_driver_unload,
+    .load = vbox_driver_load,
+    .unload = vbox_driver_unload,
 
-	.fops = &vbox_fops,
-	.name = DRIVER_NAME,
-	.desc = DRIVER_DESC,
-	.date = DRIVER_DATE,
-	.major = DRIVER_MAJOR,
-	.minor = DRIVER_MINOR,
-	.patchlevel = DRIVER_PATCHLEVEL,
+    .fops = &vbox_fops,
+    .name = DRIVER_NAME,
+    .desc = DRIVER_DESC,
+    .date = DRIVER_DATE,
+    .major = DRIVER_MAJOR,
+    .minor = DRIVER_MINOR,
+    .patchlevel = DRIVER_PATCHLEVEL,
 
-	.gem_init_object = vbox_gem_init_object,
-	.gem_free_object = vbox_gem_free_object,
-	.dumb_create = vbox_dumb_create,
-	.dumb_map_offset = vbox_dumb_mmap_offset,
-	.dumb_destroy = vbox_dumb_destroy,
+    .gem_init_object = vbox_gem_init_object,
+    .gem_free_object = vbox_gem_free_object,
+    .dumb_create = vbox_dumb_create,
+    .dumb_map_offset = vbox_dumb_mmap_offset,
+    .dumb_destroy = vbox_dumb_destroy,
 
 };
 
 static int __init vbox_init(void)
 {
 #ifdef CONFIG_VGA_CONSOLE
-	if (vgacon_text_force() && vbox_modeset == -1)
-		return -EINVAL;
+    if (vgacon_text_force() && vbox_modeset == -1)
+        return -EINVAL;
 #endif
 
-	if (vbox_modeset == 0)
-		return -EINVAL;
-	return drm_pci_init(&driver, &vbox_pci_driver);
+    if (vbox_modeset == 0)
+        return -EINVAL;
+    return drm_pci_init(&driver, &vbox_pci_driver);
 }
 static void __exit vbox_exit(void)
 {
-	drm_pci_exit(&driver, &vbox_pci_driver);
+    drm_pci_exit(&driver, &vbox_pci_driver);
 }
 
 module_init(vbox_init);
