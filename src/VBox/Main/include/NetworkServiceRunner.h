@@ -21,6 +21,8 @@
 #include <iprt/mem.h>
 #include <VBox/com/string.h>
 
+#include <string>
+
 #define TRUNKTYPE_WHATEVER "whatever"
 #define TRUNKTYPE_NETFLT   "netflt"
 #define TRUNKTYPE_NETADP   "netadp"
