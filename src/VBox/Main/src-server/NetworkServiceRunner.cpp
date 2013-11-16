@@ -30,6 +30,7 @@ const std::string NetworkServiceRunner::kNsrTrunkName = "--trunk-name";
 const std::string NetworkServiceRunner::kNsrMacAddress = "--mac-address";
 const std::string NetworkServiceRunner::kNsrIpAddress = "--ip-address";
 const std::string NetworkServiceRunner::kNsrIpNetmask = "--netmask";
+const std::string NetworkServiceRunner::kNsrKeyNeedMain = "--need-main";
 
 struct NetworkServiceRunner::Data
 {

@@ -82,6 +82,7 @@ protected:
     INTNETIFHANDLE      m_hIf;          /**< The handle to the network interface. */
     PINTNETBUF          m_pIfBuf;       /**< Interface buffer. */
     std::vector<PRTGETOPTDEF> m_vecOptionDefs;
+    bool                m_fNeedMain;
     /** @} */
     /** @name Debug stuff
      * @{  */

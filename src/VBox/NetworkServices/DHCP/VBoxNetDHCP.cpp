@@ -356,32 +356,19 @@ int VBoxNetDhcp::parseOpt(int rc, const RTGETOPTUNION& Val)
 
 int VBoxNetDhcp::init()
 {
-    HRESULT hrc = S_OK;
-    /* ok, here we should initiate instance of dhcp server
-     * and listener for Dhcp configuration events
-     */
-    AssertRCReturn(virtualbox.isNull(), VERR_INTERNAL_ERROR);
+    int rc = this->VBoxNetBaseService::init();
+    AssertRCReturn(rc, rc);
 
-    hrc = virtualbox->FindDHCPServerByNetworkName(com::Bstr(m_Network.c_str()).raw(),
-                                                  m_DhcpServer.asOutParam());
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-
-    hrc = virtualbox->FindNATNetworkByName(com::Bstr(m_Network.c_str()).raw(),
-                                           m_NATNetwork.asOutParam());
-
-
-    bool fNoMain = m_NATNetwork.isNull();
-    int rc;
     NetworkManager *netManager = NetworkManager::getNetworkManager();
 
     netManager->setOurAddress(m_Ipv4Address);
     netManager->setOurNetmask(m_Ipv4Netmask);
     netManager->setOurMac(m_MacAddress);
-
-    if (fNoMain)
-        rc = initNoMain();
-    else
+    
+    if (m_fNeedMain)
         rc = initWithMain();
+    else
+        rc = initNoMain();
 
     AssertRCReturn(rc, rc);
 
@@ -732,9 +719,6 @@ void VBoxNetDhcp::debugPrintV(int iMinLevel, bool fMsg, const char *pszFmt, va_l
 
 int VBoxNetDhcp::initNoMain()
 {
-    /* In Host-Only mode we don't need Main. */
-    com::Shutdown();
-
     CmdParameterIterator it;
 
     RTNETADDRIPV4 networkId;
@@ -776,6 +760,18 @@ int VBoxNetDhcp::initNoMain()
 
 int VBoxNetDhcp::initWithMain()
 {
+    /* ok, here we should initiate instance of dhcp server
+     * and listener for Dhcp configuration events
+     */
+    AssertRCReturn(virtualbox.isNull(), VERR_INTERNAL_ERROR);
+
+    HRESULT hrc = virtualbox->FindDHCPServerByNetworkName(com::Bstr(m_Network.c_str()).raw(),
+                                                  m_DhcpServer.asOutParam());
+    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+    hrc = virtualbox->FindNATNetworkByName(com::Bstr(m_Network.c_str()).raw(),
+                                           m_NATNetwork.asOutParam());
+
     BOOL fNeedDhcpServer = false;
     if (FAILED(m_NATNetwork->COMGETTER(NeedDhcpServer)(&fNeedDhcpServer)))
         return VERR_INTERNAL_ERROR;
@@ -786,7 +782,7 @@ int VBoxNetDhcp::initWithMain()
     RTNETADDRIPV4 gateway;
     com::Bstr strGateway;
 
-    HRESULT hrc = m_NATNetwork->COMGETTER(Gateway)(strGateway.asOutParam());
+    hrc = m_NATNetwork->COMGETTER(Gateway)(strGateway.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
     RTNetStrToIPv4Addr(com::Utf8Str(strGateway).c_str(), &gateway);
 
@@ -917,8 +913,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
     /*
      * Instantiate the DHCP server and hand it the options.
      */
-    HRESULT hrc = com::Initialize();
-    Assert(!FAILED(hrc));
 
     VBoxNetDhcp *pDhcp = new VBoxNetDhcp();
     if (!pDhcp)

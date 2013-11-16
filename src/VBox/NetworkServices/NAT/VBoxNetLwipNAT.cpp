@@ -889,12 +889,14 @@ int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules){
 
 int VBoxNetLwipNAT::init()
 {
-    int rc = VINF_SUCCESS;
     HRESULT hrc;
     LogFlowFuncEnter();
 
 
     /* virtualbox initialized in super class */
+
+    int rc = ::VBoxNetBaseService::init();
+    AssertRCReturn(rc, rc);
 
     hrc = virtualbox->FindNATNetworkByName(com::Bstr(m_Network.c_str()).raw(),
                                                   m_net.asOutParam());
