@@ -79,32 +79,34 @@
 
 struct vbox_fbdev;
 
-struct vbox_private {
-	struct drm_device *dev;
+struct vbox_private
+{
+    struct drm_device *dev;
 
-	void __iomem *vram;
+    void __iomem *vram;
     HGSMIGUESTCOMMANDCONTEXT Ctx;
     struct VBVABUFFERCONTEXT *paVBVACtx;
     bool fAnyX;
     unsigned cCrtcs;
-	bool vga2_clone;
-	uint32_t vram_size;
+    bool vga2_clone;
+    uint32_t vram_size;
 
-	struct vbox_fbdev *fbdev;
+    struct vbox_fbdev *fbdev;
 
-	int fb_mtrr;
+    int fb_mtrr;
 
-	struct {
-		struct drm_global_reference mem_global_ref;
-		struct ttm_bo_global_ref bo_global_ref;
-		struct ttm_bo_device bdev;
-	} ttm;
+    struct
+    {
+        struct drm_global_reference mem_global_ref;
+        struct ttm_bo_global_ref bo_global_ref;
+        struct ttm_bo_device bdev;
+    } ttm;
 
-	struct drm_gem_object *cursor_cache;
-	uint64_t cursor_cache_gpu_addr;
-	struct ttm_bo_kmap_obj cache_kmap;
-	int next_cursor;
-	spinlock_t dev_lock;
+    struct drm_gem_object *cursor_cache;
+    uint64_t cursor_cache_gpu_addr;
+    struct ttm_bo_kmap_obj cache_kmap;
+    int next_cursor;
+    spinlock_t dev_lock;
 };
 
 int vbox_driver_load(struct drm_device *dev, unsigned long flags);
@@ -112,38 +114,43 @@ int vbox_driver_unload(struct drm_device *dev);
 
 struct vbox_gem_object;
 
-struct vbox_connector {
-	struct drm_connector base;
+struct vbox_connector
+{
+    struct drm_connector base;
 };
 
-struct vbox_crtc {
-	struct drm_crtc base;
-	bool fBlanked;
-	unsigned crtc_id;
-	uint32_t offFB;
-	struct drm_gem_object *cursor_bo;
-	uint64_t cursor_addr;
-	int cursor_width, cursor_height;
-	u8 offset_x, offset_y;
+struct vbox_crtc
+{
+    struct drm_crtc base;
+    bool fBlanked;
+    unsigned crtc_id;
+    uint32_t offFB;
+    struct drm_gem_object *cursor_bo;
+    uint64_t cursor_addr;
+    int cursor_width, cursor_height;
+    u8 offset_x, offset_y;
 };
 
-struct vbox_encoder {
-	struct drm_encoder base;
+struct vbox_encoder
+{
+    struct drm_encoder base;
 };
 
-struct vbox_framebuffer {
-	struct drm_framebuffer base;
-	struct drm_gem_object *obj;
+struct vbox_framebuffer
+{
+    struct drm_framebuffer base;
+    struct drm_gem_object *obj;
 };
 
-struct vbox_fbdev {
-	struct drm_fb_helper helper;
-	struct vbox_framebuffer afb;
-	struct list_head fbdev_list;
-	void *sysram;
-	int size;
-	struct ttm_bo_kmap_obj mapping;
-	int x1, y1, x2, y2; /* dirty rect */
+struct vbox_fbdev
+{
+    struct drm_fb_helper helper;
+    struct vbox_framebuffer afb;
+    struct list_head fbdev_list;
+    void *sysram;
+    int size;
+    struct ttm_bo_kmap_obj mapping;
+    int x1, y1, x2, y2; /* dirty rect */
 };
 
 #define to_vbox_crtc(x) container_of(x, struct vbox_crtc, base)
@@ -165,46 +172,46 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                                        unsigned cRects);
 
 int vbox_framebuffer_init(struct drm_device *dev,
-			 struct vbox_framebuffer *vbox_fb,
-			 struct DRM_MODE_FB_CMD *mode_cmd,
-			 struct drm_gem_object *obj);
+             struct vbox_framebuffer *vbox_fb,
+             struct DRM_MODE_FB_CMD *mode_cmd,
+             struct drm_gem_object *obj);
 
 int vbox_fbdev_init(struct drm_device *dev);
 void vbox_fbdev_fini(struct drm_device *dev);
 void vbox_fbdev_set_suspend(struct drm_device *dev, int state);
 
-struct vbox_bo {
-	struct ttm_buffer_object bo;
-	struct ttm_placement placement;
-	struct ttm_bo_kmap_obj kmap;
-	struct drm_gem_object gem;
-	u32 placements[3];
-	int pin_count;
+struct vbox_bo
+{
+    struct ttm_buffer_object bo;
+    struct ttm_placement placement;
+    struct ttm_bo_kmap_obj kmap;
+    struct drm_gem_object gem;
+    u32 placements[3];
+    int pin_count;
 };
 #define gem_to_vbox_bo(gobj) container_of((gobj), struct vbox_bo, gem)
 
-static inline struct vbox_bo *
-vbox_bo(struct ttm_buffer_object *bo)
+static inline struct vbox_bo * vbox_bo(struct ttm_buffer_object *bo)
 {
-	return container_of(bo, struct vbox_bo, bo);
+    return container_of(bo, struct vbox_bo, bo);
 }
 
 
 #define to_vbox_obj(x) container_of(x, struct vbox_gem_object, base)
 
 extern int vbox_dumb_create(struct drm_file *file,
-			   struct drm_device *dev,
-			   struct drm_mode_create_dumb *args);
+               struct drm_device *dev,
+               struct drm_mode_create_dumb *args);
 extern int vbox_dumb_destroy(struct drm_file *file,
-			    struct drm_device *dev,
-			    uint32_t handle);
+                struct drm_device *dev,
+                uint32_t handle);
 
 extern int vbox_gem_init_object(struct drm_gem_object *obj);
 extern void vbox_gem_free_object(struct drm_gem_object *obj);
 extern int vbox_dumb_mmap_offset(struct drm_file *file,
-				struct drm_device *dev,
-				uint32_t handle,
-				uint64_t *offset);
+                struct drm_device *dev,
+                uint32_t handle,
+                uint64_t *offset);
 
 #define DRM_FILE_PAGE_OFFSET (0x100000000ULL >> PAGE_SHIFT)
 
@@ -212,11 +219,11 @@ int vbox_mm_init(struct vbox_private *vbox);
 void vbox_mm_fini(struct vbox_private *vbox);
 
 int vbox_bo_create(struct drm_device *dev, int size, int align,
-		  uint32_t flags, struct vbox_bo **pvboxbo);
+          uint32_t flags, struct vbox_bo **pvboxbo);
 
 int vbox_gem_create(struct drm_device *dev,
-		   u32 size, bool iskernel,
-		   struct drm_gem_object **obj);
+           u32 size, bool iskernel,
+           struct drm_gem_object **obj);
 
 int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr);
 int vbox_bo_unpin(struct vbox_bo *bo);
