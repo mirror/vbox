@@ -46,7 +46,6 @@
 
 #include <algorithm>
 #include <set>
-#include <string>
 #include <vector>
 #include <memory> // for auto_ptr
 
