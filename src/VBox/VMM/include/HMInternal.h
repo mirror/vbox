@@ -638,6 +638,8 @@ typedef struct HMCPU
         VMXRESTOREHOST              RestoreHost;
         /** Set if guest was executing in real mode (extra checks). */
         bool                        fWasInRealMode;
+        uint8_t                     u8Align2[7];
+
         /** Padding.  */
         uint32_t                    u32Padding;
     } vmx;
