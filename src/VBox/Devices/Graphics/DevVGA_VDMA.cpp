@@ -132,7 +132,7 @@ static bool VBoxVBVAExHPCmdCheckRelease(struct VBVAEXHOSTCONTEXT *pCmdVbva);
 static int VBoxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppCmd, uint32_t *pcbCmd);
 
 /* VBoxVBVAExHP**, i.e. processor functions, can NOT be called concurrently with each other,
-/* can be called concurrently with istelf as well as with other VBoxVBVAEx** functions except Init/Start/Term aparently */
+ * can be called concurrently with istelf as well as with other VBoxVBVAEx** functions except Init/Start/Term aparently */
 static int VBoxVBVAExHSCheckCommands(struct VBVAEXHOSTCONTEXT *pCmdVbva);
 
 static void VBoxVBVAExHSInit(struct VBVAEXHOSTCONTEXT *pCmdVbva);
