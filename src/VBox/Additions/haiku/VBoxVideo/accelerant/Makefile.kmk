@@ -57,7 +57,7 @@ vboxvideo.accelerant_SOURCES  = \
 
 vboxvideo.accelerant_LIBS     = \
 	be device \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(VBOX_LIB_VBGL_R3) \
 	/system/servers/app_server
 
