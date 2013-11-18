@@ -33,7 +33,7 @@ do
         exit 1;
     fi
     rm -f         "$linkname"
-    ln -vh "$trg" "$linkname"
+    /bin/ln -vh "$trg" "$linkname"
 done
 
 #
