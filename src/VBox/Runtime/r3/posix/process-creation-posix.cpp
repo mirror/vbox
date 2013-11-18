@@ -39,6 +39,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <grp.h>
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
 # include <crypt.h>
 # include <pwd.h>
@@ -585,6 +586,17 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
              * Change group and user if requested.
              */
 #if 1 /** @todo This needs more work, see suplib/hardening. */
+            if (pszAsUser)
+            {
+                int ret = initgroups(pszAsUser, gid);
+                if (ret)
+                {
+                    if (fFlags & RTPROC_FLAGS_DETACHED)
+                        _Exit(126);
+                    else
+                        exit(126);
+                }
+            }
             if (gid != ~(gid_t)0)
             {
                 if (setgid(gid))
