@@ -57,6 +57,9 @@ struct ping_pcb;
  */
 struct pxping {
     SOCKET sock4;
+    int ttl;
+    int tos;
+
     SOCKET sock6;
 
     struct pollmgr_handler pmhdl4;
@@ -95,6 +98,7 @@ struct ping_pcb {
     ipX_addr_t dst;
 
     u8_t is_ipv6;
+    u8_t is_mapped;
 
     u16_t guest_id;
     u16_t host_id;
@@ -185,11 +189,14 @@ err_t
 pxping_init(struct netif *netif, SOCKET sock)
 {
     if (sock == INVALID_SOCKET) {
-	return ERR_VAL;
+        return ERR_VAL;
     }
 
-    g_pxping.sock4 = sock;
     g_pxping.netif = netif;
+
+    g_pxping.sock4 = sock;
+    g_pxping.ttl = -1;
+    g_pxping.tos = 0;
 
     sys_mutex_new(&g_pxping.lock);
 
@@ -237,9 +244,11 @@ pxping_recv4(void *arg, struct pbuf *p)
     struct ping_pcb *pcb;
     struct ip_hdr *iph;
     struct icmp_echo_hdr *icmph;
+    int ttl, tos;
     u32_t sum;
     u16_t iphlen;
     u16_t id, seq;
+    int status;
 
     iph = (/* UNCONST */ struct ip_hdr *)ip_current_header();
     iphlen = ip_current_header_tot_len();
@@ -259,7 +268,19 @@ pxping_recv4(void *arg, struct pbuf *p)
     }
 
     pxping_pcb_debug_print(pcb); /* XXX */
-    printf(" seq %d len %u\n", ntohs(seq), (unsigned int)p->tot_len);
+    printf(" seq %d len %u ttl %d\n",
+           ntohs(seq), (unsigned int)p->tot_len,
+           IPH_TTL(iph));
+
+    ttl = IPH_TTL(iph);
+    if (!pcb->is_mapped) {
+        if (ttl == 1) {
+            pbuf_header(p, iphlen); /* back to IP header */
+            icmp_time_exceeded(p, ICMP_TE_TTL);
+            return;
+        }
+        --ttl;
+    }
 
     /* rewrite ICMP echo header */
     sum = (u16_t)~icmph->chksum;
@@ -267,13 +288,28 @@ pxping_recv4(void *arg, struct pbuf *p)
     sum = FOLD_U32T(sum);
     icmph->chksum = ~sum;
 
-    /*
-     * TODO: Support TTL, TOS (and may be options?).
-     *
-     * At least on Linux "when the IP_HDRINCL option is set, datagrams
-     * will not be fragmented and are limited to the interface MTU",
-     * so we need to use setsockopt() to set those.
-     */
+    if (ttl != pxping->ttl) {
+        status = setsockopt(pxping->sock4, IPPROTO_IP, IP_TTL,
+                            (char *)&ttl, sizeof(ttl));
+        if (status == 0) {
+            pxping->ttl = ttl;
+        }
+        else {
+            perror("IP_TTL");
+        }
+    }
+
+    tos = IPH_TOS(iph);
+    if (tos != pxping->tos) {
+        status = setsockopt(pxping->sock4, IPPROTO_IP, IP_TOS,
+                            (char *)&tos, sizeof(tos));
+        if (status == 0) {
+            pxping->tos = tos;
+        }
+        else {
+            perror("IP_TOS");
+        }
+    }
 
     proxy_sendto(pxping->sock4, p,
                  &pcb->peer.sin, sizeof(pcb->peer.sin));
@@ -421,12 +457,21 @@ pxping_pcb_for_request(struct pxping *pxping,
         if (is_ipv6) {
         }
         else {
+            int mapped;
+
             pcb->peer.sin.sin_family = AF_INET;
 #if HAVE_SA_LEN
             pcb->peer.sin.sin_len = sizeof(pcb->peer.sin);
 #endif
-            pxremap_outbound_ip4((ip_addr_t *)&pcb->peer.sin.sin_addr,
-                                 ipX_2_ip(&pcb->dst));
+            mapped = pxremap_outbound_ip4((ip_addr_t *)&pcb->peer.sin.sin_addr,
+                                          ipX_2_ip(&pcb->dst));
+            if (mapped == PXREMAP_FAILED) {
+                free(pcb);
+                return NULL;
+            }
+            else {
+                pcb->is_mapped = (mapped == PXREMAP_MAPPED);
+            }
             pcb->peer.sin.sin_port = htons(IP_PROTO_ICMP);
         }
 
@@ -716,8 +761,9 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
     struct ip_hdr *iph;
     struct icmp_echo_hdr *icmph;
     u16_t id, seq;
+    int mapped;
     struct ping_pcb *pcb;
-    ip_addr_t pcb_src, pcb_dst;
+    ip_addr_t guest_ip, target_ip, unmapped_target_ip;
     u16_t guest_id;
     u32_t sum;
 
@@ -736,8 +782,14 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
                  addrstr, ntohs(id), ntohs(seq)));
     }
 
+    ip_addr_copy(target_ip, iph->src);
+    mapped = pxremap_inbound_ip4(&unmapped_target_ip, &target_ip);
+    if (mapped == PXREMAP_FAILED) {
+        return;
+    }
+
     sys_mutex_lock(&pxping->lock);
-    pcb = pxping_pcb_for_reply(pxping, 0, ip_2_ipX(&iph->src), id);
+    pcb = pxping_pcb_for_reply(pxping, 0, ip_2_ipX(&unmapped_target_ip), id);
     if (pcb == NULL) {
         sys_mutex_unlock(&pxping->lock);
         DPRINTF2(("%s: no match\n", __func__));
@@ -747,8 +799,7 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
     DPRINTF2(("%s: pcb %p\n", __func__, (void *)pcb));
 
     /* save info before unlocking since pcb may expire */
-    ip_addr_copy(pcb_src, *ipX_2_ip(&pcb->src));
-    ip_addr_copy(pcb_dst, *ipX_2_ip(&pcb->dst));
+    ip_addr_copy(guest_ip, *ipX_2_ip(&pcb->src));
     guest_id = pcb->guest_id;
 
     sys_mutex_unlock(&pxping->lock);
@@ -761,9 +812,16 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
 
     /* rewrite outer IP header */
     sum = (u16_t)~IPH_CHKSUM(iph);
-    sum += update32_with_chksum((u32_t *)&iph->dest, ip4_addr_get_u32(&pcb_src));
-    IPH_TTL_SET(iph, IPH_TTL(iph) - 1);
-    sum += PP_NTOHS(~0x0100);
+    sum += update32_with_chksum((u32_t *)&iph->dest,
+                                ip4_addr_get_u32(&guest_ip));
+    if (mapped == PXREMAP_MAPPED) {
+        sum += update32_with_chksum((u32_t *)&iph->src,
+                                    ip4_addr_get_u32(&unmapped_target_ip));
+    }
+    else {
+        IPH_TTL_SET(iph, IPH_TTL(iph) - 1);
+        sum += PP_NTOHS(~0x0100);
+    }
     sum = FOLD_U32T(sum);
     IPH_CHKSUM_SET(iph, ~sum);
 
