@@ -864,10 +864,8 @@ static void hmR0VmxStructsFree(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[i];
         AssertPtr(pVCpu);
 
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         hmR0VmxPageFree(&pVCpu->hm.s.vmx.hMemObjHostMsr, &pVCpu->hm.s.vmx.pvHostMsr, &pVCpu->hm.s.vmx.HCPhysHostMsr);
         hmR0VmxPageFree(&pVCpu->hm.s.vmx.hMemObjGuestMsr, &pVCpu->hm.s.vmx.pvGuestMsr, &pVCpu->hm.s.vmx.HCPhysGuestMsr);
-#endif
 
         if (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
             hmR0VmxPageFree(&pVCpu->hm.s.vmx.hMemObjMsrBitmap, &pVCpu->hm.s.vmx.pvMsrBitmap, &pVCpu->hm.s.vmx.HCPhysMsrBitmap);
@@ -916,10 +914,8 @@ static int hmR0VmxStructsAlloc(PVM pVM)
         VMXLOCAL_INIT_VMCPU_MEMOBJ(Vmcs, pv);
         VMXLOCAL_INIT_VMCPU_MEMOBJ(VirtApic, pb);
         VMXLOCAL_INIT_VMCPU_MEMOBJ(MsrBitmap, pv);
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         VMXLOCAL_INIT_VMCPU_MEMOBJ(GuestMsr, pv);
         VMXLOCAL_INIT_VMCPU_MEMOBJ(HostMsr, pv);
-#endif
     }
 #undef VMXLOCAL_INIT_VMCPU_MEMOBJ
 #undef VMXLOCAL_INIT_VM_MEMOBJ
@@ -982,7 +978,6 @@ static int hmR0VmxStructsAlloc(PVM pVM)
             ASMMemFill32(pVCpu->hm.s.vmx.pvMsrBitmap, PAGE_SIZE, UINT32_C(0xffffffff));
         }
 
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Allocate the VM-entry MSR-load and VM-exit MSR-store page for the guest MSRs. */
         rc = hmR0VmxPageAllocZ(&pVCpu->hm.s.vmx.hMemObjGuestMsr, &pVCpu->hm.s.vmx.pvGuestMsr, &pVCpu->hm.s.vmx.HCPhysGuestMsr);
         if (RT_FAILURE(rc))
@@ -992,7 +987,6 @@ static int hmR0VmxStructsAlloc(PVM pVM)
         rc = hmR0VmxPageAllocZ(&pVCpu->hm.s.vmx.hMemObjHostMsr, &pVCpu->hm.s.vmx.pvHostMsr, &pVCpu->hm.s.vmx.HCPhysHostMsr);
         if (RT_FAILURE(rc))
             goto cleanup;
-#endif
     }
 
     return VINF_SUCCESS;
@@ -1200,7 +1194,6 @@ static int hmR0VmxGetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, PVMXMSREXITREAD 
 #endif /* VBOX_STRICT */
 
 
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
 /**
  * Updates the VMCS with the number of effective MSRs in the auto-load/store MSR
  * area.
@@ -1448,7 +1441,6 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
     }
 }
 # endif /* VBOX_STRICT */
-#endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
 
 /**
@@ -2306,8 +2298,7 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,  0);       AssertRCReturn(rc, rc);
 #endif
 
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    /* Setup MSR autoloading/storing. */
+    /* Setup MSR auto-load/store area. */
     Assert(pVCpu->hm.s.vmx.HCPhysGuestMsr);
     Assert(!(pVCpu->hm.s.vmx.HCPhysGuestMsr & 0xf));    /* Lower 4 bits MBZ. */
     rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
@@ -2319,7 +2310,6 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
     Assert(!(pVCpu->hm.s.vmx.HCPhysHostMsr & 0xf));     /* Lower 4 bits MBZ. */
     rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL,  pVCpu->hm.s.vmx.HCPhysHostMsr);
     AssertRCReturn(rc, rc);
-#endif
 
     /* Set VMCS link pointer. Reserved for future use, must be -1. Intel spec. 24.4 "Guest-State Area". */
     rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, UINT64_C(0xffffffffffffffff));
@@ -2839,7 +2829,6 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     AssertPtr(pVCpu->hm.s.vmx.pvHostMsr);
 
     int rc = VINF_SUCCESS;
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
 #if 0
     PVMXAUTOMSR  pHostMsr       = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
     uint32_t     cHostMsrs      = 0;
@@ -2938,7 +2927,6 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
 
     if (pVCpu->hm.s.vmx.cMsrs > 0)
         hmR0VmxUpdateAutoLoadStoreHostMsrs(pVCpu);
-#endif  /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
     /*
      * Host Sysenter MSRs.
@@ -4373,7 +4361,6 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (VMCPU_HMCF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS))
     {
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* See Intel spec. 4.1.4 "Enumeration of Paging Features by CPUID". */
         PVM pVM = pVCpu->CTX_SUFF(pVM);
         bool fSupportsLongMode = CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
@@ -4390,8 +4377,6 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cMsrs; i++, pMsr++)
             Log4(("MSR[%RU32]: u32Msr=%#RX32 u64Value=%#RX64\n", i, pMsr->u32Msr, pMsr->u64Value));
 # endif
-#endif  /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
-
         VMCPU_HMCF_CLEAR(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
     }
 
@@ -5768,7 +5753,6 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS)
         return VINF_SUCCESS;
 
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     PVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
     Log4(("hmR0VmxSaveGuestAutoLoadStoreMsrs: cMsrs=%u\n", pVCpu->hm.s.vmx.cMsrs));
     for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cMsrs; i++, pMsr++)
@@ -5787,7 +5771,6 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             }
         }
     }
-#endif
 
     pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS;
     return VINF_SUCCESS;
@@ -7964,8 +7947,6 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
                                                                    to start executing. */
 
-    /** @todo Get rid of VBOX_WITH_AUTO_MSR_LOAD_RESTORE define. */
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     /*
      * Load the TSC_AUX MSR when we are not intercepting RDTSCP.
      */
@@ -7983,20 +7964,6 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     }
 #ifdef VBOX_STRICT
     hmR0VmxCheckAutoLoadStoreMsrs(pVCpu);
-#endif
-#else
-    /*
-     * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
-     * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
-     */
-    if (   (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-        && !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
-    {
-        pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
-        int rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64HostTscAuxMsr);
-        AssertRC(rc2);
-        ASMWrMsr(MSR_K8_TSC_AUX, u64HostTscAuxMsr);
-    }
 #endif
 }
 
@@ -8034,7 +8001,6 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     {
         if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
         {
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
             /* VT-x restored the host TSC_AUX MSR for us, update the guest value from the VMCS area
                if it could have changed without causing a VM-exit. */
             if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
@@ -8042,16 +8008,6 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
                 int rc2 = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
                 AssertRC(rc2);
             }
-#else
-            /* Update guest's TSC_AUX if it could have changed. */
-            if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
-            {
-                uint64_t u64GuestTscAuxMsr = ASMRdMsr(MSR_K8_TSC_AUX);
-                CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, u64GuestTscAuxMsr);
-            }
-            /* Restore host's TSC_AUX. */
-            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
-#endif
         }
 
         /** @todo Find a way to fix hardcoding a guestimate.  */
