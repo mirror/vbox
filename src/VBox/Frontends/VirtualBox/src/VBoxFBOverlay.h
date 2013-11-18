@@ -1015,6 +1015,18 @@ class VBoxVHWASurfList
 public:
 
     VBoxVHWASurfList() : mCurrent(NULL) {}
+
+    void moveTo(VBoxVHWASurfList *pDst)
+    {
+        for (SurfList::iterator it = mSurfaces.begin();
+             it != mSurfaces.end(); it = mSurfaces.begin())
+        {
+            pDst->add((*it));
+        }
+
+        Assert(empty());
+    }
+
     void add(VBoxVHWASurfaceBase *pSurf)
     {
         VBoxVHWASurfList * pOld = pSurf->getComplexList();
@@ -1025,7 +1037,7 @@ public:
         mSurfaces.push_back(pSurf);
         pSurf->setComplexList(this);
     }
-
+/*
     void clear()
     {
         for (SurfList::iterator it = mSurfaces.begin();
@@ -1036,7 +1048,7 @@ public:
         mSurfaces.clear();
         mCurrent = NULL;
     }
-
+*/
     size_t size() const {return mSurfaces.size(); }
 
     void remove(VBoxVHWASurfaceBase *pSurf)
@@ -1077,7 +1089,12 @@ public:
     {
         VBoxVHWASurfaceBase * old = mSurfVGA;
         mSurfVGA = pVga;
-        mPrimary.clear();
+        if (!mPrimary.empty())
+        {
+            VBoxVHWASurfList *pNewList = new VBoxVHWASurfList();
+            mPrimary.moveTo(pNewList);
+            Assert(mPrimary.empty());
+        }
         if(pVga)
         {
             Assert(!pVga->getComplexList());
