@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,7 @@
 #include <nsMemory.h>
 #include <nsIServiceManager.h>
 #include <nsEventQueueUtils.h>
+#include <nsIExceptionService.h>
 
 #include <iprt/string.h>
 #include <iprt/env.h>
@@ -30,12 +31,16 @@
 
 using namespace std;
 
-static ISession            *Session        = NULL;
-static IVirtualBox         *Ivirtualbox    = NULL;
-static nsIComponentManager *manager        = NULL;
-static nsIEventQueue       *eventQ         = NULL;
+/* The following 3 object references should be eliminated once the legacy
+ * way to initialize the XPCOM C bindings is removed. */
+static ISession            *g_Session           = NULL;
+static IVirtualBox         *g_VirtualBox        = NULL;
+static nsIComponentManager *g_Manager           = NULL;
+
+static nsIEventQueue       *g_EventQueue        = NULL;
 
 static void VBoxComUninitialize(void);
+static void VBoxClientUninitialize(void);
 
 static int
 VBoxUtf16ToUtf8(const PRUnichar *pwszString, char **ppszString)
@@ -65,9 +70,7 @@ static void
 VBoxComUnallocMem(void *ptr)
 {
     if (ptr)
-    {
         nsMemory::Free(ptr);
-    }
 }
 
 static void
@@ -93,7 +96,7 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
         return;
     }
 
-    rc = NS_GetComponentManager (&manager);
+    rc = NS_GetComponentManager(&g_Manager);
     if (NS_FAILED(rc))
     {
         Log(("Cbinding: Could not get component manager! rc=%Rhrc\n", rc));
@@ -101,7 +104,7 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
         return;
     }
 
-    rc = NS_GetMainEventQ (&eventQ);
+    rc = NS_GetMainEventQ(&g_EventQueue);
     if (NS_FAILED(rc))
     {
         Log(("Cbinding: Could not get xpcom event queue! rc=%Rhrc\n", rc));
@@ -109,10 +112,10 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
         return;
     }
 
-    rc = manager->CreateInstanceByContractID(NS_VIRTUALBOX_CONTRACTID,
-                                             nsnull,
-                                             virtualBoxIID,
-                                             (void **)ppVirtualBox);
+    rc = g_Manager->CreateInstanceByContractID(NS_VIRTUALBOX_CONTRACTID,
+                                               nsnull,
+                                               virtualBoxIID,
+                                               (void **)&g_VirtualBox);
     if (NS_FAILED(rc))
     {
         Log(("Cbinding: Could not instantiate VirtualBox object! rc=%Rhrc\n",rc));
@@ -122,10 +125,10 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
 
     Log(("Cbinding: IVirtualBox object created.\n"));
 
-    rc = manager->CreateInstanceByContractID (NS_SESSION_CONTRACTID,
-                                              nsnull,
-                                              sessionIID,
-                                              (void **)ppSession);
+    rc = g_Manager->CreateInstanceByContractID(NS_SESSION_CONTRACTID,
+                                               nsnull,
+                                               sessionIID,
+                                               (void **)&g_Session);
     if (NS_FAILED(rc))
     {
         Log(("Cbinding: Could not instantiate Session object! rc=%Rhrc\n",rc));
@@ -135,51 +138,210 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
 
     Log(("Cbinding: ISession object created.\n"));
 
-    /* Store ppSession & ppVirtualBox so that VBoxComUninitialize
-     * can later take care of them while cleanup
-     */
-    Session     = *ppSession;
-    Ivirtualbox = *ppVirtualBox;
-
+    *ppSession = g_Session;
+    *ppVirtualBox = g_VirtualBox;
 }
 
 static void
 VBoxComInitializeV1(IVirtualBox **ppVirtualBox, ISession **ppSession)
 {
-    /* stub that always fails. */
-    *ppVirtualBox = NULL;
-    *ppSession = NULL;
+    VBoxComInitialize(IVIRTUALBOX_IID_STR, ppVirtualBox,
+                      ISESSION_IID_STR, ppSession);
 }
 
 static void
 VBoxComUninitialize(void)
 {
-    if (Session)
-        NS_RELEASE(Session);        // decrement refcount
-    if (Ivirtualbox)
-        NS_RELEASE(Ivirtualbox);    // decrement refcount
-    if (eventQ)
-        NS_RELEASE(eventQ);         // decrement refcount
-    if (manager)
-        NS_RELEASE(manager);        // decrement refcount
+    if (g_Session)
+    {
+        NS_RELEASE(g_Session);
+        g_Session = NULL;
+    }
+    if (g_VirtualBox)
+    {
+        NS_RELEASE(g_VirtualBox);
+        g_VirtualBox = NULL;
+    }
+    if (g_EventQueue)
+    {
+        NS_RELEASE(g_EventQueue);
+        g_EventQueue = NULL;
+    }
+    if (g_Manager)
+    {
+        NS_RELEASE(g_Manager);
+        g_Manager = NULL;
+    }
     com::Shutdown();
-    Log(("Cbinding: Cleaned up the created IVirtualBox and ISession Objects.\n"));
+    Log(("Cbinding: Cleaned up the created objects.\n"));
 }
 
 static void
-VBoxGetEventQueue(nsIEventQueue **eventQueue)
+VBoxGetEventQueue(nsIEventQueue **ppEventQueue)
 {
-    *eventQueue = eventQ;
+    *ppEventQueue = g_EventQueue;
 }
 
-static uint32_t
+static nsresult
+VBoxGetException(nsIException **ppException)
+{
+    nsresult rc;
+
+    *ppException = NULL;
+    nsIServiceManager *mgr = NULL;
+    rc = NS_GetServiceManager(&mgr);
+    if (NS_FAILED(rc) || !mgr)
+        return rc;
+
+    nsIID esid = NS_IEXCEPTIONSERVICE_IID;
+    nsIExceptionService *es = NULL;
+    rc = mgr->GetServiceByContractID(NS_EXCEPTIONSERVICE_CONTRACTID, esid, (void **)&es);
+    if (NS_FAILED(rc) || !es)
+    {
+        NS_RELEASE(mgr);
+        return rc;
+    }
+
+    nsIExceptionManager *em;
+    rc = es->GetCurrentExceptionManager(&em);
+    if (NS_FAILED(rc) || !em)
+    {
+        NS_RELEASE(es);
+        NS_RELEASE(mgr);
+        return rc;
+    }
+
+    nsIException *ex;
+    rc = em->GetCurrentException(&ex);
+    if (NS_FAILED(rc))
+    {
+        NS_RELEASE(em);
+        NS_RELEASE(es);
+        NS_RELEASE(mgr);
+        return rc;
+    }
+
+    *ppException = ex;
+    NS_RELEASE(em);
+    NS_RELEASE(es);
+    NS_RELEASE(mgr);
+    return rc;
+}
+
+static nsresult
+VBoxClearException(void)
+{
+    nsresult rc;
+
+    nsIServiceManager *mgr = NULL;
+    rc = NS_GetServiceManager(&mgr);
+    if (NS_FAILED(rc) || !mgr)
+        return rc;
+
+    nsIID esid = NS_IEXCEPTIONSERVICE_IID;
+    nsIExceptionService *es = NULL;
+    rc = mgr->GetServiceByContractID(NS_EXCEPTIONSERVICE_CONTRACTID, esid, (void **)&es);
+    if (NS_FAILED(rc) || !es)
+    {
+        NS_RELEASE(mgr);
+        return rc;
+    }
+
+    nsIExceptionManager *em;
+    rc = es->GetCurrentExceptionManager(&em);
+    if (NS_FAILED(rc) || !em)
+    {
+        NS_RELEASE(es);
+        NS_RELEASE(mgr);
+        return rc;
+    }
+
+    rc = em->SetCurrentException(NULL);
+    NS_RELEASE(em);
+    NS_RELEASE(es);
+    NS_RELEASE(mgr);
+    return rc;
+}
+
+static nsresult
+VBoxClientInitialize(const char *pszVirtualBoxClientIID, IVirtualBoxClient **ppVirtualBoxClient)
+{
+    nsresult rc;
+    nsID virtualBoxClientIID;
+    nsID sessionIID;
+
+    *ppVirtualBoxClient = NULL;
+
+    /* convert the string representation of UUID to nsIID type */
+    if (!virtualBoxClientIID.Parse(pszVirtualBoxClientIID))
+        return NS_ERROR_INVALID_ARG;
+
+    rc = com::Initialize();
+    if (NS_FAILED(rc))
+    {
+        Log(("Cbinding: XPCOM could not be initialized! rc=%Rhrc\n", rc));
+        VBoxClientUninitialize();
+        return rc;
+    }
+
+    nsIComponentManager *pManager;
+    rc = NS_GetComponentManager(&pManager);
+    if (NS_FAILED(rc))
+    {
+        Log(("Cbinding: Could not get component manager! rc=%Rhrc\n", rc));
+        VBoxClientUninitialize();
+        return rc;
+    }
+
+    rc = NS_GetMainEventQ(&g_EventQueue);
+    if (NS_FAILED(rc))
+    {
+        Log(("Cbinding: Could not get xpcom event queue! rc=%Rhrc\n", rc));
+        VBoxClientUninitialize();
+        return rc;
+    }
+
+    rc = pManager->CreateInstanceByContractID(NS_VIRTUALBOXCLIENT_CONTRACTID,
+                                              nsnull,
+                                              virtualBoxClientIID,
+                                              (void **)ppVirtualBoxClient);
+    if (NS_FAILED(rc))
+    {
+        Log(("Cbinding: Could not instantiate VirtualBoxClient object! rc=%Rhrc\n",rc));
+        VBoxClientUninitialize();
+        return rc;
+    }
+
+    NS_RELEASE(pManager);
+    pManager = NULL;
+
+    Log(("Cbinding: IVirtualBoxClient object created.\n"));
+
+    return NS_OK;
+}
+
+static void
+VBoxClientUninitialize(void)
+{
+    if (g_EventQueue)
+    {
+        NS_RELEASE(g_EventQueue);
+        g_EventQueue = NULL;
+    }
+    com::Shutdown();
+    Log(("Cbinding: Cleaned up the created objects.\n"));
+}
+
+static unsigned int
 VBoxVersion(void)
 {
-    uint32_t version = 0;
+    return VBOX_VERSION_MAJOR * 1000 * 1000 + VBOX_VERSION_MINOR * 1000 + VBOX_VERSION_BUILD;
+}
 
-    version = (VBOX_VERSION_MAJOR * 1000 * 1000) + (VBOX_VERSION_MINOR * 1000) + (VBOX_VERSION_BUILD);
-
-    return version;
+static unsigned int
+VBoxAPIVersion(void)
+{
+    return VBOX_VERSION_MAJOR * 1000 + VBOX_VERSION_MINOR + (VBOX_VERSION_BUILD > 50 ? 1 : 0);
 }
 
 VBOXXPCOMC_DECL(PCVBOXXPCOM)
@@ -192,6 +354,67 @@ VBoxGetXPCOMCFunctions(unsigned uVersion)
     {
         sizeof(VBOXXPCOMC),
         VBOX_XPCOMC_VERSION,
+
+        VBoxVersion,
+        VBoxAPIVersion,
+
+        VBoxClientInitialize,
+        VBoxClientUninitialize,
+
+        VBoxComInitialize,
+        VBoxComUninitialize,
+
+        VBoxComUnallocMem,
+
+        VBoxUtf16ToUtf8,
+        VBoxUtf8ToUtf16,
+        VBoxUtf8Free,
+        VBoxUtf16Free,
+
+        VBoxGetEventQueue,
+        VBoxGetException,
+        VBoxClearException,
+
+        VBOX_XPCOMC_VERSION
+    };
+
+    if ((uVersion & 0xffff0000U) == (VBOX_XPCOMC_VERSION & 0xffff0000U))
+        return &s_Functions;
+
+    /*
+     * Legacy interface version 2.0.
+     */
+    static const struct VBOXXPCOMCV2
+    {
+        /** The size of the structure. */
+        unsigned cb;
+        /** The structure version. */
+        unsigned uVersion;
+
+        unsigned int (*pfnGetVersion)(void);
+
+        void  (*pfnComInitialize)(const char *pszVirtualBoxIID,
+                                  IVirtualBox **ppVirtualBox,
+                                  const char *pszSessionIID,
+                                  ISession **ppSession);
+
+        void  (*pfnComUninitialize)(void);
+
+        void  (*pfnComUnallocMem)(void *pv);
+        void  (*pfnUtf16Free)(PRUnichar *pwszString);
+        void  (*pfnUtf8Free)(char *pszString);
+
+        int   (*pfnUtf16ToUtf8)(const PRUnichar *pwszString, char **ppszString);
+        int   (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);
+
+        void  (*pfnGetEventQueue)(nsIEventQueue **ppEventQueue);
+
+        /** Tail version, same as uVersion. */
+        unsigned uEndVersion;
+    } s_Functions_v2_0 =
+    {
+        sizeof(s_Functions_v2_0),
+        0x00020000U,
 
         VBoxVersion,
 
@@ -207,11 +430,11 @@ VBoxGetXPCOMCFunctions(unsigned uVersion)
 
         VBoxGetEventQueue,
 
-        VBOX_XPCOMC_VERSION
+        0x00020000U
     };
 
-    if ((uVersion & 0xffff0000U) == (VBOX_XPCOMC_VERSION & 0xffff0000U))
-        return &s_Functions;
+    if ((uVersion & 0xffff0000U) == 0x00020000U)
+        return (PCVBOXXPCOM)&s_Functions_v2_0;
 
     /*
      * Legacy interface version 1.0.
