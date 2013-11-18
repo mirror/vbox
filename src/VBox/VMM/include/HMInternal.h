@@ -47,17 +47,6 @@
 # define HM_PROFILE_EXIT_DISPATCH
 #endif
 
-/* The MSR auto load/store used to not work for KERNEL_GS_BASE MSR, thus we
- * used to handle this MSR manually. See @bugref{6208}. This was clearly visible while
- * booting Solaris 11 (11.1 b19) VMs with 2 Cpus. This is no longer the case and we
- * always auto load/store the KERNEL_GS_BASE MSR.
- *
- * Note: don't forget to update the assembly files while modifying this!
- */
-/** @todo This define should always be in effect and the define itself removed
-  after 'sufficient' testing. */
-# define VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-
 RT_C_DECLS_BEGIN
 
 
@@ -586,7 +575,6 @@ typedef struct HMCPU
         /** Virtual address of the MSR bitmap. */
         R0PTRTYPE(void *)           pvMsrBitmap;
 
-#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /** Physical address of the VM-entry MSR-load and VM-exit MSR-store area (used
          *  for guest MSRs). */
         RTHCPHYS                    HCPhysGuestMsr;
@@ -609,7 +597,6 @@ typedef struct HMCPU
         /** Whether the host MSR values are up-to-date. */
         bool                        fUpdatedHostMsrs;
         uint8_t                     u8Align[7];
-#endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         /** The cached APIC-base MSR used for identifying when to map the HC physical APIC-access page. */
         uint64_t                    u64MsrApicBase;

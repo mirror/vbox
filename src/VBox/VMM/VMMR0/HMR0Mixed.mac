@@ -355,14 +355,6 @@ ENDPROC MY_NAME(VMXR0StartVM32)
 %%skip_ldt_write64:
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
- %ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    ; Save the guest MSRs and load the host MSRs.
-    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-    LOADHOSTMSREX MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
-    LOADHOSTMSREX MSR_K6_STAR,           CPUMCTX.msrSTAR
-    LOADHOSTMSREX MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
- %endif
-
  %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     xDX         ; Saved pCache
 
@@ -453,14 +445,6 @@ ALIGN(16)
 
     ; Save the pCache pointer.
     push    xBX
-%endif
-
-%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    ; Save the host MSRs and load the guest MSRs.
-    LOADGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
-    LOADGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
-    LOADGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
-    LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 %endif
 
     ; Save the pCtx pointer.

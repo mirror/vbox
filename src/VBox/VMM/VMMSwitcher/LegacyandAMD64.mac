@@ -733,25 +733,6 @@ ENDPROC vmmR0ToRawModeAsm
 ;
 ;
 
-
-
-; Load the corresponding guest MSR (trashes rdx & rcx)
-%macro LOADGUESTMSR 2
-    mov     rcx, %1
-    mov     edx, dword [rsi + %2 + 4]
-    mov     eax, dword [rsi + %2]
-    wrmsr
-%endmacro
-
-; Save a guest MSR (trashes rdx & rcx)
-; Only really useful for gs kernel base as that one can be changed behind our back (swapgs)
-%macro SAVEGUESTMSR 2
-    mov     rcx, %1
-    rdmsr
-    mov     dword [rsi + %2], eax
-    mov     dword [rsi + %2 + 4], edx
-%endmacro
-
 ;; @def MYPUSHSEGS
 ; Macro saving all segment registers on the stack.
 ; @param 1  full width register name
@@ -932,14 +913,6 @@ ALIGN(16)
     ;  - DR7 (reset to 0x400)
     ;  - EFLAGS (reset to RT_BIT(1); not relevant)
 
-%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    ; Load the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs.
-    LOADGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
-    LOADGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
-    LOADGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
-    LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-%endif
-
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     qword [rbx + VMCSCACHE.uPos], 5
 %endif
@@ -1017,13 +990,6 @@ ALIGNCODE(16)
     mov     qword [rdi + CPUMCTX.edi], rax
 
     pop     rsi         ; pCtx (needed in rsi by the macros below)
-
-%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-    SAVEGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
-    SAVEGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
-    SAVEGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
-%endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; Saved pCache
