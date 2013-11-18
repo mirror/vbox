@@ -794,7 +794,7 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
     PHMR0FIRSTRC pFirstRc = (PHMR0FIRSTRC)pvUser1;
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
-    NOREF(pvUser2);
+    NOREF(idCpu); NOREF(pvUser2);
 
     uint64_t   fFC            = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
     bool const fInSmxMode     = RT_BOOL(ASMGetCR4() & X86_CR4_SMXE);
@@ -856,7 +856,7 @@ static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvU
     PHMR0FIRSTRC pFirstRc = (PHMR0FIRSTRC)pvUser1;
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
-    NOREF(pvUser2);
+    NOREF(idCpu); NOREF(pvUser2);
 
     /* Check if SVM is disabled. */
     int rc;
@@ -1408,9 +1408,7 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
 
     RTCPUID          idCpu = RTMpCpuId();
     PHMGLOBALCPUINFO pCpu  = &g_HvmR0.aCpuInfo[idCpu];
-    PCPUMCTX         pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
     Assert(pCpu);
-    Assert(pCtx);
     Assert(VMCPU_HMCF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
 
     rc = g_HvmR0.pfnEnterSession(pVM, pVCpu, pCpu);
