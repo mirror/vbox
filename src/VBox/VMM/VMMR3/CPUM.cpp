@@ -3939,7 +3939,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     if (iVerbosity && cCentaurMax >= 1)
     {
         ASMCpuIdExSlow(0xc0000001, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
-        uint32_t uEdxGst = pVM->cpum.s.aGuestCpuIdExt[1].edx;
+        uint32_t uEdxGst = pVM->cpum.s.aGuestCpuIdCentaur[1].edx;
         uint32_t uEdxHst = Host.edx;
 
         if (iVerbosity == 1)
