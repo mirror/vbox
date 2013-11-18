@@ -628,6 +628,7 @@ GLOBALNAME ICEnterTarget
     mov     rcx, rax                    ; save old CR0
     and     rax, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, rax
+    ;; @todo r=ramshankar: Shouldn't we use the explicit REX prefix here!?!
     fxrstor [rdx + CPUMCPU.Guest.fpu]
     mov     cr0, rcx                    ; and restore old CR0 again
 
@@ -1221,6 +1222,7 @@ BEGINPROC HMRCSaveGuestFPU64
     and     rax, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, rax
 
+    ;; @todo r=ramshankar: Shouldn't we use the explicit REX prefix here!?!
     fxsave  [rsi + CPUMCTX.fpu]
 
     mov     cr0, rcx                    ; and restore old CR0 again
