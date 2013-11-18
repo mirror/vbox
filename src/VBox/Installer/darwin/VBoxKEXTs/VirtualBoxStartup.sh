@@ -85,8 +85,8 @@ StartService()
         VBOX_LINKNAME=`echo "$VBOX_TRG" | sed -e 's|-'"${VBOX_ARCH}"'$||' `
         if test "$VBOX_LINKNAME" != "$VBOX_TRG"; then
             rm -f "$VBOX_LINKNAME"
-            if ! ln -vh "$VBOX_TRG" "$VBOX_LINKNAME"; then
-                ConsoleMessage "Error: ln -vh $VBOX_TRG $VBOX_LINKNAME failed"
+            if ! /bin/ln -vh "$VBOX_TRG" "$VBOX_LINKNAME"; then
+                ConsoleMessage "Error: /bin/ln -vh $VBOX_TRG $VBOX_LINKNAME failed"
                 VBOX_RC=1
             fi
         else
