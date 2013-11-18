@@ -753,6 +753,7 @@ void VBoxServiceMainWait(void)
 int main(int argc, char **argv)
 {
     RTEXITCODE rcExit;
+    bool fUserSession = false;
 
     /*
      * Init globals and such.
@@ -777,14 +778,32 @@ int main(int argc, char **argv)
         return rcExit;
 #endif
 
+#ifdef VBOX_WITH_GUEST_CONTROL
+    /*
+     * Check if we're the specially spawned VBoxService.exe process that
+     * handles a guest control session.
+     */
+    if (   argc >= 2
+        && !RTStrICmp(argv[1], "guestsession"))
+        fUserSession = true;
+#endif
+
     /*
      * Connect to the kernel part before daemonizing so we can fail and
      * complain if there is some kind of problem.  We need to initialize the
      * guest lib *before* we do the pre-init just in case one of services needs
      * do to some initial stuff with it.
      */
-    VBoxServiceVerbose(2, "Calling VbgR3Init()\n");
-    rc = VbglR3Init();
+    if (fUserSession)
+    {
+        VBoxServiceVerbose(2, "Calling VbgR3InitUser()\n");
+        rc = VbglR3InitUser();
+    }
+    else
+    {
+        VBoxServiceVerbose(2, "Calling VbgR3Init()\n");
+        rc = VbglR3Init();
+    }
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_ACCESS_DENIED)
@@ -798,8 +817,8 @@ int main(int argc, char **argv)
      * Check if we're the specially spawned VBoxService.exe process that
      * handles page fusion.  This saves an extra executable.
      */
-    if (    argc == 2
-        &&  !RTStrICmp(argv[1], "pagefusion"))
+    if (   argc == 2
+        && !RTStrICmp(argv[1], "pagefusion"))
         return VBoxServicePageSharingInitFork();
 #endif
 
@@ -808,8 +827,7 @@ int main(int argc, char **argv)
      * Check if we're the specially spawned VBoxService.exe process that
      * handles a guest control session.
      */
-    if (    argc >= 2
-        &&  !RTStrICmp(argv[1], "guestsession"))
+    if (fUserSession)
         return VBoxServiceControlSessionForkInit(argc, argv);
 #endif
 
