@@ -1721,7 +1721,8 @@ print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
         <title>C binding to XPCOM API</title>
 
         <note>
-          <para>This section currently applies to Linux hosts only.</para>
+          <para>This section currently applies to Linux, Mac OS X and Solaris
+          hosts only.</para>
         </note>
 
         <para>Starting with version 2.2, VirtualBox offers a C binding for the
@@ -1736,11 +1737,12 @@ print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
           <para>The following sections describe how to use the C binding in a
           C program.</para>
 
-          <para>For Linux, a sample program is provided which demonstrates use
-          of the C binding to initialize XPCOM, get handles for VirtualBox and
-          Session objects, make calls to list and start virtual machines, and
-          uninitialize resources when done. The program uses the VBoxGlue
-          library to open the C binding layer during runtime.</para>
+          <para>As part of the SDK, a sample program is provided which
+          demonstrates using the C binding to initialize XPCOM, get handles for
+          VirtualBox and Session objects, make calls to list and start virtual
+          machines, monitor events, and uninitialize resources when done. The
+          program uses the VBoxGlue library to open the C binding layer during
+          runtime.</para>
 
           <para>The sample program
           <computeroutput>tstXPCOMCGlue</computeroutput> is located in the bin
@@ -1757,11 +1759,11 @@ print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
           <title>XPCOM initialization</title>
 
           <para>Just like in C++, XPCOM needs to be initialized before it can
-          be used. The <computeroutput>VBoxCAPI_v2_5.h</computeroutput> header
+          be used. The <computeroutput>VBoxCAPI_v4_3.h</computeroutput> header
           provides the interface to the C binding. Here's how to initialize
           XPCOM:</para>
 
-          <screen>#include "VBoxCAPI_v2_5.h"
+          <screen>#include "VBoxCAPI_v4_3.h"
 ...
 PCVBOXXPCOM g_pVBoxFuncs = NULL;
 IVirtualBox *vbox        = NULL;
@@ -1783,12 +1785,21 @@ ISession *session        = NULL;
  */
 
 g_pVBoxFuncs = VBoxGetXPCOMCFunctions(VBOX_XPCOMC_VERSION);
-g_pVBoxFuncs-&gt;pfnComInitialize(&amp;vbox, &amp;session);</screen>
+g_pVBoxFuncs-&gt;pfnComInitialize(IVIRTUALBOX_IID_STR, &amp;vbox,
+                               ISESSION_IID_STR, &amp;session);</screen>
 
           <para>If either <computeroutput>vbox</computeroutput> or
           <computeroutput>session</computeroutput> is still
           <computeroutput>NULL</computeroutput>, initialization failed and the
           XPCOM API cannot be used.</para>
+
+          <para>There is now also a way to use the
+          <xref linkend="IVirtualBoxClient" xreflabel="IVirtualBoxClient" />
+          helper interface, which in comparison to the original (and still
+          available) initialization method above simplifies creating multiple
+          sessions, and also allows handling termination and crashes of the API
+          server (VBoxSVC) in a graceful way. See the sample program how this
+          is used.</para>
         </sect3>
 
         <sect3 id="c-invocation">
@@ -1885,7 +1896,7 @@ if (NS_SUCCEEDED(rc))
           characters are arrays of that type. Most string handling functions
           take pointers to that type. Prototypes for the following conversion
           functions are declared in
-          <computeroutput>VBoxCAPI_v2_5.h</computeroutput>.</para>
+          <computeroutput>VBoxCAPI_v4_3.h</computeroutput>.</para>
 
           <sect4>
             <title>Conversion of UTF-16 to and from UTF-8</title>
@@ -1945,14 +1956,12 @@ if (atexit(g_pVBoxFuncs-&gt;pfnComUninitialize()) != 0) {
           handler setting a flag noting that a signal was sent and then
           calling
           <computeroutput>g_pVBoxFuncs-&gt;pfnComUninitialize()</computeroutput>
-          later on (usually <emphasis>not</emphasis> from the handler itself
-          .)</para>
+          later on, <emphasis>not</emphasis> from the handler itself.</para>
 
           <para>That said, if a client program forgets to call
           <computeroutput>g_pVBoxFuncs-&gt;pfnComUninitialize()</computeroutput>
           before it terminates, there is a mechanism in place which will
-          eventually release references held by the client. You should not
-          rely on this, however.</para>
+          eventually release references held by the client.</para>
         </sect3>
 
         <sect3 id="c-linking">
@@ -1975,7 +1984,7 @@ VBoxXPCOMCGlue.o: $(GLUE_DIR)/VBoxXPCOMCGlue.c
     $(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $&lt;
 
 # Compile.
-program.o: program.c VBoxCAPI_v2_5.h
+program.o: program.c VBoxCAPI_v4_3.h
     $(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $&lt;
 
 # Link.
