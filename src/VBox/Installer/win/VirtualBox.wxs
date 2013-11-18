@@ -2,7 +2,7 @@
 <!--
     VirtualBox Windows Installation Script (WiX)
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -369,7 +369,7 @@
 
                     <!--
 
-                    <Component Id="Cp_StartMenuShortcut" Guid="1C137D24-E599-47BD-98D0-2F62F202A8EA" Win64="$(var.Property_Win64)">
+                    <Component Id="cp_StartMenuShortcut" Guid="1C137D24-E599-47BD-98D0-2F62F202A8EA" Win64="$(var.Property_Win64)">
                         <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)" Type="string"
                                        Value="installed" KeyPath="yes" />
                         <Shortcut Id="ShortcutStartMenuVBox" Directory="ProgramMenuDir"
@@ -379,7 +379,6 @@
 
                     <!---->
 
-                    
                     <Component Id="cp_RegisterExtensions" Guid="FEB8943E-5D60-4E2D-846F-458207019D40" Win64="$(var.Property_Win64)">
                         <Condition>REGISTERFILEEXTENSIONS</Condition>
                         <!-- Register file extensions. Note: Extension Id's *must not* be changed! These specify the actual
@@ -705,6 +704,7 @@
             <ComponentRef Id="cp_StartMenuVBox" />
             <ComponentRef Id="cp_DesktopShortcut" />
             <ComponentRef Id="cp_QuickLaunchVBox" />
+            <ComponentRef Id="cp_RegisterExtensions" />
 
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
             <ComponentRef Id="cp_Docs" />
@@ -822,7 +822,7 @@
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
             <!-- Create host-only interfaces on first-time install. -->
             <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
-            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>            
+            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
             <!-- Don't remove the host-only interfaces on update, only on uninstall. -->
             <Custom Action="ca_RemoveHostOnlyInterfaces" After="ca_UninstallNetFlt" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
             <!-- First stop the existing host-only interfaces on update ... -->
