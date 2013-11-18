@@ -727,7 +727,7 @@ ifdef VBOX_WITH_HARDENING
  else ifeq ($(KBUILD_TARGET),freebsd)
   VBOX_PATH_APP_PRIVATE      = /usr/local/lib/virtualbox
  else ifeq ($(KBUILD_TARGET),haiku)
-  VBOX_PATH_APP_PRIVATE      = /boot/apps/VirtualBox
+  VBOX_PATH_APP_PRIVATE      = /boot/system/apps/VirtualBox
  endif
 endif
 # Where the architecture specific application files are (going to be) installed.
@@ -3460,8 +3460,8 @@ TEMPLATE_VBOXR0DRV_LDTOOL              = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL_MODE=1 _STRICT_STDC IN_RING0 IN_RT_R0
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_HAIKU_SYS_INCS)
 #TODO: sort this out
-TEMPLATE_VBOXR0DRV_LDFLAGS             = -shared -no-undefined -dc -dy -nostdlib -rpath-link /boot/develop/lib/x86 --no-add-needed /boot/develop/lib/x86/_KERNEL_ --no-add-needed /boot/develop/lib/x86/haiku_version_glue.o
-TEMPLATE_VBOXR0DRV_CFLAGS              = -no-fpic \
+TEMPLATE_VBOXR0DRV_LDFLAGS             = -shared -no-undefined -dc -dy -lroot -rpath-link /boot/system/develop/lib/x86 --no-add-needed /boot/system/develop/lib/_KERNEL_ --no-add-needed /boot/system/develop/lib/haiku_version_glue.o
+TEMPLATE_VBOXR0DRV_CFLAGS              = -fno-PIC \
 	$(VBOX_GCC_WARN) -Wstrict-prototypes $(VBOX_GCC_Wno-pointer-sign) -Wno-sign-compare \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
@@ -3469,7 +3469,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
 	-fno-reorder-blocks -ffreestanding -fno-asynchronous-unwind-tables -funit-at-a-time \
 	-Wno-sign-compare -Wdeclaration-after-statement
-TEMPLATE_VBOXR0DRV_CXXFLAGS           = -no-fpic -Wpointer-arith \
+TEMPLATE_VBOXR0DRV_CXXFLAGS           = -fno-PIC -Wpointer-arith \
 	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable \
 	-Wformat \
 	-O2 -nodefaultlibs -fno-omit-frame-pointer -fno-strict-aliasing -fno-common -fno-exceptions -fno-rtti
