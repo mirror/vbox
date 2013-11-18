@@ -117,6 +117,7 @@
     <String Id="Customize2Dlg_Desc">Veuillez choisir une des options suivantes:</String>
     <String Id="Customize2Dlg_CreateShortcut">Créer un raccourci sur le bureau</String>
     <String Id="Customize2Dlg_CreateQuickLaunch">Créer un raccourci dans la barre de lancement rapide</String>
+    <String Id="Customize2Dlg_RegisterFileExtensions">Inscription des associations de fichiers</String>
 
     <!---->
 
