@@ -29,7 +29,6 @@ XpComCSamples_INST = \
 	$(INST_SDK)bindings/xpcom/cbinding/samples/
 XpComCSamples_SOURCES = \
 	tstXPCOMCGlue.c \
-	tstXPCOMCEvent.c \
 	makefile.tstXPCOMCGlue=>Makefile
 
 INSTALLS += XpComCGlue
@@ -117,22 +116,6 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
   tstXPCOMCGlue_SOURCES = \
   	tstXPCOMCGlue.c
   tstXPCOMCGlue_LIBS = \
-  	$(VBoxXPCOMCGlue_1_TARGET)
-
-  #
-  # The event listener testcase.
-  #
-  PROGRAMS += tstXPCOMCEvent
-  tstXPCOMCEvent_TEMPLATE = VBOXR3TSTEXE
-  tstXPCOMCEvent_INCS = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding
-  tstXPCOMCEvent_INTERMEDIATES = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding/VBoxXPCOMCGlue.h \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v$(VBOX_API_VERSION).h
-  tstXPCOMCEvent_SOURCES = \
-  	tstXPCOMCEvent.c
-  tstXPCOMCEvent_LIBS = \
   	$(VBoxXPCOMCGlue_1_TARGET)
  endif
 

@@ -5,7 +5,7 @@
  *  A template to generate a XPCOM IDL compatible interface definition file
  *  from the generic interface definition expressed in XML.
 
-    Copyright (C) 2008-2012 Oracle Corporation
+    Copyright (C) 2008-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -1007,22 +1007,133 @@ typedef struct VBOXXPCOMC
     /** The structure version. */
     unsigned uVersion;
 
+    /** Gets the VirtualBox version, major * 1000000 + minor * 1000 + patch. */
     unsigned int (*pfnGetVersion)(void);
 
+    /** Gets the VirtualBox API version, major * 1000 + minor, e.g. 4003. */
+    unsigned int (*pfnGetAPIVersion)(void);
+
+    /**
+     * New and preferred way to initialize the C bindings for an API client.
+     *
+     * This way is much more flexible, as it can easily handle multiple
+     * sessions (important with more complicated API clients, including
+     * multithreaded ones), and even VBoxSVC crashes can be detected and
+     * processed appropriately by listening for events from the associated
+     * event source in VirtualBoxClient. It is completely up to the client
+     * to decide what to do (terminate or continue after getting new
+     * object references to server-side objects). Must be called in the
+     * primary thread of the client, later API use can be done in any
+     * thread.
+     *
+     * Note that the returned reference is owned by the caller, and thus it's
+     * the caller's responsibility to handle the reference count appropriately.
+     *
+     * @param pszVirtualBoxClientIID    pass IVIRTUALBOXCLIENT_IID_STR
+     * @param ppVirtualBoxClient        output parameter for VirtualBoxClient
+     *              reference, handled as usual with XPCOM.
+     * @returns XPCOM error code
+     */
+    nsresult (*pfnClientInitialize)(const char *pszVirtualBoxClientIID,
+                                    IVirtualBoxClient **ppVirtualBoxClient);
+    /**
+     * Uninitialize the C bindings for an API client.
+     *
+     * Should be called when the API client is about to terminate and does
+     * not want to use the C bindings any more. It will invalidate all
+     * object references. It is possible, however, to change one's mind,
+     * and call pfnClientInitialize again to continue using the API, as long
+     * as none of the object references from before the re-initialization
+     * are used. Must be called from the primary thread of the client.
+     */
+    void (*pfnClientUninitialize)(void);
+
+    /**
+     * Deprecated way to initialize the C bindings and getting important
+     * object references. Kept for backwards compatibility.
+     *
+     * If any returned reference is NULL then the initialization failed.
+     * Note that the returned references are owned by the C bindings. The
+     * number of calls to Release in the client code must match the number
+     * of calls to AddRef, and additionally at no point in time there can
+     * be more Release calls than AddRef calls.
+     *
+     * @param pszVirtualBoxIID      pass IVIRTUALBOX_IID_STR
+     * @param ppVirtualBox          output parameter for VirtualBox reference,
+     *          owned by C bindings
+     * @param pszSessionIID         pass ISESSION_IID_STR
+     * @param ppSession             output parameter for Session reference,
+     *          owned by C bindings
+     */
     void  (*pfnComInitialize)(const char *pszVirtualBoxIID,
                               IVirtualBox **ppVirtualBox,
                               const char *pszSessionIID,
                               ISession **ppSession);
+    /**
+     * Deprecated way to uninitialize the C bindings for an API client.
+     * Kept for backwards compatibility and must be used if the C bindings
+     * were initialized using pfnComInitialize. */
     void (*pfnComUninitialize)(void);
 
+    /**
+     * Free memory managed by XPCOM.
+     *
+     * @param pv        pointer to memory block to be freed
+     */
     void  (*pfnComUnallocMem)(void *pv);
-    void  (*pfnUtf16Free)(PRUnichar *pwszString);
-    void  (*pfnUtf8Free)(char *pszString);
 
+    /**
+     * Convert string from UTF-16 encoding to UTF-8 encoding.
+     *
+     * @param pwszString    input string
+     * @param ppszString    output string
+     * @returns IPRT status code
+     */
     int   (*pfnUtf16ToUtf8)(const PRUnichar *pwszString, char **ppszString);
+    /**
+     * Convert string from UTF-8 encoding to UTF-16 encoding.
+     *
+     * @param pszString     input string
+     * @param ppwszString   output string
+     * @returns IPRT status code
+     */
     int   (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);
+    /**
+     * Free memory returned by pfnUtf16ToUtf8. Do not use for anything else.
+     *
+     * @param pszString     string to be freed.
+     */
+    void  (*pfnUtf8Free)(char *pszString);
+    /**
+     * Free memory returned by pfnUtf8ToUtf16. Do not use for anything else.
+     *
+     * @param pwszString    string to be freed.
+     */
+    void  (*pfnUtf16Free)(PRUnichar *pwszString);
 
-    void  (*pfnGetEventQueue)(nsIEventQueue **eventQueue);
+    /**
+     * Get main XPCOM event queue.
+     *
+     * @param ppEventQueue      output parameter for nsIEventQueue reference,
+     *              owned by C bindings.
+     */
+    void  (*pfnGetEventQueue)(nsIEventQueue **ppEventQueue);
+
+    /**
+     * Get current XPCOM exception.
+     *
+     * @param ppException       output parameter for nsIException reference,
+     *              may be @c NULL if no exception object has been created by
+     *              a previous XPCOM call.
+     * @returns XPCOM error code
+     */
+    nsresult (*pfnGetException)(nsIException **ppException);
+    /**
+     * Clears current XPCOM exception.
+     *
+     * @returns XPCOM error code
+     */
+    nsresult (*pfnClearException)(void);
 
     /** Tail version, same as uVersion. */
     unsigned uEndVersion;
@@ -1033,7 +1144,7 @@ typedef VBOXXPCOMC const *PCVBOXXPCOM;
 /** The current interface version.
  * For use with VBoxGetXPCOMCFunctions and to be found in
  * VBOXXPCOMC::uVersion. */
-#define VBOX_XPCOMC_VERSION     0x00020000U
+#define VBOX_XPCOMC_VERSION     0x00030000U
 
 VBOXXPCOMC_DECL(PCVBOXXPCOM) VBoxGetXPCOMCFunctions(unsigned uVersion);
 /** Typedef for VBoxGetXPCOMCFunctions. */

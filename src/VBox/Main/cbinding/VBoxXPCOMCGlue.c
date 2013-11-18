@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -37,6 +37,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <dlfcn.h>
+#include <pthread.h>
 
 #include "VBoxXPCOMCGlue.h"
 
@@ -66,6 +67,18 @@ char g_szVBoxErrMsg[256];
 PCVBOXXPCOM g_pVBoxFuncs = NULL;
 /** Pointer to VBoxGetXPCOMCFunctions for the loaded VBoxXPCOMC so/dylib/dll. */
 PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
+
+typedef void FNDUMMY(void);
+typedef FNDUMMY *PFNDUMMY;
+/** Just a dummy global structure containing a bunch of
+ * function pointers to code which is wanted in the link.
+ * In this case this is for helping gdb as it gets hideously
+ * confused if the application doesn't drag in pthreads.
+ */
+PFNDUMMY g_apfnVBoxXPCOMCGlue[] =
+{
+    (PFNDUMMY)pthread_create
+};
 
 
 /**

@@ -1,5 +1,5 @@
 # $Revision$
-## @file makefile.tstLinuxC
+## @file makefile.tstXPCOMCGlue
 # Makefile for sample program illustrating use of C binding for XPCOM.
 #
 
@@ -23,22 +23,16 @@ CC            = gcc
 CFLAGS        = -g -Wall
 
 .PHONY: all
-all: tstXPCOMCGlue tstXPCOMCEvent
+all: tstXPCOMCGlue
 
 .PHONY: clean
 clean:
-	rm -f tstXPCOMCGlue.o tstXPCOMCGlue VBoxXPCOMCGlue.o tstXPCOMCEvent.o tstXPCOMCEvent
+	rm -f tstXPCOMCGlue.o tstXPCOMCGlue VBoxXPCOMCGlue.o
 
 tstXPCOMCGlue: tstXPCOMCGlue.o VBoxXPCOMCGlue.o
-	$(CC) -o $@ $^ -ldl
-
-tstXPCOMCGlue.o: tstXPCOMCGlue.c
-	$(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $<
-
-tstXPCOMCEvent: tstXPCOMCEvent.o VBoxXPCOMCGlue.o
 	$(CC) -o $@ $^ -ldl -lpthread
 
-tstXPCOMCEvent.o: tstXPCOMCEvent.c
+tstXPCOMCGlue.o: tstXPCOMCGlue.c
 	$(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $<
 
 VBoxXPCOMCGlue.o: $(GLUE_DIR)/VBoxXPCOMCGlue.c
