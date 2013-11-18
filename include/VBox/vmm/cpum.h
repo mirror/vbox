@@ -288,15 +288,9 @@ DECLINLINE(bool)    CPUMIsGuestPagingEnabledEx(PCPUMCTX pCtx)
  */
 DECLINLINE(bool)    CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
 {
-#ifdef VBOX_WITH_OLD_VTX_CODE
-    return (    (pCtx->cr4 & X86_CR4_PAE)
-            &&  CPUMIsGuestInPagedProtectedModeEx(pCtx)
-            &&  !CPUMIsGuestInLongModeEx(pCtx));
-#else
     return (   (pCtx->cr4 & X86_CR4_PAE)
             && CPUMIsGuestPagingEnabledEx(pCtx)
             && !(pCtx->msrEFER & MSR_K6_EFER_LME));
-#endif
 }
 
 #endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
