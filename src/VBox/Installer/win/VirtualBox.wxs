@@ -116,6 +116,7 @@
         <Property Id="ARPURLUPDATEINFO">http://www.virtualbox.org</Property>
         <Property Id="INSTALLDESKTOPSHORTCUT" Value="1"></Property>
         <Property Id="INSTALLQUICKLAUNCHSHORTCUT" Value="1"></Property>
+        <Property Id="REGISTERFILEEXTENSIONS" Value="1"></Property>
         <Property Id="STARTVBOX" Value="1"></Property>
 
         <!-- Install the product for all users on the system -->
@@ -378,14 +379,9 @@
 
                     <!---->
 
-                    <!-- All Binaries, DLLs (except COM) and drivers are in one component because they belong together. Additional
-                         binaries e.g. test tools, utilities etc. should be in another component so they"re clearly separated. -->
-                    <Component Id="cp_MainBinaries" Guid="5C8FE57A-F744-4DE0-AA3F-A563F486AD98" Win64="$(var.Property_Win64)">
-
-                        <!-- Set required environment variables. -->
-                        <Environment Id="env_VBoxInstallDir" Action="set" Name="VBOX_INSTALL_PATH"
-                                     System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]" />
-
+                    
+                    <Component Id="cp_RegisterExtensions" Guid="FEB8943E-5D60-4E2D-846F-458207019D40" Win64="$(var.Property_Win64)">
+                        <Condition>REGISTERFILEEXTENSIONS</Condition>
                         <!-- Register file extensions. Note: Extension Id's *must not* be changed! These specify the actual
                              file extension to handle. Also, here would be the place to add more fancy DDE stuff later.
                              Important: The IDs in "IconIndex" *must* be matching "Resources\resource.h". -->
@@ -421,6 +417,15 @@
                         <ProgId Id="progId_VirtualBox.Shell.hdd" Description="Virtual Hard Disk" Icon="file_VBoxRes.dll" IconIndex="-306">
                             <Extension Id="hdd" ContentType="application/x-virtualbox-hdd" />
                         </ProgId>
+                    </Component> <!-- RegisterExtensions -->
+
+                    <!-- All Binaries, DLLs (except COM) and drivers are in one component because they belong together. Additional
+                         binaries e.g. test tools, utilities etc. should be in another component so they"re clearly separated. -->
+                    <Component Id="cp_MainBinaries" Guid="5C8FE57A-F744-4DE0-AA3F-A563F486AD98" Win64="$(var.Property_Win64)">
+
+                        <!-- Set required environment variables. -->
+                        <Environment Id="env_VBoxInstallDir" Action="set" Name="VBOX_INSTALL_PATH"
+                                     System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]" />
 
                         <!-- Files -->
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
