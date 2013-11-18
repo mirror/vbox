@@ -673,13 +673,15 @@ DECLINLINE(int) hmR0VmxReadExitInstrInfoVmcs(PVMXTRANSIENT pVmxTransient)
  * Reads the exit qualification from the VMCS into the VMX transient structure.
  *
  * @returns VBox status code.
+ * @param   pVCpu           Pointer to the VMCPU (required for the VMCS cache
+ *                          case).
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
-DECLINLINE(int) hmR0VmxReadExitQualificationVmcs(PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) hmR0VmxReadExitQualificationVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_QUALIFICATION))
     {
-        int rc = VMXReadVmcsGstN(VMX_VMCS_RO_EXIT_QUALIFICATION, &pVmxTransient->uExitQualification);
+        int rc = VMXReadVmcsGstN(VMX_VMCS_RO_EXIT_QUALIFICATION, &pVmxTransient->uExitQualification); NOREF(pVCpu);
         AssertRCReturn(rc, rc);
         pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_EXIT_QUALIFICATION;
     }
@@ -4539,7 +4541,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         {
             int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON, &pVCpu->hm.s.vmx.LastError.u32ExitReason);
             rc    |= VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.LastError.u32InstrError);
-            rc    |= hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+            rc    |= hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
             AssertRC(rc);
 
             pVCpu->hm.s.vmx.LastError.idEnteredCpu = pVCpu->hm.s.idEnteredCpu;
@@ -9362,7 +9364,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(!pVM->hm.s.fNestedPaging);
 
-    int rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
@@ -9916,7 +9918,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitMovCRx, y2);
-    int rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
     const RTGCUINTPTR uExitQualification = pVmxTransient->uExitQualification;
@@ -10049,7 +10051,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitIO, y1);
 
-    int rc2 = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    int rc2 = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc2    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc2    |= hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
     rc2    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);         /* Eflag checks in EMInterpretDisasCurrent(). */
@@ -10270,7 +10272,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
     /* Check if this task-switch occurred while delivery an event through the guest IDT. */
-    int rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
     if (VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE(pVmxTransient->uExitQualification) == VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IDT)
     {
@@ -10355,7 +10357,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
     rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
-    rc |= hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    rc |= hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
     /* See Intel spec. 27-6 "Exit Qualifications for APIC-access VM-exits from Linear Accesses & Guest-Phyiscal Addresses" */
@@ -10453,7 +10455,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         VMMRZCallRing3Enable(pVCpu);
 
 #ifdef VBOX_WITH_STATISTICS
-        rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+        rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
         AssertRCReturn(rc, rc);
         if (VMX_EXIT_QUALIFICATION_DRX_DIRECTION(pVmxTransient->uExitQualification) == VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxWrite);
@@ -10468,7 +10470,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
      * EMInterpretDRx[Write|Read]() calls CPUMIsGuestIn64BitCode() which requires EFER, CS. EFER is always up-to-date, see
      * hmR0VmxSaveGuestAutoLoadStoreMsrs(). Update the segment registers and DR7 from the CPU.
      */
-    rc  = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    rc  = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
@@ -10575,7 +10577,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
 
     RTGCPHYS GCPhys = 0;
     rc  = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
-    rc |= hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    rc |= hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
 #if 0
     rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);     /** @todo Can we do better?  */
 #else
@@ -10702,7 +10704,7 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
      * Get the DR6-like values from the exit qualification and pass it to DBGF
      * for processing.
      */
-    int rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
     /* Refer Intel spec. Table 27-1. "Exit Qualifications for debug exceptions" for the format. */
@@ -11102,7 +11104,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    int rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
