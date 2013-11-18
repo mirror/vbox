@@ -1984,7 +1984,7 @@
 #define VERR_HM_CONFIG_MISMATCH                     (-4103)
 /** Internal processing error in the HM init code. */
 #define VERR_HM_ALREADY_ENABLED_IPE                 (-4104)
-/** Unexpected MSR in the load / restore list.  */
+/** Unexpected MSR in the auto-load/store area.  */
 #define VERR_HM_UNEXPECTED_LD_ST_MSR                (-4105)
 /** No 32-bit to 64-bit switcher in place. */
 #define VERR_HM_NO_32_TO_64_SWITCHER                (-4106)
@@ -2010,8 +2010,6 @@
 #define VERR_HM_INVALID_HM64ON32OP                  (-4116)
 /** Resume guest execution after injecting a double-fault. */
 #define VINF_HM_DOUBLE_FAULT                        4117
-/** MSR swap count exceeded. */
-#define VERR_HM_MSR_SWAP_COUNT_EXCEEDED             (-4118)
 /** @} */
 
 

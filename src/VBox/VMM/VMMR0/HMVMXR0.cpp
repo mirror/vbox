@@ -64,16 +64,6 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 /** Use the function table. */
 #define HMVMX_USE_FUNCTION_TABLE
 
-/**
- * The maximum number of MSRs we are willing to swap during a world-switch.
- * Intel claims 512/check capability MSR, we don't want to do anywhere close
- * to that. See Intel spec. 24.7.2 "VM-Exit Controls for MSRs"
- *
- * Bump this count as and when required, there's no backward compatibility
- * requirement.
- */
-#define HMVMX_MAX_SWAP_MSR_COUNT                  5
-
 /** Determine which tagged-TLB flush handler to use. */
 #define HMVMX_FLUSH_TAGGED_TLB_EPT_VPID           0
 #define HMVMX_FLUSH_TAGGED_TLB_EPT                1
@@ -94,14 +84,12 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 #define HMVMX_UPDATED_GUEST_TR                    RT_BIT(9)
 #define HMVMX_UPDATED_GUEST_SEGMENT_REGS          RT_BIT(10)
 #define HMVMX_UPDATED_GUEST_DEBUG                 RT_BIT(11)
-#define HMVMX_UPDATED_GUEST_FS_BASE_MSR           RT_BIT(12)
-#define HMVMX_UPDATED_GUEST_GS_BASE_MSR           RT_BIT(13)
-#define HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR       RT_BIT(14)
-#define HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR      RT_BIT(15)
-#define HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR      RT_BIT(16)
-#define HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  RT_BIT(17)
-#define HMVMX_UPDATED_GUEST_ACTIVITY_STATE        RT_BIT(18)
-#define HMVMX_UPDATED_GUEST_APIC_STATE            RT_BIT(19)
+#define HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR       RT_BIT(12)
+#define HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR      RT_BIT(13)
+#define HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR      RT_BIT(14)
+#define HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  RT_BIT(15)
+#define HMVMX_UPDATED_GUEST_ACTIVITY_STATE        RT_BIT(16)
+#define HMVMX_UPDATED_GUEST_APIC_STATE            RT_BIT(17)
 #define HMVMX_UPDATED_GUEST_ALL                   (  HMVMX_UPDATED_GUEST_RIP                   \
                                                    | HMVMX_UPDATED_GUEST_RSP                   \
                                                    | HMVMX_UPDATED_GUEST_RFLAGS                \
@@ -114,8 +102,6 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
                                                    | HMVMX_UPDATED_GUEST_TR                    \
                                                    | HMVMX_UPDATED_GUEST_SEGMENT_REGS          \
                                                    | HMVMX_UPDATED_GUEST_DEBUG                 \
-                                                   | HMVMX_UPDATED_GUEST_FS_BASE_MSR           \
-                                                   | HMVMX_UPDATED_GUEST_GS_BASE_MSR           \
                                                    | HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR       \
                                                    | HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR      \
                                                    | HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR      \
@@ -308,6 +294,8 @@ typedef enum VMXMSREXITREAD
     /** Reading this MSR does not cause a VM-exit. */
     VMXMSREXIT_PASSTHRU_READ
 } VMXMSREXITREAD;
+/** Pointer to MSR-bitmap read permissions. */
+typedef VMXMSREXITREAD* PVMXMSREXITREAD;
 
 /**
  * MSR-bitmap write permissions.
@@ -319,6 +307,9 @@ typedef enum VMXMSREXITWRITE
     /** Writing to this MSR does not cause a VM-exit. */
     VMXMSREXIT_PASSTHRU_WRITE
 } VMXMSREXITWRITE;
+/** Pointer to MSR-bitmap write permissions. */
+typedef VMXMSREXITWRITE* PVMXMSREXITWRITE;
+
 
 /**
  * VMX VM-exit handler.
@@ -344,7 +335,6 @@ typedef FNVMXEXITHANDLER *PFNVMXEXITHANDLER;
 *******************************************************************************/
 static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush);
 static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr);
-static void               hmR0VmxClearEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx);
 static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
                                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntState);
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -412,7 +402,9 @@ static int          hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
 static int          hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static int          hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static int          hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+#ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
 static int          hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+#endif
 static uint32_t     hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 /*******************************************************************************
@@ -588,12 +580,11 @@ DECLINLINE(int) hmR0VmxReadEntryXcptErrorCodeVmcs(PVMXTRANSIENT pVmxTransient)
  * the VMX transient structure.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxReadEntryInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) hmR0VmxReadEntryInstrLenVmcs(PVMXTRANSIENT pVmxTransient)
 {
     int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH, &pVmxTransient->cbEntryInstr);
     AssertRCReturn(rc, rc);
@@ -606,10 +597,9 @@ DECLINLINE(int) hmR0VmxReadEntryInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTra
  * transient structure.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
-DECLINLINE(int) hmR0VmxReadExitIntInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) hmR0VmxReadExitIntInfoVmcs(PVMXTRANSIENT pVmxTransient)
 {
     if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_INFO))
     {
@@ -626,10 +616,9 @@ DECLINLINE(int) hmR0VmxReadExitIntInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
  * transient structure.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
-DECLINLINE(int) hmR0VmxReadExitIntErrorCodeVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) hmR0VmxReadExitIntErrorCodeVmcs(PVMXTRANSIENT pVmxTransient)
 {
     if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE))
     {
@@ -649,7 +638,7 @@ DECLINLINE(int) hmR0VmxReadExitIntErrorCodeVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmx
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
-DECLINLINE(int) hmR0VmxReadExitInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) hmR0VmxReadExitInstrLenVmcs(PVMXTRANSIENT pVmxTransient)
 {
     if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_LEN))
     {
@@ -666,10 +655,9 @@ DECLINLINE(int) hmR0VmxReadExitInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
  * the VMX transient structure.
  *
  * @returns VBox status code.
- * @param   pVCpu           The cross context per CPU structure.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
-DECLINLINE(int) hmR0VmxReadExitInstrInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) hmR0VmxReadExitInstrInfoVmcs(PVMXTRANSIENT pVmxTransient)
 {
     if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_INFO))
     {
@@ -685,10 +673,9 @@ DECLINLINE(int) hmR0VmxReadExitInstrInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTra
  * Reads the exit qualification from the VMCS into the VMX transient structure.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
-DECLINLINE(int) hmR0VmxReadExitQualificationVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) hmR0VmxReadExitQualificationVmcs(PVMXTRANSIENT pVmxTransient)
 {
     if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_QUALIFICATION))
     {
@@ -1162,6 +1149,57 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
 }
 
 
+#ifdef VBOX_STRICT
+/**
+ * Gets the permission bits for the specified MSR in the MSR bitmap.
+ *
+ * @returns VBox status code.
+ * @retval VINF_SUCCESS        if the specified MSR is found.
+ * @retval VERR_NOT_FOUND      if the specified MSR is not found.
+ * @retval VERR_NOT_SUPPORTED  if VT-x doesn't allow the MSR.
+ *
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   uMsr            The MSR.
+ * @param   penmRead        Where to store the read permissions.
+ * @param   penmWrite       Where to store the write permissions.
+ */
+static int hmR0VmxGetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, PVMXMSREXITREAD penmRead, PVMXMSREXITWRITE penmWrite)
+{
+    AssertPtrReturn(penmRead,  VERR_INVALID_PARAMETER);
+    AssertPtrReturn(penmWrite, VERR_INVALID_PARAMETER);
+    int32_t iBit;
+    uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.vmx.pvMsrBitmap;
+
+    /* See hmR0VmxSetMsrPermission() for the layout. */
+    if (uMsr <= 0x00001FFF)
+        iBit = uMsr;
+    else if (   uMsr >= 0xC0000000
+             && uMsr <= 0xC0001FFF)
+    {
+        iBit = (uMsr - 0xC0000000);
+        pbMsrBitmap += 0x400;
+    }
+    else
+    {
+        AssertMsgFailed(("hmR0VmxGetMsrPermission: Invalid MSR %#RX32\n", uMsr));
+        return VERR_NOT_SUPPORTED;
+    }
+
+    Assert(iBit <= 0x1fff);
+    if (ASMBitTest(pbMsrBitmap, iBit))
+        *penmRead = VMXMSREXIT_INTERCEPT_READ;
+    else
+        *penmRead = VMXMSREXIT_PASSTHRU_READ;
+
+    if (ASMBitTest(pbMsrBitmap + 0x800, iBit))
+        *penmWrite = VMXMSREXIT_INTERCEPT_WRITE;
+    else
+        *penmWrite = VMXMSREXIT_PASSTHRU_WRITE;
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_STRICT */
+
+
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
 /**
  * Updates the VMCS with the number of effective MSRs in the auto-load/store MSR
@@ -1173,8 +1211,14 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
  */
 DECLINLINE(int) hmR0VmxSetAutoLoadStoreMsrCount(PVMCPU pVCpu, uint32_t cMsrs)
 {
-    /* Update the VCPU's copy of the guest MSR count. */
-    pVCpu->hm.s.vmx.cGuestMsrs = cMsrs;
+    /* Shouldn't ever happen but there -is- a number. We're well within the recommended 512. */
+    uint32_t const cMaxSupportedMsrs = MSR_IA32_VMX_MISC_MAX_MSR(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc);
+    if (RT_UNLIKELY(cMsrs > cMaxSupportedMsrs))
+    {
+        LogRel(("CPU auto-load/store MSR count in VMCS exceeded cMsrs=%u Supported=%u.\n", cMsrs, cMaxSupportedMsrs));
+        pVCpu->hm.s.u32HMError = VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE;
+        return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
+    }
 
     /* Update number of guest MSRs to load/store across the world-switch. */
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, cMsrs);  AssertRCReturn(rc, rc);
@@ -1182,64 +1226,72 @@ DECLINLINE(int) hmR0VmxSetAutoLoadStoreMsrCount(PVMCPU pVCpu, uint32_t cMsrs)
 
     /* Update number of host MSRs to load after the world-switch. Identical to guest-MSR count as it's always paired. */
     rc     = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,  cMsrs);  AssertRCReturn(rc, rc);
+
+    /* Update the VCPU's copy of the MSR count. */
+    pVCpu->hm.s.vmx.cMsrs = cMsrs;
+
     return VINF_SUCCESS;
 }
 
 
 /**
- * Adds a guest/host MSR pair to be swapped during the world-switch as
- * part of the auto-load/store MSR area in the VMCS.
+ * Adds a new (or updates the value of an existing) guest/host MSR
+ * pair to be swapped during the world-switch as part of the
+ * auto-load/store MSR area in the VMCS.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   uMsr        The MSR.
- * @param   uGuestMsr   Value of the guest MSR.
- * @param   uHostMsr    Value of the host MSR.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   uMsr            The MSR.
+ * @param   uGuestMsr       Value of the guest MSR.
+ * @param   fUpdateHostMsr  Whether to update the value of the host MSR if
+ *                          necessary.
  */
-static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGuestMsrValue, uint64_t uHostMsrValue)
+static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGuestMsrValue, bool fUpdateHostMsr)
 {
-    AssertMsg(HMVMX_MAX_SWAP_MSR_COUNT < MSR_IA32_VMX_MISC_MAX_MSR(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc),
-              ("MSR swap count exceeded. Cpu reports %#RX32, our limit %#RX32\n",
-               MSR_IA32_VMX_MISC_MAX_MSR(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc), HMVMX_MAX_SWAP_MSR_COUNT));
-
-    PVMXAUTOMSR pGuestMsr  = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
-    uint32_t    cGuestMsrs = pVCpu->hm.s.vmx.cGuestMsrs;
+    PVMXAUTOMSR pGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+    uint32_t    cMsrs     = pVCpu->hm.s.vmx.cMsrs;
     uint32_t    i;
-    for (i = 0; i < cGuestMsrs; i++)
+    for (i = 0; i < cMsrs; i++)
     {
         if (pGuestMsr->u32Msr == uMsr)
             break;
         pGuestMsr++;
     }
 
-    AssertReturn(i < HMVMX_MAX_SWAP_MSR_COUNT, VERR_HM_MSR_SWAP_COUNT_EXCEEDED);
-    if (i == cGuestMsrs)
+    bool fAdded = false;
+    if (i == cMsrs)
     {
-        ++cGuestMsrs;
-        /* Shouldn't ever happen but there -is- a number. We're well within the recommended 512. */
-        if (RT_UNLIKELY(cGuestMsrs > MSR_IA32_VMX_MISC_MAX_MSR(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc)))
-        {
-            LogRel(("CPU autoload/store MSR count in VMCS exceeded cGuestMsrs=%u.\n", cGuestMsrs));
-            pVCpu->hm.s.u32HMError = VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE;
-            return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
-        }
-
-        int rc = hmR0VmxSetAutoLoadStoreMsrCount(pVCpu, cGuestMsrs);
+        ++cMsrs;
+        int rc = hmR0VmxSetAutoLoadStoreMsrCount(pVCpu, cMsrs);
         AssertRCReturn(rc, rc);
+
+        /* Now that we're swapping MSRs during the world-switch, allow the guest to read/write them without causing VM-exits. */
+        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
+            hmR0VmxSetMsrPermission(pVCpu, uMsr, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
+
+        fAdded = true;
     }
 
     /* Update the MSR values in the auto-load/store MSR area. */
     pGuestMsr->u32Msr    = uMsr;
     pGuestMsr->u64Value  = uGuestMsrValue;
 
+    /* Create/update the MSR slot in the host MSR area. */
     PVMXAUTOMSR pHostMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
     pHostMsr += i;
     pHostMsr->u32Msr     = uMsr;
-    pHostMsr->u64Value   = uHostMsrValue;
 
-    /* Now that we're swapping MSRs during the world-switch, allow the guest to read/write them without causing VM-exits. */
-    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS);
-    hmR0VmxSetMsrPermission(pVCpu, uMsr, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
+    /*
+     * Update the host MSR only when requested by the called AND when we're
+     * adding it to the auto-load/store area. Otherwise, it would have been
+     * updated by hmR0VmxSaveHostMsrs(). We do this for performance reasons.
+     */
+    if (   fAdded
+        && fUpdateHostMsr)
+    {
+        pHostMsr->u64Value = ASMRdMsr(pHostMsr->u32Msr);
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -1257,75 +1309,145 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGue
  */
 static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr)
 {
-    PVMXAUTOMSR pGuestMsr  = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
-    uint32_t    cGuestMsrs = pVCpu->hm.s.vmx.cGuestMsrs;
-    uint32_t    i;
-    for (i = 0; i < cGuestMsrs; i++)
+    PVMXAUTOMSR pGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+    uint32_t    cMsrs     = pVCpu->hm.s.vmx.cMsrs;
+    for (uint32_t i = 0; i < cMsrs; i++)
     {
         /* Find the MSR. */
         if (pGuestMsr->u32Msr == uMsr)
         {
             /* If it's the last MSR, simply reduce the count. */
-            if (i == cGuestMsrs - 1)
+            if (i == cMsrs - 1)
             {
-                --cGuestMsrs;
+                --cMsrs;
                 break;
             }
 
             /* Remove it by swapping the last MSR in place of it, and reducing the count. */
             PVMXAUTOMSR pLastGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
-            pLastGuestMsr            += cGuestMsrs;
+            pLastGuestMsr            += cMsrs;
             pGuestMsr->u32Msr         = pLastGuestMsr->u32Msr;
             pGuestMsr->u64Value       = pLastGuestMsr->u64Value;
 
             PVMXAUTOMSR pHostMsr     = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
             PVMXAUTOMSR pLastHostMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
-            pLastHostMsr            += cGuestMsrs;
+            pLastHostMsr            += cMsrs;
             pHostMsr->u32Msr         = pLastHostMsr->u32Msr;
             pHostMsr->u64Value       = pLastHostMsr->u64Value;
-            --cGuestMsrs;
+            --cMsrs;
             break;
         }
         pGuestMsr++;
     }
 
     /* Update the VMCS if the count changed (meaning the MSR was found). */
-    if (cGuestMsrs != pVCpu->hm.s.vmx.cGuestMsrs)
+    if (cMsrs != pVCpu->hm.s.vmx.cMsrs)
     {
-        int rc = hmR0VmxSetAutoLoadStoreMsrCount(pVCpu, cGuestMsrs);
+        int rc = hmR0VmxSetAutoLoadStoreMsrCount(pVCpu, cMsrs);
         AssertRCReturn(rc, rc);
+
+        /* We're no longer swapping MSRs during the world-switch, intercept guest read/writes to them. */
+        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
+            hmR0VmxSetMsrPermission(pVCpu, uMsr, VMXMSREXIT_INTERCEPT_READ, VMXMSREXIT_INTERCEPT_WRITE);
     }
 
-    /* We're no longer swapping MSRs during the world-switch, intercept guest read/writes to them. */
-    hmR0VmxSetMsrPermission(pVCpu, uMsr, VMXMSREXIT_INTERCEPT_READ, VMXMSREXIT_INTERCEPT_WRITE);
     return VINF_SUCCESS;
 }
 
 
 /**
- * Updates the value of a host MSR in the auto-load/store area in the VMCS.
+ * Checks if the specified guest MSR is part of the auto-load/store area in
+ * the VMCS.
  *
- * @returns VBox status code.
- * @param   pVCpu               Pointer to the VMCPU.
- * @param   uMsr                The MSR.
+ * @returns true if found, false otherwise.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   uMsr        The MSR to find.
  */
-static int hmR0VmxUpdateAutoLoadStoreHostMsr(PVMCPU pVCpu, uint32_t uMsr)
+static bool hmR0VmxIsAutoLoadStoreGuestMsr(PVMCPU pVCpu, uint32_t uMsr)
 {
-    PVMXAUTOMSR pHostMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
-    uint32_t    cMsrs    = pVCpu->hm.s.vmx.cGuestMsrs;
+    PVMXAUTOMSR pGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+    uint32_t    cMsrs     = pVCpu->hm.s.vmx.cMsrs;
 
-    for (uint32_t i = 0; i < cMsrs; i++)
+    for (uint32_t i = 0; i < cMsrs; i++, pGuestMsr++)
     {
-        if (pHostMsr->u32Msr == uMsr)
-        {
-            pHostMsr->u64Value = ASMRdMsr(pHostMsr->u32Msr);
-            return VINF_SUCCESS;
-        }
+        if (pGuestMsr->u32Msr == uMsr)
+            return true;
     }
-
-    return VERR_NOT_FOUND;
+    return false;
 }
 
+
+/**
+ * Updates the value of all host MSRs in the auto-load/store area in the VMCS.
+ *
+ * @param   pVCpu           Pointer to the VMCPU.
+ */
+static void hmR0VmxUpdateAutoLoadStoreHostMsrs(PVMCPU pVCpu)
+{
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    PVMXAUTOMSR pHostMsr  = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
+    PVMXAUTOMSR pGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+    uint32_t    cMsrs    = pVCpu->hm.s.vmx.cMsrs;
+
+    for (uint32_t i = 0; i < cMsrs; i++, pHostMsr++, pGuestMsr++)
+    {
+        AssertReturnVoid(pHostMsr->u32Msr == pGuestMsr->u32Msr);
+        pHostMsr->u64Value = ASMRdMsr(pHostMsr->u32Msr);
+    }
+
+    pVCpu->hm.s.vmx.fUpdatedHostMsrs = true;
+}
+
+
+#ifdef VBOX_STRICT
+/**
+ * Verifies whether the guest/host MSR pairs in the auto-load/store area in the
+ * VMCS are correct.
+ *
+ * @param   pVCpu           Pointer to the VMCPU.
+ */
+static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
+{
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    /* Verify MSR counts in the VMCS are what we think it should be.  */
+    uint32_t cMsrs;
+    int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, &cMsrs);  AssertRC(rc);
+    Assert(cMsrs == pVCpu->hm.s.vmx.cMsrs);
+
+    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, &cMsrs);      AssertRC(rc);
+    Assert(cMsrs == pVCpu->hm.s.vmx.cMsrs);
+
+    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, &cMsrs);       AssertRC(rc);
+    Assert(cMsrs == pVCpu->hm.s.vmx.cMsrs);
+
+    PVMXAUTOMSR pHostMsr  = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
+    PVMXAUTOMSR pGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+    for (uint32_t i = 0; i < cMsrs; i++, pHostMsr++, pGuestMsr++)
+    {
+        /* Verify that the MSRs are paired properly and that the host MSR has the correct value. */
+        AssertMsgReturnVoid(pHostMsr->u32Msr == pGuestMsr->u32Msr, ("HostMsr=%#RX32 GuestMsr=%#RX32\n", pHostMsr->u32Msr,
+                                                                    pGuestMsr->u32Msr));
+
+        uint64_t u64Msr = ASMRdMsr(pHostMsr->u32Msr);
+        AssertMsgReturnVoid(pHostMsr->u64Value == u64Msr, ("u32Msr=%#RX32 VMCS Value=%#RX64 ASMRdMsr=%#RX64\n", pHostMsr->u32Msr,
+                                                           pHostMsr->u64Value, u64Msr));
+
+        /* Verify that the permissions are as expected in the MSR bitmap. */
+        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
+        {
+            VMXMSREXITREAD  enmRead;
+            VMXMSREXITWRITE enmWrite;
+            rc = hmR0VmxGetMsrPermission(pVCpu, pGuestMsr->u32Msr, &enmRead, &enmWrite);
+            AssertMsgReturnVoid(rc == VINF_SUCCESS, ("hmR0VmxGetMsrPermission! failed. rc=%Rrc\n", rc));
+            AssertMsgReturnVoid(enmRead == VMXMSREXIT_PASSTHRU_READ, ("u32Msr=%#RX32 No passthru read permission!\n",
+                                                                      pGuestMsr->u32Msr));
+            AssertMsgReturnVoid(enmWrite == VMXMSREXIT_PASSTHRU_WRITE, ("u32Msr=%#RX32 No passthru write permission!\n",
+                                                                        pGuestMsr->u32Msr));
+        }
+    }
+}
+# endif /* VBOX_STRICT */
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
 
@@ -1380,6 +1502,7 @@ static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
  */
 static void hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr)
 {
+    NOREF(pVM);
     AssertPtr(pVM);
     Assert(pVM->hm.s.vmx.fVpid);
 
@@ -1463,6 +1586,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
  */
 VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
+    NOREF(pVM); NOREF(GCPhys);
     LogFlowFunc(("%RGp\n", GCPhys));
 
     /*
@@ -2045,15 +2169,11 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
 
         /*
          * The guest can access the following MSRs (read, write) without causing VM-exits; they are loaded/stored
-         * automatically (either as part of the MSR-load/store areas or dedicated fields in the VMCS).
+         * automatically as dedicated fields in the VMCS.
          */
         hmR0VmxSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_CS,  VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         hmR0VmxSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_ESP, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         hmR0VmxSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_EIP, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
-        hmR0VmxSetMsrPermission(pVCpu, MSR_K8_LSTAR,          VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
-        hmR0VmxSetMsrPermission(pVCpu, MSR_K6_STAR,           VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
-        hmR0VmxSetMsrPermission(pVCpu, MSR_K8_SF_MASK,        VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
-        hmR0VmxSetMsrPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         hmR0VmxSetMsrPermission(pVCpu, MSR_K8_GS_BASE,        VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         hmR0VmxSetMsrPermission(pVCpu, MSR_K8_FS_BASE,        VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
     }
@@ -2119,11 +2239,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
         }
 
         if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-        {
             val |= VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP;                     /* Enable RDTSCP support. */
-            if (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
-                hmR0VmxSetMsrPermission(pVCpu, MSR_K8_TSC_AUX, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
-        }
 
         if ((val & zap) != val)
         {
@@ -2159,6 +2275,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
  */
 static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
 {
+    NOREF(pVM);
     AssertPtr(pVM);
     AssertPtr(pVCpu);
 
@@ -2428,6 +2545,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
  */
 DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
 {
+    NOREF(pVM); NOREF(pVCpu);
+
     RTCCUINTREG uReg = ASMGetCR0();
     int rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_CR0, uReg);
     AssertRCReturn(rc, rc);
@@ -2488,6 +2607,7 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
  */
 DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 {
+    NOREF(pVM);
     int rc = VERR_INTERNAL_ERROR_5;
 
     /*
@@ -2713,11 +2833,14 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
  */
 DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
 {
+    NOREF(pVM);
+
     AssertPtr(pVCpu);
     AssertPtr(pVCpu->hm.s.vmx.pvHostMsr);
 
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+#if 0
     PVMXAUTOMSR  pHostMsr       = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
     uint32_t     cHostMsrs      = 0;
     uint32_t     u32HostExtFeatures = pVM->hm.s.cpuid.u32AMDFeatureEDX;
@@ -2761,7 +2884,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
 # if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (CPUMIsGuestInLongMode(pVCpu))
         {
-            /* Must match the EFER value in our 64 bits switcher. */
+            /* Must match the EFER value in our 64-bit switcher. */
             pHostMsr->u64Value = u64HostEfer | MSR_K6_EFER_LME | MSR_K6_EFER_SCE | MSR_K6_EFER_NXE;
         }
         else
@@ -2811,6 +2934,10 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     }
 
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, cHostMsrs);
+#endif
+
+    if (pVCpu->hm.s.vmx.cMsrs > 0)
+        hmR0VmxUpdateAutoLoadStoreHostMsrs(pVCpu);
 #endif  /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
     /*
@@ -2922,6 +3049,8 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    NOREF(pMixedCtx);
+
     int rc = VINF_SUCCESS;
     if (VMCPU_HMCF_IS_PENDING(pVCpu, HM_CHANGED_VMX_EXIT_CTLS))
     {
@@ -2991,6 +3120,8 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    NOREF(pMixedCtx);
+
     int rc = VINF_SUCCESS;
     if (VMCPU_HMCF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE))
     {
@@ -3086,6 +3217,7 @@ DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxLoadGuestIntrState(PVMCPU pVCpu, uint32_t uIntrState)
 {
+    NOREF(pVCpu);
     AssertMsg(!(uIntrState & 0xfffffff0), ("%#x\n", uIntrState));   /* Bits 31:4 MBZ. */
     Assert((uIntrState & 0x3) != 0x3);                              /* Block-by-STI and MOV SS cannot be simultaneously set. */
     int rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, uIntrState);
@@ -3537,7 +3669,7 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             {
                 /* We use 4 MB pages in our identity mapping page table when the guest doesn't have paging. */
                 u32GuestCR4 |= X86_CR4_PSE;
-                /* Our identity mapping is a 32 bits page directory. */
+                /* Our identity mapping is a 32-bit page directory. */
                 u32GuestCR4 &= ~X86_CR4_PAE;
             }
             /* else use guest CR4.*/
@@ -3952,12 +4084,11 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   idxBase     Index of the segment base in the VMCS.
  * @param   idxAccess   Index of the access rights of the segment in the VMCS.
  * @param   pSelReg     Pointer to the segment selector.
- * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
  */
 static int hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLimit, uint32_t idxBase,
-                                       uint32_t idxAccess, PCPUMSELREG pSelReg, PCPUMCTX pCtx)
+                                       uint32_t idxAccess, PCPUMSELREG pSelReg)
 {
     int rc = VMXWriteVmcs32(idxSel,    pSelReg->Sel);       /* 16-bit guest selector field. */
     AssertRCReturn(rc, rc);
@@ -4048,22 +4179,22 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         }
 #endif
         rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_CS, VMX_VMCS32_GUEST_CS_LIMIT, VMX_VMCS_GUEST_CS_BASE,
-                                     VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS, &pMixedCtx->cs, pMixedCtx);
+                                     VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS, &pMixedCtx->cs);
         AssertRCReturn(rc, rc);
         rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_SS, VMX_VMCS32_GUEST_SS_LIMIT, VMX_VMCS_GUEST_SS_BASE,
-                                     VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS, &pMixedCtx->ss, pMixedCtx);
+                                     VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS, &pMixedCtx->ss);
         AssertRCReturn(rc, rc);
         rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_DS, VMX_VMCS32_GUEST_DS_LIMIT, VMX_VMCS_GUEST_DS_BASE,
-                                     VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS, &pMixedCtx->ds, pMixedCtx);
+                                     VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS, &pMixedCtx->ds);
         AssertRCReturn(rc, rc);
         rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_ES, VMX_VMCS32_GUEST_ES_LIMIT, VMX_VMCS_GUEST_ES_BASE,
-                                     VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, &pMixedCtx->es, pMixedCtx);
+                                     VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, &pMixedCtx->es);
         AssertRCReturn(rc, rc);
         rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_FS, VMX_VMCS32_GUEST_FS_LIMIT, VMX_VMCS_GUEST_FS_BASE,
-                                     VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS, &pMixedCtx->fs, pMixedCtx);
+                                     VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS, &pMixedCtx->fs);
         AssertRCReturn(rc, rc);
         rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_GS, VMX_VMCS32_GUEST_GS_LIMIT, VMX_VMCS_GUEST_GS_BASE,
-                                     VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS, &pMixedCtx->gs, pMixedCtx);
+                                     VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS, &pMixedCtx->gs);
         AssertRCReturn(rc, rc);
 
 #ifdef VBOX_STRICT
@@ -4216,6 +4347,11 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Loads certain guest MSRs into the VM-entry MSR-load and VM-exit MSR-store
  * areas. These MSRs will automatically be loaded to the host CPU on every
  * successful VM entry and stored from the host CPU on every successful VM exit.
+ *
+ * This also creates/updates MSR slots for the host MSRs. The actual host
+ * MSR values are -not- updated here for performance reasons. See
+ * hmR0VmxSaveHostMsrs().
+ *
  * Also loads the sysenter MSRs into the guest-state area in the VMCS.
  *
  * @returns VBox status code.
@@ -4232,65 +4368,28 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertPtr(pVCpu->hm.s.vmx.pvGuestMsr);
 
     /*
-     * MSRs covered by Auto-load/store: EFER, LSTAR, STAR, SF_MASK, TSC_AUX (RDTSCP).
+     * Shared MSRs that we use the auto-load/store MSR area in the VMCS.
      */
     int rc = VINF_SUCCESS;
     if (VMCPU_HMCF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS))
     {
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-        PVM         pVM        = pVCpu->CTX_SUFF(pVM);
-        PVMXAUTOMSR pGuestMsr  = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
-        uint32_t    cGuestMsrs = 0;
-
         /* See Intel spec. 4.1.4 "Enumeration of Paging Features by CPUID". */
-        /** @todo r=ramshankar: Optimize this further to do lazy restoration and only
-         *        when the guest really is in 64-bit mode. */
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
         bool fSupportsLongMode = CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
         if (fSupportsLongMode)
         {
-            pGuestMsr->u32Msr      = MSR_K8_LSTAR;
-            pGuestMsr->u32Reserved = 0;
-            pGuestMsr->u64Value    = pMixedCtx->msrLSTAR;           /* 64 bits mode syscall rip */
-            pGuestMsr++; cGuestMsrs++;
-            pGuestMsr->u32Msr      = MSR_K6_STAR;
-            pGuestMsr->u32Reserved = 0;
-            pGuestMsr->u64Value    = pMixedCtx->msrSTAR;            /* legacy syscall eip, cs & ss */
-            pGuestMsr++; cGuestMsrs++;
-            pGuestMsr->u32Msr      = MSR_K8_SF_MASK;
-            pGuestMsr->u32Reserved = 0;
-            pGuestMsr->u64Value    = pMixedCtx->msrSFMASK;          /* syscall flag mask */
-            pGuestMsr++; cGuestMsrs++;
-            pGuestMsr->u32Msr      = MSR_K8_KERNEL_GS_BASE;
-            pGuestMsr->u32Reserved = 0;
-            pGuestMsr->u64Value    = pMixedCtx->msrKERNELGSBASE;    /* swapgs exchange value */
-            pGuestMsr++; cGuestMsrs++;
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_LSTAR,          pMixedCtx->msrLSTAR,        false /* fUpdateHostMsr */);
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_STAR,           pMixedCtx->msrSTAR,         false /* fUpdateHostMsr */);
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK,       false /* fUpdateHostMsr */);
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE, false /* fUpdateHostMsr */);
         }
 
-        /*
-         * RDTSCP requires the TSC_AUX MSR. Host and guest share the physical MSR. So we have to
-         * load the guest's copy always (since the MSR bitmap allows passthru unconditionally).
-         */
-        if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-        {
-            pGuestMsr->u32Msr      = MSR_K8_TSC_AUX;
-            pGuestMsr->u32Reserved = 0;
-            rc = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &pGuestMsr->u64Value);
-            AssertRCReturn(rc, rc);
-            pGuestMsr++; cGuestMsrs++;
-        }
-
-        /* Shouldn't ever happen but there -is- a number. We're well within the recommended 512. */
-        if (cGuestMsrs > MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.Msrs.u64Misc))
-        {
-            LogRel(("CPU autoload/store MSR count in VMCS exceeded cGuestMsrs=%u.\n", cGuestMsrs));
-            pVCpu->hm.s.u32HMError = VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE;
-            return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
-        }
-
-        /* Update the VCPU's copy of the guest MSR count. */
-        pVCpu->hm.s.vmx.cGuestMsrs = cGuestMsrs;
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, cGuestMsrs);          AssertRCReturn(rc, rc);
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, cGuestMsrs);          AssertRCReturn(rc, rc);
+# ifdef DEBUG
+        PVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+        for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cMsrs; i++, pMsr++)
+            Log4(("MSR[%RU32]: u32Msr=%#RX32 u64Value=%#RX64\n", i, pMsr->u32Msr, pMsr->u64Value));
+# endif
 #endif  /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         VMCPU_HMCF_CLEAR(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
@@ -4336,6 +4435,7 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxLoadGuestActivityState(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    NOREF(pCtx);
     /** @todo See if we can make use of other states, e.g.
      *        VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN or HLT.  */
     if (VMCPU_HMCF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_ACTIVITY_STATE))
@@ -4454,7 +4554,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         {
             int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON, &pVCpu->hm.s.vmx.LastError.u32ExitReason);
             rc    |= VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.LastError.u32InstrError);
-            rc    |= hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+            rc    |= hmR0VmxReadExitQualificationVmcs(pVmxTransient);
             AssertRC(rc);
 
             pVCpu->hm.s.vmx.LastError.idEnteredCpu = pVCpu->hm.s.idEnteredCpu;
@@ -4633,7 +4733,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
             AssertMsgFailed(("hmR0VmxReportWorldSwitchError %Rrc (%#x)\n", rcVMRun, rcVMRun));
             break;
     }
-    NOREF(pVM);
+    NOREF(pVM); NOREF(pCtx);
 }
 
 
@@ -4764,7 +4864,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 
 
 /**
- * Prepares for and executes VMLAUNCH (64 bits guests) for 32-bit hosts
+ * Prepares for and executes VMLAUNCH (64-bit guests) for 32-bit hosts
  * supporting 64-bit guests.
  *
  * @returns VBox status code.
@@ -4939,7 +5039,7 @@ static int hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   idxField        The VMCS field encoding.
- * @param   u64Val          16, 32 or 64 bits value.
+ * @param   u64Val          16, 32 or 64-bit value.
  */
 VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
 {
@@ -5036,7 +5136,7 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
  *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   idxField    The VMCS field encoding.
- * @param   u64Val      16, 32 or 64 bits value.
+ * @param   u64Val      16, 32 or 64-bit value.
  */
 VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
 {
@@ -5112,12 +5212,10 @@ VMMR0DECL(void) VMXReadCachedVmcsStore(PVMCPU pVCpu, PVMCSCACHE pCache)
  *
  * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
- * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
- *                          out-of-sync. Make sure to update the required fields
- *                          before using them.
+ *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
 {
     int  rc            = VERR_INTERNAL_ERROR_5;
     bool fOffsettedTsc = false;
@@ -5233,6 +5331,7 @@ DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntInfo, uint3
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    NOREF(pMixedCtx);
     uint32_t u32IntInfo  = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     u32IntInfo          |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
@@ -5264,7 +5363,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     AssertRCReturn(rc, rc);
     if (VMX_IDT_VECTORING_INFO_VALID(pVmxTransient->uIdtVectoringInfo))
     {
-        rc = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
+        rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
         AssertRCReturn(rc, rc);
 
         uint32_t uIntType    = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
@@ -5402,6 +5501,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
  */
 static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    NOREF(pMixedCtx);
+
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0))
     {
         uint32_t uVal    = 0;
@@ -5433,6 +5534,8 @@ static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    NOREF(pMixedCtx);
+
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR4))
     {
@@ -5600,6 +5703,7 @@ static void hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    NOREF(pMixedCtx);
     /* Nothing to do for now until we make use of different guest-CPU activity state. Just update the flag. */
     pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_ACTIVITY_STATE;
     return VINF_SUCCESS;
@@ -5647,58 +5751,6 @@ static int hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
- * Saves the guest FS_BASE MSRs from the current VMCS into the guest-CPU
- * context.
- *
- * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
- *                      out-of-sync. Make sure to update the required fields
- *                      before using them.
- *
- * @remarks No-long-jump zone!!!
- */
-static int hmR0VmxSaveGuestFSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
-{
-    int rc = VINF_SUCCESS;
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_FS_BASE_MSR))
-    {
-        uint64_t u64Val = 0;
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_FS_BASE, &u64Val);   AssertRCReturn(rc, rc);
-        pMixedCtx->fs.u64Base = u64Val;
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_FS_BASE_MSR;
-    }
-    return rc;
-}
-
-
-/**
- * Saves the guest GS_BASE MSRs from the current VMCS into the guest-CPU
- * context.
- *
- * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
- *                      out-of-sync. Make sure to update the required fields
- *                      before using them.
- *
- * @remarks No-long-jump zone!!!
- */
-static int hmR0VmxSaveGuestGSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
-{
-    int rc = VINF_SUCCESS;
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_GS_BASE_MSR))
-    {
-        uint64_t u64Val = 0;
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_GS_BASE, &u64Val);   AssertRCReturn(rc, rc);
-        pMixedCtx->gs.u64Base = u64Val;
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_GS_BASE_MSR;
-    }
-    return rc;
-}
-
-
-/**
  * Saves the auto load/store'd guest MSRs from the current VMCS into the
  * guest-CPU context. Currently these are LSTAR, STAR, SFMASK, KERNEL-GS BASE
  * and TSC_AUX.
@@ -5717,18 +5769,17 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         return VINF_SUCCESS;
 
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cGuestMsrs; i++)
+    PVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+    Log4(("hmR0VmxSaveGuestAutoLoadStoreMsrs: cMsrs=%u\n", pVCpu->hm.s.vmx.cMsrs));
+    for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cMsrs; i++, pMsr++)
     {
-        PVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
-        pMsr += i;
         switch (pMsr->u32Msr)
         {
-            case MSR_K8_LSTAR:          pMixedCtx->msrLSTAR  = pMsr->u64Value;                   break;
-            case MSR_K6_STAR:           pMixedCtx->msrSTAR   = pMsr->u64Value;                   break;
-            case MSR_K8_SF_MASK:        pMixedCtx->msrSFMASK = pMsr->u64Value;                   break;
-            case MSR_K8_TSC_AUX:        CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, pMsr->u64Value);  break;
+            case MSR_K8_LSTAR:          pMixedCtx->msrLSTAR        = pMsr->u64Value;             break;
+            case MSR_K6_STAR:           pMixedCtx->msrSTAR         = pMsr->u64Value;             break;
+            case MSR_K8_SF_MASK:        pMixedCtx->msrSFMASK       = pMsr->u64Value;             break;
             case MSR_K8_KERNEL_GS_BASE: pMixedCtx->msrKERNELGSBASE = pMsr->u64Value;             break;
-            case MSR_K6_EFER:           /* EFER can't be changed without causing a VM-exit. */   break;
+            case MSR_K8_TSC_AUX:        CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, pMsr->u64Value);  break;
             default:
             {
                 AssertFailed();
@@ -5866,6 +5917,8 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLimit, uint32_t idxBase, uint32_t idxAccess,
                                       PCPUMSELREG pSelReg)
 {
+    NOREF(pVCpu);
+
     uint32_t u32Val = 0;
     int rc = VMXReadVmcs32(idxSel, &u32Val);
     AssertRCReturn(rc, rc);
@@ -6085,6 +6138,8 @@ static int hmR0VmxSaveGuestDR7(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    NOREF(pMixedCtx);
+
     /* Updating TPR is already done in hmR0VmxPostRunGuest(). Just update the flag. */
     pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_APIC_STATE;
     return VINF_SUCCESS;
@@ -6134,12 +6189,6 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     rc = hmR0VmxSaveGuestSysenterMsrs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestSysenterMsrs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
-
-    rc = hmR0VmxSaveGuestFSBaseMsr(pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestFSBaseMsr failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
-
-    rc = hmR0VmxSaveGuestGSBaseMsr(pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestGSBaseMsr failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
     rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestAutoLoadStoreMsrs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
@@ -6900,6 +6949,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertRC(rc2);
 
     Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET);
+    NOREF(fBlockMovSS); NOREF(fBlockSti);
     return rc;
 }
 
@@ -6914,6 +6964,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    NOREF(pMixedCtx);
     uint32_t u32IntInfo = X86_XCPT_UD | VMX_EXIT_INTERRUPTION_INFO_VALID;
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
@@ -6948,6 +6999,7 @@ DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t *
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    NOREF(pMixedCtx);
     uint32_t u32IntInfo  = X86_XCPT_DB | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
@@ -6966,6 +7018,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t cbInstr)
 {
+    NOREF(pMixedCtx);
     uint32_t u32IntInfo  = X86_XCPT_OF | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
@@ -7007,6 +7060,7 @@ DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErro
  */
 DECLINLINE(void) hmR0VmxSetPendingIntN(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint16_t uVector, uint32_t cbInstr)
 {
+    NOREF(pMixedCtx);
     uint32_t u32IntInfo = uVector | VMX_EXIT_INTERRUPTION_INFO_VALID;
     if (   uVector == X86_XCPT_BP
         || uVector == X86_XCPT_OF)
@@ -7305,7 +7359,7 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     AssertPtr(pVCpu);
     Assert(pVM->hm.s.vmx.fSupported);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    NOREF(pCpu);
+    NOREF(pCpu); NOREF(pVM);
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
     Assert(VMCPU_HMCF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
@@ -7346,6 +7400,8 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
  */
 VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit)
 {
+    NOREF(fGlobalInit);
+
     switch (enmEvent)
     {
         case RTTHREADCTXEVENT_PREEMPTING:
@@ -7550,7 +7606,7 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestSegmentRegs: rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     rc = hmR0VmxLoadGuestMsrs(pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestMsrs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadSharedMsrs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     rc = hmR0VmxLoadGuestApicState(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestApicState! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
@@ -7587,6 +7643,8 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    NOREF(pVM);
+
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
@@ -7840,6 +7898,13 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     }
 
     /*
+     * The host MSR values the very first time around won't be updated, so we need to
+     * fill those values in. Subsequently, it's updated as part of the host state.
+     */
+    if (!pVCpu->hm.s.vmx.fUpdatedHostMsrs)
+        VMCPU_HMCF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT);
+
+    /*
      * Load the host state bits as we may've been preempted (only happens when
      * thread-context hooks are used or when hmR0VmxSetupVMRunHandler() changes pfnStartVM).
      */
@@ -7885,7 +7950,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     if (   pVmxTransient->fUpdateTscOffsettingAndPreemptTimer
         || idCurrentCpu != pVCpu->hm.s.idLastCpu)
     {
-        hmR0VmxUpdateTscOffsettingAndPreemptTimer(pVCpu, pMixedCtx);
+        hmR0VmxUpdateTscOffsettingAndPreemptTimer(pVCpu);
         pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = false;
     }
 
@@ -7899,18 +7964,38 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
                                                                    to start executing. */
 
-#ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+    /** @todo Get rid of VBOX_WITH_AUTO_MSR_LOAD_RESTORE define. */
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+    /*
+     * Load the TSC_AUX MSR when we are not intercepting RDTSCP.
+     */
+    uint64_t uGuestTscAuxMsr;
+    if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+    {
+        if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
+        {
+            int rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &uGuestTscAuxMsr);
+            AssertRC(rc2);
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, uGuestTscAuxMsr, true /* fUpdateHostMsr */);
+        }
+        else
+            hmR0VmxRemoveAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX);
+    }
+#ifdef VBOX_STRICT
+    hmR0VmxCheckAutoLoadStoreMsrs(pVCpu);
+#endif
+#else
     /*
      * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
      * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
      */
-    if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+    if (   (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+        && !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
     {
         pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
-        uint64_t u64HostTscAux = 0;
-        int rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64HostTscAux);
+        int rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64HostTscAuxMsr);
         AssertRC(rc2);
-        ASMWrMsr(MSR_K8_TSC_AUX, u64HostTscAux);
+        ASMWrMsr(MSR_K8_TSC_AUX, u64HostTscAuxMsr);
     }
 #endif
 }
@@ -7935,6 +8020,8 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
  */
 static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, int rcVMRun)
 {
+    NOREF(pVM);
+
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB-shootdowns. */
@@ -7945,11 +8032,28 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
 
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
     {
-#ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-        /* Restore host's TSC_AUX. */
         if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+        {
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+            /* VT-x restored the host TSC_AUX MSR for us, update the guest value from the VMCS area
+               if it could have changed without causing a VM-exit. */
+            if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
+            {
+                int rc2 = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
+                AssertRC(rc2);
+            }
+#else
+            /* Update guest's TSC_AUX if it could have changed. */
+            if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
+            {
+                uint64_t u64GuestTscAuxMsr = ASMRdMsr(MSR_K8_TSC_AUX);
+                CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, u64GuestTscAuxMsr);
+            }
+            /* Restore host's TSC_AUX. */
             ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
 #endif
+        }
+
         /** @todo Find a way to fix hardcoding a guestimate.  */
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC()
                              + pVCpu->hm.s.vmx.u64TSCOffset - 0x400   /* guestimate of world switch overhead in clock ticks */);
@@ -8236,42 +8340,46 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #ifndef HMVMX_USE_FUNCTION_TABLE
 DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, uint32_t rcReason)
 {
+#ifdef DEBUG_ramshankar
+# define SVVMCS()       do { int rc2 = hmR0VmxSaveGuestState(pVCpu, pMixedCtx); AssertRC(rc2); } while (0)
+# define LDVMCS()       do { VMCPU_HMCF_SET(pVCpu, HM_CHANGED_ALL_GUEST); } while (0)
+#endif
     int rc;
     switch (rcReason)
     {
-        case VMX_EXIT_EPT_MISCONFIG:           rc = hmR0VmxExitEptMisconfig(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_EPT_VIOLATION:           rc = hmR0VmxExitEptViolation(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_IO_INSTR:                rc = hmR0VmxExitIoInstr(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_CPUID:                   rc = hmR0VmxExitCpuid(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_RDTSC:                   rc = hmR0VmxExitRdtsc(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_RDTSCP:                  rc = hmR0VmxExitRdtscp(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_APIC_ACCESS:             rc = hmR0VmxExitApicAccess(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_XCPT_OR_NMI:             rc = hmR0VmxExitXcptOrNmi(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_MOV_CRX:                 rc = hmR0VmxExitMovCRx(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_EXT_INT:                 rc = hmR0VmxExitExtInt(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_INT_WINDOW:              rc = hmR0VmxExitIntWindow(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_MWAIT:                   rc = hmR0VmxExitMwait(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_MONITOR:                 rc = hmR0VmxExitMonitor(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_TASK_SWITCH:             rc = hmR0VmxExitTaskSwitch(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_PREEMPT_TIMER:           rc = hmR0VmxExitPreemptTimer(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_RDMSR:                   rc = hmR0VmxExitRdmsr(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_WRMSR:                   rc = hmR0VmxExitWrmsr(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_MOV_DRX:                 rc = hmR0VmxExitMovDRx(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_TPR_BELOW_THRESHOLD:     rc = hmR0VmxExitTprBelowThreshold(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_HLT:                     rc = hmR0VmxExitHlt(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_INVD:                    rc = hmR0VmxExitInvd(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_INVLPG:                  rc = hmR0VmxExitInvlpg(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_RSM:                     rc = hmR0VmxExitRsm(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_MTF:                     rc = hmR0VmxExitMtf(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_PAUSE:                   rc = hmR0VmxExitPause(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_XDTR_ACCESS:             rc = hmR0VmxExitXdtrAccess(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_TR_ACCESS:               rc = hmR0VmxExitXdtrAccess(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_WBINVD:                  rc = hmR0VmxExitWbinvd(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_XSETBV:                  rc = hmR0VmxExitXsetbv(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_RDRAND:                  rc = hmR0VmxExitRdrand(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_INVPCID:                 rc = hmR0VmxExitInvpcid(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_GETSEC:                  rc = hmR0VmxExitGetsec(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_RDPMC:                   rc = hmR0VmxExitRdpmc(pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_EPT_MISCONFIG:           /* SVVMCS(); */ rc = hmR0VmxExitEptMisconfig(pVCpu, pMixedCtx, pVmxTransient);      /* LDVMCS(); */ break;
+        case VMX_EXIT_EPT_VIOLATION:           /* SVVMCS(); */ rc = hmR0VmxExitEptViolation(pVCpu, pMixedCtx, pVmxTransient);      /* LDVMCS(); */ break;
+        case VMX_EXIT_IO_INSTR:                /* SVVMCS(); */ rc = hmR0VmxExitIoInstr(pVCpu, pMixedCtx, pVmxTransient);           /* LDVMCS(); */ break;
+        case VMX_EXIT_CPUID:                   /* SVVMCS(); */ rc = hmR0VmxExitCpuid(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
+        case VMX_EXIT_RDTSC:                   /* SVVMCS(); */ rc = hmR0VmxExitRdtsc(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
+        case VMX_EXIT_RDTSCP:                  /* SVVMCS(); */ rc = hmR0VmxExitRdtscp(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
+        case VMX_EXIT_APIC_ACCESS:             /* SVVMCS(); */ rc = hmR0VmxExitApicAccess(pVCpu, pMixedCtx, pVmxTransient);        /* LDVMCS(); */ break;
+        case VMX_EXIT_XCPT_OR_NMI:             /* SVVMCS(); */ rc = hmR0VmxExitXcptOrNmi(pVCpu, pMixedCtx, pVmxTransient);         /* LDVMCS(); */ break;
+        case VMX_EXIT_MOV_CRX:                 /* SVVMCS(); */ rc = hmR0VmxExitMovCRx(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
+        case VMX_EXIT_EXT_INT:                 /* SVVMCS(); */ rc = hmR0VmxExitExtInt(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
+        case VMX_EXIT_INT_WINDOW:              /* SVVMCS(); */ rc = hmR0VmxExitIntWindow(pVCpu, pMixedCtx, pVmxTransient);         /* LDVMCS(); */ break;
+        case VMX_EXIT_MWAIT:                   /* SVVMCS(); */ rc = hmR0VmxExitMwait(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
+        case VMX_EXIT_MONITOR:                 /* SVVMCS(); */ rc = hmR0VmxExitMonitor(pVCpu, pMixedCtx, pVmxTransient);           /* LDVMCS(); */ break;
+        case VMX_EXIT_TASK_SWITCH:             /* SVVMCS(); */ rc = hmR0VmxExitTaskSwitch(pVCpu, pMixedCtx, pVmxTransient);        /* LDVMCS(); */ break;
+        case VMX_EXIT_PREEMPT_TIMER:           /* SVVMCS(); */ rc = hmR0VmxExitPreemptTimer(pVCpu, pMixedCtx, pVmxTransient);      /* LDVMCS(); */ break;
+        case VMX_EXIT_RDMSR:                   /* SVVMCS(); */ rc = hmR0VmxExitRdmsr(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
+        case VMX_EXIT_WRMSR:                   /* SVVMCS(); */ rc = hmR0VmxExitWrmsr(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
+        case VMX_EXIT_MOV_DRX:                 /* SVVMCS(); */ rc = hmR0VmxExitMovDRx(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
+        case VMX_EXIT_TPR_BELOW_THRESHOLD:     /* SVVMCS(); */ rc = hmR0VmxExitTprBelowThreshold(pVCpu, pMixedCtx, pVmxTransient); /* LDVMCS(); */ break;
+        case VMX_EXIT_HLT:                     /* SVVMCS(); */ rc = hmR0VmxExitHlt(pVCpu, pMixedCtx, pVmxTransient);               /* LDVMCS(); */ break;
+        case VMX_EXIT_INVD:                    /* SVVMCS(); */ rc = hmR0VmxExitInvd(pVCpu, pMixedCtx, pVmxTransient);              /* LDVMCS(); */ break;
+        case VMX_EXIT_INVLPG:                  /* SVVMCS(); */ rc = hmR0VmxExitInvlpg(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
+        case VMX_EXIT_RSM:                     /* SVVMCS(); */ rc = hmR0VmxExitRsm(pVCpu, pMixedCtx, pVmxTransient);               /* LDVMCS(); */ break;
+        case VMX_EXIT_MTF:                     /* SVVMCS(); */ rc = hmR0VmxExitMtf(pVCpu, pMixedCtx, pVmxTransient);               /* LDVMCS(); */ break;
+        case VMX_EXIT_PAUSE:                   /* SVVMCS(); */ rc = hmR0VmxExitPause(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
+        case VMX_EXIT_XDTR_ACCESS:             /* SVVMCS(); */ rc = hmR0VmxExitXdtrAccess(pVCpu, pMixedCtx, pVmxTransient);        /* LDVMCS(); */ break;
+        case VMX_EXIT_TR_ACCESS:               /* SVVMCS(); */ rc = hmR0VmxExitXdtrAccess(pVCpu, pMixedCtx, pVmxTransient);        /* LDVMCS(); */ break;
+        case VMX_EXIT_WBINVD:                  /* SVVMCS(); */ rc = hmR0VmxExitWbinvd(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
+        case VMX_EXIT_XSETBV:                  /* SVVMCS(); */ rc = hmR0VmxExitXsetbv(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
+        case VMX_EXIT_RDRAND:                  /* SVVMCS(); */ rc = hmR0VmxExitRdrand(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
+        case VMX_EXIT_INVPCID:                 /* SVVMCS(); */ rc = hmR0VmxExitInvpcid(pVCpu, pMixedCtx, pVmxTransient);           /* LDVMCS(); */ break;
+        case VMX_EXIT_GETSEC:                  /* SVVMCS(); */ rc = hmR0VmxExitGetsec(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
+        case VMX_EXIT_RDPMC:                   /* SVVMCS(); */ rc = hmR0VmxExitRdpmc(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */  break;
 
         case VMX_EXIT_TRIPLE_FAULT:            rc = hmR0VmxExitTripleFault(pVCpu, pMixedCtx, pVmxTransient); break;
         case VMX_EXIT_NMI_WINDOW:              rc = hmR0VmxExitNmiWindow(pVCpu, pMixedCtx, pVmxTransient); break;
@@ -8337,10 +8445,14 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 # define HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS() \
             do { \
                 Log4Func(("\n")); \
-            } while(0)
+            } while (0)
 #else   /* Release builds */
-# define HMVMX_VALIDATE_EXIT_HANDLER_PARAMS() do { HMVMX_STOP_EXIT_DISPATCH_PROF(); } while(0)
-# define HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS() do { } while(0)
+# define HMVMX_VALIDATE_EXIT_HANDLER_PARAMS() \
+            do { \
+                HMVMX_STOP_EXIT_DISPATCH_PROF(); \
+                NOREF(pVCpu); NOREF(pMixedCtx); NOREF(pVmxTransient); \
+            } while (0)
+# define HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS() do { } while (0)
 #endif
 
 
@@ -8358,7 +8470,7 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
  */
 DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
-    int rc = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+    int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
@@ -8386,7 +8498,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #define HMVMX_CHECK_BREAK(expr, err)        if (!(expr)) { \
                                                 uError = (err); \
                                                 break; \
-                                            } else do {} while (0)
+                                            } else do { } while (0)
 /* Duplicate of IEM_IS_CANONICAL(). */
 #define HMVMX_IS_CANONICAL(a_u64Addr)       ((uint64_t)(a_u64Addr) + UINT64_C(0x800000000000) < UINT64_C(0x1000000000000))
 
@@ -8997,7 +9109,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitXcptNmi, y3);
 
-    int rc = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
+    int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
     uint32_t uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVmxTransient->uExitIntInfo);
@@ -9074,8 +9186,8 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
                         Assert(PDMVmmDevHeapIsEnabled(pVCpu->CTX_SUFF(pVM)));
                         Assert(CPUMIsGuestInRealModeEx(pMixedCtx));
 
-                        rc  = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-                        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
+                        rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
                         AssertRCReturn(rc, rc);
                         hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(uExitIntInfo),
                                                pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode,
@@ -9294,7 +9406,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(!pVM->hm.s.fNestedPaging);
 
-    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
     rc    |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
@@ -9386,6 +9498,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRsm(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
      * executing VMCALL in VMX root operation. If we get here, something funny is going on.
      * See Intel spec. "33.15.5 Enabling the Dual-Monitor Treatment".
      */
+    HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     AssertMsgFailed(("Unexpected RSM VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
     HMVMX_RETURN_UNEXPECTED_EXIT();
 }
@@ -9402,6 +9515,7 @@ HMVMX_EXIT_DECL hmR0VmxExitSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
      * in VMX root mode or receive an SMI. If we get here, something funny is going on.
      * See Intel spec. "33.15.6 Activating the Dual-Monitor Treatment" and Intel spec. 25.3 "Other Causes of VM-Exits"
      */
+    HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     AssertMsgFailed(("Unexpected SMI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
     HMVMX_RETURN_UNEXPECTED_EXIT();
 }
@@ -9413,6 +9527,7 @@ HMVMX_EXIT_DECL hmR0VmxExitSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
 HMVMX_EXIT_DECL hmR0VmxExitIoSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     /* Same treatment as VMX_EXIT_SMI. See comment in hmR0VmxExitSmi(). */
+    HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     AssertMsgFailed(("Unexpected IO SMI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
     HMVMX_RETURN_UNEXPECTED_EXIT();
 }
@@ -9428,6 +9543,7 @@ HMVMX_EXIT_DECL hmR0VmxExitSipi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT 
      * don't make use of it (see hmR0VmxLoadGuestActivityState()) as our guests don't have direct access to the host LAPIC.
      * See Intel spec. 25.3 "Other Causes of VM-exits".
      */
+    HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     AssertMsgFailed(("Unexpected SIPI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
     HMVMX_RETURN_UNEXPECTED_EXIT();
 }
@@ -9561,7 +9677,7 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
 
     rc  = hmR0VmxReadEntryIntInfoVmcs(pVmxTransient);
     rc |= hmR0VmxReadEntryXcptErrorCodeVmcs(pVmxTransient);
-    rc |= hmR0VmxReadEntryInstrLenVmcs(pVCpu, pVmxTransient);
+    rc |= hmR0VmxReadEntryInstrLenVmcs(pVmxTransient);
     rc |= VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
     AssertRCReturn(rc, rc);
 
@@ -9583,11 +9699,11 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
     Log4(("VMX_VMCS_CTRL_CR4_READ_SHADOW              %#RHr\n", uHCReg));
     rc = VMXReadVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, &u64Val);                 AssertRC(rc);
     Log4(("VMX_VMCS64_CTRL_EPTP_FULL                  %#RX64\n", u64Val));
+#else
+    NOREF(pVmxTransient);
 #endif
 
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    HMDumpRegs(pVM, pVCpu, pMixedCtx);
-
+    HMDumpRegs(pVCpu->CTX_SUFF(pVM), pVCpu, pMixedCtx);
     return VERR_VMX_INVALID_GUEST_STATE;
 }
 
@@ -9598,7 +9714,8 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
  */
 HMVMX_EXIT_DECL hmR0VmxExitErrMsrLoad(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
-    AssertMsgFailed(("Unexpected MSR-load exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
+    NOREF(pVmxTransient);
+    AssertMsgFailed(("Unexpected MSR-load exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx)); NOREF(pMixedCtx);
     HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
@@ -9609,7 +9726,8 @@ HMVMX_EXIT_DECL hmR0VmxExitErrMsrLoad(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
  */
 HMVMX_EXIT_DECL hmR0VmxExitErrMachineCheck(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
-    AssertMsgFailed(("Unexpected machine-check event exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
+    NOREF(pVmxTransient);
+    AssertMsgFailed(("Unexpected machine-check event exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx)); NOREF(pMixedCtx);
     HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
@@ -9621,6 +9739,7 @@ HMVMX_EXIT_DECL hmR0VmxExitErrMachineCheck(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
 HMVMX_EXIT_DECL hmR0VmxExitErrUndefined(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     AssertMsgFailed(("Huh!? Undefined VM-exit reason %d. pVCpu=%p pMixedCtx=%p\n", pVmxTransient->uExitReason, pVCpu, pMixedCtx));
+    NOREF(pVCpu); NOREF(pMixedCtx); NOREF(pVmxTransient);
     return VERR_VMX_UNDEFINED_EXIT_CODE;
 }
 
@@ -9670,8 +9789,19 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     int rc  = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     rc     |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     rc     |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+    if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
+        rc |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     Log4(("CS:RIP=%04x:%#RX64 ECX=%X\n", pMixedCtx->cs.Sel, pMixedCtx->rip, pMixedCtx->ecx));
+
+#ifdef VBOX_STRICT
+    if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
+        && hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
+    {
+        AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
+        HMVMX_RETURN_UNEXPECTED_EXIT();
+    }
+#endif
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     rc = EMInterpretRdmsr(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
@@ -9701,7 +9831,8 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     rc  = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
+    if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
+        rc |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     Log4(("ecx=%#RX32\n", pMixedCtx->ecx));
 
@@ -9722,12 +9853,10 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                EMInterpretWrmsr() changes it. */
             VMCPU_HMCF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
         }
-        else if (pMixedCtx->ecx == MSR_K6_EFER)         /* EFER is the only MSR we auto-load but don't allow write-passthrough. */
-            VMCPU_HMCF_SET(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
         else if (pMixedCtx->ecx == MSR_IA32_TSC)        /* Windows 7 does this during bootup. See @bugref{6398}. */
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
 
-        /* Update MSRs that are part of the VMCS when MSR-bitmaps are not supported. */
+        /* Update MSRs that are part of the VMCS and auto-load/store area when MSR-bitmaps are not supported. */
         if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
         {
             switch (pMixedCtx->ecx)
@@ -9737,7 +9866,12 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 case MSR_IA32_SYSENTER_ESP: VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_SYSENTER_ESP_MSR); break;
                 case MSR_K8_FS_BASE:        /* no break */
                 case MSR_K8_GS_BASE:        VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS);     break;
-                case MSR_K8_KERNEL_GS_BASE: VMCPU_HMCF_SET(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS);    break;
+                default:
+                {
+                    if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
+                        VMCPU_HMCF_SET(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
+                    break;
+                }
             }
         }
 #ifdef VBOX_STRICT
@@ -9756,15 +9890,17 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                     HMVMX_RETURN_UNEXPECTED_EXIT();
                 }
 
-                case MSR_K8_LSTAR:
-                case MSR_K6_STAR:
-                case MSR_K8_SF_MASK:
-                case MSR_K8_TSC_AUX:
-                case MSR_K8_KERNEL_GS_BASE:
+                /* Writes to MSRs that are part of the auto-load/store are shouldn't cause VM-exits
+                   when MSR-bitmaps are supported. */
+                default:
                 {
-                    AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
-                                     pMixedCtx->ecx));
-                    HMVMX_RETURN_UNEXPECTED_EXIT();
+                    if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
+                    {
+                        AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
+                                         pMixedCtx->ecx));
+                        HMVMX_RETURN_UNEXPECTED_EXIT();
+                    }
+                    break;
                 }
             }
         }
@@ -9801,7 +9937,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTprBelowThreshold(PVMCPU pVCpu, PCPUMCTX pMixedCtx, P
 
     /*
      * The TPR has already been updated, see hmR0VMXPostRunGuest(). RIP is also updated as part of the VM-exit by VT-x. Update
-     * the threshold in the VMCS, deliver the pending interrupt via hmR0VmxPreRunGuest()->hmR0VmxInjectEvent() and
+     * the threshold in the VMCS, deliver the pending interrupt via hmR0VmxPreRunGuest()->hmR0VmxInjectPendingEvent() and
      * resume guest execution.
      */
     VMCPU_HMCF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
@@ -9824,7 +9960,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitMovCRx, y2);
-    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
     const RTGCUINTPTR uExitQualification = pVmxTransient->uExitQualification;
@@ -9957,8 +10093,8 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitIO, y1);
 
-    int rc2 = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc2    |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+    int rc2 = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    rc2    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc2    |= hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
     rc2    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);         /* Eflag checks in EMInterpretDisasCurrent(). */
     rc2    |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);    /* CR0 checks & PGM* in EMInterpretDisasCurrent(). */
@@ -9996,7 +10132,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         AssertReturn(pMixedCtx->dx == uIOPort, VERR_HMVMX_IPE_2);
         if (MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64BasicInfo))
         {
-            rc2  = hmR0VmxReadExitInstrInfoVmcs(pVCpu, pVmxTransient);
+            rc2  = hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
             /** @todo optimize this, IEM should request the additional state if it needs it (GP, PF, ++). */
             rc2 |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
             AssertRCReturn(rc2, rc2);
@@ -10032,7 +10168,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         fUpdateRipAlready = true;
 #else
         PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
-        rcStrict = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
+        rcStrict = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL /* pcbInstr */);
         if (RT_SUCCESS(rcStrict))
         {
             if (fIOWrite)
@@ -10093,7 +10229,10 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
             VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_RIP);
         }
 
-        /* INS & OUTS with REP prefix modify RFLAGS. */
+        /*
+         * INS/OUTS with REP prefix updates RFLAGS, can be observed with triple-fault guru while booting Fedora 17 64-bit guest.
+         * See Intel Instruction reference for REP/REPE/REPZ/REPNE/REPNZ.
+         */
         if (fIOString)
             VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_RFLAGS);
 
@@ -10175,7 +10314,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
     /* Check if this task-switch occurred while delivery an event through the guest IDT. */
-    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
     if (VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE(pVmxTransient->uExitQualification) == VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IDT)
     {
@@ -10260,7 +10399,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
     rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
-    rc |= hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+    rc |= hmR0VmxReadExitQualificationVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
     /* See Intel spec. 27-6 "Exit Qualifications for APIC-access VM-exits from Linear Accesses & Guest-Phyiscal Addresses" */
@@ -10351,7 +10490,6 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         HM_DISABLE_PREEMPT_IF_NEEDED();
 
         /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
-        PVM pVM = pVCpu->CTX_SUFF(pVM);
         CPUMR0LoadGuestDebugState(pVCpu, true /* include DR6 */);
         Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
 
@@ -10359,7 +10497,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         VMMRZCallRing3Enable(pVCpu);
 
 #ifdef VBOX_WITH_STATISTICS
-        rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+        rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
         AssertRCReturn(rc, rc);
         if (VMX_EXIT_QUALIFICATION_DRX_DIRECTION(pVmxTransient->uExitQualification) == VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxWrite);
@@ -10374,7 +10512,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
      * EMInterpretDRx[Write|Read]() calls CPUMIsGuestIn64BitCode() which requires EFER, CS. EFER is always up-to-date, see
      * hmR0VmxSaveGuestAutoLoadStoreMsrs(). Update the segment registers and DR7 from the CPU.
      */
-    rc  = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+    rc  = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
@@ -10481,7 +10619,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
 
     RTGCPHYS GCPhys = 0;
     rc  = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
-    rc |= hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+    rc |= hmR0VmxReadExitQualificationVmcs(pVmxTransient);
 #if 0
     rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);     /** @todo Can we do better?  */
 #else
@@ -10581,9 +10719,9 @@ static int hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     rc = DBGFRZTrap03Handler(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
-        rc  = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
+        rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+        rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
         AssertRCReturn(rc, rc);
 
         hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
@@ -10608,7 +10746,7 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
      * Get the DR6-like values from the exit qualification and pass it to DBGF
      * for processing.
      */
-    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
     /* Refer Intel spec. Table 27-1. "Exit Qualifications for debug exceptions" for the format. */
@@ -10651,9 +10789,9 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         /*
          * Raise #DB in the guest.
          */
-        rc  = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
+        rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+        rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
         AssertRCReturn(rc, rc);
         hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
                                pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
@@ -10717,7 +10855,7 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     {
         /* Forward #NM to the guest. */
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
-        rc = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
+        rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
         AssertRCReturn(rc, rc);
         hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
                                pVmxTransient->cbInstr, 0 /* error code */, 0 /* GCPtrFaultAddress */);
@@ -10743,9 +10881,9 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     {
 #ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         /* If the guest is not in real-mode or we have unrestricted execution support, reflect #GP to the guest. */
-        rc  = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+        rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
+        rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
         AssertRCReturn(rc, rc);
         Log4(("#GP Gst: RIP %#RX64 ErrorCode=%#x CR0=%#RX64 CPL=%u\n", pMixedCtx->rip, pVmxTransient->uExitIntErrorCode,
@@ -10756,6 +10894,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 #else
         /* We don't intercept #GP. */
         AssertMsgFailed(("Unexpected VM-exit caused by #GP exception\n"));
+        NOREF(pVmxTransient);
         return VERR_VMX_UNEXPECTED_EXCEPTION;
 #endif
     }
@@ -10974,6 +11113,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 }
 
 
+#ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
 /**
  * VM-exit exception handler wrapper for generic exceptions. Simply re-injects
  * the exception reported in the VMX transient structure back into the VM.
@@ -10987,8 +11127,8 @@ static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
     /* Re-inject the exception into the guest. This cannot be a double-fault condition which would have been handled in
        hmR0VmxCheckExitDueToEventDelivery(). */
-    int rc = hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+    int rc = hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
+    rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
     Assert(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_INFO);
 
@@ -10996,6 +11136,7 @@ static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                            pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
     return VINF_SUCCESS;
 }
+#endif
 
 
 /**
@@ -11005,9 +11146,9 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVmxTransient);
+    rc    |= hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+    rc    |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
 #if defined(HMVMX_ALWAYS_TRAP_ALL_XCPTS) || defined(HMVMX_ALWAYS_TRAP_PF)
@@ -11031,6 +11172,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     }
 #else
     Assert(!pVM->hm.s.fNestedPaging);
+    NOREF(pVM);
 #endif
 
     rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);

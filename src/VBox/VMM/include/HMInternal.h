@@ -78,7 +78,7 @@ RT_C_DECLS_BEGIN
  * have been changed since last they were reset.
  * @{
  */
-#define HM_CHANGED_GUEST_CR0                     RT_BIT(0)
+#define HM_CHANGED_GUEST_CR0                     RT_BIT(0)      /* Shared */
 #define HM_CHANGED_GUEST_CR3                     RT_BIT(1)
 #define HM_CHANGED_GUEST_CR4                     RT_BIT(2)
 #define HM_CHANGED_GUEST_GDTR                    RT_BIT(3)
@@ -86,7 +86,7 @@ RT_C_DECLS_BEGIN
 #define HM_CHANGED_GUEST_LDTR                    RT_BIT(5)
 #define HM_CHANGED_GUEST_TR                      RT_BIT(6)
 #define HM_CHANGED_GUEST_SEGMENT_REGS            RT_BIT(7)
-#define HM_CHANGED_GUEST_DEBUG                   RT_BIT(8)
+#define HM_CHANGED_GUEST_DEBUG                   RT_BIT(8)      /* Shared */
 #define HM_CHANGED_GUEST_RIP                     RT_BIT(9)
 #define HM_CHANGED_GUEST_RSP                     RT_BIT(10)
 #define HM_CHANGED_GUEST_RFLAGS                  RT_BIT(11)
@@ -604,9 +604,11 @@ typedef struct HMCPU
         /** Virtual address of the VM-exit MSR-load area (used for host MSRs). */
         R0PTRTYPE(void *)           pvHostMsr;
 
-        /** Number of automatically loaded/restored guest MSRs during the world switch. */
-        uint32_t                    cGuestMsrs;
-        uint32_t                    uAlignment;
+        /** Number of guest/host MSR pairs in the auto-load/store area. */
+        uint32_t                    cMsrs;
+        /** Whether the host MSR values are up-to-date. */
+        bool                        fUpdatedHostMsrs;
+        uint8_t                     u8Align[7];
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         /** The cached APIC-base MSR used for identifying when to map the HC physical APIC-access page. */
