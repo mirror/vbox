@@ -2594,6 +2594,7 @@ int VBoxVHWAImage::vhwaSurfaceDestroy(struct VBOXVHWACMD_SURF_DESTROY *pCmd)
     }
     else
     {
+        Assert(pList);
         Assert(pList->size() >= 1);
         if(pList->size() > 1)
         {
