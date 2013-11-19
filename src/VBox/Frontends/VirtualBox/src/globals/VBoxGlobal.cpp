@@ -1721,14 +1721,6 @@ void VBoxGlobal::createMedium(const UIMedium &medium)
         m_pMediumEnumerator->createMedium(medium);
 }
 
-void VBoxGlobal::updateMedium(const UIMedium &medium)
-{
-    /* Update medium of medium-enumerator: */
-    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
-    if (m_pMediumEnumerator)
-        m_pMediumEnumerator->updateMedium(medium);
-}
-
 void VBoxGlobal::deleteMedium(const QString &strMediumID)
 {
     /* Delete medium from medium-enumerator: */
@@ -4358,8 +4350,6 @@ void VBoxGlobal::prepare()
         /* Prepare medium-enumerator: */
         connect(m_pMediumEnumerator, SIGNAL(sigMediumCreated(const QString&)),
                 this, SIGNAL(sigMediumCreated(const QString&)));
-        connect(m_pMediumEnumerator, SIGNAL(sigMediumUpdated(const QString&)),
-                this, SIGNAL(sigMediumUpdated(const QString&)));
         connect(m_pMediumEnumerator, SIGNAL(sigMediumDeleted(const QString&)),
                 this, SIGNAL(sigMediumDeleted(const QString&)));
         connect(m_pMediumEnumerator, SIGNAL(sigMediumEnumerationStarted()),

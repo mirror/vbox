@@ -119,22 +119,6 @@ void UIMediumEnumerator::createMedium(const UIMedium &medium)
     emit sigMediumCreated(strMediumID);
 }
 
-void UIMediumEnumerator::updateMedium(const UIMedium &medium)
-{
-    /* Get medium ID: */
-    QString strMediumID = medium.id();
-    LogRelFlow(("UIMediumEnumerator: Medium with ID={%s} updated.\n", strMediumID.toAscii().constData()));
-
-    /* Make sure medium still exists: */
-    AssertReturnVoid(m_mediums.contains(strMediumID));
-
-    /* Update medium: */
-    m_mediums[strMediumID] = medium;
-
-    /* Notify listener: */
-    emit sigMediumUpdated(strMediumID);
-}
-
 void UIMediumEnumerator::deleteMedium(const QString &strMediumID)
 {
     LogRelFlow(("UIMediumEnumerator: Medium with ID={%s} removed.\n", strMediumID.toAscii().constData()));

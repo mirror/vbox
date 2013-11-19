@@ -698,7 +698,7 @@ protected:
 private slots:
 
     /* Handlers: Medium-processing stuff: */
-    void sltHandleMediumUpdated(const QString &strMediumID);
+    void sltHandleMediumEnumerated(const QString &strMediumID);
     void sltHandleMediumDeleted(const QString &strMediumID);
 
     void addController();
