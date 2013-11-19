@@ -913,8 +913,6 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
                          Utf8Str(m->IPv4DhcpServerLowerIp.raw()).c_str(),
                          Utf8Str(m->IPv4DhcpServerUpperIp.raw()).c_str()));
 
-                m->dhcpServer->AddGlobalOption(DhcpOpt_Router, m->IPv4Gateway.raw());
-
                 rc = m->dhcpServer->COMSETTER(Enabled)(true);
 
                 BSTR dhcpip = NULL;
@@ -937,6 +935,9 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
             default:
                 return E_FAIL;
         }
+
+        /* XXX: AddGlobalOption(DhcpOpt_Router,) - enables attachement of DhcpServer to Main. */
+        m->dhcpServer->AddGlobalOption(DhcpOpt_Router, m->IPv4Gateway.raw());
 
         rc = m->dhcpServer->Start(mName.raw(), Bstr("").raw(), aTrunkType);
         if (FAILED(rc))
