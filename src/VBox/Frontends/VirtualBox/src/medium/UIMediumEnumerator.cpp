@@ -106,14 +106,17 @@ UIMedium UIMediumEnumerator::medium(const QString &strMediumID)
 void UIMediumEnumerator::createMedium(const UIMedium &medium)
 {
     /* Get medium ID: */
-    QString strMediumID = medium.id();
-    LogRelFlow(("UIMediumEnumerator: Medium with ID={%s} created.\n", strMediumID.toAscii().constData()));
+    const QString strMediumID = medium.id();
 
+    /* Do not create UIMedium(s) with incorrect ID: */
+    AssertReturnVoid(!strMediumID.isNull());
+    AssertReturnVoid(strMediumID != UIMedium::nullID());
     /* Make sure medium doesn't exists already: */
     AssertReturnVoid(!m_mediums.contains(strMediumID));
 
     /* Insert medium: */
     m_mediums[strMediumID] = medium;
+    LogRel(("UIMediumEnumerator: Medium with key={%s} created.\n", strMediumID.toAscii().constData()));
 
     /* Notify listener: */
     emit sigMediumCreated(strMediumID);
@@ -121,13 +124,15 @@ void UIMediumEnumerator::createMedium(const UIMedium &medium)
 
 void UIMediumEnumerator::deleteMedium(const QString &strMediumID)
 {
-    LogRelFlow(("UIMediumEnumerator: Medium with ID={%s} removed.\n", strMediumID.toAscii().constData()));
-
+    /* Do not delete UIMedium(s) with incorrect ID: */
+    AssertReturnVoid(!strMediumID.isNull());
+    AssertReturnVoid(strMediumID != UIMedium::nullID());
     /* Make sure medium still exists: */
     AssertReturnVoid(m_mediums.contains(strMediumID));
 
     /* Remove medium: */
     m_mediums.remove(strMediumID);
+    LogRel(("UIMediumEnumerator: Medium with key={%s} deleted.\n", strMediumID.toAscii().constData()));
 
     /* Notify listener: */
     emit sigMediumDeleted(strMediumID);
@@ -152,18 +157,19 @@ void UIMediumEnumerator::enumerateMediums()
     m_mediums = mediums;
 
     /* Notify listener: */
-    LogRelFlow(("UIMediumEnumerator: Medium-enumeration started...\n"));
+    LogRel(("UIMediumEnumerator: Medium-enumeration started...\n"));
     m_fMediumEnumerationInProgress = true;
     emit sigMediumEnumerationStarted();
 
-    /* Start enumeration for all the new mediums: */
+    /* Start enumeration for UIMedium(s) with correct ID: */
     foreach (const QString &strMediumID, m_mediums.keys())
-        createMediumEnumerationTask(m_mediums[strMediumID]);
+        if (!strMediumID.isNull() && strMediumID != UIMedium::nullID())
+            createMediumEnumerationTask(m_mediums[strMediumID]);
 }
 
 void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
 {
-    LogRelFlow(("UIMediumEnumerator: Machine event received, ID = %s\n", strMachineID.toAscii().constData()));
+    LogRel(("UIMediumEnumerator: Machine event received, ID = %s\n", strMachineID.toAscii().constData()));
 
     /* Compose a map of previous usage: */
     QStringList oldUsage;
@@ -174,7 +180,7 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
         if (machineIDs.contains(strMachineID))
             oldUsage << strMediumID;
     }
-    LogRelFlow(("UIMediumEnumerator:  Old usage: %s\n", oldUsage.isEmpty() ? "<empty>" : oldUsage.join(", ").toAscii().constData()));
+    LogRel(("UIMediumEnumerator:  Old usage: %s\n", oldUsage.isEmpty() ? "<empty>" : oldUsage.join(", ").toAscii().constData()));
 
     /* Compose a map of current usage: */
     QStringList newUsage;
@@ -192,7 +198,7 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
             newUsage << strMediumID;
         }
     }
-    LogRelFlow(("UIMediumEnumerator:  New usage: %s\n", newUsage.isEmpty() ? "<empty>" : newUsage.join(", ").toAscii().constData()));
+    LogRel(("UIMediumEnumerator:  New usage: %s\n", newUsage.isEmpty() ? "<empty>" : newUsage.join(", ").toAscii().constData()));
 
     /* Manipulations over the sets: */
     QSet<QString> oldSet = oldUsage.toSet();
@@ -202,23 +208,32 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
     QStringList excludedList = excludedSet.toList();
     QStringList includedList = includedSet.toList();
     if (!excludedList.isEmpty())
-        LogRelFlow(("UIMediumEnumerator:  Items excluded from machine usage: %s\n", excludedList.join(", ").toAscii().constData()));
+        LogRel(("UIMediumEnumerator:  Items excluded from machine usage: %s\n", excludedList.join(", ").toAscii().constData()));
     if (!includedList.isEmpty())
-        LogRelFlow(("UIMediumEnumerator:  Items included into machine usage: %s\n", includedList.join(", ").toAscii().constData()));
+        LogRel(("UIMediumEnumerator:  Items included into machine usage: %s\n", includedList.join(", ").toAscii().constData()));
 
     /* For each of excluded items: */
-    foreach (const QString &strExcludedMediumID, excludedList)
+    foreach (const QString &strExcludedMediumKey, excludedList)
     {
         /* Make sure this medium still in our map: */
-        if (!m_mediums.contains(strExcludedMediumID))
+        if (!m_mediums.contains(strExcludedMediumKey))
             continue;
-        /* Remove UIMedium if it was closed already: */
-        const UIMedium &uimedium = m_mediums[strExcludedMediumID];
-        if (uimedium.medium().GetId() != strExcludedMediumID)
+
+        /* Get excluded UIMedium: */
+        const UIMedium &uimedium = m_mediums[strExcludedMediumKey];
+
+        /* Delete UIMedium if CMedium was closed already: */
+        CMedium cmedium = uimedium.medium();
+        if (cmedium.GetId().isNull() || !cmedium.isOk())
         {
-            deleteMedium(strExcludedMediumID);
+            /* Delete this medium: */
+            m_mediums.remove(strExcludedMediumKey);
+            LogRel(("UIMediumEnumerator:  Medium with key={%s} closed and deleted (before enumeration).\n", strExcludedMediumKey.toAscii().constData()));
+            /* And notify listener about delete: */
+            emit sigMediumDeleted(strExcludedMediumKey);
             continue;
         }
+
         /* Enumerate UIMedium if CMedium still exists: */
         createMediumEnumerationTask(uimedium);
     }
@@ -233,11 +248,12 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
             UIMedium uimedium(cmedium, UIMediumDefs::mediumTypeToLocal(cmedium.GetDeviceType()));
             createMedium(uimedium);
         }
+
         /* Enumerate UIMedium in any case: */
         createMediumEnumerationTask(m_mediums[strIncludedMediumID]);
     }
 
-    LogRelFlow(("UIMediumEnumerator: Machine event processed, ID = %s\n", strMachineID.toAscii().constData()));
+    LogRel(("UIMediumEnumerator: Machine event processed, ID = %s\n", strMachineID.toAscii().constData()));
 }
 
 void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
@@ -246,29 +262,58 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     int iIndexOfTask = m_tasks.indexOf(pTask);
     AssertReturnVoid(iIndexOfTask != -1);
 
-    /* Get medium: */
-    UIMedium medium = pTask->data().value<UIMedium>();
-    QString strMediumID = medium.id();
-    LogRelFlow(("UIMediumEnumerator: Medium with ID={%s} enumerated.\n", strMediumID.toAscii().constData()));
+    /* Get enumerated UIMedium: */
+    const UIMedium uimedium = pTask->data().value<UIMedium>();
+    const QString strUIMediumKey = uimedium.key();
+    LogRel2(("UIMediumEnumerator: Medium with key={%s} enumerated.\n", strUIMediumKey.toAscii().constData()));
 
     /* Delete task: */
     delete m_tasks.takeAt(iIndexOfTask);
 
-    /* Make sure such medium still exists: */
-    if (!m_mediums.contains(strMediumID))
-        return;
+    /* Make sure such UIMedium still exists: */
+    AssertReturnVoid(m_mediums.contains(strUIMediumKey));
 
-    /* Update enumerated medium: */
-    m_mediums[strMediumID] = medium;
+    /* Check if UIMedium ID was changed: */
+    const QString strUIMediumID = uimedium.id();
+    /* UIMedium ID was changed to null string: */
+    if (strUIMediumID.isNull())
+    {
+        /* Delete this medium: */
+        m_mediums.remove(strUIMediumKey);
+        LogRel(("UIMediumEnumerator: Medium with key={%s} closed and deleted (after enumeration).\n", strUIMediumKey.toAscii().constData()));
+        /* And notify listener about delete: */
+        emit sigMediumDeleted(strUIMediumKey);
+    }
+    /* UIMedium ID was changed to something proper: */
+    else if (strUIMediumID != strUIMediumKey)
+    {
+        /* We have to reinject enumerated medium: */
+        m_mediums.remove(strUIMediumKey);
+        m_mediums[strUIMediumID] = uimedium;
+        m_mediums[strUIMediumID].setKey(strUIMediumID);
+        LogRel(("UIMediumEnumerator: Medium with key={%s} has it changed to {%s}.\n", strUIMediumKey.toAscii().constData(),
+                                                                                      strUIMediumID.toAscii().constData()));
 
-    /* Notify listener: */
-    emit sigMediumEnumerated(strMediumID);
+        /* And notify listener about delete/create: */
+        emit sigMediumDeleted(strUIMediumKey);
+        emit sigMediumCreated(strUIMediumID);
+    }
+    /* UIMedium ID was not changed: */
+    else
+    {
+        /* Just update enumerated medium: */
+        m_mediums[strUIMediumID] = uimedium;
+        LogRel2(("UIMediumEnumerator: Medium with key={%s} updated.\n", strUIMediumID.toAscii().constData()));
+
+        /* And notify listener about update: */
+        emit sigMediumEnumerated(strUIMediumID);
+    }
 
     /* If there are no more tasks we know about: */
     if (m_tasks.isEmpty())
     {
         /* Notify listener: */
-        LogRelFlow(("UIMediumEnumerator: Medium-enumeration finished!\n"));
+        LogRel(("UIMediumEnumerator: Medium-enumeration finished!\n"));
         m_fMediumEnumerationInProgress = false;
         emit sigMediumEnumerationFinished();
     }
