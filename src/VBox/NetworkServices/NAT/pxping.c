@@ -449,7 +449,10 @@ pxping_pcb_for_request(struct pxping *pxping,
         ipX_addr_copy(is_ipv6, pcb->dst, *dst);
 
         pcb->guest_id = guest_id;
-        pcb->host_id = random() & 0xffffUL; /* XXX */
+#ifdef RT_OS_WINDOWS
+# define random() (rand())
+#endif
+        pcb->host_id = random() & 0xffffUL;
 
         pcb->pprev_timeout = NULL;
         pcb->next_timeout = NULL;
