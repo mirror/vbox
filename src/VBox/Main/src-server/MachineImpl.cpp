@@ -5706,7 +5706,7 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
             if (FAILED(rc)) throw rc;
             rc = task.pProgress->WaitForAsyncProgressCompletion(pProgress2);
             if (FAILED(rc)) throw rc;
-            /* Check the result of the asynchrony process. */
+            /* Check the result of the asynchronous process. */
             LONG iRc;
             rc = pProgress2->COMGETTER(ResultCode)(&iRc);
             if (FAILED(rc)) throw rc;
@@ -5714,6 +5714,15 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
              * retrieve the error info from there, or it'll be lost. */
             if (FAILED(iRc))
                 throw setError(ProgressErrorInfo(pProgress2));
+
+            /* Close the medium, deliberately without checking the return
+             * code, and without leaving any trace in the error info, as
+             * a failure here is a very minor issue, which shouldn't happen
+             * as above we even managed to delete the medium. */
+            {
+                ErrorInfoKeeper eik;
+                pMedium->Close();
+            }
         }
         setMachineState(oldState);
         alock.acquire();
