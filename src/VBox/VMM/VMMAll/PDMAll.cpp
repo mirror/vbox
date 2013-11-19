@@ -211,7 +211,7 @@ VMM_INT_DECL(bool) PDMHasIoApic(PVM pVM)
 
 
 /**
- * Returns the presence of a Local IO-APIC.
+ * Returns the presence of a Local APIC.
  *
  * @returns VBox true if a Local APIC is present.
  * @param   pVM             Pointer to the VM.
