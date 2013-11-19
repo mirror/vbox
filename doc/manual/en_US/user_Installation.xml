@@ -845,6 +845,9 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
       <screen>zonecfg:vboxzone&gt;add device
 zonecfg:vboxzone:device&gt;set match=/dev/vboxdrv
 zonecfg:vboxzone:device&gt;end
+zonecfg:vboxzone&gt;add device
+zonecfg:vboxzone:device&gt;set match=/dev/vboxdrvu
+zonecfg:vboxzone:device&gt;end
 zonecfg:vboxzone&gt;verify
 zonecfg:vboxzone&gt;exit</screen>
 
