@@ -211,6 +211,18 @@ VMM_INT_DECL(bool) PDMHasIoApic(PVM pVM)
 
 
 /**
+ * Returns presence of an IO-APIC
+ *
+ * @returns VBox true if IO-APIC is present
+ * @param   pVM             Pointer to the VM.
+ */
+VMM_INT_DECL(bool) PDMHasApic(PVM pVM)
+{
+    return pVM->pdm.s.Apic.CTX_SUFF(pDevIns) != NULL;
+}
+
+
+/**
  * Set the APIC base.
  *
  * @returns VBox status code.
