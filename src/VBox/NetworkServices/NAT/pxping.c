@@ -162,10 +162,10 @@ static int pxping_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int reve
 static void pxping_pmgr_icmp4(struct pxping *pxping,
                               size_t nread, struct sockaddr_in *peer);
 static void pxping_pmgr_icmp4_echo(struct pxping *pxping,
-                                   size_t iplen, struct sockaddr_in *peer);
+                                   u16_t iplen, struct sockaddr_in *peer);
 static void pxping_pmgr_icmp4_error(struct pxping *pxping,
-                                    size_t iplen, struct sockaddr_in *peer);
-static void pxping_pmgr_forward_inbound(struct pxping *pxping, size_t iplen);
+                                    u16_t iplen, struct sockaddr_in *peer);
+static void pxping_pmgr_forward_inbound(struct pxping *pxping, u16_t iplen);
 static void pxping_pcb_forward_inbound(void *arg);
 
 /*
@@ -529,7 +529,6 @@ pxping_timer(void *arg)
 {
     struct pxping *pxping = (struct pxping *)arg;
     struct ping_pcb **chain, *pcb;
-    u32_t mask;
 
     pxping->timer_active = 0;
 
@@ -617,7 +616,6 @@ static int
 pxping_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
 {
     struct pxping *pxping;
-    struct ping_pcb *pcb;
     struct sockaddr_storage ss;
     socklen_t sslen = sizeof(ss);
     ssize_t nread;
@@ -756,7 +754,7 @@ pxping_pmgr_icmp4(struct pxping *pxping,
  */
 static void
 pxping_pmgr_icmp4_echo(struct pxping *pxping,
-                       size_t iplen, struct sockaddr_in *peer)
+                       u16_t iplen, struct sockaddr_in *peer)
 {
     struct ip_hdr *iph;
     struct icmp_echo_hdr *icmph;
@@ -835,7 +833,7 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
  */
 static void
 pxping_pmgr_icmp4_error(struct pxping *pxping,
-                        size_t iplen, struct sockaddr_in *peer)
+                        u16_t iplen, struct sockaddr_in *peer)
 {
     struct ip_hdr *iph, *oiph;
     struct icmp_echo_hdr *icmph, *oicmph;
@@ -968,7 +966,7 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
  * datagram.
  */
 static void
-pxping_pmgr_forward_inbound(struct pxping *pxping, size_t iplen)
+pxping_pmgr_forward_inbound(struct pxping *pxping, u16_t iplen)
 {
     struct pbuf *p;
     struct ping_msg *msg;
