@@ -373,7 +373,7 @@ int Guest::sessionRemove(GuestSession *pSession)
 
             fireGuestSessionRegisteredEvent(mEventSource, pCurSession,
                                             false /* Unregistered */);
-            pCurSession.setNull();      
+            pCurSession.setNull();
             break;
         }
 
@@ -486,7 +486,7 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
     /* Do not allow anonymous sessions (with system rights) with public API. */
     if (RT_UNLIKELY((aUser) == NULL || *(aUser) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
-    if (RT_UNLIKELY((aPassword) == NULL || *(aPassword) == '\0'))
+    if (RT_UNLIKELY((aPassword) == NULL)) /* Allow empty passwords. */
         return setError(E_INVALIDARG, tr("No password specified"));
     CheckComArgOutPointerValid(aGuestSession);
     /* Rest is optional. */
