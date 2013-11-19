@@ -384,6 +384,8 @@ pxping_timeout_add(struct pxping *pxping, struct ping_pcb *pcb)
 static void
 pxping_timeout_del(struct pxping *pxping, struct ping_pcb *pcb)
 {
+    LWIP_UNUSED_ARG(pxping);
+
     LWIP_ASSERT1(pcb->pprev_timeout != NULL);
     if (pcb->next_timeout != NULL) {
         pcb->next_timeout->pprev_timeout = pcb->pprev_timeout;
