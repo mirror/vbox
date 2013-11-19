@@ -691,6 +691,50 @@ ConfigurationManager::~ConfigurationManager() { if (m) delete m; }
 /**
  * Network manager
  */
+struct NetworkManager::Data
+{
+    Data()
+    {
+        RT_ZERO(BootPReplyMsg);
+        cbBooPReplyMsg = 0;
+        
+        m_pSession = NIL_RTR0PTR;
+        m_pIfBuf = NULL;
+        m_OurAddress.u = 0;
+        m_OurNetmask.u = 0;
+        RT_ZERO(m_OurMac);
+    }
+
+    union {
+        RTNETBOOTP BootPHeader;
+        uint8_t au8Storage[1024];
+    } BootPReplyMsg;
+    int cbBooPReplyMsg;
+
+    /* XXX: artifacts should be hidden or removed from here. */
+    PSUPDRVSESSION m_pSession;
+    INTNETIFHANDLE m_hIf;
+    PINTNETBUF m_pIfBuf;
+
+    RTNETADDRIPV4 m_OurAddress;
+    RTNETADDRIPV4 m_OurNetmask;
+    RTMAC m_OurMac;
+};
+
+
+NetworkManager::NetworkManager():m(NULL)
+{
+    m = new NetworkManager::Data();
+}
+
+
+NetworkManager::~NetworkManager()
+{
+    delete m;
+    m = NULL;
+}
+
+
 NetworkManager *NetworkManager::getNetworkManager()
 {
     if (!g_NetworkManager)
@@ -710,10 +754,10 @@ int NetworkManager::offer4Client(const Client& client, uint32_t u32Xid,
     prepareReplyPacket4Client(client, u32Xid);
 
     RTNETADDRIPV4 address = l.getAddress();
-    BootPReplyMsg.BootPHeader.bp_yiaddr =  address;
+    m->BootPReplyMsg.BootPHeader.bp_yiaddr =  address;
 
     /* Ubuntu ???*/
-    BootPReplyMsg.BootPHeader.bp_ciaddr =  address;
+    m->BootPReplyMsg.BootPHeader.bp_ciaddr =  address;
 
     /* options:
      * - IP lease time
@@ -757,17 +801,17 @@ int NetworkManager::ack(const Client& client, uint32_t u32Xid,
     
     Lease l = client.lease();
     address = l.getAddress();
-    BootPReplyMsg.BootPHeader.bp_ciaddr =  address;
+    m->BootPReplyMsg.BootPHeader.bp_ciaddr =  address;
 
 
     /* rfc2131 4.3.1 is about DHCPDISCOVER and this value is equal to ciaddr from
      * DHCPREQUEST or 0 ...
      * XXX: Using addressHint is not correct way to initialize [cy]iaddress...
      */
-    BootPReplyMsg.BootPHeader.bp_ciaddr = address;
-    BootPReplyMsg.BootPHeader.bp_yiaddr = address;
+    m->BootPReplyMsg.BootPHeader.bp_ciaddr = address;
+    m->BootPReplyMsg.BootPHeader.bp_yiaddr = address;
 
-    Assert(BootPReplyMsg.BootPHeader.bp_yiaddr.u);
+    Assert(m->BootPReplyMsg.BootPHeader.bp_yiaddr.u);
 
     /* options:
      * - IP address lease time (if DHCPREQUEST)
@@ -813,7 +857,7 @@ int NetworkManager::nak(const Client& client, uint32_t u32Xid)
     /* this field filed in prepareReplyPacket4Session, and
      * RFC 2131 require to have it zero fo NAK.
      */
-    BootPReplyMsg.BootPHeader.bp_yiaddr.u = 0;
+    m->BootPReplyMsg.BootPHeader.bp_yiaddr.u = 0;
 
     /* options:
      * - message type (if DHCPREQUEST)
@@ -831,34 +875,87 @@ int NetworkManager::nak(const Client& client, uint32_t u32Xid)
 }
 
 
+const RTNETADDRIPV4& NetworkManager::getOurAddress() const
+{
+    return m->m_OurAddress;
+}
+
+
+const RTNETADDRIPV4& NetworkManager::getOurNetmask() const
+{
+    return m->m_OurNetmask;
+}
+
+
+const RTMAC& NetworkManager::getOurMac() const
+{
+    return m->m_OurMac;
+}
+
+
+void NetworkManager::setOurAddress(const RTNETADDRIPV4& aAddress)
+{
+    m->m_OurAddress = aAddress;
+}
+
+
+void NetworkManager::setOurNetmask(const RTNETADDRIPV4& aNetmask)
+{
+    m->m_OurNetmask = aNetmask;
+}
+
+
+void NetworkManager::setOurMac(const RTMAC& aMac)
+{
+    m->m_OurMac = aMac;
+}
+
+
+void NetworkManager::setSession(PSUPDRVSESSION aSession)
+{
+    m->m_pSession = aSession;
+}
+
+
+void NetworkManager::setInterface(INTNETIFHANDLE aIf)
+{
+    m->m_hIf = aIf;
+}
+
+
+void NetworkManager::setRingBuffer(PINTNETBUF aBuf)
+{
+    m->m_pIfBuf = aBuf;
+}
+
 /**
  *
  */
 int NetworkManager::prepareReplyPacket4Client(const Client& client, uint32_t u32Xid)
 {
-    memset(&BootPReplyMsg, 0, sizeof(BootPReplyMsg));
+    RT_ZERO(m->BootPReplyMsg);
 
-    BootPReplyMsg.BootPHeader.bp_op     = RTNETBOOTP_OP_REPLY;
-    BootPReplyMsg.BootPHeader.bp_htype  = RTNET_ARP_ETHER;
-    BootPReplyMsg.BootPHeader.bp_hlen   = sizeof(RTMAC);
-    BootPReplyMsg.BootPHeader.bp_hops   = 0;
-    BootPReplyMsg.BootPHeader.bp_xid    = u32Xid;
-    BootPReplyMsg.BootPHeader.bp_secs   = 0;
+    m->BootPReplyMsg.BootPHeader.bp_op     = RTNETBOOTP_OP_REPLY;
+    m->BootPReplyMsg.BootPHeader.bp_htype  = RTNET_ARP_ETHER;
+    m->BootPReplyMsg.BootPHeader.bp_hlen   = sizeof(RTMAC);
+    m->BootPReplyMsg.BootPHeader.bp_hops   = 0;
+    m->BootPReplyMsg.BootPHeader.bp_xid    = u32Xid;
+    m->BootPReplyMsg.BootPHeader.bp_secs   = 0;
     /* XXX: bp_flags should be processed specially */
-    BootPReplyMsg.BootPHeader.bp_flags  = 0;
-    BootPReplyMsg.BootPHeader.bp_ciaddr.u = 0;
-    BootPReplyMsg.BootPHeader.bp_giaddr.u = 0;
+    m->BootPReplyMsg.BootPHeader.bp_flags  = 0;
+    m->BootPReplyMsg.BootPHeader.bp_ciaddr.u = 0;
+    m->BootPReplyMsg.BootPHeader.bp_giaddr.u = 0;
 
-    BootPReplyMsg.BootPHeader.bp_chaddr.Mac = client.getMacAddress();
+    m->BootPReplyMsg.BootPHeader.bp_chaddr.Mac = client.getMacAddress();
 
     const Lease l = client.lease();
-    BootPReplyMsg.BootPHeader.bp_yiaddr = l.getAddress();
-    BootPReplyMsg.BootPHeader.bp_siaddr.u = 0;
+    m->BootPReplyMsg.BootPHeader.bp_yiaddr = l.getAddress();
+    m->BootPReplyMsg.BootPHeader.bp_siaddr.u = 0;
 
 
-    BootPReplyMsg.BootPHeader.bp_vend.Dhcp.dhcp_cookie = RT_H2N_U32_C(RTNET_DHCP_COOKIE);
+    m->BootPReplyMsg.BootPHeader.bp_vend.Dhcp.dhcp_cookie = RT_H2N_U32_C(RTNET_DHCP_COOKIE);
 
-    memset(&BootPReplyMsg.BootPHeader.bp_vend.Dhcp.dhcp_opts[0],
+    memset(&m->BootPReplyMsg.BootPHeader.bp_vend.Dhcp.dhcp_opts[0],
            '\0',
            RTNET_DHCP_OPT_SIZE);
 
@@ -873,11 +970,11 @@ int NetworkManager::doReply(const Client& client, const std::vector<RawOption>& 
     /*
       Options....
      */
-    VBoxNetDhcpWriteCursor Cursor(&BootPReplyMsg.BootPHeader, RTNET_DHCP_NORMAL_SIZE);
+    VBoxNetDhcpWriteCursor Cursor(&m->BootPReplyMsg.BootPHeader, RTNET_DHCP_NORMAL_SIZE);
 
     /* The basics */
 
-    Cursor.optIPv4Addr(RTNET_DHCP_OPT_SERVER_ID, m_OurAddress);
+    Cursor.optIPv4Addr(RTNET_DHCP_OPT_SERVER_ID, m->m_OurAddress);
 
     const Lease l = client.lease(); 
     const std::map<uint8_t, RawOption>& options = l.options();
@@ -921,14 +1018,14 @@ int NetworkManager::doReply(const Client& client, const std::vector<RawOption>& 
     }
     else
 #endif
-        rc = VBoxNetUDPBroadcast(m_pSession,
-                                 m_hIf,
-                                 m_pIfBuf,
-                                 m_OurAddress,
-                                 &m_OurMac,
+        rc = VBoxNetUDPBroadcast(m->m_pSession,
+                                 m->m_hIf,
+                                 m->m_pIfBuf,
+                                 m->m_OurAddress,
+                                 &m->m_OurMac,
                                  RTNETIPV4_PORT_BOOTPS,               /* sender */
                                  RTNETIPV4_PORT_BOOTPC,
-                                 &BootPReplyMsg, RTNET_DHCP_NORMAL_SIZE);
+                                 &m->BootPReplyMsg, RTNET_DHCP_NORMAL_SIZE);
 
     AssertRCReturn(rc,rc);
 

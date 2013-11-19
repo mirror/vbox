@@ -494,36 +494,30 @@ public:
     int ack(const Client& lease, uint32_t u32Xid, uint8_t *pu8ReqList, int cReqList);
     int nak(const Client& lease, uint32_t u32Xid);
 
-    const RTNETADDRIPV4& getOurAddress(){ return m_OurAddress;}
-    const RTNETADDRIPV4& getOurNetmask(){ return m_OurNetmask;}
-    const RTMAC& getOurMac() {return m_OurMac;}
+    const RTNETADDRIPV4& getOurAddress() const;
+    const RTNETADDRIPV4& getOurNetmask() const;
+    const RTMAC& getOurMac() const;
 
-    void setOurAddress(const RTNETADDRIPV4& aAddress){ m_OurAddress = aAddress;}
-    void setOurNetmask(const RTNETADDRIPV4& aNetmask){ m_OurNetmask = aNetmask;}
-    void setOurMac(const RTMAC& aMac) {m_OurMac = aMac;}
+    void setOurAddress(const RTNETADDRIPV4& aAddress);
+    void setOurNetmask(const RTNETADDRIPV4& aNetmask);
+    void setOurMac(const RTMAC& aMac);
 
-    /* XXX: artifacts should be hidden or removed from here. */
-    PSUPDRVSESSION m_pSession;
-    INTNETIFHANDLE m_hIf;
-    PINTNETBUF m_pIfBuf;
+    void setSession(PSUPDRVSESSION);
+    void setInterface(INTNETIFHANDLE);
+    void setRingBuffer(PINTNETBUF);
 
 private:
-    NetworkManager(){}
-    virtual ~NetworkManager(){}
+    NetworkManager();
+    ~NetworkManager();
 
     int prepareReplyPacket4Client(const Client& client, uint32_t u32Xid);
     int doReply(const Client& client, const std::vector<RawOption>& extra);
     int processParameterReqList(const Client& client, uint8_t *pu8ReqList, int cReqList);
 
-    union {
-        RTNETBOOTP BootPHeader;
-        uint8_t au8Storage[1024];
-    } BootPReplyMsg;
-    int cbBooPReplyMsg;
+private:
+    struct Data;
+    Data *m;
 
-    RTNETADDRIPV4 m_OurAddress;
-    RTNETADDRIPV4 m_OurNetmask;
-    RTMAC m_OurMac;
 };
 
 
