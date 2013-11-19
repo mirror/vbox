@@ -643,7 +643,7 @@ static void RecycleSerialNumberPtr(void* aPtr)
 
 static PRBool LogThisObj(PRInt32 aSerialNumber)
 {
-  return nsnull != PL_HashTableLookup(gObjectsToLog, (const void*)(aSerialNumber));
+  return nsnull != PL_HashTableLookup(gObjectsToLog, (const void*)(uintptr_t)(aSerialNumber));
 }
 
 static PRBool InitLog(const char* envVar, const char* msg, FILE* *result)
