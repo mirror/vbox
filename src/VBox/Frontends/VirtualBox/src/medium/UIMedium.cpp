@@ -79,6 +79,7 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
     m_strLastAccessError = other.lastAccessError();
     m_result = other.result();
 
+    m_strKey = other.key();
     m_strId = other.id();
     m_strName = other.name();
     m_strLocation = other.location();
@@ -167,6 +168,9 @@ void UIMedium::refresh()
     /* Detect basic parameters... */
 
     m_strId = m_medium.isNull() ? nullID() : m_medium.GetId();
+
+    if (m_strKey.isNull() && !m_strId.isNull())
+        m_strKey = m_strId;
 
     m_fHostDrive = m_medium.isNull() ? false : m_medium.GetHostDrive();
 

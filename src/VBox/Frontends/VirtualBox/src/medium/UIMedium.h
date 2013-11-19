@@ -137,6 +137,9 @@ public:
         return fNoDiffs ? m_noDiffs.result : m_result;
     }
 
+    QString key() const { return m_strKey; }
+    void setKey(const QString &strKey) { m_strKey = strKey; }
+
     QString id() const { return m_strId; }
     QString name(bool fNoDiffs = false) const { return fNoDiffs ? root().m_strName : m_strName; }
     QString location(bool fNoDiffs = false) const { return fNoDiffs ? root().m_strLocation : m_strLocation; }
@@ -232,6 +235,7 @@ private:
     QString m_strLastAccessError;
     COMResult m_result;
 
+    QString m_strKey;
     QString m_strId;
     QString m_strName;
     QString m_strLocation;
