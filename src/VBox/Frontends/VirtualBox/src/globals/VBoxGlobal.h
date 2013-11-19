@@ -251,7 +251,6 @@ public:
 
     /* API: Medium-processing stuff: */
     void createMedium(const UIMedium &medium);
-    void updateMedium(const UIMedium &medium);
     void deleteMedium(const QString &strMediumID);
     QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
                                          const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
@@ -380,7 +379,6 @@ signals:
 
     /* Notifiers: Medium-processing stuff: */
     void sigMediumCreated(const QString &strMediumID);
-    void sigMediumUpdated(const QString &strMediumID);
     void sigMediumDeleted(const QString &strMediumID);
 
     /* Notifiers: Medium-enumeration stuff: */

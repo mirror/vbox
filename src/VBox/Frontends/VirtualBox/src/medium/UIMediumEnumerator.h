@@ -37,7 +37,6 @@ signals:
 
     /* Notifiers: Medium-operations stuff: */
     void sigMediumCreated(const QString &strMediumID);
-    void sigMediumUpdated(const QString &strMediumID);
     void sigMediumDeleted(const QString &strMediumID);
 
     /* Notifiers: Medium-enumeration stuff: */
@@ -55,7 +54,6 @@ public:
     QList<QString> mediumIDs() const;
     UIMedium medium(const QString &strMediumID);
     void createMedium(const UIMedium &medium);
-    void updateMedium(const UIMedium &medium);
     void deleteMedium(const QString &strMediumID);
 
     /* API: Medium-enumeration stuff: */

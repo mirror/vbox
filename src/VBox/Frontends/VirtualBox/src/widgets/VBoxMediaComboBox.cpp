@@ -43,8 +43,6 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
     /* Setup medium-processing handlers: */
     connect(&vboxGlobal(), SIGNAL(sigMediumCreated(const QString&)),
             this, SLOT(sltHandleMediumCreated(const QString&)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumUpdated(const QString&)),
-            this, SLOT(sltHandleMediumUpdated(const QString&)));
     connect(&vboxGlobal(), SIGNAL(sigMediumDeleted(const QString&)),
             this, SLOT(sltHandleMediumDeleted(const QString&)));
 
@@ -52,7 +50,7 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()),
             this, SLOT(sltHandleMediumEnumerationStart()));
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const QString&)),
-            this, SLOT(sltHandleMediumUpdated(const QString&)));
+            this, SLOT(sltHandleMediumEnumerated(const QString&)));
 
     /* Setup other connections */
     connect (this, SIGNAL (activated (int)),
@@ -193,7 +191,7 @@ void VBoxMediaComboBox::sltHandleMediumCreated(const QString &strMediumID)
         QComboBox::setCurrentIndex(count() - 1);
 }
 
-void VBoxMediaComboBox::sltHandleMediumUpdated(const QString &strMediumID)
+void VBoxMediaComboBox::sltHandleMediumEnumerated(const QString &strMediumID)
 {
     /* Search for corresponding medium: */
     UIMedium medium = vboxGlobal().medium(strMediumID);

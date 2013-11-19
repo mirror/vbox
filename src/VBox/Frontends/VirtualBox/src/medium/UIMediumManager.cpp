@@ -339,42 +339,6 @@ void UIMediumManager::sltHandleMediumCreated(const QString &strMediumID)
         sltHandleCurrentItemChanged(pMediumItem);
 }
 
-void UIMediumManager::sltHandleMediumUpdated(const QString &strMediumID)
-{
-    /* Search for corresponding medium: */
-    UIMedium medium = vboxGlobal().medium(strMediumID);
-
-    /* Ignore non-interesting mediums: */
-    if ((medium.isNull()) || (medium.isHostDrive()))
-        return;
-
-    /* Ignore mediums (and their children) which are
-     * marked as hidden or attached to hidden machines only: */
-    if (isMediumAttachedToHiddenMachinesOnly(medium))
-        return;
-
-    /* Prepare medium-item: */
-    UIMediumItem *pMediumItem = 0;
-    switch (medium.type())
-    {
-        case UIMediumType_HardDisk: pMediumItem = searchItem(mTwHD, medium.id()); break;
-        case UIMediumType_DVD:      pMediumItem = searchItem(mTwCD, medium.id()); break;
-        case UIMediumType_Floppy:   pMediumItem = searchItem(mTwFD, medium.id()); break;
-        default: AssertFailed();
-    }
-    AssertPtrReturnVoid(pMediumItem);
-
-    /* Update medium-item: */
-    pMediumItem->setMedium(medium);
-
-    /* Update tab-icons: */
-    updateTabIcons(pMediumItem, ItemAction_Updated);
-
-    /* Update stuff if that was current-item updated: */
-    if (pMediumItem == currentTreeWidget()->currentItem())
-        sltHandleCurrentItemChanged(pMediumItem);
-}
-
 void UIMediumManager::sltHandleMediumDeleted(const QString &strMediumID)
 {
     /* Get tree/item: */
@@ -461,8 +425,38 @@ void UIMediumManager::sltHandleMediumEnumerationStart()
 
 void UIMediumManager::sltHandleMediumEnumerated(const QString &strMediumID)
 {
-    /* Handle medium-update: */
-    sltHandleMediumUpdated(strMediumID);
+    /* Search for corresponding medium: */
+    UIMedium medium = vboxGlobal().medium(strMediumID);
+
+    /* Ignore non-interesting mediums: */
+    if ((medium.isNull()) || (medium.isHostDrive()))
+        return;
+
+    /* Ignore mediums (and their children) which are
+     * marked as hidden or attached to hidden machines only: */
+    if (isMediumAttachedToHiddenMachinesOnly(medium))
+        return;
+
+    /* Prepare medium-item: */
+    UIMediumItem *pMediumItem = 0;
+    switch (medium.type())
+    {
+        case UIMediumType_HardDisk: pMediumItem = searchItem(mTwHD, medium.id()); break;
+        case UIMediumType_DVD:      pMediumItem = searchItem(mTwCD, medium.id()); break;
+        case UIMediumType_Floppy:   pMediumItem = searchItem(mTwFD, medium.id()); break;
+        default: AssertFailed();
+    }
+    AssertPtrReturnVoid(pMediumItem);
+
+    /* Update medium-item: */
+    pMediumItem->setMedium(medium);
+
+    /* Update tab-icons: */
+    updateTabIcons(pMediumItem, ItemAction_Updated);
+
+    /* Update stuff if that was current-item updated: */
+    if (pMediumItem == currentTreeWidget()->currentItem())
+        sltHandleCurrentItemChanged(pMediumItem);
 
     /* Advance progress-bar: */
     m_pProgressBar->setValue(m_pProgressBar->value() + 1);
@@ -654,9 +648,6 @@ void UIMediumManager::sltReleaseMedium()
     foreach (const QString &strMachineId, machineIds)
         if (!releaseMediumFrom(pMediumItem->medium(), strMachineId))
             break;
-
-    /* Inform others about medium changes: */
-    vboxGlobal().updateMedium(pMediumItem->medium());
 }
 
 void UIMediumManager::sltHandleCurrentTabChanged()
@@ -881,8 +872,6 @@ void UIMediumManager::prepareThis()
     /* Configure medium-processing connections: */
     connect(&vboxGlobal(), SIGNAL(sigMediumCreated(const QString&)),
             this, SLOT(sltHandleMediumCreated(const QString&)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumUpdated(const QString&)),
-            this, SLOT(sltHandleMediumUpdated(const QString&)));
     connect(&vboxGlobal(), SIGNAL(sigMediumDeleted(const QString&)),
             this, SLOT(sltHandleMediumDeleted(const QString&)));
 
