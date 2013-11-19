@@ -386,9 +386,9 @@ int VBoxNetDhcp::run(void)
 
     /* XXX: shortcut should be hidden from network manager */
     NetworkManager *netManager = NetworkManager::getNetworkManager();
-    netManager->m_pSession = m_pSession;
-    netManager->m_hIf = m_hIf;
-    netManager->m_pIfBuf = m_pIfBuf;
+    netManager->setSession(m_pSession);
+    netManager->setInterface(m_hIf);
+    netManager->setRingBuffer(m_pIfBuf);
 
     /*
      * The loop.
