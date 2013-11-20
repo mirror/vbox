@@ -367,9 +367,9 @@ struct NATNetwork
     bool         fNeedDhcpServer;
     NATRuleList  llPortForwardRules4;
     NATRuleList  llPortForwardRules6;
-    NATNetwork():fEnabled(false),
+    NATNetwork():fEnabled(true),
       fAdvertiseDefaultIPv6Route(false),
-      fNeedDhcpServer(false)
+      fNeedDhcpServer(true)
       {}
     bool operator==(const NATNetwork &n) const
     {
