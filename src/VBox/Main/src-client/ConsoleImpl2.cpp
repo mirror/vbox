@@ -5071,7 +5071,11 @@ int Console::configNetwork(const char *pszDevice,
                         /* Stop the hostonly DHCP Server */
                     }
 
-                    if (!networkName.isEmpty())
+                    /*
+                     * NAT networks start their DHCP server theirself, see NATNetwork::Start()
+                     */
+                    if (   !networkName.isEmpty()
+                        && eAttachmentType != NetworkAttachmentType_NATNetwork)
                     {
                         /*
                          * Until we implement service reference counters DHCP Server will be stopped
