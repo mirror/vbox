@@ -152,13 +152,6 @@ protected:
     VBOXNETUDPHDRS      m_CurHdrs;
     /** @} */
 };
-#if 0
-/* XXX: clean up it. */
-typedef std::vector<VBoxNetDhcpLease> DhcpLeaseContainer;
-typedef DhcpLeaseContainer::iterator DhcpLeaseIterator;
-typedef DhcpLeaseContainer::reverse_iterator DhcpLeaseRIterator;
-typedef DhcpLeaseContainer::const_iterator DhcpLeaseCIterator;
-#endif
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -175,75 +168,6 @@ static RTGETOPTDEF g_aOptionDefs[] =
   { "--lower-ip",       'l',   RTGETOPT_REQ_IPV4ADDR },
   { "--upper-ip",       'u',   RTGETOPT_REQ_IPV4ADDR },
 };
-
-#if 0
-/* XXX this will gone */
-/**
- * Offer this lease to a client.
- *
- * @param   xid             The transaction ID.
- */
-void VBoxNetDhcpLease::offer(uint32_t xid)
-{
-    m_enmState = kState_Offer;
-    m_xid = xid;
-    RTTimeNow(&m_ExpireTime);
-    RTTimeSpecAddSeconds(&m_ExpireTime, 60);
-}
-
-
-/**
- * Activate this lease (i.e. a client is now using it).
- */
-void VBoxNetDhcpLease::activate(void)
-{
-    m_enmState = kState_Active;
-    RTTimeNow(&m_ExpireTime);
-    RTTimeSpecAddSeconds(&m_ExpireTime, m_pCfg ? m_pCfg->m_cSecLease : 60); /* m_pCfg can be NULL right now... */
-}
-
-
-/**
- * Activate this lease with a new transaction ID.
- *
- * @param   xid     The transaction ID.
- * @todo    check if this is really necessary.
- */
-void VBoxNetDhcpLease::activate(uint32_t xid)
-{
-    activate();
-    m_xid = xid;
-}
-
-
-/**
- * Release a lease either upon client request or because it didn't quite match a
- * DHCP_REQUEST.
- */
-void VBoxNetDhcpLease::release(void)
-{
-    m_enmState = kState_Free;
-    RTTimeNow(&m_ExpireTime);
-    RTTimeSpecAddSeconds(&m_ExpireTime, 5);
-}
-
-
-/**
- * Checks if the lease has expired or not.
- *
- * This just checks the expiration time not the state. This is so that this
- * method will work for reusing RELEASEd leases when the client comes back after
- * a reboot or ipconfig /renew. Callers not interested in info on released
- * leases should check the state first.
- *
- * @returns true if expired, false if not.
- */
-bool VBoxNetDhcpLease::hasExpired() const
-{
-    RTTIMESPEC Now;
-    return RTTimeSpecGetSeconds(&m_ExpireTime) > RTTimeSpecGetSeconds(RTTimeNow(&Now));
-}
-#endif
 
 /**
  * Construct a DHCP server with a default configuration.
