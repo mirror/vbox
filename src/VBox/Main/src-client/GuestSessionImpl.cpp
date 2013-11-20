@@ -282,7 +282,7 @@ void GuestSession::uninit(void)
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("Closing directories (%zu total)\n",
                      mData.mDirectories.size()));
@@ -320,7 +320,7 @@ void GuestSession::uninit(void)
     }
     mData.mProcesses.clear();
 
-    AssertMsg(mData.mNumObjects == 0, 
+    AssertMsg(mData.mNumObjects == 0,
               ("mNumObjects=%RU32 when it should be 0\n", mData.mNumObjects));
 
     baseUninit();
@@ -730,7 +730,7 @@ int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode
             else
                 vrc = VERR_INVALID_PARAMETER;
         }
-        
+
         if (uMode)
         {
             procInfo.mArguments.push_back(Utf8Str("--mode")); /* Set the creation mode. */
@@ -807,7 +807,7 @@ int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
             Assert(mData.mNumObjects);
             LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %zu processes, %ld objects)\n",
                          Utf8Str(strName).c_str(), mData.mSession.mID, mData.mDirectories.size() - 1, mData.mNumObjects - 1));
- 
+
             rc = pDirectory->onRemove();
             mData.mDirectories.erase(itDirs);
             mData.mNumObjects--;
@@ -1193,7 +1193,7 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = VERR_NOT_FOUND;    
+    int rc = VERR_NOT_FOUND;
 
     SessionFiles::iterator itFiles = mData.mFiles.begin();
     while (itFiles != mData.mFiles.end())
@@ -1220,7 +1220,7 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
 
             fireGuestFileRegisteredEvent(mEventSource, this, pCurFile,
                                          false /* Unregistered */);
-            pCurFile.setNull();            
+            pCurFile.setNull();
             break;
         }
 
@@ -1228,7 +1228,7 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
     }
 
     LogFlowFuncLeaveRC(rc);
-    return rc;    
+    return rc;
 }
 
 int GuestSession::fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
@@ -1425,7 +1425,8 @@ int GuestSession::fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &ob
             vrc = VERR_NO_DATA;
     }
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n",
+                     vrc, guestRc));
     return vrc;
 }
 
@@ -1514,8 +1515,8 @@ HRESULT GuestSession::isReadyExternal(void)
 }
 
 /**
- * Called by IGuest right before this session gets removed from 
- * the public session list. 
+ * Called by IGuest right before this session gets removed from
+ * the public session list.
  */
 int GuestSession::onRemove(void)
 {
@@ -1525,7 +1526,7 @@ int GuestSession::onRemove(void)
 
     int vrc = VINF_SUCCESS;
 
-    /* 
+    /*
      * Note: The event source stuff holds references to this object,
      *       so make sure that this is cleaned up *before* calling uninit.
      */

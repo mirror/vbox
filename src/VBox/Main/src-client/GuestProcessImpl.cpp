@@ -518,31 +518,28 @@ int GuestProcess::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTC
  * been discarded there and the same context ID was reused by
  * a process B. Process B in turn then has a different guest PID.
  *
+ * Note: This also can happen when restoring from a saved state which
+ *       had a guest process running.
+ *
  * @return  IPRT status code.
  * @param   uPID                    PID to check.
  */
 inline int GuestProcess::checkPID(uint32_t uPID)
 {
+    int rc = VINF_SUCCESS;
+
     /* Was there a PID assigned yet? */
     if (mData.mPID)
     {
-        /*
-
-         */
-        if (mSession->getProtocolVersion() < 2)
+        if (RT_UNLIKELY(mData.mPID != uPID))
         {
-            /* Simply ignore the stale requests. */
-            return (mData.mPID == uPID)
-                   ? VINF_SUCCESS : VERR_NOT_FOUND;
+            LogFlowFunc(("Stale guest process (PID=%RU32) sent data to a newly started process (pProcesS=%p, PID=%RU32, status=%RU32)\n",
+                         uPID, this, mData.mPID, mData.mStatus));
+            rc = VERR_NOT_FOUND;
         }
-#ifndef DEBUG_andy
-        /* This should never happen! */
-        AssertReleaseMsg(mData.mPID == uPID, ("Unterminated guest process (guest PID %RU32) sent data to a newly started process (host PID %RU32)\n",
-                                              uPID, mData.mPID));
-#endif
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /* static */
@@ -864,8 +861,8 @@ int GuestProcess::onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
 }
 
 /**
- * Called by IGuestSession right before this process gets 
- * removed from the public process list. 
+ * Called by IGuestSession right before this process gets
+ * removed from the public process list.
  */
 int GuestProcess::onRemove(void)
 {
@@ -875,7 +872,7 @@ int GuestProcess::onRemove(void)
 
     int vrc = VINF_SUCCESS;
 
-    /* 
+    /*
      * Note: The event source stuff holds references to this object,
      *       so make sure that this is cleaned up *before* calling uninit().
      */
@@ -2059,8 +2056,8 @@ int GuestProcessTool::Init(GuestSession *pGuestSession, const GuestProcessStartu
 
     int vrc = pSession->processCreateExInteral(mStartupInfo, pProcess);
     if (RT_SUCCESS(vrc))
-        vrc = fAsync 
-            ? pProcess->startProcessAsync() 
+        vrc = fAsync
+            ? pProcess->startProcessAsync()
             : pProcess->startProcess(30 * 1000 /* 30s timeout */, pGuestRc);
 
     if (   RT_SUCCESS(vrc)
@@ -2163,19 +2160,16 @@ int GuestProcessTool::RunEx(      GuestSession            *pGuestSession,
     {
         /* Make sure the process runs until completion. */
         vrc = procTool.Wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
+        if (RT_SUCCESS(vrc))
+        {
+            guestRc = procTool.TerminatedOk(NULL /* Exit code */);
+            if (RT_FAILURE(guestRc))
+                vrc = VERR_GSTCTL_GUEST_ERROR;
+        }
+    }
 
-        Assert(RT_SUCCESS(guestRc));
-        guestRc = procTool.TerminatedOk(NULL /* Exit code */);
-        if (RT_FAILURE(guestRc))
-            vrc = VERR_GSTCTL_GUEST_ERROR;                        
-        if (pGuestRc)
-            *pGuestRc = guestRc;
-    }
-    else if (vrc == VERR_GSTCTL_GUEST_ERROR)
-    {
-        if (pGuestRc)
-            *pGuestRc = guestRc;
-    }
+    if (pGuestRc)
+        *pGuestRc = guestRc;
 
     LogFlowFunc(("Returned rc=%Rrc, guestRc=%Rrc\n", vrc, guestRc));
     return vrc;
@@ -2321,7 +2315,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBlkO
                 break;
 
             default:
-                AssertReleaseMsgFailed(("Unhandled process wait result %RU32\n", waitRes));
+                AssertMsgFailed(("Unhandled process wait result %RU32\n", waitRes));
                 break;
         }
 
