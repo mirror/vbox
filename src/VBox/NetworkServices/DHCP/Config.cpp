@@ -697,6 +697,58 @@ NetworkManager *NetworkManager::getNetworkManager()
 }
 
 
+const RTNETADDRIPV4& NetworkManager::getOurAddress() const
+{
+    return m->m_OurAddress;
+}
+
+
+const RTNETADDRIPV4& NetworkManager::getOurNetmask() const
+{
+    return m->m_OurNetmask;
+}
+
+
+const RTMAC& NetworkManager::getOurMac() const
+{
+    return m->m_OurMac;
+}
+
+
+void NetworkManager::setOurAddress(const RTNETADDRIPV4& aAddress)
+{
+    m->m_OurAddress = aAddress;
+}
+
+
+void NetworkManager::setOurNetmask(const RTNETADDRIPV4& aNetmask)
+{
+    m->m_OurNetmask = aNetmask;
+}
+
+
+void NetworkManager::setOurMac(const RTMAC& aMac)
+{
+    m->m_OurMac = aMac;
+}
+
+
+void NetworkManager::setSession(PSUPDRVSESSION aSession)
+{
+    m->m_pSession = aSession;
+}
+
+
+void NetworkManager::setInterface(INTNETIFHANDLE aIf)
+{
+    m->m_hIf = aIf;
+}
+
+
+void NetworkManager::setRingBuffer(PINTNETBUF aBuf)
+{
+    m->m_pIfBuf = aBuf;
+}
 /**
  * Network manager creates DHCPOFFER datagramm
  */
@@ -823,60 +875,6 @@ int NetworkManager::nak(const Client& client, uint32_t u32Xid)
     extra.push_back(opt);
 
     return doReply(client, extra);
-}
-
-
-const RTNETADDRIPV4& NetworkManager::getOurAddress() const
-{
-    return m->m_OurAddress;
-}
-
-
-const RTNETADDRIPV4& NetworkManager::getOurNetmask() const
-{
-    return m->m_OurNetmask;
-}
-
-
-const RTMAC& NetworkManager::getOurMac() const
-{
-    return m->m_OurMac;
-}
-
-
-void NetworkManager::setOurAddress(const RTNETADDRIPV4& aAddress)
-{
-    m->m_OurAddress = aAddress;
-}
-
-
-void NetworkManager::setOurNetmask(const RTNETADDRIPV4& aNetmask)
-{
-    m->m_OurNetmask = aNetmask;
-}
-
-
-void NetworkManager::setOurMac(const RTMAC& aMac)
-{
-    m->m_OurMac = aMac;
-}
-
-
-void NetworkManager::setSession(PSUPDRVSESSION aSession)
-{
-    m->m_pSession = aSession;
-}
-
-
-void NetworkManager::setInterface(INTNETIFHANDLE aIf)
-{
-    m->m_hIf = aIf;
-}
-
-
-void NetworkManager::setRingBuffer(PINTNETBUF aBuf)
-{
-    m->m_pIfBuf = aBuf;
 }
 
 /**
