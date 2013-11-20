@@ -36,6 +36,14 @@ class UIMediumItem;
 class UIEnumerationProgressBar;
 class UIMedium;
 
+/** Functor interface allowing to check if passed UIMediumItem is suitable. */
+class CheckIfSuitableBy
+{
+public:
+    /** Determines whether passed UIMediumItem is suitable. */
+    virtual bool isItSuitable(UIMediumItem *pItem) const = 0;
+};
+
 /* Medium Manager Dialog: */
 class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>, public Ui::UIMediumManager
 {
@@ -133,7 +141,8 @@ private:
     QTreeWidget* currentTreeWidget() const;
     void setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem);
     UIMediumItem* toMediumItem(QTreeWidgetItem *pItem) const;
-    UIMediumItem* searchItem(QTreeWidget *pTree, const QString &strId) const;
+    UIMediumItem* searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &functor) const;
+    UIMediumItem* searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &functor) const;
     UIMediumItem* createHardDiskItem(QTreeWidget *pTree, const UIMedium &medium) const;
 
     /* Internal API: Tab-widget access stuff: */
