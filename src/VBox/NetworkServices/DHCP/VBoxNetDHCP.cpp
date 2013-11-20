@@ -365,7 +365,7 @@ int VBoxNetDhcp::init()
     netManager->setOurNetmask(m_Ipv4Netmask);
     netManager->setOurMac(m_MacAddress);
     
-    if (m_fNeedMain)
+    if (isMainNeeded())
         rc = initWithMain();
     else
         rc = initNoMain();

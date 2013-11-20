@@ -38,7 +38,7 @@ public:
     virtual int         parseOpt(int rc, const RTGETOPTUNION& getOptVal) = 0;
 
     virtual int         init(void);
-
+    virtual bool        isMainNeeded() { return m_fNeedMain; }
     /* VirtualBox instance */
     ComPtr<IVirtualBox> virtualbox;
 
@@ -82,7 +82,6 @@ protected:
     INTNETIFHANDLE      m_hIf;          /**< The handle to the network interface. */
     PINTNETBUF          m_pIfBuf;       /**< Interface buffer. */
     std::vector<PRTGETOPTDEF> m_vecOptionDefs;
-    bool                m_fNeedMain;
     /** @} */
     /** @name Debug stuff
      * @{  */
@@ -92,6 +91,8 @@ private:
 
     /* cs for syncing */
     RTCRITSECT          m_csThis;
+    /* Controls whether service will connect SVC for runtime needs */
+    bool                m_fNeedMain;
 
     /** @} */
 };
