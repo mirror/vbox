@@ -56,6 +56,12 @@ static ConfigurationManager *g_ConfigurationManager = ConfigurationManager::getC
 
 static NetworkManager *g_NetworkManager = NetworkManager::getNetworkManager();
 
+bool MACClientMatchCriteria::check(const Client& client) const
+{
+    return (client == m_mac);
+}
+
+
 int BaseConfigEntity::match(Client& client, BaseConfigEntity **cfg)
 {
     int iMatch = (m_criteria && m_criteria->check(client)? m_MatchLevel: 0);
@@ -505,6 +511,14 @@ bool ConfigurationManager::isAddressTaken(const RTNETADDRIPV4& addr, Lease& leas
     lease = Lease::NullLease;
     return false;
 }
+
+
+bool ConfigurationManager::isAddressTaken(const RTNETADDRIPV4& addr)
+{
+    Lease ignore;
+    return isAddressTaken(addr, ignore);
+}
+
 
 
 NetworkConfigEntity *ConfigurationManager::addNetwork(NetworkConfigEntity *,
