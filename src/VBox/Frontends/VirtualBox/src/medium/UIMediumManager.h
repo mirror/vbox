@@ -84,9 +84,6 @@ private slots:
     void sltHandleDoubleClick();
     void sltHandleContextMenuCall(const QPoint &position);
 
-    /* Handler: Machine stuff: */
-    void sltHandleMachineStateChanged(QString strId, KMachineState state);
-
     /* Handlers: Geometry stuff:  */
     void sltMakeRequestForTableAdjustment();
     void sltPerformTablesAdjustment();

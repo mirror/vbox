@@ -59,17 +59,17 @@ class UIMediumItem : public QTreeWidgetItem
 public:
 
     /* Medium-item type: */
-    enum { MediaItemType = QTreeWidgetItem::UserType + 1 };
+    enum { Type = QTreeWidgetItem::UserType + 1 };
 
     /* Constructor: Top-level item: */
     UIMediumItem(const UIMedium &medium, QTreeWidget *pParent)
-        : QTreeWidgetItem(pParent, MediaItemType)
+        : QTreeWidgetItem(pParent, Type)
         , m_medium(medium)
     { refresh(); }
 
     /* Constructor: Child item: */
     UIMediumItem(const UIMedium &medium, UIMediumItem *pParent)
-        : QTreeWidgetItem(pParent, MediaItemType)
+        : QTreeWidgetItem(pParent, Type)
         , m_medium(medium)
     { refresh(); }
 
@@ -88,8 +88,8 @@ public:
         refresh();
     }
 
-    /* API: Type stuff: */
-    UIMediumType type() const { return m_medium.type(); }
+    /* API: Medium-type stuff: */
+    UIMediumType mediumType() const { return m_medium.type(); }
 
     /* API: State stuff: */
     KMediumState state() const { return m_medium.state(); }
@@ -145,7 +145,7 @@ private:
 };
 
 
-/* Medium-item: */
+/* Medium-item iterator: */
 class UIMediumItemIterator : public QTreeWidgetItemIterator
 {
 public:
@@ -156,7 +156,7 @@ public:
     UIMediumItem* operator*()
     {
         QTreeWidgetItem *pItem = QTreeWidgetItemIterator::operator*();
-        return pItem && pItem->type() == UIMediumItem::MediaItemType ?
+        return pItem && pItem->type() == UIMediumItem::Type ?
             static_cast<UIMediumItem*>(pItem) : 0;
     }
 
@@ -263,11 +263,6 @@ void UIMediumManager::showModeless(QWidget *pCenterWidget /* = 0*/, bool fRefres
 
 void UIMediumManager::refreshAll()
 {
-    // TODO (Planned to 4.3.release by Dsen)
-    // Currently we just restarting medium-enumeration which is *very* expensive.
-    // To make it proper way, we have to invalidate mediums which were known as *related*
-    // to machine who's event called for *full-refresh* and start medium-enumeration.
-    // But medium-enumeration itself should update *only* invalidated mediums.
     vboxGlobal().startMediumEnumeration();
 }
 
@@ -521,7 +516,7 @@ void UIMediumManager::sltRemoveMedium()
     /* Remember ID/type as they may get lost after the closure/deletion: */
     QString strMediumID = pMediumItem->id();
     AssertReturnVoid(!strMediumID.isNull());
-    UIMediumType type = pMediumItem->type();
+    UIMediumType type = pMediumItem->mediumType();
 
     /* Confirm medium removal: */
     if (!msgCenter().confirmMediumRemoval(pMediumItem->medium(), this))
@@ -751,26 +746,6 @@ void UIMediumManager::sltHandleContextMenuCall(const QPoint &position)
         setCurrentItem(pTree, pItem);
         /* Show context menu: */
         m_pContextMenu->exec(pTree->viewport()->mapToGlobal(position));
-    }
-}
-
-void UIMediumManager::sltHandleMachineStateChanged(QString, KMachineState state)
-{
-    switch (state)
-    {
-        case KMachineState_PoweredOff:
-        case KMachineState_Aborted:
-        case KMachineState_Saved:
-        case KMachineState_Teleported:
-        case KMachineState_Starting:
-        case KMachineState_Restoring:
-        case KMachineState_TeleportingIn:
-        {
-            refreshAll();
-            break;
-        }
-        default:
-            break;
     }
 }
 
@@ -1486,7 +1461,7 @@ void UIMediumManager::setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem)
 UIMediumItem* UIMediumManager::toMediumItem(QTreeWidgetItem *pItem) const
 {
     /* Return UIMediumItem based on QTreeWidgetItem if it is valid: */
-    if (pItem && pItem->type() == UIMediumItem::MediaItemType)
+    if (pItem && pItem->type() == UIMediumItem::Type)
         return static_cast<UIMediumItem*>(pItem);
     /* Null by default: */
     return 0;
@@ -1518,11 +1493,10 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
 
     /* Prepare medium-item: */
     UIMediumItem *pMediumItem = 0;
-    CMedium parent = medium.medium().GetParent();
 
     /* First try to create item under corresponding parent: */
-    if (!parent.isNull())
-        if (UIMediumItem *pRoot = searchItem(pTree, parent.GetId()))
+    if (medium.parentID() != UIMedium::nullID())
+        if (UIMediumItem *pRoot = searchItem(pTree, medium.parentID()))
             pMediumItem = new UIMediumItem(medium, pRoot);
     /* Else just create item as top-level one: */
     if (!pMediumItem)
@@ -1541,7 +1515,7 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, ItemAction actio
     int iTab = -1;
     const QIcon *pIcon = 0;
     bool *pfInaccessible = 0;
-    switch (pMediumItem->type())
+    switch (pMediumItem->mediumType())
     {
         case UIMediumType_HardDisk:
             iTab = HDTab;
