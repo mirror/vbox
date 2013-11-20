@@ -492,6 +492,7 @@ int ConfigurationManager::expireLease4Client(Client& client)
     return VINF_SUCCESS;
 }
 
+
 bool ConfigurationManager::isAddressTaken(const RTNETADDRIPV4& addr, Lease& lease)
 {
     MapLease2Ip4AddressIterator it;
@@ -518,7 +519,6 @@ bool ConfigurationManager::isAddressTaken(const RTNETADDRIPV4& addr)
     Lease ignore;
     return isAddressTaken(addr, ignore);
 }
-
 
 
 NetworkConfigEntity *ConfigurationManager::addNetwork(NetworkConfigEntity *,
