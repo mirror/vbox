@@ -62,8 +62,10 @@ public:
 
 private slots:
 
-    /* Handler: Machine stuff: */
+    /** Handles machine-data-change and snapshot-change events. */
     void sltHandleMachineUpdate(QString strMachineID);
+    /** Handles machine-[un]registration events. */
+    void sltHandleMachineRegistration(QString strMachineID, bool fRegistered);
 
     /* Handler: Medium-enumeration stuff: */
     void sltHandleMediumEnumerationTaskComplete(UITask *pTask);
