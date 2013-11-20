@@ -7899,6 +7899,12 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
         int rc = hmR0VmxSaveHostState(pVM, pVCpu);
         AssertRC(rc);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPreemptSaveHostState);
+
+        /*
+         * Prevent unnecessary host-state updates in case fUpdatedHostMsrs remains false 
+         * throughout execution (e.g. if we are not swapping any MSRs)
+         */
+        pVCpu->hm.s.vmx.fUpdatedHostMsrs = true;
     }
     Assert(!VMCPU_HMCF_IS_PENDING(pVCpu, HM_CHANGED_HOST_CONTEXT));
 
