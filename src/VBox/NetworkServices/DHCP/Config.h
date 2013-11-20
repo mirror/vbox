@@ -228,10 +228,7 @@ class MACClientMatchCriteria: public ClientMatchCriteria
 public:
     MACClientMatchCriteria(const RTMAC& mac):m_mac(mac){}
 
-    virtual bool check(const Client& client) const
-    {
-        return (client == m_mac);
-    }
+    virtual bool check(const Client& client) const;
 
 private:
     RTMAC m_mac;
@@ -479,11 +476,7 @@ private:
 
     ~ConfigurationManager();
     bool isAddressTaken(const RTNETADDRIPV4& addr, Lease& lease);
-    bool isAddressTaken(const RTNETADDRIPV4& addr)
-    {
-        Lease ignore;
-        return isAddressTaken(addr, ignore);
-    }
+    bool isAddressTaken(const RTNETADDRIPV4& addr);
 
 public:
     /* nulls */
