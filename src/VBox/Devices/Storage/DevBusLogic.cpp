@@ -3933,7 +3933,12 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("BusLogic configuration error: failed to read Bootable as boolean"));
     Log(("%s: fBootable=%RTbool\n", __FUNCTION__, fBootable));
-    rc = CFGMR3QueryStringDef(pCfg, "ISACompat", achISACompat, sizeof(achISACompat), "Alternate");
+
+    /* Only the first instance defaults to having the ISA compatibility ports enabled. */
+    if (iInstance == 0)
+        rc = CFGMR3QueryStringDef(pCfg, "ISACompat", achISACompat, sizeof(achISACompat), "Alternate");
+    else
+        rc = CFGMR3QueryStringDef(pCfg, "ISACompat", achISACompat, sizeof(achISACompat), "Disabled");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("BusLogic configuration error: failed to read ISACompat as string"));
