@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# VBox implementation of DebugAgentLib that reports EFI state transitions 
+# VBox implementation of DebugAgentLib that reports EFI state transitions
 # to DevEFI (for debugging purposes).
 #
 
