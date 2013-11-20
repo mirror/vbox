@@ -741,7 +741,6 @@ int NetworkManager::offer4Client(const Client& client, uint32_t u32Xid,
     return doReply(client, extra);
 }
 
-
 /**
  * Network manager creates DHCPACK
  */
@@ -793,7 +792,6 @@ int NetworkManager::ack(const Client& client, uint32_t u32Xid,
 
     return doReply(client, extra);
 }
-
 
 /**
  * Network manager creates DHCPNAK

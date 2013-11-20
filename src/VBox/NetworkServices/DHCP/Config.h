@@ -165,7 +165,6 @@ typedef MapLease2Ip4Address::iterator MapLease2Ip4AddressIterator;
 typedef MapLease2Ip4Address::const_iterator MapLease2Ip4AddressConstIterator;
 typedef MapLease2Ip4Address::value_type MapLease2Ip4AddressPair;
 
-
 /**
  *
  */
