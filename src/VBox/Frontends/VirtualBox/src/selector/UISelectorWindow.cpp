@@ -951,7 +951,7 @@ void UISelectorWindow::retranslateUi()
              +  QString(RTBldCfgVersion())
              +  QString(" r")
              +  QString(RTBldCfgRevisionStr())
-             +  QString(" - "VBOX_BLEEDING_EDGE);
+             +  QString(" - " VBOX_BLEEDING_EDGE);
 #endif /* VBOX_BLEEDING_EDGE */
     setWindowTitle(strTitle);
 

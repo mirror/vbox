@@ -425,7 +425,8 @@ HRESULT VFSExplorer::updateS3(TaskVFSExplorer *aTask)
     std::list<VFSExplorer::Data::DirEntry> fileList;
     try
     {
-        int vrc = RTS3Create(&hS3, m->strUsername.c_str(), m->strPassword.c_str(), m->strHostname.c_str(), "virtualbox-agent/"VBOX_VERSION_STRING);
+        int vrc = RTS3Create(&hS3, m->strUsername.c_str(), m->strPassword.c_str(),
+                             m->strHostname.c_str(), "virtualbox-agent/" VBOX_VERSION_STRING);
         if (RT_FAILURE(vrc))
             throw setError(E_FAIL, tr ("Can't open S3 storage service (%Rrc)"), vrc);
 
@@ -503,7 +504,8 @@ HRESULT VFSExplorer::deleteS3(TaskVFSExplorer *aTask)
     float fPercentStep = 100.0f / aTask->filenames.size();
     try
     {
-        int vrc = RTS3Create(&hS3, m->strUsername.c_str(), m->strPassword.c_str(), m->strHostname.c_str(), "virtualbox-agent/"VBOX_VERSION_STRING);
+        int vrc = RTS3Create(&hS3, m->strUsername.c_str(), m->strPassword.c_str(),
+                             m->strHostname.c_str(), "virtualbox-agent/" VBOX_VERSION_STRING);
         if (RT_FAILURE(vrc))
             throw setError(E_FAIL, tr ("Can't open S3 storage service (%Rrc)"), vrc);
 
