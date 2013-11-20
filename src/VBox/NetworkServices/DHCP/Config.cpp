@@ -27,54 +27,7 @@
 #include <string>
 
 #include "Config.h"
-
-/* types */
-class ClientData
-{
-public:
-    ClientData()
-    {
-        m_address.u = 0;
-        m_network.u = 0;
-        fHasLease = false;
-        fHasClient = false;
-        fBinding = true;
-        u64TimestampBindingStarted = 0;
-        u64TimestampLeasingStarted = 0;
-        u32LeaseExpirationPeriod = 0;
-        u32BindExpirationPeriod = 0;
-        pCfg = NULL;
-
-    }
-    ~ClientData(){}
-    
-    /* client information */
-    RTNETADDRIPV4 m_address;
-    RTNETADDRIPV4 m_network;
-    RTMAC m_mac;
-    
-    bool fHasClient;
-
-    /* Lease part */
-    bool fHasLease; 
-    /** lease isn't commited */
-    bool fBinding;
-
-    /** Timestamp when lease commited. */
-    uint64_t u64TimestampLeasingStarted;
-    /** Period when lease is expired in secs. */
-    uint32_t u32LeaseExpirationPeriod;
-
-    /** timestamp when lease was bound */
-    uint64_t u64TimestampBindingStarted;
-    /* Period when binding is expired in secs. */
-    uint32_t u32BindExpirationPeriod;
-
-    MapOptionId2RawOption options;
-
-    NetworkConfigEntity *pCfg;
-};
-
+#include "ClientDataInt.h"
 
 bool operator== (const Lease& lhs, const Lease& rhs)
 {

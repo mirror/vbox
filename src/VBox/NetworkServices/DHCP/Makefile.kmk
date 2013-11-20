@@ -44,6 +44,7 @@ VBoxNetDHCP_TEMPLATE := VBOX$(if-expr defined(VBOX_WITH_HARDENING),MAINDLL,MAINC
 VBoxNetDHCP_SOURCES = \
 	VBoxNetDHCP.cpp \
 	Config.cpp \
+	NetworkManagerDhcp.cpp \
 	../NetLib/VBoxNetIntIf.cpp \
 	../NetLib/VBoxNetUDP.cpp \
 	../NetLib/VBoxNetARP.cpp \
