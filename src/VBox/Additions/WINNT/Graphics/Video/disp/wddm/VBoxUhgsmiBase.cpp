@@ -177,7 +177,6 @@ DECLCALLBACK(int) vboxUhgsmiBaseEscBufferSubmit(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_
         PVBOXUHGSMI_BUFFER_SUBMIT pBufInfo = &aBuffers[i];
         PVBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE pBuf = VBOXUHGSMIESCBASE_GET_BUFFER(pBufInfo->pBuf);
         pSubmInfo->hAlloc = pBuf->Alloc.hAlloc;
-        pSubmInfo->Info.bDoNotSignalCompletion = 0;
         if (pBufInfo->fFlags.bEntireBuffer)
         {
             pSubmInfo->Info.offData = 0;

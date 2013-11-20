@@ -195,9 +195,6 @@ typedef enum {
     CR_VBOXHGCM_USERALLOCATED,
     CR_VBOXHGCM_MEMORY,
     CR_VBOXHGCM_MEMORY_BIG
-#ifdef RT_OS_WINDOWS
-    ,CR_VBOXHGCM_DDRAW_SURFACE
-#endif
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
     ,CR_VBOXHGCM_UHGSMI_BUFFER
 #endif
@@ -220,9 +217,6 @@ typedef struct CRVBOXHGCMBUFFER {
         PVBOXUHGSMI_BUFFER pBuffer;
 #endif
     };
-#ifdef RT_OS_WINDOWS
-    LPDIRECTDRAWSURFACE  pDDS;
-#endif
 } CRVBOXHGCMBUFFER;
 
 #ifndef RT_OS_WINDOWS
@@ -705,92 +699,6 @@ static void *_crVBoxHGCMAlloc(CRConnection *conn)
                         (void *) g_crvboxhgcm.bufpool,
                         (unsigned int)sizeof(CRVBOXHGCMBUFFER) + conn->buffer_size);
 
-#if defined(IN_GUEST) && defined(RT_OS_WINDOWS)
-        /* Try to start DDRAW on guest side */
-        if (!g_crvboxhgcm.pDirectDraw && 0)
-        {
-            HRESULT hr;
-
-            hr = DirectDrawCreate(NULL, &g_crvboxhgcm.pDirectDraw, NULL);
-            if (hr != DD_OK)
-            {
-                crWarning("Failed to create DirectDraw interface (%x)\n", hr);
-                g_crvboxhgcm.pDirectDraw = NULL;
-            }
-            else
-            {
-                hr = IDirectDraw_SetCooperativeLevel(g_crvboxhgcm.pDirectDraw, NULL, DDSCL_NORMAL);
-                if (hr != DD_OK)
-                {
-                    crWarning("Failed to SetCooperativeLevel (%x)\n", hr);
-                    IDirectDraw_Release(g_crvboxhgcm.pDirectDraw);
-                    g_crvboxhgcm.pDirectDraw = NULL;
-                }
-                crDebug("Created DirectDraw and set CooperativeLevel successfully\n");
-            }
-        }
-
-        /* Try to allocate buffer via DDRAW */
-        if (g_crvboxhgcm.pDirectDraw)
-        {
-            DDSURFACEDESC       ddsd;
-            HRESULT             hr;
-            LPDIRECTDRAWSURFACE lpDDS;
-
-            memset(&ddsd, 0, sizeof(ddsd));
-            ddsd.dwSize  = sizeof(ddsd);
-
-            /* @todo DDSCAPS_VIDEOMEMORY ain't working for some reason
-             * also, it would be better to request dwLinearSize but it fails too
-             * ddsd.dwLinearSize = sizeof(CRVBOXHGCMBUFFER) + conn->buffer_size;
-             */
-
-            ddsd.dwFlags = DDSD_CAPS | DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT;
-            ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
-            /* use 1 byte per pixel format */
-            ddsd.ddpfPixelFormat.dwSize = sizeof(ddsd.ddpfPixelFormat);
-            ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
-            ddsd.ddpfPixelFormat.dwRGBBitCount = 8;
-            ddsd.ddpfPixelFormat.dwRBitMask = 0xFF;
-            ddsd.ddpfPixelFormat.dwGBitMask = 0;
-            ddsd.ddpfPixelFormat.dwBBitMask = 0;
-            /* request given buffer size, rounded to 1k */
-            ddsd.dwWidth = 1024;
-            ddsd.dwHeight = (sizeof(CRVBOXHGCMBUFFER) + conn->buffer_size + ddsd.dwWidth-1)/ddsd.dwWidth;
-
-            hr = IDirectDraw_CreateSurface(g_crvboxhgcm.pDirectDraw, &ddsd, &lpDDS, NULL);
-            if (hr != DD_OK)
-            {
-                crWarning("Failed to create DirectDraw surface (%x)\n", hr);
-            }
-            else
-            {
-                crDebug("Created DirectDraw surface (%x)\n", lpDDS);
-
-                hr = IDirectDrawSurface_Lock(lpDDS, NULL, &ddsd, DDLOCK_SURFACEMEMORYPTR, NULL);
-                if (hr != DD_OK)
-                {
-                    crWarning("Failed to lock DirectDraw surface (%x)\n", hr);
-                    IDirectDrawSurface_Release(lpDDS);
-                }
-                else
-                {
-                    uint32_t cbLocked;
-                    cbLocked = (ddsd.dwFlags & DDSD_LINEARSIZE) ? ddsd.dwLinearSize : ddsd.lPitch*ddsd.dwHeight;
-
-                    crDebug("Locked %d bytes DirectDraw surface\n", cbLocked);
-
-                    buf = (CRVBOXHGCMBUFFER *) ddsd.lpSurface;
-                    CRASSERT(buf);
-                    buf->magic = CR_VBOXHGCM_BUFFER_MAGIC;
-                    buf->kind  = CR_VBOXHGCM_DDRAW_SURFACE;
-                    buf->allocated = cbLocked;
-                    buf->pDDS = lpDDS;
-                }
-            }
-        }
-#endif
-
         /* We're either on host side, or we failed to allocate DDRAW buffer */
         if (!buf)
         {
@@ -800,9 +708,6 @@ static void *_crVBoxHGCMAlloc(CRConnection *conn)
             buf->magic = CR_VBOXHGCM_BUFFER_MAGIC;
             buf->kind  = CR_VBOXHGCM_MEMORY;
             buf->allocated = conn->buffer_size;
-#ifdef RT_OS_WINDOWS
-            buf->pDDS = NULL;
-#endif
         }
     }
 
@@ -944,18 +849,9 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
     parms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE_READ;
     parms.hdr.cParms      = SHCRGL_CPARMS_WRITE_READ;
 
-    //if (bufferKind != CR_VBOXHGCM_DDRAW_SURFACE)
-    {
-        parms.pBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
-        parms.pBuffer.u.Pointer.size         = len;
-        parms.pBuffer.u.Pointer.u.linearAddr = (uintptr_t) buf;
-    }
-    /*else ///@todo it fails badly, have to check why. bird: This fails because buf isn't a physical address?
-    {
-        parms.pBuffer.type                 = VMMDevHGCMParmType_PhysAddr;
-        parms.pBuffer.u.Pointer.size       = len;
-        parms.pBuffer.u.Pointer.u.physAddr = (uintptr_t) buf;
-    }*/
+    parms.pBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
+    parms.pBuffer.u.Pointer.size         = len;
+    parms.pBuffer.u.Pointer.u.linearAddr = (uintptr_t) buf;
 
     CRASSERT(!conn->pBuffer); //make sure there's no data to process
     parms.pWriteback.type                   = VMMDevHGCMParmType_LinAddr_Out;
@@ -1202,9 +1098,6 @@ static void _crVBoxHGCMFree(CRConnection *conn, void *buf)
     switch (hgcm_buffer->kind)
     {
         case CR_VBOXHGCM_MEMORY:
-#ifdef RT_OS_WINDOWS
-        case CR_VBOXHGCM_DDRAW_SURFACE:
-#endif
 #ifdef CHROMIUM_THREADSAFE
             crLockMutex(&g_crvboxhgcm.mutex);
 #endif
@@ -1283,7 +1176,7 @@ static void _crVBoxHGCMReceiveMessage(CRConnection *conn)
     else
     {
         /* we should NEVER have redir_ptr disabled with HGSMI command now */
-        CRASSERT(!conn->CmdData.pCmd);
+        CRASSERT(!conn->CmdData.pvCmd);
         if ( len <= conn->buffer_size )
         {
             /* put in pre-allocated buffer */
@@ -1298,9 +1191,6 @@ static void _crVBoxHGCMReceiveMessage(CRConnection *conn)
             hgcm_buffer->magic     = CR_VBOXHGCM_BUFFER_MAGIC;
             hgcm_buffer->kind      = CR_VBOXHGCM_MEMORY_BIG;
             hgcm_buffer->allocated = sizeof(CRVBOXHGCMBUFFER) + len;
-# ifdef RT_OS_WINDOWS
-            hgcm_buffer->pDDS      = NULL;
-# endif
         }
 
         hgcm_buffer->len = len;
@@ -2420,9 +2310,6 @@ void crVBoxHGCMInit(CRNetReceiveFuncList *rfl, CRNetCloseFuncList *cfl, unsigned
 /* Callback function used to free buffer pool entries */
 void crVBoxHGCMBufferFree(void *data)
 {
-#ifdef RT_OS_WINDOWS
-    LPDIRECTDRAWSURFACE lpDDS;
-#endif
     CRVBOXHGCMBUFFER *hgcm_buffer = (CRVBOXHGCMBUFFER *) data;
 
     CRASSERT(hgcm_buffer->magic == CR_VBOXHGCM_BUFFER_MAGIC);
@@ -2432,15 +2319,6 @@ void crVBoxHGCMBufferFree(void *data)
         case CR_VBOXHGCM_MEMORY:
             crFree( hgcm_buffer );
             break;
-#ifdef RT_OS_WINDOWS
-        case CR_VBOXHGCM_DDRAW_SURFACE:
-            lpDDS = hgcm_buffer->pDDS;
-            CRASSERT(lpDDS);
-            IDirectDrawSurface_Unlock(lpDDS, NULL);
-            IDirectDrawSurface_Release(lpDDS);
-            crDebug("DDraw surface freed (%x)\n", lpDDS);
-            break;
-#endif
         case CR_VBOXHGCM_MEMORY_BIG:
             crFree( hgcm_buffer );
             break;

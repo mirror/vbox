@@ -246,11 +246,15 @@ void crServerSetVBoxConfiguration()
     if (env && env[0] != '\0')
     {
         cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
-        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT/* | CR_VBOX_CAP_NO_DWM_SUPPORT*/);
+        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT | CR_VBOX_CAP_CMDVBVA);
     }
     else
     {
-        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT/* | CR_VBOX_CAP_NO_DWM_SUPPORT*/;
+        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT/* | CR_VBOX_CAP_CMDVBVA*/;
+#ifdef DEBUG_misha
+        cr_server.u32Caps |= CR_VBOX_CAP_CMDVBVA;
+#endif
+
     }
 
     if (!(cr_server.fPresentModeDefault & CR_SERVER_REDIR_F_FBO))
@@ -410,11 +414,14 @@ void crServerSetVBoxConfigurationHGCM()
     if (env && env[0] != '\0')
     {
         cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
-        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT/* | CR_VBOX_CAP_NO_DWM_SUPPORT*/);
+        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT | CR_VBOX_CAP_CMDVBVA);
     }
     else
     {
-        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT/* | CR_VBOX_CAP_NO_DWM_SUPPORT*/;
+        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT/* | CR_VBOX_CAP_CMDVBVA*/;
+#ifdef DEBUG_misha
+        cr_server.u32Caps |= CR_VBOX_CAP_CMDVBVA;
+#endif
     }
 
     if (!(cr_server.fPresentModeDefault & CR_SERVER_REDIR_F_FBO))

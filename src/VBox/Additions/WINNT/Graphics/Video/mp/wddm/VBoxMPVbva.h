@@ -114,6 +114,7 @@ typedef struct VBVAEXBUFFERBACKWARDITER
     VBVAEXBUFFERITERBASE Base;
 } VBVAEXBUFFERBACKWARDITER, *PVBVAEXBUFFERBACKWARDITER;
 
+#define VBOXCMDVBVA_BUFFERSIZE(_cbCmdApprox) (RT_OFFSETOF(VBVABUFFER, au8Data) + ((RT_SIZEOFMEMB(VBVABUFFER, aRecords)/RT_SIZEOFMEMB(VBVABUFFER, aRecords[0])) * (_cbCmdApprox)))
 
 typedef struct VBOXCMDVBVA
 {
@@ -202,7 +203,27 @@ int VBoxCmdVbvaDestroy(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva);
 int VBoxCmdVbvaCreate(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, ULONG offBuffer, ULONG cbBuffer);
 int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd);
 bool VBoxCmdVbvaPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32FenceID);
-void VBoxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, bool fPingHost);
+uint32_t VBoxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, bool fPingHost);
 bool VBoxCmdVbvaCheckCompletedIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva);
+
+/*helper functions for filling vbva commands */
+DECLINLINE(void) VBoxCVDdiPackRect(VBOXCMDVBVA_RECT *pVbvaRect, const RECT *pRect)
+{
+    pVbvaRect->xLeft = (int16_t)pRect->left;
+    pVbvaRect->yTop = (int16_t)pRect->top;
+    pVbvaRect->xRight = (int16_t)pRect->right;
+    pVbvaRect->yBottom = (int16_t)pRect->bottom;
+}
+
+DECLINLINE(void) VBoxCVDdiPackRects(VBOXCMDVBVA_RECT *paVbvaRects, const RECT *paRects, uint32_t cRects)
+{
+    for (uint32_t i = 0; i < cRects; ++i)
+    {
+        VBoxCVDdiPackRect(&paVbvaRects[i], &paRects[i]);
+    }
+
+}
+
+uint32_t VBoxCVDdiPTransferVRamSysBuildEls(VBOXCMDVBVA_PAGING_TRANSFER *pCmd, PMDL pMdl, uint32_t iPfn, uint32_t cPages, uint32_t cbBuffer, uint32_t *pcPagesWritten);
 
 #endif /* #ifndef ___VBoxMPVbva_h___ */

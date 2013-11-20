@@ -24,8 +24,8 @@ extern "C" {
 
 /* new TexPresent mechanism is available */
 #define CR_VBOX_CAP_TEX_PRESENT    0x00000001
-/* no DWM support available, required for Win8 guests to switch to display-only mode gracefully */
-#define CR_VBOX_CAP_NO_DWM_SUPPORT 0x00000002
+/* vbva command submission mechanism supported */
+#define CR_VBOX_CAP_CMDVBVA        0x00000002
 
 
 #define CR_PRESENT_SCREEN_MASK 0xffff
@@ -98,27 +98,32 @@ typedef union {
 
 #ifdef VBOX_WITH_CRHGSMI
 typedef struct CRVBOXHGSMI_CMDDATA {
-    struct VBOXVDMACMD_CHROMIUM_CMD *pCmd;
+    union
+    {
+        struct VBOXVDMACMD_CHROMIUM_CMD *pHgsmiCmd;
+        struct VBOXCMDVBVA_CRCMD_CMD *pVbvaCmd;
+        void *pvCmd;
+    };
     int          *pCmdRc;
     char         *pWriteback;
     unsigned int *pcbWriteback;
     unsigned int cbWriteback;
-    bool fCompleteNeeded;
+    bool fHgsmiCmd;
 } CRVBOXHGSMI_CMDDATA, *PCRVBOXHGSMI_CMDDATA;
 
 #ifdef DEBUG
 # define CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData)  do { \
-        CRASSERT(!(_pData)->pCmd == !(_pData)->pCmdRc); \
+        CRASSERT(!(_pData)->pvCmd == !(_pData)->pCmdRc); \
         CRASSERT(!(_pData)->pWriteback == !(_pData)->pcbWriteback); \
         CRASSERT(!(_pData)->pWriteback == !(_pData)->cbWriteback); \
         if ((_pData)->pWriteback) \
         { \
-            CRASSERT((_pData)->pCmd); \
+            CRASSERT((_pData)->pvCmd); \
         } \
     } while (0)
 
 # define CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(_pData)  do { \
-        CRASSERT(!(_pData)->pCmd); \
+        CRASSERT(!(_pData)->pvCmd); \
         CRASSERT(!(_pData)->pCmdRc); \
         CRASSERT(!(_pData)->pWriteback); \
         CRASSERT(!(_pData)->pcbWriteback); \
@@ -141,8 +146,8 @@ typedef struct CRVBOXHGSMI_CMDDATA {
 # define CRVBOXHGSMI_CMDDATA_ASSERT_ISSETWB(_pData)  do { } while (0)
 #endif
 
-#define CRVBOXHGSMI_CMDDATA_IS_COMPLETE_NEEDED(_pData) (!!(_pData)->fCompleteNeeded)
-#define CRVBOXHGSMI_CMDDATA_IS_SET(_pData) (!!(_pData)->pCmd)
+#define CRVBOXHGSMI_CMDDATA_IS_HGSMICMD(_pData) (!!(_pData)->fHgsmiCmd)
+#define CRVBOXHGSMI_CMDDATA_IS_SET(_pData) (!!(_pData)->pvCmd)
 #define CRVBOXHGSMI_CMDDATA_IS_SETWB(_pData) (!!(_pData)->pWriteback)
 
 #define CRVBOXHGSMI_CMDDATA_CLEANUP(_pData) do { \
@@ -151,16 +156,16 @@ typedef struct CRVBOXHGSMI_CMDDATA {
         CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData); \
     } while (0)
 
-#define CRVBOXHGSMI_CMDDATA_SET(_pData, _pCmd, _pHdr, _fCompleteNeeded) do { \
+#define CRVBOXHGSMI_CMDDATA_SET(_pData, _pCmd, _pHdr, _fHgsmiCmd) do { \
         CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(_pData); \
-        (_pData)->pCmd = (_pCmd); \
+        (_pData)->pvCmd = (_pCmd); \
         (_pData)->pCmdRc = &(_pHdr)->result; \
-        (_pData)->fCompleteNeeded = _fCompleteNeeded; \
+        (_pData)->fHgsmiCmd = (_fHgsmiCmd); \
         CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData); \
     } while (0)
 
-#define CRVBOXHGSMI_CMDDATA_SETWB(_pData, _pCmd, _pHdr, _pWb, _cbWb, _pcbWb, _fCompleteNeeded) do { \
-        CRVBOXHGSMI_CMDDATA_SET(_pData, _pCmd, _pHdr, _fCompleteNeeded); \
+#define CRVBOXHGSMI_CMDDATA_SETWB(_pData, _pCmd, _pHdr, _pWb, _cbWb, _pcbWb, _fHgsmiCmd) do { \
+        CRVBOXHGSMI_CMDDATA_SET(_pData, _pCmd, _pHdr, _fHgsmiCmd); \
         (_pData)->pWriteback = (_pWb); \
         (_pData)->pcbWriteback = (_pcbWb); \
         (_pData)->cbWriteback = (_cbWb); \

@@ -71,7 +71,11 @@ HRESULT vboxDispKmtCallbacksInit(PVBOXDISPKMT_CALLBACKS pCallbacks)
         Log((__FUNCTION__": pfnD3DKMTEscape = %p\n", pCallbacks->pfnD3DKMTEscape));
         bSupported &= !!(pCallbacks->pfnD3DKMTEscape);
 
-        pCallbacks->pfnD3DKMTCreateDevice = (PFND3DKMT_CREATEDEVICE)GetProcAddress(pCallbacks->hGdi32, "D3DKMTCreateDevice");
+        pCallbacks->pfnD3DKMTQueryAdapterInfo = (PFND3DKMT_QUERYADAPTERINFO)GetProcAddress(pCallbacks->hGdi32, "D3DKMTQueryAdapterInfo");
+        Log((__FUNCTION__": pfnD3DKMTQueryAdapterInfo = %p\n", pCallbacks->pfnD3DKMTQueryAdapterInfo));
+        bSupported &= !!(pCallbacks->pfnD3DKMTQueryAdapterInfo);
+
+                pCallbacks->pfnD3DKMTCreateDevice = (PFND3DKMT_CREATEDEVICE)GetProcAddress(pCallbacks->hGdi32, "D3DKMTCreateDevice");
         Log((__FUNCTION__": pfnD3DKMTCreateDevice = %p\n", pCallbacks->pfnD3DKMTCreateDevice));
         bSupported &= !!(pCallbacks->pfnD3DKMTCreateDevice);
 
