@@ -38,7 +38,7 @@ public:
     virtual int         parseOpt(int rc, const RTGETOPTUNION& getOptVal) = 0;
 
     virtual int         init(void);
-    virtual bool        isMainNeeded() { return m_fNeedMain; }
+    virtual bool        isMainNeeded() const { return m_fNeedMain; }
     /* VirtualBox instance */
     ComPtr<IVirtualBox> virtualbox;
 
