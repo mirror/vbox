@@ -97,10 +97,6 @@ public:
 
 protected:
     bool                handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t cb);
-    bool                handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb);
-    bool                handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb);
-    bool                handleDhcpReqDecline(PCRTNETBOOTP pDhcpMsg, size_t cb);
-    bool                handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb);
 
     void                debugPrintV(int32_t iMinLevel, bool fMsg,  const char *pszFmt, va_list va) const;
     static const char  *debugDhcpName(uint8_t uMsgType);
