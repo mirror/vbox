@@ -165,7 +165,8 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
     virtual int init(void);
     /* @todo: when configuration would be really needed */
     virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
-
+    /* VBoxNetNAT always needs Main */
+    virtual bool        isMainNeeded() { return true; }
    private:
     struct proxy_options m_ProxyOptions;
     struct sockaddr_in m_src4;
