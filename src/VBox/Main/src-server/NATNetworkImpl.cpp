@@ -50,10 +50,10 @@
 struct NATNetwork::Data
 {
     Data()
-      : fEnabled(FALSE)
+      : fEnabled(TRUE)
       , fIPv6Enabled(FALSE)
       , fAdvertiseDefaultIPv6Route(FALSE)
-      , fNeedDhcpServer(FALSE)
+      , fNeedDhcpServer(TRUE)
       , u32LoopbackIp6(0)
       , offGateway(0)
       , offDhcp(0)
@@ -143,7 +143,6 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox, IN_BSTR aName)
     m->offGateway = 1;
     m->IPv4NetworkCidr = "10.0.2.0/24";
     m->IPv6Prefix = "fe80::/64";
-    m->fEnabled = FALSE;
 
     settings::NATHostLoopbackOffset off;
     off.strLoopbackHostAddress = "127.0.0.1";
