@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -161,6 +161,18 @@
 
 #ifdef VBOX_WITH_XPCOM
 # include <nsMemory.h>
+#endif
+
+        /* Type traits are a C++ 11 feature, so not available everywhere (yet). */
+        /* Only GCC 4.6 or newer. */
+#if    (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 406) \
+       /* Only MSVC++ 10.0 (Visual Studio 2010) or newer. */           \
+    || (defined(_MSC_VER) && (_MSC_VER >= 1600))
+    #define VBOX_WITH_TYPE_TRAITS
+#endif
+
+#ifdef VBOX_WITH_TYPE_TRAITS
+# include <type_traits>
 #endif
 
 #include "VBox/com/defs.h"
@@ -393,6 +405,16 @@ protected:
 
     static VARTYPE VarType()
     {
+#ifdef VBOX_WITH_TYPE_TRAITS
+        if (    std::is_integral<T>::value
+            && !std::is_signed<T>::value)
+        {
+            if (sizeof(T) % 8 == 0) return VT_UI8;
+            if (sizeof(T) % 4 == 0) return VT_UI4;
+            if (sizeof(T) % 2 == 0) return VT_UI2;
+            return VT_UI1;
+        }
+#endif
         if (sizeof(T) % 8 == 0) return VT_I8;
         if (sizeof(T) % 4 == 0) return VT_I4;
         if (sizeof(T) % 2 == 0) return VT_I2;
