@@ -2961,12 +2961,17 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             if (FAILED(rc)) throw rc;
             stack.fSessionOpen = false;
         }
-        catch(HRESULT /* aRC */)
+        catch(HRESULT aRC)
         {
+            com::ErrorInfo info(this, COM_IIDOF(IAppliance));
+
             if (stack.fSessionOpen)
                 stack.pSession->UnlockMachine();
 
-            throw;
+            if (info.isFullAvailable())
+                throw setError(aRC, Utf8Str(info.getText()).c_str());
+            else
+                throw setError(aRC, "Unknown error during OVF import");
         }
     }
 
@@ -3082,13 +3087,11 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                         break;
                                 }
                                 if (itDiskImage == stack.mapDisks.end())
-                                {
                                     throw setError(E_FAIL,
                                                    tr("Internal inconsistency looking up disk image '%s'. "
                                                       "Check compliance OVA package structure and file names "
-                                                      "references in the section <References> in the OVF file."),
+                                                      "references in the section <References> in the OVF file"),
                                                    availableImage.c_str());
-                                }
 
                                 /* replace with a new found disk image */
                                 diCurrent = *(&itDiskImage->second);
@@ -3112,7 +3115,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                     }
                                 }
                                 if (!vsdeTargetHD)
-                                {
                                     /*
                                      * in this case it's an error because something wrong with OVF description file.
                                      * May be VB imports OVA package with wrong file sequence inside the archive.
@@ -3120,7 +3122,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                     throw setError(E_FAIL,
                                                    tr("Internal inconsistency looking up disk image '%s'"),
                                                    diCurrent.strHref.c_str());
-                                }
 
                                 itVDisk = vsysThis.mapVirtualDisks.find(diCurrent.strDiskId);
                                 if (itVDisk == vsysThis.mapVirtualDisks.end())
@@ -3165,7 +3166,8 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 // now use the new uuid to attach the disk image to our new machine
                 ComPtr<IMachine> sMachine;
                 rc = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
 
                 // find the hard disk controller to which we should attach
                 ovf::HardDiskController hdc = (*vsysThis.mapControllers.find(ovfVdisk.idController)).second;
@@ -3195,14 +3197,16 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                                  false,
                                                  dvdImage.asOutParam());
 
-                    if (FAILED(rc)) throw rc;
+                    if (FAILED(rc))
+                        throw rc;
 
                     rc = sMachine->AttachDevice(mhda.controllerType.raw(),// wstring name
                                                 mhda.lControllerPort,     // long controllerPort
                                                 mhda.lDevice,             // long device
                                                 DeviceType_DVD,           // DeviceType_T type
                                                 dvdImage);
-                    if (FAILED(rc)) throw rc;
+                    if (FAILED(rc))
+                        throw rc;
                 }
                 else
                 {
@@ -3212,13 +3216,15 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                                 DeviceType_HardDisk,      // DeviceType_T type
                                                 pTargetHD);
 
-                    if (FAILED(rc)) throw rc;
+                    if (FAILED(rc))
+                        throw rc;
                 }
 
                 stack.llHardDiskAttachments.push_back(mhda);
 
                 rc = sMachine->SaveSettings();
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
 
                 /* restore */
                 vsdeTargetHD->strVboxCurrent = savedVboxCurrent;
@@ -3238,15 +3244,23 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
             // only now that we're done with all disks, close the session
             rc = stack.pSession->UnlockMachine();
-            if (FAILED(rc)) throw rc;
+
+            if (FAILED(rc))
+                throw rc;
+
             stack.fSessionOpen = false;
         }
-        catch(HRESULT /* aRC */)
+        catch(HRESULT  aRC)
         {
+            com::ErrorInfo info(this, COM_IIDOF(IAppliance));
+
             if (stack.fSessionOpen)
                 stack.pSession->UnlockMachine();
 
-            throw;
+            if (info.isFullAvailable())
+                throw setError(aRC, Utf8Str(info.getText()).c_str());
+            else
+                throw setError(aRC, "Unknown error during OVF import");
         }
     }
 }
