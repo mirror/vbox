@@ -137,7 +137,7 @@ VBoxNetBaseService::~VBoxNetBaseService()
 
 int VBoxNetBaseService::init()
 {
-    if (m_fNeedMain)
+    if (isMainNeeded())
     {
         HRESULT hrc = com::Initialize();
         AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
