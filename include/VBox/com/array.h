@@ -421,6 +421,18 @@ protected:
         return VT_I1;
     }
 
+    /*
+     * Fallback method in case type traits (VBOX_WITH_TYPE_TRAITS)
+     * are not available. Always returns unsigned types.
+     */
+    static VARTYPE VarTypeUnsigned()
+    {
+        if (sizeof(T) % 8 == 0) return VT_UI8;
+        if (sizeof(T) % 4 == 0) return VT_UI4;
+        if (sizeof(T) % 2 == 0) return VT_UI2;
+        return VT_UI1;
+    }
+
     static ULONG VarCount(size_t aSize)
     {
         if (sizeof(T) % 8 == 0) return (ULONG)((sizeof(T) / 8) * aSize);
@@ -649,10 +661,18 @@ public:
             VARTYPE vt;
             HRESULT rc = SafeArrayGetVartype(arg, &vt);
             AssertComRCReturnVoid(rc);
-            AssertMsgReturnVoid(vt == VarType(),
+# ifndef VBOX_WITH_TYPE_TRAITS
+            AssertMsgReturnVoid(
+                                   vt == VarType()
+                                || vt == VarTypeUnsigned(),
+                                ("Expected vartype %d or %d, got %d.\n",
+                                 VarType(), VarTypeUnsigned(), vt));
+# else /* !VBOX_WITH_TYPE_TRAITS */
+            AssertMsgReturnVoid(
+                                   vt == VarType(),
                                 ("Expected vartype %d, got %d.\n",
                                  VarType(), vt));
-
+# endif
             rc = SafeArrayAccessData(arg, (void HUGEP **)&m.raw);
             AssertComRCReturnVoid(rc);
         }
@@ -1593,8 +1613,8 @@ public:
             HRESULT rc = SafeArrayGetVartype(arg, &vt);
             AssertComRCReturnVoid(rc);
             AssertMsgReturnVoid(vt == VT_UNKNOWN || vt == VT_DISPATCH,
-                                ("Expected vartype VT_UNKNOWN, got %d.\n",
-                                 VarType(), vt));
+                                ("Expected vartype VT_UNKNOWN or VT_DISPATCH, got %d.\n",
+                                 vt));
             GUID guid;
             rc = SafeArrayGetIID(arg, &guid);
             AssertComRCReturnVoid(rc);
