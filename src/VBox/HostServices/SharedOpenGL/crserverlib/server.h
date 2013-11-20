@@ -41,13 +41,15 @@ DECLINLINE(void) crServerCrHgsmiCmdComplete(struct VBOXVDMACMD_CHROMIUM_CMD *pCm
 }
 
 #define VBOXCRHGSMI_CMD_COMPLETE(_pData, _rc) do { \
+        Assert(CRVBOXHGSMI_CMDDATA_IS_HGSMICMD(_pData)); \
         CRVBOXHGSMI_CMDDATA_ASSERT_ISSET(_pData); \
         CRVBOXHGSMI_CMDDATA_RC(_pData, _rc); \
-        crServerCrHgsmiCmdComplete((_pData)->pCmd, VINF_SUCCESS); \
+        crServerCrHgsmiCmdComplete((_pData)->pHgsmiCmd, VINF_SUCCESS); \
     } while (0)
 
 #define VBOXCRHGSMI_CMD_CHECK_COMPLETE(_pData, _rc) do { \
-        if (CRVBOXHGSMI_CMDDATA_IS_COMPLETE_NEEDED(_pData) && CRVBOXHGSMI_CMDDATA_IS_SET(_pData)) { \
+        Assert(CRVBOXHGSMI_CMDDATA_IS_HGSMICMD(_pData)); \
+        if (CRVBOXHGSMI_CMDDATA_IS_SET(_pData)) { \
             VBOXCRHGSMI_CMD_COMPLETE(_pData, _rc); \
         } \
     } while (0)

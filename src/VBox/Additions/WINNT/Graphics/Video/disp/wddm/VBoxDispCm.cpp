@@ -164,7 +164,12 @@ HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT 
         vboxDispCmSessionCtxAdd(&g_pVBoxCmMgr.Session, pContext);
         pContext->pDevice = pDevice;
         if (fIsCrContext)
-            vboxUhgsmiD3DEscInit(&pDevice->Uhgsmi, pDevice);
+        {
+            if (pDevice->pAdapter->u32VBox3DCaps & CR_VBOX_CAP_CMDVBVA)
+                vboxUhgsmiD3DInit(&pDevice->Uhgsmi, pDevice);
+            else
+                vboxUhgsmiD3DEscInit(&pDevice->Uhgsmi, pDevice);
+        }
     }
     else
     {

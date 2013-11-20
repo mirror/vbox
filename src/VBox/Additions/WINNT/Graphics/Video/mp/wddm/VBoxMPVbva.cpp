@@ -701,25 +701,34 @@ typedef struct VBOXCMDVBVA_NOTIFYCOMPLETED_CB
 {
     PVBOXMP_DEVEXT pDevExt;
     VBOXCMDVBVA *pVbva;
-    UINT u32FenceId;
+    volatile UINT *pu32FenceId;
     DXGK_INTERRUPT_TYPE enmComplType;
 } VBOXCMDVBVA_NOTIFYCOMPLETED_CB, *PVBOXCMDVBVA_NOTIFYCOMPLETED_CB;
 
 static BOOLEAN vboxCmdVbvaDdiNotifyCompleteCb(PVOID pvContext)
 {
     PVBOXCMDVBVA_NOTIFYCOMPLETED_CB pData = (PVBOXCMDVBVA_NOTIFYCOMPLETED_CB)pvContext;
-    vboxCmdVbvaDdiNotifyCompleteIrq(pData->pDevExt, pData->pVbva, pData->u32FenceId, pData->enmComplType);
+    if (*pData->pu32FenceId)
+    {
+        UINT u32FenceId = *pData->pu32FenceId;
+        *pData->pu32FenceId = 0;
 
-    pData->pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pData->pDevExt->u.primary.DxgkInterface.DeviceHandle);
-    return TRUE;
+        vboxCmdVbvaDdiNotifyCompleteIrq(pData->pDevExt, pData->pVbva, u32FenceId, pData->enmComplType);
+
+        pData->pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pData->pDevExt->u.primary.DxgkInterface.DeviceHandle);
+
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
-static int vboxCmdVbvaDdiNotifyComplete(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, UINT u32FenceId, DXGK_INTERRUPT_TYPE enmComplType)
+static int vboxCmdVbvaDdiNotifyComplete(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, volatile UINT *pu32FenceId, DXGK_INTERRUPT_TYPE enmComplType)
 {
     VBOXCMDVBVA_NOTIFYCOMPLETED_CB Data;
     Data.pDevExt = pDevExt;
     Data.pVbva = pVbva;
-    Data.u32FenceId = u32FenceId;
+    Data.pu32FenceId = pu32FenceId;
     Data.enmComplType = enmComplType;
     BOOLEAN bDummy;
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
@@ -758,19 +767,49 @@ static int vboxCmdVbvaFlush(PVBOXMP_DEVEXT pDevExt, HGSMIGUESTCOMMANDCONTEXT *pC
     return VINF_SUCCESS;
 }
 
-static void vboxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, bool fPingHost, HGSMIGUESTCOMMANDCONTEXT *pCtx, bool fBufferOverflow)
+typedef struct VBOXCMDVBVA_CHECK_COMPLETED_CB
+{
+    PVBOXMP_DEVEXT pDevExt;
+    VBOXCMDVBVA *pVbva;
+    uint32_t u32FenceID;
+} VBOXCMDVBVA_CHECK_COMPLETED_CB;
+
+static BOOLEAN vboxCmdVbvaCheckCompletedIrqCb(PVOID pContext)
+{
+    VBOXCMDVBVA_CHECK_COMPLETED_CB *pCompleted = (VBOXCMDVBVA_CHECK_COMPLETED_CB*)pContext;
+    BOOLEAN bRc = DxgkDdiInterruptRoutineNew(pCompleted->pDevExt, 0);
+    if (pCompleted->pVbva)
+        pCompleted->u32FenceID = pCompleted->pVbva->u32FenceCompleted;
+    return bRc;
+}
+
+
+static uint32_t vboxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, bool fPingHost, HGSMIGUESTCOMMANDCONTEXT *pCtx, bool fBufferOverflow)
 {
     if (fPingHost)
         vboxCmdVbvaFlush(pDevExt, pCtx, fBufferOverflow);
 
-    vboxWddmCallIsr(pDevExt);
+    VBOXCMDVBVA_CHECK_COMPLETED_CB context;
+    context.pDevExt = pDevExt;
+    context.pVbva = pVbva;
+    context.u32FenceID = 0;
+    BOOLEAN bRet;
+    NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
+                            pDevExt->u.primary.DxgkInterface.DeviceHandle,
+                            vboxCmdVbvaCheckCompletedIrqCb,
+                            &context,
+                            0, /* IN ULONG MessageNumber */
+                            &bRet);
+    Assert(Status == STATUS_SUCCESS);
+
+    return context.u32FenceID;
 }
 
 DECLCALLBACK(void) voxCmdVbvaFlushCb(struct VBVAEXBUFFERCONTEXT *pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, void *pvFlush)
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvFlush;
 
-    vboxCmdVbvaCheckCompleted(pDevExt, true /*fPingHost*/, pHGSMICtx, true /*fBufferOverflow*/);
+    vboxCmdVbvaCheckCompleted(pDevExt, NULL,  true /*fPingHost*/, pHGSMICtx, true /*fBufferOverflow*/);
 }
 
 int VBoxCmdVbvaCreate(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, ULONG offBuffer, ULONG cbBuffer)
@@ -898,10 +937,13 @@ bool VBoxCmdVbvaPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32
             continue;
 
         if (!ASMAtomicCmpXchgU8(&pCmd->u8State, VBOXCMDVBVA_STATE_CANCELLED, VBOXCMDVBVA_STATE_SUBMITTED))
+        {
             Assert(pCmd->u8State == VBOXCMDVBVA_STATE_IN_PROGRESS);
+            break;
+        }
 
-        /* we have cancelled the command successfully */
-        vboxCmdVbvaDdiNotifyComplete(pDevExt, pVbva, u32FenceID, DXGK_INTERRUPT_DMA_PREEMPTED);
+        /* we have canceled the command successfully */
+        vboxCmdVbvaDdiNotifyComplete(pDevExt, pVbva, &pCmd->u32FenceID, DXGK_INTERRUPT_DMA_PREEMPTED);
         return true;
     }
 
@@ -938,13 +980,20 @@ bool VBoxCmdVbvaCheckCompletedIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva)
 
         if (u8State == VBOXCMDVBVA_STATE_IN_PROGRESS)
         {
-            pVbva->u32FenceCompleted = u32FenceID;
+            if (u32FenceID)
+                pVbva->u32FenceCompleted = u32FenceID;
             enmDdiNotify = DXGK_INTERRUPT_DMA_COMPLETED;
         }
         else
+        {
+            Assert(u8State == VBOXCMDVBVA_STATE_CANCELLED);
             enmDdiNotify = DXGK_INTERRUPT_DMA_PREEMPTED;
+            /* to prevent concurrent notifications from DdiPreemptCommand */
+            pCmd->u32FenceID = 0;
+        }
 
-        vboxCmdVbvaDdiNotifyCompleteIrq(pDevExt, pVbva, pCmd->u32FenceID, enmDdiNotify);
+        if (u32FenceID)
+            vboxCmdVbvaDdiNotifyCompleteIrq(pDevExt, pVbva, u32FenceID, enmDdiNotify);
 
         fHasCommandsCompletedPreempted = true;
     }
@@ -952,7 +1001,61 @@ bool VBoxCmdVbvaCheckCompletedIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva)
     return fHasCommandsCompletedPreempted;
 }
 
-void VBoxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, bool fPingHost)
+uint32_t VBoxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, bool fPingHost)
 {
-    vboxCmdVbvaCheckCompleted(pDevExt, fPingHost, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx, false /* fBufferOverflow */);
+    return vboxCmdVbvaCheckCompleted(pDevExt, pVbva, fPingHost, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx, false /* fBufferOverflow */);
 }
+
+
+static uint32_t vboxCVDdiSysMemElBuild(VBOXCMDVBVA_SYSMEMEL *pEl, PMDL pMdl, uint32_t iPfn, uint32_t cPages)
+{
+    PFN_NUMBER cur = MmGetMdlPfnArray(pMdl)[iPfn];
+    uint32_t cbEl = sizeof (*pEl);
+    uint32_t cStoredPages = 1;
+    pEl->iPage = cur;
+    --cPages;
+    for ( ; cPages && cStoredPages < VBOXCMDVBVA_SYSMEMEL_CPAGES_MAX; --cPages, ++cStoredPages)
+    {
+        PFN_NUMBER next = MmGetMdlPfnArray(pMdl)[iPfn+cStoredPages];
+        if (next != cur+1)
+            break;
+
+        cur = next;
+        ++cStoredPages;
+        --cPages;
+    }
+
+    Assert(cStoredPages);
+    pEl->cPagesAfterFirst = cStoredPages - 1;
+
+    return cPages;
+}
+
+uint32_t VBoxCVDdiPTransferVRamSysBuildEls(VBOXCMDVBVA_PAGING_TRANSFER *pCmd, PMDL pMdl, uint32_t iPfn, uint32_t cPages, uint32_t cbBuffer, uint32_t *pcPagesWritten)
+{
+    uint32_t cInitPages = cPages;
+    uint32_t cbInitBuffer = cbBuffer;
+    uint32_t cEls = 0;
+    VBOXCMDVBVA_SYSMEMEL *pEl = pCmd->aSysMem;
+
+    if (cbBuffer < sizeof (VBOXCMDVBVA_PAGING_TRANSFER))
+    {
+        WARN(("cbBuffer < sizeof (VBOXCMDVBVA_PAGING_TRANSFER)"));
+        goto done;
+    }
+
+    cbBuffer -= RT_OFFSETOF(VBOXCMDVBVA_PAGING_TRANSFER, aSysMem);
+    uint32_t i = 0;
+
+    for (; cPages && cbBuffer >= sizeof (VBOXCMDVBVA_PAGING_TRANSFER); ++cEls, cbBuffer-=sizeof (VBOXCMDVBVA_SYSMEMEL), ++pEl, ++i)
+    {
+        cPages = vboxCVDdiSysMemElBuild(pEl, pMdl, iPfn + cInitPages - cPages, cPages);
+    }
+
+    pCmd->cSysMem = i;
+
+done:
+    *pcPagesWritten = cInitPages - cPages;
+    return cbInitBuffer - cbBuffer;
+}
+

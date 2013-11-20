@@ -61,11 +61,7 @@ VBOXCRHGSMI_DECL(PVBOXUHGSMI) VBoxCrHgsmiCreate()
     PVBOXUHGSMI_PRIVATE_KMT pHgsmiGL = (PVBOXUHGSMI_PRIVATE_KMT)RTMemAllocZ(sizeof (*pHgsmiGL));
     if (pHgsmiGL)
     {
-#if 0
         HRESULT hr = vboxUhgsmiKmtCreate(pHgsmiGL, TRUE /* bD3D tmp for injection thread*/);
-#else
-        HRESULT hr = vboxUhgsmiKmtEscCreate(pHgsmiGL, TRUE /* bD3D tmp for injection thread*/);
-#endif
         Log(("CrHgsmi: faled to create KmtEsc VBOXUHGSMI instance, hr (0x%x)\n", hr));
         if (hr == S_OK)
         {

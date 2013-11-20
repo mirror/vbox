@@ -27,29 +27,20 @@
 # define NT_SUCCESS(_Status) (((NTSTATUS)(_Status)) >= 0)
 #endif
 
-#if 0
-typedef struct VBOXUHGSMI_BUFFER_PRIVATE_KMT
-{
-    VBOXUHGSMI_BUFFER_PRIVATE_BASE BasePrivate;
-    CRITICAL_SECTION CritSect;
-} VBOXUHGSMI_BUFFER_PRIVATE_KMT, *PVBOXUHGSMI_BUFFER_PRIVATE_KMT;
-
-
-#define VBOXUHGSMIKMT_GET_BUFFER(_p) VBOXUHGSMIKMT_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_KMT)
 
 DECLCALLBACK(int) vboxUhgsmiKmtBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
 {
-    PVBOXUHGSMI_BUFFER_PRIVATE_KMT pBuffer = VBOXUHGSMIKMT_GET_BUFFER(pBuf);
+    PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE pBuffer = VBOXUHGSMDXALLOCBASE_GET_BUFFER(pBuf);
+    PVBOXUHGSMI_PRIVATE_KMT pPrivate = VBOXUHGSMIKMT_GET(pBuffer->BasePrivate.pHgsmi);
+
     D3DKMT_DESTROYALLOCATION DdiDealloc;
-    DdiDealloc.hDevice = pBuffer->pHgsmi->Device.hDevice;
+    DdiDealloc.hDevice = pPrivate->Device.hDevice;
     DdiDealloc.hResource = NULL;
-    DdiDealloc.phAllocationList = &pBuffer->BasePrivate.hAllocation;
+    DdiDealloc.phAllocationList = &pBuffer->hAllocation;
     DdiDealloc.AllocationCount = 1;
-    NTSTATUS Status = pBuffer->pHgsmi->Callbacks.pfnD3DKMTDestroyAllocation(&DdiDealloc);
+    NTSTATUS Status = pPrivate->Callbacks.pfnD3DKMTDestroyAllocation(&DdiDealloc);
     if (NT_SUCCESS(Status))
     {
-        if (pBuffer->BasePrivate.hSynch)
-            CloseHandle(pBuffer->BasePrivate.hSynch);
         RTMemFree(pBuffer);
         return VINF_SUCCESS;
     }
@@ -62,27 +53,28 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
 
 DECLCALLBACK(int) vboxUhgsmiKmtBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags, void**pvLock)
 {
-    PVBOXUHGSMI_BUFFER_PRIVATE_KMT pBuffer = VBOXUHGSMIKMT_GET_BUFFER(pBuf);
+    PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE pBuffer = VBOXUHGSMDXALLOCBASE_GET_BUFFER(pBuf);
+    PVBOXUHGSMI_PRIVATE_KMT pPrivate = VBOXUHGSMIKMT_GET(pBuffer->BasePrivate.pHgsmi);
     D3DKMT_LOCK DdiLock = {0};
-    DdiLock.hDevice = pBuffer->pHgsmi->Device.hDevice;
-    DdiLock.hAllocation = pBuffer->BasePrivate.hAllocation;
+    DdiLock.hDevice = pPrivate->Device.hDevice;
+    DdiLock.hAllocation = pBuffer->hAllocation;
     DdiLock.PrivateDriverData = NULL;
 
-    EnterCriticalSection(&pBuffer->CritSect);
-
-    int rc = vboxUhgsmiBaseDxLockData(&pBuffer->BasePrivate, offLock, cbLock, fFlags,
+    int rc = vboxUhgsmiBaseDxLockData(pBuffer, offLock, cbLock, fFlags,
                                          &DdiLock.Flags, &DdiLock.NumPages);
-    AssertRC(rc);
-    if (RT_FAILURE(rc))
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("vboxUhgsmiBaseDxLockData failed rc %d", rc));
         return rc;
+    }
+
 
     if (DdiLock.NumPages)
         DdiLock.pPages = pBuffer->aLockPageIndices;
     else
         DdiLock.pPages = NULL;
 
-    NTSTATUS Status = pBuffer->pHgsmi->Callbacks.pfnD3DKMTLock(&DdiLock);
-    LeaveCriticalSection(&pBuffer->CritSect);
+    NTSTATUS Status = pPrivate->Callbacks.pfnD3DKMTLock(&DdiLock);
     if (NT_SUCCESS(Status))
     {
         *pvLock = (void*)(((uint8_t*)DdiLock.pData) + (offLock & 0xfff));
@@ -98,13 +90,14 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offL
 
 DECLCALLBACK(int) vboxUhgsmiKmtBufferUnlock(PVBOXUHGSMI_BUFFER pBuf)
 {
-    PVBOXUHGSMI_BUFFER_PRIVATE_KMT pBuffer = VBOXUHGSMIKMT_GET_BUFFER(pBuf);
+    PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE pBuffer = VBOXUHGSMDXALLOCBASE_GET_BUFFER(pBuf);
     D3DKMT_UNLOCK DdiUnlock;
 
-    DdiUnlock.hDevice = pBuffer->pHgsmi->Device.hDevice;
+    PVBOXUHGSMI_PRIVATE_KMT pPrivate = VBOXUHGSMIKMT_GET(pBuffer->BasePrivate.pHgsmi);
+    DdiUnlock.hDevice = pPrivate->Device.hDevice;
     DdiUnlock.NumAllocations = 1;
-    DdiUnlock.phAllocations = &pBuffer->BasePrivate.hAllocation;
-    NTSTATUS Status = pBuffer->pHgsmi->Callbacks.pfnD3DKMTUnlock(&DdiUnlock);
+    DdiUnlock.phAllocations = &pBuffer->hAllocation;
+    NTSTATUS Status = pPrivate->Callbacks.pfnD3DKMTUnlock(&DdiUnlock);
     if (NT_SUCCESS(Status))
         return VINF_SUCCESS;
     else
@@ -113,16 +106,12 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferUnlock(PVBOXUHGSMI_BUFFER pBuf)
     return VERR_GENERAL_FAILURE;
 }
 
-DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf, VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType, PVBOXUHGSMI_BUFFER* ppBuf)
+DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf, VBOXUHGSMI_BUFFER_TYPE_FLAGS fType, PVBOXUHGSMI_BUFFER* ppBuf)
 {
-    HANDLE hSynch = NULL;
     if (!cbBuf)
         return VERR_INVALID_PARAMETER;
 
-    int rc = vboxUhgsmiBaseEventChkCreate(fUhgsmiType, &hSynch);
-    AssertRC(rc);
-    if (RT_FAILURE(rc))
-        return rc;
+    int rc = VINF_SUCCESS;
 
     cbBuf = VBOXWDDM_ROUNDBOUND(cbBuf, 0x1000);
     Assert(cbBuf);
@@ -130,61 +119,48 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf, 
     Assert(cPages);
 
     PVBOXUHGSMI_PRIVATE_KMT pPrivate = VBOXUHGSMIKMT_GET(pHgsmi);
-    PVBOXUHGSMI_BUFFER_PRIVATE_KMT pBuf = (PVBOXUHGSMI_BUFFER_PRIVATE_KMT)RTMemAllocZ(RT_OFFSETOF(VBOXUHGSMI_BUFFER_PRIVATE_KMT, aLockPageIndices[cPages]));
-    Assert(pBuf);
-    if (pBuf)
+    PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE pBuf = (PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE)RTMemAllocZ(RT_OFFSETOF(VBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE, aLockPageIndices[cPages]));
+    if (!pBuf)
     {
-        struct
-        {
-            D3DKMT_CREATEALLOCATION DdiAlloc;
-            D3DDDI_ALLOCATIONINFO DdiAllocInfo;
-            VBOXWDDM_ALLOCINFO AllocInfo;
-        } Buf;
-        memset(&Buf, 0, sizeof (Buf));
-        Buf.DdiAlloc.hDevice = pPrivate->Device.hDevice;
-        Buf.DdiAlloc.NumAllocations = 1;
-        Buf.DdiAlloc.pAllocationInfo = &Buf.DdiAllocInfo;
-        Buf.DdiAllocInfo.pPrivateDriverData = &Buf.AllocInfo;
-        Buf.DdiAllocInfo.PrivateDriverDataSize = sizeof (Buf.AllocInfo);
-        Buf.AllocInfo.enmType = VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER;
-        Buf.AllocInfo.cbBuffer = cbBuf;
-        Buf.AllocInfo.hSynch = (uint64_t)hSynch;
-        Buf.AllocInfo.fUhgsmiType = fUhgsmiType;
+        WARN(("RTMemAllocZ failed"));
+        return VERR_NO_MEMORY;
+    }
 
-        NTSTATUS Status = pPrivate->Callbacks.pfnD3DKMTCreateAllocation(&Buf.DdiAlloc);
-        if (NT_SUCCESS(Status))
-        {
-            InitializeCriticalSection(&pBuf->CritSect);
+    D3DKMT_CREATEALLOCATION DdiAlloc;
+    D3DDDI_ALLOCATIONINFO DdiAllocInfo;
+    VBOXWDDM_ALLOCINFO AllocInfo;
 
-            Assert(Buf.DdiAllocInfo.hAllocation);
-            pBuf->BasePrivate.Base.pfnLock = vboxUhgsmiKmtBufferLock;
-            pBuf->BasePrivate.Base.pfnUnlock = vboxUhgsmiKmtBufferUnlock;
-//            pBuf->Base.pfnAdjustValidDataRange = vboxUhgsmiKmtBufferAdjustValidDataRange;
-            pBuf->BasePrivate.Base.pfnDestroy = vboxUhgsmiKmtBufferDestroy;
+    memset(&DdiAlloc, 0, sizeof (DdiAlloc));
+    DdiAlloc.hDevice = pPrivate->Device.hDevice;
+    DdiAlloc.NumAllocations = 1;
+    DdiAlloc.pAllocationInfo = &DdiAllocInfo;
 
-            pBuf->BasePrivate.Base.fType = fUhgsmiType;
-            pBuf->BasePrivate.Base.cbBuffer = cbBuf;
+    vboxUhgsmiBaseDxAllocInfoFill(&DdiAllocInfo, &AllocInfo, cbBuf, fType);
 
-            pBuf->pHgsmi = pPrivate;
-            pBuf->BasePrivate.hAllocation = Buf.DdiAllocInfo.hAllocation;
+    NTSTATUS Status = pPrivate->Callbacks.pfnD3DKMTCreateAllocation(&DdiAlloc);
+    if (NT_SUCCESS(Status))
+    {
+        Assert(DdiAllocInfo.hAllocation);
+        pBuf->BasePrivate.Base.pfnLock = vboxUhgsmiKmtBufferLock;
+        pBuf->BasePrivate.Base.pfnUnlock = vboxUhgsmiKmtBufferUnlock;
+        pBuf->BasePrivate.Base.pfnDestroy = vboxUhgsmiKmtBufferDestroy;
 
-            *ppBuf = &pBuf->BasePrivate.Base;
+        pBuf->BasePrivate.Base.fType = fType;
+        pBuf->BasePrivate.Base.cbBuffer = cbBuf;
 
-            return VINF_SUCCESS;
-        }
-        else
-        {
-            WARN(("pfnD3DKMTCreateAllocation failes, Status(0x%x)", Status));
-            rc = VERR_OUT_OF_RESOURCES;
-        }
+        pBuf->hAllocation = DdiAllocInfo.hAllocation;
 
-        RTMemFree(pBuf);
+        *ppBuf = &pBuf->BasePrivate.Base;
+
+        return VINF_SUCCESS;
     }
     else
-        rc = VERR_NO_MEMORY;
+    {
+        WARN(("pfnD3DKMTCreateAllocation failes, Status(0x%x)", Status));
+        rc = VERR_OUT_OF_RESOURCES;
+    }
 
-    if (hSynch)
-        CloseHandle(hSynch);
+    RTMemFree(pBuf);
 
     return rc;
 }
@@ -197,9 +173,11 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferSubmit(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_BUFF
             pHg->Context.pCommandBuffer, &cbDmaCmd,
             pHg->Context.pAllocationList, pHg->Context.AllocationListSize,
             pHg->Context.pPatchLocationList, pHg->Context.PatchLocationListSize);
-    AssertRC(rc);
     if (RT_FAILURE(rc))
+    {
+        WARN(("vboxUhgsmiBaseDxDmaFill failed, rc %d", rc));
         return rc;
+    }
 
     D3DKMT_RENDER DdiRender = {0};
     DdiRender.hContext = pHg->Context.hContext;
@@ -227,7 +205,7 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferSubmit(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_BUFF
 
     return VERR_GENERAL_FAILURE;
 }
-#endif
+
 
 static HRESULT vboxUhgsmiKmtEngineCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
 {
@@ -296,19 +274,80 @@ static DECLCALLBACK(int) vboxCrHhgsmiKmtEscape(struct VBOXUHGSMI_PRIVATE_BASE *p
     return VERR_GENERAL_FAILURE;
 }
 
+static void vboxUhgsmiKmtSetupCallbacks(PVBOXUHGSMI_PRIVATE_KMT pHgsmi)
+{
+    pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiKmtBufferCreate;
+    pHgsmi->BasePrivate.Base.pfnBufferSubmit = vboxUhgsmiKmtBufferSubmit;
+     /* no escapes (for now) */
+    pHgsmi->BasePrivate.pfnEscape = NULL;
+}
+
+static void vboxUhgsmiKmtEscSetupCallbacks(PVBOXUHGSMI_PRIVATE_KMT pHgsmi)
+{
+    vboxUhgsmiBaseInit(&pHgsmi->BasePrivate, vboxCrHhgsmiKmtEscape);
+}
+
 #if 0
 HRESULT vboxUhgsmiKmtCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
 {
-    vboxUhgsmiBaseInit(&pHgsmi->BasePrivate, vboxCrHhgsmiKmtEscape);
-#error "port me!"
+    vboxUhgsmiKmtSetupCallbacks(pHgsmi);
+    return vboxUhgsmiKmtEngineCreate(pHgsmi, bD3D);
+}
+
+HRESULT vboxUhgsmiKmtEscCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
+{
+    vboxUhgsmiKmtEscSetupCallbacks(pHgsmi);
     return vboxUhgsmiKmtEngineCreate(pHgsmi, bD3D);
 }
 #endif
 
-HRESULT vboxUhgsmiKmtEscCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
+static HRESULT vboxUhgsmiKmtQueryCaps(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, uint32_t *pu32Caps)
 {
-    vboxUhgsmiBaseInit(&pHgsmi->BasePrivate, vboxCrHhgsmiKmtEscape);
-    return vboxUhgsmiKmtEngineCreate(pHgsmi, bD3D);
+    VBOXWDDM_QI Query;
+    D3DKMT_QUERYADAPTERINFO Info;
+    Info.hAdapter = pHgsmi->Adapter.hAdapter;
+    Info.Type = KMTQAITYPE_UMDRIVERPRIVATE;
+    Info.pPrivateDriverData = &Query;
+    Info.PrivateDriverDataSize = sizeof (Query);
+
+    NTSTATUS Status = pHgsmi->Callbacks.pfnD3DKMTQueryAdapterInfo(&Info);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("pfnD3DKMTQueryAdapterInfo failed, Status %#x", Status));
+        return Status;
+    }
+
+    if (Query.u32Version != VBOXVIDEOIF_VERSION)
+    {
+        WARN(("Version mismatch"));
+        return E_FAIL;
+    }
+
+    *pu32Caps = Query.u32VBox3DCaps;
+
+    return S_OK;
+}
+
+HRESULT vboxUhgsmiKmtCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
+{
+    HRESULT hr = vboxUhgsmiKmtEngineCreate(pHgsmi, bD3D);
+    if (!SUCCEEDED(hr))
+        return hr;
+
+    uint32_t u32Caps = 0;
+    hr = vboxUhgsmiKmtQueryCaps(pHgsmi, &u32Caps);
+    if (!SUCCEEDED(hr))
+    {
+        WARN(("vboxUhgsmiKmtQueryCaps failed hr %#x", hr));
+        return hr;
+    }
+
+    if (u32Caps & CR_VBOX_CAP_CMDVBVA)
+        vboxUhgsmiKmtSetupCallbacks(pHgsmi);
+    else
+        vboxUhgsmiKmtEscSetupCallbacks(pHgsmi);
+
+    return S_OK;
 }
 
 HRESULT vboxUhgsmiKmtDestroy(PVBOXUHGSMI_PRIVATE_KMT pHgsmi)

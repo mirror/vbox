@@ -117,12 +117,7 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf, 
         DdiAlloc.hKMResource = NULL;
         DdiAlloc.NumAllocations = 1;
         DdiAlloc.pAllocationInfo = &DdiAllocInfo;
-        DdiAllocInfo.pPrivateDriverData = &AllocInfo;
-        DdiAllocInfo.PrivateDriverDataSize = sizeof (AllocInfo);
-        AllocInfo.enmType = VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER;
-        AllocInfo.cbBuffer = cbBuf;
-        AllocInfo.hSynch = 0;
-        AllocInfo.fUhgsmiType = fType;
+        vboxUhgsmiBaseDxAllocInfoFill(&DdiAllocInfo, &AllocInfo, cbBuf, fType);
 
         HRESULT hr = pPrivate->pDevice->RtCallbacks.pfnAllocateCb(pPrivate->pDevice->hDevice, &DdiAlloc);
         if (hr == S_OK)

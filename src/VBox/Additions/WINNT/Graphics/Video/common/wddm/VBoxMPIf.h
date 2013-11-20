@@ -34,7 +34,7 @@
 #include <VBox/VBoxGuest2.h>
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 19
+#define VBOXVIDEOIF_VERSION 20
 
 #define VBOXWDDM_NODE_ID_SYSTEM           0
 #define VBOXWDDM_NODE_ID_3D               (VBOXWDDM_NODE_ID_SYSTEM)
@@ -114,7 +114,6 @@ typedef struct VBOXWDDM_ALLOCINFO
         struct
         {
             uint32_t cbBuffer;
-            uint64_t hSynch;
             VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType;
         };
     };
@@ -182,7 +181,6 @@ typedef struct VBOXWDDM_DMA_PRIVATEDATA_BASEHDR
 
 typedef struct VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO
 {
-    uint32_t bDoNotSignalCompletion;
     uint32_t offData;
     uint32_t cbData;
 } VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO, *PVBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO;
@@ -192,6 +190,7 @@ typedef struct VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD
     VBOXWDDM_DMA_PRIVATEDATA_BASEHDR Base;
     VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO aBufInfos[1];
 } VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, *PVBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD;
+
 
 #define VBOXVHWA_F_ENABLED  0x00000001
 #define VBOXVHWA_F_CKEY_DST 0x00000002

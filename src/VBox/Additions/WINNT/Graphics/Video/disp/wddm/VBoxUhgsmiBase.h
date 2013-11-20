@@ -141,6 +141,16 @@ DECLINLINE(int) vboxUhgsmiBaseDxLockData(PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BAS
     return VINF_SUCCESS;
 }
 
+DECLINLINE(void) vboxUhgsmiBaseDxAllocInfoFill(D3DDDI_ALLOCATIONINFO *pDdiAllocInfo, VBOXWDDM_ALLOCINFO *pAllocInfo, uint32_t cbBuffer, VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType)
+{
+    pDdiAllocInfo->pPrivateDriverData = pAllocInfo;
+    pDdiAllocInfo->PrivateDriverDataSize = sizeof (*pAllocInfo);
+    pAllocInfo->enmType = VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER;
+    pAllocInfo->cbBuffer = cbBuffer;
+    pAllocInfo->fUhgsmiType = fUhgsmiType;
+
+}
+
 DECLINLINE(int) vboxUhgsmiBaseDxDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers,
         VOID* pCommandBuffer, UINT *pCommandBufferSize,
         D3DDDI_ALLOCATIONLIST *pAllocationList, UINT AllocationListSize,
@@ -162,7 +172,7 @@ DECLINLINE(int) vboxUhgsmiBaseDxDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint
 
     PVBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD pHdr = (PVBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD)pCommandBuffer;
     pHdr->Base.enmCmd = VBOXVDMACMD_TYPE_CHROMIUM_CMD;
-    pHdr->Base.u32CmdReserved = cBuffers;
+    pHdr->Base.u32CmdReserved = 0;
 
     PVBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO pBufSubmInfo = pHdr->aBufInfos;
 
@@ -176,7 +186,6 @@ DECLINLINE(int) vboxUhgsmiBaseDxDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint
         pAllocationList->Value = 0;
         pAllocationList->WriteOperation = !pBufInfo->fFlags.bHostReadOnly;
         pAllocationList->DoNotRetireInstance = pBufInfo->fFlags.bDoNotRetire;
-        pBufSubmInfo->bDoNotSignalCompletion = 0;
         if (pBufInfo->fFlags.bEntireBuffer)
         {
             pBufSubmInfo->offData = 0;

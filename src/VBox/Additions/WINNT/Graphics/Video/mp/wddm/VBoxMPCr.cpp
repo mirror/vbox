@@ -892,6 +892,10 @@ void VBoxMpCrCtlConInit()
         g_VBoxMpCrHostCaps = 0;
     }
 
+#if 1 /*def DEBUG_misha*/
+    g_VBoxMpCrHostCaps &= ~CR_VBOX_CAP_CMDVBVA;
+#endif
+
     rc = VBoxMpCrCtlConDisconnect(&CrCtlCon, u32ClientID);
     if (RT_FAILURE(rc))
         WARN(("VBoxMpCrCtlConDisconnect failed rc (%d), ignoring..", rc));
