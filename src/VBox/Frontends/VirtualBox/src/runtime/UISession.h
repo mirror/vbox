@@ -32,15 +32,6 @@
 /* Forward declarations: */
 class QMenu;
 class QMenuBar;
-#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
-# ifdef Q_WS_MAC
-struct __siginfo;
-typedef struct __siginfo siginfo_t;
-# else /* Q_WS_MAC */
-struct siginfo;
-typedef struct siginfo siginfo_t;
-# endif /* !Q_WS_MAC */
-#endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 class UIFrameBuffer;
 class UIMachine;
 class UIMachineLogic;
@@ -303,10 +294,6 @@ private:
     /* Helper: Display reconfiguration stuff: */
     void recacheDisplayData();
 #endif /* Q_WS_MAC */
-
-#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
-    static void signalHandlerSIGUSR1(int sig, siginfo_t *pInfo, void *pSecret);
-#endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 
     /* Private variables: */
     UIMachine *m_pMachine;

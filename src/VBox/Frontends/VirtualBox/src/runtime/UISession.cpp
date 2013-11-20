@@ -77,6 +77,10 @@
 #include "CSnapshot.h"
 #include "CMedium.h"
 
+#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
+static void signalHandlerSIGUSR1(int sig, siginfo_t *, void *);
+#endif
+
 #ifdef Q_WS_MAC
 /**
  * MacOS X: Application Services: Core Graphics: Display reconfiguration callback.
@@ -1678,7 +1682,7 @@ void UISession::recacheDisplayData()
  * this hack.
  */
 /* static */
-void UISession::signalHandlerSIGUSR1(int sig, siginfo_t * /* pInfo */, void * /*pSecret */)
+static void signalHandlerSIGUSR1(int sig, siginfo_t * /* pInfo */, void * /*pSecret */)
 {
     /* only SIGUSR1 is interesting */
     if (sig == SIGUSR1)
