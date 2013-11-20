@@ -1566,15 +1566,13 @@ void NetworkAdapter::updateBandwidthGroup(BandwidthGroup *aBwGroup)
 
 HRESULT NetworkAdapter::checkAndSwitchFromNatNetworking(IN_BSTR networkName)
 {
-    HRESULT hrc;
     MachineState_T state;
 
-    hrc = mParent->COMGETTER(State)(&state);
+    HRESULT hrc = mParent->COMGETTER(State)(&state);
     if (FAILED(hrc))
         return hrc;
 
-    if (   mData->mAttachmentType == NetworkAttachmentType_NATNetwork
-        && state == MachineState_Running)
+    if (state == MachineState_Running)
     {
         Bstr bstrName;
         hrc = mParent->COMGETTER(Name)(bstrName.asOutParam());
@@ -1590,10 +1588,9 @@ HRESULT NetworkAdapter::checkAndSwitchFromNatNetworking(IN_BSTR networkName)
 
 HRESULT NetworkAdapter::switchToNatNetworking(IN_BSTR aNatNetworkName)
 {
-    HRESULT hrc;
     MachineState_T state;
 
-    hrc = mParent->COMGETTER(State)(&state);
+    HRESULT hrc = mParent->COMGETTER(State)(&state);
     if (FAILED(hrc))
         return hrc;
 
