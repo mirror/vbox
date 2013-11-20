@@ -275,7 +275,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
                         progress->notifyComplete(E_FAIL,
                                                  COM_IIDOF(IHostNetworkInterface),
                                                  HostNetworkInterface::getStaticComponentName(),
-                                                 "Failed to execute '"VBOXNETADPCTL_NAME " add' (exit status: %d)", rc);
+                                                 "Failed to execute '" VBOXNETADPCTL_NAME " add' (exit status: %d)", rc);
                         rc = VERR_INTERNAL_ERROR;
                     }
                 }
@@ -286,7 +286,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
                     progress->notifyComplete(E_FAIL,
                                              COM_IIDOF(IHostNetworkInterface),
                                              HostNetworkInterface::getStaticComponentName(),
-                                             "Failed to execute '"VBOXNETADPCTL_NAME " add' (exit status: %d). Check permissions!", rc);
+                                             "Failed to execute '" VBOXNETADPCTL_NAME " add' (exit status: %d). Check permissions!", rc);
                     pclose(fp);
                 }
             }
@@ -339,7 +339,7 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
                 progress->notifyComplete(E_FAIL,
                                          COM_IIDOF(IHostNetworkInterface),
                                          HostNetworkInterface::getStaticComponentName(),
-                                         "Failed to execute '"VBOXNETADPCTL_NAME "' (exit status: %d)", rc);
+                                         "Failed to execute '" VBOXNETADPCTL_NAME "' (exit status: %d)", rc);
             else
                 progress->notifyComplete(S_OK);
         }
