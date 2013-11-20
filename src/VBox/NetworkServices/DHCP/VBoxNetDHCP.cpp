@@ -393,19 +393,21 @@ bool VBoxNetDhcp::handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t 
 {
     if (pDhcpMsg->bp_op == RTNETBOOTP_OP_REQUEST)
     {
+        NetworkManager *networkManager = NetworkManager::getNetworkManager();
+
         switch (uMsgType)
         {
             case RTNET_DHCP_MT_DISCOVER:
-                return handleDhcpReqDiscover(pDhcpMsg, cb);
+                return networkManager->handleDhcpReqDiscover(pDhcpMsg, cb);
 
             case RTNET_DHCP_MT_REQUEST:
-                return handleDhcpReqRequest(pDhcpMsg, cb);
+                return networkManager->handleDhcpReqRequest(pDhcpMsg, cb);
 
             case RTNET_DHCP_MT_DECLINE:
-                return handleDhcpReqDecline(pDhcpMsg, cb);
+                return networkManager->handleDhcpReqDecline(pDhcpMsg, cb);
 
             case RTNET_DHCP_MT_RELEASE:
-                return handleDhcpReqRelease(pDhcpMsg, cb);
+                return networkManager->handleDhcpReqRelease(pDhcpMsg, cb);
 
             case RTNET_DHCP_MT_INFORM:
                 debugPrint(0, true, "Should we handle this?");
@@ -418,155 +420,6 @@ bool VBoxNetDhcp::handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t 
     }
     return false;
 }
-
-
-/**
- * The client is requesting an offer.
- *
- * @returns true.
- *
- * @param   pDhcpMsg    The message.
- * @param   cb          The message size.
- */
-bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
-{
-    RawOption opt;
-    memset(&opt, 0, sizeof(RawOption));
-    /* 1. Find client */
-    ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
-    Client client = confManager->getClientByDhcpPacket(pDhcpMsg, cb);
-
-    /* 2. Find/Bind lease for client */
-    Lease lease = confManager->allocateLease4Client(client, pDhcpMsg, cb);
-    AssertReturn(lease != Lease::NullLease, VINF_SUCCESS);
-
-    int rc = ConfigurationManager::extractRequestList(pDhcpMsg, cb, opt);
-
-    /* 3. Send of offer */
-    NetworkManager *networkManager = NetworkManager::getNetworkManager();
-
-    lease.bindingPhase(true);
-    lease.phaseStart(RTTimeMilliTS());
-    lease.setExpiration(300); /* 3 min. */
-    networkManager->offer4Client(client, pDhcpMsg->bp_xid, opt.au8RawOpt, opt.cbRawOpt);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * The client is requesting an offer.
- *
- * @returns true.
- *
- * @param   pDhcpMsg    The message.
- * @param   cb          The message size.
- */
-bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
-{
-    ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
-    NetworkManager *networkManager = NetworkManager::getNetworkManager();
-
-    /* 1. find client */
-    Client client = confManager->getClientByDhcpPacket(pDhcpMsg, cb);
-
-    /* 2. find bound lease */
-    Lease l = client.lease();
-    if (l != Lease::NullLease)
-    {
-
-        if (l.isExpired())
-        {
-            /* send client to INIT state */
-            Client c(client);
-            networkManager->nak(client, pDhcpMsg->bp_xid);
-            confManager->expireLease4Client(c);
-            return true;
-        }
-        else {
-            /* XXX: Validate request */
-            RawOption opt;
-            RT_ZERO(opt);
-
-            Client c(client);
-            int rc = confManager->commitLease4Client(c);
-            AssertRCReturn(rc, false);
-
-            rc = ConfigurationManager::extractRequestList(pDhcpMsg, cb, opt);
-            AssertRCReturn(rc, false);
-
-            networkManager->ack(client, pDhcpMsg->bp_xid, opt.au8RawOpt, opt.cbRawOpt);
-        }
-    }
-    else
-    {
-        networkManager->nak(client, pDhcpMsg->bp_xid);
-    }
-    return true;
-}
-
-
-/**
- * The client is declining an offer we've made.
- *
- * @returns true.
- *
- * @param   pDhcpMsg    The message.
- * @param   cb          The message size.
- */
-bool VBoxNetDhcp::handleDhcpReqDecline(PCRTNETBOOTP, size_t)
-{
-    /** @todo Probably need to match the server IP here to work correctly with
-     *        other servers. */
-
-    /*
-     * The client is supposed to pass us option 50, requested address,
-     * from the offer. We also match the lease state. Apparently the
-     * MAC address is not supposed to be checked here.
-     */
-
-    /** @todo this is not required in the initial implementation, do it later. */
-    debugPrint(1, true, "DECLINE is not implemented");
-    return true;
-}
-
-
-/**
- * The client is releasing its lease - good boy.
- *
- * @returns true.
- *
- * @param   pDhcpMsg    The message.
- * @param   cb          The message size.
- */
-bool VBoxNetDhcp::handleDhcpReqRelease(PCRTNETBOOTP, size_t)
-{
-    /** @todo Probably need to match the server IP here to work correctly with
-     *        other servers. */
-
-    /*
-     * The client may pass us option 61, client identifier, which we should
-     * use to find the lease by.
-     *
-     * We're matching MAC address and lease state as well.
-     */
-
-    /*
-     * If no client identifier or if we couldn't find a lease by using it,
-     * we will try look it up by the client IP address.
-     */
-
-
-    /*
-     * If found, release it.
-     */
-
-
-    /** @todo this is not required in the initial implementation, do it later. */
-    debugPrint(1, true, "RELEASE is not implemented");
-    return true;
-}
-
 
 /**
  * Print debug message depending on the m_cVerbosity level.
