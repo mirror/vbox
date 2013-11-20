@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# VBox implementation of PeCoffExtraAction that reports EFI image load and 
+# VBox implementation of PeCoffExtraAction that reports EFI image load and
 # unload activies to the the VBox debugger via DevEFI.
 #
 
