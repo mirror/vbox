@@ -136,10 +136,18 @@ PACK_STRUCT_END
 #if LWIP_ICMP6 && LWIP_IPV6 /* don't build if not configured for use in lwipopts.h */
 
 void icmp6_input(struct pbuf *p, struct netif *inp);
+#if LWIP_CONNECTION_PROXY
+void icmp6_proxy_input(struct pbuf *p, struct netif *inp);
+#endif
 void icmp6_dest_unreach(struct pbuf *p, enum icmp6_dur_code c);
 void icmp6_packet_too_big(struct pbuf *p, u32_t mtu);
 void icmp6_time_exceeded(struct pbuf *p, enum icmp6_te_code c);
 void icmp6_param_problem(struct pbuf *p, enum icmp6_pp_code c, u32_t pointer);
+
+#if LWIP_CONNECTION_PROXY
+typedef void (*ping6_proxy_fn)(void *arg, struct pbuf *p);
+void ping6_proxy_accept(ping6_proxy_fn callback, void *arg);
+#endif
 
 #endif /* LWIP_ICMP6 && LWIP_IPV6 */
 
