@@ -678,12 +678,15 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
         return VINF_SUCCESS;
     }
 
-    mLastAddress = pvVRAM;
-    mLastBytesPerLine = cbLine;
-    mLastBitsPerPixel = bpp;
-    mLastWidth = w;
-    mLastHeight = h;
-    mLastFlags = flags;
+    if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+    {
+        mLastAddress = pvVRAM;
+        mLastBytesPerLine = cbLine;
+        mLastBitsPerPixel = bpp;
+        mLastWidth = w;
+        mLastHeight = h;
+        mLastFlags = flags;
+    }
 
     ULONG pixelFormat;
 
@@ -728,6 +731,10 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
 
         return VINF_VGA_RESIZE_IN_PROGRESS;
     }
+
+    /* Framebuffer will be invalid during resize, make sure that it is not accessed. */
+    if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+        mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, false);
 
     int rc = callFramebufferResize (maFramebuffers[uScreenId].pFramebuffer, uScreenId,
                                     pixelFormat, pvVRAM, bpp, cbLine, w, h);
@@ -792,6 +799,12 @@ void Display::handleResizeCompletedEMT (void)
                                  pFBInfo->pendingResize.cbLine, pFBInfo->pendingResize.w, pFBInfo->pendingResize.h, pFBInfo->pendingResize.flags);
             continue;
         }
+
+        /* Inform VRDP server about the change of display parameters.
+         * Must be done before calling NotifyUpdate below.
+         */
+        LogRelFlowFunc(("Calling VRDP\n"));
+        mParent->consoleVRDPServer()->SendResize();
 
         /* @todo Merge these two 'if's within one 'if (!pFBInfo->pFramebuffer.isNull())' */
         if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && !pFBInfo->pFramebuffer.isNull())
@@ -863,10 +876,6 @@ void Display::handleResizeCompletedEMT (void)
             g_stam = 1;
         }
 #endif /* DEBUG_sunlover */
-
-        /* Inform VRDP server about the change of display parameters. */
-        LogRelFlowFunc(("Calling VRDP\n"));
-        mParent->consoleVRDPServer()->SendResize();
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
         {
