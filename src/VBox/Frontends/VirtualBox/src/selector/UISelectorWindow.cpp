@@ -1065,6 +1065,13 @@ void UISelectorWindow::closeEvent(QCloseEvent *pEvent)
 
 bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
 {
+    /* If we got broadcast qApp close-event, quit app.. */
+    if (pObject == qApp && pEvent->type() == QEvent::Close)
+    {
+        sltPerformExit();
+        return true;
+    }
+
     /* Ignore for non-active window: */
     if (!isActiveWindow())
         return QIWithRetranslateUI2<QMainWindow>::eventFilter(pObject, pEvent);
