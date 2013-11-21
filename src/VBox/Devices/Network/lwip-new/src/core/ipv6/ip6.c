@@ -779,6 +779,14 @@ options_done:
       break;
 #endif /* LWIP_TCP */
 
+#if LWIP_ICMP6
+    case IP6_NEXTH_ICMP6:
+      /* Point to payload. */
+      pbuf_header(p, -ip_data.current_ip_header_tot_len);
+      icmp6_proxy_input(p, inp);
+      break;
+#endif /* LWIP_ICMP */
+
     default:
       /* no proxy support for this protocol */
       /* XXX: TODO: icmp administratively prohibited? */

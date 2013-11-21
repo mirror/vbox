@@ -66,6 +66,11 @@
 /* Forward declarations */
 static void icmp6_send_response(struct pbuf *p, u8_t code, u32_t data, u8_t type);
 
+#if LWIP_CONNECTION_PROXY
+static ping6_proxy_fn ping6_proxy_accept_callback;
+static void *ping6_proxy_accept_arg;
+#endif
+
 
 /**
  * Process an input ICMPv6 message. Called by ip6_input.
@@ -198,6 +203,68 @@ icmp6_input(struct pbuf *p, struct netif *inp)
   pbuf_free(p);
 }
 
+
+#if LWIP_CONNECTION_PROXY
+
+void
+ping6_proxy_accept(ping6_proxy_fn callback, void *arg)
+{
+  ping6_proxy_accept_callback = callback;
+  ping6_proxy_accept_arg = arg;
+}
+
+
+void
+icmp6_proxy_input(struct pbuf *p, struct netif *inp)
+{
+  struct icmp6_hdr *icmp6hdr;
+  struct pbuf * r;
+  ip6_addr_t * reply_src;
+
+  ICMP6_STATS_INC(icmp6.recv);
+
+  /* Check that ICMPv6 header fits in payload */
+  if (p->len < sizeof(struct icmp6_hdr)) {
+    /* drop short packets */
+    pbuf_free(p);
+    ICMP6_STATS_INC(icmp6.lenerr);
+    ICMP6_STATS_INC(icmp6.drop);
+    return;
+  }
+
+  icmp6hdr = (struct icmp6_hdr *)p->payload;
+  if (ip6_chksum_pseudo(p, IP6_NEXTH_ICMP6, p->tot_len, ip6_current_src_addr(),
+                        ip6_current_dest_addr()) != 0) {
+    /* Checksum failed */
+    pbuf_free(p);
+    ICMP6_STATS_INC(icmp6.chkerr);
+    ICMP6_STATS_INC(icmp6.drop);
+    return;
+  }
+
+  switch (icmp6hdr->type) {
+
+  case ICMP6_TYPE_EREQ:
+    if (ping6_proxy_accept_callback != NULL) {
+      (*ping6_proxy_accept_callback)(ping6_proxy_accept_arg, p);
+      return;
+    }
+    ICMP6_STATS_INC(icmp6.drop);
+    break;
+
+  case ICMP6_TYPE_EREP:
+    /* ignore silently */
+    ICMP6_STATS_INC(icmp6.drop);
+    break;
+
+  default:
+    ICMP6_STATS_INC(icmp6.drop);
+    break;
+  }
+
+  pbuf_free(p);
+}
+#endif /* LWIP_CONNECTION_PROXY */
 
 /**
  * Send an icmpv6 'destination unreachable' packet.
