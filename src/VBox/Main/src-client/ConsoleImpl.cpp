@@ -8486,7 +8486,7 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
             Utf8Str str(tapDeviceName);
             RTStrCopy(IfReq.ifr_name, sizeof(IfReq.ifr_name), str.c_str()); /** @todo bitch about names which are too long... */
             IfReq.ifr_flags = IFF_TAP | IFF_NO_PI;
-            rcVBox = ioctl(maTapFD[slot], TUNSETIFF, &IfReq);
+            rcVBox = ioctl(RTFileToNative(maTapFD[slot]), TUNSETIFF, &IfReq);
             if (rcVBox != 0)
             {
                 LogRel(("Failed to open the host network interface %ls\n", tapDeviceName.raw()));
@@ -8500,7 +8500,7 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
             /*
              * Make it pollable.
              */
-            if (fcntl(maTapFD[slot], F_SETFL, O_NONBLOCK) != -1)
+            if (fcntl(RTFileToNative(maTapFD[slot]), F_SETFL, O_NONBLOCK) != -1)
             {
                 Log(("attachToTapInterface: %RTfile %ls\n", maTapFD[slot], tapDeviceName.raw()));
                 /*
