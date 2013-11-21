@@ -945,6 +945,11 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
                  addrstr, ntohs(id), ntohs(seq)));
     }
 
+
+    /*
+     * Is this a reply to one of our pings?
+     */
+
     ip_addr_copy(target_ip, iph->src);
     mapped = pxremap_inbound_ip4(&target_ip, &target_ip);
     if (mapped == PXREMAP_FAILED) {
@@ -970,6 +975,11 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
     guest_id = pcb->guest_id;
 
     sys_mutex_unlock(&pxping->lock);
+
+
+    /*
+     * Rewrite headers and forward to guest.
+     */
 
     /* rewrite ICMP echo header */
     sum = (u16_t)~icmph->chksum;
@@ -1016,6 +1026,11 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
 
     iph = (struct ip_hdr *)pollmgr_udpbuf;
     icmph = (struct icmp_echo_hdr *)(pollmgr_udpbuf + IP_HLEN);
+
+    /*
+     * Inner IP datagram is not checked by the kernel and may be
+     * anything, possibly malicious.
+     */
 
     oipoff = IP_HLEN + ICMP_HLEN;
     oiplen = iplen - oipoff; /* NB: truncated length, not IPH_LEN(oiph) */
@@ -1072,14 +1087,18 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
         addrstr = inet_ntop(AF_INET, &oiph->dest, addrbuf, sizeof(addrbuf));
         DPRINTF2(("%s: ping %s id 0x%x seq %d",
                   __func__, addrstr, ntohs(id), ntohs(seq)));
+        if (ICMPH_TYPE(icmph) == ICMP_DUR) {
+            DPRINTF2((" unreachable (code %d)\n", ICMPH_CODE(icmph)));
+        }
+        else {
+            DPRINTF2((" time exceeded\n"));
+        }
     }
 
-    if (ICMPH_TYPE(icmph) == ICMP_DUR) {
-        DPRINTF2((" unreachable (code %d)\n", ICMPH_CODE(icmph)));
-    }
-    else {
-        DPRINTF2((" time exceeded\n"));
-    }
+
+    /*
+     * Is the inner (failed) datagram one of our pings?
+     */
 
     ip_addr_copy(target_ip, oiph->dest); /* inner (failed) */
     target_mapped = pxremap_inbound_ip4(&target_ip, &target_ip);
@@ -1102,6 +1121,13 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
     guest_id = pcb->guest_id;
 
     sys_mutex_unlock(&pxping->lock);
+
+
+    /*
+     * Rewrite both inner and outer headers and forward to guest.
+     * Note that the checksum of the outer ICMP error message is
+     * preserved by the changes we do to inner headers.
+     */
 
     ip_addr_copy(error_ip, iph->src); /* node that reports the error */
     error_mapped = pxremap_inbound_ip4(&error_ip, &error_ip);
@@ -1129,8 +1155,6 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
     }
     sum = FOLD_U32T(sum);
     IPH_CHKSUM_SET(oiph, ~sum);
-
-    /* keep outer ICMP error header: checksum not affected by the above */
 
     /* rewrite outer IP header */
     sum = (u16_t)~IPH_CHKSUM(iph);
