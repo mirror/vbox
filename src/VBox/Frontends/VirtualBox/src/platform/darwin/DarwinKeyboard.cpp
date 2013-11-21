@@ -503,11 +503,11 @@ void DarwinDisableGlobalHotKeys(bool fDisable)
     {
         if (enmMode != kCGSGlobalHotKeyEnable)
             return;
-        enmMode = kCGSGlobalHotKeyDisable;
+        enmMode = kCGSGlobalHotKeyDisableExceptUniversalAccess;
     }
     else
     {
-        if (enmMode != kCGSGlobalHotKeyDisable)
+        if (enmMode != kCGSGlobalHotKeyDisableExceptUniversalAccess)
             return;
         enmMode = kCGSGlobalHotKeyEnable;
     }
