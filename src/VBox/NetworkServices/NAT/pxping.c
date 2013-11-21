@@ -876,12 +876,6 @@ pxping_pmgr_icmp4(struct pxping *pxping)
         return;
     }
 
-    /* XXX: TODO: not for loopback */
-    if (IPH_TTL(iph) == 1) {
-        DPRINTF2(("%s: dropping packet with ttl 1\n", __func__));
-        return;
-    }
-
     iplen = IPH_LEN(iph);
 #if !defined(RT_OS_DARWIN)
     /* darwin reports IPH_LEN in host byte order */
@@ -930,9 +924,9 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
     struct ip_hdr *iph;
     struct icmp_echo_hdr *icmph;
     u16_t id, seq;
+    ip_addr_t guest_ip, target_ip;
     int mapped;
     struct ping_pcb *pcb;
-    ip_addr_t guest_ip, target_ip, unmapped_target_ip;
     u16_t guest_id;
     u32_t sum;
 
@@ -952,13 +946,17 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
     }
 
     ip_addr_copy(target_ip, iph->src);
-    mapped = pxremap_inbound_ip4(&unmapped_target_ip, &target_ip);
+    mapped = pxremap_inbound_ip4(&target_ip, &target_ip);
     if (mapped == PXREMAP_FAILED) {
+        return;
+    }
+    if (mapped == PXREMAP_ASIS && IPH_TTL(iph) == 1) {
+        DPRINTF2(("%s: dropping packet with ttl 1\n", __func__));
         return;
     }
 
     sys_mutex_lock(&pxping->lock);
-    pcb = pxping_pcb_for_reply(pxping, 0, ip_2_ipX(&unmapped_target_ip), id);
+    pcb = pxping_pcb_for_reply(pxping, 0, ip_2_ipX(&target_ip), id);
     if (pcb == NULL) {
         sys_mutex_unlock(&pxping->lock);
         DPRINTF2(("%s: no match\n", __func__));
@@ -985,7 +983,7 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
                                 ip4_addr_get_u32(&guest_ip));
     if (mapped == PXREMAP_MAPPED) {
         sum += update32_with_chksum((u32_t *)&iph->src,
-                                    ip4_addr_get_u32(&unmapped_target_ip));
+                                    ip4_addr_get_u32(&target_ip));
     }
     else {
         IPH_TTL_SET(iph, IPH_TTL(iph) - 1);
@@ -1010,10 +1008,10 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
     struct icmp_echo_hdr *icmph, *oicmph;
     u16_t oipoff, oiphlen, oiplen;
     u16_t id, seq;
+    ip_addr_t guest_ip, target_ip, error_ip;
+    int target_mapped, error_mapped;
     struct ping_pcb *pcb;
-    ip_addr_t pcb_src, pcb_dst;
     u16_t guest_id;
-    int mapped;
     u32_t sum;
 
     iph = (struct ip_hdr *)pollmgr_udpbuf;
@@ -1083,8 +1081,14 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
         DPRINTF2((" time exceeded\n"));
     }
 
+    ip_addr_copy(target_ip, oiph->dest); /* inner (failed) */
+    target_mapped = pxremap_inbound_ip4(&target_ip, &target_ip);
+    if (target_mapped == PXREMAP_FAILED) {
+        return;
+    }
+
     sys_mutex_lock(&pxping->lock);
-    pcb = pxping_pcb_for_reply(pxping, 0, ip_2_ipX(&oiph->dest), id);
+    pcb = pxping_pcb_for_reply(pxping, 0, ip_2_ipX(&target_ip), id);
     if (pcb == NULL) {
         sys_mutex_unlock(&pxping->lock);
         DPRINTF2(("%s: no match\n", __func__));
@@ -1094,17 +1098,20 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
     DPRINTF2(("%s: pcb %p\n", __func__, (void *)pcb));
 
     /* save info before unlocking since pcb may expire */
-    mapped = pcb->is_mapped;
-    ip_addr_copy(pcb_src, *ipX_2_ip(&pcb->src));
-    ip_addr_copy(pcb_dst, *ipX_2_ip(&pcb->dst));
+    ip_addr_copy(guest_ip, *ipX_2_ip(&pcb->src));
     guest_id = pcb->guest_id;
 
     sys_mutex_unlock(&pxping->lock);
 
-    /*
-     * NB: Checksum in the outer ICMP error header is not affected by
-     * changes to inner headers.
-     */
+    ip_addr_copy(error_ip, iph->src); /* node that reports the error */
+    error_mapped = pxremap_inbound_ip4(&error_ip, &error_ip);
+    if (error_mapped == PXREMAP_FAILED) {
+        return;
+    }
+    if (error_mapped == PXREMAP_ASIS && IPH_TTL(iph) == 1) {
+        DPRINTF2(("%s: dropping packet with ttl 1\n", __func__));
+        return;
+    }
 
     /* rewrite inner ICMP echo header */
     sum = (u16_t)~oicmph->chksum;
@@ -1114,15 +1121,26 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
 
     /* rewrite inner IP header */
     sum = (u16_t)~IPH_CHKSUM(oiph);
-    sum += update32_with_chksum((u32_t *)&oiph->src, ip4_addr_get_u32(&pcb_src));
-    /* XXX: FIXME: rewrite dst if mapped */
+    sum += update32_with_chksum((u32_t *)&oiph->src,
+                                ip4_addr_get_u32(&guest_ip));
+    if (target_mapped == PXREMAP_MAPPED) {
+        sum += update32_with_chksum((u32_t *)&oiph->dest,
+                                    ip4_addr_get_u32(&target_ip));
+    }
     sum = FOLD_U32T(sum);
     IPH_CHKSUM_SET(oiph, ~sum);
 
+    /* keep outer ICMP error header: checksum not affected by the above */
+
     /* rewrite outer IP header */
     sum = (u16_t)~IPH_CHKSUM(iph);
-    sum += update32_with_chksum((u32_t *)&iph->dest, ip4_addr_get_u32(&pcb_src));
-    if (!mapped) { /* XXX: FIXME: error may be from elsewhere */
+    sum += update32_with_chksum((u32_t *)&iph->dest,
+                                ip4_addr_get_u32(&guest_ip));
+    if (error_mapped == PXREMAP_MAPPED) {
+        sum += update32_with_chksum((u32_t *)&iph->src,
+                                    ip4_addr_get_u32(&error_ip));
+    }
+    else {
         IPH_TTL_SET(iph, IPH_TTL(iph) - 1);
         sum += PP_NTOHS(~0x0100);
     }
