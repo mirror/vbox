@@ -33,11 +33,13 @@
 #include "QISplitter.h"
 #include "QIFileDialog.h"
 #include "UIBar.h"
-#include "UINetworkManager.h"
-#include "UINetworkManagerIndicator.h"
-#include "UIUpdateManager.h"
-#include "UIDownloaderUserManual.h"
-#include "UIDownloaderExtensionPack.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UINetworkManager.h"
+# include "UINetworkManagerIndicator.h"
+# include "UIUpdateManager.h"
+# include "UIDownloaderUserManual.h"
+# include "UIDownloaderExtensionPack.h"
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #include "UIIconPool.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardExportApp.h"
@@ -1321,6 +1323,7 @@ void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
     pMenu->addSeparator();
     m_pResetWarningsAction = gActionPool->action(UIActionIndex_Simple_ResetWarnings);
     pMenu->addAction(m_pResetWarningsAction);
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     pMenu->addSeparator();
     m_pNetworkAccessManager = gActionPool->action(UIActionIndex_Simple_NetworkAccessManager);
     pMenu->addAction(m_pNetworkAccessManager);
@@ -1330,6 +1333,7 @@ void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
         pMenu->addAction(m_pUpdateAction);
     else
         m_pUpdateAction->setEnabled(false);
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
 #endif /* !Q_WS_MAC */
@@ -1339,6 +1343,7 @@ void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
 
 void UISelectorWindow::prepareStatusBar()
 {
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* Setup statusbar policy: */
     statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -1346,6 +1351,7 @@ void UISelectorWindow::prepareStatusBar()
     QIStateIndicator *pIndicator = gNetworkManager->indicator();
     statusBar()->addPermanentWidget(pIndicator);
     pIndicator->updateAppearance();
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 }
 
 void UISelectorWindow::prepareWidgets()
@@ -1461,8 +1467,10 @@ void UISelectorWindow::prepareConnections()
     connect(m_pHelpAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
     connect(m_pWebAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpWebDialog()));
     connect(m_pResetWarningsAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltResetSuppressedMessages()));
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     connect(m_pNetworkAccessManager, SIGNAL(triggered()), gNetworkManager, SLOT(show()));
     connect(m_pUpdateAction, SIGNAL(triggered()), gUpdateManager, SLOT(sltForceCheck()));
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     connect(m_pAboutAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpAboutDialog()));
 
     /* Status-bar connections: */

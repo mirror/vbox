@@ -516,12 +516,16 @@ template<> QString toInternalString(const GlobalSettingsPageType &globalSettings
     {
         case GlobalSettingsPageType_General:    strResult = "General"; break;
         case GlobalSettingsPageType_Input:      strResult = "Input"; break;
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         case GlobalSettingsPageType_Update:     strResult = "Update"; break;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         case GlobalSettingsPageType_Language:   strResult = "Language"; break;
         case GlobalSettingsPageType_Display:    strResult = "Display"; break;
         case GlobalSettingsPageType_Network:    strResult = "Network"; break;
         case GlobalSettingsPageType_Extensions: strResult = "Extensions"; break;
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         case GlobalSettingsPageType_Proxy:      strResult = "Proxy"; break;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         default:
         {
             AssertMsgFailed(("No text for settings page type=%d", globalSettingsPageType));
@@ -539,12 +543,16 @@ template<> GlobalSettingsPageType fromInternalString<GlobalSettingsPageType>(con
     QStringList keys;    QList<GlobalSettingsPageType> values;
     keys << "General";    values << GlobalSettingsPageType_General;
     keys << "Input";      values << GlobalSettingsPageType_Input;
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     keys << "Update";     values << GlobalSettingsPageType_Update;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     keys << "Language";   values << GlobalSettingsPageType_Language;
     keys << "Display";    values << GlobalSettingsPageType_Display;
     keys << "Network";    values << GlobalSettingsPageType_Network;
     keys << "Extensions"; values << GlobalSettingsPageType_Extensions;
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     keys << "Proxy";      values << GlobalSettingsPageType_Proxy;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     /* Invalid type for unknown words: */
     if (!keys.contains(strGlobalSettingsPageType, Qt::CaseInsensitive))
         return GlobalSettingsPageType_Invalid;
@@ -559,12 +567,16 @@ template<> QPixmap toWarningPixmap(const GlobalSettingsPageType &type)
     {
         case GlobalSettingsPageType_General:    return QPixmap(":/machine_warning_16px.png");
         case GlobalSettingsPageType_Input:      return QPixmap(":/hostkey_warning_16px.png");
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         case GlobalSettingsPageType_Update:     return QPixmap(":/refresh_warning_16px.png");
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         case GlobalSettingsPageType_Language:   return QPixmap(":/site_warning_16px.png");
         case GlobalSettingsPageType_Display:    return QPixmap(":/vrdp_warning_16px.png");
         case GlobalSettingsPageType_Network:    return QPixmap(":/nw_warning_16px.png");
         case GlobalSettingsPageType_Extensions: return QPixmap(":/extension_pack_warning_16px.png");
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         case GlobalSettingsPageType_Proxy:      return QPixmap(":/proxy_warning_16px.png");
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         default: AssertMsgFailed(("No pixmap for %d", type)); break;
     }
     return QPixmap();

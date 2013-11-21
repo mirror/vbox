@@ -299,7 +299,9 @@ public:
     void cannotToggleVRDEServer(const CVRDEServer &server, const QString &strMachineName, bool fEnable);
     void cannotToggleVideoCapture(const CMachine &machine, bool fEnable);
     void remindAboutGuestAdditionsAreNotActive() const;
+    void cannotMountGuestAdditions(const QString &strMachineName) const;
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* API: Network management warnings: */
     bool confirmCancelingAllNetworkRequests() const;
     void showUpdateSuccess(const QString &strVersion, const QString &strLink) const;
@@ -311,7 +313,6 @@ public:
     bool confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const;
     void cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const;
     bool proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const;
-    void cannotMountGuestAdditions(const QString &strMachineName) const;
     void cannotUpdateGuestAdditions(const CProgress &progress) const;
     bool cannotFindUserManual(const QString &strMissedLocation) const;
     bool confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const;
@@ -321,6 +322,9 @@ public:
     bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const;
     void cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
     bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+    /* API: Extension-pack warnings: */
     bool confirmInstallExtensionPack(const QString &strPackName, const QString &strPackVersion, const QString &strPackDescription, QWidget *pParent = 0) const;
     bool confirmReplaceExtensionPack(const QString &strPackName, const QString &strPackVersionNew, const QString &strPackVersionOld,
                                      const QString &strPackDescription, QWidget *pParent = 0) const;

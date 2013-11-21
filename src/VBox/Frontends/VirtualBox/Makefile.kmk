@@ -122,6 +122,10 @@ ifdef VBOX_WITH_VIDEOHWACCEL
 else ifdef VBOX_GUI_USE_QGL
  VirtualBox_DEFS        += VBOX_GUI_USE_QGL
 endif
+ifdef VBOX_WITH_LIBCURL
+ VirtualBox_DEFS        += VBOX_GUI_WITH_NETWORK_MANAGER
+ VBOX_GUI_WITH_NETWORK_MANAGER := 1
+endif
 ifdef VBOX_BLEEDING_EDGE
 VirtualBox_src/selector/UISelectorWindow.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
@@ -140,7 +144,6 @@ VBOX_GUI_INC_DIRS = \
 	./src/extensions \
 	./src/extensions/graphics \
 	./src/globals \
-	./src/net \
 	./src/medium \
 	./src/platform \
 	./src/platform/darwin \
@@ -168,6 +171,11 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/importappliance \
 	./src/wizards/firstrun
 
+ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+VBOX_GUI_INC_DIRS += \
+	./src/net
+endif
+	
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
 	$(VirtualBox_0_OUTDIR)/include
@@ -278,18 +286,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/UIThreadPool.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxUtils.h \
-	src/net/UINetworkManager.h \
-	src/net/UINetworkManagerDialog.h \
-	src/net/UINetworkManagerIndicator.h \
-	src/net/UINetworkRequest.h \
-	src/net/UINetworkRequestWidget.h \
-	src/net/UINetworkReply.h \
-	src/net/UINetworkCustomer.h \
-	src/net/UIUpdateManager.h \
-	src/net/UIDownloader.h \
-	src/net/UIDownloaderAdditions.h \
-	src/net/UIDownloaderExtensionPack.h \
-	src/net/UIDownloaderUserManual.h \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumManager.h \
 	src/runtime/UIActionPoolRuntime.h \
@@ -357,8 +353,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.h \
 	src/settings/global/UIGlobalSettingsNetworkDetailsHost.h \
 	src/settings/global/UIGlobalSettingsPortForwardingDlg.h \
-	src/settings/global/UIGlobalSettingsProxy.h \
-	src/settings/global/UIGlobalSettingsUpdate.h \
 	src/settings/machine/UIMachineSettingsAudio.h \
 	src/settings/machine/UIMachineSettingsDisplay.h \
 	src/settings/machine/UIMachineSettingsGeneral.h \
@@ -437,6 +431,24 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/firstrun/UIWizardFirstRun.h \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
 
+ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+VirtualBox_QT_MOCHDRS += \
+	src/net/UINetworkManager.h \
+	src/net/UINetworkManagerDialog.h \
+	src/net/UINetworkManagerIndicator.h \
+	src/net/UINetworkRequest.h \
+	src/net/UINetworkRequestWidget.h \
+	src/net/UINetworkReply.h \
+	src/net/UINetworkCustomer.h \
+	src/net/UIUpdateManager.h \
+	src/net/UIDownloader.h \
+	src/net/UIDownloaderAdditions.h \
+	src/net/UIDownloaderExtensionPack.h \
+	src/net/UIDownloaderUserManual.h \
+	src/settings/global/UIGlobalSettingsProxy.h \
+	src/settings/global/UIGlobalSettingsUpdate.h
+endif
+
 VirtualBox_QT_MOCHDRS.darwin += \
     src/platform/darwin/UIWindowMenuManager.h
 
@@ -450,8 +462,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIThreadPool.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumManager.cpp \
-	src/net/UINetworkReply.cpp \
-	src/net/UIUpdateManager.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
@@ -464,6 +474,12 @@ VirtualBox_QT_MOCSRCS = \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
+
+ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+VirtualBox_QT_MOCSRCS += \
+	src/net/UINetworkReply.cpp \
+	src/net/UIUpdateManager.cpp
+endif
 
 VirtualBox_QT_MOCSRCS.darwin += \
     src/platform/darwin/UIWindowMenuManager.cpp
@@ -532,19 +548,6 @@ VirtualBox_SOURCES = \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumManager.cpp \
-	src/net/UINetworkManager.cpp \
-	src/net/UINetworkManagerDialog.cpp \
-	src/net/UINetworkManagerIndicator.cpp \
-	src/net/UINetworkRequest.cpp \
-	src/net/UINetworkRequestWidget.cpp \
-	src/net/UINetworkReply.cpp \
-	src/net/UINetworkCustomer.cpp \
-	src/net/UIDownloader.cpp \
-	src/net/UIDownloaderAdditions.cpp \
-	src/net/UIDownloaderExtensionPack.cpp \
-	src/net/UIDownloaderUserManual.cpp \
-	src/net/UIUpdateDefs.cpp \
-	src/net/UIUpdateManager.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
@@ -613,8 +616,6 @@ VirtualBox_SOURCES = \
 	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.cpp \
 	src/settings/global/UIGlobalSettingsNetworkDetailsHost.cpp \
 	src/settings/global/UIGlobalSettingsPortForwardingDlg.cpp \
-	src/settings/global/UIGlobalSettingsProxy.cpp \
-	src/settings/global/UIGlobalSettingsUpdate.cpp \
 	src/settings/machine/UIMachineSettingsAudio.cpp \
 	src/settings/machine/UIMachineSettingsDisplay.cpp \
 	src/settings/machine/UIMachineSettingsGeneral.cpp \
@@ -693,6 +694,25 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
+
+ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+VirtualBox_SOURCES += \
+	src/net/UINetworkManager.cpp \
+	src/net/UINetworkManagerDialog.cpp \
+	src/net/UINetworkManagerIndicator.cpp \
+	src/net/UINetworkRequest.cpp \
+	src/net/UINetworkRequestWidget.cpp \
+	src/net/UINetworkReply.cpp \
+	src/net/UINetworkCustomer.cpp \
+	src/net/UIDownloader.cpp \
+	src/net/UIDownloaderAdditions.cpp \
+	src/net/UIDownloaderExtensionPack.cpp \
+	src/net/UIDownloaderUserManual.cpp \
+	src/net/UIUpdateDefs.cpp \
+	src/net/UIUpdateManager.cpp \
+	src/settings/global/UIGlobalSettingsProxy.cpp \
+	src/settings/global/UIGlobalSettingsUpdate.cpp
+endif
 
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIAbstractDockIconPreview.cpp \

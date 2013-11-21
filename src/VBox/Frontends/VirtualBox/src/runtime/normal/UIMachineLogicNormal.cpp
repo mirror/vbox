@@ -25,9 +25,6 @@
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineWindow.h"
-#include "UIDownloaderAdditions.h"
-#include "UIDownloaderUserManual.h"
-#include "UIDownloaderExtensionPack.h"
 #ifdef Q_WS_MAC
 #include "VBoxUtils.h"
 #endif /* Q_WS_MAC */

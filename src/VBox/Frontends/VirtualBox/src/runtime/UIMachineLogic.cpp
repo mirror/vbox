@@ -30,8 +30,10 @@
 /* GUI includes: */
 #include "QIFileDialog.h"
 #include "UIActionPoolRuntime.h"
-#include "UINetworkManager.h"
-#include "UIDownloaderAdditions.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UINetworkManager.h"
+# include "UIDownloaderAdditions.h"
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #include "UIIconPool.h"
 #include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
@@ -2162,6 +2164,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
             return uisession()->sltInstallGuestAdditionsFrom(path);
     }
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* If downloader is running already: */
     if (UIDownloaderAdditions::current())
     {
@@ -2178,6 +2181,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
         /* Start downloading: */
         pDl->start();
     }
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
