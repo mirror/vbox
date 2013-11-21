@@ -96,13 +96,14 @@ public:
 
     HRESULT init(GuestProcess *pProcess)
     {
+        AssertPtrReturn(pProcess, E_POINTER);
         mProcess = pProcess;
         return S_OK;
     }
 
     void uninit(void)
     {
-        mProcess.setNull();
+        mProcess = NULL;
     }
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
@@ -113,7 +114,7 @@ public:
             case VBoxEventType_OnGuestProcessInputNotify:
             case VBoxEventType_OnGuestProcessOutput:
             {
-                Assert(!mProcess.isNull());
+                AssertPtrReturn(mProcess, E_POINTER);
                 int rc2 = mProcess->signalWaitEvent(aType, aEvent);
 #ifdef DEBUG
                 LogFlowThisFunc(("Signalling events of type=%RU32, pProcess=%p resulted in rc=%Rrc\n",
@@ -132,7 +133,7 @@ public:
 
 private:
 
-    ComObjPtr<GuestProcess> mProcess;
+    GuestProcess *mProcess;
 };
 typedef ListenerImpl<GuestProcessListener, GuestProcess*> GuestProcessListenerImpl;
 

@@ -96,13 +96,14 @@ public:
 
     HRESULT init(GuestSession *pSession)
     {
+        AssertPtrReturn(pSession, E_POINTER);
         mSession = pSession;
         return S_OK;
     }
 
     void uninit(void)
     {
-        mSession.setNull();
+        mSession = NULL;
     }
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
@@ -111,7 +112,7 @@ public:
         {
             case VBoxEventType_OnGuestSessionStateChanged:
             {
-                Assert(!mSession.isNull());
+                AssertPtrReturn(mSession, E_POINTER);
                 int rc2 = mSession->signalWaitEvent(aType, aEvent);
 #ifdef DEBUG_andy
                 LogFlowFunc(("Signalling events of type=%RU32, session=%p resulted in rc=%Rrc\n",
@@ -130,7 +131,7 @@ public:
 
 private:
 
-    ComObjPtr<GuestSession> mSession;
+    GuestSession *mSession;
 };
 typedef ListenerImpl<GuestSessionListener, GuestSession*> GuestSessionListenerImpl;
 
