@@ -32,6 +32,8 @@ struct ip4_lomap_desc
 struct proxy_options {
     int ipv6_enabled;
     int ipv6_defroute;
+    SOCKET icmpsock4;
+    SOCKET icmpsock6;
     const char *tftp_root;
     const struct sockaddr_in *src4;
     const struct sockaddr_in6 *src6;
@@ -72,6 +74,9 @@ void pxudp_init(void);
 /* pxdns.c */
 err_t pxdns_init(struct netif *);
 void pxdns_set_nameservers(void *);
+
+/* pxping.c */
+err_t pxping_init(struct netif *, SOCKET, SOCKET);
 
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
