@@ -2415,7 +2415,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                            RTPathFilename(strSourceOVF.c_str()), vrc);
                     }
                 }
-                catch (HRESULT arc)
+                catch (HRESULT /*arc*/)
                 {
                     throw;
                 }
@@ -2479,8 +2479,6 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                                nullParent,
                                                pProgress);
                     if (FAILED(rc)) throw rc;
-
-
 
                     /* Advance to the next operation. */
                     /* operation's weight, as set up with the IProgress originally */
@@ -2963,7 +2961,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         }
         catch(HRESULT aRC)
         {
-            com::ErrorInfo info(this, COM_IIDOF(IAppliance));
+            com::ErrorInfo info;
 
             if (stack.fSessionOpen)
                 stack.pSession->UnlockMachine();
@@ -3252,7 +3250,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         }
         catch(HRESULT  aRC)
         {
-            com::ErrorInfo info(this, COM_IIDOF(IAppliance));
+            com::ErrorInfo info;
 
             if (stack.fSessionOpen)
                 stack.pSession->UnlockMachine();
