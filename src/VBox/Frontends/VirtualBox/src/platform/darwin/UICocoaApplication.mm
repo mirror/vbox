@@ -173,6 +173,11 @@ UICocoaApplication* UICocoaApplication::instance()
     return m_pInstance;
 }
 
+void UICocoaApplication::hide()
+{
+    [m_pNative hide:m_pNative];
+}
+
 UICocoaApplication::UICocoaApplication()
 {
     /* Make sure our private NSApplication object is created */
