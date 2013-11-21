@@ -869,7 +869,6 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
 
     if (!m->fEnabled) return S_OK;
 
-    m->NATRunner.setOption(NetworkServiceRunner::kNsrKeyNeedMain, "on");
     m->NATRunner.setOption(NetworkServiceRunner::kNsrKeyNetwork, Utf8Str(mName).c_str());
     m->NATRunner.setOption(NetworkServiceRunner::kNsrKeyTrunkType, Utf8Str(aTrunkType).c_str());
     m->NATRunner.setOption(NetworkServiceRunner::kNsrIpAddress, Utf8Str(m->IPv4Gateway).c_str());
