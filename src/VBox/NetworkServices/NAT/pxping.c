@@ -268,7 +268,7 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
             perror("IPV6_RECVHOPLIMIT");
         }
 
-#ifdef IPV6_RECVTCLASS
+#ifdef IPV6_RECVTCLASS  /* new in RFC 3542, there's no RFC 2292 counterpart */
         /* TODO: IPV6_RECVTCLASS */
 #endif
 
