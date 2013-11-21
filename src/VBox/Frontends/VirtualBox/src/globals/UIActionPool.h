@@ -57,8 +57,10 @@ enum UIActionIndex
     UIActionIndex_Simple_Contents,
     UIActionIndex_Simple_WebSite,
     UIActionIndex_Simple_ResetWarnings,
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     UIActionIndex_Simple_NetworkAccessManager,
     UIActionIndex_Simple_CheckForUpdates,
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     UIActionIndex_Simple_About,
 
     /* Maximum index: */

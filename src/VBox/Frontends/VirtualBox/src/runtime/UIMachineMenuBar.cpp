@@ -28,7 +28,9 @@
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UIImageTools.h"
-#include "UINetworkManager.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UINetworkManager.h"
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 /* COM includes: */
 #include "CMachine.h"
@@ -302,7 +304,9 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu)
     pMenu->addSeparator();
     pMenu->addAction(gActionPool->action(UIActionIndex_Simple_ResetWarnings));
     pMenu->addSeparator();
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     pMenu->addAction(gActionPool->action(UIActionIndex_Simple_NetworkAccessManager));
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
 #endif /* !Q_WS_MAC */
@@ -315,8 +319,10 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu)
                         &msgCenter(), SLOT(sltShowHelpWebDialog()));
     VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
                         &msgCenter(), SLOT(sltResetSuppressedMessages()));
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()),
                         gNetworkManager, SLOT(show()));
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
                         &msgCenter(), SLOT(sltShowHelpAboutDialog()));
 }

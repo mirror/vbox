@@ -34,8 +34,10 @@
 #include "UIMessageCenter.h"
 #include "UISelectorWindow.h"
 #include "UIProgressDialog.h"
-#include "UINetworkManager.h"
-#include "UINetworkManagerDialog.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UINetworkManager.h"
+# include "UINetworkManagerDialog.h"
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #include "UIModalWindowManager.h"
 #include "UIMedium.h"
 #ifdef VBOX_OSE
@@ -1981,6 +1983,16 @@ void UIMessageCenter::remindAboutGuestAdditionsAreNotActive() const
           "remindAboutGuestAdditionsAreNotActive");
 }
 
+void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName) const
+{
+    alert(0, MessageType_Error,
+          tr("<p>Could not insert the <b>VirtualBox Guest Additions</b> disk image file into the virtual machine <b>%1</b>, "
+             "as the machine has no CD/DVD drives. Please add a drive using the storage page of the "
+             "virtual machine settings window.</p>")
+             .arg(strMachineName));
+}
+
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 bool UIMessageCenter::confirmCancelingAllNetworkRequests() const
 {
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
@@ -2050,15 +2062,6 @@ bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QS
                              .arg(strUrl, strSrc),
                           0 /* auto-confirm id */,
                           tr("Insert", "additions"));
-}
-
-void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName) const
-{
-    alert(0, MessageType_Error,
-          tr("<p>Could not insert the <b>VirtualBox Guest Additions</b> disk image file into the virtual machine <b>%1</b>, "
-             "as the machine has no CD/DVD drives. Please add a drive using the storage page of the "
-             "virtual machine settings window.</p>")
-             .arg(strMachineName));
 }
 
 void UIMessageCenter::cannotUpdateGuestAdditions(const CProgress &progress) const
@@ -2149,6 +2152,7 @@ bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName,
                           0 /* auto-confirm id */,
                           tr("Install", "extension pack"));
 }
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 bool UIMessageCenter::confirmInstallExtensionPack(const QString &strPackName, const QString &strPackVersion,
                                                   const QString &strPackDescription, QWidget *pParent /* = 0*/) const

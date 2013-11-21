@@ -35,12 +35,16 @@
 
 #include "UIGlobalSettingsGeneral.h"
 #include "UIGlobalSettingsInput.h"
-#include "UIGlobalSettingsUpdate.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UIGlobalSettingsUpdate.h"
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #include "UIGlobalSettingsLanguage.h"
 #include "UIGlobalSettingsDisplay.h"
 #include "UIGlobalSettingsNetwork.h"
 #include "UIGlobalSettingsExtension.h"
-#include "UIGlobalSettingsProxy.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UIGlobalSettingsProxy.h"
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 #include "UIMachineSettingsGeneral.h"
 #include "UIMachineSettingsSystem.h"
@@ -354,6 +358,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                             iPageIndex, "#input", pSettingsPage);
                     break;
                 }
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
                 /* Update page: */
                 case GlobalSettingsPageType_Update:
                 {
@@ -363,6 +368,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                             iPageIndex, "#update", pSettingsPage);
                     break;
                 }
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
                 /* Language page: */
                 case GlobalSettingsPageType_Language:
                 {
@@ -399,6 +405,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                             iPageIndex, "#extensions", pSettingsPage);
                     break;
                 }
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
                 /* Proxy page: */
                 case GlobalSettingsPageType_Proxy:
                 {
@@ -408,6 +415,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                             iPageIndex, "#proxy", pSettingsPage);
                     break;
                 }
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
                 default:
                     break;
             }
@@ -489,8 +497,10 @@ void UISettingsDialogGlobal::retranslateUi()
     /* Input page: */
     m_pSelector->setItemText(GlobalSettingsPageType_Input, tr("Input"));
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* Update page: */
     m_pSelector->setItemText(GlobalSettingsPageType_Update, tr("Update"));
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
     /* Language page: */
     m_pSelector->setItemText(GlobalSettingsPageType_Language, tr("Language"));
@@ -504,8 +514,10 @@ void UISettingsDialogGlobal::retranslateUi()
     /* Extension page: */
     m_pSelector->setItemText(GlobalSettingsPageType_Extensions, tr("Extensions"));
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* Proxy page: */
     m_pSelector->setItemText(GlobalSettingsPageType_Proxy, tr("Proxy"));
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
     /* Polish the selector: */
     m_pSelector->polish();

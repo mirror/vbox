@@ -431,6 +431,7 @@ protected:
     }
 };
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 class UIActionSimpleNetworkAccessManager : public UIActionSimple
 {
     Q_OBJECT;
@@ -483,6 +484,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Check for a new VirtualBox version"));
     }
 };
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 class UIActionSimpleAbout : public UIActionSimple
 {
@@ -649,8 +651,10 @@ void UIActionPool::createActions()
     m_pool[UIActionIndex_Simple_Contents] = new UIActionSimpleContents(this);
     m_pool[UIActionIndex_Simple_WebSite] = new UIActionSimpleWebSite(this);
     m_pool[UIActionIndex_Simple_ResetWarnings] = new UIActionSimpleResetWarnings(this);
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     m_pool[UIActionIndex_Simple_NetworkAccessManager] = new UIActionSimpleNetworkAccessManager(this);
     m_pool[UIActionIndex_Simple_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
 }
 

@@ -100,7 +100,6 @@ namespace UIDefs
     extern const char* GUI_RecentListHD;
     extern const char* GUI_RecentListCD;
     extern const char* GUI_RecentListFD;
-    extern const char* GUI_PreventApplicationUpdate;
 
     /* Selector-window declarations: */
     extern const char* GUI_Input_SelectorShortcuts;
@@ -165,9 +164,12 @@ namespace UIDefs
     extern const char* GUI_SuppressMessages;
     extern const char* GUI_InvertMessageOption;
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* Update manager declarations: */
+    extern const char* GUI_PreventApplicationUpdate;
     extern const char* GUI_UpdateDate;
     extern const char* GUI_UpdateCheckCount;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
     /* Information dialog declarations: */
     extern const char* GUI_InfoDlgState;
@@ -299,12 +301,16 @@ enum GlobalSettingsPageType
     GlobalSettingsPageType_Invalid,
     GlobalSettingsPageType_General,
     GlobalSettingsPageType_Input,
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     GlobalSettingsPageType_Update,
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     GlobalSettingsPageType_Language,
     GlobalSettingsPageType_Display,
     GlobalSettingsPageType_Network,
     GlobalSettingsPageType_Extensions,
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     GlobalSettingsPageType_Proxy,
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     GlobalSettingsPageType_Max
 };
 Q_DECLARE_METATYPE(GlobalSettingsPageType);

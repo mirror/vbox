@@ -19,8 +19,10 @@
 
 /* GUI includes: */
 #include "UIModalWindowManager.h"
-#include "UINetworkManagerDialog.h"
-#include "UINetworkManager.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UINetworkManagerDialog.h"
+# include "UINetworkManager.h"
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #include "UISelectorWindow.h"
 #include "UIProgressDialog.h"
 #include "VBoxGlobal.h"
@@ -100,12 +102,14 @@ QWidget* UIModalWindowManager::mainWindowShown() const
     return 0;
 }
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 QWidget* UIModalWindowManager::networkManagerOrMainWindowShown() const
 {
     /* It may happen that this method is called before network-manager initialization
      * or when the network-manager is hidden, return main application window in this case: */
     return gNetworkManager && gNetworkManager->window()->isVisible() ? gNetworkManager->window() : mainWindowShown();
 }
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 QWidget* UIModalWindowManager::realParentWindow(QWidget *pWidget)
 {

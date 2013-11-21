@@ -47,7 +47,9 @@ public:
 
     /* API: Main application window stuff: */
     QWidget* mainWindowShown() const;
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     QWidget* networkManagerOrMainWindowShown() const;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 private slots:
 
