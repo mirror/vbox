@@ -110,6 +110,7 @@ private:
     void showEvent(QShowEvent *pEvent);
     void polishEvent(QShowEvent *pEvent);
 #ifdef Q_WS_MAC
+    void closeEvent(QCloseEvent *pEvent);
     bool eventFilter(QObject *pObject, QEvent *pEvent);
 #endif /* Q_WS_MAC */
 
