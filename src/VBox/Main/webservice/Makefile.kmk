@@ -356,7 +356,7 @@ VBoxJWs-inst-jar_CLEAN = \
 	$(VBOX_JWSDOC_JDEST)/package-list \
 	$(wildcard \
 		$(VBOX_JWS_GEN)/java/*/*/*.java \
-	    $(VBOX_JWS_GEN)/java/*/*/*/*.java \
+		$(VBOX_JWS_GEN)/java/*/*/*/*.java \
 		$(VBOX_JWS_JDEST)/*.class \
 		$(VBOX_JWS_JDEST)/*/*.class \
 		$(VBOX_JWS_JDEST)/*/*/*.class \
@@ -414,7 +414,7 @@ $(VBOX_JWS_GEN)/jwsglue.list.ts +| $(VBOX_JWS_GEN)/jwsglue.list: \
 		$(VBOXWEB_WSDL) \
 		$(VBoxJWs-inst-jar_GENERATEDSOURCES) \
 		| $(VBOX_JWS_GEN)/java/
-	$(QUIET)$(RM) -f $(wildcard $(VBOX_JWS_GEN)/java/*/*/*/*.java)
+	$(QUIET)$(RM) -f -- $(wildcard $(VBOX_JWS_GEN)/java/*/*/*/*.java)
 	$(call MSG_GENERATE,,$(VBOX_JWS_GEN)/jwsglue.list,JAX-WS for Java 1.6 bindings using $(VBOXWEBSERVICE_WSDL))
 	$(VBOX_WSIMPORT) -Xnocompile -p $(VBOX_JAVA_PACKAGE).jaxws -d $(VBOX_JWS_GEN)/java $(VBOXWEBSERVICE_WSDL)
 	$(QUIET)echo $(VBoxJWs-inst-jar_GENERATEDSOURCES) > $@
@@ -686,16 +686,17 @@ $(VBOXWEB_OUT_DIR)/gsoap_generate_all_ts \
 	$(REDIRECT) -C $(VBOXWEB_OUT_DIR) -- $(VBOX_SOAPCPP2) $(VBOXWEB_SOAPCPP2_SKIP_FILES) -L -2 -w -I$(VBOX_PATH_GSOAP_IMPORT) $(GSOAPH_RELEVANT)
 	$(APPEND) $@ done
 
-# copy the generated headers and stuff. This has to be a separate rule if we
-# want to use wildcard (all commands are expaned when the rule is evaluated).
+# Copy the generated headers and stuff.  This was split into a separate rule
+# way back because we thought we could use $(wildcard ) and avoid the shell,
+# however we cannot as it is subject to caching.  Let the shell do the globbing.
 $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts: $(VBOXWEB_OUT_DIR)/gsoap_generate_all_ts | $$(dir $$@)
 	$(RM) -f $@
 	$(MKDIR) -p $(PATH_TARGET_SOAPDEMOXML) $(PATH_TARGET_SOAPDEMOHEADERS) $(PATH_TARGET_SOAPDEMONSMAPS)
 ifdef VBOX_GSOAP_VERBOSE
-	$(MV) -f $(wildcard $(VBOXWEB_OUT_DIR)/*.req.xml $(VBOXWEB_OUT_DIR)/*.res.xml) $(PATH_TARGET_SOAPDEMOXML)
+	$(MV_EXT) -f -- $(VBOXWEB_OUT_DIR)/*.req.xml $(VBOXWEB_OUT_DIR)/*.res.xml $(PATH_TARGET_SOAPDEMOXML)/
 endif
-	$(MV) -f $(wildcard $(VBOXWEB_OUT_DIR)/soapvbox*.h) $(PATH_TARGET_SOAPDEMOHEADERS)
-	$(MV) -f $(VBOXWEB_OUT_DIR)/vboxBinding.nsmap $(PATH_TARGET_SOAPDEMONSMAPS)
+	$(MV_EXT) -f -- $(VBOXWEB_OUT_DIR)/soapvbox*.h $(PATH_TARGET_SOAPDEMOHEADERS)/
+	$(MV_EXT) -f -- $(VBOXWEB_OUT_DIR)/vboxBinding.nsmap $(PATH_TARGET_SOAPDEMONSMAPS)/
 	$(APPEND) $@ done
 
 $(PATH_TARGET_SOAPDEMONSMAPS) \
@@ -734,7 +735,7 @@ $(VBOXWEB_OUT_DIR)/soapC-1.cpp \
 + $(VBOXWEB_OUT_DIR)/soapC-19.cpp \
 + $(VBOXWEB_OUT_DIR)/soapC-20.cpp \
 : $(VBOXWEB_OUT_DIR)/soapC.cpp $$(split-soapC_1_TARGET) | $$(dir $$@)
-	$(RM) -f $(wildcard $(VBOXWEB_OUT_DIR)/soapC-?.cpp $(VBOXWEB_OUT_DIR)/soapC-??.cpp)
+	$(RM) -f -- $(wildcard $(VBOXWEB_OUT_DIR)/soapC-?.cpp $(VBOXWEB_OUT_DIR)/soapC-??.cpp)
 	$(split-soapC_1_TARGET) $(VBOXWEB_OUT_DIR)/soapC.cpp $(VBOXWEB_OUT_DIR) 20
 endif # !VBOX_WITHOUT_SPLIT_SOAPC
 
