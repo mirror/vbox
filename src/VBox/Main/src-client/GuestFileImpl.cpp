@@ -56,13 +56,14 @@ public:
 
     HRESULT init(GuestFile *pFile)
     {
+        AssertPtrReturn(pFile, E_POINTER);
         mFile = pFile;
         return S_OK;
     }
 
     void uninit(void)
     {
-        mFile.setNull();
+        mFile = NULL;
     }
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
@@ -74,7 +75,7 @@ public:
             case VBoxEventType_OnGuestFileRead:
             case VBoxEventType_OnGuestFileWrite:
             {
-                Assert(!mFile.isNull());
+                AssertPtrReturn(mFile, E_POINTER);
                 int rc2 = mFile->signalWaitEvent(aType, aEvent);
 #ifdef DEBUG_andy
                 LogFlowFunc(("Signalling events of type=%RU32, file=%p resulted in rc=%Rrc\n",
@@ -93,7 +94,7 @@ public:
 
 private:
 
-    ComObjPtr<GuestFile> mFile;
+    GuestFile *mFile;
 };
 typedef ListenerImpl<GuestFileListener, GuestFile*> GuestFileListenerImpl;
 
@@ -702,8 +703,8 @@ int GuestFile::onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTR
 }
 
 /**
- * Called by IGuestSession right before this file gets removed 
- * from the public file list. 
+ * Called by IGuestSession right before this file gets removed
+ * from the public file list.
  */
 int GuestFile::onRemove(void)
 {
@@ -713,7 +714,7 @@ int GuestFile::onRemove(void)
 
     int vrc = VINF_SUCCESS;
 
-    /* 
+    /*
      * Note: The event source stuff holds references to this object,
      *       so make sure that this is cleaned up *before* calling uninit().
      */
