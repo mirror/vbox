@@ -893,15 +893,15 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
          * 5. call setConfiguration() and pass all required parameters
          * 6. start dhcp server.
          */
-        int rc = mVirtualBox->FindDHCPServerByNetworkName(mName.raw(),
+        HRESULT hrc = mVirtualBox->FindDHCPServerByNetworkName(mName.raw(),
                                                       m->dhcpServer.asOutParam());
-        switch (rc)
+        switch (hrc)
         {
             case E_INVALIDARG:
                 /* server haven't beeen found let create it then */
-                rc = mVirtualBox->CreateDHCPServer(mName.raw(),
+                hrc = mVirtualBox->CreateDHCPServer(mName.raw(),
                                                    m->dhcpServer.asOutParam());
-                if (FAILED(rc))
+                if (FAILED(hrc))
                   return E_FAIL;
                 /* breakthrough */
 
@@ -912,7 +912,7 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
                          Utf8Str(m->IPv4DhcpServerLowerIp.raw()).c_str(),
                          Utf8Str(m->IPv4DhcpServerUpperIp.raw()).c_str()));
 
-                rc = m->dhcpServer->COMSETTER(Enabled)(true);
+                hrc = m->dhcpServer->COMSETTER(Enabled)(true);
 
                 BSTR dhcpip = NULL;
                 BSTR netmask = NULL;
@@ -923,7 +923,7 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
                 m->IPv4NetworkMask.cloneTo(&netmask);
                 m->IPv4DhcpServerLowerIp.cloneTo(&lowerip);
                 m->IPv4DhcpServerUpperIp.cloneTo(&upperip);
-                rc = m->dhcpServer->SetConfiguration(dhcpip,
+                hrc = m->dhcpServer->SetConfiguration(dhcpip,
                                                      netmask,
                                                      lowerip,
                                                      upperip);
@@ -938,8 +938,8 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
         /* XXX: AddGlobalOption(DhcpOpt_Router,) - enables attachement of DhcpServer to Main. */
         m->dhcpServer->AddGlobalOption(DhcpOpt_Router, m->IPv4Gateway.raw());
 
-        rc = m->dhcpServer->Start(mName.raw(), Bstr("").raw(), aTrunkType);
-        if (FAILED(rc))
+        hrc = m->dhcpServer->Start(mName.raw(), Bstr("").raw(), aTrunkType);
+        if (FAILED(hrc))
         {
             m->dhcpServer.setNull();
             return E_FAIL;
