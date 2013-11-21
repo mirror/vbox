@@ -231,16 +231,6 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
 
     g_pxping.sock4 = sock4;
     if (g_pxping.sock4 != INVALID_SOCKET) {
-#ifdef ICMP_FILTER
-        struct icmp_filter flt = { ~(uint32_t)(1U << ICMP_ECHOREPLY) };
-
-        status = setsockopt(icmpsock4, IPPROTO_ICMP, ICMP_FILTER,
-                            &flt, sizeof(flt));
-        if (status < 0) {
-            perror("ICMP_FILTER");
-        }
-#endif  /* ICMP_FILTER */
-
         g_pxping.ttl = -1;
         g_pxping.tos = 0;
 
@@ -254,24 +244,6 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
 
     g_pxping.sock6 = sock6;
     if (g_pxping.sock6 != INVALID_SOCKET) {
-#ifdef ICMP6_FILTER
-        struct icmp6_filter flt;
-	ICMP6_FILTER_SETBLOCKALL(&flt);
-
-	ICMP6_FILTER_SETPASS(ICMP6_ECHO_REPLY, &flt);
-
-	ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &flt);
-	ICMP6_FILTER_SETPASS(ICMP6_PACKET_TOO_BIG, &flt);
-	ICMP6_FILTER_SETPASS(ICMP6_TIME_EXCEEDED, &flt);
-	ICMP6_FILTER_SETPASS(ICMP6_PARAM_PROB, &flt);
-
-        status = setsockopt(icmpsock6, IPPROTO_ICMPV6, ICMP6_FILTER,
-                            &flt, sizeof(flt));
-        if (status < 0) {
-            perror("ICMP6_FILTER");
-        }
-#endif  /* ICMP6_FILTER */
-
         g_pxping.hopl = -1;
 
 #if !defined(IPV6_RECVPKTINFO)
