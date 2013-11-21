@@ -8,6 +8,9 @@
 #ifndef RT_OS_WINDOWS
 #include <sys/types.h>
 #include <sys/socket.h>
+#ifdef RT_OS_DARWIN
+# define __APPLE_USE_RFC_3542
+#endif
 #include <netinet/in.h>
 #include <arpa/inet.h>          /* XXX: inet_ntop */
 #include <poll.h>
