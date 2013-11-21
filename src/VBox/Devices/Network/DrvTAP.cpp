@@ -650,7 +650,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
     if (ioctl(InterfaceFD, SIOCGLIFFLAGS, &ifReq) == -1)
         LogRel(("TAP#%d: Failed to get interface flags after setting PPA. errno=%d\n", pThis->pDrvIns->iInstance, errno));
 
-#ifdef VBOX_SOLARIS_TAP_ARP
+# ifdef VBOX_SOLARIS_TAP_ARP
     /* Interface */
     if (ioctl(InterfaceFD, I_PUSH, "arp") == -1)
         LogRel(("TAP#%d: Failed to push ARP to Interface FD. errno=%d\n", pThis->pDrvIns->iInstance, errno));
@@ -676,7 +676,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
     ioIF.ic_dp = (char *)&ifReq;
     if (ioctl(ARPFileDes, I_STR, &ioIF) == -1)
         LogRel(("TAP#%d: Failed to set interface name to ARP.\n", pThis->pDrvIns->iInstance));
-#endif
+# endif
 
     /* We must use I_LINK and not I_PLINK as I_PLINK makes the link persistent.
      * Then we would not be able unlink the interface if we reuse it.
@@ -686,36 +686,36 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
     if (IPMuxID == -1)
     {
         close(InterfaceFD);
-#ifdef VBOX_SOLARIS_TAP_ARP
+# ifdef VBOX_SOLARIS_TAP_ARP
         close(ARPFileDes);
-#endif
+# endif
         LogRel(("TAP#%d: Cannot link TAP device to IP.\n", pThis->pDrvIns->iInstance));
         return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                     N_("Failed to link TAP device to IP. Check TAP interface name. errno=%d"), errno);
     }
 
-#ifdef VBOX_SOLARIS_TAP_ARP
+# ifdef VBOX_SOLARIS_TAP_ARP
     int ARPMuxID = ioctl(IPFileDes, I_LINK, ARPFileDes);
     if (ARPMuxID == -1)
         LogRel(("TAP#%d: Failed to link TAP device to ARP\n", pThis->pDrvIns->iInstance));
 
     close(ARPFileDes);
-#endif
+# endif
     close(InterfaceFD);
 
     /* Reuse ifReq */
     memset(&ifReq, 0, sizeof(ifReq));
     RTStrCopy(ifReq.lifr_name, sizeof(ifReq.lifr_name), pThis->pszDeviceName);
     ifReq.lifr_ip_muxid  = IPMuxID;
-#ifdef VBOX_SOLARIS_TAP_ARP
+# ifdef VBOX_SOLARIS_TAP_ARP
     ifReq.lifr_arp_muxid = ARPMuxID;
-#endif
+# endif
 
     if (ioctl(IPFileDes, SIOCSLIFMUXID, &ifReq) == -1)
     {
-#ifdef VBOX_SOLARIS_TAP_ARP
+# ifdef VBOX_SOLARIS_TAP_ARP
         ioctl(IPFileDes, I_PUNLINK, ARPMuxID);
-#endif
+# endif
         ioctl(IPFileDes, I_PUNLINK, IPMuxID);
         close(IPFileDes);
         LogRel(("TAP#%d: Failed to set Mux ID.\n", pThis->pDrvIns->iInstance));
@@ -725,7 +725,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
 
     int rc = RTFileFromNative(&pThis->hFileDevice, TapFileDes);
     AssertLogRelRC(rc);
-    if (RT_FAILURE(rc)))
+    if (RT_FAILURE(rc))
     {
         close(IPFileDes);
         close(TapFileDes);
@@ -977,7 +977,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
         return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                                    N_("Configuration error: Failed to configure /dev/net/tun. errno=%d"), errno);
     /** @todo determine device name. This can be done by reading the link /proc/<pid>/fd/<fd> */
-    Log(("drvTAPContruct: %d (from fd)\n", pThis->hFileDevice));
+    Log(("drvTAPContruct: %d (from fd)\n", (intptr_t)pThis->hFileDevice));
     rc = VINF_SUCCESS;
 
     /*
