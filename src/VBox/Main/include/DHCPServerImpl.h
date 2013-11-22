@@ -124,25 +124,11 @@ public:
     STDMETHOD(Stop)();
 
 private:
+    struct Data;
+    Data *m;
     /** weak VirtualBox parent */
     VirtualBox * const      mVirtualBox;
-
     const Bstr mName;
-
-    struct Data
-    {
-        Data() : enabled(FALSE) {}
-
-        Bstr IPAddress;
-        Bstr lowerIP;
-        Bstr upperIP;
-
-        BOOL enabled;
-        DHCPServerRunner dhcp;
-
-        DhcpOptionMap GlobalDhcpOptions;
-        VmSlot2OptionsMap VmSlot2Options;
-    } m;
 
     DhcpOptionMap& findOptMapByVmNameSlot(const com::Utf8Str& aVmName,
                                           LONG Slot);
