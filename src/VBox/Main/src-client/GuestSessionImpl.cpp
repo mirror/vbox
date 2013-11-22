@@ -1432,7 +1432,7 @@ int GuestSession::fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &ob
             vrc = VERR_NO_DATA;
     }
 
-    if (   vrc == VERR_GSTCTL_GUEST_ERROR)
+    if (   vrc == VERR_GSTCTL_GUEST_ERROR
         && pGuestRc)
         *pGuestRc = guestRc;
 
