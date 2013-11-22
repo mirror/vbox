@@ -630,37 +630,18 @@ STDMETHODIMP Appliance::Interpret()
                      * But there aren't strong requirements about correspondence one URI for one disk virtual format.
                      * So possibly, we aren't able to recognize some URIs.
                      */
-                    Utf8Str vdf = typeOfVirtualDiskFormatFromURI(di.strFormat);
 
-                    /*
-                     * fallback, if we can't determine virtual disk format using URI from the attribute ovf:format
-                     * in the corresponding section <Disk> in the OVF file.
-                     */
-                    if (vdf.isEmpty())
-                    {
-                        /* Figure out from extension which format the image of disk has. */
-                        {
-                            char *pszExt = RTPathSuffix(di.strHref.c_str());
-                            if (pszExt)
-                                pszExt++;
-                            /* Get the system properties. */
-                            SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
-                            ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(pszExt);
-                            if (trgFormat.isNull())
-                            {
-                                throw setError(E_FAIL,
-                                       tr("Internal inconsistency looking up medium format for the disk image '%s'"),
-                                       di.strHref.c_str());
-                            }
+                    ComObjPtr<MediumFormat> mediumFormat;
+                    rc = findMediumFormatFromDiskImage(di, mediumFormat);
+                    if (FAILED(rc))
+                        throw rc;
 
-                            Bstr bstrFormatName;
-                            rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
-                            if (FAILED(rc))
-                                throw rc;
+                    Bstr bstrFormatName;
+                    rc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+                    if (FAILED(rc))
+                        throw rc;
 
-                            vdf = Utf8Str(bstrFormatName);
-                        }
-                    }
+                    Utf8Str vdf = Utf8Str(bstrFormatName);
 
                     // @todo:
                     //  - figure out all possible vmdk formats we also support
@@ -2300,7 +2281,6 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                 Utf8Str strTempTargetFilename(*strTargetPath);
                 strTempTargetFilename = strTempTargetFilename.stripPath();
                 strTempTargetFilename = strTempTargetFilename.stripSuffix();
-                Utf8Str vdf = typeOfVirtualDiskFormatFromURI(di.strFormat);
 
                 strTargetDir.append(strTempTargetFilename);
 
@@ -2461,13 +2441,13 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                 {
                     /* We need a proper source format description */
                     /* Which format to use? */
-                    Utf8Str strSrcFormat = typeOfVirtualDiskFormatFromURI(di.strFormat);
-
-                    ComObjPtr<MediumFormat> srcFormat = pSysProps->mediumFormat(strSrcFormat);
-                    if (srcFormat.isNull())
+                    ComObjPtr<MediumFormat> srcFormat; 
+                    rc = findMediumFormatFromDiskImage(di, srcFormat);
+                    if (FAILED(rc))
                         throw setError(VBOX_E_NOT_SUPPORTED,
                                        tr("Could not find a valid medium format for the source disk '%s' "
-                                          "Check correctness of the image format URL in the OVF description file."),
+                                          "Check correctness of the image format URL in the OVF description file "
+                                          "or extension of the image"),
                                        RTPathFilename(strSourceOVF.c_str()));
 
                     /* Clone the source disk image */
@@ -3183,7 +3163,17 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 Log(("Attaching disk %s to port %d on device %d\n",
                 vsdeTargetHD->strVboxCurrent.c_str(), mhda.lControllerPort, mhda.lDevice));
 
-                Utf8Str vdf = typeOfVirtualDiskFormatFromURI(diCurrent.strFormat);
+                ComObjPtr<MediumFormat> mediumFormat;
+                rc = findMediumFormatFromDiskImage(diCurrent, mediumFormat);
+                if (FAILED(rc))
+                    throw rc;
+
+                Bstr bstrFormatName;
+                rc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+                if (FAILED(rc))
+                    throw rc;
+
+                Utf8Str vdf = Utf8Str(bstrFormatName);
 
                 if (vdf.compare("RAW", Utf8Str::CaseInsensitive) == 0)
                 {
@@ -3698,7 +3688,17 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
                 Bstr hdId;
 
-                Utf8Str vdf = typeOfVirtualDiskFormatFromURI(diCurrent.strFormat);
+                ComObjPtr<MediumFormat> mediumFormat;
+                rc = findMediumFormatFromDiskImage(diCurrent, mediumFormat);
+                if (FAILED(rc))
+                    throw rc;
+
+                Bstr bstrFormatName;
+                rc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+                if (FAILED(rc))
+                    throw rc;
+
+                Utf8Str vdf = Utf8Str(bstrFormatName);
 
                 if (vdf.compare("RAW", Utf8Str::CaseInsensitive) == 0)
                 {
