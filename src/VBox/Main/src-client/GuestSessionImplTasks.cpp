@@ -599,7 +599,7 @@ int SessionTaskCopyFrom::Run(void)
      * Note: There will be races between querying file size + reading the guest file's
      *       content because we currently *do not* lock down the guest file when doing the
      *       actual operations.
-     ** @todo Implement guest file locking!
+     ** @todo Use the IGuestFile API for locking down the file on the guest!
      */
     GuestFsObjData objData; int guestRc;
     int rc = pSession->fileQueryInfoInternal(Utf8Str(mSource), objData, &guestRc);
