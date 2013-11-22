@@ -3398,7 +3398,6 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
     {
         uint32_t fFeaturesECX, fFeaturesEDX, uDummy;
         uint32_t uMaxId, uVendorEBX, uVendorECX, uVendorEDX;
-        uint64_t u64FeatMsr;
 
         ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
         ASMCpuId(1, &uDummy, &uDummy, &fFeaturesECX, &fFeaturesEDX);
@@ -3492,7 +3491,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                )
             {
                 /* Check if SVM is disabled */
-                u64FeatMsr = ASMRdMsr(MSR_K8_VM_CR);
+                uint64_t u64FeatMsr = ASMRdMsr(MSR_K8_VM_CR);
                 if (!(u64FeatMsr & MSR_K8_VM_CR_SVM_DISABLE))
                 {
                     uint32_t fSvmFeatures;
