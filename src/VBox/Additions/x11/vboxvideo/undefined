@@ -29,6 +29,7 @@ chown
 close
 drmFreeVersion
 drmGetVersion
+drmIoctl
 fbPictureInit
 fbScreenInit
 fchmod

@@ -57,6 +57,8 @@
 
 #ifdef DEBUG
 
+#include <xf86.h>
+
 #define TRACE_ENTRY() \
 do { \
     xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
@@ -195,8 +197,8 @@ typedef struct VBOXRec
     int cVisualConfigs;
     __GLXvisualConfig *pVisualConfigs;
     DRIInfoRec *pDRIInfo;
-    int drmFD;
 # endif
+    int drmFD;
 #endif
 } VBOXRec, *VBOXPtr;
 
