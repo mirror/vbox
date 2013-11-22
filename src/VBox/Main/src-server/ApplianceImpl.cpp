@@ -28,7 +28,6 @@
 #include "Global.h"
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
-#include "MediumFormatImpl.h"
 #include "SystemPropertiesImpl.h"
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -725,6 +724,54 @@ Utf8Str Appliance::applianceIOName(APPLIANCEIONAME type) const
     }
 
     return name;
+}
+
+
+/**
+ * Returns a medium format object corresponding to the given 
+ * disk image or null if no such format. 
+ *
+ * @param di   Disk Image
+ * @param mf   Medium Format
+ *
+ * @return ComObjPtr<MediumFormat>
+ */
+HRESULT Appliance::findMediumFormatFromDiskImage(const ovf::DiskImage &di, ComObjPtr<MediumFormat>& mf)
+{
+    HRESULT rc = S_OK;
+
+    /* Get the system properties. */
+    SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
+
+    /* We need a proper source format description */
+    /* Which format to use? */
+    Utf8Str strSrcFormat = typeOfVirtualDiskFormatFromURI(di.strFormat);
+
+    /*
+     * fallback, if we can't determine virtual disk format using URI from the attribute ovf:format
+     * in the corresponding section <Disk> in the OVF file.
+     */
+    if (strSrcFormat.isEmpty())
+    {
+        /* Figure out from extension which format the image of disk has. */
+        {
+            char *pszExt = RTPathSuffix(di.strHref.c_str());
+            if (pszExt)
+                pszExt++;
+            mf = pSysProps->mediumFormatFromExtension(pszExt);
+        }
+    }
+    else
+        mf = pSysProps->mediumFormat(strSrcFormat);
+
+    if (mf.isNull())
+    {
+        rc = setError(E_FAIL,
+               tr("Internal inconsistency looking up medium format for the disk image '%s'"),
+               di.strHref.c_str());
+    }
+
+    return rc;
 }
 
 /**
