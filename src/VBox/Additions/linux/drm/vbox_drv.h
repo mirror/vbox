@@ -89,7 +89,12 @@ struct vbox_private
     bool fAnyX;
     unsigned cCrtcs;
     bool vga2_clone;
+    /** Amount of available VRAM, including space used for buffers. */
+    uint32_t full_vram_size;
+    /** Amount of available VRAM, not including space used for buffers. */
     uint32_t vram_size;
+    /** Is HGSMI currently disabled? */
+    bool fDisableHGSMI;
 
     struct vbox_fbdev *fbdev;
 
@@ -160,6 +165,7 @@ struct vbox_fbdev
 
 extern int vbox_mode_init(struct drm_device *dev);
 extern void vbox_mode_fini(struct drm_device *dev);
+extern void VBoxRefreshModes(struct drm_device *pDev);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
 # define DRM_MODE_FB_CMD drm_mode_fb_cmd
@@ -220,6 +226,13 @@ void vbox_mm_fini(struct vbox_private *vbox);
 
 int vbox_bo_create(struct drm_device *dev, int size, int align,
           uint32_t flags, struct vbox_bo **pvboxbo);
+
+/** IOCtl handler to stop this driver using HGSMI so that user space can. */
+extern int VBoxDisableHGSMI(struct drm_device *dev, void *data,
+                            struct drm_file *file_priv);
+/** IOCtl handler to start this driver using HGSMI again. */
+extern int VBoxEnableHGSMI(struct drm_device *dev, void *data,
+                           struct drm_file *file_priv);
 
 int vbox_gem_create(struct drm_device *dev,
            u32 size, bool iskernel,
