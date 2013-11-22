@@ -124,6 +124,7 @@ DECLINLINE(int)             supdrvLdrLock(PSUPDRVDEVEXT pDevExt);
 DECLINLINE(int)             supdrvLdrUnlock(PSUPDRVDEVEXT pDevExt);
 static int                  supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
 static int                  supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
+static int                  supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq);
 static int                  supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static void                 supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void)   supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
@@ -1889,6 +1890,19 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             pReqHdr->rc = VINF_SUCCESS;
             return 0;
         }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_MSR_PROBER):
+        {
+            /* validate */
+            PSUPMSRPROBER pReq = (PSUPMSRPROBER)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_MSR_PROBER);
+            REQ_CHECK_EXPR(SUP_IOCTL_MSR_PROBER,
+                           pReq->u.In.enmOp > SUPMSRPROBEROP_INVALID && pReq->u.In.enmOp < SUPMSRPROBEROP_END);
+
+            pReqHdr->rc = supdrvIOCtl_MsrProber(pDevExt, pReq);
+            return 0;
+        }
+
 
         default:
             Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
@@ -5133,6 +5147,66 @@ static int supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
 
     return rc;
 }
+
+
+/**
+ * Implements the MSR prober operations.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt     The device extension.
+ * @param   pReq        The request.
+ */
+static int supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq)
+{
+#ifdef SUPDRV_WITH_MSR_PROBER
+    RTCPUID const idCpu = pReq->u.In.idCpu == UINT32_MAX ? NIL_RTCPUID : pReq->u.In.idCpu;
+    int rc;
+
+    switch (pReq->u.In.enmOp)
+    {
+        case SUPMSRPROBEROP_READ:
+        {
+            uint64_t uValue;
+            rc = supdrvOSMsrProberRead(pReq->u.In.uMsr, idCpu, &uValue);
+            if (RT_SUCCESS(rc))
+            {
+                pReq->u.Out.uResults.Read.uValue = uValue;
+                pReq->u.Out.uResults.Read.fGp    = false;
+            }
+            else if (rc == VERR_ACCESS_DENIED)
+            {
+                pReq->u.Out.uResults.Read.uValue = 0;
+                pReq->u.Out.uResults.Read.fGp    = true;
+                rc  = VINF_SUCCESS;
+            }
+            break;
+        }
+
+        case SUPMSRPROBEROP_WRITE:
+            rc = supdrvOSMsrProberWrite(pReq->u.In.uMsr, idCpu, pReq->u.In.uArgs.Write.uToWrite);
+            if (RT_SUCCESS(rc))
+                pReq->u.Out.uResults.Write.fGp   = false;
+            else if (rc == VERR_ACCESS_DENIED)
+            {
+                pReq->u.Out.uResults.Read.fGp    = true;
+                rc  = VINF_SUCCESS;
+            }
+            break;
+
+        case SUPMSRPROBEROP_MODIFY:
+        case SUPMSRPROBEROP_MODIFY_FASTER:
+            rc = supdrvOSMsrProberModify(idCpu, pReq);
+            break;
+
+        default:
+            return VERR_INVALID_FUNCTION;
+    }
+    return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
 
 
 /**

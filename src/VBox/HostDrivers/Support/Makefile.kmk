@@ -82,6 +82,7 @@ SUPR3_DEFS          = \
 SUPR3_INCS         := $(PATH_SUB_CURRENT)
 SUPR3_SOURCES       = \
 	SUPLib.cpp \
+	SUPLibLdr.cpp \
 	SUPLibSem.cpp \
 	SUPLibTracerA.asm \
 	SUPR3HardenedIPRT.cpp \

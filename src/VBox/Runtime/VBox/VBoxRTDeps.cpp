@@ -54,6 +54,7 @@ PFNRT g_VBoxRTDeps[] =
 #ifndef RT_NO_GIP
     (PFNRT)SUPR3Init,
     (PFNRT)SUPR3PageAllocEx,
+    (PFNRT)SUPR3LoadVMM,
     (PFNRT)SUPSemEventCreate,
     (PFNRT)SUPTracerFireProbe,
 #endif
