@@ -22,8 +22,10 @@ ifdef VBOX_WITH_DOCS
  PROGRAMS += VBoxManageHelp
 endif
 VBoxManageHelp_TEMPLATE   = VBoxAdvBldProg
-VBoxManageHelp_DEFS      += VBOX_ONLY_DOCS
-VBoxManageHelp_SOURCES = \
+VBoxManageHelp_DEFS      += \
+	VBOX_ONLY_DOCS \
+	$(if $(VBOX_WITH_GUEST_CONTROL),VBOX_WITH_GUEST_CONTROL)
+VBoxManageHelp_SOURCES    = \
 	VBoxManage.cpp \
 	VBoxManageHelp.cpp \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
@@ -34,7 +36,7 @@ ifndef VBOX_ONLY_DOCS
 endif
 VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
 VBoxManage_DEFS.win   = _WIN32_WINNT=0x0500
-VBoxManage_SOURCES = \
+VBoxManage_SOURCES    = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp \
 	VBoxManageAppliance.cpp \

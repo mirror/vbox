@@ -300,90 +300,121 @@ static int ctrlCopyDirExists(PCOPYCONTEXT pContext, bool bGuest, const char *psz
 
 #endif /* VBOX_ONLY_DOCS */
 
-void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2)
+void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2, uint32_t uSubCmd)
 {
     RTStrmPrintf(pStrm,
-                       "%s guestcontrol %s    <uuid|vmname>\n"
-                 "                            exec[ute]\n"
-                 "                            --image <path to program> --username <name>\n"
-                 "                            [--passwordfile <file> | --password <password>]\n"
-                 "                            [--domain <domain>] [--verbose] [--timeout <msec>]\n"
-                 "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
-                 "                            [--wait-exit] [--wait-stdout] [--wait-stderr]\n"
-                 "                            [--dos2unix] [--unix2dos]\n"
-                 "                            [-- [<argument1>] ... [<argumentN>]]\n"
-                 /** @todo Add a "--" parameter (has to be last parameter) to directly execute
-                  *        stuff, e.g. "VBoxManage guestcontrol execute <VMName> --username <> ... -- /bin/rm -Rf /foo". */
-                 "\n"
-                 "                            copyfrom\n"
-                 "                            <guest source> <host dest> --username <name>\n"
-                 "                            [--passwordfile <file> | --password <password>]\n"
-                 "                            [--domain <domain>] [--verbose]\n"
-                 "                            [--dryrun] [--follow] [--recursive]\n"
-                 "\n"
-                 "                            copyto|cp\n"
-                 "                            <host source> <guest dest> --username <name>\n"
-                 "                            [--passwordfile <file> | --password <password>]\n"
-                 "                            [--domain <domain>] [--verbose]\n"
-                 "                            [--dryrun] [--follow] [--recursive]\n"
-                 "\n"
-                 "                            createdir[ectory]|mkdir|md\n"
-                 "                            <guest directory>... --username <name>\n"
-                 "                            [--passwordfile <file> | --password <password>]\n"
-                 "                            [--domain <domain>] [--verbose]\n"
-                 "                            [--parents] [--mode <mode>]\n"
-                 "\n"
-                 "                            removedir[ectory]|rmdir\n"
-                 "                            <guest directory>... --username <name>\n"
-                 "                            [--passwordfile <file> | --password <password>]\n"
-                 "                            [--domain <domain>] [--verbose]\n"
-                 "                            [--recursive|-R|-r]\n"
-                 "\n"
-                 "                            removefile|rm\n"
-                 "                            <guest file>... --username <name>\n"
-                 "                            [--passwordfile <file> | --password <password>]\n"
-                 "                            [--domain <domain>] [--verbose]\n"
-                 "\n"
-                 "                            ren[ame]|mv\n"
-                 "                            <source>... <dest> --username <name>\n"
-                 "                            [--passwordfile <file> | --password <password>]\n"
-                 "                            [--domain <domain>] [--verbose]\n"
-                 "\n"
-                 "                            createtemp[orary]|mktemp\n"
-                 "                            <template> --username <name>\n"
-                 "                            [--passwordfile <file> | --password <password>]\n"
-                 "                            [--directory] [--secure] [--tmpdir <directory>]\n"
-                 "                            [--domain <domain>] [--mode <mode>] [--verbose]\n"
-                 "\n"
-                 "                            list <all|sessions|processes|files> [--verbose]\n"
-                 "\n"
-                 /** @todo Add an own help group for "session" and "process" sub commands. */
-                 "                            process kill --session-id <ID>\n"
+                       "%s guestcontrol %s    <uuid|vmname>\n%s",
+                 pcszSep1, pcszSep2,
+                 uSubCmd == ~0U ? "\n" : "");
+    if (uSubCmd & USAGE_GSTCTRL_EXEC)
+        RTStrmPrintf(pStrm,
+                 "                              exec[ute]\n"
+                 "                              --image <path to program> --username <name>\n"
+                 "                              [--passwordfile <file> | --password <password>]\n"
+                 "                              [--domain <domain>] [--verbose] [--timeout <msec>]\n"
+                 "                              [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
+                 "                              [--wait-exit] [--wait-stdout] [--wait-stderr]\n"
+                 "                              [--dos2unix] [--unix2dos]\n"
+                 "                              [-- [<argument1>] ... [<argumentN>]]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_COPYFROM)
+        RTStrmPrintf(pStrm,
+                 "                              copyfrom\n"
+                 "                              <guest source> <host dest> --username <name>\n"
+                 "                              [--passwordfile <file> | --password <password>]\n"
+                 "                              [--domain <domain>] [--verbose]\n"
+                 "                              [--dryrun] [--follow] [--recursive]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_COPYTO)
+        RTStrmPrintf(pStrm,
+                 "                              copyto|cp\n"
+                 "                              <host source> <guest dest> --username <name>\n"
+                 "                              [--passwordfile <file> | --password <password>]\n"
+                 "                              [--domain <domain>] [--verbose]\n"
+                 "                              [--dryrun] [--follow] [--recursive]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_CREATEDIR)
+        RTStrmPrintf(pStrm,
+                 "                              createdir[ectory]|mkdir|md\n"
+                 "                              <guest directory>... --username <name>\n"
+                 "                              [--passwordfile <file> | --password <password>]\n"
+                 "                              [--domain <domain>] [--verbose]\n"
+                 "                              [--parents] [--mode <mode>]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_REMOVEDIR)
+        RTStrmPrintf(pStrm,
+                 "                              removedir[ectory]|rmdir\n"
+                 "                              <guest directory>... --username <name>\n"
+                 "                              [--passwordfile <file> | --password <password>]\n"
+                 "                              [--domain <domain>] [--verbose]\n"
+                 "                              [--recursive|-R|-r]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_REMOVEFILE)
+        RTStrmPrintf(pStrm,
+                 "                              removefile|rm\n"
+                 "                              <guest file>... --username <name>\n"
+                 "                              [--passwordfile <file> | --password <password>]\n"
+                 "                              [--domain <domain>] [--verbose]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_RENAME)
+        RTStrmPrintf(pStrm,
+                 "                              ren[ame]|mv\n"
+                 "                              <source>... <dest> --username <name>\n"
+                 "                              [--passwordfile <file> | --password <password>]\n"
+                 "                              [--domain <domain>] [--verbose]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_CREATETEMP)
+        RTStrmPrintf(pStrm,
+                 "                              createtemp[orary]|mktemp\n"
+                 "                              <template> --username <name>\n"
+                 "                              [--passwordfile <file> | --password <password>]\n"
+                 "                              [--directory] [--secure] [--tmpdir <directory>]\n"
+                 "                              [--domain <domain>] [--mode <mode>] [--verbose]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_LIST)
+        RTStrmPrintf(pStrm,
+                 "                              list <all|sessions|processes|files> [--verbose]\n"
+                 "\n");
+    /** @todo Add an own help group for "session" and "process" sub commands. */
+    if (uSubCmd & USAGE_GSTCTRL_PROCESS)
+         RTStrmPrintf(pStrm,
+                 "                              process kill --session-id <ID>\n"
+                 "                                           | --session-name <name or pattern>\n"
+                 "                                           [--verbose]\n"
+                 "                                           <PID> ... <PID n>\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_KILL)
+        RTStrmPrintf(pStrm,
+                 "                              [p[s]]kill --session-id <ID>\n"
                  "                                         | --session-name <name or pattern>\n"
                  "                                         [--verbose]\n"
                  "                                         <PID> ... <PID n>\n"
-                 "\n"
-                 "                            [p[s]]kill --session-id <ID>\n"
-                 "                                       | --session-name <name or pattern>\n"
-                 "                                       [--verbose]\n"
-                 "                                       <PID> ... <PID n>\n"
-                 "\n"
-                 "                            session close  --session-id <ID>\n"
-                 "                                         | --session-name <name or pattern>\n"
-                 "                                         | --all\n"
-                 "                                         [--verbose]\n"
-                 "                            stat\n"
-                 "                            <file>... --username <name>\n"
-                 "                            [--passwordfile <file> | --password <password>]\n"
-                 "                            [--domain <domain>] [--verbose]\n"
-                 "\n"
-                 "                            updateadditions\n"
-                 "                            [--source <guest additions .ISO>] [--verbose]\n"
-                 "                            [--wait-start]\n"
-                 "                            [-- [<argument1>] ... [<argumentN>]]\n"
-                 "\n"
-                 "                            watch [--verbose]\n"
-                 "\n", pcszSep1, pcszSep2);
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_SESSION)
+        RTStrmPrintf(pStrm,
+                 "                              session close  --session-id <ID>\n"
+                 "                                           | --session-name <name or pattern>\n"
+                 "                                           | --all\n"
+                 "                                           [--verbose]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_STAT)
+        RTStrmPrintf(pStrm,
+                 "                              stat\n"
+                 "                              <file>... --username <name>\n"
+                 "                              [--passwordfile <file> | --password <password>]\n"
+                 "                              [--domain <domain>] [--verbose]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_UPDATEADDS)
+        RTStrmPrintf(pStrm,
+                 "                              updateadditions\n"
+                 "                              [--source <guest additions .ISO>] [--verbose]\n"
+                 "                              [--wait-start]\n"
+                 "                              [-- [<argument1>] ... [<argumentN>]]\n"
+                 "\n");
+    if (uSubCmd & USAGE_GSTCTRL_WATCH)
+        RTStrmPrintf(pStrm,
+                 "                              watch [--verbose]\n"
+                 "\n");
 }
 
 #ifndef VBOX_ONLY_DOCS
@@ -748,7 +779,7 @@ static void ctrlUninitVM(PGCTLCMDCTX pCtx, uint32_t uFlags)
  * @param   uFlags                  Command context flags.
  */
 static RTEXITCODE ctrlInitVM(HandlerArg *pArg,
-                             PGCTLCMDCTX pCtx, uint32_t uFlags)
+                             PGCTLCMDCTX pCtx, uint32_t uFlags, uint32_t uUsage)
 {
     AssertPtrReturn(pArg, RTEXITCODE_FAILURE);
     AssertReturn(pArg->argc > 1, RTEXITCODE_FAILURE);
@@ -859,6 +890,10 @@ static RTEXITCODE ctrlInitVM(HandlerArg *pArg,
                         iArgIdx = GetState.iNext;
                         break;
 
+                    case 'h': /* Help */
+                        errorGetOptEx(USAGE_GUESTCONTROL, uUsage, ch, &ValueUnion);
+                        return RTEXITCODE_SYNTAX;
+
                     default:
                         /* Simply skip; might be handled in a specific command
                          * handler later. */
@@ -908,7 +943,7 @@ static RTEXITCODE ctrlInitVM(HandlerArg *pArg,
         if (!(uFlags & CTLCMDCTX_FLAGS_SESSION_ANONYMOUS))
         {
             if (pCtx->strUsername.isEmpty())
-                rcExit = errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
+                rcExit = errorSyntaxEx(USAGE_GUESTCONTROL, uUsage, "No user name specified!");
         }
     }
 
@@ -1159,7 +1194,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
             {
                 case GETOPTDEF_EXEC_DOS2UNIX:
                     if (eOutputType != OUTPUTTYPE_UNDEFINED)
-                        return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
+                        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC,
+                                             "More than one output type (dos2unix/unix2dos) specified!");
                     eOutputType = OUTPUTTYPE_DOS2UNIX;
                     break;
 
@@ -1170,7 +1206,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
 
                     vrc = RTGetOptArgvFromString(&papszArg, &cArgs, ValueUnion.psz, NULL);
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_GUESTCONTROL, "Failed to parse environment value, rc=%Rrc", vrc);
+                        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC,
+                                             "Failed to parse environment value, rc=%Rrc", vrc);
                     for (int j = 0; j < cArgs; j++)
                         aEnv.push_back(Bstr(papszArg[j]).raw());
 
@@ -1198,7 +1235,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
 
                 case GETOPTDEF_EXEC_UNIX2DOS:
                     if (eOutputType != OUTPUTTYPE_UNDEFINED)
-                        return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
+                        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC,
+                                             "More than one output type (dos2unix/unix2dos) specified!");
                     eOutputType = OUTPUTTYPE_UNIX2DOS;
                     break;
 
@@ -1232,7 +1270,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
                     if (GetState.argc == GetState.iNext)
                         aArgs.push_back(Bstr(ValueUnion.psz).raw());
                     else
-                        return RTGetOptPrintError(ch, &ValueUnion);
+                        return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC, ch, &ValueUnion);
                     break;
 
             } /* switch */
@@ -1247,11 +1285,13 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize, rc=%Rrc\n", vrc);
 
     if (strCmd.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL, "No command to execute specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC,
+                             "No command to execute specified!");
 
     /** @todo Any output conversion not supported yet! */
     if (eOutputType != OUTPUTTYPE_UNDEFINED)
-        return errorSyntax(USAGE_GUESTCONTROL, "Output conversion not implemented yet!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC,
+                             "Output conversion not implemented yet!");
 
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     HRESULT rc;
@@ -2393,6 +2433,7 @@ static RTEXITCODE handleCtrlCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
     uint32_t fFlags = CopyFileFlag_None;
     bool fCopyRecursive = false;
     bool fDryRun = false;
+    uint32_t uUsage = fHostToGuest ? USAGE_GSTCTRL_COPYTO : USAGE_GSTCTRL_COPYFROM;
 
     SOURCEVEC vecSources;
 
@@ -2437,18 +2478,17 @@ static RTEXITCODE handleCtrlCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
             }
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return errorGetOptEx(USAGE_GUESTCONTROL, uUsage, ch, &ValueUnion);
         }
     }
 
     if (!vecSources.size())
-        return errorSyntax(USAGE_GUESTCONTROL,
-                           "No source(s) specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, uUsage,
+                             "No source(s) specified!");
 
     if (strDest.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL,
-                           "No destination specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, uUsage,
+                             "No destination specified!");
 
     /*
      * Done parsing arguments, do some more preparations.
@@ -2662,14 +2702,14 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlCreateDirectory(PGCTLCMDCTX pCtx)
                 break;
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_CREATEDIR, ch, &ValueUnion);
         }
     }
 
     uint32_t cDirs = mapDirs.size();
     if (!cDirs)
-        return errorSyntax(USAGE_GUESTCONTROL, "No directory to create specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_CREATEDIR,
+                             "No directory to create specified!");
 
     /*
      * Create the directories.
@@ -2725,14 +2765,14 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlRemoveDirectory(PGCTLCMDCTX pCtx)
                 break;
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_REMOVEDIR, ch, &ValueUnion);
         }
     }
 
     uint32_t cDirs = mapDirs.size();
     if (!cDirs)
-        return errorSyntax(USAGE_GUESTCONTROL, "No directory to remove specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_REMOVEDIR,
+                             "No directory to remove specified!");
 
     /*
      * Remove the directories.
@@ -2808,14 +2848,14 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlRemoveFile(PGCTLCMDCTX pCtx)
                 break;
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_REMOVEFILE, ch, &ValueUnion);
         }
     }
 
     uint32_t cFiles = mapDirs.size();
     if (!cFiles)
-        return errorSyntax(USAGE_GUESTCONTROL, "No file to remove specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_REMOVEFILE,
+                             "No file to remove specified!");
 
     /*
      * Create the directories.
@@ -2878,8 +2918,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlRename(PGCTLCMDCTX pCtx)
                     break;
 
                 default:
-                    return RTGetOptPrintError(ch, &ValueUnion);
-                    break;
+                    return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RENAME, ch, &ValueUnion);
             }
         }
     }
@@ -2893,9 +2932,11 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlRename(PGCTLCMDCTX pCtx)
 
     uint32_t cSources = vecSources.size();
     if (!cSources)
-        return errorSyntax(USAGE_GUESTCONTROL, "No source(s) to move specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RENAME,
+                             "No source(s) to move specified!");
     if (cSources < 2)
-        return errorSyntax(USAGE_GUESTCONTROL, "No destination specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RENAME,
+                             "No destination specified!");
 
     /* Delete last element, which now is the destination. */
     vecSources.pop_back();
@@ -3054,22 +3095,23 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlCreateTemp(PGCTLCMDCTX pCtx)
                 if (strTemplate.isEmpty())
                     strTemplate = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_GUESTCONTROL,
-                                       "More than one template specified!\n");
+                    return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_CREATETEMP,
+                                         "More than one template specified!\n");
                 break;
             }
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_CREATETEMP, ch, &ValueUnion);
         }
     }
 
     if (strTemplate.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL, "No template specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_CREATETEMP,
+                             "No template specified!");
 
     if (!fDirectory)
-        return errorSyntax(USAGE_GUESTCONTROL, "Creating temporary files is currently not supported!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_CREATETEMP,
+                             "Creating temporary files is currently not supported!");
 
     /*
      * Create the directories.
@@ -3135,23 +3177,22 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlStat(PGCTLCMDCTX pCtx)
             case 'f': /* File-system */
             case 'c': /* Format */
             case 't': /* Terse */
-                return errorSyntax(USAGE_GUESTCONTROL, "Command \"%s\" not implemented yet!",
-                                   ValueUnion.psz);
-                break; /* Never reached. */
+                return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_STAT,
+                                     "Command \"%s\" not implemented yet!", ValueUnion.psz);
 
             case VINF_GETOPT_NOT_OPTION:
                 mapObjs[ValueUnion.psz]; /* Add element to check to map. */
                 break;
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_STAT, ch, &ValueUnion);
         }
     }
 
     uint32_t cObjs = mapObjs.size();
     if (!cObjs)
-        return errorSyntax(USAGE_GUESTCONTROL, "No element(s) to check specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_STAT,
+                             "No element(s) to check specified!");
 
     HRESULT rc;
 
@@ -3256,8 +3297,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlUpdateAdditions(PGCTLCMDCTX pCtx)
                 break;
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_UPDATEADDS, ch, &ValueUnion);
         }
     }
 
@@ -3334,7 +3374,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlList(PGCTLCMDCTX pCtx)
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     if (pCtx->iArgc < 1)
-        return errorSyntax(USAGE_GUESTCONTROL, "Must specify a listing category");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_LIST,
+                             "Must specify a listing category");
 
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
 
@@ -3458,7 +3499,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlList(PGCTLCMDCTX pCtx)
             rcExit = RTEXITCODE_FAILURE;
     }
     else
-        return errorSyntax(USAGE_GUESTCONTROL, "Invalid listing category '%s", pCtx->ppaArgv[0]);
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_LIST,
+                             "Invalid listing category '%s", pCtx->ppaArgv[0]);
 
     return rcExit;
 }
@@ -3468,7 +3510,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessClose(PGCTLCMDCTX pCtx)
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     if (pCtx->iArgc < 1)
-        return errorSyntax(USAGE_GUESTCONTROL, "Must specify at least a PID to close");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_PROCESS,
+                             "Must specify at least a PID to close");
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -3523,26 +3566,27 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessClose(PGCTLCMDCTX pCtx)
                 break;
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_PROCESS, ch, &ValueUnion);
         }
     }
 
     if (vecPID.empty())
-        return errorSyntax(USAGE_GUESTCONTROL, "At least one PID must be specified to kill!");
-    else if (   strSessionName.isEmpty()
-             && ulSessionID == UINT32_MAX)
-    {
-        return errorSyntax(USAGE_GUESTCONTROL, "No session ID specified!");
-    }
-    else if (   !strSessionName.isEmpty()
-             && ulSessionID != UINT32_MAX)
-    {
-        return errorSyntax(USAGE_GUESTCONTROL, "Either session ID or name (pattern) must be specified");
-    }
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_PROCESS,
+                             "At least one PID must be specified to kill!");
+
+    if (   strSessionName.isEmpty()
+        && ulSessionID == UINT32_MAX)
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_PROCESS,
+                             "No session ID specified!");
+
+    if (   !strSessionName.isEmpty()
+        && ulSessionID != UINT32_MAX)
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_PROCESS,
+                             "Either session ID or name (pattern) must be specified");
 
     if (RT_FAILURE(vrc))
-        return errorSyntax(USAGE_GUESTCONTROL, "Invalid parameters specified");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_PROCESS,
+                             "Invalid parameters specified");
 
     HRESULT rc = S_OK;
 
@@ -3645,7 +3689,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcess(PGCTLCMDCTX pCtx)
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     if (pCtx->iArgc < 1)
-        return errorSyntax(USAGE_GUESTCONTROL, "Must specify an action");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_PROCESS,
+                             "Must specify an action");
 
     /** Use RTGetOpt here when handling command line args gets more complex. */
 
@@ -3657,7 +3702,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcess(PGCTLCMDCTX pCtx)
         return handleCtrlProcessClose(pCtx);
     }
 
-    return errorSyntax(USAGE_GUESTCONTROL, "Invalid process action '%s'", pCtx->ppaArgv[0]);
+    return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_PROCESS,
+                         "Invalid process action '%s'", pCtx->ppaArgv[0]);
 }
 
 static DECLCALLBACK(RTEXITCODE) handleCtrlSessionClose(PGCTLCMDCTX pCtx)
@@ -3665,7 +3711,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlSessionClose(PGCTLCMDCTX pCtx)
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     if (pCtx->iArgc < 1)
-        return errorSyntax(USAGE_GUESTCONTROL, "Must specify at least a session to close");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_SESSION,
+                             "Must specify at least a session to close");
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -3705,21 +3752,19 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlSessionClose(PGCTLCMDCTX pCtx)
                 break;
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_SESSION, ch, &ValueUnion);
         }
     }
 
     if (   strSessionName.isEmpty()
         && ulSessionID == UINT32_MAX)
-    {
-        return errorSyntax(USAGE_GUESTCONTROL, "No session ID specified!");
-    }
-    else if (   !strSessionName.isEmpty()
-             && ulSessionID != UINT32_MAX)
-    {
-        return errorSyntax(USAGE_GUESTCONTROL, "Either session ID or name (pattern) must be specified");
-    }
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_SESSION,
+                             "No session ID specified!");
+
+    if (   !strSessionName.isEmpty()
+        && ulSessionID != UINT32_MAX)
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_SESSION,
+                             "Either session ID or name (pattern) must be specified");
 
     HRESULT rc = S_OK;
 
@@ -3785,7 +3830,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlSession(PGCTLCMDCTX pCtx)
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     if (pCtx->iArgc < 1)
-        return errorSyntax(USAGE_GUESTCONTROL, "Must specify an action");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_SESSION,
+                             "Must specify an action");
 
     /** Use RTGetOpt here when handling command line args gets more complex. */
 
@@ -3797,7 +3843,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlSession(PGCTLCMDCTX pCtx)
         return handleCtrlSessionClose(pCtx);
     }
 
-    return errorSyntax(USAGE_GUESTCONTROL, "Invalid session action '%s'", pCtx->ppaArgv[0]);
+    return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_SESSION,
+                         "Invalid session action '%s'", pCtx->ppaArgv[0]);
 }
 
 static DECLCALLBACK(RTEXITCODE) handleCtrlWatch(PGCTLCMDCTX pCtx)
@@ -3824,8 +3871,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlWatch(PGCTLCMDCTX pCtx)
                 break;
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_WATCH, ch, &ValueUnion);
         }
     }
 
@@ -3907,35 +3953,60 @@ int handleGuestControl(HandlerArg *pArg)
         return errorSyntax(USAGE_GUESTCONTROL, "No sub command specified!");
 
     uint32_t uCmdCtxFlags = 0;
+    uint32_t uUsage;
     GCTLCMD gctlCmd;
     if (   !RTStrICmp(pArg->argv[1], "exec")
         || !RTStrICmp(pArg->argv[1], "execute"))
+    {
         gctlCmd.pfnHandler = handleCtrlProcessExec;
+        uUsage = USAGE_GSTCTRL_EXEC;
+    }
     else if (!RTStrICmp(pArg->argv[1], "copyfrom"))
+    {
         gctlCmd.pfnHandler = handleCtrlCopyFrom;
+        uUsage = USAGE_GSTCTRL_COPYFROM;
+    }
     else if (   !RTStrICmp(pArg->argv[1], "copyto")
              || !RTStrICmp(pArg->argv[1], "cp"))
+    {
         gctlCmd.pfnHandler = handleCtrlCopyTo;
+        uUsage = USAGE_GSTCTRL_COPYTO;
+    }
     else if (   !RTStrICmp(pArg->argv[1], "createdirectory")
              || !RTStrICmp(pArg->argv[1], "createdir")
              || !RTStrICmp(pArg->argv[1], "mkdir")
              || !RTStrICmp(pArg->argv[1], "md"))
+    {
         gctlCmd.pfnHandler = handleCtrlCreateDirectory;
+        uUsage = USAGE_GSTCTRL_CREATEDIR;
+    }
     else if (   !RTStrICmp(pArg->argv[1], "removedirectory")
              || !RTStrICmp(pArg->argv[1], "removedir")
              || !RTStrICmp(pArg->argv[1], "rmdir"))
+    {
         gctlCmd.pfnHandler = handleCtrlRemoveDirectory;
+        uUsage = USAGE_GSTCTRL_REMOVEDIR;
+    }
     else if (   !RTStrICmp(pArg->argv[1], "rm")
              || !RTStrICmp(pArg->argv[1], "removefile"))
+    {
         gctlCmd.pfnHandler = handleCtrlRemoveFile;
+        uUsage = USAGE_GSTCTRL_REMOVEFILE;
+    }
     else if (   !RTStrICmp(pArg->argv[1], "ren")
              || !RTStrICmp(pArg->argv[1], "rename")
              || !RTStrICmp(pArg->argv[1], "mv"))
+    {
         gctlCmd.pfnHandler = handleCtrlRename;
+        uUsage = USAGE_GSTCTRL_RENAME;
+    }
     else if (   !RTStrICmp(pArg->argv[1], "createtemporary")
              || !RTStrICmp(pArg->argv[1], "createtemp")
              || !RTStrICmp(pArg->argv[1], "mktemp"))
+    {
         gctlCmd.pfnHandler = handleCtrlCreateTemp;
+        uUsage = USAGE_GSTCTRL_CREATETEMP;
+    }
     else if (   !RTStrICmp(pArg->argv[1], "kill")    /* Linux. */
              || !RTStrICmp(pArg->argv[1], "pkill")   /* Solaris / *BSD. */
              || !RTStrICmp(pArg->argv[1], "pskill")) /* SysInternals version. */
@@ -3944,40 +4015,49 @@ int handleGuestControl(HandlerArg *pArg)
         uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
                      | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
         gctlCmd.pfnHandler = handleCtrlProcessClose;
+        uUsage = USAGE_GSTCTRL_KILL;
     }
     /** @todo Implement "killall"? */
     else if (   !RTStrICmp(pArg->argv[1], "stat"))
+    {
         gctlCmd.pfnHandler = handleCtrlStat;
+        uUsage = USAGE_GSTCTRL_STAT;
+    }
     else if (   !RTStrICmp(pArg->argv[1], "updateadditions")
              || !RTStrICmp(pArg->argv[1], "updateadds"))
     {
         uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
                      | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
         gctlCmd.pfnHandler = handleCtrlUpdateAdditions;
+        uUsage = USAGE_GSTCTRL_UPDATEADDS;
     }
     else if (   !RTStrICmp(pArg->argv[1], "list"))
     {
         uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
                      | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
         gctlCmd.pfnHandler = handleCtrlList;
+        uUsage = USAGE_GSTCTRL_LIST;
     }
     else if (   !RTStrICmp(pArg->argv[1], "session"))
     {
         uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
                      | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
         gctlCmd.pfnHandler = handleCtrlSession;
+        uUsage = USAGE_GSTCTRL_SESSION;
     }
     else if (   !RTStrICmp(pArg->argv[1], "process"))
     {
         uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
                      | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
         gctlCmd.pfnHandler = handleCtrlProcess;
+        uUsage = USAGE_GSTCTRL_PROCESS;
     }
     else if (   !RTStrICmp(pArg->argv[1], "watch"))
     {
         uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
                      | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
         gctlCmd.pfnHandler = handleCtrlWatch;
+        uUsage = USAGE_GSTCTRL_WATCH;
     }
     else
         return errorSyntax(USAGE_GUESTCONTROL, "Unknown sub command '%s' specified!", pArg->argv[1]);
@@ -3985,7 +4065,7 @@ int handleGuestControl(HandlerArg *pArg)
     GCTLCMDCTX cmdCtx;
     RT_ZERO(cmdCtx);
 
-    RTEXITCODE rcExit = ctrlInitVM(pArg, &cmdCtx, uCmdCtxFlags);
+    RTEXITCODE rcExit = ctrlInitVM(pArg, &cmdCtx, uCmdCtxFlags, uUsage);
     if (rcExit == RTEXITCODE_SUCCESS)
     {
         /* Kick off the actual command handler. */

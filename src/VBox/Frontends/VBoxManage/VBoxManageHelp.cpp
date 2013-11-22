@@ -46,7 +46,7 @@ void showLogo(PRTSTREAM pStrm)
     }
 }
 
-void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
+void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
 {
     bool fDumpOpts = false;
 #ifdef RT_OS_LINUX
@@ -80,7 +80,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     bool fVBoxSDL = false;
 #endif
 
-    if (u64Cmd == USAGE_DUMPOPTS)
+    if (fCategory == USAGE_DUMPOPTS)
     {
         fDumpOpts = true;
         fLinux = true;
@@ -89,14 +89,14 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         fFreeBSD = true;
         fDarwin = true;
         fVBoxSDL = true;
-        u64Cmd = USAGE_ALL;
+        fCategory = USAGE_ALL;
     }
 
     RTStrmPrintf(pStrm,
                  "Usage:\n"
                  "\n");
 
-    if (u64Cmd == USAGE_ALL)
+    if (fCategory == USAGE_ALL)
         RTStrmPrintf(pStrm,
                      "  VBoxManage [<general option>] <command>\n"
                      " \n \n"
@@ -110,7 +110,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     const char *pcszSep1 = " ";
     const char *pcszSep2 = "         ";
-    if (u64Cmd != USAGE_ALL)
+    if (fCategory != USAGE_ALL)
     {
         pcszSep1 = "VBoxManage";
         pcszSep2 = "";
@@ -118,7 +118,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
 #define SEP pcszSep1, pcszSep2
 
-    if (u64Cmd & USAGE_LIST)
+    if (fCategory & USAGE_LIST)
         RTStrmPrintf(pStrm,
                            "%s list [--long|-l]%s vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
 #if defined(VBOX_WITH_NETFLT)
@@ -131,24 +131,24 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            groups|webcams\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_SHOWVMINFO)
+    if (fCategory & USAGE_SHOWVMINFO)
         RTStrmPrintf(pStrm,
                            "%s showvminfo %s      <uuid|vmname> [--details]\n"
                      "                            [--machinereadable]\n"
                            "%s showvminfo %s      <uuid|vmname> --log <idx>\n"
                      "\n", SEP, SEP);
 
-    if (u64Cmd & USAGE_REGISTERVM)
+    if (fCategory & USAGE_REGISTERVM)
         RTStrmPrintf(pStrm,
                            "%s registervm %s      <filename>\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_UNREGISTERVM)
+    if (fCategory & USAGE_UNREGISTERVM)
         RTStrmPrintf(pStrm,
                            "%s unregistervm %s    <uuid|vmname> [--delete]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_CREATEVM)
+    if (fCategory & USAGE_CREATEVM)
         RTStrmPrintf(pStrm,
                            "%s createvm %s        --name <name>\n"
                      "                            [--groups <group>, ...]\n"
@@ -158,7 +158,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--uuid <uuid>]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_MODIFYVM)
+    if (fCategory & USAGE_MODIFYVM)
     {
         RTStrmPrintf(pStrm,
                            "%s modifyvm %s        <uuid|vmname>\n"
@@ -381,7 +381,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "\n");
     }
 
-    if (u64Cmd & USAGE_CLONEVM)
+    if (fCategory & USAGE_CLONEVM)
         RTStrmPrintf(pStrm,
                            "%s clonevm %s         <uuid|vmname>\n"
                      "                            [--snapshot <uuid>|<name>]\n"
@@ -395,7 +395,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--register]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_IMPORTAPPLIANCE)
+    if (fCategory & USAGE_IMPORTAPPLIANCE)
         RTStrmPrintf(pStrm,
                            "%s import %s          <ovfname/ovaname>\n"
                      "                            [--dry-run|-n]\n"
@@ -404,7 +404,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            (run with -n to have options displayed\n"
                      "                             for a particular OVF)\n\n", SEP);
 
-    if (u64Cmd & USAGE_EXPORTAPPLIANCE)
+    if (fCategory & USAGE_EXPORTAPPLIANCE)
         RTStrmPrintf(pStrm,
                            "%s export %s          <machines> --output|-o <name>.<ovf/ova>\n"
                      "                            [--legacy09|--ovf09|--ovf10|--ovf20]\n"
@@ -421,7 +421,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                                    [--eulafile <filename>]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_STARTVM)
+    if (fCategory & USAGE_STARTVM)
     {
         RTStrmPrintf(pStrm,
                            "%s startvm %s         <uuid|vmname>...\n"
@@ -433,7 +433,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "\n");
     }
 
-    if (u64Cmd & USAGE_CONTROLVM)
+    if (fCategory & USAGE_CONTROLVM)
     {
         RTStrmPrintf(pStrm,
                            "%s controlvm %s       <uuid|vmname>\n"
@@ -486,17 +486,17 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "\n", SEP);
     }
 
-    if (u64Cmd & USAGE_DISCARDSTATE)
+    if (fCategory & USAGE_DISCARDSTATE)
         RTStrmPrintf(pStrm,
                            "%s discardstate %s    <uuid|vmname>\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_ADOPTSTATE)
+    if (fCategory & USAGE_ADOPTSTATE)
         RTStrmPrintf(pStrm,
                            "%s adoptstate %s      <uuid|vmname> <state_file>\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_SNAPSHOT)
+    if (fCategory & USAGE_SNAPSHOT)
         RTStrmPrintf(pStrm,
                            "%s snapshot %s        <uuid|vmname>\n"
                      "                            take <name> [--description <desc>] [--live] |\n"
@@ -510,13 +510,13 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            showvminfo <uuid|snapname>\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_CLOSEMEDIUM)
+    if (fCategory & USAGE_CLOSEMEDIUM)
         RTStrmPrintf(pStrm,
                            "%s closemedium %s     disk|dvd|floppy <uuid|filename>\n"
                      "                            [--delete]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_STORAGEATTACH)
+    if (fCategory & USAGE_STORAGEATTACH)
         RTStrmPrintf(pStrm,
                            "%s storageattach %s   <uuid|vmname>\n"
                      "                            --storagectl <name>\n"
@@ -548,7 +548,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--intnet]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_STORAGECONTROLLER)
+    if (fCategory & USAGE_STORAGECONTROLLER)
         RTStrmPrintf(pStrm,
                            "%s storagectl %s      <uuid|vmname>\n"
                      "                            --name <name>\n"
@@ -561,7 +561,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--remove]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_BANDWIDTHCONTROL)
+    if (fCategory & USAGE_BANDWIDTHCONTROL)
         RTStrmPrintf(pStrm,
                            "%s bandwidthctl %s    <uuid|vmname>\n"
                      "                            add <name> --type disk|network\n"
@@ -574,12 +574,12 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                                          K=kilobyte, M=megabyte, G=gigabyte)\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_SHOWHDINFO)
+    if (fCategory & USAGE_SHOWHDINFO)
         RTStrmPrintf(pStrm,
                            "%s showhdinfo %s      <uuid|filename>\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_CREATEHD)
+    if (fCategory & USAGE_CREATEHD)
         RTStrmPrintf(pStrm,
                            "%s createhd %s        --filename <filename>\n"
                      "                            [--size <megabytes>|--sizebyte <bytes>]\n"
@@ -588,7 +588,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_MODIFYHD)
+    if (fCategory & USAGE_MODIFYHD)
         RTStrmPrintf(pStrm,
                            "%s modifyhd %s        <uuid|filename>\n"
                      "                            [--type normal|writethrough|immutable|shareable|\n"
@@ -599,7 +599,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--resize <megabytes>|--resizebyte <bytes>]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_CLONEHD)
+    if (fCategory & USAGE_CLONEHD)
         RTStrmPrintf(pStrm,
                            "%s clonehd %s         <uuid|inputfile> <uuid|outputfile>\n"
                      "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
@@ -607,7 +607,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--existing]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_CONVERTFROMRAW)
+    if (fCategory & USAGE_CONVERTFROMRAW)
         RTStrmPrintf(pStrm,
                            "%s convertfromraw %s  <filename> <outputfile>\n"
                      "                            [--format VDI|VMDK|VHD]\n"
@@ -619,20 +619,20 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--uuid <uuid>]\n"
                      "\n", SEP, SEP);
 
-    if (u64Cmd & USAGE_GETEXTRADATA)
+    if (fCategory & USAGE_GETEXTRADATA)
         RTStrmPrintf(pStrm,
                            "%s getextradata %s    global|<uuid|vmname>\n"
                      "                            <key>|enumerate\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_SETEXTRADATA)
+    if (fCategory & USAGE_SETEXTRADATA)
         RTStrmPrintf(pStrm,
                            "%s setextradata %s    global|<uuid|vmname>\n"
                      "                            <key>\n"
                      "                            [<value>] (no value deletes key)\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_SETPROPERTY)
+    if (fCategory & USAGE_SETPROPERTY)
         RTStrmPrintf(pStrm,
                            "%s setproperty %s     machinefolder default|<folder> |\n"
                      "                            hwvirtexclusive on|off |\n"
@@ -644,7 +644,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            defaultfrontend default|<name>\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_USBFILTER_ADD)
+    if (fCategory & USAGE_USBFILTER_ADD)
         RTStrmPrintf(pStrm,
                            "%s usbfilter %s       add <index,0-N>\n"
                      "                            --target <uuid|vmname>|global\n"
@@ -661,7 +661,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--maskedinterfaces <XXXXXXXX>]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_USBFILTER_MODIFY)
+    if (fCategory & USAGE_USBFILTER_MODIFY)
         RTStrmPrintf(pStrm,
                            "%s usbfilter %s       modify <index,0-N>\n"
                      "                            --target <uuid|vmname>|global\n"
@@ -678,36 +678,36 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--maskedinterfaces <XXXXXXXX>]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_USBFILTER_REMOVE)
+    if (fCategory & USAGE_USBFILTER_REMOVE)
         RTStrmPrintf(pStrm,
                            "%s usbfilter %s       remove <index,0-N>\n"
                      "                            --target <uuid|vmname>|global\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_SHAREDFOLDER_ADD)
+    if (fCategory & USAGE_SHAREDFOLDER_ADD)
         RTStrmPrintf(pStrm,
                            "%s sharedfolder %s    add <uuid|vmname>\n"
                      "                            --name <name> --hostpath <hostpath>\n"
                      "                            [--transient] [--readonly] [--automount]\n"
                      "\n", SEP);
 
-    if (u64Cmd & USAGE_SHAREDFOLDER_REMOVE)
+    if (fCategory & USAGE_SHAREDFOLDER_REMOVE)
         RTStrmPrintf(pStrm,
                            "%s sharedfolder %s    remove <uuid|vmname>\n"
                      "                            --name <name> [--transient]\n"
                      "\n", SEP);
 
 #ifdef VBOX_WITH_GUEST_PROPS
-    if (u64Cmd & USAGE_GUESTPROPERTY)
+    if (fCategory & USAGE_GUESTPROPERTY)
         usageGuestProperty(pStrm, SEP);
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-    if (u64Cmd & USAGE_GUESTCONTROL)
-        usageGuestControl(pStrm, SEP);
+    if (fCategory & USAGE_GUESTCONTROL)
+        usageGuestControl(pStrm, SEP, fSubCategory);
 #endif /* VBOX_WITH_GUEST_CONTROL defined */
 
-    if (u64Cmd & USAGE_DEBUGVM)
+    if (fCategory & USAGE_DEBUGVM)
     {
         RTStrmPrintf(pStrm,
                            "%s debugvm %s         <uuid|vmname>\n"
@@ -729,7 +729,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--descriptions]\n"
                      "\n", SEP);
     }
-    if (u64Cmd & USAGE_METRICS)
+    if (fCategory & USAGE_METRICS)
         RTStrmPrintf(pStrm,
                            "%s metrics %s         list [*|host|<vmname> [<metric_list>]]\n"
                      "                                                 (comma-separated)\n\n"
@@ -754,7 +754,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "\n", SEP, SEP, SEP, SEP, SEP, SEP);
 
 #if defined(VBOX_WITH_NAT_SERVICE)
-    if (u64Cmd & USAGE_NATNETWORK)
+    if (fCategory & USAGE_NATNETWORK)
     {
         RTStrmPrintf(pStrm,
                            "%s natnetwork %s      add --netname <name>\n"
@@ -785,7 +785,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif
 
 #if defined(VBOX_WITH_NETFLT)
-    if (u64Cmd & USAGE_HOSTONLYIFS)
+    if (fCategory & USAGE_HOSTONLYIFS)
     {
         RTStrmPrintf(pStrm,
                            "%s hostonlyif %s      ipconfig <name>\n"
@@ -800,7 +800,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     }
 #endif
 
-    if (u64Cmd & USAGE_DHCPSERVER)
+    if (fCategory & USAGE_DHCPSERVER)
     {
         RTStrmPrintf(pStrm,
                            "%s dhcpserver %s      add|modify --netname <network_name> |\n"
@@ -818,7 +818,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif
                      "\n", SEP, SEP);
     }
-    if (u64Cmd & USAGE_EXTPACK)
+    if (fCategory & USAGE_EXTPACK)
     {
         RTStrmPrintf(pStrm,
                            "%s extpack %s         install [--replace] <tarball> |\n"
@@ -832,15 +832,35 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
  * Print a usage synopsis and the syntax error message.
  * @returns RTEXITCODE_SYNTAX.
  */
-RTEXITCODE errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
+RTEXITCODE errorSyntax(USAGECATEGORY fCategory, const char *pszFormat, ...)
 {
     va_list args;
     showLogo(g_pStdErr); // show logo even if suppressed
 #ifndef VBOX_ONLY_DOCS
     if (g_fInternalMode)
-        printUsageInternal(u64Cmd, g_pStdErr);
+        printUsageInternal(fCategory, g_pStdErr);
     else
-        printUsage(u64Cmd, g_pStdErr);
+        printUsage(fCategory, ~0U, g_pStdErr);
+#endif /* !VBOX_ONLY_DOCS */
+    va_start(args, pszFormat);
+    RTStrmPrintf(g_pStdErr, "\nSyntax error: %N\n", pszFormat, &args);
+    va_end(args);
+    return RTEXITCODE_SYNTAX;
+}
+
+/**
+ * Print a usage synopsis and the syntax error message.
+ * @returns RTEXITCODE_SYNTAX.
+ */
+RTEXITCODE errorSyntaxEx(USAGECATEGORY fCategory, uint32_t fSubCategory, const char *pszFormat, ...)
+{
+    va_list args;
+    showLogo(g_pStdErr); // show logo even if suppressed
+#ifndef VBOX_ONLY_DOCS
+    if (g_fInternalMode)
+        printUsageInternal(fCategory, g_pStdErr);
+    else
+        printUsage(fCategory, fSubCategory, g_pStdErr);
 #endif /* !VBOX_ONLY_DOCS */
     va_start(args, pszFormat);
     RTStrmPrintf(g_pStdErr, "\nSyntax error: %N\n", pszFormat, &args);
@@ -853,11 +873,12 @@ RTEXITCODE errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
  *
  * @returns RTEXITCODE_SYNTAX.
  *
- * @param   fUsageCategory  The usage category of the command.
+ * @param   fCategory          The usage category of the command.
+ * @param   fSubCategory         The usage sub-category of the command.
  * @param   rc              The RTGetOpt return code.
  * @param   pValueUnion     The value union.
  */
-RTEXITCODE errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION const *pValueUnion)
+RTEXITCODE errorGetOptEx(USAGECATEGORY fCategory, uint32_t fSubCategory, int rc, union RTGETOPTUNION const *pValueUnion)
 {
     /*
      * Check if it is an unhandled standard option.
@@ -873,9 +894,9 @@ RTEXITCODE errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION
         showLogo(g_pStdErr);
 #ifndef VBOX_ONLY_DOCS
         if (g_fInternalMode)
-            printUsageInternal(fUsageCategory, g_pStdOut);
+            printUsageInternal(fCategory, g_pStdOut);
         else
-            printUsage(fUsageCategory, g_pStdOut);
+            printUsage(fCategory, fSubCategory, g_pStdOut);
 #endif
         return RTEXITCODE_SUCCESS;
     }
@@ -886,9 +907,9 @@ RTEXITCODE errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION
     showLogo(g_pStdErr); // show logo even if suppressed
 #ifndef VBOX_ONLY_DOCS
     if (g_fInternalMode)
-        printUsageInternal(fUsageCategory, g_pStdErr);
+        printUsageInternal(fCategory, g_pStdErr);
     else
-        printUsage(fUsageCategory, g_pStdErr);
+        printUsage(fCategory, fSubCategory, g_pStdErr);
 #endif /* !VBOX_ONLY_DOCS */
 
     if (rc == VINF_GETOPT_NOT_OPTION)
@@ -906,6 +927,20 @@ RTEXITCODE errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION
     if (pValueUnion->pDef)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%s: %Rrs", pValueUnion->pDef->pszLong, rc);
     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%Rrs", rc);
+}
+
+/**
+ * errorSyntax for RTGetOpt users.
+ *
+ * @returns RTEXITCODE_SYNTAX.
+ *
+ * @param   fUsageCategory  The usage category of the command.
+ * @param   rc              The RTGetOpt return code.
+ * @param   pValueUnion     The value union.
+ */
+RTEXITCODE errorGetOpt(USAGECATEGORY fCategory, int rc, union RTGETOPTUNION const *pValueUnion)
+{
+    return errorGetOptEx(fCategory, ~0U, rc, pValueUnion);
 }
 
 /**
