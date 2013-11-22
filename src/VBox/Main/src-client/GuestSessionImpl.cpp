@@ -806,7 +806,7 @@ int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
 
             Assert(mData.mDirectories.size());
             Assert(mData.mNumObjects);
-            LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %zu processes, %ld objects)\n",
+            LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %zu processes, %RU32 objects)\n",
                          Utf8Str(strName).c_str(), mData.mSession.mID, mData.mDirectories.size() - 1, mData.mNumObjects - 1));
 
             rc = pDirectory->onRemove();
@@ -965,7 +965,7 @@ int GuestSession::directoryOpenInternal(const GuestDirectoryOpenInfo &openInfo,
         mData.mNumObjects++;
         Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-        LogFlowFunc(("Added new guest directory \"%s\" (Session: %RU32) (now total %ld dirs, %ld objects)\n",
+        LogFlowFunc(("Added new guest directory \"%s\" (Session: %RU32) (now total %zu dirs, %RU32 objects)\n",
                      openInfo.mPath.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
 
         alock.release(); /* Release lock before firing off event. */
@@ -1002,7 +1002,7 @@ int GuestSession::dispatchToDirectory(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUEST
 
     uint32_t uDirID = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCtxCb->uContextID);
 #ifdef DEBUG
-    LogFlowFunc(("uDirID=%RU32 (%RU32 total)\n",
+    LogFlowFunc(("uDirID=%RU32 (%zu total)\n",
                  uDirID, mData.mFiles.size()));
 #endif
     int rc;
@@ -1035,7 +1035,7 @@ int GuestSession::dispatchToFile(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLH
 
     uint32_t uFileID = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCtxCb->uContextID);
 #ifdef DEBUG
-    LogFlowFunc(("uFileID=%RU32 (%RU32 total)\n",
+    LogFlowFunc(("uFileID=%RU32 (%zu total)\n",
                  uFileID, mData.mFiles.size()));
 #endif
     int rc;
@@ -1117,7 +1117,7 @@ int GuestSession::dispatchToProcess(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCT
 
     uint32_t uProcessID = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCtxCb->uContextID);
 #ifdef DEBUG
-    LogFlowFunc(("uProcessID=%RU32 (%RU32 total)\n",
+    LogFlowFunc(("uProcessID=%RU32 (%zu total)\n",
                  uProcessID, mData.mProcesses.size()));
 #endif
     int rc;
@@ -1210,7 +1210,7 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
             ComAssertComRC(hr);
 
             Assert(mData.mNumObjects);
-            LogFlowThisFunc(("Removing guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
+            LogFlowThisFunc(("Removing guest file \"%s\" (Session: %RU32) (now total %zu files, %RU32 objects)\n",
                              Utf8Str(strName).c_str(), mData.mSession.mID, mData.mFiles.size() - 1, mData.mNumObjects - 1));
 
             rc = pFile->onRemove();
@@ -1335,7 +1335,7 @@ int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo,
         mData.mNumObjects++;
         Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-        LogFlowFunc(("Added new guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
+        LogFlowFunc(("Added new guest file \"%s\" (Session: %RU32) (now total %zu files, %RU32 objects)\n",
                      openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
 
         alock.release(); /* Release lock before firing off event. */
@@ -1961,7 +1961,7 @@ int GuestSession::processCreateExInteral(GuestProcessStartupInfo &procInfo, ComO
         mData.mNumObjects++;
         Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-        LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32 (now total %zu processes, %ld objects)\n",
+        LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32 (now total %zu processes, %RU32 objects)\n",
                      mData.mSession.mID, uNewProcessID, mData.mProcesses.size(), mData.mNumObjects));
 
         alock.release(); /* Release lock before firing off event. */
@@ -3547,7 +3547,7 @@ STDMETHODIMP GuestSession::ProcessGet(ULONG aPID, IGuestProcess **aProcess)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    LogFlowThisFunc(("aPID=%RU32\n", aPID));
+    LogFlowThisFunc(("PID=%RU32\n", aPID));
 
     CheckComArgOutPointerValid(aProcess);
     if (aPID == 0)
