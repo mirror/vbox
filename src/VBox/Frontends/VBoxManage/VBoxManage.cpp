@@ -332,7 +332,7 @@ int main(int argc, char *argv[])
             if (i >= argc - 1)
             {
                 showLogo(g_pStdOut);
-                printUsage(USAGE_ALL, g_pStdOut);
+                printUsage(USAGE_ALL, ~0U, g_pStdOut);
                 return 0;
             }
             fShowLogo = true;
@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
         {
             /* Special option to dump really all commands,
              * even the ones not understood on this platform. */
-            printUsage(USAGE_DUMPOPTS, g_pStdOut);
+            printUsage(USAGE_DUMPOPTS, ~0U, g_pStdOut);
             return 0;
         }
 
@@ -554,7 +554,7 @@ int main(int argc, char *argv[])
                     || (   argc - iCmdArg == 0
                         && s_commandHandlers[commandIndex].help))
                 {
-                    printUsage(s_commandHandlers[commandIndex].help, g_pStdOut);
+                    printUsage(s_commandHandlers[commandIndex].help, ~0U, g_pStdOut);
                     rcExit = RTEXITCODE_FAILURE; /* error */
                 }
                 else

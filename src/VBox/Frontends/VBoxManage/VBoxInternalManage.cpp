@@ -2383,7 +2383,7 @@ int CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<I
                 break;
 
             default:
-                return errorGetOpt(USAGE_DEBUGLOG , ch, &ValueUnion);
+                return errorGetOpt(USAGE_DEBUGLOG, ch, &ValueUnion);
         }
     }
 
@@ -2453,7 +2453,7 @@ int CmdGuestStats(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr
                 break;
 
             default:
-                return errorGetOpt(USAGE_GUESTSTATS , ch, &ValueUnion);
+                return errorGetOpt(USAGE_GUESTSTATS, ch, &ValueUnion);
         }
     }
 
@@ -2522,7 +2522,7 @@ int handleInternalCommands(HandlerArg *a)
     if (!strcmp(pszCmd, "loadsyms"))
         return CmdLoadSyms(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     //if (!strcmp(pszCmd, "unloadsyms"))
-    //    return CmdUnloadSyms(argc - 1 , &a->argv[1]);
+    //    return CmdUnloadSyms(argc - 1, &a->argv[1]);
     if (!strcmp(pszCmd, "sethduuid") || !strcmp(pszCmd, "sethdparentuuid"))
         return CmdSetHDUUID(a->argc, &a->argv[0], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "dumphdinfo"))

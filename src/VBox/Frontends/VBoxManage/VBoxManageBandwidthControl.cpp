@@ -274,8 +274,11 @@ static RTEXITCODE handleBandwidthControlList(HandlerArg *pArgs, ComPtr<IBandwidt
     {
         switch (c)
         {
-            case 'M':   enmDetails = VMINFO_MACHINEREADABLE; break;
-            default:    return errorGetOpt(USAGE_BANDWIDTHCONTROL, c, &ValueUnion);
+            case 'M':
+                enmDetails = VMINFO_MACHINEREADABLE;
+                break;
+            default:
+                return errorGetOpt(USAGE_BANDWIDTHCONTROL, c, &ValueUnion);
         }
     }
 
