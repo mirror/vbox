@@ -1432,6 +1432,10 @@ int GuestSession::fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &ob
             vrc = VERR_NO_DATA;
     }
 
+    if (   vrc == VERR_GSTCTL_GUEST_ERROR)
+        && pGuestRc)
+        *pGuestRc = guestRc;
+
     LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n",
                      vrc, guestRc));
     return vrc;
