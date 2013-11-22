@@ -508,7 +508,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 
 #endif /* RT_OS_OS2 */
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 
 /* Private IOCtls between user space and the kernel video driver.  DRM private
  * IOCtls always have the type 'd' and a number between 0x40 and 0x99 (0x9F?) */
@@ -518,6 +518,8 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 /** Stop using HGSMI in the kernel driver until it is re-enabled, so that a
  *  user-space driver can use it.  It must be re-enabled before the kernel
  *  driver can be used again in a sensible way. */
+/** @note These are only implemented on Linux currently and should fail
+ *        silently on other platforms. */
 # define DRM_VBOX_DISABLE_HGSMI    0
 # define DRM_IOCTL_VBOX_DISABLE_HGSMI    VBOX_DRM_IOCTL(DISABLE_HGSMI)
 # define VBOXVIDEO_IOCTL_DISABLE_HGSMI   _IO('d', DRM_IOCTL_VBOX_DISABLE_HGSMI)
@@ -526,7 +528,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 # define DRM_IOCTL_VBOX_ENABLE_HGSMI     VBOX_DRM_IOCTL(ENABLE_HGSMI)
 # define VBOXVIDEO_IOCTL_ENABLE_HGSMI    _IO('d', DRM_IOCTL_VBOX_ENABLE_HGSMI)
 
-#endif /* RT_OS_LINUX */
+#endif /* RT_OS_LINUX || RT_OS_SOLARIS || RT_OS_FREEBSD */
 
 /** @} */
 #endif /* !defined(IN_RC) && !defined(IN_RING0_AGNOSTIC) && !defined(IPRT_NO_CRT) */
