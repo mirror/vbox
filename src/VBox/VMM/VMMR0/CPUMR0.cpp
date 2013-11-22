@@ -414,7 +414,7 @@ VMMR0_INT_DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
     Assert(ASMGetCR4() & X86_CR4_OSFSXR);
     AssertReturn((pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU), VINF_SUCCESS);
-    NOREF(pCtx);
+    NOREF(pVM); NOREF(pCtx);
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(pCtx))

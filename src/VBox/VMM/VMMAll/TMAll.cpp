@@ -482,6 +482,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
 {
     TM_ASSERT_TIMER_LOCK_OWNERSHIP(pVM);
+    NOREF(pVM);
 
     /*
      * Dequeue the scheduling list and iterate it.
@@ -710,7 +711,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnOtherCpu(PVM pVM, uint64_t u64Now, 
 DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnHit(PVM pVM, PVMCPU pVCpu, PVMCPU pVCpuDst, uint64_t u64Now,
                                                  uint64_t *pu64Delta, PSTAMCOUNTER pCounter)
 {
-    STAM_COUNTER_INC(pCounter);
+    STAM_COUNTER_INC(pCounter); NOREF(pCounter);
     if (pVCpuDst != pVCpu)
         return tmTimerPollReturnOtherCpu(pVM, u64Now, pu64Delta);
     *pu64Delta = 0;
