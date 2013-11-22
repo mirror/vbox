@@ -279,9 +279,14 @@ typedef FNSUPR3PREINIT *PFNSUPR3PREINIT;
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-extern DECLHIDDEN(uint32_t)     g_u32Cookie;
-extern DECLHIDDEN(uint32_t)     g_u32SessionCookie;
-extern DECLHIDDEN(SUPLIBDATA)   g_supLibData;
+extern DECLHIDDEN(uint32_t)             g_u32Cookie;
+extern DECLHIDDEN(uint32_t)             g_u32SessionCookie;
+extern DECLHIDDEN(SUPLIBDATA)           g_supLibData;
+extern DECLHIDDEN(uint32_t)             g_uSupFakeMode;
+extern DECLHIDDEN(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPageR0;
+#ifdef ___SUPDrvIOC_h___
+extern DECLHIDDEN(PSUPQUERYFUNCS)       g_pSupFunctions;
+#endif
 
 
 /*******************************************************************************

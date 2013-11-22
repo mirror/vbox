@@ -210,6 +210,22 @@
      && pDevExt->u32Cookie == BIRD)
 
 
+/** @def SUPDRV_WITH_MSR_PROBER
+ * Enables the SUP_IOCTL_MSR_PROBER function.
+ * By default, only enabled in DEBUG builds as it's a sensitive feature.
+ */
+#if defined(DEBUG) && !defined(SUPDRV_WITH_MSR_PROBER) && !defined(SUPDRV_WITHOUT_MSR_PROBER)
+# define SUPDRV_WITH_MSR_PROBER
+#endif
+
+/** @def SUPDRV_WITHOUT_MSR_PROBER
+ * Executive overide for disabling the SUP_IOCTL_MSR_PROBER function.
+ */
+#ifdef SUPDRV_WITHOUT_MSR_PROBER
+# undef SUPDRV_WITH_MSR_PROBER
+#endif
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -682,6 +698,55 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
  * @param   pImage              The image data (mostly still valid).
  */
 void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
+
+
+#ifdef SUPDRV_WITH_MSR_PROBER
+
+/**
+ * Tries to read an MSR.
+ *
+ * @returns One of the listed VBox status codes.
+ * @retval  VINF_SUCCESS if read successfully, value in *puValue.
+ * @retval  VERR_ACCESS_DENIED if we couldn't read it (GP).
+ * @retval  VERR_NOT_SUPPORTED if not supported.
+ *
+ * @param   uMsr                The MSR to read from.
+ * @param   idCpu               The CPU to read the MSR on. NIL_RTCPUID
+ *                              indicates any suitable CPU.
+ * @param   puValue             Where to return the value.
+ */
+int VBOXCALL    supdrvOSMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue);
+
+/**
+ * Tries to write an MSR.
+ *
+ * @returns One of the listed VBox status codes.
+ * @retval  VINF_SUCCESS if written successfully.
+ * @retval  VERR_ACCESS_DENIED if we couldn't write the value to it (GP).
+ * @retval  VERR_NOT_SUPPORTED if not supported.
+ *
+ * @param   uMsr                The MSR to write to.
+ * @param   idCpu               The CPU to write the MSR on. NIL_RTCPUID
+ *                              indicates any suitable CPU.
+ * @param   uValue              The value to write.
+ */
+int VBOXCALL    supdrvOSMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue);
+
+/**
+ * Tries to modify an MSR value.
+ *
+ * @returns One of the listed VBox status codes.
+ * @retval  VINF_SUCCESS if succeeded.
+ * @retval  VERR_NOT_SUPPORTED if not supported.
+ *
+ * @param   idCpu               The CPU to modify the MSR on. NIL_RTCPUID
+ *                              indicates any suitable CPU.
+ * @param   pReq                The request packet with input arguments and
+ *                              where to store the results.
+ */
+int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq);
+
+#endif /* SUPDRV_WITH_MSR_PROBER */
 
 
 /*******************************************************************************

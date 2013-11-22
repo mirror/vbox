@@ -59,6 +59,12 @@
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
 # include <linux/platform_device.h>
 #endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)) && defined(SUPDRV_WITH_MSR_PROBER)
+# define SUPDRV_LINUX_HAS_SAFE_MSR_API
+# include <asm/msr.h>
+# include <iprt/asm-amd64-x86.h>
+#endif
+
 
 
 /*******************************************************************************
@@ -850,6 +856,131 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
     NOREF(pDevExt); NOREF(pImage);
 }
+
+
+#ifdef SUPDRV_WITH_MSR_PROBER
+
+int VBOXCALL    supdrvOSMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue)
+{
+# ifdef SUPDRV_LINUX_HAS_SAFE_MSR_API
+    uint32_t u32Low, u32High;
+    int rc;
+
+    if (idCpu == NIL_RTCPUID)
+        idCpu = RTMpCpuId();
+    else if (!RTMpIsCpuOnline(idCpu))
+        return VERR_CPU_OFFLINE;
+    rc = rdmsr_safe_on_cpu(idCpu, uMsr, &u32Low, &u32High);
+    if (rc >= 0)
+    {
+        *puValue = RT_MAKE_U64(u32Low, u32High);
+        return VINF_SUCCESS;
+    }
+    return VERR_ACCESS_DENIED;
+# else
+    return VERR_NOT_SUPPORTED;
+# endif
+}
+
+
+int VBOXCALL    supdrvOSMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue)
+{
+# ifdef SUPDRV_LINUX_HAS_SAFE_MSR_API
+    int rc;
+
+    if (idCpu == NIL_RTCPUID)
+        idCpu = RTMpCpuId();
+    else if (!RTMpIsCpuOnline(idCpu))
+        return VERR_CPU_OFFLINE;
+    rc = wrmsr_safe_on_cpu(idCpu, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue));
+    if (rc >= 0)
+        return VINF_SUCCESS;
+    return VERR_ACCESS_DENIED;
+# else
+    return VERR_NOT_SUPPORTED;
+# endif
+}
+
+# ifdef SUPDRV_LINUX_HAS_SAFE_MSR_API
+/**
+ * Worker for supdrvOSMsrProberModify.
+ */
+static DECLCALLBACK(void) supdrvOsMsrProberModifyOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PSUPMSRPROBER               pReq    = (PSUPMSRPROBER)pvUser1;
+    register uint32_t           uMsr    = pReq->u.In.uMsr;
+    bool const                  fFaster = pReq->u.In.enmOp == SUPMSRPROBEROP_MODIFY_FASTER;
+    uint64_t                    uBefore;
+    uint64_t                    uWritten;
+    uint64_t                    uAfter;
+    int                         rcBefore, rcWrite, rcAfter, rcRestore;
+    RTCCUINTREG                 fOldFlags;
+
+    /* Initialize result variables. */
+    uBefore = uWritten = uAfter    = 0;
+    rcWrite = rcAfter  = rcRestore = -EIO;
+
+    /*
+     * Do the job.
+     */
+    fOldFlags = ASMIntDisableFlags();
+    ASMCompilerBarrier(); /* paranoia */
+    if (!fFaster)
+        ASMWriteBackAndInvalidateCaches();
+
+    rcBefore = rdmsrl_safe(uMsr, &uBefore);
+    if (rcBefore >= 0)
+    {
+        register uint64_t uRestore = uBefore;
+        uWritten  = uRestore;
+        uWritten &= pReq->u.In.uArgs.Modify.fAndMask;
+        uWritten |= pReq->u.In.uArgs.Modify.fOrMask;
+
+        rcWrite   = wrmsr_safe(uMsr, RT_LODWORD(uWritten), RT_HIDWORD(uWritten));
+        rcAfter   = rdmsrl_safe(uMsr, &uAfter);
+        rcRestore = wrmsr_safe(uMsr, RT_LODWORD(uRestore), RT_HIDWORD(uRestore));
+
+        if (!fFaster)
+        {
+            ASMWriteBackAndInvalidateCaches();
+            ASMReloadCR3();
+            ASMNopPause();
+        }
+    }
+
+    ASMCompilerBarrier(); /* paranoia */
+    ASMSetFlags(fOldFlags);
+
+    /*
+     * Write out the results.
+     */
+    pReq->u.Out.uResults.Modify.uBefore    = uBefore;
+    pReq->u.Out.uResults.Modify.uWritten   = uWritten;
+    pReq->u.Out.uResults.Modify.uAfter     = uAfter;
+    pReq->u.Out.uResults.Modify.fBeforeGp  = rcBefore  < 0;
+    pReq->u.Out.uResults.Modify.fModifyGp  = rcWrite   < 0;
+    pReq->u.Out.uResults.Modify.fAfterGp   = rcAfter   < 0;
+    pReq->u.Out.uResults.Modify.fRestoreGp = rcRestore < 0;
+    RT_ZERO(pReq->u.Out.uResults.Modify.afReserved);
+}
+
+# endif
+
+
+int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq)
+{
+# ifdef SUPDRV_LINUX_HAS_SAFE_MSR_API
+    if (idCpu == NIL_RTCPUID)
+        idCpu = RTMpCpuId();
+    else if (!RTMpIsCpuOnline(idCpu))
+        return VERR_CPU_OFFLINE;
+    return RTMpOnSpecific(idCpu, supdrvOsMsrProberModifyOnCpu, pReq, NULL);
+# else
+    return VERR_NOT_SUPPORTED;
+# endif
+}
+
+#endif /* SUPDRV_WITH_MSR_PROBER */
 
 
 /**

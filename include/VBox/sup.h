@@ -160,6 +160,34 @@ typedef SUPDRVTRACERUSRCTX *PSUPDRVTRACERUSRCTX;
 typedef SUPDRVTRACERUSRCTX const *PCSUPDRVTRACERUSRCTX;
 
 /**
+ * The result of a modification operation (SUPMSRPROBEROP_MODIFY or
+ * SUPMSRPROBEROP_MODIFY_FASTER).
+ */
+typedef struct SUPMSRPROBERMODIFYRESULT
+{
+    /** The MSR value prior to the modifications.  Valid if fBeforeGp is false */
+    uint64_t        uBefore;
+    /** The value that was written.  Valid if fBeforeGp is false */
+    uint64_t        uWritten;
+    /** The MSR value after the modifications. Valid if AfterGp is false. */
+    uint64_t        uAfter;
+    /** Set if we GPed reading the MSR before the modification. */
+    bool            fBeforeGp;
+    /** Set if we GPed while trying to write the modified value.
+     * This is set when fBeforeGp is true. */
+    bool            fModifyGp;
+    /** Set if we GPed while trying to read the MSR after the modification.
+     * This is set when fBeforeGp is true. */
+    bool            fAfterGp;
+    /** Set if we GPed while trying to restore the MSR after the modification.
+     * This is set when fBeforeGp is true. */
+    bool            fRestoreGp;
+    /** Structure size alignment padding. */
+    bool            afReserved[4];
+} SUPMSRPROBERMODIFYRESULT, *PSUPMSRPROBERMODIFYRESULT;
+
+
+/**
  * The CPU state.
  */
 typedef enum SUPGIPCPUSTATE
@@ -1294,6 +1322,65 @@ SUPR3DECL(int) SUPR3TracerDeregisterModule(struct VTGOBJHDR *pVtgHdr);
  */
 SUPDECL(void)  SUPTracerFireProbe(struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
                                   uintptr_t uArg3, uintptr_t uArg4);
+
+
+/**
+ * Attempts to read the value of an MSR.
+ *
+ * @returns VBox status code.
+ * @param   uMsr                The MSR to read.
+ * @param   idCpu               The CPU to read it on, NIL_RTCPUID if it doesn't
+ *                              matter which CPU.
+ * @param   puValue             Where to return the value.
+ * @param   pfGp                Where to store the \#GP indicator for the read
+ *                              operation.
+ */
+SUPR3DECL(int) SUPR3MsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue, bool *pfGp);
+
+/**
+ * Attempts to write to an MSR.
+ *
+ * @returns VBox status code.
+ * @param   uMsr                The MSR to write to.
+ * @param   idCpu               The CPU to wrtie it on, NIL_RTCPUID if it
+ *                              doesn't matter which CPU.
+ * @param   uValue              The value to write.
+ * @param   pfGp                Where to store the \#GP indicator for the write
+ *                              operation.
+ */
+SUPR3DECL(int) SUPR3MsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue, bool *pfGp);
+
+/**
+ * Attempts to modify the value of an MSR.
+ *
+ * @returns VBox status code.
+ * @param   uMsr                The MSR to modify.
+ * @param   idCpu               The CPU to modify it on, NIL_RTCPUID if it
+ *                              doesn't matter which CPU.
+ * @param   fAndMask            The bits to keep in the current MSR value.
+ * @param   fOrMask             The bits to set before writing.
+ * @param   pResult             The result buffer.
+ */
+SUPR3DECL(int) SUPR3MsrProberModify(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndMask, uint64_t fOrMask,
+                                    PSUPMSRPROBERMODIFYRESULT pResult);
+
+/**
+ * Attempts to modify the value of an MSR, extended version.
+ *
+ * @returns VBox status code.
+ * @param   uMsr                The MSR to modify.
+ * @param   idCpu               The CPU to modify it on, NIL_RTCPUID if it
+ *                              doesn't matter which CPU.
+ * @param   fAndMask            The bits to keep in the current MSR value.
+ * @param   fOrMask             The bits to set before writing.
+ * @param   fFaster             If set to @c true some cache/tlb invalidation is
+ *                              skipped, otherwise behave like
+ *                              SUPR3MsrProberModify.
+ * @param   pResult             The result buffer.
+ */
+SUPR3DECL(int) SUPR3MsrProberModifyEx(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndMask, uint64_t fOrMask, bool fFaster,
+                                      PSUPMSRPROBERMODIFYRESULT pResult);
+
 /** @} */
 #endif /* IN_RING3 */
 

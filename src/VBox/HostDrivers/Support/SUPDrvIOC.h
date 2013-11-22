@@ -101,7 +101,7 @@
 /** Fast path IOCtl: VMMR0_DO_RAW_RUN */
 #define SUP_IOCTL_FAST_DO_RAW_RUN               SUP_CTL_CODE_FAST(64)
 /** Fast path IOCtl: VMMR0_DO_HM_RUN */
-#define SUP_IOCTL_FAST_DO_HM_RUN             SUP_CTL_CODE_FAST(65)
+#define SUP_IOCTL_FAST_DO_HM_RUN                SUP_CTL_CODE_FAST(65)
 /** Just a NOP call for profiling the latency of a fast ioctl call to VMMR0. */
 #define SUP_IOCTL_FAST_DO_NOP                   SUP_CTL_CODE_FAST(66)
 
@@ -193,7 +193,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Remove RTSpinlockReleaseNoInts.
  */
-#define SUPDRV_IOC_VERSION                              0x001a0005
+#define SUPDRV_IOC_VERSION                              0x001a0006
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1329,6 +1329,112 @@ typedef struct SUPTRACERUMODFIREPROBE
         SUPDRVTRACERUSRCTX  In;
     } u;
 } SUPTRACERUMODFIREPROBE, *PSUPTRACERUMODFIREPROBE;
+/** @} */
+
+
+/** @name SUP_IOCTL_MSR_PROBER
+ * MSR probing interface, not available in normal builds.
+ *
+ * @{
+ */
+#define SUP_IOCTL_MSR_PROBER                        SUP_CTL_CODE_SIZE(34, SUP_IOCTL_MSR_PROBER_SIZE)
+#define SUP_IOCTL_MSR_PROBER_SIZE                   sizeof(SUPMSRPROBER)
+#define SUP_IOCTL_MSR_PROBER_SIZE_IN                sizeof(SUPMSRPROBER)
+#define SUP_IOCTL_MSR_PROBER_SIZE_OUT               sizeof(SUPMSRPROBER)
+
+typedef enum SUPMSRPROBEROP
+{
+    SUPMSRPROBEROP_INVALID = 0,                     /**< The customary invalid zero value. */
+    SUPMSRPROBEROP_READ,                            /**< Read an MSR. */
+    SUPMSRPROBEROP_WRITE,                           /**< Write a value to an MSR (use with care!). */
+    SUPMSRPROBEROP_MODIFY,                          /**< Read-modify-restore-flushall. */
+    SUPMSRPROBEROP_MODIFY_FASTER,                   /**< Read-modify-restore, skip the flushing. */
+    SUPMSRPROBEROP_END,                             /**< End of valid values. */
+    SUPMSRPROBEROP_32BIT_HACK = 0x7fffffff          /**< The customary 32-bit type hack. */
+} SUPMSRPROBEROP;
+
+typedef struct SUPMSRPROBER
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+
+    /** Input/output union. */
+    union
+    {
+        /** Inputs.  */
+        struct
+        {
+            /** The operation. */
+            SUPMSRPROBEROP          enmOp;
+            /** The MSR to test. */
+            uint32_t                uMsr;
+            /** The CPU to perform the operation on.
+             * Use UINT32_MAX to indicate that any CPU will do. */
+            uint32_t                idCpu;
+            /** Alignment padding. */
+            uint32_t                u32Padding;
+            /** Operation specific arguments. */
+            union
+            {
+                /* SUPMSRPROBEROP_READ takes no extra arguments. */
+
+                /** For SUPMSRPROBEROP_WRITE. */
+                struct
+                {
+                    /** The value to write. */
+                    uint64_t        uToWrite;
+                } Write;
+
+                /** For SUPMSRPROBEROP_MODIFY and SUPMSRPROBEROP_MODIFY_FASTER. */
+                struct
+                {
+                    /** The value to AND the current MSR value with to construct the value to
+                     *  write.  This applied first. */
+                    uint64_t        fAndMask;
+                    /** The value to OR the result of the above mentioned AND operation with
+                     * attempting to modify the MSR. */
+                    uint64_t        fOrMask;
+                } Modify;
+
+                /** Reserve space for the future.. */
+                uint64_t        auPadding[3];
+            } uArgs;
+        } In;
+
+        /** Outputs. */
+        struct
+        {
+            /** Operation specific results. */
+            union
+            {
+                /** For SUPMSRPROBEROP_READ. */
+                struct
+                {
+                    /** The value we've read. */
+                    uint64_t        uValue;
+                    /** Set if we GPed while reading it. */
+                    bool            fGp;
+                } Read;
+
+                /** For SUPMSRPROBEROP_WRITE. */
+                struct
+                {
+                    /** Set if we GPed while writing it. */
+                    bool            fGp;
+                } Write;
+
+                /** For SUPMSRPROBEROP_MODIFY and SUPMSRPROBEROP_MODIFY_FASTER. */
+                SUPMSRPROBERMODIFYRESULT Modify;
+
+                /** Size padding/aligning. */
+                uint64_t        auPadding[5];
+            } uResults;
+        } Out;
+    } u;
+} SUPMSRPROBER, *PSUPMSRPROBER;
+AssertCompileMemberAlignment(SUPMSRPROBER, u, 8);
+AssertCompileMemberAlignment(SUPMSRPROBER, u.In.uArgs, 8);
+AssertCompileMembersSameSizeAndOffset(SUPMSRPROBER, u.In, SUPMSRPROBER, u.Out);
 /** @} */
 
 
