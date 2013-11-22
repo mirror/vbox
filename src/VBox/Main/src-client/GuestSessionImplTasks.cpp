@@ -468,8 +468,8 @@ int SessionTaskCopyTo::Run(void)
                 break;
         } /* for */
 
-        LogFlowThisFunc(("Copy loop ended with rc=%Rrc, cbWrittenTotal=%RU64, cbFileSize=%RU64\n",
-                         rc, cbWrittenTotal, mSourceSize));
+        LogFlowThisFunc(("Copy loop ended with rc=%Rrc, cbToRead=%RU64, cbWrittenTotal=%RU64, cbFileSize=%RU64\n",
+                         rc, cbToRead, cbWrittenTotal, mSourceSize));
 
         if (   !fCanceled
             || RT_SUCCESS(rc))
@@ -537,8 +537,6 @@ int SessionTaskCopyTo::Run(void)
                     rc = setProgressSuccess();
             }
         }
-
-        pProcess->Release();
     } /* processCreateExInteral */
 
     if (!mSourceFile) /* Only close locally opened files. */
@@ -808,8 +806,6 @@ int SessionTaskCopyFrom::Run(void)
                             rc = setProgressSuccess();
                     }
                 }
-
-                pProcess->Release();
             }
 
             RTFileClose(fileDest);
