@@ -1728,33 +1728,17 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
             /* Virtual USB Mouse/Tablet */
             if (   aPointingHID == PointingHIDType_USBMouse
-                || aPointingHID == PointingHIDType_ComboMouse
                 || aPointingHID == PointingHIDType_USBTablet
                 || aPointingHID == PointingHIDType_USBMultiTouch)
-                InsertConfigNode(pUsbDevices, "HidMouse", &pDev);
-            if (aPointingHID == PointingHIDType_USBMouse)
             {
+                InsertConfigNode(pUsbDevices, "HidMouse", &pDev);
                 InsertConfigNode(pDev,     "0", &pInst);
                 InsertConfigNode(pInst,    "Config", &pCfg);
 
-                InsertConfigString(pCfg,   "Mode", "relative");
-                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
-                InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "QueueSize",            128);
-
-                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-                InsertConfigString(pLunL1, "Driver",        "MainMouse");
-                InsertConfigNode(pLunL1,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
-            }
-            if (   aPointingHID == PointingHIDType_USBTablet
-                || aPointingHID == PointingHIDType_USBMultiTouch)
-            {
-                InsertConfigNode(pDev,     "1", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-
-                InsertConfigString(pCfg,   "Mode", "absolute");
+                if (aPointingHID == PointingHIDType_USBMouse)
+                    InsertConfigString(pCfg,   "Mode", "relative");
+                else
+                    InsertConfigString(pCfg,   "Mode", "absolute");
                 InsertConfigNode(pInst,    "LUN#0", &pLunL0);
                 InsertConfigString(pLunL0, "Driver",        "MouseQueue");
                 InsertConfigNode(pLunL0,   "Config", &pCfg);
@@ -1767,7 +1751,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
             if (aPointingHID == PointingHIDType_USBMultiTouch)
             {
-                InsertConfigNode(pDev,     "2", &pInst);
+                InsertConfigNode(pDev,     "1", &pInst);
                 InsertConfigNode(pInst,    "Config", &pCfg);
 
                 InsertConfigString(pCfg,   "Mode", "multitouch");
