@@ -971,10 +971,11 @@ int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq)
 {
 # ifdef SUPDRV_LINUX_HAS_SAFE_MSR_API
     if (idCpu == NIL_RTCPUID)
-        idCpu = RTMpCpuId();
-    else if (!RTMpIsCpuOnline(idCpu))
-        return VERR_CPU_OFFLINE;
-    return RTMpOnSpecific(idCpu, supdrvOsMsrProberModifyOnCpu, pReq, NULL);
+    {
+        supdrvLnxMsrProberModifyOnCpu(idCpu, pReq);
+        return VINF_SUCCESS;
+    }
+    return RTMpOnSpecific(idCpu, supdrvLnxMsrProberModifyOnCpu, pReq, NULL);
 # else
     return VERR_NOT_SUPPORTED;
 # endif
