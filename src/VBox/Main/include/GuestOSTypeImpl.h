@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,28 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+    // static int i_vrdpServerVerifyPortsString(com::Utf8Str portRange);
 #ifndef ____H_GUESTOSTYPEIMPL
 #define ____H_GUESTOSTYPEIMPL
 
-#include "VirtualBoxBase.h"
 #include "Global.h"
-
-#include <VBox/ostypes.h>
+#include "GuestOSTypeWrap.h"
 
 class ATL_NO_VTABLE GuestOSType :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IGuestOSType)
+    public GuestOSTypeWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(GuestOSType, IGuestOSType)
-
-    DECLARE_NOT_AGGREGATABLE(GuestOSType)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(GuestOSType)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IGuestOSType)
-    END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(GuestOSType)
 
@@ -47,46 +36,47 @@ public:
     HRESULT init(const Global::OSType &ostype);
     void uninit();
 
-    // IGuestOSType properties
-    STDMETHOD(COMGETTER(FamilyId))(BSTR *aFamilyId);
-    STDMETHOD(COMGETTER(FamilyDescription))(BSTR *aFamilyDescription);
-    STDMETHOD(COMGETTER(Id))(BSTR *aId);
-    STDMETHOD(COMGETTER(Description))(BSTR *aDescription);
-    STDMETHOD(COMGETTER(Is64Bit))(BOOL *aIs64Bit);
-    STDMETHOD(COMGETTER(RecommendedIOAPIC))(BOOL *aRecommendedIOAPIC);
-    STDMETHOD(COMGETTER(RecommendedVirtEx))(BOOL *aRecommendedVirtEx);
-    STDMETHOD(COMGETTER(RecommendedRAM))(ULONG *aRAMSize);
-    STDMETHOD(COMGETTER(RecommendedVRAM))(ULONG *aVRAMSize);
-    STDMETHOD(COMGETTER(Recommended2DVideoAcceleration))(BOOL *aRecommended2DVideoAcceleration);
-    STDMETHOD(COMGETTER(Recommended3DAcceleration))(BOOL *aRecommended3DAcceleration);
-    STDMETHOD(COMGETTER(RecommendedHDD))(LONG64 *aHDDSize);
-    STDMETHOD(COMGETTER(AdapterType))(NetworkAdapterType_T *aNetworkAdapterType);
-    STDMETHOD(COMGETTER(RecommendedFirmware))(FirmwareType_T *aFirmwareType);
-    STDMETHOD(COMGETTER(RecommendedDVDStorageBus))(StorageBus_T *aStorageBusType);
-    STDMETHOD(COMGETTER(RecommendedDVDStorageController))(StorageControllerType_T *aStorageControllerType);
-    STDMETHOD(COMGETTER(RecommendedHDStorageBus))(StorageBus_T *aStorageBusType);
-    STDMETHOD(COMGETTER(RecommendedHDStorageController))(StorageControllerType_T *aStorageControllerType);
-    STDMETHOD(COMGETTER(RecommendedPAE))(BOOL *aRecommendedExtHw);
-    STDMETHOD(COMGETTER(RecommendedUSBHID))(BOOL *aRecommendedUSBHID);
-    STDMETHOD(COMGETTER(RecommendedHPET))(BOOL *aRecommendedHPET);
-    STDMETHOD(COMGETTER(RecommendedUSBTablet))(BOOL *aRecommendedUSBTablet);
-    STDMETHOD(COMGETTER(RecommendedRTCUseUTC))(BOOL *aRecommendedRTCUseUTC);
-    STDMETHOD(COMGETTER(RecommendedChipset))(ChipsetType_T *aChipsetType);
-    STDMETHOD(COMGETTER(RecommendedAudioController))(AudioControllerType_T *aAudioController);
-    STDMETHOD(COMGETTER(RecommendedFloppy))(BOOL *aRecommendedFloppy);
-    STDMETHOD(COMGETTER(RecommendedUSB))(BOOL *aRecommendedUSB);
-    STDMETHOD(COMGETTER(RecommendedTFReset))(BOOL *aRecommendedTFReset);
-
     // public methods only for internal purposes
-    const Bstr &id() const { return mID; }
-    bool is64Bit() const { return !!(mOSHint & VBOXOSHINT_64BIT); }
-    bool recommendedIOAPIC() const { return !!(mOSHint & VBOXOSHINT_IOAPIC); }
-    bool recommendedVirtEx() const { return !!(mOSHint & VBOXOSHINT_HWVIRTEX); }
-    bool recommendedEFI() const { return !!(mOSHint & VBOXOSHINT_EFI); }
-    NetworkAdapterType_T networkAdapterType() const { return mNetworkAdapterType; }
-    uint32_t numSerialEnabled() const { return mNumSerialEnabled; }
+    const Bstr &i_id() const { return mID; }
+    bool i_is64Bit() const { return !!(mOSHint & VBOXOSHINT_64BIT); }
+    bool i_recommendedIOAPIC() const { return !!(mOSHint & VBOXOSHINT_IOAPIC); }
+    bool i_recommendedVirtEx() const { return !!(mOSHint & VBOXOSHINT_HWVIRTEX); }
+    bool i_recommendedEFI() const { return !!(mOSHint & VBOXOSHINT_EFI); }
+    NetworkAdapterType_T i_networkAdapterType() const { return mNetworkAdapterType; }
+    uint32_t i_numSerialEnabled() const { return mNumSerialEnabled; }
 
 private:
+
+    // Wrapped IGuestOSType properties
+    HRESULT getFamilyId(com::Utf8Str &aFamilyId);
+    HRESULT getFamilyDescription(com::Utf8Str &aFamilyDescription);
+    HRESULT getId(com::Utf8Str &aId);
+    HRESULT getDescription(com::Utf8Str &aDescription);
+    HRESULT getIs64Bit(BOOL *aIs64Bit);
+    HRESULT getRecommendedIOAPIC(BOOL *aRecommendedIOAPIC);
+    HRESULT getRecommendedVirtEx(BOOL *aRecommendedVirtEx);
+    HRESULT getRecommendedRAM(ULONG *RAMSize);
+    HRESULT getRecommendedVRAM(ULONG *aVRAMSize);
+    HRESULT getRecommended2DVideoAcceleration(BOOL *aRecommended2DVideoAcceleration);
+    HRESULT getRecommended3DAcceleration(BOOL *aRecommended3DAcceleration);
+    HRESULT getRecommendedHDD(LONG64 *aHDDSize);
+    HRESULT getAdapterType(NetworkAdapterType_T *aNetworkAdapterType);
+    HRESULT getRecommendedPAE(BOOL *aRecommendedPAE);
+    HRESULT getRecommendedDVDStorageController(StorageControllerType_T *aStorageControllerType);
+    HRESULT getRecommendedFirmware(FirmwareType_T *aFirmwareType);
+    HRESULT getRecommendedDVDStorageBus(StorageBus_T *aStorageBusType);
+    HRESULT getRecommendedHDStorageController(StorageControllerType_T *aStorageControllerType);
+    HRESULT getRecommendedHDStorageBus(StorageBus_T *aStorageBusType);
+    HRESULT getRecommendedUSBHID(BOOL *aRecommendedUSBHID);
+    HRESULT getRecommendedHPET(BOOL *aRecommendedHPET);
+    HRESULT getRecommendedUSBTablet(BOOL *aRecommendedUSBTablet);
+    HRESULT getRecommendedRTCUseUTC(BOOL *aRecommendedRTCUseUTC);
+    HRESULT getRecommendedChipset(ChipsetType_T *aChipsetType);
+    HRESULT getRecommendedAudioController(AudioControllerType_T *aAudioController);
+    HRESULT getRecommendedFloppy(BOOL *aRecommendedFloppy);
+    HRESULT getRecommendedUSB(BOOL *aRecommendedUSB);
+    HRESULT getRecommendedTFReset(BOOL *aRecommendedTFReset);
+
 
     const Bstr mFamilyID;
     const Bstr mFamilyDescription;

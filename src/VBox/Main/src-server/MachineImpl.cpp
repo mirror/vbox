@@ -336,7 +336,7 @@ HRESULT Machine::init(VirtualBox *aParent,
         if (aOsType)
         {
             /* Store OS type */
-            mUserData->s.strOsType = aOsType->id();
+            mUserData->s.strOsType = aOsType->i_id();
 
             /* Apply BIOS defaults */
             mBIOSSettings->applyDefaults(aOsType);
@@ -347,10 +347,10 @@ HRESULT Machine::init(VirtualBox *aParent,
 
             /* Apply serial port defaults */
             for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
-                mSerialPorts[slot]->applyDefaults(aOsType);
+                mSerialPorts[slot]->i_applyDefaults(aOsType);
 
             /* Let the OS type select 64-bit ness. */
-            mHWData->mLongMode = aOsType->is64Bit()
+            mHWData->mLongMode = aOsType->i_is64Bit()
                                ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
         }
 
@@ -4069,7 +4069,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         aControllerName);
 
     // check that the port and device are not out of range
-    rc = ctl->checkPortAndDeviceValid(aControllerPort, aDevice);
+    rc = ctl->i_checkPortAndDeviceValid(aControllerPort, aDevice);
     if (FAILED(rc)) return rc;
 
     /* check if the device slot is already busy */
@@ -4973,14 +4973,14 @@ STDMETHODIMP Machine::SetBandwidthGroupForDevice(IN_BSTR aControllerName, LONG a
         rc = getBandwidthGroup(strBandwidthGroupOld, pBandwidthGroupOld, false);
         Assert(SUCCEEDED(rc));
 
-        pBandwidthGroupOld->release();
+        pBandwidthGroupOld->i_release();
         pAttach->updateBandwidthGroup(Utf8Str::Empty);
     }
 
     if (!group.isNull())
     {
-        group->reference();
-        pAttach->updateBandwidthGroup(group->getName());
+        group->i_reference();
+        pAttach->updateBandwidthGroup(group->i_getName());
     }
 
     return S_OK;
@@ -6447,15 +6447,15 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
          it != mStorageControllers->end();
          ++it)
     {
-        if ((*it)->getStorageBus() == aConnectionType)
+        if ((*it)->i_getStorageBus() == aConnectionType)
         {
-            ULONG ulCurInst = (*it)->getInstance();
+            ULONG ulCurInst = (*it)->i_getInstance();
 
             if (ulCurInst >= ulInstance)
                 ulInstance = ulCurInst + 1;
 
             /* Only one controller of each type can be marked as bootable. */
-            if ((*it)->getBootable())
+            if ((*it)->i_getBootable())
                 fBootable = false;
         }
     }
@@ -6507,7 +6507,7 @@ STDMETHODIMP Machine::GetStorageControllerByInstance(ULONG aInstance,
          it != mStorageControllers->end();
          ++it)
     {
-        if ((*it)->getInstance() == aInstance)
+        if ((*it)->i_getInstance() == aInstance)
         {
             (*it).queryInterfaceTo(aStorageController);
             return S_OK;
@@ -6543,12 +6543,12 @@ STDMETHODIMP Machine::SetStorageControllerBootable(IN_BSTR aName, BOOL fBootable
             {
                 ComObjPtr<StorageController> aCtrl = (*it);
 
-                if (   (aCtrl->getName() != Utf8Str(aName))
-                    && aCtrl->getBootable() == TRUE
-                    && aCtrl->getStorageBus() == ctrl->getStorageBus()
-                    && aCtrl->getControllerType() == ctrl->getControllerType())
+                if (   (aCtrl->i_getName() != Utf8Str(aName))
+                    && aCtrl->i_getBootable() == TRUE
+                    && aCtrl->i_getStorageBus() == ctrl->i_getStorageBus()
+                    && aCtrl->i_getControllerType() == ctrl->i_getControllerType())
                 {
-                    aCtrl->setBootable(FALSE);
+                    aCtrl->i_setBootable(FALSE);
                     break;
                 }
             }
@@ -6556,7 +6556,7 @@ STDMETHODIMP Machine::SetStorageControllerBootable(IN_BSTR aName, BOOL fBootable
 
         if (SUCCEEDED(rc))
         {
-            ctrl->setBootable(fBootable);
+            ctrl->i_setBootable(fBootable);
             setModified(IsModified_Storage);
         }
     }
@@ -6616,7 +6616,7 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     setModified(IsModified_Storage);
     mStorageControllers.backup();
 
-    ctrl->unshare();
+    ctrl->i_unshare();
 
     mStorageControllers->remove(ctrl);
 
@@ -8682,7 +8682,7 @@ HRESULT Machine::initDataAndChildObjects()
     mUSBControllers.allocate();
 
     /* initialize mOSTypeId */
-    mUserData->s.strOsType = mParent->getUnknownOSType()->id();
+    mUserData->s.strOsType = mParent->getUnknownOSType()->i_id();
 
     /* create associated BIOS settings object */
     unconst(mBIOSSettings).createObject();
@@ -9350,7 +9350,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mHPETEnabled = data.fHPETEnabled;
 
         /* VRDEServer */
-        rc = mVRDEServer->loadSettings(data.vrdeSettings);
+        rc = mVRDEServer->i_loadSettings(data.vrdeSettings);
         if (FAILED(rc)) return rc;
 
         /* BIOS */
@@ -9358,7 +9358,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         if (FAILED(rc)) return rc;
 
         // Bandwidth control (must come before network adapters)
-        rc = mBandwidthControl->loadSettings(data.ioSettings);
+        rc = mBandwidthControl->i_loadSettings(data.ioSettings);
         if (FAILED(rc)) return rc;
 
         /* Shared folders */
@@ -9412,7 +9412,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
             const settings::SerialPort &s = *it;
 
             AssertBreak(s.ulSlot < RT_ELEMENTS(mSerialPorts));
-            rc = mSerialPorts[s.ulSlot]->loadSettings(s);
+            rc = mSerialPorts[s.ulSlot]->i_loadSettings(s);
             if (FAILED(rc)) return rc;
         }
 
@@ -9590,10 +9590,10 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
         /* Set IDE emulation settings (only for AHCI controller). */
         if (ctlData.controllerType == StorageControllerType_IntelAhci)
         {
-            if (    (FAILED(rc = pCtl->setIDEEmulationPort(0, ctlData.lIDE0MasterEmulationPort)))
-                 || (FAILED(rc = pCtl->setIDEEmulationPort(1, ctlData.lIDE0SlaveEmulationPort)))
-                 || (FAILED(rc = pCtl->setIDEEmulationPort(2, ctlData.lIDE1MasterEmulationPort)))
-                 || (FAILED(rc = pCtl->setIDEEmulationPort(3, ctlData.lIDE1SlaveEmulationPort)))
+            if (    (FAILED(rc = pCtl->i_setIDEEmulationPort(0, ctlData.lIDE0MasterEmulationPort)))
+                 || (FAILED(rc = pCtl->i_setIDEEmulationPort(1, ctlData.lIDE0SlaveEmulationPort)))
+                 || (FAILED(rc = pCtl->i_setIDEEmulationPort(2, ctlData.lIDE1MasterEmulationPort)))
+                 || (FAILED(rc = pCtl->i_setIDEEmulationPort(3, ctlData.lIDE1SlaveEmulationPort)))
                )
                 return rc;
         }
@@ -9646,7 +9646,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             {
                 return setError(E_FAIL,
                                 tr("Duplicate attachments for storage controller '%s', port %d, device %d of the virtual machine '%s'"),
-                                aStorageController->getName().c_str(),
+                                aStorageController->i_getName().c_str(),
                                 ad.lPort,
                                 ad.lDevice,
                                 mUserData->s.strName.c_str());
@@ -9780,7 +9780,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
         if (!dev.strBwGroup.isEmpty())
         {
-            rc = mBandwidthControl->getBandwidthGroupByName(dev.strBwGroup, pBwGroup, false /* aSetError */);
+            rc = mBandwidthControl->i_getBandwidthGroupByName(dev.strBwGroup, pBwGroup, false /* aSetError */);
             if (FAILED(rc))
                 return setError(E_FAIL,
                                 tr("Device '%s' with unknown bandwidth group '%s' is attached to the virtual machine '%s' ('%s')"),
@@ -9788,10 +9788,10 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                 dev.strBwGroup.c_str(),
                                 mUserData->s.strName.c_str(),
                                 mData->m_strConfigFileFull.c_str());
-            pBwGroup->reference();
+            pBwGroup->i_reference();
         }
 
-        const Bstr controllerName = aStorageController->getName();
+        const Bstr controllerName = aStorageController->i_getName();
         ComObjPtr<MediumAttachment> pAttachment;
         pAttachment.createObject();
         rc = pAttachment->init(this,
@@ -9806,7 +9806,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                dev.fNonRotational,
                                dev.fDiscard,
                                dev.fHotPluggable,
-                               pBwGroup.isNull() ? Utf8Str::Empty : pBwGroup->getName());
+                               pBwGroup.isNull() ? Utf8Str::Empty : pBwGroup->i_getName());
         if (FAILED(rc)) break;
 
         /* associate the medium with this machine and snapshot */
@@ -9931,7 +9931,7 @@ HRESULT Machine::getStorageControllerByName(const Utf8Str &aName,
          it != mStorageControllers->end();
          ++it)
     {
-        if ((*it)->getName() == aName)
+        if ((*it)->i_getName() == aName)
         {
             aStorageController = (*it);
             return S_OK;
@@ -10655,7 +10655,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         copyPathRelativeToMachine(mHWData->mVideoCaptureFile, data.strVideoCaptureFile);
 
         /* VRDEServer settings (optional) */
-        rc = mVRDEServer->saveSettings(data.vrdeSettings);
+        rc = mVRDEServer->i_saveSettings(data.vrdeSettings);
         if (FAILED(rc)) throw rc;
 
         /* BIOS (required) */
@@ -10708,7 +10708,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         {
             settings::SerialPort s;
             s.ulSlot = slot;
-            rc = mSerialPorts[slot]->saveSettings(s);
+            rc = mSerialPorts[slot]->i_saveSettings(s);
             if (FAILED(rc)) return rc;
 
             data.llSerialPorts.push_back(s);
@@ -10764,7 +10764,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.ioSettings.ulIOCacheSize = mHWData->mIOCacheSize;
 
         /* BandwidthControl (required) */
-        rc = mBandwidthControl->saveSettings(data.ioSettings);
+        rc = mBandwidthControl->i_saveSettings(data.ioSettings);
         if (FAILED(rc)) throw rc;
 
         /* Host PCI devices */
@@ -10846,11 +10846,11 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
         ComObjPtr<StorageController> pCtl = *it;
 
         settings::StorageController ctl;
-        ctl.strName = pCtl->getName();
-        ctl.controllerType = pCtl->getControllerType();
-        ctl.storageBus = pCtl->getStorageBus();
-        ctl.ulInstance = pCtl->getInstance();
-        ctl.fBootable = pCtl->getBootable();
+        ctl.strName = pCtl->i_getName();
+        ctl.controllerType = pCtl->i_getControllerType();
+        ctl.storageBus = pCtl->i_getStorageBus();
+        ctl.ulInstance = pCtl->i_getInstance();
+        ctl.fBootable = pCtl->i_getBootable();
 
         /* Save the port count. */
         ULONG portCount;
@@ -10867,10 +10867,10 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
         /* Save IDE emulation settings. */
         if (ctl.controllerType == StorageControllerType_IntelAhci)
         {
-            if (    (FAILED(rc = pCtl->getIDEEmulationPort(0, (LONG*)&ctl.lIDE0MasterEmulationPort)))
-                 || (FAILED(rc = pCtl->getIDEEmulationPort(1, (LONG*)&ctl.lIDE0SlaveEmulationPort)))
-                 || (FAILED(rc = pCtl->getIDEEmulationPort(2, (LONG*)&ctl.lIDE1MasterEmulationPort)))
-                 || (FAILED(rc = pCtl->getIDEEmulationPort(3, (LONG*)&ctl.lIDE1SlaveEmulationPort)))
+            if (    (FAILED(rc = pCtl->i_getIDEEmulationPort(0, (LONG*)&ctl.lIDE0MasterEmulationPort)))
+                 || (FAILED(rc = pCtl->i_getIDEEmulationPort(1, (LONG*)&ctl.lIDE0SlaveEmulationPort)))
+                 || (FAILED(rc = pCtl->i_getIDEEmulationPort(2, (LONG*)&ctl.lIDE1MasterEmulationPort)))
+                 || (FAILED(rc = pCtl->i_getIDEEmulationPort(3, (LONG*)&ctl.lIDE1SlaveEmulationPort)))
                )
                 ComAssertComRCRet(rc, rc);
         }
@@ -10893,7 +10893,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
 {
     MediaData::AttachmentList atts;
 
-    HRESULT rc = getMediumAttachmentsOfController(Bstr(aStorageController->getName()).raw(), atts);
+    HRESULT rc = getMediumAttachmentsOfController(Bstr(aStorageController->i_getName()).raw(), atts);
     if (FAILED(rc)) return rc;
 
     data.llAttachedDevices.clear();
@@ -12062,7 +12062,7 @@ void Machine::rollback(bool aNotify)
             StorageControllerList::const_iterator it = mStorageControllers->begin();
             while (it != mStorageControllers->end())
             {
-                (*it)->rollback();
+                (*it)->i_rollback();
                 ++it;
             }
         }
@@ -12113,7 +12113,7 @@ void Machine::rollback(bool aNotify)
         mBIOSSettings->rollback();
 
     if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))
-        mVRDEServer->rollback();
+        mVRDEServer->i_rollback();
 
     if (mAudioAdapter)
         mAudioAdapter->rollback();
@@ -12122,7 +12122,7 @@ void Machine::rollback(bool aNotify)
         mUSBDeviceFilters->rollback();
 
     if (mBandwidthControl && (mData->flModifications & IsModified_BandwidthControl))
-        mBandwidthControl->rollback();
+        mBandwidthControl->i_rollback();
 
     if (!mHWData.isNull())
         mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
@@ -12142,9 +12142,9 @@ void Machine::rollback(bool aNotify)
     if (mData->flModifications & IsModified_SerialPorts)
         for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
             if (    mSerialPorts[slot]
-                 && mSerialPorts[slot]->isModified())
+                 && mSerialPorts[slot]->i_isModified())
             {
-                mSerialPorts[slot]->rollback();
+                mSerialPorts[slot]->i_rollback();
                 serialPorts[slot] = mSerialPorts[slot];
             }
 
@@ -12222,10 +12222,10 @@ void Machine::commit()
         commitMedia(Global::IsOnline(mData->mMachineState));
 
     mBIOSSettings->commit();
-    mVRDEServer->commit();
+    mVRDEServer->i_commit();
     mAudioAdapter->commit();
     mUSBDeviceFilters->commit();
-    mBandwidthControl->commit();
+    mBandwidthControl->i_commit();
 
     /* Since mNetworkAdapters is a list which might have been changed (resized)
      * without using the Backupable<> template we need to handle the copying
@@ -12279,7 +12279,7 @@ void Machine::commit()
     }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
-        mSerialPorts[slot]->commit();
+        mSerialPorts[slot]->i_commit();
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
         mParallelPorts[slot]->commit();
 
@@ -12297,10 +12297,10 @@ void Machine::commit()
             StorageControllerList::const_iterator it = mStorageControllers->begin();
             while (it != mStorageControllers->end())
             {
-                (*it)->commit();
+                (*it)->i_commit();
 
                 /* look if this controller has a peer device */
-                ComObjPtr<StorageController> peer = (*it)->getPeer();
+                ComObjPtr<StorageController> peer = (*it)->i_getPeer();
                 if (!peer)
                 {
                     /* no peer means the device is a newly created one;
@@ -12349,7 +12349,7 @@ void Machine::commit()
         StorageControllerList::const_iterator it = mStorageControllers->begin();
         while (it != mStorageControllers->end())
         {
-            (*it)->commit();
+            (*it)->i_commit();
             ++it;
         }
     }
@@ -12471,10 +12471,10 @@ void Machine::copyFrom(Machine *aThat)
     }
 
     mBIOSSettings->copyFrom(aThat->mBIOSSettings);
-    mVRDEServer->copyFrom(aThat->mVRDEServer);
+    mVRDEServer->i_copyFrom(aThat->mVRDEServer);
     mAudioAdapter->copyFrom(aThat->mAudioAdapter);
     mUSBDeviceFilters->copyFrom(aThat->mUSBDeviceFilters);
-    mBandwidthControl->copyFrom(aThat->mBandwidthControl);
+    mBandwidthControl->i_copyFrom(aThat->mBandwidthControl);
 
     /* create private copies of all controllers */
     mStorageControllers.backup();
@@ -12506,7 +12506,7 @@ void Machine::copyFrom(Machine *aThat)
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
         mNetworkAdapters[slot]->copyFrom(aThat->mNetworkAdapters[slot]);
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
-        mSerialPorts[slot]->copyFrom(aThat->mSerialPorts[slot]);
+        mSerialPorts[slot]->i_copyFrom(aThat->mSerialPorts[slot]);
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
         mParallelPorts[slot]->copyFrom(aThat->mParallelPorts[slot]);
 }

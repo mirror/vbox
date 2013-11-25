@@ -20,38 +20,15 @@
 #ifndef ____H_VRDPSERVER
 #define ____H_VRDPSERVER
 
-#include "VirtualBoxBase.h"
-
-#include <VBox/VBoxAuth.h>
 #include <VBox/settings.h>
+#include "VRDEServerWrap.h"
 
 class ATL_NO_VTABLE VRDEServer :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IVRDEServer)
+    public VRDEServerWrap
 {
 public:
 
-    struct Data
-    {
-        BOOL mEnabled;
-        Bstr mAuthLibrary;
-        AuthType_T mAuthType;
-        ULONG mAuthTimeout;
-        BOOL mAllowMultiConnection;
-        BOOL mReuseSingleConnection;
-        Utf8Str mVrdeExtPack;
-        settings::StringsMap mProperties;
-    };
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VRDEServer, IVRDEServer)
-
-    DECLARE_NOT_AGGREGATABLE(VRDEServer)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(VRDEServer)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IVRDEServer)
-    END_COM_MAP()
+    typedef std::map<com::Utf8Str, com::Utf8Str> StringsMap;
 
     DECLARE_EMPTY_CTOR_DTOR(VRDEServer)
 
@@ -64,37 +41,49 @@ public:
     HRESULT initCopy(Machine *aParent, VRDEServer *aThat);
     void uninit();
 
-    // IVRDEServer properties
-    STDMETHOD(COMGETTER(Enabled))(BOOL *aEnabled);
-    STDMETHOD(COMSETTER(Enabled))(BOOL aEnable);
-    STDMETHOD(COMGETTER(AuthType))(AuthType_T *aType);
-    STDMETHOD(COMSETTER(AuthType))(AuthType_T aType);
-    STDMETHOD(COMGETTER(AuthTimeout))(ULONG *aTimeout);
-    STDMETHOD(COMSETTER(AuthTimeout))(ULONG aTimeout);
-    STDMETHOD(COMGETTER(AllowMultiConnection))(BOOL *aAllowMultiConnection);
-    STDMETHOD(COMSETTER(AllowMultiConnection))(BOOL aAllowMultiConnection);
-    STDMETHOD(COMGETTER(ReuseSingleConnection))(BOOL *aReuseSingleConnection);
-    STDMETHOD(COMSETTER(ReuseSingleConnection))(BOOL aReuseSingleConnection);
-    STDMETHOD(COMGETTER(VRDEExtPack))(BSTR *aExtPack);
-    STDMETHOD(COMSETTER(VRDEExtPack))(IN_BSTR aExtPack);
-    STDMETHOD(COMGETTER(AuthLibrary))(BSTR *aValue);
-    STDMETHOD(COMSETTER(AuthLibrary))(IN_BSTR aValue);
-    STDMETHOD(COMGETTER(VRDEProperties))(ComSafeArrayOut(BSTR, aProperties));
-
-    // IVRDEServer methods
-    STDMETHOD(SetVRDEProperty)(IN_BSTR aKey, IN_BSTR aValue);
-    STDMETHOD(GetVRDEProperty)(IN_BSTR aKey, BSTR *aValue);
-
     // public methods only for internal purposes
-
-    HRESULT loadSettings(const settings::VRDESettings &data);
-    HRESULT saveSettings(settings::VRDESettings &data);
-
-    void rollback();
-    void commit();
-    void copyFrom(VRDEServer *aThat);
+    HRESULT i_loadSettings(const settings::VRDESettings &data);
+    HRESULT i_saveSettings(settings::VRDESettings &data);
+    void i_rollback();
+    void i_commit();
+    void i_copyFrom(VRDEServer *aThat);
 
 private:
+
+     // wrapped IVRDEServer properties
+     HRESULT getEnabled(BOOL *aEnabled);
+     HRESULT setEnabled(BOOL aEnabled);
+     HRESULT getAuthType(AuthType_T *aAuthType);
+     HRESULT setAuthType(AuthType_T aAuthType);
+     HRESULT getAuthTimeout(ULONG *aAuthTimeout);
+     HRESULT setAuthTimeout(ULONG aAuthTimeout);
+     HRESULT getAllowMultiConnection(BOOL *aAllowMultiConnection);
+     HRESULT setAllowMultiConnection(BOOL aAllowMultiConnection);
+     HRESULT getReuseSingleConnection(BOOL *aReuseSingleConnection);
+     HRESULT setReuseSingleConnection(BOOL aReuseSingleConnection);
+     HRESULT getVRDEExtPack(com::Utf8Str &aVRDEExtPack);
+     HRESULT setVRDEExtPack(const com::Utf8Str &aVRDEExtPack);
+     HRESULT getAuthLibrary(com::Utf8Str &aAuthLibrary);
+     HRESULT setAuthLibrary(const com::Utf8Str &aAuthLibrary);
+     HRESULT getVRDEProperties(std::vector<com::Utf8Str> &aVRDEProperties);
+
+    // wrapped IVRDEServer methods
+    HRESULT setVRDEProperty(const com::Utf8Str &aKey,
+                            const com::Utf8Str &aValue);
+    HRESULT getVRDEProperty(const com::Utf8Str &aKey,
+                            com::Utf8Str &aValue);
+
+    struct Data
+    {
+        BOOL         mEnabled;
+        com::Utf8Str mAuthLibrary;
+        AuthType_T   mAuthType;
+        ULONG        mAuthTimeout;
+        BOOL         mAllowMultiConnection;
+        BOOL         mReuseSingleConnection;
+        Utf8Str      mVrdeExtPack;
+        StringsMap   mProperties;
+    };
 
     Machine * const     mParent;
     const ComObjPtr<VRDEServer> mPeer;

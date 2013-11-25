@@ -2048,7 +2048,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType(IN_BSTR aId, IGuestOSType **aType)
          it != m->allGuestOSTypes.end();
          ++it)
     {
-        const Bstr &typeId = (*it)->id();
+        const Bstr &typeId = (*it)->i_id();
         AssertMsg(!typeId.isEmpty(), ("ID must not be NULL"));
         if (typeId.compare(aId, Bstr::CaseInsensitive) == 0)
         {
@@ -3718,7 +3718,7 @@ HRESULT VirtualBox::findGuestOSType(const Bstr &bstrOSType,
          it != m->allGuestOSTypes.end();
          ++it)
     {
-        if ((*it)->id() == bstrOSType)
+        if ((*it)->i_id() == bstrOSType)
         {
             pGuestOSType = *it;
             return S_OK;
@@ -4238,7 +4238,7 @@ HRESULT VirtualBox::saveSettings()
                  ++it)
             {
                 settings::DHCPServer d;
-                rc = (*it)->saveSettings(d);
+                rc = (*it)->i_saveSettings(d);
                 if (FAILED(rc)) throw rc;
                 m->pMainConfigFile->llDhcpServers.push_back(d);
             }

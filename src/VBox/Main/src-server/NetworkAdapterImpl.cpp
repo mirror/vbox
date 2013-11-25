@@ -1245,9 +1245,9 @@ HRESULT NetworkAdapter::loadSettings(BandwidthControl *bwctl,
     if (mData->mBandwidthGroup.isNotEmpty())
     {
         ComObjPtr<BandwidthGroup> group;
-        rc = bwctl->getBandwidthGroupByName(data.strBandwidthGroup, group, true);
+        rc = bwctl->i_getBandwidthGroupByName(data.strBandwidthGroup, group, true);
         if (FAILED(rc)) return rc;
-        group->reference();
+        group->i_reference();
     }
 
     mNATEngine->loadSettings(data.nat);
@@ -1419,7 +1419,7 @@ void NetworkAdapter::applyDefaults(GuestOSType *aOsType)
     e1000enabled = true;
 #endif // VBOX_WITH_E1000
 
-    NetworkAdapterType_T defaultType = aOsType->networkAdapterType();
+    NetworkAdapterType_T defaultType = aOsType->i_networkAdapterType();
 
     /* Set default network adapter for this OS type */
     if (defaultType == NetworkAdapterType_I82540EM ||
@@ -1505,7 +1505,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(BandwidthGroup)(IBandwidthGroup *aBwGroup
 
     Utf8Str strBwGroup;
     if (aBwGroup)
-        strBwGroup = static_cast<BandwidthGroup*>(aBwGroup)->getName();
+        strBwGroup = static_cast<BandwidthGroup*>(aBwGroup)->i_getName();
     if (mData->mBandwidthGroup != strBwGroup)
     {
         ComObjPtr<BandwidthGroup> pBwGroup;
@@ -1550,14 +1550,14 @@ void NetworkAdapter::updateBandwidthGroup(BandwidthGroup *aBwGroup)
     mData.backup();
     if (!pOldBwGroup.isNull())
     {
-        pOldBwGroup->release();
+        pOldBwGroup->i_release();
         mData->mBandwidthGroup = Utf8Str::Empty;
     }
 
     if (aBwGroup)
     {
-        mData->mBandwidthGroup = aBwGroup->getName();
-        aBwGroup->reference();
+        mData->mBandwidthGroup = aBwGroup->i_getName();
+        aBwGroup->i_reference();
     }
 
     LogFlowThisFuncLeave();

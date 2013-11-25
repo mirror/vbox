@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009-2011 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,39 +35,6 @@
 #include "Logging.h"
 
 #include <memory>
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// VFSExplorer definitions
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/* opaque private instance data of VFSExplorer class */
-struct VFSExplorer::Data
-{
-    struct DirEntry
-    {
-        DirEntry(Utf8Str strName, VFSFileType_T fileType, uint64_t cbSize, uint32_t fMode)
-          : name(strName)
-          , type(fileType)
-          , size(cbSize)
-          , mode(fMode) {}
-
-        Utf8Str name;
-        VFSFileType_T type;
-        uint64_t size;
-        uint32_t mode;
-    };
-
-    VFSType_T storageType;
-    Utf8Str strUsername;
-    Utf8Str strPassword;
-    Utf8Str strHostname;
-    Utf8Str strPath;
-    Utf8Str strBucket;
-
-    std::list<DirEntry> entryList;
-};
 
 VFSExplorer::VFSExplorer()
     : mVirtualBox(NULL)
@@ -133,29 +100,20 @@ void VFSExplorer::uninit()
  * @param
  * @return
  */
-STDMETHODIMP VFSExplorer::COMGETTER(Path)(BSTR *aPath)
+HRESULT VFSExplorer::getPath(com::Utf8Str &aPath)
 {
-    if (!aPath)
-        return E_POINTER;
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Bstr bstrPath(m->strPath);
-    bstrPath.cloneTo(aPath);
+    aPath = m->strPath;
 
     return S_OK;
 }
 
-STDMETHODIMP VFSExplorer::COMGETTER(Type)(VFSType_T *aType)
+
+HRESULT VFSExplorer::getType(VFSType_T *aType)
 {
     if (!aType)
         return E_POINTER;
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -223,10 +181,10 @@ DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::taskThread(RTTHREAD /* aThread *
         case TaskVFSExplorer::Update:
         {
             if (pVFSExplorer->m->storageType == VFSType_File)
-                rc = pVFSExplorer->updateFS(task.get());
+                rc = pVFSExplorer->i_updateFS(task.get());
             else if (pVFSExplorer->m->storageType == VFSType_S3)
 #ifdef VBOX_WITH_S3
-                rc = pVFSExplorer->updateS3(task.get());
+                rc = pVFSExplorer->i_updateS3(task.get());
 #else
                 rc = VERR_NOT_IMPLEMENTED;
 #endif
@@ -235,10 +193,10 @@ DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::taskThread(RTTHREAD /* aThread *
         case TaskVFSExplorer::Delete:
         {
             if (pVFSExplorer->m->storageType == VFSType_File)
-                rc = pVFSExplorer->deleteFS(task.get());
+                rc = pVFSExplorer->i_deleteFS(task.get());
             else if (pVFSExplorer->m->storageType == VFSType_S3)
 #ifdef VBOX_WITH_S3
-                rc = pVFSExplorer->deleteS3(task.get());
+                rc = pVFSExplorer->i_deleteS3(task.get());
 #else
                 rc = VERR_NOT_IMPLEMENTED;
 #endif
@@ -272,7 +230,7 @@ int VFSExplorer::TaskVFSExplorer::uploadProgress(unsigned uPercent, void *pvUser
     return VINF_SUCCESS;
 }
 
-VFSFileType_T VFSExplorer::RTToVFSFileType(int aType) const
+VFSFileType_T VFSExplorer::i_RTToVFSFileType(int aType) const
 {
     int a = aType & RTFS_TYPE_MASK;
     VFSFileType_T t = VFSFileType_Unknown;
@@ -296,7 +254,7 @@ VFSFileType_T VFSExplorer::RTToVFSFileType(int aType) const
     return t;
 }
 
-HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
+HRESULT VFSExplorer::i_updateFS(TaskVFSExplorer *aTask)
 {
     LogFlowFuncEnter();
 
@@ -327,7 +285,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
                 Utf8Str name(entry.szName);
                 if (   name != "."
                     && name != "..")
-                    fileList.push_back(VFSExplorer::Data::DirEntry(name, RTToVFSFileType(entry.Info.Attr.fMode), entry.Info.cbObject, entry.Info.Attr.fMode & (RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXG | RTFS_UNIX_IRWXO)));
+                    fileList.push_back(VFSExplorer::Data::DirEntry(name, i_RTToVFSFileType(entry.Info.Attr.fMode), entry.Info.cbObject, entry.Info.Attr.fMode & (RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXG | RTFS_UNIX_IRWXO)));
             }
         }
         if (aTask->progress)
@@ -362,7 +320,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
     return VINF_SUCCESS;
 }
 
-HRESULT VFSExplorer::deleteFS(TaskVFSExplorer *aTask)
+HRESULT VFSExplorer::i_deleteFS(TaskVFSExplorer *aTask)
 {
     LogFlowFuncEnter();
 
@@ -410,7 +368,7 @@ HRESULT VFSExplorer::deleteFS(TaskVFSExplorer *aTask)
 }
 
 #ifdef VBOX_WITH_S3
-HRESULT VFSExplorer::updateS3(TaskVFSExplorer *aTask)
+HRESULT VFSExplorer::i_updateS3(TaskVFSExplorer *aTask)
 {
     LogFlowFuncEnter();
 
@@ -489,7 +447,7 @@ HRESULT VFSExplorer::updateS3(TaskVFSExplorer *aTask)
     return VINF_SUCCESS;
 }
 
-HRESULT VFSExplorer::deleteS3(TaskVFSExplorer *aTask)
+HRESULT VFSExplorer::i_deleteS3(TaskVFSExplorer *aTask)
 {
     LogFlowFuncEnter();
 
@@ -544,13 +502,8 @@ HRESULT VFSExplorer::deleteS3(TaskVFSExplorer *aTask)
 }
 #endif /* VBOX_WITH_S3 */
 
-STDMETHODIMP VFSExplorer::Update(IProgress **aProgress)
+HRESULT VFSExplorer::update(ComPtr<IProgress> &aProgress)
 {
-    CheckComArgOutPointerValid(aProgress);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
@@ -583,33 +536,22 @@ STDMETHODIMP VFSExplorer::Update(IProgress **aProgress)
         rc = aRC;
     }
 
-    if (SUCCEEDED(rc))
+     if (SUCCEEDED(rc))
         /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress);
+        progress.queryInterfaceTo(aProgress.asOutParam());
 
     return rc;
 }
 
-STDMETHODIMP VFSExplorer::Cd(IN_BSTR aDir, IProgress **aProgress)
+HRESULT VFSExplorer::cd(const com::Utf8Str &aDir, ComPtr<IProgress> &aProgress)
 {
-    CheckComArgStrNotEmptyOrNull(aDir);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        m->strPath = aDir;
-    }
-
-    return Update(aProgress);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->strPath = aDir;
+    return update(aProgress);
 }
 
-STDMETHODIMP VFSExplorer::CdUp(IProgress **aProgress)
+HRESULT VFSExplorer::cdUp(ComPtr<IProgress> &aProgress)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     Utf8Str strUpPath;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -621,24 +563,19 @@ STDMETHODIMP VFSExplorer::CdUp(IProgress **aProgress)
         RTStrFree(pszNewPath);
     }
 
-    return Cd(Bstr(strUpPath).raw(), aProgress);
+    return cd(strUpPath, aProgress);
 }
 
-STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(VFSFileType_T, aTypes), ComSafeArrayOut(LONG64, aSizes), ComSafeArrayOut(ULONG, aModes))
+HRESULT VFSExplorer::entryList(std::vector<com::Utf8Str> &aNames,
+                               std::vector<ULONG> &aTypes,
+                               std::vector<LONG64> &aSizes,
+                               std::vector<ULONG> &aModes)
 {
-    if (ComSafeArrayOutIsNull(aNames) ||
-        ComSafeArrayOutIsNull(aTypes))
-        return E_POINTER;
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    com::SafeArray<BSTR> sfaNames(m->entryList.size());
-    com::SafeArray<ULONG> sfaTypes(m->entryList.size());
-    com::SafeArray<LONG64> sfaSizes(m->entryList.size());
-    com::SafeArray<ULONG> sfaModes(m->entryList.size());
+    aNames.resize(m->entryList.size());
+    aTypes.resize(m->entryList.size());
+    aSizes.resize(m->entryList.size());
+    aModes.resize(m->entryList.size());
 
     std::list<VFSExplorer::Data::DirEntry>::const_iterator it;
     size_t i = 0;
@@ -647,34 +584,25 @@ STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayO
          ++it, ++i)
     {
         const VFSExplorer::Data::DirEntry &entry = (*it);
-        Bstr bstr(entry.name);
-        bstr.cloneTo(&sfaNames[i]);
-        sfaTypes[i] = entry.type;
-        sfaSizes[i] = entry.size;
-        sfaModes[i] = entry.mode;
+        aNames[i] = entry.name;
+        aTypes[i] = entry.type;
+        aSizes[i] = entry.type;
+        aModes[i] = entry.mode;
     }
-
-    sfaNames.detachTo(ComSafeArrayOutArg(aNames));
-    sfaTypes.detachTo(ComSafeArrayOutArg(aTypes));
-    sfaSizes.detachTo(ComSafeArrayOutArg(aSizes));
-    sfaModes.detachTo(ComSafeArrayOutArg(aModes));
 
     return S_OK;
 }
 
-STDMETHODIMP VFSExplorer::Exists(ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayOut(BSTR, aExists))
+HRESULT VFSExplorer::exists(const std::vector<com::Utf8Str> &aNames,
+                            std::vector<com::Utf8Str> &aExists)
 {
-    CheckComArgSafeArrayNotNull(aNames);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    com::SafeArray<IN_BSTR> sfaNames(ComSafeArrayInArg(aNames));
-    std::list<BSTR> listExists;
-
-    for (size_t a=0; a < sfaNames.size(); ++a)
+    aExists.resize(0);
+    for (size_t i=0; i < aNames.size(); ++i)
     {
         std::list<VFSExplorer::Data::DirEntry>::const_iterator it;
         for (it = m->entryList.begin();
@@ -682,35 +610,23 @@ STDMETHODIMP VFSExplorer::Exists(ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayOu
              ++it)
         {
             const VFSExplorer::Data::DirEntry &entry = (*it);
-            if (entry.name == RTPathFilename(Utf8Str(sfaNames[a]).c_str()))
-            {
-                BSTR name;
-                Bstr tmp(sfaNames[a]); /* gcc-3.3 cruft */
-                tmp.cloneTo(&name);
-                listExists.push_back(name);
-            }
+            if (entry.name == RTPathFilename(aNames[i].c_str()))
+                aExists.push_back(aNames[i]);
         }
     }
-
-    com::SafeArray<BSTR> sfaExists(listExists);
-    sfaExists.detachTo(ComSafeArrayOutArg(aExists));
 
     return S_OK;
 }
 
-STDMETHODIMP VFSExplorer::Remove(ComSafeArrayIn(IN_BSTR, aNames), IProgress **aProgress)
+HRESULT VFSExplorer::remove(const std::vector<com::Utf8Str> &aNames,
+                            ComPtr<IProgress> &aProgress)
 {
-    CheckComArgSafeArrayNotNull(aNames);
-    CheckComArgOutPointerValid(aProgress);
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
-
-    com::SafeArray<IN_BSTR> sfaNames(ComSafeArrayInArg(aNames));
 
     ComObjPtr<Progress> progress;
     try
@@ -727,8 +643,8 @@ STDMETHODIMP VFSExplorer::Remove(ComSafeArrayIn(IN_BSTR, aNames), IProgress **aP
         std::auto_ptr<TaskVFSExplorer> task(new TaskVFSExplorer(TaskVFSExplorer::Delete, this, progress));
 
         /* Add all filenames to delete as task data */
-        for (size_t a=0; a < sfaNames.size(); ++a)
-            task->filenames.push_back(Utf8Str(sfaNames[a]));
+        for (size_t i = 0; i < aNames.size(); ++i)
+            task->filenames.push_back(aNames[i]);
 
         rc = task->startThread();
         if (FAILED(rc)) throw rc;
@@ -743,7 +659,7 @@ STDMETHODIMP VFSExplorer::Remove(ComSafeArrayIn(IN_BSTR, aNames), IProgress **aP
 
     if (SUCCEEDED(rc))
         /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress);
+        progress.queryInterfaceTo(aProgress.asOutParam());
 
     return rc;
 }

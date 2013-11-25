@@ -813,9 +813,9 @@ public:
                               ComObjPtr<BandwidthGroup> &pBandwidthGroup,
                               bool fSetError = false)
     {
-        return mBandwidthControl->getBandwidthGroupByName(strBandwidthGroup,
-                                                          pBandwidthGroup,
-                                                          fSetError);
+        return mBandwidthControl->i_getBandwidthGroupByName(strBandwidthGroup,
+                                                            pBandwidthGroup,
+                                                            fSetError);
     }
 
 protected:
