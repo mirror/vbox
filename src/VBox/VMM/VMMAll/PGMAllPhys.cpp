@@ -4024,22 +4024,25 @@ VMMDECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys)
  *          accesses or is odd in any way.
  * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
  *
- * @param   pVM         Pointer to the VM.
- * @param   GCPhys      The GC physical address to convert.  Since this is only
- *                      used for filling the REM TLB, the A20 mask must be
- *                      applied before calling this API.
+ * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVCpu       Pointer to the cross context virtual CPU structure of
+ *                      the calling EMT.
+ * @param   GCPhys      The GC physical address to convert.  This API mask the
+ *                      A20 line when necessary.
  * @param   fWritable   Whether write access is required.
  * @param   ppv         Where to store the pointer corresponding to GCPhys on
  *                      success.
  * @param   pLock
  *
  * @remarks This is more or a less a copy of PGMR3PhysTlbGCPhys2Ptr.
+ * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, bool fByPassHandlers,
+VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, bool fWritable, bool fByPassHandlers,
                                        void **ppv, PPGMPAGEMAPLOCK pLock)
 {
+    PGM_A20_APPLY_TO_VAR(pVCpu, GCPhys);
+
     pgmLock(pVM);
-    PGM_A20_ASSERT_MASKED(VMMGetCpu(pVM), GCPhys);
 
     PPGMRAMRANGE pRam;
     PPGMPAGE pPage;
@@ -4087,7 +4090,6 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable,
                 }
 
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-            PVMCPU pVCpu = VMMGetCpu(pVM);
             void *pv;
             rc = pgmRZDynMapHCPageInlined(pVCpu,
                                           PGM_PAGE_GET_HCPHYS(pPage),
