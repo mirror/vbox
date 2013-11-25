@@ -69,6 +69,8 @@ private slots:
     void sltHandleMachineUpdate(QString strMachineID);
     /** Handles machine-[un]registration events. */
     void sltHandleMachineRegistration(QString strMachineID, bool fRegistered);
+    /** Handles snapshot-deleted events. */
+    void sltHandleSnapshotDeleted(QString strMachineID, QString strSnapshotID);
 
     /* Handler: Medium-enumeration stuff: */
     void sltHandleMediumEnumerationTaskComplete(UITask *pTask);
