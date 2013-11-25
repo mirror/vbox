@@ -45,6 +45,14 @@
 #define DPRINTF2(args) do { printf args; } while (0)
 #endif
 
+#if defined(RT_OS_LINUX) && !defined(__USE_GNU)
+/* XXX: https://sourceware.org/bugzilla/show_bug.cgi?id=6775 */
+struct in6_pktinfo {
+    struct in6_addr ipi6_addr;
+    unsigned int ipi6_ifindex;
+};
+#endif
+
 
 /* forward */
 struct ping_pcb;
@@ -189,9 +197,11 @@ static void pxping_pmgr_icmp4_error(struct pxping *pxping,
                                     u16_t iplen, struct sockaddr_in *peer);
 static void pxping_pmgr_icmp6(struct pxping *pxping);
 static void pxping_pmgr_icmp6_echo(struct pxping *pxping,
-                                   u16_t iplen, struct sockaddr_in6 *peer);
+                                   ip6_addr_t *src, ip6_addr_t *dst,
+                                   int hopl, int tclass, u16_t icmplen);
 static void pxping_pmgr_icmp6_error(struct pxping *pxping,
-                                    u16_t iplen, struct sockaddr_in6 *peer);
+                                    ip6_addr_t *src, ip6_addr_t *dst,
+                                    int hopl, int tclass, u16_t icmplen);
 
 static void pxping_pmgr_forward_inbound(struct pxping *pxping, u16_t iplen);
 static void pxping_pcb_forward_inbound(void *arg);
@@ -256,7 +266,7 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
                             (const char *)&on, sizeof(on));
         if (status < 0) {
             perror("IPV6_RECVPKTINFO");
-            /* XXX: this is fatal */
+            /* XXX: for now this is fatal */
         }
 
 #if !defined(IPV6_RECVHOPLIMIT)
@@ -285,37 +295,65 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
 
 
 static u32_t
-update16_with_chksum(u16_t *oldp, u16_t h)
+chksum_delta_16(u16_t oval, u16_t nval)
 {
-    u32_t sum = (u16_t)~*oldp;
-    sum += h;
-
-    *oldp = h;
+    u32_t sum = (u16_t)~oval;
+    sum += nval;
     return sum;
 }
 
 
 static u32_t
-update32_with_chksum(u32_t *oldp, u32_t u)
+chksum_update_16(u16_t *oldp, u16_t nval)
 {
-    u32_t sum = ~*oldp;
+    u32_t sum = chksum_delta_16(*oldp, nval);
+    *oldp = nval;
+    return sum;
+}
+
+
+static u32_t
+chksum_delta_32(u32_t oval, u32_t nval)
+{
+    u32_t sum = ~oval;
     sum = FOLD_U32T(sum);
-    sum += FOLD_U32T(u);
-
-    *oldp = u;
+    sum += FOLD_U32T(nval);
     return sum;
 }
 
 
 static u32_t
-updateip6_with_chksum(ip6_addr_t *oldp, const ip6_addr_t *ip6)
+chksum_update_32(u32_t *oldp, u32_t nval)
+{
+    u32_t sum = chksum_delta_32(*oldp, nval);
+    *oldp = nval;
+    return sum;
+}
+
+
+static u32_t
+chksum_delta_ipv6(const ip6_addr_t *oldp, const ip6_addr_t *newp)
 {
     u32_t sum;
 
-    sum  = update32_with_chksum(&oldp->addr[0], ip6->addr[0]);
-    sum += update32_with_chksum(&oldp->addr[1], ip6->addr[1]);
-    sum += update32_with_chksum(&oldp->addr[2], ip6->addr[2]);
-    sum += update32_with_chksum(&oldp->addr[3], ip6->addr[3]);
+    sum  = chksum_delta_32(oldp->addr[0], newp->addr[0]);
+    sum += chksum_delta_32(oldp->addr[1], newp->addr[1]);
+    sum += chksum_delta_32(oldp->addr[2], newp->addr[2]);
+    sum += chksum_delta_32(oldp->addr[3], newp->addr[3]);
+
+    return sum;
+}
+
+
+static u32_t
+chksum_update_ipv6(ip6_addr_t *oldp, const ip6_addr_t *newp)
+{
+    u32_t sum;
+
+    sum  = chksum_update_32(&oldp->addr[0], newp->addr[0]);
+    sum += chksum_update_32(&oldp->addr[1], newp->addr[1]);
+    sum += chksum_update_32(&oldp->addr[2], newp->addr[2]);
+    sum += chksum_update_32(&oldp->addr[3], newp->addr[3]);
 
     return sum;
 }
@@ -371,7 +409,7 @@ pxping_recv4(void *arg, struct pbuf *p)
 
     /* rewrite ICMP echo header */
     sum = (u16_t)~icmph->chksum;
-    sum += update16_with_chksum(&icmph->id, pcb->host_id);
+    sum += chksum_update_16(&icmph->id, pcb->host_id);
     sum = FOLD_U32T(sum);
     icmph->chksum = ~sum;
 
@@ -983,16 +1021,16 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
 
     /* rewrite ICMP echo header */
     sum = (u16_t)~icmph->chksum;
-    sum += update16_with_chksum(&icmph->id, guest_id);
+    sum += chksum_update_16(&icmph->id, guest_id);
     sum = FOLD_U32T(sum);
     icmph->chksum = ~sum;
 
     /* rewrite IP header */
     sum = (u16_t)~IPH_CHKSUM(iph);
-    sum += update32_with_chksum((u32_t *)&iph->dest,
+    sum += chksum_update_32((u32_t *)&iph->dest,
                                 ip4_addr_get_u32(&guest_ip));
     if (mapped == PXREMAP_MAPPED) {
-        sum += update32_with_chksum((u32_t *)&iph->src,
+        sum += chksum_update_32((u32_t *)&iph->src,
                                     ip4_addr_get_u32(&target_ip));
     }
     else {
@@ -1141,28 +1179,24 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
 
     /* rewrite inner ICMP echo header */
     sum = (u16_t)~oicmph->chksum;
-    sum += update16_with_chksum(&oicmph->id, guest_id);
+    sum += chksum_update_16(&oicmph->id, guest_id);
     sum = FOLD_U32T(sum);
     oicmph->chksum = ~sum;
 
     /* rewrite inner IP header */
     sum = (u16_t)~IPH_CHKSUM(oiph);
-    sum += update32_with_chksum((u32_t *)&oiph->src,
-                                ip4_addr_get_u32(&guest_ip));
+    sum += chksum_update_32((u32_t *)&oiph->src, ip4_addr_get_u32(&guest_ip));
     if (target_mapped == PXREMAP_MAPPED) {
-        sum += update32_with_chksum((u32_t *)&oiph->dest,
-                                    ip4_addr_get_u32(&target_ip));
+        sum += chksum_update_32((u32_t *)&oiph->dest, ip4_addr_get_u32(&target_ip));
     }
     sum = FOLD_U32T(sum);
     IPH_CHKSUM_SET(oiph, ~sum);
 
     /* rewrite outer IP header */
     sum = (u16_t)~IPH_CHKSUM(iph);
-    sum += update32_with_chksum((u32_t *)&iph->dest,
-                                ip4_addr_get_u32(&guest_ip));
+    sum += chksum_update_32((u32_t *)&iph->dest, ip4_addr_get_u32(&guest_ip));
     if (error_mapped == PXREMAP_MAPPED) {
-        sum += update32_with_chksum((u32_t *)&iph->src,
-                                    ip4_addr_get_u32(&error_ip));
+        sum += chksum_update_32((u32_t *)&iph->src, ip4_addr_get_u32(&error_ip));
     }
     else {
         IPH_TTL_SET(iph, IPH_TTL(iph) - 1);
@@ -1186,21 +1220,8 @@ pxping_pmgr_icmp6(struct pxping *pxping)
     socklen_t salen = sizeof(sin6);
     ssize_t nread;
     struct icmp6_echo_hdr *icmph;
-#if defined(RT_OS_LINUX) && !defined(__USE_GNU)
-    /* XXX: https://sourceware.org/bugzilla/show_bug.cgi?id=6775 */
-    struct in6_pktinfo {
-        struct in6_addr ipi6_addr;
-        unsigned int ipi6_ifindex;
-    };
-#endif
     struct in6_pktinfo *pktinfo;
     int hopl, tclass;
-
-    int mapped;
-    struct ping_pcb *pcb;
-    ip6_addr_t guest_ip, target_ip, unmapped_target_ip;
-    u16_t id, guest_id;
-    u32_t sum;
 
     char addrbuf[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
     const char *addrstr;
@@ -1230,9 +1251,7 @@ pxping_pmgr_icmp6(struct pxping *pxping)
     icmph = (struct icmp6_echo_hdr *)pollmgr_udpbuf;
     DPRINTF2(("%s: %s ICMPv6: ", __func__, addrstr));
 
-    id = 0;
     if (icmph->type == ICMP6_TYPE_EREP) {
-        id = icmph->id;
         DPRINTF2(("echo reply %04x %u\n",
                   (unsigned int)icmph->id, (unsigned int)icmph->seqno));
     }
@@ -1258,8 +1277,6 @@ pxping_pmgr_icmp6(struct pxping *pxping)
         }
         return;
     }
-
-    /* XXX: refactor into pxping_pmgr_icmp6_echo(), pxping_pmgr_icmp6_error() */
 
     pktinfo = NULL;
     hopl = -1;
@@ -1290,80 +1307,73 @@ pxping_pmgr_icmp6(struct pxping *pxping)
          * ip6_output_if() doesn't do checksum for us so we need to
          * manually recompute it - for this we must know the
          * destination address of the pseudo-header that we will
-         * rewrite with guest's address.
+         * rewrite with guest's address.  (TODO: yeah, yeah, we can
+         * compute it from scratch...)
          */
         DPRINTF2(("%s: unable to get pktinfo\n", __func__));
         return;
     }
 
-    ip6_addr_copy(target_ip, *(ip6_addr_t *)&sin6.sin6_addr);
-    mapped = pxremap_inbound_ip6(&unmapped_target_ip, &target_ip);
-    if (mapped == PXREMAP_FAILED) {
-        return;
-    }
-
-    sys_mutex_lock(&pxping->lock);
-    pcb = pxping_pcb_for_reply(pxping, 1, ip6_2_ipX(&unmapped_target_ip), id);
-    if (pcb == NULL) {
-        sys_mutex_unlock(&pxping->lock);
-        DPRINTF2(("%s: no match\n", __func__));
-        return;
-    }
-
-    DPRINTF2(("%s: pcb %p\n", __func__, (void *)pcb));
-
-    /* save info before unlocking since pcb may expire */
-    ip6_addr_copy(guest_ip, *ipX_2_ip6(&pcb->src));
-    guest_id = pcb->guest_id;
-
-    sys_mutex_unlock(&pxping->lock);
-
-    /* rewrite ICMPv6 echo header */
-    sum = (u16_t)~icmph->chksum;
-    sum += update16_with_chksum(&icmph->id, guest_id);
-
-    /* dst address in pseudo header (clobbers pktinfo) */
-    sum += updateip6_with_chksum((ip6_addr_t *)&pktinfo->ipi6_addr, &guest_ip);
-
-    /* src address in pseudo header (clobbers target_ip) */
-    if (mapped) {
-        sum += updateip6_with_chksum(&target_ip, &unmapped_target_ip);
-    }
-
-    sum = FOLD_U32T(sum);
-    icmph->chksum = ~sum;
-
     if (hopl < 0) {
         hopl = LWIP_ICMP6_HL;
     }
-    else if (!mapped) {
-        if (hopl == 1) {
-            return;
-        }
-        --hopl;
-    }
 
-    if (tclass < 0) {
-        tclass = 0;
+    if (icmph->type == ICMP6_TYPE_EREP) {
+        pxping_pmgr_icmp6_echo(pxping,
+                               (ip6_addr_t *)&sin6.sin6_addr,
+                               (ip6_addr_t *)&pktinfo->ipi6_addr,
+                               hopl, tclass, (u16_t)nread);
     }
-
-    pxping_pmgr_forward_inbound6(pxping,
-                                 &unmapped_target_ip, /* echo reply src */
-                                 &guest_ip, /* echo reply dst */
-                                 hopl, tclass, (u16_t)nread);
+    else {
+        pxping_pmgr_icmp6_error(pxping,
+                                (ip6_addr_t *)&sin6.sin6_addr,
+                                (ip6_addr_t *)&pktinfo->ipi6_addr,
+                                hopl, tclass, (u16_t)nread);
+    }
 }
 
 
 static void
 pxping_pmgr_icmp6_echo(struct pxping *pxping,
-                       u16_t iplen, struct sockaddr_in6 *peer)
+                       ip6_addr_t *src, ip6_addr_t *dst,
+                       int hopl, int tclass, u16_t icmplen)
 {
+    struct ip6_hdr *oiph;
+    struct icmp6_hdr *icmph, *oicmph;
+    struct ping_pcb *pcb;
+    ip6_addr_t guest_ip, target_ip, error_ip;
+    int target_mapped, error_mapped;
+    u16_t id, guest_id;
+    u32_t sum;
+
+    icmph = (struct icmp6_hdr *)pollmgr_udpbuf;
+
+    /*
+     * Inner IP datagram is not checked by the kernel and may be
+     * anything, possibly malicious.
+     */
+    oiph = (struct ip6_hdr *)(pollmgr_udpbuf + sizeof(*icmph));
+
+    if (IP6H_V(oiph) != 6) {
+        DPRINTF2(("%s: unexpected IP version %d\n", __func__, IP6H_V(oiph)));
+        return;
+    }
+
+    DPRINTF2(("%s: nexth = %d\n", __func__, IP6H_NEXTH(oiph)));
 }
+
 
 static void
 pxping_pmgr_icmp6_error(struct pxping *pxping,
-                        u16_t iplen, struct sockaddr_in6 *peer)
+                        ip6_addr_t *src, ip6_addr_t *dst,
+                        int hopl, int tclass, u16_t icmplen)
 {
+    struct icmp6_echo_hdr *icmph;
+    int mapped;
+    struct ping_pcb *pcb;
+    ip6_addr_t guest_ip, target_ip;
+    u16_t id, guest_id;
+    u32_t sum;
 }
 
 
