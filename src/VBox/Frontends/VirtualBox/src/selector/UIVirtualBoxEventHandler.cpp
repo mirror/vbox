@@ -83,6 +83,14 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
             this, SIGNAL(sigSessionStateChange(QString, KSessionState)),
             Qt::QueuedConnection);
 
+    connect(pListener->getWrapped(), SIGNAL(sigSnapshotTake(QString, QString)),
+            this, SIGNAL(sigSnapshotTake(QString, QString)),
+            Qt::QueuedConnection);
+
+    connect(pListener->getWrapped(), SIGNAL(sigSnapshotDelete(QString, QString)),
+            this, SIGNAL(sigSnapshotDelete(QString, QString)),
+            Qt::QueuedConnection);
+
     connect(pListener->getWrapped(), SIGNAL(sigSnapshotChange(QString, QString)),
             this, SIGNAL(sigSnapshotChange(QString, QString)),
             Qt::QueuedConnection);

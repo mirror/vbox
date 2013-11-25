@@ -132,13 +132,13 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         case KVBoxEventType_OnSnapshotTaken:
         {
             CSnapshotTakenEvent es(pEvent);
-            emit sigSnapshotChange(es.GetMachineId(), es.GetSnapshotId());
+            emit sigSnapshotTake(es.GetMachineId(), es.GetSnapshotId());
             break;
         }
         case KVBoxEventType_OnSnapshotDeleted:
         {
             CSnapshotDeletedEvent es(pEvent);
-            emit sigSnapshotChange(es.GetMachineId(), es.GetSnapshotId());
+            emit sigSnapshotDelete(es.GetMachineId(), es.GetSnapshotId());
             break;
         }
         case KVBoxEventType_OnSnapshotChanged:

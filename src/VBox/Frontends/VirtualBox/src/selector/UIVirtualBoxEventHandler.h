@@ -37,6 +37,8 @@ signals:
     void sigMachineDataChange(QString strId);
     void sigMachineRegistered(QString strId, bool fRegistered);
     void sigSessionStateChange(QString strId, KSessionState state);
+    void sigSnapshotTake(QString strId, QString strSnapshotId);
+    void sigSnapshotDelete(QString strId, QString strSnapshotId);
     void sigSnapshotChange(QString strId, QString strSnapshotId);
 
 private:

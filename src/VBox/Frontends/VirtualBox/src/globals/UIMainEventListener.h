@@ -62,6 +62,8 @@ signals:
     void sigExtraDataChange(QString strId, QString strKey, QString strValue);
     void sigMachineRegistered(QString strId, bool fRegistered);
     void sigSessionStateChange(QString strId, KSessionState state);
+    void sigSnapshotTake(QString strId, QString strSnapshotId);
+    void sigSnapshotDelete(QString strId, QString strSnapshotId);
     void sigSnapshotChange(QString strId, QString strSnapshotId);
     /* All Console Signals */
     void sigMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);

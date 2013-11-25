@@ -1516,6 +1516,8 @@ void UISelectorWindow::prepareConnections()
     /* Global event handlers: */
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltStateChanged(QString)));
     connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltStateChanged(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QString, QString)), this, SLOT(sltSnapshotChanged(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QString, QString)), this, SLOT(sltSnapshotChanged(QString)));
     connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltSnapshotChanged(QString)));
 }
 
