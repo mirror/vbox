@@ -41,16 +41,10 @@ LIBRARIES += \
 ifndef VBOX_ONLY_TESTSUITE
  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd)
   LIBRARIES += \
-        VBoxGuestR3LibXFree86
+  	VBoxGuestR3LibXFree86
  endif
 endif
 LIBRARIES.win.amd64 += VBoxGuestR3Lib-x86 VBoxGuestR3LibShared-x86
-ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
- LIBRARIES.linux.amd64 += \
-        VBoxGuestR3Lib-x86 \
-        VBoxGuestR3LibShared-x86 \
-        VBoxGuestR3LibXFree86-x86
-endif
 
 
 #
@@ -166,7 +160,7 @@ VBoxGuestR3Lib-x86_BLD_TRG_ARCH := x86
 
 
 #
-# VBoxGuestR3LibShared-x86 - an x86 (32-bit) variant of VBoxGuestR3LibShared for 64-bit Linux.
+# VBoxGuestR3LibShared-x86 - an x86 (32-bit) variant of VBoxGuestR3LibShared for 64-bit Windows.
 #
 VBoxGuestR3LibShared-x86_EXTENDS      := VBoxGuestR3LibShared
 VBoxGuestR3LibShared-x86_BLD_TRG_ARCH := x86
@@ -202,13 +196,6 @@ VBoxGuestR3LibXFree86_INCS     = \
         $(VBOX_PATH_X11_XFREE_4_3)/exports/include/X11
 
 VBoxGuestR3LibRuntimeXF86.cpp_CXXFLAGS = -Wno-shadow
-
-#
-# VBoxGuestR3LibXFree86-x86 - an x86 (32-bit) variant of VBoxGuestR3LibXFree86 for 64-bit Linux.
-#
-VBoxGuestR3LibXFree86-x86_TEMPLATE     := VBOXGUESTR3XF86LIB_X86
-VBoxGuestR3LibXFree86-x86_EXTENDS      := VBoxGuestR3LibXFree86
-
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
