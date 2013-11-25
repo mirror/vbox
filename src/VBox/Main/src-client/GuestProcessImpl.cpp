@@ -1878,7 +1878,9 @@ STDMETHODIMP GuestProcess::Terminate(void)
     /* Remove process from guest session list. Now only API clients
      * still can hold references to it. */
     AssertPtr(mSession);
-    mSession->processRemoveFromList(this);
+    int rc2 = mSession->processRemoveFromList(this);
+    if (RT_SUCCESS(vrc))
+        vrc = rc2;
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
