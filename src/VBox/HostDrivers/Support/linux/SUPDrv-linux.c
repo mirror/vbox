@@ -972,7 +972,7 @@ int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq)
 # ifdef SUPDRV_LINUX_HAS_SAFE_MSR_API
     if (idCpu == NIL_RTCPUID)
     {
-        supdrvLnxMsrProberModifyOnCpu(idCpu, pReq);
+        supdrvLnxMsrProberModifyOnCpu(idCpu, pReq, NULL);
         return VINF_SUCCESS;
     }
     return RTMpOnSpecific(idCpu, supdrvLnxMsrProberModifyOnCpu, pReq, NULL);
