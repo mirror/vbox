@@ -70,7 +70,7 @@ UIMediumEnumerator::UIMediumEnumerator(ulong uWorkerCount /* = 3*/, ulong uWorke
     /* Prepare Main event handlers: */
     connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(sltHandleMachineUpdate(QString)));
     connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QString, QString)), this, SLOT(sltHandleMachineUpdate(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QString, QString)), this, SLOT(sltHandleMachineUpdate(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QString, QString)), this, SLOT(sltHandleSnapshotDeleted(QString, QString)));
     connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltHandleMachineUpdate(QString)));
     connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)), this, SLOT(sltHandleMachineRegistration(QString, bool)));
 
@@ -176,7 +176,7 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
 
     /* Gather previously used UIMedium IDs: */
     QStringList previousUIMediumIDs;
-    calculateCachedUsage(strMachineID, previousUIMediumIDs, true);
+    calculateCachedUsage(strMachineID, previousUIMediumIDs, true /* take into account current state only */);
     LogRel(("UIMediumEnumerator:  Old usage: %s\n",
             previousUIMediumIDs.isEmpty() ? "<empty>" : previousUIMediumIDs.join(", ").toAscii().constData()));
 
@@ -242,6 +242,32 @@ void UIMediumEnumerator::sltHandleMachineRegistration(QString strMachineID, bool
     LogRel(("UIMediumEnumerator: Machine %s event processed, ID = %s\n",
             fRegistered ? "registration" : "unregistration",
             strMachineID.toAscii().constData()));
+}
+
+void UIMediumEnumerator::sltHandleSnapshotDeleted(QString strMachineID, QString strSnapshotID)
+{
+    LogRel(("UIMediumEnumerator: Snapshot-deleted event received, Machine ID = {%s}, Snapshot ID = {%s}\n",
+            strMachineID.toAscii().constData(), strSnapshotID.toAscii().constData()));
+
+    /* Gather previously used UIMedium IDs: */
+    QStringList previousUIMediumIDs;
+    calculateCachedUsage(strMachineID, previousUIMediumIDs, false /* take into account current state only */);
+    LogRel(("UIMediumEnumerator:  Old usage: %s\n",
+            previousUIMediumIDs.isEmpty() ? "<empty>" : previousUIMediumIDs.join(", ").toAscii().constData()));
+
+    /* Gather currently used CMediums and their IDs: */
+    CMediumMap currentCMediums;
+    QStringList currentCMediumIDs;
+    calculateActualUsage(strMachineID, currentCMediums, currentCMediumIDs);
+    LogRel(("UIMediumEnumerator:  New usage: %s\n",
+            currentCMediumIDs.isEmpty() ? "<empty>" : currentCMediumIDs.join(", ").toAscii().constData()));
+
+    /* Update everything: */
+    recacheFromCachedUsage(previousUIMediumIDs);
+    recacheFromActualUsage(currentCMediums, currentCMediumIDs);
+
+    LogRel(("UIMediumEnumerator: Snapshot-deleted event processed, Machine ID = {%s}, Snapshot ID = {%s}\n",
+            strMachineID.toAscii().constData(), strSnapshotID.toAscii().constData()));
 }
 
 void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
