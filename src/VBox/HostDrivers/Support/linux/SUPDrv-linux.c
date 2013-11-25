@@ -905,7 +905,7 @@ int VBOXCALL    supdrvOSMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uV
 /**
  * Worker for supdrvOSMsrProberModify.
  */
-static DECLCALLBACK(void) supdrvOsMsrProberModifyOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+static DECLCALLBACK(void) supdrvLnxMsrProberModifyOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     PSUPMSRPROBER               pReq    = (PSUPMSRPROBER)pvUser1;
     register uint32_t           uMsr    = pReq->u.In.uMsr;
