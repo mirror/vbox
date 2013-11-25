@@ -673,7 +673,7 @@ pxping_pcb_for_request(struct pxping *pxping,
 #if HAVE_SA_LEN
             pcb->peer.sin6.sin6_len = sizeof(pcb->peer.sin6);
 #endif
-            pcb->peer.sin.sin_port = htons(IPPROTO_ICMPV6);
+            pcb->peer.sin6.sin6_port = htons(IPPROTO_ICMPV6);
             mapped = pxremap_outbound_ip6((ip6_addr_t *)&pcb->peer.sin6.sin6_addr,
                                           ipX_2_ip6(&pcb->dst));
         }
