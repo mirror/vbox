@@ -1218,6 +1218,10 @@ void UIGChooserModel::prepareConnections()
             this, SLOT(sltMachineRegistered(QString, bool)));
     connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
             this, SLOT(sltSessionStateChanged(QString, KSessionState)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QString, QString)),
+            this, SLOT(sltSnapshotChanged(QString, QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QString, QString)),
+            this, SLOT(sltSnapshotChanged(QString, QString)));
     connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)),
             this, SLOT(sltSnapshotChanged(QString, QString)));
 }
