@@ -121,6 +121,10 @@ VBoxService_SOURCES.os2   = \
 
 VBoxService_LDFLAGS.darwin = -framework IOKit
 
+VBoxService_LIBS        += \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)       # (The joy of unix linkers.)
 if1of ($(KBUILD_TARGET), linux)
  VBoxService_LIBS        += \
 	crypt
@@ -140,16 +144,6 @@ ifdef VBOX_WITH_GUEST_PROPS
  	nsl \
 	kstat \
 	contract
-endif
-
-# 32-bit version for the 64-bit Linux Additions
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
- ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
-  PROGRAMS += VBoxService_32
-  VBoxService_32_EXTENDS  = VBoxService
-  VBoxService_32_TEMPLATE = NewVBoxGuestR3Exe_X86
-  VBoxService_32_NAME     = VBoxService
- endif
 endif
 
 #

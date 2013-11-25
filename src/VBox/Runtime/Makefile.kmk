@@ -38,12 +38,6 @@ ifdef VBOX_ONLY_ADDITIONS
   #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
   LIBRARIES.win.x86 += RuntimeGuestR0NT4
  endif
- ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
-  LIBRARIES.linux.amd64 += \
-      RuntimeGuestR3-x86 \
-      RuntimeGuestR3Mini-x86 \
-      RuntimeGuestR3Shared-x86
- endif
 
 else ifdef VBOX_ONLY_TESTSUITE
  #
@@ -93,12 +87,6 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
  ifdef VBOX_WITH_ADDITIONS
   LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
   LIBRARIES.win.amd64 += RuntimeGuestR3-x86 RuntimeGuestR3Shared-x86
-  ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
-   LIBRARIES.linux.amd64 += \
-      RuntimeGuestR3-x86 \
-      RuntimeGuestR3Mini-x86 \
-      RuntimeGuestR3Shared-x86
-  endif
   ifdef VBOX_WITH_ADDITION_DRIVERS
    LIBRARIES += RuntimeGuestR0
   endif
@@ -1280,13 +1268,6 @@ RuntimeGuestR3Mini_SOURCES.win = \
 	r3/win/thread2-win.cpp \
 	win/errmsgwin.cpp \
 	win/RTErrConvertFromWin32.cpp
-
-#
-# RuntimeGuestR3Mini-x86 - Same as RuntimeGuestR3Mini, except that it's targeting x86.
-#
-RuntimeGuestR3Mini-x86_EXTENDS        := RuntimeGuestR3Mini
-RuntimeGuestR3Mini-x86_BLD_TRG_ARCH   := x86
-
 
 # VBox specific stuff.
 RuntimeGuestR3Mini_SOURCES += \

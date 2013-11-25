@@ -75,16 +75,6 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 	draganddrop.cpp
 endif
 
-# 32-bit version for the 64-bit Linux Additions
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
- ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
-  PROGRAMS += VBoxClient_32
-  VBoxClient_32_EXTENDS  = VBoxClient
-  VBoxClient_32_TEMPLATE = NewVBoxGuestR3Exe_X86
-  VBoxClient_32_NAME     = VBoxClient
- endif
-endif
-
 ifdef VBOX_X11_SEAMLESS_GUEST
  if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
   if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)

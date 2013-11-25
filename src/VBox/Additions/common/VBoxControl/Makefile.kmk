@@ -44,15 +44,5 @@ VBoxControl_SOURCES.win = \
 	VBoxControl.rc
 VBoxControl_LDFLAGS.darwin = -framework IOKit
 
-# 32-bit version for the 64-bit Linux Additions
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
- ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
-  PROGRAMS += VBoxControl_32
-  VBoxControl_32_EXTENDS  = VBoxControl
-  VBoxControl_32_TEMPLATE = NewVBoxGuestR3Exe_X86
-  VBoxControl_32_NAME     = VBoxControl
- endif
-endif
-
 include $(FILE_KBUILD_SUB_FOOTER)
 
