@@ -1209,6 +1209,10 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
 }
 
 
+/**
+ * Process incoming ICMPv6 message for the host.
+ * NB: we will get a lot of spam here and have to sift through it.
+ */
 static void
 pxping_pmgr_icmp6(struct pxping *pxping)
 {
@@ -1275,7 +1279,10 @@ pxping_pmgr_icmp6(struct pxping *pxping)
         else {
             DPRINTF2(("type %d len %u\n", icmph->type, (unsigned int)nread));
         }
-        return;
+
+        if (icmph->type >= ICMP6_TYPE_EREQ) {
+            return;             /* informational message */
+        }
     }
 
     pktinfo = NULL;
@@ -1324,7 +1331,7 @@ pxping_pmgr_icmp6(struct pxping *pxping)
                                (ip6_addr_t *)&pktinfo->ipi6_addr,
                                hopl, tclass, (u16_t)nread);
     }
-    else {
+    else if (icmph->type < ICMP6_TYPE_EREQ) {
         pxping_pmgr_icmp6_error(pxping,
                                 (ip6_addr_t *)&sin6.sin6_addr,
                                 (ip6_addr_t *)&pktinfo->ipi6_addr,
@@ -1333,13 +1340,86 @@ pxping_pmgr_icmp6(struct pxping *pxping)
 }
 
 
+/**
+ * Check if this incoming ICMPv6 echo reply is for one of our pings
+ * and forward it to the guest.
+ */
 static void
 pxping_pmgr_icmp6_echo(struct pxping *pxping,
                        ip6_addr_t *src, ip6_addr_t *dst,
                        int hopl, int tclass, u16_t icmplen)
 {
+    struct icmp6_echo_hdr *icmph;
+    ip6_addr_t guest_ip, target_ip;
+    int mapped;
+    struct ping_pcb *pcb;
+    u16_t id, guest_id;
+    u32_t sum;
+
+    ip6_addr_copy(target_ip, *src);
+    mapped = pxremap_inbound_ip6(&target_ip, &target_ip);
+    if (mapped == PXREMAP_FAILED) {
+        return;
+    }
+    else if (mapped == PXREMAP_ASIS) {
+        if (hopl == 1) {
+            DPRINTF2(("%s: dropping packet with ttl 1\n", __func__));
+            return;
+        }
+        --hopl;
+    }
+
+    icmph = (struct icmp6_echo_hdr *)pollmgr_udpbuf;
+    id = icmph->id;
+
+    sys_mutex_lock(&pxping->lock);
+    pcb = pxping_pcb_for_reply(pxping, 1, ip6_2_ipX(&target_ip), id);
+    if (pcb == NULL) {
+        sys_mutex_unlock(&pxping->lock);
+        DPRINTF2(("%s: no match\n", __func__));
+        return;
+    }
+
+    DPRINTF2(("%s: pcb %p\n", __func__, (void *)pcb));
+
+    /* save info before unlocking since pcb may expire */
+    ip6_addr_copy(guest_ip, *ipX_2_ip6(&pcb->src));
+    guest_id = pcb->guest_id;
+
+    sys_mutex_unlock(&pxping->lock);
+
+    /* rewrite ICMPv6 echo header */
+    sum = (u16_t)~icmph->chksum;
+    sum += chksum_update_16(&icmph->id, guest_id);
+    sum += chksum_delta_ipv6(dst, &guest_ip); /* pseudo */
+    if (mapped) {
+        sum += chksum_delta_ipv6(src, &target_ip); /* pseudo */
+    }
+    sum = FOLD_U32T(sum);
+    icmph->chksum = ~sum;
+
+    pxping_pmgr_forward_inbound6(pxping,
+                                 &target_ip, /* echo reply src */
+                                 &guest_ip, /* echo reply dst */
+                                 hopl, tclass, icmplen);
+}
+
+
+/**
+ * Check if this incoming ICMPv6 error is about one of our pings and
+ * forward it to the guest.
+ */
+static void
+pxping_pmgr_icmp6_error(struct pxping *pxping,
+                        ip6_addr_t *src, ip6_addr_t *dst,
+                        int hopl, int tclass, u16_t icmplen)
+{
+    struct icmp6_hdr *icmph;
+    u8_t *bufptr;
+    size_t buflen, hlen;
+    int proto;
     struct ip6_hdr *oiph;
-    struct icmp6_hdr *icmph, *oicmph;
+    struct icmp6_echo_hdr *oicmph;
     struct ping_pcb *pcb;
     ip6_addr_t guest_ip, target_ip, error_ip;
     int target_mapped, error_mapped;
@@ -1352,28 +1432,126 @@ pxping_pmgr_icmp6_echo(struct pxping *pxping,
      * Inner IP datagram is not checked by the kernel and may be
      * anything, possibly malicious.
      */
-    oiph = (struct ip6_hdr *)(pollmgr_udpbuf + sizeof(*icmph));
+    oiph = NULL;
+    oicmph = NULL;
 
-    if (IP6H_V(oiph) != 6) {
-        DPRINTF2(("%s: unexpected IP version %d\n", __func__, IP6H_V(oiph)));
+    bufptr = pollmgr_udpbuf;
+    buflen = icmplen;
+
+    hlen = sizeof(*icmph);
+    proto = IP6_NEXTH_ENCAPS; /* i.e. IPv6, lwIP's name is unfortuate */
+    for (;;) {
+        if (hlen > buflen) {
+            DPRINTF2(("truncated datagram inside ICMPv6 error message is too short\n"));
+            return;
+        }
+        buflen -= hlen;
+        bufptr += hlen;
+
+        if (proto == IP6_NEXTH_ENCAPS && oiph == NULL) { /* outermost IPv6 */
+            oiph = (struct ip6_hdr *)bufptr;
+            if (IP6H_V(oiph) != 6) {
+                DPRINTF2(("%s: unexpected IP version %d\n", __func__, IP6H_V(oiph)));
+                return;
+            }
+
+            proto = IP6H_NEXTH(oiph);
+            hlen = IP6_HLEN;
+        }
+        else if (proto == IP6_NEXTH_ICMP6) {
+            oicmph = (struct icmp6_echo_hdr *)bufptr;
+            break;
+        }
+        else if (proto == IP6_NEXTH_ROUTING
+                 || proto == IP6_NEXTH_HOPBYHOP
+                 || proto == IP6_NEXTH_DESTOPTS)
+        {
+            proto = bufptr[0];
+            hlen = (bufptr[1] + 1) * 8;
+        }
+        else {
+            DPRINTF2(("%s: stopping at protocol %d\n", __func__, proto));
+            break;
+        }
+    }
+
+    if (oiph == NULL || oicmph == NULL) {
         return;
     }
 
-    DPRINTF2(("%s: nexth = %d\n", __func__, IP6H_NEXTH(oiph)));
-}
+    if (buflen < sizeof(*oicmph)) {
+        DPRINTF2(("%s: original ICMPv6 is truncated too short\n", __func__));
+        return;
+    }
+
+    if (oicmph->type != ICMP6_TYPE_EREQ) {
+        DPRINTF2(("%s: ignoring original ICMPv6 type %d\n", __func__, oicmph->type));
+        return;
+    }
+
+    memcpy(&target_ip, &oiph->dest, sizeof(target_ip)); /* inner (failed) */
+    target_mapped = pxremap_inbound_ip6(&target_ip, &target_ip);
+    if (target_mapped == PXREMAP_FAILED) {
+        return;
+    }
+
+    sys_mutex_lock(&pxping->lock);
+    pcb = pxping_pcb_for_reply(pxping, 1, ip_2_ipX(&target_ip), oicmph->id);
+    if (pcb == NULL) {
+        sys_mutex_unlock(&pxping->lock);
+        DPRINTF2(("%s: no match\n", __func__));
+        return;
+    }
+
+    DPRINTF2(("%s: pcb %p\n", __func__, (void *)pcb));
+
+    /* save info before unlocking since pcb may expire */
+    ip6_addr_copy(guest_ip, *ipX_2_ip6(&pcb->src));
+    guest_id = pcb->guest_id;
+
+    sys_mutex_unlock(&pxping->lock);
 
 
-static void
-pxping_pmgr_icmp6_error(struct pxping *pxping,
-                        ip6_addr_t *src, ip6_addr_t *dst,
-                        int hopl, int tclass, u16_t icmplen)
-{
-    struct icmp6_echo_hdr *icmph;
-    int mapped;
-    struct ping_pcb *pcb;
-    ip6_addr_t guest_ip, target_ip;
-    u16_t id, guest_id;
-    u32_t sum;
+    /*
+     * Rewrite inner and outer headers and forward to guest.  Note
+     * that IPv6 has no IP header checksum, but uses pseudo-header for
+     * ICMPv6, so we update both in one go, adjusting ICMPv6 checksum
+     * as we rewrite IP header.
+     */
+
+    ip6_addr_copy(error_ip, *src); /* node that reports the error */
+    error_mapped = pxremap_inbound_ip6(&error_ip, &error_ip);
+    if (error_mapped == PXREMAP_FAILED) {
+        return;
+    }
+    if (error_mapped == PXREMAP_ASIS && hopl == 1) {
+        DPRINTF2(("%s: dropping packet with ttl 1\n", __func__));
+        return;
+    }
+
+    /* rewrite inner ICMPv6 echo header and inner IPv6 header */
+    sum = (u16_t)~oicmph->chksum;
+    sum += chksum_update_16(&oicmph->id, guest_id);
+    sum += chksum_update_ipv6((ip6_addr_t *)&oiph->src, &guest_ip);
+    if (target_mapped) {
+        sum += chksum_delta_ipv6((ip6_addr_t *)&oiph->dest, &target_ip);
+    }
+    sum = FOLD_U32T(sum);
+    oicmph->chksum = ~sum;
+
+    /* rewrite outer ICMPv6 error header */
+    sum = (u16_t)~icmph->chksum;
+    sum += chksum_delta_ipv6(dst, &guest_ip); /* pseudo */
+    if (error_mapped) {
+        sum += chksum_delta_ipv6(src, &error_ip); /* pseudo */
+    }
+    sum = FOLD_U32T(sum);
+    icmph->chksum = ~sum;
+
+    pxping_pmgr_forward_inbound6(pxping,
+                                 &error_ip, /* error src */
+                                 &guest_ip, /* error dst */
+                                 hopl, tclass, icmplen);
 }
 
 
