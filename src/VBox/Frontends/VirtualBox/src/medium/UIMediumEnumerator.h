@@ -27,6 +27,9 @@
 class UIThreadPool;
 class UITask;
 
+/* Typedefs: */
+typedef QMap<QString, CMedium> CMediumMap;
+
 /* Medium-enumerator prototype.
  * Manages access to medium information using thread-pool interface. */
 class UIMediumEnumerator : public QObject
@@ -77,6 +80,12 @@ private:
     void addNullMediumToMap(UIMediumMap &mediums);
     void addMediumsToMap(const CMediumVector &inputMediums, UIMediumMap &outputMediums, UIMediumType mediumType);
     void addHardDisksToMap(const CMediumVector &inputMediums, UIMediumMap &outputMediums);
+
+    /* Helpers: Medium re-caching stuff: */
+    void calculateCachedUsage(const QString &strMachineID, QStringList &previousUIMediumIDs, bool fTakeIntoAccountCurrentStateOnly) const;
+    void calculateActualUsage(const QString &strMachineID, CMediumMap &currentCMediums, QStringList &currentCMediumIDs) const;
+    void recacheFromCachedUsage(const QStringList &previousUIMediumIDs);
+    void recacheFromActualUsage(const CMediumMap &currentCMediums, const QStringList &currentCMediumIDs);
 
     /* Variables: */
     UIThreadPool *m_pThreadPool;

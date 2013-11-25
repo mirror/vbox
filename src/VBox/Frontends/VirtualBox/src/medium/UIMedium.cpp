@@ -365,6 +365,17 @@ void UIMedium::refresh()
     m_noDiffs.isSet = false;
 }
 
+void UIMedium::updateParentID()
+{
+    m_strParentID = nullID();
+    if (m_type == UIMediumType_HardDisk)
+    {
+        CMedium parentMedium = m_medium.GetParent();
+        if (!parentMedium.isNull())
+            m_strParentID = parentMedium.GetId();
+    }
+}
+
 UIMedium UIMedium::parent() const
 {
     /* Redirect call to VBoxGlobal: */
