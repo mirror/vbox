@@ -635,7 +635,7 @@ void BIOSSettings::applyDefaults (GuestOSType *aOsType)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Initialize default BIOS settings here */
-    m->bd->fIOAPICEnabled = aOsType->recommendedIOAPIC();
+    m->bd->fIOAPICEnabled = aOsType->i_recommendedIOAPIC();
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,42 +24,10 @@
 
 #include <iprt/cpp/utils.h>
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// private member data definition
-//
-////////////////////////////////////////////////////////////////////////////////
-
-struct BackupableBandwidthGroupData
-{
-    BackupableBandwidthGroupData()
-        : enmType(BandwidthGroupType_Null),
-          aMaxBytesPerSec(0),
-          cReferences(0)
-    { }
-
-    Utf8Str                 strName;
-    BandwidthGroupType_T    enmType;
-    LONG64                  aMaxBytesPerSec;
-    ULONG                   cReferences;
-};
-
-struct BandwidthGroup::Data
-{
-    Data(BandwidthControl * const aBandwidthControl)
-        : pParent(aBandwidthControl),
-          pPeer(NULL)
-    { }
-
-    BandwidthControl * const    pParent;
-    ComObjPtr<BandwidthGroup>   pPeer;
-
-    // use the XML settings structure in the members for simplicity
-    Backupable<BackupableBandwidthGroupData> bd;
-};
-
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
+//
+DEFINE_EMPTY_CTOR_DTOR(BandwidthGroup)
 
 HRESULT BandwidthGroup::FinalConstruct()
 {
@@ -227,39 +195,24 @@ void BandwidthGroup::uninit()
     m = NULL;
 }
 
-STDMETHODIMP BandwidthGroup::COMGETTER(Name)(BSTR *aName)
+HRESULT BandwidthGroup::getName(com::Utf8Str &aName)
 {
-    CheckComArgOutPointerValid(aName);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* mName is constant during life time, no need to lock */
-    m->bd.data()->strName.cloneTo(aName);
+    aName = m->bd.data()->strName;
 
     return S_OK;
 }
 
-STDMETHODIMP BandwidthGroup::COMGETTER(Type)(BandwidthGroupType_T *aType)
+HRESULT BandwidthGroup::getType(BandwidthGroupType_T *aType)
 {
-    CheckComArgOutPointerValid(aType);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* type is constant during life time, no need to lock */
     *aType = m->bd->enmType;
 
     return S_OK;
 }
 
-STDMETHODIMP BandwidthGroup::COMGETTER(Reference)(ULONG *aReferences)
+HRESULT BandwidthGroup::getReference(ULONG *aReferences)
 {
-    CheckComArgOutPointerValid(aReferences);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aReferences = m->bd->cReferences;
@@ -267,13 +220,8 @@ STDMETHODIMP BandwidthGroup::COMGETTER(Reference)(ULONG *aReferences)
     return S_OK;
 }
 
-STDMETHODIMP BandwidthGroup::COMGETTER(MaxBytesPerSec)(LONG64 *aMaxBytesPerSec)
+HRESULT BandwidthGroup::getMaxBytesPerSec(LONG64 *aMaxBytesPerSec)
 {
-    CheckComArgOutPointerValid(aMaxBytesPerSec);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aMaxBytesPerSec = m->bd->aMaxBytesPerSec;
@@ -281,14 +229,11 @@ STDMETHODIMP BandwidthGroup::COMGETTER(MaxBytesPerSec)(LONG64 *aMaxBytesPerSec)
     return S_OK;
 }
 
-STDMETHODIMP BandwidthGroup::COMSETTER(MaxBytesPerSec)(LONG64 aMaxBytesPerSec)
+HRESULT BandwidthGroup::setMaxBytesPerSec(LONG64 aMaxBytesPerSec)
 {
     if (aMaxBytesPerSec < 0)
         return setError(E_INVALIDARG,
                         tr("Bandwidth group limit cannot be negative"));
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -296,7 +241,7 @@ STDMETHODIMP BandwidthGroup::COMSETTER(MaxBytesPerSec)(LONG64 aMaxBytesPerSec)
     m->bd->aMaxBytesPerSec = aMaxBytesPerSec;
 
     /* inform direct session if any. */
-    ComObjPtr<Machine> pMachine = m->pParent->getMachine();
+    ComObjPtr<Machine> pMachine = m->pParent->i_getMachine();
     alock.release();
     pMachine->onBandwidthGroupChange(this);
 
@@ -307,7 +252,7 @@ STDMETHODIMP BandwidthGroup::COMSETTER(MaxBytesPerSec)(LONG64 aMaxBytesPerSec)
 /////////////////////////////////////////////////////////////////////////////
 
 /** @note Locks objects for writing! */
-void BandwidthGroup::rollback()
+void BandwidthGroup::i_rollback()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
@@ -321,7 +266,7 @@ void BandwidthGroup::rollback()
  *  @note Locks this object for writing, together with the peer object (also
  *  for writing) if there is one.
  */
-void BandwidthGroup::commit()
+void BandwidthGroup::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
@@ -354,7 +299,7 @@ void BandwidthGroup::commit()
  *  @note Locks this object for writing, together with the peer object
  *  represented by @a aThat (locked for reading).
  */
-void BandwidthGroup::unshare()
+void BandwidthGroup::i_unshare()
 {
     /* sanity */
     AutoCaller autoCaller(this);
@@ -380,39 +325,14 @@ void BandwidthGroup::unshare()
     unconst(m->pPeer) = NULL;
 }
 
-ComObjPtr<BandwidthGroup> BandwidthGroup::getPeer()
-{
-    return m->pPeer;
-}
-
-const Utf8Str& BandwidthGroup::getName() const
-{
-    return m->bd->strName;
-}
-
-BandwidthGroupType_T BandwidthGroup::getType() const
-{
-    return m->bd->enmType;
-}
-
-LONG64 BandwidthGroup::getMaxBytesPerSec() const
-{
-    return m->bd->aMaxBytesPerSec;
-}
-
-ULONG BandwidthGroup::getReferences() const
-{
-    return m->bd->cReferences;
-}
-
-void BandwidthGroup::reference()
+void BandwidthGroup::i_reference()
 {
     AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
     m->bd.backup();
     m->bd->cReferences++;
 }
 
-void BandwidthGroup::release()
+void BandwidthGroup::i_release()
 {
     AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
     m->bd.backup();

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,7 +18,7 @@
 #ifndef ____H_BANDWIDTHCONTROLIMPL
 #define ____H_BANDWIDTHCONTROLIMPL
 
-#include "VirtualBoxBase.h"
+#include "BandwidthControlWrap.h"
 
 class BandwidthGroup;
 
@@ -28,22 +28,14 @@ namespace settings
 }
 
 class ATL_NO_VTABLE BandwidthControl :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IBandwidthControl)
+    public BandwidthControlWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(BandwidthControl, IBandwidthControl)
 
-    DECLARE_NOT_AGGREGATABLE(BandwidthControl)
+    DECLARE_EMPTY_CTOR_DTOR(BandwidthControl)
 
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(BandwidthControl)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IBandwidthControl)
-    END_COM_MAP()
-
-    BandwidthControl() { };
-    ~BandwidthControl() { };
+    HRESULT FinalConstruct();
+    void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aParent);
@@ -51,32 +43,53 @@ public:
     HRESULT initCopy(Machine *aParent, BandwidthControl *aThat);
     void uninit();
 
-    STDMETHOD(CreateBandwidthGroup) (IN_BSTR aName, BandwidthGroupType_T aType, LONG64 aMaxBytesPerSec);
-    STDMETHOD(DeleteBandwidthGroup) (IN_BSTR aName);
-    STDMETHOD(COMGETTER(NumGroups)) (ULONG *aGroups);
-    STDMETHOD(GetBandwidthGroup) (IN_BSTR aName, IBandwidthGroup **aBandwidthGroup);
-    STDMETHOD(GetAllBandwidthGroups) (ComSafeArrayOut(IBandwidthGroup *, aBandwidthGroups));
-
-    HRESULT FinalConstruct();
-    void FinalRelease();
-
     // public internal methods
-
-    HRESULT loadSettings(const settings::IOSettings &data);
-    HRESULT saveSettings(settings::IOSettings &data);
-
-    void rollback();
-    void commit();
-    void copyFrom (BandwidthControl *aThat);
-
-    Machine *getMachine() const;
-
-    HRESULT getBandwidthGroupByName(const Utf8Str &aName,
-                                    ComObjPtr<BandwidthGroup> &aBandwidthGroup,
-                                    bool aSetError /* = false */);
+    HRESULT i_loadSettings(const settings::IOSettings &data);
+    HRESULT i_saveSettings(settings::IOSettings &data);
+    void i_rollback();
+    void i_commit();
+    void i_copyFrom(BandwidthControl *aThat);
+    Machine *i_getMachine() const;
+    HRESULT i_getBandwidthGroupByName(const Utf8Str &aName,
+                                      ComObjPtr<BandwidthGroup> &aBandwidthGroup,
+                                      bool aSetError /* = false */);
 
 private:
-    struct Data;
+
+    // wrapped IBandwidthControl properties
+    HRESULT getNumGroups(ULONG *aNumGroups);
+
+    // wrapped IBandwidthControl methods
+    HRESULT createBandwidthGroup(const com::Utf8Str &aName,
+                                       BandwidthGroupType_T aType,
+                                       LONG64 aMaxBytesPerSec);
+    HRESULT deleteBandwidthGroup(const com::Utf8Str &aName);
+    HRESULT getBandwidthGroup(const com::Utf8Str &aName,
+                                    ComPtr<IBandwidthGroup> &aBandwidthGroup);
+    HRESULT getAllBandwidthGroups(std::vector<ComPtr<IBandwidthGroup> > &aBandwidthGroups);
+
+    // Data
+    typedef std::list< ComObjPtr<BandwidthGroup> > BandwidthGroupList;
+
+    struct Data
+    {
+        Data(Machine *pMachine)
+        : pParent(pMachine)
+        { }
+
+        ~Data()
+        {};
+
+        Machine * const                 pParent;
+
+        // peer machine's bandwidth control
+        const ComObjPtr<BandwidthControl>  pPeer;
+
+        // the following fields need special backup/rollback/commit handling,
+        // so they cannot be a part of BackupableData
+        Backupable<BandwidthGroupList>    llBandwidthGroups;
+    };
+
     Data *m;
 };
 

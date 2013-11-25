@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,26 +18,19 @@
 #ifndef ____H_BANDWIDTHGROUPIMPL
 #define ____H_BANDWIDTHGROUPIMPL
 
-#include "VirtualBoxBase.h"
 #include "BandwidthControlImpl.h"
+#include "BandwidthGroupWrap.h"
+
 
 class ATL_NO_VTABLE BandwidthGroup :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IBandwidthGroup)
+    public BandwidthGroupWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(BandwidthGroup, IBandwidthGroup)
 
-    DECLARE_NOT_AGGREGATABLE(BandwidthGroup)
+    DECLARE_EMPTY_CTOR_DTOR(BandwidthGroup)
 
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(BandwidthGroup)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IBandwidthGroup)
-    END_COM_MAP()
-
-    BandwidthGroup() { };
-    ~BandwidthGroup() { };
+    HRESULT FinalConstruct();
+    void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(BandwidthControl *aParent,
@@ -48,32 +41,62 @@ public:
     HRESULT initCopy(BandwidthControl *aParent, BandwidthGroup *aThat);
     void uninit();
 
-    HRESULT FinalConstruct();
-    void FinalRelease();
-
-    STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMGETTER(Type))(BandwidthGroupType_T *aType);
-    STDMETHOD(COMGETTER(Reference))(ULONG *aReferences);
-    STDMETHOD(COMGETTER(MaxBytesPerSec))(LONG64 *aMaxBytesPerSec);
-    STDMETHOD(COMSETTER(MaxBytesPerSec))(LONG64 aMaxBytesPerSec);
-
     // public methods only for internal purposes
-    void rollback();
-    void commit();
-    void unshare();
+    void i_rollback();
+    void i_commit();
+    void i_unshare();
+    void i_reference();
+    void i_release();
 
-    const Utf8Str &getName() const;
-    BandwidthGroupType_T getType() const;
-    LONG64 getMaxBytesPerSec() const;
-    ULONG getReferences() const;
-
-    void reference();
-    void release();
-
-    ComObjPtr<BandwidthGroup> getPeer();
+    ComObjPtr<BandwidthGroup> i_getPeer() { return m->pPeer; }
+    const Utf8Str &i_getName() const { return m->bd->strName; }
+    BandwidthGroupType_T i_getType() const { return m->bd->enmType; }
+    LONG64 i_getMaxBytesPerSec() const { return m->bd->aMaxBytesPerSec; }
+    ULONG i_getReferences() const { return m->bd->cReferences; }
 
 private:
-    struct Data;
+
+    // wrapped IBandwidthGroup properties
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT getType(BandwidthGroupType_T *aType);
+    HRESULT getReference(ULONG *aReferences);
+    HRESULT getMaxBytesPerSec(LONG64 *aMaxBytesPerSec);
+    HRESULT setMaxBytesPerSec(LONG64 MaxBytesPerSec);
+
+    ////////////////////////////////////////////////////////////////////////////////
+    ////
+    //// private member data definition
+    ////
+    //////////////////////////////////////////////////////////////////////////////////
+    //
+    struct BackupableBandwidthGroupData
+    {
+       BackupableBandwidthGroupData()
+           : enmType(BandwidthGroupType_Null),
+             aMaxBytesPerSec(0),
+             cReferences(0)
+       { }
+
+       Utf8Str                 strName;
+       BandwidthGroupType_T    enmType;
+       LONG64                  aMaxBytesPerSec;
+       ULONG                   cReferences;
+    };
+
+    struct Data
+    {
+        Data(BandwidthControl * const aBandwidthControl)
+            : pParent(aBandwidthControl),
+              pPeer(NULL)
+        { }
+
+       BandwidthControl * const    pParent;
+       ComObjPtr<BandwidthGroup>   pPeer;
+
+       // use the XML settings structure in the members for simplicity
+       Backupable<BackupableBandwidthGroupData> bd;
+    };
+
     Data *m;
 };
 

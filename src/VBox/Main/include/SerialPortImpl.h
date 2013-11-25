@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,7 @@
 #ifndef ____H_SERIALPORTIMPL
 #define ____H_SERIALPORTIMPL
 
-#include "VirtualBoxBase.h"
+#include "SerialPortWrap.h"
 
 class GuestOSType;
 
@@ -30,21 +30,11 @@ namespace settings
 }
 
 class ATL_NO_VTABLE SerialPort :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(ISerialPort)
+    public SerialPortWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(SerialPort, ISerialPort)
 
-    DECLARE_NOT_AGGREGATABLE(SerialPort)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(SerialPort)
-        VBOX_DEFAULT_INTERFACE_ENTRIES (ISerialPort)
-    END_COM_MAP()
-
-    DECLARE_EMPTY_CTOR_DTOR (SerialPort)
+    DECLARE_EMPTY_CTOR_DTOR(SerialPort)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -55,40 +45,58 @@ public:
     HRESULT initCopy (Machine *parent, SerialPort *aThat);
     void uninit();
 
-    // ISerialPort properties
-    STDMETHOD(COMGETTER(Slot))     (ULONG     *aSlot);
-    STDMETHOD(COMGETTER(Enabled))  (BOOL      *aEnabled);
-    STDMETHOD(COMSETTER(Enabled))  (BOOL       aEnabled);
-    STDMETHOD(COMGETTER(HostMode)) (PortMode_T *aHostMode);
-    STDMETHOD(COMSETTER(HostMode)) (PortMode_T  aHostMode);
-    STDMETHOD(COMGETTER(IRQ))      (ULONG     *aIRQ);
-    STDMETHOD(COMSETTER(IRQ))      (ULONG      aIRQ);
-    STDMETHOD(COMGETTER(IOBase) )  (ULONG     *aIOBase);
-    STDMETHOD(COMSETTER(IOBase))   (ULONG      aIOBase);
-    STDMETHOD(COMGETTER(Path))     (BSTR      *aPath);
-    STDMETHOD(COMSETTER(Path))     (IN_BSTR aPath);
-    STDMETHOD(COMGETTER(Server))   (BOOL      *aServer);
-    STDMETHOD(COMSETTER(Server))   (BOOL       aServer);
-
     // public methods only for internal purposes
+    HRESULT i_loadSettings(const settings::SerialPort &data);
+    HRESULT i_saveSettings(settings::SerialPort &data);
 
-    HRESULT loadSettings(const settings::SerialPort &data);
-    HRESULT saveSettings(settings::SerialPort &data);
+    bool i_isModified();
+    void i_rollback();
+    void i_commit();
+    void i_copyFrom(SerialPort *aThat);
 
-    bool isModified();
-    void rollback();
-    void commit();
-    void copyFrom(SerialPort *aThat);
-
-    void applyDefaults (GuestOSType *aOsType);
+    void i_applyDefaults (GuestOSType *aOsType);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
 private:
-    HRESULT checkSetPath(const Utf8Str &str);
 
-    struct Data;
+    HRESULT i_checkSetPath(const Utf8Str &str);
+
+    // Wrapped ISerialPort properties
+    HRESULT getEnabled(BOOL *aEnabled);
+    HRESULT setEnabled(BOOL aEnabled);
+    HRESULT getHostMode(PortMode_T *aHostMode);
+    HRESULT setHostMode(PortMode_T aHostMode);
+    HRESULT getSlot(ULONG *aSlot);
+    HRESULT getIRQ(ULONG *aIRQ);
+    HRESULT setIRQ(ULONG aIRQ);
+    HRESULT getIOBase(ULONG *aIOBase);
+    HRESULT setIOBase(ULONG aIOBase);
+    HRESULT getServer(BOOL *aServer);
+    HRESULT setServer(BOOL aServer);
+    HRESULT getPath(com::Utf8Str &aPath);
+    HRESULT setPath(const com::Utf8Str &aPath);
+
+    ////////////////////////////////////////////////////////////////////////////////
+    ////
+    //// SerialPort private data definition
+    ////
+    //////////////////////////////////////////////////////////////////////////////////
+    //
+    struct Data
+    {
+      Data()
+           : fModified(false),
+             pMachine(NULL)
+        { }
+
+       bool                                fModified;
+       Machine * const                     pMachine;
+       const ComObjPtr<SerialPort>         pPeer;
+       Backupable<settings::SerialPort>    bd;
+    };
+
     Data *m;
 };
 
