@@ -198,6 +198,7 @@ public:
     const QList <QString> &curStateMachineIds() const { return m_curStateMachineIds; }
 
     /* API: Parent/Root stuff: */
+    void updateParentID();
     QString parentID() const { return m_strParentID; }
     QString rootID() const { return m_strRootID; }
     UIMedium parent() const;
