@@ -135,7 +135,8 @@ public:
         <xsl:with-param name="iface" select="."/>
     </xsl:call-template>
     <xsl:value-of select="concat('        COM_INTERFACE_ENTRY2(IDispatch, ', @name, ')&#10;')"/>
-    <xsl:text>    END_COM_MAP()
+    <xsl:text>        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
+    END_COM_MAP()
 
 </xsl:text>
     <xsl:value-of select="concat('    DECLARE_EMPTY_CTOR_DTOR(', substring(@name, 2), 'Wrap)&#10;')"/>
