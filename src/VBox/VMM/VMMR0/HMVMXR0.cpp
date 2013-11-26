@@ -1279,7 +1279,7 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGue
     pHostMsr->u32Msr     = uMsr;
 
     /*
-     * Update the host MSR only when requested by the called AND when we're
+     * Update the host MSR only when requested by the caller AND when we're
      * adding it to the auto-load/store area. Otherwise, it would have been
      * updated by hmR0VmxSaveHostMsrs(). We do this for performance reasons.
      */
@@ -1294,7 +1294,7 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGue
 
 
 /**
- * Removes a guest/shost MSR pair to be swapped during the world-switch from the
+ * Removes a guest/host MSR pair to be swapped during the world-switch from the
  * auto-load/store MSR area in the VMCS.
  *
  * Does not fail if the MSR in @a uMsr is not found in the auto-load/store MSR
@@ -8262,8 +8262,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
- * @note    Mostly the same as hmR0VmxRunGuestCodeStep.
- * @remarks Called with preemption disabled.
+ * @note    Mostly the same as hmR0VmxRunGuestCodeStep().
  */
 static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -8335,8 +8334,7 @@ static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
- * @note    Mostly the same as hmR0VmxRunGuestCodeNormal.
- * @remarks Called with preemption disabled.
+ * @note    Mostly the same as hmR0VmxRunGuestCodeNormal().
  */
 static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -8438,8 +8436,6 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
- *
- * @remarks Called with preemption disabled.
  */
 VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
