@@ -387,28 +387,11 @@ void UIMediumManager::sltHandleMediumEnumerationStart()
     mTabWidget->setTabIcon(CDTab, m_iconCD);
     mTabWidget->setTabIcon(FDTab, m_iconFD);
 
-    /* Load mediums: */
+    /* Repopulate all medium-items: */
     QList<QString> mediumIDs = vboxGlobal().mediumIDs();
-    QList<QString> loadedMediumIDs;
     prepareToRefresh(mediumIDs.size());
-    while (!mediumIDs.isEmpty())
-    {
-        /* Get first available medium: */
-        QString strMediumID = mediumIDs.first();
-        UIMedium medium = vboxGlobal().medium(strMediumID);
-        /* Make sure medium parent (if any) is already in list: */
-        while (medium.parentID() != UIMedium::nullID() &&
-               !loadedMediumIDs.contains(medium.parentID()))
-        {
-            medium = medium.parent();
-            strMediumID = medium.id();
-        }
-        /* Insert resulting medium into tree: */
-        int iItemIndex = mediumIDs.indexOf(strMediumID);
-        AssertReturnVoid(iItemIndex != -1);
-        loadedMediumIDs.append(mediumIDs.takeAt(iItemIndex));
+    foreach (const QString &strMediumID, mediumIDs)
         sltHandleMediumCreated(strMediumID);
-    }
 
     /* Select the first item to be the current one
      * if the previous saved item was not selected yet. */
@@ -440,7 +423,7 @@ void UIMediumManager::sltHandleMediumEnumerated(const QString &strMediumID)
     if (isMediumAttachedToHiddenMachinesOnly(medium))
         return;
 
-    /* Prepare medium-item: */
+    /* Search for corresponding medium-item: */
     UIMediumItem *pMediumItem = 0;
     switch (medium.type())
     {
@@ -449,7 +432,10 @@ void UIMediumManager::sltHandleMediumEnumerated(const QString &strMediumID)
         case UIMediumType_Floppy:   pMediumItem = searchItem(mTwFD, CheckIfSuitableByID(medium.id())); break;
         default: AssertFailed();
     }
-    AssertPtrReturnVoid(pMediumItem);
+
+    /* If medium-item was not found it's time to create it: */
+    if (!pMediumItem)
+        return sltHandleMediumCreated(strMediumID);
 
     /* Update medium-item: */
     pMediumItem->setMedium(medium);
@@ -1142,24 +1128,12 @@ void UIMediumManager::populateTreeWidgets()
     {
         /* Emulate (possible partial) medium-enumeration: */
         QList<QString> mediumIDs = vboxGlobal().mediumIDs();
-        QList<QString> loadedMediumIDs;
         prepareToRefresh(mediumIDs.size());
-        while (!mediumIDs.isEmpty())
+        foreach (const QString &strMediumID, mediumIDs)
         {
-            /* Get first available medium: */
-            QString strMediumID = mediumIDs.first();
-            UIMedium medium = vboxGlobal().medium(strMediumID);
-            /* Make sure medium parent (if any) is already in list: */
-            while (medium.parentID() != UIMedium::nullID() &&
-                   !loadedMediumIDs.contains(medium.parentID()))
-            {
-                medium = medium.parent();
-                strMediumID = medium.id();
-            }
-            /* Insert resulting medium into tree: */
-            int iItemIndex = mediumIDs.indexOf(strMediumID);
-            AssertReturnVoid(iItemIndex != -1);
-            loadedMediumIDs.append(mediumIDs.takeAt(iItemIndex));
+            /* Get corresponding medium: */
+            const UIMedium medium = vboxGlobal().medium(strMediumID);
+            /* Create corresponding medium-item: */
             sltHandleMediumCreated(strMediumID);
             /* Advance progress-bar only for created mediums: */
             if (medium.state() != KMediumState_NotCreated)
@@ -1511,18 +1485,38 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
     /* Make sure passed medium is valid: */
     AssertReturn(!medium.medium().isNull(), 0);
 
-    /* Prepare medium-item: */
-    UIMediumItem *pMediumItem = 0;
+    /* Search for medium-item: */
+    UIMediumItem *pMediumItem = searchItem(pTree, CheckIfSuitableByID(medium.id()));
 
-    /* First try to create item under corresponding parent: */
-    if (medium.parentID() != UIMedium::nullID())
-        if (UIMediumItem *pRoot = searchItem(pTree, CheckIfSuitableByID(medium.parentID())))
-            pMediumItem = new UIMediumItem(medium, pRoot);
-    /* Else just create item as top-level one: */
+    /* If medium-item do not exists: */
     if (!pMediumItem)
-        pMediumItem = new UIMediumItem(medium, pTree);
+    {
+        /* If medium have a parent: */
+        if (medium.parentID() != UIMedium::nullID())
+        {
+            /* Try to find parent medium-item: */
+            UIMediumItem *pParentMediumItem = searchItem(pTree, CheckIfSuitableByID(medium.parentID()));
+            /* If parent medium-item was not found: */
+            if (!pParentMediumItem)
+            {
+                /* Make sure such corresponding parent medium is already cached! */
+                UIMedium parentMedium = vboxGlobal().medium(medium.parentID());
+                if (parentMedium.isNull())
+                    AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toAscii().constData()));
+                /* Try to create parent medium-item: */
+                else
+                    pParentMediumItem = createHardDiskItem(pTree, parentMedium);
+            }
+            /* If parent medium-item was found: */
+            if (pParentMediumItem)
+                pMediumItem = new UIMediumItem(medium, pParentMediumItem);
+        }
+        /* Else just create item as top-level one: */
+        if (!pMediumItem)
+            pMediumItem = new UIMediumItem(medium, pTree);
+    }
 
-    /* Return created item: */
+    /* Return medium-item: */
     return pMediumItem;
 }
 
