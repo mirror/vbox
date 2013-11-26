@@ -859,7 +859,7 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
   <sect1>
     <title>Webcam passthrough</title>
 
-    <sect2>
+    <sect2 id="webcam-passthrough">
       <title>Using a host webcam in the guest</title>
 
       <para>VirtualBox 4.3 includes an experimental feature which allows a guest to use
