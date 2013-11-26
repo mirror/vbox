@@ -674,6 +674,7 @@ pxping_pcb_for_request(struct pxping *pxping,
             pcb->peer.sin6.sin6_len = sizeof(pcb->peer.sin6);
 #endif
             pcb->peer.sin6.sin6_port = htons(IPPROTO_ICMPV6);
+            pcb->peer.sin6.sin6_flowinfo = 0;
             mapped = pxremap_outbound_ip6((ip6_addr_t *)&pcb->peer.sin6.sin6_addr,
                                           ipX_2_ip6(&pcb->dst));
         }
