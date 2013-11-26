@@ -305,7 +305,7 @@ public:
     {
     }
 
-    ComTypeInConverter(A *aSrc) : mSrc(mSrc)
+    ComTypeInConverter(A *aSrc) : mSrc(aSrc)
     {
     }
 
