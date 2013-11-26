@@ -7910,9 +7910,6 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
- *
- * @remarks Called with preemption disabled. In the VINF_SUCCESS return case
- *          interrupts will be disabled.
  */
 static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
