@@ -452,6 +452,10 @@
             <para>10.8 (Mountain Lion, 64-bit)</para>
           </listitem>
 
+          <listitem>
+            <para>10.9 (Mavericks, 64-bit)</para>
+          </listitem>
+
         </itemizedlist>
 
         <para>Intel hardware is required; please see <xref
@@ -468,7 +472,7 @@
               <para>10.04 ("Lucid Lynx"), 10.10 ("Maverick Meerkat),
               11.04 ("Natty Narwhal"), 11.10 ("Oneiric Oncelot"),
               12.04 ("Precise Pangolin"), 12.10 ("Quantal Quetzal"),
-              13.04 ("Raring Ringtail")</para>
+              13.04 ("Raring Ringtail"), 13.10 ("Saucy Salamander")</para>
             </listitem>
 
             <listitem>
@@ -484,7 +488,7 @@
             </listitem>
 
             <listitem>
-              <para>Fedora Core 6 to 17</para>
+              <para>Fedora Core 6 to 19</para>
             </listitem>
 
             <listitem>
