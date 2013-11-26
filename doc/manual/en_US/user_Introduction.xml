@@ -570,8 +570,12 @@
               </listitem>
 
               <listitem>
-                <para>Intel PXE boot ROM with support for the E1000 network
-                card.</para>
+                <para>Host webcam passthrough; see chapter <xref
+                    linkend="webcam-passthrough" />.</para>
+              </listitem>
+
+              <listitem>
+                <para>Intel PXE boot ROM.</para>
               </listitem>
 
               <listitem>
