@@ -5850,6 +5850,7 @@ static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         VMMRZCallRing3Disable(pVCpu);
         HM_DISABLE_PREEMPT_IF_NEEDED();
 
+        /* Doing the check here ensures we don't overwrite already-saved guest MSRs from a preemption hook. */
         if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_LAZY_MSRS))
         {
             hmR0VmxLazySaveGuestMsrs(pVCpu, pMixedCtx);
@@ -5859,7 +5860,12 @@ static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         HM_RESTORE_PREEMPT_IF_NEEDED();
         VMMRZCallRing3Enable(pVCpu);
     }
-#else
+    else
+    {
+        /* Darwin 32-bit/PAE kernels. */
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_LAZY_MSRS;
+    }
+#else   /* HC_ARCH_BITS == 32 */
     pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_LAZY_MSRS;
 #endif
 
