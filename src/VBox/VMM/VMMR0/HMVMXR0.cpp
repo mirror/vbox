@@ -5842,9 +5842,6 @@ static int hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_LAZY_MSRS)
-        return VINF_SUCCESS;
-
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (   HMVMX_IS_64BIT_HOST_MODE()
         && pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
@@ -5853,14 +5850,19 @@ static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         VMMRZCallRing3Disable(pVCpu);
         HM_DISABLE_PREEMPT_IF_NEEDED();
 
-        hmR0VmxLazySaveGuestMsrs(pVCpu, pMixedCtx);
+        if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_LAZY_MSRS))
+        {
+            hmR0VmxLazySaveGuestMsrs(pVCpu, pMixedCtx);
+            pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_LAZY_MSRS;
+        }
 
         HM_RESTORE_PREEMPT_IF_NEEDED();
         VMMRZCallRing3Enable(pVCpu);
     }
+#else
+    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_LAZY_MSRS;
 #endif
 
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_LAZY_MSRS;
     return VINF_SUCCESS;
 }
 
