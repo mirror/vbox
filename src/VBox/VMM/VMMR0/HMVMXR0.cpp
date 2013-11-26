@@ -2418,6 +2418,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
         {
             LogRel(("hmR0VmxSetupProcCtls: invalid secondary processor-based VM-execution controls combo! "
                     "cpu=%#RX64 val=%#RX64 zap=%#RX64\n", pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.disallowed0, val, zap));
+            pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC2;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
 
@@ -2431,6 +2432,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
     {
         LogRel(("hmR0VmxSetupProcCtls: Unrestricted Guest set as true when secondary processor-based VM-execution controls not "
                 "available\n"));
+        pVCpu->hm.s.u32HMError = VMX_UFC_INVALID_UX_COMBO;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 

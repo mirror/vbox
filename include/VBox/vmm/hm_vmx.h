@@ -125,6 +125,10 @@ AssertCompileSize(VMXRESTOREHOST, 56);
 #define VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE                  6
 /** Invalid VMCS size. */
 #define VMX_UFC_INVALID_VMCS_SIZE                               7
+/** Unsupported secondary processor-based VM-execution controls combo. */
+#define VMX_UFC_CTRL_PROC_EXEC2                                 8
+/** Invalid unrestricted-guest execution controls combo. */
+#define VMX_UFC_INVALID_UX_COMBO                                9
 /** @} */
 
 /** @name VMX HM-error codes for VERR_VMX_INVALID_GUEST_STATE.
