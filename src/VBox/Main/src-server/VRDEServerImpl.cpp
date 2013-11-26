@@ -511,7 +511,6 @@ HRESULT VRDEServer::getVRDEProperties(std::vector<com::Utf8Str> &aProperties)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (!mData->mEnabled)
     {
-        aProperties.resize(cProperties);
         return S_OK;
     }
     alock.release();
@@ -678,11 +677,12 @@ HRESULT VRDEServer::getAuthLibrary(com::Utf8Str &aLibrary)
         /* Get the global setting. */
         ComPtr<ISystemProperties> systemProperties;
         HRESULT hrc = mParent->getVirtualBox()->COMGETTER(SystemProperties)(systemProperties.asOutParam());
-        Bstr strlib;
         if (SUCCEEDED(hrc))
         {
+            Bstr strlib;
             hrc = systemProperties->COMGETTER(VRDEAuthLibrary)(strlib.asOutParam());
-            aLibrary = Utf8Str(strlib).c_str();
+            if (SUCCEEDED(hrc))
+                aLibrary = Utf8Str(strlib).c_str();
         }
 
         if (FAILED(hrc))
@@ -817,12 +817,15 @@ HRESULT VRDEServer::getVRDEExtPack(com::Utf8Str &aExtPack)
     else
     {
         /* Get the global setting. */
-        BSTR bstr;
         ComPtr<ISystemProperties> systemProperties;
         hrc = mParent->getVirtualBox()->COMGETTER(SystemProperties)(systemProperties.asOutParam());
         if (SUCCEEDED(hrc))
+        {
+            BSTR bstr;
             hrc = systemProperties->COMGETTER(DefaultVRDEExtPack)(&bstr);
-        aExtPack = Utf8Str(bstr);
+            if (SUCCEEDED(hrc))
+                aExtPack = Utf8Str(bstr);
+        }
     }
     return hrc;
 }
