@@ -105,7 +105,7 @@ private:
     void prepareMenuBar();
     void prepareToolBar();
     void prepareContextMenu();
-    void preapreTabWidget();
+    void prepareTabWidget();
     void prepareTreeWidgets();
     void prepareTreeWidgetHD();
     void prepareTreeWidgetCD();

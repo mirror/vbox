@@ -231,7 +231,7 @@ private:
 UIMediumManager* UIMediumManager::m_spInstance = 0;
 UIMediumManager* UIMediumManager::instance() { return m_spInstance; }
 
-UIMediumManager::UIMediumManager(QWidget *pCenterWidget, bool fRefresh /* = true*/)
+UIMediumManager::UIMediumManager(QWidget *pCenterWidget, bool fRefresh /* = true */)
     : QIWithRetranslateUI2<QIMainDialog>(0, Qt::Dialog)
     , m_pCenterWidget(pCenterWidget)
     , m_fRefresh(fRefresh)
@@ -256,7 +256,7 @@ UIMediumManager::~UIMediumManager()
 }
 
 /* static */
-void UIMediumManager::showModeless(QWidget *pCenterWidget /* = 0*/, bool fRefresh /* = true*/)
+void UIMediumManager::showModeless(QWidget *pCenterWidget /* = 0 */, bool fRefresh /* = true */)
 {
     /* Prepare instance if not prepared: */
     if (!m_spInstance)
@@ -270,6 +270,7 @@ void UIMediumManager::showModeless(QWidget *pCenterWidget /* = 0*/, bool fRefres
 
 void UIMediumManager::refreshAll()
 {
+    /* Start medium-enumeration: */
     vboxGlobal().startMediumEnumeration();
 }
 
@@ -279,7 +280,7 @@ void UIMediumManager::sltHandleMediumCreated(const QString &strMediumID)
     UIMedium medium = vboxGlobal().medium(strMediumID);
 
     /* Ignore non-interesting mediums: */
-    if ((medium.isNull()) || (medium.isHostDrive()))
+    if (medium.isNull() || medium.isHostDrive())
         return;
 
     /* Ignore mediums (and their children) which are
@@ -431,7 +432,7 @@ void UIMediumManager::sltHandleMediumEnumerated(const QString &strMediumID)
     UIMedium medium = vboxGlobal().medium(strMediumID);
 
     /* Ignore non-interesting mediums: */
-    if ((medium.isNull()) || (medium.isHostDrive()))
+    if (medium.isNull() || medium.isHostDrive())
         return;
 
     /* Ignore mediums (and their children) which are
@@ -804,7 +805,7 @@ void UIMediumManager::prepare()
     /* Prepare context-menu: */
     prepareContextMenu();
     /* Prepare tab-widget: */
-    preapreTabWidget();
+    prepareTabWidget();
     /* Prepare tree-widgets: */
     prepareTreeWidgets();
     /* Prepare information-panes: */
@@ -986,7 +987,7 @@ void UIMediumManager::prepareContextMenu()
     }
 }
 
-void UIMediumManager::preapreTabWidget()
+void UIMediumManager::prepareTabWidget()
 {
     /* Tab-widget created in .ui file. */
     {
