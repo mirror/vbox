@@ -2104,7 +2104,7 @@ int GuestProcessTool::GetCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock 
 
 bool GuestProcessTool::IsRunning(void)
 {
-    AssertReturn(!pProcess.isNull(), true);
+    AssertReturn(!pProcess.isNull(), false);
 
     ProcessStatus_T procStatus = ProcessStatus_Undefined;
     HRESULT hr = pProcess->COMGETTER(Status(&procStatus));
