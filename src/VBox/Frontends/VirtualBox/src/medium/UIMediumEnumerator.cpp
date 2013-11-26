@@ -27,6 +27,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMachine.h"
+#include "CSnapshot.h"
 #include "CMediumAttachment.h"
 
 
@@ -183,7 +184,7 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
     /* Gather currently used CMediums and their IDs: */
     CMediumMap currentCMediums;
     QStringList currentCMediumIDs;
-    calculateActualUsage(strMachineID, currentCMediums, currentCMediumIDs);
+    calculateActualUsage(strMachineID, currentCMediums, currentCMediumIDs, true /* take into account current state only */);
     LogRel(("UIMediumEnumerator:  New usage: %s\n",
             currentCMediumIDs.isEmpty() ? "<empty>" : currentCMediumIDs.join(", ").toAscii().constData()));
 
@@ -221,7 +222,7 @@ void UIMediumEnumerator::sltHandleMachineRegistration(QString strMachineID, bool
         /* Gather currently used CMediums and their IDs: */
         CMediumMap currentCMediums;
         QStringList currentCMediumIDs;
-        calculateActualUsage(strMachineID, currentCMediums, currentCMediumIDs);
+        calculateActualUsage(strMachineID, currentCMediums, currentCMediumIDs, false /* take into account current state only */);
         LogRel(("UIMediumEnumerator:  New usage: %s\n",
                 currentCMediumIDs.isEmpty() ? "<empty>" : currentCMediumIDs.join(", ").toAscii().constData()));
         /* Update cache with currently used CMediums: */
@@ -258,7 +259,7 @@ void UIMediumEnumerator::sltHandleSnapshotDeleted(QString strMachineID, QString 
     /* Gather currently used CMediums and their IDs: */
     CMediumMap currentCMediums;
     QStringList currentCMediumIDs;
-    calculateActualUsage(strMachineID, currentCMediums, currentCMediumIDs);
+    calculateActualUsage(strMachineID, currentCMediums, currentCMediumIDs, true /* take into account current state only */);
     LogRel(("UIMediumEnumerator:  New usage: %s\n",
             currentCMediumIDs.isEmpty() ? "<empty>" : currentCMediumIDs.join(", ").toAscii().constData()));
 
@@ -423,11 +424,49 @@ void UIMediumEnumerator::calculateCachedUsage(const QString &strMachineID, QStri
  * @param strMachineID describes the machine we are calculating <i>usage</i> for.
  * @param currentCMediums receives CMedium used in actual data.
  * @param currentCMediumIDs receives CMedium IDs used in actual data.
+ * @param fTakeIntoAccountCurrentStateOnly defines whether we should take into accound current VM state only.
  */
-void UIMediumEnumerator::calculateActualUsage(const QString &strMachineID, CMediumMap &currentCMediums, QStringList &currentCMediumIDs) const
+void UIMediumEnumerator::calculateActualUsage(const QString &strMachineID, CMediumMap &currentCMediums, QStringList &currentCMediumIDs, bool fTakeIntoAccountCurrentStateOnly) const
 {
     /* Search for corresponding machine: */
     CMachine machine = vboxGlobal().virtualBox().FindMachine(strMachineID);
+    AssertReturnVoid(!machine.isNull());
+
+    /* Calculate actual usage starting from root-snapshot if necessary: */
+    if (!fTakeIntoAccountCurrentStateOnly)
+        calculateActualUsage(machine.FindSnapshot(QString()), currentCMediums, currentCMediumIDs);
+    /* Calculate actual usage for current machine state: */
+    calculateActualUsage(machine, currentCMediums, currentCMediumIDs);
+}
+
+/**
+ * Calculates new CMedium <i>usage</i> based on actual data.
+ * @param snapshot is reference we are calculating <i>usage</i> for.
+ * @param currentCMediums receives CMedium used in actual data.
+ * @param currentCMediumIDs receives CMedium IDs used in actual data.
+ */
+void UIMediumEnumerator::calculateActualUsage(const CSnapshot &snapshot, CMediumMap &currentCMediums, QStringList &currentCMediumIDs) const
+{
+    /* Check passed snapshot: */
+    AssertReturnVoid(!snapshot.isNull());
+
+    /* Calculate actual usage for passed snapshot machine: */
+    calculateActualUsage(snapshot.GetMachine(), currentCMediums, currentCMediumIDs);
+
+    /* Iterate through passed snapshot children: */
+    foreach (const CSnapshot &childSnapshot, snapshot.GetChildren())
+        calculateActualUsage(childSnapshot, currentCMediums, currentCMediumIDs);
+}
+
+/**
+ * Calculates new CMedium <i>usage</i> based on actual data.
+ * @param machine is reference we are calculating <i>usage</i> for.
+ * @param currentCMediums receives CMedium used in actual data.
+ * @param currentCMediumIDs receives CMedium IDs used in actual data.
+ */
+void UIMediumEnumerator::calculateActualUsage(const CMachine &machine, CMediumMap &currentCMediums, QStringList &currentCMediumIDs) const
+{
+    /* Check passed machine: */
     AssertReturnVoid(!machine.isNull());
 
     /* For each the attachment machine have: */

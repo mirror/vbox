@@ -85,7 +85,9 @@ private:
 
     /* Helpers: Medium re-caching stuff: */
     void calculateCachedUsage(const QString &strMachineID, QStringList &previousUIMediumIDs, bool fTakeIntoAccountCurrentStateOnly) const;
-    void calculateActualUsage(const QString &strMachineID, CMediumMap &currentCMediums, QStringList &currentCMediumIDs) const;
+    void calculateActualUsage(const QString &strMachineID, CMediumMap &currentCMediums, QStringList &currentCMediumIDs, bool fTakeIntoAccountCurrentStateOnly) const;
+    void calculateActualUsage(const CSnapshot &snapshot, CMediumMap &currentCMediums, QStringList &currentCMediumIDs) const;
+    void calculateActualUsage(const CMachine &machine, CMediumMap &currentCMediums, QStringList &currentCMediumIDs) const;
     void recacheFromCachedUsage(const QStringList &previousUIMediumIDs);
     void recacheFromActualUsage(const CMediumMap &currentCMediums, const QStringList &currentCMediumIDs);
 
