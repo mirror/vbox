@@ -50,6 +50,12 @@ VBoxNetLwipNAT_LIBS = \
 VBoxNetLwipNAT_LIBS.solaris += socket nsl
 VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
 
+# Convince Solaris headers to expose socket stuff we need.  600 would
+# also work, but <sys/feature_tests.h> insists on C99 for it and so
+# explodes for C++.  Note that for 500 it insists on NOT using C99, so
+# when some day we decide to use -std=c99 we are in for some fun.
+VBoxNetLwipNAT_DEFS.solaris += _XOPEN_SOURCE=500 __EXTENSIONS__=1
+
 VBoxNetLwipNAT_SOURCES += \
     proxy_pollmgr.c \
     proxy_rtadvd.c \
