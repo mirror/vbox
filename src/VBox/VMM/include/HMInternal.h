@@ -83,18 +83,19 @@ RT_C_DECLS_BEGIN
 #define HM_CHANGED_GUEST_SYSENTER_CS_MSR         RT_BIT(13)
 #define HM_CHANGED_GUEST_SYSENTER_EIP_MSR        RT_BIT(14)
 #define HM_CHANGED_GUEST_SYSENTER_ESP_MSR        RT_BIT(15)
+#define HM_CHANGED_GUEST_LAZY_MSRS               RT_BIT(16)     /* Shared */
 /* VT-x specific state. */
-#define HM_CHANGED_VMX_GUEST_AUTO_MSRS           RT_BIT(16)
-#define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE      RT_BIT(17)
-#define HM_CHANGED_VMX_GUEST_APIC_STATE          RT_BIT(18)
-#define HM_CHANGED_VMX_ENTRY_CTLS                RT_BIT(19)
-#define HM_CHANGED_VMX_EXIT_CTLS                 RT_BIT(20)
+#define HM_CHANGED_VMX_GUEST_AUTO_MSRS           RT_BIT(17)
+#define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE      RT_BIT(18)
+#define HM_CHANGED_VMX_GUEST_APIC_STATE          RT_BIT(19)
+#define HM_CHANGED_VMX_ENTRY_CTLS                RT_BIT(20)
+#define HM_CHANGED_VMX_EXIT_CTLS                 RT_BIT(21)
 /* AMD-V specific state. */
-#define HM_CHANGED_SVM_GUEST_EFER_MSR            RT_BIT(16)
-#define HM_CHANGED_SVM_GUEST_APIC_STATE          RT_BIT(17)
-#define HM_CHANGED_SVM_RESERVED1                 RT_BIT(18)
-#define HM_CHANGED_SVM_RESERVED2                 RT_BIT(19)
-#define HM_CHANGED_SVM_RESERVED3                 RT_BIT(20)
+#define HM_CHANGED_SVM_GUEST_EFER_MSR            RT_BIT(17)
+#define HM_CHANGED_SVM_GUEST_APIC_STATE          RT_BIT(18)
+#define HM_CHANGED_SVM_RESERVED1                 RT_BIT(19)
+#define HM_CHANGED_SVM_RESERVED2                 RT_BIT(20)
+#define HM_CHANGED_SVM_RESERVED3                 RT_BIT(21)
 
 #define HM_CHANGED_ALL_GUEST                     (  HM_CHANGED_GUEST_CR0                \
                                                   | HM_CHANGED_GUEST_CR3                \
@@ -112,17 +113,19 @@ RT_C_DECLS_BEGIN
                                                   | HM_CHANGED_GUEST_SYSENTER_CS_MSR    \
                                                   | HM_CHANGED_GUEST_SYSENTER_EIP_MSR   \
                                                   | HM_CHANGED_GUEST_SYSENTER_ESP_MSR   \
+                                                  | HM_CHANGED_GUEST_LAZY_MSRS          \
                                                   | HM_CHANGED_VMX_GUEST_AUTO_MSRS      \
                                                   | HM_CHANGED_VMX_GUEST_ACTIVITY_STATE \
                                                   | HM_CHANGED_VMX_GUEST_APIC_STATE     \
                                                   | HM_CHANGED_VMX_ENTRY_CTLS           \
                                                   | HM_CHANGED_VMX_EXIT_CTLS)
 
-#define HM_CHANGED_HOST_CONTEXT                  RT_BIT(21)
+#define HM_CHANGED_HOST_CONTEXT                  RT_BIT(22)
 
 /* Bits shared between host and guest. */
 #define HM_CHANGED_HOST_GUEST_SHARED_STATE       (  HM_CHANGED_GUEST_CR0                \
-                                                  | HM_CHANGED_GUEST_DEBUG)
+                                                  | HM_CHANGED_GUEST_DEBUG              \
+                                                  | HM_CHANGED_GUEST_LAZY_MSRS)
 /** @} */
 
 /** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
@@ -594,9 +597,21 @@ typedef struct HMCPU
 
         /** Number of guest/host MSR pairs in the auto-load/store area. */
         uint32_t                    cMsrs;
-        /** Whether the host MSR values are up-to-date. */
+        /** Whether the host MSR values are up-to-date in the auto-load/store area. */
         bool                        fUpdatedHostMsrs;
         uint8_t                     u8Align[7];
+
+        /** Host LSTAR MSR value to restore lazily while leaving VT-x. */
+        uint64_t                    u64HostLStarMsr;
+        /** Host STAR MSR value to restore lazily while leaving VT-x. */
+        uint64_t                    u64HostStarMsr;
+        /** Host SF_MASK MSR value to restore lazily while leaving VT-x. */
+        uint64_t                    u64HostSFMaskMsr;
+        /** Host KernelGS-Base MSR value to restore lazily while leaving VT-x. */
+        uint64_t                    u64HostKernelGSBaseMsr;
+        /** A mask of which MSRs have been swapped and need restoration. */
+        uint32_t                    fRestoreHostMsrs;
+        uint32_t                    u32Alignment3;
 
         /** The cached APIC-base MSR used for identifying when to map the HC physical APIC-access page. */
         uint64_t                    u64MsrApicBase;
@@ -640,7 +655,7 @@ typedef struct HMCPU
         bool                        fWasInRealMode;
         uint8_t                     u8Align2[7];
 
-        /** Padding.  */
+        /** Alignment padding. */
         uint32_t                    u32Padding;
     } vmx;
 
