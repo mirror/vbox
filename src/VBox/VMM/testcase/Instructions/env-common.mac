@@ -18,6 +18,7 @@
 %ifndef ___env_common_mac
 %define ___env_common_mac
 
+%include "iprt/x86.mac"
 
 ;*******************************************************************************
 ;*  Defined Constants And Macros                                               *

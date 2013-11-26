@@ -785,11 +785,12 @@ FNIEMOP_DEF_1(iemOp_Grp7_sgdt, uint8_t, bRm)
     IEMOP_MNEMONIC("sgdt Ms");
     IEMOP_HLP_64BIT_OP_SIZE();
     IEM_MC_BEGIN(3, 1);
-    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/pIemCpu->iEffSeg,             0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                    0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                                1);
     IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSizeArg,/*=*/pIemCpu->enmEffOpSize, 2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ASSIGN(iEffSeg, pIemCpu->iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_sgdt, iEffSeg, GCPtrEffSrc, enmEffOpSizeArg);
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -834,11 +835,12 @@ FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
     IEMOP_MNEMONIC("sidt Ms");
     IEMOP_HLP_64BIT_OP_SIZE();
     IEM_MC_BEGIN(3, 1);
-    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/pIemCpu->iEffSeg,             0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                    0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                                1);
     IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSizeArg,/*=*/pIemCpu->enmEffOpSize, 2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ASSIGN(iEffSeg, pIemCpu->iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_sidt, iEffSeg, GCPtrEffSrc, enmEffOpSizeArg);
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -867,14 +869,14 @@ FNIEMOP_DEF(iemOp_Grp7_mwait)
 FNIEMOP_DEF_1(iemOp_Grp7_lgdt, uint8_t, bRm)
 {
     IEMOP_MNEMONIC("lgdt");
-    IEMOP_HLP_NO_LOCK_PREFIX();
-
     IEMOP_HLP_64BIT_OP_SIZE();
     IEM_MC_BEGIN(3, 1);
-    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/pIemCpu->iEffSeg,             0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                    0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                                1);
     IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSizeArg,/*=*/pIemCpu->enmEffOpSize, 2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ASSIGN(iEffSeg, pIemCpu->iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_lgdt, iEffSeg, GCPtrEffSrc, enmEffOpSizeArg);
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -900,16 +902,16 @@ FNIEMOP_DEF(iemOp_Grp7_xsetbv)
 /** Opcode 0x0f 0x01 /3. */
 FNIEMOP_DEF_1(iemOp_Grp7_lidt, uint8_t, bRm)
 {
-    IEMOP_HLP_NO_LOCK_PREFIX();
-
     IEMMODE enmEffOpSize = pIemCpu->enmCpuMode == IEMMODE_64BIT
                          ? IEMMODE_64BIT
                          : pIemCpu->enmEffOpSize;
     IEM_MC_BEGIN(3, 1);
-    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/pIemCpu->iEffSeg,     0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                            0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                        1);
     IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSizeArg,/*=*/enmEffOpSize,  2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ASSIGN(iEffSeg, pIemCpu->iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_lidt, iEffSeg, GCPtrEffSrc, enmEffOpSizeArg);
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -4921,15 +4923,16 @@ FNIEMOP_DEF(iemOp_shrd_Ev_Gv_CL)
 FNIEMOP_DEF_1(iemOp_Grp15_fxsave,   uint8_t, bRm)
 {
     IEMOP_MNEMONIC("fxsave m512");
-    IEMOP_HLP_NO_LOCK_PREFIX();
     if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_FXSR))
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(3, 1);
-    IEM_MC_ARG_CONST(uint8_t,   iEffSeg,/*=*/pIemCpu->iEffSeg,           0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
     IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pIemCpu->enmEffOpSize, 2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ASSIGN(iEffSeg, pIemCpu->iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_fxsave, iEffSeg, GCPtrEff, enmEffOpSize);
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -4940,15 +4943,16 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxsave,   uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC("fxrstor m512");
-    IEMOP_HLP_NO_LOCK_PREFIX();
     if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_FXSR))
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(3, 1);
-    IEM_MC_ARG_CONST(uint8_t,   iEffSeg,/*=*/pIemCpu->iEffSeg,           0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
     IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pIemCpu->enmEffOpSize, 2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ASSIGN(iEffSeg, pIemCpu->iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_fxrstor, iEffSeg, GCPtrEff, enmEffOpSize);
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -7187,7 +7191,14 @@ FNIEMOP_DEF(iemOp_seg_ES)
 
 
 /** Opcode 0x27. */
-FNIEMOP_STUB(iemOp_daa);
+FNIEMOP_DEF(iemOp_daa)
+{
+    IEMOP_MNEMONIC("daa AL");
+    IEMOP_HLP_NO_64BIT();
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF);
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_daa);
+}
 
 
 /** Opcode 0x28. */
@@ -7251,7 +7262,14 @@ FNIEMOP_DEF(iemOp_seg_CS)
 
 
 /** Opcode 0x2f. */
-FNIEMOP_STUB(iemOp_das);
+FNIEMOP_DEF(iemOp_das)
+{
+    IEMOP_MNEMONIC("das AL");
+    IEMOP_HLP_NO_64BIT();
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF);
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_das);
+}
 
 
 /** Opcode 0x30. */
@@ -13109,11 +13127,12 @@ FNIEMOP_DEF_1(iemOp_fldenv, uint8_t, bRm)
     IEMOP_MNEMONIC("fldenv m14/28byte");
     IEM_MC_BEGIN(3, 0);
     IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pIemCpu->enmEffOpSize,  0);
-    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pIemCpu->iEffSeg,       1);
+    IEM_MC_ARG(uint8_t,                 iEffSeg,                                    1);
     IEM_MC_ARG(RTGCPTR,                 GCPtrEffSrc,                                2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_ASSIGN(iEffSeg, pIemCpu->iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_fldenv, enmEffOpSize, iEffSeg, GCPtrEffSrc);
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -13143,11 +13162,12 @@ FNIEMOP_DEF_1(iemOp_fnstenv, uint8_t, bRm)
     IEMOP_MNEMONIC("fstenv m14/m28byte");
     IEM_MC_BEGIN(3, 0);
     IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pIemCpu->enmEffOpSize,  0);
-    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pIemCpu->iEffSeg,       1);
+    IEM_MC_ARG(uint8_t,                 iEffSeg,                                    1);
     IEM_MC_ARG(RTGCPTR,                 GCPtrEffDst,                                2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_ASSIGN(iEffSeg, pIemCpu->iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_fnstenv, enmEffOpSize, iEffSeg, GCPtrEffDst);
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -15005,14 +15025,15 @@ FNIEMOP_DEF_1(iemOp_fstp_m64r,   uint8_t, bRm)
 /** Opcode 0xdd !11/0. */
 FNIEMOP_DEF_1(iemOp_frstor,      uint8_t, bRm)
 {
-    IEMOP_MNEMONIC("fxrstor m94/108byte");
+    IEMOP_MNEMONIC("frstor m94/108byte");
     IEM_MC_BEGIN(3, 0);
     IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pIemCpu->enmEffOpSize,  0);
-    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pIemCpu->iEffSeg,       1);
+    IEM_MC_ARG(uint8_t,                 iEffSeg,                                    1);
     IEM_MC_ARG(RTGCPTR,                 GCPtrEffSrc,                                2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_ASSIGN(iEffSeg, pIemCpu->iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_frstor, enmEffOpSize, iEffSeg, GCPtrEffSrc);
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -15025,11 +15046,12 @@ FNIEMOP_DEF_1(iemOp_fnsave,      uint8_t, bRm)
     IEMOP_MNEMONIC("fnsave m94/108byte");
     IEM_MC_BEGIN(3, 0);
     IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pIemCpu->enmEffOpSize,  0);
-    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pIemCpu->iEffSeg,       1);
+    IEM_MC_ARG(uint8_t,                 iEffSeg,                                    1);
     IEM_MC_ARG(RTGCPTR,                 GCPtrEffDst,                                2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_ASSIGN(iEffSeg, pIemCpu->iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_fnsave, enmEffOpSize, iEffSeg, GCPtrEffDst);
     IEM_MC_END();
     return VINF_SUCCESS;

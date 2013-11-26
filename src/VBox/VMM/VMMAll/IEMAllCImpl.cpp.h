@@ -5133,7 +5133,7 @@ IEM_CIMPL_DEF_0(iemCImpl_cpuid)
 /**
  * Implements 'AAD'.
  *
- * @param   enmEffOpSize    The effective operand size.
+ * @param   bImm            The immediate operand.
  */
 IEM_CIMPL_DEF_1(iemCImpl_aad, uint8_t, bImm)
 {
@@ -5169,6 +5169,75 @@ IEM_CIMPL_DEF_1(iemCImpl_aam, uint8_t, bImm)
                               X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF,
                               X86_EFL_OF | X86_EFL_AF | X86_EFL_CF);
 
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements 'DAA'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_daa)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    uint8_t const  al       = pCtx->al;
+    bool const     fCarry   = pCtx->eflags.Bits.u1CF;
+
+    if (   pCtx->eflags.Bits.u1AF
+        || (al & 0xf) >= 10)
+    {
+        pCtx->al = al + 6;
+        pCtx->eflags.Bits.u1AF = 1;
+    }
+    else
+        pCtx->eflags.Bits.u1AF = 0;
+
+    if (al >= 0x9a || fCarry)
+    {
+        pCtx->al += 0x60;
+        pCtx->eflags.Bits.u1CF = 1;
+    }
+    else
+        pCtx->eflags.Bits.u1CF = 0;
+
+    iemHlpUpdateArithEFlagsU8(pIemCpu, pCtx->al, X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements 'DAS'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_das)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    uint8_t const  uInputAL = pCtx->al;
+    bool const     fCarry   = pCtx->eflags.Bits.u1CF;
+
+    if (   pCtx->eflags.Bits.u1AF
+        || (uInputAL & 0xf) >= 10)
+    {
+        pCtx->eflags.Bits.u1AF = 1;
+        if (uInputAL < 6)
+            pCtx->eflags.Bits.u1CF = 1;
+        pCtx->al = uInputAL - 6;
+    }
+    else
+    {
+        pCtx->eflags.Bits.u1AF = 0;
+        pCtx->eflags.Bits.u1CF = 0;
+    }
+
+    if (uInputAL >= 0x9a || fCarry)
+    {
+        pCtx->al -= 0x60;
+        pCtx->eflags.Bits.u1CF = 1;
+    }
+
+    iemHlpUpdateArithEFlagsU8(pIemCpu, pCtx->al, X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF);
     iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }

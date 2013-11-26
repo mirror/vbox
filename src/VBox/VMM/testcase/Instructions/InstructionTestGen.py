@@ -136,6 +136,36 @@ g_asGRegs8Rex   = ('al',  'cl',  'dl',  'bl',  'spl', 'bpl', 'sil',  'dil',
                    'ah',  'ch',  'dh',  'bh');
 ## @}
 
+## @name EFLAGS/RFLAGS/EFLAGS
+## @{
+X86_EFL_CF              = RT_BIT_32(0);
+X86_EFL_CF_BIT          = 0;
+X86_EFL_1               = RT_BIT_32(1);
+X86_EFL_PF              = RT_BIT_32(2);
+X86_EFL_AF              = RT_BIT_32(4);
+X86_EFL_AF_BIT          = 4;
+X86_EFL_ZF              = RT_BIT_32(6);
+X86_EFL_ZF_BIT          = 6;
+X86_EFL_SF              = RT_BIT_32(7);
+X86_EFL_SF_BIT          = 7;
+X86_EFL_TF              = RT_BIT_32(8);
+X86_EFL_IF              = RT_BIT_32(9);
+X86_EFL_DF              = RT_BIT_32(10);
+X86_EFL_OF              = RT_BIT_32(11);
+X86_EFL_OF_BIT          = 11;
+X86_EFL_IOPL            = (RT_BIT_32(12) | RT_BIT_32(13));
+X86_EFL_NT              = RT_BIT_32(14);
+X86_EFL_RF              = RT_BIT_32(16);
+X86_EFL_VM              = RT_BIT_32(17);
+X86_EFL_AC              = RT_BIT_32(18);
+X86_EFL_VIF             = RT_BIT_32(19);
+X86_EFL_VIP             = RT_BIT_32(20);
+X86_EFL_ID              = RT_BIT_32(21);
+X86_EFL_LIVE_MASK       = 0x003f7fd5;
+X86_EFL_RA1_MASK        = RT_BIT_32(1);
+X86_EFL_IOPL_SHIFT      = 12;
+X86_EFL_STATUS_BITS     = ( X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF );
+## @}
 
 ## @name Random
 ## @{
@@ -1306,6 +1336,85 @@ class InstrTest_DivIDiv(InstrTestBase):
 
 
 
+class InstrTest_DaaDas(InstrTestBase):
+    """ Tests the DAA and DAS instructions. """
+
+    def __init__(self, fIsDas):
+        InstrTestBase.__init__(self, 'das' if fIsDas else 'daa');
+        self.fIsDas = fIsDas;
+
+    def isApplicable(self, oGen):
+        return not oGen.oTarget.is64Bit();
+
+    def generateTest(self, oGen, sTestFnName):
+        if self.fIsDas: from itgTableDas import g_aItgDasResults as aItgResults;
+        else:           from itgTableDaa import g_aItgDaaResults as aItgResults;
+        cMax = len(aItgResults);
+        if oGen.isTiny():
+            cMax = 64;
+
+        oGen.write('VBINSTST_BEGINPROC %s\n' % (sTestFnName,));
+        oGen.write('        xor     ebx, ebx\n');
+        oGen.write('.das_loop:\n');
+        # Save the loop variable so we can load known values.
+        oGen.write('        push    ebx\n');
+        oGen.newSubTestEx('ebx');
+
+        # Push the results.
+        oGen.write('        movzx   eax, byte [.abAlResults + ebx]\n');
+        oGen.write('        or      eax, %#x\n' % (oGen.au32Regs[X86_GREG_xAX] & ~0xff,));
+        oGen.write('        push    eax\n');
+        oGen.write('        movzx   eax, byte [.aFlagsResults + ebx]\n');
+        oGen.write('        push    eax\n');
+        # Calc and push the inputs.
+        oGen.write('        mov     eax, ebx\n');
+        oGen.write('        shr     eax, 2\n');
+        oGen.write('        and     eax, 0ffh\n');
+        oGen.write('        or      eax, %#x\n' % (oGen.au32Regs[X86_GREG_xAX] & ~0xff,));
+        oGen.write('        push    eax\n');
+
+        oGen.write('        pushfd\n')
+        oGen.write('        and     dword [xSP], ~(X86_EFL_CF | X86_EFL_AF)\n');
+        oGen.write('        mov     al, bl\n');
+        oGen.write('        and     al, 2\n');
+        oGen.write('        shl     al, X86_EFL_AF_BIT - 1\n');
+        oGen.write('        or      [xSP], al\n');
+        oGen.write('        mov     al, bl\n');
+        oGen.write('        and     al, X86_EFL_CF\n');
+        oGen.write('        or      [xSP], al\n');
+
+        # Load register values and do the test.
+        oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
+        oGen.write('        popfd\n');
+        oGen.write('        pop     eax\n');
+        if self.fIsDas:
+            oGen.write('        das\n');
+        else:
+            oGen.write('        daa\n');
+
+        # Verify the results.
+        fFlagsToCheck = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_ZF;
+        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needFlagsGRegChecker(fFlagsToCheck, X86_GREG_xAX),));
+
+        # Restore the loop variable and advance.
+        oGen.write('        pop     ebx\n');
+        oGen.write('        inc     ebx\n');
+        oGen.write('        cmp     ebx, %#x\n' % (cMax,));
+        oGen.write('        jb      .das_loop\n');
+
+        oGen.write('        ret\n');
+
+        oGen.write('.abAlResults:\n');
+        for i in range(cMax):
+            oGen.write('        db %#x\n' % (aItgResults[i][0],));
+
+        oGen.write('.aFlagsResults:\n');
+        for i in range(cMax):
+            oGen.write('        db %#x\n' % (aItgResults[i][1],));
+
+        oGen.write('VBINSTST_ENDPROC   %s\n' % (sTestFnName,));
+        return True;
+
 
 ##
 # Instruction Tests.
@@ -1315,6 +1424,8 @@ g_aoInstructionTests = [
     InstrTest_MovSxD_Gv_Ev(),
     InstrTest_DivIDiv(fIsIDiv = False),
     InstrTest_DivIDiv(fIsIDiv = True),
+    InstrTest_DaaDas(fIsDas = False),
+    InstrTest_DaaDas(fIsDas = True),
 ];
 
 
@@ -1334,6 +1445,8 @@ class InstructionTestGen(object): # pylint: disable=R0902
     ## @}
     kasTestSizes = ( ksTestSize_Large, ksTestSize_Medium, ksTestSize_Tiny );
 
+    ## The prefix for the checker functions.
+    ksCheckerPrefix   = 'Common_Check_'
 
 
     def __init__(self, oOptions):
@@ -1420,6 +1533,13 @@ class InstructionTestGen(object): # pylint: disable=R0902
         self.write('        mov     dword [VBINSTST_NAME(g_uVBInsTstSubTestIndicator) xWrtRIP], __LINE__\n');
         return True;
 
+    def newSubTestEx(self, sIndicator):
+        """
+        Indicates that a new subtest has started.
+        """
+        self.write('        mov     dword [VBINSTST_NAME(g_uVBInsTstSubTestIndicator) xWrtRIP], %s\n' % (sIndicator, ));
+        return True;
+
     def needGRegChecker(self, iReg1, iReg2 = None, iReg3 = None):
         """
         Records the need for a given register checker function, returning its label.
@@ -1438,7 +1558,21 @@ class InstructionTestGen(object): # pylint: disable=R0902
         else:
             self._dCheckFns[sName]  = 1;
 
-        return 'Common_Check_' + sName;
+        return self.ksCheckerPrefix + sName;
+
+    def needFlagsGRegChecker(self, fFlagsToCheck, iReg1, iReg2 = None, iReg3 = None):
+        """
+        Records the need for a given rFLAGS + register checker function, returning its label.
+        """
+        sWorkerName = self.needGRegChecker(iReg1, iReg2, iReg3);
+
+        sName = 'eflags_%#x_%s' % (fFlagsToCheck, sWorkerName[len(self.ksCheckerPrefix):]);
+        if sName in self._dCheckFns:
+            self._dCheckFns[sName] += 1;
+        else:
+            self._dCheckFns[sName]  = 1;
+
+        return self.ksCheckerPrefix + sName;
 
     def needGRegMemSetup(self, cAddrBits, cbEffOp, iBaseReg = None, offDisp = None, iIndexReg = None, iScale = 1):
         """
@@ -1522,6 +1656,10 @@ class InstructionTestGen(object): # pylint: disable=R0902
     def isTiny(self):
         """ Checks if we're in tiny mode."""
         return self.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny;
+
+    def isMedium(self):
+        """ Checks if we're in medium mode."""
+        return self.oOptions.sTestSize == InstructionTestGen.ksTestSize_Medium;
 
 
     #
@@ -1873,43 +2011,76 @@ class InstructionTestGen(object): # pylint: disable=R0902
             asRegs = sName.split('_');
             sPushSize = 'dword';
 
-            # Prologue
-            self.write('\n\n'
-                       '; Checks 1 or more register values, expected values pushed on the stack.\n'
-                       '; To save space, the callee cleans up the stack.'
-                       '; Ref count: %u\n'
-                       'VBINSTST_BEGINPROC Common_Check_%s\n'
-                       '        MY_PUSH_FLAGS\n'
-                       % ( self._dCheckFns[sName], sName, ) );
+            # Do we check eflags first.
+            if asRegs[0] == 'eflags':
+                asRegs.pop(0);
+                sFlagsToCheck = asRegs.pop(0);
+                self.write('\n\n'
+                           '; Check flags and then defers to the register-only checker\n'
+                           '; To save space, the callee cleans up the stack.'
+                           '; Ref count: %u\n'
+                           'VBINSTST_BEGINPROC %s%s\n'
+                           '        MY_PUSH_FLAGS\n'
+                           '        push    sAX\n'
+                           '        mov     sAX, [xSP + sCB]\n'
+                           '        and     sAX, %s\n'
+                           '        cmp     sAX, [xSP + xCB + sCB*2]\n'
+                           '        je      .equal\n'
+                           % ( self._dCheckFns[sName], self.ksCheckerPrefix, sName,
+                               sFlagsToCheck,));
+                self.write('        push    dword 0xef ; register number\n'
+                           '        push    sAX        ; actual\n'
+                           '        mov     sAX, [xSP + xCB + sCB*4]\n'
+                           '        push    sAX        ; expected\n'
+                           '        call    VBINSTST_NAME(Common_BadValue)\n');
+                self.write('.equal:\n'
+                           '        mov     xAX, [xSP + sCB*2]\n'  # Remove the expected eflags value from the stack frame.
+                           '        mov     [xSP + sCB*2  + xCB + sCB - xCB], xAX\n'
+                           '        pop     sAX\n'
+                           '        MY_POP_FLAGS\n'
+                           '        lea     xSP, [xSP + sCB]\n'
+                           '        jmp     VBINSTST_NAME(Common_Check_%s)\n'
+                           'VBINSTST_ENDPROC   %s%s\n'
+                           % ( '_'.join(asRegs),
+                               self.ksCheckerPrefix, sName,) );
+            else:
+                # Prologue
+                self.write('\n\n'
+                           '; Checks 1 or more register values, expected values pushed on the stack.\n'
+                           '; To save space, the callee cleans up the stack.'
+                           '; Ref count: %u\n'
+                           'VBINSTST_BEGINPROC %s%s\n'
+                           '        MY_PUSH_FLAGS\n'
+                           % ( self._dCheckFns[sName], self.ksCheckerPrefix, sName, ) );
 
-            # Register checks.
-            for i in range(len(asRegs)):
-                sReg = asRegs[i];
-                iReg = self.oTarget.asGRegs.index(sReg);
-                if i == asRegs.index(sReg): # Only check once, i.e. input = output reg.
-                    self.write('        cmp     %s, [xSP + MY_PUSH_FLAGS_SIZE + xCB + sCB * %u]\n'
-                               '        je      .equal%u\n'
-                               '        push    %s %u      ; register number\n'
-                               '        push    %s         ; actual\n'
-                               '        mov     %s, [xSP + sCB*2 + MY_PUSH_FLAGS_SIZE + xCB + sCB * %u]\n'
-                               '        push    %s         ; expected\n'
-                               '        call    VBINSTST_NAME(Common_BadValue)\n'
-                               '.equal%u:\n'
-                           % ( sReg, i, i, sPushSize, iReg, sReg, sReg, i, sReg, i, ) );
+                # Register checks.
+                for i in range(len(asRegs)):
+                    sReg = asRegs[i];
+                    iReg = self.oTarget.asGRegs.index(sReg);
+                    if i == asRegs.index(sReg): # Only check once, i.e. input = output reg.
+                        self.write('        cmp     %s, [xSP + MY_PUSH_FLAGS_SIZE + xCB + sCB * %u]\n'
+                                   '        je      .equal%u\n'
+                                   '        push    %s %u      ; register number\n'
+                                   '        push    %s         ; actual\n'
+                                   '        mov     %s, [xSP + sCB*2 + MY_PUSH_FLAGS_SIZE + xCB + sCB * %u]\n'
+                                   '        push    %s         ; expected\n'
+                                   '        call    VBINSTST_NAME(Common_BadValue)\n'
+                                   '.equal%u:\n'
+                               % ( sReg, i, i, sPushSize, iReg, sReg, sReg, i, sReg, i, ) );
 
 
-            # Restore known register values and check the other registers.
-            for sReg in asRegs:
-                if self.oTarget.is64Bit():
-                    self.write('        mov     %s, [g_u64KnownValue_%s wrt rip]\n' % (sReg, sReg,));
-                else:
-                    iReg = self.oTarget.asGRegs.index(sReg)
-                    self.write('        mov     %s, 0x%x\n' % (sReg, self.au32Regs[iReg],));
-            self.write('        MY_POP_FLAGS\n'
-                       '        call    VBINSTST_NAME(Common_CheckKnownValues)\n'
-                       '        ret     sCB*%u\n'
-                       'VBINSTST_ENDPROC   Common_Check_%s\n'
-                       % (len(asRegs), sName,));
+                # Restore known register values and check the other registers.
+                for sReg in asRegs:
+                    if self.oTarget.is64Bit():
+                        self.write('        mov     %s, [g_u64KnownValue_%s wrt rip]\n' % (sReg, sReg,));
+                    else:
+                        iReg = self.oTarget.asGRegs.index(sReg)
+                        self.write('        mov     %s, 0x%x\n' % (sReg, self.au32Regs[iReg],));
+                self.write('        MY_POP_FLAGS\n'
+                           '        call    VBINSTST_NAME(Common_CheckKnownValues)\n'
+                           '        ret     sCB*%u\n'
+                           'VBINSTST_ENDPROC   %s%s\n'
+                           % (len(asRegs), self.ksCheckerPrefix, sName,));
 
         # memory setup functions
         self._generateMemSetupFunctions();
@@ -1949,14 +2120,15 @@ class InstructionTestGen(object): # pylint: disable=R0902
             # Generate the instruction tests.
             for iInstrTest in range(iInstrTestStart, iInstrTestEnd):
                 oInstrTest = g_aoInstructionTests[iInstrTest];
-                self.write('\n'
-                           '\n'
-                           ';\n'
-                           '; %s\n'
-                           ';\n'
-                           % (oInstrTest.sName,));
-                self._randInitIndexes();
-                oInstrTest.generateTest(self, self._calcTestFunctionName(oInstrTest, iInstrTest));
+                if oInstrTest.isApplicable(self):
+                    self.write('\n'
+                               '\n'
+                               ';\n'
+                               '; %s\n'
+                               ';\n'
+                               % (oInstrTest.sName,));
+                    self._randInitIndexes();
+                    oInstrTest.generateTest(self, self._calcTestFunctionName(oInstrTest, iInstrTest));
 
             # Generate the main function.
             self.write('\n\n'
