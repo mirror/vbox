@@ -1533,10 +1533,14 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
                 /** @todo Ugly hack! But right now we have no other means to disable
                  *        automatic NUMA page balancing. */
 # ifdef RT_OS_X86
+#  if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
                 pTask->mm->numa_next_reset = jiffies + 0x7fffffffUL;
+#  endif
                 pTask->mm->numa_next_scan  = jiffies + 0x7fffffffUL;
 # else
+#  if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
                 pTask->mm->numa_next_reset = jiffies + 0x7fffffffffffffffUL;
+#  endif
                 pTask->mm->numa_next_scan  = jiffies + 0x7fffffffffffffffUL;
 # endif
             }
