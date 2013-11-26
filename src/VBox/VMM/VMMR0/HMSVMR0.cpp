@@ -1799,6 +1799,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                             | HM_CHANGED_GUEST_SYSENTER_CS_MSR
                             | HM_CHANGED_GUEST_SYSENTER_EIP_MSR
                             | HM_CHANGED_GUEST_SYSENTER_ESP_MSR
+                            | HM_CHANGED_GUEST_LAZY_MSRS          /* Unused. */
                             | HM_CHANGED_SVM_RESERVED1            /* Reserved. */
                             | HM_CHANGED_SVM_RESERVED2
                             | HM_CHANGED_SVM_RESERVED3);
@@ -1834,6 +1835,9 @@ static void hmR0SvmLoadSharedState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 
     if (VMCPU_HMCF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_DEBUG))
         hmR0SvmLoadSharedDebugState(pVCpu, pVmcb, pCtx);
+
+    /* Unused on AMD-V. */
+    VMCPU_HMCF_CLEAR(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS);
 
     AssertMsg(!VMCPU_HMCF_IS_PENDING(pVCpu, HM_CHANGED_HOST_GUEST_SHARED_STATE),
               ("fContextUseFlags=%#RX32\n", VMCPU_HMCF_VALUE(pVCpu)));

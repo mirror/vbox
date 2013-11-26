@@ -94,6 +94,15 @@ AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr, 32);
 AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    40);
 AssertCompileSize(VMXRESTOREHOST, 56);
 
+/** @name Host-state MSR lazy-restoration flags.
+ * @{
+ */
+#define VMX_RESTORE_HOST_MSR_LSTAR            RT_BIT(0)
+#define VMX_RESTORE_HOST_MSR_STAR             RT_BIT(1)
+#define VMX_RESTORE_HOST_MSR_SFMASK           RT_BIT(2)
+#define VMX_RESTORE_HOST_MSR_KERNELGSBASE     RT_BIT(3)
+/** @} */
+
 /** @name VMX HM-error codes for VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO.
  *  UFC = Unsupported Feature Combination.
  * @{
@@ -2112,10 +2121,10 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
 
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 # define VMXWriteVmcsHstN(idxField, uVal)       HMVMX_IS_64BIT_HOST_MODE() ?                     \
-                                                   VMXWriteVmcs64(idxField, uVal)                 \
+                                                   VMXWriteVmcs64(idxField, uVal)                \
                                                  : VMXWriteVmcs32(idxField, uVal)
 # define VMXWriteVmcsGstN(idxField, u64Val)     (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests) ? \
-                                                   VMXWriteVmcs64(idxField, u64Val)               \
+                                                   VMXWriteVmcs64(idxField, u64Val)              \
                                                  : VMXWriteVmcs32(idxField, u64Val)
 #elif ARCH_BITS == 32
 # define VMXWriteVmcsHstN                       VMXWriteVmcs32
