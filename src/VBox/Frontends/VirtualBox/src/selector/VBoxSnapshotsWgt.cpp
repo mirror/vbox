@@ -1017,7 +1017,8 @@ void VBoxSnapshotsWgt::populateSnapshots (const CSnapshot &aSnapshot, QTreeWidge
                                     new SnapshotWgtItem (mTreeWidget, aSnapshot);
     item->recache();
 
-    if (mMachine.GetCurrentSnapshot().GetId() == aSnapshot.GetId())
+    CSnapshot curSnapshot = mMachine.GetCurrentSnapshot();
+    if (!curSnapshot.isNull() && curSnapshot.GetId() == aSnapshot.GetId())
     {
         item->setBold (true);
         mCurSnapshotItem = item;
