@@ -4464,11 +4464,14 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     {
         if (pVM->hm.s.fAllow64BitGuests)
         {
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_LSTAR,          pMixedCtx->msrLSTAR,        false /* fUpdateHostMsr */);
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_STAR,           pMixedCtx->msrSTAR,         false /* fUpdateHostMsr */);
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK,       false /* fUpdateHostMsr */);
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE, false /* fUpdateHostMsr */);
+#if HC_ARCH_BITS == 32 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+            if (!HMVMX_IS_64BIT_HOST_MODE())
+            {
+                hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_LSTAR,          pMixedCtx->msrLSTAR,        false /* fUpdateHostMsr */);
+                hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_STAR,           pMixedCtx->msrSTAR,         false /* fUpdateHostMsr */);
+                hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK,       false /* fUpdateHostMsr */);
+                hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE, false /* fUpdateHostMsr */);
+            }
 # ifdef DEBUG
             PVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
             for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cMsrs; i++, pMsr++)
@@ -5872,6 +5875,7 @@ static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_LAZY_MSRS;
     }
 #else   /* HC_ARCH_BITS == 32 */
+    NOREF(pMixedCtx);
     pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_LAZY_MSRS;
 #endif
 
@@ -8510,7 +8514,7 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         case VMX_EXIT_RDRAND:                  /* SVVMCS(); */ rc = hmR0VmxExitRdrand(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
         case VMX_EXIT_INVPCID:                 /* SVVMCS(); */ rc = hmR0VmxExitInvpcid(pVCpu, pMixedCtx, pVmxTransient);           /* LDVMCS(); */ break;
         case VMX_EXIT_GETSEC:                  /* SVVMCS(); */ rc = hmR0VmxExitGetsec(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
-        case VMX_EXIT_RDPMC:                   /* SVVMCS(); */ rc = hmR0VmxExitRdpmc(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */  break;
+        case VMX_EXIT_RDPMC:                   /* SVVMCS(); */ rc = hmR0VmxExitRdpmc(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
 
         case VMX_EXIT_TRIPLE_FAULT:            rc = hmR0VmxExitTripleFault(pVCpu, pMixedCtx, pVmxTransient); break;
         case VMX_EXIT_NMI_WINDOW:              rc = hmR0VmxExitNmiWindow(pVCpu, pMixedCtx, pVmxTransient); break;
@@ -9929,11 +9933,22 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     Log4(("CS:RIP=%04x:%#RX64 ECX=%X\n", pMixedCtx->cs.Sel, pMixedCtx->rip, pMixedCtx->ecx));
 
 #ifdef VBOX_STRICT
-    if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
-        && hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
+    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
     {
-        AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
-        HMVMX_RETURN_UNEXPECTED_EXIT();
+        if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
+        {
+            AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
+            HMVMX_RETURN_UNEXPECTED_EXIT();
+        }
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+        if (   HMVMX_IS_64BIT_HOST_MODE()
+            && pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests
+            && hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
+        {
+            AssertMsgFailed(("Unexpected RDMSR for a passthru lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
+            HMVMX_RETURN_UNEXPECTED_EXIT();
+        }
+# endif
     }
 #endif
 
