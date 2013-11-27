@@ -249,7 +249,6 @@ ifdef VBOX_WITH_WDDM
 #
 # VBoxOGL-x86 - x86 VBoxOGL version built for amd64 build
 #
-DLLS.win.amd64 += VBoxOGL-x86
 VBoxOGL-x86_EXTENDS = VBoxOGL
 VBoxOGL-x86_BLD_TRG_ARCH = x86
 VBoxOGL-x86_LIBS = $(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
@@ -477,7 +476,6 @@ ifdef VBOX_WITH_WDDM
 #
 # VBoxOGLarrayspu-x86 - x86 version of VBoxOGLarrayspu built for amd64 build
 #
-DLLS.win.amd64 += VBoxOGLarrayspu-x86
 VBoxOGLarrayspu-x86_EXTENDS = VBoxOGLarrayspu
 VBoxOGLarrayspu-x86_BLD_TRG_ARCH = x86
 VBoxOGLarrayspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
@@ -521,7 +519,6 @@ ifdef VBOX_WITH_WDDM
 #
 # VBoxOGLpassthroughspu-x86 - x86 version of VBoxOGLpassthroughspu built for amd64 build
 #
-DLLS.win.amd64 += VBoxOGLpassthroughspu-x86
 VBoxOGLpassthroughspu-x86_EXTENDS = VBoxOGLpassthroughspu
 VBoxOGLpassthroughspu-x86_BLD_TRG_ARCH = x86
 VBoxOGLpassthroughspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86)
@@ -603,7 +600,6 @@ ifdef VBOX_WITH_WDDM
 #
 # VBoxOGLpackspu-x86 - x86 version of VBoxOGLpackspu built for amd64 build
 #
-DLLS.win.amd64 += VBoxOGLpackspu-x86
 VBoxOGLpackspu-x86_EXTENDS = VBoxOGLpackspu
 VBoxOGLpackspu-x86_BLD_TRG_ARCH = x86
 VBoxOGLpackspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
@@ -680,7 +676,6 @@ ifdef VBOX_WITH_WDDM
 #
 # VBoxOGLfeedbackspu-x86 - x86 version of VBoxOGLfeedbackspu built for amd64 build
 #
-DLLS.win.amd64 += VBoxOGLfeedbackspu-x86
 VBoxOGLfeedbackspu-x86_EXTENDS = VBoxOGLfeedbackspu
 VBoxOGLfeedbackspu-x86_BLD_TRG_ARCH = x86
 VBoxOGLfeedbackspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
