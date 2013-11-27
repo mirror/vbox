@@ -128,23 +128,8 @@ private:
                   const com::Utf8Str &aTrunkType);
     HRESULT stop();
 
-
-    struct Data
-    {
-        Data() : enabled(FALSE) {}
-
-        Bstr IPAddress;
-        Bstr lowerIP;
-        Bstr upperIP;
-
-        BOOL enabled;
-        DHCPServerRunner dhcp;
-
-        DhcpOptionMap GlobalDhcpOptions;
-        VmSlot2OptionsMap VmSlot2Options;
-    };
-
-    Data m;
+    struct Data;
+    Data *m;
     /** weak VirtualBox parent */
     VirtualBox * const      mVirtualBox;
     const Bstr mName;
