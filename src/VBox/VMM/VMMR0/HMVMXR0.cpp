@@ -1416,7 +1416,6 @@ static void hmR0VmxLazySaveHostMsrs(PVMCPU pVCpu)
         if (!(pVCpu->hm.s.vmx.fRestoreHostMsrs & (RestoreFlag))) \
         { \
             pVCpu->hm.s.vmx.u64Host##a_HostMsrField = ASMRdMsr(uMsr); \
-            Log4(("hmR0VmxLazySaveHostMsrs: uMsr=%#RX32 HostValue=%#RX64\n", (uMsr), pVCpu->hm.s.vmx.u64Host##a_HostMsrField)); \
         } \
     } while (0)
 
@@ -1427,6 +1426,7 @@ static void hmR0VmxLazySaveHostMsrs(PVMCPU pVCpu)
     VMXLOCAL_SAVE_HOST_MSR(MSR_K6_STAR,           StarMsr,         VMX_RESTORE_HOST_MSR_STAR);
     VMXLOCAL_SAVE_HOST_MSR(MSR_K8_SF_MASK,        SFMaskMsr,       VMX_RESTORE_HOST_MSR_SFMASK);
     VMXLOCAL_SAVE_HOST_MSR(MSR_K8_KERNEL_GS_BASE, KernelGSBaseMsr, VMX_RESTORE_HOST_MSR_KERNELGSBASE);
+
 #undef VMXLOCAL_SAVE_HOST_MSR
 }
 
@@ -1467,6 +1467,8 @@ static bool hmR0VmxIsLazyGuestMsr(PVMCPU pVCpu, uint32_t uMsr)
 static void hmR0VmxLazySaveGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+
 #define VMXLOCAL_SAVE_GUEST_MSR(uMsr, a_GuestMsrField, RestoreFlag) \
     do { \
         if (pVCpu->hm.s.vmx.fRestoreHostMsrs & (RestoreFlag)) \
@@ -1503,6 +1505,7 @@ static void hmR0VmxLazySaveGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 static void hmR0VmxLazyLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
 #define VMXLOCAL_LOAD_GUEST_MSR(uMsr, a_GuestMsrField, a_HostMsrField, RestoreFlag) \
     do { \
@@ -1537,6 +1540,7 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 static void hmR0VmxLazyRestoreHostMsrs(PVMCPU pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
 #define VMXLOCAL_RESTORE_HOST_MSR(uMsr, a_HostMsrField, RestoreFlag) \
     do { \
