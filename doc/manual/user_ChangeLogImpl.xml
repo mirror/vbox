@@ -1,7 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
   <sect1>
-    <title>Version 4.3.0 Release Candidate 1 (2013-10-08)</title>
+    <title>Version 4.4.0 (yyyy-mm-dd)</title>
+
+    <para>This is a major update. The following major new features
+      were added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>placeholder
+      </listitem>
+
+    </itemizedlist>
+
+    <para>In addition, the following items were fixed and/or added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>API: fix information for some automatically generated events
+           (only with XPCOM, Windows host was not affected), which caused
+           errors when getting some of the attributes over the webservice
+           (bug #12379)</para>
+      </listitem>
+
+    </itemizedlist>
+
+  </sect1>
+
+  <sect1>
+    <title>Version 4.3.0 (2013-10-15)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -38,7 +67,8 @@
       </listitem>
 
       <listitem>
-        <para>Added host webcam passthrough</para>
+        <para>Added experimental support for webcam passthrough
+          complementing USB passthrough (see <xref linkend="webcam-passthrough" />)</para>
       </listitem>
 
       <listitem>
@@ -55,7 +85,8 @@
       </listitem>
 
       <listitem>
-        <para>Guest Control: implemented IGuestFile support</para>
+        <para>Guest Control: implemented <computeroutput>IGuestFile</computeroutput>
+          support</para>
       </listitem>
 
       <listitem>
@@ -86,11 +117,21 @@
       </listitem>
 
       <listitem>
+        <para>VMM: allow to activate VT-x while in SMX mode and provide more
+          information if that is not possible</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: update check uses https</para>
       </listitem>
 
       <listitem>
         <para>GUI: numerous minor internal cleanups and bug fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: HID LEDs synchronization when switching between guest window(s)
+          and host (Mac OS X hosts only)</para>
       </listitem>
 
       <listitem>
@@ -207,6 +248,12 @@
       </listitem>
 
       <listitem>
+        <para>VBoxManage: added <computeroutput>modifyvm --triplefaultreset</computeroutput>
+          to make the VM reset on triple fault instead of triggering a Guru Meditation
+          (see <xref linkend="vboxmanage-modifyvm"/>)</para>
+      </listitem>
+
+      <listitem>
         <para>3D support: several fixes</para>
       </listitem>
 
@@ -230,7 +277,16 @@
 
       <listitem>
         <para>Shared Clipboard/X11: support for BMP-format images, contributed
-           by François Revol</para>
+          by François Revol</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: limited support for Mac OS X 10.9 (Mavericks)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: use a launchd script instead of the deprecated
+          StartupItem mechanism (bug #8940)</para>
       </listitem>
 
       <listitem>
@@ -259,13 +315,13 @@
       </listitem>
 
       <listitem>
-        <para>Linux Additions: fixed udev detection in the init script
-          with Linux 3.x kernels</para>
+        <para>Windows Additions: ability to track guest user idle times through
+          the newly introduced event <emphasis>IGuestUserStateChangedEvent</emphasis></para>
       </listitem>
 
       <listitem>
-        <para>Windows guests: ability to track guest user idle times through
-          the newly introduced event <emphasis>IGuestUserStateChangedEvent</emphasis></para>
+        <para>Linux Additions: fixed udev detection in the init script
+          with Linux 3.x kernels</para>
       </listitem>
 
     </itemizedlist>
@@ -304,11 +360,11 @@
       </listitem>
 
       <listitem>
-        <para>3D: multiscreen fixes (incorrect mouse position, flickets)</para>
+        <para>3D support: multiscreen fixes (incorrect mouse position, flickets)</para>
       </listitem>
 
       <listitem>
-        <para>3D Support: several fixes for the Windows WDDM video driver
+        <para>3D support: several fixes for the Windows WDDM video driver
           (multiscreen, seamless)</para>
       </listitem>
 
@@ -335,7 +391,7 @@
         <para>Network: after the host resumes from suspend, disconnect and
           reconnect the virtual network cables to force renewing the DHCP
           leases for the guests. So far only Mac OS X hosts and Windows hosts
-          (bug #10063).</para>
+          (bug #10063)</para>
       </listitem>
 
       <listitem>
@@ -354,12 +410,12 @@
 
       <listitem>
         <para>Solaris hosts: fixed a potential kernel panic caused due to
-          unexpected preemption due to logging.</para>
+          unexpected preemption due to logging</para>
       </listitem>
 
       <listitem>
         <para>Windows hosts: fixed an issue with USB2 devices being inaccessible
-          when plugged into USB3 ports.</para>
+          when plugged into USB3 ports</para>
       </listitem>
 
       <listitem>
@@ -513,11 +569,11 @@
       </listitem>
 
       <listitem>
-        <para>3D: seamless + 3D fixes (bug #11723)</para>
+        <para>3D support: seamless + 3D fixes (bug #11723)</para>
       </listitem>
 
       <listitem>
-        <para>3D: version 4.2.12 was not able to read saved states of older
+        <para>3D support: version 4.2.12 was not able to read saved states of older
           versions under certain conditions (bug #11718)</para>
       </listitem>
 
@@ -1069,7 +1125,7 @@
       </listitem>
 
       <listitem>
-        <para>3D Support: several fixes</para>
+        <para>3D support: several fixes</para>
       </listitem>
 
       <listitem>
@@ -1327,7 +1383,7 @@
       </listitem>
 
       <listitem>
-        <para>3D Support: <emphasis>DrawIndexedPrimitiveUP</emphasis> implementation
+        <para>3D support: <emphasis>DrawIndexedPrimitiveUP</emphasis> implementation
           fixes for the Windows WDDM video driver (bug #10929) </para>
       </listitem>
 
@@ -1790,7 +1846,7 @@
       </listitem>
 
       <listitem>
-        <para>3D Support: several fixes for the Windows WDDM video driver crash</para>
+        <para>3D support: several fixes for the Windows WDDM video driver crash</para>
       </listitem>
 
       <listitem>
@@ -1884,7 +1940,7 @@
       </listitem>
 
       <listitem>
-        <para>3D Support: fixed Windows WDDM video driver crash for SMP guests
+        <para>3D support: fixed Windows WDDM video driver crash for SMP guests
           (bugs #10200, #10331)</para>
       </listitem>
 
@@ -2012,20 +2068,20 @@
       </listitem>
 
       <listitem>
-        <para>3D Support: fixed Windows XP hosts support (4.1.8 regression;
+        <para>3D support: fixed Windows XP hosts support (4.1.8 regression;
           bugs #10071 and #10088</para>
       </listitem>
 
       <listitem>
-        <para>3D Support: rendering fixes for Linux hosts with NVIDIA graphics</para>
+        <para>3D support: rendering fixes for Linux hosts with NVIDIA graphics</para>
       </listitem>
 
       <listitem>
-        <para>3D Support: fixed saved state issues (4.1.8 regression; bug #10126)</para>
+        <para>3D support: fixed saved state issues (4.1.8 regression; bug #10126)</para>
       </listitem>
 
       <listitem>
-        <para>3D Support: WDDM driver: fixed powershell_ise crashes (bug #10167),
+        <para>3D support: WDDM driver: fixed powershell_ise crashes (bug #10167),
           make WPF-based apps work with Aero enabled, fixed additional possible WinSAT crashes</para>
       </listitem>
 
@@ -2208,8 +2264,8 @@
       </listitem>
 
       <listitem>
-        <para>3D Support: fixed full screen mode issues for ATI graphics (bug #9775),
-          Windows Media Player rendering for XPDM-based Direct3D support (bug# 8341).
+        <para>3D support: fixed full screen mode issues for ATI graphics (bug #9775),
+          Windows Media Player rendering for XPDM-based Direct3D support (bug #8341).
           Multiple fixes to XPDM and WDDM - based 3D support for Windows Guests
           and for 3D support in general</para>
       </listitem>
@@ -2435,12 +2491,12 @@
       </listitem>
 
       <listitem>
-        <para>3D Support: fixed incorrect rendering and possible crashes when switching
+        <para>3D support: fixed incorrect rendering and possible crashes when switching
           to/from full screen with enabled 2D acceleration</para>
       </listitem>
 
       <listitem>
-        <para>3D Support: fixed compiz under ubuntu 9.10</para>
+        <para>3D support: fixed compiz under ubuntu 9.10</para>
       </listitem>
 
       <listitem>
