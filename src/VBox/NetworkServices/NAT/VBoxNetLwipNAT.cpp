@@ -81,20 +81,12 @@ extern "C"
 # define LWIP_SOCKET 0
 #endif
 #include "lwip/sys.h"
-#include "lwip/stats.h"
-#include "lwip/mem.h"
-#include "lwip/memp.h"
 #include "lwip/pbuf.h"
 #include "lwip/netif.h"
-#include "lwip/api.h"
-#include "lwip/tcp_impl.h"
-#include "ipv6/lwip/ethip6.h"
+#include "lwip/ethip6.h"
 #include "lwip/nd6.h"           // for proxy_na_hook
 #include "lwip/mld6.h"
-#include "lwip/udp.h"
-#include "lwip/tcp.h"
 #include "lwip/tcpip.h"
-#include "lwip/sockets.h"
 #include "netif/etharp.h"
 
 #include "proxy.h"
@@ -1362,4 +1354,3 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 # endif /* RT_OS_WINDOWS */
 
 #endif /* !VBOX_WITH_HARDENING */
-
