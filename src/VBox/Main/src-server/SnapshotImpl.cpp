@@ -2168,6 +2168,11 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
                         pSnapshot->getName().c_str(),
                         mUserData->s.strName.c_str(),
                         childrenCount);
+    if (pSnapshot == mData->mCurrentSnapshot && childrenCount >= 1)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Snapshot '%s' of the machine '%s' cannot be deleted, because it is the current snapshot and has one child snapshot"),
+                        pSnapshot->getName().c_str(),
+                        mUserData->s.strName.c_str());
 
     /* If the snapshot being deleted is the current one, ensure current
      * settings are committed and saved.

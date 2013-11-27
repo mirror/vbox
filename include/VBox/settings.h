@@ -1275,7 +1275,7 @@ private:
     void readDebugging(const xml::ElementNode *pElmDbg, Debugging *pDbg);
     void readAutostart(const xml::ElementNode *pElmAutostart, Autostart *pAutostart);
     void readGroups(const xml::ElementNode *elmGroups, StringsList *pllGroups);
-    void readSnapshot(uint32_t depth, const xml::ElementNode &elmSnapshot, Snapshot &snap);
+    bool readSnapshot(const com::Guid &curSnapshotUuid, uint32_t depth, const xml::ElementNode &elmSnapshot, Snapshot &snap);
     void convertOldOSType_pre1_5(com::Utf8Str &str);
     void readMachine(const xml::ElementNode &elmMachine);
 

@@ -19,6 +19,18 @@
     <itemizedlist>
 
       <listitem>
+        <para>API: block the removal of the current snapshot if it has child
+           snapshots (only relevant for VMs without snapshottable hard disks,
+           their presence always prevented removal), which resulted in VM
+           config corruption</para>
+      </listitem>
+
+      <listitem>
+        <para>API: mark VM configs with snapshots but without current snapshot
+           as inaccessible, as this combination is nonsense</para>
+      </listitem>
+
+      <listitem>
         <para>API: fix information for some automatically generated events
            (only with XPCOM, Windows host was not affected), which caused
            errors when getting some of the attributes over the webservice
