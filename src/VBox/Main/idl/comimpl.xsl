@@ -195,7 +195,7 @@
     <xsl:when test="$safearray='yes'">
       <xsl:variable name="elemtype">
         <xsl:call-template name="typeIdl2Back">
-          <xsl:with-param name="type" select="@type" />
+          <xsl:with-param name="type" select="$type" />
           <xsl:with-param name="safearray" select="''" />
           <xsl:with-param name="dir" select="'in'" />
         </xsl:call-template>
@@ -218,7 +218,7 @@
     <xsl:when test="$safearray='yes'">
       <xsl:variable name="elemtype">
         <xsl:call-template name="typeIdl2Back">
-             <xsl:with-param name="type" select="@type" />
+             <xsl:with-param name="type" select="$type" />
              <xsl:with-param name="safearray" select="''" />
              <xsl:with-param name="dir" select="'in'" />
         </xsl:call-template>
@@ -327,10 +327,10 @@
   </xsl:variable>
 
   <xsl:choose>
-    <xsl:when test="$extends='IEvent'">
+    <xsl:when test="$name='IEvent'">
       <xsl:value-of select="       '#ifdef VBOX_WITH_XPCOM&#10;'" />
       <xsl:value-of select="concat('NS_DECL_CLASSINFO(', $impl, ')&#10;')" />
-      <xsl:value-of select="concat('NS_IMPL_THREADSAFE_ISUPPORTS',$depth,'_CI(', $impl, ', ', $name, $parents, ', IEvent)&#10;')" />
+      <xsl:value-of select="concat('NS_IMPL_THREADSAFE_ISUPPORTS',$depth,'_CI(', $impl, $parents, ', IEvent)&#10;')" />
       <xsl:value-of select="       '#endif&#10;&#10;'"/>
     </xsl:when>
     <xsl:when test="//interface[@name=$extends]">
@@ -338,7 +338,7 @@
         <xsl:with-param name="impl" select="$impl" />
         <xsl:with-param name="name" select="$extends" />
         <xsl:with-param name="depth" select="$depth+1" />
-        <xsl:with-param name="parents" select="concat($parents, ', ', @name)" />
+        <xsl:with-param name="parents" select="concat($parents, ', ', $name)" />
       </xsl:call-template>
     </xsl:when>
     <xsl:otherwise>
@@ -591,7 +591,7 @@ private:
   <xsl:call-template name="genImplList">
     <xsl:with-param name="impl" select="$implName" />
     <xsl:with-param name="name" select="@name" />
-    <xsl:with-param name="depth" select="'2'" />
+    <xsl:with-param name="depth" select="'1'" />
     <xsl:with-param name="parents" select="''" />
   </xsl:call-template>
 
