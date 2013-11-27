@@ -373,7 +373,7 @@ public:
         return S_OK;
     }
 private:
-    Console *mConsole;
+    ComObjPtr<Console>    mConsole;
 };
 
 typedef ListenerImpl<VmEventListener, Console*> VmEventListenerImpl;
