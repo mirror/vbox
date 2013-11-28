@@ -8144,14 +8144,17 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     /*
      * Load the TSC_AUX MSR when we are not intercepting RDTSCP.
      */
-    uint64_t uGuestTscAuxMsr;
     if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
     {
         if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
         {
-            int rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &uGuestTscAuxMsr);
+            int rc2 = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
             AssertRC(rc2);
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, uGuestTscAuxMsr, true /* fUpdateHostMsr */);
+            Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS);
+            uint6_t u64GuestTscAuxMsr;
+            rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTscAuxMsr);
+            AssertRC(rc2);
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, u64GuestTscAuxMsr, true /* fUpdateHostMsr */);
         }
         else
             hmR0VmxRemoveAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX);
