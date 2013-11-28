@@ -31,7 +31,6 @@
 static int
 proxy_ip4_is_mapped_loopback(struct netif *netif, const ip_addr_t *dst, ip_addr_t *lo)
 {
-    ip_addr_t net;
     u32_t off;
     const struct ip4_lomap *lomap;
     size_t i;
