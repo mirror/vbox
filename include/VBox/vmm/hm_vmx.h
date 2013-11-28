@@ -97,10 +97,10 @@ AssertCompileSize(VMXRESTOREHOST, 56);
 /** @name Host-state MSR lazy-restoration flags.
  * @{
  */
-#define VMX_RESTORE_HOST_MSR_LSTAR            RT_BIT(0)
-#define VMX_RESTORE_HOST_MSR_STAR             RT_BIT(1)
-#define VMX_RESTORE_HOST_MSR_SFMASK           RT_BIT(2)
-#define VMX_RESTORE_HOST_MSR_KERNELGSBASE     RT_BIT(3)
+/** The host MSRs have been saved. */
+#define VMX_RESTORE_HOST_MSR_SAVED_HOST            RT_BIT(0)
+/** The guest MSRs are loaded and in effect. */
+#define VMX_RESTORE_HOST_MSR_LOADED_GUEST          RT_BIT(1)
 /** @} */
 
 /** @name VMX HM-error codes for VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO.
