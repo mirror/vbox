@@ -198,7 +198,7 @@ rtadvd_recv(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip6_addr_t *addr)
 
     lladdr_opt = NULL;
     while (p->len > 0) {
-        unsigned int optlen;
+        int optlen;
 
         if (p->len < 8) {
             ICMP6_STATS_INC(icmp6.lenerr);
