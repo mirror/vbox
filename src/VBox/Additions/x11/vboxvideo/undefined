@@ -27,6 +27,7 @@ chdir
 chmod
 chown
 close
+drmClose
 drmFreeVersion
 drmGetVersion
 drmIoctl
