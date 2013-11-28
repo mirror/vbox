@@ -454,7 +454,6 @@ pxping_recv6(void *arg, struct pbuf *p)
     struct ip6_hdr *iph;
     struct icmp6_echo_hdr *icmph;
     int hopl;
-    u32_t sum;
     u16_t iphlen;
     u16_t id, seq;
     int status;
