@@ -1106,6 +1106,30 @@ void UISession::loadSessionSettings()
 
     /* Load extra-data settings: */
     {
+        /* Runtime menu settings: */
+#ifdef Q_WS_MAC
+        m_allowedActionsMenuApplication = (RuntimeMenuApplicationActionType)
+                                          (vboxGlobal().restrictedRuntimeMenuApplicationActionTypes(machine) ^
+                                           RuntimeMenuApplicationActionType_All);
+#endif /* Q_WS_MAC */
+        m_allowedActionsMenuMachine     = (RuntimeMenuMachineActionType)
+                                          (vboxGlobal().restrictedRuntimeMenuMachineActionTypes(machine) ^
+                                           RuntimeMenuMachineActionType_All);
+        m_allowedActionsMenuView        = (RuntimeMenuViewActionType)
+                                          (vboxGlobal().restrictedRuntimeMenuViewActionTypes(machine) ^
+                                           RuntimeMenuViewActionType_All);
+        m_allowedActionsMenuDevices     = (RuntimeMenuDevicesActionType)
+                                          (vboxGlobal().restrictedRuntimeMenuDevicesActionTypes(machine) ^
+                                           RuntimeMenuDevicesActionType_All);
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        m_allowedActionsMenuDebugger    = (RuntimeMenuDebuggerActionType)
+                                          (vboxGlobal().restrictedRuntimeMenuDebuggerActionTypes(machine) ^
+                                           RuntimeMenuDebuggerActionType_All);
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+        m_allowedActionsMenuHelp        = (RuntimeMenuHelpActionType)
+                                          (vboxGlobal().restrictedRuntimeMenuHelpActionTypes(machine) ^
+                                           RuntimeMenuHelpActionType_All);
+
         /* Temporary: */
         QString strSettings;
 

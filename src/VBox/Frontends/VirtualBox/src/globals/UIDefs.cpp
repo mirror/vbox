@@ -51,6 +51,16 @@ const char* UIDefs::GUI_HideDetails = "GUI/HideDetails";
 
 /* Machine-window definitions: */
 const char* UIDefs::GUI_RestrictedRuntimeMenus = "GUI/RestrictedRuntimeMenus";
+#ifdef Q_WS_MAC
+const char* UIDefs::GUI_RestrictedRuntimeApplicationMenuActions = "GUI/RestrictedRuntimeApplicationMenuActions";
+#endif /* Q_WS_MAC */
+const char* UIDefs::GUI_RestrictedRuntimeMachineMenuActions = "GUI/RestrictedRuntimeMachineMenuActions";
+const char* UIDefs::GUI_RestrictedRuntimeViewMenuActions = "GUI/RestrictedRuntimeViewMenuActions";
+const char* UIDefs::GUI_RestrictedRuntimeDevicesMenuActions = "GUI/RestrictedRuntimeDevicesMenuActions";
+#ifdef VBOX_WITH_DEBUGGER_GUI
+const char* UIDefs::GUI_RestrictedRuntimeDebuggerMenuActions = "GUI/RestrictedRuntimeDebuggerMenuActions";
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+const char* UIDefs::GUI_RestrictedRuntimeHelpMenuActions = "GUI/RestrictedRuntimeHelpMenuActions";
 const char* UIDefs::GUI_RestrictedVisualStates = "GUI/RestrictedVisualStates";
 const char* UIDefs::GUI_Input_MachineShortcuts = "GUI/Input/MachineShortcuts";
 const char* UIDefs::GUI_LastNormalWindowPosition = "GUI/LastNormalWindowPosition";

@@ -33,6 +33,16 @@
 template<> bool canConvert<SizeSuffix>() { return true; }
 template<> bool canConvert<StorageSlot>() { return true; }
 template<> bool canConvert<RuntimeMenuType>() { return true; }
+#ifdef Q_WS_MAC
+template<> bool canConvert<RuntimeMenuApplicationActionType>() { return true; }
+#endif /* Q_WS_MAC */
+template<> bool canConvert<RuntimeMenuMachineActionType>() { return true; }
+template<> bool canConvert<RuntimeMenuViewActionType>() { return true; }
+template<> bool canConvert<RuntimeMenuDevicesActionType>() { return true; }
+#ifdef VBOX_WITH_DEBUGGER_GUI
+template<> bool canConvert<RuntimeMenuDebuggerActionType>() { return true; }
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+template<> bool canConvert<RuntimeMenuHelpActionType>() { return true; }
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
 template<> bool canConvert<GlobalSettingsPageType>() { return true; }
@@ -360,6 +370,286 @@ template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &st
         return RuntimeMenuType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuType, Qt::CaseInsensitive)));
+}
+
+#ifdef Q_WS_MAC
+/* QString <= RuntimeMenuApplicationActionType: */
+template<> QString toInternalString(const RuntimeMenuApplicationActionType &runtimeMenuApplicationActionType)
+{
+    QString strResult;
+    switch (runtimeMenuApplicationActionType)
+    {
+        case RuntimeMenuApplicationActionType_About: strResult = "About"; break;
+        case RuntimeMenuApplicationActionType_All:   strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for action type=%d", runtimeMenuApplicationActionType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* RuntimeMenuApplicationActionType <= QString: */
+template<> RuntimeMenuApplicationActionType fromInternalString<RuntimeMenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys; QList<RuntimeMenuApplicationActionType> values;
+    keys << "About";  values << RuntimeMenuApplicationActionType_About;
+    keys << "All";    values << RuntimeMenuApplicationActionType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive))
+        return RuntimeMenuApplicationActionType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive)));
+}
+#endif /* Q_WS_MAC */
+
+/* QString <= RuntimeMenuMachineActionType: */
+template<> QString toInternalString(const RuntimeMenuMachineActionType &runtimeMenuMachineActionType)
+{
+    QString strResult;
+    switch (runtimeMenuMachineActionType)
+    {
+        case RuntimeMenuMachineActionType_SettingsDialog:    strResult = "SettingsDialog"; break;
+        case RuntimeMenuMachineActionType_TakeSnapshot:      strResult = "TakeSnapshot"; break;
+        case RuntimeMenuMachineActionType_TakeScreenshot:    strResult = "TakeScreenshot"; break;
+        case RuntimeMenuMachineActionType_InformationDialog: strResult = "InformationDialog"; break;
+        case RuntimeMenuMachineActionType_MouseIntegration:  strResult = "MouseIntegration"; break;
+        case RuntimeMenuMachineActionType_TypeCAD:           strResult = "TypeCAD"; break;
+#ifdef Q_WS_X11
+        case RuntimeMenuMachineActionType_TypeCABS:          strResult = "TypeCABS"; break;
+#endif /* Q_WS_X11 */
+        case RuntimeMenuMachineActionType_Pause:             strResult = "Pause"; break;
+        case RuntimeMenuMachineActionType_Reset:             strResult = "Reset"; break;
+        case RuntimeMenuMachineActionType_SaveState:         strResult = "SaveState"; break;
+        case RuntimeMenuMachineActionType_Shutdown:          strResult = "Shutdown"; break;
+        case RuntimeMenuMachineActionType_PowerOff:          strResult = "PowerOff"; break;
+#ifndef Q_WS_MAC
+        case RuntimeMenuMachineActionType_Close:             strResult = "Close"; break;
+#endif /* !Q_WS_MAC */
+        case RuntimeMenuMachineActionType_All:               strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for action type=%d", runtimeMenuMachineActionType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* RuntimeMenuMachineActionType <= QString: */
+template<> RuntimeMenuMachineActionType fromInternalString<RuntimeMenuMachineActionType>(const QString &strRuntimeMenuMachineActionType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;            QList<RuntimeMenuMachineActionType> values;
+    keys << "SettingsDialog";    values << RuntimeMenuMachineActionType_SettingsDialog;
+    keys << "TakeSnapshot";      values << RuntimeMenuMachineActionType_TakeSnapshot;
+    keys << "TakeScreenshot";    values << RuntimeMenuMachineActionType_TakeScreenshot;
+    keys << "InformationDialog"; values << RuntimeMenuMachineActionType_InformationDialog;
+    keys << "MouseIntegration";  values << RuntimeMenuMachineActionType_MouseIntegration;
+    keys << "TypeCAD";           values << RuntimeMenuMachineActionType_TypeCAD;
+#ifdef Q_WS_X11
+    keys << "TypeCABS";          values << RuntimeMenuMachineActionType_TypeCABS;
+#endif /* Q_WS_X11 */
+    keys << "Pause";             values << RuntimeMenuMachineActionType_Pause;
+    keys << "Reset";             values << RuntimeMenuMachineActionType_Reset;
+    keys << "SaveState";         values << RuntimeMenuMachineActionType_SaveState;
+    keys << "Shutdown";          values << RuntimeMenuMachineActionType_Shutdown;
+    keys << "PowerOff";          values << RuntimeMenuMachineActionType_PowerOff;
+#ifndef Q_WS_MAC
+    keys << "Close";             values << RuntimeMenuMachineActionType_Close;
+#endif /* !Q_WS_MAC */
+    keys << "All";               values << RuntimeMenuMachineActionType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRuntimeMenuMachineActionType, Qt::CaseInsensitive))
+        return RuntimeMenuMachineActionType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRuntimeMenuMachineActionType, Qt::CaseInsensitive)));
+}
+
+/* QString <= RuntimeMenuViewActionType: */
+template<> QString toInternalString(const RuntimeMenuViewActionType &runtimeMenuViewActionType)
+{
+    QString strResult;
+    switch (runtimeMenuViewActionType)
+    {
+        case RuntimeMenuViewActionType_Fullscreen:      strResult = "Fullscreen"; break;
+        case RuntimeMenuViewActionType_Seamless:        strResult = "Seamless"; break;
+        case RuntimeMenuViewActionType_Scale:           strResult = "Scale"; break;
+        case RuntimeMenuViewActionType_GuestAutoresize: strResult = "GuestAutoresize"; break;
+        case RuntimeMenuViewActionType_AdjustWindow:    strResult = "AdjustWindow"; break;
+        case RuntimeMenuViewActionType_Multiscreen:     strResult = "Multiscreen"; break;
+        case RuntimeMenuViewActionType_All:             strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for action type=%d", runtimeMenuViewActionType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* RuntimeMenuViewActionType <= QString: */
+template<> RuntimeMenuViewActionType fromInternalString<RuntimeMenuViewActionType>(const QString &strRuntimeMenuViewActionType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;          QList<RuntimeMenuViewActionType> values;
+    keys << "Fullscreen";      values << RuntimeMenuViewActionType_Fullscreen;
+    keys << "Seamless";        values << RuntimeMenuViewActionType_Seamless;
+    keys << "Scale";           values << RuntimeMenuViewActionType_Scale;
+    keys << "GuestAutoresize"; values << RuntimeMenuViewActionType_GuestAutoresize;
+    keys << "AdjustWindow";    values << RuntimeMenuViewActionType_AdjustWindow;
+    keys << "Multiscreen";     values << RuntimeMenuViewActionType_Multiscreen;
+    keys << "All";             values << RuntimeMenuViewActionType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRuntimeMenuViewActionType, Qt::CaseInsensitive))
+        return RuntimeMenuViewActionType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRuntimeMenuViewActionType, Qt::CaseInsensitive)));
+}
+
+/* QString <= RuntimeMenuDevicesActionType: */
+template<> QString toInternalString(const RuntimeMenuDevicesActionType &runtimeMenuDevicesActionType)
+{
+    QString strResult;
+    switch (runtimeMenuDevicesActionType)
+    {
+        case RuntimeMenuDevicesActionType_OpticalDevices:        strResult = "OpticalDevices"; break;
+        case RuntimeMenuDevicesActionType_FloppyDevices:         strResult = "FloppyDevices"; break;
+        case RuntimeMenuDevicesActionType_USBDevices:            strResult = "USBDevices"; break;
+        case RuntimeMenuDevicesActionType_WebCams:               strResult = "WebCams"; break;
+        case RuntimeMenuDevicesActionType_SharedClipboard:       strResult = "SharedClipboard"; break;
+        case RuntimeMenuDevicesActionType_DragAndDrop:           strResult = "DragAndDrop"; break;
+        case RuntimeMenuDevicesActionType_NetworkSettings:       strResult = "NetworkSettings"; break;
+        case RuntimeMenuDevicesActionType_SharedFoldersSettings: strResult = "SharedFoldersSettings"; break;
+        case RuntimeMenuDevicesActionType_VRDEServer:            strResult = "VRDEServer"; break;
+        case RuntimeMenuDevicesActionType_VideoCapture:          strResult = "VideoCapture"; break;
+        case RuntimeMenuDevicesActionType_InstallGuestTools:     strResult = "InstallGuestTools"; break;
+        case RuntimeMenuDevicesActionType_All:                   strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for action type=%d", runtimeMenuDevicesActionType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* RuntimeMenuDevicesActionType <= QString: */
+template<> RuntimeMenuDevicesActionType fromInternalString<RuntimeMenuDevicesActionType>(const QString &strRuntimeMenuDevicesActionType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;                QList<RuntimeMenuDevicesActionType> values;
+    keys << "OpticalDevices";        values << RuntimeMenuDevicesActionType_OpticalDevices;
+    keys << "FloppyDevices";         values << RuntimeMenuDevicesActionType_FloppyDevices;
+    keys << "USBDevices";            values << RuntimeMenuDevicesActionType_USBDevices;
+    keys << "WebCams";               values << RuntimeMenuDevicesActionType_WebCams;
+    keys << "SharedClipboard";       values << RuntimeMenuDevicesActionType_SharedClipboard;
+    keys << "DragAndDrop";           values << RuntimeMenuDevicesActionType_DragAndDrop;
+    keys << "NetworkSettings";       values << RuntimeMenuDevicesActionType_NetworkSettings;
+    keys << "SharedFoldersSettings"; values << RuntimeMenuDevicesActionType_SharedFoldersSettings;
+    keys << "VRDEServer";            values << RuntimeMenuDevicesActionType_VRDEServer;
+    keys << "VideoCapture";          values << RuntimeMenuDevicesActionType_VideoCapture;
+    keys << "InstallGuestTools";     values << RuntimeMenuDevicesActionType_InstallGuestTools;
+    keys << "All";                   values << RuntimeMenuDevicesActionType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRuntimeMenuDevicesActionType, Qt::CaseInsensitive))
+        return RuntimeMenuDevicesActionType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRuntimeMenuDevicesActionType, Qt::CaseInsensitive)));
+}
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+/* QString <= RuntimeMenuDebuggerActionType: */
+template<> QString toInternalString(const RuntimeMenuDebuggerActionType &runtimeMenuDebuggerActionType)
+{
+    QString strResult;
+    switch (runtimeMenuDebuggerActionType)
+    {
+        case RuntimeMenuDebuggerActionType_Statistics:  strResult = "Statistics"; break;
+        case RuntimeMenuDebuggerActionType_CommandLine: strResult = "CommandLine"; break;
+        case RuntimeMenuDebuggerActionType_Logging:     strResult = "Logging"; break;
+        case RuntimeMenuDebuggerActionType_LogDialog:   strResult = "LogDialog"; break;
+        case RuntimeMenuDebuggerActionType_All:         strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for action type=%d", runtimeMenuDebuggerActionType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* RuntimeMenuDebuggerActionType <= QString: */
+template<> RuntimeMenuDebuggerActionType fromInternalString<RuntimeMenuDebuggerActionType>(const QString &strRuntimeMenuDebuggerActionType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;      QList<RuntimeMenuDebuggerActionType> values;
+    keys << "Statistics";  values << RuntimeMenuDebuggerActionType_Statistics;
+    keys << "CommandLine"; values << RuntimeMenuDebuggerActionType_CommandLine;
+    keys << "Logging";     values << RuntimeMenuDebuggerActionType_Logging;
+    keys << "LogDialog";   values << RuntimeMenuDebuggerActionType_LogDialog;
+    keys << "All";         values << RuntimeMenuDebuggerActionType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRuntimeMenuDebuggerActionType, Qt::CaseInsensitive))
+        return RuntimeMenuDebuggerActionType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRuntimeMenuDebuggerActionType, Qt::CaseInsensitive)));
+}
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
+/* QString <= RuntimeMenuHelpActionType: */
+template<> QString toInternalString(const RuntimeMenuHelpActionType &runtimeMenuHelpActionType)
+{
+    QString strResult;
+    switch (runtimeMenuHelpActionType)
+    {
+        case RuntimeMenuHelpActionType_Contents:             strResult = "Contents"; break;
+        case RuntimeMenuHelpActionType_WebSite:              strResult = "WebSite"; break;
+        case RuntimeMenuHelpActionType_ResetWarnings:        strResult = "ResetWarnings"; break;
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+        case RuntimeMenuHelpActionType_NetworkAccessManager: strResult = "NetworkAccessManager"; break;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#ifndef Q_WS_MAC
+        case RuntimeMenuHelpActionType_About:                strResult = "About"; break;
+#endif /* !Q_WS_MAC */
+        case RuntimeMenuHelpActionType_All:                  strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for action type=%d", runtimeMenuHelpActionType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* RuntimeMenuHelpActionType <= QString: */
+template<> RuntimeMenuHelpActionType fromInternalString<RuntimeMenuHelpActionType>(const QString &strRuntimeMenuHelpActionType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;               QList<RuntimeMenuHelpActionType> values;
+    keys << "Contents";             values << RuntimeMenuHelpActionType_Contents;
+    keys << "WebSite";              values << RuntimeMenuHelpActionType_WebSite;
+    keys << "ResetWarnings";        values << RuntimeMenuHelpActionType_ResetWarnings;
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    keys << "NetworkAccessManager"; values << RuntimeMenuHelpActionType_NetworkAccessManager;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#ifndef Q_WS_MAC
+    keys << "About";                values << RuntimeMenuHelpActionType_About;
+#endif /* !Q_WS_MAC */
+    keys << "All";                  values << RuntimeMenuHelpActionType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRuntimeMenuHelpActionType, Qt::CaseInsensitive))
+        return RuntimeMenuHelpActionType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRuntimeMenuHelpActionType, Qt::CaseInsensitive)));
 }
 
 /* QString <= UIVisualStateType: */

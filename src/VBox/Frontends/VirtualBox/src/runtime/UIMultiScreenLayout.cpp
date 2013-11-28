@@ -359,6 +359,10 @@ void UIMultiScreenLayout::cleanupViewMenu()
 
 void UIMultiScreenLayout::updateMenuActions(bool fWithSave)
 {
+    /* Make sure view-menu was set: */
+    if (!m_pViewMenu)
+        return;
+
     /* Get the list of all view-menu actions: */
     QList<QAction*> viewMenuActions = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu()->actions();
     /* Get the list of all view related actions: */
