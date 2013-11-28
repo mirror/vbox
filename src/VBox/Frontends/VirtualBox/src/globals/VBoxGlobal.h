@@ -363,6 +363,16 @@ public:
     static bool shouldWeAllowSnapshotOperations(CMachine &machine, bool fIncludingSanityCheck = true);
     static MachineCloseAction defaultMachineCloseAction(CMachine &machine);
     static RuntimeMenuType restrictedRuntimeMenuTypes(CMachine &machine);
+#ifdef Q_WS_MAC
+    static RuntimeMenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(CMachine &machine);
+#endif /* Q_WS_MAC */
+    static RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(CMachine &machine);
+    static RuntimeMenuViewActionType restrictedRuntimeMenuViewActionTypes(CMachine &machine);
+    static RuntimeMenuDevicesActionType restrictedRuntimeMenuDevicesActionTypes(CMachine &machine);
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    static RuntimeMenuDebuggerActionType restrictedRuntimeMenuDebuggerActionTypes(CMachine &machine);
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    static RuntimeMenuHelpActionType restrictedRuntimeMenuHelpActionTypes(CMachine &machine);
     static UIVisualStateType restrictedVisualStateTypes(CMachine &machine);
     static QList<IndicatorType> restrictedStatusBarIndicators(CMachine &machine);
     static MachineCloseAction restrictedMachineCloseActions(CMachine &machine);

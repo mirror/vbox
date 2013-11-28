@@ -120,6 +120,16 @@ namespace UIDefs
 
     /* Machine-window declarations: */
     extern const char* GUI_RestrictedRuntimeMenus;
+#ifdef Q_WS_MAC
+    extern const char* GUI_RestrictedRuntimeApplicationMenuActions;
+#endif /* Q_WS_MAC */
+    extern const char* GUI_RestrictedRuntimeMachineMenuActions;
+    extern const char* GUI_RestrictedRuntimeViewMenuActions;
+    extern const char* GUI_RestrictedRuntimeDevicesMenuActions;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    extern const char* GUI_RestrictedRuntimeDebuggerMenuActions;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    extern const char* GUI_RestrictedRuntimeHelpMenuActions;
     extern const char* GUI_RestrictedVisualStates;
     extern const char* GUI_Input_MachineShortcuts;
     extern const char* GUI_LastNormalWindowPosition;
@@ -261,6 +271,100 @@ enum RuntimeMenuType
     RuntimeMenuType_Debug   = RT_BIT(3),
     RuntimeMenuType_Help    = RT_BIT(4),
     RuntimeMenuType_All     = 0xFF
+};
+
+#ifdef Q_WS_MAC
+/** Runtime UI: Application menu: Action types. */
+enum RuntimeMenuApplicationActionType
+{
+    RuntimeMenuApplicationActionType_Invalid = 0,
+    RuntimeMenuApplicationActionType_About   = RT_BIT(0),
+    RuntimeMenuApplicationActionType_All     = 0xFFFF
+};
+#endif /* Q_WS_MAC */
+
+/** Runtime UI: Machine menu: Action types. */
+enum RuntimeMenuMachineActionType
+{
+    RuntimeMenuMachineActionType_Invalid           = 0,
+    RuntimeMenuMachineActionType_SettingsDialog    = RT_BIT(0),
+    RuntimeMenuMachineActionType_TakeSnapshot      = RT_BIT(1),
+    RuntimeMenuMachineActionType_TakeScreenshot    = RT_BIT(2),
+    RuntimeMenuMachineActionType_InformationDialog = RT_BIT(3),
+    RuntimeMenuMachineActionType_MouseIntegration  = RT_BIT(4),
+    RuntimeMenuMachineActionType_TypeCAD           = RT_BIT(5),
+#ifdef Q_WS_X11
+    RuntimeMenuMachineActionType_TypeCABS          = RT_BIT(6),
+#endif /* Q_WS_X11 */
+    RuntimeMenuMachineActionType_Pause             = RT_BIT(7),
+    RuntimeMenuMachineActionType_Reset             = RT_BIT(8),
+    RuntimeMenuMachineActionType_SaveState         = RT_BIT(9),
+    RuntimeMenuMachineActionType_Shutdown          = RT_BIT(10),
+    RuntimeMenuMachineActionType_PowerOff          = RT_BIT(11),
+#ifndef Q_WS_MAC
+    RuntimeMenuMachineActionType_Close             = RT_BIT(12),
+#endif /* !Q_WS_MAC */
+    RuntimeMenuMachineActionType_All               = 0xFFFF
+};
+
+/** Runtime UI: View menu: Action types. */
+enum RuntimeMenuViewActionType
+{
+    RuntimeMenuViewActionType_Invalid         = 0,
+    RuntimeMenuViewActionType_Fullscreen      = RT_BIT(0),
+    RuntimeMenuViewActionType_Seamless        = RT_BIT(1),
+    RuntimeMenuViewActionType_Scale           = RT_BIT(2),
+    RuntimeMenuViewActionType_GuestAutoresize = RT_BIT(3),
+    RuntimeMenuViewActionType_AdjustWindow    = RT_BIT(4),
+    RuntimeMenuViewActionType_Multiscreen     = RT_BIT(5),
+    RuntimeMenuViewActionType_All             = 0xFFFF
+};
+
+/** Runtime UI: Devices menu: Action types. */
+enum RuntimeMenuDevicesActionType
+{
+    RuntimeMenuDevicesActionType_Invalid               = 0,
+    RuntimeMenuDevicesActionType_OpticalDevices        = RT_BIT(0),
+    RuntimeMenuDevicesActionType_FloppyDevices         = RT_BIT(1),
+    RuntimeMenuDevicesActionType_USBDevices            = RT_BIT(2),
+    RuntimeMenuDevicesActionType_WebCams               = RT_BIT(3),
+    RuntimeMenuDevicesActionType_SharedClipboard       = RT_BIT(4),
+    RuntimeMenuDevicesActionType_DragAndDrop           = RT_BIT(5),
+    RuntimeMenuDevicesActionType_NetworkSettings       = RT_BIT(6),
+    RuntimeMenuDevicesActionType_SharedFoldersSettings = RT_BIT(7),
+    RuntimeMenuDevicesActionType_VRDEServer            = RT_BIT(8),
+    RuntimeMenuDevicesActionType_VideoCapture          = RT_BIT(9),
+    RuntimeMenuDevicesActionType_InstallGuestTools     = RT_BIT(10),
+    RuntimeMenuDevicesActionType_All                   = 0xFFFF
+};
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+/** Runtime UI: Debugger menu: Action types. */
+enum RuntimeMenuDebuggerActionType
+{
+    RuntimeMenuDebuggerActionType_Invalid     = 0,
+    RuntimeMenuDebuggerActionType_Statistics  = RT_BIT(0),
+    RuntimeMenuDebuggerActionType_CommandLine = RT_BIT(1),
+    RuntimeMenuDebuggerActionType_Logging     = RT_BIT(2),
+    RuntimeMenuDebuggerActionType_LogDialog   = RT_BIT(3),
+    RuntimeMenuDebuggerActionType_All         = 0xFFFF
+};
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
+/** Runtime UI: Help menu: Action types. */
+enum RuntimeMenuHelpActionType
+{
+    RuntimeMenuHelpActionType_Invalid              = 0,
+    RuntimeMenuHelpActionType_Contents             = RT_BIT(0),
+    RuntimeMenuHelpActionType_WebSite              = RT_BIT(1),
+    RuntimeMenuHelpActionType_ResetWarnings        = RT_BIT(2),
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    RuntimeMenuHelpActionType_NetworkAccessManager = RT_BIT(3),
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#ifndef Q_WS_MAC
+    RuntimeMenuHelpActionType_About                = RT_BIT(4),
+#endif /* !Q_WS_MAC */
+    RuntimeMenuHelpActionType_All                  = 0xFFFF
 };
 
 /* Runtime UI visual-state types: */

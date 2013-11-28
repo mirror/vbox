@@ -93,6 +93,26 @@ public:
     QMenuBar* newMenuBar(RuntimeMenuType fOptions = RuntimeMenuType_All);
     QCursor cursor() const { return m_cursor; }
 
+    /** @name Runtime menus configuration stuff.
+     ** @{ */
+#ifdef Q_WS_MAC
+    /** Determines Application menu allowed actions. */
+    RuntimeMenuApplicationActionType allowedActionsMenuApplication() const { return m_allowedActionsMenuApplication; }
+#endif /* Q_WS_MAC */
+    /** Determines Machine menu allowed actions. */
+    RuntimeMenuMachineActionType allowedActionsMenuMachine() const { return m_allowedActionsMenuMachine; }
+    /** Determines View menu allowed actions. */
+    RuntimeMenuViewActionType allowedActionsMenuView() const { return m_allowedActionsMenuView; }
+    /** Determines Devices menu allowed actions. */
+    RuntimeMenuDevicesActionType allowedActionsMenuDevices() const { return m_allowedActionsMenuDevices; }
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Determines Debugger menu allowed actions. */
+    RuntimeMenuDebuggerActionType allowedActionsMenuDebugger() const { return m_allowedActionsMenuDebugger; }
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    /** Determines Help menu allowed actions. */
+    RuntimeMenuHelpActionType allowedActionsMenuHelp() const { return m_allowedActionsMenuHelp; }
+    /** @} */
+
     /** @name Application Close configuration stuff.
      * @{ */
     /** Returns default close action. */
@@ -311,6 +331,26 @@ private:
     KMachineState m_machineStatePrevious;
     KMachineState m_machineState;
     QCursor m_cursor;
+
+    /** @name Runtime menus configuration variables.
+     ** @{ */
+#ifdef Q_WS_MAC
+    /** Determines Application menu allowed actions. */
+    RuntimeMenuApplicationActionType m_allowedActionsMenuApplication;
+#endif /* Q_WS_MAC */
+    /** Determines Machine menu allowed actions. */
+    RuntimeMenuMachineActionType m_allowedActionsMenuMachine;
+    /** Determines View menu allowed actions. */
+    RuntimeMenuViewActionType m_allowedActionsMenuView;
+    /** Determines Devices menu allowed actions. */
+    RuntimeMenuDevicesActionType m_allowedActionsMenuDevices;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Determines Debugger menu allowed actions. */
+    RuntimeMenuDebuggerActionType m_allowedActionsMenuDebugger;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    /** Determines Help menu allowed actions. */
+    RuntimeMenuHelpActionType m_allowedActionsMenuHelp;
+    /** @} */
 
     /** @name Visual-state configuration variables.
      ** @{ */

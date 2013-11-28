@@ -239,8 +239,9 @@ void UIMachineLogicSeamless::prepareMenu()
     /* Call to base-class: */
     UIMachineLogic::prepareMenu();
 
-    /* Finally update view-menu: */
-    m_pScreenLayout->setViewMenu(gActionPool->action(UIActionIndexRuntime_Menu_View)->menu());
+    /* Finally update view-menu, if necessary: */
+    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_Multiscreen)
+        m_pScreenLayout->setViewMenu(gActionPool->action(UIActionIndexRuntime_Menu_View)->menu());
 }
 
 void UIMachineLogicSeamless::cleanupMachineWindows()
