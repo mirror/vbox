@@ -1230,7 +1230,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     if (icmpsock4 != INVALID_SOCKET)
     {
-#ifdef ICMP_FILTER              //  Linux specific; NB: privileged!
+#ifdef ICMP_FILTER              //  Linux specific
         struct icmp_filter flt = {
             ~(uint32_t)(
                   (1U << ICMP_ECHOREPLY)
