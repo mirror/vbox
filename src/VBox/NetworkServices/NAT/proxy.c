@@ -408,14 +408,15 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
     size_t i, clen;
 #ifndef RT_OS_WINDOWS
     struct msghdr mh;
+    ssize_t nsent;
 #else
+    DWORD nsent;
     int rc;
 #endif
     IOVEC fixiov[8];     /* fixed size (typical case) */
     const size_t fixiovsize = sizeof(fixiov)/sizeof(fixiov[0]);
     IOVEC *dyniov;       /* dynamically sized */
     IOVEC *iov;
-    ssize_t nsent;
 
     /*
      * Static iov[] is usually enough since UDP protocols use small
@@ -458,7 +459,8 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
                  __func__, sock, errno));
     }
 #else
-    rc = WSASendTo(sock, iov, (DWORD)clen, (DWORD *)&nsent, 0, name, (int)namelen, NULL, NULL);
+    rc = WSASendTo(sock, iov, (DWORD)clen, &nsent, 0,
+                   name, (int)namelen, NULL, NULL);
     if (rc == SOCKET_ERROR) {
          DPRINTF(("%s: fd %d: sendmsg errno %d\n",
                   __func__, sock, WSAGetLastError()));
