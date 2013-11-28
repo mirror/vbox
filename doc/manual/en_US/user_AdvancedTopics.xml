@@ -1474,7 +1474,8 @@ VBoxManage setextradata "VM name" \
 
     <para>The DMI data VirtualBox provides to guests can be changed for a
     specific VM. Use the following commands to configure the DMI BIOS
-    information:</para>
+    information. In case your VM is configured to use EFI firmware you need to
+    replace <code>pcbios</code> by <code>efi</code> in the keys.</para>
 
     <sect2>
       <title>DMI BIOS information (type 0)</title>
