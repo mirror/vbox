@@ -19,6 +19,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_HM
+#include <iprt/x86.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
@@ -2991,7 +2992,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 /**
  * Saves certain host MSRs in the VM-Exit MSR-load area and some in the
  * host-state area of the VMCS. Theses MSRs will be automatically restored on
- * the host after every successful VM exit.
+ * the host after every successful VM-exit.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
@@ -3380,7 +3381,7 @@ static int hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Eflags.u32 |= VMX_EFLAGS_RESERVED_1;                   /* Bit 1 MB1. */
 
         /*
-         * If we're emulating real-mode using Virtual 8086 mode, save the real-mode eflags so we can restore them on VM exit.
+         * If we're emulating real-mode using Virtual 8086 mode, save the real-mode eflags so we can restore them on VM-exit.
          * Modify the real-mode guest's eflags so that VT-x can run the real-mode guest code under Virtual 8086 mode.
          */
         if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
@@ -3462,13 +3463,13 @@ static int hmR0VmxLoadSharedCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             if (CPUMIsGuestPagingEnabledEx(pMixedCtx))
             {
-                /* The guest has paging enabled, let it access CR3 without causing a VM exit if supported. */
+                /* The guest has paging enabled, let it access CR3 without causing a VM-exit if supported. */
                 pVCpu->hm.s.vmx.u32ProcCtls &= ~(  VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT
                                                  | VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT);
             }
             else
             {
-                /* The guest doesn't have paging enabled, make CR3 access to cause VM exits to update our shadow. */
+                /* The guest doesn't have paging enabled, make CR3 access cause a VM-exit to update our shadow. */
                 pVCpu->hm.s.vmx.u32ProcCtls |=   VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT
                                                | VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT;
             }
@@ -3797,7 +3798,7 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4, u32GuestCR4);
         AssertRCReturn(rc, rc);
 
-        /* Setup CR4 mask. CR4 flags owned by the host, if the guest attempts to change them, that would cause a VM exit. */
+        /* Setup CR4 mask. CR4 flags owned by the host, if the guest attempts to change them, that would cause a VM-exit. */
         uint32_t u32CR4Mask = 0;
         u32CR4Mask =  X86_CR4_VME
                     | X86_CR4_PAE
@@ -3816,7 +3817,7 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 /**
  * Loads the guest debug registers into the guest-state area in the VMCS.
- * This also sets up whether #DB and MOV DRx accesses cause VM exits.
+ * This also sets up whether #DB and MOV DRx accesses cause VM-exits.
  *
  * The guest debug bits are partially shared with the host (e.g. DR6, DR0-3).
  *
@@ -4424,7 +4425,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 /**
  * Loads certain guest MSRs into the VM-entry MSR-load and VM-exit MSR-store
  * areas. These MSRs will automatically be loaded to the host CPU on every
- * successful VM entry and stored from the host CPU on every successful VM exit.
+ * successful VM entry and stored from the host CPU on every successful VM-exit.
  *
  * This also creates/updates MSR slots for the host MSRs. The actual host
  * MSR values are -not- updated here for performance reasons. See
@@ -8626,8 +8627,6 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                                                 uError = (err); \
                                                 break; \
                                             } else do { } while (0)
-/* Duplicate of IEM_IS_CANONICAL(). */
-#define HMVMX_IS_CANONICAL(a_u64Addr)       ((uint64_t)(a_u64Addr) + UINT64_C(0x800000000000) < UINT64_C(0x1000000000000))
 
     int      rc;
     uint32_t uError             = VMX_IGS_ERROR;
@@ -8773,11 +8772,11 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
             rc = VMXReadVmcs64(VMX_VMCS_HOST_SYSENTER_ESP, &u64Val);
             AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_ESP_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_ESP_NOT_CANONICAL);
 
             rc = VMXReadVmcs64(VMX_VMCS_HOST_SYSENTER_EIP, &u64Val);
             AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_EIP_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_EIP_NOT_CANONICAL);
         }
 #endif
 
@@ -8948,10 +8947,10 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
             if (HMVMX_IS_64BIT_HOST_MODE())
             {
-                HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(pCtx->fs.u64Base), VMX_IGS_FS_BASE_NOT_CANONICAL);
-                HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(pCtx->gs.u64Base), VMX_IGS_GS_BASE_NOT_CANONICAL);
+                HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->fs.u64Base), VMX_IGS_FS_BASE_NOT_CANONICAL);
+                HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->gs.u64Base), VMX_IGS_GS_BASE_NOT_CANONICAL);
                 HMVMX_CHECK_BREAK(   (pCtx->ldtr.Attr.u & X86DESCATTR_UNUSABLE)
-                                  || HMVMX_IS_CANONICAL(pCtx->ldtr.u64Base), VMX_IGS_LDTR_BASE_NOT_CANONICAL);
+                                  || X86_IS_CANONICAL(pCtx->ldtr.u64Base), VMX_IGS_LDTR_BASE_NOT_CANONICAL);
                 HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
                 HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32),
                                   VMX_IGS_LONGMODE_SS_BASE_INVALID);
@@ -9007,10 +9006,10 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
             if (HMVMX_IS_64BIT_HOST_MODE())
             {
-                HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(pCtx->fs.u64Base), VMX_IGS_FS_BASE_NOT_CANONICAL);
-                HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(pCtx->gs.u64Base), VMX_IGS_GS_BASE_NOT_CANONICAL);
+                HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->fs.u64Base), VMX_IGS_FS_BASE_NOT_CANONICAL);
+                HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->gs.u64Base), VMX_IGS_GS_BASE_NOT_CANONICAL);
                 HMVMX_CHECK_BREAK(   (pCtx->ldtr.Attr.u & X86DESCATTR_UNUSABLE)
-                                  || HMVMX_IS_CANONICAL(pCtx->ldtr.u64Base), VMX_IGS_LDTR_BASE_NOT_CANONICAL);
+                                  || X86_IS_CANONICAL(pCtx->ldtr.u64Base), VMX_IGS_LDTR_BASE_NOT_CANONICAL);
                 HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
                 HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32),
                                   VMX_IGS_LONGMODE_SS_BASE_INVALID);
@@ -9030,7 +9029,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (HMVMX_IS_64BIT_HOST_MODE())
         {
-            HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(pCtx->tr.u64Base), VMX_IGS_TR_BASE_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->tr.u64Base), VMX_IGS_TR_BASE_NOT_CANONICAL);
         }
 #endif
         if (fLongModeGuest)
@@ -9061,11 +9060,11 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             rc = VMXReadVmcs64(VMX_VMCS_GUEST_GDTR_BASE, &u64Val);
             AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(u64Val), VMX_IGS_GDTR_BASE_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_GDTR_BASE_NOT_CANONICAL);
 
             rc = VMXReadVmcs64(VMX_VMCS_GUEST_IDTR_BASE, &u64Val);
             AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(u64Val), VMX_IGS_IDTR_BASE_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_IDTR_BASE_NOT_CANONICAL);
         }
 #endif
 
@@ -9203,7 +9202,6 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 #undef HMVMX_ERROR_BREAK
 #undef HMVMX_CHECK_BREAK
-#undef HMVMX_IS_CANONICAL
 }
 
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
