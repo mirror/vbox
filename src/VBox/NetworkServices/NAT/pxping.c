@@ -72,6 +72,9 @@ struct pxping {
     int tos;
 
     SOCKET sock6;
+#ifdef RT_OS_WINDOWS
+    LPFN_WSARECVMSG pfWSARecvMsg6;
+#endif
     int hopl;
 
     struct pollmgr_handler pmhdl4;
@@ -167,6 +170,9 @@ struct ping6_msg {
 };
 
 
+#ifdef RT_OS_WINDOWS
+static int pxping_init_windows(struct pxping *pxping);
+#endif
 static void pxping_recv4(void *arg, struct pbuf *p);
 static void pxping_recv6(void *arg, struct pbuf *p);
 
@@ -256,6 +262,16 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
     }
 
     g_pxping.sock6 = sock6;
+#ifdef RT_OS_WINDOWS
+    /* we need recvmsg */
+    if (g_pxping.sock6 != INVALID_SOCKET) {
+        status = pxping_init_windows(&g_pxping);
+        if (status == SOCKET_ERROR) {
+            g_pxping.sock6 = INVALID_SOCKET;
+            /* close(sock6); */
+        }
+    }
+#endif
     if (g_pxping.sock6 != INVALID_SOCKET) {
         g_pxping.hopl = -1;
 
@@ -292,6 +308,26 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
 
     return ERR_OK;
 }
+
+
+#ifdef RT_OS_WINDOWS
+static int
+pxping_init_windows(struct pxping *pxping)
+{
+    GUID WSARecvMsgGUID = WSAID_WSARECVMSG;
+    DWORD nread;
+    int status;
+
+    pxping->pfWSARecvMsg6 = NULL;
+    status = WSAIoctl(pxping->sock6,
+                      SIO_GET_EXTENSION_FUNCTION_POINTER,
+                      &WSARecvMsgGUID, sizeof(WSARecvMsgGUID),
+                      &pxping->pfWSARecvMsg6, sizeof(pxping->pfWSARecvMsg6),
+                      &nread,
+                      NULL, NULL);
+    return status;
+}
+#endif  /* RT_OS_WINDOWS */
 
 
 static u32_t
@@ -1216,16 +1252,22 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
 static void
 pxping_pmgr_icmp6(struct pxping *pxping)
 {
+#ifndef RT_OS_WINDOWS
     struct msghdr mh;
-    struct iovec iov[1];
+    ssize_t nread;
+#else
+    WSAMSG mh;
+    DWORD nread;
+#endif
+    IOVEC iov[1];
     static u8_t cmsgbuf[128];
     struct cmsghdr *cmh;
     struct sockaddr_in6 sin6;
     socklen_t salen = sizeof(sin6);
-    ssize_t nread;
     struct icmp6_echo_hdr *icmph;
     struct in6_pktinfo *pktinfo;
     int hopl, tclass;
+    int status;
 
     char addrbuf[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
     const char *addrstr;
@@ -1234,11 +1276,13 @@ pxping_pmgr_icmp6(struct pxping *pxping)
      * Reads from raw IPv6 sockets deliver only the payload.  Full
      * headers are available via recvmsg(2)/cmsg(3).
      */
+    IOVEC_SET_BASE(iov[0], pollmgr_udpbuf);
+    IOVEC_SET_LEN(iov[0], sizeof(pollmgr_udpbuf));
+
     memset(&mh, 0, sizeof(mh));
+#ifndef RT_OS_WINDOWS
     mh.msg_name = &sin6;
     mh.msg_namelen = sizeof(sin6);
-    iov[0].iov_base = pollmgr_udpbuf;
-    iov[0].iov_len = sizeof(pollmgr_udpbuf);
     mh.msg_iov = iov;
     mh.msg_iovlen = 1;
     mh.msg_control = cmsgbuf;
@@ -1250,9 +1294,26 @@ pxping_pmgr_icmp6(struct pxping *pxping)
         perror(__func__);
         return;
     }
-    addrstr = inet_ntop(AF_INET6, (void *)&sin6.sin6_addr, addrbuf, sizeof(addrbuf));
+#else  /* RT_OS_WINDOWS */
+    mh.name = (LPSOCKADDR)&sin6;
+    mh.namelen = sizeof(sin6);
+    mh.lpBuffers = iov;
+    mh.dwBufferCount = 1;
+    mh.Control.buf = cmsgbuf;
+    mh.Control.len = sizeof(cmsgbuf);
+    mh.dwFlags = 0;
+
+    status = (*pxping->pfWSARecvMsg6)(pxping->sock6, &mh, &nread, NULL, NULL);
+    if (status == SOCKET_ERROR) {
+        DPRINTF2(("%s: error %d\n", __func__, WSAGetLastError()));
+        return;
+    }
+#endif
 
     icmph = (struct icmp6_echo_hdr *)pollmgr_udpbuf;
+
+    addrstr = inet_ntop(AF_INET6, (void *)&sin6.sin6_addr,
+                        addrbuf, sizeof(addrbuf));
     DPRINTF2(("%s: %s ICMPv6: ", __func__, addrstr));
 
     if (icmph->type == ICMP6_TYPE_EREP) {
