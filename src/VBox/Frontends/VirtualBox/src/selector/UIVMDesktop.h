@@ -62,6 +62,11 @@ public:
     void updateSnapshots(UIVMItem *pVMItem, const CMachine& machine);
     void lockSnapshots();
 
+private slots:
+
+    /** Initialization handler. */
+    void sltInit();
+
 private:
 
     /* Helper: Translate stuff: */
