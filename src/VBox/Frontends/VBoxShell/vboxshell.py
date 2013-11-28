@@ -348,6 +348,10 @@ def monitorSource(ctx, eventSource, active, dur):
             scev = ctx['global'].queryInterface(event, 'IMachineStateChangedEvent')
             if scev:
                 print "machine state event: mach=%s state=%s" % (scev.machineId, scev.state)
+        elif  evtype == ctx['global'].constants.VBoxEventType_OnSnapshotTaken:
+            stev = ctx['global'].queryInterface(event, 'ISnapshotTakenEvent')
+            if stev:
+                print "snapshot taken event: mach=%s snap=%s" % (stev.machineId, stev.snapshotId)
         elif  evtype == ctx['global'].constants.VBoxEventType_OnGuestPropertyChanged:
             gpcev = ctx['global'].queryInterface(event, 'IGuestPropertyChangedEvent')
             if gpcev:
