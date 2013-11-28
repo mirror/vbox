@@ -1884,10 +1884,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
         </xsl:when>
         <xsl:when test="@dir='out'">
           <xsl:apply-templates select="@type" mode="forwarder"/>
-          <xsl:if test="@type='wstring'">
-            <xsl:text>*</xsl:text>
-          </xsl:if>
-          <xsl:text>*</xsl:text>
+          <xsl:text>**</xsl:text>
         </xsl:when>
         <xsl:when test="@dir='return'">
           <xsl:apply-templates select="@type" mode="forwarder"/>
