@@ -127,6 +127,16 @@ typedef WSABUF IOVEC;
 #  define IOVEC_GET_LEN(iov) ((iov).len)
 #  define IOVEC_SET_LEN(iov, l) ((iov).len = (ULONG)(l))
 
+#if _WIN32_WINNT < 0x0600
+/* otherwise defined the other way around in ws2def.h */
+#define cmsghdr _WSACMSGHDR
+
+#undef CMSG_DATA       /* wincrypt.h can byte my shiny metal #undef */
+#define CMSG_DATA WSA_CMSG_DATA
+#define CMSG_LEN WSA_CMSG_LEN
+#define CMSG_SPACE WSA_CMSG_SPACE
+#endif  /* _WIN32_WINNT < 0x0600 - provide unglified CMSG names */
+
 RT_C_DECLS_BEGIN
 int RTWinSocketPair(int domain, int type, int protocol, SOCKET socket_vector[2]);
 RT_C_DECLS_END
