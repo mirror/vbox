@@ -1370,8 +1370,8 @@
 
       <para>To control GOP, use the following
       <computeroutput>VBoxManage</computeroutput> command: <screen>VBoxManage setextradata "VM name" VBoxInternal2/EfiGopMode N</screen>
-      Where N can be one of 0,1,2,3,4 referring to the 640x480, 800x600,
-      1024x768, 1280x1024, 1440x900 screen resolution respectively.</para>
+      Where N can be one of 0,1,2,3,4,5 referring to the 640x480, 800x600,
+      1024x768, 1280x1024, 1440x900, 1920x1200 screen resolution respectively.</para>
 
       <para>To change the UGA resolution: <screen>VBoxManage setextradata "VM name" VBoxInternal2/UgaHorizontalResolution 1440
 VBoxManage setextradata "VM name" VBoxInternal2/UgaVerticalResolution    900</screen></para>
