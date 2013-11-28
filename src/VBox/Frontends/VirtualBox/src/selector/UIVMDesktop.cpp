@@ -22,6 +22,9 @@
 #include <QStackedLayout>
 #include <QStackedWidget>
 #include <QToolButton>
+#ifdef Q_WS_MAC
+# include <QTimer>
+#endif /* Q_WS_MAC */
 
 /* GUI includes */
 #include "UIBar.h"
@@ -228,7 +231,14 @@ UIVMDesktop::UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *
     m_pHeaderBtn->setIcon(Dtls, UIIconPool::iconSet(":/vm_settings_16px.png"));
     m_pHeaderBtn->setIcon(Snap, UIIconPool::iconSet(":/snapshot_take_16px.png",
                                                     ":/snapshot_take_disabled_16px.png"));
-    m_pHeaderBtn->animateClick(0);
+#ifdef Q_WS_MAC
+    /* Cocoa stuff should be async...
+     * Do not ask me why but otherwise
+     * it conflicts with native handlers. */
+    QTimer::singleShot(0, this, SLOT(sltInit()));
+#else /* !Q_WS_MAC */
+    sltInit();
+#endif /* !Q_WS_MAC */
 
     /* Prepare main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -323,6 +333,11 @@ void UIVMDesktop::lockSnapshots()
 {
     m_pHeaderBtn->animateClick(Dtls);
     m_pHeaderBtn->setEnabled(Snap, false);
+}
+
+void UIVMDesktop::sltInit()
+{
+    m_pHeaderBtn->animateClick(0);
 }
 
 void UIVMDesktop::retranslateUi()
