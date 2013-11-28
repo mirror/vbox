@@ -63,6 +63,10 @@
 # include <sys/poll.h>
 # include <sys/socket.h>
 # include <netinet/in.h>
+# ifdef RT_OS_LINUX
+#  include <linux/icmp.h>       /* ICMP_FILTER */
+# endif
+# include <netinet/icmp6.h>
 #endif
 
 #include <vector>
@@ -150,7 +154,7 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 {
     friend class NATNetworkListener;
   public:
-    VBoxNetLwipNAT();
+    VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6);
     virtual ~VBoxNetLwipNAT();
     void usage(){                /* @todo: should be implemented */ };
     int run();
@@ -757,12 +761,14 @@ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
 }
 
 
-VBoxNetLwipNAT::VBoxNetLwipNAT()
+VBoxNetLwipNAT::VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6)
 {
     LogFlowFuncEnter();
 
     m_ProxyOptions.ipv6_enabled = 0;
     m_ProxyOptions.ipv6_defroute = 0;
+    m_ProxyOptions.icmpsock4 = icmpsock4;
+    m_ProxyOptions.icmpsock6 = icmpsock6;
     m_ProxyOptions.tftp_root = NULL;
     m_ProxyOptions.src4 = NULL;
     m_ProxyOptions.src6 = NULL;
@@ -1207,6 +1213,73 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 #endif
 
+    SOCKET icmpsock4 = INVALID_SOCKET;
+    SOCKET icmpsock6 = INVALID_SOCKET;
+#ifndef RT_OS_DARWIN
+    const int icmpstype = SOCK_RAW;
+#else
+    /* on OS X it's not privileged */
+    const int icmpstype = SOCK_DGRAM;
+#endif
+
+    icmpsock4 = socket(AF_INET, icmpstype, IPPROTO_ICMP);
+    if (icmpsock4 == INVALID_SOCKET)
+    {
+        perror("IPPROTO_ICMP");
+    }
+
+    if (icmpsock4 != INVALID_SOCKET)
+    {
+#ifdef ICMP_FILTER              //  Linux specific; NB: privileged!
+        struct icmp_filter flt = {
+            ~(uint32_t)(
+                  (1U << ICMP_ECHOREPLY)
+                | (1U << ICMP_DEST_UNREACH)
+                | (1U << ICMP_TIME_EXCEEDED)
+            )
+        };
+
+        int status = setsockopt(icmpsock4, icmpstype, ICMP_FILTER,
+                                &flt, sizeof(flt));
+        if (status < 0)
+        {
+            perror("ICMP_FILTER");
+        }
+#endif
+    }
+
+    icmpsock6 = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+    if (icmpsock6 == INVALID_SOCKET)
+    {
+        perror("IPPROTO_ICMPV6");
+    }
+
+    if (icmpsock6 != INVALID_SOCKET)
+    {
+#ifdef ICMP6_FILTER             // Windows doesn't support RFC 3542 API
+        /*
+         * XXX: We do this here for now, not in pxping.c, to avoid
+         * name clashes between lwIP and system headers.
+         */
+        struct icmp6_filter flt;
+        ICMP6_FILTER_SETBLOCKALL(&flt);
+
+        ICMP6_FILTER_SETPASS(ICMP6_ECHO_REPLY, &flt);
+
+        ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_PACKET_TOO_BIG, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_TIME_EXCEEDED, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_PARAM_PROB, &flt);
+
+        int status = setsockopt(icmpsock6, IPPROTO_ICMPV6, ICMP6_FILTER,
+                                &flt, sizeof(flt));
+        if (status < 0)
+        {
+            perror("ICMP6_FILTER");
+        }
+#endif
+    }
+
     HRESULT hrc = com::Initialize();
 #ifdef VBOX_WITH_XPCOM
     if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
@@ -1220,7 +1293,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (FAILED(hrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM!");
 
-    g_pLwipNat = new VBoxNetLwipNAT();
+    g_pLwipNat = new VBoxNetLwipNAT(icmpsock4, icmpsock6);
 
     Log2(("NAT: initialization\n"));
     int rc = g_pLwipNat->parseArgs(argc - 1, argv + 1);
