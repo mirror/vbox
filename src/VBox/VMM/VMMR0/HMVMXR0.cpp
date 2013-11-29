@@ -10848,9 +10848,11 @@ static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
     if (!(pMixedCtx->cr0 & X86_CR0_NE))
     {
-        /* Old-style FPU error reporting needs some extra work. */
-        /** @todo don't fall back to the recompiler, but do it manually. */
-        return VERR_EM_INTERPRETER;
+        /* Convert a #MF into a FERR -> IRQ 13. */
+        rc = PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13, 1, 0 /*uTagSrc*/);
+        int rc2 = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
+        AssertRCReturn(rc2, rc2);
+        return rc;
     }
 
     hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
