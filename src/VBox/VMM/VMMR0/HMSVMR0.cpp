@@ -5018,7 +5018,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         if (RT_SUCCESS(rc))
         {
             /* Convert a #MF into a FERR -> IRQ 13. See @bugref{6117}. */
-            rc = PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13, 1, 0 /*uTagSrc*/);
+            rc = PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13, 1, 0 /* uTagSrc */);
             if (RT_SUCCESS(rc))
                 pCtx->rip += cbOp;
         }
