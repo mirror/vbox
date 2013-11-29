@@ -1495,7 +1495,6 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-#if 0   /* Disabled until issue with non-atomic flag updates is resolved. See @bugref{6398#c170}. */
     Assert(pVCpu->hm.s.vmx.fRestoreHostMsrs & VMX_RESTORE_HOST_MSR_SAVED_HOST);
     if (!(pVCpu->hm.s.vmx.fRestoreHostMsrs & VMX_RESTORE_HOST_MSR_LOADED_GUEST))
     {
@@ -1514,7 +1513,6 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 #undef VMXLOCAL_LAZY_LOAD_GUEST_MSR
     }
     else
-#endif
     {
         ASMWrMsr(MSR_K8_LSTAR,          pMixedCtx->msrLSTAR);
         ASMWrMsr(MSR_K6_STAR,           pMixedCtx->msrSTAR);
