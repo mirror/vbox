@@ -5188,7 +5188,7 @@ static int supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq)
                 pReq->u.Out.uResults.Write.fGp   = false;
             else if (rc == VERR_ACCESS_DENIED)
             {
-                pReq->u.Out.uResults.Read.fGp    = true;
+                pReq->u.Out.uResults.Write.fGp   = true;
                 rc  = VINF_SUCCESS;
             }
             break;
