@@ -291,7 +291,7 @@ static void VBoxDrvFreeBSDDtr(void *pData)
     /*
      * Close the session.
      */
-    supdrvSessionRelease(&g_VBoxDrvFreeBSDDevExt, pSession);
+    supdrvSessionRelease(pSession);
     ASMAtomicDecU32(&g_cUsers);
 }
 

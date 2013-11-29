@@ -135,6 +135,8 @@ const HostDnsMonitor *HostDnsMonitor::getHostDnsMonitor()
         g_monitor = new HostDnsServiceLinux();
 # elif defined(RT_OS_SOLARIS)
         g_monitor =  new HostDnsServiceSolaris();
+# elif defined(RT_OS_FREEBSD)
+        g_monitor = new HostDnsServiceFreebsd();
 # elif defined(RT_OS_OS2)
         g_monitor = new HostDnsServiceOs2();
 # else

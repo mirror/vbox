@@ -109,5 +109,10 @@ int CollectorFreeBSD::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
     return VERR_NOT_IMPLEMENTED;
 }
 
+int getDiskListByFs(const char *name, DiskList& list)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 } /* namespace pm */
 
