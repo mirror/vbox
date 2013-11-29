@@ -585,6 +585,7 @@ STDMETHODIMP Appliance::Interpret()
                             }
                             else if (!hdc.strControllerType.compare("BusLogic", Utf8Str::CaseInsensitive))
                                 hdcController = "BusLogic";
+
                             pNewDesc->addEntry(vsdet,
                                                strControllerID,
                                                hdc.strControllerType,
@@ -2174,9 +2175,15 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
         break;
 
         case ovf::HardDiskController::SCSI:
-            controllerType = Bstr("SCSI Controller");
+        {
+            if(hdc.strControllerType.compare("lsilogicsas")==0)
+                controllerType = Bstr("SAS Controller");
+            else
+                controllerType = Bstr("SCSI Controller");
+
             lControllerPort = (long)ulAddressOnParent;
             lDevice = (long)0;
+        }
         break;
 
         default: break;
