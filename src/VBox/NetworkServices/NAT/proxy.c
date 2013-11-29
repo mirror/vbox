@@ -85,9 +85,7 @@ proxy_init(struct netif *proxy_netif, struct proxy_options *opts)
 
     pxdns_init(proxy_netif);
 
-#if 0 /* XXX */
     pxping_init(proxy_netif, opts->icmpsock4, opts->icmpsock6);
-#endif
 
     pollmgr_tid = sys_thread_new("pollmgr_thread",
                                  pollmgr_thread, NULL,
