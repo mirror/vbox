@@ -9269,7 +9269,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     }
 
     uint32_t uExitIntInfo = pVmxTransient->uExitIntInfo;
-    uint32_t uVector       = VMX_EXIT_INTERRUPTION_INFO_VECTOR(uExitIntInfo);
+    uint32_t uVector      = VMX_EXIT_INTERRUPTION_INFO_VECTOR(uExitIntInfo);
     switch (uIntType)
     {
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT:   /* Software exception. (#BP or #OF) */
@@ -10846,8 +10846,8 @@ static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
     if (!(pMixedCtx->cr0 & X86_CR0_NE))
     {
-        /* Convert a #MF into a FERR -> IRQ 13. */
-        rc = PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13, 1, 0 /*uTagSrc*/);
+        /* Convert a #MF into a FERR -> IRQ 13. See @bugref{6117}. */
+        rc = PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13, 1, 0 /* uTagSrc */);
         int rc2 = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc2, rc2);
         return rc;
