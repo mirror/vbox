@@ -1649,6 +1649,11 @@ RuntimeR0_SOURCES += \
 	common/math/gcc/xordi3.c
 endif
 
+RuntimeR0_SOURCES.x86 += \
+	common/asm/ASMCpuIdExSlow.asm
+RuntimeR0_SOURCES.amd64 += \
+	common/asm/ASMCpuIdExSlow.asm
+
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR0_SOURCES += common/time/timesupA.asm
 #else
