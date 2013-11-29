@@ -43,6 +43,7 @@
 #include <net/if_dl.h>
 #include <netinet/in.h>
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -388,7 +389,7 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
             pInfo->Uuid = uuid;
 
             struct ifreq IfReq;
-            RTSTrCopy(IfReq.ifr_name, sizeof(IfReq.ifr_name), pInfo->szShortName);
+            RTStrCopy(IfReq.ifr_name, sizeof(IfReq.ifr_name), pInfo->szShortName);
             if (ioctl(sock, SIOCGIFFLAGS, &IfReq) < 0)
             {
                 Log(("NetIfList: ioctl(SIOCGIFFLAGS) -> %d\n", errno));

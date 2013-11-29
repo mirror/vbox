@@ -88,6 +88,11 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 }
 
 
+RTDECL(RTCPUID) RTMpGetCoreCount(void)
+{
+    return mp_maxid + 1;
+}
+
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
     return idCpu <= mp_maxid

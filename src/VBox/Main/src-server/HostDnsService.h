@@ -142,7 +142,7 @@ class HostDnsServiceWin : public HostDnsMonitor
     HRESULT updateInfo();
 };
 # endif
-# if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2)
+# if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
 class HostDnsServiceResolvConf: public HostDnsMonitor
 {
   public:
@@ -180,6 +180,15 @@ class HostDnsServiceLinux : public HostDnsServiceResolvConf
     HRESULT init(const char *aResolvConfFileName);
 
     static int hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser);
+};
+
+#  elif defined(RT_OS_FREEBSD)
+class HostDnsServiceFreebsd: public HostDnsServiceResolvConf
+{
+    public:
+    HostDnsServiceFreebsd(){}
+    ~HostDnsServiceFreebsd(){}
+    HRESULT init(){ return HostDnsServiceResolvConf::init("/etc/resolv.conf");}
 };
 
 #  elif defined(RT_OS_OS2)

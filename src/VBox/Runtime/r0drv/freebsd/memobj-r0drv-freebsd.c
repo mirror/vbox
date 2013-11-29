@@ -162,7 +162,11 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_PHYS:
         case RTR0MEMOBJTYPE_PHYS_NC:
         {
+#if __FreeBSD_version >= 1000030
+            VM_OBJECT_WLOCK(pMemFreeBSD->pObject);
+#else
             VM_OBJECT_LOCK(pMemFreeBSD->pObject);
+#endif
             vm_page_t pPage = vm_page_find_least(pMemFreeBSD->pObject, 0);
             vm_page_lock_queues();
             for (vm_page_t pPage = vm_page_find_least(pMemFreeBSD->pObject, 0);
@@ -172,7 +176,11 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 vm_page_unwire(pPage, 0);
             }
             vm_page_unlock_queues();
+#if __FreeBSD_version >= 1000030
+            VM_OBJECT_WUNLOCK(pMemFreeBSD->pObject);
+#else
             VM_OBJECT_UNLOCK(pMemFreeBSD->pObject);
+#endif
             vm_object_deallocate(pMemFreeBSD->pObject);
             break;
         }
@@ -200,10 +208,18 @@ static vm_page_t rtR0MemObjFreeBSDContigPhysAllocHelper(vm_object_t pObject, vm_
 
     while (cTries <= 1)
     {
+#if __FreeBSD_version >= 1000030
+        VM_OBJECT_WLOCK(pObject);
+#else
         VM_OBJECT_LOCK(pObject);
+#endif
         pPages = vm_page_alloc_contig(pObject, iPIndex, fFlags, cPages, 0,
                                       VmPhysAddrHigh, uAlignment, 0, VM_MEMATTR_DEFAULT);
+#if __FreeBSD_version >= 1000030
+        VM_OBJECT_WUNLOCK(pObject);
+#else
         VM_OBJECT_UNLOCK(pObject);
+#endif
         if (pPages)
             break;
         vm_pageout_grow_cache(cTries, 0, VmPhysAddrHigh);
@@ -223,7 +239,11 @@ static vm_page_t rtR0MemObjFreeBSDContigPhysAllocHelper(vm_object_t pObject, vm_
 
     if (!pPages)
         return pPages;
+#if __FreeBSD_version >= 1000030
+    VM_OBJECT_WLOCK(pObject);
+#else
     VM_OBJECT_LOCK(pObject);
+#endif
     for (vm_pindex_t iPage = 0; iPage < cPages; iPage++)
     {
         vm_page_t pPage = pPages + iPage;
@@ -235,7 +255,11 @@ static vm_page_t rtR0MemObjFreeBSDContigPhysAllocHelper(vm_object_t pObject, vm_
             atomic_add_int(&cnt.v_wire_count, 1);
         }
     }
+#if __FreeBSD_version >= 1000030
+    VM_OBJECT_WUNLOCK(pObject);
+#else
     VM_OBJECT_UNLOCK(pObject);
+#endif
     return pPages;
 #endif
 }
@@ -259,7 +283,11 @@ static int rtR0MemObjFreeBSDPhysAllocHelper(vm_object_t pObject, u_long cPages,
         if (!pPage)
         {
             /* Free all allocated pages */
+#if __FreeBSD_version >= 1000030
+            VM_OBJECT_WLOCK(pObject);
+#else
             VM_OBJECT_LOCK(pObject);
+#endif
             while (iPage-- > 0)
             {
                 pPage = vm_page_lookup(pObject, iPage);
@@ -269,7 +297,11 @@ static int rtR0MemObjFreeBSDPhysAllocHelper(vm_object_t pObject, u_long cPages,
                 vm_page_free(pPage);
                 vm_page_unlock_queues();
             }
+#if __FreeBSD_version >= 1000030
+            VM_OBJECT_WUNLOCK(pObject);
+#else
             VM_OBJECT_UNLOCK(pObject);
+#endif
             return rcNoMem;
         }
     }
@@ -286,9 +318,15 @@ static int rtR0MemObjFreeBSDAllocHelper(PRTR0MEMOBJFREEBSD pMemFreeBSD, bool fEx
     pMemFreeBSD->pObject = vm_object_allocate(OBJT_PHYS, cPages);
 
     /* No additional object reference for auto-deallocation upon unmapping. */
+#if __FreeBSD_version >= 1000055
+    rc = vm_map_find(kernel_map, pMemFreeBSD->pObject, 0,
+                     &MapAddress, pMemFreeBSD->Core.cb, 0, VMFS_ANY_SPACE,
+                     fExecutable ? VM_PROT_ALL : VM_PROT_RW, VM_PROT_ALL, 0);
+#else
     rc = vm_map_find(kernel_map, pMemFreeBSD->pObject, 0,
                      &MapAddress, pMemFreeBSD->Core.cb, VMFS_ANY_SPACE,
                      fExecutable ? VM_PROT_ALL : VM_PROT_RW, VM_PROT_ALL, 0);
+#endif
 
     if (rc == KERN_SUCCESS)
     {
@@ -402,9 +440,17 @@ static int rtR0MemObjFreeBSDAllocPhysPages(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOB
         if (fContiguous)
         {
             Assert(enmType == RTR0MEMOBJTYPE_PHYS);
+#if __FreeBSD_version >= 1000030
+            VM_OBJECT_WLOCK(pMemFreeBSD->pObject);
+#else
             VM_OBJECT_LOCK(pMemFreeBSD->pObject);
+#endif
             pMemFreeBSD->Core.u.Phys.PhysBase = VM_PAGE_TO_PHYS(vm_page_find_least(pMemFreeBSD->pObject, 0));
+#if __FreeBSD_version >= 1000030
+            VM_OBJECT_WUNLOCK(pMemFreeBSD->pObject);
+#else
             VM_OBJECT_UNLOCK(pMemFreeBSD->pObject);
+#endif
             pMemFreeBSD->Core.u.Phys.fAllocated = true;
         }
 
@@ -551,6 +597,9 @@ static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixe
                      0,                             /* offset */
                      &MapAddress,                   /* addr (IN/OUT) */
                      cb,                            /* length */
+#if __FreeBSD_version >= 1000055
+                     0,                             /* max addr */
+#endif
                      pvFixed == (void *)-1 ? VMFS_ANY_SPACE : VMFS_NO_SPACE,
                                                     /* find_space */
                      VM_PROT_NONE,                  /* protection */
@@ -628,6 +677,9 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
                      offSub,                /* Start offset in the object */
                      &Addr,                 /* Start address IN/OUT */
                      cbSub,                 /* Size of the mapping */
+#if __FreeBSD_version >= 1000055
+                     0,                     /* Upper bound of mapping */
+#endif
                      VMFS_ANY_SPACE,        /* Whether a suitable address should be searched for first */
                      ProtectionFlags,       /* protection flags */
                      VM_PROT_ALL,           /* Maximum protection flags */
@@ -704,6 +756,9 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
                      0,                     /* Start offset in the object */
                      &AddrR3,               /* Start address IN/OUT */
                      pMemToMap->cb,         /* Size of the mapping */
+#if __FreeBSD_version >= 1000055
+                     0,                     /* Upper bound of the mapping */
+#endif
                      R3PtrFixed == (RTR3PTR)-1 ? VMFS_ANY_SPACE : VMFS_NO_SPACE,
                                             /* Whether a suitable address should be searched for first */
                      ProtectionFlags,       /* protection flags */
@@ -814,9 +869,17 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
         case RTR0MEMOBJTYPE_PHYS_NC:
         {
             RTHCPHYS addr;
+#if __FreeBSD_version >= 1000030
+            VM_OBJECT_WLOCK(pMemFreeBSD->pObject);
+#else
             VM_OBJECT_LOCK(pMemFreeBSD->pObject);
+#endif
             addr = VM_PAGE_TO_PHYS(vm_page_lookup(pMemFreeBSD->pObject, iPage));
+#if __FreeBSD_version >= 1000030
+            VM_OBJECT_WUNLOCK(pMemFreeBSD->pObject);
+#else
             VM_OBJECT_UNLOCK(pMemFreeBSD->pObject);
+#endif
             return addr;
         }
 
