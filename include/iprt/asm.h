@@ -2992,6 +2992,8 @@ DECLINLINE(void) ASMAtomicOrS64(int64_t volatile *pi64, int64_t i64)
 {
     ASMAtomicOrU64((uint64_t volatile *)pi64, i64);
 }
+
+
 /**
  * Atomically And an unsigned 32-bit value, ordered.
  *
@@ -3082,6 +3084,180 @@ DECLINLINE(void) ASMAtomicAndU64(uint64_t volatile *pu64, uint64_t u64)
 DECLINLINE(void) ASMAtomicAndS64(int64_t volatile *pi64, int64_t i64)
 {
     ASMAtomicAndU64((uint64_t volatile *)pi64, (uint64_t)i64);
+}
+
+
+/**
+ * Atomically OR an unsigned 32-bit value, unordered but interrupt safe.
+ *
+ * @param   pu32   Pointer to the pointer variable to OR u32 with.
+ * @param   u32    The value to OR *pu32 with.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMAtomicUoOrU32(uint32_t volatile *pu32, uint32_t u32);
+#else
+DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile *pu32, uint32_t u32)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("orl %1, %0\n\t"
+                         : "=m" (*pu32)
+                         : "ir" (u32),
+                           "m" (*pu32));
+# else
+    __asm
+    {
+        mov     eax, [u32]
+#  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+        or      [rdx], eax
+#  else
+        mov     edx, [pu32]
+        or      [edx], eax
+#  endif
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Atomically OR a signed 32-bit value, unordered.
+ *
+ * @param   pi32   Pointer to the pointer variable to OR u32 with.
+ * @param   i32    The value to OR *pu32 with.
+ */
+DECLINLINE(void) ASMAtomicUoOrS32(int32_t volatile *pi32, int32_t i32)
+{
+    ASMAtomicUoOrU32((uint32_t volatile *)pi32, i32);
+}
+
+
+/**
+ * Atomically OR an unsigned 64-bit value, unordered.
+ *
+ * @param   pu64   Pointer to the pointer variable to OR u64 with.
+ * @param   u64    The value to OR *pu64 with.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMAtomicUoOrU64(uint64_t volatile *pu64, uint64_t u64);
+#else
+DECLINLINE(void) ASMAtomicUoOrU64(uint64_t volatile *pu64, uint64_t u64)
+{
+# if RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    __asm__ __volatile__("orq %1, %q0\n\t"
+                         : "=m" (*pu64)
+                         : "r" (u64),
+                           "m" (*pu64));
+# else
+    for (;;)
+    {
+        uint64_t u64Old = ASMAtomicUoReadU64(pu64);
+        uint64_t u64New = u64Old | u64;
+        if (ASMAtomicCmpXchgU64(pu64, u64New, u64Old))
+            break;
+        ASMNopPause();
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Atomically Or a signed 64-bit value, unordered.
+ *
+ * @param   pi64   Pointer to the pointer variable to OR u64 with.
+ * @param   i64    The value to OR *pu64 with.
+ */
+DECLINLINE(void) ASMAtomicUoOrS64(int64_t volatile *pi64, int64_t i64)
+{
+    ASMAtomicUoOrU64((uint64_t volatile *)pi64, i64);
+}
+
+
+/**
+ * Atomically And an unsigned 32-bit value, unordered.
+ *
+ * @param   pu32   Pointer to the pointer variable to AND u32 with.
+ * @param   u32    The value to AND *pu32 with.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMAtomicUoAndU32(uint32_t volatile *pu32, uint32_t u32);
+#else
+DECLINLINE(void) ASMAtomicUoAndU32(uint32_t volatile *pu32, uint32_t u32)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("andl %1, %0\n\t"
+                         : "=m" (*pu32)
+                         : "ir" (u32),
+                           "m" (*pu32));
+# else
+    __asm
+    {
+        mov     eax, [u32]
+#  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+        and     [rdx], eax
+#  else
+        mov     edx, [pu32]
+        and     [edx], eax
+#  endif
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Atomically And a signed 32-bit value, unordered.
+ *
+ * @param   pi32   Pointer to the pointer variable to AND i32 with.
+ * @param   i32    The value to AND *pi32 with.
+ */
+DECLINLINE(void) ASMAtomicUoAndS32(int32_t volatile *pi32, int32_t i32)
+{
+    ASMAtomicUoAndU32((uint32_t volatile *)pi32, (uint32_t)i32);
+}
+
+
+/**
+ * Atomically And an unsigned 64-bit value, unordered.
+ *
+ * @param   pu64   Pointer to the pointer variable to AND u64 with.
+ * @param   u64    The value to AND *pu64 with.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMAtomicUoAndU64(uint64_t volatile *pu64, uint64_t u64);
+#else
+DECLINLINE(void) ASMAtomicUoAndU64(uint64_t volatile *pu64, uint64_t u64)
+{
+# if RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    __asm__ __volatile__("andq %1, %0\n\t"
+                         : "=m" (*pu64)
+                         : "r" (u64),
+                           "m" (*pu64));
+# else
+    for (;;)
+    {
+        uint64_t u64Old = ASMAtomicUoReadU64(pu64);
+        uint64_t u64New = u64Old & u64;
+        if (ASMAtomicCmpXchgU64(pu64, u64New, u64Old))
+            break;
+        ASMNopPause();
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Atomically And a signed 64-bit value, unordered.
+ *
+ * @param   pi64   Pointer to the pointer variable to AND i64 with.
+ * @param   i64    The value to AND *pi64 with.
+ */
+DECLINLINE(void) ASMAtomicUoAndS64(int64_t volatile *pi64, int64_t i64)
+{
+    ASMAtomicUoAndU64((uint64_t volatile *)pi64, (uint64_t)i64);
 }
 
 
