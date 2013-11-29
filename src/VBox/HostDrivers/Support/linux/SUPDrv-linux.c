@@ -867,11 +867,12 @@ int VBOXCALL    supdrvOSMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *pu
     int rc;
 
     if (idCpu == NIL_RTCPUID)
-        idCpu = RTMpCpuId();
-    else if (!RTMpIsCpuOnline(idCpu))
+        rc = rdmsr_safe(uMsr, &u32Low, &u32High);
+    else if (RTMpIsCpuOnline(idCpu))
+        rc = rdmsr_safe_on_cpu(idCpu, uMsr, &u32Low, &u32High);
+    else
         return VERR_CPU_OFFLINE;
-    rc = rdmsr_safe_on_cpu(idCpu, uMsr, &u32Low, &u32High);
-    if (rc >= 0)
+    if (rc == 0)
     {
         *puValue = RT_MAKE_U64(u32Low, u32High);
         return VINF_SUCCESS;
@@ -889,11 +890,12 @@ int VBOXCALL    supdrvOSMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uV
     int rc;
 
     if (idCpu == NIL_RTCPUID)
-        idCpu = RTMpCpuId();
-    else if (!RTMpIsCpuOnline(idCpu))
+        rc = wrmsr_safe(uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue));
+    else if (RTMpIsCpuOnline(idCpu))
+        rc = wrmsr_safe_on_cpu(idCpu, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue));
+    else
         return VERR_CPU_OFFLINE;
-    rc = wrmsr_safe_on_cpu(idCpu, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue));
-    if (rc >= 0)
+    if (rc == 0)
         return VINF_SUCCESS;
     return VERR_ACCESS_DENIED;
 # else
@@ -957,10 +959,10 @@ static DECLCALLBACK(void) supdrvLnxMsrProberModifyOnCpu(RTCPUID idCpu, void *pvU
     pReq->u.Out.uResults.Modify.uBefore    = uBefore;
     pReq->u.Out.uResults.Modify.uWritten   = uWritten;
     pReq->u.Out.uResults.Modify.uAfter     = uAfter;
-    pReq->u.Out.uResults.Modify.fBeforeGp  = rcBefore  < 0;
-    pReq->u.Out.uResults.Modify.fModifyGp  = rcWrite   < 0;
-    pReq->u.Out.uResults.Modify.fAfterGp   = rcAfter   < 0;
-    pReq->u.Out.uResults.Modify.fRestoreGp = rcRestore < 0;
+    pReq->u.Out.uResults.Modify.fBeforeGp  = rcBefore  != 0;
+    pReq->u.Out.uResults.Modify.fModifyGp  = rcWrite   != 0;
+    pReq->u.Out.uResults.Modify.fAfterGp   = rcAfter   != 0;
+    pReq->u.Out.uResults.Modify.fRestoreGp = rcRestore != 0;
     RT_ZERO(pReq->u.Out.uResults.Modify.afReserved);
 }
 
