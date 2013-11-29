@@ -41,7 +41,7 @@ int main()
 
     RTTestSub(hTest, "CS/DS Selector");
 
-    RTTestIPrintf(RTTESTLVL_ALWAYS,  "Initial state:\n");
+    RTTestIPrintf(RTTESTLVL_ALWAYS,  "Initial state (0x20 will be subtracted from IP):\n");
     /* Trigger an exception to make sure we've got something to look at. */
     MyFpuPrepXcpt();
     static X86FXSTATE FxState;
