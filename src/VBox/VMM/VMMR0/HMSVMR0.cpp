@@ -5011,13 +5011,13 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     if (!(pCtx->cr0 & X86_CR0_NE))
     {
-        PVM         pVM  = pVCpu->CTX_SUFF(pVM);
-        PDISSTATE   pDis = &pVCpu->hm.s.DisState;
-        unsigned    cbOp;
+        PVM       pVM  = pVCpu->CTX_SUFF(pVM);
+        PDISSTATE pDis = &pVCpu->hm.s.DisState;
+        unsigned  cbOp;
         int rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
         if (RT_SUCCESS(rc))
         {
-            /* Convert a #MF into a FERR -> IRQ 13. */
+            /* Convert a #MF into a FERR -> IRQ 13. See @bugref{6117}. */
             rc = PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13, 1, 0 /*uTagSrc*/);
             if (RT_SUCCESS(rc))
                 pCtx->rip += cbOp;
