@@ -1627,7 +1627,7 @@ VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
 {
     /* Sync. entire state on VM reset R0-reentry. It's safe to reset
        the HM flags here, all other EMTs are in ring-3. See VMR3Reset(). */
-    VMCPU_HMCF_RESET_TO(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
+    HMCPU_CF_RESET_TO(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
 
     pVCpu->hm.s.vmx.u32CR0Mask     = 0;
     pVCpu->hm.s.vmx.u32CR4Mask     = 0;
@@ -2646,7 +2646,7 @@ VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
  */
 VMMR3_INT_DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
 {
-    VMCPU_HMCF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 }
 
 
@@ -2657,7 +2657,7 @@ VMMR3_INT_DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
  */
 VMMR3_INT_DECL(void) HMR3NotifyEmulated(PVMCPU pVCpu)
 {
-    VMCPU_HMCF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 }
 
 
