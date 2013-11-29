@@ -2116,6 +2116,29 @@ typedef const X86PML4 *PCX86PML4;
 
 /** @} */
 
+/**
+ * 32-bit protected mode FSTENV image.
+ */
+typedef struct X86FSTENV32P
+{
+    uint16_t    FCW;
+    uint16_t    padding1;
+    uint16_t    FSW;
+    uint16_t    padding2;
+    uint16_t    FTW;
+    uint16_t    padding3;
+    uint32_t    FPUIP;
+    uint16_t    FPUCS;
+    uint16_t    FOP;
+    uint32_t    FPUDP;
+    uint16_t    FPUDS;
+    uint16_t    padding4;
+} X86FSTENV32P;
+/** Pointer to a 32-bit protected mode FSTENV image. */
+typedef X86FSTENV32P *PX86FSTENV32P;
+/** Pointer to a const 32-bit protected mode FSTENV image. */
+typedef X86FSTENV32P const *PCX86FSTENV32P;
+
 
 /**
  * 80-bit MMX/FPU register type.

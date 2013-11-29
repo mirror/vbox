@@ -56,9 +56,10 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
   	tstSSM \
   	tstVMMR0CallHost-1 \
   	tstVMMR0CallHost-2 \
-  	tstVMREQ
+  	tstVMREQ \
+	tstX86-FpuSaveRestore
   ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.x86 solaris.amd64 win.amd64 ) ## TODO: Fix the code.
-   PROGRAMS  +=  tstX86-1
+   PROGRAMS += tstX86-1
   endif
   ifneq ($(KBUILD_TARGET),l4)
    PROGRAMS += tstAnimate
@@ -255,6 +256,10 @@ tstAnimate_LIBS         = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 tstX86-1_TEMPLATE       = VBOXR3TSTEXE
 tstX86-1_SOURCES        = tstX86-1.cpp tstX86-1A.asm
 tstX86-1_LIBS           = $(LIB_RUNTIME)
+
+tstX86-FpuSaveRestore_TEMPLATE = VBOXR3TSTEXE
+tstX86-FpuSaveRestore_SOURCES  = tstX86-FpuSaveRestore.cpp tstX86-FpuSaveRestoreA.asm
+tstX86-FpuSaveRestore_LIBS     = $(LIB_RUNTIME)
 
 ifdef VBOX_WITH_RAW_MODE
 
