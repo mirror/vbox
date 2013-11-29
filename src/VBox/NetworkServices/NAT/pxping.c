@@ -45,8 +45,8 @@
 #define DPRINTF2(args) do { printf args; } while (0)
 #endif
 
-#if defined(RT_OS_LINUX) && !defined(__USE_GNU) \
-    && __GLIBC_PREREQ(2, 8)
+#if defined(RT_OS_LINUX) && !defined(__USE_GNU)
+#if __GLIBC_PREREQ(2, 8)
 /*
  * XXX: This is gross.  in6_pktinfo is now hidden behind _GNU_SOURCE
  * https://sourceware.org/bugzilla/show_bug.cgi?id=6775
@@ -59,7 +59,8 @@ struct in6_pktinfo {
     struct in6_addr ipi6_addr;
     unsigned int ipi6_ifindex;
 };
-#endif
+#endif  /* __GLIBC_PREREQ */
+#endif  /* RT_OS_LINUX && !__USE_GNU */
 
 
 /* forward */
