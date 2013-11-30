@@ -502,14 +502,12 @@ public:
     void setOurNetmask(const RTNETADDRIPV4& aNetmask);
     void setOurMac(const RTMAC& aMac);
 
-    void setSession(PSUPDRVSESSION);
-    void setInterface(INTNETIFHANDLE);
-    void setRingBuffer(PINTNETBUF);
-
     bool handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb);
     bool handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb);
     bool handleDhcpReqDecline(PCRTNETBOOTP pDhcpMsg, size_t cb);
     bool handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb);
+
+    void setService(const VBoxNetHlpUDPService *);
 private:
     NetworkManager();
     ~NetworkManager();

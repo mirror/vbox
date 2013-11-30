@@ -5,6 +5,7 @@
  */
 
 #include <iprt/asm.h>
+#include <iprt/getopt.h>
 #include <iprt/net.h>
 #include <iprt/time.h>
 
@@ -18,6 +19,8 @@
 
 #include <iprt/cpp/xml.h>
 
+#define BASE_SERVICES_ONLY
+#include "../NetLib/VBoxNetBaseService.h"
 #include "../NetLib/VBoxNetLib.h"
 #include "../NetLib/shared_ptr.h"
 
@@ -665,8 +668,6 @@ struct NetworkManager::Data
         RT_ZERO(BootPReplyMsg);
         cbBooPReplyMsg = 0;
         
-        m_pSession = NIL_RTR0PTR;
-        m_pIfBuf = NULL;
         m_OurAddress.u = 0;
         m_OurNetmask.u = 0;
         RT_ZERO(m_OurMac);
@@ -678,14 +679,10 @@ struct NetworkManager::Data
     } BootPReplyMsg;
     int cbBooPReplyMsg;
 
-    /* XXX: artifacts should be hidden or removed from here. */
-    PSUPDRVSESSION m_pSession;
-    INTNETIFHANDLE m_hIf;
-    PINTNETBUF m_pIfBuf;
-
     RTNETADDRIPV4 m_OurAddress;
     RTNETADDRIPV4 m_OurNetmask;
     RTMAC m_OurMac;
+    const VBoxNetHlpUDPService *m_service;
 };
 
 
@@ -747,22 +744,11 @@ void NetworkManager::setOurMac(const RTMAC& aMac)
 }
 
 
-void NetworkManager::setSession(PSUPDRVSESSION aSession)
+void NetworkManager::setService(const VBoxNetHlpUDPService *srv)
 {
-    m->m_pSession = aSession;
+    m->m_service = srv;
 }
 
-
-void NetworkManager::setInterface(INTNETIFHANDLE aIf)
-{
-    m->m_hIf = aIf;
-}
-
-
-void NetworkManager::setRingBuffer(PINTNETBUF aBuf)
-{
-    m->m_pIfBuf = aBuf;
-}
 /**
  * Network manager creates DHCPOFFER datagramm
  */
@@ -981,14 +967,10 @@ int NetworkManager::doReply(const Client& client, const std::vector<RawOption>& 
     }
     else
 #endif
-        rc = VBoxNetUDPBroadcast(m->m_pSession,
-                                 m->m_hIf,
-                                 m->m_pIfBuf,
-                                 m->m_OurAddress,
-                                 &m->m_OurMac,
-                                 RTNETIPV4_PORT_BOOTPS,               /* sender */
-                                 RTNETIPV4_PORT_BOOTPC,
-                                 &m->BootPReplyMsg, RTNET_DHCP_NORMAL_SIZE);
+        rc = m->m_service->hlpUDPBroadcast(RTNETIPV4_PORT_BOOTPS,               /* sender */
+                                           RTNETIPV4_PORT_BOOTPC,
+                                           &m->BootPReplyMsg, 
+                                           RTNET_DHCP_NORMAL_SIZE);
 
     AssertRCReturn(rc,rc);
 
