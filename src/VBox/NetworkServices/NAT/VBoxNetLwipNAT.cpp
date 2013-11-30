@@ -163,6 +163,10 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
     virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
     /* VBoxNetNAT always needs Main */
     virtual bool isMainNeeded() const { return true; }
+    virtual int processFrame(void *, size_t);
+    virtual int processGSO(PCPDMNETWORKGSO, size_t);
+    virtual int processUDP(void *, size_t) { return VERR_IGNORED; }
+
    private:
     struct proxy_options m_ProxyOptions;
     struct sockaddr_in m_src4;
@@ -186,6 +190,7 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 
     ComPtr<IHost> m_host;
     ComObjPtr<NATNetworkListenerImpl> m_vboxListener;
+    static INTNETSEG aXmitSeg[64];
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent);
 
@@ -201,7 +206,6 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
     static err_t netifInit(netif *pNetif);
     static err_t netifLinkoutput(netif *pNetif, pbuf *pBuf);
     static int intNetThreadRecv(RTTHREAD, void *);
-    static void vboxNetLwipNATProcessXmit(void);
 
     VECNATSERVICEPF m_vecPortForwardRule4;
     VECNATSERVICEPF m_vecPortForwardRule6;
@@ -212,6 +216,7 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 
 
 static VBoxNetLwipNAT *g_pLwipNat;
+INTNETSEG VBoxNetLwipNAT::aXmitSeg[64];
 
 STDMETHODIMP NATNetworkListener::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 {
@@ -410,14 +415,16 @@ void VBoxNetLwipNAT::onLwipTcpIpInit(void* arg)
     proxy_ip6_divert_hook = pxremap_ip6_divert;
 
     /* lwip thread */
-    RTNETADDRIPV4 IpNetwork;
-    IpNetwork.u = g_pLwipNat->m_Ipv4Address.u & g_pLwipNat->m_Ipv4Netmask.u;
+    RTNETADDRIPV4 network;
+    RTNETADDRIPV4 address = g_pLwipNat->getIpv4Address();
+    RTNETADDRIPV4 netmask = g_pLwipNat->getIpv4Netmask();
+    network.u = address.u & netmask.u;
 
     ip_addr LwipIpAddr, LwipIpNetMask, LwipIpNetwork;
 
-    memcpy(&LwipIpAddr, &g_pLwipNat->m_Ipv4Address, sizeof(ip_addr));
-    memcpy(&LwipIpNetMask, &g_pLwipNat->m_Ipv4Netmask, sizeof(ip_addr));
-    memcpy(&LwipIpNetwork, &IpNetwork, sizeof(ip_addr));
+    memcpy(&LwipIpAddr, &address, sizeof(ip_addr));
+    memcpy(&LwipIpNetMask, &netmask, sizeof(ip_addr));
+    memcpy(&LwipIpNetwork, &network, sizeof(ip_addr));
 
     netif *pNetif = netif_add(&g_pLwipNat->m_LwipNetIf /* Lwip Interface */,
                               &LwipIpAddr /* IP address*/,
@@ -503,7 +510,8 @@ err_t VBoxNetLwipNAT::netifInit(netif *pNetif)
 
 
     pNetif->hwaddr_len = sizeof(RTMAC);
-    memcpy(pNetif->hwaddr, &pNat->m_MacAddress, sizeof(RTMAC));
+    RTMAC mac = g_pLwipNat->getMacAddress();
+    memcpy(pNetif->hwaddr, &mac, sizeof(RTMAC));
 
     pNat->m_u16Mtu = 1500; // XXX: FIXME
     pNetif->mtu = pNat->m_u16Mtu;
@@ -560,208 +568,48 @@ int VBoxNetLwipNAT::intNetThreadRecv(RTTHREAD, void *)
     if (FAILED(hrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM!");
 
-    /* Well we're ready */
-    PINTNETRINGBUF  pRingBuf = &g_pLwipNat->m_pIfBuf->Recv;
-
-    for (;;)
-    {
-        /*
-         * Wait for a packet to become available.
-         */
-        /* 2. waiting for request for */
-        rc = g_pLwipNat->waitForIntNetEvent(2000);
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED)
-            {
-                /* do we want interrupt anyone ??? */
-                continue;
-            }
-            LogRel(("VBoxNetNAT: waitForIntNetEvent returned %Rrc\n", rc));
-            AssertRCReturn(rc,ERR_IF);
-        }
-
-        /*
-         * Process the receive buffer.
-         */
-        PCINTNETHDR pHdr;
-
-        while ((pHdr = IntNetRingGetNextFrameToRead(pRingBuf)) != NULL)
-        {
-            uint8_t const u8Type = pHdr->u8Type;
-            size_t         cbFrame = pHdr->cbFrame;
-            uint8_t        *pu8Frame = NULL;
-            pbuf           *pPbufHdr = NULL;
-            pbuf           *pPbuf = NULL;
-            switch (u8Type)
-            {
-
-                case INTNETHDR_TYPE_FRAME:
-                    /* @todo:should it be really here?
-                     * Well well well, we're accessing lwip code here
-                     */
-                    pPbufHdr = pPbuf = pbuf_alloc(PBUF_RAW, pHdr->cbFrame, PBUF_POOL);
-                    if (!pPbuf)
-                    {
-                        LogRel(("NAT: Can't allocate send buffer cbFrame=%u\n", cbFrame));
-                        break;
-                    }
-                    Assert(pPbufHdr->tot_len == cbFrame);
-                    pu8Frame = (uint8_t *)IntNetHdrGetFramePtr(pHdr, g_pLwipNat->m_pIfBuf);
-                    while(pPbuf)
-                    {
-                        memcpy(pPbuf->payload, pu8Frame, pPbuf->len);
-                        pu8Frame += pPbuf->len;
-                        pPbuf = pPbuf->next;
-                    }
-
-                    g_pLwipNat->m_LwipNetIf.input(pPbufHdr, &g_pLwipNat->m_LwipNetIf);
-
-                    AssertReleaseRC(rc);
-                    break;
-                case INTNETHDR_TYPE_GSO:
-                  {
-                      PCPDMNETWORKGSO pGso = IntNetHdrGetGsoContext(pHdr,
-                                                                    g_pLwipNat->m_pIfBuf);
-                      if (!PDMNetGsoIsValid(pGso, cbFrame,
-                                            cbFrame - sizeof(PDMNETWORKGSO)))
-                          break;
-                      cbFrame -= sizeof(PDMNETWORKGSO);
-                      uint8_t         abHdrScratch[256];
-                      uint32_t const  cSegs = PDMNetGsoCalcSegmentCount(pGso,
-                                                                        cbFrame);
-                      for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
-                      {
-                          uint32_t cbSegFrame;
-                          void    *pvSegFrame =
-                            PDMNetGsoCarveSegmentQD(pGso,
-                                                    (uint8_t *)(pGso + 1),
-                                                    cbFrame,
-                                                    abHdrScratch,
-                                                    iSeg,
-                                                    cSegs,
-                                                    &cbSegFrame);
-
-                          pPbuf = pbuf_alloc(PBUF_RAW, cbSegFrame, PBUF_POOL);
-                          if (!pPbuf)
-                          {
-                              LogRel(("NAT: Can't allocate send buffer cbFrame=%u\n", cbSegFrame));
-                              break;
-                          }
-                          Assert(   !pPbuf->next
-                                 && pPbuf->len == cbSegFrame);
-                          memcpy(pPbuf->payload, pvSegFrame, cbSegFrame);
-                          g_pLwipNat->m_LwipNetIf.input(pPbuf, &g_pLwipNat->m_LwipNetIf);
-
-                      }
-
-                  }
-                  break;
-                case INTNETHDR_TYPE_PADDING:
-                    break;
-                default:
-                    STAM_REL_COUNTER_INC(&g_pLwipNat->m_pIfBuf->cStatBadFrames);
-                    break;
-            }
-            IntNetRingSkipFrame(&g_pLwipNat->m_pIfBuf->Recv);
-
-        } /* loop */
-    }
+    g_pLwipNat->doReceiveLoop();
     /* 3. deinitilization and termination */
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 
-/**
- *
- */
-void VBoxNetLwipNAT::vboxNetLwipNATProcessXmit()
-{
-    int rc = VINF_SUCCESS;
-    INTNETIFSENDREQ SendReq;
-    SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    SendReq.Hdr.cbReq    = sizeof(SendReq);
-    SendReq.pSession     = g_pLwipNat->m_pSession;
-    SendReq.hIf          = g_pLwipNat->m_hIf;
-    rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_SEND, 0, &SendReq.Hdr);
-    AssertRC(rc);
-}
-
-
 err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
 {
-    int rc = VINF_SUCCESS;
-    err_t rcLwip = ERR_OK;
     AssertPtrReturn(pNetif, ERR_ARG);
     AssertPtrReturn(pPBuf, ERR_ARG);
     AssertReturn((void *)g_pLwipNat == pNetif->state, ERR_ARG);
+
     LogFlowFunc(("ENTER: pNetif[%c%c%d], pPbuf:%p\n",
                  pNetif->name[0],
                  pNetif->name[1],
                  pNetif->num,
                  pPBuf));
 
-    /*
-     * We're on the lwip thread ...
-     * try accure Xmit lock (actually we DO accure the lock ... )
-     * 1. we've entered csXmit so we should create frame
-     *   1.a. Frame creation success see 2.
-     *   1.b. (hm ... what about queue processing in place)
-     *   1.c. 2nd attempt create frame
-     *   1.d. Unlock the Xmit
-     *   1.e. goto BUSY.1
-     * 2. Copy pbuf to the frame
-     * 3. Send
-     * 4. leave csXmit & return.
-     *
-     * @todo: perhaps we can use it for optimization,
-     * e.g. drop UDP and reoccure lock on TCP NOTE: now BUSY is unachievable!
-     * Otherwise (BUSY)
-     * 1. Unbuffered (drop)
-     * (buffered)
-     * 1. Copy pbuf to entermediate buffer.
-     * 2. Add call buffer to the queue
-     * 3. return.
-     */
-    /* see p.1 */
-    rc = VINF_SUCCESS;
-    PINTNETHDR pHdr = NULL;
-    uint8_t *pu8Frame = NULL;
-    int offFrame = 0;
-    int idxSg = 0;
-    struct pbuf *pPBufPtr = pPBuf;
-    /* Allocate frame, and pad it if required. */
-    rc = IntNetRingAllocateFrame(&g_pLwipNat->m_pIfBuf->Send, pPBuf->tot_len, &pHdr, (void **)&pu8Frame);
-    if (RT_SUCCESS(rc))
+    RT_ZERO(VBoxNetLwipNAT::aXmitSeg);
+    
+    unsigned idx = 0;
+    for( struct pbuf *pPBufPtr = pPBuf;
+         pPBufPtr;
+         pPBufPtr = pPBufPtr->next, ++idx) 
     {
-        /* see p. 2 */
-        while (pPBufPtr)
-        {
-            memcpy(&pu8Frame[offFrame], pPBufPtr->payload, pPBufPtr->len);
-            offFrame += pPBufPtr->len;
-            pPBufPtr = pPBufPtr->next;
-        }
-    }
-    if (RT_FAILURE(rc))
-    {
-        /* Could it be that some frames are still in the ring buffer */
-        /* 1.c */
-        AssertMsgFailed(("Debug Me!"));
+        AssertReturn(idx < RT_ELEMENTS(VBoxNetLwipNAT::aXmitSeg), ERR_MEM);
+        VBoxNetLwipNAT::aXmitSeg[idx].pv = pPBufPtr->payload; 
+        VBoxNetLwipNAT::aXmitSeg[idx].cb = pPBufPtr->len;
     }
 
-    /* Commit - what really this function do  */
-    IntNetRingCommitFrameEx(&g_pLwipNat->m_pIfBuf->Send, pHdr, pPBuf->tot_len);
-
-    g_pLwipNat->vboxNetLwipNATProcessXmit();
-
+    int rc = g_pLwipNat->sendBufferOnWire(VBoxNetLwipNAT::aXmitSeg, idx, pPBuf->tot_len);
     AssertRCReturn(rc, ERR_IF);
-    LogFlowFunc(("LEAVE: %d\n", rcLwip));
-    return rcLwip;
+
+    g_pLwipNat->flushWire();
+
+    LogFlowFunc(("LEAVE: %d\n", ERR_OK));
+    return ERR_OK;
 }
 
 
-VBoxNetLwipNAT::VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6)
+VBoxNetLwipNAT::VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6) : VBoxNetBaseService("VBoxNetNAT", "nat-network")
 {
     LogFlowFuncEnter();
 
@@ -784,21 +632,27 @@ VBoxNetLwipNAT::VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6)
 
     m_LwipNetIf.name[0] = 'N';
     m_LwipNetIf.name[1] = 'T';
-    m_MacAddress.au8[0] = 0x52;
-    m_MacAddress.au8[1] = 0x54;
-    m_MacAddress.au8[2] = 0;
-    m_MacAddress.au8[3] = 0x12;
-    m_MacAddress.au8[4] = 0x35;
-    m_MacAddress.au8[5] = 0;
-    m_Ipv4Address.u     = RT_MAKE_U32_FROM_U8( 10,  0,  2,  2); // NB: big-endian
-    m_Ipv4Netmask.u     = RT_H2N_U32_C(0xffffff00);
+
+    RTMAC mac;
+    mac.au8[0] = 0x52;
+    mac.au8[1] = 0x54;
+    mac.au8[2] = 0;
+    mac.au8[3] = 0x12;
+    mac.au8[4] = 0x35;
+    mac.au8[5] = 0;
+    setMacAddress(mac);
+
+    RTNETADDRIPV4 address;
+    address.u     = RT_MAKE_U32_FROM_U8( 10,  0,  2,  2); // NB: big-endian
+    setIpv4Address(address);
+    
+    address.u     = RT_H2N_U32_C(0xffffff00);
+    setIpv4Netmask(address);
 
     fDontLoadRulesOnStartup = false;
 
     for(unsigned int i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
-        m_vecOptionDefs.push_back(&g_aGetOptDef[i]);
-
-    m_enmTrunkType = kIntNetTrunkType_SrvNat;
+        addCommandLineOption(&g_aGetOptDef[i]);
 
     LogFlowFuncLeave();
 }
@@ -897,7 +751,8 @@ int VBoxNetLwipNAT::init()
     int rc = ::VBoxNetBaseService::init();
     AssertRCReturn(rc, rc);
 
-    hrc = virtualbox->FindNATNetworkByName(com::Bstr(m_Network.c_str()).raw(),
+    std::string networkName = getNetwork();
+    hrc = virtualbox->FindNATNetworkByName(com::Bstr(networkName.c_str()).raw(),
                                                   m_net.asOutParam());
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
 
@@ -954,7 +809,7 @@ int VBoxNetLwipNAT::init()
     m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
 
 
-    com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4",m_Network.c_str());
+    com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4", networkName.c_str());
     com::Bstr bstrSourceIpX;
     hrc = virtualbox->GetExtraData(bstrSourceIp4Key.raw(), bstrSourceIpX.asOutParam());
     if (SUCCEEDED(hrc))
@@ -1168,6 +1023,65 @@ int VBoxNetLwipNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
         default:;
     }
     return VERR_NOT_FOUND;
+}
+
+
+int VBoxNetLwipNAT::processFrame(void *pvFrame, size_t cbFrame)
+{
+    AssertReturn(pvFrame && cbFrame, VERR_INVALID_PARAMETER);
+
+    struct  pbuf *pPbufHdr, *pPbuf;
+    pPbufHdr = pPbuf = pbuf_alloc(PBUF_RAW, cbFrame, PBUF_POOL);
+
+    AssertMsgReturn(pPbuf, ("NAT: Can't allocate send buffer cbFrame=%u\n", cbFrame), VERR_INTERNAL_ERROR);
+    AssertReturn(pPbufHdr->tot_len == cbFrame, VERR_INTERNAL_ERROR);
+                    
+    uint8_t *pu8Frame = (uint8_t *)pvFrame;
+    while(pPbuf)
+    {
+        memcpy(pPbuf->payload, pu8Frame, pPbuf->len);
+        pu8Frame += pPbuf->len;
+        pPbuf = pPbuf->next;
+    }
+
+    m_LwipNetIf.input(pPbufHdr, &m_LwipNetIf);
+    
+    return VINF_SUCCESS;
+}
+
+
+int VBoxNetLwipNAT::processGSO(PCPDMNETWORKGSO pGso, size_t cbFrame)
+{
+    if (!PDMNetGsoIsValid(pGso, cbFrame,
+                          cbFrame - sizeof(PDMNETWORKGSO)))
+        return VERR_INVALID_PARAMETER;
+    
+    cbFrame -= sizeof(PDMNETWORKGSO);
+    uint8_t         abHdrScratch[256];
+    uint32_t const  cSegs = PDMNetGsoCalcSegmentCount(pGso,
+                                                      cbFrame);
+    for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
+    {
+        uint32_t cbSegFrame;
+        void    *pvSegFrame =
+          PDMNetGsoCarveSegmentQD(pGso,
+                                  (uint8_t *)(pGso + 1),
+                                  cbFrame,
+                                  abHdrScratch,
+                                  iSeg,
+                                  cSegs,
+                                  &cbSegFrame);
+
+        struct pbuf *pPbuf = pbuf_alloc(PBUF_RAW, cbSegFrame, PBUF_POOL);
+
+        AssertMsgReturn(pPbuf, ("NAT: Can't allocate send buffer cbFrame=%u\n", cbSegFrame), VERR_INTERNAL_ERROR);
+        AssertReturn(!pPbuf->next && pPbuf->len == cbSegFrame, VERR_INTERNAL_ERROR);
+
+        memcpy(pPbuf->payload, pvSegFrame, cbSegFrame);
+        m_LwipNetIf.input(pPbuf, &g_pLwipNat->m_LwipNetIf);
+    }
+
+    return VINF_SUCCESS;
 }
 
 

@@ -44,7 +44,11 @@ VBoxNetLwipNAT_DEFS += ${LWIP_DEFS} IPv6
 VBoxNetLwipNAT_DEFS.win += VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
 VBoxNetLwipNAT_SOURCES += VBoxNetLwipNAT.cpp	\
 	../NetLib/VBoxNetBaseService.cpp \
-	../NetLib/VBoxNetPortForwardString.cpp
+	../NetLib/VBoxNetPortForwardString.cpp \
+	../NetLib/VBoxNetIntIf.cpp \
+	../NetLib/VBoxNetUDP.cpp \
+	../NetLib/VBoxNetARP.cpp
+
 VBoxNetLwipNAT_LIBS = \
 	$(LIB_RUNTIME)
 VBoxNetLwipNAT_LIBS.solaris += socket nsl
