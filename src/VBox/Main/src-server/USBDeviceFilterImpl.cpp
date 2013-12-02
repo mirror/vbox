@@ -930,7 +930,7 @@ HRESULT HostUSBDeviceFilter::init(Host *aParent,
 
     /* register with parent early, since uninit() will unconditionally
      * unregister on failure */
-    mParent->addChild(this);
+    mParent->i_addChild(this);
 
     mData.allocate();
     mData->mName = data.strName;
@@ -999,7 +999,7 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent, IN_BSTR aName)
 
     /* register with parent early, since uninit() will unconditionally
      * unregister on failure */
-    mParent->addChild(this);
+    mParent->i_addChild(this);
 
     mData.allocate();
 
@@ -1033,7 +1033,7 @@ void HostUSBDeviceFilter::uninit()
 
     mData.free();
 
-    mParent->removeChild(this);
+    mParent->i_removeChild(this);
 
     unconst(mParent) = NULL;
 }
@@ -1082,7 +1082,7 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Name) (IN_BSTR aName)
         /* leave the lock before informing callbacks */
         alock.release();
 
-        return mParent->onUSBDeviceFilterChange (this);
+        return mParent->i_onUSBDeviceFilterChange (this);
     }
 
     return S_OK;
@@ -1116,7 +1116,7 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Active) (BOOL aActive)
         /* leave the lock before informing callbacks */
         alock.release();
 
-        return mParent->onUSBDeviceFilterChange (this, TRUE /* aActiveChanged  */);
+        return mParent->i_onUSBDeviceFilterChange (this, TRUE /* aActiveChanged  */);
     }
 
     return S_OK;
@@ -1285,7 +1285,7 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Action) (USBDeviceFilterAction_T aAc
         /* leave the lock before informing callbacks */
         alock.release();
 
-        return mParent->onUSBDeviceFilterChange (this);
+        return mParent->i_onUSBDeviceFilterChange (this);
     }
 
     return S_OK;
@@ -1372,7 +1372,7 @@ HRESULT HostUSBDeviceFilter::usbFilterFieldSetter(USBFILTERIDX aIdx, Bstr aStr)
         /* leave the lock before informing callbacks */
         alock.release();
 
-        return mParent->onUSBDeviceFilterChange(this);
+        return mParent->i_onUSBDeviceFilterChange(this);
     }
 
     return S_OK;

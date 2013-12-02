@@ -581,7 +581,7 @@ void MachineCloneVMPrivate::updateMACAddresses(settings::NetworkAdaptersList &nw
         if (   fNotNAT
             && it->mode == NetworkAttachmentType_NAT)
             continue;
-        Host::generateMACAddress(it->strMACAddress);
+        Host::i_generateMACAddress(it->strMACAddress);
     }
 }
 

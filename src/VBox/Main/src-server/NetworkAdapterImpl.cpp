@@ -1458,7 +1458,7 @@ ComObjPtr<NetworkAdapter> NetworkAdapter::getPeer()
 void NetworkAdapter::generateMACAddress()
 {
     Utf8Str mac;
-    Host::generateMACAddress(mac);
+    Host::i_generateMACAddress(mac);
     LogFlowThisFunc(("generated MAC: '%s'\n", mac.c_str()));
     mData->mMACAddress = mac;
 }
