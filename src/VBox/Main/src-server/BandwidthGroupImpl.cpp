@@ -126,14 +126,14 @@ HRESULT BandwidthGroup::init(BandwidthControl *aParent,
         AutoWriteLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
 
         unconst(aThat->m->pPeer) = this;
-        m->bd.attach (aThat->m->bd);
+        m->bd.attach(aThat->m->bd);
     }
     else
     {
         unconst(m->pPeer) = aThat;
 
         AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
-        m->bd.share (aThat->m->bd);
+        m->bd.share(aThat->m->bd);
     }
 
     /* Confirm successful initialization */
@@ -270,11 +270,11 @@ void BandwidthGroup::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller peerCaller (m->pPeer);
-    AssertComRCReturnVoid (peerCaller.rc());
+    AutoCaller peerCaller(m->pPeer);
+    AssertComRCReturnVoid(peerCaller.rc());
 
     /* lock both for writing since we modify both (m->pPeer is "master" so locked
      * first) */
@@ -286,7 +286,7 @@ void BandwidthGroup::i_commit()
         if (m->pPeer)
         {
             // attach new data to the peer and reshare it
-            m->pPeer->m->bd.attach (m->bd);
+            m->pPeer->m->bd.attach(m->bd);
         }
     }
 }
@@ -303,11 +303,11 @@ void BandwidthGroup::i_unshare()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller peerCaller (m->pPeer);
-    AssertComRCReturnVoid (peerCaller.rc());
+    AutoCaller peerCaller(m->pPeer);
+    AssertComRCReturnVoid(peerCaller.rc());
 
     /* peer is not modified, lock it for reading (m->pPeer is "master" so locked
      * first) */
