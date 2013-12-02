@@ -2591,7 +2591,7 @@ bool Host::i_getDVDInfoFromHal(std::list<ComObjPtr<Medium> > &list)
  * @returns true if information was successfully obtained, false otherwise
  * @retval  list drives found will be attached to this list
  */
-bool Host::getFloppyInfoFromHal(std::list< ComObjPtr<Medium> > &list)
+bool Host::i_getFloppyInfoFromHal(std::list< ComObjPtr<Medium> > &list)
 {
     bool halSuccess = false;
     DBusError dbusError;
@@ -2749,7 +2749,7 @@ bool Host::getFloppyInfoFromHal(std::list< ComObjPtr<Medium> > &list)
 /**
  * Helper function to parse the given mount file and add found entries
  */
-void Host::parseMountTable(char *mountTable, std::list< ComObjPtr<Medium> > &list)
+void Host::i_parseMountTable(char *mountTable, std::list< ComObjPtr<Medium> > &list)
 {
 #ifdef RT_OS_LINUX
     FILE *mtab = setmntent(mountTable, "r");
@@ -2797,7 +2797,7 @@ void Host::parseMountTable(char *mountTable, std::list< ComObjPtr<Medium> > &lis
             if (strstr(mnt_type, "iso9660") == 0)
             {
                 /** @todo check whether we've already got the drive in our list! */
-                if (validateDevice(mnt_dev, true))
+                if (i_validateDevice(mnt_dev, true))
                 {
                     ComObjPtr<Medium> hostDVDDriveObj;
                     hostDVDDriveObj.createObject();
@@ -2829,7 +2829,7 @@ void Host::parseMountTable(char *mountTable, std::list< ComObjPtr<Medium> > &lis
                                       strncmp(mountFSType, RT_STR_TUPLE("lofs")) != 0)))   // skip loop-back file-system (lofs)
                 {
                     char *rawDevName = getfullrawname((char *)mountName);
-                    if (validateDevice(rawDevName, true))
+                    if (i_validateDevice(rawDevName, true))
                     {
                         ComObjPtr<Medium> hostDVDDriveObj;
                         hostDVDDriveObj.createObject();
@@ -2849,7 +2849,7 @@ void Host::parseMountTable(char *mountTable, std::list< ComObjPtr<Medium> > &lis
 /**
  * Helper function to check whether the given device node is a valid drive
  */
-bool Host::validateDevice(const char *deviceNode, bool isCDROM)
+bool Host::i_validateDevice(const char *deviceNode, bool isCDROM)
 {
     struct stat statInfo;
     bool retValue = false;
