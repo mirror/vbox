@@ -834,7 +834,7 @@ HRESULT Host::getNameServers(std::vector<com::Utf8Str> &aNameServers)
     aNameServers.resize(0);
     com::SafeArray<BSTR> resultArr;
     resultArr.setNull();
-    HRESULT rc = m->hostDnsMonitorProxy.COMGETTER(NameServers)(ComSafeArrayAsOutParam(resultArr));
+    HRESULT rc = m->hostDnsMonitorProxy.GetNameServers(ComSafeArrayAsOutParam(resultArr));
     if (FAILED(rc)) return rc;
     aNameServers.resize(resultArr.size());
     for (size_t i = 0; i < resultArr.size(); ++i)
@@ -851,7 +851,7 @@ HRESULT Host::getNameServers(std::vector<com::Utf8Str> &aNameServers)
 HRESULT Host::getDomainName(com::Utf8Str &aDomainName)
 {
     BSTR bstr;
-    HRESULT rc = m->hostDnsMonitorProxy.COMGETTER(DomainName)(&bstr);
+    HRESULT rc = m->hostDnsMonitorProxy.GetDomainName(&bstr);
     if SUCCEEDED(rc)
         aDomainName = com::Utf8Str(bstr);
     return rc;
@@ -868,7 +868,7 @@ HRESULT Host::getSearchStrings(std::vector<com::Utf8Str> &aSearchStrings)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     com::SafeArray<BSTR> resultArr;
     resultArr.setNull();
-    HRESULT rc = m->hostDnsMonitorProxy.COMGETTER(SearchStrings)(ComSafeArrayAsOutParam(resultArr));
+    HRESULT rc = m->hostDnsMonitorProxy.GetSearchStrings(ComSafeArrayAsOutParam(resultArr));
     if (FAILED(rc)) return rc;
     aSearchStrings.resize(resultArr.size());
     for (size_t i = 0; i < resultArr.size(); ++i)
@@ -2055,10 +2055,10 @@ HRESULT Host::i_buildDVDDrivesList(MediaList &list)
 
 #elif defined(RT_OS_SOLARIS)
 # ifdef VBOX_USE_LIBHAL
-        if (!getDVDInfoFromHal(list))
+        if (!i_getDVDInfoFromHal(list))
 # endif
         {
-            getDVDInfoFromDevTree(list);
+            i_getDVDInfoFromDevTree(list);
         }
 
 #elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
@@ -2407,7 +2407,7 @@ static int solarisWalkDeviceNodeForDVD(di_node_t Node, void *pvArg)
  * Solaris specific function to enumerate CD/DVD drives via the device tree.
  * Works on Solaris 10 as well as OpenSolaris without depending on libhal.
  */
-void Host::getDVDInfoFromDevTree(std::list<ComObjPtr<Medium> > &list)
+void Host::i_getDVDInfoFromDevTree(std::list<ComObjPtr<Medium> > &list)
 {
     PSOLARISDVD pDrives = NULL;
     di_node_t RootNode = di_init("/", DINFOCPYALL);
@@ -2438,7 +2438,7 @@ void Host::getDVDInfoFromDevTree(std::list<ComObjPtr<Medium> > &list)
  * @returns true if information was successfully obtained, false otherwise
  * @retval  list drives found will be attached to this list
  */
-bool Host::getDVDInfoFromHal(std::list<ComObjPtr<Medium> > &list)
+bool Host::i_getDVDInfoFromHal(std::list<ComObjPtr<Medium> > &list)
 {
     bool halSuccess = false;
     DBusError dbusError;
