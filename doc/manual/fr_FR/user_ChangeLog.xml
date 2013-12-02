@@ -15,6 +15,49 @@
   hoc représente une construction de développement ou de test. En outre, chaque
   construction contient un numéro de révision.</para>
 
+
+  <sect1>
+    <title>Version 4.4.0 (yyyy-mm-dd)</title>
+
+    <para>C'est une mise à jour majeure. Les nouvelles fonctions importantes
+    suivantes ont été ajoutées :</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>placeholder</para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>En outre, les éléments suivants ont été corrigés et/ou ajoutés :</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>API : blocage de la suppression de l'instantané actuel s'il a des
++           instantanés fils (pertinent seulement pour les VMs où aucun instantané
+            durs n'est pas possible car leur présence empêchait toujours la
+            suppression), ce qui provoquait une corruption de la config de la VM</para>
+      </listitem>
+
+      <listitem>
+        <para>API : marquage des configs de VM ayant des instantanés mais aucun
+        d'accessible actuellement comme inaccessibles, car cette combinaison
+        n'a pas de sens</para>
+      </listitem>
+
+      <listitem>
+        <para>API : correction des informations de certains événements générées
+        automatiquement (seulement avec XPCOM, l'hîte Windows n'était pas concerné),
+        ce qui provoquait des erreurs de récupération d'attributs par le service
+           Web (bogue #12379)</para>
+      </listitem>
+
+    </itemizedlist>
+
+  </sect1>
+
   <sect1>
     <title>Version 4.3.0 (2013-10-15)</title>
 
@@ -53,7 +96,8 @@
       </listitem>
 
       <listitem>
-        <para>Ajout du webcam passthrough de la webcam de l'hôte.</para>
+        <para>Ajout du support expérimental du webcam passthrough en complément
+         du passthroough USB (voir <xref linkend="webcam-passthrough" />)</para>
       </listitem>
       <listitem>
         <para>Ajout de l'émulation d'un CD-ROM SCSI, incluant le support au
@@ -70,7 +114,7 @@
       </listitem>
 
       <listitem>
-        <para>Contrôle invité : implémentation du support d'IGuestFile</para>
+        <para>Contrôle invité : implémentation du support d'<computeroutput>IGuestFile</computeroutput></para>
       </listitem>
 
       <listitem>
@@ -101,6 +145,10 @@
         de tâches (bogue #10532)</para>
       </listitem>
       <listitem>
+        <para>VMM : possibilité d'activer VT-x tout en étant en mode IMX et
+        on donne plus d'informations si ce n'est pas possible</para>
+      </listitem>
+      <listitem>
         <para>GUI : la vérification des mises à jour utilise https</para>
       </listitem>
 
@@ -108,6 +156,10 @@
         <para>GUI : nombreux petits nettoyages internes et corrections de bogues</para>
       </listitem>
 
+      <listitem>
+        <para>GUI : synchronisation des LEDs HID pendant le changement
+        de fenêtre hôte-invité (hîtes (Mac OS X seulement)</para>
+      </listitem>
       <listitem>
         <para>GUI, VBoxManage : lorsqu'on désenregistre une VM, désenregistrement
         également des images de disques durs utilisées exclusivement par celle-ci
@@ -218,6 +270,11 @@
           <computeroutput>guestcontrol watch</computeroutput>
         </para>
       </listitem>
+      <listitem>
+        <para>VBoxManage : ajout de  <computeroutput>modifyvm --triplefaultreset</computeroutput>
+        pour que la VM redémarre après trois erreurs au lieu de tomber en
+        Guru Meditation.</para>
+      </listitem>
 
       <listitem>
         <para>Support 3D : plusieurs corrections</para>
@@ -260,6 +317,13 @@
         contribution de François Revol</para>
        </listitem>
        <listitem>
+         <para>Hôtes Mac OS X : support limité pour Mac OS X 10.9 (Mavericks)</para>
+       </listitem>
+       <listitem>
+         <para>Hôtes Mac OS X : utilisation d'un script de lancement au lieu
+         du mécanisme obsolète StartupItem (bogue #8940)</para>
+       </listitem>
+       <listitem>
          <para>Hôtes Windows : ne provoque pas de grosse latence DPC (seulement
          sur certains hôtes ; a encore besoin d'améliorations ; bogue #6242)</para>
        </listitem>
@@ -280,16 +344,16 @@
          (bogue #12072)</para>
        </listitem>
        <listitem>
-         <para>Suppléments Linux : correction de la détection par udev dans le
-         script de démarrage avec les noyaux 3.x</para>
-       </listitem>
-
-       <listitem>
          <para>Invités Windows : possibilité de repérer les moments
 d'inactivité 
          de l'utilisateur dans l'invité grâce à l'événement
          IGuestUserStateChangedEvent, introduit récemment.</para>
        </listitem>
+       <listitem>
+         <para>Suppléments Linux : correction de la détection par udev dans le
+         script de démarrage avec les noyaux 3.x</para>
+       </listitem>
+
 
     </itemizedlist>
 
@@ -330,7 +394,7 @@ d'inactivité
       </listitem>
 
       <listitem>
-        <para>3D : corrections du multiécrans (mauvais positionnement de la souris,
+        <para>Support 3D : corrections du multiécrans (mauvais positionnement de la souris,
         morcellements)</para>
       </listitem>
 
@@ -364,7 +428,7 @@ d'inactivité
         <para>Réseau : après le réveil de l'hôte d'une suspension, déconnexion
         et reconnexion des câbles réseaux virtuels pour forcer le renouvellement
           des baux DHCP de l'invité. Jusque-là, seuls les hôtes Mac OS X et
-          Windows le faisaient (bogue #10063).</para>
+          Windows le faisaient (bogue #10063)</para>
       </listitem>
 
       <listitem>
@@ -383,7 +447,7 @@ d'inactivité
 
       <listitem>
         <para>Hôtes Solaris : correction d'un kernel panic potentiel à cause
-        d'une préemption imprévue due à la journalisation.</para>
+        d'une préemption imprévue due à la journalisation</para>
       </listitem>
 
       <listitem>
@@ -546,11 +610,11 @@ d'inactivité
       </listitem>
 
       <listitem>
-        <para>3D : corrections du mode transparent + 3D (bogue #11723)</para>
+        <para>Support 3D : corrections du mode transparent + 3D (bogue #11723)</para>
       </listitem>
 
       <listitem>
-        <para>3D : la version 4.2.12 ne pouvait pas lire les états suvegardés des
+        <para>Support 3D : la version 4.2.12 ne pouvait pas lire les états suvegardés des
         anciennes versions dans certaines conditions (bogue #11718)</para>
       </listitem>
 

@@ -1407,8 +1407,8 @@
 
       <para>Pour contrôler GOP, utilisez la commande
       <computeroutput>VBoxManage</computeroutput> suivante&#xA0;: <screen>VBoxManage setextradata "nom VM" VBoxInternal2/EfiGopMode N</screen>
-      Où N peut être 0,1,2,3,4, respectivement pour des résolutions d'écran
-      640x480, 800x600, 1024x768, 1280x1024, 1440x900.</para>
+      Où N peut être 0,1,2,3,4,5, respectivement pour des résolutions d'écran
+      640x480, 800x600, 1024x768, 1280x1024, 1440x900, 1920x1200.</para>
 
       <para>Pour modifier la résolution UGA,&#xA0;: <screen>VBoxManage setextradata "nom VM" VBoxInternal2/UgaHorizontalResolution 1440
 VBoxManage setextradata "nom VM" VBoxInternal2/UgaVerticalResolution    900</screen></para>

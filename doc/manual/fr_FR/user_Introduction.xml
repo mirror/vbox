@@ -479,6 +479,9 @@
           <listitem>
             <para>10.8 (Mountain Lion, 64 bits)</para>
           </listitem>
+          <listitem>
+            <para>10.9 (Mavericks, 64 bits)</para>
+          </listitem>
 
         </itemizedlist>
 
@@ -496,7 +499,7 @@
               <para>10.04 ("Lucid Lynx"), 10.10 ("Maverick Meerkat),
               11.04 ("Natty Narwhal"), 11.10 ("Oneiric Oncelot"),
               12.04 ("Precise Pangolin"), 12.10 ("Quantal Quetzal"),
-              13.04 ("Raring Ringtail")</para>
+              13.04 ("Raring Ringtail"), 13.10 ("Saucy Salamander")</para>
             </listitem>
 
             <listitem>
@@ -512,7 +515,7 @@
             </listitem>
 
             <listitem>
-              <para>Fedora Core 6 à 17</para>
+              <para>Fedora Core 6 à 19</para>
             </listitem>
 
             <listitem>
@@ -597,7 +600,11 @@
               </listitem>
 
               <listitem>
-                <para>Amorçage Intel PXE ROM avec support pour la carte réseau E1000.</para>
+                <para>Webcam hôte passthrough; voir le chapitre <xref
+                linkend="webcam-passthrough" />.</para>
+              </listitem>
+              <listitem>
+                <para>Amorçage Intel PXE ROM.</para>
               </listitem>
 
               <listitem>

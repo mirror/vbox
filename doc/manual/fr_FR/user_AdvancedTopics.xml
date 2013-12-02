@@ -781,8 +781,8 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     les périphériques PCI physiques de l'hôte sur l'invité même si l'hôte n'a pas
     de pilote pour ce périphérique particulier. Tant les cartes PCI normales que
     certaines cartes PCI express sont supportées. L'AGP et certaines cartes PCI
-    Express ne sont pas supportées pour l'instant si elles s'appuient sur l'unité
-    de programmation GART (Graphics Address Remapping Table) pour la gestion 
+    Express ne sont pas supportées pour l'instant si elles s'appuient sur la
+    de programmation unitaire GART (Graphics Address Remapping Table) pour la gestion 
     des textures vu qu'il fait plutôt des opérations non triviales avec l'association
     de pages qui s'interfacent avec IOMMU. Il se peut que cette limite soit
     surmontée dans les prochaines versions.</para>
@@ -897,7 +897,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
    <sect1>
     <title>Webcam passthrough</title>
 
-    <sect2>
+    <sect2 id="webcam-passthrough">
       <title>Utilisation d'une webcam hôte dans l'invité</title>
 
       <para>VirtualBox 4.3 inclut une fonction expérimentale permettant à un 
@@ -1550,7 +1550,9 @@ VBoxManage setextradata "nom VM" \
 
     <para>Vous pouvez changer les données DMI que VirtualBox fournit aux invités
     pour une VM spécifique. Utilisez les commandes suivantes pour configurer les
-    informations DMI du BIOS&#xA0;:</para>
+    informations DMI du BIOS. Si votre VM est configurée pour utiliser un firmware
+    EFI, vous devez remplacer <code>pcbios</code> par <code>efi</code> dans les
+    clés.</para>
 
     <sect2>
       <title>Informations DMI du BIOS (type 0)</title>
