@@ -1477,7 +1477,7 @@ ALIGNCODE(16)
     ret
 
 .not_in_long_mode:
-    mov     eax, VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE
+    mov     eax, VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE
     ret
 ENDPROC   VMXR0StartVM64
 
