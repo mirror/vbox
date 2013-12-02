@@ -2705,7 +2705,7 @@ STDMETHODIMP Machine::COMGETTER(USBControllers)(ComSafeArrayOut(IUSBController *
     MultiResult rc(S_OK);
 
 # ifdef VBOX_WITH_USB
-    rc = mParent->host()->checkUSBProxyService();
+    rc = mParent->host()->i_checkUSBProxyService();
     if (FAILED(rc)) return rc;
 # endif
 
@@ -2735,7 +2735,7 @@ STDMETHODIMP Machine::COMGETTER(USBDeviceFilters)(IUSBDeviceFilters **aUSBDevice
     MultiResult rc(S_OK);
 
 # ifdef VBOX_WITH_USB
-    rc = mParent->host()->checkUSBProxyService();
+    rc = mParent->host()->i_checkUSBProxyService();
     if (FAILED(rc)) return rc;
 # endif
 
@@ -5723,6 +5723,7 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
                 ErrorInfoKeeper eik;
                 pMedium->Close();
             }
+
         }
         setMachineState(oldState);
         alock.acquire();
@@ -9666,7 +9667,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             case DeviceType_Floppy:
             case DeviceType_DVD:
                 if (dev.strHostDriveSrc.isNotEmpty())
-                    rc = mParent->host()->findHostDriveByName(dev.deviceType, dev.strHostDriveSrc, false /* fRefresh */, medium);
+                    rc = mParent->host()->i_findHostDriveByName(dev.deviceType, dev.strHostDriveSrc, false /* fRefresh */, medium);
                 else
                     rc = mParent->findRemoveableMedium(dev.deviceType,
                                                        dev.uuid,
@@ -12977,7 +12978,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         AssertComRC(rc);
         NOREF(rc);
 
-        USBProxyService *service = mParent->host()->usbProxyService();
+        USBProxyService *service = mParent->host()->i_usbProxyService();
         if (service)
             service->detachAllDevicesFromVM(this, true /* aDone */, true /* aAbnormal */);
     }
@@ -13444,10 +13445,10 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice(IN_BSTR aId)
 #ifdef VBOX_WITH_USB
     /* if captureDeviceForVM() fails, it must have set extended error info */
     clearError();
-    MultiResult rc = mParent->host()->checkUSBProxyService();
+    MultiResult rc = mParent->host()->i_checkUSBProxyService();
     if (FAILED(rc)) return rc;
 
-    USBProxyService *service = mParent->host()->usbProxyService();
+    USBProxyService *service = mParent->host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
     return service->captureDeviceForVM(this, Guid(aId).ref());
 #else
@@ -13467,7 +13468,7 @@ STDMETHODIMP SessionMachine::DetachUSBDevice(IN_BSTR aId, BOOL aDone)
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
-    USBProxyService *service = mParent->host()->usbProxyService();
+    USBProxyService *service = mParent->host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
     return service->detachDeviceFromVM(this, Guid(aId).ref(), !!aDone);
 #else
@@ -13497,7 +13498,7 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
     AssertComRC(rc);
     NOREF(rc);
 
-    USBProxyService *service = mParent->host()->usbProxyService();
+    USBProxyService *service = mParent->host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
     return service->autoCaptureDevicesForVM(this);
 #else
@@ -13527,7 +13528,7 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
     AssertComRC(rc);
     NOREF(rc);
 
-    USBProxyService *service = mParent->host()->usbProxyService();
+    USBProxyService *service = mParent->host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
     return service->detachAllDevicesFromVM(this, !!aDone, false /* aAbnormal */);
 #else

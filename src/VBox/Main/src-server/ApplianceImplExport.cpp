@@ -76,7 +76,7 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
         if (FAILED(autoCaller1.rc())) return autoCaller1.rc();
 
         LocationInfo locInfo;
-        parseURI(location, locInfo);
+        i_parseURI(location, locInfo);
         // create a new virtual system to store in the appliance
         rc = pNewDesc.createObject();
         if (FAILED(rc)) throw rc;
@@ -142,36 +142,36 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
 
         /* Guest OS type */
         ovf::CIMOSType_T cim = convertVBoxOSType2CIMOSType(strOsTypeVBox.c_str(), fLongMode);
-        pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
-                           "",
-                           Utf8StrFmt("%RI32", cim),
-                           strOsTypeVBox);
+        pNewDesc->i_addEntry(VirtualSystemDescriptionType_OS,
+                             "",
+                             Utf8StrFmt("%RI32", cim),
+                             strOsTypeVBox);
 
         /* VM name */
-        pNewDesc->addEntry(VirtualSystemDescriptionType_Name,
-                           "",
-                           strVMName,
-                           strVMName);
+        pNewDesc->i_addEntry(VirtualSystemDescriptionType_Name,
+                             "",
+                             strVMName,
+                             strVMName);
 
         // description
-        pNewDesc->addEntry(VirtualSystemDescriptionType_Description,
-                           "",
-                           strDescription,
-                           strDescription);
+        pNewDesc->i_addEntry(VirtualSystemDescriptionType_Description,
+                             "",
+                             strDescription,
+                             strDescription);
 
         /* CPU count*/
         Utf8Str strCpuCount = Utf8StrFmt("%RI32", cCPUs);
-        pNewDesc->addEntry(VirtualSystemDescriptionType_CPU,
-                           "",
-                           strCpuCount,
-                           strCpuCount);
+        pNewDesc->i_addEntry(VirtualSystemDescriptionType_CPU,
+                             "",
+                             strCpuCount,
+                             strCpuCount);
 
         /* Memory */
         Utf8Str strMemory = Utf8StrFmt("%RI64", (uint64_t)ulMemSizeMB * _1M);
-        pNewDesc->addEntry(VirtualSystemDescriptionType_Memory,
-                           "",
-                           strMemory,
-                           strMemory);
+        pNewDesc->i_addEntry(VirtualSystemDescriptionType_Memory,
+                             "",
+                             strMemory,
+                             strMemory);
 
         // the one VirtualBox IDE controller has two channels with two ports each, which is
         // considered two IDE controllers with two ports each by OVF, so export it as two
@@ -224,16 +224,16 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
 
             if (strVbox.length())
             {
-                lIDEControllerPrimaryIndex = (int32_t)pNewDesc->m->llDescriptions.size();
-                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
-                                   Utf8StrFmt("%d", lIDEControllerPrimaryIndex),        // strRef
-                                   strVbox,     // aOvfValue
-                                   strVbox);    // aVboxValue
+                lIDEControllerPrimaryIndex = (int32_t)pNewDesc->m->maDescriptions.size();
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
+                                     Utf8StrFmt("%d", lIDEControllerPrimaryIndex),        // strRef
+                                     strVbox,     // aOvfValue
+                                     strVbox);    // aVboxValue
                 lIDEControllerSecondaryIndex = lIDEControllerPrimaryIndex + 1;
-                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
-                                   Utf8StrFmt("%d", lIDEControllerSecondaryIndex),
-                                   strVbox,
-                                   strVbox);
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
+                                     Utf8StrFmt("%d", lIDEControllerSecondaryIndex),
+                                     strVbox,
+                                     strVbox);
             }
         }
 
@@ -241,11 +241,11 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
         if (!pSATAController.isNull())
         {
             Utf8Str strVbox = "AHCI";
-            lSATAControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
-                               Utf8StrFmt("%d", lSATAControllerIndex),
-                               strVbox,
-                               strVbox);
+            lSATAControllerIndex = (int32_t)pNewDesc->m->maDescriptions.size();
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
+                                 Utf8StrFmt("%d", lSATAControllerIndex),
+                                 strVbox,
+                                 strVbox);
         }
 
 //     <const name="HardDiskControllerSCSI" value="8" />
@@ -261,11 +261,11 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                     case StorageControllerType_LsiLogic: strVbox = "LsiLogic"; break;
                     case StorageControllerType_BusLogic: strVbox = "BusLogic"; break;
                 }
-                lSCSIControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
-                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
-                                   Utf8StrFmt("%d", lSCSIControllerIndex),
-                                   strVbox,
-                                   strVbox);
+                lSCSIControllerIndex = (int32_t)pNewDesc->m->maDescriptions.size();
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
+                                     Utf8StrFmt("%d", lSCSIControllerIndex),
+                                     strVbox,
+                                     strVbox);
             }
             else
                 throw rc;
@@ -276,11 +276,11 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
             // VirtualBox considers the SAS controller a class of its own but in OVF
             // it should be a SCSI controller
             Utf8Str strVbox = "LsiLogicSas";
-            lSCSIControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSAS,
-                               Utf8StrFmt("%d", lSCSIControllerIndex),
-                               strVbox,
-                               strVbox);
+            lSCSIControllerIndex = (int32_t)pNewDesc->m->maDescriptions.size();
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerSAS,
+                                 Utf8StrFmt("%d", lSCSIControllerIndex),
+                                 strVbox,
+                                 strVbox);
         }
 
 //     <const name="HardDiskImage" value="9" />
@@ -477,31 +477,31 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
             {
                 case DeviceType_HardDisk:
                     Log(("Adding VirtualSystemDescriptionType_HardDiskImage, disk size: %RI64\n", llSize));
-                    pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                                       strTargetImageName,   // disk ID: let's use the name
-                                       strTargetImageName,   // OVF value:
-                                       strLocation, // vbox value: media path
-                                       (uint32_t)(llSize / _1M),
-                                       strExtra);
+                    pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskImage,
+                                         strTargetImageName,   // disk ID: let's use the name
+                                         strTargetImageName,   // OVF value:
+                                         strLocation, // vbox value: media path
+                                        (uint32_t)(llSize / _1M),
+                                         strExtra);
                 break;
 
                 case DeviceType_DVD:
                     Log(("Adding VirtualSystemDescriptionType_CDROM, disk size: %RI64\n", llSize));
-                    pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM,
-                                       strTargetImageName,   // disk ID
-                                       strTargetImageName,   // OVF value
-                                       strLocation, // vbox value
-                                       (uint32_t)(llSize / _1M),// ulSize
-                                       strExtra);
+                    pNewDesc->i_addEntry(VirtualSystemDescriptionType_CDROM,
+                                         strTargetImageName,   // disk ID
+                                         strTargetImageName,   // OVF value
+                                         strLocation, // vbox value
+                                         (uint32_t)(llSize / _1M),// ulSize
+                                         strExtra);
                 break;
 
                 case DeviceType_Floppy:
-                    pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy,
-                                       strEmpty,      // disk ID
-                                       strEmpty,      // OVF value
-                                       strEmpty,      // vbox value
-                                       1,       // ulSize
-                                       strExtra);
+                    pNewDesc->i_addEntry(VirtualSystemDescriptionType_Floppy,
+                                         strEmpty,      // disk ID
+                                         strEmpty,      // OVF value
+                                         strEmpty,      // vbox value
+                                         1,       // ulSize
+                                         strExtra);
                 break;
             }
         }
@@ -531,7 +531,7 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                 if (FAILED(rc)) throw rc;
 
                 Utf8Str strAttachmentType = convertNetworkAttachmentTypeToString(attachmentType);
-                pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_NetworkAdapter,
                                    "",      // ref
                                    strAttachmentType,      // orig
                                    Utf8StrFmt("%RI32", (uint32_t)adapterType),   // conf
@@ -543,15 +543,15 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
 //     <const name="USBController"  />
 #ifdef VBOX_WITH_USB
         if (fUSBEnabled)
-            pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
 #endif /* VBOX_WITH_USB */
 
 //     <const name="SoundCard"  />
         if (fAudioEnabled)
-            pNewDesc->addEntry(VirtualSystemDescriptionType_SoundCard,
-                               "",
-                               "ensoniq1371",       // this is what OVFTool writes and VMware supports
-                               Utf8StrFmt("%RI32", audioController));
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_SoundCard,
+                                 "",
+                                 "ensoniq1371",       // this is what OVFTool writes and VMware supports
+                                 Utf8StrFmt("%RI32", audioController));
 
         /* We return the new description to the caller */
         ComPtr<IVirtualSystemDescription> copy(pNewDesc);
@@ -583,20 +583,23 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
  * @param aProgress
  * @return
  */
-STDMETHODIMP Appliance::Write(IN_BSTR format, ComSafeArrayIn(ImportOptions_T, options), IN_BSTR path, IProgress **aProgress)
+HRESULT Appliance::write(const com::Utf8Str &aFormat,
+                         const std::vector<ExportOptions_T> &aOptions,
+                         const com::Utf8Str &aPath,
+                         ComPtr<IProgress> &aProgress)
 {
-    if (!path) return E_POINTER;
-    CheckComArgOutPointerValid(aProgress);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (options != NULL)
-        m->optListExport = com::SafeArray<ExportOptions_T>(ComSafeArrayInArg(options)).toList();
+    m->optListExport.clear();
+    if (aOptions.size())
+    {
+        for (size_t i = 0; i < aOptions.size(); ++i)
+        {
+            m->optListExport.insert(i, aOptions[i]);
+        }
+    }
 
-//    AssertReturn(!(m->optListExport.contains(ExportOptions_CreateManifest) && m->optListExport.contains(ExportOptions_ExportDVDImages)), E_INVALIDARG);
+//  AssertReturn(!(m->optListExport.contains(ExportOptions_CreateManifest) && m->optListExport.contains(ExportOptions_ExportDVDImages)), E_INVALIDARG);
 
     m->fExportISOImages = m->optListExport.contains(ExportOptions_ExportDVDImages);
 
@@ -608,40 +611,38 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, ComSafeArrayIn(ImportOptions_T, op
              ++it)
         {
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-            vsdescThis->removeByType(VirtualSystemDescriptionType_CDROM);
+            vsdescThis->i_removeByType(VirtualSystemDescriptionType_CDROM);
         }
     }
 
     // do not allow entering this method if the appliance is busy reading or writing
-    if (!isApplianceIdle())
+    if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
 
     // see if we can handle this file; for now we insist it has an ".ovf" extension
-    Utf8Str strPath = path;
-    if (!(   strPath.endsWith(".ovf", Utf8Str::CaseInsensitive)
-          || strPath.endsWith(".ova", Utf8Str::CaseInsensitive)))
+    if (!(   aPath.endsWith(".ovf", Utf8Str::CaseInsensitive)
+          || aPath.endsWith(".ova", Utf8Str::CaseInsensitive)))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Appliance file must have .ovf or .ova extension"));
 
     m->fManifest = m->optListExport.contains(ExportOptions_CreateManifest);
-    Utf8Str strFormat(format);
 
     ovf::OVFVersion_T ovfF;
-    if (strFormat == "ovf-0.9")
+    if (aFormat == "ovf-0.9")
     {
         ovfF = ovf::OVFVersion_0_9;
     }
-    else if (strFormat == "ovf-1.0")
+    else if (aFormat == "ovf-1.0")
     {
         ovfF = ovf::OVFVersion_1_0;
     }
-    else if (strFormat == "ovf-2.0")
+    else if (aFormat == "ovf-2.0")
     {
         ovfF = ovf::OVFVersion_2_0;
     }
     else
         return setError(VBOX_E_FILE_ERROR,
-                        tr("Invalid format \"%s\" specified"), strFormat.c_str());
+                        tr("Invalid format \"%s\" specified"), aFormat.c_str());
 
     /* as of OVF 2.0 we have to use SHA256 */
     m->fSha256 = ovfF >= ovf::OVFVersion_2_0;
@@ -651,8 +652,8 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, ComSafeArrayIn(ImportOptions_T, op
     try
     {
         /* Parse all necessary info out of the URI */
-        parseURI(strPath, m->locInfo);
-        rc = writeImpl(ovfF, m->locInfo, progress);
+        i_parseURI(aPath, m->locInfo);
+        rc = i_writeImpl(ovfF, m->locInfo, progress);
     }
     catch (HRESULT aRC)
     {
@@ -661,7 +662,7 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, ComSafeArrayIn(ImportOptions_T, op
 
     if (SUCCEEDED(rc))
         /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress);
+        progress.queryInterfaceTo(aProgress.asOutParam());
 
     return rc;
 }
@@ -684,24 +685,24 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, ComSafeArrayIn(ImportOptions_T, op
  *
  * 1) from the public Appliance::Write().
  *
- * 2) in a second worker thread; in that case, Appliance::Write() called Appliance::writeImpl(), which
- *    called Appliance::writeFSOVA(), which called Appliance::writeImpl(), which then called this again.
+ * 2) in a second worker thread; in that case, Appliance::Write() called Appliance::i_writeImpl(), which
+ *    called Appliance::i_writeFSOVA(), which called Appliance::i_writeImpl(), which then called this again.
  *
- * 3) from Appliance::writeS3(), which got called from a previous instance of Appliance::taskThreadWriteOVF().
+ * 3) from Appliance::i_writeS3(), which got called from a previous instance of Appliance::taskThreadWriteOVF().
  *
  * @param aFormat
  * @param aLocInfo
  * @param aProgress
  * @return
  */
-HRESULT Appliance::writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
+HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
     HRESULT rc = S_OK;
     try
     {
-        rc = setUpProgress(aProgress,
-                           BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
-                           (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
+        rc = i_setUpProgress(aProgress,
+                             BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
+                             (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
 
         /* Initialize our worker task */
         std::auto_ptr<TaskOVF> task(new TaskOVF(this, TaskOVF::Write, aLocInfo, aProgress));
@@ -723,7 +724,7 @@ HRESULT Appliance::writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLoc
 }
 
 /**
- * Called from Appliance::writeFS() for creating a XML document for this
+ * Called from Appliance::i_writeFS() for creating a XML document for this
  * Appliance.
  *
  * @param writeLock                          The current write lock.
@@ -734,11 +735,11 @@ HRESULT Appliance::writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLoc
  *                                           instance for which to write XML.
  * @param enFormat                           OVF format (0.9 or 1.0).
  */
-void Appliance::buildXML(AutoWriteLockBase& writeLock,
-                         xml::Document &doc,
-                         XMLStack &stack,
-                         const Utf8Str &strPath,
-                         ovf::OVFVersion_T enFormat)
+void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
+                           xml::Document &doc,
+                           XMLStack &stack,
+                           const Utf8Str &strPath,
+                           ovf::OVFVersion_T enFormat)
 {
     xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
 
@@ -850,12 +851,12 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
          ++it)
     {
         ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
-        buildXMLForOneVirtualSystem(writeLock,
-                                    *pelmToAddVirtualSystemsTo,
-                                    &llElementsWithUuidAttributes,
-                                    vsdescThis,
-                                    enFormat,
-                                    stack);         // disks and networks stack
+        i_buildXMLForOneVirtualSystem(writeLock,
+                                      *pelmToAddVirtualSystemsTo,
+                                      &llElementsWithUuidAttributes,
+                                      vsdescThis,
+                                      enFormat,
+                                      stack);         // disks and networks stack
     }
 
     // now, fill in the network section we set up empty above according
@@ -1009,7 +1010,7 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
 }
 
 /**
- * Called from Appliance::buildXML() for each virtual system (machine) that
+ * Called from Appliance::i_buildXML() for each virtual system (machine) that
  * needs XML written out.
  *
  * @param writeLock                          The current write lock.
@@ -1023,12 +1024,12 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
  * @param stack                              Structure for temporary private
  *                                           data shared with caller.
  */
-void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
-                                            xml::ElementNode &elmToAddVirtualSystemsTo,
-                                            std::list<xml::ElementNode*> *pllElementsWithUuidAttributes,
-                                            ComObjPtr<VirtualSystemDescription> &vsdescThis,
-                                            ovf::OVFVersion_T enFormat,
-                                            XMLStack &stack)
+void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
+                                              xml::ElementNode &elmToAddVirtualSystemsTo,
+                                              std::list<xml::ElementNode*> *pllElementsWithUuidAttributes,
+                                              ComObjPtr<VirtualSystemDescription> &vsdescThis,
+                                              ovf::OVFVersion_T enFormat,
+                                              XMLStack &stack)
 {
     LogFlowFunc(("ENTER appliance %p\n", this));
 
@@ -1044,18 +1045,18 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
 
     /*xml::ElementNode *pelmVirtualSystemInfo =*/ pelmVirtualSystem->createChild("Info")->addContent("A virtual machine");
 
-    std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
+    std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->i_findByType(VirtualSystemDescriptionType_Name);
     if (!llName.size())
         throw setError(VBOX_E_NOT_SUPPORTED, tr("Missing VM name"));
     Utf8Str &strVMName = llName.back()->strVboxCurrent;
     pelmVirtualSystem->setAttribute("ovf:id", strVMName);
 
     // product info
-    std::list<VirtualSystemDescriptionEntry*> llProduct = vsdescThis->findByType(VirtualSystemDescriptionType_Product);
-    std::list<VirtualSystemDescriptionEntry*> llProductUrl = vsdescThis->findByType(VirtualSystemDescriptionType_ProductUrl);
-    std::list<VirtualSystemDescriptionEntry*> llVendor = vsdescThis->findByType(VirtualSystemDescriptionType_Vendor);
-    std::list<VirtualSystemDescriptionEntry*> llVendorUrl = vsdescThis->findByType(VirtualSystemDescriptionType_VendorUrl);
-    std::list<VirtualSystemDescriptionEntry*> llVersion = vsdescThis->findByType(VirtualSystemDescriptionType_Version);
+    std::list<VirtualSystemDescriptionEntry*> llProduct = vsdescThis->i_findByType(VirtualSystemDescriptionType_Product);
+    std::list<VirtualSystemDescriptionEntry*> llProductUrl = vsdescThis->i_findByType(VirtualSystemDescriptionType_ProductUrl);
+    std::list<VirtualSystemDescriptionEntry*> llVendor = vsdescThis->i_findByType(VirtualSystemDescriptionType_Vendor);
+    std::list<VirtualSystemDescriptionEntry*> llVendorUrl = vsdescThis->i_findByType(VirtualSystemDescriptionType_VendorUrl);
+    std::list<VirtualSystemDescriptionEntry*> llVersion = vsdescThis->i_findByType(VirtualSystemDescriptionType_Version);
     bool fProduct = llProduct.size() && !llProduct.back()->strVboxCurrent.isEmpty();
     bool fProductUrl = llProductUrl.size() && !llProductUrl.back()->strVboxCurrent.isEmpty();
     bool fVendor = llVendor.size() && !llVendor.back()->strVboxCurrent.isEmpty();
@@ -1099,7 +1100,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     }
 
     // description
-    std::list<VirtualSystemDescriptionEntry*> llDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
+    std::list<VirtualSystemDescriptionEntry*> llDescription = vsdescThis->i_findByType(VirtualSystemDescriptionType_Description);
     if (llDescription.size() &&
         !llDescription.back()->strVboxCurrent.isEmpty())
     {
@@ -1122,7 +1123,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     }
 
     // license
-    std::list<VirtualSystemDescriptionEntry*> llLicense = vsdescThis->findByType(VirtualSystemDescriptionType_License);
+    std::list<VirtualSystemDescriptionEntry*> llLicense = vsdescThis->i_findByType(VirtualSystemDescriptionType_License);
     if (llLicense.size() &&
         !llLicense.back()->strVboxCurrent.isEmpty())
     {
@@ -1144,7 +1145,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     }
 
     // operating system
-    std::list<VirtualSystemDescriptionEntry*> llOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
+    std::list<VirtualSystemDescriptionEntry*> llOS = vsdescThis->i_findByType(VirtualSystemDescriptionType_OS);
     if (!llOS.size())
         throw setError(VBOX_E_NOT_SUPPORTED, tr("Missing OS type"));
     /*  <OperatingSystemSection ovf:id="82">
@@ -1232,9 +1233,9 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     for (size_t uLoop = 1; uLoop <= 2; ++uLoop)
     {
         int32_t lIndexThis = 0;
-        list<VirtualSystemDescriptionEntry>::const_iterator itD;
-        for (itD = vsdescThis->m->llDescriptions.begin();
-            itD != vsdescThis->m->llDescriptions.end();
+        vector<VirtualSystemDescriptionEntry>::const_iterator itD;
+        for (itD = vsdescThis->m->maDescriptions.begin();
+            itD != vsdescThis->m->maDescriptions.end();
             ++itD, ++lIndexThis)
         {
             const VirtualSystemDescriptionEntry &desc = *itD;
@@ -1849,17 +1850,17 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
  * Actual worker code for writing out OVF/OVA to disk. This is called from Appliance::taskThreadWriteOVF()
  * and therefore runs on the OVF/OVA write worker thread. This runs in two contexts:
  *
- * 1) in a first worker thread; in that case, Appliance::Write() called Appliance::writeImpl();
+ * 1) in a first worker thread; in that case, Appliance::Write() called Appliance::i_writeImpl();
  *
- * 2) in a second worker thread; in that case, Appliance::Write() called Appliance::writeImpl(), which
- *    called Appliance::writeS3(), which called Appliance::writeImpl(), which then called this. In other
+ * 2) in a second worker thread; in that case, Appliance::Write() called Appliance::i_writeImpl(), which
+ *    called Appliance::i_writeS3(), which called Appliance::i_writeImpl(), which then called this. In other
  *    words, to write to the cloud, the first worker thread first starts a second worker thread to create
  *    temporary files and then uploads them to the S3 cloud server.
  *
  * @param pTask
  * @return
  */
-HRESULT Appliance::writeFS(TaskOVF *pTask)
+HRESULT Appliance::i_writeFS(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("ENTER appliance %p\n", this));
@@ -1878,9 +1879,9 @@ HRESULT Appliance::writeFS(TaskOVF *pTask)
     m->state = Data::ApplianceExporting;
 
     if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
-        rc = writeFSOVF(pTask, multiLock);
+        rc = i_writeFSOVF(pTask, multiLock);
     else
-        rc = writeFSOVA(pTask, multiLock);
+        rc = i_writeFSOVA(pTask, multiLock);
 
     // reset the state so others can call methods again
     m->state = Data::ApplianceIdle;
@@ -1890,7 +1891,7 @@ HRESULT Appliance::writeFS(TaskOVF *pTask)
     return rc;
 }
 
-HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
+HRESULT Appliance::i_writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 {
     LogFlowFuncEnter();
 
@@ -1919,7 +1920,7 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         storage.fSha256 = m->fSha256;
 
 
-        Utf8Str name = applianceIOName(applianceIOFile);
+        Utf8Str name = i_applianceIOName(applianceIOFile);
 
         int vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
                                  VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
@@ -1929,7 +1930,7 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             rc = E_FAIL;
             break;
         }
-        rc = writeFSImpl(pTask, writeLock, pShaIo, &storage);
+        rc = i_writeFSImpl(pTask, writeLock, pShaIo, &storage);
     } while (0);
 
     /* Cleanup */
@@ -1942,7 +1943,7 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     return rc;
 }
 
-HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
+HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 {
     LogFlowFuncEnter();
 
@@ -1976,7 +1977,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         storage.fCreateDigest = m->fManifest;
         storage.fSha256 = m->fSha256;
 
-        Utf8Str name = applianceIOName(applianceIOTar);
+        Utf8Str name = i_applianceIOName(applianceIOTar);
 
         vrc = VDInterfaceAdd(&pTarIo->Core, name.c_str(),
                              VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
@@ -1987,7 +1988,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             rc = E_FAIL;
             break;
         }
-        rc = writeFSImpl(pTask, writeLock, pShaIo, &storage);
+        rc = i_writeFSImpl(pTask, writeLock, pShaIo, &storage);
     } while (0);
 
     RTTarClose(tar);
@@ -2006,7 +2007,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     return rc;
 }
 
-HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
+HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
 {
     LogFlowFuncEnter();
 
@@ -2025,7 +2026,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             // Create a xml document
             xml::Document doc;
             // Now fully build a valid ovf document in memory
-            buildXML(writeLock, doc, stack, pTask->locInfo.strPath, pTask->enFormat);
+            i_buildXML(writeLock, doc, stack, pTask->locInfo.strPath, pTask->enFormat);
             /* Extract the OVA file name */
             Utf8Str strOvaFile = pTask->locInfo.strPath;
             /* Extract the path */
@@ -2143,7 +2144,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
 
                     ComPtr<IProgress> pProgress3(pProgress2);
                     // now wait for the background disk operation to complete; this throws HRESULTs on error
-                    waitForAsyncProgress(pTask->pProgress, pProgress3);
+                    i_waitForAsyncProgress(pTask->pProgress, pProgress3);
                 }
                 else//pDiskEntry->type == VirtualSystemDescriptionType_CDROM
                 {
@@ -2313,12 +2314,12 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
 /**
  * Worker code for writing out OVF to the cloud. This is called from Appliance::taskThreadWriteOVF()
  * in S3 mode and therefore runs on the OVF write worker thread. This then starts a second worker
- * thread to create temporary files (see Appliance::writeFS()).
+ * thread to create temporary files (see Appliance::i_writeFS()).
  *
  * @param pTask
  * @return
  */
-HRESULT Appliance::writeS3(TaskOVF *pTask)
+HRESULT Appliance::i_writeS3(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -2346,7 +2347,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
         /* Extract the bucket */
         Utf8Str tmpPath = pTask->locInfo.strPath;
         Utf8Str bucket;
-        parseBucket(tmpPath, bucket);
+        i_parseBucket(tmpPath, bucket);
 
         /* We need a temporary directory which we can put the OVF file & all
          * disk images in */
@@ -2363,7 +2364,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
         /* Create a temporary file based location info for the sub task */
         LocationInfo li;
         li.strPath = strTmpOvf;
-        rc = writeImpl(pTask->enFormat, li, progress);
+        rc = i_writeImpl(pTask->enFormat, li, progress);
         if (FAILED(rc)) throw rc;
 
         /* Unlock the appliance for the writing thread */
@@ -2371,7 +2372,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
         /* Wait until the writing is done, but report the progress back to the
            caller */
         ComPtr<IProgress> progressInt(progress);
-        waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
+        i_waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
 
         /* Again lock the appliance for the next steps */
         appLock.acquire();
@@ -2396,7 +2397,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
              ++it)
         {
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
             std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
             for (itH = avsdeHDs.begin();
                  itH != avsdeHDs.end();
@@ -2416,7 +2417,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
             }
         }
         /* Next we have to upload the OVF & all disk images */
-        vrc = RTS3Create(&hS3, pTask->locInfo.strUsername.c_str(), pTask->locInfo.strPassword.c_str(), pTask->locInfo.strHostname.c_str(), "virtualbox-agent/" VBOX_VERSION_STRING);
+        vrc = RTS3Create(&hS3, pTask->locInfo.strUsername.c_str(), pTask->locInfo.strPassword.c_str(), pTask->locInfo.strHostname.c_str(), "virtualbox-agent/"VBOX_VERSION_STRING);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Cannot create S3 service handler"));

@@ -3,8 +3,7 @@
  * VirtualBox Appliance private data definitions
  */
 
-/*
- * Copyright (C) 2006-2013 Oracle Corporation
+/* Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -211,8 +210,8 @@ struct Appliance::ImportStack
 
 struct VirtualSystemDescription::Data
 {
-    std::list<VirtualSystemDescriptionEntry>
-                            llDescriptions;     // item descriptions
+    std::vector<VirtualSystemDescriptionEntry>
+                            maDescriptions;     // item descriptions
 
     ComPtr<Machine>         pMachine;           // VirtualBox machine this description was exported from (export only)
 

@@ -61,20 +61,15 @@ using namespace std;
  * Public method implementation. This opens the OVF with ovfreader.cpp.
  * Thread implementation is in Appliance::readImpl().
  *
- * @param path
+ * @param aFile
  * @return
  */
-STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
+HRESULT Appliance::read(const com::Utf8Str &aFile,
+                        ComPtr<IProgress> &aProgress)
 {
-    if (!path) return E_POINTER;
-    CheckComArgOutPointerValid(aProgress);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!isApplianceIdle())
+    if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
 
     if (m->pReader)
@@ -84,9 +79,8 @@ STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
     }
 
     // see if we can handle this file; for now we insist it has an ovf/ova extension
-    Utf8Str strPath (path);
-    if (!(   strPath.endsWith(".ovf", Utf8Str::CaseInsensitive)
-          || strPath.endsWith(".ova", Utf8Str::CaseInsensitive)))
+    if (!(   aFile.endsWith(".ovf", Utf8Str::CaseInsensitive)
+          || aFile.endsWith(".ova", Utf8Str::CaseInsensitive)))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Appliance file must have .ovf extension"));
 
@@ -95,8 +89,8 @@ STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
     try
     {
         /* Parse all necessary info out of the URI */
-        parseURI(strPath, m->locInfo);
-        rc = readImpl(m->locInfo, progress);
+        i_parseURI(aFile, m->locInfo);
+        rc = i_readImpl(m->locInfo, progress);
     }
     catch (HRESULT aRC)
     {
@@ -105,7 +99,7 @@ STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
 
     if (SUCCEEDED(rc))
         /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress);
+        progress.queryInterfaceTo(aProgress.asOutParam());
 
     return S_OK;
 }
@@ -115,18 +109,15 @@ STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
  * VirtualSystemDescription instances.
  * @return
  */
-STDMETHODIMP Appliance::Interpret()
+HRESULT Appliance::interpret()
 {
     // @todo:
     //  - don't use COM methods but the methods directly (faster, but needs appropriate
     // locking of that objects itself (s. HardDisk))
     //  - Appropriate handle errors like not supported file formats
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!isApplianceIdle())
+    if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
 
     HRESULT rc = S_OK;
@@ -164,7 +155,7 @@ STDMETHODIMP Appliance::Interpret()
             // if the virtual system in OVF had a <vbox:Machine> element, have the
             // VirtualBox settings code parse that XML now
             if (vsysThis.pelmVboxMachine)
-                pNewDesc->importVboxMachineXML(*vsysThis.pelmVboxMachine);
+                pNewDesc->i_importVboxMachineXML(*vsysThis.pelmVboxMachine);
 
             // Guest OS type
             // This is taken from one of three places, in this order:
@@ -181,10 +172,10 @@ STDMETHODIMP Appliance::Interpret()
             // 3) Otherwise, make a best guess what the vbox type is from the OVF (CIM) OS type.
             else
                 convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos, vsysThis.strCimosDesc);
-            pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
-                               "",
-                               strCIMOSType,
-                               strOsTypeVBox);
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_OS,
+                                 "",
+                                 strCIMOSType,
+                                 strOsTypeVBox);
 
             /* VM name */
             Utf8Str nameVBox;
@@ -198,11 +189,11 @@ STDMETHODIMP Appliance::Interpret()
              * of the OS type */
             if (nameVBox.isEmpty())
                 nameVBox = strOsTypeVBox;
-            searchUniqueVMName(nameVBox);
-            pNewDesc->addEntry(VirtualSystemDescriptionType_Name,
-                               "",
-                               vsysThis.strName,
-                               nameVBox);
+            i_searchUniqueVMName(nameVBox);
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_Name,
+                                 "",
+                                 vsysThis.strName,
+                                 nameVBox);
 
             /* Based on the VM name, create a target machine path. */
             Bstr bstrMachineFilename;
@@ -217,52 +208,52 @@ STDMETHODIMP Appliance::Interpret()
 
             /* VM Product */
             if (!vsysThis.strProduct.isEmpty())
-                pNewDesc->addEntry(VirtualSystemDescriptionType_Product,
-                                    "",
-                                    vsysThis.strProduct,
-                                    vsysThis.strProduct);
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_Product,
+                                      "",
+                                      vsysThis.strProduct,
+                                      vsysThis.strProduct);
 
             /* VM Vendor */
             if (!vsysThis.strVendor.isEmpty())
-                pNewDesc->addEntry(VirtualSystemDescriptionType_Vendor,
-                                    "",
-                                    vsysThis.strVendor,
-                                    vsysThis.strVendor);
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_Vendor,
+                                     "",
+                                     vsysThis.strVendor,
+                                     vsysThis.strVendor);
 
             /* VM Version */
             if (!vsysThis.strVersion.isEmpty())
-                pNewDesc->addEntry(VirtualSystemDescriptionType_Version,
-                                    "",
-                                    vsysThis.strVersion,
-                                    vsysThis.strVersion);
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_Version,
+                                     "",
+                                     vsysThis.strVersion,
+                                     vsysThis.strVersion);
 
             /* VM ProductUrl */
             if (!vsysThis.strProductUrl.isEmpty())
-                pNewDesc->addEntry(VirtualSystemDescriptionType_ProductUrl,
-                                    "",
-                                    vsysThis.strProductUrl,
-                                    vsysThis.strProductUrl);
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_ProductUrl,
+                                     "",
+                                     vsysThis.strProductUrl,
+                                     vsysThis.strProductUrl);
 
             /* VM VendorUrl */
             if (!vsysThis.strVendorUrl.isEmpty())
-                pNewDesc->addEntry(VirtualSystemDescriptionType_VendorUrl,
-                                    "",
-                                    vsysThis.strVendorUrl,
-                                    vsysThis.strVendorUrl);
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_VendorUrl,
+                                     "",
+                                     vsysThis.strVendorUrl,
+                                     vsysThis.strVendorUrl);
 
             /* VM description */
             if (!vsysThis.strDescription.isEmpty())
-                pNewDesc->addEntry(VirtualSystemDescriptionType_Description,
-                                    "",
-                                    vsysThis.strDescription,
-                                    vsysThis.strDescription);
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_Description,
+                                     "",
+                                     vsysThis.strDescription,
+                                     vsysThis.strDescription);
 
             /* VM license */
             if (!vsysThis.strLicenseText.isEmpty())
-                pNewDesc->addEntry(VirtualSystemDescriptionType_License,
-                                    "",
-                                    vsysThis.strLicenseText,
-                                    vsysThis.strLicenseText);
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_License,
+                                     "",
+                                     vsysThis.strLicenseText,
+                                     vsysThis.strLicenseText);
 
             /* Now that we know the OS type, get our internal defaults based on that. */
             ComPtr<IGuestOSType> pGuestOSType;
@@ -280,17 +271,17 @@ STDMETHODIMP Appliance::Interpret()
             /* Check for the constraints */
             if (cpuCountVBox > SchemaDefs::MaxCPUCount)
             {
-                addWarning(tr("The virtual system \"%s\" claims support for %u CPU's, but VirtualBox has support for "
-                              "max %u CPU's only."),
-                           vsysThis.strName.c_str(), cpuCountVBox, SchemaDefs::MaxCPUCount);
+                i_addWarning(tr("The virtual system \"%s\" claims support for %u CPU's, but VirtualBox has support for "
+                                "max %u CPU's only."),
+                                vsysThis.strName.c_str(), cpuCountVBox, SchemaDefs::MaxCPUCount);
                 cpuCountVBox = SchemaDefs::MaxCPUCount;
             }
             if (vsysThis.cCPUs == 0)
                 cpuCountVBox = 1;
-            pNewDesc->addEntry(VirtualSystemDescriptionType_CPU,
-                               "",
-                               Utf8StrFmt("%RU32", (uint32_t)vsysThis.cCPUs),
-                               Utf8StrFmt("%RU32", (uint32_t)cpuCountVBox));
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_CPU,
+                                "",
+                                Utf8StrFmt("%RU32", (uint32_t)vsysThis.cCPUs),
+                                Utf8StrFmt("%RU32", (uint32_t)cpuCountVBox));
 
             /* RAM */
             uint64_t ullMemSizeVBox;
@@ -307,9 +298,9 @@ STDMETHODIMP Appliance::Interpret()
                     )
                )
             {
-                addWarning(tr("The virtual system \"%s\" claims support for %llu MB RAM size, but VirtualBox has "
-                              "support for min %u & max %u MB RAM size only."),
-                              vsysThis.strName.c_str(), ullMemSizeVBox, MM_RAM_MIN_IN_MB, MM_RAM_MAX_IN_MB);
+                i_addWarning(tr("The virtual system \"%s\" claims support for %llu MB RAM size, but VirtualBox has "
+                                "support for min %u & max %u MB RAM size only."),
+                                vsysThis.strName.c_str(), ullMemSizeVBox, MM_RAM_MIN_IN_MB, MM_RAM_MAX_IN_MB);
                 ullMemSizeVBox = RT_MIN(RT_MAX(ullMemSizeVBox, MM_RAM_MIN_IN_MB), MM_RAM_MAX_IN_MB);
             }
             if (vsysThis.ullMemorySize == 0)
@@ -321,10 +312,10 @@ STDMETHODIMP Appliance::Interpret()
                 /* VBox stores that in MByte */
                 ullMemSizeVBox = (uint64_t)memSizeVBox2;
             }
-            pNewDesc->addEntry(VirtualSystemDescriptionType_Memory,
-                               "",
-                               Utf8StrFmt("%RU64", (uint64_t)vsysThis.ullMemorySize),
-                               Utf8StrFmt("%RU64", (uint64_t)ullMemSizeVBox));
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_Memory,
+                                 "",
+                                 Utf8StrFmt("%RU64", (uint64_t)vsysThis.ullMemorySize),
+                                 Utf8StrFmt("%RU64", (uint64_t)ullMemSizeVBox));
 
             /* Audio */
             Utf8Str strSoundCard;
@@ -344,10 +335,10 @@ STDMETHODIMP Appliance::Interpret()
                 strSoundCardOrig = vsysThis.strSoundCardType;
             }
             if (strSoundCard.isNotEmpty())
-                pNewDesc->addEntry(VirtualSystemDescriptionType_SoundCard,
-                                   "",
-                                   strSoundCardOrig,
-                                   strSoundCard);
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_SoundCard,
+                                     "",
+                                     strSoundCardOrig,
+                                     strSoundCard);
 
 #ifdef VBOX_WITH_USB
             /* USB Controller */
@@ -355,7 +346,7 @@ STDMETHODIMP Appliance::Interpret()
             if (   (   vsysThis.pelmVboxMachine
                     && pNewDesc->m->pConfig->hardwareMachine.usbSettings.llUSBControllers.size() > 0)
                 || vsysThis.fHasUsbController)
-                pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
 #endif /* VBOX_WITH_USB */
 
             /* Network Controller */
@@ -367,9 +358,9 @@ STDMETHODIMP Appliance::Interpret()
                 const settings::NetworkAdaptersList &llNetworkAdapters = pNewDesc->m->pConfig->hardwareMachine.llNetworkAdapters;
                 /* Check for the constrains */
                 if (llNetworkAdapters.size() > maxNetworkAdapters)
-                    addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox "
-                                  "has support for max %u network adapter only."),
-                                  vsysThis.strName.c_str(), llNetworkAdapters.size(), maxNetworkAdapters);
+                    i_addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox "
+                                    "has support for max %u network adapter only."),
+                                    vsysThis.strName.c_str(), llNetworkAdapters.size(), maxNetworkAdapters);
                 /* Iterate through all network adapters. */
                 settings::NetworkAdaptersList::const_iterator it1;
                 size_t a = 0;
@@ -380,12 +371,12 @@ STDMETHODIMP Appliance::Interpret()
                     if (it1->fEnabled)
                     {
                         Utf8Str strMode = convertNetworkAttachmentTypeToString(it1->mode);
-                        pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
-                                           "", // ref
-                                           strMode, // orig
-                                           Utf8StrFmt("%RU32", (uint32_t)it1->type), // conf
-                                           0,
-                                           Utf8StrFmt("slot=%RU32;type=%s", it1->ulSlot, strMode.c_str())); // extra conf
+                        pNewDesc->i_addEntry(VirtualSystemDescriptionType_NetworkAdapter,
+                                             "", // ref
+                                             strMode, // orig
+                                             Utf8StrFmt("%RU32", (uint32_t)it1->type), // conf
+                                             0,
+                                             Utf8StrFmt("slot=%RU32;type=%s", it1->ulSlot, strMode.c_str())); // extra conf
                     }
                 }
             }
@@ -396,9 +387,9 @@ STDMETHODIMP Appliance::Interpret()
 
                 /* Check for the constrains */
                 if (cEthernetAdapters > maxNetworkAdapters)
-                    addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox "
-                                  "has support for max %u network adapter only."),
-                                  vsysThis.strName.c_str(), cEthernetAdapters, maxNetworkAdapters);
+                    i_addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox "
+                                    "has support for max %u network adapter only."),
+                                    vsysThis.strName.c_str(), cEthernetAdapters, maxNetworkAdapters);
 
                 /* Get the default network adapter type for the selected guest OS */
                 NetworkAdapterType_T defaultAdapterVBox = NetworkAdapterType_Am79C970A;
@@ -460,12 +451,12 @@ STDMETHODIMP Appliance::Interpret()
                     }
 #endif /* VBOX_WITH_E1000 */
 
-                    pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
-                                       "",      // ref
-                                       ea.strNetworkName,      // orig
-                                       Utf8StrFmt("%RU32", (uint32_t)nwAdapterVBox),   // conf
-                                       0,
-                                       Utf8StrFmt("type=%s", strNetwork.c_str()));       // extra conf
+                    pNewDesc->i_addEntry(VirtualSystemDescriptionType_NetworkAdapter,
+                                         "",      // ref
+                                         ea.strNetworkName,      // orig
+                                         Utf8StrFmt("%RU32", (uint32_t)nwAdapterVBox),   // conf
+                                         0,
+                                         Utf8StrFmt("type=%s", strNetwork.c_str()));       // extra conf
                 }
             }
 
@@ -502,10 +493,10 @@ STDMETHODIMP Appliance::Interpret()
             }
             /* Floppy Drive */
             if (fFloppy)
-                pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy, "", "", "");
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_Floppy, "", "", "");
             /* CD Drive */
             if (fDVD)
-                pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
+                pNewDesc->i_addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
 
             /* Hard disk Controller */
             uint16_t cIDEused = 0;
@@ -533,17 +524,17 @@ STDMETHODIMP Appliance::Interpret()
                                 strType = "PIIX3";
                             else if (!hdc.strControllerType.compare("ICH6", Utf8Str::CaseInsensitive))
                                 strType = "ICH6";
-                            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
-                                               strControllerID,         // strRef
-                                               hdc.strControllerType,   // aOvfValue
-                                               strType);                // aVboxValue
+                            pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
+                                                 strControllerID,         // strRef
+                                                 hdc.strControllerType,   // aOvfValue
+                                                 strType);                // aVboxValue
                         }
                         else
                             /* Warn only once */
                             if (cIDEused == 2)
-                                addWarning(tr("The virtual \"%s\" system requests support for more than two "
+                                i_addWarning(tr("The virtual \"%s\" system requests support for more than two "
                                               "IDE controller channels, but VirtualBox supports only two."),
-                                            vsysThis.strName.c_str());
+                                              vsysThis.strName.c_str());
 
                         ++cIDEused;
                     break;
@@ -554,18 +545,18 @@ STDMETHODIMP Appliance::Interpret()
                         {
                             // @todo: figure out the SATA types
                             /* We only support a plain AHCI controller, so use them always */
-                            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
-                                                strControllerID,
-                                                hdc.strControllerType,
-                                                "AHCI");
+                            pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
+                                                 strControllerID,
+                                                 hdc.strControllerType,
+                                                 "AHCI");
                         }
                         else
                         {
                             /* Warn only once */
                             if (cSATAused == 1)
-                                addWarning(tr("The virtual system \"%s\" requests support for more than one "
-                                              "SATA controller, but VirtualBox has support for only one"),
-                                            vsysThis.strName.c_str());
+                                i_addWarning(tr("The virtual system \"%s\" requests support for more than one "
+                                                "SATA controller, but VirtualBox has support for only one"),
+                                                vsysThis.strName.c_str());
 
                         }
                         ++cSATAused;
@@ -585,19 +576,18 @@ STDMETHODIMP Appliance::Interpret()
                             }
                             else if (!hdc.strControllerType.compare("BusLogic", Utf8Str::CaseInsensitive))
                                 hdcController = "BusLogic";
-
-                            pNewDesc->addEntry(vsdet,
-                                               strControllerID,
-                                               hdc.strControllerType,
-                                               hdcController);
+                            pNewDesc->i_addEntry(vsdet,
+                                                 strControllerID,
+                                                 hdc.strControllerType,
+                                                 hdcController);
                         }
                         else
-                            addWarning(tr("The virtual system \"%s\" requests support for an additional "
-                                          "SCSI controller of type \"%s\" with ID %s, but VirtualBox presently "
-                                          "supports only one SCSI controller."),
-                                        vsysThis.strName.c_str(),
-                                        hdc.strControllerType.c_str(),
-                                        strControllerID.c_str());
+                            i_addWarning(tr("The virtual system \"%s\" requests support for an additional "
+                                            "SCSI controller of type \"%s\" with ID %s, but VirtualBox presently "
+                                            "supports only one SCSI controller."),
+                                            vsysThis.strName.c_str(),
+                                            hdc.strControllerType.c_str(),
+                                            strControllerID.c_str());
                         ++cSCSIused;
                     break;
                 }
@@ -633,7 +623,7 @@ STDMETHODIMP Appliance::Interpret()
                      */
 
                     ComObjPtr<MediumFormat> mediumFormat;
-                    rc = findMediumFormatFromDiskImage(di, mediumFormat);
+                    rc = i_findMediumFormatFromDiskImage(di, mediumFormat);
                     if (FAILED(rc))
                         throw rc;
 
@@ -641,7 +631,6 @@ STDMETHODIMP Appliance::Interpret()
                     rc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
                     if (FAILED(rc))
                         throw rc;
-
                     Utf8Str vdf = Utf8Str(bstrFormatName);
 
                     // @todo:
@@ -658,12 +647,12 @@ STDMETHODIMP Appliance::Interpret()
 
                         Utf8Str strTargetPath = Utf8Str(strMachineFolder);
                         strTargetPath.append(RTPATH_DELIMITER).append(di.strHref);
-                        searchUniqueDiskImageFilePath(strTargetPath);
+                        i_searchUniqueDiskImageFilePath(strTargetPath);
 
                         /* find the description for the hard disk controller
                          * that has the same ID as hd.idController */
                         const VirtualSystemDescriptionEntry *pController;
-                        if (!(pController = pNewDesc->findControllerFromID(hd.idController)))
+                        if (!(pController = pNewDesc->i_findControllerFromID(hd.idController)))
                             throw setError(E_FAIL,
                                            tr("Cannot find hard disk controller with OVF instance ID %RI32 "
                                               "to which disk \"%s\" should be attached"),
@@ -674,12 +663,12 @@ STDMETHODIMP Appliance::Interpret()
                         Utf8StrFmt strExtraConfig("controller=%RI16;channel=%RI16",
                                                   pController->ulIndex,
                                                   hd.ulAddressOnParent);
-                        pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                                           hd.strDiskId,
-                                           di.strHref,
-                                           strTargetPath,
-                                           di.ulSuggestedSizeMB,
-                                           strExtraConfig);
+                        pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskImage,
+                                             hd.strDiskId,
+                                             di.strHref,
+                                             strTargetPath,
+                                             di.ulSuggestedSizeMB,
+                                             strExtraConfig);
                     }
                     else if (vdf.compare("RAW", Utf8Str::CaseInsensitive) == 0)
                     {
@@ -691,12 +680,12 @@ STDMETHODIMP Appliance::Interpret()
                         Utf8Str strTargetPath = Utf8Str(strMachineFolder)
                             .append(RTPATH_DELIMITER)
                             .append(di.strHref);
-                        searchUniqueDiskImageFilePath(strTargetPath);
+                        i_searchUniqueDiskImageFilePath(strTargetPath);
 
                         /* find the description for the hard disk controller
                          * that has the same ID as hd.idController */
                         const VirtualSystemDescriptionEntry *pController;
-                        if (!(pController = pNewDesc->findControllerFromID(hd.idController)))
+                        if (!(pController = pNewDesc->i_findControllerFromID(hd.idController)))
                             throw setError(E_FAIL,
                                            tr("Cannot find disk controller with OVF instance ID %RI32 "
                                               "to which disk \"%s\" should be attached"),
@@ -707,12 +696,12 @@ STDMETHODIMP Appliance::Interpret()
                         Utf8StrFmt strExtraConfig("controller=%RI16;channel=%RI16",
                                                   pController->ulIndex,
                                                   hd.ulAddressOnParent);
-                        pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                                           hd.strDiskId,
-                                           di.strHref,
-                                           strTargetPath,
-                                           di.ulSuggestedSizeMB,
-                                           strExtraConfig);
+                        pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskImage,
+                                             hd.strDiskId,
+                                             di.strHref,
+                                             strTargetPath,
+                                             di.ulSuggestedSizeMB,
+                                             strExtraConfig);
                     }
                     else
                         throw setError(VBOX_E_FILE_ERROR,
@@ -742,37 +731,39 @@ STDMETHODIMP Appliance::Interpret()
 /**
  * Public method implementation. This creates one or more new machines according to the
  * VirtualSystemScription instances created by Appliance::Interpret().
- * Thread implementation is in Appliance::importImpl().
+ * Thread implementation is in Appliance::i_importImpl().
  * @param aProgress
  * @return
  */
-STDMETHODIMP Appliance::ImportMachines(ComSafeArrayIn(ImportOptions_T, options), IProgress **aProgress)
+HRESULT Appliance::importMachines(const std::vector<ImportOptions_T> &aOptions,
+                                  ComPtr<IProgress> &aProgress)
 {
-    CheckComArgOutPointerValid(aProgress);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (options != NULL)
-        m->optListImport = com::SafeArray<ImportOptions_T>(ComSafeArrayInArg(options)).toList();
+    if (aOptions.size())
+    {
+        m->optListImport.setCapacity(aOptions.size());
+        for (size_t i = 0; i < aOptions.size(); ++i)
+        {
+            m->optListImport.insert(i, aOptions[i]);
+        }
+    }
 
     AssertReturn(!(m->optListImport.contains(ImportOptions_KeepAllMACs) && m->optListImport.contains(ImportOptions_KeepNATMACs)), E_INVALIDARG);
 
     // do not allow entering this method if the appliance is busy reading or writing
-    if (!isApplianceIdle())
+    if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
 
     if (!m->pReader)
         return setError(E_FAIL,
-                        tr("Cannot import machines without reading it first (call read() before importMachines())"));
+                        tr("Cannot import machines without reading it first (call read() before i_importMachines())"));
 
     ComObjPtr<Progress> progress;
     HRESULT rc = S_OK;
     try
     {
-        rc = importImpl(m->locInfo, progress);
+        rc = i_importImpl(m->locInfo, progress);
     }
     catch (HRESULT aRC)
     {
@@ -781,7 +772,7 @@ STDMETHODIMP Appliance::ImportMachines(ComSafeArrayIn(ImportOptions_T, options),
 
     if (SUCCEEDED(rc))
         /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress);
+        progress.queryInterfaceTo(aProgress.asOutParam());
 
     return rc;
 }
@@ -792,7 +783,7 @@ STDMETHODIMP Appliance::ImportMachines(ComSafeArrayIn(ImportOptions_T, options),
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT Appliance::preCheckImageAvailability(PSHASTORAGE pSHAStorage,
+HRESULT Appliance::i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
                                                RTCString &availableImage)
 {
     HRESULT rc = S_OK;
@@ -835,8 +826,8 @@ HRESULT Appliance::preCheckImageAvailability(PSHASTORAGE pSHAStorage,
  *
  * 1) from the public Appliance::Read().
  *
- * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl(), which
- *    called Appliance::readFSOVA(), which called Appliance::importImpl(), which then called this again.
+ * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl(), which
+ *    called Appliance::readFSOVA(), which called Appliance::i_importImpl(), which then called this again.
  *
  * 3) from Appliance::readS3(), which got called from a previous instance of Appliance::taskThreadImportOrExport().
  *
@@ -844,7 +835,7 @@ HRESULT Appliance::preCheckImageAvailability(PSHASTORAGE pSHAStorage,
  * @param aProgress
  * @return
  */
-HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
+HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
     BstrFmt bstrDesc = BstrFmt(tr("Reading appliance '%s'"),
                                aLocInfo.strPath.c_str());
@@ -894,7 +885,7 @@ HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &a
  * @param pTask
  * @return
  */
-HRESULT Appliance::readFS(TaskOVF *pTask)
+HRESULT Appliance::i_readFS(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -907,9 +898,9 @@ HRESULT Appliance::readFS(TaskOVF *pTask)
     HRESULT rc = S_OK;
 
     if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
-        rc = readFSOVF(pTask);
+        rc = i_readFSOVF(pTask);
     else
-        rc = readFSOVA(pTask);
+        rc = i_readFSOVA(pTask);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -917,7 +908,7 @@ HRESULT Appliance::readFS(TaskOVF *pTask)
     return rc;
 }
 
-HRESULT Appliance::readFSOVF(TaskOVF *pTask)
+HRESULT Appliance::i_readFSOVF(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
 
@@ -1008,7 +999,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                         storage.fSha256 = true;
                     }
 
-                    Utf8Str name = applianceIOName(applianceIOFile);
+                    Utf8Str name = i_applianceIOName(applianceIOFile);
 
                     vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
                                              VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
@@ -1016,7 +1007,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                     if (RT_FAILURE(vrc))
                         throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
 
-                    rc = readFSImpl(pTask, pTask->locInfo.strPath, pShaIo, &storage);
+                    rc = i_readFSImpl(pTask, pTask->locInfo.strPath, pShaIo, &storage);
                     if (FAILED(rc))
                         break;
                 }
@@ -1030,7 +1021,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
             else
             {
                 storage.fCreateDigest = false;
-                rc = readFSImpl(pTask, pTask->locInfo.strPath, pFileIo, &storage);
+                rc = i_readFSImpl(pTask, pTask->locInfo.strPath, pFileIo, &storage);
                 if (FAILED(rc))
                     break;
             }
@@ -1054,7 +1045,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
     return rc;
 }
 
-HRESULT Appliance::readFSOVA(TaskOVF *pTask)
+HRESULT Appliance::i_readFSOVA(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
 
@@ -1111,7 +1102,7 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
                 break ;
             }
 
-            Utf8Str name = applianceIOName(applianceIOTar);
+            Utf8Str name = i_applianceIOName(applianceIOTar);
 
             vrc = VDInterfaceAdd(&pTarIo->Core, name.c_str(),
                                  VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
@@ -1122,7 +1113,7 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
                 break;
             }
 
-            rc = readFSImpl(pTask, pszFilename, pShaIo, &storage);
+            rc = i_readFSImpl(pTask, pszFilename, pShaIo, &storage);
             if (FAILED(rc))
                 break;
 
@@ -1147,7 +1138,7 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
     return rc;
 }
 
-HRESULT Appliance::readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
+HRESULT Appliance::i_readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
 {
     LogFlowFuncEnter();
 
@@ -1234,7 +1225,7 @@ HRESULT Appliance::readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDI
  * @param pTask
  * @return
  */
-HRESULT Appliance::readS3(TaskOVF *pTask)
+HRESULT Appliance::i_readS3(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -1259,7 +1250,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
         /* Extract the bucket */
         Utf8Str tmpPath = pTask->locInfo.strPath;
         Utf8Str bucket;
-        parseBucket(tmpPath, bucket);
+        i_parseBucket(tmpPath, bucket);
 
         /* We need a temporary directory which we can put the OVF file & all
          * disk images in */
@@ -1314,7 +1305,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
         LocationInfo li;
         li.strPath = strTmpOvf;
         /* Start the reading from the fs */
-        rc = readImpl(li, progress);
+        rc = i_readImpl(li, progress);
         if (FAILED(rc)) throw rc;
 
         /* Unlock the appliance for the reading thread */
@@ -1322,7 +1313,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
         /* Wait until the reading is done, but report the progress back to the
            caller */
         ComPtr<IProgress> progressInt(progress);
-        waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
+        i_waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
 
         /* Again lock the appliance for the next steps */
         appLock.acquire();
@@ -1373,14 +1364,14 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
  * This is in a separate private method because it is used from two locations:
  *
  * 1) from the public Appliance::ImportMachines().
- * 2) from Appliance::importS3(), which got called from a previous instance of Appliance::taskThreadImportOrExport().
+ * 2) from Appliance::i_importS3(), which got called from a previous instance of Appliance::taskThreadImportOrExport().
  *
  * @param aLocInfo
  * @param aProgress
  * @return
  */
-HRESULT Appliance::importImpl(const LocationInfo &locInfo,
-                              ComObjPtr<Progress> &progress)
+HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
+                                ComObjPtr<Progress> &progress)
 {
     HRESULT rc = S_OK;
 
@@ -1390,9 +1381,9 @@ HRESULT Appliance::importImpl(const LocationInfo &locInfo,
     else
         mode = ImportS3;
 
-    rc = setUpProgress(progress,
-                       BstrFmt(tr("Importing appliance '%s'"), locInfo.strPath.c_str()),
-                       mode);
+    rc = i_setUpProgress(progress,
+                         BstrFmt(tr("Importing appliance '%s'"), locInfo.strPath.c_str()),
+                         mode);
     if (FAILED(rc)) throw rc;
 
     /* Initialize our worker task */
@@ -1414,32 +1405,29 @@ HRESULT Appliance::importImpl(const LocationInfo &locInfo,
  *
  * This runs in three contexts:
  *
- * 1) in a first worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl();
+ * 1) in a first worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl();
  *
- * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl(), which
- *    called Appliance::importFSOVA(), which called Appliance::importImpl(), which then called this again.
+ * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl(), which
+ *    called Appliance::i_i_importFSOVA(), which called Appliance::i_importImpl(), which then called this again.
  *
- * 3) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl(), which
- *    called Appliance::importS3(), which called Appliance::importImpl(), which then called this again.
+ * 3) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl(), which
+ *    called Appliance::i_importS3(), which called Appliance::i_importImpl(), which then called this again.
  *
  * @param pTask
  * @return
  */
-HRESULT Appliance::importFS(TaskOVF *pTask)
+HRESULT Appliance::i_importFS(TaskOVF *pTask)
 {
 
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Change the appliance state so we can safely leave the lock while doing
      * time-consuming disk imports; also the below method calls do all kinds of
      * locking which conflicts with the appliance object lock. */
     AutoWriteLock writeLock(this COMMA_LOCKVAL_SRC_POS);
     /* Check if the appliance is currently busy. */
-    if (!isApplianceIdle())
+    if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
     /* Set the internal state to importing. */
     m->state = Data::ApplianceImporting;
@@ -1450,9 +1438,9 @@ HRESULT Appliance::importFS(TaskOVF *pTask)
     m->llGuidsMachinesCreated.clear();
 
     if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
-        rc = importFSOVF(pTask, writeLock);
+        rc = i_importFSOVF(pTask, writeLock);
     else
-        rc = importFSOVA(pTask, writeLock);
+        rc = i_importFSOVA(pTask, writeLock);
 
     if (FAILED(rc))
     {
@@ -1488,7 +1476,7 @@ HRESULT Appliance::importFS(TaskOVF *pTask)
     return rc;
 }
 
-HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
+HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 {
     LogFlowFuncEnter();
 
@@ -1511,7 +1499,7 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         SHASTORAGE storage;
         RT_ZERO(storage);
 
-        Utf8Str name = applianceIOName(applianceIOFile);
+        Utf8Str name = i_applianceIOName(applianceIOFile);
 
         int vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
                                  VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
@@ -1528,7 +1516,7 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             if (!pShaIo)
                 throw setError(E_OUTOFMEMORY);
 
-            Utf8Str nameSha = applianceIOName(applianceIOSha);
+            Utf8Str nameSha = i_applianceIOName(applianceIOSha);
             /* Fill out interface descriptor. */
             pShaIo->Core.u32Magic         = VDINTERFACE_MAGIC;
             pShaIo->Core.cbSize           = sizeof(VDINTERFACEIO);
@@ -1542,13 +1530,13 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             size_t cbMfSize = 0;
 
             /* Now import the appliance. */
-            importMachines(stack, pShaIo, &storage);
+            i_importMachines(stack, pShaIo, &storage);
             /* Read & verify the manifest file. */
             /* Add the ovf file to the digest list. */
             stack.llSrcDisksDigest.push_front(STRPAIR(pTask->locInfo.strPath, m->strOVFSHADigest));
-            rc = readFileToBuf(strMfFile, &pvMfBuf, &cbMfSize, true, pShaIo, &storage);
+            rc = i_readFileToBuf(strMfFile, &pvMfBuf, &cbMfSize, true, pShaIo, &storage);
             if (FAILED(rc)) throw rc;
-            rc = verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
+            rc = i_verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
             if (FAILED(rc)) throw rc;
 
             size_t cbCertSize = 0;
@@ -1559,7 +1547,7 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             Utf8Str strCertFile = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".cert");
             if (RTFileExists(strCertFile.c_str()))
             {
-                rc = readFileToBuf(strCertFile, &pvCertBuf, &cbCertSize, false, pShaIo, &storage);
+                rc = i_readFileToBuf(strCertFile, &pvCertBuf, &cbCertSize, false, pShaIo, &storage);
                 if (FAILED(rc)) throw rc;
 
                 /* verify Certificate */
@@ -1568,7 +1556,7 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         else
         {
             storage.fCreateDigest = false;
-            importMachines(stack, pFileIo, &storage);
+            i_importMachines(stack, pFileIo, &storage);
         }
     }
     catch (HRESULT rc2)
@@ -1593,7 +1581,7 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     return rc;
 }
 
-HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
+HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 {
     LogFlowFuncEnter();
 
@@ -1629,7 +1617,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         SHASTORAGE storage;
         RT_ZERO(storage);
 
-        Utf8Str nameTar = applianceIOName(applianceIOTar);
+        Utf8Str nameTar = i_applianceIOName(applianceIOTar);
 
         vrc = VDInterfaceAdd(&pTarIo->Core, nameTar.c_str(),
                              VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
@@ -1638,7 +1626,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Creation of the VD interface failed (%Rrc)"), vrc);
 
-        Utf8Str nameSha = applianceIOName(applianceIOSha);
+        Utf8Str nameSha = i_applianceIOName(applianceIOSha);
         /* Fill out interface descriptor. */
         pShaIo->Core.u32Magic         = VDINTERFACE_MAGIC;
         pShaIo->Core.cbSize           = sizeof(VDINTERFACEIO);
@@ -1710,7 +1698,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * searching for it. We have to try to open it on all possible places.
          * If it fails here, we will try it again after all disks where read.
          */
-        rc = readTarFileToBuf(tar, strMfFile, &pvMfBuf, &cbMfSize, true, pCallbacks, pStorage);
+        rc = i_readTarFileToBuf(tar, strMfFile, &pvMfBuf, &cbMfSize, true, pCallbacks, pStorage);
         if (FAILED(rc)) throw rc;
 
         /*
@@ -1725,7 +1713,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             {
                 if (strCertFile.compare(pszFilename) == 0)
                 {
-                    rc = readTarFileToBuf(tar, strCertFile, &pvCertBuf, &cbCertSize, false, pCallbacks, pStorage);
+                    rc = i_readTarFileToBuf(tar, strCertFile, &pvCertBuf, &cbCertSize, false, pCallbacks, pStorage);
                     if (FAILED(rc)) throw rc;
 
                     if (pvCertBuf)
@@ -1737,11 +1725,11 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         }
 
         /* Now import the appliance. */
-        importMachines(stack, pCallbacks, pStorage);
+        i_importMachines(stack, pCallbacks, pStorage);
         /* Try to read the manifest file. Second try. */
         if (!pvMfBuf)
         {
-            rc = readTarFileToBuf(tar, strMfFile, &pvMfBuf, &cbMfSize, true, pCallbacks, pStorage);
+            rc = i_readTarFileToBuf(tar, strMfFile, &pvMfBuf, &cbMfSize, true, pCallbacks, pStorage);
             if (FAILED(rc)) throw rc;
 
             /* If we were able to read a manifest file we can check it now. */
@@ -1749,7 +1737,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             {
                 /* Add the ovf file to the digest list. */
                 stack.llSrcDisksDigest.push_front(STRPAIR(OVFfilename, m->strOVFSHADigest));
-                rc = verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
+                rc = i_verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
                 if (FAILED(rc)) throw rc;
 
                 /*
@@ -1762,7 +1750,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
                 {
                     if (strCertFile.compare(pszFilename) == 0)
                     {
-                        rc = readTarFileToBuf(tar, strCertFile, &pvCertBuf, &cbCertSize, false, pCallbacks, pStorage);
+                        rc = i_readTarFileToBuf(tar, strCertFile, &pvCertBuf, &cbCertSize, false, pCallbacks, pStorage);
                         if (FAILED(rc)) throw rc;
 
                         if (pvCertBuf)
@@ -1804,17 +1792,14 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 /**
  * Worker code for importing OVF from the cloud. This is called from Appliance::taskThreadImportOrExport()
  * in S3 mode and therefore runs on the OVF import worker thread. This then starts a second worker
- * thread to import from temporary files (see Appliance::importFS()).
+ * thread to import from temporary files (see Appliance::i_importFS()).
  * @param pTask
  * @return
  */
-HRESULT Appliance::importS3(TaskOVF *pTask)
+HRESULT Appliance::i_importS3(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1832,7 +1817,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
         /* Extract the bucket */
         Utf8Str tmpPath = pTask->locInfo.strPath;
         Utf8Str bucket;
-        parseBucket(tmpPath, bucket);
+        i_parseBucket(tmpPath, bucket);
 
         /* We need a temporary directory which we can put the all disk images
          * in */
@@ -1848,7 +1833,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
              ++it)
         {
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
             std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
             for (itH = avsdeHDs.begin();
                  itH != avsdeHDs.end();
@@ -1950,7 +1935,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
         /* Import the whole temporary OVF & the disk images */
         LocationInfo li;
         li.strPath = strTmpOvf;
-        rc = importImpl(li, progress);
+        rc = i_importImpl(li, progress);
         if (FAILED(rc)) throw rc;
 
         /* Unlock the appliance for the fs import thread */
@@ -1958,7 +1943,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
         /* Wait until the import is done, but report the progress back to the
            caller */
         ComPtr<IProgress> progressInt(progress);
-        waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
+        i_waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
 
         /* Again lock the appliance for the next steps */
         appLock.acquire();
@@ -1999,12 +1984,12 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
 }
 #endif /* VBOX_WITH_S3 */
 
-HRESULT Appliance::readFileToBuf(const Utf8Str &strFile,
-                                 void **ppvBuf,
-                                 size_t *pcbSize,
-                                 bool fCreateDigest,
-                                 PVDINTERFACEIO pCallbacks,
-                                 PSHASTORAGE pStorage)
+HRESULT Appliance::i_readFileToBuf(const Utf8Str &strFile,
+                                   void **ppvBuf,
+                                   size_t *pcbSize,
+                                   bool fCreateDigest,
+                                   PVDINTERFACEIO pCallbacks,
+                                   PSHASTORAGE pStorage)
 {
     HRESULT rc = S_OK;
 
@@ -2021,13 +2006,13 @@ HRESULT Appliance::readFileToBuf(const Utf8Str &strFile,
     return rc;
 }
 
-HRESULT Appliance::readTarFileToBuf(RTTAR tar,
-                                    const Utf8Str &strFile,
-                                    void **ppvBuf,
-                                    size_t *pcbSize,
-                                    bool fCreateDigest,
-                                    PVDINTERFACEIO pCallbacks,
-                                    PSHASTORAGE pStorage)
+HRESULT Appliance::i_readTarFileToBuf(RTTAR tar,
+                                      const Utf8Str &strFile,
+                                      void **ppvBuf,
+                                      size_t *pcbSize,
+                                      bool fCreateDigest,
+                                      PVDINTERFACEIO pCallbacks,
+                                      PSHASTORAGE pStorage)
 {
     HRESULT rc = S_OK;
 
@@ -2045,7 +2030,7 @@ HRESULT Appliance::readTarFileToBuf(RTTAR tar,
         else
         {
             if (!strcmp(pszCurFile, RTPathFilename(strFile.c_str())))
-                rc = readFileToBuf(strFile, ppvBuf, pcbSize, fCreateDigest, pCallbacks, pStorage);
+                rc = i_readFileToBuf(strFile, ppvBuf, pcbSize, fCreateDigest, pCallbacks, pStorage);
             RTStrFree(pszCurFile);
         }
     }
@@ -2055,7 +2040,7 @@ HRESULT Appliance::readTarFileToBuf(RTTAR tar,
     return rc;
 }
 
-HRESULT Appliance::verifyManifestFile(const Utf8Str &strFile, ImportStack &stack, void *pvBuf, size_t cbSize)
+HRESULT Appliance::i_verifyManifestFile(const Utf8Str &strFile, ImportStack &stack, void *pvBuf, size_t cbSize)
 {
     HRESULT rc = S_OK;
 
@@ -2098,13 +2083,13 @@ HRESULT Appliance::verifyManifestFile(const Utf8Str &strFile, ImportStack &stack
  * @param lControllerPort out: the channel (controller port) of the controller to attach to.
  * @param lDevice out: the device number to attach to.
  */
-void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
+void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                             uint32_t ulAddressOnParent,
                                             Bstr &controllerType,
                                             int32_t &lControllerPort,
                                             int32_t &lDevice)
 {
-    Log(("Appliance::convertDiskAttachmentValues: hdc.system=%d, hdc.fPrimary=%d, ulAddressOnParent=%d\n",
+    Log(("Appliance::i_convertDiskAttachmentValues: hdc.system=%d, hdc.fPrimary=%d, ulAddressOnParent=%d\n",
          hdc.system,
          hdc.fPrimary,
          ulAddressOnParent));
@@ -2180,7 +2165,6 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                 controllerType = Bstr("SAS Controller");
             else
                 controllerType = Bstr("SCSI Controller");
-
             lControllerPort = (long)ulAddressOnParent;
             lDevice = (long)0;
         }
@@ -2194,9 +2178,9 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
 
 /**
  * Imports one disk image. This is common code shared between
- *  --  importMachineGeneric() for the OVF case; in that case the information comes from
+ *  --  i_importMachineGeneric() for the OVF case; in that case the information comes from
  *      the OVF virtual systems;
- *  --  importVBoxMachine(); in that case, the information comes from the <vbox:Machine>
+ *  --  i_importVBoxMachine(); in that case, the information comes from the <vbox:Machine>
  *      tag.
  *
  * Both ways of describing machines use the OVF disk references section, so in both cases
@@ -2213,12 +2197,12 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
  * @param pTargetHD out: The newly created target disk. This also gets pushed on stack.llHardDisksCreated for cleanup.
  * @param stack
  */
-void Appliance::importOneDiskImage(const ovf::DiskImage &di,
-                                   Utf8Str *strTargetPath,
-                                   ComObjPtr<Medium> &pTargetHD,
-                                   ImportStack &stack,
-                                   PVDINTERFACEIO pCallbacks,
-                                   PSHASTORAGE pStorage)
+void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
+                                     Utf8Str *strTargetPath,
+                                     ComObjPtr<Medium> &pTargetHD,
+                                     ImportStack &stack,
+                                     PVDINTERFACEIO pCallbacks,
+                                     PSHASTORAGE pStorage)
 {
     SHASTORAGE finalStorage;
     PSHASTORAGE pRealUsedStorage = pStorage;/* may be changed later to finalStorage */
@@ -2245,7 +2229,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     Utf8Str strTargetDir(*strTargetPath);
 
     /* Construct source file path */
-    Utf8Str name = applianceIOName(applianceIOTar);
+    Utf8Str name = i_applianceIOName(applianceIOTar);
 
     if (RTStrNICmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
         strSrcFilePath = strSourceOVF;
@@ -2303,7 +2287,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                 if (!pFileIo)
                     throw setError(E_OUTOFMEMORY);
 
-                name = applianceIOName(applianceIOFile);
+                name = i_applianceIOName(applianceIOFile);
 
                 vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
                                      VDINTERFACETYPE_IO, NULL, sizeof(VDINTERFACEIO),
@@ -2448,8 +2432,8 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                 {
                     /* We need a proper source format description */
                     /* Which format to use? */
-                    ComObjPtr<MediumFormat> srcFormat; 
-                    rc = findMediumFormatFromDiskImage(di, srcFormat);
+                    ComObjPtr<MediumFormat> srcFormat;
+                    rc = i_findMediumFormatFromDiskImage(di, srcFormat);
                     if (FAILED(rc))
                         throw setError(VBOX_E_NOT_SUPPORTED,
                                        tr("Could not find a valid medium format for the source disk '%s' "
@@ -2467,6 +2451,8 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                                pProgress);
                     if (FAILED(rc)) throw rc;
 
+
+
                     /* Advance to the next operation. */
                     /* operation's weight, as set up with the IProgress originally */
                     stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"),
@@ -2477,7 +2463,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                 /* Now wait for the background disk operation to complete; this throws
                  * HRESULTs on error. */
                 ComPtr<IProgress> pp(pProgress);
-                waitForAsyncProgress(stack.pProgress, pp);
+                i_waitForAsyncProgress(stack.pProgress, pp);
 
                 if (fGzipUsed == true)
                 {
@@ -2522,12 +2508,12 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
  * @param pNewMachine out: Newly created machine.
  * @param stack Cleanup stack for when this throws.
  */
-void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
-                                     ComObjPtr<VirtualSystemDescription> &vsdescThis,
-                                     ComPtr<IMachine> &pNewMachine,
-                                     ImportStack &stack,
-                                     PVDINTERFACEIO pCallbacks,
-                                     PSHASTORAGE pStorage)
+void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
+                                       ComObjPtr<VirtualSystemDescription> &vsdescThis,
+                                       ComPtr<IMachine> &pNewMachine,
+                                       ImportStack &stack,
+                                       PVDINTERFACEIO pCallbacks,
+                                       PSHASTORAGE pStorage)
 {
     HRESULT rc;
 
@@ -2627,7 +2613,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     /* Change the network adapters */
     uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(ChipsetType_PIIX3);
 
-    std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
+    std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->i_findByType(VirtualSystemDescriptionType_NetworkAdapter);
     if (vsdeNW.size() == 0)
     {
         /* No network adapters, so we have to disable our default one */
@@ -2743,6 +2729,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Generic);
                 if (FAILED(rc)) throw rc;
             }
+
             /* Next test for NAT network interfaces */
             else if (pvsys->strExtraConfigCurrent.endsWith("type=NATNetwork", Utf8Str::CaseInsensitive))
             {
@@ -2768,7 +2755,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     }
 
     // IDE Hard disk controller
-    std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
     /*
      * In OVF (at least VMware's version of it), an IDE controller has two ports,
      * so VirtualBox's single IDE controller with two channels and two ports each counts as
@@ -2800,7 +2787,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     }
 
     /* Hard disk controller SATA */
-    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
     if (vsdeHDCSATA.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many SATA controllers in OVF; import facility only supports one"));
@@ -2822,7 +2809,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     }
 
     /* Hard disk controller SCSI */
-    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
     if (vsdeHDCSCSI.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many SCSI controllers in OVF; import facility only supports one"));
@@ -2856,7 +2843,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     }
 
     /* Hard disk controller SAS */
-    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSAS = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSAS);
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSAS = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSAS);
     if (vsdeHDCSAS.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many SAS controllers in OVF; import facility only supports one"));
@@ -2883,11 +2870,11 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     m->llGuidsMachinesCreated.push_back(uuidNewMachine);
 
     // Add floppies and CD-ROMs to the appropriate controllers.
-    std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
+    std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->i_findByType(VirtualSystemDescriptionType_Floppy);
     if (vsdeFloppy.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many floppy controllers in OVF; import facility only supports one"));
-    std::list<VirtualSystemDescriptionEntry*> vsdeCDROM = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM);
+    std::list<VirtualSystemDescriptionEntry*> vsdeCDROM = vsdescThis->i_findByType(VirtualSystemDescriptionType_CDROM);
     if (    (vsdeFloppy.size() > 0)
          || (vsdeCDROM.size() > 0)
        )
@@ -2961,7 +2948,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     }
 
     // create the hard disks & connect them to the appropriate controllers
-    std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+    std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
     if (avsdeHDs.size() > 0)
     {
         // If there's an error here we need to close the session, so
@@ -2974,9 +2961,10 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             stack.fSessionOpen = true;
 
             /* get VM name from virtual system description. Only one record is possible (size of list is equal 1). */
-            std::list<VirtualSystemDescriptionEntry*> vmName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
+            std::list<VirtualSystemDescriptionEntry*> vmName = vsdescThis->i_findByType(VirtualSystemDescriptionType_Name);
             std::list<VirtualSystemDescriptionEntry*>::iterator vmNameIt = vmName.begin();
             VirtualSystemDescriptionEntry* vmNameEntry = *vmNameIt;
+
 
             ovf::DiskImagesMap::const_iterator oit = stack.mapDisks.begin();
             std::set<RTCString>  disksResolvedNames;
@@ -3034,7 +3022,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                  * This step is useful if image is placed in the OVA (TAR) package
                  */
 
-                Utf8Str name = applianceIOName(applianceIOTar);
+                Utf8Str name = i_applianceIOName(applianceIOTar);
 
                 if (strncmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
                 {
@@ -3049,9 +3037,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                     RTCString availableImage(diCurrent.strHref);
 
-                    rc = preCheckImageAvailability(pStorage,
-                                                   availableImage
-                                                  );
+                    rc = i_preCheckImageAvailability(pStorage, availableImage);
 
                     if (SUCCEEDED(rc))
                     {
@@ -3072,11 +3058,13 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                         break;
                                 }
                                 if (itDiskImage == stack.mapDisks.end())
+                                {
                                     throw setError(E_FAIL,
                                                    tr("Internal inconsistency looking up disk image '%s'. "
                                                       "Check compliance OVA package structure and file names "
-                                                      "references in the section <References> in the OVF file"),
+                                                      "references in the section <References> in the OVF file."),
                                                    availableImage.c_str());
+                                }
 
                                 /* replace with a new found disk image */
                                 diCurrent = *(&itDiskImage->second);
@@ -3100,13 +3088,15 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                     }
                                 }
                                 if (!vsdeTargetHD)
+                                {
                                     /*
-                                     * in this case it's an error because something wrong with OVF description file.
+ -                                   * in this case it's an error because something wrong with OVF description file.
                                      * May be VB imports OVA package with wrong file sequence inside the archive.
                                      */
                                     throw setError(E_FAIL,
                                                    tr("Internal inconsistency looking up disk image '%s'"),
                                                    diCurrent.strHref.c_str());
+                                }
 
                                 itVDisk = vsysThis.mapVirtualDisks.find(diCurrent.strDiskId);
                                 if (itVDisk == vsysThis.mapVirtualDisks.end())
@@ -3141,12 +3131,12 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 Utf8Str savedVboxCurrent = vsdeTargetHD->strVboxCurrent;
 
-                importOneDiskImage(diCurrent,
-                                   &vsdeTargetHD->strVboxCurrent,
-                                   pTargetHD,
-                                   stack,
-                                   pCallbacks,
-                                   pStorage);
+                i_importOneDiskImage(diCurrent,
+                                     &vsdeTargetHD->strVboxCurrent,
+                                     pTargetHD,
+                                     stack,
+                                     pCallbacks,
+                                     pStorage);
 
                 // now use the new uuid to attach the disk image to our new machine
                 ComPtr<IMachine> sMachine;
@@ -3161,17 +3151,17 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 MyHardDiskAttachment mhda;
                 mhda.pMachine = pNewMachine;
 
-                convertDiskAttachmentValues(hdc,
-                                            ovfVdisk.ulAddressOnParent,
-                                            mhda.controllerType,        // Bstr
-                                            mhda.lControllerPort,
-                                            mhda.lDevice);
+                i_convertDiskAttachmentValues(hdc,
+                                              ovfVdisk.ulAddressOnParent,
+                                              mhda.controllerType,        // Bstr
+                                              mhda.lControllerPort,
+                                              mhda.lDevice);
 
                 Log(("Attaching disk %s to port %d on device %d\n",
                 vsdeTargetHD->strVboxCurrent.c_str(), mhda.lControllerPort, mhda.lDevice));
 
                 ComObjPtr<MediumFormat> mediumFormat;
-                rc = findMediumFormatFromDiskImage(diCurrent, mediumFormat);
+                rc = i_findMediumFormatFromDiskImage(diCurrent, mediumFormat);
                 if (FAILED(rc))
                     throw rc;
 
@@ -3239,16 +3229,13 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
             // only now that we're done with all disks, close the session
             rc = stack.pSession->UnlockMachine();
-
             if (FAILED(rc))
                 throw rc;
-
             stack.fSessionOpen = false;
         }
-        catch(HRESULT  aRC)
+        catch(HRESULT aRC)
         {
             com::ErrorInfo info;
-
             if (stack.fSessionOpen)
                 stack.pSession->UnlockMachine();
 
@@ -3289,11 +3276,11 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
  * @param pNewMachine
  * @param stack
  */
-void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
-                                  ComPtr<IMachine> &pReturnNewMachine,
-                                  ImportStack &stack,
-                                  PVDINTERFACEIO pCallbacks,
-                                  PSHASTORAGE pStorage)
+void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
+                                    ComPtr<IMachine> &pReturnNewMachine,
+                                    ImportStack &stack,
+                                    PVDINTERFACEIO pCallbacks,
+                                    PSHASTORAGE pStorage)
 {
     Assert(vsdescThis->m->pConfig);
 
@@ -3377,10 +3364,10 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
         if (!(   fKeepAllMACs
               || (fKeepNATMACs && it1->mode == NetworkAttachmentType_NAT)
               || (fKeepNATMACs && it1->mode == NetworkAttachmentType_NATNetwork)))
-            Host::generateMACAddress(it1->strMACAddress);
+            Host::i_generateMACAddress(it1->strMACAddress);
     }
     /* Now iterate over all network entries. */
-    std::list<VirtualSystemDescriptionEntry*> avsdeNWs = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
+    std::list<VirtualSystemDescriptionEntry*> avsdeNWs = vsdescThis->i_findByType(VirtualSystemDescriptionType_NetworkAdapter);
     if (avsdeNWs.size() > 0)
     {
         /* Iterate through all network adapter entries and search for the
@@ -3414,9 +3401,9 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
     }
 
     /* Floppy controller */
-    bool fFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy).size() > 0;
+    bool fFloppy = vsdescThis->i_findByType(VirtualSystemDescriptionType_Floppy).size() > 0;
     /* DVD controller */
-    bool fDVD = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM).size() > 0;
+    bool fDVD = vsdescThis->i_findByType(VirtualSystemDescriptionType_CDROM).size() > 0;
     /* Iterate over all storage controller check the attachments and remove
      * them when necessary. Also detect broken configs with more than one
      * attachment. Old VirtualBox versions (prior to 3.2.10) had all disk
@@ -3474,14 +3461,13 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
     /*
      * step 2: scan the machine config for media attachments
      */
-
     /* get VM name from virtual system description. Only one record is possible (size of list is equal 1). */
-    std::list<VirtualSystemDescriptionEntry*> vmName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
+    std::list<VirtualSystemDescriptionEntry*> vmName = vsdescThis->i_findByType(VirtualSystemDescriptionType_Name);
     std::list<VirtualSystemDescriptionEntry*>::iterator vmNameIt = vmName.begin();
     VirtualSystemDescriptionEntry* vmNameEntry = *vmNameIt;
 
     /* Get all hard disk descriptions. */
-    std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+    std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
     std::list<VirtualSystemDescriptionEntry*>::iterator avsdeHDsIt = avsdeHDs.begin();
     /* paranoia - if there is no 1:1 match do not try to repair. */
     if (cDisks != avsdeHDs.size())
@@ -3516,7 +3502,6 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                     break;
                 }
             }
-
             if (!vsdeTargetHD)
             {
                 /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
@@ -3533,7 +3518,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
          * This step is useful if image is placed in the OVA (TAR) package
          */
 
-        Utf8Str name = applianceIOName(applianceIOTar);
+        Utf8Str name = i_applianceIOName(applianceIOTar);
 
         if (strncmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
         {
@@ -3548,9 +3533,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
             RTCString availableImage(diCurrent.strHref);
 
-            rc = preCheckImageAvailability(pStorage,
-                                           availableImage
-                                          );
+            rc = i_preCheckImageAvailability(pStorage, availableImage);
 
             if (SUCCEEDED(rc))
             {
@@ -3686,17 +3669,17 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                  */
                 Utf8Str savedVboxCurrent = vsdeTargetHD->strVboxCurrent;
                 ComObjPtr<Medium> pTargetHD;
-                importOneDiskImage(diCurrent,
-                                   &vsdeTargetHD->strVboxCurrent,
-                                   pTargetHD,
-                                   stack,
-                                   pCallbacks,
-                                   pStorage);
+                i_importOneDiskImage(diCurrent,
+                                     &vsdeTargetHD->strVboxCurrent,
+                                     pTargetHD,
+                                     stack,
+                                     pCallbacks,
+                                     pStorage);
 
                 Bstr hdId;
 
                 ComObjPtr<MediumFormat> mediumFormat;
-                rc = findMediumFormatFromDiskImage(diCurrent, mediumFormat);
+                rc = i_findMediumFormatFromDiskImage(diCurrent, mediumFormat);
                 if (FAILED(rc))
                     throw rc;
 
@@ -3752,6 +3735,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
     }// while(oit != stack.mapDisks.end())
 
+
     /*
      * quantity of the imported disks isn't equal to the size of the avsdeHDs list.
      */
@@ -3789,9 +3773,9 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
     m->llGuidsMachinesCreated.push_back(Guid(bstrNewMachineId));
 }
 
-void Appliance::importMachines(ImportStack &stack,
-                               PVDINTERFACEIO pCallbacks,
-                               PSHASTORAGE pStorage)
+void Appliance::i_importMachines(ImportStack &stack,
+                                 PVDINTERFACEIO pCallbacks,
+                                 PSHASTORAGE pStorage)
 {
     HRESULT rc = S_OK;
 
@@ -3834,7 +3818,7 @@ void Appliance::importMachines(ImportStack &stack,
         // the OVF because otherwise the "override import parameters" mechanism in the GUI won't work.
 
         // VM name
-        std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
+        std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->i_findByType(VirtualSystemDescriptionType_Name);
         if (vsdeName.size() < 1)
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Missing VM name"));
@@ -3855,14 +3839,14 @@ void Appliance::importMachines(ImportStack &stack,
 
         // guest OS type
         std::list<VirtualSystemDescriptionEntry*> vsdeOS;
-        vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
+        vsdeOS = vsdescThis->i_findByType(VirtualSystemDescriptionType_OS);
         if (vsdeOS.size() < 1)
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Missing guest OS type"));
         stack.strOsTypeVBox = vsdeOS.front()->strVboxCurrent;
 
         // CPU count
-        std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->findByType(VirtualSystemDescriptionType_CPU);
+        std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->i_findByType(VirtualSystemDescriptionType_CPU);
         if (vsdeCPU.size() != 1)
             throw setError(VBOX_E_FILE_ERROR, tr("CPU count missing"));
 
@@ -3875,36 +3859,36 @@ void Appliance::importMachines(ImportStack &stack,
         }
 
         // RAM
-        std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
+        std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->i_findByType(VirtualSystemDescriptionType_Memory);
         if (vsdeRAM.size() != 1)
             throw setError(VBOX_E_FILE_ERROR, tr("RAM size missing"));
         stack.ulMemorySizeMB = (ULONG)vsdeRAM.front()->strVboxCurrent.toUInt64();
 
 #ifdef VBOX_WITH_USB
         // USB controller
-        std::list<VirtualSystemDescriptionEntry*> vsdeUSBController = vsdescThis->findByType(VirtualSystemDescriptionType_USBController);
+        std::list<VirtualSystemDescriptionEntry*> vsdeUSBController = vsdescThis->i_findByType(VirtualSystemDescriptionType_USBController);
         // USB support is enabled if there's at least one such entry; to disable USB support,
         // the type of the USB item would have been changed to "ignore"
         stack.fUSBEnabled = vsdeUSBController.size() > 0;
 #endif
         // audio adapter
-        std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->findByType(VirtualSystemDescriptionType_SoundCard);
+        std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->i_findByType(VirtualSystemDescriptionType_SoundCard);
         /* @todo: we support one audio adapter only */
         if (vsdeAudioAdapter.size() > 0)
             stack.strAudioAdapter = vsdeAudioAdapter.front()->strVboxCurrent;
 
         // for the description of the new machine, always use the OVF entry, the user may have changed it in the import config
-        std::list<VirtualSystemDescriptionEntry*> vsdeDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
+        std::list<VirtualSystemDescriptionEntry*> vsdeDescription = vsdescThis->i_findByType(VirtualSystemDescriptionType_Description);
         if (vsdeDescription.size())
             stack.strDescription = vsdeDescription.front()->strVboxCurrent;
 
         // import vbox:machine or OVF now
         if (vsdescThis->m->pConfig)
             // vbox:Machine config
-            importVBoxMachine(vsdescThis, pNewMachine, stack, pCallbacks, pStorage);
+            i_importVBoxMachine(vsdescThis, pNewMachine, stack, pCallbacks, pStorage);
         else
             // generic OVF config
-            importMachineGeneric(vsysThis, vsdescThis, pNewMachine, stack, pCallbacks, pStorage);
+            i_importMachineGeneric(vsysThis, vsdescThis, pNewMachine, stack, pCallbacks, pStorage);
 
     } // for (it = pAppliance->m->llVirtualSystems.begin() ...
 }

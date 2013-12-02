@@ -31,7 +31,6 @@
 #include <VBox/settings.h>
 
 #include "EventImpl.h"
-#include "VBoxEvents.h"
 
 #include "VirtualBoxImpl.h"
 #include <algorithm>
@@ -46,7 +45,6 @@
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
-
 struct NATNetwork::Data
 {
     Data()
@@ -72,20 +70,20 @@ struct NATNetwork::Data
     NATNetworkServiceRunner NATRunner;
     ComObjPtr<IDHCPServer> dhcpServer;
 #endif
-    Bstr IPv4Gateway;
-    Bstr IPv4NetworkCidr;
-    Bstr IPv4NetworkMask;
-    Bstr IPv4DhcpServer;
-    Bstr IPv4DhcpServerLowerIp;
-    Bstr IPv4DhcpServerUpperIp;
+    com::Utf8Str IPv4Gateway;
+    com::Utf8Str IPv4NetworkCidr;
+    com::Utf8Str IPv4NetworkMask;
+    com::Utf8Str IPv4DhcpServer;
+    com::Utf8Str IPv4DhcpServerLowerIp;
+    com::Utf8Str IPv4DhcpServerUpperIp;
     BOOL fEnabled;
     BOOL fIPv6Enabled;
-    Bstr IPv6Prefix;
+    com::Utf8Str IPv6Prefix;
     BOOL fAdvertiseDefaultIPv6Route;
     BOOL fNeedDhcpServer;
     NATRuleMap mapName2PortForwardRule4;
     NATRuleMap mapName2PortForwardRule6;
-    settings::NATLoopbackOffsetList llNATLoopbackOffsetList;
+    settings::NATLoopbackOffsetList maNATLoopbackOffsetList;
     uint32_t u32LoopbackIp6;
     uint32_t offGateway;
     uint32_t offDhcp;
@@ -128,10 +126,9 @@ void NATNetwork::uninit()
     unconst(mVirtualBox) = NULL;
 }
 
-
-HRESULT NATNetwork::init(VirtualBox *aVirtualBox, IN_BSTR aName)
+HRESULT NATNetwork::init(VirtualBox *aVirtualBox, com::Utf8Str aName)
 {
-    AssertReturn(aName != NULL, E_INVALIDARG);
+    AssertReturn(!aName.isEmpty(), E_INVALIDARG);
 
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -147,9 +144,9 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox, IN_BSTR aName)
     settings::NATHostLoopbackOffset off;
     off.strLoopbackHostAddress = "127.0.0.1";
     off.u32Offset = (uint32_t)2;
-    m->llNATLoopbackOffsetList.push_back(off);
+    m->maNATLoopbackOffsetList.push_back(off);
 
-    recalculateIpv4AddressAssignments();
+    i_recalculateIpv4AddressAssignments();
 
     HRESULT hrc = unconst(m->pEventSource).createObject();
     if (FAILED(hrc)) throw hrc;
@@ -184,11 +181,11 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox,
 
     m->u32LoopbackIp6 = data.u32HostLoopback6Offset;
 
-    m->llNATLoopbackOffsetList.clear();
-    m->llNATLoopbackOffsetList.assign(data.llHostLoopbackOffsetList.begin(),
+    m->maNATLoopbackOffsetList.clear();
+    m->maNATLoopbackOffsetList.assign(data.llHostLoopbackOffsetList.begin(),
                                data.llHostLoopbackOffsetList.end());
 
-    recalculateIpv4AddressAssignments();
+    i_recalculateIpv4AddressAssignments();
 
     /* IPv4 port-forward rules */
     m->mapName2PortForwardRule4.clear();
@@ -217,8 +214,7 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox,
     return S_OK;
 }
 
-
-HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
+HRESULT NATNetwork::i_saveSettings(settings::NATNetwork &data)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -248,73 +244,50 @@ HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
     data.u32HostLoopback6Offset = m->u32LoopbackIp6;
 
     data.llHostLoopbackOffsetList.clear();
-    data.llHostLoopbackOffsetList.assign(m->llNATLoopbackOffsetList.begin(),
-                                         m->llNATLoopbackOffsetList.end());
+    data.llHostLoopbackOffsetList.assign(m->maNATLoopbackOffsetList.begin(),
+                                         m->maNATLoopbackOffsetList.end());
 
-    mVirtualBox->onNATNetworkSetting(mName.raw(),
+    mVirtualBox->onNATNetworkSetting(Bstr(mName).raw(),
                                      data.fEnabled ? TRUE : FALSE,
-                                     m->IPv4NetworkCidr.raw(),
-                                     m->IPv4Gateway.raw(),
+                                     Bstr(m->IPv4NetworkCidr).raw(),
+                                     Bstr(m->IPv4Gateway).raw(),
                                      data.fAdvertiseDefaultIPv6Route ? TRUE : FALSE,
                                      data.fNeedDhcpServer ? TRUE : FALSE);
 
     /* Notify listerners listening on this network only */
     fireNATNetworkSettingEvent(m->pEventSource,
-                                     mName.raw(),
-                                     data.fEnabled ? TRUE : FALSE,
-                                     m->IPv4NetworkCidr.raw(),
-                                     m->IPv4Gateway.raw(),
-                                     data.fAdvertiseDefaultIPv6Route ? TRUE : FALSE,
-                                     data.fNeedDhcpServer ? TRUE : FALSE);
+                               Bstr(mName).raw(),
+                               data.fEnabled ? TRUE : FALSE,
+                               Bstr(m->IPv4NetworkCidr).raw(),
+                               Bstr(m->IPv4Gateway).raw(),
+                               data.fAdvertiseDefaultIPv6Route ? TRUE : FALSE,
+                               data.fNeedDhcpServer ? TRUE : FALSE);
 
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::COMGETTER(EventSource)(IEventSource ** aEventSource)
+HRESULT NATNetwork::getEventSource(ComPtr<IEventSource> &aEventSource)
 {
-    CheckComArgOutPointerValid(aEventSource);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* event source is const, no need to lock */
-    m->pEventSource.queryInterfaceTo(aEventSource);
-
+    m->pEventSource.queryInterfaceTo(aEventSource.asOutParam());
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::COMGETTER(NetworkName)(BSTR *aName)
+HRESULT NATNetwork::getNetworkName(com::Utf8Str &aNetworkName)
 {
-    CheckComArgOutPointerValid(aName);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    mName.cloneTo(aName);
-
+    aNetworkName = mName;
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::COMSETTER(NetworkName)(IN_BSTR aName)
+HRESULT NATNetwork::setNetworkName(const com::Utf8Str &aNetworkName)
 {
-    CheckComArgOutPointerValid(aName);
-    AutoCaller autoCaller(this);
-
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-        if (aName == mName)
+        if (aNetworkName == mName)
             return S_OK;
 
-        unconst(mName) = aName;
+        unconst(mName) = aNetworkName;
     }
-
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = mVirtualBox->saveSettings();
     ComAssertComRCRetRC(rc);
@@ -322,77 +295,46 @@ STDMETHODIMP NATNetwork::COMSETTER(NetworkName)(IN_BSTR aName)
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::COMGETTER(Enabled)(BOOL *aEnabled)
+HRESULT NATNetwork::getEnabled(BOOL *aEnabled)
 {
-    CheckComArgOutPointerValid(aEnabled);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     *aEnabled = m->fEnabled;
-    recalculateIpv4AddressAssignments();
 
+    i_recalculateIpv4AddressAssignments();
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::COMSETTER(Enabled)(BOOL aEnabled)
+HRESULT NATNetwork::setEnabled(const BOOL aEnabled)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
         if (aEnabled == m->fEnabled)
             return S_OK;
-
         m->fEnabled = aEnabled;
     }
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = mVirtualBox->saveSettings();
     ComAssertComRCRetRC(rc);
+    return S_OK;
+}
 
+HRESULT NATNetwork::getGateway(com::Utf8Str &aIPv4Gateway)
+{
+    aIPv4Gateway = m->IPv4Gateway;
+    return S_OK;
+}
+
+HRESULT NATNetwork::getNetwork(com::Utf8Str &aNetwork)
+{
+    aNetwork = m->IPv4NetworkCidr;
     return S_OK;
 }
 
 
-STDMETHODIMP NATNetwork::COMGETTER(Gateway)(BSTR *aIPv4Gateway)
+HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
 {
-    CheckComArgOutPointerValid(aIPv4Gateway);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    m->IPv4Gateway.cloneTo(aIPv4Gateway);
-
-    return S_OK;
-}
-
-
-STDMETHODIMP NATNetwork::COMGETTER(Network)(BSTR *aIPv4NetworkCidr)
-{
-    CheckComArgOutPointerValid(aIPv4NetworkCidr);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-    m->IPv4NetworkCidr.cloneTo(aIPv4NetworkCidr);
-    return S_OK;
-}
-
-
-STDMETHODIMP NATNetwork::COMSETTER(Network)(IN_BSTR aIPv4NetworkCidr)
-{
-    CheckComArgOutPointerValid(aIPv4NetworkCidr);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
     {
+
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (aIPv4NetworkCidr == m->IPv4NetworkCidr)
@@ -405,37 +347,28 @@ STDMETHODIMP NATNetwork::COMSETTER(Network)(IN_BSTR aIPv4NetworkCidr)
         if (!m->mapName2PortForwardRule4.empty())
             return S_OK;
 
-        unconst(m->IPv4NetworkCidr) = Bstr(aIPv4NetworkCidr);
-        recalculateIpv4AddressAssignments();
+
+        unconst(m->IPv4NetworkCidr) = aIPv4NetworkCidr;
+        i_recalculateIpv4AddressAssignments();
     }
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = mVirtualBox->saveSettings();
     ComAssertComRCRetRC(rc);
-
     return S_OK;
 }
 
 
-STDMETHODIMP NATNetwork::COMGETTER(IPv6Enabled)(BOOL *aIPv6Enabled)
+HRESULT NATNetwork::getIPv6Enabled(BOOL *aIPv6Enabled)
 {
-    CheckComArgOutPointerValid(aIPv6Enabled);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     *aIPv6Enabled = m->fIPv6Enabled;
 
     return S_OK;
 }
 
 
-STDMETHODIMP NATNetwork::COMSETTER(IPv6Enabled)(BOOL aIPv6Enabled)
+HRESULT NATNetwork::setIPv6Enabled(const BOOL aIPv6Enabled)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -453,28 +386,16 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Enabled)(BOOL aIPv6Enabled)
 }
 
 
-STDMETHODIMP NATNetwork::COMGETTER(IPv6Prefix) (BSTR *aIPv6Prefix)
+HRESULT NATNetwork::getIPv6Prefix(com::Utf8Str &aIPv6Prefix)
 {
-    CheckComArgOutPointerValid(aIPv6Prefix);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->IPv6Prefix.cloneTo(aIPv6Prefix);
-
+    aIPv6Prefix = m->IPv6Prefix;
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::COMSETTER(IPv6Prefix) (IN_BSTR aIPv6Prefix)
+HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
 {
-    CheckComArgOutPointerValid(aIPv6Prefix);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -498,25 +419,16 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Prefix) (IN_BSTR aIPv6Prefix)
 }
 
 
-STDMETHODIMP NATNetwork::COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(BOOL *aAdvertiseDefaultIPv6Route)
+HRESULT NATNetwork::getAdvertiseDefaultIPv6RouteEnabled(BOOL *aAdvertiseDefaultIPv6Route)
 {
-    CheckComArgOutPointerValid(aAdvertiseDefaultIPv6Route);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     *aAdvertiseDefaultIPv6Route = m->fAdvertiseDefaultIPv6Route;
 
     return S_OK;
 }
 
 
-STDMETHODIMP NATNetwork::COMSETTER(AdvertiseDefaultIPv6RouteEnabled)(BOOL aAdvertiseDefaultIPv6Route)
+HRESULT NATNetwork::setAdvertiseDefaultIPv6RouteEnabled(const BOOL aAdvertiseDefaultIPv6Route)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -535,25 +447,15 @@ STDMETHODIMP NATNetwork::COMSETTER(AdvertiseDefaultIPv6RouteEnabled)(BOOL aAdver
 }
 
 
-STDMETHODIMP NATNetwork::COMGETTER(NeedDhcpServer)(BOOL *aNeedDhcpServer)
+HRESULT NATNetwork::getNeedDhcpServer(BOOL *aNeedDhcpServer)
 {
-    CheckComArgOutPointerValid(aNeedDhcpServer);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     *aNeedDhcpServer = m->fNeedDhcpServer;
 
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::COMSETTER(NeedDhcpServer)(BOOL aNeedDhcpServer)
+HRESULT NATNetwork::setNeedDhcpServer(const BOOL aNeedDhcpServer)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -562,7 +464,7 @@ STDMETHODIMP NATNetwork::COMSETTER(NeedDhcpServer)(BOOL aNeedDhcpServer)
 
         m->fNeedDhcpServer = aNeedDhcpServer;
 
-        recalculateIpv4AddressAssignments();
+        i_recalculateIpv4AddressAssignments();
 
     }
 
@@ -573,41 +475,25 @@ STDMETHODIMP NATNetwork::COMSETTER(NeedDhcpServer)(BOOL aNeedDhcpServer)
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::COMGETTER(LocalMappings)(ComSafeArrayOut(BSTR, aLocalMappings))
+HRESULT NATNetwork::getLocalMappings(std::vector<com::Utf8Str> &aLocalMappings)
 {
-    CheckComArgOutSafeArrayPointerValid(aLocalMappings);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    com::SafeArray<BSTR> sf(m->llNATLoopbackOffsetList.size());
-
+    aLocalMappings.resize(m->maNATLoopbackOffsetList.size());
     size_t i = 0;
-    settings::NATLoopbackOffsetList::const_iterator it;
-
-    for (it = m->llNATLoopbackOffsetList.begin();
-         it != m->llNATLoopbackOffsetList.end(); ++it, ++i)
-      {
-          BstrFmt bstr("%s=%d",
-                       (*it).strLoopbackHostAddress.c_str(),
-                       (*it).u32Offset);
-        bstr.detachTo(&sf[i]);
+    for (settings::NATLoopbackOffsetList::const_iterator it = m->maNATLoopbackOffsetList.begin();
+         it != m->maNATLoopbackOffsetList.end(); ++it, ++i)
+    {
+        aLocalMappings[i] = Utf8StrFmt("%s;%d",
+                            (*it).strLoopbackHostAddress.c_str(),
+                            (*it).u32Offset);
     }
-    sf.detachTo(ComSafeArrayOutArg(aLocalMappings));
 
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
+HRESULT NATNetwork::addLocalMapping(const com::Utf8Str &aHostId, LONG aOffset)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    //AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     RTNETADDRIPV4 addr, net, mask;
 
     int rc = RTNetStrToIPv4Addr(Utf8Str(aHostId).c_str(), &addr);
@@ -628,21 +514,20 @@ STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
 
     settings::NATLoopbackOffsetList::iterator it;
 
-    it = std::find(m->llNATLoopbackOffsetList.begin(),
-                   m->llNATLoopbackOffsetList.end(),
-                   Utf8Str(aHostId).c_str());
-
-    if (it != m->llNATLoopbackOffsetList.end())
+    it = std::find(m->maNATLoopbackOffsetList.begin(),
+                   m->maNATLoopbackOffsetList.end(),
+                   aHostId);
+    if (it != m->maNATLoopbackOffsetList.end())
     {
         if (aOffset == 0) /* erase */
-            m->llNATLoopbackOffsetList.erase(it, it);
+            m->maNATLoopbackOffsetList.erase(it, it);
         else /* modify */
         {
             settings::NATLoopbackOffsetList::iterator it1;
-            it1 = std::find(m->llNATLoopbackOffsetList.begin(),
-                           m->llNATLoopbackOffsetList.end(),
+            it1 = std::find(m->maNATLoopbackOffsetList.begin(),
+                           m->maNATLoopbackOffsetList.end(),
                            (uint32_t)aOffset);
-            if (it1 != m->llNATLoopbackOffsetList.end())
+            if (it1 != m->maNATLoopbackOffsetList.end())
                 return E_INVALIDARG; /* this offset is already registered. */
 
             (*it).u32Offset = aOffset;
@@ -653,27 +538,25 @@ STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
     }
 
     /* injection */
-    it = std::find(m->llNATLoopbackOffsetList.begin(),
-                   m->llNATLoopbackOffsetList.end(),
+    it = std::find(m->maNATLoopbackOffsetList.begin(),
+                   m->maNATLoopbackOffsetList.end(),
                    (uint32_t)aOffset);
 
-    if (it != m->llNATLoopbackOffsetList.end())
+    if (it != m->maNATLoopbackOffsetList.end())
         return E_INVALIDARG; /* offset is already registered. */
 
     settings::NATHostLoopbackOffset off;
     off.strLoopbackHostAddress = aHostId;
     off.u32Offset = (uint32_t)aOffset;
-    m->llNATLoopbackOffsetList.push_back(off);
+    m->maNATLoopbackOffsetList.push_back(off);
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     return mVirtualBox->saveSettings();
 }
 
 
-STDMETHODIMP NATNetwork::COMGETTER(LoopbackIp6)(LONG *aLoopbackIp6)
+HRESULT NATNetwork::getLoopbackIp6(LONG *aLoopbackIp6)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aLoopbackIp6 = m->u32LoopbackIp6;
@@ -681,12 +564,8 @@ STDMETHODIMP NATNetwork::COMGETTER(LoopbackIp6)(LONG *aLoopbackIp6)
 }
 
 
-STDMETHODIMP NATNetwork::COMSETTER(LoopbackIp6)(LONG aLoopbackIp6)
+HRESULT NATNetwork::setLoopbackIp6(LONG aLoopbackIp6)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -704,45 +583,30 @@ STDMETHODIMP NATNetwork::COMSETTER(LoopbackIp6)(LONG aLoopbackIp6)
 }
 
 
-STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules4)(ComSafeArrayOut(BSTR, aPortForwardRules4))
+HRESULT NATNetwork::getPortForwardRules4(std::vector<com::Utf8Str> &aPortForwardRules4)
 {
-    CheckComArgOutSafeArrayPointerValid(aPortForwardRules4);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    GetPortForwardRulesFromMap(ComSafeArrayInArg(aPortForwardRules4),
-                               m->mapName2PortForwardRule4);
+    i_getPortForwardRulesFromMap(aPortForwardRules4,
+                                 m->mapName2PortForwardRule4);
     return S_OK;
 }
 
-STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules6)(ComSafeArrayOut(BSTR,
-                                                                      aPortForwardRules6))
+HRESULT NATNetwork::getPortForwardRules6(std::vector<com::Utf8Str> &aPortForwardRules6)
 {
-    CheckComArgOutSafeArrayPointerValid(aPortForwardRules6);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    GetPortForwardRulesFromMap(ComSafeArrayInArg(aPortForwardRules6), m->mapName2PortForwardRule6);
+    i_getPortForwardRulesFromMap(aPortForwardRules6,
+                                 m->mapName2PortForwardRule6);
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
-                                            IN_BSTR aPortForwardRuleName,
-                                            NATProtocol_T aProto,
-                                            IN_BSTR aHostIp,
-                                            USHORT aHostPort,
-                                            IN_BSTR aGuestIp,
-                                            USHORT aGuestPort)
+HRESULT NATNetwork::addPortForwardRule(BOOL aIsIpv6,
+                                       const com::Utf8Str &aPortForwardRuleName,
+                                       NATProtocol_T aProto,
+                                       const com::Utf8Str &aHostIp,
+                                       USHORT aHostPort,
+                                       const com::Utf8Str &aGuestIp,
+                                       USHORT aGuestPort)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         Utf8Str name = aPortForwardRuleName;
@@ -762,18 +626,16 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
         }
         if (name.isEmpty())
             name = Utf8StrFmt("%s_[%s]%%%d_[%s]%%%d", proto.c_str(),
-                              Utf8Str(aHostIp).c_str(), aHostPort,
-                              Utf8Str(aGuestIp).c_str(), aGuestPort);
+                              aHostIp.c_str(), aHostPort,
+                              aGuestIp.c_str(), aGuestPort);
 
-        NATRuleMap::iterator it;
-
-        for (it = mapRules.begin(); it != mapRules.end(); ++it)
+        for (NATRuleMap::iterator it = mapRules.begin(); it != mapRules.end(); ++it)
         {
             r = it->second;
             if (it->first == name)
                 return setError(E_INVALIDARG,
                                 tr("A NAT rule of this name already exists"));
-            if (   r.strHostIP == Utf8Str(aHostIp)
+            if (   r.strHostIP == aHostIp
                    && r.u16HostPort == aHostPort
                    && r.proto == aProto)
                 return setError(E_INVALIDARG,
@@ -788,45 +650,37 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
         r.u16GuestPort = aGuestPort;
         mapRules.insert(std::make_pair(name, r));
     }
-
     {
         AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
         HRESULT rc = mVirtualBox->saveSettings();
         ComAssertComRCRetRC(rc);
     }
 
-    mVirtualBox->onNATNetworkPortForward(mName.raw(), TRUE, aIsIpv6,
-                                         aPortForwardRuleName, aProto,
-                                         aHostIp, aHostPort,
-                                         aGuestIp, aGuestPort);
+    mVirtualBox->onNATNetworkPortForward(Bstr(mName).raw(), TRUE, aIsIpv6,
+                                         Bstr(aPortForwardRuleName).raw(), aProto,
+                                         Bstr(aHostIp).raw(), aHostPort,
+                                         Bstr(aGuestIp).raw(), aGuestPort);
 
     /* Notify listerners listening on this network only */
-    fireNATNetworkPortForwardEvent(m->pEventSource, mName.raw(), TRUE,
-                                   aIsIpv6, aPortForwardRuleName, aProto,
-                                   aHostIp, aHostPort,
-                                   aGuestIp, aGuestPort);
+    fireNATNetworkPortForwardEvent(m->pEventSource, Bstr(mName).raw(), TRUE,
+                                   aIsIpv6, Bstr(aPortForwardRuleName).raw(), aProto,
+                                   Bstr(aHostIp).raw(), aHostPort,
+                                   Bstr(aGuestIp).raw(), aGuestPort);
+
     return S_OK;
 }
 
-
-STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwardRuleName)
+HRESULT NATNetwork::removePortForwardRule(BOOL aIsIpv6, const com::Utf8Str &aPortForwardRuleName)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
     Utf8Str strHostIP;
     Utf8Str strGuestIP;
     uint16_t u16HostPort;
     uint16_t u16GuestPort;
     NATProtocol_T proto;
 
-
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        NATRuleMap& mapRules = aIsIpv6 ? m->mapName2PortForwardRule6
-          : m->mapName2PortForwardRule4;
-
+        NATRuleMap& mapRules = aIsIpv6 ? m->mapName2PortForwardRule6 : m->mapName2PortForwardRule4;
         NATRuleMap::iterator it = mapRules.find(aPortForwardRuleName);
 
         if (it == mapRules.end())
@@ -847,26 +701,23 @@ STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwar
         ComAssertComRCRetRC(rc);
     }
 
-    mVirtualBox->onNATNetworkPortForward(mName.raw(), FALSE, aIsIpv6,
-                                         aPortForwardRuleName, proto,
+    mVirtualBox->onNATNetworkPortForward(Bstr(mName).raw(), FALSE, aIsIpv6,
+                                         Bstr(aPortForwardRuleName).raw(), proto,
                                          Bstr(strHostIP).raw(), u16HostPort,
                                          Bstr(strGuestIP).raw(), u16GuestPort);
 
     /* Notify listerners listening on this network only */
-    fireNATNetworkPortForwardEvent(m->pEventSource, mName.raw(), FALSE,
-                                   aIsIpv6, aPortForwardRuleName, proto,
+    fireNATNetworkPortForwardEvent(m->pEventSource, Bstr(mName).raw(), FALSE,
+                                   aIsIpv6, Bstr(aPortForwardRuleName).raw(), proto,
                                    Bstr(strHostIP).raw(), u16HostPort,
                                    Bstr(strGuestIP).raw(), u16GuestPort);
     return S_OK;
 }
 
 
-STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
+HRESULT  NATNetwork::start(const com::Utf8Str &aTrunkType)
 {
 #ifdef VBOX_WITH_NAT_SERVICE
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     if (!m->fEnabled) return S_OK;
 
     m->NATRunner.setOption(NetworkServiceRunner::kNsrKeyNetwork, Utf8Str(mName).c_str());
@@ -892,13 +743,13 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
          * 5. call setConfiguration() and pass all required parameters
          * 6. start dhcp server.
          */
-        HRESULT hrc = mVirtualBox->FindDHCPServerByNetworkName(mName.raw(),
-                                                      m->dhcpServer.asOutParam());
+        HRESULT hrc = mVirtualBox->FindDHCPServerByNetworkName(Bstr(mName).raw(),
+                                                               m->dhcpServer.asOutParam());
         switch (hrc)
         {
             case E_INVALIDARG:
                 /* server haven't beeen found let create it then */
-                hrc = mVirtualBox->CreateDHCPServer(mName.raw(),
+                hrc = mVirtualBox->CreateDHCPServer(Bstr(mName).raw(),
                                                    m->dhcpServer.asOutParam());
                 if (FAILED(hrc))
                   return E_FAIL;
@@ -906,10 +757,10 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
 
             {
                 LogFunc(("gateway: %s, dhcpserver:%s, dhcplowerip:%s, dhcpupperip:%s\n",
-                         Utf8Str(m->IPv4Gateway.raw()).c_str(),
-                         Utf8Str(m->IPv4DhcpServer.raw()).c_str(),
-                         Utf8Str(m->IPv4DhcpServerLowerIp.raw()).c_str(),
-                         Utf8Str(m->IPv4DhcpServerUpperIp.raw()).c_str()));
+                         m->IPv4Gateway.c_str(),
+                         m->IPv4DhcpServer.c_str(),
+                         m->IPv4DhcpServerLowerIp.c_str(),
+                         m->IPv4DhcpServerUpperIp.c_str()));
 
                 hrc = m->dhcpServer->COMSETTER(Enabled)(true);
 
@@ -935,9 +786,9 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
         }
 
         /* XXX: AddGlobalOption(DhcpOpt_Router,) - enables attachement of DhcpServer to Main. */
-        m->dhcpServer->AddGlobalOption(DhcpOpt_Router, m->IPv4Gateway.raw());
+        m->dhcpServer->AddGlobalOption(DhcpOpt_Router, Bstr(m->IPv4Gateway).raw());
 
-        hrc = m->dhcpServer->Start(mName.raw(), Bstr("").raw(), aTrunkType);
+        hrc = m->dhcpServer->Start(Bstr(mName).raw(), Bstr("").raw(), Bstr(aTrunkType).raw());
         if (FAILED(hrc))
         {
             m->dhcpServer.setNull();
@@ -947,7 +798,7 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
 
     if (RT_SUCCESS(m->NATRunner.start()))
     {
-        mVirtualBox->onNATNetworkStartStop(mName.raw(), TRUE);
+        mVirtualBox->onNATNetworkStartStop(Bstr(mName).raw(), TRUE);
         return S_OK;
     }
     /** @todo missing setError()! */
@@ -958,8 +809,7 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
 #endif
 }
 
-
-STDMETHODIMP NATNetwork::Stop()
+HRESULT NATNetwork::stop()
 {
 #ifdef VBOX_WITH_NAT_SERVICE
     if (!m->dhcpServer.isNull())
@@ -967,7 +817,7 @@ STDMETHODIMP NATNetwork::Stop()
 
     if (RT_SUCCESS(m->NATRunner.stop()))
     {
-        mVirtualBox->onNATNetworkStartStop(mName.raw(), FALSE);
+        mVirtualBox->onNATNetworkStartStop(Bstr(mName).raw(), FALSE);
         return S_OK;
     }
     /** @todo missing setError()! */
@@ -978,45 +828,40 @@ STDMETHODIMP NATNetwork::Stop()
 }
 
 
-void NATNetwork::GetPortForwardRulesFromMap(ComSafeArrayOut(BSTR, aPortForwardRules), NATRuleMap& aRules)
+void NATNetwork::i_getPortForwardRulesFromMap(std::vector<com::Utf8Str> &aPortForwardRules, NATRuleMap& aRules)
 {
-    com::SafeArray<BSTR> sf(aRules.size());
+    aPortForwardRules.resize(aRules.size());
     size_t i = 0;
-    NATRuleMap::const_iterator it;
-    for (it = aRules.begin();
+    for (NATRuleMap::const_iterator it = aRules.begin();
          it != aRules.end(); ++it, ++i)
       {
         settings::NATRule r = it->second;
-        BstrFmt bstr("%s:%s:[%s]:%d:[%s]:%d",
-                     r.strName.c_str(),
-                     (r.proto == NATProtocol_TCP? "tcp" : "udp"),
-                     r.strHostIP.c_str(),
-                     r.u16HostPort,
-                     r.strGuestIP.c_str(),
-                     r.u16GuestPort);
-        bstr.detachTo(&sf[i]);
+        aPortForwardRules[i] =  Utf8StrFmt("%s:%s:[%s]:%d:[%s]:%d",
+                                           r.strName.c_str(),
+                                           (r.proto == NATProtocol_TCP? "tcp" : "udp"),
+                                           r.strHostIP.c_str(),
+                                           r.u16HostPort,
+                                           r.strGuestIP.c_str(),
+                                           r.u16GuestPort);
     }
-    sf.detachTo(ComSafeArrayOutArg(aPortForwardRules));
 }
 
 
-int NATNetwork::findFirstAvailableOffset(ADDRESSLOOKUPTYPE addrType, uint32_t *poff)
+int NATNetwork::i_findFirstAvailableOffset(ADDRESSLOOKUPTYPE addrType, uint32_t *poff)
 {
     RTNETADDRIPV4 network, netmask;
 
-    int rc = RTCidrStrToIPv4(Utf8Str(m->IPv4NetworkCidr.raw()).c_str(),
+    int rc = RTCidrStrToIPv4(m->IPv4NetworkCidr.c_str(),
                              &network,
                              &netmask);
     AssertRCReturn(rc, rc);
 
     uint32_t off;
-    settings::NATLoopbackOffsetList::iterator it;
     for (off = 1; off < ~netmask.u; ++off)
     {
-
         bool skip = false;
-        for (it = m->llNATLoopbackOffsetList.begin();
-             it != m->llNATLoopbackOffsetList.end();
+        for (settings::NATLoopbackOffsetList::iterator it = m->maNATLoopbackOffsetList.begin();
+             it != m->maNATLoopbackOffsetList.end();
              ++it)
         {
             if ((*it).u32Offset == off)
@@ -1056,18 +901,17 @@ int NATNetwork::findFirstAvailableOffset(ADDRESSLOOKUPTYPE addrType, uint32_t *p
     return VINF_SUCCESS;
 }
 
-
-int NATNetwork::recalculateIpv4AddressAssignments()
+int NATNetwork::i_recalculateIpv4AddressAssignments()
 {
     RTNETADDRIPV4 network, netmask;
-    int rc = RTCidrStrToIPv4(Utf8Str(m->IPv4NetworkCidr.raw()).c_str(),
+    int rc = RTCidrStrToIPv4(m->IPv4NetworkCidr.c_str(),
                              &network,
                              &netmask);
     AssertRCReturn(rc, rc);
 
-    findFirstAvailableOffset(ADDR_GATEWAY, &m->offGateway);
+    i_findFirstAvailableOffset(ADDR_GATEWAY, &m->offGateway);
     if (m->fNeedDhcpServer)
-        findFirstAvailableOffset(ADDR_DHCP, &m->offDhcp);
+        i_findFirstAvailableOffset(ADDR_DHCP, &m->offDhcp);
 
     /* I don't remember the reason CIDR calculated on the host. */
     RTNETADDRIPV4 gateway = network;
@@ -1085,7 +929,7 @@ int NATNetwork::recalculateIpv4AddressAssignments()
         /* XXX: adding more services should change the math here */
         RTNETADDRIPV4 dhcplowerip = network;
         uint32_t offDhcpLowerIp;
-        findFirstAvailableOffset(ADDR_DHCPLOWERIP, &offDhcpLowerIp);
+        i_findFirstAvailableOffset(ADDR_DHCPLOWERIP, &offDhcpLowerIp);
         dhcplowerip.u = RT_H2N_U32(dhcplowerip.u + offDhcpLowerIp);
 
         RTNETADDRIPV4 dhcpupperip;

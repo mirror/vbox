@@ -68,7 +68,6 @@
 # include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 #include "EventImpl.h"
-#include "VBoxEvents.h"
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
@@ -427,7 +426,7 @@ HRESULT VirtualBox::init()
         rc = m->pHost->init(this);
         ComAssertComRCThrowRC(rc);
 
-        rc = m->pHost->loadSettings(m->pMainConfigFile->host);
+        rc = m->pHost->i_loadSettings(m->pMainConfigFile->host);
         if (FAILED(rc)) throw rc;
 
         /*
@@ -3689,10 +3688,10 @@ HRESULT VirtualBox::findRemoveableMedium(DeviceType_T mediumType,
     }
 
     // first search for host drive with that UUID
-    HRESULT rc = m->pHost->findHostDriveById(mediumType,
-                                             uuid,
-                                             fRefresh,
-                                             pMedium);
+    HRESULT rc = m->pHost->i_findHostDriveById(mediumType,
+                                               uuid,
+                                               fRefresh,
+                                               pMedium);
     if (rc == VBOX_E_OBJECT_NOT_FOUND)
                 // then search for an image with that UUID
         rc = findDVDOrFloppyImage(mediumType, &uuid, Utf8Str::Empty, aSetError, &pMedium);
@@ -4254,7 +4253,7 @@ HRESULT VirtualBox::saveSettings()
                  ++it)
             {
                 settings::NATNetwork n;
-                rc = (*it)->saveSettings(n);
+                rc = (*it)->i_saveSettings(n);
                 if (FAILED(rc)) throw rc;
                 m->pMainConfigFile->llNATNetworks.push_back(n);
             }
@@ -4264,7 +4263,7 @@ HRESULT VirtualBox::saveSettings()
         // leave extra data alone, it's still in the config file
 
         // host data (USB filters)
-        rc = m->pHost->saveSettings(m->pMainConfigFile->host);
+        rc = m->pHost->i_saveSettings(m->pMainConfigFile->host);
         if (FAILED(rc)) throw rc;
 
         rc = m->pSystemProperties->saveSettings(m->pMainConfigFile->systemProperties);

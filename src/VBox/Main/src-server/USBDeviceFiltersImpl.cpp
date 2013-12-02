@@ -389,7 +389,7 @@ STDMETHODIMP USBDeviceFilters::InsertDeviceFilter(ULONG aPosition,
     if (pFilter->getData().mActive && Global::IsOnline(adep.machineState())
         && pFilter->getData().mRemote.isMatch(false))
     {
-        USBProxyService *pProxySvc = m->pHost->usbProxyService();
+        USBProxyService *pProxySvc = m->pHost->i_usbProxyService();
         ComAssertRet(pProxySvc, E_FAIL);
 
         ComAssertRet(pFilter->getId() == NULL, E_FAIL);
@@ -461,7 +461,7 @@ STDMETHODIMP USBDeviceFilters::RemoveDeviceFilter(ULONG aPosition,
     if (pFilter->getData().mActive && Global::IsOnline(adep.machineState())
         && pFilter->getData().mRemote.isMatch(false))
     {
-        USBProxyService *pProxySvc = m->pHost->usbProxyService();
+        USBProxyService *pProxySvc = m->pHost->i_usbProxyService();
         ComAssertRet(pProxySvc, E_FAIL);
 
         ComAssertRet(pFilter->getId() != NULL, E_FAIL);
@@ -601,7 +601,7 @@ void USBDeviceFilters::rollback()
 
     if (m->llDeviceFilters.isBackedUp())
     {
-        USBProxyService *pProxySvc = m->pHost->usbProxyService();
+        USBProxyService *pProxySvc = m->pHost->i_usbProxyService();
         Assert(pProxySvc);
 
         /* uninitialize all new filters (absent in the backed up list) */
@@ -843,7 +843,7 @@ HRESULT USBDeviceFilters::onDeviceFilterChange(USBDeviceFilter *aFilter,
     if (    aFilter->mInList
          && m->pParent->isRegistered())
     {
-        USBProxyService *pProxySvc = m->pHost->usbProxyService();
+        USBProxyService *pProxySvc = m->pHost->i_usbProxyService();
         ComAssertRet(pProxySvc, E_FAIL);
 
         if (aActiveChanged)
@@ -1041,7 +1041,7 @@ HRESULT USBDeviceFilters::notifyProxy(bool aInsertFilters)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    USBProxyService *pProxySvc = m->pHost->usbProxyService();
+    USBProxyService *pProxySvc = m->pHost->i_usbProxyService();
     AssertReturn(pProxySvc, E_FAIL);
 
     DeviceFilterList::const_iterator it = m->llDeviceFilters->begin();
