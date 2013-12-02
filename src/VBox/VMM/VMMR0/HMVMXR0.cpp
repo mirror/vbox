@@ -4092,10 +4092,13 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         /* 64-bit capable CPUs. */
 # if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        Assert(!(pCtx->cs.u64Base >> 32));
-        Assert(!pCtx->ss.Attr.u || !(pCtx->ss.u64Base >> 32));
-        Assert(!pCtx->ds.Attr.u || !(pCtx->ds.u64Base >> 32));
-        Assert(!pCtx->es.Attr.u || !(pCtx->es.u64Base >> 32));
+        if (HMVMX_IS_64BIT_HOST_MODE())
+        {
+            Assert(!(pCtx->cs.u64Base >> 32));
+            Assert(!pCtx->ss.Attr.u || !(pCtx->ss.u64Base >> 32));
+            Assert(!pCtx->ds.Attr.u || !(pCtx->ds.u64Base >> 32));
+            Assert(!pCtx->es.Attr.u || !(pCtx->es.u64Base >> 32));
+        }
 # endif
     }
     else if (   CPUMIsGuestInV86ModeEx(pCtx)
@@ -4141,10 +4144,13 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(u32GSAttr == 0xf3);
         /* 64-bit capable CPUs. */
 # if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        Assert(!(pCtx->cs.u64Base >> 32));
-        Assert(!u32SSAttr || !(pCtx->ss.u64Base >> 32));
-        Assert(!u32DSAttr || !(pCtx->ds.u64Base >> 32));
-        Assert(!u32ESAttr || !(pCtx->es.u64Base >> 32));
+        if (HMVMX_IS_64BIT_HOST_MODE())
+        {
+            Assert(!(pCtx->cs.u64Base >> 32));
+            Assert(!u32SSAttr || !(pCtx->ss.u64Base >> 32));
+            Assert(!u32DSAttr || !(pCtx->ds.u64Base >> 32));
+            Assert(!u32ESAttr || !(pCtx->es.u64Base >> 32));
+        }
 # endif
     }
 }
