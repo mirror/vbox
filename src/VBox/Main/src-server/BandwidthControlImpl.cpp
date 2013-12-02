@@ -114,9 +114,9 @@ HRESULT BandwidthControl::init(Machine *aParent,
     /* create copies of all groups */
     m->llBandwidthGroups.allocate();
     BandwidthGroupList::const_iterator it;
-    for(it = aThat->m->llBandwidthGroups->begin();
-        it != aThat->m->llBandwidthGroups->end();
-        ++it)
+    for (it = aThat->m->llBandwidthGroups->begin();
+         it != aThat->m->llBandwidthGroups->end();
+         ++it)
     {
         ComObjPtr<BandwidthGroup> group;
         group.createObject();
@@ -156,9 +156,9 @@ HRESULT BandwidthControl::initCopy(Machine *aParent, BandwidthControl *aThat)
     /* create copies of all groups */
     m->llBandwidthGroups.allocate();
     BandwidthGroupList::const_iterator it;
-    for(it = aThat->m->llBandwidthGroups->begin();
-        it != aThat->m->llBandwidthGroups->end();
-        ++it)
+    for (it = aThat->m->llBandwidthGroups->begin();
+         it != aThat->m->llBandwidthGroups->end();
+         ++it)
     {
         ComObjPtr<BandwidthGroup> group;
         group.createObject();
@@ -177,23 +177,23 @@ HRESULT BandwidthControl::initCopy(Machine *aParent, BandwidthControl *aThat)
  *  @note Locks this object for writing, together with the peer object
  *  represented by @a aThat (locked for reading).
  */
-void BandwidthControl::i_copyFrom (BandwidthControl *aThat)
+void BandwidthControl::i_copyFrom(BandwidthControl *aThat)
 {
-    AssertReturnVoid (aThat != NULL);
+    AssertReturnVoid(aThat != NULL);
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (aThat);
-    AssertComRCReturnVoid (thatCaller.rc());
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnVoid(thatCaller.rc());
 
     /* even more sanity */
     AutoAnyStateDependency adep(m->pParent);
-    AssertComRCReturnVoid (adep.rc());
+    AssertComRCReturnVoid(adep.rc());
     /* Machine::copyFrom() may not be called when the VM is running */
-    AssertReturnVoid (!Global::IsOnline (adep.machineState()));
+    AssertReturnVoid(!Global::IsOnline(adep.machineState()));
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -204,13 +204,13 @@ void BandwidthControl::i_copyFrom (BandwidthControl *aThat)
     m->llBandwidthGroups.backup();
     m->llBandwidthGroups->clear();
     BandwidthGroupList::const_iterator it;
-    for(it = aThat->m->llBandwidthGroups->begin();
-        it != aThat->m->llBandwidthGroups->end();
-        ++it)
+    for (it = aThat->m->llBandwidthGroups->begin();
+         it != aThat->m->llBandwidthGroups->end();
+         ++it)
     {
         ComObjPtr<BandwidthGroup> group;
         group.createObject();
-        group->initCopy (this, *it);
+        group->initCopy(this, *it);
         m->llBandwidthGroups->push_back(group);
     }
 }
@@ -234,9 +234,9 @@ void BandwidthControl::i_rollback()
         {
             /* unitialize all new groups (absent in the backed up list). */
             BandwidthGroupList *backedList = m->llBandwidthGroups.backedUpData();
-            for(it  = m->llBandwidthGroups->begin();
-                it != m->llBandwidthGroups->end();
-                ++it)
+            for (it  = m->llBandwidthGroups->begin();
+                 it != m->llBandwidthGroups->end();
+                 ++it)
             {
                 if (   std::find(backedList->begin(), backedList->end(), *it)
                     == backedList->end())
@@ -248,9 +248,9 @@ void BandwidthControl::i_rollback()
         }
 
         /* rollback any changes to groups after restoring the list */
-        for(it = m->llBandwidthGroups->begin();
-            it != m->llBandwidthGroups->end();
-            ++it)
+        for (it = m->llBandwidthGroups->begin();
+             it != m->llBandwidthGroups->end();
+             ++it)
             (*it)->i_rollback();
     }
 }
@@ -271,7 +271,9 @@ void BandwidthControl::i_commit()
             /* Commit all changes to new controllers (this will reshare data with
              * peers for those who have peers) */
             BandwidthGroupList *newList = new BandwidthGroupList();
-            for(it = m->llBandwidthGroups->begin(); it != m->llBandwidthGroups->end(); ++it)
+            for (it = m->llBandwidthGroups->begin();
+                 it != m->llBandwidthGroups->end();
+                 ++it)
             {
                 (*it)->i_commit();
 
@@ -291,14 +293,12 @@ void BandwidthControl::i_commit()
                 }
                 /* and add it to the new list */
                 newList->push_back(peer);
-
-                ++it;
             }
 
             /* uninit old peer's controllers that are left */
-            for(it = m->pPeer->m->llBandwidthGroups->begin();
-                it != m->pPeer->m->llBandwidthGroups->end();
-                ++it)
+            for (it = m->pPeer->m->llBandwidthGroups->begin();
+                 it != m->pPeer->m->llBandwidthGroups->end();
+                 ++it)
                 (*it)->uninit();
 
             /* attach new list of controllers to our peer */
@@ -320,9 +320,9 @@ void BandwidthControl::i_commit()
 
     if (commitBandwidthGroups)
     {
-        for(it = m->llBandwidthGroups->begin();
-            it != m->llBandwidthGroups->end();
-            ++it)
+        for (it = m->llBandwidthGroups->begin();
+             it != m->llBandwidthGroups->end();
+             ++it)
             (*it)->i_commit();
     }
 }
@@ -481,9 +481,9 @@ HRESULT BandwidthControl::getAllBandwidthGroups(std::vector<ComPtr<IBandwidthGro
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     aBandwidthGroups.resize(0);
     BandwidthGroupList::const_iterator it;
-    for(it = m->llBandwidthGroups->begin();
-        it != m->llBandwidthGroups->end();
-        ++it)
+    for (it = m->llBandwidthGroups->begin();
+         it != m->llBandwidthGroups->end();
+         ++it)
         aBandwidthGroups.push_back(*it);
 
     return S_OK;
@@ -496,9 +496,9 @@ HRESULT BandwidthControl::i_loadSettings(const settings::IOSettings &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
     settings::BandwidthGroupList::const_iterator it;
-    for(it = data.llBandwidthGroups.begin();
-        it != data.llBandwidthGroups.end();
-        ++it)
+    for (it = data.llBandwidthGroups.begin();
+         it != data.llBandwidthGroups.end();
+         ++it)
     {
         const settings::BandwidthGroup &gr = *it;
         rc = createBandwidthGroup(gr.strName, gr.enmType, gr.cMaxBytesPerSec);
@@ -516,9 +516,9 @@ HRESULT BandwidthControl::i_saveSettings(settings::IOSettings &data)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     data.llBandwidthGroups.clear();
     BandwidthGroupList::const_iterator it;
-    for(it = m->llBandwidthGroups->begin();
-        it != m->llBandwidthGroups->end();
-        ++it)
+    for (it = m->llBandwidthGroups->begin();
+         it != m->llBandwidthGroups->end();
+         ++it)
     {
         AutoWriteLock groupLock(*it COMMA_LOCKVAL_SRC_POS);
         settings::BandwidthGroup group;
