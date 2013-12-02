@@ -79,6 +79,7 @@ struct pxping {
     SOCKET sock4;
     int ttl;
     int tos;
+    int df;
 
     SOCKET sock6;
 #ifdef RT_OS_WINDOWS
@@ -261,6 +262,7 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
     if (g_pxping.sock4 != INVALID_SOCKET) {
         g_pxping.ttl = -1;
         g_pxping.tos = 0;
+        g_pxping.df = -1;
 
         g_pxping.pmhdl4.callback = pxping_pmgr_pump;
         g_pxping.pmhdl4.data = (void *)&g_pxping;
@@ -480,6 +482,36 @@ pxping_recv4(void *arg, struct pbuf *p)
             perror("IP_TOS");
         }
     }
+
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
+    {
+        const int df_flag = IPH_OFFSET(iph) & PP_HTONS(IP_DF);
+
+#if   defined(RT_OS_LINUX)
+        const char * const dfoptname = "IP_MTU_DISCOVER";
+        const int dfopt = IP_MTU_DISCOVER;
+        int df = df_flag ? IP_PMTUDISC_PROBE : IP_PMTUDISC_DONT;
+#elif defined(RT_OS_SOLARIS)
+        const char * const dfoptname = "IP_DONTFRAG";
+        const int dfopt = IP_DONTFRAG;
+        int df = !!df_flag;
+#elif defined(RT_OS_WINDOWS)
+        const char * const dfoptname = "IP_DONTFRAGMENT";
+        const int dfopt = IP_DONTFRAGMENT;
+        DWORD df = !!df_flag;
+#endif
+        if (df != pxping->df) {
+            status = setsockopt(pxping->sock4, IPPROTO_IP, dfopt,
+                                (char *)&df, sizeof(df));
+            if (status == 0) {
+                pxping->df = df;
+            }
+            else {
+                perror(dfoptname);
+            }
+        }
+    }
+#endif /* don't fragment */
 
     proxy_sendto(pxping->sock4, p,
                  &pcb->peer.sin, sizeof(pcb->peer.sin));
