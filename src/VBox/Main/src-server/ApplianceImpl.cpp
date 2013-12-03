@@ -1507,10 +1507,13 @@ std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::i_findByType
  */
 void VirtualSystemDescription::i_removeByType(VirtualSystemDescriptionType_T aType)
 {
-    for (std::vector<VirtualSystemDescriptionEntry>::iterator it = m->maDescriptions.begin();  it != m->maDescriptions.end(); ++it)
+    std::vector<VirtualSystemDescriptionEntry>::iterator it = m->maDescriptions.begin();
+    while (it != m->maDescriptions.end())
     {
         if (it->type == aType)
             it = m->maDescriptions.erase(it);
+        else
+            ++it;
     }
 }
 

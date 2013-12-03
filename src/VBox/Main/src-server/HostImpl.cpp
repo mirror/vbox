@@ -515,7 +515,7 @@ void Host::uninit()
 /**
  * Returns a list of host DVD drives.
  *
- * @returns COM status code
+ * @returns status code
  * @param drives address of result pointer
  */
 
@@ -523,6 +523,7 @@ HRESULT Host::getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives)
 {
     AutoWriteLock alock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
     MediaList *pList;
+    aDVDDrives.resize(0);
     HRESULT rc = i_getDrives(DeviceType_DVD, true /* fRefresh */, pList);
     if (SUCCEEDED(rc))
     {
@@ -540,7 +541,7 @@ HRESULT Host::getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives)
 /**
  * Returns a list of host floppy drives.
  *
- * @returns COM status code
+ * @returns status code
  * @param drives address of result pointer
  */
 HRESULT Host::getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives)
@@ -548,6 +549,7 @@ HRESULT Host::getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives)
     AutoWriteLock alock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
+    aFloppyDrives.resize(0);
     HRESULT rc = i_getDrives(DeviceType_Floppy, true /* fRefresh */, pList);
     if (SUCCEEDED(rc))
     {
@@ -609,11 +611,12 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
 /**
  * Returns a list of host network interfaces.
  *
- * @returns COM status code
+ * @returns status code
  * @param drives address of result pointer
  */
 HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &aNetworkInterfaces)
 {
+    aNetworkInterfaces.resize(0);
 #if defined(RT_OS_WINDOWS) ||  defined(VBOX_WITH_NETFLT) /*|| defined(RT_OS_OS2)*/
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 # ifdef VBOX_WITH_HOSTNETIF_API
@@ -794,9 +797,9 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
 
 HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
 {
+    aUSBDevices.resize(0);
 #ifdef VBOX_WITH_USB
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    aUSBDevices.resize(0);
     HRESULT rc = i_checkUSBProxyService();
     if (FAILED(rc)) return rc;
     SafeIfaceArray<IHostUSBDevice> resultArr;
@@ -867,6 +870,7 @@ HRESULT Host::getSearchStrings(std::vector<com::Utf8Str> &aSearchStrings)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     com::SafeArray<BSTR> resultArr;
+    aSearchStrings.resize(0);
     resultArr.setNull();
     HRESULT rc = m->hostDnsMonitorProxy.GetSearchStrings(ComSafeArrayAsOutParam(resultArr));
     if (FAILED(rc)) return rc;
@@ -880,9 +884,9 @@ HRESULT Host::getSearchStrings(std::vector<com::Utf8Str> &aSearchStrings)
 
 HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aUSBDeviceFilters)
 {
+    aUSBDeviceFilters.resize(0);
 #ifdef VBOX_WITH_USB
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    aUSBDeviceFilters.resize(0);
     HRESULT rc = i_checkUSBProxyService();
     if (FAILED(rc)) return rc;
     aUSBDeviceFilters.resize(m->llUSBDeviceFilters.size());
@@ -908,7 +912,7 @@ HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aU
 /**
  * Returns the number of installed logical processors
  *
- * @returns VBOX status code
+ * @returns status code
  * @param   count address of result variable
  */
 
@@ -923,7 +927,7 @@ HRESULT Host::getProcessorCount(ULONG *aCount)
 /**
  * Returns the number of online logical processors
  *
- * @returns COM status code
+ * @returns status code
  * @param   count address of result variable
  */
 HRESULT Host::getProcessorOnlineCount(ULONG *aCount)
@@ -937,7 +941,7 @@ HRESULT Host::getProcessorOnlineCount(ULONG *aCount)
 /**
  * Returns the number of installed physical processor cores.
  *
- * @returns COM status code
+ * @returns status code
  * @param   count address of result variable
  */
 HRESULT Host::getProcessorCoreCount(ULONG *aCount)
@@ -951,7 +955,7 @@ HRESULT Host::getProcessorCoreCount(ULONG *aCount)
 /**
  * Returns the number of installed physical processor cores.
  *
- * @returns COM status code
+ * @returns status code
  * @param   count address of result variable
  */
 HRESULT Host::getProcessorOnlineCoreCount(ULONG *aCount)
@@ -965,7 +969,7 @@ HRESULT Host::getProcessorOnlineCoreCount(ULONG *aCount)
 /**
  * Returns the (approximate) maximum speed of the given host CPU in MHz
  *
- * @returns COM status code
+ * @returns status code
  * @param   cpu id to get info for.
  * @param   speed address of result variable, speed is 0 if unknown or aCpuId is invalid.
  */
@@ -981,7 +985,7 @@ HRESULT Host::getProcessorSpeed(ULONG aCpuId,
 /**
  * Returns a description string for the host CPU
  *
- * @returns COM status code
+ * @returns status code
  * @param   cpu id to get info for.
  * @param   description address of result variable, empty string if not known or aCpuId is invalid.
  */
@@ -990,7 +994,7 @@ HRESULT  Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
     // no locking required
 
     char szCPUModel[80];
-    szCPUModel[0] = *"\0";
+    szCPUModel[0] = 0;
     int vrc = RTMpGetDescription(aCpuId, szCPUModel, sizeof(szCPUModel));
     if (RT_FAILURE(vrc))
         return E_FAIL; /** @todo error reporting? */
@@ -1001,7 +1005,7 @@ HRESULT  Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
 /**
  * Returns whether a host processor feature is supported or not
  *
- * @returns COM status code
+ * @returns status code
  * @param   Feature to query.
  * @param   address of supported bool result variable
  */
@@ -1087,7 +1091,7 @@ HRESULT  Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported
 /**
  * Returns the specific CPUID leaf.
  *
- * @returns COM status code
+ * @returns status code
  * @param   aCpuId              The CPU number. Mostly ignored.
  * @param   aLeaf               The leaf number.
  * @param   aSubLeaf            The sub-leaf number.
@@ -1121,7 +1125,7 @@ HRESULT Host::getProcessorCPUIDLeaf(ULONG aCpuId, ULONG aLeaf, ULONG aSubLeaf,
 /**
  * Returns the amount of installed system memory in megabytes
  *
- * @returns COM status code
+ * @returns  status code
  * @param   size address of result variable
  */
 HRESULT Host::getMemorySize(ULONG *aSize)
@@ -1139,7 +1143,7 @@ HRESULT Host::getMemorySize(ULONG *aSize)
 /**
  * Returns the current system memory free space in megabytes
  *
- * @returns COM status code
+ * @returns status code
  * @param   available address of result variable
  */
 HRESULT Host::getMemoryAvailable(ULONG *aAvailable)
@@ -1157,7 +1161,7 @@ HRESULT Host::getMemoryAvailable(ULONG *aAvailable)
 /**
  * Returns the name string of the host operating system
  *
- * @returns COM status code
+ * @returns  status code
  * @param   os address of result variable
  */
 HRESULT Host::getOperatingSystem(com::Utf8Str &aOperatingSystem)
@@ -1175,7 +1179,7 @@ HRESULT Host::getOperatingSystem(com::Utf8Str &aOperatingSystem)
 /**
  * Returns the version string of the host operating system
  *
- * @returns COM status code
+ * @returns status code
  * @param   os address of result variable
  */
 HRESULT Host::getOSVersion(com::Utf8Str &aVersion)
@@ -1210,7 +1214,7 @@ HRESULT Host::getOSVersion(com::Utf8Str &aVersion)
 /**
  * Returns the current host time in milliseconds since 1970-01-01 UTC.
  *
- * @returns COM status code
+ * @returns status code
  * @param   time address of result variable
  */
 HRESULT Host::getUTCTime(LONG64 *aUTCTime)
@@ -1519,8 +1523,6 @@ HRESULT Host::findHostNetworkInterfaceByName(const com::Utf8Str &aName,
 #else
     if (!aName.length())
         return E_INVALIDARG;
-    if (!aNetworkInterface)
-        return E_POINTER;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1557,8 +1559,6 @@ HRESULT Host::findHostNetworkInterfaceById(const com::Guid &aId,
 #else
     if (!aId.isValid())
         return E_INVALIDARG;
-    if (!aNetworkInterface)
-        return E_POINTER;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1591,9 +1591,9 @@ HRESULT Host::findHostNetworkInterfaceById(const com::Guid &aId,
 HRESULT Host::findHostNetworkInterfacesOfType(HostNetworkInterfaceType_T aType,
                                               std::vector<ComPtr<IHostNetworkInterface> > &aNetworkInterfaces)
 {
+    aNetworkInterfaces.resize(0);
 #ifdef VBOX_WITH_HOSTNETIF_API
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     int rc = i_updateNetIfList();
     if (RT_FAILURE(rc))
         return E_FAIL;
@@ -1640,8 +1640,7 @@ HRESULT Host::findUSBDeviceByAddress(const com::Utf8Str &aName,
         if (FAILED(rc)) return rc;
         if (address == aName)
         {
-            ComObjPtr<IHostUSBDevice> (devsvec[i]).queryInterfaceTo(aDevice.asOutParam());
-            return S_OK;
+            return (ComObjPtr<IHostUSBDevice> (devsvec[i]).queryInterfaceTo(aDevice.asOutParam()));
         }
     }
 
@@ -1675,8 +1674,7 @@ HRESULT Host::findUSBDeviceById(const com::Guid &aId,
         if (FAILED(rc)) return rc;
         if (Guid(id) == aId)
         {
-            ComObjPtr<IHostUSBDevice> (devsvec[i]).queryInterfaceTo(aDevice.asOutParam());
-            return rc;
+            return (ComObjPtr<IHostUSBDevice> (devsvec[i]).queryInterfaceTo(aDevice.asOutParam()));
         }
     }
     return setErrorNoLog (VBOX_E_OBJECT_NOT_FOUND, tr (
@@ -1700,18 +1698,20 @@ HRESULT Host::generateMACAddress(com::Utf8Str &aAddress)
 /**
  * Returns a list of host video capture devices (webcams, etc).
  *
- * @returns COM status code
+ * @returns status code
  * @param aVideoInputDevices Array of interface pointers to be filled.
  */
 HRESULT Host::getVideoInputDevices(std::vector<ComPtr<IHostVideoInputDevice> > &aVideoInputDevices)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     HostVideoInputDeviceList list;
+    aVideoInputDevices.resize(0);
 
     HRESULT hr = HostVideoInputDevice::queryHostDevices(m->pParent, &list);
 
     if (SUCCEEDED(hr))
     {
+        aVideoInputDevices.resize(list.size());
         size_t i = 0;
         for (HostVideoInputDeviceList::const_iterator it = list.begin(); it != list.end(); ++it, ++i)
         {
