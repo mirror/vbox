@@ -631,7 +631,7 @@ typedef struct HMCPU
         /** Current exception bitmap. */
         uint32_t                    u32XcptBitmap;
         /** The updated-guest-state mask. */
-        uint32_t                    fUpdatedGuestState;
+        volatile uint32_t           fUpdatedGuestState;
         /** Current EPTP. */
         RTHCPHYS                    HCPhysEPTP;
 
