@@ -483,7 +483,7 @@ pxping_recv4(void *arg, struct pbuf *p)
         }
     }
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
+#if /*defined(RT_OS_LINUX) ||*/ defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
     {
         const int df_flag = IPH_OFFSET(iph) & PP_HTONS(IP_DF);
 
