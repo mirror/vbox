@@ -87,7 +87,6 @@ public:
 
     /* private instance data */
 private:
-    /** weak VirtualBox parent */
     // wrapped IAppliance properties
     HRESULT getPath(com::Utf8Str &aPath);
     HRESULT getDisks(std::vector<com::Utf8Str> &aDisks);
@@ -108,7 +107,7 @@ private:
                   ComPtr<IProgress> &aProgress);
     HRESULT getWarnings(std::vector<com::Utf8Str> &aWarnings);
 
-
+    /** weak VirtualBox parent */
     VirtualBox* const   mVirtualBox;
 
     struct ImportStack;
