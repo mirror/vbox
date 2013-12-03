@@ -1487,6 +1487,10 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     void *pvMfBuf = NULL;
     void *pvCertBuf = NULL;
     writeLock.release();
+
+    /* Create the import stack for the rollback on errors. */
+    ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
+
     try
     {
         /* Create the necessary file access interfaces. */
@@ -1506,9 +1510,6 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
                                  &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
-
-        /* Create the import stack for the rollback on errors. */
-        ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
 
         if (RTFileExists(strMfFile.c_str()))
         {
@@ -1562,6 +1563,26 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     catch (HRESULT rc2)
     {
         rc = rc2;
+        /*
+         * Restoring original UUID from OVF description file.
+         * During import VB creates new UUIDs for imported images and 
+         * assigns them to the images. In case of failure we have to restore
+         * the original UUIDs because those new UUIDs are obsolete now and
+         * won't be used anymore.
+         */
+        {
+            list< ComObjPtr<VirtualSystemDescription> >::const_iterator itvsd;
+            /* Iterate through all virtual systems of that appliance */
+            for (itvsd = m->virtualSystemDescriptions.begin();
+                 itvsd != m->virtualSystemDescriptions.end();
+                 ++itvsd)
+            {
+                ComObjPtr<VirtualSystemDescription> vsdescThis = (*itvsd);
+                settings::MachineConfigFile *pConfig = vsdescThis->m->pConfig;
+                if(vsdescThis->m->pConfig!=NULL)
+                    stack.restoreOriginalUUIDOfAttachedDevice(pConfig);
+            }
+        }
     }
     writeLock.acquire();
 
@@ -1604,6 +1625,10 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     Utf8Str OVFfilename;
 
     writeLock.release();
+
+    /* Create the import stack for the rollback on errors. */
+    ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
+
     try
     {
         /* Create the necessary file access interfaces. */
@@ -1684,8 +1709,6 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * is a manifest file in the stream. */
         pStorage->fCreateDigest = true;
 
-        /* Create the import stack for the rollback on errors. */
-        ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
         /*
          * Try to read the manifest file. First try.
          *
@@ -1765,6 +1788,27 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     catch (HRESULT rc2)
     {
         rc = rc2;
+
+        /*
+         * Restoring original UUID from OVF description file.
+         * During import VB creates new UUIDs for imported images and 
+         * assigns them to the images. In case of failure we have to restore
+         * the original UUIDs because those new UUIDs are obsolete now and
+         * won't be used anymore.
+         */
+        {
+            list< ComObjPtr<VirtualSystemDescription> >::const_iterator itvsd;
+            /* Iterate through all virtual systems of that appliance */
+            for (itvsd = m->virtualSystemDescriptions.begin();
+                 itvsd != m->virtualSystemDescriptions.end();
+                 ++itvsd)
+            {
+                ComObjPtr<VirtualSystemDescription> vsdescThis = (*itvsd);
+                settings::MachineConfigFile *pConfig = vsdescThis->m->pConfig;
+                if(vsdescThis->m->pConfig!=NULL)
+                  stack.restoreOriginalUUIDOfAttachedDevice(pConfig);
+            }
+        }
     }
     writeLock.acquire();
 
@@ -3718,7 +3762,15 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                 /* restore */
                 vsdeTargetHD->strVboxCurrent = savedVboxCurrent;
 
-                d.uuid = hdId;
+                /*
+                 * 1. saving original UUID for restoring in case of failure. 
+                 * 2. replacement of original UUID by new UUID in the current VM config (settings::MachineConfigFile).
+                 */
+                {
+                    rc = stack.saveOriginalUUIDOfAttachedDevice(d, Utf8Str(hdId));
+                    d.uuid = hdId;
+                }
+
                 fFound = true;
                 break;
             } // for (settings::AttachedDevicesList::const_iterator dit = sc.llAttachedDevices.begin();
@@ -3891,5 +3943,45 @@ void Appliance::i_importMachines(ImportStack &stack,
             i_importMachineGeneric(vsysThis, vsdescThis, pNewMachine, stack, pCallbacks, pStorage);
 
     } // for (it = pAppliance->m->llVirtualSystems.begin() ...
+}
+
+HRESULT Appliance::ImportStack::saveOriginalUUIDOfAttachedDevice(settings::AttachedDevice &device,
+                                                     const Utf8Str &newlyUuid)
+{
+    HRESULT rc = S_OK;
+
+    /* save for restoring */
+    mapNewUUIDsToOriginalUUIDs.insert(std::make_pair(newlyUuid, device.uuid.toString()));
+
+    return rc;
+}
+
+HRESULT Appliance::ImportStack::restoreOriginalUUIDOfAttachedDevice(settings::MachineConfigFile *config)
+{
+    HRESULT rc = S_OK;
+
+    settings::StorageControllersList &llControllers = config->storageMachine.llStorageControllers;
+    settings::StorageControllersList::iterator itscl;
+    for (itscl = llControllers.begin();
+         itscl != llControllers.end();
+         ++itscl)
+    {
+        settings::AttachedDevicesList &llAttachments = itscl->llAttachedDevices;
+        settings::AttachedDevicesList::iterator itadl = llAttachments.begin();
+        while (itadl != llAttachments.end())
+        {
+            std::map<Utf8Str , Utf8Str>::const_iterator cit =
+                mapNewUUIDsToOriginalUUIDs.find(itadl->uuid.toString());
+            if(cit!=mapNewUUIDsToOriginalUUIDs.end())
+            {
+                Utf8Str uuidOriginal = cit->second;
+                itadl->uuid = Guid(uuidOriginal);
+                mapNewUUIDsToOriginalUUIDs.erase(cit);
+            }
+            ++itadl;
+        }
+    }
+
+    return rc;
 }
 

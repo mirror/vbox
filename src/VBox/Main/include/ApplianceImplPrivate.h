@@ -79,6 +79,7 @@ struct Appliance::Data
     Utf8Str             strOVFSHADigest;//SHA digest of OVf file. It is stored here after reading OVF file (before import)
 
     bool                fExportISOImages;// when 1 the ISO images are exported
+    bool                fX509;// wether X509 is used or not
 
     RTCList<ImportOptions_T> optListImport;
     RTCList<ExportOptions_T> optListExport;
@@ -182,6 +183,7 @@ struct Appliance::ImportStack
     // and will be cleaned up on errors
     std::list<MyHardDiskAttachment> llHardDiskAttachments;      // disks that were attached
     std::list<STRPAIR>              llSrcDisksDigest;           // Digests of the source disks
+    std::map<Utf8Str , Utf8Str> mapNewUUIDsToOriginalUUIDs;
 
     ImportStack(const LocationInfo &aLocInfo,
                 const ovf::DiskImagesMap &aMapDisks,
@@ -200,6 +202,10 @@ struct Appliance::ImportStack
         strSourceDir = aLocInfo.strPath;
         strSourceDir.stripFilename();
     }
+
+    HRESULT restoreOriginalUUIDOfAttachedDevice(settings::MachineConfigFile *config);
+    HRESULT saveOriginalUUIDOfAttachedDevice(settings::AttachedDevice &device,
+                                                  const Utf8Str &newlyUuid);
 };
 
 ////////////////////////////////////////////////////////////////////////////////

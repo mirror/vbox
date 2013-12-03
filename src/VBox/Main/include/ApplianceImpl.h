@@ -21,6 +21,7 @@
 #define ____H_APPLIANCEIMPL
 
 /* VBox includes */
+#include <VBox/settings.h>
 #include "VirtualSystemDescriptionWrap.h"
 #include "ApplianceWrap.h"
 #include "MediumFormatImpl.h"
