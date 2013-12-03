@@ -1399,7 +1399,7 @@ static void hmR0VmxUpdateAutoLoadStoreHostMsrs(PVMCPU pVCpu)
 }
 
 
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64
 /**
  * Saves a set of host MSRs to allow read/write passthru access to the guest and
  * perform lazy restoration of the host MSRs while leaving VT-x.
@@ -1548,7 +1548,7 @@ static void hmR0VmxLazyRestoreHostMsrs(PVMCPU pVCpu)
     }
     pVCpu->hm.s.vmx.fRestoreHostMsrs &= ~(VMX_RESTORE_HOST_MSR_LOADED_GUEST | VMX_RESTORE_HOST_MSR_SAVED_HOST);
 }
-#endif  /* HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) */
+#endif  /* HC_ARCH_BITS == 64 */
 
 
 #ifdef VBOX_STRICT
@@ -2328,12 +2328,11 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
         hmR0VmxSetMsrPermission(pVCpu, MSR_K8_GS_BASE,        VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         hmR0VmxSetMsrPermission(pVCpu, MSR_K8_FS_BASE,        VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
 
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64
         /*
          * Set passthru permissions for the following MSRs (mandatory for VT-x) required for 64-bit guests.
          */
-        if (   HMVMX_IS_64BIT_HOST_MODE()
-            && pVM->hm.s.fAllow64BitGuests)
+        if (pVM->hm.s.fAllow64BitGuests)
         {
             hmR0VmxSetMsrPermission(pVCpu, MSR_K8_LSTAR,          VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
             hmR0VmxSetMsrPermission(pVCpu, MSR_K6_STAR,           VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
@@ -3006,12 +3005,9 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     AssertPtr(pVCpu->hm.s.vmx.pvHostMsr);
 
     int rc = VINF_SUCCESS;
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    if (   HMVMX_IS_64BIT_HOST_MODE()
-        && pVM->hm.s.fAllow64BitGuests)
-    {
+#if HC_ARCH_BITS == 64
+    if (pVM->hm.s.fAllow64BitGuests)
         hmR0VmxLazySaveHostMsrs(pVCpu);
-    }
 #endif
 
     if (pVCpu->hm.s.vmx.cMsrs > 0)
@@ -4456,23 +4452,20 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS))
     {
+#if HC_ARCH_BITS == 32 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (pVM->hm.s.fAllow64BitGuests)
         {
-#if HC_ARCH_BITS == 32 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-            if (!HMVMX_IS_64BIT_HOST_MODE())
-            {
-                hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_LSTAR,          pMixedCtx->msrLSTAR,        false /* fUpdateHostMsr */);
-                hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_STAR,           pMixedCtx->msrSTAR,         false /* fUpdateHostMsr */);
-                hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK,       false /* fUpdateHostMsr */);
-                hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE, false /* fUpdateHostMsr */);
-            }
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_LSTAR,          pMixedCtx->msrLSTAR,        false /* fUpdateHostMsr */);
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_STAR,           pMixedCtx->msrSTAR,         false /* fUpdateHostMsr */);
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK,       false /* fUpdateHostMsr */);
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE, false /* fUpdateHostMsr */);
 # ifdef DEBUG
             PVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
             for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cMsrs; i++, pMsr++)
                 Log4(("Load: MSR[%RU32]: u32Msr=%#RX32 u64Value=%#RX64\n", i, pMsr->u32Msr, pMsr->u64Value));
 # endif
-#endif
         }
+#endif
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
     }
 
@@ -5845,9 +5838,8 @@ static int hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    if (   HMVMX_IS_64BIT_HOST_MODE()
-        && pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+#if HC_ARCH_BITS == 64
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
     {
         /* We should not get preempted to a different CPU at this point while reading the MSRs. */
         VMMRZCallRing3Disable(pVCpu);
@@ -5864,11 +5856,8 @@ static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         VMMRZCallRing3Enable(pVCpu);
     }
     else
-    {
-        /* Darwin 32-bit/PAE kernel or 64-bit host running 32-bit guest. */
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_LAZY_MSRS;
-    }
-#else   /* HC_ARCH_BITS == 32 */
+#else
     NOREF(pMixedCtx);
     pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_LAZY_MSRS;
 #endif
@@ -6641,10 +6630,9 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
     }
 #endif
 
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64
     /* Restore the host MSRs as we're leaving VT-x context. */
-    if (   HMVMX_IS_64BIT_HOST_MODE()
-        && pVM->hm.s.fAllow64BitGuests
+    if (   pVM->hm.s.fAllow64BitGuests
         && pVCpu->hm.s.vmx.fRestoreHostMsrs)
     {
         /* We shouldn't reload the guest MSRs without saving it first. */
@@ -6869,10 +6857,9 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
         }
 #endif
 
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64
         /* Restore the host MSRs as we're leaving VT-x context. */
-        if (   HMVMX_IS_64BIT_HOST_MODE()
-            && pVM->hm.s.fAllow64BitGuests
+        if (   pVM->hm.s.fAllow64BitGuests
             && pVCpu->hm.s.vmx.fRestoreHostMsrs)
         {
             hmR0VmxLazyRestoreHostMsrs(pVCpu);
@@ -7828,12 +7815,9 @@ static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS))
     {
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (   HMVMX_IS_64BIT_HOST_MODE()
-            && pVM->hm.s.fAllow64BitGuests)
-        {
+#if HC_ARCH_BITS == 64
+        if (pVM->hm.s.fAllow64BitGuests)
             hmR0VmxLazyLoadGuestMsrs(pVCpu, pCtx);
-        }
 #endif
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS);
     }
@@ -9934,9 +9918,8 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
             AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
             HMVMX_RETURN_UNEXPECTED_EXIT();
         }
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (   HMVMX_IS_64BIT_HOST_MODE()
-            && pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests
+# if HC_ARCH_BITS == 64
+        if (   pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests
             && hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
         {
             AssertMsgFailed(("Unexpected RDMSR for a passthru lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
@@ -10016,12 +9999,9 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 {
                     if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
                         HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-                    else if (   HMVMX_IS_64BIT_HOST_MODE()
-                             && hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
-                    {
+#if HC_ARCH_BITS == 64
+                    else if (hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
                         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS);
-                    }
 #endif
                     break;
                 }
@@ -10053,9 +10033,8 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                         HMVMX_RETURN_UNEXPECTED_EXIT();
                     }
 
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-                    if (   HMVMX_IS_64BIT_HOST_MODE()
-                        && hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
+#if HC_ARCH_BITS == 64
+                    if (hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
                     {
                         AssertMsgFailed(("Unexpected WRMSR for passthru, lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
                         HMVMX_RETURN_UNEXPECTED_EXIT();
