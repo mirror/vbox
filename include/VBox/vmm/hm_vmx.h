@@ -53,6 +53,46 @@
  * @{
  */
 
+/** @def HMVMXCPU_GST_SET_UPDATED
+ * Sets a guest-state-updated flag.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   fFlag   The flag to set.
+ */
+#define HMVMXCPU_GST_SET_UPDATED(pVCpu, fFlag)        (ASMAtomicUoOrU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState, (fFlag)))
+
+/** @def HMVMXCPU_GST_IS_SET
+ * Checks if all the flags in the specified guest-state-updated set is pending.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   fFlag   The flag to check.
+ */
+#define HMVMXCPU_GST_IS_SET(pVCpu, fFlag)             ((ASMAtomicUoReadU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState) & (fFlag)) == (fFlag))
+
+/** @def HMVMXCPU_GST_IS_UPDATED
+ * Checks if one or more of the flags in the specified guest-state-updated set
+ * is updated.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   fFlags  The flags to check for.
+ */
+#define HMVMXCPU_GST_IS_UPDATED(pVCpu, fFlags)        RT_BOOL(ASMAtomicUoReadU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState) & (fFlags))
+
+/** @def HMVMXCPU_GST_RESET_TO
+ * Resets the guest-state-updated flags to the specified value.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   fFlags  The new value.
+ */
+#define HMVMXCPU_GST_RESET_TO(pVCpu, fFlags)          (ASMAtomicUoWriteU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState, (fFlags)))
+
+/** @def HMVMXCPU_GST_VALUE
+ * Returns the current guest-state-updated flags value.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ */
+#define HMVMXCPU_GST_VALUE(pVCpu)                     (ASMAtomicUoReadU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState))
+
 /** @name Host-state restoration flags.
  * @{
  */
