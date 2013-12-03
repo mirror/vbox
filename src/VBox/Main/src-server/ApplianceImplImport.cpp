@@ -3976,7 +3976,7 @@ HRESULT Appliance::ImportStack::restoreOriginalUUIDOfAttachedDevice(settings::Ma
             {
                 Utf8Str uuidOriginal = it->second;
                 itadl->uuid = Guid(uuidOriginal);
-                mapNewUUIDsToOriginalUUIDs.erase(it);
+                mapNewUUIDsToOriginalUUIDs.erase(it->first);
             }
             ++itadl;
         }
