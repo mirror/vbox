@@ -508,14 +508,14 @@ void Host::uninit()
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// ISnapshot public methods
+// IHost public methods
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Returns a list of host DVD drives.
  *
- * @returns status code
+ * @returns COM status code
  * @param drives address of result pointer
  */
 
@@ -541,7 +541,7 @@ HRESULT Host::getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives)
 /**
  * Returns a list of host floppy drives.
  *
- * @returns status code
+ * @returns COM status code
  * @param drives address of result pointer
  */
 HRESULT Host::getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives)
@@ -571,8 +571,8 @@ HRESULT Host::getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives)
 static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *pPist,
                                   INetCfgComponent *pncc)
 {
-    LPWSTR              lpszName;
-    GUID                IfGuid;
+    LPWSTR lpszName;
+    GUID IfGuid;
     HRESULT hr;
     int rc = VERR_GENERAL_FAILURE;
 
@@ -611,13 +611,13 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
 /**
  * Returns a list of host network interfaces.
  *
- * @returns status code
+ * @returns COM status code
  * @param drives address of result pointer
  */
 HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &aNetworkInterfaces)
 {
     aNetworkInterfaces.resize(0);
-#if defined(RT_OS_WINDOWS) ||  defined(VBOX_WITH_NETFLT) /*|| defined(RT_OS_OS2)*/
+#if defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT) /*|| defined(RT_OS_OS2)*/
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 # ifdef VBOX_WITH_HOSTNETIF_API
     int rc = i_updateNetIfList();
@@ -808,7 +808,7 @@ HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
     aUSBDevices.resize(resultArr.size());
     for (size_t i = 0; i < resultArr.size(); ++i)
     {
-         ComObjPtr<IHostUSBDevice> iHu = static_cast<IHostUSBDevice *>(resultArr[i]);
+         ComObjPtr<IHostUSBDevice> iHu = resultArr[i];
          iHu.queryInterfaceTo(aUSBDevices[i].asOutParam());
     }
 
@@ -912,7 +912,7 @@ HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aU
 /**
  * Returns the number of installed logical processors
  *
- * @returns status code
+ * @returns COM status code
  * @param   count address of result variable
  */
 
@@ -927,7 +927,7 @@ HRESULT Host::getProcessorCount(ULONG *aCount)
 /**
  * Returns the number of online logical processors
  *
- * @returns status code
+ * @returns COM status code
  * @param   count address of result variable
  */
 HRESULT Host::getProcessorOnlineCount(ULONG *aCount)
@@ -941,7 +941,7 @@ HRESULT Host::getProcessorOnlineCount(ULONG *aCount)
 /**
  * Returns the number of installed physical processor cores.
  *
- * @returns status code
+ * @returns COM status code
  * @param   count address of result variable
  */
 HRESULT Host::getProcessorCoreCount(ULONG *aCount)
@@ -955,7 +955,7 @@ HRESULT Host::getProcessorCoreCount(ULONG *aCount)
 /**
  * Returns the number of installed physical processor cores.
  *
- * @returns status code
+ * @returns COM status code
  * @param   count address of result variable
  */
 HRESULT Host::getProcessorOnlineCoreCount(ULONG *aCount)
@@ -969,7 +969,7 @@ HRESULT Host::getProcessorOnlineCoreCount(ULONG *aCount)
 /**
  * Returns the (approximate) maximum speed of the given host CPU in MHz
  *
- * @returns status code
+ * @returns COM status code
  * @param   cpu id to get info for.
  * @param   speed address of result variable, speed is 0 if unknown or aCpuId is invalid.
  */
@@ -985,11 +985,11 @@ HRESULT Host::getProcessorSpeed(ULONG aCpuId,
 /**
  * Returns a description string for the host CPU
  *
- * @returns status code
+ * @returns COM status code
  * @param   cpu id to get info for.
  * @param   description address of result variable, empty string if not known or aCpuId is invalid.
  */
-HRESULT  Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
+HRESULT Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
 {
     // no locking required
 
@@ -1005,11 +1005,11 @@ HRESULT  Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
 /**
  * Returns whether a host processor feature is supported or not
  *
- * @returns status code
+ * @returns COM status code
  * @param   Feature to query.
  * @param   address of supported bool result variable
  */
-HRESULT  Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
+HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
 {
     /* Validate input. */
     switch (aFeature)
@@ -1091,7 +1091,7 @@ HRESULT  Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported
 /**
  * Returns the specific CPUID leaf.
  *
- * @returns status code
+ * @returns COM status code
  * @param   aCpuId              The CPU number. Mostly ignored.
  * @param   aLeaf               The leaf number.
  * @param   aSubLeaf            The sub-leaf number.
@@ -1125,7 +1125,7 @@ HRESULT Host::getProcessorCPUIDLeaf(ULONG aCpuId, ULONG aLeaf, ULONG aSubLeaf,
 /**
  * Returns the amount of installed system memory in megabytes
  *
- * @returns  status code
+ * @returns COM status code
  * @param   size address of result variable
  */
 HRESULT Host::getMemorySize(ULONG *aSize)
@@ -1143,7 +1143,7 @@ HRESULT Host::getMemorySize(ULONG *aSize)
 /**
  * Returns the current system memory free space in megabytes
  *
- * @returns status code
+ * @returns COM status code
  * @param   available address of result variable
  */
 HRESULT Host::getMemoryAvailable(ULONG *aAvailable)
@@ -1161,7 +1161,7 @@ HRESULT Host::getMemoryAvailable(ULONG *aAvailable)
 /**
  * Returns the name string of the host operating system
  *
- * @returns  status code
+ * @returns COM status code
  * @param   os address of result variable
  */
 HRESULT Host::getOperatingSystem(com::Utf8Str &aOperatingSystem)
@@ -1179,7 +1179,7 @@ HRESULT Host::getOperatingSystem(com::Utf8Str &aOperatingSystem)
 /**
  * Returns the version string of the host operating system
  *
- * @returns status code
+ * @returns COM status code
  * @param   os address of result variable
  */
 HRESULT Host::getOSVersion(com::Utf8Str &aVersion)
@@ -1214,7 +1214,7 @@ HRESULT Host::getOSVersion(com::Utf8Str &aVersion)
 /**
  * Returns the current host time in milliseconds since 1970-01-01 UTC.
  *
- * @returns status code
+ * @returns COM status code
  * @param   time address of result variable
  */
 HRESULT Host::getUTCTime(LONG64 *aUTCTime)
@@ -1264,8 +1264,8 @@ HRESULT Host::createHostOnlyNetworkInterface(ComPtr<IHostNetworkInterface> &aHos
 #ifdef VBOX_WITH_HOSTNETIF_API
     /* No need to lock anything. If there ever will - watch out, the function
      * called below grabs the VirtualBox lock. */
-    IHostNetworkInterface *iHn = static_cast<IHostNetworkInterface *>(aHostInterface);
-    IProgress *iHn2 = static_cast<IProgress *>(aProgress);
+    IHostNetworkInterface *iHn = aHostInterface;
+    IProgress *iHn2 = aProgress;
 
     int r = NetIfCreateHostOnlyNetworkInterface(m->pParent, &iHn, &iHn2);
     if (RT_SUCCESS(r))
@@ -1323,7 +1323,7 @@ HRESULT Host::removeHostOnlyNetworkInterface(const com::Guid &aId,
     /* first check whether an interface with the given name already exists */
     {
         ComPtr<IHostNetworkInterface> iface;
-        rc  = findHostNetworkInterfaceById(aId, iface);
+        rc = findHostNetworkInterfaceById(aId, iface);
         if (FAILED(rc))
             return setError(VBOX_E_OBJECT_NOT_FOUND,
                             tr("Host network interface with UUID {%RTuuid} does not exist"),
@@ -1332,7 +1332,7 @@ HRESULT Host::removeHostOnlyNetworkInterface(const com::Guid &aId,
         ComAssertComRCRet(rc, rc);
     }
 
-    IProgress *iPr  = static_cast<IProgress *>(aProgress);
+    IProgress *iPr = aProgress;
 
     int r = NetIfRemoveHostOnlyNetworkInterface(m->pParent, Guid(aId).ref(), &iPr);
     if (RT_SUCCESS(r))
@@ -1538,7 +1538,7 @@ HRESULT Host::findHostNetworkInterfaceByName(const com::Utf8Str &aName,
     for (HostNetworkInterfaceList::iterator it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
     {
         Bstr n;
-        (*it)->COMGETTER(Name) (n.asOutParam());
+        (*it)->COMGETTER(Name)(n.asOutParam());
         if (n == aName)
             found = *it;
     }
@@ -1575,7 +1575,7 @@ HRESULT Host::findHostNetworkInterfaceById(const com::Guid &aId,
     for (it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
     {
         Bstr g;
-        (*it)->COMGETTER(Id) (g.asOutParam());
+        (*it)->COMGETTER(Id)(g.asOutParam());
         if (Guid(g) == aId)
             found = *it;
     }
@@ -1630,17 +1630,17 @@ HRESULT Host::findUSBDeviceByAddress(const com::Utf8Str &aName,
 
     aDevice = NULL;
     SafeIfaceArray<IHostUSBDevice> devsvec;
-    HRESULT rc = COMGETTER(USBDevices) (ComSafeArrayAsOutParam(devsvec));
+    HRESULT rc = COMGETTER(USBDevices)(ComSafeArrayAsOutParam(devsvec));
     if (FAILED(rc)) return rc;
 
     for (size_t i = 0; i < devsvec.size(); ++i)
     {
         Bstr address;
-        rc = devsvec[i]->COMGETTER(Address) (address.asOutParam());
+        rc = devsvec[i]->COMGETTER(Address)(address.asOutParam());
         if (FAILED(rc)) return rc;
         if (address == aName)
         {
-            return (ComObjPtr<IHostUSBDevice> (devsvec[i]).queryInterfaceTo(aDevice.asOutParam()));
+            return (ComObjPtr<IHostUSBDevice>(devsvec[i]).queryInterfaceTo(aDevice.asOutParam()));
         }
     }
 
@@ -1664,17 +1664,17 @@ HRESULT Host::findUSBDeviceById(const com::Guid &aId,
     aDevice = NULL;
 
     SafeIfaceArray<IHostUSBDevice> devsvec;
-    HRESULT rc = COMGETTER(USBDevices) (ComSafeArrayAsOutParam(devsvec));
+    HRESULT rc = COMGETTER(USBDevices)(ComSafeArrayAsOutParam(devsvec));
     if (FAILED(rc)) return rc;
 
     for (size_t i = 0; i < devsvec.size(); ++i)
     {
         Bstr id;
-        rc = devsvec[i]->COMGETTER(Id) (id.asOutParam());
+        rc = devsvec[i]->COMGETTER(Id)(id.asOutParam());
         if (FAILED(rc)) return rc;
         if (Guid(id) == aId)
         {
-            return (ComObjPtr<IHostUSBDevice> (devsvec[i]).queryInterfaceTo(aDevice.asOutParam()));
+            return (ComObjPtr<IHostUSBDevice>(devsvec[i]).queryInterfaceTo(aDevice.asOutParam()));
         }
     }
     return setErrorNoLog (VBOX_E_OBJECT_NOT_FOUND, tr (
@@ -1698,7 +1698,7 @@ HRESULT Host::generateMACAddress(com::Utf8Str &aAddress)
 /**
  * Returns a list of host video capture devices (webcams, etc).
  *
- * @returns status code
+ * @returns COM status code
  * @param aVideoInputDevices Array of interface pointers to be filled.
  */
 HRESULT Host::getVideoInputDevices(std::vector<ComPtr<IHostVideoInputDevice> > &aVideoInputDevices)
@@ -1801,7 +1801,7 @@ HRESULT Host::i_saveSettings(settings::Host &data)
  * @param mediumType Must be DeviceType_Floppy or DeviceType_DVD.
  * @param fRefresh Whether to refresh the host drives list even if this is not the first call.
  * @param pll Caller's pointer which gets set to the static list of host drives.
- * @return
+ * @returns COM status code
  */
 HRESULT Host::i_getDrives(DeviceType_T mediumType,
                           bool fRefresh,
@@ -2985,11 +2985,11 @@ HRESULT Host::i_updateNetIfList()
     {
         bool fGone = true;
         Bstr nameOld;
-        (*itOld)->COMGETTER(Name) (nameOld.asOutParam());
+        (*itOld)->COMGETTER(Name)(nameOld.asOutParam());
         for (itNew = listCopy.begin(); itNew != listCopy.end(); ++itNew)
         {
             Bstr nameNew;
-            (*itNew)->COMGETTER(Name) (nameNew.asOutParam());
+            (*itNew)->COMGETTER(Name)(nameNew.asOutParam());
             if (nameNew == nameOld)
             {
                 fGone = false;
@@ -3018,7 +3018,7 @@ HRESULT Host::i_updateNetIfList()
         if (FAILED(hr))
         {
             Bstr n;
-            (*itNew)->COMGETTER(Name) (n.asOutParam());
+            (*itNew)->COMGETTER(Name)(n.asOutParam());
             LogRel(("Host::updateNetIfList: failed to get interface type for %ls\n", n.raw()));
         }
         else if (t == HostNetworkInterfaceType_Bridged)
