@@ -115,7 +115,9 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
     for (int i=0; i < actions.size(); ++i)
         menus << actions.at(i)->menu();
     m_pMiniToolBar->addMenus(menus);
+#ifndef RT_OS_DARWIN
     connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()));
+#endif /* !RT_OS_DARWIN */
     connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
             gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SLOT(trigger()));
     connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),

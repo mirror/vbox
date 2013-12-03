@@ -270,7 +270,9 @@ void UIRuntimeMiniToolBar::prepare()
         /* Configure child connections: */
         connect(m_pToolbar, SIGNAL(sigResized()), this, SLOT(sltHandleToolbarResize()));
         connect(m_pToolbar, SIGNAL(sigAutoHideToggled()), this, SLOT(sltAutoHideToggled()));
+#ifndef RT_OS_DARWIN
         connect(m_pToolbar, SIGNAL(sigMinimizeAction()), this, SIGNAL(sigMinimizeAction()));
+#endif /* !RT_OS_DARWIN */
         connect(m_pToolbar, SIGNAL(sigExitAction()), this, SIGNAL(sigExitAction()));
         connect(m_pToolbar, SIGNAL(sigCloseAction()), this, SIGNAL(sigCloseAction()));
         /* Add child to mdi-area: */
@@ -426,7 +428,9 @@ UIMiniToolBar::UIMiniToolBar()
     /* Variables: Contents stuff: */
     , m_pAutoHideAction(0)
     , m_pLabel(0)
+#ifndef RT_OS_DARWIN
     , m_pMinimizeAction(0)
+#endif /* !RT_OS_DARWIN */
     , m_pRestoreAction(0)
     , m_pCloseAction(0)
     /* Variables: Menu stuff: */
@@ -606,12 +610,14 @@ void UIMiniToolBar::prepare()
     /* Right label margin: */
     m_margins << widgetForAction(addWidget(new QWidget));
 
+#ifndef RT_OS_DARWIN
     /* Minimize action: */
     m_pMinimizeAction = new QAction(this);
     m_pMinimizeAction->setIcon(UIIconPool::iconSet(":/minimize_16px.png"));
     m_pMinimizeAction->setToolTip(tr("Minimize Window"));
     connect(m_pMinimizeAction, SIGNAL(triggered()), this, SIGNAL(sigMinimizeAction()));
     addAction(m_pMinimizeAction);
+#endif /* !RT_OS_DARWIN */
 
     /* Exit action: */
     m_pRestoreAction = new QAction(this);
