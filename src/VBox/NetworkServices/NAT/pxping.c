@@ -483,6 +483,7 @@ pxping_recv4(void *arg, struct pbuf *p)
         }
     }
 
+#if 0
 #if /*defined(RT_OS_LINUX) ||*/ defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
     {
         const int df_flag = IPH_OFFSET(iph) & PP_HTONS(IP_DF);
@@ -512,6 +513,7 @@ pxping_recv4(void *arg, struct pbuf *p)
         }
     }
 #endif /* don't fragment */
+#endif /* 0 */
 
     proxy_sendto(pxping->sock4, p,
                  &pcb->peer.sin, sizeof(pcb->peer.sin));
