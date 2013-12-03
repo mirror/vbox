@@ -2138,6 +2138,355 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
       the default behavior, use</para>
       <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeMenus</screen>
 
+      <para>You can also disable (i.e. blacklist) certain menu actions of certain
+        menus. Use the following command to disable certain actions of the
+        <emphasis>Application</emphasis> menu (only available on Mac OS X hosts):</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeApplicationMenuActions OPTION[,OPTION...]</screen>
+
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>All</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show any menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>About</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>About</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. To restore
+      the default behavior, use</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeMenus</screen>
+
+      <para>Use the following command to disable certain actions of the <emphasis>Machine</emphasis>
+        menu:</para>
+
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeApplicationMenuActions OPTION[,OPTION...]</screen>
+
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>All</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show any menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>SettingsDialog</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Settings</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>TakeSnapshot</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Take Snapshot</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>TakeScreenshot</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Take Screenshot</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>InformationDialog</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Session Information</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>MouseIntegration</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Disable Mouse Integration</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>TypeCAD</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Insert Ctrl+Alt+Del</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>TypeCABS</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Insert Ctrl+Alt+Backspace</emphasis> menu item in
+              this menu (available on X11 hosts only).</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Pause</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Pause</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Reset</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Reset</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>SaveState</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Save the machine state</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Shutdown</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>ACPI Shutdown</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Power Off the machine</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. To restore
+      the default behavior, use</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeApplicationMenuActions</screen>
+
+      <para>Use the following command to disable certain actions of the <emphasis>View</emphasis>
+        menu:</para>
+
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeViewMenuActions OPTION[,OPTION...]</screen>
+
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>All</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show any menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Fullscreen</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Switch to Fullscreen</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Seamless</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Switch to Seamless Mode</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Scale</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Switch to Scaled Mode</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>GuestAutoresize</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Auto-resize Guest Display</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>AdjustWindow</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Adjust Window Size</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Multiscreen</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Multiscreen</emphasis> menu item in this menu (only visible in fullscreen/seamless mode).</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. To restore
+      the default behavior, use</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeViewMenuActions</screen>
+
+      <para>Use the following command to disable certain actions of the <emphasis>View</emphasis>
+        menu:</para>
+
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeDevicesMenuActions OPTION[,OPTION...]</screen>
+
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords to disable actions in the <emphasis>Devices</emphasis> menu:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>All</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show any menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>OpticalDevices</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>CD/DVD Devices</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>FloppyDevices</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>FLoppy Devices</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>USBDevices</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>USB Devices</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>SharedClipboard</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Shared Clipboard</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>DragAndDrop</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Drag'n'Drop</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>NetworkSettings</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Network Settings...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>SharedFoldersSettings</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Shared Folders Settings...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>VRDEServer</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Remove Display</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>InstallGuestTools</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Insert Guest Additions CD imnage...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. To restore
+      the default behavior, use</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeDevicesMenuActions</screen>
+
+      <para>Use the following command to disable certain actions of the <emphasis>View</emphasis>
+        menu:</para>
+
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeDebuggerMenuActions OPTION[,OPTION...]</screen>
+
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords to disable actions in the <emphasis>Debug</emphasis> menu (normally completely disabled):</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>All</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show any menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Statistics</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Statistics...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>CommandLine</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Command Line...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Logging</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Logging...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>LogDialog</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Show Log...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. To restore
+      the default behavior, use</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeDebuggerMenuActions</screen>
+
+      <para>Use the following command to disable certain actions of the <emphasis>View</emphasis>
+        menu:</para>
+
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeHelpMenuActions OPTION[,OPTION...]</screen>
+
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords to disable actions in the <emphasis>Help</emphasis> menu (normally completely disabled):</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>All</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show any menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Contents</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Contents...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>WebSite</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>VirtualBox Web Site...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>ResetWarnings</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Reset All Warnings</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>NetworkAccessManager</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Network Operations Manager</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>About</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>About</emphasis> menu item in this menu (only on non Mac OS X hosts).</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Contents</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Contents...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Contents</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Contents...</emphasis> menu item in this menu.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. To restore
+      the default behavior, use</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeHelpMenuActions</screen>
+
     </sect2>
 
     <sect2>
