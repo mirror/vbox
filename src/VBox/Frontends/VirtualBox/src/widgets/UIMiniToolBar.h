@@ -53,7 +53,9 @@ class UIRuntimeMiniToolBar : public QWidget
 signals:
 
     /* Notifiers: Action stuff: */
+#ifndef RT_OS_DARWIN
     void sigMinimizeAction();
+#endif /* !RT_OS_DARWIN */
     void sigExitAction();
     void sigCloseAction();
 
@@ -151,7 +153,9 @@ signals:
 
     /* Notifiers: Action stuff: */
     void sigAutoHideToggled();
+#ifndef RT_OS_DARWIN
     void sigMinimizeAction();
+#endif /* !RT_OS_DARWIN */
     void sigExitAction();
     void sigCloseAction();
 
@@ -201,7 +205,9 @@ private:
     /* Variables: Contents stuff: */
     QAction *m_pAutoHideAction;
     QLabel *m_pLabel;
+#ifndef RT_OS_DARWIN
     QAction *m_pMinimizeAction;
+#endif /* !RT_OS_DARWIN */
     QAction *m_pRestoreAction;
     QAction *m_pCloseAction;
 
