@@ -2942,6 +2942,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
             case VERR_SVM_UNEXPECTED_EXIT:
             case VERR_SVM_UNEXPECTED_PATCH_TYPE:
             case VERR_SVM_UNEXPECTED_XCPT_EXIT:
+            case VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE:
             {
                 LogRel(("HM: CPU[%u] HM error         %#x (%u)\n", i, pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError));
                 break;
