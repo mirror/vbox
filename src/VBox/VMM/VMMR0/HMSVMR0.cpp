@@ -4675,7 +4675,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
     /* TPR patching for 32-bit guests, using the reserved bit in the page tables for MMIO regions.  */
-    if (   pVM->hm.s.fTRPPatchingAllowed
+    if (   pVM->hm.s.fTprPatchingAllowed
         && (GCPhysFaultAddr & PAGE_OFFSET_MASK) == 0x80                                                  /* TPR offset. */
         && (   !(u32ErrCode & X86_TRAP_PF_P)                                                             /* Not present */
             || (u32ErrCode & (X86_TRAP_PF_P | X86_TRAP_PF_RSVD)) == (X86_TRAP_PF_P | X86_TRAP_PF_RSVD))  /* MMIO page. */
@@ -4876,7 +4876,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
     /* Shortcut for APIC TPR reads and writes; only applicable to 32-bit guests. */
-    if (   pVM->hm.s.fTRPPatchingAllowed
+    if (   pVM->hm.s.fTprPatchingAllowed
         && (uFaultAddress & 0xfff) == 0x80  /* TPR offset. */
         && !(u32ErrCode & X86_TRAP_PF_P)    /* Not present. */
         && !CPUMIsGuestInLongModeEx(pCtx)
