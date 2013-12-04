@@ -9272,7 +9272,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     {
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT:  /* Privileged software exception. (#DB from ICEBP) */
             Assert(uVector == X86_XCPT_DB);
-            /* fall through */
+            /* no break */
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT:       /* Software exception. (#BP or #OF) */
             Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF || uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT);
             /* no break */
@@ -10941,6 +10941,12 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
         /*
          * Raise #DB in the guest.
+         *
+         * It is important to reflect what the VM-exit gave us (preserving the interruption-type) rather than use
+         * hmR0VmxSetPendingXcptDB() as the #DB could've been raised while executing ICEBP and not the 'normal' #DB.
+         * Thus it -may- trigger different handling in the CPU (like skipped DPL checks). See @bugref{6398}.
+         *
+         * Since ICEBP isn't documented on Intel, see AMD spec. 15.20 "Event Injection".
          */
         rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
         rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
