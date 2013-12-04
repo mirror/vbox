@@ -965,7 +965,6 @@ static DECLCALLBACK(void) supdrvLnxMsrProberModifyOnCpu(RTCPUID idCpu, void *pvU
     pReq->u.Out.uResults.Modify.fRestoreGp = rcRestore != 0;
     RT_ZERO(pReq->u.Out.uResults.Modify.afReserved);
 }
-
 # endif
 
 

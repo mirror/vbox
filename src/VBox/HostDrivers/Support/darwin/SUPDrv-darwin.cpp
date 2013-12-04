@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -227,6 +227,15 @@ static PFNRT            g_pfnVmxResume = NULL;
 /** Pointer to vmx_use_count. */
 static int volatile    *g_pVmxUseCount = NULL;
 
+#ifdef SUPDRV_WITH_MSR_PROBER
+/** Pointer to rdmsr_carefully if found. Returns 0 on success. */
+static int             (*g_pfnRdMsrCarefully)(uint32_t uMsr, uint32_t *puLow, uint32_t *puHigh) = NULL;
+/** Pointer to rdmsr64_carefully if found. Returns 0 on success. */
+static int             (*g_pfnRdMsr64Carefully)(uint32_t uMsr, uint64_t *uValue) = NULL;
+/** Pointer to wrmsr[64]_carefully if found. Returns 0 on success. */
+static int             (*g_pfnWrMsr64Carefully)(uint32_t uMsr, uint64_t uValue) = NULL;
+#endif
+
 
 /**
  * Start the kernel module.
@@ -345,6 +354,21 @@ static void vboxdrvDarwinResolveSymbols(void)
             g_pfnVmxSuspend = NULL;
             g_pVmxUseCount  = NULL;
         }
+
+#ifdef SUPDRV_WITH_MSR_PROBER
+        /* MSR prober stuff. */
+        int rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "rdmsr_carefully", (void **)&g_pfnRdMsrCarefully);
+        if (RT_FAILURE(rc))
+            g_pfnRdMsrCarefully = NULL;
+        rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "rdmsr64_carefully", (void **)&g_pfnRdMsr64Carefully);
+        if (RT_FAILURE(rc))
+            g_pfnRdMsr64Carefully = NULL;
+# ifdef RT_ARCH_AMD64 /* Missing 64 in name, so if implemented on 32-bit it could have different signature. */
+        rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "wrmsr_carefully", (void **)&g_pfnWrMsr64Carefully);
+        if (RT_FAILURE(rc))
+# endif
+            g_pfnWrMsr64Carefully = NULL;
+#endif /* SUPDRV_WITH_MSR_PROBER */
 
         RTR0DbgKrnlInfoRelease(hKrnlInfo);
     }
@@ -944,24 +968,175 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 
 #ifdef SUPDRV_WITH_MSR_PROBER
 
+typedef struct SUPDRVDARWINMSRARGS
+{
+    RTUINT64U       uValue;
+    uint32_t        uMsr;
+    int             rc;
+} SUPDRVDARWINMSRARGS, *PSUPDRVDARWINMSRARGS;
+
+/**
+ * On CPU worker for supdrvOSMsrProberRead.
+ *
+ * @param   idCpu           Ignored.
+ * @param   pvUser1         Pointer to a SUPDRVDARWINMSRARGS.
+ * @param   pvUser2         Ignored.
+ */
+static DECLCALLBACK(void) supdrvDarwinMsrProberReadOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PSUPDRVDARWINMSRARGS pArgs = (PSUPDRVDARWINMSRARGS)pvUser1;
+    if (g_pfnRdMsr64Carefully)
+        pArgs->rc = g_pfnRdMsr64Carefully(pArgs->uMsr, &pArgs->uValue.u);
+    else if (g_pfnRdMsrCarefully)
+        pArgs->rc = g_pfnRdMsrCarefully(pArgs->uMsr, &pArgs->uValue.s.Lo, &pArgs->uValue.s.Hi);
+    else
+        pArgs->rc = 2;
+    NOREF(idCpu); NOREF(pvUser2);
+}
+
+
 int VBOXCALL    supdrvOSMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue)
 {
-    NOREF(uMsr); NOREF(idCpu); NOREF(puValue);
-    return VERR_NOT_SUPPORTED;
+    if (!g_pfnRdMsr64Carefully && !g_pfnRdMsrCarefully)
+        return VERR_NOT_SUPPORTED;
+
+    SUPDRVDARWINMSRARGS Args;
+    Args.uMsr     = uMsr;
+    Args.uValue.u = 0;
+    Args.rc       = -1;
+
+    if (idCpu == NIL_RTCPUID)
+        supdrvDarwinMsrProberReadOnCpu(idCpu, &Args, NULL);
+    else
+    {
+        int rc = RTMpOnSpecific(idCpu, supdrvDarwinMsrProberReadOnCpu, &Args, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    if (Args.rc)
+        return VERR_ACCESS_DENIED;
+    *puValue = Args.uValue.u;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * On CPU worker for supdrvOSMsrProberWrite.
+ *
+ * @param   idCpu           Ignored.
+ * @param   pvUser1         Pointer to a SUPDRVDARWINMSRARGS.
+ * @param   pvUser2         Ignored.
+ */
+static DECLCALLBACK(void) supdrvDarwinMsrProberWriteOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PSUPDRVDARWINMSRARGS pArgs = (PSUPDRVDARWINMSRARGS)pvUser1;
+    if (g_pfnWrMsr64Carefully)
+        pArgs->rc = g_pfnWrMsr64Carefully(pArgs->uMsr, pArgs->uValue.u);
+    else
+        pArgs->rc = 2;
+    NOREF(idCpu); NOREF(pvUser2);
 }
 
 
 int VBOXCALL    supdrvOSMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue)
 {
-    NOREF(uMsr); NOREF(idCpu); NOREF(uValue);
-    return VERR_NOT_SUPPORTED;
+    if (!g_pfnWrMsr64Carefully)
+        return VERR_NOT_SUPPORTED;
+
+    SUPDRVDARWINMSRARGS Args;
+    Args.uMsr     = uMsr;
+    Args.uValue.u = uValue;
+    Args.rc       = -1;
+
+    if (idCpu == NIL_RTCPUID)
+        supdrvDarwinMsrProberWriteOnCpu(idCpu, &Args, NULL);
+    else
+    {
+        int rc = RTMpOnSpecific(idCpu, supdrvDarwinMsrProberWriteOnCpu, &Args, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    if (Args.rc)
+        return VERR_ACCESS_DENIED;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker for supdrvOSMsrProberModify.
+ */
+static DECLCALLBACK(void) supdrvDarwinMsrProberModifyOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PSUPMSRPROBER               pReq    = (PSUPMSRPROBER)pvUser1;
+    register uint32_t           uMsr    = pReq->u.In.uMsr;
+    bool const                  fFaster = pReq->u.In.enmOp == SUPMSRPROBEROP_MODIFY_FASTER;
+    uint64_t                    uBefore;
+    uint64_t                    uWritten;
+    uint64_t                    uAfter;
+    int                         rcBefore, rcWrite, rcAfter, rcRestore;
+    RTCCUINTREG                 fOldFlags;
+
+    /* Initialize result variables. */
+    uBefore = uWritten = uAfter    = 0;
+    rcWrite = rcAfter  = rcRestore = -1;
+
+    /*
+     * Do the job.
+     */
+    fOldFlags = ASMIntDisableFlags();
+    ASMCompilerBarrier(); /* paranoia */
+    if (!fFaster)
+        ASMWriteBackAndInvalidateCaches();
+
+    rcBefore = g_pfnRdMsr64Carefully(uMsr, &uBefore);
+    if (rcBefore >= 0)
+    {
+        register uint64_t uRestore = uBefore;
+        uWritten  = uRestore;
+        uWritten &= pReq->u.In.uArgs.Modify.fAndMask;
+        uWritten |= pReq->u.In.uArgs.Modify.fOrMask;
+
+        rcWrite   = g_pfnWrMsr64Carefully(uMsr, uWritten);
+        rcAfter   = g_pfnRdMsr64Carefully(uMsr, &uAfter);
+        rcRestore = g_pfnWrMsr64Carefully(uMsr, uRestore);
+
+        if (!fFaster)
+        {
+            ASMWriteBackAndInvalidateCaches();
+            ASMReloadCR3();
+            ASMNopPause();
+        }
+    }
+
+    ASMCompilerBarrier(); /* paranoia */
+    ASMSetFlags(fOldFlags);
+
+    /*
+     * Write out the results.
+     */
+    pReq->u.Out.uResults.Modify.uBefore    = uBefore;
+    pReq->u.Out.uResults.Modify.uWritten   = uWritten;
+    pReq->u.Out.uResults.Modify.uAfter     = uAfter;
+    pReq->u.Out.uResults.Modify.fBeforeGp  = rcBefore  != 0;
+    pReq->u.Out.uResults.Modify.fModifyGp  = rcWrite   != 0;
+    pReq->u.Out.uResults.Modify.fAfterGp   = rcAfter   != 0;
+    pReq->u.Out.uResults.Modify.fRestoreGp = rcRestore != 0;
+    RT_ZERO(pReq->u.Out.uResults.Modify.afReserved);
 }
 
 
 int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq)
 {
-    NOREF(idCpu); NOREF(pReq);
-    return VERR_NOT_SUPPORTED;
+    if (!g_pfnWrMsr64Carefully || !g_pfnRdMsr64Carefully)
+        return VERR_NOT_SUPPORTED;
+    if (idCpu == NIL_RTCPUID)
+    {
+        supdrvDarwinMsrProberModifyOnCpu(idCpu, pReq, NULL);
+        return VINF_SUCCESS;
+    }
+    return RTMpOnSpecific(idCpu, supdrvDarwinMsrProberModifyOnCpu, pReq, NULL);
 }
 
 #endif /* SUPDRV_WITH_MSR_PROBER */
