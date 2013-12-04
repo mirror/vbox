@@ -1492,8 +1492,8 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT                   0
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI                       2
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT                   3
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT                    4 /**< int xx */
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_DB_XCPT                   5 /**< Why are we getting this one?? */
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT                    4
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT              5
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT                   6
 /** @} */
 
