@@ -2275,9 +2275,12 @@ static void vga_draw_blank(PVGASTATE pThis, int full_update)
         val = 0;
     w = pThis->last_scr_width * ((pThis->pDrv->cBits + 7) >> 3);
     d = pThis->pDrv->pu8Data;
-    for(i = 0; i < (int)pThis->last_scr_height; i++) {
-        memset(d, val, w);
-        d += cbScanline;
+    if (pThis->fRenderVRAM)
+    {
+        for(i = 0; i < (int)pThis->last_scr_height; i++) {
+            memset(d, val, w);
+            d += cbScanline;
+        }
     }
     pThis->pDrv->pfnUpdateRect(pThis->pDrv, 0, 0, pThis->last_scr_width, pThis->last_scr_height);
 }
