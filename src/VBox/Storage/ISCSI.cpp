@@ -4069,7 +4069,6 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
 
     SCSIREQ sr;
     RTSGSEG DataSeg;
-    uint8_t sense[96];
     uint8_t data8[8];
     uint8_t data12[12];
 
