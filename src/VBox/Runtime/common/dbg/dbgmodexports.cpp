@@ -86,7 +86,8 @@ static DECLCALLBACK(int) rtDbgModExportsAddSegmentsCallback(RTLDRMOD hLdrMod, PC
     pArgs->cSegs++;
 
     /* Add dummy segments for segments that doesn't get mapped. */
-    if (pSeg->LinkAddress == NIL_RTLDRADDR)
+    if (   pSeg->LinkAddress == NIL_RTLDRADDR
+        || pSeg->RVA         == NIL_RTLDRADDR)
         return RTDbgModSegmentAdd(pArgs->pDbgMod, 0, 0, pSeg->pszName, 0 /*fFlags*/, NULL);
 
     RTLDRADDR uRva = pSeg->RVA;
