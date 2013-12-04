@@ -132,6 +132,7 @@ protected:
     void setMouseHandler(UIMouseHandler *pMouseHandler);
     void addMachineWindow(UIMachineWindow *pMachineWindow);
     void retranslateUi();
+    bool isHidLedsSyncEnabled();
 #ifdef Q_WS_MAC
     bool isDockIconPreviewEnabled() const { return m_fIsDockIconEnabled; }
     void setDockIconPreviewEnabled(bool fIsDockIconPreviewEnabled) { m_fIsDockIconEnabled = fIsDockIconPreviewEnabled; }

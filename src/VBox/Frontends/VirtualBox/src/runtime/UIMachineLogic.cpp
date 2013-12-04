@@ -510,8 +510,12 @@ void UIMachineLogic::sltKeyboardLedsChanged()
 {
     /* Here we have to update host LED lock states using values provided by UISession:
      * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
-    LogRelFlow(("UIMachineLogic::sltKeyboardLedsChanged: Updating host LED lock states (NOT IMPLEMENTED).\n"));
+
+    if (!isHidLedsSyncEnabled())
+        return;
+
 #ifdef Q_WS_MAC
+    LogRelFlow(("UIMachineLogic::sltKeyboardLedsChanged: Updating host LED lock states.\n"));
     DarwinHidDevicesBroadcastLeds(m_pHostLedsState, uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
 #endif
 }
@@ -671,6 +675,14 @@ void UIMachineLogic::retranslateUi()
         foreach (QAction *pAction, m_pDragAndDropActions->actions())
             pAction->setText(gpConverter->toString(pAction->data().value<KDragAndDropMode>()));
     }
+}
+
+bool UIMachineLogic::isHidLedsSyncEnabled()
+{
+    QString strHidLedsSyncSettings = session().GetMachine().GetExtraData(GUI_HidLedsSync);
+    if (strHidLedsSyncSettings == "1")
+        return true;
+    return false;
 }
 
 #ifdef Q_WS_MAC
@@ -2303,8 +2315,11 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
     /* Here we have to update host LED lock states using values provided by UISession registry.
      * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
 
-    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds: keep host LED lock states and broadcast guest's ones (NOT IMPLEMENTED).\n"));
+    if (!isHidLedsSyncEnabled())
+        return;
+
 #ifdef Q_WS_MAC
+    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds: keep host LED lock states and broadcast guest's ones.\n"));
     if (m_pHostLedsState == NULL)
         m_pHostLedsState = DarwinHidDevicesKeepLedsState();
     DarwinHidDevicesBroadcastLeds(m_pHostLedsState, uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
@@ -2319,10 +2334,13 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
 //           strDt.toAscii().constData(),
 //           session().GetMachine().GetName().toAscii().constData());
 
-    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds: restore host LED lock states (NOT IMPLEMENTED).\n"));
+    if (!isHidLedsSyncEnabled())
+        return;
 
     /* Here we have to restore host LED lock states. */
 #ifdef Q_WS_MAC
+    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds: restore host LED lock states.\n"));
+
     if (m_pHostLedsState)
     {
         DarwinHidDevicesApplyAndReleaseLedsState(m_pHostLedsState);
