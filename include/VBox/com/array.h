@@ -1655,7 +1655,7 @@ public:
         for (typename List::const_iterator it = aCntr.begin();
              it != aCntr.end(); ++ it, ++ i)
 #ifdef VBOX_WITH_XPCOM
-            Copy(*it, Base::m.arr[i]);
+            this->Copy(*it, Base::m.arr[i]);
 #else
             Copy(*it, Base::m.raw[i]);
 #endif
