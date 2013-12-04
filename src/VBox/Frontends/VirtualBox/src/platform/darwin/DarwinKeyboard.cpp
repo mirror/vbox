@@ -23,7 +23,6 @@
 #define LOG_GROUP LOG_GROUP_GUI
 
 #define VBOX_WITH_KBD_LEDS_SYNC
-//#define VBOX_WITH_KBD_SCROLL_LED_SYNC
 //#define VBOX_WITHOUT_KBD_LEDS_SYNC_FILTERING
 
 #include "DarwinKeyboard.h"
@@ -39,6 +38,7 @@
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
 # include <iprt/err.h>
 # include <iprt/semaphore.h>
+# include <VBox/usblib.h>
 #endif
 
 #ifdef USE_HID_FOR_MODIFIERS
@@ -1269,6 +1269,8 @@ static int darwinLedElementSetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     IOHIDValueRef valueRef;
     IOReturn      rc = kIOReturnError;
 
+    USBLibResumeBuiltInKeyboard();
+
     valueRef = IOHIDValueCreateWithIntegerValue(kCFAllocatorDefault, element, 0, (fEnabled) ? 1 : 0);
     if (valueRef)
     {
@@ -1290,6 +1292,8 @@ static int darwinLedElementGetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     IOHIDValueRef valueRef;
     IOReturn      rc;
     CFIndex       integerValue;
+
+    USBLibResumeBuiltInKeyboard();
 
     rc = IOHIDDeviceGetValue(hidDevice, element, &valueRef);
     if (rc == kIOReturnSuccess)
@@ -1341,11 +1345,9 @@ static int darwinSetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
                 case kHIDUsage_LED_CapsLock:
                     rc = darwinLedElementSetValue(hidDevice, element, fCapsLockOn);
                     break;
-#ifdef VBOX_WITH_KBD_SCROLL_LED_SYNC
                 case kHIDUsage_LED_ScrollLock:
                     rc = darwinLedElementSetValue(hidDevice, element, fScrollLockOn);
                     break;
-#endif
             }
             if (rc != 0)
             {
@@ -1388,11 +1390,9 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
                 case kHIDUsage_LED_CapsLock:
                     rc = darwinLedElementGetValue(hidDevice, element, fCapsLockOn);
                     break;
-#ifdef VBOX_WITH_KBD_SCROLL_LED_SYNC
                 case kHIDUsage_LED_ScrollLock:
                     rc = darwinLedElementGetValue(hidDevice, element, fScrollLockOn);
                     break;
-#endif
             }
             if (rc != 0)
             {
@@ -1455,11 +1455,6 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
     if (vendorId == 0x05D5)      /* Genius */
     {
         if (productId == 0x8001) /* GK-04008/C keyboard */
-            fSupported = false;
-    }
-    else if (vendorId == 0x05AC) /* Apple */
-    {
-        if (productId == 0x0263) /* Apple Internal Keyboard */
             fSupported = false;
     }
 
@@ -1919,6 +1914,8 @@ void * DarwinHidDevicesKeepLedsState(void)
     IOReturn         rc;
     VBoxHidsState_t *pHidState;
 
+    USBLibInit();
+
     pHidState = (VBoxHidsState_t *)malloc(sizeof(VBoxHidsState_t));
     AssertReturn(pHidState, NULL);
 
@@ -2059,6 +2056,8 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
     CFRelease(pHidState->hidManagerRef);
 
     free(pHidState);
+
+    USBLibTerm();
 
     return rc2;
 #else /* !VBOX_WITH_KBD_LEDS_SYNC */

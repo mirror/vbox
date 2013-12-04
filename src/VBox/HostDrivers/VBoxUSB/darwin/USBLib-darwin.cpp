@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -189,3 +189,21 @@ USBLIB_DECL(void) USBLibRemoveFilter(void *pvId)
     NOREF(kr);
 }
 
+USBLIB_DECL(void) USBLibResumeBuiltInKeyboard(void)
+{
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1050
+    kern_return_t kr = IOConnectMethodStructureIStructureO(g_Connection,
+                                                           VBOXUSBMETHOD_RESUME_BUILTIN_KBD,
+                                                           0,
+                                                           NULL,
+                                                           NULL,
+                                                           NULL);
+#else  /* 10.5 and later */
+    kern_return_t kr = IOConnectCallStructMethod(g_Connection,
+                                                 VBOXUSBMETHOD_RESUME_BUILTIN_KBD,
+                                                 NULL, 0,
+                                                 NULL, NULL);
+#endif /* 10.5 and later */
+    AssertMsg(kr == kIOReturnSuccess, ("kr=%#x\n", kr));
+    NOREF(kr);
+}

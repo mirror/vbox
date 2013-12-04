@@ -147,6 +147,7 @@ namespace UIDefs
     extern const char* GUI_PassCAD;
     extern const char* GUI_DefaultCloseAction;
     extern const char* GUI_RestrictedStatusBarIndicators;
+    extern const char* GUI_HidLedsSync;
 
     /* Settings dialogs stuff: */
     extern const char* GUI_RestrictedGlobalSettingsPages;
