@@ -1118,10 +1118,13 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
             }
             pThis->vbe_regs[pThis->vbe_index] = val;
             /*
-             * LFB video mode is either disabled or changed. This notification
-             * is used by the display to disable VBVA.
+             * LFB video mode is either disabled or changed. Notify the display
+             * and reset VBVA.
              */
             pThis->pDrv->pfnLFBModeChange(pThis->pDrv, (val & VBE_DISPI_ENABLED) != 0);
+#ifdef VBOX_WITH_HGSMI
+            VBVAReset(pThis);
+#endif /* VBOX_WITH_HGSMI */
 
             /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
             if (pThis->fRemappedVGA)
