@@ -1681,9 +1681,9 @@
 /** @def RT_LO_U16
  * Gets the low uint16_t of a uint32_t or something equivalent. */
 #ifdef __GNUC__
-# define RT_LO_U16(a)   __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint64_t)); (uint32_t)(a); })
+# define RT_LO_U16(a)   __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint32_t)); (uint16_t)(a); })
 #else
-# define RT_LO_U16(a)                           ( (uint32_t)(a) )
+# define RT_LO_U16(a)                           ( (uint16_t)(a) )
 #endif
 /** @def RT_HI_U16
  * Gets the high uint16_t of a uint32_t or something equivalent). */
