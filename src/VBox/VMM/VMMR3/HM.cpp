@@ -408,7 +408,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 
     /** @cfgm{/HM/TPRPatchingEnabled, bool, false}
      * Enables TPR patching for 32-bit windows guests with IO-APIC. */
-    rc = CFGMR3QueryBoolDef(pCfgHM, "TPRPatchingEnabled", &pVM->hm.s.fTRPPatchingAllowed, false);
+    rc = CFGMR3QueryBoolDef(pCfgHM, "TPRPatchingEnabled", &pVM->hm.s.fTprPatchingAllowed, false);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/64bitEnabled, bool, 32-bit:false, 64-bit:true}
@@ -948,8 +948,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
     pVM->hm.s.fHasIoApic = PDMHasIoApic(pVM);
     if (!pVM->hm.s.fHasIoApic)
     {
-        Assert(!pVM->hm.s.fTRPPatchingAllowed); /* paranoia */
-        pVM->hm.s.fTRPPatchingAllowed = false;
+        Assert(!pVM->hm.s.fTprPatchingAllowed); /* paranoia */
+        pVM->hm.s.fTprPatchingAllowed = false;
     }
 
     /*
@@ -1462,7 +1462,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     else if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
-    LogRel(("HM: TPR Patching %s.\n", (pVM->hm.s.fTRPPatchingAllowed) ? "enabled" : "disabled"));
+    LogRel(("HM: TPR patching %s.\n", (pVM->hm.s.fTprPatchingAllowed) ? "enabled" : "disabled"));
 
     LogRel((pVM->hm.s.fAllow64BitGuests
             ? "HM: Guest support: 32-bit and 64-bit.\n"

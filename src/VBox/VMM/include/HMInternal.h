@@ -327,7 +327,7 @@ typedef struct HM
     bool                        fHasIoApic;
 
     /** Set when TPR patching is allowed. */
-    bool                        fTRPPatchingAllowed;
+    bool                        fTprPatchingAllowed;
 
     /** Set when we initialize VT-x or AMD-V once for all CPUs. */
     bool                        fGlobalInit;
