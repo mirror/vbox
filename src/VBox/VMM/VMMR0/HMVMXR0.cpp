@@ -9271,8 +9271,10 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     switch (uIntType)
     {
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT:  /* Privileged software exception. (#DB from ICEBP) */
+            Assert(uVector == X86_XCPT_DB);
+            /* fall through */
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT:       /* Software exception. (#BP or #OF) */
-            Assert(uVector == X86_XCPT_DB || uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
+            Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF || uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT);
             /* no break */
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT:
         {
