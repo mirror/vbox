@@ -68,6 +68,7 @@
 # include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 #include "EventImpl.h"
+// #include "VBoxEvents.h"
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
@@ -2234,7 +2235,7 @@ int VirtualBox::decryptMediumSettings(Medium *pMedium)
         Utf8Str strPlaintext;
         int rc = decryptSetting(&strPlaintext, bstrCipher);
         if (RT_SUCCESS(rc))
-            pMedium->setPropertyDirect("InitiatorSecret", strPlaintext);
+            pMedium->i_setPropertyDirect("InitiatorSecret", strPlaintext);
         else
             return rc;
     }
@@ -2441,7 +2442,7 @@ void VirtualBox::dumpAllBackRefs()
              ++mt)
         {
             ComObjPtr<Medium> pMedium = *mt;
-            pMedium->dumpBackRefs();
+            pMedium->i_dumpBackRefs();
         }
     }
     {
@@ -2451,7 +2452,7 @@ void VirtualBox::dumpAllBackRefs()
              ++mt)
         {
             ComObjPtr<Medium> pMedium = *mt;
-            pMedium->dumpBackRefs();
+            pMedium->i_dumpBackRefs();
         }
     }
 }
@@ -3522,7 +3523,7 @@ HRESULT VirtualBox::findHardDiskByLocation(const Utf8Str &strLocation,
         if (FAILED(autoCaller.rc())) return autoCaller.rc();
         AutoWriteLock mlock(pHD COMMA_LOCKVAL_SRC_POS);
 
-        Utf8Str strLocationFull = pHD->getLocationFull();
+        Utf8Str strLocationFull = pHD->i_getLocationFull();
 
         if (0 == RTPathCompare(strLocationFull.c_str(), strLocation.c_str()))
         {
@@ -3603,16 +3604,16 @@ HRESULT VirtualBox::findDVDOrFloppyImage(DeviceType_T mediumType,
         // no AutoCaller, registered image life time is bound to this
         Medium *pMedium = *it;
         AutoReadLock imageLock(pMedium COMMA_LOCKVAL_SRC_POS);
-        const Utf8Str &strLocationFull = pMedium->getLocationFull();
+        const Utf8Str &strLocationFull = pMedium->i_getLocationFull();
 
         found =     (    aId
-                      && pMedium->getId() == *aId)
+                      && pMedium->i_getId() == *aId)
                  || (    !aLocation.isEmpty()
                       && RTPathCompare(location.c_str(),
                                        strLocationFull.c_str()) == 0);
         if (found)
         {
-            if (pMedium->getDeviceType() != mediumType)
+            if (pMedium->i_getDeviceType() != mediumType)
             {
                 if (mediumType == DeviceType_DVD)
                     return setError(E_INVALIDARG,
@@ -3926,8 +3927,8 @@ HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
         /* Note: no AutoCaller since bound to this */
         AutoReadLock mlock(pMediumFound COMMA_LOCKVAL_SRC_POS);
 
-        Utf8Str strLocFound = pMediumFound->getLocationFull();
-        Guid idFound = pMediumFound->getId();
+        Utf8Str strLocFound = pMediumFound->i_getLocationFull();
+        Guid idFound = pMediumFound->i_getId();
 
         if (    (RTPathCompare(strLocFound.c_str(), aLocation.c_str()) == 0)
              && (idFound == aId)
@@ -4032,7 +4033,7 @@ static int fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser)
          ++it)
     {
         Medium *pMedium = *it;
-        pMedium->markRegistriesModified();
+        pMedium->i_markRegistriesModified();
     }
 
     pDesc->pVirtualBox->saveModifiedRegistries();
@@ -4105,8 +4106,8 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
                  ++it2)
             {
                 const Data::PendingMachineRename &pmr = *it2;
-                HRESULT rc = pMedium->updatePath(pmr.strConfigDirOld,
-                                                 pmr.strConfigDirNew);
+                HRESULT rc = pMedium->i_updatePath(pmr.strConfigDirOld,
+                                                   pmr.strConfigDirNew);
                 if (SUCCEEDED(rc))
                 {
                     // Remember which medium objects has been changed,
@@ -4177,10 +4178,10 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
             if (FAILED(autoCaller.rc())) throw autoCaller.rc();
             AutoReadLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-            if (pMedium->isInRegistry(uuidRegistry))
+            if (pMedium->i_isInRegistry(uuidRegistry))
             {
                 settings::Medium med;
-                rc = pMedium->saveSettings(med, strMachineFolder);     // this recurses into child hard disks
+                rc = pMedium->i_saveSettings(med, strMachineFolder);     // this recurses into child hard disks
                 if (FAILED(rc)) throw rc;
                 llTarget.push_back(med);
             }
@@ -4403,9 +4404,9 @@ HRESULT VirtualBox::registerMedium(const ComObjPtr<Medium> &pMedium,
     ComObjPtr<Medium> pParent;
     {
         AutoReadLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
-        id = pMedium->getId();
-        strLocationFull = pMedium->getLocationFull();
-        pParent = pMedium->getParent();
+        id = pMedium->i_getId();
+        strLocationFull = pMedium->i_getLocationFull();
+        pParent = pMedium->i_getParent();
     }
 
     HRESULT rc;
@@ -4477,9 +4478,9 @@ HRESULT VirtualBox::unregisterMedium(Medium *pMedium)
     DeviceType_T devType;
     {
         AutoReadLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
-        id = pMedium->getId();
-        pParent = pMedium->getParent();
-        devType = pMedium->getDeviceType();
+        id = pMedium->i_getId();
+        pParent = pMedium->i_getParent();
+        devType = pMedium->i_getDeviceType();
     }
 
     ObjectsList<Medium> *pall = NULL;
@@ -4524,7 +4525,7 @@ void VirtualBox::pushMediumToListWithChildren(MediaList &llMedia, Medium *pMediu
     // recurse first, then add ourselves; this way children end up on the
     // list before their parents
 
-    const MediaList &llChildren = pMedium->getChildren();
+    const MediaList &llChildren = pMedium->i_getChildren();
     for (MediaList::const_iterator it = llChildren.begin();
          it != llChildren.end();
          ++it)
@@ -4533,7 +4534,7 @@ void VirtualBox::pushMediumToListWithChildren(MediaList &llMedia, Medium *pMediu
         pushMediumToListWithChildren(llMedia, pChild);
     }
 
-    Log(("Pushing medium %RTuuid\n", pMedium->getId().raw()));
+    Log(("Pushing medium %RTuuid\n", pMedium->i_getId().raw()));
     llMedia.push_back(pMedium);
 }
 
@@ -4570,7 +4571,7 @@ HRESULT VirtualBox::unregisterMachineMedia(const Guid &uuidMachine)
             if (FAILED(medCaller.rc())) return medCaller.rc();
             AutoReadLock medlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-            if (pMedium->isInRegistry(uuidMachine))
+            if (pMedium->i_isInRegistry(uuidMachine))
                 // recursively with children first
                 pushMediumToListWithChildren(llMedia2Close, pMedium);
         }
@@ -4581,9 +4582,9 @@ HRESULT VirtualBox::unregisterMachineMedia(const Guid &uuidMachine)
          ++it)
     {
         ComObjPtr<Medium> pMedium = *it;
-        Log(("Closing medium %RTuuid\n", pMedium->getId().raw()));
+        Log(("Closing medium %RTuuid\n", pMedium->i_getId().raw()));
         AutoCaller mac(pMedium);
-        pMedium->close(mac);
+        pMedium->i_close(mac);
     }
 
     LogFlowFuncLeave();
@@ -4631,16 +4632,16 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
             if (FAILED(medCaller.rc())) return medCaller.rc();
             AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-            if (pMedium->removeRegistry(id, true /* fRecurse */))
+            if (pMedium->i_removeRegistry(id, true /* fRecurse */))
             {
                 // machine ID was found in base medium's registry list:
                 // move this base image and all its children to another registry then
                 // 1) first, find a better registry to add things to
-                const Guid *puuidBetter = pMedium->getAnyMachineBackref();
+                const Guid *puuidBetter = pMedium->i_getAnyMachineBackref();
                 if (puuidBetter)
                 {
                     // 2) better registry found: then use that
-                    pMedium->addRegistry(*puuidBetter, true /* fRecurse */);
+                    pMedium->i_addRegistry(*puuidBetter, true /* fRecurse */);
                     // 3) and make sure the registry is saved below
                     mlock.release();
                     tlock.release();

@@ -4085,7 +4085,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             AutoReadLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
             return setError(VBOX_E_OBJECT_IN_USE,
                             tr("Medium '%s' is already attached to port %d, device %d of controller '%ls' of this virtual machine"),
-                            pMedium->getLocationFull().c_str(),
+                            pMedium->i_getLocationFull().c_str(),
                             aControllerPort,
                             aDevice,
                             aControllerName);
@@ -4110,11 +4110,11 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
        )
         return setError(VBOX_E_OBJECT_IN_USE,
                         tr("Medium '%s' is already attached to this virtual machine"),
-                        medium->getLocationFull().c_str());
+                        medium->i_getLocationFull().c_str());
 
     if (!medium.isNull())
     {
-        MediumType_T mtype = medium->getType();
+        MediumType_T mtype = medium->i_getType();
         // MediumType_Readonly is also new, but only applies to DVDs and floppies.
         // For DVDs it's not written to the config file, so needs no global config
         // version bump. For floppies it's a new attribute "type", which is ignored
@@ -4132,19 +4132,19 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             // As a result, we can only use these two new types if the medium is NOT in the
             // global registry:
             const Guid &uuidGlobalRegistry = mParent->getGlobalRegistryId();
-            if (    medium->isInRegistry(uuidGlobalRegistry)
+            if (    medium->i_isInRegistry(uuidGlobalRegistry)
                  || !mData->pMachineConfigFile->canHaveOwnMediaRegistry()
                )
                 return setError(VBOX_E_INVALID_OBJECT_STATE,
                                 tr("Cannot attach medium '%s': the media type 'MultiAttach' can only be attached "
                                    "to machines that were created with VirtualBox 4.0 or later"),
-                                medium->getLocationFull().c_str());
+                                medium->i_getLocationFull().c_str());
         }
     }
 
     bool fIndirect = false;
     if (!medium.isNull())
-        fIndirect = medium->isReadOnly();
+        fIndirect = medium->i_isReadOnly();
     bool associate = true;
 
     do
@@ -4177,10 +4177,10 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
                         MediumLockList *pMediumLockList(new MediumLockList());
 
-                        rc = medium->createMediumLockList(true /* fFailIfInaccessible */,
-                                                          true /* fMediumLockWrite */,
-                                                          NULL,
-                                                          *pMediumLockList);
+                        rc = medium->i_createMediumLockList(true /* fFailIfInaccessible */,
+                                                            true /* fMediumLockWrite */,
+                                                            NULL,
+                                                            *pMediumLockList);
                         alock.acquire();
                         if (FAILED(rc))
                             delete pMediumLockList;
@@ -4225,7 +4225,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
          * attachments. Note that smart attachment is only applicable to base
          * hard disks. */
 
-        if (medium->getParent().isNull())
+        if (medium->i_getParent().isNull())
         {
             /* first, investigate the backup copy of the current hard disk
              * attachments to make it possible to re-attach existing diffs to
@@ -4248,7 +4248,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                     if (pMedium.isNull())
                         continue;
 
-                    if (pMedium->getBase(&level) == medium)
+                    if (pMedium->i_getBase(&level) == medium)
                     {
                         /* skip the hard disk if its currently attached (we
                          * cannot attach the same hard disk twice) */
@@ -4276,10 +4276,10 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
                                 MediumLockList *pMediumLockList(new MediumLockList());
 
-                                rc = medium->createMediumLockList(true /* fFailIfInaccessible */,
-                                                                  true /* fMediumLockWrite */,
-                                                                  NULL,
-                                                                  *pMediumLockList);
+                                rc = medium->i_createMediumLockList(true /* fFailIfInaccessible */,
+                                                                    true /* fMediumLockWrite */,
+                                                                    NULL,
+                                                                    *pMediumLockList);
                                 alock.acquire();
                                 if (FAILED(rc))
                                     delete pMediumLockList;
@@ -4363,7 +4363,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         continue;
 
                     uint32_t level = 0;
-                    if (pMedium->getBase(&level) == medium)
+                    if (pMedium->i_getBase(&level) == medium)
                     {
                         /* matched device, channel and bus (i.e. attached to the
                          * same place) will win and immediately stop the search;
@@ -4418,7 +4418,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         diff.createObject();
         // store this diff in the same registry as the parent
         Guid uuidRegistryParent;
-        if (!medium->getFirstRegistryMachineId(uuidRegistryParent))
+        if (!medium->i_getFirstRegistryMachineId(uuidRegistryParent))
         {
             // parent image has no registry: this can happen if we're attaching a new immutable
             // image that has not yet been attached (medium then points to the base and we're
@@ -4431,10 +4431,10 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             alock.acquire();
             treeLock.acquire();
             mediumLock.acquire();
-            medium->getFirstRegistryMachineId(uuidRegistryParent);
+            medium->i_getFirstRegistryMachineId(uuidRegistryParent);
         }
         rc = diff->init(mParent,
-                        medium->getPreferredDiffFormat(),
+                        medium->i_getPreferredDiffFormat(),
                         strFullSnapshotFolder.append(RTPATH_SLASH_STR),
                         uuidRegistryParent);
         if (FAILED(rc)) return rc;
@@ -4443,10 +4443,10 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         MediumLockList *pMediumLockList(new MediumLockList());
         mediumLock.release();
         treeLock.release();
-        rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
-                                        true /* fMediumLockWrite */,
-                                        medium,
-                                        *pMediumLockList);
+        rc = diff->i_createMediumLockList(true /* fFailIfInaccessible */,
+                                          true /* fMediumLockWrite */,
+                                          medium,
+                                          *pMediumLockList);
         treeLock.acquire();
         mediumLock.acquire();
         if (SUCCEEDED(rc))
@@ -4459,7 +4459,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             if (FAILED(rc))
                 setError(rc,
                          tr("Could not lock medium when creating diff '%s'"),
-                         diff->getLocationFull().c_str());
+                         diff->i_getLocationFull().c_str());
             else
             {
                 /* will release the lock before the potentially lengthy
@@ -4471,11 +4471,11 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 treeLock.release();
                 alock.release();
 
-                rc = medium->createDiffStorage(diff,
-                                               MediumVariant_Standard,
-                                               pMediumLockList,
-                                               NULL /* aProgress */,
-                                               true /* aWait */);
+                rc = medium->i_createDiffStorage(diff,
+                                                 MediumVariant_Standard,
+                                                 pMediumLockList,
+                                                 NULL /* aProgress */,
+                                                 true /* aWait */);
 
                 alock.acquire();
                 treeLock.acquire();
@@ -4518,7 +4518,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     if (associate && !medium.isNull())
     {
         // as the last step, associate the medium to the VM
-        rc = medium->addBackReference(mData->mUuid);
+        rc = medium->i_addBackReference(mData->mUuid);
         // here we can fail because of Deleting, or being in process of creating a Diff
         if (FAILED(rc)) return rc;
 
@@ -4546,7 +4546,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         {
             MediumLockList *pMediumLockList(new MediumLockList());
 
-            rc = medium->createMediumLockList(true /* fFailIfInaccessible */,
+            rc = medium->i_createMediumLockList(true /* fFailIfInaccessible */,
                                               true /* fMediumLockWrite */,
                                               NULL,
                                               *pMediumLockList);
@@ -5089,10 +5089,10 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                                  aControllerPort,
                                  aDevice);
         if (!oldmedium.isNull())
-            oldmedium->removeBackReference(mData->mUuid);
+            oldmedium->i_removeBackReference(mData->mUuid);
         if (!pMedium.isNull())
         {
-            pMedium->addBackReference(mData->mUuid);
+            pMedium->i_addBackReference(mData->mUuid);
 
             mediumLock.release();
             multiLock.release();
@@ -5117,7 +5117,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     if (FAILED(rc))
     {
         if (!pMedium.isNull())
-            pMedium->removeBackReference(mData->mUuid);
+            pMedium->i_removeBackReference(mData->mUuid);
         pAttach = findAttachment(mMediaData->mAttachments,
                                  aControllerName,
                                  aControllerPort,
@@ -5127,7 +5127,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
             return rc;
         AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
         if (!oldmedium.isNull())
-            oldmedium->addBackReference(mData->mUuid);
+            oldmedium->i_addBackReference(mData->mUuid);
         pAttach->updateMedium(oldmedium);
     }
 
@@ -5696,7 +5696,7 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
             {
                 AutoCaller mac(pMedium);
                 if (FAILED(mac.rc())) throw mac.rc();
-                Utf8Str strLocation = pMedium->getLocationFull();
+                Utf8Str strLocation = pMedium->i_getLocationFull();
                 rc = task.pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), strLocation.c_str()).raw(), 1);
                 if (FAILED(rc)) throw rc;
                 LogFunc(("Deleting file %s\n", strLocation.c_str()));
@@ -5723,7 +5723,6 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
                 ErrorInfoKeeper eik;
                 pMedium->Close();
             }
-
         }
         setMachineState(oldState);
         alock.acquire();
@@ -8823,7 +8822,7 @@ void Machine::uninitDataAndChildObjects()
             ComObjPtr<Medium> pMedium = (*it)->getMedium();
             if (pMedium.isNull())
                 continue;
-            HRESULT rc = pMedium->removeBackReference(mData->mUuid, getSnapshotId());
+            HRESULT rc = pMedium->i_removeBackReference(mData->mUuid, getSnapshotId());
             AssertComRC(rc);
         }
     }
@@ -9701,13 +9700,13 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
                 AutoWriteLock hdLock(medium COMMA_LOCKVAL_SRC_POS);
 
-                if (medium->getType() == MediumType_Immutable)
+                if (medium->i_getType() == MediumType_Immutable)
                 {
                     if (isSnapshotMachine())
                         return setError(E_FAIL,
                                         tr("Immutable hard disk '%s' with UUID {%RTuuid} cannot be directly attached to snapshot with UUID {%RTuuid} "
                                            "of the virtual machine '%s' ('%s')"),
-                                        medium->getLocationFull().c_str(),
+                                        medium->i_getLocationFull().c_str(),
                                         dev.uuid.raw(),
                                         puuidSnapshot->raw(),
                                         mUserData->s.strName.c_str(),
@@ -9715,19 +9714,19 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
                     return setError(E_FAIL,
                                     tr("Immutable hard disk '%s' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%s' ('%s')"),
-                                    medium->getLocationFull().c_str(),
+                                    medium->i_getLocationFull().c_str(),
                                     dev.uuid.raw(),
                                     mUserData->s.strName.c_str(),
                                     mData->m_strConfigFileFull.c_str());
                 }
 
-                if (medium->getType() == MediumType_MultiAttach)
+                if (medium->i_getType() == MediumType_MultiAttach)
                 {
                     if (isSnapshotMachine())
                         return setError(E_FAIL,
                                         tr("Multi-attach hard disk '%s' with UUID {%RTuuid} cannot be directly attached to snapshot with UUID {%RTuuid} "
                                            "of the virtual machine '%s' ('%s')"),
-                                        medium->getLocationFull().c_str(),
+                                        medium->i_getLocationFull().c_str(),
                                         dev.uuid.raw(),
                                         puuidSnapshot->raw(),
                                         mUserData->s.strName.c_str(),
@@ -9735,29 +9734,29 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
                     return setError(E_FAIL,
                                     tr("Multi-attach hard disk '%s' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%s' ('%s')"),
-                                    medium->getLocationFull().c_str(),
+                                    medium->i_getLocationFull().c_str(),
                                     dev.uuid.raw(),
                                     mUserData->s.strName.c_str(),
                                     mData->m_strConfigFileFull.c_str());
                 }
 
                 if (    !isSnapshotMachine()
-                     && medium->getChildren().size() != 0
+                     && medium->i_getChildren().size() != 0
                    )
                     return setError(E_FAIL,
                                     tr("Hard disk '%s' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%s' ('%s') "
                                        "because it has %d differencing child hard disks"),
-                                    medium->getLocationFull().c_str(),
+                                    medium->i_getLocationFull().c_str(),
                                     dev.uuid.raw(),
                                     mUserData->s.strName.c_str(),
                                     mData->m_strConfigFileFull.c_str(),
-                                    medium->getChildren().size());
+                                    medium->i_getChildren().size());
 
                 if (findAttachment(mMediaData->mAttachments,
                                    medium))
                     return setError(E_FAIL,
                                     tr("Hard disk '%s' with UUID {%RTuuid} is already attached to the virtual machine '%s' ('%s')"),
-                                    medium->getLocationFull().c_str(),
+                                    medium->i_getLocationFull().c_str(),
                                     dev.uuid.raw(),
                                     mUserData->s.strName.c_str(),
                                     mData->m_strConfigFileFull.c_str());
@@ -9768,7 +9767,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             default:
                 return setError(E_FAIL,
                                 tr("Device '%s' with unknown type is attached to the virtual machine '%s' ('%s')"),
-                                medium->getLocationFull().c_str(),
+                                medium->i_getLocationFull().c_str(),
                                 mUserData->s.strName.c_str(),
                                 mData->m_strConfigFileFull.c_str());
         }
@@ -9785,7 +9784,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             if (FAILED(rc))
                 return setError(E_FAIL,
                                 tr("Device '%s' with unknown bandwidth group '%s' is attached to the virtual machine '%s' ('%s')"),
-                                medium->getLocationFull().c_str(),
+                                medium->i_getLocationFull().c_str(),
                                 dev.strBwGroup.c_str(),
                                 mUserData->s.strName.c_str(),
                                 mData->m_strConfigFileFull.c_str());
@@ -9818,15 +9817,15 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             AutoWriteLock mlock(medium COMMA_LOCKVAL_SRC_POS);
 
             if (isSnapshotMachine())
-                rc = medium->addBackReference(mData->mUuid, *puuidSnapshot);
+                rc = medium->i_addBackReference(mData->mUuid, *puuidSnapshot);
             else
-                rc = medium->addBackReference(mData->mUuid);
+                rc = medium->i_addBackReference(mData->mUuid);
             /* If the medium->addBackReference fails it sets an appropriate
              * error message, so no need to do any guesswork here. */
 
             if (puuidRegistry)
                 // caller wants registry ID to be set on all attached media (OVF import case)
-                medium->addRegistry(*puuidRegistry, false /* fRecurse */);
+                medium->i_addRegistry(*puuidRegistry, false /* fRecurse */);
         }
 
         if (FAILED(rc))
@@ -10405,7 +10404,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
  * The caller can then call MachineConfigFile::write() or do something else
  * with it.
  *
- * Caller must hold the machine lock!
+  Caller must hold the machine lock!
  *
  * This throws XML errors and HRESULT, so the caller must have a catch block!
  */
@@ -10914,10 +10913,10 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
         dev.fHotPluggable = pAttach->getHotPluggable();
         if (pMedium)
         {
-            if (pMedium->isHostDrive())
-                dev.strHostDriveSrc = pMedium->getLocationFull();
+            if (pMedium->i_isHostDrive())
+                dev.strHostDriveSrc = pMedium->i_getLocationFull();
             else
-                dev.uuid = pMedium->getId();
+                dev.uuid = pMedium->i_getId();
             dev.fTempEject = pAttach->getTempEject();
             dev.fNonRotational = pAttach->getNonRotational();
             dev.fDiscard = pAttach->getDiscard();
@@ -11008,7 +11007,7 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium)
     ComObjPtr<Medium> pBase;
     {
         AutoReadLock treeLock(&mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-        pBase = pMedium->getBase();
+        pBase = pMedium->i_getBase();
     }
 
     /* Paranoia checks: do not hold medium locks. */
@@ -11023,14 +11022,14 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium)
     else
         uuid = mParent->getGlobalRegistryId(); // VirtualBox global registry UUID
 
-    if (pMedium->addRegistry(uuid, false /* fRecurse */))
+    if (pMedium->i_addRegistry(uuid, false /* fRecurse */))
         mParent->markRegistryModified(uuid);
 
     /* For more complex hard disk structures it can happen that the base
      * medium isn't yet associated with any medium registry. Do that now. */
     if (pMedium != pBase)
     {
-        if (pBase->addRegistry(uuid, true /* fRecurse */))
+        if (pBase->i_addRegistry(uuid, true /* fRecurse */))
             mParent->markRegistryModified(uuid);
     }
 }
@@ -11113,10 +11112,10 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
                     MediumLockList *pMediumLockList(new MediumLockList());
                     alock.release();
-                    rc = pMedium->createMediumLockList(true /* fFailIfInaccessible */,
-                                                       false /* fMediumLockWrite */,
-                                                       NULL,
-                                                       *pMediumLockList);
+                    rc = pMedium->i_createMediumLockList(true /* fFailIfInaccessible */,
+                                                         false /* fMediumLockWrite */,
+                                                         NULL,
+                                                         *pMediumLockList);
                     alock.acquire();
                     if (FAILED(rc))
                     {
@@ -11163,7 +11162,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
             if (   devType != DeviceType_HardDisk
                 || pMedium == NULL
-                || pMedium->getType() != MediumType_Normal)
+                || pMedium->i_getType() != MediumType_Normal)
             {
                 /* copy the attachment as is */
 
@@ -11177,7 +11176,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                                     aWeight);        // weight
                     else
                         aProgress->SetNextOperation(BstrFmt(tr("Skipping medium '%s'"),
-                                                            pMedium->getBase()->getName().c_str()).raw(),
+                                                            pMedium->i_getBase()->i_getName().c_str()).raw(),
                                                     aWeight);        // weight
                 }
 
@@ -11187,7 +11186,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
             /* need a diff */
             aProgress->SetNextOperation(BstrFmt(tr("Creating differencing hard disk for '%s'"),
-                                                pMedium->getBase()->getName().c_str()).raw(),
+                                                pMedium->i_getBase()->i_getName().c_str()).raw(),
                                         aWeight);        // weight
 
             Utf8Str strFullSnapshotFolder;
@@ -11199,10 +11198,10 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
             // (this cannot fail here because we can't create implicit diffs for
             // unregistered images)
             Guid uuidRegistryParent;
-            bool fInRegistry = pMedium->getFirstRegistryMachineId(uuidRegistryParent);
+            bool fInRegistry = pMedium->i_getFirstRegistryMachineId(uuidRegistryParent);
             Assert(fInRegistry); NOREF(fInRegistry);
             rc = diff->init(mParent,
-                            pMedium->getPreferredDiffFormat(),
+                            pMedium->i_getPreferredDiffFormat(),
                             strFullSnapshotFolder.append(RTPATH_SLASH_STR),
                             uuidRegistryParent);
             if (FAILED(rc)) throw rc;
@@ -11228,16 +11227,16 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
             /* release the locks before the potentially lengthy operation */
             alock.release();
-            rc = pMedium->createDiffStorage(diff, MediumVariant_Standard,
-                                            pMediumLockList,
-                                            NULL /* aProgress */,
-                                            true /* aWait */);
+            rc = pMedium->i_createDiffStorage(diff, MediumVariant_Standard,
+                                              pMediumLockList,
+                                              NULL /* aProgress */,
+                                              true /* aWait */);
             alock.acquire();
             if (FAILED(rc)) throw rc;
 
             /* actual lock list update is done in Medium::commitMedia */
 
-            rc = diff->addBackReference(mData->mUuid);
+            rc = diff->i_addBackReference(mData->mUuid);
             AssertComRCThrowRC(rc);
 
             /* add a new attachment */
@@ -11363,10 +11362,10 @@ HRESULT Machine::deleteImplicitDiffs(bool aOnline)
 
                     MediumLockList *pMediumLockList(new MediumLockList());
                     alock.release();
-                    rc = pMedium->createMediumLockList(true /* fFailIfInaccessible */,
-                                                       false /* fMediumLockWrite */,
-                                                       NULL,
-                                                       *pMediumLockList);
+                    rc = pMedium->i_createMediumLockList(true /* fFailIfInaccessible */,
+                                                         false /* fMediumLockWrite */,
+                                                         NULL,
+                                                         *pMediumLockList);
                     alock.acquire();
 
                     if (FAILED(rc))
@@ -11405,7 +11404,7 @@ HRESULT Machine::deleteImplicitDiffs(bool aOnline)
             {
                 /* Deassociate and mark for deletion */
                 LogFlowThisFunc(("Detaching '%s', pending deletion\n", pAtt->getLogName()));
-                rc = pMedium->removeBackReference(mData->mUuid);
+                rc = pMedium->i_removeBackReference(mData->mUuid);
                 if (FAILED(rc))
                    throw rc;
                 implicitAtts.push_back(pAtt);
@@ -11417,7 +11416,7 @@ HRESULT Machine::deleteImplicitDiffs(bool aOnline)
             {
                 /* no: de-associate */
                 LogFlowThisFunc(("Detaching '%s', no deletion\n", pAtt->getLogName()));
-                rc = pMedium->removeBackReference(mData->mUuid);
+                rc = pMedium->i_removeBackReference(mData->mUuid);
                 if (FAILED(rc))
                     throw rc;
                 continue;
@@ -11460,9 +11459,9 @@ HRESULT Machine::deleteImplicitDiffs(bool aOnline)
                 ComObjPtr<Medium> pMedium = pAtt->getMedium();
                 Assert(pMedium);
 
-                rc = pMedium->deleteStorage(NULL /*aProgress*/, true /*aWait*/);
+                rc = pMedium->i_deleteStorage(NULL /*aProgress*/, true /*aWait*/);
                 // continue on delete failure, just collect error messages
-                AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, pAtt->getLogName(), pMedium->getLocationFull().c_str() ));
+                AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, pAtt->getLogName(), pMedium->i_getLocationFull().c_str() ));
                 mrc = rc;
             }
 
@@ -11578,7 +11577,7 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
     {
         MediumAttachment *pAttach = *it;
         ComObjPtr<Medium> pMediumThis = pAttach->getMedium();
-        if (pMediumThis->getId() == id)
+        if (pMediumThis->i_getId() == id)
             return pAttach;
     }
 
@@ -11601,7 +11600,7 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
     ComObjPtr<Medium> oldmedium = pAttach->getMedium();
     DeviceType_T mediumType = pAttach->getType();
 
-    LogFlowThisFunc(("Entering, medium of attachment is %s\n", oldmedium ? oldmedium->getLocationFull().c_str() : "NULL"));
+    LogFlowThisFunc(("Entering, medium of attachment is %s\n", oldmedium ? oldmedium->i_getLocationFull().c_str() : "NULL"));
 
     if (pAttach->isImplicit())
     {
@@ -11620,8 +11619,8 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
 
         writeLock.release();
 
-        HRESULT rc = oldmedium->deleteStorage(NULL /*aProgress*/,
-                                              true /*aWait*/);
+        HRESULT rc = oldmedium->i_deleteStorage(NULL /*aProgress*/,
+                                                true /*aWait*/);
 
         writeLock.acquire();
 
@@ -11638,10 +11637,10 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
     {
         // if this is from a snapshot, do not defer detachment to commitMedia()
         if (pSnapshot)
-            oldmedium->removeBackReference(mData->mUuid, pSnapshot->getId());
+            oldmedium->i_removeBackReference(mData->mUuid, pSnapshot->getId());
         // else if non-hard disk media, do not defer detachment to commitMedia() either
         else if (mediumType != DeviceType_HardDisk)
-            oldmedium->removeBackReference(mData->mUuid);
+            oldmedium->i_removeBackReference(mData->mUuid);
     }
 
     return S_OK;
@@ -11696,14 +11695,14 @@ HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
             AutoCaller mac(pMedium);
             if (FAILED(mac.rc())) return mac.rc();
             AutoReadLock lock(pMedium COMMA_LOCKVAL_SRC_POS);
-            DeviceType_T devType = pMedium->getDeviceType();
+            DeviceType_T devType = pMedium->i_getDeviceType();
             if (    (    cleanupMode == CleanupMode_DetachAllReturnHardDisksOnly
                       && devType == DeviceType_HardDisk)
                  || (cleanupMode == CleanupMode_Full)
                )
             {
                 llMedia.push_back(pMedium);
-                ComObjPtr<Medium> pParent = pMedium->getParent();
+                ComObjPtr<Medium> pParent = pMedium->i_getParent();
                 /*
                  * Search for medias which are not attached to any machine, but
                  * in the chain to an attached disk. Mediums are only consided
@@ -11717,16 +11716,16 @@ HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
                     AutoCaller mac1(pParent);
                     if (FAILED(mac1.rc())) return mac1.rc();
                     AutoReadLock lock1(pParent COMMA_LOCKVAL_SRC_POS);
-                    if (pParent->getChildren().size() == 1)
+                    if (pParent->i_getChildren().size() == 1)
                     {
-                        if (   pParent->getMachineBackRefCount() == 0
-                            && pParent->getType() == MediumType_Normal
+                        if (   pParent->i_getMachineBackRefCount() == 0
+                            && pParent->i_getType() == MediumType_Normal
                             && find(llMedia.begin(), llMedia.end(), pParent) == llMedia.end())
                             llMedia.push_back(pParent);
                     }
                     else
                         break;
-                    pParent = pParent->getParent();
+                    pParent = pParent->i_getParent();
                 }
             }
         }
@@ -11786,7 +11785,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
         bool fImplicit = pAttach->isImplicit();
 
         LogFlowThisFunc(("Examining current medium '%s' (implicit: %d)\n",
-                         (pMedium) ? pMedium->getName().c_str() : "NULL",
+                         (pMedium) ? pMedium->i_getName().c_str() : "NULL",
                          fImplicit));
 
         /** @todo convert all this Machine-based voodoo to MediumAttachment
@@ -11801,7 +11800,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
                  && pAttach->getType() == DeviceType_HardDisk
                )
             {
-                ComObjPtr<Medium> parent = pMedium->getParent();
+                ComObjPtr<Medium> parent = pMedium->i_getParent();
                 AutoWriteLock parentLock(parent COMMA_LOCKVAL_SRC_POS);
 
                 /* update the appropriate lock list */
@@ -11837,7 +11836,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
                 MediumAttachment *pOldAttach = *oldIt;
                 if (pOldAttach->getMedium() == pMedium)
                 {
-                    LogFlowThisFunc(("--> medium '%s' was attached before, will not remove\n", pMedium->getName().c_str()));
+                    LogFlowThisFunc(("--> medium '%s' was attached before, will not remove\n", pMedium->i_getName().c_str()));
 
                     /* yes: remove from old to avoid de-association */
                     oldAtts.erase(oldIt);
@@ -11860,10 +11859,10 @@ void Machine::commitMedia(bool aOnline /*= false*/)
          * instantly in MountMedium. */
         if (pAttach->getType() == DeviceType_HardDisk && pMedium)
         {
-            LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->getName().c_str()));
+            LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->i_getName().c_str()));
 
             /* now de-associate from the current machine state */
-            rc = pMedium->removeBackReference(mData->mUuid);
+            rc = pMedium->i_removeBackReference(mData->mUuid);
             AssertComRC(rc);
 
             if (aOnline)
@@ -11963,7 +11962,7 @@ void Machine::rollbackMedia()
             Medium* pMedium = pAttach->getMedium();
             if (pMedium)
             {
-                rc = pMedium->removeBackReference(mData->mUuid);
+                rc = pMedium->i_removeBackReference(mData->mUuid);
                 AssertComRC(rc);
             }
         }
@@ -11977,7 +11976,7 @@ void Machine::rollbackMedia()
             Medium* pMedium = pAttach->getMedium();
             if (pMedium)
             {
-                rc = pMedium->addBackReference(mData->mUuid);
+                rc = pMedium->i_addBackReference(mData->mUuid);
                 AssertComRC(rc);
             }
         }
@@ -13993,7 +13992,7 @@ STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
 
             AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
             if (!oldmedium.isNull())
-                oldmedium->removeBackReference(mData->mUuid);
+                oldmedium->i_removeBackReference(mData->mUuid);
 
             pAttach->updateMedium(NULL);
             pAttach->updateEjected();
@@ -14725,16 +14724,16 @@ HRESULT SessionMachine::lockMedia()
         // attached later.
         if (pMedium != NULL)
         {
-            MediumType_T mediumType = pMedium->getType();
+            MediumType_T mediumType = pMedium->i_getType();
             bool fIsReadOnlyLock =    mediumType == MediumType_Readonly
                                    || mediumType == MediumType_Shareable;
             bool fIsVitalImage = (devType == DeviceType_HardDisk);
 
             alock.release();
-            mrc = pMedium->createMediumLockList(fIsVitalImage /* fFailIfInaccessible */,
-                                                !fIsReadOnlyLock /* fMediumLockWrite */,
-                                                NULL,
-                                                *pMediumLockList);
+            mrc = pMedium->i_createMediumLockList(fIsVitalImage /* fFailIfInaccessible */,
+                                                  !fIsReadOnlyLock /* fMediumLockWrite */,
+                                                  NULL,
+                                                  *pMediumLockList);
             alock.acquire();
             if (FAILED(mrc))
             {

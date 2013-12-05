@@ -1565,7 +1565,7 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         rc = rc2;
         /*
          * Restoring original UUID from OVF description file.
-         * During import VB creates new UUIDs for imported images and 
+         * During import VB creates new UUIDs for imported images and
          * assigns them to the images. In case of failure we have to restore
          * the original UUIDs because those new UUIDs are obsolete now and
          * won't be used anymore.
@@ -1791,7 +1791,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
         /*
          * Restoring original UUID from OVF description file.
-         * During import VB creates new UUIDs for imported images and 
+         * During import VB creates new UUIDs for imported images and
          * assigns them to the images. In case of failure we have to restore
          * the original UUIDs because those new UUIDs are obsolete now and
          * won't be used anymore.
@@ -2487,12 +2487,12 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 
                     /* Clone the source disk image */
                     ComObjPtr<Medium> nullParent;
-                    rc = pTargetHD->importFile(strSrcFilePath.c_str(),
-                                               srcFormat,
-                                               MediumVariant_Standard,
-                                               pCallbacks, pRealUsedStorage,
-                                               nullParent,
-                                               pProgress);
+                    rc = pTargetHD->i_importFile(strSrcFilePath.c_str(),
+                                                 srcFormat,
+                                                 MediumVariant_Standard,
+                                                 pCallbacks, pRealUsedStorage,
+                                                 nullParent,
+                                                 pProgress);
                     if (FAILED(rc)) throw rc;
 
 
@@ -3763,7 +3763,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                 vsdeTargetHD->strVboxCurrent = savedVboxCurrent;
 
                 /*
-                 * 1. saving original UUID for restoring in case of failure. 
+                 * 1. saving original UUID for restoring in case of failure.
                  * 2. replacement of original UUID by new UUID in the current VM config (settings::MachineConfigFile).
                  */
                 {

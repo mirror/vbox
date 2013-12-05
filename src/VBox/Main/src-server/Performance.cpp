@@ -1100,7 +1100,7 @@ void MachineDiskUsage::collect()
 
         AutoReadLock local_alock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-        used += (ULONG)(pMedium->getSize() / _1M);
+        used += (ULONG)(pMedium->i_getSize() / _1M);
     }
 
     mUsed->put(used);
