@@ -5154,7 +5154,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
         Args.idCpu    = pVCpu->idCpu;
         rc = RTAvlGCPtrDoWithAll(&pGVM->gmm.s.pSharedModuleTree, true /* fFromLeft */, gmmR0CheckSharedModule, &Args);
 
-        Log(("GMMR0CheckSharedModules done!\n"));
+        Log(("GMMR0CheckSharedModules done (rc=%Rrc)!\n", rc));
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
