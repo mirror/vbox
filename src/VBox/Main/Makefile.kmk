@@ -173,23 +173,23 @@ ifndef VBOX_ONLY_SDK
 #
 LIBRARIES += VBoxAPIWrap
 VBoxAPIWrap_TEMPLATE        = VBoxMainLib
-VBoxAPIWrap_SOURCES         = $(VBoxAPIWrap_GENERATEDCPP)
-VBoxAPIWrap_GENERATEDCPP    = $(filter %.cpp,$(VBoxAPIWrap_GENERATEDSOURCES))
-VBoxAPIWrap_GENERATEDSOURCES = $(addprefix $(VBoxAPIWrap_0_OUTDIR)/,$(VBoxAPIWrap_VBOX_APIWRAPPERFILES))
-VBoxAPIWrap_RAWSRC          = \
+VBoxAPIWrap_SOURCES         = $(VBoxAPIWrap_VBOX_GENERATEDCPP)
+VBoxAPIWrap_VBOX_GENERATEDCPP = $(filter %.cpp,$(VBoxAPIWrap_VBOX_GENERATEDSOURCES))
+VBoxAPIWrap_VBOX_GENERATEDSOURCES = $(addprefix $(VBoxAPIWrap_0_OUTDIR)/,$(VBoxAPIWrap_VBOX_APIWRAPPERFILES))
+VBoxAPIWrap_VBOX_RAWSRC     = \
 	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers
 VBoxAPIWrap_XSLT            = \
 	$(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server.xsl
-VBoxAPIWrap_DEFS.win.x86 += _WIN32_WINNT=0x0500
+VBoxAPIWrap_DEFS.win.x86   += _WIN32_WINNT=0x0500
 VBoxAPIWrap_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 VBoxAPIWrap_INCS           += \
 	include
 VBoxAPIWrap_CLEAN           = \
 	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) \
 	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h) \
-	$(VBoxAPIWrap_RAWSRC)
-VBoxAPIWrap_KMK = $(PATH_OUT)/vboxapiwrap.kmk
-include $(VBoxAPIWrap_KMK)
+	$(VBoxAPIWrap_VBOX_RAWSRC)
+VBoxAPIWrap_VBOX_KMK_FILE   = $(PATH_OUT)/vboxapiwrap.kmk
+include $(VBoxAPIWrap_VBOX_KMK_FILE)
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API
 LIBRARIES += VBoxAPIWrap-x86
@@ -291,7 +291,7 @@ VBoxSVC_DEFS.freebsd += VBOX_USE_LIBHAL
 
 VBoxSVC_CXXFLAGS = $(filter-out -Wno-unused,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS))
 
-VBoxSVC_DEPS = $(filter %.h,$(VBoxAPIWrap_GENERATEDSOURCES))
+VBoxSVC_DEPS = $(filter %.h,$(VBoxAPIWrap_VBOX_GENERATEDSOURCES))
 
 VBoxSVC_INCS = \
 	include \
@@ -619,7 +619,7 @@ ifdef VBOX_WITH_VPX
   VBoxC_SDKS += VBOX_VPX
 endif
 
-VBoxC_DEPS = $(filter %.h,$(VBoxAPIWrap_GENERATEDSOURCES))
+VBoxC_DEPS = $(filter %.h,$(VBoxAPIWrap_VBOX_GENERATEDSOURCES))
 
 VBoxC_INCS          = \
 	include \
@@ -1052,23 +1052,23 @@ javagluesample_SOURCES = \
 	$(VBOX_PATH_MAIN_SRC)/glue/tests/Makefile=>Makefile
 
 # Moved those rules to the end so that VBoxAPIWrap_0_OUTDIR can be expanded without $$ trickery.
-$(VBoxAPIWrap_RAWSRC) \
-+| $(VBoxAPIWrap_GENERATEDSOURCES): \
+$(VBoxAPIWrap_VBOX_RAWSRC) \
++| $(VBoxAPIWrap_VBOX_GENERATEDSOURCES): \
 		$(VBOX_XIDL_FILE) \
 		$(VBoxAPIWrap_XSLT) \
 		$(VBOX_FILESPLIT) \
 		| $$(dir $$@)
 	$(call MSG_L1,Generating C++ Server API wrapper files from XIDL)
-	$(QUIET)$(RM) -f $(filter-out $(VBoxAPIWrap_GENERATEDSOURCES),$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
+	$(QUIET)$(RM) -f $(filter-out $(VBoxAPIWrap_VBOX_GENERATEDSOURCES),$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly "" -o $@ $(VBoxAPIWrap_XSLT) $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
-$(VBoxAPIWrap_KMK).ts +| $(VBoxAPIWrap_KMK): $(VBOX_XIDL_FILE) $(VBoxAPIWrap_XSLT)
-	$(call MSG_GENERATE,,$(VBoxAPIWrap_KMK))
+$(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FILE) $(VBoxAPIWrap_XSLT)
+	$(call MSG_GENERATE,,$(VBoxAPIWrap_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly VBoxAPIWrap_VBOX_APIWRAPPERFILES -o $@ $(VBoxAPIWrap_XSLT) $<
-	$(QUIET)$(CP) --changed -fv $@ $(VBoxAPIWrap_KMK)
+	$(QUIET)$(CP) --changed -fv $@ $(VBoxAPIWrap_VBOX_KMK_FILE)
 
 updatenls::
 	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)
