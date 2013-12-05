@@ -633,7 +633,7 @@ STDMETHODIMP Display::HandleEvent(IEvent * aEvent)
 static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId,
                                   ULONG pixelFormat, void *pvVRAM,
                                   uint32_t bpp, uint32_t cbLine,
-                                  int w, int h)
+                                  uint32_t w, uint32_t h)
 {
     Assert (pFramebuffer);
 
@@ -665,7 +665,7 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId
  *  @thread EMT
  */
 int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM,
-                                  uint32_t cbLine, int w, int h, uint16_t flags)
+                                  uint32_t cbLine, uint32_t w, uint32_t h, uint16_t flags)
 {
     LogRel(("Display::handleDisplayResize(): uScreenId = %d, pvVRAM=%p "
             "w=%d h=%d bpp=%d cbLine=0x%X, flags=0x%X\n",
@@ -3238,7 +3238,7 @@ int Display::updateDisplayData(void)
         rc = pFramebuffer->COMGETTER(Height) (&height);
         AssertComRC (rc);
 
-        if (   (width != mLastWidth && mLastWidth != 0)
+        if (   (width  != mLastWidth  && mLastWidth != 0)
             || (height != mLastHeight && mLastHeight != 0))
         {
             LogRel(("updateDisplayData: size mismatch w %d(%d) h %d(%d)\n",
