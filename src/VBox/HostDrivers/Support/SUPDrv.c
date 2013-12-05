@@ -3397,6 +3397,9 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
  */
 SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
 {
+    int rc = VERR_UNSUPPORTED_CPU;
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+
     /*
      * Input validation.
      */
@@ -3404,10 +3407,8 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
     AssertPtrReturn(pfCaps, VERR_INVALID_POINTER);
 
     *pfCaps = 0;
-
-    /** @todo r=ramshankar: Although we're only reading CPUIDs/MSRs here which
-     *        should be identical on all CPUs on the system, it's probably
-     *        cleaner to prevent migration nonetheless? */
+    /* We may modify MSRs and re-read them, disable preemption so we make sure we don't migrate CPUs. */
+    RTThreadPreemptDisable(&PreemptState);
     if (ASMHasCpuId())
     {
         uint32_t fFeaturesECX, fFeaturesEDX, uDummy;
@@ -3484,15 +3485,13 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                         if (vtCaps.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
                             *pfCaps |= SUPVTCAPS_NESTED_PAGING;
                     }
-                    return VINF_SUCCESS;
                 }
-                return rc;
             }
-            return VERR_VMX_NO_VMX;
+            else
+                rc = VERR_VMX_NO_VMX;
         }
-
-        if (   ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
-            && ASMIsValidStdRange(uMaxId))
+        else if (   ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
+                 && ASMIsValidStdRange(uMaxId))
         {
             uint32_t fExtFeaturesEcx, uExtMaxId;
             ASMCpuId(0x80000000, &uExtMaxId, &uDummy, &uDummy, &uDummy);
@@ -3516,15 +3515,18 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                     if (fSvmFeatures & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
                         *pfCaps |= SUPVTCAPS_NESTED_PAGING;
 
-                    return VINF_SUCCESS;
+                    rc = VINF_SUCCESS;
                 }
-                return VERR_SVM_DISABLED;
+                else
+                    rc = VERR_SVM_DISABLED;
             }
-            return VERR_SVM_NO_SVM;
+            else
+                rc = VERR_SVM_NO_SVM;
         }
     }
 
-    return VERR_UNSUPPORTED_CPU;
+    RTThreadPreemptRestore(&PreemptState);
+    return rc;
 }
 
 
