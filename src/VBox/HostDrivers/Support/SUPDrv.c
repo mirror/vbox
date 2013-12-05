@@ -3435,7 +3435,6 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                 bool       fVmxAllowed    = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
 
                 /* Check if the LOCK bit is set but excludes the required VMXON bit. */
-                int rc = VERR_HM_IPE_1;
                 if (fMsrLocked)
                 {
                     if (fInSmxMode && !fSmxVmxAllowed)
