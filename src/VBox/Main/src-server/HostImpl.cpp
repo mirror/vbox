@@ -1856,14 +1856,14 @@ HRESULT Host::i_getDrives(DeviceType_T mediumType,
                  /*nothing */)
             {
                 Medium *pCached = *itCached;
-                const Utf8Str strLocationCached = pCached->getLocationFull();
+                const Utf8Str strLocationCached = pCached->i_getLocationFull();
                 bool fFound = false;
                 for (MediaList::iterator itNew = llNew.begin();
                      itNew != llNew.end();
                      ++itNew)
                 {
                     Medium *pNew = *itNew;
-                    const Utf8Str strLocationNew = pNew->getLocationFull();
+                    const Utf8Str strLocationNew = pNew->i_getLocationFull();
                     if (strLocationNew == strLocationCached)
                     {
                         fFound = true;
@@ -1882,14 +1882,14 @@ HRESULT Host::i_getDrives(DeviceType_T mediumType,
                  ++itNew)
             {
                 Medium *pNew = *itNew;
-                const Utf8Str strLocationNew = pNew->getLocationFull();
+                const Utf8Str strLocationNew = pNew->i_getLocationFull();
                 bool fFound = false;
                 for (MediaList::iterator itCached = pllCached->begin();
                      itCached != pllCached->end();
                      ++itCached)
                 {
                     Medium *pCached = *itCached;
-                    const Utf8Str strLocationCached = pCached->getLocationFull();
+                    const Utf8Str strLocationCached = pCached->i_getLocationFull();
                     if (strLocationNew == strLocationCached)
                     {
                         fFound = true;
@@ -1938,7 +1938,7 @@ HRESULT Host::i_findHostDriveById(DeviceType_T mediumType,
             Medium *pThis = *it;
             AutoCaller mediumCaller(pThis);
             AutoReadLock mediumLock(pThis COMMA_LOCKVAL_SRC_POS);
-            if (pThis->getId() == uuid)
+            if (pThis->i_getId() == uuid)
             {
                 pMedium = pThis;
                 return S_OK;
@@ -1978,7 +1978,7 @@ HRESULT Host::i_findHostDriveByName(DeviceType_T mediumType,
             Medium *pThis = *it;
             AutoCaller mediumCaller(pThis);
             AutoReadLock mediumLock(pThis COMMA_LOCKVAL_SRC_POS);
-            if (pThis->getLocationFull() == strLocationFull)
+            if (pThis->i_getLocationFull() == strLocationFull)
             {
                 pMedium = pThis;
                 return S_OK;

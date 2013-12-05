@@ -658,25 +658,25 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine>
         ComObjPtr<Medium> diff;
         diff.createObject();
         rc = diff->init(p->getVirtualBox(),
-                        pParent->getPreferredDiffFormat(),
+                        pParent->i_getPreferredDiffFormat(),
                         Utf8StrFmt("%s%c", strSnapshotFolder.c_str(), RTPATH_DELIMITER),
                         Guid::Empty /* empty media registry */);
         if (FAILED(rc)) throw rc;
 
         MediumLockList *pMediumLockList(new MediumLockList());
-        rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
-                                        true /* fMediumLockWrite */,
-                                        pParent,
-                                        *pMediumLockList);
+        rc = diff->i_createMediumLockList(true /* fFailIfInaccessible */,
+                                          true /* fMediumLockWrite */,
+                                          pParent,
+                                          *pMediumLockList);
         if (FAILED(rc)) throw rc;
         rc = pMediumLockList->Lock();
         if (FAILED(rc)) throw rc;
 
         /* this already registers the new diff image */
-        rc = pParent->createDiffStorage(diff, MediumVariant_Standard,
-                                        pMediumLockList,
-                                        NULL /* aProgress */,
-                                        true /* aWait */);
+        rc = pParent->i_createDiffStorage(diff, MediumVariant_Standard,
+                                          pMediumLockList,
+                                          NULL /* aProgress */,
+                                          true /* aWait */);
         delete pMediumLockList;
         if (FAILED(rc)) throw rc;
         /* Remember created medium. */
@@ -1053,8 +1053,8 @@ HRESULT MachineCloneVM::run()
                     ComObjPtr<Medium> pLMedium = static_cast<Medium*>(pTmp);
                     if (pLMedium.isNull())
                         throw p->setError(VBOX_E_OBJECT_NOT_FOUND);
-                    ComObjPtr<Medium> pBase = pLMedium->getBase();
-                    if (pBase->isReadOnly())
+                    ComObjPtr<Medium> pBase = pLMedium->i_getBase();
+                    if (pBase->i_isReadOnly())
                     {
                         ComObjPtr<Medium> pDiff;
                         /* create the diff under the snapshot medium */
@@ -1180,19 +1180,19 @@ HRESULT MachineCloneVM::run()
                         if (FAILED(rc)) throw rc;
 
                         /* Update the new uuid. */
-                        pTarget->updateId(newId);
+                        pTarget->i_updateId(newId);
 
                         srcLock.release();
                         /* Do the disk cloning. */
                         ComPtr<IProgress> progress2;
 
                         ComObjPtr<Medium> pLMedium = static_cast<Medium*>((IMedium*)pMedium);
-                        rc = pLMedium->cloneToEx(pTarget,
-                                                 srcVar,
-                                                 pNewParent,
-                                                 progress2.asOutParam(),
-                                                 uSrcParentIdx,
-                                                 uTrgParentIdx);
+                        rc = pLMedium->i_cloneToEx(pTarget,
+                                                   srcVar,
+                                                   pNewParent,
+                                                   progress2.asOutParam(),
+                                                   uSrcParentIdx,
+                                                   uTrgParentIdx);
                         if (FAILED(rc)) throw rc;
 
                         /* Wait until the async process has finished. */
@@ -1253,8 +1253,8 @@ HRESULT MachineCloneVM::run()
                 ComObjPtr<Medium> pLMedium = static_cast<Medium*>((IMedium*)mt.pMedium);
                 if (pLMedium.isNull())
                     throw p->setError(VBOX_E_OBJECT_NOT_FOUND);
-                ComObjPtr<Medium> pBase = pLMedium->getBase();
-                if (pBase->isReadOnly())
+                ComObjPtr<Medium> pBase = pLMedium->i_getBase();
+                if (pBase->i_isReadOnly())
                 {
                     ComObjPtr<Medium> pDiff;
                     trgLock.release();
@@ -1291,14 +1291,14 @@ HRESULT MachineCloneVM::run()
             Guid uuid = d->pTrgMachine->mData->mUuid;
             if (d->options.contains(CloneOptions_Link))
             {
-                ComObjPtr<Medium> pParent = pMedium->getParent();
+                ComObjPtr<Medium> pParent = pMedium->i_getParent();
                 mlock.release();
                 if (!pParent.isNull())
                 {
                     AutoCaller mac2(pParent);
                     if (FAILED(mac2.rc())) throw mac2.rc();
                     AutoReadLock mlock2(pParent COMMA_LOCKVAL_SRC_POS);
-                    if (pParent->getFirstRegistryMachineId(uuid))
+                    if (pParent->i_getFirstRegistryMachineId(uuid))
                     {
                         mlock2.release();
                         trgLock.release();
@@ -1311,7 +1311,7 @@ HRESULT MachineCloneVM::run()
                 }
                 mlock.acquire();
             }
-            pMedium->addRegistry(uuid, false /* fRecurse */);
+            pMedium->i_addRegistry(uuid, false /* fRecurse */);
         }
         /* Check if a snapshot folder is necessary and if so doesn't already
          * exists. */
@@ -1406,7 +1406,7 @@ HRESULT MachineCloneVM::run()
         for (size_t i = newMedia.size(); i > 0; --i)
         {
             const ComObjPtr<Medium> &pMedium = newMedia.at(i - 1);
-            mrc = pMedium->deleteStorage(NULL /* aProgress */,
+            mrc = pMedium->i_deleteStorage(NULL /* aProgress */,
                                          true /* aWait */);
             pMedium->Close();
         }

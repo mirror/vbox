@@ -399,13 +399,19 @@ HRESULT SerialPort::setPath(const com::Utf8Str &aPath)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (aPath != m->bd->strPath)
+    com::Utf8Str strPath = aPath;
+
+    /* we treat empty as null when e.g. saving to XML, do the same here */
+    if (!strPath.isEmpty())
+        strPath = "";
+
+    if (strPath != m->bd->strPath)
     {
-        HRESULT rc = i_checkSetPath(aPath);
+        HRESULT rc = i_checkSetPath(strPath);
         if (FAILED(rc)) return rc;
 
         m->bd.backup();
-        m->bd->strPath = aPath;
+        m->bd->strPath = strPath;
 
         m->fModified = true;
         // leave the lock before informing callbacks

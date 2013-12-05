@@ -21,12 +21,10 @@
 #define ____H_MEDIUMIMPL
 
 #include <VBox/vd.h>
-
-#include "VirtualBoxBase.h"
-#include "MediumLock.h"
-
+#include "MediumWrap.h"
 class Progress;
 class MediumFormat;
+class MediumLockList;
 
 namespace settings
 {
@@ -39,20 +37,9 @@ namespace settings
  * Medium component class for all media types.
  */
 class ATL_NO_VTABLE Medium :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IMedium)
+    public MediumWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Medium, IMedium)
-
-    DECLARE_NOT_AGGREGATABLE(Medium)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(Medium)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IMedium)
-    END_COM_MAP()
-
     DECLARE_EMPTY_CTOR_DTOR(Medium)
 
     HRESULT FinalConstruct();
@@ -95,221 +82,225 @@ public:
 
     void uninit();
 
-    void deparent();
-    void setParent(const ComObjPtr<Medium> &pParent);
-
-    // IMedium properties
-    STDMETHOD(COMGETTER(Id))(BSTR *aId);
-    STDMETHOD(COMGETTER(Description))(BSTR *aDescription);
-    STDMETHOD(COMSETTER(Description))(IN_BSTR aDescription);
-    STDMETHOD(COMGETTER(State))(MediumState_T *aState);
-    STDMETHOD(COMGETTER(Variant))(ComSafeArrayOut(MediumVariant_T, aVariant));
-    STDMETHOD(COMGETTER(Location))(BSTR *aLocation);
-    STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMGETTER(DeviceType))(DeviceType_T *aDeviceType);
-    STDMETHOD(COMGETTER(HostDrive))(BOOL *aHostDrive);
-    STDMETHOD(COMGETTER(Size))(LONG64 *aSize);
-    STDMETHOD(COMGETTER(Format))(BSTR *aFormat);
-    STDMETHOD(COMGETTER(MediumFormat))(IMediumFormat **aMediumFormat);
-    STDMETHOD(COMGETTER(Type))(MediumType_T *aType);
-    STDMETHOD(COMSETTER(Type))(MediumType_T aType);
-    STDMETHOD(COMGETTER(AllowedTypes))(ComSafeArrayOut(MediumType_T, aAllowedTypes));
-    STDMETHOD(COMGETTER(Parent))(IMedium **aParent);
-    STDMETHOD(COMGETTER(Children))(ComSafeArrayOut(IMedium *, aChildren));
-    STDMETHOD(COMGETTER(Base))(IMedium **aBase);
-    STDMETHOD(COMGETTER(ReadOnly))(BOOL *aReadOnly);
-    STDMETHOD(COMGETTER(LogicalSize))(LONG64 *aLogicalSize);
-    STDMETHOD(COMGETTER(AutoReset))(BOOL *aAutoReset);
-    STDMETHOD(COMSETTER(AutoReset))(BOOL aAutoReset);
-    STDMETHOD(COMGETTER(LastAccessError))(BSTR *aLastAccessError);
-    STDMETHOD(COMGETTER(MachineIds))(ComSafeArrayOut(BSTR, aMachineIds));
-
-    // IMedium methods
-    STDMETHOD(SetIds)(BOOL aSetImageId, IN_BSTR aImageId,
-                      BOOL aSetParentId, IN_BSTR aParentId);
-    STDMETHOD(RefreshState)(MediumState_T *aState);
-    STDMETHOD(GetSnapshotIds)(IN_BSTR aMachineId,
-                              ComSafeArrayOut(BSTR, aSnapshotIds));
-    STDMETHOD(LockRead)(IToken **aToken);
-    STDMETHOD(LockWrite)(IToken **aToken);
-    STDMETHOD(Close)();
-    STDMETHOD(GetProperty)(IN_BSTR aName, BSTR *aValue);
-    STDMETHOD(SetProperty)(IN_BSTR aName, IN_BSTR aValue);
-    STDMETHOD(GetProperties)(IN_BSTR aNames,
-                             ComSafeArrayOut(BSTR, aReturnNames),
-                             ComSafeArrayOut(BSTR, aReturnValues));
-    STDMETHOD(SetProperties)(ComSafeArrayIn(IN_BSTR, aNames),
-                             ComSafeArrayIn(IN_BSTR, aValues));
-    STDMETHOD(CreateBaseStorage)(LONG64 aLogicalSize,
-                                 ComSafeArrayIn(MediumVariant_T, aVariant),
-                                 IProgress **aProgress);
-    STDMETHOD(DeleteStorage)(IProgress **aProgress);
-    STDMETHOD(CreateDiffStorage)(IMedium *aTarget,
-                                 ComSafeArrayIn(MediumVariant_T, aVariant),
-                                 IProgress **aProgress);
-    STDMETHOD(MergeTo)(IMedium *aTarget, IProgress **aProgress);
-    STDMETHOD(CloneTo)(IMedium *aTarget, ComSafeArrayIn(MediumVariant_T, aVariant),
-                        IMedium *aParent, IProgress **aProgress);
-    STDMETHOD(CloneToBase)(IMedium *aTarget, ComSafeArrayIn(MediumVariant_T, aVariant),
-                           IProgress **aProgress);
-    STDMETHOD(SetLocation)(IN_BSTR aLocation, IProgress **aProgress);
-    STDMETHOD(Compact)(IProgress **aProgress);
-    STDMETHOD(Resize)(LONG64 aLogicalSize, IProgress **aProgress);
-    STDMETHOD(Reset)(IProgress **aProgress);
+    void i_deparent();
+    void i_setParent(const ComObjPtr<Medium> &pParent);
 
     // unsafe methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
-    const ComObjPtr<Medium>& getParent() const;
-    const MediaList& getChildren() const;
+    const ComObjPtr<Medium>& i_getParent() const;
+    const MediaList& i_getChildren() const;
 
-    const Guid& getId() const;
-    MediumState_T getState() const;
-    MediumVariant_T getVariant() const;
-    bool isHostDrive() const;
-    const Utf8Str& getLocationFull() const;
-    const Utf8Str& getFormat() const;
-    const ComObjPtr<MediumFormat> & getMediumFormat() const;
-    bool isMediumFormatFile() const;
-    uint64_t getSize() const;
-    DeviceType_T getDeviceType() const;
-    MediumType_T getType() const;
-    Utf8Str getName();
+    const Guid& i_getId() const;
+    MediumState_T i_getState() const;
+    MediumVariant_T i_getVariant() const;
+    bool i_isHostDrive() const;
+    const Utf8Str& i_getLocationFull() const;
+    const Utf8Str& i_getFormat() const;
+    const ComObjPtr<MediumFormat> & i_getMediumFormat() const;
+    bool i_isMediumFormatFile() const;
+    uint64_t i_getSize() const;
+    DeviceType_T i_getDeviceType() const;
+    MediumType_T i_getType() const;
+    Utf8Str i_getName();
 
     /* handles caller/locking itself */
-    bool addRegistry(const Guid& id, bool fRecurse);
+    bool i_addRegistry(const Guid& id, bool fRecurse);
     /* handles caller/locking itself */
-    bool removeRegistry(const Guid& id, bool fRecurse);
-    bool isInRegistry(const Guid& id);
-    bool getFirstRegistryMachineId(Guid &uuid) const;
-    void markRegistriesModified();
+    bool i_removeRegistry(const Guid& id, bool fRecurse);
+    bool i_isInRegistry(const Guid& id);
+    bool i_getFirstRegistryMachineId(Guid &uuid) const;
+    void i_markRegistriesModified();
 
-    HRESULT setPropertyDirect(const Utf8Str &aName, const Utf8Str &aValue);
+    HRESULT i_setPropertyDirect(const Utf8Str &aName, const Utf8Str &aValue);
 
-    HRESULT addBackReference(const Guid &aMachineId,
-                             const Guid &aSnapshotId = Guid::Empty);
-    HRESULT removeBackReference(const Guid &aMachineId,
-                                const Guid &aSnapshotId = Guid::Empty);
+    HRESULT i_addBackReference(const Guid &aMachineId,
+                               const Guid &aSnapshotId = Guid::Empty);
+    HRESULT i_removeBackReference(const Guid &aMachineId,
+                                  const Guid &aSnapshotId = Guid::Empty);
 
 
-    const Guid* getFirstMachineBackrefId() const;
-    const Guid* getAnyMachineBackref() const;
-    const Guid* getFirstMachineBackrefSnapshotId() const;
-    size_t getMachineBackRefCount() const;
+    const Guid* i_getFirstMachineBackrefId() const;
+    const Guid* i_getAnyMachineBackref() const;
+    const Guid* i_getFirstMachineBackrefSnapshotId() const;
+    size_t i_getMachineBackRefCount() const;
 
 #ifdef DEBUG
-    void dumpBackRefs();
+    void i_dumpBackRefs();
 #endif
 
-    HRESULT updatePath(const Utf8Str &strOldPath, const Utf8Str &strNewPath);
+    HRESULT i_updatePath(const Utf8Str &strOldPath, const Utf8Str &strNewPath);
 
-    ComObjPtr<Medium> getBase(uint32_t *aLevel = NULL);
+    ComObjPtr<Medium> i_getBase(uint32_t *aLevel = NULL);
 
-    bool isReadOnly();
-    void updateId(const Guid &id);
+    bool i_isReadOnly();
+    void i_updateId(const Guid &id);
 
-    HRESULT saveSettings(settings::Medium &data,
-                         const Utf8Str &strHardDiskFolder);
+    HRESULT i_saveSettings(settings::Medium &data,
+                           const Utf8Str &strHardDiskFolder);
 
-    HRESULT createMediumLockList(bool fFailIfInaccessible,
-                                 bool fMediumLockWrite,
-                                 Medium *pToBeParent,
-                                 MediumLockList &mediumLockList);
+    HRESULT i_createMediumLockList(bool fFailIfInaccessible,
+                                   bool fMediumLockWrite,
+                                   Medium *pToBeParent,
+                                   MediumLockList &mediumLockList);
 
-    HRESULT createDiffStorage(ComObjPtr<Medium> &aTarget,
-                              MediumVariant_T aVariant,
-                              MediumLockList *pMediumLockList,
-                              ComObjPtr<Progress> *aProgress,
-                              bool aWait);
-    Utf8Str getPreferredDiffFormat();
+    HRESULT i_createDiffStorage(ComObjPtr<Medium> &aTarget,
+                                MediumVariant_T aVariant,
+                                MediumLockList *pMediumLockList,
+                                ComObjPtr<Progress> *aProgress,
+                                bool aWait);
+    Utf8Str i_getPreferredDiffFormat();
 
-    HRESULT close(AutoCaller &autoCaller);
-    HRESULT unlockRead(MediumState_T *aState);
-    HRESULT unlockWrite(MediumState_T *aState);
-    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait);
-    HRESULT markForDeletion();
-    HRESULT unmarkForDeletion();
-    HRESULT markLockedForDeletion();
-    HRESULT unmarkLockedForDeletion();
+    HRESULT i_close(AutoCaller &autoCaller);
+    HRESULT i_unlockRead(MediumState_T *aState);
+    HRESULT i_unlockWrite(MediumState_T *aState);
+    HRESULT i_deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait);
+    HRESULT i_markForDeletion();
+    HRESULT i_unmarkForDeletion();
+    HRESULT i_markLockedForDeletion();
+    HRESULT i_unmarkLockedForDeletion();
 
-    HRESULT queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
-                                         bool &fMergeForward);
+    HRESULT i_queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
+                                           bool &fMergeForward);
 
-    HRESULT prepareMergeTo(const ComObjPtr<Medium> &pTarget,
-                           const Guid *aMachineId,
-                           const Guid *aSnapshotId,
-                           bool fLockMedia,
-                           bool &fMergeForward,
-                           ComObjPtr<Medium> &pParentForTarget,
-                           MediumLockList * &aChildrenToReparent,
-                           MediumLockList * &aMediumLockList);
-    HRESULT mergeTo(const ComObjPtr<Medium> &pTarget,
-                    bool fMergeForward,
-                    const ComObjPtr<Medium> &pParentForTarget,
-                    MediumLockList *aChildrenToReparent,
-                    MediumLockList *aMediumLockList,
-                    ComObjPtr<Progress> *aProgress,
-                    bool aWait);
-    void cancelMergeTo(MediumLockList *aChildrenToReparent,
+    HRESULT i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
+                             const Guid *aMachineId,
+                             const Guid *aSnapshotId,
+                             bool fLockMedia,
+                             bool &fMergeForward,
+                             ComObjPtr<Medium> &pParentForTarget,
+                             MediumLockList * &aChildrenToReparent,
+                             MediumLockList * &aMediumLockList);
+    HRESULT i_mergeTo(const ComObjPtr<Medium> &pTarget,
+                      bool fMergeForward,
+                      const ComObjPtr<Medium> &pParentForTarget,
+                      MediumLockList *aChildrenToReparent,
+                      MediumLockList *aMediumLockList,
+                      ComObjPtr<Progress> *aProgress,
+                      bool aWait);
+    void i_cancelMergeTo(MediumLockList *aChildrenToReparent,
                        MediumLockList *aMediumLockList);
 
-    HRESULT fixParentUuidOfChildren(MediumLockList *pChildrenToReparent);
+    HRESULT i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent);
 
-    HRESULT exportFile(const char *aFilename,
-                       const ComObjPtr<MediumFormat> &aFormat,
-                       MediumVariant_T aVariant,
-                       PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
-                       const ComObjPtr<Progress> &aProgress);
-    HRESULT importFile(const char *aFilename,
-                       const ComObjPtr<MediumFormat> &aFormat,
-                       MediumVariant_T aVariant,
-                       PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
-                       const ComObjPtr<Medium> &aParent,
-                       const ComObjPtr<Progress> &aProgress);
+    HRESULT i_exportFile(const char *aFilename,
+                         const ComObjPtr<MediumFormat> &aFormat,
+                         MediumVariant_T aVariant,
+                         PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
+                         const ComObjPtr<Progress> &aProgress);
+    HRESULT i_importFile(const char *aFilename,
+                        const ComObjPtr<MediumFormat> &aFormat,
+                        MediumVariant_T aVariant,
+                        PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
+                        const ComObjPtr<Medium> &aParent,
+                        const ComObjPtr<Progress> &aProgress);
 
-    HRESULT cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
-                      const ComObjPtr<Medium> &aParent, IProgress **aProgress,
-                      uint32_t idxSrcImageSame, uint32_t idxDstImageSame);
+    HRESULT i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
+                        const ComObjPtr<Medium> &aParent, IProgress **aProgress,
+                        uint32_t idxSrcImageSame, uint32_t idxDstImageSame);
 
 private:
 
-    HRESULT queryInfo(bool fSetImageId, bool fSetParentId);
+    // wrapped IMedium properties
+    HRESULT getId(com::Guid &aId);
+    HRESULT getDescription(com::Utf8Str &aDescription);
+    HRESULT setDescription(const com::Utf8Str &aDescription);
+    HRESULT getState(MediumState_T *aState);
+    HRESULT getVariant(std::vector<MediumVariant_T> &aVariant);
+    HRESULT getLocation(com::Utf8Str &aLocation);
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT getDeviceType(DeviceType_T *aDeviceType);
+    HRESULT getHostDrive(BOOL *aHostDrive);
+    HRESULT getSize(LONG64 *aSize);
+    HRESULT getFormat(com::Utf8Str &aFormat);
+    HRESULT getMediumFormat(ComPtr<IMediumFormat> &aMediumFormat);
+    HRESULT getType(MediumType_T *aType);
+    HRESULT setType(MediumType_T aType);
+    HRESULT getAllowedTypes(std::vector<MediumType_T> &aAllowedTypes);
+    HRESULT getParent(ComPtr<IMedium> &aParent);
+    HRESULT getChildren(std::vector<ComPtr<IMedium> > &aChildren);
+    HRESULT getBase(ComPtr<IMedium> &aBase);
+    HRESULT getReadOnly(BOOL *aReadOnly);
+    HRESULT getLogicalSize(LONG64 *aLogicalSize);
+    HRESULT getAutoReset(BOOL *aAutoReset);
+    HRESULT setAutoReset(BOOL aAutoReset);
+    HRESULT getLastAccessError(com::Utf8Str &aLastAccessError);
+    HRESULT getMachineIds(std::vector<com::Guid> &aMachineIds);
 
-    HRESULT canClose();
-    HRESULT unregisterWithVirtualBox();
+    // wrapped IMedium methods
+    HRESULT setIds(BOOL aSetImageId,
+                   const com::Guid &aImageId,
+                   BOOL aSetParentId,
+                   const com::Guid &aParentId);
+    HRESULT refreshState(MediumState_T *aState);
+    HRESULT getSnapshotIds(const com::Guid &aMachineId,
+                           std::vector<com::Guid> &aSnapshotIds);
+    HRESULT lockRead(ComPtr<IToken> &aToken);
+    HRESULT lockWrite(ComPtr<IToken> &aToken);
+    HRESULT close();
+    HRESULT getProperty(const com::Utf8Str &aName,
+                        com::Utf8Str &aValue);
+    HRESULT setProperty(const com::Utf8Str &aName,
+                        const com::Utf8Str &aValue);
+    HRESULT getProperties(const com::Utf8Str &aNames,
+                          std::vector<com::Utf8Str> &aReturnNames,
+                          std::vector<com::Utf8Str> &aReturnValues);
+    HRESULT setProperties(const std::vector<com::Utf8Str> &aNames,
+                          const std::vector<com::Utf8Str> &aValues);
+    HRESULT createBaseStorage(LONG64 aLogicalSize,
+                              const std::vector<MediumVariant_T> &aVariant,
+                              ComPtr<IProgress> &aProgress);
+    HRESULT deleteStorage(ComPtr<IProgress> &aProgress);
+    HRESULT createDiffStorage(const ComPtr<IMedium> &aTarget,
+                              const std::vector<MediumVariant_T> &aVariant,
+                              ComPtr<IProgress> &aProgress);
+    HRESULT mergeTo(const ComPtr<IMedium> &aTarget,
+                    ComPtr<IProgress> &aProgress);
+    HRESULT cloneTo(const ComPtr<IMedium> &aTarget,
+                    const std::vector<MediumVariant_T> &aVariant,
+                    const ComPtr<IMedium> &aParent,
+                    ComPtr<IProgress> &aProgress);
+    HRESULT cloneToBase(const ComPtr<IMedium> &aTarget,
+                        const std::vector<MediumVariant_T> &aVariant,
+                        ComPtr<IProgress> &aProgress);
+    HRESULT setLocation(const com::Utf8Str &aLocation,
+                        ComPtr<IProgress> &aProgress);
+    HRESULT compact(ComPtr<IProgress> &aProgress);
+    HRESULT resize(LONG64 aLogicalSize,
+                   ComPtr<IProgress> &aProgress);
+    HRESULT reset(ComPtr<IProgress> &aProgress);
 
-    HRESULT setStateError();
+    // Private internal nmethods
+    HRESULT i_queryInfo(bool fSetImageId, bool fSetParentId);
+    HRESULT i_canClose();
+    HRESULT i_unregisterWithVirtualBox();
+    HRESULT i_setStateError();
+    HRESULT i_setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat = Utf8Str::Empty);
+    HRESULT i_setFormat(const Utf8Str &aFormat);
+    VDTYPE i_convertDeviceType();
+    DeviceType_T i_convertToDeviceType(VDTYPE enmType);
+    Utf8Str i_vdError(int aVRC);
 
-    HRESULT setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat = Utf8Str::Empty);
-    HRESULT setFormat(const Utf8Str &aFormat);
-
-    VDTYPE convertDeviceType();
-    DeviceType_T convertToDeviceType(VDTYPE enmType);
-
-    Utf8Str vdError(int aVRC);
-
-    static DECLCALLBACK(void) vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
-                                          const char *pszFormat, va_list va);
-
-    static DECLCALLBACK(bool) vdConfigAreKeysValid(void *pvUser,
-                                                   const char *pszzValid);
-    static DECLCALLBACK(int) vdConfigQuerySize(void *pvUser, const char *pszName,
-                                               size_t *pcbValue);
-    static DECLCALLBACK(int) vdConfigQuery(void *pvUser, const char *pszName,
-                                           char *pszValue, size_t cchValue);
-
-    static DECLCALLBACK(int) vdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock);
-    static DECLCALLBACK(int) vdTcpSocketDestroy(VDSOCKET Sock);
-    static DECLCALLBACK(int) vdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort);
-    static DECLCALLBACK(int) vdTcpClientClose(VDSOCKET Sock);
-    static DECLCALLBACK(bool) vdTcpIsClientConnected(VDSOCKET Sock);
-    static DECLCALLBACK(int) vdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies);
-    static DECLCALLBACK(int) vdTcpRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
-    static DECLCALLBACK(int) vdTcpWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer);
-    static DECLCALLBACK(int) vdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf);
-    static DECLCALLBACK(int) vdTcpFlush(VDSOCKET Sock);
-    static DECLCALLBACK(int) vdTcpSetSendCoalescing(VDSOCKET Sock, bool fEnable);
-    static DECLCALLBACK(int) vdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr);
-    static DECLCALLBACK(int) vdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr);
+    static DECLCALLBACK(void) i_vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
+                                            const char *pszFormat, va_list va);
+    static DECLCALLBACK(bool) i_vdConfigAreKeysValid(void *pvUser,
+                                                     const char *pszzValid);
+    static DECLCALLBACK(int) i_vdConfigQuerySize(void *pvUser, const char *pszName,
+                                                 size_t *pcbValue);
+    static DECLCALLBACK(int) i_vdConfigQuery(void *pvUser, const char *pszName,
+                                             char *pszValue, size_t cchValue);
+    static DECLCALLBACK(int) i_vdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock);
+    static DECLCALLBACK(int) i_vdTcpSocketDestroy(VDSOCKET Sock);
+    static DECLCALLBACK(int) i_vdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort);
+    static DECLCALLBACK(int) i_vdTcpClientClose(VDSOCKET Sock);
+    static DECLCALLBACK(bool) i_vdTcpIsClientConnected(VDSOCKET Sock);
+    static DECLCALLBACK(int) i_vdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies);
+    static DECLCALLBACK(int) i_vdTcpRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
+    static DECLCALLBACK(int) i_vdTcpWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer);
+    static DECLCALLBACK(int) i_vdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf);
+    static DECLCALLBACK(int) i_vdTcpFlush(VDSOCKET Sock);
+    static DECLCALLBACK(int) i_vdTcpSetSendCoalescing(VDSOCKET Sock, bool fEnable);
+    static DECLCALLBACK(int) i_vdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr);
+    static DECLCALLBACK(int) i_vdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr);
 
     class Task;
     class CreateBaseTask;
@@ -334,19 +325,19 @@ private:
     friend class ExportTask;
     friend class ImportTask;
 
-    HRESULT startThread(Medium::Task *pTask);
-    HRESULT runNow(Medium::Task *pTask);
+    HRESULT i_startThread(Medium::Task *pTask);
+    HRESULT i_runNow(Medium::Task *pTask);
 
-    HRESULT taskCreateBaseHandler(Medium::CreateBaseTask &task);
-    HRESULT taskCreateDiffHandler(Medium::CreateDiffTask &task);
-    HRESULT taskMergeHandler(Medium::MergeTask &task);
-    HRESULT taskCloneHandler(Medium::CloneTask &task);
-    HRESULT taskDeleteHandler(Medium::DeleteTask &task);
-    HRESULT taskResetHandler(Medium::ResetTask &task);
-    HRESULT taskCompactHandler(Medium::CompactTask &task);
-    HRESULT taskResizeHandler(Medium::ResizeTask &task);
-    HRESULT taskExportHandler(Medium::ExportTask &task);
-    HRESULT taskImportHandler(Medium::ImportTask &task);
+    HRESULT i_taskCreateBaseHandler(Medium::CreateBaseTask &task);
+    HRESULT i_taskCreateDiffHandler(Medium::CreateDiffTask &task);
+    HRESULT i_taskMergeHandler(Medium::MergeTask &task);
+    HRESULT i_taskCloneHandler(Medium::CloneTask &task);
+    HRESULT i_taskDeleteHandler(Medium::DeleteTask &task);
+    HRESULT i_taskResetHandler(Medium::ResetTask &task);
+    HRESULT i_taskCompactHandler(Medium::CompactTask &task);
+    HRESULT i_taskResizeHandler(Medium::ResizeTask &task);
+    HRESULT i_taskExportHandler(Medium::ExportTask &task);
+    HRESULT i_taskImportHandler(Medium::ImportTask &task);
 
     struct Data;            // opaque data struct, defined in MediumImpl.cpp
     Data *m;
