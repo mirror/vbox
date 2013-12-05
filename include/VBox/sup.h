@@ -1381,6 +1381,13 @@ SUPR3DECL(int) SUPR3MsrProberModify(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndM
 SUPR3DECL(int) SUPR3MsrProberModifyEx(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndMask, uint64_t fOrMask, bool fFaster,
                                       PSUPMSRPROBERMODIFYRESULT pResult);
 
+/**
+ * Resume built-in keyboard on MacBook Air and Pro hosts.
+ *
+ * @returns VBox status code.
+ */
+SUPR3DECL(int) SUPR3ResumeBuiltinKeyboard(void);
+
 /** @} */
 #endif /* IN_RING3 */
 

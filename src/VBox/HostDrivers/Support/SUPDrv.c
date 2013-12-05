@@ -138,6 +138,7 @@ static void                 supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64N
 static void                 supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t u64TSC,
                                                   RTCPUID idCpu, uint8_t idApic, uint64_t iTick);
 static void                 supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t u64NanoTS);
+static int                  supdrvIOCtl_ResumeBuiltinKbd(void);
 
 
 /*******************************************************************************
@@ -1903,6 +1904,14 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             return 0;
         }
 
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_RESUME_BUILTIN_KBD):
+        {
+            /* validate */
+            REQ_CHECK_SIZES(SUP_IOCTL_RESUME_BUILTIN_KBD);
+
+            pReqHdr->rc = supdrvIOCtl_ResumeBuiltinKbd();
+            return 0;
+        }
 
         default:
             Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
@@ -6137,5 +6146,20 @@ static void supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uin
             ASMAtomicIncU32(&pGipCpu->u32TransactionId);
         }
     }
+}
+
+/**
+ * Resume built-in keyboard on MacBook Air and Pro hosts.
+ * If there is no built-in keyboard device, return success anyway.
+ *
+ * @returns 0 on Mac OS X platform, VERR_NOT_IMPLEMENTED on the other ones.
+ */
+static int supdrvIOCtl_ResumeBuiltinKbd(void)
+{
+#if defined(RT_OS_DARWIN)
+    return supdrvDarwinResumeBuiltinKbd();
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 

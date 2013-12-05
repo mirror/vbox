@@ -193,7 +193,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Remove RTSpinlockReleaseNoInts.
  */
-#define SUPDRV_IOC_VERSION                              0x001a0006
+#define SUPDRV_IOC_VERSION                              0x001a0007
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1435,6 +1435,17 @@ typedef struct SUPMSRPROBER
 AssertCompileMemberAlignment(SUPMSRPROBER, u, 8);
 AssertCompileMemberAlignment(SUPMSRPROBER, u.In.uArgs, 8);
 AssertCompileMembersSameSizeAndOffset(SUPMSRPROBER, u.In, SUPMSRPROBER, u.Out);
+/** @} */
+
+/** @name SUP_IOCTL_RESUME_BUILTIN_KBD
+ * Resume built-in keyboard (make sense on MacBook Air/Pro hosts only).
+ *
+ * @{
+ */
+#define SUP_IOCTL_RESUME_BUILTIN_KBD                    SUP_CTL_CODE_SIZE(35, SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE)
+#define SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE               sizeof(SUPREQHDR)
+#define SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE_IN            sizeof(SUPREQHDR)
+#define SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE_OUT           sizeof(SUPREQHDR)
 /** @} */
 
 

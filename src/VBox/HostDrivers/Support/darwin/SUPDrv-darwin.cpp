@@ -66,6 +66,7 @@
 #include <IOKit/IOUserClient.h>
 #include <IOKit/pwr_mgt/RootDomain.h>
 #include <IOKit/IODeviceTreeSupport.h>
+#include <IOKit/usb/IOUSBHIDDriver.h>
 
 #ifdef VBOX_WITH_HOST_VMX
 # include <libkern/version.h>
@@ -1140,6 +1141,36 @@ int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq)
 }
 
 #endif /* SUPDRV_WITH_MSR_PROBER */
+
+
+/**
+ * Resume built-in keyboard on MacBook Air and Pro hosts.
+ * If there is no built-in keyboard device, return success anyway.
+ */
+int VBOXCALL    supdrvDarwinResumeBuiltinKbd(void)
+{
+    /*
+     * AppleUSBTCKeyboard KEXT is responsible for built-in keyboard management.
+     * We resume keyboard by accessing to its IOService. */
+    OSDictionary *pDictionary = IOService::serviceMatching("AppleUSBTCKeyboard");
+    if (pDictionary)
+    {
+        OSIterator     *pIter;
+        IOUSBHIDDriver *pDriver;
+
+        pIter = IOService::getMatchingServices(pDictionary);
+        if (pIter)
+        {
+            while ((pDriver = (IOUSBHIDDriver *)pIter->getNextObject()))
+                pDriver->SuspendPort(false, 0);
+
+            pIter->release();
+        }
+        pDictionary->release();
+    }
+
+    return 0;
+}
 
 
 

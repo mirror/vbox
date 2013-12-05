@@ -49,8 +49,6 @@ RT_C_DECLS_BEGIN
 #define VBOXUSB_FILTER_KEY  "VBoxUSB-Filter"
 /** @} */
 
-USBLIB_DECL(void) USBLibResumeBuiltInKeyboard(void);
-
 /** @} */
 RT_C_DECLS_END
 

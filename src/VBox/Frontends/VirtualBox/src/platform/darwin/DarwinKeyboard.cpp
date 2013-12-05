@@ -38,7 +38,7 @@
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
 # include <iprt/err.h>
 # include <iprt/semaphore.h>
-# include <VBox/usblib.h>
+# include <VBox/sup.h>
 #endif
 
 #ifdef USE_HID_FOR_MODIFIERS
@@ -1269,7 +1269,10 @@ static int darwinLedElementSetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     IOHIDValueRef valueRef;
     IOReturn      rc = kIOReturnError;
 
-    USBLibResumeBuiltInKeyboard();
+    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
+    int rc1 = SUPR3ResumeBuiltinKeyboard();
+    if (RT_FAILURE(rc1))
+        return rc1;
 
     valueRef = IOHIDValueCreateWithIntegerValue(kCFAllocatorDefault, element, 0, (fEnabled) ? 1 : 0);
     if (valueRef)
@@ -1293,7 +1296,10 @@ static int darwinLedElementGetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     IOReturn      rc;
     CFIndex       integerValue;
 
-    USBLibResumeBuiltInKeyboard();
+    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
+    int rc1 = SUPR3ResumeBuiltinKeyboard();
+    if (RT_FAILURE(rc1))
+        return rc1;
 
     rc = IOHIDDeviceGetValue(hidDevice, element, &valueRef);
     if (rc == kIOReturnSuccess)
@@ -1914,8 +1920,6 @@ void * DarwinHidDevicesKeepLedsState(void)
     IOReturn         rc;
     VBoxHidsState_t *pHidState;
 
-    USBLibInit();
-
     pHidState = (VBoxHidsState_t *)malloc(sizeof(VBoxHidsState_t));
     AssertReturn(pHidState, NULL);
 
@@ -2056,8 +2060,6 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
     CFRelease(pHidState->hidManagerRef);
 
     free(pHidState);
-
-    USBLibTerm();
 
     return rc2;
 #else /* !VBOX_WITH_KBD_LEDS_SYNC */

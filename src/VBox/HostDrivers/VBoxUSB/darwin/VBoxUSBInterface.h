@@ -29,8 +29,6 @@ typedef enum VBOXUSBMETHOD
     VBOXUSBMETHOD_ADD_FILTER = 0,
     /** org_virtualbox_VBoxUSBClient::removeFilter */
     VBOXUSBMETHOD_REMOVE_FILTER,
-    /** org_virtualbox_VBoxUSBClient::resumeBuiltInKbd */
-    VBOXUSBMETHOD_RESUME_BUILTIN_KBD,
     /** End/max. */
     VBOXUSBMETHOD_END
 } VBOXUSBMETHOD;
