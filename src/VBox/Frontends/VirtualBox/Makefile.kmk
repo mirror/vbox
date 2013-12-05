@@ -183,9 +183,6 @@ VirtualBox_INCS = \
 # Necessary for the hdd backend enumeration
 VirtualBox_LIBS = $(LIB_DDU)
 
-# Necessary for the HID LEDs sync
-VirtualBox_LIBS.darwin += $(PATH_OUT)/lib/USBLib.a
-
 if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd)
  VirtualBox_LIBS += dl
 endif
@@ -1100,8 +1097,6 @@ tstDarwinKeyboard_SOURCES.amd64 = \
 tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
 tstDarwinKeyboard_LIBS = \
 	$(LIB_RUNTIME)
-tstDarwinKeyboard_LIBS.darwin += $(PATH_OUT)/lib/USBLib.a
-
 endif
 
 
