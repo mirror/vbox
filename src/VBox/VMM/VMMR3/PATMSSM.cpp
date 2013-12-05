@@ -431,14 +431,14 @@ static SSMFIELD const g_aPatmPatchRecFields[] =
  */
 static SSMFIELD const g_aPatmRelocRec[] =
 {
-    SSMFIELD_ENTRY_HCPTR_HACK_U32(  RELOCREC, Core.Key),        // Used to store the relocation type
+    SSMFIELD_ENTRY(                 RELOCREC, Core.Key),        // HC pointer into patch memory.
     SSMFIELD_ENTRY_IGN_HCPTR(       RELOCREC, Core.pLeft),
     SSMFIELD_ENTRY_IGN_HCPTR(       RELOCREC, Core.pRight),
     SSMFIELD_ENTRY_IGNORE(          RELOCREC, Core.uchHeight),
     SSMFIELD_ENTRY_PAD_HC_AUTO(     3, 7),
     SSMFIELD_ENTRY(                 RELOCREC, uType),
     SSMFIELD_ENTRY_PAD_HC_AUTO(     0, 4),
-    SSMFIELD_ENTRY_HCPTR_HACK_U32(  RELOCREC, pRelocPos),       // converted to a patch member offset.
+    SSMFIELD_ENTRY(                 RELOCREC, pRelocPos),       // HC pointer into patch memory.
     SSMFIELD_ENTRY_RCPTR(           RELOCREC, pSource),
     SSMFIELD_ENTRY_RCPTR(           RELOCREC, pDest),
     SSMFIELD_ENTRY_TERM()
