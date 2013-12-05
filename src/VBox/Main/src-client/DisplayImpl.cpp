@@ -810,7 +810,7 @@ void Display::handleResizeCompletedEMT (void)
         if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && !pFBInfo->pFramebuffer.isNull())
         {
             /* Primary framebuffer has completed the resize. Update the connector data for VGA device. */
-            updateDisplayData();
+            int rc2 = updateDisplayData();
 
             /* Check the framebuffer pixel format to setup the rendering in VGA device. */
             BOOL usesGuestVRAM = FALSE;
@@ -821,7 +821,7 @@ void Display::handleResizeCompletedEMT (void)
             /* If the primary framebuffer is disabled, tell the VGA device to not to copy
              * pixels from VRAM to the framebuffer.
              */
-            if (pFBInfo->fDisabled)
+            if (pFBInfo->fDisabled || RT_FAILURE(rc2))
                 mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, false);
             else
                 mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort,
@@ -3191,13 +3191,13 @@ STDMETHODIMP Display::ViewportChanged(ULONG aScreenId, ULONG x, ULONG y, ULONG w
  *
  *  @thread EMT
  */
-void Display::updateDisplayData(void)
+int Display::updateDisplayData(void)
 {
     LogRelFlowFunc(("\n"));
 
     /* the driver might not have been constructed yet */
     if (!mpDrv)
-        return;
+        return VINF_SUCCESS;
 
 #ifdef VBOX_STRICT
     /*
@@ -3238,6 +3238,14 @@ void Display::updateDisplayData(void)
         rc = pFramebuffer->COMGETTER(Height) (&height);
         AssertComRC (rc);
 
+        if (   (width != mLastWidth && mLastWidth != 0)
+            || (height != mLastHeight && mLastHeight != 0))
+        {
+            LogRel(("updateDisplayData: size mismatch w %d(%d) h %d(%d)\n",
+                    width, mLastWidth, height, mLastHeight));
+            return VERR_INVALID_STATE;
+        }
+
         mpDrv->IConnector.pu8Data = (uint8_t *) address;
         mpDrv->IConnector.cbScanline = bytesPerLine;
         mpDrv->IConnector.cBits = bitsPerPixel;
@@ -3254,6 +3262,7 @@ void Display::updateDisplayData(void)
         mpDrv->IConnector.cy = 0;
     }
     LogRelFlowFunc(("leave\n"));
+    return VINF_SUCCESS;
 }
 
 #ifdef VBOX_WITH_CRHGSMI
