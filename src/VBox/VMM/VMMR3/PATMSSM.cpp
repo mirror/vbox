@@ -728,7 +728,7 @@ static DECLCALLBACK(int) patmSavePatchState(PAVLOU32NODECORE pNode, void *pVM1)
     Assert(nrLookupRecords == pPatch->patch.nrPatch2GuestRecs);
 #endif
 
-    RTAvlU32DoWithAll(&pPatch->patch.Patch2GuestAddrTree, true, patmSaveP2GLookupRecords, pVM);
+    rc = RTAvlU32DoWithAll(&pPatch->patch.Patch2GuestAddrTree, true, patmSaveP2GLookupRecords, pVM);
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
