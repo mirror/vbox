@@ -113,7 +113,7 @@ tstCollector_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstCollector_SOURCES  = \
 	tstCollector.cpp \
 	../src-server/Performance.cpp
-tstCollector_INCS     = ../include
+tstCollector_INCS     = ../include $(VBOX_MAIN_APIWRAPPER_INCS)
 tstCollector_DEFS    += VBOX_COLLECTOR_TEST_CASE
 tstCollector_LDFLAGS.darwin  += -lproc
 tstCollector_LDFLAGS.solaris += -lkstat -lnvpair

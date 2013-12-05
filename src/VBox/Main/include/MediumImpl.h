@@ -22,6 +22,8 @@
 
 #include <VBox/vd.h>
 #include "MediumWrap.h"
+#include "VirtualBoxBase.h"
+#include "AutoCaller.h"
 class Progress;
 class MediumFormat;
 class MediumLockList;
