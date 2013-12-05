@@ -203,7 +203,7 @@ public:
 
 private:
 
-    void updateDisplayData(void);
+    int updateDisplayData(void);
 
 #ifdef VBOX_WITH_CRHGSMI
     void setupCrHgsmiData(void);
