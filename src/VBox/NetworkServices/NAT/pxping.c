@@ -449,6 +449,7 @@ pxping_recv4(void *arg, struct pbuf *p)
         if (ttl == 1) {
             pbuf_header(p, iphlen); /* back to IP header */
             icmp_time_exceeded(p, ICMP_TE_TTL);
+            pbuf_free(p);
             return;
         }
         --ttl;
@@ -564,6 +565,7 @@ pxping_recv6(void *arg, struct pbuf *p)
         if (hopl == 1) {
             pbuf_header(p, iphlen); /* back to IP header */
             icmp6_time_exceeded(p, ICMP6_TE_HL);
+            pbuf_free(p);
             return;
         }
         --hopl;
