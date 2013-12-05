@@ -62,7 +62,8 @@ typedef PAVLPVNODECORE     AVLPVTREE;
 /** Pointer to a tree with void pointer keys. */
 typedef PPAVLPVNODECORE    PAVLPVTREE;
 
-/** Callback function for AVLPVDoWithAll(). */
+/** Callback function for AVLPVDoWithAll().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int) AVLPVCALLBACK(PAVLPVNODECORE, void *);
 /** Pointer to callback function for AVLPVDoWithAll(). */
 typedef AVLPVCALLBACK *PAVLPVCALLBACK;
@@ -102,7 +103,8 @@ typedef struct _AVLULNodeCore
 } AVLULNODECORE, *PAVLULNODECORE, **PPAVLULNODECORE;
 
 
-/** Callback function for AVLULDoWithAll(). */
+/** Callback function for AVLULDoWithAll().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int) AVLULCALLBACK(PAVLULNODECORE, void*);
 /** Pointer to callback function for AVLULDoWithAll(). */
 typedef AVLULCALLBACK *PAVLULCALLBACK;
@@ -149,7 +151,8 @@ typedef PAVLRPVNODECORE    AVLRPVTREE;
 /** Pointer to a tree with void pointer keys. */
 typedef PPAVLRPVNODECORE   PAVLRPVTREE;
 
-/** Callback function for AVLPVDoWithAll(). */
+/** Callback function for AVLPVDoWithAll().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int) AVLRPVCALLBACK(PAVLRPVNODECORE, void *);
 /** Pointer to callback function for AVLPVDoWithAll(). */
 typedef AVLRPVCALLBACK *PAVLRPVCALLBACK;
@@ -192,7 +195,8 @@ typedef PAVLU32NODECORE     AVLU32TREE;
 /** Pointer to a tree with void pointer keys. */
 typedef PPAVLU32NODECORE    PAVLU32TREE;
 
-/** Callback function for AVLU32DoWithAll() & AVLU32Destroy(). */
+/** Callback function for AVLU32DoWithAll() & AVLU32Destroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int) AVLU32CALLBACK(PAVLU32NODECORE, void*);
 /** Pointer to callback function for AVLU32DoWithAll() & AVLU32Destroy(). */
 typedef AVLU32CALLBACK *PAVLU32CALLBACK;
@@ -242,7 +246,8 @@ typedef AVLOU32TREE    *PAVLOU32TREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLOU32TREE    *PPAVLOU32NODECORE;
 
-/** Callback function for RTAvloU32DoWithAll(). */
+/** Callback function for RTAvloU32DoWithAll().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLOU32CALLBACK(PAVLOU32NODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvloU32DoWithAll(). */
 typedef AVLOU32CALLBACK *PAVLOU32CALLBACK;
@@ -275,7 +280,8 @@ typedef struct _AVLLU32NodeCore
     struct _AVLLU32NodeCore    *pList;      /**< Pointer to next node with the same key. */
 } AVLLU32NODECORE, *PAVLLU32NODECORE, **PPAVLLU32NODECORE;
 
-/** Callback function for RTAvllU32DoWithAll() & RTAvllU32Destroy(). */
+/** Callback function for RTAvllU32DoWithAll() & RTAvllU32Destroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int) AVLLU32CALLBACK(PAVLLU32NODECORE, void*);
 /** Pointer to callback function for RTAvllU32DoWithAll() & RTAvllU32Destroy(). */
 typedef AVLLU32CALLBACK *PAVLLU32CALLBACK;
@@ -323,7 +329,8 @@ typedef PAVLRU64NODECORE    AVLRU64TREE;
 /** Pointer to a tree with void pointer keys. */
 typedef PPAVLRU64NODECORE   PAVLRU64TREE;
 
-/** Callback function for AVLRU64DoWithAll(). */
+/** Callback function for AVLRU64DoWithAll().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int) AVLRU64CALLBACK(PAVLRU64NODECORE, void *);
 /** Pointer to callback function for AVLU64DoWithAll(). */
 typedef AVLRU64CALLBACK *PAVLRU64CALLBACK;
@@ -380,7 +387,8 @@ typedef AVLOGCPHYSTREE    *PAVLOGCPHYSTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLOGCPHYSTREE    *PPAVLOGCPHYSNODECORE;
 
-/** Callback function for RTAvloGCPhysDoWithAll() and RTAvloGCPhysDestroy(). */
+/** Callback function for RTAvloGCPhysDoWithAll() and RTAvloGCPhysDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLOGCPHYSCALLBACK(PAVLOGCPHYSNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvloGCPhysDoWithAll() and RTAvloGCPhysDestroy(). */
 typedef AVLOGCPHYSCALLBACK *PAVLOGCPHYSCALLBACK;
@@ -433,7 +441,8 @@ typedef AVLROGCPHYSTREE    *PAVLROGCPHYSTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLROGCPHYSTREE    *PPAVLROGCPHYSNODECORE;
 
-/** Callback function for RTAvlroGCPhysDoWithAll() and RTAvlroGCPhysDestroy(). */
+/** Callback function for RTAvlroGCPhysDoWithAll() and RTAvlroGCPhysDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLROGCPHYSCALLBACK(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlroGCPhysDoWithAll() and RTAvlroGCPhysDestroy(). */
 typedef AVLROGCPHYSCALLBACK *PAVLROGCPHYSCALLBACK;
@@ -477,7 +486,8 @@ typedef PAVLGCPTRNODECORE     AVLGCPTRTREE;
 /** Pointer to a tree of RTGCPTR keys. */
 typedef PPAVLGCPTRNODECORE    PAVLGCPTRTREE;
 
-/** Callback function for RTAvlGCPtrDoWithAll(). */
+/** Callback function for RTAvlGCPtrDoWithAll(). 
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLGCPTRCALLBACK(PAVLGCPTRNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlGCPtrDoWithAll(). */
 typedef AVLGCPTRCALLBACK *PAVLGCPTRCALLBACK;
@@ -527,7 +537,8 @@ typedef AVLOGCPTRTREE    *PAVLOGCPTRTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLOGCPTRTREE    *PPAVLOGCPTRNODECORE;
 
-/** Callback function for RTAvloGCPtrDoWithAll(). */
+/** Callback function for RTAvloGCPtrDoWithAll().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLOGCPTRCALLBACK(PAVLOGCPTRNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvloGCPtrDoWithAll(). */
 typedef AVLOGCPTRCALLBACK *PAVLOGCPTRCALLBACK;
@@ -573,7 +584,8 @@ typedef AVLRGCPTRTREE    *PAVLRGCPTRTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLRGCPTRTREE    *PPAVLRGCPTRNODECORE;
 
-/** Callback function for RTAvlrGCPtrDoWithAll() and RTAvlrGCPtrDestroy(). */
+/** Callback function for RTAvlrGCPtrDoWithAll() and RTAvlrGCPtrDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLRGCPTRCALLBACK(PAVLRGCPTRNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlrGCPtrDoWithAll() and RTAvlrGCPtrDestroy(). */
 typedef AVLRGCPTRCALLBACK *PAVLRGCPTRCALLBACK;
@@ -629,7 +641,8 @@ typedef AVLROGCPTRTREE    *PAVLROGCPTRTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLROGCPTRTREE    *PPAVLROGCPTRNODECORE;
 
-/** Callback function for RTAvlroGCPtrDoWithAll() and RTAvlroGCPtrDestroy(). */
+/** Callback function for RTAvlroGCPtrDoWithAll() and RTAvlroGCPtrDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLROGCPTRCALLBACK(PAVLROGCPTRNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlroGCPtrDoWithAll() and RTAvlroGCPtrDestroy(). */
 typedef AVLROGCPTRCALLBACK *PAVLROGCPTRCALLBACK;
@@ -686,7 +699,8 @@ typedef AVLROOGCPTRTREE    *PAVLROOGCPTRTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLROOGCPTRTREE    *PPAVLROOGCPTRNODECORE;
 
-/** Callback function for RTAvlrooGCPtrDoWithAll() and RTAvlrooGCPtrDestroy(). */
+/** Callback function for RTAvlrooGCPtrDoWithAll() and RTAvlrooGCPtrDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLROOGCPTRCALLBACK(PAVLROOGCPTRNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlrooGCPtrDoWithAll() and RTAvlrooGCPtrDestroy(). */
 typedef AVLROOGCPTRCALLBACK *PAVLROOGCPTRCALLBACK;
@@ -737,7 +751,8 @@ typedef AVLUINTPTRTREE     *PAVLUINTPTRTREE;
  * In this case it's a pointer to a pointer. */
 typedef AVLUINTPTRTREE     *PPAVLUINTPTRNODECORE;
 
-/** Callback function for RTAvlUIntPtrDoWithAll() and RTAvlUIntPtrDestroy(). */
+/** Callback function for RTAvlUIntPtrDoWithAll() and RTAvlUIntPtrDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)    AVLUINTPTRCALLBACK(PAVLUINTPTRNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlUIntPtrDoWithAll() and RTAvlUIntPtrDestroy(). */
 typedef AVLUINTPTRCALLBACK *PAVLUINTPTRCALLBACK;
@@ -787,7 +802,8 @@ typedef AVLRUINTPTRTREE     *PAVLRUINTPTRTREE;
  * In this case it's a pointer to a pointer. */
 typedef AVLRUINTPTRTREE     *PPAVLRUINTPTRNODECORE;
 
-/** Callback function for RTAvlrUIntPtrDoWithAll() and RTAvlrUIntPtrDestroy(). */
+/** Callback function for RTAvlrUIntPtrDoWithAll() and RTAvlrUIntPtrDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)    AVLRUINTPTRCALLBACK(PAVLRUINTPTRNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlrUIntPtrDoWithAll() and RTAvlrUIntPtrDestroy(). */
 typedef AVLRUINTPTRCALLBACK *PAVLRUINTPTRCALLBACK;
@@ -843,7 +859,8 @@ typedef AVLOHCPHYSTREE    *PAVLOHCPHYSTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLOHCPHYSTREE    *PPAVLOHCPHYSNODECORE;
 
-/** Callback function for RTAvloHCPhysDoWithAll() and RTAvloHCPhysDestroy(). */
+/** Callback function for RTAvloHCPhysDoWithAll() and RTAvloHCPhysDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLOHCPHYSCALLBACK(PAVLOHCPHYSNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvloHCPhysDoWithAll() and RTAvloHCPhysDestroy(). */
 typedef AVLOHCPHYSCALLBACK *PAVLOHCPHYSCALLBACK;
@@ -893,7 +910,8 @@ typedef AVLOIOPORTTREE    *PAVLOIOPORTTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLOIOPORTTREE    *PPAVLOIOPORTNODECORE;
 
-/** Callback function for RTAvloIOPortDoWithAll() and RTAvloIOPortDestroy(). */
+/** Callback function for RTAvloIOPortDoWithAll() and RTAvloIOPortDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLOIOPORTCALLBACK(PAVLOIOPORTNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvloIOPortDoWithAll() and RTAvloIOPortDestroy(). */
 typedef AVLOIOPORTCALLBACK *PAVLOIOPORTCALLBACK;
@@ -944,7 +962,8 @@ typedef AVLROIOPORTTREE    *PAVLROIOPORTTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLROIOPORTTREE    *PPAVLROIOPORTNODECORE;
 
-/** Callback function for RTAvlroIOPortDoWithAll() and RTAvlroIOPortDestroy(). */
+/** Callback function for RTAvlroIOPortDoWithAll() and RTAvlroIOPortDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLROIOPORTCALLBACK(PAVLROIOPORTNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlroIOPortDoWithAll() and RTAvlroIOPortDestroy(). */
 typedef AVLROIOPORTCALLBACK *PAVLROIOPORTCALLBACK;
@@ -993,7 +1012,8 @@ typedef AVLHCPHYSTREE    *PAVLHCPHYSTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLHCPHYSTREE    *PPAVLHCPHYSNODECORE;
 
-/** Callback function for RTAvlHCPhysDoWithAll() and RTAvlHCPhysDestroy(). */
+/** Callback function for RTAvlHCPhysDoWithAll() and RTAvlHCPhysDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLHCPHYSCALLBACK(PAVLHCPHYSNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlHCPhysDoWithAll() and RTAvlHCPhysDestroy(). */
 typedef AVLHCPHYSCALLBACK *PAVLHCPHYSCALLBACK;
@@ -1041,7 +1061,8 @@ typedef AVLGCPHYSTREE    *PAVLGCPHYSTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLGCPHYSTREE    *PPAVLGCPHYSNODECORE;
 
-/** Callback function for RTAvlGCPhysDoWithAll() and RTAvlGCPhysDestroy(). */
+/** Callback function for RTAvlGCPhysDoWithAll() and RTAvlGCPhysDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLGCPHYSCALLBACK(PAVLGCPHYSNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlGCPhysDoWithAll() and RTAvlGCPhysDestroy(). */
 typedef AVLGCPHYSCALLBACK *PAVLGCPHYSCALLBACK;
@@ -1087,7 +1108,8 @@ typedef AVLRFOFFTREE    *PAVLRFOFFTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLRFOFFTREE    *PPAVLRFOFFNODECORE;
 
-/** Callback function for RTAvlrGCPtrDoWithAll() and RTAvlrGCPtrDestroy(). */
+/** Callback function for RTAvlrGCPtrDoWithAll() and RTAvlrGCPtrDestroy().
+ *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLRFOFFCALLBACK(PAVLRFOFFNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlrGCPtrDoWithAll() and RTAvlrGCPtrDestroy(). */
 typedef AVLRFOFFCALLBACK *PAVLRFOFFCALLBACK;
