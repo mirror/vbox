@@ -2132,3 +2132,26 @@ SUPR3DECL(int) SUPR3MsrProberModifyEx(uint32_t uMsr, RTCPUID idCpu, uint64_t fAn
     return rc;
 }
 
+
+SUPR3DECL(int) SUPR3ResumeBuiltinKeyboard(void)
+{
+#ifdef RT_OS_DARWIN
+    /*
+     * Issue IOCtl to the SUPDRV kernel module.
+     */
+    SUPREQHDR Req;
+    Req.u32Cookie       = g_u32Cookie;
+    Req.u32SessionCookie= g_u32SessionCookie;
+    Req.cbIn            = SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE_IN;
+    Req.cbOut           = SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE_OUT;
+    Req.fFlags          = SUPREQHDR_FLAGS_DEFAULT;
+    Req.rc              = VERR_INTERNAL_ERROR;
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_RESUME_BUILTIN_KBD, &Req, SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE);
+    if (RT_SUCCESS(rc))
+        rc = Req.rc;
+    return rc;
+#else /* !RT_OS_DARWIN */
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+

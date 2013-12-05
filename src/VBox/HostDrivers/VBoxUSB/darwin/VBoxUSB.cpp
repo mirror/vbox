@@ -59,7 +59,6 @@
 #include <IOKit/usb/IOUSBDevice.h>
 #include <IOKit/usb/IOUSBInterface.h>
 #include <IOKit/usb/IOUSBUserClient.h>
-#include <IOKit/usb/IOUSBHIDDriver.h>
 
 /* private: */
 RT_C_DECLS_BEGIN
@@ -140,7 +139,6 @@ public:
      * @{ */
     IOReturn addFilter(PUSBFILTER pFilter, PVBOXUSBADDFILTEROUT pOut, IOByteCount cbFilter, IOByteCount *pcbOut);
     IOReturn removeFilter(uintptr_t *puId, int *prc, IOByteCount cbIn, IOByteCount *pcbOut);
-    IOReturn resumeBuiltInKbd(void *unused1, void *unused2, IOByteCount unused3, IOByteCount *unused4, void *unused5, void *unused6);
     /** @} */
 
     static bool isClientTask(task_t ClientTask);
@@ -789,14 +787,6 @@ org_virtualbox_VBoxUSBClient::getTargetAndMethodForIndex(IOService **ppService, 
             sizeof(uintptr_t),                                      /* count0 - size of the input (id) */
             sizeof(int)                                             /* count1 - size of the output (rc) */
         },
-        /* [VBOXUSBMETHOD_RESUME_BUILTIN_KBD] = */
-        {
-            (IOService *)0,                                         /* object */
-            (IOMethod)&org_virtualbox_VBoxUSBClient::resumeBuiltInKbd, /* func */
-            kIOUCScalarIScalarO,                                    /* flags - scalar input (count0) and scalar output (count1) */
-            0,                                                      /* count0 - # of input parameters */
-            0                                                       /* count1 - # of output parameters */
-        },
     };
 
     if (RT_UNLIKELY(iMethod >= RT_ELEMENTS(s_aMethods)))
@@ -902,42 +892,6 @@ org_virtualbox_VBoxUSBClient::removeFilter(uintptr_t *puId, int *prc, IOByteCoun
     return kIOReturnSuccess;
 }
 
-IOReturn
-org_virtualbox_VBoxUSBClient::resumeBuiltInKbd(void *unused1, void *unused2, IOByteCount unused3, IOByteCount *unused4, void *unused5, void *unused6)
-{
-    (void)unused1;
-    (void)unused2;
-    (void)unused3;
-    (void)unused4;
-    (void)unused5;
-    (void)unused6;
-
-    OSDictionary *pDictionary;
-
-    VBOXUSB_LOCK();
-
-    pDictionary = IOService::serviceMatching("AppleUSBTCKeyboard");
-    if (pDictionary)
-    {
-        OSIterator     *pIter;
-        IOUSBHIDDriver *pDriver;
-
-        pIter = IOService::getMatchingServices(pDictionary);
-        if (pIter)
-        {
-            while ((pDriver = (IOUSBHIDDriver *)pIter->getNextObject()))
-                pDriver->SuspendPort(false, 0);
-
-            pIter->release();
-        }
-
-        pDictionary->release();
-    }
-
-    VBOXUSB_UNLOCK();
-
-    return kIOReturnSuccess;
-}
 
 /**
  * Checks whether the specified task is a VBoxUSB client task or not.

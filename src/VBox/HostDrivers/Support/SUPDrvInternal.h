@@ -748,6 +748,9 @@ int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq);
 
 #endif /* SUPDRV_WITH_MSR_PROBER */
 
+#if defined(RT_OS_DARWIN)
+int VBOXCALL    supdrvDarwinResumeBuiltinKbd(void);
+#endif
 
 /*******************************************************************************
 *   Shared Functions                                                           *
