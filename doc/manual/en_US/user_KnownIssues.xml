@@ -247,6 +247,12 @@
                 snv_124 or higher. Webcams and other isochronous devices are known
                 to have poor performance.</para>
               </listitem>
+
+              <listitem>
+                <para>Host Webcam passthrough is restricted to 640x480 frames at
+                20 frames per second due to limitations in the Solaris V4L2 API.
+                This may be addressed in a future Solaris release.</para>
+              </listitem>
     
               <listitem>
                 <para>No ACPI information (battery status, power source) is

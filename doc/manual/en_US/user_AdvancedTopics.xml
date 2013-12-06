@@ -943,7 +943,7 @@ host path or identifier</screen>
     </sect2>
 
     <sect2>
-      <title>Linux hosts</title>
+      <title>Linux and Solaris hosts</title>
 
       <para>When the webcam is detached from the host the emulated webcam device is
       automatically detached from the guest only if the webcam is streaming video.
