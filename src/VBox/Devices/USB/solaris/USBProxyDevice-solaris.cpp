@@ -316,7 +316,7 @@ static int usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, v
                     /*
                      * Create wakeup pipe.
                      */
-                    rc = RTPipeCreate(&pDevLnx->hPipeWakeupR, &pDevLnx->hPipeWakeupW, 0);
+                    rc = RTPipeCreate(&pDevSol->hPipeWakeupR, &pDevSol->hPipeWakeupW, 0);
                     if (RT_SUCCESS(rc))
                     {
                         int Instance;
@@ -381,8 +381,8 @@ static int usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, v
                             if (rc == VERR_NOT_FOUND)
                                 rc = VERR_OPEN_FAILED;
                         }
-                        RTPipeClose(pDevLnx->hPipeWakeupR);
-                        RTPipeClose(pDevLnx->hPipeWakeupW);
+                        RTPipeClose(pDevSol->hPipeWakeupR);
+                        RTPipeClose(pDevSol->hPipeWakeupW);
                     }
 
                     RTCritSectDelete(&pDevSol->CritSect);
@@ -445,8 +445,8 @@ static void usbProxySolarisClose(PUSBPROXYDEV pProxyDev)
         RTMemFree(pUrbSol);
     }
 
-    RTPipeClose(pDevLnx->hPipeWakeupR);
-    RTPipeClose(pDevLnx->hPipeWakeupW);
+    RTPipeClose(pDevSol->hPipeWakeupR);
+    RTPipeClose(pDevSol->hPipeWakeupW);
 
     RTStrFree(pDevSol->pszDevicePath);
     pDevSol->pszDevicePath = NULL;
@@ -726,11 +726,11 @@ static PVUSBURB usbProxySolarisUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMil
             pfd[0].events = POLLIN;
             pfd[0].revents = 0;
 
-            pfd[1].fd = RTPipeToNative(pDevSol->hWakeupPipeR);
+            pfd[1].fd = RTPipeToNative(pDevSol->hPipeWakeupR);
             pfd[1].events = POLLIN;
             pfd[1].revents = 0;
 
-            int rc = poll(&pfd, 2, cMilliesWait);
+            int rc = poll(&pfd[0], 2, cMilliesWait);
             if (rc > 0)
             {
                 if (pfd[0].revents & POLLHUP)
@@ -745,7 +745,7 @@ static PVUSBURB usbProxySolarisUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMil
                     /* Got woken up, drain pipe. */
                     uint8_t bRead;
                     size_t cbIgnored = 0;
-                    RTPipeRead(pDevLnx->hPipeWakeupR, &bRead, 1, &cbIgnored);
+                    RTPipeRead(pDevSol->hPipeWakeupR, &bRead, 1, &cbIgnored);
 
                     /*
                      * It is possible that we got woken up and have an URB pending
