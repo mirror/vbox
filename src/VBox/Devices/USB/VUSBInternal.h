@@ -28,6 +28,7 @@
 #include <VBox/vusb.h>
 #include <VBox/vmm/stam.h>
 #include <iprt/assert.h>
+#include <iprt/queueatomic.h>
 
 RT_C_DECLS_BEGIN
 
@@ -121,7 +122,7 @@ typedef struct vusb_pipe
     /** Pointer to the extra state data required to run a control pipe. */
     PVUSBCTRLEXTRA      pCtrl;
     /** Count of active async transfers. */
-    uint8_t             async;
+    volatile uint32_t   async;
     /** The periodic read-ahead buffer thread. */
     RTTHREAD            ReadAheadThread;
     /** Pointer to the reset thread arguments. */
@@ -213,6 +214,14 @@ typedef struct VUSBDEV
     void               *pvResetArgs;
     /** The reset timer handle. */
     PTMTIMER            pResetTimer;
+    /** URB submit and reap thread. */
+    RTTHREAD            hUrbIoThread;
+    /** Queue of URBs to submit. */
+    RTQUEUEATOMIC       QueueUrb;
+    /** Flag whether the URB I/O thread should terminate. */
+    bool volatile       fTerminate;
+    /** Flag whether the I/O thread was woken up. */
+    bool volatile       fWokenUp;
 #if HC_ARCH_BITS == 32
     /** Align the size to a 8 byte boundary. */
     uint32_t            Alignment0;
@@ -433,9 +442,15 @@ typedef enum CANCELMODE
 int  vusbUrbSubmit(PVUSBURB pUrb);
 void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete);
 void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies);
+void vusbUrbDoReapAsyncDev(PVUSBDEV pDev, RTMSINTERVAL cMillies);
 void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode);
 void vusbUrbRipe(PVUSBURB pUrb);
 void vusbUrbCompletionRh(PVUSBURB pUrb);
+int vusbUrbSubmitHardError(PVUSBURB pUrb);
+int vusbUrbErrorRh(PVUSBURB pUrb);
+int vusbDevUrbIoThreadWakeup(PVUSBDEV pDev);
+int vusbDevUrbIoThreadCreate(PVUSBDEV pDev);
+int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev);
 
 void vusbUrbCompletionReadAhead(PVUSBURB pUrb);
 void vusbReadAheadStart(PVUSBDEV pDev, PVUSBPIPE pPipe);
@@ -447,11 +462,15 @@ PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, uint32_t cbData, uin
 
 DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
 {
+    PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->VUsb.pDev);
+
+    RTCritSectEnter(&pRh->CritSect);
     *pUrb->VUsb.ppPrev = pUrb->VUsb.pNext;
     if (pUrb->VUsb.pNext)
         pUrb->VUsb.pNext->VUsb.ppPrev = pUrb->VUsb.ppPrev;
     pUrb->VUsb.pNext = NULL;
     pUrb->VUsb.ppPrev = NULL;
+    RTCritSectLeave(&pRh->CritSect);
 }
 
 /** @def vusbUrbAssert

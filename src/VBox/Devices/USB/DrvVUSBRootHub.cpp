@@ -584,6 +584,13 @@ static DECLCALLBACK(int) vusbRhCancelUrbsEp(PVUSBIROOTHUBCONNECTOR pInterface, P
      * Cancel and reap the URB(s) on an endpoint.
      */
     LogFlow(("vusbRhCancelUrbsEp: pRh=%p pUrb=%p\n", pRh));
+
+    /* Tear down reaper thread on the device. */
+    PVUSBDEV pDev = pUrb->VUsb.pDev;
+    int rc = vusbDevUrbIoThreadDestroy(pDev);
+    if (RT_FAILURE(rc))
+        return rc;
+
     vusbUrbCancel(pUrb, CANCELMODE_UNDO);
 
     PVUSBURB pRipe;
@@ -596,13 +603,27 @@ static DECLCALLBACK(int) vusbRhCancelUrbsEp(PVUSBIROOTHUBCONNECTOR pInterface, P
         pRipe->enmStatus = VUSBSTATUS_CRC;
         vusbUrbRipe(pRipe);
     }
-    return VINF_SUCCESS;
+
+    rc = vusbDevUrbIoThreadCreate(pDev);
+    return rc;
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnCancelAllUrbs */
 static DECLCALLBACK(void) vusbRhCancelAllUrbs(PVUSBIROOTHUBCONNECTOR pInterface)
 {
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+
+    /*
+     * Tear down all reaper threads first to avoid concurrency issues.
+     * pfnUrbReap is not thread safe.
+     */
+    PVUSBDEV pDev = pRh->pDevices;
+    while (pDev)
+    {
+        int rc = vusbDevUrbIoThreadDestroy(pDev);
+        AssertRC(rc); /* Should not fail. */
+        pDev = pDev->pNext;
+    }
 
     /*
      * Cancel the URBS.
@@ -634,6 +655,17 @@ static DECLCALLBACK(void) vusbRhCancelAllUrbs(PVUSBIROOTHUBCONNECTOR pInterface)
             pRipe->enmStatus = VUSBSTATUS_CRC;
             vusbUrbRipe(pRipe);
         }
+    }
+
+    /*
+     * Create the reaper threads again.
+     */
+    pDev = pRh->pDevices;
+    while (pDev)
+    {
+        int rc = vusbDevUrbIoThreadCreate(pDev);
+        AssertRC(rc); /** @todo: What if this fails? */
+        pDev = pDev->pNext;
     }
 }
 

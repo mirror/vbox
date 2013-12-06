@@ -412,6 +412,13 @@ typedef struct PDMUSBREG
      */
     DECLR3CALLBACKMEMBER(PVUSBURB, pfnUrbReap,(PPDMUSBINS pUsbIns, RTMSINTERVAL cMillies));
 
+    /**
+     * Wakes a thread waiting in pfnUrbReap.
+     *
+     * @returns VBox status code.
+     * @param   pUsbIns             The USB device instance.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWakeup,(PPDMUSBINS pUsbIns));
 
     /** Just some init precaution. Must be set to PDM_USBREG_VERSION. */
     uint32_t            u32TheEnd;

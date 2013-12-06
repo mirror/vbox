@@ -32,6 +32,7 @@
 
 #include <iprt/stdint.h>
 #include <iprt/err.h>
+#include <iprt/pipe.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -152,6 +153,10 @@ typedef struct USBPROXYDEVLNX
     PUSBPROXYURBLNX     pTaxingTail;
     /** Are we using sysfs to find the active configuration? */
     bool                fUsingSysfs;
+    /** Pipe handle for waiking up - writing end. */
+    RTPIPE              hPipeWakeupW;
+    /** Pipe handle for waiking up - reading end. */
+    RTPIPE              hPipeWakeupR;
     /** The device node/sysfs path of the device.
      * Used to figure out the configuration after a reset. */
     char                szPath[1];
@@ -656,31 +661,39 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
     int rc = RTFileOpen(&hFile, pszDevNode, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Allocate and initialize the linux backend data.
-         */
-        PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)RTMemAllocZVar(sizeof(*pDevLnx) + cchPath);
-        if (pDevLnx)
-        {
-            pDevLnx->fUsingSysfs = fUsingSysfs;
-            memcpy(&pDevLnx->szPath[0], pszPath, cchPath);
-            pDevLnx->szPath[cchPath] = '\0';
-            pDevLnx->hFile = hFile;
-            rc = RTCritSectInit(&pDevLnx->CritSect);
-            if (RT_SUCCESS(rc))
+            /*
+             * Allocate and initialize the linux backend data.
+             */
+            PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)RTMemAllocZVar(sizeof(*pDevLnx) + cchPath);
+            if (pDevLnx)
             {
-                pProxyDev->Backend.pv = pDevLnx;
 
-                LogFlow(("usbProxyLinuxOpen(%p, %s): returns successfully File=%RTfile iActiveCfg=%d\n",
-                         pProxyDev, pszAddress, pDevLnx->hFile, pProxyDev->iActiveCfg));
+                rc = RTPipeCreate(&pDevLnx->hPipeWakeupR, &pDevLnx->hPipeWakeupW, 0);
+                if (RT_SUCCESS(rc))
+                {
+                    pDevLnx->fUsingSysfs = fUsingSysfs;
+                    memcpy(&pDevLnx->szPath[0], pszPath, cchPath);
+                    pDevLnx->szPath[cchPath] = '\0';
+                    pDevLnx->hFile = hFile;
+                    rc = RTCritSectInit(&pDevLnx->CritSect);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pProxyDev->Backend.pv = pDevLnx;
 
-                return VINF_SUCCESS;
+                        LogFlow(("usbProxyLinuxOpen(%p, %s): returns successfully File=%RTfile iActiveCfg=%d\n",
+                                 pProxyDev, pszAddress, pDevLnx->hFile, pProxyDev->iActiveCfg));
+
+                        return VINF_SUCCESS;
+                    }
+                    RTPipeClose(pDevLnx->hPipeWakeupR);
+                    RTPipeClose(pDevLnx->hPipeWakeupW);
+                }
+
+                RTMemFree(pDevLnx);
             }
+            else
+                rc = VERR_NO_MEMORY;
 
-            RTMemFree(pDevLnx);
-        }
-        else
-            rc = VERR_NO_MEMORY;
         RTFileClose(hFile);
     }
     else if (rc == VERR_ACCESS_DENIED)
@@ -813,6 +826,9 @@ static void usbProxyLinuxClose(PUSBPROXYDEV pProxyDev)
 
     RTFileClose(pDevLnx->hFile);
     pDevLnx->hFile = NIL_RTFILE;
+
+    RTPipeClose(pDevLnx->hPipeWakeupR);
+    RTPipeClose(pDevLnx->hPipeWakeupW);
 
     RTMemFree(pDevLnx);
     pProxyDev->Backend.pv = NULL;
@@ -1744,7 +1760,28 @@ static PVUSBURB usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMilli
          * Don't block if nothing is in the air.
          */
         if (!pDevLnx->pInFlightHead)
+        {
+            int cMilliesWait = cMillies == RT_INDEFINITE_WAIT ? -1 : cMillies;
+
+            LogFlow(("Nothing in flight, going to sleep\n"));
+
+            struct pollfd pfd;
+
+            pfd.fd = RTPipeToNative(pDevLnx->hPipeWakeupR);
+            pfd.events = POLLIN | POLLHUP;
+            pfd.revents = 0;
+
+            int rc = poll(&pfd, 1, cMilliesWait);
+            Log(("usbProxyLinuxUrbReap: poll rc = %d\n", rc));
+            if (rc >= 1)
+            {
+                /* Drain pipe. */
+               uint8_t bRead;
+               size_t cbIgnored = 0;
+               RTPipeRead(pDevLnx->hPipeWakeupR, &bRead, 1, &cbIgnored);
+            }
             return NULL;
+        }
 
         /*
          * Block for requested period.
@@ -1755,18 +1792,33 @@ static PVUSBURB usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMilli
          */
         if (cMillies)
         {
+            int cMilliesWait = cMillies == RT_INDEFINITE_WAIT ? -1 : cMillies;
 
             for (;;)
             {
-                struct pollfd pfd;
-                pfd.fd = RTFileToNative(pDevLnx->hFile);
-                pfd.events = POLLOUT | POLLWRNORM /* completed async */
-                           | POLLERR | POLLHUP    /* disconnected */;
-                pfd.revents = 0;
-                int rc = poll(&pfd, 1, cMillies);
+                struct pollfd pfd[2];
+                pfd[0].fd = RTFileToNative(pDevLnx->hFile);
+                pfd[0].events = POLLOUT | POLLWRNORM /* completed async */
+                              | POLLERR | POLLHUP    /* disconnected */;
+                pfd[0].revents = 0;
+
+                pfd[1].fd = RTPipeToNative(pDevLnx->hPipeWakeupR);
+                pfd[1].events = POLLIN | POLLHUP;
+                pfd[1].revents = 0;
+
+                int rc = poll(&pfd[0], 2, cMilliesWait);
                 Log(("usbProxyLinuxUrbReap: poll rc = %d\n", rc));
                 if (rc >= 1)
+                {
+                    /* If the pipe caused the return drain it. */
+                    if (pfd[1].revents & POLLIN)
+                    {
+                        uint8_t bRead;
+                        size_t cbIgnored = 0;
+                        RTPipeRead(pDevLnx->hPipeWakeupR, &bRead, 1, &cbIgnored);
+                    }
                     break;
+                }
                 if (rc >= 0 /*|| errno == ETIMEOUT*/)
                 {
                     vusbProxyLinuxUrbDoTimeouts(pProxyDev, pDevLnx);
@@ -1946,6 +1998,16 @@ static void usbProxyLinuxUrbCancel(PVUSBURB pUrb)
 }
 
 
+static DECLCALLBACK(int) usbProxyLinuxWakeup(PUSBPROXYDEV pProxyDev)
+{
+    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    size_t cbIgnored;
+
+    LogFlowFunc(("pProxyDev=%p\n", pProxyDev));
+
+    return RTPipeWrite(pDevLnx->hPipeWakeupW, "", 1, &cbIgnored);
+}
+
 /**
  * The Linux USB Proxy Backend.
  */
@@ -1964,6 +2026,7 @@ const USBPROXYBACK g_USBProxyDeviceHost =
     usbProxyLinuxUrbQueue,
     usbProxyLinuxUrbCancel,
     usbProxyLinuxUrbReap,
+    usbProxyLinuxWakeup,
     0
 };
 

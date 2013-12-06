@@ -1668,6 +1668,8 @@ static DECLCALLBACK(PVUSBURB) usbHidUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVAL cMi
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
 
+    LogFlowFunc(("pUsbIns=%p cMillies=%u\n", pUsbIns, cMillies));
+
     RTCritSectEnter(&pThis->CritSect);
 
     PVUSBURB pUrb = usbHidQueueRemoveHead(&pThis->DoneQueue);
@@ -1693,6 +1695,15 @@ static DECLCALLBACK(PVUSBURB) usbHidUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVAL cMi
     return pUrb;
 }
 
+/**
+ * @copydoc PDMUSBREG::pfnWakeup
+ */
+static DECLCALLBACK(int) usbHidWakeup(PPDMUSBINS pUsbIns)
+{
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+
+    return RTSemEventSignal(pThis->hEvtDoneQueue);
+}
 
 /**
  * @copydoc PDMUSBREG::pfnUrbCancel
@@ -2422,6 +2433,8 @@ const PDMUSBREG g_UsbHidMou =
     usbHidUrbCancel,
     /* pfnUrbReap */
     usbHidUrbReap,
+    /* pfnWakeup */
+    usbHidWakeup,
     /* u32TheEnd */
     PDM_USBREG_VERSION
 };

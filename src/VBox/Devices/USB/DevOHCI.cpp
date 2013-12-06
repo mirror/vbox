@@ -90,6 +90,8 @@
 #include <iprt/string.h>
 #include <iprt/asm.h>
 #include <iprt/asm-math.h>
+#include <iprt/semaphore.h>
+#include <iprt/critsect.h>
 #ifdef IN_RING3
 # include <iprt/alloca.h>
 # include <iprt/mem.h>
@@ -358,6 +360,20 @@ typedef struct OHCI
     bool                fRZEnabled;
 
     uint32_t            Alignment3;     /**< Align size on a 8 byte boundary. */
+
+    /** The framer thread. */
+    R3PTRTYPE(PPDMTHREAD) hThreadFrame;
+    /** Event semaphore to interact with the framer thread. */
+    R3PTRTYPE(RTSEMEVENT) hSemEventFrame;
+    /** Flag whether the framer thread should processing frames. */
+    volatile bool         fBusStarted;
+    /** Alignment. */
+    uint32_t              Alignment5;
+    /** How long to wait until the next frame. */
+    uint64_t              nsWait;
+    /** Critical section to synchronize the framer and URB completion handler. */
+    RTCRITSECT            CritSect;
+
 } OHCI;
 
 /* Standard OHCI bus speed */
@@ -784,6 +800,10 @@ static void ohciUpdateInterrupt(POHCI ohci, const char *msg)
 {
     int level = 0;
 
+#ifdef IN_RING3
+    PDMCritSectEnter(ohci->pDevInsR3->pCritSectRoR3, VERR_IGNORED);
+#endif
+
     if (    (ohci->intr & OHCI_INTR_MASTER_INTERRUPT_ENABLED)
         &&  (ohci->intr_status & ohci->intr)
         && !(ohci->ctl & OHCI_CTL_IR))
@@ -797,6 +817,10 @@ static void ohciUpdateInterrupt(POHCI ohci, const char *msg)
               val, val & 1, (val >> 1) & 1, (val >> 2) & 1, (val >> 3) & 1, (val >> 4) & 1, (val >> 5) & 1,
               (val >> 6) & 1, (val >> 30) & 1, msg)); NOREF(val); NOREF(msg);
     }
+
+#ifdef IN_RING3
+    PDMCritSectLeave(ohci->pDevInsR3->pCritSectRoR3);
+#endif
 }
 
 /**
@@ -1081,7 +1105,9 @@ static void ohciDoReset(POHCI pThis, uint32_t fNewMode, bool fResetOnLinux)
      * suspend/reset state. Also, a real HC isn't going to send anything
      * any more when a reset has been signaled.
      */
+    RTCritSectEnter(&pThis->CritSect);
     pThis->RootHub.pIRhConn->pfnCancelAllUrbs(pThis->RootHub.pIRhConn);
+    RTCritSectLeave(&pThis->CritSect);
 
     /*
      * Reset the hardware registers.
@@ -2430,8 +2456,8 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
     POHCI pThis = VUSBIROOTHUBPORT_2_OHCI(pInterface);
     LogFlow(("%s: ohciRhXferCompletion: EdAddr=%#010RX32 cTds=%d TdAddr0=%#010RX32\n",
              pUrb->pszDesc, pUrb->Hci.EdAddr, pUrb->Hci.cTds, pUrb->Hci.paTds[0].TdAddr));
-    Assert(PDMCritSectIsOwner(pThis->pDevInsR3->pCritSectRoR3));
 
+    RTCritSectEnter(&pThis->CritSect);
     pThis->fIdle = false;   /* Mark as active */
 
     /* get the current end point descriptor. */
@@ -2455,6 +2481,7 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
         Log(("%s: ohciRhXferCompletion: CANCELED {ED=%#010x cTds=%d TD0=%#010x age %d}\n",
              pUrb->pszDesc, pUrb->Hci.EdAddr, pUrb->Hci.cTds, pUrb->Hci.paTds[0].TdAddr, cFmAge));
         STAM_COUNTER_INC(&pThis->StatDroppedUrbs);
+        RTCritSectLeave(&pThis->CritSect);
         return;
     }
     bool fHasBeenCanceled = false;
@@ -2474,6 +2501,7 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
              fHasBeenCanceled                                       ? " td canceled" : ""));
         NOREF(fHasBeenCanceled);
         STAM_COUNTER_INC(&pThis->StatDroppedUrbs);
+        RTCritSectLeave(&pThis->CritSect);
         return;
     }
 
@@ -2488,6 +2516,7 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
 
     /* finally write back the endpoint descriptor. */
     ohciWriteEd(pThis, pUrb->Hci.EdAddr, &Ed);
+    RTCritSectLeave(&pThis->CritSect);
 }
 
 
@@ -2505,7 +2534,6 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
 static DECLCALLBACK(bool) ohciRhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb)
 {
     POHCI pThis = VUSBIROOTHUBPORT_2_OHCI(pInterface);
-    Assert(PDMCritSectIsOwner(pThis->pDevInsR3->pCritSectRoR3));
 
     /*
      * Isochronous URBs can't be retried.
@@ -2522,6 +2550,9 @@ static DECLCALLBACK(bool) ohciRhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBURB
         return true;
     }
 
+    RTCritSectEnter(&pThis->CritSect);
+
+    bool fRetire = false;
     /*
      * Check if the TDs still are valid.
      * This will make sure the TdCopy is up to date.
@@ -2531,26 +2562,31 @@ static DECLCALLBACK(bool) ohciRhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBURB
     if (ohciHasUrbBeenCanceled(pThis, pUrb, NULL))
     {
         Log(("%s: ohciRhXferError: TdAddr0=%#x canceled!\n", pUrb->pszDesc, TdAddr));
-        return true;
+        fRetire = true;
     }
-
-    /*
-     * Get and update the error counter.
-     */
-    POHCITD     pTd = (POHCITD)&pUrb->Hci.paTds[0].TdCopy[0];
-    unsigned    cErrs = (pTd->hwinfo & TD_HWINFO_ERRORS) >> TD_ERRORS_SHIFT;
-    pTd->hwinfo &= ~TD_HWINFO_ERRORS;
-    cErrs++;
-    pTd->hwinfo |= (cErrs % TD_ERRORS_MAX) << TD_ERRORS_SHIFT;
-    ohciWriteTd(pThis, TdAddr, pTd, "ohciRhXferError");
-
-    if (cErrs >= TD_ERRORS_MAX - 1)
+    else
     {
-        Log2(("%s: ohciRhXferError: too many errors, giving up!\n", pUrb->pszDesc));
-        return true;
+        /*
+         * Get and update the error counter.
+         */
+        POHCITD     pTd = (POHCITD)&pUrb->Hci.paTds[0].TdCopy[0];
+        unsigned    cErrs = (pTd->hwinfo & TD_HWINFO_ERRORS) >> TD_ERRORS_SHIFT;
+        pTd->hwinfo &= ~TD_HWINFO_ERRORS;
+        cErrs++;
+        pTd->hwinfo |= (cErrs % TD_ERRORS_MAX) << TD_ERRORS_SHIFT;
+        ohciWriteTd(pThis, TdAddr, pTd, "ohciRhXferError");
+
+        if (cErrs >= TD_ERRORS_MAX - 1)
+        {
+            Log2(("%s: ohciRhXferError: too many errors, giving up!\n", pUrb->pszDesc));
+            fRetire = true;
+        }
+        else
+            Log2(("%s: ohciRhXferError: cErrs=%d: retrying...\n", pUrb->pszDesc, cErrs));
     }
-    Log2(("%s: ohciRhXferError: cErrs=%d: retrying...\n", pUrb->pszDesc, cErrs));
-    return false;
+
+    RTCritSectLeave(&pThis->CritSect);
+    return fRetire;
 }
 
 
@@ -3529,11 +3565,11 @@ static void ohciCalcTimerIntervals(POHCI pThis, uint32_t u32FrameRate)
 {
     Assert(u32FrameRate <= OHCI_DEFAULT_TIMER_FREQ);
 
-
     pThis->cTicksPerFrame = pThis->u64TimerHz / u32FrameRate;
     if (!pThis->cTicksPerFrame)
         pThis->cTicksPerFrame = 1;
     pThis->cTicksPerUsbTick   = pThis->u64TimerHz >= VUSB_BUS_HZ ? pThis->u64TimerHz / VUSB_BUS_HZ : 1;
+    pThis->nsWait             = RT_NS_1SEC / u32FrameRate;
     pThis->uFrameRate         = u32FrameRate;
 }
 
@@ -3642,19 +3678,10 @@ static void ohciStartOfFrame(POHCI pThis)
 #endif
 
     /*
-     * Update HcFmRemaining.FRT and re-arm the timer.
+     * Update HcFmRemaining.FRT and update start of frame time.
      */
     pThis->frt = pThis->fit;
-#if 1 /* This is required for making the quickcam work on the mac. Should really look
-         into that adaptive polling stuff... */
     pThis->SofTime += pThis->cTicksPerFrame;
-    const uint64_t u64Now = TMTimerGet(pThis->CTX_SUFF(pEndOfFrameTimer));
-    if (pThis->SofTime + pThis->cTicksPerFrame < u64Now)
-        pThis->SofTime = u64Now - pThis->cTicksPerFrame / 2;
-#else
-    pThis->SofTime = TMTimerGet(pThis->CTX_SUFF(pEndOfFrameTimer));
-#endif
-    TMTimerSet(pThis->CTX_SUFF(pEndOfFrameTimer), pThis->SofTime + pThis->cTicksPerFrame);
 
     /*
      * Check that the HCCA address isn't bogus. Linux 2.4.x is known to start
@@ -3663,7 +3690,7 @@ static void ohciStartOfFrame(POHCI pThis)
     bool fValidHCCA = !(    pThis->hcca >= OHCI_HCCA_MASK
                         ||  pThis->hcca < ~OHCI_HCCA_MASK);
 
-#if 0 /* moved down for higher speed. */
+#if 1
     /*
      * Update the HCCA.
      * Should be done after SOF but before HC read first ED in this frame.
@@ -3712,7 +3739,7 @@ static void ohciStartOfFrame(POHCI pThis)
         &&    pThis->fBulkNeedsCleaning)
         ohciUndoBulkList(pThis);    /* If list disabled but not empty, abort endpoints. */
 
-#if 1
+#if 0
     /*
      * Update the HCCA after processing the lists and everything. A bit experimental.
      *
@@ -3771,14 +3798,7 @@ static void ohciStartOfFrame(POHCI pThis)
         }
     }
     if (uNewFrameRate != pThis->uFrameRate)
-    {
         ohciCalcTimerIntervals(pThis, uNewFrameRate);
-        if (uNewFrameRate == OHCI_DEFAULT_TIMER_FREQ)
-        {
-            /* If we're switching back to full speed, re-program the timer immediately to minimize latency. */
-            TMTimerSet(pThis->CTX_SUFF(pEndOfFrameTimer), pThis->SofTime + pThis->cTicksPerFrame);
-        }
-    }
 }
 
 /**
@@ -3791,6 +3811,67 @@ static void bump_frame_number(POHCI pThis)
         pThis->fno = 1;
 }
 
+static DECLCALLBACK(int) ohciR3ThreadFrame(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    int rc = VINF_SUCCESS;
+    POHCI pThis = (POHCI)pThread->pvUser;
+    uint64_t tsNanoStart = 0;
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+        while (   !ASMAtomicReadBool(&pThis->fBusStarted)
+               && pThread->enmState == PDMTHREADSTATE_RUNNING
+               && RT_SUCCESS(rc))
+            rc = RTSemEventWait(pThis->hSemEventFrame, RT_INDEFINITE_WAIT);
+
+        AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_TIMEOUT, ("%Rrc\n", rc), rc);
+        if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
+            break;
+
+        tsNanoStart = RTTimeNanoTS();
+
+        RTCritSectEnter(&pThis->CritSect);
+
+        /* Reset idle detection flag */
+        pThis->fIdle = true;
+
+        /* Frame boundary, so do EOF stuff here. */
+        bump_frame_number(pThis);
+        if ( (pThis->dqic != 0x7) && (pThis->dqic != 0))
+            pThis->dqic--;
+
+        /* Clean up any URBs that have been removed. */
+        ohciCancelOrphanedURBs(pThis);
+
+        /* Start the next frame. */
+        ohciStartOfFrame(pThis);
+
+        RTCritSectLeave(&pThis->CritSect);
+
+        /* Wait for the next round. */
+        RTMSINTERVAL msWait = (RTMSINTERVAL)(((RTTimeNanoTS() + pThis->nsWait) - tsNanoStart) / 1000000);
+        rc = RTSemEventWait(pThis->hSemEventFrame, msWait);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Unblock the framer thread so it can respond to a state change.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pThread     The send thread.
+ */
+static DECLCALLBACK(int) ohciR3ThreadFrameWakeup(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
+    return RTSemEventSignal(pThis->hSemEventFrame);
+}
+
 /**
  * Do frame processing on frame boundary
  */
@@ -3798,23 +3879,6 @@ static void ohciFrameBoundaryTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 {
     POHCI pThis = (POHCI)pvUser;
     STAM_PROFILE_START(&pThis->StatTimer, a);
-
-    /* Reset idle detection flag */
-    pThis->fIdle = true;
-
-    VUSBIRhReapAsyncUrbs(pThis->RootHub.pIRhConn, 0);
-
-    /* Frame boundary, so do EOF stuff here */
-    bump_frame_number(pThis);
-    if ( (pThis->dqic != 0x7) && (pThis->dqic != 0) )
-        pThis->dqic--;
-
-    /* Clean up any URBs that have been removed */
-    ohciCancelOrphanedURBs(pThis);
-
-    /* Start the next frame */
-    ohciStartOfFrame(pThis);
-
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
 
@@ -3825,14 +3889,13 @@ static void ohciFrameBoundaryTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 static void ohciBusStart(POHCI pThis)
 {
     VUSBIDevPowerOn(pThis->RootHub.pIDev);
-    bump_frame_number(pThis);
     pThis->dqic = 0x7;
 
     Log(("ohci: %s: Bus started\n", pThis->PciDev.name));
 
-    pThis->SofTime = TMTimerGet(pThis->CTX_SUFF(pEndOfFrameTimer)) - pThis->cTicksPerFrame;
-    pThis->fIdle = false;   /* Assume we won't be idle */
-    ohciStartOfFrame(pThis);
+    pThis->SofTime = PDMDevHlpTMTimeVirtGet(pThis->CTX_SUFF(pDevIns));
+    ASMAtomicXchgBool(&pThis->fBusStarted, true);
+    RTSemEventSignal(pThis->hSemEventFrame);
 }
 
 /**
@@ -3840,8 +3903,8 @@ static void ohciBusStart(POHCI pThis)
  */
 static void ohciBusStop(POHCI pThis)
 {
-    if (pThis->CTX_SUFF(pEndOfFrameTimer))
-        TMTimerStop(pThis->CTX_SUFF(pEndOfFrameTimer));
+    ASMAtomicXchgBool(&pThis->fBusStarted, false);
+    RTSemEventSignal(pThis->hSemEventFrame);
     VUSBIDevPowerOff(pThis->RootHub.pIDev);
 }
 
@@ -4367,7 +4430,7 @@ static int HcFmRemaining_r(PCOHCI pThis, uint32_t iReg, uint32_t *pu32Value)
         /*
          * Being in USB operational state guarantees SofTime was set already.
          */
-        uint64_t tks = TMTimerGet(pThis->CTX_SUFF(pEndOfFrameTimer)) - pThis->SofTime;
+        uint64_t tks = PDMDevHlpTMTimeVirtGet(pThis->CTX_SUFF(pDevIns)) - pThis->SofTime;
         if (tks < pThis->cTicksPerFrame)  /* avoid muldiv if possible */
         {
             uint16_t fr;
@@ -5018,8 +5081,6 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
                  */
                 pRh->aPorts[i].pDev = pDev;
             }
-            else /* Reap URBs one last time to make sure the lists are empty. */
-                VUSBIRhReapAsyncUrbs(pRh->pIRhConn, 0);
         }
     }
     PDMCritSectLeave(pThis->pDevInsR3->pCritSectRoR3);
@@ -5448,7 +5509,14 @@ static DECLCALLBACK(void) ohciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
  */
 static DECLCALLBACK(int) ohciR3Destruct(PPDMDEVINS pDevIns)
 {
+    POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+
+    /*
+     * Destroy event sempahores.
+     */
+    RTSemEventDestroy(pThis->hSemEventFrame);
+    RTCritSectDelete(&pThis->CritSect);
 
     /*
      * Tear down the per endpoint in-flight tracking...
@@ -5592,6 +5660,36 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     ohciCalcTimerIntervals(pThis, OHCI_DEFAULT_TIMER_FREQ);
     Log(("ohci: cTicksPerFrame=%RU64 cTicksPerUsbTick=%RU64\n",
          pThis->cTicksPerFrame, pThis->cTicksPerUsbTick));
+
+    pThis->fBusStarted = false;
+
+    rc = RTSemEventCreate(&pThis->hSemEventFrame);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Initialize the critical section without the lock validator.
+     * This is necessary because USB devices attached to this controller
+     * will be detached in the save state callback with the
+     * per device PDM critical section held. If there are still URBs pending
+     * for this device they will get reaped and cause a lock validator error
+     * because they will take this critical section.
+     *
+     * The framer thread on the other hand will first take this critical section
+     * during a run and might take the PDM critical section when issuing an interrupt.
+     * Normally this is a real deadlock issue but we make sure
+     * that the framer thread is not running when the save state handler is called.
+     */
+    rc = RTCritSectInitEx(&pThis->CritSect, RTCRITSECT_FLAGS_NO_LOCK_VAL,
+                          NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_USER, "OhciCritSect");
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("OHCI: Failed to create critical section"));
+
+    rc = PDMDevHlpThreadCreate(pDevIns, &pThis->hThreadFrame, pThis, ohciR3ThreadFrame,
+                               ohciR3ThreadFrameWakeup, 0, RTTHREADTYPE_IO, "OhciFramer");
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("OHCI: Failed to create worker thread"));
 
     /*
      * Do a hardware reset.
