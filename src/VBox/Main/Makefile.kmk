@@ -174,10 +174,6 @@ ifndef VBOX_ONLY_SDK
 LIBRARIES += VBoxAPIWrap
 VBoxAPIWrap_TEMPLATE        = VBoxMainLib
 VBoxAPIWrap_SOURCES         = $(filter %.cpp,$(VBOX_MAIN_APIWRAPPER_GEN_FILES))
-VBoxAPIWrap_VBOX_RAWSRC     = \
-	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers
-VBoxAPIWrap_XSLT            = \
-	$(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server.xsl
 VBoxAPIWrap_DEFS.win.x86   += _WIN32_WINNT=0x0500
 VBoxAPIWrap_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 VBoxAPIWrap_INCS           += \
@@ -186,6 +182,12 @@ VBoxAPIWrap_CLEAN           = \
 	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) \
 	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h) \
 	$(VBoxAPIWrap_VBOX_RAWSRC)
+
+# Two VBox variables used here and/or in the rules generating wrappers.
+VBoxAPIWrap_VBOX_RAWSRC     = \
+	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers
+VBoxAPIWrap_VBOX_XSLT       = \
+	$(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server.xsl
 
 # This include file (generated at the bottom of this file), defines
 # VBOX_MAIN_APIWRAPPER_GEN_FILES and VBOX_MAIN_APIWRAPPER_GEN_HDRS.
@@ -1054,19 +1056,19 @@ javagluesample_SOURCES = \
 $(VBoxAPIWrap_VBOX_RAWSRC) \
 +| $(VBOX_MAIN_APIWRAPPER_GEN_FILES): \
 		$(VBOX_XIDL_FILE) \
-		$(VBoxAPIWrap_XSLT) \
+		$(VBoxAPIWrap_VBOX_XSLT) \
 		$(VBOX_FILESPLIT) \
 		| $$(dir $$@)
 	$(call MSG_L1,Generating C++ Server API wrapper files from XIDL)
 	$(QUIET)$(RM) -f $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_FILES),$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly "" -o $@ $(VBoxAPIWrap_XSLT) $<
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly "" -o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
-$(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FILE) $(VBoxAPIWrap_XSLT) $(MAKEFILE_CURRENT)
+$(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FILE) $(VBoxAPIWrap_VBOX_XSLT) $(MAKEFILE_CURRENT)
 	$(call MSG_GENERATE,,$(VBoxAPIWrap_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly VBOX_MAIN_APIWRAPPER_GEN_FILES -o $@ $(VBoxAPIWrap_XSLT) $<
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly VBOX_MAIN_APIWRAPPER_GEN_FILES -o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
 	$(QUIET)$(APPEND) -n "$@" "" "" \
 		'VBOX_MAIN_APIWRAPPER_GEN_FILES := $$(addprefix $$(VBOX_MAIN_APIWRAPPER_DIR)/,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))' \
 		'VBOX_MAIN_APIWRAPPER_GEN_HDRS = $$(filter %.h,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))'
