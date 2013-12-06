@@ -1269,11 +1269,6 @@ static int darwinLedElementSetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     IOHIDValueRef valueRef;
     IOReturn      rc = kIOReturnError;
 
-    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
-    int rc1 = SUPR3ResumeBuiltinKeyboard();
-    if (RT_FAILURE(rc1))
-        return rc1;
-
     valueRef = IOHIDValueCreateWithIntegerValue(kCFAllocatorDefault, element, 0, (fEnabled) ? 1 : 0);
     if (valueRef)
     {
@@ -1295,11 +1290,6 @@ static int darwinLedElementGetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     IOHIDValueRef valueRef;
     IOReturn      rc;
     CFIndex       integerValue;
-
-    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
-    int rc1 = SUPR3ResumeBuiltinKeyboard();
-    if (RT_FAILURE(rc1))
-        return rc1;
 
     rc = IOHIDDeviceGetValue(hidDevice, element, &valueRef);
     if (rc == kIOReturnSuccess)
@@ -1329,6 +1319,11 @@ static int darwinSetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
 {
     CFArrayRef matchingElementsArrayRef;
     int        rc2 = 0;
+
+    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
+    int rc1 = SUPR3ResumeBuiltinKeyboard();
+    if (RT_FAILURE(rc1))
+        return rc1;
 
     matchingElementsArrayRef = IOHIDDeviceCopyMatchingElements(hidDevice, elementMatchingDict, kIOHIDOptionsTypeNone);
     if (matchingElementsArrayRef)
@@ -1374,6 +1369,11 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
 {
     CFArrayRef matchingElementsArrayRef;
     int        rc2 = 0;
+
+    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
+    int rc1 = SUPR3ResumeBuiltinKeyboard();
+    if (RT_FAILURE(rc1))
+        return rc1;
 
     matchingElementsArrayRef = IOHIDDeviceCopyMatchingElements(hidDevice, elementMatchingDict, kIOHIDOptionsTypeNone);
     if (matchingElementsArrayRef)
@@ -1700,9 +1700,7 @@ static CGEventRef darwinCarbonCallback(CGEventTapProxy unused, CGEventType unuse
                 CFDictionaryRef elementMatchingDict = darwinQueryLedElementMatchingDictionary();
                 if (elementMatchingDict)
                 {
-                    (void)darwinSetDeviceLedsState(pKbd->pDevice, elementMatchingDict, pHidState->guestState.fNumLockOn,
-                        pHidState->guestState.fCapsLockOn, pHidState->guestState.fScrollLockOn);
-
+                    (void)darwinSetDeviceLedsState(pKbd->pDevice, elementMatchingDict, fNum, fCaps, pHidState->guestState.fScrollLockOn);
                     CFRelease(elementMatchingDict);
                 }
             }
