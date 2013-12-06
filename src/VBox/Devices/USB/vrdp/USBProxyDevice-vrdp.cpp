@@ -261,6 +261,15 @@ static void usbProxyVrdpUrbCancel(PVUSBURB pUrb)
     pDevVrdp->pCallback->pfnCancelURB (pDevVrdp->pDevice, (PREMOTEUSBQURB)pUrb->Dev.pvPrivate);
 }
 
+static int usbProxyVrdpWakeup(PUSBPROXYDEV pProxyDev)
+{
+    LogFlow(("usbProxyVrdpWakeup: pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
+
+    PUSBPROXYDEVVRDP pDevVrdp = (PUSBPROXYDEVVRDP)pProxyDev->Backend.pv;
+
+    return pDevVrdp->pCallback->pfnWakeup (pDevVrdp->pDevice);
+}
+
 /**
  * The VRDP USB Proxy Backend operations.
  */
@@ -279,6 +288,7 @@ extern const USBPROXYBACK g_USBProxyDeviceVRDP =
     usbProxyVrdpUrbQueue,
     usbProxyVrdpUrbCancel,
     usbProxyVrdpUrbReap,
+    usbProxyVrdpWakeup,
     0
 };
 

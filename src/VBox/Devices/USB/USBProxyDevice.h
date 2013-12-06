@@ -129,6 +129,14 @@ typedef struct USBPROXYBACK
      */
     PVUSBURB (* pfnUrbReap)(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies);
 
+    /**
+     * Kicks the thread waiting in pfnUrbReap to make it return.
+     *
+     * @returns VBox status code.
+     * @param   pProxyDev   The device.
+     */
+    int (* pfnWakeup)(PUSBPROXYDEV pProxyDev);
+
     /** Dummy entry for making sure we've got all members initialized. */
     uint32_t uDummy;
 } USBPROXYBACK;

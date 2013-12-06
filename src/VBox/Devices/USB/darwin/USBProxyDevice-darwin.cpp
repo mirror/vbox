@@ -1871,6 +1871,15 @@ static void usbProxyDarwinUrbCancel(PVUSBURB pUrb)
 }
 
 
+static int usbProxyDarwinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
+{
+    PUSBPROXYDEVOSX pDevOsX = (PUSBPROXYDEVOSX)pProxyDev->Backend.pv;
+
+    CFRunLoopStop(g_pRunLoopMode);
+    return VINF_SUCCESS;
+}
+
+
 /**
  * The Darwin USB Proxy Backend.
  */
@@ -1889,6 +1898,7 @@ extern const USBPROXYBACK g_USBProxyDeviceHost =
     usbProxyDarwinUrbQueue,
     usbProxyDarwinUrbCancel,
     usbProxyDarwinUrbReap,
+    usbProxyDarwinWakeup,
     0
 };
 

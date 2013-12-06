@@ -115,6 +115,7 @@ typedef struct _REMOTEUSBDEVICE
     volatile uint32_t hURB;            /* Source for URB's handles. */
     bool              fFailed;         /* True if an operation has failed for the device. */
     RTCRITSECT        critsect;        /* Protects the queued urb list. */
+    volatile bool     fWokenUp;        /* Flag whther the reaper was woken up. */
 } REMOTEUSBDEVICE;
 
 
@@ -276,6 +277,7 @@ static DECLCALLBACK(int) iface_Open (PREMOTEUSBBACKEND pInstance, const char *ps
         {
             /* Initialize the device structure. */
             pDevice->pOwner = pThis;
+            pDevice->fWokenUp = false;
 
             rc = RTCritSectInit(&pDevice->critsect);
             AssertRC(rc);
@@ -690,6 +692,9 @@ static DECLCALLBACK(int) iface_ReapURB (PREMOTEUSBDEVICE pDevice, uint32_t u32Mi
     {
         uint32_t u32ClientId;
 
+        if (ASMAtomicXchgBool(&pDevice->fWokenUp, false))
+            break;
+
         /* Scan queued URBs, look for completed. */
         requestDevice (pDevice);
 
@@ -781,6 +786,12 @@ static DECLCALLBACK(int) iface_ReapURB (PREMOTEUSBDEVICE pDevice, uint32_t u32Mi
     }
 
     return rc;
+}
+
+static DECLCALLBACK(int) iface_Wakeup (PREMOTEUSBDEVICE pDevice)
+{
+    ASMAtomicXchgBool(&pDevice->fWokenUp, true);
+    return VINF_SUCCESS;
 }
 
 void RemoteUSBBackend::AddRef (void)
@@ -976,6 +987,7 @@ RemoteUSBBackend::RemoteUSBBackend(Console *console, ConsoleVRDPServer *server, 
     mCallback.pfnReapURB          = iface_ReapURB;
     mCallback.pfnClearHaltedEP    = iface_ClearHaltedEP;
     mCallback.pfnCancelURB        = iface_CancelURB;
+    mCallback.pfnWakeup           = iface_Wakeup;
 }
 
 RemoteUSBBackend::~RemoteUSBBackend()

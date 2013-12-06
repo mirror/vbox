@@ -29,6 +29,8 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 
+#include <iprt/queueatomic.h>
+
 struct PDMLED;
 
 RT_C_DECLS_BEGIN
@@ -1057,15 +1059,18 @@ typedef struct VUSBURB
         uint32_t        u32FrameNo;
         /** Flag indicating that the TDs have been unlinked. */
         bool            fUnlinked;
+        RTQUEUEATOMICITEM QueueItem;
     } Hci;
 
     /** The device data. */
     struct VUSBURBDEV
     {
         /** Pointer to private device specific data.  */
-        void           *pvPrivate;
+        void             *pvPrivate;
         /** Used by the device when linking the URB in some list of its own.   */
-        PVUSBURB        pNext;
+        PVUSBURB          pNext;
+        /** Work queue item. */
+        RTQUEUEATOMICITEM QueueItem;
     } Dev;
 
 #ifndef RDESKTOP

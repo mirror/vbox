@@ -1115,6 +1115,113 @@ static void vusbDevCancelAllUrbs(PVUSBDEV pDev, bool fDetaching)
 }
 
 
+static DECLCALLBACK(int) vusbDevUrbIoThread(RTTHREAD hThread, void *pvUser)
+{
+    PVUSBDEV pDev = (PVUSBDEV)pvUser;
+
+    /* Notify the starter that we are up and running. */
+    RTThreadUserSignal(hThread);
+
+    LogFlowFunc(("Entering work loop\n"));
+
+    while (!ASMAtomicReadBool(&pDev->fTerminate))
+    {
+        if (pDev->enmState != VUSB_DEVICE_STATE_RESET)
+            vusbUrbDoReapAsyncDev(pDev, RT_INDEFINITE_WAIT);
+
+        /* Woken up or there is an URB to queue. */
+        PRTQUEUEATOMICITEM pHead = RTQueueAtomicRemoveAll(&pDev->QueueUrb);
+        while (pHead)
+        {
+            PVUSBURB pUrb = RT_FROM_MEMBER(pHead, VUSBURB, Dev.QueueItem);
+
+            pHead = pHead->pNext;
+
+            LogFlow(("%s: Queuing URB\n", pUrb->pszDesc));
+            int rc = pUrb->pUsbIns->pReg->pfnUrbQueue(pUrb->pUsbIns, pUrb);
+            if (RT_FAILURE(rc))
+            {
+                LogFlow(("%s: Queuing URB failed with %Rrc\n", pUrb->pszDesc, rc));
+
+                /*
+                 * The device was detached, so we fail everything.
+                 * (We should really detach and destroy the device, but we'll have to wait till Main reacts.)
+                 */
+                if (rc == VERR_VUSB_DEVICE_NOT_ATTACHED)
+                    rc = vusbUrbSubmitHardError(pUrb);
+
+                /*
+                 * We don't increment error count if async URBs are in flight, in
+                 * this case we just assume we need to throttle back, this also
+                 * makes sure we don't halt bulk endpoints at the wrong time.
+                 */
+                else if (   RT_FAILURE(rc)
+                         && !pDev->aPipes[pUrb->EndPt].async
+                         /* && pUrb->enmType == VUSBXFERTYPE_BULK ?? */
+                         && !vusbUrbErrorRh(pUrb))
+                {
+                    /* don't retry it anymore. */
+                    pUrb->enmState = VUSBURBSTATE_REAPED;
+                    pUrb->enmStatus = VUSBSTATUS_CRC;
+                    vusbUrbCompletionRh(pUrb);
+                }
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+int vusbDevUrbIoThreadWakeup(PVUSBDEV pDev)
+{
+    ASMAtomicXchgBool(&pDev->fWokenUp, true);
+    return pDev->pUsbIns->pReg->pfnWakeup(pDev->pUsbIns);
+}
+
+/**
+ * Create the URB I/O thread.
+ *
+ * @returns VBox status code.
+ * @param   pDev    The VUSB device.
+ */
+int vusbDevUrbIoThreadCreate(PVUSBDEV pDev)
+{
+    int rc = VINF_SUCCESS;
+
+    ASMAtomicXchgBool(&pDev->fTerminate, false);
+    rc = RTThreadCreateF(&pDev->hUrbIoThread, vusbDevUrbIoThread, pDev, 0, RTTHREADTYPE_IO,
+                         RTTHREADFLAGS_WAITABLE, "USBDevIo-%d", pDev->i16Port);
+    if (RT_SUCCESS(rc))
+    {
+        /* Wait for it to become active. */
+        rc = RTThreadUserWait(pDev->hUrbIoThread, RT_INDEFINITE_WAIT);
+    }
+
+    return rc;
+}
+
+/**
+ * Destro the URB I/O thread.
+ *
+ * @returns VBox status code.
+ * @param   pDev    The VUSB device.
+ */
+int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev)
+{
+    int rc = VINF_SUCCESS;
+    int rcThread = VINF_SUCCESS;
+
+    ASMAtomicXchgBool(&pDev->fTerminate, true);
+    vusbDevUrbIoThreadWakeup(pDev);
+
+    rc = RTThreadWait(pDev->hUrbIoThread, RT_INDEFINITE_WAIT, &rcThread);
+    if (RT_SUCCESS(rc))
+        rc = rcThread;
+
+    return rc;
+}
+
+
 /**
  * Detaches a device from the hub it's attached to.
  *
@@ -1181,6 +1288,9 @@ void vusbDevDestroy(PVUSBDEV pDev)
             pDev->enmState = VUSB_DEVICE_STATE_DEFAULT; /* anything but reset */
         }
     }
+
+    /* Destroy I/O thread. */
+    vusbDevUrbIoThreadDestroy(pDev);
 
     /*
      * Detach and free resources.
@@ -1575,6 +1685,7 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
     pDev->hResetThread = NIL_RTTHREAD;
     pDev->pvResetArgs = NULL;
     pDev->pResetTimer = NULL;
+    RTQueueAtomicInit(&pDev->QueueUrb);
 
     /*
      * Create the reset timer.
@@ -1617,6 +1728,9 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
     size_t cbIface = vusbDevMaxInterfaces(pDev) * sizeof(*pDev->paIfStates);
     pDev->paIfStates = (PVUSBINTERFACESTATE)RTMemAllocZ(cbIface);
     AssertMsgReturn(pDev->paIfStates, ("RTMemAllocZ(%d) failed\n", cbIface), VERR_NO_MEMORY);
+
+    rc = vusbDevUrbIoThreadCreate(pDev);
+    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }

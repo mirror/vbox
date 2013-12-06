@@ -985,7 +985,7 @@ static void vusbMsgCompletion(PVUSBURB pUrb)
  * @returns false if it should be completed with failure.
  * @param   pUrb    The URB in question.
  */
-static int vusbUrbErrorRh(PVUSBURB pUrb)
+int vusbUrbErrorRh(PVUSBURB pUrb)
 {
     PVUSBDEV pDev = pUrb->VUsb.pDev;
     PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
@@ -1204,14 +1204,7 @@ int vusbUrbQueueAsyncRh(PVUSBURB pUrb)
         return VERR_OBJECT_DESTROYED;
     }
 
-    int rc = pUrb->pUsbIns->pReg->pfnUrbQueue(pUrb->pUsbIns, pUrb);
-    if (RT_FAILURE(rc))
-    {
-        LogFlow(("%s: vusbUrbQueueAsyncRh: returns %Rrc (queue_urb)\n", pUrb->pszDesc, rc));
-        return rc;
-    }
-
-    pDev->aPipes[pUrb->EndPt].async++;
+    ASMAtomicIncU32(&pDev->aPipes[pUrb->EndPt].async);
 
     /* Queue the pUrb on the roothub */
     RTCritSectEnter(&pRh->CritSect);
@@ -1222,7 +1215,10 @@ int vusbUrbQueueAsyncRh(PVUSBURB pUrb)
     pUrb->VUsb.ppPrev = &pRh->pAsyncUrbHead;
     RTCritSectLeave(&pRh->CritSect);
 
-    return rc;
+    RTQueueAtomicInsert(&pDev->QueueUrb, &pUrb->Dev.QueueItem);
+    vusbDevUrbIoThreadWakeup(pDev);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1798,7 +1794,7 @@ static int vusbUrbSubmitIsochronous(PVUSBURB pUrb)
  * @return VINF_SUCCESS (the Urb status indicates the error).
  * @param   pUrb    The URB.
  */
-static int vusbUrbSubmitHardError(PVUSBURB pUrb)
+int vusbUrbSubmitHardError(PVUSBURB pUrb)
 {
     /* FIXME: Find out the correct return code from the spec */
     pUrb->enmState = VUSBURBSTATE_REAPED;
@@ -1926,7 +1922,7 @@ int vusbUrbSubmit(PVUSBURB pUrb)
      * makes sure we don't halt bulk endpoints at the wrong time.
      */
     else if (   RT_FAILURE(rc)
-             && !pDev->aPipes[pUrb->EndPt].async
+             && !ASMAtomicReadU32(&pDev->aPipes[pUrb->EndPt].async)
              /* && pUrb->enmType == VUSBXFERTYPE_BULK ?? */
              && !vusbUrbErrorRh(pUrb))
     {
@@ -1985,6 +1981,41 @@ void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies)
     }
 }
 
+/**
+ * Reap URBs on a per device level.
+ *
+ * @returns nothing.
+ * @param   pDev        The device instance to reap URBs for.
+ * @param   cMillies    Number of milliseconds to block in each reap operation.
+ *                      Use 0 to not block at all.
+ */
+void vusbUrbDoReapAsyncDev(PVUSBDEV pDev, RTMSINTERVAL cMillies)
+{
+    Assert(pDev->enmState != VUSB_DEVICE_STATE_RESET);
+
+    /*
+     * Reap most URBs pending on a single device.
+     */
+    PVUSBURB pRipe;
+
+    /**
+     * This is workaround for race(should be fixed) detach on one EMT thread and frame boundary timer on other
+     * and leaked URBs (shouldn't be affected by leaked URBs).
+     */
+
+    if (ASMAtomicXchgBool(&pDev->fWokenUp, false))
+        return;
+
+    Assert(pDev->pUsbIns);
+    while (   pDev->pUsbIns
+           && ((pRipe = pDev->pUsbIns->pReg->pfnUrbReap(pDev->pUsbIns, cMillies)) != NULL))
+    {
+        vusbUrbAssert(pRipe);
+        vusbUrbRipe(pRipe);
+        if (ASMAtomicXchgBool(&pDev->fWokenUp, false))
+            break;
+    }
+}
 
 /**
  * Completes the URB.
@@ -1992,7 +2023,7 @@ void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies)
 static void vusbUrbCompletion(PVUSBURB pUrb)
 {
     Assert(pUrb->VUsb.pDev->aPipes);
-    pUrb->VUsb.pDev->aPipes[pUrb->EndPt].async--;
+    ASMAtomicDecU32(&pUrb->VUsb.pDev->aPipes[pUrb->EndPt].async);
 
     if (pUrb->enmState == VUSBURBSTATE_REAPED)
         vusbUrbUnlink(pUrb);

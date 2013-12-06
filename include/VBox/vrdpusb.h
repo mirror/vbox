@@ -69,6 +69,7 @@ typedef struct _REMOTEUSBCALLBACK
     DECLCALLBACKMEMBER(int, pfnReapURB)          (PREMOTEUSBDEVICE pDevice, uint32_t u32Millies, void **ppvURB, uint32_t *pu32Len, uint32_t *pu32Err);
     DECLCALLBACKMEMBER(int, pfnClearHaltedEP)    (PREMOTEUSBDEVICE pDevice, uint8_t u8Ep);
     DECLCALLBACKMEMBER(void, pfnCancelURB)       (PREMOTEUSBDEVICE pDevice, PREMOTEUSBQURB pRemoteURB);
+    DECLCALLBACKMEMBER(int, pfnWakeup)           (PREMOTEUSBDEVICE pDevice);
 } REMOTEUSBCALLBACK;
 
 #endif
