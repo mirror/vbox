@@ -799,7 +799,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  endif
  VBoxClient-x86_LIBS = $(NO_SUCH_VARIABLE)
  VBoxClient-x86_LIBS.win = $(NO_SUCH_VARIABLE)
- VBoxClient-x86_CLEAN.win += $$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs
+ VBoxClient-x86_CLEAN.win += $(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs
  src-client/win/VBoxClient-x86.rc_DEPS = \
  	$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs \
  	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb
