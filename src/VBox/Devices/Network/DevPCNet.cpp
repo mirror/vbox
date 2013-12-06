@@ -4955,6 +4955,15 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return rc;
 
+    /** XXX remove! */
+#define PCNET_GUEST_SHARED_MEMORY_SIZE _512K
+    void *pvSharedMMIOR3;
+    rc = PDMDevHlpMMIO2Register(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE, 0, (void **)&pvSharedMMIOR3, "PCNetSh");
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Failed to allocate %u bytes of memory for the PCNet device"),
+                                   PCNET_GUEST_SHARED_MEMORY_SIZE);
+
 #ifdef PCNET_NO_POLLING
     /*
      * Resolve the R0 and RC handlers.
