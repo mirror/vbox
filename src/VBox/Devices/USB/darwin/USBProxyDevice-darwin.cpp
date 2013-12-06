@@ -240,6 +240,10 @@ typedef struct USBPROXYDEVOSX
     PUSBPROXYURBOSX         pTaxingHead;
     /** The tail of the landed Darwin URBs. */
     PUSBPROXYURBOSX         pTaxingTail;
+    /** Runloop reference of the thread reaping. */
+    volatile CFRunLoopRef   hRunLoopReaping;
+    /** Flag whether the reaping thread is about the be waked. */
+    volatile bool           fReapingThreadWake;
 } USBPROXYDEVOSX, *PUSBPROXYDEVOSX;
 
 
@@ -1789,6 +1793,15 @@ static PVUSBURB usbProxyDarwinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMill
     PVUSBURB pUrb = NULL;
     PUSBPROXYDEVOSX pDevOsX = (PUSBPROXYDEVOSX)pProxyDev->Backend.pv;
 
+    ASMAtomicXchgPtr((void * volatile *)&pDevOsX->hRunLoopReaping, CFRunLoopGetCurrent());
+
+    if (ASMAtomicReadBool(&pDevOsX->fReapingThreadWake))
+    {
+        /* Return immediately. */
+        ASMAtomicXchgPtr((void * volatile *)&pDevOsX->hRunLoopReaping, NULL);
+        return NULL;
+    }
+
     /*
      * If we've got any in-flight URBs, excercise the runloop.
      */
@@ -1799,6 +1812,8 @@ static PVUSBURB usbProxyDarwinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMill
         &&  cMillies
         &&  pDevOsX->pInFlightHead)
         CFRunLoopRunInMode(g_pRunLoopMode, cMillies / 1000.0, true);
+
+    ASMAtomicXchgPtr((void * volatile *)&pDevOsX->hRunLoopReaping, NULL);
 
     /*
      * Any URBs pending delivery?
@@ -1871,11 +1886,18 @@ static void usbProxyDarwinUrbCancel(PVUSBURB pUrb)
 }
 
 
-static int usbProxyDarwinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
+static int usbProxyDarwinWakeup(PUSBPROXYDEV pProxyDev)
 {
     PUSBPROXYDEVOSX pDevOsX = (PUSBPROXYDEVOSX)pProxyDev->Backend.pv;
 
-    CFRunLoopStop(g_pRunLoopMode);
+    ASMAtomicXchgBool(&pDevOsX->fReapingThreadWake, true);
+
+    CFRunLoopRef hRunLoopWake = (CFRunLoopRef)ASMAtomicReadPtr((void * volatile *)&pDevOsX->hRunLoopReaping);
+    if (hRunLoopWake)
+        CFRunLoopStop(hRunLoopWake);
+
+    ASMAtomicXchgBool(&pDevOsX->fReapingThreadWake, false);
+
     return VINF_SUCCESS;
 }
 
