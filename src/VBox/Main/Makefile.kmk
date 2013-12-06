@@ -1062,7 +1062,7 @@ $(VBoxAPIWrap_VBOX_RAWSRC) \
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly "" -o $@ $(VBoxAPIWrap_XSLT) $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
-$(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FILE) $(VBoxAPIWrap_XSLT)
+$(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FILE) $(VBoxAPIWrap_XSLT) $(MAKEFILE_CURRENT)
 	$(call MSG_GENERATE,,$(VBoxAPIWrap_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
