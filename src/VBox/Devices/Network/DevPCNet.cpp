@@ -54,6 +54,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmnetifs.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/version.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
@@ -402,7 +403,7 @@ typedef struct PCNETSTATE
     /* True: Emulate Am79C973. False: Emulate 79C970A. */
     bool                                fAm79C973;
     /* Link speed to be reported through CSR68. */
-    bool                                Alignment5;
+    bool                                fSharedRegion;
     /* Alignment padding. */
     uint32_t                            u32LinkSpeed;
     /* MS to wait before we enable the link. */
@@ -3913,20 +3914,6 @@ static DECLCALLBACK(int) pcnetMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegi
 }
 
 
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP, VBox specific MMIO2 interface.}
- */
-static DECLCALLBACK(int) pcnetMMIOSharedMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
-                                            RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
-{
-    if (GCPhysAddress != NIL_RTGCPHYS)
-        return PDMDevHlpMMIO2Map(pPciDev->pDevIns, iRegion, GCPhysAddress);
-
-    /* nothing to clean up */
-    return VINF_SUCCESS;
-}
-
-
 /* -=-=-=-=-=- Debug Info Handler -=-=-=-=-=- */
 
 /**
@@ -4258,7 +4245,7 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 
 /**
- * @callback_method_impl{FNSSMDEVLOADPREP,
+ * @callback_method_impl{FNSSMDEVLOADPREP},
  *      Serializes the receive thread, it may be working inside the critsect.}
  */
 static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
@@ -4267,9 +4254,23 @@ static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
+
+    uint32_t uVer = SSMR3HandleVersion(pSSM);
+    if (    uVer  < VBOX_FULL_VERSION_MAKE(4, 3,  6)
+        || (   uVer >= VBOX_FULL_VERSION_MAKE(4, 3, 51)
+            && uVer <  VBOX_FULL_VERSION_MAKE(4, 3, 53)))
+    {
+        /* older saved states contain the shared memory region which was never used for ages. */
+        void *pvSharedMMIOR3;
+        rc = PDMDevHlpMMIO2Register(pDevIns, 2, _512K, 0, (void **)&pvSharedMMIOR3, "PCNetSh");
+        if (RT_FAILURE(rc))
+            rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                     N_("Failed to allocate the dummy shmem region for the PCNet device"));
+        pThis->fSharedRegion = true;
+    }
     PDMCritSectLeave(&pThis->CritSect);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -4376,6 +4377,21 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     return VINF_SUCCESS;
 }
 
+/**
+ * @callback_method_impl{FNSSMDEVLOADDONE}
+ */
+static DECLCALLBACK(int) pcnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
+    int rc = VINF_SUCCESS;
+    if (pThis->fSharedRegion)
+    {
+        /* drop this dummy region */
+        rc = PDMDevHlpMMIO2Deregister(pDevIns, 2);
+        pThis->fSharedRegion = false;
+    }
+    return rc;
+}
 
 /* -=-=-=-=-=- PCNETSTATE::INetworkDown -=-=-=-=-=- */
 
@@ -4955,15 +4971,6 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return rc;
 
-    /** XXX remove! */
-#define PCNET_GUEST_SHARED_MEMORY_SIZE _512K
-    void *pvSharedMMIOR3;
-    rc = PDMDevHlpMMIO2Register(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE, 0, (void **)&pvSharedMMIOR3, "PCNetSh");
-    if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("Failed to allocate %u bytes of memory for the PCNet device"),
-                                   PCNET_GUEST_SHARED_MEMORY_SIZE);
-
 #ifdef PCNET_NO_POLLING
     /*
      * Resolve the R0 and RC handlers.
@@ -5000,7 +5007,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpSSMRegisterEx(pDevIns, PCNET_SAVEDSTATE_VERSION, sizeof(*pThis), NULL,
                                 NULL,          pcnetLiveExec, NULL,
                                 pcnetSavePrep, pcnetSaveExec, NULL,
-                                pcnetLoadPrep, pcnetLoadExec, NULL);
+                                pcnetLoadPrep, pcnetLoadExec, pcnetLoadDone);
     if (RT_FAILURE(rc))
         return rc;
 
