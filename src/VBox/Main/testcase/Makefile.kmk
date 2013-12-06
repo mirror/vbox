@@ -109,15 +109,22 @@ tstVBoxAPIWin_SOURCES  = \
 #
 # tstCollector
 #
+# Note! VBOX_MAIN_APIWRAPPER_GEN_HDRS is only defined if kmk is executed a
+#       parent directory.  Since the rules for generating the files listed by
+#       the variable lives in the parent makefile, this is not a problem.
+#
 tstCollector_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstCollector_SOURCES  = \
 	tstCollector.cpp \
 	../src-server/Performance.cpp
-tstCollector_INCS     = ../include $(VBOX_MAIN_APIWRAPPER_INCS)
-tstCollector_DEFS    += VBOX_COLLECTOR_TEST_CASE
-tstCollector_LDFLAGS.darwin  += -lproc
-tstCollector_LDFLAGS.solaris += -lkstat -lnvpair
-tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
+tstCollector_INCS            = \
+	../include \
+	$(VBOX_MAIN_APIWRAPPER_INCS)
+tstCollector_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
+tstCollector_DEFS            = VBOX_COLLECTOR_TEST_CASE
+tstCollector_LDFLAGS.darwin  = -lproc
+tstCollector_LDFLAGS.solaris = -lkstat -lnvpair
+tstCollector_LDFLAGS.win     = psapi.lib powrprof.lib
 
 
 #
