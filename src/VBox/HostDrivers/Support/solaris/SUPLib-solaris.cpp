@@ -52,6 +52,7 @@
 
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/zone.h>
 
 #include <fcntl.h>
 #include <errno.h>
@@ -59,17 +60,20 @@
 #include <sys/mman.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <zone.h>
 
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** @todo r=ramshankar: This breaks accessing the driver from non-global zones. We should check
-    using getzoneid() != GLOBAL_ZONE and use /dev/vboxdrv[u] instead when we're in a zone. */
 /** Solaris device link - system. */
-#define DEVICE_NAME_SYS     "/devices/pseudo/vboxdrv@0:vboxdrv"
+#define DEVICE_NAME_SYS       "/devices/pseudo/vboxdrv@0:vboxdrv"
 /** Solaris device link - user. */
-#define DEVICE_NAME_USR     "/devices/pseudo/vboxdrv@0:vboxdrvu"
+#define DEVICE_NAME_USR       "/devices/pseudo/vboxdrv@0:vboxdrvu"
+/** Solaris device link - system (non-global zone). */
+#define DEVICE_NAME_SYS_ZONE  "/dev/vboxdrv"
+/** Solaris device link - user (non-global zone). */
+#define DEVICE_NAME_USR_ZONE  "/dev/vboxdrvu"
 
 
 
@@ -105,7 +109,11 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
     /*
      * Try to open the device.
      */
-    const char *pszDeviceNm = fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR;
+    const char *pszDeviceNm;
+    if (getzoneid() == GLOBAL_ZONEID)
+        pszDeviceNm = fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR;
+    else
+        pszDeviceNm = fUnrestricted ? DEVICE_NAME_SYS_ZONE : DEVICE_NAME_USR_ZONE;
     int hDevice = open(pszDeviceNm, O_RDWR, 0);
     if (hDevice < 0)
     {
