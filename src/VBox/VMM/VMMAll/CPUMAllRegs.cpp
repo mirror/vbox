@@ -2797,9 +2797,11 @@ VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
 {
+    /* Intel mentions EFER.LMA and EFER.LME in different parts of their spec. We shall use EFER.LMA rather
+       than EFER.LME as it reflects if the CPU has entered paging with EFER.LME set.  */
     return (pVCpu->cpum.s.Guest.cr4 & X86_CR4_PAE)
         && (pVCpu->cpum.s.Guest.cr0 & X86_CR0_PG)
-        && !(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LME);
+        && !(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA);
 }
 
 
