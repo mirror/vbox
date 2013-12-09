@@ -17,6 +17,7 @@
 
 #include "winutils.h"
 
+#include <VBox/com/assert.h>
 #include <VBox/com/com.h>
 #include <VBox/com/listeners.h>
 #include <VBox/com/string.h>
@@ -25,7 +26,6 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/com/VirtualBox.h>
-#include <VBox/com/NativeEventQueue.h>
 
 #include <iprt/net.h>
 #include <iprt/initterm.h>
@@ -130,7 +130,6 @@ class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
     void usage(){                /* @todo: should be implemented */ };
     int run();
     virtual int init(void);
-    /* @todo: when configuration would be really needed */
     virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
     /* VBoxNetNAT always needs Main */
     virtual bool isMainNeeded() const { return true; }
@@ -150,8 +149,6 @@ class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
 
     uint16_t m_u16Mtu;
     netif m_LwipNetIf;
-    /* thread where we're waiting for a frames, no semaphores needed */
-    RTTHREAD hThrIntNetRecv;
 
     /* Our NAT network descriptor in Main */
     ComPtr<INATNetwork> m_net;
@@ -186,6 +183,9 @@ class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
 static VBoxNetLwipNAT *g_pLwipNat;
 INTNETSEG VBoxNetLwipNAT::aXmitSeg[64];
 
+/**
+ * @note: this work on Event thread.
+ */
 HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                                                   IEvent *pEvent)
 {
@@ -514,25 +514,6 @@ err_t VBoxNetLwipNAT::netifInit(netif *pNetif)
 }
 
 
-/**
- * Intnet-recv thread
- */
-int VBoxNetLwipNAT::intNetThreadRecv(RTTHREAD, void *)
-{
-    int rc = VINF_SUCCESS;
-
-    /* 1. initialization and connection */
-    HRESULT hrc = com::Initialize();
-    if (FAILED(hrc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM!");
-
-    g_pLwipNat->doReceiveLoop();
-    /* 3. deinitilization and termination */
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-
 err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
 {
     AssertPtrReturn(pNetif, ERR_ARG);
@@ -698,6 +679,9 @@ int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules){
 }
 
 
+/** This method executed on main thread, only at the end threr're one threads started explcitly (LWIP and later in ::run()
+ * RECV) 
+ */
 int VBoxNetLwipNAT::init()
 {
     LogFlowFuncEnter();
@@ -807,18 +791,8 @@ int VBoxNetLwipNAT::init()
         return rc;
     }
 
+    /* this starts LWIP thread */
     vboxLwipCoreInitialize(VBoxNetLwipNAT::onLwipTcpIpInit, this);
-
-    rc = RTThreadCreate(&g_pLwipNat->hThrIntNetRecv, /* thread handle*/
-                        VBoxNetLwipNAT::intNetThreadRecv,  /* routine */
-                        NULL, /* user data */
-                        128 * _1K, /* stack size */
-                        RTTHREADTYPE_IO, /* type */
-                        0, /* flags, @todo: waitable ?*/
-                        "INTNET-RECV");
-    AssertRCReturn(rc,rc);
-
-
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -962,15 +936,8 @@ int VBoxNetLwipNAT::processGSO(PCPDMNETWORKGSO pGso, size_t cbFrame)
 
 int VBoxNetLwipNAT::run()
 {
-    /* EventQueue processing from VBoxHeadless.cpp */
-    com::NativeEventQueue         *gEventQ = NULL;
-    gEventQ = com::NativeEventQueue::getMainEventQueue();
-    while(true)
-    {
-        /* XXX:todo: graceful termination */
-        gEventQ->processEventQueue(0);
-        gEventQ->processEventQueue(500);
-    }
+    /* Father starts receiving thread and enter event loop. */
+    VBoxNetBaseService::run();
 
     vboxLwipCoreFinalize(VBoxNetLwipNAT::onLwipTcpIpFini, this);
 
