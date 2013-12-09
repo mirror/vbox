@@ -85,7 +85,7 @@
 /**
  * DHCP server instance.
  */
-class VBoxNetDhcp: public VBoxNetBaseService
+class VBoxNetDhcp: public VBoxNetBaseService, public NATNetworkEventAdapter
 {
 public:
     VBoxNetDhcp();
@@ -108,6 +108,7 @@ protected:
 private:
     int initNoMain();
     int initWithMain();
+    HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent);
     int fetchAndUpdateDnsInfo();
 
 protected:
@@ -127,6 +128,8 @@ protected:
 
     ComPtr<INATNetwork> m_NATNetwork;
 
+    /** Listener for Host DNS changes */
+    ComPtr<NATNetworkListenerImpl> m_vboxListener;
     /*
      * We will ignore cmd line parameters IFF there will be some DHCP specific arguments
      * otherwise all paramters will come from Main.
@@ -501,6 +504,11 @@ int VBoxNetDhcp::initWithMain()
     rc = fetchAndUpdateDnsInfo();
     AssertMsgRCReturn(rc, ("Wasn't able to fetch Dns info"), rc);
 
+    ComEventTypeArray aVBoxEvents;
+    aVBoxEvents.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
+    rc = createNatListener(m_vboxListener, virtualbox, this, aVBoxEvents);
+    AssertRCReturn(rc, rc);
+
     com::Bstr strUpperIp, strLowerIp;
     
     RTNETADDRIPV4 LowerAddress;
@@ -509,7 +517,6 @@ int VBoxNetDhcp::initWithMain()
     hrc = m_DhcpServer->COMGETTER(UpperIP)(strUpperIp.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
     RTNetStrToIPv4Addr(com::Utf8Str(strUpperIp).c_str(), &UpperAddress);
-
 
     hrc = m_DhcpServer->COMGETTER(LowerIP)(strLowerIp.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
@@ -571,6 +578,19 @@ int VBoxNetDhcp::fetchAndUpdateDnsInfo()
     }
     
     return VINF_SUCCESS;
+}
+
+
+HRESULT VBoxNetDhcp::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
+{
+    switch(aEventType)
+    {
+        case VBoxEventType_OnHostNameResolutionConfigurationChange:
+            fetchAndUpdateDnsInfo();
+            break;
+    }
+
+    return S_OK;
 }
 
 /**
