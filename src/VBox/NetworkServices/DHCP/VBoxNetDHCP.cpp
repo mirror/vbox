@@ -509,22 +509,19 @@ int VBoxNetDhcp::initWithMain()
     rc = createNatListener(m_vboxListener, virtualbox, this, aVBoxEvents);
     AssertRCReturn(rc, rc);
 
+    /* XXX: extract function here. */
     com::Bstr strUpperIp, strLowerIp;
-    
     RTNETADDRIPV4 LowerAddress;
     RTNETADDRIPV4 UpperAddress;
-
     hrc = m_DhcpServer->COMGETTER(UpperIP)(strUpperIp.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
     RTNetStrToIPv4Addr(com::Utf8Str(strUpperIp).c_str(), &UpperAddress);
-
     hrc = m_DhcpServer->COMGETTER(LowerIP)(strLowerIp.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
     RTNetStrToIPv4Addr(com::Utf8Str(strLowerIp).c_str(), &LowerAddress);
 
     RTNETADDRIPV4 address = getIpv4Address();
     RTNETADDRIPV4 netmask = getIpv4Netmask();
-
     RTNETADDRIPV4 networkId = networkid(address, netmask);
     std::string name = std::string("default");
 
