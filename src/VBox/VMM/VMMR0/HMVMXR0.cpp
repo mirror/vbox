@@ -10192,6 +10192,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         {
             /* EMInterpretCRxRead() requires EFER MSR, CS. */
             rc  = hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
             Assert(   !pVM->hm.s.fNestedPaging
                    || !CPUMIsGuestPagingEnabledEx(pMixedCtx)
