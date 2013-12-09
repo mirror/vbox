@@ -9186,7 +9186,27 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             /** @todo SMM checks. */
         }
 
-        /** @todo Checks on Guest Page-Directory-Pointer-Table Entries.  */
+        /** @todo Checks on Guest Page-Directory-Pointer-Table Entries when guest is
+         *        in IA-32e Paging Mode (AMD64 Paging). */
+        if (   pVM->hm.s.fNestedPaging
+            && CPUMIsGuestInPAEModeEx(pCtx))
+        {
+            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(!(u64Val & X86_PDPE_PAE_MBZ_MASK), VMX_IGS_PAE_PDPTE_RESERVED);
+
+            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(!(u64Val & X86_PDPE_PAE_MBZ_MASK), VMX_IGS_PAE_PDPTE_RESERVED);
+
+            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(!(u64Val & X86_PDPE_PAE_MBZ_MASK), VMX_IGS_PAE_PDPTE_RESERVED);
+
+            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(!(u64Val & X86_PDPE_PAE_MBZ_MASK), VMX_IGS_PAE_PDPTE_RESERVED);
+        }
 
         /* Shouldn't happen but distinguish it from AssertRCBreak() errors. */
         if (uError == VMX_IGS_ERROR)
