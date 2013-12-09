@@ -479,24 +479,19 @@ int VBoxNetDhcp::initWithMain()
     AssertRCReturn(virtualbox.isNull(), VERR_INTERNAL_ERROR);
     std::string networkName = getNetwork();
 
-    HRESULT hrc = virtualbox->FindDHCPServerByNetworkName(com::Bstr(networkName.c_str()).raw(),
-                                                          m_DhcpServer.asOutParam());
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+    int rc = findDhcpServer(virtualbox, networkName, m_DhcpServer);
+    AssertRCReturn(rc, rc);
 
-    hrc = virtualbox->FindNATNetworkByName(com::Bstr(networkName.c_str()).raw(),
-                                           m_NATNetwork.asOutParam());
+    rc = findNatNetwork(virtualbox, networkName, m_NATNetwork);
+    AssertRCReturn(rc, rc);
 
-    BOOL fNeedDhcpServer = false;
-    if (FAILED(m_NATNetwork->COMGETTER(NeedDhcpServer)(&fNeedDhcpServer)))
-        return VERR_INTERNAL_ERROR;
-
+    BOOL fNeedDhcpServer = isDhcpRequired(m_NATNetwork);
     if (!fNeedDhcpServer)
         return VERR_CANCELLED;
 
     RTNETADDRIPV4 gateway;
     com::Bstr strGateway;
-
-    hrc = m_NATNetwork->COMGETTER(Gateway)(strGateway.asOutParam());
+    HRESULT hrc = m_NATNetwork->COMGETTER(Gateway)(strGateway.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
     RTNetStrToIPv4Addr(com::Utf8Str(strGateway).c_str(), &gateway);
 
@@ -504,7 +499,7 @@ int VBoxNetDhcp::initWithMain()
     AssertPtrReturn(confManager, VERR_INTERNAL_ERROR);
     confManager->addToAddressList(RTNET_DHCP_OPT_ROUTERS, gateway);
 
-    int rc = fetchAndUpdateDnsInfo();
+    rc = fetchAndUpdateDnsInfo();
     AssertMsgRCReturn(rc, ("Wasn't able to fetch Dns info"), rc);
 
     com::Bstr strUpperIp, strLowerIp;
