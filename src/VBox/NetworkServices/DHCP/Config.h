@@ -21,11 +21,8 @@
 #include <iprt/asm-math.h>
 #include <iprt/cpp/utils.h>
 
+#include "../NetLib/cpp/utils.h"
 
-static bool operator <(const RTNETADDRIPV4& a, const RTNETADDRIPV4& b)
-{
-    return (RT_N2H_U32(a.u) < RT_N2H_U32(b.u));
-}
 
 static bool operator > (const RTNETADDRIPV4& a, const RTNETADDRIPV4& b)
 {
