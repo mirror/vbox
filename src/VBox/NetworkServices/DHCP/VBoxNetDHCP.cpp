@@ -92,7 +92,6 @@ public:
     virtual ~VBoxNetDhcp();
 
     int                 init();
-    int                 run(void);
     void                usage(void) { /* XXX: document options */ };
     int                 parseOpt(int rc, const RTGETOPTUNION& getOptVal);
     int                 processFrame(void *, size_t) {return VERR_IGNORED; };
@@ -282,18 +281,6 @@ int VBoxNetDhcp::init()
     return VINF_SUCCESS;
 }
 
-/**
- * Runs the DHCP server.
- *
- * @returns exit code + error message to stderr on failure, won't return on
- *          success (you must kill this process).
- */
-int VBoxNetDhcp::run(void)
-{
-    doReceiveLoop();
-    return 0;
-}
-
 
 int  VBoxNetDhcp::processUDP(void *pv, size_t cbPv)
 {
@@ -305,7 +292,11 @@ int  VBoxNetDhcp::processUDP(void *pv, size_t cbPv)
     if (RTNetIPv4IsDHCPValid(NULL /* why is this here? */, pDhcpMsg, cbPv, &uMsgType))
     {
         m_uCurMsgType = uMsgType;
-        handleDhcpMsg(uMsgType, pDhcpMsg, cbPv);
+        {
+            /* To avoid fight with event processing thread */
+            VBoxNetALock(this);
+            handleDhcpMsg(uMsgType, pDhcpMsg, cbPv);
+        }
         m_uCurMsgType = UINT8_MAX;
     }
     else
@@ -564,6 +555,7 @@ int VBoxNetDhcp::fetchAndUpdateDnsInfo()
         AssertMsgRCReturn(rc, ("Debug me!!"), rc);
 
         {
+            VBoxNetALock(this);   
             ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
             confManager->flushAddressList(RTNET_DHCP_OPT_DNS);
 

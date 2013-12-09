@@ -29,8 +29,35 @@ virtual int                 hlpUDPBroadcast(unsigned uSrcPort, unsigned uDstPort
 };
 
 
+class VBoxNetLockee
+{
+public:
+    virtual int  syncEnter() = 0;
+    virtual int  syncLeave() = 0;
+};
+
+
+class VBoxNetALock
+{
+public:
+    VBoxNetALock(VBoxNetLockee *a_lck):m_lck(a_lck)
+    {
+        if (m_lck)
+            m_lck->syncEnter();
+    }
+
+    ~VBoxNetALock()
+    {
+        if (m_lck)
+            m_lck->syncLeave();
+    }
+
+private:
+    VBoxNetLockee *m_lck;
+};
+
 # ifndef BASE_SERVICES_ONLY 
-class VBoxNetBaseService: public VBoxNetHlpUDPService
+class VBoxNetBaseService: public VBoxNetHlpUDPService, public VBoxNetLockee
 {
 public:
     VBoxNetBaseService(const std::string& aName, const std::string& aNetworkName);
@@ -47,7 +74,6 @@ public:
     virtual int         hlpUDPBroadcast(unsigned uSrcPort, unsigned uDstPort,
                                         void const *pvData, size_t cbData) const;
     virtual void        usage(void) = 0;
-    virtual int         run(void) = 0;
     virtual int         parseOpt(int rc, const RTGETOPTUNION& getOptVal) = 0;
     virtual int         processFrame(void *, size_t) = 0;
     virtual int         processGSO(PCPDMNETWORKGSO, size_t) = 0;
@@ -55,6 +81,7 @@ public:
 
 
     virtual int         init(void);
+    virtual int         run(void);
     virtual bool        isMainNeeded() const;
 
 protected:
@@ -95,17 +122,21 @@ protected:
     void debugPrint(int32_t iMinLevel, bool fMsg, const char *pszFmt, ...) const;
     virtual void debugPrintV(int32_t iMinLevel, bool fMsg, const char *pszFmt, va_list va) const;
 
+    private:
     void doReceiveLoop();
 
-protected:
+    /** starts receiving thread and enter event polling loop. */
+    int startReceiveThreadAndEnterEventLoop();
+
+    protected:
     /* VirtualBox instance */
     ComPtr<IVirtualBox> virtualbox;
 
-private:
+    private:
     struct Data;
     Data *m;
 
-private:
+    private:
     PRTGETOPTDEF getOptionsPtr();
 };
 # endif

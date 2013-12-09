@@ -28,8 +28,8 @@
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
-#include <VBox/com/EventQueue.h>
 #include <VBox/com/VirtualBox.h>
+#include <VBox/com/NativeEventQueue.h>
 
 #include <iprt/alloca.h>
 #include <iprt/buildconfig.h>
@@ -43,6 +43,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#include <iprt/thread.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
 
@@ -82,7 +83,10 @@ struct VBoxNetBaseService::Data
       m_hIf(INTNET_HANDLE_INVALID),
       m_pIfBuf(NULL),
       m_cVerbosity(0),
-      m_fNeedMain(false)
+      m_fNeedMain(false),
+      m_EventQ(NULL),
+      m_hThrRecv(NIL_RTTHREAD),
+      fShutdown(false)
     {
         int rc = RTCritSectInit(&m_csThis);
         AssertRC(rc);
@@ -112,6 +116,14 @@ struct VBoxNetBaseService::Data
 
     /* Controls whether service will connect SVC for runtime needs */
     bool                m_fNeedMain;
+    /* Event Queue */
+    com::NativeEventQueue  *m_EventQ;
+
+    /** receiving thread, used only if main is used */
+    RTTHREAD m_hThrRecv;
+
+    bool fShutdown;
+    static int recvLoop(RTTHREAD, void *);
 };
 
 /*******************************************************************************
@@ -132,6 +144,19 @@ static RTGETOPTDEF g_aGetOptDef[] =
 };
 
 
+int VBoxNetBaseService::Data::recvLoop(RTTHREAD, void *pvUser)
+{
+    VBoxNetBaseService *pThis = static_cast<VBoxNetBaseService *>(pvUser);
+
+    HRESULT hrc = com::Initialize();
+    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+    pThis->doReceiveLoop();
+
+    return VINF_SUCCESS;
+}
+
+
 VBoxNetBaseService::VBoxNetBaseService(const std::string& aName, const std::string& aNetworkName):m(NULL)
 {
     m = new VBoxNetBaseService::Data(aName, aNetworkName);
@@ -148,6 +173,7 @@ VBoxNetBaseService::~VBoxNetBaseService()
      */
     if (m != NULL)
     {
+        shutdown();
         if (m->m_hIf != INTNET_HANDLE_INVALID)
         {
             INTNETIFCLOSEREQ CloseReq;
@@ -192,6 +218,22 @@ int VBoxNetBaseService::init()
 bool VBoxNetBaseService::isMainNeeded() const
 {
     return m->m_fNeedMain;
+}
+
+
+int VBoxNetBaseService::run()
+{
+    /**
+     * If child class need Main we start receving thread which calls doReceiveLoop and enter to event polling loop
+     * and for the rest clients we do receiving on the current (main) thread.
+     */
+    if (isMainNeeded())
+        return startReceiveThreadAndEnterEventLoop();
+    else
+    {
+        doReceiveLoop();
+        return VINF_SUCCESS;
+    }
 }
 
 /**
@@ -413,6 +455,9 @@ int VBoxNetBaseService::tryGoOnline(void)
 
 void VBoxNetBaseService::shutdown(void)
 {
+    syncEnter();
+    m->fShutdown = true;
+    syncLeave();
 }
 
 
@@ -674,6 +719,37 @@ void VBoxNetBaseService::doReceiveLoop()
         } /* loop */
     }
 
+}
+
+
+int VBoxNetBaseService::startReceiveThreadAndEnterEventLoop()
+{
+    AssertMsgReturn(isMainNeeded(), ("It's expected that we need Main"), VERR_INTERNAL_ERROR);
+        
+    /* start receiving thread */
+    int rc = RTThreadCreate(&m->m_hThrRecv, /* thread handle*/
+                            &VBoxNetBaseService::Data::recvLoop,  /* routine */
+                            this, /* user data */
+                            128 * _1K, /* stack size */
+                            RTTHREADTYPE_IO, /* type */
+                            0, /* flags, @todo: waitable ?*/
+                            "RECV");
+    AssertRCReturn(rc,rc);
+
+    m->m_EventQ = com::NativeEventQueue::getMainEventQueue();
+    AssertPtrReturn(m->m_EventQ, VERR_INTERNAL_ERROR);
+
+    while(true)
+    {
+        m->m_EventQ->processEventQueue(0);
+            
+        if (m->fShutdown)
+            break;
+
+        m->m_EventQ->processEventQueue(500);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
