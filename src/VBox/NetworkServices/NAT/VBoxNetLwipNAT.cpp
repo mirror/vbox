@@ -118,6 +118,7 @@ typedef std::vector<NATSEVICEPORTFORWARDRULE> VECNATSERVICEPF;
 typedef VECNATSERVICEPF::iterator ITERATORNATSERVICEPF;
 typedef VECNATSERVICEPF::const_iterator CITERATORNATSERVICEPF;
 
+static int fetchNatPortForwardRules(const ComNatPtr&, bool, VECNATSERVICEPF&);
 
 
 class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
@@ -761,77 +762,25 @@ int VBoxNetLwipNAT::init()
 
     if (!fDontLoadRulesOnStartup)
     {
-        /* XXX: extract function and do not duplicate */
-        com::SafeArray<BSTR> rules;
-        hrc = m_net->COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(rules));
-        Assert(SUCCEEDED(hrc));
-
-        size_t idxRules = 0;
-        for (idxRules = 0; idxRules < rules.size(); ++idxRules)
-        {
-            Log(("%d-rule: %ls\n", idxRules, rules[idxRules]));
-            NATSEVICEPORTFORWARDRULE Rule;
-            RT_ZERO(Rule);
-            rc = netPfStrToPf(com::Utf8Str(rules[idxRules]).c_str(), 0, &Rule.Pfr);
-            AssertRC(rc);
-            m_vecPortForwardRule4.push_back(Rule);
-        }
-
-        rules.setNull();
-        hrc = m_net->COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(rules));
-        Assert(SUCCEEDED(hrc));
-
-        for (idxRules = 0; idxRules < rules.size(); ++idxRules)
-        {
-            Log(("%d-rule: %ls\n", idxRules, rules[idxRules]));
-            NATSEVICEPORTFORWARDRULE Rule;
-            netPfStrToPf(com::Utf8Str(rules[idxRules]).c_str(), 1, &Rule.Pfr);
-            m_vecPortForwardRule6.push_back(Rule);
-        }
+        fetchNatPortForwardRules(m_net, false, m_vecPortForwardRule4);
+        fetchNatPortForwardRules(m_net, true, m_vecPortForwardRule6);
     } /* if (!fDontLoadRulesOnStartup) */
 
-    com::SafeArray<BSTR> strs;
-    int count_strs;
-    hrc = m_net->COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs));
-    if (   SUCCEEDED(hrc)
-           && (count_strs = strs.size()))
+    AddressToOffsetMapping tmp;
+    rc = localMappings(m_net, tmp);
+    if (RT_SUCCESS(rc) && tmp.size() != 0)
     {
-        unsigned int j = 0;
-        int i;
-
-        for (i = 0; i < count_strs && j < RT_ELEMENTS(m_lo2off); ++i)
+        unsigned long i = 0;
+        for (AddressToOffsetMapping::iterator it = tmp.begin();
+             it != tmp.begin() && i < RT_ELEMENTS(m_lo2off); 
+             ++it, ++i)
         {
-            char szAddr[17];
-            RTNETADDRIPV4 ip4addr;
-            char *pszTerm;
-            uint32_t u32Off;
-            com::Utf8Str strLo2Off(strs[i]);
-            const char *pszLo2Off = strLo2Off.c_str();
-
-            RT_ZERO(szAddr);
-
-            pszTerm = RTStrStr(pszLo2Off, "=");
-
-            if (   !pszTerm
-                || (pszTerm - pszLo2Off) >= 17)
-                continue;
-
-            memcpy(szAddr, pszLo2Off, (pszTerm - pszLo2Off));
-            rc = RTNetStrToIPv4Addr(szAddr, &ip4addr);
-            if (RT_FAILURE(rc))
-                continue;
-
-            u32Off = RTStrToUInt32(pszTerm + 1);
-            if (u32Off == 0)
-                continue;
-
-            ip4_addr_set_u32(&m_lo2off[j].loaddr, ip4addr.u);
-            m_lo2off[j].off = u32Off;
-            ++j;
+            ip4_addr_set_u32(&m_lo2off[i].loaddr, it->first.u);
+            m_lo2off[i].off = it->second;
         }
 
         m_loOptDescriptor.lomap = m_lo2off;
-        m_loOptDescriptor.num_lomap = j;
+        m_loOptDescriptor.num_lomap = i;
         m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
     }
 
@@ -1151,6 +1100,33 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     delete g_pLwipNat;
     return 0;
+}
+
+
+static int fetchNatPortForwardRules(const ComNatPtr& nat, bool fIsIPv6, VECNATSERVICEPF& vec)
+{
+    HRESULT hrc;
+    com::SafeArray<BSTR> rules;
+    if (fIsIPv6)
+        hrc = nat->COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(rules));
+    else
+        hrc = nat->COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(rules));
+    AssertReturn(SUCCEEDED(hrc), VERR_INTERNAL_ERROR);
+
+    NATSEVICEPORTFORWARDRULE Rule;
+    for (size_t idxRules = 0; idxRules < rules.size(); ++idxRules)
+    {
+        Log(("%d-%s rule: %ls\n", idxRules, (fIsIPv6 ? "IPv6" : "IPv4"), rules[idxRules]));
+        RT_ZERO(Rule);
+        
+        int rc = netPfStrToPf(com::Utf8Str(rules[idxRules]).c_str(), 0, &Rule.Pfr);
+        if (RT_FAILURE(rc))
+            continue;
+        
+        vec.push_back(Rule);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
