@@ -537,13 +537,17 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMAtomicUoAndU64.asm \
 	common/asm/ASMAtomicUoAndU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
-	common/asm/ASMAtomicUoOrU32.asm
+	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMRdMsrEx.asm \
+	common/asm/ASMWrMsrEx.asm
 RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
 	common/asm/ASMAtomicUoAndU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
-	common/asm/ASMAtomicUoOrU32.asm
+	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMRdMsrEx.asm \
+	common/asm/ASMWrMsrEx.asm
 
 # Some versions of GCC might require this.
 RuntimeR3_SOURCES.x86 += \
@@ -1663,13 +1667,17 @@ RuntimeR0_SOURCES.x86 += \
 	common/asm/ASMAtomicUoAndU64.asm \
 	common/asm/ASMAtomicUoAndU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
-	common/asm/ASMAtomicUoOrU32.asm
+	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMRdMsrEx.asm \
+	common/asm/ASMWrMsrEx.asm
 RuntimeR0_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
 	common/asm/ASMAtomicUoAndU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
-	common/asm/ASMAtomicUoOrU32.asm
+	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMRdMsrEx.asm \
+	common/asm/ASMWrMsrEx.asm
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR0_SOURCES += common/time/timesupA.asm
@@ -1806,6 +1814,14 @@ RuntimeR0Drv_SOURCES    = \
 	r0drv/initterm-r0drv.cpp \
 	r0drv/generic/semspinmutex-r0drv-generic.c \
 	VBox/log-vbox.cpp \
+
+RuntimeR0Drv_SOURCES.amd64 = \
+	common/asm/ASMRdMsrEx.asm \
+	common/asm/ASMWrMsrEx.asm
+RuntimeR0Drv_SOURCES.x86   = \
+	common/asm/ASMRdMsrEx.asm \
+	common/asm/ASMWrMsrEx.asm
+
 
 RuntimeR0Drv_SOURCES.linux = \
 	common/misc/thread.cpp \

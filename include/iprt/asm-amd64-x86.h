@@ -1766,6 +1766,82 @@ DECLINLINE(void) ASMWrMsr(uint32_t uRegister, uint64_t u64Val)
 
 
 /**
+ * Reads a machine specific register, extended version (for AMD).
+ *
+ * @returns Register content.
+ * @param   uRegister   Register to read.
+ * @param   uXDI        RDI/EDI value.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(uint64_t) ASMRdMsrEx(uint32_t uRegister, RTCCUINTREG uXDI);
+#else
+DECLINLINE(uint64_t) ASMRdMsrEx(uint32_t uRegister, RTCCUINTREG uXDI)
+{
+    RTUINT64U u;
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("rdmsr\n\t"
+                         : "=a" (u.s.Lo),
+                           "=d" (u.s.Hi)
+                         : "c" (uRegister),
+                           "D" (uXDI));
+
+# else
+    __asm
+    {
+        mov     ecx, [uRegister]
+        xchg    edi, [uXDI]
+        rdmsr
+        mov     [u.s.Lo], eax
+        mov     [u.s.Hi], edx
+        xchg    edi, [uXDI]
+    }
+# endif
+
+    return u.u;
+}
+#endif
+
+
+/**
+ * Writes a machine specific register, extended version (for AMD).
+ *
+ * @returns Register content.
+ * @param   uRegister   Register to write to.
+ * @param   uXDI        RDI/EDI value.
+ * @param   u64Val      Value to write.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMWrMsrEx(uint32_t uRegister, RTCCUINTREG uXDI, uint64_t u64Val);
+#else
+DECLINLINE(void) ASMWrMsrEx(uint32_t uRegister, RTCCUINTREG uXDI, uint64_t u64Val)
+{
+    RTUINT64U u;
+
+    u.u = u64Val;
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("wrmsr\n\t"
+                         ::"a" (u.s.Lo),
+                           "d" (u.s.Hi),
+                           "c" (uRegister),
+                           "D" (uXDI));
+
+# else
+    __asm
+    {
+        mov     ecx, [uRegister]
+        xchg    edi, [uXDI]
+        mov     edx, [u.s.Hi]
+        mov     eax, [u.s.Lo]
+        wrmsr
+        xchg    edi, [uXDI]
+    }
+# endif
+}
+#endif
+
+
+
+/**
  * Reads low part of a machine specific register.
  *
  * @returns Register content.
