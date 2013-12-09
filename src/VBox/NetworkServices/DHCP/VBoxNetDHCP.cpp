@@ -99,7 +99,6 @@ public:
     int                 processGSO(PCPDMNETWORKGSO, size_t) {return VERR_IGNORED; };
     int                 processUDP(void *, size_t);
 
-
 protected:
     bool                handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t cb);
 
