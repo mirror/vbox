@@ -63,6 +63,7 @@
 #include <map>
 
 #include "../NetLib/VBoxNetBaseService.h"
+#include "../NetLib/utils.h"
 
 #ifdef RT_OS_WINDOWS /* WinMain */
 # include <Windows.h>
@@ -108,6 +109,7 @@ protected:
 private:
     int initNoMain();
     int initWithMain();
+    int fetchAndUpdateDnsInfo();
 
 protected:
     /** @name The DHCP server specific configuration data members.
@@ -502,90 +504,8 @@ int VBoxNetDhcp::initWithMain()
     AssertPtrReturn(confManager, VERR_INTERNAL_ERROR);
     confManager->addToAddressList(RTNET_DHCP_OPT_ROUTERS, gateway);
 
-    unsigned int i;
-    unsigned int count_strs;
-    com::SafeArray<BSTR> strs;
-    std::map<RTNETADDRIPV4, uint32_t> MapIp4Addr2Off;
-
-    hrc = m_NATNetwork->COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs));
-    if (   SUCCEEDED(hrc)
-           && (count_strs = strs.size()))
-    {
-        for (i = 0; i < count_strs; ++i)
-        {
-            char szAddr[17];
-            RTNETADDRIPV4 ip4addr;
-            char *pszTerm;
-            uint32_t u32Off;
-            com::Utf8Str strLo2Off(strs[i]);
-            const char *pszLo2Off = strLo2Off.c_str();
-
-            RT_ZERO(szAddr);
-
-            pszTerm = RTStrStr(pszLo2Off, "=");
-
-            if (   pszTerm
-                   && (pszTerm - pszLo2Off) <= INET_ADDRSTRLEN)
-            {
-                memcpy(szAddr, pszLo2Off, (pszTerm - pszLo2Off));
-                int rc = RTNetStrToIPv4Addr(szAddr, &ip4addr);
-                if (RT_SUCCESS(rc))
-                {
-                    u32Off = RTStrToUInt32(pszTerm + 1);
-                    if (u32Off != 0)
-                        MapIp4Addr2Off.insert(
-                          std::map<RTNETADDRIPV4,uint32_t>::value_type(ip4addr, u32Off));
-                }
-            }
-        }
-    }
-
-
-    RTNETADDRIPV4 address = getIpv4Address();
-    RTNETADDRIPV4 netmask = getIpv4Netmask();
-    strs.setNull();
-    ComPtr<IHost> host;
-    if (SUCCEEDED(virtualbox->COMGETTER(Host)(host.asOutParam())))
-    {
-        if (SUCCEEDED(host->COMGETTER(NameServers)(ComSafeArrayAsOutParam(strs))))
-        {
-            RTNETADDRIPV4 addr;
-
-            confManager->flushAddressList(RTNET_DHCP_OPT_DNS);
-            int rc;
-            for (i = 0; i < strs.size(); ++i)
-            {
-                rc = RTNetStrToIPv4Addr(com::Utf8Str(strs[i]).c_str(), &addr);
-                if (RT_SUCCESS(rc))
-                {
-                    if (addr.au8[0] == 127)
-                    {
-                        if (MapIp4Addr2Off[addr] != 0)
-                        {
-                            addr.u = RT_H2N_U32(RT_N2H_U32(address.u & netmask.u)
-                                                + MapIp4Addr2Off[addr]);
-                        }
-                        else
-                            continue;
-                    }
-
-                    confManager->addToAddressList(RTNET_DHCP_OPT_DNS, addr);
-                }
-            }
-        }
-
-        strs.setNull();
-#if 0
-        if (SUCCEEDED(host->COMGETTER(SearchStrings)(ComSafeArrayAsOutParam(strs)))) 
-        {
-            /* XXX: todo. */;
-        }
-        strs.setNull();
-#endif
-        com::Bstr domain;
-        if (SUCCEEDED(host->COMGETTER(DomainName)(domain.asOutParam())))
-            confManager->setString(RTNET_DHCP_OPT_DOMAIN_NAME, std::string(com::Utf8Str(domain).c_str()));
-    }
+    int rc = fetchAndUpdateDnsInfo();
+    AssertMsgRCReturn(rc, ("Wasn't able to fetch Dns info"), rc);
 
     com::Bstr strUpperIp, strLowerIp;
     
@@ -601,8 +521,10 @@ int VBoxNetDhcp::initWithMain()
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
     RTNetStrToIPv4Addr(com::Utf8Str(strLowerIp).c_str(), &LowerAddress);
 
-    RTNETADDRIPV4 networkId;
-    networkId.u = address.u & netmask.u;
+    RTNETADDRIPV4 address = getIpv4Address();
+    RTNETADDRIPV4 netmask = getIpv4Netmask();
+
+    RTNETADDRIPV4 networkId = networkid(address, netmask);
     std::string name = std::string("default");
 
     confManager->addNetwork(unconst(g_RootConfig),
@@ -617,6 +539,43 @@ int VBoxNetDhcp::initWithMain()
                                                 bstr.raw(), RTPATH_DELIMITER, networkName.c_str()).c_str());
     confManager->loadFromFile(strXmlLeaseFile);
 
+    return VINF_SUCCESS;
+}
+
+
+int VBoxNetDhcp::fetchAndUpdateDnsInfo()
+{
+    ComHostPtr host;
+    if (SUCCEEDED(virtualbox->COMGETTER(Host)(host.asOutParam())))
+    {
+        AddressToOffsetMapping mapIp4Addr2Off;
+        int rc = localMappings(m_NATNetwork, mapIp4Addr2Off);
+        /* XXX: here could be several cases: 1. COM error, 2. not found (empty) 3. ? */
+        AssertMsgRCReturn(rc, ("Can't fetch local mappings"), rc);
+
+        RTNETADDRIPV4 address = getIpv4Address();
+        RTNETADDRIPV4 netmask = getIpv4Netmask();
+
+        AddressList nameservers;
+        rc = hostDnsServers(host, networkid(address, netmask), mapIp4Addr2Off, nameservers);
+        AssertMsgRCReturn(rc, ("Debug me!!!"), rc);
+        /* XXX: Search strings */
+
+        std::string domain;
+        rc = hostDnsDomain(host, domain);
+        AssertMsgRCReturn(rc, ("Debug me!!"), rc);
+
+        {
+            ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
+            confManager->flushAddressList(RTNET_DHCP_OPT_DNS);
+
+            for (AddressList::iterator it = nameservers.begin(); it != nameservers.end(); ++it)
+                confManager->addToAddressList(RTNET_DHCP_OPT_DNS, *it);
+            
+            confManager->setString(RTNET_DHCP_OPT_DOMAIN_NAME, domain);
+        }
+    }
+    
     return VINF_SUCCESS;
 }
 

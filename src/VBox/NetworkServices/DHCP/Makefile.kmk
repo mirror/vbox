@@ -48,7 +48,8 @@ VBoxNetDHCP_SOURCES = \
 	../NetLib/VBoxNetIntIf.cpp \
 	../NetLib/VBoxNetUDP.cpp \
 	../NetLib/VBoxNetARP.cpp \
-	../NetLib/VBoxNetBaseService.cpp
+	../NetLib/VBoxNetBaseService.cpp \
+	../NetLib/ComHostUtils.cpp
 VBoxNetDHCP_LIBS = \
 	$(LIB_RUNTIME)
 VBoxNetDHCP_LDFLAGS.win = /SUBSYSTEM:windows
