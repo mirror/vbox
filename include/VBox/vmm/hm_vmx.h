@@ -425,6 +425,8 @@ AssertCompileSize(VMXRESTOREHOST, 56);
 #define VMX_IGS_CS_ATTR_S_INVALID                               120
 /** CS.Attr.DPL invalid. */
 #define VMX_IGS_CS_ATTR_DPL_INVALID                             121
+/** PAE PDPTE reserved bits not set to 0. */
+#define VMX_IGS_PAE_PDPTE_RESERVED                              123
 /** @} */
 
 /** @name VMX VMCS-Read cache indices.
