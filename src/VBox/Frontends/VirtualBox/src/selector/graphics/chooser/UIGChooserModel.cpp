@@ -1463,7 +1463,7 @@ void UIGChooserModel::unregisterMachines(const QStringList &ids)
                 continue;
             }
         }
-        else if (iResultCode == AlertButton_Choice2)
+        else if (iResultCode == AlertButton_Choice2 || iResultCode == AlertButton_Ok)
         {
             /* Unregister machine first: */
             CMediumVector mediums = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
