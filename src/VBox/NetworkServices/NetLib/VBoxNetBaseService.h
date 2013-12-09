@@ -96,7 +96,6 @@ protected:
     virtual void debugPrintV(int32_t iMinLevel, bool fMsg, const char *pszFmt, va_list va) const;
 
     void doReceiveLoop();
-    
 
 protected:
     /* VirtualBox instance */
