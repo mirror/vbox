@@ -1038,6 +1038,15 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 
 #ifdef SUPDRV_WITH_MSR_PROBER
 
+#if 1
+/** @todo make this selectable. */
+# define AMD_MSR_PASSCODE 0x9c5a203a
+#else
+# define ASMRdMsrEx(a, b, c) ASMRdMsr(a)
+# define ASMWrMsrEx(a, b, c) ASMWrMsr(a,c)
+#endif
+
+
 /**
  * Argument package used by supdrvOSMsrProberRead and supdrvOSMsrProberWrite.
  */
@@ -1059,7 +1068,7 @@ static DECLCALLBACK(void) supdrvNtMsProberReadOnCpu(RTCPUID idCpu, void *pvUser1
     RTCCUINTREG             fOldFlags = ASMIntDisableFlags();
     __try
     {
-        pArgs->uValue = ASMRdMsr(pArgs->uMsr);
+        pArgs->uValue = ASMRdMsrEx(pArgs->uMsr, AMD_MSR_PASSCODE);
         pArgs->fGp    = false;
     }
     __except(EXCEPTION_EXECUTE_HANDLER)
@@ -1105,7 +1114,7 @@ static DECLCALLBACK(void) supdrvNtMsProberWriteOnCpu(RTCPUID idCpu, void *pvUser
     RTCCUINTREG             fOldFlags = ASMIntDisableFlags();
     __try
     {
-        ASMWrMsr(pArgs->uMsr, pArgs->uValue);
+        ASMWrMsrEx(pArgs->uMsr, AMD_MSR_PASSCODE, pArgs->uValue);
         pArgs->fGp = false;
     }
     __except(EXCEPTION_EXECUTE_HANDLER)
@@ -1161,7 +1170,7 @@ static DECLCALLBACK(void) supdrvNtMsProberModifyOnCpu(RTCPUID idCpu, void *pvUse
 
     __try
     {
-        uBefore   = ASMRdMsr(uMsr);
+        uBefore   = ASMRdMsrEx(uMsr, AMD_MSR_PASSCODE);
         fBeforeGp = false;
     }
     __except(EXCEPTION_EXECUTE_HANDLER)
@@ -1178,7 +1187,7 @@ static DECLCALLBACK(void) supdrvNtMsProberModifyOnCpu(RTCPUID idCpu, void *pvUse
         uWritten |= pReq->u.In.uArgs.Modify.fOrMask;
         __try
         {
-            ASMWrMsr(uMsr, uWritten);
+            ASMWrMsrEx(uMsr, AMD_MSR_PASSCODE, uWritten);
             fModifyGp = false;
         }
         __except(EXCEPTION_EXECUTE_HANDLER)
@@ -1189,7 +1198,7 @@ static DECLCALLBACK(void) supdrvNtMsProberModifyOnCpu(RTCPUID idCpu, void *pvUse
         /* Read modified value. */
         __try
         {
-            uAfter   = ASMRdMsr(uMsr);
+            uAfter   = ASMRdMsrEx(uMsr, AMD_MSR_PASSCODE);
             fAfterGp = false;
         }
         __except(EXCEPTION_EXECUTE_HANDLER)
@@ -1200,7 +1209,7 @@ static DECLCALLBACK(void) supdrvNtMsProberModifyOnCpu(RTCPUID idCpu, void *pvUse
         /* Restore original value. */
         __try
         {
-            ASMWrMsr(uMsr, uRestore);
+            ASMWrMsrEx(uMsr, AMD_MSR_PASSCODE, uRestore);
             fRestoreGp = false;
         }
         __except(EXCEPTION_EXECUTE_HANDLER)
