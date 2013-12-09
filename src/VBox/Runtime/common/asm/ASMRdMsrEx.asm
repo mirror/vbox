@@ -44,12 +44,15 @@ proc_frame ASMRdMsrEx_DupWarningHack
         push    rdi
         [pushreg rdi]
 [endprolog]
-        and     ecx, 0ffffffffh         ; serious paranoia
+        and     ecx, ecx                ; serious paranoia
         mov     rdi, rdx
         xor     eax, eax
         xor     edx, edx
         rdmsr
         pop     rdi
+        and     eax, eax                ; paranoia
+        shl     rdx, 32
+        or      rax, rdx
         ret
 endproc_frame
 %elifdef ASM_CALL64_GCC
@@ -58,6 +61,9 @@ endproc_frame
         xor     eax, eax
         xor     edx, edx
         rdmsr
+        and     eax, eax                ; paranoia
+        shl     rdx, 32
+        or      rax, rdx
         ret
 %elifdef RT_ARCH_X86
         push    ebp
