@@ -47,7 +47,8 @@ VBoxNetLwipNAT_SOURCES += VBoxNetLwipNAT.cpp	\
 	../NetLib/VBoxNetPortForwardString.cpp \
 	../NetLib/VBoxNetIntIf.cpp \
 	../NetLib/VBoxNetUDP.cpp \
-	../NetLib/VBoxNetARP.cpp
+	../NetLib/VBoxNetARP.cpp \
+	../NetLib/ComHostUtils.cpp
 
 VBoxNetLwipNAT_LIBS = \
 	$(LIB_RUNTIME)

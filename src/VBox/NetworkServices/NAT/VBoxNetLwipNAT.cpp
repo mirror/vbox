@@ -69,11 +69,13 @@
 # include <netinet/icmp6.h>
 #endif
 
+#include <map>
 #include <vector>
 #include <string>
 
 #include "../NetLib/VBoxNetLib.h"
 #include "../NetLib/VBoxNetBaseService.h"
+#include "../NetLib/utils.h"
 #include "VBoxLwipCore.h"
 
 extern "C"
@@ -117,40 +119,8 @@ typedef VECNATSERVICEPF::iterator ITERATORNATSERVICEPF;
 typedef VECNATSERVICEPF::const_iterator CITERATORNATSERVICEPF;
 
 
-class VBoxNetLwipNAT;
 
-
-class NATNetworkListener
-{
-public:
-    NATNetworkListener():m_pNAT(NULL){}
-
-    HRESULT init(VBoxNetLwipNAT *pNAT)
-    {
-        AssertPtrReturn(pNAT, E_INVALIDARG);
-
-        m_pNAT = pNAT;
-        return S_OK;
-    }
-
-    HRESULT init()
-    {
-        m_pNAT = NULL;
-        return S_OK;
-    }
-
-    void uninit() { m_pNAT = NULL; }
-
-    STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent);
-
-private:
-    VBoxNetLwipNAT *m_pNAT;
-};
-typedef ListenerImpl<NATNetworkListener, VBoxNetLwipNAT *> NATNetworkListenerImpl;
-VBOX_LISTENER_DECLARE(NATNetworkListenerImpl)
-
-
-class VBoxNetLwipNAT: public VBoxNetBaseService
+class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
 {
     friend class NATNetworkListener;
   public:
@@ -184,13 +154,13 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 
     /* Our NAT network descriptor in Main */
     ComPtr<INATNetwork> m_net;
-    ComObjPtr<NATNetworkListenerImpl> m_listener;
+    ComNatListenerPtr m_listener;
 
     ComPtr<IHost> m_host;
-    ComObjPtr<NATNetworkListenerImpl> m_vboxListener;
+    ComNatListenerPtr m_vboxListener;
     static INTNETSEG aXmitSeg[64];
 
-    STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent);
+    HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent);
 
     const char **getHostNameservers();
 
@@ -214,16 +184,6 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 
 static VBoxNetLwipNAT *g_pLwipNat;
 INTNETSEG VBoxNetLwipNAT::aXmitSeg[64];
-
-STDMETHODIMP NATNetworkListener::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
-{
-    if (m_pNAT)
-        return m_pNAT->HandleEvent(aEventType, pEvent);
-    else
-        return E_FAIL;
-}
-
-
 
 STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                                                   IEvent *pEvent)
@@ -739,7 +699,6 @@ int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules){
 
 int VBoxNetLwipNAT::init()
 {
-    HRESULT hrc;
     LogFlowFuncEnter();
 
     /* virtualbox initialized in super class */
@@ -747,46 +706,25 @@ int VBoxNetLwipNAT::init()
     AssertRCReturn(rc, rc);
 
     std::string networkName = getNetwork();
-    hrc = virtualbox->FindNATNetworkByName(com::Bstr(networkName.c_str()).raw(),
-                                                  m_net.asOutParam());
-    AssertComRCReturn(hrc, VERR_NOT_FOUND);
+    rc = findNatNetwork(virtualbox, networkName, m_net);
+    AssertRCReturn(rc, rc);
 
-    hrc = m_listener.createObject();
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-
-    hrc = m_listener->init(new NATNetworkListener(), this);
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-
-    ComPtr<IEventSource> esNet;
-    hrc = m_net->COMGETTER(EventSource)(esNet.asOutParam());
-    AssertComRC(hrc);
-
-    com::SafeArray<VBoxEventType_T> aNetEvents;
+    ComEventTypeArray aNetEvents;
     aNetEvents.push_back(VBoxEventType_OnNATNetworkPortForward);
     aNetEvents.push_back(VBoxEventType_OnNATNetworkSetting);
-    hrc = esNet->RegisterListener(m_listener, ComSafeArrayAsInParam(aNetEvents), true);
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+    rc = createNatListener(m_listener, virtualbox, this, aNetEvents);
+    AssertRCReturn(rc, rc);
 
 
     // resolver changes are reported on vbox but are retrieved from
     // host so stash a pointer for future lookups
-    hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
+    HRESULT hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-    hrc = m_vboxListener.createObject();
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-
-    hrc = m_vboxListener->init(new NATNetworkListener(), this);
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-
-    ComPtr<IEventSource> esVBox;
-    hrc = virtualbox->COMGETTER(EventSource)(esVBox.asOutParam());
-    AssertComRC(hrc);
-
-    com::SafeArray<VBoxEventType_T> aVBoxEvents;
+    ComEventTypeArray aVBoxEvents;
     aVBoxEvents.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
-    hrc = esVBox->RegisterListener(m_vboxListener, ComSafeArrayAsInParam(aVBoxEvents), true);
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+    rc = createNatListener(m_vboxListener, virtualbox, this, aVBoxEvents);
+    AssertRCReturn(rc, rc);
 
     BOOL fIPv6Enabled = FALSE;
     hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
