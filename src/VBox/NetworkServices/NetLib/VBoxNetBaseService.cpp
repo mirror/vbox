@@ -146,7 +146,7 @@ VBoxNetBaseService::~VBoxNetBaseService()
     /*
      * Close the interface connection.
      */
-    if (m != NULL) 
+    if (m != NULL)
     {
         if (m->m_hIf != INTNET_HANDLE_INVALID)
         {
@@ -167,10 +167,10 @@ VBoxNetBaseService::~VBoxNetBaseService()
         }
 
         RTCritSectDelete(&m->m_csThis);
-        
+
         delete m;
         m = NULL;
-    }       
+    }
 }
 
 
@@ -261,7 +261,7 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
                 m->m_Ipv4Address = Val.IPv4Addr;
                 break;
 
-            case 'm': // --netmask 
+            case 'm': // --netmask
                 m->m_Ipv4Netmask = Val.IPv4Addr;
                 break;
 
@@ -645,13 +645,13 @@ void VBoxNetBaseService::doReceiveLoop()
                             VBOXNETUDPHDRS Hdrs;
                             size_t  cb;
                             void   *pv = VBoxNetUDPMatch(m->m_pIfBuf, RTNETIPV4_PORT_BOOTPS, &m->m_MacAddress,
-                                                         VBOXNETUDP_MATCH_UNICAST | VBOXNETUDP_MATCH_BROADCAST 
+                                                         VBOXNETUDP_MATCH_UNICAST | VBOXNETUDP_MATCH_BROADCAST
                                                          | VBOXNETUDP_MATCH_CHECKSUM
                                                          | (m->m_cVerbosity > 2 ? VBOXNETUDP_MATCH_PRINT_STDERR : 0),
                                                          &Hdrs, &cb);
                             if (pv && cb)
                                 processUDP(pv, cb);
-                            else 
+                            else
                                 VBoxNetArpHandleIt(m->m_pSession, m->m_hIf, m->m_pIfBuf, &m->m_MacAddress, m->m_Ipv4Address);
                         }
                     }
