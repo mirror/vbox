@@ -3556,6 +3556,7 @@ def main(argv):
         if sPath is None:
             for sCurLoc in asLocations:
                 if os.path.isfile(os.path.join(sCurLoc, "sdk", "bindings", "VirtualBox.xidl")):
+                    sCurLoc = os.path.join(sCurLoc, "sdk");
                     print "Autodetected VBOX_SDK_PATH as", sCurLoc
                     os.environ["VBOX_SDK_PATH"] = sCurLoc
                     sPath = sCurLoc;
