@@ -209,4 +209,6 @@ int createNatListener(ComNatListenerPtr& listener, const ComVirtualBoxPtr& vboxp
 
     hrc = esVBox->RegisterListener(listener, ComSafeArrayAsInParam(events), true);
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+    return VINF_SUCCESS;
 }
