@@ -192,7 +192,7 @@ int hostDnsDomain(const ComHostPtr& host, std::string& domainStr)
 }
 
 int createNatListener(ComNatListenerPtr& listener, const ComVirtualBoxPtr& vboxptr, 
-                             NATNetworkEventAdapter *adapter, const ComEventTypeArray& events)
+                      NATNetworkEventAdapter *adapter, /* const */ ComEventTypeArray& events)
 {
     ComObjPtr<NATNetworkListenerImpl> obj;
     HRESULT hrc = obj.createObject();
