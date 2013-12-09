@@ -44,7 +44,7 @@ proc_frame ASMWrMsrEx_DupWarningHack
         push    rdi
         [pushreg rdi]
 [endprolog]
-        and     ecx, 0ffffffffh         ; serious paranoia
+        and     ecx, ecx                ; serious paranoia
         mov     rdi, rdx
         mov     eax, r8d
         mov     rdx, r8
