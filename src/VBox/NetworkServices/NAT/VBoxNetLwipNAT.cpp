@@ -186,7 +186,7 @@ class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
 static VBoxNetLwipNAT *g_pLwipNat;
 INTNETSEG VBoxNetLwipNAT::aXmitSeg[64];
 
-STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
+HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                                                   IEvent *pEvent)
 {
     HRESULT hrc = S_OK;
