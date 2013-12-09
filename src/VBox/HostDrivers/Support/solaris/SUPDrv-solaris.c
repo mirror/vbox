@@ -1192,6 +1192,8 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 
 int VBOXCALL    supdrvOSMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue)
 {
+/** @todo cmi_hdl_rdmsr can safely do this. there is also the on_trap() fun
+ *        for catching traps that could possibly be used directly. */
     NOREF(uMsr); NOREF(idCpu); NOREF(puValue);
     return VERR_NOT_SUPPORTED;
 }
@@ -1199,6 +1201,7 @@ int VBOXCALL    supdrvOSMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *pu
 
 int VBOXCALL    supdrvOSMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue)
 {
+/** @todo cmi_hdl_wrmsr can safely do this. */
     NOREF(uMsr); NOREF(idCpu); NOREF(uValue);
     return VERR_NOT_SUPPORTED;
 }
