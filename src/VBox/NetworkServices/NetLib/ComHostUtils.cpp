@@ -191,6 +191,7 @@ int hostDnsDomain(const ComHostPtr& host, std::string& domainStr)
     return VERR_NOT_FOUND;
 }
 
+
 int createNatListener(ComNatListenerPtr& listener, const ComVirtualBoxPtr& vboxptr, 
                       NATNetworkEventAdapter *adapter, /* const */ ComEventTypeArray& events)
 {
