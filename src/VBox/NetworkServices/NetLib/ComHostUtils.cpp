@@ -18,6 +18,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifdef RT_OS_WINDOWS
+# define VBOX_COM_OUTOFPROC_MODULE
+#endif
 #include <VBox/com/com.h>
 #include <VBox/com/listeners.h>
 #include <VBox/com/string.h>
