@@ -21,6 +21,7 @@
 
 #include <iprt/cpp/utils.h>
 
+#include "Logging.h"
 #include "VirtualBoxImpl.h"
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
@@ -33,6 +34,8 @@
 
 static HostDnsMonitor *g_monitor;
 
+static void dumpHostDnsInformation(const HostDnsInformation&);
+static void dumpHostDnsStrVector(const std::string&, const std::vector<std::string>&);
 
 /* Lockee */
 Lockee::Lockee()
@@ -240,6 +243,9 @@ HRESULT HostDnsMonitorProxy::GetNameServers(ComSafeArrayOut(BSTR, aNameServers))
     if (m->fModified)
         updateInfo();
 
+    LogRel(("HostDnsMonitorProxy::GetNameServers:\n"));
+    dumpHostDnsStrVector("Name Server", m->info->servers);
+
     detachVectorOfString(m->info->servers, ComSafeArrayOutArg(aNameServers));
 
     return S_OK;
@@ -253,6 +259,8 @@ HRESULT HostDnsMonitorProxy::GetDomainName(BSTR *aDomainName)
     if (m->fModified)
         updateInfo();
 
+    LogRel(("HostDnsMonitorProxy::GetDomainName:%s\n", m->info->domain.c_str()));
+
     Utf8Str(m->info->domain.c_str()).cloneTo(aDomainName);
 
     return S_OK;
@@ -265,6 +273,9 @@ HRESULT HostDnsMonitorProxy::GetSearchStrings(ComSafeArrayOut(BSTR, aSearchStrin
 
     if (m->fModified)
         updateInfo();
+
+    LogRel(("HostDnsMonitorProxy::GetSearchStrings:\n"));
+    dumpHostDnsStrVector("Search String", m->info->searchList);
 
     detachVectorOfString(m->info->searchList, ComSafeArrayOutArg(aSearchStrings));
 
@@ -287,9 +298,37 @@ void HostDnsMonitorProxy::updateInfo()
     HostDnsInformation *info = new HostDnsInformation(m->monitor->getInfo());
     HostDnsInformation *old = m->info;
 
+    LogRel(("HostDnsMonitorProxy: Host's DNS information updated:\n"));
+    dumpHostDnsInformation(*info);
+
     m->info = info;
     if (old)
+    {
+        LogRel(("HostDnsMonitorProxy: Old host information:\n"));
+        dumpHostDnsInformation(*old);
+
         delete old;
+    }
 
     m->fModified = false;
+}
+
+
+static void dumpHostDnsInformation(const HostDnsInformation& info)
+{
+    dumpHostDnsStrVector("DNS server", info.servers);
+    dumpHostDnsStrVector("SearchString", info.searchList);
+
+    if (!info.domain.empty())
+        LogRel(("DNS domain: %s\n", info.domain.c_str()));
+}
+
+
+static void dumpHostDnsStrVector(const std::string& prefix, const std::vector<std::string>& v)
+{
+    int i = 0;
+    for (std::vector<std::string>::const_iterator it = v.begin();
+         it != v.end();
+         ++it, ++i)
+        LogRel(("%s %d: %s\n", prefix.c_str(), i, it->c_str()));
 }
