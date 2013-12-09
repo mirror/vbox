@@ -236,7 +236,7 @@ TEMPLATE_XPCOMOSX105_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEF
 TEMPLATE_XPCOMOSX105_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_5)/Developer/Headers/FlatCarbon
 
 #
-# Template for building VBoxPhython against the Mac OS X 10.6 SDK.
+# Template for building VBoxPython against the Mac OS X 10.6 SDK.
 # ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
 #
 TEMPLATE_XPCOMOSX106                    = XPCOM libraries (shared) built against the Mac OS X 10.6 SDK
@@ -248,7 +248,7 @@ TEMPLATE_XPCOMOSX106_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEF
 TEMPLATE_XPCOMOSX106_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_6)/Developer/Headers/FlatCarbon
 
 #
-# Template for building VBoxPhython against the Mac OS X 10.7 SDK.
+# Template for building VBoxPython against the Mac OS X 10.7 SDK.
 # ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
 #
 TEMPLATE_XPCOMOSX107                    = XPCOM libraries (shared) built against the Mac OS X 10.7 SDK
