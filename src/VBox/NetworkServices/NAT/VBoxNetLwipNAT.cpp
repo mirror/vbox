@@ -742,9 +742,7 @@ int VBoxNetLwipNAT::init()
     HRESULT hrc;
     LogFlowFuncEnter();
 
-
     /* virtualbox initialized in super class */
-
     int rc = ::VBoxNetBaseService::init();
     AssertRCReturn(rc, rc);
 
@@ -789,7 +787,6 @@ int VBoxNetLwipNAT::init()
     aVBoxEvents.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
     hrc = esVBox->RegisterListener(m_vboxListener, ComSafeArrayAsInParam(aVBoxEvents), true);
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-
 
     BOOL fIPv6Enabled = FALSE;
     hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
