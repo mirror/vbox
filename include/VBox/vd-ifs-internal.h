@@ -557,7 +557,7 @@ DECLINLINE(size_t) vdIfIoIntIoCtxCopyTo(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIo
 DECLINLINE(size_t) vdIfIoIntIoCtxCopyFrom(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx,
                                           void *pvBuffer, size_t cbBuffer)
 {
-    return pIfIoInt->pfnIoCtxCopyTo(pIfIoInt->Core.pvUser, pIoCtx, pvBuffer, cbBuffer);
+    return pIfIoInt->pfnIoCtxCopyFrom(pIfIoInt->Core.pvUser, pIoCtx, pvBuffer, cbBuffer);
 }
 
 DECLINLINE(size_t) vdIfIoIntIoCtxSet(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx,
