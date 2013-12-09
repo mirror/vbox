@@ -52,6 +52,12 @@
 
 #include <string.h>
 
+/* see comment in "lwip/ip.h" */
+#ifdef IP_HDRINCL
+#undef IP_HDRINCL
+#endif
+#define IP_HDRINCL LWIP_IP_HDRINCL
+
 /** Small optimization: set to 0 if incoming PBUF_POOL pbuf always can be
  * used to modify and send a response packet (and to 1 if this is not the case,
  * e.g. when link header is stripped of when receiving) */

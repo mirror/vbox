@@ -60,6 +60,12 @@
 #include "lwip/debug.h"
 #include "lwip/stats.h"
 
+/* see comment in "lwip/ip.h" */
+#ifdef IP_HDRINCL
+#undef IP_HDRINCL
+#endif
+#define IP_HDRINCL LWIP_IP_HDRINCL
+
 #if LWIP_CONNECTION_PROXY
 proxy_ip6_divert_hook_fn proxy_ip6_divert_hook;
 #endif
