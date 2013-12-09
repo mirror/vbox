@@ -118,6 +118,8 @@ RT_C_DECLS_BEGIN
 #define VMMDEV_MAX_VMMDEVREQ_SIZE           _1M
 /** Maximum number of HGCM parameters. */
 #define VMMDEV_MAX_HGCM_PARMS               1024
+/** Maximum total size of hgcm buffers in one call. */
+#define VMMDEV_MAX_HGCM_DATA_SIZE           UINT32_C(0x7FFFFFFF)
 
 /**
  * VMMDev request types.
