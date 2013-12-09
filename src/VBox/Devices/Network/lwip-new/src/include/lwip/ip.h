@@ -49,10 +49,18 @@ extern "C" {
 /* This is passed as the destination address to ip_output_if (not
    to ip_output), meaning that an IP header already is constructed
    in the pbuf. This is used when TCP retransmits. */
+#if 0
+/* XXX: "IP_HDRINCL" is a name of a socket option and the #undef below
+   is a good sign that reusing this name was rather unfortuate.  Other
+   naming conflicts are mostly restricted to "lwip/sockets.h" but this
+   one is pretty nasty since it affects all code that uses lwip.
+   Rename it out of the way here and do undef/redef dance in the few
+   lwip files that use this name to minimize diffs to upstream. */
 #ifdef IP_HDRINCL
 #undef IP_HDRINCL
 #endif /* IP_HDRINCL */
-#define IP_HDRINCL  NULL
+#endif /* XXX: 0 */
+#define LWIP_IP_HDRINCL  NULL
 
 #if LWIP_NETIF_HWADDRHINT
 #define IP_PCB_ADDRHINT ;u8_t addr_hint

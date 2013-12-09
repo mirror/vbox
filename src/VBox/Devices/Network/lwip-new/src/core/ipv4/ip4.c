@@ -58,6 +58,12 @@
 
 #include <string.h>
 
+/* see comment in "lwip/ip.h" */
+#ifdef IP_HDRINCL
+#undef IP_HDRINCL
+#endif
+#define IP_HDRINCL LWIP_IP_HDRINCL
+
 /** Set this to 0 in the rare case of wanting to call an extra function to
  * generate the IP checksum (in contrast to calculating it on-the-fly). */
 #ifndef LWIP_INLINE_IP_CHKSUM
