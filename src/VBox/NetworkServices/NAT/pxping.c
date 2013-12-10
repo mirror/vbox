@@ -1652,7 +1652,7 @@ pxping_pmgr_icmp6_error(struct pxping *pxping,
     struct ping_pcb *pcb;
     ip6_addr_t guest_ip, target_ip, error_ip;
     int target_mapped, error_mapped;
-    u16_t id, guest_id;
+    u16_t guest_id;
     u32_t sum;
 
     icmph = (struct icmp6_hdr *)pollmgr_udpbuf;
