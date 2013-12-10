@@ -949,20 +949,26 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     NSRect newFrame    = NSZeroRect;
 
     DEBUG_MSG(("OVIW(%p): reshape\n", (void*)self));
-
-    /* Getting the right screen coordinates of the parents frame is a little bit
-     * complicated. */
+    
     parentFrame = [m_pParentView frame];
-    parentPos = [[m_pParentView window] convertBaseToScreen:[[m_pParentView superview] convertPointToBase:NSMakePoint(parentFrame.origin.x, parentFrame.origin.y + parentFrame.size.height)]];
-    parentFrame.origin.x = parentPos.x;
-    parentFrame.origin.y = parentPos.y;
-
-    /* Calculate the new screen coordinates of the overlay window. */
+    DEBUG_MSG(("FIXED parentFrame [%f:%f], [%f:%f]\n", parentFrame.origin.x, parentFrame.origin.y, parentFrame.size.width, parentFrame.size.height));    
+    parentPos = parentFrame.origin;
+    parentPos.y += parentFrame.size.height;
+    DEBUG_MSG(("FIXED(view) parentPos [%f:%f]\n", parentPos.x, parentPos.y));
+    parentPos = [m_pParentView convertPoint:parentPos toView:nil];
+    DEBUG_MSG(("FIXED parentPos(win) [%f:%f]\n", parentPos.x, parentPos.y));
+    parentPos = [[m_pParentView window] convertBaseToScreen:parentPos];
+    DEBUG_MSG(("FIXED parentPos(screen) [%f:%f]\n", parentPos.x, parentPos.y));
+    parentFrame.origin = parentPos;
+    
     childPos = NSMakePoint(m_Pos.x, m_Pos.y + m_Size.height);
-    childPos = [[m_pParentView window] convertBaseToScreen:[[m_pParentView superview] convertPointToBase:childPos]];
-
-    /* Make a frame out of it. */
+    DEBUG_MSG(("FIXED(view) childPos [%f:%f]\n", childPos.x, childPos.y));
+    childPos = [m_pParentView convertPoint:childPos toView:nil];
+    DEBUG_MSG(("FIXED(win) childPos [%f:%f]\n", childPos.x, childPos.y));
+    childPos = [[m_pParentView window] convertBaseToScreen:childPos];
+    DEBUG_MSG(("FIXED childPos(screen) [%f:%f]\n", childPos.x, childPos.y));
     childFrame = NSMakeRect(childPos.x, childPos.y, m_Size.width, m_Size.height);
+    DEBUG_MSG(("FIXED childFrame [%f:%f], [%f:%f]\n", childFrame.origin.x, childFrame.origin.y, childFrame.size.width, childFrame.size.height));        
 
     /* We have to make sure that the overlay window will not be displayed out
      * of the parent window. So intersect both frames & use the result as the new
@@ -982,7 +988,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
           (void*)self, 
          newFrame.origin.x, newFrame.origin.y,
          newFrame.size.width, newFrame.size.height));
-    
+
     /* Later we have to correct the texture position in the case the window is
      * out of the parents window frame. So save the shift values for later use. */ 
     m_RootRect.origin.x = newFrame.origin.x - childFrame.origin.x;
