@@ -2145,15 +2145,12 @@ HRESULT Medium::i_unlockWrite(MediumState_T *aState)
     return rc;
 }
 
-HRESULT Medium::close()
+HRESULT Medium::close(AutoCaller &aAutoCaller)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     // make a copy of VirtualBox pointer which gets nulled by uninit()
     ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
 
-    MultiResult mrc = i_close(autoCaller);
+    MultiResult mrc = i_close(aAutoCaller);
 
     pVirtualBox->saveModifiedRegistries();
 

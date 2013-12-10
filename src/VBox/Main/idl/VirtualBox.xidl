@@ -13848,7 +13848,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="close">
+    <method name="close" wrap-hint-server="passcaller">
       <desc>
         Closes this medium.
 

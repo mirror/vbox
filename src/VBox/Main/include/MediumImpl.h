@@ -238,7 +238,7 @@ private:
                            std::vector<com::Guid> &aSnapshotIds);
     HRESULT lockRead(ComPtr<IToken> &aToken);
     HRESULT lockWrite(ComPtr<IToken> &aToken);
-    HRESULT close();
+    HRESULT close(AutoCaller &aAutoCaller);
     HRESULT getProperty(const com::Utf8Str &aName,
                         com::Utf8Str &aValue);
     HRESULT setProperty(const com::Utf8Str &aName,
