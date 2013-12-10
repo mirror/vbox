@@ -811,9 +811,9 @@ HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
-    NOREF(aUSBDeviceFilters);
+    NOREF(aUSBDevices);
 # ifndef RT_OS_WINDOWS
-    NOREF(aUSBDeviceFiltersSize);
+    NOREF(aUSBDevices);
 # endif
     ReturnComNotImplemented();
 #endif
@@ -897,7 +897,7 @@ HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aU
      * (w/o treating it as a failure), for example, as in OSE. */
     NOREF(aUSBDeviceFilters);
 # ifndef RT_OS_WINDOWS
-    NOREF(aUSBDeviceFiltersSize);
+    NOREF(aUSBDeviceFilters);
 # endif
     ReturnComNotImplemented();
 #endif

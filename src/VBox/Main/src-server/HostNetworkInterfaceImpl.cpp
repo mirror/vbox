@@ -530,7 +530,7 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
 #endif
 }
 
-HRESULT HostNetworkInterface::HostNetworkInterface::enableDynamicIPConfig()
+HRESULT HostNetworkInterface::enableDynamicIPConfig()
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
