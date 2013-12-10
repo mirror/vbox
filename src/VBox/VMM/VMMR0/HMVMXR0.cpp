@@ -6514,7 +6514,7 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
 
     uint32_t uVectorType     = VMX_IDT_VECTORING_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
     uint32_t uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVCpu->hm.s.Event.u64IntInfo);
-    bool     fErrorCodeValid = !!VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntInfo);
+    bool     fErrorCodeValid = VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntInfo);
     uint32_t uErrorCode      = pVCpu->hm.s.Event.u32ErrCode;
 
     /* If a trap was already pending, we did something wrong! */
@@ -10503,7 +10503,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
                 && uIntType != VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT)
             {
                 uint32_t uVector     = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
-                bool fErrorCodeValid = !!VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo);
+                bool fErrorCodeValid = VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo);
 
                 /* Save it as a pending event and it'll be converted to a TRPM event on the way out to ring-3. */
                 Assert(!pVCpu->hm.s.Event.fPending);
