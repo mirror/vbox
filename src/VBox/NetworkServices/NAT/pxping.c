@@ -529,8 +529,8 @@ pxping_recv4(void *arg, struct pbuf *p)
         /* wants ip_offset and ip_len fields in host order */
         IPH_OFFSET_SET(iph, ntohs(IPH_OFFSET(iph)));
         IPH_LEN_SET(iph, ntohs(IPH_LEN(iph)));
-        /* wants checksum */
-        sum = inet_chksum_pbuf(p); /* sic(?) */
+        /* wants checksum of everything (sic!), in host order */
+        sum = inet_chksum_pbuf(p);
         IPH_CHKSUM_SET(iph, sum);
 #else /* !RT_OS_DARWIN  */
         IPH_CHKSUM_SET(iph, 0); /* kernel will recalculate */
