@@ -98,14 +98,19 @@ inet_ntop(INT Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize)
 /* Missing errno codes */
 
 /**
- * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740668(v=vs.85).aspx#WSAEHOSTDOWN
- * Corresponds to WSAEHOSTDOWN (10064) WSAGetLastError()
+ * "Windows Sockets Error Codes" obtained with WSAGetLastError().
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740668(v=vs.85).aspx
  */
-#  define EHOSTDOWN WSAEHOSTDOWN
-/**
- * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740668(v=vs.85).aspx#WSAEHOSTUNREACH
- */
-#  define EHOSTUNREAH WSAEHOSTUNREACH
+#  undef  EMSGSIZE
+#  define EMSGSIZE              WSAEMSGSIZE
+#  undef  ENETDOWN
+#  define ENETDOWN              WSAENETDOWN
+#  undef  ENETUNREACH
+#  define ENETUNREACH           WSAENETUNREACH
+#  undef  EHOSTDOWN
+#  define EHOSTDOWN             WSAEHOSTDOWN
+#  undef  EHOSTUNREACH
+#  define EHOSTUNREACH          WSAEHOSTUNREACH
 
 /**
  * parameters to shutdown (2) with Winsock2
