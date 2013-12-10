@@ -319,7 +319,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
                         rc = d->iface->init(Bstr(name), Bstr(name), guid, HostNetworkInterfaceType_HostOnly);
                         if (SUCCEEDED(rc))
                         {
-                            rc = d->iface->setVirtualBox(d->vBox);
+                            rc = d->iface->i_setVirtualBox(d->vBox);
                             if (SUCCEEDED(rc))
                             {
                                 rc = d->iface->updateConfig();
