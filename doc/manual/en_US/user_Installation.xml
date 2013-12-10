@@ -825,17 +825,15 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
     <sect2 id="solaris-zones">
       <title>Configuring a zone for running VirtualBox</title>
 
-      <para>Starting with VirtualBox 1.6 it is possible to run VirtualBox from
-      within Solaris zones. For an introduction of Solaris zones, please refer
-      to <ulink
-      url="http://www.sun.com/bigadmin/features/articles/solaris_zones.jsp">http://www.sun.com/bigadmin/features/articles/solaris_zones.jsp</ulink>.</para>
-
       <para>Assuming that VirtualBox has already been installed into your
       zone, you need to give the zone access to VirtualBox's device node. This
       is done by performing the following steps. Start a root terminal and
       execute:</para>
 
       <screen>zonecfg -z vboxzone</screen>
+
+      <para>Replace "vboxzone" with the name of the zone in which you intend
+      to run VirtualBox.</para>
 
       <para>Inside the <computeroutput>zonecfg</computeroutput> prompt add the
       <computeroutput>device</computeroutput> resource and
@@ -848,19 +846,15 @@ zonecfg:vboxzone:device&gt;end
 zonecfg:vboxzone&gt;add device
 zonecfg:vboxzone:device&gt;set match=/dev/vboxdrvu
 zonecfg:vboxzone:device&gt;end
-zonecfg:vboxzone&gt;verify
 zonecfg:vboxzone&gt;exit</screen>
 
-      <para>If you are running VirtualBox 2.2.0 or above on Solaris 11 or
-      Nevada hosts, you should add a device for
-      <computeroutput>/dev/vboxusbmon</computeroutput> too, similar to what
-      was shown above. This does not apply to Solaris 10 hosts due to lack of
-      USB support.</para>
-
-      <para>Replace "vboxzone" with the name of the zone in which you intend
-      to run VirtualBox. Next reboot the zone using
-      <computeroutput>zoneadm</computeroutput> and you should be able to run
-      VirtualBox from within the configured zone.</para>
+      <para>If you are running VirtualBox 2.2.0 or above on Solaris 11 or 
+      above, you may add a device for <computeroutput>/dev/vboxusbmon</computeroutput>
+      too, similar to what was shown above. This does not apply to Solaris 10
+      hosts due to lack of USB support.</para>
+      
+      <para>Next reboot the zone using <computeroutput>zoneadm</computeroutput>
+      and you should be able to run VirtualBox from within the configured zone.</para>
     </sect2>
   </sect1>
 </chapter>
