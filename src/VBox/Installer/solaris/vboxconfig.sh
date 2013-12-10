@@ -618,11 +618,10 @@ install_drivers()
     fi
 
     ## Add vboxdrv to devlink.tab (KEEP TABS!)
-    # clean up devlink.tab (KEEP TABS!)
     if test -f "$PKG_INSTALL_ROOT/etc/devlink.tab"; then
         sed -e '/name=vboxdrv/d' -e '/name=vboxdrvu/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
-        #echo "type=ddi_pseudo;name=vboxdrv;minor=vboxdrv	\D"  >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
-        #echo "type=ddi_pseudo;name=vboxdrv;minor=vboxdrvu	\M0" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        echo "type=ddi_pseudo;name=vboxdrv;minor=vboxdrv	\D"  >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        echo "type=ddi_pseudo;name=vboxdrv;minor=vboxdrvu	\M0" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
         mv -f "$PKG_INSTALL_ROOT/etc/devlink.vbox" "$PKG_INSTALL_ROOT/etc/devlink.tab"
     else
         errorprint "Missing $PKG_INSTALL_ROOT/etc/devlink.tab, aborting install"
@@ -632,10 +631,10 @@ install_drivers()
     # Create the device link for non-remote installs (not really relevant any more)
     if test "$REMOTEINST" -eq 0; then
         /usr/sbin/devfsadm -i "$MOD_VBOXDRV"
-        #if test $? -ne 0 || test ! -h "/dev/vboxdrv" || test ! -h "/dev/vboxdrvu" ; then
-        #    errorprint "Failed to create device link for $MOD_VBOXDRV."
-        #    exit 1
-        #fi
+        if test $? -ne 0 || test ! -h "/dev/vboxdrv" || test ! -h "/dev/vboxdrvu" ; then
+            errorprint "Failed to create device link for $MOD_VBOXDRV."
+            exit 1
+        fi
     fi
 
     # Load VBoxNetAdp
@@ -717,11 +716,11 @@ remove_drivers()
 {
     fatal=$1
 
-    # Remove vboxdrv from devlink.tab
+    # Remove vboxdrv[u] from devlink.tab
     if test -f "$PKG_INSTALL_ROOT/etc/devlink.tab"; then
         devlinkfound=`cat "$PKG_INSTALL_ROOT/etc/devlink.tab" | grep vboxdrv`
         if test -n "$devlinkfound"; then
-            sed -e '/name=vboxdrv/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+            sed -e '/name=vboxdrv/d' -e '/name=vboxdrvu/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
             mv -f "$PKG_INSTALL_ROOT/etc/devlink.vbox" "$PKG_INSTALL_ROOT/etc/devlink.tab"
         fi
 
