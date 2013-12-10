@@ -156,6 +156,22 @@ protected:
     /** @} */
 };
 
+
+static inline int configGetBoundryAddress(const ComDhcpServerPtr& dhcp, bool fUpperBoundry, RTNETADDRIPV4& boundryAddress)
+{
+    boundryAddress.u = INADDR_ANY;
+
+    HRESULT hrc;
+    com::Bstr strAddress;
+    if (fUpperBoundry)
+        hrc = dhcp->COMGETTER(UpperIP)(strAddress.asOutParam());
+    else
+        hrc = dhcp->COMGETTER(LowerIP)(strAddress.asOutParam());
+    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+    
+    return RTNetStrToIPv4Addr(com::Utf8Str(strAddress).c_str(), &boundryAddress);
+}
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -500,16 +516,13 @@ int VBoxNetDhcp::initWithMain()
     rc = createNatListener(m_vboxListener, virtualbox, this, aVBoxEvents);
     AssertRCReturn(rc, rc);
 
-    /* XXX: extract function here. */
-    com::Bstr strUpperIp, strLowerIp;
     RTNETADDRIPV4 LowerAddress;
+    rc = configGetBoundryAddress(m_DhcpServer, false, LowerAddress);
+    AssertMsgRCReturn(rc, ("can't get lower boundrary adderss'"),rc);
+
     RTNETADDRIPV4 UpperAddress;
-    hrc = m_DhcpServer->COMGETTER(UpperIP)(strUpperIp.asOutParam());
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-    RTNetStrToIPv4Addr(com::Utf8Str(strUpperIp).c_str(), &UpperAddress);
-    hrc = m_DhcpServer->COMGETTER(LowerIP)(strLowerIp.asOutParam());
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-    RTNetStrToIPv4Addr(com::Utf8Str(strLowerIp).c_str(), &LowerAddress);
+    rc = configGetBoundryAddress(m_DhcpServer, true, UpperAddress);
+    AssertMsgRCReturn(rc, ("can't get upper boundrary adderss'"),rc);
 
     RTNETADDRIPV4 address = getIpv4Address();
     RTNETADDRIPV4 netmask = getIpv4Netmask();
