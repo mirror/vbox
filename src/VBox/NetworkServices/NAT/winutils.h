@@ -120,8 +120,6 @@ inet_ntop(INT Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize)
 #  define SHUT_WR SD_SEND
 #  define SHUT_RDWR SD_BOTH
 
-typedef int socklen_t;
-
 typedef ULONG nfds_t;
 
 typedef WSABUF IOVEC;
