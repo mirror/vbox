@@ -2998,7 +2998,7 @@ HRESULT Host::i_updateNetIfList()
         if (fGone)
         {
 # ifdef VBOX_WITH_RESOURCE_USAGE_API
-            (*itOld)->unregisterMetrics(aCollector, this);
+            (*itOld)->i_unregisterMetrics(aCollector, this);
 # endif
         }
     }
@@ -3007,7 +3007,7 @@ HRESULT Host::i_updateNetIfList()
      * (see @bugref{6439}).
      */
     for (itNew = list.begin(); itNew != list.end(); ++itNew)
-        (*itNew)->setVirtualBox(m->pParent);
+        (*itNew)->i_setVirtualBox(m->pParent);
     /* At this point listCopy will contain newly discovered interfaces only. */
     for (itNew = listCopy.begin(); itNew != listCopy.end(); ++itNew)
     {
@@ -3022,7 +3022,7 @@ HRESULT Host::i_updateNetIfList()
         else if (t == HostNetworkInterfaceType_Bridged)
         {
 # ifdef VBOX_WITH_RESOURCE_USAGE_API
-            (*itNew)->registerMetrics(aCollector, this);
+            (*itNew)->i_registerMetrics(aCollector, this);
 # endif
         }
     }

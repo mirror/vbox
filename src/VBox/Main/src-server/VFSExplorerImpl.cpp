@@ -36,6 +36,32 @@
 
 #include <memory>
 
+struct VFSExplorer::Data
+{
+    struct DirEntry
+    {
+        DirEntry(Utf8Str strName, VFSFileType_T fileType, uint64_t cbSize, uint32_t fMode)
+           : name(strName)
+           , type(fileType)
+           , size(cbSize)
+           , mode(fMode) {}
+
+        Utf8Str name;
+        VFSFileType_T type;
+        uint64_t size;
+        uint32_t mode;
+    };
+
+    VFSType_T storageType;
+    Utf8Str strUsername;
+    Utf8Str strPassword;
+    Utf8Str strHostname;
+    Utf8Str strPath;
+    Utf8Str strBucket;
+    std::list<DirEntry> entryList;
+};
+
+
 VFSExplorer::VFSExplorer()
     : mVirtualBox(NULL)
 {
@@ -537,8 +563,8 @@ HRESULT VFSExplorer::update(ComPtr<IProgress> &aProgress)
     }
 
      if (SUCCEEDED(rc))
-        /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress.asOutParam());
+         /* Return progress to the caller */
+         progress.queryInterfaceTo(aProgress.asOutParam());
 
     return rc;
 }

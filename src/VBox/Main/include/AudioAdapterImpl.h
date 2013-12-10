@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,37 +20,16 @@
 #ifndef ____H_AUDIOADAPTER
 #define ____H_AUDIOADAPTER
 
-#include "VirtualBoxBase.h"
-
+#include "AudioAdapterWrap.h"
 namespace settings
 {
     struct AudioAdapter;
 }
 
 class ATL_NO_VTABLE AudioAdapter :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IAudioAdapter)
+    public AudioAdapterWrap
 {
 public:
-
-    struct Data
-    {
-        Data();
-
-        BOOL mEnabled;
-        AudioDriverType_T mAudioDriver;
-        AudioControllerType_T mAudioController;
-    };
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(AudioAdapter, IAudioAdapter)
-
-    DECLARE_NOT_AGGREGATABLE(AudioAdapter)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(AudioAdapter)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IAudioAdapter)
-    END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (AudioAdapter)
 
@@ -63,27 +42,28 @@ public:
     HRESULT initCopy(Machine *aParent, AudioAdapter *aThat);
     void uninit();
 
-    STDMETHOD(COMGETTER(Enabled))(BOOL *aEnabled);
-    STDMETHOD(COMSETTER(Enabled))(BOOL aEnabled);
-    STDMETHOD(COMGETTER(AudioDriver))(AudioDriverType_T *aAudioDriverType);
-    STDMETHOD(COMSETTER(AudioDriver))(AudioDriverType_T aAudioDriverType);
-    STDMETHOD(COMGETTER(AudioController))(AudioControllerType_T *aAudioControllerType);
-    STDMETHOD(COMSETTER(AudioController))(AudioControllerType_T aAudioControllerType);
 
     // public methods only for internal purposes
+    HRESULT i_loadSettings(const settings::AudioAdapter &data);
+    HRESULT i_saveSettings(settings::AudioAdapter &data);
 
-    HRESULT loadSettings(const settings::AudioAdapter &data);
-    HRESULT saveSettings(settings::AudioAdapter &data);
-
-    void rollback();
-    void commit();
-    void copyFrom(AudioAdapter *aThat);
+    void i_rollback();
+    void i_commit();
+    void i_copyFrom(AudioAdapter *aThat);
 
 private:
 
+    // wrapped IAudioAdapter properties
+    HRESULT getEnabled(BOOL *aEnabled);
+    HRESULT setEnabled(BOOL aEnabled);
+    HRESULT getAudioDriver(AudioDriverType_T *aAudioDriver);
+    HRESULT setAudioDriver(AudioDriverType_T aAudioDriver);
+    HRESULT getAudioController(AudioControllerType_T *aAudioController);
+    HRESULT setAudioController(AudioControllerType_T aAudioController);
+
     Machine * const     mParent;
     const ComObjPtr<AudioAdapter> mPeer;
-
+    struct Data;
     Backupable<Data>    mData;
 };
 
