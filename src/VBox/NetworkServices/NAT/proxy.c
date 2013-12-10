@@ -399,7 +399,7 @@ proxy_reset_socket(SOCKET s)
 }
 
 
-void
+int
 proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
 {
     struct pbuf *q;
@@ -415,6 +415,7 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
     const size_t fixiovsize = sizeof(fixiov)/sizeof(fixiov[0]);
     IOVEC *dyniov;       /* dynamically sized */
     IOVEC *iov;
+    int error = 0;
 
     /*
      * Static iov[] is usually enough since UDP protocols use small
@@ -427,6 +428,7 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
          */
         dyniov = (IOVEC *)malloc(clen * sizeof(*dyniov));
         if (dyniov == NULL) {
+            error = -errno;
             goto out;
         }
         iov = dyniov;
@@ -453,6 +455,7 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
 
     nsent = sendmsg(sock, &mh, 0);
     if (nsent < 0) {
+        error = -errno;
         DPRINTF(("%s: fd %d: sendmsg errno %d\n",
                  __func__, sock, errno));
     }
@@ -462,6 +465,7 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
     if (rc == SOCKET_ERROR) {
          DPRINTF(("%s: fd %d: sendmsg errno %d\n",
                   __func__, sock, WSAGetLastError()));
+         error = -WSAGetLastError();
     }
 #endif
 
@@ -470,6 +474,7 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
         free(dyniov);
     }
     pbuf_free(p);
+    return error;
 }
 
 

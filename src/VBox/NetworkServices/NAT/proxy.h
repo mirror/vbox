@@ -48,7 +48,7 @@ void proxy_init(struct netif *, struct proxy_options *);
 SOCKET proxy_connected_socket(int, int, ipX_addr_t *, u16_t);
 SOCKET proxy_bound_socket(int, int, struct sockaddr *);
 void proxy_reset_socket(SOCKET);
-void proxy_sendto(SOCKET, struct pbuf *, void *, size_t);
+int proxy_sendto(SOCKET, struct pbuf *, void *, size_t);
 void proxy_lwip_post(struct tcpip_msg *);
 const char *proxy_lwip_strerr(err_t);
 
