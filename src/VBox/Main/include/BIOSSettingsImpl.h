@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,7 @@
 #ifndef ____H_BIOSSETTINGS
 #define ____H_BIOSSETTINGS
 
-#include "VirtualBoxBase.h"
+#include "BIOSSettingsWrap.h"
 
 class GuestOSType;
 
@@ -30,60 +30,53 @@ namespace settings
 }
 
 class ATL_NO_VTABLE BIOSSettings :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IBIOSSettings)
+    public BIOSSettingsWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(BIOSSettings, IBIOSSettings)
 
-    DECLARE_NOT_AGGREGATABLE(BIOSSettings)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(BIOSSettings)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IBIOSSettings)
-    END_COM_MAP()
+    DECLARE_EMPTY_CTOR_DTOR(BIOSSettings)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *parent);
-    HRESULT init (Machine *parent, BIOSSettings *that);
-    HRESULT initCopy (Machine *parent, BIOSSettings *that);
+    HRESULT init(Machine *parent);
+    HRESULT init(Machine *parent, BIOSSettings *that);
+    HRESULT initCopy(Machine *parent, BIOSSettings *that);
     void uninit();
 
-    STDMETHOD(COMGETTER(LogoFadeIn))(BOOL *enabled);
-    STDMETHOD(COMSETTER(LogoFadeIn))(BOOL enable);
-    STDMETHOD(COMGETTER(LogoFadeOut))(BOOL *enabled);
-    STDMETHOD(COMSETTER(LogoFadeOut))(BOOL enable);
-    STDMETHOD(COMGETTER(LogoDisplayTime))(ULONG *displayTime);
-    STDMETHOD(COMSETTER(LogoDisplayTime))(ULONG displayTime);
-    STDMETHOD(COMGETTER(LogoImagePath))(BSTR *imagePath);
-    STDMETHOD(COMSETTER(LogoImagePath))(IN_BSTR imagePath);
-    STDMETHOD(COMGETTER(BootMenuMode))(BIOSBootMenuMode_T *bootMenuMode);
-    STDMETHOD(COMSETTER(BootMenuMode))(BIOSBootMenuMode_T bootMenuMode);
-    STDMETHOD(COMGETTER(ACPIEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(ACPIEnabled))(BOOL enable);
-    STDMETHOD(COMGETTER(IOAPICEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(IOAPICEnabled))(BOOL enable);
-    STDMETHOD(COMGETTER(PXEDebugEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(PXEDebugEnabled))(BOOL enable);
-    STDMETHOD(COMGETTER)(TimeOffset)(LONG64 *offset);
-    STDMETHOD(COMSETTER)(TimeOffset)(LONG64 offset);
-    STDMETHOD(COMGETTER)(NonVolatileStorageFile)(BSTR *pbstrPath);
-
     // public methods only for internal purposes
+    HRESULT i_loadSettings(const settings::BIOSSettings &data);
+    HRESULT i_saveSettings(settings::BIOSSettings &data);
 
-    HRESULT loadSettings(const settings::BIOSSettings &data);
-    HRESULT saveSettings(settings::BIOSSettings &data);
-
-    void rollback();
-    void commit();
-    void copyFrom (BIOSSettings *aThat);
-    void applyDefaults (GuestOSType *aOsType);
+    void i_rollback();
+    void i_commit();
+    void i_copyFrom(BIOSSettings *aThat);
+    void i_applyDefaults(GuestOSType *aOsType);
 
 private:
+
+    // wrapped IBIOSettings properties
+    HRESULT getLogoFadeIn(BOOL *enabled);
+    HRESULT setLogoFadeIn(BOOL enable);
+    HRESULT getLogoFadeOut(BOOL *enabled);
+    HRESULT setLogoFadeOut(BOOL enable);
+    HRESULT getLogoDisplayTime(ULONG *displayTime);
+    HRESULT setLogoDisplayTime(ULONG displayTime);
+    HRESULT getLogoImagePath(com::Utf8Str &imagePath);
+    HRESULT setLogoImagePath(const com::Utf8Str &imagePath);
+    HRESULT getBootMenuMode(BIOSBootMenuMode_T *bootMenuMode);
+    HRESULT setBootMenuMode(BIOSBootMenuMode_T bootMenuMode);
+    HRESULT getACPIEnabled(BOOL *enabled);
+    HRESULT setACPIEnabled(BOOL enable);
+    HRESULT getIOAPICEnabled(BOOL *aIOAPICEnabled);
+    HRESULT setIOAPICEnabled(BOOL aIOAPICEnabled);
+    HRESULT getTimeOffset(LONG64 *offset);
+    HRESULT setTimeOffset(LONG64 offset);
+    HRESULT getPXEDebugEnabled(BOOL *enabled);
+    HRESULT setPXEDebugEnabled(BOOL enable);
+    HRESULT getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile);
+
     struct Data;
     Data *m;
 };

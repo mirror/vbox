@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 #ifndef ____H_PARALLELPORTIMPL
 #define ____H_PARALLELPORTIMPL
 
-#include "VirtualBoxBase.h"
+#include "ParallelPortWrap.h"
 
 namespace settings
 {
@@ -27,22 +27,11 @@ namespace settings
 }
 
 class ATL_NO_VTABLE ParallelPort :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IParallelPort)
+    public ParallelPortWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(ParallelPort, IParallelPort)
 
-    DECLARE_NOT_AGGREGATABLE(ParallelPort)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(ParallelPort)
-        VBOX_DEFAULT_INTERFACE_ENTRIES (IParallelPort)
-    END_COM_MAP()
-
-    ParallelPort() {}
-    ~ParallelPort() {}
+    DECLARE_EMPTY_CTOR_DTOR(ParallelPort)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -53,32 +42,29 @@ public:
     HRESULT initCopy (Machine *parent, ParallelPort *aThat);
     void uninit();
 
-    // IParallelPort properties
-    STDMETHOD(COMGETTER(Slot))    (ULONG     *aSlot);
-    STDMETHOD(COMGETTER(Enabled)) (BOOL      *aEnabled);
-    STDMETHOD(COMSETTER(Enabled)) (BOOL       aEnabled);
-    STDMETHOD(COMGETTER(IRQ))     (ULONG     *aIRQ);
-    STDMETHOD(COMSETTER(IRQ))     (ULONG      aIRQ);
-    STDMETHOD(COMGETTER(IOBase))  (ULONG     *aIOBase);
-    STDMETHOD(COMSETTER(IOBase))  (ULONG      aIOBase);
-    STDMETHOD(COMGETTER(Path))    (BSTR      *aPath);
-    STDMETHOD(COMSETTER(Path))    (IN_BSTR aPath);
+    HRESULT i_loadSettings(const settings::ParallelPort &data);
+    HRESULT i_saveSettings(settings::ParallelPort &data);
 
     // public methods only for internal purposes
-
-    HRESULT loadSettings(const settings::ParallelPort &data);
-    HRESULT saveSettings(settings::ParallelPort &data);
-
-    bool isModified();
-    void rollback();
-    void commit();
-    void copyFrom(ParallelPort *aThat);
-
-    // public methods for internal purposes only
-    // (ensure there is a caller and a read lock before calling them!)
+    bool i_isModified();
+    void i_rollback();
+    void i_commit();
+    void i_copyFrom(ParallelPort *aThat);
 
 private:
-    HRESULT checkSetPath(const Utf8Str &str);
+
+    // Wrapped IParallelPort properties
+    HRESULT getEnabled(BOOL *aEnabled);
+    HRESULT setEnabled(BOOL aEnabled);
+    HRESULT getSlot(ULONG *aSlot);
+    HRESULT getIRQ(ULONG *aIRQ);
+    HRESULT setIRQ(ULONG aIRQ);
+    HRESULT getIOBase(ULONG *aIOBase);
+    HRESULT setIOBase(ULONG aIOBase);
+    HRESULT getPath(com::Utf8Str &aPath);
+    HRESULT setPath(const com::Utf8Str &aPath);
+
+    HRESULT i_checkSetPath(const Utf8Str &str);
 
     struct Data;
     Data *m;

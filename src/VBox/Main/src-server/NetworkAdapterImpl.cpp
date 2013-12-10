@@ -1250,7 +1250,7 @@ HRESULT NetworkAdapter::loadSettings(BandwidthControl *bwctl,
         group->i_reference();
     }
 
-    mNATEngine->loadSettings(data.nat);
+    mNATEngine->i_loadSettings(data.nat);
     mData->mBridgedInterface = data.strBridgedName;
     mData->mInternalNetwork = data.strInternalNetworkName;
     mData->mHostOnlyInterface = data.strHostOnlyName;
@@ -1305,8 +1305,8 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
 
     data.mode = mData->mAttachmentType;
 
-    mNATEngine->commit();
-    mNATEngine->saveSettings(data.nat);
+    mNATEngine->i_commit();
+    mNATEngine->i_saveSettings(data.nat);
 
     data.strBridgedName = mData->mBridgedInterface;
 
@@ -1332,7 +1332,7 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
 bool NetworkAdapter::isModified() {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     bool fChanged = m_fModified;
-    fChanged |= (mData->mAdapterType == NetworkAttachmentType_NAT? mNATEngine->isModified() : false);
+    fChanged |= (mData->mAdapterType == NetworkAttachmentType_NAT? mNATEngine->i_isModified() : false);
     return fChanged;
 }
 

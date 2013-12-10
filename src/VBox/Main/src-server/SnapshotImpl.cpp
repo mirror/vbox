@@ -1044,7 +1044,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
          ++it)
     {
         MediumAttachment *pAtt = *it;
-        Medium *pMedium = pAtt->getMedium();
+        Medium *pMedium = pAtt->i_getMedium();
         if (pMedium) // can be NULL for non-harddisk
         {
             rc = pMedium->i_addBackReference(mData->mUuid, mSnapshotId);
@@ -1776,12 +1776,12 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
     {
         ComObjPtr<MediumAttachment> &pAttach = *it;
         AutoReadLock attachLock(pAttach COMMA_LOCKVAL_SRC_POS);
-        if (pAttach->getType() == DeviceType_HardDisk)
+        if (pAttach->i_getType() == DeviceType_HardDisk)
         {
             ++ulOpCount;
             ++ulTotalWeight;         // assume one MB weight for each differencing hard disk to manage
-            Assert(pAttach->getMedium());
-            LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount, pAttach->getMedium()->i_getName().c_str()));
+            Assert(pAttach->i_getMedium());
+            LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount, pAttach->i_getMedium()->i_getName().c_str()));
         }
     }
 
@@ -1963,12 +1963,12 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
              ++it)
         {
             ComObjPtr<MediumAttachment> pAttach = *it;
-            ComObjPtr<Medium> pMedium = pAttach->getMedium();
+            ComObjPtr<Medium> pMedium = pAttach->i_getMedium();
 
             /* while the hard disk is attached, the number of children or the
              * parent cannot change, so no lock */
             if (    !pMedium.isNull()
-                 && pAttach->getType() == DeviceType_HardDisk
+                 && pAttach->i_getType() == DeviceType_HardDisk
                  && !pMedium->i_getParent().isNull()
                  && pMedium->i_getChildren().size() == 0
                )
@@ -2007,7 +2007,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
              ++it)
         {
             ComObjPtr<MediumAttachment> pAttach = *it;        // guaranteed to have only attachments where medium != NULL
-            ComObjPtr<Medium> pMedium = pAttach->getMedium();
+            ComObjPtr<Medium> pMedium = pAttach->i_getMedium();
 
             AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
@@ -2175,7 +2175,6 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
                         pSnapshot->getName().c_str(),
                         mUserData->s.strName.c_str());
 
-
     /* If the snapshot being deleted is the current one, ensure current
      * settings are committed and saved.
      */
@@ -2213,9 +2212,9 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     {
         ComObjPtr<MediumAttachment> &pAttach = *it;
         AutoReadLock attachLock(pAttach COMMA_LOCKVAL_SRC_POS);
-        if (pAttach->getType() == DeviceType_HardDisk)
+        if (pAttach->i_getType() == DeviceType_HardDisk)
         {
-            ComObjPtr<Medium> pHD = pAttach->getMedium();
+            ComObjPtr<Medium> pHD = pAttach->i_getMedium();
             Assert(pHD);
             AutoReadLock mlock(pHD COMMA_LOCKVAL_SRC_POS);
 
@@ -2436,10 +2435,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         {
             ComObjPtr<MediumAttachment> &pAttach = *it;
             AutoReadLock attachLock(pAttach COMMA_LOCKVAL_SRC_POS);
-            if (pAttach->getType() != DeviceType_HardDisk)
+            if (pAttach->i_getType() != DeviceType_HardDisk)
                 continue;
 
-            ComObjPtr<Medium> pHD = pAttach->getMedium();
+            ComObjPtr<Medium> pHD = pAttach->i_getMedium();
             Assert(!pHD.isNull());
 
             {
@@ -2478,9 +2477,9 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 // prevent online merging in general.
                 pOnlineMediumAttachment =
                     findAttachment(mMediaData->mAttachments,
-                                   pAttach->getControllerName().raw(),
-                                   pAttach->getPort(),
-                                   pAttach->getDevice());
+                                   pAttach->i_getControllerName().raw(),
+                                   pAttach->i_getPort(),
+                                   pAttach->i_getDevice());
                 if (pOnlineMediumAttachment)
                 {
                     rc = mData->mSession.mLockedMedia.Get(pOnlineMediumAttachment,
@@ -2872,7 +2871,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 if (pAtt)
                 {
                     AutoWriteLock attLock(pAtt COMMA_LOCKVAL_SRC_POS);
-                    pAtt->updateMedium(it->mpTarget);
+                    pAtt->i_updateMedium(it->mpTarget);
                     it->mpTarget->i_addBackReference(pMachine->mData->mUuid, childSnapshotId);
                 }
                 else
@@ -3648,7 +3647,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium()
     if (!pDeleteRec->mfMergeForward && !fSourceHasChildren)
     {
         AutoWriteLock attLock(pDeleteRec->mpOnlineMediumAttachment COMMA_LOCKVAL_SRC_POS);
-        pDeleteRec->mpOnlineMediumAttachment->updateMedium(pDeleteRec->mpTarget);
+        pDeleteRec->mpOnlineMediumAttachment->i_updateMedium(pDeleteRec->mpTarget);
     }
 
     return S_OK;

@@ -1473,7 +1473,7 @@ HRESULT Medium::setDescription(const com::Utf8Str &aDescription)
     /// @todo update m->description and save the global registry (and local
     /// registries of portable VMs referring to this medium), this will also
     /// require to add the mRegistered flag to data
-
+    NOREF(aDescription);
     ReturnComNotImplemented();
 }
 
@@ -1703,6 +1703,7 @@ HRESULT Medium::setType(MediumType_T aType)
 
 HRESULT Medium::getAllowedTypes(std::vector<MediumType_T> &aAllowedTypes)
 {
+    NOREF(aAllowedTypes);
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ReturnComNotImplemented();
@@ -2661,6 +2662,8 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
 HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aProgress)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    NOREF(aLocation);
+    NOREF(aProgress);
 
     /// @todo NEWMEDIA for file names, add the default extension if no extension
     /// is present (using the information from the VD backend which also implies

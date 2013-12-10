@@ -339,7 +339,7 @@ HRESULT Machine::init(VirtualBox *aParent,
             mUserData->s.strOsType = aOsType->i_id();
 
             /* Apply BIOS defaults */
-            mBIOSSettings->applyDefaults(aOsType);
+            mBIOSSettings->i_applyDefaults(aOsType);
 
             /* Apply network adapters defaults */
             for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
@@ -4079,7 +4079,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                                       aControllerPort,
                                       aDevice)))
     {
-        Medium *pMedium = pAttachTemp->getMedium();
+        Medium *pMedium = pAttachTemp->i_getMedium();
         if (pMedium)
         {
             AutoReadLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
@@ -4162,7 +4162,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 AssertReturn(!fIndirect, E_FAIL);
 
                 /* see if it's the same bus/channel/device */
-                if (pAttachTemp->matches(aControllerName, aControllerPort, aDevice))
+                if (pAttachTemp->i_matches(aControllerName, aControllerPort, aDevice))
                 {
                     /* the simplest case: restore the whole attachment
                      * and return, nothing else to do */
@@ -4243,8 +4243,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 {
                     uint32_t level = 0;
                     MediumAttachment *pAttach = *it;
-                    ComObjPtr<Medium> pMedium = pAttach->getMedium();
-                    Assert(!pMedium.isNull() || pAttach->getType() != DeviceType_HardDisk);
+                    ComObjPtr<Medium> pMedium = pAttach->i_getMedium();
+                    Assert(!pMedium.isNull() || pAttach->i_getType() != DeviceType_HardDisk);
                     if (pMedium.isNull())
                         continue;
 
@@ -4261,7 +4261,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                          * otherwise the attachment that has the youngest
                          * descendant of medium will be used
                          */
-                        if (pAttach->matches(aControllerName, aControllerPort, aDevice))
+                        if (pAttach->i_matches(aControllerName, aControllerPort, aDevice))
                         {
                             /* the simplest case: restore the whole attachment
                              * and return, nothing else to do */
@@ -4321,7 +4321,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 if (foundIt != oldAtts.end())
                 {
                     /* use the previously attached hard disk */
-                    medium = (*foundIt)->getMedium();
+                    medium = (*foundIt)->i_getMedium();
                     mediumCaller.attach(medium);
                     if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
                     mediumLock.attach(medium);
@@ -4357,8 +4357,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                      ++it)
                 {
                     MediumAttachment *pAttach = *it;
-                    ComObjPtr<Medium> pMedium = pAttach->getMedium();
-                    Assert(!pMedium.isNull() || pAttach->getType() != DeviceType_HardDisk);
+                    ComObjPtr<Medium> pMedium = pAttach->i_getMedium();
+                    Assert(!pMedium.isNull() || pAttach->i_getType() != DeviceType_HardDisk);
                     if (pMedium.isNull())
                         continue;
 
@@ -4370,9 +4370,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                          * otherwise the attachment that has the youngest
                          * descendant of medium will be used
                          */
-                        if (    pAttach->getDevice() == aDevice
-                             && pAttach->getPort() == aControllerPort
-                             && pAttach->getControllerName() == aControllerName
+                        if (    pAttach->i_getDevice() == aDevice
+                             && pAttach->i_getPort() == aControllerPort
+                             && pAttach->i_getControllerName() == aControllerName
                            )
                         {
                             pAttachFound = pAttach;
@@ -4390,7 +4390,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
                 if (pAttachFound)
                 {
-                    base = pAttachFound->getMedium();
+                    base = pAttachFound->i_getMedium();
                     break;
                 }
 
@@ -4640,7 +4640,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
                         tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
                         aDevice, aControllerPort, aControllerName);
 
-    if (fHotplug && !pAttach->getHotPluggable())
+    if (fHotplug && !pAttach->i_getHotPluggable())
         return setError(VBOX_E_NOT_SUPPORTED,
                         tr("The device slot %d on port %d of controller '%ls' does not support hotplugging"),
                         aDevice, aControllerPort, aControllerName);
@@ -4705,11 +4705,11 @@ STDMETHODIMP Machine::PassthroughDevice(IN_BSTR aControllerName, LONG aControlle
 
     AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
 
-    if (pAttach->getType() != DeviceType_DVD)
+    if (pAttach->i_getType() != DeviceType_DVD)
         return setError(E_INVALIDARG,
                         tr("Setting passthrough rejected as the device attached to device slot %d on port %d of controller '%ls' is not a DVD"),
                         aDevice, aControllerPort, aControllerName);
-    pAttach->updatePassthrough(!!aPassthrough);
+    pAttach->i_updatePassthrough(!!aPassthrough);
 
     return S_OK;
 }
@@ -4745,11 +4745,11 @@ STDMETHODIMP Machine::TemporaryEjectDevice(IN_BSTR aControllerName, LONG aContro
 
     AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
 
-    if (pAttach->getType() != DeviceType_DVD)
+    if (pAttach->i_getType() != DeviceType_DVD)
         return setError(E_INVALIDARG,
                         tr("Setting temporary eject flag rejected as the device attached to device slot %d on port %d of controller '%ls' is not a DVD"),
                         aDevice, aControllerPort, aControllerName);
-    pAttach->updateTempEject(!!aTemporaryEject);
+    pAttach->i_updateTempEject(!!aTemporaryEject);
 
     return S_OK;
 }
@@ -4792,11 +4792,11 @@ STDMETHODIMP Machine::NonRotationalDevice(IN_BSTR aControllerName, LONG aControl
 
     AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
 
-    if (pAttach->getType() != DeviceType_HardDisk)
+    if (pAttach->i_getType() != DeviceType_HardDisk)
         return setError(E_INVALIDARG,
                         tr("Setting the non-rotational medium flag rejected as the device attached to device slot %d on port %d of controller '%ls' is not a hard disk"),
                         aDevice, aControllerPort, aControllerName);
-    pAttach->updateNonRotational(!!aNonRotational);
+    pAttach->i_updateNonRotational(!!aNonRotational);
 
     return S_OK;
 }
@@ -4839,11 +4839,11 @@ STDMETHODIMP Machine::SetAutoDiscardForDevice(IN_BSTR aControllerName, LONG aCon
 
     AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
 
-    if (pAttach->getType() != DeviceType_HardDisk)
+    if (pAttach->i_getType() != DeviceType_HardDisk)
         return setError(E_INVALIDARG,
                         tr("Setting the discard medium flag rejected as the device attached to device slot %d on port %d of controller '%ls' is not a hard disk"),
                         aDevice, aControllerPort, aControllerName);
-    pAttach->updateDiscard(!!aDiscard);
+    pAttach->i_updateDiscard(!!aDiscard);
 
     return S_OK;
 }
@@ -4902,11 +4902,11 @@ STDMETHODIMP Machine::SetHotPluggableForDevice(IN_BSTR aControllerName, LONG aCo
 
     AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
 
-    if (pAttach->getType() == DeviceType_Floppy)
+    if (pAttach->i_getType() == DeviceType_Floppy)
         return setError(E_INVALIDARG,
                         tr("Setting the hot-pluggable device flag rejected as the device attached to device slot %d on port %d of controller '%ls' is a floppy drive"),
                         aDevice, aControllerPort, aControllerName);
-    pAttach->updateHotPluggable(!!aHotPluggable);
+    pAttach->i_updateHotPluggable(!!aHotPluggable);
 
     return S_OK;
 }
@@ -4965,7 +4965,7 @@ STDMETHODIMP Machine::SetBandwidthGroupForDevice(IN_BSTR aControllerName, LONG a
 
     AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
 
-    const Utf8Str strBandwidthGroupOld = pAttach->getBandwidthGroup();
+    const Utf8Str strBandwidthGroupOld = pAttach->i_getBandwidthGroup();
     if (strBandwidthGroupOld.isNotEmpty())
     {
         /* Get the bandwidth group object and release it - this must not fail. */
@@ -4974,13 +4974,13 @@ STDMETHODIMP Machine::SetBandwidthGroupForDevice(IN_BSTR aControllerName, LONG a
         Assert(SUCCEEDED(rc));
 
         pBandwidthGroupOld->i_release();
-        pAttach->updateBandwidthGroup(Utf8Str::Empty);
+        pAttach->i_updateBandwidthGroup(Utf8Str::Empty);
     }
 
     if (!group.isNull())
     {
         group->i_reference();
-        pAttach->updateBandwidthGroup(group->i_getName());
+        pAttach->i_updateBandwidthGroup(group->i_getName());
     }
 
     return S_OK;
@@ -5050,7 +5050,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     /* Remember previously mounted medium. The medium before taking the
      * backup is not necessarily the same thing. */
     ComObjPtr<Medium> oldmedium;
-    oldmedium = pAttach->getMedium();
+    oldmedium = pAttach->i_getMedium();
 
     ComObjPtr<Medium> pMedium = static_cast<Medium*>(aMedium);
     if (aMedium && pMedium.isNull())
@@ -5062,7 +5062,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     AutoWriteLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
     if (pMedium)
     {
-        DeviceType_T mediumType = pAttach->getType();
+        DeviceType_T mediumType = pAttach->i_getType();
         switch (mediumType)
         {
             case DeviceType_DVD:
@@ -5102,7 +5102,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         }
 
         AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
-        pAttach->updateMedium(pMedium);
+        pAttach->i_updateMedium(pMedium);
     }
 
     setModified(IsModified_Storage);
@@ -5128,7 +5128,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
         if (!oldmedium.isNull())
             oldmedium->i_addBackReference(mData->mUuid);
-        pAttach->updateMedium(oldmedium);
+        pAttach->i_updateMedium(oldmedium);
     }
 
     mediumLock.release();
@@ -5166,7 +5166,7 @@ STDMETHODIMP Machine::GetMedium(IN_BSTR aControllerName,
                         tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
                         aDevice, aControllerPort, aControllerName);
 
-    pAttach->getMedium().queryInterfaceTo(aMedium);
+    pAttach->i_getMedium().queryInterfaceTo(aMedium);
 
     return S_OK;
 }
@@ -6604,7 +6604,7 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
 
             AutoReadLock local_alock(pAttachTemp COMMA_LOCKVAL_SRC_POS);
 
-            if (pAttachTemp->getControllerName() == aName)
+            if (pAttachTemp->i_getControllerName() == aName)
             {
                 rc = detachDevice(pAttachTemp, alock, NULL);
                 if (FAILED(rc)) return rc;
@@ -6742,7 +6742,7 @@ STDMETHODIMP Machine::RemoveUSBController(IN_BSTR aName)
     setModified(IsModified_USB);
     mUSBControllers.backup();
 
-    ctrl->unshare();
+    ctrl->i_unshare();
 
     mUSBControllers->remove(ctrl);
 
@@ -8819,7 +8819,7 @@ void Machine::uninitDataAndChildObjects()
              it != mMediaData->mAttachments.end();
              ++it)
         {
-            ComObjPtr<Medium> pMedium = (*it)->getMedium();
+            ComObjPtr<Medium> pMedium = (*it)->i_getMedium();
             if (pMedium.isNull())
                 continue;
             HRESULT rc = pMedium->i_removeBackReference(mData->mUuid, getSnapshotId());
@@ -9354,7 +9354,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         if (FAILED(rc)) return rc;
 
         /* BIOS */
-        rc = mBIOSSettings->loadSettings(data.biosSettings);
+        rc = mBIOSSettings->i_loadSettings(data.biosSettings);
         if (FAILED(rc)) return rc;
 
         // Bandwidth control (must come before network adapters)
@@ -9424,12 +9424,12 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
             const settings::ParallelPort &p = *it;
 
             AssertBreak(p.ulSlot < RT_ELEMENTS(mParallelPorts));
-            rc = mParallelPorts[p.ulSlot]->loadSettings(p);
+            rc = mParallelPorts[p.ulSlot]->i_loadSettings(p);
             if (FAILED(rc)) return rc;
         }
 
         /* AudioAdapter */
-        rc = mAudioAdapter->loadSettings(data.audioAdapter);
+        rc = mAudioAdapter->i_loadSettings(data.audioAdapter);
         if (FAILED(rc)) return rc;
 
         /* Shared folders */
@@ -9962,7 +9962,7 @@ HRESULT Machine::getUSBControllerByName(const Utf8Str &aName,
          it != mUSBControllers->end();
          ++it)
     {
-        if ((*it)->getName() == aName)
+        if ((*it)->i_getName() == aName)
         {
             aUSBController = (*it);
             return S_OK;
@@ -9989,7 +9989,7 @@ ULONG Machine::getUSBControllerCountByType(USBControllerType_T enmType)
          it != mUSBControllers->end();
          ++it)
     {
-        if ((*it)->getControllerType() == enmType)
+        if ((*it)->i_getControllerType() == enmType)
             cCtrls++;
     }
 
@@ -10022,7 +10022,7 @@ HRESULT Machine::getMediumAttachmentsOfController(CBSTR aName,
         }
         AutoReadLock attLock(pAtt COMMA_LOCKVAL_SRC_POS);
 
-        if (pAtt->getControllerName() == aName)
+        if (pAtt->i_getControllerName() == aName)
             atts.push_back(pAtt);
     }
 
@@ -10404,7 +10404,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
  * The caller can then call MachineConfigFile::write() or do something else
  * with it.
  *
-  Caller must hold the machine lock!
+ * Caller must hold the machine lock!
  *
  * This throws XML errors and HRESULT, so the caller must have a catch block!
  */
@@ -10659,7 +10659,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         if (FAILED(rc)) throw rc;
 
         /* BIOS (required) */
-        rc = mBIOSSettings->saveSettings(data.biosSettings);
+        rc = mBIOSSettings->i_saveSettings(data.biosSettings);
         if (FAILED(rc)) throw rc;
 
         /* USB Controller (required) */
@@ -10670,8 +10670,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
             ComObjPtr<USBController> ctrl = *it;
             settings::USBController settingsCtrl;
 
-            settingsCtrl.strName = ctrl->getName();
-            settingsCtrl.enmType = ctrl->getControllerType();
+            settingsCtrl.strName = ctrl->i_getName();
+            settingsCtrl.enmType = ctrl->i_getControllerType();
 
             data.usbSettings.llUSBControllers.push_back(settingsCtrl);
         }
@@ -10722,14 +10722,14 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         {
             settings::ParallelPort p;
             p.ulSlot = slot;
-            rc = mParallelPorts[slot]->saveSettings(p);
+            rc = mParallelPorts[slot]->i_saveSettings(p);
             if (FAILED(rc)) return rc;
 
             data.llParallelPorts.push_back(p);
         }
 
         /* Audio adapter */
-        rc = mAudioAdapter->saveSettings(data.audioAdapter);
+        rc = mAudioAdapter->i_saveSettings(data.audioAdapter);
         if (FAILED(rc)) return rc;
 
         /* Shared folders */
@@ -10904,25 +10904,25 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
         settings::AttachedDevice dev;
 
         MediumAttachment *pAttach = *it;
-        Medium *pMedium = pAttach->getMedium();
+        Medium *pMedium = pAttach->i_getMedium();
 
-        dev.deviceType = pAttach->getType();
-        dev.lPort = pAttach->getPort();
-        dev.lDevice = pAttach->getDevice();
-        dev.fPassThrough = pAttach->getPassthrough();
-        dev.fHotPluggable = pAttach->getHotPluggable();
+        dev.deviceType = pAttach->i_getType();
+        dev.lPort = pAttach->i_getPort();
+        dev.lDevice = pAttach->i_getDevice();
+        dev.fPassThrough = pAttach->i_getPassthrough();
+        dev.fHotPluggable = pAttach->i_getHotPluggable();
         if (pMedium)
         {
             if (pMedium->i_isHostDrive())
                 dev.strHostDriveSrc = pMedium->i_getLocationFull();
             else
                 dev.uuid = pMedium->i_getId();
-            dev.fTempEject = pAttach->getTempEject();
-            dev.fNonRotational = pAttach->getNonRotational();
-            dev.fDiscard = pAttach->getDiscard();
+            dev.fTempEject = pAttach->i_getTempEject();
+            dev.fNonRotational = pAttach->i_getNonRotational();
+            dev.fDiscard = pAttach->i_getDiscard();
         }
 
-        dev.strBwGroup = pAttach->getBandwidthGroup();
+        dev.strBwGroup = pAttach->i_getBandwidthGroup();
 
         data.llAttachedDevices.push_back(dev);
     }
@@ -11105,9 +11105,9 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                  ++it)
             {
                 MediumAttachment* pAtt = *it;
-                if (pAtt->getType() == DeviceType_HardDisk)
+                if (pAtt->i_getType() == DeviceType_HardDisk)
                 {
-                    Medium* pMedium = pAtt->getMedium();
+                    Medium* pMedium = pAtt->i_getMedium();
                     Assert(pMedium);
 
                     MediumLockList *pMediumLockList(new MediumLockList());
@@ -11157,8 +11157,8 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
         {
             MediumAttachment* pAtt = *it;
 
-            DeviceType_T devType = pAtt->getType();
-            Medium* pMedium = pAtt->getMedium();
+            DeviceType_T devType = pAtt->i_getType();
+            Medium* pMedium = pAtt->i_getMedium();
 
             if (   devType != DeviceType_HardDisk
                 || pMedium == NULL
@@ -11244,17 +11244,17 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
             attachment.createObject();
             rc = attachment->init(this,
                                   diff,
-                                  pAtt->getControllerName(),
-                                  pAtt->getPort(),
-                                  pAtt->getDevice(),
+                                  pAtt->i_getControllerName(),
+                                  pAtt->i_getPort(),
+                                  pAtt->i_getDevice(),
                                   DeviceType_HardDisk,
                                   true /* aImplicit */,
                                   false /* aPassthrough */,
                                   false /* aTempEject */,
-                                  pAtt->getNonRotational(),
-                                  pAtt->getDiscard(),
-                                  pAtt->getHotPluggable(),
-                                  pAtt->getBandwidthGroup());
+                                  pAtt->i_getNonRotational(),
+                                  pAtt->i_getDiscard(),
+                                  pAtt->i_getHotPluggable(),
+                                  pAtt->i_getBandwidthGroup());
             if (FAILED(rc)) throw rc;
 
             rc = lockedMediaMap->ReplaceKey(pAtt, attachment);
@@ -11305,7 +11305,7 @@ HRESULT Machine::deleteImplicitDiffs(bool aOnline)
          ++it)
     {
         const ComObjPtr<MediumAttachment> &pAtt = *it;
-        if (pAtt->isImplicit())
+        if (pAtt->i_isImplicit())
         {
             fImplicitDiffs = true;
             break;
@@ -11355,9 +11355,9 @@ HRESULT Machine::deleteImplicitDiffs(bool aOnline)
                ++it)
             {
                 MediumAttachment* pAtt = *it;
-                if (pAtt->getType() == DeviceType_HardDisk)
+                if (pAtt->i_getType() == DeviceType_HardDisk)
                 {
-                    Medium* pMedium = pAtt->getMedium();
+                    Medium* pMedium = pAtt->i_getMedium();
                     Assert(pMedium);
 
                     MediumLockList *pMediumLockList(new MediumLockList());
@@ -11395,15 +11395,15 @@ HRESULT Machine::deleteImplicitDiffs(bool aOnline)
              ++it)
         {
             ComObjPtr<MediumAttachment> pAtt = *it;
-            ComObjPtr<Medium> pMedium = pAtt->getMedium();
+            ComObjPtr<Medium> pMedium = pAtt->i_getMedium();
             if (pMedium.isNull())
                 continue;
 
             // Implicit attachments go on the list for deletion and back references are removed.
-            if (pAtt->isImplicit())
+            if (pAtt->i_isImplicit())
             {
                 /* Deassociate and mark for deletion */
-                LogFlowThisFunc(("Detaching '%s', pending deletion\n", pAtt->getLogName()));
+                LogFlowThisFunc(("Detaching '%s', pending deletion\n", pAtt->i_getLogName()));
                 rc = pMedium->i_removeBackReference(mData->mUuid);
                 if (FAILED(rc))
                    throw rc;
@@ -11415,13 +11415,13 @@ HRESULT Machine::deleteImplicitDiffs(bool aOnline)
             if (!findAttachment(oldAtts, pMedium))
             {
                 /* no: de-associate */
-                LogFlowThisFunc(("Detaching '%s', no deletion\n", pAtt->getLogName()));
+                LogFlowThisFunc(("Detaching '%s', no deletion\n", pAtt->i_getLogName()));
                 rc = pMedium->i_removeBackReference(mData->mUuid);
                 if (FAILED(rc))
                     throw rc;
                 continue;
             }
-            LogFlowThisFunc(("Not detaching '%s'\n", pAtt->getLogName()));
+            LogFlowThisFunc(("Not detaching '%s'\n", pAtt->i_getLogName()));
         }
 
         /* If there are implicit attachments to delete, throw away the lock
@@ -11455,13 +11455,13 @@ HRESULT Machine::deleteImplicitDiffs(bool aOnline)
                 // Remove medium associated with this attachment.
                 ComObjPtr<MediumAttachment> pAtt = *it;
                 Assert(pAtt);
-                LogFlowThisFunc(("Deleting '%s'\n", pAtt->getLogName()));
-                ComObjPtr<Medium> pMedium = pAtt->getMedium();
+                LogFlowThisFunc(("Deleting '%s'\n", pAtt->i_getLogName()));
+                ComObjPtr<Medium> pMedium = pAtt->i_getMedium();
                 Assert(pMedium);
 
                 rc = pMedium->i_deleteStorage(NULL /*aProgress*/, true /*aWait*/);
                 // continue on delete failure, just collect error messages
-                AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, pAtt->getLogName(), pMedium->i_getLocationFull().c_str() ));
+                AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, pAtt->i_getLogName(), pMedium->i_getLocationFull().c_str() ));
                 mrc = rc;
             }
 
@@ -11523,7 +11523,7 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
         ++it)
     {
         MediumAttachment *pAttach = *it;
-        if (pAttach->matches(aControllerName, aControllerPort, aDevice))
+        if (pAttach->i_matches(aControllerName, aControllerPort, aDevice))
             return pAttach;
     }
 
@@ -11549,7 +11549,7 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
         ++it)
     {
         MediumAttachment *pAttach = *it;
-        ComObjPtr<Medium> pMediumThis = pAttach->getMedium();
+        ComObjPtr<Medium> pMediumThis = pAttach->i_getMedium();
         if (pMediumThis == pMedium)
             return pAttach;
     }
@@ -11576,7 +11576,7 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
          ++it)
     {
         MediumAttachment *pAttach = *it;
-        ComObjPtr<Medium> pMediumThis = pAttach->getMedium();
+        ComObjPtr<Medium> pMediumThis = pAttach->i_getMedium();
         if (pMediumThis->i_getId() == id)
             return pAttach;
     }
@@ -11597,12 +11597,12 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
                               AutoWriteLock &writeLock,
                               Snapshot *pSnapshot)
 {
-    ComObjPtr<Medium> oldmedium = pAttach->getMedium();
-    DeviceType_T mediumType = pAttach->getType();
+    ComObjPtr<Medium> oldmedium = pAttach->i_getMedium();
+    DeviceType_T mediumType = pAttach->i_getType();
 
     LogFlowThisFunc(("Entering, medium of attachment is %s\n", oldmedium ? oldmedium->i_getLocationFull().c_str() : "NULL"));
 
-    if (pAttach->isImplicit())
+    if (pAttach->i_isImplicit())
     {
         /* attempt to implicitly delete the implicitly created diff */
 
@@ -11688,7 +11688,7 @@ HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
          ++it)
     {
         ComObjPtr<MediumAttachment> &pAttach = *it;
-        ComObjPtr<Medium> pMedium = pAttach->getMedium();
+        ComObjPtr<Medium> pMedium = pAttach->i_getMedium();
 
         if (!pMedium.isNull())
         {
@@ -11779,10 +11779,10 @@ void Machine::commitMedia(bool aOnline /*= false*/)
     {
         MediumAttachment *pAttach = *it;
 
-        pAttach->commit();
+        pAttach->i_commit();
 
-        Medium* pMedium = pAttach->getMedium();
-        bool fImplicit = pAttach->isImplicit();
+        Medium* pMedium = pAttach->i_getMedium();
+        bool fImplicit = pAttach->i_isImplicit();
 
         LogFlowThisFunc(("Examining current medium '%s' (implicit: %d)\n",
                          (pMedium) ? pMedium->i_getName().c_str() : "NULL",
@@ -11793,11 +11793,11 @@ void Machine::commitMedia(bool aOnline /*= false*/)
         if (fImplicit)
         {
             /* convert implicit attachment to normal */
-            pAttach->setImplicit(false);
+            pAttach->i_setImplicit(false);
 
             if (    aOnline
                  && pMedium
-                 && pAttach->getType() == DeviceType_HardDisk
+                 && pAttach->i_getType() == DeviceType_HardDisk
                )
             {
                 ComObjPtr<Medium> parent = pMedium->i_getParent();
@@ -11834,7 +11834,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
                  ++oldIt)
             {
                 MediumAttachment *pOldAttach = *oldIt;
-                if (pOldAttach->getMedium() == pMedium)
+                if (pOldAttach->i_getMedium() == pMedium)
                 {
                     LogFlowThisFunc(("--> medium '%s' was attached before, will not remove\n", pMedium->i_getName().c_str()));
 
@@ -11853,11 +11853,11 @@ void Machine::commitMedia(bool aOnline /*= false*/)
          ++it)
     {
         MediumAttachment *pAttach = *it;
-        Medium* pMedium = pAttach->getMedium();
+        Medium* pMedium = pAttach->i_getMedium();
 
         /* Detach only hard disks, since DVD/floppy media is detached
          * instantly in MountMedium. */
-        if (pAttach->getType() == DeviceType_HardDisk && pMedium)
+        if (pAttach->i_getType() == DeviceType_HardDisk && pMedium)
         {
             LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->i_getName().c_str()));
 
@@ -11918,7 +11918,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
              it != mMediaData->mAttachments.end();
              ++it)
         {
-            (*it)->updateParentMachine(mPeer);
+            (*it)->i_updateParentMachine(mPeer);
         }
 
         /* attach new data to the primary machine and reshare it */
@@ -11957,9 +11957,9 @@ void Machine::rollbackMedia()
     {
         MediumAttachment *pAttach = *it;
         /* Fix up the backrefs for DVD/floppy media. */
-        if (pAttach->getType() != DeviceType_HardDisk)
+        if (pAttach->i_getType() != DeviceType_HardDisk)
         {
-            Medium* pMedium = pAttach->getMedium();
+            Medium* pMedium = pAttach->i_getMedium();
             if (pMedium)
             {
                 rc = pMedium->i_removeBackReference(mData->mUuid);
@@ -11967,13 +11967,13 @@ void Machine::rollbackMedia()
             }
         }
 
-        (*it)->rollback();
+        (*it)->i_rollback();
 
         pAttach = *it;
         /* Fix up the backrefs for DVD/floppy media. */
-        if (pAttach->getType() != DeviceType_HardDisk)
+        if (pAttach->i_getType() != DeviceType_HardDisk)
         {
-            Medium* pMedium = pAttach->getMedium();
+            Medium* pMedium = pAttach->i_getMedium();
             if (pMedium)
             {
                 rc = pMedium->i_addBackReference(mData->mUuid);
@@ -12096,7 +12096,7 @@ void Machine::rollback(bool aNotify)
             USBControllerList::const_iterator it = mUSBControllers->begin();
             while (it != mUSBControllers->end())
             {
-                (*it)->rollback();
+                (*it)->i_rollback();
                 ++it;
             }
         }
@@ -12110,13 +12110,13 @@ void Machine::rollback(bool aNotify)
         rollbackMedia();
 
     if (mBIOSSettings)
-        mBIOSSettings->rollback();
+        mBIOSSettings->i_rollback();
 
     if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))
         mVRDEServer->i_rollback();
 
     if (mAudioAdapter)
-        mAudioAdapter->rollback();
+        mAudioAdapter->i_rollback();
 
     if (mUSBDeviceFilters && (mData->flModifications & IsModified_USB))
         mUSBDeviceFilters->rollback();
@@ -12151,9 +12151,9 @@ void Machine::rollback(bool aNotify)
     if (mData->flModifications & IsModified_ParallelPorts)
         for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
             if (    mParallelPorts[slot]
-                 && mParallelPorts[slot]->isModified())
+                 && mParallelPorts[slot]->i_isModified())
             {
-                mParallelPorts[slot]->rollback();
+                mParallelPorts[slot]->i_rollback();
                 parallelPorts[slot] = mParallelPorts[slot];
             }
 
@@ -12221,9 +12221,9 @@ void Machine::commit()
     if (mMediaData.isBackedUp())
         commitMedia(Global::IsOnline(mData->mMachineState));
 
-    mBIOSSettings->commit();
+    mBIOSSettings->i_commit();
     mVRDEServer->i_commit();
-    mAudioAdapter->commit();
+    mAudioAdapter->i_commit();
     mUSBDeviceFilters->commit();
     mBandwidthControl->i_commit();
 
@@ -12281,7 +12281,7 @@ void Machine::commit()
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
         mSerialPorts[slot]->i_commit();
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
-        mParallelPorts[slot]->commit();
+        mParallelPorts[slot]->i_commit();
 
     bool commitStorageControllers = false;
 
@@ -12368,10 +12368,10 @@ void Machine::commit()
             USBControllerList::const_iterator it = mUSBControllers->begin();
             while (it != mUSBControllers->end())
             {
-                (*it)->commit();
+                (*it)->i_commit();
 
                 /* look if this controller has a peer device */
-                ComObjPtr<USBController> peer = (*it)->getPeer();
+                ComObjPtr<USBController> peer = (*it)->i_getPeer();
                 if (!peer)
                 {
                     /* no peer means the device is a newly created one;
@@ -12420,7 +12420,7 @@ void Machine::commit()
         USBControllerList::const_iterator it = mUSBControllers->begin();
         while (it != mUSBControllers->end())
         {
-            (*it)->commit();
+            (*it)->i_commit();
             ++it;
         }
     }
@@ -12470,9 +12470,9 @@ void Machine::copyFrom(Machine *aThat)
         *it = folder;
     }
 
-    mBIOSSettings->copyFrom(aThat->mBIOSSettings);
+    mBIOSSettings->i_copyFrom(aThat->mBIOSSettings);
     mVRDEServer->i_copyFrom(aThat->mVRDEServer);
-    mAudioAdapter->copyFrom(aThat->mAudioAdapter);
+    mAudioAdapter->i_copyFrom(aThat->mAudioAdapter);
     mUSBDeviceFilters->copyFrom(aThat->mUSBDeviceFilters);
     mBandwidthControl->i_copyFrom(aThat->mBandwidthControl);
 
@@ -12508,7 +12508,7 @@ void Machine::copyFrom(Machine *aThat)
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
         mSerialPorts[slot]->i_copyFrom(aThat->mSerialPorts[slot]);
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
-        mParallelPorts[slot]->copyFrom(aThat->mParallelPorts[slot]);
+        mParallelPorts[slot]->i_copyFrom(aThat->mParallelPorts[slot]);
 }
 
 /**
@@ -12554,8 +12554,8 @@ void Machine::getDiskList(MediaList &list)
 
         AutoReadLock local_alockA(pAttach COMMA_LOCKVAL_SRC_POS);
 
-        if (pAttach->getType() == DeviceType_HardDisk)
-            list.push_back(pAttach->getMedium());
+        if (pAttach->i_getType() == DeviceType_HardDisk)
+            list.push_back(pAttach->i_getMedium());
     }
 }
 
@@ -13963,10 +13963,10 @@ STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
 
         /* Need to query the details first, as the IMediumAttachment reference
          * might be to the original settings, which we are going to change. */
-        ctrlName = pAttach->getControllerName();
-        lPort = pAttach->getPort();
-        lDevice = pAttach->getDevice();
-        fTempEject = pAttach->getTempEject();
+        ctrlName = pAttach->i_getControllerName();
+        lPort = pAttach->i_getPort();
+        lDevice = pAttach->i_getDevice();
+        fTempEject = pAttach->i_getTempEject();
     }
 
     if (!fTempEject)
@@ -13974,7 +13974,7 @@ STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
         /* Remember previously mounted medium. The medium before taking the
          * backup is not necessarily the same thing. */
         ComObjPtr<Medium> oldmedium;
-        oldmedium = pAttach->getMedium();
+        oldmedium = pAttach->i_getMedium();
 
         setModified(IsModified_Storage);
         mMediaData.backup();
@@ -13994,8 +13994,8 @@ STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
             if (!oldmedium.isNull())
                 oldmedium->i_removeBackReference(mData->mUuid);
 
-            pAttach->updateMedium(NULL);
-            pAttach->updateEjected();
+            pAttach->i_updateMedium(NULL);
+            pAttach->i_updateEjected();
         }
 
         setModified(IsModified_Storage);
@@ -14004,7 +14004,7 @@ STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
     {
         {
             AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
-            pAttach->updateEjected();
+            pAttach->i_updateEjected();
         }
     }
 
@@ -14714,8 +14714,8 @@ HRESULT SessionMachine::lockMedia()
          ++it)
     {
         MediumAttachment* pAtt = *it;
-        DeviceType_T devType = pAtt->getType();
-        Medium *pMedium = pAtt->getMedium();
+        DeviceType_T devType = pAtt->i_getType();
+        Medium *pMedium = pAtt->i_getMedium();
 
         MediumLockList *pMediumLockList(new MediumLockList());
         // There can be attachments without a medium (floppy/dvd), and thus
