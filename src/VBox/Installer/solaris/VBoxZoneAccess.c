@@ -30,11 +30,12 @@
 *  Defined Constants And Macros                                                *
 *******************************************************************************/
 #define DEVICE_NAME     "/devices/pseudo/vboxdrv@0:vboxdrv"
-
+#define DEVICE_NAME_USR "/devices/pseudo/vboxdrv@0:vboxdrvu"
 
 int main(int argc, char *argv[])
 {
     int hDevice = -1;
+    int hDeviceUsr = -1;
 
     /* Check root permissions. */
     if (geteuid() != 0)
@@ -56,11 +57,22 @@ int main(int argc, char *argv[])
         return errno;
     }
 
+    /* Open the user device. */
+    hDeviceUsr = open(DEVICE_NAME_USR, O_RDWR, 0);
+    if (hDeviceUsr < 0)
+    {
+        fprintf(stderr, "Failed to open '%s'. errno=%d\n", DEVICE_NAME_USR, errno);
+        close(hDevice);
+        return errno;
+    }
+
     /* Mark the file handle close on exec. */
-    if (fcntl(hDevice, F_SETFD, FD_CLOEXEC) != 0)
+    if (   fcntl(hDevice,    F_SETFD, FD_CLOEXEC) != 0
+        || fcntl(hDeviceUsr, F_SETFD, FD_CLOEXEC) != 0)
     {
         fprintf(stderr, "Failed to set close on exec. errno=%d\n", errno);
         close(hDevice);
+        close(hDeviceUsr);
         return errno;
     }
 
@@ -69,6 +81,7 @@ int main(int argc, char *argv[])
     sleep(500000000U);
 
     close(hDevice);
+    close(hDeviceUsr);
 
     return 0;
 }
