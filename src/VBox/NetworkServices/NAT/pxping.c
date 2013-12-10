@@ -77,9 +77,15 @@ struct ping_pcb;
  */
 struct pxping {
     SOCKET sock4;
+
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+#   define DF_WITH_IP_HDRINCL
+    int hdrincl;
+#else
+    int df;
+#endif
     int ttl;
     int tos;
-    int df;
 
     SOCKET sock6;
 #ifdef RT_OS_WINDOWS
@@ -260,9 +266,24 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
 
     g_pxping.sock4 = sock4;
     if (g_pxping.sock4 != INVALID_SOCKET) {
+#ifdef DF_WITH_IP_HDRINCL
+        g_pxping.hdrincl = -1;
+#else
+        g_pxping.df = -1;
+#endif
         g_pxping.ttl = -1;
         g_pxping.tos = 0;
-        g_pxping.df = -1;
+
+#ifdef RT_OS_LINUX
+        {
+            const int dont = IP_PMTUDISC_DONT;
+            status = setsockopt(sock4, IPPROTO_IP, IP_MTU_DISCOVER,
+                                &dont, sizeof(dont));
+            if (status != 0) {
+                perror("IP_MTU_DISCOVER");
+            }
+        }
+#endif /* RT_OS_LINUX */
 
         g_pxping.pmhdl4.callback = pxping_pmgr_pump;
         g_pxping.pmhdl4.data = (void *)&g_pxping;
@@ -414,26 +435,30 @@ pxping_recv4(void *arg, struct pbuf *p)
 {
     struct pxping *pxping = (struct pxping *)arg;
     struct ping_pcb *pcb;
+#ifdef DF_WITH_IP_HDRINCL
+    struct ip_hdr iph_orig;
+#endif
+    struct icmp_echo_hdr icmph_orig;
     struct ip_hdr *iph;
     struct icmp_echo_hdr *icmph;
-    int ttl, tos;
+    int df, ttl, tos;
     u32_t sum;
     u16_t iphlen;
-    u16_t id, seq;
     int status;
 
-    iph = (/* UNCONST */ struct ip_hdr *)ip_current_header();
     iphlen = ip_current_header_tot_len();
+    if (iphlen != IP_HLEN) {    /* we don't do options */
+        pbuf_free(p);
+        return;
+    }
 
+    iph = (/* UNCONST */ struct ip_hdr *)ip_current_header();
     icmph = (struct icmp_echo_hdr *)p->payload;
-
-    id  = icmph->id;
-    seq = icmph->seqno;
 
     pcb = pxping_pcb_for_request(pxping, 0,
                                  ipX_current_src_addr(),
                                  ipX_current_dest_addr(),
-                                 id);
+                                 icmph->id);
     if (pcb == NULL) {
         pbuf_free(p);
         return;
@@ -441,83 +466,181 @@ pxping_recv4(void *arg, struct pbuf *p)
 
     pxping_pcb_debug_print(pcb); /* XXX */
     printf(" seq %d len %u ttl %d\n",
-           ntohs(seq), (unsigned int)p->tot_len,
+           ntohs(icmph->seqno), (unsigned int)p->tot_len,
            IPH_TTL(iph));
 
     ttl = IPH_TTL(iph);
     if (!pcb->is_mapped) {
-        if (ttl == 1) {
-            pbuf_header(p, iphlen); /* back to IP header */
-            icmp_time_exceeded(p, ICMP_TE_TTL);
+        if (RT_UNLIKELY(ttl == 1)) {
+            status = pbuf_header(p, iphlen); /* back to IP header */
+            if (RT_LIKELY(status == 0)) {
+                icmp_time_exceeded(p, ICMP_TE_TTL);
+            }
             pbuf_free(p);
             return;
         }
         --ttl;
     }
 
-    /* rewrite ICMP echo header */
-    sum = (u16_t)~icmph->chksum;
-    sum += chksum_update_16(&icmph->id, pcb->host_id);
-    sum = FOLD_U32T(sum);
-    icmph->chksum = ~sum;
+    /*
+     * OS X doesn't provide a socket option to control fragmentation.
+     * Solaris doesn't provide IP_DONTFRAG on all releases we support.
+     * In this case we have to use IP_HDRINCL.  We don't want to use
+     * it always since it doesn't handle fragmentation (but that's ok
+     * for DF) and Windows doesn't do automatic source address
+     * selection with IP_HDRINCL.
+     */
+    df = (IPH_OFFSET(iph) & PP_HTONS(IP_DF)) != 0;
 
-    if (ttl != pxping->ttl) {
-        status = setsockopt(pxping->sock4, IPPROTO_IP, IP_TTL,
-                            (char *)&ttl, sizeof(ttl));
-        if (status == 0) {
-            pxping->ttl = ttl;
+#ifdef DF_WITH_IP_HDRINCL
+    if (df != pxping->hdrincl) {
+        status = setsockopt(pxping->sock4, IPPROTO_IP, IP_HDRINCL,
+                            &df, sizeof(df));
+        if (RT_LIKELY(status == 0)) {
+            pxping->hdrincl = df;
         }
         else {
-            perror("IP_TTL");
+            perror("IP_HDRINCL");
         }
     }
 
-    tos = IPH_TOS(iph);
-    if (tos != pxping->tos) {
-        status = setsockopt(pxping->sock4, IPPROTO_IP, IP_TOS,
-                            (char *)&tos, sizeof(tos));
-        if (status == 0) {
-            pxping->tos = tos;
+    if (pxping->hdrincl) {
+        status = pbuf_header(p, iphlen); /* back to IP header */
+        if (RT_UNLIKELY(status != 0)) {
+            pbuf_free(p);
+            return;
+        }
+
+        /* we will overwrite IP header, save original for ICMP errors */
+        memcpy(&iph_orig, iph, iphlen);
+
+        if (g_proxy_options->src4 != NULL) {
+            memcpy(&iph->src, &g_proxy_options->src4->sin_addr,
+                   sizeof(g_proxy_options->src4->sin_addr));
         }
         else {
-            perror("IP_TOS");
+            /* let the kernel select suitable source address */
+            memset(&iph->src, 0, sizeof(iph->src));
         }
-    }
 
-#if 0
-#if /*defined(RT_OS_LINUX) ||*/ defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
+        IPH_TTL_SET(iph, ttl);  /* already decremented */
+        IPH_ID_SET(iph, 0);     /* kernel will set one */
+#ifdef RT_OS_DARWIN
+        /* wants ip_offset and ip_len fields in host order */
+        IPH_OFFSET_SET(iph, ntohs(IPH_OFFSET(iph)));
+        IPH_LEN_SET(iph, ntohs(IPH_LEN(iph)));
+#endif
+        IPH_CHKSUM_SET(iph, 0); /* kernel will recalculate */
+    }
+    else /* !pxping->hdrincl */
+#endif   /* DF_WITH_IP_HDRINCL */
     {
-        const int df_flag = IPH_OFFSET(iph) & PP_HTONS(IP_DF);
-
+#if !defined(DF_WITH_IP_HDRINCL)
+        /* control DF flag via setsockopt(2) */
+#define USE_DF_OPTION(_Optname)                         \
+        const int dfopt = _Optname;                     \
+        const char * const dfoptname = #_Optname;
 #if   defined(RT_OS_LINUX)
-        const char * const dfoptname = "IP_MTU_DISCOVER";
-        const int dfopt = IP_MTU_DISCOVER;
-        int df = df_flag ? IP_PMTUDISC_PROBE : IP_PMTUDISC_DONT;
-#elif defined(RT_OS_SOLARIS)
-        const char * const dfoptname = "IP_DONTFRAG";
-        const int dfopt = IP_DONTFRAG;
-        int df = !!df_flag;
+        USE_DF_OPTION(IP_MTU_DISCOVER);
+        df = df ? IP_PMTUDISC_DO : IP_PMTUDISC_DONT;
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+        USE_DF_OPTION(IP_DONTFRAG);
 #elif defined(RT_OS_WINDOWS)
-        const char * const dfoptname = "IP_DONTFRAGMENT";
-        const int dfopt = IP_DONTFRAGMENT;
-        DWORD df = !!df_flag;
+        USE_DF_OPTION(IP_DONTFRAGMENT);
 #endif
         if (df != pxping->df) {
             status = setsockopt(pxping->sock4, IPPROTO_IP, dfopt,
                                 (char *)&df, sizeof(df));
-            if (status == 0) {
+            if (RT_LIKELY(status == 0)) {
                 pxping->df = df;
             }
             else {
                 perror(dfoptname);
             }
         }
-    }
-#endif /* don't fragment */
-#endif /* 0 */
+#endif /* !DF_WITH_IP_HDRINCL */
 
-    proxy_sendto(pxping->sock4, p,
-                 &pcb->peer.sin, sizeof(pcb->peer.sin));
+        if (ttl != pxping->ttl) {
+            status = setsockopt(pxping->sock4, IPPROTO_IP, IP_TTL,
+                                (char *)&ttl, sizeof(ttl));
+            if (RT_LIKELY(status == 0)) {
+                pxping->ttl = ttl;
+            }
+            else {
+                perror("IP_TTL");
+            }
+        }
+
+        tos = IPH_TOS(iph);
+        if (tos != pxping->tos) {
+            status = setsockopt(pxping->sock4, IPPROTO_IP, IP_TOS,
+                                (char *)&tos, sizeof(tos));
+            if (RT_LIKELY(status == 0)) {
+                pxping->tos = tos;
+            }
+            else {
+                perror("IP_TOS");
+            }
+        }
+    }
+
+    /* rewrite ICMP echo header */
+    memcpy(&icmph_orig, icmph, sizeof(*icmph));
+    sum = (u16_t)~icmph->chksum;
+    sum += chksum_update_16(&icmph->id, pcb->host_id);
+    sum = FOLD_U32T(sum);
+    icmph->chksum = ~sum;
+
+    status = proxy_sendto(pxping->sock4, p,
+                          &pcb->peer.sin, sizeof(pcb->peer.sin));
+    if (status != 0) {
+        int error = -status;
+        DPRINTF(("%s: sendto errno %d\n", __func__, error));
+
+#ifdef DF_WITH_IP_HDRINCL
+        if (pxping->hdrincl) {
+            /* restore original IP header */
+            memcpy(iph, &iph_orig, iphlen);
+        }
+        else
+#endif
+        {
+            status = pbuf_header(p, iphlen); /* back to IP header */
+            if (RT_UNLIKELY(status != 0)) {
+                pbuf_free(p);
+                return;
+            }
+        }
+
+        /* restore original ICMP header */
+        memcpy(icmph, &icmph_orig, sizeof(*icmph));
+
+        /*
+         * Some ICMP errors may be generated by the kernel and we read
+         * them from the socket and forward them normally, hence the
+         * ifdefs below.
+         */
+        switch (error) {
+
+#if !( defined(RT_OS_SOLARIS)                                   \
+    || (defined(RT_OS_LINUX) && !defined(DF_WITH_IP_HDRINCL))   \
+    )
+        case EMSGSIZE:
+            icmp_dest_unreach(p, ICMP_DUR_FRAG);
+            break;
+#endif
+
+        case ENETDOWN:
+        case ENETUNREACH:
+            icmp_dest_unreach(p, ICMP_DUR_NET);
+            break;
+
+        case EHOSTDOWN:
+        case EHOSTUNREACH:
+            icmp_dest_unreach(p, ICMP_DUR_HOST);
+            break;
+        }
+    }
 
     pbuf_free(p);
 }
