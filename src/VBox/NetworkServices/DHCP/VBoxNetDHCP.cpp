@@ -168,7 +168,7 @@ static inline int configGetBoundryAddress(const ComDhcpServerPtr& dhcp, bool fUp
     else
         hrc = dhcp->COMGETTER(LowerIP)(strAddress.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-    
+
     return RTNetStrToIPv4Addr(com::Utf8Str(strAddress).c_str(), &boundryAddress);
 }
 
