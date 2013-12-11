@@ -100,8 +100,8 @@ private:
 
     HRESULT removeRedirect(const com::Utf8Str &aName);
 
-    struct  Data;
-    Backupable<Data> mData;
+    struct Data;
+    Data *mData;
     bool m_fModified;
     const ComObjPtr<NATEngine> mPeer;
     Machine * const mParent;

@@ -64,7 +64,7 @@ private:
     Machine * const     mParent;
     const ComObjPtr<AudioAdapter> mPeer;
     struct Data;
-    Backupable<Data>    mData;
+    Data *mData;
 };
 
 #endif // ____H_AUDIOADAPTER
