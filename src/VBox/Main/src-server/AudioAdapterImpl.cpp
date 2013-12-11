@@ -30,8 +30,8 @@ struct AudioAdapterData
 {
     AudioAdapterData() :
         mEnabled(false),
-        mAudioController(AudioControllerType_AC97),
-        mAudioDriver(AudioDriverType_Null)
+        mAudioDriver(AudioDriverType_Null),
+        mAudioController(AudioControllerType_AC97)
     {}
 
     BOOL mEnabled;

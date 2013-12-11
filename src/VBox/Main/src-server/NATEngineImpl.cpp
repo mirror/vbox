@@ -69,7 +69,7 @@ struct NATEngine::Data
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-NATEngine::NATEngine():mParent(NULL), mAdapter(NULL), mData(NULL) {}
+NATEngine::NATEngine():mData(NULL), mParent(NULL), mAdapter(NULL) {}
 NATEngine::~NATEngine(){}
 
 HRESULT NATEngine::FinalConstruct()
