@@ -137,7 +137,7 @@
 
 /** @name VMCB Clean Bits.
  *
- * These flags are used for VMCB-state caching. A set VMCB Clean Bit indicates
+ * These flags are used for VMCB-state caching. A set VMCB Clean bit indicates
  * AMD-V doesn't need to reload the corresponding value(s) from the VMCB in
  * memory.
  *
@@ -1053,7 +1053,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 
 /**
  * Adds an exception to the intercept exception bitmap in the VMCB and updates
- * the corresponding VMCB Clean Bit.
+ * the corresponding VMCB Clean bit.
  *
  * @param   pVmcb       Pointer to the VM control block.
  * @param   u32Xcpt     The value of the exception (X86_XCPT_*).
@@ -1070,7 +1070,7 @@ DECLINLINE(void) hmR0SvmAddXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
 
 /**
  * Removes an exception from the intercept-exception bitmap in the VMCB and
- * updates the corresponding VMCB Clean Bit.
+ * updates the corresponding VMCB Clean bit.
  *
  * @param   pVmcb       Pointer to the VM control block.
  * @param   u32Xcpt     The value of the exception (X86_XCPT_*).
@@ -1202,7 +1202,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
 #endif
                 enmShwPagingMode = PGMGetHostMode(pVM);
 
-            pVmcb->ctrl.u64NestedPagingCR3  = PGMGetNestedCR3(pVCpu, enmShwPagingMode);
+            pVmcb->ctrl.u64NestedPagingCR3 = PGMGetNestedCR3(pVCpu, enmShwPagingMode);
             pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_NP;
             Assert(pVmcb->ctrl.u64NestedPagingCR3);
             pVmcb->guest.u64CR3 = pCtx->cr3;
@@ -1285,6 +1285,7 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         HMSVM_LOAD_SEG_REG(FS, fs);
         HMSVM_LOAD_SEG_REG(GS, gs);
 
+        pVmcb->guest.u8CPL = pCtx->ss.Attr.n.u2Dpl;
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_SEG;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS);
     }
@@ -1783,7 +1784,6 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     pVmcb->guest.u64RIP    = pCtx->rip;
     pVmcb->guest.u64RSP    = pCtx->rsp;
     pVmcb->guest.u64RFlags = pCtx->eflags.u32;
-    pVmcb->guest.u8CPL     = pCtx->ss.Attr.n.u2Dpl;
     pVmcb->guest.u64RAX    = pCtx->rax;
 
     rc = hmR0SvmLoadGuestApicState(pVCpu, pVmcb, pCtx);
@@ -2835,10 +2835,10 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
 
     /*
      * Re-enable nested paging (automatically disabled on every VM-exit). See AMD spec. 15.25.3 "Enabling Nested Paging".
-     * We avoid changing the corresponding VMCB Clean Bit as we're not changing it to a different value since the previous run.
+     * We avoid changing the corresponding VMCB Clean bit as we're not changing it to a different value since the previous run.
      */
     /** @todo The above assumption could be wrong. It's not documented what
-     *        should be done wrt to the VMCB Clean Bit, but we'll find out the
+     *        should be done wrt to the VMCB Clean bit, but we'll find out the
      *        hard way. */
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     pVmcb->ctrl.NestedPaging.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
@@ -2948,7 +2948,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
         pSvmTransient->fUpdateTscOffsetting = false;
     }
 
-    /* If we've migrating CPUs, mark the VMCB clean bits as dirty. */
+    /* If we've migrating CPUs, mark the VMCB Clean bits as dirty. */
     if (HMR0GetCurrentCpu()->idCpu != pVCpu->hm.s.idLastCpu)
         pVmcb->ctrl.u64VmcbCleanBits = 0;
 
@@ -2999,7 +2999,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     else
         hmR0SvmSetMsrPermission(pVCpu, MSR_K8_TSC_AUX, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
 
-    /* If VMCB Clean Bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
+    /* If VMCB Clean bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
     if (!(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN))
         pVmcb->ctrl.u64VmcbCleanBits = 0;
 }
