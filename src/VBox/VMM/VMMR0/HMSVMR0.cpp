@@ -2948,6 +2948,10 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
         pSvmTransient->fUpdateTscOffsetting = false;
     }
 
+    /* If we've migrating CPUs, mark the VMCB clean bits as dirty. */
+    if (HMR0GetCurrentCpu()->idCpu != pVCpu->hm.s.idLastCpu)
+        pVmcb->ctrl.u64VmcbCleanBits = 0;
+
     /* Store status of the shared guest-host state at the time of VMRUN. */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(pCtx))
