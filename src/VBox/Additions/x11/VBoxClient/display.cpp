@@ -47,7 +47,13 @@ static int initDisplay(Display *pDisplay)
     if (!XRRQueryExtension(pDisplay, &iDummy, &iDummy))
         rc = VERR_NOT_SUPPORTED;
     if (RT_SUCCESS(rc))
+    {
         rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
+#ifdef VBOX_WITH_GUEST_KMS_DRIVER
+        if (RT_SUCCESS(rc))
+            VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0);
+#endif
+    }
     else
         VbglR3CtlFilterMask(0, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
     /* Log and ignore the return value, as there is not much we can do with
@@ -67,7 +73,11 @@ static int initDisplay(Display *pDisplay)
     }
     if (RT_FAILURE(rc))
     {
-        VbglR3CtlFilterMask(0, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
+        VbglR3CtlFilterMask(0,   VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED
+                               | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
+#ifdef VBOX_WITH_GUEST_KMS_DRIVER
+        VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+#endif
         VbglR3SetMouseStatus(  fMouseFeatures
                              | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
     }
@@ -81,6 +91,9 @@ void cleanupDisplay(void)
     LogRelFlowFunc(("\n"));
     VbglR3CtlFilterMask(0,   VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
                            | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
+#ifdef VBOX_WITH_GUEST_KMS_DRIVER
+    VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+#endif
     int rc = VbglR3GetMouseStatus(&fMouseFeatures, NULL, NULL);
     if (RT_SUCCESS(rc))
         VbglR3SetMouseStatus(  fMouseFeatures
@@ -222,27 +235,28 @@ static int runDisplay(Display *pDisplay)
                             if (cx != 0 && cy != 0)
                             {
                                 RTStrPrintf(szCommand, sizeof(szCommand),
-                                            "%s --output VBOX%u --set VBOX_MODE %dx%d",
-                                            pcszXrandr, iDisplay, cx, cy);
+                                            "%s --output VGA-%u --set VBOX_MODE %d",
+                                            pcszXrandr, iDisplay,
+                                            (cx & 0xffff) << 16 | (cy & 0xffff));
                                 system(szCommand);
                             }
                             /* Extended Display support possible . Secondary monitor position supported */
                             if (cxOrg != 0 || cyOrg != 0)
                             {
                                 RTStrPrintf(szCommand, sizeof(szCommand),
-                                            "%s --output VBOX%u --auto --pos %dx%d",
+                                            "%s --output VGA-%u --auto --pos %dx%d",
                                             pcszXrandr, iDisplay, cxOrg, cyOrg);
                                 system(szCommand);
                             }
                             RTStrPrintf(szCommand, sizeof(szCommand),
-                                        "%s --output VBOX%u --preferred",
+                                        "%s --output VGA-%u --preferred",
                                         pcszXrandr, iDisplay);
                             system(szCommand);
                         }
                         else /* disable the virtual monitor */
                         {
                             RTStrPrintf(szCommand, sizeof(szCommand),
-                                        "%s --output VBOX%u --off",
+                                        "%s --output VGA-%u --off",
                                          pcszXrandr, iDisplay);
                             system(szCommand);
                         }
@@ -252,11 +266,12 @@ static int runDisplay(Display *pDisplay)
                         if (cx != 0 && cy != 0)
                         {
                             RTStrPrintf(szCommand, sizeof(szCommand),
-                                        "%s --output VBOX%u --set VBOX_MODE %dx%d",
-                                        pcszXrandr, iDisplay, cx, cy);
+                                        "%s --output VGA-%u --set VBOX_MODE %d",
+                                        pcszXrandr, iDisplay,
+                                        (cx & 0xffff) << 16 | (cy & 0xffff));
                             system(szCommand);
                             RTStrPrintf(szCommand, sizeof(szCommand),
-                                        "%s --output VBOX%u --preferred",
+                                        "%s --output VGA-%u --preferred",
                                         pcszXrandr, iDisplay);
                             system(szCommand);
                         }

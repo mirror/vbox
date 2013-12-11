@@ -121,8 +121,10 @@ Bool VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
         VBoxVideoSetModeRegisters(cwReal, cHeight, pScrn->displayWidth,
                                   vboxBPP(pScrn), 0, x, y);
     /* Tell the host we support graphics */
+#ifndef VBOX_WITH_GUEST_KMS_DRIVER
     if (vbox_device_available(pVBox))
         vboxEnableGraphicsCap(pVBox);
+#endif
     if (pVBox->fHaveHGSMI)
     {
         uint16_t fFlags = VBVA_SCREEN_F_ACTIVE;
