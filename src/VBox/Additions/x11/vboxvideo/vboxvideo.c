@@ -519,21 +519,20 @@ vbox_output_set_property(xf86OutputPtr output, Atom property,
 {
     ScrnInfoPtr pScrn = output->scrn;
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-    TRACE_LOG("property=%d, value->type=%d, value->format=%d, value->size=%ld\n",
-              (int)property, (int)value->type, value->format, value->size);
+    TRACE_LOG("property=%d, value->type=%d, value->format=%d, value->size=%d\n",
+              (int)property, (int)value->type, (int)value->format, (int)value->size);
     if (property == vboxAtomVBoxMode())
     {
         uint32_t cDisplay = (uintptr_t)output->driver_private;
-        char sz[256] = { 0 };
         int w, h;
 
-        if (   value->type != XA_STRING
-            || (unsigned) value->size > (sizeof(sz) - 1))
+        if (   value->type != XA_INTEGER
+            || value->format != 32
+            || value->size != 1)
             return FALSE;
-        strncpy(sz, value->data, value->size);
-        TRACE_LOG("screen=%u, property value=%s\n", cDisplay, sz);
-        if (sscanf(sz, "%dx%d", &w, &h) != 2)
-            return FALSE;
+        w = (*(uint32_t *)value->data) >> 16;
+        h = (*(uint32_t *)value->data) & 0xffff;
+        TRACE_LOG("screen=%u, property value=%dx%d\n", cDisplay, w, h);
         pVBox->aPreferredSize[cDisplay].cx = w;
         pVBox->aPreferredSize[cDisplay].cy = h;
         return TRUE;
@@ -1053,7 +1052,9 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 
     if (vbox_open (pScrn, pScreen, pVBox)) {
         vboxEnableVbva(pScrn);
+#ifndef VBOX_WITH_GUEST_KMS_DRIVER
         vboxEnableGraphicsCap(pVBox);
+#endif
     }
 
 #ifdef VBOXVIDEO_13
@@ -1072,7 +1073,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
             pVBox->paCrtcs[i]->driver_private = (void *)(uintptr_t)i;
 
             /* Set up our virtual outputs. */
-            snprintf(szOutput, sizeof(szOutput), "VBOX%u", i);
+            snprintf(szOutput, sizeof(szOutput), "VGA-%u", i);
             pVBox->paOutputs[i] = xf86OutputCreate(pScrn, &VBOXOutputFuncs,
                                                    szOutput);
 
@@ -1111,10 +1112,10 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 
         for (i = 0; i < pVBox->cScreens; ++i)
         {
-            char csz[] = "0x0";
+            INT32 value = 0;
             RRChangeOutputProperty(pVBox->paOutputs[i]->randr_output,
-                                   vboxAtomVBoxMode(), XA_STRING, 8,
-                                   PropModeReplace, sizeof(csz), csz, TRUE,
+                                   vboxAtomVBoxMode(), XA_INTEGER, 32,
+                                   PropModeReplace, 1, &value, TRUE,
                                    FALSE);
 
         }
@@ -1221,7 +1222,9 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
     if (pVBox->fHaveHGSMI)
         vboxDisableVbva(pScrn);
     vboxClearVRAM(pScrn, 0, 0);
+#ifndef VBOX_WITH_GUEST_KMS_DRIVER
     vboxDisableGraphicsCap(pVBox);
+#endif
 #ifdef VBOX_DRI_OLD
     if (pVBox->useDRI)
         DRILock(xf86ScrnToScreen(pScrn), 0);
@@ -1244,8 +1247,10 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
     {
         if (pVBox->fHaveHGSMI)
             vboxDisableVbva(pScrn);
+#ifndef VBOX_WITH_GUEST_KMS_DRIVER
         if (pScrn->vtSema)
             vboxDisableGraphicsCap(pVBox);
+#endif
         vboxClearVRAM(pScrn, 0, 0);
     }
 #ifdef VBOX_DRI
