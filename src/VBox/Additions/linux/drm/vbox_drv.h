@@ -122,6 +122,13 @@ struct vbox_gem_object;
 struct vbox_connector
 {
     struct drm_connector base;
+    /** Property for receiving mode hints from user space. */
+    struct drm_property *pModeHintProp;
+    struct
+    {
+        uint16_t cX;
+        uint16_t cY;
+    } modeHint;
 };
 
 struct vbox_crtc
