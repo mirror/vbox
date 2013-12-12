@@ -6593,7 +6593,7 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
     Log4Func(("HostCpuId=%u\n", idCpu));
 
     /*
-     * IMPORTANT!!!
+     * !!! IMPORTANT !!!
      * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
      */
 
@@ -6718,7 +6718,7 @@ DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     }
 
     /*
-     * IMPORTANT!!!
+     * !!! IMPORTANT !!!
      * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
      */
 
