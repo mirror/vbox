@@ -6582,8 +6582,6 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
  *                              fields before using them.
  * @param   fSaveGuestState     Whether to save the guest state or not.
  *
- * @remarks If you modify code here, make sure to check whether
- *          hmR0VmxCallRing3Callback() needs to be updated too!!!
  * @remarks No-long-jmp zone!!!
  */
 static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGuestState)
@@ -6593,6 +6591,11 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
 
     RTCPUID idCpu = RTMpCpuId();
     Log4Func(("HostCpuId=%u\n", idCpu));
+
+    /*
+     * IMPORTANT!!!
+     * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
+     */
 
     /* Save the guest state if necessary. */
     if (   fSaveGuestState
@@ -6713,6 +6716,11 @@ DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturnStmt(rc2, HM_RESTORE_PREEMPT_IF_NEEDED(), rc2);
         pVCpu->hm.s.fLeaveDone = true;
     }
+
+    /*
+     * IMPORTANT!!!
+     * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
+     */
 
     /* Deregister hook now that we've left HM context before re-enabling preemption. */
     /** @todo This is bad. Deregistering here means we need to VMCLEAR always
@@ -6836,15 +6844,16 @@ static int hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rcE
  * @param   pvUser          Opaque pointer to the guest-CPU context. The data
  *                          may be out-of-sync. Make sure to update the required
  *                          fields before using them.
- *
- * @remarks If you modify code here, make sure to check whether
- *          hmR0VmxLeave() needs to be updated too!!!
  */
 DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
 {
     if (enmOperation == VMMCALLRING3_VM_R0_ASSERTION)
     {
-        /* If anything here asserts or fails, good luck. */
+        /*
+         * !!! IMPORTANT !!!
+         * If you modify code here, make sure to check whether hmR0VmxLeave() and hmR0VmxLeaveSession() needs
+         * to be updated too. This is a stripped down version which gets out ASAP trying to not trigger any assertion.
+         */
         VMMRZCallRing3RemoveNotification(pVCpu);
         VMMRZCallRing3Disable(pVCpu);
         HM_DISABLE_PREEMPT_IF_NEEDED();
