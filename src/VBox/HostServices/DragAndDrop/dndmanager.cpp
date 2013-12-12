@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,10 @@
  *   Header Files                                                             *
  ******************************************************************************/
 
-#define LOG_GROUP LOG_GROUP_HGCM
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_DND
 
 #include "dndmanager.h"
 
@@ -28,16 +31,6 @@
 #include <iprt/dir.h>
 #include <iprt/path.h>
 #include <iprt/uri.h>
-
-#define VERBOSE 1
-
-#if defined(VERBOSE) && defined(DEBUG_poetzsch)
-# include <iprt/stream.h>
-# define DO(s) RTPrintf s
-#else
-# define DO(s) do {} while(0)
-//# define DO(s) Log s
-#endif
 
 /******************************************************************************
  *   Private declarations                                                     *
@@ -64,6 +57,7 @@ public:
         paTmpParms[0].setString(m_strPath.c_str());
         paTmpParms[1].setUInt32(m_strPath.length() + 1);
         paTmpParms[2].setUInt32(fMode);
+
         m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_DIR, 3, paTmpParms);
     }
 
@@ -96,15 +90,15 @@ class DnDHGSendFilePrivate: public DnDMessage
 {
 public:
     DnDHGSendFilePrivate(const RTCString &strHostPath, const RTCString &strGuestPath, uint32_t fMode, uint64_t cbSize, PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser);
-    ~DnDHGSendFilePrivate();
+    virtual ~DnDHGSendFilePrivate();
 
     int currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
 protected:
     RTCString              m_strHostPath;
     RTCString              m_strGuestPath;
-    uint64_t               m_cbSize;
-    uint64_t               m_cbDone;
+    uint64_t               m_cbFileSize;
+    uint64_t               m_cbFileProcessed;
     RTFILE                 m_hCurFile;
     VBOXHGCMSVCPARM        m_paSkelParms[5];
 
@@ -145,8 +139,8 @@ protected:
 DnDHGSendFilePrivate::DnDHGSendFilePrivate(const RTCString &strHostPath, const RTCString &strGuestPath, uint32_t fMode, uint64_t cbSize, PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser)
   : m_strHostPath(strHostPath)
   , m_strGuestPath(strGuestPath)
-  , m_cbSize(cbSize)
-  , m_cbDone(0)
+  , m_cbFileSize(cbSize)
+  , m_cbFileProcessed(0)
   , m_hCurFile(0)
   , m_pfnProgressCallback(pfnProgressCallback)
   , m_pvProgressUser(pvProgressUser)
@@ -156,6 +150,7 @@ DnDHGSendFilePrivate::DnDHGSendFilePrivate(const RTCString &strHostPath, const R
     m_paSkelParms[2].setPointer(NULL, 0);
     m_paSkelParms[3].setUInt32(0);
     m_paSkelParms[4].setUInt32(fMode);
+
     m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_FILE, 5, m_paSkelParms);
 }
 
@@ -177,41 +172,62 @@ int DnDHGSendFilePrivate::currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGC
 
     if (!m_hCurFile)
     {
-        rc = RTFileOpen(&m_hCurFile, m_strHostPath.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_ALL);
-        if (RT_FAILURE(rc))
-            return rc;
+        /* Open files on the host with RTFILE_O_DENY_WRITE to prevent races where the host
+         * writes to the file while the guest transfers it over. */
+        rc = RTFileOpen(&m_hCurFile, m_strHostPath.c_str(),
+                        RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
     }
 
-    /* How big is the pointer provided by the guest? */
-    uint32_t cbToRead = paParms[2].u.pointer.size;
     size_t cbRead;
-    rc = RTFileRead(m_hCurFile, paParms[2].u.pointer.addr, cbToRead, &cbRead);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
     {
-        /* On error, immediately close the file. */
-        RTFileClose(m_hCurFile);
-        m_hCurFile = 0;
-        return rc;
-    }
-    m_cbDone += cbRead;
-    /* Tell the guest the actual size. */
-    paParms[3].setUInt32(cbRead);
-    /* Check if we are done. */
-    if (m_cbSize == m_cbDone)
-    {
-        RTFileClose(m_hCurFile);
-        m_hCurFile = 0;
-    }
-    else
-    {
-        /* More data! Prepare the next message. */
-        m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_FILE, 5, m_paSkelParms);
+        /* Get buffer size + pointer to buffer from guest side. */
+        uint32_t cbToRead = paParms[2].u.pointer.size;
+        Assert(cbToRead);
+        void *pvBuf = paParms[2].u.pointer.addr;
+        AssertPtr(pvBuf);
+        rc = RTFileRead(m_hCurFile, pvBuf, cbToRead, &cbRead);
+        if (RT_LIKELY(RT_SUCCESS(rc)))
+        {
+            /* Advance. */
+            m_cbFileProcessed += cbRead;
+            Assert(m_cbFileProcessed <= m_cbFileSize);
+
+            /* Tell the guest the actual size. */
+            paParms[3].setUInt32(cbRead);
+        }
     }
 
-    /* Advance progress info */
-    if (   RT_SUCCESS(rc)
-        && m_pfnProgressCallback)
-        rc = m_pfnProgressCallback(cbRead, m_pvProgressUser);
+    if (RT_SUCCESS(rc))
+    {
+        /* Check if we are done. */
+        bool fDone = m_cbFileSize == m_cbFileProcessed;
+        if (!fDone)
+        {
+            try
+            {
+                /* More data! Prepare the next message. */
+                m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_FILE, 5 /* cParms */,
+                                               m_paSkelParms);
+            }
+            catch(std::bad_alloc &)
+            {
+                rc = VERR_NO_MEMORY;
+            }
+        }
+
+        /* Advance progress info. */
+        if (   RT_SUCCESS(rc)
+            && m_pfnProgressCallback)
+            rc = m_pfnProgressCallback(cbRead, m_pvProgressUser);
+
+        if (   fDone
+            || RT_FAILURE(rc))
+        {
+            RTFileClose(m_hCurFile);
+            m_hCurFile = 0;
+        }
+    }
 
     return rc;
 }
@@ -240,6 +256,8 @@ int DnDHGSendDataMessagePrivate::currentMessage(uint32_t uMsg, uint32_t cParms, 
     int rc = VINF_SUCCESS;
 
     HGCM::Message *pCurMsg = m_pNextMsg;
+    AssertPtr(pCurMsg);
+
     m_pNextMsg = 0;
     rc = pCurMsg->getData(uMsg, cParms, paParms);
     /* Depending on the current message, the data pointer is on a
@@ -257,8 +275,17 @@ int DnDHGSendDataMessagePrivate::currentMessage(uint32_t uMsg, uint32_t cParms, 
         pCurMsg->getParmPtrInfo(iPos, &pvOldData, &cOldData);
         paTmpParms[0].setPointer(static_cast<uint8_t*>(pvOldData) + paParms[iPos].u.pointer.size, cOldData - paParms[iPos].u.pointer.size);
         paTmpParms[1].setUInt32(cOldData - paParms[iPos].u.pointer.size);
-        m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_MORE_DATA, 2, paTmpParms);
+
+        try
+        {
+            m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_MORE_DATA, 2, paTmpParms);
+        }
+        catch(std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
     }
+
     delete pCurMsg;
 
     /* Advance progress info */
@@ -279,19 +306,20 @@ int DnDHGSendDataMessagePrivate::currentMessage(uint32_t uMsg, uint32_t cParms, 
  * directories which have to be transfered to the guest.
  */
 DnDHGSendDataMessage::DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], PFNDNDPROGRESS pfnProgressCallback, void *pvProgressUser)
-  : m_cbAll(0)
-  , m_cbTransfered(0)
-  , m_pfnProgressCallback(pfnProgressCallback)
-  , m_pvProgressUser(pvProgressUser)
+    : m_cbAll(0)
+    , m_cbTransfered(0)
+    , m_pfnProgressCallback(pfnProgressCallback)
+    , m_pvProgressUser(pvProgressUser)
 {
     RTCString strNewUris;
     /* Check the format for any uri type. */
     if (hasFileUrls(static_cast<const char*>(paParms[1].u.pointer.addr), paParms[1].u.pointer.size))
     {
-        DO(("old data '%s'\n", (char*)paParms[3].u.pointer.addr));
+        LogFlowFunc(("Old data: '%s'\n", (char*)paParms[3].u.pointer.addr));
         /* The list is separated by newline (Even if only one file is
          * listed). */
-        RTCList<RTCString> oldUriList = RTCString(static_cast<const char*>(paParms[3].u.pointer.addr), paParms[3].u.pointer.size).split("\r\n");
+        RTCList<RTCString> oldUriList = RTCString(static_cast<const char*>(paParms[3].u.pointer.addr),
+                                                  paParms[3].u.pointer.size).split("\r\n");
         if (!oldUriList.isEmpty())
         {
             RTCList<RTCString> newUriList;
@@ -336,14 +364,17 @@ DnDHGSendDataMessage::DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms, VBOXH
     /* Add the size of the data to the todo list. */
     m_cbAll += paParms[4].u.uint32;
     /* The first message is the meta info for the data and the data itself. */
-    m_pNextPathMsg = new DnDHGSendDataMessagePrivate(uMsg, cParms, paParms, &DnDHGSendDataMessage::progressCallback, this);
+    m_pNextPathMsg = new DnDHGSendDataMessagePrivate(uMsg, cParms, paParms,
+                                                     &DnDHGSendDataMessage::progressCallback, this);
 
-    DO(("new data '%s'\n", (char*)paParms[3].u.pointer.addr));
-    DO(("cbAll: %u\n", m_cbAll));
-    DO(("cbData: %u\n", paParms[4].u.uint32));
+    LogFlowFunc(("new data '%s'\n", (char*)paParms[3].u.pointer.addr));
+    LogFlowFunc(("cbAll: %zu\n", m_cbAll));
+    LogFlowFunc(("cbData: %RU32\n", paParms[4].u.uint32));
 
     for (size_t i = 0; i < m_uriList.size(); ++i)
-        DO(("file: %s : %s - %o - %ld\n", m_uriList.at(i).m_strHostPath.c_str(), m_uriList.at(i).m_strGuestPath.c_str(), m_uriList.at(i).m_fMode, m_uriList.at(i).m_cbSize));
+        LogFlowFunc(("file: %s : %s - %o - %ld\n",
+                     m_uriList.at(i).m_strHostPath.c_str(), m_uriList.at(i).m_strGuestPath.c_str(),
+                     m_uriList.at(i).m_fMode, m_uriList.at(i).m_cbSize));
 }
 
 DnDHGSendDataMessage::~DnDHGSendDataMessage()
@@ -390,21 +421,35 @@ int DnDHGSendDataMessage::currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGC
         /* Create new messages based on our internal path list. Currently
          * this could be directories or regular files. */
         PathEntry nextPath = m_uriList.first();
-        if (RTFS_IS_DIRECTORY(nextPath.m_fMode))
-            m_pNextPathMsg = new DnDHGSendDirPrivate(nextPath.m_strGuestPath, nextPath.m_fMode, nextPath.m_cbSize, &DnDHGSendDataMessage::progressCallback, this);
-        else if (RTFS_IS_FILE(nextPath.m_fMode))
-            m_pNextPathMsg = new DnDHGSendFilePrivate(nextPath.m_strHostPath, nextPath.m_strGuestPath, nextPath.m_fMode, nextPath.m_cbSize, &DnDHGSendDataMessage::progressCallback, this);
-        else
-            AssertMsgFailedReturn(("type '%d' is not supported for path '%s'", nextPath.m_fMode, nextPath.m_strHostPath.c_str()), VERR_NO_DATA);
-        m_uriList.removeFirst();
+        try
+        {
+            if (RTFS_IS_DIRECTORY(nextPath.m_fMode))
+                m_pNextPathMsg = new DnDHGSendDirPrivate(nextPath.m_strGuestPath,
+                                                         nextPath.m_fMode, nextPath.m_cbSize,
+                                                         &DnDHGSendDataMessage::progressCallback, this);
+            else if (RTFS_IS_FILE(nextPath.m_fMode))
+                m_pNextPathMsg = new DnDHGSendFilePrivate(nextPath.m_strHostPath, nextPath.m_strGuestPath,
+                                                          nextPath.m_fMode, nextPath.m_cbSize,
+                                                          &DnDHGSendDataMessage::progressCallback, this);
+            else
+                AssertMsgFailedReturn(("type '%d' is not supported for path '%s'",
+                                       nextPath.m_fMode, nextPath.m_strHostPath.c_str()), VERR_NO_DATA);
+
+            m_uriList.removeFirst();
+        }
+        catch(std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
     }
+
     return rc;
 }
 
 bool DnDHGSendDataMessage::hasFileUrls(const char *pcszFormat, size_t cbMax) const
 {
-    DO(("format %s\n", pcszFormat));
-    /* text/uri also an official variant? */
+    LogFlowFunc(("format %s\n", pcszFormat));
+    /** @todo text/uri also an official variant? */
     return    RTStrNICmp(pcszFormat, "text/uri-list", cbMax)             == 0
            || RTStrNICmp(pcszFormat, "x-special/gnome-icon-list", cbMax) == 0;
 }
@@ -434,7 +479,7 @@ int DnDHGSendDataMessage::buildFileTree(const char *pcszPath, size_t cbBaseLen)
         return rc;
     m_uriList.append(PathEntry(pcszPath, &pcszPath[cbBaseLen], objInfo.Attr.fMode, cbSize));
     m_cbAll += cbSize;
-    DO(("cbFile: %u\n", cbSize));
+    LogFlowFunc(("cbFile: %RU64\n", cbSize));
 
     PRTDIR hDir;
     /* We have to try to open even symlinks, cause they could be symlinks
@@ -517,7 +562,7 @@ int DnDHGSendDataMessage::progressCallback(size_t cbDone, void *pvUser)
     if (   pSelf->m_pfnProgressCallback
         && pSelf->m_cbAll)
         rc = pSelf->m_pfnProgressCallback((uint64_t)pSelf->m_cbTransfered * 100 / pSelf->m_cbAll,
-                                          DragAndDropSvc::DND_PROGRESS_RUNNING, pSelf->m_pvProgressUser);
+                                          DragAndDropSvc::DND_PROGRESS_RUNNING, VINF_SUCCESS /* rc */, pSelf->m_pvProgressUser);
 
     return rc;
 }
@@ -529,147 +574,161 @@ int DnDHGSendDataMessage::progressCallback(size_t cbDone, void *pvUser)
 int DnDManager::addMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-    switch (uMsg)
+
+    try
     {
-        case DragAndDropSvc::HOST_DND_HG_EVT_ENTER:
+        switch (uMsg)
         {
-            clear();
-            LogFlowFunc(("HOST_DND_HG_EVT_ENTER\n"));
-            DO(("HOST_DND_HG_EVT_ENTER\n"));
-            /* Verify parameter count and types. */
-            if (   cParms != 7
-                || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */
-                || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT /* x-pos */
-                || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* y-pos */
-                || paParms[3].type != VBOX_HGCM_SVC_PARM_32BIT /* default action */
-                || paParms[4].type != VBOX_HGCM_SVC_PARM_32BIT /* allowed actions */
-                || paParms[5].type != VBOX_HGCM_SVC_PARM_PTR   /* data */
-                || paParms[6].type != VBOX_HGCM_SVC_PARM_32BIT /* size */)
-                rc = VERR_INVALID_PARAMETER;
-            else
+            case DragAndDropSvc::HOST_DND_HG_EVT_ENTER:
             {
-                m_fOpInProcess = true;
-                DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
-                m_dndMessageQueue.append(pMessage);
-            }
-            break;
-        }
-        case DragAndDropSvc::HOST_DND_HG_EVT_MOVE:
-        {
-            LogFlowFunc(("HOST_DND_HG_EVT_MOVE\n"));
-            DO(("HOST_DND_HG_EVT_MOVE\n"));
-            /* Verify parameter count and types. */
-            if (   cParms != 7
-                || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */
-                || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT /* x-pos */
-                || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* y-pos */
-                || paParms[3].type != VBOX_HGCM_SVC_PARM_32BIT /* default action */
-                || paParms[4].type != VBOX_HGCM_SVC_PARM_32BIT /* allowed actions */
-                || paParms[5].type != VBOX_HGCM_SVC_PARM_PTR   /* data */
-                || paParms[6].type != VBOX_HGCM_SVC_PARM_32BIT /* size */)
-                rc = VERR_INVALID_PARAMETER;
-            else
-            {
-                m_fOpInProcess = true;
-                DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
-                m_dndMessageQueue.append(pMessage);
-            }
-            break;
-        }
-        case DragAndDropSvc::HOST_DND_HG_EVT_LEAVE:
-        {
-            LogFlowFunc(("HOST_DND_HG_EVT_LEAVE\n"));
-            DO(("HOST_DND_HG_EVT_LEAVE\n"));
+                clear();
+                LogFlowFunc(("HOST_DND_HG_EVT_ENTER\n"));
 
-            /* Verify parameter count and types. */
-            if (cParms != 0)
-                rc = VERR_INVALID_PARAMETER;
-            else
-            {
-                DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
-                m_dndMessageQueue.append(pMessage);
+                /* Verify parameter count and types. */
+                if (   cParms != 7
+                    || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */
+                    || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT /* x-pos */
+                    || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* y-pos */
+                    || paParms[3].type != VBOX_HGCM_SVC_PARM_32BIT /* default action */
+                    || paParms[4].type != VBOX_HGCM_SVC_PARM_32BIT /* allowed actions */
+                    || paParms[5].type != VBOX_HGCM_SVC_PARM_PTR   /* data */
+                    || paParms[6].type != VBOX_HGCM_SVC_PARM_32BIT /* size */)
+                    rc = VERR_INVALID_PARAMETER;
+                else
+                {
+                    m_fOpInProcess = true;
+                    DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
+                    m_dndMessageQueue.append(pMessage);
+                }
+                break;
             }
-            m_fOpInProcess = false;
-            break;
-        }
-        case DragAndDropSvc::HOST_DND_HG_EVT_DROPPED:
-        {
-            LogFlowFunc(("HOST_DND_HG_EVT_DROPPED\n"));
-            DO(("HOST_DND_HG_EVT_DROPPED\n"));
-            /* Verify parameter count and types. */
-            if (   cParms != 7
-                || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */
-                || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT /* x-pos */
-                || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* y-pos */
-                || paParms[3].type != VBOX_HGCM_SVC_PARM_32BIT /* default action */
-                || paParms[4].type != VBOX_HGCM_SVC_PARM_32BIT /* allowed actions */
-                || paParms[5].type != VBOX_HGCM_SVC_PARM_PTR   /* data */
-                || paParms[6].type != VBOX_HGCM_SVC_PARM_32BIT /* size */)
-                rc = VERR_INVALID_PARAMETER;
-            else
+            case DragAndDropSvc::HOST_DND_HG_EVT_MOVE:
             {
-                DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
-                m_dndMessageQueue.append(pMessage);
-            }
-            break;
-        }
-        case DragAndDropSvc::HOST_DND_HG_SND_DATA:
-        {
-            LogFlowFunc(("HOST_DND_HG_SND_DATA\n"));
-            DO(("HOST_DND_HG_SND_DATA\n"));
+                LogFlowFunc(("HOST_DND_HG_EVT_MOVE\n"));
 
-            /* Verify parameter count and types. */
-            if (   cParms != 5
-                || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */
-                || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR   /* format */
-                || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* format size */
-                || paParms[3].type != VBOX_HGCM_SVC_PARM_PTR   /* data */
-                || paParms[4].type != VBOX_HGCM_SVC_PARM_32BIT /* data size */)
-                rc = VERR_INVALID_PARAMETER;
-            else
-            {
-                DnDHGSendDataMessage *pMessage = new DnDHGSendDataMessage(uMsg, cParms, paParms, m_pfnProgressCallback, m_pvProgressUser);
-                m_dndMessageQueue.append(pMessage);
+                /* Verify parameter count and types. */
+                if (   cParms != 7
+                    || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */
+                    || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT /* x-pos */
+                    || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* y-pos */
+                    || paParms[3].type != VBOX_HGCM_SVC_PARM_32BIT /* default action */
+                    || paParms[4].type != VBOX_HGCM_SVC_PARM_32BIT /* allowed actions */
+                    || paParms[5].type != VBOX_HGCM_SVC_PARM_PTR   /* data */
+                    || paParms[6].type != VBOX_HGCM_SVC_PARM_32BIT /* size */)
+                    rc = VERR_INVALID_PARAMETER;
+                else
+                {
+                    m_fOpInProcess = true;
+                    DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
+                    m_dndMessageQueue.append(pMessage);
+                }
+                break;
             }
-            break;
-        }
-#ifdef VBOX_WITH_DRAG_AND_DROP_GH
-        case DragAndDropSvc::HOST_DND_GH_REQ_PENDING:
-        {
-            LogFlowFunc(("HOST_DND_GH_REQ_PENDING\n"));
-            DO(("HOST_DND_GH_REQ_PENDING\n"));
+            case DragAndDropSvc::HOST_DND_HG_EVT_LEAVE:
+            {
+                LogFlowFunc(("HOST_DND_HG_EVT_LEAVE\n"));
 
-            /* Verify parameter count and types. */
-            if (   cParms != 1
-                || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */)
-                rc = VERR_INVALID_PARAMETER;
-            else
-            {
-                DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
-                m_dndMessageQueue.append(pMessage);
+                /* Verify parameter count and types. */
+                if (cParms != 0)
+                    rc = VERR_INVALID_PARAMETER;
+                else
+                {
+                    DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
+                    m_dndMessageQueue.append(pMessage);
+                }
+                m_fOpInProcess = false;
+                break;
             }
-            break;
-        }
-        case DragAndDropSvc::HOST_DND_GH_EVT_DROPPED:
-        {
-            LogFlowFunc(("HOST_DND_GH_EVT_DROPPED\n"));
-            DO(("HOST_DND_GH_EVT_DROPPED\n"));
+            case DragAndDropSvc::HOST_DND_HG_EVT_DROPPED:
+            {
+                LogFlowFunc(("HOST_DND_HG_EVT_DROPPED\n"));
 
-            /* Verify parameter count and types. */
-            if (   cParms != 3
-                || paParms[0].type != VBOX_HGCM_SVC_PARM_PTR   /* format */
-                || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT /* format size */
-                || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* action */)
-                rc = VERR_INVALID_PARAMETER;
-            else
-            {
-                DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
-                m_dndMessageQueue.append(pMessage);
+                /* Verify parameter count and types. */
+                if (   cParms != 7
+                    || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */
+                    || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT /* x-pos */
+                    || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* y-pos */
+                    || paParms[3].type != VBOX_HGCM_SVC_PARM_32BIT /* default action */
+                    || paParms[4].type != VBOX_HGCM_SVC_PARM_32BIT /* allowed actions */
+                    || paParms[5].type != VBOX_HGCM_SVC_PARM_PTR   /* data */
+                    || paParms[6].type != VBOX_HGCM_SVC_PARM_32BIT /* size */)
+                    rc = VERR_INVALID_PARAMETER;
+                else
+                {
+                    DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
+                    m_dndMessageQueue.append(pMessage);
+                }
+                break;
             }
-            break;
+            case DragAndDropSvc::HOST_DND_HG_SND_DATA:
+            {
+                LogFlowFunc(("HOST_DND_HG_SND_DATA\n"));
+
+                /* Verify parameter count and types. */
+                if (   cParms != 5
+                    || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */
+                    || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR   /* format */
+                    || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* format size */
+                    || paParms[3].type != VBOX_HGCM_SVC_PARM_PTR   /* data */
+                    || paParms[4].type != VBOX_HGCM_SVC_PARM_32BIT /* data size */)
+                    rc = VERR_INVALID_PARAMETER;
+                else
+                {
+                    DnDHGSendDataMessage *pMessage = new DnDHGSendDataMessage(uMsg, cParms, paParms, m_pfnProgressCallback, m_pvProgressUser);
+                    m_dndMessageQueue.append(pMessage);
+                }
+                break;
+            }
+    #ifdef VBOX_WITH_DRAG_AND_DROP_GH
+            case DragAndDropSvc::HOST_DND_GH_REQ_PENDING:
+            {
+                LogFlowFunc(("HOST_DND_GH_REQ_PENDING\n"));
+
+                /* Verify parameter count and types. */
+                if (   cParms != 1
+                    || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */)
+                    rc = VERR_INVALID_PARAMETER;
+                else
+                {
+                    DnDGenericMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
+                    m_dndMessageQueue.append(pMessage);
+                }
+                break;
+            }
+            case DragAndDropSvc::HOST_DND_GH_EVT_DROPPED:
+            {
+                LogFlowFunc(("HOST_DND_GH_EVT_DROPPED\n"));
+
+                /* Verify parameter count and types. */
+                if (   cParms != 3
+                    || paParms[0].type != VBOX_HGCM_SVC_PARM_PTR   /* format */
+                    || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT /* format size */
+                    || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* action */)
+                    rc = VERR_INVALID_PARAMETER;
+                else
+                {
+                    try
+                    {
+                        DnDGenericMessage *pMessage
+                            = new DnDGenericMessage(uMsg, cParms, paParms);
+                        m_dndMessageQueue.append(pMessage);
+                    }
+                    catch(std::bad_alloc &)
+                    {
+                        rc = VERR_NO_MEMORY;
+                    }
+                }
+                break;
+            }
+    #endif
+            default:
+                rc = VERR_NOT_IMPLEMENTED;
+                break;
         }
-#endif
-        default: rc = VERR_NOT_IMPLEMENTED; break;
+    }
+    catch(std::bad_alloc &)
+    {
+        rc = VERR_NO_MEMORY;
     }
 
     return rc;
@@ -709,43 +768,66 @@ int DnDManager::nextMessageInfo(uint32_t *puMsg, uint32_t *pcParms)
             rc = m_dndMessageQueue.first()->currentMessageInfo(puMsg, pcParms);
     }
 
-    DO(("next msg info: %d %d %Rrc\n", *puMsg, *pcParms, rc));
+    LogFlowFunc(("Returning puMsg=%RU32, pcParms=%RU32, rc=%Rrc\n", *puMsg, *pcParms, rc));
     return rc;
 }
 
 int DnDManager::nextMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
+    LogFlowFunc(("uMsg=%RU32, cParms=%RU32\n", uMsg, cParms));
+
     if (!m_pCurMsg)
     {
         /* Check for pending messages in our queue. */
         if (m_dndMessageQueue.isEmpty())
+        {
+            LogFlowFunc(("Message queue is empty, returning\n"));
             return VERR_NO_DATA;
+        }
+
         m_pCurMsg = m_dndMessageQueue.first();
         m_dndMessageQueue.removeFirst();
     }
 
     /* Fetch the current message info */
     int rc = m_pCurMsg->currentMessage(uMsg, cParms, paParms);
-    /* If this message not provide any additional sub messages, clear it. */
+    /* If this message doesn't provide any additional sub messages, clear it. */
     if (!m_pCurMsg->isMessageWaiting())
     {
         delete m_pCurMsg;
-        m_pCurMsg = 0;
+        m_pCurMsg = NULL;
     }
 
-    /* If the user has canceled the operation, we need to cleanup all pending
-     * events and inform the progress callback about our successful cleanup. */
-    if (   rc == VERR_CANCELLED
+    /*
+     * If there was an error handling the current message or the user has canceled
+     * the operation, we need to cleanup all pending events and inform the progress
+     * callback about our exit.
+     */
+    if (   RT_FAILURE(rc)
         && m_pfnProgressCallback)
     {
-        /* Clear any pending messages */
+        /* Clear any pending messages. */
         clear();
-        /* Create a new cancel message to inform the guest. */
-        m_pCurMsg = new DnDHGCancelMessage();
-        m_pfnProgressCallback(100, DragAndDropSvc::DND_PROGRESS_CANCELLED, m_pvProgressUser);
+
+        /* Create a new cancel message to inform the guest + call
+         * the host whether the current transfer was canceled or aborted
+         * due to an error. */
+        try
+        {
+            Assert(!m_pCurMsg);
+            m_pCurMsg = new DnDHGCancelMessage();
+            m_pfnProgressCallback(100 /* Percent */,
+                                    rc == VERR_CANCELLED
+                                  ? DragAndDropSvc::DND_PROGRESS_CANCELLED
+                                  : DragAndDropSvc::DND_PROGRESS_ERROR, rc, m_pvProgressUser);
+        }
+        catch(std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
     }
 
-    DO(("next msg: %d %d %Rrc\n", uMsg, cParms, rc));
+    LogFlowFunc(("Message processed with rc=%Rrc\n", rc));
     return rc;
 }
 

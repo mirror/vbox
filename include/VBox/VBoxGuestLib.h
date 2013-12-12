@@ -78,7 +78,6 @@
 
 RT_C_DECLS_BEGIN
 
-
 /** @defgroup grp_guest_lib_r0     Ring-0 interface.
  * @{
  */
@@ -693,7 +692,7 @@ VBGLR3DECL(int)     VbglR3PageIsShared(RTGCPTR pPage, bool *pfShared, uint64_t *
 typedef struct VBGLR3DNDHGCMEVENT
 {
     uint32_t uType;               /** The event type this struct contains */
-    uint32_t uScreenId;           /** Screen id this request belongs to */
+    uint32_t uScreenId;           /** Screen ID this request belongs to */
     char    *pszFormats;          /** Format list (\r\n separated) */
     uint32_t cbFormats;           /** Size of pszFormats (\0 included) */
     union
@@ -714,20 +713,17 @@ typedef struct VBGLR3DNDHGCMEVENT
 } VBGLR3DNDHGCMEVENT;
 typedef VBGLR3DNDHGCMEVENT *PVBGLR3DNDHGCMEVENT;
 typedef const PVBGLR3DNDHGCMEVENT CPVBGLR3DNDHGCMEVENT;
-VBGLR3DECL(int)     VbglR3DnDInit(void);
-VBGLR3DECL(int)     VbglR3DnDTerm(void);
-
 VBGLR3DECL(int)     VbglR3DnDConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3DnDDisconnect(uint32_t u32ClientId);
 
-VBGLR3DECL(int)     VbglR3DnDProcessNextMessage(CPVBGLR3DNDHGCMEVENT pEvent);
+VBGLR3DECL(int)     VbglR3DnDProcessNextMessage(uint32_t u32ClientId, CPVBGLR3DNDHGCMEVENT pEvent);
 
-VBGLR3DECL(int)     VbglR3DnDHGAcknowledgeOperation(uint32_t uAction);
-VBGLR3DECL(int)     VbglR3DnDHGRequestData(const char* pcszFormat);
+VBGLR3DECL(int)     VbglR3DnDHGAcknowledgeOperation(uint32_t u32ClientId, uint32_t uAction);
+VBGLR3DECL(int)     VbglR3DnDHGRequestData(uint32_t u32ClientId, const char* pcszFormat);
 #  ifdef VBOX_WITH_DRAG_AND_DROP_GH
-VBGLR3DECL(int)     VbglR3DnDGHAcknowledgePending(uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormat);
-VBGLR3DECL(int)     VbglR3DnDGHSendData(void *pvData, uint32_t cbData);
-VBGLR3DECL(int)     VbglR3DnDGHErrorEvent(int rcOp);
+VBGLR3DECL(int)     VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId, uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormat);
+VBGLR3DECL(int)     VbglR3DnDGHSendData(uint32_t u32ClientId, void *pvData, uint32_t cbData);
+VBGLR3DECL(int)     VbglR3DnDGHErrorEvent(uint32_t u32ClientId, int rcOp);
 #  endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 /** @} */
 # endif /* VBOX_WITH_DRAG_AND_DROP */

@@ -221,6 +221,8 @@ typedef enum LOGGROUP
     LOG_GROUP_GMM,
     /** Guest control. */
     LOG_GROUP_GUEST_CONTROL,
+    /** Guest drag'n drop. */
+    LOG_GROUP_GUEST_DND,
     /** GUI group. */
     LOG_GROUP_GUI,
     /** GVMM group. */
@@ -769,6 +771,7 @@ typedef enum LOGGROUP
     "FTM",          \
     "GMM",          \
     "GUEST_CONTROL", \
+    "GUEST_DND",    \
     "GUI",          \
     "GVMM",         \
     "HGCM",         \

@@ -25,7 +25,9 @@ ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxTray_DEBUG_INSTTYPE = both
 endif
 VBoxTray_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST)
-VBoxTray_DEFS     = VBOX_WITH_HGCM LOG_TO_BACKDOOR
+VBoxTray_DEFS     = \
+	VBOX_WITH_HGCM \
+	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 VBoxTray_INCS     = ../include
 VBoxTray_SOURCES  = \
 	VBoxTray.cpp \
@@ -38,14 +40,24 @@ VBoxTray_SOURCES  = \
 	VBoxIPC.cpp \
 	VBoxHelpers.cpp \
 	VBoxTray.rc
+ifdef VBOX_WITH_DRAG_AND_DROP
+ VBoxTray_DEFS     += \
+	VBOX_WITH_DRAG_AND_DROP \
+	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
+ VBoxTray_SOURCES  += \
+	VBoxDnD.cpp \
+	VBoxDnDDataObject.cpp \
+	VBoxDnDEnumFormat.cpp \
+	VBoxDnDDropSource.cpp
+endif
 ifdef VBOX_WITH_GUEST_PROPS
- VBoxTray_DEFS     +=  _WIN32_IE=0x500 VBOX_WITH_GUEST_PROPS
+ VBoxTray_DEFS     += _WIN32_IE=0x500 VBOX_WITH_GUEST_PROPS
  VBoxTray_SOURCES  += \
 	VBoxHostVersion.cpp \
 	VBoxLA.cpp
 endif
 ifdef VBOX_WITH_SHARED_FOLDERS
- VBoxTray_DEFS     +=  VBOX_WITH_SHARED_FOLDERS
+ VBoxTray_DEFS     += VBOX_WITH_SHARED_FOLDERS
  VBoxTray_SOURCES  += \
 	VBoxSharedFolders.cpp
  VBoxTray_LIBS.win += \
@@ -56,7 +68,6 @@ ifdef VBOX_WITH_MMR
  VBoxTray_SOURCES  += \
         VBoxMMR.cpp
 endif
-
 ifdef VBOX_WITH_WDDM
  VBoxTray_DEFS   += VBOX_WITH_WDDM
  # VBoxTray_DEFS   += LOG_ENABLED

@@ -145,7 +145,7 @@ my_file()
             MY_FOLDER="$1-Others.lst"
             ;;
     esac
-    if test -n "$3"; 
+    if test -n "$3";
     then
         MY_FOLDER="$1-$3.lst"
     fi
@@ -224,15 +224,15 @@ my_generate_folder()
         do
             if test -d "${f}";
             then
-                if test -z "${MY_OPT_USE_WILDCARDS}"; 
+                if test -z "${MY_OPT_USE_WILDCARDS}";
                 then
                     my_sub_tree "${MY_FILE}" "${f}"
                 else
                     case "${f}" in
-                        ${MY_ROOT_DIR}/include*) 
+                        ${MY_ROOT_DIR}/include*)
                             my_sub_tree "${MY_FILE}" "${f}" "Headers"
                             ;;
-                        *)  my_wildcard "${MY_FILE}" "${f}" 
+                        *)  my_wildcard "${MY_FILE}" "${f}"
                             ;;
                     esac
                 fi
@@ -256,7 +256,7 @@ my_generate_folder()
     fi
     if test -s "${MY_FILE}-Headers.lst";
     then
-        if test -z "${MY_OPT_USE_WILDCARDS}"; 
+        if test -z "${MY_OPT_USE_WILDCARDS}";
         then
             echo '        <Folder Name="Headers"  Filters="*.h;*.hpp">' >> "${MY_FILE}"
         else
@@ -907,6 +907,7 @@ my_generate_project "VBoxUSB"       "src/VBox/HostDrivers/VBoxUSB"          --be
 
 # src/VBox/HostServices
 my_generate_project "GuestCntl"     "src/VBox/HostServices/GuestControl"    --begin-incs "include" "src/VBox/HostServices/GuestControl"     --end-includes "src/VBox/HostServices/GuestControl"
+my_generate_project "DragAndDrop"   "src/VBox/HostServices/DragAndDrop"     --begin-incs "include" "src/VBox/HostServices/DragAndDrop"      --end-includes "src/VBox/HostServices/DragAndDrop"
 my_generate_project "GuestProps"    "src/VBox/HostServices/GuestProperties" --begin-incs "include" "src/VBox/HostServices/GuestProperties"  --end-includes "src/VBox/HostServices/GuestProperties"
 my_generate_project "ShClip-HS"     "src/VBox/HostServices/SharedClipboard" --begin-incs "include" "src/VBox/HostServices/SharedClipboard"  --end-includes "src/VBox/HostServices/SharedClipboard"
 my_generate_project "SharedFolders" "src/VBox/HostServices/SharedFolders"   --begin-incs "include" "src/VBox/HostServices/SharedFolders"    --end-includes "src/VBox/HostServices/SharedFolders" "include/VBox/shflsvc.h"

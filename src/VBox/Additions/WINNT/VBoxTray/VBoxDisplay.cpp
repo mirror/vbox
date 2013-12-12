@@ -963,7 +963,9 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
         }
         else
         {
+#ifndef DEBUG_andy /* Too noisy for me. */
             Log(("VBoxTray: VBoxDisplayThread: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
+#endif
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
             {
