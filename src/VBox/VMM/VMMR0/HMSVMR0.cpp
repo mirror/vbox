@@ -1998,7 +1998,7 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     /*
-     * IMPORTANT!!!
+     * !!! IMPORTANT !!!
      * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
      */
 
@@ -2060,9 +2060,10 @@ static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     /*
-     * IMPORTANT!!!
+     * !!! IMPORTANT !!!
      * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
      */
+
     /* Deregister hook now that we've left HM context before re-enabling preemption. */
     if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
         VMMR0ThreadCtxHooksDeregister(pVCpu);
