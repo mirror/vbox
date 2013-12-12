@@ -45,7 +45,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_KBD
-#include "vl_vbox.h"
 #include <VBox/vmm/pdmdev.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
@@ -1074,58 +1073,56 @@ static void kbd_reset(void *opaque)
 #endif
 }
 
-static void kbd_save(QEMUFile* f, void* opaque)
+static void kbd_save(PSSMHANDLE pSSM, KBDState *s)
 {
 #ifndef VBOX_WITH_NEW_PS2M
     uint32_t    cItems;
     int i;
 #endif
-    KBDState *s = (KBDState*)opaque;
 
-    qemu_put_8s(f, &s->write_cmd);
-    qemu_put_8s(f, &s->status);
-    qemu_put_8s(f, &s->mode);
-    qemu_put_8s(f, &s->dbbout);
+    SSMR3PutU8(pSSM, s->write_cmd);
+    SSMR3PutU8(pSSM, s->status);
+    SSMR3PutU8(pSSM, s->mode);
+    SSMR3PutU8(pSSM, s->dbbout);
 #ifndef VBOX_WITH_NEW_PS2M
-    qemu_put_be32s(f, &s->mouse_write_cmd);
-    qemu_put_8s(f, &s->mouse_status);
-    qemu_put_8s(f, &s->mouse_resolution);
-    qemu_put_8s(f, &s->mouse_sample_rate);
-    qemu_put_8s(f, &s->mouse_wrap);
-    qemu_put_8s(f, &s->mouse_type);
-    qemu_put_8s(f, &s->mouse_detect_state);
-    qemu_put_be32s(f, &s->mouse_dx);
-    qemu_put_be32s(f, &s->mouse_dy);
-    qemu_put_be32s(f, &s->mouse_dz);
-    qemu_put_be32s(f, &s->mouse_dw);
-    qemu_put_be32s(f, &s->mouse_flags);
-    qemu_put_8s(f, &s->mouse_buttons);
-    qemu_put_8s(f, &s->mouse_buttons_reported);
+    SSMR3PutU32(pSSM, s->mouse_write_cmd);
+    SSMR3PutU8(pSSM, s->mouse_status);
+    SSMR3PutU8(pSSM, s->mouse_resolution);
+    SSMR3PutU8(pSSM, s->mouse_sample_rate);
+    SSMR3PutU8(pSSM, s->mouse_wrap);
+    SSMR3PutU8(pSSM, s->mouse_type);
+    SSMR3PutU8(pSSM, s->mouse_detect_state);
+    SSMR3PutU32(pSSM, s->mouse_dx);
+    SSMR3PutU32(pSSM, s->mouse_dy);
+    SSMR3PutU32(pSSM, s->mouse_dz);
+    SSMR3PutU32(pSSM, s->mouse_dw);
+    SSMR3PutU32(pSSM, s->mouse_flags);
+    SSMR3PutU8(pSSM, s->mouse_buttons);
+    SSMR3PutU8(pSSM, s->mouse_buttons_reported);
 
     cItems = s->mouse_command_queue.count;
-    SSMR3PutU32(f, cItems);
+    SSMR3PutU32(pSSM, cItems);
     for (i = s->mouse_command_queue.rptr; cItems-- > 0; i = (i + 1) % RT_ELEMENTS(s->mouse_command_queue.data))
-        SSMR3PutU8(f, s->mouse_command_queue.data[i]);
+        SSMR3PutU8(pSSM, s->mouse_command_queue.data[i]);
     Log(("kbd_save: %d mouse command queue items stored\n", s->mouse_command_queue.count));
 
     cItems = s->mouse_event_queue.count;
-    SSMR3PutU32(f, cItems);
+    SSMR3PutU32(pSSM, cItems);
     for (i = s->mouse_event_queue.rptr; cItems-- > 0; i = (i + 1) % RT_ELEMENTS(s->mouse_event_queue.data))
-        SSMR3PutU8(f, s->mouse_event_queue.data[i]);
+        SSMR3PutU8(pSSM, s->mouse_event_queue.data[i]);
     Log(("kbd_save: %d mouse event queue items stored\n", s->mouse_event_queue.count));
 #endif
 
     /* terminator */
-    SSMR3PutU32(f, ~0);
+    SSMR3PutU32(pSSM, ~0);
 }
 
-static int kbd_load(QEMUFile* f, void* opaque, int version_id)
+static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
 {
     uint32_t    u32, i;
     uint8_t u8Dummy;
     uint32_t u32Dummy;
     int         rc;
-    KBDState *s = (KBDState*)opaque;
 
 #if 0
     /** @todo enable this and remove the "if (version_id == 4)" code at some
@@ -1135,44 +1132,44 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
 #endif
     if (version_id < 2 || version_id > PCKBD_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    qemu_get_8s(f, &s->write_cmd);
-    qemu_get_8s(f, &s->status);
-    qemu_get_8s(f, &s->mode);
+    SSMR3GetU8(pSSM, &s->write_cmd);
+    SSMR3GetU8(pSSM, &s->status);
+    SSMR3GetU8(pSSM, &s->mode);
     if (version_id <= 5)
     {
-        qemu_get_be32s(f, (uint32_t *)&u32Dummy);
-        qemu_get_be32s(f, (uint32_t *)&u32Dummy);
+        SSMR3GetU32(pSSM, (uint32_t *)&u32Dummy);
+        SSMR3GetU32(pSSM, (uint32_t *)&u32Dummy);
     }
     else
     {
-        qemu_get_8s(f, &s->dbbout);
+        SSMR3GetU8(pSSM, &s->dbbout);
     }
 #ifndef VBOX_WITH_NEW_PS2M
-    qemu_get_be32s(f, (uint32_t *)&s->mouse_write_cmd);
-    qemu_get_8s(f, &s->mouse_status);
-    qemu_get_8s(f, &s->mouse_resolution);
-    qemu_get_8s(f, &s->mouse_sample_rate);
-    qemu_get_8s(f, &s->mouse_wrap);
-    qemu_get_8s(f, &s->mouse_type);
-    qemu_get_8s(f, &s->mouse_detect_state);
-    qemu_get_be32s(f, (uint32_t *)&s->mouse_dx);
-    qemu_get_be32s(f, (uint32_t *)&s->mouse_dy);
-    qemu_get_be32s(f, (uint32_t *)&s->mouse_dz);
+    SSMR3GetU32(pSSM, (uint32_t *)&s->mouse_write_cmd);
+    SSMR3GetU8(pSSM, &s->mouse_status);
+    SSMR3GetU8(pSSM, &s->mouse_resolution);
+    SSMR3GetU8(pSSM, &s->mouse_sample_rate);
+    SSMR3GetU8(pSSM, &s->mouse_wrap);
+    SSMR3GetU8(pSSM, &s->mouse_type);
+    SSMR3GetU8(pSSM, &s->mouse_detect_state);
+    SSMR3GetU32(pSSM, (uint32_t *)&s->mouse_dx);
+    SSMR3GetU32(pSSM, (uint32_t *)&s->mouse_dy);
+    SSMR3GetU32(pSSM, (uint32_t *)&s->mouse_dz);
     if (version_id > 2)
     {
-        SSMR3GetS32(f, &s->mouse_dw);
-        SSMR3GetS32(f, &s->mouse_flags);
+        SSMR3GetS32(pSSM, &s->mouse_dw);
+        SSMR3GetS32(pSSM, &s->mouse_flags);
     }
-    qemu_get_8s(f, &s->mouse_buttons);
+    SSMR3GetU8(pSSM, &s->mouse_buttons);
     if (version_id == 4)
     {
-        SSMR3GetU32(f, &u32Dummy);
-        SSMR3GetU32(f, &u32Dummy);
+        SSMR3GetU32(pSSM, &u32Dummy);
+        SSMR3GetU32(pSSM, &u32Dummy);
     }
     if (version_id > 3)
-        SSMR3GetU8(f, &s->mouse_buttons_reported);
+        SSMR3GetU8(pSSM, &s->mouse_buttons_reported);
     if (version_id == 4)
-        SSMR3GetU8(f, &u8Dummy);
+        SSMR3GetU8(pSSM, &u8Dummy);
     s->mouse_command_queue.count = 0;
     s->mouse_command_queue.rptr = 0;
     s->mouse_command_queue.wptr = 0;
@@ -1189,12 +1186,12 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
      */
     if (version_id <= 5)
     {
-        rc = SSMR3GetU32(f, &u32);
+        rc = SSMR3GetU32(pSSM, &u32);
         if (RT_FAILURE(rc))
             return rc;
         for (i = 0; i < u32; i++)
         {
-            rc = SSMR3GetU8(f, &u8Dummy);
+            rc = SSMR3GetU8(pSSM, &u8Dummy);
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -1202,7 +1199,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     }
 
 #ifndef VBOX_WITH_NEW_PS2M
-    rc = SSMR3GetU32(f, &u32);
+    rc = SSMR3GetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
     if (u32 > RT_ELEMENTS(s->mouse_command_queue.data))
@@ -1212,7 +1209,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     }
     for (i = 0; i < u32; i++)
     {
-        rc = SSMR3GetU8(f, &s->mouse_command_queue.data[i]);
+        rc = SSMR3GetU8(pSSM, &s->mouse_command_queue.data[i]);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1220,7 +1217,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     s->mouse_command_queue.count = u32;
     Log(("kbd_load: %d mouse command queue items loaded\n", u32));
 
-    rc = SSMR3GetU32(f, &u32);
+    rc = SSMR3GetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
     if (u32 > RT_ELEMENTS(s->mouse_event_queue.data))
@@ -1230,7 +1227,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     }
     for (i = 0; i < u32; i++)
     {
-        rc = SSMR3GetU8(f, &s->mouse_event_queue.data[i]);
+        rc = SSMR3GetU8(pSSM, &s->mouse_event_queue.data[i]);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1240,12 +1237,12 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
 #else
     if (version_id <= 6)
     {
-        rc = SSMR3GetU32(f, &u32);
+        rc = SSMR3GetU32(pSSM, &u32);
         if (RT_FAILURE(rc))
             return rc;
         for (i = 0; i < u32; i++)
         {
-            rc = SSMR3GetU8(f, &u8Dummy);
+            rc = SSMR3GetU8(pSSM, &u8Dummy);
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -1254,7 +1251,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
 #endif
 
     /* terminator */
-    rc = SSMR3GetU32(f, &u32);
+    rc = SSMR3GetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
     if (u32 != ~0U)
