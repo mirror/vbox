@@ -133,7 +133,6 @@
 # include <stdio.h> /* sscan */
 #endif
 
-#include "vl_vbox.h"
 #include "VBoxDD.h"
 #include "VBoxDD2.h"
 
@@ -1174,7 +1173,7 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
 #endif
 
 /* called for accesses between 0xa0000 and 0xc0000 */
-static uint32_t vga_mem_readb(PVGASTATE pThis, target_phys_addr_t addr, int *prc)
+static uint32_t vga_mem_readb(PVGASTATE pThis, RTGCPHYS addr, int *prc)
 {
     int memory_map_mode, plane;
     uint32_t ret;
@@ -1255,7 +1254,7 @@ static uint32_t vga_mem_readb(PVGASTATE pThis, target_phys_addr_t addr, int *prc
 }
 
 /* called for accesses between 0xa0000 and 0xc0000 */
-static int vga_mem_writeb(PVGASTATE pThis, target_phys_addr_t addr, uint32_t val)
+static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
 {
     int memory_map_mode, plane, write_mode, b, func_select, mask;
     uint32_t write_mask, bit_mask, set_mask;
