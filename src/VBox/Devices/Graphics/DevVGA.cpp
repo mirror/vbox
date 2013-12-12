@@ -111,6 +111,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pgm.h>
 #ifdef IN_RING3
+# include <iprt/cdefs.h>
 # include <iprt/alloc.h>
 # include <iprt/ctype.h>
 #endif /* IN_RING3 */
@@ -133,7 +134,6 @@
 # include <stdio.h> /* sscan */
 #endif
 
-#include "vl_vbox.h"
 #include "VBoxDD.h"
 #include "VBoxDD2.h"
 
@@ -1174,7 +1174,7 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
 #endif
 
 /* called for accesses between 0xa0000 and 0xc0000 */
-static uint32_t vga_mem_readb(PVGASTATE pThis, target_phys_addr_t addr, int *prc)
+static uint32_t vga_mem_readb(PVGASTATE pThis, RTGCPHYS addr, int *prc)
 {
     int memory_map_mode, plane;
     uint32_t ret;
@@ -1255,7 +1255,7 @@ static uint32_t vga_mem_readb(PVGASTATE pThis, target_phys_addr_t addr, int *prc
 }
 
 /* called for accesses between 0xa0000 and 0xc0000 */
-static int vga_mem_writeb(PVGASTATE pThis, target_phys_addr_t addr, uint32_t val)
+static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
 {
     int memory_map_mode, plane, write_mode, b, func_select, mask;
     uint32_t write_mask, bit_mask, set_mask;
@@ -2200,12 +2200,12 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
         if (!(pThis->cr[0x17] & 2)) {
             addr = (addr & ~(1 << 16)) | ((y1 & 2) << 15);
         }
-        page0 = addr & TARGET_PAGE_MASK;
-        page1 = (addr + bwidth - 1) & TARGET_PAGE_MASK;
+        page0 = addr & ~PAGE_OFFSET_MASK;
+        page1 = (addr + bwidth - 1) & ~PAGE_OFFSET_MASK;
         bool update = full_update | vga_is_dirty(pThis, page0) | vga_is_dirty(pThis, page1);
-        if (page1 - page0 > TARGET_PAGE_SIZE) {
+        if (page1 - page0 > PAGE_SIZE) {
             /* if wide line, can use another page */
-            update |= vga_is_dirty(pThis, page0 + TARGET_PAGE_SIZE);
+            update |= vga_is_dirty(pThis, page0 + PAGE_SIZE);
         }
         /* explicit invalidation for the hardware cursor */
         update |= (pThis->invalidated_y_table[y >> 5] >> (y & 0x1f)) & 1;
@@ -2251,7 +2251,7 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
     }
     /* reset modified pages */
     if (page_max != -1 && reset_dirty) {
-        vga_reset_dirty(pThis, page_min, page_max + TARGET_PAGE_SIZE);
+        vga_reset_dirty(pThis, page_min, page_max + PAGE_SIZE);
     }
     memset(pThis->invalidated_y_table, 0, ((height + 31) >> 5) * 4);
     return VINF_SUCCESS;
@@ -2390,89 +2390,91 @@ static int vga_update_display(PVGASTATE pThis, bool fUpdateAll, bool fFailOnResi
     return rc;
 }
 
-static void vga_save(QEMUFile *f, PVGASTATE pThis)
+static void vga_save(PSSMHANDLE pSSM, PVGASTATE pThis)
 {
     int i;
 
-    qemu_put_be32s(f, &pThis->latch);
-    qemu_put_8s(f, &pThis->sr_index);
-    qemu_put_buffer(f, pThis->sr, 8);
-    qemu_put_8s(f, &pThis->gr_index);
-    qemu_put_buffer(f, pThis->gr, 16);
-    qemu_put_8s(f, &pThis->ar_index);
-    qemu_put_buffer(f, pThis->ar, 21);
-    qemu_put_be32s(f, &pThis->ar_flip_flop);
-    qemu_put_8s(f, &pThis->cr_index);
-    qemu_put_buffer(f, pThis->cr, 256);
-    qemu_put_8s(f, &pThis->msr);
-    qemu_put_8s(f, &pThis->fcr);
-    qemu_put_8s(f, &pThis->st00);
-    qemu_put_8s(f, &pThis->st01);
+    SSMR3PutU32(pSSM, pThis->latch);
+    SSMR3PutU8(pSSM, pThis->sr_index);
+    SSMR3PutMem(pSSM, pThis->sr, 8);
+    SSMR3PutU8(pSSM, pThis->gr_index);
+    SSMR3PutMem(pSSM, pThis->gr, 16);
+    SSMR3PutU8(pSSM, pThis->ar_index);
+    SSMR3PutMem(pSSM, pThis->ar, 21);
+    SSMR3PutU32(pSSM, pThis->ar_flip_flop);
+    SSMR3PutU8(pSSM, pThis->cr_index);
+    SSMR3PutMem(pSSM, pThis->cr, 256);
+    SSMR3PutU8(pSSM, pThis->msr);
+    SSMR3PutU8(pSSM, pThis->fcr);
+    SSMR3PutU8(pSSM, pThis->st00);
+    SSMR3PutU8(pSSM, pThis->st01);
 
-    qemu_put_8s(f, &pThis->dac_state);
-    qemu_put_8s(f, &pThis->dac_sub_index);
-    qemu_put_8s(f, &pThis->dac_read_index);
-    qemu_put_8s(f, &pThis->dac_write_index);
-    qemu_put_buffer(f, pThis->dac_cache, 3);
-    qemu_put_buffer(f, pThis->palette, 768);
+    SSMR3PutU8(pSSM, pThis->dac_state);
+    SSMR3PutU8(pSSM, pThis->dac_sub_index);
+    SSMR3PutU8(pSSM, pThis->dac_read_index);
+    SSMR3PutU8(pSSM, pThis->dac_write_index);
+    SSMR3PutMem(pSSM, pThis->dac_cache, 3);
+    SSMR3PutMem(pSSM, pThis->palette, 768);
 
-    qemu_put_be32s(f, &pThis->bank_offset);
+    SSMR3PutU32(pSSM, pThis->bank_offset);
 #ifdef CONFIG_BOCHS_VBE
-    qemu_put_byte(f, 1);
-    qemu_put_be16s(f, &pThis->vbe_index);
+    SSMR3PutU8(pSSM, 1);
+    SSMR3PutU16(pSSM, pThis->vbe_index);
     for(i = 0; i < VBE_DISPI_INDEX_NB_SAVED; i++)
-        qemu_put_be16s(f, &pThis->vbe_regs[i]);
-    qemu_put_be32s(f, &pThis->vbe_start_addr);
-    qemu_put_be32s(f, &pThis->vbe_line_offset);
+        SSMR3PutU16(pSSM, pThis->vbe_regs[i]);
+    SSMR3PutU32(pSSM, pThis->vbe_start_addr);
+    SSMR3PutU32(pSSM, pThis->vbe_line_offset);
 #else
-    qemu_put_byte(f, 0);
+    SSMR3PutU8(pSSM, 0);
 #endif
 }
 
-static int vga_load(QEMUFile *f, PVGASTATE pThis, int version_id)
+static int vga_load(PSSMHANDLE pSSM, PVGASTATE pThis, int version_id)
 {
     int is_vbe, i;
     uint32_t u32Dummy;
+    uint8_t u8;
 
-    qemu_get_be32s(f, &pThis->latch);
-    qemu_get_8s(f, &pThis->sr_index);
-    qemu_get_buffer(f, pThis->sr, 8);
-    qemu_get_8s(f, &pThis->gr_index);
-    qemu_get_buffer(f, pThis->gr, 16);
-    qemu_get_8s(f, &pThis->ar_index);
-    qemu_get_buffer(f, pThis->ar, 21);
-    qemu_get_be32s(f, (uint32_t *)&pThis->ar_flip_flop);
-    qemu_get_8s(f, &pThis->cr_index);
-    qemu_get_buffer(f, pThis->cr, 256);
-    qemu_get_8s(f, &pThis->msr);
-    qemu_get_8s(f, &pThis->fcr);
-    qemu_get_8s(f, &pThis->st00);
-    qemu_get_8s(f, &pThis->st01);
+    SSMR3GetU32(pSSM, &pThis->latch);
+    SSMR3GetU8(pSSM, &pThis->sr_index);
+    SSMR3GetMem(pSSM, pThis->sr, 8);
+    SSMR3GetU8(pSSM, &pThis->gr_index);
+    SSMR3GetMem(pSSM, pThis->gr, 16);
+    SSMR3GetU8(pSSM, &pThis->ar_index);
+    SSMR3GetMem(pSSM, pThis->ar, 21);
+    SSMR3GetU32(pSSM, (uint32_t *)&pThis->ar_flip_flop);
+    SSMR3GetU8(pSSM, &pThis->cr_index);
+    SSMR3GetMem(pSSM, pThis->cr, 256);
+    SSMR3GetU8(pSSM, &pThis->msr);
+    SSMR3GetU8(pSSM, &pThis->fcr);
+    SSMR3GetU8(pSSM, &pThis->st00);
+    SSMR3GetU8(pSSM, &pThis->st01);
 
-    qemu_get_8s(f, &pThis->dac_state);
-    qemu_get_8s(f, &pThis->dac_sub_index);
-    qemu_get_8s(f, &pThis->dac_read_index);
-    qemu_get_8s(f, &pThis->dac_write_index);
-    qemu_get_buffer(f, pThis->dac_cache, 3);
-    qemu_get_buffer(f, pThis->palette, 768);
+    SSMR3GetU8(pSSM, &pThis->dac_state);
+    SSMR3GetU8(pSSM, &pThis->dac_sub_index);
+    SSMR3GetU8(pSSM, &pThis->dac_read_index);
+    SSMR3GetU8(pSSM, &pThis->dac_write_index);
+    SSMR3GetMem(pSSM, pThis->dac_cache, 3);
+    SSMR3GetMem(pSSM, pThis->palette, 768);
 
-    qemu_get_be32s(f, (uint32_t *)&pThis->bank_offset);
-    is_vbe = qemu_get_byte(f);
+    SSMR3GetU32(pSSM, (uint32_t *)&pThis->bank_offset);
+    SSMR3GetU8(pSSM, &u8);
+    is_vbe = !!u8;
 #ifdef CONFIG_BOCHS_VBE
     if (!is_vbe)
     {
         Log(("vga_load: !is_vbe !!\n"));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
-    qemu_get_be16s(f, &pThis->vbe_index);
+    SSMR3GetU16(pSSM, &pThis->vbe_index);
     for(i = 0; i < VBE_DISPI_INDEX_NB_SAVED; i++)
-        qemu_get_be16s(f, &pThis->vbe_regs[i]);
+        SSMR3GetU16(pSSM, &pThis->vbe_regs[i]);
     if (version_id <= VGA_SAVEDSTATE_VERSION_INV_VHEIGHT)
         recalculate_data(pThis, false); /* <- re-calculate the pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] since it might be invalid */
-    qemu_get_be32s(f, &pThis->vbe_start_addr);
-    qemu_get_be32s(f, &pThis->vbe_line_offset);
+    SSMR3GetU32(pSSM, &pThis->vbe_start_addr);
+    SSMR3GetU32(pSSM, &pThis->vbe_line_offset);
     if (version_id < 2)
-        qemu_get_be32s(f, &u32Dummy);
+        SSMR3GetU32(pSSM, &u32Dummy);
     pThis->vbe_bank_max = (pThis->vram_size >> 16) - 1;
 #else
     if (is_vbe)

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,12 +55,12 @@
 
 #if DEPTH != 15
 
-static inline void glue(vga_draw_glyph_line_, DEPTH)(uint8_t *d,
-                                                     int font_data,
-                                                     uint32_t xorcol,
-                                                     uint32_t bgcol,
-                                                     int dscan,
-                                                     int linesize)
+static inline void RT_CONCAT(vga_draw_glyph_line_, DEPTH)(uint8_t *d,
+                                                          int font_data,
+                                                          uint32_t xorcol,
+                                                          uint32_t bgcol,
+                                                          int dscan,
+                                                          int linesize)
 {
 #if BPP == 1
         ((uint32_t *)d)[0] = (dmask16[(font_data >> 4)] & xorcol) ^ bgcol;
@@ -91,9 +91,9 @@ static inline void glue(vga_draw_glyph_line_, DEPTH)(uint8_t *d,
 #endif
 }
 
-static void glue(vga_draw_glyph8_, DEPTH)(uint8_t *d, int linesize,
-                                          const uint8_t *font_ptr, int h,
-                                          uint32_t fgcol, uint32_t bgcol, int dscan)
+static void RT_CONCAT(vga_draw_glyph8_, DEPTH)(uint8_t *d, int linesize,
+                                               const uint8_t *font_ptr, int h,
+                                               uint32_t fgcol, uint32_t bgcol, int dscan)
 {
     uint32_t xorcol;
     int      font_data;
@@ -101,15 +101,15 @@ static void glue(vga_draw_glyph8_, DEPTH)(uint8_t *d, int linesize,
     xorcol = bgcol ^ fgcol;
     do {
         font_data = font_ptr[0];
-        glue(vga_draw_glyph_line_, DEPTH)(d, font_data, xorcol, bgcol, dscan, linesize);
+        RT_CONCAT(vga_draw_glyph_line_, DEPTH)(d, font_data, xorcol, bgcol, dscan, linesize);
         font_ptr += 4;
         d += linesize << dscan;
     } while (--h);
 }
 
-static void glue(vga_draw_glyph16_, DEPTH)(uint8_t *d, int linesize,
-                                          const uint8_t *font_ptr, int h,
-                                          uint32_t fgcol, uint32_t bgcol, int dscan)
+static void RT_CONCAT(vga_draw_glyph16_, DEPTH)(uint8_t *d, int linesize,
+                                                const uint8_t *font_ptr, int h,
+                                                uint32_t fgcol, uint32_t bgcol, int dscan)
 {
     uint32_t xorcol;
     int      font_data;
@@ -117,20 +117,20 @@ static void glue(vga_draw_glyph16_, DEPTH)(uint8_t *d, int linesize,
     xorcol = bgcol ^ fgcol;
     do {
         font_data = font_ptr[0];
-        glue(vga_draw_glyph_line_, DEPTH)(d,
-                                          expand4to8[font_data >> 4],
-                                          xorcol, bgcol, dscan, linesize);
-        glue(vga_draw_glyph_line_, DEPTH)(d + 8 * BPP,
-                                          expand4to8[font_data & 0x0f],
-                                          xorcol, bgcol, dscan, linesize);
+        RT_CONCAT(vga_draw_glyph_line_, DEPTH)(d,
+                                               expand4to8[font_data >> 4],
+                                               xorcol, bgcol, dscan, linesize);
+        RT_CONCAT(vga_draw_glyph_line_, DEPTH)(d + 8 * BPP,
+                                               expand4to8[font_data & 0x0f],
+                                               xorcol, bgcol, dscan, linesize);
         font_ptr += 4;
         d += linesize << dscan;
     } while (--h);
 }
 
-static void glue(vga_draw_glyph9_, DEPTH)(uint8_t *d, int linesize,
-                                          const uint8_t *font_ptr, int h,
-                                          uint32_t fgcol, uint32_t bgcol, int dup9)
+static void RT_CONCAT(vga_draw_glyph9_, DEPTH)(uint8_t *d, int linesize,
+                                               const uint8_t *font_ptr, int h,
+                                               uint32_t fgcol, uint32_t bgcol, int dup9)
 {
     uint32_t xorcol, v;
     int      font_data;
@@ -139,20 +139,20 @@ static void glue(vga_draw_glyph9_, DEPTH)(uint8_t *d, int linesize,
     do {
         font_data = font_ptr[0];
 #if BPP == 1
-        cpu_to_32wu((uint32_t *)d, (dmask16[(font_data >> 4)] & xorcol) ^ bgcol);
+        ((uint32_t *)d)[0] = RT_H2LE_U32((dmask16[(font_data >> 4)] & xorcol) ^ bgcol);
         v = (dmask16[(font_data >> 0) & 0xf] & xorcol) ^ bgcol;
-        cpu_to_32wu(((uint32_t *)d)+1, v);
+        ((uint32_t *)d)[1] = RT_H2LE_U32(v);
         if (dup9)
             ((uint8_t *)d)[8] = v >> (24 * (1 - BIG));
         else
             ((uint8_t *)d)[8] = bgcol;
 
 #elif BPP == 2
-        cpu_to_32wu(((uint32_t *)d)+0, (dmask4[(font_data >> 6)] & xorcol) ^ bgcol);
-        cpu_to_32wu(((uint32_t *)d)+1, (dmask4[(font_data >> 4) & 3] & xorcol) ^ bgcol);
-        cpu_to_32wu(((uint32_t *)d)+2, (dmask4[(font_data >> 2) & 3] & xorcol) ^ bgcol);
+        ((uint32_t *)d)[0] = RT_H2LE_U32((dmask4[(font_data >> 6)] & xorcol) ^ bgcol);
+        ((uint32_t *)d)[1] = RT_H2LE_U32((dmask4[(font_data >> 4) & 3] & xorcol) ^ bgcol);
+        ((uint32_t *)d)[2] = RT_H2LE_U32((dmask4[(font_data >> 2) & 3] & xorcol) ^ bgcol);
         v = (dmask4[(font_data >> 0) & 3] & xorcol) ^ bgcol;
-        cpu_to_32wu(((uint32_t *)d)+3, v);
+        ((uint32_t *)d)[3] = RT_H2LE_U32(v);
         if (dup9)
             ((uint16_t *)d)[8] = v >> (16 * (1 - BIG));
         else
@@ -180,8 +180,8 @@ static void glue(vga_draw_glyph9_, DEPTH)(uint8_t *d, int linesize,
 /*
  * 4 color mode
  */
-static void glue(vga_draw_line2_, DEPTH)(VGAState *s1, uint8_t *d,
-                                         const uint8_t *s, int width)
+static void RT_CONCAT(vga_draw_line2_, DEPTH)(VGAState *s1, uint8_t *d,
+                                              const uint8_t *s, int width)
 {
     uint32_t plane_mask, *palette, data, v, src_inc, dwb_mode;
     int x;
@@ -224,8 +224,8 @@ static void glue(vga_draw_line2_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 4 color mode, dup2 horizontal
  */
-static void glue(vga_draw_line2d2_, DEPTH)(VGAState *s1, uint8_t *d,
-                                           const uint8_t *s, int width)
+static void RT_CONCAT(vga_draw_line2d2_, DEPTH)(VGAState *s1, uint8_t *d,
+                                                const uint8_t *s, int width)
 {
     uint32_t plane_mask, *palette, data, v, src_inc, dwb_mode;
     int x;
@@ -259,8 +259,8 @@ static void glue(vga_draw_line2d2_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 16 color mode
  */
-static void glue(vga_draw_line4_, DEPTH)(VGAState *s1, uint8_t *d,
-                                         const uint8_t *s, int width)
+static void RT_CONCAT(vga_draw_line4_, DEPTH)(VGAState *s1, uint8_t *d,
+                                              const uint8_t *s, int width)
 {
     uint32_t plane_mask, data, v, *palette;
     int x;
@@ -291,8 +291,8 @@ static void glue(vga_draw_line4_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 16 color mode, dup2 horizontal
  */
-static void glue(vga_draw_line4d2_, DEPTH)(VGAState *s1, uint8_t *d,
-                                           const uint8_t *s, int width)
+static void RT_CONCAT(vga_draw_line4d2_, DEPTH)(VGAState *s1, uint8_t *d,
+                                                const uint8_t *s, int width)
 {
     uint32_t plane_mask, data, v, *palette;
     int x;
@@ -325,8 +325,8 @@ static void glue(vga_draw_line4d2_, DEPTH)(VGAState *s1, uint8_t *d,
  *
  * XXX: add plane_mask support (never used in standard VGA modes)
  */
-static void glue(vga_draw_line8d2_, DEPTH)(VGAState *s1, uint8_t *d,
-                                           const uint8_t *s, int width)
+static void RT_CONCAT(vga_draw_line8d2_, DEPTH)(VGAState *s1, uint8_t *d,
+                                                const uint8_t *s, int width)
 {
     uint32_t *palette;
     int x;
@@ -348,8 +348,8 @@ static void glue(vga_draw_line8d2_, DEPTH)(VGAState *s1, uint8_t *d,
  *
  * XXX: add plane_mask support (never used in standard VGA modes)
  */
-static void glue(vga_draw_line8_, DEPTH)(VGAState *s1, uint8_t *d,
-                                         const uint8_t *s, int width)
+static void RT_CONCAT(vga_draw_line8_, DEPTH)(VGAState *s1, uint8_t *d,
+                                              const uint8_t *s, int width)
 {
     uint32_t *palette;
     int x;
@@ -378,8 +378,8 @@ static void glue(vga_draw_line8_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 15 bit color
  */
-static void glue(vga_draw_line15_, DEPTH)(VGAState *s1, uint8_t *d,
-                                          const uint8_t *s, int width)
+static void RT_CONCAT(vga_draw_line15_, DEPTH)(VGAState *s1, uint8_t *d,
+                                               const uint8_t *s, int width)
 {
 #if DEPTH == 15 && defined(WORDS_BIGENDIAN) == defined(TARGET_WORDS_BIGENDIAN)
     memcpy(d, s, width * 2);
@@ -389,11 +389,11 @@ static void glue(vga_draw_line15_, DEPTH)(VGAState *s1, uint8_t *d,
 
     w = width;
     do {
-        v = lduw_raw((void *)s);
+        v = s[0] | (s[1] << 8);
         r = (v >> 7) & 0xf8;
         g = (v >> 2) & 0xf8;
         b = (v << 3) & 0xf8;
-        ((PIXEL_TYPE *)d)[0] = glue(rgb_to_pixel, DEPTH)(r, g, b);
+        ((PIXEL_TYPE *)d)[0] = RT_CONCAT(rgb_to_pixel, DEPTH)(r, g, b);
         s += 2;
         d += BPP;
     } while (--w != 0);
@@ -404,8 +404,8 @@ static void glue(vga_draw_line15_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 16 bit color
  */
-static void glue(vga_draw_line16_, DEPTH)(VGAState *s1, uint8_t *d,
-                                          const uint8_t *s, int width)
+static void RT_CONCAT(vga_draw_line16_, DEPTH)(VGAState *s1, uint8_t *d,
+                                               const uint8_t *s, int width)
 {
 #if DEPTH == 16 && defined(WORDS_BIGENDIAN) == defined(TARGET_WORDS_BIGENDIAN)
     memcpy(d, s, width * 2);
@@ -415,11 +415,11 @@ static void glue(vga_draw_line16_, DEPTH)(VGAState *s1, uint8_t *d,
 
     w = width;
     do {
-        v = lduw_raw((void *)s);
+        v = s[0] | (s[1] << 8);
         r = (v >> 8) & 0xf8;
         g = (v >> 3) & 0xfc;
         b = (v << 3) & 0xf8;
-        ((PIXEL_TYPE *)d)[0] = glue(rgb_to_pixel, DEPTH)(r, g, b);
+        ((PIXEL_TYPE *)d)[0] = RT_CONCAT(rgb_to_pixel, DEPTH)(r, g, b);
         s += 2;
         d += BPP;
     } while (--w != 0);
@@ -430,8 +430,8 @@ static void glue(vga_draw_line16_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 24 bit color
  */
-static void glue(vga_draw_line24_, DEPTH)(VGAState *s1, uint8_t *d,
-                                          const uint8_t *s, int width)
+static void RT_CONCAT(vga_draw_line24_, DEPTH)(VGAState *s1, uint8_t *d,
+                                               const uint8_t *s, int width)
 {
     int w;
     uint32_t r, g, b;
@@ -448,7 +448,7 @@ static void glue(vga_draw_line24_, DEPTH)(VGAState *s1, uint8_t *d,
         g = s[1];
         r = s[2];
 #endif
-        ((PIXEL_TYPE *)d)[0] = glue(rgb_to_pixel, DEPTH)(r, g, b);
+        ((PIXEL_TYPE *)d)[0] = RT_CONCAT(rgb_to_pixel, DEPTH)(r, g, b);
         s += 3;
         d += BPP;
     } while (--w != 0);
@@ -457,8 +457,8 @@ static void glue(vga_draw_line24_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 32 bit color
  */
-static void glue(vga_draw_line32_, DEPTH)(VGAState *s1, uint8_t *d,
-                                          const uint8_t *s, int width)
+static void RT_CONCAT(vga_draw_line32_, DEPTH)(VGAState *s1, uint8_t *d,
+                                               const uint8_t *s, int width)
 {
 #if DEPTH == 32 && defined(WORDS_BIGENDIAN) == defined(TARGET_WORDS_BIGENDIAN)
     memcpy(d, s, width * 4);
@@ -477,7 +477,7 @@ static void glue(vga_draw_line32_, DEPTH)(VGAState *s1, uint8_t *d,
         g = s[1];
         r = s[2];
 #endif
-        ((PIXEL_TYPE *)d)[0] = glue(rgb_to_pixel, DEPTH)(r, g, b);
+        ((PIXEL_TYPE *)d)[0] = RT_CONCAT(rgb_to_pixel, DEPTH)(r, g, b);
         s += 4;
         d += BPP;
     } while (--w != 0);
@@ -490,12 +490,12 @@ static void glue(vga_draw_line32_, DEPTH)(VGAState *s1, uint8_t *d,
 #ifdef VBOX
 static
 #endif/* VBOX */
-void glue(vga_draw_cursor_line_, DEPTH)(uint8_t *d1,
-                                        const uint8_t *src1,
-                                        int poffset, int w,
-                                        unsigned int color0,
-                                        unsigned int color1,
-                                        unsigned int color_xor)
+void RT_CONCAT(vga_draw_cursor_line_, DEPTH)(uint8_t *d1,
+                                             const uint8_t *src1,
+                                             int poffset, int w,
+                                             unsigned int color0,
+                                             unsigned int color1,
+                                             unsigned int color_xor)
 {
     const uint8_t *plane0, *plane1;
     int x, b0, b1;
