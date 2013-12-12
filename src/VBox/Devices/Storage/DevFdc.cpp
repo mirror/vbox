@@ -2283,7 +2283,7 @@ static void fdctrl_write_data(fdctrl_t *fdctrl, uint32_t value)
         fdctrl->msr |= FD_MSR_CMDBUSY;
     }
 
-    FLOPPY_DPRINTF("%s: %02x\n", __func__, value);
+    FLOPPY_DPRINTF("%s: %02x\n", __FUNCTION__, value);
     fdctrl->fifo[fdctrl->data_pos++] = value;
     if (fdctrl->data_pos == fdctrl->data_len) {
         /* We now have all parameters
