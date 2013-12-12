@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,12 @@
 #include <QMimeData>
 #include <QStringList>
 #include <QTimer>
+
+#ifdef LOG_GROUP
+# undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/log.h>
 
 /* GUI includes: */
 #include "UIDnDHandler.h"
@@ -45,6 +51,9 @@ UIDnDHandler::UIDnDHandler()
 
 Qt::DropAction UIDnDHandler::dragHGEnter(CGuest &guest, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget * /* pParent = 0 */)
 {
+    LogFlowFunc(("screenId=%RU32, x=%d, y=%d, action=%ld\n",
+                 screenId, x, y, toVBoxDnDAction(proposedAction)));
+
     /* Ask the guest for starting a DnD event. */
     KDragAndDropAction result = guest.DragHGEnter(screenId,
                                                   x,
@@ -58,7 +67,13 @@ Qt::DropAction UIDnDHandler::dragHGEnter(CGuest &guest, ulong screenId, int x, i
 
 Qt::DropAction UIDnDHandler::dragHGMove(CGuest &guest, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget * /* pParent = 0 */)
 {
-    /* Ask the guest for starting a DnD event. */
+#ifdef DEBUG_andy
+    LogFlowFunc(("screenId=%RU32, x=%d, y=%d, action=%ld\n",
+                 screenId, x, y, toVBoxDnDAction(proposedAction)));
+#endif
+
+    /* Notify the guest that the mouse has been moved while doing
+     * a drag'n drop operation. */
     KDragAndDropAction result = guest.DragHGMove(screenId,
                                                  x,
                                                  y,
@@ -71,6 +86,9 @@ Qt::DropAction UIDnDHandler::dragHGMove(CGuest &guest, ulong screenId, int x, in
 
 Qt::DropAction UIDnDHandler::dragHGDrop(CGuest &guest, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent /* = 0 */)
 {
+    LogFlowFunc(("screenId=%RU32, x=%d, y=%d, action=%ld\n",
+                 screenId, x, y, toVBoxDnDAction(proposedAction)));
+
     /* The format the guest requests. */
     QString format;
     /* Ask the guest for dropping data. */
@@ -115,6 +133,7 @@ Qt::DropAction UIDnDHandler::dragHGDrop(CGuest &guest, ulong screenId, int x, in
 
 void UIDnDHandler::dragHGLeave(CGuest &guest, ulong screenId, QWidget * /* pParent = 0 */)
 {
+    LogFlowFunc(("screenId=%RU32\n", screenId));
     guest.DragHGLeave(screenId);
 }
 
@@ -143,7 +162,8 @@ public:
       , m_actions(actions)
       , m_fState(Dragging)
     {
-        /* This is unbelievable hacky, but I didn't found another way. Stupid
+        /*
+         * This is unbelievable hacky, but I didn't find another way. Stupid
          * Qt QDrag interface is so less verbose, that we in principle know
          * nothing about what happens when the user drag something around. It
          * is possible that the target request data (s. retrieveData) while the
@@ -157,7 +177,8 @@ public:
          * to be last in the event filter queue and therefore called before the
          * one installed by the QDrag object.
          *
-         * Todo: test this on all supported platforms (X11 works) */
+         ** @todo: Test this on all supported platforms (X11 works).
+         */
         QTimer::singleShot(0, this, SLOT(sltInstallEventFilter()));
     }
 
@@ -257,13 +278,15 @@ private:
 
 void UIDnDHandler::dragGHPending(CSession &session, ulong screenId, QWidget *pParent /* = 0 */)
 {
-    /* How does this work: Host is asking the guest if there is any DnD
+    /*
+     * How this works: Host is asking the guest if there is any DnD
      * operation pending, when the mouse leaves the guest window
      * (DragGHPending). On return there is some info about a running DnD
      * operation (or defaultAction is KDragAndDropAction_Ignore if not). With
      * this information we create a Qt QDrag object with our own QMimeType
      * implementation and call exec. Please note, this *blocks* until the DnD
-     * operation has finished. */
+     * operation has finished.
+     */
     CGuest guest = session.GetConsole().GetGuest();
     QVector<QString> formats;
     QVector<KDragAndDropAction> actions;

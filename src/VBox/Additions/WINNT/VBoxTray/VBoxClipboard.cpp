@@ -524,7 +524,9 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
         }
     }
 
+#ifndef DEBUG_andy
     Log(("VBoxTray: vboxClipboardProcessMsg returned with rc = %ld\n", rc));
+#endif
     return rc;
 }
 

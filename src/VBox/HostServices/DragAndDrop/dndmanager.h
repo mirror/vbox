@@ -23,7 +23,7 @@
 #include <iprt/cpp/ministring.h>
 #include <iprt/cpp/list.h>
 
-typedef DECLCALLBACK(int) FNDNDPROGRESS(unsigned uPercentage, uint32_t uState, void *pvUser);
+typedef DECLCALLBACK(int) FNDNDPROGRESS(unsigned uPercentage, uint32_t uState, int rc, void *pvUser);
 typedef FNDNDPROGRESS *PFNDNDPROGRESS;
 
 /**
@@ -167,7 +167,7 @@ public:
       , m_pfnProgressCallback(pfnProgressCallback)
       , m_pvProgressUser(pvProgressUser)
     {}
-    ~DnDManager()
+    virtual ~DnDManager()
     {
         clear();
     }

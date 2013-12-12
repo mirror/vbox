@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,7 +71,11 @@ enum eHostFn
     HOST_DND_HG_EVT_LEAVE,
     HOST_DND_HG_EVT_DROPPED,
     HOST_DND_HG_EVT_CANCEL,
+    /** Gets the actual MIME data, based on
+     *  the format(s) specified by HOST_DND_HG_EVT_ENTER. */
     HOST_DND_HG_SND_DATA,
+    /** Sent when the actual buffer for HOST_DND_HG_SND_DATA
+     *  was too small. */
     HOST_DND_HG_SND_MORE_DATA,
     HOST_DND_HG_SND_DIR,
     HOST_DND_HG_SND_FILE,
@@ -391,8 +395,9 @@ typedef struct VBOXDNDCBHGEVTPROGRESSDATA
     VBOXDNDCBHEADERDATA hdr;
     uint32_t uPercentage;
     uint32_t uState;
+    int rc;
 } VBOXDNDCBHGEVTPROGRESSDATA;
-typedef VBOXDNDCBHGEVTPROGRESSDATA *PVBOXDNDCBHGEVTPROGRESSDATA ;
+typedef VBOXDNDCBHGEVTPROGRESSDATA *PVBOXDNDCBHGEVTPROGRESSDATA;
 
 typedef struct VBOXDNDCBGHACKPENDINGDATA
 {
@@ -418,7 +423,7 @@ typedef struct VBOXDNDCBEVTERRORDATA
 {
     /** Callback data header. */
     VBOXDNDCBHEADERDATA hdr;
-    int32_t  rc;
+    int32_t rc;
 } VBOXDNDCBEVTERRORDATA;
 typedef VBOXDNDCBEVTERRORDATA *PVBOXDNDCBEVTERRORDATA;
 

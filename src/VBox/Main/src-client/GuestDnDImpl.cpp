@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,6 +28,12 @@
 # include <VBox/com/list.h>
 # include <VBox/HostServices/DragAndDropSvc.h>
 
+# ifdef LOG_GROUP
+ # undef LOG_GROUP
+# endif
+# define LOG_GROUP LOG_GROUP_GUEST_DND
+# include <VBox/log.h>
+
 # include <iprt/stream.h>
 # include <iprt/semaphore.h>
 # include <iprt/cpp/utils.h>
@@ -47,18 +53,18 @@
  * 1. GUI: Uses the Qt classes for Drag and Drop and mainly forward the content
  *    of it to the Main IGuest interface (see UIDnDHandler.cpp).
  * 2. Main: Public interface for doing Drag and Drop. Also manage the IProgress
- *    interfaces for blocking the caller by showing a progress dialog. (see
- *    this file)
+ *    interfaces for blocking the caller by showing a progress dialog (see
+ *    this file).
  * 3. HGCM service: Handle all messages from the host to the guest at once and
- *    encapsulate the internal communication details. (see dndmanager.cpp and
- *    friends)
+ *    encapsulate the internal communication details (see dndmanager.cpp and
+ *    friends).
  * 4. Guest additions: Split into the platform neutral part (see
  *    VBoxGuestR3LibDragAndDrop.cpp) and the guest OS specific parts.
  *    Receive/send message from/to the HGCM service and does all guest specific
- *    operations. Currently only X11 is supported. (see draganddrop.cpp within
- *    VBoxClient)
+ *    operations. Currently only X11 is supported (see draganddrop.cpp within
+ *    VBoxClient).
  *
- * Host  -> Guest:
+ * Host -> Guest:
  * 1. There are DnD Enter, Move, Leave events which are send exactly like this
  *    to the guest. The info includes the pos, mimetypes and allowed actions.
  *    The guest has to respond with an action it would accept, so the GUI could
@@ -85,8 +91,8 @@
  *
  * Dropping of a directory, means recursively transferring _all_ the content.
  *
- * Directories and files are placed into a public visible user directory on the
- * guest (~/Documents/VirtualBox Dropped Files). We can't delete them after the
+ * Directories and files are placed into the user's temporary directory on the
+ * guest (e.g. /tmp/VirtualBox Dropped Files). We can't delete them after the
  * DnD operation, because we didn't know what the DnD target does with it. E.g.
  * it could just be opened in place. This could lead ofc to filling up the disk
  * within the guest. To inform the user about this, a small app could be
@@ -111,24 +117,6 @@
  * Cancel is supported in both directions and cleans up all previous steps
  * (thats is: deleting already transfered dirs/files).
  *
- * There are a lot of DO (debug output) calls in the code. This could be
- * disabled, but should be removed (or replaced by Log calls) when this is
- * nearly finished.
- *
- * For Windows guests there could be different communication become necessary.
- * So the current interface isn't set in stone and should be made public only,
- * after someone had deeply looked into the Win guest support. See
- * http://www.catch22.net/tuts/dragdrop for a start.
- *
- * How to test:
- * First set VBOX_WITH_DRAG_AND_DROP=1 in LocalConfig.kmk. The best is if the
- * host match the guest OS arch. Just build the tree and point a shared folder
- * within the guest to the additions subfolder in bin. Start the guest and
- * execute ./VBoxClient --dragandrop --nodaemon within this shared folder. You
- * should now be able of dragging text or files to the guest. I used a 64bit
- * Linux for both the host and the guest. If the archs don't match, you need to
- * first setup a build environment in the guest ofc.
- *
  * In general I propose the following changes in the VBox HGCM infrastructure
  * for the future:
  * - Currently it isn't really possible to send messages to the guest from the
@@ -151,7 +139,7 @@
  *
  * Todo:
  * - Dragging out of the guest (partly done)
- *   - ESC doesn't really work
+ *   - ESC doesn't really work (on Windows guests it's already implemented)
  *   - transfer of URIs (that is the files and patching of the data)
  *   - testing in a multi monitor setup
  *   ... in any case it seems a little bit difficult to handle from the Qt
@@ -229,7 +217,7 @@ private:
     DnDGuestResponse *response() const { return m_pDnDResponse; }
 
     void adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) const;
-    void hostCall(const char* psczFunction, uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
+    void hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
 
     /* Static helper */
     static RTCString           toFormatString(ComSafeArrayIn(IN_BSTR, formats));
@@ -253,6 +241,8 @@ private:
 
 /* What mime-types are supported by VirtualBox.
  * Note: If you add something here, make sure you test it with all guest OS's!
+ ** @todo Make this MIME list configurable / extendable (by extra data?). Currently
+ *        this is done hardcoded on every guest platform (POSIX/Windows).
  */
 /* static */
 const RTCList<RTCString> GuestDnDPrivate::m_sstrAllowedMimeTypes = RTCList<RTCString>()
@@ -295,7 +285,11 @@ int DnDGuestResponse::notifyAboutGuestResponse()
 
 int DnDGuestResponse::waitForGuestResponse()
 {
-    return RTSemEventWait(m_EventSem, 300);
+    int vrc = RTSemEventWait(m_EventSem, 300);
+#ifdef DEBUG_andy
+    LogFlowFunc(("rc=%Rrc\n", vrc));
+#endif
+    return vrc;
 }
 
 int DnDGuestResponse::addData(void *pvData, uint32_t cbData, uint32_t *pcbCurSize)
@@ -339,34 +333,43 @@ HRESULT DnDGuestResponse::resetProgress(const ComObjPtr<Guest>& pParent)
 
 int DnDGuestResponse::setProgress(unsigned uPercentage, uint32_t uState, int rcOp /* = VINF_SUCCESS */)
 {
+    LogFlowFunc(("uPercentage=%RU32, uState=%ld, rcOp=%Rrc\n", uPercentage, uState, rcOp));
+
     int vrc = VINF_SUCCESS;
-    HRESULT rc;
     if (!m_progress.isNull())
     {
         BOOL fCompleted;
-        rc = m_progress->COMGETTER(Completed)(&fCompleted);
+        HRESULT rc = m_progress->COMGETTER(Completed)(&fCompleted);
         if (!fCompleted)
         {
             if (uState == DragAndDropSvc::DND_PROGRESS_ERROR)
+            {
                 rc = m_progress->notifyComplete(E_FAIL,
                                                 COM_IIDOF(IGuest),
                                                 m_parent->getComponentName(),
                                                 m_parent->tr("Guest error (%Rrc)"), rcOp);
+            }
             else if (uState == DragAndDropSvc::DND_PROGRESS_CANCELLED)
-                rc = m_progress->notifyComplete(S_OK);
-            else
+            {
+                rc = m_progress->Cancel();
+                vrc = VERR_CANCELLED;
+            }
+            else /* uState == DragAndDropSvc::DND_PROGRESS_RUNNING */
             {
                 rc = m_progress->SetCurrentOperationProgress(uPercentage);
+#ifndef DEBUG_andy
+                Assert(SUCCEEDED(rc));
+#endif
                 if (   uState      == DragAndDropSvc::DND_PROGRESS_COMPLETE
                     || uPercentage >= 100)
                     rc = m_progress->notifyComplete(S_OK);
             }
+#ifndef DEBUG_andy
+            Assert(SUCCEEDED(rc));
+#endif
         }
-        BOOL fCanceled = FALSE;
-        rc = m_progress->COMGETTER(Canceled)(&fCanceled);
-        if (fCanceled)
-            vrc = VERR_CANCELLED;
     }
+
     return vrc;
 }
 
@@ -390,9 +393,9 @@ void GuestDnDPrivate::adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) cons
     *puY += yShift;
 }
 
-void GuestDnDPrivate::hostCall(const char* psczFunction, uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const
+void GuestDnDPrivate::hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const
 {
-    VMMDev *vmmDev = 0;
+    VMMDev *vmmDev = NULL;
     {
         /* Make sure mParent is valid, so set the read lock while using.
          * Do not keep this lock while doing the actual call, because in the meanwhile
@@ -408,7 +411,7 @@ void GuestDnDPrivate::hostCall(const char* psczFunction, uint32_t u32Function, u
         throw p->setError(VBOX_E_VM_ERROR,
                           p->tr("VMM device is not available (is the VM running?)"));
 
-    LogFlowFunc(("hgcmHostCall msg=%s; numParms=%u\n", psczFunction, u32Function));
+    LogFlowFunc(("hgcmHostCall msg=%RU32, numParms=%RU32\n", u32Function, cParms));
     int vrc = vmmDev->hgcmHostCall("VBoxDragAndDropSvc",
                                    u32Function,
                                    cParms, paParms);
@@ -575,8 +578,7 @@ HRESULT GuestDnD::dragHGEnter(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAc
         paParms[i++].setPointer((void*)strFormats.c_str(), strFormats.length() + 1);
         paParms[i++].setUInt32(strFormats.length() + 1);
 
-        d->hostCall("HOST_DND_HG_EVT_ENTER",
-                    DragAndDropSvc::HOST_DND_HG_EVT_ENTER,
+        d->hostCall(DragAndDropSvc::HOST_DND_HG_EVT_ENTER,
                     i,
                     paParms);
 
@@ -587,6 +589,7 @@ HRESULT GuestDnD::dragHGEnter(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAc
 
         /* Copy the response info */
         *pResultAction = d->toMainAction(pDnD->defAction());
+        LogFlowFunc(("*pResultAction=%ld\n", *pResultAction));
     }
     catch (HRESULT rc2)
     {
@@ -635,8 +638,7 @@ HRESULT GuestDnD::dragHGMove(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAct
         paParms[i++].setPointer((void*)strFormats.c_str(), strFormats.length() + 1);
         paParms[i++].setUInt32(strFormats.length() + 1);
 
-        d->hostCall("HOST_DND_HG_EVT_MOVE",
-                    DragAndDropSvc::HOST_DND_HG_EVT_MOVE,
+        d->hostCall(DragAndDropSvc::HOST_DND_HG_EVT_MOVE,
                     i,
                     paParms);
 
@@ -647,6 +649,7 @@ HRESULT GuestDnD::dragHGMove(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAct
 
         /* Copy the response info */
         *pResultAction = d->toMainAction(pDnD->defAction());
+        LogFlowFunc(("*pResultAction=%ld\n", *pResultAction));
     }
     catch (HRESULT rc2)
     {
@@ -665,8 +668,7 @@ HRESULT GuestDnD::dragHGLeave(ULONG uScreenId)
 
     try
     {
-        d->hostCall("HOST_DND_HG_EVT_LEAVE",
-                    DragAndDropSvc::HOST_DND_HG_EVT_LEAVE,
+        d->hostCall(DragAndDropSvc::HOST_DND_HG_EVT_LEAVE,
                     0,
                     NULL);
 
@@ -721,8 +723,7 @@ HRESULT GuestDnD::dragHGDrop(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAct
         paParms[i++].setPointer((void*)strFormats.c_str(), strFormats.length() + 1);
         paParms[i++].setUInt32(strFormats.length() + 1);
 
-        d->hostCall("HOST_DND_HG_EVT_DROPPED",
-                    DragAndDropSvc::HOST_DND_HG_EVT_DROPPED,
+        d->hostCall(DragAndDropSvc::HOST_DND_HG_EVT_DROPPED,
                     i,
                     paParms);
 
@@ -734,6 +735,8 @@ HRESULT GuestDnD::dragHGDrop(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAct
         /* Copy the response info */
         *pResultAction = d->toMainAction(pDnD->defAction());
         Bstr(pDnD->format()).cloneTo(pstrFormat);
+
+        LogFlowFunc(("*pResultAction=%ld\n", *pResultAction));
     }
     catch (HRESULT rc2)
     {
@@ -767,8 +770,7 @@ HRESULT GuestDnD::dragHGPutData(ULONG uScreenId, IN_BSTR bstrFormat, ComSafeArra
         /* Reset any old progress status. */
         pDnD->resetProgress(p);
 
-        d->hostCall("HOST_DND_HG_SND_DATA",
-                    DragAndDropSvc::HOST_DND_HG_SND_DATA,
+        d->hostCall(DragAndDropSvc::HOST_DND_HG_SND_DATA,
                     i,
                     paParms);
 
@@ -800,8 +802,7 @@ HRESULT GuestDnD::dragGHPending(ULONG uScreenId, ComSafeArrayOut(BSTR, formats),
         int i = 0;
         paParms[i++].setUInt32(uScreenId);
 
-        d->hostCall("HOST_DND_GH_REQ_PENDING",
-                    DragAndDropSvc::HOST_DND_GH_REQ_PENDING,
+        d->hostCall(DragAndDropSvc::HOST_DND_GH_REQ_PENDING,
                     i,
                     paParms);
 
@@ -854,8 +855,7 @@ HRESULT GuestDnD::dragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action, 
         pDnD->resetData();
         pDnD->resetProgress(p);
 
-        d->hostCall("HOST_DND_GH_EVT_DROPPED",
-                    DragAndDropSvc::HOST_DND_GH_EVT_DROPPED,
+        d->hostCall(DragAndDropSvc::HOST_DND_GH_EVT_DROPPED,
                     i,
                     paParms);
 
@@ -901,6 +901,9 @@ HRESULT GuestDnD::dragGHGetData(ComSafeArrayOut(BYTE, data))
 
 DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms)
 {
+    LogFlowFunc(("pvExtension=%p, u32Function=%RU32, pvParms=%p, cbParms=%RU32\n",
+                 pvExtension, u32Function, pvParms, cbParms));
+
     ComObjPtr<Guest> pGuest = reinterpret_cast<Guest*>(pvExtension);
     if (!pGuest->m_pGuestDnD)
         return VINF_SUCCESS;
@@ -908,8 +911,8 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
     GuestDnDPrivate *d = static_cast<GuestDnDPrivate*>(pGuest->m_pGuestDnD->d_ptr);
     const ComObjPtr<Guest> &p = d->p;
 
-    DnDGuestResponse *pDnD = d->response();
-    if (pDnD == NULL)
+    DnDGuestResponse *pResp = d->response();
+    if (pResp == NULL)
         return VERR_INVALID_PARAMETER;
 
     int rc = VINF_SUCCESS;
@@ -921,8 +924,8 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
             AssertPtr(pCBData);
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGACKOPDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_ACK_OP == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
-            pDnD->setDefAction(pCBData->uAction);
-            rc = pDnD->notifyAboutGuestResponse();
+            pResp->setDefAction(pCBData->uAction);
+            rc = pResp->notifyAboutGuestResponse();
             break;
         }
         case DragAndDropSvc::GUEST_DND_HG_REQ_DATA:
@@ -931,8 +934,8 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
             AssertPtr(pCBData);
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGREQDATADATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_REQ_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
-            pDnD->setFormat(pCBData->pszFormat);
-            rc = pDnD->notifyAboutGuestResponse();
+            pResp->setFormat(pCBData->pszFormat);
+            rc = pResp->notifyAboutGuestResponse();
             break;
         }
         case DragAndDropSvc::GUEST_DND_HG_EVT_PROGRESS:
@@ -941,7 +944,7 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
             AssertPtr(pCBData);
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGEVTPROGRESSDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_EVT_PROGRESS == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
-            rc = pDnD->setProgress(pCBData->uPercentage, pCBData->uState);
+            rc = pResp->setProgress(pCBData->uPercentage, pCBData->uState, pCBData->rc);
             break;
         }
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -951,10 +954,10 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
             AssertPtr(pCBData);
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBGHACKPENDINGDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_ACK_PENDING == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
-            pDnD->setFormat(pCBData->pszFormat);
-            pDnD->setDefAction(pCBData->uDefAction);
-            pDnD->setAllActions(pCBData->uAllActions);
-            rc = pDnD->notifyAboutGuestResponse();
+            pResp->setFormat(pCBData->pszFormat);
+            pResp->setDefAction(pCBData->uDefAction);
+            pResp->setAllActions(pCBData->uAllActions);
+            rc = pResp->notifyAboutGuestResponse();
             break;
         }
         case DragAndDropSvc::GUEST_DND_GH_SND_DATA:
@@ -964,13 +967,13 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBSNDDATADATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_SND_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
             uint32_t cbCurSize = 0;
-            pDnD->addData(pCBData->pvData, pCBData->cbData, &cbCurSize);
-            rc = pDnD->setProgress(100.0 / pCBData->cbAllSize * cbCurSize, (pCBData->cbAllSize == cbCurSize ? DragAndDropSvc::DND_PROGRESS_COMPLETE : DragAndDropSvc::DND_PROGRESS_RUNNING));
+            pResp->addData(pCBData->pvData, pCBData->cbData, &cbCurSize);
+            rc = pResp->setProgress(100.0 / pCBData->cbAllSize * cbCurSize, (pCBData->cbAllSize == cbCurSize ? DragAndDropSvc::DND_PROGRESS_COMPLETE : DragAndDropSvc::DND_PROGRESS_RUNNING));
             /* Todo: for now we instantly confirm the cancel. Check if the
              * guest should first clean up stuff itself and than really confirm
              * the cancel request by an extra message. */
             if (rc == VERR_CANCELLED)
-                pDnD->setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED);
+                pResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED);
             break;
         }
         case DragAndDropSvc::GUEST_DND_GH_EVT_ERROR:
@@ -980,14 +983,17 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBEVTERRORDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
             /* Cleanup */
-            pDnD->resetData();
-            rc = pDnD->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc);
+            pResp->resetData();
+            rc = pResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc);
             break;
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
-        default: AssertMsgFailedReturn(("Function %u not recognized!\n", u32Function), VERR_INVALID_PARAMETER); break;
+        default:
+            AssertMsgFailedReturn(("Function %RU32 not supported\n", u32Function), VERR_NOT_SUPPORTED);
+            break;
     }
 
+    LogFlowFunc(("Returning rc=%Rrc\n", rc));
     return rc;
 }
 

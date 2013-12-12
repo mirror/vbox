@@ -19,6 +19,14 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifdef DEBUG
+# define LOG_ENABLED
+# define LOG_GROUP LOG_GROUP_DEFAULT
+#endif
+
+#include <package-generated.h>
+#include "product-generated.h"
+
 #include "VBoxTray.h"
 #include "VBoxTrayMsg.h"
 #include "VBoxHelpers.h"
@@ -29,6 +37,9 @@
 #include "VBoxVRDP.h"
 #include "VBoxHostVersion.h"
 #include "VBoxSharedFolders.h"
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "VBoxDnD.h"
+#endif
 #include "VBoxIPC.h"
 #include "VBoxLA.h"
 #include "VBoxMMR.h"
@@ -41,6 +52,10 @@
 
 #include <iprt/buildconfig.h>
 #include <iprt/ldr.h>
+#include <iprt/process.h>
+#include <iprt/system.h>
+#include <iprt/time.h>
+#include <VBox/log.h>
 
 /* Default desktop state tracking */
 #include <Wtsapi32.h>
@@ -132,6 +147,10 @@ HWND                  ghwndToolWindow;
 NOTIFYICONDATA        gNotifyIconData;
 DWORD                 gMajorVersion;
 
+static PRTLOGGER      g_pLoggerRelease = NULL;
+static uint32_t       g_cHistory = 10;                   /* Enable log rotation, 10 files. */
+static uint32_t       g_uHistoryFileTime = RT_SEC_1DAY;  /* Max 1 day per file. */
+static uint64_t       g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. */
 
 /* The service table. */
 static VBOXSERVICEINFO vboxServiceTable[] =
@@ -194,6 +213,15 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         VBoxMMRThread,
         NULL /* pfnStop */,
         VBoxMMRDestroy
+    },
+#endif
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    {
+        "Drag and Drop",
+        VBoxDnDInit,
+        VBoxDnDThread,
+        VBoxDnDStop,
+        VBoxDnDDestroy
     },
 #endif
     {
@@ -474,6 +502,129 @@ static void vboxTrayCloseBaseDriver(void)
         CloseHandle(ghVBoxDriver);
         ghVBoxDriver = NULL;
     }
+}
+
+/**
+ * Release logger callback.
+ *
+ * @return  IPRT status code.
+ * @param   pLoggerRelease
+ * @param   enmPhase
+ * @param   pfnLog
+ */
+static void vboxTrayLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
+{
+    /* Some introductory information. */
+    static RTTIMESPEC s_TimeSpec;
+    char szTmp[256];
+    if (enmPhase == RTLOGPHASE_BEGIN)
+        RTTimeNow(&s_TimeSpec);
+    RTTimeSpecToString(&s_TimeSpec, szTmp, sizeof(szTmp));
+
+    switch (enmPhase)
+    {
+        case RTLOGPHASE_BEGIN:
+        {
+            pfnLog(pLoggerRelease,
+                   "VBoxTray %s r%s %s (%s %s) release log\n"
+                   "Log opened %s\n",
+                   RTBldCfgVersion(), RTBldCfgRevisionStr(), VBOX_BUILD_TARGET,
+                   __DATE__, __TIME__, szTmp);
+
+            int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Product: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Release: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Version: %s\n", szTmp);
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Service Pack: %s\n", szTmp);
+
+            /* the package type is interesting for Linux distributions */
+            char szExecName[RTPATH_MAX];
+            char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
+            pfnLog(pLoggerRelease,
+                   "Executable: %s\n"
+                   "Process ID: %u\n"
+                   "Package type: %s"
+#ifdef VBOX_OSE
+                   " (OSE)"
+#endif
+                   "\n",
+                   pszExecName ? pszExecName : "unknown",
+                   RTProcSelf(),
+                   VBOX_PACKAGE_STRING);
+            break;
+        }
+
+        case RTLOGPHASE_PREROTATE:
+            pfnLog(pLoggerRelease, "Log rotated - Log started %s\n", szTmp);
+            break;
+
+        case RTLOGPHASE_POSTROTATE:
+            pfnLog(pLoggerRelease, "Log continuation - Log started %s\n", szTmp);
+            break;
+
+        case RTLOGPHASE_END:
+            pfnLog(pLoggerRelease, "End of log file - Log started %s\n", szTmp);
+            break;
+
+        default:
+            /* nothing */;
+    }
+}
+
+/**
+ * Creates the default release logger outputting to the specified file.
+ * Pass NULL for disabled logging.
+ *
+ * @return  IPRT status code.
+ * @param   pszLogFile              Filename for log output.  Optional.
+ */
+static int vboxTrayLogCreate(const char *pszLogFile)
+{
+    /* Create release logger (stdout + file). */
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    fFlags |= RTLOGFLAGS_USECRLF;
+#endif
+    char szError[RTPATH_MAX + 128] = "";
+    int rc = RTLogCreateEx(&g_pLoggerRelease, fFlags,
+#ifdef DEBUG
+                           "all.e.l.f",
+                           "VBOXTRAY_LOG",
+#else
+                           "all",
+                           "VBOXTRAY_RELEASE_LOG",
+#endif
+                           RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_STDOUT,
+                           vboxTrayLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
+                           szError, sizeof(szError), pszLogFile);
+    if (RT_SUCCESS(rc))
+    {
+#ifdef DEBUG
+        RTLogSetDefaultInstance(g_pLoggerRelease);
+#else
+        /* Register this logger as the release logger. */
+        RTLogRelSetDefaultInstance(g_pLoggerRelease);
+#endif
+        /* Explicitly flush the log in case of VBOXTRAY_RELEASE_LOG=buffered. */
+        RTLogFlush(g_pLoggerRelease);
+    }
+    else
+        MessageBox(GetDesktopWindow(),
+                   szError, "VBoxTray - Logging Error", MB_OK | MB_ICONERROR);
+
+    return rc;
+}
+
+static void vboxTrayLogDestroy(void)
+{
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
 }
 
 static void vboxTrayDestroyToolWindow(void)
@@ -801,7 +952,9 @@ static int vboxTrayServiceMain(void)
                             MSG msg;
                             while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
                             {
+#ifndef DEBUG_andy
                                 Log(("VBoxTray: msg %p\n", msg.message));
+#endif
                                 if (msg.message == WM_QUIT)
                                 {
                                     Log(("VBoxTray: WM_QUIT!\n"));
@@ -832,12 +985,13 @@ static int vboxTrayServiceMain(void)
  */
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    /* Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
+    /* Note: Do not use a global namespace ("Global\\") for mutex name here,
+     * will blow up NT4 compatibility! */
     HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, "VBoxTray");
     if (   hMutexAppRunning != NULL
         && GetLastError() == ERROR_ALREADY_EXISTS)
     {
-        /* Close the mutex for this application instance. */
+        /* VBoxTray already running? Bail out. */
         CloseHandle (hMutexAppRunning);
         hMutexAppRunning = NULL;
         return 0;
@@ -846,6 +1000,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     LogRel(("VBoxTray: %s r%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr()));
 
     int rc = RTR3InitExeNoArguments(0);
+    if (RT_SUCCESS(rc))
+        rc = vboxTrayLogCreate(NULL /* pszLogFile */);
+
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3Init();
@@ -930,6 +1087,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     }
 
     VbglR3Term();
+
+    vboxTrayLogDestroy();
+
     return RT_SUCCESS(rc) ? 0 : 1;
 }
 
