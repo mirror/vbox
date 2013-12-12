@@ -1997,6 +1997,11 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
+    /*
+     * IMPORTANT!!!
+     * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
+     */
+
     /* Restore host FPU state if necessary and resync on next R0 reentry .*/
     if (CPUMIsGuestFPUStateActive(pVCpu))
     {
@@ -2054,6 +2059,10 @@ static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hm.s.fLeaveDone = true;
     }
 
+    /*
+     * IMPORTANT!!!
+     * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
+     */
     /* Deregister hook now that we've left HM context before re-enabling preemption. */
     if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
         VMMR0ThreadCtxHooksDeregister(pVCpu);
@@ -2091,17 +2100,38 @@ static int hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   enmOperation    The operation causing the ring-3 longjump.
  * @param   pvUser          The user argument (pointer to the possibly
  *                          out-of-date guest-CPU context).
- *
- * @remarks Must never be called with @a enmOperation ==
- *          VMMCALLRING3_VM_R0_ASSERTION. We can't assert it here because if it
- *          it -does- get called with VMMCALLRING3_VM_R0_ASSERTION, we'll end up
- *          with an infinite recursion.
  */
 DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
 {
-    NOREF(enmOperation);
+    if (enmOperation == VMMCALLRING3_VM_R0_ASSERTION)
+    {
+        /*
+         * !!! IMPORTANT !!!
+         * If you modify code here, make sure to check whether hmR0SvmLeave() and hmR0SvmLeaveSession() needs
+         * to be updated too. This is a stripped down version which gets out ASAP trying to not trigger any assertion.
+         */
+        VMMRZCallRing3RemoveNotification(pVCpu);
+        VMMRZCallRing3Disable(pVCpu);
+        HM_DISABLE_PREEMPT_IF_NEEDED();
 
-    /* VMMRZCallRing3() already makes sure we never get called as a result of an longjmp due to an assertion, */
+        /* Restore host FPU state if necessary and resync on next R0 reentry .*/
+        if (CPUMIsGuestFPUStateActive(pVCpu))
+            CPUMR0SaveGuestFPU(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser);
+
+        /* Restore host debug registers if necessary and resync on next R0 reentry. */
+        CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */);
+
+        /* Deregister hook now that we've left HM context before re-enabling preemption. */
+        if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
+            VMMR0ThreadCtxHooksDeregister(pVCpu);
+
+        /* Leave HM context. This takes care of local init (term). */
+        int rc = HMR0LeaveCpu(pVCpu);
+
+        HM_RESTORE_PREEMPT_IF_NEEDED();
+        return VINF_SUCCESS;
+    }
+
     Assert(pVCpu);
     Assert(pvUser);
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
