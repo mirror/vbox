@@ -541,6 +541,8 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
                     return RTMsgErrorRc(rc, "Out of memory (uMsr=%#x).\n", uMsr);
                 vbCpuRepDebug("%#010x: uValue=%#llx fFlags=%#x\n", uMsr, uValue, fFlags);
             }
+
+            uMsr++;
         }
     }
 
