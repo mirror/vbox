@@ -174,6 +174,7 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_Ia32DsArea,
     kCpumMsrRdFn_Ia32TscDeadline,
     kCpumMsrRdFn_Ia32X2ApicN,
+    kCpumMsrRdFn_Ia32DebugInterface,
     kCpumMsrRdFn_Ia32VmxBase,               /**< Takes real value as reference. */
     kCpumMsrRdFn_Ia32VmxPinbasedCtls,       /**< Takes real value as reference. */
     kCpumMsrRdFn_Ia32VmxProcbasedCtls,      /**< Takes real value as reference. */
@@ -250,6 +251,19 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_IntelI7RaplPp1PowerLimit,   /**< Takes real value as reference. */
     kCpumMsrRdFn_IntelI7RaplPp1EnergyStatus, /**< Takes real value as reference. */
     kCpumMsrRdFn_IntelI7RaplPp1Policy,       /**< Takes real value as reference. */
+    kCpumMsrRdFn_IntelI7IvyConfigTdpNominal, /**< Takes real value as reference. */
+    kCpumMsrRdFn_IntelI7IvyConfigTdpLevel1,  /**< Takes real value as reference. */
+    kCpumMsrRdFn_IntelI7IvyConfigTdpLevel2,  /**< Takes real value as reference. */
+    kCpumMsrRdFn_IntelI7IvyConfigTdpControl,
+    kCpumMsrRdFn_IntelI7IvyTurboActivationRatio,
+    kCpumMsrRdFn_IntelI7UncPerfGlobalCtrl,
+    kCpumMsrRdFn_IntelI7UncPerfGlobalStatus,
+    kCpumMsrRdFn_IntelI7UncPerfGlobalOvfCtrl,
+    kCpumMsrRdFn_IntelI7UncPerfFixedCtrCtrl,
+    kCpumMsrRdFn_IntelI7UncPerfFixedCtr,
+    kCpumMsrRdFn_IntelI7UncCBoxConfig,
+    kCpumMsrRdFn_IntelI7UncArbPerfCtrN,
+    kCpumMsrRdFn_IntelI7UncArbPerfEvtSelN,
 
     kCpumMsrRdFn_P6LastBranchFromIp,
     kCpumMsrRdFn_P6LastBranchToIp,
@@ -410,6 +424,7 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_Ia32DsArea,
     kCpumMsrWrFn_Ia32TscDeadline,
     kCpumMsrWrFn_Ia32X2ApicN,
+    kCpumMsrWrFn_Ia32DebugInterface,
 
     kCpumMsrWrFn_Amd64Efer,
     kCpumMsrWrFn_Amd64SyscallTarget,
@@ -452,6 +467,15 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_IntelI7RaplPp0Policy,
     kCpumMsrWrFn_IntelI7RaplPp1PowerLimit,
     kCpumMsrWrFn_IntelI7RaplPp1Policy,
+    kCpumMsrWrFn_IntelI7IvyConfigTdpControl,
+    kCpumMsrWrFn_IntelI7IvyTurboActivationRatio,
+    kCpumMsrWrFn_IntelI7UncPerfGlobalCtrl,
+    kCpumMsrWrFn_IntelI7UncPerfGlobalStatus,
+    kCpumMsrWrFn_IntelI7UncPerfGlobalOvfCtrl,
+    kCpumMsrWrFn_IntelI7UncPerfFixedCtrCtrl,
+    kCpumMsrWrFn_IntelI7UncPerfFixedCtr,
+    kCpumMsrWrFn_IntelI7UncArbPerfCtrN,
+    kCpumMsrWrFn_IntelI7UncArbPerfEvtSelN,
 
     kCpumMsrWrFn_P6LastIntFromIp,
     kCpumMsrWrFn_P6LastIntToIp,

@@ -1078,9 +1078,18 @@ static DECLCALLBACK(int) cpumMsrWr_Ia32X2ApicN(PVMCPU pVCpu, uint32_t idMsr, PCC
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(int) cpumMsrRd_(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+static DECLCALLBACK(int) cpumMsrRd_Ia32DebugInterface(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    /** @todo IA32_DEBUG_INTERFACE (no docs)  */
     *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_Ia32DebugInterface(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo IA32_DEBUG_INTERFACE (no docs)  */
     return VINF_SUCCESS;
 }
 
@@ -2170,6 +2179,193 @@ static DECLCALLBACK(int) cpumMsrWr_IntelI7RaplPp1Policy(PVMCPU pVCpu, uint32_t i
 }
 
 
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7IvyConfigTdpNominal(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo intel power management.  */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7IvyConfigTdpLevel1(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo intel power management.  */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7IvyConfigTdpLevel2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo intel power management.  */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7IvyConfigTdpControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo intel power management.  */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelI7IvyConfigTdpControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo intel power management.  */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7IvyTurboActivationRatio(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo intel power management.  */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelI7IvyTurboActivationRatio(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo intel power management.  */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7UncPerfGlobalCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo uncore msrs.  */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelI7UncPerfGlobalCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo uncore msrs.  */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7UncPerfGlobalStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo uncore msrs.  */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelI7UncPerfGlobalStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo uncore msrs.  */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7UncPerfGlobalOvfCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo uncore msrs.  */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelI7UncPerfGlobalOvfCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo uncore msrs.  */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7UncPerfFixedCtrCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo uncore msrs.  */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelI7UncPerfFixedCtrCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo uncore msrs.  */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7UncPerfFixedCtr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo uncore msrs.  */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelI7UncPerfFixedCtr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo uncore msrs.  */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7UncCBoxConfig(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo uncore msrs.  */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7UncArbPerfCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo uncore msrs.  */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelI7UncArbPerfCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo uncore msrs.  */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7UncArbPerfEvtSelN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo uncore msrs.  */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelI7UncArbPerfEvtSelN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo uncore msrs.  */
+    return VINF_SUCCESS;
+}
 
 
 
@@ -3905,6 +4101,7 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_Ia32DsArea,
     cpumMsrRd_Ia32TscDeadline,
     cpumMsrRd_Ia32X2ApicN,
+    cpumMsrRd_Ia32DebugInterface,
     cpumMsrRd_Ia32VmxBase,
     cpumMsrRd_Ia32VmxPinbasedCtls,
     cpumMsrRd_Ia32VmxProcbasedCtls,
@@ -3981,6 +4178,19 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_IntelI7RaplPp1PowerLimit,
     cpumMsrRd_IntelI7RaplPp1EnergyStatus,
     cpumMsrRd_IntelI7RaplPp1Policy,
+    cpumMsrRd_IntelI7IvyConfigTdpNominal,
+    cpumMsrRd_IntelI7IvyConfigTdpLevel1,
+    cpumMsrRd_IntelI7IvyConfigTdpLevel2,
+    cpumMsrRd_IntelI7IvyConfigTdpControl,
+    cpumMsrRd_IntelI7IvyTurboActivationRatio,
+    cpumMsrRd_IntelI7UncPerfGlobalCtrl,
+    cpumMsrRd_IntelI7UncPerfGlobalStatus,
+    cpumMsrRd_IntelI7UncPerfGlobalOvfCtrl,
+    cpumMsrRd_IntelI7UncPerfFixedCtrCtrl,
+    cpumMsrRd_IntelI7UncPerfFixedCtr,
+    cpumMsrRd_IntelI7UncCBoxConfig,
+    cpumMsrRd_IntelI7UncArbPerfCtrN,
+    cpumMsrRd_IntelI7UncArbPerfEvtSelN,
 
     cpumMsrRd_P6LastBranchFromIp,
     cpumMsrRd_P6LastBranchToIp,
@@ -4132,6 +4342,7 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_Ia32DsArea,
     cpumMsrWr_Ia32TscDeadline,
     cpumMsrWr_Ia32X2ApicN,
+    cpumMsrWr_Ia32DebugInterface,
 
     cpumMsrWr_Amd64Efer,
     cpumMsrWr_Amd64SyscallTarget,
@@ -4175,6 +4386,15 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_IntelI7RaplPp0Policy,
     cpumMsrWr_IntelI7RaplPp1PowerLimit,
     cpumMsrWr_IntelI7RaplPp1Policy,
+    cpumMsrWr_IntelI7IvyConfigTdpControl,
+    cpumMsrWr_IntelI7IvyTurboActivationRatio,
+    cpumMsrWr_IntelI7UncPerfGlobalCtrl,
+    cpumMsrWr_IntelI7UncPerfGlobalStatus,
+    cpumMsrWr_IntelI7UncPerfGlobalOvfCtrl,
+    cpumMsrWr_IntelI7UncPerfFixedCtrCtrl,
+    cpumMsrWr_IntelI7UncPerfFixedCtr,
+    cpumMsrWr_IntelI7UncArbPerfCtrN,
+    cpumMsrWr_IntelI7UncArbPerfEvtSelN,
 
     cpumMsrWr_P6LastIntFromIp,
     cpumMsrWr_P6LastIntToIp,
@@ -4511,6 +4731,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(Ia32DsArea);
     CPUM_ASSERT_RD_MSR_FN(Ia32TscDeadline);
     CPUM_ASSERT_RD_MSR_FN(Ia32X2ApicN);
+    CPUM_ASSERT_RD_MSR_FN(Ia32DebugInterface);
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxBase);
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxPinbasedCtls);
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxProcbasedCtls);
@@ -4528,6 +4749,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxTrueProcbasedCtls);
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxTrueExitCtls);
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxTrueEntryCtls);
+
     CPUM_ASSERT_RD_MSR_FN(Amd64Efer);
     CPUM_ASSERT_RD_MSR_FN(Amd64SyscallTarget);
     CPUM_ASSERT_RD_MSR_FN(Amd64LongSyscallTarget);
@@ -4537,6 +4759,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(Amd64GsBase);
     CPUM_ASSERT_RD_MSR_FN(Amd64KernelGsBase);
     CPUM_ASSERT_RD_MSR_FN(Amd64TscAux);
+
     CPUM_ASSERT_RD_MSR_FN(IntelEblCrPowerOn);
     CPUM_ASSERT_RD_MSR_FN(IntelPlatformInfo100MHz);
     CPUM_ASSERT_RD_MSR_FN(IntelPlatformInfo133MHz);
@@ -4585,6 +4808,19 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(IntelI7RaplPp1PowerLimit);
     CPUM_ASSERT_RD_MSR_FN(IntelI7RaplPp1EnergyStatus);
     CPUM_ASSERT_RD_MSR_FN(IntelI7RaplPp1Policy);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7IvyConfigTdpNominal);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7IvyConfigTdpLevel1);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7IvyConfigTdpLevel2);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7IvyConfigTdpControl);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7IvyTurboActivationRatio);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7UncPerfGlobalCtrl);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7UncPerfGlobalStatus);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7UncPerfGlobalOvfCtrl);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7UncPerfFixedCtrCtrl);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7UncPerfFixedCtr);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7UncCBoxConfig);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7UncArbPerfCtrN);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7UncArbPerfEvtSelN);
 
     CPUM_ASSERT_RD_MSR_FN(P6LastBranchFromIp);
     CPUM_ASSERT_RD_MSR_FN(P6LastBranchToIp);
@@ -4725,6 +4961,8 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(Ia32DsArea);
     CPUM_ASSERT_WR_MSR_FN(Ia32TscDeadline);
     CPUM_ASSERT_WR_MSR_FN(Ia32X2ApicN);
+    CPUM_ASSERT_WR_MSR_FN(Ia32DebugInterface);
+
     CPUM_ASSERT_WR_MSR_FN(Amd64Efer);
     CPUM_ASSERT_WR_MSR_FN(Amd64SyscallTarget);
     CPUM_ASSERT_WR_MSR_FN(Amd64LongSyscallTarget);
@@ -4767,6 +5005,15 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(IntelI7RaplPp0Policy);
     CPUM_ASSERT_WR_MSR_FN(IntelI7RaplPp1PowerLimit);
     CPUM_ASSERT_WR_MSR_FN(IntelI7RaplPp1Policy);
+    CPUM_ASSERT_WR_MSR_FN(IntelI7IvyConfigTdpControl);
+    CPUM_ASSERT_WR_MSR_FN(IntelI7IvyTurboActivationRatio);
+    CPUM_ASSERT_WR_MSR_FN(IntelI7UncPerfGlobalCtrl);
+    CPUM_ASSERT_WR_MSR_FN(IntelI7UncPerfGlobalStatus);
+    CPUM_ASSERT_WR_MSR_FN(IntelI7UncPerfGlobalOvfCtrl);
+    CPUM_ASSERT_WR_MSR_FN(IntelI7UncPerfFixedCtrCtrl);
+    CPUM_ASSERT_WR_MSR_FN(IntelI7UncPerfFixedCtr);
+    CPUM_ASSERT_WR_MSR_FN(IntelI7UncArbPerfCtrN);
+    CPUM_ASSERT_WR_MSR_FN(IntelI7UncArbPerfEvtSelN);
 
     CPUM_ASSERT_WR_MSR_FN(P6LastIntFromIp);
     CPUM_ASSERT_WR_MSR_FN(P6LastIntToIp);
