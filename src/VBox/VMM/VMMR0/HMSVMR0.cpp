@@ -1511,7 +1511,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
          * intercept #DB as DR6 is updated in the VMCB.
          */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        else if (   !CPUMIsGuestDebugStateActivePending(pVCpu))
+        else if (   !CPUMIsGuestDebugStateActivePending(pVCpu)
                  && !CPUMIsGuestDebugStateActive(pVCpu))
 #else
         else if (!CPUMIsGuestDebugStateActive(pVCpu))
