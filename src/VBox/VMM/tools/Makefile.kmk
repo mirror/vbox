@@ -63,6 +63,8 @@ VBoxCpuReport_SOURCES   = \
 VBoxCpuReport_LIBS      = \
 	$(PATH_STAGE_LIB)/SUPR3Static$(VBOX_SUFF_LIB) \
        $(VBOX_LIB_RUNTIME_STATIC)
+VBoxCpuReport_LIBS.solaris = kstat contract
+
 VBoxCpuReport_LDFLAGS.darwin = \
 	-framework IOKit -framework CoreFoundation -framework CoreServices
 
