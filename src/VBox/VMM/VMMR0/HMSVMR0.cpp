@@ -879,9 +879,15 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
         pVCpu->hm.s.uCurrentAsid         = 1;
         pVCpu->hm.s.cTlbFlushes          = pCpu->cTlbFlushes;
         pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+
+        /* Clear the VMCB Clean Bit for NP while flushing the TLB. See @bugref{7152}. */
+        pVmcb->ctrl.u64VmcbCleanBits    &= ~HMSVM_VMCB_CLEAN_NP;
     }
     else if (pVCpu->hm.s.fForceTLBFlush)
     {
+        /* Clear the VMCB Clean Bit for NP while flushing the TLB. See @bugref{7152}. */
+        pVmcb->ctrl.u64VmcbCleanBits    &= ~HMSVM_VMCB_CLEAN_NP;
+
         if (fNewAsid)
         {
             ++pCpu->uCurrentAsid;
