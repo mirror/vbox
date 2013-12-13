@@ -1419,7 +1419,7 @@ DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
     Log(("vmmR3SendInitIpi for VCPU %d\n", idCpu));
 
     PGMR3ResetCpu(pVM, pVCpu);
-    CPUMR3ResetCpu(pVCpu);
+    CPUMR3ResetCpu(pVM, pVCpu);
 
     return VINF_EM_WAIT_SIPI;
 }

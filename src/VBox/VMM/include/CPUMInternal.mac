@@ -66,20 +66,16 @@ struc CPUM
     .CPUFeaturesExt.edx   resd    1
     .CPUFeaturesExt.ecx   resd    1
 
-    .enmHostCpuVendor     resd    1
-    .enmGuestCpuVendor    resd    1
-
     ; CR4 masks
     .CR4.AndMask          resd    1
     .CR4.OrMask           resd    1
     ; entered rawmode?
-    .fSyntheticCpu        resb    1
     .u8PortableCpuIdLevel resb    1
     .fPendingRestore      resb    1
 %if RTHCPTR_CB == 8
-    .abPadding            resb    5
+    .abPadding            resb    6
 %else
-    .abPadding            resb    1
+    .abPadding            resb    2
 %endif
 
     ; CPUID leafs
@@ -92,6 +88,18 @@ struc CPUM
 %if HC_ARCH_BITS == 32
     .abPadding2           resb    4
 %endif
+
+    .GuestInfo            resb    RTHCPTR_CB*4 + RTRCPTR_CB*2 + 4*10
+    .GuestFeatures        resb    32
+    .HostFeatures         resb    32
+
+    .cMsrWrites                 resq  1
+    .cMsrWritesToIgnoredBits    resq  1
+    .cMsrWritesRaiseGp          resq  1
+    .cMsrWritesUnknown          resq  1
+    .cMsrReads                  resq  1
+    .cMsrReadsRaiseGp           resq  1
+    .cMsrReadsUnknown           resq  1
 endstruc
 
 struc CPUMCPU

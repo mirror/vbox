@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -77,11 +77,256 @@ typedef enum CPUMCPUVENDOR
     CPUMCPUVENDOR_INTEL,
     CPUMCPUVENDOR_AMD,
     CPUMCPUVENDOR_VIA,
+    CPUMCPUVENDOR_CYRIX,
     CPUMCPUVENDOR_UNKNOWN,
-    CPUMCPUVENDOR_SYNTHETIC,
     /** 32bit hackishness. */
     CPUMCPUVENDOR_32BIT_HACK = 0x7fffffff
 } CPUMCPUVENDOR;
+
+
+/**
+ * X86 and AMD64 CPU microarchitectures and in processor generations.
+ *
+ * @remarks The separation here is sometimes a little bit too finely grained,
+ *          and the differences is more like processor generation than micro
+ *          arch.  This can be useful, so we'll provide functions for getting at
+ *          more coarse grained info.
+ */
+typedef enum CPUMMICROARCH
+{
+    kCpumMicroarch_Invalid = 0,
+
+    kCpumMicroarch_Intel_First,
+
+    kCpumMicroarch_Intel_8086 = kCpumMicroarch_Intel_First,
+    kCpumMicroarch_Intel_80186,
+    kCpumMicroarch_Intel_80286,
+    kCpumMicroarch_Intel_80386,
+    kCpumMicroarch_Intel_80486,
+    kCpumMicroarch_Intel_P5,
+
+    kCpumMicroarch_Intel_P6_Core_Atom_First,
+    kCpumMicroarch_Intel_P6 = kCpumMicroarch_Intel_P6_Core_Atom_First,
+    kCpumMicroarch_Intel_P6_II,
+    kCpumMicroarch_Intel_P6_III,
+
+    kCpumMicroarch_Intel_P6_M_Banias,
+    kCpumMicroarch_Intel_P6_M_Dothan,
+    kCpumMicroarch_Intel_Core_Yonah,        /**< Core, also known as Enhanced Pentium M. */
+
+    kCpumMicroarch_Intel_Core2_Merom,
+    kCpumMicroarch_Intel_Core2_Penryn,
+
+    kCpumMicroarch_Intel_Core7_First,
+    kCpumMicroarch_Intel_Core7_Nehalem = kCpumMicroarch_Intel_Core7_First,
+    kCpumMicroarch_Intel_Core7_Westmere,
+    kCpumMicroarch_Intel_Core7_SandyBridge,
+    kCpumMicroarch_Intel_Core7_IvyBridge,
+    kCpumMicroarch_Intel_Core7_Haswell,
+    kCpumMicroarch_Intel_Core7_Broadwell,
+    kCpumMicroarch_Intel_Core7_Skylake,
+    kCpumMicroarch_Intel_Core7_Cannonlake,
+    kCpumMicroarch_Intel_Core7_End,
+
+    kCpumMicroarch_Intel_Atom_First,
+    kCpumMicroarch_Intel_Atom_Bonnell = kCpumMicroarch_Intel_Atom_First,
+    kCpumMicroarch_Intel_Atom_Lincroft,     /**< Second generation bonnell (44nm). */
+    kCpumMicroarch_Intel_Atom_Saltwell,     /**< 32nm shrink of Bonnell. */
+    kCpumMicroarch_Intel_Atom_Silvermont,   /**< 22nm */
+    kCpumMicroarch_Intel_Atom_Airmount,     /**< 14nm */
+    kCpumMicroarch_Intel_Atom_Goldmont,     /**< 14nm */
+    kCpumMicroarch_Intel_Atom_Unknown,
+    kCpumMicroarch_Intel_Atom_End,
+
+    kCpumMicroarch_Intel_P6_Core_Atom_End,
+
+    kCpumMicroarch_Intel_NB_First,
+    kCpumMicroarch_Intel_NB_Willamette = kCpumMicroarch_Intel_NB_First, /**< 180nm */
+    kCpumMicroarch_Intel_NB_Northwood,      /**< 130nm */
+    kCpumMicroarch_Intel_NB_Prescott,       /**< 90nm */
+    kCpumMicroarch_Intel_NB_Prescott2M,     /**< 90nm */
+    kCpumMicroarch_Intel_NB_CedarMill,      /**< 65nm */
+    kCpumMicroarch_Intel_NB_Gallatin,       /**< 90nm Xeon, Pentium 4 Extreme Edition ("Emergency Edition"). */
+    kCpumMicroarch_Intel_NB_Unknown,
+    kCpumMicroarch_Intel_NB_End,
+
+    kCpumMicroarch_Intel_Unknown,
+    kCpumMicroarch_Intel_End,
+
+    kCpumMicroarch_AMD_First,
+    kCpumMicroarch_AMD_Am286 = kCpumMicroarch_AMD_First,
+    kCpumMicroarch_AMD_Am386,
+    kCpumMicroarch_AMD_Am486,
+    kCpumMicroarch_AMD_Am486Enh,            /**< Covers Am5x86 as well. */
+    kCpumMicroarch_AMD_K5,
+    kCpumMicroarch_AMD_K6,
+
+    kCpumMicroarch_AMD_K7_First,
+    kCpumMicroarch_AMD_K7_Palomino = kCpumMicroarch_AMD_K7_First,
+    kCpumMicroarch_AMD_K7_Spitfire,
+    kCpumMicroarch_AMD_K7_Thunderbird,
+    kCpumMicroarch_AMD_K7_Morgan,
+    kCpumMicroarch_AMD_K7_Thoroughbred,
+    kCpumMicroarch_AMD_K7_Barton,
+    kCpumMicroarch_AMD_K7_Unknown,
+    kCpumMicroarch_AMD_K7_End,
+
+    kCpumMicroarch_AMD_K8_First,
+    kCpumMicroarch_AMD_K8_130nm = kCpumMicroarch_AMD_K8_First, /**< 130nm Clawhammer, Sledgehammer, Newcastle, Paris, Odessa, Dublin */
+    kCpumMicroarch_AMD_K8_90nm,             /**< 90nm shrink */
+    kCpumMicroarch_AMD_K8_90nm_DualCore,    /**< 90nm with two cores. */
+    kCpumMicroarch_AMD_K8_90nm_AMDV,        /**< 90nm with AMD-V (usually) and two cores (usually). */
+    kCpumMicroarch_AMD_K8_65nm,             /**< 65nm shrink. */
+    kCpumMicroarch_AMD_K8_End,
+
+    kCpumMicroarch_AMD_K10,
+    kCpumMicroarch_AMD_K10_Lion,
+    kCpumMicroarch_AMD_K10_Llano,
+    kCpumMicroarch_AMD_Bobcat,
+    kCpumMicroarch_AMD_Jaguar,
+
+    kCpumMicroarch_AMD_15h_First,
+    kCpumMicroarch_AMD_15h_Bulldozer = kCpumMicroarch_AMD_15h_First,
+    kCpumMicroarch_AMD_15h_Piledriver,
+    kCpumMicroarch_AMD_15h_Steamroller,     /**< Yet to be released, might have different family.  */
+    kCpumMicroarch_AMD_15h_Excavator,       /**< Yet to be released, might have different family.  */
+    kCpumMicroarch_AMD_15h_Unknown,
+    kCpumMicroarch_AMD_15h_End,
+
+    kCpumMicroarch_AMD_16h_First,
+    kCpumMicroarch_AMD_16h_End,
+
+    kCpumMicroarch_AMD_Unknown,
+    kCpumMicroarch_AMD_End,
+
+    kCpumMicroarch_VIA_First,
+    kCpumMicroarch_Centaur_C6 = kCpumMicroarch_VIA_First,
+    kCpumMicroarch_Centaur_C2,
+    kCpumMicroarch_Centaur_C3,
+    kCpumMicroarch_VIA_C3_M2,
+    kCpumMicroarch_VIA_C3_C5A,          /**< 180nm Samuel - Cyrix III, C3, 1GigaPro. */
+    kCpumMicroarch_VIA_C3_C5B,          /**< 150nm Samuel 2 - Cyrix III, C3, 1GigaPro, Eden ESP, XP 2000+. */
+    kCpumMicroarch_VIA_C3_C5C,          /**< 130nm Ezra - C3, Eden ESP. */
+    kCpumMicroarch_VIA_C3_C5N,          /**< 130nm Ezra-T - C3. */
+    kCpumMicroarch_VIA_C3_C5XL,         /**< 130nm Nehemiah - C3, Eden ESP, Eden-N. */
+    kCpumMicroarch_VIA_C3_C5P,          /**< 130nm Nehemiah+ - C3. */
+    kCpumMicroarch_VIA_C7_C5J,          /**< 90nm Esther - C7, C7-D, C7-M, Eden, Eden ULV. */
+    kCpumMicroarch_VIA_Isaiah,
+    kCpumMicroarch_VIA_Unknown,
+    kCpumMicroarch_VIA_End,
+
+    kCpumMicroarch_Cyrix_First,
+    kCpumMicroarch_Cyrix_5x86 = kCpumMicroarch_Cyrix_First,
+    kCpumMicroarch_Cyrix_M1,
+    kCpumMicroarch_Cyrix_MediaGX,
+    kCpumMicroarch_Cyrix_MediaGXm,
+    kCpumMicroarch_Cyrix_M2,
+    kCpumMicroarch_Cyrix_Unknown,
+    kCpumMicroarch_Cyrix_End,
+
+    kCpumMicroarch_Unknown,
+
+    kCpumMicroarch_32BitHack = 0x7fffffff
+} CPUMMICROARCH;
+
+
+/** Predicate macro for catching netburst CPUs. */
+#define CPUMMICROARCH_IS_INTEL_NETBURST(a_enmMicroarch) \
+    ((a_enmMicroarch) >= kCpumMicroarch_Intel_NB_First && (a_enmMicroarch) <= kCpumMicroarch_Intel_NB_End)
+
+/** Predicate macro for catching Core7 CPUs. */
+#define CPUMMICROARCH_IS_INTEL_CORE7(a_enmMicroarch) \
+    ((a_enmMicroarch) >= kCpumMicroarch_Intel_Core7_First && (a_enmMicroarch) <= kCpumMicroarch_Intel_Core7_End)
+
+/** Predicate macro for catching AMD Family 8H CPUs (aka K8).    */
+#define CPUMMICROARCH_IS_AMD_FAM_8H(a_enmMicroarch) \
+    ((a_enmMicroarch) >= kCpumMicroarch_AMD_K8_First && (a_enmMicroarch) <= kCpumMicroarch_AMD_K8_End)
+
+/** Predicate macro for catching AMD Family 10H CPUs (aka K10).    */
+#define CPUMMICROARCH_IS_AMD_FAM_10H(a_enmMicroarch) ((a_enmMicroarch) == kCpumMicroarch_AMD_K10)
+
+/** Predicate macro for catching AMD Family 11H CPUs (aka Lion).    */
+#define CPUMMICROARCH_IS_AMD_FAM_11H(a_enmMicroarch) ((a_enmMicroarch) == kCpumMicroarch_AMD_K10_Lion)
+
+/** Predicate macro for catching AMD Family 12H CPUs (aka Llano).    */
+#define CPUMMICROARCH_IS_AMD_FAM_12H(a_enmMicroarch) ((a_enmMicroarch) == kCpumMicroarch_AMD_K10_Llano)
+
+/** Predicate macro for catching AMD Family 14H CPUs (aka Bobcat).    */
+#define CPUMMICROARCH_IS_AMD_FAM_14H(a_enmMicroarch) ((a_enmMicroarch) == kCpumMicroarch_AMD_Bobcat)
+
+/** Predicate macro for catching AMD Family 15H CPUs (bulldozer and it's
+ * decendants). */
+#define CPUMMICROARCH_IS_AMD_FAM_15H(a_enmMicroarch) \
+    ((a_enmMicroarch) >= kCpumMicroarch_AMD_15h_First && (a_enmMicroarch) <= kCpumMicroarch_AMD_15h_End)
+
+/** Predicate macro for catching AMD Family 16H CPUs. */
+#define CPUMMICROARCH_IS_AMD_FAM_16H(a_enmMicroarch) \
+    ((a_enmMicroarch) >= kCpumMicroarch_AMD_16h_First && (a_enmMicroarch) <= kCpumMicroarch_AMD_16h_End)
+
+
+
+/**
+ * CPUID leaf.
+ */
+typedef struct CPUMCPUIDLEAF
+{
+    /** The leaf number. */
+    uint32_t    uLeaf;
+    /** The sub-leaf number. */
+    uint32_t    uSubLeaf;
+    /** Sub-leaf mask.  This is 0 when sub-leaves aren't used. */
+    uint32_t    fSubLeafMask;
+
+    /** The EAX value. */
+    uint32_t    uEax;
+    /** The EBX value. */
+    uint32_t    uEbx;
+    /** The ECX value. */
+    uint32_t    uEcx;
+    /** The EDX value. */
+    uint32_t    uEdx;
+
+    /** Flags. */
+    uint32_t    fFlags;
+} CPUMCPUIDLEAF;
+/** Pointer to a CPUID leaf. */
+typedef CPUMCPUIDLEAF *PCPUMCPUIDLEAF;
+/** Pointer to a const CPUID leaf. */
+typedef CPUMCPUIDLEAF const *PCCPUMCPUIDLEAF;
+
+/** @name CPUMCPUIDLEAF::fFlags
+ * @{ */
+/** Indicates that ECX (the sub-leaf indicator) doesn't change when
+ * requesting the final leaf and all undefined leaves that follows it.
+ * Observed for 0x0000000b on Intel. */
+#define CPUMCPUIDLEAF_F_SUBLEAVES_ECX_UNCHANGED RT_BIT_32(0)
+/** @} */
+
+/**
+ * Method used to deal with unknown CPUID leafs.
+ */
+typedef enum CPUMUKNOWNCPUID
+{
+    /** Invalid zero value. */
+    CPUMUKNOWNCPUID_INVALID = 0,
+    /** Use given default values (DefCpuId). */
+    CPUMUKNOWNCPUID_DEFAULTS,
+    /** Return the last standard leaf.
+     * Intel Sandy Bridge has been observed doing this. */
+    CPUMUKNOWNCPUID_LAST_STD_LEAF,
+    /** Return the last standard leaf, with ecx observed.
+     * Intel Sandy Bridge has been observed doing this. */
+    CPUMUKNOWNCPUID_LAST_STD_LEAF_WITH_ECX,
+    /** The register values are passed thru unmodified. */
+    CPUMUKNOWNCPUID_PASSTHRU,
+    /** End of valid value. */
+    CPUMUKNOWNCPUID_END,
+    /** Ensure 32-bit type. */
+    CPUMUKNOWNCPUID_32BIT_HACK = 0x7fffffff
+} CPUMUKNOWNCPUID;
+/** Pointer to unknown CPUID leaf method. */
+typedef CPUMUKNOWNCPUID *PCPUMUKNOWNCPUID;
+
 
 
 /** @name Guest Register Getters.
@@ -172,6 +417,8 @@ VMMDECL(bool)       CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeatur
 VMMDECL(void)       CPUMSetGuestCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
 VMM_INT_DECL(void)  CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu);
 VMM_INT_DECL(void)  CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg);
+VMMR0_INT_DECL(void)        CPUMR0SetGuestTscAux(PVMCPU pVCpu, uint64_t uValue);
+VMMR0_INT_DECL(uint64_t)    CPUMR0GetGuestTscAux(PVMCPU pVCpu);
 /** @} */
 
 
@@ -442,7 +689,7 @@ VMMR3DECL(void)         CPUMR3LogCpuIds(PVM pVM);
 VMMR3DECL(void)         CPUMR3Relocate(PVM pVM);
 VMMR3DECL(int)          CPUMR3Term(PVM pVM);
 VMMR3DECL(void)         CPUMR3Reset(PVM pVM);
-VMMR3DECL(void)         CPUMR3ResetCpu(PVMCPU pVCpu);
+VMMR3DECL(void)         CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu);
 VMMDECL(bool)           CPUMR3IsStateRestorePending(PVM pVM);
 VMMR3DECL(void)         CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled);
 VMMR3DECL(int)          CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
@@ -450,6 +697,15 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdStdRCPtr(PVM pVM);
 VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdExtRCPtr(PVM pVM);
 VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdCentaurRCPtr(PVM pVM);
 VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdDefRCPtr(PVM pVM);
+
+VMMR3DECL(CPUMMICROARCH)    CPUMR3CpuIdDetermineMicroarchEx(CPUMCPUVENDOR enmVendor, uint8_t bFamily,
+                                                            uint8_t bModel, uint8_t bStepping);
+VMMR3DECL(const char *)     CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch);
+VMMR3DECL(int)              CPUMR3CpuIdCollectLeaves(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves);
+VMMR3DECL(int)              CPUMR3CpuIdDetectUnknownLeafMethod(PCPUMUKNOWNCPUID penmUnknownMethod, PCPUMCPUID pDefUnknown);
+VMMR3DECL(const char *)     CPUMR3CpuIdUnknownLeafMethodName(CPUMUKNOWNCPUID enmUnknownMethod);
+VMMR3DECL(CPUMCPUVENDOR)    CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX);
+VMMR3DECL(const char *)     CPUMR3CpuVendorName(CPUMCPUVENDOR enmVendor);
 
 /** @} */
 #endif /* IN_RING3 */

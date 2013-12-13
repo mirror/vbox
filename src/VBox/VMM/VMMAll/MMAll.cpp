@@ -567,6 +567,10 @@ const char *mmGetTagName(MMTAG enmTag)
         TAG2STR(CFGM_STRING);
         TAG2STR(CFGM_USER);
 
+        TAG2STR(CPUM_CTX);
+        TAG2STR(CPUM_CPUID);
+        TAG2STR(CPUM_MSRS);
+
         TAG2STR(CSAM);
         TAG2STR(CSAM_PATCH);
 

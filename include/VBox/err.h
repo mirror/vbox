@@ -610,6 +610,16 @@
 /** CPUMR3DisasmInstrCPU unexpectedly failed to determin the hidden
  * parts of the CS register. */
 #define VERR_CPUM_HIDDEN_CS_LOAD_ERROR          (-1752)
+/** Couldn't find the end of CPUID sub-leaves. */
+#define VERR_CPUM_TOO_MANY_CPUID_SUBLEAVES      (-1753)
+/** CPUM internal processing error \#1. */
+#define VERR_CPUM_IPE_1                         (-1754)
+/** CPUM internal processing error \#2. */
+#define VERR_CPUM_IPE_2                         (-1755)
+/** The specified CPU cannot be found in the CPU database. */
+#define VERR_CPUM_DB_CPU_NOT_FOUND              (-1756)
+/** Invalid CPUMCPU offset in MSR range. */
+#define VERR_CPUM_MSR_BAD_CPUMCPU_OFFSET        (-1757)
 /** @} */
 
 

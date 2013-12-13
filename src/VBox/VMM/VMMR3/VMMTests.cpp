@@ -871,21 +871,52 @@ VMMR3DECL(int) VMMDoMsrExperiments(PVM pVM)
     /*
      * Do the experiments.
      */
-    uint32_t uMsr   = 0xc0011011;
-    uint64_t uValue = 0x10000;
+    uint32_t uMsr   = 0x00000277;
+    uint64_t uValue = UINT64_C(0x0007010600070106);
 #if 0
+    uValue &= ~(RT_BIT_64(17) | RT_BIT_64(16) | RT_BIT_64(15) | RT_BIT_64(14) | RT_BIT_64(13));
+    uValue |= RT_BIT_64(13);
     rc = VMMR3CallRC(pVM, RCPtrEP, 6, pVM->pVMRC, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue),
                      RCPtrValues, RCPtrValues + sizeof(uint64_t));
     RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc\n",
              uMsr, pauValues[0], uValue, pauValues[1], rc);
-#endif
+#elif 1
+    const uint64_t uOrgValue = uValue;
+    uint32_t       cChanges = 0;
+    for (int iBit = 63; iBit >= 58; iBit--)
+    {
+        uValue = uOrgValue & ~RT_BIT_64(iBit);
+        rc = VMMR3CallRC(pVM, RCPtrEP, 6, pVM->pVMRC, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue),
+                         RCPtrValues, RCPtrValues + sizeof(uint64_t));
+        RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc\nclear bit=%u -> %s\n",
+                 uMsr, pauValues[0], uValue, pauValues[1], rc, iBit,
+                 (pauValues[0] ^  pauValues[1]) & RT_BIT_64(iBit) ?  "changed" : "unchanged");
+        cChanges += RT_BOOL(pauValues[0] ^ pauValues[1]);
+
+        uValue = uOrgValue | RT_BIT_64(iBit);
+        rc = VMMR3CallRC(pVM, RCPtrEP, 6, pVM->pVMRC, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue),
+                         RCPtrValues, RCPtrValues + sizeof(uint64_t));
+        RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc\nset   bit=%u -> %s\n",
+                 uMsr, pauValues[0], uValue, pauValues[1], rc, iBit,
+                 (pauValues[0] ^  pauValues[1]) & RT_BIT_64(iBit) ?  "changed" : "unchanged");
+        cChanges += RT_BOOL(pauValues[0] ^ pauValues[1]);
+    }
+    RTPrintf("%u change(s)\n", cChanges);
+#else
+    uint64_t fWriteable = 0;
     for (uint32_t i = 0; i <= 63; i++)
     {
         uValue = RT_BIT_64(i);
+# if 0
+        if (uValue & (0x7))
+            continue;
+# endif
         rc = VMMR3CallRC(pVM, RCPtrEP, 6, pVM->pVMRC, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue),
                          RCPtrValues, RCPtrValues + sizeof(uint64_t));
         RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc\n",
                  uMsr, pauValues[0], uValue, pauValues[1], rc);
+        if (RT_SUCCESS(rc))
+            fWriteable |= RT_BIT_64(i);
     }
 
     uValue = 0;
@@ -899,6 +930,14 @@ VMMR3DECL(int) VMMDoMsrExperiments(PVM pVM)
                      RCPtrValues, RCPtrValues + sizeof(uint64_t));
     RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc\n",
              uMsr, pauValues[0], uValue, pauValues[1], rc);
+
+    uValue = fWriteable;
+    rc = VMMR3CallRC(pVM, RCPtrEP, 6, pVM->pVMRC, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue),
+                     RCPtrValues, RCPtrValues + sizeof(uint64_t));
+    RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc [fWriteable]\n",
+             uMsr, pauValues[0], uValue, pauValues[1], rc);
+
+#endif
 
     /*
      * Cleanups.

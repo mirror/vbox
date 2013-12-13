@@ -234,6 +234,10 @@ GLOBALNAME vmmRCSafeMsrRead
     mov     ebp, esp
     pushf
     cli
+    push    esi
+    push    edi
+    push    ebx
+    push    ebp
 
     mov     ecx, [ebp + 8]              ; The MSR to read.
     mov     eax, 0deadbeefh
@@ -246,16 +250,19 @@ TRPM_GP_HANDLER NAME(TRPMRCTrapHyperHandlerSetEIP), .trapped
     mov     [ecx], eax
     mov     [ecx + 4], edx
 
-    popf
     mov     eax, 1
+.return:
+    pop     ebp
+    pop     ebx
+    pop     edi
+    pop     esi
+    popf
     leave
     ret
 
 .trapped:
-    popf
     mov     eax, 0
-    leave
-    ret
+    jmp     .return
 ENDPROC vmmRCSafeMsrRead
 
 
@@ -270,6 +277,10 @@ GLOBALNAME vmmRCSafeMsrWrite
     mov     ebp, esp
     pushf
     cli
+    push    esi
+    push    edi
+    push    ebx
+    push    ebp
 
     mov     ecx, [ebp + 8]              ; The MSR to write to.
     mov     eax, [ebp + 12]             ; The value to write.
@@ -278,16 +289,19 @@ GLOBALNAME vmmRCSafeMsrWrite
 TRPM_GP_HANDLER NAME(TRPMRCTrapHyperHandlerSetEIP), .trapped
     wrmsr
 
-    popf
     mov     eax, 1
+.return:
+    pop     ebp
+    pop     ebx
+    pop     edi
+    pop     esi
+    popf
     leave
     ret
 
 .trapped:
-    popf
     mov     eax, 0
-    leave
-    ret
+    jmp     .return
 ENDPROC vmmRCSafeMsrWrite
 
 

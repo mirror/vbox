@@ -5898,7 +5898,7 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     {
         switch (pMsr->u32Msr)
         {
-            case MSR_K8_TSC_AUX:        CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, pMsr->u64Value);  break;
+            case MSR_K8_TSC_AUX:        CPUMR0SetGuestTscAux(pVCpu, pMsr->u64Value);             break;
             case MSR_K8_LSTAR:          pMixedCtx->msrLSTAR        = pMsr->u64Value;             break;
             case MSR_K6_STAR:           pMixedCtx->msrSTAR         = pMsr->u64Value;             break;
             case MSR_K8_SF_MASK:        pMixedCtx->msrSFMASK       = pMsr->u64Value;             break;
@@ -8146,10 +8146,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
             int rc2 = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
             AssertRC(rc2);
             Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS));
-            uint64_t u64GuestTscAuxMsr;
-            rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTscAuxMsr);
-            AssertRC(rc2);
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, u64GuestTscAuxMsr, true /* fUpdateHostMsr */);
+            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, CPUMR0GetGuestTscAux(pVCpu), true /* fUpdateHostMsr */);
         }
         else
             hmR0VmxRemoveAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX);

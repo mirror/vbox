@@ -2167,6 +2167,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         pVM->pgm.s.HCPhysInvMmioPg |= UINT64_C(0x000f0000000000);
     }
 
+    /** @todo query from CPUM. */
     pVM->pgm.s.GCPhysInvAddrMask = 0;
     for (uint32_t iBit = cMaxPhysAddrWidth; iBit < 64; iBit++)
         pVM->pgm.s.GCPhysInvAddrMask |= RT_BIT_64(iBit);
