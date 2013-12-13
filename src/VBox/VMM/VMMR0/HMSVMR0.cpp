@@ -1511,9 +1511,8 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
          * intercept #DB as DR6 is updated in the VMCB.
          */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        else if (   (   CPUMIsGuestInLongModeEx(pCtx)
-                     && !CPUMIsGuestDebugStateActivePending(pVCpu))
-                 || !CPUMIsGuestDebugStateActive(pVCpu))
+        else if (   !CPUMIsGuestDebugStateActivePending(pVCpu))
+                 && !CPUMIsGuestDebugStateActive(pVCpu))
 #else
         else if (!CPUMIsGuestDebugStateActive(pVCpu))
 #endif
@@ -4467,15 +4466,16 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxRead);
 
-    /* We should -not- get this VM-exit if we're not stepping or the guest is debugging. */
-    AssertMsgReturn(   pVCpu->hm.s.fSingleInstruction
-                    || DBGFIsStepping(pVCpu)
-                    || !pSvmTransient->fWasGuestDebugStateActive,
-                    ("hmR0SvmExitReadDRx: Unexpected exit. pVCpu=%p pCtx=%p\n", pVCpu, pCtx),
-                    VERR_SVM_UNEXPECTED_EXIT);
+    /* We should -not- get this VM-exit if the guest's debug registers were active. */
+    if (pSvmTransient->fWasGuestDebugStateActive)
+    {
+        AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
+        pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
+        return VERR_SVM_UNEXPECTED_EXIT;
+    }
 
     /*
-     * Lazy DR0-3 loading?
+     * Lazy DR0-3 loading.
      */
     if (!pSvmTransient->fWasHyperDebugStateActive)
     {
