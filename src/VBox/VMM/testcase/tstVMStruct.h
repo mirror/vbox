@@ -31,11 +31,8 @@
     GEN_CHECK_OFF(CPUM, CPUFeatures);
     GEN_CHECK_OFF(CPUM, CPUFeaturesExt);
     GEN_CHECK_OFF(CPUM, CPUFeaturesExt);
-    GEN_CHECK_OFF(CPUM, enmHostCpuVendor);
-    GEN_CHECK_OFF(CPUM, enmGuestCpuVendor);
     GEN_CHECK_OFF(CPUM, CR4);
 #ifndef VBOX_FOR_DTRACE_LIB
-    GEN_CHECK_OFF(CPUM, fSyntheticCpu);
     GEN_CHECK_OFF(CPUM, u8PortableCpuIdLevel);
     GEN_CHECK_OFF(CPUM, fPendingRestore);
 #endif

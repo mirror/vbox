@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -48,6 +48,7 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg);
 static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame);
 static DECLCALLBACK(int) vmmGCTestTmpPFHandlerCorruptFS(PVM pVM, PCPUMCTXCORE pRegFrame);
 DECLASM(bool)   vmmRCSafeMsrRead(uint32_t uMsr, uint64_t *pu64Value);
+DECLASM(bool)   vmmRCSafeMsrWrite(uint32_t uMsr, uint64_t u64Value);
 
 
 
@@ -374,6 +375,48 @@ VMMRCTestReadMsrs(PVM pVM, uint32_t uMsr, uint32_t cMsrs, PVMMTESTMSRENTRY paRes
 
     ASMIntDisable();
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Tries to write the given value to an MSR, returns the effect and restors the
+ * original value.
+ *
+ * This is called directly via VMMR3CallRC.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   uMsr            The MSR to start at.
+ * @param   u32ValueLow     The low part of the value to write.
+ * @param   u32ValueHi      The high part of the value to write.
+ * @param   puValueBefore   The value before writing.
+ * @param   puValueAfter    The value read back after writing.
+ */
+extern "C" VMMRCDECL(int)
+VMMRCTestTestWriteMsr(PVM pVM, uint32_t uMsr, uint32_t u32ValueLow, uint32_t u32ValueHi,
+                      uint64_t *puValueBefore, uint64_t *puValueAfter)
+{
+    AssertPtrReturn(puValueBefore, VERR_INVALID_POINTER);
+    AssertPtrReturn(puValueAfter, VERR_INVALID_POINTER);
+    ASMIntDisable();
+
+    int      rc           = VINF_SUCCESS;
+    uint64_t uValueBefore = UINT64_MAX;
+    uint64_t uValueAfter  = UINT64_MAX;
+    if (vmmRCSafeMsrRead(uMsr, &uValueBefore))
+    {
+        if (!vmmRCSafeMsrWrite(uMsr, RT_MAKE_U64(u32ValueLow, u32ValueHi)))
+            rc = VERR_WRITE_PROTECT;
+        if (!vmmRCSafeMsrRead(uMsr, &uValueAfter) && RT_SUCCESS(rc))
+            rc = VERR_READ_ERROR;
+        vmmRCSafeMsrWrite(uMsr, uValueBefore);
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+
+    *puValueBefore = uValueBefore;
+    *puValueAfter  = uValueAfter;
+    return rc;
 }
 
 

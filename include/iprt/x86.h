@@ -1036,25 +1036,25 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Enable misc. processor features (R/W). */
 #define MSR_IA32_MISC_ENABLE                   0x1A0
 /** Enable fast-strings feature (for REP MOVS and REP STORS). */
-#define MSR_IA32_MISC_ENABLE_FAST_STRINGS      RT_BIT(0)
+#define MSR_IA32_MISC_ENABLE_FAST_STRINGS      RT_BIT_64(0)
 /** Automatic Thermal Control Circuit Enable (R/W). */
-#define MSR_IA32_MISC_ENABLE_TCC               RT_BIT(3)
+#define MSR_IA32_MISC_ENABLE_TCC               RT_BIT_64(3)
 /** Performance Monitoring Available (R). */
-#define MSR_IA32_MISC_ENABLE_PERF_MON          RT_BIT(7)
+#define MSR_IA32_MISC_ENABLE_PERF_MON          RT_BIT_64(7)
 /** Branch Trace Storage Unavailable (R/O). */
-#define MSR_IA32_MISC_ENABLE_BTS_UNAVAIL       RT_BIT(11)
+#define MSR_IA32_MISC_ENABLE_BTS_UNAVAIL       RT_BIT_64(11)
 /** Precise Event Based Sampling (PEBS) Unavailable (R/O). */
-#define MSR_IA32_MISC_ENABLE_PEBS_UNAVAIL      RT_BIT(12)
+#define MSR_IA32_MISC_ENABLE_PEBS_UNAVAIL      RT_BIT_64(12)
 /** Enhanced Intel SpeedStep Technology Enable (R/W). */
-#define MSR_IA32_MISC_ENABLE_SST_ENABLE        RT_BIT(16)
+#define MSR_IA32_MISC_ENABLE_SST_ENABLE        RT_BIT_64(16)
 /** If MONITOR/MWAIT is supported (R/W). */
-#define MSR_IA32_MISC_ENABLE_MONITOR           RT_BIT(18)
+#define MSR_IA32_MISC_ENABLE_MONITOR           RT_BIT_64(18)
 /** Limit CPUID Maxval to 3 leafs (R/W). */
-#define MSR_IA32_MISC_ENABLE_LIMIT_CPUID       RT_BIT(22)
+#define MSR_IA32_MISC_ENABLE_LIMIT_CPUID       RT_BIT_64(22)
 /** When set to 1, xTPR messages are disabled (R/W). */
-#define MSR_IA32_MISC_ENABLE_XTPR_MSG_DISABLE  RT_BIT(23)
+#define MSR_IA32_MISC_ENABLE_XTPR_MSG_DISABLE  RT_BIT_64(23)
 /** When set to 1, the Execute Disable Bit feature (XD Bit) is disabled (R/W). */
-#define MSR_IA32_MISC_ENABLE_XD_DISABLE        RT_BIT(34)
+#define MSR_IA32_MISC_ENABLE_XD_DISABLE        RT_BIT_64(34)
 
 /** Trace/Profile Resource Control (R/W) */
 #define MSR_IA32_DEBUGCTL                   UINT32_C(0x000001d9)

@@ -2397,7 +2397,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         REMR3Reset(pVM);
                         PGMR3ResetCpu(pVM, pVCpu);
                         TRPMR3ResetCpu(pVCpu);
-                        CPUMR3ResetCpu(pVCpu);
+                        CPUMR3ResetCpu(pVM, pVCpu);
                         EMR3ResetCpu(pVCpu);
                         HMR3ResetCpu(pVCpu);
                         pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);

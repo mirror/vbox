@@ -75,6 +75,25 @@ typedef struct CPUMHOSTLAPIC
 static CPUMHOSTLAPIC g_aLApics[RTCPUSET_MAX_CPUS];
 #endif
 
+/**
+ * CPUID bits to unify among all cores.
+ */
+static struct
+{
+    uint32_t uLeaf;  /**< Leaf to check. */
+    uint32_t ecx;    /**< which bits in ecx to unify between CPUs. */
+    uint32_t edx;    /**< which bits in edx to unify between CPUs. */
+}
+const g_aCpuidUnifyBits[] =
+{
+    {
+        0x00000001,
+        X86_CPUID_FEATURE_ECX_CX16 | X86_CPUID_FEATURE_ECX_MONITOR,
+        X86_CPUID_FEATURE_EDX_CX8
+    }
+};
+
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -113,6 +132,8 @@ VMMR0_INT_DECL(int) CPUMR0ModuleTerm(void)
 
 
 /**
+ *
+ *
  * Check the CPUID features of this particular CPU and disable relevant features
  * for the guest which do not exist on this CPU. We have seen systems where the
  * X86_CPUID_FEATURE_ECX_MONITOR feature flag is only set on some host CPUs, see
@@ -126,38 +147,32 @@ VMMR0_INT_DECL(int) CPUMR0ModuleTerm(void)
  */
 static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+    PVM     pVM   = (PVM)pvUser1;
+    PCPUM   pCPUM = &pVM->cpum.s;
+
     NOREF(idCpu); NOREF(pvUser2);
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aCpuidUnifyBits); i++)
+    {
+        /* Note! Cannot use cpumCpuIdGetLeaf from here because we're not
+                 necessarily in the VM process context.  So, we using the
+                 legacy arrays as temporary storage. */
 
-    struct
-    {
-        uint32_t uLeave; /* leave to check */
-        uint32_t ecx;    /* which bits in ecx to unify between CPUs */
-        uint32_t edx;    /* which bits in edx to unify between CPUs */
-    } aCpuidUnify[]
-    =
-    {
-        { 0x00000001, X86_CPUID_FEATURE_ECX_CX16
-                    | X86_CPUID_FEATURE_ECX_MONITOR,
-                      X86_CPUID_FEATURE_EDX_CX8 }
-    };
-    PVM pVM = (PVM)pvUser1;
-    PCPUM pCPUM = &pVM->cpum.s;
-    for (uint32_t i = 0; i < RT_ELEMENTS(aCpuidUnify); i++)
-    {
-        uint32_t uLeave = aCpuidUnify[i].uLeave;
-        uint32_t eax, ebx, ecx, edx;
-
-        ASMCpuId_Idx_ECX(uLeave, 0, &eax, &ebx, &ecx, &edx);
-        PCPUMCPUID paLeaves;
-        if (uLeave < 0x80000000)
-            paLeaves = &pCPUM->aGuestCpuIdStd[uLeave - 0x00000000];
-        else if (uLeave < 0xc0000000)
-            paLeaves = &pCPUM->aGuestCpuIdExt[uLeave - 0x80000000];
+        uint32_t   uLeaf = g_aCpuidUnifyBits[i].uLeaf;
+        PCPUMCPUID pLegacyLeaf;
+        if (uLeaf < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
+            pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdStd[uLeaf];
+        else if (uLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
+            pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdExt[uLeaf - UINT32_C(0x80000000)];
+        else if (uLeaf - UINT32_C(0xc0000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur))
+            pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdCentaur[uLeaf - UINT32_C(0xc0000000)];
         else
-            paLeaves = &pCPUM->aGuestCpuIdCentaur[uLeave - 0xc0000000];
-        /* unify important bits */
-        ASMAtomicAndU32(&paLeaves->ecx, ecx | ~aCpuidUnify[i].ecx);
-        ASMAtomicAndU32(&paLeaves->edx, edx | ~aCpuidUnify[i].edx);
+            continue;
+
+        uint32_t eax, ebx, ecx, edx;
+        ASMCpuIdExSlow(uLeaf, 0, 0, 0, &eax, &ebx, &ecx, &edx);
+
+        ASMAtomicAndU32(&pLegacyLeaf->ecx, ecx | ~g_aCpuidUnifyBits[i].ecx);
+        ASMAtomicAndU32(&pLegacyLeaf->edx, edx | ~g_aCpuidUnifyBits[i].edx);
     }
 }
 
@@ -259,7 +274,38 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
             }
         }
 
+        /*
+         * Unify/cross check some CPUID feature bits on all available CPU cores
+         * and threads.  We've seen CPUs where the monitor support differed.
+         *
+         * Because the hyper heap isn't always mapped into ring-0, we cannot
+         * access it from a RTMpOnAll callback.  We use the legacy CPUID arrays
+         * as temp ring-0 accessible memory instead, ASSUMING that they're all
+         * up to date when we get here.
+         */
         RTMpOnAll(cpumR0CheckCpuid, pVM, NULL);
+
+        for (uint32_t i = 0; i < RT_ELEMENTS(g_aCpuidUnifyBits); i++)
+        {
+            uint32_t        uLeaf = g_aCpuidUnifyBits[i].uLeaf;
+            PCPUMCPUIDLEAF  pLeaf = cpumCpuIdGetLeaf(pVM, uLeaf, 0);
+            if (pLeaf)
+            {
+                PCPUMCPUID pLegacyLeaf;
+                if (uLeaf < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
+                    pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdStd[uLeaf];
+                else if (uLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
+                    pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdExt[uLeaf - UINT32_C(0x80000000)];
+                else if (uLeaf - UINT32_C(0xc0000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur))
+                    pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdCentaur[uLeaf - UINT32_C(0xc0000000)];
+                else
+                    continue;
+
+                pLeaf->uEcx = pLegacyLeaf->ecx;
+                pLeaf->uEdx = pLegacyLeaf->edx;
+            }
+        }
+
     }
 
 

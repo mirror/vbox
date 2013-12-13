@@ -321,14 +321,13 @@ static int mmHyperAllocInternal(PVM pVM, size_t cb, unsigned uAlignment, MMTAG e
     return VERR_MM_HYPER_NO_MEMORY;
 }
 
+
 /**
  * Wrapper for mmHyperAllocInternal
  */
 VMMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv)
 {
-    int rc;
-
-    rc = mmHyperLock(pVM);
+    int rc = mmHyperLock(pVM);
     AssertRCReturn(rc, rc);
 
     LogFlow(("MMHyperAlloc %x align=%x tag=%s\n", cb, uAlignment, mmGetTagName(enmTag)));
@@ -338,6 +337,19 @@ VMMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag,
     mmHyperUnlock(pVM);
     return rc;
 }
+
+
+/**
+ * Duplicates a block of memory.
+ */
+VMMDECL(int) MMHyperDupMem(PVM pVM, const void *pvSrc, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv)
+{
+    int rc = MMHyperAlloc(pVM, cb, uAlignment, enmTag, ppv);
+    if (RT_SUCCESS(rc))
+        memcpy(*ppv, pvSrc, cb);
+    return rc;
+}
+
 
 /**
  * Allocates a chunk of memory from the specified heap.

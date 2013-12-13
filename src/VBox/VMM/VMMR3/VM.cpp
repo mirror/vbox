@@ -4379,7 +4379,7 @@ static DECLCALLBACK(int) vmR3HotUnplugCpu(PVM pVM, VMCPUID idCpu)
     PGMR3ResetCpu(pVM, pVCpu);
     PDMR3ResetCpu(pVCpu);
     TRPMR3ResetCpu(pVCpu);
-    CPUMR3ResetCpu(pVCpu);
+    CPUMR3ResetCpu(pVM, pVCpu);
     EMR3ResetCpu(pVCpu);
     HMR3ResetCpu(pVCpu);
     return VINF_EM_WAIT_SIPI;
