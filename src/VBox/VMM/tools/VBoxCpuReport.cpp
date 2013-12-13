@@ -842,7 +842,8 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000393: return "I7_UNC_PERF_GLOBAL_OVF_CTRL";         /* X. ASSUMING this is the same on sandybridge and later. */
         case 0x00000394: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "I7_UNC_PERF_FIXED_CTR"  /* X */    : "I7_UNC_PERF_FIXED_CTR_CTRL"; /* >= S,H */
         case 0x00000395: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "I7_UNC_PERF_FIXED_CTR_CTRL" /* X*/ : "I7_UNC_PERF_FIXED_CTR";      /* >= S,H */
-        case 0x00000396: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "I7_UNC_ADDR_OPCODE_MATCH" /* X */  : "I7_UNC_CB0_CONFIG";          /* >= S,H */
+        case 0x00000396: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "I7_UNC_ADDR_OPCODE_MATCH" /* X */  : "I7_UNC_CBO_CONFIG";          /* >= S,H */
+        case 0x00000397: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_IvyBridge   ? NULL                                : "I7_IB_UNK_0000_0397";
         case 0x0000039c: return "I7_SB_MSR_PEBS_NUM_ALT";
         case 0x000003b0: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "I7_UNC_PMC0" /* X */               : "I7_UNC_ARB_PERF_CTR0";       /* >= S,H */
         case 0x000003b1: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "I7_UNC_PMC1" /* X */               : "I7_UNC_ARB_PERF_CTR1";       /* >= S,H */
@@ -897,7 +898,9 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000502: return "I7_SB_UNK_0000_0502";
         case 0x00000600: return "IA32_DS_AREA";
         case 0x00000601: return "I7_SB_MSR_VR_CURRENT_CONFIG"; /* SandyBridge, IvyBridge. */
+        case 0x00000602: return "I7_IB_UNK_0000_0602";
         case 0x00000603: return "I7_SB_MSR_VR_MISC_CONFIG"; /* SandyBridge, IvyBridge. */
+        case 0x00000604: return "I7_IB_UNK_0000_0602";
         case 0x00000606: return "I7_SB_MSR_RAPL_POWER_UNIT"; /* SandyBridge, IvyBridge. */
         case 0x0000060a: return "I7_SB_MSR_PKGC3_IRTL"; /* SandyBridge, IvyBridge. */
         case 0x0000060b: return "I7_SB_MSR_PKGC6_IRTL"; /* SandyBridge, IvyBridge. */
@@ -918,6 +921,11 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000640: return "I7_HW_MSR_PP0_POWER_LIMIT";
         case 0x00000641: return "I7_HW_MSR_PP0_ENERGY_STATUS";
         case 0x00000642: return "I7_HW_MSR_PP0_POLICY";
+        case 0x00000648: return "I7_IB_MSR_CONFIG_TDP_NOMINAL";
+        case 0x00000649: return "I7_IB_MSR_CONFIG_TDP_LEVEL1";
+        case 0x0000064a: return "I7_IB_MSR_CONFIG_TDP_LEVEL2";
+        case 0x0000064b: return "I7_IB_MSR_CONFIG_TDP_CONTROL";
+        case 0x0000064c: return "I7_IB_MSR_TURBO_ACTIVATION_RATIO";
         case 0x00000680: return "MSR_LASTBRANCH_0_FROM_IP";
         case 0x00000681: return "MSR_LASTBRANCH_1_FROM_IP";
         case 0x00000682: return "MSR_LASTBRANCH_2_FROM_IP";
@@ -952,6 +960,10 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x000006cf: return "MSR_LASTBRANCH_15_TO_IP";
         case 0x000006e0: return "IA32_TSC_DEADLINE";
 
+        case 0x00000c80: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_IvyBridge ? "IA32_DEBUG_INTERFACE" : NULL; /* Mentioned in an intel dataskit called 4th-gen-core-family-desktop-vol-1-datasheet.pdf. */
+        case 0x00000c81: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_IvyBridge ? "I7_IB_UNK_0000_0c81"  : NULL; /* Probably related to IA32_DEBUG_INTERFACE... */
+        case 0x00000c82: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_IvyBridge ? "I7_IB_UNK_0000_0c82"  : NULL; /* Probably related to IA32_DEBUG_INTERFACE... */
+        case 0x00000c83: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_IvyBridge ? "I7_IB_UNK_0000_0c83"  : NULL; /* Probably related to IA32_DEBUG_INTERFACE... */
 
         /* 0x1000..0x1004 seems to have been used by IBM 386 and 486 clones too. */
         case 0x00001000: return "P6_DEBUG_REGISTER_0";
@@ -1310,6 +1322,43 @@ static const char *getMsrNameHandled(uint32_t uMsr)
             case 0x00000db6: return "I7_SB_UNK_0000_0db6"; case 0x00000db7: return "I7_SB_UNK_0000_0db7";
             case 0x00000db8: return "I7_SB_UNK_0000_0db8"; case 0x00000db9: return "I7_SB_UNK_0000_0db9";
         }
+
+    /*
+     * Ditto for ivy bridge (observed on the i5-3570).  There are some haswell
+     * and sandybridge related docs on registers in this ares, but either
+     * things are different for ivy or they're very incomplete.  Again, kudos
+     * to intel!
+     */
+    if (g_enmMicroarch == kCpumMicroarch_Intel_Core7_IvyBridge)
+        switch (uMsr)
+        {
+            case 0x00000700: return "I7_IB_UNK_0000_0700"; case 0x00000701: return "I7_IB_UNK_0000_0701";
+            case 0x00000702: return "I7_IB_UNK_0000_0702"; case 0x00000703: return "I7_IB_UNK_0000_0703";
+            case 0x00000704: return "I7_IB_UNK_0000_0704"; case 0x00000705: return "I7_IB_UNK_0000_0705";
+            case 0x00000706: return "I7_IB_UNK_0000_0706"; case 0x00000707: return "I7_IB_UNK_0000_0707";
+            case 0x00000708: return "I7_IB_UNK_0000_0708"; case 0x00000709: return "I7_IB_UNK_0000_0709";
+            case 0x00000710: return "I7_IB_UNK_0000_0710"; case 0x00000711: return "I7_IB_UNK_0000_0711";
+            case 0x00000712: return "I7_IB_UNK_0000_0712"; case 0x00000713: return "I7_IB_UNK_0000_0713";
+            case 0x00000714: return "I7_IB_UNK_0000_0714"; case 0x00000715: return "I7_IB_UNK_0000_0715";
+            case 0x00000716: return "I7_IB_UNK_0000_0716"; case 0x00000717: return "I7_IB_UNK_0000_0717";
+            case 0x00000718: return "I7_IB_UNK_0000_0718"; case 0x00000719: return "I7_IB_UNK_0000_0719";
+            case 0x00000720: return "I7_IB_UNK_0000_0720"; case 0x00000721: return "I7_IB_UNK_0000_0721";
+            case 0x00000722: return "I7_IB_UNK_0000_0722"; case 0x00000723: return "I7_IB_UNK_0000_0723";
+            case 0x00000724: return "I7_IB_UNK_0000_0724"; case 0x00000725: return "I7_IB_UNK_0000_0725";
+            case 0x00000726: return "I7_IB_UNK_0000_0726"; case 0x00000727: return "I7_IB_UNK_0000_0727";
+            case 0x00000728: return "I7_IB_UNK_0000_0728"; case 0x00000729: return "I7_IB_UNK_0000_0729";
+            case 0x00000730: return "I7_IB_UNK_0000_0730"; case 0x00000731: return "I7_IB_UNK_0000_0731";
+            case 0x00000732: return "I7_IB_UNK_0000_0732"; case 0x00000733: return "I7_IB_UNK_0000_0733";
+            case 0x00000734: return "I7_IB_UNK_0000_0734"; case 0x00000735: return "I7_IB_UNK_0000_0735";
+            case 0x00000736: return "I7_IB_UNK_0000_0736"; case 0x00000737: return "I7_IB_UNK_0000_0737";
+            case 0x00000738: return "I7_IB_UNK_0000_0738"; case 0x00000739: return "I7_IB_UNK_0000_0739";
+            case 0x00000740: return "I7_IB_UNK_0000_0740"; case 0x00000741: return "I7_IB_UNK_0000_0741";
+            case 0x00000742: return "I7_IB_UNK_0000_0742"; case 0x00000743: return "I7_IB_UNK_0000_0743";
+            case 0x00000744: return "I7_IB_UNK_0000_0744"; case 0x00000745: return "I7_IB_UNK_0000_0745";
+            case 0x00000746: return "I7_IB_UNK_0000_0746"; case 0x00000747: return "I7_IB_UNK_0000_0747";
+            case 0x00000748: return "I7_IB_UNK_0000_0748"; case 0x00000749: return "I7_IB_UNK_0000_0749";
+
+        }
     return NULL;
 }
 
@@ -1560,7 +1609,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x00000393: return "IntelI7UncPerfGlobalOvfCtrl";          /* X. ASSUMING this is the same on sandybridge and later. */
         case 0x00000394: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "IntelI7UncPerfFixedCtr"  /* X */   : "IntelI7UncPerfFixedCtrCtrl"; /* >= S,H */
         case 0x00000395: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "IntelI7UncPerfFixedCtrCtrl" /* X*/ : "IntelI7UncPerfFixedCtr";     /* >= S,H */
-        case 0x00000396: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "IntelI7UncAddrOpcodeMatch" /* X */ : "IntelI7UncCbO_Config";       /* >= S,H */
+        case 0x00000396: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "IntelI7UncAddrOpcodeMatch" /* X */ : "IntelI7UncCBoxConfig";       /* >= S,H */
         case 0x0000039c: return "IntelI7SandyPebsNumAlt";
         case 0x000003b0: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "IntelI7UncPmcN" /* X */            : "IntelI7UncArbPerfCtrN";      /* >= S,H */
         case 0x000003b1: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "IntelI7UncPmcN" /* X */            : "IntelI7UncArbPerfCtrN";      /* >= S,H */
@@ -1633,6 +1682,12 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x00000640: return "IntelI7RaplPp1PowerLimit";
         case 0x00000641: return "IntelI7RaplPp1EnergyStatus";
         case 0x00000642: return "IntelI7RaplPp1Policy";
+        case 0x00000648: return "IntelI7IvyConfigTdpNominal";
+        case 0x00000649: return "IntelI7IvyConfigTdpLevel1";
+        case 0x0000064a: return "IntelI7IvyConfigTdpLevel2";
+        case 0x0000064b: return "IntelI7IvyConfigTdpControl";
+        case 0x0000064c: return "IntelI7IvyTurboActivationRatio";
+
         case 0x00000680: case 0x00000681: case 0x00000682: case 0x00000683:
         case 0x00000684: case 0x00000685: case 0x00000686: case 0x00000687:
         case 0x00000688: case 0x00000689: case 0x0000068a: case 0x0000068b:
@@ -1651,7 +1706,9 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         //case 0x000006d8: case 0x000006d9: case 0x000006da: case 0x000006db:
         //case 0x000006dc: case 0x000006dd: case 0x000006de: case 0x000006df:
             return "IntelLastBranchFromN";
-        case 0x000006e0: return "Ia32TscDeadline";
+        case 0x000006e0: return "Ia32TscDeadline"; /** @todo detect this correctly! */
+
+        case 0x00000c80: return g_enmMicroarch > kCpumMicroarch_Intel_Core7_Nehalem ? "Ia32DebugInterface" : NULL;
 
         case 0xc0000080: return "Amd64Efer";
         case 0xc0000081: return "Amd64SyscallTarget";
@@ -1880,6 +1937,10 @@ static uint64_t getGenericSkipMask(uint32_t uMsr)
         case 0x000001f2: return UINT64_C(0xfffff00f); /* Ia32SmrrPhysBase - Only writable in SMM. */
         case 0x000001f3: return UINT64_C(0xfffff800); /* Ia32SmrrPhysMask - Only writable in SMM. */
 
+        /* these two have lock bits. */
+        case 0x0000064b: return UINT64_C(0x80000003);
+        case 0x0000064c: return UINT64_C(0x800000ff);
+
         case 0xc0010015: return 1; /* SmmLock bit */
 
         /* SmmLock effect: */
@@ -1900,7 +1961,7 @@ static uint64_t getGenericSkipMask(uint32_t uMsr)
         case 0x00000010:
         case 0x000000e7:
         case 0x000000e8:
-            return RT_BIT_32(27) - 1;
+            return RT_BIT_32(29) - 1;
     }
     return 0;
 }
