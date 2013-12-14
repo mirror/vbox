@@ -6872,9 +6872,6 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
             VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
             pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
         }
-#endif
-
-#if HC_ARCH_BITS == 64
         /* Restore the host MSRs as we're leaving VT-x context. */
         if (   pVM->hm.s.fAllow64BitGuests
             && pVCpu->hm.s.vmx.fRestoreHostMsrs)
