@@ -935,7 +935,7 @@ $(VBOX_IDL_HEADER.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $$(dir $$@) $(VBOX_XPIDL)
 
 $(VBOX_IDL_FILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(if $(VBOX_WITH_MIDL_PROXY_STUB),-stringparam g_fGenProxy yes,) $< $(VBOX_XIDL_FILE)
 
 # Aliases for testing purposes.
 ifdef VBOX_WITH_XPCOM
