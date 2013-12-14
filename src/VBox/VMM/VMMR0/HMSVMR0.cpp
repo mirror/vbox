@@ -2135,7 +2135,7 @@ DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
             VMMR0ThreadCtxHooksDeregister(pVCpu);
 
         /* Leave HM context. This takes care of local init (term). */
-        int rc = HMR0LeaveCpu(pVCpu);
+        HMR0LeaveCpu(pVCpu);
 
         HM_RESTORE_PREEMPT_IF_NEEDED();
         return VINF_SUCCESS;
