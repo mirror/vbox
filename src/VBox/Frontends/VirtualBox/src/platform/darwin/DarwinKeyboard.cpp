@@ -40,17 +40,20 @@
 # include <iprt/semaphore.h>
 # include <VBox/sup.h>
 # include <IOKit/IOMessage.h>
+# include <IOKit/usb/IOUSBLib.h>
+# include <IOKit/IOMessage.h>
 #endif
 
 #ifdef USE_HID_FOR_MODIFIERS
 # include <mach/mach.h>
 # include <mach/mach_error.h>
-# include <IOKit/IOKitLib.h>
-# include <IOKit/IOCFPlugIn.h>
 # include <IOKit/hid/IOHIDUsageTables.h>
 # include <CoreFoundation/CoreFoundation.h>
 #endif
-# include <IOKit/usb/USB.h>
+
+#include <IOKit/IOKitLib.h>
+#include <IOKit/IOCFPlugIn.h>
+#include <IOKit/usb/USB.h>
 #include <IOKit/hid/IOHIDLib.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h>
@@ -315,10 +318,7 @@ typedef struct VBoxKbdState_t {
     void             *pParentContainer;     /** A pointer to a VBoxHidsState_t instance where VBoxKbdState_t instance is stored */
     CFIndex           idxPosition;          /** Position in global storage (used to simplify CFArray navigation when removing detached device) */
     uint64_t          cCapsLockTimeout;     /** KBD CAPS LOCK key hold timeout (some Apple keyboards only) */
-
-    io_object_t           notification;         /** General interest notification stuff: notification reference */
-    IONotificationPortRef notificationPortRef;  /** General interest notification stuff: notification port reference */
-
+    uint32_t          idLocation;           /** HID Location ID: unique for an USB device registered in the system */
 } VBoxKbdState_t;
 
 /* A struct that used to pass input event info from IOKit callback to a Carbon one */
@@ -336,6 +336,12 @@ typedef struct VBoxHidsState_t {
 
     CFMutableArrayRef   pFifoEventQueue;    /** This queue will be appended in IOKit input callback. Carbon input callback will extract data from it */
     RTSEMMUTEX          fifoEventQueueLock; /** Lock for pFifoEventQueue */
+
+    io_iterator_t         pUsbHidDeviceMatchNotify;     /** IOService notification reference: USB HID device matching */
+    io_iterator_t         pUsbHidGeneralInterestNotify; /** IOService notification reference: USB HID general interest
+                                                            notifications (IOService messages) */
+    IONotificationPortRef pNotificationPrortRef;        /** IOService notification port reference: used for both notification
+                                                            types - device match and device general interest message */
 
     /* Carbon events data */
     CFMachPortRef       pTapRef;
@@ -1452,6 +1458,12 @@ static uint32_t darwinHidProductId(IOHIDDeviceRef pHidDeviceRef)
     return darwinQueryIntProperty(pHidDeviceRef, CFSTR(kIOHIDProductIDKey));
 }
 
+/** Get HID Location ID */
+static uint32_t darwinHidLocationId(IOHIDDeviceRef pHidDeviceRef)
+{
+    return darwinQueryIntProperty(pHidDeviceRef, CFSTR(kIOHIDLocationIDKey));
+}
+
 /** Some keyboard devices might freeze after LEDs manipulation. We filter out such devices here.
  * In the list below, devices that known to have such issues. If you want to add new device,
  * then add it here. Currently, we only filter devices by Vendor ID.
@@ -1466,6 +1478,11 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
     if (vendorId == 0x05D5)      /* Genius */
     {
         if (productId == 0x8001) /* GK-04008/C keyboard */
+            fSupported = false;
+    }
+    if (vendorId == 0xE6A)       /* Megawin Technology */
+    {
+        if (productId == 0x6001) /* Japanese flexible keyboard */
             fSupported = false;
     }
 
@@ -1722,10 +1739,55 @@ static CGEventRef darwinCarbonCallback(CGEventTapProxy unused, CGEventType unuse
     return pEventRef;
 }
 
-/** IOHID Device general interest notification callback. We are interested in kIOMessageDeviceHasPoweredOn message.
- * When we receive it, we do silently resync kbd which was just resumed. The rest of messages are for debugging
- * purpose. */
-static void darwinHidNotificationCb(void *pData, io_service_t unused1, natural_t msg, void *unused2)
+/** Helper function to obtain interface for IOUSBInterface IOService. */
+static IOUSBDeviceInterface ** darwinQueryUsbHidInterfaceInterface(io_service_t service)
+{
+    kern_return_t         rc;
+    IOCFPlugInInterface **ppPluginInterface = NULL;
+    int32_t               iScore;
+
+    rc = IOCreatePlugInInterfaceForService(service, kIOUSBInterfaceUserClientTypeID,
+                                           kIOCFPlugInInterfaceID, &ppPluginInterface, &iScore);
+
+    if (rc == kIOReturnSuccess && ppPluginInterface != NULL)
+    {
+        IOUSBDeviceInterface **ppUsbDeviceInterface = NULL;
+
+        rc = (*ppPluginInterface)->QueryInterface(ppPluginInterface, CFUUIDGetUUIDBytes(kIOUSBInterfaceInterfaceID),
+                                                  (LPVOID *)&ppUsbDeviceInterface);
+        IODestroyPlugInInterface(ppPluginInterface);
+
+        if (rc == kIOReturnSuccess && ppUsbDeviceInterface != NULL)
+            return ppUsbDeviceInterface;
+        else
+            LogRel2(("Failed to query plugin interface for USB device\n"));
+
+    }
+    else
+        LogRel2(("Failed to create plugin interface for USB device\n"));
+
+    return NULL;
+}
+
+/** Helper function for IOUSBInterface IOService general interest notification callback: resync LEDs. */
+static void darwinUsbHidResyncLeds(VBoxKbdState_t *pKbd)
+{
+    AssertReturnVoid(pKbd);
+
+    VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pKbd->pParentContainer;
+    CFDictionaryRef  elementMatchingDict = darwinQueryLedElementMatchingDictionary();
+    if (elementMatchingDict)
+    {
+        LogRel2(("Do HID device resync at location 0x%X \n", pKbd->idLocation));
+        (void)darwinSetDeviceLedsState(pKbd->pDevice, elementMatchingDict,
+            pHidState->guestState.fNumLockOn, pHidState->guestState.fCapsLockOn, pHidState->guestState.fScrollLockOn);
+        CFRelease(elementMatchingDict);
+    }
+}
+
+/** IOUSBInterface IOService general interest notification callback. When we receive it, we do
+ * silently resync kbd which has just changed its state. */
+static void darwinUsbHidGeneralInterestCb(void *pData, io_service_t unused1, natural_t msg, void *unused2)
 {
     NOREF(unused1);
     NOREF(unused2);
@@ -1735,78 +1797,154 @@ static void darwinHidNotificationCb(void *pData, io_service_t unused1, natural_t
 
     switch (msg)
     {
-        case kIOMessageDeviceHasPoweredOn:
+        case kIOUSBMessagePortHasBeenSuspended:
             {
-                LogRel2(("HID general interest notification kIOMessageDeviceHasPoweredOn for KBD %d\n", (int)(pKbd->idxPosition)));
-
-                VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pKbd->pParentContainer;
-                CFDictionaryRef  elementMatchingDict = darwinQueryLedElementMatchingDictionary();
-                if (elementMatchingDict)
-                {
-                    (void)darwinSetDeviceLedsState(pKbd->pDevice, elementMatchingDict,
-                        pHidState->guestState.fNumLockOn, pHidState->guestState.fCapsLockOn, pHidState->guestState.fScrollLockOn);
-                    CFRelease(elementMatchingDict);
-                }
+                LogRel2(("IOUSBInterface IOService general interest notification kIOUSBMessagePortHasBeenSuspended for KBD %d (Location ID: 0x%X)\n",
+                         (int)(pKbd->idxPosition), pKbd->idLocation));
                 break;
             }
 
-        case kIOMessageDeviceWillPowerOff:
+        case kIOUSBMessagePortHasBeenResumed:
             {
-                LogRel2(("HID general interest notification kIOMessageDeviceWillPowerOff for KBD %d\n", (int)(pKbd->idxPosition)));
+                LogRel2(("IOUSBInterface IOService general interest notification kIOUSBMessagePortHasBeenResumed for KBD %d (Location ID: 0x%X)\n",
+                         (int)(pKbd->idxPosition), pKbd->idLocation));
+                darwinUsbHidResyncLeds(pKbd);
                 break;
             }
 
-        case kIOMessageCanDevicePowerOff:
+        case kIOUSBMessagePortHasBeenReset:
             {
-                LogRel2(("HID general interest notification kIOMessageCanDevicePowerOff for KBD %d\n", (int)(pKbd->idxPosition)));
+                LogRel2(("IOUSBInterface IOService general interest notification kIOUSBMessagePortHasBeenReset for KBD %d (Location ID: 0x%X)\n",
+                         (int)(pKbd->idxPosition), pKbd->idLocation));
+                darwinUsbHidResyncLeds(pKbd);
+                break;
+            }
+
+        case kIOUSBMessageCompositeDriverReconfigured:
+            {
+                LogRel2(("IOUSBInterface IOService general interest notification kIOUSBMessageCompositeDriverReconfigured for KBD %d (Location ID: 0x%X)\n",
+                         (int)(pKbd->idxPosition), pKbd->idLocation));
+                darwinUsbHidResyncLeds(pKbd);
+                break;
+            }
+
+        case kIOMessageServiceWasClosed:
+            {
+                LogRel2(("IOUSBInterface IOService general interest notification kIOMessageServiceWasClosed for KBD %d (Location ID: 0x%X)\n",
+                         (int)(pKbd->idxPosition), pKbd->idLocation));
                 break;
             }
 
         default:
-            LogRel2(("HID general interest notification 0x%X for KBD %d\n", (int)msg, (int)(pKbd->idxPosition)));
+            LogRel2(("IOUSBInterface IOService general interest notification 0x%X for KBD %d (Location ID: 0x%X)\n",
+                     msg, (int)(pKbd->idxPosition), pKbd->idLocation));
     }
 }
 
-/** Battle against automatic power management for KBD devices. Register general interest notification
- * callback in order to recync KBD device when its driver report that it has been resumed from auto-sleep. */
-static int darwinHidSubscribeInterestNotification(VBoxKbdState_t *pKbd)
+/** Get pre-cached KBD device by its Location ID. */
+static VBoxKbdState_t * darwinUsbHidQueryKbdByLocationId(uint32_t idLocation, VBoxHidsState_t *pHidState)
 {
-    AssertReturn(pKbd, kIOReturnError);
-    AssertReturn(pKbd->pDevice, kIOReturnError);
+    AssertReturn(pHidState, NULL);
 
-    io_service_t  service;
-    kern_return_t rc = kIOReturnError;
-
-    service = IOHIDDeviceGetService(pKbd->pDevice);
-    if (service)
+    for (CFIndex i = 0; i < CFArrayGetCount(pHidState->pDeviceCollection); i++)
     {
-        pKbd->notificationPortRef = IONotificationPortCreate(kIOMasterPortDefault);
-        if (pKbd->notificationPortRef)
-        {
-            rc = IOServiceAddInterestNotification(pKbd->notificationPortRef, service, kIOGeneralInterest, darwinHidNotificationCb, pKbd, &(pKbd->notification));
-            if (rc == kIOReturnSuccess)
-            {
-                LogRel2(("Interest notification has been registeted for KBD %d\n", (int)(pKbd->idxPosition)));
-                CFRunLoopAddSource(CFRunLoopGetCurrent(), IONotificationPortGetRunLoopSource(pKbd->notificationPortRef), kCFRunLoopDefaultMode);
-                return 0;
-            }
-        }
+        VBoxKbdState_t *pKbd = (VBoxKbdState_t *)CFArrayGetValueAtIndex(pHidState->pDeviceCollection, i);
+        if (pKbd && pKbd->idLocation == idLocation)
+            return pKbd;
     }
+
+    return NULL;
+}
+
+/** IOUSBInterface IOService match notification callback: issued when IOService instantinates.
+ * We subscribe to general interest notifications for available IOServices here. */
+static void darwinUsbHidDeviceMatchCb(void *pData, io_iterator_t iter)
+{
+    AssertReturnVoid(pData);
+
+    io_service_t     service;
+    VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pData;
+
+    while ((service = IOIteratorNext(iter)))
+    {
+        kern_return_t         rc;
+
+        IOUSBDeviceInterface **ppUsbDeviceInterface = darwinQueryUsbHidInterfaceInterface(service);
+
+        if (ppUsbDeviceInterface)
+        {
+            uint8_t  idDeviceClass, idDeviceSubClass;
+            uint32_t idLocation;
+
+            rc = (*ppUsbDeviceInterface)->GetLocationID    (ppUsbDeviceInterface,  &idLocation);       AssertMsg(rc == 0, ("Failed to get Location ID"));
+            rc = (*ppUsbDeviceInterface)->GetDeviceClass   (ppUsbDeviceInterface,  &idDeviceClass);    AssertMsg(rc == 0, ("Failed to get Device Class"));
+            rc = (*ppUsbDeviceInterface)->GetDeviceSubClass(ppUsbDeviceInterface,  &idDeviceSubClass); AssertMsg(rc == 0, ("Failed to get Device Subclass"));
+
+            if (idDeviceClass == kUSBHIDInterfaceClass && idDeviceSubClass == kUSBHIDBootInterfaceSubClass)
+            {
+                VBoxKbdState_t *pKbd = darwinUsbHidQueryKbdByLocationId(idLocation, pHidState);
+
+                rc = IOServiceAddInterestNotification(pHidState->pNotificationPrortRef, service, kIOGeneralInterest,
+                    darwinUsbHidGeneralInterestCb, pKbd, &pHidState->pUsbHidGeneralInterestNotify);
+
+                AssertMsg(rc == 0, ("Failed to add general interest notification"));
+
+                LogRel2(("Found HID device at location 0x%X: class 0x%X, subclass 0x%X\n", idLocation, idDeviceClass, idDeviceSubClass));
+            }
+
+            rc = (*ppUsbDeviceInterface)->Release(ppUsbDeviceInterface); AssertMsg(rc == 0, ("Failed to release USB device interface"));
+        }
+
+        IOObjectRelease(service);
+    }
+}
+
+/** Register IOUSBInterface IOService match notification callback in order to recync KBD
+ * device when it reports state change. */
+static int darwinUsbHidSubscribeInterestNotifications(VBoxHidsState_t *pHidState)
+{
+    AssertReturn(pHidState, kIOReturnBadArgument);
+
+    int rc = kIOReturnNoMemory;
+    CFDictionaryRef pDictionary = IOServiceMatching(kIOUSBInterfaceClassName);
+
+    if (pDictionary)
+    {
+        pHidState->pNotificationPrortRef = IONotificationPortCreate(kIOMasterPortDefault);
+        if (pHidState->pNotificationPrortRef)
+        {
+            CFRunLoopAddSource(CFRunLoopGetCurrent(), IONotificationPortGetRunLoopSource(pHidState->pNotificationPrortRef), kCFRunLoopDefaultMode);
+
+            rc = IOServiceAddMatchingNotification(pHidState->pNotificationPrortRef, kIOMatchedNotification,
+                pDictionary, darwinUsbHidDeviceMatchCb, pHidState, &pHidState->pUsbHidDeviceMatchNotify);
+
+            if (rc == kIOReturnSuccess && &pHidState->pUsbHidDeviceMatchNotify != NULL)
+            {
+                darwinUsbHidDeviceMatchCb(pHidState, pHidState->pUsbHidDeviceMatchNotify);
+                LogRel2(("Successfully subscribed to IOUSBInterface IOService match notifications\n"));
+            }
+            else
+                LogRel2(("Failed to subscribe to IOUSBInterface IOService match notifications: subscription error 0x%X\n", rc));
+        }
+        else
+            LogRel2(("Failed to subscribe to IOUSBInterface IOService match notifications: unable to create notification port\n"));
+    }
+    else
+        LogRel2(("Failed to subscribe to IOUSBInterface IOService match notifications: no memory\n"));
 
     return rc;
 }
 
-/** Remove general interest notification subscription. */
-static void darwinHidUnsubscribeInterestNotification(VBoxKbdState_t *pKbd)
+/** Remove IOUSBInterface IOService match notification subscription. */
+static void darwinUsbHidUnsubscribeInterestNotifications(VBoxHidsState_t *pHidState)
 {
-    AssertReturnVoid(pKbd);
-    AssertReturnVoid(pKbd->notificationPortRef);
+    AssertReturnVoid(pHidState);
 
-    CFRunLoopRemoveSource(CFRunLoopGetCurrent(), IONotificationPortGetRunLoopSource(pKbd->notificationPortRef), kCFRunLoopDefaultMode);
-    IONotificationPortDestroy(pKbd->notificationPortRef);
-    pKbd->notificationPortRef = 0;
+    CFRunLoopRemoveSource(CFRunLoopGetCurrent(), IONotificationPortGetRunLoopSource(pHidState->pNotificationPrortRef), kCFRunLoopDefaultMode);
+    IONotificationPortDestroy(pHidState->pNotificationPrortRef);
+    pHidState->pNotificationPrortRef = NULL;
 
-    LogRel2(("Interest notification has been removed for KBD %d\n", (int)(pKbd->idxPosition)));
+    LogRel2(("Successfully un-subscribed from IOUSBInterface IOService match notifications\n"));
 }
 
 /** This callback is called when user physically removes HID device. We remove device from cache here. */
@@ -1824,8 +1962,6 @@ static void darwinHidRemovalCallback(void *pData, IOReturn unused, void *unused1
 
     //if (RT_FAILURE(RTSemMutexRequest(pHidState->fifoEventQueueLock, RT_INDEFINITE_WAIT)))
     //    return ;
-
-    darwinHidUnsubscribeInterestNotification(pKbd);
 
     CFArrayRemoveValueAtIndex(pHidState->pDeviceCollection, pKbd->idxPosition);
     free(pKbd);
@@ -1865,6 +2001,7 @@ static void darwinHidAddDevice(VBoxHidsState_t *pHidState, IOHIDDeviceRef pDevic
                 pKbd->pDevice = pDevice;
                 pKbd->pParentContainer = (void *)pHidState;
                 pKbd->idxPosition = CFArrayGetCount(pHidState->pDeviceCollection);
+                pKbd->idLocation = darwinHidLocationId(pDevice);
 
                 /* Some Apple keyboards have CAPS LOCK key timeout. According to corresponding
                  * kext plist files, it is equals to 75 ms. For such devices we only add info into our FIFO event
@@ -1890,35 +2027,29 @@ static void darwinHidAddDevice(VBoxHidsState_t *pHidState, IOHIDDeviceRef pDevic
                         pKbd->LED.fScrollLockOn = false;
                     }
 
-                    rc = darwinHidSubscribeInterestNotification(pKbd);
-                    if (rc == 0)
+                    /* Register per-device removal callback */
+                    IOHIDDeviceRegisterRemovalCallback(pKbd->pDevice, darwinHidRemovalCallback, (void *)pKbd);
+
+                    /* Register per-device input callback */
+                    IOHIDDeviceRegisterInputValueCallback(pKbd->pDevice, darwinHidInputCallback, (void *)pKbd);
+                    IOHIDDeviceScheduleWithRunLoop(pKbd->pDevice, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+
+                    CFArrayAppendValue(pHidState->pDeviceCollection, (void *)pKbd);
+
+                    LogRel2(("Saved LEDs for KBD %d (%p): fNumLockOn=%s, fCapsLockOn=%s, fScrollLockOn=%s\n",
+                        (int)pKbd->idxPosition, pKbd, VBOX_BOOL_TO_STR_STATE(pKbd->LED.fNumLockOn), VBOX_BOOL_TO_STR_STATE(pKbd->LED.fCapsLockOn),
+                        VBOX_BOOL_TO_STR_STATE(pKbd->LED.fScrollLockOn)));
+
+                    if (fApplyLedState)
                     {
-                        /* Register per-device removal callback */
-                        IOHIDDeviceRegisterRemovalCallback(pKbd->pDevice, darwinHidRemovalCallback, (void *)pKbd);
-
-                        /* Register per-device input callback */
-                        IOHIDDeviceRegisterInputValueCallback(pKbd->pDevice, darwinHidInputCallback, (void *)pKbd);
-                        IOHIDDeviceScheduleWithRunLoop(pKbd->pDevice, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
-
-                        CFArrayAppendValue(pHidState->pDeviceCollection, (void *)pKbd);
-
-                        LogRel2(("Saved LEDs for KBD %d (%p): fNumLockOn=%s, fCapsLockOn=%s, fScrollLockOn=%s\n",
-                            (int)pKbd->idxPosition, pKbd, VBOX_BOOL_TO_STR_STATE(pKbd->LED.fNumLockOn), VBOX_BOOL_TO_STR_STATE(pKbd->LED.fCapsLockOn),
-                            VBOX_BOOL_TO_STR_STATE(pKbd->LED.fScrollLockOn)));
-
-                        if (fApplyLedState)
-                        {
-                            rc = darwinSetDeviceLedsState(pKbd->pDevice, elementMatchingDict, pHidState->guestState.fNumLockOn,
-                                                          pHidState->guestState.fCapsLockOn, pHidState->guestState.fScrollLockOn);
-                            if (rc != 0)
-                                LogRel2(("Unable to apply guest state to newly attached device\n"));
-                        }
-
-                        CFRelease(elementMatchingDict);
-                        return;
+                        rc = darwinSetDeviceLedsState(pKbd->pDevice, elementMatchingDict, pHidState->guestState.fNumLockOn,
+                                                      pHidState->guestState.fCapsLockOn, pHidState->guestState.fScrollLockOn);
+                        if (rc != 0)
+                            LogRel2(("Unable to apply guest state to newly attached device\n"));
                     }
-                    else
-                        LogRel2(("Unable to subscribe to IOService interest notification for KBD %d. Disable sync for this keyboard.\n", (int)(pKbd->idxPosition)));
+
+                    CFRelease(elementMatchingDict);
+                    return;
                 }
 
                 free(pKbd);
@@ -2066,7 +2197,10 @@ void * DarwinHidDevicesKeepLedsState(void)
                         pHidState->guestState.fCapsLockOn =
                         pHidState->guestState.fScrollLockOn = false;
 
-                        return pHidState;
+                        /* Finally, subscribe to USB HID notifications in order to prevent LED artifacts on
+                           automatic power management */
+                        if (darwinUsbHidSubscribeInterestNotifications(pHidState) == 0)
+                            return pHidState;
                     }
                 }
 
@@ -2104,6 +2238,8 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
 
     AssertReturn(pHidState, kIOReturnError);
 
+    darwinUsbHidUnsubscribeInterestNotifications(pHidState);
+
     /* Need to unregister Carbon stuff first */
     darwinRemoveCarbonHandler(pHidState);
 
@@ -2135,8 +2271,6 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
                 LogRel2(("Restored LEDs for KBD %d (%p): fNumLockOn=%s, fCapsLockOn=%s, fScrollLockOn=%s\n",
                      (int)i, pKbd, VBOX_BOOL_TO_STR_STATE(pKbd->LED.fNumLockOn), VBOX_BOOL_TO_STR_STATE(pKbd->LED.fCapsLockOn),
                      VBOX_BOOL_TO_STR_STATE(pKbd->LED.fScrollLockOn)));
-
-                darwinHidUnsubscribeInterestNotification(pKbd);
 
                 free(pKbd);
             }
