@@ -1744,7 +1744,7 @@ static IOUSBDeviceInterface ** darwinQueryUsbHidInterfaceInterface(io_service_t 
 {
     kern_return_t         rc;
     IOCFPlugInInterface **ppPluginInterface = NULL;
-    int32_t               iScore;
+    SInt32                iScore;
 
     rc = IOCreatePlugInInterfaceForService(service, kIOUSBInterfaceUserClientTypeID,
                                            kIOCFPlugInInterfaceID, &ppPluginInterface, &iScore);
@@ -1874,7 +1874,7 @@ static void darwinUsbHidDeviceMatchCb(void *pData, io_iterator_t iter)
         if (ppUsbDeviceInterface)
         {
             uint8_t  idDeviceClass, idDeviceSubClass;
-            uint32_t idLocation;
+            UInt32   idLocation;
 
             rc = (*ppUsbDeviceInterface)->GetLocationID    (ppUsbDeviceInterface,  &idLocation);       AssertMsg(rc == 0, ("Failed to get Location ID"));
             rc = (*ppUsbDeviceInterface)->GetDeviceClass   (ppUsbDeviceInterface,  &idDeviceClass);    AssertMsg(rc == 0, ("Failed to get Device Class"));
@@ -1882,7 +1882,7 @@ static void darwinUsbHidDeviceMatchCb(void *pData, io_iterator_t iter)
 
             if (idDeviceClass == kUSBHIDInterfaceClass && idDeviceSubClass == kUSBHIDBootInterfaceSubClass)
             {
-                VBoxKbdState_t *pKbd = darwinUsbHidQueryKbdByLocationId(idLocation, pHidState);
+                VBoxKbdState_t *pKbd = darwinUsbHidQueryKbdByLocationId((uint32_t)idLocation, pHidState);
 
                 rc = IOServiceAddInterestNotification(pHidState->pNotificationPrortRef, service, kIOGeneralInterest,
                     darwinUsbHidGeneralInterestCb, pKbd, &pHidState->pUsbHidGeneralInterestNotify);
