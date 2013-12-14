@@ -25,16 +25,17 @@ include $(KBUILD_PATH)/subheader.kmk
 ifndef VBOX_ONLY_SDK
  if defined(VBOX_WITH_TESTCASES)
   PROGRAMS       += \
-	tstAPI \
-	$(if $(VBOX_OSE),,tstOVF) \
-	$(if $(VBOX_WITH_XPCOM),tstVBoxAPIXPCOM,tstVBoxAPIWin) \
-	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,) \
-	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
-	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,) \
-	tstMediumLock \
-	tstMouseImpl
+  	tstAPI \
+  	tstVBoxAPIPerf \
+  	$(if $(VBOX_OSE),,tstOVF) \
+  	$(if $(VBOX_WITH_XPCOM),tstVBoxAPIXPCOM,tstVBoxAPIWin) \
+  	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,) \
+  	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
+  	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,) \
+  	tstMediumLock \
+  	tstMouseImpl
   PROGRAMS.linux += \
-	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
+  	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
  endif # !VBOX_WITH_TESTCASES
 endif # !VBOX_ONLY_SDK
 if defined(VBOX_ONLY_SDK) || !defined(VBOX_WITH_XPCOM)
@@ -64,6 +65,13 @@ tstAPI_TEMPLATE = VBOXMAINCLIENTTSTEXE
 #tstAPI_INST = $(INST_SDK)bindings/gluecom/samples/
 tstAPI_SOURCES  = tstAPI.cpp
 
+
+#
+# tstVBoxAPIPerf
+#
+tstVBoxAPIPerf_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstVBoxAPIPerf_SOURCES  = \
+	tstVBoxAPIPerf.cpp
 
 #
 # tstOVF
