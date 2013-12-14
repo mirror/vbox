@@ -10869,6 +10869,10 @@ static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     {
         /* Convert a #MF into a FERR -> IRQ 13. See @bugref{6117}. */
         rc = PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13, 1, 0 /* uTagSrc */);
+
+        /** @todo r=ramshankar: The Intel spec. does -not- specify that this VM-exit
+         *        provides VM-exit instruction length. If this causes problem later,
+         *        disassemble the instruction like it's done on AMD-V. */
         int rc2 = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc2, rc2);
         return rc;
