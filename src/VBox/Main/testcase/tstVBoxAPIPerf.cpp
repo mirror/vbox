@@ -25,6 +25,7 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/VirtualBox.h>
+#include <VBox/sup.h>
 
 #include <iprt/test.h>
 #include <iprt/time.h>
@@ -169,6 +170,7 @@ int main(int argc, char **argv)
     RTEXITCODE rcExit = RTTestInitAndCreate("tstVBoxAPIPerf", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
+    SUPR3Init(NULL); /* Better time support. */
     RTTestBanner(g_hTest);
 
     RTTestSub(g_hTest, "Initializing COM and singletons");
@@ -197,6 +199,7 @@ int main(int argc, char **argv)
             }
         }
 
+        ptrVBox.setNull();
         com::Shutdown();
     }
     else
