@@ -101,22 +101,30 @@ goto register_amd64
 @echo on
 %_VBOX_DIR%VBoxSVC.exe /UnregServer
 regsvr32 /s /u %_VBOX_DIR%VBoxC.dll
+if exist %_VBOX_DIR%VBoxProxyStub.dll     %windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub.dll
 @if "%1" == "-u" goto end
 %_VBOX_DIR%VBoxSVC.exe /RegServer
 regsvr32 /s    %_VBOX_DIR%VBoxC.dll
+@if "%1" == "--no-proxy" goto end
+if exist %_VBOX_DIR%VBoxProxyStub.dll     %windir%\system32\regsvr32 /s %_VBOX_DIR%VBoxProxyStub.dll
 @echo off
 goto end
 
-REM Unregister both first, then register them. The order matters here.
+REM Unregister all first, then register them. The order matters here.
 :register_amd64
 @echo on
 %_VBOX_DIR%VBoxSVC.exe /UnregServer
 %windir%\syswow64\regsvr32 /s /u %_VBOX_DIR%x86\VBoxClient-x86.dll
 %windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxC.dll
+if exist %_VBOX_DIR%VBoxProxyStub.dll     %windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub.dll
+if exist %_VBOX_DIR%VBoxProxyStub-x86.dll %windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub-x86.dll
 @if "%1" == "-u" goto end
 %_VBOX_DIR%VBoxSVC.exe /RegServer
 %windir%\system32\regsvr32 /s    %_VBOX_DIR%VBoxC.dll
 %windir%\syswow64\regsvr32 /s    %_VBOX_DIR%x86\VBoxClient-x86.dll
+@if "%1" == "--no-proxy" goto end
+if exist %_VBOX_DIR%VBoxProxyStub.dll     %windir%\system32\regsvr32 /s %_VBOX_DIR%VBoxProxyStub.dll
+if exist %_VBOX_DIR%VBoxProxyStub-x86.dll %windir%\system32\regsvr32 /s %_VBOX_DIR%VBoxProxyStub-x86.dll
 @echo off
 
 :end
