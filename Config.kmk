@@ -1872,13 +1872,15 @@ if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH), linux.x86 solaris.x86 win.x86)
 endif
 
 # The Microsoft IDL compiler (the SDK build needs this on non-Windows).
-VBOX_WIN_MIDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
-	$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
-	$(PATH_SDK_$(VBOX_WINPSDK))/[Bb][Ii][Nn]/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
-	$(PATH_SDK_WINPSDK_BIN)/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
-	$(PATH_SDK_WINPSDK)/[Bb][Ii][Nn]/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
-	$(PATH_DEVTOOLS)/win.x86/bin/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
-	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
+VBOX_WIN_MIDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard $(addsuffix /[Mm][Ii][Dd][Ll].[Ee][Xx][Ee], \
+	$(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Bin$(if-expr "$(KBUILD_HOST_ARCH)" == "amd64",/x64,) \
+	$(PATH_DEVTOOLS)/win.x86/ddk/7600.16385.1/bin/x86 \
+	$(PATH_DEVTOOLS)/win.x86/bin \
+	$(PATH_SDK_$(VBOX_WINPSDK)_BIN) \
+	$(PATH_SDK_$(VBOX_WINPSDK)) \
+	$(PATH_SDK_WINPSDK_BIN) \
+	$(PATH_SDK_WINPSDK) \
+	)) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 
 # XPCOM setup for all but win32.
 ifneq ($(KBUILD_TARGET),win)
@@ -1890,12 +1892,12 @@ ifneq ($(KBUILD_TARGET),win)
  endif
  VBOX_PATH_XPCOM_IDL ?= $(VBOX_PATH_SDK)/bindings/xpcom/idl
  VBOX_XPCOM_INCS     ?=				\
-	$(VBOX_PATH_SDK)/bindings/xpcom/include	\
-	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom	\
-	$(VBOX_PATH_SDK)/bindings/xpcom/include/string	\
-	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom	\
-        $(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
-	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include	\
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom	\
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include/string	\
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom	\
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd
  ifneq ($(KBUILD_TARGET),os2)
   # libIDL-config (for xpcom18a4)
   ifeq ($(origin VBOX_LIBIDL_CONFIG),undefined)
