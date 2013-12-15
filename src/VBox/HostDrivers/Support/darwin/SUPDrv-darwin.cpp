@@ -369,6 +369,10 @@ static void vboxdrvDarwinResolveSymbols(void)
         if (RT_FAILURE(rc))
 # endif
             g_pfnWrMsr64Carefully = NULL;
+
+        LogRel(("VBoxDrv: g_pfnRdMsrCarefully=%p g_pfnRdMsr64Carefully=%p g_pfnWrMsr64Carefully=%p\n",
+                g_pfnRdMsrCarefully, g_pfnRdMsr64Carefully, g_pfnWrMsr64Carefully));
+
 #endif /* SUPDRV_WITH_MSR_PROBER */
 
         RTR0DbgKrnlInfoRelease(hKrnlInfo);
