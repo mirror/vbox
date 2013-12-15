@@ -1455,7 +1455,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * VIA:   Reserved
      * Safe to expose
      */
-    pCurLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, 4, 0);
+    pCurLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, 5, 0);
     if (pCurLeaf)
     {
         if (!(pStdFeatureLeaf->uEcx & X86_CPUID_FEATURE_ECX_MONITOR))
