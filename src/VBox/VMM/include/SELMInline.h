@@ -252,7 +252,7 @@ DECLINLINE(bool) selmIsSRegStale32(PCCPUMSELREG pSReg, PCX86DESC pShwDesc, uint3
 
     if (pSReg->u64Base != X86DESC_BASE(pShwDesc))
     {
-        Log(("selmIsSRegStale32: base changed (%#llx -> %#llx)\n", pSReg->u64Base, X86DESC_BASE(pShwDesc)));
+        Log(("selmIsSRegStale32: base changed (%#llx -> %#x)\n", pSReg->u64Base, X86DESC_BASE(pShwDesc)));
         return true;
     }
 
