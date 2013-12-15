@@ -29,3 +29,14 @@ endif
 VBOX_MAIN_APIWRAPPER_DIR  := $(abspath $(call TARGET_PATH,VBoxAPIWrap))
 VBOX_MAIN_APIWRAPPER_INCS := $(VBOX_MAIN_APIWRAPPER_DIR)
 
+
+# The header is required by a testcase, that why these defines are here.
+VBOX_XML_SCHEMADEFS_H   = $(PATH_TARGET)/Main/SchemaDefs.h
+VBOX_XML_SCHEMADEFS_CPP = $(PATH_TARGET)/Main/SchemaDefs.cpp
+VBOX_XML_SCHEMADEFS_XSL = $(VBOX_PATH_MAIN_SRC)/xml/SchemaDefs.xsl
+
+# These files are also required by a testcase.
+VBOX_AUTOGEN_EVENT_H    = $(PATH_TARGET)/Main/VBoxEvents.h
+VBOX_AUTOGEN_EVENT_CPP  = $(PATH_TARGET)/Main/VBoxEvents.cpp
+
+
