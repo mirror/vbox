@@ -161,6 +161,39 @@ static void tstApiPrf3(IVirtualBox *pVBox)
 }
 
 
+static void tstApiPrf4(IVirtualBox *pVBox)
+{
+    RTTestSub(g_hTest, "IHost::GetProcessorFeature performance");
+
+    IHost      *pHost = NULL;
+    HRESULT     hrc = pVBox->COMGETTER(Host)(&pHost);
+    if (FAILED(hrc))
+    {
+        tstComExpr(hrc, "IVirtualBox::Host", __LINE__);
+        return;
+    }
+
+    uint32_t const  cCalls   = 65536;
+    uint32_t        cLeft    = cCalls;
+    uint64_t        uStartTS = RTTimeNanoTS();
+    while (cLeft-- > 0)
+    {
+        BOOL fSupported;
+        HRESULT hrc = pHost->GetProcessorFeature(ProcessorFeature_PAE, &fSupported);
+        if (FAILED(hrc))
+        {
+            tstComExpr(hrc, "IHost::GetProcessorFeature", __LINE__);
+            pHost->Release();
+            return;
+        }
+    }
+    uint64_t uElapsed = RTTimeNanoTS() - uStartTS;
+    RTTestValue(g_hTest, "IHost::GetProcessorFeature average", uElapsed / cCalls, RTTESTUNIT_NS_PER_CALL);
+    pHost->Release();
+    RTTestSubDone(g_hTest);
+}
+
+
 
 int main(int argc, char **argv)
 {
@@ -196,6 +229,7 @@ int main(int argc, char **argv)
 
                 /** @todo Find something that returns a 2nd instance of an interface and see
                  *        how if wrapper stuff is reused in any way. */
+                tstApiPrf4(ptrVBox);
             }
         }
 
