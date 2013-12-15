@@ -908,11 +908,24 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  DLLS += VBoxProxyStub
  VBoxProxyStub_TEMPLATE = VBOXMAINCOMP
  VBoxProxyStub_DEFS     = REGISTER_PROXY_DLL
+ VBoxProxyStub_DEFS.win.x86 = WIN32
  VBoxProxyStub_SOURCES  = \
  	$(VBoxCOM_0_OUTDIR)/dlldata.c \
  	$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c \
  	$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
-       src-all/win/VBoxProxyStub.def
+ 	src-all/win/VBoxProxyStub.def
+
+ ifdef VBOX_WITH_32_ON_64_MAIN_API
+  DLLS += VBoxProxyStub-x86
+  VBoxProxyStub-x86_TEMPLATE = VBoxMainComp-x86
+  VBoxProxyStub-x86_DEFS     = REGISTER_PROXY_DLL
+  VBoxProxyStub-x86_DEFS.win.x86 = WIN32
+  VBoxProxyStub-x86_SOURCES  = \
+  	$(VBoxCOM-x86_0_OUTDIR)/dlldata.c \
+  	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c \
+  	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
+  	src-all/win/VBoxProxyStub.def
+ endif
 endif
 
 
@@ -975,6 +988,7 @@ $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
 $(if $(VBOX_WITH_MIDL_PROXY_STUB),+ $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM-x86_0_OUTDIR)/dlldata.c,) \
 + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(VBOX_WIN_MIDL) /nologo /env win32 /target NT51 \
+		/robust /protocol all \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM-x86_0_OUTDIR)) \
 		/tlb $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_CC))) \
