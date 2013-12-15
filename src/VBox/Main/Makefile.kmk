@@ -907,6 +907,22 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "linux"
 endif
 
 
+if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
+ #
+ # Experimental COM proxy + stub DLL.
+ #
+ DLLS += VBoxProxyStub
+ VBoxProxyStub_TEMPLATE = VBOXMAINCOMP
+ VBoxProxyStub_DEFS     = REGISTER_PROXY_DLL
+ VBoxProxyStub_SOURCES  = \
+ 	$(VBoxCOM_0_OUTDIR)/dlldata.c \
+ 	$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c \
+ 	$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
+       src-all/win/VBoxProxyStub.def
+endif
+
+
+
 # generate rules
 include $(FILE_KBUILD_SUB_FOOTER)
 
@@ -949,6 +965,7 @@ endif
 
 $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.h \
+$(if $(VBOX_WITH_MIDL_PROXY_STUB),+ $(VBoxCOM_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM_0_OUTDIR)/dlldata.c,) \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(VBOX_WIN_MIDL) /nologo \
 		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64" && "$(KBUILD_HOST)" == "win",/env amd64,/env win32) /target NT51 \
@@ -960,6 +977,7 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 
 $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
 + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \
+$(if $(VBOX_WITH_MIDL_PROXY_STUB),+ $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM-x86_0_OUTDIR)/dlldata.c,) \
 + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(VBOX_WIN_MIDL) /nologo /env win32 /target NT51 \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM-x86_0_OUTDIR)) \
