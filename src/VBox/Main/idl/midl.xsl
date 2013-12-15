@@ -157,9 +157,8 @@
     <xsl:text>&#x0A;</xsl:text>
     <!-- all enums go first -->
     <xsl:apply-templates select="enum | if/enum"/>
-    <!-- everything else but result codes and enums -->
-    <xsl:apply-templates select="*[not(self::result or self::enum) and
-                                   not(self::if[result] or self::if[enum])]"/>
+    <!-- declare the interfaces -->
+    <xsl:apply-templates select="if | interface"/>
   </xsl:if>
 
 [
@@ -176,15 +175,18 @@
     <xsl:apply-templates select="."/>
   </xsl:for-each>
   <xsl:text>&#x0A;</xsl:text>
-  <!-- forward declarations -->
-  <xsl:apply-templates select="if | interface" mode="forward"/>
   <xsl:text>&#x0A;</xsl:text>
   <xsl:choose>
     <xsl:when test="$g_fGenProxy = 'yes'">
-      <!-- all enums go first -->
+      <!-- reference enums and interfaces -->
+      <xsl:apply-templates select="if | interface" mode="forward"/>
       <xsl:apply-templates select="enum | if/enum" mode="forward"/>
+      <!-- the modules (i.e. everything else) -->
+      <xsl:apply-templates select="module | if/module"/>
     </xsl:when>
     <xsl:otherwise>
+      <!-- forward declarations -->
+      <xsl:apply-templates select="if | interface" mode="forward"/>
       <!-- all enums go first -->
       <xsl:apply-templates select="enum | if/enum"/>
       <!-- everything else but result codes and enums -->
