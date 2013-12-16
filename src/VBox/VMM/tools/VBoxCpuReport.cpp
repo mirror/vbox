@@ -1595,7 +1595,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x0000017f: return "IntelI7SandyErrorControl"; /* SandyBridge. */
         case 0x00000186: return "Ia32PerfEvtSelN";
         case 0x00000187: return "Ia32PerfEvtSelN";
-        case 0x00000193: return CPUMMICROARCH_IS_INTEL_NETBURST(g_enmMicroarch) ? NULL : NULL /* Core2_Penryn. */;
+        case 0x00000193: return /*CPUMMICROARCH_IS_INTEL_NETBURST(g_enmMicroarch) ? NULL :*/ NULL /* Core2_Penryn. */;
         case 0x00000198: *pfTakesValue = true; return "Ia32PerfStatus";
         case 0x00000199: *pfTakesValue = true; return "Ia32PerfCtl";
         case 0x0000019a: *pfTakesValue = true; return "Ia32ClockModulation";
