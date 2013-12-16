@@ -3817,7 +3817,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             if (uECX & RT_BIT(28))  pHlp->pfnPrintf(pHlp, " AVX");
             if (uECX & RT_BIT(29))  pHlp->pfnPrintf(pHlp, " 29");
             if (uECX & RT_BIT(30))  pHlp->pfnPrintf(pHlp, " 30");
-            if (uECX & RT_BIT(31))  pHlp->pfnPrintf(pHlp, " 31");
+            if (uECX & RT_BIT(31))  pHlp->pfnPrintf(pHlp, " HVP");
             pHlp->pfnPrintf(pHlp, "\n");
         }
         else

@@ -574,6 +574,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000017: return "IA32_PLATFORM_ID";
         case 0x00000018: return "P6_UNK_0000_0018"; /* P6_M_Dothan. */
         case 0x0000001b: return "IA32_APIC_BASE";
+        case 0x00000021: return "C2_UNK_0000_0021"; /* Core2_Penryn */
         case 0x0000002a: return "EBL_CR_POWERON";
         case 0x0000002e: return "I7_UNK_0000_002e"; /* SandyBridge, IvyBridge. */
         case 0x0000002f: return "P6_UNK_0000_002f"; /* P6_M_Dothan. */
@@ -582,20 +583,21 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000034: return "P6_UNK_0000_0034"; /* P6_M_Dothan. */
         case 0x00000035: return "P6_UNK_0000_0035"; /* P6_M_Dothan. */
         case 0x00000036: return "I7_UNK_0000_0036"; /* SandyBridge, IvyBridge. */
+        case 0x00000039: return "C2_UNK_0000_0039"; /* Core2_Penryn */
         case 0x0000003a: return "IA32_FEATURE_CONTROL";
         case 0x0000003b: return "P6_UNK_0000_003b"; /* P6_M_Dothan. */
         case 0x0000003e: return "I7_UNK_0000_003e"; /* SandyBridge, IvyBridge. */
         case 0x0000003f: return "P6_UNK_0000_003f"; /* P6_M_Dothan. */
-        case 0x00000040: return "MSR_LASTBRANCH_0";
-        case 0x00000041: return "MSR_LASTBRANCH_1";
-        case 0x00000042: return "MSR_LASTBRANCH_2";
-        case 0x00000043: return "MSR_LASTBRANCH_3";
-        case 0x00000044: return "MSR_LASTBRANCH_4";
-        case 0x00000045: return "MSR_LASTBRANCH_5";
-        case 0x00000046: return "MSR_LASTBRANCH_6";
-        case 0x00000047: return "MSR_LASTBRANCH_7";
-        case 0x00000048: return "MSR_LASTBRANCH_8";
-        case 0x00000049: return "MSR_LASTBRANCH_9";
+        case 0x00000040: return g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah ? "MSR_LASTBRANCH_0_FROM_IP" : "MSR_LASTBRANCH_0";
+        case 0x00000041: return g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah ? "MSR_LASTBRANCH_1_FROM_IP" : "MSR_LASTBRANCH_1";
+        case 0x00000042: return g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah ? "MSR_LASTBRANCH_2_FROM_IP" : "MSR_LASTBRANCH_2";
+        case 0x00000043: return g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah ? "MSR_LASTBRANCH_3_FROM_IP" : "MSR_LASTBRANCH_3";
+        case 0x00000044: return g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah ? "MSR_LASTBRANCH_4_FROM_IP" : "MSR_LASTBRANCH_4";
+        case 0x00000045: return g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah ? "MSR_LASTBRANCH_5_FROM_IP" : "MSR_LASTBRANCH_5";
+        case 0x00000046: return g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah ? "MSR_LASTBRANCH_6_FROM_IP" : "MSR_LASTBRANCH_6";
+        case 0x00000047: return g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah ? "MSR_LASTBRANCH_7_FROM_IP" : "MSR_LASTBRANCH_7";
+        case 0x00000048: return "MSR_LASTBRANCH_8"; /*??*/
+        case 0x00000049: return "MSR_LASTBRANCH_9"; /*??*/
         case 0x0000004a: return "P6_UNK_0000_004a"; /* P6_M_Dothan. */
         case 0x0000004b: return "P6_UNK_0000_004b"; /* P6_M_Dothan. */
         case 0x0000004c: return "P6_UNK_0000_004c"; /* P6_M_Dothan. */
@@ -607,6 +609,14 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000052: return "P6_UNK_0000_0052"; /* P6_M_Dothan. */
         case 0x00000053: return "P6_UNK_0000_0053"; /* P6_M_Dothan. */
         case 0x00000054: return "P6_UNK_0000_0054"; /* P6_M_Dothan. */
+        case 0x00000060: return "MSR_LASTBRANCH_0_TO_IP"; /* Core2_Penryn */
+        case 0x00000061: return "MSR_LASTBRANCH_1_TO_IP"; /* Core2_Penryn */
+        case 0x00000062: return "MSR_LASTBRANCH_2_TO_IP"; /* Core2_Penryn */
+        case 0x00000063: return "MSR_LASTBRANCH_3_TO_IP"; /* Core2_Penryn */
+        case 0x00000064: return "MSR_LASTBRANCH_4_TO_IP"; /* Atom? */
+        case 0x00000065: return "MSR_LASTBRANCH_5_TO_IP";
+        case 0x00000066: return "MSR_LASTBRANCH_6_TO_IP";
+        case 0x00000067: return "MSR_LASTBRANCH_7_TO_IP";
         case 0x0000006c: return "P6_UNK_0000_006c"; /* P6_M_Dothan. */
         case 0x0000006d: return "P6_UNK_0000_006d"; /* P6_M_Dothan. */
         case 0x0000006e: return "P6_UNK_0000_006e"; /* P6_M_Dothan. */
@@ -622,6 +632,12 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x0000008f: return "P6_UNK_0000_008f"; /* P6_M_Dothan. */
         case 0x00000090: return "P6_UNK_0000_0090"; /* P6_M_Dothan. */
         case 0x0000009b: return "IA32_SMM_MONITOR_CTL";
+        case 0x000000a8: return "C2_EMTTM_CR_TABLES_0";
+        case 0x000000a9: return "C2_EMTTM_CR_TABLES_1";
+        case 0x000000aa: return "C2_EMTTM_CR_TABLES_2";
+        case 0x000000ab: return "C2_EMTTM_CR_TABLES_3";
+        case 0x000000ac: return "C2_EMTTM_CR_TABLES_4";
+        case 0x000000ad: return "C2_EMTTM_CR_TABLES_5";
         case 0x000000ae: return "P6_UNK_0000_00ae"; /* P6_M_Dothan. */
         case 0x000000c1: return "IA32_PMC0";
         case 0x000000c2: return "IA32_PMC1";
@@ -635,10 +651,16 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x000000c8: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First ? "IA32_PMC7" : NULL;
         case 0x000000cd: return "P6_UNK_0000_00cd"; /* P6_M_Dothan. */
         case 0x000000ce: return "P6_UNK_0000_00ce"; /* P6_M_Dothan. */
+        case 0x000000cf: return "C2_UNK_0000_00cf"; /* Core2_Penryn. */
+        case 0x000000e0: return "C2_UNK_0000_00e0"; /* Core2_Penryn. */
+        case 0x000000e1: return "C2_UNK_0000_00e1"; /* Core2_Penryn. */
         case 0x000000e2: return "MSR_PKG_CST_CONFIG_CONTROL";
+        case 0x000000e3: return "C2_SMM_CST_MISC_INFO"; /* Core2_Penryn. */
         case 0x000000e4: return "MSR_PMG_IO_CAPTURE_BASE";
+        case 0x000000e5: return "C2_UNK_0000_00e5"; /* Core2_Penryn. */
         case 0x000000e7: return "IA32_MPERF";
         case 0x000000e8: return "IA32_APERF";
+        case 0x000000ee: return "C1_EXT_CONFIG"; /* Core2_Penryn. msrtool lists it for Core1 as well. */
         case 0x000000fe: return "IA32_MTRRCAP";
         case 0x00000102: return "I7_IB_UNK_0000_0102"; /* IvyBridge. */
         case 0x00000103: return "I7_IB_UNK_0000_0103"; /* IvyBridge. */
@@ -648,6 +670,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000119: return "BBL_CR_CTL";
         case 0x0000011a: return "BBL_CR_TRIG";
         case 0x0000011b: return "P6_UNK_0000_011b"; /* P6_M_Dothan. */
+        case 0x0000011c: return "C2_UNK_0000_011c"; /* Core2_Penryn. */
         case 0x0000011e: return "BBL_CR_CTL3";
         case 0x00000130: return g_enmMicroarch == kCpumMicroarch_Intel_Core7_Westmere
                              || g_enmMicroarch == kCpumMicroarch_Intel_Core7_Nehalem
@@ -670,6 +693,8 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000151: return "P6_UNK_0000_0151"; /* P6_M_Dothan. */
         case 0x00000154: return "P6_UNK_0000_0154"; /* P6_M_Dothan. */
         case 0x0000015b: return "P6_UNK_0000_015b"; /* P6_M_Dothan. */
+        case 0x0000015e: return "C2_UNK_0000_015e"; /* Core2_Penryn. */
+        case 0x0000015f: return "C1_DTS_CAL_CTRL"; /* Core2_Penryn. msrtool only docs this for core1! */
         case 0x00000174: return "IA32_SYSENTER_CS";
         case 0x00000175: return "IA32_SYSENTER_ESP";
         case 0x00000176: return "IA32_SYSENTER_EIP";
@@ -696,7 +721,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000190: return g_fIntelNetBurst ? "MSR_MCG_R8"        : NULL;
         case 0x00000191: return g_fIntelNetBurst ? "MSR_MCG_R9"        : NULL;
         case 0x00000192: return g_fIntelNetBurst ? "MSR_MCG_R10"       : NULL;
-        case 0x00000193: return g_fIntelNetBurst ? "MSR_MCG_R11"       : NULL;
+        case 0x00000193: return g_fIntelNetBurst ? "MSR_MCG_R11"       : "C2_UNK_0000_0193";
         case 0x00000194: return g_fIntelNetBurst ? "MSR_MCG_R12"       : "CLOCK_FLEX_MAX";
         case 0x00000195: return g_fIntelNetBurst ? "MSR_MCG_R13"       : NULL;
         case 0x00000196: return g_fIntelNetBurst ? "MSR_MCG_R14"       : NULL;
@@ -723,6 +748,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x000001b0: return "IA32_ENERGY_PERF_BIAS";
         case 0x000001b1: return "IA32_PACKAGE_THERM_STATUS";
         case 0x000001b2: return "IA32_PACKAGE_THERM_INTERRUPT";
+        case 0x000001bf: return "C2_UNK_0000_01bf"; /* Core2_Penryn. */
         case 0x000001c6: return "I7_UNK_0000_01c6"; /* SandyBridge*/
         case 0x000001c8: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_Nehalem ? "MSR_LBR_SELECT" : NULL;
         case 0x000001c9: return    g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah
@@ -869,7 +895,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x000003fc: return "I7_MSR_CORE_C3_RESIDENCY";
         case 0x000003fd: return "I7_MSR_CORE_C6_RESIDENCY";
         case 0x000003fe: return "I7_MSR_CORE_C7_RESIDENCY";
-        case 0x00000478: g_enmMicroarch == kCpumMicroarch_Intel_Core2_Penryn ? "CPUID1_FEATURE_MASK" : NULL;
+        case 0x00000478: return g_enmMicroarch == kCpumMicroarch_Intel_Core2_Penryn ? "CPUID1_FEATURE_MASK" : NULL;
         case 0x00000480: return "IA32_VMX_BASIC";
         case 0x00000481: return "IA32_VMX_PINBASED_CTLS";
         case 0x00000482: return "IA32_VMX_PROCBASED_CTLS";
@@ -895,7 +921,19 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x000004c6: return "IA32_A_PMC5";
         case 0x000004c7: return "IA32_A_PMC6";
         case 0x000004c8: return "IA32_A_PMC7";
+        case 0x000004f8: return "C2_UNK_0000_04f8"; /* Core2_Penryn. */
+        case 0x000004f9: return "C2_UNK_0000_04f9"; /* Core2_Penryn. */
+        case 0x000004fa: return "C2_UNK_0000_04fa"; /* Core2_Penryn. */
+        case 0x000004fb: return "C2_UNK_0000_04fb"; /* Core2_Penryn. */
+        case 0x000004fc: return "C2_UNK_0000_04fc"; /* Core2_Penryn. */
+        case 0x000004fd: return "C2_UNK_0000_04fd"; /* Core2_Penryn. */
+        case 0x000004fe: return "C2_UNK_0000_04fe"; /* Core2_Penryn. */
+        case 0x000004ff: return "C2_UNK_0000_04ff"; /* Core2_Penryn. */
         case 0x00000502: return "I7_SB_UNK_0000_0502";
+        case 0x00000590: return "C2_UNK_0000_0590"; /* Core2_Penryn. */
+        case 0x00000591: return "C2_UNK_0000_0591"; /* Core2_Penryn. */
+        case 0x000005a0: return "C2_PECI_CTL"; /* Core2_Penryn. */
+        case 0x000005a1: return "C2_UNK_0000_05a1"; /* Core2_Penryn. */
         case 0x00000600: return "IA32_DS_AREA";
         case 0x00000601: return "I7_SB_MSR_VR_CURRENT_CONFIG"; /* SandyBridge, IvyBridge. */
         case 0x00000602: return "I7_IB_UNK_0000_0602";
@@ -1401,6 +1439,13 @@ static const char *getMsrRangeName(uint32_t uMsr)
 {
     switch (uMsr)
     {
+        case 0x00000040:
+            return g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah ? "MSR_LASTBRANCH_n_FROM_IP" : "MSR_LASTBRANCH_n";
+        case 0x00000060:
+            if (g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah)
+                return "MSR_LASTBRANCH_n_TO_IP";
+            break;
+
         case 0x000003f8:
         case 0x000003f9:
         case 0x000003fa:
@@ -1495,6 +1540,15 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
 
         case 0x0000009b: return "Ia32SmmMonitorCtl";
 
+        case 0x000000a8:
+        case 0x000000a9:
+        case 0x000000aa:
+        case 0x000000ab:
+        case 0x000000ac:
+        case 0x000000ad:
+            *pfTakesValue = true;
+            return "IntelCore2EmttmCrTablesN";
+
         case 0x000000c1:
         case 0x000000c2:
         case 0x000000c3:
@@ -1509,9 +1563,11 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
             return NULL;
 
         case 0x000000e2: return "IntelPkgCStConfigControl";
+        case 0x000000e3: return "IntelCore2SmmCStMiscInfo";
         case 0x000000e4: return "IntelPmgIoCaptureBase";
         case 0x000000e7: return "Ia32MPerf";
         case 0x000000e8: return "Ia32APerf";
+        case 0x000000ee: return "IntelCore1ExtConfig";
         case 0x000000fe: *pfTakesValue = true; return "Ia32MtrrCap";
         case 0x00000119: *pfTakesValue = true; return "IntelBblCrCtl";
         case 0x0000011e: *pfTakesValue = true; return "IntelBblCrCtl3";
@@ -1529,6 +1585,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x00000134: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_SandyBridge
                               ? "IntelCpuId80000001FeatureMaskEcdx" : NULL;
         case 0x0000013c: return "IntelI7SandyAesNiCtl";
+        case 0x0000015f: return "IntelCore1DtsCalControl";
         case 0x00000174: return "Ia32SysEnterCs";
         case 0x00000175: return "Ia32SysEnterEsp";
         case 0x00000176: return "Ia32SysEnterEip";
@@ -1538,6 +1595,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x0000017f: return "IntelI7SandyErrorControl"; /* SandyBridge. */
         case 0x00000186: return "Ia32PerfEvtSelN";
         case 0x00000187: return "Ia32PerfEvtSelN";
+        case 0x00000193: return CPUMMICROARCH_IS_INTEL_NETBURST(g_enmMicroarch) ? NULL : NULL /* Core2_Penryn. */;
         case 0x00000198: *pfTakesValue = true; return "Ia32PerfStatus";
         case 0x00000199: *pfTakesValue = true; return "Ia32PerfCtl";
         case 0x0000019a: *pfTakesValue = true; return "Ia32ClockModulation";
@@ -1629,7 +1687,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x000003fd: return "IntelI7CoreCnResidencyN";
         case 0x000003fe: return "IntelI7CoreCnResidencyN";
 
-        case 0x00000478: g_enmMicroarch == kCpumMicroarch_Intel_Core2_Penryn ? "IntelCpuId1FeatureMaskEcdx" : NULL;
+        case 0x00000478: return g_enmMicroarch == kCpumMicroarch_Intel_Core2_Penryn ? "IntelCpuId1FeatureMaskEcdx" : NULL;
         case 0x00000480: *pfTakesValue = true; return "Ia32VmxBase";
         case 0x00000481: *pfTakesValue = true; return "Ia32VmxPinbasedCtls";
         case 0x00000482: *pfTakesValue = true; return "Ia32VmxProcbasedCtls";
@@ -1657,6 +1715,8 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x000004c7:
         case 0x000004c8:
             return "Ia32PmcN";
+
+        case 0x000005a0: return "IntelCore2PeciControl"; /* Core2_Penryn. */
 
         case 0x00000600: return "Ia32DsArea";
         case 0x00000601: return "IntelI7SandyVrCurrentConfig";
@@ -1705,7 +1765,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         //case 0x000006d4: case 0x000006d5: case 0x000006d6: case 0x000006d7:
         //case 0x000006d8: case 0x000006d9: case 0x000006da: case 0x000006db:
         //case 0x000006dc: case 0x000006dd: case 0x000006de: case 0x000006df:
-            return "IntelLastBranchFromN";
+            return "IntelLastBranchToN";
         case 0x000006e0: return "Ia32TscDeadline"; /** @todo detect this correctly! */
 
         case 0x00000c80: return g_enmMicroarch > kCpumMicroarch_Intel_Core7_Nehalem ? "Ia32DebugInterface" : NULL;
@@ -1956,6 +2016,14 @@ static uint64_t getGenericSkipMask(uint32_t uMsr)
         case 0xc0011038:
         case 0xc001103b:
             return UINT64_C(0xffff800000000000);
+
+        case 0x00000060: case 0x00000061: case 0x00000062: case 0x00000063:
+        case 0x00000064: case 0x00000065: case 0x00000066: case 0x00000067:
+        case 0x00000040: case 0x00000041: case 0x00000042: case 0x00000043:
+        case 0x00000044: case 0x00000045: case 0x00000046: case 0x00000047:
+            if (g_enmMicroarch >= kCpumMicroarch_Intel_Core2_First)
+                return UINT64_C(0xffff800000000000);
+            break;
 
         /* Time counters - fudge them to avoid incorrect ignore masks. */
         case 0x00000010:
@@ -2490,7 +2558,7 @@ static int reportMsr_Generic(uint32_t uMsr, uint32_t fFlags, uint64_t uValue)
 
 
 static int reportMsr_GenRangeFunctionEx(VBCPUREPMSR const *paMsrs, uint32_t cMsrs, uint32_t cMax, const char *pszRdWrFnName,
-                                        uint32_t uMsrBase, bool fEarlyEndOk, uint64_t fSkipMask, uint32_t *pidxLoop)
+                                        uint32_t uMsrBase, bool fEarlyEndOk, bool fNoIgnMask, uint64_t fSkipMask, uint32_t *pidxLoop)
 {
     uint32_t uMsr   = paMsrs[0].uMsr;
     uint32_t iRange = uMsr - uMsrBase;
@@ -2530,7 +2598,7 @@ static int reportMsr_GenRangeFunctionEx(VBCPUREPMSR const *paMsrs, uint32_t cMsr
         if (RT_FAILURE(rc))
             return rc;
         if (   fReadOnlyN != fReadOnly0
-            || fIgnMaskN  != fIgnMask0
+            || (fIgnMaskN != fIgnMask0 && !fNoIgnMask)
             || fGpMaskN   != fGpMask0)
         {
             if (!fEarlyEndOk)
@@ -2550,9 +2618,11 @@ static int reportMsr_GenRangeFunctionEx(VBCPUREPMSR const *paMsrs, uint32_t cMsr
      */
     *pidxLoop += cRegs - 1;
 
-    bool     fSimple = fIgnMask0 == 0
-                    && (fGpMask0 == 0 || (fGpMask0 == UINT64_MAX && fReadOnly0))
-                    && iRange == 0;
+    if (fNoIgnMask)
+        fIgnMask0 = 0;
+    bool fSimple = fIgnMask0 == 0
+                && (fGpMask0 == 0 || (fGpMask0 == UINT64_MAX && fReadOnly0))
+                && iRange == 0;
     if (cRegs == 1)
         return printMsrFunctionExtendedIdxVal(uMsr, pszRdWrFnName, fReadOnly0 ? "ReadOnly" : pszRdWrFnName,
                                               iRange, fIgnMask0, fGpMask0,
@@ -2569,7 +2639,7 @@ static int reportMsr_GenRangeFunctionEx(VBCPUREPMSR const *paMsrs, uint32_t cMsr
 static int reportMsr_GenRangeFunction(VBCPUREPMSR const *paMsrs, uint32_t cMsrs, uint32_t cMax, const char *pszRdWrFnName,
                                       uint32_t *pidxLoop)
 {
-    return reportMsr_GenRangeFunctionEx(paMsrs, cMsrs, cMax, pszRdWrFnName, paMsrs[0].uMsr, false /*fEarlyEndOk*/,
+    return reportMsr_GenRangeFunctionEx(paMsrs, cMsrs, cMax, pszRdWrFnName, paMsrs[0].uMsr, false /*fEarlyEndOk*/, false /*fNoIgnMask*/,
                                         getGenericSkipMask(paMsrs[0].uMsr), pidxLoop);
 }
 
@@ -3418,8 +3488,14 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
             rc = printMsrAlias(uMsr, 0x00000401, NULL); /** @todo not 101% correct on Fam15h and later, 0xc0010015[McstatusWrEn] effect differs. */
         else if (uMsr == 0x0000001b)
             rc = reportMsr_Ia32ApicBase(uMsr, uValue);
-        else if (uMsr == 0x00000040)
+        else if (uMsr == 0x00000040 && g_enmMicroarch <= kCpumMicroarch_Intel_P6_M_Dothan)
             rc = reportMsr_GenRangeFunction(&paMsrs[i], cMsrs - i, 8 /*cMax*/, "IntelLastBranchFromToN", &i);
+        else if (uMsr == 0x00000040)
+            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 8 /*cMax*/, "IntelLastBranchToN", uMsr, false,
+                                              true, getGenericSkipMask(uMsr), &i);
+        else if (uMsr == 0x00000060 && g_enmMicroarch >= kCpumMicroarch_Intel_Core_Yonah)
+            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 8 /*cMax*/, "IntelLastBranchFromN", uMsr, false,
+                                              true, getGenericSkipMask(uMsr), &i);
         else if (uMsr == 0x000000c1)
             rc = reportMsr_GenRangeFunction(&paMsrs[i], cMsrs - i,
                                             g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First ? 8 : 4 /*cMax*/,
@@ -3435,23 +3511,23 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
         else if (uMsr >= 0x00000250 && uMsr <= 0x00000279)
             rc = reportMsr_Ia32MtrrFixedOrPat(uMsr);
         else if (uMsr >= 0x00000280 && uMsr <= 0x00000295)
-            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 22 /*cMax*/, NULL, 0x00000280, true /*fEarlyEndOk*/, 0, &i);
+            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 22 /*cMax*/, NULL, 0x00000280, true /*fEarlyEndOk*/, false, 0, &i);
         else if (uMsr == 0x000002ff)
             rc = reportMsr_Ia32MtrrDefType(uMsr);
         else if (uMsr >= 0x00000309 && uMsr <= 0x0000030b)
-            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 3 /*cMax*/, NULL, 0x00000309, true /*fEarlyEndOk*/, 0, &i);
+            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 3 /*cMax*/, NULL, 0x00000309, true /*fEarlyEndOk*/, false, 0, &i);
         else if (uMsr == 0x000003f8 || uMsr == 0x000003fc || uMsr == 0x0000060a)
-            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 4, NULL, uMsr - 3, true, 0, &i);
+            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 4, NULL, uMsr - 3, true, false, 0, &i);
         else if (uMsr == 0x000003f9 || uMsr == 0x000003fd || uMsr == 0x0000060b)
-            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 8, NULL, uMsr - 6, true, 0, &i);
+            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 8, NULL, uMsr - 6, true, false, 0, &i);
         else if (uMsr == 0x000003fa || uMsr == 0x000003fe || uMsr == 0x0000060c)
-            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 8, NULL, uMsr - 7, true, 0, &i);
-        else if (uMsr >= 0x00000400 && uMsr <= 0x0000047f)
+            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 8, NULL, uMsr - 7, true, false, 0, &i);
+        else if (uMsr >= 0x00000400 && uMsr <= 0x00000477)
             rc = reportMsr_Ia32McCtlStatusAddrMiscN(&paMsrs[i], cMsrs - i, &i);
         else if (uMsr == 0x000004c1)
             rc = reportMsr_GenRangeFunction(&paMsrs[i], cMsrs - i, 8, NULL, &i);
         else if (uMsr == 0x00000680 || uMsr == 0x000006c0)
-            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 16, NULL, uMsr, false, UINT64_C(0xffff800000000000), &i);
+            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 16, NULL, uMsr, false, false, UINT64_C(0xffff800000000000), &i);
         else if (uMsr >= 0x00000800 && uMsr <= 0x000008ff)
             rc = reportMsr_GenX2Apic(&paMsrs[i], cMsrs - i, &i);
         else if (uMsr == 0x00002000 && g_enmVendor == CPUMCPUVENDOR_INTEL)
@@ -3493,7 +3569,7 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
         else if (uMsr == 0xc0010030)
             rc = reportMsr_GenRangeFunction(&paMsrs[i], cMsrs - i, 6, "AmdK8CpuNameN", &i);
         else if (uMsr >= 0xc0010044 && uMsr <= 0xc001004a)
-            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 7, "AmdK8McCtlMaskN", 0xc0010044, true /*fEarlyEndOk*/, 0, &i);
+            rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 7, "AmdK8McCtlMaskN", 0xc0010044, true /*fEarlyEndOk*/, false, 0, &i);
         else if (uMsr == 0xc0010050)
             rc = reportMsr_GenRangeFunction(&paMsrs[i], cMsrs - i, 4, "AmdK8SmiOnIoTrapN", &i);
         else if (uMsr == 0xc0010064)
@@ -3510,14 +3586,14 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
             rc = reportMsr_AmdGenPerfMixedRange(&paMsrs[i], cMsrs - i, 8, &i);
         else if (uMsr == 0xc0011019 && g_enmMicroarch >= kCpumMicroarch_AMD_15h_Piledriver)
             rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 3, "AmdK7DrXAddrMaskN", 0xc0011019 - 1,
-                                              false /*fEarlyEndOk*/, 0, &i);
+                                              false /*fEarlyEndOk*/, false /*fNoIgnMask*/, 0, &i);
         else if (uMsr == 0xc0011021)
             rc = reportMsr_AmdK7InstrCacheCfg(uMsr, uValue);
         else if (uMsr == 0xc0011023 && CPUMMICROARCH_IS_AMD_FAM_15H(g_enmMicroarch))
             rc = reportMsr_AmdFam15hCombUnitCfg(uMsr, uValue);
         else if (uMsr == 0xc0011027)
             rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 1, "AmdK7DrXAddrMaskN", 0xc0011027,
-                                              false /*fEarlyEndOk*/, 0, &i);
+                                              false /*fEarlyEndOk*/, false /*fNoIgnMask*/, 0, &i);
         else if (uMsr == 0xc001102c && CPUMMICROARCH_IS_AMD_FAM_15H(g_enmMicroarch))
             rc = reportMsr_AmdFam15hExecUnitCfg(uMsr, uValue);
         /* generic handling. */

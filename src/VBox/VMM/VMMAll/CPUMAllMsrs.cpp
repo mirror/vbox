@@ -2368,6 +2368,91 @@ static DECLCALLBACK(int) cpumMsrWr_IntelI7UncArbPerfEvtSelN(PVMCPU pVCpu, uint32
 }
 
 
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelCore2EmttmCrTablesN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo implement enhanced multi thread termal monitoring? */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelCore2EmttmCrTablesN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo implement enhanced multi thread termal monitoring? */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelCore2SmmCStMiscInfo(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo SMM & C-states? */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelCore2SmmCStMiscInfo(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo SMM & C-states? */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelCore1ExtConfig(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo Core1&2 EXT_CONFIG (whatever that is)? */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelCore1ExtConfig(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo Core1&2 EXT_CONFIG (whatever that is)? */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelCore1DtsCalControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo Core1&2(?) DTS_CAL_CTRL (whatever that is)? */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelCore1DtsCalControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo Core1&2(?) DTS_CAL_CTRL (whatever that is)? */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelCore2PeciControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo Core2+ platform environment control interface control register? */
+    *puValue = 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelCore2PeciControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo Core2+ platform environment control interface control register? */
+    return VINF_SUCCESS;
+}
+
+
 
 /*
  * Multiple vendor P6 MSRs.
@@ -4191,6 +4276,11 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_IntelI7UncCBoxConfig,
     cpumMsrRd_IntelI7UncArbPerfCtrN,
     cpumMsrRd_IntelI7UncArbPerfEvtSelN,
+    cpumMsrRd_IntelCore2EmttmCrTablesN,
+    cpumMsrRd_IntelCore2SmmCStMiscInfo,
+    cpumMsrRd_IntelCore1ExtConfig,
+    cpumMsrRd_IntelCore1DtsCalControl,
+    cpumMsrRd_IntelCore2PeciControl,
 
     cpumMsrRd_P6LastBranchFromIp,
     cpumMsrRd_P6LastBranchToIp,
@@ -4395,6 +4485,11 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_IntelI7UncPerfFixedCtr,
     cpumMsrWr_IntelI7UncArbPerfCtrN,
     cpumMsrWr_IntelI7UncArbPerfEvtSelN,
+    cpumMsrWr_IntelCore2EmttmCrTablesN,
+    cpumMsrWr_IntelCore2SmmCStMiscInfo,
+    cpumMsrWr_IntelCore1ExtConfig,
+    cpumMsrWr_IntelCore1DtsCalControl,
+    cpumMsrWr_IntelCore2PeciControl,
 
     cpumMsrWr_P6LastIntFromIp,
     cpumMsrWr_P6LastIntToIp,
@@ -4821,6 +4916,11 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(IntelI7UncCBoxConfig);
     CPUM_ASSERT_RD_MSR_FN(IntelI7UncArbPerfCtrN);
     CPUM_ASSERT_RD_MSR_FN(IntelI7UncArbPerfEvtSelN);
+    CPUM_ASSERT_RD_MSR_FN(IntelCore2EmttmCrTablesN);
+    CPUM_ASSERT_RD_MSR_FN(IntelCore2SmmCStMiscInfo);
+    CPUM_ASSERT_RD_MSR_FN(IntelCore1ExtConfig);
+    CPUM_ASSERT_RD_MSR_FN(IntelCore1DtsCalControl);
+    CPUM_ASSERT_RD_MSR_FN(IntelCore2PeciControl);
 
     CPUM_ASSERT_RD_MSR_FN(P6LastBranchFromIp);
     CPUM_ASSERT_RD_MSR_FN(P6LastBranchToIp);
@@ -5014,6 +5114,11 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(IntelI7UncPerfFixedCtr);
     CPUM_ASSERT_WR_MSR_FN(IntelI7UncArbPerfCtrN);
     CPUM_ASSERT_WR_MSR_FN(IntelI7UncArbPerfEvtSelN);
+    CPUM_ASSERT_WR_MSR_FN(IntelCore2EmttmCrTablesN);
+    CPUM_ASSERT_WR_MSR_FN(IntelCore2SmmCStMiscInfo);
+    CPUM_ASSERT_WR_MSR_FN(IntelCore1ExtConfig);
+    CPUM_ASSERT_WR_MSR_FN(IntelCore1DtsCalControl);
+    CPUM_ASSERT_WR_MSR_FN(IntelCore2PeciControl);
 
     CPUM_ASSERT_WR_MSR_FN(P6LastIntFromIp);
     CPUM_ASSERT_WR_MSR_FN(P6LastIntToIp);
