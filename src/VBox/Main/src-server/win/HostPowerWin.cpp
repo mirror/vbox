@@ -53,8 +53,8 @@ HostPowerServiceWin::~HostPowerServiceWin()
 
         /* Is this allowed from another thread? */
         SetWindowLongPtr(mHwnd, 0, 0);
-        /* Send the quit message and wait for it be processed. */
-        SendMessage(mHwnd, WM_QUIT, 0, 0);
+        /* Poke the thread out of the event loop and wait for it to clean up. */
+        PostMessage(mHwnd, WM_QUIT, 0, 0);
         RTThreadWait(mThread, 5000, NULL);
         mThread = NIL_RTTHREAD;
     }
@@ -113,10 +113,19 @@ DECLCALLBACK(int) HostPowerServiceWin::NotificationThread(RTTHREAD ThreadSelf, v
                          SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
 
             MSG msg;
-            while (GetMessage(&msg, NULL, 0, 0))
+            BOOL fRet;
+            while ((fRet = GetMessage(&msg, NULL, 0, 0)) != 0)
             {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                if (fRet != -1)
+                {
+                    TranslateMessage(&msg);
+                    DispatchMessage(&msg);
+                }
+                else
+                {
+                    // handle the error and possibly exit
+                    break;
+                }
             }
         }
     }

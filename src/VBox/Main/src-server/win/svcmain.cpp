@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2012 Oracle Corporation
+ * Copyright (C) 2004-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,7 +56,7 @@ public:
 };
 
 const DWORD dwTimeOut = 5000; /* time for EXE to be idle before shutting down */
-const DWORD dwPause = 1000; /* time to wait for threads to finish up */
+const DWORD dwPause = 100; /* time to wait for threads to finish up */
 
 /* Passed to CreateThread to monitor the shutdown event */
 static DWORD WINAPI MonitorProc(void* pv)
