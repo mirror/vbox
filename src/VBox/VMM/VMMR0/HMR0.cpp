@@ -907,8 +907,7 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     Assert(!pCpu->fConfigured);
 
-    pCpu->idCpu         = idCpu;
-    pCpu->uCurrentAsid  = 0;    /* we'll aways increment this the first time (host uses ASID 0) */
+    pCpu->idCpu = idCpu;
     /* Do NOT reset cTlbFlushes here, see @bugref{6255}. */
 
     int rc;
@@ -975,13 +974,15 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
      */
     g_HvmR0.fGlobalInit = pVM->hm.s.fGlobalInit;
 
+#ifdef VBOX_STRICT
     for (unsigned i = 0; i < RT_ELEMENTS(g_HvmR0.aCpuInfo); i++)
     {
         Assert(g_HvmR0.aCpuInfo[i].hMemObj == NIL_RTR0MEMOBJ);
-        g_HvmR0.aCpuInfo[i].fConfigured  = false;
-        g_HvmR0.aCpuInfo[i].cTlbFlushes  = 0;
-        g_HvmR0.aCpuInfo[i].uCurrentAsid = 0;
+        Assert(!g_HvmR0.aCpuInfo[i].fConfigured);
+        Assert(!g_HvmR0.aCpuInfo[i].cTlbFlushes);
+        Assert(!g_HvmR0.aCpuInfo[i].uCurrentAsid);
     }
+#endif
 
     int rc;
     if (   g_HvmR0.vmx.fSupported
@@ -1088,7 +1089,6 @@ static int hmR0DisableCpu(RTCPUID idCpu)
     else
         rc = VINF_SUCCESS; /* nothing to do */
 
-    pCpu->uCurrentAsid = 0;
     return rc;
 }
 
