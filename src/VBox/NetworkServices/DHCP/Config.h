@@ -523,8 +523,6 @@ private:
 };
 
 
-
-
 extern const ClientMatchCriteria *g_AnyClient;
 extern RootConfigEntity *g_RootConfig;
 extern const NullConfigEntity *g_NullConfig;
