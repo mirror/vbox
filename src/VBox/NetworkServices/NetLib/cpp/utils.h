@@ -18,9 +18,17 @@
 #ifndef _NETLIB_CPP_UTILS_H_
 # define _NETLIB_CPP_UTILS_H_
 
+/* less operator for IPv4 addresess */
 static bool operator <(const RTNETADDRIPV4& a, const RTNETADDRIPV4& b)
 {
     return (RT_N2H_U32(a.u) < RT_N2H_U32(b.u));
 }
 
+/*  Compares MAC addresses */
+static bool operator== (const RTMAC& lhs, const RTMAC& rhs)
+{
+    return (   lhs.au16[0] == rhs.au16[0]
+            && lhs.au16[1] == rhs.au16[1]
+            && lhs.au16[2] == rhs.au16[2]);
+}
 #endif
