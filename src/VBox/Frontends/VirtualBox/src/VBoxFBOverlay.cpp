@@ -211,8 +211,6 @@ private:
     RTMEMCACHE mVBoxCmdEntryCache;
 };
 
-static VBoxVHWAEntriesCache g_VBoxCmdEntriesCache;
-
 static struct VBOXVHWACMD * vhwaHHCmdCreate(VBOXVHWACMD_TYPE type, size_t size)
 {
     char *buf = (char*)malloc(VBOXVHWACMD_SIZE_FROMBODYSIZE(size));
@@ -311,7 +309,7 @@ uint32_t VBoxVHWAHandleTable::put(void * data)
     if(mcUsage == mcSize)
     {
         /* @todo: resize */
-        Assert(0);
+        AssertFailed();
     }
 
     Assert(mcUsage < mcSize);
@@ -333,7 +331,7 @@ uint32_t VBoxVHWAHandleTable::put(void * data)
         mCursor = 1; /* 0 is treated as invalid */
     }
 
-    Assert(0);
+    AssertFailed();
     return VBOXVHWA_SURFHANDLE_INVALID;
 }
 
@@ -485,7 +483,7 @@ int VBoxVHWAGlShaderComponent::init()
     QFile fi(mRcName);
     if (!fi.open(QIODevice::ReadOnly))
     {
-        Assert(0);
+        AssertFailed();
         return VERR_GENERAL_FAILURE;
     }
 
@@ -919,7 +917,7 @@ int VBoxVHWAGlProgramVHWA::init()
                 case FOURCC_AYUV:
                     break;
                 default:
-                    Assert(0);
+                    AssertFailed();
                     break;
             }
         }
@@ -957,7 +955,7 @@ int VBoxVHWAGlProgramVHWA::init()
     if(rc == VINF_SUCCESS)
         return VINF_SUCCESS;
 
-    Assert(0);
+    AssertFailed();
     VBoxVHWAGlProgram::uninit();
     return VERR_GENERAL_FAILURE;
 }
@@ -1106,7 +1104,7 @@ VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::createProgram(uint32_t type, uint
 
     if(type & VBOXVHWA_PROGRAM_SRCCOLORKEY)
     {
-        Assert(0);
+        AssertFailed();
         /* disabled for now, not really necessary for video overlaying */
     }
 
@@ -1359,7 +1357,7 @@ ulong VBoxVHWASurfaceBase::calcBytesPerPixel(GLenum format, GLenum type)
         numComponents = 2;
         break;
     default:
-        Assert(0);
+        AssertFailed();
         break;
     }
 
@@ -1381,7 +1379,7 @@ ulong VBoxVHWASurfaceBase::calcBytesPerPixel(GLenum format, GLenum type)
         componentSize = 4;
         break;
     default:
-        Assert(0);
+        AssertFailed();
         break;
     }
     return numComponents * componentSize;
@@ -1565,7 +1563,7 @@ void VBoxVHWATexture::dbgDump()
     );
     VBOXQGLDBGPRINT(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d\">texture info</exec>\n",
             pvBuf, mRect.width(), mRect.height()));
-    Assert(0);
+    AssertFailed();
 
     free(pvBuf);
 #endif
@@ -2204,7 +2202,7 @@ int VBoxVHWAImage::vhwaSurfaceCanCreate(struct VBOXVHWACMD_SURF_CANCREATE *pCmd)
 
     if(!(pCmd->SurfInfo.flags & VBOXVHWA_SD_CAPS))
     {
-        Assert(0);
+        AssertFailed();
         pCmd->u.out.ErrInfo = -1;
         return VINF_SUCCESS;
     }
@@ -2212,7 +2210,7 @@ int VBoxVHWAImage::vhwaSurfaceCanCreate(struct VBOXVHWACMD_SURF_CANCREATE *pCmd)
     if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN)
     {
 #ifdef DEBUGVHWASTRICT
-        Assert(0);
+        AssertFailed();
 #endif
         pCmd->u.out.ErrInfo = -1;
         return VINF_SUCCESS;
@@ -2224,7 +2222,7 @@ int VBoxVHWAImage::vhwaSurfaceCanCreate(struct VBOXVHWACMD_SURF_CANCREATE *pCmd)
         if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_COMPLEX)
         {
 #ifdef DEBUG_misha
-            Assert(0);
+            AssertFailed();
 #endif
             pCmd->u.out.ErrInfo = -1;
         }
@@ -2239,7 +2237,7 @@ int VBoxVHWAImage::vhwaSurfaceCanCreate(struct VBOXVHWACMD_SURF_CANCREATE *pCmd)
     if ((pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY) == 0)
     {
 #ifdef DEBUGVHWASTRICT
-        Assert (0);
+        AssertFailed();
 #endif
         pCmd->u.out.ErrInfo = -1;
         return VINF_SUCCESS;
@@ -2250,7 +2248,7 @@ int VBoxVHWAImage::vhwaSurfaceCanCreate(struct VBOXVHWACMD_SURF_CANCREATE *pCmd)
     {
         if (!(pCmd->SurfInfo.flags & VBOXVHWA_SD_PIXELFORMAT))
         {
-            Assert (0);
+            AssertFailed();
             pCmd->u.out.ErrInfo = -1;
             return VINF_SUCCESS;
         }
@@ -2260,7 +2258,7 @@ int VBoxVHWAImage::vhwaSurfaceCanCreate(struct VBOXVHWACMD_SURF_CANCREATE *pCmd)
             if (pCmd->SurfInfo.PixelFormat.c.rgbBitCount != 32
                     || pCmd->SurfInfo.PixelFormat.c.rgbBitCount != 24)
             {
-                Assert (0);
+                AssertFailed();
                 pCmd->u.out.ErrInfo = -1;
                 return VINF_SUCCESS;
             }
@@ -2284,7 +2282,7 @@ int VBoxVHWAImage::vhwaSurfaceCanCreate(struct VBOXVHWACMD_SURF_CANCREATE *pCmd)
         }
         else
         {
-            Assert (0);
+            AssertFailed();
             pCmd->u.out.ErrInfo = -1;
             return VINF_SUCCESS;
         }
@@ -2304,7 +2302,7 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct VBOXVHWACMD_SURF_CREATE *pCmd)
         handle = pCmd->SurfInfo.hSurf;
         if(mSurfHandleTable.get(handle))
         {
-            Assert(0);
+            AssertFailed();
             return VERR_GENERAL_FAILURE;
         }
     }
@@ -3230,7 +3228,7 @@ int VBoxVHWAImage::vhwaLoadSurface(VHWACommandList * pCmdList, struct SSMHANDLE 
         }
         else
         {
-            Assert(0);
+            AssertFailed();
         }
 
         if(cBackBuffers)
@@ -3790,19 +3788,19 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
                 break;
             case 24:
 #ifdef DEBUG_misha
-                Assert(0);
+                AssertFailed();
 #endif
                 break;
             case 8:
 #ifdef DEBUG_misha
-                Assert(0);
+                AssertFailed();
 #endif
                 g = b = 0;
                 remind = true;
                 break;
             case 1:
 #ifdef DEBUG_misha
-                Assert(0);
+                AssertFailed();
 #endif
                 r = 1;
                 g = b = 0;
@@ -3810,7 +3808,7 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
                 break;
             default:
 #ifdef DEBUG_misha
-                Assert(0);
+                AssertFailed();
 #endif
                 remind = true;
                 fallback = true;
@@ -4026,7 +4024,7 @@ void VBoxVHWAColorFormat::init (uint32_t fourcc)
             mWidthCompression = 4;
             break;
         default:
-            Assert(0);
+            AssertFailed();
             mBitsPerPixel = 0;
             mBitsPerPixelTex = 0;
             mWidthCompression = 0;
@@ -4051,7 +4049,7 @@ void VBoxVHWAColorFormat::init (uint32_t bitsPerPixel, uint32_t r, uint32_t g, u
             break;
         case 24:
 #ifdef DEBUG_misha
-            Assert(0);
+            AssertFailed();
 #endif
             mInternalFormat = 3;//GL_RGB;
             mFormat = GL_BGR_EXT;
@@ -4062,7 +4060,7 @@ void VBoxVHWAColorFormat::init (uint32_t bitsPerPixel, uint32_t r, uint32_t g, u
             break;
         case 16:
 #ifdef DEBUG_misha
-            Assert(0);
+            AssertFailed();
 #endif
             mInternalFormat = GL_RGB5;
             mFormat = GL_BGR_EXT;
@@ -4073,7 +4071,7 @@ void VBoxVHWAColorFormat::init (uint32_t bitsPerPixel, uint32_t r, uint32_t g, u
             break;
         case 8:
 #ifdef DEBUG_misha
-            Assert(0);
+            AssertFailed();
 #endif
             mInternalFormat = 1;//GL_RGB;
             mFormat = GL_RED;//GL_RGB;
@@ -4082,7 +4080,7 @@ void VBoxVHWAColorFormat::init (uint32_t bitsPerPixel, uint32_t r, uint32_t g, u
             break;
         case 1:
 #ifdef DEBUG_misha
-            Assert(0);
+            AssertFailed();
 #endif
             mInternalFormat = 1;
             mFormat = GL_COLOR_INDEX;
@@ -4091,7 +4089,7 @@ void VBoxVHWAColorFormat::init (uint32_t bitsPerPixel, uint32_t r, uint32_t g, u
             break;
         default:
 #ifdef DEBUG_misha
-            Assert(0);
+            AssertFailed();
 #endif
             mBitsPerPixel = 0;
             mBitsPerPixelTex = 0;
@@ -4823,7 +4821,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         } break;
 #endif
         default:
-            Assert(0);
+            AssertFailed();
             pCmd->rc = VERR_NOT_IMPLEMENTED;
             break;
     }
@@ -4944,7 +4942,7 @@ void VBoxQGLOverlay::processCmd(VBoxVHWACommandElement * pCmd)
         }
 #endif
         default:
-            Assert(0);
+            AssertFailed();
     }
 }
 
@@ -4958,6 +4956,8 @@ VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(QObject *pNotif
     AssertRC(rc);
 
     RTListInit(&mCommandList);
+
+    m_pCmdEntryCache = new VBoxVHWAEntriesCache;
 }
 
 VBoxVHWACommandElementProcessor::~VBoxVHWACommandElementProcessor()
@@ -4966,6 +4966,8 @@ VBoxVHWACommandElementProcessor::~VBoxVHWACommandElementProcessor()
     RTListIsEmpty(&mCommandList);
 
     RTCritSectDelete(&mCritSect);
+
+    delete m_pCmdEntryCache;
 }
 
 void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData)
@@ -4977,7 +4979,7 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
     /* 1. lock*/
     RTCritSectEnter(&mCritSect);
 
-    VBoxVHWACommandElement * pCmd = g_VBoxCmdEntriesCache.alloc();
+    VBoxVHWACommandElement * pCmd = m_pCmdEntryCache->alloc();
     if(!pCmd)
     {
         VBOXQGLLOG(("!!!no more free elements!!!\n"));
@@ -5078,7 +5080,7 @@ void VBoxVHWACommandElementProcessor::doneCmd()
     RTCritSectLeave(&mCritSect);
 
     if (pEl)
-        g_VBoxCmdEntriesCache.free(pEl);
+        m_pCmdEntryCache->free(pEl);
 }
 
 VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::getCmd()
@@ -5172,19 +5174,19 @@ void VBoxVHWACommandElementProcessor::reset(CDisplay *pDisplay)
             break;
         case VBOXVHWA_PIPECMD_FUNC:
             /* should not happen, don't handle this for now */
-            Assert(0);
+            AssertFailed();
             break;
 #endif
         case VBOXVHWA_PIPECMD_PAINT:
             break;
         default:
             /* should not happen, don't handle this for now */
-            Assert(0);
+            AssertFailed();
             break;
         }
 
         RTListNodeRemove(&pCur->ListNode);
-        g_VBoxCmdEntriesCache.free(pCur);
+        m_pCmdEntryCache->free(pCur);
     }
 
     RTCritSectEnter(&mCritSect);
@@ -5259,7 +5261,7 @@ int VBoxVHWACommandElementProcessor::loadExec (struct SSMHANDLE * pSSM, uint32_t
                             break;
                         }
                         default:
-                            Assert(0);
+                            AssertFailed();
                             break;
                     }
 
@@ -5305,7 +5307,7 @@ void VBoxVHWACommandElementProcessor::saveExec (struct SSMHANDLE * pSSM, void *p
                 break;
             }
             default:
-                Assert(0);
+                AssertFailed();
                 break;
         }
     }
