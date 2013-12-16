@@ -132,7 +132,6 @@ class Lease
     void setConfig(NetworkConfigEntity *);
 
     const MapOptionId2RawOption& options() const;
-    MapOptionId2RawOption& options();
 
     bool toXML(xml::ElementNode *) const;
     bool fromXML(const xml::ElementNode *);
@@ -515,7 +514,7 @@ private:
 
     int prepareReplyPacket4Client(const Client& client, uint32_t u32Xid);
     int doReply(const Client& client, const std::vector<RawOption>& extra);
-    int processParameterReqList(const Client& client, uint8_t *pu8ReqList, int cReqList);
+    int processParameterReqList(const Client& client, const uint8_t *pu8ReqList, int cReqList, std::vector<RawOption>& extra);
 
 private:
     struct Data;

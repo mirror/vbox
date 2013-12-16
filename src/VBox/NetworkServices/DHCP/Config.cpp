@@ -772,7 +772,7 @@ int NetworkManager::offer4Client(const Client& client, uint32_t u32Xid,
     RawOption opt;
     RT_ZERO(opt);
 
-    std::vector<RawOption> extra(2);
+    std::vector<RawOption> extra;
     opt.u8OptId = RTNET_DHCP_OPT_MSG_TYPE;
     opt.au8RawOpt[0] = RTNET_DHCP_MT_OFFER;
     opt.cbRawOpt = 1;
@@ -788,7 +788,7 @@ int NetworkManager::offer4Client(const Client& client, uint32_t u32Xid,
 
     extra.push_back(opt);
 
-    processParameterReqList(client, pu8ReqList, cReqList);
+    processParameterReqList(client, pu8ReqList, cReqList, extra);
 
     return doReply(client, extra);
 }
@@ -825,7 +825,7 @@ int NetworkManager::ack(const Client& client, uint32_t u32Xid,
     RawOption opt;
     RT_ZERO(opt);
 
-    std::vector<RawOption> extra(2);
+    std::vector<RawOption> extra;
     opt.u8OptId = RTNET_DHCP_OPT_MSG_TYPE;
     opt.au8RawOpt[0] = RTNET_DHCP_MT_ACK;
     opt.cbRawOpt = 1;
@@ -840,7 +840,7 @@ int NetworkManager::ack(const Client& client, uint32_t u32Xid,
     opt.cbRawOpt = sizeof(RTNETADDRIPV4);
     extra.push_back(opt);
 
-    processParameterReqList(client, pu8ReqList, cReqList);
+    processParameterReqList(client, pu8ReqList, cReqList, extra);
 
     return doReply(client, extra);
 }
@@ -978,27 +978,24 @@ int NetworkManager::doReply(const Client& client, const std::vector<RawOption>& 
 }
 
 
-int NetworkManager::processParameterReqList(const Client& client, uint8_t *pu8ReqList, int cReqList)
+int NetworkManager::processParameterReqList(const Client& client, const uint8_t *pu8ReqList, 
+                                            int cReqList, std::vector<RawOption>& extra)
 {
-    /* request parameter list */
-    RawOption opt;
-    int idxParam = 0;
-
-    uint8_t *pReqList = pu8ReqList;
-    
-    const Lease const_l = client.lease();
-    Lease l = Lease(const_l);
+    const Lease l = client.lease();
     
     const NetworkConfigEntity *pNetCfg = l.getConfig();
 
-    for (idxParam = 0; idxParam < cReqList; ++idxParam)
+    /* request parameter list */
+    RawOption opt;
+    bool fIgnore;
+    uint8_t u8Req;
+    for (int idxParam = 0; idxParam < cReqList; ++idxParam)
     {
-
-        bool fIgnore = false;
+        fIgnore = false;
         RT_ZERO(opt);
-        opt.u8OptId = pReqList[idxParam];
+        u8Req = opt.u8OptId = pu8ReqList[idxParam];
 
-        switch(pReqList[idxParam])
+        switch(u8Req)
         {
             case RTNET_DHCP_OPT_SUBNET_MASK:
                 ((PRTNETADDRIPV4)opt.au8RawOpt)->u = pNetCfg->netmask().u;
@@ -1010,7 +1007,7 @@ int NetworkManager::processParameterReqList(const Client& client, uint8_t *pu8Re
             case RTNET_DHCP_OPT_DNS:
                 {
                     const Ipv4AddressContainer lst =
-                      g_ConfigurationManager->getAddressList(pReqList[idxParam]);
+                      g_ConfigurationManager->getAddressList(u8Req);
                     PRTNETADDRIPV4 pAddresses = (PRTNETADDRIPV4)&opt.au8RawOpt[0];
 
                     for (Ipv4AddressConstIterator it = lst.begin();
@@ -1028,7 +1025,7 @@ int NetworkManager::processParameterReqList(const Client& client, uint8_t *pu8Re
                 break;
             case RTNET_DHCP_OPT_DOMAIN_NAME:
                 {
-                    std::string domainName = g_ConfigurationManager->getString(pReqList[idxParam]);
+                    std::string domainName = g_ConfigurationManager->getString(u8Req);
                     if (domainName == g_ConfigurationManager->m_noString)
                     {
                         fIgnore = true;
@@ -1042,13 +1039,13 @@ int NetworkManager::processParameterReqList(const Client& client, uint8_t *pu8Re
                 }
                 break;
             default:
-                Log(("opt: %d is ignored\n", pReqList[idxParam]));
+                Log(("opt: %d is ignored\n", u8Req));
                 fIgnore = true;
                 break;
         }
 
         if (!fIgnore)
-            l.options().insert(std::map<uint8_t, RawOption>::value_type(opt.u8OptId, opt));
+            extra.push_back(opt);
 
     }
 
@@ -1219,12 +1216,6 @@ void Lease::setConfig(NetworkConfigEntity *pCfg)
 
 
 const MapOptionId2RawOption& Lease::options() const
-{
-    return m->options;
-}
-
-
-MapOptionId2RawOption& Lease::options()
 {
     return m->options;
 }
