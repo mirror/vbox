@@ -50,7 +50,7 @@
  *   better done on the host side)
  */
 
-int vbglR3DnDPathSanitize(char *pszPath, size_t cbPath);
+static int vbglR3DnDPathSanitize(char *pszPath, size_t cbPath);
 
 /******************************************************************************
  *    Private internal functions                                              *
