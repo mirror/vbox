@@ -849,6 +849,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
      * so we cannot reuse the ASIDs without flushing.
      */
     bool fNewAsid = false;
+    Assert(pCpu->idCpu != NIL_RTCPUID);
     if (   pVCpu->hm.s.idLastCpu   != pCpu->idCpu
         || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
     {
@@ -962,6 +963,8 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_ASID;
     }
 
+    AssertMsg(pVCpu->hm.s.idLastCpu == pCpu->idCpu,
+              ("vcpu idLastCpu=%x pcpu idCpu=%x\n", pVCpu->hm.s.idLastCpu, pCpu->idCpu));
     AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
     AssertMsg(pCpu->uCurrentAsid >= 1 && pCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
