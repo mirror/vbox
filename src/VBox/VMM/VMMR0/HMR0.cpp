@@ -945,6 +945,7 @@ static DECLCALLBACK(void) hmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, vo
     PVM             pVM      = (PVM)pvUser1;     /* can be NULL! */
     PHMR0FIRSTRC    pFirstRc = (PHMR0FIRSTRC)pvUser2;
     AssertReturnVoid(g_HvmR0.fGlobalInit);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     hmR0FirstRcSetStatus(pFirstRc, hmR0EnableCpu(pVM, idCpu));
 }
 
