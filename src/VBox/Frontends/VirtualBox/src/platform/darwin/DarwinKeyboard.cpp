@@ -1808,7 +1808,6 @@ static void darwinUsbHidGeneralInterestCb(void *pData, io_service_t unused1, nat
             {
                 LogRel2(("IOUSBInterface IOService general interest notification kIOUSBMessagePortHasBeenResumed for KBD %d (Location ID: 0x%X)\n",
                          (int)(pKbd->idxPosition), pKbd->idLocation));
-                darwinUsbHidResyncLeds(pKbd);
                 break;
             }
 
