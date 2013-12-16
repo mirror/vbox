@@ -2626,7 +2626,7 @@ static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMs
         fOpen |= RTFILE_O_WRITE_THROUGH;
 
     int rc;
-    int cBackoff = 0;
+    unsigned cBackoff = 0;
     do
     {
         rc = RTFileOpen(&pLogger->pInt->hFile, pLogger->pInt->szFilename, fOpen);
@@ -2734,7 +2734,7 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
 
 
             int rc;
-            int cBackoff = 0;
+            unsigned cBackoff = 0;
             do
             {
 	        rc = RTFileRename(szOldName, szNewName, RTFILEMOVE_FLAGS_REPLACE);
