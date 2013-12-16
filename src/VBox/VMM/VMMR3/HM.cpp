@@ -810,7 +810,7 @@ static int hmR3InitCPU(PVM pVM)
         {
             STAMR3RegisterF(pVM, &pVCpu->hm.s.paStatInjectedIrqs[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                             "Injected event.",
-                            (j < 0x20) ? "/HM/CPU%d/EventInject/Event/Trap/%02X" : "/HM/CPU%d/EventInject/Event/IRQ/%02X", i, j);
+                            (j < 0x20) ? "/HM/CPU%d/EventInject/InjectTrap/%02X" : "/HM/CPU%d/EventInject/InjectIRQ/%02X", i, j);
         }
 
 #endif /* VBOX_WITH_STATISTICS */
