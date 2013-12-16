@@ -76,7 +76,7 @@ class Client
     void dump();
 
     Lease lease();
-    const Lease lease() const; 
+    const Lease lease() const;
 
     public:
     static const Client NullClient;
