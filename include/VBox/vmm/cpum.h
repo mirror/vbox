@@ -114,7 +114,8 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_Intel_P6_M_Dothan,
     kCpumMicroarch_Intel_Core_Yonah,        /**< Core, also known as Enhanced Pentium M. */
 
-    kCpumMicroarch_Intel_Core2_Merom,
+    kCpumMicroarch_Intel_Core2_First,
+    kCpumMicroarch_Intel_Core2_Merom = kCpumMicroarch_Intel_Core2_First,
     kCpumMicroarch_Intel_Core2_Penryn,
 
     kCpumMicroarch_Intel_Core7_First,
