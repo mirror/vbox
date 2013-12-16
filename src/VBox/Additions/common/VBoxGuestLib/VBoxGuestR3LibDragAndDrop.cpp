@@ -392,83 +392,86 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
             switch (uNextMsg)
             {
                 case DragAndDropSvc::HOST_DND_HG_SND_DIR:
+                {
+                    uint32_t fMode = 0;
+                    rc = vbglR3DnDHGProcessSendDirMessage(uClientId,
+                                                          pszPathname,
+                                                          sizeof(pszPathname),
+                                                          &cbPathname,
+                                                          &fMode);
+                    if (RT_SUCCESS(rc))
+                        rc = vbglR3DnDPathSanitize(pszPathname, sizeof(pszPathname));
+                    if (RT_SUCCESS(rc))
                     {
-                        uint32_t fMode = 0;
-                        rc = vbglR3DnDHGProcessSendDirMessage(uClientId,
-                                                              pszPathname,
-                                                              sizeof(pszPathname),
-                                                              &cbPathname,
-                                                              &fMode);
-                        if (RT_SUCCESS(rc))
-                            rc = vbglR3DnDPathSanitize(pszPathname, sizeof(pszPathname));
-                        if (RT_SUCCESS(rc))
+                        char *pszNewDir = RTPathJoinA(pszDropDir, pszPathname);
+                        if (pszNewDir)
                         {
-                            char *pszNewDir = RTPathJoinA(pszDropDir, pszPathname);
-                            if (pszNewDir)
-                            {
-                                rc = RTDirCreate(pszNewDir, (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRWXU, 0);
-                                if (!guestDirList.contains(pszNewDir))
-                                    guestDirList.append(pszNewDir);
+                            rc = RTDirCreate(pszNewDir, (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRWXU, 0);
+                            if (!guestDirList.contains(pszNewDir))
+                                guestDirList.append(pszNewDir);
 
-                                RTStrFree(pszNewDir);
-                            }
-                            else
-                                rc = VERR_NO_MEMORY;
+                            RTStrFree(pszNewDir);
                         }
-                        break;
+                        else
+                            rc = VERR_NO_MEMORY;
                     }
+                    break;
+                }
                 case DragAndDropSvc::HOST_DND_HG_SND_FILE:
+                {
+                    uint32_t cbDataRecv;
+                    uint32_t fMode = 0;
+                    rc = vbglR3DnDHGProcessSendFileMessage(uClientId,
+                                                           pszPathname,
+                                                           sizeof(pszPathname),
+                                                           &cbPathname,
+                                                           pvTmpData,
+                                                           cbTmpData,
+                                                           &cbDataRecv,
+                                                           &fMode);
+                    if (RT_SUCCESS(rc))
+                        rc = vbglR3DnDPathSanitize(pszPathname, sizeof(pszPathname));
+                    if (RT_SUCCESS(rc))
                     {
-                        uint32_t cbDataRecv;
-                        uint32_t fMode = 0;
-                        rc = vbglR3DnDHGProcessSendFileMessage(uClientId,
-                                                               pszPathname,
-                                                               sizeof(pszPathname),
-                                                               &cbPathname,
-                                                               pvTmpData,
-                                                               cbTmpData,
-                                                               &cbDataRecv,
-                                                               &fMode);
-                        if (RT_SUCCESS(rc))
-                            rc = vbglR3DnDPathSanitize(pszPathname, sizeof(pszPathname));
-                        if (RT_SUCCESS(rc))
+                        char *pszNewFile = RTPathJoinA(pszDropDir, pszPathname);
+                        if (pszNewFile)
                         {
-                            char *pszNewFile = RTPathJoinA(pszDropDir, pszPathname);
-                            if (pszNewFile)
+                            RTFILE hFile;
+                            /** @todo r=andy Keep the file open and locked during the actual file transfer. Otherwise this will
+                             *               create all sorts of funny races because we don't know if the guest has
+                             *               modified the file in between the file data send calls. */
+                            rc = RTFileOpen(&hFile, pszNewFile,
+                                            RTFILE_O_WRITE | RTFILE_O_APPEND | RTFILE_O_DENY_ALL | RTFILE_O_OPEN_CREATE);
+                            if (RT_SUCCESS(rc))
                             {
-                                RTFILE hFile;
-                                /** @todo r=andy Keep the file open and locked during the actual file transfer. Otherwise this will
-                                 *               create all sorts of funny races because we don't know if the guest has
-                                 *               modified the file in between the file data send calls. */
-                                rc = RTFileOpen(&hFile, pszNewFile, RTFILE_O_WRITE | RTFILE_O_APPEND | RTFILE_O_DENY_ALL | RTFILE_O_OPEN_CREATE);
+                                rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, NULL);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, NULL);
-                                    if (RT_SUCCESS(rc))
-                                    {
-                                        rc = RTFileWrite(hFile, pvTmpData, cbDataRecv, 0);
-                                        /* Valid UNIX mode? */
-                                        if (RT_SUCCESS(rc)
-                                            && (fMode & RTFS_UNIX_MASK)) rc = RTFileSetMode(hFile, (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
-                                    }
-                                    RTFileClose(hFile);
-                                    if (!guestFileList.contains(pszNewFile))
-                                        guestFileList.append(pszNewFile);
+                                    rc = RTFileWrite(hFile, pvTmpData, cbDataRecv, 0);
+                                    /* Valid UNIX mode? */
+                                    if (   RT_SUCCESS(rc)
+                                        && (fMode & RTFS_UNIX_MASK))
+                                        rc = RTFileSetMode(hFile, (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
                                 }
-
-                                RTStrFree(pszNewFile);
+                                RTFileClose(hFile);
+                                if (!guestFileList.contains(pszNewFile))
+                                    guestFileList.append(pszNewFile);
                             }
-                            else
-                                rc = VERR_NO_MEMORY;
+
+                            RTStrFree(pszNewFile);
                         }
-                        break;
+                        else
+                            rc = VERR_NO_MEMORY;
                     }
+                    break;
+                }
                 case DragAndDropSvc::HOST_DND_HG_EVT_CANCEL:
-                    {
-                        rc = vbglR3DnDHGProcessCancelMessage(uClientId);
-                        if (RT_SUCCESS(rc)) rc = VERR_CANCELLED;
-                        /* Break out of the loop. */
-                    }
+                {
+                    rc = vbglR3DnDHGProcessCancelMessage(uClientId);
+                    if (RT_SUCCESS(rc))
+                        rc = VERR_CANCELLED;
+                    /* Break out of the loop. */
+                }
                 default:
                     fLoop = false;
                     break;
@@ -476,7 +479,8 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
         }
         else
         {
-            if (rc == VERR_NO_DATA) rc = VINF_SUCCESS;
+            if (rc == VERR_NO_DATA)
+                rc = VINF_SUCCESS;
             break;
         }
     } /* while */
