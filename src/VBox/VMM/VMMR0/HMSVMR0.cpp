@@ -868,7 +868,6 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
     }
 
-    pVCpu->hm.s.idLastCpu = pCpu->idCpu;
     pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
 
     if (pVM->hm.s.svm.fAlwaysFlushTLB)
@@ -924,6 +923,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
             }
 
             pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
+            pVCpu->hm.s.idLastCpu    = pCpu->idCpu;
             pVCpu->hm.s.cTlbFlushes  = pCpu->cTlbFlushes;
         }
         else
