@@ -179,7 +179,7 @@ static void tstApiPrf4(IVirtualBox *pVBox)
     while (cLeft-- > 0)
     {
         BOOL fSupported;
-        HRESULT hrc = pHost->GetProcessorFeature(ProcessorFeature_PAE, &fSupported);
+        hrc = pHost->GetProcessorFeature(ProcessorFeature_PAE, &fSupported);
         if (FAILED(hrc))
         {
             tstComExpr(hrc, "IHost::GetProcessorFeature", __LINE__);
