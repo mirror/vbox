@@ -745,7 +745,7 @@ static int vbglR3DnDGHProcessDroppedMessage(uint32_t  uClientId,
     return rc;
 }
 
-int vbglR3DnDPathSanitize(char *pszPath, size_t cbPath)
+static int vbglR3DnDPathSanitize(char *pszPath, size_t cbPath)
 {
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
