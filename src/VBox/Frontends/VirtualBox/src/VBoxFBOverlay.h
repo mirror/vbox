@@ -1306,6 +1306,7 @@ private:
     volatile uint32_t m_cRefs;
 };
 
+class VBoxVHWAEntriesCache;
 class VBoxVHWACommandElementProcessor
 {
 public:
@@ -1330,6 +1331,7 @@ private:
     VBoxVHWACommandElement *mpCurCmd;
     bool mbResetting;
     uint32_t mcDisabled;
+    VBoxVHWAEntriesCache *m_pCmdEntryCache;
 };
 
 /* added to workaround this ** [VBox|UI] duplication */
