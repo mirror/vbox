@@ -2490,6 +2490,41 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
     return VINF_SUCCESS;
 }
 
+static int vdWriteHelperStandardReadImageAsync(PVDIOCTX pIoCtx)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
+
+    pIoCtx->fFlags |= VDIOCTX_FLAGS_ZERO_FREE_BLOCKS;
+
+    if (   pIoCtx->Req.Io.cbTransferLeft
+        && !pIoCtx->cDataTransfersPending)
+        rc = vdReadHelperAsync(pIoCtx);
+
+    if (   RT_SUCCESS(rc)
+        && (   pIoCtx->Req.Io.cbTransferLeft
+            || pIoCtx->cMetaTransfersPending))
+        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+    else
+    {
+        size_t cbFill = pIoCtx->Type.Child.Write.Optimized.cbFill;
+
+        /* Zero out the remainder of this block. Will never be visible, as this
+         * is beyond the limit of the image. */
+        if (cbFill)
+            vdIoCtxSet(pIoCtx, '\0', cbFill);
+
+        /* Write the full block to the virtual disk. */
+        RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
+
+        vdIoCtxChildReset(pIoCtx);
+        pIoCtx->pfnIoCtxTransferNext = vdWriteHelperCommitAsync;
+    }
+
+    return rc;
+}
+
 static int vdWriteHelperStandardAssemble(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
@@ -2519,22 +2554,26 @@ static int vdWriteHelperStandardAssemble(PVDIOCTX pIoCtx)
             RTSgBufCopy(&pIoCtx->Req.Io.SgBuf, &SgBufParentTmp, cbWriteCopy);
         }
 
-        /* Zero out the remainder of this block. Will never be visible, as this
-         * is beyond the limit of the image. */
-        if (cbFill)
-        {
-            RTSgBufAdvance(&pIoCtx->Req.Io.SgBuf, cbReadImage);
-            vdIoCtxSet(pIoCtx, '\0', cbFill);
-        }
-
         if (cbReadImage)
         {
             /* Read remaining data. */
+            pIoCtx->pfnIoCtxTransferNext = vdWriteHelperStandardReadImageAsync;
+
+            /* Read the data that goes before the write to fill the block. */
+            pIoCtx->Req.Io.cbTransferLeft = (uint32_t)cbReadImage; Assert(cbReadImage == (uint32_t)cbReadImage);
+            pIoCtx->Req.Io.cbTransfer     = pIoCtx->Req.Io.cbTransferLeft;
+            pIoCtx->Req.Io.uOffset       += cbWriteCopy;
         }
         else
         {
+            /* Zero out the remainder of this block. Will never be visible, as this
+             * is beyond the limit of the image. */
+            if (cbFill)
+                vdIoCtxSet(pIoCtx, '\0', cbFill);
+
             /* Write the full block to the virtual disk. */
             RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
+            vdIoCtxChildReset(pIoCtx);
             pIoCtx->pfnIoCtxTransferNext = vdWriteHelperCommitAsync;
         }
     }
@@ -2542,6 +2581,7 @@ static int vdWriteHelperStandardAssemble(PVDIOCTX pIoCtx)
     {
         /* Write the full block to the virtual disk. */
         RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
+        vdIoCtxChildReset(pIoCtx);
         pIoCtx->pfnIoCtxTransferNext = vdWriteHelperCommitAsync;
     }
 
@@ -2556,7 +2596,8 @@ static int vdWriteHelperStandardPreReadAsync(PVDIOCTX pIoCtx)
 
     pIoCtx->fFlags |= VDIOCTX_FLAGS_ZERO_FREE_BLOCKS;
 
-    if (pIoCtx->Req.Io.cbTransferLeft)
+    if (   pIoCtx->Req.Io.cbTransferLeft
+        && !pIoCtx->cDataTransfersPending)
         rc = vdReadHelperAsync(pIoCtx);
 
     if (   RT_SUCCESS(rc)
@@ -2591,9 +2632,10 @@ static int vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
     {
         /* If we have data to be written, use that instead of reading
          * data from the image. */
-        cbWriteCopy;
         if (cbWrite > cbThisWrite)
             cbWriteCopy = RT_MIN(cbWrite - cbThisWrite, cbPostRead);
+        else
+            cbWriteCopy = 0;
 
         /* Figure out how much we cannot read from the image, because
          * the last block to write might exceed the nominal size of the
