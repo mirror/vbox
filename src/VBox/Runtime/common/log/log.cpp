@@ -2085,24 +2085,27 @@ RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
         char szNum[32];
         if (pLogger->pInt->cHistory)
         {
-            RTStrPrintf(szNum, sizeof(szNum), fNotFirst ? "history=%u" : " history=%u", pLogger->pInt->cHistory);
+            RTStrPrintf(szNum, sizeof(szNum), fNotFirst ? " history=%u" : "history=%u", pLogger->pInt->cHistory);
             rc = RTStrCopyP(&pszBuf, &cchBuf, szNum);
             if (RT_FAILURE(rc))
                 return rc;
+            fNotFirst = true;
         }
         if (pLogger->pInt->cbHistoryFileMax != UINT64_MAX)
         {
-            RTStrPrintf(szNum, sizeof(szNum), fNotFirst ? "histsize=%llu" : " histsize=%llu", pLogger->pInt->cbHistoryFileMax);
+            RTStrPrintf(szNum, sizeof(szNum), fNotFirst ? " histsize=%llu" : "histsize=%llu", pLogger->pInt->cbHistoryFileMax);
             rc = RTStrCopyP(&pszBuf, &cchBuf, szNum);
             if (RT_FAILURE(rc))
                 return rc;
+            fNotFirst = true;
         }
         if (pLogger->pInt->cSecsHistoryTimeSlot != UINT32_MAX)
         {
-            RTStrPrintf(szNum, sizeof(szNum), fNotFirst ? "histtime=%llu" : " histtime=%llu", pLogger->pInt->cSecsHistoryTimeSlot);
+            RTStrPrintf(szNum, sizeof(szNum), fNotFirst ? " histtime=%llu" : "histtime=%llu", pLogger->pInt->cSecsHistoryTimeSlot);
             rc = RTStrCopyP(&pszBuf, &cchBuf, szNum);
             if (RT_FAILURE(rc))
                 return rc;
+            fNotFirst = true;
         }
     }
 # endif /* IN_RING3 */
@@ -2737,7 +2740,7 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
             unsigned cBackoff = 0;
             do
             {
-	        rc = RTFileRename(szOldName, szNewName, RTFILEMOVE_FLAGS_REPLACE);
+                rc = RTFileRename(szOldName, szNewName, RTFILEMOVE_FLAGS_REPLACE);
                 if (rc == VERR_SHARING_VIOLATION)
                 {
                     if (cBackoff >= RT_ELEMENTS(s_aLogBackoff))
