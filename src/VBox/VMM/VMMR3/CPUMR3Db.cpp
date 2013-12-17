@@ -178,6 +178,7 @@ typedef struct CPUMDBENTRY
 #include "cpus/Intel_Xeon_X5482_3_20GHz.h"
 
 #include "cpus/AMD_FX_8150_Eight_Core.h"
+#include "cpus/AMD_Phenom_II_X6_1100T.h"
 #include "cpus/Quad_Core_AMD_Opteron_2384.h"
 
 
