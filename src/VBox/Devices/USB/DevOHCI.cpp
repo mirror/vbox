@@ -361,6 +361,9 @@ typedef struct OHCI
 
     uint32_t            Alignment3;     /**< Align size on a 8 byte boundary. */
 
+    /** Critical section synchronising interrupt handling. */
+    PDMCRITSECT         CsIrq;
+
     /** The framer thread. */
     R3PTRTYPE(PPDMTHREAD) hThreadFrame;
     /** Event semaphore to interact with the framer thread. */
@@ -796,13 +799,9 @@ RT_C_DECLS_END
 /**
  * Update PCI IRQ levels
  */
-static void ohciUpdateInterrupt(POHCI ohci, const char *msg)
+static void ohciUpdateInterruptLocked(POHCI ohci, const char *msg)
 {
     int level = 0;
-
-#ifdef IN_RING3
-    PDMCritSectEnter(ohci->pDevInsR3->pCritSectRoR3, VERR_IGNORED);
-#endif
 
     if (    (ohci->intr & OHCI_INTR_MASTER_INTERRUPT_ENABLED)
         &&  (ohci->intr_status & ohci->intr)
@@ -817,28 +816,34 @@ static void ohciUpdateInterrupt(POHCI ohci, const char *msg)
               val, val & 1, (val >> 1) & 1, (val >> 2) & 1, (val >> 3) & 1, (val >> 4) & 1, (val >> 5) & 1,
               (val >> 6) & 1, (val >> 30) & 1, msg)); NOREF(val); NOREF(msg);
     }
-
-#ifdef IN_RING3
-    PDMCritSectLeave(ohci->pDevInsR3->pCritSectRoR3);
-#endif
 }
 
 /**
  * Set an interrupt, use the wrapper ohciSetInterrupt.
  */
-DECLINLINE(void) ohciSetInterruptInt(POHCI ohci, uint32_t intr, const char *msg)
+DECLINLINE(int) ohciSetInterruptInt(POHCI ohci, int rcBusy, uint32_t intr, const char *msg)
 {
-    if ( (ohci->intr_status & intr) == intr )
-        return;
-    ohci->intr_status |= intr;
-    ohciUpdateInterrupt(ohci, msg);
+    int rc = VINF_SUCCESS;
+
+    rc = PDMCritSectEnter(&ohci->CsIrq, rcBusy);
+    if (rc != VINF_SUCCESS)
+        return rc;
+
+    if ( (ohci->intr_status & intr) != intr )
+    {
+        ohci->intr_status |= intr;
+        ohciUpdateInterruptLocked(ohci, msg);
+    }
+
+    PDMCritSectLeave(&ohci->CsIrq);
+    return rc;
 }
 
 /**
  * Set an interrupt wrapper macro for logging purposes.
  */
-#define ohciSetInterrupt(ohci, intr) ohciSetInterruptInt(ohci, intr, #intr)
-
+#define ohciSetInterrupt(ohci, a_rcBusy, intr) ohciSetInterruptInt(ohci, a_rcBusy, intr, #intr)
+#define ohciR3SetInterrupt(ohci, intr) ohciSetInterruptInt(ohci, VERR_IGNORED, intr, #intr)
 
 #ifdef IN_RING3
 
@@ -959,7 +964,7 @@ static DECLCALLBACK(int) ohciRhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE
     rhport_power(&pThis->RootHub, uPort, 1 /* power on */);
 
     ohci_remote_wakeup(pThis);
-    ohciSetInterrupt(pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
+    ohciR3SetInterrupt(pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
 
     PDMCritSectLeave(pThis->pDevInsR3->pCritSectRoR3);
     return VINF_SUCCESS;
@@ -996,7 +1001,7 @@ static DECLCALLBACK(void) ohciRhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVIC
         pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_R_CONNECT_STATUS_CHANGE;
 
     ohci_remote_wakeup(pThis);
-    ohciSetInterrupt(pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
+    ohciR3SetInterrupt(pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
 
     PDMCritSectLeave(pThis->pDevInsR3->pCritSectRoR3);
 }
@@ -3554,7 +3559,7 @@ static void ohciUpdateHCCA(POHCI pThis)
 
     ohciPhysWrite(pThis, pThis->hcca + OHCI_HCCA_OFS, (uint8_t *)&hcca, sizeof(hcca));
     if (fWriteDoneHeadInterrupt)
-        ohciSetInterrupt(pThis, OHCI_INTR_WRITE_DONE_HEAD);
+        ohciR3SetInterrupt(pThis, OHCI_INTR_WRITE_DONE_HEAD);
 }
 
 
@@ -3700,11 +3705,11 @@ static void ohciStartOfFrame(POHCI pThis)
 #endif
 
     /* "After writing to HCCA, HC will set SF in HcInterruptStatus" - guest isn't executing, so ignore the order! */
-    ohciSetInterrupt(pThis, OHCI_INTR_START_OF_FRAME);
+    ohciR3SetInterrupt(pThis, OHCI_INTR_START_OF_FRAME);
 
     if (pThis->fno)
     {
-        ohciSetInterrupt(pThis, OHCI_INTR_FRAMENUMBER_OVERFLOW);
+        ohciR3SetInterrupt(pThis, OHCI_INTR_FRAMENUMBER_OVERFLOW);
         pThis->fno = 0;
     }
 
@@ -3920,7 +3925,7 @@ static void ohciBusResume(POHCI pThis, bool fHardware)
          fHardware, (pThis->ctl & OHCI_CTL_RWE) ? "on" : "off"));
 
     if (fHardware && (pThis->ctl & OHCI_CTL_RWE))
-        ohciSetInterrupt(pThis, OHCI_INTR_RESUME_DETECT);
+        ohciR3SetInterrupt(pThis, OHCI_INTR_RESUME_DETECT);
 
     ohciBusStart(pThis);
 }
@@ -4126,6 +4131,12 @@ static int HcInterruptStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
 {
     uint32_t res = pThis->intr_status & ~val;
     uint32_t chg = pThis->intr_status ^ res; NOREF(chg);
+    int rc = VINF_SUCCESS;
+
+    rc = PDMCritSectEnter(&pThis->CsIrq, VINF_IOM_R3_MMIO_WRITE);
+    if (rc != VINF_SUCCESS)
+        return rc;
+
     Log2(("HcInterruptStatus_w(%#010x) => %sSO=%d %sWDH=%d %sSF=%d %sRD=%d %sUE=%d %sFNO=%d %sRHSC=%d %sOC=%d\n",
           val,
           chg & RT_BIT(0) ? "*" : "",  res       & 1,
@@ -4144,7 +4155,8 @@ static int HcInterruptStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
      * register by writing '1' to bit positions to be cleared"
      */
     pThis->intr_status &= ~val;
-    ohciUpdateInterrupt(pThis, "HcInterruptStatus_w");
+    ohciUpdateInterruptLocked(pThis, "HcInterruptStatus_w");
+    PDMCritSectLeave(&pThis->CsIrq);
     return VINF_SUCCESS;
 }
 
@@ -4168,6 +4180,12 @@ static int HcInterruptEnable_w(POHCI pThis, uint32_t iReg, uint32_t val)
 {
     uint32_t res = pThis->intr | val;
     uint32_t chg = pThis->intr ^ res; NOREF(chg);
+    int rc = VINF_SUCCESS;
+
+    rc = PDMCritSectEnter(&pThis->CsIrq, VINF_IOM_R3_MMIO_WRITE);
+    if (rc != VINF_SUCCESS)
+        return rc;
+
     Log2(("HcInterruptEnable_w(%#010x) => %sSO=%d %sWDH=%d %sSF=%d %sRD=%d %sUE=%d %sFNO=%d %sRHSC=%d %sOC=%d %sMIE=%d\n",
           val,
           chg & RT_BIT(0)  ? "*" : "",  res        & 1,
@@ -4183,7 +4201,8 @@ static int HcInterruptEnable_w(POHCI pThis, uint32_t iReg, uint32_t val)
         Log2(("Uknown bits %#x are set!!!\n", val & ~0xc000007f));
 
     pThis->intr |= val;
-    ohciUpdateInterrupt(pThis, "HcInterruptEnable_w");
+    ohciUpdateInterruptLocked(pThis, "HcInterruptEnable_w");
+    PDMCritSectLeave(&pThis->CsIrq);
     return VINF_SUCCESS;
 }
 
@@ -4212,6 +4231,12 @@ static int HcInterruptDisable_w(POHCI pThis, uint32_t iReg, uint32_t val)
 {
     uint32_t res = pThis->intr & ~val;
     uint32_t chg = pThis->intr ^ res; NOREF(chg);
+    int rc = VINF_SUCCESS;
+
+    rc = PDMCritSectEnter(&pThis->CsIrq, VINF_IOM_R3_MMIO_WRITE);
+    if (rc != VINF_SUCCESS)
+        return rc;
+
     Log2(("HcInterruptDisable_w(%#010x) => %sSO=%d %sWDH=%d %sSF=%d %sRD=%d %sUE=%d %sFNO=%d %sRHSC=%d %sOC=%d %sMIE=%d\n",
           val,
           chg & RT_BIT(0)  ? "*" : "",  res        & 1,
@@ -4227,7 +4252,8 @@ static int HcInterruptDisable_w(POHCI pThis, uint32_t iReg, uint32_t val)
      * interrupts you don't know about. */
 
     pThis->intr &= ~val;
-    ohciUpdateInterrupt(pThis, "HcInterruptDisable_w");
+    ohciUpdateInterruptLocked(pThis, "HcInterruptDisable_w");
+    PDMCritSectLeave(&pThis->CsIrq);
     return VINF_SUCCESS;
 }
 
@@ -4767,7 +4793,7 @@ static DECLCALLBACK(void) uchi_port_reset_done(PVUSBIDEVICE pDev, int rc, void *
     }
 
     /* Raise roothub status change interrupt. */
-    ohciSetInterrupt(pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
+    ohciR3SetInterrupt(pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
 }
 
 /**
@@ -4791,7 +4817,7 @@ static bool rhport_set_if_connected(POHCIROOTHUB pRh, int iPort, uint32_t fValue
     if (!(pRh->aPorts[iPort].fReg & OHCI_PORT_R_CURRENT_CONNECT_STATUS))
     {
         pRh->aPorts[iPort].fReg |= OHCI_PORT_R_CONNECT_STATUS_CHANGE;
-        ohciSetInterrupt(pRh->pOhci, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
+        ohciR3SetInterrupt(pRh->pOhci, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
         return false;
     }
 
@@ -4886,7 +4912,7 @@ static int HcRhPortStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
         rhport_power(&pThis->RootHub, i, true /* power up */);
         pThis->RootHub.aPorts[i].fReg &= ~OHCI_PORT_R_SUSPEND_STATUS;
         pThis->RootHub.aPorts[i].fReg |= OHCI_PORT_R_SUSPEND_STATUS_CHANGE;
-        ohciSetInterrupt(pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
+        ohciR3SetInterrupt(pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
     }
 
     if (p->fReg != old_state)
@@ -5517,6 +5543,7 @@ static DECLCALLBACK(int) ohciR3Destruct(PPDMDEVINS pDevIns)
      */
     RTSemEventDestroy(pThis->hSemEventFrame);
     RTCritSectDelete(&pThis->CritSect);
+    PDMR3CritSectDelete(&pThis->CsIrq);
 
     /*
      * Tear down the per endpoint in-flight tracking...
@@ -5663,24 +5690,15 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     pThis->fBusStarted = false;
 
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CsIrq, RT_SRC_POS, "OHCI#%uIrq", iInstance);
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("EHCI: Failed to create critical section"));
+
     rc = RTSemEventCreate(&pThis->hSemEventFrame);
     AssertRCReturn(rc, rc);
 
-    /*
-     * Initialize the critical section without the lock validator.
-     * This is necessary because USB devices attached to this controller
-     * will be detached in the save state callback with the
-     * per device PDM critical section held. If there are still URBs pending
-     * for this device they will get reaped and cause a lock validator error
-     * because they will take this critical section.
-     *
-     * The framer thread on the other hand will first take this critical section
-     * during a run and might take the PDM critical section when issuing an interrupt.
-     * Normally this is a real deadlock issue but we make sure
-     * that the framer thread is not running when the save state handler is called.
-     */
-    rc = RTCritSectInitEx(&pThis->CritSect, RTCRITSECT_FLAGS_NO_LOCK_VAL,
-                          NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_USER, "OhciCritSect");
+    rc = RTCritSectInit(&pThis->CritSect);
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("OHCI: Failed to create critical section"));
