@@ -3022,8 +3022,6 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     if (    (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
         && !(pVmcb->ctrl.u32InterceptCtrl2 & SVM_CTRL2_INTERCEPT_RDTSCP))
     {
-        /** @todo r=bird: I cannot find any place where the guest TSC_AUX value is
-         *        saved. */
         hmR0SvmSetMsrPermission(pVCpu, MSR_K8_TSC_AUX, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
         pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
         uint64_t u64GuestTscAux = CPUMR0GetGuestTscAux(pVCpu);
