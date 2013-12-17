@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,9 +20,7 @@
 #ifndef ____H_SNAPSHOTIMPL
 #define ____H_SNAPSHOTIMPL
 
-#include "VirtualBoxBase.h"
-
-#include <iprt/time.h>
+#include "SnapshotWrap.h"
 
 class SnapshotMachine;
 
@@ -32,25 +30,10 @@ namespace settings
 }
 
 class ATL_NO_VTABLE Snapshot :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(ISnapshot)
+    public SnapshotWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Snapshot, ISnapshot)
-
-    DECLARE_NOT_AGGREGATABLE(Snapshot)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(Snapshot)
-        VBOX_DEFAULT_INTERFACE_ENTRIES (ISnapshot)
-    END_COM_MAP()
-
-    Snapshot()
-        : m(NULL)
-    { };
-    ~Snapshot()
-    { };
+    DECLARE_EMPTY_CTOR_DTOR(Snapshot)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -65,24 +48,9 @@ public:
                  Snapshot *aParent);
     void uninit();
 
-    void beginSnapshotDelete();
+    void i_beginSnapshotDelete();
 
-    void deparent();
-
-    // ISnapshot properties
-    STDMETHOD(COMGETTER(Id))(BSTR *aId);
-    STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMSETTER(Name))(IN_BSTR aName);
-    STDMETHOD(COMGETTER(Description))(BSTR *aDescription);
-    STDMETHOD(COMSETTER(Description))(IN_BSTR aDescription);
-    STDMETHOD(COMGETTER(TimeStamp))(LONG64 *aTimeStamp);
-    STDMETHOD(COMGETTER(Online))(BOOL *aOnline);
-    STDMETHOD(COMGETTER(Machine))(IMachine **aMachine);
-    STDMETHOD(COMGETTER(Parent))(ISnapshot **aParent);
-    STDMETHOD(COMGETTER(Children))(ComSafeArrayOut(ISnapshot *, aChildren));
-
-    // ISnapshot methods
-    STDMETHOD(GetChildrenCount)(ULONG* count);
+    void i_deparent();
 
     // public methods only for internal purposes
 
@@ -90,49 +58,67 @@ public:
      * Override of the default locking class to be used for validating lock
      * order with the standard member lock handle.
      */
-    virtual VBoxLockingClass getLockingClass() const
+    virtual VBoxLockingClass i_getLockingClass() const
     {
         return LOCKCLASS_SNAPSHOTOBJECT;
     }
 
-    const ComObjPtr<Snapshot>& getParent() const;
-    const ComObjPtr<Snapshot> getFirstChild() const;
+    const ComObjPtr<Snapshot>& i_getParent() const;
+    const ComObjPtr<Snapshot> i_getFirstChild() const;
 
-    const Utf8Str& getStateFilePath() const;
+    const Utf8Str& i_getStateFilePath() const;
 
-    uint32_t getDepth();
+    uint32_t i_getDepth();
 
-    ULONG getChildrenCount();
-    ULONG getAllChildrenCount();
-    ULONG getAllChildrenCountImpl();
+    ULONG i_getChildrenCount();
+    ULONG i_getAllChildrenCount();
+    ULONG i_getAllChildrenCountImpl();
 
-    const ComObjPtr<SnapshotMachine>& getSnapshotMachine() const;
+    const ComObjPtr<SnapshotMachine>& i_getSnapshotMachine() const;
 
-    Guid getId() const;
-    const Utf8Str& getName() const;
-    RTTIMESPEC getTimeStamp() const;
+    Guid i_getId() const;
+    const Utf8Str& i_getName() const;
+    RTTIMESPEC i_getTimeStamp() const;
 
-    ComObjPtr<Snapshot> findChildOrSelf(IN_GUID aId);
-    ComObjPtr<Snapshot> findChildOrSelf(const Utf8Str &aName);
+    ComObjPtr<Snapshot> i_findChildOrSelf(IN_GUID aId);
+    ComObjPtr<Snapshot> i_findChildOrSelf(const Utf8Str &aName);
 
-    void updateSavedStatePaths(const Utf8Str &strOldPath,
-                               const Utf8Str &strNewPath);
-    void updateSavedStatePathsImpl(const Utf8Str &strOldPath,
-                                   const Utf8Str &strNewPath);
+    void i_updateSavedStatePaths(const Utf8Str &strOldPath,
+                                 const Utf8Str &strNewPath);
+    void i_updateSavedStatePathsImpl(const Utf8Str &strOldPath,
+                                     const Utf8Str &strNewPath);
 
-    bool sharesSavedStateFile(const Utf8Str &strPath,
-                              Snapshot *pSnapshotToIgnore);
+    bool i_sharesSavedStateFile(const Utf8Str &strPath,
+                                Snapshot *pSnapshotToIgnore);
 
-    HRESULT saveSnapshot(settings::Snapshot &data, bool aAttrsOnly);
-    HRESULT saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly);
+    HRESULT i_saveSnapshot(settings::Snapshot &data, bool aAttrsOnly);
+    HRESULT i_saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly);
 
-    HRESULT uninitRecursively(AutoWriteLock &writeLock,
-                              CleanupMode_T cleanupMode,
-                              MediaList &llMedia,
-                              std::list<Utf8Str> &llFilenames);
+    HRESULT i_uninitRecursively(AutoWriteLock &writeLock,
+                                CleanupMode_T cleanupMode,
+                                MediaList &llMedia,
+                                std::list<Utf8Str> &llFilenames);
+
 
 private:
+
     struct Data;            // opaque, defined in SnapshotImpl.cpp
+
+    // wrapped ISnapshot properties
+    HRESULT getId(com::Guid &aId);
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT setName(const com::Utf8Str &aName);
+    HRESULT getDescription(com::Utf8Str &aDescription);
+    HRESULT setDescription(const com::Utf8Str &aDescription);
+    HRESULT getTimeStamp(LONG64 *aTimeStamp);
+    HRESULT getOnline(BOOL *aOnline);
+    HRESULT getMachine(ComPtr<IMachine> &aMachine);
+    HRESULT getParent(ComPtr<ISnapshot> &aParent);
+    HRESULT getChildren(std::vector<ComPtr<ISnapshot> > &aChildren);
+
+    // wrapped ISnapshot methods
+    HRESULT getChildrenCount(ULONG *aChildrenCount);
+
     Data *m;
 };
 

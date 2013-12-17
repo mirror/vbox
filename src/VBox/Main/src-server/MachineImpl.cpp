@@ -2910,7 +2910,7 @@ STDMETHODIMP Machine::COMGETTER(SnapshotCount)(ULONG *aSnapshotCount)
 
     *aSnapshotCount = mData->mFirstSnapshot.isNull()
                           ? 0
-                          : mData->mFirstSnapshot->getAllChildrenCount() + 1;
+                          : mData->mFirstSnapshot->i_getAllChildrenCount() + 1;
 
     return S_OK;
 }
@@ -4347,7 +4347,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             {
                 AutoReadLock snapLock(snap COMMA_LOCKVAL_SRC_POS);
 
-                const MediaData::AttachmentList &snapAtts = snap->getSnapshotMachine()->mMediaData->mAttachments;
+                const MediaData::AttachmentList &snapAtts = snap->i_getSnapshotMachine()->mMediaData->mAttachments;
 
                 MediumAttachment *pAttachFound = NULL;
                 uint32_t foundLevel = 0;
@@ -4394,7 +4394,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                     break;
                 }
 
-                snap = snap->getParent();
+                snap = snap->i_getParent();
             }
 
             /* re-lock medium tree and the medium, as we need it below */
@@ -5474,7 +5474,7 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
 
     size_t cSnapshots = 0;
     if (mData->mFirstSnapshot)
-        cSnapshots = mData->mFirstSnapshot->getAllChildrenCount() + 1;
+        cSnapshots = mData->mFirstSnapshot->i_getAllChildrenCount() + 1;
     if (cSnapshots && cleanupMode == CleanupMode_UnregisterOnly)
         // fail now before we start detaching media
         return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -5524,7 +5524,7 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
         ComObjPtr<Snapshot> pFirstSnapshot = mData->mFirstSnapshot;
 
         // GO!
-        pFirstSnapshot->uninitRecursively(alock, cleanupMode, llMedia, mData->llFilesToDelete);
+        pFirstSnapshot->i_uninitRecursively(alock, cleanupMode, llMedia, mData->llFilesToDelete);
 
         mData->mMachineState = oldState;
     }
@@ -9200,7 +9200,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
 
     /* memorize the current snapshot when appropriate */
     if (    !mData->mCurrentSnapshot
-         && pSnapshot->getId() == aCurSnapshotId
+         && pSnapshot->i_getId() == aCurSnapshotId
        )
         mData->mCurrentSnapshot = pSnapshot;
 
@@ -9864,7 +9864,7 @@ HRESULT Machine::findSnapshotById(const Guid &aId,
     if (aId.isZero())
         aSnapshot = mData->mFirstSnapshot;
     else
-        aSnapshot = mData->mFirstSnapshot->findChildOrSelf(aId.ref());
+        aSnapshot = mData->mFirstSnapshot->i_findChildOrSelf(aId.ref());
 
     if (!aSnapshot)
     {
@@ -9901,7 +9901,7 @@ HRESULT Machine::findSnapshotByName(const Utf8Str &strName,
         return VBOX_E_OBJECT_NOT_FOUND;
     }
 
-    aSnapshot = mData->mFirstSnapshot->findChildOrSelf(strName);
+    aSnapshot = mData->mFirstSnapshot->i_findChildOrSelf(strName);
 
     if (!aSnapshot)
     {
@@ -10191,8 +10191,8 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
 
             // and do the same thing for the saved state file paths of all the online snapshots
             if (mData->mFirstSnapshot)
-                mData->mFirstSnapshot->updateSavedStatePaths(configDir.c_str(),
-                                                             newConfigDir.c_str());
+                mData->mFirstSnapshot->i_updateSavedStatePaths(configDir.c_str(),
+                                                               newConfigDir.c_str());
         }
         while (0);
 
@@ -10460,7 +10460,7 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     }
 
     if (mData->mCurrentSnapshot)
-        config.uuidCurrentSnapshot = mData->mCurrentSnapshot->getId();
+        config.uuidCurrentSnapshot = mData->mCurrentSnapshot->i_getId();
     else
         config.uuidCurrentSnapshot.clear();
 
@@ -10516,7 +10516,7 @@ HRESULT Machine::saveAllSnapshots(settings::MachineConfigFile &config)
             // work on that copy directly to avoid excessive copying later
             settings::Snapshot &snap = config.llFirstSnapshot.front();
 
-            rc = mData->mFirstSnapshot->saveSnapshot(snap, false /*aAttrsOnly*/);
+            rc = mData->mFirstSnapshot->i_saveSnapshot(snap, false /*aAttrsOnly*/);
             if (FAILED(rc)) throw rc;
         }
 
@@ -11637,7 +11637,7 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
     {
         // if this is from a snapshot, do not defer detachment to commitMedia()
         if (pSnapshot)
-            oldmedium->i_removeBackReference(mData->mUuid, pSnapshot->getId());
+            oldmedium->i_removeBackReference(mData->mUuid, pSnapshot->i_getId());
         // else if non-hard disk media, do not defer detachment to commitMedia() either
         else if (mediumType != DeviceType_HardDisk)
             oldmedium->i_removeBackReference(mData->mUuid);
@@ -13041,7 +13041,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         // delete the saved state file (it might have been already created)
         // AFTER killing the snapshot so that releaseSavedStateFile() won't
         // think it's still in use
-        Utf8Str strStateFile = mConsoleTaskData.mSnapshot->getStateFilePath();
+        Utf8Str strStateFile = mConsoleTaskData.mSnapshot->i_getStateFilePath();
         mConsoleTaskData.mSnapshot->uninit();
         releaseSavedStateFile(strStateFile, NULL /* pSnapshotToIgnore */ );
     }
@@ -14670,7 +14670,7 @@ void SessionMachine::releaseSavedStateFile(const Utf8Str &strStateFile,
        )
         // ... and it must also not be shared with other snapshots
         if (    !mData->mFirstSnapshot
-             || !mData->mFirstSnapshot->sharesSavedStateFile(strStateFile, pSnapshotToIgnore)
+             || !mData->mFirstSnapshot->i_sharesSavedStateFile(strStateFile, pSnapshotToIgnore)
                                 // this checks the SnapshotMachine's state file paths
            )
             RTFileDelete(strStateFile.c_str());
@@ -14936,7 +14936,7 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
 
             // it is safe to delete the saved state file if ...
             if (    !mData->mFirstSnapshot      // ... we have no snapshots or
-                 || !mData->mFirstSnapshot->sharesSavedStateFile(mSSData->strStateFilePath, NULL /* pSnapshotToIgnore */)
+                 || !mData->mFirstSnapshot->i_sharesSavedStateFile(mSSData->strStateFilePath, NULL /* pSnapshotToIgnore */)
                                                 // ... none of the snapshots share the saved state file
                )
                 RTFileDelete(mSSData->strStateFilePath.c_str());

@@ -891,7 +891,7 @@ bool USBDeviceFilters::i_hasMatchingFilter(const ComObjPtr<HostUSBDevice> &aDevi
          ++it)
     {
         AutoWriteLock filterLock(*it COMMA_LOCKVAL_SRC_POS);
-        if (aDevice->isMatch((*it)->i_getData()))
+        if (aDevice->i_isMatch((*it)->i_getData()))
         {
             *aMaskedIfs = (*it)->i_getData().mMaskedIfs;
             return true;

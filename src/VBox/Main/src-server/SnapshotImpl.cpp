@@ -42,7 +42,6 @@
 
 #include <VBox/settings.h>
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Snapshot private data definition
@@ -81,6 +80,7 @@ struct Snapshot::Data
 // Constructor / destructor
 //
 ////////////////////////////////////////////////////////////////////////////////
+DEFINE_EMPTY_CTOR_DTOR(Snapshot)
 
 HRESULT Snapshot::FinalConstruct()
 {
@@ -175,7 +175,7 @@ void Snapshot::uninit()
     m->llChildren.clear();          // this unsets all the ComPtrs and probably calls delete
 
     if (m->pParent)
-        deparent();
+        i_deparent();
 
     if (m->pMachine)
     {
@@ -199,7 +199,7 @@ void Snapshot::uninit()
  *  (and the snapshots tree) is protected by the caller having requested the machine
  *  lock in write mode AND the machine state must be DeletingSnapshot.
  */
-void Snapshot::beginSnapshotDelete()
+void Snapshot::i_beginSnapshotDelete()
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc()))
@@ -265,7 +265,7 @@ void Snapshot::beginSnapshotDelete()
  *
  * The caller must hold the machine lock in write mode (which protects the snapshots tree)!
  */
-void Snapshot::deparent()
+void Snapshot::i_deparent()
 {
     Assert(m->pMachine->isWriteLockOnCurrentThread());
 
@@ -291,29 +291,19 @@ void Snapshot::deparent()
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP Snapshot::COMGETTER(Id)(BSTR *aId)
+HRESULT Snapshot::getId(com::Guid &aId)
 {
-    CheckComArgOutPointerValid(aId);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->uuid.toUtf16().cloneTo(aId);
+    aId = m->uuid;
+
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Name)(BSTR *aName)
+HRESULT Snapshot::getName(com::Utf8Str &aName)
 {
-    CheckComArgOutPointerValid(aName);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    m->strName.cloneTo(aName);
+    aName = m->strName;
     return S_OK;
 }
 
@@ -321,10 +311,9 @@ STDMETHODIMP Snapshot::COMGETTER(Name)(BSTR *aName)
  *  @note Locks this object for writing, then calls Machine::onSnapshotChange()
  *  (see its lock requirements).
  */
-STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
+HRESULT Snapshot::setName(const com::Utf8Str &aName)
 {
     HRESULT rc = S_OK;
-    CheckComArgStrNotEmptyOrNull(aName);
 
     // prohibit setting a UUID only as the machine name, or else it can
     // never be found by findMachine()
@@ -333,16 +322,11 @@ STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
     if (!test.isZero() && test.isValid())
         return setError(E_INVALIDARG,  tr("A machine cannot have a UUID as its name"));
 
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    Utf8Str strName(aName);
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->strName != strName)
+    if (m->strName != aName)
     {
-        m->strName = strName;
+        m->strName = aName;
         alock.release(); /* Important! (child->parent locks are forbidden) */
         rc = m->pMachine->onSnapshotChange(this);
     }
@@ -350,32 +334,21 @@ STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
     return rc;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Description)(BSTR *aDescription)
+HRESULT Snapshot::getDescription(com::Utf8Str &aDescription)
 {
-    CheckComArgOutPointerValid(aDescription);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    m->strDescription.cloneTo(aDescription);
+    aDescription = m->strDescription;
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMSETTER(Description)(IN_BSTR aDescription)
+HRESULT Snapshot::setDescription(const com::Utf8Str &aDescription)
 {
     HRESULT rc = S_OK;
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    Utf8Str strDescription(aDescription);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (m->strDescription != strDescription)
+    if (m->strDescription != aDescription)
     {
-        m->strDescription = strDescription;
+        m->strDescription = aDescription;
         alock.release(); /* Important! (child->parent locks are forbidden) */
         rc = m->pMachine->onSnapshotChange(this);
     }
@@ -383,79 +356,55 @@ STDMETHODIMP Snapshot::COMSETTER(Description)(IN_BSTR aDescription)
     return rc;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(TimeStamp)(LONG64 *aTimeStamp)
+HRESULT Snapshot::getTimeStamp(LONG64 *aTimeStamp)
 {
-    CheckComArgOutPointerValid(aTimeStamp);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aTimeStamp = RTTimeSpecGetMilli(&m->timeStamp);
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Online)(BOOL *aOnline)
+HRESULT Snapshot::getOnline(BOOL *aOnline)
 {
-    CheckComArgOutPointerValid(aOnline);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aOnline = getStateFilePath().isNotEmpty();
+    *aOnline = i_getStateFilePath().isNotEmpty();
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Machine)(IMachine **aMachine)
+HRESULT Snapshot::getMachine(ComPtr<IMachine> &aMachine)
 {
-    CheckComArgOutPointerValid(aMachine);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->pMachine.queryInterfaceTo(aMachine);
+    m->pMachine.queryInterfaceTo(aMachine.asOutParam());
+
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Parent)(ISnapshot **aParent)
+
+HRESULT Snapshot::getParent(ComPtr<ISnapshot> &aParent)
 {
-    CheckComArgOutPointerValid(aParent);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->pParent.queryInterfaceTo(aParent);
+    m->pParent.queryInterfaceTo(aParent.asOutParam());
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Children)(ComSafeArrayOut(ISnapshot *, aChildren))
+HRESULT Snapshot::getChildren(std::vector<ComPtr<ISnapshot> > &aChildren)
 {
-    CheckComArgOutSafeArrayPointerValid(aChildren);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     // snapshots tree is protected by machine lock
     AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-
-    SafeIfaceArray<ISnapshot> collection(m->llChildren);
-    collection.detachTo(ComSafeArrayOutArg(aChildren));
-
+    aChildren.resize(0);
+    for (SnapshotsList::const_iterator it = m->llChildren.begin();
+         it != m->llChildren.end();
+         ++it)
+        aChildren.push_back(*it);
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::GetChildrenCount(ULONG* count)
+HRESULT Snapshot::getChildrenCount(ULONG* count)
 {
-    CheckComArgOutPointerValid(count);
-
-    *count = getChildrenCount();
+    *count = i_getChildrenCount();
 
     return S_OK;
 }
@@ -470,7 +419,7 @@ STDMETHODIMP Snapshot::GetChildrenCount(ULONG* count)
  * Returns the parent snapshot or NULL if there's none.  Must have caller + locking!
  * @return
  */
-const ComObjPtr<Snapshot>& Snapshot::getParent() const
+const ComObjPtr<Snapshot>& Snapshot::i_getParent() const
 {
     return m->pParent;
 }
@@ -479,7 +428,7 @@ const ComObjPtr<Snapshot>& Snapshot::getParent() const
  * Returns the first child snapshot or NULL if there's none.  Must have caller + locking!
  * @return
  */
-const ComObjPtr<Snapshot> Snapshot::getFirstChild() const
+const ComObjPtr<Snapshot> Snapshot::i_getFirstChild() const
 {
     if (!m->llChildren.size())
         return NULL;
@@ -490,7 +439,7 @@ const ComObjPtr<Snapshot> Snapshot::getFirstChild() const
  *  @note
  *      Must be called from under the object's lock!
  */
-const Utf8Str& Snapshot::getStateFilePath() const
+const Utf8Str& Snapshot::i_getStateFilePath() const
 {
     return m->pMachine->mSSData->strStateFilePath;
 }
@@ -501,7 +450,7 @@ const Utf8Str& Snapshot::getStateFilePath() const
  * @note takes the snapshot tree lock
  */
 
-uint32_t Snapshot::getDepth()
+uint32_t Snapshot::i_getDepth()
 {
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
@@ -525,7 +474,7 @@ uint32_t Snapshot::getDepth()
  * Does not recurse.
  * @return
  */
-ULONG Snapshot::getChildrenCount()
+ULONG Snapshot::i_getChildrenCount()
 {
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
@@ -541,7 +490,7 @@ ULONG Snapshot::getChildrenCount()
  * tree lock only once before recursing. Don't call directly.
  * @return
  */
-ULONG Snapshot::getAllChildrenCountImpl()
+ULONG Snapshot::i_getAllChildrenCountImpl()
 {
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
@@ -551,7 +500,7 @@ ULONG Snapshot::getAllChildrenCountImpl()
          it != m->llChildren.end();
          ++it)
     {
-        count += (*it)->getAllChildrenCountImpl();
+        count += (*it)->i_getAllChildrenCountImpl();
     }
 
     return count;
@@ -562,7 +511,7 @@ ULONG Snapshot::getAllChildrenCountImpl()
  * Recurses into the snapshots tree.
  * @return
  */
-ULONG Snapshot::getAllChildrenCount()
+ULONG Snapshot::i_getAllChildrenCount()
 {
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
@@ -570,7 +519,7 @@ ULONG Snapshot::getAllChildrenCount()
     // snapshots tree is protected by machine lock
     AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
 
-    return getAllChildrenCountImpl();
+    return i_getAllChildrenCountImpl();
 }
 
 /**
@@ -578,7 +527,7 @@ ULONG Snapshot::getAllChildrenCount()
  * Caller must hold the snapshot's object lock!
  * @return
  */
-const ComObjPtr<SnapshotMachine>& Snapshot::getSnapshotMachine() const
+const ComObjPtr<SnapshotMachine>& Snapshot::i_getSnapshotMachine() const
 {
     return m->pMachine;
 }
@@ -588,7 +537,7 @@ const ComObjPtr<SnapshotMachine>& Snapshot::getSnapshotMachine() const
  * Caller must hold the snapshot's object lock!
  * @return
  */
-Guid Snapshot::getId() const
+Guid Snapshot::i_getId() const
 {
     return m->uuid;
 }
@@ -598,7 +547,7 @@ Guid Snapshot::getId() const
  * Caller must hold the snapshot's object lock!
  * @return
  */
-const Utf8Str& Snapshot::getName() const
+const Utf8Str& Snapshot::i_getName() const
 {
     return m->strName;
 }
@@ -608,7 +557,7 @@ const Utf8Str& Snapshot::getName() const
  * Caller must hold the snapshot's object lock!
  * @return
  */
-RTTIMESPEC Snapshot::getTimeStamp() const
+RTTIMESPEC Snapshot::i_getTimeStamp() const
 {
     return m->timeStamp;
 }
@@ -619,7 +568,7 @@ RTTIMESPEC Snapshot::getTimeStamp() const
  *
  *  Caller must hold the machine lock (which protects the snapshots tree!)
  */
-ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
+ComObjPtr<Snapshot> Snapshot::i_findChildOrSelf(IN_GUID aId)
 {
     ComObjPtr<Snapshot> child;
 
@@ -635,7 +584,7 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
              it != m->llChildren.end();
              ++it)
         {
-            if ((child = (*it)->findChildOrSelf(aId)))
+            if ((child = (*it)->i_findChildOrSelf(aId)))
                 break;
         }
     }
@@ -650,7 +599,7 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
  *
  *  Caller must hold the machine lock (which protects the snapshots tree!)
  */
-ComObjPtr<Snapshot> Snapshot::findChildOrSelf(const Utf8Str &aName)
+ComObjPtr<Snapshot> Snapshot::i_findChildOrSelf(const Utf8Str &aName)
 {
     ComObjPtr<Snapshot> child;
     AssertReturn(!aName.isEmpty(), child);
@@ -669,7 +618,7 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(const Utf8Str &aName)
              it != m->llChildren.end();
              ++it)
         {
-            if ((child = (*it)->findChildOrSelf(aName)))
+            if ((child = (*it)->i_findChildOrSelf(aName)))
                 break;
         }
     }
@@ -682,8 +631,8 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(const Utf8Str &aName)
  * @param aOldPath
  * @param aNewPath
  */
-void Snapshot::updateSavedStatePathsImpl(const Utf8Str &strOldPath,
-                                         const Utf8Str &strNewPath)
+void Snapshot::i_updateSavedStatePathsImpl(const Utf8Str &strOldPath,
+                                           const Utf8Str &strNewPath)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -706,7 +655,7 @@ void Snapshot::updateSavedStatePathsImpl(const Utf8Str &strOldPath,
          ++it)
     {
         Snapshot *pChild = *it;
-        pChild->updateSavedStatePathsImpl(strOldPath, strNewPath);
+        pChild->i_updateSavedStatePathsImpl(strOldPath, strNewPath);
     }
 }
 
@@ -722,8 +671,8 @@ void Snapshot::updateSavedStatePathsImpl(const Utf8Str &strOldPath,
  * @param pSnapshotToIgnore If != NULL, this snapshot is ignored during the checks.
  * @return
  */
-bool Snapshot::sharesSavedStateFile(const Utf8Str &strPath,
-                                    Snapshot *pSnapshotToIgnore)
+bool Snapshot::i_sharesSavedStateFile(const Utf8Str &strPath,
+                                      Snapshot *pSnapshotToIgnore)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     const Utf8Str &path = m->pMachine->mSSData->strStateFilePath;
@@ -740,7 +689,7 @@ bool Snapshot::sharesSavedStateFile(const Utf8Str &strPath,
     {
         Snapshot *pChild = *it;
         if (!pSnapshotToIgnore || pSnapshotToIgnore != pChild)
-            if (pChild->sharesSavedStateFile(strPath, pSnapshotToIgnore))
+            if (pChild->i_sharesSavedStateFile(strPath, pSnapshotToIgnore))
                 return true;
     }
 
@@ -759,8 +708,8 @@ bool Snapshot::sharesSavedStateFile(const Utf8Str &strPath,
  *
  *  @note Locks the machine (for the snapshots tree) +  this object + children for writing.
  */
-void Snapshot::updateSavedStatePaths(const Utf8Str &strOldPath,
-                                     const Utf8Str &strNewPath)
+void Snapshot::i_updateSavedStatePaths(const Utf8Str &strOldPath,
+                                      const Utf8Str &strNewPath)
 {
     LogFlowThisFunc(("aOldPath={%s} aNewPath={%s}\n", strOldPath.c_str(), strNewPath.c_str()));
 
@@ -771,7 +720,7 @@ void Snapshot::updateSavedStatePaths(const Utf8Str &strOldPath,
     AutoWriteLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
 
     // call the implementation under the tree lock
-    updateSavedStatePathsImpl(strOldPath, strNewPath);
+    i_updateSavedStatePathsImpl(strOldPath, strNewPath);
 }
 
 /**
@@ -782,7 +731,7 @@ void Snapshot::updateSavedStatePaths(const Utf8Str &strOldPath,
  * @param aAttrsOnly
  * @return
  */
-HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
+HRESULT Snapshot::i_saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -795,8 +744,8 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
         return S_OK;
 
     // state file (only if this snapshot is online)
-    if (getStateFilePath().isNotEmpty())
-        m->pMachine->copyPathRelativeToMachine(getStateFilePath(), data.strStateFile);
+    if (i_getStateFilePath().isNotEmpty())
+        m->pMachine->copyPathRelativeToMachine(i_getStateFilePath(), data.strStateFile);
     else
         data.strStateFile.setNull();
 
@@ -821,7 +770,7 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
            // stack can be quite small, especially with XPCOM.
 
             settings::Snapshot *snap = new settings::Snapshot();
-            rc = (*it)->saveSnapshotImpl(*snap, aAttrsOnly);
+            rc = (*it)->i_saveSnapshotImpl(*snap, aAttrsOnly);
             if (FAILED(rc))
             {
                 delete snap;
@@ -843,12 +792,12 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
  *  @param aSnapshot    Snapshot to save.
  *  @param aAttrsOnly   If true, only update user-changeable attrs.
  */
-HRESULT Snapshot::saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
+HRESULT Snapshot::i_saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
 {
     // snapshots tree is protected by machine lock
     AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
 
-    return saveSnapshotImpl(data, aAttrsOnly);
+    return i_saveSnapshotImpl(data, aAttrsOnly);
 }
 
 /**
@@ -874,10 +823,10 @@ HRESULT Snapshot::saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
  * @param llFilenames
  * @return
  */
-HRESULT Snapshot::uninitRecursively(AutoWriteLock &writeLock,
-                                    CleanupMode_T cleanupMode,
-                                    MediaList &llMedia,
-                                    std::list<Utf8Str> &llFilenames)
+HRESULT Snapshot::i_uninitRecursively(AutoWriteLock &writeLock,
+                                      CleanupMode_T cleanupMode,
+                                      MediaList &llMedia,
+                                      std::list<Utf8Str> &llFilenames)
 {
     Assert(m->pMachine->isWriteLockOnCurrentThread());
 
@@ -885,8 +834,8 @@ HRESULT Snapshot::uninitRecursively(AutoWriteLock &writeLock,
 
     // make a copy of the Guid for logging before we uninit ourselves
 #ifdef LOG_ENABLED
-    Guid uuid = getId();
-    Utf8Str name = getName();
+    Guid uuid = i_getId();
+    Utf8Str name = i_getName();
     LogFlowThisFunc(("Entering for snapshot '%s' {%RTuuid}\n", name.c_str(), uuid.raw()));
 #endif
 
@@ -902,7 +851,7 @@ HRESULT Snapshot::uninitRecursively(AutoWriteLock &writeLock,
          ++it)
     {
         Snapshot *pChild = *it;
-        rc = pChild->uninitRecursively(writeLock, cleanupMode, llMedia, llFilenames);
+        rc = pChild->i_uninitRecursively(writeLock, cleanupMode, llMedia, llFilenames);
         if (FAILED(rc))
             return rc;
     }
@@ -934,7 +883,7 @@ HRESULT Snapshot::uninitRecursively(AutoWriteLock &writeLock,
             llFilenames.push_back(m->pMachine->mSSData->strStateFilePath);
     }
 
-    this->beginSnapshotDelete();
+    this->i_beginSnapshotDelete();
     this->uninit();
 
 #ifdef LOG_ENABLED
@@ -1288,7 +1237,7 @@ HRESULT SnapshotMachine::onSnapshotChange(Snapshot *aSnapshot)
 {
     AutoMultiWriteLock2 mlock(this, aSnapshot COMMA_LOCKVAL_SRC_POS);
     Guid uuidMachine(mData->mUuid),
-         uuidSnapshot(aSnapshot->getId());
+         uuidSnapshot(aSnapshot->i_getId());
     bool fNeedsGlobalSaveSettings = false;
 
     /* Flag the machine as dirty or change won't get saved. We disable the
@@ -1470,7 +1419,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     AssertReturn(mConsoleTaskData.mSnapshot.isNull(), E_FAIL);
 
     if (   mData->mCurrentSnapshot
-        && mData->mCurrentSnapshot->getDepth() >= SETTINGS_SNAPSHOT_DEPTH_MAX)
+        && mData->mCurrentSnapshot->i_getDepth() >= SETTINGS_SNAPSHOT_DEPTH_MAX)
     {
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot take another snapshot for machine '%s', because it exceeds the maximum snapshot depth limit. Please delete some earlier snapshot which you no longer need"),
@@ -1676,7 +1625,7 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
 
         /* inform callbacks */
         mParent->onSnapshotTaken(mData->mUuid,
-                                 mConsoleTaskData.mSnapshot->getId());
+                                 mConsoleTaskData.mSnapshot->i_getId());
         machineLock.release();
     }
     else
@@ -1695,7 +1644,7 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
             // no need to test for whether the saved state file is shared: an online
             // snapshot means that a new saved state file was created, which we must
             // clean up now
-            RTFileDelete(mConsoleTaskData.mSnapshot->getStateFilePath().c_str());
+            RTFileDelete(mConsoleTaskData.mSnapshot->i_getStateFilePath().c_str());
             machineLock.acquire();
 
 
@@ -1762,7 +1711,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
                  E_FAIL);
 
     ComObjPtr<Snapshot> pSnapshot(static_cast<Snapshot*>(aSnapshot));
-    ComObjPtr<SnapshotMachine> pSnapMachine = pSnapshot->getSnapshotMachine();
+    ComObjPtr<SnapshotMachine> pSnapMachine = pSnapshot->i_getSnapshotMachine();
 
     // create a progress object. The number of operations is:
     // 1 (preparing) + # of hard disks + 1 (if we need to copy the saved state file) */
@@ -1788,7 +1737,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
     ComObjPtr<Progress> pProgress;
     pProgress.createObject();
     pProgress->init(mParent, aInitiator,
-                    BstrFmt(tr("Restoring snapshot '%s'"), pSnapshot->getName().c_str()).raw(),
+                    BstrFmt(tr("Restoring snapshot '%s'"), pSnapshot->i_getName().c_str()).raw(),
                     FALSE /* aCancelable */,
                     ulOpCount,
                     ulTotalWeight,
@@ -1899,9 +1848,9 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             AutoReadLock snapshotLock(aTask.pSnapshot COMMA_LOCKVAL_SRC_POS);
 
             /* remember the timestamp of the snapshot we're restoring from */
-            snapshotTimeStamp = aTask.pSnapshot->getTimeStamp();
+            snapshotTimeStamp = aTask.pSnapshot->i_getTimeStamp();
 
-            ComPtr<SnapshotMachine> pSnapshotMachine(aTask.pSnapshot->getSnapshotMachine());
+            ComPtr<SnapshotMachine> pSnapshotMachine(aTask.pSnapshot->i_getSnapshotMachine());
 
             /* copy all hardware data from the snapshot */
             copyFrom(pSnapshotMachine);
@@ -1943,13 +1892,13 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             /* should not have a saved state file associated at this point */
             Assert(mSSData->strStateFilePath.isEmpty());
 
-            const Utf8Str &strSnapshotStateFile = aTask.pSnapshot->getStateFilePath();
+            const Utf8Str &strSnapshotStateFile = aTask.pSnapshot->i_getStateFilePath();
 
             if (strSnapshotStateFile.isNotEmpty())
                 // online snapshot: then share the state file
                 mSSData->strStateFilePath = strSnapshotStateFile;
 
-            LogFlowThisFunc(("Setting new current snapshot {%RTuuid}\n", aTask.pSnapshot->getId().raw()));
+            LogFlowThisFunc(("Setting new current snapshot {%RTuuid}\n", aTask.pSnapshot->i_getId().raw()));
             /* make the snapshot we restored from the current snapshot */
             mData->mCurrentSnapshot = aTask.pSnapshot;
         }
@@ -2161,18 +2110,18 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
 
     AutoWriteLock snapshotLock(pSnapshot COMMA_LOCKVAL_SRC_POS);
 
-    size_t childrenCount = pSnapshot->getChildrenCount();
+    size_t childrenCount = pSnapshot->i_getChildrenCount();
     if (childrenCount > 1)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Snapshot '%s' of the machine '%s' cannot be deleted, because it has %d child snapshots, which is more than the one snapshot allowed for deletion"),
-                        pSnapshot->getName().c_str(),
+                        pSnapshot->i_getName().c_str(),
                         mUserData->s.strName.c_str(),
                         childrenCount);
 
     if (pSnapshot == mData->mCurrentSnapshot && childrenCount >= 1)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Snapshot '%s' of the machine '%s' cannot be deleted, because it is the current snapshot and has one child snapshot"),
-                        pSnapshot->getName().c_str(),
+                        pSnapshot->i_getName().c_str(),
                         mUserData->s.strName.c_str());
 
     /* If the snapshot being deleted is the current one, ensure current
@@ -2189,7 +2138,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
         }
     }
 
-    ComObjPtr<SnapshotMachine> pSnapMachine = pSnapshot->getSnapshotMachine();
+    ComObjPtr<SnapshotMachine> pSnapMachine = pSnapshot->i_getSnapshotMachine();
 
     /* create a progress object. The number of operations is:
      *   1 (preparing) + 1 if the snapshot is online + # of normal hard disks
@@ -2199,7 +2148,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     ULONG ulOpCount = 1;            // one for preparations
     ULONG ulTotalWeight = 1;        // one for preparations
 
-    if (pSnapshot->getStateFilePath().length())
+    if (pSnapshot->i_getStateFilePath().length())
     {
         ++ulOpCount;
         ++ulTotalWeight;            // assume 1 MB for deleting the state file
@@ -2236,7 +2185,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     ComObjPtr<Progress> pProgress;
     pProgress.createObject();
     pProgress->init(mParent, aInitiator,
-                    BstrFmt(tr("Deleting snapshot '%s'"), pSnapshot->getName().c_str()).raw(),
+                    BstrFmt(tr("Deleting snapshot '%s'"), pSnapshot->i_getName().c_str()).raw(),
                     FALSE /* aCancelable */,
                     ulOpCount,
                     ulTotalWeight,
@@ -2412,14 +2361,14 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         // has exited after setting the machine state to MachineState_DeletingSnapshot
 
         AutoWriteLock treeLock(mParent->getMediaTreeLockHandle()
-                                      COMMA_LOCKVAL_SRC_POS);
+                               COMMA_LOCKVAL_SRC_POS);
 
-        ComObjPtr<SnapshotMachine> pSnapMachine = aTask.pSnapshot->getSnapshotMachine();
+        ComObjPtr<SnapshotMachine> pSnapMachine = aTask.pSnapshot->i_getSnapshotMachine();
         // no need to lock the snapshot machine since it is const by definition
         Guid machineId = pSnapMachine->getId();
 
         // save the snapshot ID (for callbacks)
-        snapshotId = aTask.pSnapshot->getId();
+        snapshotId = aTask.pSnapshot->i_getId();
 
         // first pass:
         LogFlowThisFunc(("1: Checking hard disk merge prerequisites...\n"));
@@ -2701,7 +2650,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             // tree is protected by the machine lock as well
             AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
 
-            Utf8Str stateFilePath = aTask.pSnapshot->getStateFilePath();
+            Utf8Str stateFilePath = aTask.pSnapshot->i_getStateFilePath();
             if (!stateFilePath.isEmpty())
             {
                 aTask.pProgress->SetNextOperation(Bstr(tr("Deleting the execution state")).raw(),
@@ -2861,11 +2810,11 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 // There can be only one child snapshot in this case.
                 ComObjPtr<Machine> pMachine = this;
                 Guid childSnapshotId;
-                ComObjPtr<Snapshot> pChildSnapshot = aTask.pSnapshot->getFirstChild();
+                ComObjPtr<Snapshot> pChildSnapshot = aTask.pSnapshot->i_getFirstChild();
                 if (pChildSnapshot)
                 {
-                    pMachine = pChildSnapshot->getSnapshotMachine();
-                    childSnapshotId = pChildSnapshot->getId();
+                    pMachine = pChildSnapshot->i_getSnapshotMachine();
+                    childSnapshotId = pChildSnapshot->i_getId();
                 }
                 pAtt = findAttachment(pMachine->mMediaData->mAttachments, it->mpSource);
                 if (pAtt)
@@ -2906,7 +2855,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             // tree is protected by the machine lock as well
             AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
 
-            aTask.pSnapshot->beginSnapshotDelete();
+            aTask.pSnapshot->i_beginSnapshotDelete();
             aTask.pSnapshot->uninit();
 
             machineLock.release();
@@ -3112,9 +3061,9 @@ HRESULT SessionMachine::prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD
     childLock.release();
     alock.release();
     rc = aSource->i_prepareMergeTo(aTarget, &aMachineId, &aSnapshotId,
-                                 !fOnlineMergePossible /* fLockMedia */,
-                                 aMergeForward, aParentForTarget,
-                                 aChildrenToReparent, aMediumLockList);
+                                   !fOnlineMergePossible /* fLockMedia */,
+                                   aMergeForward, aParentForTarget,
+                                   aChildrenToReparent, aMediumLockList);
     alock.acquire();
     childLock.acquire();
     if (SUCCEEDED(rc) && fOnlineMergePossible)
