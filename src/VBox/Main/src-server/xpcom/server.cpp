@@ -452,7 +452,7 @@ public:
 
         if (sInstance == NULL)
         {
-            LogFlowFunc (("Creating new VirtualBox object...\n"));
+            LogFlowFunc(("Creating new VirtualBox object...\n"));
             sInstance = new VirtualBoxClassFactory();
             if (sInstance != NULL)
             {
@@ -891,7 +891,7 @@ int main(int argc, char **argv)
             break;
         }
 
-        nsCOMPtr<ipcIService> ipcServ (do_GetService(IPC_SERVICE_CONTRACTID, &rc));
+        nsCOMPtr<ipcIService> ipcServ(do_GetService(IPC_SERVICE_CONTRACTID, &rc));
         if (NS_FAILED(rc))
         {
             RTMsgError("Failed to get IPC service! (rc=%Rhrc)", rc);
@@ -1005,8 +1005,7 @@ int main(int argc, char **argv)
 
         /* process any remaining events. These events may include
          * CreateInstance() requests received right before we called
-         * StopAcceptingEvents() above. We will detect this case below,
-         * restore gKeepRunning and continue to serve. */
+         * StopAcceptingEvents() above, and those will fail. */
         gEventQ->ProcessPendingEvents();
 
         RTPrintf("Terminated event loop.\n");
