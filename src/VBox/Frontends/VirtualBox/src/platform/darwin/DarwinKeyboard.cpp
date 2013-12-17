@@ -1280,8 +1280,8 @@ static int darwinLedElementSetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     IOHIDValueRef valueRef;
     IOReturn      rc = kIOReturnError;
 
-    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
-    int rc1 = SUPR3ResumeBuiltinKeyboard();
+    /* Try to resume suspended keyboard devices. Abort if failed in order to avoid GUI freezes. */
+    int rc1 = SUPR3ResumeSuspendedKeyboards();
     if (RT_FAILURE(rc1))
         return rc1;
 
@@ -1307,8 +1307,8 @@ static int darwinLedElementGetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     IOReturn      rc;
     CFIndex       integerValue;
 
-    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
-    int rc1 = SUPR3ResumeBuiltinKeyboard();
+    /* Try to resume suspended keyboard devices. Abort if failed in order to avoid GUI freezes. */
+    int rc1 = SUPR3ResumeSuspendedKeyboards();
     if (RT_FAILURE(rc1))
         return rc1;
 

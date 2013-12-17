@@ -138,7 +138,7 @@ static void                 supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64N
 static void                 supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t u64TSC,
                                                   RTCPUID idCpu, uint8_t idApic, uint64_t iTick);
 static void                 supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t u64NanoTS);
-static int                  supdrvIOCtl_ResumeBuiltinKbd(void);
+static int                  supdrvIOCtl_ResumeSuspendedKbds(void);
 
 
 /*******************************************************************************
@@ -1904,12 +1904,12 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             return 0;
         }
 
-        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_RESUME_BUILTIN_KBD):
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_RESUME_SUSPENDED_KBDS):
         {
             /* validate */
-            REQ_CHECK_SIZES(SUP_IOCTL_RESUME_BUILTIN_KBD);
+            REQ_CHECK_SIZES(SUP_IOCTL_RESUME_SUSPENDED_KBDS);
 
-            pReqHdr->rc = supdrvIOCtl_ResumeBuiltinKbd();
+            pReqHdr->rc = supdrvIOCtl_ResumeSuspendedKbds();
             return 0;
         }
 
@@ -6154,10 +6154,10 @@ static void supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uin
  *
  * @returns 0 on Mac OS X platform, VERR_NOT_IMPLEMENTED on the other ones.
  */
-static int supdrvIOCtl_ResumeBuiltinKbd(void)
+static int supdrvIOCtl_ResumeSuspendedKbds(void)
 {
 #if defined(RT_OS_DARWIN)
-    return supdrvDarwinResumeBuiltinKbd();
+    return supdrvDarwinResumeSuspendedKbds();
 #else
     return VERR_NOT_IMPLEMENTED;
 #endif

@@ -1437,15 +1437,15 @@ AssertCompileMemberAlignment(SUPMSRPROBER, u.In.uArgs, 8);
 AssertCompileMembersSameSizeAndOffset(SUPMSRPROBER, u.In, SUPMSRPROBER, u.Out);
 /** @} */
 
-/** @name SUP_IOCTL_RESUME_BUILTIN_KBD
- * Resume built-in keyboard (make sense on MacBook Air/Pro hosts only).
+/** @name SUP_IOCTL_RESUME_SUSPENDED_KBDS
+ * Resume suspended keyboard devices if any found in the system.
  *
  * @{
  */
-#define SUP_IOCTL_RESUME_BUILTIN_KBD                    SUP_CTL_CODE_SIZE(35, SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE)
-#define SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE               sizeof(SUPREQHDR)
-#define SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE_IN            sizeof(SUPREQHDR)
-#define SUP_IOCTL_RESUME_BUILTIN_KBD_SIZE_OUT           sizeof(SUPREQHDR)
+#define SUP_IOCTL_RESUME_SUSPENDED_KBDS                 SUP_CTL_CODE_SIZE(35, SUP_IOCTL_RESUME_SUSPENDED_KBDS_SIZE)
+#define SUP_IOCTL_RESUME_SUSPENDED_KBDS_SIZE            sizeof(SUPREQHDR)
+#define SUP_IOCTL_RESUME_SUSPENDED_KBDS_SIZE_IN         sizeof(SUPREQHDR)
+#define SUP_IOCTL_RESUME_SUSPENDED_KBDS_SIZE_OUT        sizeof(SUPREQHDR)
 /** @} */
 
 

@@ -1386,7 +1386,7 @@ SUPR3DECL(int) SUPR3MsrProberModifyEx(uint32_t uMsr, RTCPUID idCpu, uint64_t fAn
  *
  * @returns VBox status code.
  */
-SUPR3DECL(int) SUPR3ResumeBuiltinKeyboard(void);
+SUPR3DECL(int) SUPR3ResumeSuspendedKeyboards(void);
 
 /** @} */
 #endif /* IN_RING3 */
