@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,7 @@
 
 #include <VBox/usb.h>
 #include "Logging.h"
+#include "HostUSBDeviceWrap.h"
 
 class SessionMachine;
 class USBProxyService;
@@ -168,23 +169,10 @@ typedef enum
  * Object class used to hold Host USB Device properties.
  */
 class ATL_NO_VTABLE HostUSBDevice :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IHostUSBDevice)
+    public HostUSBDeviceWrap
 {
 public:
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(HostUSBDevice, IHostUSBDevice)
-
-    DECLARE_NOT_AGGREGATABLE(HostUSBDevice)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(HostUSBDevice)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IHostUSBDevice)
-        COM_INTERFACE_ENTRY(IUSBDevice)
-    END_COM_MAP()
-
-    DECLARE_EMPTY_CTOR_DTOR (HostUSBDevice)
+    DECLARE_EMPTY_CTOR_DTOR(HostUSBDevice)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -193,36 +181,19 @@ public:
     HRESULT init(PUSBDEVICE aUsb, USBProxyService *aUSBProxyService);
     void uninit();
 
-    // IUSBDevice properties
-    STDMETHOD(COMGETTER(Id))(BSTR *aId);
-    STDMETHOD(COMGETTER(VendorId))(USHORT *aVendorId);
-    STDMETHOD(COMGETTER(ProductId))(USHORT *aProductId);
-    STDMETHOD(COMGETTER(Revision))(USHORT *aRevision);
-    STDMETHOD(COMGETTER(Manufacturer))(BSTR *aManufacturer);
-    STDMETHOD(COMGETTER(Product))(BSTR *aProduct);
-    STDMETHOD(COMGETTER(SerialNumber))(BSTR *aSerialNumber);
-    STDMETHOD(COMGETTER(Address))(BSTR *aAddress);
-    STDMETHOD(COMGETTER(Port))(USHORT *aPort);
-    STDMETHOD(COMGETTER(Version))(USHORT *aVersion);
-    STDMETHOD(COMGETTER(PortVersion))(USHORT *aPortVersion);
-    STDMETHOD(COMGETTER(Remote))(BOOL *aRemote);
-
-    // IHostUSBDevice properties
-    STDMETHOD(COMGETTER(State))(USBDeviceState_T *aState);
-
     // public methods only for internal purposes
 
     /** @note Must be called from under the object read lock. */
-    const Guid& getId() const { return mId; }
+    const Guid& i_getId() const { return mId; }
 
     /** @note Must be called from under the object read lock. */
-    HostUSBDeviceState getUnistate() const { return mUniState; }
+    HostUSBDeviceState i_getUnistate() const { return mUniState; }
 
     /** @note Must be called from under the object read lock. */
-    const char *getStateName() { return stateName (mUniState, mPendingUniState, mUniSubState); }
+    const char *i_getStateName() { return i_stateName (mUniState, mPendingUniState, mUniSubState); }
 
     /** @note Must be called from under the object read lock. */
-    bool isCapturableOrHeld()
+    bool i_isCapturableOrHeld()
     {
         return mUniState == kHostUSBDeviceState_Unused
             || mUniState == kHostUSBDeviceState_Capturable
@@ -230,46 +201,64 @@ public:
     }
 
     /** @note Must be called from under the object read lock. */
-    ComObjPtr<SessionMachine> &getMachine() { return mMachine; }
+    ComObjPtr<SessionMachine> &i_getMachine() { return mMachine; }
 
     /** @note Must be called from under the object read lock. */
-    PCUSBDEVICE getUsbData() const { return mUsb; }
+    PCUSBDEVICE i_getUsbData() const { return mUsb; }
 
-    Utf8Str getName();
+    com::Utf8Str i_getName();
 
-    HRESULT requestCaptureForVM(SessionMachine *aMachine, bool aSetError, ULONG aMaskedIfs = 0);
-    HRESULT onDetachFromVM(SessionMachine *aMachine, bool aDone, bool *aRunFilters, bool aAbnormal = false);
-    HRESULT requestReleaseToHost();
-    HRESULT requestHold();
-    bool wasActuallyDetached();
-    void onPhysicalDetached();
+    HRESULT i_requestCaptureForVM(SessionMachine *aMachine, bool aSetError, ULONG aMaskedIfs = 0);
+    HRESULT i_onDetachFromVM(SessionMachine *aMachine, bool aDone, bool *aRunFilters, bool aAbnormal = false);
+    HRESULT i_requestReleaseToHost();
+    HRESULT i_requestHold();
+    bool i_wasActuallyDetached();
+    void i_onPhysicalDetached();
 
-    bool isMatch(const USBDeviceFilter::Data &aData);
-    int compare(PCUSBDEVICE aDev2);
-    static int compare(PCUSBDEVICE aDev1, PCUSBDEVICE aDev2, bool aIsAwaitingReAttach = false);
+    bool i_isMatch(const USBDeviceFilter::Data &aData);
+    int i_compare(PCUSBDEVICE aDev2);
+    static int i_compare(PCUSBDEVICE aDev1, PCUSBDEVICE aDev2, bool aIsAwaitingReAttach = false);
 
-    bool updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMachine **aIgnoreMachine);
-    bool updateStateFake(PCUSBDEVICE aDev, bool *aRunFilters, SessionMachine **aIgnoreMachine);
+    bool i_updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMachine **aIgnoreMachine);
+    bool i_updateStateFake(PCUSBDEVICE aDev, bool *aRunFilters, SessionMachine **aIgnoreMachine);
 
-    static const char *stateName(HostUSBDeviceState aState,
-                                 HostUSBDeviceState aPendingState = kHostUSBDeviceState_Invalid,
-                                 HostUSBDeviceSubState aSubState = kHostUSBDeviceSubState_Default);
+    static const char *i_stateName(HostUSBDeviceState aState,
+                                   HostUSBDeviceState aPendingState = kHostUSBDeviceState_Invalid,
+                                   HostUSBDeviceSubState aSubState = kHostUSBDeviceSubState_Default);
 
 protected:
-    HRESULT attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs = 0);
-    void detachFromVM(HostUSBDeviceState aFinalState);
-    void onPhysicalDetachedInternal();
-    bool hasAsyncOperationTimedOut() const;
 
-    bool setState (HostUSBDeviceState aNewState, HostUSBDeviceState aNewPendingState = kHostUSBDeviceState_Invalid,
-                   HostUSBDeviceSubState aNewSubState = kHostUSBDeviceSubState_Default);
-    bool startTransition (HostUSBDeviceState aNewState, HostUSBDeviceState aFinalState,
-                          HostUSBDeviceSubState aNewSubState = kHostUSBDeviceSubState_Default);
-    bool advanceTransition(bool aSkipReAttach = false);
-    bool failTransition();
-    USBDeviceState_T canonicalState() const;
+    HRESULT i_attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs = 0);
+    void i_detachFromVM(HostUSBDeviceState aFinalState);
+    void i_onPhysicalDetachedInternal();
+    bool i_hasAsyncOperationTimedOut() const;
+
+    bool i_setState (HostUSBDeviceState aNewState, HostUSBDeviceState aNewPendingState = kHostUSBDeviceState_Invalid,
+                     HostUSBDeviceSubState aNewSubState = kHostUSBDeviceSubState_Default);
+    bool i_startTransition (HostUSBDeviceState aNewState, HostUSBDeviceState aFinalState,
+                            HostUSBDeviceSubState aNewSubState = kHostUSBDeviceSubState_Default);
+    bool i_advanceTransition(bool aSkipReAttach = false);
+    bool i_failTransition();
+    USBDeviceState_T i_canonicalState() const;
 
 private:
+
+    // wrapped IUSBDevice properties
+    HRESULT getId(com::Guid &aId);
+    HRESULT getVendorId(USHORT *aVendorId);
+    HRESULT getProductId(USHORT *aProductId);
+    HRESULT getRevision(USHORT *aRevision);
+    HRESULT getManufacturer(com::Utf8Str &aManufacturer);
+    HRESULT getProduct(com::Utf8Str &aProduct);
+    HRESULT getSerialNumber(com::Utf8Str &aSerialNumber);
+    HRESULT getAddress(com::Utf8Str &aAddress);
+    HRESULT getPort(USHORT *aPort);
+    HRESULT getVersion(USHORT *aVersion);
+    HRESULT getPortVersion(USHORT *aPortVersion);
+    HRESULT getRemote(BOOL *aRemote);
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT getState(USBDeviceState_T *aState);
+
 
     const Guid mId;
 
