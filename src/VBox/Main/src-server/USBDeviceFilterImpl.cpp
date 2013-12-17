@@ -521,7 +521,7 @@ HRESULT USBDeviceFilter::getVendorId(com::Utf8Str &aVendorId)
 
 HRESULT USBDeviceFilter::setVendorId(const com::Utf8Str &aVendorId)
 {
-    return i_usbFilterFieldSetter(USBFILTERIDX_VENDOR_ID, Bstr(aVendorId).raw());
+    return i_usbFilterFieldSetter(USBFILTERIDX_VENDOR_ID, aVendorId);
 }
 
 HRESULT USBDeviceFilter::getProductId(com::Utf8Str &aProductId)
@@ -541,7 +541,7 @@ HRESULT USBDeviceFilter::getRevision(com::Utf8Str &aRevision)
 
 HRESULT USBDeviceFilter::setRevision(const com::Utf8Str &aRevision)
 {
-    return i_usbFilterFieldSetter(USBFILTERIDX_DEVICE, Bstr(aRevision).raw());
+    return i_usbFilterFieldSetter(USBFILTERIDX_DEVICE, aRevision);
 }
 
 HRESULT USBDeviceFilter::getManufacturer(com::Utf8Str &aManufacturer)
@@ -551,7 +551,7 @@ HRESULT USBDeviceFilter::getManufacturer(com::Utf8Str &aManufacturer)
 
 HRESULT USBDeviceFilter::setManufacturer(const com::Utf8Str &aManufacturer)
 {
-    return i_usbFilterFieldSetter(USBFILTERIDX_MANUFACTURER_STR, Bstr(aManufacturer).raw());
+    return i_usbFilterFieldSetter(USBFILTERIDX_MANUFACTURER_STR, aManufacturer);
 }
 
 HRESULT USBDeviceFilter::getProduct(com::Utf8Str &aProduct)
@@ -561,7 +561,7 @@ HRESULT USBDeviceFilter::getProduct(com::Utf8Str &aProduct)
 
 HRESULT USBDeviceFilter::setProduct(const com::Utf8Str &aProduct)
 {
-    return i_usbFilterFieldSetter(USBFILTERIDX_PRODUCT_STR, Bstr(aProduct).raw());
+    return i_usbFilterFieldSetter(USBFILTERIDX_PRODUCT_STR, aProduct);
 }
 
 HRESULT USBDeviceFilter::getSerialNumber(com::Utf8Str &aSerialNumber)
@@ -571,7 +571,7 @@ HRESULT USBDeviceFilter::getSerialNumber(com::Utf8Str &aSerialNumber)
 
 HRESULT USBDeviceFilter::setSerialNumber(const com::Utf8Str &aSerialNumber)
 {
-    return i_usbFilterFieldSetter(USBFILTERIDX_SERIAL_NUMBER_STR,  Bstr(aSerialNumber).raw());
+    return i_usbFilterFieldSetter(USBFILTERIDX_SERIAL_NUMBER_STR, aSerialNumber);
 }
 
 HRESULT USBDeviceFilter::getPort(com::Utf8Str &aPort)
@@ -581,7 +581,7 @@ HRESULT USBDeviceFilter::getPort(com::Utf8Str &aPort)
 
 HRESULT USBDeviceFilter::setPort(const com::Utf8Str &aPort)
 {
-    return i_usbFilterFieldSetter(USBFILTERIDX_PORT, Bstr(aPort).raw());
+    return i_usbFilterFieldSetter(USBFILTERIDX_PORT, aPort);
 }
 
 
