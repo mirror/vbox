@@ -865,10 +865,10 @@ int GuestSession::directoryRemoveInternal(const Utf8Str &strPath, uint32_t uFlag
 }
 
 int GuestSession::objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath,
-                                           bool fDirectory, const Utf8Str &strName, int *pGuestRc)
+                                           bool fDirectory, Utf8Str &strName, int *pGuestRc)
 {
-    LogFlowThisFunc(("strTemplate=%s, strPath=%s, fDirectory=%RTbool, strName=%s\n",
-                     strTemplate.c_str(), strPath.c_str(), fDirectory, strName.c_str()));
+    LogFlowThisFunc(("strTemplate=%s, strPath=%s, fDirectory=%RTbool\n",
+                     strTemplate.c_str(), strPath.c_str(), fDirectory));
 
     int vrc = VINF_SUCCESS;
 
@@ -893,8 +893,35 @@ int GuestSession::objectCreateTempInternal(const Utf8Str &strTemplate, const Utf
         vrc = VERR_NO_MEMORY;
     }
 
+    /** @todo Use an internal HGCM command for this operation, since
+     *        we now can run in a user-dedicated session. */
+    int guestRc; GuestCtrlStreamObjects stdOut;
     if (RT_SUCCESS(vrc))
-        vrc = GuestProcessTool::Run(this, procInfo, pGuestRc);
+        vrc = GuestProcessTool::RunEx(this, procInfo,
+                                      &stdOut, 1 /* cStrmOutObjects */,
+                                      &guestRc);
+    if (   RT_SUCCESS(vrc)
+        && RT_SUCCESS(guestRc))
+    {
+        GuestFsObjData objData;
+        if (!stdOut.empty())
+        {
+            vrc = objData.FromMkTemp(stdOut.at(0));
+            if (RT_FAILURE(vrc))
+            {
+                guestRc = vrc;
+                vrc = VERR_GSTCTL_GUEST_ERROR;
+            }
+        }
+        else
+            vrc = VERR_NO_DATA;
+
+        if (RT_SUCCESS(vrc))
+            strName = objData.mName;
+    }
+
+    if (pGuestRc)
+        *pGuestRc = guestRc;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
