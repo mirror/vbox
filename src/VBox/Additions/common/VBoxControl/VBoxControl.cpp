@@ -1176,7 +1176,7 @@ static RTEXITCODE getGuestProperty(int argc, char **argv)
     int rc = VINF_SUCCESS;
 
     rc = VbglR3GuestPropConnect(&u32ClientId);
-    if (!RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
         VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
 
     /*
@@ -1220,7 +1220,7 @@ static RTEXITCODE getGuestProperty(int argc, char **argv)
         }
         if (VERR_TOO_MUCH_DATA == rc)
             VBoxControlError("Temporarily unable to retrieve the property\n");
-        else if (!RT_SUCCESS(rc) && (rc != VERR_NOT_FOUND))
+        else if (RT_FAILURE(rc) && rc != VERR_NOT_FOUND)
             VBoxControlError("Failed to retrieve the property value, error %Rrc\n", rc);
     }
 
@@ -1293,15 +1293,15 @@ static RTEXITCODE setGuestProperty(int argc, char *argv[])
     uint32_t u32ClientId = 0;
     int rc = VINF_SUCCESS;
     rc = VbglR3GuestPropConnect(&u32ClientId);
-    if (!RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
         VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
-    if (RT_SUCCESS(rc))
+    else
     {
         if (pszFlags != NULL)
             rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, pszFlags);
         else
             rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, pszValue);
-        if (!RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
             VBoxControlError("Failed to store the property value, error %Rrc\n", rc);
     }
 
@@ -1341,12 +1341,12 @@ static RTEXITCODE deleteGuestProperty(int argc, char *argv[])
      */
     uint32_t u32ClientId = 0;
     int rc = VbglR3GuestPropConnect(&u32ClientId);
-    if (!RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
         VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
-    if (RT_SUCCESS(rc))
+    else
     {
         rc = VbglR3GuestPropDelete(u32ClientId, pszName);
-        if (!RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
             VBoxControlError("Failed to delete the property value, error %Rrc\n", rc);
     }
 
@@ -1484,7 +1484,7 @@ static RTEXITCODE waitGuestProperty(int argc, char **argv)
     int rc = VINF_SUCCESS;
 
     rc = VbglR3GuestPropConnect(&u32ClientId);
-    if (!RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
         VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
 
     /*
@@ -1531,7 +1531,7 @@ static RTEXITCODE waitGuestProperty(int argc, char **argv)
         else if (rc == VERR_INTERRUPTED)
             VBoxControlError("The request timed out or was interrupted\n");
 #ifndef RT_OS_WINDOWS  /* Windows guests do not do this right */
-        else if (!RT_SUCCESS(rc) && (rc != VERR_NOT_FOUND))
+        else if (RT_FAILURE(rc) && rc != VERR_NOT_FOUND)
             VBoxControlError("Failed to get a notification, error %Rrc\n", rc);
 #endif
     }
@@ -1615,7 +1615,7 @@ static RTEXITCODE listSharedFolders(int argc, char **argv)
 
     uint32_t u32ClientId;
     int rc = VbglR3SharedFolderConnect(&u32ClientId);
-    if (!RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
         VBoxControlError("Failed to connect to the shared folder service, error %Rrc\n", rc);
     else
     {
