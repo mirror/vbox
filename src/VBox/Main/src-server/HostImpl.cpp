@@ -1408,10 +1408,10 @@ HRESULT Host::insertUSBDeviceFilter(ULONG aPosition,
 
     /* notify the proxy (only when the filter is active) */
     if (    m->pUSBProxyService->isActive()
-         && pFilter->getData().mActive)
+         && pFilter->i_getData().mActive)
     {
-        ComAssertRet(pFilter->getId() == NULL, E_FAIL);
-        pFilter->getId() = m->pUSBProxyService->insertFilter(&pFilter->getData().mUSBFilter);
+        ComAssertRet(pFilter->i_getId() == NULL, E_FAIL);
+        pFilter->i_getId() = m->pUSBProxyService->insertFilter(&pFilter->i_getData().mUSBFilter);
     }
 
     // save the global settings; for that we should hold only the VirtualBox lock
@@ -1462,11 +1462,11 @@ HRESULT Host::removeUSBDeviceFilter(ULONG aPosition)
     }
 
     /* notify the proxy (only when the filter is active) */
-    if (m->pUSBProxyService->isActive() && filter->getData().mActive)
+    if (m->pUSBProxyService->isActive() && filter->i_getData().mActive)
     {
-        ComAssertRet(filter->getId() != NULL, E_FAIL);
-        m->pUSBProxyService->removeFilter(filter->getId());
-        filter->getId() = NULL;
+        ComAssertRet(filter->i_getId() != NULL, E_FAIL);
+        m->pUSBProxyService->removeFilter(filter->i_getId());
+        filter->i_getId() = NULL;
     }
 
     // save the global settings; for that we should hold only the VirtualBox lock
@@ -1741,10 +1741,10 @@ HRESULT Host::i_loadSettings(const settings::Host &data)
         pFilter->mInList = true;
 
         /* notify the proxy (only when the filter is active) */
-        if (pFilter->getData().mActive)
+        if (pFilter->i_getData().mActive)
         {
             HostUSBDeviceFilter *flt = pFilter; /* resolve ambiguity */
-            flt->getId() = m->pUSBProxyService->insertFilter(&pFilter->getData().mUSBFilter);
+            flt->i_getId() = m->pUSBProxyService->insertFilter(&pFilter->i_getData().mUSBFilter);
         }
     }
 #else
@@ -1770,7 +1770,7 @@ HRESULT Host::i_saveSettings(settings::Host &data)
     {
         ComObjPtr<HostUSBDeviceFilter> pFilter = *it;
         settings::USBDeviceFilter f;
-        pFilter->saveSettings(f);
+        pFilter->i_saveSettings(f);
         data.llUSBDeviceFilters.push_back(f);
     }
 #else
@@ -2219,26 +2219,26 @@ HRESULT Host::i_onUSBDeviceFilterChange(HostUSBDeviceFilter *aFilter,
         if (aActiveChanged)
         {
             // insert/remove the filter from the proxy
-            if (aFilter->getData().mActive)
+            if (aFilter->i_getData().mActive)
             {
-                ComAssertRet(aFilter->getId() == NULL, E_FAIL);
-                aFilter->getId() = m->pUSBProxyService->insertFilter(&aFilter->getData().mUSBFilter);
+                ComAssertRet(aFilter->i_getId() == NULL, E_FAIL);
+                aFilter->i_getId() = m->pUSBProxyService->insertFilter(&aFilter->i_getData().mUSBFilter);
             }
             else
             {
-                ComAssertRet(aFilter->getId() != NULL, E_FAIL);
-                m->pUSBProxyService->removeFilter(aFilter->getId());
-                aFilter->getId() = NULL;
+                ComAssertRet(aFilter->i_getId() != NULL, E_FAIL);
+                m->pUSBProxyService->removeFilter(aFilter->i_getId());
+                aFilter->i_getId() = NULL;
             }
         }
         else
         {
-            if (aFilter->getData().mActive)
+            if (aFilter->i_getData().mActive)
             {
                 // update the filter in the proxy
-                ComAssertRet(aFilter->getId() != NULL, E_FAIL);
-                m->pUSBProxyService->removeFilter(aFilter->getId());
-                aFilter->getId() = m->pUSBProxyService->insertFilter(&aFilter->getData().mUSBFilter);
+                ComAssertRet(aFilter->i_getId() != NULL, E_FAIL);
+                m->pUSBProxyService->removeFilter(aFilter->i_getId());
+                aFilter->i_getId() = m->pUSBProxyService->insertFilter(&aFilter->i_getData().mUSBFilter);
             }
         }
 

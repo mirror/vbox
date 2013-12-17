@@ -343,7 +343,7 @@ HRESULT Machine::init(VirtualBox *aParent,
 
             /* Apply network adapters defaults */
             for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
-                mNetworkAdapters[slot]->applyDefaults(aOsType);
+                mNetworkAdapters[slot]->i_applyDefaults(aOsType);
 
             /* Apply serial port defaults */
             for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
@@ -9375,7 +9375,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         }
 
         /* USB device filters */
-        rc = mUSBDeviceFilters->loadSettings(data.usbSettings);
+        rc = mUSBDeviceFilters->i_loadSettings(data.usbSettings);
         if (FAILED(rc)) return rc;
 
         // network adapters
@@ -9400,7 +9400,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
 
             /* slot unicity is guaranteed by XML Schema */
             AssertBreak(nic.ulSlot < mNetworkAdapters.size());
-            rc = mNetworkAdapters[nic.ulSlot]->loadSettings(mBandwidthControl, nic);
+            rc = mNetworkAdapters[nic.ulSlot]->i_loadSettings(mBandwidthControl, nic);
             if (FAILED(rc)) return rc;
         }
 
@@ -10677,7 +10677,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         }
 
         /* USB device filters (required) */
-        rc = mUSBDeviceFilters->saveSettings(data.usbSettings);
+        rc = mUSBDeviceFilters->i_saveSettings(data.usbSettings);
         if (FAILED(rc)) throw rc;
 
         /* Network adapters (required) */
@@ -10693,7 +10693,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
             /* paranoia check... must not be NULL, but must not crash either. */
             if (mNetworkAdapters[slot])
             {
-                rc = mNetworkAdapters[slot]->saveSettings(nic);
+                rc = mNetworkAdapters[slot]->i_saveSettings(nic);
                 if (FAILED(rc)) throw rc;
 
                 data.llNetworkAdapters.push_back(nic);
@@ -12119,7 +12119,7 @@ void Machine::rollback(bool aNotify)
         mAudioAdapter->i_rollback();
 
     if (mUSBDeviceFilters && (mData->flModifications & IsModified_USB))
-        mUSBDeviceFilters->rollback();
+        mUSBDeviceFilters->i_rollback();
 
     if (mBandwidthControl && (mData->flModifications & IsModified_BandwidthControl))
         mBandwidthControl->i_rollback();
@@ -12133,9 +12133,9 @@ void Machine::rollback(bool aNotify)
     if (mData->flModifications & IsModified_NetworkAdapters)
         for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
             if (    mNetworkAdapters[slot]
-                 && mNetworkAdapters[slot]->isModified())
+                 && mNetworkAdapters[slot]->i_isModified())
             {
-                mNetworkAdapters[slot]->rollback();
+                mNetworkAdapters[slot]->i_rollback();
                 networkAdapters[slot] = mNetworkAdapters[slot];
             }
 
@@ -12224,7 +12224,7 @@ void Machine::commit()
     mBIOSSettings->i_commit();
     mVRDEServer->i_commit();
     mAudioAdapter->i_commit();
-    mUSBDeviceFilters->commit();
+    mUSBDeviceFilters->i_commit();
     mBandwidthControl->i_commit();
 
     /* Since mNetworkAdapters is a list which might have been changed (resized)
@@ -12237,13 +12237,13 @@ void Machine::commit()
     {
         /* commit everything, even the ones which will go away */
         for (size_t slot = 0; slot < mNetworkAdapters.size(); slot++)
-            mNetworkAdapters[slot]->commit();
+            mNetworkAdapters[slot]->i_commit();
         /* copy over the new entries, creating a peer and uninit the original */
         mPeer->mNetworkAdapters.resize(RT_MAX(newSize, mPeer->mNetworkAdapters.size()));
         for (size_t slot = 0; slot < newSize; slot++)
         {
             /* look if this adapter has a peer device */
-            ComObjPtr<NetworkAdapter> peer = mNetworkAdapters[slot]->getPeer();
+            ComObjPtr<NetworkAdapter> peer = mNetworkAdapters[slot]->i_getPeer();
             if (!peer)
             {
                 /* no peer means the adapter is a newly created one;
@@ -12275,7 +12275,7 @@ void Machine::commit()
     if (commitNetworkAdapters)
     {
         for (size_t slot = 0; slot < mNetworkAdapters.size(); slot++)
-            mNetworkAdapters[slot]->commit();
+            mNetworkAdapters[slot]->i_commit();
     }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
@@ -12473,7 +12473,7 @@ void Machine::copyFrom(Machine *aThat)
     mBIOSSettings->i_copyFrom(aThat->mBIOSSettings);
     mVRDEServer->i_copyFrom(aThat->mVRDEServer);
     mAudioAdapter->i_copyFrom(aThat->mAudioAdapter);
-    mUSBDeviceFilters->copyFrom(aThat->mUSBDeviceFilters);
+    mUSBDeviceFilters->i_copyFrom(aThat->mUSBDeviceFilters);
     mBandwidthControl->i_copyFrom(aThat->mBandwidthControl);
 
     /* create private copies of all controllers */
@@ -12504,7 +12504,7 @@ void Machine::copyFrom(Machine *aThat)
 
     mNetworkAdapters.resize(aThat->mNetworkAdapters.size());
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
-        mNetworkAdapters[slot]->copyFrom(aThat->mNetworkAdapters[slot]);
+        mNetworkAdapters[slot]->i_copyFrom(aThat->mNetworkAdapters[slot]);
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
         mSerialPorts[slot]->i_copyFrom(aThat->mSerialPorts[slot]);
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
@@ -12973,7 +12973,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
          *
          * This is identical to SessionMachine::DetachAllUSBDevices except
          * for the aAbnormal argument. */
-        HRESULT rc = mUSBDeviceFilters->notifyProxy(false /* aInsertFilters */);
+        HRESULT rc = mUSBDeviceFilters->i_notifyProxy(false /* aInsertFilters */);
         AssertComRC(rc);
         NOREF(rc);
 
@@ -13421,7 +13421,7 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters(IUSBDevice *aUSBDevice,
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
-    *aMatched = mUSBDeviceFilters->hasMatchingFilter(aUSBDevice, aMaskedIfs);
+    *aMatched = mUSBDeviceFilters->i_hasMatchingFilter(aUSBDevice, aMaskedIfs);
 #else
     NOREF(aUSBDevice);
     NOREF(aMaskedIfs);
@@ -13493,7 +13493,7 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
-    HRESULT rc = mUSBDeviceFilters->notifyProxy(true /* aInsertFilters */);
+    HRESULT rc = mUSBDeviceFilters->i_notifyProxy(true /* aInsertFilters */);
     AssertComRC(rc);
     NOREF(rc);
 
@@ -13523,7 +13523,7 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
-    HRESULT rc = mUSBDeviceFilters->notifyProxy(false /* aInsertFilters */);
+    HRESULT rc = mUSBDeviceFilters->i_notifyProxy(false /* aInsertFilters */);
     AssertComRC(rc);
     NOREF(rc);
 
@@ -14509,7 +14509,7 @@ bool SessionMachine::hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevic
         /** @todo Live Migration: snapshoting & teleporting. Need to fend things of
          *        elsewhere... */
             alock.release();
-            return mUSBDeviceFilters->hasMatchingFilter(aDevice, aMaskedIfs);
+            return mUSBDeviceFilters->i_hasMatchingFilter(aDevice, aMaskedIfs);
         default: break;
     }
 #else

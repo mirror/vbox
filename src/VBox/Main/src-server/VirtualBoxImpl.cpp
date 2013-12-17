@@ -441,7 +441,7 @@ HRESULT VirtualBox::init()
         rc = m->pSystemProperties->init(this);
         ComAssertComRCThrowRC(rc);
 
-        rc = m->pSystemProperties->loadSettings(m->pMainConfigFile->systemProperties);
+        rc = m->pSystemProperties->i_loadSettings(m->pMainConfigFile->systemProperties);
         if (FAILED(rc)) throw rc;
 
         /* guest OS type objects, needed by machines */
@@ -4267,7 +4267,7 @@ HRESULT VirtualBox::saveSettings()
         rc = m->pHost->i_saveSettings(m->pMainConfigFile->host);
         if (FAILED(rc)) throw rc;
 
-        rc = m->pSystemProperties->saveSettings(m->pMainConfigFile->systemProperties);
+        rc = m->pSystemProperties->i_saveSettings(m->pMainConfigFile->systemProperties);
         if (FAILED(rc)) throw rc;
 
         // and write out the XML, still under the lock

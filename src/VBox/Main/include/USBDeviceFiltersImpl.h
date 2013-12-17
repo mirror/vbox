@@ -20,7 +20,7 @@
 #ifndef ____H_USBDEVICEFILTERSIMPL
 #define ____H_USBDEVICEFILTERSIMPL
 
-#include "VirtualBoxBase.h"
+#include "USBDeviceFiltersWrap.h"
 
 class HostUSBDevice;
 class USBDeviceFilter;
@@ -31,19 +31,9 @@ namespace settings
 }
 
 class ATL_NO_VTABLE USBDeviceFilters :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IUSBDeviceFilters)
+    public USBDeviceFiltersWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(USBDeviceFilters, IUSBDeviceFilters)
-
-    DECLARE_NOT_AGGREGATABLE(USBDeviceFilters)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(USBDeviceFilters)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IUSBDeviceFilters)
-    END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(USBDeviceFilters)
 
@@ -56,41 +46,38 @@ public:
     HRESULT initCopy(Machine *aParent, USBDeviceFilters *aThat);
     void uninit();
 
-    // IUSBDeviceFilters attributes
-    STDMETHOD(COMGETTER(DeviceFilters))(ComSafeArrayOut(IUSBDeviceFilter *, aDevicesFilters));
-
-    // IUSBDeviceFilters methods
-    STDMETHOD(CreateDeviceFilter)(IN_BSTR aName, IUSBDeviceFilter **aFilter);
-    STDMETHOD(InsertDeviceFilter)(ULONG aPosition, IUSBDeviceFilter *aFilter);
-    STDMETHOD(RemoveDeviceFilter)(ULONG aPosition, IUSBDeviceFilter **aFilter);
-
     // public methods only for internal purposes
+    HRESULT i_loadSettings(const settings::USB &data);
+    HRESULT i_saveSettings(settings::USB &data);
 
-    HRESULT loadSettings(const settings::USB &data);
-    HRESULT saveSettings(settings::USB &data);
-
-    void rollback();
-    void commit();
-    void copyFrom(USBDeviceFilters *aThat);
+    void i_rollback();
+    void i_commit();
+    void i_copyFrom(USBDeviceFilters *aThat);
 
 #ifdef VBOX_WITH_USB
-    HRESULT onDeviceFilterChange(USBDeviceFilter *aFilter,
-                                 BOOL aActiveChanged = FALSE);
-
-    bool hasMatchingFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
-    bool hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaskedIfs);
-
-    HRESULT notifyProxy(bool aInsertFilters);
+    HRESULT i_onDeviceFilterChange(USBDeviceFilter *aFilter,
+                                   BOOL aActiveChanged = FALSE);
+    bool i_hasMatchingFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
+    bool i_hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaskedIfs);
+    HRESULT i_notifyProxy(bool aInsertFilters);
 #endif /* VBOX_WITH_USB */
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
-    Machine* getMachine();
+    Machine* i_getMachine();
 
 private:
 
-    void printList();
+    // Wrapped IUSBDeviceFilters attributes
+    HRESULT getDeviceFilters(std::vector<ComPtr<IUSBDeviceFilter> > &aDeviceFilters);
 
+    // wrapped IUSBDeviceFilters methods
+    HRESULT createDeviceFilter(const com::Utf8Str &aName,
+                               ComPtr<IUSBDeviceFilter> &aFilter);
+    HRESULT insertDeviceFilter(ULONG aPosition,
+                               const ComPtr<IUSBDeviceFilter> &aFilter);
+    HRESULT removeDeviceFilter(ULONG aPosition,
+                               ComPtr<IUSBDeviceFilter> &aFilter);
     struct Data;
     Data *m;
 };
