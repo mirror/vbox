@@ -1166,7 +1166,8 @@ int VBOXCALL    supdrvDarwinResumeBuiltinKbd(void)
         if (pIter)
         {
             while ((pDriver = (IOUSBHIDDriver *)pIter->getNextObject()))
-                pDriver->SuspendPort(false, 0);
+                if (pDriver->IsPortSuspended())
+                    pDriver->SuspendPort(false, 0);
 
             pIter->release();
         }
