@@ -2884,12 +2884,18 @@ static int reportMsr_Ia32MtrrPhysBaseMaskN(VBCPUREPMSR const *paMsrs, uint32_t c
  */
 static int reportMsr_Ia32MtrrFixedOrPat(uint32_t uMsr)
 {
-    /* Every 8 bytes is a type, check the type ranges one by one. */
-    for (uint32_t iBit = 0; iBit < 64; iBit += 8)
+    /* Had a spot of trouble on an old macbook pro with core2 duo T9900 (penryn)
+       running 64-bit win81pe. Not giving PAT such a scrutiny fixes it. */
+    if (   uMsr != 0x00000277
+        || g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First)
     {
-        int rc = msrVerifyMtrrTypeGPs(uMsr, iBit, 7 + (uMsr == 0x00000277));
-        if (RT_FAILURE(rc))
-            return rc;
+        /* Every 8 bytes is a type, check the type ranges one by one. */
+        for (uint32_t iBit = 0; iBit < 64; iBit += 8)
+        {
+            int rc = msrVerifyMtrrTypeGPs(uMsr, iBit, 7 + (uMsr == 0x00000277));
+            if (RT_FAILURE(rc))
+                return rc;
+        }
     }
 
     return printMsrFunctionCpumCpu(uMsr, NULL, NULL, NULL, NULL);
@@ -3461,12 +3467,13 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
         uint64_t    uValue     = paMsrs[i].uValue;
         int         rc;
 #if 1
-        //if (uMsr < 0xc0000000)
-        //    continue;
-        if (uMsr >= 0xc0010000)
+        if (   0 //(uMsr >= 0x00000268 && uMsr <= 0x0000026f)
+            || uMsr == 0x00000277
+            || uMsr == 0x000002ff
+           )
         {
             vbCpuRepDebug("produceMsrReport: uMsr=%#x (%s)...\n", uMsr, getMsrNameHandled(uMsr));
-            RTThreadSleep(1000);
+            RTThreadSleep(2000);
         }
 #endif
         /*
