@@ -339,9 +339,9 @@ int USBProxyServiceSolaris::captureDevice(HostUSBDevice *aDevice)
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
     AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
-    LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
+    LogFlowThisFunc(("aDevice=%s\n", aDevice->i_getName().c_str()));
 
-    Assert(aDevice->getUnistate() == kHostUSBDeviceState_Capturing);
+    Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_Capturing);
     AssertReturn(aDevice->mUsb, VERR_INVALID_POINTER);
 
     /*
@@ -378,7 +378,7 @@ void USBProxyServiceSolaris::captureDeviceCompleted(HostUSBDevice *aDevice, bool
     /*
      * Remove the one-shot filter if necessary.
      */
-    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->getName().c_str(), aSuccess, aDevice->mOneShotId));
+    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->_getName().c_str(), aSuccess, aDevice->mOneShotId));
     if (!aSuccess && aDevice->mOneShotId)
         USBLibRemoveFilter(aDevice->mOneShotId);
     aDevice->mOneShotId = NULL;
@@ -394,9 +394,9 @@ int USBProxyServiceSolaris::releaseDevice(HostUSBDevice *aDevice)
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
     AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
-    LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
+    LogFlowThisFunc(("aDevice=%s\n", aDevice->i_getName().c_str()));
 
-    Assert(aDevice->getUnistate() == kHostUSBDeviceState_ReleasingToHost);
+    Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_ReleasingToHost);
     AssertReturn(aDevice->mUsb, VERR_INVALID_POINTER);
 
     /*
@@ -433,7 +433,7 @@ void USBProxyServiceSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool
     /*
      * Remove the one-shot filter if necessary.
      */
-    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->getName().c_str(), aSuccess, aDevice->mOneShotId));
+    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->mOneShotId));
     if (!aSuccess && aDevice->mOneShotId)
         USBLibRemoveFilter(aDevice->mOneShotId);
     aDevice->mOneShotId = NULL;
