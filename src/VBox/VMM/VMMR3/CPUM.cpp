@@ -1578,7 +1578,7 @@ static int cpumR3CpuIdInit(PVM pVM)
         {
             pCurLeaf->uEax = 5;
             cpumR3CpuIdRemoveRange(pCPUM->GuestInfo.paCpuIdLeavesR3, &pCPUM->GuestInfo.cCpuIdLeaves,
-                                   UINT32_C(0x00000006), UINT32_C(0x000fffff));
+                                   pCurLeaf->uEax + 1, UINT32_C(0x000fffff));
         }
 
         /* NT4 hack, no zapping of extra leaves here. */
@@ -1593,7 +1593,7 @@ static int cpumR3CpuIdInit(PVM pVM)
         {
             pCurLeaf->uEax = UINT32_C(0x80000008);
             cpumR3CpuIdRemoveRange(pCPUM->GuestInfo.paCpuIdLeavesR3, &pCPUM->GuestInfo.cCpuIdLeaves,
-                                   UINT32_C(0x80000008), UINT32_C(0x800fffff));
+                                   pCurLeaf->uEax + 1, UINT32_C(0x800fffff));
         }
     }
 
