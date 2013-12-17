@@ -823,9 +823,7 @@ static void ohciUpdateInterruptLocked(POHCI ohci, const char *msg)
  */
 DECLINLINE(int) ohciSetInterruptInt(POHCI ohci, int rcBusy, uint32_t intr, const char *msg)
 {
-    int rc = VINF_SUCCESS;
-
-    rc = PDMCritSectEnter(&ohci->CsIrq, rcBusy);
+    int rc = PDMCritSectEnter(&ohci->CsIrq, rcBusy);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -4131,9 +4129,8 @@ static int HcInterruptStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
 {
     uint32_t res = pThis->intr_status & ~val;
     uint32_t chg = pThis->intr_status ^ res; NOREF(chg);
-    int rc = VINF_SUCCESS;
 
-    rc = PDMCritSectEnter(&pThis->CsIrq, VINF_IOM_R3_MMIO_WRITE);
+    int rc = PDMCritSectEnter(&pThis->CsIrq, VINF_IOM_R3_MMIO_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -4180,9 +4177,8 @@ static int HcInterruptEnable_w(POHCI pThis, uint32_t iReg, uint32_t val)
 {
     uint32_t res = pThis->intr | val;
     uint32_t chg = pThis->intr ^ res; NOREF(chg);
-    int rc = VINF_SUCCESS;
 
-    rc = PDMCritSectEnter(&pThis->CsIrq, VINF_IOM_R3_MMIO_WRITE);
+    int rc = PDMCritSectEnter(&pThis->CsIrq, VINF_IOM_R3_MMIO_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -4231,9 +4227,8 @@ static int HcInterruptDisable_w(POHCI pThis, uint32_t iReg, uint32_t val)
 {
     uint32_t res = pThis->intr & ~val;
     uint32_t chg = pThis->intr ^ res; NOREF(chg);
-    int rc = VINF_SUCCESS;
 
-    rc = PDMCritSectEnter(&pThis->CsIrq, VINF_IOM_R3_MMIO_WRITE);
+    int rc = PDMCritSectEnter(&pThis->CsIrq, VINF_IOM_R3_MMIO_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
