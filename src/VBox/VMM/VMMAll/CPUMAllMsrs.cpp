@@ -220,6 +220,22 @@ static DECLCALLBACK(int) cpumMsrWr_Ia32FeatureControl(PVMCPU pVCpu, uint32_t idM
 }
 
 
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_Ia32BiosSignId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo fake microcode update. */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_Ia32BiosSignId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    return VERR_CPUM_RAISE_GP_0;
+}
+
+
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(int) cpumMsrWr_Ia32BiosUpdateTrigger(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
 {
@@ -694,6 +710,14 @@ static DECLCALLBACK(int) cpumMsrRd_Ia32PerfStatus(PVMCPU pVCpu, uint32_t idMsr, 
 {
     /** @todo implement IA32_PERFSTATUS. */
     *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_Ia32PerfStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /* Pentium4 allows writing, but all bits are ignored. */
     return VINF_SUCCESS;
 }
 
@@ -1459,6 +1483,57 @@ static DECLCALLBACK(int) cpumMsrRd_IntelEblCrPowerOn(PVMCPU pVCpu, uint32_t idMs
 static DECLCALLBACK(int) cpumMsrWr_IntelEblCrPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
 {
     /** @todo Write EBL_CR_POWERON: Remember written bits. */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelP4EbcHardPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo P4 hard power on config */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelP4EbcHardPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo P4 hard power on config */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelP4EbcSoftPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo P4 soft power on config  */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelP4EbcSoftPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo P4 soft power on config */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelP4EbcFrequencyId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo P4 bus frequency config  */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelP4EbcFrequencyId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo P4 bus frequency config  */
     return VINF_SUCCESS;
 }
 
@@ -2812,6 +2887,32 @@ static DECLCALLBACK(int) cpumMsrWr_AmdK8SwThermalCtrl(PVMCPU pVCpu, uint32_t idM
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_AmdK8FidVidControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo AMD FIDVID_CTL. */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_AmdK8FidVidControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo AMD FIDVID_CTL. */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_AmdK8FidVidStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo AMD FIDVID_STATUS. */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(int) cpumMsrRd_AmdK8McCtlMaskN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     /** @todo AMD MC. */
@@ -3452,6 +3553,23 @@ static DECLCALLBACK(int) cpumMsrRd_AmdK8CpuIdCtlExt01hEdcx(PVMCPU pVCpu, uint32_
 static DECLCALLBACK(int) cpumMsrWr_AmdK8CpuIdCtlExt01hEdcx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
 {
     /** @todo Changing CPUID leaf 0x80000001. */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_AmdK8PatchLevel(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /** @todo Fake AMD microcode patching.  */
+    *puValue = pRange->uInitOrReadValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_AmdK8PatchLoader(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue)
+{
+    /** @todo Fake AMD microcode patching.  */
     return VINF_SUCCESS;
 }
 
@@ -4143,6 +4261,7 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_Ia32TimestampCounter,
     cpumMsrRd_Ia32ApicBase,
     cpumMsrRd_Ia32FeatureControl,
+    cpumMsrRd_Ia32BiosSignId,
     cpumMsrRd_Ia32SmmMonitorCtl,
     cpumMsrRd_Ia32PmcN,
     cpumMsrRd_Ia32MonitorFilterLineSize,
@@ -4216,6 +4335,9 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_Amd64TscAux,
 
     cpumMsrRd_IntelEblCrPowerOn,
+    cpumMsrRd_IntelP4EbcHardPowerOn,
+    cpumMsrRd_IntelP4EbcSoftPowerOn,
+    cpumMsrRd_IntelP4EbcFrequencyId,
     cpumMsrRd_IntelPlatformInfo100MHz,
     cpumMsrRd_IntelPlatformInfo133MHz,
     cpumMsrRd_IntelPkgCStConfigControl,
@@ -4303,6 +4425,8 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_AmdK8CpuNameN,
     cpumMsrRd_AmdK8HwThermalCtrl,
     cpumMsrRd_AmdK8SwThermalCtrl,
+    cpumMsrRd_AmdK8FidVidControl,
+    cpumMsrRd_AmdK8FidVidStatus,
     cpumMsrRd_AmdK8McCtlMaskN,
     cpumMsrRd_AmdK8SmiOnIoTrapN,
     cpumMsrRd_AmdK8SmiOnIoTrapCtlSts,
@@ -4340,6 +4464,7 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_AmdK8CpuIdCtlStd06hEcx,
     cpumMsrRd_AmdK8CpuIdCtlStd01hEdcx,
     cpumMsrRd_AmdK8CpuIdCtlExt01hEdcx,
+    cpumMsrRd_AmdK8PatchLevel,
     cpumMsrRd_AmdK7DebugStatusMaybe,
     cpumMsrRd_AmdK7BHTraceBaseMaybe,
     cpumMsrRd_AmdK7BHTracePtrMaybe,
@@ -4392,6 +4517,7 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_Ia32TimestampCounter,
     cpumMsrWr_Ia32ApicBase,
     cpumMsrWr_Ia32FeatureControl,
+    cpumMsrWr_Ia32BiosSignId,
     cpumMsrWr_Ia32BiosUpdateTrigger,
     cpumMsrWr_Ia32SmmMonitorCtl,
     cpumMsrWr_Ia32PmcN,
@@ -4414,6 +4540,7 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_Ia32PlatformDcaCap,
     cpumMsrWr_Ia32Dca0Cap,
     cpumMsrWr_Ia32PerfEvtSelN,
+    cpumMsrWr_Ia32PerfStatus,
     cpumMsrWr_Ia32PerfCtl,
     cpumMsrWr_Ia32FixedCtrN,
     cpumMsrWr_Ia32PerfCapabilities,
@@ -4445,6 +4572,9 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_Amd64TscAux,
 
     cpumMsrWr_IntelEblCrPowerOn,
+    cpumMsrWr_IntelP4EbcHardPowerOn,
+    cpumMsrWr_IntelP4EbcSoftPowerOn,
+    cpumMsrWr_IntelP4EbcFrequencyId,
     cpumMsrWr_IntelPkgCStConfigControl,
     cpumMsrWr_IntelPmgIoCaptureBase,
     cpumMsrWr_IntelLastBranchFromToN,
@@ -4510,6 +4640,7 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_AmdK8CpuNameN,
     cpumMsrWr_AmdK8HwThermalCtrl,
     cpumMsrWr_AmdK8SwThermalCtrl,
+    cpumMsrWr_AmdK8FidVidControl,
     cpumMsrWr_AmdK8McCtlMaskN,
     cpumMsrWr_AmdK8SmiOnIoTrapN,
     cpumMsrWr_AmdK8SmiOnIoTrapCtlSts,
@@ -4546,6 +4677,7 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_AmdK8CpuIdCtlStd06hEcx,
     cpumMsrWr_AmdK8CpuIdCtlStd01hEdcx,
     cpumMsrWr_AmdK8CpuIdCtlExt01hEdcx,
+    cpumMsrWr_AmdK8PatchLoader,
     cpumMsrWr_AmdK7DebugStatusMaybe,
     cpumMsrWr_AmdK7BHTraceBaseMaybe,
     cpumMsrWr_AmdK7BHTracePtrMaybe,
@@ -4784,6 +4916,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(Ia32TimestampCounter);
     CPUM_ASSERT_RD_MSR_FN(Ia32ApicBase);
     CPUM_ASSERT_RD_MSR_FN(Ia32FeatureControl);
+    CPUM_ASSERT_RD_MSR_FN(Ia32BiosSignId);
     CPUM_ASSERT_RD_MSR_FN(Ia32SmmMonitorCtl);
     CPUM_ASSERT_RD_MSR_FN(Ia32PmcN);
     CPUM_ASSERT_RD_MSR_FN(Ia32MonitorFilterLineSize);
@@ -4856,6 +4989,9 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(Amd64TscAux);
 
     CPUM_ASSERT_RD_MSR_FN(IntelEblCrPowerOn);
+    CPUM_ASSERT_RD_MSR_FN(IntelP4EbcHardPowerOn);
+    CPUM_ASSERT_RD_MSR_FN(IntelP4EbcSoftPowerOn);
+    CPUM_ASSERT_RD_MSR_FN(IntelP4EbcFrequencyId);
     CPUM_ASSERT_RD_MSR_FN(IntelPlatformInfo100MHz);
     CPUM_ASSERT_RD_MSR_FN(IntelPlatformInfo133MHz);
     CPUM_ASSERT_RD_MSR_FN(IntelPkgCStConfigControl);
@@ -4943,6 +5079,8 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(AmdK8CpuNameN);
     CPUM_ASSERT_RD_MSR_FN(AmdK8HwThermalCtrl);
     CPUM_ASSERT_RD_MSR_FN(AmdK8SwThermalCtrl);
+    CPUM_ASSERT_RD_MSR_FN(AmdK8FidVidControl);
+    CPUM_ASSERT_RD_MSR_FN(AmdK8FidVidStatus);
     CPUM_ASSERT_RD_MSR_FN(AmdK8McCtlMaskN);
     CPUM_ASSERT_RD_MSR_FN(AmdK8SmiOnIoTrapN);
     CPUM_ASSERT_RD_MSR_FN(AmdK8SmiOnIoTrapCtlSts);
@@ -4980,6 +5118,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(AmdK8CpuIdCtlStd06hEcx);
     CPUM_ASSERT_RD_MSR_FN(AmdK8CpuIdCtlStd01hEdcx);
     CPUM_ASSERT_RD_MSR_FN(AmdK8CpuIdCtlExt01hEdcx);
+    CPUM_ASSERT_RD_MSR_FN(AmdK8PatchLevel);
     CPUM_ASSERT_RD_MSR_FN(AmdK7DebugStatusMaybe);
     CPUM_ASSERT_RD_MSR_FN(AmdK7BHTraceBaseMaybe);
     CPUM_ASSERT_RD_MSR_FN(AmdK7BHTracePtrMaybe);
@@ -5022,6 +5161,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(Ia32TimestampCounter);
     CPUM_ASSERT_WR_MSR_FN(Ia32ApicBase);
     CPUM_ASSERT_WR_MSR_FN(Ia32FeatureControl);
+    CPUM_ASSERT_WR_MSR_FN(Ia32BiosSignId);
     CPUM_ASSERT_WR_MSR_FN(Ia32BiosUpdateTrigger);
     CPUM_ASSERT_WR_MSR_FN(Ia32SmmMonitorCtl);
     CPUM_ASSERT_WR_MSR_FN(Ia32PmcN);
@@ -5044,6 +5184,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(Ia32PlatformDcaCap);
     CPUM_ASSERT_WR_MSR_FN(Ia32Dca0Cap);
     CPUM_ASSERT_WR_MSR_FN(Ia32PerfEvtSelN);
+    CPUM_ASSERT_WR_MSR_FN(Ia32PerfStatus);
     CPUM_ASSERT_WR_MSR_FN(Ia32PerfCtl);
     CPUM_ASSERT_WR_MSR_FN(Ia32FixedCtrN);
     CPUM_ASSERT_WR_MSR_FN(Ia32PerfCapabilities);
@@ -5074,6 +5215,9 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(Amd64TscAux);
 
     CPUM_ASSERT_WR_MSR_FN(IntelEblCrPowerOn);
+    CPUM_ASSERT_WR_MSR_FN(IntelP4EbcHardPowerOn);
+    CPUM_ASSERT_WR_MSR_FN(IntelP4EbcSoftPowerOn);
+    CPUM_ASSERT_WR_MSR_FN(IntelP4EbcFrequencyId);
     CPUM_ASSERT_WR_MSR_FN(IntelPkgCStConfigControl);
     CPUM_ASSERT_WR_MSR_FN(IntelPmgIoCaptureBase);
     CPUM_ASSERT_WR_MSR_FN(IntelLastBranchFromToN);
@@ -5139,6 +5283,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(AmdK8CpuNameN);
     CPUM_ASSERT_WR_MSR_FN(AmdK8HwThermalCtrl);
     CPUM_ASSERT_WR_MSR_FN(AmdK8SwThermalCtrl);
+    CPUM_ASSERT_WR_MSR_FN(AmdK8FidVidControl);
     CPUM_ASSERT_WR_MSR_FN(AmdK8McCtlMaskN);
     CPUM_ASSERT_WR_MSR_FN(AmdK8SmiOnIoTrapN);
     CPUM_ASSERT_WR_MSR_FN(AmdK8SmiOnIoTrapCtlSts);
@@ -5175,6 +5320,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(AmdK8CpuIdCtlStd06hEcx);
     CPUM_ASSERT_WR_MSR_FN(AmdK8CpuIdCtlStd01hEdcx);
     CPUM_ASSERT_WR_MSR_FN(AmdK8CpuIdCtlExt01hEdcx);
+    CPUM_ASSERT_WR_MSR_FN(AmdK8PatchLoader);
     CPUM_ASSERT_WR_MSR_FN(AmdK7DebugStatusMaybe);
     CPUM_ASSERT_WR_MSR_FN(AmdK7BHTraceBaseMaybe);
     CPUM_ASSERT_WR_MSR_FN(AmdK7BHTracePtrMaybe);

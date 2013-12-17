@@ -239,8 +239,8 @@ typedef enum CPUMMICROARCH
 #define CPUMMICROARCH_IS_INTEL_CORE7(a_enmMicroarch) \
     ((a_enmMicroarch) >= kCpumMicroarch_Intel_Core7_First && (a_enmMicroarch) <= kCpumMicroarch_Intel_Core7_End)
 
-/** Predicate macro for catching AMD Family 8H CPUs (aka K8).    */
-#define CPUMMICROARCH_IS_AMD_FAM_8H(a_enmMicroarch) \
+/** Predicate macro for catching AMD Family OFh CPUs (aka K8).    */
+#define CPUMMICROARCH_IS_AMD_FAM_0FH(a_enmMicroarch) \
     ((a_enmMicroarch) >= kCpumMicroarch_AMD_K8_First && (a_enmMicroarch) <= kCpumMicroarch_AMD_K8_End)
 
 /** Predicate macro for catching AMD Family 10H CPUs (aka K10).    */

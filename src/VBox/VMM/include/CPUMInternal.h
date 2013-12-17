@@ -131,6 +131,7 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_Ia32TimestampCounter,
     kCpumMsrRdFn_Ia32ApicBase,
     kCpumMsrRdFn_Ia32FeatureControl,
+    kCpumMsrRdFn_Ia32BiosSignId,            /**< Range value returned. */
     kCpumMsrRdFn_Ia32SmmMonitorCtl,
     kCpumMsrRdFn_Ia32PmcN,
     kCpumMsrRdFn_Ia32MonitorFilterLineSize,
@@ -204,6 +205,9 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_Amd64TscAux,
 
     kCpumMsrRdFn_IntelEblCrPowerOn,
+    kCpumMsrRdFn_IntelP4EbcHardPowerOn,
+    kCpumMsrRdFn_IntelP4EbcSoftPowerOn,
+    kCpumMsrRdFn_IntelP4EbcFrequencyId,
     kCpumMsrRdFn_IntelPlatformInfo100MHz,
     kCpumMsrRdFn_IntelPlatformInfo133MHz,
     kCpumMsrRdFn_IntelPkgCStConfigControl,
@@ -291,6 +295,8 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_AmdK8CpuNameN,
     kCpumMsrRdFn_AmdK8HwThermalCtrl,        /**< Range value returned. */
     kCpumMsrRdFn_AmdK8SwThermalCtrl,
+    kCpumMsrRdFn_AmdK8FidVidControl,        /**< Range value returned. */
+    kCpumMsrRdFn_AmdK8FidVidStatus,         /**< Range value returned. */
     kCpumMsrRdFn_AmdK8McCtlMaskN,
     kCpumMsrRdFn_AmdK8SmiOnIoTrapN,
     kCpumMsrRdFn_AmdK8SmiOnIoTrapCtlSts,
@@ -328,6 +334,7 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_AmdK8CpuIdCtlStd06hEcx,
     kCpumMsrRdFn_AmdK8CpuIdCtlStd01hEdcx,
     kCpumMsrRdFn_AmdK8CpuIdCtlExt01hEdcx,
+    kCpumMsrRdFn_AmdK8PatchLevel,           /**< Returns range value. */
     kCpumMsrRdFn_AmdK7DebugStatusMaybe,
     kCpumMsrRdFn_AmdK7BHTraceBaseMaybe,
     kCpumMsrRdFn_AmdK7BHTracePtrMaybe,
@@ -389,6 +396,7 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_Ia32TimestampCounter,
     kCpumMsrWrFn_Ia32ApicBase,
     kCpumMsrWrFn_Ia32FeatureControl,
+    kCpumMsrWrFn_Ia32BiosSignId,
     kCpumMsrWrFn_Ia32BiosUpdateTrigger,
     kCpumMsrWrFn_Ia32SmmMonitorCtl,
     kCpumMsrWrFn_Ia32PmcN,
@@ -411,6 +419,7 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_Ia32PlatformDcaCap,
     kCpumMsrWrFn_Ia32Dca0Cap,
     kCpumMsrWrFn_Ia32PerfEvtSelN,           /**< Range value indicates the register number. */
+    kCpumMsrWrFn_Ia32PerfStatus,
     kCpumMsrWrFn_Ia32PerfCtl,
     kCpumMsrWrFn_Ia32FixedCtrN,             /**< Takes register number of start of range. */
     kCpumMsrWrFn_Ia32PerfCapabilities,
@@ -441,6 +450,9 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_Amd64KernelGsBase,
     kCpumMsrWrFn_Amd64TscAux,
     kCpumMsrWrFn_IntelEblCrPowerOn,
+    kCpumMsrWrFn_IntelP4EbcHardPowerOn,
+    kCpumMsrWrFn_IntelP4EbcSoftPowerOn,
+    kCpumMsrWrFn_IntelP4EbcFrequencyId,
     kCpumMsrWrFn_IntelPkgCStConfigControl,
     kCpumMsrWrFn_IntelPmgIoCaptureBase,
     kCpumMsrWrFn_IntelLastBranchFromToN,
@@ -506,6 +518,7 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_AmdK8CpuNameN,
     kCpumMsrWrFn_AmdK8HwThermalCtrl,
     kCpumMsrWrFn_AmdK8SwThermalCtrl,
+    kCpumMsrWrFn_AmdK8FidVidControl,
     kCpumMsrWrFn_AmdK8McCtlMaskN,
     kCpumMsrWrFn_AmdK8SmiOnIoTrapN,
     kCpumMsrWrFn_AmdK8SmiOnIoTrapCtlSts,
@@ -542,6 +555,7 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_AmdK8CpuIdCtlStd06hEcx,
     kCpumMsrWrFn_AmdK8CpuIdCtlStd01hEdcx,
     kCpumMsrWrFn_AmdK8CpuIdCtlExt01hEdcx,
+    kCpumMsrWrFn_AmdK8PatchLoader,
     kCpumMsrWrFn_AmdK7DebugStatusMaybe,
     kCpumMsrWrFn_AmdK7BHTraceBaseMaybe,
     kCpumMsrWrFn_AmdK7BHTracePtrMaybe,
