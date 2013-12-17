@@ -2645,7 +2645,7 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
     }
 
     int rc = VBoxGuestSetGuestCapabilities(fSessionOrCaps, fSessionNotCaps);
-    if (!RT_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         LogRel(("VBoxGuestCommonGuestCapsAcquire: VBoxGuestSetGuestCapabilities failed, rc=%Rrc\n", rc));
 
