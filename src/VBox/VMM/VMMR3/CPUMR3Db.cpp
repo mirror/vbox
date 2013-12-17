@@ -172,14 +172,16 @@ typedef struct CPUMDBENTRY
 /** @} */
 
 
-#include "cpus/Intel_Pentium_M_processor_2_00GHz.h"
 #include "cpus/Intel_Core_i7_3960X.h"
 #include "cpus/Intel_Core_i5_3570.h"
 #include "cpus/Intel_Xeon_X5482_3_20GHz.h"
+#include "cpus/Intel_Pentium_M_processor_2_00GHz.h"
+#include "cpus/Intel_Pentium_4_3_00GHz.h"
 
 #include "cpus/AMD_FX_8150_Eight_Core.h"
 #include "cpus/AMD_Phenom_II_X6_1100T.h"
 #include "cpus/Quad_Core_AMD_Opteron_2384.h"
+#include "cpus/AMD_Athlon_64_3200.h"
 
 
 
@@ -203,6 +205,10 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 #ifdef VBOX_CPUDB_Intel_Xeon_X5482_3_20GHz
     &g_Entry_Intel_Xeon_X5482_3_20GHz,
 #endif
+#ifdef VBOX_CPUDB_Intel_Pentium_4_3_00GHz
+    &g_Entry_Intel_Pentium_4_3_00GHz,
+#endif
+
 #ifdef VBOX_CPUDB_AMD_FX_8150_Eight_Core
     &g_Entry_AMD_FX_8150_Eight_Core,
 #endif
@@ -211,6 +217,9 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 #endif
 #ifdef VBOX_CPUDB_Quad_Core_AMD_Opteron_2384
     &g_Entry_Quad_Core_AMD_Opteron_2384,
+#endif
+#ifdef VBOX_CPUDB_AMD_Athlon_64_3200
+    &g_Entry_AMD_Athlon_64_3200,
 #endif
 };
 
