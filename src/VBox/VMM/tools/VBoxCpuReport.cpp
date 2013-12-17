@@ -487,59 +487,71 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
                 RTThreadSleep(22);
             }
 #if 0
-            else if (uMsr >= 0xc0011008 && uMsr <= 0xc0011100)
+            else if (uMsr >= 0xc0011000 && uMsr <= 0xc0011100)
             {
                 vbCpuRepDebug("testing %#x...\n", uMsr);
-                RTThreadSleep(22);
+                RTThreadSleep(250);
             }
 #endif
-
-            /* Read probing normally does it. */
-            uint64_t uValue = 0;
-            bool     fGp    = true;
-            int rc = SUPR3MsrProberRead(uMsr, NIL_RTCPUID, &uValue, &fGp);
-            if (RT_FAILURE(rc))
-            {
-                RTMemFree(*ppaMsrs);
-                *ppaMsrs = NULL;
-                return RTMsgErrorRc(rc, "SUPR3MsrProberRead failed on %#x: %Rrc\n", uMsr, rc);
-            }
-
-            uint32_t fFlags;
-            if (!fGp)
-                fFlags = 0;
+            /* Skip 0xc0011012..13 as it seems to be bad for our health (Phenom II X6 1100T). */
+            if ((uMsr >= 0xc0011012 && uMsr <= 0xc0011013) && g_enmVendor == CPUMCPUVENDOR_AMD)
+                vbCpuRepDebug("Skipping %#x\n", uMsr);
             else
             {
-                /* Is it a write only register? */
-                fGp = true;
-                rc = SUPR3MsrProberWrite(uMsr, NIL_RTCPUID, 0, &fGp);
+                /* Read probing normally does it. */
+                uint64_t uValue = 0;
+                bool     fGp    = true;
+                int rc = SUPR3MsrProberRead(uMsr, NIL_RTCPUID, &uValue, &fGp);
                 if (RT_FAILURE(rc))
                 {
                     RTMemFree(*ppaMsrs);
                     *ppaMsrs = NULL;
-                    return RTMsgErrorRc(rc, "SUPR3MsrProberWrite failed on %#x: %Rrc\n", uMsr, rc);
+                    return RTMsgErrorRc(rc, "SUPR3MsrProberRead failed on %#x: %Rrc\n", uMsr, rc);
                 }
-                uValue = 0;
-                fFlags = VBCPUREPMSR_F_WRITE_ONLY;
 
-                /*
-                 * Tweaks.  On Intel CPUs we've got trouble detecting
-                 * IA32_BIOS_UPDT_TRIG (0x00000079), so we have to add it manually here.
-                 */
-                if (   uMsr == 0x00000079
-                    && fGp
-                    && g_enmMicroarch >= kCpumMicroarch_Intel_P6_Core_Atom_First
-                    && g_enmMicroarch <= kCpumMicroarch_Intel_End)
-                    fGp = false;
-            }
+                uint32_t fFlags;
+                if (!fGp)
+                    fFlags = 0;
+                else
+                {
+                    /* Is it a write only register? */
+#if 0
+                    if (uMsr >= 0xc0011000 && uMsr <= 0xc0011100)
+                    {
+                        vbCpuRepDebug("test writing %#x...\n", uMsr);
+                        RTThreadSleep(250);
+                    }
+#endif
+                    fGp = true;
+                    rc = SUPR3MsrProberWrite(uMsr, NIL_RTCPUID, 0, &fGp);
+                    if (RT_FAILURE(rc))
+                    {
+                        RTMemFree(*ppaMsrs);
+                        *ppaMsrs = NULL;
+                        return RTMsgErrorRc(rc, "SUPR3MsrProberWrite failed on %#x: %Rrc\n", uMsr, rc);
+                    }
+                    uValue = 0;
+                    fFlags = VBCPUREPMSR_F_WRITE_ONLY;
 
-            if (!fGp)
-            {
-                /* Add it. */
-                rc = vbCpuRepMsrsAddOne(ppaMsrs, pcMsrs, uMsr, uValue, fFlags);
-                if (RT_FAILURE(rc))
-                    return RTMsgErrorRc(rc, "Out of memory (uMsr=%#x).\n", uMsr);
-                vbCpuRepDebug("%#010x: uValue=%#llx fFlags=%#x\n", uMsr, uValue, fFlags);
+                    /*
+                     * Tweaks.  On Intel CPUs we've got trouble detecting
+                     * IA32_BIOS_UPDT_TRIG (0x00000079), so we have to add it manually here.
+                     */
+                    if (   uMsr == 0x00000079
+                        && fGp
+                        && g_enmMicroarch >= kCpumMicroarch_Intel_P6_Core_Atom_First
+                        && g_enmMicroarch <= kCpumMicroarch_Intel_End)
+                        fGp = false;
+                }
+
+                if (!fGp)
+                {
+                    /* Add it. */
+                    rc = vbCpuRepMsrsAddOne(ppaMsrs, pcMsrs, uMsr, uValue, fFlags);
+                    if (RT_FAILURE(rc))
+                        return RTMsgErrorRc(rc, "Out of memory (uMsr=%#x).\n", uMsr);
+                    vbCpuRepDebug("%#010x: uValue=%#llx fFlags=%#x\n", uMsr, uValue, fFlags);
+                }
             }
 
             uMsr++;
@@ -1061,6 +1073,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0xc001001d: return "AMD_K8_TOP_MEM2";
         case 0xc001001e: return "AMD_K8_MANID";
         case 0xc001001f: return "AMD_K8_NB_CFG1";
+        case 0xc0010021: return "AMD_10H_UNK_c001_0021";
         case 0xc0010022: return "AMD_K8_MC_XCPT_REDIR";
         case 0xc0010028: return "AMD_K8_UNK_c001_0028";
         case 0xc0010029: return "AMD_K8_UNK_c001_0029";
@@ -3466,14 +3479,11 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
         uint32_t    fFlags     = paMsrs[i].fFlags;
         uint64_t    uValue     = paMsrs[i].uValue;
         int         rc;
-#if 1
-        if (   0 //(uMsr >= 0x00000268 && uMsr <= 0x0000026f)
-            || uMsr == 0x00000277
-            || uMsr == 0x000002ff
-           )
+#if 0
+        if (uMsr >= 0x10011007)
         {
             vbCpuRepDebug("produceMsrReport: uMsr=%#x (%s)...\n", uMsr, getMsrNameHandled(uMsr));
-            RTThreadSleep(2000);
+            RTThreadSleep(1000);
         }
 #endif
         /*
