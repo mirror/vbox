@@ -615,7 +615,7 @@ HRESULT Appliance::i_initSetOfSupportedStandardsURI()
     /* Get the system properties. */
     SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
     {
-        ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension("iso");
+        ComObjPtr<MediumFormat> trgFormat = pSysProps->i_mediumFormatFromExtension("iso");
         if (trgFormat.isNull())
             return setError(E_FAIL, tr("Can't find appropriate medium format for ISO type of a virtual disk."));
 
@@ -629,7 +629,7 @@ HRESULT Appliance::i_initSetOfSupportedStandardsURI()
     }
 
     {
-        ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension("vmdk");
+        ComObjPtr<MediumFormat> trgFormat = pSysProps->i_mediumFormatFromExtension("vmdk");
         if (trgFormat.isNull())
             return setError(E_FAIL, tr("Can't find appropriate medium format for VMDK type of a virtual disk."));
 
@@ -646,7 +646,7 @@ HRESULT Appliance::i_initSetOfSupportedStandardsURI()
     }
 
     {
-        ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension("vhd");
+        ComObjPtr<MediumFormat> trgFormat = pSysProps->i_mediumFormatFromExtension("vhd");
         if (trgFormat.isNull())
             return setError(E_FAIL, tr("Can't find appropriate medium format for VHD type of a virtual disk."));
 
@@ -746,11 +746,11 @@ HRESULT Appliance::i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, Com
             char *pszExt = RTPathSuffix(di.strHref.c_str());
             if (pszExt)
                 pszExt++;
-            mf = pSysProps->mediumFormatFromExtension(pszExt);
+            mf = pSysProps->i_mediumFormatFromExtension(pszExt);
         }
     }
     else
-        mf = pSysProps->mediumFormat(strSrcFormat);
+        mf = pSysProps->i_mediumFormat(strSrcFormat);
 
     if (mf.isNull())
     {

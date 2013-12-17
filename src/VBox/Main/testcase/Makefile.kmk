@@ -160,7 +160,7 @@ tstGuestCtrlContextID_INCS     = ../include
 #
 # tstUSBProxyLinux
 #
-tstUSBProxyLinux_TEMPLATE  = VBOXR3TSTNPEXE
+tstUSBProxyLinux_TEMPLATE  = VBOXMAINCLIENTTSTEXE
 tstUSBProxyLinux_SOURCES   = \
 	tstUSBProxyLinux.cpp \
 	../src-server/linux/USBProxyServiceLinux.cpp \
@@ -170,7 +170,8 @@ tstUSBProxyLinux_INCS      = \
 	../include \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
-	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
+	$(VBOX_MAIN_APIWRAPPER_INCS)
 tstUSBProxyLinux_DEFS      = \
 	UNIT_TEST \
 	VBOX_WITH_USB \

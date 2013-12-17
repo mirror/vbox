@@ -20,12 +20,9 @@
 #ifndef ____H_SYSTEMPROPERTIESIMPL
 #define ____H_SYSTEMPROPERTIESIMPL
 
-#include "VirtualBoxBase.h"
 #include "MediumFormatImpl.h"
+#include "SystemPropertiesWrap.h"
 
-#include <VBox/com/array.h>
-
-#include <list>
 
 namespace settings
 {
@@ -33,20 +30,10 @@ namespace settings
 }
 
 class ATL_NO_VTABLE SystemProperties :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(ISystemProperties)
+    public SystemPropertiesWrap
 {
 public:
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(SystemProperties, ISystemProperties)
-
-    DECLARE_NOT_AGGREGATABLE(SystemProperties)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(SystemProperties)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(ISystemProperties)
-    END_COM_MAP()
+    typedef std::list<ComObjPtr<MediumFormat> > MediumFormatList;
 
     DECLARE_EMPTY_CTOR_DTOR(SystemProperties)
 
@@ -57,93 +44,101 @@ public:
     HRESULT init(VirtualBox *aParent);
     void uninit();
 
-    // ISystemProperties properties
-    STDMETHOD(COMGETTER(MinGuestRAM))(ULONG *minRAM);
-    STDMETHOD(COMGETTER(MaxGuestRAM))(ULONG *maxRAM);
-    STDMETHOD(COMGETTER(MinGuestVRAM))(ULONG *minVRAM);
-    STDMETHOD(COMGETTER(MaxGuestVRAM))(ULONG *maxVRAM);
-    STDMETHOD(COMGETTER(MinGuestCPUCount))(ULONG *minCPUCount);
-    STDMETHOD(COMGETTER(MaxGuestCPUCount))(ULONG *maxCPUCount);
-    STDMETHOD(COMGETTER(MaxGuestMonitors))(ULONG *maxMonitors);
-    STDMETHOD(COMGETTER(InfoVDSize))(LONG64 *infoVDSize);
-    STDMETHOD(COMGETTER(SerialPortCount))(ULONG *count);
-    STDMETHOD(COMGETTER(ParallelPortCount))(ULONG *count);
-    STDMETHOD(COMGETTER(MaxBootPosition))(ULONG *aMaxBootPosition);
-    STDMETHOD(COMGETTER(ExclusiveHwVirt))(BOOL *aExclusiveHwVirt);
-    STDMETHOD(COMSETTER(ExclusiveHwVirt))(BOOL aExclusiveHwVirt);
-    STDMETHOD(COMGETTER(LoggingLevel))(BSTR *aLoggingLevel);
-    STDMETHOD(COMSETTER(LoggingLevel))(IN_BSTR aLoggingLevel);
-    STDMETHOD(COMGETTER(DefaultMachineFolder))(BSTR *aDefaultMachineFolder);
-    STDMETHOD(COMSETTER(DefaultMachineFolder))(IN_BSTR aDefaultMachineFolder);
-    STDMETHOD(COMGETTER(MediumFormats))(ComSafeArrayOut(IMediumFormat *, aMediumFormats));
-    STDMETHOD(COMGETTER(DefaultHardDiskFormat))(BSTR *aDefaultHardDiskFormat);
-    STDMETHOD(COMSETTER(DefaultHardDiskFormat))(IN_BSTR aDefaultHardDiskFormat);
-    STDMETHOD(COMGETTER(FreeDiskSpaceWarning))(LONG64 *aFreeDiskSpace);
-    STDMETHOD(COMSETTER(FreeDiskSpaceWarning))(LONG64 aFreeDiskSpace);
-    STDMETHOD(COMGETTER(FreeDiskSpacePercentWarning))(ULONG *aFreeDiskSpacePercent);
-    STDMETHOD(COMSETTER(FreeDiskSpacePercentWarning))(ULONG aFreeDiskSpacePercent);
-    STDMETHOD(COMGETTER(FreeDiskSpaceError))(LONG64 *aFreeDiskSpace);
-    STDMETHOD(COMSETTER(FreeDiskSpaceError))(LONG64 aFreeDiskSpace);
-    STDMETHOD(COMGETTER(FreeDiskSpacePercentError))(ULONG *aFreeDiskSpacePercent);
-    STDMETHOD(COMSETTER(FreeDiskSpacePercentError))(ULONG aFreeDiskSpacePercent);
-    STDMETHOD(COMGETTER(VRDEAuthLibrary))(BSTR *aVRDEAuthLibrary);
-    STDMETHOD(COMSETTER(VRDEAuthLibrary))(IN_BSTR aVRDEAuthLibrary);
-    STDMETHOD(COMGETTER(WebServiceAuthLibrary))(BSTR *aWebServiceAuthLibrary);
-    STDMETHOD(COMSETTER(WebServiceAuthLibrary))(IN_BSTR aWebServiceAuthLibrary);
-    STDMETHOD(COMGETTER(DefaultVRDEExtPack))(BSTR *aExtPack);
-    STDMETHOD(COMSETTER(DefaultVRDEExtPack))(IN_BSTR aExtPack);
-    STDMETHOD(COMGETTER(LogHistoryCount))(ULONG *count);
-    STDMETHOD(COMSETTER(LogHistoryCount))(ULONG count);
-    STDMETHOD(COMGETTER(DefaultAudioDriver))(AudioDriverType_T *aAudioDriver);
-    STDMETHOD(COMGETTER(AutostartDatabasePath))(BSTR *aAutostartDbPath);
-    STDMETHOD(COMSETTER(AutostartDatabasePath))(IN_BSTR aAutostartDbPath);
-    STDMETHOD(COMGETTER(DefaultAdditionsISO))(BSTR *aDefaultAdditionsISO);
-    STDMETHOD(COMSETTER(DefaultAdditionsISO))(IN_BSTR aDefaultAdditionsISO);
-    STDMETHOD(COMGETTER(DefaultFrontend))(BSTR *aDefaultFrontend);
-    STDMETHOD(COMSETTER(DefaultFrontend))(IN_BSTR aDefaultFrontend);
-
-    STDMETHOD(GetMaxNetworkAdapters)(ChipsetType_T aChipset, ULONG *aMaxInstances);
-    STDMETHOD(GetMaxNetworkAdaptersOfType)(ChipsetType_T aChipset, NetworkAttachmentType_T aType, ULONG *aMaxInstances);
-    STDMETHOD(GetMaxDevicesPerPortForStorageBus)(StorageBus_T aBus, ULONG *aMaxDevicesPerPort);
-    STDMETHOD(GetMinPortCountForStorageBus)(StorageBus_T aBus, ULONG *aMinPortCount);
-    STDMETHOD(GetMaxPortCountForStorageBus)(StorageBus_T aBus, ULONG *aMaxPortCount);
-    STDMETHOD(GetMaxInstancesOfStorageBus)(ChipsetType_T aChipset, StorageBus_T aBus, ULONG *aMaxInstances);
-    STDMETHOD(GetDeviceTypesForStorageBus)(StorageBus_T aBus, ComSafeArrayOut(DeviceType_T, aDeviceTypes));
-    STDMETHOD(GetDefaultIoCacheSettingForStorageController)(StorageControllerType_T aControllerType, BOOL *aEnabled);
-    STDMETHOD(GetMaxInstancesOfUSBControllerType)(ChipsetType_T aChipset, USBControllerType_T aType, ULONG *aMaxInstances);
-
-    // public methods only for internal purposes
-
-    HRESULT loadSettings(const settings::SystemProperties &data);
-    HRESULT saveSettings(settings::SystemProperties &data);
-
-    ComObjPtr<MediumFormat> mediumFormat(const Utf8Str &aFormat);
-    ComObjPtr<MediumFormat> mediumFormatFromExtension(const Utf8Str &aExt);
-
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
+    HRESULT i_loadSettings(const settings::SystemProperties &data);
+    HRESULT i_saveSettings(settings::SystemProperties &data);
+
+    ComObjPtr<MediumFormat> i_mediumFormat(const Utf8Str &aFormat);
+    ComObjPtr<MediumFormat> i_mediumFormatFromExtension(const Utf8Str &aExt);
 
 private:
 
-    typedef std::list<ComObjPtr<MediumFormat> > MediumFormatList;
+    // wrapped ISystemProperties properties
+    HRESULT getMinGuestRAM(ULONG *aMinGuestRAM);
+    HRESULT getMaxGuestRAM(ULONG *aMaxGuestRAM);
+    HRESULT getMinGuestVRAM(ULONG *aMinGuestVRAM);
+    HRESULT getMaxGuestVRAM(ULONG *aMaxGuestVRAM);
+    HRESULT getMinGuestCPUCount(ULONG *aMinGuestCPUCount);
+    HRESULT getMaxGuestCPUCount(ULONG *aMaxGuestCPUCount);
+    HRESULT getMaxGuestMonitors(ULONG *aMaxGuestMonitors);
+    HRESULT getInfoVDSize(LONG64 *aInfoVDSize);
+    HRESULT getSerialPortCount(ULONG *aSerialPortCount);
+    HRESULT getParallelPortCount(ULONG *aParallelPortCount);
+    HRESULT getMaxBootPosition(ULONG *aMaxBootPosition);
+    HRESULT getExclusiveHwVirt(BOOL *aExclusiveHwVirt);
+    HRESULT setExclusiveHwVirt(BOOL aExclusiveHwVirt);
+    HRESULT getDefaultMachineFolder(com::Utf8Str &aDefaultMachineFolder);
+    HRESULT setDefaultMachineFolder(const com::Utf8Str &aDefaultMachineFolder);
+    HRESULT getLoggingLevel(com::Utf8Str &aLoggingLevel);
+    HRESULT setLoggingLevel(const com::Utf8Str &aLoggingLevel);
+    HRESULT getMediumFormats(std::vector<ComPtr<IMediumFormat> > &aMediumFormats);
+    HRESULT getDefaultHardDiskFormat(com::Utf8Str &aDefaultHardDiskFormat);
+    HRESULT setDefaultHardDiskFormat(const com::Utf8Str &aDefaultHardDiskFormat);
+    HRESULT getFreeDiskSpaceWarning(LONG64 *aFreeDiskSpaceWarning);
+    HRESULT setFreeDiskSpaceWarning(LONG64 aFreeDiskSpaceWarning);
+    HRESULT getFreeDiskSpacePercentWarning(ULONG *aFreeDiskSpacePercentWarning);
+    HRESULT setFreeDiskSpacePercentWarning(ULONG aFreeDiskSpacePercentWarning);
+    HRESULT getFreeDiskSpaceError(LONG64 *aFreeDiskSpaceError);
+    HRESULT setFreeDiskSpaceError(LONG64 aFreeDiskSpaceError);
+    HRESULT getFreeDiskSpacePercentError(ULONG *aFreeDiskSpacePercentError);
+    HRESULT setFreeDiskSpacePercentError(ULONG aFreeDiskSpacePercentError);
+    HRESULT getVRDEAuthLibrary(com::Utf8Str &aVRDEAuthLibrary);
+    HRESULT setVRDEAuthLibrary(const com::Utf8Str &aVRDEAuthLibrary);
+    HRESULT getWebServiceAuthLibrary(com::Utf8Str &aWebServiceAuthLibrary);
+    HRESULT setWebServiceAuthLibrary(const com::Utf8Str &aWebServiceAuthLibrary);
+    HRESULT getDefaultVRDEExtPack(com::Utf8Str &aDefaultVRDEExtPack);
+    HRESULT setDefaultVRDEExtPack(const com::Utf8Str &aDefaultVRDEExtPack);
+    HRESULT getLogHistoryCount(ULONG *aLogHistoryCount);
+    HRESULT setLogHistoryCount(ULONG aLogHistoryCount);
+    HRESULT getDefaultAudioDriver(AudioDriverType_T *aDefaultAudioDriver);
+    HRESULT getAutostartDatabasePath(com::Utf8Str &aAutostartDatabasePath);
+    HRESULT setAutostartDatabasePath(const com::Utf8Str &aAutostartDatabasePath);
+    HRESULT getDefaultAdditionsISO(com::Utf8Str &aDefaultAdditionsISO);
+    HRESULT setDefaultAdditionsISO(const com::Utf8Str &aDefaultAdditionsISO);
+    HRESULT getDefaultFrontend(com::Utf8Str &aDefaultFrontend);
+    HRESULT setDefaultFrontend(const com::Utf8Str &aDefaultFrontend);
 
-    HRESULT getUserHomeDirectory(Utf8Str &strPath);
-    HRESULT setDefaultMachineFolder(const Utf8Str &aPath);
-    HRESULT setLoggingLevel(const Utf8Str &aLoggingLevel);
-    HRESULT setDefaultHardDiskFormat(const Utf8Str &aFormat);
+    // wrapped ISystemProperties methods
+    HRESULT getMaxNetworkAdapters(ChipsetType_T aChipset,
+                                  ULONG *aMaxNetworkAdapters);
+    HRESULT getMaxNetworkAdaptersOfType(ChipsetType_T aChipset,
+                                        NetworkAttachmentType_T aType,
+                                        ULONG *aMaxNetworkAdapters);
+    HRESULT getMaxDevicesPerPortForStorageBus(StorageBus_T aBus,
+                                              ULONG *aMaxDevicesPerPort);
+    HRESULT getMinPortCountForStorageBus(StorageBus_T aBus,
+                                         ULONG *aMinPortCount);
+    HRESULT getMaxPortCountForStorageBus(StorageBus_T aBus,
+                                         ULONG *aMaxPortCount);
+    HRESULT getMaxInstancesOfStorageBus(ChipsetType_T aChipset,
+                                        StorageBus_T aBus,
+                                        ULONG *aMaxInstances);
+    HRESULT getDeviceTypesForStorageBus(StorageBus_T aBus,
+                                        std::vector<DeviceType_T> &aDeviceTypes);
+    HRESULT getDefaultIoCacheSettingForStorageController(StorageControllerType_T aControllerType,
+                                                         BOOL *aEnabled);
+    HRESULT getMaxInstancesOfUSBControllerType(ChipsetType_T aChipset,
+                                               USBControllerType_T aType,
+                                               ULONG *aMaxInstances);
 
-    HRESULT setVRDEAuthLibrary(const Utf8Str &aPath);
-    HRESULT setWebServiceAuthLibrary(const Utf8Str &aPath);
-    HRESULT setDefaultVRDEExtPack(const Utf8Str &aPath);
-    HRESULT setAutostartDatabasePath(const Utf8Str &aPath);
-    HRESULT setDefaultAdditionsISO(const Utf8Str &aPath);
-    HRESULT setDefaultFrontend(const Utf8Str &aPath);
+    HRESULT i_getUserHomeDirectory(Utf8Str &strPath);
+    HRESULT i_setDefaultMachineFolder(const Utf8Str &strPath);
+    HRESULT i_setLoggingLevel(const com::Utf8Str &aLoggingLevel);
+    HRESULT i_setDefaultHardDiskFormat(const com::Utf8Str &aFormat);
+    HRESULT i_setVRDEAuthLibrary(const com::Utf8Str &aPath);
+
+    HRESULT i_setWebServiceAuthLibrary(const com::Utf8Str &aPath);
+    HRESULT i_setDefaultVRDEExtPack(const com::Utf8Str &aExtPack);
+    HRESULT i_setAutostartDatabasePath(const com::Utf8Str &aPath);
+    HRESULT i_setDefaultAdditionsISO(const com::Utf8Str &aPath);
+    HRESULT i_setDefaultFrontend(const com::Utf8Str &aDefaultFrontend);
 
     VirtualBox * const  mParent;
 
     settings::SystemProperties *m;
 
-    MediumFormatList    m_llMediumFormats;
+    MediumFormatList m_llMediumFormats;
 
     friend class VirtualBox;
 };

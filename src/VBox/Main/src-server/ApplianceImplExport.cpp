@@ -2058,9 +2058,9 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
             AutoReadLock propsLock(pSysProps COMMA_LOCKVAL_SRC_POS);
             // We are always exporting to VMDK stream optimized for now
-            formatTemp = pSysProps->mediumFormatFromExtension("iso");
+            formatTemp = pSysProps->i_mediumFormatFromExtension("iso");
 
-            format = pSysProps->mediumFormat("VMDK");
+            format = pSysProps->i_mediumFormat("VMDK");
             if (format.isNull())
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Invalid medium storage format"));
