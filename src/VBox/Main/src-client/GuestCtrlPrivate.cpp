@@ -326,6 +326,32 @@ int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk)
     return rc;
 }
 
+int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
+{
+    LogFlowFunc(("\n"));
+
+    int rc;
+
+    try
+    {
+#ifdef DEBUG
+        strmBlk.DumpToLog();
+#endif
+        /* Object name. */
+        mName = strmBlk.GetString("name");
+        if (mName.isEmpty()) throw VERR_NOT_FOUND;
+        /* Assign the stream block's rc. */
+        rc = strmBlk.GetRc();
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
 {
     LogFlowFunc(("\n"));
@@ -462,6 +488,21 @@ int64_t GuestProcessStreamBlock::GetInt64(const char *pszKey) const
 size_t GuestProcessStreamBlock::GetCount(void) const
 {
     return mPairs.size();
+}
+
+/**
+ * Gets the return code (name = "rc") of this stream block.
+ *
+ * @return  IPRT status code.
+ */
+int GuestProcessStreamBlock::GetRc(void) const
+{
+    const char *pszValue = GetString("rc");
+    if (pszValue)
+    {
+        return RTStrToInt16(pszValue);
+    }
+    return VERR_NOT_FOUND;
 }
 
 /**

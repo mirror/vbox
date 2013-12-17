@@ -342,7 +342,7 @@ public:
     int                     directoryRemoveFromList(GuestDirectory *pDirectory);
     int                     directoryRemoveInternal(const Utf8Str &strPath, uint32_t uFlags, int *pGuestRc);
     int                     directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pGuestRc);
-    int                     objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory, const Utf8Str &strName, int *pGuestRc);
+    int                     objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory, Utf8Str &strName, int *pGuestRc);
     int                     directoryOpenInternal(const GuestDirectoryOpenInfo &openInfo, ComObjPtr<GuestDirectory> &pDirectory, int *pGuestRc);
     int                     directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
     int                     dispatchToDirectory(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
