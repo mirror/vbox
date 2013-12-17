@@ -55,7 +55,7 @@
        {
            /* Embedded scripts are not available here. So, just do a command
               line checking for running VMs instead. */
-           rcScript = system.run('/bin/sh', '-c', '/bin/ps -e | /usr/bin/grep -E "VirtualBoxVM.*startvm|VBoxNetDHCP|VBoxNetNAT" | /usr/bin/grep -qv grep');
+           rcScript = system.run('/bin/sh', '-c', '/bin/ps -e | /usr/bin/grep -E "VirtualBox.*startvm|VBoxNetDHCP|VBoxNetNAT|VBoxHeadless|VBoxSVC" | /usr/bin/grep -qv grep');
            result = (rcScript != 0);
            system.log("system.run /bin/sh .. returned: " + rcScript + " result=" + result);
        } catch (e) { system.log(e); result = false; }
