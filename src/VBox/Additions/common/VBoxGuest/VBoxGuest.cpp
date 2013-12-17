@@ -76,7 +76,7 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 
 DECLINLINE(uint32_t) VBoxGuestCommonGetHandledEventsLocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
-    if(!pDevExt->u32AcquireModeGuestCaps)
+    if (!pDevExt->u32AcquireModeGuestCaps)
         return VMMDEV_EVENT_VALID_EVENT_MASK;
 
     uint32_t u32AllowedGuestCaps = pSession->u32AquiredGuestCaps | (VMMDEV_EVENT_VALID_EVENT_MASK & ~pDevExt->u32AcquireModeGuestCaps);
@@ -462,7 +462,7 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBal
             pDevExt->MemBalloon.paMemObj = (PRTR0MEMOBJ)RTMemAllocZ(sizeof(RTR0MEMOBJ) * pDevExt->MemBalloon.cMaxChunks);
             if (!pDevExt->MemBalloon.paMemObj)
             {
-                LogRel(("VBoxGuestSetBalloonSizeKernel: no memory for paMemObj!\n"));
+                LogRel(("vboxGuestSetBalloonSizeKernel: no memory for paMemObj!\n"));
                 return VERR_NO_MEMORY;
             }
         }
@@ -2073,7 +2073,7 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
     if (cbData < cbActual)
     {
         LogRel(("VBoxGuestCommonIOCtl: HGCM_CALL: cbData=%#zx (%zu) required size is %#zx (%zu)\n",
-             cbData, cbActual));
+               cbData, cbData, cbActual, cbActual));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -2522,10 +2522,8 @@ static int VBoxGuestCommonIOCtl_Log(PVBOXGUESTDEVEXT pDevExt, const char *pch, s
 static bool VBoxGuestCommonGuestCapsValidateValues(uint32_t fCaps)
 {
     if (fCaps & (~(VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING | VMMDEV_GUEST_SUPPORTS_GRAPHICS)))
-    {
-        LogRel(("VBoxGuestCommonGuestCapsValidateValues: invalid guest caps 0x%x\n", fCaps));
         return false;
-    }
+
     return true;
 }
 
@@ -2570,29 +2568,32 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 {
     uint32_t fSetCaps = 0;
 
-    LogRel(("VBoxGuest: VBoxGuestCommonGuestCapsAcquire: pSession(0x%p), OR(0x%x), NOT(0x%x), flags(0x%x)\n", pSession, fOrMask, fNotMask, enmFlags));
-
     if (!VBoxGuestCommonGuestCapsValidateValues(fOrMask))
     {
-        LogRel(("invalid fOrMask 0x%x\n", fOrMask));
+        LogRel(("VBoxGuestCommonGuestCapsAcquire: pSession(0x%p), OR(0x%x), NOT(0x%x), flags(0x%x) -- invalid fOrMask\n",
+                pSession, fOrMask, fNotMask, enmFlags));
         return VERR_INVALID_PARAMETER;
     }
 
-    if (enmFlags != VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE
-            && enmFlags != VBOXGUESTCAPSACQUIRE_FLAGS_NONE)
+    if (   enmFlags != VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE
+        && enmFlags != VBOXGUESTCAPSACQUIRE_FLAGS_NONE)
     {
-        LogRel(("invalid enmFlags %d\n", enmFlags));
+        LogRel(("VBoxGuestCommonGuestCapsAcquire: pSession(0x%p), OR(0x%x), NOT(0x%x), flags(0x%x) -- invalid enmFlags %d\n",
+                pSession, fOrMask, fNotMask, enmFlags));
         return VERR_INVALID_PARAMETER;
     }
+
     if (!VBoxGuestCommonGuestCapsModeSet(pDevExt, fOrMask, true, &fSetCaps))
     {
-        LogRel(("calling caps acquire for set caps %d\n", fOrMask));
+        LogRel(("VBoxGuestCommonGuestCapsAcquire: pSession(0x%p), OR(0x%x), NOT(0x%x), flags(0x%x) -- calling caps acquire for set caps\n",
+                pSession, fOrMask, fNotMask, enmFlags));
         return VERR_INVALID_STATE;
     }
 
     if (enmFlags & VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE)
     {
-        Log(("Configured Acquire caps: 0x%x\n", fOrMask));
+        Log(("VBoxGuestCommonGuestCapsAcquire: pSession(0x%p), OR(0x%x), NOT(0x%x), flags(0x%x) -- configured acquire caps: 0x%x\n",
+             pSession, fOrMask, fNotMask, enmFlags));
         return VINF_SUCCESS;
     }
 
@@ -2644,9 +2645,9 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
     }
 
     int rc = VBoxGuestSetGuestCapabilities(fSessionOrCaps, fSessionNotCaps);
-    if (!RT_SUCCESS(rc))
+    if (!RT_FAILURE(rc))
     {
-        LogRel(("VBoxGuest: VBoxGuestCommonGuestCapsAcquire: VBoxGuestSetGuestCapabilities failed, rc %d\n", rc));
+        LogRel(("VBoxGuestCommonGuestCapsAcquire: VBoxGuestSetGuestCapabilities failed, rc=%Rrc\n", rc));
 
         /* Failure branch
          * this is generally bad since e.g. failure to release the caps may result in other sessions not being able to use it
@@ -2676,8 +2677,8 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 static int VBoxGuestCommonIOCTL_GuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, VBoxGuestCapsAquire *pAcquire)
 {
     int rc = VBoxGuestCommonGuestCapsAcquire(pDevExt, pSession, pAcquire->u32OrMask, pAcquire->u32NotMask, pAcquire->enmFlags);
-    if (!RT_SUCCESS(rc))
-        LogRel(("VBoxGuestCommonGuestCapsAcquire: failed rc %d\n", rc));
+    if (RT_FAILURE(rc))
+        LogRel(("VBoxGuestCommonGuestCapsAcquire: failed rc=%Rrc\n", rc));
     pAcquire->rc = rc;
     return VINF_SUCCESS;
 }
@@ -2914,8 +2915,8 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
 
             default:
             {
-                LogRel(("VBoxGuestCommonIOCtl: Unknown request iFunction=%#x Stripped size=%#x\n", iFunction,
-                                VBOXGUEST_IOCTL_STRIP_SIZE(iFunction)));
+                LogRel(("VBoxGuestCommonIOCtl: Unknown request iFunction=%#x stripped size=%#x\n",
+                        iFunction, VBOXGUEST_IOCTL_STRIP_SIZE(iFunction)));
                 rc = VERR_NOT_SUPPORTED;
                 break;
             }
