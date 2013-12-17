@@ -1722,7 +1722,12 @@ static CGEventRef darwinCarbonCallback(CGEventTapProxy unused, CGEventType unuse
                 CFDictionaryRef elementMatchingDict = darwinQueryLedElementMatchingDictionary();
                 if (elementMatchingDict)
                 {
-                    (void)darwinSetDeviceLedsState(pKbd->pDevice, elementMatchingDict, fNum, fCaps, pHidState->guestState.fScrollLockOn);
+                    (void)darwinSetDeviceLedsState(pKbd->pDevice,
+                                                   elementMatchingDict,
+                                                   pHidState->guestState.fNumLockOn,
+                                                   pHidState->guestState.fCapsLockOn,
+                                                   pHidState->guestState.fScrollLockOn);
+
                     CFRelease(elementMatchingDict);
                 }
             }
