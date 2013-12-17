@@ -1280,6 +1280,11 @@ static int darwinLedElementSetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     IOHIDValueRef valueRef;
     IOReturn      rc = kIOReturnError;
 
+    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
+    int rc1 = SUPR3ResumeBuiltinKeyboard();
+    if (RT_FAILURE(rc1))
+        return rc1;
+
     valueRef = IOHIDValueCreateWithIntegerValue(kCFAllocatorDefault, element, 0, (fEnabled) ? 1 : 0);
     if (valueRef)
     {
@@ -1301,6 +1306,11 @@ static int darwinLedElementGetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     IOHIDValueRef valueRef;
     IOReturn      rc;
     CFIndex       integerValue;
+
+    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
+    int rc1 = SUPR3ResumeBuiltinKeyboard();
+    if (RT_FAILURE(rc1))
+        return rc1;
 
     rc = IOHIDDeviceGetValue(hidDevice, element, &valueRef);
     if (rc == kIOReturnSuccess)
@@ -1330,11 +1340,6 @@ static int darwinSetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
 {
     CFArrayRef matchingElementsArrayRef;
     int        rc2 = 0;
-
-    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
-    int rc1 = SUPR3ResumeBuiltinKeyboard();
-    if (RT_FAILURE(rc1))
-        return rc1;
 
     matchingElementsArrayRef = IOHIDDeviceCopyMatchingElements(hidDevice, elementMatchingDict, kIOHIDOptionsTypeNone);
     if (matchingElementsArrayRef)
@@ -1380,11 +1385,6 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
 {
     CFArrayRef matchingElementsArrayRef;
     int        rc2 = 0;
-
-    /* Try to resume built-in keyboard. Abort if failed in order to avoid GUI freezes. */
-    int rc1 = SUPR3ResumeBuiltinKeyboard();
-    if (RT_FAILURE(rc1))
-        return rc1;
 
     matchingElementsArrayRef = IOHIDDeviceCopyMatchingElements(hidDevice, elementMatchingDict, kIOHIDOptionsTypeNone);
     if (matchingElementsArrayRef)
@@ -1848,8 +1848,13 @@ static VBoxKbdState_t * darwinUsbHidQueryKbdByLocationId(uint32_t idLocation, VB
     {
         VBoxKbdState_t *pKbd = (VBoxKbdState_t *)CFArrayGetValueAtIndex(pHidState->pDeviceCollection, i);
         if (pKbd && pKbd->idLocation == idLocation)
+        {
+            LogRel2(("Lookup USB HID Device by location ID 0x%X: found match\n", idLocation));
             return pKbd;
+        }
     }
+
+    LogRel2(("Lookup USB HID Device by location ID 0x%X: no matches found:\n", idLocation));
 
     return NULL;
 }
@@ -1882,12 +1887,15 @@ static void darwinUsbHidDeviceMatchCb(void *pData, io_iterator_t iter)
             {
                 VBoxKbdState_t *pKbd = darwinUsbHidQueryKbdByLocationId((uint32_t)idLocation, pHidState);
 
-                rc = IOServiceAddInterestNotification(pHidState->pNotificationPrortRef, service, kIOGeneralInterest,
-                    darwinUsbHidGeneralInterestCb, pKbd, &pHidState->pUsbHidGeneralInterestNotify);
+                if (pKbd)
+                {
+                    rc = IOServiceAddInterestNotification(pHidState->pNotificationPrortRef, service, kIOGeneralInterest,
+                        darwinUsbHidGeneralInterestCb, pKbd, &pHidState->pUsbHidGeneralInterestNotify);
 
-                AssertMsg(rc == 0, ("Failed to add general interest notification"));
+                    AssertMsg(rc == 0, ("Failed to add general interest notification"));
 
-                LogRel2(("Found HID device at location 0x%X: class 0x%X, subclass 0x%X\n", idLocation, idDeviceClass, idDeviceSubClass));
+                    LogRel2(("Found HID device at location 0x%X: class 0x%X, subclass 0x%X\n", idLocation, idDeviceClass, idDeviceSubClass));
+                }
             }
 
             rc = (*ppUsbDeviceInterface)->Release(ppUsbDeviceInterface); AssertMsg(rc == 0, ("Failed to release USB device interface"));
