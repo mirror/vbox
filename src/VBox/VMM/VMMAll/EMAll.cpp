@@ -1820,23 +1820,34 @@ VMM_INT_DECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
 VMM_INT_DECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-    uint64_t val;
+    uint64_t uNewDrX;
     int      rc;
     NOREF(pVM);
 
     if (CPUMIsGuestIn64BitCode(pVCpu))
-        rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
+        rc = DISFetchReg64(pRegFrame, SrcRegGen, &uNewDrX);
     else
     {
         uint32_t val32;
         rc = DISFetchReg32(pRegFrame, SrcRegGen, &val32);
-        val = val32;
+        uNewDrX = val32;
     }
 
     if (RT_SUCCESS(rc))
     {
+        if (DestRegDrx == 6)
+        {
+            uNewDrX |= X86_DR6_RA1_MASK;
+            uNewDrX &= ~X86_DR6_RAZ_MASK;
+        }
+        else if (DestRegDrx == 7)
+        {
+            uNewDrX |= X86_DR7_RA1_MASK;
+            uNewDrX &= ~X86_DR7_RAZ_MASK;
+        }
+
         /** @todo we don't fail if illegal bits are set/cleared for e.g. dr7 */
-        rc = CPUMSetGuestDRx(pVCpu, DestRegDrx, val);
+        rc = CPUMSetGuestDRx(pVCpu, DestRegDrx, uNewDrX);
         if (RT_SUCCESS(rc))
             return rc;
         AssertMsgFailed(("CPUMSetGuestDRx %d failed\n", DestRegDrx));
