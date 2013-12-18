@@ -117,10 +117,10 @@ typedef enum CPUMMSRRDFN
 {
     /** Invalid zero value. */
     kCpumMsrRdFn_Invalid = 0,
-    /** Return the CPUMMSRRANGE::uInitOrReadValue. */
+    /** Return the CPUMMSRRANGE::uValue. */
     kCpumMsrRdFn_FixedValue,
     /** Alias to the MSR range starting at the MSR given by
-     * CPUMMSRRANGE::uInitOrReadValue.  Must be used in pair with
+     * CPUMMSRRANGE::uValue.  Must be used in pair with
      * kCpumMsrWrFn_MsrAlias. */
     kCpumMsrRdFn_MsrAlias,
     /** Write only register, GP all read attempts. */
@@ -387,7 +387,7 @@ typedef enum CPUMMSRWRFN
     /** Writes cause GP(0) to be raised, the fWrGpMask should be UINT64_MAX. */
     kCpumMsrWrFn_ReadOnly,
     /** Alias to the MSR range starting at the MSR given by
-     * CPUMMSRRANGE::uInitOrReadValue.  Must be used in pair with
+     * CPUMMSRRANGE::uValue.  Must be used in pair with
      * kCpumMsrRdFn_MsrAlias. */
     kCpumMsrWrFn_MsrAlias,
 
@@ -618,7 +618,7 @@ typedef struct CPUMMSRRANGE
      * When enmRdFn is kCpumMsrRdFn_INIT_VALUE, this is the value returned on RDMSR.
      * offCpumCpu must be UINT16_MAX in that case, otherwise it must be a valid
      * offset into CPUM. */
-    uint64_t    uInitOrReadValue;
+    uint64_t    uValue;
     /** The bits to ignore when writing. [24]   */
     uint64_t    fWrIgnMask;
     /** The bits that will cause a GP(0) when writing. [32]

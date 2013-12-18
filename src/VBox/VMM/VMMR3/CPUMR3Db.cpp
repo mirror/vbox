@@ -626,9 +626,9 @@ int cpumR3MsrRegStats(PVM pVM)
                  STAMUNIT_OCCURENCES, "RDMSR on unknown MSRs (raises #GP).");
     STAM_REL_REG(pVM, &pCpum->cMsrWrites,               STAMTYPE_COUNTER,   "/CPUM/MSR-Totals/Writes",
                  STAMUNIT_OCCURENCES, "All RDMSRs making it to CPUM.");
-    STAM_REL_REG(pVM, &pCpum->cMsrWritesToIgnoredBits,  STAMTYPE_COUNTER,   "/CPUM/MSR-Totals/WritesRaisingGP",
+    STAM_REL_REG(pVM, &pCpum->cMsrWritesRaiseGp,        STAMTYPE_COUNTER,   "/CPUM/MSR-Totals/WritesRaisingGP",
                  STAMUNIT_OCCURENCES, "WRMSR raising #GPs, except unknown MSRs.");
-    STAM_REL_REG(pVM, &pCpum->cMsrWritesRaiseGp,        STAMTYPE_COUNTER,   "/CPUM/MSR-Totals/WritesToIgnoredBits",
+    STAM_REL_REG(pVM, &pCpum->cMsrWritesToIgnoredBits,  STAMTYPE_COUNTER,   "/CPUM/MSR-Totals/WritesToIgnoredBits",
                  STAMUNIT_OCCURENCES, "Writing of ignored bits.");
     STAM_REL_REG(pVM, &pCpum->cMsrWritesUnknown,        STAMTYPE_COUNTER,   "/CPUM/MSR-Totals/WritesUnknown",
                  STAMUNIT_OCCURENCES, "WRMSR on unknown MSRs (raises #GP).");

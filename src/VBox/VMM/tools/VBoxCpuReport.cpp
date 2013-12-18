@@ -2774,8 +2774,20 @@ static int reportMsr_GenRangeFunction(VBCPUREPMSR const *paMsrs, uint32_t cMsrs,
 }
 
 
+/**
+ * Generic report for an MSR implemented by functions, extended version.
+ *
+ * @returns VBox status code.
+ * @param   uMsr            The MSR.
+ * @param   pszRdWrFnName   The read/write function name, optional.
+ * @param   uValue          The MSR range value.
+ * @param   fSkipMask       Mask of bits to skip.
+ * @param   fNoGpMask       Mask of bits to remove from the GP mask after
+ *                          probing
+ * @param   pszAnnotate     Annotation.
+ */
 static int reportMsr_GenFunctionEx(uint32_t uMsr, const char *pszRdWrFnName, uint32_t uValue,
-                                   uint64_t fSkipMask, const char *pszAnnotate)
+                                   uint64_t fSkipMask, uint64_t fNoGpMask, const char *pszAnnotate)
 {
     /* Resolve default function name. */
     if (!pszRdWrFnName)
@@ -2791,6 +2803,8 @@ static int reportMsr_GenFunctionEx(uint32_t uMsr, const char *pszRdWrFnName, uin
     int rc = msrProberModifyBitChanges(uMsr, &fIgnMask, &fGpMask, fSkipMask);
     if (RT_SUCCESS(rc))
     {
+        fGpMask &= ~fNoGpMask;
+
         if (fGpMask == UINT64_MAX && uValue == 0 && !msrProberModifyZero(uMsr))
             rc = printMsrFunctionReadOnly(uMsr, pszRdWrFnName, pszAnnotate);
         else if (fIgnMask == UINT64_MAX && fGpMask == 0 && uValue == 0)
@@ -2821,7 +2835,7 @@ static int reportMsr_Ia32ApicBase(uint32_t uMsr, uint64_t uValue)
     uint64_t fSkipMask = RT_BIT_64(11);
     if (vbCpuRepSupportsX2Apic())
         fSkipMask |= RT_BIT_64(10);
-    return reportMsr_GenFunctionEx(uMsr, "Ia32ApicBase", uValue, fSkipMask, NULL);
+    return reportMsr_GenFunctionEx(uMsr, "Ia32ApicBase", uValue, fSkipMask, 0, NULL);
 }
 
 
@@ -3143,7 +3157,7 @@ static int reportMsr_Amd64Efer(uint32_t uMsr, uint64_t uValue)
         RTThreadSleep(1000);
     }
 
-    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, NULL);
+    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, MSR_K6_EFER_LMA, NULL);
 }
 
 
@@ -3321,7 +3335,7 @@ static int reportMsr_AmdK8SysCfg(uint32_t uMsr, uint64_t uValue)
                   |  RT_BIT(1)   /* SysAckLimit */
                   |  RT_BIT(0)   /* SysAckLimit */;
 
-    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, annotateValue(uValue));
+    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, 0, annotateValue(uValue));
 }
 
 
@@ -3353,7 +3367,7 @@ static int reportMsr_AmdK8HwCr(uint32_t uMsr, uint64_t uValue)
         fSkipMask |= RT_BIT(1);  /* SLOWFENCE */
     fSkipMask |= RT_BIT(0);      /* SMMLOCK */
 
-    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, annotateValue(uValue));
+    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, 0, annotateValue(uValue));
 }
 
 
@@ -3369,7 +3383,7 @@ static int reportMsr_AmdK8IorrBaseN(uint32_t uMsr, uint64_t uValue)
     /* Skip know bits here, as harm seems to come from messing with them. */
     uint64_t fSkipMask = RT_BIT(4) | RT_BIT(3);
     fSkipMask |= (RT_BIT_64(vbCpuRepGetPhysAddrWidth()) - 1) & X86_PAGE_4K_BASE_MASK;
-    return reportMsr_GenFunctionEx(uMsr, NULL, (uMsr - 0xc0010016) / 2, fSkipMask, annotateValue(uValue));
+    return reportMsr_GenFunctionEx(uMsr, NULL, (uMsr - 0xc0010016) / 2, fSkipMask, 0, annotateValue(uValue));
 }
 
 
@@ -3385,7 +3399,7 @@ static int reportMsr_AmdK8IorrMaskN(uint32_t uMsr, uint64_t uValue)
     /* Skip know bits here, as harm seems to come from messing with them. */
     uint64_t fSkipMask = RT_BIT(11);
     fSkipMask |= (RT_BIT_64(vbCpuRepGetPhysAddrWidth()) - 1) & X86_PAGE_4K_BASE_MASK;
-    return reportMsr_GenFunctionEx(uMsr, NULL, (uMsr - 0xc0010017) / 2, fSkipMask, annotateValue(uValue));
+    return reportMsr_GenFunctionEx(uMsr, NULL, (uMsr - 0xc0010017) / 2, fSkipMask, 0, annotateValue(uValue));
 }
 
 
@@ -3400,7 +3414,7 @@ static int reportMsr_AmdK8TopMemN(uint32_t uMsr, uint64_t uValue)
 {
     /* Skip know bits here, as harm seems to come from messing with them. */
     uint64_t fSkipMask = (RT_BIT_64(vbCpuRepGetPhysAddrWidth()) - 1) & ~(RT_BIT_64(23) - 1);
-    return reportMsr_GenFunctionEx(uMsr, NULL, uMsr == 0xc001001d, fSkipMask, annotateValue(uValue));
+    return reportMsr_GenFunctionEx(uMsr, NULL, uMsr == 0xc001001d, fSkipMask, 0, annotateValue(uValue));
 }
 
 
@@ -3485,7 +3499,7 @@ static int reportMsr_AmdFam10hCofVidControl(uint32_t uMsr, uint64_t uValue)
     fSkipMask |= UINT32_C(0x000001c0);              /* CpuDid */
     fSkipMask |= UINT32_C(0x0000003f);              /* CpuFid */
 
-    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, annotateValue(uValue));
+    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, 0, annotateValue(uValue));
 }
 
 
@@ -3555,7 +3569,7 @@ static int reportMsr_AmdK7InstrCacheCfg(uint32_t uMsr, uint64_t uValue)
         fSkipMask |= RT_BIT_64(27); /* Unknown killer bit, possibly applicable to other microarchs. */
         fSkipMask |= RT_BIT_64(28); /* Unknown killer bit, possibly applicable to other microarchs. */
     }
-    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, annotateValue(uValue));
+    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, 0, annotateValue(uValue));
 }
 
 
@@ -3576,7 +3590,7 @@ static int reportMsr_AmdFam15hCombUnitCfg(uint32_t uMsr, uint64_t uValue)
                        | RT_BIT_64(19) /* L2FirstLockWay */
                        | RT_BIT_64(10) /* DcacheAggressivePriority */;
     fSkipMask |= RT_BIT_64(46) | RT_BIT_64(45); /* Killer field. Seen bit 46 set, 45 clear. Messing with either means reboot/BSOD. */
-    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, annotateValue(uValue));
+    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, 0, annotateValue(uValue));
 }
 
 
@@ -3592,7 +3606,7 @@ static int reportMsr_AmdFam15hExecUnitCfg(uint32_t uMsr, uint64_t uValue)
     /* Skip know bits here, as harm seems to come from messing with them. */
     uint64_t fSkipMask = RT_BIT_64(54) /* LateSbzResync  */;
     fSkipMask |= RT_BIT_64(35); /* Undocumented killer bit. */
-    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, annotateValue(uValue));
+    return reportMsr_GenFunctionEx(uMsr, NULL, uValue, fSkipMask, 0, annotateValue(uValue));
 }
 
 
@@ -3682,25 +3696,25 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
         else if (uMsr >= 0x00000800 && uMsr <= 0x000008ff)
             rc = reportMsr_GenX2Apic(&paMsrs[i], cMsrs - i, &i);
         else if (uMsr == 0x00002000 && g_enmVendor == CPUMCPUVENDOR_INTEL)
-            rc = reportMsr_GenFunctionEx(uMsr, "IntelP6CrN", 0, X86_CR0_PE | X86_CR0_PG,
+            rc = reportMsr_GenFunctionEx(uMsr, "IntelP6CrN", 0, X86_CR0_PE | X86_CR0_PG, 0,
                                          annotateIfMissingBits(uValue, X86_CR0_PE | X86_CR0_PE | X86_CR0_ET));
         else if (uMsr == 0x00002002 && g_enmVendor == CPUMCPUVENDOR_INTEL)
-            rc = reportMsr_GenFunctionEx(uMsr, "IntelP6CrN", 2, 0, annotateValue(uValue));
+            rc = reportMsr_GenFunctionEx(uMsr, "IntelP6CrN", 2, 0, 0, annotateValue(uValue));
         else if (uMsr == 0x00002003 && g_enmVendor == CPUMCPUVENDOR_INTEL)
         {
             uint64_t fCr3Mask = (RT_BIT_64(vbCpuRepGetPhysAddrWidth()) - 1) & (X86_CR3_PAE_PAGE_MASK | X86_CR3_AMD64_PAGE_MASK);
             if (!vbCpuRepSupportsPae())
                 fCr3Mask &= X86_CR3_PAGE_MASK | X86_CR3_AMD64_PAGE_MASK;
-            rc = reportMsr_GenFunctionEx(uMsr, "IntelP6CrN", 3, fCr3Mask, annotateValue(uValue));
+            rc = reportMsr_GenFunctionEx(uMsr, "IntelP6CrN", 3, fCr3Mask, 0, annotateValue(uValue));
         }
         else if (uMsr == 0x00002004 && g_enmVendor == CPUMCPUVENDOR_INTEL)
             rc = reportMsr_GenFunctionEx(uMsr, "IntelP6CrN", 4,
-                                         X86_CR4_PSE | X86_CR4_PAE | X86_CR4_MCE | X86_CR4_SMXE,
+                                         X86_CR4_PSE | X86_CR4_PAE | X86_CR4_MCE | X86_CR4_SMXE, 0,
                                          annotateValue(uValue));
         else if (uMsr == 0xc0000080)
             rc = reportMsr_Amd64Efer(uMsr, uValue);
         else if (uMsr == 0xc0000082 || uMsr == 0xc0000083 || uMsr == 0xc0000100 || uMsr == 0xc0000101 || uMsr == 0xc0000102)
-            rc = reportMsr_GenFunctionEx(uMsr, NULL, 0, UINT64_C(0xffff800000000000), annotateValue(uValue)); /* Canoncial address hack. */
+            rc = reportMsr_GenFunctionEx(uMsr, NULL, 0, UINT64_C(0xffff800000000000), 0, annotateValue(uValue)); /* Canoncial address hack. */
         else if (uMsr >= 0xc0000408 && uMsr <= 0xc000040f)
             rc = reportMsr_AmdFam10hMc4MiscN(&paMsrs[i], cMsrs - i, &i);
         else if (uMsr == 0xc0010000)
