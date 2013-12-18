@@ -8212,6 +8212,8 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     {
         /* restore the session state */
         mData->mSession.mState = SessionState_Unlocked;
+        alock.release();
+        mParent->addProcessToReap(pid);
         /* The failure may occur w/o any error info (from RPC), so provide one */
         return setError(VBOX_E_VM_ERROR,
                         tr("Failed to assign the machine to the session (%Rhrc)"), rc);
@@ -8224,6 +8226,9 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     mData->mSession.mPID = pid;
     mData->mSession.mState = SessionState_Spawning;
     mData->mSession.mType = strFrontend;
+
+    alock.release();
+    mParent->addProcessToReap(pid);
 
     LogFlowThisFuncLeave();
     return S_OK;
@@ -8295,7 +8300,6 @@ bool Machine::isSessionSpawning()
     return false;
 }
 
-#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
 /**
  * Called from the client watcher thread to check for unexpected client process
  * death during Session_Spawning state (e.g. before it successfully opened a
@@ -8389,7 +8393,6 @@ bool Machine::checkForSpawnFailure()
 
     return false;
 }
-#endif /* !VBOX_WITH_GENERIC_SESSION_WATCHER */
 
 /**
  *  Checks whether the machine can be registered. If so, commits and saves
@@ -12984,8 +12987,8 @@ void SessionMachine::uninit(Uninit::Reason aReason)
 #endif /* VBOX_WITH_USB */
 
     // we need to lock this object in uninit() because the lock is shared
-    // with mPeer (as well as data we modify below). mParent->addProcessToReap()
-    // and others need mParent lock, and USB needs host lock.
+    // with mPeer (as well as data we modify below). mParent lock is needed
+    // by several calls to it, and USB needs host lock.
     AutoMultiWriteLock3 multilock(mParent, mParent->host(), this COMMA_LOCKVAL_SRC_POS);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
@@ -13044,16 +13047,6 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         Utf8Str strStateFile = mConsoleTaskData.mSnapshot->i_getStateFilePath();
         mConsoleTaskData.mSnapshot->uninit();
         releaseSavedStateFile(strStateFile, NULL /* pSnapshotToIgnore */ );
-    }
-
-    if (!mData->mSession.mType.isEmpty())
-    {
-        /* mType is not null when this machine's process has been started by
-         * Machine::LaunchVMProcess(), therefore it is our child.  We
-         * need to queue the PID to reap the process (and avoid zombies on
-         * Linux). */
-        Assert(mData->mSession.mPID != NIL_RTPROCESS);
-        mParent->addProcessToReap(mData->mSession.mPID);
     }
 
     mData->mSession.mPID = NIL_RTPROCESS;
