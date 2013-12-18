@@ -691,7 +691,6 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
 
 #elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
 
-    bool update = false;
     bool updateSpawned = false;
 
     do
@@ -732,34 +731,21 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
             if (!autoCaller.isOk())
                 break;
 
-            if (RT_SUCCESS(rc) || update || updateSpawned)
+            /** @todo this quite big effort for catching machines in spawning
+             * state which can't be caught by the token mechanism (as the token
+             * can't be in the other process yet) could be eliminated if the
+             * reaping is made smarter, having cross-reference information
+             * from the pid to the corresponding machine object. Both cases do
+             * more or less the same thing anyway. */
+            if (RT_SUCCESS(rc) || updateSpawned)
             {
                 /* RT_SUCCESS(rc) means an update event is signaled */
 
-#if 0
                 // get reference to the machines list in VirtualBox
                 VirtualBox::MachinesOList &allMachines = that->mVirtualBox->getMachinesList();
 
                 // lock the machines list for reading
                 AutoReadLock thatLock(allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-                if (RT_SUCCESS(rc) || update)
-                {
-                    /* obtain a new set of opened machines */
-                    machines.clear();
-
-                    for (MachinesOList::iterator it = allMachines.begin();
-                         it != allMachines.end();
-                         ++it)
-                    {
-                        ComObjPtr<SessionMachine> sm;
-                        if ((*it)->isSessionOpenOrClosing(sm))
-                            machines.push_back(sm);
-                    }
-
-                    cnt = machines.size();
-                    LogFlowFunc(("UPDATE: direct session count = %d\n", cnt));
-                }
 
                 if (RT_SUCCESS(rc) || updateSpawned)
                 {
@@ -778,23 +764,13 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
                     LogFlowFunc(("UPDATE: spawned session count = %d\n", cntSpawned));
                 }
 
-                // machines lock unwinds here
-#else
                 NOREF(cnt);
-#endif
+                // machines lock unwinds here
             }
-
-#if 0
-            update = false;
-            for (size_t i = 0; i < cnt; ++i)
-                update |= (machines[i])->checkForDeath();
 
             updateSpawned = false;
             for (size_t i = 0; i < cntSpawned; ++i)
                 updateSpawned |= (spawnedMachines[i])->checkForSpawnFailure();
-#else
-            NOREF(cntSpawned);
-#endif
 
             /* reap child processes */
             {

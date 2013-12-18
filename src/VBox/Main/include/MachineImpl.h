@@ -790,9 +790,7 @@ public:
                                 ComPtr<IInternalSessionControl> *aControl = NULL)
     { return isSessionOpen(aMachine, aControl, true /* aAllowClosing */); }
 
-#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
     bool checkForSpawnFailure();
-#endif /* !VBOX_WITH_GENERIC_SESSION_WATCHER */
 
     HRESULT prepareRegister();
 
