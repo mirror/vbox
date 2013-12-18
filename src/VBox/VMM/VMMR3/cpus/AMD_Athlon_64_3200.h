@@ -112,7 +112,7 @@ static CPUMMSRRANGE const g_aMsrRanges_AMD_Athlon_64_3200[] =
     MFS(0x00000277, "IA32_PAT", Ia32Pat, Ia32Pat, Guest.msrPAT),
     MFZ(0x000002ff, "IA32_MTRR_DEF_TYPE", Ia32MtrrDefType, Ia32MtrrDefType, GuestMsrs.msr.MtrrDefType, 0, UINT64_C(0xfffffffffffff3f8)),
     RFN(0x00000400, 0x00000413, "IA32_MCi_CTL_STATUS_ADDR_MISC", Ia32McCtlStatusAddrMiscN, Ia32McCtlStatusAddrMiscN),
-    MFX(0xc0000080, "AMD64_EFER", Amd64Efer, Amd64Efer, 0x800, 0xfe, UINT64_C(0xfffffffffffff600)),
+    MFX(0xc0000080, "AMD64_EFER", Amd64Efer, Amd64Efer, 0x800, 0xfe, UINT64_C(0xfffffffffffff200)),
     MFN(0xc0000081, "AMD64_STAR", Amd64SyscallTarget, Amd64SyscallTarget), /* value=0x0 */
     MFN(0xc0000082, "AMD64_STAR64", Amd64LongSyscallTarget, Amd64LongSyscallTarget), /* value=0x0 */
     MFN(0xc0000083, "AMD64_STARCOMPAT", Amd64CompSyscallTarget, Amd64CompSyscallTarget), /* value=0x0 */
