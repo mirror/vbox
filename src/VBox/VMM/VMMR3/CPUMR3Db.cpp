@@ -438,6 +438,52 @@ int cpumR3MsrRangesInsert(PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PC
 }
 
 
+/**
+ * Fudges the MSRs that guest are known to access in some odd cases.
+ *
+ * A typical example is a VM that has been moved between different hosts where
+ * for instance the cpu vendor differs.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 Pointer to the cross context VM structure.
+ */
+int cpumR3MsrApplyFudge(PVM pVM)
+{
+    static CPUMMSRRANGE const s_aFudgeMsrs[] =
+    {
+        MFO(0x00000099, "IA32_P5_MC_ADDR",          Ia32P5McAddr),
+        MFX(0x00000001, "IA32_P5_MC_TYPE",          Ia32P5McType,   Ia32P5McType,   0, 0, UINT64_MAX),
+        MVO(0x00000017, "IA32_PLATFORM_ID",         0),
+        MFN(0x0000001b, "IA32_APIC_BASE",           Ia32ApicBase,   Ia32ApicBase),
+        MVI(0x0000008b, "BIOS_SIGN",                0),
+        MFX(0x000000fe, "IA32_MTRRCAP",             Ia32MtrrCap,    ReadOnly,       0x508, 0, 0),
+        MFX(0x00000179, "IA32_MCG_CAP",             Ia32McgCap,     ReadOnly,       0x005, 0, 0),
+        MFX(0x0000017a, "IA32_MCG_STATUS",          Ia32McgStatus,  Ia32McgStatus,  0, ~(uint64_t)UINT32_MAX, 0),
+        MFN(0x000001a0, "IA32_MISC_ENABLE",         Ia32MiscEnable, Ia32MiscEnable),
+        MFN(0x000001d9, "IA32_DEBUGCTL",            Ia32DebugCtl,   Ia32DebugCtl),
+        MFO(0x000001db, "P6_LAST_BRANCH_FROM_IP",   P6LastBranchFromIp),
+        MFO(0x000001dc, "P6_LAST_BRANCH_TO_IP",     P6LastBranchToIp),
+        MFO(0x000001dd, "P6_LAST_INT_FROM_IP",      P6LastIntFromIp),
+        MFO(0x000001de, "P6_LAST_INT_TO_IP",        P6LastIntToIp),
+        MFS(0x00000277, "IA32_PAT",                 Ia32Pat, Ia32Pat, Guest.msrPAT),
+        MFZ(0x000002ff, "IA32_MTRR_DEF_TYPE",       Ia32MtrrDefType, Ia32MtrrDefType, GuestMsrs.msr.MtrrDefType, 0, ~(uint64_t)0xc07),
+        MFN(0x00000400, "IA32_MCi_CTL_STATUS_ADDR_MISC", Ia32McCtlStatusAddrMiscN, Ia32McCtlStatusAddrMiscN),
+    };
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aFudgeMsrs); i++)
+        if (!cpumLookupMsrRange(pVM, s_aFudgeMsrs[i].uFirst))
+        {
+            LogRel(("CPUM: MSR fudge: %#010x %s\n", s_aFudgeMsrs[i].uFirst, s_aFudgeMsrs[i].szName));
+            int rc = cpumR3MsrRangesInsert(&pVM->cpum.s.GuestInfo.paMsrRangesR3, &pVM->cpum.s.GuestInfo.cMsrRanges,
+                                           &s_aFudgeMsrs[i]);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+    return VINF_SUCCESS;
+}
+
+
 int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
 {
     CPUMDBENTRY const *pEntry = NULL;
