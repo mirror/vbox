@@ -439,6 +439,29 @@ int cpumR3MsrRangesInsert(PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PC
 
 
 /**
+ * Worker for cpumR3MsrApplyFudge that applies one table.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   paRanges            Array of MSRs to fudge.
+ * @param   cRanges             Number of MSRs in the array.
+ */
+static int cpumR3MsrApplyFudgeTable(PVM pVM, PCCPUMMSRRANGE paRanges, size_t cRanges)
+{
+    for (uint32_t i = 0; i < cRanges; i++)
+        if (!cpumLookupMsrRange(pVM, paRanges[i].uFirst))
+        {
+            LogRel(("CPUM: MSR fudge: %#010x %s\n", paRanges[i].uFirst, paRanges[i].szName));
+            int rc = cpumR3MsrRangesInsert(&pVM->cpum.s.GuestInfo.paMsrRangesR3, &pVM->cpum.s.GuestInfo.cMsrRanges,
+                                           &paRanges[i]);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Fudges the MSRs that guest are known to access in some odd cases.
  *
  * A typical example is a VM that has been moved between different hosts where
@@ -449,9 +472,12 @@ int cpumR3MsrRangesInsert(PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PC
  */
 int cpumR3MsrApplyFudge(PVM pVM)
 {
+    /*
+     * Basic.
+     */
     static CPUMMSRRANGE const s_aFudgeMsrs[] =
     {
-        MFO(0x00000099, "IA32_P5_MC_ADDR",          Ia32P5McAddr),
+        MFO(0x00000000, "IA32_P5_MC_ADDR",          Ia32P5McAddr),
         MFX(0x00000001, "IA32_P5_MC_TYPE",          Ia32P5McType,   Ia32P5McType,   0, 0, UINT64_MAX),
         MVO(0x00000017, "IA32_PLATFORM_ID",         0),
         MFN(0x0000001b, "IA32_APIC_BASE",           Ia32ApicBase,   Ia32ApicBase),
@@ -469,18 +495,23 @@ int cpumR3MsrApplyFudge(PVM pVM)
         MFZ(0x000002ff, "IA32_MTRR_DEF_TYPE",       Ia32MtrrDefType, Ia32MtrrDefType, GuestMsrs.msr.MtrrDefType, 0, ~(uint64_t)0xc07),
         MFN(0x00000400, "IA32_MCi_CTL_STATUS_ADDR_MISC", Ia32McCtlStatusAddrMiscN, Ia32McCtlStatusAddrMiscN),
     };
+    int rc = cpumR3MsrApplyFudgeTable(pVM, &s_aFudgeMsrs[0], RT_ELEMENTS(s_aFudgeMsrs));
+    AssertLogRelRCReturn(rc, rc);
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(s_aFudgeMsrs); i++)
-        if (!cpumLookupMsrRange(pVM, s_aFudgeMsrs[i].uFirst))
+    /*
+     * XP might mistake opterons and other newer CPUs for P4s.
+     */
+    if (pVM->cpum.s.GuestFeatures.uFamily >= 0xf)
+    {
+        static CPUMMSRRANGE const s_aP4FudgeMsrs[] =
         {
-            LogRel(("CPUM: MSR fudge: %#010x %s\n", s_aFudgeMsrs[i].uFirst, s_aFudgeMsrs[i].szName));
-            int rc = cpumR3MsrRangesInsert(&pVM->cpum.s.GuestInfo.paMsrRangesR3, &pVM->cpum.s.GuestInfo.cMsrRanges,
-                                           &s_aFudgeMsrs[i]);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
+            MFX(0x0000002c, "P4_EBC_FREQUENCY_ID", IntelP4EbcFrequencyId, IntelP4EbcFrequencyId, 0xf12010f, UINT64_MAX, 0),
+        };
+        int rc = cpumR3MsrApplyFudgeTable(pVM, &s_aP4FudgeMsrs[0], RT_ELEMENTS(s_aP4FudgeMsrs));
+        AssertLogRelRCReturn(rc, rc);
+    }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
