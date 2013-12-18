@@ -1676,6 +1676,20 @@ static int cpumR3CpuIdInit(PVM pVM)
         }
     }
 
+    /*
+     * MSR fudging.
+     */
+    /** @cfgm{CPUM/FudgeMSRs, boolean, true}
+     * Fudges some common MSRs if not present in the selected CPU database entry.
+     * This is for trying to keep VMs running when moved between different hosts
+     * and different CPU vendors. */
+    bool fEnable;
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "FudgeMSRs", &fEnable, true);       AssertRCReturn(rc, rc);
+    if (fEnable)
+    {
+        rc = cpumR3MsrApplyFudge(pVM);
+        AssertLogRelRCReturn(rc, rc);
+    }
 
     /*
      * Move the MSR and CPUID arrays over on the hypervisor heap, and explode
@@ -1703,7 +1717,6 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
 
     /* Check if PAE was explicitely enabled by the user. */
-    bool fEnable;
     rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnablePAE", &fEnable, false);      AssertRCReturn(rc, rc);
     if (fEnable)
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
