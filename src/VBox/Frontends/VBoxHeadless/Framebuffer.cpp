@@ -44,7 +44,7 @@ VRDPFramebuffer::VRDPFramebuffer()
 
     // start with a standard size
     RequestResize(0, FramebufferPixelFormat_Opaque,
-                  (ULONG) NULL, 0, 0, 640, 480, NULL);
+                  NULL, 0, 0, 640, 480, NULL);
 }
 
 VRDPFramebuffer::~VRDPFramebuffer()
