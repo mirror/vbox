@@ -13,8 +13,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __DEVVMWARE_H__
-#define __DEVVMWARE_H__
+#ifndef __DEVVGA_SVGA_H__
+#define __DEVVGA_SVGA_H__
 
 
 /** Default FIFO size. */
@@ -42,5 +42,5 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
 int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns);
 
-#endif  /* __DEVVMWARE_H__ */
+#endif  /* __DEVVGA_SVGA_H__ */
 
