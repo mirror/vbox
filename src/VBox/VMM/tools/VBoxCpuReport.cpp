@@ -497,7 +497,7 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
                 RTThreadSleep(22);
             }
 #if 0
-            else if (uMsr >= 0xc0011000 && uMsr <= 0xc0011100)
+            else if (uMsr >= 0x00003170 && uMsr <= 0xc0000090)
             {
                 vbCpuRepDebug("testing %#x...\n", uMsr);
                 RTThreadSleep(250);
@@ -522,11 +522,20 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
                 uint32_t fFlags;
                 if (!fGp)
                     fFlags = 0;
+                /* VIA HACK - writing to 0x0000317e on a quad core make the core unresponsive. */
+                else if (uMsr == 0x0000317e && g_enmVendor == CPUMCPUVENDOR_VIA)
+                {
+                    uValue = 0;
+                    fFlags = VBCPUREPMSR_F_WRITE_ONLY;
+                    fGp    = *pcMsrs == 0
+                          || (*ppaMsrs)[*pcMsrs - 1].uMsr != 0x0000317d
+                          || (*ppaMsrs)[*pcMsrs - 1].fFlags != VBCPUREPMSR_F_WRITE_ONLY;
+                }
                 else
                 {
                     /* Is it a write only register? */
 #if 0
-                    if (uMsr >= 0xc0011000 && uMsr <= 0xc0011100)
+                    if (uMsr >= 0x00003170 && uMsr <= 0xc0000090)
                     {
                         vbCpuRepDebug("test writing %#x...\n", uMsr);
                         RTThreadSleep(250);
@@ -566,7 +575,10 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
                     rc = vbCpuRepMsrsAddOne(ppaMsrs, pcMsrs, uMsr, uValue, fFlags);
                     if (RT_FAILURE(rc))
                         return RTMsgErrorRc(rc, "Out of memory (uMsr=%#x).\n", uMsr);
-                    vbCpuRepDebug("%#010x: uValue=%#llx fFlags=%#x\n", uMsr, uValue, fFlags);
+                    if (   g_enmVendor != CPUMCPUVENDOR_VIA
+                        || uValue
+                        || fFlags)
+                        vbCpuRepDebug("%#010x: uValue=%#llx fFlags=%#x\n", uMsr, uValue, fFlags);
                 }
             }
 
@@ -1117,6 +1129,53 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00001007: return "P6_DEBUG_REGISTER_7";
         case 0x0000103f: return "P6_UNK_0000_103f"; /* P6_M_Dothan. */
         case 0x000010cd: return "P6_UNK_0000_10cd"; /* P6_M_Dothan. */
+
+        case 0x00001107: return "VIA_UNK_0000_1107";
+        case 0x0000110f: return "VIA_UNK_0000_110f";
+        case 0x00001153: return "VIA_UNK_0000_1153";
+        case 0x00001200: return "VIA_UNK_0000_1200";
+        case 0x00001201: return "VIA_UNK_0000_1201";
+        case 0x00001202: return "VIA_UNK_0000_1202";
+        case 0x00001203: return "VIA_UNK_0000_1203";
+        case 0x00001204: return "VIA_UNK_0000_1204";
+        case 0x00001205: return "VIA_UNK_0000_1205";
+        case 0x00001206: return "VIA_ALT_VENDOR_EBX";
+        case 0x00001207: return "VIA_ALT_VENDOR_ECDX";
+        case 0x00001208: return "VIA_UNK_0000_1208";
+        case 0x00001209: return "VIA_UNK_0000_1209";
+        case 0x0000120a: return "VIA_UNK_0000_120a";
+        case 0x0000120b: return "VIA_UNK_0000_120b";
+        case 0x0000120c: return "VIA_UNK_0000_120c";
+        case 0x0000120d: return "VIA_UNK_0000_120d";
+        case 0x0000120e: return "VIA_UNK_0000_120e";
+        case 0x0000120f: return "VIA_UNK_0000_120f";
+        case 0x00001210: return "VIA_UNK_0000_1210";
+        case 0x00001211: return "VIA_UNK_0000_1211";
+        case 0x00001212: return "VIA_UNK_0000_1212";
+        case 0x00001213: return "VIA_UNK_0000_1213";
+        case 0x00001214: return "VIA_UNK_0000_1214";
+        case 0x00001220: return "VIA_UNK_0000_1220";
+        case 0x00001221: return "VIA_UNK_0000_1221";
+        case 0x00001230: return "VIA_UNK_0000_1230";
+        case 0x00001231: return "VIA_UNK_0000_1231";
+        case 0x00001232: return "VIA_UNK_0000_1232";
+        case 0x00001233: return "VIA_UNK_0000_1233";
+        case 0x00001234: return "VIA_UNK_0000_1234";
+        case 0x00001235: return "VIA_UNK_0000_1235";
+        case 0x00001236: return "VIA_UNK_0000_1236";
+        case 0x00001237: return "VIA_UNK_0000_1237";
+        case 0x00001238: return "VIA_UNK_0000_1238";
+        case 0x00001239: return "VIA_UNK_0000_1239";
+        case 0x00001240: return "VIA_UNK_0000_1240";
+        case 0x00001241: return "VIA_UNK_0000_1241";
+        case 0x00001243: return "VIA_UNK_0000_1243";
+        case 0x00001245: return "VIA_UNK_0000_1245";
+        case 0x00001246: return "VIA_UNK_0000_1246";
+        case 0x00001247: return "VIA_UNK_0000_1247";
+        case 0x00001248: return "VIA_UNK_0000_1248";
+        case 0x00001249: return "VIA_UNK_0000_1249";
+        case 0x0000124a: return "VIA_UNK_0000_124a";
+
         case 0x00002000: return "P6_CR0";
         case 0x00002002: return "P6_CR2";
         case 0x00002003: return "P6_CR3";
@@ -2193,8 +2252,20 @@ static VBCPUREPBADNESS queryMsrWriteBadness(uint32_t uMsr)
         case 0x00000052:
         case 0x00000053:
         case 0x00000054:
+
         case 0x00001006:
         case 0x00001007:
+            return VBCPUREPBADNESS_BOND_VILLAIN;
+
+        case 0x0000120e:
+        case 0x00001233:
+        case 0x00001239:
+        case 0x00001249:
+        case 0x0000124a:
+            if (g_enmVendor == CPUMCPUVENDOR_VIA)
+                return VBCPUREPBADNESS_BOND_VILLAIN;
+            break;
+
         case 0xc0010010:
         case 0xc0010016:
         case 0xc0010017:
@@ -2202,7 +2273,6 @@ static VBCPUREPBADNESS queryMsrWriteBadness(uint32_t uMsr)
         case 0xc0010019:
         case 0xc001001a:
         case 0xc001001d:
-        case 0xc001101e:
         case 0xc0010064: /* P-state fequency, voltage, ++. */
         case 0xc0010065: /* P-state fequency, voltage, ++. */
         case 0xc0010066: /* P-state fequency, voltage, ++. */
@@ -2212,6 +2282,7 @@ static VBCPUREPBADNESS queryMsrWriteBadness(uint32_t uMsr)
         case 0xc001006a: /* P-state fequency, voltage, ++. */
         case 0xc001006b: /* P-state fequency, voltage, ++. */
         case 0xc0010070: /* COFVID Control. */
+        case 0xc001101e:
         case 0xc0011021: /* IC_CFG (instruction cache configuration) */
         case 0xc0011023: /* CU_CFG (combined unit configuration) */
         case 0xc001102c: /* EX_CFG (execution unit configuration) */
@@ -2232,6 +2303,69 @@ static VBCPUREPBADNESS queryMsrWriteBadness(uint32_t uMsr)
     }
     return VBCPUREPBADNESS_MOSTLY_HARMLESS;
 }
+
+
+/**
+ * Checks if this might be a VIA dummy register.
+ *
+ * @returns true if it's a dummy, false if it isn't.
+ * @param   uMsr                The MSR.
+ * @param   uValue              The value.
+ * @param   fFlags              The flags.
+ */
+static bool isMsrViaDummy(uint32_t uMsr, uint64_t uValue, uint32_t fFlags)
+{
+    if (g_enmVendor != CPUMCPUVENDOR_VIA)
+        return false;
+
+    if (uValue)
+        return false;
+
+    if (fFlags)
+        return false;
+
+    switch (uMsr)
+    {
+        case 0x00000010:
+        case 0x0000001b:
+        case 0x000000c1:
+        case 0x000000c2:
+        case 0x0000011e:
+        case 0x00000186:
+        case 0x00000187:
+        //case 0x00000200 ... (mtrrs will be detected)
+            return false;
+
+        case 0xc0000080:
+        case 0xc0000081:
+        case 0xc0000082:
+        case 0xc0000083:
+            if (vbCpuRepSupportsLongMode())
+                return false;
+            break;
+    }
+
+    if (uMsr >= 0x00001200 && uMsr <= 0x00003fff && queryMsrWriteBadness(uMsr) != VBCPUREPBADNESS_MOSTLY_HARMLESS)
+        return false;
+
+    if (   !msrProberModifyNoChange(uMsr)
+        && !msrProberModifyZero(uMsr))
+        return false;
+
+    uint64_t fIgnMask  = 0;
+    uint64_t fGpMask   = 0;
+    int rc = msrProberModifyBitChanges(uMsr, &fIgnMask, &fGpMask, 0);
+    if (RT_FAILURE(rc))
+        return false;
+
+    if (fIgnMask != UINT64_MAX)
+        return false;
+    if (fGpMask != 0)
+        return false;
+
+    return true;
+}
+
 
 
 
@@ -2301,15 +2435,22 @@ static int printMsrValueReadOnly(uint32_t uMsr, uint64_t uValue, const char *psz
 }
 
 
-static int printMsrValueIgnoreWrites(uint32_t uMsr, uint64_t uValue, const char *pszAnnotation)
+
+static int printMsrValueIgnoreWritesNamed(uint32_t uMsr, uint64_t uValue, const char *pszName, const char *pszAnnotation)
 {
-    vbCpuRepPrintf("    MVI(%#010x, \"%s\"", uMsr, getMsrName(uMsr));
+    vbCpuRepPrintf("    MVI(%#010x, \"%s\"", uMsr, pszName);
     printMsrValueU64(uValue);
     vbCpuRepPrintf("),");
     if (pszAnnotation)
         vbCpuRepPrintf(" /* %s */", pszAnnotation);
     printMsrNewLine();
     return VINF_SUCCESS;
+}
+
+
+static int printMsrValueIgnoreWrites(uint32_t uMsr, uint64_t uValue, const char *pszAnnotation)
+{
+    return printMsrValueIgnoreWritesNamed(uMsr, uValue, getMsrName(uMsr), pszAnnotation);
 }
 
 
@@ -2340,15 +2481,21 @@ static int printMsrRangeValueReadOnly(uint32_t uMsr, uint32_t uLast, uint64_t uV
 }
 
 
-static int printMsrRangeValueIgnoreWrites(uint32_t uMsr, uint32_t uLast, uint64_t uValue, const char *pszAnnotation)
+static int printMsrRangeValueIgnoreWritesNamed(uint32_t uMsr, uint32_t uLast, uint64_t uValue, const char *pszName, const char *pszAnnotation)
 {
-    vbCpuRepPrintf("    RVI(%#010x, %#010x, \"%s\"", uMsr, uLast, getMsrRangeName(uMsr));
+    vbCpuRepPrintf("    RVI(%#010x, %#010x, \"%s\"", uMsr, uLast, pszName);
     printMsrValueU64(uValue);
     vbCpuRepPrintf("),");
     if (pszAnnotation)
         vbCpuRepPrintf(" /* %s */", pszAnnotation);
     printMsrNewLine();
     return VINF_SUCCESS;
+}
+
+
+static int printMsrRangeValueIgnoreWrites(uint32_t uMsr, uint32_t uLast, uint64_t uValue, const char *pszAnnotation)
+{
+    return printMsrRangeValueIgnoreWritesNamed(uMsr, uLast, uValue, getMsrRangeName(uMsr), pszAnnotation);
 }
 
 
@@ -2582,7 +2729,6 @@ static const char *annotateIfMissingBits(uint64_t uValue, uint64_t fBits)
 }
 
 
-
 static int reportMsr_Generic(uint32_t uMsr, uint32_t fFlags, uint64_t uValue)
 {
     int         rc;
@@ -2731,7 +2877,7 @@ static int reportMsr_GenRangeFunctionEx(VBCPUREPMSR const *paMsrs, uint32_t cMsr
             || (fIgnMaskN != fIgnMask0 && !fNoIgnMask)
             || fGpMaskN   != fGpMask0)
         {
-            if (!fEarlyEndOk)
+            if (!fEarlyEndOk && !isMsrViaDummy(uMsr, paMsrs[i].uValue, paMsrs[i].fFlags))
             {
                 vbCpuRepDebug("MSR %s (%#x) range ended unexpectedly early on %#x: ro=%d ign=%#llx/%#llx gp=%#llx/%#llx [N/0]\n",
                               getMsrNameHandled(uMsr), uMsr, paMsrs[i].uMsr,
@@ -2817,6 +2963,47 @@ static int reportMsr_GenFunctionEx(uint32_t uMsr, const char *pszRdWrFnName, uin
             rc = printMsrFunctionExtended(uMsr, pszRdWrFnName, NULL, uValue, fIgnMask, fGpMask, pszAnnotate);
     }
     return rc;
+}
+
+
+/**
+ * Reports a VIA dummy range.
+ *
+ * @returns VBox status code.
+ * @param   paMsrs              Pointer to the first MSR.
+ * @param   cMsrs               The number of MSRs in the array @a paMsr.
+ * @param   pidxLoop            Index variable that should be advanced to the
+ *                              last MSR entry in the range.
+ */
+static int reportMsr_ViaDummyRange(VBCPUREPMSR const *paMsrs, uint32_t cMsrs, uint32_t *pidxLoop)
+{
+    /* Figure how many. */
+    uint32_t uMsr  = paMsrs[0].uMsr;
+    uint32_t cRegs = 1;
+    while (   cRegs < cMsrs
+           && paMsrs[cRegs].uMsr == uMsr + cRegs
+           && isMsrViaDummy(paMsrs[cRegs].uMsr, paMsrs[cRegs].uValue, paMsrs[cRegs].fFlags))
+    {
+        cRegs++;
+        if (!(cRegs % 0x80))
+            vbCpuRepPrintf("VIA dummy detection cRegs=%#x...\n", cRegs);
+    }
+
+    /* Advance. */
+    *pidxLoop += cRegs - 1;
+
+    /* Report it/them. */
+    char szName[80];
+    if (cRegs == 1)
+    {
+        RTStrPrintf(szName, sizeof(szName), "ZERO_%04x_%04x", RT_HI_U16(uMsr), RT_LO_U16(uMsr));
+        return printMsrValueIgnoreWritesNamed(uMsr, 0, szName, NULL);
+    }
+
+    uint32_t uMsrLast = uMsr +  cRegs - 1;
+    RTStrPrintf(szName, sizeof(szName), "ZERO_%04x_%04x_THRU_%04x_%04x",
+                RT_HI_U16(uMsr), RT_LO_U16(uMsr), RT_HI_U16(uMsrLast), RT_LO_U16(uMsrLast));
+    return printMsrRangeValueIgnoreWritesNamed(uMsr, uMsrLast, 0, szName, NULL);
 }
 
 
@@ -2922,7 +3109,8 @@ static int reportMsr_Ia32MtrrPhysBaseMaskN(VBCPUREPMSR const *paMsrs, uint32_t c
     /* Count them. */
     uint32_t cRegs = 1;
     while (   cRegs < cMsrs
-           && paMsrs[cRegs].uMsr == uMsr + cRegs)
+           && paMsrs[cRegs].uMsr == uMsr + cRegs
+           && !isMsrViaDummy(paMsrs[cRegs].uMsr, paMsrs[cRegs].uValue, paMsrs[cRegs].fFlags) )
         cRegs++;
     if (cRegs & 1)
         return RTMsgErrorRc(VERR_INVALID_PARAMETER, "MTRR variable MSR range is odd: cRegs=%#x\n", cRegs);
@@ -3623,7 +3811,9 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
         uint64_t    uValue     = paMsrs[i].uValue;
         int         rc;
 #if 1
-        if (uMsr >= 0xc0000000 && g_fIntelNetBurst)
+        if (uMsr < 0x00001200)
+            continue;
+        if (uMsr >= 0x00001238)
         {
             vbCpuRepDebug("produceMsrReport: uMsr=%#x (%s)...\n", uMsr, getMsrNameHandled(uMsr));
             RTThreadSleep(1000);
@@ -3639,6 +3829,12 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
             else
                 rc = reportMsr_Generic(uMsr, fFlags, uValue);
         }
+        /*
+         * VIA implement MSRs in a interesting way, so we have to select what we
+         * want to handle there to avoid making the code below unreadable.
+         */
+        else if (isMsrViaDummy(uMsr, uValue, fFlags))
+            rc = reportMsr_ViaDummyRange(&paMsrs[i], cMsrs - i, &i);
         /*
          * This shall be sorted by uMsr as much as possible.
          */
@@ -3717,46 +3913,46 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
             rc = reportMsr_GenFunctionEx(uMsr, NULL, 0, UINT64_C(0xffff800000000000), 0, annotateValue(uValue)); /* Canoncial address hack. */
         else if (uMsr >= 0xc0000408 && uMsr <= 0xc000040f)
             rc = reportMsr_AmdFam10hMc4MiscN(&paMsrs[i], cMsrs - i, &i);
-        else if (uMsr == 0xc0010000)
+        else if (uMsr == 0xc0010000 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdK8PerfCtlN(&paMsrs[i], cMsrs - i, &i);
-        else if (uMsr == 0xc0010004)
+        else if (uMsr == 0xc0010004 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdK8PerfCtrN(&paMsrs[i], cMsrs - i, &i);
-        else if (uMsr == 0xc0010010)
+        else if (uMsr == 0xc0010010 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdK8SysCfg(uMsr, uValue);
-        else if (uMsr == 0xc0010015)
+        else if (uMsr == 0xc0010015 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdK8HwCr(uMsr, uValue);
-        else if (uMsr == 0xc0010016 || uMsr == 0xc0010018)
+        else if ((uMsr == 0xc0010016 || uMsr == 0xc0010018) && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdK8IorrBaseN(uMsr, uValue);
-        else if (uMsr == 0xc0010017 || uMsr == 0xc0010019)
+        else if ((uMsr == 0xc0010017 || uMsr == 0xc0010019) && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdK8IorrMaskN(uMsr, uValue);
-        else if (uMsr == 0xc001001a || uMsr == 0xc001001d)
+        else if ((uMsr == 0xc001001a || uMsr == 0xc001001d) && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdK8TopMemN(uMsr, uValue);
-        else if (uMsr == 0xc0010030)
+        else if (uMsr == 0xc0010030 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_GenRangeFunction(&paMsrs[i], cMsrs - i, 6, "AmdK8CpuNameN", &i);
-        else if (uMsr >= 0xc0010044 && uMsr <= 0xc001004a)
+        else if (uMsr >= 0xc0010044 && uMsr <= 0xc001004a && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 7, "AmdK8McCtlMaskN", 0xc0010044, true /*fEarlyEndOk*/, false, 0, &i);
-        else if (uMsr == 0xc0010050)
+        else if (uMsr == 0xc0010050 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_GenRangeFunction(&paMsrs[i], cMsrs - i, 4, "AmdK8SmiOnIoTrapN", &i);
-        else if (uMsr == 0xc0010064)
+        else if (uMsr == 0xc0010064 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdFam10hPStateN(&paMsrs[i], cMsrs - i, &i);
-        else if (uMsr == 0xc0010070)
+        else if (uMsr == 0xc0010070 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdFam10hCofVidControl(uMsr, uValue);
-        else if ((uMsr == 0xc0010118 || uMsr == 0xc0010119) && getMsrFnName(uMsr, NULL))
+        else if ((uMsr == 0xc0010118 || uMsr == 0xc0010119) && getMsrFnName(uMsr, NULL) && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = printMsrFunction(uMsr, NULL, NULL, annotateValue(uValue)); /* RAZ, write key. */
-        else if (uMsr == 0xc0010200)
+        else if (uMsr == 0xc0010200 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdGenPerfMixedRange(&paMsrs[i], cMsrs - i, 12, &i);
-        else if (uMsr == 0xc0010230)
+        else if (uMsr == 0xc0010230 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdGenPerfMixedRange(&paMsrs[i], cMsrs - i, 8, &i);
-        else if (uMsr == 0xc0010240)
+        else if (uMsr == 0xc0010240 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdGenPerfMixedRange(&paMsrs[i], cMsrs - i, 8, &i);
-        else if (uMsr == 0xc0011019 && g_enmMicroarch >= kCpumMicroarch_AMD_15h_Piledriver)
+        else if (uMsr == 0xc0011019 && g_enmMicroarch >= kCpumMicroarch_AMD_15h_Piledriver && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 3, "AmdK7DrXAddrMaskN", 0xc0011019 - 1,
                                               false /*fEarlyEndOk*/, false /*fNoIgnMask*/, 0, &i);
-        else if (uMsr == 0xc0011021)
+        else if (uMsr == 0xc0011021 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_AmdK7InstrCacheCfg(uMsr, uValue);
         else if (uMsr == 0xc0011023 && CPUMMICROARCH_IS_AMD_FAM_15H(g_enmMicroarch))
             rc = reportMsr_AmdFam15hCombUnitCfg(uMsr, uValue);
-        else if (uMsr == 0xc0011027)
+        else if (uMsr == 0xc0011027 && g_enmVendor == CPUMCPUVENDOR_AMD)
             rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 1, "AmdK7DrXAddrMaskN", 0xc0011027,
                                               false /*fEarlyEndOk*/, false /*fNoIgnMask*/, 0, &i);
         else if (uMsr == 0xc001102c && CPUMMICROARCH_IS_AMD_FAM_15H(g_enmMicroarch))
@@ -4072,11 +4268,21 @@ static int produceCpuReport(void)
 
         /* Make it C/C++ acceptable. */
         strcpy(szNameC, pszName);
-        for (char *psz = szNameC; *psz; psz++)
-            if (!RT_C_IS_ALNUM(*psz) && *psz != '_')
-                *psz = '_';
-        for (size_t off = strlen(szNameC); off > 1 && szNameC[off - 1] == '_'; off--)
-            szNameC[off - 1] = '\0';
+        unsigned offDst = 0;
+        for (unsigned offSrc = 0; ; offSrc++)
+        {
+            char ch = szNameC[offSrc];
+            if (!RT_C_IS_ALNUM(ch) && ch != '_' && ch != '\0')
+                ch = '_';
+            if (ch == '_' && offDst > 0 && szNameC[offDst - 1] == '_')
+                offDst--;
+            szNameC[offDst++] = ch;
+            if (!ch)
+                break;
+        }
+        while (offDst > 1 && szNameC[offDst - 1] == '_')
+            szNameC[--offDst] = '\0';
+
         vbCpuRepDebug("NameC: %s\n", szNameC);
     }
     else
@@ -4231,7 +4437,7 @@ int main(int argc, char **argv)
         kCpuReportOp_MsrsHacking
     } enmOp = kCpuReportOp_Normal;
     g_pReportOut = NULL;
-    g_pDebugOut  = g_pStdErr;
+    g_pDebugOut  = NULL;
     const char *pszOutput   = NULL;
     const char *pszDebugOut = NULL;
 
