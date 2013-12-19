@@ -1933,6 +1933,9 @@ STDMETHODIMP Machine::COMSETTER(GraphicsControllerType)(GraphicsControllerType_T
     {
         case GraphicsControllerType_Null:
         case GraphicsControllerType_VBoxVGA:
+#ifdef VBOX_WITH_VMSVGA
+        case GraphicsControllerType_VMSVGA:
+#endif
             break;
         default:
             return setError(E_INVALIDARG, tr("The graphics controller type (%d) is invalid"), aGraphicsControllerType);

@@ -561,7 +561,8 @@ private:
     int configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachine *pMachine);
     int configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMachine);
 
-    int configGraphicsController(PCFGMNODE pDevices, const char *pcszDevice,
+    int configGraphicsController(PCFGMNODE pDevices,
+                                 const GraphicsControllerType_T graphicsController,
                                  BusAssignmentManager *pBusMgr,
                                  const ComPtr<IMachine> &pMachine,
                                  const ComPtr<IBIOSSettings> &biosSettings,

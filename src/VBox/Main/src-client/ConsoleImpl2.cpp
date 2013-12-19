@@ -1433,7 +1433,10 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             case GraphicsControllerType_Null:
                 break;
             case GraphicsControllerType_VBoxVGA:
-                rc = configGraphicsController(pDevices, "vga", pBusMgr, pMachine, biosSettings,
+#ifdef VBOX_WITH_VMSVGA
+            case GraphicsControllerType_VMSVGA:
+#endif
+                rc = configGraphicsController(pDevices, graphicsController, pBusMgr, pMachine, biosSettings,
                                               RT_BOOL(fHMEnabled));
                 if (FAILED(rc))
                     return rc;
@@ -3185,7 +3188,7 @@ int Console::configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMa
 }
 
 int Console::configGraphicsController(PCFGMNODE pDevices,
-                                      const char *pcszDevice,
+                                      const GraphicsControllerType_T graphicsController,
                                       BusAssignmentManager *pBusMgr,
                                       const ComPtr<IMachine> &pMachine,
                                       const ComPtr<IBIOSSettings> &biosSettings,
@@ -3197,6 +3200,7 @@ int Console::configGraphicsController(PCFGMNODE pDevices,
         PCFGMNODE pDev, pInst, pCfg, pLunL0;
         HRESULT hrc;
         Bstr    bstr;
+        const char *pcszDevice = "vga";
 
 #define H()         AssertMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_GENERAL_FAILURE)
         InsertConfigNode(pDevices, pcszDevice, &pDev);
@@ -3215,6 +3219,27 @@ int Console::configGraphicsController(PCFGMNODE pDevices,
         InsertConfigInteger(pCfg,  "R0Enabled",            fHMEnabled);
 #else
         NOREF(fHMEnabled);
+#endif
+
+#ifdef VBOX_WITH_VMSVGA
+        if (graphicsController == GraphicsControllerType_VMSVGA)
+        {
+            InsertConfigInteger(pCfg, "VMSVGAEnabled", true);
+#ifdef VBOX_WITH_VMSVGA3D
+            IFramebuffer *pFramebuffer = getDisplay()->getFramebuffer();
+            if (pFramebuffer)
+            {
+                LONG64 winId = 0;
+                /* @todo deal with multimonitor setup */
+                Assert(cMonitorCount == 1);
+                hrc = pFramebuffer->COMGETTER(WinId)(&winId);
+                InsertConfigInteger(pCfg, "HostWindowId", winId);
+            }
+            BOOL f3DEnabled;
+            pMachine->COMGETTER(Accelerate3DEnabled)(&f3DEnabled);
+            InsertConfigInteger(pCfg, "VMSVGA3dEnabled", f3DEnabled);
+#endif
+        }
 #endif
 
         /* Custom VESA mode list */

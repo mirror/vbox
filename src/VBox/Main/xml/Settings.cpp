@@ -2874,6 +2874,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 GraphicsControllerType_T type;
                 if (strGraphicsControllerType == "VBOXVGA")
                     type = GraphicsControllerType_VBoxVGA;
+                else if (strGraphicsControllerType == "VMSVGA")
+                    type = GraphicsControllerType_VMSVGA;
                 else if (strGraphicsControllerType == "NONE")
                     type = GraphicsControllerType_Null;
                 else
@@ -4142,6 +4144,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         switch (hw.graphicsControllerType)
         {
             case GraphicsControllerType_VBoxVGA:            pcszGraphics = "VBoxVGA"; break;
+            case GraphicsControllerType_VMSVGA:             pcszGraphics = "VMSVGA"; break;
             default: /*case GraphicsControllerType_Null:*/  pcszGraphics = "None"; break;
         }
         pelmDisplay->setAttribute("controller", pcszGraphics);
