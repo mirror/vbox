@@ -1630,24 +1630,24 @@
     <attribute name="vmConfigs" type="wstring" safearray="yes" readonly="yes"/>
 
     <!-- VM-slot settings
-	 It's corresponds to dhcpd.conf entries, like:
+         It's corresponds to dhcpd.conf entries, like:
 
-	 host ncd1 { hardware ethernet 0:c0:c3:11:90:23; }
+         host ncd1 { hardware ethernet 0:c0:c3:11:90:23; }
 
-	 - in Main we can match (vm name, slot) to ethernet address
-	 that why it's easy to configure dhcp server in such way,
-	 then ask user to to enter valid name,
+         - in Main we can match (vm name, slot) to ethernet address
+         that why it's easy to configure dhcp server in such way,
+         then ask user to to enter valid name,
 
-	 - mac address might change because of adapter type (e1k <-> pcnet) or because
-	 of import/export
+         - mac address might change because of adapter type (e1k <-> pcnet) or because
+         of import/export
 
-	 - it's easy to provide vm-name.rom in boot filename VM with network boot.
+         - it's easy to provide vm-name.rom in boot filename VM with network boot.
 
-	 XXX: do we need classic getOptionValueByMAC?
+         XXX: do we need classic getOptionValueByMAC?
 
-	 XML: O-o-oh, this settings are per VM, so perhaps they should be stored in
-	      VM configuration files. And we haven't got the attachment type for
-	      NATNetwork.
+         XML: O-o-oh, this settings are per VM, so perhaps they should be stored in
+         VM configuration files. And we haven't got the attachment type for
+         NATNetwork.
     -->
     <method name="addVmSlotOption">
       <param name="vmname" type="wstring" dir="in"/>
