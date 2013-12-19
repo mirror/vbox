@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -63,6 +63,10 @@
 # include "HGSMI/HGSMIHost.h"
 #endif /* VBOX_WITH_HGSMI */
 #include "DevVGASavedState.h"
+
+#ifdef VBOX_WITH_VMSVGA
+# include "DevVGA-SVGA.h"
+#endif
 
 # include <iprt/list.h>
 
@@ -304,6 +308,77 @@ typedef struct VGAState {
     /** The R0 vram pointer... */
     R0PTRTYPE(uint8_t *)        vram_ptrR0;
 
+#ifdef VBOX_WITH_VMSVGA
+    struct
+    {
+        /** The host window handle */
+        uint64_t                    u64HostWindowId;
+        /** The R3 FIFO pointer. */
+        R3PTRTYPE(uint32_t *)       pFIFOR3;
+        /** The R0 FIFO pointer. */
+        R0PTRTYPE(uint32_t *)       pFIFOR0;
+        /** R3 Opaque pointer to svga state. */
+        R3PTRTYPE(void *)           pSVGAState;
+        /** R3 Opaque pointer to 3d state. */
+        R3PTRTYPE(void *)           p3dState;
+        /** R3 Opaque pointer to a copy of the first 32k of the framebuffer before switching into svga mode. */
+        R3PTRTYPE(void *)           pFrameBufferBackup;
+        /** Guest physical address of the FIFO memory range. */
+        RTGCPHYS                    GCPhysFIFO;
+        /** Size in bytes of the FIFO memory range. */
+        uint32_t                    cbFIFO;
+        /** SVGA id. */
+        uint32_t                    u32SVGAId;
+        /** SVGA extensions enabled or not. */
+        uint32_t                    fEnabled;
+        /** SVGA memory area configured status. */
+        uint32_t                    fConfigured;
+        /** Device is busy handling FIFO requests. */
+        uint32_t                    fBusy;
+        /** Traces (dirty page detection) enabled or not. */
+        uint32_t                    fTraces;
+        /** Guest OS identifier. */
+        uint32_t                    u32GuestId;
+        /** Scratch region size. */
+        uint32_t                    cScratchRegion;
+        /** Scratch array. */
+        uint32_t                    au32ScratchRegion[VMSVGA_SCRATCH_SIZE];
+        /** Irq status. */
+        uint32_t                    u32IrqStatus;
+        /** Irq mask. */
+        uint32_t                    u32IrqMask;
+        /** Pitch lock. */
+        uint32_t                    u32PitchLock;
+        /** Current GMR id. (SVGA_REG_GMR_ID) */
+        uint32_t                    u32CurrentGMRId;
+        /** Register caps. */
+        uint32_t                    u32RegCaps;
+        /** Physical address of command mmio range. */
+        RTIOPORT                    BasePort;
+        /** Port io index register. */
+        uint32_t                    u32IndexReg;
+        /** FIFO request semaphore. */
+        RTSEMEVENT                  FIFORequestSem;
+        /** FIFO IO Thread. */
+        R3PTRTYPE(PPDMTHREAD)       pFIFOIOThread;
+        int32_t                     iWidth;
+        int32_t                     iHeight;
+        uint32_t                    iBpp;
+        uint32_t                    cbScanline;
+        /** Maximum width supported. */
+        uint32_t                    u32MaxWidth;
+        /** Maximum height supported. */
+        uint32_t                    u32MaxHeight;
+        /** Action flags */
+        uint32_t                    u32ActionFlags;
+        /** SVGA 3d extensions enabled or not. */
+        bool                        f3DEnabled;
+        /** VRAM page monitoring enabled or not. */
+        bool                        fVRAMTracking;
+        bool                        Padding6[HC_ARCH_BITS == 64 ? 6 : 2];
+    } svga;
+#endif
+
     /** The number of monitors. */
     uint32_t                    cMonitors;
     /** Current refresh timer interval. */
@@ -323,7 +398,13 @@ typedef struct VGAState {
     bool                        fRemappedVGA;
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
     bool                        fRenderVRAM;
+#ifdef VBOX_WITH_VMSVGA
+    /* Whether the SVGA emulation is enabled or not. */
+    bool                        fVMSVGAEnabled;
+    bool                        Padding1[1];
+#else
     bool                        Padding1[2];
+#endif
 
     /** The physical address the VRAM was assigned. */
     RTGCPHYS                    GCPhysVRAM;
@@ -558,6 +639,12 @@ int vboxCmdVBVACmdFlush(PVGASTATE pVGAState);
 void vboxCmdVBVACmdTimer(PVGASTATE pVGAState);
 
 #endif /* VBOX_WITH_HGSMI */
+
+# ifdef VBOX_WITH_VMSVGA
+int vgaR3RegisterVRAMHandler(PVGASTATE pVGAState, uint64_t cbFrameBuffer);
+int vgaR3UnregisterVRAMHandler(PVGASTATE pVGAState);
+int vgaR3UpdateDisplay(PVGASTATE pVGAState, unsigned xStart, unsigned yStart, unsigned width, unsigned height);
+# endif
 
 #ifndef VBOX
 void vga_common_init(VGAState *s, DisplayState *ds, uint8_t *vga_ram_base,

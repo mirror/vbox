@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,7 +22,13 @@
 #ifndef Graphics_DevVGASavedState_h
 #define Graphics_DevVGASavedState_h
 
+#ifdef VBOX_WITH_VMSVGA
+#define VGA_SAVEDSTATE_VERSION_VMSVGA_2D    10 /* <- internal build with 2d state only */
+#define VGA_SAVEDSTATE_VERSION_VMSVGA       11
+#define VGA_SAVEDSTATE_VERSION              11
+#else
 #define VGA_SAVEDSTATE_VERSION              10
+#endif
 #define VGA_SAVEDSTATE_VERSION_WITH_PENDVHWA 10
 #define VGA_SAVEDSTATE_VERSION_INV_GCMDFIFO 8 /* <- states upto and including this version may contain invalid completed Guest Commands fifo entries */
 #define VGA_SAVEDSTATE_VERSION_INV_VHEIGHT  8 /* <- states upto and including this version may contain invalid vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] value */

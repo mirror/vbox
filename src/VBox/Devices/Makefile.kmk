@@ -239,6 +239,23 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Graphics/HGSMI/SHGSMIHost.cpp
  endif
 
+ ifdef VBOX_WITH_VMSVGA
+  VBoxDD_DEFS         += VBOX_WITH_VMSVGA
+  VBoxDD_SOURCES      += Graphics/DevVGA-SVGA.cpp
+ endif
+ ifdef VBOX_WITH_VMSVGA3D
+  VBoxDD_DEFS         += VBOX_WITH_VMSVGA3D
+  VBoxDD_SOURCES      += Graphics/DevVGA-SVGA3d-shared.cpp
+  ifeq ($(KBUILD_TARGET),win)
+    VBoxDD_SOURCES += Graphics/DevVGA-SVGA3d-win.cpp
+  else
+    VBoxDD_SOURCES += Graphics/DevVGA-SVGA3d-ogl.cpp
+    VBoxDD_LIBS    += $(PATH_STAGE_BIN)/vmsvgashader$(VBOX_SUFF_DLL)
+  endif
+  VBoxDD_LIBS.win      += d3d9.lib
+  VBoxDD_LIBS.linux    += GL X11
+ endif
+
  ifdef VBOX_WITH_VDMA
   VBoxDD_DEFS           += VBOX_WITH_VDMA
   VBoxDD_SOURCES        += \
@@ -823,6 +840,14 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   ifdef VBOXWDDM_WITH_VBVA
    VBoxDDGC_DEFS        += VBOXWDDM_WITH_VBVA
   endif
+  ifdef VBOX_WITH_VMSVGA
+   VBoxDDGC_DEFS         += VBOX_WITH_VMSVGA
+   VBoxDDGC_SOURCES      += \
+    Graphics/DevVGA-SVGA.cpp
+  endif
+  ifdef VBOX_WITH_VMSVGA3D
+   VBoxDDGC_DEFS         += VBOX_WITH_VMSVGA3D
+  endif
   ifdef VBOX_VDMA_WITH_WATCHDOG
    VBoxDDGC_DEFS        += VBOX_VDMA_WITH_WATCHDOG
   endif
@@ -963,6 +988,15 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDDR0_DEFS         += VBOX_WITH_NETSHAPER
   VBoxDDR0_SOURCES      += \
  	Network/DrvNetShaper.cpp
+ endif
+
+ ifdef VBOX_WITH_VMSVGA
+  VBoxDDR0_DEFS         += VBOX_WITH_VMSVGA
+  VBoxDDR0_SOURCES      += \
+    Graphics/DevVGA-SVGA.cpp
+ endif
+ ifdef VBOX_WITH_VMSVGA3D
+  VBoxDDR0_DEFS         += VBOX_WITH_VMSVGA3D
  endif
 
  ifdef VBOX_WITH_HGSMI

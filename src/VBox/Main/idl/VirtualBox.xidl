@@ -4066,6 +4066,9 @@
     <const name="VBoxVGA"   value="1">
       <desc>Default VirtualBox VGA device.</desc>
     </const>
+    <const name="VMSVGA"    value="2">
+      <desc>VMware SVGA II device.</desc>
+    </const>
   </enum>
 
   <enum

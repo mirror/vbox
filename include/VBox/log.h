@@ -147,6 +147,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_VMM_BACKDOOR,
     /** VMM Device group for logging guest backdoor logging to stderr. */
     LOG_GROUP_DEV_VMM_STDERR,
+    /** VMSVGA Device group. */
+    LOG_GROUP_DEV_VMSVGA,
     /** Disassembler group. */
     LOG_GROUP_DIS,
     /** Generic driver group. */
@@ -734,6 +736,7 @@ typedef enum LOGGROUP
     "DEV_VMM",      \
     "DEV_VMM_BACKDOOR", \
     "DEV_VMM_STDERR", \
+    "DEV_VMSVGA",   \
     "DIS",          \
     "DRV",          \
     "DRV_ACPI",     \
