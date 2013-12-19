@@ -29,6 +29,8 @@
 
 /* COM includes: */
 #include "CVRDEServer.h"
+#include "CExtPackManager.h"
+#include "CExtPack.h"
 
 UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     : m_iMinVRAM(0)
@@ -387,6 +389,18 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         /* Prepare message: */
         UIValidationMessage message;
         message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(1));
+
+#ifdef VBOX_WITH_EXTPACK
+        CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+        if (m_pCheckboxRemoteDisplay->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
+        {
+            message.second << tr("Remote Display is currently enabled for this virtual machine. "
+                                 "However, this requires the <b>%1</b> to be installed. "
+                                 "Please install the Extension Pack from the VirtualBox download site as "
+                                 "otherwise your VM will be started with Remote Display disabled.")
+                                .arg(GUI_ExtPackName);
+        }
+#endif
 
         /* Check VRDE server port: */
         if (m_pEditorRemoteDisplayPort->text().trimmed().isEmpty())
