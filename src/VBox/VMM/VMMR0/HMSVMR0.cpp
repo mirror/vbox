@@ -2976,15 +2976,16 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     AssertMsg(!HMCPU_CF_VALUE(pVCpu), ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
     /* Setup TSC offsetting. */
+    RTCPUID idCurrentCpu = HMR0GetCurrentCpu()->idCpu;
     if (   pSvmTransient->fUpdateTscOffsetting
-        || HMR0GetCurrentCpu()->idCpu != pVCpu->hm.s.idLastCpu)
+        || idCurrentCpu != pVCpu->hm.s.idLastCpu)
     {
         hmR0SvmUpdateTscOffsetting(pVCpu);
         pSvmTransient->fUpdateTscOffsetting = false;
     }
 
     /* If we've migrating CPUs, mark the VMCB Clean bits as dirty. */
-    if (HMR0GetCurrentCpu()->idCpu != pVCpu->hm.s.idLastCpu)
+    if (idCurrentCpu != pVCpu->hm.s.idLastCpu)
         pVmcb->ctrl.u64VmcbCleanBits = 0;
 
     /* Store status of the shared guest-host state at the time of VMRUN. */
