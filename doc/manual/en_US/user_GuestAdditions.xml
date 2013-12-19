@@ -1079,6 +1079,14 @@
           <para>Currently only Linux and Solaris Guest Additions support
           symlinks.</para>
         </listitem>
+
+        <listitem>
+          <para>For security reasons the guest OS is not allowed to create
+          symlinks by default. If you trust the guest OS to not abuse the
+          functionality, you can enable creation of symlinks for "sharename"
+          with:
+          <screen>VBoxManage setextradata "VM name" VBoxInternal2/SharedFoldersEnableSymlinksCreate/sharename 1</screen></para>
+        </listitem>
       </orderedlist></para>
 
     <sect2 id="sf_mount_manual">
