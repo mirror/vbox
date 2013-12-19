@@ -4729,21 +4729,53 @@ static
 # endif
 PCPUMMSRRANGE cpumLookupMsrRange(PVM pVM, uint32_t idMsr)
 {
-# if 0
     /*
      * Binary lookup.
      */
+    uint32_t        cRanges   = pVM->cpum.s.GuestInfo.cMsrRanges;
+    if (!cRanges)
+        return NULL;
+    PCPUMMSRRANGE   paRanges  = pVM->cpum.s.GuestInfo.CTX_SUFF(paMsrRanges);
+    for (;;)
+    {
+        uint32_t i = cRanges / 2;
+        if (idMsr < paRanges[i].uFirst)
+        {
+            if (i == 0)
+                break;
+            cRanges = i;
+        }
+        else if (idMsr > paRanges[i].uLast)
+        {
+            i++;
+            if (i >= cRanges)
+                break;
+            cRanges -= i;
+            paRanges = &paRanges[i];
+        }
+        else
+        {
+            if (paRanges[i].enmRdFn == kCpumMsrRdFn_MsrAlias)
+                return cpumLookupMsrRange(pVM, paRanges[i].uValue);
+            return &paRanges[i];
+        }
+    }
 
-# else
+# ifdef VBOX_STRICT
     /*
-     * Linear lookup.
+     * Linear lookup to verify the above binary search.
      */
     uint32_t        cLeft = pVM->cpum.s.GuestInfo.cMsrRanges;
     PCPUMMSRRANGE   pCur  = pVM->cpum.s.GuestInfo.CTX_SUFF(paMsrRanges);
     while (cLeft-- > 0)
     {
         if (idMsr >= pCur->uFirst && idMsr <= pCur->uLast)
+        {
+            AssertFailed();
+            if (pCur->enmRdFn == kCpumMsrRdFn_MsrAlias)
+                return cpumLookupMsrRange(pVM, pCur->uValue);
             return pCur;
+        }
         pCur++;
     }
 # endif
