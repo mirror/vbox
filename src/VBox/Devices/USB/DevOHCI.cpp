@@ -5104,6 +5104,22 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             }
         }
     }
+
+    /*
+     * If the bus was started set the timer. This is ugly but avoids changing the
+     * saved state version for now so we can backport the changes to other branches.
+     */
+    /** @todo: Do it properly for 4.4 by changing the saved state. */
+    if (pThis->fBusStarted)
+    {
+        /* Calculate a new timer expiration so this saved state works with older releases. */
+        uint64_t u64Expire = PDMDevHlpTMTimeVirtGet(pThis->CTX_SUFF(pDevIns)) + pThis->cTicksPerFrame;
+
+        LogFlowFunc(("Bus is active, setting timer to %llu\n", u64Expire));
+        int rc = TMTimerSet(pThis->pEndOfFrameTimerR3, u64Expire);
+        AssertRC(rc);
+    }
+
     PDMCritSectLeave(pThis->pDevInsR3->pCritSectRoR3);
 
     /*
@@ -5449,6 +5465,30 @@ static DECLCALLBACK(void) ohciR3Reset(PPDMDEVINS pDevIns)
 
 
 /**
+ * Resume notification.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(void) ohciR3Resume(PPDMDEVINS pDevIns)
+{
+    POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
+    LogFlowFunc(("\n"));
+
+    /* Restart the frame thread if the timer is active. */
+    if (TMTimerIsActive(pThis->pEndOfFrameTimerR3))
+    {
+        int rc = TMTimerStop(pThis->pEndOfFrameTimerR3);
+        AssertRC(rc);
+
+        LogFlowFunc(("Bus was active, restart frame thread\n"));
+        ASMAtomicXchgBool(&pThis->fBusStarted, true);
+        RTSemEventSignal(pThis->hSemEventFrame);
+    }
+}
+
+
+/**
  * Info handler, device version. Dumps OHCI control registers.
  *
  * @param   pDevIns     Device instance which registered the info.
@@ -5769,7 +5809,7 @@ const PDMDEVREG g_DeviceOHCI =
     /* pfnSuspend */
     NULL,
     /* pfnResume */
-    NULL,
+    ohciR3Resume,
     /* pfnAttach */
     NULL,
     /* pfnDetach */
