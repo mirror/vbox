@@ -6594,7 +6594,7 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
 
     /*
      * !!! IMPORTANT !!!
-     * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
+     * If you modify code here, make sure to check whether hmR0VmxCallRing3Callback() needs to be updated too.
      */
 
     /* Save the guest state if necessary. */
@@ -6719,7 +6719,7 @@ DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     /*
      * !!! IMPORTANT !!!
-     * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
+     * If you modify code here, make sure to check whether hmR0VmxCallRing3Callback() needs to be updated too.
      */
 
     /* Deregister hook now that we've left HM context before re-enabling preemption. */
