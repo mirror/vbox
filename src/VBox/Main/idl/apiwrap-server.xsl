@@ -157,10 +157,41 @@ public:
 </xsl:text>
 </xsl:template>
 
+<xsl:template name="emitISupports">
+    <xsl:param name="classname"/>
+    <xsl:param name="extends"/>
+    <xsl:param name="depth"/>
+    <xsl:param name="interfacelist"/>
+
+    <xsl:choose>
+        <xsl:when test="$extends and not($extends='$unknown') and not($extends='$dispatched') and not($extends='$errorinfo')">
+            <xsl:variable name="newextends" select="//interface[@name=$extends]/@extends"/>
+            <xsl:variable name="newiflist" select="concat($interfacelist, ', ', $extends)"/>
+            <xsl:call-template name="emitISupports">
+                <xsl:with-param name="classname" select="$classname"/>
+                <xsl:with-param name="extends" select="$newextends"/>
+                <xsl:with-param name="depth" select="$depth + 1"/>
+                <xsl:with-param name="interfacelist" select="$newiflist"/>
+            </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:value-of select="concat('NS_IMPL_THREADSAFE_ISUPPORTS', $depth, '_CI(', $classname, ', ', $interfacelist, ')&#10;')"/>
+        </xsl:otherwise>
+    </xsl:choose>
+</xsl:template>
+
 <xsl:template match="interface" mode="codefooter">
     <xsl:text>#ifdef VBOX_WITH_XPCOM
 </xsl:text>
-    <xsl:value-of select="concat('NS_DECL_CLASSINFO(', substring(@name, 2), 'Wrap)&#10;NS_IMPL_THREADSAFE_ISUPPORTS1_CI(', substring(@name, 2), 'Wrap, ', @name, ')&#10;')"/>
+    <xsl:value-of select="concat('NS_DECL_CLASSINFO(', substring(@name, 2), 'Wrap)&#10;')"/>
+
+    <xsl:call-template name="emitISupports">
+        <xsl:with-param name="classname" select="concat(substring(@name, 2), 'Wrap')"/>
+        <xsl:with-param name="extends" select="@extends"/>
+        <xsl:with-param name="depth" select="1"/>
+        <xsl:with-param name="interfacelist" select="@name"/>
+    </xsl:call-template>
+
     <xsl:text>#endif // VBOX_WITH_XPCOM
 </xsl:text>
 </xsl:template>
