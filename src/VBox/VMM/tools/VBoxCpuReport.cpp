@@ -1176,14 +1176,123 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00001249: return "VIA_UNK_0000_1249";
         case 0x0000124a: return "VIA_UNK_0000_124a";
 
-        case 0x00002000: return "P6_CR0";
-        case 0x00002002: return "P6_CR2";
-        case 0x00002003: return "P6_CR3";
-        case 0x00002004: return "P6_CR4";
-        case 0x0000203f: return "P6_UNK_0000_203f"; /* P6_M_Dothan. */
-        case 0x000020cd: return "P6_UNK_0000_20cd"; /* P6_M_Dothan. */
-        case 0x0000303f: return "P6_UNK_0000_303f"; /* P6_M_Dothan. */
-        case 0x000030cd: return "P6_UNK_0000_30cd"; /* P6_M_Dothan. */
+        case 0x00001301: return "VIA_UNK_0000_1301";
+        case 0x00001302: return "VIA_UNK_0000_1302";
+        case 0x00001303: return "VIA_UNK_0000_1303";
+        case 0x00001304: return "VIA_UNK_0000_1304";
+        case 0x00001305: return "VIA_UNK_0000_1305";
+        case 0x00001306: return "VIA_UNK_0000_1306";
+        case 0x00001307: return "VIA_UNK_0000_1307";
+        case 0x00001308: return "VIA_UNK_0000_1308";
+        case 0x00001309: return "VIA_UNK_0000_1309";
+        case 0x0000130d: return "VIA_UNK_0000_130d";
+        case 0x0000130e: return "VIA_UNK_0000_130e";
+        case 0x00001312: return "VIA_UNK_0000_1312";
+        case 0x00001315: return "VIA_UNK_0000_1315";
+        case 0x00001317: return "VIA_UNK_0000_1317";
+        case 0x00001318: return "VIA_UNK_0000_1318";
+        case 0x0000131a: return "VIA_UNK_0000_131a";
+        case 0x0000131b: return "VIA_UNK_0000_131b";
+        case 0x00001402: return "VIA_UNK_0000_1402";
+        case 0x00001403: return "VIA_UNK_0000_1403";
+        case 0x00001404: return "VIA_UNK_0000_1404";
+        case 0x00001405: return "VIA_UNK_0000_1405";
+        case 0x00001406: return "VIA_UNK_0000_1406";
+        case 0x00001407: return "VIA_UNK_0000_1407";
+        case 0x00001410: return "VIA_UNK_0000_1410";
+        case 0x00001411: return "VIA_UNK_0000_1411";
+        case 0x00001412: return "VIA_UNK_0000_1412";
+        case 0x00001413: return "VIA_UNK_0000_1413";
+        case 0x00001414: return "VIA_UNK_0000_1414";
+        case 0x00001415: return "VIA_UNK_0000_1415";
+        case 0x00001416: return "VIA_UNK_0000_1416";
+        case 0x00001417: return "VIA_UNK_0000_1417";
+        case 0x00001418: return "VIA_UNK_0000_1418";
+        case 0x00001419: return "VIA_UNK_0000_1419";
+        case 0x0000141a: return "VIA_UNK_0000_141a";
+        case 0x0000141b: return "VIA_UNK_0000_141b";
+        case 0x0000141c: return "VIA_UNK_0000_141c";
+        case 0x0000141d: return "VIA_UNK_0000_141d";
+        case 0x0000141e: return "VIA_UNK_0000_141e";
+        case 0x0000141f: return "VIA_UNK_0000_141f";
+        case 0x00001420: return "VIA_UNK_0000_1420";
+        case 0x00001421: return "VIA_UNK_0000_1421";
+        case 0x00001422: return "VIA_UNK_0000_1422";
+        case 0x00001423: return "VIA_UNK_0000_1423";
+        case 0x00001424: return "VIA_UNK_0000_1424";
+        case 0x00001425: return "VIA_UNK_0000_1425";
+        case 0x00001426: return "VIA_UNK_0000_1426";
+        case 0x00001427: return "VIA_UNK_0000_1427";
+        case 0x00001428: return "VIA_UNK_0000_1428";
+        case 0x00001429: return "VIA_UNK_0000_1429";
+        case 0x0000142a: return "VIA_UNK_0000_142a";
+        case 0x0000142b: return "VIA_UNK_0000_142b";
+        case 0x0000142c: return "VIA_UNK_0000_142c";
+        case 0x0000142d: return "VIA_UNK_0000_142d";
+        case 0x0000142e: return "VIA_UNK_0000_142e";
+        case 0x0000142f: return "VIA_UNK_0000_142f";
+        case 0x00001434: return "VIA_UNK_0000_1434";
+        case 0x00001435: return "VIA_UNK_0000_1435";
+        case 0x00001436: return "VIA_UNK_0000_1436";
+        case 0x00001437: return "VIA_UNK_0000_1437";
+        case 0x00001438: return "VIA_UNK_0000_1438";
+        case 0x0000143a: return "VIA_UNK_0000_143a";
+        case 0x0000143c: return "VIA_UNK_0000_143c";
+        case 0x0000143d: return "VIA_UNK_0000_143d";
+        case 0x00001440: return "VIA_UNK_0000_1440";
+        case 0x00001441: return "VIA_UNK_0000_1441";
+        case 0x00001442: return "VIA_UNK_0000_1442";
+        case 0x00001449: return "VIA_UNK_0000_1449";
+        case 0x00001450: return "VIA_UNK_0000_1450";
+        case 0x00001451: return "VIA_UNK_0000_1451";
+        case 0x00001452: return "VIA_UNK_0000_1452";
+        case 0x00001453: return "VIA_UNK_0000_1453";
+        case 0x00001460: return "VIA_UNK_0000_1460";
+        case 0x00001461: return "VIA_UNK_0000_1461";
+        case 0x00001462: return "VIA_UNK_0000_1462";
+        case 0x00001463: return "VIA_UNK_0000_1463";
+        case 0x00001465: return "VIA_UNK_0000_1465";
+        case 0x00001466: return "VIA_UNK_0000_1466";
+        case 0x00001470: return "VIA_UNK_0000_1470";
+        case 0x00001471: return "VIA_UNK_0000_1471";
+        case 0x00001480: return "VIA_UNK_0000_1480";
+        case 0x00001481: return "VIA_UNK_0000_1481";
+        case 0x00001482: return "VIA_UNK_0000_1482";
+        case 0x00001483: return "VIA_UNK_0000_1483";
+        case 0x00001484: return "VIA_UNK_0000_1484";
+        case 0x00001485: return "VIA_UNK_0000_1485";
+        case 0x00001486: return "VIA_UNK_0000_1486";
+        case 0x00001490: return "VIA_UNK_0000_1490";
+        case 0x00001491: return "VIA_UNK_0000_1491";
+        case 0x00001492: return "VIA_UNK_0000_1492";
+        case 0x00001493: return "VIA_UNK_0000_1493";
+        case 0x00001494: return "VIA_UNK_0000_1494";
+        case 0x00001495: return "VIA_UNK_0000_1495";
+        case 0x00001496: return "VIA_UNK_0000_1496";
+        case 0x00001497: return "VIA_UNK_0000_1497";
+        case 0x00001498: return "VIA_UNK_0000_1498";
+        case 0x00001499: return "VIA_UNK_0000_1499";
+        case 0x0000149a: return "VIA_UNK_0000_149a";
+        case 0x0000149b: return "VIA_UNK_0000_149b";
+        case 0x0000149c: return "VIA_UNK_0000_149c";
+        case 0x0000149f: return "VIA_UNK_0000_149f";
+        case 0x00001523: return "VIA_UNK_0000_1523";
+
+        case 0x00002000: return g_enmVendor == CPUMCPUVENDOR_INTEL ? "P6_CR0" : NULL;
+        case 0x00002002: return g_enmVendor == CPUMCPUVENDOR_INTEL ? "P6_CR2" : NULL;
+        case 0x00002003: return g_enmVendor == CPUMCPUVENDOR_INTEL ? "P6_CR3" : NULL;
+        case 0x00002004: return g_enmVendor == CPUMCPUVENDOR_INTEL ? "P6_CR4" : NULL;
+        case 0x0000203f: return g_enmVendor == CPUMCPUVENDOR_INTEL ? "P6_UNK_0000_203f" /* P6_M_Dothan. */ : NULL;
+        case 0x000020cd: return g_enmVendor == CPUMCPUVENDOR_INTEL ? "P6_UNK_0000_20cd" /* P6_M_Dothan. */ : NULL;
+        case 0x0000303f: return g_enmVendor == CPUMCPUVENDOR_INTEL ? "P6_UNK_0000_303f" /* P6_M_Dothan. */ : NULL;
+        case 0x000030cd: return g_enmVendor == CPUMCPUVENDOR_INTEL ? "P6_UNK_0000_30cd" /* P6_M_Dothan. */ : NULL;
+
+        case 0x0000317a: return "VIA_UNK_0000_317a";
+        case 0x0000317b: return "VIA_UNK_0000_317b";
+        case 0x0000317d: return "VIA_UNK_0000_317d";
+        case 0x0000317e: return "VIA_UNK_0000_317e";
+        case 0x0000317f: return "VIA_UNK_0000_317f";
+        case 0x80000198: return "VIA_UNK_8000_0198";
 
         case 0xc0000080: return "AMD64_EFER";
         case 0xc0000081: return "AMD64_STAR";
@@ -2262,6 +2371,15 @@ static VBCPUREPBADNESS queryMsrWriteBadness(uint32_t uMsr)
         case 0x00001239:
         case 0x00001249:
         case 0x0000124a:
+        case 0x00001404:
+        case 0x00001405:
+        case 0x00001413:
+        case 0x0000142c: /* Caused rip to be set to 297 or some such weirdness... */
+        case 0x0000142e:
+        case 0x00001435:
+        case 0x00001436:
+        case 0x00001438:
+        case 0x0000317f:
             if (g_enmVendor == CPUMCPUVENDOR_VIA)
                 return VBCPUREPBADNESS_BOND_VILLAIN;
             break;
@@ -2295,9 +2413,13 @@ static VBCPUREPBADNESS queryMsrWriteBadness(uint32_t uMsr)
 
         case 0x000001a0: /* IA32_MISC_ENABLE */
         case 0x00000199: /* IA32_PERF_CTL */
-        case 0x00002000: /* P6_CR0 */
-        case 0x00002003: /* P6_CR3 */
-        case 0x00002004: /* P6_CR4 */
+            return VBCPUREPBADNESS_MIGHT_BITE;
+        case 0x00002000: /* P6_CR0. */
+        case 0x00002003: /* P6_CR3. */
+        case 0x00002004: /* P6_CR4. */
+            if (g_enmVendor == CPUMCPUVENDOR_INTEL)
+                return VBCPUREPBADNESS_MIGHT_BITE;
+            break;
         case 0xc0000080: /* MSR_K6_EFER */
             return VBCPUREPBADNESS_MIGHT_BITE;
     }
@@ -2986,7 +3108,7 @@ static int reportMsr_ViaDummyRange(VBCPUREPMSR const *paMsrs, uint32_t cMsrs, ui
     {
         cRegs++;
         if (!(cRegs % 0x80))
-            vbCpuRepPrintf("VIA dummy detection cRegs=%#x...\n", cRegs);
+            vbCpuRepDebug("VIA dummy detection %#llx..%#llx (%#x regs)...\n", uMsr, uMsr + cRegs - 1, cRegs);
     }
 
     /* Advance. */
@@ -3810,10 +3932,10 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
         uint32_t    fFlags     = paMsrs[i].fFlags;
         uint64_t    uValue     = paMsrs[i].uValue;
         int         rc;
-#if 1
-        if (uMsr < 0x00001200)
+#if 0
+        if (uMsr < 0x00003170)
             continue;
-        if (uMsr >= 0x00001238)
+        if (uMsr >= 0x00003170)
         {
             vbCpuRepDebug("produceMsrReport: uMsr=%#x (%s)...\n", uMsr, getMsrNameHandled(uMsr));
             RTThreadSleep(1000);
@@ -4001,7 +4123,10 @@ static int hackingMsrs(void)
     uint32_t uMsr = 0xc0000080;
     uint64_t uValue = 0;
     msrProberRead(uMsr, &uValue);
-    reportMsr_Amd64Efer(uMsr, uValue);
+    /* Try for a triple fault... */
+    msrProberWrite(uMsr, uValue ^ MSR_K6_EFER_LME);
+    msrProberRead(uMsr, &uValue);
+    msrProberWrite(uMsr, uValue ^ MSR_K6_EFER_NXE);
 #endif
     return VINF_SUCCESS;
 }
