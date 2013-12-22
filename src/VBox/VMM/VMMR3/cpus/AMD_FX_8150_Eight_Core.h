@@ -167,6 +167,7 @@ static CPUMMSRRANGE const g_aMsrRanges_AMD_FX_8150_Eight_Core[] =
     MFW(0xc001001a, "AMD_K8_TOP_MEM", AmdK8TopOfMemN, AmdK8TopOfMemN, UINT64_C(0xffff0000007fffff)), /* value=0xd0000000 */
     MFX(0xc001001d, "AMD_K8_TOP_MEM2", AmdK8TopOfMemN, AmdK8TopOfMemN, 0x1, UINT64_C(0xffff0000007fffff), 0), /* value=0x4`2f000000 */
     MFN(0xc001001f, "AMD_K8_NB_CFG1", AmdK8NbCfg1, AmdK8NbCfg1), /* value=0x400000`00810008 */
+    MFN(0xc0010020, "AMD_K8_PATCH_LOADER", WriteOnly, AmdK8PatchLoader),
     MFX(0xc0010022, "AMD_K8_MC_XCPT_REDIR", AmdK8McXcptRedir, AmdK8McXcptRedir, 0, UINT64_C(0xffffffffffff0000), 0), /* value=0x0 */
     MVO(0xc0010028, "AMD_K8_UNK_c001_0028", 0),
     MVO(0xc0010029, "AMD_K8_UNK_c001_0029", 0),

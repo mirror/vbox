@@ -140,6 +140,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Quad_Core_AMD_Opteron_2384[] =
     MFW(0xc001001a, "AMD_K8_TOP_MEM", AmdK8TopOfMemN, AmdK8TopOfMemN, UINT64_C(0xffff0000007fffff)), /* value=0xc8000000 */
     MFX(0xc001001d, "AMD_K8_TOP_MEM2", AmdK8TopOfMemN, AmdK8TopOfMemN, 0x1, UINT64_C(0xffff0000007fffff), 0), /* value=0x2`38000000 */
     MFN(0xc001001f, "AMD_K8_NB_CFG1", AmdK8NbCfg1, AmdK8NbCfg1), /* value=0x400000`00000008 */
+    MFN(0xc0010020, "AMD_K8_PATCH_LOADER", WriteOnly, AmdK8PatchLoader),
     MFX(0xc0010022, "AMD_K8_MC_XCPT_REDIR", AmdK8McXcptRedir, AmdK8McXcptRedir, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x0 */
     RFN(0xc0010030, 0xc0010035, "AMD_K8_CPU_NAME_n", AmdK8CpuNameN, AmdK8CpuNameN),
     MFX(0xc001003e, "AMD_K8_HTC", AmdK8HwThermalCtrl, AmdK8HwThermalCtrl, 0x327f0004, UINT64_C(0xffffffffc0008838), 0), /* value=0x327f0004 */
