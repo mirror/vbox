@@ -112,7 +112,8 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_VM_SET_RUNTIME_ERROR,
     /** Signal a ring 0 assertion. */
     VMMCALLRING3_VM_R0_ASSERTION,
-    /** Ring switch to force preemption. */
+    /** Ring switch to force preemption.  This is also used by PDMCritSect to
+     *  handle VERR_INTERRUPTED in kernel context. */
     VMMCALLRING3_VM_R0_PREEMPT,
     /** Sync the FTM state with the standby node. */
     VMMCALLRING3_FTM_SET_CHECKPOINT,
