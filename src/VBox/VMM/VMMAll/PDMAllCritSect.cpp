@@ -143,27 +143,51 @@ static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD 
     RTTHREAD        hThreadSelf = RTThreadSelf();
 #  endif
 # endif
-    for (;;)
+    for (unsigned i = 0;; i++)
     {
-# ifdef PDMCRITSECT_STRICT
+        /*
+         * Do the wait.
+         *
+         * In ring-3 this gets cluttered by lock validation and thread state
+         * maintainence.
+         *
+         * In ring-0 we have to deal with the possibility that the thread has
+         * been signalled and the interruptible wait function returning
+         * immediately.  We handle this by prefering the interruptible wait
+         * and alternating with short period of non-interruptible waiting.
+         */
+# ifdef IN_RING3
+#  ifdef PDMCRITSECT_STRICT
         int rc9 = RTLockValidatorRecExclCheckBlocking(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos,
                                                       !(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NO_NESTING),
                                                       RT_INDEFINITE_WAIT, RTTHREADSTATE_CRITSECT, true);
         if (RT_FAILURE(rc9))
             return rc9;
-# elif defined(IN_RING3)
+#  else
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT, true);
-# endif
+#  endif
         int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_INDEFINITE_WAIT);
-# ifdef IN_RING3
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
-# endif
+# else  /* IN_RING0 */
+        int rc;
+        if ((i & 1) == 0)
+            rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_INDEFINITE_WAIT);
+        else
+            rc = SUPSemEventWait(pSession, hEvent, 1000 /*ms*/);
+# endif /* IN_RING0 */
 
+        /*
+         * Deal with the return code and critsect destruction.
+         */
         if (RT_UNLIKELY(pCritSect->s.Core.u32Magic != RTCRITSECT_MAGIC))
             return VERR_SEM_DESTROYED;
         if (rc == VINF_SUCCESS)
             return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
+# ifdef IN_RING3
         AssertMsg(rc == VERR_INTERRUPTED, ("rc=%Rrc\n", rc));
+# else
+        AssertMsg(rc == (!(i & 1) ? VERR_INTERRUPTED : VERR_TIMEOUT), ("rc=%Rrc i=%u\n", rc, i));
+# endif
     }
     /* won't get here */
 }
