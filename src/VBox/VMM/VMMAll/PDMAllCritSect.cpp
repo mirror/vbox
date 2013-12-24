@@ -113,8 +113,6 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_SEM_DESTROYED if destroyed.
- * @retval  VERR_INTERRUPTED in ring-0 if we should return rcBusy or jump to
- *          ring-3.
  *
  * @param   pCritSect           The critsect.
  * @param   hNativeSelf         The native thread handle.
@@ -183,8 +181,18 @@ static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD 
         if (rc == VINF_SUCCESS)
             return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
         AssertMsg(rc == VERR_INTERRUPTED, ("rc=%Rrc\n", rc));
+
 # ifdef IN_RING0
-        return VERR_INTERRUPTED;
+        /* Something is pending (signal, APC, debugger, whatever), just go back
+           to ring-3 so the kernel can deal with it when leaving kernel context.
+
+           Note! We've incremented cLockers already and cannot safely decrement
+                 it without creating a race with PDMCritSectLeave, resulting in
+                 spurious wakeups. */
+        PVM     pVM   = pCritSect->s.CTX_SUFF(pVM); AssertPtr(pVM);
+        PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+        rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_PREEMPT, NULL);
+        AssertRC(rc);
 # endif
     }
     /* won't get here */
@@ -305,11 +313,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
      */
     if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
         && ASMIntAreEnabled())
-    {
-        int rc = pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
-        if (rc != VERR_INTERRUPTED)
-            return rc;
-    }
+        return pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
 #  endif
 #endif /* IN_RING0 */
 
