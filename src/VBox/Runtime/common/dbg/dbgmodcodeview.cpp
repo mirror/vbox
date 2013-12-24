@@ -2717,7 +2717,7 @@ static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch
         {
             /* Try the executable in case it has a NBxx tail header. */
             rc2 = rtDbgModCvProbeFile(pMod, pMod->pszImgFile, enmArch);
-            if (RT_FAILURE(rc2) && (RT_SUCCESS(rc) || VERR_DBG_NO_MATCHING_INTERPRETER))
+            if (RT_FAILURE(rc2) && (RT_SUCCESS(rc) || rc == VERR_DBG_NO_MATCHING_INTERPRETER))
                 rc = rc2;
         }
     }
