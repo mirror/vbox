@@ -132,7 +132,11 @@ static char *rtUriPercentDecodeN(const char *pszString, size_t cchMax)
             /* % encoding means the percent sign and exactly 2 hexadecimal
              * digits describing the ASCII number of the character. */
             ++iIn;
-            char szNum[] = { pszString[iIn++], pszString[iIn++], '\0' };
+            char szNum[3];
+            szNum[0] = pszString[iIn++];
+            szNum[1] = pszString[iIn++];
+            szNum[2] = '\0';
+           
             uint8_t u8;
             rc = RTStrToUInt8Ex(szNum, NULL, 16, &u8);
             if (RT_FAILURE(rc))
