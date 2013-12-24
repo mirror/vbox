@@ -111,7 +111,11 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
 /**
  * Deals with the contended case in ring-3 and ring-0.
  *
- * @returns VINF_SUCCESS or VERR_SEM_DESTROYED.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_DESTROYED if destroyed.
+ * @retval  VERR_INTERRUPTED in ring-0 if we should return rcBusy or jump to
+ *          ring-3.
+ *
  * @param   pCritSect           The critsect.
  * @param   hNativeSelf         The native thread handle.
  */
@@ -143,7 +147,7 @@ static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD 
     RTTHREAD        hThreadSelf = RTThreadSelf();
 #  endif
 # endif
-    for (unsigned i = 0;; i++)
+    for (;;)
     {
         /*
          * Do the wait.
@@ -153,8 +157,7 @@ static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD 
          *
          * In ring-0 we have to deal with the possibility that the thread has
          * been signalled and the interruptible wait function returning
-         * immediately.  We handle this by prefering the interruptible wait
-         * and alternating with short period of non-interruptible waiting.
+         * immediately.  In that case we do normal R0/RC rcBusy handling.
          */
 # ifdef IN_RING3
 #  ifdef PDMCRITSECT_STRICT
@@ -169,11 +172,7 @@ static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD 
         int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_INDEFINITE_WAIT);
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
 # else  /* IN_RING0 */
-        int rc;
-        if ((i & 1) == 0)
-            rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_INDEFINITE_WAIT);
-        else
-            rc = SUPSemEventWait(pSession, hEvent, 1000 /*ms*/);
+        int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_INDEFINITE_WAIT);
 # endif /* IN_RING0 */
 
         /*
@@ -183,10 +182,9 @@ static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD 
             return VERR_SEM_DESTROYED;
         if (rc == VINF_SUCCESS)
             return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
-# ifdef IN_RING3
         AssertMsg(rc == VERR_INTERRUPTED, ("rc=%Rrc\n", rc));
-# else
-        AssertMsg(rc == (!(i & 1) ? VERR_INTERRUPTED : VERR_TIMEOUT), ("rc=%Rrc i=%u\n", rc, i));
+# ifdef IN_RING0
+        return VERR_INTERRUPTED;
 # endif
     }
     /* won't get here */
@@ -307,7 +305,11 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
      */
     if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
         && ASMIntAreEnabled())
-        return pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
+    {
+        int rc = pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
+        if (rc != VERR_INTERRUPTED)
+            return rc;
+    }
 #  endif
 #endif /* IN_RING0 */
 
