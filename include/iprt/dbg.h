@@ -106,7 +106,7 @@ typedef RTDBGSEGMENT const *PCRTDBGSEGMENT;
 
 
 /** Max length (including '\\0') of a symbol name. */
-#define RTDBG_SYMBOL_NAME_LENGTH    (384 - 8 - 8 - 8 - 4 - 4 - 8)
+#define RTDBG_SYMBOL_NAME_LENGTH    (512 - 8 - 8 - 8 - 4 - 4 - 8)
 
 /**
  * Debug symbol.
