@@ -1850,9 +1850,8 @@ pxping_pcb_forward_inbound(void *arg)
     if (error != ERR_OK) {
         DPRINTF(("%s: ip_output_if: %s\n",
                  __func__, proxy_lwip_strerr(error)));
-        pbuf_free(msg->p);
     }
-
+    pbuf_free(msg->p);
     free(msg);
 }
 
@@ -1921,8 +1920,7 @@ pxping_pcb_forward_inbound6(void *arg)
     if (error != ERR_OK) {
         DPRINTF(("%s: ip6_output_if: %s\n",
                  __func__, proxy_lwip_strerr(error)));
-        pbuf_free(msg->p);
     }
-
+    pbuf_free(msg->p);
     free(msg);
 }
