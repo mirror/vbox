@@ -532,9 +532,25 @@ udp_proxy_input(struct pbuf *p, struct netif *inp)
     goto end;
   }
 
-  udphdr = (struct udp_hdr *)p->payload;
-
   LWIP_DEBUGF(UDP_DEBUG, ("udp_proxy_input: received datagram of length %"U16_F"\n", p->tot_len));
+
+  udphdr = (struct udp_hdr *)p->payload;
+  if (udphdr->chksum != 0) {
+    LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE,
+                ("udp_proxy_input: calculating checksum\n"));
+    if (ipX_chksum_pseudo(ip_current_is_v6(), p, IP_PROTO_UDP, p->tot_len,
+                          ipX_current_src_addr(),
+                          ipX_current_dest_addr()) != 0)
+    {
+      LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_LEVEL_WARNING,
+                  ("udp_proxy_input: UDP datagram discarded due to failing checksum\n"));
+      UDP_STATS_INC(udp.chkerr);
+      UDP_STATS_INC(udp.drop);
+      snmp_inc_udpinerrors();
+      pbuf_free(p);
+      goto end;
+    }
+  }
 
   /* convert src and dest ports to host byte order */
   src = ntohs(udphdr->src);
