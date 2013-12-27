@@ -275,6 +275,9 @@ ifeq ($(BUILD_TYPE),debug)
  # IPRT_DEBUG_SEMS indicates thread wrt sems state via the comm field.
  #KFLAGS  += -DIPRT_DEBUG_SEMS
 endif
+ifdef VBOX_WITH_TEXT_MODMEM_HACK
+ KFLAGS += -DRTMEMALLOC_EXEC_HEAP -DVBOX_WITH_TEXT_MODMEM_HACK
+endif
 
 # 2.6 and later
 MODULE_EXT    := ko

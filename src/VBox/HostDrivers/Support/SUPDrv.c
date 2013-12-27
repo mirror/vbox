@@ -4460,6 +4460,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (RT_FAILURE(rc) && pDevExt->pvVMMR0 == pImage->pvImage)
             supdrvLdrUnsetVMMR0EPs(pDevExt);
     }
+    SUPR0Printf("vboxdrv: %p %s\n", pImage->pvImage, pImage->szName);
 
     if (RT_FAILURE(rc))
     {
