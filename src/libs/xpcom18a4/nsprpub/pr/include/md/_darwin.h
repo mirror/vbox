@@ -72,6 +72,13 @@
 #define _PR_HAVE_LARGE_OFF_T
 #define PR_HAVE_SYSV_NAMED_SHARED_MEMORY
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060 /* Mac OS X 10.6 has poll(). */
+# if 0 /* ... but we don't use it because it performs worse on Mt. Lion - WEIRD! */
+# define _PR_POLL_AVAILABLE     1
+# define _PR_USE_POLL           1
+# endif
+#endif
+
 #define _PR_INET6
 /*
  * I'd prefer to use getipnodebyname and getipnodebyaddr but the

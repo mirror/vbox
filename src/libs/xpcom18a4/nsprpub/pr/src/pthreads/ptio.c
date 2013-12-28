@@ -187,6 +187,10 @@ static ssize_t (*pt_aix_sendfile_fptr)() = NULL;
 
 #include "primpl.h"
 
+#if defined(VBOX) && defined(_PR_POLL_AVAILABLE)
+# include <poll.h>
+#endif
+
 #include <netinet/tcp.h>  /* TCP_NODELAY, TCP_MAXSEG */
 #ifdef LINUX
 /* TCP_CORK is not defined in <netinet/tcp.h> on Red Hat Linux 6.0 */
