@@ -54,7 +54,7 @@
 #elif defined(RT_OS_SOLARIS)
 # if defined(RT_ARCH_X86)
 #  include <md/_solaris32.cfg>
-#else
+# else
 #  include <md/_solaris64.cfg>
 # endif
 #elif defined(RT_OS_OS2)
