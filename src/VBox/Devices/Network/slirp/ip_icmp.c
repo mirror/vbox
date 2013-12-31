@@ -724,7 +724,12 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     
     m->m_data -= shlen + RT_OFFSETOF(struct icmp, icmp_ip); /* _m_: shifts m_data to the start of ICMP header */
     m->m_len += s_ip_len + shlen + RT_OFFSETOF(struct icmp, icmp_ip); /* _m_: m_len counts bytes in IP payload */
-    
+
+    /**
+     * It asserts if calculation above is wrong. 
+     */
+    Assert(icp == mtod(m, struct icmp*));
+
     icp->icmp_cksum = 0;
     icp->icmp_cksum = cksum(m, m->m_len);
 
@@ -742,6 +747,11 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     /* returns pointer back. */
     m->m_data -= hlen;
     m->m_len  += hlen;
+    
+    /**
+     * paranoid. if something goes wrong previous assert should be triggered.
+     */
+    Assert(ip == mtod(m, struct ip*));
     (void) ip_output0(pData, (struct socket *)NULL, m, 1);
 
     icmpstat.icps_reflect++;
