@@ -601,11 +601,13 @@ done:
  * be fully correct and in host byte order.
  * ICMP fragmentation is illegal.  All machines must accept 576 bytes in one
  * packet.  The maximum payload is 576-20(ip hdr)-8(icmp hdr)=548
+ * @note: implementation note: MSIZE is 256 bytes (minimal buffer), m_getjcl we allocate two mbufs on: clust_zone 
+ * and mbuf_zone. the maximum payload 256 - 14 (Ethernet header) - 20 (IPv4 hdr) - 8 (ICMPv4 header) = 214
  *
  * @note This function will free msrc!
  */
 
-#define ICMP_MAXDATALEN (IP_MSS-28)
+#define ICMP_MAXDATALEN (MSIZE - 28 - ETH_HLEN)
 void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, int minsize, const char *message)
 {
     unsigned hlen, shlen, s_ip_len;
@@ -653,72 +655,75 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
             goto end_error;
     }
 
-    new_ip_size = sizeof(struct ip) + ICMP_MINLEN + ICMP_MAXDATALEN;
-    new_m_size = if_maxlinkhdr + new_ip_size;
-    if (new_m_size < MSIZE)
-        size = MCLBYTES;
-    else if (new_m_size < MCLBYTES)
-        size = MCLBYTES;
-    else if(new_m_size < MJUM9BYTES)
-        size = MJUM9BYTES;
-    else if (new_m_size < MJUM16BYTES)
-        size = MJUM16BYTES;
-    else
-        AssertMsgFailed(("Unsupported size"));
-    m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
+    m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
     if (!m)
         goto end_error;
 
     m->m_data += if_maxlinkhdr;
     m->m_pkthdr.header = mtod(m, void *);
 
-    m->m_len = msrc->m_len < new_ip_size ? msrc->m_len : new_ip_size;
-    memcpy(m->m_data, msrc->m_data, m->m_len);   /* copy msrc to m */
+    memcpy(m->m_pkthdr.header, ip, shlen); /* initialize respond IP header with data from original one. */
 
-    /* make the header of the reply packet */
-    ip   = mtod(m, struct ip *);
-    hlen = sizeof(struct ip);             /* no options in reply */
+    ip   = mtod(m, struct ip *); /* ip points to new IP header */
+    hlen = sizeof(struct ip);  /* trim the IP header no options in reply */
 
     /* fill in icmp */
-    m->m_data += hlen;
-    m->m_len  -= hlen;
-
-    icp = mtod(m, struct icmp *);
-
-    if (minsize)
-        s_ip_len = shlen+ICMP_MINLEN;      /* return header+8b only */
-    else if (s_ip_len > ICMP_MAXDATALEN)   /* maximum size */
-        s_ip_len = ICMP_MAXDATALEN;
-
-    m->m_len = ICMP_MINLEN + s_ip_len;     /* 8 bytes ICMP header */
-
-    /* min. size = 8+sizeof(struct ip)+8 */
+    m->m_data += hlen; /* shifts m_data to ICMP header */
+    icp = mtod(m, struct icmp *); /* _icp_: points to the ICMP header */
+    m->m_data += RT_OFFSETOF(struct icmp, icmp_ip); /* shifts m_data to IP header payload */
 
     icp->icmp_type = type;
     icp->icmp_code = code;
     icp->icmp_id = 0;
     icp->icmp_seq = 0;
 
-    memcpy(&icp->icmp_ip, msrc->m_data, s_ip_len);   /* report the ip packet */
-
     HTONS(icp->icmp_ip.ip_len);
     HTONS(icp->icmp_ip.ip_id);
     HTONS(icp->icmp_ip.ip_off);
 
+    memcpy(mtod(m, void *), mtod(msrc, void *), shlen);  /* copy original IP header (with options) */
+    msrc->m_data += shlen; /* _msrc_: shifts m_data of original mbuf to the end of original IP header */
+    msrc->m_len -= shlen; /* _msrc_: alter m_len to size of original IP datagram payload */
+    m->m_data += shlen; /* _m_: shifts m_data to the end of reported IP datagram */
+    /* initialize reported payload of original datagram  with MUST size RFC792 or with rest of allocated mbuf */
+    s_ip_len = minsize ? 8 : M_TRAILINGSPACE(m);
+    /* trims original IP datagram's payload to the lenght of its mbuf size or already reserved space if it's smaller */
+    s_ip_len = RT_MIN(s_ip_len, msrc->m_len);
+    memcpy(mtod(m, void *), mtod(msrc, void *), s_ip_len);
+
 #if DEBUG
     if (message)
     {
-        /* DEBUG : append message to ICMP packet */
+
         size_t message_len;
+        /**
+         * Trim reported payload to first eight bytes (RFC792) to let sniffering tools do
+         * their audit duties, and add hint message to the tail of mandatory piece.
+         */
+        s_ip_len = 8;
+        /**
+         * _m_: shifts m_data to the end of mandatory 8b piece to let M_TRAILINGSPACE
+         * to returns available space with counting mandatory region.
+         */
+        m->m_data += s_ip_len;
         message_len = strlen(message);
-        if (message_len > ICMP_MAXDATALEN)
-            message_len = ICMP_MAXDATALEN;
+        if (message_len > M_TRAILINGSPACE(m))
+            message_len = M_TRAILINGSPACE(m);
+   
+        /**
+         * m->m_data points to the end of 8 bytes payload, and m->m_len is length of appended 
+         * message.
+         */
         m_append(pData, m, (int)message_len, message);
+        m->m_data -= s_ip_len; /* now we're ready for further processing, with pointing to mandatory payload */
     }
 #else
     NOREF(message);
 #endif
-
+    
+    m->m_data -= shlen + RT_OFFSETOF(struct icmp, icmp_ip); /* _m_: shifts m_data to the start of ICMP header */
+    m->m_len += s_ip_len + shlen + RT_OFFSETOF(struct icmp, icmp_ip); /* _m_: m_len counts bytes in IP payload */
+    
     icp->icmp_cksum = 0;
     icp->icmp_cksum = cksum(m, m->m_len);
 
