@@ -750,7 +750,7 @@ end_error:
     /*
      * clear source datagramm in case if some of requirement haven't been met.
      */
-    if (!msrc)
+    if (msrc)
         m_freem(pData, msrc);
 
     {
