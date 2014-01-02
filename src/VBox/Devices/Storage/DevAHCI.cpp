@@ -674,6 +674,8 @@ typedef struct AHCI
 
     /** Bitmask of ports which asserted an interrupt. */
     volatile uint32_t               u32PortsInterrupted;
+    /** Number of I/O threads currently active - used for async controller reset handling. */
+    volatile uint32_t               cThreadsActive;
     /** Device is in a reset state. */
     bool                            fReset;
     /** Supports 64bit addressing */
@@ -697,6 +699,10 @@ typedef struct AHCI
 
     /** Flag whether we have written the first 4bytes in an 8byte MMIO write successfully. */
     volatile bool                   f8ByteMMIO4BytesWrittenSuccessfully;
+
+#if HC_ARCH_BITS == 64
+    uint32_t                        Alignment7;
+#endif
 
     /** The support driver session handle. */
     R3R0PTRTYPE(PSUPDRVSESSION)     pSupDrvSession;
@@ -1734,9 +1740,22 @@ static int HbaControl_w(PAHCI ahci, uint32_t iReg, uint32_t u32Value)
 #ifndef IN_RING3
     return VINF_IOM_R3_MMIO_WRITE;
 #else
-    ahci->regHbaCtrl = (u32Value & AHCI_HBA_CTRL_RW_MASK) | AHCI_HBA_CTRL_AE;
-    if (ahci->regHbaCtrl & AHCI_HBA_CTRL_HR)
+    /*
+     * Increase the active thread counter because we might set the host controller
+     * reset bit.
+     */
+    ASMAtomicIncU32(&ahci->cThreadsActive);
+    ASMAtomicWriteU32(&ahci->regHbaCtrl, (u32Value & AHCI_HBA_CTRL_RW_MASK) | AHCI_HBA_CTRL_AE);
+
+    /*
+     * Do the HBA reset if requested and there is no other active thread at the moment,
+     * the work is deferred to the last active thread otherwise.
+     */
+    uint32_t cThreadsActive = ASMAtomicDecU32(&ahci->cThreadsActive);
+    if (   (u32Value & AHCI_HBA_CTRL_HR)
+        && !cThreadsActive)
         ahciHBAReset(ahci);
+
     return VINF_SUCCESS;
 #endif
 }
@@ -6320,14 +6339,16 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
 /**
  * Retrieve a command FIS from guest memory.
  *
- * @returns nothing
+ * @returns whether the H2D FIS was successfully read from the guest memory.
  * @param pAhciReq The state of the actual task.
  */
-static void ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
+static bool ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
     RTGCPHYS  GCPhysAddrCmdTbl;
 
-    AssertMsg(pAhciPort->GCPhysAddrClb && pAhciPort->GCPhysAddrFb, ("%s: GCPhysAddrClb and/or GCPhysAddrFb are 0\n", __FUNCTION__));
+    AssertMsgReturn(pAhciPort->GCPhysAddrClb && pAhciPort->GCPhysAddrFb,
+                    ("%s: GCPhysAddrClb and/or GCPhysAddrFb are 0\n", __FUNCTION__),
+                    false);
 
     /*
      * First we are reading the command header pointed to by regCLB.
@@ -6346,12 +6367,17 @@ static void ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 
     GCPhysAddrCmdTbl = AHCI_RTGCPHYS_FROM_U32(pAhciReq->cmdHdr.u32CmdTblAddrUp, pAhciReq->cmdHdr.u32CmdTblAddr);
 
-    AssertMsg((pAhciReq->cmdHdr.u32DescInf & AHCI_CMDHDR_CFL_MASK) * sizeof(uint32_t) == AHCI_CMDFIS_TYPE_H2D_SIZE,
-              ("This is not a command FIS!!\n"));
+    AssertMsgReturn((pAhciReq->cmdHdr.u32DescInf & AHCI_CMDHDR_CFL_MASK) * sizeof(uint32_t) == AHCI_CMDFIS_TYPE_H2D_SIZE,
+                    ("This is not a command FIS!!\n"),
+                    false);
 
     /* Read the command Fis. */
     LogFlow(("%s: PDMDevHlpPhysRead GCPhysAddrCmdTbl=%RGp cbCmdFis=%u\n", __FUNCTION__, GCPhysAddrCmdTbl, AHCI_CMDFIS_TYPE_H2D_SIZE));
     PDMDevHlpPhysRead(pAhciPort->CTX_SUFF(pDevIns), GCPhysAddrCmdTbl, &pAhciReq->cmdFis[0], AHCI_CMDFIS_TYPE_H2D_SIZE);
+
+    AssertMsgReturn(pAhciReq->cmdFis[AHCI_CMDFIS_TYPE] == AHCI_CMDFIS_TYPE_H2D,
+                    ("This is not a command FIS\n"),
+                    false);
 
     /* Set transfer direction. */
     pAhciReq->enmTxDir = (pAhciReq->cmdHdr.u32DescInf & AHCI_CMDHDR_W) ? AHCITXDIR_WRITE : AHCITXDIR_READ;
@@ -6398,6 +6424,8 @@ static void ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
         GCPhysPrdtl += sizeof(SGLEntry);
     }
 #endif
+
+    return true;
 }
 
 /**
@@ -6445,6 +6473,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     {
         unsigned idx = 0;
         uint32_t u32Tasks = 0;
+        uint32_t u32RegHbaCtrl = 0;
 
         ASMAtomicWriteBool(&pAhciPort->fWrkThreadSleeping, true);
         u32Tasks = ASMAtomicXchgU32(&pAhciPort->u32TasksNew, 0);
@@ -6460,6 +6489,20 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         }
 
         ASMAtomicWriteBool(&pAhciPort->fWrkThreadSleeping, false);
+        ASMAtomicIncU32(&pAhci->cThreadsActive);
+
+        /*
+         * Check whether the global host controller bit is set and go to sleep immediately again
+         * if it is set.
+         */
+        u32RegHbaCtrl = ASMAtomicReadU32(&pAhci->regHbaCtrl);
+        if (   u32RegHbaCtrl & AHCI_HBA_CTRL_HR
+            && !ASMAtomicDecU32(&pAhci->cThreadsActive))
+        {
+            ahciHBAReset(pAhci);
+            continue;
+        }
+
         idx = ASMBitFirstSetU32(u32Tasks);
         while (idx)
         {
@@ -6497,7 +6540,23 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             pAhciReq->uTag = idx;
             ASMAtomicWriteU32(&pAhciPort->u32CurrentCommandSlot, pAhciReq->uTag);
 
-            ahciPortTaskGetCommandFis(pAhciPort, pAhciReq);
+            bool fFisRead = ahciPortTaskGetCommandFis(pAhciPort, pAhciReq);
+            if (RT_UNLIKELY(!fFisRead))
+            {
+                /*
+                 * Couldn't find anything in either the AHCI or SATA spec which
+                 * indicates what should be done if the FIS is not read successfully.
+                 * The closes thing is in the state machine, stating that the device
+                 * should go into idle state again (SATA spec 1.0 chapter 8.7.1).
+                 * Do the same here and ignore any corrupt FIS types, after all
+                 * the guest messed up everything and this behavior is undefined.
+                 */
+                ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
+                Assert(fXchg);
+                u32Tasks &= ~RT_BIT_32(idx); /* Clear task bit. */
+                idx = ASMBitFirstSetU32(u32Tasks);
+                continue;
+            }
 
             /* Mark the task as processed by the HBA if this is a queued task so that it doesn't occur in the CI register anymore. */
             if (pAhciPort->regSACT & (1 << idx))
@@ -6514,21 +6573,15 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     ahciLog(("%s: Setting device into reset state\n", __FUNCTION__));
                     pAhciPort->fResetDevice = true;
                     ahciSendD2HFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, true);
-
-                    ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
-                    AssertMsg(fXchg, ("Task is not active\n"));
-                    break;
                 }
                 else if (pAhciPort->fResetDevice) /* The bit is not set and we are in a reset state. */
-                {
                     ahciFinishStorageDeviceReset(pAhciPort, pAhciReq);
-
-                    ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
-                    AssertMsg(fXchg, ("Task is not active\n"));
-                    break;
-                }
                 else /* We are not in a reset state update the control registers. */
                     AssertMsgFailed(("%s: Update the control register\n", __FUNCTION__));
+
+                ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
+                AssertMsg(fXchg, ("Task is not active\n"));
+                break;
             }
             else
             {
@@ -6635,6 +6688,16 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             u32Tasks &= ~RT_BIT_32(idx); /* Clear task bit. */
             idx = ASMBitFirstSetU32(u32Tasks);
         } /* while tasks available */
+
+        /*
+         * Check whether a host controller reset is pending and execute the reset
+         * if this is the last active thread.
+         */
+        u32RegHbaCtrl = ASMAtomicReadU32(&pAhci->regHbaCtrl);
+        uint32_t cThreadsActive = ASMAtomicDecU32(&pAhci->cThreadsActive);
+        if (   (u32RegHbaCtrl & AHCI_HBA_CTRL_HR)
+            && !cThreadsActive)
+            ahciHBAReset(pAhci);
     } /* While running */
 
     ahciLog(("%s: Port %d async IO thread exiting\n", __FUNCTION__, pAhciPort->iLUN));
@@ -7997,6 +8060,8 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->dev.config[0xa9] = 0x00;                /* next */
     PCIDevSetWord(&pThis->dev, 0xaa, 0x0010);      /* Revision */
     PCIDevSetDWord(&pThis->dev, 0xac, 0x00000028); /* SATA Capability Register 1 */
+
+    pThis->cThreadsActive = 0;
 
     /* Initialize port members. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)

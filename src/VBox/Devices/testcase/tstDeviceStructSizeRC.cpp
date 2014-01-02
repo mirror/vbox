@@ -1283,6 +1283,7 @@ int main()
     GEN_CHECK_OFF(AHCI, ahciPort[AHCI_MAX_NR_PORTS_IMPL-1]);
     GEN_CHECK_OFF(AHCI, lock);
     GEN_CHECK_OFF(AHCI, u32PortsInterrupted);
+    GEN_CHECK_OFF(AHCI, cThreadsActive);
     GEN_CHECK_OFF(AHCI, fReset);
     GEN_CHECK_OFF(AHCI, f64BitAddr);
     GEN_CHECK_OFF(AHCI, fGCEnabled);
