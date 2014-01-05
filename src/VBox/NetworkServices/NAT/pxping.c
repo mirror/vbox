@@ -769,8 +769,8 @@ static void
 pxping_pcb_delete(struct pxping *pxping, struct ping_pcb *pcb)
 {
     LWIP_ASSERT1(pxping->npcbs > 0);
-    LWIP_ASSERT1(pxping->next == NULL);
-    LWIP_ASSERT1(pxping->pprev_timeout == NULL);
+    LWIP_ASSERT1(pcb->next == NULL);
+    LWIP_ASSERT1(pcb->pprev_timeout == NULL);
 
     printf("%s: ping %p\n", __func__, (void *)pcb);
 
