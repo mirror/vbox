@@ -363,7 +363,8 @@ static int VBoxServiceVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pPro
                         Assert(dwLength);
                         if (dwLength)
                         {
-                            pProc->pSid = (PSID)RTMemAlloc(dwLength);
+                            pProc->pSid = (PSID)HeapAlloc(GetProcessHeap(),
+                                                          HEAP_ZERO_MEMORY, dwLength);
                             AssertPtr(pProc->pSid);
                             if (CopySid(dwLength, pProc->pSid, pUser->User.Sid))
                             {
@@ -377,8 +378,15 @@ static int VBoxServiceVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pPro
                             dwErr = ERROR_NO_DATA;
 
                         if (dwErr != ERROR_SUCCESS)
+                        {
                             VBoxServiceError("Error retrieving SID of process PID=%ld: %ld\n",
                                              pProc->id, dwErr);
+                            if (pProc->pSid)
+                            {
+                                HeapFree(GetProcessHeap(), 0 /* Flags */, pProc->pSid);
+                                pProc->pSid = NULL;
+                            }
+                        }
                         break;
                     }
 
@@ -456,6 +464,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDW
             break;
         }
     } while (cProcesses <= _32K); /* Should be enough; see: http://blogs.technet.com/markrussinovich/archive/2009/07/08/3261309.aspx */
+
     if (RT_SUCCESS(rc))
     {
         /*
@@ -494,7 +503,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDW
                 *ppaProcs = paProcs;
             }
             else
-                RTMemFree(paProcs);
+                VBoxServiceVMInfoWinProcessesFree(cProcesses, paProcs);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -515,7 +524,11 @@ void VBoxServiceVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paPr
     for (DWORD i = 0; i < cProcs; i++)
     {
         if (paProcs[i].pSid)
-            RTMemFree(paProcs[i].pSid);
+        {
+            HeapFree(GetProcessHeap(), 0 /* Flags */, paProcs[i].pSid);
+            paProcs[i].pSid = NULL;
+        }
+
     }
     RTMemFree(paProcs);
 }
@@ -991,6 +1004,9 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
     int rc2 = VbglR3GuestPropConnect(&s_uDebugGuestPropClientID);
     AssertRC(rc2);
 
+    char *pszUserList = NULL;
+    uint32_t cUsersInList = 0;
+
     /* This function can report stale or orphaned interactive logon sessions
        of already logged off users (especially in Windows 2000). */
     PLUID    paSessions = NULL;
@@ -1138,7 +1154,6 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
             VBoxServiceVerbose(3, "Found %u unique logged-in user(s)\n",
                                cUniqueUsers);
 
-            *pcUsersInList = 0;
             for (ULONG i = 0; i < cUniqueUsers; i++)
             {
                 if (g_cVerbosity > 3)
@@ -1158,13 +1173,13 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
                     VBoxServiceVerbose(3, "User \"%ls\" has %RU32 interactive processes (session=%RU32)\n",
                                        pUserInfo[i].wszUser, pUserInfo[i].ulNumProcs, pUserInfo[i].ulLastSession);
 
-                    if (*pcUsersInList > 0)
+                    if (cUsersInList > 0)
                     {
-                        rc = RTStrAAppend(ppszUserList, ",");
-                        AssertRCBreakStmt(rc, RTStrFree(*ppszUserList));
+                        rc = RTStrAAppend(&pszUserList, ",");
+                        AssertRCBreakStmt(rc, RTStrFree(pszUserList));
                     }
 
-                    *pcUsersInList += 1;
+                    cUsersInList += 1;
 
                     char *pszUser = NULL;
                     char *pszDomain = NULL;
@@ -1175,19 +1190,19 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
                     if (RT_SUCCESS(rc))
                     {
                         /* Append user to users list. */
-                        rc = RTStrAAppend(ppszUserList, pszUser);
+                        rc = RTStrAAppend(&pszUserList, pszUser);
 
                         /* Do idle detection. */
                         if (RT_SUCCESS(rc))
                             rc = vboxServiceVMInfoWinWriteLastInput(pCache, pszUser, pszDomain);
                     }
                     else
-                        rc = RTStrAAppend(ppszUserList, "<string-conversion-error>");
+                        rc = RTStrAAppend(&pszUserList, "<string-conversion-error>");
 
                     RTStrFree(pszUser);
                     RTStrFree(pszDomain);
 
-                    AssertRCBreakStmt(rc, RTStrFree(*ppszUserList));
+                    AssertRCBreakStmt(rc, RTStrFree(pszUserList));
                 }
             }
 
@@ -1197,6 +1212,12 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
     }
     if (paSessions)
         LsaFreeReturnBuffer(paSessions);
+
+    if (RT_SUCCESS(rc))
+    {
+        *ppszUserList = pszUserList;
+        *pcUsersInList = cUsersInList;
+    }
 
     s_uDebugIter++;
     VbglR3GuestPropDisconnect(s_uDebugGuestPropClientID);
