@@ -473,7 +473,6 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
     if (dyniov != NULL) {
         free(dyniov);
     }
-    pbuf_free(p);
     return error;
 }
 

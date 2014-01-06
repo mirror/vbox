@@ -486,6 +486,7 @@ fwudp_pcb_forward_outbound(struct fwudp *fwudp, struct udp_pcb *pcb,
     }
 
     proxy_sendto(fwudp->sock, p, &peer, namelen);
+    pbuf_free(p);
 }
 
 

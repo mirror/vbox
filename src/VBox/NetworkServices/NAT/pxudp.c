@@ -501,6 +501,7 @@ pxudp_pcb_forward_outbound(struct pxudp *pxudp, struct pbuf *p,
     }
 
     proxy_sendto(pxudp->sock, p, NULL, 0);
+    pbuf_free(p);
 }
 
 
