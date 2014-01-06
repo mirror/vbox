@@ -43,6 +43,7 @@
 
 #include "lwip/opt.h"
 #include "lwip/pbuf.h"
+#include "lwip/ip6.h"
 #include "lwip/ip6_addr.h"
 #include "lwip/netif.h"
 
@@ -56,16 +57,18 @@ extern "C" {
 /* The IPv6 reassembly timer interval in milliseconds. */
 #define IP6_REASS_TMR_INTERVAL 1000
 
-/* IPv6 reassembly helper struct.
+struct ip6_reass_helper;
+
+/* IPv6 reassembly struct.
  * This is exported because memp needs to know the size.
  */
 struct ip6_reassdata {
   struct ip6_reassdata *next;
-  struct pbuf *p;
-  struct ip6_hdr * iphdr;
+  struct ip6_reass_helper *iprh;
+  struct ip6_hdr *iphdr0;
+  struct ip6_hdr iphdr;
   u32_t identification;
   u16_t datagram_len;
-  u8_t nexth;
   u8_t timer;
 };
 
