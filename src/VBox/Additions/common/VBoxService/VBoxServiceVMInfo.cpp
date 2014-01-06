@@ -553,13 +553,13 @@ static int vboxserviceVMInfoWriteUsers(void)
     while (   (ut_user = getutxent())
            && RT_SUCCESS(rc))
     {
-#ifdef RT_OS_DARWIN /* No ut_user->ut_session on Darwin */
+# ifdef RT_OS_DARWIN /* No ut_user->ut_session on Darwin */
         VBoxServiceVerbose(4, "Found entry \"%s\" (type: %d, PID: %RU32)\n",
                            ut_user->ut_user, ut_user->ut_type, ut_user->ut_pid);
-#else
+# else
         VBoxServiceVerbose(4, "Found entry \"%s\" (type: %d, PID: %RU32, session: %RU32)\n",
                            ut_user->ut_user, ut_user->ut_type, ut_user->ut_pid, ut_user->ut_session);
-#endif
+# endif
         if (cUsersInList > cListSize)
         {
             cListSize += 32;
@@ -589,8 +589,8 @@ static int vboxserviceVMInfoWriteUsers(void)
         }
     }
 
-#ifdef VBOX_WITH_DBUS
-# if defined(RT_OS_LINUX) /* Not yet for Solaris/FreeBSB. */
+# ifdef VBOX_WITH_DBUS
+#  if defined(RT_OS_LINUX) /* Not yet for Solaris/FreeBSB. */
     DBusError dbErr;
     DBusConnection *pConnection = NULL;
     int rc2 = RTDBusLoadLib();
@@ -782,8 +782,8 @@ static int vboxserviceVMInfoWriteUsers(void)
     if (   pConnection
         && dbus_error_is_set(&dbErr))
         dbus_error_free(&dbErr);
-# endif /* RT_OS_LINUX */
-#endif /* VBOX_WITH_DBUS */
+#  endif /* RT_OS_LINUX */
+# endif /* VBOX_WITH_DBUS */
 
     /** @todo Fedora/others: Handle systemd-loginctl. */
 
@@ -818,7 +818,8 @@ static int vboxserviceVMInfoWriteUsers(void)
     RTMemFree(papszUsers);
 
     endutxent(); /* Close utmpx file. */
-#endif
+#endif /* !RT_OS_WINDOWS && !RT_OS_FREEBSD && !RT_OS_HAIKU && !RT_OS_OS2 */
+
     Assert(RT_FAILURE(rc) || cUsersInList == 0 || (pszUserList && *pszUserList));
 
     /* If the user enumeration above failed, reset the user count to 0 except
