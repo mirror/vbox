@@ -828,6 +828,7 @@ pxping_pcb_deregister(struct pxping *pxping, struct ping_pcb *pcb)
     for (p = &pxping->pcbs; *p != NULL; p = &(*p)->next) {
         if (*p == pcb) {
             *p = pcb->next;
+            pcb->next = NULL;
             break;
         }
     }
