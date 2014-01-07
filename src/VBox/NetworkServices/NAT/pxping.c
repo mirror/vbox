@@ -690,8 +690,10 @@ pxping_recv6(void *arg, struct pbuf *p)
     hopl = IP6H_HOPLIM(iph);
     if (!pcb->is_mapped) {
         if (hopl == 1) {
-            pbuf_header(p, iphlen); /* back to IP header */
-            icmp6_time_exceeded(p, ICMP6_TE_HL);
+            status = pbuf_header(p, iphlen); /* back to IP header */
+            if (RT_LIKELY(status == 0)) {
+                icmp6_time_exceeded(p, ICMP6_TE_HL);
+            }
             pbuf_free(p);
             return;
         }
