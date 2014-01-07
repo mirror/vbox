@@ -720,8 +720,37 @@ pxping_recv6(void *arg, struct pbuf *p)
         }
     }
 
-    proxy_sendto(pxping->sock6, p,
-                 &pcb->peer.sin6, sizeof(pcb->peer.sin6));
+    status = proxy_sendto(pxping->sock6, p,
+                          &pcb->peer.sin6, sizeof(pcb->peer.sin6));
+    if (status != 0) {
+        int error = -status;
+        DPRINTF(("%s: sendto errno %d\n", __func__, error));
+
+        status = pbuf_header(p, iphlen); /* back to IP header */
+        if (RT_UNLIKELY(status != 0)) {
+            pbuf_free(p);
+            return;
+        }
+
+        /* restore original ICMP header */
+        icmph->id = pcb->guest_id;
+
+        switch (error) {
+        case EACCES:
+            icmp6_dest_unreach(p, ICMP6_DUR_PROHIBITED);
+            break;
+
+#ifdef ENONET
+        case ENONET:
+#endif
+        case ENETDOWN:
+        case ENETUNREACH:
+        case EHOSTDOWN:
+        case EHOSTUNREACH:
+            icmp6_dest_unreach(p, ICMP6_DUR_NO_ROUTE);
+            break;
+        }
+    }
 
     pbuf_free(p);
 }
