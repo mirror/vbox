@@ -6707,6 +6707,31 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         else
             progressDesc = tr("Starting virtual machine");
 
+        Bstr savedStateFile;
+
+        /*
+         * Saved VMs will have to prove that their saved states seem kosher.
+         */
+        if (mMachineState == MachineState_Saved)
+        {
+            rc = mMachine->COMGETTER(StateFilePath)(savedStateFile.asOutParam());
+            if (FAILED(rc))
+                throw rc;
+            ComAssertRet(!savedStateFile.isEmpty(), E_FAIL);
+            int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Delete the saved state prior to starting the VM"),
+                               savedStateFile.raw(), vrc);
+        }
+
+        /* Read console data, including console shared folders, stored in the
+         * saved state file (if not yet done).
+         */
+        rc = loadDataFromSavedState();
+        if (FAILED(rc))
+            throw rc;
+
         /* Check all types of shared folders and compose a single list */
         SharedFolderDataMap sharedFolders;
         {
@@ -6740,24 +6765,6 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                                                             pSF->isWritable(),
                                                             pSF->isAutoMounted());
             }
-        }
-
-        Bstr savedStateFile;
-
-        /*
-         * Saved VMs will have to prove that their saved states seem kosher.
-         */
-        if (mMachineState == MachineState_Saved)
-        {
-            rc = mMachine->COMGETTER(StateFilePath)(savedStateFile.asOutParam());
-            if (FAILED(rc))
-                throw rc;
-            ComAssertRet(!savedStateFile.isEmpty(), E_FAIL);
-            int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
-            if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Delete the saved state prior to starting the VM"),
-                               savedStateFile.raw(), vrc);
         }
 
         /* Setup task object and thread to carry out the operaton
@@ -7022,11 +7029,6 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             }
         }
 #endif // 0
-
-        /* Read console data stored in the saved state file (if not yet done) */
-        rc = loadDataFromSavedState();
-        if (FAILED(rc))
-            throw rc;
 
         /* setup task object and thread to carry out the operation
          * asynchronously */
