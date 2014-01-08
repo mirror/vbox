@@ -1210,6 +1210,7 @@ int main()
     GEN_CHECK_OFF(AHCIPort, u32TasksFinished);
     GEN_CHECK_OFF(AHCIPort, u32QueuedTasksFinished);
     GEN_CHECK_OFF(AHCIPort, u32TasksNew);
+    GEN_CHECK_OFF(AHCIPort, u32TasksRedo);
     GEN_CHECK_OFF(AHCIPort, u32CurrentCommandSlot);
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
     GEN_CHECK_OFF(AHCIPort, pDrvBlock);
