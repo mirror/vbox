@@ -51,15 +51,6 @@ ifdef VBOX_WITH_WDDM
  DLLS.win.amd64 += $(VBOX_OGL_X86_GUEST_DLLS)
 endif
 
-# 32-bit version for the 64-bit Linux Additions
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
- ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
-  DLLS += $(VBOX_OGL_X86_GUEST_DLLS)
-  $(foreach i,$(VBOX_OGL_X86_GUEST_DLLS),$(eval $(i)_INST = $(INST_ADDITIONS)/32/))
-  $(foreach i,$(VBOX_OGL_X86_GUEST_DLLS),$(eval $(i)_NAME = $(subst -x86,,$(i))))
- endif
-endif
-
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  #VBoxOGL_DRI = 1
  ifn1of ($(KBUILD_TARGET),solaris)   # No DRI on Solaris yet
