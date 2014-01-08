@@ -479,13 +479,15 @@ typedef struct AHCIPort
     volatile uint32_t               u32QueuedTasksFinished;
     /** Bitmap for new queued tasks (Guest -> R3). */
     volatile uint32_t               u32TasksNew;
+    /** Bitmap of tasks which must be redone because of a non fatal error. */
+    volatile uint32_t               u32TasksRedo;
 
     /** Current command slot processed.
      * Accessed by the guest by reading the CMD register.
      * Holds the command slot of the command processed at the moment. */
     volatile uint32_t               u32CurrentCommandSlot;
 
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 64
     uint32_t                        u32Alignment2;
 #endif
 
@@ -1972,6 +1974,7 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     pAhciPort->uATATransferMode = ATA_MODE_UDMA | 6;
 
     pAhciPort->u32TasksNew = 0;
+    pAhciPort->u32TasksRedo = 0;
     pAhciPort->u32TasksFinished = 0;
     pAhciPort->u32QueuedTasksFinished = 0;
     pAhciPort->u32CurrentCommandSlot = 0;
@@ -5917,7 +5920,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pAhciReq, NULL);
             }
             else
-                ASMAtomicOrU32(&pAhciPort->u32TasksNew, RT_BIT_32(pAhciReq->uTag));
+                ASMAtomicOrU32(&pAhciPort->u32TasksRedo, RT_BIT_32(pAhciReq->uTag));
         }
         else
         {
@@ -7498,10 +7501,13 @@ static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
     {
         PAHCIPort pAhciPort = &pAhci->ahciPort[i];
 
-        if (pAhciPort->u32TasksNew)
+        if (pAhciPort->u32TasksRedo)
         {
             PDEVPORTNOTIFIERQUEUEITEM pItem = (PDEVPORTNOTIFIERQUEUEITEM)PDMQueueAlloc(pAhci->CTX_SUFF(pNotifierQueue));
             AssertMsg(pItem, ("Allocating item for queue failed\n"));
+
+            pAhciPort->u32TasksNew |= pAhciPort->u32TasksRedo;
+            pAhciPort->u32TasksRedo = 0;
 
             Assert(pAhciPort->fRedo);
             pAhciPort->fRedo = false;
