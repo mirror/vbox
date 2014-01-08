@@ -445,8 +445,6 @@ typedef struct AHCIPort
     bool                            fResetDevice;
     /** Flag whether this port is hot plug capable. */
     bool                            fHotpluggable;
-    /** Flag whether the I/O thread idles. */
-    volatile bool                   fAsyncIOThreadIdle;
     /** Flag whether the port is in redo task mode. */
     volatile bool                   fRedo;
     /** Flag whether the worker thread is sleeping. */
@@ -6546,7 +6544,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 /*
                  * Couldn't find anything in either the AHCI or SATA spec which
                  * indicates what should be done if the FIS is not read successfully.
-                 * The closes thing is in the state machine, stating that the device
+                 * The closest thing is in the state machine, stating that the device
                  * should go into idle state again (SATA spec 1.0 chapter 8.7.1).
                  * Do the same here and ignore any corrupt FIS types, after all
                  * the guest messed up everything and this behavior is undefined.
@@ -6787,7 +6785,6 @@ static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "PortATAPI=%RTbool\n", pThisPort->fATAPI);
         pHlp->pfnPrintf(pHlp, "PortTasksFinished=%#x\n", pThisPort->u32TasksFinished);
         pHlp->pfnPrintf(pHlp, "PortQueuedTasksFinished=%#x\n", pThisPort->u32QueuedTasksFinished);
-        pHlp->pfnPrintf(pHlp, "PortAsyncIoThreadIdle=%RTbool\n", pThisPort->fAsyncIOThreadIdle);
         pHlp->pfnPrintf(pHlp, "\n");
     }
 }
@@ -6807,17 +6804,16 @@ static bool ahciR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
 {
     PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
 
+    if (pThis->cThreadsActive)
+        return false;
+
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->ahciPort); i++)
     {
         PAHCIPort pThisPort = &pThis->ahciPort[i];
         if (pThisPort->pDrvBase)
         {
-            bool fFinished;
-            if (pThisPort->fAsyncInterface)
-                fFinished = (pThisPort->cTasksActive == 0);
-            else
-                fFinished = ((pThisPort->cTasksActive == 0) && (pThisPort->fAsyncIOThreadIdle));
-            if (!fFinished)
+            if (   (pThisPort->cTasksActive != 0)
+                || (pThisPort->u32TasksNew != 0))
                return false;
         }
     }
@@ -8221,7 +8217,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pAhciPort->IPort.pfnQueryDeviceLocation         = ahciR3PortQueryDeviceLocation;
         pAhciPort->IMountNotify.pfnMountNotify          = ahciR3MountNotify;
         pAhciPort->IMountNotify.pfnUnmountNotify        = ahciR3UnmountNotify;
-        pAhciPort->fAsyncIOThreadIdle                   = true;
 
         /* Query per port configuration options if available. */
         PCFGMNODE pCfgPort = CFGMR3GetChild(pDevIns->pCfg, szName);
