@@ -31,6 +31,12 @@ MOD_CFLAGS = -fshort-wchar -include $(MANGLING)
 MOD_INCL   = $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
 # What on earth is this?
 MOD_INCL  += $(addprefix -I$(KBUILD_EXTMOD)/vboxvideo,/ /include /r0drv/linux)
+# Enterprise Linux 6.5 does not include the drm user API headers with the kernel
+# headers.
+MOD_INCL += $(foreach inc,$(KERN_INCL),\
+              $(if $(wildcard $(inc)/linux/utsrelease.h),\
+                $(if $(shell grep '"2.6.32.*el6.*"' $(inc)/linux/utsrelease.h),\
+		      -I/usr/include,),))
 MOD_DEFS  := -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 \
 	     -DIN_SUP_R0 -DVBOX -DVBOX_WITH_HGCM -DLOG_TO_BACKDOOR -DIN_MODULE \
 	     -DIN_GUEST_R0
