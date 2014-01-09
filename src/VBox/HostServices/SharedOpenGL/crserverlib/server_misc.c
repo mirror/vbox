@@ -1818,17 +1818,11 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchEnd( void )
         crServerSpriteCoordReplEnable(GL_FALSE);
 }
 
-#ifdef DEBUG
-extern GLuint g_VBoxTstNumVa;
-#endif
-
 void SERVER_DISPATCH_APIENTRY crServerDispatchBegin(GLenum mode)
 {
 #ifdef DEBUG
     CRContext *ctx = crStateGetCurrent();
     SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
-
-    g_VBoxTstNumVa = 0;
 
     if (ctx->program.vpProgramBinding)
     {
