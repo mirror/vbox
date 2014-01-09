@@ -400,7 +400,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                                  "otherwise your VM will be started with Remote Display disabled.")
                                  .arg(GUI_ExtPackName);
         }
-#endif VBOX_WITH_EXTPACK
+#endif /* VBOX_WITH_EXTPACK */
 
         /* Check VRDE server port: */
         if (m_pEditorRemoteDisplayPort->text().trimmed().isEmpty())
