@@ -76,6 +76,8 @@
 #include "CHostVideoInputDevice.h"
 #include "CSnapshot.h"
 #include "CMedium.h"
+#include "CExtPack.h"
+#include "CExtPackManager.h"
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 static void signalHandlerSIGUSR1(int sig, siginfo_t *, void *);
@@ -127,6 +129,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_pMenuPool(0)
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(session().GetMachine().GetState())
+    , m_fIsExtensionPackUsable(false)
     , m_requestedVisualStateType(UIVisualStateType_Invalid)
 #ifdef Q_WS_WIN
     , m_alphaCursor(0)
@@ -1106,6 +1109,10 @@ void UISession::loadSessionSettings()
 
     /* Load extra-data settings: */
     {
+        /* Extension pack stuff: */
+        CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+        m_fIsExtensionPackUsable = !extPack.isNull() && extPack.GetUsable();
+
         /* Runtime menu settings: */
 #ifdef Q_WS_MAC
         m_allowedActionsMenuApplication = (RuntimeMenuApplicationActionType)

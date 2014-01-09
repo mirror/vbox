@@ -398,9 +398,9 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                                  "However, this requires the <b>%1</b> to be installed. "
                                  "Please install the Extension Pack from the VirtualBox download site as "
                                  "otherwise your VM will be started with Remote Display disabled.")
-                                .arg(GUI_ExtPackName);
+                                 .arg(GUI_ExtPackName);
         }
-#endif
+#endif VBOX_WITH_EXTPACK
 
         /* Check VRDE server port: */
         if (m_pEditorRemoteDisplayPort->text().trimmed().isEmpty())
