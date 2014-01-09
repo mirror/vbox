@@ -1168,17 +1168,14 @@ static int cpumR3CpuIdInit(PVM pVM)
     /* ... split this function about here ... */
 
 
-    PCPUMCPUIDLEAF pStdLeaf0 = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, 0, 0);
-    AssertLogRelReturn(pStdLeaf0, VERR_CPUM_IPE_2);
-
-
     /* Cpuid 1:
      * Only report features we can support.
      *
      * Note! When enabling new features the Synthetic CPU and Portable CPUID
      *       options may require adjusting (i.e. stripping what was enabled).
      */
-    PCPUMCPUIDLEAF pStdFeatureLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, 1, 0);
+    PCPUMCPUIDLEAF pStdFeatureLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves,
+                                                        1, 0); /* Note! Must refetch when used later. */
     AssertLogRelReturn(pStdFeatureLeaf, VERR_CPUM_IPE_2);
     pStdFeatureLeaf->uEdx        &= X86_CPUID_FEATURE_EDX_FPU
                                   | X86_CPUID_FEATURE_EDX_VME
@@ -1279,7 +1276,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * ASSUMES that this is ALWAYS the AMD defined feature set if present.
      */
     PCPUMCPUIDLEAF pExtFeatureLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves,
-                                                        UINT32_C(0x80000001), 0);
+                                                        UINT32_C(0x80000001), 0); /* Note! Must refetch when used later. */
     if (pExtFeatureLeaf)
     {
         pExtFeatureLeaf->uEdx    &= X86_CPUID_AMD_FEATURE_EDX_FPU
@@ -1402,6 +1399,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Safe to expose
      */
     pCurLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, 3, 0);
+    pStdFeatureLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, 1, 0);
     if (   !(pStdFeatureLeaf->uEdx & X86_CPUID_FEATURE_EDX_PSN)
         && pCurLeaf)
     {
@@ -1458,6 +1456,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCurLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, 5, 0);
     if (pCurLeaf)
     {
+        pStdFeatureLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, 1, 0);
         if (!(pStdFeatureLeaf->uEcx & X86_CPUID_FEATURE_ECX_MONITOR))
             pCurLeaf->uEax = pCurLeaf->uEbx = 0;
 
@@ -1557,6 +1556,8 @@ static int cpumR3CpuIdInit(PVM pVM)
         {
             /* Legacy method to determine the number of cores. */
             pCurLeaf->uEcx |= (pVM->cCpus - 1); /* NC: Number of CPU cores - 1; 8 bits */
+            pExtFeatureLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves,
+                                                 UINT32_C(0x80000001), 0);
             if (pExtFeatureLeaf)
                 pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_CMPL;
         }
@@ -1657,6 +1658,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     if (pCPUM->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL)
     {
+        pStdFeatureLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, 1, 0);
         uint32_t uCurIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(ASMGetCpuStepping(pStdFeatureLeaf->uEax),
                                                                 ASMGetCpuModelIntel(pStdFeatureLeaf->uEax),
                                                                 ASMGetCpuFamily(pStdFeatureLeaf->uEax),
