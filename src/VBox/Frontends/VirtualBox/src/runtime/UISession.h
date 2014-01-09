@@ -93,6 +93,12 @@ public:
     QMenuBar* newMenuBar(RuntimeMenuType fOptions = RuntimeMenuType_All);
     QCursor cursor() const { return m_cursor; }
 
+    /** @name Extension Pack stuff.
+     ** @{ */
+    /** Determines whether extension pack installed and usable. */
+    bool isExtensionPackUsable() const { return m_fIsExtensionPackUsable; }
+    /** @} */
+
     /** @name Runtime menus configuration stuff.
      ** @{ */
 #ifdef Q_WS_MAC
@@ -331,6 +337,12 @@ private:
     KMachineState m_machineStatePrevious;
     KMachineState m_machineState;
     QCursor m_cursor;
+
+    /** @name Extension Pack variables.
+     ** @{ */
+    /** Determines whether extension pack installed and usable. */
+    bool m_fIsExtensionPackUsable;
+    /** @} */
 
     /** @name Runtime menus configuration variables.
      ** @{ */

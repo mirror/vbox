@@ -472,6 +472,8 @@ void UIMachineMenuBar::prepareMenuDevices(QMenu *pMenu)
     if (m_pSession->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_VRDEServer)
     {
         pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer));
+        if (!m_pSession->isExtensionPackUsable())
+            gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer)->setEnabled(false);
         fSeparator2 = true;
     }
     else
