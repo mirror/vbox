@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -77,7 +77,7 @@ typedef struct VBOXIPCSESSION
 /** Static pointer to GetLastInputInfo() function. */
 static PFNGETLASTINPUTINFO s_pfnGetLastInputInfo = NULL;
 
-int vboxIPCSessionDestroyLocked(PVBOXIPCSESSION pSession);
+int vboxIPCSessionStop(PVBOXIPCSESSION pSession);
 
 static int vboxIPCHandleVBoxTrayRestart(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEADER pHdr)
 {
@@ -230,6 +230,7 @@ void VBoxIPCStop(const VBOXSERVICEENV *pEnv, void *pInstance)
 
     LogFunc(("Stopping pInstance=%p\n", pInstance));
 
+    /* Shut down local IPC server. */
     PVBOXIPCCONTEXT pCtx = (PVBOXIPCCONTEXT)pInstance;
     AssertPtr(pCtx);
 
@@ -239,41 +240,74 @@ void VBoxIPCStop(const VBOXSERVICEENV *pEnv, void *pInstance)
         if (RT_FAILURE(rc2))
             LogFunc(("Cancelling current listening call failed with rc=%Rrc\n", rc2));
     }
-}
 
-void VBoxIPCDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
-{
-    AssertPtr(pEnv);
-    AssertPtr(pInstance);
-
-    LogFunc(("Destroying pInstance=%p\n", pInstance));
-
-    PVBOXIPCCONTEXT pCtx = (PVBOXIPCCONTEXT)pInstance;
-    AssertPtr(pCtx);
-
+    /* Stop all remaining session threads. */
     int rc = RTCritSectEnter(&pCtx->CritSect);
     if (RT_SUCCESS(rc))
     {
         PVBOXIPCSESSION pSession;
         RTListForEach(&pCtx->SessionList, pSession, VBOXIPCSESSION, Node)
         {
-            int rc2 = vboxIPCSessionDestroyLocked(pSession);
+            int rc2 = vboxIPCSessionStop(pSession);
             if (RT_FAILURE(rc2))
             {
-                LogFunc(("Destroying IPC session %p failed with rc=%Rrc\n",
+                LogFunc(("Stopping IPC session %p failed with rc=%Rrc\n",
                          pSession, rc2));
                 /* Keep going. */
             }
         }
+    }
+}
 
-        RTLocalIpcServerDestroy(pCtx->hServer);
+void VBoxIPCDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
+{
+    AssertPtrReturnVoid(pEnv);
+    AssertPtrReturnVoid(pInstance);
+
+    LogFunc(("Destroying pInstance=%p\n", pInstance));
+
+    PVBOXIPCCONTEXT pCtx = (PVBOXIPCCONTEXT)pInstance;
+    AssertPtr(pCtx);
+
+    /* Shut down local IPC server. */
+    int rc = RTCritSectEnter(&pCtx->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLocalIpcServerDestroy(pCtx->hServer);
+        if (RT_FAILURE(rc))
+            LogFunc(("Unable to destroy IPC server, rc=%Rrc\n", rc));
 
         int rc2 = RTCritSectLeave(&pCtx->CritSect);
-        AssertRC(rc2);
-
-        rc2 = RTCritSectDelete(&pCtx->CritSect);
-        AssertRC(rc2);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
+
+    LogFunc(("Waiting for remaining IPC sessions to shut down ...\n"));
+
+    /* Wait for all IPC session threads to shut down. */
+    bool fListIsEmpty = true;
+    do
+    {
+        int rc2 = RTCritSectEnter(&pCtx->CritSect);
+        if (RT_SUCCESS(rc2))
+        {
+            fListIsEmpty = RTListIsEmpty(&pCtx->SessionList);
+            rc2 = RTCritSectLeave(&pCtx->CritSect);
+        }
+
+        if (RT_FAILURE(rc2))
+            break;
+
+    } while (!fListIsEmpty);
+
+    AssertMsg(fListIsEmpty,
+              ("Session thread list is not empty when it should\n"));
+
+    LogFunc(("All remaining IPC sessions shut down\n"));
+
+    int rc2 = RTCritSectDelete(&pCtx->CritSect);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     LogFunc(("Destroyed pInstance=%p, rc=%Rrc\n",
              pInstance, rc));
@@ -389,21 +423,34 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
              pThis, rc));
 
     /*
+     * Close the session.
+     */
+    int rc2 = RTLocalIpcSessionClose(hSession);
+    if (RT_FAILURE(rc2))
+        LogFunc(("Session %p: Failed closing session %p, rc=%Rrc\n", pThis, rc2));
+
+    /*
      * Clean up the session.
      */
     PVBOXIPCCONTEXT pCtx = ASMAtomicReadPtrT(&pThis->pCtx, PVBOXIPCCONTEXT);
     AssertMsg(pCtx, ("Session %p: No context found\n", pThis));
-    rc = RTCritSectEnter(&pCtx->CritSect);
-    if (RT_SUCCESS(rc))
+    rc2 = RTCritSectEnter(&pCtx->CritSect);
+    if (RT_SUCCESS(rc2))
     {
-        rc = vboxIPCSessionDestroyLocked(pThis);
+        /* Remove this session from the session list. */
+        RTListNodeRemove(&pThis->Node);
 
-        int rc2 = RTCritSectLeave(&pCtx->CritSect);
+        rc2 = RTCritSectLeave(&pCtx->CritSect);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
 
-    LogFunc(("Session %p: Terminated\n", pThis));
+    LogFunc(("Session %p: Terminated with rc=%Rrc, freeing ...\n",
+             pThis, rc));
+
+    RTMemFree(pThis);
+    pThis = NULL;
+
     return rc;
 }
 
@@ -425,8 +472,9 @@ static int vboxIPCSessionCreate(PVBOXIPCCONTEXT pCtx, RTLOCALIPCSESSION hSession
 
             /* Start IPC session thread. */
             LogFlowFunc(("Creating thread for session %p ...\n", pSession));
-            rc = RTThreadCreate(&pSession->hThread, vboxIPCSessionThread, pSession, 0,
-                                RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VBXTRYIPCSESS");
+            rc = RTThreadCreate(&pSession->hThread, vboxIPCSessionThread,
+                                pSession /* pvUser */, 0 /* Default stack size */,
+                                RTTHREADTYPE_DEFAULT, 0 /* Flags */, "VBXTRYIPCSESS");
             if (RT_SUCCESS(rc))
             {
                 /* Add session thread to session IPC list. */
@@ -452,22 +500,18 @@ static int vboxIPCSessionCreate(PVBOXIPCCONTEXT pCtx, RTLOCALIPCSESSION hSession
     return rc;
 }
 
-static int vboxIPCSessionDestroyLocked(PVBOXIPCSESSION pSession)
+static int vboxIPCSessionStop(PVBOXIPCSESSION pSession)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
-    pSession->hThread = NIL_RTTHREAD;
+    ASMAtomicWriteBool(&pSession->fTerminate, true);
 
     RTLOCALIPCSESSION hSession;
     ASMAtomicXchgHandle(&pSession->hSession, NIL_RTLOCALIPCSESSION, &hSession);
-    int rc = RTLocalIpcSessionClose(hSession);
+    if (hSession)
+        return RTLocalIpcSessionClose(hSession);
 
-    RTListNodeRemove(&pSession->Node);
-
-    RTMemFree(pSession);
-    pSession = NULL;
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
