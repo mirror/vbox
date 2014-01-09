@@ -109,7 +109,11 @@ typedef struct CR_HTML_DUMPER
     uint32_t cImg;
 } CR_HTML_DUMPER;
 
+DECLEXPORT(bool) crDmpHtmlIsInited(struct CR_HTML_DUMPER * pDumper);
+DECLEXPORT(void) crDmpHtmlTerm(struct CR_HTML_DUMPER * pDumper);
 DECLEXPORT(int) crDmpHtmlInit(struct CR_HTML_DUMPER * pDumper, const char *pszDir, const char *pszFile);
+DECLEXPORT(int) crDmpHtmlInitV(struct CR_HTML_DUMPER * pDumper, const char *pszDir, const char *pszFile, va_list pArgList);
+DECLEXPORT(int) crDmpHtmlInitF(struct CR_HTML_DUMPER * pDumper, const char *pszDir, const char *pszFile, ...);
 
 #ifdef RT_OS_WINDOWS
 DECLINLINE(void) crDmpDbgPrintInit(CR_DBGPRINT_DUMPER *pDumper)

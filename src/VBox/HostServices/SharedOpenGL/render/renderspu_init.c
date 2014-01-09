@@ -373,6 +373,8 @@ renderSPUInit( int id, SPU *child, SPU *self,
 
     render_spu.gather_conns = NULL;
 
+    numFuncs = renderspu_SystemPostprocessFunctions(_cr_render_table, numFuncs, RT_ELEMENTS(_cr_render_table));
+
     crDebug("Render SPU: ---------- End of Init -------------");
 
     return &render_functions;

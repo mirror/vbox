@@ -176,7 +176,7 @@ $(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c: $(PATH_SUB_CURRENT)/util/debug_opco
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
 ifdef VBOX_WITH_CRDUMPER
-$(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp: $(PATH_SUB_CURRENT)/state_tracker/dump_gen.py $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_sizes.py  $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_components.py $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_isenabled.txt state_extensions_isenabled.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+$(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp: $(PATH_SUB_CURRENT)/state_tracker/dump_gen.py $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_sizes.py $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_isenabled.txt state_extensions_isenabled.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 endif
@@ -463,7 +463,6 @@ VBoxOGLcrstate_SOURCES = \
 	$(VBOX_PATH_CROGL_GENFILES)/state_lighting_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_line_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_multisample_gen.c \
-	$(VBOX_PATH_CROGL_GENFILES)/state_point_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_polygon_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_regcombiner_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c \
@@ -482,7 +481,6 @@ VBoxOGLcrstate_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/state_lighting_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_line_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_multisample_gen.c \
-	$(VBOX_PATH_CROGL_GENFILES)/state_point_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_polygon_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_regcombiner_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c \
@@ -570,10 +568,6 @@ $(VBOX_PATH_CROGL_GENFILES)/state_multisample_gen.c: $(addprefix $(PATH_SUB_CURR
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py multisample Multisample $(<D)
 
-$(VBOX_PATH_CROGL_GENFILES)/state_point_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_point.txt gendiffcode.py) | $$(dir $$@)
-	$(call MSG_GENERATE,python,$@,$<)
-	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py point Point $(<D)
-
 $(VBOX_PATH_CROGL_GENFILES)/state_polygon_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_polygon.txt gendiffcode.py) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py polygon Polygon $(<D)
@@ -586,7 +580,7 @@ $(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c: $(addprefix $(PATH_SUB_CURRENT
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py viewport Viewport $(<D)
 
-$(VBOX_PATH_CROGL_GENFILES)/state_get.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_get.py state_get.txt state_extensions_get.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+$(VBOX_PATH_CROGL_GENFILES)/state_get.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_get.py state_get.txt state_extensions_get.txt get_components.py) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $(<D)/state_get.py $(VBOX_PATH_CROGL_GLAPI) $(<D)
 

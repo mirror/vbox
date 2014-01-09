@@ -108,8 +108,6 @@ convert_bufferid = [
     'GetVertexAttribivNV'
 ];
 
-from get_components import *;
-
 keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
 for func_name in keys:
     #(return_type, arg_names, arg_types) = gl_mapping[func_name]
@@ -142,5 +140,5 @@ for func_name in keys:
         if func_name in no_pnames:
             print '\tcrServerReturnValue( &(%s[0]), %d*sizeof(%s) );' % (local_argname, max_components[func_name], local_argtype );
         else:
-            print '\tcrServerReturnValue( &(%s[0]), lookupComponents(pname)*sizeof(%s) );' % (local_argname, local_argtype );
+            print '\tcrServerReturnValue( &(%s[0]), crStateHlpComponentsCount(pname)*sizeof(%s) );' % (local_argname, local_argtype );
         print '}\n'

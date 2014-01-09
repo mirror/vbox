@@ -468,7 +468,7 @@ void PACK_APIENTRY crPackGetAttachedShaders(GLuint program, GLsizei maxCount, GL
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
-void PACK_APIENTRY crPackGetAttachedObjectsARB(GLhandleARB containerObj, GLsizei maxCount, GLsizei * count, GLhandleARB * obj, int * writeback)
+void PACK_APIENTRY crPackGetAttachedObjectsARB(VBoxGLhandleARB containerObj, GLsizei maxCount, GLsizei * count, VBoxGLhandleARB * obj, int * writeback)
 {
 	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
@@ -476,7 +476,7 @@ void PACK_APIENTRY crPackGetAttachedObjectsARB(GLhandleARB containerObj, GLsizei
 	CR_GET_BUFFERED_POINTER(pc, 32);
 	WRITE_DATA(0, GLint, 32);
 	WRITE_DATA(4, GLenum, CR_GETATTACHEDOBJECTSARB_EXTEND_OPCODE);
-	WRITE_DATA(8, GLhandleARB, containerObj);
+	WRITE_DATA(8, VBoxGLhandleARB, containerObj);
 	WRITE_DATA(12, GLsizei, maxCount);
 	WRITE_NETWORK_POINTER(16, (void *) count);
 	WRITE_NETWORK_POINTER(24, (void *) writeback);
@@ -484,7 +484,7 @@ void PACK_APIENTRY crPackGetAttachedObjectsARB(GLhandleARB containerObj, GLsizei
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
-void PACK_APIENTRY crPackGetInfoLogARB(GLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog, int * writeback)
+void PACK_APIENTRY crPackGetInfoLogARB(VBoxGLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog, int * writeback)
 {
 	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
@@ -492,7 +492,7 @@ void PACK_APIENTRY crPackGetInfoLogARB(GLhandleARB obj, GLsizei maxLength, GLsiz
 	CR_GET_BUFFERED_POINTER(pc, 32);
 	WRITE_DATA(0, GLint, 32);
 	WRITE_DATA(4, GLenum, CR_GETINFOLOGARB_EXTEND_OPCODE);
-	WRITE_DATA(8, GLhandleARB, obj);
+	WRITE_DATA(8, VBoxGLhandleARB, obj);
 	WRITE_DATA(12, GLsizei, maxLength);
 	WRITE_NETWORK_POINTER(16, (void *) length);
 	WRITE_NETWORK_POINTER(24, (void *) writeback);

@@ -253,3 +253,13 @@ VBoxTexPresent
 GetError
 GetProgramiv
 GetShaderiv
+Begin
+DrawArrays
+DrawElements
+End
+TexEnvf
+TexEnvfv
+TexEnvi
+TexEnviv
+GetTexEnvfv
+GetTexEnviv

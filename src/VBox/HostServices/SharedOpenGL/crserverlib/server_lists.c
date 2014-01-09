@@ -307,12 +307,13 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchPrioritizeTextures( GLsizei n, con
         return;
     }
 
+    crStatePrioritizeTextures(n, textures, priorities);
+
     for (i = 0; i < n; i++)
     {
         newTextures[i] = crStateGetTextureHWID(textures[i]);
     }
 
-    crStatePrioritizeTextures(n, textures, priorities);
     cr_server.head_spu->dispatch_table.PrioritizeTextures(n, newTextures, priorities);
     crFree(newTextures);
 }

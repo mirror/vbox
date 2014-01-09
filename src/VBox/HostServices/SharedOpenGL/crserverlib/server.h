@@ -250,6 +250,19 @@ DECLINLINE(void) crServerXchgI8(int8_t *pu8Val1, int8_t *pu8Val2)
     *pu8Val2 = tmp;
 }
 
+#ifdef DEBUG
+# define CR_GLERR_CHECK(_op) do { \
+        GLenum status; \
+        while ((status = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR) {/*Assert(0);*/} \
+        _op \
+        while ((status = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR) {Assert(0);} \
+    } while (0)
+#else
+# define CR_GLERR_CHECK(_op) do { \
+        _op \
+    } while (0)
+#endif
+
 #ifdef DEBUG_misha
 # define CR_SERVER_RPW_DEBUG
 #endif

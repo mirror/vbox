@@ -21,24 +21,24 @@
 #include "cr_compiler.h"
 
 #ifdef IN_RING0
-#include <common/VBoxMPUtils.h>
-#define WINGDIAPI
+# include <common/VBoxMPUtils.h>
+# define WINGDIAPI
 #endif
 /*
  * We effectively wrap gl.h, glu.h, etc, just like GLUT
  */
 
 #ifndef GL_GLEXT_PROTOTYPES
-#define GL_GLEXT_PROTOTYPES
+# define GL_GLEXT_PROTOTYPES
 #endif
 
 #if defined(WINDOWS)
 # ifdef IN_RING0
 #  error "should not happen!"
 # endif
-#define WIN32_LEAN_AND_MEAN
-#define WGL_APIENTRY __stdcall
-#include <windows.h>
+# define WIN32_LEAN_AND_MEAN
+# define WGL_APIENTRY __stdcall
+# include <windows.h>
 #elif defined(DARWIN)
 /* nothing */
 #else
@@ -55,23 +55,23 @@
 
 
 #ifdef GLX
-#ifndef GLX_GLXEXT_PROTOTYPES
-#define GLX_GLXEXT_PROTOTYPES
-#endif
-#include <GL/glx.h>
+# ifndef GLX_GLXEXT_PROTOTYPES
+#  define GLX_GLXEXT_PROTOTYPES
+# endif
+# include <GL/glx.h>
 #endif
 
 #ifdef USE_OSMESA
-#include <GL/osmesa.h>
+# include <GL/osmesa.h>
 #endif
 
 #ifdef DARWIN
-#include <stddef.h>
+# include <stddef.h>
 #elif !defined(FreeBSD)
-#include <malloc.h>  /* to get ptrdiff_t used below */
+#  include <malloc.h>  /* to get ptrdiff_t used below */
 #endif
 
-#include <GL/glext.h>
+#include "cr_glext.h"
 
 #ifdef __cplusplus
 extern "C" {

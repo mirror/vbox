@@ -113,7 +113,7 @@ num_extended_components = {
 	'GL_COORD_REPLACE_ARB': (1, 'CR_ARB_point_sprite'),
 }
 
-print """static unsigned int lookupComponents( GLenum pname )
+print """unsigned int crStateHlpComponentsCount( GLenum pname )
 {
 	switch( pname )
 	{
@@ -133,7 +133,7 @@ for comp in comps:
 
 print """
 		default:
-			crError( "Unknown parameter name in lookupComponents: %d", (int) pname );
+			crError( "Unknown parameter name in crStateHlpComponentsCount: %d", (int) pname );
 			break;
 	}
 	/* NOTREACHED */

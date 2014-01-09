@@ -200,3 +200,248 @@ void STATE_APIENTRY crStatePointParameteriv(GLenum pname, const GLint *params)
 	GLfloat f_param = (GLfloat) (*params);
 	crStatePointParameterfvARB( pname, &f_param );
 }
+
+void crStatePointDiff(CRPointBits *b, CRbitvalue *bitID,
+        CRContext *fromCtx, CRContext *toCtx)
+{
+    CRPointState *from = &(fromCtx->point);
+    CRPointState *to = &(toCtx->point);
+    unsigned int j, i;
+    CRbitvalue nbitID[CR_MAX_BITARRAY];
+    Assert(0);
+    for (j=0;j<CR_MAX_BITARRAY;j++)
+        nbitID[j] = ~bitID[j];
+    i = 0; /* silence compiler */
+    if (CHECKDIRTY(b->enableSmooth, bitID))
+    {
+        glAble able[2];
+        able[0] = diff_api.Disable;
+        able[1] = diff_api.Enable;
+        if (from->pointSmooth != to->pointSmooth)
+        {
+            able[to->pointSmooth](GL_POINT_SMOOTH);
+            from->pointSmooth = to->pointSmooth;
+        }
+        CLEARDIRTY(b->enableSmooth, nbitID);
+    }
+    if (CHECKDIRTY(b->size, bitID))
+    {
+        if (from->pointSize != to->pointSize)
+        {
+            diff_api.PointSize (to->pointSize);
+            from->pointSize = to->pointSize;
+        }
+        CLEARDIRTY(b->size, nbitID);
+    }
+    if (CHECKDIRTY(b->minSize, bitID))
+    {
+        if (from->minSize != to->minSize)
+        {
+            diff_api.PointParameterfARB (GL_POINT_SIZE_MIN_ARB, to->minSize);
+            from->minSize = to->minSize;
+        }
+        CLEARDIRTY(b->minSize, nbitID);
+    }
+    if (CHECKDIRTY(b->maxSize, bitID))
+    {
+        if (from->maxSize != to->maxSize)
+        {
+            diff_api.PointParameterfARB (GL_POINT_SIZE_MAX_ARB, to->maxSize);
+            from->maxSize = to->maxSize;
+        }
+        CLEARDIRTY(b->maxSize, nbitID);
+    }
+    if (CHECKDIRTY(b->fadeThresholdSize, bitID))
+    {
+        if (from->fadeThresholdSize != to->fadeThresholdSize)
+        {
+            diff_api.PointParameterfARB (GL_POINT_FADE_THRESHOLD_SIZE_ARB, to->fadeThresholdSize);
+            from->fadeThresholdSize = to->fadeThresholdSize;
+        }
+        CLEARDIRTY(b->fadeThresholdSize, nbitID);
+    }
+    if (CHECKDIRTY(b->spriteCoordOrigin, bitID))
+    {
+        if (from->spriteCoordOrigin != to->spriteCoordOrigin)
+        {
+            diff_api.PointParameterfARB (GL_POINT_SPRITE_COORD_ORIGIN, to->spriteCoordOrigin);
+            from->spriteCoordOrigin = to->spriteCoordOrigin;
+        }
+        CLEARDIRTY(b->spriteCoordOrigin, nbitID);
+    }
+    if (CHECKDIRTY(b->distanceAttenuation, bitID))
+    {
+        if (from->distanceAttenuation[0] != to->distanceAttenuation[0] || from->distanceAttenuation[1] != to->distanceAttenuation[1] || from->distanceAttenuation[2] != to->distanceAttenuation[2]) {
+            diff_api.PointParameterfvARB (GL_POINT_DISTANCE_ATTENUATION_ARB, to->distanceAttenuation);
+            from->distanceAttenuation[0] = to->distanceAttenuation[0];
+            from->distanceAttenuation[1] = to->distanceAttenuation[1];
+            from->distanceAttenuation[2] = to->distanceAttenuation[2];
+        }
+        CLEARDIRTY(b->distanceAttenuation, nbitID);
+    }
+    if (CHECKDIRTY(b->enableSprite, bitID))
+    {
+        glAble able[2];
+        able[0] = diff_api.Disable;
+        able[1] = diff_api.Enable;
+        if (from->pointSprite != to->pointSprite)
+        {
+            able[to->pointSprite](GL_POINT_SPRITE_ARB);
+            from->pointSprite = to->pointSprite;
+        }
+        CLEARDIRTY(b->enableSprite, nbitID);
+    }
+    {
+        unsigned int activeUnit = (unsigned int) -1;
+        for (i = 0; i < CR_MAX_TEXTURE_UNITS; i++) {
+            if (CHECKDIRTY(b->coordReplacement[i], bitID))
+            {
+                GLint replacement = to->coordReplacement[i];
+                if (activeUnit != i) {
+                     diff_api.ActiveTextureARB(i + GL_TEXTURE0_ARB );
+                     activeUnit = i;
+                }
+                diff_api.TexEnviv(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, &replacement);
+                from->coordReplacement[i] = to->coordReplacement[i];
+                CLEARDIRTY(b->coordReplacement[i], nbitID);
+            }
+        }
+        if (activeUnit != toCtx->texture.curTextureUnit)
+           diff_api.ActiveTextureARB(GL_TEXTURE0 + toCtx->texture.curTextureUnit);
+    }
+    CLEARDIRTY(b->dirty, nbitID);
+}
+
+void crStatePointSwitch(CRPointBits *b, CRbitvalue *bitID,
+        CRContext *fromCtx, CRContext *toCtx)
+{
+    CRPointState *from = &(fromCtx->point);
+    CRPointState *to = &(toCtx->point);
+    unsigned int j, i;
+    GLboolean fEnabled;
+    CRbitvalue nbitID[CR_MAX_BITARRAY];
+    for (j=0;j<CR_MAX_BITARRAY;j++)
+        nbitID[j] = ~bitID[j];
+    i = 0; /* silence compiler */
+    if (CHECKDIRTY(b->enableSmooth, bitID))
+    {
+        glAble able[2];
+        able[0] = diff_api.Disable;
+        able[1] = diff_api.Enable;
+        if (from->pointSmooth != to->pointSmooth)
+        {
+            able[to->pointSmooth](GL_POINT_SMOOTH);
+            FILLDIRTY(b->enableSmooth);
+            FILLDIRTY(b->dirty);
+        }
+        CLEARDIRTY(b->enableSmooth, nbitID);
+    }
+    if (CHECKDIRTY(b->size, bitID))
+    {
+        if (from->pointSize != to->pointSize)
+        {
+            diff_api.PointSize (to->pointSize);
+            FILLDIRTY(b->size);
+            FILLDIRTY(b->dirty);
+        }
+        CLEARDIRTY(b->size, nbitID);
+    }
+    if (CHECKDIRTY(b->minSize, bitID))
+    {
+        if (from->minSize != to->minSize)
+        {
+            diff_api.PointParameterfARB (GL_POINT_SIZE_MIN_ARB, to->minSize);
+            FILLDIRTY(b->minSize);
+            FILLDIRTY(b->dirty);
+        }
+        CLEARDIRTY(b->minSize, nbitID);
+    }
+    if (CHECKDIRTY(b->maxSize, bitID))
+    {
+        if (from->maxSize != to->maxSize)
+        {
+            diff_api.PointParameterfARB (GL_POINT_SIZE_MAX_ARB, to->maxSize);
+            FILLDIRTY(b->maxSize);
+            FILLDIRTY(b->dirty);
+        }
+        CLEARDIRTY(b->maxSize, nbitID);
+    }
+    if (CHECKDIRTY(b->fadeThresholdSize, bitID))
+    {
+        if (from->fadeThresholdSize != to->fadeThresholdSize)
+        {
+            diff_api.PointParameterfARB (GL_POINT_FADE_THRESHOLD_SIZE_ARB, to->fadeThresholdSize);
+            FILLDIRTY(b->fadeThresholdSize);
+            FILLDIRTY(b->dirty);
+        }
+        CLEARDIRTY(b->fadeThresholdSize, nbitID);
+    }
+    if (CHECKDIRTY(b->spriteCoordOrigin, bitID))
+    {
+        if (from->spriteCoordOrigin != to->spriteCoordOrigin)
+        {
+            diff_api.PointParameterfARB (GL_POINT_SPRITE_COORD_ORIGIN, to->spriteCoordOrigin);
+            FILLDIRTY(b->spriteCoordOrigin);
+            FILLDIRTY(b->dirty);
+        }
+        CLEARDIRTY(b->spriteCoordOrigin, nbitID);
+    }
+    if (CHECKDIRTY(b->distanceAttenuation, bitID))
+    {
+        if (from->distanceAttenuation[0] != to->distanceAttenuation[0] || from->distanceAttenuation[1] != to->distanceAttenuation[1] || from->distanceAttenuation[2] != to->distanceAttenuation[2]) {
+            diff_api.PointParameterfvARB (GL_POINT_DISTANCE_ATTENUATION_ARB, to->distanceAttenuation);
+            FILLDIRTY(b->distanceAttenuation);
+            FILLDIRTY(b->dirty);
+        }
+        CLEARDIRTY(b->distanceAttenuation, nbitID);
+    }
+    fEnabled = from->pointSprite;
+    {
+        unsigned int activeUnit = (unsigned int) -1;
+        for (i = 0; i < CR_MAX_TEXTURE_UNITS; i++) {
+            if (CHECKDIRTY(b->coordReplacement[i], bitID))
+            {
+                if (!fEnabled)
+                {
+                    diff_api.Enable(GL_POINT_SPRITE_ARB);
+                    fEnabled = GL_TRUE;
+                }
+#if 0
+                /*don't set coord replacement, it will be set just before drawing points when necessary,
+                 * to work around gpu driver bugs
+                 * See crServerDispatch[Begin|End|Draw*] */
+                GLint replacement = to->coordReplacement[i];
+                if (activeUnit != i) {
+                     diff_api.ActiveTextureARB(i + GL_TEXTURE0_ARB );
+                     activeUnit = i;
+                }
+                diff_api.TexEnviv(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, &replacement);
+#endif
+                CLEARDIRTY(b->coordReplacement[i], nbitID);
+            }
+        }
+        if (activeUnit != toCtx->texture.curTextureUnit)
+           diff_api.ActiveTextureARB(GL_TEXTURE0 + toCtx->texture.curTextureUnit);
+    }
+    if (CHECKDIRTY(b->enableSprite, bitID))
+    {
+        glAble able[2];
+        able[0] = diff_api.Disable;
+        able[1] = diff_api.Enable;
+        if (fEnabled != to->pointSprite)
+        {
+            able[to->pointSprite](GL_POINT_SPRITE_ARB);
+            FILLDIRTY(b->enableSprite);
+            FILLDIRTY(b->dirty);
+        }
+        CLEARDIRTY(b->enableSprite, nbitID);
+    }
+    else if (fEnabled != to->pointSprite)
+    {
+        glAble able[2];
+        able[0] = diff_api.Disable;
+        able[1] = diff_api.Enable;
+        able[to->pointSprite](GL_POINT_SPRITE_ARB);
+    }
+    CLEARDIRTY(b->dirty, nbitID);
+}

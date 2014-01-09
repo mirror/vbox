@@ -209,6 +209,15 @@ typedef struct CR_RENDER_WINCMD
 } CR_RENDER_WINCMD, *PCR_RENDER_WINCMD;
 #endif
 
+#ifdef RT_OS_DARWIN
+typedef void (*PFNDELETE_OBJECT)(GLhandleARB obj);
+typedef void (*PFNGET_ATTACHED_OBJECTS)( GLhandleARB containerObj, GLsizei maxCount, GLsizei * count, GLhandleARB * obj );
+typedef GLhandleARB (*PFNGET_HANDLE)(GLenum pname);
+typedef void (*PFNGET_INFO_LOG)( GLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog );
+typedef void (*PFNGET_OBJECT_PARAMETERFV)( GLhandleARB obj, GLenum pname, GLfloat * params );
+typedef void (*PFNGET_OBJECT_PARAMETERIV)( GLhandleARB obj, GLenum pname, GLint * params );
+#endif
+
 /**
  * Renderspu state info
  */
@@ -310,6 +319,13 @@ typedef struct {
 
 #ifdef RT_OS_DARWIN
 # ifdef VBOX_WITH_COCOA_QT
+    PFNDELETE_OBJECT pfnDeleteObject;
+    PFNGET_ATTACHED_OBJECTS pfnGetAttachedObjects;
+    PFNGET_HANDLE pfnGetHandle;
+    PFNGET_INFO_LOG pfnGetInfoLog;
+    PFNGET_OBJECT_PARAMETERFV pfnGetObjectParameterfv;
+    PFNGET_OBJECT_PARAMETERIV pfnGetObjectParameteriv;
+
     CR_GLSL_CACHE GlobalShaders;
 # else
     RgnHandle hRootVisibleRegion;
@@ -390,6 +406,7 @@ extern void renderspu_SystemMakeCurrent( WindowInfo *window, GLint windowInfor, 
 extern void renderspu_SystemSwapBuffers( WindowInfo *window, GLint flags );
 extern void renderspu_SystemReparentWindow(WindowInfo *window);
 extern void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry );
+uint32_t renderspu_SystemPostprocessFunctions(SPUNamedFunctionTable *aFunctions, uint32_t cFunctions, uint32_t cTable);
 extern void renderspu_GCWindow(void);
 extern int renderspuCreateFunctions( SPUNamedFunctionTable table[] );
 extern void renderspuVBoxCompositorSet( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor);

@@ -235,6 +235,8 @@ DECLEXPORT(void) crStateSetExtensionString( CRContext *ctx, const GLubyte *exten
 DECLEXPORT(void) crStateDiffContext( CRContext *from, CRContext *to );
 DECLEXPORT(void) crStateSwitchContext( CRContext *from, CRContext *to );
 
+DECLEXPORT(unsigned int) crStateHlpComponentsCount( GLenum pname );
+
 typedef struct CRFBDataElement
 {
     /* FBO, can be NULL */

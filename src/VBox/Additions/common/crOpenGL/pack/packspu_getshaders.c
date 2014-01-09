@@ -98,7 +98,7 @@ void PACKSPU_APIENTRY packspu_GetAttachedShaders(GLuint program, GLsizei maxCoun
     crFree(pLocal);
 }
 
-void PACKSPU_APIENTRY packspu_GetAttachedObjectsARB(GLhandleARB containerObj, GLsizei maxCount, GLsizei * count, GLhandleARB * obj)
+void PACKSPU_APIENTRY packspu_GetAttachedObjectsARB(VBoxGLhandleARB containerObj, GLsizei maxCount, GLsizei * count, VBoxGLhandleARB * obj)
 {
     GET_THREAD(thread);
     int writeback = 1;
@@ -106,7 +106,7 @@ void PACKSPU_APIENTRY packspu_GetAttachedObjectsARB(GLhandleARB containerObj, GL
 
     if (!obj) return;
 
-    pLocal = (GLsizei*) crAlloc(maxCount*sizeof(GLhandleARB)+sizeof(GLsizei));
+    pLocal = (GLsizei*) crAlloc(maxCount*sizeof(VBoxGLhandleARB)+sizeof(GLsizei));
     if (!pLocal) return;
 
     crPackGetAttachedObjectsARB(containerObj, maxCount, pLocal, NULL, &writeback);
@@ -115,13 +115,13 @@ void PACKSPU_APIENTRY packspu_GetAttachedObjectsARB(GLhandleARB containerObj, GL
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     if (count) *count=*pLocal;
-    crMemcpy(obj, &pLocal[1], *pLocal*sizeof(GLhandleARB));
+    crMemcpy(obj, &pLocal[1], *pLocal*sizeof(VBoxGLhandleARB));
     crFree(pLocal);
 }
 
 AssertCompile(sizeof(GLsizei) == 4);
 
-void PACKSPU_APIENTRY packspu_GetInfoLogARB(GLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog)
+void PACKSPU_APIENTRY packspu_GetInfoLogARB(VBoxGLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog)
 {
     GET_THREAD(thread);
     int writeback = 1;

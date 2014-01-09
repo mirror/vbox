@@ -729,7 +729,7 @@ void crRecDumpProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
 
     crRecDumpLog(pRec, hwid);
 
-    GLhandleARB *pShaders = (GLhandleARB*)crCalloc(cShaders * sizeof (*pShaders));
+    VBoxGLhandleARB *pShaders = (VBoxGLhandleARB*)crCalloc(cShaders * sizeof (*pShaders));
     if (!pShaders)
     {
         crWarning("crCalloc failed");
@@ -740,7 +740,10 @@ void crRecDumpProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
     pRec->pDispatch->GetAttachedObjectsARB(hwid, cShaders, NULL, pShaders);
     for (GLint i = 0; i < cShaders; ++i)
     {
-        crRecDumpShader(pRec, ctx, 0, pShaders[i]);
+        if (pShaders[i])
+            crRecDumpShader(pRec, ctx, 0, pShaders[i]);
+        else
+            crDmpStrF(pRec->pDumper, "WARNING: Shader[%d] is null", i);
     }
 
     crFree(pShaders);
@@ -847,7 +850,7 @@ void crRecRecompileProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hw
 
     crDmpStrF(pRec->pDumper, "==RECOMPILE PROGRAM ctx(%d) id(%d) hwid(%d) status(%d) shaders(%d)==", ctx->id, id, hwid, linkStatus, cShaders);
 
-    GLhandleARB *pShaders = (GLhandleARB*)crCalloc(cShaders * sizeof (*pShaders));
+    VBoxGLhandleARB *pShaders = (VBoxGLhandleARB*)crCalloc(cShaders * sizeof (*pShaders));
     if (!pShaders)
     {
         crWarning("crCalloc failed");
@@ -1664,6 +1667,18 @@ static void crDmpHtmlPrintFooter(struct CR_HTML_DUMPER * pDumper)
     fflush(pDumper->pFile);
 }
 
+DECLEXPORT(bool) crDmpHtmlIsInited(struct CR_HTML_DUMPER * pDumper)
+{
+    return !!pDumper->pFile;
+}
+
+DECLEXPORT(void) crDmpHtmlTerm(struct CR_HTML_DUMPER * pDumper)
+{
+    crDmpHtmlPrintFooter(pDumper);
+    fclose (pDumper->pFile);
+    pDumper->pFile = NULL;
+}
+
 DECLEXPORT(int) crDmpHtmlInit(struct CR_HTML_DUMPER * pDumper, const char *pszDir, const char *pszFile)
 {
     int rc = VERR_NO_MEMORY;
@@ -1703,6 +1718,23 @@ DECLEXPORT(int) crDmpHtmlInit(struct CR_HTML_DUMPER * pDumper, const char *pszDi
     {
         crWarning("open failed");
     }
+    return rc;
+}
+
+DECLEXPORT(int) crDmpHtmlInitV(struct CR_HTML_DUMPER * pDumper, const char *pszDir, const char *pszFile, va_list pArgList)
+{
+    char szBuffer[4096] = {0};
+    vsprintf_s(szBuffer, sizeof (szBuffer), pszFile, pArgList);
+    return crDmpHtmlInit(pDumper, pszDir, szBuffer);
+}
+
+DECLEXPORT(int) crDmpHtmlInitF(struct CR_HTML_DUMPER * pDumper, const char *pszDir, const char *pszFile, ...)
+{
+    int rc;
+    va_list pArgList;
+    va_start(pArgList, pszFile);
+    rc = crDmpHtmlInitV(pDumper, pszDir, pszFile, pArgList);
+    va_end(pArgList);
     return rc;
 }
 
