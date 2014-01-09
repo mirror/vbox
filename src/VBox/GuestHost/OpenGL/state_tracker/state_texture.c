@@ -3259,10 +3259,28 @@ void STATE_APIENTRY
 crStatePrioritizeTextures(GLsizei n, const GLuint *textures,
                                                     const GLclampf *priorities) 
 {
-    UNUSED(n);
-    UNUSED(textures);
+    CRContext *g = GetCurrentContext();
+    CRTextureObj *tobj;
+    GLsizei i;
     UNUSED(priorities);
-    /* TODO: */
+
+    for (i = 0; i < n; ++i)
+    {
+        GLuint tex = textures[i];
+        GET_TOBJ(tobj, g, tex);
+        if (!tobj)
+        {
+            Assert(crHashtableIsKeyUsed(g->shared->textureTable, tex));
+            tobj = crStateTextureAllocate_t(g, tex);
+        }
+
+        /* so far the code just ensures the tex object is created to make
+         * the crserverlib code be able to pass it to host ogl */
+
+        /* TODO: store texture priorities in the state data to be able to restore it properly
+         * on save state load */
+    }
+
     return;
 }
 

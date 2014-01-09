@@ -174,7 +174,7 @@ $(VBOX_PATH_CROGL_GENFILES)/server_retval.c: $(addprefix $(PATH_SUB_CURRENT)/crs
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 
-$(VBOX_PATH_CROGL_GENFILES)/server_get.c: $(addprefix $(PATH_SUB_CURRENT)/crserverlib/, server_get.py server_special get_components.py) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+$(VBOX_PATH_CROGL_GENFILES)/server_get.c: $(addprefix $(PATH_SUB_CURRENT)/crserverlib/, server_get.py server_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 

@@ -2079,3 +2079,8 @@ void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, Conte
 {
 
 }
+
+uint32_t renderspu_SystemPostprocessFunctions(SPUNamedFunctionTable *aFunctions, uint32_t cFunctions, uint32_t cTable)
+{
+    return cFunctions;
+}

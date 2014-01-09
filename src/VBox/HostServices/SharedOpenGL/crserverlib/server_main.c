@@ -331,7 +331,7 @@ crServerInit(int argc, char *argv[])
     }
 #endif
 
-//    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
+    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
 
     if (cr_server.bUseMultipleContexts)
     {
@@ -395,6 +395,14 @@ crServerInit(int argc, char *argv[])
     crServerInitTmpCtxDispatch();
     crStateDiffAPI( &(cr_server.head_spu->dispatch_table) );
 
+#ifdef VBOX_WITH_CRSERVER_DUMPER
+    crMemset(&cr_server.Recorder, 0, sizeof (cr_server.Recorder));
+    crMemset(&cr_server.RecorderBlitter, 0, sizeof (cr_server.RecorderBlitter));
+    crMemset(&cr_server.DbgPrintDumper, 0, sizeof (cr_server.DbgPrintDumper));
+    crMemset(&cr_server.HtmlDumper, 0, sizeof (cr_server.HtmlDumper));
+    cr_server.pDumper = NULL;
+#endif
+
     crUnpackSetReturnPointer( &(cr_server.return_ptr) );
     crUnpackSetWritebackPointer( &(cr_server.writeback_ptr) );
 
@@ -431,7 +439,7 @@ GLboolean crVBoxServerInit(void)
     }
 #endif
 
-//    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
+    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
 
     if (cr_server.bUseMultipleContexts)
     {
@@ -508,6 +516,14 @@ GLboolean crVBoxServerInit(void)
     crServerInitDispatch();
     crServerInitTmpCtxDispatch();
     crStateDiffAPI( &(cr_server.head_spu->dispatch_table) );
+
+#ifdef VBOX_WITH_CRSERVER_DUMPER
+    crMemset(&cr_server.Recorder, 0, sizeof (cr_server.Recorder));
+    crMemset(&cr_server.RecorderBlitter, 0, sizeof (cr_server.RecorderBlitter));
+    crMemset(&cr_server.DbgPrintDumper, 0, sizeof (cr_server.DbgPrintDumper));
+    crMemset(&cr_server.HtmlDumper, 0, sizeof (cr_server.HtmlDumper));
+    cr_server.pDumper = NULL;
+#endif
 
     /*Check for PBO support*/
     if (crStateGetCurrent()->extensions.ARB_pixel_buffer_object)

@@ -1815,6 +1815,5 @@ renderspuCreateFunctions(SPUNamedFunctionTable table[])
     FILLIN( "GetChromiumParametervCR", renderspuGetChromiumParametervCR );
     FILLIN( "GetString", renderspuGetString );
     FILLIN( "VBoxPresentComposition", renderspuVBoxPresentComposition );
-
     return i;
 }

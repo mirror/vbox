@@ -97,11 +97,11 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedShaders(GLuint program,
     crFree(pLocal);
 }
 
-void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedObjectsARB(GLhandleARB containerObj, GLsizei maxCount, GLsizei * count, GLhandleARB * obj)
+void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedObjectsARB(VBoxGLhandleARB containerObj, GLsizei maxCount, GLsizei * count, VBoxGLhandleARB * obj)
 {
     GLsizei *pLocal;
 
-    pLocal = (GLsizei*) crAlloc(maxCount*sizeof(GLhandleARB)+sizeof(GLsizei));
+    pLocal = (GLsizei*) crAlloc(maxCount*sizeof(VBoxGLhandleARB)+sizeof(GLsizei));
     if (!pLocal)
     {
         GLsizei zero=0;
@@ -109,7 +109,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedObjectsARB(GLhandleARB 
     }
     /* initial (fallback )value */
     *pLocal = 0;
-    cr_server.head_spu->dispatch_table.GetAttachedObjectsARB(crStateGetProgramHWID(containerObj), maxCount, pLocal, (GLhandleARB*)&pLocal[1]);
+    cr_server.head_spu->dispatch_table.GetAttachedObjectsARB(crStateGetProgramHWID(containerObj), maxCount, pLocal, (VBoxGLhandleARB*)&pLocal[1]);
 
     {
         GLsizei i;
@@ -119,13 +119,13 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedObjectsARB(GLhandleARB 
           ids[i] = crStateGLSLShaderHWIDtoID(ids[i]);
     }
 
-    crServerReturnValue(pLocal, (*pLocal)*sizeof(GLhandleARB)+sizeof(GLsizei));
+    crServerReturnValue(pLocal, (*pLocal)*sizeof(VBoxGLhandleARB)+sizeof(GLsizei));
     crFree(pLocal);
 }
 
 AssertCompile(sizeof(GLsizei) == 4);
 
-void SERVER_DISPATCH_APIENTRY crServerDispatchGetInfoLogARB(GLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog)
+void SERVER_DISPATCH_APIENTRY crServerDispatchGetInfoLogARB(VBoxGLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog)
 {
     GLsizei *pLocal;
     GLuint hwid;
@@ -304,7 +304,7 @@ GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsProgram(GLuint program)
     return retval; /* ignored */
 }
 
-void SERVER_DISPATCH_APIENTRY crServerDispatchGetObjectParameterfvARB( GLhandleARB obj, GLenum pname, GLfloat * params )
+void SERVER_DISPATCH_APIENTRY crServerDispatchGetObjectParameterfvARB( VBoxGLhandleARB obj, GLenum pname, GLfloat * params )
 {
     GLfloat local_params[1];
     GLuint hwid = crStateGetProgramHWID(obj);
@@ -323,7 +323,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetObjectParameterfvARB( GLhandleA
     crServerReturnValue( &(local_params[0]), 1*sizeof(GLfloat) );
 }
 
-void SERVER_DISPATCH_APIENTRY crServerDispatchGetObjectParameterivARB( GLhandleARB obj, GLenum pname, GLint * params )
+void SERVER_DISPATCH_APIENTRY crServerDispatchGetObjectParameterivARB( VBoxGLhandleARB obj, GLenum pname, GLint * params )
 {
     GLint local_params[1];
     GLuint hwid = crStateGetProgramHWID(obj);

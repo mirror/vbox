@@ -9754,7 +9754,7 @@ chromium    nopack
 # GL_ARB_shader_objects
 
 name        GetHandleARB
-return      GLhandleARB
+return      VBoxGLhandleARB
 param       pname           GLenum
 paramprop   pname           GL_PROGRAM_OBJECT_ARB
 category    GL_ARB_shader_objects
@@ -9763,7 +9763,7 @@ chromium    extpack serverdependent
 
 name        DeleteObjectARB
 return      void
-param       obj             GLhandleARB
+param       obj             VBoxGLhandleARB
 category    GL_ARB_shader_objects
 props       nolist
 chromium    extpack
@@ -9771,14 +9771,14 @@ chromium    extpack
 name        DetachObjectARB
 alias       DetachShader
 return      void
-param       containerObj    GLhandleARB
-param       attachedObj     GLhandleARB
+param       containerObj    VBoxGLhandleARB
+param       attachedObj     VBoxGLhandleARB
 category    GL_ARB_shader_objects
 chromium    extpack
 
 name        CreateShaderObjectARB
 alias       CreateShader
-return      GLhandleARB
+return      VBoxGLhandleARB
 param       shaderType      GLenum
 paramprop   shaderType      GL_FRAGMENT_SHADER_ARB GL_VERTEX_SHADER_ARB
 category    GL_ARB_shader_objects
@@ -9788,7 +9788,7 @@ chromium    nopack
 name        ShaderSourceARB
 alias       ShaderSource
 return      void
-param       shaderObj   GLhandleARB
+param       shaderObj   VBoxGLhandleARB
 param       count       GLsizei
 param       string      const GLcharARB **
 param       length      const GLint *
@@ -9798,13 +9798,13 @@ chromium    nopack
 name        CompileShaderARB
 alias       CompileShader
 return      void
-param       shaderObj   GLhandleARB
+param       shaderObj   VBoxGLhandleARB
 category    GL_ARB_shader_objects
 chromium    nopack
 
 name        CreateProgramObjectARB
 alias       CreateProgram
-return      GLhandleARB
+return      VBoxGLhandleARB
 category    GL_ARB_shader_objects
 props       get
 chromium    nopack
@@ -9812,29 +9812,29 @@ chromium    nopack
 name        AttachObjectARB
 alias       AttachShader
 return      void
-param       containerObj    GLhandleARB
-param       obj             GLhandleARB
+param       containerObj    VBoxGLhandleARB
+param       obj             VBoxGLhandleARB
 category    GL_ARB_shader_objects
 chromium    extpack
 
 name        LinkProgramARB
 alias       LinkProgram
 return      void
-param       programObj      GLhandleARB
+param       programObj      VBoxGLhandleARB
 category    GL_ARB_shader_objects
 chromium    nopack
 
 name        UseProgramObjectARB
 alias       UseProgram
 return      void
-param       programObj      GLhandleARB
+param       programObj      VBoxGLhandleARB
 category    GL_ARB_shader_objects
 chromium    nopack
 
 name        ValidateProgramARB
 alias       ValidateProgram
 return      void
-param       programObj      GLhandleARB
+param       programObj      VBoxGLhandleARB
 category    GL_ARB_shader_objects
 chromium    nopack
 
@@ -10018,7 +10018,7 @@ chromium    nopack
 
 name        GetObjectParameterfvARB
 return      void
-param       obj         GLhandleARB
+param       obj         VBoxGLhandleARB
 param       pname       GLenum
 paramprop   pname       GL_OBJECT_TYPE_ARB GL_OBJECT_SUBTYPE_ARB GL_OBJECT_DELETE_STATUS_ARB GL_OBJECT_COMPILE_STATUS_ARB GL_OBJECT_LINK_STATUS_ARB GL_OBJECT_VALIDATE_STATUS_ARB GL_OBJECT_INFO_LOG_LENGTH_ARB GL_OBJECT_ATTACHED_OBJECTS_ARB GL_OBJECT_ACTIVE_UNIFORMS_ARB GL_OBJECT_ACTIVE_UNIFORM_MAX_LENGTH_ARB GL_OBJECT_SHADER_SOURCE_LENGTH_ARB
 param       params      GLfloat *
@@ -10028,7 +10028,7 @@ chromium    extpack
 
 name        GetObjectParameterivARB
 return      void
-param       obj         GLhandleARB
+param       obj         VBoxGLhandleARB
 param       pname       GLenum
 paramprop   pname       GL_OBJECT_TYPE_ARB GL_OBJECT_SUBTYPE_ARB GL_OBJECT_DELETE_STATUS_ARB GL_OBJECT_COMPILE_STATUS_ARB GL_OBJECT_LINK_STATUS_ARB GL_OBJECT_VALIDATE_STATUS_ARB GL_OBJECT_INFO_LOG_LENGTH_ARB GL_OBJECT_ATTACHED_OBJECTS_ARB GL_OBJECT_ACTIVE_UNIFORMS_ARB GL_OBJECT_ACTIVE_UNIFORM_MAX_LENGTH_ARB GL_OBJECT_SHADER_SOURCE_LENGTH_ARB
 param       params      GLint *
@@ -10038,7 +10038,7 @@ chromium    extpack
 
 name        GetInfoLogARB
 return      void
-param       obj         GLhandleARB
+param       obj         VBoxGLhandleARB
 param       maxLength   GLsizei
 param       length      GLsizei *
 param       infoLog     GLcharARB *
@@ -10048,10 +10048,10 @@ chromium    extpack
 
 name        GetAttachedObjectsARB
 return      void
-param       containerObj    GLhandleARB
+param       containerObj    VBoxGLhandleARB
 param       maxCount        GLsizei
 param       count           GLsizei *
-param       obj             GLhandleARB *
+param       obj             VBoxGLhandleARB *
 category    GL_ARB_shader_objects
 props       get
 chromium    extpack
@@ -10059,7 +10059,7 @@ chromium    extpack
 name        GetUniformLocationARB
 alias       GetUniformLocation
 return      GLint
-param       programObj  GLhandleARB
+param       programObj  VBoxGLhandleARB
 param       name        const GLcharARB *
 category    GL_ARB_shader_objects
 props       get
@@ -10068,7 +10068,7 @@ chromium    nopack
 name        GetActiveUniformARB
 alias       GetActiveUniform
 return      void
-param       programObj  GLhandleARB
+param       programObj  VBoxGLhandleARB
 param       index       GLuint
 param       maxLength   GLsizei
 param       length      GLsizei *
@@ -10082,7 +10082,7 @@ chromium    nopack
 name        GetShaderSourceARB
 alias       GetShaderSource
 return      void
-param       obj         GLhandleARB
+param       obj         VBoxGLhandleARB
 param       maxLength   GLsizei
 param       length      GLsizei *
 param       source      GLcharARB *
@@ -10093,7 +10093,7 @@ chromium    nopack
 name        GetUniformfvARB
 alias       GetUniformfv
 return      void
-param       programObj  GLhandleARB
+param       programObj  VBoxGLhandleARB
 param       location    GLint
 param       params      GLfloat *
 category    GL_ARB_shader_objects
@@ -10103,7 +10103,7 @@ chromium    nopack
 name        GetUniformivARB
 alias       GetUniformiv
 return      void
-param       programObj  GLhandleARB
+param       programObj  VBoxGLhandleARB
 param       location    GLint
 param       params      GLint *
 category    GL_ARB_shader_objects
@@ -10115,7 +10115,7 @@ chromium    nopack
 name        GetActiveAttribARB
 alias       GetActiveAttrib
 return      void
-param       programObj  GLhandleARB
+param       programObj  VBoxGLhandleARB
 param       index       GLuint
 param       maxLength   GLsizei
 param       length      GLsizei *
@@ -10129,7 +10129,7 @@ chromium    nopack
 name        GetAttribLocationARB
 alias       GetAttribLocation
 return      GLint
-param       programObj  GLhandleARB
+param       programObj  VBoxGLhandleARB
 param       name        const GLcharARB *
 category    GL_ARB_vertex_shader
 props       get
@@ -10138,7 +10138,7 @@ chromium    nopack
 name        BindAttribLocationARB
 alias       BindAttribLocation
 return      void
-param       programObj  GLhandleARB
+param       programObj  VBoxGLhandleARB
 param       index       GLuint
 param       name        const GLcharARB *
 category    GL_ARB_vertex_shader

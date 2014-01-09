@@ -136,3 +136,56 @@ CR_FUNC_IMAGE(TexImage2D,
 CR_FUNC_IMAGE(TexImage3D,
     (GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid * pixels),
     (target, level, internalFormat, width, height, depth, border, format, type, realptr), pixels)
+
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnvf( GLenum target, GLenum pname, GLfloat param )
+{
+    crStateTexEnvf( target, pname, param );
+    if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
+        CR_GLERR_CHECK(cr_server.head_spu->dispatch_table.TexEnvf( target, pname, param ););
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnvfv( GLenum target, GLenum pname, const GLfloat * params )
+{
+    crStateTexEnvfv( target, pname, params );
+    if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
+        CR_GLERR_CHECK(cr_server.head_spu->dispatch_table.TexEnvfv( target, pname, params ););
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnvi( GLenum target, GLenum pname, GLint param )
+{
+    crStateTexEnvi( target, pname, param );
+    if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
+        CR_GLERR_CHECK(cr_server.head_spu->dispatch_table.TexEnvi( target, pname, param ););
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnviv( GLenum target, GLenum pname, const GLint * params )
+{
+    crStateTexEnviv( target, pname, params );
+    if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
+        CR_GLERR_CHECK(cr_server.head_spu->dispatch_table.TexEnviv( target, pname, params ););
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnvfv( GLenum target, GLenum pname, GLfloat * params )
+{
+    GLfloat local_params[4];
+    (void) params;
+    if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
+        cr_server.head_spu->dispatch_table.GetTexEnvfv( target, pname, local_params );
+    else
+        crStateGetTexEnvfv( target, pname, local_params );
+
+    crServerReturnValue( &(local_params[0]), crStateHlpComponentsCount(pname)*sizeof (GLfloat) );
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnviv( GLenum target, GLenum pname, GLint * params )
+{
+    GLint local_params[4];
+    (void) params;
+    if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
+        cr_server.head_spu->dispatch_table.GetTexEnviv( target, pname, local_params );
+    else
+        crStateGetTexEnviv( target, pname, local_params );
+
+    crServerReturnValue( &(local_params[0]), crStateHlpComponentsCount(pname)*sizeof (GLint) );
+}

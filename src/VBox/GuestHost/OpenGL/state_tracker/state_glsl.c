@@ -258,7 +258,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGLSLProgramHWIDtoID(GLuint hwid)
     return parms.id;
 }
 
-DECLEXPORT(GLuint) STATE_APIENTRY crStateDeleteObjectARB( GLhandleARB obj )
+DECLEXPORT(GLuint) STATE_APIENTRY crStateDeleteObjectARB( VBoxGLhandleARB obj )
 {
     GLuint hwId = crStateGetProgramHWID(obj);
     if (hwId)

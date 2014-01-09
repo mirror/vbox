@@ -48,7 +48,6 @@ GLboolean crPackIsPixelStoreParm(GLenum pname)
 """
 
 from get_sizes import *
-from get_components import *
 
 easy_swaps = { 
     'GenTextures': '(unsigned int) n',
@@ -205,7 +204,7 @@ for func_name in keys:
         if func_name in hard_funcs.keys():
             print '\tif (pack_spu.swap)'
             print '\t{'
-            print '\t\tfor (i = 0 ; i < lookupComponents(pname) ; i++)'
+            print '\t\tfor (i = 0 ; i < crStateHlpComponentsCount(pname) ; i++)'
             print '\t\t{'
             if hard_funcs[func_name] == 'SWAPDOUBLE':
                 print '\t\t\t%s[i] = %s(%s[i]);' % (lastParamName, hard_funcs[func_name], lastParamName)

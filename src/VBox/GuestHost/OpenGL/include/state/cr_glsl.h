@@ -99,7 +99,7 @@ DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsIntUniform(GLenum type);
 
 DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateShader(GLuint id, GLenum type);
 DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateProgram(GLuint id);
-DECLEXPORT(GLuint) STATE_APIENTRY crStateDeleteObjectARB( GLhandleARB obj );
+DECLEXPORT(GLuint) STATE_APIENTRY crStateDeleteObjectARB( VBoxGLhandleARB obj );
 
 DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsProgramUniformsCached(GLuint program);
 

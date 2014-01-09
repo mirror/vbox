@@ -21,6 +21,9 @@
 #include <iprt/string.h>
 #include <iprt/path.h>
 
+#include <cr_string.h>
+#include <cr_mem.h>
+
 GLboolean renderspu_SystemInitVisual(VisualInfo *pVisInfo)
 {
     CRASSERT(pVisInfo);
@@ -198,6 +201,23 @@ int renderspu_SystemTerm()
     return VINF_SUCCESS;
 }
 
+static SPUNamedFunctionTable * renderspuFindEntry(SPUNamedFunctionTable *aFunctions, const char *pcszName)
+{
+    SPUNamedFunctionTable *pCur;
+
+    for (pCur = aFunctions ; pCur->name != NULL ; pCur++)
+    {
+        if (!crStrcmp( pcszName, pCur->name ) )
+        {
+            return pCur;
+        }
+    }
+
+    AssertFailed();
+
+    return NULL;
+}
+
 typedef struct CR_RENDER_CTX_INFO
 {
     ContextInfo * pContext;
@@ -288,4 +308,179 @@ void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, Conte
         else
             crWarning("renderspuCtxSetCurrentWithAnyWindow failed!");
     }
+}
+
+AssertCompile(sizeof (GLhandleARB) == sizeof (void*));
+
+static VBoxGLhandleARB crHndlSearchVBox(GLhandleARB hNative)
+{
+    CRASSERT(!(((uintptr_t)hNative) >> 32));
+    return (VBoxGLhandleARB)((uintptr_t)hNative);
+}
+
+static GLhandleARB crHndlSearchNative(VBoxGLhandleARB hVBox)
+{
+    return (GLhandleARB)((uintptr_t)hVBox);
+}
+
+static VBoxGLhandleARB crHndlAcquireVBox(GLhandleARB hNative)
+{
+    CRASSERT(!(((uintptr_t)hNative) >> 32));
+    return (VBoxGLhandleARB)((uintptr_t)hNative);
+}
+
+static GLhandleARB crHndlReleaseVBox(VBoxGLhandleARB hVBox)
+{
+    return (GLhandleARB)((uintptr_t)hVBox);
+}
+
+static void SPU_APIENTRY renderspu_SystemDeleteObjectARB(VBoxGLhandleARB obj)
+{
+    GLhandleARB hNative = crHndlReleaseVBox(obj);
+    if (!hNative)
+    {
+        crWarning("no native for %d", obj);
+        return;
+    }
+
+    render_spu.pfnDeleteObject(hNative);
+}
+
+static void SPU_APIENTRY renderspu_SystemGetAttachedObjectsARB( VBoxGLhandleARB containerObj, GLsizei maxCount, GLsizei * pCount, VBoxGLhandleARB * obj )
+{
+    GLhandleARB *paAttachments;
+    GLhandleARB hNative = crHndlSearchNative(containerObj);
+    GLsizei count, i;
+
+    if (pCount)
+        *pCount = 0;
+
+    if (!hNative)
+    {
+        crWarning("no native for %d", obj);
+        return;
+    }
+
+    paAttachments = crCalloc(maxCount * sizeof (*paAttachments));
+    if (!paAttachments)
+    {
+        crWarning("crCalloc failed");
+        return;
+    }
+
+    render_spu.pfnGetAttachedObjects(hNative, maxCount, &count, paAttachments);
+    if (pCount)
+        *pCount = count;
+    if (count > maxCount)
+    {
+        crWarning("count too big");
+        count = maxCount;
+    }
+
+    for (i = 0; i < count; ++i)
+    {
+        obj[i] = crHndlSearchVBox(paAttachments[i]);
+        CRASSERT(obj[i]);
+    }
+
+    crFree(paAttachments);
+}
+
+static VBoxGLhandleARB SPU_APIENTRY renderspu_SystemGetHandleARB(GLenum pname)
+{
+    GLhandleARB hNative = render_spu.pfnGetHandle(pname);
+    VBoxGLhandleARB hVBox;
+    if (!hNative)
+    {
+        crWarning("pfnGetHandle failed");
+        return 0;
+    }
+    hVBox = crHndlAcquireVBox(hNative);
+    CRASSERT(hVBox);
+    return hVBox;
+}
+
+static void SPU_APIENTRY renderspu_SystemGetInfoLogARB( VBoxGLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog )
+{
+    GLhandleARB hNative = crHndlSearchNative(obj);
+    if (!hNative)
+    {
+        crWarning("invalid handle!");
+        return;
+    }
+
+    render_spu.pfnGetInfoLog(hNative, maxLength, length, infoLog);
+}
+
+static void SPU_APIENTRY renderspu_SystemGetObjectParameterfvARB( VBoxGLhandleARB obj, GLenum pname, GLfloat * params )
+{
+    GLhandleARB hNative = crHndlSearchNative(obj);
+    if (!hNative)
+    {
+        crWarning("invalid handle!");
+        return;
+    }
+
+    render_spu.pfnGetObjectParameterfv(hNative, pname, params);
+}
+
+static void SPU_APIENTRY renderspu_SystemGetObjectParameterivARB( VBoxGLhandleARB obj, GLenum pname, GLint * params )
+{
+    GLhandleARB hNative = crHndlSearchNative(obj);
+    if (!hNative)
+    {
+        crWarning("invalid handle!");
+        return;
+    }
+
+    render_spu.pfnGetObjectParameteriv(hNative, pname, params);
+}
+
+uint32_t renderspu_SystemPostprocessFunctions(SPUNamedFunctionTable *aFunctions, uint32_t cFunctions, uint32_t cTable)
+{
+    SPUNamedFunctionTable * pEntry;
+
+    pEntry = renderspuFindEntry(aFunctions, "DeleteObjectARB");
+    if (pEntry)
+    {
+        render_spu.pfnDeleteObject = (PFNDELETE_OBJECT)pEntry->fn;
+        pEntry->fn = (SPUGenericFunction)renderspu_SystemDeleteObjectARB;
+    }
+
+    pEntry = renderspuFindEntry(aFunctions, "GetAttachedObjectsARB");
+    if (pEntry)
+    {
+        render_spu.pfnGetAttachedObjects = (PFNGET_ATTACHED_OBJECTS)pEntry->fn;
+        pEntry->fn = (SPUGenericFunction)renderspu_SystemGetAttachedObjectsARB;
+    }
+
+    pEntry = renderspuFindEntry(aFunctions, "GetHandleARB");
+    if (pEntry)
+    {
+        render_spu.pfnGetHandle = (PFNGET_HANDLE)pEntry->fn;
+        pEntry->fn = (SPUGenericFunction)renderspu_SystemGetHandleARB;
+    }
+
+    pEntry = renderspuFindEntry(aFunctions, "GetInfoLogARB");
+    if (pEntry)
+    {
+        render_spu.pfnGetInfoLog = (PFNGET_INFO_LOG)pEntry->fn;
+        pEntry->fn = (SPUGenericFunction)renderspu_SystemGetInfoLogARB;
+    }
+
+    pEntry = renderspuFindEntry(aFunctions, "GetObjectParameterfvARB");
+    if (pEntry)
+    {
+        render_spu.pfnGetObjectParameterfv = (PFNGET_OBJECT_PARAMETERFV)pEntry->fn;
+        pEntry->fn = (SPUGenericFunction)renderspu_SystemGetObjectParameterfvARB;
+    }
+
+    pEntry = renderspuFindEntry(aFunctions, "GetObjectParameterivARB");
+    if (pEntry)
+    {
+        render_spu.pfnGetObjectParameteriv = (PFNGET_OBJECT_PARAMETERIV)pEntry->fn;
+        pEntry->fn = (SPUGenericFunction)renderspu_SystemGetObjectParameterivARB;
+    }
+
+    return cFunctions;
 }

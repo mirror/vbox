@@ -128,8 +128,6 @@ print """
 #endif
 """
 
-from get_components import *;
-
 texenv_mappings = {
     'GL_TEXTURE_ENV' : [
         'GL_TEXTURE_ENV_MODE',
@@ -194,7 +192,7 @@ void crRecDumpTexParam(CR_RECORDER *pRec, CRContext *ctx, GLenum enmTarget)
     crDmpStrF(pRec->pDumper, "==TEX_PARAM for target(0x%x)==", enmTarget);
 """
 for pname in texparam_names:
-    print "\tcComponents = lookupComponents(%s);" % pname
+    print "\tcComponents = crStateHlpComponentsCount(%s);" % pname
     print "\tAssert(cComponents <= RT_ELEMENTS(afBuf));"
     print "\tmemset(afBuf, 0, sizeof (afBuf));"
     print "\tpRec->pDispatch->GetTexParameterfv(enmTarget, %s, afBuf);" % pname
@@ -221,7 +219,7 @@ for target in keys:
     print "\tcrDmpStrF(pRec->pDumper, \"===%s===\");" % target
     values = texenv_mappings[target]
     for pname in values:
-        print "\tcComponents = lookupComponents(%s);" % pname
+        print "\tcComponents = crStateHlpComponentsCount(%s);" % pname
         print "\tAssert(cComponents <= RT_ELEMENTS(afBuf));"
         print "\tmemset(afBuf, 0, sizeof (afBuf));"
         print "\tpRec->pDispatch->GetTexEnvfv(%s, %s, afBuf);" % (target, pname)
@@ -246,7 +244,7 @@ void crRecDumpTexGen(CR_RECORDER *pRec, CRContext *ctx)
 for coord in texgen_coords:
     print "\tcrDmpStrF(pRec->pDumper, \"===%s===\");" % coord
     for pname in texgen_names:
-        print "\tcComponents = lookupComponents(%s);" % pname
+        print "\tcComponents = crStateHlpComponentsCount(%s);" % pname
         print "\tAssert(cComponents <= RT_ELEMENTS(afBuf));"
         print "\tmemset(afBuf, 0, sizeof (afBuf));"
         print "\tpRec->pDispatch->GetTexGendv(%s, %s, afBuf);" % (coord, pname)

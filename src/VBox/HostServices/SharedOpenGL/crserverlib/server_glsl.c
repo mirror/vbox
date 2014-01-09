@@ -111,7 +111,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchBindAttribLocation(GLuint program,
     cr_server.head_spu->dispatch_table.BindAttribLocation(crStateGetProgramHWID(program), index, name);
 }
 
-void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteObjectARB(GLhandleARB obj)
+void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteObjectARB(VBoxGLhandleARB obj)
 {
     GLuint hwid =  crStateDeleteObjectARB(obj);
 
@@ -129,9 +129,9 @@ GLint SERVER_DISPATCH_APIENTRY crServerDispatchGetAttribLocation( GLuint program
     return retval; /* WILL PROBABLY BE IGNORED */
 }
 
-GLhandleARB SERVER_DISPATCH_APIENTRY crServerDispatchGetHandleARB( GLenum pname )
+VBoxGLhandleARB SERVER_DISPATCH_APIENTRY crServerDispatchGetHandleARB( GLenum pname )
 {
-    GLhandleARB retval;
+    VBoxGLhandleARB retval;
     retval = cr_server.head_spu->dispatch_table.GetHandleARB(pname);
     if (pname==GL_PROGRAM_OBJECT_ARB)
     {
