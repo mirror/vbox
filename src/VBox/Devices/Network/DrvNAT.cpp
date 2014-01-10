@@ -23,6 +23,9 @@
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
 #include "slirp/libslirp.h"
+extern "C" {
+#include "slirp/slirp_dns.h"
+};
 #include "slirp/ctl.h"
 
 #include <VBox/vmm/dbgf.h>
@@ -217,6 +220,10 @@ typedef DRVNAT *PDRVNAT;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho);
+DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(
+  PDRVNAT pThis,
+  bool fHostNetworkConfigurationEventListener);
+static DECLCALLBACK(int) drvNATReinitializeHostNameResolving(PDRVNAT pThis);
 
 
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
@@ -971,7 +978,7 @@ static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRe
     {
         CFArrayRef hArrAddresses = (CFArrayRef)CFDictionaryGetValue(hDnsDict, kSCPropNetDNSServerAddresses);
         if (hArrAddresses)
-            pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig, PDMNETWORKLINKSTATE_DOWN_RESUME);
+            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, /* RT_OS_DARWIN */ true);
 
         CFRelease(hDnsDict);
     }
@@ -1044,17 +1051,72 @@ static DECLCALLBACK(void) drvNATResume(PPDMDRVINS pDrvIns)
     switch (enmReason)
     {
         case VMRESUMEREASON_HOST_RESUME:
+            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, !RT_OS_DARWIN);
+            return;
+        default: /* Ignore every other resume reason. */
+            /* do nothing */
+            return;
+    }
+}
+
+
+static DECLCALLBACK(int) drvNATReinitializeHostNameResolving(PDRVNAT pThis)
+{
+    slirpReleaseDnsSettings(pThis->pNATState);
+    slirpInitializeDnsSettings(pThis->pNATState);
+    return VINF_SUCCESS;
+}
+
+/**
+ * This function at this stage could be called from two places, but both from non-NAT thread,
+ * - drvNATResume (EMT?)
+ * - drvNatDnsChanged (darwin, GUI or main) "listener"
+ * When Main's interface IHost will support host network configuration change event on every host,
+ * we won't call it from drvNATResume, but from listener of Main event in the similar way it done 
+ * for port-forwarding, and it wan't be on GUI/main thread, but on EMT thread only.
+ *
+ * Thread here is important, because we need to change DNS server list and domain name (+ perhaps, 
+ * search string) at runtime (VBOX_NAT_ENFORCE_INTERNAL_DNS_UPDATE), we can do it safely on NAT thread,
+ * so with changing other variables (place where we handle update) the main mechanism of update 
+ * _won't_ be changed, the only thing will change is drop of fHostNetworkConfigurationEventListener parameter. 
+ */
+DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(PDRVNAT pThis,
+                                                                        bool fHostNetworkConfigurationEventListener)
+{
+    int strategy = slirp_host_network_configuration_change_strategy_selector(pThis->pNATState);
+    switch (strategy)
+    {
+                 
+        case VBOX_NAT_HNCE_DNSPROXY:
+            {
+                /**
+                 * It's unsafe to to do it directly on non-NAT thread
+                 * so we schedule the worker and kick the NAT thread. 
+                 */
+                RTREQQUEUE hQueue = pThis->hSlirpReqQueue;
+                
+                int rc = RTReqQueueCallEx(hQueue, NULL /*ppReq*/, 0 /*cMillies*/, 
+                                          RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                                          (PFNRT)drvNATReinitializeHostNameResolving, 1, pThis);
+                if (RT_SUCCESS(rc))
+                    drvNATNotifyNATThread(pThis, "drvNATNetworkUp_SendBuf");
+
+
+                return;
+
+            }
+        case VBOX_NAT_HNCE_EXSPOSED_NAME_RESOLUTION_INFO:
             /*
              * Host resumed from a suspend and the network might have changed.
              * Disconnect the guest from the network temporarily to let it pick up the changes.
              */
-#ifndef RT_OS_DARWIN
-            pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig,
-                                                  PDMNETWORKLINKSTATE_DOWN_RESUME);
-#endif
+
+            if (fHostNetworkConfigurationEventListener)
+                pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig,
+                                                      PDMNETWORKLINKSTATE_DOWN_RESUME);
             return;
-        default: /* Ignore every other resume reason. */
-            /* do nothing */
+        case VBOX_NAT_HNCE_HOSTRESOLVER:
+        default:
             return;
     }
 }
