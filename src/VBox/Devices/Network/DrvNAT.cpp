@@ -1051,7 +1051,11 @@ static DECLCALLBACK(void) drvNATResume(PPDMDRVINS pDrvIns)
     switch (enmReason)
     {
         case VMRESUMEREASON_HOST_RESUME:
-            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, !RT_OS_DARWIN);
+#if RT_OS_DARWIN
+            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, false);
+#else
+            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, true);
+#endif
             return;
         default: /* Ignore every other resume reason. */
             /* do nothing */
