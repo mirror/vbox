@@ -25,7 +25,7 @@
 #include "slirp/libslirp.h"
 extern "C" {
 #include "slirp/slirp_dns.h"
-};
+}
 #include "slirp/ctl.h"
 
 #include <VBox/vmm/dbgf.h>
