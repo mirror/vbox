@@ -338,7 +338,6 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
         return;
     }
 
-
     req = so->so_timeout_arg;
 
     if (!req)
