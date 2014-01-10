@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1258,9 +1258,16 @@ static DECLCALLBACK(int) gstcntlSessionThread(RTTHREAD ThreadSelf, void *pvUser)
 
         if (!fProcessAlive)
         {
-            VBoxServiceVerbose(2, "Guest session ID=%RU32 process terminated with rc=%Rrc, reason=%ld, status=%d\n",
+            VBoxServiceVerbose(2, "Guest session process (ID=%RU32) terminated with rc=%Rrc, reason=%ld, status=%d\n",
                                uSessionID, rcWait,
                                ProcessStatus.enmReason, ProcessStatus.iStatus);
+            if (ProcessStatus.iStatus == RTEXITCODE_INIT)
+            {
+                VBoxServiceError("Guest session process (ID=%RU32) failed to initialize. Here some hints:\n",
+                                 uSessionID);
+                VBoxServiceError("- Is logging enabled and the output directory is read-only by the guest session user?\n");
+                /** @todo Add more here. */
+            }
         }
     }
 
@@ -2350,11 +2357,11 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
     /* Init the session object. */
     rc = GstCntlSessionInit(&g_Session, uSessionFlags);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize session object, rc=%Rrc\n", rc);
+        return RTMsgErrorExit(RTEXITCODE_INIT, "Failed to initialize session object, rc=%Rrc\n", rc);
 
     rc = VBoxServiceLogCreate(strlen(g_szLogFile) ? g_szLogFile : NULL);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create release log (%s, %Rrc)",
+        return RTMsgErrorExit(RTEXITCODE_INIT, "Failed to create log file \"%s\", rc=%Rrc\n",
                               strlen(g_szLogFile) ? g_szLogFile : "<None>", rc);
 
     RTEXITCODE rcExit = gstcntlSessionForkWorker(&g_Session);
