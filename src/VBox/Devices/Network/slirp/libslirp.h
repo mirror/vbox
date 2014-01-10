@@ -95,6 +95,21 @@ void slirp_set_mtu(PNATState, int);
 void slirp_info(PNATState pData, const void *pvArg, const char *pszArgs);
 void slirp_set_somaxconn(PNATState pData, int iSoMaxConn);
 
+/**
+ * This method help DrvNAT to select strategy: about VMRESUMEREASON_HOST_RESUME:
+ * - proceed with link termination (we let guest track host DNS settings)
+ *    VBOX_NAT_HNCE_EXPOSED_NAME_RESOLVING_INFO
+ * - enforce internal DNS update (we are using dnsproxy and track but don't export DNS host settings)
+ *    VBOX_NAT_HNCE_DNSPROXY
+ * - ignore (NAT configured to use hostresolver - we aren't track any host DNS changes)
+ *    VBOX_NAT_HNCE_HOSTRESOLVER
+ * @note: It's safe to call this method from any thread, because settings we're checking 
+ * are immutable at runtime.
+ */
+#define VBOX_NAT_HNCE_EXSPOSED_NAME_RESOLUTION_INFO 0
+#define VBOX_NAT_HNCE_DNSPROXY 1
+#define VBOX_NAT_HNCE_HOSTRESOLVER 2
+int slirp_host_network_configuration_change_strategy_selector(const PNATState);
 #if defined(RT_OS_WINDOWS)
 
 
