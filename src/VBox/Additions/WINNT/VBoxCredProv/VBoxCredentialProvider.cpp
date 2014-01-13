@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,6 +45,7 @@ static LONG g_cDllRefs  = 0;            /**< Global DLL reference count. */
 static HINSTANCE g_hDllInst = NULL;     /**< Global DLL hInstance. */
 
 #ifdef VBOX_WITH_SENS
+static bool g_fSENSEnabled = false;
 static IEventSystem *g_pIEventSystem;   /**< Pointer to IEventSystem interface. */
 
 /**
@@ -387,6 +388,9 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD dwReason, LPVOID pReserved)
         case DLL_THREAD_ATTACH:
         case DLL_THREAD_DETACH:
             break;
+
+        default:
+            break;
     }
 
     return TRUE;
@@ -441,7 +445,8 @@ HRESULT __stdcall DllCanUnloadNow(void)
 #ifdef VBOX_WITH_SENS
     if (!g_cDllRefs)
     {
-        VBoxCredentialProviderUnregisterSENS();
+        if (g_fSENSEnabled)
+            VBoxCredentialProviderUnregisterSENS();
 
         CoUninitialize();
     }
@@ -476,11 +481,39 @@ HRESULT VBoxCredentialProviderCreate(REFCLSID classID, REFIID interfaceID,
             pFactory->Release();
 
 #ifdef VBOX_WITH_SENS
-            if (SUCCEEDED(hr))
+            g_fSENSEnabled = true; /* By default SENS support is enabled. */
+
+            HKEY hKey;
+            /** @todo Add some registry wrapper function(s) as soon as we got more values to retrieve. */
+            DWORD dwRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Oracle\\VirtualBox Guest Additions\\AutoLogon",
+                                       0L, KEY_QUERY_VALUE, &hKey);
+            if (dwRet == ERROR_SUCCESS)
+            {
+                DWORD dwValue;
+                DWORD dwType = REG_DWORD;
+                DWORD dwSize = sizeof(DWORD);
+
+                dwRet = RegQueryValueEx(hKey, L"HandleSENS", NULL, &dwType, (LPBYTE)&dwValue, &dwSize);
+                if (   dwRet  == ERROR_SUCCESS
+                    && dwType == REG_DWORD
+                    && dwSize == sizeof(DWORD))
+                {
+                    g_fSENSEnabled = RT_BOOL(dwValue);
+                }
+
+                RegCloseKey(hKey);
+            }
+
+            VBoxCredProvVerbose(0, "VBoxCredentialProviderCreate: g_fSENSEnabled=%RTbool\n",
+                                g_fSENSEnabled);
+            if (   SUCCEEDED(hr)
+                && g_fSENSEnabled)
             {
                 HRESULT hRes = CoInitializeEx(NULL, COINIT_MULTITHREADED);
                 VBoxCredentialProviderRegisterSENS();
             }
+#else
+            VBoxCredProvVerbose(0, "VBoxCredentialProviderCreate: SENS support is disabled\n");
 #endif
         }
         catch (std::bad_alloc &ex)
