@@ -15,13 +15,6 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-#
-# Recommended kmk flags:
-#
-# VBOX_WITH_NAT_SERVICE=1
-# VBOX_WITH_LWIP_NAT=1
-#
-
 LWIP_INCS += \
     src/include \
     src/include/ipv4 \
@@ -101,16 +94,16 @@ LWIP_SOURCES += \
 #     src/netif/ppp/vj.c
 
 
-define def_vbox_lwip_flags # VAR_BaseName, path/to/lwip/dir
-  $(strip $1)_INCS += $(foreach incdir, $(LWIP_INCS), $(strip $2)/$(incdir))
-endef
-
 define _def_vbox_lwip_use # VAR_BaseName, path/to/lwip/dir
   $(strip $1)_SOURCES += \
         $(foreach file, $(LWIP_SOURCES), $(strip $2)/$(file))
 
   # if individual lwip files need special settings, add them here:
   # $(strip $2)/src/foo/bar.c_CFLAGS += -magic
+endef
+
+define def_vbox_lwip_flags # VAR_BaseName, path/to/lwip/dir
+  $(strip $1)_INCS += $(foreach incdir, $(LWIP_INCS), $(strip $2)/$(incdir))
 endef
 
 ###
