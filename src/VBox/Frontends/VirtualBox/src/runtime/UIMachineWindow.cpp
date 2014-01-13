@@ -443,11 +443,21 @@ void UIMachineWindow::cleanupMachineView()
 
 void UIMachineWindow::handleScreenCountChange()
 {
+    /* Ignore if window is minimized: */
+    if (isMinimized())
+        return;
+
+    /* Make sure window is in necessary mode: */
     showInNecessaryMode();
 }
 
 void UIMachineWindow::handleScreenGeometryChange()
 {
+    /* Ignore if window is minimized: */
+    if (isMinimized())
+        return;
+
+    /* Make sure window is in necessary mode: */
     showInNecessaryMode();
 }
 
