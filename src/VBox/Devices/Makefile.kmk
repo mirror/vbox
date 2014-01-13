@@ -374,7 +374,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
     $(eval $(call def_vbox_lwip_private, \
                       VBoxDD, Network/lwip-new))
     $(eval $(call def_vbox_lwip_flags, \
-                      Network/DevINIP.cpp, Network/lwip-new))
+                      VBoxDD, Network/DevINIP.cpp, Network/lwip-new))
   endif
  endif # VBOX_WITH_INIP
 
@@ -449,7 +449,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   ifdef VBOX_WITH_NEW_LWIP
     Storage/DrvVD.cpp_DEFS += VBOX_WITH_NEW_LWIP
     $(eval $(call def_vbox_lwip_flags, \
-                      Storage/DrvVD.cpp, Network/lwip-new))
+                      VBoxDD, Storage/DrvVD.cpp, Network/lwip-new))
   else
     Storage/DrvVD.cpp_INCS = $(LWIP_INCS)
   endif
