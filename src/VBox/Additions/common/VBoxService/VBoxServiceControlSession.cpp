@@ -2008,6 +2008,19 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                 uint32_t uProcFlags = RTPROC_FLAGS_SERVICE
                                     | RTPROC_FLAGS_HIDDEN; /** @todo More flags from startup info? */
 
+                /*
+                 * Create the session process' environment block.
+                 */
+                RTENV hEnv = NIL_RTENV;
+                if (RT_SUCCESS(rc))
+                {
+                    /** @todo At the moment a session process does not have the ability to use the
+                     *        per-session environment variables itself, only the session's guest
+                     *        processes do so. Implement that later, also needs tweaking of
+                     *        VbglR3GuestCtrlSessionGetOpen(). */
+                    rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
+                }
+
 #if 0 /* Pipe handling not needed (yet). */
                 /* Setup pipes. */
                 rc = GstcntlProcessSetupPipe("|", 0 /*STDIN_FILENO*/,
@@ -2035,15 +2048,11 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                         }
 
                         if (RT_SUCCESS(rc))
-                        {
-                            /* Fork the thing. */
-                            /** @todo Do we need a custom environment block? */
-                            rc = RTProcCreateEx(pszExeName, papszArgs, RTENV_DEFAULT, uProcFlags,
+                            rc = RTProcCreateEx(pszExeName, papszArgs, hEnv, uProcFlags,
                                                 pSession->StdIn.phChild, pSession->StdOut.phChild, pSession->StdErr.phChild,
                                                 !fAnonymous ? pSession->StartupInfo.szUser : NULL,
                                                 !fAnonymous ? pSession->StartupInfo.szPassword : NULL,
                                                 &pSession->hProcess);
-                        }
 
                         if (RT_SUCCESS(rc))
                         {
@@ -2073,8 +2082,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                     {
                         hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
 
-                        /** @todo Set custom/cloned guest session environment block. */
-                        rc = RTProcCreateEx(pszExeName, papszArgs, RTENV_DEFAULT, uProcFlags,
+                        rc = RTProcCreateEx(pszExeName, papszArgs, hEnv, uProcFlags,
                                             &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
                                             !fAnonymous ? pSessionThread->StartupInfo.szUser : NULL,
                                             !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
@@ -2086,6 +2094,8 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                     RTFileClose(hStdIn.u.hFile);
                 }
 #endif
+                if (hEnv != NIL_RTENV)
+                    RTEnvDestroy(hEnv);
             }
         }
         else
