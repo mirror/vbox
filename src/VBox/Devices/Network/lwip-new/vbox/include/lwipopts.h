@@ -138,6 +138,7 @@
 #define LWIP_IPV6_DUP_DETECT_ATTEMPTS   0
 #endif
 
+#define LWIP_IPV6_FRAG                  1
 
 /** 
  * aka Slirp mode.
