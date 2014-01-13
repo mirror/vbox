@@ -1103,7 +1103,8 @@ DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(PDRVN
                                           RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                                           (PFNRT)drvNATReinitializeHostNameResolving, 1, pThis);
                 if (RT_SUCCESS(rc))
-                    drvNATNotifyNATThread(pThis, "drvNATNetworkUp_SendBuf");
+                    drvNATNotifyNATThread(pThis, 
+                                          "drvNATHostNetworkConfigurationChangeEventStrategySelector");
 
 
                 return;
