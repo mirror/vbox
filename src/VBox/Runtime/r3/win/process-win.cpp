@@ -644,8 +644,10 @@ static int rtProcWinEnvironmentCreateInternal(VOID *pvBlock, RTENV hEnv, PRTUTF1
                     RTStrFree(pszEntry);
                 }
             }
+            else
+                break;
             pwch += RTUtf16Len(pwch) + 1;
-            if (*pwch)
+            if (!*pwch)
                 break;
         }
 
@@ -673,6 +675,9 @@ static int rtProcWinEnvironmentCreateInternal(VOID *pvBlock, RTENV hEnv, PRTUTF1
  */
 static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppwszBlock)
 {
+    Assert(hToken);
+    Assert(hEnv != NIL_RTENV);
+
     RTLDRMOD hUserenv;
     int rc = RTLdrLoadSystem("Userenv.dll", true /*fNoUnload*/, &hUserenv);
     if (RT_SUCCESS(rc))
@@ -722,7 +727,7 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppws
  * @param   ppwszBlock      Pointer to a pointer of the final UTF16 environment block.
  */
 static int rtProcWinCreateEnvFromAccount(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain,
-                                              RTENV hEnv, PRTUTF16 *ppwszBlock)
+                                         RTENV hEnv, PRTUTF16 *ppwszBlock)
 {
     HANDLE hToken;
     int rc = rtProcWinUserLogon(pwszUser, pwszPassword, pwszDomain, &hToken);
@@ -866,7 +871,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
              */
             phToken = fFound ? &hTokenUserDesktop : &hTokenLogon;
             RTLDRMOD hUserenv;
-            int rc = RTLdrLoadSystem("Userenv.dll", true /*fNoUnload*/, &hUserenv);
+            rc = RTLdrLoadSystem("Userenv.dll", true /*fNoUnload*/, &hUserenv);
             if (RT_SUCCESS(rc))
             {
                 PFNLOADUSERPROFILEW pfnLoadUserProfileW;
@@ -908,7 +913,9 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                                            NULL,         /* pThreadAttributes */
                                                            TRUE,         /* fInheritHandles */
                                                            dwCreationFlags,
-                                                           pwszzBlock,
+                                                           /** @todo Warn about exceeding 8192 bytes
+                                                            *        on XP and up. */
+                                                           pwszzBlock,   /* lpEnvironment */
                                                            NULL,         /* pCurrentDirectory */
                                                            pStartupInfo,
                                                            pProcInfo);
@@ -1057,7 +1064,6 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     AssertReturn(!pszAsUser || *pszAsUser, VERR_INVALID_PARAMETER);
     AssertReturn(!pszPassword || pszAsUser, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pszPassword, VERR_INVALID_POINTER);
-    /** @todo search the PATH (add flag for this). */
 
     /*
      * Initialize the globals.
@@ -1194,7 +1200,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                  */
                 PROCESS_INFORMATION ProcInfo;
                 RT_ZERO(ProcInfo);
-                DWORD               dwCreationFlags = CREATE_UNICODE_ENVIRONMENT;
+                DWORD dwCreationFlags = CREATE_UNICODE_ENVIRONMENT;
                 if (fFlags & RTPROC_FLAGS_DETACHED)
                     dwCreationFlags |= DETACHED_PROCESS;
                 if (fFlags & RTPROC_FLAGS_NO_WINDOW)
