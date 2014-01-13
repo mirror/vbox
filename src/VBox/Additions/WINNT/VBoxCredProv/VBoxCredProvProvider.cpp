@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -141,7 +141,7 @@ VBoxCredProvProvider::LoadConfiguration(void)
             && dwType == REG_DWORD
             && dwSize == sizeof(DWORD))
         {
-            m_fHandleRemoteSessions = true;
+            m_fHandleRemoteSessions = RT_BOOL(dwValue);
         }
 
         dwRet = RegQueryValueEx(hKey, L"LoggingEnabled", NULL, &dwType, (LPBYTE)&dwValue, &dwSize);
@@ -285,9 +285,9 @@ VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsa
             break;
         }
 
-        case CPUS_CHANGE_PASSWORD:
-        case CPUS_CREDUI:
-        case CPUS_PLAP:
+        case CPUS_CHANGE_PASSWORD: /* Asks us to provide a way to change the password. */
+        case CPUS_CREDUI:          /* Displays an own UI. We don't need that. */
+        case CPUS_PLAP:            /* See Pre-Logon-Access Provider. Not needed (yet). */
 
             hr = E_NOTIMPL;
             break;
