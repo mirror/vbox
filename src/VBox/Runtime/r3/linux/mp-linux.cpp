@@ -184,18 +184,25 @@ RTDECL(RTCPUID) RTMpGetCoreCount(void)
 {
     RTCPUID     cMax      = rtMpLinuxMaxCpus();
     uint32_t   *paidCores = (uint32_t *)alloca(sizeof(paidCores[0]) * (cMax + 1));
+    uint32_t   *paidPckgs = (uint32_t *)alloca(sizeof(paidPckgs[0]) * (cMax + 1));
     uint32_t    cCores    = 0;
     for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
     {
         if (RTMpIsCpuPossible(idCpu))
         {
             uint32_t idCore = (uint32_t)RTLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/topology/core_id", (int)idCpu);
+            uint32_t idPckg = (uint32_t)RTLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/topology/physical_package_id", (int)idCpu);
             uint32_t i;
             for (i = 0; i < cCores; i++)
-                if (paidCores[i] == idCore)
+                if (   paidCores[i] == idCore
+                    && paidPckgs[i] == idPckg)
                     break;
             if (i >= cCores)
-                paidCores[cCores++] = idCore;
+            {
+                paidCores[cCores] = idCore;
+                paidPckgs[cCores] = idPckg;
+                cCores++;
+            }
         }
     }
     Assert(cCores > 0);
@@ -226,18 +233,25 @@ RTDECL(RTCPUID) RTMpGetOnlineCoreCount(void)
 {
     RTCPUID     cMax      = rtMpLinuxMaxCpus();
     uint32_t   *paidCores = (uint32_t *)alloca(sizeof(paidCores[0]) * (cMax + 1));
+    uint32_t   *paidPckgs = (uint32_t *)alloca(sizeof(paidPckgs[0]) * (cMax + 1));
     uint32_t    cCores    = 0;
     for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
     {
         if (RTMpIsCpuOnline(idCpu))
         {
             uint32_t idCore = (uint32_t)RTLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/topology/core_id", (int)idCpu);
+            uint32_t idPckg = (uint32_t)RTLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/topology/physical_package_id", (int)idCpu);
             uint32_t i;
             for (i = 0; i < cCores; i++)
-                if (paidCores[i] == idCore)
+                if (   paidCores[i] == idCore
+                    && paidPckgs[i] == idPckg)
                     break;
             if (i >= cCores)
-                paidCores[cCores++] = idCore;
+            {
+                paidCores[cCores] = idCore;
+                paidPckgs[cCores] = idPckg;
+                cCores++;
+            }
         }
     }
     Assert(cCores > 0);
