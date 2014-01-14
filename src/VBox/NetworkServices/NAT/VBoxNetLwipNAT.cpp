@@ -81,11 +81,6 @@
 extern "C"
 {
 /* bunch of LWIP headers */
-#include "lwip/opt.h"
-#ifdef LWIP_SOCKET
-# undef LWIP_SOCKET
-# define LWIP_SOCKET 0
-#endif
 #include "lwip/sys.h"
 #include "lwip/pbuf.h"
 #include "lwip/netif.h"
