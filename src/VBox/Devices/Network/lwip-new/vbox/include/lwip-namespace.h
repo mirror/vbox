@@ -221,19 +221,4 @@
 #define lwip_pbuf_init()
 #define lwip_etharp_init()
 
-#ifndef htons
-# define htons   lwip_htons
-#endif
-
-#ifndef ntohs
-# define ntohs   lwip_ntohs
-#endif
-
-#ifndef htonl
-# define htonl   lwip_htonl
-#endif
-
-#ifndef ntohl
-# define ntohl   lwip_ntohl
-#endif
 #endif  /* _VBOX_LWIP_NAMESPACE_H_ */
