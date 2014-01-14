@@ -371,6 +371,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
       include $(PATH_SUB_CURRENT)/Network/lwip-new/Makefile.kmk
     endif
     Network/DevINIP.cpp_DEFS += VBOX_WITH_NEW_LWIP
+    VBoxDD_LWIP_INCS += Network # for lwipopts.h
     $(eval $(call def_vbox_lwip_private, \
                       VBoxDD, Network/lwip-new))
     $(eval $(call def_vbox_lwip_flags, \
