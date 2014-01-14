@@ -147,7 +147,7 @@
 #define sys_sem_free lwip_sys_sem_free
 #define sys_sem_new lwip_sys_sem_new
 #define sys_sem_signal lwip_sys_sem_signal
-#define lwip_sys_sem_wait lwip_sys_arch_sem_wait
+#define lwip_sys_sem_wait sys_sem_wait
 #define sys_arch_sem_wait lwip_sys_arch_sem_wait
 #endif
 #define sys_timeout_debug lwip_sys_timeout_debug
