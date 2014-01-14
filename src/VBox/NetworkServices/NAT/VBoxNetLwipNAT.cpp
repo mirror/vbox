@@ -100,6 +100,18 @@ extern "C"
 #include "portfwd.h"
 }
 
+
+#if defined(VBOX_RAWSOCK_DEBUG_HELPER)          \
+    && (defined(VBOX_WITH_HARDENING)            \
+        || defined(RT_OS_WINDOWS)               \
+        || defined(RT_OS_DARWIN))
+# error Have you forgotten to turn off VBOX_RAWSOCK_DEBUG_HELPER?
+#endif
+
+#ifdef VBOX_RAWSOCK_DEBUG_HELPER
+extern "C" int getrawsock(int type);
+#endif
+
 #include "../NetLib/VBoxPortForwardString.h"
 
 static RTGETOPTDEF g_aGetOptDef[] =
@@ -982,6 +994,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (icmpsock4 == INVALID_SOCKET)
     {
         perror("IPPROTO_ICMP");
+#ifdef VBOX_RAWSOCK_DEBUG_HELPER
+        icmpsock4 = getrawsock(AF_INET);
+#endif
     }
 
     if (icmpsock4 != INVALID_SOCKET)
@@ -1008,6 +1023,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (icmpsock6 == INVALID_SOCKET)
     {
         perror("IPPROTO_ICMPV6");
+#ifdef VBOX_RAWSOCK_DEBUG_HELPER
+        icmpsock6 = getrawsock(AF_INET6);
+#endif
     }
 
     if (icmpsock6 != INVALID_SOCKET)

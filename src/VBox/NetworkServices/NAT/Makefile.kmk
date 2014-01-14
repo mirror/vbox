@@ -87,6 +87,7 @@ endif
 # ifeq ($(VBOX_WITH_HARDENING),)
 #  ifn1of ($(KBUILD_TARGET), darwin win)
 #   # helper for debugging unprivileged
+#   VBoxNetLwipNAT_DEFS += VBOX_RAWSOCK_DEBUG_HELPER
 #   VBoxNetLwipNAT_SOURCES += getrawsock.c
 #  endif
 # endif
