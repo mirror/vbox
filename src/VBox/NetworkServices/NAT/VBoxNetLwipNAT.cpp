@@ -402,7 +402,7 @@ void VBoxNetLwipNAT::onLwipTcpIpInit(void* arg)
                               &LwipIpAddr /* gateway address, @todo: is self IP acceptable? */,
                               g_pLwipNat /* state */,
                               VBoxNetLwipNAT::netifInit /* netif_init_fn */,
-                              lwip_tcpip_input /* netif_input_fn */);
+                              tcpip_input /* netif_input_fn */);
 
     AssertPtrReturnVoid(pNetif);
 
@@ -491,7 +491,7 @@ err_t VBoxNetLwipNAT::netifInit(netif *pNetif)
       | NETIF_FLAG_ETHERNET;             /* Lwip works with ethernet too */
 
     pNetif->linkoutput = netifLinkoutput; /* ether-level-pipe */
-    pNetif->output = lwip_etharp_output; /* ip-pipe */
+    pNetif->output = etharp_output;       /* ip-pipe */
 
     if (pNat->m_ProxyOptions.ipv6_enabled) {
         pNetif->output_ip6 = ethip6_output;
