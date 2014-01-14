@@ -110,7 +110,7 @@
 #define SYS_LIGHTWEIGHT_PROT 1
 
 /** Attempt to get rid of htons etc. macro issues. */
-#define LWIP_PREFIX_BYTEORDER_FUNCS
+#undef LWIP_PREFIX_BYTEORDER_FUNCS
 
 #define LWIP_NOASSERT 0
 
