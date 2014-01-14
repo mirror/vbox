@@ -110,7 +110,7 @@
 #define SYS_LIGHTWEIGHT_PROT 1
 
 /** Attempt to get rid of htons etc. macro issues. */
-#define LWIP_PREFIX_BYTEORDER_FUNCS
+#undef LWIP_PREFIX_BYTEORDER_FUNCS
 
 #define LWIP_NOASSERT 0
 
@@ -215,8 +215,5 @@
 #define malloc(x) RTMemAlloc(x)
 #define realloc(x,y) RTMemRealloc((x), (y))
 #define free(x) RTMemFree(x)
-
-
-#include "lwip-namespace.h"
 
 #endif /* _VBOX_NETNAT_LWIP_OPTS_H_ */
