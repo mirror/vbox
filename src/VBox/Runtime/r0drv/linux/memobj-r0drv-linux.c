@@ -320,9 +320,9 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
         ||  cb <= PAGE_SIZE * 2)
     {
 # ifdef VBOX_USE_INSERT_PAGE
-        paPages = alloc_pages(fFlagsLnx |  __GFP_COMP, rtR0MemObjLinuxOrder(cPages));
+        paPages = alloc_pages(fFlagsLnx | __GFP_COMP | __GFP_NOWARN, rtR0MemObjLinuxOrder(cPages));
 # else
-        paPages = alloc_pages(fFlagsLnx, rtR0MemObjLinuxOrder(cPages));
+        paPages = alloc_pages(fFlagsLnx | __GFP_NOWARN, rtR0MemObjLinuxOrder(cPages));
 # endif
         if (paPages)
         {
@@ -341,7 +341,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
     {
         for (iPage = 0; iPage < cPages; iPage++)
         {
-            pMemLnx->apPages[iPage] = alloc_page(fFlagsLnx);
+            pMemLnx->apPages[iPage] = alloc_page(fFlagsLnx | __GFP_NOWARN);
             if (RT_UNLIKELY(!pMemLnx->apPages[iPage]))
             {
                 while (iPage-- > 0)
@@ -1170,7 +1170,7 @@ DECLHIDDEN(int) rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *
      * Allocate a dummy page and create a page pointer array for vmap such that
      * the dummy page is mapped all over the reserved area.
      */
-    pDummyPage = alloc_page(GFP_HIGHUSER);
+    pDummyPage = alloc_page(GFP_HIGHUSER | __GFP_NOWARN);
     if (!pDummyPage)
         return VERR_NO_MEMORY;
     papPages = RTMemAlloc(sizeof(*papPages) * cPages);
@@ -1407,7 +1407,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     /*
      * Allocate a dummy page for use when mapping the memory.
      */
-    pDummyPage = alloc_page(GFP_USER);
+    pDummyPage = alloc_page(GFP_USER | __GFP_NOWARN);
     if (!pDummyPage)
         return VERR_NO_MEMORY;
     SetPageReserved(pDummyPage);

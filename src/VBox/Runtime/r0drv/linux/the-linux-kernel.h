@@ -150,6 +150,10 @@
 # define DEFINE_WAIT(name) DECLARE_WAITQUEUE(name, current)
 #endif
 
+#ifndef __GFP_NOWARN
+# define __GFP_NOWARN 0
+#endif
+
 /*
  * 2.4 / early 2.6 compatibility wrappers
  */
