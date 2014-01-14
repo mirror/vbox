@@ -148,7 +148,7 @@ int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void *pvCallbackArg)
             }
         }
 
-        lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem, 0);
+        lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem);
         ++g_LwipCore.iLWIPInitiatorCounter;
     }
   done:
@@ -211,7 +211,7 @@ void vboxLwipCoreFinalize(PFNRT1 pfnCallback, void *pvCallbackArg)
         }
 
         if (lwipRc == ERR_OK)
-            lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem, 0);
+            lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem);
     }
 
     LogFlowFuncLeave();
