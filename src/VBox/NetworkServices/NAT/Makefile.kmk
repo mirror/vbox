@@ -83,6 +83,13 @@ else
  VBoxNetLwipNAT_SOURCES += pxping.c
 endif
 
+# ifeq ($(VBOX_WITH_HARDENING),)
+#  ifn1of ($(KBUILD_TARGET), darwin win)
+#   # helper for debugging unprivileged
+#   VBoxNetLwipNAT_SOURCES += getrawsock.c
+#  endif
+# endif
+
 VBoxNetLwipNAT_SOURCES.darwin  += rtmon_bsd.c
 VBoxNetLwipNAT_SOURCES.freebsd += rtmon_bsd.c
 VBoxNetLwipNAT_SOURCES.linux   += rtmon_linux.c
