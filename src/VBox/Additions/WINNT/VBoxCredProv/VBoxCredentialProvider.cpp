@@ -41,12 +41,12 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-static LONG g_cDllRefs  = 0;            /**< Global DLL reference count. */
-static HINSTANCE g_hDllInst = NULL;     /**< Global DLL hInstance. */
+static LONG g_cDllRefs  = 0;                 /**< Global DLL reference count. */
+static HINSTANCE g_hDllInst = NULL;          /**< Global DLL hInstance. */
 
 #ifdef VBOX_WITH_SENS
 static bool g_fSENSEnabled = false;
-static IEventSystem *g_pIEventSystem;   /**< Pointer to IEventSystem interface. */
+static IEventSystem *g_pIEventSystem = NULL; /**< Pointer to IEventSystem interface. */
 
 /**
  * Subscribed SENS events.
@@ -181,7 +181,7 @@ protected:
 
     LONG m_cRefs;
 };
-static VBoxCredProvSensLogon *g_pISensLogon;
+static VBoxCredProvSensLogon *g_pISensLogon = NULL;
 
 
 /**
@@ -212,7 +212,8 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
         hr = E_OUTOFMEMORY;
     }
 
-    if (SUCCEEDED(hr))
+    if (   SUCCEEDED(hr)
+        && g_pIEventSystem)
     {
         IEventSubscription *pIEventSubscription;
         int i;
@@ -291,9 +292,13 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
     {
         VBoxCredProvVerbose(0, "VBoxCredentialProviderRegisterSENS: Error registering SENS provider, hr=%Rhrc\n", hr);
         if (g_pIEventSystem)
+        {
             g_pIEventSystem->Release();
+            g_pIEventSystem = NULL;
+        }
     }
 
+    VBoxCredProvVerbose(0, "VBoxCredentialProviderRegisterSENS: Returning hr=%Rhrc\n", hr);
     return hr;
 }
 
@@ -303,12 +308,17 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
 static void VBoxCredentialProviderUnregisterSENS(void)
 {
     if (g_pIEventSystem)
+    {
         g_pIEventSystem->Release();
+        g_pIEventSystem = NULL;
+    }
 
     /* We need to reconnecto to the event system because we can be called
      * in a different context COM can't handle. */
-    HRESULT hr = CoCreateInstance(CLSID_CEventSystem, 0, CLSCTX_SERVER, IID_IEventSystem, (void**)&g_pIEventSystem);
-    if (SUCCEEDED(hr))
+    HRESULT hr = CoCreateInstance(CLSID_CEventSystem, 0,
+                                  CLSCTX_SERVER, IID_IEventSystem, (void**)&g_pIEventSystem);
+    if (   SUCCEEDED(hr)
+        && g_pIEventSystem)
     {
         VBoxCredProvVerbose(0, "VBoxCredentialProviderUnregisterSENS\n");
 
@@ -345,10 +355,16 @@ static void VBoxCredentialProviderUnregisterSENS(void)
         }
 
         g_pIEventSystem->Release();
+        g_pIEventSystem = NULL;
     }
 
     if (g_pISensLogon)
+    {
         delete g_pISensLogon;
+        g_pISensLogon = NULL;
+    }
+
+    VBoxCredProvVerbose(0, "VBoxCredentialProviderUnregisterSENS: Returning hr=%Rhrc\n", hr);
 }
 #endif /* VBOX_WITH_SENS */
 
