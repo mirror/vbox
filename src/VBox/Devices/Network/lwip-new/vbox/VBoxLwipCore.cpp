@@ -74,7 +74,7 @@ static DECLCALLBACK(void) lwipCoreUserCallback(void *pvArg)
         pUserClbk->pfn(pUserClbk->pvUser);
 
     /* wake up caller on EMT/main */
-    lwip_sys_sem_signal(&g_LwipCore.LwipTcpIpSem);
+    sys_sem_signal(&g_LwipCore.LwipTcpIpSem);
     LogFlowFuncLeave();
 }
 
@@ -129,14 +129,14 @@ int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void *pvCallbackArg)
 
         if (g_LwipCore.iLWIPInitiatorCounter == 0)
         {
-            lwipRc = lwip_sys_sem_new(&g_LwipCore.LwipTcpIpSem, 0);
+            lwipRc = sys_sem_new(&g_LwipCore.LwipTcpIpSem, 0);
             if (lwipRc != ERR_OK)
             {
                 LogFlow(("%s: sys_sem_new error %d\n", __FUNCTION__, lwipRc));
                 goto done;
             }
 
-            lwip_tcpip_init(lwipCoreInitDone, &callback);
+            tcpip_init(lwipCoreInitDone, &callback);
         }
         else
         {
@@ -148,7 +148,7 @@ int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void *pvCallbackArg)
             }
         }
 
-        lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem);
+        sys_sem_wait(&g_LwipCore.LwipTcpIpSem);
         ++g_LwipCore.iLWIPInitiatorCounter;
     }
   done:
@@ -211,7 +211,7 @@ void vboxLwipCoreFinalize(PFNRT1 pfnCallback, void *pvCallbackArg)
         }
 
         if (lwipRc == ERR_OK)
-            lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem);
+            sys_sem_wait(&g_LwipCore.LwipTcpIpSem);
     }
 
     LogFlowFuncLeave();
