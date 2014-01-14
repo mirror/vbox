@@ -1,5 +1,5 @@
-#ifndef VBOX_LWIP_OPTS_H_
-#define VBOX_LWIP_OPTS_H_
+#ifndef _VBOX_NETNAT_LWIP_OPTS_H_
+#define _VBOX_NETNAT_LWIP_OPTS_H_
 
 #include <iprt/mem.h>
 #include <iprt/alloca.h>    /* This may include malloc.h (msc), which is something that has
@@ -219,4 +219,4 @@
 
 #include "lwip-namespace.h"
 
-#endif
+#endif /* _VBOX_NETNAT_LWIP_OPTS_H_ */
