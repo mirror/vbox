@@ -1817,7 +1817,10 @@ int HGSMICompleteGuestCommand(PHGSMIINSTANCE pIns,
     LogFlowFunc(("pIns = %p, pvMem = %p\n", pIns, pvMem));
 
     int rc = VINF_SUCCESS;
-    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&pIns->hostHeap, pvMem);
+
+    HGSMIBUFFERHEADER *pHeader = HGSMIBufferHeaderFromData(pvMem);
+    HGSMIOFFSET offBuffer = HGSMIPointerToOffset(&pIns->area, pHeader);
+
     Assert(offBuffer != HGSMIOFFSET_VOID);
     if (offBuffer != HGSMIOFFSET_VOID)
     {
