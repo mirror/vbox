@@ -65,7 +65,6 @@
 # include "VBoxUtils.h"
 # include "UIWindowMenuManager.h"
 # include "UIImageTools.h"
-# include "UICocoaApplication.h"
 #endif /* Q_WS_MAC */
 
 /* Other VBox stuff: */
@@ -335,7 +334,7 @@ void UISelectorWindow::sltShowPreferencesDialog()
 
 void UISelectorWindow::sltPerformExit()
 {
-    QApplication::quit();
+    close();
 }
 
 void UISelectorWindow::sltShowAddMachineDialog(const QString &strFileName /* = QString() */)
@@ -1056,19 +1055,8 @@ void UISelectorWindow::polishEvent(QShowEvent*)
 }
 
 #ifdef Q_WS_MAC
-/** MacOS X host: Hides VM selector UI instead of closing. */
-void UISelectorWindow::closeEvent(QCloseEvent *pEvent)
-{
-    pEvent->ignore();
-    UICocoaApplication::instance()->hide();
-}
-
 bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-    /* If we got broadcast qApp close-event, quit app.. */
-    if (pObject == qApp && pEvent->type() == QEvent::Close)
-        return true;
-
     /* Ignore for non-active window: */
     if (!isActiveWindow())
         return QIWithRetranslateUI2<QMainWindow>::eventFilter(pObject, pEvent);
