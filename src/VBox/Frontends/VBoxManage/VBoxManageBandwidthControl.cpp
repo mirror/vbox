@@ -107,6 +107,12 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
 
 
     Bstr name(a->argv[2]);
+    if (name.isEmpty())
+    {
+        errorArgument("Bandwidth group name must not be empty!\n");
+        return RTEXITCODE_FAILURE;
+    }
+
     const char *pszType  = NULL;
     int64_t cMaxBytesPerSec = INT64_MAX;
 
