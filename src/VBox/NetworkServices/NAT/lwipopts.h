@@ -24,6 +24,9 @@
 #define MEM_ALIGNMENT 4
 #endif
 
+/* Padding before Ethernet header to make IP header aligned */
+#define ETH_PAD_SIZE 2
+
 /* IP */
 #define IP_REASSEMBLY 1
 #define IP_REASS_MAX_PBUFS      128
