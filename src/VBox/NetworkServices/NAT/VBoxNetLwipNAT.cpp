@@ -525,7 +525,10 @@ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
 {
     AssertPtrReturn(pNetif, ERR_ARG);
     AssertPtrReturn(pPBuf, ERR_ARG);
-    AssertReturn((void *)g_pLwipNat == pNetif->state, ERR_ARG);
+
+    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(pNetif->state);
+    AssertPtrReturn(self, ERR_IF);
+    AssertReturn(self == g_pLwipNat, ERR_ARG);
 
     LogFlowFunc(("ENTER: pNetif[%c%c%d], pPbuf:%p\n",
                  pNetif->name[0],
@@ -534,21 +537,31 @@ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
                  pPBuf));
 
     RT_ZERO(VBoxNetLwipNAT::aXmitSeg);
-    
-    unsigned idx = 0;
-    for( struct pbuf *pPBufPtr = pPBuf;
-         pPBufPtr;
-         pPBufPtr = pPBufPtr->next, ++idx) 
+
+    size_t idx = 0;
+    for (struct pbuf *q = pPBuf; q != NULL; q = q->next, ++idx) 
     {
         AssertReturn(idx < RT_ELEMENTS(VBoxNetLwipNAT::aXmitSeg), ERR_MEM);
-        VBoxNetLwipNAT::aXmitSeg[idx].pv = pPBufPtr->payload; 
-        VBoxNetLwipNAT::aXmitSeg[idx].cb = pPBufPtr->len;
+
+#if ETH_PAD_SIZE
+        if (q == pPBuf)
+        {
+            VBoxNetLwipNAT::aXmitSeg[idx].pv = (uint8_t *)q->payload + ETH_PAD_SIZE;
+            VBoxNetLwipNAT::aXmitSeg[idx].cb = q->len - ETH_PAD_SIZE;
+        }
+        else
+#endif
+        {
+            VBoxNetLwipNAT::aXmitSeg[idx].pv = q->payload;
+            VBoxNetLwipNAT::aXmitSeg[idx].cb = q->len;
+        }
     }
 
-    int rc = g_pLwipNat->sendBufferOnWire(VBoxNetLwipNAT::aXmitSeg, idx, pPBuf->tot_len);
+    int rc = self->sendBufferOnWire(VBoxNetLwipNAT::aXmitSeg, idx,
+                                    pPBuf->tot_len - ETH_PAD_SIZE);
     AssertRCReturn(rc, ERR_IF);
 
-    g_pLwipNat->flushWire();
+    self->flushWire();
 
     LogFlowFunc(("LEAVE: %d\n", ERR_OK));
     return ERR_OK;
@@ -884,24 +897,41 @@ int VBoxNetLwipNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
 
 int VBoxNetLwipNAT::processFrame(void *pvFrame, size_t cbFrame)
 {
-    AssertReturn(pvFrame && cbFrame, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pvFrame, VERR_INVALID_PARAMETER);
+    AssertReturn(cbFrame != 0, VERR_INVALID_PARAMETER);
 
-    struct  pbuf *pPbufHdr, *pPbuf;
-    pPbufHdr = pPbuf = pbuf_alloc(PBUF_RAW, cbFrame, PBUF_POOL);
-
-    AssertMsgReturn(pPbuf, ("NAT: Can't allocate send buffer cbFrame=%u\n", cbFrame), VERR_INTERNAL_ERROR);
-    AssertReturn(pPbufHdr->tot_len == cbFrame, VERR_INTERNAL_ERROR);
-                    
-    uint8_t *pu8Frame = (uint8_t *)pvFrame;
-    while(pPbuf)
+    struct pbuf *p = pbuf_alloc(PBUF_RAW, cbFrame + ETH_PAD_SIZE, PBUF_POOL);
+    if (RT_UNLIKELY(p == NULL))
     {
-        memcpy(pPbuf->payload, pu8Frame, pPbuf->len);
-        pu8Frame += pPbuf->len;
-        pPbuf = pPbuf->next;
+        return VERR_NO_MEMORY;
     }
 
-    m_LwipNetIf.input(pPbufHdr, &m_LwipNetIf);
-    
+    /*
+     * The code below is inlined version of:
+     *
+     *   pbuf_header(p, -ETH_PAD_SIZE); // hide padding
+     *   pbuf_take(p, pvFrame, cbFrame);
+     *   pbuf_header(p, ETH_PAD_SIZE);  // reveal padding
+     */
+    struct pbuf *q = p;
+    uint8_t *pu8Chunk = (uint8_t *)pvFrame;
+    do {
+        uint8_t *payload = (uint8_t *)q->payload;
+        size_t len = q->len;
+
+#if ETH_PAD_SIZE
+        if (RT_LIKELY(q == p))  // single pbuf is large enough
+        {
+            payload += ETH_PAD_SIZE;
+            len -= ETH_PAD_SIZE;
+        }
+#endif
+        memcpy(payload, pu8Chunk, len);
+        pu8Chunk += len;
+        q = q->next;
+    } while (RT_UNLIKELY(q != NULL));
+
+    m_LwipNetIf.input(p, &m_LwipNetIf);
     return VINF_SUCCESS;
 }
 
@@ -928,13 +958,11 @@ int VBoxNetLwipNAT::processGSO(PCPDMNETWORKGSO pGso, size_t cbFrame)
                                   cSegs,
                                   &cbSegFrame);
 
-        struct pbuf *pPbuf = pbuf_alloc(PBUF_RAW, cbSegFrame, PBUF_POOL);
-
-        AssertMsgReturn(pPbuf, ("NAT: Can't allocate send buffer cbFrame=%u\n", cbSegFrame), VERR_INTERNAL_ERROR);
-        AssertReturn(!pPbuf->next && pPbuf->len == cbSegFrame, VERR_INTERNAL_ERROR);
-
-        memcpy(pPbuf->payload, pvSegFrame, cbSegFrame);
-        m_LwipNetIf.input(pPbuf, &g_pLwipNat->m_LwipNetIf);
+        int rc = processFrame(pvSegFrame, cbSegFrame);
+        if (RT_FAILURE(rc))
+        {
+            return rc;
+        }
     }
 
     return VINF_SUCCESS;
