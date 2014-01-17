@@ -1088,9 +1088,13 @@ void UISelectorWindow::prepareIcon()
 {
     /* Prepare application icon: */
 #if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
-    /* On Win32, it's built-in to the executable.
-     * On Mac OS X the icon referenced in info.plist is used. */
-    setWindowIcon(QIcon(":/VirtualBox_48px.png"));
+    /* On Win host it's built-in to the executable.
+     * On Mac OS X the icon referenced in info.plist is used.
+     * On X11 we will provide as much icons as we can.. */
+    QIcon icon(":/VirtualBox.svg");
+    icon.addFile(":/VirtualBox_48px.png");
+    icon.addFile(":/VirtualBox_64px.png");
+    setWindowIcon(icon);
 #endif
 }
 
