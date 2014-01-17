@@ -106,6 +106,15 @@
          0x82 - 0x83
     Second to third net boot devices:
          0x84 - 0x89
+    First SCSI HDD:
+         0x90 - 0x97
+    Second SCSI HDD:
+         0x98 - 0x9f
+    Third SCSI HDD:
+         0xa0 - 0xa7
+    Fourth SCSI HDD:
+         0xa8 - 0xaf
+
 @endverbatim
  *
  * @todo Mark which bits are compatible with which BIOSes and
@@ -151,8 +160,12 @@ typedef struct DEVPCBIOS
     char           *pszHDDevice;
     /** Sata harddisk device. */
     char           *pszSataDevice;
-    /** LUN of the four harddisks which are emulated as IDE. */
+    /** LUNs of the four BIOS-accessible SATA disks. */
     uint32_t        iSataHDLUN[4];
+    /** SCSI harddisk device. */
+    char           *pszScsiDevice;
+    /** LUNs of the four BIOS-accessible SCSI disks. */
+    uint32_t        iScsiHDLUN[4];
     /** Bios message buffer. */
     char            szMsg[256];
     /** Bios message buffer index. */
@@ -461,6 +474,40 @@ static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIBLOCKBIOS pHardDisk, PPD
 
 
 /**
+ * Get logical CHS geometry for a hard disk, intended for SCSI/SAS drives
+ * with no physical geometry.
+ *
+ * @returns VBox status code.
+ * @param   pHardDisk     The hard disk.
+ * @param   pLCHSGeometry Where to store the geometry settings.
+ */
+static int getLogicalDiskGeometry(PPDMIBLOCKBIOS pHardDisk, PPDMMEDIAGEOMETRY pLCHSGeometry)
+{
+    PDMMEDIAGEOMETRY LCHSGeometry;
+    int rc = VINF_SUCCESS;
+
+    rc = pHardDisk->pfnGetLCHSGeometry(pHardDisk, &LCHSGeometry);
+    if (   rc == VERR_PDM_GEOMETRY_NOT_SET
+        || LCHSGeometry.cCylinders == 0
+        || LCHSGeometry.cHeads == 0
+        || LCHSGeometry.cHeads > 255
+        || LCHSGeometry.cSectors == 0
+        || LCHSGeometry.cSectors > 63)
+    {
+        /* Unlike the ATA case, if the image does not provide valid logical
+         * geometry, we leave things alone and let the BIOS decide what the
+         * logical geometry should be.
+         */
+        rc = VERR_PDM_GEOMETRY_NOT_SET;
+    }
+    else
+        *pLCHSGeometry = LCHSGeometry;
+
+    return rc;
+}
+
+
+/**
  * Get BIOS boot code from enmBootDevice in order
  *
  * @todo r=bird: This is a rather silly function since the conversion is 1:1.
@@ -627,7 +674,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     pcbiosCmosWrite(pDevIns, 0x14, u32);                                        /* 14h - Equipment Byte */
 
     /*
-     * Harddisks.
+     * IDE harddisks.
      */
     for (i = 0; i < RT_ELEMENTS(apHDs); i++)
     {
@@ -682,11 +729,11 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     pcbiosCmosWrite(pDevIns, 0x12, u32);
 
     /*
-     * Sata Harddisks.
+     * SATA harddisks.
      */
     if (pThis->pszSataDevice)
     {
-        /* Clear pointers to IDE controller. */
+        /* Clear pointers to the block devices. */
         for (i = 0; i < RT_ELEMENTS(apHDs); i++)
             apHDs[i] = NULL;
 
@@ -731,6 +778,62 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
                                            &LCHSGeometry);
                 }
                 LogRel(("DevPcBios: SATA LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
+            }
+        }
+    }
+
+    /*
+     * SCSI harddisks. Not handled quite the same as SATA.
+     */
+    if (pThis->pszScsiDevice)
+    {
+        /* Clear pointers to the block devices. */
+        for (i = 0; i < RT_ELEMENTS(apHDs); i++)
+            apHDs[i] = NULL;
+
+        for (i = 0; i < RT_ELEMENTS(apHDs); i++)
+        {
+            PPDMIBASE pBase;
+            int rc = PDMR3QueryLun(pUVM, pThis->pszScsiDevice, 0, pThis->iScsiHDLUN[i], &pBase);
+            if (RT_SUCCESS(rc))
+                apHDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIBLOCKBIOS);
+            if (   apHDs[i]
+                && (   apHDs[i]->pfnGetType(apHDs[i]) != PDMBLOCKTYPE_HARD_DISK
+                    || !apHDs[i]->pfnIsVisible(apHDs[i])))
+                apHDs[i] = NULL;
+            if (apHDs[i])
+            {
+                PDMMEDIAGEOMETRY LCHSGeometry;
+                rc = getLogicalDiskGeometry(apHDs[i], &LCHSGeometry);
+
+                if (i < 4 && RT_SUCCESS(rc))
+                {
+                    /* Extended drive information (for SCSI disks).
+                     * Used by the BIOS for setting the logical geometry, but
+                     * only if the image provided valid data.
+                     */
+                    int offInfo;
+                    switch (i)
+                    {
+                        case 0:
+                            offInfo = 0x90;
+                            break;
+                        case 1:
+                            offInfo = 0x98;
+                            break;
+                        case 2:
+                            offInfo = 0xa0;
+                            break;
+                        case 3:
+                        default:
+                            offInfo = 0xa8;
+                            break;
+                    }
+                    pcbiosCmosInitHardDisk(pDevIns, 0x00, offInfo, &LCHSGeometry);
+                    LogRel(("DevPcBios: SCSI LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
+                }
+                else
+                    LogRel(("DevPcBios: SCSI LUN#%d LCHS not provided\n", i));
             }
         }
     }
@@ -848,6 +951,12 @@ static DECLCALLBACK(int) pcbiosDestruct(PPDMDEVINS pDevIns)
         pThis->pszSataDevice = NULL;
     }
 
+    if (pThis->pszScsiDevice)
+    {
+        MMR3HeapFree(pThis->pszScsiDevice);
+        pThis->pszScsiDevice = NULL;
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -917,6 +1026,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "SataLUN2\0"
                               "SataLUN3\0"
                               "SataLUN4\0"
+                              "ScsiHardDiskDevice\0"
+                              "ScsiLUN1\0"
+                              "ScsiLUN2\0"
+                              "ScsiLUN3\0"
+                              "ScsiLUN4\0"
                               "FloppyDevice\0"
                               "DelayBoot\0"
                               "BiosRom\0"
@@ -1040,6 +1154,32 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                            N_("Configuration error: Querying \"%s\" as a string failed"), s_apszSataDisks);
         }
     }
+
+    /* Repeat the exercise for SCSI drives. */
+    rc = CFGMR3QueryStringAlloc(pCfg, "ScsiHardDiskDevice", &pThis->pszScsiDevice);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pThis->pszScsiDevice = NULL;
+    else if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"ScsiHardDiskDevice\" as a string failed"));
+
+    if (pThis->pszScsiDevice)
+    {
+        static const char * const s_apszScsiDisks[] =
+            { "ScsiLUN1", "ScsiLUN2", "ScsiLUN3", "ScsiLUN4" };
+        Assert(RT_ELEMENTS(s_apszScsiDisks) == RT_ELEMENTS(pThis->iScsiHDLUN));
+        for (unsigned i = 0; i < RT_ELEMENTS(pThis->iScsiHDLUN); i++)
+        {
+            rc = CFGMR3QueryU32(pCfg, s_apszScsiDisks[i], &pThis->iScsiHDLUN[i]);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+                pThis->iScsiHDLUN[i] = i;
+            else if (RT_FAILURE(rc))
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("Configuration error: Querying \"%s\" as a string failed"), s_apszScsiDisks);
+        }
+    }
+
+
     /*
      * Register I/O Ports and PC BIOS.
      */
