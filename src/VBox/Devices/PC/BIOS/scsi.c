@@ -410,6 +410,7 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                 uint32_t    sectors, sector_size, cylinders;
                 uint16_t    heads, sectors_per_track;
                 uint8_t     hdcount;
+                uint8_t     cmos_base;
 
                 /* Issue a read capacity command now. */
                 _fmemset(aCDB, 0, sizeof(aCDB));
@@ -439,26 +440,56 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                     continue;
                 }
 
-                /* We need to calculate the geometry for the disk. From
-                 * the BusLogic driver in the Linux kernel.
-                 */
-                if (sectors >= (uint32_t)4 * 1024 * 1024)
+                devcount_scsi = bios_dsk->scsi_devcount;
+
+                /* Get logical CHS geometry. */
+                switch (devcount_scsi)
                 {
-                    heads = 255;
-                    sectors_per_track = 63;
+                    case 0:
+                        cmos_base = 0x90;
+                        break;
+                    case 1:
+                        cmos_base = 0x98;
+                        break;
+                    case 2:
+                        cmos_base = 0xA0;
+                        break;
+                    case 3:
+                        cmos_base = 0xA8;
+                        break;
+                    default:
+                        cmos_base = 0;
                 }
-                else if (sectors >= (uint32_t)2 * 1024 * 1024)
+
+                if (cmos_base && inb_cmos(cmos_base + 7))
                 {
-                    heads = 128;
-                    sectors_per_track = 32;
+                    /* If provided, grab the logical geometry from CMOS. */
+                    cylinders         = inb_cmos(cmos_base + 0) + (inb_cmos(cmos_base + 1) << 8);
+                    heads             = inb_cmos(cmos_base + 2);
+                    sectors_per_track = inb_cmos(cmos_base + 7);
                 }
                 else
                 {
-                    heads = 64;
-                    sectors_per_track = 32;
+                    /* Calculate default logical geometry. NB: Very different
+                     * from default ATA/SATA logical geometry!
+                     */
+                    if (sectors >= (uint32_t)4 * 1024 * 1024)
+                    {
+                        heads = 255;
+                        sectors_per_track = 63;
+                    }
+                    else if (sectors >= (uint32_t)2 * 1024 * 1024)
+                    {
+                        heads = 128;
+                        sectors_per_track = 32;
+                    }
+                    else
+                    {
+                        heads = 64;
+                        sectors_per_track = 32;
+                    }
+                    cylinders = (uint32_t)(sectors / (heads * sectors_per_track));
                 }
-                cylinders = (uint32_t)(sectors / (heads * sectors_per_track));
-                devcount_scsi = bios_dsk->scsi_devcount;
 
                 /* Calculate index into the generic disk table. */
                 hd_index = devcount_scsi + BX_MAX_ATA_DEVICES;
