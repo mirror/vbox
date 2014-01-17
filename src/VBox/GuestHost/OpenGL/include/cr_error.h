@@ -24,14 +24,16 @@ extern "C" {
 #define PRINTF
 #endif
 
-#ifndef IN_RING0
-#define LOG(_m) do { crDebug _m ; } while (0)
-#define LOGREL(_m) do { crDebug _m ; } while (0)
-#define WARN(_m) do { crWarning _m ; AssertMsgFailed(_m); } while (0)
-#else
-#define LOG(_m) do { } while (0)
-#define LOGREL(_m) do { } while (0)
-#define WARN(_m) do { AssertMsgFailed(_m); } while (0)
+#ifndef WARN
+# ifndef IN_RING0
+#  define LOG(_m) do { crDebug _m ; } while (0)
+#  define LOGREL(_m) do { crDebug _m ; } while (0)
+#  define WARN(_m) do { crWarning _m ; AssertMsgFailed(_m); } while (0)
+# else
+#  define LOG(_m) do { } while (0)
+#  define LOGREL(_m) do { } while (0)
+#  define WARN(_m) do { AssertMsgFailed(_m); } while (0)
+# endif
 #endif
 
 DECLEXPORT(void) crEnableWarnings(int onOff);
