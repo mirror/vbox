@@ -219,7 +219,7 @@ typedef struct USBPROXYDEVOSX
     CFRunLoopSourceRef      RunLoopSrcRef;
     /** we want to add and remove RunLoopSourceRefs to run loop's of
      * every EMT thread participated in USB processing. */
-    RTLISTANCHOR        HeadOfRunLoopLst;
+    RTLISTANCHOR            HeadOfRunLoopLst;
     /** Pointer to the proxy device instance. */
     PUSBPROXYDEV            pProxyDev;
 
@@ -240,6 +240,10 @@ typedef struct USBPROXYDEVOSX
     PUSBPROXYURBOSX         pTaxingHead;
     /** The tail of the landed Darwin URBs. */
     PUSBPROXYURBOSX         pTaxingTail;
+    /* Runloop source for waking up the reaper thread. */
+    CFRunLoopSourceRef      hRunLoopSrcWakeRef;
+    /** List of threads used for reaping which can be woken up. */
+    RTLISTANCHOR            HeadOfRunLoopWakeLst;
     /** Runloop reference of the thread reaping. */
     volatile CFRunLoopRef   hRunLoopReaping;
     /** Flag whether the reaping thread is about the be waked. */
@@ -1065,6 +1069,11 @@ static bool usbProxyDarwinDictGetU64(CFMutableDictionaryRef DictRef, CFStringRef
 }
 
 
+static DECLCALLBACK(void) usbProxyDarwinPerformWakeup(void *pInfo)
+{
+    return;
+}
+
 /* -=-=-=-=-=- The exported methods -=-=-=-=-=- */
 
 
@@ -1260,13 +1269,34 @@ static int usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, vo
                                 //irc = (*ppDevI)->GetConfiguration(ppDevI, &u8Cfg);
                                 if (irc != kIOReturnNoDevice)
                                 {
-                                    //pProxyDev->iActiveCfg = irc == kIOReturnSuccess ? u8Cfg : -1;
-                                    pProxyDev->iActiveCfg = -1;
-                                    pProxyDev->cIgnoreSetConfigs = 1;
+                                    CFRunLoopSourceContext CtxRunLoopSource;
+                                    CtxRunLoopSource.version = 0;
+                                    CtxRunLoopSource.info = NULL;
+                                    CtxRunLoopSource.retain = NULL;
+                                    CtxRunLoopSource.release = NULL;
+                                    CtxRunLoopSource.copyDescription = NULL;
+                                    CtxRunLoopSource.equal = NULL;
+                                    CtxRunLoopSource.hash = NULL;
+                                    CtxRunLoopSource.schedule = NULL;
+                                    CtxRunLoopSource.cancel = NULL;
+                                    CtxRunLoopSource.perform = usbProxyDarwinPerformWakeup;
+                                    pDevOsX->hRunLoopSrcWakeRef = CFRunLoopSourceCreate(NULL, 0, &CtxRunLoopSource);
+                                    if (CFRunLoopSourceIsValid(pDevOsX->hRunLoopSrcWakeRef))
+                                    {
+                                        //pProxyDev->iActiveCfg = irc == kIOReturnSuccess ? u8Cfg : -1;
+                                        RTListInit(&pDevOsX->HeadOfRunLoopWakeLst);
+                                        pProxyDev->iActiveCfg = -1;
+                                        pProxyDev->cIgnoreSetConfigs = 1;
 
-                                    pProxyDev->Backend.pv = pDevOsX;
-                                    usbProxyDarwinAddRunLoopRef(&pDevOsX->HeadOfRunLoopLst, pDevOsX->RunLoopSrcRef);
-                                    return VINF_SUCCESS;        /* return */
+                                        pProxyDev->Backend.pv = pDevOsX;
+                                        usbProxyDarwinAddRunLoopRef(&pDevOsX->HeadOfRunLoopLst, pDevOsX->RunLoopSrcRef);
+                                        return VINF_SUCCESS;        /* return */
+                                    }
+                                    else
+                                    {
+                                        LogRel(("USB: Device '%s' out of memory allocating runloop source\n", pszAddress));
+                                        vrc = VERR_NO_MEMORY;
+                                    }
                                 }
                                 vrc = VERR_VUSB_DEVICE_NOT_ATTACHED;
                             }
@@ -1348,6 +1378,17 @@ static void usbProxyDarwinClose(PUSBPROXYDEV pProxyDev)
 
         CFRelease(pDevOsX->RunLoopSrcRef);
         pDevOsX->RunLoopSrcRef = NULL;
+    }
+
+    if (pDevOsX->hRunLoopSrcWakeRef)
+    {
+        int rc = usbProxyDarwinRemoveSourceRefFromAllRunLoops(&pDevOsX->HeadOfRunLoopWakeLst, pDevOsX->hRunLoopSrcWakeRef);
+        AssertRC(rc);
+
+        RTListInit((PRTLISTNODE)&pDevOsX->HeadOfRunLoopWakeLst);
+
+        CFRelease(pDevOsX->hRunLoopSrcWakeRef);
+        pDevOsX->hRunLoopSrcWakeRef = NULL;
     }
 
     IOReturn irc = (*pDevOsX->ppDevI)->ResetDevice(pDevOsX->ppDevI);
@@ -1762,7 +1803,10 @@ static int usbProxyDarwinUrbQueue(PVUSBURB pUrb)
      * Success?
      */
     if (RT_LIKELY(irc == kIOReturnSuccess))
+    {
+        Log(("%s: usbProxyDarwinUrbQueue: success\n", pUrb->pszDesc));
         return true;
+    }
     switch (irc)
     {
         case kIOUSBPipeStalled:
@@ -1792,10 +1836,16 @@ static PVUSBURB usbProxyDarwinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMill
 {
     PVUSBURB pUrb = NULL;
     PUSBPROXYDEVOSX pDevOsX = (PUSBPROXYDEVOSX)pProxyDev->Backend.pv;
+    CFRunLoopRef hRunLoopRef = CFRunLoopGetCurrent();
 
-    ASMAtomicXchgPtr((void * volatile *)&pDevOsX->hRunLoopReaping, CFRunLoopGetCurrent());
+    Assert(!pDevOsX->hRunLoopReaping);
 
-    if (ASMAtomicReadBool(&pDevOsX->fReapingThreadWake))
+    if (!CFRunLoopContainsSource(hRunLoopRef, pDevOsX->hRunLoopSrcWakeRef, g_pRunLoopMode))
+        usbProxyDarwinAddRunLoopRef(&pDevOsX->HeadOfRunLoopWakeLst, pDevOsX->hRunLoopSrcWakeRef);
+
+    ASMAtomicXchgPtr((void * volatile *)&pDevOsX->hRunLoopReaping, hRunLoopRef);
+
+    if (ASMAtomicXchgBool(&pDevOsX->fReapingThreadWake, false))
     {
         /* Return immediately. */
         ASMAtomicXchgPtr((void * volatile *)&pDevOsX->hRunLoopReaping, NULL);
@@ -1809,11 +1859,11 @@ static PVUSBURB usbProxyDarwinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMill
         CFRunLoopRunInMode(g_pRunLoopMode, 0.0, false);
 
     if (    !pDevOsX->pTaxingHead
-        &&  cMillies
-        &&  pDevOsX->pInFlightHead)
+        &&  cMillies)
         CFRunLoopRunInMode(g_pRunLoopMode, cMillies / 1000.0, true);
 
     ASMAtomicXchgPtr((void * volatile *)&pDevOsX->hRunLoopReaping, NULL);
+    ASMAtomicXchgBool(&pDevOsX->fReapingThreadWake, false);
 
     /*
      * Any URBs pending delivery?
@@ -1839,7 +1889,8 @@ static PVUSBURB usbProxyDarwinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMill
     if (pUrb)
         LogFlowFunc(("LEAVE: %s: pProxyDev=%s returns %p\n", pUrb->pszDesc, pProxyDev->pUsbIns->pszName, pUrb));
     else
-        LogFlowFunc(("LEAVE: NULL pProxyDev=%s returns NULL", pProxyDev->pUsbIns->pszName));
+        LogFlowFunc(("LEAVE: NULL pProxyDev=%s returns NULL\n", pProxyDev->pUsbIns->pszName));
+
     return pUrb;
 }
 
@@ -1890,13 +1941,17 @@ static int usbProxyDarwinWakeup(PUSBPROXYDEV pProxyDev)
 {
     PUSBPROXYDEVOSX pDevOsX = (PUSBPROXYDEVOSX)pProxyDev->Backend.pv;
 
+    LogFlow(("usbProxyDarwinWakeup: pProxyDev=%p\n", pProxyDev));
+
     ASMAtomicXchgBool(&pDevOsX->fReapingThreadWake, true);
 
     CFRunLoopRef hRunLoopWake = (CFRunLoopRef)ASMAtomicReadPtr((void * volatile *)&pDevOsX->hRunLoopReaping);
     if (hRunLoopWake)
-        CFRunLoopStop(hRunLoopWake);
-
-    ASMAtomicXchgBool(&pDevOsX->fReapingThreadWake, false);
+    {
+        LogFlow(("usbProxyDarwinWakeup: Waking runloop %p\n", hRunLoopWake));
+        CFRunLoopSourceSignal(pDevOsX->hRunLoopSrcWakeRef);
+        CFRunLoopWakeUp(hRunLoopWake);
+    }
 
     return VINF_SUCCESS;
 }
