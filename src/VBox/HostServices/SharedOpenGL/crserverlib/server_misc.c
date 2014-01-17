@@ -687,6 +687,14 @@ PCR_BLITTER crServerVBoxBlitterGet()
     return &cr_server.Blitter;
 }
 
+PCR_BLITTER crServerVBoxBlitterGetInitialized()
+{
+    if (CrBltIsInitialized(&cr_server.Blitter))
+        return &cr_server.Blitter;
+    return NULL;
+}
+
+
 int crServerVBoxBlitterTexInit(CRContext *ctx, CRMuralInfo *mural, PVBOXVR_TEXTURE pTex, GLboolean fDraw)
 {
     CRTextureObj *tobj;
@@ -701,7 +709,7 @@ int crServerVBoxBlitterTexInit(CRContext *ctx, CRMuralInfo *mural, PVBOXVR_TEXTU
     {
         GLuint hwid;
 
-        if (!(mural->fPresentMode & CR_SERVER_REDIR_F_FBO))
+        if (!mural->fRedirected)
             return VERR_NOT_IMPLEMENTED;
 
         enmBuf = fDraw ? ctx->buffer.drawBuffer : ctx->buffer.readBuffer;
@@ -846,14 +854,14 @@ int crServerVBoxBlitterBlitCurrentCtx(GLint srcX0, GLint srcY0, GLint srcX1, GLi
 
     crServerVBoxBlitterCtxInit(&Ctx, cr_server.curClient->currentCtxInfo);
 
-    CrBltMuralSetCurrent(pBlitter, &BltInfo);
+    CrBltMuralSetCurrentInfo(pBlitter, &BltInfo);
 
     idDrawFBO = CR_SERVER_FBO_FOR_IDX(mural, mural->iCurDrawBuffer);
     idReadFBO = CR_SERVER_FBO_FOR_IDX(mural, mural->iCurReadBuffer);
 
     crStateSwitchPrepare(NULL, ctx, idDrawFBO, idReadFBO);
 
-    rc = CrBltEnter(pBlitter, &Ctx, &BltInfo);
+    rc = CrBltEnter(pBlitter);
     if (RT_SUCCESS(rc))
     {
         RTRECT ReadRect, DrawRect;
@@ -1480,10 +1488,10 @@ int crServerDumpCheckInit()
             return rc;
         }
 
-        rc = CrBltMuralSetCurrent(&cr_server.RecorderBlitter, &BltWin);
+        rc = CrBltMuralSetCurrentInfo(&cr_server.RecorderBlitter, &BltWin);
         if (!RT_SUCCESS(rc))
         {
-            crWarning("CrBltMuralSetCurrent failed rc %d", rc);
+            crWarning("CrBltMuralSetCurrentInfo failed rc %d", rc);
             return rc;
         }
     }

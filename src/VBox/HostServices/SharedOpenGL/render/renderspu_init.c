@@ -385,7 +385,8 @@ static void renderSPUSelfDispatch(SPUDispatchTable *self)
     crSPUInitDispatchTable( &(render_spu.self) );
     crSPUCopyDispatchTable( &(render_spu.self), self );
 
-    render_spu.blitterDispatch = &(render_spu.self);
+    crSPUInitDispatchTable( &(render_spu.blitterDispatch) );
+    crSPUCopyDispatchTable( &(render_spu.blitterDispatch), self );
 
     render_spu.server = (CRServer *)(self->server);
 

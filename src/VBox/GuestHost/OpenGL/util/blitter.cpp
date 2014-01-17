@@ -41,7 +41,7 @@
  *                                     must be set before doing BltEnter, and ResoreContext info is ignored in that case.
  *                                     Also note that blitter caches the current window info, and assumes the current context's values are preserved
  *                                     wrt that window before the calls, so if one uses different contexts for one blitter,
- *                                     the blitter current window values must be explicitly reset by doing CrBltMuralSetCurrent(pBlitter, NULL)
+ *                                     the blitter current window values must be explicitly reset by doing CrBltMuralSetCurrentInfo(pBlitter, NULL)
  * @param fForceDrawBlt - if true  - forces the blitter to always use glDrawXxx-based blits even if GL_EXT_framebuffer_blit.
  *                                   This is needed because BlitFramebufferEXT is known to be often buggy, and glDrawXxx-based blits appear to be more reliable
  */
@@ -93,7 +93,7 @@ VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *p
     return VINF_SUCCESS;
 }
 
-VBOXBLITTERDECL(int) CrBltCleanup(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, const CR_BLITTER_WINDOW *pRestoreMural)
+VBOXBLITTERDECL(int) CrBltCleanup(PCR_BLITTER pBlitter)
 {
     if (CrBltIsEntered(pBlitter))
     {
@@ -104,7 +104,7 @@ VBOXBLITTERDECL(int) CrBltCleanup(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT
     if (pBlitter->Flags.ShadersGloal || !CrGlslNeedsCleanup(&pBlitter->LocalGlslCache))
         return VINF_SUCCESS;
 
-    int rc = CrBltEnter(pBlitter, pRestoreCtxInfo, pRestoreMural);
+    int rc = CrBltEnter(pBlitter);
     if (!RT_SUCCESS(rc))
     {
         crWarning("CrBltEnter failed, rc %d", rc);
@@ -125,7 +125,7 @@ void CrBltTerm(PCR_BLITTER pBlitter)
     memset(pBlitter, 0, sizeof (*pBlitter));
 }
 
-int CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural)
+int CrBltMuralSetCurrentInfo(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural)
 {
     if (pMural)
     {
@@ -519,6 +519,11 @@ static int crBltInitOnMakeCurent(PCR_BLITTER pBlitter)
     else
         crWarning("GL_EXT_framebuffer_object not supported, blitter can only blit to window");
 
+    if (crStrstr(pszExtension, "GL_ARB_pixel_buffer_object"))
+        pBlitter->Flags.SupportsPBO = 1;
+    else
+        crWarning("GL_ARB_pixel_buffer_object not supported");
+
     /* BlitFramebuffer seems to be buggy on Intel, 
      * try always glDrawXxx for now */
     if (!pBlitter->Flags.ForceDrawBlit && crStrstr(pszExtension, "GL_EXT_framebuffer_blit"))
@@ -558,21 +563,12 @@ void CrBltLeave(PCR_BLITTER pBlitter)
     pBlitter->pDispatch->Flush();
 
     if (pBlitter->CtxInfo.Base.id)
-    {
-        if (pBlitter->pRestoreCtxInfo != &pBlitter->CtxInfo)
-        {
-            pBlitter->pDispatch->MakeCurrent(pBlitter->pRestoreMural->Base.id, 0, pBlitter->pRestoreCtxInfo->Base.id);
-        }
-        else
-        {
-            pBlitter->pDispatch->MakeCurrent(0, 0, 0);
-        }
-    }
+        pBlitter->pDispatch->MakeCurrent(0, 0, 0);
 
-    pBlitter->pRestoreCtxInfo = NULL;
+    pBlitter->Flags.Entered = 0;
 }
 
-int CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, const CR_BLITTER_WINDOW *pRestoreMural)
+int CrBltEnter(PCR_BLITTER pBlitter)
 {
     if (!pBlitter->CurrentMural.Base.id && pBlitter->CtxInfo.Base.id)
     {
@@ -588,28 +584,10 @@ int CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, 
 
     if (pBlitter->CurrentMural.Base.id) /* <- pBlitter->CurrentMural.Base.id can be null if the blitter is in a "no-context" mode (see comments to BltInit for detail)*/
     {
-        if (pRestoreCtxInfo)
-            pBlitter->pDispatch->Flush();
         pBlitter->pDispatch->MakeCurrent(pBlitter->CurrentMural.Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
     }
-    else
-    {
-        if (pRestoreCtxInfo)
-        {
-            crWarning("pRestoreCtxInfo is not NULL for \"no-context\" blitter");
-            pRestoreCtxInfo = NULL;
-        }
-    }
 
-    if (pRestoreCtxInfo)
-    {
-        pBlitter->pRestoreCtxInfo = pRestoreCtxInfo;
-        pBlitter->pRestoreMural = pRestoreMural;
-    }
-    else
-    {
-        pBlitter->pRestoreCtxInfo = &pBlitter->CtxInfo;
-    }
+    pBlitter->Flags.Entered = 1;
 
     if (pBlitter->Flags.Initialized)
         return VINF_SUCCESS;
@@ -717,7 +695,7 @@ void CrBltPresent(PCR_BLITTER pBlitter)
         pBlitter->pDispatch->Flush();
 }
 
-static int crBltImgCreateForTex(const VBOXVR_TEXTURE *pSrc, CR_BLITTER_IMG *pDst, GLenum enmFormat)
+static int crBltImgInitBaseForTex(const VBOXVR_TEXTURE *pSrc, CR_BLITTER_IMG *pDst, GLenum enmFormat)
 {
     memset(pDst, 0, sizeof (*pDst));
     if (enmFormat != GL_RGBA
@@ -731,6 +709,25 @@ static int crBltImgCreateForTex(const VBOXVR_TEXTURE *pSrc, CR_BLITTER_IMG *pDst
 
     uint32_t pitch = ((bpp * pSrc->width) + 7) >> 3;
     uint32_t cbData = pitch * pSrc->height;
+    pDst->cbData = cbData;
+    pDst->enmFormat = enmFormat;
+    pDst->width = pSrc->width;
+    pDst->height = pSrc->height;
+    pDst->bpp = bpp;
+    pDst->pitch = pitch;
+    return VINF_SUCCESS;
+}
+
+static int crBltImgCreateForTex(const VBOXVR_TEXTURE *pSrc, CR_BLITTER_IMG *pDst, GLenum enmFormat)
+{
+    int rc = crBltImgInitBaseForTex(pSrc, pDst, enmFormat);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("crBltImgInitBaseForTex failed rc %d", rc);
+        return rc;
+    }
+
+    uint32_t cbData = pDst->cbData;
     pDst->pvData = RTMemAllocZ(cbData);
     if (!pDst->pvData)
     {
@@ -747,13 +744,6 @@ static int crBltImgCreateForTex(const VBOXVR_TEXTURE *pSrc, CR_BLITTER_IMG *pDst
         }
     }
 #endif
-
-    pDst->cbData = cbData;
-    pDst->enmFormat = enmFormat;
-    pDst->width = pSrc->width;
-    pDst->height = pSrc->height;
-    pDst->bpp = bpp;
-    pDst->pitch = pitch;
     return VINF_SUCCESS;
 }
 
@@ -1132,4 +1122,230 @@ VBOXBLITTERDECL(void) CrGlslTerm(CR_GLSL_CACHE *pCache)
 
     /* sanity */
     memset(pCache, 0, sizeof (*pCache));
+}
+
+
+/*TdBlt*/
+
+static void crTdBltCheckPBO(PCR_TEXDATA pTex)
+{
+    if (pTex->idPBO)
+        return;
+
+    PCR_BLITTER pBlitter = pTex->pBlitter;
+
+    if (!pBlitter->Flags.SupportsPBO)
+        return;
+
+    pBlitter->pDispatch->GenBuffersARB(1, &pTex->idPBO);
+    if (!pTex->idPBO)
+    {
+        crWarning("PBO create failed");
+        return;
+    }
+
+    pBlitter->pDispatch->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pTex->idPBO);
+    pBlitter->pDispatch->BufferDataARB(GL_PIXEL_PACK_BUFFER_ARB,
+                pTex->Tex.width*pTex->Tex.height*4,
+                0, GL_STREAM_READ_ARB);
+    pBlitter->pDispatch->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
+}
+
+static uint32_t crTdBltTexCreate(PCR_TEXDATA pTex)
+{
+	PCR_BLITTER pBlitter = pTex->pBlitter;
+    uint32_t tex = 0;
+    pBlitter->pDispatch->GenTextures(1, &tex);
+    if (!tex)
+    {
+        crWarning("Tex create failed");
+        return 0;
+    }
+
+    pBlitter->pDispatch->BindTexture(GL_TEXTURE_2D, tex);
+    pBlitter->pDispatch->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    pBlitter->pDispatch->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    pBlitter->pDispatch->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    pBlitter->pDispatch->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    pBlitter->pDispatch->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+            pTex->Tex.width,
+            pTex->Tex.height,
+            0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+
+    /*Restore gl state*/
+    pBlitter->pDispatch->BindTexture(GL_TEXTURE_2D, 0);
+
+    return tex;
+}
+
+int crTdBltCheckInvertTex(PCR_TEXDATA pTex)
+{
+    if (pTex->idInvertTex)
+        return VINF_SUCCESS;
+
+    pTex->idInvertTex = crTdBltTexCreate(pTex);
+    if (!pTex->idInvertTex)
+    {
+        crWarning("Invert Tex create failed");
+        return VERR_GENERAL_FAILURE;
+    }
+    return VINF_SUCCESS;
+}
+
+void crTdBltImgFree(PCR_TEXDATA pTex)
+{
+    if (!pTex->Img.pvData)
+        return;
+
+    PCR_BLITTER pBlitter = pTex->pBlitter;
+
+    if (pTex->idPBO)
+    {
+        pBlitter->pDispatch->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pTex->idPBO);
+        pBlitter->pDispatch->UnmapBufferARB(GL_PIXEL_PACK_BUFFER_ARB);
+        pBlitter->pDispatch->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
+    }
+    else
+        RTMemFree(pTex->Img.pvData);
+
+    pTex->Img.pvData = NULL;
+}
+
+int crTdBltImgAcquire(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted)
+{
+    int rc = crBltImgInitBaseForTex(&pTex->Tex, &pTex->Img, enmFormat);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("crBltImgInitBaseForTex failed rc %d", rc);
+        return rc;
+    }
+
+    PCR_BLITTER pBlitter = pTex->pBlitter;
+    void *pvData = NULL;
+    pBlitter->pDispatch->BindTexture(pTex->Tex.target, fInverted ? pTex->idInvertTex : pTex->Tex.hwid);
+
+    pBlitter->pDispatch->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pTex->idPBO);
+
+    if (!pTex->idPBO)
+    {
+        pvData = RTMemAlloc(4*pTex->Tex.width*pTex->Tex.height);
+        if (!pvData)
+        {
+            crWarning("Out of memory in crTdBltImgAcquire");
+            return VERR_NO_MEMORY;
+        }
+    }
+
+    /*read the texture, note pixels are NULL for PBO case as it's offset in the buffer*/
+    pBlitter->pDispatch->GetTexImage(GL_TEXTURE_2D, 0, enmFormat, GL_UNSIGNED_BYTE, pvData);
+
+    /*restore gl state*/
+    pBlitter->pDispatch->BindTexture(pTex->Tex.target, 0);
+
+    if (pTex->idPBO)
+    {
+        pvData = pBlitter->pDispatch->MapBufferARB(GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY);
+        if (!pvData)
+        {
+            crWarning("Failed to MapBuffer in CrHlpGetTexImage");
+            return VERR_GENERAL_FAILURE;
+        }
+
+        pBlitter->pDispatch->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
+    }
+
+    CRASSERT(pvData);
+    pTex->Img.pvData = pvData;
+    pTex->Flags.DataInverted = fInverted;
+    return VINF_SUCCESS;
+}
+
+/* release the texture data, the data remains cached in the CR_TEXDATA object until it is discarded with CrTdBltDataDiscard or CrTdBltDataCleanup */
+VBOXBLITTERDECL(void) CrTdBltDataRelease(PCR_TEXDATA pTex)
+{
+    Assert(pTex->Img.pvData);
+}
+
+/* discard the texture data cached with previous CrTdBltDataAcquire.
+ * Must be called wit data released (CrTdBltDataRelease) */
+VBOXBLITTERDECL(void) CrTdBltDataDiscard(PCR_TEXDATA pTex)
+{
+    crTdBltImgFree(pTex);
+}
+/* does same as CrTdBltDataDiscard, and in addition cleans up */
+VBOXBLITTERDECL(void) CrTdBltDataCleanup(PCR_TEXDATA pTex)
+{
+    crTdBltImgFree(pTex);
+
+    PCR_BLITTER pBlitter = pTex->pBlitter;
+
+    if (pTex->idPBO)
+    {
+        pBlitter->pDispatch->DeleteBuffersARB(1, &pTex->idPBO);
+        pTex->idPBO = 0;
+    }
+
+    if (pTex->idInvertTex)
+    {
+        pBlitter->pDispatch->DeleteTextures(1, &pTex->idInvertTex);
+        pTex->idInvertTex = 0;
+    }
+}
+
+/* acquire the texture data, returns the cached data in case it is cached.
+ * the data remains cached in the CR_TEXDATA object until it is discarded with CrTdBltDataDiscard or CrTdBltDataCleanup.
+ * */
+VBOXBLITTERDECL(int) CrTdBltDataAcquire(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted, const CR_BLITTER_IMG**ppImg)
+{
+    if (pTex->Img.pvData && pTex->Img.enmFormat == enmFormat && !pTex->Flags.DataInverted == !fInverted)
+    {
+        *ppImg = &pTex->Img;
+        return VINF_SUCCESS;
+    }
+
+    crTdBltImgFree(pTex);
+
+    crTdBltCheckPBO(pTex);
+
+    int rc;
+
+    if (fInverted)
+    {
+        rc = crTdBltCheckInvertTex(pTex);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("crTdBltCheckInvertTex failed rc %d", rc);
+            return rc;
+        }
+
+        RTRECT SrcRect, DstRect;
+        VBOXVR_TEXTURE InvertTex;
+
+        InvertTex = pTex->Tex;
+        InvertTex.hwid = pTex->idInvertTex;
+
+        SrcRect.xLeft = 0;
+        SrcRect.yTop = InvertTex.height;
+        SrcRect.xRight = InvertTex.width;
+        SrcRect.yBottom = 0;
+
+        DstRect.xLeft = 0;
+        DstRect.yTop = 0;
+        DstRect.xRight = InvertTex.width;
+        DstRect.yBottom = InvertTex.height;
+
+        CrBltBlitTexTex(pTex->pBlitter, &pTex->Tex, &SrcRect, &InvertTex, &DstRect, 1, 0);
+    }
+
+    rc = crTdBltImgAcquire(pTex, enmFormat, fInverted);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("crTdBltImgAcquire failed rc %d", rc);
+        return rc;
+    }
+
+    *ppImg = &pTex->Img;
+
+    return VINF_SUCCESS;
 }

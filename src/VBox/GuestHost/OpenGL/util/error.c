@@ -498,7 +498,9 @@ DECLEXPORT(void) crDebug(const char *format, ... )
     outputChromiumMessage( output, txt );
 #else
     if (!output
+#ifndef DEBUG_misha
             || output==stderr
+#endif
             )
     {
         LogRel(("%s\n", txt));

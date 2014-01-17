@@ -443,8 +443,6 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
     else
     {
         cr_server.head_spu->dispatch_table.SwapBuffers( mural->spuWindow, flags );
-        if (crServerVBoxCompositionPresentNeeded(mural))
-            mural->fDataPresented = GL_TRUE;
     }
 
     CR_SERVER_DUMP_SWAPBUFFERS_LEAVE();
@@ -463,8 +461,6 @@ crServerDispatchFlush(void)
         {
             if (crServerIsRedirectedToFBO())
                 crServerPresentFBO(mural);
-            else if (crServerVBoxCompositionPresentNeeded(mural))
-                mural->fDataPresented = GL_TRUE;
         }
 
         if (ctx->framebufferobject.drawFB
@@ -487,8 +483,6 @@ crServerDispatchFinish(void)
         {
             if (crServerIsRedirectedToFBO())
                 crServerPresentFBO(mural);
-            else if (crServerVBoxCompositionPresentNeeded(mural))
-                mural->fDataPresented = GL_TRUE;
         }
 
         if (ctx->framebufferobject.drawFB

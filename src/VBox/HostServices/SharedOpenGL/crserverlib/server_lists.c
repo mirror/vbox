@@ -60,6 +60,7 @@ GLuint crServerTranslateProgramID( GLuint id )
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchNewList( GLuint list, GLenum mode )
 {
+    Assert(0);
     if (mode == GL_COMPILE_AND_EXECUTE)
         crWarning("using glNewList(GL_COMPILE_AND_EXECUTE) can confuse the crserver");
 
@@ -73,7 +74,7 @@ static void crServerQueryHWState()
     GLuint fbFbo, bbFbo;
     CRClient *client = cr_server.curClient;
     CRMuralInfo *mural = client ? client->currentMural : NULL;
-    if (mural && mural->fPresentMode & CR_SERVER_REDIR_F_FBO)
+    if (mural && mural->fRedirected)
     {
         fbFbo = mural->aidFBOs[CR_SERVER_FBO_FB_IDX(mural)];
         bbFbo = mural->aidFBOs[CR_SERVER_FBO_BB_IDX(mural)];
@@ -290,6 +291,12 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteTextures( GLsizei n, const G
     {
         newTextures[i] = crStateGetTextureHWID(textures[i]);
     }
+
+    for (i = 0; i < n; ++i)
+    {
+        crDebug("DeleteTexture: %d, pid %d, ctx %d", textures[i], (uint32_t)cr_server.curClient->pid, cr_server.currentCtxInfo->pContext->id);
+    }
+
 
     crStateDeleteTextures(n, textures);
     cr_server.head_spu->dispatch_table.DeleteTextures(n, newTextures);

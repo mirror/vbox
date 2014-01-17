@@ -14,6 +14,8 @@
 #include "state/cr_currentpointers.h"
 
 #include "cr_server.h"
+#include <cr_htable.h>
+#include <cr_compositor.h>
 
 #ifdef VBOX_WITH_CRHGSMI
 # include <VBox/VBoxVideo.h>
@@ -113,13 +115,12 @@ GLboolean crServerClientInBeginEnd(const CRClient *client);
 
 GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLint shareCtx, GLint preloadCtxID, int32_t internalID);
 GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preloadWinID);
-GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID, GLboolean fUseDefaultDEntry);
+GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID);
 void crServerMuralTerm(CRMuralInfo *mural);
 GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
-void crServerMuralPosition(CRMuralInfo *mural, GLint x, GLint y, GLboolean fSkipCheckGeometry);
+void crServerMuralPosition(CRMuralInfo *mural, GLint x, GLint y);
 void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *pRects );
 void crServerMuralShow( CRMuralInfo *mural, GLint state );
-int crServerMuralSynchRootVr(CRMuralInfo *mural, bool *pfChanged);
 
 GLint crServerGenerateID(GLint *pCounter);
 
@@ -129,82 +130,26 @@ GLuint crServerTranslateProgramID(GLuint id);
 
 CRMuralInfo * crServerGetDummyMural(GLint visualBits);
 
-void crServerPresentOutputRedirect(CRMuralInfo *pMural);
-void crServerOutputRedirectCheckEnableDisable(CRMuralInfo *pMural);
-
 void crServerCheckMuralGeometry(CRMuralInfo *mural);
 GLboolean crServerSupportRedirMuralFBO(void);
+
+void crVBoxServerMuralFbResizeBegin(HCR_FRAMEBUFFER hFb);
+void crVBoxServerMuralFbResizeEnd(HCR_FRAMEBUFFER hFb);
 
 void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void*pvData);
 void crVBoxServerCheckVisibilityEvent(int32_t idScreen);
 
-void crServerDisplayTermAll();
+void crServerRedirMuralFbClear(CRMuralInfo *mural);
 
-void crServerWindowSize(CRMuralInfo *pMural);
-void crServerWindowShow(CRMuralInfo *pMural);
-void crServerWindowVisibleRegion(CRMuralInfo *pMural);
 void crServerWindowReparent(CRMuralInfo *pMural);
 
-void crServerWindowSetIsVisible(CRMuralInfo *pMural, GLboolean fIsVisible);
-void crServerWindowCheckIsVisible(CRMuralInfo *pMural);
-
-int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI);
-
-#define CR_SERVER_REDIR_F_NONE     0x00
-/* the data should be displayed on host (unset when is on or when CR_SERVER_REDIR_F_FBO_RAM_VMFB is set) */
-#define CR_SERVER_REDIR_F_DISPLAY       0x01
-/* guest window data get redirected to FBO on host */
-#define CR_SERVER_REDIR_F_FBO           0x02
-/* used with CR_SERVER_REDIR_F_FBO only
- * indicates that FBO data should be copied to RAM for further processing */
-#define CR_SERVER_REDIR_F_FBO_RAM       0x04
-/* used with CR_SERVER_REDIR_F_FBO_RAM only
- * indicates that FBO data should be passed to VRDP backend */
-#define CR_SERVER_REDIR_F_FBO_RAM_VRDP  0x08
-/* used with CR_SERVER_REDIR_F_FBO_RAM only
- * indicates that FBO data should be passed to VM Framebuffer */
-#define CR_SERVER_REDIR_F_FBO_RAM_VMFB  0x10
-/* used with CR_SERVER_REDIR_F_FBO_RAM only
- * makes the RPW (Read Pixels Worker) mechanism to be used for GPU memory aquisition */
-#define CR_SERVER_REDIR_F_FBO_RPW       0x20
-
-
-#define CR_SERVER_REDIR_F_ALL           0x3f
-
-#define CR_SERVER_REDIR_FGROUP_REQUIRE_FBO     (CR_SERVER_REDIR_F_ALL & ~CR_SERVER_REDIR_F_DISPLAY)
-#define CR_SERVER_REDIR_FGROUP_REQUIRE_FBO_RAM (CR_SERVER_REDIR_F_FBO_RAM_VRDP | CR_SERVER_REDIR_F_FBO_RAM_VMFB | CR_SERVER_REDIR_F_FBO_RPW)
-
-DECLINLINE(GLuint) crServerRedirModeAdjust(GLuint value)
-{
-    /* sanitize values */
-    value &= CR_SERVER_REDIR_F_ALL;
-
-    if (value & CR_SERVER_REDIR_FGROUP_REQUIRE_FBO)
-        value |=  CR_SERVER_REDIR_F_FBO;
-    if (value & CR_SERVER_REDIR_FGROUP_REQUIRE_FBO_RAM)
-        value |=  CR_SERVER_REDIR_F_FBO_RAM;
-
-    return value;
-}
-
-int32_t crServerSetOffscreenRenderingMode(GLuint value);
-void crServerRedirMuralFBO(CRMuralInfo *mural, GLuint redir);
+void crServerRedirMuralFBO(CRMuralInfo *mural, bool fEnabled);
 void crServerDeleteMuralFBO(CRMuralInfo *mural);
 void crServerPresentFBO(CRMuralInfo *mural);
 GLboolean crServerIsRedirectedToFBO();
 GLint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer);
 void crServerMuralFBOSwapBuffers(CRMuralInfo *mural);
 
-void crServerVBoxCompositionDisableEnter(CRMuralInfo *mural);
-void crServerVBoxCompositionDisableLeave(CRMuralInfo *mural, GLboolean fForcePresentOnEnabled);
-void crServerVBoxCompositionPresent(CRMuralInfo *mural);
-DECLINLINE(GLboolean) crServerVBoxCompositionPresentNeeded(CRMuralInfo *mural)
-{
-    return mural->bVisible
-                && mural->width
-                && mural->height
-                && !mural->fRootVrOn ? !CrVrScrCompositorIsEmpty(&mural->Compositor) : !CrVrScrCompositorIsEmpty(&mural->RootVrCompositor);
-}
 
 #define CR_SERVER_FBO_BB_IDX(_mural) ((_mural)->iBbBuffer)
 #define CR_SERVER_FBO_FB_IDX(_mural) (((_mural)->iBbBuffer + 1) % ((_mural)->cBuffers))
@@ -218,11 +163,10 @@ DECLINLINE(GLboolean) crServerVBoxCompositionPresentNeeded(CRMuralInfo *mural)
 
 int32_t crVBoxServerInternalClientRead(CRClient *pClient, uint8_t *pBuffer, uint32_t *pcbBuffer);
 
-PCR_DISPLAY crServerDisplayGetInitialized(uint32_t idScreen);
-
 void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo );
 
 PCR_BLITTER crServerVBoxBlitterGet();
+PCR_BLITTER crServerVBoxBlitterGetInitialized();
 
 DECLINLINE(void) crServerVBoxBlitterWinInit(CR_BLITTER_WINDOW *win, CRMuralInfo *mural)
 {
@@ -419,61 +363,56 @@ void crServerInitTmpCtxDispatch();
 
 int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal);
 
-void CrDpRootUpdate(PCR_DISPLAY pDisplay);
-void CrDpEnter(PCR_DISPLAY pDisplay);
-void CrDpLeave(PCR_DISPLAY pDisplay);
-int CrDpInit(PCR_DISPLAY pDisplay);
-void CrDpTerm(PCR_DISPLAY pDisplay);
+/*helper function that calls CrFbUpdateBegin for all enabled framebuffers */
+int CrPMgrHlpGlblUpdateBegin();
+/*helper function that calls CrFbUpdateEnd for all framebuffers being updated */
+void CrPMgrHlpGlblUpdateEnd();
+HCR_FRAMEBUFFER CrPMgrFbGetFirstEnabled();
+HCR_FRAMEBUFFER CrPMgrFbGetNextEnabled(HCR_FRAMEBUFFER hFb);
+int CrPMgrModeVrdp(bool fEnable);
+int CrPMgrModeRootVr(bool fEnable);
+int CrPMgrRootVrUpdate();
+int CrPMgrViewportUpdate(uint32_t idScreen);
+int CrPMgrScreenChanged(uint32_t idScreen);
+int CrPMgrNotifyResize(HCR_FRAMEBUFFER hFb);
+int CrPMgrSaveState(PSSMHANDLE pSSM);
+int CrPMgrLoadState(PSSMHANDLE pSSM, uint32_t version);
+HCR_FRAMEBUFFER CrPMgrFbGet(uint32_t idScreen);
+/*cleanup stuff*/
 
-DECLINLINE(bool) CrDpIsEmpty(PCR_DISPLAY pDisplay)
-{
-    return CrVrScrCompositorIsEmpty(&pDisplay->Mural.Compositor);
-}
+int CrPMgrInit();
+void CrPMgrTerm();
 
-int CrDpSaveState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM);
-int CrDpLoadState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM, uint32_t version);
+int CrFbResize(HCR_FRAMEBUFFER hFb, const struct VBVAINFOSCREEN * pScreen, void *pvVRAM);
+bool CrFbIsEnabled(HCR_FRAMEBUFFER hFb);
+int CrFbEntryCreateForTexId(HCR_FRAMEBUFFER hFb, GLuint idTex, uint32_t fFlags, HCR_FRAMEBUFFER_ENTRY *phEntry);
+int CrFbEntryCreateForTexData(HCR_FRAMEBUFFER hFb, struct CR_TEXDATA *pTex, uint32_t fFlags, HCR_FRAMEBUFFER_ENTRY *phEntry);
+void CrFbEntryAddRef(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry);
+void CrFbEntryRelease(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry);
+const struct VBVAINFOSCREEN* CrFbGetScreenInfo(HCR_FRAMEBUFFER hFb);
+const struct VBOXVR_SCR_COMPOSITOR* CrFbGetCompositor(HCR_FRAMEBUFFER hFb);
+const struct VBOXVR_SCR_COMPOSITOR_ENTRY* CrFbEntryGetCompositorEntry(HCR_FRAMEBUFFER_ENTRY hEntry);
 
-void CrDpReparent(PCR_DISPLAY pDisplay, CRScreenInfo *pScreen);
+/* start doing modifications to the framebuffer */
+int CrFbUpdateBegin(HCR_FRAMEBUFFER hFb);
+/*below commands can only be used in Framebuffer update mode, i.e. after the CrFbUpdateBegin succeeded */
+int CrFbEntryRegions(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry);
 
-void CrDpResize(PCR_DISPLAY pDisplay, int32_t xPos, int32_t yPos, uint32_t width, uint32_t height);
-void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData, uint32_t fFlags, PFNVBOXVRSCRCOMPOSITOR_ENTRY_RELEASED pfnEntryReleased);
-void CrDpEntryCleanup(PCR_DISPLAY_ENTRY pEntry);
-int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
-int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions, CR_DISPLAY_ENTRY_MAP *pMap);
-void CrDpRegionsClear(PCR_DISPLAY pDisplay);
-DECLINLINE(bool) CrDpEntryIsUsed(PCR_DISPLAY_ENTRY pEntry)
-{
-    return CrVrScrCompositorEntryIsInList(&pEntry->CEntry);
-}
+/* complete doing modifications to the framebuffer */
+void CrFbUpdateEnd(HCR_FRAMEBUFFER hFb);
 
-DECLINLINE(CRMuralInfo*) CrDpGetMural(PCR_DISPLAY pDisplay)
-{
-    return &pDisplay->Mural;
-}
+int CrFbEntryRegionsAdd(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions, bool fPosRelated);
+int CrFbEntryRegionsSet(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions, bool fPosRelated);
 
-int CrDemGlobalInit();
-void CrDemTeGlobalTerm();
-void CrDemEnter(PCR_DISPLAY_ENTRY_MAP pMap);
-void CrDemLeave(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY pNewEntry, PCR_DISPLAY_ENTRY pReplacedEntry);
-int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap);
-void CrDemTerm(PCR_DISPLAY_ENTRY_MAP pMap);
-PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture, uint32_t fFlags);
-void CrDemEntryRelease(PCR_DISPLAY_ENTRY pEntry);
-int CrDemEntrySaveState(PCR_DISPLAY_ENTRY pEntry, PSSMHANDLE pSSM);
-int CrDemEntryLoadState(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY *ppEntry, PSSMHANDLE pSSM);
+int CrFbEntryTexDataUpdate(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY pEntry, struct CR_TEXDATA *pTex);
 
-int crServerDisplaySaveState(PSSMHANDLE pSSM);
-int crServerDisplayLoadState(PSSMHANDLE pSSM, uint32_t u32Version);
+CRHTABLE_HANDLE CrFbDDataAllocSlot(HCR_FRAMEBUFFER hFb);
+void CrFbDDataReleaseSlot(HCR_FRAMEBUFFER hFb, CRHTABLE_HANDLE hSlot);
+int CrFbDDataEntryPut(HCR_FRAMEBUFFER_ENTRY hEntry, CRHTABLE_HANDLE hSlot, void *pvData);
+void* CrFbDDataEntryGet(HCR_FRAMEBUFFER_ENTRY hEntry, CRHTABLE_HANDLE hSlot);
 
-
-void crServerDEntryResized(CRMuralInfo *pMural, CR_DISPLAY_ENTRY *pDEntry);
-void crServerDEntryMoved(CRMuralInfo *pMural, CR_DISPLAY_ENTRY *pDEntry);
-void crServerDEntryVibleRegions(CRMuralInfo *pMural, CR_DISPLAY_ENTRY *pDEntry);
-void crServerDEntryCheckFBO(CRMuralInfo *pMural, CR_DISPLAY_ENTRY *pDEntry, CRContext *ctx);
-
-void crServerDEntryAllResized(CRMuralInfo *pMural);
-void crServerDEntryAllMoved(CRMuralInfo *pMural);
-void crServerDEntryAllVibleRegions(CRMuralInfo *pMural);
+CR_TEXDATA* CrFbTexDataCreate(const VBOXVR_TEXTURE *pTex);
+void CrFbTexDataInit(CR_TEXDATA* pFbTex, const VBOXVR_TEXTURE *pTex, PFNCRTEXDATA_RELEASED pfnTextureReleased);
 
 //#define VBOX_WITH_CRSERVER_DUMPER
 #ifdef VBOX_WITH_CRSERVER_DUMPER

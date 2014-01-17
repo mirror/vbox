@@ -84,6 +84,8 @@ VBoxOGLcrutil_SOURCES       = \
 	util/warp.c \
 	util/vreg.cpp \
 	util/blitter.cpp \
+	util/compositor.cpp \
+	util/htable.cpp \
 	util/vboxhgcm.c \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
 VBoxOGLcrutil_SOURCES.win.x86 = \

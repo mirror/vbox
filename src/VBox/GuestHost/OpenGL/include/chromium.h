@@ -726,6 +726,8 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 /* Tells renderspu the default context id being used by the crserver */
 #define GL_HH_SET_DEFAULT_SHARED_CTX  0x8B2D
 
+#define GL_HH_SET_TMPCTX_MAKE_CURRENT 0x8B2E
+
 /**********************************************************************/
 /*****                Chromium-specific API                       *****/
 /**********************************************************************/

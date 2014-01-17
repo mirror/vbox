@@ -154,7 +154,7 @@ void renderspu_SystemShowWindow(WindowInfo *pWinInfo, GLboolean fShowIt)
     cocoaViewShow(pWinInfo->window, fShowIt);
 }
 
-void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
+void renderspu_SystemVBoxPresentComposition( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
 {
     cocoaViewPresentComposition(window->window, pChangedEntry);
 }
@@ -270,7 +270,7 @@ void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, Conte
 
     if (!CrGlslIsInited(&render_spu.GlobalShaders))
     {
-        CrGlslInit(&render_spu.GlobalShaders, render_spu.blitterDispatch);
+        CrGlslInit(&render_spu.GlobalShaders, &render_spu.blitterDispatch);
     }
 
     if (fromContext)

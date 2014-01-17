@@ -26,12 +26,11 @@
 #include <iprt/thread.h>
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
+#include <iprt/memcache.h>
 
 #include <VBox/vmm/ssm.h>
 
-#ifdef VBOX_WITH_CRHGSMI
-# include <VBox/VBoxVideo.h>
-#endif
+#include <VBox/VBoxVideo.h>
 #include <VBox/Hardware/VBoxVideoVBE.h>
 #include <VBox/VBoxVideo3D.h>
 
@@ -203,18 +202,17 @@ typedef struct CR_SERVER_RPW {
 } CR_SERVER_RPW;
 /* */
 
-/* DISPLAY */
-/* define display entry early so it can be used in MuralInfo */
-typedef struct CR_DISPLAY_ENTRY
-{
-    VBOXVR_SCR_COMPOSITOR_ENTRY CEntry;
-    VBOXVR_SCR_COMPOSITOR_ENTRY RootVrCEntry;
-    void *pvORInstance;
-    GLuint idPBO;
-    GLuint idInvertTex;
-} CR_DISPLAY_ENTRY, *PCR_DISPLAY_ENTRY;
-/**/
+/* FRAMEBUFFER */
+typedef struct CR_FRAMEBUFFER *HCR_FRAMEBUFFER;
+typedef struct CR_FRAMEBUFFER_ENTRY *HCR_FRAMEBUFFER_ENTRY;
+/* */
 
+typedef struct CR_FBDATA
+{
+    HCR_FRAMEBUFFER hFb;
+    HCR_FRAMEBUFFER_ENTRY hFbEntry;
+    CR_TEXDATA* apTexDatas[2];
+} CR_FBDATA;
 /**
  * Mural info
  */
@@ -230,7 +228,7 @@ typedef struct {
     GLboolean bVisible;      /*guest window is visible*/
     GLubyte   u8Unused;       /*redirect to FBO instead of real host window*/
     GLboolean bFbDraw;       /*GL_FRONT buffer is drawn to directly*/
-    GLboolean fDataPresented;
+    GLboolean fReserved;
 
     GLint       cVisibleRects;    /*count of visible rects*/
     GLint      *pVisibleRects;    /*visible rects left, top, right, bottom*/
@@ -254,28 +252,18 @@ typedef struct {
     GLuint idDepthStencilRB;
     GLuint fboWidth, fboHeight;
 
-    GLuint cDisabled;
-
-    GLuint   fPresentMode;       /*redirect to FBO instead of real host window*/
-
     GLboolean fHasParentWindow;
 
-    GLboolean fRootVrOn;
+    GLboolean fRedirected;
     GLboolean fForcePresentState;
     GLboolean fOrPresentOnReenable;
 
-    GLboolean fUseDefaultDEntry;
-
     GLboolean fIsVisible;
 
-    CR_DISPLAY_ENTRY DefaultDEntry;
-
-    VBOXVR_SCR_COMPOSITOR Compositor;
-
-    /* if root Visible regions are set, these two contain actual regions being passed to render spu */
-    VBOXVR_SCR_COMPOSITOR RootVrCompositor;
-
-    CR_SERVER_RPW_ENTRY RpwEntry;
+    CR_TEXDATA aTexs[2];
+    uint32_t cUsedFBDatas;
+    CR_FBDATA *apUsedFBDatas[CR_MAX_GUEST_MONITORS];
+    CR_FBDATA aFBDatas[CR_MAX_GUEST_MONITORS];
 
     /* bitfield representing contexts the mural has been ever current with
      * we just reuse CR_STATE_SHAREDOBJ_USAGE_XXX API here for simplicity */
@@ -343,34 +331,8 @@ typedef struct {
 } CRScreenInfo;
 
 typedef struct {
-    int32_t    x, y;
-    uint32_t   w, h;
+    RTRECT Rect;
 } CRScreenViewportInfo;
-
-
-/* DISPLAY */
-
-#define CR_DENTRY_FROM_CENTRY(_pCentry) ((CR_DISPLAY_ENTRY*)((uint8_t*)(_pCentry) - RT_OFFSETOF(CR_DISPLAY_ENTRY, CEntry)))
-
-
-/* @todo:
- * 1. use compositor stored inside mural to use current MuralFBO and window-related API
- * 2. CR_SERVER_REDIR_F_NONE and CR_SERVER_REDIR_F_FBO should be trated identically for presented window
- *    since we just need to blit the given textures to it if we are NOT in CR_SERVER_REDIR_F_FBO_RAM mode */
-typedef struct CR_DISPLAY
-{
-    CRMuralInfo Mural;
-    GLboolean fForcePresent;
-} CR_DISPLAY, *PCR_DISPLAY;
-
-
-typedef struct CR_DISPLAY_ENTRY_MAP
-{
-    CRHashTable * pTexIdToDemInfoMap;
-    uint32_t cEntered;
-    RTLISTNODE ReleasedList;
-} CR_DISPLAY_ENTRY_MAP, *PCR_DISPLAY_ENTRY_MAP;
-
 
 typedef struct CRWinVisibilityInfo
 {
@@ -378,16 +340,6 @@ typedef struct CRWinVisibilityInfo
     uint32_t fLastReportedVisible   : 1;
     uint32_t fVisibleChanged        : 1;
 } CRWinVisibilityInfo;
-
-/* */
-
-/* helpers */
-
-void CrHlpFreeTexImage(CRContext *pCurCtx, GLuint idPBO, void *pvData);
-void* CrHlpGetTexImage(CRContext *pCurCtx, const VBOXVR_TEXTURE *pTexture, GLuint idPBO, GLenum enmFormat);
-void CrHlpPutTexImage(CRContext *pCurCtx, const VBOXVR_TEXTURE *pTexture, GLenum enmFormat, void *pvData);
-
-/* */
 
 /* BFB (BlitFramebuffer Blitter) flags
  * so far only CR_SERVER_BFB_ON_ALWAIS is supported and is alwais used if any flag is set */
@@ -516,13 +468,10 @@ typedef struct {
     GLuint currentSerialNo;
 
     PFNCRSERVERPRESENTFBO pfnPresentFBO;
-    GLuint                fPresentMode; /*Force server to render 3d data offscreen
-                                                     *using callback above to update vbox framebuffers*/
-    GLuint                fPresentModeDefault; /*can be set with CR_SERVER_DEFAULT_RENDER_TYPE*/
-    GLuint                fVramPresentModeDefault;
+
+    GLuint                fVisualBitsDefault;
     GLboolean             bUsePBOForReadback;       /*Use PBO's for data readback*/
 
-    GLboolean             bUseOutputRedirect;       /* Whether the output redirect was set. */
     CROutputRedirect      outputRedirect;
 
     GLboolean             bUseMultipleContexts;
@@ -552,12 +501,6 @@ typedef struct {
 
     int RcToGuest;
     int RcToGuestOnce;
-
-    /* @todo: should we use just one blitter?
-     * we use two currently because the drawable attribs can differ*/
-    CR_DISPLAY_ENTRY_MAP  PresentTexturepMap;
-    uint32_t              DisplaysInitMap[(CR_MAX_GUEST_MONITORS + 31)/32];
-    CR_DISPLAY            aDispplays[CR_MAX_GUEST_MONITORS];
 } CRServer;
 
 
@@ -581,10 +524,13 @@ extern DECLEXPORT(int32_t) crVBoxServerClientSetPID(uint32_t u32ClientID, uint64
 extern DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM);
 extern DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version);
 
+extern DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable);
 extern DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount);
 extern DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex);
 extern DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h, uint64_t winID);
 extern DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable);
+struct VBVAINFOSCREEN;
+extern DECLEXPORT(int) crVBoxServerNotifyResize(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM);
 extern DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT *pRects);
 
 extern DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO);

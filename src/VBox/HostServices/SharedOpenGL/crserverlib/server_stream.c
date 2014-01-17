@@ -441,7 +441,7 @@ crServerDispatchMessage(CRConnection *conn, CRMessage *msg)
         {
             uint32_t cbWriteback = pCmdData->cbWriteback;
             rc = crVBoxServerInternalClientRead(conn->pClient, (uint8_t*)pCmdData->pWriteback, &cbWriteback);
-            CRASSERT(rc == VINF_SUCCESS || rc == VERR_BUFFER_OVERFLOW);
+            Assert(rc == VINF_SUCCESS || rc == VERR_BUFFER_OVERFLOW);
             *pCmdData->pcbWriteback = cbWriteback;
         }
         VBOXCRHGSMI_CMD_CHECK_COMPLETE(pCmdData, rc);

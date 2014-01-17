@@ -187,11 +187,7 @@ static void crServerTearDown( void )
     /* Free murals */
     crFreeHashtable(cr_server.muralTable, deleteMuralInfoCallback);
 
-    crServerDisplayTermAll();
-    CrDemTerm(&cr_server.PresentTexturepMap);
-    CrDemTeGlobalTerm();
-    memset(cr_server.DisplaysInitMap, 0, sizeof (cr_server.DisplaysInitMap));
-    memset(cr_server.aDispplays, 0, sizeof (cr_server.aDispplays));
+    CrPMgrTerm();
 
     for (i = 0; i < cr_server.numClients; i++) {
         if (cr_server.clients[i]) {
@@ -368,11 +364,7 @@ crServerInit(int argc, char *argv[])
 
     cr_server.dummyMuralTable = crAllocHashtable();
 
-    CrDemGlobalInit();
-
-    CrDemInit(&cr_server.PresentTexturepMap);
-    memset(cr_server.DisplaysInitMap, 0, sizeof (cr_server.DisplaysInitMap));
-    memset(cr_server.aDispplays, 0, sizeof (cr_server.aDispplays));
+    CrPMgrInit();
 
     cr_server.fRootVrOn = GL_FALSE;
     VBoxVrListInit(&cr_server.RootVr);
@@ -485,11 +477,7 @@ GLboolean crVBoxServerInit(void)
 
     cr_server.dummyMuralTable = crAllocHashtable();
 
-    CrDemGlobalInit();
-
-    CrDemInit(&cr_server.PresentTexturepMap);
-    memset(cr_server.DisplaysInitMap, 0, sizeof (cr_server.DisplaysInitMap));
-    memset(cr_server.aDispplays, 0, sizeof (cr_server.aDispplays));
+    CrPMgrInit();
 
     cr_server.fRootVrOn = GL_FALSE;
     VBoxVrListInit(&cr_server.RootVr);
@@ -1004,7 +992,7 @@ CRMuralInfo * crServerGetDummyMural(GLint visualBits)
             crWarning("crCalloc failed!");
             return NULL;
         }
-        id = crServerMuralInit(pMural, "", visualBits, 0, GL_TRUE);
+        id = crServerMuralInit(pMural, "", visualBits, 0);
         if (id < 0)
         {
             crWarning("crServerMuralInit failed!");
@@ -1148,7 +1136,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     pData->cElements = 0;
 
     pEl = &pData->aElements[pData->cElements];
-    pEl->idFBO = pMural && (pMural->fPresentMode & CR_SERVER_REDIR_F_FBO) ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
+    pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
     pEl->enmBuffer = pData->aElements[1].idFBO ? GL_COLOR_ATTACHMENT0 : GL_FRONT;
     pEl->posX = 0;
     pEl->posY = 0;
@@ -1175,7 +1163,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     		)
     {
         pEl = &pData->aElements[pData->cElements];
-        pEl->idFBO = pMural && (pMural->fPresentMode & CR_SERVER_REDIR_F_FBO) ? pMural->aidFBOs[CR_SERVER_FBO_BB_IDX(pMural)] : 0;
+        pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_BB_IDX(pMural)] : 0;
         pEl->enmBuffer = pData->aElements[1].idFBO ? GL_COLOR_ATTACHMENT0 : GL_BACK;
         pEl->posX = 0;
         pEl->posY = 0;
@@ -1205,7 +1193,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         {
             AssertCompile(sizeof (GLfloat) == 4);
             pEl = &pData->aElements[pData->cElements];
-            pEl->idFBO = pMural && (pMural->fPresentMode & CR_SERVER_REDIR_F_FBO) ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
+            pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
             pEl->enmBuffer = 0; /* we do not care */
             pEl->posX = 0;
             pEl->posY = 0;
@@ -1236,7 +1224,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         {
             AssertCompile(sizeof (GLuint) == 4);
             pEl = &pData->aElements[pData->cElements];
-            pEl->idFBO = pMural && (pMural->fPresentMode & CR_SERVER_REDIR_F_FBO) ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
+            pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
             pEl->enmBuffer = 0; /* we do not care */
             pEl->posX = 0;
             pEl->posY = 0;
@@ -1261,7 +1249,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     		|| (pCtxInfo->CreateInfo.visualBits & CR_DEPTH_BIT))
     {
         pEl = &pData->aElements[pData->cElements];
-        pEl->idFBO = pMural && (pMural->fPresentMode & CR_SERVER_REDIR_F_FBO) ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
+        pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
         pEl->enmBuffer = 0; /* we do not care */
         pEl->posX = 0;
         pEl->posY = 0;
@@ -1718,7 +1706,7 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
         }
     }
 
-    rc = crServerDisplaySaveState(pSSM);
+    rc = CrPMgrSaveState(pSSM);
     AssertRCReturn(rc, rc);
 
     /* all context gl error states should have now be synced with chromium erro states,
@@ -2136,13 +2124,6 @@ static int32_t crVBoxServerLoadMurals(CR_SERVER_LOADSTATE_READER *pReader, uint3
         {
             crFree(muralInfo.pVisibleRects);
         }
-
-        Assert(!pActualMural->fDataPresented);
-
-        if (version >= SHCROGL_SSM_VERSION_WITH_PRESENT_STATE)
-            pActualMural->fDataPresented = muralInfo.fDataPresented;
-        else
-            pActualMural->fDataPresented = crServerVBoxCompositionPresentNeeded(pActualMural);
     }
 
     CRASSERT(RT_SUCCESS(rc));
@@ -2230,10 +2211,7 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
         CRASSERT(!pBuf->pBackImg);
         crVBoxServerFBImageDataTerm(&Data.data);
 
-        if ((pMural->fPresentMode & CR_SERVER_REDIR_F_FBO) && pMural->fDataPresented && crServerVBoxCompositionPresentNeeded(pMural))
-        {
-            crServerPresentFBO(pMural);
-        }
+        crServerPresentFBO(pMural);
 
         CRASSERT(cr_server.currentMural);
         cr_server.head_spu->dispatch_table.MakeCurrent( cr_server.currentMural->spuWindow,
@@ -2609,7 +2587,9 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 
     if (version >= SHCROGL_SSM_VERSION_WITH_SCREEN_INFO)
     {
-        rc = crServerDisplayLoadState(pSSM, version);
+        HCR_FRAMEBUFFER hFb;
+
+        rc = CrPMgrLoadState(pSSM, version);
         AssertRCReturn(rc, rc);
     }
 
@@ -2681,25 +2661,22 @@ void crVBoxServerCheckVisibilityEvent(int32_t idScreen)
     cr_server.aWinVisibilityInfos[idScreen].fVisibleChanged = 0;
 }
 
+void crServerWindowReparent(CRMuralInfo *pMural)
+{
+    pMural->fHasParentWindow = !!cr_server.screen[pMural->screenId].winID;
+
+    renderspuReparentWindow(pMural->spuWindow);
+}
+
 static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *data2)
 {
     CRMuralInfo *pMI = (CRMuralInfo*) data1;
     int *sIndex = (int*) data2;
 
-    Assert(pMI->cDisabled);
-
     if (pMI->screenId == *sIndex)
     {
         crServerWindowReparent(pMI);
     }
-}
-
-static void crVBoxServerCheckMuralCB(unsigned long key, void *data1, void *data2)
-{
-    CRMuralInfo *pMI = (CRMuralInfo*) data1;
-    (void) data2;
-
-    crServerCheckMuralGeometry(pMI);
 }
 
 DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount)
@@ -2736,8 +2713,6 @@ DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex)
 
     if (MAPPED(SCREEN(sIndex)))
     {
-        PCR_DISPLAY pDisplay = crServerDisplayGetInitialized(sIndex);
-
         SCREEN(sIndex).winID = 0;
         renderspuSetWindowId(0);
 
@@ -2745,13 +2720,10 @@ DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex)
 
         crHashtableWalk(cr_server.dummyMuralTable, crVBoxServerReparentMuralCB, &sIndex);
 
-        if (pDisplay)
-            CrDpReparent(pDisplay, &SCREEN(sIndex));
+        CrPMgrScreenChanged((uint32_t)sIndex);
     }
 
     renderspuSetWindowId(SCREEN(0).winID);
-
-    crHashtableWalk(cr_server.muralTable, crVBoxServerCheckMuralCB, NULL);
 
 /*    crVBoxServerNotifyEvent(sIndex, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, NULL); */
 
@@ -2782,8 +2754,6 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
 
     crHashtableWalk(cr_server.dummyMuralTable, crVBoxServerReparentMuralCB, &sIndex);
     renderspuSetWindowId(SCREEN(0).winID);
-
-    crHashtableWalk(cr_server.muralTable, crVBoxServerCheckMuralCB, NULL);
 
 #ifndef WINDOWS
     /*Restore FB content for clients, which have current window on a screen being remapped*/
@@ -2818,11 +2788,7 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
     }
 #endif
 
-    {
-        PCR_DISPLAY pDisplay = crServerDisplayGetInitialized(sIndex);
-        if (pDisplay)
-            CrDpReparent(pDisplay, &SCREEN(sIndex));
-    }
+    CrPMgrScreenChanged((uint32_t)sIndex);
 
     crVBoxServerNotifyEvent(sIndex, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA,
             cr_server.aWinVisibilityInfos[sIndex].cVisibleWindows ? (void*)1 : NULL);
@@ -2830,60 +2796,10 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
     return VINF_SUCCESS;
 }
 
-int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
-{
-    GLboolean fForcePresent;
-
-    int rc = VINF_SUCCESS;
-
-    fForcePresent = crServerVBoxCompositionPresentNeeded(pMI);
-
-    crServerVBoxCompositionDisableEnter(pMI);
-
-    if (cr_server.fRootVrOn)
-    {
-        if (!pMI->fRootVrOn)
-        {
-            CrVrScrCompositorInit(&pMI->RootVrCompositor);
-        }
-
-        rc = crServerMuralSynchRootVr(pMI, NULL);
-        if (!RT_SUCCESS(rc))
-        {
-            crWarning("crServerMuralSynchRootVr failed, rc %d", rc);
-            goto end;
-        }
-    }
-    else
-    {
-        CrVrScrCompositorClear(&pMI->RootVrCompositor);
-    }
-
-    pMI->fRootVrOn = cr_server.fRootVrOn;
-
-    crServerWindowVisibleRegion(pMI);
-
-end:
-    crServerVBoxCompositionDisableLeave(pMI, fForcePresent);
-
-    return rc;
-}
-
-static void crVBoxServerSetRootVisibleRegionCB(unsigned long key, void *data1, void *data2)
-{
-    CRMuralInfo *pMI = (CRMuralInfo*) data1;
-
-    if (!pMI->CreateInfo.externalID)
-        return;
-    (void) data2;
-
-    crVBoxServerUpdateMuralRootVisibleRegion(pMI);
-}
-
 DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT *pRects)
 {
     int32_t rc = VINF_SUCCESS;
-    int i;
+    GLboolean fOldRootVrOn = cr_server.fRootVrOn;
 
     /* non-zero rects pointer indicate rects are present and switched on
      * i.e. cRects==0 and pRects!=NULL means root visible regioning is ON and there are no visible regions,
@@ -2910,15 +2826,23 @@ DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT 
         cr_server.fRootVrOn = GL_FALSE;
     }
 
-    crHashtableWalk(cr_server.muralTable, crVBoxServerSetRootVisibleRegionCB, NULL);
-
-    for (i = 0; i < cr_server.screenCount; ++i)
+    if (!fOldRootVrOn != !cr_server.fRootVrOn)
     {
-        PCR_DISPLAY pDisplay = crServerDisplayGetInitialized((uint32_t)i);
-        if (!pDisplay)
-            continue;
-
-        CrDpRootUpdate(pDisplay);
+        rc = CrPMgrModeRootVr(cr_server.fRootVrOn);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrPMgrModeRootVr failed rc %d", rc);
+            return rc;
+        }
+    }
+    else if (cr_server.fRootVrOn)
+    {
+        rc = CrPMgrRootVrUpdate();
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrPMgrRootVrUpdate failed rc %d", rc);
+            return rc;
+        }
     }
 
     return VINF_SUCCESS;
@@ -2929,52 +2853,9 @@ DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO
     cr_server.pfnPresentFBO = pfnPresentFBO;
 }
 
-int32_t crServerSetOffscreenRenderingMode(GLuint value)
-{
-    /* sanitize values */
-    value = crServerRedirModeAdjust(value);
-
-    if (value == CR_SERVER_REDIR_F_NONE)
-    {
-        crWarning("crServerSetOffscreenRenderingMode: value undefined");
-    }
-
-    if (cr_server.fPresentMode==value)
-    {
-        return VINF_SUCCESS;
-    }
-
-    if ((value & CR_SERVER_REDIR_F_FBO) && !crServerSupportRedirMuralFBO())
-    {
-        crWarning("crServerSetOffscreenRenderingMode: FBO not supported");
-        return VERR_NOT_SUPPORTED;
-    }
-
-    cr_server.fPresentMode=value;
-
-    crHashtableWalk(cr_server.muralTable, crVBoxServerCheckMuralCB, NULL);
-
-    return VINF_SUCCESS;
-}
-
 DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value)
 {
-    return crServerSetOffscreenRenderingMode(value ?
-            cr_server.fPresentModeDefault | CR_SERVER_REDIR_F_FBO_RAM_VRDP | cr_server.fVramPresentModeDefault
-            : cr_server.fPresentModeDefault);
-}
-
-static void crVBoxServerOutputRedirectCB(unsigned long key, void *data1, void *data2)
-{
-    CRMuralInfo *mural = (CRMuralInfo*) data1;
-
-    if (!mural->CreateInfo.externalID)
-        return;
-
-    if (cr_server.bUseOutputRedirect)
-        crServerPresentOutputRedirect(mural);
-    else
-        crServerOutputRedirectCheckEnableDisable(mural);
+    return CrPMgrModeVrdp(value);
 }
 
 DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallbacks)
@@ -2983,35 +2864,21 @@ DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallb
     if (pCallbacks)
     {
         cr_server.outputRedirect = *pCallbacks;
-        cr_server.bUseOutputRedirect = true;
     }
     else
     {
-        cr_server.bUseOutputRedirect = false;
+        memset (&cr_server.outputRedirect, 0, sizeof (cr_server.outputRedirect));
     }
-
-    /* dynamically intercept already existing output */
-    crHashtableWalk(cr_server.muralTable, crVBoxServerOutputRedirectCB, NULL);
 
     return VINF_SUCCESS;
 }
 
-static void crVBoxServerUpdateScreenViewportCB(unsigned long key, void *data1, void *data2)
-{
-    CRMuralInfo *mural = (CRMuralInfo*) data1;
-    int *sIndex = (int*) data2;
-
-    if (mural->screenId != *sIndex)
-        return;
-
-    crServerCheckMuralGeometry(mural);
-}
-
-
 DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h)
 {
-    CRScreenViewportInfo *pVieport;
-    GLboolean fPosChanged, fSizeChanged;
+    CRScreenViewportInfo *pViewport;
+    RTRECT NewRect;
+    GLboolean fChanged;
+    int rc;
 
     crDebug("crVBoxServerSetScreenViewport(%i)", sIndex);
 
@@ -3021,38 +2888,28 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
         return VERR_INVALID_PARAMETER;
     }
 
-    pVieport = &cr_server.screenVieport[sIndex];
-    fPosChanged = (pVieport->x != x || pVieport->y != y);
-    fSizeChanged = (pVieport->w != w || pVieport->h != h);
+    NewRect.xLeft = x;
+    NewRect.yTop = y;
+    NewRect.xRight = x + w;
+    NewRect.yBottom = y + h;
 
-    if (!fPosChanged && !fSizeChanged)
+    pViewport = &cr_server.screenVieport[sIndex];
+
+    fChanged = !!memcmp(&NewRect, &pViewport->Rect, sizeof (NewRect));
+    if (!fChanged)
     {
         crDebug("crVBoxServerSetScreenViewport: no changes");
         return VINF_SUCCESS;
     }
 
-    if (fPosChanged)
+    pViewport->Rect = NewRect;
+    rc = CrPMgrViewportUpdate((uint32_t)sIndex);
+    if (!RT_SUCCESS(rc))
     {
-        pVieport->x = x;
-        pVieport->y = y;
-
-        crHashtableWalk(cr_server.muralTable, crVBoxServerUpdateScreenViewportCB, &sIndex);
+        crWarning("CrPMgrViewportUpdate failed %d", rc);
+        return rc;
     }
 
-    if (fSizeChanged)
-    {
-        pVieport->w = w;
-        pVieport->h = h;
-
-        /* no need to do anything here actually */
-    }
-
-    if (fPosChanged || fSizeChanged)
-    {
-        PCR_DISPLAY pDisplay = crServerDisplayGetInitialized(sIndex);
-        if (pDisplay)
-            CrDpResize(pDisplay, SCREEN(sIndex).x, SCREEN(sIndex).y, SCREEN(sIndex).w, SCREEN(sIndex).h);
-    }
     return VINF_SUCCESS;
 }
 
@@ -3369,7 +3226,6 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCm
 
     return rc;
 }
-
 
 int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t cbCmd)
 {

@@ -28,6 +28,8 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
     GLboolean fFirst = GL_FALSE;
 
     dpyName = "";
+    if (cr_server.fVisualBitsDefault)
+    	visualBits = cr_server.fVisualBitsDefault;
 
     if (shareCtx > 0) {
         crWarning("CRServer: context sharing not implemented.");
@@ -300,7 +302,7 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
      * crStateSwitchPrepare restores the FBO state to its default values before the context window switch,
      * while crStateSwitchPostprocess restores it back to the original values */
     oldCtx = crStateGetCurrent();
-    if (oldMural && (oldMural->fPresentMode & CR_SERVER_REDIR_F_FBO) && crServerSupportRedirMuralFBO())
+    if (oldMural && oldMural->fRedirected && crServerSupportRedirMuralFBO())
     {
         idDrawFBO = CR_SERVER_FBO_FOR_IDX(oldMural, oldMural->iCurDrawBuffer);
         idReadFBO = CR_SERVER_FBO_FOR_IDX(oldMural, oldMural->iCurReadBuffer);
@@ -382,7 +384,7 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
     /* This used to be earlier, after crStateUpdateColorBits() call */
     crStateMakeCurrent( ctx );
 
-    if (mural && (mural->fPresentMode & CR_SERVER_REDIR_F_FBO) && crServerSupportRedirMuralFBO())
+    if (mural && mural->fRedirected  && crServerSupportRedirMuralFBO())
     {
         GLuint id = crServerMuralFBOIdxFromBufferName(mural, ctx->buffer.drawBuffer);
         if (id != mural->iCurDrawBuffer)
@@ -413,7 +415,7 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
             && cr_server.curClient)
         cr_server.curClient->currentMural->bFbDraw = GL_TRUE;
 
-    if (!(mural->fPresentMode & CR_SERVER_REDIR_F_FBO))
+    if (!mural->fRedirected)
     {
         ctx->buffer.width = mural->width;
         ctx->buffer.height = mural->height;

@@ -15,11 +15,24 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#include <cr_htable.h>
-#include <iprt/mem.h>
+#include <iprt/cdefs.h>
+#include <iprt/asm.h>
+#include "cr_spu.h"
+#include "cr_vreg.h"
 
-#include <cr_error.h>
-#define WARN(_m) do { crWarning _m ; } while (0)
+#include "cr_htable.h"
+#include "cr_spu.h"
+#include "chromium.h"
+#include "cr_error.h"
+#include "cr_net.h"
+#include "cr_rand.h"
+#include "cr_mem.h"
+#include "cr_string.h"
+
+#include <iprt/cdefs.h>
+#include <iprt/types.h>
+#include <iprt/mem.h>
+#include <iprt/err.h>
 
 VBOXHTABLEDECL(int) CrHTableCreate(PCRHTABLE pTbl, uint32_t cSize)
 {
@@ -36,12 +49,12 @@ VBOXHTABLEDECL(int) CrHTableCreate(PCRHTABLE pTbl, uint32_t cSize)
     return VERR_NO_MEMORY;
 }
 
-VBOXHTABLEDECL(void) CrHTableDestroy(PCRHTABLE pTbl);
+VBOXHTABLEDECL(void) CrHTableDestroy(PCRHTABLE pTbl)
 {
     if (!pTbl->paData)
         return;
 
-    RTMemMemFree(pTbl->paData);
+    RTMemFree(pTbl->paData);
 }
 
 int crHTableRealloc(PCRHTABLE pTbl, uint32_t cNewSize)
@@ -49,7 +62,7 @@ int crHTableRealloc(PCRHTABLE pTbl, uint32_t cNewSize)
     Assert(cNewSize > pTbl->cSize);
     if (cNewSize > pTbl->cSize)
     {
-        void **pvNewData = (PVOID*)RTMemAllocZ(sizeof (pTbl->paData[0]) * cNewSize);
+        void **pvNewData = (void**)RTMemAllocZ(sizeof (pTbl->paData[0]) * cNewSize);
         if (!pvNewData)
         {
             WARN(("RTMemAllocZ failed for size (%d)", sizeof (pTbl->paData[0]) * cNewSize));
@@ -85,12 +98,12 @@ VBOXHTABLEDECL(void) CrHTableEmpty(PCRHTABLE pTbl)
 
 static void* crHTablePutToSlot(PCRHTABLE pTbl, uint32_t iSlot, void* pvData)
 {
-    void* pvOld = pTbl->paData[i];
-    pTbl->paData[i] = pvData;
+    void* pvOld = pTbl->paData[iSlot];
+    pTbl->paData[iSlot] = pvData;
     if (!pvOld)
         ++pTbl->cData;
     Assert(pTbl->cData <= pTbl->cSize);
-
+    return pvOld;
 }
 
 VBOXHTABLEDECL(int) CrHTablePutToSlot(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle, void* pvData)
@@ -111,7 +124,7 @@ VBOXHTABLEDECL(int) CrHTablePutToSlot(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle, v
     return VINF_SUCCESS;
 }
 
-VBOXHTABLEDECL(CRHTABLE_HANDLE) CrHTablePut(PCRHTABLE pTbl, PVOID pvData)
+VBOXHTABLEDECL(CRHTABLE_HANDLE) CrHTablePut(PCRHTABLE pTbl, void* pvData)
 {
     if (pTbl->cSize == pTbl->cData)
     {
@@ -122,7 +135,7 @@ VBOXHTABLEDECL(CRHTABLE_HANDLE) CrHTablePut(PCRHTABLE pTbl, PVOID pvData)
             return CRHTABLE_HANDLE_INVALID;
         }
     }
-    for (UINT i = pTbl->iNext2Search; ; ++i, i %= pTbl->cSize)
+    for (uint32_t i = pTbl->iNext2Search; ; ++i, i %= pTbl->cSize)
     {
         Assert(i < pTbl->cSize);
         if (!pTbl->paData[i])
@@ -144,7 +157,7 @@ VBOXHTABLEDECL(void*) CrHTableRemove(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle)
     Assert(iIndex < pTbl->cSize);
     if (iIndex < pTbl->cSize)
     {
-        PVOID pvData = pTbl->paData[iIndex];
+        void* pvData = pTbl->paData[iIndex];
         pTbl->paData[iIndex] = NULL;
         --pTbl->cData;
         Assert(pTbl->cData <= pTbl->cSize);
