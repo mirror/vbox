@@ -80,14 +80,22 @@ void write_dword(uint16_t seg, uint16_t offset, uint32_t data)
 
 uint8_t inb_cmos(uint8_t cmos_reg)
 {
-    outb(0x70, cmos_reg);
-    return inb(0x71);
+    uint8_t     cmos_port = 0x70;
+
+    if (cmos_reg >= 0x80)
+        cmos_port += 2;
+    outb(cmos_port, cmos_reg);
+    return inb(cmos_port + 1);
 }
 
 void outb_cmos(uint8_t cmos_reg, uint8_t val)
 {
-    outb(0x70, cmos_reg);
-    outb(0x71, val);
+    uint8_t     cmos_port = 0x70;
+
+    if (cmos_reg >= 0x80)
+        cmos_port += 2;
+    outb(cmos_port, cmos_reg);
+    outb(cmos_port + 1, val);
 }
 
 void BIOSCALL dummy_isr_function(pusha_regs_t regs, uint16_t es,
