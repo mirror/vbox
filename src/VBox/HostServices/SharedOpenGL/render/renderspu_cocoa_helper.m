@@ -372,11 +372,11 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 - (void)swapFBO;
 - (void)vboxTryDraw;
 - (void)vboxTryDrawUI;
-- (void)vboxPresent:(PVBOXVR_SCR_COMPOSITOR)pCompositor;
-- (void)vboxPresentCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor;
-- (void)vboxPresentToDockTileCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor;
-- (void)vboxPresentToViewCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor;
-- (void)presentComposition:(PVBOXVR_SCR_COMPOSITOR_ENTRY)pChangedEntry;
+- (void)vboxPresent:(const VBOXVR_SCR_COMPOSITOR*)pCompositor;
+- (void)vboxPresentCS:(const VBOXVR_SCR_COMPOSITOR*)pCompositor;
+- (void)vboxPresentToDockTileCS:(const VBOXVR_SCR_COMPOSITOR*)pCompositor;
+- (void)vboxPresentToViewCS:(const VBOXVR_SCR_COMPOSITOR*)pCompositor;
+- (void)presentComposition:(const VBOXVR_SCR_COMPOSITOR_ENTRY*)pChangedEntry;
 - (void)vboxBlitterSyncWindow;
 
 - (void)clearVisibleRegions;
@@ -789,13 +789,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 {
     [self deleteDockTile];
     
-    if (m_pGLCtx)
-    {
-        if ([m_pGLCtx view] == self)
-            [m_pGLCtx clearDrawable];
-
-        m_pGLCtx = nil;
-    }
+    [self setGLCtx:nil];
+    
     if (m_pSharedGLCtx)
     {
         if ([m_pSharedGLCtx view] == self)
@@ -806,6 +801,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
         m_pSharedGLCtx = nil;
         
         CrBltTerm(m_pBlitter);
+        
+        RTMemFree(m_pBlitter);
         
         m_pBlitter = nil;
     }
@@ -835,9 +832,15 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
     /* ensure the context drawable is cleared to avoid holding a reference to inexistent view */
     if (m_pGLCtx)
+    {
         [m_pGLCtx clearDrawable];
+        [m_pGLCtx release];
+        /*[m_pGLCtx performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];*/
+    }
 
     m_pGLCtx = pCtx;
+    if (pCtx)
+        [pCtx retain];
 }
 
 - (NSOpenGLContext*)glCtx
@@ -1112,7 +1115,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     GLint opaque       = 0;
     if ([self lockFocusIfCanDraw])
     {
-        VBOXVR_SCR_COMPOSITOR *pCompositor = NULL;
+        const const VBOXVR_SCR_COMPOSITOR *pCompositor = NULL;
         if (!m_pSharedGLCtx)
 	    {
 	    	pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
@@ -1122,7 +1125,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
                 m_pBlitter = RTMemAlloc(sizeof (*m_pBlitter));
                 if (m_pBlitter)
                 {
-                    int rc = CrBltInit(m_pBlitter, NULL, false, false, &render_spu.GlobalShaders, render_spu.blitterDispatch);
+                    int rc = CrBltInit(m_pBlitter, NULL, false, false, &render_spu.GlobalShaders, &render_spu.blitterDispatch);
                     if (RT_SUCCESS(rc))
                     {
                         DEBUG_MSG(("blitter created successfully for view 0x%p\n", (void*)self));
@@ -1217,7 +1220,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
              * crOpenGL service thread does compositor lock acquire and calls cocoa NS methods that could synchronize on the GUI thread
              * while here we do a reverse order: acquire compositor lock being in gui thread.
              * this is why we do only try acquire and re-submit repaint event if compositor lock is busy */
-             VBOXVR_SCR_COMPOSITOR *pCompositor = NULL;
+            const VBOXVR_SCR_COMPOSITOR *pCompositor = NULL;
             int rc = renderspuVBoxCompositorTryAcquire(m_pWinInfo, &pCompositor);
             if (RT_SUCCESS(rc))
             {
@@ -1227,19 +1230,21 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
             }
             else if (rc == VERR_SEM_BUSY)
             {
+                Assert(!pCompositor);
                 /* re-issue to the gui thread */
 # ifdef DEBUG_misha
                 DEBUG_WARN(("renderspuVBoxCompositorTryAcquire busy\n"));
 # endif 
                 [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(vboxTryDrawUI) userInfo:nil repeats:NO];
             }
-            else
+            else if (rc != VERR_INVALID_STATE) /* VERR_INVALID_STATE means no compositor, which is ok */
             {
+                Assert(!pCompositor);
                 /* this is somewhat we do not expect */
                 DEBUG_WARN(("renderspuVBoxCompositorTryAcquire failed rc %d", rc));
             }
 #else
-	    	VBOXVR_SCR_COMPOSITOR *pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
+	    	const VBOXVR_SCR_COMPOSITOR *pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
 	    	if (pCompositor)
 	    	{
 	    		[self vboxPresent:pCompositor];
@@ -1260,7 +1265,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     [m_pGLCtx flushBuffer];
 }
 
-- (void)vboxPresent:(PVBOXVR_SCR_COMPOSITOR)pCompositor
+- (void)vboxPresent:(const VBOXVR_SCR_COMPOSITOR*)pCompositor
 {
     VBOX_CR_RENDER_CTX_INFO CtxInfo;    
     
@@ -1284,7 +1289,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     vboxCtxLeave(&CtxInfo);
 }
 
-- (void)vboxPresentCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor
+- (void)vboxPresentCS:(const VBOXVR_SCR_COMPOSITOR*)pCompositor
 {
         {
             if ([m_pSharedGLCtx view] != self)
@@ -1337,17 +1342,17 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     pRect->yBottom = (int)((pR->origin.y + pR->size.height) * yStretch);
 }
 
-- (void)vboxPresentToViewCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor
+- (void)vboxPresentToViewCS:(const VBOXVR_SCR_COMPOSITOR*)pCompositor
 {
     NSRect r = [self frame];
     float xStretch, yStretch;
     DEBUG_MSG(("OVIW(%p): rF2V frame: [%i, %i, %i, %i]\n", (void*)self, (int)r.origin.x, (int)r.origin.y, (int)r.size.width, (int)r.size.height));
 
 #if 1 /* Set to 0 to see the docktile instead of the real output */
-    VBOXVR_SCR_COMPOSITOR_ITERATOR CIter;
-    PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry;
+    VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR CIter;
+    const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry;
         
-    CrVrScrCompositorIterInit(pCompositor, &CIter);
+    CrVrScrCompositorConstIterInit(pCompositor, &CIter);
         
     glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
     glDrawBuffer(GL_BACK);
@@ -1357,7 +1362,7 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     
     CrVrScrCompositorGetStretching(pCompositor, &xStretch, &yStretch);
         
-    while ((pEntry = CrVrScrCompositorIterNext(&CIter)) != NULL)
+    while ((pEntry = CrVrScrCompositorConstIterNext(&CIter)) != NULL)
     {
         uint32_t cRegions;
         const RTRECT *paSrcRegions, *paDstRegions;
@@ -1366,15 +1371,16 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
         if (RT_SUCCESS(rc))
         {
             uint32_t i;
-            int rc = CrBltEnter(m_pBlitter, NULL, NULL);
+            int rc = CrBltEnter(m_pBlitter);
             if (RT_SUCCESS(rc))
             {                   
                 for (i = 0; i < cRegions; ++i)
                 {
                     const RTRECT * pSrcRect = &paSrcRegions[i];
                     const RTRECT * pDstRect = &paDstRegions[i];
-                    RTRECT SrcRect, DstRect, RestrictSrcRect, RestrictDstRect;
-                    
+                    RTRECT DstRect, RestrictDstRect;
+                    RTRECT SrcRect, RestrictSrcRect;
+
                     vboxNSRectToRect(&m_RootRect, &RestrictDstRect);
                     VBoxRectIntersected(&RestrictDstRect, pDstRect, &DstRect);
                     
@@ -1382,8 +1388,9 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
                         continue;
 
                     VBoxRectTranslate(&DstRect, -RestrictDstRect.xLeft, -RestrictDstRect.yTop);
-                        
+
                     vboxNSRectToRectUnstretched(&m_RootRect, &RestrictSrcRect, xStretch, yStretch);
+                    VBoxRectTranslate(&RestrictSrcRect, -CrVrScrCompositorEntryRectGet(pEntry)->xLeft, -CrVrScrCompositorEntryRectGet(pEntry)->yTop);
                     VBoxRectIntersected(&RestrictSrcRect, pSrcRect, &SrcRect);
                     
                     if (VBoxRectIsZero(&SrcRect))
@@ -1392,7 +1399,9 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
                     pSrcRect = &SrcRect;
                     pDstRect = &DstRect;
                     
-                    CrBltBlitTexMural(m_pBlitter, true, &pEntry->Tex, pSrcRect, pDstRect, 1, fFlags | CRBLT_F_NOALPHA);
+                    const CR_TEXDATA *pTexData = CrVrScrCompositorEntryTexGet(pEntry);
+                    
+                    CrBltBlitTexMural(m_pBlitter, true, CrTdTexGet(pTexData), pSrcRect, pDstRect, 1, fFlags | CRBLT_F_NOALPHA);
                 }
                 CrBltLeave(m_pBlitter);
             }
@@ -1415,7 +1424,7 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
             [m_pSharedGLCtx flushBuffer];
 }
 
-- (void)presentComposition:(PVBOXVR_SCR_COMPOSITOR_ENTRY)pChangedEntry
+- (void)presentComposition:(const VBOXVR_SCR_COMPOSITOR_ENTRY*)pChangedEntry
 {
     [self vboxTryDraw];
 }
@@ -1437,16 +1446,16 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     Assert(WinInfo.width = m_RootRect.size.width);
     Assert(WinInfo.height = m_RootRect.size.height);
 
-    /*CrBltMuralSetCurrent(m_pBlitter, NULL);*/
+    /*CrBltMuralSetCurrentInfo(m_pBlitter, NULL);*/
     
-    CrBltMuralSetCurrent(m_pBlitter, &WinInfo);
+    CrBltMuralSetCurrentInfo(m_pBlitter, &WinInfo);
     CrBltCheckUpdateViewport(m_pBlitter);
 }
 
 #ifdef VBOX_WITH_CRDUMPER_THUMBNAIL
 static int g_cVBoxTgaCtr = 0;
 #endif
-- (void)vboxPresentToDockTileCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor
+- (void)vboxPresentToDockTileCS:(const VBOXVR_SCR_COMPOSITOR*)pCompositor
 {
     NSRect r        = [self frame];
     NSRect rr       = NSZeroRect;
@@ -1459,8 +1468,8 @@ static int g_cVBoxTgaCtr = 0;
         /* Only update after at least 200 ms, cause glReadPixels is
          * heavy performance wise. */
         uint64_t uiNewTime = RTTimeMilliTS();
-        VBOXVR_SCR_COMPOSITOR_ITERATOR CIter;
-        PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry;
+        VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR CIter;
+        const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry;
         
         if (uiNewTime - m_uiDockUpdateTime > 200)
         {
@@ -1491,8 +1500,8 @@ static int g_cVBoxTgaCtr = 0;
             
             CrVrScrCompositorGetStretching(pCompositor, &xStretch, &yStretch);
             
-            CrVrScrCompositorIterInit(pCompositor, &CIter);
-            while ((pEntry = CrVrScrCompositorIterNext(&CIter)) != NULL)
+            CrVrScrCompositorConstIterInit(pCompositor, &CIter);
+            while ((pEntry = CrVrScrCompositorConstIterNext(&CIter)) != NULL)
             {
                 uint32_t cRegions;
                 const RTRECT *paSrcRegions, *paDstRegions;
@@ -1501,7 +1510,7 @@ static int g_cVBoxTgaCtr = 0;
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t i;
-                    int rc = CrBltEnter(m_pBlitter, NULL, NULL);
+                    int rc = CrBltEnter(m_pBlitter);
                     if (RT_SUCCESS(rc))
                     {                   
                         for (i = 0; i < cRegions; ++i)
@@ -1521,6 +1530,7 @@ static int g_cVBoxTgaCtr = 0;
                                 continue;
                         
                             vboxNSRectToRectUnstretched(&m_RootRect, &RestrictSrcRect, xStretch, yStretch);
+                            VBoxRectTranslate(&RestrictSrcRect, -CrVrScrCompositorEntryRectGet(pEntry)->xLeft, -CrVrScrCompositorEntryRectGet(pEntry)->yTop);
                             VBoxRectIntersected(&RestrictSrcRect, pSrcRect, &SrcRect);
                     
                             if (VBoxRectIsZero(&SrcRect))
@@ -1529,7 +1539,9 @@ static int g_cVBoxTgaCtr = 0;
                             pSrcRect = &SrcRect;
                             pDstRect = &DstRect;
                             
-                            CrBltBlitTexMural(m_pBlitter, true, &pEntry->Tex, pSrcRect, pDstRect, 1, fFlags);
+                            const CR_TEXDATA *pTexData = CrVrScrCompositorEntryTexGet(pEntry);
+                            
+                            CrBltBlitTexMural(m_pBlitter, true, CrTdTexGet(pTexData), pSrcRect, pDstRect, 1, fFlags);
                         }
                         CrBltLeave(m_pBlitter);
                     }
@@ -1746,9 +1758,8 @@ void cocoaGLCtxDestroy(NativeNSOpenGLContextRef pCtx)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
-    /*
     [pCtx release];
-    */
+    /*[pCtx performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];*/
 
     [pPool release];
 }
@@ -1905,7 +1916,7 @@ void cocoaViewGetGeometry(NativeNSViewRef pView, int *pX, int *pY, int *pW, int 
     [pPool release];
 }
 
-void cocoaViewPresentComposition(NativeNSViewRef pView, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry)
+void cocoaViewPresentComposition(NativeNSViewRef pView, const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
     NSOpenGLContext *pCtx;

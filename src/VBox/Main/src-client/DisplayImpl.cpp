@@ -496,6 +496,9 @@ HRESULT Display::init(Console *aParent)
         RT_ZERO(maFramebuffers[ul].vbvaSkippedRect);
         maFramebuffers[ul].pVBVAHostFlags = NULL;
 #endif /* VBOX_WITH_HGSMI */
+#ifdef VBOX_WITH_CROGL
+        RT_ZERO(maFramebuffers[ul].pendingViewportInfo);
+#endif
     }
 
     {
@@ -649,6 +652,33 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId
         return VINF_VGA_RESIZE_IN_PROGRESS;
     }
 
+    return VINF_SUCCESS;
+}
+
+int Display::notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM)
+{
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+    BOOL is3denabled;
+    mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+
+    if (is3denabled)
+    {
+        VBOXHGCMSVCPARM parm[SHCRGL_CPARMS_DEV_RESIZE];
+
+        parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
+        parm[0].u.pointer.addr = (void*)pScreen;
+        parm[0].u.pointer.size = sizeof (*pScreen);
+        parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
+        parm[1].u.pointer.addr = (void*)pvVRAM;
+        parm[1].u.pointer.size = 0;
+
+        VMMDev *pVMMDev = mParent->getVMMDev();
+
+        if (pVMMDev)
+            return pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_DEV_RESIZE, SHCRGL_CPARMS_DEV_RESIZE, parm);
+        return VERR_INVALID_STATE;
+    }
+#endif /* #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL) */
     return VINF_SUCCESS;
 }
 
@@ -3151,33 +3181,33 @@ STDMETHODIMP Display::CompleteVHWACommand(BYTE *pCommand)
 STDMETHODIMP Display::ViewportChanged(ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
 {
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+
+    if (mcMonitors <= aScreenId)
+    {
+        AssertMsgFailed(("invalid screen id\n"));
+        return E_INVALIDARG;
+    }
+
     BOOL is3denabled;
     mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
 
     if (is3denabled)
     {
-        VBOXHGCMSVCPARM aParms[5];
-
-        aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
-        aParms[0].u.uint32 = aScreenId;
-
-        aParms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
-        aParms[1].u.uint32 = x;
-
-        aParms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
-        aParms[2].u.uint32 = y;
-
-
-        aParms[3].type = VBOX_HGCM_SVC_PARM_32BIT;
-        aParms[3].u.uint32 = width;
-
-        aParms[4].type = VBOX_HGCM_SVC_PARM_32BIT;
-        aParms[4].u.uint32 = height;
-
         VMMDev *pVMMDev = mParent->getVMMDev();
 
         if (pVMMDev)
-            pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_VIEWPORT_CHANGED, SHCRGL_CPARMS_VIEWPORT_CHANGED, aParms);
+        {
+            crViewportNotify(pVMMDev, aScreenId, x, y, width, height);
+        }
+        else
+        {
+            DISPLAYFBINFO *pFb = &maFramebuffers[aScreenId];
+            pFb->pendingViewportInfo.fPending = true;
+            pFb->pendingViewportInfo.x = x;
+            pFb->pendingViewportInfo.y = y;
+            pFb->pendingViewportInfo.width = width;
+            pFb->pendingViewportInfo.height = height;
+        }
     }
 #endif /* VBOX_WITH_CROGL && VBOX_WITH_HGCM */
     return S_OK;
@@ -3265,6 +3295,32 @@ int Display::updateDisplayData(void)
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_CROGL
+void Display::crViewportNotify(VMMDev *pVMMDev, ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
+{
+    VBOXHGCMSVCPARM aParms[5];
+
+    aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
+    aParms[0].u.uint32 = aScreenId;
+
+    aParms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
+    aParms[1].u.uint32 = x;
+
+    aParms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
+    aParms[2].u.uint32 = y;
+
+
+    aParms[3].type = VBOX_HGCM_SVC_PARM_32BIT;
+    aParms[3].u.uint32 = width;
+
+    aParms[4].type = VBOX_HGCM_SVC_PARM_32BIT;
+    aParms[4].u.uint32 = height;
+
+    pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_VIEWPORT_CHANGED, SHCRGL_CPARMS_VIEWPORT_CHANGED, aParms);
+
+}
+#endif
+
 #ifdef VBOX_WITH_CRHGSMI
 void Display::setupCrHgsmiData(void)
 {
@@ -3291,7 +3347,21 @@ void Display::setupCrHgsmiData(void)
 
         rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_CRHGSMI_CTL, 1, &parm);
         if (RT_SUCCESS(rc))
+        {
+            ULONG ul;
+
+            for (ul = 0; ul < mcMonitors; ul++)
+            {
+                DISPLAYFBINFO *pFb = &maFramebuffers[ul];
+                if (!pFb->pendingViewportInfo.fPending)
+                    continue;
+
+                crViewportNotify(pVMMDev, ul, pFb->pendingViewportInfo.x, pFb->pendingViewportInfo.y, pFb->pendingViewportInfo.width, pFb->pendingViewportInfo.height);
+                pFb->pendingViewportInfo.fPending = false;
+            }
+
             return;
+        }
 
         AssertMsgFailed(("VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP_COMPLETION failed rc %d", rc));
     }
@@ -4302,6 +4372,8 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
 
     if (pScreen->u16Flags & VBVA_SCREEN_F_DISABLED)
     {
+        pThis->notifyCroglResize(pView, pScreen, pvVRAM);
+
         pFBInfo->fDisabled = true;
         pFBInfo->flags = pScreen->u16Flags;
 
@@ -4325,17 +4397,6 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
      */
     bool fResize = pFBInfo->fDisabled || pFBInfo->pFramebuffer.isNull();
 
-    if (pFBInfo->fDisabled)
-    {
-        pFBInfo->fDisabled = false;
-        fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
-                                     GuestMonitorChangedEventType_Enabled,
-                                     pScreen->u32ViewIndex,
-                                     pScreen->i32OriginX, pScreen->i32OriginY,
-                                     pScreen->u32Width, pScreen->u32Height);
-        /* Continue to update pFBInfo. */
-    }
-
     /* Check if this is a real resize or a notification about the screen origin.
      * The guest uses this VBVAResize call for both.
      */
@@ -4348,6 +4409,20 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
 
     bool fNewOrigin =    pFBInfo->xOrigin != pScreen->i32OriginX
                       || pFBInfo->yOrigin != pScreen->i32OriginY;
+
+    if (fNewOrigin || fResize)
+        pThis->notifyCroglResize(pView, pScreen, pvVRAM);
+
+    if (pFBInfo->fDisabled)
+    {
+        pFBInfo->fDisabled = false;
+        fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+                                     GuestMonitorChangedEventType_Enabled,
+                                     pScreen->u32ViewIndex,
+                                     pScreen->i32OriginX, pScreen->i32OriginY,
+                                     pScreen->u32Width, pScreen->u32Height);
+        /* Continue to update pFBInfo. */
+    }
 
     pFBInfo->u32Offset = pView->u32ViewOffset; /* Not used in HGSMI. */
     pFBInfo->u32MaxFramebufferSize = pView->u32MaxScreenSize; /* Not used in HGSMI. */
@@ -4373,27 +4448,6 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
                                      pScreen->i32OriginX, pScreen->i32OriginY,
                                      0, 0);
     }
-
-#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-    if (fNewOrigin && !fResize)
-    {
-        BOOL is3denabled;
-        pThis->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-
-        if (is3denabled)
-        {
-            VBOXHGCMSVCPARM parm;
-
-            parm.type = VBOX_HGCM_SVC_PARM_32BIT;
-            parm.u.uint32 = pScreen->u32ViewIndex;
-
-            VMMDev *pVMMDev = pThis->mParent->getVMMDev();
-
-            if (pVMMDev)
-                pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED, SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
-        }
-    }
-#endif /* VBOX_WITH_CROGL */
 
     if (!fResize)
     {

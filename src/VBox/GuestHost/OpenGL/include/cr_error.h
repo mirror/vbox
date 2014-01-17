@@ -24,10 +24,20 @@ extern "C" {
 #define PRINTF
 #endif
 
+#ifndef IN_RING0
+#define LOG(_m) do { crDebug _m ; } while (0)
+#define LOGREL(_m) do { crDebug _m ; } while (0)
+#define WARN(_m) do { crWarning _m ; AssertMsgFailed(_m); } while (0)
+#else
+#define LOG(_m) do { } while (0)
+#define LOGREL(_m) do { } while (0)
+#define WARN(_m) do { AssertMsgFailed(_m); } while (0)
+#endif
+
 DECLEXPORT(void) crEnableWarnings(int onOff);
 
 DECLEXPORT(void) crDebug(const char *format, ... ) PRINTF;
-#ifdef DEBUG_misha
+#if defined(DEBUG_misha) && defined(RT_OS_WINDOWS)
 typedef void FNCRDEBUG(const char *format, ... ) PRINTF;
 typedef FNCRDEBUG *PFNCRDEBUG;
 DECLINLINE(PFNCRDEBUG) crGetDebug() {return crDebug;}

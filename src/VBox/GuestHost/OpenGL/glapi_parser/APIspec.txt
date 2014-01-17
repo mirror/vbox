@@ -8594,8 +8594,8 @@ chromium    nopack
 name        VBoxPresentComposition
 return      void
 param       win              GLint
-param       pCompositor      struct VBOXVR_SCR_COMPOSITOR *
-param       pChangedEntry    struct VBOXVR_SCR_COMPOSITOR_ENTRY *
+param       pCompositor      const struct VBOXVR_SCR_COMPOSITOR *
+param       pChangedEntry    const struct VBOXVR_SCR_COMPOSITOR_ENTRY *
 category    VBox
 chromium    nopack
 

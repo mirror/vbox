@@ -198,15 +198,6 @@ void VBoxMpCrShgsmiTransportTerm(PVBOXMP_CRSHGSMITRANSPORT pCon)
 //    vboxMpCrShgsmiBufCacheTerm(pCon, &pCon->CmdDrCache);
 }
 
-//typedef struct VBOXMP_CRHGSMICMD_HDR
-//{
-//    union
-//    {
-//        PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION pfnWriteReadCompletion;
-//        PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEASYNC_COMPLETION pfnWriteCompletion;
-//    };
-//} VBOXMP_CRHGSMICMD_HDR, *PVBOXMP_CRHGSMICMD_HDR;
-
 typedef struct VBOXMP_CRHGSMICMD_BASE
 {
 //    VBOXMP_CRHGSMICMD_HDR Hdr;
@@ -899,7 +890,6 @@ void VBoxMpCrCtlConInit()
     rc = VBoxMpCrCtlConDisconnect(&CrCtlCon, u32ClientID);
     if (RT_FAILURE(rc))
         WARN(("VBoxMpCrCtlConDisconnect failed rc (%d), ignoring..", rc));
-#else
 #endif
 }
 

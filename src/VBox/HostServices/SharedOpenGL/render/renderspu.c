@@ -765,7 +765,7 @@ renderspuWindowShow( GLint win, GLint flag )
 }
 
 static void RENDER_APIENTRY
-renderspuVBoxPresentComposition( GLint win, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
+renderspuVBoxPresentComposition( GLint win, const struct VBOXVR_SCR_COMPOSITOR * pCompositor, const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
 {
     WindowInfo *window;
     CRASSERT(win >= 0);
@@ -788,12 +788,12 @@ renderspuVBoxPresentComposition( GLint win, struct VBOXVR_SCR_COMPOSITOR * pComp
     }
 }
 
-void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter, GLfloat scaleX, GLfloat scaleY)
+void renderspuVBoxCompositorBlitStretched ( const struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter, GLfloat scaleX, GLfloat scaleY)
 {
-    VBOXVR_SCR_COMPOSITOR_ITERATOR CIter;
-    PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry;
-    CrVrScrCompositorIterInit(pCompositor, &CIter);
-    while ((pEntry = CrVrScrCompositorIterNext(&CIter)) != NULL)
+    VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR CIter;
+    const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry;
+    CrVrScrCompositorConstIterInit(pCompositor, &CIter);
+    while ((pEntry = CrVrScrCompositorConstIterNext(&CIter)) != NULL)
     {
         uint32_t cRegions;
         const RTRECT *paSrcRegions, *paDstRegions;
@@ -805,11 +805,12 @@ void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pComp
             for (i = 0; i < cRegions; ++i)
             {
                 RTRECT DstRect;
+                const CR_TEXDATA *pTexData = CrVrScrCompositorEntryTexGet(pEntry);
                 DstRect.xLeft = paDstRegions[i].xLeft * scaleX;
                 DstRect.yTop = paDstRegions[i].yTop * scaleY;
                 DstRect.xRight = paDstRegions[i].xRight * scaleX;
                 DstRect.yBottom = paDstRegions[i].yBottom * scaleY;
-                CrBltBlitTexMural(pBlitter, true, &pEntry->Tex, &paSrcRegions[i], &DstRect, 1, fFlags);
+                CrBltBlitTexMural(pBlitter, true, CrTdTexGet(pTexData), &paSrcRegions[i], &DstRect, 1, fFlags);
             }
         }
         else
@@ -819,12 +820,12 @@ void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pComp
     }
 }
 
-void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter)
+void renderspuVBoxCompositorBlit ( const struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter)
 {
-    VBOXVR_SCR_COMPOSITOR_ITERATOR CIter;
-    PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry;
-    CrVrScrCompositorIterInit(pCompositor, &CIter);
-    while ((pEntry = CrVrScrCompositorIterNext(&CIter)) != NULL)
+    VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR CIter;
+    const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry;
+    CrVrScrCompositorConstIterInit(pCompositor, &CIter);
+    while ((pEntry = CrVrScrCompositorConstIterNext(&CIter)) != NULL)
     {
         uint32_t cRegions;
         const RTRECT *paSrcRegions, *paDstRegions;
@@ -832,7 +833,8 @@ void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, P
         uint32_t fFlags = CrVrScrCompositorEntryFlagsCombinedGet(pCompositor, pEntry);
         if (RT_SUCCESS(rc))
         {
-            CrBltBlitTexMural(pBlitter, true, &pEntry->Tex, paSrcRegions, paDstRegions, cRegions, fFlags);
+            const CR_TEXDATA *pTexData = CrVrScrCompositorEntryTexGet(pEntry);
+            CrBltBlitTexMural(pBlitter, true, CrTdTexGet(pTexData), paSrcRegions, paDstRegions, cRegions, fFlags);
         }
         else
         {
@@ -849,15 +851,15 @@ void renderspuVBoxPresentBlitterCleanup( WindowInfo *window )
     if (render_spu.blitterTable)
     {
         const CR_BLITTER_WINDOW * pBltInfo = CrBltMuralGetCurrentInfo(window->pBlitter);
-        if (pBltInfo->Base.id == window->BltInfo.Base.id)
+        if (pBltInfo && pBltInfo->Base.id == window->BltInfo.Base.id)
         {
-            CrBltMuralSetCurrent(window->pBlitter, NULL);
+            CrBltMuralSetCurrentInfo(window->pBlitter, NULL);
         }
     }
     else
     {
         CRASSERT(CrBltMuralGetCurrentInfo(window->pBlitter)->Base.id == window->BltInfo.Base.id);
-        CrBltMuralSetCurrent(window->pBlitter, NULL);
+        CrBltMuralSetCurrentInfo(window->pBlitter, NULL);
         CrBltTerm(window->pBlitter);
     }
     window->pBlitter = NULL;
@@ -894,7 +896,7 @@ PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window )
                 return NULL;
             }
 
-            rc = CrBltInit(pBlitter, &pDefaultCtxInfo->BltInfo, true, true, NULL, render_spu.blitterDispatch);
+            rc = CrBltInit(pBlitter, &pDefaultCtxInfo->BltInfo, true, true, NULL, &render_spu.blitterDispatch);
 
             /* we can release it either way, since it will be retained when used as a shared context */
             renderspuDefaultSharedContextRelease(pDefaultCtxInfo);
@@ -919,29 +921,17 @@ PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window )
         window->pBlitter = pBlitter;
     }
 
-    CrBltMuralSetCurrent(pBlitter, &window->BltInfo);
+    CrBltMuralSetCurrentInfo(pBlitter, &window->BltInfo);
     return pBlitter;
 }
 
 int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter, int32_t i32MakeCurrentUserData)
 {
     int rc;
-    PCR_BLITTER_CONTEXT pCtxInfo = NULL;
-    PCR_BLITTER_WINDOW pWindowInfo = NULL;
-    GET_CONTEXT(pCtx);
-
-    if (pCtx)
-    {
-        if (pCtx->currentWindow)
-        {
-            pCtxInfo = &pCtx->BltInfo;
-            pWindowInfo =  &pCtx->currentWindow->BltInfo;
-        }
-    }
 
     CrBltSetMakeCurrentUserData(pBlitter, i32MakeCurrentUserData);
 
-    rc = CrBltEnter(pBlitter, pCtxInfo, pWindowInfo);
+    rc = CrBltEnter(pBlitter);
     if (!RT_SUCCESS(rc))
     {
         crWarning("CrBltEnter failed, rc %d", rc);
@@ -968,7 +958,7 @@ PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window, int32_
 {
     if (!window->pBlitter)
     {
-        struct VBOXVR_SCR_COMPOSITOR * pTmpCompositor;
+        const struct VBOXVR_SCR_COMPOSITOR * pTmpCompositor;
         /* just use compositor lock to synchronize */
         pTmpCompositor = renderspuVBoxCompositorAcquire(window);
         CRASSERT(pTmpCompositor);
@@ -1005,7 +995,7 @@ PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window, int32_
     return window->pBlitter;
 }
 
-void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry, int32_t i32MakeCurrentUserData )
+void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR * pCompositor, const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry, int32_t i32MakeCurrentUserData )
 {
     PCR_BLITTER pBlitter = renderspuVBoxPresentBlitterGetAndEnter(window, i32MakeCurrentUserData);
     if (!pBlitter)
@@ -1018,7 +1008,7 @@ void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, struct VBOXVR_S
     CrBltLeave(pBlitter);
 }
 
-void renderspuVBoxCompositorSet( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor)
+void renderspuVBoxCompositorSet( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR * pCompositor)
 {
     int rc;
     /* renderspuVBoxCompositorSet can be invoked from the chromium thread only and is not reentrant,
@@ -1055,12 +1045,12 @@ void renderspuVBoxCompositorClearAll()
     crHashtableWalkUnlocked(render_spu.windowTable, renderspuVBoxCompositorClearAllCB, NULL);
 }
 
-struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo *window)
+const struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo *window)
 {
     int rc = RTCritSectEnter(&window->CompositorLock);
     if (RT_SUCCESS(rc))
     {
-        VBOXVR_SCR_COMPOSITOR * pCompositor = window->pCompositor;
+        const VBOXVR_SCR_COMPOSITOR * pCompositor = window->pCompositor;
         if (pCompositor)
             return pCompositor;
 
@@ -1088,7 +1078,7 @@ int renderspuVBoxCompositorUnlock(WindowInfo *window)
     return rc;
 }
 
-int renderspuVBoxCompositorTryAcquire(WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR **ppCompositor)
+int renderspuVBoxCompositorTryAcquire(WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR **ppCompositor)
 {
     int rc = RTCritSectTryEnter(&window->CompositorLock);
     if (RT_SUCCESS(rc))
@@ -1549,6 +1539,13 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
             }
         }
         break;
+
+    case GL_HH_SET_TMPCTX_MAKE_CURRENT:
+    	if (type == GL_BYTE && count == sizeof (void*))
+    		memcpy(&render_spu.blitterDispatch.MakeCurrent, values, count);
+    	else
+    		crWarning("unexpected type(%#x) - count(%d) pair", type, count);
+    	break;
 
     default:
 #if 0

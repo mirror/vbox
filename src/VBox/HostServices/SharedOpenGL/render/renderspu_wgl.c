@@ -430,7 +430,7 @@ MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
             WindowInfo *pWindow = (WindowInfo *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
             if (pWindow)
             {
-                struct VBOXVR_SCR_COMPOSITOR * pCompositor;
+                const struct VBOXVR_SCR_COMPOSITOR * pCompositor;
 
                 pCompositor = renderspuVBoxCompositorAcquire(pWindow);
                 if (pCompositor)
@@ -1251,14 +1251,14 @@ void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
     window->visible = showIt;
 }
 
-void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
+void renderspu_SystemVBoxPresentComposition( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
 {
     /* the CR_RENDER_FORCE_PRESENT_MAIN_THREAD is actually inherited from cocoa backend impl,
      * here it forces rendering in WinCmd thread rather than a Main thread.
      * it is used for debugging only in any way actually.
      * @todo: change to some more generic macro name */
 #ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
-    struct VBOXVR_SCR_COMPOSITOR *pCompositor;
+    const struct VBOXVR_SCR_COMPOSITOR *pCompositor;
     /* we do not want to be blocked with the GUI thread here, so only draw her eif we are really able to do that w/o bllocking */
     int rc = renderspuVBoxCompositorTryAcquire(window, &pCompositor);
     if (RT_SUCCESS(rc))

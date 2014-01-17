@@ -101,6 +101,17 @@ typedef struct _DISPLAYFBINFO
     } vbvaSkippedRect;
     PVBVAHOSTFLAGS pVBVAHostFlags;
 #endif /* VBOX_WITH_HGSMI */
+
+#ifdef VBOX_WITH_CROGL
+    struct
+    {
+        bool fPending;
+        ULONG x;
+        ULONG y;
+        ULONG width;
+        ULONG height;
+    } pendingViewportInfo;
+#endif /* VBOX_WITH_CROGL */
 } DISPLAYFBINFO;
 
 class DisplayMouseInterface
@@ -111,6 +122,8 @@ public:
     virtual void getFramebufferDimensions(int32_t *px1, int32_t *py1,
                                           int32_t *px2, int32_t *py2) = 0;
 };
+
+class VMMDev;
 
 class ATL_NO_VTABLE Display :
     public VirtualBoxBase,
@@ -156,6 +169,8 @@ public:
     void handleCrHgsmiCommandCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam);
     void handleCrHgsmiControlCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam);
 #endif
+    int notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM);
+
     IFramebuffer *getFramebuffer()
     {
         return maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer;
@@ -208,6 +223,10 @@ private:
 #ifdef VBOX_WITH_CRHGSMI
     void setupCrHgsmiData(void);
     void destructCrHgsmiData(void);
+#endif
+
+#ifdef VBOX_WITH_CROGL
+    void crViewportNotify(class VMMDev *pVMMDev, ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height);
 #endif
 
     static DECLCALLBACK(int)   changeFramebuffer(Display *that, IFramebuffer *aFB, unsigned uScreenId);

@@ -51,11 +51,7 @@ setDefaults(void)
     cr_server.uniqueWindows = 0;
 
     cr_server.screenCount = 0;
-    cr_server.fPresentMode = CR_SERVER_REDIR_F_NONE;
-    cr_server.fPresentModeDefault = cr_server.fPresentMode;
-    cr_server.fVramPresentModeDefault = CR_SERVER_REDIR_F_FBO_RAM;
     cr_server.bUsePBOForReadback = GL_FALSE;
-    cr_server.bUseOutputRedirect = GL_FALSE;
     cr_server.bWindowsInitiallyHidden = GL_FALSE;
 
     cr_server.cDisableEvents = 0;
@@ -216,31 +212,17 @@ void crServerSetVBoxConfiguration()
     cr_server.head_spu =
         crSPULoadChain(num_spus, spu_ids, spu_names, spu_dir, &cr_server);
 
-    env = crGetenv( "CR_SERVER_DEFAULT_RENDER_TYPE" );
+    env = crGetenv( "CR_SERVER_DEFAULT_VISUAL_BITS" );
     if (env != NULL && env[0] != '\0')
     {
-        unsigned int redir = (unsigned int)crServerVBoxParseNumerics(env, CR_SERVER_REDIR_F_NONE);
-        if (redir <= CR_SERVER_REDIR_F_ALL)
-        {
-            int rc = crServerSetOffscreenRenderingMode(redir);
-            if (!RT_SUCCESS(rc))
-                crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
-        }
+        unsigned int bits = (unsigned int)crServerVBoxParseNumerics(env, 0);
+        if (bits <= CR_ALL_BITS)
+            cr_server.fVisualBitsDefault = bits;
         else
-            crWarning("invalid redir option %c", redir);
+            crWarning("invalid bits option %c", bits);
     }
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(GLX)
-    if (cr_server.fPresentMode == CR_SERVER_REDIR_F_NONE)
-    {
-        /* the CR_SERVER_REDIR_F_FBO_BLT is set only if parent window is received, which means we are not in headles */
-        int rc = crServerSetOffscreenRenderingMode(CR_SERVER_REDIR_F_FBO | CR_SERVER_REDIR_F_DISPLAY);
-        if (!RT_SUCCESS(rc))
-            crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
-
-    }
-#endif
-    cr_server.fPresentModeDefault = cr_server.fPresentMode;
-    cr_server.fVramPresentModeDefault = CR_SERVER_REDIR_F_FBO_RAM/* | CR_SERVER_REDIR_F_FBO_RPW*/;
+    else
+        cr_server.fVisualBitsDefault = CR_RGB_BIT | CR_ALPHA_BIT | CR_DOUBLE_BIT;
 
     env = crGetenv("CR_SERVER_CAPS");
     if (env && env[0] != '\0')
@@ -257,14 +239,9 @@ void crServerSetVBoxConfiguration()
 
     }
 
-    if (!(cr_server.fPresentModeDefault & CR_SERVER_REDIR_F_FBO))
-    {
-        /* can not do tex present in case CR_SERVER_REDIR_F_FBO is disabled */
-        cr_server.u32Caps &= ~CR_VBOX_CAP_TEX_PRESENT;
-    }
-
-    crInfo("Cfg: fPresentModeDefault(%#x), fVramPresentModeDefault(%#x), u32Caps(%#x)",
-            cr_server.fPresentModeDefault, cr_server.fVramPresentModeDefault, cr_server.u32Caps);
+    crInfo("Cfg: u32Caps(%#x), fVisualBitsDefault(%#x)",
+            cr_server.u32Caps,
+            cr_server.fVisualBitsDefault);
 
     /* Need to do this as early as possible */
 
@@ -384,31 +361,18 @@ void crServerSetVBoxConfigurationHGCM()
     if (!cr_server.head_spu)
         return;
 
-    env = crGetenv( "CR_SERVER_DEFAULT_RENDER_TYPE" );
+
+    env = crGetenv( "CR_SERVER_DEFAULT_VISUAL_BITS" );
     if (env != NULL && env[0] != '\0')
     {
-        unsigned int redir = (unsigned int)crServerVBoxParseNumerics(env, CR_SERVER_REDIR_F_NONE);
-        if (redir <= CR_SERVER_REDIR_F_ALL)
-        {
-            int rc = crServerSetOffscreenRenderingMode(redir);
-            if (!RT_SUCCESS(rc))
-                crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
-        }
+        unsigned int bits = (unsigned int)crServerVBoxParseNumerics(env, 0);
+        if (bits <= CR_ALL_BITS)
+            cr_server.fVisualBitsDefault = bits;
         else
-            crWarning("invalid redir option %c", redir);
+            crWarning("invalid bits option %c", bits);
     }
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(GLX)
-    if (cr_server.fPresentMode == CR_SERVER_REDIR_F_NONE)
-    {
-        /* the CR_SERVER_REDIR_F_FBO_BLT is set only if parent window is received, which means we are not in headles */
-        int rc = crServerSetOffscreenRenderingMode(CR_SERVER_REDIR_F_FBO | CR_SERVER_REDIR_F_DISPLAY);
-        if (!RT_SUCCESS(rc))
-            crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
-
-    }
-#endif
-    cr_server.fPresentModeDefault = cr_server.fPresentMode;
-    cr_server.fVramPresentModeDefault = CR_SERVER_REDIR_F_FBO_RAM/* | CR_SERVER_REDIR_F_FBO_RPW*/;
+    else
+        cr_server.fVisualBitsDefault = CR_RGB_BIT | CR_ALPHA_BIT | CR_DOUBLE_BIT;
 
     env = crGetenv("CR_SERVER_CAPS");
     if (env && env[0] != '\0')
@@ -424,14 +388,9 @@ void crServerSetVBoxConfigurationHGCM()
 #endif
     }
 
-    if (!(cr_server.fPresentModeDefault & CR_SERVER_REDIR_F_FBO))
-    {
-        /* can not do tex present in case CR_SERVER_REDIR_F_FBO is disabled */
-        cr_server.u32Caps &= ~CR_VBOX_CAP_TEX_PRESENT;
-    }
-
-    crInfo("Cfg: fPresentModeDefault(%#x), fVramPresentModeDefault(%#x), u32Caps(%#x)",
-            cr_server.fPresentModeDefault, cr_server.fVramPresentModeDefault, cr_server.u32Caps);
+    crInfo("Cfg: u32Caps(%#x), fVisualBitsDefault(%#x)",
+            cr_server.u32Caps,
+            cr_server.fVisualBitsDefault);
 
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_POSITION_CR, 0, GL_INT, 2, &dims[0]);
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, 0, GL_INT, 2, &dims[2]);

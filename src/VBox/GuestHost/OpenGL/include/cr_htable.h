@@ -21,6 +21,8 @@
 #include <iprt/types.h>
 #include <iprt/cdefs.h>
 
+#include <cr_error.h>
+
 #ifndef IN_RING0
 # define VBOXHTABLEDECL(_type) DECLEXPORT(_type)
 #else
@@ -75,7 +77,7 @@ DECLINLINE(void*) CrHTableIterNext(PCRHTABLE_ITERATOR pIter, CRHTABLE_HANDLE *ph
     if (!pIter->cLeft)
     {
         if (phHandle)
-            *phHandle = NULL;
+            *phHandle = 0;
         return NULL;
     }
 
@@ -93,7 +95,7 @@ DECLINLINE(void*) CrHTableIterNext(PCRHTABLE_ITERATOR pIter, CRHTABLE_HANDLE *ph
         }
     }
 
-    WARN(("interator concurent modification!"));
+    crWarning("interator concurent modification!");
     return NULL;
 }
 
@@ -101,7 +103,7 @@ VBOXHTABLEDECL(int) CrHTableCreate(PCRHTABLE pTbl, uint32_t cSize);
 DECLINLINE(void) CrHTableMoveTo(PCRHTABLE pSrcTbl, PCRHTABLE pDstTbl)
 {
     *pDstTbl = *pSrcTbl;
-    CrHTableCreate(pSrcTbl);
+    CrHTableCreate(pSrcTbl, 0);
 }
 VBOXHTABLEDECL(void) CrHTableEmpty(PCRHTABLE pTbl);
 VBOXHTABLEDECL(void) CrHTableDestroy(PCRHTABLE pTbl);
@@ -113,5 +115,6 @@ VBOXHTABLEDECL(int) CrHTablePutToSlot(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle, v
 VBOXHTABLEDECL(void*) CrHTableRemove(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle);
 VBOXHTABLEDECL(void*) CrHTableGet(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle);
 
+RT_C_DECLS_END
 
 #endif /* #ifndef ___cr_htable_h_*/
