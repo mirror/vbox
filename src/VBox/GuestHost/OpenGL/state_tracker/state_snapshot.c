@@ -1426,7 +1426,7 @@ static int32_t crStateSaveKeys(CRHashTable *pHash, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-static int32_t crStateLoadKeys(CRHashTable *pHash, PSSMHANDLE pSSM)
+static int32_t crStateLoadKeys(CRHashTable *pHash, PSSMHANDLE pSSM, uint32_t u32Version)
 {
     uint32_t u32Key, u32Count, i;
     int rc;
@@ -1443,10 +1443,13 @@ static int32_t crStateLoadKeys(CRHashTable *pHash, PSSMHANDLE pSSM)
 
         CRASSERT(u32Count);
 
-        for (i = u32Key; i < u32Count + u32Key; ++i)
+        if (u32Version > SHCROGL_SSM_VERSION_WITH_BUGGY_KEYS)
         {
-            GLboolean fIsNew = crHashtableAllocRegisterKey(pHash, i);
-            CRASSERT(fIsNew);
+            for (i = u32Key; i < u32Count + u32Key; ++i)
+            {
+                GLboolean fIsNew = crHashtableAllocRegisterKey(pHash, i);
+                CRASSERT(fIsNew);
+            }
         }
     }
 
@@ -2231,7 +2234,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
 
         if (u32Version >= SHCROGL_SSM_VERSION_WITH_ALLOCATED_KEYS)
         {
-            rc = crStateLoadKeys(pContext->shared->buffersTable, pSSM);
+            rc = crStateLoadKeys(pContext->shared->buffersTable, pSSM, u32Version);
             AssertRCReturn(rc, rc);
         }
 
@@ -2341,7 +2344,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
     {
         if (u32Version >= SHCROGL_SSM_VERSION_WITH_ALLOCATED_KEYS)
         {
-            rc = crStateLoadKeys(pContext->shared->textureTable, pSSM);
+            rc = crStateLoadKeys(pContext->shared->textureTable, pSSM, u32Version);
             AssertRCReturn(rc, rc);
         }
     }
@@ -2470,7 +2473,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
     {
         if (u32Version >= SHCROGL_SSM_VERSION_WITH_ALLOCATED_KEYS)
         {
-            rc = crStateLoadKeys(pContext->shared->fbTable, pSSM);
+            rc = crStateLoadKeys(pContext->shared->fbTable, pSSM, u32Version);
             AssertRCReturn(rc, rc);
         }
 
@@ -2495,7 +2498,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
 
         if (u32Version >= SHCROGL_SSM_VERSION_WITH_ALLOCATED_KEYS)
         {
-            rc = crStateLoadKeys(pContext->shared->rbTable, pSSM);
+            rc = crStateLoadKeys(pContext->shared->rbTable, pSSM, u32Version);
             AssertRCReturn(rc, rc);
         }
 

@@ -217,7 +217,7 @@ void crHashIdPoolFreeBlock( CRHashIdPool *pool, GLuint first, GLuint count )
          * so we have either intersection */
 
         if (f->min > first)
-            f->min = first; /* first is guarantied not to touch any prev regions */
+            f->min = first; /* first is guaranteed not to touch any prev regions */
 
         newMax = last;
 
@@ -352,8 +352,12 @@ void crHashIdWalkKeys( CRHashIdPool *pool, CRHashIdWalkKeys walkFunc , void *dat
     {
         if (prev)
         {
-            Assert(prev->max < (f->min - 1));
-            walkFunc(prev->max+1, f->min - 1, data);
+            Assert(prev->max < f->min);
+            walkFunc(prev->max+1, f->min - prev->max, data);
+        }
+        else if (f->min > pool->min)
+        {
+            walkFunc(pool->min, f->min - pool->min, data);
         }
 
         prev = f;
@@ -363,7 +367,7 @@ void crHashIdWalkKeys( CRHashIdPool *pool, CRHashIdWalkKeys walkFunc , void *dat
 
     if (prev->max < pool->max)
     {
-        walkFunc(prev->max+1, pool->max, data);
+        walkFunc(prev->max+1, pool->max - prev->max, data);
     }
 }
 

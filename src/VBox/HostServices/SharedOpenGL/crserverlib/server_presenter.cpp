@@ -1804,6 +1804,28 @@ public:
         return VINF_SUCCESS;
     }
 
+    virtual int EntryTexChanged(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
+    {
+        int rc = CrFbDisplayBase::EntryTexChanged(pFb, hEntry);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("err"));
+            return rc;
+        }
+
+        if (mpWindow->GetParentId())
+        {
+            rc = mpWindow->Create();
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
+                return rc;
+            }
+        }
+
+        return VINF_SUCCESS;
+    }
+
     virtual int EntryRemoved(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
     {
         int rc = CrFbDisplayBase::EntryRemoved(pFb, hEntry);
@@ -2832,8 +2854,8 @@ static HCR_FRAMEBUFFER crPMgrFbGetNextEnabled(uint32_t i)
 HCR_FRAMEBUFFER CrPMgrFbGetFirstEnabled()
 {
     HCR_FRAMEBUFFER hFb = crPMgrFbGetNextEnabled(0);
-    if (!hFb)
-        WARN(("no enabled framebuffer found"));
+//    if (!hFb)
+//        WARN(("no enabled framebuffer found"));
     return hFb;
 }
 
