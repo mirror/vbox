@@ -150,10 +150,10 @@ public: /* IUnknown methods. */
 
 public: /* IDropTarget methods. */
 
-	STDMETHOD(DragEnter)(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect);
-	STDMETHOD(DragOver)(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect);
-	STDMETHOD(DragLeave)(void);
-	STDMETHOD(Drop)(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect);
+    STDMETHOD(DragEnter)(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect);
+    STDMETHOD(DragOver)(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect);
+    STDMETHOD(DragLeave)(void);
+    STDMETHOD(Drop)(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect);
 
 protected:
 
@@ -173,19 +173,19 @@ class VBoxDnDEnumFormatEtc : public IEnumFORMATETC
 {
 public:
 
-	VBoxDnDEnumFormatEtc(FORMATETC *pFormatEtc, ULONG cFormats);
-	virtual ~VBoxDnDEnumFormatEtc(void);
+    VBoxDnDEnumFormatEtc(FORMATETC *pFormatEtc, ULONG cFormats);
+    virtual ~VBoxDnDEnumFormatEtc(void);
 
 public:
 
-	STDMETHOD(QueryInterface)(REFIID iid, void ** ppvObject);
-	STDMETHOD_(ULONG, AddRef)(void);
-	STDMETHOD_(ULONG, Release)(void);
+    STDMETHOD(QueryInterface)(REFIID iid, void ** ppvObject);
+    STDMETHOD_(ULONG, AddRef)(void);
+    STDMETHOD_(ULONG, Release)(void);
 
-	STDMETHOD(Next)(ULONG cFormats, FORMATETC *pFormatEtc, ULONG *pcFetched);
-	STDMETHOD(Skip)(ULONG cFormats);
-	STDMETHOD(Reset)(void);
-	STDMETHOD(Clone)(IEnumFORMATETC ** ppEnumFormatEtc);
+    STDMETHOD(Next)(ULONG cFormats, FORMATETC *pFormatEtc, ULONG *pcFetched);
+    STDMETHOD(Skip)(ULONG cFormats);
+    STDMETHOD(Reset)(void);
+    STDMETHOD(Clone)(IEnumFORMATETC ** ppEnumFormatEtc);
 
 public:
 
@@ -194,10 +194,10 @@ public:
 
 private:
 
-	LONG		m_lRefCount;
-	ULONG		m_nIndex;
-	ULONG		m_nNumFormats;
-	FORMATETC * m_pFormatEtc;
+    LONG        m_lRefCount;
+    ULONG       m_nIndex;
+    ULONG       m_nNumFormats;
+    FORMATETC * m_pFormatEtc;
 };
 
 struct VBOXDNDCONTEXT;
