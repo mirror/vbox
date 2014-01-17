@@ -3211,9 +3211,14 @@ int CrFbSaveState(CR_FRAMEBUFFER *pFb, PSSMHANDLE pSSM)
 
     while ((pEntry = CrVrScrCompositorConstIterNext(&Iter)) != NULL)
     {
-        HCR_FRAMEBUFFER_ENTRY hEntry = CrFbEntryFromCompositorEntry(pEntry);
-        rc = CrFbEntrySaveState(pFb, hEntry, pSSM);
-        AssertRCReturn(rc, rc);
+        CR_TEXDATA *pTexData = CrVrScrCompositorEntryTexGet(pEntry);
+        CR_FBTEX *pFbTex = PCR_FBTEX_FROM_TEX(pTexData);
+        if (pFbTex->pTobj)
+        {
+            HCR_FRAMEBUFFER_ENTRY hEntry = CrFbEntryFromCompositorEntry(pEntry);
+            rc = CrFbEntrySaveState(pFb, hEntry, pSSM);
+            AssertRCReturn(rc, rc);
+        }
     }
 
     return VINF_SUCCESS;
