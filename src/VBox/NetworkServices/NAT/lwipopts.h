@@ -115,8 +115,6 @@
 /** Attempt to get rid of htons etc. macro issues. */
 #undef LWIP_PREFIX_BYTEORDER_FUNCS
 
-#define LWIP_NOASSERT 0
-
 #define LWIP_TCPIP_CORE_LOCKING_INPUT 0
 #define LWIP_TCPIP_CORE_LOCKING 0
 #define LWIP_TCP 1
