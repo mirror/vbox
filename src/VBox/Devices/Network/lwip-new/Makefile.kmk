@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk$
+# $Id$
 ## @file
 # Adds sources list and defines required to LWIP pre-1.5.0 compilation
 #
