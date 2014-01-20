@@ -5,7 +5,7 @@
  *  A template to generate a XPCOM IDL compatible interface definition file
  *  from the generic interface definition expressed in XML.
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2014 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -102,19 +102,6 @@
 #include "nsISupports.idl"
 #include "nsIException.idl"
 
-%{C++
-/**
- * For escaping compound expression so they don't cause trouble when -pedantic
- * is used.
- * @internal
- */
-#if defined(__cplusplus) &amp;&amp; defined(__GNUC__)
-# define VBOX_GCC_EXTENSION __extension__
-#endif
-#ifndef VBOX_GCC_EXTENSION
-# define VBOX_GCC_EXTENSION
-#endif
-%}
 </xsl:text>
   <!-- native typedefs for the 'mod="ptr"' attribute -->
   <xsl:text>
@@ -199,8 +186,16 @@
  *  libraries
 -->
 <xsl:template match="library">
-  <!-- result codes -->
   <xsl:text>%{C++&#x0A;</xsl:text>
+  <xsl:text>#ifndef VBOX_EXTERN_C&#x0A;</xsl:text>
+  <xsl:text># ifdef __cplusplus&#x0A;</xsl:text>
+  <xsl:text>#  define VBOX_EXTERN_C extern "C"&#x0A;</xsl:text>
+  <xsl:text># else // !__cplusplus&#x0A;</xsl:text>
+  <xsl:text>#  define VBOX_EXTERN_C extern&#x0A;</xsl:text>
+  <xsl:text># endif // !__cplusplus&#x0A;</xsl:text>
+  <xsl:text>#endif // !VBOX_EXTERN_C&#x0A;</xsl:text>
+  <!-- result codes -->
+  <xsl:text>// result codes declared in API spec&#x0A;</xsl:text>
   <xsl:for-each select="result">
     <xsl:apply-templates select="."/>
   </xsl:for-each>
@@ -289,8 +284,12 @@
   <xsl:value-of select="@name"/>
   <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
   <xsl:value-of select="@name"/>
-  <xsl:text>_TO (base::)&#x0A;</xsl:text>
+  <xsl:text>_TO (base::)&#x0A;&#x0A;</xsl:text>
   <!-- -->
+  <xsl:text>// for compatibility with Win32&#x0A;</xsl:text>
+  <xsl:text>VBOX_EXTERN_C const nsID IID_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>;&#x0A;</xsl:text>
   <xsl:text>%}&#x0A;&#x0A;</xsl:text>
   <!-- end -->
 </xsl:template>
@@ -660,6 +659,11 @@
 <xsl:template match="module/class">
   <!-- class and contract id -->
   <xsl:text>%{C++&#x0A;</xsl:text>
+  <xsl:text>// Definitions for module </xsl:text>
+  <xsl:value-of select="../@name"/>
+  <xsl:text>, class </xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>:&#x0A;</xsl:text>
   <xsl:text>#define NS_</xsl:text>
   <xsl:call-template name="uppercase">
     <xsl:with-param name="str" select="@name"/>
@@ -690,13 +694,9 @@
   <xsl:text>;1&quot;&#x0A;</xsl:text>
   <!-- CLSID_xxx declarations for XPCOM, for compatibility with Win32 -->
   <xsl:text>// for compatibility with Win32&#x0A;</xsl:text>
-  <xsl:text>#define CLSID_</xsl:text>
+  <xsl:text>VBOX_EXTERN_C const nsCID CLSID_</xsl:text>
   <xsl:value-of select="@name"/>
-  <xsl:text> VBOX_GCC_EXTENSION (nsCID) NS_</xsl:text>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="str" select="@name"/>
-  </xsl:call-template>
-  <xsl:text>_CID&#x0A;</xsl:text>
+  <xsl:text>;&#x0A;</xsl:text>
   <xsl:text>%}&#x0A;&#x0A;</xsl:text>
 </xsl:template>
 
