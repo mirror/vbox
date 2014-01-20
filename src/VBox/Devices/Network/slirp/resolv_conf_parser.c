@@ -51,10 +51,6 @@ enum RCP_TOKEN {
 
 #define RCP_BUFFER_SIZE 256
 
-/* If ctypes.h doesn't have definition for isblank(3) */
-#ifndef isblank
-# define isblank(c) ((c) == '\t' || (c) == '\ ')
-#endif
 
 struct rcp_parser
 {
@@ -84,7 +80,7 @@ static int rcp_get_token(struct rcp_parser *parser)
     char *ptr;
     size_t ptr_len;
 
-    while (isblank(tok))
+    while (isspace(tok))
         tok = GETCHAR(parser);
 
     ptr = parser->rcpp_str_buffer;
