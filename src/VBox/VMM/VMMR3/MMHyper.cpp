@@ -51,7 +51,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
  * @returns The heap size in bytes.
  * @param   pVM     Pointer to the VM.
  */
-static uint32_t mmR3HyperHeapComputeSize(PVM pVM)
+static uint32_t mmR3HyperComputeHeapSize(PVM pVM)
 {
     /*
      * Gather parameters.
@@ -123,7 +123,7 @@ int mmR3HyperInit(PVM pVM)
      */
     PCFGMNODE pMM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM");
     uint32_t cbHyperHeap;
-    int rc = CFGMR3QueryU32Def(pMM, "cbHyperHeap", &cbHyperHeap, mmR3HyperHeapComputeSize(pVM));
+    int rc = CFGMR3QueryU32Def(pMM, "cbHyperHeap", &cbHyperHeap, mmR3HyperComputeHeapSize(pVM));
     AssertLogRelRCReturn(rc, rc);
 
     cbHyperHeap = RT_ALIGN_32(cbHyperHeap, PAGE_SIZE);
@@ -148,7 +148,8 @@ int mmR3HyperInit(PVM pVM)
          */
         AssertRelease(pVM->cbSelf == RT_UOFFSETOF(VM, aCpus[pVM->cCpus]));
         RTGCPTR GCPtr;
-        rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
+        rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM",
+                               &GCPtr);
         if (RT_SUCCESS(rc))
         {
             pVM->pVMRC = (RTRCPTR)GCPtr;
@@ -351,7 +352,8 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
             /*
              * Accepted!
              */
-            AssertMsg(GCPtrOld == pVM->mm.s.pvHyperAreaGC, ("GCPtrOld=%RGv pVM->mm.s.pvHyperAreaGC=%RGv\n", GCPtrOld, pVM->mm.s.pvHyperAreaGC));
+            AssertMsg(GCPtrOld == pVM->mm.s.pvHyperAreaGC,
+                      ("GCPtrOld=%RGv pVM->mm.s.pvHyperAreaGC=%RGv\n", GCPtrOld, pVM->mm.s.pvHyperAreaGC));
             Log(("Relocating the hypervisor from %RGv to %RGv\n", GCPtrOld, GCPtrNew));
 
             /*
@@ -411,9 +413,11 @@ VMMR3DECL(int) MMR3LockCall(PVM pVM)
  * @param   pszDesc     Description.
  * @param   pGCPtr      Where to store the GC address.
  */
-VMMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTR0PTR pvR0, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr)
+VMMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTR0PTR pvR0, RTHCPHYS HCPhys, size_t cb,
+                                  const char *pszDesc, PRTGCPTR pGCPtr)
 {
-    LogFlow(("MMR3HyperMapHCPhys: pvR3=%p pvR0=%p HCPhys=%RHp cb=%d pszDesc=%p:{%s} pGCPtr=%p\n", pvR3, pvR0, HCPhys, (int)cb, pszDesc, pszDesc, pGCPtr));
+    LogFlow(("MMR3HyperMapHCPhys: pvR3=%p pvR0=%p HCPhys=%RHp cb=%d pszDesc=%p:{%s} pGCPtr=%p\n",
+             pvR3, pvR0, HCPhys, (int)cb, pszDesc, pszDesc, pGCPtr));
 
     /*
      * Validate input.
@@ -613,7 +617,8 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
  * @param   pszDesc     Mapping description.
  * @param   pGCPtr      Where to store the GC address corresponding to pvR3.
  */
-VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages, const char *pszDesc, PRTGCPTR pGCPtr)
+VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages,
+                                 const char *pszDesc, PRTGCPTR pGCPtr)
 {
     LogFlow(("MMR3HyperMapPages: pvR3=%p pvR0=%p cPages=%zu paPages=%p pszDesc=%p:{%s} pGCPtr=%p\n",
              pvR3, pvR0, cPages, paPages, pszDesc, pszDesc, pGCPtr));
@@ -645,7 +650,9 @@ VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPage
         {
             for (size_t i = 0; i < cPages; i++)
             {
-                AssertReleaseMsgReturn(paPages[i].Phys != 0 && paPages[i].Phys != NIL_RTHCPHYS && !(paPages[i].Phys & PAGE_OFFSET_MASK),
+                AssertReleaseMsgReturn(   paPages[i].Phys != 0
+                                       && paPages[i].Phys != NIL_RTHCPHYS
+                                       && !(paPages[i].Phys & PAGE_OFFSET_MASK),
                                        ("i=%#zx Phys=%RHp %s\n", i, paPages[i].Phys, pszDesc),
                                        VERR_INTERNAL_ERROR);
                 paHCPhysPages[i] = paPages[i].Phys;
@@ -1430,3 +1437,4 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
         pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
     }
 }
+
