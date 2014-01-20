@@ -323,6 +323,9 @@ typedef struct VGAState {
         R3PTRTYPE(void *)           p3dState;
         /** R3 Opaque pointer to a copy of the first 32k of the framebuffer before switching into svga mode. */
         R3PTRTYPE(void *)           pFrameBufferBackup;
+#if HC_ARCH_BITS == 32
+        uint32_t                    Padding3;
+#endif
         /** Guest physical address of the FIFO memory range. */
         RTGCPHYS                    GCPhysFIFO;
         /** Size in bytes of the FIFO memory range. */
