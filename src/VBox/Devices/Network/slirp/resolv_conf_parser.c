@@ -291,8 +291,8 @@ static enum RCP_TOKEN rcp_parse_nameserver(struct rcp_parser *parser)
                     if ((st->rcps_flags & RCPSF_IGNORE_IPV6) != 0)
                         return rcp_get_token(parser);
 
-                    rc = inet_net_pton(AF_INET6, parser->rcpp_str_buffer,
-                                       &address->uAddr.IPv6, sizeof(address->uAddr.IPv6));
+                    rc = inet_pton(AF_INET6, parser->rcpp_str_buffer,
+                                       &address->uAddr.IPv6);
                     if (rc == -1)
                         return tok_error;
 
