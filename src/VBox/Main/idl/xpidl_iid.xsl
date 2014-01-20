@@ -51,7 +51,7 @@
 #ifndef nsID_h__
 struct nsID
 {
-    unsigned long m0;
+    unsigned int m0;
     unsigned short m1;
     unsigned short m2;
     unsigned char m3[8];
