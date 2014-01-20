@@ -100,7 +100,7 @@ typedef struct CR_PRESENTER_GLOBALS
     uint32_t u32DisplayMode;
     CRHashTable *pFbTexMap;
     CR_FBDISPLAY_INFO aDisplayInfos[CR_MAX_GUEST_MONITORS];
-    uint8_t aFramebufferInitMap[(CR_MAX_GUEST_MONITORS+7)/8];
+    CR_FBMAP FramebufferInitMap;
     CR_FRAMEBUFFER aFramebuffers[CR_MAX_GUEST_MONITORS];
 } CR_PRESENTER_GLOBALS;
 
@@ -214,9 +214,14 @@ void CrFbTerm(CR_FRAMEBUFFER *pFb)
         WARN(("update in progress"));
         return;
     }
+    uint32_t idScreen = pFb->ScreenInfo.u32ViewIndex;
+
     CrVrScrCompositorClear(&pFb->Compositor);
     CrHTableDestroy(&pFb->SlotTable);
     memset(pFb, 0, sizeof (*pFb));
+
+    pFb->ScreenInfo.u16Flags = VBVA_SCREEN_F_DISABLED;
+    pFb->ScreenInfo.u32ViewIndex = idScreen;
 }
 
 ICrFbDisplay* CrFbDisplayGet(CR_FRAMEBUFFER *pFb)
@@ -276,85 +281,6 @@ typedef struct CR_FBTEX
 #define CR_PMGR_MODE_ALL    0x7
 
 static int crPMgrModeModifyGlobal(uint32_t u32Mode, bool fEnable);
-
-int CrPMgrInit()
-{
-    int rc = VINF_SUCCESS;
-    memset(&g_CrPresenter, 0, sizeof (g_CrPresenter));
-    g_CrPresenter.pFbTexMap = crAllocHashtable();
-    if (g_CrPresenter.pFbTexMap)
-    {
-#ifndef VBOXVDBG_MEMCACHE_DISABLE
-        rc = RTMemCacheCreate(&g_CrPresenter.FbEntryLookasideList, sizeof (CR_FRAMEBUFFER_ENTRY),
-                                0, /* size_t cbAlignment */
-                                UINT32_MAX, /* uint32_t cMaxObjects */
-                                NULL, /* PFNMEMCACHECTOR pfnCtor*/
-                                NULL, /* PFNMEMCACHEDTOR pfnDtor*/
-                                NULL, /* void *pvUser*/
-                                0 /* uint32_t fFlags*/
-                                );
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTMemCacheCreate(&g_CrPresenter.FbTexLookasideList, sizeof (CR_FBTEX),
-                                        0, /* size_t cbAlignment */
-                                        UINT32_MAX, /* uint32_t cMaxObjects */
-                                        NULL, /* PFNMEMCACHECTOR pfnCtor*/
-                                        NULL, /* PFNMEMCACHEDTOR pfnDtor*/
-                                        NULL, /* void *pvUser*/
-                                        0 /* uint32_t fFlags*/
-                                        );
-            if (RT_SUCCESS(rc))
-            {
-                rc = RTMemCacheCreate(&g_CrPresenter.CEntryLookasideList, sizeof (VBOXVR_SCR_COMPOSITOR_ENTRY),
-                                            0, /* size_t cbAlignment */
-                                            UINT32_MAX, /* uint32_t cMaxObjects */
-                                            NULL, /* PFNMEMCACHECTOR pfnCtor*/
-                                            NULL, /* PFNMEMCACHEDTOR pfnDtor*/
-                                            NULL, /* void *pvUser*/
-                                            0 /* uint32_t fFlags*/
-                                            );
-                if (RT_SUCCESS(rc))
-                {
-#endif
-                    rc = crPMgrModeModifyGlobal(CR_PMGR_MODE_WINDOW, true);
-                    if (RT_SUCCESS(rc))
-                        return VINF_SUCCESS;
-                    else
-                        WARN(("crPMgrModeModifyGlobal failed rc %d", rc));
-#ifndef VBOXVDBG_MEMCACHE_DISABLE
-                    RTMemCacheDestroy(g_CrPresenter.CEntryLookasideList);
-                }
-                else
-                    WARN(("RTMemCacheCreate failed rc %d", rc));
-
-                RTMemCacheDestroy(g_CrPresenter.FbTexLookasideList);
-            }
-            else
-                WARN(("RTMemCacheCreate failed rc %d", rc));
-
-            RTMemCacheDestroy(g_CrPresenter.FbEntryLookasideList);
-        }
-        else
-            WARN(("RTMemCacheCreate failed rc %d", rc));
-#endif
-    }
-    else
-    {
-        WARN(("crAllocHashtable failed"));
-        rc = VERR_NO_MEMORY;
-    }
-    return rc;
-}
-
-void CrPMgrTerm()
-{
-#ifndef VBOXVDBG_MEMCACHE_DISABLE
-    RTMemCacheDestroy(g_CrPresenter.FbEntryLookasideList);
-    RTMemCacheDestroy(g_CrPresenter.FbTexLookasideList);
-    RTMemCacheDestroy(g_CrPresenter.CEntryLookasideList);
-#endif
-    crFreeHashtable(g_CrPresenter.pFbTexMap, NULL);
-}
 
 static CR_FBTEX* crFbTexAlloc()
 {
@@ -2797,6 +2723,109 @@ int crServerDisplayLoadState(PSSMHANDLE pSSM, uint32_t u32Version)
 }
 #endif
 
+int CrPMgrInit()
+{
+    int rc = VINF_SUCCESS;
+    memset(&g_CrPresenter, 0, sizeof (g_CrPresenter));
+    g_CrPresenter.pFbTexMap = crAllocHashtable();
+    if (g_CrPresenter.pFbTexMap)
+    {
+#ifndef VBOXVDBG_MEMCACHE_DISABLE
+        rc = RTMemCacheCreate(&g_CrPresenter.FbEntryLookasideList, sizeof (CR_FRAMEBUFFER_ENTRY),
+                                0, /* size_t cbAlignment */
+                                UINT32_MAX, /* uint32_t cMaxObjects */
+                                NULL, /* PFNMEMCACHECTOR pfnCtor*/
+                                NULL, /* PFNMEMCACHEDTOR pfnDtor*/
+                                NULL, /* void *pvUser*/
+                                0 /* uint32_t fFlags*/
+                                );
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTMemCacheCreate(&g_CrPresenter.FbTexLookasideList, sizeof (CR_FBTEX),
+                                        0, /* size_t cbAlignment */
+                                        UINT32_MAX, /* uint32_t cMaxObjects */
+                                        NULL, /* PFNMEMCACHECTOR pfnCtor*/
+                                        NULL, /* PFNMEMCACHEDTOR pfnDtor*/
+                                        NULL, /* void *pvUser*/
+                                        0 /* uint32_t fFlags*/
+                                        );
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTMemCacheCreate(&g_CrPresenter.CEntryLookasideList, sizeof (VBOXVR_SCR_COMPOSITOR_ENTRY),
+                                            0, /* size_t cbAlignment */
+                                            UINT32_MAX, /* uint32_t cMaxObjects */
+                                            NULL, /* PFNMEMCACHECTOR pfnCtor*/
+                                            NULL, /* PFNMEMCACHEDTOR pfnDtor*/
+                                            NULL, /* void *pvUser*/
+                                            0 /* uint32_t fFlags*/
+                                            );
+                if (RT_SUCCESS(rc))
+                {
+#endif
+                    rc = crPMgrModeModifyGlobal(CR_PMGR_MODE_WINDOW, true);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    else
+                        WARN(("crPMgrModeModifyGlobal failed rc %d", rc));
+#ifndef VBOXVDBG_MEMCACHE_DISABLE
+                    RTMemCacheDestroy(g_CrPresenter.CEntryLookasideList);
+                }
+                else
+                    WARN(("RTMemCacheCreate failed rc %d", rc));
+
+                RTMemCacheDestroy(g_CrPresenter.FbTexLookasideList);
+            }
+            else
+                WARN(("RTMemCacheCreate failed rc %d", rc));
+
+            RTMemCacheDestroy(g_CrPresenter.FbEntryLookasideList);
+        }
+        else
+            WARN(("RTMemCacheCreate failed rc %d", rc));
+#endif
+    }
+    else
+    {
+        WARN(("crAllocHashtable failed"));
+        rc = VERR_NO_MEMORY;
+    }
+    return rc;
+}
+
+void CrPMgrTerm()
+{
+    crPMgrModeModifyGlobal(CR_PMGR_MODE_ALL, false);
+
+    HCR_FRAMEBUFFER hFb;
+
+    for (hFb = CrPMgrFbGetFirstInitialized();
+            hFb;
+            hFb = CrPMgrFbGetNextInitialized(hFb))
+    {
+        uint32_t idScreen = CrFbGetScreenInfo(hFb)->u32ViewIndex;
+        CrFbDisplaySet(hFb, NULL);
+        CR_FBDISPLAY_INFO *pInfo = &g_CrPresenter.aDisplayInfos[idScreen];
+
+        if (pInfo->pDpComposite)
+            delete pInfo->pDpComposite;
+
+        Assert(!pInfo->pDpWin);
+        Assert(!pInfo->pDpWinRootVr);
+        Assert(!pInfo->pDpVrdp);
+
+        CrFbTerm(hFb);
+    }
+
+#ifndef VBOXVDBG_MEMCACHE_DISABLE
+    RTMemCacheDestroy(g_CrPresenter.FbEntryLookasideList);
+    RTMemCacheDestroy(g_CrPresenter.FbTexLookasideList);
+    RTMemCacheDestroy(g_CrPresenter.CEntryLookasideList);
+#endif
+    crFreeHashtable(g_CrPresenter.pFbTexMap, NULL);
+
+    memset(&g_CrPresenter, 0, sizeof (g_CrPresenter));
+}
+
 HCR_FRAMEBUFFER CrPMgrFbGet(uint32_t idScreen)
 {
     if (idScreen >= CR_MAX_GUEST_MONITORS)
@@ -2805,10 +2834,28 @@ HCR_FRAMEBUFFER CrPMgrFbGet(uint32_t idScreen)
         return NULL;
     }
 
-    if (!ASMBitTest(g_CrPresenter.aFramebufferInitMap, idScreen))
+    if (!CrFBmIsSet(&g_CrPresenter.FramebufferInitMap, idScreen))
     {
         CrFbInit(&g_CrPresenter.aFramebuffers[idScreen], idScreen);
-        ASMBitSet(g_CrPresenter.aFramebufferInitMap, idScreen);
+        CrFBmSet(&g_CrPresenter.FramebufferInitMap, idScreen);
+    }
+    else
+        Assert(g_CrPresenter.aFramebuffers[idScreen].ScreenInfo.u32ViewIndex == idScreen);
+
+    return &g_CrPresenter.aFramebuffers[idScreen];
+}
+
+HCR_FRAMEBUFFER CrPMgrFbGetInitialized(uint32_t idScreen)
+{
+    if (idScreen >= CR_MAX_GUEST_MONITORS)
+    {
+        WARN(("invalid idScreen %d", idScreen));
+        return NULL;
+    }
+
+    if (!CrFBmIsSet(&g_CrPresenter.FramebufferInitMap, idScreen))
+    {
+        return NULL;
     }
     else
         Assert(g_CrPresenter.aFramebuffers[idScreen].ScreenInfo.u32ViewIndex == idScreen);
@@ -2818,22 +2865,9 @@ HCR_FRAMEBUFFER CrPMgrFbGet(uint32_t idScreen)
 
 HCR_FRAMEBUFFER CrPMgrFbGetEnabled(uint32_t idScreen)
 {
-    if (idScreen >= CR_MAX_GUEST_MONITORS)
-    {
-        WARN(("invalid idScreen %d", idScreen));
-        return NULL;
-    }
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetInitialized(idScreen);
 
-    if (!ASMBitTest(g_CrPresenter.aFramebufferInitMap, idScreen))
-    {
-        return NULL;
-    }
-    else
-        Assert(g_CrPresenter.aFramebuffers[idScreen].ScreenInfo.u32ViewIndex == idScreen);
-
-    HCR_FRAMEBUFFER hFb = &g_CrPresenter.aFramebuffers[idScreen];
-
-    if(CrFbIsEnabled(hFb))
+    if(hFb && CrFbIsEnabled(hFb))
         return hFb;
 
     return NULL;
@@ -2844,6 +2878,18 @@ static HCR_FRAMEBUFFER crPMgrFbGetNextEnabled(uint32_t i)
     for (;i < cr_server.screenCount; ++i)
     {
         HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(i);
+        if (hFb)
+            return hFb;
+    }
+
+    return NULL;
+}
+
+static HCR_FRAMEBUFFER crPMgrFbGetNextInitialized(uint32_t i)
+{
+    for (;i < cr_server.screenCount; ++i)
+    {
+        HCR_FRAMEBUFFER hFb = CrPMgrFbGetInitialized(i);
         if (hFb)
             return hFb;
     }
@@ -2862,6 +2908,19 @@ HCR_FRAMEBUFFER CrPMgrFbGetFirstEnabled()
 HCR_FRAMEBUFFER CrPMgrFbGetNextEnabled(HCR_FRAMEBUFFER hFb)
 {
     return crPMgrFbGetNextEnabled(hFb->ScreenInfo.u32ViewIndex+1);
+}
+
+HCR_FRAMEBUFFER CrPMgrFbGetFirstInitialized()
+{
+    HCR_FRAMEBUFFER hFb = crPMgrFbGetNextInitialized(0);
+//    if (!hFb)
+//        WARN(("no initialized framebuffer found"));
+    return hFb;
+}
+
+HCR_FRAMEBUFFER CrPMgrFbGetNextInitialized(HCR_FRAMEBUFFER hFb)
+{
+    return crPMgrFbGetNextInitialized(hFb->ScreenInfo.u32ViewIndex+1);
 }
 
 static uint32_t crPMgrModeAdjustVal(uint32_t u32Mode)
@@ -3110,8 +3169,9 @@ int CrPMgrRootVrUpdate()
 }
 
 /*helper function that calls CrFbUpdateBegin for all enabled framebuffers */
-int CrPMgrHlpGlblUpdateBegin()
+int CrPMgrHlpGlblUpdateBegin(CR_FBMAP *pMap)
 {
+    CrFBmInit(pMap);
     for (HCR_FRAMEBUFFER hFb = CrPMgrFbGetFirstEnabled();
             hFb;
             hFb = CrPMgrFbGetNextEnabled(hFb))
@@ -3125,23 +3185,28 @@ int CrPMgrHlpGlblUpdateBegin()
                         hTmpFb = CrPMgrFbGetNextEnabled(hTmpFb))
             {
                 CrFbUpdateEnd(hTmpFb);
+                CrFBmClear(pMap, CrFbGetScreenInfo(hFb)->u32ViewIndex);
             }
             return rc;
         }
+
+        CrFBmSet(pMap, CrFbGetScreenInfo(hFb)->u32ViewIndex);
     }
 
     return VINF_SUCCESS;
 }
 
 /*helper function that calls CrFbUpdateEnd for all framebuffers being updated */
-void CrPMgrHlpGlblUpdateEnd()
+void CrPMgrHlpGlblUpdateEnd(CR_FBMAP *pMap)
 {
     for (uint32_t i = 0; i < cr_server.screenCount; ++i)
     {
-        HCR_FRAMEBUFFER hFb = CrPMgrFbGet(i);
-        Assert(hFb);
-        if (CrFbIsUpdating(hFb))
-            CrFbUpdateEnd(hFb);
+        if (!CrFBmIsSet(pMap, i))
+            continue;
+
+        HCR_FRAMEBUFFER hFb = CrPMgrFbGetInitialized(i);
+        CRASSERT(hFb);
+        CrFbUpdateEnd(hFb);
     }
 }
 
