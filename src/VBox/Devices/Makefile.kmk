@@ -537,6 +537,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/slirp/dnsproxy/hash.c \
  	Network/slirp/tftp.c \
  	Network/slirp/dnsproxy/dnsproxy.c
+
+ ifneq ($(KBUILD_TARGET), win)
+  VBOX_SLIRP_SOURCES +=  	Network/slirp/resolv_conf_parser.c
+ endif
+
  ifdef VBOX_WITH_SLIRP_BSD_SBUF
   VBOX_SLIRP_SOURCES += Network/slirp/bsd/kern/subr_sbuf.c
  endif
