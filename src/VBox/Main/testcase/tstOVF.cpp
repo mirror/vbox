@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,7 +23,6 @@
 #include <VBox/com/string.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
-#include <VBox/com/EventQueue.h>
 
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
@@ -304,10 +303,6 @@ int main(int argc, char *argv[])
 
         rc = pSession.createInprocObject(CLSID_Session);
         if (FAILED(rc)) throw MyError(rc, "failed to create a session object!\n");
-
-        // create the event queue
-        // (here it is necessary only to process remaining XPCOM/IPC events after the session is closed)
-        EventQueue eventQ;
 
         // for each testcase, we will copy the dummy VMDK image to the subdirectory with the OVF testcase
         // so that the import will find the disks it expects; this is just for testing the import since

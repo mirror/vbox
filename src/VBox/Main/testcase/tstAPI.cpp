@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,7 +24,6 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
-#include <VBox/com/EventQueue.h>
 
 #include <VBox/com/VirtualBox.h>
 
@@ -368,11 +367,6 @@ int main(int argc, char *argv[])
 //        getchar();
     }
 #endif
-
-    // create the event queue
-    // (here it is necessary only to process remaining XPCOM/IPC events
-    // after the session is closed)
-    EventQueue eventQ;
 
 #if 0
     // the simplest COM API test
