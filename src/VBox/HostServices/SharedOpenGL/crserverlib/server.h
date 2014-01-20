@@ -131,6 +131,7 @@ GLuint crServerTranslateProgramID(GLuint id);
 CRMuralInfo * crServerGetDummyMural(GLint visualBits);
 
 void crServerCheckMuralGeometry(CRMuralInfo *mural);
+void crServerCheckAllMuralGeometry(CRMuralInfo *pMI);
 GLboolean crServerSupportRedirMuralFBO(void);
 
 void crVBoxServerMuralFbResizeBegin(HCR_FRAMEBUFFER hFb);
@@ -149,6 +150,11 @@ void crServerPresentFBO(CRMuralInfo *mural);
 GLboolean crServerIsRedirectedToFBO();
 GLint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer);
 void crServerMuralFBOSwapBuffers(CRMuralInfo *mural);
+
+HCR_FRAMEBUFFER CrPMgrFbGetFirstEnabled();
+HCR_FRAMEBUFFER CrPMgrFbGetNextEnabled(HCR_FRAMEBUFFER hFb);
+HCR_FRAMEBUFFER CrPMgrFbGetFirstInitialized();
+HCR_FRAMEBUFFER CrPMgrFbGetNextInitialized(HCR_FRAMEBUFFER hFb);
 
 
 #define CR_SERVER_FBO_BB_IDX(_mural) ((_mural)->iBbBuffer)
@@ -363,10 +369,35 @@ void crServerInitTmpCtxDispatch();
 
 int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal);
 
+typedef struct CR_FBMAP
+{
+    uint8_t Map[(CR_MAX_GUEST_MONITORS+7)/8];
+} CR_FBMAP;
+
+DECLINLINE(void) CrFBmInit(CR_FBMAP *pMap)
+{
+    memset(pMap, 0, sizeof (*pMap));
+}
+
+DECLINLINE(bool) CrFBmIsSet(CR_FBMAP *pMap, uint32_t i)
+{
+    return ASMBitTest(&pMap->Map, i);
+}
+
+DECLINLINE(void) CrFBmSet(CR_FBMAP *pMap, uint32_t i)
+{
+    return ASMBitSet(&pMap->Map, i);
+}
+
+DECLINLINE(void) CrFBmClear(CR_FBMAP *pMap, uint32_t i)
+{
+    return ASMBitClear(&pMap->Map, i);
+}
+
 /*helper function that calls CrFbUpdateBegin for all enabled framebuffers */
-int CrPMgrHlpGlblUpdateBegin();
+int CrPMgrHlpGlblUpdateBegin(CR_FBMAP *pMap);
 /*helper function that calls CrFbUpdateEnd for all framebuffers being updated */
-void CrPMgrHlpGlblUpdateEnd();
+void CrPMgrHlpGlblUpdateEnd(CR_FBMAP *pMap);
 HCR_FRAMEBUFFER CrPMgrFbGetFirstEnabled();
 HCR_FRAMEBUFFER CrPMgrFbGetNextEnabled(HCR_FRAMEBUFFER hFb);
 int CrPMgrModeVrdp(bool fEnable);

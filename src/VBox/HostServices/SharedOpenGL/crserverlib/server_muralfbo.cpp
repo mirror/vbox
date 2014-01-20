@@ -48,6 +48,35 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
     crServerRedirMuralFbSync(mural);
 }
 
+static void crServerCheckMuralGeometryCB(unsigned long key, void *data1, void *data2)
+{
+    CRMuralInfo *pMI = (CRMuralInfo*) data1;
+
+    if (!pMI->fRedirected || pMI == data2)
+        return;
+
+    crServerCheckMuralGeometry(pMI);
+}
+
+
+void crServerCheckAllMuralGeometry(CRMuralInfo *pMI)
+{
+    CR_FBMAP Map;
+    int rc = CrPMgrHlpGlblUpdateBegin(&Map);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("CrPMgrHlpGlblUpdateBegin failed %d", rc));
+        return;
+    }
+
+    crHashtableWalk(cr_server.muralTable, crServerCheckMuralGeometryCB, pMI);
+
+    if (pMI)
+        crServerCheckMuralGeometry(pMI);
+
+    CrPMgrHlpGlblUpdateEnd(&Map);
+}
+
 GLboolean crServerSupportRedirMuralFBO(void)
 {
     static GLboolean fInited = GL_FALSE;

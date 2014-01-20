@@ -309,6 +309,8 @@ crServerDispatchWindowDestroy( GLint window )
     }
 
     crHashtableDelete(cr_server.muralTable, window, crFree);
+
+    crServerCheckAllMuralGeometry(NULL);
 }
 
 GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
@@ -328,7 +330,7 @@ GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         crStateGetCurrent()->buffer.height = mural->height;
     }
 
-    crServerCheckMuralGeometry(mural);
+    crServerCheckAllMuralGeometry(mural);
 
     return GL_TRUE;
 }
@@ -363,7 +365,7 @@ void crServerMuralPosition(CRMuralInfo *mural, GLint x, GLint y)
     mural->gX = x;
     mural->gY = y;
 
-    crServerCheckMuralGeometry(mural);
+    crServerCheckAllMuralGeometry(mural);
 }
 
 void SERVER_DISPATCH_APIENTRY
@@ -399,7 +401,7 @@ void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *
         crMemcpy(mural->pVisibleRects, pRects, 4*sizeof(GLint)*cRects);
     }
 
-    crServerCheckMuralGeometry(mural);
+    crServerCheckAllMuralGeometry(mural);
 }
 
 void SERVER_DISPATCH_APIENTRY
@@ -421,7 +423,10 @@ void crServerMuralShow( CRMuralInfo *mural, GLint state )
     if (!mural->bVisible == !state)
         return;
 
-    crServerCheckMuralGeometry(mural);
+    if (mural->bVisible)
+        crServerCheckMuralGeometry(mural);
+    else
+        crServerCheckAllMuralGeometry(mural);
 }
 
 void SERVER_DISPATCH_APIENTRY
