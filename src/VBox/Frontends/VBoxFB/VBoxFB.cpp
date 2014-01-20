@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
          * operations so it doesn't run the event loop.
          */
         nsCOMPtr<nsIEventQueue> eventQ;
-        rc = NS_GetMainEventQ(getter_AddRefs (eventQ));
+        rc = NS_GetMainEventQ(getter_AddRefs(eventQ));
         if (NS_FAILED(rc))
         {
             printf("Error: could not get main event queue! rc=%08X\n", rc);
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
          * counting and freeing.
          */
         nsCOMPtr<nsIComponentManager> manager;
-        rc = NS_GetComponentManager (getter_AddRefs (manager));
+        rc = NS_GetComponentManager(getter_AddRefs(manager));
         if (NS_FAILED(rc))
         {
             printf("Error: could not get component manager! rc=%08X\n", rc);
