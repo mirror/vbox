@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -380,6 +380,7 @@ typedef nsIID   IID;
 
 #define STDMETHOD(a) NS_IMETHOD a
 #define STDMETHODIMP NS_IMETHODIMP
+#define STDMETHOD_(ret, meth) NS_IMETHOD_(ret) meth
 
 #define COM_IIDOF(I) NS_GET_IID(I)
 
