@@ -27,6 +27,18 @@ RT_C_DECLS_BEGIN
 #define RCPS_MAX_SEARCHLIST 10
 #define RCPS_BUFFER_SIZE 256
 #define RCPS_IPVX_SIZE 47
+
+/**
+ * RESOLV_CONF_FILE can be defined in external tests for verification of Slirp behaviour.
+ */
+#ifndef RESOLV_CONF_FILE
+# ifndef RT_OS_OS2
+#  define RESOLV_CONF_FILE "/etc/resolv.conf"
+# else
+#  define RESOLV_CONF_FILE "\\MPTN\\ETC\\RESOLV2"
+# endif
+#endif
+
 /**
  * In Slirp we don't need IPv6 for general case (only for dnsproxy mode 
  * it's potentially acceptable) 
