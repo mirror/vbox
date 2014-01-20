@@ -2877,7 +2877,7 @@ int CrPMgrScreenChanged(uint32_t idScreen)
     if (idScreen >= CR_MAX_GUEST_MONITORS)
     {
         WARN(("invalid idScreen %d", idScreen));
-        return NULL;
+        return VERR_INVALID_PARAMETER;
     }
 
     CR_FBDISPLAY_INFO *pInfo = &g_CrPresenter.aDisplayInfos[idScreen];
