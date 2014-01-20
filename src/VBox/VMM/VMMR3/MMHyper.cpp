@@ -816,17 +816,14 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
                               0 /*fFlags*/,
                               &pv,
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                              HMIsEnabled(pVM) ? &pvR0 : NULL,
+                              &pvR0,
 #else
                               NULL,
 #endif
                               paPages);
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        if (!HMIsEnabled(pVM))
-            pvR0 = NIL_RTR0PTR;
-#else
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         pvR0 = (uintptr_t)pv;
 #endif
         memset(pv, 0, cbAligned);
