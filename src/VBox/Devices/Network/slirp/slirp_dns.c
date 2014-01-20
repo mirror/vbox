@@ -151,178 +151,84 @@ static int get_dns_addr_domain(PNATState pData,
 
 #else /* !RT_OS_WINDOWS */
 
-static int RTFileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRead)
-{
-    size_t cbRead;
-    char bTest;
-    int rc = VERR_NO_MEMORY;
-    char *pu8Buf = (char *)pvBuf;
-    *pcbRead = 0;
+#include "resolv_conf_parser.h"
 
-    while (   RT_SUCCESS(rc = RTFileRead(File, &bTest, 1, &cbRead))
-           && (pu8Buf - (char *)pvBuf) < cbBufSize)
-    {
-        if (cbRead == 0)
-            return VERR_EOF;
-
-        if (bTest == '\r' || bTest == '\n')
-        {
-            *pu8Buf = 0;
-            return VINF_SUCCESS;
-        }
-        *pu8Buf = bTest;
-         pu8Buf++;
-        (*pcbRead)++;
-    }
-    return rc;
-}
-
-static int slirpOpenResolvConfFile(PRTFILE pResolvConfFile)
-{
-    int rc;
-    char buff[512];
-    char *etc = NULL;
-    char *home = NULL;
-    AssertPtrReturn(pResolvConfFile, VERR_INVALID_PARAMETER);
-    LogFlowFuncEnter();
-# ifdef RT_OS_OS2
-    /* Try various locations. */
-    NOREF(home);
-    etc = getenv("ETC");
-    if (etc)
-    {
-        RTStrmPrintf(buff, sizeof(buff), "%s/RESOLV2", etc);
-        rc = RTFileOpen(pResolvConfFile, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    }
-    if (RT_FAILURE(rc))
-    {
-        RTStrmPrintf(buff, sizeof(buff), "%s/RESOLV2", _PATH_ETC);
-        rc = RTFileOpen(pResolvConfFile, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    }
-    if (RT_FAILURE(rc))
-    {
-        RTStrmPrintf(buff, sizeof(buff), "%s/resolv.conf", _PATH_ETC);
-        rc = RTFileOpen(pResolvConfFile, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    }
-# else /* !RT_OS_OS2 */
-#  ifndef DEBUG_vvl
-    rc = RTFileOpen(pResolvConfFile, "/etc/resolv.conf", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-#  else
-    NOREF(etc);
-    home = getenv("HOME");
-    RTStrPrintf(buff, sizeof(buff), "%s/resolv.conf", home);
-    rc = RTFileOpen(pResolvConfFile, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    if (RT_SUCCESS(rc))
-        Log(("NAT: DNS we're using %s\n", buff));
-    else
-    {
-        rc = RTFileOpen(pResolvConfFile, "/etc/resolv.conf", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-        Log(("NAT: DNS we're using %s\n", buff));
-    }
-#  endif
-# endif /* !RT_OS_OS2 */
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
 static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
 {
-    char buff[256];
-    char buff2[256];
-    RTFILE ResolvConfFile;
-    int cNameserversFound = 0;
-    bool fWarnTooManyDnsServers = false;
-    struct in_addr tmp_addr;
+    struct rcp_state st;
     int rc;
-    size_t bytes;
+    unsigned i;
 
-    rc = slirpOpenResolvConfFile(&ResolvConfFile);
-    if (RT_FAILURE(rc))
+    /* XXX: perhaps IPv6 shouldn't be ignored if we're using DNS proxy */
+    st.rcps_flags = RCPSF_IGNORE_IPV6;
+    rc = rcp_parse(&st, RESOLV_CONF_FILE);
+
+    /* for historical reasons: Slirp returns 0 and fall down to host resolver if wasn't able open resolv.conf file */
+    if(rc == -1)
     {
-        LogRel(("NAT: there're some problems with accessing resolv.conf (or known analog), thus NAT switches to use host resolver mechanism\n"));
         pData->fUseHostResolver = 1;
-        return VINF_SUCCESS;
+        return 0;
     }
 
-    if (ppszDomain)
-        *ppszDomain = NULL;
-
-    Log(("NAT: DNS Servers:\n"));
-    while (    RT_SUCCESS(rc = RTFileGets(ResolvConfFile, buff, sizeof(buff), &bytes))
-            && rc != VERR_EOF)
-    {
-        struct dns_entry *pDns = NULL;
-        if (   cNameserversFound == 4
-            && !fWarnTooManyDnsServers
-            && sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1)
-        {
-            fWarnTooManyDnsServers = true;
-            LogRel(("NAT: too many nameservers registered.\n"));
-        }
-        if (   sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1
-            && cNameserversFound < 4) /* Unix doesn't accept more than 4 name servers*/
-        {
-            if (!inet_aton(buff2, &tmp_addr))
-                continue;
-
-            /* localhost mask */
-            pDns = RTMemAllocZ(sizeof (struct dns_entry));
-            if (!pDns)
-            {
-                Log(("can't alloc memory for DNS entry\n"));
-                return -1;
-            }
-
-            /* check */
-            pDns->de_addr.s_addr = tmp_addr.s_addr;
-            if ((pDns->de_addr.s_addr & RT_H2N_U32_C(IN_CLASSA_NET)) == RT_N2H_U32_C(INADDR_LOOPBACK & IN_CLASSA_NET))
-            {
-                if ((pDns->de_addr.s_addr) == RT_N2H_U32_C(INADDR_LOOPBACK))
-                    pDns->de_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
-                else if (pData->fUseDnsProxy != 1)
-                {
-                    /* Modern Ubuntu register 127.0.1.1 as DNS server */
-                    LogRel(("NAT: DNS server %RTnaipv4 registration detected, switching to the DNS proxy.\n",
-                            pDns->de_addr.s_addr));
-                    pData->fUseDnsProxy = 1;
-                    pData->fUseHostResolver = 0;
-                }
-            }
-            TAILQ_INSERT_HEAD(&pData->pDnsList, pDns, de_list);
-            cNameserversFound++;
-        }
-        if (!strncmp(buff, "domain", 6) || !strncmp(buff, "search", 6))
-        {
-            char *tok;
-            char *saveptr;
-            struct dns_domain_entry *pDomain = NULL;
-            int fFoundDomain = 0;
-            tok = strtok_r(&buff[6], " \t\n", &saveptr);
-            LIST_FOREACH(pDomain, &pData->pDomainList, dd_list)
-            {
-                if (   tok != NULL
-                    && strcmp(tok, pDomain->dd_pszDomain) == 0)
-                {
-                    fFoundDomain = 1;
-                    break;
-                }
-            }
-            if (tok != NULL && !fFoundDomain)
-            {
-                pDomain = RTMemAllocZ(sizeof(struct dns_domain_entry));
-                if (!pDomain)
-                {
-                    Log(("NAT: not enought memory to add domain list\n"));
-                    return VERR_NO_MEMORY;
-                }
-                pDomain->dd_pszDomain = RTStrDup(tok);
-                Log(("NAT: adding domain name %s to search list\n", pDomain->dd_pszDomain));
-                LIST_INSERT_HEAD(&pData->pDomainList, pDomain, dd_list);
-            }
-        }
-    }
-    RTFileClose(ResolvConfFile);
-    if (!cNameserversFound)
+    /* for historical reasons: Slirp returns -1 if no nameservers were found */
+    if (st.rcps_num_nameserver == 0)
         return -1;
+
+    
+    /* XXX: We're composing the list, but we already knows 
+     * its size so we can allocate array instead (Linux guests 
+     * dont like >3 servers in the list anyway) 
+     * or use pre-allocated array in NATState.
+     */
+    for (i = 0; i != st.rcps_num_nameserver; ++i)
+    {
+        struct dns_entry *pDns;
+        RTNETADDRU *address = &st.rcps_nameserver[i].uAddr;
+        if (  (address->IPv4.u & RT_H2N_U32_C(IN_CLASSA_NET)) 
+           == RT_N2H_U32_C(INADDR_LOOPBACK & IN_CLASSA_NET)) 
+        {
+            /** 
+             * XXX: Note shouldn't patch the address in case of using DNS proxy,
+             * because DNS proxy we do revert it back actually. 
+             */
+            if (address->IPv4.u == RT_N2H_U32_C(INADDR_LOOPBACK))
+                address->IPv4.u = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
+            else if (pData->fUseDnsProxy == 0) {
+                /* We detects that using some address in 127/8 network */
+                LogRel(("NAT: DNS server %RTnaipv4 registration detected, switching to the DNS proxy.\n", address->IPv4));
+                pData->fUseDnsProxy = 1;
+                pData->fUseHostResolver = 0;
+            }
+        }
+
+        pDns = RTMemAllocZ(sizeof(struct dns_entry));
+        if (pDns == NULL)
+        {
+            slirpReleaseDnsSettings(pData);
+            return VERR_NO_MEMORY;
+        }
+
+        pDns->de_addr.s_addr = address->IPv4.u;
+        TAILQ_INSERT_HEAD(&pData->pDnsList, pDns, de_list);
+    }
+
+    if (st.rcps_domain != 0)
+    {
+        struct dns_domain_entry *pDomain = RTMemAllocZ(sizeof(struct dns_domain_entry));
+        if (pDomain == NULL)
+        {
+            slirpReleaseDnsSettings(pData);
+            return -1;
+        }
+
+        pDomain->dd_pszDomain = RTStrDup(st.rcps_domain);
+        LogRel(("NAT: adding domain name %s\n", pDomain->dd_pszDomain));
+        LIST_INSERT_HEAD(&pData->pDomainList, pDomain, dd_list);
+    }
+
+    if (ppszDomain && st.rcps_domain != 0)
+        *ppszDomain = RTStrDup(st.rcps_domain);
+
     return 0;
 }
 
