@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -48,18 +48,18 @@
 
     // ...
 
-    QVector <LONG> in (3);
-    in [0] = -1;
-    in [1] = -2;
-    in [2] = -3;
+    QVector<LONG> in(3);
+    in[0] = -1;
+    in[1] = -2;
+    in[2] = -3;
 
-    QVector <LONG> out;
-    QVector <LONG> ret;
+    QVector<LONG> out;
+    QVector<LONG> ret;
 
-    ret = component.TestArrays (in, out);
+    ret = component.TestArrays(in, out);
 
     for (size_t i = 0; i < ret.size(); ++ i)
-        LogFlow (("*** ret[%u]=%d\n", i, ret [i]));
+        LogFlow(("*** ret[%u]=%d\n", i, ret[i]));
 
  * @endcode
  * @}
@@ -87,9 +87,9 @@
  * Additional COM / XPCOM defines and includes
  */
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
-#else /* !defined (VBOX_WITH_XPCOM) */
+#else /* !defined(VBOX_WITH_XPCOM) */
 
 #include <nsXPCOM.h>
 #include <nsMemory.h>
@@ -97,15 +97,15 @@
 
 class XPCOMEventQSocketListener;
 
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* !defined(VBOX_WITH_XPCOM) */
 
 
 /* VirtualBox interfaces declarations */
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
     #include <VirtualBox.h>
-#else /* !defined (VBOX_WITH_XPCOM) */
+#else /* !defined(VBOX_WITH_XPCOM) */
     #include <VirtualBox_XPCOM.h>
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* !defined(VBOX_WITH_XPCOM) */
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -169,7 +169,7 @@ private:
 
     void fetchFromCurrentThread(IUnknown *callee, const GUID *calleeIID);
 
-    static QString getInterfaceNameFromIID (const QUuid &id);
+    static QString getInterfaceNameFromIID(const QUuid &id);
 
     bool mIsNull : 1;
     bool mIsBasicAvailable : 1;
@@ -209,151 +209,151 @@ public:
      */
     HRESULT lastRC() const { return mRC; }
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
     /** Converts a GUID value to QUuid */
-    static QUuid ToQUuid (const GUID &id)
+    static QUuid ToQUuid(const GUID &id)
     {
-        return QUuid (id.Data1, id.Data2, id.Data3,
-                      id.Data4[0], id.Data4[1], id.Data4[2], id.Data4[3],
-                      id.Data4[4], id.Data4[5], id.Data4[6], id.Data4[7]);
+        return QUuid(id.Data1, id.Data2, id.Data3,
+                     id.Data4[0], id.Data4[1], id.Data4[2], id.Data4[3],
+                     id.Data4[4], id.Data4[5], id.Data4[6], id.Data4[7]);
     }
 
-#else /* !defined (VBOX_WITH_XPCOM) */
+#else /* !defined(VBOX_WITH_XPCOM) */
 
     /** Converts a GUID value to QUuid */
-    static QUuid ToQUuid (const nsID &id)
+    static QUuid ToQUuid(const nsID &id)
     {
-        return QUuid (id.m0, id.m1, id.m2,
-                      id.m3[0], id.m3[1], id.m3[2], id.m3[3],
-                      id.m3[4], id.m3[5], id.m3[6], id.m3[7]);
+        return QUuid(id.m0, id.m1, id.m2,
+                     id.m3[0], id.m3[1], id.m3[2], id.m3[3],
+                     id.m3[4], id.m3[5], id.m3[6], id.m3[7]);
     }
 
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* !defined(VBOX_WITH_XPCOM) */
 
     /* Arrays of arbitrary types */
 
     template <typename QT, typename CT>
-    static void ToSafeArray (const QVector <QT> &aVec, com::SafeArray <CT> &aArr)
+    static void ToSafeArray(const QVector<QT> &aVec, com::SafeArray<CT> &aArr)
     {
-        aArr.reset (aVec.size());
+        aArr.reset(aVec.size());
         for (int i = 0; i < aVec.size(); ++i)
-            aArr [i] = static_cast<CT> (aVec.at (i));
+            aArr[i] = static_cast<CT>(aVec.at(i));
     }
 
     template <typename CT, typename QT>
-    static void FromSafeArray (const com::SafeArray <CT> &aArr, QVector <QT> &aVec)
+    static void FromSafeArray(const com::SafeArray<CT> &aArr, QVector<QT> &aVec)
     {
-        aVec.resize (static_cast<int> (aArr.size()));
+        aVec.resize(static_cast<int>(aArr.size()));
         for (int i = 0; i < aVec.size(); ++i)
-            aVec [i] = static_cast<QT> (aArr [i]);
+            aVec[i] = static_cast<QT>(aArr[i]);
     }
 
     template <typename QT, typename CT>
-    static void ToSafeArray (const QVector <QT *> &aVec, com::SafeArray <CT *> &aArr)
+    static void ToSafeArray(const QVector<QT *> &aVec, com::SafeArray<CT *> &aArr)
     {
-        Q_UNUSED (aVec);
-        Q_UNUSED (aArr);
-        AssertMsgFailedReturnVoid (("No conversion!\n"));
+        Q_UNUSED(aVec);
+        Q_UNUSED(aArr);
+        AssertMsgFailedReturnVoid(("No conversion!\n"));
     }
 
     template <typename CT, typename QT>
-    static void FromSafeArray (const com::SafeArray <CT *> &aArr, QVector <QT *> &aVec)
+    static void FromSafeArray(const com::SafeArray<CT *> &aArr, QVector<QT *> &aVec)
     {
-        Q_UNUSED (aArr);
-        Q_UNUSED (aVec);
-        AssertMsgFailedReturnVoid (("No conversion!\n"));
+        Q_UNUSED(aArr);
+        Q_UNUSED(aVec);
+        AssertMsgFailedReturnVoid(("No conversion!\n"));
     }
 
     /* Arrays of equal types */
 
     template <typename T>
-    static void ToSafeArray (const QVector <T> &aVec, com::SafeArray <T> &aArr)
+    static void ToSafeArray(const QVector<T> &aVec, com::SafeArray<T> &aArr)
     {
-        aArr.reset (aVec.size());
+        aArr.reset(aVec.size());
         for (int i = 0; i < aVec.size(); ++i)
-            aArr [i] = aVec.at (i);
+            aArr[i] = aVec.at(i);
     }
 
     template <typename T>
-    static void FromSafeArray (const com::SafeArray <T> &aArr, QVector <T> &aVec)
+    static void FromSafeArray(const com::SafeArray<T> &aArr, QVector<T> &aVec)
     {
-        aVec.resize (static_cast<int> (aArr.size()));
+        aVec.resize(static_cast<int>(aArr.size()));
         for (int i = 0; i < aVec.size(); ++i)
-            aVec [i] = aArr [i];
+            aVec[i] = aArr[i];
     }
 
     /* Arrays of strings */
 
-    static void ToSafeArray (const QVector <QString> &aVec,
-                             com::SafeArray <BSTR> &aArr);
-    static void FromSafeArray (const com::SafeArray <BSTR> &aArr,
-                               QVector <QString> &aVec);
+    static void ToSafeArray(const QVector<QString> &aVec,
+                            com::SafeArray<BSTR> &aArr);
+    static void FromSafeArray(const com::SafeArray<BSTR> &aArr,
+                              QVector<QString> &aVec);
 
     /* Arrays of GUID */
 
-    static void ToSafeArray (const QVector <QUuid> &aVec,
-                             com::SafeGUIDArray &aArr);
-    static void FromSafeArray (const com::SafeGUIDArray &aArr,
-                               QVector <QUuid> &aVec);
+    static void ToSafeArray(const QVector<QUuid> &aVec,
+                            com::SafeGUIDArray &aArr);
+    static void FromSafeArray(const com::SafeGUIDArray &aArr,
+                              QVector<QUuid> &aVec);
 
     /* Arrays of enums. Does a cast similar to what ENUMOut does. */
 
     template <typename QE, typename CE>
-    static void ToSafeArray (const QVector <QE> &aVec,
-                             com::SafeIfaceArray <CE> &aArr)
+    static void ToSafeArray(const QVector<QE> &aVec,
+                            com::SafeIfaceArray<CE> &aArr)
     {
-        aArr.reset (static_cast <int> (aVec.size()));
+        aArr.reset(static_cast<int>(aVec.size()));
         for (int i = 0; i < aVec.size(); ++i)
-            aArr [i] = static_cast <CE> (aVec.at (i));
+            aArr[i] = static_cast<CE>(aVec.at(i));
     }
 
     template <typename CE, typename QE>
-    static void FromSafeArray (const com::SafeIfaceArray <CE> &aArr,
-                               QVector <QE> &aVec)
+    static void FromSafeArray(const com::SafeIfaceArray<CE> &aArr,
+                              QVector<QE> &aVec)
     {
-        aVec.resize (static_cast <int> (aArr.size()));
+        aVec.resize(static_cast<int>(aArr.size()));
         for (int i = 0; i < aVec.size(); ++i)
-            aVec [i] = static_cast <QE> (aArr [i]);
+            aVec[i] = static_cast<QE>(aArr[i]);
     }
 
     /* Arrays of interface pointers. Note: we need a separate pair of names
      * only because the MSVC8 template matching algorithm is poor and tries to
-     * instantiate a com::SafeIfaceArray <BSTR> (!!!) template otherwise for
+     * instantiate a com::SafeIfaceArray<BSTR> (!!!) template otherwise for
      * *no* reason and fails. Note that it's also not possible to choose the
      * correct function by specifying template arguments explicitly because then
-     * it starts to try to instantiate the com::SafeArray <I> template for
+     * it starts to try to instantiate the com::SafeArray<I> template for
      * *no* reason again and fails too. Definitely, broken. Works in GCC like a
      * charm. */
 
     template <class CI, class I>
-    static void ToSafeIfaceArray (const QVector <CI> &aVec,
-                                  com::SafeIfaceArray <I> &aArr)
+    static void ToSafeIfaceArray(const QVector<CI> &aVec,
+                                 com::SafeIfaceArray<I> &aArr)
     {
-        aArr.reset (static_cast<int> (aVec.size()));
+        aArr.reset(static_cast<int>(aVec.size()));
         for (int i = 0; i < aVec.size(); ++i)
         {
-            aArr [i] = aVec.at (i).raw();
-            if (aArr [i])
-                aArr [i]->AddRef();
+            aArr[i] = aVec.at(i).raw();
+            if (aArr[i])
+                aArr[i]->AddRef();
         }
     }
 
     template <class I, class CI>
-    static void FromSafeIfaceArray (const com::SafeIfaceArray <I> &aArr,
-                                    QVector <CI> &aVec)
+    static void FromSafeIfaceArray(const com::SafeIfaceArray<I> &aArr,
+                                   QVector<CI> &aVec)
     {
-        aVec.resize (static_cast<int> (aArr.size()));
+        aVec.resize(static_cast<int>(aArr.size()));
         for (int i = 0; i < aVec.size(); ++i)
-            aVec [i].attach (aArr [i]);
+            aVec[i].attach(aArr[i]);
     }
 
 protected:
 
     /* no arbitrary instance creations */
-    COMBase() : mRC (S_OK) {}
+    COMBase() : mRC(S_OK) {}
 
-#if defined (VBOX_WITH_XPCOM)
+#if defined(VBOX_WITH_XPCOM)
     static XPCOMEventQSocketListener *sSocketListener;
 #endif
 
@@ -362,13 +362,13 @@ protected:
     {
     public:
 
-        BSTRIn (const QString &s) : bstr (SysAllocString ((const OLECHAR *)
+        BSTRIn(const QString &s) : bstr(SysAllocString((const OLECHAR *)
             (s.isNull() ? 0 : s.utf16()))) {}
 
         ~BSTRIn()
         {
             if (bstr)
-                SysFreeString (bstr);
+                SysFreeString(bstr);
         }
 
         operator BSTR() const { return bstr; }
@@ -383,13 +383,13 @@ protected:
     {
     public:
 
-        BSTROut (QString &s) : str (s), bstr (0) {}
+        BSTROut(QString &s) : str(s), bstr(0) {}
 
         ~BSTROut()
         {
             if (bstr) {
-                str = QString::fromUtf16 (bstr);
-                SysFreeString (bstr);
+                str = QString::fromUtf16(bstr);
+                SysFreeString(bstr);
             }
         }
 
@@ -412,8 +412,8 @@ protected:
     {
     public:
 
-        ENUMOut (QE &e) : qe (e), ce ((CE) 0) {}
-        ~ENUMOut() { qe = (QE) ce; }
+        ENUMOut(QE &e) : qe(e), ce((CE)0) {}
+        ~ENUMOut() { qe = (QE)ce; }
         operator CE *() { return &ce; }
 
     private:
@@ -422,24 +422,24 @@ protected:
         CE ce;
     };
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
     /** Adapter to pass QUuid as input GUID params */
-    static GUID GUIDIn (const QUuid &uuid) { return uuid; }
+    static GUID GUIDIn(const QUuid &uuid) { return uuid; }
 
     /** Adapter to pass QUuid as output GUID params */
     class GUIDOut
     {
     public:
 
-        GUIDOut (QUuid &id) : uuid (id)
+        GUIDOut(QUuid &id) : uuid(id)
         {
-            ::memset (&guid, 0, sizeof (GUID));
+            ::memset(&guid, 0, sizeof(GUID));
         }
 
         ~GUIDOut()
         {
-            uuid = QUuid (
+            uuid = QUuid(
                 guid.Data1, guid.Data2, guid.Data3,
                 guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
                 guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
@@ -453,10 +453,10 @@ protected:
         GUID guid;
     };
 
-#else /* !defined (VBOX_WITH_XPCOM) */
+#else /* !defined(VBOX_WITH_XPCOM) */
 
     /** Adapter to pass QUuid as input GUID params */
-    static const nsID &GUIDIn (const QUuid &uuid)
+    static const nsID &GUIDIn(const QUuid &uuid)
     {
         return *(const nsID *) &uuid;
     }
@@ -466,17 +466,17 @@ protected:
     {
     public:
 
-        GUIDOut (QUuid &id) : uuid (id), nsid (0) {}
+        GUIDOut(QUuid &id) : uuid(id), nsid(0) {}
 
         ~GUIDOut()
         {
             if (nsid)
             {
-                uuid = QUuid (
+                uuid = QUuid(
                     nsid->m0, nsid->m1, nsid->m2,
                     nsid->m3[0], nsid->m3[1], nsid->m3[2], nsid->m3[3],
                     nsid->m3[4], nsid->m3[5], nsid->m3[6], nsid->m3[7]);
-                nsMemory::Free (nsid);
+                nsMemory::Free(nsid);
             }
         }
 
@@ -488,10 +488,10 @@ protected:
         nsID *nsid;
     };
 
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* !defined(VBOX_WITH_XPCOM) */
 
-    static void addref (IUnknown *aIface) { if (aIface) aIface->AddRef(); }
-    static void release (IUnknown *aIface) { if (aIface) aIface->Release(); }
+    static void addref(IUnknown *aIface) { if (aIface) aIface->AddRef(); }
+    static void release(IUnknown *aIface) { if (aIface) aIface->Release(); }
 
 protected:
 
@@ -522,13 +522,13 @@ public:
 protected:
 
     /* no arbitrary instance creation */
-    COMBaseWithEI() : COMBase () {};
+    COMBaseWithEI() : COMBase() {};
 
-    void setErrorInfo (const COMErrorInfo &aErrInfo) { mErrInfo = aErrInfo; }
+    void setErrorInfo(const COMErrorInfo &aErrInfo) { mErrInfo = aErrInfo; }
 
-    void fetchErrorInfo (IUnknown *aCallee, const GUID *aCalleeIID) const
+    void fetchErrorInfo(IUnknown *aCallee, const GUID *aCalleeIID) const
     {
-        mErrInfo.fetchFromCurrentThread (aCallee, aCalleeIID);
+        mErrInfo.fetchFromCurrentThread(aCallee, aCalleeIID);
     }
 
     mutable COMErrorInfo mErrInfo;
@@ -543,13 +543,13 @@ class COMResult
 {
 public:
 
-    COMResult() : mRC (S_OK) {}
+    COMResult() : mRC(S_OK) {}
 
     /**
      * Queries the current result code from the given component.
      */
-    explicit COMResult (const COMBase &aComponent)
-        : mRC (aComponent.lastRC()) {}
+    explicit COMResult(const COMBase &aComponent)
+        : mRC(aComponent.lastRC()) {}
 
     /**
      * Queries the current result code and error info from the given component.
@@ -562,7 +562,7 @@ public:
     /**
      * Queries the current result code from the given component.
      */
-    COMResult &operator= (const COMBase &aComponent)
+    COMResult &operator=(const COMBase &aComponent)
     {
         mRC = aComponent.lastRC();
         return *this;
@@ -571,7 +571,7 @@ public:
     /**
      * Queries the current result code and error info from the given component.
      */
-    COMResult &operator= (const COMBaseWithEI &aComponent)
+    COMResult &operator=(const COMBaseWithEI &aComponent)
     {
         mRC = aComponent.lastRC();
         mErrInfo = aComponent.errorInfo();
@@ -584,13 +584,13 @@ public:
      * Returns @c true if the result code represents success (with or without
      * warnings).
      */
-    bool isOk() const { return SUCCEEDED (mRC); }
+    bool isOk() const { return SUCCEEDED(mRC); }
 
     /**
      * Returns @c true if the result code represents success with one or more
      * warnings.
      */
-    bool isWarning() const { return SUCCEEDED_WARNING (mRC); }
+    bool isWarning() const { return SUCCEEDED_WARNING(mRC); }
 
     /**
      * Returns @c true if the result code represents success with no warnings.
@@ -634,18 +634,18 @@ public:
         clear();
     }
 
-    CInterface (const CInterface &that) : B (that)
+    CInterface(const CInterface &that) : B(that)
     {
         clear();
         mIface = that.mIface;
         this->addref(ptr());
     }
 
-    CInterface (I *aIface)
+    CInterface(I *aIface)
     {
         clear();
-        setPtr (aIface);
-        this->addref (aIface);
+        setPtr(aIface);
+        this->addref(aIface);
     }
 
     virtual ~CInterface()
@@ -657,24 +657,24 @@ public:
     }
 
     // utility methods
-    void createInstance (const CLSID &aClsId)
+    void createInstance(const CLSID &aClsId)
     {
-        AssertMsg (ptr() == NULL, ("Instance is already non-NULL\n"));
+        AssertMsg(ptr() == NULL, ("Instance is already non-NULL\n"));
         if (ptr() == NULL)
         {
             I* pObj = NULL;
-#if !defined (VBOX_WITH_XPCOM)
-            B::mRC = CoCreateInstance (aClsId, NULL, CLSCTX_ALL,
-                                       _ATL_IIDOF (I), (void **) &pObj);
+#if !defined(VBOX_WITH_XPCOM)
+            B::mRC = CoCreateInstance(aClsId, NULL, CLSCTX_ALL,
+                                      _ATL_IIDOF(I), (void **)&pObj);
 #else
-            nsCOMPtr <nsIComponentManager> manager;
-            B::mRC = NS_GetComponentManager (getter_AddRefs (manager));
-            if (SUCCEEDED (B::mRC))
-                B::mRC = manager->CreateInstance (aClsId, nsnull, NS_GET_IID (I),
-                                                  (void **) &pObj);
+            nsCOMPtr<nsIComponentManager> manager;
+            B::mRC = NS_GetComponentManager(getter_AddRefs(manager));
+            if (SUCCEEDED(B::mRC))
+                B::mRC = manager->CreateInstance(aClsId, nsnull, NS_GET_IID(I),
+                                                 (void **)&pObj);
 #endif
 
-            if (SUCCEEDED (B::mRC))
+            if (SUCCEEDED(B::mRC))
                setPtr(pObj);
             else
                setPtr(NULL);
@@ -682,7 +682,7 @@ public:
             /* fetch error info, but don't assert if it's missing -- many other
              * reasons can lead to an error (w/o providing error info), not only
              * the instance initialization code (that should always provide it) */
-            B::fetchErrorInfo (NULL, NULL);
+            B::fetchErrorInfo(NULL, NULL);
          }
     }
 
@@ -691,20 +691,20 @@ public:
      * interface on it. The operation may fail.
      */
     template <class OI>
-    void attach (OI *aIface)
+    void attach(OI *aIface)
     {
 #ifdef DEBUG
         Assert(!mDead);
 #endif
         /* be aware of self assignment */
         I* amIface = ptr();
-        this->addref (aIface);
-        this->release (amIface);
+        this->addref(aIface);
+        this->release(amIface);
         if (aIface)
         {
             amIface = NULL;
-            B::mRC = aIface->QueryInterface (COM_IIDOF (I), (void **) &amIface);
-            this->release (aIface);
+            B::mRC = aIface->QueryInterface(COM_IIDOF(I), (void **)&amIface);
+            this->release(aIface);
             setPtr(amIface);
         }
         else
@@ -715,14 +715,14 @@ public:
     };
 
     /** Specialization of attach() for our own interface I. Never fails. */
-    void attach (I *aIface)
+    void attach(I *aIface)
     {
 #ifdef DEBUG
         Assert(!mDead);
 #endif
         /* be aware of self assignment */
-        this->addref (aIface);
-        this->release (ptr());
+        this->addref(aIface);
+        this->release(ptr());
         setPtr(aIface);
         B::mRC = S_OK;
     };
@@ -733,7 +733,7 @@ public:
 #ifdef DEBUG
        Assert(!mDead);
 #endif
-       this->release (ptr());
+       this->release(ptr());
        setPtr(NULL);
     }
 
@@ -750,13 +750,13 @@ public:
      * Returns @c true if the result code represents success (with or without
      * warnings).
      */
-    bool isOk() const { return !isNull() && SUCCEEDED (B::mRC); }
+    bool isOk() const { return !isNull() && SUCCEEDED(B::mRC); }
 
     /**
      * Returns @c true if the result code represents success with one or more
      * warnings.
      */
-    bool isWarning() const { return !isNull() && SUCCEEDED_WARNING (B::mRC); }
+    bool isWarning() const { return !isNull() && SUCCEEDED_WARNING(B::mRC); }
 
     /**
      * Returns @c true if the result code represents success with no warnings.
@@ -765,16 +765,16 @@ public:
 
     // utility operators
 
-    CInterface &operator= (const CInterface &that)
+    CInterface &operator=(const CInterface &that)
     {
-        attach (that.ptr());
-        B::operator= (that);
+        attach(that.ptr());
+        B::operator=(that);
         return *this;
     }
 
-    CInterface &operator= (I *aIface)
+    CInterface &operator=(I *aIface)
     {
-        attach (aIface);
+        attach(aIface);
         return *this;
     }
 
@@ -787,8 +787,8 @@ public:
        return ptr();
     }
 
-    bool operator== (const CInterface &that) const { return ptr() == that.ptr(); }
-    bool operator!= (const CInterface &that) const { return ptr() != that.ptr(); }
+    bool operator==(const CInterface &that) const { return ptr() == that.ptr(); }
+    bool operator!=(const CInterface &that) const { return ptr() != that.ptr(); }
 
     I* ptr() const
     {
@@ -824,73 +824,73 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 
-class CUnknown : public CInterface <IUnknown, COMBaseWithEI>
+class CUnknown : public CInterface<IUnknown, COMBaseWithEI>
 {
 public:
 
-    typedef CInterface <IUnknown, COMBaseWithEI> Base;
+    typedef CInterface<IUnknown, COMBaseWithEI> Base;
 
     CUnknown() {}
 
     /** Creates an instance given another CInterface-based instance. */
     template <class OI, class OB>
-    explicit CUnknown (const CInterface <OI, OB> &that)
+    explicit CUnknown(const CInterface<OI, OB> &that)
     {
-        attach (that.ptr());
-        if (SUCCEEDED (mRC))
+        attach(that.ptr());
+        if (SUCCEEDED(mRC))
         {
             /* preserve old error info if any */
             mRC = that.lastRC();
-            setErrorInfo (that.errorInfo());
+            setErrorInfo(that.errorInfo());
         }
     }
 
     /** Constructor specialization for IUnknown. */
-    CUnknown (const CUnknown &that) : Base (that) {}
+    CUnknown(const CUnknown &that) : Base(that) {}
 
     /** Creates an instance given a foreign interface pointer. */
     template <class OI>
-    explicit CUnknown (OI *aIface)
+    explicit CUnknown(OI *aIface)
     {
-        attach (aIface);
+        attach(aIface);
     }
 
     /** Constructor specialization for IUnknown. */
-    explicit CUnknown (IUnknown *aIface) : Base (aIface) {}
+    explicit CUnknown(IUnknown *aIface) : Base(aIface) {}
 
     /** Assigns from another CInterface-based instance. */
     template <class OI, class OB>
-    CUnknown &operator= (const CInterface <OI, OB> &that)
+    CUnknown &operator=(const CInterface<OI, OB> &that)
     {
-        attach (that.ptr());
-        if (SUCCEEDED (mRC))
+        attach(that.ptr());
+        if (SUCCEEDED(mRC))
         {
             /* preserve old error info if any */
             mRC = that.lastRC();
-            setErrorInfo (that.errorInfo());
+            setErrorInfo(that.errorInfo());
         }
         return *this;
     }
 
     /** Assignment specialization for CUnknown. */
-    CUnknown &operator= (const CUnknown &that)
+    CUnknown &operator=(const CUnknown &that)
     {
-        Base::operator= (that);
+        Base::operator=(that);
         return *this;
     }
 
     /** Assigns from a foreign interface pointer. */
     template <class OI>
-    CUnknown &operator= (OI *aIface)
+    CUnknown &operator=(OI *aIface)
     {
-        attach (aIface);
+        attach(aIface);
         return *this;
     }
 
     /** Assignment specialization for IUnknown. */
-    CUnknown &operator= (IUnknown *aIface)
+    CUnknown &operator=(IUnknown *aIface)
     {
-        Base::operator= (aIface);
+        Base::operator=(aIface);
         return *this;
     }
 };

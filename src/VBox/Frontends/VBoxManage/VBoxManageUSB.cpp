@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,17 +26,6 @@
 #include "VBoxManage.h"
 
 #include <iprt/asm.h>
-
-/* missing XPCOM <-> COM wrappers */
-#ifndef STDMETHOD_
-# define STDMETHOD_(ret, meth) NS_IMETHOD_(ret) meth
-#endif
-#ifndef NS_GET_IID
-# define NS_GET_IID(I) IID_##I
-#endif
-#ifndef RT_OS_WINDOWS
-#define IUnknown nsISupports
-#endif
 
 using namespace com;
 
@@ -70,13 +59,13 @@ public:
     STDMETHOD(QueryInterface)(const IID &iid, void **ppvObject)
     {
         Guid guid(iid);
-        if (guid == Guid(NS_GET_IID(IUnknown)))
+        if (guid == Guid(COM_IIDOF(IUnknown)))
             *ppvObject = (IUnknown *)this;
 #ifdef RT_OS_WINDOWS
-        else if (guid == Guid(NS_GET_IID(IDispatch)))
+        else if (guid == Guid(COM_IIDOF(IDispatch)))
             *ppvObject = (IDispatch *)this;
 #endif
-        else if (guid == Guid(NS_GET_IID(IUSBDevice)))
+        else if (guid == Guid(COM_IIDOF(IUSBDevice)))
             *ppvObject = (IUSBDevice *)this;
         else
             return E_NOINTERFACE;
