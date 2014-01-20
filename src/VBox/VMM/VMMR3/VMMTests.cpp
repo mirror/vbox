@@ -599,10 +599,12 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
 
         rc = VINF_SUCCESS;
 
+#if 0  /* drop this for now as it causes trouble on AMDs (Opteron 2384 and possibly others). */
         /*
          * A quick MSR report.
          */
         vmmR3DoMsrQuickReport(pVM, NULL, true);
+#endif
     }
     else
         AssertMsgFailed(("Failed to resolved VMMGC.gc::VMMGCEntry(), rc=%Rrc\n", rc));
