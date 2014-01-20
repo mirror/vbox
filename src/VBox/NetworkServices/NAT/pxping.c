@@ -34,17 +34,6 @@
 #include "lwip/ip.h"
 #include "lwip/icmp.h"
 
-#if 1 /* XXX: force debug for now */
-#undef  DPRINTF0
-#undef  DPRINTF
-#undef  DPRINTF1
-#undef  DPRINTF2
-#define DPRINTF0(args) do { printf args; } while (0)
-#define DPRINTF(args)  do { printf args; } while (0)
-#define DPRINTF1(args) do { printf args; } while (0)
-#define DPRINTF2(args) do { printf args; } while (0)
-#endif
-
 #if defined(RT_OS_LINUX) && !defined(__USE_GNU)
 #if __GLIBC_PREREQ(2, 8)
 /*
