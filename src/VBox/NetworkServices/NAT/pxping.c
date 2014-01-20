@@ -465,9 +465,9 @@ pxping_recv4(void *arg, struct pbuf *p)
     }
 
     pxping_pcb_debug_print(pcb); /* XXX */
-    printf(" seq %d len %u ttl %d\n",
-           ntohs(icmph->seqno), (unsigned int)p->tot_len,
-           IPH_TTL(iph));
+    DPRINTF((" seq %d len %u ttl %d\n",
+             ntohs(icmph->seqno), (unsigned int)p->tot_len,
+             IPH_TTL(iph)));
 
     ttl = IPH_TTL(iph);
     if (!pcb->is_mapped) {
@@ -683,9 +683,9 @@ pxping_recv6(void *arg, struct pbuf *p)
     }
 
     pxping_pcb_debug_print(pcb); /* XXX */
-    printf(" seq %d len %u hopl %d\n",
-           ntohs(seq), (unsigned int)p->tot_len,
-           IP6H_HOPLIM(iph));
+    DPRINTF((" seq %d len %u hopl %d\n",
+             ntohs(seq), (unsigned int)p->tot_len,
+             IP6H_HOPLIM(iph)));
 
     hopl = IP6H_HOPLIM(iph);
     if (!pcb->is_mapped) {
@@ -803,7 +803,7 @@ pxping_pcb_delete(struct pxping *pxping, struct ping_pcb *pcb)
     LWIP_ASSERT1(pcb->next == NULL);
     LWIP_ASSERT1(pcb->pprev_timeout == NULL);
 
-    printf("%s: ping %p\n", __func__, (void *)pcb);
+    DPRINTF(("%s: ping %p\n", __func__, (void *)pcb));
 
     --pxping->npcbs;
     free(pcb);
@@ -942,16 +942,16 @@ pxping_pcb_for_request(struct pxping *pxping,
         sys_mutex_unlock(&pxping->lock);
 
         pxping_pcb_debug_print(pcb); /* XXX */
-        printf(" - created\n");
+        DPRINTF((" - created\n"));
 
         pxping_timer_needed(pxping);
     }
     else {
         /* just bump up expiration timeout lazily */
         pxping_pcb_debug_print(pcb); /* XXX */
-        printf(" - slot %d -> %d\n",
-               (unsigned int)pcb->timeout_slot,
-               (unsigned int)pxping->timeout_slot);
+        DPRINTF((" - slot %d -> %d\n",
+                 (unsigned int)pcb->timeout_slot,
+                 (unsigned int)pxping->timeout_slot));
         pcb->timeout_slot = pxping->timeout_slot;
     }
 
@@ -1012,10 +1012,6 @@ pxping_timer(void *arg)
 
         if (xpcb->timeout_slot == pxping->timeout_slot) {
             /* expired */
-            printf("... ");
-            pxping_pcb_debug_print(xpcb);
-            printf(" - expired\n");
-
             pxping_pcb_deregister(pxping, xpcb);
             pxping_pcb_delete(pxping, xpcb);
         }
@@ -1024,12 +1020,6 @@ pxping_timer(void *arg)
              * If there was another request, we updated timeout_slot
              * but delayed actually moving the pcb until now.
              */
-            printf("... ");
-            pxping_pcb_debug_print(xpcb);
-            printf(" - alive slot %d -> %d\n",
-                   (unsigned int)pxping->timeout_slot,
-                   (unsigned int)xpcb->timeout_slot);
-
             pxping_timeout_del(pxping, xpcb); /* from current slot */
             pxping_timeout_add(pxping, xpcb); /* to new slot */
         }
