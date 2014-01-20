@@ -303,6 +303,22 @@ int main()
     GEN_CHECK_OFF(VGASTATE, pDrv);
     GEN_CHECK_OFF(VGASTATE, RefreshTimer);
     GEN_CHECK_OFF(VGASTATE, pDevInsR0);
+#ifdef VBOX_WITH_VMSVGA
+    GEN_CHECK_OFF(VGASTATE, svga.u64HostWindowId);
+    GEN_CHECK_OFF(VGASTATE, svga.pFIFOR3);
+    GEN_CHECK_OFF(VGASTATE, svga.pFIFOR0);
+    GEN_CHECK_OFF(VGASTATE, svga.pSVGAState);
+    GEN_CHECK_OFF(VGASTATE, svga.p3dState);
+    GEN_CHECK_OFF(VGASTATE, svga.pFrameBufferBackup);
+    GEN_CHECK_OFF(VGASTATE, svga.GCPhysFIFO);
+    GEN_CHECK_OFF(VGASTATE, svga.cbFIFO);
+    GEN_CHECK_OFF(VGASTATE, svga.BasePort);
+    GEN_CHECK_OFF(VGASTATE, svga.pFIFOIOThread);
+    GEN_CHECK_OFF(VGASTATE, svga.iWidth);
+    GEN_CHECK_OFF(VGASTATE, svga.u32ActionFlags);
+    GEN_CHECK_OFF(VGASTATE, svga.f3DEnabled);
+    GEN_CHECK_OFF(VGASTATE, svga.fVRAMTracking);
+#endif
     GEN_CHECK_OFF(VGASTATE, cMonitors);
     GEN_CHECK_OFF(VGASTATE, cMilliesRefreshInterval);
     GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap);
