@@ -51,6 +51,10 @@ enum RCP_TOKEN {
 
 #define RCP_BUFFER_SIZE 256
 
+/* If ctypes.h doesn't have definition for isblank(3) */
+#ifndef isblank
+# define isblank(c) ((c) == '\t' || (c) == '\ ')
+#endif
 
 struct rcp_parser
 {
