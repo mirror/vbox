@@ -346,7 +346,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
         if (!strcmp(pcszElemName, "Section"))       // OVF 0.9 used "Section" element always with a varying "type" attribute
         {
             const xml::AttributeNode *pTypeAttr = pelmThis->findAttribute("type");
-            if (!pTypeAttr)
+            if (pTypeAttr)
                 pcszTypeAttr = pTypeAttr->getValue();
             else
                 throw OVFLogicError(N_("Error reading \"%s\": element \"Section\" has no \"type\" attribute, line %d"),
