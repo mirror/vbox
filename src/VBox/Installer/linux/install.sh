@@ -423,7 +423,7 @@ if [ "$ACTION" = "install" ]; then
         cd $i
         if [ -d /usr/share/icons/hicolor/$i ]; then
             for j in *; do
-                if [ "$j" = "virtualbox.png" ]; then
+                if expr "$j" : "virtualbox\..*" > /dev/null; then
                     dst=apps
                 else
                     dst=mimetypes

@@ -186,9 +186,9 @@ test -z "${NO_QT}" &&
 test -z "${NO_QT}" &&
     for i in "${INSTALL_SOURCE}/icons/"*; do
         folder=`expr "${i}/" : '.*/\([^/][^/]*/\)/*'`
-        if test -f "${i}/virtualbox.png"; then
+        if test -f "${i}/virtualbox."*; then
             install -d -g 0 -o 0 "${PREFIX}/share/icons/hicolor/${folder}/apps"
-            mv "${i}/virtualbox.png" "${PREFIX}/share/icons/hicolor/${folder}/apps"
+            mv "${i}/virtualbox."* "${PREFIX}/share/icons/hicolor/${folder}/apps"
         fi
         install -d -g 0 -o 0 "${PREFIX}/share/icons/hicolor/${folder}/mimetypes"
         mv "${i}/"* "${PREFIX}/share/icons/hicolor/${folder}/mimetypes" 2>/dev/null || true
