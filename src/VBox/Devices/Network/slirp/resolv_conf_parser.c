@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * resolv_conf_parser.c - parser of resolv.conf resolver(5) 
+ * resolv_conf_parser.c - parser of resolv.conf resolver(5)
  */
 
 /*
@@ -28,7 +28,8 @@
 
 #include "resolv_conf_parser.h"
 
-enum RCP_TOKEN {
+enum RCP_TOKEN
+{
   tok_eof = -1, /* EOF */
   tok_string = -2, /* string */
   tok_number = -3, /* number */
@@ -89,7 +90,7 @@ static int rcp_get_token(struct rcp_parser *parser)
     if (isalnum(tok)) {
         int xdigit, digit, dot_number;
         RT_ZERO(parser->rcpp_str_buffer);
-        
+
         dot_number = 0;
         xdigit = 1;
         digit = 1;
@@ -115,7 +116,7 @@ static int rcp_get_token(struct rcp_parser *parser)
                 if (xdigit == 1)
                 {
                     int port = 0;
-                    do 
+                    do
                     {
                         *ptr++ = tok;
                         tok = GETCHAR(parser);
@@ -126,23 +127,23 @@ static int rcp_get_token(struct rcp_parser *parser)
                     } while(PARSER_STOP(tok, parser, ptr) && (tok == ':' || tok == '.' || isxdigit(tok)));
 
                     PARSER_BUFFER_EXCEEDED(parser, ptr);
-                    
-                    if (port == 0) 
+
+                    if (port == 0)
                         return tok_ipv6;
                     else if (port == 1)
                         return tok_ipv6_port;
-                    else 
+                    else
                     {
                         /* eats rest of the token */
-                        do 
+                        do
                         {
                             *ptr++ = tok;
                             tok = GETCHAR(parser);
-                        } while(   PARSER_STOP(tok, parser, ptr) 
+                        } while(   PARSER_STOP(tok, parser, ptr)
                                 && (isalnum(tok) || tok == '.'  || tok == '_' || tok == '-'));
 
                         PARSER_BUFFER_EXCEEDED(parser, ptr);
-                        
+
                         return tok_string;
                     }
                 }
@@ -160,9 +161,9 @@ static int rcp_get_token(struct rcp_parser *parser)
                     *ptr++ = tok;
                     digit &= (isdigit(tok) || (tok == '.'));
                     tok = GETCHAR(parser);
-                } while(   PARSER_STOP(tok, parser, ptr) 
+                } while(   PARSER_STOP(tok, parser, ptr)
                         && (isalnum(tok) || tok == '.' || tok == '_' || tok == '-'));
-                
+
                 PARSER_BUFFER_EXCEEDED(parser, ptr);
 
                 if (dot_number == 3 && digit)
@@ -174,7 +175,7 @@ static int rcp_get_token(struct rcp_parser *parser)
             }
         } while(   PARSER_STOP(tok, parser, ptr)
                 && (isalnum(tok) || tok == ':' || tok == '.' || tok == '-' || tok == '_'));
-        
+
         PARSER_BUFFER_EXCEEDED(parser, ptr);
 
         if (digit || xdigit)
@@ -206,7 +207,7 @@ static int rcp_get_token(struct rcp_parser *parser)
         do{
             tok = GETCHAR(parser);
         } while (tok != EOF && tok != '\r' && tok != '\n');
-        
+
         if (tok == EOF) return tok_eof;
 
         return tok_comment;
@@ -238,11 +239,14 @@ static enum RCP_TOKEN rcp_parse_nameserver(struct rcp_parser *parser)
            || tok == tok_ipv6_port)
     {
         struct rcp_state *st;
+        RTNETADDR *address;
+        char *str_address;
+
         Assert(parser->rcpp_state);
-        
+
         st = parser->rcpp_state;
-        RTNETADDR *address = &st->rcps_nameserver[st->rcps_num_nameserver];
-        char *str_address = &st->rcps_nameserver_str_buffer[st->rcps_num_nameserver * RCPS_IPVX_SIZE];
+        address = &st->rcps_nameserver[st->rcps_num_nameserver];
+        str_address = &st->rcps_nameserver_str_buffer[st->rcps_num_nameserver * RCPS_IPVX_SIZE];
 #ifdef RT_OS_DARWIN
         if (   tok == tok_ipv4_port
             || (   tok == tok_ipv6_port
@@ -265,7 +269,7 @@ static enum RCP_TOKEN rcp_parse_nameserver(struct rcp_parser *parser)
                 return tok_error;
 
             strcpy(str_address, parser->rcpp_str_buffer);
-        
+
             st->rcps_str_nameserver[st->rcps_num_nameserver] = str_address;
 
             goto loop_prolog;
@@ -278,7 +282,7 @@ static enum RCP_TOKEN rcp_parse_nameserver(struct rcp_parser *parser)
                 {
                     int rc = RTNetStrToIPv4Addr(parser->rcpp_str_buffer, &address->uAddr.IPv4);
                     if (RT_FAILURE(rc)) return tok_error;
-                    
+
                     address->enmType = RTNETADDRTYPE_IPV4;
                 }
 
@@ -324,7 +328,7 @@ static enum RCP_TOKEN rcp_parse_port(struct rcp_parser *parser)
     Assert(parser->rcpp_state);
     st = parser->rcpp_state;
 
-    if (   tok != tok_number 
+    if (   tok != tok_number
         || tok == tok_eof)
         return tok_error;
 
@@ -348,7 +352,7 @@ static enum RCP_TOKEN rcp_parse_domain(struct rcp_parser *parser)
     st = parser->rcpp_state;
 
     /**
-     * It's nowhere specified how resolver should react on dublicats 
+     * It's nowhere specified how resolver should react on dublicats
      * of 'domain' declarations, let's assume that resolv.conf is broken.
      */
     if (   tok == tok_eof
@@ -358,8 +362,8 @@ static enum RCP_TOKEN rcp_parse_domain(struct rcp_parser *parser)
 
     strcpy(st->rcps_domain_buffer, parser->rcpp_str_buffer);
     /**
-     * We initialize this pointer in place, just make single pointer check 
-     * in 'domain'-less resolv.conf. 
+     * We initialize this pointer in place, just make single pointer check
+     * in 'domain'-less resolv.conf.
      */
     st->rcps_domain = st->rcps_domain_buffer;
 
@@ -382,9 +386,9 @@ static enum RCP_TOKEN rcp_parse_search(struct rcp_parser *parser)
 
     Assert(parser->rcpp_state);
     st = parser->rcpp_state;
-    
+
     /**
-     * We asume that duplication of search list in resolv.conf isn't correct. 
+     * We asume that duplication of search list in resolv.conf isn't correct.
      */
     if (   tok == tok_eof
         || tok == tok_error
@@ -405,9 +409,9 @@ static enum RCP_TOKEN rcp_parse_search(struct rcp_parser *parser)
 
         trailing -= len + 1; /* 1 reserved for '\0' */
 
-        st->rcps_searchlist[i] = ptr; 
+        st->rcps_searchlist[i] = ptr;
 
-    } while(  (tok = rcp_get_token(parser)) == tok_string 
+    } while(  (tok = rcp_get_token(parser)) == tok_string
             && ++i != RCPS_MAX_SEARCHLIST);
 
     st->rcps_num_searchlist = i;
@@ -419,7 +423,7 @@ static enum RCP_TOKEN rcp_parse_search(struct rcp_parser *parser)
  * expr ::= nameserverexpr | expr
  *      ::= portexpr | expr
  *      ::= domainexpr | expr
- *      ::= searchexpr | expr 
+ *      ::= searchexpr | expr
  *      ::= searchlistexpr | expr
  *      ::= search_orderexpr | expr
  *      ::= timeoutexpr | expr
@@ -431,7 +435,7 @@ static int rcp_parse_primary(struct rcp_parser *parser)
     tok = rcp_get_token(parser);
 
     while(   tok != tok_eof
-          && tok != tok_error) 
+          && tok != tok_error)
     {
         switch (tok)
         {
@@ -475,10 +479,10 @@ int rcp_parse(struct rcp_state* state, const char *filename)
     parser.rcpp_state = state;
 
     /**
-     * for debugging need: with RCP_STANDALONE it's possible 
+     * for debugging need: with RCP_STANDALONE it's possible
      * to run simplefied scenarious like
      *
-     * # cat /etc/resolv.conf | rcp-test-0 
+     * # cat /etc/resolv.conf | rcp-test-0
      * or in lldb
      * # process launch -i /etc/resolv.conf
      */
@@ -500,7 +504,7 @@ int rcp_parse(struct rcp_state* state, const char *filename)
     if (filename != NULL)
         RTStrmClose(parser.rcpp_stream);
 
-    if (rc == -1) 
+    if (rc == -1)
         return -1;
 
 #ifdef RT_OS_DARWIN
@@ -511,7 +515,7 @@ int rcp_parse(struct rcp_state* state, const char *filename)
     if (state->rcps_port == 0)
         state->rcps_port = 53;
 
-    for(i = 0;  (state->rcps_flags & RCPSF_NO_STR2IPCONV) == 0 
+    for(i = 0;  (state->rcps_flags & RCPSF_NO_STR2IPCONV) == 0
              && i != RCPS_MAX_NAMESERVERS; ++i)
     {
         RTNETADDR *addr = &state->rcps_nameserver[i];
