@@ -245,6 +245,11 @@ static enum RCP_TOKEN rcp_parse_nameserver(struct rcp_parser *parser)
         Assert(parser->rcpp_state);
 
         st = parser->rcpp_state;
+
+        /* It's still valid resolv.conf file, just rest of the nameservers should be ignored */
+        if (st->rcps_num_nameserver >= RCPS_MAX_NAMESERVERS)
+            return rcp_get_token(parser);
+
         address = &st->rcps_nameserver[st->rcps_num_nameserver];
         str_address = &st->rcps_nameserver_str_buffer[st->rcps_num_nameserver * RCPS_IPVX_SIZE];
 #ifdef RT_OS_DARWIN
