@@ -4244,7 +4244,7 @@ TEMPLATE_VBOXMAINEXE_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXMAINEXE_LDFLAGS.amd64       = -m64
  ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXMAINEXE_LIBS                = pthread m rt $(LIB_RUNTIME) dl
-TEMPLATE_VBOXMAINEXE_LDFLAGS.linux       = $(VBOX_LD_as_needed)
+TEMPLATE_VBOXMAINEXE_LDFLAGS.linux       = -Wl,-z,noexecstack $(VBOX_LD_as_needed)
  else ifeq ($(KBUILD_TARGET),os2)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3OMF
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
@@ -4703,7 +4703,7 @@ ifdef VBOX_WITH_QTGUI
 	$(VBOX_LIB_VMM_LAZY)
 
   ifeq ($(KBUILD_TARGET),linux)
-   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
+   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += -Wl,-z,noexecstack $(VBOX_LD_as_needed)
    TEMPLATE_VBOXQT4GUIEXE_LIBS += \
      $(VBOX_XCURSOR_LIBS) \
 	Xext \
