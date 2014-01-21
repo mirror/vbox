@@ -40,6 +40,7 @@
 #include <iprt/string.h>
 
 #include "internal/magics.h"
+#include "tar.h"
 
 
 /******************************************************************************
@@ -268,29 +269,59 @@ DECLINLINE(uint64_t) rtTarRecToSize(PRTTARRECORD pRecord)
     return (uint64_t)cbSize;
 }
 
-DECLINLINE(int) rtTarCalcChkSum(PRTTARRECORD pRecord, uint32_t *pChkSum)
+/**
+ * Calculates the TAR header checksums and detects if it's all zeros.
+ *
+ * @returns true if all zeros, false if not.
+ * @param   pHdr                The header to checksum.
+ * @param   pi32Unsigned        Where to store the checksum calculated using
+ *                              unsigned chars.   This is the one POSIX
+ *                              specifies.
+ * @param   pi32Signed          Where to store the checksum calculated using
+ *                              signed chars.
+ *
+ * @remarks The reason why we calculate the checksum as both signed and unsigned
+ *          has to do with various the char C type being signed on some hosts
+ *          and unsigned on others.
+ *
+ * @remarks Borrowed from tarvfs.cpp.
+ */
+static bool rtZipTarCalcChkSum(PCRTZIPTARHDR pHdr, int32_t *pi32Unsigned, int32_t *pi32Signed)
 {
-    uint32_t check = 0;
-    uint32_t zero = 0;
-    for (size_t i = 0; i < sizeof(RTTARRECORD); ++i)
+    int32_t i32Unsigned = 0;
+    int32_t i32Signed   = 0;
+
+    /*
+     * Sum up the entire header.
+     */
+    const char *pch    = (const char *)pHdr;
+    const char *pchEnd = pch + sizeof(*pHdr);
+    do
     {
-        /* Calculate the sum of every byte from the header. The checksum field
-         * itself is counted as all blanks. */
-        if (   i <  RT_UOFFSETOF(RTTARRECORD, h.chksum)
-            || i >= RT_UOFFSETOF(RTTARRECORD, h.linkflag))
-            check += pRecord->d[i];
-        else
-            check += ' ';
-        /* Additional check if all fields are zero, which indicate EOF. */
-        zero += pRecord->d[i];
-    }
+        i32Unsigned += *(unsigned char *)pch;
+        i32Signed   += *(signed   char *)pch;
+    } while (++pch != pchEnd);
 
-    /* EOF? */
-    if (!zero)
-        return VERR_TAR_END_OF_FILE;
+    /*
+     * Check if it's all zeros and replace the chksum field with spaces.
+     */
+    bool const fZeroHdr = i32Unsigned == 0;
 
-    *pChkSum = check;
-    return VINF_SUCCESS;
+    pch    = pHdr->Common.chksum;
+    pchEnd = pch + sizeof(pHdr->Common.chksum);
+    do
+    {
+        i32Unsigned -= *(unsigned char *)pch;
+        i32Signed   -= *(signed   char *)pch;
+    } while (++pch != pchEnd);
+
+    i32Unsigned += (unsigned char)' ' * sizeof(pHdr->Common.chksum);
+    i32Signed   += (signed   char)' ' * sizeof(pHdr->Common.chksum);
+
+    *pi32Unsigned = i32Unsigned;
+    if (pi32Signed)
+        *pi32Signed = i32Signed;
+    return fZeroHdr;
 }
 
 DECLINLINE(int) rtTarReadHeaderRecord(RTFILE hFile, PRTTARRECORD pRecord)
@@ -305,16 +336,16 @@ DECLINLINE(int) rtTarReadHeaderRecord(RTFILE hFile, PRTTARRECORD pRecord)
         return rc;
 
     /* Check for data integrity & an EOF record */
-    uint32_t check = 0;
-    rc = rtTarCalcChkSum(pRecord, &check);
-    /* EOF? */
-    if (RT_FAILURE(rc))
-        return rc;
+    int32_t iUnsignedChksum, iSignedChksum;
+    if (rtZipTarCalcChkSum((PCRTZIPTARHDR)pRecord, &iUnsignedChksum, &iSignedChksum))
+        return VERR_TAR_END_OF_FILE;
 
     /* Verify the checksum */
     uint32_t sum;
     rc = RTStrToUInt32Full(pRecord->h.chksum, 8, &sum);
-    if (RT_SUCCESS(rc) && sum == check)
+    if (   RT_SUCCESS(rc)
+        && (   sum == (uint32_t)iSignedChksum
+            || sum == (uint32_t)iUnsignedChksum) )
     {
         /* Make sure the strings are zero terminated. */
         pRecord->h.name[sizeof(pRecord->h.name) - 1]         = 0;
@@ -350,12 +381,12 @@ DECLINLINE(int) rtTarCreateHeaderRecord(PRTTARRECORD pRecord, const char *pszSrc
     pRecord->h.linkflag = LF_NORMAL;
 
     /* Create the checksum out of the new header */
-    uint32_t uChkSum = 0;
-    int rc = rtTarCalcChkSum(pRecord, &uChkSum);
-    if (RT_FAILURE(rc))
-        return rc;
+    int32_t iUnsignedChksum, iSignedChksum;
+    if (rtZipTarCalcChkSum((PCRTZIPTARHDR)pRecord, &iUnsignedChksum, &iSignedChksum))
+        return VERR_TAR_END_OF_FILE;
+
     /* Format the checksum */
-    RTStrPrintf(pRecord->h.chksum, sizeof(pRecord->h.chksum), "%0.7o", uChkSum);
+    RTStrPrintf(pRecord->h.chksum, sizeof(pRecord->h.chksum), "%0.7o", iUnsignedChksum);
 
     return VINF_SUCCESS;
 }
