@@ -275,7 +275,7 @@ typedef struct CR_FBTEX
 #define PCR_FBENTRY_FROM_ENTRY(_pEntry) ((CR_FRAMEBUFFER_ENTRY*)((uint8_t*)(_pEntry) - RT_OFFSETOF(CR_FRAMEBUFFER_ENTRY, Entry)))
 
 #define CR_PMGR_MODE_WINDOW 0x1
-/* CR_PMGR_MODE_WINDOW gets automatically set with it */
+/* mutually exclusive with CR_PMGR_MODE_WINDOW */
 #define CR_PMGR_MODE_ROOTVR 0x2
 #define CR_PMGR_MODE_VRDP   0x4
 #define CR_PMGR_MODE_ALL    0x7
@@ -515,6 +515,7 @@ static CR_FRAMEBUFFER_ENTRY* crFbEntryCreate(CR_FRAMEBUFFER *pFb, CR_TEXDATA* pT
     CrVrScrCompositorEntryInit(&pEntry->Entry, pRect, pTex, crFbEntryReleased);
     CrVrScrCompositorEntryFlagsSet(&pEntry->Entry, fFlags);
     pEntry->cRefs = 1;
+    pEntry->Flags.Value = 0;
     CrHTableCreate(&pEntry->HTable, 0);
 
     return pEntry;
@@ -958,10 +959,18 @@ protected:
         while ((pEntry = CrVrScrCompositorConstIterNext(&Iter)) != NULL)
         {
             HCR_FRAMEBUFFER_ENTRY hEntry = CrFbEntryFromCompositorEntry(pEntry);
+            rc = EntryCreated(mpFb, hEntry);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
+                break;
+            }
+
             rc = EntryAdded(mpFb, hEntry);
             if (!RT_SUCCESS(rc))
             {
                 WARN(("err"));
+                EntryDestroyed(mpFb, hEntry);
                 break;
             }
         }
@@ -1404,16 +1413,24 @@ public:
             return VERR_INVALID_STATE;
         }
 
-        mParentId = parentId;
+        uint64_t oldParentId = mParentId;
 
-        if (!parentId)
-            cr_server.head_spu->dispatch_table.WindowShow(mSpuWindow, false);
+        mParentId = parentId;
 
         if (mSpuWindow)
         {
+            if (oldParentId && !parentId && mFlags.fVisible)
+                cr_server.head_spu->dispatch_table.WindowShow(mSpuWindow, false);
+
             renderspuSetWindowId(mParentId);
             renderspuReparentWindow(mSpuWindow);
             renderspuSetWindowId(cr_server.screen[0].winID);
+
+            if (parentId)
+                cr_server.head_spu->dispatch_table.WindowPosition(mSpuWindow, mxPos, myPos);
+
+            if (!oldParentId && parentId && mFlags.fVisible)
+                cr_server.head_spu->dispatch_table.WindowShow(mSpuWindow, true);
         }
 
         return VINF_SUCCESS;
@@ -2927,7 +2944,7 @@ static uint32_t crPMgrModeAdjustVal(uint32_t u32Mode)
 {
     u32Mode = CR_PMGR_MODE_ALL & u32Mode;
     if (CR_PMGR_MODE_ROOTVR & u32Mode)
-        u32Mode |= CR_PMGR_MODE_WINDOW;
+        u32Mode &= ~CR_PMGR_MODE_WINDOW;
     return u32Mode;
 }
 
@@ -2999,10 +3016,19 @@ int CrPMgrModeModify(HCR_FRAMEBUFFER hFb, uint32_t u32ModeAdd, uint32_t u32ModeR
     uint32_t idScreen = CrFbGetScreenInfo(hFb)->u32ViewIndex;
 
     CR_FBDISPLAY_INFO *pInfo = &g_CrPresenter.aDisplayInfos[idScreen];
-    u32ModeRemove = crPMgrModeAdjustVal(u32ModeRemove);
+    u32ModeRemove = ((u32ModeRemove | crPMgrModeAdjustVal(u32ModeRemove)) & CR_PMGR_MODE_ALL);
     u32ModeAdd = crPMgrModeAdjustVal(u32ModeAdd);
     u32ModeRemove &= pInfo->u32Mode;
     u32ModeAdd &= ~(u32ModeRemove | pInfo->u32Mode);
+    uint32_t u32ModeResulting = ((pInfo->u32Mode | u32ModeAdd) & ~u32ModeRemove);
+    uint32_t u32Tmp = crPMgrModeAdjustVal(u32ModeResulting);
+    if (u32Tmp != u32ModeResulting)
+    {
+        u32ModeAdd |= (u32Tmp & ~u32ModeResulting);
+        u32ModeRemove |= (~u32Tmp & u32ModeResulting);
+        u32ModeResulting = u32Tmp;
+        Assert(u32ModeResulting == ((pInfo->u32Mode | u32ModeAdd) & ~u32ModeRemove));
+    }
     if (!u32ModeRemove && !u32ModeAdd)
         return VINF_SUCCESS;
 
@@ -3024,12 +3050,6 @@ int CrPMgrModeModify(HCR_FRAMEBUFFER hFb, uint32_t u32ModeAdd, uint32_t u32ModeR
         delete pInfo->pDpWinRootVr;
         pInfo->pDpWinRootVr = NULL;
         pInfo->pDpWin = NULL;
-
-        if (!(u32ModeRemove & CR_PMGR_MODE_WINDOW))
-        {
-            /* ensure the window is re-created */
-            u32ModeAdd |= CR_PMGR_MODE_WINDOW;
-        }
     }
     else if (u32ModeRemove & CR_PMGR_MODE_WINDOW)
     {
@@ -3106,7 +3126,7 @@ int CrPMgrModeModify(HCR_FRAMEBUFFER hFb, uint32_t u32ModeAdd, uint32_t u32ModeR
     if (pOldWin)
         delete pOldWin;
 
-    pInfo->u32Mode = ((pInfo->u32Mode | u32ModeAdd) & ~u32ModeRemove);
+    pInfo->u32Mode = u32ModeResulting;
 
     return VINF_SUCCESS;
 }
