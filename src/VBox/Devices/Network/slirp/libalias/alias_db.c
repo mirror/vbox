@@ -1073,7 +1073,7 @@ DeleteLink(struct alias_link *lnk)
 #if 0
         sofree(la->pData, lnk->pSo);
 #else
-	slirpDeleteLinkSocket(lnk);
+        slirpDeleteLinkSocket(lnk);
 #endif
     }
 # endif
