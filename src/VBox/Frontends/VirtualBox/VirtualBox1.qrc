@@ -256,6 +256,7 @@
         <file alias="minimize_16px.png">images/minimize_16px.png</file>
         <file alias="restore_16px.png">images/restore_16px.png</file>
         <file alias="close_16px.png">images/close_16px.png</file>
+        <file alias="close_popup_16px.png">images/close_popup_16px.png</file>
         <file alias="ok_16px.png">images/ok_16px.png</file>
         <file alias="cancel_16px.png">images/cancel_16px.png</file>
         <file alias="vm_save_state_16px.png">images/vm_save_state_16px.png</file>

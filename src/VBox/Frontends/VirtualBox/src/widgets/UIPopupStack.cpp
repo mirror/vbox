@@ -49,14 +49,12 @@ bool UIPopupStack::exists(const QString &strPopupPaneID) const
 
 void UIPopupStack::createPopupPane(const QString &strPopupPaneID,
                                    const QString &strMessage, const QString &strDetails,
-                                   const QMap<int, QString> &buttonDescriptions,
-                                   bool fProposeAutoConfirmation)
+                                   const QMap<int, QString> &buttonDescriptions)
 {
     /* Redirect request to viewport: */
     m_pScrollViewport->createPopupPane(strPopupPaneID,
                                        strMessage, strDetails,
-                                       buttonDescriptions,
-                                       fProposeAutoConfirmation);
+                                       buttonDescriptions);
 
     /* Propagate width: */
     propagateWidth();

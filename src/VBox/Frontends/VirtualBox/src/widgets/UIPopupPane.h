@@ -70,8 +70,7 @@ public:
     /* Constructor: */
     UIPopupPane(QWidget *pParent,
                 const QString &strMessage, const QString &strDetails,
-                const QMap<int, QString> &buttonDescriptions,
-                bool fProposeAutoConfirmation);
+                const QMap<int, QString> &buttonDescriptions);
 
     /* API: Recall stuff: */
     void recall();
@@ -79,9 +78,6 @@ public:
     /* API: Text stuff: */
     void setMessage(const QString &strMessage);
     void setDetails(const QString &strDetails);
-
-    /* API: Auto-confirmation stuff: */
-    void setProposeAutoConfirmation(bool fPropose);
 
     /* API: Layout stuff: */
     QSize minimumSizeHint() const { return m_minimumSizeHint; }
@@ -147,9 +143,6 @@ private:
 
     /* Variables: Text stuff: */
     QString m_strMessage, m_strDetails;
-
-    /* Variables: Auto-confirmation stuff: */
-    bool m_fProposeAutoConfirmation;
 
     /* Variables: Button stuff: */
     QMap<int, QString> m_buttonDescriptions;

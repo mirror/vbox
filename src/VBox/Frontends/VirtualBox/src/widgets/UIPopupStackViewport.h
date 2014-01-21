@@ -51,8 +51,7 @@ public:
     bool exists(const QString &strPopupPaneID) const;
     void createPopupPane(const QString &strPopupPaneID,
                          const QString &strMessage, const QString &strDetails,
-                         const QMap<int, QString> &buttonDescriptions,
-                         bool fProposeAutoConfirmation);
+                         const QMap<int, QString> &buttonDescriptions);
     void updatePopupPane(const QString &strPopupPaneID,
                          const QString &strMessage, const QString &strDetails);
     void recallPopupPane(const QString &strPopupPaneID);
