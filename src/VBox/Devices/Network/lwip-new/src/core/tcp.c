@@ -1005,7 +1005,12 @@ tcp_slowtmr_start:
      * (to the real destination - as done by proxy hanlder).
      */
     /* Check if this PCB has stayed too long in SYN-RCVD */
-    if (pcb->state == SYN_RCVD || pcb->state == SYN_RCVD_0) {
+    if (pcb->state == SYN_RCVD
+#if LWIP_CONNECTION_PROXY
+        || pcb->state == SYN_RCVD_0
+#endif
+        )
+    {
       if ((u32_t)(tcp_ticks - pcb->tmr) >
           TCP_SYN_RCVD_TIMEOUT / TCP_SLOW_INTERVAL) {
         ++pcb_remove;
