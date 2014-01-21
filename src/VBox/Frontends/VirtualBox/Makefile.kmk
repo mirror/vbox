@@ -849,6 +849,7 @@ VirtualBox_BLDDIRS       += $(VBOX_VIRTUALBOX4_OUT_DIR)
 VirtualBox_CLEAN         += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
 $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc: \
 		$(VBOX_VIRTUALBOX4_SRC)/VirtualBoxBrand.qrc \
+		$(PATH_ROOT)/Config.kmk \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
 	$(QUIET)$(SED) \
