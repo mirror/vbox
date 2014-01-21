@@ -117,14 +117,14 @@
 #define LWIP_TCP 1
 #define LWIP_SOCKET 1
 #define LWIP_ARP 1
-#define ARP_PROXY 1
+#define ARP_PROXY 0
 #define LWIP_ETHERNET 1
 #define LWIP_COMPAT_SOCKETS 0
 #define LWIP_COMPAT_MUTEX 1
 
 #define LWIP_IPV6 1
-#define LWIP_IPV6_FORWARD 1
-#define LWIP_ND6_PROXY 1
+#define LWIP_IPV6_FORWARD 0
+#define LWIP_ND6_PROXY 0
 
 #define LWIP_ND6_ALLOW_RA_UPDATES       (!LWIP_IPV6_FORWARD)
 #define LWIP_IPV6_SEND_ROUTER_SOLICIT   (!LWIP_IPV6_FORWARD)
@@ -141,8 +141,8 @@
 /** 
  * aka Slirp mode.
  */
-#define LWIP_CONNECTION_PROXY 1
-#define IP_FORWARD            1
+#define LWIP_CONNECTION_PROXY 0
+#define IP_FORWARD            0
 
 /* MEMP_NUM_SYS_TIMEOUT: the number of simultaneously active
    timeouts. */
