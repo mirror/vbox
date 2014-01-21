@@ -18,6 +18,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QKeyEvent>
@@ -172,11 +173,19 @@ QString UIPopupPaneButtonPane::defaultToolTip(int iButtonID)
     QString strToolTip;
     switch (iButtonID & AlertButtonMask)
     {
-        case AlertButton_Ok:      strToolTip = QIMessageBox::tr("OK");     break;
-        case AlertButton_Cancel:  strToolTip = QIMessageBox::tr("Cancel"); break;
-        case AlertButton_Choice1: strToolTip = QIMessageBox::tr("Yes");    break;
-        case AlertButton_Choice2: strToolTip = QIMessageBox::tr("No");     break;
-        default:                  strToolTip = QString();                  break;
+        case AlertButton_Ok: strToolTip = QIMessageBox::tr("OK"); break;
+        case AlertButton_Cancel:
+        {
+            switch (iButtonID & AlertOptionMask)
+            {
+                case AlertOption_AutoConfirmed: strToolTip = QApplication::translate("UIMessageCenter", "Do not show this message again"); break;
+                default: strToolTip = QIMessageBox::tr("Cancel"); break;
+            }
+            break;
+        }
+        case AlertButton_Choice1: strToolTip = QIMessageBox::tr("Yes"); break;
+        case AlertButton_Choice2: strToolTip = QIMessageBox::tr("No"); break;
+        default: strToolTip = QString(); break;
     }
     return strToolTip;
 }
@@ -187,11 +196,19 @@ QIcon UIPopupPaneButtonPane::defaultIcon(int iButtonID)
     QIcon icon;
     switch (iButtonID & AlertButtonMask)
     {
-        case AlertButton_Ok:      icon = UIIconPool::iconSet(":/ok_16px.png"); break;
-        case AlertButton_Cancel:  icon = UIIconPool::iconSet(":/cancel_16px.png"); break;
+        case AlertButton_Ok: icon = UIIconPool::iconSet(":/ok_16px.png"); break;
+        case AlertButton_Cancel:
+        {
+            switch (iButtonID & AlertOptionMask)
+            {
+                case AlertOption_AutoConfirmed: icon = UIIconPool::iconSet(":/close_popup_16px.png"); break;
+                default: icon = UIIconPool::iconSet(":/cancel_16px.png"); break;
+            }
+            break;
+        }
         case AlertButton_Choice1: break;
         case AlertButton_Choice2: break;
-        default:                  break;
+        default: break;
     }
     return icon;
 }

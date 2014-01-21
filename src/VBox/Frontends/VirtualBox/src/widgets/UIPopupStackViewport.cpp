@@ -38,8 +38,7 @@ bool UIPopupStackViewport::exists(const QString &strPopupPaneID) const
 
 void UIPopupStackViewport::createPopupPane(const QString &strPopupPaneID,
                                            const QString &strMessage, const QString &strDetails,
-                                           const QMap<int, QString> &buttonDescriptions,
-                                           bool fProposeAutoConfirmation)
+                                           const QMap<int, QString> &buttonDescriptions)
 {
     /* Make sure there is no such popup-pane already: */
     if (m_panes.contains(strPopupPaneID))
@@ -51,8 +50,7 @@ void UIPopupStackViewport::createPopupPane(const QString &strPopupPaneID,
     /* Create new popup-pane: */
     UIPopupPane *pPopupPane = m_panes[strPopupPaneID] = new UIPopupPane(this,
                                                                         strMessage, strDetails,
-                                                                        buttonDescriptions,
-                                                                        fProposeAutoConfirmation);
+                                                                        buttonDescriptions);
 
     /* Attach popup-pane connection: */
     connect(this, SIGNAL(sigProposePopupPaneWidth(int)), pPopupPane, SLOT(sltHandleProposalForWidth(int)));

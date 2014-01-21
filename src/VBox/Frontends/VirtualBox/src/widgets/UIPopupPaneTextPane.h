@@ -22,16 +22,12 @@
 /* Qt includes: */
 #include <QWidget>
 
-/* GUI includes: */
-#include "QIWithRetranslateUI.h"
-
 /* Forward declarations: */
 class QLabel;
-class QCheckBox;
 class UIAnimation;
 
 /* Popup-pane text-pane prototype class: */
-class UIPopupPaneTextPane : public QIWithRetranslateUI<QWidget>
+class UIPopupPaneTextPane : public QWidget
 {
     Q_OBJECT;
     Q_PROPERTY(QSize collapsedSizeHint READ collapsedSizeHint);
@@ -50,16 +46,10 @@ signals:
 public:
 
     /* Constructor: */
-    UIPopupPaneTextPane(QWidget *pParent, const QString &strText,
-                        bool fProposeAutoConfirmation, bool fFocused);
+    UIPopupPaneTextPane(QWidget *pParent, const QString &strText, bool fFocused);
 
     /* API: Text stuff: */
     void setText(const QString &strText);
-
-    /* API: Auto-confirmation stuff: */
-    void setProposeAutoConfirmation(bool fPropose);
-    bool autoConfirmationProposed() const;
-    bool isAutoConfirmed() const;
 
     /* API: Layout stuff: */
     QSize minimumSizeHint() const;
@@ -82,9 +72,6 @@ private:
     void prepareContent();
     void prepareAnimation();
 
-    /* Helper: Translate stuff: */
-    void retranslateUi();
-
     /* Helper: Layout stuff: */
     void updateSizeHint();
 
@@ -99,7 +86,6 @@ private:
     const int m_iLayoutMargin;
     const int m_iLayoutSpacing;
     QSize m_labelSizeHint;
-    QSize m_checkBoxSizeHint;
     QSize m_collapsedSizeHint;
     QSize m_expandedSizeHint;
     QSize m_minimumSizeHint;
@@ -108,8 +94,6 @@ private:
     QString m_strText;
     QLabel *m_pLabel;
     int m_iDesiredLabelWidth;
-    QCheckBox *m_pAutoConfirmCheckBox;
-    bool m_fProposeAutoConfirmation;
 
     /* Variables: Focus stuff: */
     bool m_fFocused;

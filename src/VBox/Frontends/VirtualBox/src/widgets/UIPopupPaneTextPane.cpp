@@ -25,16 +25,13 @@
 #include "UIPopupPaneTextPane.h"
 #include "UIAnimationFramework.h"
 
-UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent, const QString &strText,
-                                         bool fProposeAutoConfirmation, bool fFocused)
-    : QIWithRetranslateUI<QWidget>(pParent)
+UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent, const QString &strText, bool fFocused)
+    : QWidget(pParent)
     , m_iLayoutMargin(0)
     , m_iLayoutSpacing(10)
     , m_strText(strText)
     , m_pLabel(0)
     , m_iDesiredLabelWidth(-1)
-    , m_pAutoConfirmCheckBox(0)
-    , m_fProposeAutoConfirmation(fProposeAutoConfirmation)
     , m_fFocused(fFocused)
     , m_pAnimation(0)
 {
@@ -54,31 +51,6 @@ void UIPopupPaneTextPane::setText(const QString &strText)
 
     /* Update size-hint: */
     updateSizeHint();
-}
-
-void UIPopupPaneTextPane::setProposeAutoConfirmation(bool fPropose)
-{
-    /* Make sure the auto-confirmation-proposal has changed: */
-    if (m_fProposeAutoConfirmation == fPropose)
-        return;
-
-    /* Fetch new auto-confirmation-proposal: */
-    m_fProposeAutoConfirmation = fPropose;
-
-    /* Update size-hint: */
-    updateSizeHint();
-}
-
-bool UIPopupPaneTextPane::autoConfirmationProposed() const
-{
-    return m_fProposeAutoConfirmation;
-}
-
-bool UIPopupPaneTextPane::isAutoConfirmed() const
-{
-    return autoConfirmationProposed() &&
-           m_pAutoConfirmCheckBox &&
-           m_pAutoConfirmCheckBox->isChecked();
 }
 
 QSize UIPopupPaneTextPane::minimumSizeHint() const
@@ -115,27 +87,6 @@ void UIPopupPaneTextPane::layoutContent()
     /* Label: */
     m_pLabel->move(m_iLayoutMargin, m_iLayoutMargin);
     m_pLabel->resize(qMin(iWidth, iLabelWidth), qMin(iHeight, iLabelHeight));
-
-    /* Check-box: */
-    if (m_fProposeAutoConfirmation)
-    {
-        /* Variables: */
-        const int iCheckBoxWidth = m_checkBoxSizeHint.width();
-        const int iCheckBoxHeight = m_checkBoxSizeHint.height();
-        const int iCheckBoxY = m_iLayoutMargin + iLabelHeight + m_iLayoutSpacing;
-        /* Layout check-box: */
-        if (iHeight - m_iLayoutMargin - iCheckBoxHeight - iCheckBoxY >= 0)
-        {
-            m_pAutoConfirmCheckBox->move(m_iLayoutMargin, iCheckBoxY);
-            m_pAutoConfirmCheckBox->resize(iCheckBoxWidth, iCheckBoxHeight);
-            if (m_pAutoConfirmCheckBox->isHidden())
-                m_pAutoConfirmCheckBox->show();
-        }
-        else if (!m_pAutoConfirmCheckBox->isHidden())
-            m_pAutoConfirmCheckBox->hide();
-    }
-    else if (!m_pAutoConfirmCheckBox->isHidden())
-        m_pAutoConfirmCheckBox->hide();
 }
 
 void UIPopupPaneTextPane::sltHandleProposalForWidth(int iWidth)
@@ -199,17 +150,6 @@ void UIPopupPaneTextPane::prepareContent()
         m_pLabel->setFocusPolicy(Qt::NoFocus);
         m_pLabel->setText(m_strText);
     }
-
-    /* Create check-box: */
-    m_pAutoConfirmCheckBox = new QCheckBox(this);
-    {
-        /* Prepare check-box: */
-        m_pAutoConfirmCheckBox->setFont(tuneFont(m_pAutoConfirmCheckBox->font()));
-        m_pAutoConfirmCheckBox->setFocusPolicy(Qt::NoFocus);
-    }
-
-    /* Translate UI finally: */
-    retranslateUi();
 }
 
 void UIPopupPaneTextPane::prepareAnimation()
@@ -220,12 +160,6 @@ void UIPopupPaneTextPane::prepareAnimation()
     /* Install geometry animation for 'minimumSizeHint' property: */
     m_pAnimation = UIAnimation::installPropertyAnimation(this, "minimumSizeHint", "collapsedSizeHint", "expandedSizeHint",
                                                          SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()), m_fFocused);
-}
-
-void UIPopupPaneTextPane::retranslateUi()
-{
-    /* Translate auto-confirm check-box: */
-    m_pAutoConfirmCheckBox->setText(QApplication::translate("UIMessageCenter", "Do not show this message again"));
 }
 
 void UIPopupPaneTextPane::updateSizeHint()
@@ -241,16 +175,8 @@ void UIPopupPaneTextPane::updateSizeHint()
     {
         /* Recalculate label size-hint: */
         m_labelSizeHint = QSize(m_iDesiredLabelWidth, m_pLabel->heightForWidth(m_iDesiredLabelWidth));
-        /* Recalculate check-box size-hint: */
-        m_checkBoxSizeHint = m_fProposeAutoConfirmation ? m_pAutoConfirmCheckBox->sizeHint() : QSize();
         /* Expanded size-hint contains full-size label: */
         m_expandedSizeHint = m_labelSizeHint;
-        /* Expanded size-hint can contain check-box: */
-        if (m_checkBoxSizeHint.isValid())
-        {
-            m_expandedSizeHint.setWidth(qMax(m_expandedSizeHint.width(), m_checkBoxSizeHint.width()));
-            m_expandedSizeHint.setHeight(m_expandedSizeHint.height() + m_iLayoutSpacing + m_checkBoxSizeHint.height());
-        }
     }
 
     /* Update current size-hint: */

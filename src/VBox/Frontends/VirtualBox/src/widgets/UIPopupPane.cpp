@@ -29,13 +29,11 @@
 
 UIPopupPane::UIPopupPane(QWidget *pParent,
                          const QString &strMessage, const QString &strDetails,
-                         const QMap<int, QString> &buttonDescriptions,
-                         bool fProposeAutoConfirmation)
+                         const QMap<int, QString> &buttonDescriptions)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fPolished(false)
     , m_iLayoutMargin(10), m_iLayoutSpacing(5)
     , m_strMessage(strMessage), m_strDetails(strDetails)
-    , m_fProposeAutoConfirmation(fProposeAutoConfirmation)
     , m_buttonDescriptions(buttonDescriptions)
     , m_fShown(false)
     , m_pShowAnimation(0)
@@ -76,17 +74,6 @@ void UIPopupPane::setDetails(const QString &strDetails)
 
     /* Fetch new details: */
     m_strDetails = strDetails;
-}
-
-void UIPopupPane::setProposeAutoConfirmation(bool fPropose)
-{
-    /* Make sure the auto-confirmation-proposal has changed: */
-    if (m_fProposeAutoConfirmation == fPropose)
-        return;
-
-    /* Fetch new auto-confirmation-proposal: */
-    m_fProposeAutoConfirmation = fPropose;
-    m_pTextPane->setProposeAutoConfirmation(m_fProposeAutoConfirmation);
 }
 
 void UIPopupPane::setMinimumSizeHint(const QSize &minimumSizeHint)
@@ -198,7 +185,7 @@ void UIPopupPane::sltUpdateSizeHint()
 void UIPopupPane::sltButtonClicked(int iButtonID)
 {
     /* Complete popup with corresponding code: */
-    done(iButtonID & AlertButtonMask);
+    done(iButtonID);
 }
 
 void UIPopupPane::prepare()
@@ -227,7 +214,7 @@ void UIPopupPane::prepareBackground()
 void UIPopupPane::prepareContent()
 {
     /* Create message-label: */
-    m_pTextPane = new UIPopupPaneTextPane(this, m_strMessage, m_fProposeAutoConfirmation, m_fFocused);
+    m_pTextPane = new UIPopupPaneTextPane(this, m_strMessage, m_fFocused);
     {
         /* Prepare label: */
         connect(this, SIGNAL(sigProposeTextPaneWidth(int)), m_pTextPane, SLOT(sltHandleProposalForWidth(int)));
@@ -447,10 +434,6 @@ void UIPopupPane::paintFrame(QPainter &painter)
 
 void UIPopupPane::done(int iResultCode)
 {
-    /* Was the popup auto-confirmed? */
-    if (m_pTextPane->isAutoConfirmed())
-        iResultCode |= AlertOption_AutoConfirmed;
-
     /* Notify listeners: */
     emit sigDone(iResultCode);
 }
