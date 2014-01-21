@@ -394,7 +394,8 @@ void crVBoxServerMuralFbResizeBegin(HCR_FRAMEBUFFER hFb)
     crHashtableWalk(cr_server.muralTable, crVBoxServerMuralFbCleanCB, hFb);
 }
 
-DECLEXPORT(int) crVBoxServerNotifyResize(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM)
+
+static int crVBoxServerResizeScreen(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM)
 {
     int rc;
     HCR_FRAMEBUFFER hFb = CrPMgrFbGet(pScreen->u32ViewIndex);
@@ -426,6 +427,28 @@ DECLEXPORT(int) crVBoxServerNotifyResize(const struct VBVAINFOSCREEN *pScreen, v
     CrPMgrNotifyResize(hFb);
 
     return rc;
+}
+
+DECLEXPORT(int) crVBoxServerNotifyResize(uint32_t idScreen)
+{
+    struct VBVAINFOSCREEN Screen;
+    void *pvVRAM;
+
+    int rc = cr_server.CltInfo.pfnDmGet(cr_server.CltInfo.hClient, idScreen, &Screen, &pvVRAM);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("err"));
+        return rc;
+    }
+
+    rc = crVBoxServerResizeScreen(&Screen, pvVRAM);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("err"));
+        return rc;
+    }
+
+    return VINF_SUCCESS;
 }
 
 void crServerRedirMuralFBO(CRMuralInfo *mural, bool fEnabled)

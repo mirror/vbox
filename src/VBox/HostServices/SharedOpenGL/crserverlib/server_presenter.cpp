@@ -669,6 +669,15 @@ int CrFbEntryRegionsAdd(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry, const
             Assert(!fChangeFlags);
             Assert(!pReplacedScrEntry);
         }
+
+        if (hEntry)
+        {
+            if (CrVrScrCompositorEntryIsUsed(&hEntry->Entry))
+            {
+                if (pFb->pDisplay)
+                    pFb->pDisplay->EntryTexChanged(pFb, hEntry);
+            }
+        }
     }
     else
         WARN(("CrVrScrCompositorEntryRegionsAdd failed, rc %d", rc));
@@ -726,6 +735,15 @@ int CrFbEntryRegionsSet(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry, const
             if (pFb->pDisplay)
                 pFb->pDisplay->RegionsChanged(pFb);
         }
+
+        if (hEntry)
+        {
+            if (CrVrScrCompositorEntryIsUsed(&hEntry->Entry))
+            {
+                if (pFb->pDisplay)
+                    pFb->pDisplay->EntryTexChanged(pFb, hEntry);
+            }
+        }
     }
     else
         WARN(("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc));
@@ -763,6 +781,15 @@ void* CrFbDDataEntryGet(HCR_FRAMEBUFFER_ENTRY hEntry, CRHTABLE_HANDLE hSlot)
     return CrHTableGet(&hEntry->HTable, hSlot);
 }
 
+typedef union CR_FBDISPBASE_FLAGS
+{
+    struct {
+        uint32_t fRegionsShanged : 1;
+        uint32_t Reserved        : 31;
+    };
+    uint32_t u32Value;
+} CR_FBDISPBASE_FLAGS;
+
 class CrFbDisplayBase : public ICrFbDisplay
 {
 public:
@@ -771,7 +798,9 @@ public:
         mpFb(NULL),
         mcUpdates(0),
         mhSlot(CRHTABLE_HANDLE_INVALID)
-    {}
+    {
+        mFlags.u32Value = 0;
+    }
 
     virtual bool isComposite()
     {
@@ -791,6 +820,18 @@ public:
     bool isUpdating()
     {
         return !!mcUpdates;
+    }
+
+    int setRegionsChanged()
+    {
+        if (!mcUpdates)
+        {
+            WARN(("err"));
+            return VERR_INVALID_STATE;
+        }
+
+        mFlags.fRegionsShanged = 1;
+        return VINF_SUCCESS;
     }
 
     int setFramebuffer(struct CR_FRAMEBUFFER *pFb)
@@ -847,6 +888,7 @@ public:
     virtual int UpdateBegin(struct CR_FRAMEBUFFER *pFb)
     {
         ++mcUpdates;
+        Assert(!mFlags.fRegionsShanged || mcUpdates > 1);
         return VINF_SUCCESS;
     }
 
@@ -854,6 +896,8 @@ public:
     {
         --mcUpdates;
         Assert(mcUpdates < UINT32_MAX/2);
+        if (!mcUpdates)
+            onUpdateEnd();
     }
 
     virtual int EntryCreated(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
@@ -873,6 +917,7 @@ public:
             WARN(("err"));
             return VERR_INVALID_STATE;
         }
+        mFlags.fRegionsShanged = 1;
         return VINF_SUCCESS;
     }
 
@@ -903,6 +948,7 @@ public:
             WARN(("err"));
             return VERR_INVALID_STATE;
         }
+        mFlags.fRegionsShanged = 1;
         return VINF_SUCCESS;
     }
 
@@ -918,6 +964,7 @@ public:
             WARN(("err"));
             return VERR_INVALID_STATE;
         }
+        mFlags.fRegionsShanged = 1;
         return VINF_SUCCESS;
     }
 
@@ -928,6 +975,7 @@ public:
             WARN(("err"));
             return VERR_INVALID_STATE;
         }
+        mFlags.fRegionsShanged = 1;
         return VINF_SUCCESS;
     }
 
@@ -947,6 +995,19 @@ public:
     RTLISTNODE mNode;
     class CrFbDisplayComposite* mpContainer;
 protected:
+    virtual void onUpdateEnd()
+    {
+        if (mFlags.fRegionsShanged)
+        {
+            mFlags.fRegionsShanged = 0;
+            ueRegions();
+        }
+    }
+
+    virtual void ueRegions()
+    {
+    }
+
     int fbSynchAddAllEntries()
     {
         VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR Iter;
@@ -1051,6 +1112,7 @@ private:
     struct CR_FRAMEBUFFER *mpFb;
     uint32_t mcUpdates;
     CRHTABLE_HANDLE mhSlot;
+    CR_FBDISPBASE_FLAGS mFlags;
 };
 
 class CrFbDisplayComposite : public CrFbDisplayBase
@@ -1686,21 +1748,26 @@ public:
 
     virtual int UpdateBegin(struct CR_FRAMEBUFFER *pFb)
     {
-        int rc = CrFbDisplayBase::UpdateBegin(pFb);
-        if (!RT_SUCCESS(rc))
+        int rc = mpWindow->UpdateBegin();
+        if (RT_SUCCESS(rc))
         {
-            WARN(("err"));
-            return rc;
+            rc = CrFbDisplayBase::UpdateBegin(pFb);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+            else
+                WARN(("err"));
         }
+        else
+            WARN(("err"));
 
-        return mpWindow->UpdateBegin();
+        return rc;
     }
 
     virtual void UpdateEnd(struct CR_FRAMEBUFFER *pFb)
     {
-        mpWindow->UpdateEnd();
-
         CrFbDisplayBase::UpdateEnd(pFb);
+
+        mpWindow->UpdateEnd();
     }
 
     virtual int EntryCreated(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
@@ -1767,42 +1834,6 @@ public:
         }
 
         return VINF_SUCCESS;
-    }
-
-    virtual int EntryRemoved(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
-    {
-        int rc = CrFbDisplayBase::EntryRemoved(pFb, hEntry);
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("err"));
-            return rc;
-        }
-
-        return mpWindow->SetVisibleRegionsChanged();
-    }
-
-    virtual int EntryPosChanged(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
-    {
-        int rc = CrFbDisplayBase::EntryPosChanged(pFb, hEntry);
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("err"));
-            return rc;
-        }
-
-        return mpWindow->SetVisibleRegionsChanged();
-    }
-
-    virtual int RegionsChanged(struct CR_FRAMEBUFFER *pFb)
-    {
-        int rc = CrFbDisplayBase::RegionsChanged(pFb);
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("err"));
-            return rc;
-        }
-
-        return mpWindow->SetVisibleRegionsChanged();
     }
 
     virtual int FramebufferChanged(struct CR_FRAMEBUFFER *pFb)
@@ -1893,6 +1924,11 @@ public:
     }
 
 protected:
+    virtual void ueRegions()
+    {
+        mpWindow->SetVisibleRegionsChanged();
+    }
+
     virtual int screenChanged()
     {
         if (!isUpdating())
@@ -1909,7 +1945,7 @@ protected:
             return rc;
         }
 
-        mpWindow->SetVisibleRegionsChanged();
+        setRegionsChanged();
 
         return mpWindow->SetSize((uint32_t)(pRect->xRight - pRect->xLeft), (uint32_t)(pRect->yBottom - pRect->yTop));
     }
@@ -2121,6 +2157,14 @@ public:
             return rc;
         }
 
+        VBOXVR_SCR_COMPOSITOR_ENTRY *pMyEntry = (VBOXVR_SCR_COMPOSITOR_ENTRY*)CrFbDDataEntryGet(hEntry, slotGet());
+        rc = CrVrScrCompositorEntryRegionsSet(&mCompositor, pMyEntry, NULL, 0, NULL, false, NULL);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("err"));
+            return rc;
+        }
+
         return VINF_SUCCESS;
     }
 
@@ -2137,25 +2181,6 @@ public:
         VBOXVR_SCR_COMPOSITOR_ENTRY *pMyEntry = (VBOXVR_SCR_COMPOSITOR_ENTRY*)CrFbDDataEntryGet(hEntry, slotGet());
         CrVrScrCompositorEntryCleanup(pMyEntry);
         entryFree(pMyEntry);
-
-        return VINF_SUCCESS;
-    }
-
-    virtual int RegionsChanged(struct CR_FRAMEBUFFER *pFb)
-    {
-        int rc = CrFbDisplayWindow::RegionsChanged(pFb);
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("err"));
-            return rc;
-        }
-
-        rc = synchCompositorRegions();
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("err"));
-            return rc;
-        }
 
         return VINF_SUCCESS;
     }
@@ -2180,6 +2205,11 @@ public:
     }
 
 protected:
+    virtual void ueRegions()
+    {
+        synchCompositorRegions();
+    }
+
     virtual int screenChanged()
     {
         int rc = CrFbDisplayWindow::screenChanged();
@@ -2197,6 +2227,11 @@ protected:
         }
 
         return VINF_SUCCESS;
+    }
+
+    virtual const struct VBOXVR_SCR_COMPOSITOR* getCompositor()
+    {
+        return &mCompositor;
     }
 
     virtual int fbCleanup()
@@ -2629,7 +2664,7 @@ protected:
                     {
                     	vrdpGeometry(hEntry);
                     	vrdpRegions(hFb, hEntry);
-                    	vrdpFrame(hEntry);
+                    	//vrdpFrame(hEntry);
                         return VINF_SUCCESS;
                     }
                     else

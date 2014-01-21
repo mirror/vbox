@@ -663,20 +663,25 @@ int Display::notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN 
 
     if (is3denabled)
     {
-        VBOXHGCMSVCPARM parm[SHCRGL_CPARMS_DEV_RESIZE];
+        int rc = VERR_INVALID_STATE;
+        if (mhCrOglSvc)
+        {
+            VMMDev *pVMMDev = mParent->getVMMDev();
+            if (pVMMDev)
+            {
+                VBOXHGCMSVCPARM parm[SHCRGL_CPARMS_DEV_RESIZE];
 
-        parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-        parm[0].u.pointer.addr = (void*)pScreen;
-        parm[0].u.pointer.size = sizeof (*pScreen);
-        parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
-        parm[1].u.pointer.addr = (void*)pvVRAM;
-        parm[1].u.pointer.size = 0;
+                parm[0].type = VBOX_HGCM_SVC_PARM_32BIT;
+                parm[0].u.uint32 = pScreen->u32ViewIndex;
 
-        VMMDev *pVMMDev = mParent->getVMMDev();
+                /* no completion callback is specified with this call,
+                 * the CrOgl code will complete the CrHgsmi command once it processes it */
+                rc = pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_DEV_RESIZE, parm, NULL, NULL);
+                AssertRC(rc);
+            }
+        }
 
-        if (pVMMDev)
-            return pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_DEV_RESIZE, SHCRGL_CPARMS_DEV_RESIZE, parm);
-        return VERR_INVALID_STATE;
+        return rc;
     }
 #endif /* #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL) */
     return VINF_SUCCESS;
