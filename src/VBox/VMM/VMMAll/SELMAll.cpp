@@ -725,40 +725,27 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, R
         if (     pSRegCS->Attr.n.u1DescType == 1
             &&  (pSRegCS->Attr.n.u4Type & X86_SEL_TYPE_CODE))
         {
-            /*
-             * Check level.
-             */
-            unsigned uLevel = RT_MAX(SelCPL & X86_SEL_RPL, SelCS & X86_SEL_RPL);
-            if (    !(pSRegCS->Attr.n.u4Type & X86_SEL_TYPE_CONF)
-                ?   uLevel <= pSRegCS->Attr.n.u2Dpl
-                :   uLevel >= pSRegCS->Attr.n.u2Dpl /* hope I got this right now... */
-               )
+            /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
+               (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
+            if (    pSRegCS->Attr.n.u1Long
+                &&  CPUMIsGuestInLongMode(pVCpu))
             {
-                /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
-                   (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
-                if (    pSRegCS->Attr.n.u1Long
-                    &&  CPUMIsGuestInLongMode(pVCpu))
-                {
-                    *ppvFlat = Addr;
-                    return VINF_SUCCESS;
-                }
-
-                /*
-                 * Limit check. Note that the limit in the hidden register is the
-                 * final value. The granularity bit was included in its calculation.
-                 */
-                uint32_t u32Limit = pSRegCS->u32Limit;
-                if ((RTGCUINTPTR)Addr <= u32Limit)
-                {
-                    *ppvFlat = Addr + pSRegCS->u64Base;
-                    return VINF_SUCCESS;
-                }
-
-                return VERR_OUT_OF_SELECTOR_BOUNDS;
+                *ppvFlat = Addr;
+                return VINF_SUCCESS;
             }
-            Log(("selmValidateAndConvertCSAddrHidden: Invalid RPL Attr.n.u4Type=%x cpl=%x dpl=%x\n",
-                 pSRegCS->Attr.n.u4Type, uLevel, pSRegCS->Attr.n.u2Dpl));
-            return VERR_INVALID_RPL;
+
+            /*
+             * Limit check. Note that the limit in the hidden register is the
+             * final value. The granularity bit was included in its calculation.
+             */
+            uint32_t u32Limit = pSRegCS->u32Limit;
+            if ((RTGCUINTPTR)Addr <= u32Limit)
+            {
+                *ppvFlat = Addr + pSRegCS->u64Base;
+                return VINF_SUCCESS;
+            }
+
+            return VERR_OUT_OF_SELECTOR_BOUNDS;
         }
         return VERR_NOT_CODE_SELECTOR;
     }
