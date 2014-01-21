@@ -237,16 +237,6 @@ RTR3DECL(int) RTTarFileGetSize(RTTARFILE hFile, uint64_t *pcbSize);
 RTR3DECL(int) RTTarFileSetSize(RTTARFILE hFile, uint64_t cbSize);
 
 /**
- * Gets the mode flags of an open file.
- *
- * @returns IPRT status code.
- *
- * @param   hFile          Handle to the file.
- * @param   pfMode         Where to store the file mode, see @ref grp_rt_fs for details.
- */
-RTR3DECL(int) RTTarFileGetMode(RTTARFILE hFile, uint32_t *pfMode);
-
-/**
  * Changes the mode flags of an open file.
  *
  * @returns IPRT status code.
@@ -257,16 +247,6 @@ RTR3DECL(int) RTTarFileGetMode(RTTARFILE hFile, uint32_t *pfMode);
 RTR3DECL(int) RTTarFileSetMode(RTTARFILE hFile, uint32_t fMode);
 
 /**
- * Gets the modification timestamp of the file.
- *
- * @returns IPRT status code.
- *
- * @param   pFile           Handle to the file.
- * @param   pTime           Where to store the time.
- */
-RTR3DECL(int) RTTarFileGetTime(RTTARFILE hFile, PRTTIMESPEC pTime);
-
-/**
  * Sets the modification timestamp of the file.
  *
  * @returns IPRT status code.
@@ -275,17 +255,6 @@ RTR3DECL(int) RTTarFileGetTime(RTTARFILE hFile, PRTTIMESPEC pTime);
  * @param   pTime           The time to store.
  */
 RTR3DECL(int) RTTarFileSetTime(RTTARFILE hFile, PRTTIMESPEC pTime);
-
-/**
- * Gets the owner and/or group of an open file.
- *
- * @returns IPRT status code.
- *
- * @param   hFile           Handle to the file.
- * @param   pUid            Where to store the owner user id. NULL is ok.
- * @param   pGid            Where to store the group id. NULL is ok.
- */
-RTR3DECL(int) RTTarFileGetOwner(RTTARFILE hFile, uint32_t *pUid, uint32_t *pGid);
 
 /**
  * Changes the owner and/or group of an open file.
@@ -303,24 +272,6 @@ RTR3DECL(int) RTTarFileSetOwner(RTTARFILE hFile, uint32_t uid, uint32_t gid);
  ******************************************************************************/
 
 /**
- * Check if the specified file exists in the Tar archive.
- *
- * (The matching is case sensitive.)
- *
- * @note    Currently only regular files are supported.
- *
- * @returns IPRT status code.
- * @retval  VINF_SUCCESS when the file exists in the Tar archive.
- * @retval  VERR_FILE_NOT_FOUND when the file not exists in the Tar archive.
- *
- * @param   pszTarFile      Tar file to check.
- * @param   pszFile         Filename to check for.
- *
- * @todo    This is predicate function which SHALL return bool!
- */
-RTR3DECL(int) RTTarFileExists(const char *pszTarFile, const char *pszFile);
-
-/**
  * Create a file list from a Tar archive.
  *
  * @note    Currently only regular files are supported.
@@ -334,69 +285,6 @@ RTR3DECL(int) RTTarFileExists(const char *pszTarFile, const char *pszFile);
  * @param   pcFiles         On success the number of entries in ppapszFiles.
  */
 RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcFiles);
-
-/**
- * Extract a file from a Tar archive into a memory buffer.
- *
- * The caller is responsible for the deletion of the returned memory buffer.
- *
- * (The matching is case sensitive.)
- *
- * @note    Currently only regular files are supported. Also some of the header
- *          fields are not used (uid, gid, uname, gname, mtime).
- *
- * @returns IPRT status code.
- *
- * @param   pszTarFile           Tar file to extract files from.
- * @param   ppBuf                The buffer which will held the extracted data.
- * @param   pcbSize              The size (in bytes) of ppBuf after successful
- *                               extraction.
- * @param   pszFile              The file to extract.
- * @param   pfnProgressCallback  Progress callback function. Optional.
- * @param   pvUser               User defined data for the progress
- *                               callback. Optional.
- */
-RTR3DECL(int) RTTarExtractFileToBuf(const char *pszTarFile, void **ppvBuf, size_t *pcbSize, const char *pszFile,
-                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser);
-
-/**
- * Extract a set of files from a Tar archive.
- *
- * Also note that this function is atomic. If an error occurs all previously
- * extracted files will be deleted.
- *
- * (The matching is case sensitive.)
- *
- * @note    Currently only regular files are supported. Also some of the header
- *          fields are not used (uid, gid, uname, gname, mtime).
- *
- * @returns IPRT status code.
- *
- * @param   pszTarFile           Tar file to extract files from.
- * @param   pszOutputDir         Where to store the extracted files. Must exist.
- * @param   papszFiles           Which files should be extracted.
- * @param   cFiles               The number of files in papszFiles.
- * @param   pfnProgressCallback  Progress callback function. Optional.
- * @param   pvUser               User defined data for the progress
- *                               callback. Optional.
- */
-RTR3DECL(int) RTTarExtractFiles(const char *pszTarFile, const char *pszOutputDir, const char * const *papszFiles, size_t cFiles, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
-
-/**
- * Extract all files of the archive.
- *
- * @note    Currently only regular files are supported. Also some of the header
- *          fields are not used (uid, gid, uname, gname, mtime).
- *
- * @returns IPRT status code.
- *
- * @param   pszTarFile           Tar file to extract the files from.
- * @param   pszOutputDir         Where to store the extracted files. Must exist.
- * @param   pfnProgressCallback  Progress callback function. Optional.
- * @param   pvUser               User defined data for the progress
- *                               callback. Optional.
- */
-RTR3DECL(int) RTTarExtractAll(const char *pszTarFile, const char *pszOutputDir, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 /**
  * Create a Tar archive out of the given files.
