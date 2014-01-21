@@ -1696,7 +1696,7 @@ RT_C_DECLS_END
 /** Too long name or link string. */
 #define VERR_TAR_NAME_TOO_LONG                  (-947)
 /** A directory entry in the archive. */
-#define VINF_TAR_DIR_PATH                        (925)
+#define VINF_TAR_DIR_PATH                        (948)
 /** @} */
 
 /** @name RTPoll status codes
