@@ -1187,15 +1187,14 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
 
             for (int i = 0; i < SHCRGL_CPARMS_DEV_RESIZE; ++i)
             {
-                if (paParms[i].type != VBOX_HGCM_SVC_PARM_PTR
-                        || !paParms[i].u.pointer.addr)
+                if (paParms[i].type != VBOX_HGCM_SVC_PARM_32BIT)
                 {
                     AssertMsgFailed(("invalid param\n"));
                     return VERR_INVALID_PARAMETER;
                 }
             }
 
-            rc = crVBoxServerNotifyResize((const VBVAINFOSCREEN *)paParms[0].u.pointer.addr, paParms[1].u.pointer.addr);
+            rc = crVBoxServerNotifyResize(paParms[0].u.uint32);
             break;
         }
         case SHCRGL_HOST_FN_VIEWPORT_CHANGED:

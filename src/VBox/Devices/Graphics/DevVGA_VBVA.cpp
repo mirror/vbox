@@ -1917,7 +1917,7 @@ static DECLCALLBACK(void) vbvaNotifyGuest (void *pvCallback)
 {
 #if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM))
     PVGASTATE pVGAState = (PVGASTATE)pvCallback;
-    VBVARaiseIrq (pVGAState, 0);
+    VBVARaiseIrqNoWait (pVGAState, 0);
 #else
     NOREF(pvCallback);
     /* Do nothing. Later the VMMDev/VGA IRQ can be used for the notification. */
@@ -2434,4 +2434,40 @@ void VBVADestroy (PVGASTATE pVGAState)
 
     HGSMIDestroy (pVGAState->pHGSMI);
     pVGAState->pHGSMI = NULL;
+}
+
+int VBVAGetScreenInfo(PVGASTATE pVGAState, unsigned uScreenId, struct VBVAINFOSCREEN *pScreen, void **ppvVram)
+{
+    PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
+    PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
+    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pIns);
+    int rc = PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
+    if (RT_SUCCESS(rc))
+    {
+        if (uScreenId < pCtx->cViews)
+        {
+            VBVAVIEW *pView = &pCtx->aViews[uScreenId];
+            if (pView->pVBVA)
+            {
+                uint8_t *pu8VRAM = pVGAState->vram_ptrR3 + pView->view.u32ViewOffset;
+                *pScreen = pView->screen;
+                *ppvVram = (void*)pu8VRAM;
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                /* pretend disabled */
+                memset(pScreen, 0, sizeof (*pScreen));
+                pScreen->u16Flags = VBVA_SCREEN_F_DISABLED;
+                pScreen->u32ViewIndex = uScreenId;
+                *ppvVram = NULL;
+                rc = VINF_SUCCESS;
+            }
+        }
+        else
+            rc = VERR_INVALID_PARAMETER;
+
+        PDMCritSectLeave(&pVGAState->CritSect);
+    }
+    return rc;
 }

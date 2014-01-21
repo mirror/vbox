@@ -355,6 +355,14 @@ static DECLCALLBACK(int) vboxVDMACrCmdCltCmdGet(HVBOXCRCMDCLT hClt, PVBOXCMDVBVA
     return VERR_INTERNAL_ERROR;
 }
 
+static DECLCALLBACK(int) vboxVDMACrCmdCltDmGet(HVBOXCRCMDCLT hClt, uint32_t idScreen, struct VBVAINFOSCREEN *pScreen, void **ppvVram)
+{
+    struct VBOXVDMAHOST *pVdma = hClt;
+    PVGASTATE pVGAState = pVdma->pVGAState;
+
+    return VBVAGetScreenInfo(pVGAState, idScreen, pScreen, ppvVram);
+}
+
 static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
 {
     PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP pCmd;
@@ -365,6 +373,7 @@ static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
         VBOXCRCMD_CLTINFO CltInfo;
         CltInfo.hClient = pVdma;
         CltInfo.pfnCmdGet = vboxVDMACrCmdCltCmdGet;
+        CltInfo.pfnDmGet = vboxVDMACrCmdCltDmGet;
         PVGASTATE pVGAState = pVdma->pVGAState;
         pCmd->pvVRamBase = pVGAState->vram_ptrR3;
         pCmd->cbVRam = pVGAState->vram_size;

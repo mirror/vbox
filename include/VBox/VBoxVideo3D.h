@@ -158,11 +158,16 @@ typedef struct VBOXCMDVBVA_HDR *PVBOXCMDVBVA_HDR;
  * Must not be called from the EMT thread.*/
 typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_CLT_CMDGET)(HVBOXCRCMDCLT hClt, PVBOXCMDVBVA_HDR *ppNextCmd, uint32_t *pcbNextCmd);
 
+struct VBVAINFOSCREEN;
+/* server queries for display mode.*/
+typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_CLT_DMGET)(HVBOXCRCMDCLT hClt, uint32_t idScreen, struct VBVAINFOSCREEN *pScreen, void **ppvVram);
+
 /* Client callbacks (i.e. those client exposes to the server) */
 typedef struct VBOXCRCMD_CLTINFO
 {
     HVBOXCRCMDCLT hClient;
     PFNVBOXCRCMD_CLT_CMDGET pfnCmdGet;
+    PFNVBOXCRCMD_CLT_DMGET pfnDmGet;
 } VBOXCRCMD_CLTINFO;
 
 
