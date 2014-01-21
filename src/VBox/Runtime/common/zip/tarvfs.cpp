@@ -125,6 +125,8 @@ typedef struct RTZIPTARIOSTREAM
     RTFOFF                  cbFile;
     /** The current file position. */
     RTFOFF                  offFile;
+    /** The start position in the hVfsIos (for seekable hVfsIos). */
+    RTFOFF                  offStart;
     /** The number of padding bytes following the file. */
     uint32_t                cbPadding;
     /** Set if we've reached the end of the file. */
@@ -1010,25 +1012,27 @@ static DECLCALLBACK(int) rtZipTarFssIos_QueryInfo(void *pvThis, PRTFSOBJINFO pOb
 
 
 /**
- * Reads one segment.
- *
- * @returns IPRT status code.
- * @param   pThis           The instance data.
- * @param   pvBuf           Where to put the read bytes.
- * @param   cbToRead        The number of bytes to read.
- * @param   fBlocking       Whether to block or not.
- * @param   pcbRead         Where to store the number of bytes actually read.
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static int rtZipTarFssIos_ReadOneSeg(PRTZIPTARIOSTREAM pThis, void *pvBuf, size_t cbToRead, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtZipTarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
+    PRTZIPTARIOSTREAM pThis = (PRTZIPTARIOSTREAM)pvThis;
+    Assert(pSgBuf->cSegs == 1);
+
     /*
-     * Fend of reads beyond the end of the stream here.
+     * Make offset into a real offset so it's possible to do random access
+     * on TAR files that are seekable.  Fend of reads beyond the end of the
+     * stream.
      */
-    if (pThis->fEndOfStream)
+    if (off < 0)
+        off = pThis->offFile;
+    if (off >= pThis->cbFile)
         return pcbRead ? VINF_EOF : VERR_EOF;
 
+
     Assert(pThis->cbFile >= pThis->offFile);
-    uint64_t cbLeft = (uint64_t)(pThis->cbFile - pThis->offFile);
+    uint64_t cbLeft   = (uint64_t)(pThis->cbFile - pThis->offFile);
+    size_t   cbToRead = pSgBuf->paSegs[0].cbSeg;
     if (cbToRead > cbLeft)
     {
         if (!pcbRead)
@@ -1042,51 +1046,13 @@ static int rtZipTarFssIos_ReadOneSeg(PRTZIPTARIOSTREAM pThis, void *pvBuf, size_
     size_t cbReadStack = 0;
     if (!pcbRead)
         pcbRead = &cbReadStack;
-    int rc = RTVfsIoStrmRead(pThis->hVfsIos, pvBuf, cbToRead, fBlocking, pcbRead);
-    pThis->offFile += *pcbRead;
+    int rc = RTVfsIoStrmReadAt(pThis->hVfsIos, pThis->offStart + off, pSgBuf->paSegs[0].pvSeg, cbToRead, fBlocking, pcbRead);
+    pThis->offFile = off + *pcbRead;
     if (pThis->offFile >= pThis->cbFile)
     {
         Assert(pThis->offFile == pThis->cbFile);
         pThis->fEndOfStream = true;
         RTVfsIoStrmSkip(pThis->hVfsIos, pThis->cbPadding);
-    }
-
-    return rc;
-}
-
-
-/**
- * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
- */
-static DECLCALLBACK(int) rtZipTarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
-{
-    PRTZIPTARIOSTREAM pThis = (PRTZIPTARIOSTREAM)pvThis;
-    int               rc;
-    AssertReturn(off == -1, VERR_INVALID_PARAMETER);
-
-    if (pSgBuf->cSegs == 1)
-        rc = rtZipTarFssIos_ReadOneSeg(pThis, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, fBlocking, pcbRead);
-    else
-    {
-        rc = VINF_SUCCESS;
-        size_t  cbRead = 0;
-        size_t  cbReadSeg;
-        size_t *pcbReadSeg = pcbRead ? &cbReadSeg : NULL;
-        for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
-        {
-            cbReadSeg = 0;
-            rc = rtZipTarFssIos_ReadOneSeg(pThis, pSgBuf->paSegs[iSeg].pvSeg, pSgBuf->paSegs[iSeg].cbSeg, fBlocking, pcbReadSeg);
-            if (RT_FAILURE(rc))
-                break;
-            if (pcbRead)
-            {
-                cbRead += cbReadSeg;
-                if (cbReadSeg != pSgBuf->paSegs[iSeg].cbSeg)
-                    break;
-            }
-        }
-        if (pcbRead)
-            *pcbRead = cbRead;
     }
 
     return rc;
@@ -1164,7 +1130,7 @@ static const RTVFSIOSTREAMOPS g_rtZipTarFssIosOps =
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,
-    0,
+    RTVFSIOSTREAMOPS_FEAT_NO_SG,
     rtZipTarFssIos_Read,
     rtZipTarFssIos_Write,
     rtZipTarFssIos_Flush,
@@ -1422,6 +1388,7 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
             pIosData->BaseObj.ObjInfo   = Info;
             pIosData->cbFile            = Info.cbObject;
             pIosData->offFile           = 0;
+            pIosData->offStart          = RTVfsIoStrmTell(pThis->hVfsIos);
             pIosData->cbPadding         = (uint32_t)(Info.cbAllocated - Info.cbObject);
             pIosData->fEndOfStream      = false;
             pIosData->hVfsIos           = pThis->hVfsIos;

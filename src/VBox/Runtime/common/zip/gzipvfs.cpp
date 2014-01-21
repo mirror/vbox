@@ -147,7 +147,7 @@ typedef struct RTZIPGZIPSTREAM
     bool                fFatalError;
     /** Set if we've reached the end of the zlib stream. */
     bool                fEndOfStream;
-    /** The stream offset for pfnTell. */
+    /** The stream offset for pfnTell, always the uncompressed data. */
     RTFOFF              offStream;
     /** The zlib stream.  */
     z_stream            Zlib;
@@ -376,9 +376,9 @@ static DECLCALLBACK(int) rtZipGzip_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
     PRTZIPGZIPSTREAM pThis = (PRTZIPGZIPSTREAM)pvThis;
 
     Assert(pSgBuf->cSegs == 1);
-    AssertReturn(off == -1, VERR_INVALID_PARAMETER);
     if (!pThis->fDecompress)
         return VERR_ACCESS_DENIED;
+    AssertReturn(off == -1 || off == pThis->offStream , VERR_INVALID_PARAMETER);
 
     return rtZipGzip_ReadOneSeg(pThis, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, fBlocking, pcbRead);
 }
@@ -509,14 +509,13 @@ static DECLCALLBACK(int) rtZipGzip_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSg
 {
     PRTZIPGZIPSTREAM pThis = (PRTZIPGZIPSTREAM)pvThis;
 
-    AssertReturn(off == -1, VERR_INVALID_PARAMETER);
     Assert(pSgBuf->cSegs == 1); NOREF(fBlocking);
-
     if (pThis->fDecompress)
         return VERR_ACCESS_DENIED;
+    AssertReturn(off == -1 || off == pThis->offStream , VERR_INVALID_PARAMETER);
 
     /*
-     * Write out the intput buffer. Using a loop here because of potential
+     * Write out the input buffer. Using a loop here because of potential
      * integer type overflow since avail_in is uInt and cbSeg is size_t.
      */
     int             rc        = VINF_SUCCESS;
@@ -540,6 +539,7 @@ static DECLCALLBACK(int) rtZipGzip_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSg
             cbLeft -= cbThis;
         }
 
+    pThis->offStream += cbWritten;
     if (pcbWritten)
         *pcbWritten = cbWritten;
     return rc;
