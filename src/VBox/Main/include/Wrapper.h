@@ -150,6 +150,9 @@ public:
 
     ArrayBSTRInConverter(ComSafeArrayIn(IN_BSTR, aSrc))
     {
+        /** @todo How to handle ComSafeArrayInIsNull(aSrc)?  Is it appropriate to
+         *        assert everywhere like we currently do?  It wasn't for the
+         *        ArrayInConverter class (IAppliance::importMachines)... */
         com::SafeArray<IN_BSTR> inArray(ComSafeArrayInArg(aSrc));
         mArray.resize(inArray.size());
         for (size_t i = 0; i < inArray.size(); i++)
@@ -380,6 +383,9 @@ public:
 
     ArrayComTypeInConverter(ComSafeArrayIn(A *, aSrc))
     {
+        /** @todo How to handle ComSafeArrayInIsNull(aSrc)?  Is it appropriate to
+         *        assert everywhere like we currently do?  It wasn't for the
+         *        ArrayInConverter class (IAppliance::importMachines)... */
         com::SafeIfaceArray<A> inArray(ComSafeArrayInArg(aSrc));
         mArray.resize(inArray.size());
         for (size_t i = 0; i < inArray.size(); i++)
@@ -459,10 +465,13 @@ public:
 
     ArrayInConverter(ComSafeArrayIn(A, aSrc))
     {
-        com::SafeArray<A> inArray(ComSafeArrayInArg(aSrc));
-        mArray.resize(inArray.size());
-        for (size_t i = 0; i < inArray.size(); i++)
-            mArray[i] = inArray[i];
+        if (!ComSafeArrayInIsNull(aSrc))
+        {
+            com::SafeArray<A> inArray(ComSafeArrayInArg(aSrc));
+            mArray.resize(inArray.size());
+            for (size_t i = 0; i < inArray.size(); i++)
+                mArray[i] = inArray[i];
+        }
     }
 
     ~ArrayInConverter()
