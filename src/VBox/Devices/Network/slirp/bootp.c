@@ -693,14 +693,21 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
     Assert(pu8RawDhcpObject);
     if (!pu8RawDhcpObject)
         return;
-    /*
+    /**
      * We're going update dns list at least once per DHCP transaction (!not on every operation
      * within transaction), assuming that transaction can't be longer than 1 min.
+     *
+     * @note: NATState::fUseHostResolver became (r89055) the flag signalling that Slirp 
+     * wasn't able to fetch fresh host DNS info and fall down to use host-resolver, on one 
+     * of the previous attempts to proxy dns requests to Host's name-resolving API
+     * 
+     * @note: Checking NATState::fUseHostResolver == true, we want to try restore behaviour initialy
+     * wanted by user ASAP (P here when host serialize its  configuration in files parsed by Slirp).
      */
     if (   !pData->fUseHostResolverPermanent
         && (   pData->dnsLastUpdate == 0
-            || curtime - pData->dnsLastUpdate > 60 * 1000
-            || pData->fUseHostResolver)) /* one minute*/
+            || curtime - pData->dnsLastUpdate > 60 * 1000 /* one minute */
+            || pData->fUseHostResolver))
     {
         uint8_t i = 2; /* i = 0 - tag, i == 1 - length */
         parameter_list = dhcp_find_option(&bp->bp_vend[0], RFC2132_PARAM_LIST);
