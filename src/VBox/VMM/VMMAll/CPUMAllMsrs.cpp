@@ -233,7 +233,11 @@ static DECLCALLBACK(int) cpumMsrRd_Ia32BiosSignId(PVMCPU pVCpu, uint32_t idMsr, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(int) cpumMsrWr_Ia32BiosSignId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
-    return VERR_CPUM_RAISE_GP_0;
+    /* Normally, zero is written to Ia32BiosSignId before reading it in order
+       to select the signature instead of the BBL_CR_D3 behaviour.  The GP mask
+       of the database entry should take care of most illegal writes for now, so
+       just ignore all writes atm. */
+    return VINF_SUCCESS;
 }
 
 
