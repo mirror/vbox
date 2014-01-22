@@ -1103,6 +1103,20 @@ static int cpumR3CpuIdInit(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCpumCfg, "MWaitExtensions", &fMWaitExtensions, false);
     AssertLogRelRCReturn(rc, rc);
 
+    /** @cfgm{/CPUM/SSE4.1, boolean, false}
+     * Expose SSE4.1 to the guest if available.
+     */
+    bool fSse41;
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.1", &fSse41, false);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/SSE4.2, boolean, false}
+     * Expose SSE4.2 to the guest if available.
+     */
+    bool fSse42;
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.2", &fSse42, false);
+    AssertLogRelRCReturn(rc, rc);
+
     /** @cfgm{/CPUM/NT4LeafLimit, boolean, false}
      * Limit the number of standard CPUID leaves to 0..3 to prevent NT4 from
      * bugchecking with MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED (0x3e).
@@ -1221,6 +1235,8 @@ static int cpumR3CpuIdInit(PVM pVM)
                                     | (fCmpXchg16b ? X86_CPUID_FEATURE_ECX_CX16 : 0)
                                   /* ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
                                   //| X86_CPUID_FEATURE_ECX_TPRUPDATE
+                                  | (fSse41 ? X86_CPUID_FEATURE_ECX_SSE4_1 : 0)
+                                  | (fSse42 ? X86_CPUID_FEATURE_ECX_SSE4_2 : 0)
                                   /* ECX Bit 21 - x2APIC support - not yet. */
                                   // | X86_CPUID_FEATURE_ECX_X2APIC
                                   /* ECX Bit 23 - POPCNT instruction. */
@@ -1231,6 +1247,8 @@ static int cpumR3CpuIdInit(PVM pVM)
         PORTABLE_CLEAR_BITS_WHEN(1, pStdFeatureLeaf->uEax, ProcessorType, (UINT32_C(3) << 12), (UINT32_C(2) << 12));
         PORTABLE_DISABLE_FEATURE_BIT(1, pStdFeatureLeaf->uEcx, SSSE3, X86_CPUID_FEATURE_ECX_SSSE3);
         PORTABLE_DISABLE_FEATURE_BIT(1, pStdFeatureLeaf->uEcx, SSE3,  X86_CPUID_FEATURE_ECX_SSE3);
+        PORTABLE_DISABLE_FEATURE_BIT(1, pStdFeatureLeaf->uEcx, SSE4_1, X86_CPUID_FEATURE_ECX_SSE4_1);
+        PORTABLE_DISABLE_FEATURE_BIT(1, pStdFeatureLeaf->uEcx, SSE4_2, X86_CPUID_FEATURE_ECX_SSE4_2);
         PORTABLE_DISABLE_FEATURE_BIT(1, pStdFeatureLeaf->uEcx, CX16,  X86_CPUID_FEATURE_ECX_CX16);
         PORTABLE_DISABLE_FEATURE_BIT(2, pStdFeatureLeaf->uEdx, SSE2,  X86_CPUID_FEATURE_EDX_SSE2);
         PORTABLE_DISABLE_FEATURE_BIT(3, pStdFeatureLeaf->uEdx, SSE,   X86_CPUID_FEATURE_EDX_SSE);
