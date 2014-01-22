@@ -127,6 +127,7 @@ extrn		_cdemu_init:near
 extrn		_keyboard_init:near
 extrn		_print_bios_banner:near
 extrn		_inv_op_handler:near
+extrn		rom_scan_:near
 
 
 ;; Symbols referenced from C code
@@ -168,8 +169,6 @@ public		int75_handler
 public		int15_handler32
 public		int15_handler_mouse
 public		iret_modify_cf
-public		rom_scan
-public		rom_checksum
 public		init_pic
 public		floppy_post
 public		int13_out
@@ -392,6 +391,10 @@ memory_cleared:
 
 		call	ebda_post
 
+		;; Initialize PCI devices. This can and should be done early.
+		call	pcibios_init_iomem_bases
+		call	pcibios_init_irqs
+
 		;; PIT setup
 		SET_INT_VECTOR 08h, BIOSSEG, int08_handler
 		mov	al, 34h		; timer 0, binary, 16-bit, mode 2
@@ -399,6 +402,9 @@ memory_cleared:
 		mov	al, 0		; max count -> ~18.2 Hz
 		out	40h, al
 		out	40h, al
+
+		;; video setup - must be done before POSTing VGA ROM
+		SET_INT_VECTOR 10h, BIOSSEG, int10_handler
 
 		;; keyboard setup
 		SET_INT_VECTOR 09h, BIOSSEG, int09_handler
@@ -424,6 +430,14 @@ memory_cleared:
 
 		push	ds
 		C_SETUP
+
+		;; Scan for video ROMs in the C000-C800 range. This is done
+		;; early so that errors are displayed on the screen.
+		mov	ax, 0C000h
+		mov	dx, 0C800h
+		call	rom_scan_
+
+		;; Initialize the keyboard
 		call	_keyboard_init
 		pop	ds
 
@@ -483,15 +497,7 @@ memory_cleared:
 		;; IRQ 13h (FPU exception) setup
 		SET_INT_VECTOR 75h, BIOSSEG, int75_handler
 
-		;; Video setup
-		SET_INT_VECTOR 10h, BIOSSEG, int10_handler
-
 		call	init_pic
-
-		call	pcibios_init_iomem_bases
-		call	pcibios_init_irqs
-
-		call	rom_scan
 
 		jmp	norm_post_cont
 
@@ -561,6 +567,11 @@ endif
 
 		C_SETUP			; in case assembly code changed things
 		call	_print_bios_banner
+
+		;; Scan for additional ROMs in the C800-EFFF range
+		mov	ax, 0C800h
+		mov	dx, 0F000h
+		call	rom_scan_
 
 		;; El Torito floppy/hard disk emulation
 		call	_cdemu_init
@@ -730,73 +741,6 @@ dummy_isr:
 		pop	ds
 		iret
 
-
-rom_checksum 	proc	near
-		push	ax
-ifdef CHECKSUM_ROMS
-		push	bx
-		push	cx
-		xor	ax, ax
-		xor	bx, bx
-		xor	cx, cx
-		mov	ch, ds:[2]
-		shl	cx, 1
-checksum_loop:
-		add	al, [bx]
-		inc	bx
-		loop	checksum_loop
-		and	al, 0FFh	; set flags
-		pop	cx
-		pop	bx
-else
-		xor	al, al
-endif
-		pop	ax
-		ret
-rom_checksum	endp
-
-
-;;
-;; ROM scan - scan for valid ROMs and initialize them
-;;
-rom_scan:
-		mov	cx, 0C000h	; start at C000
-rom_scan_loop:
-		mov	ds, cx
-		mov	ax, 4		; scan in 2K increments
-		cmp	word ptr ds:[0], 0AA55h	; look for signature
-		jne	rom_scan_increment
-
-		call	rom_checksum
-		jnz	rom_scan_increment
-
-		mov	al, ds:[2]	; set increment to ROM length
-		test	al, 3
-		jz	block_count_rounded
-
-		and	al, 0FCh	; round up
-		add	al, 4		; to nearest 2K
-block_count_rounded:
-		xor	bx, bx
-		mov	ds, bx
-		push	ax
-		push	cx		; push segment...
-		push	3		; ...and offset of ROM entry
-		mov	bp, sp
-		call	dword ptr [bp]	; call ROM init routine
-		cli			; in case ROM enabled interrupts
-		add	sp, 2		; get rid of offset
-		pop	cx		; restore registers
-		pop	ax
-rom_scan_increment:
-		shl	ax, 5		; convert to 16-byte increments
-		add	cx, ax
-		cmp	cx, 0E800h	; must encompass VBOX_LANBOOT_SEG!
-		jbe	rom_scan_loop
-
-		xor	ax, ax		; DS back to zero
-		mov	ds, ax
-		ret
 
 init_pic	proc	near
 
