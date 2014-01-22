@@ -41,6 +41,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	  segment BIOS32  segaddr=0xF000 offset=0xDA00 \
  	  segment BIOSSEG segaddr=0xF000 offset=0xE000
  VBoxPcBios_SOURCES = \
+ 	post.c \
  	bios.c \
  	print.c \
  	ata.c \

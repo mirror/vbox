@@ -29,11 +29,11 @@ INCLS  = -I$(Q)../../../../../include$(Q)
 .asm.obj : .autodepend
 	wasm -fo=.obj $(AFLAGS) $(DEFS) $<
 
-OBJS = 	bios.obj print.obj ata.obj floppy.obj floppyt.obj eltorito.obj &
+OBJS = 	bios.obj post.obj ata.obj floppy.obj floppyt.obj eltorito.obj &
 	boot.obj keyboard.obj disk.obj serial.obj system.obj invop.obj &
 	timepci.obj logo.obj ps2mouse.obj parallel.obj scsi.obj &
 	ahci.obj apm.obj apm_pm.obj pcibios.obj pciutil.obj vds.obj &
-	pcibio32.obj pci32.obj orgs.obj
+	print.obj pcibio32.obj pci32.obj orgs.obj
 
 vbxbios.rom : vbxbios.bin
 	biossums $< $@
