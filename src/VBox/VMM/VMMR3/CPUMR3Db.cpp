@@ -190,8 +190,14 @@ typedef struct CPUMDBENTRY
 /**
  * The database entries.
  *
- * Warning! The first entry is special.  It is the fallback for unknown
- *          processors.  Thus, it better be pretty representative.
+ * 1. The first entry is special.  It is the fallback for unknown
+ *    processors.  Thus, it better be pretty representative.
+ *
+ * 2. The first entry for a CPU vendor is likewise important as it is
+ *    the default entry for that vendor.
+ *
+ * Generally we put the most recent CPUs first, since these tend to have the
+ * most complicated and backwards compatible list of MSRs.
  */
 static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 {
@@ -556,46 +562,53 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
             CPUMDBENTRY const *pCur = g_apCpumDbEntries[i];
             if ((CPUMCPUVENDOR)pCur->enmVendor == enmVendor)
             {
-                /* Anything from the same vendor is better than nothing: */
-                if (!pEntry)
-                    pEntry = pCur;
-                /* Newer micro arch is better than an older one: */
-                else if (   pEntry->enmMicroarch < enmMicroarch
-                         && pCur->enmMicroarch   >= enmMicroarch)
-                    pEntry = pCur;
-                /* Prefer a micro arch match: */
-                else if (   pEntry->enmMicroarch != enmMicroarch
-                         && pCur->enmMicroarch   == enmMicroarch)
-                    pEntry = pCur;
-                /* If the micro arch matches, check model and stepping. Stop
-                   looping if we get an exact match. */
-                else if (   pEntry->enmMicroarch == enmMicroarch
-                         && pCur->enmMicroarch   == enmMicroarch)
+                /* Match against Family, Microarch, model and stepping.  Except
+                   for family, always match the closer with preference given to
+                   the later/older ones. */
+                if (pCur->uFamily == uFamily)
                 {
-                    if (pCur->uModel == uModel)
+                    if (pCur->enmMicroarch == enmMicroarch)
                     {
-                        /* Perfect match? */
-                        if (pCur->uStepping == uStepping)
+                        if (pCur->uModel == uModel)
                         {
-                            pEntry = pCur;
-                            break;
-                        }
+                            if (pCur->uStepping == uStepping)
+                            {
+                                /* Perfect match. */
+                                pEntry = pCur;
+                                break;
+                            }
 
-                        /* Better model match? */
-                        if (pEntry->uModel != uModel)
+                            if (   !pEntry
+                                || pEntry->uModel       != uModel
+                                || pEntry->enmMicroarch != enmMicroarch
+                                || pEntry->uFamily      != uFamily)
+                                pEntry = pCur;
+                            else if (  pCur->uStepping >= uStepping
+                                     ? pCur->uStepping < pEntry->uStepping || pEntry->uStepping < uStepping
+                                     : pCur->uStepping > pEntry->uStepping)
+                                     pEntry = pCur;
+                        }
+                        else if (   !pEntry
+                                 || pEntry->enmMicroarch != enmMicroarch
+                                 || pEntry->uFamily      != uFamily)
                             pEntry = pCur;
-                        /* The one with the closest stepping, prefering ones over earlier ones. */
-                        else if (  pCur->uStepping > uStepping
-                                 ? pCur->uStepping < pEntry->uStepping || pEntry->uStepping < uStepping
-                                 : pCur->uStepping > pEntry->uStepping)
+                        else if (  pCur->uModel >= uModel
+                                 ? pCur->uModel < pEntry->uModel || pEntry->uModel < uModel
+                                 : pCur->uModel > pEntry->uModel)
                             pEntry = pCur;
                     }
-                    /* The one with the closest model, prefering later ones over earlier ones. */
-                    else if (  pCur->uModel > uModel
-                             ? pCur->uModel < pEntry->uModel || pEntry->uModel < uModel
-                             : pCur->uModel > pEntry->uModel)
+                    else if (   !pEntry
+                             || pEntry->uFamily != uFamily)
+                        pEntry = pCur;
+                    else if (  pCur->enmMicroarch >= enmMicroarch
+                             ? pCur->enmMicroarch < pEntry->enmMicroarch || pEntry->enmMicroarch < enmMicroarch
+                             : pCur->enmMicroarch > pEntry->enmMicroarch)
                         pEntry = pCur;
                 }
+                /* We don't do closeness matching on family, we use the first
+                   entry for the CPU vendor instead. (P4 workaround.) */
+                else if (!pEntry)
+                    pEntry = pCur;
             }
         }
 
