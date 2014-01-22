@@ -1103,18 +1103,18 @@ static int cpumR3CpuIdInit(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCpumCfg, "MWaitExtensions", &fMWaitExtensions, false);
     AssertLogRelRCReturn(rc, rc);
 
-    /** @cfgm{/CPUM/SSE4.1, boolean, false}
+    /** @cfgm{/CPUM/SSE4.1, boolean, true}
      * Expose SSE4.1 to the guest if available.
      */
     bool fSse41;
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.1", &fSse41, false);
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.1", &fSse41, true);
     AssertLogRelRCReturn(rc, rc);
 
-    /** @cfgm{/CPUM/SSE4.2, boolean, false}
+    /** @cfgm{/CPUM/SSE4.2, boolean, true}
      * Expose SSE4.2 to the guest if available.
      */
     bool fSse42;
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.2", &fSse42, false);
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.2", &fSse42, true);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/NT4LeafLimit, boolean, false}
