@@ -187,6 +187,12 @@ int CrFbResize(CR_FRAMEBUFFER *pFb, const struct VBVAINFOSCREEN * pScreen, void 
         WARN(("no update in progress"));
         return VERR_INVALID_STATE;
     }
+
+    if (pScreen->u16Flags & VBVA_SCREEN_F_DISABLED)
+    {
+        CrVrScrCompositorClear(&pFb->Compositor);
+    }
+
     RTRECT Rect;
     Rect.xLeft = 0;
     Rect.yTop = 0;
@@ -204,6 +210,7 @@ int CrFbResize(CR_FRAMEBUFFER *pFb, const struct VBVAINFOSCREEN * pScreen, void 
 
     if (pFb->pDisplay)
         pFb->pDisplay->FramebufferChanged(pFb);
+
     return VINF_SUCCESS;
 }
 
@@ -1858,7 +1865,7 @@ public:
 
         if (pViewportRect->xLeft != mViewportRect.xLeft || pViewportRect->yTop != mViewportRect.yTop)
         {
-            const RTRECT* pRect = CrVrScrCompositorRectGet(getCompositor());
+            const RTRECT* pRect = getRect();
             int rc = mpWindow->SetPosition(pRect->xLeft - mViewportRect.xLeft, pRect->yTop - mViewportRect.yTop);
             if (!RT_SUCCESS(rc))
             {
@@ -1937,17 +1944,32 @@ protected:
             return VERR_INVALID_STATE;
         }
 
-        const RTRECT* pRect = CrVrScrCompositorRectGet(getCompositor());
-        int rc = mpWindow->SetPosition(pRect->xLeft - mViewportRect.xLeft, pRect->yTop - mViewportRect.yTop);
-        if (!RT_SUCCESS(rc))
+        if (CrFbIsEnabled(getFramebuffer()))
         {
-            WARN(("SetComposition failed rc %d", rc));
-            return rc;
+            const RTRECT* pRect = getRect();
+            int rc = mpWindow->SetPosition(pRect->xLeft - mViewportRect.xLeft, pRect->yTop - mViewportRect.yTop);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("SetComposition failed rc %d", rc));
+                return rc;
+            }
+
+            setRegionsChanged();
+
+            return mpWindow->SetSize((uint32_t)(pRect->xRight - pRect->xLeft), (uint32_t)(pRect->yBottom - pRect->yTop));
         }
 
-        setRegionsChanged();
+        return mpWindow->SetVisible(false);
+    }
 
-        return mpWindow->SetSize((uint32_t)(pRect->xRight - pRect->xLeft), (uint32_t)(pRect->yBottom - pRect->yTop));
+    virtual int windowSetCompositor(bool fSet)
+    {
+        if (fSet)
+        {
+            const struct VBOXVR_SCR_COMPOSITOR* pCompositor = CrFbGetCompositor(getFramebuffer());
+            return mpWindow->SetCompositor(pCompositor);
+        }
+        return mpWindow->SetCompositor(NULL);
     }
 
     virtual int windowCleanup()
@@ -1967,7 +1989,7 @@ protected:
             return rc;
         }
 
-        rc = mpWindow->SetCompositor(NULL);
+        rc = windowSetCompositor(false);
         if (!RT_SUCCESS(rc))
         {
             WARN(("err"));
@@ -1993,8 +2015,7 @@ protected:
 
     virtual int windowSync()
     {
-        const struct VBOXVR_SCR_COMPOSITOR* pCompositor = getCompositor();
-        const RTRECT* pRect = CrVrScrCompositorRectGet(pCompositor);
+        const RTRECT* pRect = getRect();
 
         int rc = mpWindow->UpdateBegin();
         if (!RT_SUCCESS(rc))
@@ -2003,7 +2024,7 @@ protected:
             return rc;
         }
 
-        rc = mpWindow->SetCompositor(pCompositor);
+        rc = windowSetCompositor(true);
         if (!RT_SUCCESS(rc))
         {
             WARN(("err"));
@@ -2052,9 +2073,10 @@ protected:
         return windowSync();
     }
 
-    virtual const struct VBOXVR_SCR_COMPOSITOR* getCompositor()
+    virtual const struct RTRECT* getRect()
     {
-        return CrFbGetCompositor(getFramebuffer());
+        const struct VBOXVR_SCR_COMPOSITOR* pCompositor = CrFbGetCompositor(getFramebuffer());
+        return CrVrScrCompositorRectGet(pCompositor);
     }
 
     CrFbWindow* getWindow() {return mpWindow;}
@@ -2194,7 +2216,7 @@ public:
             return rc;
         }
 
-        rc = synchCompositorData();
+        rc = setRegionsChanged();
         if (!RT_SUCCESS(rc))
         {
             WARN(("err"));
@@ -2205,33 +2227,60 @@ public:
     }
 
 protected:
+    virtual int windowSetCompositor(bool fSet)
+    {
+        if (fSet)
+            return getWindow()->SetCompositor(&mCompositor);
+        return getWindow()->SetCompositor(NULL);
+    }
+
     virtual void ueRegions()
     {
         synchCompositorRegions();
     }
 
-    virtual int screenChanged()
+    int compositorMarkUpdated()
     {
-        int rc = CrFbDisplayWindow::screenChanged();
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("screenChanged failed %d", rc));
-            return rc;
-        }
-
-        rc = synchCompositorData();
+        CrVrScrCompositorClear(&mCompositor);
+        int rc = CrVrScrCompositorRectSet(&mCompositor, CrVrScrCompositorRectGet(CrFbGetCompositor(getFramebuffer())), NULL);
         if (!RT_SUCCESS(rc))
         {
             WARN(("err"));
             return rc;
         }
 
+        rc = setRegionsChanged();
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("screenChanged failed %d", rc));
+            return rc;
+        }
+
         return VINF_SUCCESS;
     }
 
-    virtual const struct VBOXVR_SCR_COMPOSITOR* getCompositor()
+    virtual int screenChanged()
     {
-        return &mCompositor;
+        int rc = compositorMarkUpdated();
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("err"));
+            return rc;
+        }
+
+        rc = CrFbDisplayWindow::screenChanged();
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("screenChanged failed %d", rc));
+            return rc;
+        }
+
+        return VINF_SUCCESS;
+    }
+
+    virtual const struct RTRECT* getRect()
+    {
+        return CrVrScrCompositorRectGet(&mCompositor);
     }
 
     virtual int fbCleanup()
@@ -2297,36 +2346,12 @@ protected:
         return getWindow()->SetVisibleRegionsChanged();
     }
 
-    int synchCompositorData()
-    {
-        CrVrScrCompositorClear(&mCompositor);
-
-        const struct VBVAINFOSCREEN* pScreenInfo = CrFbGetScreenInfo(getFramebuffer());
-        mPos.x = pScreenInfo->i32OriginX;
-        mPos.y = pScreenInfo->i32OriginY;
-
-        int rc = CrVrScrCompositorRectSet(&mCompositor, CrVrScrCompositorRectGet(CrFbGetCompositor(getFramebuffer())), NULL);
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("CrVrScrCompositorRectSet failed, rc %d", rc));
-            return rc;
-        }
-        rc = synchCompositorRegions();
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("synchCompositorRegions failed, rc %d", rc));
-            return rc;
-        }
-
-        return rc;
-    }
-
     virtual int synchCompositor()
     {
-        int rc = CrVrScrCompositorRectSet(&mCompositor, CrVrScrCompositorRectGet(CrFbGetCompositor(getFramebuffer())), NULL);
+        int rc = compositorMarkUpdated();
         if (!RT_SUCCESS(rc))
         {
-            WARN(("CrVrScrCompositorRectSet failed, rc %d", rc));
+            WARN(("compositorMarkUpdated failed, rc %d", rc));
             return rc;
         }
 
@@ -2334,13 +2359,6 @@ protected:
         if (!RT_SUCCESS(rc))
         {
             WARN(("fbSynchAddAllEntries failed, rc %d", rc));
-            return rc;
-        }
-
-        rc = synchCompositorRegions();
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("synchCompositorRegions failed, rc %d", rc));
             return rc;
         }
 
