@@ -245,9 +245,17 @@ typedef struct NATState
     struct mbstat mbstat;
 #endif
     uma_zone_t zone_ext_refcnt;
+    /**
+     * in (r89055) using of this behaviour has been changed and mean that Slirp
+     * can't parse hosts strucutures/files to provide to guest host name-resolving 
+     * configuration, instead Slirp provides .{interface-number + 1}.3 as a nameserver 
+     * and proxies DNS queiries to Host's Name Resolver API.
+     */
     bool fUseHostResolver;
-    /** Flag whether using the host resolver mode is permanent
-     * because the user configured it that way. */
+    /**
+     * Flag whether using the host resolver mode is permanent
+     * because the user configured it that way. 
+     */
     bool fUseHostResolverPermanent;
     /* from dnsproxy/dnsproxy.h*/
     unsigned int authoritative_port;
