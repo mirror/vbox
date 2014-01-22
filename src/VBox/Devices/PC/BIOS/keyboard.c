@@ -238,10 +238,8 @@ void BIOSCALL keyboard_init(void)
         keyboard_panic(993);
     }
 
-    /* Wait for data */
-    max=0xffff;
-    while ( ((inb(0x64) & 0x01) == 0) && (--max>0) ) outb(0x80, 0x31);
-    if (max==0x0) keyboard_panic(31);
+    /* Wait for reset to complete */
+    while ( (inb(0x64) & 0x01) == 0 ) outb(0x80, 0x31);
 
     if ((inb(0x60) != 0xaa && inb(0x60) != 0xaa)) {
         keyboard_panic(994);
