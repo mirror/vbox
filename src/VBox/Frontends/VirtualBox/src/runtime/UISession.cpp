@@ -1538,8 +1538,8 @@ void UISession::reinitMenuPool()
             }
         }
 
-        /* Show/Hide Network Adapters action depending on overall adapters activity status: */
-        gActionPool->action(UIActionIndexRuntime_Simple_NetworkSettings)->setVisible(fAtLeastOneAdapterActive);
+        /* Show/Hide Network sub-menu depending on overall adapters activity status: */
+        gActionPool->action(UIActionIndexRuntime_Menu_Network)->setVisible(fAtLeastOneAdapterActive);
     }
 
     /* USB stuff: */

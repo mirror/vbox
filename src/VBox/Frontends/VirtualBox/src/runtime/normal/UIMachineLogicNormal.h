@@ -39,7 +39,6 @@ private slots:
     void sltCheckForRequestedVisualStateType();
 
     /* Windowed mode functionality: */
-    void sltPrepareNetworkAdaptersMenu();
     void sltPrepareSharedFoldersMenu();
     void sltPrepareVideoCaptureMenu();
     void sltPrepareMouseIntegrationMenu();

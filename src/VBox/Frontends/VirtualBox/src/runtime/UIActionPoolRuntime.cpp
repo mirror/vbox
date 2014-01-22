@@ -797,14 +797,17 @@ class UIActionMenuNetworkAdapters : public UIActionMenu
 public:
 
     UIActionMenuNetworkAdapters(UIActionPool *pParent)
-        : UIActionMenu(pParent)
+        : UIActionMenu(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png")
     {
         retranslateUi();
     }
 
 protected:
 
-    void retranslateUi() {}
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Network"));
+    }
 };
 
 class UIActionSimpleShowNetworkSettingsDialog : public UIActionSimple

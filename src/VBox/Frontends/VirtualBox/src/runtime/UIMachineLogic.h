@@ -208,6 +208,8 @@ private slots:
     void sltPrepareSharedClipboardMenu();
     void sltChangeSharedClipboardType(QAction *pAction);
     void sltPrepareDragAndDropMenu();
+    void sltPrepareNetworkMenu();
+    void sltToggleNetworkAdapterConnection();
     void sltChangeDragAndDropType(QAction *pAction);
     void sltToggleVRDE(bool fEnabled);
     void sltToggleVideoCapture(bool fEnabled);
