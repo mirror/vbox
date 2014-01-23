@@ -791,21 +791,16 @@ HRESULT Appliance::i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
     char *pszFilename = 0;
 
     int vrc = RTTarCurrentFile(tar, &pszFilename);
-
     if (RT_FAILURE(vrc))
-    {
         throw setError(VBOX_E_FILE_ERROR,
-               tr("Could not open the current file in the OVA package (%Rrc)"), vrc);
-    }
-    else
+                       tr("Could not open the current file in the OVA package (%Rrc)"), vrc);
+    if (vrc == VINF_TAR_DIR_PATH)
     {
-        if (vrc == VINF_TAR_DIR_PATH)
-        {
-            throw setError(VBOX_E_FILE_ERROR,
-                   tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
-                      pszFilename,
-                      vrc);
-        }
+        HRESULT hrc = setError(VBOX_E_FILE_ERROR,
+                               tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
+                               pszFilename, vrc);
+        RTStrFree(pszFilename);
+        throw hrc;
     }
 
     availableImage = pszFilename;
@@ -1126,7 +1121,7 @@ HRESULT Appliance::i_readFSOVA(TaskOVF *pTask)
 
     /* Cleanup */
     if (pszFilename)
-        RTMemFree(pszFilename);
+        RTStrFree(pszFilename);
     if (pShaIo)
         RTMemFree(pShaIo);
     if (pTarIo)
@@ -1665,22 +1660,20 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         pShaIo->Core.pvUser           = &storage;
         pShaIo->Core.pNext            = NULL;
 
-        /* Read the file name of the first file (need to be the ovf file). This
-         * is how all internal files are named. */
+        /*
+         * File #1 - the .ova file.
+         *
+         * Read the name of the first file. This is how all internal files
+         * are named.
+         */
         vrc = RTTarCurrentFile(tar, &pszFilename);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Getting the OVF file within the archive failed (%Rrc)"), vrc);
-        else
-        {
-            if (vrc == VINF_TAR_DIR_PATH)
-            {
-                throw setError(VBOX_E_FILE_ERROR,
-                       tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
-                          pszFilename,
-                          vrc);
-            }
-        }
+        if (vrc == VINF_TAR_DIR_PATH)
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
+                           pszFilename, vrc);
 
         /* save original OVF filename */
         OVFfilename = pszFilename;
@@ -1695,44 +1688,43 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             && vrc != VERR_TAR_END_OF_FILE)
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Seeking within the archive failed (%Rrc)"), vrc);
-        else
-        {
-            RTTarCurrentFile(tar, &pszFilename);
-            if (vrc == VINF_TAR_DIR_PATH)
-            {
-                throw setError(VBOX_E_FILE_ERROR,
-                       tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
-                          pszFilename,
-                          vrc);
-            }
-        }
+        RTStrFree(pszFilename);
+        pszFilename = NULL;
+        RTTarCurrentFile(tar, &pszFilename);
+        if (vrc == VINF_TAR_DIR_PATH)
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
+                           pszFilename, vrc);
 
         PVDINTERFACEIO pCallbacks = pShaIo;
         PSHASTORAGE pStorage = &storage;
 
-        /* We always need to create the digest, cause we didn't know if there
+        /* We always need to create the digest, cause we don't know if there
          * is a manifest file in the stream. */
         pStorage->fCreateDigest = true;
 
         /*
-         * Try to read the manifest file. First try.
+         * File #2 - the manifest file (.mf), optional.
          *
          * Note: This isn't fatal if the file is not found. The standard
-         * defines 3 cases.
-         * 1. no manifest file
-         * 2. manifest file after the OVF file
-         * 3. manifest file after all disk files
+         * defines 3 cases:
+         *  1. no manifest file
+         *  2. manifest file after the OVF file
+         *  3. manifest file after all disk files
+         *
          * If we want streaming capabilities, we can't check if it is there by
          * searching for it. We have to try to open it on all possible places.
          * If it fails here, we will try it again after all disks where read.
          */
         rc = i_readTarFileToBuf(tar, strMfFile, &pvMfBuf, &cbMfSize, true, pCallbacks, pStorage);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
         /*
-         * Try to read the certificate file. First try.
-         * Logic is the same as with manifest file
-         * Only if the manifest file had been read successfully before
+         * File #3 - certificate file (.cer), optional.
+         *
+         * Logic is the same as with manifest file.  This only makes sense if
+         * there is a manifest file.
          */
         vrc = RTTarCurrentFile(tar, &pszFilename);
         if (RT_SUCCESS(vrc))
@@ -1752,11 +1744,20 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             }
         }
 
-        /* Now import the appliance. */
+        /*
+         * Now import the appliance.
+         */
         i_importMachines(stack, pCallbacks, pStorage);
-        /* Try to read the manifest file. Second try. */
+
+        /*
+         * The certificate and mainifest files may alternatively be stored
+         * after the disk files, so look again if we didn't find them already.
+         */
         if (!pvMfBuf)
         {
+            /*
+             * File #N-1 - The manifest file, optional.
+             */
             rc = i_readTarFileToBuf(tar, strMfFile, &pvMfBuf, &cbMfSize, true, pCallbacks, pStorage);
             if (FAILED(rc)) throw rc;
 
@@ -1769,10 +1770,11 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
                 if (FAILED(rc)) throw rc;
 
                 /*
-                 * Try to read the certificate file. Second try.
-                 * Only if the manifest file had been read successfully before
+                 * File #N - The certificate file, optional.
+                 * (Requires mainfest, as mention before.)
                  */
-
+                RTStrFree(pszFilename);
+                pszFilename = NULL;
                 vrc = RTTarCurrentFile(tar, &pszFilename);
                 if (RT_SUCCESS(vrc))
                 {
@@ -1822,7 +1824,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     /* Cleanup */
     if (pszFilename)
-        RTMemFree(pszFilename);
+        RTStrFree(pszFilename);
     if (pvMfBuf)
         RTMemFree(pvMfBuf);
     if (pShaIo)
@@ -2070,19 +2072,16 @@ HRESULT Appliance::i_readTarFileToBuf(RTTAR tar,
     int vrc = RTTarCurrentFile(tar, &pszCurFile);
     if (RT_SUCCESS(vrc))
     {
-        if (vrc == VINF_TAR_DIR_PATH)
-        {
-            rc = setError(VBOX_E_FILE_ERROR,
-                          tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
-                             pszCurFile,
-                             vrc);
-        }
-        else
+        if (vrc != VINF_TAR_DIR_PATH)
         {
             if (!strcmp(pszCurFile, RTPathFilename(strFile.c_str())))
                 rc = i_readFileToBuf(strFile, ppvBuf, pcbSize, fCreateDigest, pCallbacks, pStorage);
-            RTStrFree(pszCurFile);
         }
+        else
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
+                          pszCurFile, vrc);
+        RTStrFree(pszCurFile);
     }
     else if (vrc != VERR_TAR_END_OF_FILE)
         rc = setError(VBOX_E_IPRT_ERROR, "Seeking within the archive failed (%Rrc)", vrc);
@@ -3011,7 +3010,11 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             {
                 size_t i = 0;
                 for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD = avsdeHDs.begin(); itHD != avsdeHDs.end(); ++itHD, i++)
-                    Log(("avsdeHDs[%zu]: strRef=%s\n", i, (*itHD)->strRef.c_str()));
+                    Log(("avsdeHDs[%zu]: strRef=%s strOvf=%s\n", i, (*itHD)->strRef.c_str(), (*itHD)->strOvf.c_str()));
+                i = 0;
+                for (ovf::DiskImagesMap::const_iterator itDisk = stack.mapDisks.begin(); itDisk != stack.mapDisks.end(); ++itDisk)
+                    Log(("mapDisks[%zu]: strDiskId=%s strHref=%s\n", i, itDisk->second.strDiskId.c_str(), itDisk->second.strHref.c_str()));
+
             }
 #endif
 
@@ -3037,7 +3040,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 ovf::VirtualDisksMap::const_iterator itVDisk = vsysThis.mapVirtualDisks.begin();
 
                 VirtualSystemDescriptionEntry *vsdeTargetHD = 0;
-                Log(("diCurrent.strDiskId=%s\n", diCurrent.strDiskId.c_str()));
+                Log(("diCurrent.strDiskId=%s diCurrent.strHref=%s\n", diCurrent.strDiskId.c_str(), diCurrent.strHref.c_str()));
 
                 /*
                  *
