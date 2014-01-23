@@ -115,10 +115,9 @@ private:
 
     enum SetUpProgressMode { ImportFile, ImportS3, WriteFile, WriteS3 };
 
-    /*******************************************************************************
-     * General stuff
-     ******************************************************************************/
-
+    /** @name General stuff
+     * @{
+     */
     bool i_isApplianceIdle();
     HRESULT i_searchUniqueVMName(Utf8Str& aName) const;
     HRESULT i_searchUniqueDiskImageFilePath(Utf8Str& aName) const;
@@ -143,11 +142,11 @@ private:
     Utf8Str i_applianceIOName(APPLIANCEIONAME type) const;
 
     HRESULT i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, ComObjPtr<MediumFormat>& mf);
+    /** @}  */
 
-    /*******************************************************************************
-     * Read stuff
-     ******************************************************************************/
-
+    /** @name Read stuff
+     * @{
+     */
     HRESULT i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     HRESULT i_readFS(TaskOVF *pTask);
@@ -155,11 +154,11 @@ private:
     HRESULT i_readFSOVA(TaskOVF *pTask);
     HRESULT i_readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage);
     HRESULT i_readS3(TaskOVF *pTask);
+    /** @}  */
 
-    /*******************************************************************************
-     * Import stuff
-     ******************************************************************************/
-
+    /** @name Import stuff
+     * @}
+     */
     HRESULT i_importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     HRESULT i_importFS(TaskOVF *pTask);
@@ -210,10 +209,13 @@ private:
                           PVDINTERFACEIO pCallbacks,
                           PSHASTORAGE pStorage);
 
-    /*******************************************************************************
-     * Write stuff
-     ******************************************************************************/
+    HRESULT i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
+                                        RTCString &availableImage);
+    /** @} */
 
+    /** @name Write stuff
+     * @{
+     */
     HRESULT i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     HRESULT i_writeFS(TaskOVF *pTask);
@@ -235,9 +237,7 @@ private:
                                        ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                        ovf::OVFVersion_T enFormat,
                                        XMLStack &stack);
-
-    HRESULT i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
-                                        RTCString &availableImage);
+    /** @} */
 
     friend class Machine;
 };
@@ -246,16 +246,16 @@ void i_parseURI(Utf8Str strUri, LocationInfo &locInfo);
 
 struct VirtualSystemDescriptionEntry
 {
-    uint32_t ulIndex;                       // zero-based index of this entry within array
-    VirtualSystemDescriptionType_T type;    // type of this entry
-    Utf8Str strRef;                         // reference number (hard disk controllers only)
-    Utf8Str strOvf;                         // original OVF value (type-dependent)
-    Utf8Str strVBoxSuggested;               // configuration value (type-dependent); original value suggested by interpret()
-    Utf8Str strVBoxCurrent;                 // configuration value (type-dependent); current value, either from interpret() or setFinalValue()
-    Utf8Str strExtraConfigSuggested;        // extra configuration key=value strings (type-dependent); original value suggested by interpret()
-    Utf8Str strExtraConfigCurrent;          // extra configuration key=value strings (type-dependent); current value, either from interpret() or setFinalValue()
+    uint32_t ulIndex;                       ///< zero-based index of this entry within array
+    VirtualSystemDescriptionType_T type;    ///< type of this entry
+    Utf8Str strRef;                         ///< reference number (hard disk controllers only)
+    Utf8Str strOvf;                         ///< original OVF value (type-dependent)
+    Utf8Str strVBoxSuggested;               ///< configuration value (type-dependent); original value suggested by interpret()
+    Utf8Str strVBoxCurrent;                 ///< configuration value (type-dependent); current value, either from interpret() or setFinalValue()
+    Utf8Str strExtraConfigSuggested;        ///< extra configuration key=value strings (type-dependent); original value suggested by interpret()
+    Utf8Str strExtraConfigCurrent;          ///< extra configuration key=value strings (type-dependent); current value, either from interpret() or setFinalValue()
 
-    uint32_t ulSizeMB;                      // hard disk images only: a copy of ovf::DiskImage::ulSuggestedSizeMB
+    uint32_t ulSizeMB;                      ///< hard disk images only: a copy of ovf::DiskImage::ulSuggestedSizeMB
 };
 
 class ATL_NO_VTABLE VirtualSystemDescription :
