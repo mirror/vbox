@@ -188,11 +188,14 @@
 # include "oaidl.h"
 # include "VirtualBox.h"
 
+#ifndef __cplusplus
+/* Skip this in the C++ case as there's already a definition for CBSTR. */
 typedef const BSTR CBSTR;
+#endif /* !__cplusplus */
 
 #define ComSafeArrayAsInParam(f) (f)
 #define ComSafeArrayAsOutParam(f) (&amp;(f))
-#define ComSafeArrayAsOutIfaceParam(f) (&amp;(f))
+#define ComSafeArrayAsOutIfaceParam(f,t) (&amp;(f))
 
 #else /* !WIN32 */
 
