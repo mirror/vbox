@@ -1399,9 +1399,12 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
 }
 
 /**
- * Actual worker code for importing OVF data into VirtualBox. This is called from Appliance::taskThreadImportOrExport()
- * and therefore runs on the OVF import worker thread. This creates one or more new machines according to the
- * VirtualSystemScription instances created by Appliance::Interpret().
+ * Actual worker code for importing OVF data into VirtualBox.
+ *
+ * This is called from Appliance::taskThreadImportOrExport() and therefore runs
+ * on the OVF import worker thread. This creates one or more new machines
+ * according to the VirtualSystemScription instances created by
+ * Appliance::Interpret().
  *
  * This runs in three contexts:
  *
@@ -1413,8 +1416,8 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
  * 3) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl(), which
  *    called Appliance::i_importS3(), which called Appliance::i_importImpl(), which then called this again.
  *
- * @param pTask
- * @return
+ * @param   pTask       The OVF task data.
+ * @return  COM status code.
  */
 HRESULT Appliance::i_importFS(TaskOVF *pTask)
 {
@@ -1447,6 +1450,7 @@ HRESULT Appliance::i_importFS(TaskOVF *pTask)
         /* With _whatever_ error we've had, do a complete roll-back of
          * machines and disks we've created */
         writeLock.release();
+        ErrorInfoKeeper eik;
         for (list<Guid>::iterator itID = m->llGuidsMachinesCreated.begin();
              itID != m->llGuidsMachinesCreated.end();
              ++itID)
@@ -1571,6 +1575,7 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * won't be used anymore.
          */
         {
+            ErrorInfoKeeper eik; /* paranoia */
             list< ComObjPtr<VirtualSystemDescription> >::const_iterator itvsd;
             /* Iterate through all virtual systems of that appliance */
             for (itvsd = m->virtualSystemDescriptions.begin();
@@ -2559,6 +2564,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                        PVDINTERFACEIO pCallbacks,
                                        PSHASTORAGE pStorage)
 {
+    LogFlowFuncEnter();
     HRESULT rc;
 
     // Get the instance of IGuestOSType which matches our string guest OS type so we
@@ -2999,6 +3005,15 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         // we need another try/catch block.
         try
         {
+#ifdef LOG_ENABLED
+            if (LogIsEnabled())
+            {
+                size_t i = 0;
+                for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD = avsdeHDs.begin(); itHD != avsdeHDs.end(); ++itHD, i++)
+                    Log(("avsdeHDs[%zu]: strRef=%s\n", i, (*itHD)->strRef.c_str()));
+            }
+#endif
+
             // to attach things we need to open a session for the new machine
             rc = pNewMachine->LockMachine(stack.pSession, LockType_Write);
             if (FAILED(rc)) throw rc;
@@ -3021,6 +3036,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 ovf::VirtualDisksMap::const_iterator itVDisk = vsysThis.mapVirtualDisks.begin();
 
                 VirtualSystemDescriptionEntry *vsdeTargetHD = 0;
+                Log(("diCurrent.strDiskId=%s\n", diCurrent.strDiskId.c_str()));
 
                 /*
                  *
@@ -3134,7 +3150,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                 if (!vsdeTargetHD)
                                 {
                                     /*
- -                                   * in this case it's an error because something wrong with OVF description file.
+                                     * in this case it's an error because something wrong with OVF description file.
                                      * May be VB imports OVA package with wrong file sequence inside the archive.
                                      */
                                     throw setError(E_FAIL,
@@ -3289,6 +3305,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 throw setError(aRC, "Unknown error during OVF import");
         }
     }
+    LogFlowFuncLeave();
 }
 
 /**
@@ -3326,6 +3343,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                                     PVDINTERFACEIO pCallbacks,
                                     PSHASTORAGE pStorage)
 {
+    LogFlowFuncEnter();
     Assert(vsdescThis->m->pConfig);
 
     HRESULT rc = S_OK;
@@ -3823,6 +3841,8 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
     rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
     if (FAILED(rc)) throw rc;
     m->llGuidsMachinesCreated.push_back(Guid(bstrNewMachineId));
+
+    LogFlowFuncLeave();
 }
 
 void Appliance::i_importMachines(ImportStack &stack,
@@ -3888,6 +3908,7 @@ void Appliance::i_importMachines(ImportStack &stack,
         // and determine the machine folder from that
         stack.strMachineFolder = bstrMachineFilename;
         stack.strMachineFolder.stripFilename();
+        LogFunc(("i=%zu strName=%s bstrMachineFilename=%ls\n", i, stack.strNameVBox.c_str(), bstrMachineFilename.raw()));
 
         // guest OS type
         std::list<VirtualSystemDescriptionEntry*> vsdeOS;
