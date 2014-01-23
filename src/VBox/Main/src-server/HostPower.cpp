@@ -35,6 +35,25 @@ HostPowerService::HostPowerService(VirtualBox *aVirtualBox)
 {
     AssertPtr(aVirtualBox);
     mVirtualBox = aVirtualBox;
+
+    // keep this in sync with the host-specific implementations
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
+    Bstr bstrValue;
+    HRESULT hrc = mVirtualBox->GetExtraData(Bstr("HostPower/SavestateOnBatteryLow").raw(),
+                                            bstrValue.asOutParam());
+    if (   SUCCEEDED(hrc)
+        && (   bstrValue.isEmpty()
+            || bstrValue != "0"))
+    {
+        fSavestateOnBatteryLow = true;
+        LogRel(("Power: BatteryLow event will trigger VM savestate\n"));
+    }
+    else
+#endif
+    {
+        fSavestateOnBatteryLow = false;
+        LogRel(("Power: BatteryLow will be ignored\n"));
+    }
 }
 
 HostPowerService::~HostPowerService()
@@ -122,43 +141,47 @@ void HostPowerService::notify(Reason_T aReason)
 
         case Reason_HostBatteryLow:
         {
-            LogFunc(("BATTERY LOW\n"));
-
-            mVirtualBox->getOpenedMachines(machines, &controls);
-
-            size_t saved = 0;
-
-            /* save running VMs */
-            for (VirtualBox::InternalControlList::const_iterator it = controls.begin();
-                 it != controls.end();
-                 ++it)
+            if (fSavestateOnBatteryLow)
             {
-                ComPtr<IInternalSessionControl> pControl = *it;
+                LogFunc(("BATTERY LOW -- savestate running VMs\n"));
 
-                ComPtr<IProgress> progress;
+                mVirtualBox->getOpenedMachines(machines, &controls);
+                size_t saved = 0;
 
-                /* note that SaveStateWithReason() will simply return a failure
-                 * if the VM is in an inappropriate state */
-                rc = pControl->SaveStateWithReason(Reason_HostBatteryLow, progress.asOutParam());
-                if (FAILED(rc))
-                    continue;
-
-                /* Wait until the operation has been completed. */
-                rc = progress->WaitForCompletion(-1);
-                if (SUCCEEDED(rc))
+                /* save running VMs */
+                for (VirtualBox::InternalControlList::const_iterator it = controls.begin();
+                     it != controls.end();
+                     ++it)
                 {
-                    LONG iRc;
-                    progress->COMGETTER(ResultCode)(&iRc);
-                    rc = iRc;
+                    ComPtr<IInternalSessionControl> pControl = *it;
+                    ComPtr<IProgress> progress;
+
+                    /* note that SaveStateWithReason() will simply return a failure
+                     * if the VM is in an inappropriate state */
+                    rc = pControl->SaveStateWithReason(Reason_HostBatteryLow, progress.asOutParam());
+                    if (FAILED(rc))
+                        continue;
+
+                    /* Wait until the operation has been completed. */
+                    rc = progress->WaitForCompletion(-1);
+                    if (SUCCEEDED(rc))
+                    {
+                        LONG iRc;
+                        progress->COMGETTER(ResultCode)(&iRc);
+                        rc = iRc;
+                    }
+
+                    AssertMsg(SUCCEEDED(rc), ("SaveState WaitForCompletion failed with %Rhrc (%#08X)\n", rc, rc));
+
+                    if (SUCCEEDED(rc))
+                        ++saved;
                 }
-
-                AssertMsg(SUCCEEDED(rc), ("SaveState WaitForCompletion failed with %Rhrc (%#08X)\n", rc, rc));
-
-                if (SUCCEEDED(rc))
-                    ++saved;
+                LogFunc(("Saved %d VMs\n", saved));
             }
-
-            LogFunc(("Saved %d VMs\n", saved));
+            else
+            {
+                LogFunc(("BATTERY LOW -- no action\n"));
+            }
 
             break;
         }

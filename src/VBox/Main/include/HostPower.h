@@ -29,18 +29,17 @@
 
 class HostPowerService
 {
-public:
-
+  public:
     HostPowerService(VirtualBox *aVirtualBox);
     virtual ~HostPowerService();
-
     void notify(Reason_T aReason);
 
-protected:
-
+  protected:
     VirtualBox *mVirtualBox;
-
     std::vector<ComPtr<IInternalSessionControl> > mSessionControls;
+
+  private:
+    bool fSavestateOnBatteryLow;
 };
 
 # ifdef RT_OS_WINDOWS
