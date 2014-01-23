@@ -20,6 +20,7 @@ class VirtualSystemDescription;
 
 #include "ovfreader.h"
 #include <map>
+#include <iprt/vfs.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -248,6 +249,16 @@ typedef struct SHASTORAGE
 PVDINTERFACEIO ShaCreateInterface();
 PVDINTERFACEIO FileCreateInterface();
 PVDINTERFACEIO TarCreateInterface();
+
+/** Pointer to the instance data for the fssRdOnly_ methods. */
+typedef struct FSSRDONLYINTERFACEIO *PFSSRDONLYINTERFACEIO;
+
+int  fssRdOnlyCreateInterfaceForTarFile(const char *pszFilename, PFSSRDONLYINTERFACEIO *pTarIo);
+void fssRdOnlyDestroyInterface(PFSSRDONLYINTERFACEIO pFssIo);
+int  fssRdOnlyGetCurrentName(PFSSRDONLYINTERFACEIO pFssIo, const char **ppszName);
+int  fssRdOnlySkipCurrent(PFSSRDONLYINTERFACEIO pFssIo);
+bool fssRdOnlyIsCurrentDirectory(PFSSRDONLYINTERFACEIO pFssIo);
+
 int readFileIntoBuffer(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pIfIo, void *pvUser);
 int writeBufferToFile(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser);
 int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullFilenameOut, PVDINTERFACEIO pIfIo, void *pvUser);

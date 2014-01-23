@@ -172,13 +172,18 @@ private:
                             bool fCreateDigest,
                             PVDINTERFACEIO pCallbacks,
                             PSHASTORAGE pStorage);
-    HRESULT i_readTarFileToBuf(RTTAR tar,
-                              const Utf8Str &strFile,
-                              void **ppvBuf,
-                              size_t *pcbSize,
-                              bool fCreateDigest,
-                              PVDINTERFACEIO pCallbacks,
-                              PSHASTORAGE pStorage);
+    HRESULT i_readTarFileToBuf(
+#ifdef USE_RTTAR_FOR_READING
+                               RTTAR tar,
+#else
+                               struct FSSRDONLYINTERFACEIO *pTarIo,
+#endif
+                               const Utf8Str &strFile,
+                               void **ppvBuf,
+                               size_t *pcbSize,
+                               bool fCreateDigest,
+                               PVDINTERFACEIO pCallbacks,
+                               PSHASTORAGE pStorage);
     HRESULT i_verifyManifestFile(const Utf8Str &strFile, ImportStack &stack, void *pvBuf, size_t cbSize);
 
     void i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
