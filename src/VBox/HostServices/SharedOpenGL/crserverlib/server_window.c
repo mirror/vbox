@@ -195,6 +195,7 @@ void crServerMuralTerm(CRMuralInfo *mural)
     		CRMuralInfo *dummy = crServerGetDummyMural(mural->CreateInfo.visualBits);
     		CR_BLITTER_WINDOW DummyInfo;
     		CRASSERT(dummy);
+    		crServerVBoxBlitterWinInit(&DummyInfo, dummy);
     		CrBltMuralSetCurrentInfo(pBlitter, &DummyInfo);
     	}
     }

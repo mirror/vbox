@@ -239,6 +239,10 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParametervCR(GLenum target
         cr_server.projectionOverride = GL_TRUE;
         break;
 
+    case GL_HH_SET_TMPCTX_MAKE_CURRENT:
+        /*we should not receive it from the guest! */
+        break;
+
     default:
         /* Pass the parameter info to the head SPU */
         cr_server.head_spu->dispatch_table.ChromiumParametervCR( target, type, count, values );
@@ -672,7 +676,7 @@ PCR_BLITTER crServerVBoxBlitterGet()
         CRASSERT(cr_server.MainContextInfo.SpuContext);
         Ctx.Base.id = cr_server.MainContextInfo.SpuContext;
         Ctx.Base.visualBits = cr_server.MainContextInfo.CreateInfo.visualBits;
-        rc = CrBltInit(&cr_server.Blitter, &Ctx, true, true, NULL, &cr_server.head_spu->dispatch_table);
+        rc = CrBltInit(&cr_server.Blitter, &Ctx, true, true, NULL, &cr_server.TmpCtxDispatch);
         if (RT_SUCCESS(rc))
         {
             CRASSERT(CrBltIsInitialized(&cr_server.Blitter));
@@ -684,6 +688,16 @@ PCR_BLITTER crServerVBoxBlitterGet()
             return NULL;
         }
     }
+
+    if (!CrBltMuralGetCurrentInfo(&cr_server.Blitter)->Base.id)
+    {
+        CRMuralInfo *dummy = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        CR_BLITTER_WINDOW DummyInfo;
+        CRASSERT(dummy);
+        crServerVBoxBlitterWinInit(&DummyInfo, dummy);
+        CrBltMuralSetCurrentInfo(&cr_server.Blitter, &DummyInfo);
+    }
+
     return &cr_server.Blitter;
 }
 
@@ -1346,13 +1360,35 @@ crServerMakeTmpCtxCurrent( GLint window, GLint nativeWindow, GLint context )
 
     if (pCtx)
     {
-        GLint curSrvSpuCtx = cr_server.currentCtxInfo && cr_server.currentCtxInfo->SpuContext > 0 ? cr_server.currentCtxInfo->SpuContext : cr_server.MainContextInfo.SpuContext;
-        bool fSwitchToTmpCtx = (curSrvSpuCtx != context);
         CRMuralInfo *pCurrentMural = cr_server.currentMural;
-        CRContextInfo *pCurCtxInfo = cr_server.currentCtxInfo;
-        pCurCtx = pCurCtxInfo ? pCurCtxInfo->pContext : NULL;
 
-        CRASSERT(pCurCtx == pCtx);
+        pCurCtx = cr_server.currentCtxInfo ? cr_server.currentCtxInfo->pContext : cr_server.MainContextInfo.pContext;
+        Assert(pCurCtx == pCtx);
+
+        if (!context)
+        {
+            if (pCurrentMural)
+            {
+                Assert(cr_server.currentCtxInfo);
+                context = cr_server.currentCtxInfo->SpuContext > 0 ? cr_server.currentCtxInfo->SpuContext : cr_server.MainContextInfo.SpuContext;
+                window = pCurrentMural->spuWindow;
+            }
+            else
+            {
+                CRMuralInfo * pDummy;
+                Assert(!cr_server.currentCtxInfo);
+                pDummy = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+                context = cr_server.MainContextInfo.SpuContext;
+                window = pDummy->spuWindow;
+            }
+
+
+            fDoPrePostProcess = -1;
+        }
+        else
+        {
+            fDoPrePostProcess = 1;
+        }
 
         if (pCurrentMural)
         {
@@ -1364,8 +1400,6 @@ crServerMakeTmpCtxCurrent( GLint window, GLint nativeWindow, GLint context )
             idDrawFBO = 0;
             idReadFBO = 0;
         }
-
-        fDoPrePostProcess = fSwitchToTmpCtx ? 1 : -1;
     }
     else
     {
@@ -1383,9 +1417,15 @@ crServerMakeTmpCtxCurrent( GLint window, GLint nativeWindow, GLint context )
 
 void crServerInitTmpCtxDispatch()
 {
+    MakeCurrentFunc_t pfnMakeCurrent;
+
     crSPUInitDispatchTable(&cr_server.TmpCtxDispatch);
     crSPUCopyDispatchTable(&cr_server.TmpCtxDispatch, &cr_server.head_spu->dispatch_table);
     cr_server.TmpCtxDispatch.MakeCurrent = crServerMakeTmpCtxCurrent;
+
+    pfnMakeCurrent = crServerMakeTmpCtxCurrent;
+    cr_server.head_spu->dispatch_table.ChromiumParametervCR(GL_HH_SET_TMPCTX_MAKE_CURRENT, GL_BYTE, sizeof (void*), &pfnMakeCurrent);
+
 }
 
 /* dump stuff */
