@@ -1802,6 +1802,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * won't be used anymore.
          */
         {
+            ErrorInfoKeeper eik; /* paranoia */
             list< ComObjPtr<VirtualSystemDescription> >::const_iterator itvsd;
             /* Iterate through all virtual systems of that appliance */
             for (itvsd = m->virtualSystemDescriptions.begin();
