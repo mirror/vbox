@@ -184,7 +184,7 @@ int scsi_read_sectors(bio_dsk_t __far *bios_dsk)
 
     device_id = VBOX_GET_SCSI_DEVICE(bios_dsk->drqp.dev_id);
     if (device_id > BX_MAX_SCSI_DEVICES)
-        BX_PANIC("scsi_read_sectors: device_id out of range %d\n", device_id);
+        BX_PANIC("%s: device_id out of range %d\n", __func__, device_id);
 
     count    = bios_dsk->drqp.nsect;
 
@@ -233,7 +233,7 @@ int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
 
     device_id = VBOX_GET_SCSI_DEVICE(bios_dsk->drqp.dev_id);
     if (device_id > BX_MAX_SCSI_DEVICES)
-        BX_PANIC("scsi_write_sectors: device_id out of range %d\n", device_id);
+        BX_PANIC("%s: device_id out of range %d\n", __func__, device_id);
 
     count    = bios_dsk->drqp.nsect;
 
@@ -599,13 +599,13 @@ void BIOSCALL scsi_init(void)
     if (identifier == 0x55)
     {
         /* Detected - Enumerate attached devices. */
-        DBG_SCSI("scsi_init: BusLogic SCSI adapter detected\n");
+        DBG_SCSI("%s: BusLogic SCSI adapter detected\n", __func__);
         outb(BUSLOGIC_BIOS_IO_PORT+VBSCSI_REGISTER_RESET, 0);
         scsi_enumerate_attached_devices(BUSLOGIC_BIOS_IO_PORT);
     }
     else
     {
-        DBG_SCSI("scsi_init: BusLogic SCSI adapter not detected\n");
+        DBG_SCSI("%s: BusLogic SCSI adapter not detected\n", __func__);
     }
 
     /* Detect the LSI Logic parallel SCSI adapter. */
@@ -615,13 +615,13 @@ void BIOSCALL scsi_init(void)
     if (identifier == 0x55)
     {
         /* Detected - Enumerate attached devices. */
-        DBG_SCSI("scsi_init: LSI Logic SCSI adapter detected\n");
+        DBG_SCSI("%s: LSI Logic SCSI adapter detected\n", __func__);
         outb(LSILOGIC_BIOS_IO_PORT+VBSCSI_REGISTER_RESET, 0);
         scsi_enumerate_attached_devices(LSILOGIC_BIOS_IO_PORT);
     }
     else
     {
-        DBG_SCSI("scsi_init: LSI Logic SCSI adapter not detected\n");
+        DBG_SCSI("%s: LSI Logic SCSI adapter not detected\n", __func__);
     }
 
     /* Detect the LSI Logic SAS adapter. */
@@ -631,12 +631,12 @@ void BIOSCALL scsi_init(void)
     if (identifier == 0x55)
     {
         /* Detected - Enumerate attached devices. */
-        DBG_SCSI("scsi_init: LSI Logic SAS adapter detected\n");
+        DBG_SCSI("%s: LSI Logic SAS adapter detected\n", __func__);
         outb(LSILOGIC_SAS_BIOS_IO_PORT+VBSCSI_REGISTER_RESET, 0);
         scsi_enumerate_attached_devices(LSILOGIC_SAS_BIOS_IO_PORT);
     }
     else
     {
-        DBG_SCSI("scsi_init: LSI Logic SAS adapter not detected\n");
+        DBG_SCSI("%s: LSI Logic SAS adapter not detected\n", __func__);
     }
 }
