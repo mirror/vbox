@@ -1185,16 +1185,27 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 break;
             }
 
-            for (int i = 0; i < SHCRGL_CPARMS_DEV_RESIZE; ++i)
+            if (paParms->type != VBOX_HGCM_SVC_PARM_PTR)
             {
-                if (paParms[i].type != VBOX_HGCM_SVC_PARM_32BIT)
-                {
-                    AssertMsgFailed(("invalid param\n"));
-                    return VERR_INVALID_PARAMETER;
-                }
+                AssertMsgFailed(("invalid param\n"));
+                return VERR_INVALID_PARAMETER;
             }
 
-            rc = crVBoxServerNotifyResize(paParms[0].u.uint32);
+            if (!paParms->u.pointer.addr)
+            {
+                AssertMsgFailed(("invalid param\n"));
+                return VERR_INVALID_PARAMETER;
+            }
+
+            if (paParms->u.pointer.size != sizeof (CRVBOXHGCMDEVRESIZE))
+            {
+                AssertMsgFailed(("invalid param\n"));
+                return VERR_INVALID_PARAMETER;
+            }
+
+            CRVBOXHGCMDEVRESIZE *pResize = (CRVBOXHGCMDEVRESIZE*)paParms->u.pointer.addr;
+
+            rc = crVBoxServerNotifyResize(&pResize->Screen, pResize->pvVRAM);
             break;
         }
         case SHCRGL_HOST_FN_VIEWPORT_CHANGED:

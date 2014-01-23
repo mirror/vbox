@@ -408,8 +408,15 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompo
 
         if (fAdjusted)
         {
-            fChangeFlags &= ~VBOXVR_COMPOSITOR_CF_ENTRY_REPLACED;
-            fChangeFlags |= VBOXVR_COMPOSITOR_CF_REGIONS_CHANGED | VBOXVR_COMPOSITOR_CF_ENTRY_REGIONS_CHANGED;
+            if (CrVrScrCompositorEntryIsUsed(pEntry))
+            {
+                fChangeFlags &= ~VBOXVR_COMPOSITOR_CF_ENTRY_REPLACED;
+                fChangeFlags |= VBOXVR_COMPOSITOR_CF_REGIONS_CHANGED | VBOXVR_COMPOSITOR_CF_ENTRY_REGIONS_CHANGED;
+            }
+            else
+            {
+                fChangeFlags = 0;
+            }
         }
     }
 
