@@ -888,8 +888,10 @@ nd6_send_ns(struct netif * netif, ip6_addr_t * target_addr, u8_t flags)
     target_addr = &multicast_address;
   }
 
+#if CHECKSUM_GEN_ICMP6
   ns_hdr->chksum = ip6_chksum_pseudo(p, IP6_NEXTH_ICMP6, p->len, src_addr,
     target_addr);
+#endif /* CHECKSUM_GEN_ICMP6 */
 
   /* Send the packet out. */
   ND6_STATS_INC(nd6.xmit);
@@ -960,8 +962,10 @@ nd6_send_na(struct netif * netif, ip6_addr_t * target_addr, u8_t flags)
     dest_addr = ip6_current_src_addr();
   }
 
+#if CHECKSUM_GEN_ICMP6
   na_hdr->chksum = ip6_chksum_pseudo(p, IP6_NEXTH_ICMP6, p->len, src_addr,
     dest_addr);
+#endif /* CHECKSUM_GEN_ICMP6 */
 
   /* Send the packet out. */
   ND6_STATS_INC(nd6.xmit);
@@ -1027,8 +1031,10 @@ nd6_send_rs(struct netif * netif)
     SMEMCPY(lladdr_opt->addr, netif->hwaddr, netif->hwaddr_len);
   }
 
+#if CHECKSUM_GEN_ICMP6
   rs_hdr->chksum = ip6_chksum_pseudo(p, IP6_NEXTH_ICMP6, p->len, src_addr,
     &multicast_address);
+#endif /* CHECKSUM_GEN_ICMP6 */
 
   /* Send the packet out. */
   ND6_STATS_INC(nd6.xmit);
