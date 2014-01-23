@@ -1159,6 +1159,8 @@ tcp_fasttmr_start:
         }
       }
       pcb = next;
+    } else {
+      pcb = pcb->next;
     }
   }
 }
