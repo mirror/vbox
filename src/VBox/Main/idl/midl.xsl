@@ -5,7 +5,7 @@
  *  A template to generate a MS IDL compatible interface definition file
  *  from the generic interface definition expressed in XML.
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2014 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -242,7 +242,6 @@
   <xsl:text> : </xsl:text>
   <xsl:choose>
     <xsl:when test="@extends='$unknown'">IDispatch</xsl:when>
-    <xsl:when test="@extends='$dispatched'">IDispatch</xsl:when>
     <xsl:when test="@extends='$errorinfo'">IErrorInfo</xsl:when>
     <xsl:otherwise><xsl:value-of select="@extends"/></xsl:otherwise>
   </xsl:choose>

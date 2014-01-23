@@ -659,6 +659,12 @@
                     </Component>
 <?endif?>
 
+                    <!-- C API (glue) binding -->
+                    <Component Id="cp_VBoxCAPI" Guid="097F7F53-7111-467F-8E0C-257D9926FDA0">
+                        <File Id="file_VBoxCAPI.dll" Name="VBoxCAPI.dll"
+                              Source="$(env.PATH_OUT)\bin\VBoxCAPI.dll" />
+                    </Component>
+
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
                     <Component Id="cp_VBoxPythonBinding" Guid="293D7E11-78DA-4C31-AEED-AE2FE42F6881">
                         <Condition>PYTHON_INSTALLED</Condition>

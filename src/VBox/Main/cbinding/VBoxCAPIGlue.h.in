@@ -1,10 +1,10 @@
 /* $Revision$ */
-/** @file VBoxXPCOMCGlue.h
- * Glue for dynamically linking with VBoxXPCOMC.
+/** @file VBoxCAPIGlue.h
+ * Glue for dynamically linking with VBoxCAPI.
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,23 +28,29 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBoxXPCOMC_cglue_h
-#define ___VBoxXPCOMC_cglue_h
+#ifndef ___VBoxCAPIGlue_h
+#define ___VBoxCAPIGlue_h
 
+#undef VBOX_WITH_GLUE
+#define VBOX_WITH_GLUE
 #include "VBoxCAPI_v@VBOX_API_VERSION@.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** The dlopen handle for VBoxXPCOMC. */
-extern void *g_hVBoxXPCOMC;
+/** The so/dynsym/dll handle for VBoxCAPI. */
+#ifndef WIN32
+extern void *g_hVBoxCAPI;
+#else
+extern HMODULE g_hVBoxCAPI;
+#endif
 /** The last load error. */
 extern char g_szVBoxErrMsg[256];
-/** Pointer to the VBoxXPCOMC function table. */
-extern PCVBOXXPCOM g_pVBoxFuncs;
-/** Pointer to VBoxGetXPCOMCFunctions for the loaded VBoxXPCOMC so/dylib/dll. */
-extern PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions;
+/** Pointer to the VBOXCAPI function table. */
+extern PCVBOXCAPI g_pVBoxFuncs;
+/** Pointer to VBoxGetCAPIFunctions for the loaded VBoxCAPI so/dylib/dll. */
+extern PFNVBOXGETCAPIFUNCTIONS g_pfnGetFunctions;
 
 
 int VBoxCGlueInit(void);

@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2009-2013 Oracle Corporation
+# Copyright (C) 2009-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -19,30 +19,29 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 
-if defined(VBOX_WITH_XPCOM) || defined(VBOX_ONLY_SDK)
 #
 # The samples
 #
-INSTALLS += XpComCSamples
-XpComCSamples_MODE = a+r,u+rw
-XpComCSamples_INST = \
-	$(INST_SDK)bindings/xpcom/cbinding/samples/
-XpComCSamples_SOURCES = \
-	tstXPCOMCGlue.c \
-	makefile.tstXPCOMCGlue=>Makefile
+INSTALLS += CAPISamples
+CAPISamples_MODE = a+r,u+rw
+CAPISamples_INST = \
+	$(INST_SDK)bindings/c/samples/
+CAPISamples_SOURCES = \
+	tstCAPIGlue.c \
+	makefile.tstCAPIGlue=>Makefile
 
-INSTALLS += XpComCGlue
-XpComCGlue_MODE = a+r,u+rw
-XpComCGlue_INST = \
-	$(INST_SDK)bindings/xpcom/cbinding/
-XpComCGlue_SOURCES = \
-	VBoxXPCOMCGlue.c \
-	$(XpComCHeaders_0_OUTDIR)/VBoxXPCOMCGlue.h
+INSTALLS += CAPIGlue
+CAPIGlue_MODE = a+r,u+rw
+CAPIGlue_INST = \
+	$(INST_SDK)bindings/c/glue/
+CAPIGlue_SOURCES = \
+	VBoxCAPIGlue.c \
+	$(CAPIHeaders_0_OUTDIR)/VBoxCAPIGlue.h
 
-INSTALLS += XpComCHeaders
-XpComCHeaders_MODE = a+r,u+rw
-XpComCHeaders_INST = $(INST_SDK)bindings/xpcom/include/
-XpComCHeaders_SOURCES = \
+INSTALLS += CAPIHeaders
+CAPIHeaders_MODE = a+r,u+rw
+CAPIHeaders_INST = $(INST_SDK)bindings/c/include/
+CAPIHeaders_SOURCES = \
 	VBoxCAPI_v2_2.h \
 	VBoxCAPI_v3_0.h \
 	VBoxCAPI_v3_1.h \
@@ -50,10 +49,10 @@ XpComCHeaders_SOURCES = \
 	VBoxCAPI_v4_0.h \
 	VBoxCAPI_v4_1.h \
 	VBoxCAPI_v4_2.h \
-	$(XpComCHeaders_0_OUTDIR)/VBoxCAPI.h=>VBoxCAPI_v$(VBOX_API_VERSION).h
+	$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h=>VBoxCAPI_v$(VBOX_API_VERSION).h
 
-$$(XpComCHeaders_0_OUTDIR)/VBoxXPCOMCGlue.h: \
-		$(PATH_SUB_CURRENT)/VBoxXPCOMCGlue.h.in \
+$$(CAPIHeaders_0_OUTDIR)/VBoxCAPIGlue.h: \
+		$(PATH_SUB_CURRENT)/VBoxCAPIGlue.h.in \
 		$(MAKEFILE_CURRENT) \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,,$@)
@@ -61,62 +60,78 @@ $$(XpComCHeaders_0_OUTDIR)/VBoxXPCOMCGlue.h: \
 		-e 's/@VBOX_API_VERSION@/$(VBOX_API_VERSION)/' \
 		<  $< >  $@
 
-$$(XpComCHeaders_0_OUTDIR)/VBoxCAPI.h: \
-		$(PATH_SUB_CURRENT)/xpcidl.xsl \
+$$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h: \
+		$(PATH_SUB_CURRENT)/capiidl.xsl \
 		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
-	$(call MSG_TOOL,xsltproc,XpComCHeaders,$<,$@)
+	$(call MSG_TOOL,xsltproc,CAPIHeaders,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
-endif # VBOX_WITH_XPCOM || SDK
-if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
+if !defined(VBOX_ONLY_SDK)
 
  #
- # The C utility DLL
+ # The C API binding utility DLL
  #
+ DLLS += VBoxCAPI
+ VBoxCAPI_TEMPLATE = VBOXMAINCLIENTDLL
  ifdef VBOX_WITH_XPCOM
- DLLS += VBoxXPCOMC
- VBoxXPCOMC_TEMPLATE = VBOXMAINDLL
- VBoxXPCOMC_DEFS = IN_VBOXXPCOMC
- VBoxXPCOMC_SOURCES = \
- 	VBoxXPCOMC.cpp
- VBoxXPCOMC_INCS = \
-  	$(XpComCHeaders_0_OUTDIR)
- VBoxXPCOMC_INTERMEDIATES = \
- 	$(XpComCHeaders_0_OUTDIR)/VBoxCAPI.h
+  # Keep old name on XPCOM so that legacy code is happy.
+  VBoxCAPI_INST = $(INST_BIN)VBoxXPCOMC$(VBOX_SUFF_DLL)
  endif
+ VBoxCAPI_DEFS = IN_VBOXCAPI
+ VBoxCAPI_SOURCES = \
+ 	VBoxCAPI.cpp
+ VBoxCAPI_INCS = \
+ 	$(CAPIHeaders_0_OUTDIR)
+ VBoxCAPI_INTERMEDIATES = \
+ 	$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h
 
  #
  # The C glue library.
  #
- LIBRARIES += VBoxXPCOMCGlue
- VBoxXPCOMCGlue_TEMPLATE = VBOXMAINEXE
- VBoxXPCOMCGlue_DEFS = IN_VBOXXPCOMC
- VBoxXPCOMCGlue_SOURCES = \
- 	VBoxXPCOMCGlue.c
- VBoxXPCOMCGlue_INCS = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding
- VBoxXPCOMCGlue_INTERMEDIATES = \
- 	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding/VBoxXPCOMCGlue.h \
- 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v$(VBOX_API_VERSION).h
+ LIBRARIES += VBoxCAPIGlue
+ VBoxCAPIGlue_TEMPLATE = VBOXMAINEXE
+ VBoxCAPIGlue_DEFS = IN_VBOXCAPI
+ VBoxCAPIGlue_SOURCES = \
+ 	VBoxCAPIGlue.c
+ ifdef VBOX_WITH_XPCOM
+  VBoxCAPIGlue_SOURCES += \
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/lib/VirtualBox_i.c
+ else
+  VBoxCAPIGlue_SOURCES += \
+ 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c
+ endif
+ VBoxCAPIGlue_INCS = \
+ 	$(VBOX_PATH_SDK)/bindings/c/include \
+ 	$(VBOX_PATH_SDK)/bindings/c/glue
+ VBoxCAPIGlue_INTERMEDIATES = \
+ 	$(VBOX_PATH_SDK)/bindings/c/glue/VBoxCAPIGlue.h \
+ 	$(VBOX_PATH_SDK)/bindings/c/include/VBoxCAPI_v$(VBOX_API_VERSION).h
 
  if defined(VBOX_WITH_TESTCASES) && "$(KBUILD_TARGET)" != "darwin"
   #
   # The testcase (also in samples).
   # C testcase using the dynamic glue.
   #
-  PROGRAMS += tstXPCOMCGlue
-  tstXPCOMCGlue_TEMPLATE = VBOXR3TSTEXE
-  tstXPCOMCGlue_INCS = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding
-  tstXPCOMCGlue_INTERMEDIATES = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding/VBoxXPCOMCGlue.h \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v$(VBOX_API_VERSION).h
-  tstXPCOMCGlue_SOURCES = \
-  	tstXPCOMCGlue.c
-  tstXPCOMCGlue_LIBS = \
-  	$(VBoxXPCOMCGlue_1_TARGET)
+  PROGRAMS += tstCAPIGlue
+  tstCAPIGlue_TEMPLATE = VBOXR3TSTEXE
+  tstCAPIGlue_INCS = \
+  	$(VBOX_PATH_SDK)/bindings/c/include \
+  	$(VBOX_PATH_SDK)/bindings/c/glue
+  ifdef VBOX_WITH_XPCOM
+   tstCAPIGlue_INCS += \
+   	$(VBOX_PATH_SDK)/bindings/xpcom/include
+  else
+   tstCAPIGlue_INCS += \
+   	$(VBOX_PATH_SDK)/bindings/mscom/include
+  endif
+  tstCAPIGlue_INTERMEDIATES = \
+  	$(VBOX_PATH_SDK)/bindings/c/glue/VBoxCAPIGlue.h \
+  	$(VBOX_PATH_SDK)/bindings/c/include/VBoxCAPI_v$(VBOX_API_VERSION).h
+  tstCAPIGlue_SOURCES = \
+  	tstCAPIGlue.c
+  tstCAPIGlue_LIBS = \
+  	$(VBoxCAPIGlue_1_TARGET)
  endif
 
 endif # ! VBOX_ONLY_SDK

@@ -11,7 +11,7 @@
 
      Contributed by James Lucas (mjlucas at eng.uts.edu.au).
 
-    Copyright (C) 2008-2013 Oracle Corporation
+    Copyright (C) 2008-2014 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -168,7 +168,7 @@
  */
 </xsl:text>
    <xsl:choose>
-      <xsl:when test="($extends = '$unknown') or ($extends = '$dispatched') or ($extends = '$errorinfo')">
+      <xsl:when test="($extends = '$unknown') or ($extends = '$errorinfo')">
          <xsl:value-of select="concat('class ', $ifname, ' extends VBox_ManagedObject&#10;{&#10;')" />
       </xsl:when>
       <xsl:when test="//interface[@name=$extends]">
@@ -360,7 +360,7 @@ class <xsl:value-of select="$ifname"/>Collection extends VBox_EnumCollection
 <xsl:text>&lt;?php
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of a free software library; you can redistribute
  * it and/or modify it under the terms of the GNU Lesser General

@@ -10,7 +10,7 @@
         XSLT stylesheet that generates Java glue code for XPCOM, MSCOM and JAX-WS from
         VirtualBox.xidl.
 
-    Copyright (C) 2010-2013 Oracle Corporation
+    Copyright (C) 2010-2014 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -46,7 +46,7 @@
 <xsl:template name="fileheader">
   <xsl:param name="name" />
   <xsl:text>/*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of the VirtualBox SDK, as available from
  * http://www.virtualbox.org.  This library is free software; you can
@@ -2486,7 +2486,7 @@
       <xsl:otherwise>
         <xsl:variable name="extends" select="//interface[@name=$ifname]/@extends" />
         <xsl:choose>
-          <xsl:when test="($extends = '$unknown') or ($extends = '$dispatched') or ($extends = '$errorinfo')">
+          <xsl:when test="($extends = '$unknown') or ($extends = '$errorinfo')">
             <xsl:value-of select="concat('public class ', $ifname, ' extends IUnknown&#10;')" />
             <xsl:text>{&#10;&#10;</xsl:text>
           </xsl:when>

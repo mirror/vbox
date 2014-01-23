@@ -1,10 +1,10 @@
 /* $Revision$ */
 /** @file
- * Glue code for dynamically linking to VBoxXPCOMC.
+ * Glue code for dynamically linking to VBoxCAPI.
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -31,26 +31,33 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include "VBoxCAPIGlue.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdint.h>
-#include <dlfcn.h>
-#include <pthread.h>
-
-#include "VBoxXPCOMCGlue.h"
+#ifndef WIN32
+# include <dlfcn.h>
+# include <pthread.h>
+#else /* WIN32 */
+# include <Windows.h>
+#endif /* WIN32 */
 
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #if defined(__linux__) || defined(__linux_gnu__) || defined(__sun__) || defined(__FreeBSD__)
-# define DYNLIB_NAME    "VBoxXPCOMC.so"
+# define DYNLIB_NAME        "VBoxXPCOMC.so"
 #elif defined(__APPLE__)
-# define DYNLIB_NAME    "VBoxXPCOMC.dylib"
-#elif defined(_MSC_VER) || defined(__OS2__)
-# define DYNLIB_NAME    "VBoxXPCOMC.dll"
+# define DYNLIB_NAME        "VBoxXPCOMC.dylib"
+#elif defined(__OS2__)
+# define DYNLIB_NAME        "VBoxXPCOMC.dll"
+#elif defined(WIN32)
+# define DYNLIB_NAME        "VBoxCAPI.dll"
+# undef DYNLIB_LEGACY_NAME
 #else
 # error "Port me"
 #endif
@@ -59,25 +66,31 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** The dlopen handle for VBoxXPCOMC. */
-void *g_hVBoxXPCOMC = NULL;
+/** The so/dynsym/dll handle for VBoxCAPI. */
+#ifndef WIN32
+void *g_hVBoxCAPI = NULL;
+#else /* WIN32 */
+HMODULE g_hVBoxCAPI = NULL;
+#endif /* WIN32 */
 /** The last load error. */
-char g_szVBoxErrMsg[256];
-/** Pointer to the VBoxXPCOMC function table. */
-PCVBOXXPCOM g_pVBoxFuncs = NULL;
-/** Pointer to VBoxGetXPCOMCFunctions for the loaded VBoxXPCOMC so/dylib/dll. */
-PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
+char g_szVBoxErrMsg[256] = "";
+/** Pointer to the VBOXCAPI function table. */
+PCVBOXCAPI g_pVBoxFuncs = NULL;
+/** Pointer to VBoxGetCAPIFunctions for the loaded VBoxCAPI so/dylib/dll. */
+PFNVBOXGETCAPIFUNCTIONS g_pfnGetFunctions = NULL;
 
 typedef void FNDUMMY(void);
 typedef FNDUMMY *PFNDUMMY;
 /** Just a dummy global structure containing a bunch of
- * function pointers to code which is wanted in the link.
- * In this case this is for helping gdb as it gets hideously
- * confused if the application doesn't drag in pthreads.
- */
-PFNDUMMY g_apfnVBoxXPCOMCGlue[] =
+ * function pointers to code which is wanted in the link. */
+PFNDUMMY g_apfnVBoxCAPIGlue[] =
 {
-    (PFNDUMMY)pthread_create
+#ifndef WIN32
+    /* The following link dependency is for helping gdb as it gets hideously
+     * confused if the application doesn't drag in pthreads, but uses it. */
+    (PFNDUMMY)pthread_create,
+#endif /* !WIN32 */
+    NULL
 };
 
 
@@ -102,21 +115,20 @@ static void setErrMsg(int fAlways, const char *pszFormat, ...)
 
 
 /**
- * Try load VBoxXPCOMC.so/dylib/dll from the specified location and resolve all
- * the symbols we need.
+ * Try load C API .so/dylib/dll from the specified location and resolve all
+ * the symbols we need. Tries both the new style and legacy name.
  *
  * @returns 0 on success, -1 on failure.
- * @param   pszHome         The director where to try load VBoxXPCOMC from. Can
- *                          be NULL.
+ * @param   pszHome         The directory where to try load VBoxCAPI/VBoxXPCOMC
+ *                          from. Can be NULL.
  * @param   fSetAppHome     Whether to set the VBOX_APP_HOME env.var. or not
  *                          (boolean).
  */
-static int tryLoadOne(const char *pszHome, int fSetAppHome)
+static int tryLoadLibrary(const char *pszHome, int fSetAppHome)
 {
     size_t      cchHome = pszHome ? strlen(pszHome) : 0;
     size_t      cbBufNeeded;
     char        szName[4096];
-    int         rc = -1;
 
     /*
      * Construct the full name.
@@ -142,20 +154,29 @@ static int tryLoadOne(const char *pszHome, int fSetAppHome)
      */
     if (fSetAppHome)
     {
+#ifndef WIN32
         if (pszHome)
             setenv("VBOX_APP_HOME", pszHome, 1 /* always override */);
         else
             unsetenv("VBOX_APP_HOME");
+#endif /* !WIN32 */
     }
-    g_hVBoxXPCOMC = dlopen(szName, RTLD_NOW | RTLD_LOCAL);
-    if (g_hVBoxXPCOMC)
+
+#ifndef WIN32
+    g_hVBoxCAPI = dlopen(szName, RTLD_NOW | RTLD_LOCAL);
+    if (g_hVBoxCAPI)
     {
-        PFNVBOXGETXPCOMCFUNCTIONS pfnGetFunctions;
-        pfnGetFunctions = (PFNVBOXGETXPCOMCFUNCTIONS)(uintptr_t)
-            dlsym(g_hVBoxXPCOMC, VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME);
+        PFNVBOXGETCAPIFUNCTIONS pfnGetFunctions;
+        pfnGetFunctions = (PFNVBOXGETCAPIFUNCTIONS)(uintptr_t)
+            dlsym(g_hVBoxCAPI, VBOX_GET_CAPI_FUNCTIONS_SYMBOL_NAME);
+#ifdef VBOX_GET_XPCOM_FUNCTIONS_SYMBOL_NAME
+        if (!pfnGetFunctions)
+            pfnGetFunctions = (PFNVBOXGETCAPIFUNCTIONS)(uintptr_t)
+                dlsym(g_hVBoxCAPI, VBOX_GET_XPCOM_FUNCTIONS_SYMBOL_NAME);
+#endif /* VBOX_GET_XPCOM_FUNCTIONS_SYMBOL_NAME */
         if (pfnGetFunctions)
         {
-            g_pVBoxFuncs = pfnGetFunctions(VBOX_XPCOMC_VERSION);
+            g_pVBoxFuncs = pfnGetFunctions(VBOX_CAPI_VERSION);
             if (g_pVBoxFuncs)
             {
                 g_pfnGetFunctions = pfnGetFunctions;
@@ -164,62 +185,113 @@ static int tryLoadOne(const char *pszHome, int fSetAppHome)
 
             /* bail out */
             setErrMsg(1, "%.80s: pfnGetFunctions(%#x) failed",
-                      szName, VBOX_XPCOMC_VERSION);
+                      szName, VBOX_CAPI_VERSION);
         }
         else
             setErrMsg(1, "dlsym(%.80s/%.32s): %.128s",
-                      szName, VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME, dlerror());
-        dlclose(g_hVBoxXPCOMC);
-        g_hVBoxXPCOMC = NULL;
+                      szName, VBOX_GET_CAPI_FUNCTIONS_SYMBOL_NAME, dlerror());
+        dlclose(g_hVBoxCAPI);
+        g_hVBoxCAPI = NULL;
     }
     else
         setErrMsg(0, "dlopen(%.80s): %.160s", szName, dlerror());
-    return rc;
+#else /* !WIN32 */
+    g_hVBoxCAPI = LoadLibraryExA(szName, NULL /* hFile */, 0 /* dwFlags */);
+    if (g_hVBoxCAPI)
+    {
+        PFNVBOXGETCAPIFUNCTIONS pfnGetFunctions;
+        pfnGetFunctions = (PFNVBOXGETCAPIFUNCTIONS)
+            GetProcAddress(g_hVBoxCAPI, VBOX_GET_CAPI_FUNCTIONS_SYMBOL_NAME);
+        if (pfnGetFunctions)
+        {
+            g_pVBoxFuncs = pfnGetFunctions(VBOX_CAPI_VERSION);
+            if (g_pVBoxFuncs)
+            {
+                g_pfnGetFunctions = pfnGetFunctions;
+                return 0;
+            }
+
+            /* bail out */
+            setErrMsg(1, "%.80s: pfnGetFunctions(%#x) failed",
+                      szName, VBOX_CAPI_VERSION);
+        }
+        else
+            setErrMsg(1, "GetProcAddress(%.80s/%.32s): %d",
+                      szName, VBOX_GET_CAPI_FUNCTIONS_SYMBOL_NAME, GetLastError());
+        FreeLibrary(g_hVBoxCAPI);
+        g_hVBoxCAPI = NULL;
+    }
+    else
+        setErrMsg(0, "LoadLibraryEx(%.80s): %d", szName, GetLastError());
+#endif /* !WIN32 */
+
+    return -1;
 }
 
 
 /**
- * Tries to locate and load VBoxXPCOMC.so/dylib/dll, resolving all the related
+ * Tries to locate and load VBoxCAPI.so/dylib/dll, resolving all the related
  * function pointers.
  *
  * @returns 0 on success, -1 on failure.
  *
  * @remark  This should be considered moved into a separate glue library since
- *          its its going to be pretty much the same for any user of VBoxXPCOMC
+ *          its its going to be pretty much the same for any user of VBoxCAPI
  *          and it will just cause trouble to have duplicate versions of this
  *          source code all around the place.
  */
 int VBoxCGlueInit(void)
 {
+    const char *pszHome;
+
+    memset(g_szVBoxErrMsg, 0, sizeof(g_szVBoxErrMsg));
+
     /*
      * If the user specifies the location, try only that.
      */
-    const char *pszHome = getenv("VBOX_APP_HOME");
+    pszHome = getenv("VBOX_APP_HOME");
     if (pszHome)
-        return tryLoadOne(pszHome, 0);
+        return tryLoadLibrary(pszHome, 0);
 
     /*
      * Try the known standard locations.
      */
-    g_szVBoxErrMsg[0] = '\0';
 #if defined(__gnu__linux__) || defined(__linux__)
-    if (tryLoadOne("/opt/VirtualBox", 1) == 0)
+    if (tryLoadLibrary("/opt/VirtualBox", 1) == 0)
         return 0;
-    if (tryLoadOne("/usr/lib/virtualbox", 1) == 0)
+    if (tryLoadLibrary("/usr/lib/virtualbox", 1) == 0)
         return 0;
 #elif defined(__sun__)
-    if (tryLoadOne("/opt/VirtualBox/amd64", 1) == 0)
+    if (tryLoadLibrary("/opt/VirtualBox/amd64", 1) == 0)
         return 0;
-    if (tryLoadOne("/opt/VirtualBox/i386", 1) == 0)
+    if (tryLoadLibrary("/opt/VirtualBox/i386", 1) == 0)
         return 0;
 #elif defined(__APPLE__)
-    if (tryLoadOne("/Application/VirtualBox.app/Contents/MacOS", 1) == 0)
+    if (tryLoadLibrary("/Application/VirtualBox.app/Contents/MacOS", 1) == 0)
         return 0;
 #elif defined(__FreeBSD__)
-    if (tryLoadOne("/usr/local/lib/virtualbox", 1) == 0)
+    if (tryLoadLibrary("/usr/local/lib/virtualbox", 1) == 0)
         return 0;
 #elif defined(__OS2__)
-    if (tryLoadOne("C:/Apps/VirtualBox", 1) == 0)
+    if (tryLoadLibrary("C:/Apps/VirtualBox", 1) == 0)
+        return 0;
+#elif defined(WIN32)
+    pszHome = getenv("ProgramFiles");
+    if (pszHome)
+    {
+        char szPath[4096];
+        size_t cb = sizeof(szPath);
+        char *tmp = szPath;
+        strncpy(tmp, pszHome, cb);
+        tmp[cb - 1] = '\0';
+        cb -= strlen(tmp);
+        tmp += strlen(tmp);
+        strncpy(tmp, "/Oracle/VirtualBox", cb);
+        tmp[cb - 1] = '\0';
+        if (tryLoadLibrary(szPath, 1) == 0)
+            return 0;
+    }
+    if (tryLoadLibrary("C:/Program Files/Oracle/VirtualBox", 1) == 0)
         return 0;
 #else
 # error "port me"
@@ -228,7 +300,7 @@ int VBoxCGlueInit(void)
     /*
      * Finally try the dynamic linker search path.
      */
-    if (tryLoadOne(NULL, 1) == 0)
+    if (tryLoadLibrary(NULL, 1) == 0)
         return 0;
 
     /* No luck, return failure. */
@@ -241,12 +313,16 @@ int VBoxCGlueInit(void)
  */
 void VBoxCGlueTerm(void)
 {
-    if (g_hVBoxXPCOMC)
+    if (g_hVBoxCAPI)
     {
 #if 0 /* VBoxRT.so doesn't like being reloaded. See @bugref{3725}. */
-        dlclose(g_hVBoxXPCOMC);
+#ifndef WIN32
+        dlclose(g_hVBoxCAPI);
+#else
+        FreeLibrary(g_hVBoxCAPI);
 #endif
-        g_hVBoxXPCOMC = NULL;
+#endif
+        g_hVBoxCAPI = NULL;
     }
     g_pVBoxFuncs = NULL;
     g_pfnGetFunctions = NULL;
