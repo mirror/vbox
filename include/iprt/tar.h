@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,6 +34,10 @@ RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_tar    RTTar - Tar archive I/O
  * @ingroup grp_rt
+ *
+ * @deprecated  Only used for legacy code and writing.  Migrate new code to the
+ *              VFS interface, add the write part when needed.
+ *
  * @{
  */
 
@@ -76,28 +80,6 @@ typedef RTTARFILE                               *PRTTARFILE;
  */
 RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char *pszTarname, uint32_t fMode, bool fStream);
 
-#if 0
-/**
- * Opens a Tar archive by handle.
- *
- * Use the mask to specify the access type. In create mode the target file
- * have not to exists.
- *
- * @returns IPRT status code.
- *
- * @param   phTar          Where to store the RTTAR handle.
- * @param   hFile          The file handle of the tar file.  This is expected
- *                         to be a regular file at the moment.
- * @param   fStream        Open the file in stream mode. Within this mode no
- *                         seeking is allowed.  Use this together with
- *                         RTTarFileCurrent, RTTarFileOpenCurrent,
- *                         RTTarFileSeekNextFile and the read method to
- *                         sequential read a tar file.  Currently ignored with
- *                         RTFILE_O_WRITE.
- */
-RTR3DECL(int) RTTarOpenByHandle(PRTTAR phTar, RTFILE hFile, uint32_t fMode, bool fStream);
-#endif
-
 /**
  * Close the Tar archive.
  *
@@ -106,6 +88,42 @@ RTR3DECL(int) RTTarOpenByHandle(PRTTAR phTar, RTFILE hFile, uint32_t fMode, bool
  * @param   hTar           Handle to the RTTAR interface.
  */
 RTR3DECL(int) RTTarClose(RTTAR hTar);
+
+/**
+ * Jumps to the next file from the current RTTar position.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hTar           Handle to the RTTAR interface.
+ */
+RTR3DECL(int) RTTarSeekNextFile(RTTAR hTar);
+
+/**
+ * Return the filename where RTTar currently stays at.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hTar           Handle to the RTTAR interface.
+ * @param   ppszFilename   On success the filename.
+ */
+RTR3DECL(int) RTTarCurrentFile(RTTAR hTar, char **ppszFilename);
+
+/**
+ * Opens the file where RTTar currently stays at.
+ *
+ * The current file can only be opened once.  The next call will open the next
+ * file, implicitly calling RTTarSeekNextFile().
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hTar           Handle to the RTTAR interface.
+ * @param   phFile         Where to store the handle to the opened file.
+ * @param   ppszFilename   On success the filename.
+ * @param   fOpen          Open flags, i.e a combination of the RTFILE_O_* defines.
+ *                         The ACCESS, ACTION flags are mandatory! Currently
+ *                         only RTFILE_O_OPEN | RTFILE_O_READ is supported.
+ */
+RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **ppszFilename, uint32_t fOpen);
 
 /**
  * Open a file in the Tar archive.
@@ -138,42 +156,6 @@ RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilena
 RTR3DECL(int) RTTarFileClose(RTTARFILE hFile);
 
 /**
- * Changes the read & write position in a file.
- *
- * @returns IPRT status code.
- *
- * @param   hFile          Handle to the file.
- * @param   offSeek        Offset to seek.
- * @param   uMethod        Seek method, i.e. one of the RTFILE_SEEK_* defines.
- * @param   poffActual     Where to store the new file position.
- *                         NULL is allowed.
- */
-RTR3DECL(int) RTTarFileSeek(RTTARFILE hFile, uint64_t offSeek, unsigned uMethod, uint64_t *poffActual);
-
-/**
- * Gets the current file position.
- *
- * @returns File offset.
- * @returns UINT64_MAX on failure.
- *
- * @param   hFile          Handle to the file.
- */
-RTR3DECL(uint64_t) RTTarFileTell(RTTARFILE hFile);
-
-/**
- * Read bytes from a file.
- *
- * @returns IPRT status code.
- *
- * @param   hFile          Handle to the file.
- * @param   pvBuf          Where to put the bytes we read.
- * @param   cbToRead       How much to read.
- * @param   *pcbRead       How much we actually read .
- *                         If NULL an error will be returned for a partial read.
- */
-RTR3DECL(int) RTTarFileRead(RTTARFILE hFile, void *pvBuf, size_t cbToRead, size_t *pcbRead);
-
-/**
  * Read bytes from a file at a given offset.
  * This function may modify the file position.
  *
@@ -183,23 +165,10 @@ RTR3DECL(int) RTTarFileRead(RTTARFILE hFile, void *pvBuf, size_t cbToRead, size_
  * @param   off            Where to read.
  * @param   pvBuf          Where to put the bytes we read.
  * @param   cbToRead       How much to read.
- * @param   *pcbRead       How much we actually read .
- *                         If NULL an error will be returned for a partial read.
+ * @param   pcbRead        Where to return how much we actually read.  If NULL
+ *                         an error will be returned for a partial read.
  */
 RTR3DECL(int) RTTarFileReadAt(RTTARFILE hFile, uint64_t off, void *pvBuf, size_t cbToRead, size_t *pcbRead);
-
-/**
- * Write bytes to a file.
- *
- * @returns IPRT status code.
- *
- * @param   hFile          Handle to the file.
- * @param   pvBuf          What to write.
- * @param   cbToWrite      How much to write.
- * @param   *pcbWritten    How much we actually wrote.
- *                         If NULL an error will be returned for a partial write.
- */
-RTR3DECL(int) RTTarFileWrite(RTTARFILE hFile, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
 /**
  * Write bytes to a file at a given offset.
@@ -211,8 +180,8 @@ RTR3DECL(int) RTTarFileWrite(RTTARFILE hFile, const void *pvBuf, size_t cbToWrit
  * @param   off            Where to write.
  * @param   pvBuf          What to write.
  * @param   cbToWrite      How much to write.
- * @param   *pcbWritten    How much we actually wrote.
- *                         If NULL an error will be returned for a partial write.
+ * @param   pcbWritten     Where to return how much we actually wrote.  If NULL
+ *                         an error will be returned for a partial write.
  */
 RTR3DECL(int) RTTarFileWriteAt(RTTARFILE hFile, uint64_t off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
@@ -236,113 +205,9 @@ RTR3DECL(int) RTTarFileGetSize(RTTARFILE hFile, uint64_t *pcbSize);
  */
 RTR3DECL(int) RTTarFileSetSize(RTTARFILE hFile, uint64_t cbSize);
 
-/**
- * Changes the mode flags of an open file.
- *
- * @returns IPRT status code.
- *
- * @param   hFile          Handle to the file.
- * @param   fMode          The new file mode, see @ref grp_rt_fs for details.
- */
-RTR3DECL(int) RTTarFileSetMode(RTTARFILE hFile, uint32_t fMode);
-
-/**
- * Sets the modification timestamp of the file.
- *
- * @returns IPRT status code.
- *
- * @param   pFile           Handle to the file.
- * @param   pTime           The time to store.
- */
-RTR3DECL(int) RTTarFileSetTime(RTTARFILE hFile, PRTTIMESPEC pTime);
-
-/**
- * Changes the owner and/or group of an open file.
- *
- * @returns IPRT status code.
- *
- * @param   hFile           Handle to the file.
- * @param   uid             The new file owner user id. Use -1 (or ~0) to leave this unchanged.
- * @param   gid             The new group id. Use -1 (or ~0) to leave this unchanged.
- */
-RTR3DECL(int) RTTarFileSetOwner(RTTARFILE hFile, uint32_t uid, uint32_t gid);
-
-/******************************************************************************
- *   Convenience Functions                                                    *
- ******************************************************************************/
-
-/**
- * Create a file list from a Tar archive.
- *
- * @note    Currently only regular files are supported.
- *
- * @returns IPRT status code.
- *
- * @param   pszTarFile      Tar file to list files from.
- * @param   ppapszFiles     On success an array with array with the filenames is
- *                          returned. The names must be freed with RTStrFree and
- *                          the array with RTMemFree.
- * @param   pcFiles         On success the number of entries in ppapszFiles.
- */
-RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcFiles);
-
-/**
- * Create a Tar archive out of the given files.
- *
- * @note Currently only regular files are supported.
- *
- * @returns IPRT status code.
- *
- * @param   pszTarFile           Where to create the Tar archive.
- * @param   papszFiles           Which files should be included.
- * @param   cFiles               The number of files in papszFiles.
- * @param   pfnProgressCallback  Progress callback function. Optional.
- * @param   pvUser               User defined data for the progress
- *                               callback. Optional.
- */
-RTR3DECL(int) RTTarCreate(const char *pszTarFile, const char * const *papszFiles, size_t cFiles, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
-
-/******************************************************************************
- *   Streaming Functions                                                      *
- ******************************************************************************/
-
-/**
- * Return the filename where RTTar currently stays at.
- *
- * @returns IPRT status code.
- *
- * @param   hTar           Handle to the RTTAR interface.
- * @param   ppszFilename   On success the filename.
- */
-RTR3DECL(int) RTTarCurrentFile(RTTAR hTar, char **ppszFilename);
-
-/**
- * Jumps to the next file from the current RTTar position.
- *
- * @returns IPRT status code.
- *
- * @param   hTar           Handle to the RTTAR interface.
- */
-RTR3DECL(int) RTTarSeekNextFile(RTTAR hTar);
-
-/**
- * Opens the file where RTTar currently stays at.
- *
- * @returns IPRT status code.
- *
- * @param   hTar           Handle to the RTTAR interface.
- * @param   phFile         Where to store the handle to the opened file.
- * @param   ppszFilename   On success the filename.
- * @param   fOpen          Open flags, i.e a combination of the RTFILE_O_* defines.
- *                         The ACCESS, ACTION flags are mandatory! Currently
- *                         only RTFILE_O_OPEN | RTFILE_O_READ is supported.
- */
-RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **ppszFilename, uint32_t fOpen);
-
-
 /** @} */
 
 RT_C_DECLS_END
 
-#endif /* ___iprt_tar_h */
+#endif
 
