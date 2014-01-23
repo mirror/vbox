@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,26 +42,6 @@ VBoxDnDDropSource::~VBoxDnDDropSource(void)
     int rc = VbglR3DnDDisconnect(mClientID);
 
     LogFlowFunc(("rc=%Rrc, mRefCount=%RI32\n", rc, mRefCount));
-}
-
-/* static */
-int VBoxDnDDropSource::CreateDropSource(VBoxDnDWnd *pParent, IDropSource **ppDropSource)
-{
-    AssertPtrReturn(pParent, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppDropSource, VERR_INVALID_POINTER);
-
-    int rc;
-    try
-    {
-        *ppDropSource = new VBoxDnDDropSource(pParent);
-        rc = VINF_SUCCESS;
-    }
-    catch(std::bad_alloc &)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-
-    return rc;
 }
 
 /*
