@@ -429,19 +429,9 @@ static int crVBoxServerResizeScreen(const struct VBVAINFOSCREEN *pScreen, void *
     return rc;
 }
 
-DECLEXPORT(int) crVBoxServerNotifyResize(uint32_t idScreen)
+DECLEXPORT(int) crVBoxServerNotifyResize(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM)
 {
-    struct VBVAINFOSCREEN Screen;
-    void *pvVRAM;
-
-    int rc = cr_server.CltInfo.pfnDmGet(cr_server.CltInfo.hClient, idScreen, &Screen, &pvVRAM);
-    if (!RT_SUCCESS(rc))
-    {
-        WARN(("err"));
-        return rc;
-    }
-
-    rc = crVBoxServerResizeScreen(&Screen, pvVRAM);
+    int rc = crVBoxServerResizeScreen(pScreen, pvVRAM);
     if (!RT_SUCCESS(rc))
     {
         WARN(("err"));

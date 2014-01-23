@@ -94,6 +94,8 @@ VBOXHTABLEDECL(void) CrHTableEmpty(PCRHTABLE pTbl)
 {
     pTbl->cData = 0;
     pTbl->iNext2Search = 0;
+    if (pTbl->cSize)
+        memset(pTbl->paData, 0, sizeof (pTbl->paData[0]) * pTbl->cSize);
 }
 
 static void* crHTablePutToSlot(PCRHTABLE pTbl, uint32_t iSlot, void* pvData)
@@ -158,10 +160,13 @@ VBOXHTABLEDECL(void*) CrHTableRemove(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle)
     if (iIndex < pTbl->cSize)
     {
         void* pvData = pTbl->paData[iIndex];
-        pTbl->paData[iIndex] = NULL;
-        --pTbl->cData;
-        Assert(pTbl->cData <= pTbl->cSize);
-        pTbl->iNext2Search = iIndex;
+        if (pvData)
+        {
+            pTbl->paData[iIndex] = NULL;
+            --pTbl->cData;
+            Assert(pTbl->cData <= pTbl->cSize);
+            pTbl->iNext2Search = iIndex;
+        }
         return pvData;
     }
     WARN(("invalid handle supplied %d", hHandle));
@@ -171,9 +176,8 @@ VBOXHTABLEDECL(void*) CrHTableRemove(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle)
 VBOXHTABLEDECL(void*) CrHTableGet(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle)
 {
     uint32_t iIndex = crHTableHandle2Index(hHandle);
-    Assert(iIndex < pTbl->cSize);
     if (iIndex < pTbl->cSize)
         return pTbl->paData[iIndex];
-    WARN(("invalid handle supplied %d", hHandle));
+    LOG(("invalid handle supplied %d", hHandle));
     return NULL;
 }

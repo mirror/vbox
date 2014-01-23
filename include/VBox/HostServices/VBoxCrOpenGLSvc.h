@@ -31,6 +31,7 @@
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest2.h>
 #include <VBox/hgcmsvc.h>
+#include <VBox/VBoxVideo.h>
 
 /* crOpenGL host functions */
 #define SHCRGL_HOST_FN_SET_CONSOLE (1)
@@ -359,5 +360,12 @@ typedef struct
     HGCMFunctionParameter   cbWriteback;
 
 } CRVBOXHGCMWRITEREADBUFFERED;
+
+
+typedef struct
+{
+    VBVAINFOSCREEN Screen;
+    void *pvVRAM;
+} CRVBOXHGCMDEVRESIZE;
 
 #endif

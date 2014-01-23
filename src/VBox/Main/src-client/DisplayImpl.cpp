@@ -669,15 +669,23 @@ int Display::notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN 
             VMMDev *pVMMDev = mParent->getVMMDev();
             if (pVMMDev)
             {
-                VBOXHGCMSVCPARM parm[SHCRGL_CPARMS_DEV_RESIZE];
+                CRVBOXHGCMDEVRESIZE *pData = (CRVBOXHGCMDEVRESIZE*)RTMemAlloc(sizeof (*pData));
+                if (pData)
+                {
+                    pData->Screen = *pScreen;
+                    pData->pvVRAM = pvVRAM;
 
-                parm[0].type = VBOX_HGCM_SVC_PARM_32BIT;
-                parm[0].u.uint32 = pScreen->u32ViewIndex;
+                    VBOXHGCMSVCPARM parm;
 
-                /* no completion callback is specified with this call,
-                 * the CrOgl code will complete the CrHgsmi command once it processes it */
-                rc = pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_DEV_RESIZE, parm, NULL, NULL);
-                AssertRC(rc);
+                    parm.type = VBOX_HGCM_SVC_PARM_PTR;
+                    parm.u.pointer.addr = pData;
+                    parm.u.pointer.size = sizeof (*pData);
+
+                    rc = pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_DEV_RESIZE, &parm, displayCrAsyncCmdCompletion, this);
+                    AssertRC(rc);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
             }
         }
 
@@ -4061,6 +4069,22 @@ DECLCALLBACK(void) Display::displayCrHgsmiControlCompletion(int32_t result, uint
     Display *pDisplay = (Display *)pvContext;
     pDisplay->handleCrHgsmiControlCompletion(result, u32Function, pParam);
 }
+#endif
+
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+DECLCALLBACK(void)  Display::displayCrAsyncCmdCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)
+{
+    Display *pDisplay = (Display *)pvContext;
+    pDisplay->handleCrAsyncCmdCompletion(result, u32Function, pParam);
+}
+
+
+void  Display::handleCrAsyncCmdCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam)
+{
+    if (pParam->type == VBOX_HGCM_SVC_PARM_PTR && pParam->u.pointer.addr)
+        RTMemFree(pParam->u.pointer.addr);
+}
+
 #endif
 
 

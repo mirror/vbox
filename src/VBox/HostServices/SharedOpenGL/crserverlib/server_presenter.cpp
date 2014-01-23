@@ -247,8 +247,6 @@ int CrFbDisplaySet(CR_FRAMEBUFFER *pFb, ICrFbDisplay *pDisplay)
     if (pFb->pDisplay == pDisplay)
         return VINF_SUCCESS;
 
-    CrHTableEmpty(&pFb->SlotTable);
-
     pFb->pDisplay = pDisplay;
 
     return VINF_SUCCESS;
@@ -287,7 +285,7 @@ typedef struct CR_FBTEX
 #define CR_PMGR_MODE_VRDP   0x4
 #define CR_PMGR_MODE_ALL    0x7
 
-static int crPMgrModeModifyGlobal(uint32_t u32Mode, bool fEnable);
+static int crPMgrModeModifyGlobal(uint32_t u32ModeAdd, uint32_t u32ModeRemove);
 
 static CR_FBTEX* crFbTexAlloc()
 {
@@ -411,7 +409,7 @@ static CR_FBTEX* crFbTexAcquire(GLuint idTexture)
     CRTextureObj *pTobj = (CRTextureObj*)crHashtableSearch(pShared->textureTable, idTexture);
     if (!pTobj)
     {
-        WARN(("pTobj is null!"));
+        LOG(("pTobj is null!"));
         crStateGlobalSharedRelease();
         return NULL;
     }
@@ -572,7 +570,7 @@ int CrFbEntryCreateForTexId(CR_FRAMEBUFFER *pFb, GLuint idTexture, uint32_t fFla
     CR_FBTEX* pFbTex = crFbTexAcquire(idTexture);
     if (!pFbTex)
     {
-        WARN(("crFbTexAcquire failed"));
+        LOG(("crFbTexAcquire failed"));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1007,7 +1005,8 @@ protected:
         if (mFlags.fRegionsShanged)
         {
             mFlags.fRegionsShanged = 0;
-            ueRegions();
+            if (getFramebuffer()) /*<-dont't do anything on cleanup*/
+                ueRegions();
         }
     }
 
@@ -2242,6 +2241,7 @@ protected:
     int compositorMarkUpdated()
     {
         CrVrScrCompositorClear(&mCompositor);
+
         int rc = CrVrScrCompositorRectSet(&mCompositor, CrVrScrCompositorRectGet(CrFbGetCompositor(getFramebuffer())), NULL);
         if (!RT_SUCCESS(rc))
         {
@@ -2832,7 +2832,7 @@ int CrPMgrInit()
                 if (RT_SUCCESS(rc))
                 {
 #endif
-                    rc = crPMgrModeModifyGlobal(CR_PMGR_MODE_WINDOW, true);
+                    rc = crPMgrModeModifyGlobal(CR_PMGR_MODE_WINDOW, 0);
                     if (RT_SUCCESS(rc))
                         return VINF_SUCCESS;
                     else
@@ -2864,7 +2864,7 @@ int CrPMgrInit()
 
 void CrPMgrTerm()
 {
-    crPMgrModeModifyGlobal(CR_PMGR_MODE_ALL, false);
+    crPMgrModeModifyGlobal(0, CR_PMGR_MODE_ALL);
 
     HCR_FRAMEBUFFER hFb;
 
@@ -3184,20 +3184,8 @@ int CrPMgrModeModify(HCR_FRAMEBUFFER hFb, uint32_t u32ModeAdd, uint32_t u32ModeR
     return VINF_SUCCESS;
 }
 
-static int crPMgrModeModifyGlobal(uint32_t u32Mode, bool fEnable)
+static int crPMgrModeModifyGlobal(uint32_t u32ModeAdd, uint32_t u32ModeRemove)
 {
-    uint32_t u32ModeAdd, u32ModeRemove;
-    if (fEnable)
-    {
-        u32ModeAdd = u32Mode;
-        u32ModeRemove = 0;
-    }
-    else
-    {
-        u32ModeAdd = 0;
-        u32ModeRemove = u32Mode;
-    }
-
     g_CrPresenter.u32DisplayMode = (g_CrPresenter.u32DisplayMode | u32ModeAdd) & ~u32ModeRemove;
 
     for (HCR_FRAMEBUFFER hFb = CrPMgrFbGetFirstEnabled();
@@ -3212,12 +3200,35 @@ static int crPMgrModeModifyGlobal(uint32_t u32Mode, bool fEnable)
 
 int CrPMgrModeVrdp(bool fEnable)
 {
-    return crPMgrModeModifyGlobal(CR_PMGR_MODE_VRDP, fEnable);
+    uint32_t u32ModeAdd, u32ModeRemove;
+    if (fEnable)
+    {
+        u32ModeAdd = CR_PMGR_MODE_VRDP;
+        u32ModeRemove = 0;
+    }
+    else
+    {
+        u32ModeAdd = 0;
+        u32ModeRemove = CR_PMGR_MODE_VRDP;
+    }
+    return crPMgrModeModifyGlobal(u32ModeAdd, u32ModeRemove);
 }
 
 int CrPMgrModeRootVr(bool fEnable)
 {
-    return crPMgrModeModifyGlobal(CR_PMGR_MODE_ROOTVR, fEnable);
+    uint32_t u32ModeAdd, u32ModeRemove;
+    if (fEnable)
+    {
+        u32ModeAdd = CR_PMGR_MODE_ROOTVR;
+        u32ModeRemove = CR_PMGR_MODE_WINDOW;
+    }
+    else
+    {
+        u32ModeAdd = CR_PMGR_MODE_WINDOW;
+        u32ModeRemove = CR_PMGR_MODE_ROOTVR;
+    }
+
+    return crPMgrModeModifyGlobal(u32ModeAdd, u32ModeRemove);
 }
 
 int CrPMgrRootVrUpdate()
@@ -3676,7 +3687,7 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
         rc = CrFbEntryCreateForTexId(hFb, texture, (cfg & CR_PRESENT_FLAG_TEX_NONINVERT_YCOORD) ? 0 : CRBLT_F_INVERT_SRC_YCOORDS, &hEntry);
         if (!RT_SUCCESS(rc))
         {
-            WARN(("CrFbEntryCreateForTexId Failed"));
+            LOG(("CrFbEntryCreateForTexId Failed"));
             return;
         }
 
