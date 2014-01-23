@@ -91,7 +91,7 @@ static const char *GetStateName(MachineState_T machineState)
  *
  * @param  iInfo    Platform dependent detail info (ignored).
  */
-static BOOL ctrlCHandler(DWORD iInfo)
+static BOOL WINAPI ctrlCHandler(DWORD iInfo)
 {
     (void)iInfo;
     g_fStop = 1;

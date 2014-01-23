@@ -193,6 +193,8 @@
 typedef const BSTR CBSTR;
 #endif /* !__cplusplus */
 
+#define VBOX_WINAPI WINAPI
+
 #define ComSafeArrayAsInParam(f) (f)
 #define ComSafeArrayAsOutParam(f) (&amp;(f))
 #define ComSafeArrayAsOutIfaceParam(f,t) (&amp;(f))
@@ -802,6 +804,7 @@ typedef nsID nsCID;
 
 #endif /* __cplusplus */
 
+#define VBOX_WINAPI
 
 /* Various COM types defined by their XPCOM equivalent */
 typedef PRInt64 LONG64;
