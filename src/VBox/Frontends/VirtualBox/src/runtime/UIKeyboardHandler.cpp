@@ -355,6 +355,12 @@ void UIKeyboardHandler::setDebuggerActive(bool aActive /* = true*/)
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #if defined(Q_WS_WIN)
+/** Tell keyboard event handler to skip host keyboard events. Used for HID LEDs sync
+ * when on Windows host a keyboard event is generated in order to change corresponding LED. */
+void UIKeyboardHandler::winSkipKeyboardEvents(bool fSkip)
+{
+    m_fSkipKeyboardEvents = fSkip;
+}
 
 bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
 {
@@ -362,6 +368,11 @@ bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
      * Returning 'true' means filtering-out,
      * Returning 'false' means passing event to Qt. */
     bool fResult = false; /* Pass to Qt by default: */
+
+    /* Skip this event if m_fSkipKeyboardEvents is set by winSkipKeyboardEvents(). */
+    if (m_fSkipKeyboardEvents)
+        return false;
+
     switch (pMsg->message)
     {
         case WM_KEYDOWN:
@@ -680,6 +691,7 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
 #if defined(Q_WS_WIN)
     , m_bIsHostkeyInCapture(false)
     , m_iKeyboardHookViewIndex(-1)
+    , m_fSkipKeyboardEvents(false)
 #elif defined(Q_WS_MAC)
     , m_darwinKeyModifiers(0)
     , m_fKeyboardGrabbed(false)
@@ -1203,7 +1215,7 @@ bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags
         /* Check if the guest has the same view on the modifier keys
          * (NumLock, CapsLock, ScrollLock) as the X server.
          * If not, send KeyPress events to synchronize the state: */
-#if !defined(Q_WS_MAC)
+#if !defined(Q_WS_MAC) && !defined(Q_WS_WIN)
         if (fFlags & KeyPressed)
             fixModifierState(pCodes, puCodesCount);
 #endif
