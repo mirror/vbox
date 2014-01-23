@@ -415,7 +415,7 @@ memp_init(void)
     VALGRIND_CREATE_MEMPOOL(&memp_tab[i], MEMP_VALGRIND_RED_ZONE, 0);
 #endif
 #if MEMP_SEPARATE_POOLS
-    memp = (struct memp*)memp_bases[i];
+    memp = (struct memp*)LWIP_MEM_ALIGN(memp_bases[i]);
 #endif /* MEMP_SEPARATE_POOLS */
     /* create a linked list of memp elements */
     for (j = 0; j < memp_num[i]; ++j) {
