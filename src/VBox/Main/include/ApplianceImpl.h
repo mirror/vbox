@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
@@ -252,8 +250,8 @@ struct VirtualSystemDescriptionEntry
     VirtualSystemDescriptionType_T type;    // type of this entry
     Utf8Str strRef;                         // reference number (hard disk controllers only)
     Utf8Str strOvf;                         // original OVF value (type-dependent)
-    Utf8Str strVboxSuggested;               // configuration value (type-dependent); original value suggested by interpret()
-    Utf8Str strVboxCurrent;                 // configuration value (type-dependent); current value, either from interpret() or setFinalValue()
+    Utf8Str strVBoxSuggested;               // configuration value (type-dependent); original value suggested by interpret()
+    Utf8Str strVBoxCurrent;                 // configuration value (type-dependent); current value, either from interpret() or setFinalValue()
     Utf8Str strExtraConfigSuggested;        // extra configuration key=value strings (type-dependent); original value suggested by interpret()
     Utf8Str strExtraConfigCurrent;          // extra configuration key=value strings (type-dependent); current value, either from interpret() or setFinalValue()
 
@@ -279,14 +277,14 @@ public:
     void i_addEntry(VirtualSystemDescriptionType_T aType,
                     const Utf8Str &strRef,
                     const Utf8Str &aOvfValue,
-                    const Utf8Str &aVboxValue,
+                    const Utf8Str &aVBoxValue,
                     uint32_t ulSizeMB = 0,
                     const Utf8Str &strExtraConfig = "");
 
     std::list<VirtualSystemDescriptionEntry*> i_findByType(VirtualSystemDescriptionType_T aType);
     const VirtualSystemDescriptionEntry* i_findControllerFromID(uint32_t id);
 
-    void i_importVboxMachineXML(const xml::ElementNode &elmMachine);
+    void i_importVBoxMachineXML(const xml::ElementNode &elmMachine);
     const settings::MachineConfigFile* i_getMachineConfig() const;
 
     /* private instance data */
@@ -324,5 +322,5 @@ private:
     friend class Machine;
 };
 
-#endif // ____H_APPLIANCEIMPL
+#endif // !____H_APPLIANCEIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

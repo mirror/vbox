@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * IAppliance and IVirtualSystem COM class implementations.
  */
 
@@ -154,21 +153,21 @@ HRESULT Appliance::interpret()
 
             // if the virtual system in OVF had a <vbox:Machine> element, have the
             // VirtualBox settings code parse that XML now
-            if (vsysThis.pelmVboxMachine)
-                pNewDesc->i_importVboxMachineXML(*vsysThis.pelmVboxMachine);
+            if (vsysThis.pelmVBoxMachine)
+                pNewDesc->i_importVBoxMachineXML(*vsysThis.pelmVBoxMachine);
 
             // Guest OS type
             // This is taken from one of three places, in this order:
             Utf8Str strOsTypeVBox;
             Utf8StrFmt strCIMOSType("%RU32", (uint32_t)vsysThis.cimos);
             // 1) If there is a <vbox:Machine>, then use the type from there.
-            if (   vsysThis.pelmVboxMachine
+            if (   vsysThis.pelmVBoxMachine
                 && pNewDesc->m->pConfig->machineUserData.strOsType.isNotEmpty()
                )
                 strOsTypeVBox = pNewDesc->m->pConfig->machineUserData.strOsType;
             // 2) Otherwise, if there is OperatingSystemSection/vbox:OSType, use that one.
-            else if (vsysThis.strTypeVbox.isNotEmpty())      // OVFReader has found vbox:OSType
-                strOsTypeVBox = vsysThis.strTypeVbox;
+            else if (vsysThis.strTypeVBox.isNotEmpty())      // OVFReader has found vbox:OSType
+                strOsTypeVBox = vsysThis.strTypeVBox;
             // 3) Otherwise, make a best guess what the vbox type is from the OVF (CIM) OS type.
             else
                 convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos, vsysThis.strCimosDesc);
@@ -180,7 +179,7 @@ HRESULT Appliance::interpret()
             /* VM name */
             Utf8Str nameVBox;
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
-            if (   vsysThis.pelmVboxMachine
+            if (   vsysThis.pelmVBoxMachine
                 && pNewDesc->m->pConfig->machineUserData.strName.isNotEmpty())
                 nameVBox = pNewDesc->m->pConfig->machineUserData.strName;
             else
@@ -263,7 +262,7 @@ HRESULT Appliance::interpret()
             /* CPU count */
             ULONG cpuCountVBox;
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
-            if (   vsysThis.pelmVboxMachine
+            if (   vsysThis.pelmVBoxMachine
                 && pNewDesc->m->pConfig->hardwareMachine.cCPUs)
                 cpuCountVBox = pNewDesc->m->pConfig->hardwareMachine.cCPUs;
             else
@@ -286,7 +285,7 @@ HRESULT Appliance::interpret()
             /* RAM */
             uint64_t ullMemSizeVBox;
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
-            if (   vsysThis.pelmVboxMachine
+            if (   vsysThis.pelmVBoxMachine
                 && pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB)
                 ullMemSizeVBox = pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB;
             else
@@ -321,7 +320,7 @@ HRESULT Appliance::interpret()
             Utf8Str strSoundCard;
             Utf8Str strSoundCardOrig;
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
-            if (   vsysThis.pelmVboxMachine
+            if (   vsysThis.pelmVBoxMachine
                 && pNewDesc->m->pConfig->hardwareMachine.audioAdapter.fEnabled)
             {
                 strSoundCard = Utf8StrFmt("%RU32",
@@ -343,7 +342,7 @@ HRESULT Appliance::interpret()
 #ifdef VBOX_WITH_USB
             /* USB Controller */
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
-            if (   (   vsysThis.pelmVboxMachine
+            if (   (   vsysThis.pelmVBoxMachine
                     && pNewDesc->m->pConfig->hardwareMachine.usbSettings.llUSBControllers.size() > 0)
                 || vsysThis.fHasUsbController)
                 pNewDesc->i_addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
@@ -351,7 +350,7 @@ HRESULT Appliance::interpret()
 
             /* Network Controller */
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
-            if (vsysThis.pelmVboxMachine)
+            if (vsysThis.pelmVBoxMachine)
             {
                 uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(pNewDesc->m->pConfig->hardwareMachine.chipsetType);
 
@@ -463,7 +462,7 @@ HRESULT Appliance::interpret()
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             bool fFloppy = false;
             bool fDVD = false;
-            if (vsysThis.pelmVboxMachine)
+            if (vsysThis.pelmVBoxMachine)
             {
                 settings::StorageControllersList &llControllers = pNewDesc->m->pConfig->storageMachine.llStorageControllers;
                 settings::StorageControllersList::iterator it3;
@@ -527,7 +526,7 @@ HRESULT Appliance::interpret()
                             pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
                                                  strControllerID,         // strRef
                                                  hdc.strControllerType,   // aOvfValue
-                                                 strType);                // aVboxValue
+                                                 strType);                // aVBoxValue
                         }
                         else
                             /* Warn only once */
@@ -1564,7 +1563,7 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         rc = rc2;
         /*
          * Restoring original UUID from OVF description file.
-         * During import VB creates new UUIDs for imported images and
+         * During import VBox creates new UUIDs for imported images and
          * assigns them to the images. In case of failure we have to restore
          * the original UUIDs because those new UUIDs are obsolete now and
          * won't be used anymore.
@@ -1798,7 +1797,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
         /*
          * Restoring original UUID from OVF description file.
-         * During import VB creates new UUIDs for imported images and
+         * During import VBox creates new UUIDs for imported images and
          * assigns them to the images. In case of failure we have to restore
          * the original UUIDs because those new UUIDs are obsolete now and
          * won't be used anymore.
@@ -2688,7 +2687,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         {
             const VirtualSystemDescriptionEntry* pvsys = *nwIt;
 
-            const Utf8Str &nwTypeVBox = pvsys->strVboxCurrent;
+            const Utf8Str &nwTypeVBox = pvsys->strVBoxCurrent;
             uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
             ComPtr<INetworkAdapter> pNetworkAdapter;
             rc = pNewMachine->GetNetworkAdapter((ULONG)a, pNetworkAdapter.asOutParam());
@@ -2822,7 +2821,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         rc = pNewMachine->AddStorageController(Bstr("IDE Controller").raw(), StorageBus_IDE, pController.asOutParam());
         if (FAILED(rc)) throw rc;
 
-        const char *pcszIDEType = vsdeHDCIDE.front()->strVboxCurrent.c_str();
+        const char *pcszIDEType = vsdeHDCIDE.front()->strVBoxCurrent.c_str();
         if (!strcmp(pcszIDEType, "PIIX3"))
             rc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX3);
         else if (!strcmp(pcszIDEType, "PIIX4"))
@@ -2844,7 +2843,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (vsdeHDCSATA.size() > 0)
     {
         ComPtr<IStorageController> pController;
-        const Utf8Str &hdcVBox = vsdeHDCSATA.front()->strVboxCurrent;
+        const Utf8Str &hdcVBox = vsdeHDCSATA.front()->strVBoxCurrent;
         if (hdcVBox == "AHCI")
         {
             rc = pNewMachine->AddStorageController(Bstr("SATA Controller").raw(),
@@ -2869,7 +2868,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         Bstr bstrName(L"SCSI Controller");
         StorageBus_T busType = StorageBus_SCSI;
         StorageControllerType_T controllerType;
-        const Utf8Str &hdcVBox = vsdeHDCSCSI.front()->strVboxCurrent;
+        const Utf8Str &hdcVBox = vsdeHDCSCSI.front()->strVBoxCurrent;
         if (hdcVBox == "LsiLogic")
             controllerType = StorageControllerType_LsiLogic;
         else if (hdcVBox == "LsiLogicSas")
@@ -3155,7 +3154,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                 {
                                     /*
                                      * in this case it's an error because something wrong with OVF description file.
-                                     * May be VB imports OVA package with wrong file sequence inside the archive.
+                                     * May be VBox imports OVA package with wrong file sequence inside the archive.
                                      */
                                     throw setError(E_FAIL,
                                                    tr("Internal inconsistency looking up disk image '%s'"),
@@ -3193,10 +3192,10 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 ComObjPtr<Medium> pTargetHD;
 
-                Utf8Str savedVboxCurrent = vsdeTargetHD->strVboxCurrent;
+                Utf8Str savedVBoxCurrent = vsdeTargetHD->strVBoxCurrent;
 
                 i_importOneDiskImage(diCurrent,
-                                     &vsdeTargetHD->strVboxCurrent,
+                                     &vsdeTargetHD->strVBoxCurrent,
                                      pTargetHD,
                                      stack,
                                      pCallbacks,
@@ -3222,7 +3221,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                               mhda.lDevice);
 
                 Log(("Attaching disk %s to port %d on device %d\n",
-                vsdeTargetHD->strVboxCurrent.c_str(), mhda.lControllerPort, mhda.lDevice));
+                vsdeTargetHD->strVBoxCurrent.c_str(), mhda.lControllerPort, mhda.lDevice));
 
                 ComObjPtr<MediumFormat> mediumFormat;
                 rc = i_findMediumFormatFromDiskImage(diCurrent, mediumFormat);
@@ -3240,7 +3239,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 {
                     ComPtr<IMedium> dvdImage(pTargetHD);
 
-                    rc = mVirtualBox->OpenMedium(Bstr(vsdeTargetHD->strVboxCurrent).raw(),
+                    rc = mVirtualBox->OpenMedium(Bstr(vsdeTargetHD->strVBoxCurrent).raw(),
                                                  DeviceType_DVD,
                                                  AccessMode_ReadWrite,
                                                  false,
@@ -3276,7 +3275,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                     throw rc;
 
                 /* restore */
-                vsdeTargetHD->strVboxCurrent = savedVboxCurrent;
+                vsdeTargetHD->strVBoxCurrent = savedVBoxCurrent;
 
                 ++cImportedDisks;
 
@@ -3458,7 +3457,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                     if (it1->ulSlot == iSlot)
                     {
                         it1->fEnabled = true;
-                        it1->type = (NetworkAdapterType_T)vsdeNW->strVboxCurrent.toUInt32();
+                        it1->type = (NetworkAdapterType_T)vsdeNW->strVBoxCurrent.toUInt32();
                         break;
                     }
                 }
@@ -3646,7 +3645,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                     if (!vsdeTargetHD)
                         /*
                          * in this case it's an error because something wrong with OVF description file.
-                         * May be VB imports OVA package with wrong file sequence inside the archive.
+                         * May be VBox imports OVA package with wrong file sequence inside the archive.
                          */
                         throw setError(E_FAIL,
                                        tr("Internal inconsistency looking up disk image '%s'"),
@@ -3717,7 +3716,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                     if (itDiskImage != stack.mapDisks.end())
                     {
                         const ovf::DiskImage &di = itDiskImage->second;
-                        d.uuid = Guid(di.uuidVbox);
+                        d.uuid = Guid(di.uuidVBox);
                     }
                     ++avsdeHDsIt;
                 }
@@ -3725,7 +3724,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                 // convert the Guid to string
                 strUuid = d.uuid.toString();
 
-                if (diCurrent.uuidVbox != strUuid)
+                if (diCurrent.uuidVBox != strUuid)
                 {
                     continue;
                 }
@@ -3733,10 +3732,10 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                 /*
                  * step 3: import disk
                  */
-                Utf8Str savedVboxCurrent = vsdeTargetHD->strVboxCurrent;
+                Utf8Str savedVBoxCurrent = vsdeTargetHD->strVBoxCurrent;
                 ComObjPtr<Medium> pTargetHD;
                 i_importOneDiskImage(diCurrent,
-                                     &vsdeTargetHD->strVboxCurrent,
+                                     &vsdeTargetHD->strVBoxCurrent,
                                      pTargetHD,
                                      stack,
                                      pCallbacks,
@@ -3760,7 +3759,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                 {
                     ComPtr<IMedium> dvdImage(pTargetHD);
 
-                    rc = mVirtualBox->OpenMedium(Bstr(vsdeTargetHD->strVboxCurrent).raw(),
+                    rc = mVirtualBox->OpenMedium(Bstr(vsdeTargetHD->strVBoxCurrent).raw(),
                                                  DeviceType_DVD,
                                                  AccessMode_ReadWrite,
                                                  false,
@@ -3782,7 +3781,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                 }
 
                 /* restore */
-                vsdeTargetHD->strVboxCurrent = savedVboxCurrent;
+                vsdeTargetHD->strVBoxCurrent = savedVBoxCurrent;
 
                 /*
                  * 1. saving original UUID for restoring in case of failure.
@@ -3898,7 +3897,7 @@ void Appliance::i_importMachines(ImportStack &stack,
         if (vsdeName.size() < 1)
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Missing VM name"));
-        stack.strNameVBox = vsdeName.front()->strVboxCurrent;
+        stack.strNameVBox = vsdeName.front()->strVBoxCurrent;
 
         // have VirtualBox suggest where the filename would be placed so we can
         // put the disk images in the same directory
@@ -3920,14 +3919,14 @@ void Appliance::i_importMachines(ImportStack &stack,
         if (vsdeOS.size() < 1)
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Missing guest OS type"));
-        stack.strOsTypeVBox = vsdeOS.front()->strVboxCurrent;
+        stack.strOsTypeVBox = vsdeOS.front()->strVBoxCurrent;
 
         // CPU count
         std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->i_findByType(VirtualSystemDescriptionType_CPU);
         if (vsdeCPU.size() != 1)
             throw setError(VBOX_E_FILE_ERROR, tr("CPU count missing"));
 
-        stack.cCPUs = vsdeCPU.front()->strVboxCurrent.toUInt32();
+        stack.cCPUs = vsdeCPU.front()->strVBoxCurrent.toUInt32();
         // We need HWVirt & IO-APIC if more than one CPU is requested
         if (stack.cCPUs > 1)
         {
@@ -3939,7 +3938,7 @@ void Appliance::i_importMachines(ImportStack &stack,
         std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->i_findByType(VirtualSystemDescriptionType_Memory);
         if (vsdeRAM.size() != 1)
             throw setError(VBOX_E_FILE_ERROR, tr("RAM size missing"));
-        stack.ulMemorySizeMB = (ULONG)vsdeRAM.front()->strVboxCurrent.toUInt64();
+        stack.ulMemorySizeMB = (ULONG)vsdeRAM.front()->strVBoxCurrent.toUInt64();
 
 #ifdef VBOX_WITH_USB
         // USB controller
@@ -3952,12 +3951,12 @@ void Appliance::i_importMachines(ImportStack &stack,
         std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->i_findByType(VirtualSystemDescriptionType_SoundCard);
         /* @todo: we support one audio adapter only */
         if (vsdeAudioAdapter.size() > 0)
-            stack.strAudioAdapter = vsdeAudioAdapter.front()->strVboxCurrent;
+            stack.strAudioAdapter = vsdeAudioAdapter.front()->strVBoxCurrent;
 
         // for the description of the new machine, always use the OVF entry, the user may have changed it in the import config
         std::list<VirtualSystemDescriptionEntry*> vsdeDescription = vsdescThis->i_findByType(VirtualSystemDescriptionType_Description);
         if (vsdeDescription.size())
-            stack.strDescription = vsdeDescription.front()->strVboxCurrent;
+            stack.strDescription = vsdeDescription.front()->strVBoxCurrent;
 
         // import vbox:machine or OVF now
         if (vsdescThis->m->pConfig)

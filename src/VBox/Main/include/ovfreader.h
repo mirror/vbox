@@ -252,7 +252,7 @@ struct DiskImage
                                     // space, but cannot be larger than iCapacity; -1 if not set)
     RTCString strFormat;              // value from DiskSection/Disk/@format
                 // typically http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized
-    RTCString uuidVbox;      // optional; if the file was exported by VirtualBox >= 3.2,
+    RTCString uuidVBox;      // optional; if the file was exported by VirtualBox >= 3.2,
                                     // then this has the UUID with which the disk was registered
 
     // fields from /References/File; the spec says the file reference from disk can be empty,
@@ -554,7 +554,7 @@ struct VirtualSystem
 
     CIMOSType_T         cimos;
     RTCString    strCimosDesc;           // readable description of the cimos type in the case of cimos = 0/1/102
-    RTCString    strTypeVbox;            // optional type from @vbox:ostype attribute (VirtualBox 4.0 or higher)
+    RTCString    strTypeVBox;            // optional type from @vbox:ostype attribute (VirtualBox 4.0 or higher)
 
     RTCString    strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
                                                 // VMware Workstation 6.5 is "vmx-07"
@@ -588,8 +588,7 @@ struct VirtualSystem
     RTCString    strProductUrl;          // product info if any; receives contents of VirtualSystem/ProductSection/ProductUrl
     RTCString    strVendorUrl;           // product info if any; receives contents of VirtualSystem/ProductSection/VendorUrl
 
-    const xml::ElementNode                      // pointer to <vbox:Machine> element under <VirtualSystem> element or NULL if not present
-                        *pelmVboxMachine;
+    const xml::ElementNode *pelmVBoxMachine; // pointer to <vbox:Machine> element under <VirtualSystem> element or NULL if not present
 
     VirtualSystem()
         : cimos(CIMOSType_CIMOS_Unknown),
@@ -598,7 +597,7 @@ struct VirtualSystem
           fHasFloppyDrive(false),
           fHasCdromDrive(false),
           fHasUsbController(false),
-          pelmVboxMachine(NULL)
+          pelmVBoxMachine(NULL)
     {
     }
 };
