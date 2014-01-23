@@ -145,10 +145,10 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
     if (RT_SUCCESS(rc))
     {
         DWORD dwExStyle = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE;
-        DWORD dwStyle = WS_POPUPWINDOW;
+        DWORD dwStyle = WS_POPUP;
 #ifdef VBOX_DND_DEBUG_WND
-        dwExStyle &= ~WS_EX_TRANSPARENT;
-        dwStyle |= WS_VISIBLE | WS_OVERLAPPEDWINDOW;
+        dwExStyle &= ~WS_EX_TRANSPARENT; /* Remove transparency bit. */
+        dwStyle |= WS_VISIBLE; /* Make the window visible. */
 #endif
         pThis->hWnd =
             CreateWindowEx(dwExStyle,
@@ -175,6 +175,17 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
             LogFlowFunc(("Proxy window created, hWnd=0x%x\n", pThis->hWnd));
 #else
             LogFlowFunc(("Debug proxy window created, hWnd=0x%x\n", pThis->hWnd));
+
+            /*
+             * Install some mouse tracking.
+             */
+            TRACKMOUSEEVENT me;
+            RT_ZERO(me);
+            me.cbSize    = sizeof(TRACKMOUSEEVENT);
+            me.dwFlags   = TME_HOVER | TME_LEAVE | TME_NONCLIENT;
+            me.hwndTrack = pThis->hWnd;
+            BOOL fRc = TrackMouseEvent(&me);
+            Assert(fRc);
 #endif
         }
     }
@@ -182,6 +193,8 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
     if (RT_SUCCESS(rc))
     {
         OleInitialize(NULL);
+
+        pThis->RegisterAsDropTarget();
 
         bool fShutdown = false;
 
@@ -270,6 +283,10 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
             mfMouseButtonDown = false;
             return 0;
 
+        case WM_MOUSELEAVE:
+            LogFlowThisFunc(("WM_MOUSELEAVE\n"));
+            return 0;
+
         /* Will only be called once; after the first mouse move, this
          * window will be hidden! */
         case WM_MOUSEMOVE:
@@ -340,7 +357,11 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
             }
             else if (mMode == GH) /* Guest to host. */
             {
-                hide();
+                //hide();
+
+                /* Starting here VBoxDnDDropTarget should
+                 * take over; was instantiated when registering
+                 * this proxy window as a (valid) drop target. */
             }
             else
                 rc = VERR_NOT_SUPPORTED;
@@ -349,6 +370,14 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                              mMode, mState, rc));
             return 0;
         }
+
+        case WM_NCMOUSEHOVER:
+            LogFlowThisFunc(("WM_NCMOUSEHOVER\n"));
+            return 0;
+
+        case WM_NCMOUSELEAVE:
+            LogFlowThisFunc(("WM_NCMOUSELEAVE\n"));
+            return 0;
 
         case WM_VBOXTRAY_DND_MESSAGE:
         {
@@ -531,10 +560,10 @@ int VBoxDnDWnd::RegisterAsDropTarget(void)
     if (pDropTarget) /* Already registered as drop target? */
         return VINF_SUCCESS;
 
-    int rc = VBoxDnDDropTarget::CreateDropTarget(this /* pParent */,
-                                                 &pDropTarget);
-    if (RT_SUCCESS(rc))
+    int rc;
+    try
     {
+        pDropTarget = new VBoxDnDDropTarget(this /* pParent */);
         AssertPtr(pDropTarget);
         HRESULT hr = CoLockObjectExternal(pDropTarget, TRUE /* fLock */,
                                           FALSE /* fLastUnlockReleases */);
@@ -543,9 +572,15 @@ int VBoxDnDWnd::RegisterAsDropTarget(void)
 
         if (FAILED(hr))
         {
-            LogRel(("DnD: Creating drop target failed with hr=0x%x\n", hr));
+            LogRel(("DnD: Creating drop target failed with hr=%Rhrc\n", hr));
             rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
         }
+        else
+            rc = VINF_SUCCESS;
+    }
+    catch (std::bad_alloc)
+    {
+        rc = VERR_NO_MEMORY;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -706,7 +741,7 @@ int VBoxDnDWnd::OnHgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
     {
         rc = VbglR3DnDHGAcknowledgeOperation(mClientID, uActionNotify);
         if (RT_FAILURE(rc))
-            LogFlowThisFunc(("Acknowleding operation failed with rc=%Rrc\n", rc));
+            LogFlowThisFunc(("Acknowledging operation failed with rc=%Rrc\n", rc));
     }
 
     LogFlowThisFunc(("Returning uActionNotify=0x%x, rc=%Rrc\n", uActionNotify, rc));
@@ -827,16 +862,38 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
     int rc;
     if (mState == Initialized)
     {
-        //rc = makeFullscreen();
-        rc = VINF_SUCCESS;
-        if (RT_SUCCESS(rc))
-            rc = RegisterAsDropTarget();
+        rc = makeFullscreen();
+        /*if (RT_SUCCESS(rc))
+            rc = RegisterAsDropTarget();*/
 
         if (RT_SUCCESS(rc))
+        {
+            /*
+             * We have to release the left mouse button to
+             * get into our (invisible) proxy window.
+             */
+            dragRelease();
+
+            /*
+             * Even if we just released the left mouse button
+             * we're still in the dragging state to handle our
+             * own drop target (for the host).
+             */
             mState = Dragging;
+        }
     }
     else
         rc = VINF_SUCCESS;
+
+    /**
+     * Some notes regarding guest cursor movement:
+     * - The host only sends an HOST_DND_GH_REQ_PENDING message to the guest
+     *   if the mouse cursor is outside the VM's window.
+     * - The guest does not know anything about the host's cursor
+     *   position / state due to security reasons.
+     * - The guest *only* knows that the host currently is asking whether a
+     *   guest DnD operation is in progress.
+     */
 
     if (   RT_SUCCESS(rc)
         && (mState == Dragging))
@@ -844,23 +901,43 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
         /** @todo Put this block into a function! */
         POINT p;
         GetCursorPos(&p);
-
+        ClientToScreen(hWnd, &p);
 #ifdef DEBUG_andy
-        LogFlowThisFunc(("Setting cursor to curX=%d, curY=%d\n", p.x, p.y));
+        LogFlowThisFunc(("Client to screen curX=%ld, curY=%ld\n", p.x, p.y));
 #endif
+
+#if 1
         /** @todo Multi-monitor setups? */
         int iScreenX = GetSystemMetrics(SM_CXSCREEN) - 1;
         int iScreenY = GetSystemMetrics(SM_CYSCREEN) - 1;
 
-        static int pos = 100;
-        pos++;
+        static LONG px = p.x;
+        if (px <= 0)
+            px = 1;
+        static LONG py = p.y;
+        if (py <= 0)
+            py = 1;
+        //px++; py++;
+        LogFlowThisFunc(("px=%ld, py=%ld\n", px, py));
 
         INPUT Input[1] = { 0 };
         Input[0].type       = INPUT_MOUSE;
-        Input[0].mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_ABSOLUTE;
-        Input[0].mi.dx      = pos * (65535 / iScreenX); //p.x * (65535 / iScreenX);
-        Input[0].mi.dy      = 100 * (65535 / iScreenY); //p.y * (65535 / iScreenY);
-        SendInput(1, Input, sizeof(INPUT));
+        Input[0].mi.dwFlags = MOUSEEVENTF_MOVE | /*MOUSEEVENTF_LEFTDOWN |*/ MOUSEEVENTF_ABSOLUTE;
+        Input[0].mi.dx      = px * (65535 / iScreenX);
+        Input[0].mi.dy      = py * (65535 / iScreenY);
+        UINT uiProcessed = SendInput(1, Input, sizeof(INPUT));
+        if (uiProcessed)
+        {
+#ifdef DEBUG_andy
+            LogFlowFunc(("Sent %RU16 mouse input(s), x=%ld, y=%ld, flags=0x%x\n",
+                         uiProcessed, Input[0].mi.dx, Input[0].mi.dy, Input[0].mi.dwFlags));
+#endif
+        }
+        else
+            LogFlowFunc(("Unable to send input, error=0x%x\n", GetLastError()));
+#else
+        SetCursorPos(p.x, p.y);
+#endif
 
 #ifdef DEBUG_andy
         CURSORINFO ci;
@@ -874,9 +951,23 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
 #endif
     }
 
-    int rc2= VbglR3DnDGHAcknowledgePending(mClientID,
-                                           DND_COPY_ACTION, DND_COPY_ACTION, "text/plain;charset=utf-8");
-    LogFlowThisFunc(("sent=%Rrc\n", rc2));
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t uDefAction = DND_IGNORE_ACTION;
+        RTCString strFormat = "unknown";
+        if (   pDropTarget
+            && pDropTarget->HasData())
+        {
+            uDefAction = DND_COPY_ACTION;
+            uAllActions = uDefAction;
+            strFormat = "text/plain;charset=utf-8";
+        }
+
+        LogFlowFunc(("Acknowledging pDropTarget=0x%p, uDefAction=0x%x, uAllActions=0x%x, strFormat=%s\n",
+                     pDropTarget, uDefAction, uAllActions, strFormat.c_str()));
+        rc = VbglR3DnDGHAcknowledgePending(mClientID,
+                                           uDefAction, uAllActions, strFormat.c_str());
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -887,10 +978,10 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormats, uint32_t cbFormats,
 {
     LogFlowThisFunc(("mMode=%ld, mState=%ld, cbFormats=%RU32, uDefAction=0x%x\n",
                      mMode, mState, cbFormats, uDefAction));
-
     int rc;
     if (mState == Dragging)
     {
+        AssertPtr(pDropTarget);
     }
     else
         rc = VERR_WRONG_ORDER;
@@ -912,6 +1003,9 @@ int VBoxDnDWnd::ProcessEvent(PVBOXDNDEVENT pEvent)
 
 int VBoxDnDWnd::dragRelease(void)
 {
+#ifdef DEBUG_andy
+    LogFlowFunc(("\n"));
+#endif
     /* Release mouse button in the guest to start the "drop"
      * action at the current mouse cursor position. */
     INPUT Input[1] = { 0 };
@@ -924,6 +1018,9 @@ int VBoxDnDWnd::dragRelease(void)
 
 int VBoxDnDWnd::hide(void)
 {
+#ifdef DEBUG_andy
+    LogFlowFunc(("\n"));
+#endif
     ShowWindow(hWnd, SW_HIDE);
 
     return VINF_SUCCESS;
@@ -966,20 +1063,30 @@ int VBoxDnDWnd::makeFullscreen(void)
 
     if (RT_SUCCESS(rc))
     {
+        LONG lStyle = GetWindowLong(hWnd, GWL_STYLE);
+        SetWindowLong(hWnd, GWL_STYLE,
+                      lStyle & ~(WS_CAPTION | WS_THICKFRAME));
+        LONG lExStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+        SetWindowLong(hWnd, GWL_EXSTYLE,
+                      lExStyle & ~(  WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE
+                                   | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
+
         fRc = SetWindowPos(hWnd, HWND_TOPMOST,
                            r.left,
                            r.top,
                            r.right  - r.left,
                            r.bottom - r.top,
 #ifdef VBOX_DND_DEBUG_WND
-                           SWP_SHOWWINDOW);
+                           SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 #else
                            SWP_SHOWWINDOW | SWP_NOOWNERZORDER | SWP_NOREDRAW | SWP_NOACTIVATE);
 #endif
         if (fRc)
+        {
             LogFlowFunc(("Virtual screen is %ld,%ld,%ld,%ld (%ld x %ld)\n",
                          r.left, r.top, r.right, r.bottom,
                          r.right - r.left, r.bottom - r.top));
+        }
         else
         {
             DWORD dwErr = GetLastError();

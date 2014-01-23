@@ -46,26 +46,6 @@ VBoxDnDDropTarget::~VBoxDnDDropTarget(void)
     LogFlowFunc(("rc=%Rrc, mRefCount=%RI32\n", rc, mRefCount));
 }
 
-/* static */
-int VBoxDnDDropTarget::CreateDropTarget(VBoxDnDWnd *pParent, IDropTarget **ppDropTarget)
-{
-    AssertPtrReturn(pParent, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppDropTarget, VERR_INVALID_POINTER);
-
-    int rc;
-    try
-    {
-        *ppDropTarget = new VBoxDnDDropTarget(pParent);
-        rc = VINF_SUCCESS;
-    }
-    catch(std::bad_alloc &)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-
-    return rc;
-}
-
 /*
  * IUnknown methods.
  */
@@ -116,7 +96,7 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
     LogFlowFunc(("mfHasDropData=%RTbool, pDataObject=0x%p, grfKeyState=0x%x, x=%ld, y=%ld, dwEffect=%RU32\n",
                  mfHasDropData, pDataObject, grfKeyState, pt.x, pt.y, *pdwEffect));
 
-    FORMATETC fmtetc = { CF_HDROP, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+    FORMATETC fmtetc = { CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
 
     /* We only handle CF_HDROP in an HGLOBAL medium at the moment. */
     HRESULT hr = pDataObject->QueryGetData(&fmtetc);
@@ -161,7 +141,7 @@ STDMETHODIMP VBoxDnDDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pd
     }
 
 #ifdef DEBUG_andy
-    LogFlowFunc(("Returning pdwEffect=%ld\n", pdwEffect));
+    LogFlowFunc(("Returning *pdwEffect=%ld\n", *pdwEffect));
 #endif
     return S_OK;
 }
@@ -183,33 +163,29 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
     AssertPtrReturn(pDataObject, E_INVALIDARG);
     AssertPtrReturn(pdwEffect, E_INVALIDARG);
 
-#ifdef DEBUG_andy
+#ifdef DEBUG
     LogFlowFunc(("mfHasDropData=%RTbool, pDataObject=0x%p, grfKeyState=0x%x, x=%ld, y=%ld\n",
                  mfHasDropData, pDataObject, grfKeyState, pt.x, pt.y));
 #endif
-
-    //PositionCursor(m_hWnd, pt);
-
     bool fCanDrop = false;
     if (mfHasDropData)
     {
-        // construct a FORMATETC object
-        FORMATETC fmtetc = { CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
-        STGMEDIUM stgmed;
+        FORMATETC fmtEtc = { CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+        STGMEDIUM stgMed;
 
         AssertPtr(pDataObject);
-        if (   (pDataObject->QueryGetData(&fmtetc) == S_OK)
-            && (pDataObject->GetData(&fmtetc, &stgmed) == S_OK))
+        if (   (pDataObject->QueryGetData(&fmtEtc)     == S_OK)
+            && (pDataObject->GetData(&fmtEtc, &stgMed) == S_OK))
         {
-            // we asked for the data as a HGLOBAL, so access it appropriately
-            PVOID data = GlobalLock(stgmed.hGlobal);
+            PVOID pvData = GlobalLock(stgMed.hGlobal);
+#ifdef DEBUG
+            if (fmtEtc.cfFormat == CF_TEXT)
+                LogFlowFunc(("pvData=%s\n", (char*)pvData));
+#endif
+            GlobalUnlock(stgMed.hGlobal);
 
-            //SetWindowText(hwnd, (char *)data);
-
-            GlobalUnlock(stgmed.hGlobal);
-
-            // release the data using the COM API
-            ReleaseStgMedium(&stgmed);
+            /* Release storage medium again. */
+            ReleaseStgMedium(&stgMed);
 
             fCanDrop = true;
         }
@@ -224,6 +200,8 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
     else
         *pdwEffect = DROPEFFECT_NONE;
 
+    LogFlowFunc(("Returning with mfHasDropData=%RTbool, fCanDrop=%RTbool, *pdwEffect=%RI32\n",
+                 mfHasDropData, fCanDrop, *pdwEffect));
     return S_OK;
 }
 
@@ -250,7 +228,8 @@ DWORD VBoxDnDDropTarget::GetDropEffect(DWORD grfKeyState, DWORD dwAllowedEffects
     }
 
 #ifdef DEBUG_andy
-    LogFlowFunc(("dwEffect=%ld\n", dwEffect));
+    LogFlowFunc(("grfKeyState=0x%x, dwAllowedEffects=0x%x, dwEffect=0x%x\n",
+                 grfKeyState, dwAllowedEffects, dwEffect));
 #endif
     return dwEffect;
 }

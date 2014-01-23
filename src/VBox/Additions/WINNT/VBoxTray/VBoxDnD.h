@@ -105,10 +105,6 @@ public:
 
 public:
 
-    static int CreateDropSource(VBoxDnDWnd *pParent, IDropSource **ppDropSource);
-
-public:
-
     uint32_t GetCurrentAction(void) { return muCurAction; }
 
 public: /* IUnknown methods. */
@@ -138,10 +134,6 @@ public:
     VBoxDnDDropTarget(VBoxDnDWnd *pThis);
     virtual ~VBoxDnDDropTarget(void);
 
-public:
-
-    static int CreateDropTarget(VBoxDnDWnd *pParent, IDropTarget **ppDropTarget);
-
 public: /* IUnknown methods. */
 
     STDMETHOD(QueryInterface)(REFIID iid, void ** ppvObject);
@@ -158,6 +150,11 @@ public: /* IDropTarget methods. */
 protected:
 
     static DWORD GetDropEffect(DWORD grfKeyState, DWORD dwAllowedEffects);
+
+public:
+
+    const IDataObject *GetDataObject(void) { return mpDataObject; }
+    bool HasData(void) { return mfHasDropData; }
 
 protected:
 
@@ -373,7 +370,7 @@ public: /** @todo Make protected! */
      *  currently while being in this window? */
     bool                       mfMouseButtonDown;
 # ifdef VBOX_WITH_DRAG_AND_DROP_GH
-    IDropTarget               *pDropTarget;
+    VBoxDnDDropTarget         *pDropTarget;
 # endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 #else
     /** @todo Implement me. */
