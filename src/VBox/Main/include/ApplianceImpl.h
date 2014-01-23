@@ -108,7 +108,7 @@ private:
     HRESULT getWarnings(std::vector<com::Utf8Str> &aWarnings);
 
     /** weak VirtualBox parent */
-    VirtualBox* const   mVirtualBox;
+    VirtualBox* const mVirtualBox;
 
     struct ImportStack;
     struct TaskOVF;

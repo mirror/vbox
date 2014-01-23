@@ -29,10 +29,11 @@
 #include "MachineImpl.h"
 
 #include <iprt/mem.h>
+#include <iprt/cpp/utils.h>
 
 HostPowerService::HostPowerService(VirtualBox *aVirtualBox)
 {
-    Assert(aVirtualBox != NULL);
+    AssertPtr(aVirtualBox);
     mVirtualBox = aVirtualBox;
 }
 

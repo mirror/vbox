@@ -120,7 +120,7 @@ private:
     void i_getPortForwardRulesFromMap(std::vector<Utf8Str> &aPortForwardRules, NATRuleMap& aRules);
 
     /** weak VirtualBox parent */
-    VirtualBox * const      mVirtualBox;
+    VirtualBox * const mVirtualBox;
 
     const  com::Utf8Str mName;
 
