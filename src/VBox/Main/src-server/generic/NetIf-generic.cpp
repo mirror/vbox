@@ -179,7 +179,7 @@ int NetIfEnableDynamicIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * /
 }
 
 
-int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
+int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
                                         IHostNetworkInterface **aHostNetworkInterface,
                                         IProgress **aProgress,
                                         const char *pcszName)
@@ -190,10 +190,10 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
     progress.createObject();
 
     ComPtr<IHost> host;
-    HRESULT hrc = pVBox->COMGETTER(Host)(host.asOutParam());
+    HRESULT hrc = pVirtualBox->COMGETTER(Host)(host.asOutParam());
     if (SUCCEEDED(hrc))
     {
-        hrc = progress->init(pVBox, host,
+        hrc = progress->init(pVirtualBox, host,
                              Bstr("Creating host only network interface").raw(),
                              FALSE /* aCancelable */);
         if (SUCCEEDED(hrc))
@@ -265,7 +265,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
                             ComObjPtr<HostNetworkInterface> iface;
                             iface.createObject();
                             iface->init(IfName, HostNetworkInterfaceType_HostOnly, pInfo);
-                            iface->i_setVirtualBox(pVBox);
+                            iface->i_setVirtualBox(pVirtualBox);
                             iface.queryInterfaceTo(aHostNetworkInterface);
                         }
                         RTMemFree(pInfo);
@@ -300,7 +300,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
     return hrc;
 
 #else
-    NOREF(pVBox);
+    NOREF(pVirtualBox);
     NOREF(aHostNetworkInterface);
     NOREF(aProgress);
     NOREF(pcszName);
@@ -308,7 +308,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
 #endif
 }
 
-int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
+int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, IN_GUID aId,
                                         IProgress **aProgress)
 {
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
@@ -317,7 +317,7 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
     progress.createObject();
     ComPtr<IHost> host;
     int rc = VINF_SUCCESS;
-    HRESULT hr = pVBox->COMGETTER(Host)(host.asOutParam());
+    HRESULT hr = pVirtualBox->COMGETTER(Host)(host.asOutParam());
     if (SUCCEEDED(hr))
     {
         Bstr ifname;
@@ -328,7 +328,7 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
         if (ifname.isEmpty())
             return VERR_INTERNAL_ERROR;
 
-        rc = progress->init(pVBox, host,
+        rc = progress->init(pVirtualBox, host,
                             Bstr("Removing host network interface").raw(),
                             FALSE /* aCancelable */);
         if (SUCCEEDED(rc))
@@ -351,7 +351,7 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
     }
     return rc;
 #else
-    NOREF(pVBox);
+    NOREF(pVirtualBox);
     NOREF(aId);
     NOREF(aProgress);
     return VERR_NOT_IMPLEMENTED;

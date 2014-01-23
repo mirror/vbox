@@ -63,7 +63,7 @@ private:
                    ComPtr<IProgress> &aProgress);
 
     /* Private member vars */
-    VirtualBox * const  mVirtualBox;
+    VirtualBox * const mVirtualBox;
 
     ////////////////////////////////////////////////////////////////////////////////
     ////

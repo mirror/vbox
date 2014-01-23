@@ -1109,7 +1109,7 @@ int NetIfGetLinkSpeed(const char * /*pcszIfName*/, uint32_t * /*puMbits*/)
     return VERR_NOT_IMPLEMENTED;
 }
 
-int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
+int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
                                         IHostNetworkInterface **aHostNetworkInterface,
                                         IProgress **aProgress,
                                         const char *pcszName)
@@ -1122,10 +1122,10 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
     progress.createObject();
 
     ComPtr<IHost> host;
-    HRESULT rc = pVBox->COMGETTER(Host)(host.asOutParam());
+    HRESULT rc = pVirtualBox->COMGETTER(Host)(host.asOutParam());
     if (SUCCEEDED(rc))
     {
-        rc = progress->init(pVBox, host,
+        rc = progress->init(pVirtualBox, host,
                             Bstr(_T("Creating host only network interface")).raw(),
                             FALSE /* aCancelable */);
         if (SUCCEEDED(rc))
@@ -1146,13 +1146,12 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
             d->msgCode = SVCHlpMsg::CreateHostOnlyNetworkInterface;
 //            d->name = aName;
             d->iface = iface;
-            d->vBox = pVBox;
+            d->vBox = pVirtualBox;
 
-            rc = pVBox->startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
-                                             netIfNetworkInterfaceHelperClient,
-                                             static_cast<void *>(d.get()),
-                                             progress);
-
+            rc = pVirtualBox->startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
+                                                   netIfNetworkInterfaceHelperClient,
+                                                   static_cast<void *>(d.get()),
+                                                   progress);
             if (SUCCEEDED(rc))
             {
                 /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
@@ -1165,7 +1164,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
 #endif
 }
 
-int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
+int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, IN_GUID aId,
                                         IProgress **aProgress)
 {
 #ifndef VBOX_WITH_NETFLT
@@ -1175,10 +1174,10 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
     ComObjPtr<Progress> progress;
     progress.createObject();
     ComPtr<IHost> host;
-    HRESULT rc = pVBox->COMGETTER(Host)(host.asOutParam());
+    HRESULT rc = pVirtualBox->COMGETTER(Host)(host.asOutParam());
     if (SUCCEEDED(rc))
     {
-        rc = progress->init(pVBox, host,
+        rc = progress->init(pVirtualBox, host,
                            Bstr(_T("Removing host network interface")).raw(),
                            FALSE /* aCancelable */);
         if (SUCCEEDED(rc))
@@ -1194,10 +1193,10 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
             d->msgCode = SVCHlpMsg::RemoveHostOnlyNetworkInterface;
             d->guid = aId;
 
-            rc = pVBox->startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
-                                             netIfNetworkInterfaceHelperClient,
-                                             static_cast<void *>(d.get()),
-                                             progress);
+            rc = pVirtualBox->startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
+                                                   netIfNetworkInterfaceHelperClient,
+                                                   static_cast<void *>(d.get()),
+                                                   progress);
 
             if (SUCCEEDED(rc))
             {

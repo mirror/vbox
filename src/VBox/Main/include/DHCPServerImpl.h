@@ -131,7 +131,7 @@ private:
     struct Data;
     Data *m;
     /** weak VirtualBox parent */
-    VirtualBox * const      mVirtualBox;
+    VirtualBox * const mVirtualBox;
     const Bstr mName;
 
 };

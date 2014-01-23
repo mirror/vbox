@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,7 +37,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 HostNetworkInterface::HostNetworkInterface()
-    : mVBox(NULL)
+    : mVirtualBox(NULL)
 {
 }
 
@@ -107,9 +107,13 @@ void HostNetworkInterface::i_registerMetrics(PerformanceCollector *aCollector, C
         "Physical link speed.");
 
     /* Create and register base metrics */
-    pm::BaseMetric *networkSpeed = new pm::HostNetworkSpeed(hal, objptr, strName + "/LinkSpeed", Utf8Str(mShortName), Utf8Str(mInterfaceName), m.speedMbits, networkLinkSpeed);
+    pm::BaseMetric *networkSpeed = new pm::HostNetworkSpeed(hal, objptr, strName + "/LinkSpeed", 
+                                                            Utf8Str(mShortName), Utf8Str(mInterfaceName),
+                                                            m.speedMbits, networkLinkSpeed);
     aCollector->registerBaseMetric(networkSpeed);
-    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName + "/Load", Utf8Str(mShortName), Utf8Str(mInterfaceName), m.speedMbits, networkLoadRx, networkLoadTx);
+    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName + "/Load",
+                                                             Utf8Str(mShortName), Utf8Str(mInterfaceName),
+                                                             m.speedMbits, networkLoadRx, networkLoadTx);
     aCollector->registerBaseMetric(networkLoad);
 
     aCollector->registerMetric(new pm::Metric(networkSpeed, networkLinkSpeed, 0));
@@ -439,13 +443,15 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
     {
         if (m.IPAddress)
         {
-            int rc = NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, 0, 0);
+            int rc = NetIfEnableStaticIpConfig(mVirtualBox, this, m.IPAddress, 0, 0);
             if (RT_SUCCESS(rc))
             {
                 m.realIPAddress = 0;
-                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()).raw(), NULL)))
+                if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress",
+                                                             mInterfaceName.raw()).raw(), NULL)))
                     return E_FAIL;
-                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw()).raw(), NULL)))
+                if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask",
+                                                             mInterfaceName.raw()).raw(), NULL)))
                     return E_FAIL;
                 return S_OK;
             }
@@ -466,16 +472,18 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
         {
             if (m.realIPAddress == ip && m.realNetworkMask == mask)
                 return S_OK;
-            int rc = NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, ip, mask);
+            int rc = NetIfEnableStaticIpConfig(mVirtualBox, this, m.IPAddress, ip, mask);
             if (RT_SUCCESS(rc))
             {
                 m.realIPAddress   = ip;
                 m.realNetworkMask = mask;
-                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()).raw(),
-                                               Bstr(aIPAddress).raw())))
+                if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress",
+                                                             mInterfaceName.raw()).raw(),
+                                                     Bstr(aIPAddress).raw())))
                     return E_FAIL;
-                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw()).raw(),
-                                               Bstr(aNetworkMask).raw())))
+                if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask",
+                                                             mInterfaceName.raw()).raw(),
+                                                     Bstr(aNetworkMask).raw())))
                     return E_FAIL;
                 return S_OK;
             }
@@ -501,13 +509,15 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
         return E_INVALIDARG;
 
     int rc = S_OK;
-    if (m.realIPV6Address != aIPV6Address || m.realIPV6PrefixLength != aIPV6NetworkMaskPrefixLength)
+    if (   m.realIPV6Address      != aIPV6Address
+        || m.realIPV6PrefixLength != aIPV6NetworkMaskPrefixLength)
     {
         BSTR bstr;
         aIPV6Address.cloneTo(&bstr);
         if (aIPV6NetworkMaskPrefixLength == 0)
             aIPV6NetworkMaskPrefixLength = 64;
-        rc = NetIfEnableStaticIpConfigV6(mVBox, this, m.IPV6Address.raw(), bstr, aIPV6NetworkMaskPrefixLength);
+        rc = NetIfEnableStaticIpConfigV6(mVirtualBox, this, m.IPV6Address.raw(),
+                                         bstr, aIPV6NetworkMaskPrefixLength);
         if (RT_FAILURE(rc))
         {
             LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Rrc\n", rc));
@@ -517,11 +527,13 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
         {
             m.realIPV6Address = aIPV6Address;
             m.realIPV6PrefixLength = aIPV6NetworkMaskPrefixLength;
-            if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPV6Address", mInterfaceName.raw()).raw(),
-                                           Bstr(aIPV6Address).raw())))
+            if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%ls/IPV6Address",
+                                                         mInterfaceName.raw()).raw(),
+                                                 Bstr(aIPV6Address).raw())))
                 return E_FAIL;
-            if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPV6NetMask", mInterfaceName.raw()).raw(),
-                                           BstrFmt("%u", aIPV6NetworkMaskPrefixLength).raw())))
+            if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%ls/IPV6NetMask",
+                                                         mInterfaceName.raw()).raw(),
+                                                 BstrFmt("%u", aIPV6NetworkMaskPrefixLength).raw())))
                 return E_FAIL;
         }
 
@@ -535,7 +547,7 @@ HRESULT HostNetworkInterface::enableDynamicIPConfig()
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
 #else
-    int rc = NetIfEnableDynamicIpConfig(mVBox, this);
+    int rc = NetIfEnableDynamicIpConfig(mVirtualBox, this);
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to EnableDynamicIpConfig with rc=%Rrc\n", rc));
@@ -550,7 +562,7 @@ HRESULT HostNetworkInterface::dHCPRediscover()
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
 #else
-    int rc = NetIfDhcpRediscover(mVBox, this);
+    int rc = NetIfDhcpRediscover(mVirtualBox, this);
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to DhcpRediscover with rc=%Rrc\n", rc));
@@ -560,27 +572,29 @@ HRESULT HostNetworkInterface::dHCPRediscover()
 #endif
 }
 
-HRESULT HostNetworkInterface::i_setVirtualBox(VirtualBox *pVBox)
+HRESULT HostNetworkInterface::i_setVirtualBox(VirtualBox *pVirtualBox)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AssertReturn(mVBox != pVBox, S_OK);
+    AssertReturn(mVirtualBox != pVirtualBox, S_OK);
 
-    unconst(mVBox) = pVBox;
+    unconst(mVirtualBox) = pVirtualBox;
 
 #if !defined(RT_OS_WINDOWS)
     /* If IPv4 address hasn't been initialized */
     if (m.IPAddress == 0 && mIfType == HostNetworkInterfaceType_HostOnly)
     {
         Bstr tmpAddr, tmpMask;
-        HRESULT hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()).raw(),
-                                          tmpAddr.asOutParam());
+        HRESULT hrc = mVirtualBox->GetExtraData(BstrFmt("HostOnly/%ls/IPAddress",
+                                                        mInterfaceName.raw()).raw(),
+                                                tmpAddr.asOutParam());
         if (FAILED(hrc) || tmpAddr.isEmpty())
             tmpAddr = getDefaultIPv4Address(mInterfaceName);
 
-        hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw()).raw(),
-                                  tmpMask.asOutParam());
+        hrc = mVirtualBox->GetExtraData(BstrFmt("HostOnly/%ls/IPNetMask",
+                                                mInterfaceName.raw()).raw(),
+                                        tmpMask.asOutParam());
         if (FAILED(hrc) || tmpMask.isEmpty())
             tmpMask = Bstr(VBOXNET_IPV4MASK_DEFAULT);
 
@@ -591,12 +605,14 @@ HRESULT HostNetworkInterface::i_setVirtualBox(VirtualBox *pVBox)
     if (m.IPV6Address.isEmpty())
     {
         Bstr tmpPrefixLen;
-        HRESULT hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPV6Address", mInterfaceName.raw()).raw(),
-                                          m.IPV6Address.asOutParam());
+        HRESULT hrc = mVirtualBox->GetExtraData(BstrFmt("HostOnly/%ls/IPV6Address",
+                                                        mInterfaceName.raw()).raw(),
+                                                m.IPV6Address.asOutParam());
         if (SUCCEEDED(hrc) && !m.IPV6Address.isEmpty())
         {
-            hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPV6PrefixLen", mInterfaceName.raw()).raw(),
-                                      tmpPrefixLen.asOutParam());
+            hrc = mVirtualBox->GetExtraData(BstrFmt("HostOnly/%ls/IPV6PrefixLen",
+                                                    mInterfaceName.raw()).raw(),
+                                            tmpPrefixLen.asOutParam());
             if (SUCCEEDED(hrc) && !tmpPrefixLen.isEmpty())
                 m.IPV6NetworkMaskPrefixLength = Utf8Str(tmpPrefixLen).toUInt32();
             else

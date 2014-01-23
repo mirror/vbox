@@ -96,14 +96,14 @@ protected:
                           bool fFailOnError);
 private:
 
-    VirtualBoxBase * const  mParent;
+    VirtualBoxBase * const mParent;
 
     /* weak parents (only one of them is not null) */
 #if !defined(VBOX_COM_INPROC)
-    Machine * const         mMachine;
-    VirtualBox * const      mVirtualBox;
+    Machine        * const mMachine;
+    VirtualBox     * const mVirtualBox;
 #else
-    Console * const         mConsole;
+    Console        * const mConsole;
 #endif
 
     struct Data;            // opaque data struct, defined in SharedFolderImpl.cpp
