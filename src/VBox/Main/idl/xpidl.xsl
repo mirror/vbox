@@ -243,7 +243,6 @@
   <xsl:text> : </xsl:text>
   <xsl:choose>
       <xsl:when test="@extends='$unknown'">nsISupports</xsl:when>
-      <xsl:when test="@extends='$dispatched'">nsISupports</xsl:when>
       <xsl:when test="@extends='$errorinfo'">nsIException</xsl:when>
       <xsl:otherwise><xsl:value-of select="@extends"/></xsl:otherwise>
   </xsl:choose>

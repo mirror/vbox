@@ -9,7 +9,7 @@
         VirtualBox.xidl. This Python file represents our
         web service API. Depends on WSDL file for actual SOAP bindings.
 
-    Copyright (C) 2008-2013 Oracle Corporation
+    Copyright (C) 2008-2014 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -51,7 +51,6 @@
     <xsl:when test="$type='result'">UnsignedInt</xsl:when>
     <xsl:when test="$type='octet'">Octet</xsl:when>
     <xsl:when test="$type='$unknown'">IUnknown</xsl:when>
-    <xsl:when test="$type='$dispatched'">IUnknown</xsl:when>
     <xsl:otherwise><xsl:value-of select="$type" /></xsl:otherwise>
   </xsl:choose>
 </xsl:template>
@@ -148,7 +147,7 @@ class <xsl:value-of select="$cname"/>:
   <xsl:param name="base" />
 
   <xsl:choose>
-    <xsl:when test="($base = '$unknown') or ($base = '$dispatched')">
+    <xsl:when test="($base = '$unknown')">
       <xsl:value-of select="'IUnknown'"/>
     </xsl:when>
     <xsl:when test="($base = '$errorinfo') ">
@@ -468,7 +467,7 @@ class <xsl:value-of select="@name"/>:
 </xsl:template>
 
 <xsl:template match="/">
-<xsl:text># Copyright (C) 2008-2011 Oracle Corporation
+<xsl:text># Copyright (C) 2008-2014 Oracle Corporation
 #
 # This file is part of a free software library; you can redistribute
 # it and/or modify it under the terms of the GNU Lesser General

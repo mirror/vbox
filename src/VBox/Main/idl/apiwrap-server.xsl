@@ -5,7 +5,7 @@
         XSLT stylesheet that generates C++ API wrappers (server side) from
         VirtualBox.xidl.
 
-     Copyright (C) 2010-2013 Oracle Corporation
+     Copyright (C) 2010-2014 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -77,7 +77,7 @@ templates for file headers/footers
  */
 
 /**
- * Copyright (C) 2011-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -97,7 +97,7 @@ templates for file headers/footers
     <xsl:value-of select="concat('        COM_INTERFACE_ENTRY(', $iface/@name, ')&#10;')"/>
     <!-- now recurse to emit all base interfaces -->
     <xsl:variable name="extends" select="$iface/@extends"/>
-    <xsl:if test="$extends and not($extends='$unknown') and not($extends='$dispatched') and not($extends='$errorinfo')">
+    <xsl:if test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
         <xsl:call-template name="emitCOMInterfaces">
             <xsl:with-param name="iface" select="//interface[@name=$extends]"/>
         </xsl:call-template>
@@ -164,7 +164,7 @@ public:
     <xsl:param name="interfacelist"/>
 
     <xsl:choose>
-        <xsl:when test="$extends and not($extends='$unknown') and not($extends='$dispatched') and not($extends='$errorinfo')">
+        <xsl:when test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
             <xsl:variable name="newextends" select="//interface[@name=$extends]/@extends"/>
             <xsl:variable name="newiflist" select="concat($interfacelist, ', ', $extends)"/>
             <xsl:call-template name="emitISupports">
@@ -875,7 +875,7 @@ public:
 
     <!-- first recurse to emit all base interfaces -->
     <xsl:variable name="extends" select="$iface/@extends"/>
-    <xsl:if test="$extends and not($extends='$unknown') and not($extends='$dispatched') and not($extends='$errorinfo')">
+    <xsl:if test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
         <xsl:call-template name="emitAttributes">
             <xsl:with-param name="iface" select="//interface[@name=$extends]"/>
             <xsl:with-param name="topclass" select="$topclass"/>
@@ -1130,7 +1130,7 @@ public:
 
     <!-- first recurse to emit all base interfaces -->
     <xsl:variable name="extends" select="$iface/@extends"/>
-    <xsl:if test="$extends and not($extends='$unknown') and not($extends='$dispatched') and not($extends='$errorinfo')">
+    <xsl:if test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
         <xsl:call-template name="emitMethods">
             <xsl:with-param name="iface" select="//interface[@name=$extends]"/>
             <xsl:with-param name="topclass" select="$topclass"/>
