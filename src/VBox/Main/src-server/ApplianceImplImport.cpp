@@ -812,9 +812,11 @@ HRESULT Appliance::i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
  ******************************************************************************/
 
 /**
- * Implementation for reading an OVF. This starts a new thread which will call
- * Appliance::taskThreadImportOrExport() which will then call readFS() or readS3().
- * This will then open the OVF with ovfreader.cpp.
+ * Implementation for reading an OVF (via task).
+ *
+ * This starts a new thread which will call
+ * Appliance::taskThreadImportOrExport() which will then call readFS() or
+ * readS3(). This will then open the OVF with ovfreader.cpp.
  *
  * This is in a separate private method because it is used from three locations:
  *
@@ -825,9 +827,9 @@ HRESULT Appliance::i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
  *
  * 3) from Appliance::readS3(), which got called from a previous instance of Appliance::taskThreadImportOrExport().
  *
- * @param aLocInfo
- * @param aProgress
- * @return
+ * @param   aLocInfo    The OVF location.
+ * @param   aProgress   Where to return the progress object.
+ * @return  COM success status code. COM error codes will be thrown.
  */
 HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
@@ -1145,7 +1147,7 @@ HRESULT Appliance::i_readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PV
     {
         /* Read the OVF into a memory buffer */
         size_t cbSize = 0;
-        int vrc = ShaReadBuf(strFilename.c_str(), &pvTmpBuf, &cbSize, pIfIo, pStorage);
+        int vrc = readFileIntoBuffer(strFilename.c_str(), &pvTmpBuf, &cbSize, pIfIo, pStorage);
         if (RT_FAILURE(vrc)
             || !pvTmpBuf)
             throw setError(VBOX_E_FILE_ERROR,
@@ -1160,24 +1162,21 @@ HRESULT Appliance::i_readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PV
             m->fSha256 = true;
 
             uint8_t digest[RTSHA256_HASH_SIZE];
-            size_t cbDigest = RTSHA256_DIGEST_LEN;
+            size_t cchDigest = RTSHA256_DIGEST_LEN;
             char *pszDigest;
 
             RTSha256(pvTmpBuf, cbSize, &digest[0]);
 
-            vrc = RTStrAllocEx(&pszDigest, cbDigest + 1);
-            if (RT_SUCCESS(vrc))
-                vrc = RTSha256ToString(digest, pszDigest, cbDigest + 1);
-            else
-                throw setError(VBOX_E_FILE_ERROR,
-                           tr("Could not allocate string for SHA256 digest (%Rrc)"), vrc);
+            vrc = RTStrAllocEx(&pszDigest, cchDigest + 1);
+            if (RT_FAILURE(vrc))
+                throw setError(E_OUTOFMEMORY, tr("Could not allocate string for SHA256 digest (%Rrc)"), vrc);
 
+            vrc = RTSha256ToString(digest, pszDigest, cchDigest + 1);
             if (RT_SUCCESS(vrc))
                 /* Copy the SHA256 sum of the OVF file for later validation */
                 m->strOVFSHADigest = pszDigest;
             else
-                throw setError(VBOX_E_FILE_ERROR,
-                           tr("Converting SHA256 digest to a string was failed (%Rrc)"), vrc);
+                throw setError(VBOX_E_FILE_ERROR, tr("Converting SHA256 digest to a string was failed (%Rrc)"), vrc);
 
             RTStrFree(pszDigest);
 
@@ -2046,7 +2045,7 @@ HRESULT Appliance::i_readFileToBuf(const Utf8Str &strFile,
 
     bool fOldDigest = pStorage->fCreateDigest;/* Save the old digest property */
     pStorage->fCreateDigest = fCreateDigest;
-    int vrc = ShaReadBuf(strFile.c_str(), ppvBuf, pcbSize, pCallbacks, pStorage);
+    int vrc = readFileIntoBuffer(strFile.c_str(), ppvBuf, pcbSize, pCallbacks, pStorage);
     if (   RT_FAILURE(vrc)
         && vrc != VERR_FILE_NOT_FOUND)
         rc = setError(VBOX_E_FILE_ERROR,
