@@ -201,7 +201,7 @@ static const char *memp_desc[MEMP_MAX] = {
  *   extern u8_t __attribute__((section(".onchip_mem"))) memp_memory_UDP_PCB_base[];
  */
 #define LWIP_MEMPOOL(name,num,size,desc) u8_t memp_memory_ ## name ## _base \
-  [((num) * (MEMP_SIZE + MEMP_ALIGN_SIZE(size)))];   
+  [LWIP_MEM_ALIGN_BUFFER((num) * (MEMP_SIZE + MEMP_ALIGN_SIZE(size)))];   
 #include "lwip/memp_std.h"
 
 /** This array holds the base of each memory pool. */
@@ -213,7 +213,7 @@ static u8_t *const memp_bases[] = {
 #else /* MEMP_SEPARATE_POOLS */
 
 /** This is the actual memory used by the pools (all pools in one big block). */
-static u8_t memp_memory[MEM_ALIGNMENT - 1 
+static u8_t memp_memory[MEM_ALIGNMENT - 1 /* XXX: LWIP_MEM_ALIGN_BUFFER */
 #define LWIP_MEMPOOL(name,num,size,desc) + ( (num) * (MEMP_SIZE + MEMP_ALIGN_SIZE(size) ) )
 #include "lwip/memp_std.h"
 ];
@@ -334,7 +334,7 @@ memp_overflow_check_all(void)
 #endif /* !MEMP_SEPARATE_POOLS */
   for (i = 0; i < MEMP_MAX; ++i) {
 #if MEMP_SEPARATE_POOLS
-    p = (struct memp *)(memp_bases[i]);
+    p = (struct memp *)LWIP_MEM_ALIGN(memp_bases[i]);
 #endif /* MEMP_SEPARATE_POOLS */
     for (j = 0; j < memp_num[i]; ++j) {
       memp_overflow_check_element_overflow(p, i);
@@ -346,7 +346,7 @@ memp_overflow_check_all(void)
 #endif /* !MEMP_SEPARATE_POOLS */
   for (i = 0; i < MEMP_MAX; ++i) {
 #if MEMP_SEPARATE_POOLS
-    p = (struct memp *)(memp_bases[i]);
+    p = (struct memp *)LWIP_MEM_ALIGN(memp_bases[i]);
 #endif /* MEMP_SEPARATE_POOLS */
     for (j = 0; j < memp_num[i]; ++j) {
       memp_overflow_check_element_underflow(p, i);
@@ -370,7 +370,7 @@ memp_overflow_init(void)
 #endif /* !MEMP_SEPARATE_POOLS */
   for (i = 0; i < MEMP_MAX; ++i) {
 #if MEMP_SEPARATE_POOLS
-    p = (struct memp *)(memp_bases[i]);
+    p = (struct memp *)LWIP_MEM_ALIGN(memp_bases[i]);
 #endif /* MEMP_SEPARATE_POOLS */
     for (j = 0; j < memp_num[i]; ++j) {
 #if MEMP_SANITY_REGION_BEFORE_ALIGNED > 0
