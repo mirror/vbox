@@ -329,7 +329,7 @@ DECLCALLBACK(void) crFbTexRelease(CR_TEXDATA *pTex)
     CR_FBTEX *pFbTex = PCR_FBTEX_FROM_TEX(pTex);
     CRTextureObj *pTobj = pFbTex->pTobj;
 
-    CrTdBltDataCleanup(pTex);
+    CrTdBltDataCleanupNe(pTex);
 
     if (pTobj)
     {
@@ -2432,7 +2432,35 @@ public:
             return rc;
         }
 
-    	return vrdpFrame(hNewEntry);
+        const VBOXVR_SCR_COMPOSITOR_ENTRY* pReplacedEntry = CrFbEntryGetCompositorEntry(hReplacedEntry);
+        CR_TEXDATA *pReplacedTex = CrVrScrCompositorEntryTexGet(pReplacedEntry);
+        const VBOXVR_SCR_COMPOSITOR_ENTRY* pNewEntry = CrFbEntryGetCompositorEntry(hNewEntry);
+        CR_TEXDATA *pNewTex = CrVrScrCompositorEntryTexGet(pNewEntry);
+
+        rc = CrTdBltEnter(pReplacedTex);
+        if (RT_SUCCESS(rc))
+        {
+            if (pNewTex != pReplacedTex)
+            {
+                CrTdBltDataDiscard(pReplacedTex);
+                rc = CrTdBltEnter(pNewTex);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = vrdpFrame(hNewEntry);
+                    CrTdBltLeave(pNewTex);
+                }
+                else
+                    WARN(("CrTdBltEnter failed %d", rc));
+            }
+            else
+                rc = vrdpFrame(hNewEntry);
+
+            CrTdBltLeave(pReplacedTex);
+        }
+        else
+            WARN(("CrTdBltEnter failed %d", rc));
+
+    	return rc;
     }
 
     virtual int EntryTexChanged(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
@@ -2444,7 +2472,19 @@ public:
             return rc;
         }
 
-    	return vrdpFrame(hEntry);
+        const VBOXVR_SCR_COMPOSITOR_ENTRY* pEntry = CrFbEntryGetCompositorEntry(hEntry);
+        CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(pEntry);
+
+        rc = CrTdBltEnter(pTex);
+        if (RT_SUCCESS(rc))
+        {
+            rc = vrdpFrame(hEntry);
+            CrTdBltLeave(pTex);
+        }
+        else
+            WARN(("CrTdBltEnter failed %d", rc));
+
+    	return rc;
     }
 
     virtual int EntryRemoved(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
@@ -2596,6 +2636,7 @@ protected:
         const VBOXVR_SCR_COMPOSITOR_ENTRY* pEntry = CrFbEntryGetCompositorEntry(hEntry);
     	CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(pEntry);
     	const CR_BLITTER_IMG *pImg;
+        CrTdBltDataDiscard(pTex);
     	int rc = CrTdBltDataAcquire(pTex, GL_BGRA, !!(CrVrScrCompositorEntryFlagsGet(pEntry) & CRBLT_F_INVERT_SRC_YCOORDS), &pImg);
     	if (!RT_SUCCESS(rc))
     	{

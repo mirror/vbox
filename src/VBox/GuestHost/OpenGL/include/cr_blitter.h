@@ -243,7 +243,7 @@ DECLINLINE(int) CrTdBltEnter(PCR_TEXDATA pTex)
 		int rc = CrBltEnter(pTex->pBlitter);
 		if (!RT_SUCCESS(rc))
 		{
-			crWarning("CrBltEnter failed rc %d", rc);
+			WARN(("CrBltEnter failed rc %d", rc));
 			return rc;
 		}
 		pTex->Flags.BltEntered = 1;
@@ -261,7 +261,7 @@ DECLINLINE(void) CrTdBltLeave(PCR_TEXDATA pTex)
 {
 	if (!pTex->Flags.Entered)
 	{
-		crWarning("invalid Blt Leave");
+		WARN(("invalid Blt Leave"));
 		return;
 	}
 
@@ -280,13 +280,15 @@ DECLINLINE(void) CrTdBltLeave(PCR_TEXDATA pTex)
  * */
 VBOXBLITTERDECL(int) CrTdBltDataAcquire(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted, const CR_BLITTER_IMG**ppImg);
 /* release the texture data, the data remains cached in the CR_TEXDATA object until it is discarded with CrTdBltDataDiscard or CrTdBltDataCleanup */
-VBOXBLITTERDECL(void) CrTdBltDataRelease(PCR_TEXDATA pTex);
+VBOXBLITTERDECL(int) CrTdBltDataRelease(PCR_TEXDATA pTex);
 /* discard the texture data cached with previous CrTdBltDataAcquire.
  * Must be called wit data released (CrTdBltDataRelease) */
-VBOXBLITTERDECL(void) CrTdBltDataDiscard(PCR_TEXDATA pTex);
+VBOXBLITTERDECL(int) CrTdBltDataDiscard(PCR_TEXDATA pTex);
 /* does same as CrTdBltDataDiscard, and in addition cleans up.
  * this is kind of a texture destructor, which clients should call on texture object destruction, e.g. from the PFNCRTEXDATA_RELEASED callback */
-VBOXBLITTERDECL(void) CrTdBltDataCleanup(PCR_TEXDATA pTex);
+VBOXBLITTERDECL(int) CrTdBltDataCleanup(PCR_TEXDATA pTex);
+
+VBOXBLITTERDECL(int) CrTdBltDataCleanupNe(PCR_TEXDATA pTex);
 
 DECLINLINE(uint32_t) CrTdAddRef(PCR_TEXDATA pTex)
 {
@@ -301,7 +303,7 @@ DECLINLINE(uint32_t) CrTdRelease(PCR_TEXDATA pTex)
         if (pTex->pfnTextureReleased)
             pTex->pfnTextureReleased(pTex);
         else
-            CrTdBltDataCleanup(pTex);
+            CrTdBltDataCleanupNe(pTex);
 	}
 
     return cRefs;

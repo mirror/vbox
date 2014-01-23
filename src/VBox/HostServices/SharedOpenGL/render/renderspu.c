@@ -1544,12 +1544,12 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
     	if (type == GL_BYTE && count == sizeof (void*))
     		memcpy(&render_spu.blitterDispatch.MakeCurrent, values, count);
     	else
-    		crWarning("unexpected type(%#x) - count(%d) pair", type, count);
+    		WARN(("unexpected type(%#x) - count(%d) pair", type, count));
     	break;
 
     default:
 #if 0
-        crWarning("Unhandled target in renderspuChromiumParametervCR(0x%x)", (int) target);
+        WARN(("Unhandled target in renderspuChromiumParametervCR(0x%x)", (int) target));
 #endif
         break;
     }
