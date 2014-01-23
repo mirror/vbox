@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * IAppliance and IVirtualSystem COM class implementations.
  */
 
@@ -1321,7 +1320,7 @@ HRESULT VirtualSystemDescription::getDescription(std::vector<VirtualSystemDescri
         aTypes[i] = vsde.type;
         aRefs[i] = vsde.strRef;
         aOVFValues[i] = vsde.strOvf;
-        aVBoxValues[i] = vsde.strVboxCurrent;
+        aVBoxValues[i] = vsde.strVBoxCurrent;
         aExtraConfigValues[i] = vsde.strExtraConfigCurrent;
     }
     return S_OK;
@@ -1355,7 +1354,7 @@ HRESULT VirtualSystemDescription::getDescriptionByType(VirtualSystemDescriptionT
         aTypes[i] = vsde->type;
         aRefs[i] = vsde->strRef;
         aOVFValues[i] = vsde->strOvf;
-        aVBoxValues[i] = vsde->strVboxCurrent;
+        aVBoxValues[i] = vsde->strVBoxCurrent;
         aExtraConfigValues[i] = vsde->strExtraConfigCurrent;
     }
 
@@ -1388,7 +1387,7 @@ HRESULT VirtualSystemDescription::getValuesByType(VirtualSystemDescriptionType_T
         {
             case VirtualSystemDescriptionValueType_Reference: aValues[i]  = vsde->strRef; break;
             case VirtualSystemDescriptionValueType_Original: aValues[i]  = vsde->strOvf; break;
-            case VirtualSystemDescriptionValueType_Auto: aValues[i]  = vsde->strVboxCurrent; break;
+            case VirtualSystemDescriptionValueType_Auto: aValues[i]  = vsde->strVBoxCurrent; break;
             case VirtualSystemDescriptionValueType_ExtraConfig: aValues[i] = vsde->strExtraConfigCurrent; break;
         }
     }
@@ -1424,7 +1423,7 @@ HRESULT VirtualSystemDescription::setFinalValues(const std::vector<BOOL> &aEnabl
 
         if (aEnabled[i])
         {
-            vsde.strVboxCurrent = aVBoxValues[i];
+            vsde.strVBoxCurrent = aVBoxValues[i];
             vsde.strExtraConfigCurrent = aExtraConfigValues[i];
         }
         else
@@ -1460,7 +1459,7 @@ HRESULT VirtualSystemDescription::addDescription(VirtualSystemDescriptionType_T 
 void VirtualSystemDescription::i_addEntry(VirtualSystemDescriptionType_T aType,
                                           const Utf8Str &strRef,
                                           const Utf8Str &aOvfValue,
-                                          const Utf8Str &aVboxValue,
+                                          const Utf8Str &aVBoxValue,
                                           uint32_t ulSizeMB,
                                           const Utf8Str &strExtraConfig /*= ""*/)
 {
@@ -1469,9 +1468,9 @@ void VirtualSystemDescription::i_addEntry(VirtualSystemDescriptionType_T aType,
     vsde.type = aType;
     vsde.strRef = strRef;
     vsde.strOvf = aOvfValue;
-    vsde.strVboxSuggested           // remember original value
-        = vsde.strVboxCurrent       // and set current value which can be overridden by setFinalValues()
-        = aVboxValue;
+    vsde.strVBoxSuggested           // remember original value
+        = vsde.strVBoxCurrent       // and set current value which can be overridden by setFinalValues()
+        = aVBoxValue;
     vsde.strExtraConfigSuggested
         = vsde.strExtraConfigCurrent
         = strExtraConfig;
@@ -1561,7 +1560,7 @@ const VirtualSystemDescriptionEntry* VirtualSystemDescription::i_findControllerF
  * @param elmMachine <vbox:Machine> element with attributes and subelements from some
  *                  DOM tree.
  */
-void VirtualSystemDescription::i_importVboxMachineXML(const xml::ElementNode &elmMachine)
+void VirtualSystemDescription::i_importVBoxMachineXML(const xml::ElementNode &elmMachine)
 {
     settings::MachineConfigFile *pConfig = NULL;
 
@@ -1583,7 +1582,7 @@ void VirtualSystemDescription::i_importVboxMachineXML(const xml::ElementNode &el
 }
 
 /**
- * Returns the machine config created by importVboxMachineXML() or NULL if there's none.
+ * Returns the machine config created by importVBoxMachineXML() or NULL if there's none.
  * @return
  */
 const settings::MachineConfigFile* VirtualSystemDescription::i_getMachineConfig() const

@@ -1,5 +1,4 @@
 /** @file
- *
  * VirtualBox Appliance private data definitions
  */
 

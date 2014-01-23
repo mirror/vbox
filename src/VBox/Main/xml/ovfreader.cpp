@@ -226,7 +226,7 @@ void OVFReader::HandleDiskSection(const xml::ElementNode *pReferencesElem,
                 d.iPopulatedSize = -1;
 
             // optional vbox:uuid attribute (if OVF was exported by VirtualBox != 3.2)
-            pelmDisk->getAttributeValue("uuid", d.uuidVbox, "vbox");
+            pelmDisk->getAttributeValue("uuid", d.uuidVBox, "vbox");
 
             const char *pcszFileRef;
             if (pelmDisk->getAttributeValue("fileRef", pcszFileRef)) // optional
@@ -330,7 +330,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
 
     // peek under the <VirtualSystem> node whether we have a <vbox:Machine> node;
     // that case case, the caller can completely ignore the OVF but only load the VBox machine XML
-    vsys.pelmVboxMachine = pelmVirtualSystem->findChildElementNS("vbox", "Machine");
+    vsys.pelmVBoxMachine = pelmVirtualSystem->findChildElementNS("vbox", "Machine");
 
     // now look for real OVF
     const xml::AttributeNode *pIdAttr = pelmVirtualSystem->findAttribute("id");
@@ -808,7 +808,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
             const xml::ElementNode *pelmVBoxOSType;
             if ((pelmVBoxOSType = pelmThis->findChildElementNS("vbox",            // namespace
                                                                "OSType")))        // element name
-                vsys.strTypeVbox = pelmVBoxOSType->getValue();
+                vsys.strTypeVBox = pelmVBoxOSType->getValue();
         }
         else if (    (!strcmp(pcszElemName, "AnnotationSection"))
                   || (!strcmp(pcszTypeAttr, "ovf:AnnotationSection_Type"))
