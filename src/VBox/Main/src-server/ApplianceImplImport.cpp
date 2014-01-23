@@ -1077,7 +1077,7 @@ HRESULT Appliance::i_readFSOVA(TaskOVF *pTask)
                 vrc = VERR_FILE_NOT_FOUND;
                 rc = setError(VBOX_E_FILE_ERROR,
                               tr("First file in the OVA package must have the extension 'ovf'. "
-                                 "But the file '%s' has the different extension (%Rrc)"),
+                                 "But the file '%s' has a different extension (%Rrc)"),
                                  pszFilename,
                                  vrc);
                 break;
