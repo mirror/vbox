@@ -1087,20 +1087,27 @@ void Appliance::i_parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
 }
 
 /**
+ * Starts the worker thread for the task.
  *
- * @return
+ * @return COM status code.
  */
-int Appliance::TaskOVF::startThread()
+HRESULT Appliance::TaskOVF::startThread()
 {
+    /* Pick a thread name suitable for logging (<= 8 chars). */
+    const char *pszTaskNm;
+    switch (taskType)
+    {
+        case TaskOVF::Read:     pszTaskNm = "ApplRead"; break;
+        case TaskOVF::Import:   pszTaskNm = "ApplImp"; break;
+        case TaskOVF::Write:    pszTaskNm = "ApplWrit"; break;
+        default:                pszTaskNm = "ApplTask"; break;
+    }
+
     int vrc = RTThreadCreate(NULL, Appliance::i_taskThreadImportOrExport, this,
-                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                             "Appliance::Task");
-
-    if (RT_FAILURE(vrc))
-        return Appliance::i_setErrorStatic(E_FAIL,
-                                         Utf8StrFmt("Could not create OVF task thread (%Rrc)\n", vrc));
-
-    return S_OK;
+                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0, pszTaskNm);
+    if (RT_SUCCESS(vrc))
+        return S_OK;
+    return Appliance::i_setErrorStatic(E_FAIL, Utf8StrFmt("Could not create OVF task thread (%Rrc)\n", vrc));
 }
 
 /**
@@ -1121,7 +1128,7 @@ DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, 
     Appliance *pAppliance = task->pAppliance;
 
     LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", pAppliance));
+    LogFlowFunc(("Appliance %p taskType=%d\n", pAppliance, task->taskType));
 
     HRESULT taskrc = S_OK;
 

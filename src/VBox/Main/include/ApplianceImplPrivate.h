@@ -127,7 +127,7 @@ struct Appliance::TaskOVF
 
     static int updateProgress(unsigned uPercent, void *pvUser);
 
-    int startThread();
+    HRESULT startThread();
 
     Appliance *pAppliance;
     TaskType taskType;
