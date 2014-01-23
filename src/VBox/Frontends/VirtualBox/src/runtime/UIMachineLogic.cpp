@@ -86,6 +86,9 @@
 #ifdef Q_WS_MAC
 # include "DarwinKeyboard.h"
 #endif
+#ifdef Q_WS_WIN
+# include "WinKeyboard.h"
+#endif
 
 /* External includes: */
 #ifdef Q_WS_X11
@@ -515,9 +518,19 @@ void UIMachineLogic::sltKeyboardLedsChanged()
     if (!isHidLedsSyncEnabled())
         return;
 
-#ifdef Q_WS_MAC
-    LogRelFlow(("UIMachineLogic::sltKeyboardLedsChanged: Updating host LED lock states.\n"));
+#if defined(Q_WS_MAC)
     DarwinHidDevicesBroadcastLeds(m_pHostLedsState, uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
+#elif defined(Q_WS_WIN)
+    if (!winHidLedsInSync(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock()))
+    {
+        keyboardHandler()->winSkipKeyboardEvents(true);
+        WinHidDevicesBroadcastLeds(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
+        keyboardHandler()->winSkipKeyboardEvents(false);
+    }
+    else
+        LogRel2(("HID LEDs Sync: already in sync\n"));
+#else
+    LogRelFlow(("UIMachineLogic::sltKeyboardLedsChanged: Updating host LED lock states does not supported on this platform.\n"));
 #endif
 }
 
@@ -603,8 +616,8 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pDockIconPreview(0)
     , m_pDockPreviewSelectMonitorGroup(0)
     , m_DockIconPreviewMonitor(0)
-    , m_pHostLedsState(NULL)
 #endif /* Q_WS_MAC */
+    , m_pHostLedsState(NULL)
 {
 }
 
@@ -2396,12 +2409,19 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
     if (!isHidLedsSyncEnabled())
         return;
 
-#ifdef Q_WS_MAC
-    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds: keep host LED lock states and broadcast guest's ones.\n"));
+#if defined(Q_WS_MAC)
     if (m_pHostLedsState == NULL)
         m_pHostLedsState = DarwinHidDevicesKeepLedsState();
     DarwinHidDevicesBroadcastLeds(m_pHostLedsState, uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
-#endif /* Q_WS_MAC */
+#elif defined(Q_WS_WIN)
+    if (m_pHostLedsState == NULL)
+        m_pHostLedsState = WinHidDevicesKeepLedsState();
+    keyboardHandler()->winSkipKeyboardEvents(true);
+    WinHidDevicesBroadcastLeds(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
+    keyboardHandler()->winSkipKeyboardEvents(false);
+#else
+    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds: keep host LED lock states and broadcast guest's ones does not supported on this platform.\n"));
+#endif
 }
 
 void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
@@ -2416,15 +2436,19 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
         return;
 
     /* Here we have to restore host LED lock states. */
-#ifdef Q_WS_MAC
-    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds: restore host LED lock states.\n"));
-
     if (m_pHostLedsState)
     {
-        DarwinHidDevicesApplyAndReleaseLedsState(m_pHostLedsState);
+#if defined(Q_WS_MAC)
+    	DarwinHidDevicesApplyAndReleaseLedsState(m_pHostLedsState);
+#elif defined(Q_WS_WIN)
+        keyboardHandler()->winSkipKeyboardEvents(true);
+        WinHidDevicesApplyAndReleaseLedsState(m_pHostLedsState);
+        keyboardHandler()->winSkipKeyboardEvents(false);
+#else
+        LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds: restore host LED lock states does not supported on this platform.\n"));
+#endif
         m_pHostLedsState = NULL;
-    }
-#endif /* Q_WS_MAC */
+	}
 }
 
 int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,

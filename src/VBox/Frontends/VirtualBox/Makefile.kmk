@@ -730,7 +730,8 @@ endif
 VirtualBox_SOURCES.win += \
 	src/platform/win/VirtualBox.rc \
 	src/platform/win/UIDesktopServices_win.cpp \
-	src/platform/win/VBoxUtils-win.cpp
+	src/platform/win/VBoxUtils-win.cpp \
+	src/platform/win/WinKeyboard.cpp
 
 VirtualBox_DEFS.darwin += VBOX_DARWIN_USE_NATIVE_CONTROLS
 VirtualBox_SOURCES.darwin += \

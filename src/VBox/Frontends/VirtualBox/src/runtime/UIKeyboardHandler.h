@@ -83,6 +83,7 @@ public:
     /* External event-filters: */
 #if defined(Q_WS_WIN)
     bool winEventFilter(MSG *pMsg, ulong uScreenId);
+    void winSkipKeyboardEvents(bool fSkip);
 #elif defined(Q_WS_X11)
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
 #endif
@@ -182,6 +183,8 @@ protected:
     static UIKeyboardHandler *m_spKeyboardHandler;
     HHOOK m_keyboardHook;
     int m_iKeyboardHookViewIndex;
+    /* A flag that used to tell kbd event filter to ignore keyboard events */
+    bool m_fSkipKeyboardEvents;
 #elif defined(Q_WS_MAC)
     /* The current modifier key mask. Used to figure out which modifier
      * key was pressed when we get a kEventRawKeyModifiersChanged event. */
