@@ -248,15 +248,15 @@ Utf8Str GuestDirectory::guestErrorToString(int guestRc)
 }
 
 /**
- * Called by IGuestSession right before this directory gets 
- * removed from the public directory list. 
+ * Called by IGuestSession right before this directory gets
+ * removed from the public directory list.
  */
 int GuestDirectory::onRemove(void)
 {
     LogFlowThisFuncEnter();
 
     int vrc = VINF_SUCCESS;
-         
+
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }

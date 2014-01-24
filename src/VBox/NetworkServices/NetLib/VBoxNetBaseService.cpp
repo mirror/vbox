@@ -725,7 +725,7 @@ void VBoxNetBaseService::doReceiveLoop()
 int VBoxNetBaseService::startReceiveThreadAndEnterEventLoop()
 {
     AssertMsgReturn(isMainNeeded(), ("It's expected that we need Main"), VERR_INTERNAL_ERROR);
-        
+
     /* start receiving thread */
     int rc = RTThreadCreate(&m->m_hThrRecv, /* thread handle*/
                             &VBoxNetBaseService::Data::recvLoop,  /* routine */
@@ -742,7 +742,7 @@ int VBoxNetBaseService::startReceiveThreadAndEnterEventLoop()
     while(true)
     {
         m->m_EventQ->processEventQueue(0);
-            
+
         if (m->fShutdown)
             break;
 

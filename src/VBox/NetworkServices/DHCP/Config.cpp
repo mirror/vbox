@@ -1,4 +1,20 @@
 /* $Id$ */
+/** @file
+ * Configuration for DHCP.
+ */
+
+/*
+ * Copyright (C) 2013-2014 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
 
 /**
  * XXX: license.
@@ -130,7 +146,7 @@ struct ConfigurationManager::Data
     std::string          m_leaseStorageFilename;
     bool                 fFileExists;
 };
-    
+
 ConfigurationManager *ConfigurationManager::getConfigurationManager()
 {
     if (!g_ConfigurationManager)
@@ -173,7 +189,7 @@ const std::string tagXMLLeaseOptions = "Options";
 int ConfigurationManager::loadFromFile(const std::string& leaseStorageFileName)
 {
     m->m_leaseStorageFilename = leaseStorageFileName;
-    
+
     xml::XmlFileParser parser;
     xml::Document doc;
 
@@ -207,10 +223,10 @@ int ConfigurationManager::loadFromFile(const std::string& leaseStorageFileName)
     {
         if (!lease->nameEquals(tagXMLLease.c_str()))
             continue;
-        
+
         ClientData *data = new ClientData();
         Lease l(data);
-        if (l.fromXML(lease)) 
+        if (l.fromXML(lease))
         {
 
             m->m_allocations.insert(MapLease2Ip4AddressPair(l, l.getAddress()));
@@ -241,7 +257,7 @@ int ConfigurationManager::saveToFile()
     xml::ElementNode *root = doc.createRootElement(tagXMLLeases.c_str());
     if (!root)
         return VERR_INTERNAL_ERROR;
-    
+
     root->setAttribute(tagXMLLeasesAttributeVersion.c_str(), tagXMLLeasesVersion_1_0.c_str());
 
     for(MapLease2Ip4AddressConstIterator it = m->m_allocations.begin();
@@ -387,7 +403,7 @@ Lease ConfigurationManager::allocateLease4Client(const Client& client, PCRTNETBO
         const Lease l = client.lease();
         if (l != Lease::NullLease)
         {
-            /* Here we should take lease from the m_allocation which was feed with leases 
+            /* Here we should take lease from the m_allocation which was feed with leases
              *  on start
              */
             if (l.isExpired())
@@ -475,7 +491,7 @@ int ConfigurationManager::expireLease4Client(Client& client)
 {
     Lease l = client.lease();
     AssertReturn(l != Lease::NullLease, VERR_INTERNAL_ERROR);
-    
+
     if (l.isInBindingPhase())
     {
 
@@ -490,7 +506,7 @@ int ConfigurationManager::expireLease4Client(Client& client)
         l.expire();
         return VINF_SUCCESS;
     }
-    
+
     l = Lease(client); /* re-new */
     return VINF_SUCCESS;
 }
@@ -667,7 +683,7 @@ struct NetworkManager::Data
     {
         RT_ZERO(BootPReplyMsg);
         cbBooPReplyMsg = 0;
-        
+
         m_OurAddress.u = 0;
         m_OurNetmask.u = 0;
         RT_ZERO(m_OurMac);
@@ -802,7 +818,7 @@ int NetworkManager::ack(const Client& client, uint32_t u32Xid,
     RTNETADDRIPV4 address;
 
     prepareReplyPacket4Client(client, u32Xid);
-    
+
     Lease l = client.lease();
     address = l.getAddress();
     m->BootPReplyMsg.BootPHeader.bp_ciaddr =  address;
@@ -925,10 +941,10 @@ int NetworkManager::doReply(const Client& client, const std::vector<RawOption>& 
 
     Cursor.optIPv4Addr(RTNET_DHCP_OPT_SERVER_ID, m->m_OurAddress);
 
-    const Lease l = client.lease(); 
+    const Lease l = client.lease();
     const std::map<uint8_t, RawOption>& options = l.options();
 
-    for(std::vector<RawOption>::const_iterator it = extra.begin(); 
+    for(std::vector<RawOption>::const_iterator it = extra.begin();
         it != extra.end(); ++it)
     {
         if (!Cursor.begin(it->u8OptId, it->cbRawOpt))
@@ -937,7 +953,7 @@ int NetworkManager::doReply(const Client& client, const std::vector<RawOption>& 
 
     }
 
-    for(std::map<uint8_t, RawOption>::const_iterator it = options.begin(); 
+    for(std::map<uint8_t, RawOption>::const_iterator it = options.begin();
         it != options.end(); ++it)
     {
         if (!Cursor.begin(it->second.u8OptId, it->second.cbRawOpt))
@@ -952,7 +968,7 @@ int NetworkManager::doReply(const Client& client, const std::vector<RawOption>& 
      */
 #if 0
     /** @todo need to see someone set this flag to check that it's correct. */
-    if (!(pDhcpMsg->bp_flags & RTNET_DHCP_FLAGS_NO_BROADCAST))  
+    if (!(pDhcpMsg->bp_flags & RTNET_DHCP_FLAGS_NO_BROADCAST))
     {
         rc = VBoxNetUDPUnicast(m_pSession,
                                m_hIf,
@@ -969,7 +985,7 @@ int NetworkManager::doReply(const Client& client, const std::vector<RawOption>& 
 #endif
         rc = m->m_service->hlpUDPBroadcast(RTNETIPV4_PORT_BOOTPS,               /* sender */
                                            RTNETIPV4_PORT_BOOTPC,
-                                           &m->BootPReplyMsg, 
+                                           &m->BootPReplyMsg,
                                            RTNET_DHCP_NORMAL_SIZE);
 
     AssertRCReturn(rc,rc);
@@ -978,11 +994,11 @@ int NetworkManager::doReply(const Client& client, const std::vector<RawOption>& 
 }
 
 
-int NetworkManager::processParameterReqList(const Client& client, const uint8_t *pu8ReqList, 
+int NetworkManager::processParameterReqList(const Client& client, const uint8_t *pu8ReqList,
                                             int cReqList, std::vector<RawOption>& extra)
 {
     const Lease l = client.lease();
-    
+
     const NetworkConfigEntity *pNetCfg = l.getConfig();
 
     /* request parameter list */
@@ -1223,20 +1239,20 @@ bool Lease::toXML(xml::ElementNode *node) const
     valueAddition = node->setAttribute(tagXMLLeaseAttributeNetwork.c_str(), com::Utf8StrFmt("%RTnaipv4", m->m_network));
     if (!valueAddition) return false;
 
-    xml::ElementNode *address = node->createChild(tagXMLLeaseAddress.c_str()); 
+    xml::ElementNode *address = node->createChild(tagXMLLeaseAddress.c_str());
     if (!address) return false;
 
     valueAddition = address->setAttribute(tagXMLAddressAttributeValue.c_str(), com::Utf8StrFmt("%RTnaipv4", m->m_address));
     if (!valueAddition) return false;
 
-    xml::ElementNode *time = node->createChild(tagXMLLeaseTime.c_str()); 
+    xml::ElementNode *time = node->createChild(tagXMLLeaseTime.c_str());
     if (!time) return false;
 
-    valueAddition = time->setAttribute(tagXMLTimeAttributeIssued.c_str(), 
+    valueAddition = time->setAttribute(tagXMLTimeAttributeIssued.c_str(),
                                        m->u64TimestampLeasingStarted);
     if (!valueAddition) return false;
 
-    valueAddition = time->setAttribute(tagXMLTimeAttributeExpiration.c_str(), 
+    valueAddition = time->setAttribute(tagXMLTimeAttributeExpiration.c_str(),
                                        m->u32LeaseExpirationPeriod);
     if (!valueAddition) return false;
 
@@ -1265,17 +1281,17 @@ bool Lease::fromXML(const xml::ElementNode *node)
     valueExists = address->getAttributeValue(tagXMLAddressAttributeValue.c_str(), addressValue);
     if (!valueExists) return false;
     rc = RTNetStrToIPv4Addr(addressValue.c_str(), &m->m_address);
-    
+
     /* Time */
     const xml::ElementNode *time = node->findChildElement(tagXMLLeaseTime.c_str());
     if (!time) return false;
 
-    valueExists = time->getAttributeValue(tagXMLTimeAttributeIssued.c_str(), 
+    valueExists = time->getAttributeValue(tagXMLTimeAttributeIssued.c_str(),
                                           &m->u64TimestampLeasingStarted);
     if (!valueExists) return false;
     m->fBinding = false;
-    
-    valueExists = time->getAttributeValue(tagXMLTimeAttributeExpiration.c_str(), 
+
+    valueExists = time->getAttributeValue(tagXMLTimeAttributeExpiration.c_str(),
                                           &m->u32LeaseExpirationPeriod);
     if (!valueExists) return false;
 
@@ -1285,6 +1301,5 @@ bool Lease::fromXML(const xml::ElementNode *node)
 
 
 const Lease Lease::NullLease;
-
 
 const Client Client::NullClient;

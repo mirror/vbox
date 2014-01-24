@@ -2,10 +2,10 @@
 #define __SHARED_PTR_H__
 
 #ifdef __cplusplus
-template<typename T> 
+template<typename T>
 class SharedPtr
 {
-    struct imp 
+    struct imp
     {
         imp(T *pTrg = NULL, int cnt = 1): ptr(pTrg),refcnt(cnt){}
         ~imp() { if (ptr) delete ptr;}
@@ -14,13 +14,13 @@ class SharedPtr
         int refcnt;
     };
 
-    
+
     public:
     SharedPtr(T *t = NULL):p(NULL)
     {
         p = new imp(t);
     }
-    
+
     ~SharedPtr()
     {
         p->refcnt--;
@@ -39,9 +39,9 @@ class SharedPtr
     const SharedPtr& operator= (const SharedPtr& rhs)
     {
         if (p == rhs.p) return *this;
-        
+
         p->refcnt--;
-        if (p->refcnt == 0) 
+        if (p->refcnt == 0)
             delete p;
 
         p = rhs.p;
@@ -56,13 +56,13 @@ class SharedPtr
         return p->ptr;
     }
 
-    
+
     T *operator->()
     {
         return p->ptr;
     }
 
-    
+
     const T*operator->() const
     {
         return p->ptr;
@@ -78,4 +78,5 @@ class SharedPtr
     imp *p;
 };
 #endif
+
 #endif

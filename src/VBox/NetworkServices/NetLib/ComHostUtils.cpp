@@ -121,7 +121,7 @@ int localMappings(const ComNatPtr& nat, AddressToOffsetMapping& mapping)
  * @note: const dropped here, because of map<K,V>::operator[] which isn't const, map<K,V>::at() has const
  * variant but it's C++11.
  */
-int hostDnsServers(const ComHostPtr& host, const RTNETADDRIPV4& networkid, 
+int hostDnsServers(const ComHostPtr& host, const RTNETADDRIPV4& networkid,
                    /*const*/ AddressToOffsetMapping& mapping, AddressList& servers)
 {
     servers.clear();
@@ -165,7 +165,7 @@ int hostDnsSearchList(const ComHostPtr& host, std::vector<std::string>& strings)
     strings.clear();
 
     ComBstrArray strs;
-    if (SUCCEEDED(host->COMGETTER(SearchStrings)(ComSafeArrayAsOutParam(strs)))) 
+    if (SUCCEEDED(host->COMGETTER(SearchStrings)(ComSafeArrayAsOutParam(strs))))
     {
         for (unsigned int i = 0; i < strs.size(); ++i)
         {
@@ -192,7 +192,7 @@ int hostDnsDomain(const ComHostPtr& host, std::string& domainStr)
 }
 
 
-int createNatListener(ComNatListenerPtr& listener, const ComVirtualBoxPtr& vboxptr, 
+int createNatListener(ComNatListenerPtr& listener, const ComVirtualBoxPtr& vboxptr,
                       NATNetworkEventAdapter *adapter, /* const */ ComEventTypeArray& events)
 {
     ComObjPtr<NATNetworkListenerImpl> obj;

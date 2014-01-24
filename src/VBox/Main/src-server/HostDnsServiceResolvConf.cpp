@@ -119,7 +119,7 @@ HRESULT HostDnsServiceResolvConf::readResolvConf()
 
             cNameserversFound++;
         }
-        if (   !strncmp(buff, "domain", 6) 
+        if (   !strncmp(buff, "domain", 6)
             || !strncmp(buff, "search", 6))
         {
             char *tok;

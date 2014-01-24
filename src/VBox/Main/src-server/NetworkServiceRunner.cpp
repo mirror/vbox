@@ -43,7 +43,7 @@ struct NetworkServiceRunner::Data
 NetworkServiceRunner::NetworkServiceRunner(const char *aProcName)
 {
     m = new NetworkServiceRunner::Data(aProcName);
-    
+
 }
 
 
