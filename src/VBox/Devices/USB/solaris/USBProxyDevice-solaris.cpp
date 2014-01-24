@@ -97,7 +97,7 @@ typedef struct USBPROXYDEVSOL
     RTPIPE                         hPipeWakeupR;
 } USBPROXYDEVSOL, *PUSBPROXYDEVSOL;
 
-PVUSBURB usbProxySolarisUrbComplete(PUSBPROXYDEVSOL pDevSol);
+static PVUSBURB usbProxySolarisUrbComplete(PUSBPROXYDEVSOL pDevSol);
 
 
 /**
