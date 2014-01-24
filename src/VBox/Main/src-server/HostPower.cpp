@@ -188,8 +188,8 @@ void HostPowerService::notify(Reason_T aReason)
                         ++saved;
                     }
                 }
-                LogRel(("Battery Low: Saved %d VMs\n", saved));
             }
+            LogRel(("Battery Low: saved %d VMs\n", saved));
             break;
         }
 
