@@ -881,8 +881,8 @@ void UIMachineView::scrollContentsBy(int dx, int dy)
     session().GetConsole().GetDisplay().ViewportChanged(screenId(),
                             contentsX(),
                             contentsY(),
-                            contentsWidth(),
-                            contentsHeight());
+                            visibleWidth(),
+                            visibleHeight());
 }
 
 
@@ -1005,8 +1005,8 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 session().GetConsole().GetDisplay().ViewportChanged(screenId(),
                         contentsX(),
                         contentsY(),
-                        contentsWidth(),
-                        contentsHeight());
+                        visibleWidth(),
+                        visibleHeight());
                 break;
             }
             default:
