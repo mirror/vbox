@@ -37,9 +37,6 @@ class HostPowerService
   protected:
     VirtualBox *mVirtualBox;
     std::vector<ComPtr<IInternalSessionControl> > mSessionControls;
-
-  private:
-    bool fSavestateOnBatteryLow;
 };
 
 # ifdef RT_OS_WINDOWS
