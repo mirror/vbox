@@ -289,7 +289,7 @@ static inline int usbProxySolarisGetActiveConfig(PUSBPROXYDEVSOL pDevSol)
  */
 static DECLCALLBACK(int) usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
 {
-    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+    PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
 
     LogFlowFunc((USBPROXY ":usbProxySolarisOpen pProxyDev=%p pszAddress=%s pvBackend=%p\n", pProxyDev, pszAddress, pvBackend));
 
@@ -405,7 +405,7 @@ static DECLCALLBACK(void) usbProxySolarisClose(PUSBPROXYDEV pProxyDev)
 {
     LogFlow((USBPROXY ":usbProxySolarisClose: pProxyDev=%p\n", pProxyDev));
 
-    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+    PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
 
     /* Close the device (do not re-enumerate). */
     VBOXUSBREQ_CLOSE_DEVICE CloseReq;
@@ -455,7 +455,7 @@ static DECLCALLBACK(int) usbProxySolarisReset(PUSBPROXYDEV pProxyDev, bool fRoot
     LogFlowFunc((USBPROXY ":usbProxySolarisReset pProxyDev=%s fRootHubReset=%d\n", pProxyDev->pUsbIns->pszName, fRootHubReset));
 
     /** Pass all resets to the device. The Trekstor USB (1.1) stick requires this to work. */
-    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+    PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
 
     /* Soft reset the device. */
     VBOXUSBREQ_CLOSE_DEVICE CloseReq;
@@ -487,7 +487,7 @@ static DECLCALLBACK(int) usbProxySolarisSetConfig(PUSBPROXYDEV pProxyDev, int iC
 {
     LogFlowFunc((USBPROXY ":usbProxySolarisSetConfig: pProxyDev=%p iCfg=%#x\n", pProxyDev, iCfg));
 
-    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+    PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     AssertPtrReturn(pDevSol, VERR_INVALID_POINTER);
 
     VBOXUSBREQ_SET_CONFIG SetConfigReq;
@@ -540,7 +540,7 @@ static DECLCALLBACK(int) usbProxySolarisSetInterface(PUSBPROXYDEV pProxyDev, int
 {
     LogFlowFunc((USBPROXY ":usbProxySolarisSetInterface: pProxyDev=%p iIf=%d iAlt=%d\n", pProxyDev, iIf, iAlt));
 
-    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+    PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     AssertPtrReturn(pDevSol, VERR_INVALID_POINTER);
 
     VBOXUSBREQ_SET_INTERFACE SetInterfaceReq;
@@ -564,7 +564,7 @@ static DECLCALLBACK(bool) usbProxySolarisClearHaltedEp(PUSBPROXYDEV pProxyDev, u
 {
     LogFlowFunc((USBPROXY ":usbProxySolarisClearHaltedEp pProxyDev=%p EndPt=%#x\n", pProxyDev, EndPt));
 
-    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+    PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     AssertPtrReturn(pDevSol, VERR_INVALID_POINTER);
 
     VBOXUSBREQ_CLEAR_EP ClearEpReq;
@@ -586,7 +586,7 @@ static DECLCALLBACK(bool) usbProxySolarisClearHaltedEp(PUSBPROXYDEV pProxyDev, u
 static DECLCALLBACK(int) usbProxySolarisUrbQueue(PVUSBURB pUrb)
 {
     PUSBPROXYDEV    pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
-    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+    PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
 
     LogFlowFunc((USBPROXY ": usbProxySolarisUrbQueue: pProxyDev=%s pUrb=%p EndPt=%#x enmDir=%d cbData=%d pvData=%p\n",
              pProxyDev->pUsbIns->pszName, pUrb, pUrb->EndPt, pUrb->enmDir, pUrb->cbData, pUrb->abData));
@@ -654,7 +654,7 @@ static DECLCALLBACK(void) usbProxySolarisUrbCancel(PVUSBURB pUrb)
     PUSBPROXYURBSOL pUrbSol = (PUSBPROXYURBSOL)pUrb->Dev.pvPrivate;
 
     PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
-    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+    PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     AssertPtrReturnVoid(pDevSol);
 
     LogFlowFunc((USBPROXY ":usbProxySolarisUrbCancel pUrb=%p pUrbSol=%p pDevSol=%p\n", pUrb, pUrbSol, pUrbSol->pDevSol));
@@ -689,7 +689,7 @@ static DECLCALLBACK(PVUSBURB) usbProxySolarisUrbReap(PUSBPROXYDEV pProxyDev, RTM
 {
     //LogFlowFunc((USBPROXY ":usbProxySolarisUrbReap pProxyDev=%p cMillies=%u\n", pProxyDev, cMillies));
 
-    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+    PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
 
     /*
      * Don't block if nothing is in the air.
@@ -879,7 +879,7 @@ static PVUSBURB usbProxySolarisUrbComplete(PUSBPROXYDEVSOL pDevSol)
 
 static DECLCALLBACK(int) usbProxySolarisWakeup(PUSBPROXYDEV pProxyDev)
 {
-    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+    PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     size_t cbIgnored;
 
     LogFlowFunc(("pProxyDev=%p\n", pProxyDev));
