@@ -79,7 +79,7 @@ static int tcpip_tcp_timer_active;
 #if LWIP_CONNECTION_PROXY
 /** global variable that shows if proxy timer is currently scheduled or not */
 static int proxy_udp_timer_active;
-#endif /* LWIP_TCP */
+#endif /* LWIP_CONNECTION_PROXY */
 
 
 #if LWIP_TCP
