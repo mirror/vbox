@@ -1948,7 +1948,7 @@ public:
         if (!hFb)
             return false;
         const struct VBOXVR_SCR_COMPOSITOR* pCompositor = CrFbGetCompositor(hFb);
-        return CrVrScrCompositorIsEmpty(pCompositor);
+        return !CrVrScrCompositorIsEmpty(pCompositor);
     }
 
 protected:
