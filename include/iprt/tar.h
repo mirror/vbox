@@ -60,25 +60,19 @@ typedef RTTARFILE                               *PRTTARFILE;
 #define RTTAR_NAME_MAX                           99
 
 /**
- * Opens a Tar archive.
+ * Creates a Tar archive.
  *
- * Use the mask to specify the access type. In create mode the target file
- * have not to exists.
+ * Use the mask to specify the access type.
  *
  * @returns IPRT status code.
  *
  * @param   phTar          Where to store the RTTAR handle.
- * @param   pszTarname     The file name of the tar archive to open.
+ * @param   pszTarname     The file name of the tar archive to create.  Should
+ *                         not exist.
  * @param   fMode          Open flags, i.e a combination of the RTFILE_O_* defines.
  *                         The ACCESS, ACTION and DENY flags are mandatory!
- * @param   fStream        Open the file in stream mode. Within this mode no
- *                         seeking is allowed. Use this together with
- *                         RTTarFileCurrent, RTTarFileOpenCurrent,
- *                         RTTarFileSeekNextFile and the read method to
- *                         sequential read a tar file. Currently ignored with
- *                         RTFILE_O_WRITE.
  */
-RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char *pszTarname, uint32_t fMode, bool fStream);
+RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char *pszTarname, uint32_t fMode);
 
 /**
  * Close the Tar archive.
@@ -88,42 +82,6 @@ RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char *pszTarname, uint32_t fMode, bo
  * @param   hTar           Handle to the RTTAR interface.
  */
 RTR3DECL(int) RTTarClose(RTTAR hTar);
-
-/**
- * Jumps to the next file from the current RTTar position.
- *
- * @returns IPRT status code.
- *
- * @param   hTar           Handle to the RTTAR interface.
- */
-RTR3DECL(int) RTTarSeekNextFile(RTTAR hTar);
-
-/**
- * Return the filename where RTTar currently stays at.
- *
- * @returns IPRT status code.
- *
- * @param   hTar           Handle to the RTTAR interface.
- * @param   ppszFilename   On success the filename.
- */
-RTR3DECL(int) RTTarCurrentFile(RTTAR hTar, char **ppszFilename);
-
-/**
- * Opens the file where RTTar currently stays at.
- *
- * The current file can only be opened once.  The next call will open the next
- * file, implicitly calling RTTarSeekNextFile().
- *
- * @returns IPRT status code.
- *
- * @param   hTar           Handle to the RTTAR interface.
- * @param   phFile         Where to store the handle to the opened file.
- * @param   ppszFilename   On success the filename.
- * @param   fOpen          Open flags, i.e a combination of the RTFILE_O_* defines.
- *                         The ACCESS, ACTION flags are mandatory! Currently
- *                         only RTFILE_O_OPEN | RTFILE_O_READ is supported.
- */
-RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **ppszFilename, uint32_t fOpen);
 
 /**
  * Open a file in the Tar archive.

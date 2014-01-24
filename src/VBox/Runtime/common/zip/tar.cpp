@@ -109,18 +109,12 @@ typedef struct RTTARINTERNAL
     /** Whether a file within the archive is currently open for writing.
      * Only one can be open.  */
     bool                fFileOpenForWrite;
-    /** Whether operating in stream mode. */
-    bool                fStreamMode;
-    /** The tar file VFS handle. */
+    /** The tar file VFS handle (for reading). */
     RTVFSFILE           hVfsFile;
     /** The tar file system VFS handle. */
     RTVFSFSSTREAM       hVfsFss;
     /** Set if hVfsFss is at the start of the stream and doesn't need rewinding. */
     bool                fFssAtStart;
-    /** The current stream object (fStreamMode = true). */
-    RTVFSIOSTREAM       hVfsCur;
-    /** The name of the current object (fStreamMode = true). */
-    char               *pszVfsCurName;
 } RTTARINTERNAL;
 /** Pointer to a the internal data of a tar handle.  */
 typedef RTTARINTERNAL* PRTTARINTERNAL;
@@ -193,9 +187,9 @@ typedef RTTARFILEINTERNAL *PRTTARFILEINTERNAL;
     } while (0)
 
 
-RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char *pszTarname, uint32_t fMode, bool fStream)
+RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char *pszTarname, uint32_t fMode)
 {
-    AssertReturn(!fStream || !(fMode & RTFILE_O_WRITE), VERR_INVALID_PARAMETER);
+    AssertReturn(fMode & RTFILE_O_WRITE, VERR_INVALID_PARAMETER);
 
     /*
      * Create a tar instance.
@@ -204,39 +198,16 @@ RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char *pszTarname, uint32_t fMode, bo
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    pThis->u32Magic    = RTTAR_MAGIC;
-    pThis->fOpenMode   = fMode;
-    pThis->fStreamMode = fStream && (fMode & RTFILE_O_READ);
+    pThis->u32Magic         = RTTAR_MAGIC;
+    pThis->fOpenMode        = fMode;
+    pThis->hVfsFile         = NIL_RTVFSFILE;
+    pThis->hVfsFss          = NIL_RTVFSFSSTREAM;
+    pThis->fFssAtStart      = false;
 
     /*
      * Open the tar file.
      */
-    pThis->hVfsFile         = NIL_RTVFSFILE;
-    pThis->hVfsFss          = NIL_RTVFSFSSTREAM;
-    pThis->fFssAtStart      = false;
-    pThis->hVfsCur          = NIL_RTVFSIOSTREAM;
-    pThis->pszVfsCurName    = NULL;
-
-    int rc;
-    if (!(fMode & RTFILE_O_WRITE))
-    {
-        rc = RTVfsFileOpenNormal(pszTarname, fMode, &pThis->hVfsFile);
-        if (RT_SUCCESS(rc))
-        {
-            RTVFSIOSTREAM hVfsIos = RTVfsFileToIoStream(pThis->hVfsFile);
-            rc = RTZipTarFsStreamFromIoStream(hVfsIos, 0 /*fFlags*/, &pThis->hVfsFss);
-            if (RT_SUCCESS(rc))
-                pThis->fFssAtStart = true;
-            else
-            {
-                RTVfsFileRelease(pThis->hVfsFile);
-                pThis->hVfsFile = NIL_RTVFSFILE;
-            }
-            RTVfsIoStrmRelease(hVfsIos);
-        }
-    }
-    else
-        rc = RTFileOpen(&pThis->hTarFile, pszTarname, fMode);
+    int rc = RTFileOpen(&pThis->hTarFile, pszTarname, fMode);
     if (RT_SUCCESS(rc))
     {
         *phTar = pThis;
@@ -246,6 +217,7 @@ RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char *pszTarname, uint32_t fMode, bo
     RTMemFree(pThis);
     return rc;
 }
+
 
 RTR3DECL(int) RTTarClose(RTTAR hTar)
 {
@@ -280,18 +252,6 @@ RTR3DECL(int) RTTarClose(RTTAR hTar)
         pInt->hVfsFile = NIL_RTVFSFILE;
     }
 
-    if (pInt->hVfsCur != NIL_RTVFSIOSTREAM)
-    {
-        RTVfsIoStrmRelease(pInt->hVfsCur);
-        pInt->hVfsCur = NIL_RTVFSIOSTREAM;
-    }
-
-    if (pInt->pszVfsCurName)
-    {
-        RTStrFree(pInt->pszVfsCurName);
-        pInt->pszVfsCurName = NULL;
-    }
-
     if (pInt->hTarFile != NIL_RTFILE)
     {
         rc = RTFileClose(pInt->hTarFile);
@@ -303,93 +263,6 @@ RTR3DECL(int) RTTarClose(RTTAR hTar)
     RTMemFree(pInt);
 
     return rc;
-}
-
-
-RTR3DECL(int) RTTarSeekNextFile(RTTAR hTar)
-{
-    PRTTARINTERNAL pInt = hTar;
-    RTTAR_VALID_RETURN(pInt);
-
-    if (!pInt->fStreamMode)
-        return VERR_INVALID_STATE;
-
-    /*
-     * Release the current object.
-     */
-    if (pInt->hVfsCur != NIL_RTVFSIOSTREAM)
-    {
-        RTVfsIoStrmRelease(pInt->hVfsCur);
-        pInt->hVfsCur = NIL_RTVFSIOSTREAM;
-    }
-
-    if (pInt->pszVfsCurName)
-    {
-        RTStrFree(pInt->pszVfsCurName);
-        pInt->pszVfsCurName = NULL;
-    }
-
-    /*
-     * Find the next file.
-     */
-    for (;;)
-    {
-        char           *pszName;
-        RTVFSOBJTYPE    enmType;
-        RTVFSOBJ        hVfsObj;
-        int rc = RTVfsFsStrmNext(hTar->hVfsFss, &pszName, &enmType, &hVfsObj);
-        if (rc == VERR_EOF)
-            return VERR_TAR_END_OF_FILE;
-
-        if (   enmType == RTVFSOBJTYPE_FILE
-            || enmType == RTVFSOBJTYPE_IO_STREAM
-            || enmType == RTVFSOBJTYPE_DIR)
-        {
-            pInt->pszVfsCurName = pszName;
-            if (enmType == RTVFSOBJTYPE_DIR)
-                rc = VINF_TAR_DIR_PATH;
-            else
-            {
-                pInt->hVfsCur = RTVfsObjToIoStream(hVfsObj);
-                Assert(pInt->hVfsCur != NIL_RTVFSIOSTREAM);
-                rc = VINF_SUCCESS;
-            }
-            RTVfsObjRelease(hVfsObj);
-            return rc;
-        }
-        RTStrFree(pszName);
-        RTVfsObjRelease(hVfsObj);
-    }
-}
-
-
-RTR3DECL(int) RTTarCurrentFile(RTTAR hTar, char **ppszFilename)
-{
-    /* Validate input. */
-    AssertPtrNullReturn(ppszFilename, VERR_INVALID_POINTER);
-
-    PRTTARINTERNAL pInt = hTar;
-    RTTAR_VALID_RETURN(pInt);
-
-    if (!pInt->fStreamMode)
-        return VERR_INVALID_STATE;
-
-    if (!pInt->pszVfsCurName)
-    {
-        int rc = RTTarSeekNextFile(pInt);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-    Assert(pInt->pszVfsCurName);
-
-    if (ppszFilename)
-    {
-        *ppszFilename = RTStrDup(pInt->pszVfsCurName);
-        if (!*ppszFilename)
-            return VERR_NO_STR_MEMORY;
-    }
-
-    return pInt->hVfsCur != NIL_RTVFSIOSTREAM ? VINF_SUCCESS : VINF_TAR_DIR_PATH;
 }
 
 
@@ -438,69 +311,6 @@ static int rtTarFileCreateHandleForReadOnly(char *pszName, RTVFSIOSTREAM hVfsIos
 }
 
 
-
-RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **ppszFilename, uint32_t fOpen)
-{
-    /* Validate input. */
-    AssertPtrReturn(phFile, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(ppszFilename, VERR_INVALID_POINTER);
-    AssertReturn((fOpen & RTFILE_O_READ), VERR_INVALID_PARAMETER); /* Only valid in read mode. */
-
-    PRTTARINTERNAL pInt = hTar;
-    RTTAR_VALID_RETURN(pInt);
-
-    if (!pInt->fStreamMode)
-        return VERR_INVALID_STATE;
-
-    /*
-     * Make sure there is a current file (first call w/o RTTarSeekNextFile call).
-     */
-    if (pInt->hVfsCur == NIL_RTVFSIOSTREAM)
-    {
-        if (pInt->pszVfsCurName)
-            return -VINF_TAR_DIR_PATH;
-
-        int rc = RTTarSeekNextFile(pInt);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (pInt->hVfsCur == NIL_RTVFSIOSTREAM)
-            return -VINF_TAR_DIR_PATH;
-    }
-    Assert(pInt->pszVfsCurName);
-
-    /*
-     * Return a copy of the filename if requested.
-     */
-    if (ppszFilename)
-    {
-        *ppszFilename = RTStrDup(pInt->pszVfsCurName);
-        if (!*ppszFilename)
-            return VERR_NO_STR_MEMORY;
-    }
-
-    /*
-     * Create a handle for it.
-     */
-    int rc = rtTarFileCreateHandleForReadOnly(RTStrDup(pInt->pszVfsCurName), pInt->hVfsCur, RTFILE_O_READ, phFile);
-    if (RT_SUCCESS(rc))
-    {
-        /* Force a RTTarSeekNextFile call the next time around. */
-        RTVfsIoStrmRelease(pInt->hVfsCur);
-        pInt->hVfsCur = NIL_RTVFSIOSTREAM;
-        RTStrFree(pInt->pszVfsCurName);
-        pInt->pszVfsCurName = NULL;
-    }
-    else if (ppszFilename)
-    {
-        RTStrFree(*ppszFilename);
-        *ppszFilename = NULL;
-    }
-
-    return rc;
-}
-
-
 /* Only used for write handles. */
 static PRTTARFILEINTERNAL rtTarFileCreateForWrite(PRTTARINTERNAL pInt, const char *pszFilename, uint32_t fOpen)
 {
@@ -525,16 +335,14 @@ static PRTTARFILEINTERNAL rtTarFileCreateForWrite(PRTTARINTERNAL pInt, const cha
 
 RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilename, uint32_t fOpen)
 {
-    AssertReturn((fOpen & RTFILE_O_READ) || (fOpen & RTFILE_O_WRITE), VERR_INVALID_PARAMETER);
+    /* Write only interface now. */
+    AssertReturn(fOpen & RTFILE_O_WRITE, VERR_INVALID_PARAMETER);
 
     PRTTARINTERNAL pInt = hTar;
     RTTAR_VALID_RETURN(pInt);
 
     if (!pInt->hTarFile)
         return VERR_INVALID_HANDLE;
-
-    if (pInt->fStreamMode)
-        return VERR_INVALID_STATE;
 
     if (fOpen & RTFILE_O_WRITE)
     {
@@ -564,7 +372,6 @@ RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilena
                 if (RT_FAILURE(rc))
                     return rc;
             }
-            Assert(pInt->hVfsCur == NIL_RTVFSIOSTREAM && pInt->pszVfsCurName == NULL);
 
             RTVFSIOSTREAM hVfsIos = RTVfsFileToIoStream(pInt->hVfsFile);
             rc = RTZipTarFsStreamFromIoStream(hVfsIos, 0 /*fFlags*/, &pInt->hVfsFss);
@@ -909,7 +716,7 @@ RTR3DECL(int) RTTarFileWriteAt(RTTARFILE hFile, uint64_t off, const void *pvBuf,
     RTTARFILE_VALID_RETURN(pFileInt);
 
     if ((pFileInt->fOpenMode & RTFILE_O_WRITE) != RTFILE_O_WRITE)
-        return VERR_WRITE_ERROR;
+        return VERR_ACCESS_DENIED;
 
     size_t cbTmpWritten = 0;
     int rc = RTFileWriteAt(pFileInt->pTar->hTarFile, pFileInt->offStart + 512 + off, pvBuf, cbToWrite, &cbTmpWritten);
