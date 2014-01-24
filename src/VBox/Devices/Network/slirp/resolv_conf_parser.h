@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * resolv_conf_parser.h - interface to parser of resolv.conf resolver(5) 
+ * resolv_conf_parser.h - interface to parser of resolv.conf resolver(5)
  */
 
 /*
