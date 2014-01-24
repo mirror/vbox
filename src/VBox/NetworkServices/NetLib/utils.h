@@ -32,13 +32,13 @@ typedef com::SafeArray<BSTR> ComBstrArray;
 typedef std::vector<RTNETADDRIPV4> AddressList;
 typedef std::map<RTNETADDRIPV4, int> AddressToOffsetMapping;
 
-  
+
 inline bool isDhcpRequired(const ComNatPtr& nat)
 {
     BOOL fNeedDhcpServer = false;
     if (FAILED(nat->COMGETTER(NeedDhcpServer)(&fNeedDhcpServer)))
         return false;
-    
+
     return fNeedDhcpServer;
 }
 
@@ -48,7 +48,7 @@ inline int findDhcpServer(const ComVirtualBoxPtr& vbox, const std::string& name,
     HRESULT hrc = vbox->FindDHCPServerByNetworkName(com::Bstr(name.c_str()).raw(),
                                                           dhcp.asOutParam());
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
-    
+
     return VINF_SUCCESS;
 }
 
@@ -59,7 +59,7 @@ inline int findNatNetwork(const ComVirtualBoxPtr& vbox, const std::string& name,
                                                    nat.asOutParam());
 
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
-    
+
     return VINF_SUCCESS;
 }
 
@@ -119,15 +119,15 @@ class NATNetworkListener
 };
 typedef ListenerImpl<NATNetworkListener, NATNetworkEventAdapter*> NATNetworkListenerImpl;
 
-# if VBOX_WITH_XPCOM 
+# if VBOX_WITH_XPCOM
 class NS_CLASSINFO_NAME(NATNetworkListenerImpl);
 # endif
 
 typedef ComPtr<NATNetworkListenerImpl> ComNatListenerPtr;
 typedef com::SafeArray<VBoxEventType_T> ComEventTypeArray;
 
-/* XXX: const is commented out because of compilation erro on Windows host, but it's intended that this function 
+/* XXX: const is commented out because of compilation erro on Windows host, but it's intended that this function
  isn't modify event type array */
-int createNatListener(ComNatListenerPtr& listener, const ComVirtualBoxPtr& vboxptr, 
+int createNatListener(ComNatListenerPtr& listener, const ComVirtualBoxPtr& vboxptr,
                       NATNetworkEventAdapter *adapter, /* const */ ComEventTypeArray& events);
 #endif

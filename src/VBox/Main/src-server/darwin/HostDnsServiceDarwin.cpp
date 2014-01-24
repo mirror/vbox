@@ -183,7 +183,7 @@ HRESULT HostDnsServiceDarwin::updateInfo()
                                                            CFStringGetSystemEncoding());
             if (!pszServerAddress)
                 continue;
-            
+
             info.servers.push_back(std::string(pszServerAddress));
         }
     }

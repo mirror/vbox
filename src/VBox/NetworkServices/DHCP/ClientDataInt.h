@@ -36,16 +36,16 @@ public:
 
     }
     ~ClientData(){}
-    
+
     /* client information */
     RTNETADDRIPV4 m_address;
     RTNETADDRIPV4 m_network;
     RTMAC m_mac;
-    
+
     bool fHasClient;
 
     /* Lease part */
-    bool fHasLease; 
+    bool fHasLease;
     /** lease isn't commited */
     bool fBinding;
 
@@ -63,4 +63,5 @@ public:
 
     NetworkConfigEntity *pCfg;
 };
+
 #endif

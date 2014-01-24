@@ -223,7 +223,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
 
             break;
         }
-        
+
         case VBoxEventType_OnNATNetworkPortForward:
         {
             com::Bstr name, strHostAddr, strGuestAddr;
@@ -539,7 +539,7 @@ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
     RT_ZERO(VBoxNetLwipNAT::aXmitSeg);
 
     size_t idx = 0;
-    for (struct pbuf *q = pPBuf; q != NULL; q = q->next, ++idx) 
+    for (struct pbuf *q = pPBuf; q != NULL; q = q->next, ++idx)
     {
         AssertReturn(idx < RT_ELEMENTS(VBoxNetLwipNAT::aXmitSeg), ERR_MEM);
 
@@ -604,7 +604,7 @@ VBoxNetLwipNAT::VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6) : VBoxNetBase
     RTNETADDRIPV4 address;
     address.u     = RT_MAKE_U32_FROM_U8( 10,  0,  2,  2); // NB: big-endian
     setIpv4Address(address);
-    
+
     address.u     = RT_H2N_U32_C(0xffffff00);
     setIpv4Netmask(address);
 
@@ -700,7 +700,7 @@ int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules){
 
 
 /** This method executed on main thread, only at the end threr're one threads started explcitly (LWIP and later in ::run()
- * RECV) 
+ * RECV)
  */
 int VBoxNetLwipNAT::init()
 {
@@ -776,7 +776,7 @@ int VBoxNetLwipNAT::init()
     {
         unsigned long i = 0;
         for (AddressToOffsetMapping::iterator it = tmp.begin();
-             it != tmp.end() && i < RT_ELEMENTS(m_lo2off); 
+             it != tmp.end() && i < RT_ELEMENTS(m_lo2off);
              ++it, ++i)
         {
             ip4_addr_set_u32(&m_lo2off[i].loaddr, it->first.u);
@@ -941,7 +941,7 @@ int VBoxNetLwipNAT::processGSO(PCPDMNETWORKGSO pGso, size_t cbFrame)
     if (!PDMNetGsoIsValid(pGso, cbFrame,
                           cbFrame - sizeof(PDMNETWORKGSO)))
         return VERR_INVALID_PARAMETER;
-    
+
     cbFrame -= sizeof(PDMNETWORKGSO);
     uint8_t         abHdrScratch[256];
     uint32_t const  cSegs = PDMNetGsoCalcSegmentCount(pGso,
@@ -1126,11 +1126,11 @@ static int fetchNatPortForwardRules(const ComNatPtr& nat, bool fIsIPv6, VECNATSE
     {
         Log(("%d-%s rule: %ls\n", idxRules, (fIsIPv6 ? "IPv6" : "IPv4"), rules[idxRules]));
         RT_ZERO(Rule);
-        
+
         int rc = netPfStrToPf(com::Utf8Str(rules[idxRules]).c_str(), 0, &Rule.Pfr);
         if (RT_FAILURE(rc))
             continue;
-        
+
         vec.push_back(Rule);
     }
 

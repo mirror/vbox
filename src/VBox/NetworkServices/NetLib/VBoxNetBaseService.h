@@ -56,7 +56,7 @@ private:
     VBoxNetLockee *m_lck;
 };
 
-# ifndef BASE_SERVICES_ONLY 
+# ifndef BASE_SERVICES_ONLY
 class VBoxNetBaseService: public VBoxNetHlpUDPService, public VBoxNetLockee
 {
 public:

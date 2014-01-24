@@ -253,7 +253,7 @@ int VBoxNetDhcp::parseOpt(int rc, const RTGETOPTUNION& Val)
     {
         case 'l':
         case 'u':
-        case 'g': 
+        case 'g':
         {
             char buf[17];
             RTStrPrintf(buf, 17, "%RTnaipv4", Val.IPv4Addr.u);
@@ -286,7 +286,7 @@ int VBoxNetDhcp::init()
     netManager->setOurNetmask(getIpv4Netmask());
     netManager->setOurMac(getMacAddress());
     netManager->setService(this);
-    
+
     if (isMainNeeded())
         rc = initWithMain();
     else
@@ -464,10 +464,10 @@ int VBoxNetDhcp::initNoMain()
                 break;
             case 'b':
                 break;
-                    
+
         }
     }
-        
+
     ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
     AssertPtrReturn(confManager, VERR_INTERNAL_ERROR);
     confManager->addNetwork(unconst(g_RootConfig),
@@ -568,17 +568,17 @@ int VBoxNetDhcp::fetchAndUpdateDnsInfo()
         AssertMsgRCReturn(rc, ("Debug me!!"), rc);
 
         {
-            VBoxNetALock(this);   
+            VBoxNetALock(this);
             ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
             confManager->flushAddressList(RTNET_DHCP_OPT_DNS);
 
             for (AddressList::iterator it = nameservers.begin(); it != nameservers.end(); ++it)
                 confManager->addToAddressList(RTNET_DHCP_OPT_DNS, *it);
-            
+
             confManager->setString(RTNET_DHCP_OPT_DOMAIN_NAME, domain);
         }
     }
-    
+
     return VINF_SUCCESS;
 }
 

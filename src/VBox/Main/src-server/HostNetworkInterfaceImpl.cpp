@@ -107,7 +107,7 @@ void HostNetworkInterface::i_registerMetrics(PerformanceCollector *aCollector, C
         "Physical link speed.");
 
     /* Create and register base metrics */
-    pm::BaseMetric *networkSpeed = new pm::HostNetworkSpeed(hal, objptr, strName + "/LinkSpeed", 
+    pm::BaseMetric *networkSpeed = new pm::HostNetworkSpeed(hal, objptr, strName + "/LinkSpeed",
                                                             Utf8Str(mShortName), Utf8Str(mInterfaceName),
                                                             m.speedMbits, networkLinkSpeed);
     aCollector->registerBaseMetric(networkSpeed);
