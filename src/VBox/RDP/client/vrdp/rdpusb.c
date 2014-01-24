@@ -132,9 +132,9 @@ static inline int op_usbproxy_back_interface_setting(PUSBPROXYDEV pDev, int ifnu
     return g_USBProxyDeviceHost.pfnSetInterface (pDev, ifnum, setting);
 }
 
-static inline int op_usbproxy_back_queue_urb(PVUSBURB pUrb)
+static inline int op_usbproxy_back_queue_urb(PUSBPROXYDEV pDev, PVUSBURB pUrb)
 {
-    return g_USBProxyDeviceHost.pfnUrbQueue(pUrb);
+    return g_USBProxyDeviceHost.pfnUrbQueue(pDev, pUrb);
 }
 
 static inline PVUSBURB op_usbproxy_back_reap_urb(PUSBPROXYDEV pDev, unsigned cMillies)
@@ -147,9 +147,9 @@ static inline bool op_usbproxy_back_clear_halted_ep(PUSBPROXYDEV pDev, unsigned 
     return g_USBProxyDeviceHost.pfnClearHaltedEndpoint (pDev, EndPoint);
 }
 
-static inline void op_usbproxy_back_cancel_urb(PVUSBURB pUrb)
+static inline int op_usbproxy_back_cancel_urb(PUSBPROXYDEV pDev, PVUSBURB pUrb)
 {
-    return g_USBProxyDeviceHost.pfnUrbCancel (pUrb);
+    return g_USBProxyDeviceHost.pfnUrbCancel (pDev, pUrb);
 }
 
 
@@ -698,7 +698,7 @@ rdpusb_process(STREAM s)
 				in_uint8a (s, pUrb->abData, datalen);
 			}
 
-			rc = op_usbproxy_back_queue_urb(pUrb);
+			rc = op_usbproxy_back_queue_urb(proxy, pUrb);
 
 			/* No reply required. */
 
@@ -771,7 +771,7 @@ rdpusb_process(STREAM s)
 
 			if (pUrb)
 			{
-				op_usbproxy_back_cancel_urb(pUrb);
+				op_usbproxy_back_cancel_urb(proxy, pUrb);
 
 				/* No reply required. */
 

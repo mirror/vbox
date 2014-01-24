@@ -1481,12 +1481,12 @@ static DECLCALLBACK(int) usbProxyDarwinSetConfig(PUSBPROXYDEV pProxyDev, int iCf
     if (irc != kIOReturnSuccess)
     {
         Log(("usbProxyDarwinSetConfig: Set configuration -> %#x\n", irc));
-        return false;
+        return RTErrConvertFromDarwin(irc);
     }
 
     usbProxyDarwinReleaseAllInterfaces(pDevOsX);
     usbProxyDarwinSeizeAllInterfaces(pDevOsX, true /* make the best out of it */);
-    return true;
+    return VINF_SUCCESS;
 }
 
 
@@ -1496,11 +1496,11 @@ static DECLCALLBACK(int) usbProxyDarwinSetConfig(PUSBPROXYDEV pProxyDev, int iCf
  * This is a stub on Darwin since we release/claim all interfaces at
  * open/reset/setconfig time.
  *
- * @returns success indicator (always true).
+ * @returns success indicator (always VINF_SUCCESS).
  */
 static DECLCALLBACK(int) usbProxyDarwinClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
-    return true;
+    return VINF_SUCCESS;
 }
 
 
@@ -1514,7 +1514,7 @@ static DECLCALLBACK(int) usbProxyDarwinClaimInterface(PUSBPROXYDEV pProxyDev, in
  */
 static DECLCALLBACK(int) usbProxyDarwinReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
-    return true;
+    return VINF_SUCCESS;
 }
 
 
@@ -1539,7 +1539,7 @@ static DECLCALLBACK(int) usbProxyDarwinSetInterface(PUSBPROXYDEV pProxyDev, int 
             if (irc == kIOReturnSuccess)
             {
                 usbProxyDarwinGetPipeProperties(pDevOsX, pIf);
-                return true;
+                return VINF_SUCCESS;
             }
         }
         else
@@ -1557,20 +1557,20 @@ static DECLCALLBACK(int) usbProxyDarwinSetInterface(PUSBPROXYDEV pProxyDev, int 
             Req.pData = NULL;
             irc = (*pDevOsX->ppDevI)->DeviceRequest(pDevOsX->ppDevI, &Req);
             Log(("usbProxyDarwinSetInterface: SET_INTERFACE(%d,%d) -> irc=%#x\n", iIf, iAlt, irc));
-            return true;
+            return VINF_SUCCESS;
         }
     }
 
     LogFlow(("usbProxyDarwinSetInterface: pProxyDev=%s eiIf=%#x iAlt=%#x - failure - pIf=%p irc=%#x\n",
              pProxyDev->pUsbIns->pszName, iIf, iAlt, pIf, irc));
-    return false;
+    return RTErrConvertFromDarwin(irc);
 }
 
 
 /**
  * Clears the halted endpoint 'EndPt'.
  */
-static DECLCALLBACK(bool) usbProxyDarwinClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
+static DECLCALLBACK(int) usbProxyDarwinClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
 {
     PUSBPROXYDEVOSX pDevOsX = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVOSX);
     LogFlow(("usbProxyDarwinClearHaltedEp: pProxyDev=%s EndPt=%#x\n", pProxyDev->pUsbIns->pszName, EndPt));
@@ -1580,7 +1580,7 @@ static DECLCALLBACK(bool) usbProxyDarwinClearHaltedEp(PUSBPROXYDEV pProxyDev, un
      * supported by the API. Just ignore it.
      */
     if (EndPt == 0)
-        return true;
+        return VINF_SUCCESS;
 
     /*
      * Find the interface/pipe combination and invoke the ClearPipeStallBothEnds
@@ -1594,22 +1594,21 @@ static DECLCALLBACK(bool) usbProxyDarwinClearHaltedEp(PUSBPROXYDEV pProxyDev, un
     {
         irc = (*pIf->ppIfI)->ClearPipeStallBothEnds(pIf->ppIfI, u8PipeRef);
         if (irc == kIOReturnSuccess)
-            return true;
+            return VINF_SUCCESS;
         AssertMsg(irc == kIOReturnNoDevice || irc == kIOReturnNotResponding, ("irc=#x (control pipe?)\n", irc));
     }
 
     LogFlow(("usbProxyDarwinClearHaltedEp: pProxyDev=%s EndPt=%#x - failure - pIf=%p irc=%#x\n",
              pProxyDev->pUsbIns->pszName, EndPt, pIf, irc));
-    return false;
+    return RTErrConvertFromDarwin(irc);
 }
 
 
 /**
  * @copydoc USBPROXYBACK::pfnUrbQueue
  */
-static DECLCALLBACK(int) usbProxyDarwinUrbQueue(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyDarwinUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
-    PUSBPROXYDEV    pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
     PUSBPROXYDEVOSX pDevOsX = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVOSX);
     LogFlow(("%s: usbProxyDarwinUrbQueue: pProxyDev=%s pUrb=%p EndPt=%d cbData=%d\n",
              pUrb->pszDesc, pProxyDev->pUsbIns->pszName, pUrb, pUrb->EndPt, pUrb->cbData));
@@ -1628,7 +1627,7 @@ static DECLCALLBACK(int) usbProxyDarwinUrbQueue(PVUSBURB pUrb)
         {
             LogFlow(("%s: usbProxyDarwinUrbQueue: pProxyDev=%s EndPt=%d cbData=%d - can't find interface / pipe!!!\n",
                      pUrb->pszDesc, pProxyDev->pUsbIns->pszName, pUrb->EndPt, pUrb->cbData));
-            return false;
+            return VERR_NOT_FOUND;
         }
 
         if (!CFRunLoopContainsSource(CFRunLoopGetCurrent(), pIf->RunLoopSrcRef, g_pRunLoopMode))
@@ -1645,7 +1644,7 @@ static DECLCALLBACK(int) usbProxyDarwinUrbQueue(PVUSBURB pUrb)
      */
     PUSBPROXYURBOSX pUrbOsX = usbProxyDarwinUrbAlloc(pDevOsX);
     if (!pUrbOsX)
-        return false;
+        return VERR_NO_MEMORY;
 
     pUrbOsX->u64SubmitTS = RTTimeMilliTS();
     pUrbOsX->pVUsbUrb = pUrb;
@@ -1794,7 +1793,7 @@ static DECLCALLBACK(int) usbProxyDarwinUrbQueue(PVUSBURB pUrb)
     if (RT_LIKELY(irc == kIOReturnSuccess))
     {
         Log(("%s: usbProxyDarwinUrbQueue: success\n", pUrb->pszDesc));
-        return true;
+        return VINF_SUCCESS;
     }
     switch (irc)
     {
@@ -1803,13 +1802,13 @@ static DECLCALLBACK(int) usbProxyDarwinUrbQueue(PVUSBURB pUrb)
             usbProxyDarwinUrbAsyncComplete(pUrbOsX, kIOUSBPipeStalled, 0);
             Log(("%s: usbProxyDarwinUrbQueue: pProxyDev=%s EndPt=%d cbData=%d - failed irc=%#x! (stall)\n",
                  pUrb->pszDesc, pProxyDev->pUsbIns->pszName, pUrb->EndPt, pUrb->cbData, irc));
-            return true;
+            return VINF_SUCCESS;
         }
     }
 
     Log(("%s: usbProxyDarwinUrbQueue: pProxyDev=%s EndPt=%d cbData=%d - failed irc=%#x!\n",
          pUrb->pszDesc, pProxyDev->pUsbIns->pszName, pUrb->EndPt, pUrb->cbData, irc));
-    return false;
+    return RTErrConvertFromDarwin(irc);
 }
 
 
@@ -1895,11 +1894,9 @@ static DECLCALLBACK(PVUSBURB) usbProxyDarwinUrbReap(PUSBPROXYDEV pProxyDev, RTMS
  *          the card does the URB cancelling before submitting new
  *          requests, we should probably be fine...
  */
-static DECLCALLBACK(void) usbProxyDarwinUrbCancel(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyDarwinUrbCancel(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
-    PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
     PUSBPROXYDEVOSX pDevOsX = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVOSX);
-    //PUSBPROXYURBOSX pUrbOsX = (PUSBPROXYURBOSX)pUrb->Dev.pvProxyUrb;
     LogFlow(("%s: usbProxyDarwinUrbCancel: pProxyDev=%s EndPt=%d\n",
              pUrb->pszDesc, pProxyDev->pUsbIns->pszName, pUrb->EndPt));
 
@@ -1920,9 +1917,16 @@ static DECLCALLBACK(void) usbProxyDarwinUrbCancel(PVUSBURB pUrb)
             Log(("usbProxyDarwinUrbCancel: pProxyDev=%s pUrb=%p EndPt=%d - cannot find the interface / pipe!\n",
                  pProxyDev->pUsbIns->pszName, pUrb, pUrb->EndPt));
     }
+
+    int rc = VINF_SUCCESS;
     if (irc != kIOReturnSuccess)
+    {
         Log(("usbProxyDarwinUrbCancel: pProxyDev=%s pUrb=%p EndPt=%d -> %#x!\n",
              pProxyDev->pUsbIns->pszName, pUrb, pUrb->EndPt, irc));
+        rc = RTErrConvertFromDarwin(irc);
+    }
+
+    return rc;
 }
 
 

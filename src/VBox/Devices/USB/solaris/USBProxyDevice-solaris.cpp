@@ -493,13 +493,11 @@ static DECLCALLBACK(int) usbProxySolarisSetConfig(PUSBPROXYDEV pProxyDev, int iC
     VBOXUSBREQ_SET_CONFIG SetConfigReq;
     SetConfigReq.bConfigValue = iCfg;
     int rc = usbProxySolarisIOCtl(pDevSol, VBOXUSB_IOCTL_SET_CONFIG, &SetConfigReq, sizeof(SetConfigReq));
-    if (RT_SUCCESS(rc))
-        return true;
-
-    if (rc != VERR_VUSB_DEVICE_NOT_ATTACHED)
+    if (   RT_FAILURE(rc)
+        && rc != VERR_VUSB_DEVICE_NOT_ATTACHED)
         LogRel((USBPROXY ":usbProxySolarisSetConfig failed to switch configuration. rc=%Rrc\n", rc));
 
-    return false;
+    return rc;
 }
 
 
@@ -513,7 +511,7 @@ static DECLCALLBACK(int) usbProxySolarisSetConfig(PUSBPROXYDEV pProxyDev, int iC
  */
 static DECLCALLBACK(int) usbProxySolarisClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
-    return true;
+    return VINF_SUCCESS;
 }
 
 
@@ -527,7 +525,7 @@ static DECLCALLBACK(int) usbProxySolarisClaimInterface(PUSBPROXYDEV pProxyDev, i
  */
 static DECLCALLBACK(int) usbProxySolarisReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
-    return true;
+    return VINF_SUCCESS;
 }
 
 
@@ -547,20 +545,18 @@ static DECLCALLBACK(int) usbProxySolarisSetInterface(PUSBPROXYDEV pProxyDev, int
     SetInterfaceReq.bInterface = iIf;
     SetInterfaceReq.bAlternate = iAlt;
     int rc = usbProxySolarisIOCtl(pDevSol, VBOXUSB_IOCTL_SET_INTERFACE, &SetInterfaceReq, sizeof(SetInterfaceReq));
-    if (RT_SUCCESS(rc))
-        return true;
-
-    if (rc != VERR_VUSB_DEVICE_NOT_ATTACHED)
+    if (   RT_FAILURE(rc)
+        && rc != VERR_VUSB_DEVICE_NOT_ATTACHED)
         LogRel((USBPROXY ":usbProxySolarisSetInterface failed to set interface. rc=%Rrc\n", rc));
 
-    return false;
+    return rc;
 }
 
 
 /**
  * Clears the halted endpoint 'EndPt'.
  */
-static DECLCALLBACK(bool) usbProxySolarisClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
+static DECLCALLBACK(int) usbProxySolarisClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
 {
     LogFlowFunc((USBPROXY ":usbProxySolarisClearHaltedEp pProxyDev=%p EndPt=%#x\n", pProxyDev, EndPt));
 
@@ -570,13 +566,11 @@ static DECLCALLBACK(bool) usbProxySolarisClearHaltedEp(PUSBPROXYDEV pProxyDev, u
     VBOXUSBREQ_CLEAR_EP ClearEpReq;
     ClearEpReq.bEndpoint = EndPt;
     int rc = usbProxySolarisIOCtl(pDevSol, VBOXUSB_IOCTL_CLEAR_EP, &ClearEpReq, sizeof(ClearEpReq));
-    if (RT_SUCCESS(rc))
-        return true;
-
-    if (rc != VERR_VUSB_DEVICE_NOT_ATTACHED)
+    if (   RT_FAILURE(rc)
+        && rc != VERR_VUSB_DEVICE_NOT_ATTACHED)
         LogRel((USBPROXY ":usbProxySolarisClearHaltedEp failed! rc=%Rrc\n", rc));
 
-    return false;
+    return rc;
 }
 
 
@@ -595,7 +589,7 @@ static DECLCALLBACK(int) usbProxySolarisUrbQueue(PVUSBURB pUrb)
     if (RT_UNLIKELY(!pUrbSol))
     {
         LogRel((USBPROXY ":usbProxySolarisUrbQueue: Failed to allocate URB.\n"));
-        return false;
+        return VERR_NO_MEMORY;
     }
 
     pUrbSol->pVUsbUrb = pUrb;
@@ -631,14 +625,14 @@ static DECLCALLBACK(int) usbProxySolarisUrbQueue(PVUSBURB pUrb)
         if (pUrb->enmType == VUSBXFERTYPE_ISOC)
             LogFlow((USBPROXY ":usbProxySolarisUrbQueue success cbData=%d.\n", pUrb->cbData));
         pUrb->Dev.pvPrivate = pUrbSol;
-        return true;
+        return VINF_SUCCESS;
     }
 
     if (rc != VERR_VUSB_DEVICE_NOT_ATTACHED)
         LogRel((USBPROXY ":usbProxySolarisUrbQueue Failed!! pProxyDev=%s pUrb=%p EndPt=%#x bEndpoint=%#x enmType=%d enmDir=%d cbData=%u rc=%Rrc\n",
              pProxyDev->pUsbIns->pszName, pUrb, pUrb->EndPt, UrbReq.bEndpoint, pUrb->enmType, pUrb->enmDir, pUrb->cbData, rc));
 
-    return false;
+    return rc;
 }
 
 
@@ -649,11 +643,9 @@ static DECLCALLBACK(int) usbProxySolarisUrbQueue(PVUSBURB pUrb)
  * @remark  There isn't any way to cancel a specific asynchronous request
  *          on Solaris. So we just abort pending URBs on the pipe.
  */
-static DECLCALLBACK(void) usbProxySolarisUrbCancel(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxySolarisUrbCancel(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
     PUSBPROXYURBSOL pUrbSol = (PUSBPROXYURBSOL)pUrb->Dev.pvPrivate;
-
-    PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
     PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     AssertPtrReturnVoid(pDevSol);
 
@@ -661,19 +653,17 @@ static DECLCALLBACK(void) usbProxySolarisUrbCancel(PVUSBURB pUrb)
 
     /* Aborting the control pipe isn't supported, pretend success. */
     if (!pUrb->EndPt)
-        return;
+        return VINF_SUCCESS;
 
     VBOXUSBREQ_ABORT_PIPE AbortPipeReq;
     AbortPipeReq.bEndpoint = pUrb->EndPt | (pUrb->enmDir == VUSBDIRECTION_IN ? VUSB_DIR_TO_HOST : VUSB_DIR_TO_DEVICE);
     int rc = usbProxySolarisIOCtl(pDevSol, VBOXUSB_IOCTL_ABORT_PIPE, &AbortPipeReq, sizeof(AbortPipeReq));
-    if (RT_FAILURE(rc))
-    {
-        if (rc != VERR_VUSB_DEVICE_NOT_ATTACHED)
-            LogRel((USBPROXY ":usbProxySolarisUrbCancel failed to abort pipe. rc=%Rrc\n", rc));
-        return;
-    }
+    if (   RT_FAILURE(rc)
+        && rc != VERR_VUSB_DEVICE_NOT_ATTACHED)
+        LogRel((USBPROXY ":usbProxySolarisUrbCancel failed to abort pipe. rc=%Rrc\n", rc));
 
-    LogFlow((USBPROXY ":usbProxySolarisUrbCancel success.\n", rc));
+    LogFlow((USBPROXY ":usbProxySolarisUrbCancel: rc=%Rrc.\n", rc));
+    return rc;
 }
 
 
