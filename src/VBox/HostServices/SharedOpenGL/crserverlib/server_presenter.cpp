@@ -1876,7 +1876,7 @@ public:
         if (pViewportRect->xLeft != mViewportRect.xLeft || pViewportRect->yTop != mViewportRect.yTop)
         {
             const RTRECT* pRect = getRect();
-            int rc = mpWindow->SetPosition(pRect->xLeft - mViewportRect.xLeft, pRect->yTop - mViewportRect.yTop);
+            int rc = mpWindow->SetPosition(pRect->xLeft - pViewportRect->xLeft, pRect->yTop - pViewportRect->yTop);
             if (!RT_SUCCESS(rc))
             {
                 WARN(("SetPosition failed"));
