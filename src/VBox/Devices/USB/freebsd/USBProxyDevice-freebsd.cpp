@@ -800,12 +800,12 @@ retry:
             index++;
             goto retry;
         }
-        return false;
+        return rc;
     }
     pUrb->Dev.pvPrivate = (void *)(long)(index + 1);
     pEndpointFBSD->pUrb = pUrb;
 
-    return true;
+    return rc;
 }
 
 /**
