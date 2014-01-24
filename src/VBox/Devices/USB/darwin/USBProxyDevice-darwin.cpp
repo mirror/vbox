@@ -1286,7 +1286,6 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
                                     pProxyDev->iActiveCfg = -1;
                                     pProxyDev->cIgnoreSetConfigs = 1;
 
-                                    pProxyDev->Backend.pv = pDevOsX;
                                     usbProxyDarwinAddRunLoopRef(&pDevOsX->HeadOfRunLoopLst, pDevOsX->RunLoopSrcRef);
                                     return VINF_SUCCESS;        /* return */
                                 }
