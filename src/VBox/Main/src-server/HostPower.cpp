@@ -35,25 +35,6 @@ HostPowerService::HostPowerService(VirtualBox *aVirtualBox)
 {
     AssertPtr(aVirtualBox);
     mVirtualBox = aVirtualBox;
-
-    // keep this in sync with the host-specific implementations
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
-    Bstr bstrValue;
-    HRESULT hrc = mVirtualBox->GetExtraData(Bstr("HostPower/SavestateOnBatteryLow").raw(),
-                                            bstrValue.asOutParam());
-    if (   SUCCEEDED(hrc)
-        && (   bstrValue.isEmpty()
-            || bstrValue != "0"))
-    {
-        fSavestateOnBatteryLow = true;
-        LogRel(("Power: BatteryLow event will trigger VM savestate\n"));
-    }
-    else
-#endif
-    {
-        fSavestateOnBatteryLow = false;
-        LogRel(("Power: BatteryLow will be ignored\n"));
-    }
 }
 
 HostPowerService::~HostPowerService()
@@ -141,7 +122,11 @@ void HostPowerService::notify(Reason_T aReason)
 
         case Reason_HostBatteryLow:
         {
-            if (fSavestateOnBatteryLow)
+            Bstr value;
+            HRESULT hrc = mVirtualBox->GetExtraData(Bstr("VBoxInternal2/SavestateOnBatteryLow").raw(),
+                                                         value.asOutParam());
+            if (   SUCCEEDED(hrc)
+                && value != "0")
             {
                 LogFunc(("BATTERY LOW -- savestate running VMs\n"));
 
