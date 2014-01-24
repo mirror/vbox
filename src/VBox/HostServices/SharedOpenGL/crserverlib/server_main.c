@@ -2633,34 +2633,6 @@ void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void*pvData)
     cr_server.pfnNotifyEventCB(idScreen, uEvent, pvData);
 }
 
-void crVBoxServerCheckVisibilityEvent(int32_t idScreen)
-{
-    if (cr_server.cDisableEvents)
-        return;
-
-    if (idScreen < 0)
-    {
-        int32_t i = 0;
-        for (; i < cr_server.screenCount; ++i)
-        {
-            crVBoxServerCheckVisibilityEvent(i);
-        }
-        return;
-    }
-
-    CRASSERT(idScreen < cr_server.screenCount);
-
-    if (!cr_server.aWinVisibilityInfos[idScreen].fVisibleChanged
-            && !cr_server.aWinVisibilityInfos[idScreen].cVisibleWindows == !cr_server.aWinVisibilityInfos[idScreen].fLastReportedVisible)
-        return;
-
-    crVBoxServerNotifyEvent(idScreen, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA,
-            cr_server.aWinVisibilityInfos[idScreen].cVisibleWindows ? (void*)1 : NULL);
-
-    cr_server.aWinVisibilityInfos[idScreen].fLastReportedVisible = cr_server.aWinVisibilityInfos[idScreen].cVisibleWindows ? 1 : 0;
-    cr_server.aWinVisibilityInfos[idScreen].fVisibleChanged = 0;
-}
-
 void crServerWindowReparent(CRMuralInfo *pMural)
 {
     pMural->fHasParentWindow = !!cr_server.screen[pMural->screenId].winID;
@@ -2725,8 +2697,6 @@ DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex)
 
     renderspuSetWindowId(SCREEN(0).winID);
 
-/*    crVBoxServerNotifyEvent(sIndex, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, NULL); */
-
     return VINF_SUCCESS;
 }
 
@@ -2789,9 +2759,6 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
 #endif
 
     CrPMgrScreenChanged((uint32_t)sIndex);
-
-    crVBoxServerNotifyEvent(sIndex, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA,
-            cr_server.aWinVisibilityInfos[sIndex].cVisibleWindows ? (void*)1 : NULL);
 
     return VINF_SUCCESS;
 }
