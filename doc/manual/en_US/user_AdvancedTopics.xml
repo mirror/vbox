@@ -455,7 +455,7 @@ greeter-session=vbox-greeter</screen></para>
         Ubuntu, or simply restart the guest.</para></note>
 
         <note><para>vbox-greeter is independent of the graphical session chosen
-        by the user (like Gnome, KDE, Unity etc). However it requires FLTK 1.3
+        by the user (like Gnome, KDE, Unity etc). However, it requires FLTK 1.3
         for representing its own user interface.</para></note>
 
         <para>There are numerous guest properties which can be used to further
@@ -908,7 +908,7 @@ host path or identifier</screen>
                 <computeroutput>MaxPayloadTransferSize</computeroutput> How many bytes the emulated
                 webcam can send to the guest at a time. Default value is 3060 bytes, which is used by
                 some webcams. Higher values can slightly reduce CPU load, if the guest is able to use
-                larger buffers. However a high <computeroutput>MaxPayloadTransferSize</computeroutput>
+                larger buffers. However, a high <computeroutput>MaxPayloadTransferSize</computeroutput>
                 might be not supported by some guests.
               </listitem>
             </itemizedlist>
@@ -3370,4 +3370,69 @@ alice = {
     <para>Storage attachments can be reconfigured while the VM is paused afterwards using:</para>
     <screen>VBoxManage storageattach ...</screen>
   </sect1>
+
+  <sect1 id="hostpowertweaks">
+    <title>Handling of host power management events</title>
+
+    <para>Some host power management events are handled by VirtualBox. The
+    actual behavior depends on the platform:</para>
+
+    <para>
+      <glosslist>
+        <glossentry>
+          <glossterm>Host Suspends</glossterm>
+           <glossdef>
+             <para>
+               This event is generated when the host is about to suspend, that is,
+               the host saves the state to some non-volatile storage and powers off.
+             </para>
+             <para>
+               This event is currently only handled on Windows hosts and Mac OS X hosts.
+               When this event is generated, VirtualBox will pause all running VMs.
+             </para>
+           </glossdef>
+         </glossentry>
+         <glossentry>
+           <glossterm>Host Resumes</glossterm>
+           <glossdef>
+             <para>
+               This event is generated when the host woke up from the suspended
+               state.
+             </para>
+             <para>
+               This event is currently only handled on Windows hosts and Mac OS X hosts.
+               When this event is generated, VirtualBox will resume all VMs which
+               are where paused before.
+             </para>
+           </glossdef>
+         </glossentry>
+         <glossentry>
+           <glossterm>Battery Low</glossterm>
+           <glossdef>
+             <para>
+               The battery level reached a critical level (usually less than 5
+               percent charged).
+             </para>
+             <para>
+               This event is currently only handled on Windows hosts and Mac OS X hosts.
+               When this event is generated, VirtualBox will save the state and
+               terminate all VMs in preperation of a potential host powerdown.
+             </para>
+             <para>The behavior can be configured. By executing the following command,
+             no VM is saved:</para>
+             <screen>VBoxManage setextradata global "VBoxInternal2/SavestateOnBatteryLow" 0</screen>
+             <para>This is a global setting as well as a per-VM setting. The per-VM
+               value has higher precedence than the global value. The following command
+               will save the state of all VMs but will not save the state of VM "foo":</para>
+             <screen>VBoxManage setextradata global "VBoxInternal2/SavestateOnBatteryLow" 1
+VBoxManage setextradata "foo" "VBoxInternal2/SavestateOnBatteryLow" 0</screen>
+             <para>The first line is actually not required as by default the savestate
+             action is performed.</para>
+           </glossdef>
+         </glossentry>
+       </glosslist>
+     </para>
+
+   </sect1>
+
 </chapter>
