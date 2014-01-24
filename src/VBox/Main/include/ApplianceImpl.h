@@ -172,12 +172,7 @@ private:
                             bool fCreateDigest,
                             PVDINTERFACEIO pCallbacks,
                             PSHASTORAGE pStorage);
-    HRESULT i_readTarFileToBuf(
-#ifdef USE_RTTAR_FOR_READING
-                               RTTAR tar,
-#else
-                               struct FSSRDONLYINTERFACEIO *pTarIo,
-#endif
+    HRESULT i_readTarFileToBuf(struct FSSRDONLYINTERFACEIO *pTarIo,
                                const Utf8Str &strFile,
                                void **ppvBuf,
                                size_t *pcbSize,
