@@ -205,6 +205,9 @@ typedef struct USBPROXYDEV
     /** Whether we've opened the device or not.
      * For dealing with failed construction (the destruct method is always called). */
     bool                fOpened;
+    /** Whether we've called pfnInit or not.
+     * For dealing with failed construction (the destruct method is always called). */
+    bool                fInited;
     /** Whether the device has been detached.
      * This is hack for making PDMUSBREG::pfnUsbQueue return the right status code. */
     bool                fDetached;
