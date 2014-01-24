@@ -1036,7 +1036,8 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
             return VINF_IOM_R3_IOPORT_WRITE;
 #else
         {
-            bool fVbeEnableChange = (val & VBE_DISPI_ENABLED) != (pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED);
+            /* reset when VBE is switched off */
+            bool fNeedRest = !(val & VBE_DISPI_ENABLED) && (pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED);
 
             if ((val & VBE_DISPI_ENABLED) &&
                 !(pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED)) {
@@ -1130,7 +1131,7 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
              */
             pThis->pDrv->pfnLFBModeChange(pThis->pDrv, (val & VBE_DISPI_ENABLED) != 0);
 #ifdef VBOX_WITH_HGSMI
-            if (fVbeEnableChange)
+            if (fNeedRest)
                 VBVAReset(pThis);
 #endif /* VBOX_WITH_HGSMI */
 
