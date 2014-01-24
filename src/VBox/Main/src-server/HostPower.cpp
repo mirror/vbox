@@ -126,7 +126,7 @@ void HostPowerService::notify(Reason_T aReason)
             rc = mVirtualBox->GetExtraData(Bstr("VBoxInternal2/SavestateOnBatteryLow").raw(),
                                            value.asOutParam());
             int fGlobal = 0;
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(rc) && !value.isEmpty())
             {
                 if (value != "0")
                     fGlobal = 1;
@@ -147,7 +147,7 @@ void HostPowerService::notify(Reason_T aReason)
                 rc = pMachine->GetExtraData(Bstr("VBoxInternal2/SavestateOnBatteryLow").raw(),
                                             value.asOutParam());
                 int fPerVM = 0;
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(rc) && !value.isEmpty())
                 {
                     /* per-VM overrides global */
                     if (value != "0")
