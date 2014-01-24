@@ -159,7 +159,7 @@ typedef struct USBPROXYDEVLNX
     RTPIPE              hPipeWakeupR;
     /** The device node/sysfs path of the device.
      * Used to figure out the configuration after a reset. */
-    char                szPath[1];
+    char                *pszPath;
 } USBPROXYDEVLNX, *PUSBPROXYDEVLNX;
 
 
@@ -193,7 +193,7 @@ static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *psz
 static int usbProxyLinuxDoIoCtl(PUSBPROXYDEV pProxyDev, unsigned long iCmd, void *pvArg, bool fHandleNoDev, uint32_t cTries)
 {
     int rc;
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
     do
     {
         do
@@ -224,7 +224,7 @@ static int usbProxyLinuxDoIoCtl(PUSBPROXYDEV pProxyDev, unsigned long iCmd, void
  */
 static void usbProxLinuxUrbUnplugged(PUSBPROXYDEV pProxyDev)
 {
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
 
     /*
      * Shoot down all flying URBs.
@@ -306,7 +306,7 @@ static void usbProxyLinuxSetConnected(PUSBPROXYDEV pProxyDev, int iIf, bool fCon
  */
 static PUSBPROXYURBLNX usbProxyLinuxUrbAlloc(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pSplitHead)
 {
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
     PUSBPROXYURBLNX pUrbLnx;
 
     RTCritSectEnter(&pDevLnx->CritSect);
@@ -359,7 +359,7 @@ static PUSBPROXYURBLNX usbProxyLinuxUrbAlloc(PUSBPROXYDEV pProxyDev, PUSBPROXYUR
  */
 static void usbProxyLinuxUrbFree(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pUrbLnx)
 {
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
 
     RTCritSectEnter(&pDevLnx->CritSect);
 
@@ -397,7 +397,7 @@ static void usbProxyLinuxUrbFree(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pUrbLnx
  */
 static void usbProxyLinuxUrbFreeSplitList(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pUrbLnx)
 {
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
 
     RTCritSectEnter(&pDevLnx->CritSect);
 
@@ -584,7 +584,7 @@ static int usbProxyLinuxFindActiveConfigSysfs(PUSBPROXYDEV pProxyDev, const char
  */
 static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *pszPath, int *piFirstCfg)
 {
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
     if (pDevLnx->fUsingSysfs)
         return usbProxyLinuxFindActiveConfigSysfs(pProxyDev, pszPath, piFirstCfg);
     return usbProxyLinuxFindActiveConfigUsbfs(pProxyDev, pszPath, piFirstCfg);
@@ -599,7 +599,7 @@ static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *psz
  */
 RTDECL(int) USBProxyDeviceLinuxGetFD(PUSBPROXYDEV pProxyDev)
 {
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
     AssertReturn(pDevLnx->hFile != NIL_RTFILE, -1);
     return RTFileToNative(pDevLnx->hFile);
 }
@@ -617,7 +617,7 @@ RTDECL(int) USBProxyDeviceLinuxGetFD(PUSBPROXYDEV pProxyDev)
  *                          not to contain the substring "//".
  * @param   pvBackend       Backend specific pointer, unused for the linux backend.
  */
-static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
+static DECLCALLBACK(int) usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
 {
     LogFlow(("usbProxyLinuxOpen: pProxyDev=%p pszAddress=%s\n", pProxyDev, pszAddress));
     const char *pszDevNode;
@@ -636,7 +636,6 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
         if (!pszDevNode)
         {
             LogRel(("usbProxyLinuxOpen: Invalid device address: '%s'\n", pszAddress));
-            pProxyDev->Backend.pv = NULL;
             return VERR_INVALID_PARAMETER;
         }
 
@@ -661,38 +660,32 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
     int rc = RTFileOpen(&hFile, pszDevNode, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
-            /*
-             * Allocate and initialize the linux backend data.
-             */
-            PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)RTMemAllocZVar(sizeof(*pDevLnx) + cchPath);
-            if (pDevLnx)
+        /*
+         * Initialize the linux backend data.
+         */
+        PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
+        pDevLnx->pszPath = RTStrDupN(pszPath, cchPath);
+        if (pDevLnx->pszPath)
+        {
+            rc = RTPipeCreate(&pDevLnx->hPipeWakeupR, &pDevLnx->hPipeWakeupW, 0);
+            if (RT_SUCCESS(rc))
             {
-
-                rc = RTPipeCreate(&pDevLnx->hPipeWakeupR, &pDevLnx->hPipeWakeupW, 0);
+                pDevLnx->fUsingSysfs = fUsingSysfs;
+                pDevLnx->hFile = hFile;
+                rc = RTCritSectInit(&pDevLnx->CritSect);
                 if (RT_SUCCESS(rc))
                 {
-                    pDevLnx->fUsingSysfs = fUsingSysfs;
-                    memcpy(&pDevLnx->szPath[0], pszPath, cchPath);
-                    pDevLnx->szPath[cchPath] = '\0';
-                    pDevLnx->hFile = hFile;
-                    rc = RTCritSectInit(&pDevLnx->CritSect);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pProxyDev->Backend.pv = pDevLnx;
+                    LogFlow(("usbProxyLinuxOpen(%p, %s): returns successfully File=%RTfile iActiveCfg=%d\n",
+                             pProxyDev, pszAddress, pDevLnx->hFile, pProxyDev->iActiveCfg));
 
-                        LogFlow(("usbProxyLinuxOpen(%p, %s): returns successfully File=%RTfile iActiveCfg=%d\n",
-                                 pProxyDev, pszAddress, pDevLnx->hFile, pProxyDev->iActiveCfg));
-
-                        return VINF_SUCCESS;
-                    }
-                    RTPipeClose(pDevLnx->hPipeWakeupR);
-                    RTPipeClose(pDevLnx->hPipeWakeupW);
+                    return VINF_SUCCESS;
                 }
-
-                RTMemFree(pDevLnx);
+                RTPipeClose(pDevLnx->hPipeWakeupR);
+                RTPipeClose(pDevLnx->hPipeWakeupW);
             }
-            else
-                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_NO_MEMORY;
 
         RTFileClose(hFile);
     }
@@ -701,7 +694,6 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
 
     Log(("usbProxyLinuxOpen(%p, %s) failed, rc=%s!\n", pProxyDev, pszAddress,
          RTErrGetShort(rc)));
-    pProxyDev->Backend.pv = NULL;
 
     NOREF(pvBackend);
     return rc;
@@ -715,9 +707,9 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
  * @returns VINF_SUCCESS.
  * @param   pProxyDev       The proxy device.
  */
-static int usbProxyLinuxInit(PUSBPROXYDEV pProxyDev)
+static DECLCALLBACK(int) usbProxyLinuxInit(PUSBPROXYDEV pProxyDev)
 {
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
 
     /*
      * Brute force rulez.
@@ -736,11 +728,11 @@ static int usbProxyLinuxInit(PUSBPROXYDEV pProxyDev)
      */
     pProxyDev->cIgnoreSetConfigs = 1;
     int iFirstCfg;
-    pProxyDev->iActiveCfg = usbProxyLinuxFindActiveConfig(pProxyDev, pDevLnx->szPath, &iFirstCfg);
+    pProxyDev->iActiveCfg = usbProxyLinuxFindActiveConfig(pProxyDev, pDevLnx->pszPath, &iFirstCfg);
     if (pProxyDev->iActiveCfg == -1)
     {
         usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_SETCONFIGURATION, &iFirstCfg, false, UINT32_MAX);
-        pProxyDev->iActiveCfg = usbProxyLinuxFindActiveConfig(pProxyDev, pDevLnx->szPath, NULL);
+        pProxyDev->iActiveCfg = usbProxyLinuxFindActiveConfig(pProxyDev, pDevLnx->pszPath, NULL);
         Log(("usbProxyLinuxInit: No active config! Tried to set %d: iActiveCfg=%d\n", iFirstCfg, pProxyDev->iActiveCfg));
     }
     else
@@ -752,13 +744,11 @@ static int usbProxyLinuxInit(PUSBPROXYDEV pProxyDev)
 /**
  * Closes the proxy device.
  */
-static void usbProxyLinuxClose(PUSBPROXYDEV pProxyDev)
+static DECLCALLBACK(void) usbProxyLinuxClose(PUSBPROXYDEV pProxyDev)
 {
     LogFlow(("usbProxyLinuxClose: pProxyDev=%s\n", usbProxyGetName(pProxyDev)));
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
-    Assert(pDevLnx);
-    if (!pDevLnx)
-        return;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
+    AssertPtrReturnVoid(pDevLnx);
 
     /*
      * Try put the device in a state which linux can cope with before we release it.
@@ -830,8 +820,8 @@ static void usbProxyLinuxClose(PUSBPROXYDEV pProxyDev)
     RTPipeClose(pDevLnx->hPipeWakeupR);
     RTPipeClose(pDevLnx->hPipeWakeupW);
 
-    RTMemFree(pDevLnx);
-    pProxyDev->Backend.pv = NULL;
+    RTStrFree(pDevLnx->pszPath);
+
     LogFlow(("usbProxyLinuxClose: returns\n"));
 }
 
@@ -1028,10 +1018,10 @@ static int usb_reset_logical_reconnect(PUSBPROXYDEV pDev)
  * @returns VBox status code.
  * @param   pDev    The device to reset.
  */
-static int usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
+static DECLCALLBACK(int) usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
 {
 #ifdef NO_PORT_RESET
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
 
     /*
      * Specific device resets are NOPs.
@@ -1057,7 +1047,7 @@ static int usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
         }
 
         /* find the active config - damn annoying. */
-        pProxyDev->iActiveCfg = usbProxyLinuxFindActiveConfig(pProxyDev, pDevLnx->szPath, NULL);
+        pProxyDev->iActiveCfg = usbProxyLinuxFindActiveConfig(pProxyDev, pDevLnx->pszPath, NULL);
         LogFlow(("usbProxyLinuxReset: returns successfully iActiveCfg=%d\n", pProxyDev->iActiveCfg));
     }
     pProxyDev->cIgnoreSetConfigs = 2;
@@ -1127,7 +1117,7 @@ static int usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
  * @param   pProxyDev       The device instance data.
  * @param   iCfg            The configuration to set.
  */
-static int usbProxyLinuxSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
+static DECLCALLBACK(int) usbProxyLinuxSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
 {
     LogFlow(("usbProxyLinuxSetConfig: pProxyDev=%s cfg=%#x\n",
              usbProxyGetName(pProxyDev), iCfg));
@@ -1145,7 +1135,7 @@ static int usbProxyLinuxSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
  * Claims an interface.
  * @returns success indicator.
  */
-static int usbProxyLinuxClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
+static DECLCALLBACK(int) usbProxyLinuxClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
     LogFlow(("usbProxyLinuxClaimInterface: pProxyDev=%s ifnum=%#x\n", usbProxyGetName(pProxyDev), iIf));
     usbProxyLinuxSetConnected(pProxyDev, iIf, false, false);
@@ -1290,7 +1280,7 @@ static void usbProxyLinuxCleanupFailedSubmit(PUSBPROXYDEV pProxyDev, PUSBPROXYUR
  */
 static bool usbProxyLinuxSubmitURB(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pCur, PVUSBURB pUrb, bool *pfUnplugged)
 {
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
     unsigned        cTries = 0;
 
     while (ioctl(RTFileToNative(pDevLnx->hFile), USBDEVFS_SUBMITURB, &pCur->KUrb))
@@ -1462,7 +1452,7 @@ static int usbProxyLinuxUrbQueueSplit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pU
 /**
  * @copydoc USBPROXYBACK::pfnUrbQueue
  */
-static int usbProxyLinuxUrbQueue(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PVUSBURB pUrb)
 {
     unsigned        cTries;
 #ifndef RDESKTOP
@@ -1470,7 +1460,7 @@ static int usbProxyLinuxUrbQueue(PVUSBURB pUrb)
 #else
     PUSBPROXYDEV    pProxyDev = usbProxyFromVusbDev(pUrb->pDev);
 #endif
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
     LogFlow(("usbProxyLinuxUrbQueue: pProxyDev=%s pUrb=%p EndPt=%d cbData=%d\n",
              usbProxyGetName(pProxyDev), pUrb, pUrb->EndPt, pUrb->cbData));
 
@@ -1722,10 +1712,10 @@ static VUSBSTATUS vusbProxyLinuxUrbGetStatus(PUSBPROXYURBLNX pUrbLnx)
  * @param   pProxyDev   The device.
  * @param   cMillies    Number of milliseconds to wait. Use 0 to not wait at all.
  */
-static PVUSBURB usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
+static DECLCALLBACK(PVUSBURB) usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
 {
     PUSBPROXYURBLNX pUrbLnx = NULL;
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
 
     /*
      * Any URBs pending delivery?
@@ -1960,7 +1950,7 @@ static PVUSBURB usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMilli
  * Cancels the URB.
  * The URB requires reaping, so we don't change its state.
  */
-static void usbProxyLinuxUrbCancel(PVUSBURB pUrb)
+static DECLCALLBACK(void) usbProxyLinuxUrbCancel(PVUSBURB pUrb)
 {
 #ifndef RDESKTOP
     PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
@@ -2000,7 +1990,7 @@ static void usbProxyLinuxUrbCancel(PVUSBURB pUrb)
 
 static DECLCALLBACK(int) usbProxyLinuxWakeup(PUSBPROXYDEV pProxyDev)
 {
-    PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
     size_t cbIgnored;
 
     LogFlowFunc(("pProxyDev=%p\n", pProxyDev));
@@ -2013,7 +2003,10 @@ static DECLCALLBACK(int) usbProxyLinuxWakeup(PUSBPROXYDEV pProxyDev)
  */
 const USBPROXYBACK g_USBProxyDeviceHost =
 {
+    /* pszName */
     "host",
+    /* cbBackend */
+    sizeof(USBPROXYDEVLNX),
     usbProxyLinuxOpen,
     usbProxyLinuxInit,
     usbProxyLinuxClose,

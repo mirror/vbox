@@ -50,6 +50,8 @@ typedef struct USBPROXYBACK
 {
     /** Name of the backend. */
     const char *pszName;
+    /** Size of the backend specific data. */
+    size_t      cbBackend;
 
     /**
      * Opens the USB device specfied by pszAddress.
@@ -63,7 +65,7 @@ typedef struct USBPROXYBACK
      * @param   pszAddress  Host specific USB device address.
      * @param   pvBackend   Pointer to backend specific data.
      */
-    int  (* pfnOpen)(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend);
+    DECLR3CALLBACKMEMBER(int, pfnOpen, (PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend));
 
     /**
      * Optional callback for initializing the device after the configuration
@@ -72,13 +74,14 @@ typedef struct USBPROXYBACK
      * @returns VBox status code.
      * @param   pProxyDev   The USB Proxy Device instance.
      */
-    int  (* pfnInit)(PUSBPROXYDEV pProxyDev);
+    DECLR3CALLBACKMEMBER(int, pfnInit, (PUSBPROXYDEV pProxyDev));
 
-    /**         Closes handle to the host USB device.
+    /**
+     * Closes handle to the host USB device.
      *
      * @param   pDev        The USB Proxy Device instance.
      */
-    void (* pfnClose)(PUSBPROXYDEV pProxyDev);
+    DECLR3CALLBACKMEMBER(void, pfnClose, (PUSBPROXYDEV pProxyDev));
 
     /**
      * Reset a device.
@@ -90,25 +93,25 @@ typedef struct USBPROXYBACK
      * @param   fResetOnLinux   It's safe to do reset on linux, we can deal with devices
      *                          being logically reconnected.
      */
-    int  (* pfnReset)(PUSBPROXYDEV pProxyDev, bool fResetOnLinux);
+    DECLR3CALLBACKMEMBER(int, pfnReset, (PUSBPROXYDEV pProxyDev, bool fResetOnLinux));
 
     /** @todo make it return a VBox status code! */
-    int  (* pfnSetConfig)(PUSBPROXYDEV pProxyDev, int iCfg);
+    DECLR3CALLBACKMEMBER(int, pfnSetConfig, (PUSBPROXYDEV pProxyDev, int iCfg));
 
     /** @todo make it return a VBox status code! */
-    int  (* pfnClaimInterface)(PUSBPROXYDEV pProxyDev, int iIf);
+    DECLR3CALLBACKMEMBER(int, pfnClaimInterface, (PUSBPROXYDEV pProxyDev, int iIf));
 
     /** @todo make it return a VBox status code! */
-    int  (* pfnReleaseInterface)(PUSBPROXYDEV pProxyDev, int iIf);
+    DECLR3CALLBACKMEMBER(int, pfnReleaseInterface, (PUSBPROXYDEV pProxyDev, int iIf));
 
     /** @todo make it return a VBox status code! */
-    int  (* pfnSetInterface)(PUSBPROXYDEV pProxyDev, int iIf, int setting);
+    DECLR3CALLBACKMEMBER(int, pfnSetInterface, (PUSBPROXYDEV pProxyDev, int iIf, int setting));
 
     /** @todo make it return a VBox status code! */
-    bool (* pfnClearHaltedEndpoint)(PUSBPROXYDEV  pDev, unsigned int iEp);
+    DECLR3CALLBACKMEMBER(bool, pfnClearHaltedEndpoint, (PUSBPROXYDEV  pDev, unsigned int iEp));
 
     /** @todo make it return a VBox status code! Add pDev. */
-    int  (* pfnUrbQueue)(PVUSBURB pUrb);
+    DECLR3CALLBACKMEMBER(int, pfnUrbQueue, (PVUSBURB pUrb));
 
     /**
      * Cancel an in-flight URB.
@@ -116,7 +119,7 @@ typedef struct USBPROXYBACK
      * @param   pUrb        The URB to cancel.
      * @todo make it return a VBox status code! Add pDev.
      */
-    void (* pfnUrbCancel)(PVUSBURB pUrb);
+    DECLR3CALLBACKMEMBER(void, pfnUrbCancel, (PVUSBURB pUrb));
 
     /**
      * Reap URBs in-flight on a device.
@@ -127,7 +130,7 @@ typedef struct USBPROXYBACK
      * @param   cMillies    Number of milliseconds to wait. Use 0 to not
      *                      wait at all.
      */
-    PVUSBURB (* pfnUrbReap)(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies);
+    DECLR3CALLBACKMEMBER(PVUSBURB, pfnUrbReap, (PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies));
 
     /**
      * Kicks the thread waiting in pfnUrbReap to make it return.
@@ -135,7 +138,7 @@ typedef struct USBPROXYBACK
      * @returns VBox status code.
      * @param   pProxyDev   The device.
      */
-    int (* pfnWakeup)(PUSBPROXYDEV pProxyDev);
+    DECLR3CALLBACKMEMBER(int, pfnWakeup, (PUSBPROXYDEV pProxyDev));
 
     /** Dummy entry for making sure we've got all members initialized. */
     uint32_t uDummy;
@@ -170,7 +173,7 @@ typedef struct USBPROXYDEV
     /** The previous device in rdesktop-vrdp's linked list */
     PUSBPROXYDEV        pPrev;
     /** The vrdp device ID */
-    uint32_t devid;
+    uint32_t            devid;
     /** Linked list of in-flight URBs */
     PVUSBURB            pUrbs;
 #endif
@@ -202,27 +205,17 @@ typedef struct USBPROXYDEV
     /** Whether we've opened the device or not.
      * For dealing with failed construction (the destruct method is always called). */
     bool                fOpened;
-    /** Whether we've called pfnInit or not.
-     * For dealing with failed construction (the destruct method is always called). */
-    bool                fInited;
     /** Whether the device has been detached.
      * This is hack for making PDMUSBREG::pfnUsbQueue return the right status code. */
     bool                fDetached;
-    /** Backend specific data */
-    union USBPROXYBACKENDDATA
-    {
-        /** Pointer to some backend data.
-         * The Linux and Darwin backends are making use of this. */
-        void *pv;
-        RTFILE hFile;
-        int fd;
-        struct vrdp_priv
-        {
-            void *pCallback;
-            void *pDevice;
-        } vrdp;
-    } Backend;
+    /** Backend specific data, the size is stored in pOps::cbBackend. */
+    void                *pvInstanceDataR3;
 } USBPROXYDEV;
+
+/** @def USBPROXYDEV_2_DATA
+ * Converts a USB proxy Device, pointer to a pointer to the backend specific instance data.
+ */
+#define USBPROXYDEV_2_DATA(a_pProxyDev, a_Type)   ( (a_Type)(a_pProxyDev)->pvInstanceDataR3 )
 
 static inline char *usbProxyGetName(PUSBPROXYDEV pProxyDev)
 {

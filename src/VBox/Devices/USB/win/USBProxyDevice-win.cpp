@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -89,18 +89,9 @@ static DECLCALLBACK(int) usbProxyWinAsyncIoThread(RTTHREAD ThreadSelf, void *lpP
  *
  * @returns VBox status code.
  */
-static int usbProxyWinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
+static DECLCALLBACK(int) usbProxyWinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
 {
-    /* Here you just need to use pProxyDev->priv to store whatever per-device
-     * data is needed
-     */
-    /*
-     * Allocate private device instance data and use USBPROXYDEV::Backend::pv to point to it.
-     */
-    PPRIV_USBW32 pPriv = (PPRIV_USBW32)RTMemAllocZ(sizeof(PRIV_USBW32));
-    if (!pPriv)
-        return VERR_NO_MEMORY;
-    pProxyDev->Backend.pv = pPriv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
 
     int rc = VINF_SUCCESS;
     pPriv->cAllocatedUrbs = 32;
@@ -191,21 +182,19 @@ static int usbProxyWinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void 
 
     RTMemFree(pPriv->paQueuedUrbs);
     RTMemFree(pPriv->paHandles);
-    RTMemFree(pPriv);
-    pProxyDev->Backend.pv = NULL;
     return rc;
 }
 
 /**
  * Copy the device and free resources associated with the backend.
  */
-static void usbProxyWinClose(PUSBPROXYDEV pProxyDev)
+static DECLCALLBACK(void) usbProxyWinClose(PUSBPROXYDEV pProxyDev)
 {
     /* Here we just close the device and free up p->priv
      * there is no need to do anything like cancel outstanding requests
      * that will have been done already
      */
-    PPRIV_USBW32 pPriv = (PPRIV_USBW32)pProxyDev->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     Assert(pPriv);
     if (!pPriv)
         return;
@@ -232,14 +221,12 @@ static void usbProxyWinClose(PUSBPROXYDEV pProxyDev)
 
     RTMemFree(pPriv->paQueuedUrbs);
     RTMemFree(pPriv->paHandles);
-    RTMemFree(pPriv);
-    pProxyDev->Backend.pv = NULL;
 }
 
 
-static int usbProxyWinReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
+static DECLCALLBACK(int) usbProxyWinReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
 {
-    PPRIV_USBW32 pPriv = (PPRIV_USBW32)pProxyDev->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     DWORD cbReturned;
     int  rc;
 
@@ -270,7 +257,7 @@ static int usbProxyWinReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
     return RTErrConvertFromWin32(rc);
 }
 
-static int usbProxyWinSetConfig(PUSBPROXYDEV pProxyDev, int cfg)
+static DECLCALLBACK(int) usbProxyWinSetConfig(PUSBPROXYDEV pProxyDev, int cfg)
 {
     /* Send a SET_CONFIGURATION command to the device. We don't do this
      * as a normal control message, because the OS might not want to
@@ -279,7 +266,7 @@ static int usbProxyWinSetConfig(PUSBPROXYDEV pProxyDev, int cfg)
      * It would be OK to send a SET_CONFIGURATION control URB at this
      * point but it has to be synchronous.
     */
-    PPRIV_USBW32 pPriv = (PPRIV_USBW32)pProxyDev->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     USBSUP_SET_CONFIG in;
     DWORD cbReturned;
 
@@ -305,14 +292,14 @@ static int usbProxyWinSetConfig(PUSBPROXYDEV pProxyDev, int cfg)
     return 0;
 }
 
-static int usbProxyWinClaimInterface(PUSBPROXYDEV p, int ifnum)
+static DECLCALLBACK(int) usbProxyWinClaimInterface(PUSBPROXYDEV p, int ifnum)
 {
     /* Called just before we use an interface. Needed on Linux to claim
      * the interface from the OS, since even when proxying the host OS
      * might want to allow other programs to use the unused interfaces.
      * Not relevant for Windows.
      */
-    PPRIV_USBW32 pPriv = (PPRIV_USBW32)p->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
 
     pPriv->bInterfaceNumber = ifnum;
 
@@ -320,22 +307,22 @@ static int usbProxyWinClaimInterface(PUSBPROXYDEV p, int ifnum)
     return true;
 }
 
-static int usbProxyWinReleaseInterface(PUSBPROXYDEV p, int ifnum)
+static DECLCALLBACK(int) usbProxyWinReleaseInterface(PUSBPROXYDEV p, int ifnum)
 {
     /* The opposite of claim_interface. */
-    PPRIV_USBW32 pPriv = (PPRIV_USBW32)p->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
 
     Assert(pPriv);
     return true;
 }
 
-static int usbProxyWinSetInterface(PUSBPROXYDEV pProxyDev, int ifnum, int setting)
+static DECLCALLBACK(int) usbProxyWinSetInterface(PUSBPROXYDEV pProxyDev, int ifnum, int setting)
 {
     /* Select an alternate setting for an interface, the same applies
      * here as for set_config, you may convert this in to a control
      * message if you want but it must be synchronous
      */
-    PPRIV_USBW32 pPriv = (PPRIV_USBW32)pProxyDev->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     USBSUP_SELECT_INTERFACE in;
     DWORD cbReturned;
 
@@ -364,9 +351,9 @@ static int usbProxyWinSetInterface(PUSBPROXYDEV pProxyDev, int ifnum, int settin
 /**
  * Clears the halted endpoint 'ep'.
  */
-static bool usbProxyWinClearHaltedEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
+static DECLCALLBACK(bool) usbProxyWinClearHaltedEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
 {
-    PPRIV_USBW32 pPriv = (PPRIV_USBW32)pProxyDev->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     USBSUP_CLEAR_ENDPOINT in;
     DWORD cbReturned;
 
@@ -395,7 +382,7 @@ static bool usbProxyWinClearHaltedEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
  */
 static int usbProxyWinAbortEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
 {
-    PPRIV_USBW32 pPriv = (PPRIV_USBW32)pProxyDev->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     USBSUP_CLEAR_ENDPOINT in;
     DWORD cbReturned;
     int  rc;
@@ -424,10 +411,10 @@ static int usbProxyWinAbortEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
 /**
  * @copydoc USBPROXYBACK::pfnUrbQueue
  */
-static int usbProxyWinUrbQueue(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyWinUrbQueue(PVUSBURB pUrb)
 {
     PUSBPROXYDEV    pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
-    PPRIV_USBW32    pPriv = (PPRIV_USBW32)pProxyDev->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     Assert(pPriv);
 
     /*
@@ -570,9 +557,9 @@ static VUSBSTATUS usbProxyWinStatusToVUsbStatus(USBSUP_ERROR win_status)
  * @param   cMillies    Number of milliseconds to wait. Use 0 to not
  *                      wait at all.
  */
-static PVUSBURB usbProxyWinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
+static DECLCALLBACK(PVUSBURB) usbProxyWinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
 {
-    PPRIV_USBW32      pPriv = (PPRIV_USBW32)pProxyDev->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     AssertReturn(pPriv, NULL);
 
     /*
@@ -731,10 +718,10 @@ again:
  *          all URBs pending on an endpoint. Luckily that is usually
  *          exactly what the guest wants to do.
  */
-static void usbProxyWinUrbCancel(PVUSBURB pUrb)
+static DECLCALLBACK(void) usbProxyWinUrbCancel(PVUSBURB pUrb)
 {
     PUSBPROXYDEV      pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
-    PPRIV_USBW32      pPriv     = (PPRIV_USBW32)pProxyDev->Backend.pv;
+    PPRIV_USBW32      pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     PQUEUED_URB       pQUrbWin  = (PQUEUED_URB)pUrb->Dev.pvPrivate;
     int                     rc;
     USBSUP_CLEAR_ENDPOINT   in;
@@ -759,9 +746,9 @@ static void usbProxyWinUrbCancel(PVUSBURB pUrb)
         AssertMsgFailed(("lasterr=%d\n", rc));
 }
 
-static int usbProxyWinWakeup(PUSBPROXYDEV pProxyDev)
+static DECLCALLBACK(int) usbProxyWinWakeup(PUSBPROXYDEV pProxyDev)
 {
-    PPRIV_USBW32 pPriv = (PPRIV_USBW32)pProxyDev->Backend.pv;
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
 
     SetEvent(pPriv->hEventWakeup);
     return VINF_SUCCESS;
@@ -772,7 +759,10 @@ static int usbProxyWinWakeup(PUSBPROXYDEV pProxyDev)
  */
 extern const USBPROXYBACK g_USBProxyDeviceHost =
 {
+    /* pszName */
     "host",
+    /* cbBackend */
+    sizeof(PRIV_USBW32),
     usbProxyWinOpen,
     NULL,
     usbProxyWinClose,

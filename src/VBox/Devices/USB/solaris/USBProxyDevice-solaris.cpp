@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2013 Oracle Corporation
+ * Copyright (C) 2009-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -91,9 +91,9 @@ typedef struct USBPROXYDEVSOL
     PUSBPROXYURBSOL                pTaxingHead;
     /** The tail of the landed solaris URBs. */
     PUSBPROXYURBSOL                pTaxingTail;
-    /** Pipe handle for waiking up - writing end. */
+    /** Pipe handle for waking up - writing end. */
     RTPIPE                         hPipeWakeupW;
-    /** Pipe handle for waiking up - reading end. */
+    /** Pipe handle for waking up - reading end. */
     RTPIPE                         hPipeWakeupR;
 } USBPROXYDEVSOL, *PUSBPROXYDEVSOL;
 
@@ -287,8 +287,10 @@ static inline int usbProxySolarisGetActiveConfig(PUSBPROXYDEVSOL pDevSol)
  *                          The format of this string is "VendorId:ProducIt:Release:StaticPath".
  * @param   pvBackend       Backend specific pointer, unused for the solaris backend.
  */
-static int usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
+static DECLCALLBACK(int) usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
 {
+    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
+
     LogFlowFunc((USBPROXY ":usbProxySolarisOpen pProxyDev=%p pszAddress=%s pvBackend=%p\n", pProxyDev, pszAddress, pvBackend));
 
     /*
@@ -300,110 +302,96 @@ static int usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, v
         /*
          * Allocate and initialize the solaris backend data.
          */
-        PUSBPROXYDEVSOL pDevSol = (PUSBPROXYDEVSOL)RTMemAllocZ(sizeof(*pDevSol));
-        if (RT_LIKELY(pDevSol))
+        AssertCompile(PATH_MAX >= MAXPATHLEN);
+        char szDeviceIdent[PATH_MAX+48];
+        rc = RTStrPrintf(szDeviceIdent, sizeof(szDeviceIdent), "%s", pszAddress);
+        if (RT_SUCCESS(rc))
         {
-            AssertCompile(PATH_MAX >= MAXPATHLEN);
-            char szDeviceIdent[PATH_MAX+48];
-            rc = RTStrPrintf(szDeviceIdent, sizeof(szDeviceIdent), "%s", pszAddress);
+            rc = RTCritSectInit(&pDevSol->CritSect);
             if (RT_SUCCESS(rc))
             {
-                rc = RTCritSectInit(&pDevSol->CritSect);
+                /*
+                 * Create wakeup pipe.
+                 */
+                rc = RTPipeCreate(&pDevSol->hPipeWakeupR, &pDevSol->hPipeWakeupW, 0);
                 if (RT_SUCCESS(rc))
                 {
-                    pProxyDev->Backend.pv = pDevSol;
-
-                    /*
-                     * Create wakeup pipe.
-                     */
-                    rc = RTPipeCreate(&pDevSol->hPipeWakeupR, &pDevSol->hPipeWakeupW, 0);
+                    int Instance;
+                    char *pszDevicePath = NULL;
+                    rc = USBLibGetClientInfo(szDeviceIdent, &pszDevicePath, &Instance);
                     if (RT_SUCCESS(rc))
                     {
-                        int Instance;
-                        char *pszDevicePath = NULL;
-                        rc = USBLibGetClientInfo(szDeviceIdent, &pszDevicePath, &Instance);
+                        pDevSol->pszDevicePath = pszDevicePath;
+
+                        /*
+                         * Open the client driver.
+                         */
+                        RTFILE hFile;
+                        rc = RTFileOpen(&hFile, pDevSol->pszDevicePath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
                         if (RT_SUCCESS(rc))
                         {
-                            pDevSol->pszDevicePath = pszDevicePath;
+                            pDevSol->hFile = hFile;
+                            pDevSol->pProxyDev = pProxyDev;
 
                             /*
-                             * Open the client driver.
+                             * Verify client driver version.
                              */
-                            RTFILE hFile;
-                            rc = RTFileOpen(&hFile, pDevSol->pszDevicePath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+                            VBOXUSBREQ_GET_VERSION GetVersionReq;
+                            bzero(&GetVersionReq, sizeof(GetVersionReq));
+                            rc = usbProxySolarisIOCtl(pDevSol, VBOXUSB_IOCTL_GET_VERSION, &GetVersionReq, sizeof(GetVersionReq));
                             if (RT_SUCCESS(rc))
                             {
-                                pDevSol->hFile = hFile;
-                                pDevSol->pProxyDev = pProxyDev;
-
-                                /*
-                                 * Verify client driver version.
-                                 */
-                                VBOXUSBREQ_GET_VERSION GetVersionReq;
-                                bzero(&GetVersionReq, sizeof(GetVersionReq));
-                                rc = usbProxySolarisIOCtl(pDevSol, VBOXUSB_IOCTL_GET_VERSION, &GetVersionReq, sizeof(GetVersionReq));
-                                if (RT_SUCCESS(rc))
+                                if (   GetVersionReq.u32Major == VBOXUSB_VERSION_MAJOR
+                                    && GetVersionReq.u32Minor >= VBOXUSB_VERSION_MINOR)
                                 {
-                                    if (   GetVersionReq.u32Major == VBOXUSB_VERSION_MAJOR
-                                        && GetVersionReq.u32Minor >= VBOXUSB_VERSION_MINOR)
-                                    {
-                                        /*
-                                         * Try & get the current cached config from Solaris.
-                                         */
-                                        usbProxySolarisGetActiveConfig(pDevSol);
-                                        return VINF_SUCCESS;
-                                    }
-                                    else
-                                    {
-                                        LogRel((USBPROXY ":version mismatch! driver v%d.%d expecting ~v%d.%d\n", GetVersionReq.u32Major,
-                                                GetVersionReq.u32Minor, VBOXUSB_VERSION_MAJOR, VBOXUSB_VERSION_MINOR));
-                                        rc = VERR_VERSION_MISMATCH;
-                                    }
+                                    /*
+                                     * Try & get the current cached config from Solaris.
+                                     */
+                                    usbProxySolarisGetActiveConfig(pDevSol);
+                                    return VINF_SUCCESS;
                                 }
                                 else
                                 {
-                                    LogRel((USBPROXY ":failed to query driver version. rc=%Rrc\n", rc));
+                                    LogRel((USBPROXY ":version mismatch! driver v%d.%d expecting ~v%d.%d\n", GetVersionReq.u32Major,
+                                            GetVersionReq.u32Minor, VBOXUSB_VERSION_MAJOR, VBOXUSB_VERSION_MINOR));
+                                    rc = VERR_VERSION_MISMATCH;
                                 }
-
-                                RTFileClose(pDevSol->hFile);
-                                pDevSol->hFile = NIL_RTFILE;
-                                pDevSol->pProxyDev = NULL;
                             }
                             else
-                                LogRel((USBPROXY ":failed to open device. rc=%Rrc pszDevicePath=%s\n", rc, pDevSol->pszDevicePath));
+                                LogRel((USBPROXY ":failed to query driver version. rc=%Rrc\n", rc));
 
-                            RTStrFree(pDevSol->pszDevicePath);
-                            pDevSol->pszDevicePath = NULL;
+                            RTFileClose(pDevSol->hFile);
+                            pDevSol->hFile = NIL_RTFILE;
+                            pDevSol->pProxyDev = NULL;
                         }
                         else
-                        {
-                            LogRel((USBPROXY ":failed to get client info. rc=%Rrc pszDevicePath=%s\n", rc, pDevSol->pszDevicePath));
-                            if (rc == VERR_NOT_FOUND)
-                                rc = VERR_OPEN_FAILED;
-                        }
-                        RTPipeClose(pDevSol->hPipeWakeupR);
-                        RTPipeClose(pDevSol->hPipeWakeupW);
-                    }
+                            LogRel((USBPROXY ":failed to open device. rc=%Rrc pszDevicePath=%s\n", rc, pDevSol->pszDevicePath));
 
-                    RTCritSectDelete(&pDevSol->CritSect);
+                        RTStrFree(pDevSol->pszDevicePath);
+                        pDevSol->pszDevicePath = NULL;
+                    }
+                    else
+                    {
+                        LogRel((USBPROXY ":failed to get client info. rc=%Rrc pszDevicePath=%s\n", rc, pDevSol->pszDevicePath));
+                        if (rc == VERR_NOT_FOUND)
+                            rc = VERR_OPEN_FAILED;
+                    }
+                    RTPipeClose(pDevSol->hPipeWakeupR);
+                    RTPipeClose(pDevSol->hPipeWakeupW);
                 }
-                else
-                    LogRel((USBPROXY ":RTCritSectInit failed. rc=%Rrc pszAddress=%s\n", rc, pszAddress));
+
+                RTCritSectDelete(&pDevSol->CritSect);
             }
             else
-                LogRel((USBPROXY ":RTStrAPrintf failed. rc=%Rrc pszAddress=%s\n", rc, pszAddress));
-
-            RTMemFree(pDevSol);
-            pDevSol = NULL;
+                LogRel((USBPROXY ":RTCritSectInit failed. rc=%Rrc pszAddress=%s\n", rc, pszAddress));
         }
         else
-            rc = VERR_NO_MEMORY;
+            LogRel((USBPROXY ":RTStrAPrintf failed. rc=%Rrc pszAddress=%s\n", rc, pszAddress));
     }
     else
         LogRel((USBPROXY ":USBLibInit failed. rc=%Rrc\n", rc));
 
     USBLibTerm();
-    pProxyDev->Backend.pv = NULL;
     return rc;
 }
 
@@ -413,11 +401,11 @@ static int usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, v
  *
  * @param   pProxyDev   The device instance.
  */
-static void usbProxySolarisClose(PUSBPROXYDEV pProxyDev)
+static DECLCALLBACK(void) usbProxySolarisClose(PUSBPROXYDEV pProxyDev)
 {
     LogFlow((USBPROXY ":usbProxySolarisClose: pProxyDev=%p\n", pProxyDev));
 
-    PUSBPROXYDEVSOL pDevSol = (PUSBPROXYDEVSOL)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
 
     /* Close the device (do not re-enumerate). */
     VBOXUSBREQ_CLOSE_DEVICE CloseReq;
@@ -451,9 +439,6 @@ static void usbProxySolarisClose(PUSBPROXYDEV pProxyDev)
     RTStrFree(pDevSol->pszDevicePath);
     pDevSol->pszDevicePath = NULL;
 
-    RTMemFree(pDevSol);
-    pProxyDev->Backend.pv = NULL;
-
     USBLibTerm();
 }
 
@@ -465,12 +450,12 @@ static void usbProxySolarisClose(PUSBPROXYDEV pProxyDev)
  * @param   pProxyDev           The device to reset.
  * @param   fRootHubReset       Is this a root hub reset or device specific reset request.
  */
-static int usbProxySolarisReset(PUSBPROXYDEV pProxyDev, bool fRootHubReset)
+static DECLCALLBACK(int) usbProxySolarisReset(PUSBPROXYDEV pProxyDev, bool fRootHubReset)
 {
     LogFlowFunc((USBPROXY ":usbProxySolarisReset pProxyDev=%s fRootHubReset=%d\n", pProxyDev->pUsbIns->pszName, fRootHubReset));
 
     /** Pass all resets to the device. The Trekstor USB (1.1) stick requires this to work. */
-    PUSBPROXYDEVSOL pDevSol = (PUSBPROXYDEVSOL)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
 
     /* Soft reset the device. */
     VBOXUSBREQ_CLOSE_DEVICE CloseReq;
@@ -498,11 +483,11 @@ static int usbProxySolarisReset(PUSBPROXYDEV pProxyDev, bool fRootHubReset)
  * @param   pProxyDev       The device instance data.
  * @param   iCfg            The configuration value to set.
  */
-static int usbProxySolarisSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
+static DECLCALLBACK(int) usbProxySolarisSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
 {
     LogFlowFunc((USBPROXY ":usbProxySolarisSetConfig: pProxyDev=%p iCfg=%#x\n", pProxyDev, iCfg));
 
-    PUSBPROXYDEVSOL pDevSol = (PUSBPROXYDEVSOL)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     AssertPtrReturn(pDevSol, VERR_INVALID_POINTER);
 
     VBOXUSBREQ_SET_CONFIG SetConfigReq;
@@ -526,7 +511,7 @@ static int usbProxySolarisSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
  *
  * @returns success indicator (always true).
  */
-static int usbProxySolarisClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
+static DECLCALLBACK(int) usbProxySolarisClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
     return true;
 }
@@ -540,7 +525,7 @@ static int usbProxySolarisClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
  *
  * @returns success indicator.
  */
-static int usbProxySolarisReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
+static DECLCALLBACK(int) usbProxySolarisReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
     return true;
 }
@@ -551,11 +536,11 @@ static int usbProxySolarisReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
  *
  * @returns success indicator.
  */
-static int usbProxySolarisSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
+static DECLCALLBACK(int) usbProxySolarisSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
 {
     LogFlowFunc((USBPROXY ":usbProxySolarisSetInterface: pProxyDev=%p iIf=%d iAlt=%d\n", pProxyDev, iIf, iAlt));
 
-    PUSBPROXYDEVSOL pDevSol = (PUSBPROXYDEVSOL)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     AssertPtrReturn(pDevSol, VERR_INVALID_POINTER);
 
     VBOXUSBREQ_SET_INTERFACE SetInterfaceReq;
@@ -575,11 +560,11 @@ static int usbProxySolarisSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt
 /**
  * Clears the halted endpoint 'EndPt'.
  */
-static bool usbProxySolarisClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
+static DECLCALLBACK(bool) usbProxySolarisClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
 {
     LogFlowFunc((USBPROXY ":usbProxySolarisClearHaltedEp pProxyDev=%p EndPt=%#x\n", pProxyDev, EndPt));
 
-    PUSBPROXYDEVSOL pDevSol = (PUSBPROXYDEVSOL)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     AssertPtrReturn(pDevSol, VERR_INVALID_POINTER);
 
     VBOXUSBREQ_CLEAR_EP ClearEpReq;
@@ -598,10 +583,10 @@ static bool usbProxySolarisClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int En
 /**
  * @copydoc USBPROXYBACK::pfnUrbQueue
  */
-static int usbProxySolarisUrbQueue(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxySolarisUrbQueue(PVUSBURB pUrb)
 {
     PUSBPROXYDEV    pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
-    PUSBPROXYDEVSOL pDevSol = (PUSBPROXYDEVSOL)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
 
     LogFlowFunc((USBPROXY ": usbProxySolarisUrbQueue: pProxyDev=%s pUrb=%p EndPt=%#x enmDir=%d cbData=%d pvData=%p\n",
              pProxyDev->pUsbIns->pszName, pUrb, pUrb->EndPt, pUrb->enmDir, pUrb->cbData, pUrb->abData));
@@ -664,12 +649,12 @@ static int usbProxySolarisUrbQueue(PVUSBURB pUrb)
  * @remark  There isn't any way to cancel a specific asynchronous request
  *          on Solaris. So we just abort pending URBs on the pipe.
  */
-static void usbProxySolarisUrbCancel(PVUSBURB pUrb)
+static DECLCALLBACK(void) usbProxySolarisUrbCancel(PVUSBURB pUrb)
 {
     PUSBPROXYURBSOL pUrbSol = (PUSBPROXYURBSOL)pUrb->Dev.pvPrivate;
 
     PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
-    PUSBPROXYDEVSOL pDevSol = (PUSBPROXYDEVSOL)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     AssertPtrReturnVoid(pDevSol);
 
     LogFlowFunc((USBPROXY ":usbProxySolarisUrbCancel pUrb=%p pUrbSol=%p pDevSol=%p\n", pUrb, pUrbSol, pUrbSol->pDevSol));
@@ -700,11 +685,11 @@ static void usbProxySolarisUrbCancel(PVUSBURB pUrb)
  * @param   pProxyDev   The device.
  * @param   cMillies    Number of milliseconds to wait. Use 0 to not wait at all.
  */
-static PVUSBURB usbProxySolarisUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
+static DECLCALLBACK(PVUSBURB) usbProxySolarisUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
 {
     //LogFlowFunc((USBPROXY ":usbProxySolarisUrbReap pProxyDev=%p cMillies=%u\n", pProxyDev, cMillies));
 
-    PUSBPROXYDEVSOL pDevSol = (PUSBPROXYDEVSOL)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
 
     /*
      * Don't block if nothing is in the air.
@@ -804,7 +789,7 @@ static PVUSBURB usbProxySolarisUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMil
  *
  * @param   pDevSol         The Solaris device instance.
  */
-PVUSBURB usbProxySolarisUrbComplete(PUSBPROXYDEVSOL pDevSol)
+static PVUSBURB usbProxySolarisUrbComplete(PUSBPROXYDEVSOL pDevSol)
 {
     LogFlowFunc((USBPROXY ":usbProxySolarisUrbComplete pDevSol=%p\n", pDevSol));
 
@@ -894,7 +879,7 @@ PVUSBURB usbProxySolarisUrbComplete(PUSBPROXYDEVSOL pDevSol)
 
 static DECLCALLBACK(int) usbProxySolarisWakeup(PUSBPROXYDEV pProxyDev)
 {
-    PUSBPROXYDEVSOL pDevSol = (PUSBPROXYDEVSOL)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
     size_t cbIgnored;
 
     LogFlowFunc(("pProxyDev=%p\n", pProxyDev));
@@ -908,7 +893,10 @@ static DECLCALLBACK(int) usbProxySolarisWakeup(PUSBPROXYDEV pProxyDev)
  */
 extern const USBPROXYBACK g_USBProxyDeviceHost =
 {
+    /* pszName */
     "host",
+    /* cbBackend */
+    sizeof(USBPROXYDEVSOL),
     usbProxySolarisOpen,
     NULL,
     usbProxySolarisClose,
