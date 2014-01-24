@@ -82,7 +82,28 @@ typedef struct
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int usbProxyWinSetInterface(PUSBPROXYDEV p, int ifnum, int setting);
-static DECLCALLBACK(int) usbProxyWinAsyncIoThread(RTTHREAD ThreadSelf, void *lpParameter);
+
+/**
+ * Converts the given Windows error code to VBox handling unplugged devices.
+ *
+ * @returns VBox status code.
+ * @param   pProxDev    The USB proxy device instance.
+ * @param   dwErr       Windows error code.
+ */
+static int usbProxyWinHandleUnpluggedDevice(PUSBPROXYDEV pProxyDev, DWORD dwErr)
+{
+    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
+
+    if (   dwErr == ERROR_INVALID_HANDLE_STATE
+        || dwErr == ERROR_BAD_COMMAND)
+    {
+        Log(("usbproxy: device %x unplugged!!\n", pPriv->hDev));
+        pProxyDev->fDetached = true;
+    }
+    else
+        AssertMsgFailed(("lasterr=%d\n", dwErr));
+    return RTErrConvertFromWin32(dwErr);
+}
 
 /**
  * Open a USB device and create a backend instance for it.
@@ -278,18 +299,9 @@ static DECLCALLBACK(int) usbProxyWinSetConfig(PUSBPROXYDEV pProxyDev, int cfg)
     /* Here we just need to assert reset signalling on the USB device */
     cbReturned = 0;
     if (DeviceIoControl(pPriv->hDev, SUPUSB_IOCTL_USB_SET_CONFIG, &in, sizeof(in), NULL, 0, &cbReturned, NULL))
-        return 1;
+        return VINF_SUCCESS;
 
-    if (   GetLastError() == ERROR_INVALID_HANDLE_STATE
-        || GetLastError() == ERROR_BAD_COMMAND)
-    {
-        Log(("usbproxy: device %p unplugged!!\n", pPriv->hDev));
-        pProxyDev->fDetached = true;
-    }
-    else
-        AssertMsgFailed(("lasterr=%u\n", GetLastError()));
-
-    return 0;
+    return usbProxyWinHandleUnpluggedDevice(pProxyDev, GetLastError());
 }
 
 static DECLCALLBACK(int) usbProxyWinClaimInterface(PUSBPROXYDEV pProxyDev, int ifnum)
@@ -304,7 +316,7 @@ static DECLCALLBACK(int) usbProxyWinClaimInterface(PUSBPROXYDEV pProxyDev, int i
     pPriv->bInterfaceNumber = ifnum;
 
     Assert(pPriv);
-    return true;
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) usbProxyWinReleaseInterface(PUSBPROXYDEV pProxyDev, int ifnum)
@@ -313,7 +325,7 @@ static DECLCALLBACK(int) usbProxyWinReleaseInterface(PUSBPROXYDEV pProxyDev, int
     PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
 
     Assert(pPriv);
-    return true;
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) usbProxyWinSetInterface(PUSBPROXYDEV pProxyDev, int ifnum, int setting)
@@ -335,23 +347,15 @@ static DECLCALLBACK(int) usbProxyWinSetInterface(PUSBPROXYDEV pProxyDev, int ifn
     /* Here we just need to assert reset signalling on the USB device */
     cbReturned = 0;
     if (DeviceIoControl(pPriv->hDev, SUPUSB_IOCTL_USB_SELECT_INTERFACE, &in, sizeof(in), NULL, 0, &cbReturned, NULL))
-        return true;
+        return VINF_SUCCESS;
 
-    if (    GetLastError() == ERROR_INVALID_HANDLE_STATE
-        ||  GetLastError() == ERROR_BAD_COMMAND)
-    {
-        Log(("usbproxy: device %x unplugged!!\n", pPriv->hDev));
-        pProxyDev->fDetached = true;
-    }
-    else
-        AssertMsgFailed(("lasterr=%d\n", GetLastError()));
-    return 0;
+    return usbProxyWinHandleUnpluggedDevice(pProxyDev, GetLastError());
 }
 
 /**
  * Clears the halted endpoint 'ep'.
  */
-static DECLCALLBACK(bool) usbProxyWinClearHaltedEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
+static DECLCALLBACK(int) usbProxyWinClearHaltedEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
 {
     PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     USBSUP_CLEAR_ENDPOINT in;
@@ -364,17 +368,9 @@ static DECLCALLBACK(bool) usbProxyWinClearHaltedEndPt(PUSBPROXYDEV pProxyDev, un
 
     cbReturned = 0;
     if (DeviceIoControl(pPriv->hDev, SUPUSB_IOCTL_USB_CLEAR_ENDPOINT, &in, sizeof(in), NULL, 0, &cbReturned, NULL))
-        return true;
+        return VINF_SUCCESS;
 
-    if (    GetLastError() == ERROR_INVALID_HANDLE_STATE
-        ||  GetLastError() == ERROR_BAD_COMMAND)
-    {
-        Log(("usbproxy: device %x unplugged!!\n", pPriv->hDev));
-        pProxyDev->fDetached = true;
-    }
-    else
-        AssertMsgFailed(("lasterr=%d\n", GetLastError()));
-    return 0;
+    return usbProxyWinHandleUnpluggedDevice(pProxyDev, GetLastError());
 }
 
 /**
@@ -396,24 +392,14 @@ static int usbProxyWinAbortEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
     if (DeviceIoControl(pPriv->hDev, SUPUSB_IOCTL_USB_ABORT_ENDPOINT, &in, sizeof(in), NULL, 0, &cbReturned, NULL))
         return VINF_SUCCESS;
 
-    rc = GetLastError();
-    if (    rc == ERROR_INVALID_HANDLE_STATE
-        ||  rc == ERROR_BAD_COMMAND)
-    {
-        Log(("usbproxy: device %x unplugged!!\n", pPriv->hDev));
-        pProxyDev->fDetached = true;
-    }
-    else
-        AssertMsgFailed(("lasterr=%d\n", rc));
-    return RTErrConvertFromWin32(rc);
+    return usbProxyWinHandleUnpluggedDevice(pProxyDev, GetLastError());
 }
 
 /**
  * @copydoc USBPROXYBACK::pfnUrbQueue
  */
-static DECLCALLBACK(int) usbProxyWinUrbQueue(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyWinUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
-    PUSBPROXYDEV    pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
     PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     Assert(pPriv);
 
@@ -423,7 +409,7 @@ static DECLCALLBACK(int) usbProxyWinUrbQueue(PVUSBURB pUrb)
     /** @todo pool these */
     PQUEUED_URB pQUrbWin = (PQUEUED_URB)RTMemAllocZ(sizeof(QUEUED_URB));
     if (!pQUrbWin)
-        return false;
+        return VERR_NO_MEMORY;
 
     switch (pUrb->enmType)
     {
@@ -442,7 +428,7 @@ static DECLCALLBACK(int) usbProxyWinUrbQueue(PVUSBURB pUrb)
         case VUSBXFERTYPE_MSG:  pQUrbWin->urbwin.type = USBSUP_TRANSFER_TYPE_MSG; break;
         default:
             AssertMsgFailed(("Invalid type %d\n", pUrb->enmType));
-            return false;
+            return VERR_INVALID_PARAMETER;
     }
 
     switch (pUrb->enmDir)
@@ -459,7 +445,7 @@ static DECLCALLBACK(int) usbProxyWinUrbQueue(PVUSBURB pUrb)
             break;
         default:
             AssertMsgFailed(("Invalid direction %d\n", pUrb->enmDir));
-            return false;
+            return VERR_INVALID_PARAMETER;
     }
 
     Log(("usbproxy: Queue URB %p ep=%d cbData=%d abData=%p cIsocPkts=%d\n", pUrb, pUrb->EndPt, pUrb->cbData, pUrb->abData, pUrb->cIsocPkts));
@@ -473,6 +459,7 @@ static DECLCALLBACK(int) usbProxyWinUrbQueue(PVUSBURB pUrb)
     if (pUrb->enmDir == VUSBDIRECTION_IN && !pUrb->fShortNotOk)
         pQUrbWin->urbwin.flags = USBSUP_FLAG_SHORT_OK;
 
+    int rc = VINF_SUCCESS;
     pQUrbWin->overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     if (pQUrbWin->overlapped.hEvent != INVALID_HANDLE_VALUE)
     {
@@ -491,7 +478,7 @@ static DECLCALLBACK(int) usbProxyWinUrbQueue(PVUSBURB pUrb)
             pPriv->cPendingUrbs++;
             RTCritSectLeave(&pPriv->CritSect);
             SetEvent(pPriv->hEventWakeup);
-            return true;
+            return VINF_SUCCESS;
         }
         else
         {
@@ -499,12 +486,12 @@ static DECLCALLBACK(int) usbProxyWinUrbQueue(PVUSBURB pUrb)
             if (   dwErr == ERROR_INVALID_HANDLE_STATE
                 || dwErr == ERROR_BAD_COMMAND)
             {
-                PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pQUrbWin->urb->pUsbIns, PUSBPROXYDEV);
                 Log(("usbproxy: device %p unplugged!!\n", pPriv->hDev));
                 pProxyDev->fDetached = true;
             }
             else
                 AssertMsgFailed(("dwErr=%X urbwin.error=%d (submit urb)\n", dwErr, pQUrbWin->urbwin.error));
+            rc = RTErrConvertFromWin32(dwErr);
             CloseHandle(pQUrbWin->overlapped.hEvent);
             pQUrbWin->overlapped.hEvent = INVALID_HANDLE_VALUE;
         }
@@ -513,12 +500,13 @@ static DECLCALLBACK(int) usbProxyWinUrbQueue(PVUSBURB pUrb)
     else
     {
         AssertMsgFailed(("FAILED!!, hEvent(0x%p)\n", pQUrbWin->overlapped.hEvent));
+        rc = VERR_NO_MEMORY;
     }
 #endif
 
     Assert(pQUrbWin->overlapped.hEvent == INVALID_HANDLE_VALUE);
     RTMemFree(pQUrbWin);
-    return false;
+    return rc;
 }
 
 /**
@@ -586,9 +574,7 @@ again:
     {
         RTCritSectEnter(&pPriv->CritSect);
 
-        /* Ensure we've got sufficient space in the arrays.
-         * Do it inside the lock to ensure we do not concur
-         * with the usbProxyWinAsyncIoThread */
+        /* Ensure we've got sufficient space in the arrays. */
         if (pPriv->cQueuedUrbs + pPriv->cPendingUrbs + 1 > pPriv->cAllocatedUrbs)
         {
             unsigned cNewMax = pPriv->cAllocatedUrbs + pPriv->cPendingUrbs + 1;
@@ -718,29 +704,29 @@ again:
  *          all URBs pending on an endpoint. Luckily that is usually
  *          exactly what the guest wants to do.
  */
-static DECLCALLBACK(void) usbProxyWinUrbCancel(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyWinUrbCancel(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
-    PUSBPROXYDEV      pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
     PPRIV_USBW32      pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     PQUEUED_URB       pQUrbWin  = (PQUEUED_URB)pUrb->Dev.pvPrivate;
-    int                     rc;
     USBSUP_CLEAR_ENDPOINT   in;
     DWORD                   cbReturned;
-    Assert(pQUrbWin);
+
+    AssertPtrReturn(pQUrbWin, VERR_INVALID_PARAMETER);
 
     in.bEndpoint = pUrb->EndPt | (pUrb->enmDir == VUSBDIRECTION_IN ? 0x80 : 0);
     Log(("Cancel urb %p, endpoint %x\n", pUrb, in.bEndpoint));
 
     cbReturned = 0;
     if (DeviceIoControl(pPriv->hDev, SUPUSB_IOCTL_USB_ABORT_ENDPOINT, &in, sizeof(in), NULL, 0, &cbReturned, NULL))
-        return;
+        return VINF_SUCCESS;
 
-    rc = GetLastError();
-    if (    rc == ERROR_INVALID_HANDLE_STATE
-        ||  rc == ERROR_BAD_COMMAND)
+    DWORD dwErr = GetLastError();
+    if (    dwErr == ERROR_INVALID_HANDLE_STATE
+        ||  dwErr == ERROR_BAD_COMMAND)
     {
         Log(("usbproxy: device %x unplugged!!\n", pPriv->hDev));
         pProxyDev->fDetached = true;
+        return VINF_SUCCESS; /* Fake success and deal with the unplugged device elsewhere. */
     }
     else
         AssertMsgFailed(("lasterr=%d\n", rc));

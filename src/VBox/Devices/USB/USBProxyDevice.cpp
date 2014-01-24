@@ -52,6 +52,7 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
         /*
          * Setup a MSG URB, queue and reap it.
          */
+        int rc = VINF_SUCCESS;
         VUSBURB Urb;
         AssertCompile(RT_SIZEOFMEMB(VUSBURB, abData) >= _4K);
         Urb.u32Magic = VUSBURB_MAGIC;
@@ -78,7 +79,8 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
         pSetup->wIndex = LangId;
         pSetup->wLength = cbHint;
 
-        if (!pProxyDev->pOps->pfnUrbQueue(&Urb))
+        rc = pProxyDev->pOps->pfnUrbQueue(pProxyDev, &Urb);
+        if (RT_FAILURE(rc))
             break;
 
         /* Don't wait forever, it's just a simple request that should
@@ -88,7 +90,9 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
         PVUSBURB pUrbReaped = pProxyDev->pOps->pfnUrbReap(pProxyDev, 10000 /* ms */);
         if (!pUrbReaped)
         {
-            pProxyDev->pOps->pfnUrbCancel(&Urb);
+            rc = pProxyDev->pOps->pfnUrbCancel(pProxyDev, &Urb);
+            AssertRC(rc);
+            /** @todo: This breaks the comment above... */
             pUrbReaped = pProxyDev->pOps->pfnUrbReap(pProxyDev, RT_INDEFINITE_WAIT);
         }
         if (pUrbReaped != &Urb)
@@ -628,10 +632,7 @@ static DECLCALLBACK(int) usbProxyDevSetInterface(PPDMUSBINS pUsbIns, uint8_t bIn
     LogFlow(("usbProxyDevSetInterface: pProxyDev=%s bInterfaceNumber=%d bAlternateSetting=%d\n",
              pUsbIns->pszName, bInterfaceNumber, bAlternateSetting));
 
-    /** @todo this is fishy, pfnSetInterface returns true/false from what I can see... */
-    if (pProxyDev->pOps->pfnSetInterface(pProxyDev, bInterfaceNumber, bAlternateSetting) < 0)
-        return VERR_GENERAL_FAILURE;
-    return VINF_SUCCESS;
+    return pProxyDev->pOps->pfnSetInterface(pProxyDev, bInterfaceNumber, bAlternateSetting);
 }
 
 
@@ -646,9 +647,7 @@ static DECLCALLBACK(int) usbProxyDevClearHaltedEndpoint(PPDMUSBINS pUsbIns, unsi
     LogFlow(("usbProxyDevClearHaltedEndpoint: pProxyDev=%s uEndpoint=%u\n",
              pUsbIns->pszName, uEndpoint));
 
-    if (!pProxyDev->pOps->pfnClearHaltedEndpoint(pProxyDev, uEndpoint))
-        return VERR_GENERAL_FAILURE;
-    return VINF_SUCCESS;
+    return pProxyDev->pOps->pfnClearHaltedEndpoint(pProxyDev, uEndpoint);
 }
 
 
@@ -659,12 +658,14 @@ static DECLCALLBACK(int) usbProxyDevClearHaltedEndpoint(PPDMUSBINS pUsbIns, unsi
  */
 static DECLCALLBACK(int) usbProxyDevUrbQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {
+    int rc = VINF_SUCCESS;
     PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUsbIns, PUSBPROXYDEV);
-    if (!pProxyDev->pOps->pfnUrbQueue(pUrb))
+    rc = pProxyDev->pOps->pfnUrbQueue(pProxyDev, pUrb);
+    if (RT_FAILURE(rc))
         return pProxyDev->fDetached
              ? VERR_VUSB_DEVICE_NOT_ATTACHED
              : VERR_VUSB_FAILED_TO_QUEUE_URB;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -676,8 +677,7 @@ static DECLCALLBACK(int) usbProxyDevUrbQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 static DECLCALLBACK(int) usbProxyDevUrbCancel(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {
     PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUsbIns, PUSBPROXYDEV);
-    pProxyDev->pOps->pfnUrbCancel(pUrb);
-    return VINF_SUCCESS;
+    return pProxyDev->pOps->pfnUrbCancel(pProxyDev, pUrb);
 }
 
 

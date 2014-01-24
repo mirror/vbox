@@ -117,7 +117,7 @@ static DECLCALLBACK(int) usbProxyVrdpSetConfig(PUSBPROXYDEV pProxyDev, int cfg)
         pProxyDev->fDetached = true;
     }
 
-    return RT_SUCCESS(rc);
+    return rc;
 }
 
 static DECLCALLBACK(int) usbProxyVrdpClaimInterface(PUSBPROXYDEV pProxyDev, int ifnum)
@@ -134,7 +134,7 @@ static DECLCALLBACK(int) usbProxyVrdpClaimInterface(PUSBPROXYDEV pProxyDev, int 
         pProxyDev->fDetached = true;
     }
 
-    return RT_SUCCESS(rc);
+    return rc;
 }
 
 static DECLCALLBACK(int) usbProxyVrdpReleaseInterface(PUSBPROXYDEV pProxyDev, int ifnum)
@@ -151,7 +151,7 @@ static DECLCALLBACK(int) usbProxyVrdpReleaseInterface(PUSBPROXYDEV pProxyDev, in
         pProxyDev->fDetached = true;
     }
 
-    return RT_SUCCESS(rc);
+    return rc;
 }
 
 static DECLCALLBACK(int) usbProxyVrdpSetInterface(PUSBPROXYDEV pProxyDev, int ifnum, int setting)
@@ -168,10 +168,10 @@ static DECLCALLBACK(int) usbProxyVrdpSetInterface(PUSBPROXYDEV pProxyDev, int if
         pProxyDev->fDetached = true;
     }
 
-    return RT_SUCCESS(rc);
+    return rc;
 }
 
-static DECLCALLBACK(bool) usbProxyVrdpClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int ep)
+static DECLCALLBACK(int) usbProxyVrdpClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int ep)
 {
     LogFlow(("usbProxyVrdpClearHaltedEp: pProxyDev=%s ep=%u\n", pProxyDev->pUsbIns->pszName, ep));
 
@@ -185,10 +185,10 @@ static DECLCALLBACK(bool) usbProxyVrdpClearHaltedEp(PUSBPROXYDEV pProxyDev, unsi
         pProxyDev->fDetached = true;
     }
 
-    return RT_SUCCESS(rc);
+    return rc;
 }
 
-static DECLCALLBACK(int) usbProxyVrdpUrbQueue(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyVrdpUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
     LogFlow(("usbProxyVrdpUrbQueue: pUrb=%p\n", pUrb));
 
@@ -196,12 +196,10 @@ static DECLCALLBACK(int) usbProxyVrdpUrbQueue(PVUSBURB pUrb)
     if (pUrb->enmType == VUSBXFERTYPE_ISOC)
     {
         Log(("usbproxy: isochronous transfers aren't implemented yet.\n"));
-        return false;
+        return VERR_NOT_IMPLEMENTED;
     }
 
-    PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
     PUSBPROXYDEVVRDP pDevVrdp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVVRDP);
-
     int rc = pDevVrdp->pCallback->pfnQueueURB (pDevVrdp->pDevice, pUrb->enmType, pUrb->EndPt, pUrb->enmDir, pUrb->cbData,
                                                pUrb->abData, pUrb, (PREMOTEUSBQURB *)&pUrb->Dev.pvPrivate);
 
@@ -211,7 +209,7 @@ static DECLCALLBACK(int) usbProxyVrdpUrbQueue(PVUSBURB pUrb)
         pProxyDev->fDetached = true;
     }
 
-    return RT_SUCCESS(rc);
+    return rc;
 }
 
 static DECLCALLBACK(PVUSBURB) usbProxyVrdpUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
@@ -244,14 +242,13 @@ static DECLCALLBACK(PVUSBURB) usbProxyVrdpUrbReap(PUSBPROXYDEV pProxyDev, RTMSIN
     return pUrb;
 }
 
-static DECLCALLBACK(void) usbProxyVrdpUrbCancel(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyVrdpUrbCancel(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
     LogFlow(("usbProxyVrdpUrbCancel: pUrb=%p\n", pUrb));
 
-    PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
     PUSBPROXYDEVVRDP pDevVrdp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVVRDP);
-
     pDevVrdp->pCallback->pfnCancelURB (pDevVrdp->pDevice, (PREMOTEUSBQURB)pUrb->Dev.pvPrivate);
+    return VINF_SUCCESS; /** @todo: Enhance remote interface to pass a status code. */
 }
 
 static DECLCALLBACK(int) usbProxyVrdpWakeup(PUSBPROXYDEV pProxyDev)
@@ -259,7 +256,6 @@ static DECLCALLBACK(int) usbProxyVrdpWakeup(PUSBPROXYDEV pProxyDev)
     LogFlow(("usbProxyVrdpWakeup: pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
 
     PUSBPROXYDEVVRDP pDevVrdp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVVRDP);
-
     return pDevVrdp->pCallback->pfnWakeup (pDevVrdp->pDevice);
 }
 

@@ -536,7 +536,7 @@ static DECLCALLBACK(int) usbProxyFreeBSDSetConfig(PUSBPROXYDEV pProxyDev, int iC
     {
         LogFlow(("usbProxyFreeBSDSetInterface: Freeing kernel resources "
                  "failed failed rc=%d\n", rc));
-        return false;
+        return rc;
     }
 
     if (iCfg == 0)
@@ -557,21 +557,17 @@ static DECLCALLBACK(int) usbProxyFreeBSDSetConfig(PUSBPROXYDEV pProxyDev, int iC
         {
             LogFlow(("usbProxyFreeBSDSetConfig: configuration "
                      "%d not found\n", iCfg));
-            return false;
+            return VERR_NOT_FOUND;
         }
     }
 
     /* Set the config */
     rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_SET_CONFIG, &iCfgIndex, true);
     if (RT_FAILURE(rc))
-        return false;
+        return rc;
 
     /* Allocate kernel ressources again. */
-    rc = usbProxyFreeBSDFsInit(pProxyDev);
-    if (RT_FAILURE(rc))
-        return false;
-
-    return true;
+    return usbProxyFreeBSDFsInit(pProxyDev);
 }
 
 /**
@@ -589,14 +585,10 @@ static DECLCALLBACK(int) usbProxyFreeBSDClaimInterface(PUSBPROXYDEV pProxyDev, i
      * Try to detach kernel driver on this interface, ignore any
      * failures
      */
-    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_IFACE_DRIVER_DETACH, &iIf, true);
+    usbProxyFreeBSDDoIoCtl(pProxyDev, USB_IFACE_DRIVER_DETACH, &iIf, true);
 
     /* Try to claim interface */
-    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_CLAIM_INTERFACE, &iIf, true);
-    if (RT_FAILURE(rc))
-        return false;
-
-    return true;
+    return usbProxyFreeBSDDoIoCtl(pProxyDev, USB_CLAIM_INTERFACE, &iIf, true);
 }
 
 /**
@@ -610,11 +602,7 @@ static DECLCALLBACK(int) usbProxyFreeBSDReleaseInterface(PUSBPROXYDEV pProxyDev,
     LogFlow(("usbProxyFreeBSDReleaseInterface: pProxyDev=%s "
         "ifnum=%x\n", pProxyDev->pUsbIns->pszName, iIf));
 
-    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_RELEASE_INTERFACE, &iIf, true);
-    if (RT_FAILURE(rc))
-        return false;
-
-    return true;
+    return usbProxyFreeBSDDoIoCtl(pProxyDev, USB_RELEASE_INTERFACE, &iIf, true);
 }
 
 /**
@@ -622,8 +610,7 @@ static DECLCALLBACK(int) usbProxyFreeBSDReleaseInterface(PUSBPROXYDEV pProxyDev,
  *
  * @returns success indicator.
  */
-static DECLCALLBACK(int)
-usbProxyFreeBSDSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
+static DECLCALLBACK(int) usbProxyFreeBSDSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
 {
     PUSBPROXYDEVFBSD pDevFBSD = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVFBSD);
     struct usb_alt_interface UsbIntAlt;
@@ -638,7 +625,7 @@ usbProxyFreeBSDSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
     {
         LogFlow(("usbProxyFreeBSDSetInterface: Freeing kernel resources "
                  "failed failed rc=%d\n", rc));
-        return false;
+        return rc;
     }
     memset(&UsbIntAlt, 0, sizeof(UsbIntAlt));
     UsbIntAlt.uai_interface_index = iIf;
@@ -649,24 +636,17 @@ usbProxyFreeBSDSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
     {
         LogFlow(("usbProxyFreeBSDSetInterface: Setting interface %d %d "
                  "failed rc=%d\n", iIf, iAlt, rc));
-        return false;
+        return rc;
     }
 
-    rc = usbProxyFreeBSDFsInit(pProxyDev);
-    if (RT_FAILURE(rc))
-        return false;
-
-    return true;
+    return usbProxyFreeBSDFsInit(pProxyDev);
 }
 
 /**
  * Clears the halted endpoint 'ep_num'.
  */
-static DECLCALLBACK(bool) usbProxyFreeBSDClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int ep_num)
+static DECLCALLBACK(int) usbProxyFreeBSDClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int ep_num)
 {
-    struct usb_ctl_request Req;
-    int rc;
-
     LogFlow(("usbProxyFreeBSDClearHaltedEp: pProxyDev=%s ep_num=%u\n",
              pProxyDev->pUsbIns->pszName, ep_num));
 
@@ -675,22 +655,18 @@ static DECLCALLBACK(bool) usbProxyFreeBSDClearHaltedEp(PUSBPROXYDEV pProxyDev, u
      * Just ignore it.
      */
     if ((ep_num & 0xF) == 0)
-        return true;
+        return VINF_SUCCESS;
 
+    struct usb_ctl_request Req;
     memset(&Req, 0, sizeof(Req));
-
     usbProxyFreeBSDSetupReq(&Req.ucr_request,
                             VUSB_DIR_TO_DEV | VUSB_TO_ENDPOINT,
                             VUSB_REQ_CLEAR_FEATURE, 0, ep_num, 0);
 
-    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_DO_REQUEST, &Req, true);
+    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_DO_REQUEST, &Req, true);
 
     LogFlow(("usbProxyFreeBSDClearHaltedEp: rc=%Rrc\n", rc));
-
-    if (RT_FAILURE(rc))
-        return false;
-
-    return true;
+    return rc;
 }
 
 /**
@@ -726,7 +702,7 @@ retry:
                                         index);
 
     if (index < 0)
-        return false;
+        return VERR_INVALID_PARAMETER;
 
     pEndpointFBSD = &pDevFBSD->aSwEndpoint[index];
     pXferEndpoint = &pDevFBSD->aHwEndpoint[index];
@@ -996,19 +972,17 @@ repeat:
  * Cancels the URB.
  * The URB requires reaping, so we don't change its state.
  */
-static DECLCALLBACK(void) usbProxyFreeBSDUrbCancel(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyFreeBSDUrbCancel(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
-    PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
     int index;
 
     index = (int)(long)pUrb->Dev.pvPrivate - 1;
 
     if (index < 0 || index >= USBFBSD_MAXENDPOINTS)
-        return;
+        return VINF_SUCCESS; /* invalid index, pretend success. */
 
     LogFlow(("usbProxyFreeBSDUrbCancel: epindex=%u\n", (unsigned)index));
-
-    usbProxyFreeBSDEndpointClose(pProxyDev, index);
+    return usbProxyFreeBSDEndpointClose(pProxyDev, index);
 }
 
 /**

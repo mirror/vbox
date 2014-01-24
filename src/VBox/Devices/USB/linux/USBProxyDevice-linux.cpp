@@ -1125,9 +1125,9 @@ static DECLCALLBACK(int) usbProxyLinuxSetConfig(PUSBPROXYDEV pProxyDev, int iCfg
     if (usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_SETCONFIGURATION, &iCfg, true, UINT32_MAX))
     {
         Log(("usb-linux: Set configuration. errno=%d\n", errno));
-        return false;
+        return RTErrConvertFromErrno(errno);
     }
-    return true;
+    return VINF_SUCCESS;
 }
 
 
@@ -1143,9 +1143,9 @@ static DECLCALLBACK(int) usbProxyLinuxClaimInterface(PUSBPROXYDEV pProxyDev, int
     if (usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_CLAIMINTERFACE, &iIf, true, UINT32_MAX))
     {
         Log(("usb-linux: Claim interface. errno=%d pProxyDev=%s\n", errno, usbProxyGetName(pProxyDev)));
-        return false;
+        return RTErrConvertFromErrno(errno);
     }
-    return true;
+    return VINF_SUCCESS;
 }
 
 
@@ -1160,9 +1160,9 @@ static int usbProxyLinuxReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
     if (usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_RELEASEINTERFACE, &iIf, true, UINT32_MAX))
     {
         Log(("usb-linux: Release interface, errno=%d. pProxyDev=%s\n", errno, usbProxyGetName(pProxyDev)));
-        return false;
+        return RTErrConvertFromErrno(errno);
     }
-    return true;
+    return VINF_SUCCESS;
 }
 
 
@@ -1181,16 +1181,16 @@ static int usbProxyLinuxSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
     if (usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_SETINTERFACE, &SetIf, true, UINT32_MAX))
     {
         Log(("usb-linux: Set interface, errno=%d. pProxyDev=%s\n", errno, usbProxyGetName(pProxyDev)));
-        return false;
+        return RTErrConvertFromErrno(errno);
     }
-    return true;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Clears the halted endpoint 'EndPt'.
  */
-static bool usbProxyLinuxClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
+static int usbProxyLinuxClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
 {
     LogFlow(("usbProxyLinuxClearHaltedEp: pProxyDev=%s EndPt=%u\n", usbProxyGetName(pProxyDev), EndPt));
 
@@ -1205,13 +1205,13 @@ static bool usbProxyLinuxClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndP
         {
             Log(("usb-linux: clear_halted_ep failed errno=%d. pProxyDev=%s ep=%d - IGNORED\n",
                  errno, usbProxyGetName(pProxyDev), EndPt));
-            return true;
+            return VINF_SUCCESS;
         }
         Log(("usb-linux: clear_halted_ep failed errno=%d. pProxyDev=%s ep=%d\n",
              errno, usbProxyGetName(pProxyDev), EndPt));
-        return false;
+        return RTErrConvertFromErrno(errno);
     }
-    return true;
+    return VINF_SUCCESS;
 }
 
 
@@ -1276,10 +1276,11 @@ static void usbProxyLinuxCleanupFailedSubmit(PUSBPROXYDEV pProxyDev, PUSBPROXYUR
  * Submit one URB through the usbfs IOCTL interface, with
  * retries
  *
- * @returns true / false.
+ * @returns VBox status code.
  */
-static bool usbProxyLinuxSubmitURB(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pCur, PVUSBURB pUrb, bool *pfUnplugged)
+static int usbProxyLinuxSubmitURB(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pCur, PVUSBURB pUrb, bool *pfUnplugged)
 {
+    int rc = VINF_SUCCESS;
     PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
     unsigned        cTries = 0;
 
@@ -1291,7 +1292,7 @@ static bool usbProxyLinuxSubmitURB(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pCur,
         {
             Log(("usbProxyLinuxSubmitURB: ENODEV -> unplugged. pProxyDev=%s\n", usbProxyGetName(pProxyDev)));
             *pfUnplugged = true;
-            return false;
+            return RTErrConvertFromErrno(errno);
         }
 
         Log(("usb-linux: Submit URB %p -> %d!!! type=%d ep=%#x buffer_length=%#x cTries=%d\n",
@@ -1301,9 +1302,9 @@ static bool usbProxyLinuxSubmitURB(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pCur,
             pCur->u64SubmitTS = RTTimeMilliTS();
             continue;
         }
-        return false;
+        return RTErrConvertFromErrno(errno);
     }
-    return true;
+    return VINF_SUCCESS;
 }
 
 /** The split size. 16K in known Linux kernel versions. */
@@ -1352,7 +1353,7 @@ static PUSBPROXYURBLNX usbProxyLinuxSplitURBFragment(PUSBPROXYDEV pProxyDev, PUS
  * fragment URBs might be filled. We can only safely set up one
  * URB at a time -> worse performance but correct behaviour.
  *
- * @returns true / false.
+ * @returns VBox status code.
  * @param   pProxyDev   The proxy device.
  * @param   pUrbLnx     The linux URB which was rejected because of being too big.
  * @param   pUrb        The VUSB URB.
@@ -1378,7 +1379,7 @@ static int usbProxyLinuxUrbQueueSplit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pU
         case VUSBXFERTYPE_ISOC:
             AssertMsgFailed(("We can't split isochronous URBs!\n"));
             usbProxyLinuxUrbFree(pProxyDev, pUrbLnx);
-            return false;
+            return VERR_INVALID_PARAMETER; /** @todo: Better status code. */
     }
     pUrbLnx->KUrb.endpoint          = pUrb->EndPt;
     if (pUrb->enmDir == VUSBDIRECTION_IN)
@@ -1401,17 +1402,16 @@ static int usbProxyLinuxUrbQueueSplit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pU
     cbLeft -= pUrbLnx->KUrb.buffer_length;
     pUrbLnx->cbSplitRemaining = cbLeft;
 
-    bool fSucceeded = false;
+    int rc = VINF_SUCCESS;
     bool fUnplugged = false;
     if (pUrb->enmDir == VUSBDIRECTION_IN && !pUrb->fShortNotOk)
     {
         /* Subsequent fragments will be queued only after the previous fragment is reaped
          * and only if necessary.
          */
-        fSucceeded = true;
         Log(("usb-linux: Large ShortOK read, only queuing first fragment.\n"));
         Assert(pUrbLnx->cbSplitRemaining > 0 && pUrbLnx->cbSplitRemaining < 256 * _1K);
-        fSucceeded = usbProxyLinuxSubmitURB(pProxyDev, pUrbLnx, pUrb, &fUnplugged);
+        rc = usbProxyLinuxSubmitURB(pProxyDev, pUrbLnx, pUrb, &fUnplugged);
     }
     else
     {
@@ -1421,9 +1421,7 @@ static int usbProxyLinuxUrbQueueSplit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pU
         {
             pCur = usbProxyLinuxSplitURBFragment(pProxyDev, pUrbLnx, pCur);
             if (!pCur)
-            {
-                return false;
-            }
+                return VERR_NO_MEMORY;
         }
         Assert(pCur->cbSplitRemaining == 0);
 
@@ -1431,35 +1429,31 @@ static int usbProxyLinuxUrbQueueSplit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pU
         pCur = pUrbLnx;
         for (i = 0; i < cKUrbs; i++, pCur = pCur->pSplitNext)
         {
-            fSucceeded = usbProxyLinuxSubmitURB(pProxyDev, pCur, pUrb, &fUnplugged);
-            if (!fSucceeded)
+            rc = usbProxyLinuxSubmitURB(pProxyDev, pCur, pUrb, &fUnplugged);
+            if (RT_FAILURE(rc))
                 break;
         }
     }
 
-    if (fSucceeded)
+    if (RT_SUCCESS(rc))
     {
         pUrb->Dev.pvPrivate = pUrbLnx;
         LogFlow(("usbProxyLinuxUrbQueueSplit: ok\n"));
-        return true;
+        return VINF_SUCCESS;
     }
 
     usbProxyLinuxCleanupFailedSubmit(pProxyDev, pUrbLnx, pCur, pUrb, &fUnplugged);
-    return false;
+    return rc;
 }
 
 
 /**
  * @copydoc USBPROXYBACK::pfnUrbQueue
  */
-static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
+    int             rc = VINF_SUCCESS;
     unsigned        cTries;
-#ifndef RDESKTOP
-    PUSBPROXYDEV    pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
-#else
-    PUSBPROXYDEV    pProxyDev = usbProxyFromVusbDev(pUrb->pDev);
-#endif
     PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
     LogFlow(("usbProxyLinuxUrbQueue: pProxyDev=%s pUrb=%p EndPt=%d cbData=%d\n",
              usbProxyGetName(pProxyDev), pUrb, pUrb->EndPt, pUrb->cbData));
@@ -1469,7 +1463,7 @@ static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PVUSBURB pUrb)
      */
     PUSBPROXYURBLNX pUrbLnx = usbProxyLinuxUrbAlloc(pProxyDev, NULL);
     if (!pUrbLnx)
-        return false;
+        return VERR_NO_MEMORY;
 
     pUrbLnx->KUrb.endpoint          = pUrb->EndPt | (pUrb->enmDir == VUSBDIRECTION_IN ? 0x80 : 0);
     pUrbLnx->KUrb.status            = 0;
@@ -1490,7 +1484,7 @@ static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PVUSBURB pUrb)
             if (pUrb->cbData < sizeof(VUSBSETUP))
             {
                 usbProxyLinuxUrbFree(pProxyDev, pUrbLnx);
-                return false;
+                return VERR_BUFFER_UNDERFLOW;
             }
             usbProxyLinuxUrbSwapSetup((PVUSBSETUP)pUrb->abData);
             LogFlow(("usbProxyLinuxUrbQueue: message\n"));
@@ -1514,7 +1508,7 @@ static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PVUSBURB pUrb)
             pUrbLnx->KUrb.type = USBDEVFS_URB_TYPE_INTERRUPT;
             break;
         default:
-            goto l_err;
+            rc = VERR_INVALID_PARAMETER; /** @todo: better status code. */
     }
 
     /*
@@ -1533,7 +1527,7 @@ static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PVUSBURB pUrb)
             usbProxyLinuxUrbFree(pProxyDev, pUrbLnx);
 
             usbProxLinuxUrbUnplugged(pProxyDev);
-            return false;
+            return RTErrConvertFromErrno(errno);
         }
 
         /*
@@ -1552,17 +1546,20 @@ static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PVUSBURB pUrb)
              pUrb, errno, pUrbLnx->KUrb.type, pUrbLnx->KUrb.endpoint, pUrbLnx->KUrb.buffer_length, cTries));
         if (errno != EBUSY && ++cTries < 3) /* this doesn't work for the floppy :/ */
             continue;
+
+        rc = RTErrConvertFromErrno(errno);
+
 l_err:
         if (pUrb->enmType == VUSBXFERTYPE_MSG)
             usbProxyLinuxUrbSwapSetup((PVUSBSETUP)pUrb->abData);
         usbProxyLinuxUrbFree(pProxyDev, pUrbLnx);
-        return false;
+        return rc;
     }
     pUrbLnx->u64SubmitTS = RTTimeMilliTS();
 
     LogFlow(("usbProxyLinuxUrbQueue: ok\n"));
     pUrb->Dev.pvPrivate = pUrbLnx;
-    return true;
+    return rc;
 }
 
 
@@ -1950,13 +1947,9 @@ static DECLCALLBACK(PVUSBURB) usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSI
  * Cancels the URB.
  * The URB requires reaping, so we don't change its state.
  */
-static DECLCALLBACK(void) usbProxyLinuxUrbCancel(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyLinuxUrbCancel(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
-#ifndef RDESKTOP
-    PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
-#else
-    PUSBPROXYDEV pProxyDev = usbProxyFromVusbDev(pUrb->pDev);
-#endif
+    int rc = VINF_SUCCESS;
     PUSBPROXYURBLNX pUrbLnx = (PUSBPROXYURBLNX)pUrb->Dev.pvPrivate;
     if (pUrbLnx->pSplitHead)
     {
@@ -1972,6 +1965,7 @@ static DECLCALLBACK(void) usbProxyLinuxUrbCancel(PVUSBURB pUrb)
                 continue;
             if (errno == ENODEV)
                 break;
+            /** @todo: Think about how to handle errors wrt. to the status code. */
             Log(("usb-linux: Discard URB %p failed, errno=%d. pProxyDev=%s!!! (split)\n",
                  pUrb, errno, usbProxyGetName(pProxyDev)));
         }
@@ -1982,9 +1976,14 @@ static DECLCALLBACK(void) usbProxyLinuxUrbCancel(PVUSBURB pUrb)
         if (    usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_DISCARDURB, &pUrbLnx->KUrb, true, UINT32_MAX)
             &&  errno != ENODEV /* deal with elsewhere. */
             &&  errno != ENOENT)
+        {
             Log(("usb-linux: Discard URB %p failed, errno=%d. pProxyDev=%s!!!\n",
                  pUrb, errno, usbProxyGetName(pProxyDev)));
+            rc = RTErrConvertFromErrno(errno);
+        }
     }
+
+    return rc;
 }
 
 
