@@ -248,7 +248,7 @@ typedef struct SHASTORAGE
 
 PVDINTERFACEIO ShaCreateInterface();
 PVDINTERFACEIO FileCreateInterface();
-PVDINTERFACEIO TarCreateInterface();
+PVDINTERFACEIO tarWriterCreateInterface(void);
 
 /** Pointer to the instance data for the fssRdOnly_ methods. */
 typedef struct FSSRDONLYINTERFACEIO *PFSSRDONLYINTERFACEIO;

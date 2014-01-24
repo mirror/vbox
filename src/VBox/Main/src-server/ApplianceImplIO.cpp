@@ -53,7 +53,7 @@ typedef struct FILESTORAGEINTERNAL
 typedef struct TARSTORAGEINTERNAL
 {
     /** Tar handle. */
-    RTTARFILE      file;
+    RTTARFILE      hTarFile;
     /** Completion callback. */
     PFNVDCOMPLETED pfnCompleted;
 } TARSTORAGEINTERNAL, *PTARSTORAGEINTERNAL;
@@ -327,87 +327,45 @@ static int fileFlushSyncCallback(void * /* pvUser */, void *pvStorage)
     return RTFileFlush(pInt->file);
 }
 
-/******************************************************************************
- *   Internal: RTTar interface
- ******************************************************************************/
 
-static int tarOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen,
-                             PFNVDCOMPLETED pfnCompleted, void **ppInt)
+/** @name VDINTERFACEIO implementation that writes TAR files via RTTar.
+ * @{ */
+
+static DECLCALLBACK(int) tarWriter_Open(void *pvUser, const char *pszLocation, uint32_t fOpen,
+                                        PFNVDCOMPLETED pfnCompleted, void **ppInt)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
     AssertPtrReturn(ppInt, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
-//    AssertReturn(!(fOpen & RTFILE_O_READWRITE), VERR_INVALID_PARAMETER);
-
-    RTTAR tar = (RTTAR)pvUser;
+    AssertReturn(fOpen & RTFILE_O_WRITE, VERR_INVALID_PARAMETER); /* Only for writing. */
 
     DEBUG_PRINT_FLOW();
 
+    /*
+     * Allocate a storage handle.
+     */
+    int rc;
     PTARSTORAGEINTERNAL pInt = (PTARSTORAGEINTERNAL)RTMemAllocZ(sizeof(TARSTORAGEINTERNAL));
-    if (!pInt)
-        return VERR_NO_MEMORY;
-
-    pInt->pfnCompleted = pfnCompleted;
-
-    int rc = VINF_SUCCESS;
-
-    if (fOpen & RTFILE_O_READ
-        && !(fOpen & RTFILE_O_WRITE))
+    if (pInt)
     {
-        /* Read only is a little bit more complicated than writing, cause we
-         * need streaming functionality. First try to open the file on the
-         * current file position. If this is the file the caller requested, we
-         * are fine. If not seek to the next file in the stream and check
-         * again. This is repeated until EOF of the OVA. */
+        pInt->pfnCompleted = pfnCompleted;
+
         /*
-         *
-         *
-         *  TODO: recheck this with more VDMKs (or what else) in an test OVA.
-         *
-         *
+         * Try open the file.
          */
-        bool fFound = false;
-
-        for (;;)
-        {
-            char *pszFilename;
-            rc = RTTarCurrentFile(tar, &pszFilename);
-            if (RT_SUCCESS(rc))
-            {
-                if (rc == VINF_TAR_DIR_PATH)
-                {
-                    RTStrFree(pszFilename);
-                    break;
-                }
-
-                fFound = !RTStrICmp(pszFilename, pszLocation);
-
-                RTStrFree(pszFilename);
-                if (fFound)
-                    break;
-                rc = RTTarSeekNextFile(tar);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-            else
-                break;
-        }
-        if (fFound)
-            rc = RTTarFileOpenCurrentFile(tar, &pInt->file, 0, fOpen);
+        rc = RTTarFileOpen((RTTAR)pvUser, &pInt->hTarFile, RTPathFilename(pszLocation), fOpen);
+        if (RT_SUCCESS(rc))
+            *ppInt = pInt;
+        else
+            RTMemFree(pInt);
     }
     else
-        rc = RTTarFileOpen(tar, &pInt->file, RTPathFilename(pszLocation), fOpen);
-
-    if (RT_FAILURE(rc))
-        RTMemFree(pInt);
-    else
-        *ppInt = pInt;
-
+        rc = VERR_NO_MEMORY;
     return rc;
 }
 
-static int tarCloseCallback(void *pvUser, void *pvStorage)
+static DECLCALLBACK(int) tarWriter_Close(void *pvUser, void *pvStorage)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -417,7 +375,8 @@ static int tarCloseCallback(void *pvUser, void *pvStorage)
 
     DEBUG_PRINT_FLOW();
 
-    int rc = RTTarFileClose(pInt->file);
+    int rc = RTTarFileClose(pInt->hTarFile);
+    pInt->hTarFile = NIL_RTTARFILE;
 
     /* Cleanup */
     RTMemFree(pInt);
@@ -425,54 +384,22 @@ static int tarCloseCallback(void *pvUser, void *pvStorage)
     return rc;
 }
 
-static int tarDeleteCallback(void *pvUser, const char *pcszFilename)
+static DECLCALLBACK(int) tarWriter_GetSize(void *pvUser, void *pvStorage, uint64_t *pcbSize)
 {
+    /** @todo Not sure if this is really required, but it's not a biggie to keep
+     *        around. */
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcszFilename, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
+
+    PTARSTORAGEINTERNAL pInt = (PTARSTORAGEINTERNAL)pvStorage;
 
     DEBUG_PRINT_FLOW();
 
-    return VERR_NOT_IMPLEMENTED;
+    return RTTarFileGetSize(pInt->hTarFile, pcbSize);
 }
 
-static int tarMoveCallback(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned /* fMove */)
-{
-    /* Validate input. */
-    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcszSrc, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcszDst, VERR_INVALID_POINTER);
-
-    DEBUG_PRINT_FLOW();
-
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static int tarGetFreeSpaceCallback(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
-{
-    /* Validate input. */
-    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcszFilename, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbFreeSpace, VERR_INVALID_POINTER);
-
-    DEBUG_PRINT_FLOW();
-
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static int tarGetModificationTimeCallback(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
-{
-    /* Validate input. */
-    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcszFilename, VERR_INVALID_POINTER);
-    AssertPtrReturn(pModificationTime, VERR_INVALID_POINTER);
-
-    DEBUG_PRINT_FLOW();
-
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static int tarGetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
+static DECLCALLBACK(int) tarWriter_SetSize(void *pvUser, void *pvStorage, uint64_t cbSize)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -482,10 +409,11 @@ static int tarGetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
 
     DEBUG_PRINT_FLOW();
 
-    return RTTarFileGetSize(pInt->file, pcbSize);
+    return RTTarFileSetSize(pInt->hTarFile, cbSize);
 }
 
-static int tarSetSizeCallback(void *pvUser, void *pvStorage, uint64_t cbSize)
+static DECLCALLBACK(int) tarWriter_WriteSync(void *pvUser, void *pvStorage, uint64_t uOffset,
+                                             const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -495,26 +423,14 @@ static int tarSetSizeCallback(void *pvUser, void *pvStorage, uint64_t cbSize)
 
     DEBUG_PRINT_FLOW();
 
-    return RTTarFileSetSize(pInt->file, cbSize);
+    return RTTarFileWriteAt(pInt->hTarFile, uOffset, pvBuf, cbWrite, pcbWritten);
 }
 
-static int tarWriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
-                                  const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
+static DECLCALLBACK(int) tarWriter_ReadSync(void *pvUser, void *pvStorage, uint64_t uOffset,
+                                            void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
-    /* Validate input. */
-    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
-
-    PTARSTORAGEINTERNAL pInt = (PTARSTORAGEINTERNAL)pvStorage;
-
-    DEBUG_PRINT_FLOW();
-
-    return RTTarFileWriteAt(pInt->file, uOffset, pvBuf, cbWrite, pcbWritten);
-}
-
-static int tarReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
-                                 void *pvBuf, size_t cbRead, size_t *pcbRead)
-{
+    /** @todo Not sure if this is really required, but it's not a biggie to keep
+     *        around. */
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
@@ -523,24 +439,36 @@ static int tarReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
 
 //    DEBUG_PRINT_FLOW();
 
-    return RTTarFileReadAt(pInt->file, uOffset, pvBuf, cbRead, pcbRead);
+    return RTTarFileReadAt(pInt->hTarFile, uOffset, pvBuf, cbRead, pcbRead);
 }
 
-static int tarFlushSyncCallback(void *pvUser, void *pvStorage)
+
+PVDINTERFACEIO tarWriterCreateInterface(void)
 {
-    /* Validate input. */
-    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
+    PVDINTERFACEIO pCallbacks = (PVDINTERFACEIO)RTMemAllocZ(sizeof(VDINTERFACEIO));
+    if (!pCallbacks)
+        return NULL;
 
-    DEBUG_PRINT_FLOW();
+    pCallbacks->pfnOpen                = tarWriter_Open;
+    pCallbacks->pfnClose               = tarWriter_Close;
+    pCallbacks->pfnDelete              = notImpl_Delete;
+    pCallbacks->pfnMove                = notImpl_Move;
+    pCallbacks->pfnGetFreeSpace        = notImpl_GetFreeSpace;
+    pCallbacks->pfnGetModificationTime = notImpl_GetModificationTime;
+    pCallbacks->pfnGetSize             = tarWriter_GetSize;
+    pCallbacks->pfnSetSize             = tarWriter_SetSize;
+    pCallbacks->pfnReadSync            = tarWriter_ReadSync;
+    pCallbacks->pfnWriteSync           = tarWriter_WriteSync;
+    pCallbacks->pfnFlushSync           = notImpl_FlushSync;
 
-    return VERR_NOT_IMPLEMENTED;
+    return pCallbacks;
 }
+
+/** @} */
 
 
 /** @name VDINTERFACEIO implementation on top of an IPRT file system stream.
  * @{ */
-
 
 /**
  * Internal data for read only I/O stream (related to FSSRDONLYINTERFACEIO).
@@ -1626,27 +1554,6 @@ PVDINTERFACEIO FileCreateInterface()
     pCallbacks->pfnReadSync            = fileReadSyncCallback;
     pCallbacks->pfnWriteSync           = fileWriteSyncCallback;
     pCallbacks->pfnFlushSync           = fileFlushSyncCallback;
-
-    return pCallbacks;
-}
-
-PVDINTERFACEIO TarCreateInterface()
-{
-    PVDINTERFACEIO pCallbacks = (PVDINTERFACEIO)RTMemAllocZ(sizeof(VDINTERFACEIO));
-    if (!pCallbacks)
-        return NULL;
-
-    pCallbacks->pfnOpen                = tarOpenCallback;
-    pCallbacks->pfnClose               = tarCloseCallback;
-    pCallbacks->pfnDelete              = tarDeleteCallback;
-    pCallbacks->pfnMove                = tarMoveCallback;
-    pCallbacks->pfnGetFreeSpace        = tarGetFreeSpaceCallback;
-    pCallbacks->pfnGetModificationTime = tarGetModificationTimeCallback;
-    pCallbacks->pfnGetSize             = tarGetSizeCallback;
-    pCallbacks->pfnSetSize             = tarSetSizeCallback;
-    pCallbacks->pfnReadSync            = tarReadSyncCallback;
-    pCallbacks->pfnWriteSync           = tarWriteSyncCallback;
-    pCallbacks->pfnFlushSync           = tarFlushSyncCallback;
 
     return pCallbacks;
 }

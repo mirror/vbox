@@ -1444,7 +1444,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         </Item> */
                     if (uLoop == 2)
                     {
-                        uint32_t cDisks = stack.mapDisks.size();
+                        uint32_t cDisks = (uint32_t)stack.mapDisks.size();
                         Utf8Str strDiskID = Utf8StrFmt("vmdisk%RI32", ++cDisks);
 
                         strDescription = "Disk Image";
@@ -1947,7 +1947,7 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     LogFlowFuncEnter();
 
     RTTAR tar;
-    int vrc = RTTarOpen(&tar, pTask->locInfo.strPath.c_str(), RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL, false);
+    int vrc = RTTarOpen(&tar, pTask->locInfo.strPath.c_str(), RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL);
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Could not create OVA file '%s' (%Rrc)"),
@@ -1965,7 +1965,7 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             rc = E_OUTOFMEMORY;
             break;
         }
-        pTarIo = TarCreateInterface();
+        pTarIo = tarWriterCreateInterface();
         if (!pTarIo)
         {
             rc = E_OUTOFMEMORY;
@@ -2122,7 +2122,8 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             try
             {
                 // advance to the next operation
-                pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), RTPathFilename(strTargetFilePath.c_str())).raw(),
+                pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"),
+                                                           RTPathFilename(strTargetFilePath.c_str())).raw(),
                                                    pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally
 
                 // create a flat copy of the source disk image
@@ -2130,7 +2131,8 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                 {
                     ComObjPtr<Progress> pProgress2;
                     pProgress2.createObject();
-                    rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"), strTargetFilePath.c_str()).raw(), TRUE);
+                    rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"),
+                                                                                               strTargetFilePath.c_str()).raw(), TRUE);
                     if (FAILED(rc)) throw rc;
 
                     rc = pSourceDisk->i_exportFile(strTargetFilePath.c_str(),
@@ -2145,9 +2147,11 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                     // now wait for the background disk operation to complete; this throws HRESULTs on error
                     i_waitForAsyncProgress(pTask->pProgress, pProgress3);
                 }
-                else//pDiskEntry->type == VirtualSystemDescriptionType_CDROM
+                else
                 {
                     //copy/clone CD/DVD image
+                    Assert(pDiskEntry->type == VirtualSystemDescriptionType_CDROM);
+
                     /* Read the ISO file and add one to OVA/OVF package */
                     {
                         void *pvStorage;
@@ -2175,52 +2179,45 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                                            strSrcFilePath.c_str(), vrc);
                         }
 
-                        void *pvTmpBuf = 0;
-                        size_t cbTmpSize = _1M;
-                        size_t cbAllWritten = 0;
                         uint64_t cbFile = 0;
-                        size_t cbSize = 0;
-
                         vrc = RTFileGetSize(pFile, &cbFile);
-
-                        do
+                        if (RT_SUCCESS(vrc))
                         {
-                            pvTmpBuf = RTMemAlloc(cbTmpSize);
-                            if (!pvTmpBuf)
+                            size_t const cbTmpSize = _1M;
+                            void *pvTmpBuf = RTMemAlloc(cbTmpSize);
+                            if (pvTmpBuf)
                             {
+                                /* The copy loop. */
+                                uint64_t offDstFile = 0;
+                                for (;;)
+                                {
+                                    size_t cbChunk = 0;
+                                    vrc = RTFileRead(pFile, pvTmpBuf, cbTmpSize, &cbChunk);
+                                    if (RT_FAILURE(vrc) || cbChunk == 0)
+                                        break;
+
+                                    size_t cbWritten = 0;
+                                    vrc = pIfIo->pfnWriteSync(pvUser,
+                                                              pvStorage,
+                                                              offDstFile,
+                                                              pvTmpBuf,
+                                                              cbChunk,
+                                                              &cbWritten);
+                                    if (RT_FAILURE(vrc))
+                                        break;
+                                    Assert(cbWritten == cbChunk);
+
+                                    offDstFile += cbWritten;
+                                }
+
+                                RTMemFree(pvTmpBuf);
+                            }
+                            else
                                 vrc = VERR_NO_MEMORY;
-                                break;
-                            }
-
-                            for (;;)
-                            {
-                                // copy raw data into the buffer pvTmpBuf
-                                vrc = RTFileRead(pFile, pvTmpBuf, cbTmpSize, &cbSize);
-
-                                if (RT_FAILURE(vrc) || cbSize == 0)
-                                    break;
-
-                                size_t cbToWrite = cbSize;
-                                size_t cbWritten = 0;
-
-                                vrc = pIfIo->pfnWriteSync(pvUser,
-                                                         pvStorage,
-                                                         cbAllWritten,
-                                                         pvTmpBuf,
-                                                         cbToWrite,&cbWritten);
-
-                                if (RT_FAILURE(vrc))
-                                    break;
-
-                                cbAllWritten += cbWritten;
-                            }
-                        } while (0);
+                        }
 
                         pIfIo->pfnClose(pvUser, pvStorage);
                         RTFileClose(pFile);
-
-                        if (pvTmpBuf)
-                            RTMemFree(pvTmpBuf);
 
                         if (RT_FAILURE(vrc))
                         {
