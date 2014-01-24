@@ -32,6 +32,7 @@
 extern const USBPROXYBACK g_USBProxyDeviceHost =
 {
     "host",
+    0,          /* cbBackend */
     NULL,       /* Open */
     NULL,       /* Init */
     NULL,       /* Close */
