@@ -785,27 +785,6 @@ HRESULT Appliance::importMachines(const std::vector<ImportOptions_T> &aOptions,
 HRESULT Appliance::i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
                                                RTCString &availableImage)
 {
-#ifdef USE_RTTAR_FOR_READING
-    RTTAR tar = (RTTAR)pSHAStorage->pVDImageIfaces->pvUser;
-    char *pszFilename = 0;
-
-    int vrc = RTTarCurrentFile(tar, &pszFilename);
-    if (RT_FAILURE(vrc))
-        throw setError(VBOX_E_FILE_ERROR,
-                       tr("Could not open the current file in the OVA package (%Rrc)"), vrc);
-    if (vrc == VINF_TAR_DIR_PATH)
-    {
-        HRESULT hrc = setError(VBOX_E_FILE_ERROR,
-                               tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
-                               pszFilename, vrc);
-        RTStrFree(pszFilename);
-        throw hrc;
-    }
-
-    availableImage = pszFilename;
-    return S_OK;
-
-#else
     PFSSRDONLYINTERFACEIO pTarIo = (PFSSRDONLYINTERFACEIO)pSHAStorage->pVDImageIfaces->pvUser;
     const char *pszFilename;
     int vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
@@ -822,7 +801,6 @@ HRESULT Appliance::i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
     }
 
     throw setError(VBOX_E_FILE_ERROR, tr("Could not open the current file in the OVA package (%Rrc)"), vrc);
-#endif
 }
 
 /*******************************************************************************
@@ -1063,94 +1041,6 @@ HRESULT Appliance::i_readFSOVA(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
 
-#ifdef USE_RTTAR_FOR_READING
-    RTTAR tar;
-    HRESULT rc = S_OK;
-    int vrc = 0;
-    PVDINTERFACEIO pShaIo = 0;
-    PVDINTERFACEIO pTarIo = 0;
-    char *pszFilename = 0;
-    SHASTORAGE storage;
-
-    RT_ZERO(storage);
-
-    vrc = RTTarOpen(&tar, pTask->locInfo.strPath.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, true);
-    if (RT_FAILURE(vrc))
-        rc = setError(VBOX_E_FILE_ERROR,
-                        tr("Could not open the OVA file '%s' (%Rrc)"),
-                        pTask->locInfo.strPath.c_str(), vrc);
-    else
-    {
-        do
-        {
-            vrc = RTTarCurrentFile(tar, &pszFilename);
-            if (RT_FAILURE(vrc))
-            {
-                rc = VBOX_E_FILE_ERROR;
-                break;
-            }
-
-            Utf8Str suffix(RTPathSuffix(pszFilename));
-
-            if (!suffix.endsWith(".ovf",Utf8Str::CaseInsensitive))
-            {
-                vrc = VERR_FILE_NOT_FOUND;
-                rc = setError(VBOX_E_FILE_ERROR,
-                              tr("First file in the OVA package must have the extension 'ovf'. "
-                                 "But the file '%s' has a different extension (%Rrc)"),
-                                 pszFilename,
-                                 vrc);
-                break;
-            }
-
-            pTarIo = TarCreateInterface();
-            if (!pTarIo)
-            {
-                rc = E_OUTOFMEMORY;
-                break;
-            }
-
-            pShaIo = ShaCreateInterface();
-            if (!pShaIo)
-            {
-                rc = E_OUTOFMEMORY;
-                break ;
-            }
-
-            Utf8Str name = i_applianceIOName(applianceIOTar);
-
-            vrc = VDInterfaceAdd(&pTarIo->Core, name.c_str(),
-                                 VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
-                                 &storage.pVDImageIfaces);
-            if (RT_FAILURE(vrc))
-            {
-                rc = setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
-                break;
-            }
-
-            rc = i_readFSImpl(pTask, pszFilename, pShaIo, &storage);
-            if (FAILED(rc))
-                break;
-
-        } while (0);
-
-        RTTarClose(tar);
-    }
-
-    /* Cleanup */
-    if (pszFilename)
-        RTStrFree(pszFilename);
-    if (pShaIo)
-        RTMemFree(pShaIo);
-    if (pTarIo)
-        RTMemFree(pTarIo);
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return rc;
-
-#else
     /*
      * Open the tar file and get a VD I/O interface for it.
      */
@@ -1209,7 +1099,6 @@ HRESULT Appliance::i_readFSOVA(TaskOVF *pTask)
     LogFlowFunc(("rc=%Rhrc\n", hrc));
     LogFlowFuncLeave();
     return hrc;
-#endif
 }
 
 HRESULT Appliance::i_readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
@@ -1603,19 +1492,19 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
             storage.fCreateDigest = true;
 
-            size_t cbMfSize = 0;
+            size_t cbMfFile = 0;
 
             /* Now import the appliance. */
             i_importMachines(stack, pShaIo, &storage);
             /* Read & verify the manifest file. */
             /* Add the ovf file to the digest list. */
             stack.llSrcDisksDigest.push_front(STRPAIR(pTask->locInfo.strPath, m->strOVFSHADigest));
-            rc = i_readFileToBuf(strMfFile, &pvMfBuf, &cbMfSize, true, pShaIo, &storage);
+            rc = i_readFileToBuf(strMfFile, &pvMfBuf, &cbMfFile, true, pShaIo, &storage);
             if (FAILED(rc)) throw rc;
-            rc = i_verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
+            rc = i_verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfFile);
             if (FAILED(rc)) throw rc;
 
-            size_t cbCertSize = 0;
+            size_t cbCertFile = 0;
 
             /* Save the SHA digest of the manifest file for the next validation */
             Utf8Str manifestShaDigest = storage.strDigest;
@@ -1623,7 +1512,7 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             Utf8Str strCertFile = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".cert");
             if (RTFileExists(strCertFile.c_str()))
             {
-                rc = i_readFileToBuf(strCertFile, &pvCertBuf, &cbCertSize, false, pShaIo, &storage);
+                rc = i_readFileToBuf(strCertFile, &pvCertBuf, &cbCertFile, false, pShaIo, &storage);
                 if (FAILED(rc)) throw rc;
 
                 /* verify Certificate */
@@ -1686,17 +1575,8 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     /*
      * Open the OVA (TAR) file.
      */
-#ifdef USE_RTTAR_FOR_READING
-    PVDINTERFACEIO pTarIo = 0;
-    RTTAR tar;
-    int vrc = RTTarOpen(&tar,
-                        pTask->locInfo.strPath.c_str(),
-                        RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, true);
-#else
     PFSSRDONLYINTERFACEIO pTarIo;
     int vrc = fssRdOnlyCreateInterfaceForTarFile(pTask->locInfo.strPath.c_str(), &pTarIo);
-    PFSSRDONLYINTERFACEIO tar = pTarIo; /* temporary hack */
-#endif
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Could not open OVA file '%s' (%Rrc)"),
@@ -1704,11 +1584,8 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
 
     PVDINTERFACEIO pShaIo = 0;
-#ifdef USE_RTTAR_FOR_READING
-    char *pszFilename = 0;
-#endif
-    void *pvMfBuf = 0;
-    void *pvCertBuf = 0;
+    void *pvMfBuf = NULL;
+    void *pvCertBuf = NULL;
     Utf8Str OVFfilename;
 
     writeLock.release();
@@ -1722,32 +1599,19 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         pShaIo = ShaCreateInterface();
         if (!pShaIo)
             throw setError(E_OUTOFMEMORY);
-#ifdef USE_RTTAR_FOR_READING
-        pTarIo = TarCreateInterface();
-        if (!pTarIo)
-            throw setError(E_OUTOFMEMORY);
-#endif
-
-        SHASTORAGE storage;
-        RT_ZERO(storage);
 
         Utf8Str nameTar = i_applianceIOName(applianceIOTar);
-
-#ifdef USE_RTTAR_FOR_READING
-        vrc = VDInterfaceAdd(&pTarIo->Core, nameTar.c_str(),
-                             VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
-                             &storage.pVDImageIfaces);
-#else
+        SHASTORAGE storage;
+        RT_ZERO(storage);
         vrc = VDInterfaceAdd((PVDINTERFACE)pTarIo, nameTar.c_str(),
                              VDINTERFACETYPE_IO, pTarIo, sizeof(VDINTERFACEIO),
                              &storage.pVDImageIfaces);
-#endif
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Creation of the VD interface failed (%Rrc)"), vrc);
 
-        Utf8Str nameSha = i_applianceIOName(applianceIOSha);
         /* Fill out interface descriptor. */
+        Utf8Str nameSha = i_applianceIOName(applianceIOSha);
         pShaIo->Core.u32Magic         = VDINTERFACE_MAGIC;
         pShaIo->Core.cbSize           = sizeof(VDINTERFACEIO);
         pShaIo->Core.pszInterfaceName = nameSha.c_str();
@@ -1761,12 +1625,8 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * Read the name of the first file. This is how all internal files
          * are named.
          */
-#ifdef USE_RTTAR_FOR_READING
-        vrc = RTTarCurrentFile(tar, &pszFilename);
-#else
         const char *pszFilename;
         vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
-#endif
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Getting the OVF file within the archive failed (%Rrc)"), vrc);
@@ -1777,33 +1637,16 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
         /* save original OVF filename */
         OVFfilename = pszFilename;
-        size_t cbMfSize = 0;
-        size_t cbCertSize = 0;
         Utf8Str strMfFile = (Utf8Str(pszFilename)).stripSuffix().append(".mf");
         Utf8Str strCertFile = (Utf8Str(pszFilename)).stripSuffix().append(".cert");
 
         /* Skip the OVF file, cause this was read in IAppliance::Read already. */
-#ifdef USE_RTTAR_FOR_READING
-        vrc = RTTarSeekNextFile(tar);
-        if (   RT_FAILURE(vrc)
-            && vrc != VERR_TAR_END_OF_FILE)
-            throw setError(VBOX_E_IPRT_ERROR,
-                           tr("Seeking within the archive failed (%Rrc)"), vrc);
-        RTStrFree(pszFilename);
-        pszFilename = NULL;
-        RTTarCurrentFile(tar, &pszFilename);
-        if (vrc == VINF_TAR_DIR_PATH)
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
-                           pszFilename, vrc);
-#else
         vrc = fssRdOnlySkipCurrent(pTarIo);
         if (RT_SUCCESS(vrc))
             vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
         if (   RT_FAILURE(vrc)
             && vrc != VERR_EOF)
             throw setError(VBOX_E_IPRT_ERROR, tr("Seeking within the archive failed (%Rrc)"), vrc);
-#endif
 
         PVDINTERFACEIO pCallbacks = pShaIo;
         PSHASTORAGE pStorage = &storage;
@@ -1825,7 +1668,8 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * searching for it. We have to try to open it on all possible places.
          * If it fails here, we will try it again after all disks where read.
          */
-        rc = i_readTarFileToBuf(tar, strMfFile, &pvMfBuf, &cbMfSize, true, pCallbacks, pStorage);
+        size_t cbMfFile = 0;
+        rc = i_readTarFileToBuf(pTarIo, strMfFile, &pvMfBuf, &cbMfFile, true, pCallbacks, pStorage);
         if (FAILED(rc))
             throw rc;
 
@@ -1835,18 +1679,15 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * Logic is the same as with manifest file.  This only makes sense if
          * there is a manifest file.
          */
-#ifdef USE_RTTAR_FOR_READING
-        vrc = RTTarCurrentFile(tar, &pszFilename);
-#else
+        size_t cbCertFile = 0;
         vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
-#endif
         if (RT_SUCCESS(vrc))
         {
             if (pvMfBuf)
             {
                 if (strCertFile.compare(pszFilename) == 0)
                 {
-                    rc = i_readTarFileToBuf(tar, strCertFile, &pvCertBuf, &cbCertSize, false, pCallbacks, pStorage);
+                    rc = i_readTarFileToBuf(pTarIo, strCertFile, &pvCertBuf, &cbCertFile, false, pCallbacks, pStorage);
                     if (FAILED(rc)) throw rc;
 
                     if (pvCertBuf)
@@ -1871,7 +1712,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             /*
              * File #N-1 - The manifest file, optional.
              */
-            rc = i_readTarFileToBuf(tar, strMfFile, &pvMfBuf, &cbMfSize, true, pCallbacks, pStorage);
+            rc = i_readTarFileToBuf(pTarIo, strMfFile, &pvMfBuf, &cbMfFile, true, pCallbacks, pStorage);
             if (FAILED(rc)) throw rc;
 
             /* If we were able to read a manifest file we can check it now. */
@@ -1879,25 +1720,19 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             {
                 /* Add the ovf file to the digest list. */
                 stack.llSrcDisksDigest.push_front(STRPAIR(OVFfilename, m->strOVFSHADigest));
-                rc = i_verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
+                rc = i_verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfFile);
                 if (FAILED(rc)) throw rc;
 
                 /*
                  * File #N - The certificate file, optional.
                  * (Requires mainfest, as mention before.)
                  */
-#ifdef USE_RTTAR_FOR_READING
-                RTStrFree(pszFilename);
-                pszFilename = NULL;
-                vrc = RTTarCurrentFile(tar, &pszFilename);
-#else
                 vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
-#endif
                 if (RT_SUCCESS(vrc))
                 {
                     if (strCertFile.compare(pszFilename) == 0)
                     {
-                        rc = i_readTarFileToBuf(tar, strCertFile, &pvCertBuf, &cbCertSize, false, pCallbacks, pStorage);
+                        rc = i_readTarFileToBuf(pTarIo, strCertFile, &pvCertBuf, &cbCertFile, false, pCallbacks, pStorage);
                         if (FAILED(rc)) throw rc;
 
                         if (pvCertBuf)
@@ -1908,6 +1743,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
                 }
             }
         }
+        /** @todo else: Verify the manifest! */
     }
     catch (HRESULT rc2)
     {
@@ -1920,42 +1756,27 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * the original UUIDs because those new UUIDs are obsolete now and
          * won't be used anymore.
          */
+        ErrorInfoKeeper eik; /* paranoia */
+        list< ComObjPtr<VirtualSystemDescription> >::const_iterator itvsd;
+        /* Iterate through all virtual systems of that appliance */
+        for (itvsd = m->virtualSystemDescriptions.begin();
+             itvsd != m->virtualSystemDescriptions.end();
+             ++itvsd)
         {
-            ErrorInfoKeeper eik; /* paranoia */
-            list< ComObjPtr<VirtualSystemDescription> >::const_iterator itvsd;
-            /* Iterate through all virtual systems of that appliance */
-            for (itvsd = m->virtualSystemDescriptions.begin();
-                 itvsd != m->virtualSystemDescriptions.end();
-                 ++itvsd)
-            {
-                ComObjPtr<VirtualSystemDescription> vsdescThis = (*itvsd);
-                settings::MachineConfigFile *pConfig = vsdescThis->m->pConfig;
-                if(vsdescThis->m->pConfig!=NULL)
-                  stack.restoreOriginalUUIDOfAttachedDevice(pConfig);
-            }
+            ComObjPtr<VirtualSystemDescription> vsdescThis = (*itvsd);
+            settings::MachineConfigFile *pConfig = vsdescThis->m->pConfig;
+            if(vsdescThis->m->pConfig!=NULL)
+              stack.restoreOriginalUUIDOfAttachedDevice(pConfig);
         }
     }
     writeLock.acquire();
 
-#ifdef USE_RTTAR_FOR_READING
-    RTTarClose(tar);
-#else
-    fssRdOnlyDestroyInterface(pTarIo);
-#endif
-
     /* Cleanup */
-#ifdef USE_RTTAR_FOR_READING
-    if (pszFilename)
-        RTStrFree(pszFilename);
-#endif
+    fssRdOnlyDestroyInterface(pTarIo);
     if (pvMfBuf)
         RTMemFree(pvMfBuf);
     if (pShaIo)
         RTMemFree(pShaIo);
-#ifdef USE_RTTAR_FOR_READING
-    if (pTarIo)
-        RTMemFree(pTarIo);
-#endif
     if (pvCertBuf)
         RTMemFree(pvCertBuf);
 
@@ -2183,12 +2004,7 @@ HRESULT Appliance::i_readFileToBuf(const Utf8Str &strFile,
     return rc;
 }
 
-HRESULT Appliance::i_readTarFileToBuf(
-#ifdef USE_RTTAR_FOR_READING
-                                      RTTAR tar,
-#else
-                                      PFSSRDONLYINTERFACEIO pTarIo,
-#endif
+HRESULT Appliance::i_readTarFileToBuf(PFSSRDONLYINTERFACEIO pTarIo,
                                       const Utf8Str &strFile,
                                       void **ppvBuf,
                                       size_t *pcbSize,
@@ -2198,13 +2014,8 @@ HRESULT Appliance::i_readTarFileToBuf(
 {
     HRESULT rc = S_OK;
 
-#ifdef USE_RTTAR_FOR_READING
-    char *pszCurFile;
-    int vrc = RTTarCurrentFile(tar, &pszCurFile);
-#else
     const char *pszCurFile;
     int vrc = fssRdOnlyGetCurrentName(pTarIo, &pszCurFile);
-#endif
     if (RT_SUCCESS(vrc))
     {
         if (vrc != VINF_TAR_DIR_PATH)
@@ -2216,15 +2027,8 @@ HRESULT Appliance::i_readTarFileToBuf(
             rc = setError(VBOX_E_FILE_ERROR,
                           tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
                           pszCurFile, vrc);
-#ifdef USE_RTTAR_FOR_READING
-        RTStrFree(pszCurFile);
-#endif
     }
-#ifdef USE_RTTAR_FOR_READING
-    else if (vrc != VERR_TAR_END_OF_FILE)
-#else
     else if (vrc != VERR_EOF)
-#endif
         rc = setError(VBOX_E_IPRT_ERROR, "Seeking within the archive failed (%Rrc)", vrc);
 
     return rc;
