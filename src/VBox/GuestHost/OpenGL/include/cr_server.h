@@ -334,13 +334,6 @@ typedef struct {
     RTRECT Rect;
 } CRScreenViewportInfo;
 
-typedef struct CRWinVisibilityInfo
-{
-    uint32_t cVisibleWindows        : 30;
-    uint32_t fLastReportedVisible   : 1;
-    uint32_t fVisibleChanged        : 1;
-} CRWinVisibilityInfo;
-
 /* BFB (BlitFramebuffer Blitter) flags
  * so far only CR_SERVER_BFB_ON_ALWAIS is supported and is alwais used if any flag is set */
 #define CR_SERVER_BFB_DISABLED 0
@@ -483,9 +476,6 @@ typedef struct {
      * Currently can have only CR_VBOX_CAP_TEX_PRESENT cap to notify
      * that the TexPresent mechanism is available and enabled */
     uint32_t              u32Caps;
-
-    uint32_t cDisableEvents;
-    CRWinVisibilityInfo  aWinVisibilityInfos[CR_MAX_GUEST_MONITORS];
 
     PFNCRSERVERNOTIFYEVENT pfnNotifyEventCB;
 

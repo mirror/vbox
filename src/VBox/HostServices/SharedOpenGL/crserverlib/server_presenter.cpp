@@ -1736,13 +1736,24 @@ private:
     uint64_t mParentId;
 };
 
+typedef union CR_FBDISPWINDOW_FLAGS
+{
+    struct {
+        uint32_t fNeVisible : 1;
+        uint32_t fNeForce   : 1;
+        uint32_t Reserved   : 30;
+    };
+    uint32_t u32Value;
+} CR_FBDISPWINDOW_FLAGS;
 class CrFbDisplayWindow : public CrFbDisplayBase
 {
 public:
     CrFbDisplayWindow(CrFbWindow *pWindow, const RTRECT *pViewportRect) :
         mpWindow(pWindow),
-        mViewportRect(*pViewportRect)
+        mViewportRect(*pViewportRect),
+        mu32Screen(~0)
     {
+        mFlags.u32Value = 0;
         CRASSERT(pWindow);
     }
 
@@ -1926,10 +1937,33 @@ public:
         if (!RT_SUCCESS(rc))
             WARN(("window reparent failed"));
 
+        mFlags.fNeForce = 1;
+
         return rc;
     }
 
+    virtual bool isVisible()
+    {
+        HCR_FRAMEBUFFER hFb = getFramebuffer();
+        if (!hFb)
+            return false;
+        const struct VBOXVR_SCR_COMPOSITOR* pCompositor = CrFbGetCompositor(hFb);
+        return CrVrScrCompositorIsEmpty(pCompositor);
+    }
+
 protected:
+    virtual void onUpdateEnd()
+    {
+        CrFbDisplayBase::onUpdateEnd();
+        bool fVisible = isVisible();
+        if (mFlags.fNeVisible != fVisible || mFlags.fNeForce)
+        {
+            crVBoxServerNotifyEvent(mu32Screen, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, fVisible ? (void*)1 : NULL);
+            mFlags.fNeVisible = fVisible;
+            mFlags.fNeForce = 0;
+        }
+    }
+
     virtual void ueRegions()
     {
         mpWindow->SetVisibleRegionsChanged();
@@ -2069,6 +2103,8 @@ protected:
             return rc;
         }
 
+        mu32Screen = CrFbGetScreenInfo(getFramebuffer())->u32ViewIndex;
+
         return windowSync();
     }
 
@@ -2082,6 +2118,8 @@ protected:
 private:
     CrFbWindow *mpWindow;
     RTRECT mViewportRect;
+    CR_FBDISPWINDOW_FLAGS mFlags;
+    uint32_t mu32Screen;
 };
 
 class CrFbDisplayWindowRootVr : public CrFbDisplayWindow

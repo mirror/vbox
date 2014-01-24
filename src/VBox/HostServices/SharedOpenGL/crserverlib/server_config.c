@@ -54,9 +54,6 @@ setDefaults(void)
     cr_server.bUsePBOForReadback = GL_FALSE;
     cr_server.bWindowsInitiallyHidden = GL_FALSE;
 
-    cr_server.cDisableEvents = 0;
-    memset(cr_server.aWinVisibilityInfos, 0, sizeof (cr_server.aWinVisibilityInfos));
-
     cr_server.pfnNotifyEventCB = NULL;
 }
 

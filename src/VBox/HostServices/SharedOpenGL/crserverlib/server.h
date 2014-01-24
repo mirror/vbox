@@ -138,7 +138,6 @@ void crVBoxServerMuralFbResizeBegin(HCR_FRAMEBUFFER hFb);
 void crVBoxServerMuralFbResizeEnd(HCR_FRAMEBUFFER hFb);
 
 void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void*pvData);
-void crVBoxServerCheckVisibilityEvent(int32_t idScreen);
 
 void crServerRedirMuralFbClear(CRMuralInfo *mural);
 
