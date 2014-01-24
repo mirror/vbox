@@ -822,6 +822,7 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
     pThis->iActiveCfg = -1;
     pThis->fMaskedIfs = 0;
     pThis->fOpened = false;
+    pThis->fInited = false;
 
     /*
      * Read the basic configuration.
@@ -1071,6 +1072,7 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
         if (RT_FAILURE(rc))
             return rc;
     }
+    pThis->fInited = true;
 
     /*
      * We're good!
