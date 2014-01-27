@@ -33,7 +33,7 @@ TOOL_VBoxXGccX86RedHatLinux_CC  ?= $(TOOL_VBoxXGccX86RedHatLinux_PREFIX)gcc$(HOS
 TOOL_VBoxXGccX86RedHatLinux_CXX ?= $(TOOL_VBoxXGccX86RedHatLinux_PREFIX)g++$(HOSTSUFF_EXE)
 TOOL_VBoxXGccX86RedHatLinux_AS  ?= $(TOOL_VBoxXGccX86RedHatLinux_PREFIX)gcc$(HOSTSUFF_EXE)
 TOOL_VBoxXGccX86RedHatLinux_AR  ?= $(TOOL_VBoxXGccX86RedHatLinux_PREFIX)ar$(HOSTSUFF_EXE)
-TOOL_VBoxXGccX86RedHatLinux_LD  ?= $(TOOL_VBoxXGccX86RedHatLinux_PREFIX)g++$(HOSTSUFF_EXE) -Wl,-rpath-link,$(PATH_TOOL_VBoxXGccX86RedHatLinux)/i386-redhat-linux/lib
+TOOL_VBoxXGccX86RedHatLinux_LD  ?= $(TOOL_VBoxXGccX86RedHatLinux_PREFIX)gcc$(HOSTSUFF_EXE) -Wl,-rpath-link,$(PATH_TOOL_VBoxXGccX86RedHatLinux)/i386-redhat-linux/lib
 TOOL_VBoxXGccX86RedHatLinux_LD_SYSMOD ?= $(TOOL_VBoxXGccX86RedHatLinux_PREFIX)ld$(HOSTSUFF_EXE)
 
 TOOL_VBoxXGccX86RedHatLinux_LD_SONAME ?= -Wl,-soname=$(firstword $($(1)_SONAME.$(KBUILD_TARGET).$(KBUILD_TYPE)) $($(1)_SONAME.$(KBUILD_TARGET)) $($(1)_SONAME.$(KBUILD_TYPE)) $($(1)_SONAME) $(notdir $(2)))
