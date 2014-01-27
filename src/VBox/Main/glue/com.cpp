@@ -379,7 +379,7 @@ int VBoxLogRelCreate(const char *pcszEntity, const char *pcszLogFile,
                             pcszEnvVarBase, RT_ELEMENTS(s_apszGroups), s_apszGroups, fDestFlags,
                             vboxHeaderFooter, cHistory, uHistoryFileSize, uHistoryFileTime,
                             pszError, cbError,
-                            "%s", pcszLogFile);
+                            pcszLogFile ? "%s" : NULL, pcszLogFile);
     if (RT_SUCCESS(vrc))
     {
         /* make sure that we don't flood logfiles */
