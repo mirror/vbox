@@ -421,6 +421,7 @@ void UIMachineView::prepareFrameBuffer()
                 /* Mark framebuffer as used again: */
                 LogRelFlow(("UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d.\n", screenId()));
                 pFrameBuffer->setMarkAsUnused(false);
+                uisession()->setFrameBuffer(screenId(), pFrameBuffer);
             }
             else
             {
@@ -456,6 +457,7 @@ void UIMachineView::prepareFrameBuffer()
                 /* Mark framebuffer as used again: */
                 LogRelFlow(("UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d.\n", screenId()));
                 pFrameBuffer->setMarkAsUnused(false);
+                uisession()->setFrameBuffer(screenId(), pFrameBuffer);
             }
             else
             {
@@ -632,9 +634,6 @@ void UIMachineView::cleanupFrameBuffer()
 
     /* Detach framebuffer from view: */
     m_pFrameBuffer->setView(NULL);
-
-    /* Attach frambuffer back to IDisplay: */
-    display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
 }
 
 UIMachineLogic* UIMachineView::machineLogic() const
