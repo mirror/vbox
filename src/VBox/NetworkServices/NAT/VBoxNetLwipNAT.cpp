@@ -127,6 +127,8 @@ typedef VECNATSERVICEPF::const_iterator CITERATORNATSERVICEPF;
 
 static int fetchNatPortForwardRules(const ComNatPtr&, bool, VECNATSERVICEPF&);
 
+static int vboxNetNATLogInit(int argc, char **argv);
+
 
 class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
 {
@@ -988,6 +990,8 @@ int VBoxNetLwipNAT::run()
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    int rc;
+
     LogFlowFuncEnter();
 
     NOREF(envp);
@@ -1097,10 +1101,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                               "Failed to initialize COM: %Rhrf", hrc);
     }
 
+    rc = vboxNetNATLogInit(argc, argv);
+    // shall we bail if we failed to init logging?
+
     g_pLwipNat = new VBoxNetLwipNAT(icmpsock4, icmpsock6);
 
     Log2(("NAT: initialization\n"));
-    int rc = g_pLwipNat->parseArgs(argc - 1, argv + 1);
+    rc = g_pLwipNat->parseArgs(argc - 1, argv + 1);
     rc = (rc == 0) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /* XXX: FIXME */
 
     if (RT_SUCCESS(rc))
@@ -1115,6 +1122,105 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     delete g_pLwipNat;
     return 0;
+}
+
+
+static int vboxNetNATLogInit(int argc, char **argv)
+{
+    size_t cch;
+    int rc;
+
+    char szHome[RTPATH_MAX];
+    rc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    const char *pcszNetwork = NULL;
+
+    // XXX: This duplicates information from VBoxNetBaseService.cpp.
+    // Perhaps option definitions should be exported as public static
+    // member of VBoxNetBaseService?
+    static const RTGETOPTDEF s_aOptions[] = {
+        { "--network", 'n', RTGETOPT_REQ_STRING }
+    };
+
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1,
+                 RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+
+    RTGETOPTUNION ValueUnion;
+    int ch;
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        if (ch == 'n')
+        {
+            pcszNetwork = ValueUnion.psz;
+            break;
+        }
+    }
+
+    if (pcszNetwork == NULL)
+    {
+        return VERR_MISSING;
+    }
+
+    char szNetwork[RTPATH_MAX];
+    rc = RTStrCopy(szNetwork, sizeof(szNetwork), pcszNetwork);
+    if (RT_FAILURE(rc))
+    {
+        return rc;
+    }
+
+    // sanitize network name to be usable as a path component
+    for (char *p = szNetwork; *p != '\0'; ++p)
+    {
+        if (RTPATH_IS_SEP(*p))
+        {
+            *p = '_';
+        }
+    }
+
+    char szLogFile[RTPATH_MAX];
+    cch = RTStrPrintf(szLogFile, sizeof(szLogFile),
+                      "%s%c%s.log", szHome, RTPATH_DELIMITER, szNetwork);
+    if (cch >= sizeof(szLogFile))
+    {
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    // sanitize network name some more to be usable as environment variable
+    for (char *p = szNetwork; *p != '\0'; ++p)
+    {
+        if (*p != '_'
+            && (*p < '0' || '9' < *p)
+            && (*p < 'a' || 'z' < *p)
+            && (*p < 'A' || 'Z' < *p))
+        {
+            *p = '_';
+        }
+    }
+
+    char szEnvVarBase[128];
+    cch = RTStrPrintf(szEnvVarBase, sizeof(szEnvVarBase),
+                      "VBOXNET_%s_RELEASE_LOG", szNetwork);
+    if (cch >= sizeof(szEnvVarBase))
+    {
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    char szError[RTPATH_MAX + 128];
+    rc = com::VBoxLogRelCreate("NetNAT",
+                               szLogFile,
+                               RTLOGFLAGS_PREFIX_TIME_PROG,
+                               "all all.restrict -default.restrict",
+                               szEnvVarBase,
+                               RTLOGDEST_FILE,
+                               32768 /* cMaxEntriesPerGroup */,
+                               0 /* cHistory */,
+                               0 /* uHistoryFileTime */,
+                               0 /* uHistoryFileSize */,
+                               szError, sizeof(szError));
+    return rc;
 }
 
 
