@@ -256,7 +256,8 @@ typedef union CR_FBENTRY_FLAGS
 {
     struct {
         uint32_t fCreateNotified : 1;
-        uint32_t Reserved : 31;
+        uint32_t fInList         : 1;
+        uint32_t Reserved        : 30;
     };
     uint32_t Value;
 } CR_FBENTRY_FLAGS;
@@ -496,13 +497,20 @@ static DECLCALLBACK(void) crFbEntryReleased(const struct VBOXVR_SCR_COMPOSITOR *
 
         /* 2. mark the replaced entry is destroyed */
         Assert(pFbEntry->Flags.fCreateNotified);
+        Assert(pFbEntry->Flags.fInList);
         pFbEntry->Flags.fCreateNotified = 0;
+        pFbEntry->Flags.fInList = 0;
         pFbReplacingEntry->Flags.fCreateNotified = 1;
+        pFbReplacingEntry->Flags.fInList = 1;
     }
     else
     {
-        if (pFb->pDisplay)
-            pFb->pDisplay->EntryRemoved(pFb, pFbEntry);
+        if (pFbEntry->Flags.fInList)
+        {
+            pFbEntry->Flags.fInList = 0;
+            if (pFb->pDisplay)
+                pFb->pDisplay->EntryRemoved(pFb, pFbEntry);
+        }
     }
 
     crFbEntryRelease(pFb, pFbEntry);
@@ -633,6 +641,8 @@ int CrFbEntryRegionsAdd(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry, const
         crFbEntryAddRef(hEntry);
         pNewEntry = &hEntry->Entry;
         fEntryWasInList = CrVrScrCompositorEntryIsUsed(pNewEntry);
+
+        Assert(!hEntry->Flags.fInList == !fEntryWasInList);
     }
     else
     {
@@ -654,6 +664,9 @@ int CrFbEntryRegionsAdd(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry, const
                     if (pFb->pDisplay)
                         pFb->pDisplay->EntryCreated(pFb, hEntry);
                 }
+
+                Assert(!hEntry->Flags.fInList);
+                hEntry->Flags.fInList = 1;
 
                 if (pFb->pDisplay)
                     pFb->pDisplay->EntryAdded(pFb, hEntry);
@@ -708,6 +721,7 @@ int CrFbEntryRegionsSet(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry, const
         crFbEntryAddRef(hEntry);
         pNewEntry = &hEntry->Entry;
         fEntryWasInList = CrVrScrCompositorEntryIsUsed(pNewEntry);
+        Assert(!hEntry->Flags.fInList == !fEntryWasInList);
     }
     else
     {
@@ -731,6 +745,9 @@ int CrFbEntryRegionsSet(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry, const
                         if (pFb->pDisplay)
                             pFb->pDisplay->EntryCreated(pFb, hEntry);
                     }
+
+                    Assert(!hEntry->Flags.fInList);
+                    hEntry->Flags.fInList = 1;
 
                     if (pFb->pDisplay)
                         pFb->pDisplay->EntryAdded(pFb, hEntry);
@@ -1865,6 +1882,11 @@ public:
         return screenChanged();
     }
 
+    const RTRECT* getViewportRect()
+    {
+        return &mViewportRect;
+    }
+
     virtual int setViewportRect(const RTRECT *pViewportRect)
     {
         if (!isUpdating())
@@ -2129,7 +2151,6 @@ public:
         CrFbDisplayWindow(pWindow, pViewportRect)
     {
         CrVrScrCompositorInit(&mCompositor, NULL);
-        memset(&mPos, 0, sizeof (mPos));
     }
 
     virtual int EntryCreated(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
@@ -2410,11 +2431,15 @@ protected:
 
     void rootVrTranslateForPos()
     {
-        int32_t dx = cr_server.RootVrCurPoint.x - mPos.x;
-        int32_t dy = cr_server.RootVrCurPoint.y - mPos.y;
+        const RTRECT *pRect = getViewportRect();
+        const struct VBVAINFOSCREEN* pScreen = CrFbGetScreenInfo(getFramebuffer());
+        int32_t x = pScreen->i32OriginX;
+        int32_t y = pScreen->i32OriginY;
+        int32_t dx = cr_server.RootVrCurPoint.x - x;
+        int32_t dy = cr_server.RootVrCurPoint.y - y;
 
-        cr_server.RootVrCurPoint.x = mPos.x;
-        cr_server.RootVrCurPoint.y = mPos.y;
+        cr_server.RootVrCurPoint.x = x;
+        cr_server.RootVrCurPoint.y = y;
 
         VBoxVrListTranslate(&cr_server.RootVr, dx, dy);
     }
@@ -2430,7 +2455,6 @@ protected:
     }
 private:
     VBOXVR_SCR_COMPOSITOR mCompositor;
-    RTPOINT mPos;
 };
 
 class CrFbDisplayVrdp : public CrFbDisplayBase
