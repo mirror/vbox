@@ -424,6 +424,8 @@ void crServerMuralShow( CRMuralInfo *mural, GLint state )
     if (!mural->bVisible == !state)
         return;
 
+    mural->bVisible = !!state;
+
     if (mural->bVisible)
         crServerCheckMuralGeometry(mural);
     else
