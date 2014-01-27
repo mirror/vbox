@@ -798,25 +798,33 @@ static int vboxVrListIntersectNoJoin(PVBOXVR_LIST pList, const VBOXVR_LIST *pLis
 
             if (pReg1)
             {
-                if (!VBoxRectCmp(&pReg1->Rect, pRect2))
+                if (VBoxRectCovers(pRect2, &RegRect1))
                 {
-                    /* no change, and we can break the iteration here */
+                    /* no change */
 
                     /* zero up the pReg1 to mark it as intersected (see the code after this inner loop) */
                     pReg1 = NULL;
-                    break;
+
+                    if (!VBoxRectCmp(pRect2, &RegRect1))
+                        break; /* and we can break the iteration here */
                 }
-                /* @todo: this can have false-alarming sometimes if the separated rects will then be joind into the original rect,
-                 * so far this should not be a problem for VReg clients, so keep it this way for now  */
-                fChanged = true;
+                else
+                {
+                    /*just to ensure the VBoxRectCovers is true for equal rects */
+                    Assert(VBoxRectCmp(pRect2, &RegRect1));
 
-                /* re-use the reg entry */
-                vboxVrListRegRemove(pList, pReg1);
-                VBoxRectIntersect(&pReg1->Rect, pRect2);
-                Assert(!VBoxRectIsZero(&pReg1->Rect));
+                    /* @todo: this can have false-alarming sometimes if the separated rects will then be joind into the original rect,
+                     * so far this should not be a problem for VReg clients, so keep it this way for now  */
+                    fChanged = true;
 
-                vboxVrListRegAddOrder(pList, pMemberEntry, pReg1);
-                pReg1 = NULL;
+                    /* re-use the reg entry */
+                    vboxVrListRegRemove(pList, pReg1);
+                    VBoxRectIntersect(&pReg1->Rect, pRect2);
+                    Assert(!VBoxRectIsZero(&pReg1->Rect));
+
+                    vboxVrListRegAddOrder(pList, pMemberEntry, pReg1);
+                    pReg1 = NULL;
+                }
             }
             else
             {
@@ -1006,7 +1014,7 @@ VBOXVREGDECL(int) VBoxVrListRectsAdd(PVBOXVR_LIST pList, uint32_t cRects, const 
         {
             PVBOXVR_REG pReg1 = PVBOXVR_REG_FROM_ENTRY(pEntry1);
 
-            if (VBoxRectIsCoveres(&pReg1->Rect, &aRects[i]))
+            if (VBoxRectCovers(&pReg1->Rect, &aRects[i]))
             {
                 cCovered++;
                 break;

@@ -110,7 +110,7 @@ DECLINLINE(void) VBoxRectMoved(const RTRECT * pRect, int32_t x, int32_t y, RTREC
     VBoxRectMove(pResult, x, y);
 }
 
-DECLINLINE(bool) VBoxRectIsCoveres(const RTRECT *pRect, const RTRECT *pCovered)
+DECLINLINE(bool) VBoxRectCovers(const RTRECT *pRect, const RTRECT *pCovered)
 {
     Assert(pRect);
     Assert(pCovered);
