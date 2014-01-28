@@ -196,14 +196,20 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     /* Or select WinXP item for Windows family as default: */
     else if (strFamilyId == "Windows")
     {
-        int iIndexWinXP = m_pTypeCombo->findData("WindowsXP", TypeID);
+        QString strDefaultID = "WindowsXP";
+        if (ARCH_BITS == 64)
+            strDefaultID += "_64";
+        int iIndexWinXP = m_pTypeCombo->findData(strDefaultID, TypeID);
         if (iIndexWinXP != -1)
             m_pTypeCombo->setCurrentIndex(iIndexWinXP);
     }
     /* Or select Ubuntu item for Linux family as default: */
     else if (strFamilyId == "Linux")
     {
-        int iIndexUbuntu = m_pTypeCombo->findData("Ubuntu", TypeID);
+        QString strDefaultID = "Ubuntu";
+        if (ARCH_BITS == 64)
+            strDefaultID += "_64";
+        int iIndexUbuntu = m_pTypeCombo->findData(strDefaultID, TypeID);
         if (iIndexUbuntu != -1)
             m_pTypeCombo->setCurrentIndex(iIndexUbuntu);
     }
