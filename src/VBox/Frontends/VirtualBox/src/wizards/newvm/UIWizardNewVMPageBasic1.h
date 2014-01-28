@@ -35,7 +35,7 @@ protected:
     UIWizardNewVMPage1(const QString &strGroup);
 
     /* Handlers: */
-    void onNameChanged(const QString &strNewName);
+    void onNameChanged(QString strNewName);
     void onOsTypeChanged();
 
     /* Helping stuff: */
