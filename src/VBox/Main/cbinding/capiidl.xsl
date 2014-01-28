@@ -874,14 +874,29 @@ typedef struct SAFEARRAY
 #define IUnknown nsISupports
 #define IDispatch nsISupports
 
+/* Make things as COM compatible as possible */
+#define interface struct
+#ifdef CONST_VTABLE
+# define CONST_VTBL const
+#else /* !CONST_VTABLE */
+# define CONST_VTBL
+#endif /* !CONST_VTABLE */
+
 #ifndef __cplusplus
 
-struct nsISupports;   /* forward declaration */
-struct nsIStackFrame; /* forward declaration */
-struct nsIException;  /* forward declaration */
-typedef struct nsISupports nsISupports;     /* forward declaration */
-typedef struct nsIStackFrame nsIStackFrame; /* forward declaration */
-typedef struct nsIException nsIException;   /* forward declaration */
+/** @todo this first batch of forward declarations (and the corresponding ones
+ * generated for each interface) are 100% redundant, remove eventually. */
+interface nsISupports;   /* forward declaration */
+interface nsIException;  /* forward declaration */
+interface nsIStackFrame; /* forward declaration */
+interface nsIEventTarget;/* forward declaration */
+interface nsIEventQueue; /* forward declaration */
+
+typedef interface nsISupports nsISupports;     /* forward declaration */
+typedef interface nsIException nsIException;   /* forward declaration */
+typedef interface nsIStackFrame nsIStackFrame; /* forward declaration */
+typedef interface nsIEventTarget nsIEventTarget;/* forward declaration */
+typedef interface nsIEventQueue nsIEventQueue; /* forward declaration */
 
 /* starting interface:    nsISupports */
 #define NS_ISUPPORTS_IID_STR "00000000-0000-0000-c000-000000000046"
@@ -935,12 +950,12 @@ struct nsISupportsVtbl
 #define IDispatch_Release(p) ((p)->lpVtbl->Release(p))
 #endif /* !VBOX_WITH_GLUE */
 
-struct nsISupports
+interface nsISupports
 {
 #ifndef VBOX_WITH_GLUE
     struct nsISupports_vtbl *vtbl;
 #else /* !VBOX_WITH_GLUE */
-    struct nsISupportsVtbl *lpVtbl;
+    CONST_VTBL struct nsISupportsVtbl *lpVtbl;
 #endif /* !VBOX_WITH_GLUE */
 };
 
@@ -1028,12 +1043,12 @@ struct nsIExceptionVtbl
 #define IErrorInfo_ToString(p, retval) ((p)->lpVtbl->ToString(p, retval))
 #endif /* !VBOX_WITH_GLUE */
 
-struct nsIException
+interface nsIException
 {
 #ifndef VBOX_WITH_GLUE
     struct nsIException_vtbl *vtbl;
 #else /* !VBOX_WITH_GLUE */
-    struct nsIExceptionVtbl *lpVtbl;
+    CONST_VTBL struct nsIExceptionVtbl *lpVtbl;
 #endif /* !VBOX_WITH_GLUE */
 };
 
@@ -1095,12 +1110,12 @@ struct nsIStackFrameVtbl
 #define nsIStackFrame_ToString(p, retval) ((p)->lpVtbl->ToString(p, retval))
 #endif /* !VBOX_WITH_GLUE */
 
-struct nsIStackFrame
+interface nsIStackFrame
 {
 #ifndef VBOX_WITH_GLUE
     struct nsIStackFrame_vtbl *vtbl;
 #else /* !VBOX_WITH_GLUE */
-    struct nsIStackFrameVtbl *lpVtbl;
+    CONST_VTBL struct nsIStackFrameVtbl *lpVtbl;
 #endif /* !VBOX_WITH_GLUE */
 };
 
@@ -1110,9 +1125,6 @@ struct nsIStackFrame
 #define NS_IEVENTTARGET_IID \
     {0xea99ad5b, 0xcc67, 0x4efb, \
       { 0x97, 0xc9, 0x2e, 0xf6, 0x20, 0xa5, 0x9f, 0x2a }}
-
-struct nsIEventTarget;
-typedef struct nsIEventTarget nsIEventTarget;
 
 #ifndef VBOX_WITH_GLUE
 struct nsIEventTarget_vtbl
@@ -1139,12 +1151,12 @@ struct nsIEventTargetVtbl
 #define nsIEventTarget_IsOnCurrentThread(p, retval) ((p)->lpVtbl->IsOnCurrentThread(p, retval))
 #endif /* !VBOX_WITH_GLUE */
 
-struct nsIEventTarget
+interface nsIEventTarget
 {
 #ifndef VBOX_WITH_GLUE
     struct nsIEventTarget_vtbl *vtbl;
 #else /* !VBOX_WITH_GLUE */
-    struct nsIEventTargetVtbl *lpVtbl;
+    CONST_VTBL struct nsIEventTargetVtbl *lpVtbl;
 #endif /* !VBOX_WITH_GLUE */
 };
 
@@ -1154,9 +1166,6 @@ struct nsIEventTarget
 #define NS_IEVENTQUEUE_IID \
   {0x176afb41, 0x00a4, 0x11d3, \
     { 0x9f, 0x2a, 0x00, 0x40, 0x05, 0x53, 0xee, 0xf0 }}
-
-struct nsIEventQueue;
-typedef struct nsIEventQueue nsIEventQueue;
 
 #ifndef VBOX_WITH_GLUE
 struct nsIEventQueue_vtbl
@@ -1238,12 +1247,12 @@ struct nsIEventQueueVtbl
 #define nsIEventQueue_StopAcceptingEvents(p) ((p)->lpVtbl->StopAcceptingEvents(p))
 #endif /* !VBOX_WITH_GLUE */
 
-struct nsIEventQueue
+interface nsIEventQueue
 {
 #ifndef VBOX_WITH_GLUE
     struct nsIEventQueue_vtbl *vtbl;
 #else /* !VBOX_WITH_GLUE */
-    struct nsIEventQueueVtbl *lpVtbl;
+    CONST_VTBL struct nsIEventQueueVtbl *lpVtbl;
 #endif /* !VBOX_WITH_GLUE */
 };
 
@@ -1641,7 +1650,7 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 -->
 <xsl:template match="interface" mode="forward">
   <xsl:if test="not(@internal='yes')">
-    <xsl:text>struct </xsl:text>
+    <xsl:text>interface </xsl:text>
     <xsl:value-of select="@name"/>
     <xsl:text>;&#x0A;</xsl:text>
   </xsl:if>
@@ -1653,7 +1662,7 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 -->
 <xsl:template match="interface" mode="typedef">
   <xsl:if test="not(@internal='yes')">
-    <xsl:text>typedef struct </xsl:text>
+    <xsl:text>typedef interface </xsl:text>
     <xsl:value-of select="@name"/>
     <xsl:text> </xsl:text>
     <xsl:value-of select="@name"/>
@@ -1918,7 +1927,7 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
     <!-- -->
     <xsl:text>#endif /* VBOX_WITH_GLUE */&#x0A;</xsl:text>
     <xsl:text>&#x0A;</xsl:text>
-    <xsl:text>struct </xsl:text>
+    <xsl:text>interface </xsl:text>
     <xsl:value-of select="@name"/>
     <xsl:text>&#x0A;{&#x0A;</xsl:text>
     <xsl:text>#ifndef VBOX_WITH_GLUE&#x0A;</xsl:text>
@@ -1926,7 +1935,7 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
     <xsl:value-of select="@name"/>
     <xsl:text>_vtbl *vtbl;&#x0A;</xsl:text>
     <xsl:text>#else /* VBOX_WITH_GLUE */&#x0A;</xsl:text>
-    <xsl:text>    struct </xsl:text>
+    <xsl:text>    CONST_VTBL struct </xsl:text>
     <xsl:value-of select="@name"/>
     <xsl:text>Vtbl *lpVtbl;&#x0A;</xsl:text>
     <xsl:text>#endif /* VBOX_WITH_GLUE */&#x0A;</xsl:text>
