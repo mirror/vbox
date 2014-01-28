@@ -60,7 +60,7 @@
 /* Parameters count */
 #define SHCRGL_CPARMS_SET_CONSOLE (1)
 #define SHCRGL_CPARMS_SET_VM (1)
-#define SHCRGL_CPARMS_SET_VISIBLE_REGION (2)
+#define SHCRGL_CPARMS_SET_VISIBLE_REGION (1)
 #define SHCRGL_CPARMS_WRITE      (1)
 #define SHCRGL_CPARMS_READ       (2)
 #define SHCRGL_CPARMS_WRITE_READ (3)
@@ -73,7 +73,7 @@
 #define SHCRGL_CPARMS_WRITE_READ_BUFFERED (3)
 #define SHCRGL_CPARMS_SET_OUTPUT_REDIRECT (1)
 #define SHCRGL_CPARMS_CRCMD_NOTIFY_CMDS (0)
-#define SHCRGL_CPARMS_VIEWPORT_CHANGED (5)
+#define SHCRGL_CPARMS_VIEWPORT_CHANGED (1)
 #define SHCRGL_CPARMS_GET_CAPS (1)
 
 /* @todo Move to H3DOR.h begin */
@@ -367,5 +367,14 @@ typedef struct
     VBVAINFOSCREEN Screen;
     void *pvVRAM;
 } CRVBOXHGCMDEVRESIZE;
+
+typedef struct
+{
+    uint32_t u32Screen;
+    uint32_t x;
+    uint32_t y;
+    uint32_t width;
+    uint32_t height;
+} CRVBOXHGCMVIEWPORT;
 
 #endif
