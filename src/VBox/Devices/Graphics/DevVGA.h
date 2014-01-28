@@ -592,6 +592,7 @@ int      VBVAInit       (PVGASTATE pVGAState);
 void     VBVADestroy    (PVGASTATE pVGAState);
 int      VBVAUpdateDisplay (PVGASTATE pVGAState);
 void     VBVAReset (PVGASTATE pVGAState);
+void     VBVAPause (PVGASTATE pVGAState, bool fPause);
 int      VBVAGetScreenInfo(PVGASTATE pVGAState, unsigned uScreenId, struct VBVAINFOSCREEN *pScreen, void **ppvVram);
 
 bool VBVAIsEnabled(PVGASTATE pVGAState);
