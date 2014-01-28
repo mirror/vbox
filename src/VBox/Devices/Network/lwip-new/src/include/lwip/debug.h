@@ -76,6 +76,8 @@
 #endif /* LWIP_ERROR */
 
 #ifdef LWIP_DEBUG
+/* let VBox override it to use logging */
+#ifndef LWIP_DEBUGF
 /** print debug message only if debug message type is enabled...
  *  AND is of correct type AND is at least LWIP_DBG_LEVEL
  */
@@ -90,8 +92,12 @@
                                  } \
                                } \
                              } while(0)
-
+#endif /* !LWIP_DEBUGF */
 #else  /* LWIP_DEBUG */
+#ifdef LWIP_DEBUG
+/* sanity check, this is going to fail with undefined variables anyway */
+#error LWIP_DEBUGF is defined without LWIP_DEBUG
+#endif
 #define LWIP_DEBUGF(debug, message) 
 #endif /* LWIP_DEBUG */
 
