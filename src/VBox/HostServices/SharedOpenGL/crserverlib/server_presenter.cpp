@@ -1581,8 +1581,8 @@ public:
         }
 
         LOG(("CrWIN: Pos [%d ; %d]", x, y));
-
-        if (x != mxPos || y != myPos)
+//      always do WindowPosition to ensure window is adjusted properly
+//        if (x != mxPos || y != myPos)
         {
             mxPos = x;
             myPos = y;
@@ -1904,7 +1904,8 @@ public:
             return VERR_INVALID_STATE;
         }
 
-        if (pViewportRect->xLeft != mViewportRect.xLeft || pViewportRect->yTop != mViewportRect.yTop)
+// always call SetPosition to ensure window is adjustep properly
+//        if (pViewportRect->xLeft != mViewportRect.xLeft || pViewportRect->yTop != mViewportRect.yTop)
         {
             const RTRECT* pRect = getRect();
             int rc = mpWindow->SetPosition(pRect->xLeft - pViewportRect->xLeft, pRect->yTop - pViewportRect->yTop);

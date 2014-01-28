@@ -2844,7 +2844,6 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
 {
     CRScreenViewportInfo *pViewport;
     RTRECT NewRect;
-    GLboolean fChanged;
     int rc;
 
     crDebug("crVBoxServerSetScreenViewport(%i)", sIndex);
@@ -2861,14 +2860,8 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
     NewRect.yBottom = y + h;
 
     pViewport = &cr_server.screenVieport[sIndex];
-
-    fChanged = !!memcmp(&NewRect, &pViewport->Rect, sizeof (NewRect));
-    if (!fChanged)
-    {
-        crDebug("crVBoxServerSetScreenViewport: no changes");
-        return VINF_SUCCESS;
-    }
-
+    /*always do viewport updates no matter whether the rectangle actually changes,
+     * this is needed to ensure window is adjusted properly on OSX */
     pViewport->Rect = NewRect;
     rc = CrPMgrViewportUpdate((uint32_t)sIndex);
     if (!RT_SUCCESS(rc))
