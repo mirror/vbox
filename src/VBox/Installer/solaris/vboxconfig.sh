@@ -257,7 +257,7 @@ get_sysinfo()
                     # not set by most pkg(5) tools...
                     # STR_KERN_MAJOR is now of the format "5.12-5.12.0.0.0.9.1.3.0:20121012T032837Z" with '9' representing
                     # the build number.
-                    BRANCH_VERSION=STR_KERN_MAJOR
+                    BRANCH_VERSION=$STR_KERN_MAJOR
                     HOST_OS_MAJORVERSION=`echo "$BRANCH_VERSION" | cut -f2 -d'-' | cut -f1,2 -d'.'`
                     if test "$HOST_OS_MAJORVERSION" = "5.12"; then
                         HOST_OS_MAJORVERSION="12"
