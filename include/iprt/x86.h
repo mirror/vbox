@@ -280,8 +280,10 @@ typedef struct X86CPUIDFEATECX
     unsigned    u1OSXSAVE : 1;
     /** Bit 28 - AVX - Supports AVX instruction extensions. */
     unsigned    u1AVX : 1;
-    /** Bit 29 - 30 - Reserved */
-    unsigned    u2Reserved3 : 2;
+    /** Bit 29 - F16C - Supports 16-bit floating point conversion instructions. */
+    unsigned    u1F16C : 1;
+    /** Bit 30 - RDRAND - Supports RDRAND. */
+    unsigned    u1RDRAND : 1;
     /** Bit 31 - Hypervisor present (we're a guest). */
     unsigned    u1HVP : 1;
 } X86CPUIDFEATECX;
@@ -451,6 +453,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_ECX_AVX       RT_BIT(28)
 /** ECX Bit 29 - F16C - Half-precision convert instruction support. */
 #define X86_CPUID_FEATURE_ECX_F16C      RT_BIT(29)
+/** ECX Bit 30 - RDRAND instruction. */
+#define X86_CPUID_FEATURE_ECX_RDRAND    RT_BIT(30)
 /** ECX Bit 31 - Hypervisor Present (software only). */
 #define X86_CPUID_FEATURE_ECX_HVP       RT_BIT(31)
 

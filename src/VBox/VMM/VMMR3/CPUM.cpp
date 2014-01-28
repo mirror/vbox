@@ -3848,8 +3848,8 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             if (uECX & RT_BIT(26))  pHlp->pfnPrintf(pHlp, " XSAVE");
             if (uECX & RT_BIT(27))  pHlp->pfnPrintf(pHlp, " OSXSAVE");
             if (uECX & RT_BIT(28))  pHlp->pfnPrintf(pHlp, " AVX");
-            if (uECX & RT_BIT(29))  pHlp->pfnPrintf(pHlp, " 29");
-            if (uECX & RT_BIT(30))  pHlp->pfnPrintf(pHlp, " 30");
+            if (uECX & RT_BIT(29))  pHlp->pfnPrintf(pHlp, " F16C");
+            if (uECX & RT_BIT(30))  pHlp->pfnPrintf(pHlp, " RDRAND");
             if (uECX & RT_BIT(31))  pHlp->pfnPrintf(pHlp, " HVP");
             pHlp->pfnPrintf(pHlp, "\n");
         }
@@ -3925,7 +3925,8 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             pHlp->pfnPrintf(pHlp, "XSAVE/XRSTOR extended state feature    = %d (%d)\n",  EcxGuest.u1XSAVE,      EcxHost.u1XSAVE);
             pHlp->pfnPrintf(pHlp, "Supports OSXSAVE                       = %d (%d)\n",  EcxGuest.u1OSXSAVE,    EcxHost.u1OSXSAVE);
             pHlp->pfnPrintf(pHlp, "AVX instruction extensions             = %d (%d)\n",  EcxGuest.u1AVX,        EcxHost.u1AVX);
-            pHlp->pfnPrintf(pHlp, "29/30 - Reserved                       = %#x (%#x)\n",EcxGuest.u2Reserved3,  EcxHost.u2Reserved3);
+            pHlp->pfnPrintf(pHlp, "16-bit floating point conversion instr = %d (%d)\n",  EcxGuest.u1F16C,       EcxHost.u1F16C);
+            pHlp->pfnPrintf(pHlp, "RDRAND instruction                     = %d (%d)\n",  EcxGuest.u1RDRAND,     EcxHost.u1RDRAND);
             pHlp->pfnPrintf(pHlp, "Hypervisor Present (we're a guest)     = %d (%d)\n",  EcxGuest.u1HVP,        EcxHost.u1HVP);
         }
     }
