@@ -24,6 +24,7 @@ typedef int socklen_t;
 #include <string>
 
 #include "HostDnsService.h"
+#include "../../Devices/Network/slirp/resolv_conf_parser.h"
 
 
 struct HostDnsServiceResolvConf::Data
@@ -33,37 +34,11 @@ struct HostDnsServiceResolvConf::Data
     std::string resolvConfFilename;
 };
 
-const std::string &HostDnsServiceResolvConf::resolvConf()
+const std::string& HostDnsServiceResolvConf::resolvConf() const
 {
     return m->resolvConfFilename;
 }
 
-static int fileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRead)
-{
-    size_t cbRead;
-    char bTest;
-    int rc = VERR_NO_MEMORY;
-    char *pu8Buf = (char *)pvBuf;
-    *pcbRead = 0;
-
-    while (   RT_SUCCESS(rc = RTFileRead(File, &bTest, 1, &cbRead))
-           && (pu8Buf - (char *)pvBuf) >= 0
-           && (size_t)(pu8Buf - (char *)pvBuf) < cbBufSize)
-    {
-        if (cbRead == 0)
-            return VERR_EOF;
-
-        if (bTest == '\r' || bTest == '\n')
-        {
-            *pu8Buf = 0;
-            return VINF_SUCCESS;
-        }
-        *pu8Buf = bTest;
-         pu8Buf++;
-        (*pcbRead)++;
-    }
-    return rc;
-}
 
 HostDnsServiceResolvConf::~HostDnsServiceResolvConf()
 {
@@ -76,64 +51,40 @@ HostDnsServiceResolvConf::~HostDnsServiceResolvConf()
 
 HRESULT HostDnsServiceResolvConf::init(const char *aResolvConfFileName)
 {
+    m = new Data(aResolvConfFileName);
+
     HostDnsMonitor::init();
 
-    m = new Data(aResolvConfFileName);
     readResolvConf();
 
     return S_OK;
 }
 
+
 HRESULT HostDnsServiceResolvConf::readResolvConf()
 {
-    char buff[256];
-    char buff2[256];
-    int cNameserversFound = 0;
-    bool fWarnTooManyDnsServers = false;
-    struct in_addr tmp_addr;
-    size_t bytes;
+    struct rcp_state st;
+    
+    st.rcps_flags = RCPSF_NO_STR2IPCONV; 
+    int rc = rcp_parse(&st, m->resolvConfFilename.c_str());
+    if (rc == -1)
+        return S_OK;
+
     HostDnsInformation info;
-    RTFILE resolvConfFile;
-
-    int rc = RTFileOpen(&resolvConfFile, m->resolvConfFilename.c_str(),
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    AssertRCReturn(rc, E_FAIL);
-
-    while (    RT_SUCCESS(rc = fileGets(resolvConfFile, buff, sizeof(buff), &bytes))
-            && rc != VERR_EOF)
+    for (unsigned i = 0; i != st.rcps_num_nameserver; ++i)
     {
-        if (   cNameserversFound == 4
-            && !fWarnTooManyDnsServers
-            && sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1)
-        {
-            fWarnTooManyDnsServers = true;
-            LogRel(("NAT: too many nameservers registered.\n"));
-        }
-        if (   sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1
-            && cNameserversFound < 4) /* Unix doesn't accept more than 4 name servers*/
-        {
-            if (!inet_aton(buff2, &tmp_addr))
-                continue;
-
-            info.servers.push_back(std::string(buff2));
-
-            cNameserversFound++;
-        }
-        if (   !strncmp(buff, "domain", 6)
-            || !strncmp(buff, "search", 6))
-        {
-            char *tok;
-            char *saveptr;
-
-            tok = strtok_r(&buff[6], " \t\n", &saveptr);
-
-            if (tok != NULL)
-                info.domain = std::string(tok);
-        }
+        AssertBreak(st.rcps_str_nameserver[i]);
+        info.servers.push_back(st.rcps_str_nameserver[i]);
     }
+    
+    if (st.rcps_domain)
+        info.domain = st.rcps_domain;
 
-    RTFileClose(resolvConfFile);
-
+    for (unsigned i = 0; i != st.rcps_num_searchlist; ++i)
+    {
+        AssertBreak(st.rcps_searchlist[i]);
+        info.searchList.push_back(st.rcps_searchlist[i]);
+    }
     setInfo(info);
 
     return S_OK;

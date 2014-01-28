@@ -31,68 +31,50 @@
 #include "../HostDnsService.h"
 
 
+struct HostDnsServiceDarwin::Data
+{
+    SCDynamicStoreRef m_store;
+    CFRunLoopSourceRef m_DnsWatcher;
+    CFRunLoopRef m_RunLoopRef;
+    CFRunLoopSourceRef m_Stopper;
+    bool m_fStop;
+    RTSEMEVENT m_evtStop;
+    static void performShutdownCallback(void *);
+};
 
-SCDynamicStoreRef g_store;
-CFRunLoopSourceRef g_DnsWatcher;
-CFRunLoopRef g_RunLoopRef;
-RTTHREAD g_DnsMonitoringThread;
-RTSEMEVENT g_DnsInitEvent;
 
 static const CFStringRef kStateNetworkGlobalDNSKey = CFSTR("State:/Network/Global/DNS");
 
-static int hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser)
+
+HostDnsServiceDarwin::HostDnsServiceDarwin():HostDnsMonitor(true),m(NULL)
 {
-    NOREF(ThreadSelf);
-    NOREF(pvUser);
-    g_RunLoopRef = CFRunLoopGetCurrent();
-    AssertReturn(g_RunLoopRef, VERR_INTERNAL_ERROR);
-
-    CFRetain(g_RunLoopRef);
-
-    CFArrayRef watchingArrayRef = CFArrayCreate(NULL,
-                                                (const void **)&kStateNetworkGlobalDNSKey,
-                                                1, &kCFTypeArrayCallBacks);
-    if (!watchingArrayRef)
-    {
-        CFRelease(g_DnsWatcher);
-        return E_OUTOFMEMORY;
-    }
-
-    if(SCDynamicStoreSetNotificationKeys(g_store, watchingArrayRef, NULL))
-        CFRunLoopAddSource(CFRunLoopGetCurrent(), g_DnsWatcher, kCFRunLoopCommonModes);
-
-    CFRelease(watchingArrayRef);
-
-    RTSemEventSignal(g_DnsInitEvent);
-
-    CFRunLoopRun();
-
-    CFRelease(g_RunLoopRef);
-
-    return VINF_SUCCESS;
+    m = new HostDnsServiceDarwin::Data();
 }
-
-
-HostDnsServiceDarwin::HostDnsServiceDarwin(){}
 
 
 HostDnsServiceDarwin::~HostDnsServiceDarwin()
 {
-    if (g_RunLoopRef)
-        CFRunLoopStop(g_RunLoopRef);
+    if (!m)
+        return;
 
-    CFRelease(g_DnsWatcher);
+    monitorThreadShutdown();
 
-    CFRelease(g_store);
+    CFRelease(m->m_RunLoopRef);
+    
+    CFRelease(m->m_DnsWatcher);
+
+    CFRelease(m->m_store);
+
+    RTSemEventDestroy(m->m_evtStop);
+
+    delete m;
+    m = NULL;
 }
 
 
-void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *arg0, void *arg1, void *info)
+void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *info)
 {
     HostDnsServiceDarwin *pThis = (HostDnsServiceDarwin *)info;
-
-    NOREF(arg0); /* SCDynamicStore */
-    NOREF(arg1); /* CFArrayRef */
 
     ALock l(pThis);
     pThis->updateInfo();
@@ -107,33 +89,84 @@ HRESULT HostDnsServiceDarwin::init()
 
     ctx.info = this;
 
-    g_store = SCDynamicStoreCreate(NULL, CFSTR("org.virtualbox.VBoxSVC"),
+    m->m_store = SCDynamicStoreCreate(NULL, CFSTR("org.virtualbox.VBoxSVC"),
                                    (SCDynamicStoreCallBack)HostDnsServiceDarwin::hostDnsServiceStoreCallback,
                                    &ctx);
-    AssertReturn(g_store, E_FAIL);
+    AssertReturn(m->m_store, E_FAIL);
 
-    g_DnsWatcher = SCDynamicStoreCreateRunLoopSource(NULL, g_store, 0);
-    if (!g_DnsWatcher)
+    m->m_DnsWatcher = SCDynamicStoreCreateRunLoopSource(NULL, m->m_store, 0);
+    if (!m->m_DnsWatcher)
         return E_OUTOFMEMORY;
+
+    int rc = RTSemEventCreate(&m->m_evtStop);
+    AssertRCReturn(rc, E_FAIL);
+
+    CFRunLoopSourceContext sctx;
+    RT_ZERO(sctx);
+    sctx.perform = HostDnsServiceDarwin::Data::performShutdownCallback;
+    m->m_Stopper = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sctx);
+    AssertReturn(m->m_Stopper, E_FAIL);
 
     HRESULT hrc = HostDnsMonitor::init();
     AssertComRCReturn(hrc, hrc);
 
-    int rc = RTSemEventCreate(&g_DnsInitEvent);
-    AssertRCReturn(rc, E_FAIL);
-
-    rc = RTThreadCreate(&g_DnsMonitoringThread, hostMonitoringRoutine,
-                        this, 128 * _1K, RTTHREADTYPE_IO, 0, "dns-monitor");
-    AssertRCReturn(rc, E_FAIL);
-
-    RTSemEventWait(g_DnsInitEvent, RT_INDEFINITE_WAIT);
     return updateInfo();
+}
+
+
+void HostDnsServiceDarwin::monitorThreadShutdown()
+{
+    ALock l(this);
+    if (!m->m_fStop)
+    {
+        CFRunLoopSourceSignal(m->m_Stopper);
+        CFRunLoopWakeUp(m->m_RunLoopRef);
+        
+        RTSemEventWait(m->m_evtStop, RT_INDEFINITE_WAIT);
+    }
+}
+
+
+int HostDnsServiceDarwin::monitorWorker()
+{
+    m->m_RunLoopRef = CFRunLoopGetCurrent();
+    AssertReturn(m->m_RunLoopRef, VERR_INTERNAL_ERROR);
+
+    CFRetain(m->m_RunLoopRef);
+
+    CFArrayRef watchingArrayRef = CFArrayCreate(NULL,
+                                                (const void **)&kStateNetworkGlobalDNSKey,
+                                                1, &kCFTypeArrayCallBacks);
+    if (!watchingArrayRef)
+    {
+        CFRelease(m->m_DnsWatcher);
+        return E_OUTOFMEMORY;
+    }
+
+    if(SCDynamicStoreSetNotificationKeys(m->m_store, watchingArrayRef, NULL))
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), m->m_DnsWatcher, kCFRunLoopCommonModes);
+
+    CFRelease(watchingArrayRef);
+
+    monitorThreadInitializationDone();
+
+    while (!m->m_fStop)
+    {
+        CFRunLoopRun();
+    }
+
+    CFRelease(m->m_RunLoopRef);
+
+    /* We're notifying stopper thread. */
+    RTSemEventSignal(m->m_evtStop);
+
+    return VINF_SUCCESS;
 }
 
 
 HRESULT HostDnsServiceDarwin::updateInfo()
 {
-    CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(g_store,
+    CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(m->m_store,
                                                             kStateNetworkGlobalDNSKey);
     /**
      * 0:vvl@nb-mbp-i7-2(0)# scutil
@@ -214,4 +247,10 @@ HRESULT HostDnsServiceDarwin::updateInfo()
     setInfo(info);
 
     return S_OK;
+}
+
+void HostDnsServiceDarwin::Data::performShutdownCallback(void *info)
+{
+    HostDnsServiceDarwin::Data *pThis = static_cast<HostDnsServiceDarwin::Data *>(info);
+    pThis->m_fStop = true;
 }

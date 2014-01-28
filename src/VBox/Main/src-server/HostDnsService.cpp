@@ -82,8 +82,13 @@ inline static void detachVectorOfString(const std::vector<std::string>& v,
 
 struct HostDnsMonitor::Data
 {
+    Data(bool aThreaded):fThreaded(aThreaded){}
+
     std::vector<PCHostDnsMonitorProxy> proxies;
     HostDnsInformation info;
+    const bool fThreaded;
+    RTTHREAD hMonitoringThread;
+    RTSEMEVENT hDnsInitEvent;
 };
 
 struct HostDnsMonitorProxy::Data
@@ -111,9 +116,10 @@ struct HostDnsMonitorProxy::Data
 };
 
 
-HostDnsMonitor::HostDnsMonitor()
+HostDnsMonitor::HostDnsMonitor(bool fThreaded)
   : m(NULL)
 {
+   m = new HostDnsMonitor::Data(fThreaded);
 }
 
 HostDnsMonitor::~HostDnsMonitor()
@@ -200,10 +206,33 @@ void HostDnsMonitor::setInfo(const HostDnsInformation &info)
 
 HRESULT HostDnsMonitor::init()
 {
-    m = new HostDnsMonitor::Data();
+    if (m->fThreaded)
+    {
+        int rc = RTSemEventCreate(&m->hDnsInitEvent);
+        AssertRCReturn(rc, E_FAIL);
+
+        rc = RTThreadCreate(&m->hMonitoringThread,
+                            HostDnsMonitor::threadMonitoringRoutine,
+                            this, 128 * _1K, RTTHREADTYPE_IO, 0, "dns-monitor");
+        AssertRCReturn(rc, E_FAIL);
+
+        RTSemEventWait(m->hDnsInitEvent, RT_INDEFINITE_WAIT);
+    }
     return S_OK;
 }
 
+
+void HostDnsMonitor::monitorThreadInitializationDone()
+{
+    RTSemEventSignal(m->hDnsInitEvent);
+}
+
+
+int HostDnsMonitor::threadMonitoringRoutine(RTTHREAD, void *pvUser)
+{
+    HostDnsMonitor *pThis = static_cast<HostDnsMonitor *>(pvUser);
+    return pThis->monitorWorker();
+}
 
 /* HostDnsMonitorProxy */
 HostDnsMonitorProxy::HostDnsMonitorProxy()

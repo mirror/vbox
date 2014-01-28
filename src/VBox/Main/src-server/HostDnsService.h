@@ -46,7 +46,7 @@ class Lockee
 class ALock
 {
   public:
-    ALock(const Lockee *l);
+    explicit ALock(const Lockee *l);
     ~ALock();
 
   private:
@@ -74,17 +74,26 @@ class HostDnsMonitor : public Lockee
     void addMonitorProxy(PCHostDnsMonitorProxy) const;
     void releaseMonitorProxy(PCHostDnsMonitorProxy) const;
     const HostDnsInformation &getInfo() const;
+    /* @note: method will wait till client call
+       HostDnsService::monitorThreadInitializationDone() */
     virtual HRESULT init();
 
   protected:
+    explicit HostDnsMonitor(bool fThreaded = false);
+    virtual ~HostDnsMonitor();
+
     void notifyAll() const;
     void setInfo(const HostDnsInformation &);
-    HostDnsMonitor();
-    virtual ~HostDnsMonitor();
+
+    /* this function used only if HostDnsMonitor::HostDnsMonitor(true) */
+    void monitorThreadInitializationDone();
+    virtual void monitorThreadShutdown() = 0;
+    virtual int monitorWorker() = 0;
 
   private:
     HostDnsMonitor(const HostDnsMonitor &);
     HostDnsMonitor& operator= (const HostDnsMonitor &);
+    static int threadMonitoringRoutine(RTTHREAD, void *);
 
   public:
     struct Data;
@@ -96,7 +105,7 @@ class HostDnsMonitor : public Lockee
  */
 class HostDnsMonitorProxy : public Lockee
 {
-  public:
+    public:
     HostDnsMonitorProxy();
     ~HostDnsMonitorProxy();
     void init(const HostDnsMonitor *aMonitor, const VirtualBox *aParent);
@@ -108,10 +117,10 @@ class HostDnsMonitorProxy : public Lockee
 
     bool operator==(PCHostDnsMonitorProxy&);
 
-  private:
+    private:
     void updateInfo();
 
-  private:
+    private:
     struct Data;
     Data *m;
 };
@@ -124,35 +133,54 @@ class HostDnsServiceDarwin : public HostDnsMonitor
     ~HostDnsServiceDarwin();
     HRESULT init();
 
-  private:
+    protected:
+    virtual void monitorThreadShutdown();
+    virtual int monitorWorker();
+
+    private:
     HRESULT updateInfo();
     static void hostDnsServiceStoreCallback(void *store, void *arrayRef, void *info);
+    struct Data;
+    Data *m;
 };
 # endif
 # ifdef RT_OS_WINDOWS
 class HostDnsServiceWin : public HostDnsMonitor
 {
-  public:
+    public:
     HostDnsServiceWin();
     ~HostDnsServiceWin();
     HRESULT init();
 
-  private:
+    protected:
+    virtual void monitorThreadShutdown();
+    virtual int monitorWorker();
+
+    private:
     void strList2List(std::vector<std::string>& lst, char *strLst);
     HRESULT updateInfo();
+
+    private:
+    struct Data;
+    Data *m;
 };
 # endif
 # if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
 class HostDnsServiceResolvConf: public HostDnsMonitor
 {
   public:
-    HostDnsServiceResolvConf() : m(NULL) {}
+    explicit HostDnsServiceResolvConf(bool fThreaded = false) : HostDnsMonitor(fThreaded), m(NULL) {}
     virtual ~HostDnsServiceResolvConf();
     virtual HRESULT init(const char *aResolvConfFileName);
-    const std::string& resolvConf();
+    const std::string& resolvConf() const;
 
   protected:
     HRESULT readResolvConf();
+    /* While not all hosts supports Hosts DNS change notifiaction
+     * default implementation offers return VERR_IGNORE.
+     */
+    virtual void monitorThreadShutdown() {}
+    virtual int monitorWorker() {return VERR_IGNORED;}
 
   protected:
     struct Data;
@@ -174,12 +202,13 @@ class HostDnsServiceSolaris : public HostDnsServiceResolvConf
 class HostDnsServiceLinux : public HostDnsServiceResolvConf
 {
   public:
-    HostDnsServiceLinux(){}
-    ~HostDnsServiceLinux();
-    HRESULT init() {return init("/etc/resolv.conf");}
-    HRESULT init(const char *aResolvConfFileName);
+    HostDnsServiceLinux():HostDnsServiceResolvConf(true){}
+    virtual ~HostDnsServiceLinux();
+    virtual HRESULT init(){ return HostDnsServiceResolvConf::init("/etc/resolv.conf");}
 
-    static int hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser);
+  protected:
+    virtual void monitorThreadShutdown();
+    virtual int monitorWorker();
 };
 
 #  elif defined(RT_OS_FREEBSD)

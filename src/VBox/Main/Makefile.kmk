@@ -388,6 +388,10 @@ VBoxSVC_SOURCES = \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(if $(VBOX_WITH_XPCOM),src-server/xpcom/server.cpp,)
 
+ifn1of ($(KBUILD_TARGET), win darwin) 
+	VBoxSVC_SOURCES += $(PATH_ROOT)/src/VBox/Devices/Network/slirp/resolv_conf_parser.c
+endif
+
 VBoxSVC_SOURCES.darwin = \
 	src-server/darwin/iokit.cpp \
 	src-server/darwin/HostPowerDarwin.cpp \
