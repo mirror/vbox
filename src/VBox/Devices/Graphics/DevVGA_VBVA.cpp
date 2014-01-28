@@ -81,6 +81,7 @@ typedef struct VBVACONTEXT
     uint32_t cViews;
     VBVAVIEW aViews[64 /* @todo SchemaDefs::MaxGuestMonitors*/];
     VBVAMOUSESHAPEINFO mouseShapeInfo;
+    bool fPaused;
 } VBVACONTEXT;
 
 
@@ -2320,6 +2321,24 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
     return rc;
 }
 
+/* When VBVA is paused, then VGA device is allowed to work but
+ * no HGSMI etc state is changed.
+ */
+void VBVAPause(PVGASTATE pVGAState, bool fPause)
+{
+    if (!pVGAState || !pVGAState->pHGSMI)
+    {
+        return;
+    }
+
+    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pVGAState->pHGSMI);
+
+    if (pCtx)
+    {
+        pCtx->fPaused = fPause;
+    }
+}
+
 void VBVAReset (PVGASTATE pVGAState)
 {
     if (!pVGAState || !pVGAState->pHGSMI)
@@ -2368,14 +2387,17 @@ int VBVAUpdateDisplay (PVGASTATE pVGAState)
 
     if (pCtx)
     {
-        rc = vbvaFlush (pVGAState, pCtx);
-
-        if (RT_SUCCESS (rc))
+        if (!pCtx->fPaused)
         {
-            if (!pCtx->aViews[0].pVBVA)
+            rc = vbvaFlush (pVGAState, pCtx);
+
+            if (RT_SUCCESS (rc))
             {
-                /* VBVA is not enabled for the first view, so VGA device must do updates. */
-                rc = VERR_NOT_SUPPORTED;
+                if (!pCtx->aViews[0].pVBVA)
+                {
+                    /* VBVA is not enabled for the first view, so VGA device must do updates. */
+                    rc = VERR_NOT_SUPPORTED;
+                }
             }
         }
     }
@@ -2412,6 +2434,7 @@ int VBVAInit (PVGASTATE pVGAState)
          {
              VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pVGAState->pHGSMI);
              pCtx->cViews = pVGAState->cMonitors;
+             pCtx->fPaused = true;
          }
      }
 

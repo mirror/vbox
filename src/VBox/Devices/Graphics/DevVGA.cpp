@@ -1036,9 +1036,6 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
             return VINF_IOM_R3_IOPORT_WRITE;
 #else
         {
-            /* reset when VBE is switched off */
-            bool fNeedRest = !(val & VBE_DISPI_ENABLED) && (pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED);
-
             if ((val & VBE_DISPI_ENABLED) &&
                 !(pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED)) {
                 int h, shift_control;
@@ -1131,8 +1128,7 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
              */
             pThis->pDrv->pfnLFBModeChange(pThis->pDrv, (val & VBE_DISPI_ENABLED) != 0);
 #ifdef VBOX_WITH_HGSMI
-            if (fNeedRest)
-                VBVAReset(pThis);
+            VBVAPause(pThis, (val & VBE_DISPI_ENABLED) == 0);
 #endif /* VBOX_WITH_HGSMI */
 
             /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
