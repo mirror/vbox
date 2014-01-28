@@ -979,7 +979,7 @@ int main(int argc, char **argv)
 
     printf("Starting main()\n");
 
-    if (VBoxCGlueInit() != 0)
+    if (VBoxCGlueInit())
     {
         fprintf(stderr, "%s: FATAL: VBoxCGlueInit failed: %s\n",
                 argv[0], g_szVBoxErrMsg);
