@@ -1718,166 +1718,215 @@ print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
       </sect2>
 
       <sect2 id="cbinding">
-        <title>C binding to XPCOM API</title>
+        <title>C binding to VirtualBox API</title>
 
-        <note>
-          <para>This section currently applies to Linux, Mac OS X and Solaris
-          hosts only.</para>
-        </note>
+        <para>The VirtualBox API originally is designed as object oriented,
+        using XPCOM or COM as the middleware, which translates natively to C++.
+        This means that in order to use it from C there needs to be some
+        helper code to bridge the language differences and reduce the
+        differences between platforms.</para>
 
-        <para>Starting with version 2.2, VirtualBox offers a C binding for the
-        XPCOM API.</para>
+        <sect3 id="capi_glue">
+          <title>Cross-platform C binding to VirtualBox API</title>
 
-        <para>The C binding provides a layer enabling object creation, method
-        invocation and attribute access from C.</para>
+            <para>Starting with version 4.3, VirtualBox offers a C binding
+            which allows using the same C client sources for all platforms,
+            covering Windows, Linux, Mac OS X and Solaris. It is the
+            preferred way to write API clients, even though the old style
+            is still available.</para>
+
+        </sect3>
 
         <sect3 id="c-gettingstarted">
           <title>Getting started</title>
 
-          <para>The following sections describe how to use the C binding in a
-          C program.</para>
+          <para>The following sections describe how to use the VirtualBox API
+          in a C program. The necessary files are included in the SDK, in the
+          directories <computeroutput>sdk/bindings/c/include</computeroutput>
+          and <computeroutput>sdk/bindings/c/glue</computeroutput>.</para>
 
-          <para>As part of the SDK, a sample program is provided which
-          demonstrates using the C binding to initialize XPCOM, get handles for
+          <para>As part of the SDK, a sample program
+          <computeroutput>tstCAPIGlue.c</computeroutput> is provided in the
+          directory <computeroutput>sdk/bindings/c/samples</computeroutput>
+          which demonstrates
+          using the C binding to initialize the API, get handles for
           VirtualBox and Session objects, make calls to list and start virtual
           machines, monitor events, and uninitialize resources when done. The
-          program uses the VBoxGlue library to open the C binding layer during
-          runtime.</para>
+          sample program is trying to illustrate all relevant concepts, so it
+          is a great source of detail information. Among many other generally
+          useful code sequences it contains a function which shows how to
+          retrieve error details in C code if they are available from the API
+          call.</para>
 
-          <para>The sample program
-          <computeroutput>tstXPCOMCGlue</computeroutput> is located in the bin
-          directory and can be run without arguments. It lists registered
-          machines on the host along with some additional information and ask
-          for a machine to start. The source for this program is available in
-          <computeroutput>sdk/bindings/xpcom/cbinding/samples/</computeroutput>
-          directory. The source for the VBoxGlue library is available in the
-          <computeroutput>sdk/bindings/xpcom/cbinding/</computeroutput>
-          directory.</para>
+          <para>The sample program <computeroutput>tstCAPIGlue</computeroutput>
+          can be built using the provided <computeroutput>Makefile</computeroutput>
+          and can be run without arguments.</para>
+          
+          <para>It uses the VBoxCAPIGlue library (source code is in directory
+          <computeroutput>sdk/bindings/c/glue</computeroutput>, to be used in
+          your API client code) to open the C binding layer during runtime,
+          which is preferred to other means as it isolates the code which
+          locates the necessary dynamic library, using a known working way
+          which works on all platforms. If you encounter problems with this
+          glue code in <computeroutput>VBoxCAPIGlue.c</computeroutput>, let the
+          VirtualBox developers know, rather than inventing incompatible
+          solutions.</para>
+
+          <para>The following sections document the important concepts needed
+          to correctly use the C binding, as it is vital for developing API
+          client code which manages memory correctly, updates the reference
+          counters correctly, avoiding crashes and memory leaks. Concepts such
+          as event handling are described in the API specification (see
+          <xref linkend="events" />) in great detail detail, and the sample
+          illustrates the practical aspects of how to use both types of event
+          handling, active and passive, from a C application. If you look at
+          the code complexity of active event handling (and its inherenly
+          platform/compiler specific elements) it should be clear that passive
+          event handling should be used whereever possible.</para>
         </sect3>
 
         <sect3 id="c-initialization">
-          <title>XPCOM initialization</title>
+          <title>VirtualBox C API initialization</title>
 
-          <para>Just like in C++, XPCOM needs to be initialized before it can
-          be used. The <computeroutput>VBoxCAPI_v4_3.h</computeroutput> header
-          provides the interface to the C binding. Here's how to initialize
-          XPCOM:</para>
-
-          <screen>#include "VBoxCAPI_v4_3.h"
+          <para>Just like in C++, the API and the underlying middleware needs
+          to be initialized before it can be used. The
+          <computeroutput>VBoxCAPI_v4_3.h</computeroutput> header provides the
+          interface to the C binding, but you can alternatively and more
+          conveniently also include <computeroutput>VBoxCAPIGlue.h</computeroutput>,
+          as this avoids the VirtualBox version dependent header file name and
+          makes sure the global variable <code>g_pVBoxFuncs</code> contains a
+          pointer to the structure which contains the helper function pointers.
+          Here's how to initialize the C API:<screen>#include "VBoxCAPIGlue.h"
 ...
-PCVBOXXPCOM g_pVBoxFuncs = NULL;
-IVirtualBox *vbox        = NULL;
-ISession *session        = NULL;
+IVirtualBoxClient *vboxclient   = NULL;
+IVirtualBox *vbox               = NULL;
+ISession *session               = NULL;
+HRESULT rc;
+ULONG revision;
 
 /*
- * VBoxGetXPCOMCFunctions() is the only function exported by
- * VBoxXPCOMC.so and the only one needed to make virtualbox
- * work with C. This functions gives you the pointer to the
- * function table (g_pVBoxFuncs).
+ * VBoxCGlueInit() loads the necessary dynamic library, handles errors
+ * (producing an error message hinting what went wrong) and gives you
+ * the pointer to the function table (g_pVBoxFuncs).
  *
  * Once you get the function table, then how and which functions
  * to use is explained below.
  *
- * g_pVBoxFuncs-&gt;pfnComInitialize does all the necessary startup
- * action and provides us with pointers to vbox and session handles.
- * It should be matched by a call to g_pVBoxFuncs-&gt;pfnComUninitialize()
+ * g_pVBoxFuncs-&gt;pfnClientInitialize does all the necessary startup
+ * action and provides us with pointers to an IVirtualBoxClient instance.
+ * It should be matched by a call to g_pVBoxFuncs-&gt;pfnClientUninitialize()
  * when done.
  */
 
-g_pVBoxFuncs = VBoxGetXPCOMCFunctions(VBOX_XPCOMC_VERSION);
-g_pVBoxFuncs-&gt;pfnComInitialize(IVIRTUALBOX_IID_STR, &amp;vbox,
-                               ISESSION_IID_STR, &amp;session);</screen>
+if (VBoxCGlueInit())
+{
+    fprintf(stderr, "s: FATAL: VBoxCGlueInit failed: %s\n",
+            argv[0], g_szVBoxErrMsg);
+    return EXIT_FAILURE;
+}
+    
+g_pVBoxFuncs-&gt;pfnClientInitialize(NULL, &amp;vboxclient);
+if (!vboxclient)
+{
+    fprintf(stderr, "%s: FATAL: could not get VirtualBoxClient reference\n",
+            argv[0]);
+    return EXIT_FAILURE;
+}</screen></para>
 
-          <para>If either <computeroutput>vbox</computeroutput> or
-          <computeroutput>session</computeroutput> is still
-          <computeroutput>NULL</computeroutput>, initialization failed and the
-          XPCOM API cannot be used.</para>
+          <para>If <computeroutput>vboxclient</computeroutput> is still
+          <computeroutput>NULL</computeroutput> this means the initializationi
+          failed and the VirtualBox C API cannot be used.</para>
 
-          <para>There is now also a way to use the
-          <xref linkend="IVirtualBoxClient" xreflabel="IVirtualBoxClient" />
-          helper interface, which in comparison to the original (and still
-          available) initialization method above simplifies creating multiple
-          sessions, and also allows handling termination and crashes of the API
-          server (VBoxSVC) in a graceful way. See the sample program how this
-          is used.</para>
+          <para>It is possible to write C applications using multiple threads
+          which all use the VirtualBox API, as long as you're initializing
+          the C API in each thread which your application creates. This is done
+          with <code>g_pVBoxFuncs->pfnClientThreadInitialize()</code> and
+          likewise before the thread is terminated the API must be
+          uninitialized with
+          <code>g_pVBoxFuncs->pfnClientThreadUninitialize()</code>. You don't
+          have to use these functions in worker threads created by COM/XPCOM
+          (which you might observe if your code uses active event handling),
+          everything is initialized correctly already. On Windows the C
+          bindings create a marshaller which supports a wide range of COM
+          threading models, from STA to MTA, so you don't have to worry about
+          these details unless you plan to use active event handlers. See
+          the sample code how to get this to work reliably (in other words
+          think twice if passive event handling isn't the better solution after
+          you looked at the sample code).</para>
         </sect3>
 
         <sect3 id="c-invocation">
-          <title>XPCOM method invocation</title>
+          <title>C API attribute and method invocation</title>
 
           <para>Method invocation is straightforward. It looks pretty much
-          like the C++ way, augmented with an extra indirection due to
-          accessing the vtable and passing a pointer to the object as the
-          first argument to serve as the <computeroutput>this</computeroutput>
-          pointer.</para>
+          like the C++ way, by using a macro which internally accesses the
+          vtable, and additionally needs to be passed a pointer to the objecti
+          as the first argument to serve as the
+          <computeroutput>this</computeroutput> pointer.</para>
 
           <para>Using the C binding, all method invocations return a numeric
-          result code.</para>
+          result code of type <code>HRESULT</code> (with a few exceptions
+          which normally are not relevant).</para>
 
           <para>If an interface is specified as returning an object, a pointer
           to a pointer to the appropriate object must be passed as the last
           argument. The method will then store an object pointer in that
           location.</para>
 
-          <para>In other words, to call an object's method what you need
-          is</para>
+          <para>Likewise, attributes (properties) can be queried or set using
+          method invocations, using specially named methods. For each
+          attribute there exists a getter method, the name of which is composed
+          of <computeroutput>get_</computeroutput> followed by the capitalized
+          attribute name. Unless the attribute is read-only, an analogous
+          <computeroutput>set_</computeroutput> method exists. Let's apply
+          these rules to get the <computeroutput>IVirtualBox</computeroutput>
+          reference, an <computeroutput>ISession</computeroutput> instance 
+          reference and read the <xref linkend="IVirtualBox__revision"
+          xreflabel="IVirtualBox::revision" /> attribute:<screen>rc = IVirtualBoxClient_get_VirtualBox(vboxclient, &amp;vbox);
+if (FAILED(rc) || !vbox)
+{
+    PrintErrorInfo(argv[0], "FATAL: could not get VirtualBox reference", rc);
+    return EXIT_FAILURE;
+}
+rc = IVirtualBoxClient_get_Session(vboxclient, &amp;session);
+if (FAILED(rc) || !session)
+{
+    PrintErrorInfo(argv[0], "FATAL: could not get Session reference", rc);
+    return EXIT_FAILURE;
+}
 
-          <screen>IObject *object;
-nsresult rc;
+rc = IVirtualBox_get_Revision(vbox, &amp;revision);
+if (SUCCEEDED(rc))
+{
+    printf("Revision: %u\n", revision);
+}</screen></para>
+
+          <para>The convenience macros for calling a method are named by
+          prepending the method name with the interface name (using
+          <code>_</code>as the separator).</para>
+
+          <para>So far only attribute getters were illustrated, but generic
+          method calls are straightforward, too:<screen>IMachine *machine = NULL;
+BSTR vmname = ...;
 ...
 /*
- * Calling void IObject::method(arg, ...)
+ * Calling IMachine::findMachine(...)
  */
-rc = object-&gt;vtbl-&gt;Method(object, arg, ...);
+rc = IVirtualBox_FindMachine(vbox, vmname, &amp;machine);</screen></para>
 
-...
-IFoo *foo;
-/*
- * Calling IFoo IObject::method(arg, ...)
- */
-rc = object-&gt;vtbl-&gt;Method(object, args, ..., &amp;foo);</screen>
-
-          <para>As a real-world example of a method invocation, let's call
-          <xref linkend="IMachine__launchVMProcess"
+          <para>As a more complicated example of a method invocation, let's
+          call <xref linkend="IMachine__launchVMProcess"
           xreflabel="IMachine::launchVMProcess" /> which returns an
           IProgress object. Note again that the method name is
-          capitalized.</para>
-
-          <screen>IProgress *progress;
+          capitalized:<screen>IProgress *progress;
 ...
-rc = vbox-&gt;vtbl-&gt;LaunchVMProcess(
+rc = IMachine_LaunchVMProcess(
     machine,       /* this  */
     session,       /* arg 1 */
     sessionType,   /* arg 2 */
     env,           /* arg 3 */
     &amp;progress      /* Out   */
-);</screen>
-        </sect3>
-
-        <sect3 id="c-attributes">
-          <title>XPCOM attribute access</title>
-
-          <para>A construct similar to calling non-void methods is used to
-          access object attributes. For each attribute there exists a getter
-          method, the name of which is composed of
-          <computeroutput>Get</computeroutput> followed by the capitalized
-          attribute name. Unless the attribute is read-only, an analogous
-          <computeroutput>Set</computeroutput> method exists. Let's apply
-          these rules to read the <xref linkend="IVirtualBox__revision"
-          xreflabel="IVirtualBox::revision" /> attribute.</para>
-
-          <para>Using the <computeroutput>IVirtualBox</computeroutput> handle
-          <computeroutput>vbox</computeroutput> obtained above, calling its
-          <computeroutput>GetRevision</computeroutput> method looks like
-          this:</para>
-
-          <screen>PRUint32   rev;
-
-rc = vbox-&gt;vtbl-&gt;GetRevision(vbox, &amp;rev);
-if (NS_SUCCEEDED(rc))
-{
-    printf("Revision: %u\n", (unsigned)rev);
-}</screen>
+);</screen></para>
 
           <para>All objects with their methods and attributes are documented
           in <xref linkend="sdkref_classes" />.</para>
@@ -1889,63 +1938,114 @@ if (NS_SUCCEEDED(rc))
           <para>When dealing with strings you have to be aware of a string's
           encoding and ownership.</para>
 
-          <para>Internally, XPCOM uses UTF-16 encoded strings. A set of
+          <para>Internally, the API uses UTF-16 encoded strings. A set of
           conversion functions is provided to convert other encodings to and
           from UTF-16. The type of a UTF-16 character is
-          <computeroutput>PRUnichar</computeroutput>. Strings of UTF-16
-          characters are arrays of that type. Most string handling functions
-          take pointers to that type. Prototypes for the following conversion
-          functions are declared in
-          <computeroutput>VBoxCAPI_v4_3.h</computeroutput>.</para>
+          <computeroutput>BSTR</computeroutput> (or its constant counterpart
+          <computeroutput>CBSTR</computeroutput>), which is an array type,
+          represented by a pointer to the start of the zero-terminated string.
+          There are functions for converting between UTF-8 and UTF-16 strings
+          available through <code>g_pVBoxFuncs</code>:<screen>int (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
+int (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);</screen></para>
 
-          <sect4>
-            <title>Conversion of UTF-16 to and from UTF-8</title>
+          <para>The ownership of a string determines who is responsible for
+          releasing resources associated with the string. Whenever the API
+          creates a string (essentially for output parameters), ownership is
+          transferred to the caller. To avoid resource leaks, the caller
+          should release resources once the string is no longer needed.
+          There are plenty of examples in the sample code.</para>
+        </sect3>
 
-            <screen>int (*pfnUtf16ToUtf8)(const PRUnichar *pwszString, char **ppszString);
-int (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);</screen>
-          </sect4>
+        <sect3 id="c-safearray">
+          <title>Array handling</title>
 
-          <sect4>
-            <title>Ownership</title>
+          <para>Arrays are handled somewhat similarly to strings, with the
+          additional information of the number of elements in the array. The
+          exact details of string passing depends on the platform middleware
+          (COM/XPCOM), and therefore the C binding offers helper functions to
+          gloss over these differences.</para>
 
-            <para>The ownership of a string determines who is responsible for
-            releasing resources associated with the string. Whenever XPCOM
-            creates a string, ownership is transferred to the caller. To avoid
-            resource leaks, the caller should release resources once the
-            string is no longer needed.</para>
-          </sect4>
+          <para>Passing arrays as input parameters to API methods is usually
+          done by the following sequence, calling a hypothetical
+          <code>IArrayDemo_PassArray</code> API method:<screen>static const ULONG aElements[] = { 1, 2, 3, 4 };
+ULONG cElements = sizeof(aElements) / sizeof(aElements[0]);
+SAFEARRAY *psa = NULL;
+psa = g_pVBoxFuncs->pfnSafeArrayCreateVector(VT_I4, 0, cElements);
+g_pVBoxFuncs->pfnSafeArrayCopyInParamHelper(psa, aElements, sizeof(aElements));
+IArrayDemo_PassArray(pThis, ComSafeArrayAsInParam(psa));
+g_pVBoxFuncs->pfnSafeArrayDestroy(psa);</screen></para>
+
+          <para>Likewise, getting arrays results from output parameters is done
+          using helper functions which manage memory allocations as part of
+          their other functionality:<screen>SAFEARRAY *psa = g_pVBoxFuncs->pfnSafeArrayOutParamAlloc();
+ULONG *pData;
+ULONG cElements;
+IArrayDemo_ReturnArray(pThis, ComSafeArrayAsOutParam(psa));
+g_pVBoxFuncs->pfnSafeArrayCopyOutParamHelper((void **)&amp;pData, &amp;cElements, VT_I4, psa);
+g_pVBoxFuncs->pfnSafeArrayDestroy(psa);</screen></para>
+
+          <para>This covers the necessary functionality for all array element
+          types except interface references. These need special helpers to
+          manage the reference counting correctly. The following code snippet
+          gets the list of VMs, and passes the first IMachine reference to
+          another API function (assuming that there is at least one element
+          in the array, to simplify the example):<screen>SAFEARRAY psa = g_pVBoxFuncs->pfnSafeArrayOutParamAlloc();
+IMachine **machines = NULL;
+ULONG machineCnt = 0;
+ULONG i;
+IVirtualBox_get_Machines(virtualBox, ComSafeArrayAsOutIfaceParam(machinesSA, IMachine *));
+g_pVBoxFuncs->pfnSafeArrayCopyOutIfaceParamHelper((IUnknown ***)&amp;machines, &amp;machineCnt, machinesSA);
+g_pVBoxFuncs->pfnSafeArrayDestroy(machinesSA);
+/* Now "machines" contains the IMachine references, and machineCnt the
+ * number of elements in the array. */
+...
+SAFEARRAY *psa = g_pVBoxFuncs->pfnSafeArrayCreateVector(VT_IUNKNOWN, 0, 1);
+g_pVBoxFuncs->pfnSafeArrayCopyInParamHelper(psa, (void *)&amp;machines[0], sizeof(machines[0]));
+IVirtualBox_GetMachineStates(ComSafeArrayAsInParam(psa), ...);
+...
+g_pVBoxFuncs->pfnSafeArrayDestroy(psa);
+for (i = 0; i &lt; machineCnt; ++i)
+{
+    IMachine *machine = machines[i];
+    IMachine_Release(machine);
+}
+free(machines);</screen></para>
+
+          <para>Handling output parameters needs more special effort than
+          input parameters, thus only for the former there are special helpers,
+          and the latter is handled through the generic array support.</para>
         </sect3>
 
         <sect3 id="c-uninitialization">
-          <title>XPCOM uninitialization</title>
+          <title>C API uninitialization</title>
 
           <para>Uninitialization is performed by
-          <computeroutput>g_pVBoxFuncs-&gt;pfnComUninitialize().</computeroutput>
+          <computeroutput>g_pVBoxFuncs-&gt;pfnClientUninitialize().</computeroutput>
           If your program can exit from more than one place, it is a good idea
           to install this function as an exit handler with Standard C's
           <computeroutput>atexit()</computeroutput> just after calling
-          <computeroutput>g_pVBoxFuncs-&gt;pfnComInitialize()</computeroutput>
+          <computeroutput>g_pVBoxFuncs-&gt;pfnClientInitialize()</computeroutput>
           , e.g. <screen>#include &lt;stdlib.h&gt;
 #include &lt;stdio.h&gt;
 
 ...
 
 /*
- * Make sure g_pVBoxFuncs-&gt;pfnComUninitialize() is called at exit, no
+ * Make sure g_pVBoxFuncs-&gt;pfnClientUninitialize() is called at exit, no
  * matter if we return from the initial call to main or call exit()
  * somewhere else. Note that atexit registered functions are not
  * called upon abnormal termination, i.e. when calling abort() or
- * signal(). Separate provisions must be taken for these cases.
+ * signal().
  */
 
-if (atexit(g_pVBoxFuncs-&gt;pfnComUninitialize()) != 0) {
-    fprintf(stderr, "failed to register g_pVBoxFuncs-&gt;pfnComUninitialize()\n");
+if (atexit(g_pVBoxFuncs-&gt;pfnClientUninitialize()) != 0) {
+    fprintf(stderr, "failed to register g_pVBoxFuncs-&gt;pfnClientUninitialize()\n");
     exit(EXIT_FAILURE);
 }</screen></para>
 
           <para>Another idea would be to write your own <computeroutput>void
           myexit(int status)</computeroutput> function, calling
-          <computeroutput>g_pVBoxFuncs-&gt;pfnComUninitialize()</computeroutput>
+          <computeroutput>g_pVBoxFuncs-&gt;pfnClientUninitialize()</computeroutput>
           followed by the real <computeroutput>exit()</computeroutput>, and
           use it instead of <computeroutput>exit()</computeroutput> throughout
           your program and at the end of
@@ -1955,13 +2055,14 @@ if (atexit(g_pVBoxFuncs-&gt;pfnComUninitialize()) != 0) {
           user types CTRL-C sending SIGINT) you might want to install a signal
           handler setting a flag noting that a signal was sent and then
           calling
-          <computeroutput>g_pVBoxFuncs-&gt;pfnComUninitialize()</computeroutput>
+          <computeroutput>g_pVBoxFuncs-&gt;pfnClientUninitialize()</computeroutput>
           later on, <emphasis>not</emphasis> from the handler itself.</para>
 
           <para>That said, if a client program forgets to call
-          <computeroutput>g_pVBoxFuncs-&gt;pfnComUninitialize()</computeroutput>
+          <computeroutput>g_pVBoxFuncs-&gt;pfnClientUninitialize()</computeroutput>
           before it terminates, there is a mechanism in place which will
-          eventually release references held by the client.</para>
+          eventually release references held by the client. On Windows it can
+          take quite a while, in the order of 6-7 minutes.</para>
         </sect3>
 
         <sect3 id="c-linking">
@@ -1969,27 +2070,91 @@ if (atexit(g_pVBoxFuncs-&gt;pfnComUninitialize()) != 0) {
 
           <para>A program using the C binding has to open the library during
           runtime using the help of glue code provided and as shown in the
-          example <computeroutput>tstXPCOMCGlue.c</computeroutput>.
-          Compilation and linking can be achieved, e.g., with a makefile
-          fragment similar to</para>
+          example <computeroutput>tstCAPIGlue.c</computeroutput>.
+          Compilation and linking can be achieved with a makefile fragment
+          similar to:<screen># Where is the SDK directory?
+PATH_SDK      = ../../..
+CAPI_INC      = -I$(PATH_SDK)/bindings/c/include
+ifeq ($(BUILD_PLATFORM),win)
+PLATFORM_INC  = -I$(PATH_SDK)/bindings/mscom/include
+PLATFORM_LIB  = $(PATH_SDK)/bindings/mscom/lib
+else
+PLATFORM_INC  = -I$(PATH_SDK)/bindings/xpcom/include
+PLATFORM_LIB  = $(PATH_SDK)/bindings/xpcom/lib
+endif
+GLUE_DIR      = $(PATH_SDK)/bindings/c/glue
+GLUE_INC      = -I$(GLUE_DIR)
 
-          <screen># Where is the XPCOM include directory?
-INCS_XPCOM    = -I../../include
-# Where is the glue code directory?
-GLUE_DIR      = ..
-GLUE_INC      = -I..
+# Compile Glue Library
+VBoxCAPIGlue.o: $(GLUE_DIR)/VBoxCAPIGlue.c
+    $(CC) $(CFLAGS) $(CAPI_INC) $(PLATFORM_INC) $(GLUE_INC) -o $@ -c $&lt;
 
-#Compile Glue Library
-VBoxXPCOMCGlue.o: $(GLUE_DIR)/VBoxXPCOMCGlue.c
-    $(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $&lt;
+# Compile interface ID list
+VirtualBox_i.o: $(PLATFORM_LIB)/VirtualBox_i.c
+    $(CC) $(CFLAGS) $(CAPI_INC) $(PLATFORM_INC) $(GLUE_INC) -o $@ -c $&lt;
 
-# Compile.
-program.o: program.c VBoxCAPI_v4_3.h
-    $(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $&lt;
+# Compile program code
+program.o: program.c
+    $(CC) $(CFLAGS) $(CAPI_INC) $(PLATFORM_INC) $(GLUE_INC) -o $@ -c $&lt;
 
-# Link.
-program: program.o VBoxXPCOMCGlue.o
-    $(CC) -o $@ $^ -ldl</screen>
+# Link program.
+program: program.o VBoxCAPICGlue.o VirtualBox_i.o
+    $(CC) -o $@ $^ -ldl -lpthread</screen></para>
+        </sect3>
+
+        <sect3 id="capi_conversion">
+          <title>Conversion of code using legacy C binding</title>
+
+          <para>This section aims to make the task of converting code using
+          the legacy C binding to the new style a breeze, by pointing out some
+          key steps.</para>
+
+          <para>One necessary change is adjusting your Makefile to reflect the
+          different include paths. See above. There are now 3 relevant include
+          directories, and most of it is pointing to the C binding directory.
+          The XPCOM include directory is still relevant for platforms where
+          the XPCOM middleware is used, but most of the include files live
+          elsewhere now, so it's good to have it last. Additionally the
+          <computeroutput>VirtualBox_i.c</computeroutput> file needs to be
+          compiled and linked to the program, it contains the IIDs relevant
+          for the VirtualBox API, making sure they are not replicated endlessly
+          if the code refers to them frequently.</para>
+
+          <para>The C API client code should include <computeroutput>VBoxCAPIGlue.h</computeroutput>
+          instead of <computeroutput>VBoxXPCOMCGlue.h</computeroutput> or
+          <computeroutput>VBoxCAPI_v4_3.h</computeroutput>, as this makes sure
+          the correct macros and internal translations are selected.</para>
+
+          <para>All API method calls (anything mentioning <code>vtbl</code>)
+          should be rewritten using the convenience macros for calling methods,
+          as these hide the internal details, are generally easier to use and
+          shorter to type. You should remove as many as possible
+          <code>(nsISupports **)</code> or similar typecasts, as the new style
+          should use the correct type in most places, increasing the type
+          safety in case of an error in the source code.</para>
+
+          <para>Finally adjust the string and array handling to use the new
+          helpers, as these make sure the code works without changes with
+          both COM and XPCOM, which are significantly different in this area.
+          The code should be double checked if it uses the correct way to
+          manage memory, and is freeing it only after the last use.</para>
+        </sect3>
+
+        <sect3 id="xpcom_cbinding">
+          <title>Legacy C binding to VirtualBox API for XPCOM</title>
+
+          <note>
+            <para>This section applies to Linux, Mac OS X and Solaris
+            hosts only and describes deprecated use of the API from C.</para>
+          </note>
+
+          <para>Starting with version 2.2, VirtualBox offers a C binding for
+          its API which works only on platforms using XPCOM. Refer to the
+          old SDK documentation, it still applies unchanged. The fundamental
+          concepts are similar (but the syntactical details are quite
+          different) to the newer cross-platform C binding which should be
+          used for all new code, as the support for the old C binding will go
+          away in a major release after version 4.3.</para>
         </sect3>
       </sect2>
     </sect1>
@@ -2138,7 +2303,7 @@ if (prog.getResultCode() != 0)  // check success
       stopped, snapshotted or other things.</para>
     </sect1>
 
-    <sect1>
+    <sect1 id="events">
       <title>VirtualBox events</title>
 
       <para>In VirtualBox, "events" provide a uniform mechanism to register
