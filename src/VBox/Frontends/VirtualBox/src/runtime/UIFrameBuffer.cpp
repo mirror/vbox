@@ -500,6 +500,14 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pData)
             /* Confirm Notify3DEvent: */
             return S_OK;
         }
+
+        case VBOX3D_NOTIFY_EVENT_TYPE_TEST_FUNCTIONAL:
+        {
+            HRESULT hr = m_fIsMarkedAsUnused ? E_FAIL : S_OK;
+            unlock();
+            return hr;
+        }
+
         default:
             break;
     }

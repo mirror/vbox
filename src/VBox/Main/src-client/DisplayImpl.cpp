@@ -934,7 +934,12 @@ void Display::handleResizeCompletedEMT (void)
 
                 VMMDev *pVMMDev = mParent->getVMMDev();
                 if (pVMMDev)
-                    pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED, SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
+                {
+                    if (mhCrOglSvc)
+                        pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_SCREEN_CHANGED, &parm, NULL, NULL);
+                    else
+                        AssertMsgFailed(("mhCrOglSvc is NULL\n"));
+                }
             }
         }
 #endif /* VBOX_WITH_CROGL */
@@ -1250,15 +1255,27 @@ int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
     VMMDev *vmmDev = mParent->getVMMDev();
     if (is3denabled && vmmDev)
     {
-        VBOXHGCMSVCPARM parms[2];
+        if (mhCrOglSvc)
+        {
+            RTRECT *pRectsCopy = (RTRECT *)RTMemAlloc(  RT_MAX(cRect, 1)
+                                                             * sizeof (RTRECT));
+            if (pRectsCopy)
+            {
+                memcpy(pRectsCopy, pRect, cRect * sizeof (RTRECT));
 
-        parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
-        parms[0].u.pointer.addr = pRect;
-        parms[0].u.pointer.size = 0;  /* We don't actually care. */
-        parms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
-        parms[1].u.uint32 = cRect;
+                VBOXHGCMSVCPARM parm;
 
-        vmmDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VISIBLE_REGION, 2, &parms[0]);
+                parm.type = VBOX_HGCM_SVC_PARM_PTR;
+                parm.u.pointer.addr = pRectsCopy;
+                parm.u.pointer.size = cRect * sizeof (RTRECT);
+
+                vmmDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_SET_VISIBLE_REGION, &parm, displayCrAsyncCmdCompletion, this);
+            }
+            else
+                AssertMsgFailed(("failed to allocate rects memory\n"));
+        }
+        else
+            AssertMsgFailed(("mhCrOglSvc is NULL\n"));
     }
 #endif
 
@@ -1673,7 +1690,7 @@ static void vbvaFetchBytes (VBVAMEMORY *pVbvaMemory, uint8_t *pu8Dst, uint32_t c
 {
     if (cbDst >= VBVA_RING_BUFFER_SIZE)
     {
-        AssertMsgFailed (("cbDst = 0x%08X, ring buffer size 0x%08X", cbDst, VBVA_RING_BUFFER_SIZE));
+        AssertMsgFailed (("cbDst = 0x%08X, ring buffer size 0x%08X\n", cbDst, VBVA_RING_BUFFER_SIZE));
         return;
     }
 
@@ -2213,7 +2230,12 @@ STDMETHODIMP Display::SetFramebuffer(ULONG aScreenId, IFramebuffer *aFramebuffer
                 alock.release();
 
                 if (pVMMDev)
-                    vrc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED, SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
+                {
+                    if (mhCrOglSvc)
+                        pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_SCREEN_CHANGED, &parm, NULL, NULL);
+                    else
+                        AssertMsgFailed(("mhCrOglSvc is NULL\n"));
+                }
                 /*ComAssertRCRet (vrc, E_FAIL);*/
 
                 alock.acquire();
@@ -2344,16 +2366,18 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
         VMMDev *vmmDev = mParent->getVMMDev();
         if (is3denabled && vmmDev)
         {
-            VBOXHGCMSVCPARM parms[2];
+            VBOXHGCMSVCPARM parm;
 
-            parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+            parm.type = VBOX_HGCM_SVC_PARM_PTR;
             /* NULL means disable */
-            parms[0].u.pointer.addr = NULL;
-            parms[0].u.pointer.size = 0;  /* We don't actually care. */
-            parms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
-            parms[1].u.uint32 = 0;
+            parm.u.pointer.addr = NULL;
+            parm.u.pointer.size = 0;  /* <- means null rects, NULL pRects address and 0 rects means "disable" */
 
-            vmmDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VISIBLE_REGION, 2, &parms[0]);
+            if (mhCrOglSvc)
+                vmmDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_SET_VISIBLE_REGION, &parm, NULL, NULL);
+            else
+                AssertMsgFailed(("mhCrOglSvc is NULL\n"));
+
         }
     }
 #endif
@@ -3311,25 +3335,26 @@ int Display::updateDisplayData(void)
 #ifdef VBOX_WITH_CROGL
 void Display::crViewportNotify(VMMDev *pVMMDev, ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
 {
-    VBOXHGCMSVCPARM aParms[5];
+    VBOXHGCMSVCPARM parm;
 
-    aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
-    aParms[0].u.uint32 = aScreenId;
+    CRVBOXHGCMVIEWPORT *pViewportInfo = (CRVBOXHGCMVIEWPORT*)RTMemAlloc(sizeof (*pViewportInfo));
+    if(!pViewportInfo)
+    {
+        AssertMsgFailed(("RTMemAlloc failed!\n"));
+        return;
+    }
 
-    aParms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
-    aParms[1].u.uint32 = x;
+    pViewportInfo->u32Screen = aScreenId;
+    pViewportInfo->x = x;
+    pViewportInfo->y = y;
+    pViewportInfo->width = width;
+    pViewportInfo->height = height;
 
-    aParms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
-    aParms[2].u.uint32 = y;
+    parm.type = VBOX_HGCM_SVC_PARM_PTR;
+    parm.u.pointer.addr = pViewportInfo;
+    parm.u.pointer.size = sizeof (*pViewportInfo);
 
-
-    aParms[3].type = VBOX_HGCM_SVC_PARM_32BIT;
-    aParms[3].u.uint32 = width;
-
-    aParms[4].type = VBOX_HGCM_SVC_PARM_32BIT;
-    aParms[4].u.uint32 = height;
-
-    pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_VIEWPORT_CHANGED, SHCRGL_CPARMS_VIEWPORT_CHANGED, aParms);
+    pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_VIEWPORT_CHANGED, &parm, displayCrAsyncCmdCompletion, this);
 
 }
 #endif

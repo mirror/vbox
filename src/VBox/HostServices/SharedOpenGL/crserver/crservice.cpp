@@ -1099,16 +1099,15 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             }
 
             if (    paParms[0].type != VBOX_HGCM_SVC_PARM_PTR     /* pRects */
-                 || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT   /* cRects */
                )
             {
                 rc = VERR_INVALID_PARAMETER;
                 break;
             }
 
-            Assert(sizeof(RTRECT)==4*sizeof(GLint));
+            Assert(sizeof (RTRECT) == 4 * sizeof (GLint));
 
-            rc = crVBoxServerSetRootVisibleRegion(paParms[1].u.uint32, (const RTRECT*)paParms[0].u.pointer.addr);
+            rc = crVBoxServerSetRootVisibleRegion(paParms[0].u.pointer.size / sizeof (RTRECT), (const RTRECT*)paParms[0].u.pointer.addr);
             break;
         }
         case SHCRGL_HOST_FN_SCREEN_CHANGED:
@@ -1149,22 +1148,32 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 }
                 else
                 {
-                    CHECK_ERROR_RET(pFramebuffer, COMGETTER(WinId)(&winId), rc);
+                    CHECK_ERROR_RET(pFramebuffer, Lock(), rc);
 
-                    if (!winId)
-                    {
-                        /* View associated with framebuffer is destroyed, happens with 2d accel enabled */
-                        rc = crVBoxServerUnmapScreen(screenId);
-                        AssertRCReturn(rc, rc);
-                    }
-                    else
-                    {
-                        CHECK_ERROR_RET(pFramebuffer, COMGETTER(Width)(&w), rc);
-                        CHECK_ERROR_RET(pFramebuffer, COMGETTER(Height)(&h), rc);
+                    do {
+                        /* determine if the framebuffer is functional */
+                        rc = pFramebuffer->Notify3DEvent(VBOX3D_NOTIFY_EVENT_TYPE_TEST_FUNCTIONAL, NULL);
 
-                        rc = crVBoxServerMapScreen(screenId, xo, yo, w, h, winId);
-                        AssertRCReturn(rc, rc);
-                    }
+                        if (rc == S_OK)
+                            CHECK_ERROR_BREAK(pFramebuffer, COMGETTER(WinId)(&winId));
+
+                        if (!winId)
+                        {
+                            /* View associated with framebuffer is destroyed, happens with 2d accel enabled */
+                            rc = crVBoxServerUnmapScreen(screenId);
+                            AssertRCReturn(rc, rc);
+                        }
+                        else
+                        {
+                            CHECK_ERROR_BREAK(pFramebuffer, COMGETTER(Width)(&w));
+                            CHECK_ERROR_BREAK(pFramebuffer, COMGETTER(Height)(&h));
+
+                            rc = crVBoxServerMapScreen(screenId, xo, yo, w, h, winId);
+                            AssertRCReturn(rc, rc);
+                        }
+                    } while (0);
+
+                    CHECK_ERROR_RET(pFramebuffer, Unlock(), rc);
                 }
 
                 crServerVBoxCompositionSetEnableStateGlobal(GL_TRUE);
@@ -1220,29 +1229,27 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 break;
             }
 
-            for (int i = 0; i < SHCRGL_CPARMS_VIEWPORT_CHANGED; ++i)
+            if (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR
+                    || !paParms[0].u.pointer.addr
+                    || paParms[0].u.pointer.size != sizeof (CRVBOXHGCMVIEWPORT))
             {
-                if (paParms[i].type != VBOX_HGCM_SVC_PARM_32BIT)
-                {
-                    LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: param[%d] type invalid - %d", i, paParms[i].type));
-                    rc = VERR_INVALID_PARAMETER;
-                    break;
-                }
-            }
-
-            if (!RT_SUCCESS(rc))
-            {
-                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: param validation failed, returning.."));
+                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: param invalid - %d, %#x, %d",
+                        paParms[0].type,
+                        paParms[0].u.pointer.addr,
+                        paParms[0].u.pointer.size));
+                rc = VERR_INVALID_PARAMETER;
                 break;
             }
 
             crServerVBoxCompositionSetEnableStateGlobal(GL_FALSE);
 
-            rc = crVBoxServerSetScreenViewport((int)paParms[0].u.uint32,
-                    paParms[1].u.uint32, /* x */
-                    paParms[2].u.uint32, /* y */
-                    paParms[3].u.uint32, /* w */
-                    paParms[4].u.uint32  /* h */);
+            CRVBOXHGCMVIEWPORT *pViewportInfo = (CRVBOXHGCMVIEWPORT*)paParms[0].u.pointer.addr;
+
+            rc = crVBoxServerSetScreenViewport(pViewportInfo->u32Screen,
+                    pViewportInfo->x, /* x */
+                    pViewportInfo->y, /* y */
+                    pViewportInfo->width, /* w */
+                    pViewportInfo->height  /* h */);
             if (!RT_SUCCESS(rc))
             {
                 LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: crVBoxServerSetScreenViewport failed, rc %d", rc));

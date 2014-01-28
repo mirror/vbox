@@ -665,11 +665,20 @@ int CrFbEntryRegionsAdd(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry, const
                         pFb->pDisplay->EntryCreated(pFb, hEntry);
                 }
 
+#ifdef DEBUG_misha
+                /* in theory hEntry->Flags.fInList can be set if entry is replaced,
+                 * but then modified to fit the compositor rects,
+                 * and so we get the regions changed notification as a result
+                 * this should not generally happen though, so put an assertion to debug that situation */
                 Assert(!hEntry->Flags.fInList);
-                hEntry->Flags.fInList = 1;
+#endif
+                if (!hEntry->Flags.fInList)
+                {
+                    hEntry->Flags.fInList = 1;
 
-                if (pFb->pDisplay)
-                    pFb->pDisplay->EntryAdded(pFb, hEntry);
+                    if (pFb->pDisplay)
+                        pFb->pDisplay->EntryAdded(pFb, hEntry);
+                }
             }
             if (pFb->pDisplay)
                 pFb->pDisplay->RegionsChanged(pFb);
