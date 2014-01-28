@@ -154,11 +154,13 @@
 
 /* Debugging stuff. */
 #ifdef DEBUG
+
+# define LWIP_DEBUG
+
 /* filter in debugging severity */
 # define DBG_TYPES_ON (LWIP_DBG_ON | LWIP_DBG_TRACE | LWIP_DBG_STATE | LWIP_DBG_FRESH | LWIP_DBG_HALT)
 # define DBG_MIN_LEVEL 0
 
-# define LWIP_DEBUG LWIP_DBG_ON
 /* Ethernet & ARP debugging */
 # define ETHARP_DEBUG    LWIP_DBG_ON
 /* IPv4 debugging */
