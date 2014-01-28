@@ -1148,7 +1148,9 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 }
                 else
                 {
+#if 0
                     CHECK_ERROR_RET(pFramebuffer, Lock(), rc);
+#endif
 
                     do {
                         /* determine if the framebuffer is functional */
@@ -1172,8 +1174,9 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                             AssertRCReturn(rc, rc);
                         }
                     } while (0);
-
+#if 0
                     CHECK_ERROR_RET(pFramebuffer, Unlock(), rc);
+#endif
                 }
 
                 crServerVBoxCompositionSetEnableStateGlobal(GL_TRUE);
@@ -1218,6 +1221,50 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             break;
         }
         case SHCRGL_HOST_FN_VIEWPORT_CHANGED:
+        {
+            Log(("svcCall: SHCRGL_HOST_FN_VIEWPORT_CHANGED\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHCRGL_CPARMS_VIEWPORT_CHANGED)
+            {
+                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: cParms invalid - %d", cParms));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            for (int i = 0; i < SHCRGL_CPARMS_VIEWPORT_CHANGED; ++i)
+            {
+                if (paParms[i].type != VBOX_HGCM_SVC_PARM_32BIT)
+                {
+                    LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: param[%d] type invalid - %d", i, paParms[i].type));
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
+            }
+
+            if (!RT_SUCCESS(rc))
+            {
+                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: param validation failed, returning.."));
+                break;
+            }
+
+            crServerVBoxCompositionSetEnableStateGlobal(GL_FALSE);
+
+            rc = crVBoxServerSetScreenViewport((int)paParms[0].u.uint32,
+                    paParms[1].u.uint32, /* x */
+                    paParms[2].u.uint32, /* y */
+                    paParms[3].u.uint32, /* w */
+                    paParms[4].u.uint32  /* h */);
+            if (!RT_SUCCESS(rc))
+            {
+                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: crVBoxServerSetScreenViewport failed, rc %d", rc));
+            }
+
+            crServerVBoxCompositionSetEnableStateGlobal(GL_TRUE);
+
+            break;
+        }
+        case SHCRGL_HOST_FN_VIEWPORT_CHANGED2:
         {
             Log(("svcCall: SHCRGL_HOST_FN_VIEWPORT_CHANGED\n"));
 
