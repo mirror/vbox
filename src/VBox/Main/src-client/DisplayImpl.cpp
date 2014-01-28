@@ -935,10 +935,14 @@ void Display::handleResizeCompletedEMT (void)
                 VMMDev *pVMMDev = mParent->getVMMDev();
                 if (pVMMDev)
                 {
+#if 0
                     if (mhCrOglSvc)
                         pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_SCREEN_CHANGED, &parm, NULL, NULL);
                     else
                         AssertMsgFailed(("mhCrOglSvc is NULL\n"));
+#else
+                    pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED, SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
+#endif
                 }
             }
         }
@@ -2231,10 +2235,14 @@ STDMETHODIMP Display::SetFramebuffer(ULONG aScreenId, IFramebuffer *aFramebuffer
 
                 if (pVMMDev)
                 {
+#if 0
                     if (mhCrOglSvc)
                         pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_SCREEN_CHANGED, &parm, NULL, NULL);
                     else
                         AssertMsgFailed(("mhCrOglSvc is NULL\n"));
+#else
+                    pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED, SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
+#endif
                 }
                 /*ComAssertRCRet (vrc, E_FAIL);*/
 
@@ -3335,6 +3343,7 @@ int Display::updateDisplayData(void)
 #ifdef VBOX_WITH_CROGL
 void Display::crViewportNotify(VMMDev *pVMMDev, ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
 {
+#if 0
     VBOXHGCMSVCPARM parm;
 
     CRVBOXHGCMVIEWPORT *pViewportInfo = (CRVBOXHGCMVIEWPORT*)RTMemAlloc(sizeof (*pViewportInfo));
@@ -3354,8 +3363,28 @@ void Display::crViewportNotify(VMMDev *pVMMDev, ULONG aScreenId, ULONG x, ULONG 
     parm.u.pointer.addr = pViewportInfo;
     parm.u.pointer.size = sizeof (*pViewportInfo);
 
-    pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_VIEWPORT_CHANGED, &parm, displayCrAsyncCmdCompletion, this);
+    pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_VIEWPORT_CHANGED2, &parm, displayCrAsyncCmdCompletion, this);
+#else
+    VBOXHGCMSVCPARM aParms[5];
 
+    aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
+    aParms[0].u.uint32 = aScreenId;
+
+    aParms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
+    aParms[1].u.uint32 = x;
+
+    aParms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
+    aParms[2].u.uint32 = y;
+
+
+    aParms[3].type = VBOX_HGCM_SVC_PARM_32BIT;
+    aParms[3].u.uint32 = width;
+
+    aParms[4].type = VBOX_HGCM_SVC_PARM_32BIT;
+    aParms[4].u.uint32 = height;
+
+    pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_VIEWPORT_CHANGED, SHCRGL_CPARMS_VIEWPORT_CHANGED, aParms);
+#endif
 }
 #endif
 
