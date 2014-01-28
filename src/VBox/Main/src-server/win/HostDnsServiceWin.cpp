@@ -12,22 +12,66 @@
 #include <vector>
 #include "../HostDnsService.h"
 
-static HKEY g_hKeyTcpipParameters;
-
-HostDnsServiceWin::HostDnsServiceWin()
+struct HostDnsServiceWin::Data
 {
-    RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-                 TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters"),
-                 0, KEY_READ, &g_hKeyTcpipParameters);
+    HostDnsServiceWin::Data(){}
+    HKEY hKeyTcpipParameters;
+#define DATA_DNS_UPDATE_EVENT 0
+#define DATA_SHUTDOWN_EVENT   1
+#define DATA_MAX_EVENT        2
+    HANDLE haDataEvent[DATA_MAX_EVENT];
+};
+
+static inline int registerNotification(const HKEY& hKey, HANDLE& hEvent)
+{
+    LONG lrc = RegNotifyChangeKeyValue(hKey,
+                                       TRUE,
+                                       REG_NOTIFY_CHANGE_LAST_SET,
+                                       hEvent,
+                                       TRUE);
+    AssertMsgReturn(lrc == ERROR_SUCCESS,
+                    ("Failed to register event on the key. Please debug me!"),
+                    VERR_INTERNAL_ERROR);
+
+    return VINF_SUCCESS;
+}
+
+HostDnsServiceWin::HostDnsServiceWin():HostDnsMonitor(true), m(NULL)
+{
+    m = new Data();
+
+    m->haDataEvent[DATA_DNS_UPDATE_EVENT] = CreateEvent(NULL,
+      TRUE, FALSE, NULL);
+    AssertReleaseMsg(m->haDataEvent[DATA_DNS_UPDATE_EVENT],
+      ("Failed to create event for DNS event (%d)\n", GetLastError()));
+
+    m->haDataEvent[DATA_SHUTDOWN_EVENT] = CreateEvent(NULL,
+      TRUE, FALSE, NULL);
+    AssertReleaseMsg(m->haDataEvent[DATA_SHUTDOWN_EVENT],
+      ("Failed to create event for Shutdown signal (%d)\n", GetLastError()));
+
+    LONG lrc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+      TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters"),
+      0, KEY_READ|KEY_NOTIFY, &m->hKeyTcpipParameters);
+    AssertReleaseMsg(lrc == ERROR_SUCCESS,
+      ("Failed to open Registry Key for read and update notifications (%d)\n",
+      GetLastError()));
 }
 
 
 HostDnsServiceWin::~HostDnsServiceWin()
 {
-    if (!g_hKeyTcpipParameters)
+    if (m && !m->hKeyTcpipParameters)
     {
-        RegCloseKey(g_hKeyTcpipParameters);
-        g_hKeyTcpipParameters = 0;
+        RegCloseKey(m->hKeyTcpipParameters);
+        m->hKeyTcpipParameters = 0;
+
+        CloseHandle(m->haDataEvent[DATA_DNS_UPDATE_EVENT]);
+        CloseHandle(m->haDataEvent[DATA_SHUTDOWN_EVENT]);
+
+        delete m;
+
+        m = NULL;
     }
 }
 
@@ -38,6 +82,55 @@ HRESULT HostDnsServiceWin::init()
     AssertComRCReturn(hrc, hrc);
 
     return updateInfo();
+}
+
+
+void HostDnsServiceWin::monitorThreadShutdown()
+{
+    SetEvent(m->haDataEvent[DATA_SHUTDOWN_EVENT]);
+}
+
+
+int HostDnsServiceWin::monitorWorker()
+{
+    registerNotification(m->hKeyTcpipParameters,
+                         m->haDataEvent[DATA_DNS_UPDATE_EVENT]);
+
+    monitorThreadInitializationDone();
+
+    DWORD dwRc;
+    while (true)
+    {
+        dwRc = WaitForMultipleObjects(DATA_MAX_EVENT,
+                                      m->haDataEvent,
+                                      FALSE,
+                                      INFINITE);
+        AssertMsgReturn(dwRc != WAIT_FAILED,
+                        ("WaitForMultipleObjects failed (%d) to wait! Please debug",
+                         GetLastError()), VERR_INTERNAL_ERROR);
+
+        if ((dwRc - WAIT_OBJECT_0) == DATA_DNS_UPDATE_EVENT)
+        {
+            updateInfo();
+            notifyAll();
+            ResetEvent(m->haDataEvent[DATA_DNS_UPDATE_EVENT]);
+            registerNotification(m->hKeyTcpipParameters,
+                                 m->haDataEvent[DATA_DNS_UPDATE_EVENT]);
+
+        }
+        else if ((dwRc - WAIT_OBJECT_0) == DATA_SHUTDOWN_EVENT)
+        {
+            break;
+        }
+        else
+        {
+            AssertMsgFailedReturn(
+              ("WaitForMultipleObjects returns out of bound index %d. Please debug!",
+                                   dwRc),
+              VERR_INTERNAL_ERROR);
+        }
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -61,7 +154,7 @@ HRESULT HostDnsServiceWin::updateInfo()
         BYTE keyData[1024];
         DWORD cbKeyData = sizeof(keyData);
 
-        hrc = RegEnumValueA(g_hKeyTcpipParameters, regIndex, keyName, &cbKeyName, 0,
+        hrc = RegEnumValueA(m->hKeyTcpipParameters, regIndex, keyName, &cbKeyName, 0,
                             &keyType, keyData, &cbKeyData);
         if (   hrc == ERROR_SUCCESS
             || hrc == ERROR_MORE_DATA)
@@ -110,7 +203,6 @@ HRESULT HostDnsServiceWin::updateInfo()
 
     return S_OK;
 }
-
 
 
 void HostDnsServiceWin::strList2List(std::vector<std::string>& lst, char *strLst)

@@ -32,6 +32,8 @@
 
 #include <fcntl.h>
 
+#include <linux/limits.h>
+
 #include <sys/inotify.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -41,9 +43,11 @@
 #include "../HostDnsService.h"
 
 
-static RTTHREAD g_DnsMonitoringThread;
-static RTSEMEVENT g_DnsInitEvent;
 static int g_DnsMonitorStop[2];
+
+static const std::string g_EtcFolder = "/etc";
+static const std::string g_ResolvConf = "resolv.conf";
+static const std::string g_ResolvConfFullPath = "/etc/resolv.conf";
 
 class FileDescriptor
 {
@@ -70,50 +74,24 @@ class AutoNotify:public FileDescriptor
         FileDescriptor::fd = inotify_init();
         AssertReturnVoid(FileDescriptor::fd != -1);
     }
-
 };
 
-
-class AutoWatcher:public FileDescriptor
+struct InotifyEventWithName
 {
-    public:
-    AutoWatcher(const AutoNotify& notifier, const std::string& filename, uint32_t mask = IN_CLOSE_WRITE)
-      :name(filename)
-    {
-        nfd = notifier.fileDescriptor();
-        fd = inotify_add_watch(nfd, name.c_str(), mask);
-        AssertMsgReturnVoid(fd != -1, ("failed to add watcher %s\n", name.c_str()));
-
-        int opt = fcntl(fd, F_GETFL);
-        opt |= O_NONBLOCK;
-        fcntl(fd, F_SETFL, opt);
-    }
-
-    ~AutoWatcher()
-    {
-        int rc = inotify_rm_watch(nfd, fd);
-        AssertMsgReturnVoid(rc != -1, ("Can't detach watcher %d from %d (%d: %s)\n", nfd, fd,
-                                       errno, strerror(errno)));
-    }
-
-    private:
-    std::string name;
-    int nfd;
+    struct inotify_event e;
+    char name[NAME_MAX];
 };
-
 
 HostDnsServiceLinux::~HostDnsServiceLinux()
 {
-    send(g_DnsMonitorStop[0], "", 1, 0);
+    monitorThreadShutdown();
 }
 
 
-int HostDnsServiceLinux::hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser)
+int HostDnsServiceLinux::monitorWorker()
 {
-    NOREF(ThreadSelf);
+
     AutoNotify a;
-    HostDnsServiceLinux *dns = static_cast<HostDnsServiceLinux *>(pvUser);
-    AutoWatcher w(a, std::string(dns->resolvConf().c_str()));
 
     int rc = socketpair(AF_LOCAL, SOCK_DGRAM, 0, g_DnsMonitorStop);
     AssertMsgReturn(rc == 0, ("socketpair: failed (%d: %s)\n", errno, strerror(errno)), E_FAIL);
@@ -130,8 +108,26 @@ int HostDnsServiceLinux::hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser
     polls[1].fd = g_DnsMonitorStop[1];
     polls[1].events = POLLIN;
 
-    RTSemEventSignal(g_DnsInitEvent);
+    monitorThreadInitializationDone();
 
+    int wd[2];
+    wd[0] = wd[1] = -1;
+    /* inotify inialization */
+    wd[0] = inotify_add_watch(a.fileDescriptor(),
+                              g_ResolvConfFullPath.c_str(), IN_CLOSE_WRITE|IN_DELETE_SELF);
+
+    /**
+     * If /etc/resolv.conf exists we want to listen for movements: because
+     * # mv /etc/resolv.conf ...
+     * won't arm IN_DELETE_SELF on wd[0] instead it will fire IN_MOVE_FROM on wd[1].
+     *
+     * Because on some distributions /etc/resolv.conf is link, wd[0] can't detect deletion,
+     * it's recognizible on directory level (wd[1]) only.
+     */
+    wd[1] = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
+                              wd[0] == -1 ? IN_MOVED_TO|IN_CREATE : IN_MOVED_FROM|IN_DELETE);
+
+    struct InotifyEventWithName combo;
     while(true)
     {
         rc = poll(polls, 2, -1);
@@ -147,33 +143,91 @@ int HostDnsServiceLinux::hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser
 
         if (polls[0].revents & POLLIN)
         {
-            dns->readResolvConf();
-            /* notifyAll() takes required locks */
-            dns->notifyAll();
+            RT_ZERO(combo);
+            ssize_t r = read(polls[0].fd, static_cast<void *>(&combo), sizeof(combo));
 
-            polls[0].revents = 0;
+            if (combo.e.wd == wd[0])
+            {
+                if (combo.e.mask & IN_CLOSE_WRITE)
+                {
+                    readResolvConf();
+                    /* notifyAll() takes required locks */
+                    notifyAll();
+                }
+                else if (combo.e.mask & IN_DELETE_SELF)
+                {
+                    inotify_rm_watch(a.fileDescriptor(), wd[0]); /* removes file watcher */
+                    inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
+                                      IN_MOVED_TO|IN_CREATE); /* alter folder watcher */
+                }
+                else if (combo.e.mask & IN_IGNORED)
+                {
+                    wd[0] = -1; /* we want receive any events on this watch */
+                }
+                else
+                {
+                    /**
+                     * It shouldn't happen, in release we will just ignore in debug
+                     * we will have to chance to look at into inotify_event
+                     */
+                    AssertMsgFailed(("Debug Me!!!"));
+                }
+            }
+            else if (combo.e.wd == wd[1])
+            {
+                if (   combo.e.mask & IN_MOVED_FROM
+                    || combo.e.mask & IN_DELETE)
+                {
+                    if (g_ResolvConf == combo.e.name)
+                    {
+                        /**
+                         * Our file has been moved so we should change watching mode.
+                         */
+                        inotify_rm_watch(a.fileDescriptor(), wd[0]);
+                        wd[1] = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
+                                                  IN_MOVED_TO|IN_CREATE);
+                        AssertMsg(wd[1] != -1,
+                                  ("It shouldn't happen, further investigation is needed\n"));
+                    }
+                }
+                else
+                {
+                    AssertMsg(combo.e.mask & (IN_MOVED_TO|IN_CREATE),
+                              ("%RX32 event isn't expected, we are waiting for IN_MOVED|IN_CREATE\n",
+                               combo.e.mask));
+                    if (g_ResolvConf == combo.e.name)
+                    {
+                        AssertMsg(wd[0] == -1, ("We haven't removed file watcher first\n"));
 
-            inotify_event ev;
-            rc = read(a.fileDescriptor(), static_cast<void *>(&ev), sizeof(ev));
-            AssertMsg(rc == sizeof(ev) && ev.wd == w.fileDescriptor(), ("Hmm, debug me"));
+                        /* alter folder watcher*/
+                        wd[1] = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
+                                                  IN_MOVED_FROM|IN_DELETE);
+                        AssertMsg(wd[1] != -1, ("It shouldn't happen.\n"));
+
+                        wd[0] = inotify_add_watch(a.fileDescriptor(),
+                                                  g_ResolvConfFullPath.c_str(),
+                                                  IN_CLOSE_WRITE | IN_DELETE_SELF);
+                        AssertMsg(wd[0] != -1, ("Adding watcher to file (%s) has been failed!\n",
+                                                g_ResolvConfFullPath.c_str()));
+
+                        /* Notify our listeners */
+                        readResolvConf();
+                        notifyAll();
+
+                    }
+                }
+            }
+            else
+            {
+                /* It shouldn't happen */
+                AssertMsgFailed(("Shouldn't happen! Please debug me!"));
+            }
         }
     }
 }
 
 
-HRESULT HostDnsServiceLinux::init(const char *aResolvConfFileName)
+void HostDnsServiceLinux::monitorThreadShutdown()
 {
-    HRESULT hrc = HostDnsServiceResolvConf::init(aResolvConfFileName);
-    AssertComRCReturnRC(hrc);
-
-    int rc = RTSemEventCreate(&g_DnsInitEvent);
-    AssertRCReturn(rc, E_FAIL);
-
-    rc = RTThreadCreate(&g_DnsMonitoringThread, HostDnsServiceLinux::hostMonitoringRoutine,
-                        this, 128 * _1K, RTTHREADTYPE_IO, 0, "dns-monitor");
-    AssertRCReturn(rc, E_FAIL);
-
-    RTSemEventWait(g_DnsInitEvent, RT_INDEFINITE_WAIT);
-
-    return S_OK;
+    send(g_DnsMonitorStop[0], "", 1, 0);
 }
