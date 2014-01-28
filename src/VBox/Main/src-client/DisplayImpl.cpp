@@ -492,6 +492,7 @@ HRESULT Display::init(Console *aParent)
         RT_ZERO(maFramebuffers[ul].pendingResize);
 #ifdef VBOX_WITH_HGSMI
         maFramebuffers[ul].fVBVAEnabled = false;
+        maFramebuffers[ul].fVBVAForceResize = false;
         maFramebuffers[ul].cVBVASkipUpdate = 0;
         RT_ZERO(maFramebuffers[ul].vbvaSkippedRect);
         maFramebuffers[ul].pVBVAHostFlags = NULL;
@@ -4152,6 +4153,7 @@ DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, u
 
     pThis->maFramebuffers[uScreenId].fVBVAEnabled = true;
     pThis->maFramebuffers[uScreenId].pVBVAHostFlags = pHostFlags;
+    pThis->maFramebuffers[uScreenId].fVBVAForceResize = true;
 
     vbvaSetMemoryFlagsHGSMI(uScreenId, pThis->mfu32SupportedOrders, pThis->mfVideoAccelVRDP, &pThis->maFramebuffers[uScreenId]);
 
@@ -4184,6 +4186,7 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
     }
 
     pFBInfo->fVBVAEnabled = false;
+    pFBInfo->fVBVAForceResize = false;
 
     vbvaSetMemoryFlagsHGSMI(uScreenId, 0, false, pFBInfo);
 
@@ -4388,6 +4391,7 @@ static void logVBVAResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScre
             "    pFBInfo->pendingResize.w,h         %dx%d\n"
             "    pFBInfo->pendingResize.flags       0x%04X\n"
             "    pFBInfo->fVBVAEnabled    %d\n"
+            "    pFBInfo->fVBVAForceResize %d\n"
             "    pFBInfo->cVBVASkipUpdate %d\n"
             "    pFBInfo->vbvaSkippedRect %d-%d %d-%d\n"
             "    pFBInfo->pVBVAHostFlags  %p\n"
@@ -4434,6 +4438,7 @@ static void logVBVAResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScre
             pFBInfo->pendingResize.h,
             pFBInfo->pendingResize.flags,
             pFBInfo->fVBVAEnabled,
+            pFBInfo->fVBVAForceResize,
             pFBInfo->cVBVASkipUpdate,
             pFBInfo->vbvaSkippedRect.xLeft,
             pFBInfo->vbvaSkippedRect.yTop,
@@ -4479,6 +4484,13 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
      * because the framebuffer was/will be changed.
      */
     bool fResize = pFBInfo->fDisabled || pFBInfo->pFramebuffer.isNull();
+
+    if (pFBInfo->fVBVAForceResize)
+    {
+        /* VBVA was just enabled. Do the resize. */
+        fResize = true;
+        pFBInfo->fVBVAForceResize = false;
+    }
 
     /* Check if this is a real resize or a notification about the screen origin.
      * The guest uses this VBVAResize call for both.

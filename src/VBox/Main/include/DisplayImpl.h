@@ -91,6 +91,7 @@ typedef struct _DISPLAYFBINFO
 
 #ifdef VBOX_WITH_HGSMI
     bool fVBVAEnabled;
+    bool fVBVAForceResize;
     uint32_t cVBVASkipUpdate;
     struct
     {
