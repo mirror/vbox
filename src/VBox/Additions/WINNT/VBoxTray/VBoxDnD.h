@@ -150,11 +150,14 @@ public: /* IDropTarget methods. */
 protected:
 
     static DWORD GetDropEffect(DWORD grfKeyState, DWORD dwAllowedEffects);
+    void reset(void);
 
 public:
 
-    const IDataObject *GetDataObject(void) { return mpDataObject; }
-    bool HasData(void) { return mfHasDropData; }
+    bool HasData(void) { return RT_BOOL(mFormatEtc.cfFormat != 0); }
+    void *DataMutableRaw(void) { return mpvData; }
+    uint32_t DataSize(void) { return mcbData; }
+    int WaitForDrop(RTMSINTERVAL msTimeout);
 
 protected:
 
@@ -162,8 +165,13 @@ protected:
     VBoxDnDWnd *mpWndParent;
     uint32_t mClientID;
     DWORD mdwCurEffect;
-    IDataObject *mpDataObject;
-    bool mfHasDropData;
+    /** Copy of the data object's FORMATETC struct.
+     *  Note: We don't keep the pointer of the
+     *        DVTARGETDEVICE here! */
+    FORMATETC mFormatEtc;
+    void *mpvData;
+    uint32_t mcbData;
+    RTSEMEVENT hEventDrop;
 };
 
 class VBoxDnDEnumFormatEtc : public IEnumFORMATETC

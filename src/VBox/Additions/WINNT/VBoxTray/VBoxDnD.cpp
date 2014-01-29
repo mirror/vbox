@@ -228,6 +228,10 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
 
         } while (RT_SUCCESS(rc));
 
+        int rc2 = pThis->UnregisterAsDropTarget();
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+
         OleUninitialize();
     }
 
@@ -404,7 +408,6 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 
                     reset();
 
-                    Assert(mMode == Unknown);
                     mMode = HG;
 
                     if (pEvent->Event.cbFormats)
@@ -463,8 +466,6 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     LogFlowThisFunc(("HOST_DND_HG_EVT_CANCEL\n"));
 
                     rc = OnHgCancel();
-
-                    reset();
                     break;
                 }
 
@@ -472,10 +473,16 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                 {
                     LogFlowThisFunc(("HOST_DND_GH_REQ_PENDING\n"));
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-                    Assert(   mMode == Unknown
-                           || mMode == GH);
-                    mMode = GH;
-                    rc = OnGhIsDnDPending(pEvent->Event.uScreenId);
+                    if (   mMode == Unknown
+                        /* There can be more than one HOST_DND_GH_REQ_PENDING
+                         * messages coming in. */
+                        || mMode == GH)
+                    {
+                        mMode = GH;
+                        rc = OnGhIsDnDPending(pEvent->Event.uScreenId);
+                    }
+                    else
+                        rc = VERR_WRONG_ORDER;
 #else
                     rc = VERR_NOT_SUPPORTED;
 #endif
@@ -486,11 +493,14 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                 {
                     LogFlowThisFunc(("HOST_DND_GH_EVT_DROPPED\n"));
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-                    Assert(mMode == GH);
-                    rc = OnGhDropped(pEvent->Event.pszFormats,
-                                     pEvent->Event.cbFormats,
-                                     pEvent->Event.u.a.uDefAction);
-                    mMode = Unknown;
+                    if (mMode == GH)
+                    {
+                        rc = OnGhDropped(pEvent->Event.pszFormats,
+                                         pEvent->Event.cbFormats,
+                                         pEvent->Event.u.a.uDefAction);
+                    }
+                    else
+                        rc = VERR_WRONG_ORDER;
 #else
                     rc = VERR_NOT_SUPPORTED;
 #endif
@@ -584,7 +594,9 @@ int VBoxDnDWnd::RegisterAsDropTarget(void)
             rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
         }
         else
+        {
             rc = VINF_SUCCESS;
+        }
     }
     catch (std::bad_alloc)
     {
@@ -597,6 +609,8 @@ int VBoxDnDWnd::RegisterAsDropTarget(void)
 
 int VBoxDnDWnd::UnregisterAsDropTarget(void)
 {
+    LogFlowFuncEnter();
+
     if (!pDropTarget) /* No drop target? Bail out. */
         return VINF_SUCCESS;
 
@@ -605,7 +619,12 @@ int VBoxDnDWnd::UnregisterAsDropTarget(void)
         hr = CoLockObjectExternal(pDropTarget, FALSE /* fLock */,
                                   TRUE /* fLastUnlockReleases */);
     if (SUCCEEDED(hr))
-        pDropTarget->Release();
+    {
+        ULONG cRefs = pDropTarget->Release();
+
+        Assert(cRefs == 0);
+        pDropTarget = NULL;
+    }
 
     int rc = SUCCEEDED(hr)
            ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Fix this. */
@@ -651,7 +670,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
      ** @todo See todo for m_sstrAllowedMimeTypes in GuestDnDImpl.cpp.
      */
     const RTCList<RTCString> lstAllowedMimeTypes = RTCList<RTCString>()
-        /* Uri's */
+        /* URI's */
         << "text/uri-list"
         /* Text */
         << "text/plain;charset=utf-8"
@@ -660,7 +679,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
         << "COMPOUND_TEXT"
         << "TEXT"
         << "STRING"
-        /* OpenOffice formates */
+        /* OpenOffice formats */
         << "application/x-openoffice-embed-source-xml;windows_formatname=\"Star Embed Source (XML)\""
         << "application/x-openoffice-drawing;windows_formatname=\"Drawing Format\"";
     this->lstAllowedFormats = lstAllowedMimeTypes;
@@ -855,6 +874,8 @@ int VBoxDnDWnd::OnHgCancel(void)
     if (RT_SUCCESS(rc))
         rc = rc2;
 
+    reset();
+
     return rc;
 }
 
@@ -958,10 +979,11 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
 
     if (RT_SUCCESS(rc))
     {
+        AssertPtr(pDropTarget);
+
         uint32_t uDefAction = DND_IGNORE_ACTION;
         RTCString strFormat = "unknown";
-        if (   pDropTarget
-            && pDropTarget->HasData())
+        if (pDropTarget->HasData())
         {
             uDefAction = DND_COPY_ACTION;
             uAllActions = uDefAction;
@@ -969,12 +991,12 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
             /** @todo There can be more than one format, separated
              *        with \r\n. */
             strFormat = "text/plain;charset=utf-8";
-        }
 
-        LogFlowFunc(("Acknowledging pDropTarget=0x%p, uDefAction=0x%x, uAllActions=0x%x, strFormat=%s\n",
-                     pDropTarget, uDefAction, uAllActions, strFormat.c_str()));
-        rc = VbglR3DnDGHAcknowledgePending(mClientID,
-                                           uDefAction, uAllActions, strFormat.c_str());
+            LogFlowFunc(("Acknowledging pDropTarget=0x%p, uDefAction=0x%x, uAllActions=0x%x, strFormat=%s\n",
+                         pDropTarget, uDefAction, uAllActions, strFormat.c_str()));
+            rc = VbglR3DnDGHAcknowledgePending(mClientID,
+                                               uDefAction, uAllActions, strFormat.c_str());
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -984,12 +1006,29 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
 int VBoxDnDWnd::OnGhDropped(const char *pszFormats, uint32_t cbFormats,
                             uint32_t uDefAction)
 {
-    LogFlowThisFunc(("mMode=%ld, mState=%ld, cbFormats=%RU32, uDefAction=0x%x\n",
-                     mMode, mState, cbFormats, uDefAction));
+    LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, cbFormats=%RU32, uDefAction=0x%x\n",
+                     mMode, mState, pDropTarget, cbFormats, uDefAction));
     int rc;
     if (mState == Dragging)
     {
         AssertPtr(pDropTarget);
+        rc = pDropTarget->WaitForDrop(30 * 1000 /* Timeout */);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo Respect uDefAction. */
+            /** @todo Do data checking / conversion based on pszFormats. */
+
+            void *pvData = pDropTarget->DataMutableRaw();
+            AssertPtr(pvData);
+            uint32_t cbData = pDropTarget->DataSize();
+            Assert(cbData);
+
+            rc = VbglR3DnDGHSendData(mClientID, pvData, cbData);
+            LogFlowFunc(("Sent pvData=0x%p, cbData=%RU32, rc=%Rrc\n",
+                         pvData, cbData, rc));
+        }
+
+        reset();
     }
     else
         rc = VERR_WRONG_ORDER;

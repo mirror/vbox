@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2013 Oracle Corporation
+# Copyright (C) 2006-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -175,7 +175,7 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 VBOX_GUI_INC_DIRS += \
 	./src/net
 endif
-	
+
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
 	$(VirtualBox_0_OUTDIR)/include
@@ -389,7 +389,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIMiniToolBar.h \
 	src/widgets/VBoxOSTypeSelectorButton.h \
 	src/widgets/UINameAndSystemEditor.h \
-    src/widgets/UIWarningPane.h \
+	src/widgets/UIWarningPane.h \
 	src/widgets/UIFilmContainer.h \
 	src/widgets/graphics/UIGraphicsButton.h \
 	src/widgets/graphics/UIGraphicsRotatorButton.h \
@@ -432,7 +432,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-VirtualBox_QT_MOCHDRS += \
+ VirtualBox_QT_MOCHDRS += \
 	src/net/UINetworkManager.h \
 	src/net/UINetworkManagerDialog.h \
 	src/net/UINetworkManagerIndicator.h \
@@ -447,6 +447,13 @@ VirtualBox_QT_MOCHDRS += \
 	src/net/UIDownloaderUserManual.h \
 	src/settings/global/UIGlobalSettingsProxy.h \
 	src/settings/global/UIGlobalSettingsUpdate.h
+endif
+
+ifdef VBOX_WITH_DRAG_AND_DROP
+ ifdef VBOX_WITH_DRAG_AND_DROP_GH
+  VirtualBox_QT_MOCHDRS += \
+	src/runtime/UIDnDMIMEData.h
+ endif
 endif
 
 VirtualBox_QT_MOCHDRS.darwin += \
@@ -476,9 +483,16 @@ VirtualBox_QT_MOCSRCS = \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-VirtualBox_QT_MOCSRCS += \
+ VirtualBox_QT_MOCSRCS += \
 	src/net/UINetworkReply.cpp \
 	src/net/UIUpdateManager.cpp
+endif
+
+ifdef VBOX_WITH_DRAG_AND_DROP
+ ifdef VBOX_WITH_DRAG_AND_DROP_GH
+  VirtualBox_QT_MOCSRCS += \
+	src/runtime/UIDnDMIMEData.cpp
+ endif
 endif
 
 VirtualBox_QT_MOCSRCS.darwin += \
@@ -762,6 +776,12 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 	src/runtime/UIDnDHandler.cpp
  VirtualBox_QT_MOCSRCS += \
 	src/runtime/UIDnDHandler.cpp
+ ifdef VBOX_WITH_DRAG_AND_DROP_GH
+  VirtualBox_SOURCES += \
+	src/runtime/UIDnDMIMEData.cpp
+  VirtualBox_QT_MOCSRCS += \
+	src/runtime/UIDnDMIMEData.cpp
+ endif
 endif
 
 # The Qt modules we're using.

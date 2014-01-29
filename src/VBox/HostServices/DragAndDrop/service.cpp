@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2013 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -176,6 +176,11 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
     int rc = VINF_SUCCESS;
     switch (u32Function)
     {
+        /* Note: Older VBox versions with enabled DnD guest->host support (< 4.4)
+         *       used the same ID (300) for GUEST_DND_GET_NEXT_HOST_MSG and
+         *       HOST_DND_GH_REQ_PENDING, which led this service returning
+         *       VERR_INVALID_PARAMETER when the guest wanted to actually
+         *       handle HOST_DND_GH_REQ_PENDING. */
         case DragAndDropSvc::GUEST_DND_GET_NEXT_HOST_MSG:
         {
             LogFlowFunc(("GUEST_DND_GET_NEXT_HOST_MSG\n"));
