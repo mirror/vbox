@@ -100,6 +100,7 @@ VBOXHTABLEDECL(void) CrHTableEmpty(PCRHTABLE pTbl)
 
 static void* crHTablePutToSlot(PCRHTABLE pTbl, uint32_t iSlot, void* pvData)
 {
+    Assert(pvData);
     void* pvOld = pTbl->paData[iSlot];
     pTbl->paData[iSlot] = pvData;
     if (!pvOld)
@@ -110,8 +111,13 @@ static void* crHTablePutToSlot(PCRHTABLE pTbl, uint32_t iSlot, void* pvData)
 
 VBOXHTABLEDECL(int) CrHTablePutToSlot(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle, void* pvData)
 {
+    if (!pvData)
+    {
+        AssertMsgFailed(("pvData is NULL\n"));
+        return VERR_INVALID_PARAMETER;
+    }
     uint32_t iIndex = crHTableHandle2Index(hHandle);
-    if (iIndex >= pTbl->cData)
+    if (iIndex >= pTbl->cSize)
     {
         int rc = crHTableRealloc(pTbl, iIndex + RT_MAX(10, pTbl->cSize/4));
         if (!RT_SUCCESS(rc))
@@ -128,6 +134,12 @@ VBOXHTABLEDECL(int) CrHTablePutToSlot(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle, v
 
 VBOXHTABLEDECL(CRHTABLE_HANDLE) CrHTablePut(PCRHTABLE pTbl, void* pvData)
 {
+    if (!pvData)
+    {
+        AssertMsgFailed(("pvData is NULL\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+
     if (pTbl->cSize == pTbl->cData)
     {
         int rc = crHTableRealloc(pTbl, pTbl->cSize + RT_MAX(10, pTbl->cSize/4));

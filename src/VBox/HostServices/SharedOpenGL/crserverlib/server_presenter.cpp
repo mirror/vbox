@@ -77,8 +77,10 @@ typedef struct CR_FRAMEBUFFER
     struct VBVAINFOSCREEN ScreenInfo;
     void *pvVram;
     ICrFbDisplay *pDisplay;
-    CRHTABLE SlotTable;
+    RTLISTNODE EntriesList;
+    uint32_t cEntries; /* <- just for debugging */
     uint32_t cUpdating;
+    CRHTABLE SlotTable;
 } CR_FRAMEBUFFER;
 
 typedef struct CR_FBDISPLAY_INFO
@@ -119,6 +121,7 @@ void CrFbInit(CR_FRAMEBUFFER *pFb, uint32_t idScreen)
     pFb->ScreenInfo.u16Flags = VBVA_SCREEN_F_DISABLED;
     pFb->ScreenInfo.u32ViewIndex = idScreen;
     CrVrScrCompositorInit(&pFb->Compositor, &Rect);
+    RTListInit(&pFb->EntriesList);
     CrHTableCreate(&pFb->SlotTable, 0);
 }
 
@@ -225,6 +228,10 @@ void CrFbTerm(CR_FRAMEBUFFER *pFb)
 
     CrVrScrCompositorClear(&pFb->Compositor);
     CrHTableDestroy(&pFb->SlotTable);
+
+    Assert(RTListIsEmpty(&pFb->EntriesList));
+    Assert(!pFb->cEntries);
+
     memset(pFb, 0, sizeof (*pFb));
 
     pFb->ScreenInfo.u16Flags = VBVA_SCREEN_F_DISABLED;
@@ -265,6 +272,7 @@ typedef union CR_FBENTRY_FLAGS
 typedef struct CR_FRAMEBUFFER_ENTRY
 {
     VBOXVR_SCR_COMPOSITOR_ENTRY Entry;
+    RTLISTNODE Node;
     uint32_t cRefs;
     CR_FBENTRY_FLAGS Flags;
     CRHTABLE HTable;
@@ -463,6 +471,9 @@ static void crFbEntryDestroy(CR_FRAMEBUFFER *pFb, CR_FRAMEBUFFER_ENTRY* pEntry)
     crFbEntryMarkDestroyed(pFb, pEntry);
     CrVrScrCompositorEntryCleanup(&pEntry->Entry);
     CrHTableDestroy(&pEntry->HTable);
+    Assert(pFb->cEntries);
+    RTListNodeRemove(&pEntry->Node);
+    --pFb->cEntries;
     crFbEntryFree(pEntry);
 }
 
@@ -530,6 +541,9 @@ static CR_FRAMEBUFFER_ENTRY* crFbEntryCreate(CR_FRAMEBUFFER *pFb, CR_TEXDATA* pT
     pEntry->cRefs = 1;
     pEntry->Flags.Value = 0;
     CrHTableCreate(&pEntry->HTable, 0);
+
+    RTListAppend(&pFb->EntriesList, &pEntry->Node);
+    ++pFb->cEntries;
 
     return pEntry;
 }
@@ -797,14 +811,29 @@ CRHTABLE_HANDLE CrFbDDataAllocSlot(CR_FRAMEBUFFER *pFb)
     return CrHTablePut(&pFb->SlotTable, (void*)1);
 }
 
-void CrFbDDataReleaseSlot(CR_FRAMEBUFFER *pFb, CRHTABLE_HANDLE hSlot)
+void CrFbDDataReleaseSlot(CR_FRAMEBUFFER *pFb, CRHTABLE_HANDLE hSlot, PFNCR_FRAMEBUFFER_SLOT_RELEASE_CB pfnReleaseCb, void *pvContext)
 {
+    HCR_FRAMEBUFFER_ENTRY hEntry, hNext;
+    RTListForEachSafeCpp(&pFb->EntriesList, hEntry, hNext, CR_FRAMEBUFFER_ENTRY, Node)
+    {
+        if (CrFbDDataEntryGet(hEntry, hSlot))
+        {
+            pfnReleaseCb(pFb, hEntry, pvContext);
+            CrFbDDataEntryClear(hEntry, hSlot);
+        }
+    }
+
     CrHTableRemove(&pFb->SlotTable, hSlot);
 }
 
 int CrFbDDataEntryPut(HCR_FRAMEBUFFER_ENTRY hEntry, CRHTABLE_HANDLE hSlot, void *pvData)
 {
     return CrHTablePutToSlot(&hEntry->HTable, hSlot, pvData);
+}
+
+void* CrFbDDataEntryClear(HCR_FRAMEBUFFER_ENTRY hEntry, CRHTABLE_HANDLE hSlot)
+{
+    return CrHTableRemove(&hEntry->HTable, hSlot);
 }
 
 void* CrFbDDataEntryGet(HCR_FRAMEBUFFER_ENTRY hEntry, CRHTABLE_HANDLE hSlot)
@@ -1113,11 +1142,22 @@ protected:
         UpdateEnd(pFb);
     }
 
+    static DECLCALLBACK(void) slotEntryReleaseCB(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry, void *pvContext)
+    {
+        ((ICrFbDisplay*)pvContext)->EntryDestroyed(hFb, hEntry);
+    }
+
+    virtual void slotRelease()
+    {
+        Assert(mhSlot);
+        CrFbDDataReleaseSlot(mpFb, mhSlot, slotEntryReleaseCB, this);
+    }
+
     virtual int fbCleanup()
     {
         if (mhSlot)
         {
-            CrFbDDataReleaseSlot(mpFb, mhSlot);
+            slotRelease();
             mhSlot = 0;
         }
         mpFb = NULL;
@@ -2436,7 +2476,7 @@ protected:
 
     virtual int clearCompositor()
     {
-        return fbCleanupRemoveAllEntries(true);
+        return fbCleanupRemoveAllEntries(false);
     }
 
     void rootVrTranslateForPos()
@@ -2641,7 +2681,7 @@ protected:
 
     virtual int fbCleanup()
     {
-        int rc = fbCleanupRemoveAllEntries(true);
+        int rc = fbCleanupRemoveAllEntries(false);
         if (!RT_SUCCESS(rc))
         {
             WARN(("err"));
