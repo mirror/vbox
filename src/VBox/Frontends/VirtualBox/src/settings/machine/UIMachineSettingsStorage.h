@@ -373,6 +373,7 @@ public:
     bool attIsPassthrough() const;
     bool attIsTempEject() const;
     bool attIsNonRotational() const;
+    bool attIsHotPluggable() const;
 
     void setAttSlot (const StorageSlot &aAttSlot);
     void setAttDevice (KDeviceType aAttDeviceType);
@@ -380,6 +381,7 @@ public:
     void setAttIsPassthrough (bool aPassthrough);
     void setAttIsTempEject (bool aTempEject);
     void setAttIsNonRotational (bool aNonRotational);
+    void setAttIsHotPluggable(bool fIsHotPluggable);
 
     QString attSize() const;
     QString attLogicalSize() const;
@@ -412,6 +414,7 @@ private:
     bool mAttIsPassthrough;
     bool mAttIsTempEject;
     bool mAttIsNonRotational;
+    bool m_fIsHotPluggable;
 
     QString mAttName;
     QString mAttTip;
@@ -470,6 +473,7 @@ public:
         R_AttIsPassthrough,
         R_AttIsTempEject,
         R_AttIsNonRotational,
+        R_AttIsHotPluggable,
         R_AttSize,
         R_AttLogicalSize,
         R_AttLocation,
@@ -585,7 +589,9 @@ struct UIDataSettingsMachineStorageAttachment
         , m_strAttachmentMediumId(QString())
         , m_fAttachmentPassthrough(false)
         , m_fAttachmentTempEject(false)
-        , m_fAttachmentNonRotational(false) {}
+        , m_fAttachmentNonRotational(false)
+        , m_fAttachmentHotPluggable(false)
+    {}
     /* Functions: */
     bool equal(const UIDataSettingsMachineStorageAttachment &other) const
     {
@@ -595,7 +601,8 @@ struct UIDataSettingsMachineStorageAttachment
                (m_strAttachmentMediumId == other.m_strAttachmentMediumId) &&
                (m_fAttachmentPassthrough == other.m_fAttachmentPassthrough) &&
                (m_fAttachmentTempEject == other.m_fAttachmentTempEject) &&
-               (m_fAttachmentNonRotational == other.m_fAttachmentNonRotational);
+               (m_fAttachmentNonRotational == other.m_fAttachmentNonRotational) &&
+               (m_fAttachmentHotPluggable == other.m_fAttachmentHotPluggable);
     }
     /* Operators: */
     bool operator==(const UIDataSettingsMachineStorageAttachment &other) const { return equal(other); }
@@ -608,6 +615,7 @@ struct UIDataSettingsMachineStorageAttachment
     bool m_fAttachmentPassthrough;
     bool m_fAttachmentTempEject;
     bool m_fAttachmentNonRotational;
+    bool m_fAttachmentHotPluggable;
 };
 typedef UISettingsCache<UIDataSettingsMachineStorageAttachment> UICacheSettingsMachineStorageAttachment;
 

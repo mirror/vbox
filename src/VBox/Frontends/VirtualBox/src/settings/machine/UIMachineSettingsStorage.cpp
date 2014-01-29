@@ -606,6 +606,7 @@ AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
     , mAttIsPassthrough (false)
     , mAttIsTempEject (false)
     , mAttIsNonRotational (false)
+    , m_fIsHotPluggable(false)
 {
     /* Check for proper parent type */
     AssertMsg (mParent->rtti() == AbstractItem::Type_ControllerItem, ("Incorrect parent type!\n"));
@@ -669,6 +670,11 @@ bool AttachmentItem::attIsNonRotational() const
     return mAttIsNonRotational;
 }
 
+bool AttachmentItem::attIsHotPluggable() const
+{
+    return m_fIsHotPluggable;
+}
+
 void AttachmentItem::setAttSlot (const StorageSlot &aAttSlot)
 {
     mAttSlot = aAttSlot;
@@ -699,6 +705,11 @@ void AttachmentItem::setAttIsTempEject (bool aIsAttTempEject)
 void AttachmentItem::setAttIsNonRotational (bool aIsAttNonRotational)
 {
     mAttIsNonRotational = aIsAttNonRotational;
+}
+
+void AttachmentItem::setAttIsHotPluggable(bool fIsHotPluggable)
+{
+    m_fIsHotPluggable = fIsHotPluggable;
 }
 
 QString AttachmentItem::attSize() const
@@ -1187,6 +1198,13 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                     return static_cast <AttachmentItem*> (item)->attIsNonRotational();
             return false;
         }
+        case R_AttIsHotPluggable:
+        {
+            if (AbstractItem *item = static_cast<AbstractItem*>(aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_AttachmentItem)
+                    return static_cast<AttachmentItem*>(item)->attIsHotPluggable();
+            return false;
+        }
         case R_AttSize:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -1425,6 +1443,17 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                 {
                     static_cast <AttachmentItem*> (item)->setAttIsNonRotational (aValue.toBool());
                     emit dataChanged (aIndex, aIndex);
+                    return true;
+                }
+            return false;
+        }
+        case R_AttIsHotPluggable:
+        {
+            if (AbstractItem *item = static_cast<AbstractItem*>(aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_AttachmentItem)
+                {
+                    static_cast<AttachmentItem*>(item)->setAttIsHotPluggable(aValue.toBool());
+                    emit dataChanged(aIndex, aIndex);
                     return true;
                 }
             return false;
@@ -1921,6 +1950,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     connect (mCbPassthrough, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
     connect (mCbTempEject, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
     connect (mCbNonRotational, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
+    connect(m_pCheckBoxHotPluggable, SIGNAL(stateChanged(int)), this, SLOT(setInformation()));
 
     /* Applying language settings */
     retranslateUi();
@@ -2006,6 +2036,7 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
                     storageAttachmentData.m_fAttachmentPassthrough = attachment.GetPassthrough();
                     storageAttachmentData.m_fAttachmentTempEject = attachment.GetTemporaryEject();
                     storageAttachmentData.m_fAttachmentNonRotational = attachment.GetNonRotational();
+                    storageAttachmentData.m_fAttachmentHotPluggable = attachment.GetHotPluggable();
                     const CMedium cmedium = attachment.GetMedium();
                     storageAttachmentData.m_strAttachmentMediumId = cmedium.isNull() ? UIMedium::nullID() : cmedium.GetId();
                 }
@@ -2066,6 +2097,7 @@ void UIMachineSettingsStorage::getFromCache()
             mStorageModel->setData(attachmentIndex, attachmentData.m_fAttachmentPassthrough, StorageModel::R_AttIsPassthrough);
             mStorageModel->setData(attachmentIndex, attachmentData.m_fAttachmentTempEject, StorageModel::R_AttIsTempEject);
             mStorageModel->setData(attachmentIndex, attachmentData.m_fAttachmentNonRotational, StorageModel::R_AttIsNonRotational);
+            mStorageModel->setData(attachmentIndex, attachmentData.m_fAttachmentHotPluggable, StorageModel::R_AttIsHotPluggable);
         }
     }
     /* Set the first controller as current if present */
@@ -2119,6 +2151,7 @@ void UIMachineSettingsStorage::putToCache()
             attachmentData.m_fAttachmentPassthrough = mStorageModel->data(attachmentIndex, StorageModel::R_AttIsPassthrough).toBool();
             attachmentData.m_fAttachmentTempEject = mStorageModel->data(attachmentIndex, StorageModel::R_AttIsTempEject).toBool();
             attachmentData.m_fAttachmentNonRotational = mStorageModel->data(attachmentIndex, StorageModel::R_AttIsNonRotational).toBool();
+            attachmentData.m_fAttachmentHotPluggable = mStorageModel->data(attachmentIndex, StorageModel::R_AttIsHotPluggable).toBool();
             attachmentData.m_strAttachmentMediumId = mStorageModel->data(attachmentIndex, StorageModel::R_AttMediumId).toString();
 
             /* Recache storage attachment data: */
@@ -2598,6 +2631,10 @@ void UIMachineSettingsStorage::getInformation()
                 mCbNonRotational->setVisible (device == KDeviceType_HardDisk);
                 mCbNonRotational->setChecked (mStorageModel->data (index, StorageModel::R_AttIsNonRotational).toBool());
 
+                /* Getting hot-pluggable state: */
+                m_pCheckBoxHotPluggable->setVisible(slt.bus == KStorageBus_SATA);
+                m_pCheckBoxHotPluggable->setChecked(mStorageModel->data(index, StorageModel::R_AttIsHotPluggable).toBool());
+
                 /* Update optional widgets visibility */
                 updateAdditionalObjects (device);
 
@@ -2677,6 +2714,10 @@ void UIMachineSettingsStorage::setInformation()
             else if (sdr == mCbNonRotational)
             {
                 mStorageModel->setData (index, mCbNonRotational->isChecked(), StorageModel::R_AttIsNonRotational);
+            }
+            else if (sdr == m_pCheckBoxHotPluggable)
+            {
+                mStorageModel->setData(index, m_pCheckBoxHotPluggable->isChecked(), StorageModel::R_AttIsHotPluggable);
             }
             break;
         }
@@ -3552,6 +3593,7 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
         bool fAttachmentPassthrough = attachmentData.m_fAttachmentPassthrough;
         bool fAttachmentTempEject = attachmentData.m_fAttachmentTempEject;
         bool fAttachmentNonRotational = attachmentData.m_fAttachmentNonRotational;
+        bool fAttachmentHotPluggable = attachmentData.m_fAttachmentHotPluggable;
         /* Get GUI medium object: */
         UIMedium vboxMedium = vboxGlobal().medium(strAttachmentMediumId);
         /* Get COM medium object: */
@@ -3591,6 +3633,9 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
                     /* Check that machine is OK: */
                     fSuccess = m_machine.isOk();
                 }
+                m_machine.SetHotPluggableForDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentHotPluggable);
+                /* Check that machine is OK: */
+                fSuccess = m_machine.isOk();
             }
             else
             {
@@ -3627,6 +3672,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
         bool fAttachmentPassthrough = attachmentData.m_fAttachmentPassthrough;
         bool fAttachmentTempEject = attachmentData.m_fAttachmentTempEject;
         bool fAttachmentNonRotational = attachmentData.m_fAttachmentNonRotational;
+        bool fAttachmentHotPluggable = attachmentData.m_fAttachmentHotPluggable;
         KDeviceType attachmentDeviceType = attachmentData.m_attachmentType;
 
         /* Check that storage attachment exists: */
@@ -3670,6 +3716,9 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
                         fSuccess = m_machine.isOk();
                     }
                 }
+                m_machine.SetHotPluggableForDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentHotPluggable);
+                /* Check that machine is OK: */
+                fSuccess = m_machine.isOk();
             }
             else
             {
@@ -3753,6 +3802,7 @@ void UIMachineSettingsStorage::polishPage()
     mCbPassthrough->setEnabled(isMachineOffline());
     mCbTempEject->setEnabled(isMachineInValidMode());
     mCbNonRotational->setEnabled(isMachineOffline());
+    m_pCheckBoxHotPluggable->setEnabled(isMachineOffline());
     mLsInformation->setEnabled(isMachineInValidMode());
     mLbHDFormat->setEnabled(isMachineInValidMode());
     mLbHDFormatValue->setEnabled(isMachineInValidMode());
