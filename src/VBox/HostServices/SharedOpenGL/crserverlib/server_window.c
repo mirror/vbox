@@ -322,8 +322,6 @@ GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
     mural->width = width;
     mural->height = height;
 
-    cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, mural->width, mural->height);
-
     if (cr_server.curClient && cr_server.curClient->currentMural == mural
             && !mural->fRedirected)
     {

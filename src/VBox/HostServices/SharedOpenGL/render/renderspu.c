@@ -1704,6 +1704,9 @@ renderspuGetString(GLenum pname)
             return NULL;
         }
 
+        if (!context)
+            return (const GLubyte *)nativeExt;
+
         crExt = crStrjoin3(crExtensions, " ", crAppOnlyExtensions);
         s1 = crStrIntersect(nativeExt, crExt);
         remove_trailing_space(s1);
