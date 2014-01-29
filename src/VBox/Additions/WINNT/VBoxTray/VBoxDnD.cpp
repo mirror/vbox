@@ -228,10 +228,11 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
 
         } while (RT_SUCCESS(rc));
 
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
         int rc2 = pThis->UnregisterAsDropTarget();
         if (RT_SUCCESS(rc))
             rc = rc2;
-
+#endif
         OleUninitialize();
     }
 
