@@ -241,6 +241,64 @@ typedef enum LOGGROUP
     LOG_GROUP_IOM,
     /** XPCOM IPC group. */
     LOG_GROUP_IPC,
+    /** lwIP group. */
+    LOG_GROUP_LWIP,
+    /** lwIP group, api_lib.c API_LIB_DEBUG */
+    LOG_GROUP_LWIP_API_LIB,
+    /** lwIP group, api_msg.c API_MSG_DEBUG */
+    LOG_GROUP_LWIP_API_MSG,
+    /** lwIP group, etharp.c ETHARP_DEBUG */
+    LOG_GROUP_LWIP_ETHARP,
+    /** lwIP group, icmp.c ICMP_DEBUG */
+    LOG_GROUP_LWIP_ICMP,
+    /** lwIP group, igmp.c IGMP_DEBUG */
+    LOG_GROUP_LWIP_IGMP,
+    /** lwIP group, inet.c INET_DEBUG */
+    LOG_GROUP_LWIP_INET,
+    /** lwIP group, IP_DEBUG (sic!) */
+    LOG_GROUP_LWIP_IP4,
+    /** lwIP group, ip_frag.c IP_REASS_DEBUG (sic!) */
+    LOG_GROUP_LWIP_IP4_REASS,
+    /** lwIP group, IP6_DEBUG */
+    LOG_GROUP_LWIP_IP6,
+    /** lwIP group, mem.c MEM_DEBUG */
+    LOG_GROUP_LWIP_MEM,
+    /** lwIP group, memp.c MEMP_DEBUG */
+    LOG_GROUP_LWIP_MEMP,
+    /** lwIP group, netif.c NETIF_DEBUG */
+    LOG_GROUP_LWIP_NETIF,
+    /** lwIP group, pbuf.c PBUF_DEBUG */
+    LOG_GROUP_LWIP_PBUF,
+    /** lwIP group, raw.c RAW_DEBUG */
+    LOG_GROUP_LWIP_RAW,
+    /** lwIP group, sockets.c SOCKETS_DEBUG */
+    LOG_GROUP_LWIP_SOCKETS,
+    /** lwIP group, SYS_DEBUG */
+    LOG_GROUP_LWIP_SYS,
+    /** lwIP group, TCP_DEBUG */
+    LOG_GROUP_LWIP_TCP,
+    /** lwIP group, tcpip.c TCPIP_DEBUG */
+    LOG_GROUP_LWIP_TCPIP,
+    /** lwIP group, TCP_CWND_DEBUG (congestion window) */
+    LOG_GROUP_LWIP_TCP_CWND,
+    /** lwIP group, tcp_in.c TCP_FR_DEBUG (fast retransmit) */
+    LOG_GROUP_LWIP_TCP_FR,
+    /** lwIP group, tcp_in.c TCP_INPUT_DEBUG */
+    LOG_GROUP_LWIP_TCP_INPUT,
+    /** lwIP group, tcp_out.c TCP_OUTPUT_DEBUG */
+    LOG_GROUP_LWIP_TCP_OUTPUT,
+    /** lwIP group, TCP_QLEN_DEBUG */
+    LOG_GROUP_LWIP_TCP_QLEN,
+    /** lwIP group, TCP_RST_DEBUG */
+    LOG_GROUP_LWIP_TCP_RST,
+    /** lwIP group, TCP_RTO_DEBUG (retransmit) */
+    LOG_GROUP_LWIP_TCP_RTO,
+    /** lwIP group, tcp_in.c TCP_WND_DEBUG (window updates) */
+    LOG_GROUP_LWIP_TCP_WND,
+    /** lwIP group, timers.c TIMERS_DEBUG */
+    LOG_GROUP_LWIP_TIMERS,
+    /** lwIP group, udp.c UDP_DEBUG */
+    LOG_GROUP_LWIP_UDP,
     /** Main group. */
     LOG_GROUP_MAIN,
     /** Main group, IAdditionsFacility. */
@@ -783,6 +841,35 @@ typedef enum LOGGROUP
     "IEM",          \
     "IOM",          \
     "IPC",          \
+    "LWIP",            \
+    "LWIP_API_LIB",    \
+    "LWIP_API_MSG",    \
+    "LWIP_ETHARP",     \
+    "LWIP_ICMP",       \
+    "LWIP_IGMP",       \
+    "LWIP_INET",       \
+    "LWIP_IP4",        \
+    "LWIP_IP4_REASS",  \
+    "LWIP_IP6",        \
+    "LWIP_MEM",        \
+    "LWIP_MEMP",       \
+    "LWIP_NETIF",      \
+    "LWIP_PBUF",       \
+    "LWIP_RAW",        \
+    "LWIP_SOCKETS",    \
+    "LWIP_SYS",        \
+    "LWIP_TCP",        \
+    "LWIP_TCPIP",      \
+    "LWIP_TCP_CWND",   \
+    "LWIP_TCP_FR",     \
+    "LWIP_TCP_INPUT",  \
+    "LWIP_TCP_OUTPUT", \
+    "LWIP_TCP_QLEN",   \
+    "LWIP_TCP_RST",    \
+    "LWIP_TCP_RTO",    \
+    "LWIP_TCP_WND",    \
+    "LWIP_TIMERS",     \
+    "LWIP_UDP",        \
     "MAIN",         \
     "MAIN_ADDITIONSFACILITY", \
     "MAIN_ADDITIONSSTATECHANGEDEVENT", \
