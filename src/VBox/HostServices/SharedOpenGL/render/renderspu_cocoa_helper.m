@@ -347,6 +347,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     WindowInfo *m_pWinInfo;
     bool m_fNeedViewportUpdate;
     bool m_fNeedCtxUpdate;
+    bool m_fDataVisible;
+    bool m_fEverSized;
 }
 - (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView*)pParentView winInfo:(WindowInfo*)pWinInfo;
 - (void)setGLCtx:(NSOpenGLContext*)pCtx;
@@ -359,11 +361,13 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
 - (void)setPos:(NSPoint)pos;
 - (NSPoint)pos;
+- (bool)isEverSized;
 - (void)setSize:(NSSize)size;
 - (NSSize)size;
 - (void)updateViewportCS;
-- (void)reshape;
-- (void)reshapeLocked;
+- (void)vboxReshapePerform;
+- (void)vboxReshapeOnResizePerform;
+- (void)vboxReshapeOnReparentPerform;
 
 - (void)createDockTile;
 - (void)deleteDockTile;
@@ -718,10 +722,16 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     /* Reposition this window with the help of the OverlayView. Perform the
      * call in the OpenGL thread. */
     /*
-    [m_pOverlayView performSelector:@selector(reshape) onThread:m_Thread withObject:nil waitUntilDone:YES];
+    [m_pOverlayView performSelector:@selector(vboxReshapePerform) onThread:m_Thread withObject:nil waitUntilDone:YES];
     */
 
-    [m_pOverlayView reshape];
+    if ([m_pOverlayView isEverSized])
+    {    
+        if([NSThread isMainThread])
+            [m_pOverlayView vboxReshapePerform];
+        else
+            [self performSelectorOnMainThread:@selector(vboxReshapePerform) withObject:nil waitUntilDone:NO];
+    }
 }
 
 - (void)parentWindowChanged:(NSWindow*)pWindow
@@ -743,10 +753,17 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
         /* Reshape the overlay view after a short waiting time to let the main
          * window resize itself properly. */
         /*
-        [m_pOverlayView performSelector:@selector(reshape) withObject:nil afterDelay:0.2];
-        [NSTimer scheduledTimerWithTimeInterval:0.2 target:m_pOverlayView selector:@selector(reshape) userInfo:nil repeats:NO];
+        [m_pOverlayView performSelector:@selector(vboxReshapePerform) withObject:nil afterDelay:0.2];
+        [NSTimer scheduledTimerWithTimeInterval:0.2 target:m_pOverlayView selector:@selector(vboxReshapePerform) userInfo:nil repeats:NO];
         */
-        [m_pOverlayView reshape];
+
+        if ([m_pOverlayView isEverSized])
+        {    
+            if([NSThread isMainThread])
+                [m_pOverlayView vboxReshapePerform];
+            else
+                [self performSelectorOnMainThread:@selector(vboxReshapePerform) withObject:nil waitUntilDone:NO];
+        }        
     }
 }
 
@@ -777,6 +794,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     m_pWinInfo             	  = pWinInfo;
     m_fNeedViewportUpdate     = true;        
     m_fNeedCtxUpdate          = true;
+    m_fDataVisible            = false;
+    m_fEverSized              = false;
     
     self = [super initWithFrame:frame];
 
@@ -878,7 +897,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
     m_Pos = pos;
 
-    [self reshape];
+    if (m_fEverSized)
+        [self performSelectorOnMainThread:@selector(vboxReshapePerform) withObject:nil waitUntilDone:NO];
     
     /* we need to redwar on regions change, however the compositor now is cleared 
      * because all compositor&window data-related modifications are performed with compositor cleared
@@ -894,29 +914,22 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     return m_Pos;
 }
 
+- (bool)isEverSized
+{
+    return m_fEverSized;
+}
+
 - (void)setSize:(NSSize)size
 {
     NSOpenGLContext *pCurCtx;
     NSView *pCurView;
     m_Size = size;
+    
+    m_fEverSized = true;
 
     DEBUG_MSG(("OVIW(%p): setSize: new size: %dx%d\n", (void*)self, (int)size.width, (int)size.height));
-    [self reshape];
-    [self createDockTile];
-    /* have to rebind GL_TEXTURE_RECTANGLE_ARB as m_FBOTexId could be changed in updateFBO call */
-    m_fNeedViewportUpdate = true;
-    pCurCtx = [NSOpenGLContext currentContext];
-    if (pCurCtx && pCurCtx == m_pGLCtx && (pCurView = [pCurCtx view]) == self)
-    {
-        [m_pGLCtx update];
-        m_fNeedCtxUpdate = false;
-    }
-    else
-    {
-        /* do it in a lazy way */
-        m_fNeedCtxUpdate = true;
-    }
-    
+    [self performSelectorOnMainThread:@selector(vboxReshapeOnResizePerform) withObject:nil waitUntilDone:NO];
+
     /* we need to redwar on regions change, however the compositor now is cleared 
      * because all compositor&window data-related modifications are performed with compositor cleared
      * the renderspu client will re-set the compositor after modifications are complete
@@ -941,9 +954,37 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     [self vboxBlitterSyncWindow];
         
     /* Clear background to transparent */
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);}
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+}
 
-- (void)reshapeLocked
+- (void)vboxReshapeOnResizePerform
+{
+    [self vboxReshapePerform];
+    
+    [self createDockTile];
+    /* have to rebind GL_TEXTURE_RECTANGLE_ARB as m_FBOTexId could be changed in updateFBO call */
+    m_fNeedViewportUpdate = true;
+#if 0
+    pCurCtx = [NSOpenGLContext currentContext];
+    if (pCurCtx && pCurCtx == m_pGLCtx && (pCurView = [pCurCtx view]) == self)
+    {
+        [m_pGLCtx update];
+        m_fNeedCtxUpdate = false;
+    }
+    else
+    {
+        /* do it in a lazy way */
+        m_fNeedCtxUpdate = true;
+    }
+#endif
+}
+
+- (void)vboxReshapeOnReparentPerform
+{
+    [self createDockTile];
+}
+
+- (void)vboxReshapePerform
 {
     NSRect parentFrame = NSZeroRect;
     NSPoint parentPos  = NSZeroPoint;
@@ -951,7 +992,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     NSRect childFrame  = NSZeroRect;
     NSRect newFrame    = NSZeroRect;
 
-    DEBUG_MSG(("OVIW(%p): reshape\n", (void*)self));
+    DEBUG_MSG(("OVIW(%p): vboxReshapePerform\n", (void*)self));
     
     parentFrame = [m_pParentView frame];
     DEBUG_MSG(("FIXED parentFrame [%f:%f], [%f:%f]\n", parentFrame.origin.x, parentFrame.origin.y, parentFrame.size.width, parentFrame.size.height));    
@@ -1038,16 +1079,6 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     }
 }
 
-- (void)reshape
-{
-    int rc = renderspuVBoxCompositorLock(m_pWinInfo);
-    if (RT_SUCCESS(rc))
-    {
-        [self reshapeLocked];
-        renderspuVBoxCompositorUnlock(m_pWinInfo);
-    }
-}
-
 - (void)createDockTile
 {
 	NSView *pDockScreen      = nil;
@@ -1110,153 +1141,100 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     }
 }
 
-- (void)vboxTryDraw
+- (bool)vboxSharedCtxCreate
 {
-    GLint opaque       = 0;
-    if ([self lockFocusIfCanDraw])
+    if (m_pSharedGLCtx)
+        return true;
+        
+    Assert(!m_pBlitter);
+    m_pBlitter = RTMemAlloc(sizeof (*m_pBlitter));
+    if (!m_pBlitter)
     {
-        const const VBOXVR_SCR_COMPOSITOR *pCompositor = NULL;
-        if (!m_pSharedGLCtx)
-	    {
-	    	pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
-	    	if (pCompositor)
-	    	{
-	    	    Assert(!m_pBlitter);
-                m_pBlitter = RTMemAlloc(sizeof (*m_pBlitter));
-                if (m_pBlitter)
-                {
-                    int rc = CrBltInit(m_pBlitter, NULL, false, false, &render_spu.GlobalShaders, &render_spu.blitterDispatch);
-                    if (RT_SUCCESS(rc))
-                    {
-                        DEBUG_MSG(("blitter created successfully for view 0x%p\n", (void*)self));
-                    }
-                    else
-                    {
-                        DEBUG_WARN(("CrBltInit failed, rc %d", rc));
-                        RTMemFree(m_pBlitter);
-                        m_pBlitter = NULL;
-                    }        
-                }
-                else
-                {
-                    DEBUG_WARN(("m_pBlitter allocation failed"));
-                }
-                    
-	    	    if (m_pBlitter)
-	    	    {
-    		        /* Create a shared context out of the main context. Use the same pixel format. */
-    		        m_pSharedGLCtx = [[NSOpenGLContext alloc] initWithFormat:[(OverlayOpenGLContext*)m_pGLCtx openGLPixelFormat] shareContext:m_pGLCtx];
-    		
-    		        /* Set the new context as non opaque */
-    		        [m_pSharedGLCtx setValues:&opaque forParameter:NSOpenGLCPSurfaceOpacity];
-    		        /* Set this view as the drawable for the new context */
-    		        [m_pSharedGLCtx setView: self];
-    		        m_fNeedViewportUpdate = true;
-    		    }
-#ifdef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
-				renderspuVBoxCompositorRelease(m_pWinInfo);
-				pCompositor = NULL;
-#endif
-		    }
-		}
-		
-		if (m_pSharedGLCtx)
-		{
-			if (!pCompositor)
-			{
-#ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
-				/* we do not want to be blocked with the GUI thread here, so only draw her eif we are really able to do that w/o bllocking */
-				int rc = renderspuVBoxCompositorTryAcquire(m_pWinInfo, &pCompositor);
-				if (RT_SUCCESS(rc))
-				{
-					Assert(pCompositor);
-				}
-			    else if (rc == VERR_SEM_BUSY)
-#endif
-			    {
-			        glFlush();
-			            
-			        /* issue to the gui thread */
-			        [self setNeedsDisplay:YES];
-			    }
-#ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
-			    else
-			    {
-			        /* this is somewhat we do not expect */
-			        DEBUG_MSG(("renderspuVBoxCompositorTryAcquire failed rc %d", rc));
-			    }
-#endif
-			}
-		
-#ifdef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
-			Assert(!pCompositor);
-#endif	
-			if (pCompositor)
-			{
-				[self vboxPresent:pCompositor];
-				renderspuVBoxCompositorRelease(m_pWinInfo);
-			}
-		}
-		else
-		{
-			AssertRelease(!pCompositor);
-		}
-        [self unlockFocus];
+        DEBUG_WARN(("m_pBlitter allocation failed"));
+        return false;
+    }
+        
+    int rc = CrBltInit(m_pBlitter, NULL, false, false, &render_spu.GlobalShaders, &render_spu.blitterDispatch);
+    if (RT_SUCCESS(rc))
+    {
+        DEBUG_MSG(("blitter created successfully for view 0x%p\n", (void*)self));
     }
     else
     {
-        [self setNeedsDisplay:YES];
-    }
+        DEBUG_WARN(("CrBltInit failed, rc %d", rc));
+        RTMemFree(m_pBlitter);
+        m_pBlitter = NULL;
+        return false;
+    }        
+    
+    GLint opaque       = 0;
+    /* Create a shared context out of the main context. Use the same pixel format. */
+    NSOpenGLContext *pSharedGLCtx = [[NSOpenGLContext alloc] initWithFormat:[(OverlayOpenGLContext*)m_pGLCtx openGLPixelFormat] shareContext:m_pGLCtx];
+        
+    /* Set the new context as non opaque */
+    [pSharedGLCtx setValues:&opaque forParameter:NSOpenGLCPSurfaceOpacity];
+    /* Set this view as the drawable for the new context */
+    [pSharedGLCtx setView: self];
+    m_fNeedViewportUpdate = true;
+    
+    m_pSharedGLCtx = pSharedGLCtx;
+    
+    return true;
+}
+
+- (void)vboxTryDraw
+{
+    glFlush();
+                        
+    /* issue to the gui thread */
+    [self setNeedsDisplay:YES];
 }
 
 - (void)vboxTryDrawUI
 {
+    const VBOXVR_SCR_COMPOSITOR *pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
+    if (!m_fDataVisible && !pCompositor)
+        return;
+
+    VBOXVR_SCR_COMPOSITOR TmpCompositor;
+    
+    if (pCompositor)
+    {
+        if (!m_pSharedGLCtx)
+        {
+            Assert(!m_fDataVisible);
+            renderspuVBoxCompositorRelease(m_pWinInfo);
+            if (![self vboxSharedCtxCreate])
+            {
+                DEBUG_WARN(("vboxSharedCtxCreate failed\n"));
+                return;
+            }
+            
+            Assert(m_pSharedGLCtx);
+            
+            pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
+            Assert(!m_fDataVisible);
+            if (!pCompositor)
+                return;
+        }
+    }
+    else
+    {
+        CrVrScrCompositorInit(&TmpCompositor, NULL);
+        pCompositor = &TmpCompositor;
+    }
+    
     if ([self lockFocusIfCanDraw])
     {
-        if (m_pSharedGLCtx)
-	    {
-#if 1
-            /* tmp workaround to prevent potential deadlock:
-             * crOpenGL service thread does compositor lock acquire and calls cocoa NS methods that could synchronize on the GUI thread
-             * while here we do a reverse order: acquire compositor lock being in gui thread.
-             * this is why we do only try acquire and re-submit repaint event if compositor lock is busy */
-            const VBOXVR_SCR_COMPOSITOR *pCompositor = NULL;
-            int rc = renderspuVBoxCompositorTryAcquire(m_pWinInfo, &pCompositor);
-            if (RT_SUCCESS(rc))
-            {
-                Assert(pCompositor);
-                [self vboxPresent:pCompositor];
-                renderspuVBoxCompositorRelease(m_pWinInfo);
-            }
-            else if (rc == VERR_SEM_BUSY)
-            {
-                Assert(!pCompositor);
-                /* re-issue to the gui thread */
-# ifdef DEBUG_misha
-                DEBUG_WARN(("renderspuVBoxCompositorTryAcquire busy\n"));
-# endif 
-                [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(vboxTryDrawUI) userInfo:nil repeats:NO];
-            }
-            else if (rc != VERR_INVALID_STATE) /* VERR_INVALID_STATE means no compositor, which is ok */
-            {
-                Assert(!pCompositor);
-                /* this is somewhat we do not expect */
-                DEBUG_WARN(("renderspuVBoxCompositorTryAcquire failed rc %d", rc));
-            }
-#else
-	    	const VBOXVR_SCR_COMPOSITOR *pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
-	    	if (pCompositor)
-	    	{
-	    		[self vboxPresent:pCompositor];
-				renderspuVBoxCompositorRelease(m_pWinInfo);
-			}
-#endif
-		}
+        [self vboxPresent:pCompositor];
+        if (pCompositor != &TmpCompositor)
+            renderspuVBoxCompositorRelease(m_pWinInfo);
+            
         [self unlockFocus];
     }
     else
     {
-        [self setNeedsDisplay:YES];
+        [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(vboxTryDrawUI) userInfo:nil repeats:NO];
     }
 }
 
@@ -1272,15 +1250,6 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     DEBUG_MSG(("OVIW(%p): renderFBOToView\n", (void*)self));    
     
     Assert(pCompositor);
-    
-#if 0 //def DEBUG
-            {
-            	NSOpenGLContext *pTstOldCtx = [NSOpenGLContext currentContext];
-            	NSView *pTstOldView = (pTstOldCtx ? [pTstOldCtx view] : nil);
-            	Assert(pTstOldCtx == m_pGLCtx);
-            	Assert(pTstOldView == self);
-            }
-#endif
 
     vboxCtxEnter(m_pSharedGLCtx, &CtxInfo);
     
@@ -1360,6 +1329,8 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     /* Clear background to transparent */
     glClear(GL_COLOR_BUFFER_BIT);
     
+    m_fDataVisible = false;
+    
     CrVrScrCompositorGetStretching(pCompositor, &xStretch, &yStretch);
         
     while ((pEntry = CrVrScrCompositorConstIterNext(&CIter)) != NULL)
@@ -1402,6 +1373,8 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
                     const CR_TEXDATA *pTexData = CrVrScrCompositorEntryTexGet(pEntry);
                     
                     CrBltBlitTexMural(m_pBlitter, true, CrTdTexGet(pTexData), pSrcRect, pDstRect, 1, fFlags | CRBLT_F_NOALPHA);
+                    
+                    m_fDataVisible = true;
                 }
                 CrBltLeave(m_pBlitter);
             }
@@ -1443,8 +1416,8 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     WinInfo.width = r.size.width;
     WinInfo.height = r.size.height;
     
-    Assert(WinInfo.width = m_RootRect.size.width);
-    Assert(WinInfo.height = m_RootRect.size.height);
+    Assert(WinInfo.width == m_RootRect.size.width);
+    Assert(WinInfo.height == m_RootRect.size.height);
 
     /*CrBltMuralSetCurrentInfo(m_pBlitter, NULL);*/
     
@@ -1808,7 +1781,8 @@ void cocoaViewReparent(NativeNSViewRef pView, NativeNSViewRef pParentView)
         if (pParentView != nil)
         {
             [[pParentView window] addChildWindow:[pOView overlayWin] ordered:NSWindowAbove];
-            [pOView createDockTile];
+            if ([pOView isEverSized])
+                [pOView performSelectorOnMainThread:@selector(vboxReshapeOnReparentPerform) withObject:nil waitUntilDone:NO];
         }
     }
 
