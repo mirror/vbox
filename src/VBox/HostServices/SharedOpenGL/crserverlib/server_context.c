@@ -28,8 +28,6 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
     GLboolean fFirst = GL_FALSE;
 
     dpyName = "";
-    if (cr_server.fVisualBitsDefault)
-    	visualBits = cr_server.fVisualBitsDefault;
 
     if (shareCtx > 0) {
         crWarning("CRServer: context sharing not implemented.");
@@ -45,16 +43,21 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
 
     pContextInfo->currentMural = NULL;
 
-    pContextInfo->CreateInfo.visualBits = visualBits;
+    pContextInfo->CreateInfo.requestedVisualBits = visualBits;
+
+    if (cr_server.fVisualBitsDefault)
+        visualBits = cr_server.fVisualBitsDefault;
+
+    pContextInfo->CreateInfo.realVisualBits = visualBits;
 
     /* Since the Cr server serialized all incoming clients/contexts into
      * one outgoing GL stream, we only need to create one context for the
      * head SPU.  We'll only have to make it current once too, below.
      */
     if (cr_server.firstCallCreateContext) {
-        cr_server.MainContextInfo.CreateInfo.visualBits = visualBits;
+        cr_server.MainContextInfo.CreateInfo.realVisualBits = visualBits;
         cr_server.MainContextInfo.SpuContext = cr_server.head_spu->dispatch_table.
-            CreateContext(dpyName, cr_server.MainContextInfo.CreateInfo.visualBits, shareCtx);
+            CreateContext(dpyName, cr_server.MainContextInfo.CreateInfo.realVisualBits, shareCtx);
         if (cr_server.MainContextInfo.SpuContext < 0) {
             crWarning("crServerDispatchCreateContext() failed.");
             crFree(pContextInfo);
@@ -69,13 +72,14 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
     }
     else {
         /* second or third or ... context */
-        if (!cr_server.bUseMultipleContexts && ((visualBits & cr_server.MainContextInfo.CreateInfo.visualBits) != visualBits)) {
+        if (!cr_server.bUseMultipleContexts && ((visualBits & cr_server.MainContextInfo.CreateInfo.realVisualBits) != visualBits)) {
             int oldSpuContext;
-
+            /* should never be here */
+            CRASSERT(0);
             /* the new context needs new visual attributes */
-            cr_server.MainContextInfo.CreateInfo.visualBits |= visualBits;
+            cr_server.MainContextInfo.CreateInfo.realVisualBits |= visualBits;
             crWarning("crServerDispatchCreateContext requires new visual (0x%x).",
-                    cr_server.MainContextInfo.CreateInfo.visualBits);
+                    cr_server.MainContextInfo.CreateInfo.realVisualBits);
 
             /* Here, we used to just destroy the old rendering context.
              * Unfortunately, this had the side effect of destroying
@@ -90,7 +94,7 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
             /* create new rendering context with suitable visual */
             oldSpuContext = cr_server.MainContextInfo.SpuContext;
             cr_server.MainContextInfo.SpuContext = cr_server.head_spu->dispatch_table.
-                CreateContext(dpyName, cr_server.MainContextInfo.CreateInfo.visualBits, cr_server.MainContextInfo.SpuContext);
+                CreateContext(dpyName, cr_server.MainContextInfo.CreateInfo.realVisualBits, cr_server.MainContextInfo.SpuContext);
             /* destroy old rendering context */
             cr_server.head_spu->dispatch_table.DestroyContext(oldSpuContext);
             if (cr_server.MainContextInfo.SpuContext < 0) {
@@ -107,7 +111,7 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
 
     if (cr_server.bUseMultipleContexts) {
         pContextInfo->SpuContext = cr_server.head_spu->dispatch_table.
-                CreateContext(dpyName, cr_server.MainContextInfo.CreateInfo.visualBits, cr_server.MainContextInfo.SpuContext);
+                CreateContext(dpyName, cr_server.MainContextInfo.CreateInfo.realVisualBits, cr_server.MainContextInfo.SpuContext);
         if (pContextInfo->SpuContext < 0) {
             crWarning("crServerDispatchCreateContext() failed.");
             crStateEnableDiffOnMakeCurrent(GL_TRUE);
@@ -135,7 +139,7 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
         retVal = preloadCtxID<0 ? (GLint)crHashtableAllocKeys( cr_server.contextTable, 1 ) : preloadCtxID;
 
         pContextInfo->pContext = newCtx;
-        pContextInfo->CreateInfo.visualBits = visualBits;
+        Assert(pContextInfo->CreateInfo.realVisualBits == visualBits);
         pContextInfo->CreateInfo.externalID = retVal;
         pContextInfo->CreateInfo.pszDpyName = dpyName ? crStrdup(dpyName) : NULL;
         crHashtableAdd(cr_server.contextTable, retVal, pContextInfo);
@@ -201,7 +205,7 @@ crServerDispatchDestroyContext( GLint ctx )
 
     if (cr_server.currentCtxInfo == crCtxInfo)
     {
-        CRMuralInfo *dummyMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        CRMuralInfo *dummyMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
         crServerPerformMakeCurrent(dummyMural, &cr_server.MainContextInfo);
         CRASSERT(cr_server.currentCtxInfo == &cr_server.MainContextInfo);
     }

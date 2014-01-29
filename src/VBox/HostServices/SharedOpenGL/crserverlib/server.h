@@ -176,7 +176,7 @@ PCR_BLITTER crServerVBoxBlitterGetInitialized();
 DECLINLINE(void) crServerVBoxBlitterWinInit(CR_BLITTER_WINDOW *win, CRMuralInfo *mural)
 {
     win->Base.id = mural->spuWindow;
-    win->Base.visualBits = mural->CreateInfo.visualBits;
+    win->Base.visualBits = mural->CreateInfo.realVisualBits;
     win->width = mural->width;
     win->height = mural->height;
 }
@@ -186,7 +186,7 @@ DECLINLINE(void) crServerVBoxBlitterCtxInit(CR_BLITTER_CONTEXT *ctx, CRContextIn
     ctx->Base.id = ctxInfo->SpuContext;
     if (ctx->Base.id < 0)
         ctx->Base.id = cr_server.MainContextInfo.SpuContext;
-    ctx->Base.visualBits = cr_server.curClient->currentCtxInfo->CreateInfo.visualBits;
+    ctx->Base.visualBits = cr_server.curClient->currentCtxInfo->CreateInfo.realVisualBits;
 }
 
 /* display worker thread.

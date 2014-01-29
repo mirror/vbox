@@ -25,13 +25,17 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     GLint windowID = -1;
     GLint spuWindow;
     int rc;
+    GLint realVisBits = visBits;
 
     crMemset(mural, 0, sizeof (*mural));
+
+    if (cr_server.fVisualBitsDefault)
+        realVisBits = cr_server.fVisualBitsDefault;
 
     /*
      * Have first SPU make a new window.
      */
-    spuWindow = cr_server.head_spu->dispatch_table.WindowCreate( dpyName, visBits );
+    spuWindow = cr_server.head_spu->dispatch_table.WindowCreate( dpyName, realVisBits );
     if (spuWindow < 0) {
         return spuWindow;
     }
@@ -61,7 +65,8 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     else
         windowID = preloadWinID<0 ? (GLint)crHashtableAllocKeys( cr_server.muralTable, 1 ) : preloadWinID;
 
-    mural->CreateInfo.visualBits = visBits;
+    mural->CreateInfo.realVisualBits = realVisBits;
+    mural->CreateInfo.requestedVisualBits = visBits;
     mural->CreateInfo.externalID = windowID;
     mural->CreateInfo.pszDpyName = dpyName ? crStrdup(dpyName) : NULL;
 
@@ -76,9 +81,6 @@ GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint p
     GLint windowID = -1;
 
     dpyName = "";
-
-    if (cr_server.fVisualBitsDefault)
-        visBits = cr_server.fVisualBitsDefault;
 
     if (cr_server.sharedWindows) {
         int pos, j;
@@ -144,7 +146,7 @@ GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint p
     }
 
     /* ensure we have a dummy mural created right away to avoid potential deadlocks on VM shutdown */
-    crServerGetDummyMural(mural->CreateInfo.visualBits);
+    crServerGetDummyMural(mural->CreateInfo.realVisualBits);
 
     crServerReturnValue( &windowID, sizeof(windowID) );
     return windowID;
@@ -174,7 +176,7 @@ void crServerMuralTerm(CRMuralInfo *mural)
 
     if (cr_server.currentMural == mural)
     {
-        CRMuralInfo *dummyMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        CRMuralInfo *dummyMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
         /* reset the current context to some dummy values to ensure render spu does not switch to a default "0" context,
          * which might lead to muralFBO (offscreen rendering) gl entities being created in a scope of that context */
         cr_server.head_spu->dispatch_table.MakeCurrent(dummyMural->spuWindow, 0, cr_server.MainContextInfo.SpuContext);
@@ -192,7 +194,7 @@ void crServerMuralTerm(CRMuralInfo *mural)
     	const CR_BLITTER_WINDOW * pWindow = CrBltMuralGetCurrentInfo(pBlitter);
     	if (pWindow && pWindow->Base.id == mural->spuWindow)
     	{
-    		CRMuralInfo *dummy = crServerGetDummyMural(mural->CreateInfo.visualBits);
+    		CRMuralInfo *dummy = crServerGetDummyMural(mural->CreateInfo.realVisualBits);
     		CR_BLITTER_WINDOW DummyInfo;
     		CRASSERT(dummy);
     		crServerVBoxBlitterWinInit(&DummyInfo, dummy);

@@ -853,14 +853,19 @@ static void crVBoxServerSaveCreateInfoCB(unsigned long key, void *data1, void *d
 static void crVBoxServerSaveCreateInfoFromMuralInfoCB(unsigned long key, void *data1, void *data2)
 {
     CRMuralInfo *pMural = (CRMuralInfo *)data1;
-    CRCreateInfo_t *pCreateInfo = &pMural->CreateInfo;
-    crVBoxServerSaveCreateInfoCB(key, pCreateInfo, data2);
+    CRCreateInfo_t CreateInfo;
+    CreateInfo.pszDpyName = pMural->CreateInfo.pszDpyName;
+    CreateInfo.visualBits = pMural->CreateInfo.requestedVisualBits;
+    CreateInfo.externalID = pMural->CreateInfo.externalID;
+    crVBoxServerSaveCreateInfoCB(key, &CreateInfo, data2);
 }
 
 static void crVBoxServerSaveCreateInfoFromCtxInfoCB(unsigned long key, void *data1, void *data2)
 {
     CRContextInfo *pContextInfo = (CRContextInfo *)data1;
-    CRCreateInfo_t CreateInfo = pContextInfo->CreateInfo;
+    CRCreateInfo_t CreateInfo;
+    CreateInfo.pszDpyName = pContextInfo->CreateInfo.pszDpyName;
+    CreateInfo.visualBits = pContextInfo->CreateInfo.requestedVisualBits;
     /* saved state contains internal id */
     CreateInfo.externalID = pContextInfo->pContext->id;
     crVBoxServerSaveCreateInfoCB(key, &CreateInfo, data2);
@@ -919,7 +924,7 @@ static void crVBoxServerBuildAdditionalWindowContextMapCB(unsigned long key, voi
 
     Assert(!crHashtableGetDataKey(pData->pGlobal->contextMuralTable, pMural, NULL));
 
-    if (cr_server.MainContextInfo.CreateInfo.visualBits == pMural->CreateInfo.visualBits)
+    if (cr_server.MainContextInfo.CreateInfo.realVisualBits == pMural->CreateInfo.realVisualBits)
     {
         pContextInfo = &cr_server.MainContextInfo;
     }
@@ -964,7 +969,7 @@ static void crVBoxServerBuildContextWindowMapWindowWalkerCB(unsigned long key, v
     if (crHashtableSearch(pData->usedMuralTable, pMural->CreateInfo.externalID))
         return;
 
-    CRASSERT(pMural->CreateInfo.visualBits == pData->pContextInfo->CreateInfo.visualBits);
+    CRASSERT(pMural->CreateInfo.realVisualBits == pData->pContextInfo->CreateInfo.realVisualBits);
     pData->pMural = pMural;
 }
 
@@ -1032,7 +1037,7 @@ static void crVBoxServerBuildContextUnusedWindowMapCB(unsigned long key, void *d
 
     if (!pMural)
     {
-        pMural = crServerGetDummyMural(pContextInfo->CreateInfo.visualBits);
+        pMural = crServerGetDummyMural(pContextInfo->CreateInfo.realVisualBits);
         if (!pMural)
         {
             crWarning("crServerGetDummyMural failed");
@@ -1156,8 +1161,8 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
 
     /* there is a lot of code that assumes we have double buffering, just assert here to print a warning in the log
      * so that we know that something irregular is going on */
-    CRASSERT(pCtxInfo->CreateInfo.visualBits & CR_DOUBLE_BIT);
-    if ((pCtxInfo->CreateInfo.visualBits & CR_DOUBLE_BIT)
+    CRASSERT(pCtxInfo->CreateInfo.requestedVisualBits & CR_DOUBLE_BIT);
+    if ((pCtxInfo->CreateInfo.requestedVisualBits & CR_DOUBLE_BIT)
     		|| version < SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL /* <- older version had a typo which lead to back always being used,
     																	* no matter what the visual bits are */
     		)
@@ -1188,7 +1193,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
 
     if (version < SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL)
     {
-/*        if (pCtxInfo->CreateInfo.visualBits & CR_DEPTH_BIT) */ /* <- older version had a typo which lead to back always being used,
+/*        if (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT) */ /* <- older version had a typo which lead to back always being used,
 																  * no matter what the visual bits are */
         {
             AssertCompile(sizeof (GLfloat) == 4);
@@ -1219,7 +1224,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
             ++pData->cElements;
         }
 
- /*       if (pCtxInfo->CreateInfo.visualBits & CR_STENCIL_BIT) */ /* <- older version had a typo which lead to back always being used,
+ /*       if (pCtxInfo->CreateInfo.requestedVisualBits & CR_STENCIL_BIT) */ /* <- older version had a typo which lead to back always being used,
 																	* no matter what the visual bits are */
         {
             AssertCompile(sizeof (GLuint) == 4);
@@ -1245,8 +1250,8 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         return VINF_SUCCESS;
     }
 
-    if ((pCtxInfo->CreateInfo.visualBits & CR_STENCIL_BIT)
-    		|| (pCtxInfo->CreateInfo.visualBits & CR_DEPTH_BIT))
+    if ((pCtxInfo->CreateInfo.requestedVisualBits & CR_STENCIL_BIT)
+    		|| (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT))
     {
         pEl = &pData->aElements[pData->cElements];
         pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
@@ -2346,7 +2351,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         CRASSERT(cr_server.MainContextInfo.SpuContext > 0);
         CRASSERT(!cr_server.currentCtxInfo);
         CRASSERT(!cr_server.currentMural);
-        pMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        pMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
         CRASSERT(pMural);
         crServerPerformMakeCurrent(pMural, &cr_server.MainContextInfo);
     }
@@ -2380,7 +2385,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
             else
             {
                 /* null winId means a dummy mural, get it */
-                pMural = crServerGetDummyMural(pContextInfo->CreateInfo.visualBits);
+                pMural = crServerGetDummyMural(pContextInfo->CreateInfo.realVisualBits);
                 CRASSERT(pMural);
             }
         }

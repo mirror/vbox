@@ -91,6 +91,12 @@ typedef struct {
     int32_t externalID;
 } CRCreateInfo_t;
 
+typedef struct {
+    char   *pszDpyName;
+    int32_t externalID;
+    GLint   requestedVisualBits;
+    GLint   realVisualBits;
+} CRCreateInfoEx_t;
 
 /* VRAM->RAM worker thread */
 
@@ -241,7 +247,7 @@ typedef struct {
 
     void *pvReserved;
 
-    CRCreateInfo_t CreateInfo;
+    CRCreateInfoEx_t CreateInfo;
 
     /* to avoid saved state breakage we need to keep RT_OFFSETOF(CRMuralInfo, CreateInfo) intact
      * this is why we place some FBO stuff to the tail
@@ -273,7 +279,7 @@ typedef struct {
 typedef struct {
     CRContext *pContext;
     int SpuContext;
-    CRCreateInfo_t CreateInfo;
+    CRCreateInfoEx_t CreateInfo;
     CRMuralInfo * currentMural;
 } CRContextInfo;
 
