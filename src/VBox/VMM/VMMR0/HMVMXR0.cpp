@@ -7077,28 +7077,35 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 #endif
     }
 
-    /* Delivery pending debug exception if the guest is single-stepping. Evaluate and set the BS bit. */
-    if (   !pVCpu->hm.s.fSingleInstruction
-        && !DBGFIsStepping(pVCpu))
+    /* Deliver pending debug exception if the guest is single-stepping. Evaluate and set the BS bit. */
+    if (   fBlockSti
+        || fBlockMovSS)
     {
-        int rc2 = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
-        AssertRCReturn(rc2, rc2);
-        if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
+        if (   !pVCpu->hm.s.fSingleInstruction
+            && !DBGFIsStepping(pVCpu))
+        {
+            int rc2 = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+            AssertRCReturn(rc2, rc2);
+            if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
+            {
+                /*
+                 * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD,
+                 * VMX_EXIT_MTF, VMX_EXIT_APIC_WRITE and VMX_EXIT_VIRTUALIZED_EOI.
+                 * See Intel spec. 27.3.4 "Saving Non-Register State".
+                 */
+                rc2 = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+                AssertRCReturn(rc2, rc2);
+            }
+        }
+        else if (pMixedCtx->eflags.Bits.u1TF)
         {
             /*
-             * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD,
-             * VMX_EXIT_MTF, VMX_EXIT_APIC_WRITE and VMX_EXIT_VIRTUALIZED_EOI.
-             * See Intel spec. 27.3.4 "Saving Non-Register State".
+             * We are single-stepping in the hypervisor debugger using EFLAGS.TF. Clear interrupt inhibition as setting the
+             * BS bit would mean delivering a #DB to the guest upon VM-entry when it shouldn't be.
              */
-            rc2 = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
-            AssertRCReturn(rc2, rc2);
+            Assert(!(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG));
+            uIntrState = 0;
         }
-    }
-    else
-    {
-        /* We are single-stepping in the hypervisor debugger, clear interrupt inhibition as setting the BS bit would mean
-           delivering a #DB to the guest upon VM-entry when it shouldn't be. */
-        uIntrState = 0;
     }
 
     /*
@@ -8599,10 +8606,19 @@ DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
 {
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     pMixedCtx->rip += pVmxTransient->cbInstr;
     HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP);
+
+    /* Deliver pending debug exception if the guest is single-stepping. */
+    if (pMixedCtx->eflags.Bits.u1TF)
+    {
+        rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+        AssertRCReturn(rc, rc);
+    }
+
     return rc;
 }
 
