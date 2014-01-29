@@ -881,7 +881,6 @@ VBGLR3DECL(int) VbglR3DnDProcessNextMessage(uint32_t u32ClientId, CPVBGLR3DNDHGC
                 rc = vbglR3DnDHGProcessCancelMessage(u32ClientId);
                 break;
             }
-#ifdef VBOX_WITH_DRAG_AND_DROP_GH
             case DragAndDropSvc::HOST_DND_GH_REQ_PENDING:
             {
                 pEvent->uType = uMsg;
@@ -904,10 +903,8 @@ VBGLR3DECL(int) VbglR3DnDProcessNextMessage(uint32_t u32ClientId, CPVBGLR3DNDHGC
                                                           &pEvent->u.a.uDefAction);
                 break;
             }
-#endif /* VBOX_WITH_DRAG_AND_DROP_GH */
             default:
-                AssertMsgFailedReturn(("Message %u isn't expected in this context", uMsg),
-                                      VERR_INVALID_PARAMETER);
+                rc = VERR_NOT_SUPPORTED;
                 break;
         }
     }
@@ -943,8 +940,9 @@ VBGLR3DECL(int) VbglR3DnDHGRequestData(uint32_t u32ClientId, const char* pcszFor
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_HG_REQ_DATA;
     Msg.hdr.cParms      = 1;
-    /* Do request */
+    /* Initialize parameter */
     Msg.pFormat.SetPtr((void*)pcszFormat, (uint32_t)strlen(pcszFormat) + 1);
+    /* Do request */
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
@@ -967,7 +965,7 @@ VBGLR3DECL(int) VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId,
     /* Initialize parameter */
     Msg.uDefAction.SetUInt32(uDefAction);
     Msg.uAllActions.SetUInt32(uAllActions);
-    Msg.pFormat.SetPtr((void*)pcszFormat, static_cast<uint32_t>(strlen(pcszFormat) + 1));
+    Msg.pFormat.SetPtr((void*)pcszFormat, (uint32_t)strlen(pcszFormat) + 1);
     /* Do request */
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -981,14 +979,14 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId, void *pvData, uint32_t
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData,    VERR_INVALID_PARAMETER);
 
-    /* Todo: URI support. Currently only data is send over to the host. For URI
-     * support basically the same as in the H->G case (see
-     * HostServices/DragAndDrop/dndmanager.h/cpp) has to be done:
-     * 1. Parse the urilist
-     * 2. Recursively send "create dir" and "transfer file" msg to the host
-     * 3. Patch the urilist by removing all base dirnames
-     * 4. On the host all needs to received and the urilist patched afterwards
-     *    to point to the new location
+    /** @todo Add URI support. Currently only data is send over to the host. For URI
+     *        support basically the same as in the H->G case (see
+     *        HostServices/DragAndDrop/dndmanager.h/cpp) has to be done:
+     *        1. Parse the urilist
+     *        2. Recursively send "create dir" and "transfer file" msg to the host
+     *        3. Patch the urilist by removing all base dirnames
+     *        4. On the host all needs to received and the urilist patched afterwards
+     *           to point to the new location
      */
 
     DragAndDropSvc::VBOXDNDGHSENDDATAMSG Msg;
@@ -998,14 +996,16 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId, void *pvData, uint32_t
     Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_GH_SND_DATA;
     Msg.hdr.cParms      = 2;
     Msg.uSize.SetUInt32(cbData);
+
     int rc          = VINF_SUCCESS;
-    uint32_t cbMax  = _1M;
-    uint32_t cbSend = 0;
-    while(cbSend < cbData)
+    uint32_t cbMax  = _1M; /** @todo Remove 1 MB limit. */
+    uint32_t cbSent = 0;
+
+    while (cbSent < cbData)
     {
         /* Initialize parameter */
-        uint32_t cbToSend = RT_MIN(cbData - cbSend, cbMax);
-        Msg.pData.SetPtr(static_cast<uint8_t*>(pvData) + cbSend, cbToSend);
+        uint32_t cbToSend = RT_MIN(cbData - cbSent, cbMax);
+        Msg.pData.SetPtr(static_cast<uint8_t*>(pvData) + cbSent, cbToSend);
         /* Do request */
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
@@ -1017,7 +1017,7 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId, void *pvData, uint32_t
         }
         else
             break;
-        cbSend += cbToSend;
+        cbSent += cbToSend;
 //        RTThreadSleep(500);
     }
 

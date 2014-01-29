@@ -497,7 +497,7 @@ void DragInstance::uninit(void)
     if (m_wndProxy != 0)
         XDestroyWindow(m_pDisplay, m_wndProxy);
 
-    if (m_uClientID) 
+    if (m_uClientID)
     {
         VbglR3DnDDisconnect(m_uClientID);
         m_uClientID = 0;
@@ -1612,7 +1612,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
             break;
 
         m_pCurDnD = new DragInstance(m_pDisplay, this);
-        if (!m_pCurDnD) 
+        if (!m_pCurDnD)
         {
             rc = VERR_NO_MEMORY;
             break;
@@ -1828,6 +1828,9 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
         return rc;
     }
 
+    /* Number of invalid messages skipped in a row. */
+    int cMsgSkippedInvalid = 0;
+
     do
     {
         RT_ZERO(e);
@@ -1836,11 +1839,27 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
         rc = VbglR3DnDProcessNextMessage(uClientID, &e.hgcm);
         if (RT_SUCCESS(rc))
         {
+            cMsgSkippedInvalid = 0; /* Reset skipped messages count. */
+
             pThis->m_eventQueue.append(e);
             rc = RTSemEventSignal(pThis->m_hEventSem);
             if (RT_FAILURE(rc))
                 return rc;
         }
+        else
+        {
+            /* Old(er) hosts either are broken regarding DnD support or otherwise
+             * don't support the stuff we do on the guest side, so make sure we
+             * don't process invalid messages forever. */
+            if (rc == VERR_INVALID_PARAMETER)
+                cMsgSkippedInvalid++;
+            if (cMsgSkippedInvalid > 3)
+            {
+                LogFlowFunc(("Too many invalid/skipped messages from host, exiting ...\n"));
+                break;
+            }
+        }
+
     } while (!ASMAtomicReadBool(&pThis->m_fSrvStopping));
 
     VbglR3DnDDisconnect(uClientID);

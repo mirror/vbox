@@ -906,11 +906,12 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                 || cpnt.y() < 0
                 || cpnt.y() > iCh - 1)
             {
-                if ((mouseButtons.testFlag(Qt::LeftButton)))
+                bool fHandledGHDnD
+                    = RT_BOOL(mouseButtons.testFlag(Qt::LeftButton));
+                if (fHandledGHDnD)
                 {
                     m_views[uScreenId]->handleGHDnd();
-
-                    return false;
+                    return true;
                 }
             }
 # endif

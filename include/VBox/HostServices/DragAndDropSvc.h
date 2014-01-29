@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011-2013 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -60,6 +60,8 @@ namespace DragAndDropSvc {
 
 /**
  * The service functions which are callable by host.
+ * Note: When adding new functions to this table, make sure that the actual ID
+ *       does *not* overlap with the eGuestFn enumeration below!
  */
 enum eHostFn
 {
@@ -81,18 +83,25 @@ enum eHostFn
     HOST_DND_HG_SND_FILE,
 
     /* G->H */
-    HOST_DND_GH_REQ_PENDING            = 300,
+    /** The host asks the guest whether a DnD operation
+     *  is in progress when the mouse leaves the guest window. */
+    HOST_DND_GH_REQ_PENDING            = 600,
+    /** The host informs the guest that a DnD drop operation
+     *  has been started and that the host wants the data in
+     *  a specific mime-type. */
     HOST_DND_GH_EVT_DROPPED
 };
 
 /**
  * The service functions which are called by guest.
+ * Note: When adding new functions to this table, make sure that the actual ID
+ *       does *not* overlap with the eGuestFn enumeration above!
  */
 enum eGuestFn
 {
     /**
-     * Guest waits for a new message the host wants to process on the guest side.
-     * This is a blocking call and can be deferred.
+     * Guest waits for a new message the host wants to process
+     * on the guest side. This can be a blocking call.
      */
     GUEST_DND_GET_NEXT_HOST_MSG        = 300,
 
@@ -102,6 +111,11 @@ enum eGuestFn
     GUEST_DND_HG_EVT_PROGRESS,
 
     /* G->H */
+    /**
+     * The guests acknowledges that it currently has a drag'n drop
+     * operation in progress on the guest, which eventually could be
+     * dragged over to the host.
+     */
     GUEST_DND_GH_ACK_PENDING           = 500,
     GUEST_DND_GH_SND_DATA,
     GUEST_DND_GH_EVT_ERROR
@@ -415,7 +429,7 @@ typedef struct VBOXDNDCBSNDDATADATA
     VBOXDNDCBHEADERDATA hdr;
     void     *pvData;
     uint32_t  cbData;
-    uint32_t  cbAllSize;
+    uint32_t  cbAllSize; /** @todo Why is this transmitted every time? */
 } VBOXDNDCBSNDDATADATA;
 typedef VBOXDNDCBSNDDATADATA *PVBOXDNDCBSNDDATADATA;
 

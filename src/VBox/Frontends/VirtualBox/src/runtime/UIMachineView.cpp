@@ -1168,7 +1168,7 @@ void UIMachineView::dropEvent(QDropEvent *pEvent)
     pEvent->accept();
 }
 
-void UIMachineView::handleGHDnd()
+void UIMachineView::handleGHDnd(void)
 {
     /* The guest object to talk to. */
     CGuest guest = session().GetConsole().GetGuest();
