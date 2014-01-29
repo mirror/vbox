@@ -1775,14 +1775,9 @@ print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
           <para>The following sections document the important concepts needed
           to correctly use the C binding, as it is vital for developing API
           client code which manages memory correctly, updates the reference
-          counters correctly, avoiding crashes and memory leaks. Concepts such
-          as event handling are described in the API specification (see
-          <xref linkend="events" />) in great detail detail, and the sample
-          illustrates the practical aspects of how to use both types of event
-          handling, active and passive, from a C application. If you look at
-          the code complexity of active event handling (and its inherenly
-          platform/compiler specific elements) it should be clear that passive
-          event handling should be used whereever possible.</para>
+          counters correctly, avoiding crashes and memory leaks. Often API
+          clients need to handle events, so the C API specifics are also
+          described below.</para>
         </sect3>
 
         <sect3 id="c-initialization">
@@ -2016,6 +2011,65 @@ free(machines);</screen></para>
           and the latter is handled through the generic array support.</para>
         </sect3>
 
+        <sect3 id="c-eventhandling">
+          <title>Event handling</title>
+
+          <para>The VirtualBox API offers two types of event handling, active
+          and passive, and consequently there is support for both with the
+          C API binding. Active event handling (based on asynchronous
+          callback invocation for event delivery) is more difficult, as it
+          requires the construction of valid C++ objects in C, which is
+          inherently platform and compiler dependent. Passive event handling
+          is much simpler, it relies on an event loop, fetching events and
+          triggering the necessary handlers explicitly in the API client code.
+          Both approaches depend on an event loop to make sure that events
+          get delivered in a timely manner, with differences what exactly needs
+          to be done.</para>
+
+          <para>The C API sample contains code for both event handling styles,
+          and one has to modify the appropriate <code>#define</code> to select
+          which style is actually used by the compiled program. It allows a
+          good comparison between the two variants, and the code sequences are
+          probably worth reusing without much change in other API clients
+          with only minor adaptions.</para>
+
+          <para>Active event handling needs to ensure that the following helper
+          function is called frequently enough in the primary thread:
+          <screen>g_pVBoxFuncs->pfnProcessEventQueue(cTimeoutMS);</screen></para>
+
+          <para>The actual event handler implementation is quite tedious, as
+          it has to implement a complete API interface. Especially on Windows
+          it is a lot of work to implement the complicated <code>IDispatch</code>
+          interface, requiring to load COM type information and using it
+          in the <code>IDispatch</code> method implementation. Overall this is
+          quite tedious compared to passive event handling.</para>
+
+          <para>Passive event handling uses a similar event loop structure,
+          which requires calling the following function in a loop, and
+          processing the returned event appropriately:
+          <screen>rc = IEventSource_GetEvent(pEventSource, pListener, cTimeoutMS, &amp;pEvent);</screen></para>
+
+          <para>After processing the event it needs to be marked as processed
+          with the following method call:
+          <screen>rc = IEventSource_EventProcessed(pEventSource, pListener, pEvent);</screen></para>
+
+          <para>This is vital for vetoable events, as they would be stuck
+          otherwise, waiting whether the veto comes or not. It does not do any
+          harm for other event types, and in the end is cheaper than checking
+          if the event at hand is vetoable or not.</para>
+
+          <para>The general event handling concepts are described in the API
+          specification (see <xref linkend="events" />), including how to
+          aggregate multiple event sources for processing in one event loop.
+          As mentioned, the sample illustrates the practical aspects of how to
+          use both types of event handling, active and passive, from a C
+          application. Additional hints are in the comments documenting
+          the helper methods in <computeroutput>VBoxCAPI_v4_3.h</computeroutput>.
+          The code complexity of active event handling (and its inherenly
+          platform/compiler specific aspects) should be motivation to use
+          passive event handling whereever possible.</para>
+        </sect3>
+
         <sect3 id="c-uninitialization">
           <title>C API uninitialization</title>
 
@@ -2133,6 +2187,15 @@ program: program.o VBoxCAPICGlue.o VirtualBox_i.o
           should use the correct type in most places, increasing the type
           safety in case of an error in the source code.</para>
 
+          <para>To gloss over the platform differences, API client code should
+          no longer rely on XPCOM specific interface names such as
+          <code>nsISupports</code>, <code>nsIException</code> and
+          <code>nsIEventQueue</code>, and replace them by the platform
+          independent interface names <code>IUnknown</code> and
+          <code>IErrorInfo</code> for the first two respectively. Event queue
+          handling should be replaced by using the platform independent way
+          described in <xref linkend="c-eventhandling" />.</para>
+
           <para>Finally adjust the string and array handling to use the new
           helpers, as these make sure the code works without changes with
           both COM and XPCOM, which are significantly different in this area.
@@ -2150,11 +2213,12 @@ program: program.o VBoxCAPICGlue.o VirtualBox_i.o
 
           <para>Starting with version 2.2, VirtualBox offers a C binding for
           its API which works only on platforms using XPCOM. Refer to the
-          old SDK documentation, it still applies unchanged. The fundamental
-          concepts are similar (but the syntactical details are quite
-          different) to the newer cross-platform C binding which should be
-          used for all new code, as the support for the old C binding will go
-          away in a major release after version 4.3.</para>
+          old SDK documentation (included in the SDK packages for version 4.3.6
+          or earlier), it still applies unchanged. The fundamental concepts are
+          similar (but the syntactical details are quite different) to the
+          newer cross-platform C binding which should be used for all new code,
+          as the support for the old C binding will go away in a major release
+          after version 4.3.</para>
         </sect3>
       </sect2>
     </sect1>
