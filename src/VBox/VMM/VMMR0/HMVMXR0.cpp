@@ -7014,6 +7014,26 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
+ * Sets a pending-debug exception to be delivered to the guest if the guest is
+ * single-stepping.
+ *
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
+ *                          out-of-sync. Make sure to update the required fields
+ *                          before using them.
+ */
+DECLINLINE(void) hmR0VmxSetPendingDebugXcpt(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RFLAGS);
+    if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
+    {
+        int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+        AssertRC(rc);
+    }
+}
+
+
+/**
  * Injects any pending events into the guest if the guest is in a state to
  * receive them.
  *
@@ -7084,18 +7104,14 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (   !pVCpu->hm.s.fSingleInstruction
             && !DBGFIsStepping(pVCpu))
         {
+            /*
+             * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD,
+             * VMX_EXIT_MTF, VMX_EXIT_APIC_WRITE and VMX_EXIT_VIRTUALIZED_EOI.
+             * See Intel spec. 27.3.4 "Saving Non-Register State".
+             */
             int rc2 = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
             AssertRCReturn(rc2, rc2);
-            if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
-            {
-                /*
-                 * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD,
-                 * VMX_EXIT_MTF, VMX_EXIT_APIC_WRITE and VMX_EXIT_VIRTUALIZED_EOI.
-                 * See Intel spec. 27.3.4 "Saving Non-Register State".
-                 */
-                rc2 = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
-                AssertRCReturn(rc2, rc2);
-            }
+            hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
         }
         else if (pMixedCtx->eflags.Bits.u1TF)
         {
@@ -8618,11 +8634,7 @@ DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
      *
      * See Intel spec. 32.2.1 "Debug Exceptions".
      */
-    if (pMixedCtx->eflags.Bits.u1TF)
-    {
-        rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
-        AssertRCReturn(rc, rc);
-    }
+    hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
 
     return rc;
 }
@@ -11131,6 +11143,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 pMixedCtx->eflags.Bits.u1IF = 0;
                 pMixedCtx->rip += pDis->cbInstr;
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+                hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCli);
                 break;
             }
@@ -11142,6 +11155,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
                 Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+                hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitSti);
                 break;
             }
@@ -11160,6 +11174,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 Log4(("POPF CS:RIP %04x:%#RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
                 uint32_t cbParm = 0;
                 uint32_t uMask  = 0;
+                bool     fAlreadyStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
                 if (pDis->fPrefix & DISPREFIX_OPSIZE)
                 {
                     cbParm = 4;
@@ -11194,10 +11209,18 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 pMixedCtx->esp              += cbParm;
                 pMixedCtx->esp              &= uMask;
                 pMixedCtx->rip              += pDis->cbInstr;
-
                 HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
                                       | HM_CHANGED_GUEST_RSP
                                       | HM_CHANGED_GUEST_RFLAGS);
+
+                /* Only generate a debug execption after POPF if the guest is already stepping over POPF and
+                   POPF restores EFLAGS.TF. The CPU looks at the EFLAGS.TF after the instruction is done manipulating it. */
+                if (   fAlreadyStepping
+                    && pMixedCtx->eflags.Bits.u1TF)
+                {
+                    hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
+                }
+
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPopf);
                 break;
             }
@@ -11242,6 +11265,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 pMixedCtx->esp               &= uMask;
                 pMixedCtx->rip               += pDis->cbInstr;
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP);
+                hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPushf);
                 break;
             }
@@ -11253,6 +11277,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 RTGCPTR  GCPtrStack = 0;
                 uint32_t uMask      = 0xffff;
                 uint16_t aIretFrame[3];
+                bool     fAlreadyStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
                 if (pDis->fPrefix & (DISPREFIX_OPSIZE | DISPREFIX_ADDRSIZE))
                 {
                     rc = VERR_EM_INTERPRETER;
@@ -11279,6 +11304,15 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                                     | HM_CHANGED_GUEST_SEGMENT_REGS
                                     | HM_CHANGED_GUEST_RSP
                                     | HM_CHANGED_GUEST_RFLAGS);
+
+                /* Only generate a debug execption after IRET if the guest is already stepping over IRET and
+                   IRET restores EFLAGS.TF. The CPU looks at the EFLAGS.TF after the instruction is done manipulating it. */
+                if (   fAlreadyStepping
+                    && pMixedCtx->eflags.Bits.u1TF)
+                {
+                    hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
+                }
+
                 Log4(("IRET %#RX32 to %04x:%x\n", GCPtrStack, pMixedCtx->cs.Sel, pMixedCtx->ip));
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIret);
                 break;
@@ -11288,6 +11322,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
             {
                 uint16_t uVector = pDis->Param1.uValue & 0xff;
                 hmR0VmxSetPendingIntN(pVCpu, pMixedCtx, uVector, pDis->cbInstr);
+                /* INT clears EFLAGS.TF, we mustn't set any pending debug exceptions here. */
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInt);
                 break;
             }
@@ -11297,6 +11332,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 if (pMixedCtx->eflags.Bits.u1OF)
                 {
                     hmR0VmxSetPendingXcptOF(pVCpu, pMixedCtx, pDis->cbInstr);
+                    /* INTO clears EFLAGS.TF, we mustn't set any pending debug exceptions here. */
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInt);
                 }
                 break;
@@ -11308,6 +11344,8 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                                                                     EMCODETYPE_SUPERVISOR);
                 rc = VBOXSTRICTRC_VAL(rc2);
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+                /** @todo We have to set pending-debug exceptions here when the guest is
+                 *        single-stepping depending on the instruction that was interpreted. */
                 Log4(("#GP rc=%Rrc\n", rc));
                 break;
             }
