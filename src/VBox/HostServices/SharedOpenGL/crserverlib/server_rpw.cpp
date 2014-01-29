@@ -350,14 +350,14 @@ int crServerRpwInit(CR_SERVER_RPW *pWorker)
             rc =  RTSemEventCreate(&pWorker->Ctl.hCompleteEvent);
             if (RT_SUCCESS(rc))
             {
-                CRASSERT(cr_server.MainContextInfo.CreateInfo.visualBits);
+                CRASSERT(cr_server.MainContextInfo.CreateInfo.realVisualBits);
                 CRASSERT(cr_server.MainContextInfo.SpuContext);
 
-                pWorker->ctxId = cr_server.head_spu->dispatch_table.CreateContext("", cr_server.MainContextInfo.CreateInfo.visualBits, cr_server.MainContextInfo.SpuContext);
+                pWorker->ctxId = cr_server.head_spu->dispatch_table.CreateContext("", cr_server.MainContextInfo.CreateInfo.realVisualBits, cr_server.MainContextInfo.SpuContext);
                 if (pWorker->ctxId)
                 {
                     CRMuralInfo *pDummyMural;
-                    pWorker->ctxVisBits = cr_server.MainContextInfo.CreateInfo.visualBits;
+                    pWorker->ctxVisBits = cr_server.MainContextInfo.CreateInfo.realVisualBits;
                     pDummyMural = crServerGetDummyMural(pWorker->ctxVisBits);
                     if (pDummyMural)
                     {
@@ -447,7 +447,7 @@ int crServerRpwEntryResizeCleaned(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *p
 
     if (!cr_server.currentCtxInfo)
     {
-        CRMuralInfo *pDummy = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        CRMuralInfo *pDummy = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
         if (!pDummy)
         {
             crWarning("crServerGetDummyMural failed");
@@ -535,7 +535,7 @@ int crServerRpwEntryCleanup(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *pEntry)
 
     if (!cr_server.currentCtxInfo)
     {
-        CRMuralInfo *pDummy = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        CRMuralInfo *pDummy = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
         if (!pDummy)
         {
             crWarning("crServerGetDummyMural failed");

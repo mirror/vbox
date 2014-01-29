@@ -675,7 +675,7 @@ PCR_BLITTER crServerVBoxBlitterGet()
         int rc;
         CRASSERT(cr_server.MainContextInfo.SpuContext);
         Ctx.Base.id = cr_server.MainContextInfo.SpuContext;
-        Ctx.Base.visualBits = cr_server.MainContextInfo.CreateInfo.visualBits;
+        Ctx.Base.visualBits = cr_server.MainContextInfo.CreateInfo.realVisualBits;
         rc = CrBltInit(&cr_server.Blitter, &Ctx, true, true, NULL, &cr_server.TmpCtxDispatch);
         if (RT_SUCCESS(rc))
         {
@@ -691,7 +691,7 @@ PCR_BLITTER crServerVBoxBlitterGet()
 
     if (!CrBltMuralGetCurrentInfo(&cr_server.Blitter)->Base.id)
     {
-        CRMuralInfo *dummy = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        CRMuralInfo *dummy = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
         CR_BLITTER_WINDOW DummyInfo;
         CRASSERT(dummy);
         crServerVBoxBlitterWinInit(&DummyInfo, dummy);
@@ -1377,7 +1377,7 @@ crServerMakeTmpCtxCurrent( GLint window, GLint nativeWindow, GLint context )
             {
                 CRMuralInfo * pDummy;
                 Assert(!cr_server.currentCtxInfo);
-                pDummy = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+                pDummy = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
                 context = cr_server.MainContextInfo.SpuContext;
                 window = pDummy->spuWindow;
             }
@@ -1511,7 +1511,7 @@ int crServerDumpCheckInit()
 
     if (!CrBltIsInitialized(&cr_server.RecorderBlitter))
     {
-        pBlitterMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        pBlitterMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
         if (!pBlitterMural)
         {
             crWarning("crServerGetDummyMural failed");

@@ -523,7 +523,7 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
         cr_server.head_spu->dispatch_table.MakeCurrent(mural->spuWindow, 0, cr_server.MainContextInfo.SpuContext);
     }
 
-    if (pMuralContextInfo->CreateInfo.visualBits != mural->CreateInfo.visualBits)
+    if (pMuralContextInfo->CreateInfo.realVisualBits != mural->CreateInfo.realVisualBits)
     {
         WARN(("mural visual bits do not match with current context visual bits!"));
     }
