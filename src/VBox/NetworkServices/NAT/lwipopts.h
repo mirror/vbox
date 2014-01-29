@@ -202,8 +202,6 @@
 # define DHCP_DEBUG  LWIP_DBG_ON
 
 # define LWIP_PROXY_DEBUG LWIP_DBG_ON
-/* Debug checks */
-# define TCP_OVERSIZE_DBGCHECK 1
 #endif /* DEBUG */
 
 /* printf formatter definitions */
