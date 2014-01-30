@@ -8887,7 +8887,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="1254a96a-ae57-4484-946a-22d86c1f98af"
+    uuid="29c295a2-346e-42cf-92c0-8db515d75397"
     wsmap="managed"
     >
     <desc>
@@ -9301,6 +9301,19 @@
 
       <param name="enabled" type="boolean" dir="return">
         <desc>Returned flag indicating the default value</desc>
+      </param>
+    </method>
+
+    <method name="getStorageControllerHotplugCapable">
+      <desc>Returns whether the given storage controller supports
+        hot-plugging devices.</desc>
+
+      <param name="controllerType" type="StorageControllerType" dir="in">
+        <desc>The storage controller to check for.</desc>
+      </param>
+
+      <param name="hotplugCapable" type="boolean" dir="return">
+        <desc>Returned flag indicating whether the controller is hotplug capable</desc>
       </param>
     </method>
 

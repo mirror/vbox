@@ -537,6 +537,31 @@ HRESULT SystemProperties::getDefaultIoCacheSettingForStorageController(StorageCo
     return S_OK;
 }
 
+HRESULT SystemProperties::getStorageControllerHotplugCapable(StorageControllerType_T aControllerType,
+                                                             BOOL *aHotplugCapable)
+{
+    switch (aControllerType)
+    {
+        case StorageControllerType_IntelAhci:
+        case StorageControllerType_USB:
+            *aHotplugCapable = true;
+            break;
+        case StorageControllerType_LsiLogic:
+        case StorageControllerType_LsiLogicSas:
+        case StorageControllerType_BusLogic:
+        case StorageControllerType_PIIX3:
+        case StorageControllerType_PIIX4:
+        case StorageControllerType_ICH6:
+        case StorageControllerType_I82078:
+            *aHotplugCapable = false;
+            break;
+        default:
+            AssertMsgFailedReturn(("Invalid controller type %d\n", aControllerType), E_FAIL);
+    }
+
+    return S_OK;
+}
+
 HRESULT SystemProperties::getMaxInstancesOfUSBControllerType(ChipsetType_T aChipset,
                                                              USBControllerType_T aType,
                                                              ULONG *aMaxInstances)
