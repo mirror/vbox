@@ -413,6 +413,9 @@ HCR_FRAMEBUFFER CrPMgrFbGet(uint32_t idScreen);
 int CrPMgrInit();
 void CrPMgrTerm();
 
+typedef DECLCALLBACKPTR(bool, PFNCR_FRAMEBUFFER_ENTRIES_VISITOR_CB)(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry, void *pvContext);
+
+void CrFbVisitCreatedEntries(HCR_FRAMEBUFFER hFb, PFNCR_FRAMEBUFFER_ENTRIES_VISITOR_CB pfnVisitorCb, void *pvContext);
 int CrFbResize(HCR_FRAMEBUFFER hFb, const struct VBVAINFOSCREEN * pScreen, void *pvVRAM);
 bool CrFbIsEnabled(HCR_FRAMEBUFFER hFb);
 int CrFbEntryCreateForTexId(HCR_FRAMEBUFFER hFb, GLuint idTex, uint32_t fFlags, HCR_FRAMEBUFFER_ENTRY *phEntry);
