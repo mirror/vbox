@@ -1070,9 +1070,15 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                 {
                     ControllerItem *ctr = static_cast <ControllerItem*> (item);
                     CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
-                    return (m_dialogType == SettingsDialogType_Offline) &&
-                           ((uint)rowCount(aIndex) < sp.GetMaxPortCountForStorageBus(ctr->ctrBusType()) *
-                                                     sp.GetMaxDevicesPerPortForStorageBus(ctr->ctrBusType()));
+                    switch (m_dialogType)
+                    {
+                        case SettingsDialogType_Offline: return ((uint)rowCount(aIndex) < sp.GetMaxPortCountForStorageBus(ctr->ctrBusType()) *
+                                                                                          sp.GetMaxDevicesPerPortForStorageBus(ctr->ctrBusType()));
+                        case SettingsDialogType_Online: return (ctr->ctrBusType() == KStorageBus_SATA) &&
+                                                               ((uint)rowCount(aIndex) < ctr->portCount());
+                        default: break;
+                    }
+                    return false;
                 }
             }
             return false;
@@ -1492,6 +1498,7 @@ QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDevic
         QModelIndex parentIndex = index (parentPosition, 0, root());
         beginInsertRows (parentIndex, parent->childCount(), parent->childCount());
         AttachmentItem *pItem = new AttachmentItem (parent, aDeviceType);
+        pItem->setAttIsHotPluggable(m_dialogType != SettingsDialogType_Offline);
         pItem->setAttMediumId(strMediumId);
         endInsertRows();
         return index (parent->childCount() - 1, 0, parentIndex);
@@ -2613,10 +2620,20 @@ void UIMachineSettingsStorage::getInformation()
                     default:
                         break;
                 }
+
+                /* Get hot-pluggable state: */
+                bool fIsHotPluggable = mStorageModel->data(index, StorageModel::R_AttIsHotPluggable).toBool();
+
+                /* Fetch device-type, medium-id: */
                 m_pMediumIdHolder->setType(mediumTypeToLocal(device));
                 m_pMediumIdHolder->setId(mStorageModel->data(index, StorageModel::R_AttMediumId).toString());
-                mLbMedium->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
-                mTbOpen->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
+
+                /* Get/fetch editable state: */
+                bool fIsEditable =    (isMachineOffline())
+                                   || (isMachineOnline() && device != KDeviceType_HardDisk)
+                                   || (isMachineOnline() && device == KDeviceType_HardDisk && fIsHotPluggable);
+                mLbMedium->setEnabled(fIsEditable);
+                mTbOpen->setEnabled(fIsEditable);
 
                 /* Getting Passthrough state */
                 bool isHostDrive = mStorageModel->data (index, StorageModel::R_AttIsHostDrive).toBool();
@@ -2631,9 +2648,9 @@ void UIMachineSettingsStorage::getInformation()
                 mCbNonRotational->setVisible (device == KDeviceType_HardDisk);
                 mCbNonRotational->setChecked (mStorageModel->data (index, StorageModel::R_AttIsNonRotational).toBool());
 
-                /* Getting hot-pluggable state: */
+                /* Fetch hot-pluggable state: */
                 m_pCheckBoxHotPluggable->setVisible(slt.bus == KStorageBus_SATA);
-                m_pCheckBoxHotPluggable->setChecked(mStorageModel->data(index, StorageModel::R_AttIsHotPluggable).toBool());
+                m_pCheckBoxHotPluggable->setChecked(fIsHotPluggable);
 
                 /* Update optional widgets visibility */
                 updateAdditionalObjects (device);
@@ -2854,7 +2871,9 @@ void UIMachineSettingsStorage::updateActionsState()
     bool isController = mStorageModel->data (index, StorageModel::R_IsController).toBool();
     bool isAttachment = mStorageModel->data (index, StorageModel::R_IsAttachment).toBool();
     bool isAttachmentsPossible = mStorageModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool();
+    bool fIsAttachmentHotPluggable = mStorageModel->data(index, StorageModel::R_AttIsHotPluggable).toBool();
 
+    /* Configure "add controller" actions: */
     mAddCtrAction->setEnabled (isIDEPossible || isSATAPossible || isSCSIPossible || isFloppyPossible || isSASPossible || isUSBPossible);
     mAddIDECtrAction->setEnabled (isIDEPossible);
     mAddSATACtrAction->setEnabled (isSATAPossible);
@@ -2863,13 +2882,20 @@ void UIMachineSettingsStorage::updateActionsState()
     mAddSASCtrAction->setEnabled (isSASPossible);
     mAddUSBCtrAction->setEnabled (isUSBPossible);
 
+    /* Configure "add attachment" actions: */
     mAddAttAction->setEnabled (isController && isAttachmentsPossible);
     mAddHDAttAction->setEnabled (isController && isAttachmentsPossible);
     mAddCDAttAction->setEnabled (isController && isAttachmentsPossible);
     mAddFDAttAction->setEnabled (isController && isAttachmentsPossible);
 
-    mDelCtrAction->setEnabled (isMachineOffline() && isController);
-    mDelAttAction->setEnabled (isMachineOffline() && isAttachment);
+    /* Configure "delete controller" action: */
+    bool fControllerInSuitableState = isMachineOffline();
+    mDelCtrAction->setEnabled(isController && fControllerInSuitableState);
+
+    /* Configure "delete attachment" action: */
+    bool fAttachmentInSuitableState = isMachineOffline() ||
+                                      (isMachineOnline() && fIsAttachmentHotPluggable);
+    mDelAttAction->setEnabled(isAttachment && fAttachmentInSuitableState);
 }
 
 void UIMachineSettingsStorage::onRowInserted (const QModelIndex &aParent, int aPosition)
