@@ -118,6 +118,8 @@ private:
                                         std::vector<DeviceType_T> &aDeviceTypes);
     HRESULT getDefaultIoCacheSettingForStorageController(StorageControllerType_T aControllerType,
                                                          BOOL *aEnabled);
+    HRESULT getStorageControllerHotplugCapable(StorageControllerType_T aControllerType,
+                                               BOOL *aHotplugCapable);
     HRESULT getMaxInstancesOfUSBControllerType(ChipsetType_T aChipset,
                                                USBControllerType_T aType,
                                                ULONG *aMaxInstances);
