@@ -3271,7 +3271,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                     rc = VMR3ReqPriorityCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
                                                  (PFNRT)s->pDrvMount->pfnUnmount, 3,
                                                  s->pDrvMount, false /*=fForce*/, true /*=fEject*/);
-                    Assert(RT_SUCCESS(rc) || rc == VERR_PDM_MEDIA_LOCKED || rc = VERR_PDM_MEDIA_NOT_MOUNTED);
+                    Assert(RT_SUCCESS(rc) || rc == VERR_PDM_MEDIA_LOCKED || rc == VERR_PDM_MEDIA_NOT_MOUNTED);
                     if (RT_SUCCESS(rc) && pThis->pMediaNotify)
                     {
                         rc = VMR3ReqCallNoWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
