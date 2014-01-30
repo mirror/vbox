@@ -11172,9 +11172,9 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
             case OP_POPF:
             {
                 Log4(("POPF CS:RIP %04x:%#RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
-                uint32_t cbParm = 0;
-                uint32_t uMask  = 0;
-                bool     fAlreadyStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
+                uint32_t cbParm;
+                uint32_t uMask;
+                bool     fStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
                 if (pDis->fPrefix & DISPREFIX_OPSIZE)
                 {
                     cbParm = 4;
@@ -11212,14 +11212,9 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
                                       | HM_CHANGED_GUEST_RSP
                                       | HM_CHANGED_GUEST_RFLAGS);
-
-                /* Only generate a debug execption after POPF if the guest is already stepping over POPF and
-                   POPF restores EFLAGS.TF. The CPU looks at the EFLAGS.TF after the instruction is done manipulating it. */
-                if (   fAlreadyStepping
-                    && pMixedCtx->eflags.Bits.u1TF)
-                {
+                /* Generate a pending-debug exception when stepping over POPF regardless of how POPF modifies EFLAGS.TF. */
+                if (fStepping)
                     hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
-                }
 
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPopf);
                 break;
@@ -11227,8 +11222,8 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
             case OP_PUSHF:
             {
-                uint32_t cbParm = 0;
-                uint32_t uMask  = 0;
+                uint32_t cbParm;
+                uint32_t uMask;
                 if (pDis->fPrefix & DISPREFIX_OPSIZE)
                 {
                     cbParm = 4;
@@ -11276,8 +11271,8 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                  *        instruction reference. */
                 RTGCPTR  GCPtrStack = 0;
                 uint32_t uMask      = 0xffff;
+                bool     fStepping  = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
                 uint16_t aIretFrame[3];
-                bool     fAlreadyStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
                 if (pDis->fPrefix & (DISPREFIX_OPSIZE | DISPREFIX_ADDRSIZE))
                 {
                     rc = VERR_EM_INTERPRETER;
@@ -11304,15 +11299,9 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                                     | HM_CHANGED_GUEST_SEGMENT_REGS
                                     | HM_CHANGED_GUEST_RSP
                                     | HM_CHANGED_GUEST_RFLAGS);
-
-                /* Only generate a debug execption after IRET if the guest is already stepping over IRET and
-                   IRET restores EFLAGS.TF. The CPU looks at the EFLAGS.TF after the instruction is done manipulating it. */
-                if (   fAlreadyStepping
-                    && pMixedCtx->eflags.Bits.u1TF)
-                {
+                /* Generate a pending-debug exception when stepping over IRET regardless of how IRET modifies EFLAGS.TF. */
+                if (fStepping)
                     hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
-                }
-
                 Log4(("IRET %#RX32 to %04x:%x\n", GCPtrStack, pMixedCtx->cs.Sel, pMixedCtx->ip));
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIret);
                 break;
