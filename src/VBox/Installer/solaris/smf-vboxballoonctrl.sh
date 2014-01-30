@@ -1,7 +1,7 @@
 #!/sbin/sh
 # $Id$
 
-# Copyright (C) 2008-2013 Oracle Corporation
+# Copyright (C) 2008-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -24,13 +24,13 @@ VW_EXIT=0
 
 case $VW_OPT in
     start)
-        if [ ! -x /opt/VirtualBox/VBoxBalloonCtrl ]; then
+        if [ ! -f /opt/VirtualBox/VBoxBalloonCtrl ]; then
             echo "ERROR: /opt/VirtualBox/VBoxBalloonCtrl does not exist."
             return $SMF_EXIT_ERR_CONFIG
         fi
 
-        if [ ! -f /opt/VirtualBox/VBoxBalloonCtrl ]; then
-            echo "ERROR: /opt/VirtualBox/VBoxBalloonCtrl does not exist."
+        if [ ! -x /opt/VirtualBox/VBoxBalloonCtrl ]; then
+            echo "ERROR: /opt/VirtualBox/VBoxBalloonCtrl is not executable."
             return $SMF_EXIT_ERR_CONFIG
         fi
 
