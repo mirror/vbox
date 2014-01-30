@@ -10317,6 +10317,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     bool     fIOWrite  = (   VMX_EXIT_QUALIFICATION_IO_DIRECTION(pVmxTransient->uExitQualification)
                           == VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT);
     bool     fIOString = VMX_EXIT_QUALIFICATION_IO_IS_STRING(pVmxTransient->uExitQualification);
+    bool     fStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
     AssertReturn(uIOWidth <= 3 && uIOWidth != 2, VERR_HMVMX_IPE_1);
 
     /* I/O operation lookup arrays. */
@@ -10443,7 +10444,12 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
          * See Intel Instruction reference for REP/REPE/REPZ/REPNE/REPNZ.
          */
         if (fIOString)
+        {
+            /** @todo Single-step for INS/OUTS with REP prefix? */
             HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RFLAGS);
+        }
+        else if (fStepping)
+            hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
 
         /*
          * If any I/O breakpoints are armed, we need to check if one triggered
