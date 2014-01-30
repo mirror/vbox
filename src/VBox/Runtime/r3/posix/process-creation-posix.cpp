@@ -240,7 +240,7 @@ static void rtSolarisContractPostForkParent(int templateFd, pid_t pid)
     /* Abandon this contract we just created. */
     char ctlPath[PATH_MAX];
     size_t len = snprintf(ctlPath, sizeof(ctlPath),
-                          CTFS_ROOT "/process/%d/ctl", ctId);
+                          CTFS_ROOT "/process/%ld/ctl", (long)ctId);
     if (len >= sizeof(ctlPath))
         return;
     int ctlFd = open64(ctlPath, O_WRONLY);
