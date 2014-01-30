@@ -806,6 +806,20 @@ HCR_FRAMEBUFFER_ENTRY CrFbEntryFromCompositorEntry(const struct VBOXVR_SCR_COMPO
     return RT_FROM_MEMBER(pCEntry, CR_FRAMEBUFFER_ENTRY, Entry);
 }
 
+void CrFbVisitCreatedEntries(HCR_FRAMEBUFFER hFb, PFNCR_FRAMEBUFFER_ENTRIES_VISITOR_CB pfnVisitorCb, void *pvContext)
+{
+    HCR_FRAMEBUFFER_ENTRY hEntry, hNext;
+    RTListForEachSafe(&hFb->EntriesList, hEntry, hNext, CR_FRAMEBUFFER_ENTRY, Node)
+    {
+        if (hEntry->Flags.fCreateNotified)
+        {
+            if (!pfnVisitorCb(hFb, hEntry, pvContext))
+                return;
+        }
+    }
+}
+
+
 CRHTABLE_HANDLE CrFbDDataAllocSlot(CR_FRAMEBUFFER *pFb)
 {
     return CrHTablePut(&pFb->SlotTable, (void*)1);
@@ -814,11 +828,13 @@ CRHTABLE_HANDLE CrFbDDataAllocSlot(CR_FRAMEBUFFER *pFb)
 void CrFbDDataReleaseSlot(CR_FRAMEBUFFER *pFb, CRHTABLE_HANDLE hSlot, PFNCR_FRAMEBUFFER_SLOT_RELEASE_CB pfnReleaseCb, void *pvContext)
 {
     HCR_FRAMEBUFFER_ENTRY hEntry, hNext;
-    RTListForEachSafeCpp(&pFb->EntriesList, hEntry, hNext, CR_FRAMEBUFFER_ENTRY, Node)
+    RTListForEachSafe(&pFb->EntriesList, hEntry, hNext, CR_FRAMEBUFFER_ENTRY, Node)
     {
         if (CrFbDDataEntryGet(hEntry, hSlot))
         {
-            pfnReleaseCb(pFb, hEntry, pvContext);
+            if (pfnReleaseCb)
+                pfnReleaseCb(pFb, hEntry, pvContext);
+
             CrFbDDataEntryClear(hEntry, hSlot);
         }
     }
@@ -1069,6 +1085,26 @@ protected:
     {
     }
 
+    static DECLCALLBACK(bool) entriesCreateCb(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry, void *pvContext)
+    {
+        int rc = ((ICrFbDisplay*)(pvContext))->EntryCreated(hFb, hEntry);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("err"));
+        }
+        return true;
+    }
+
+    static DECLCALLBACK(bool) entriesDestroyCb(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry, void *pvContext)
+    {
+        int rc = ((ICrFbDisplay*)(pvContext))->EntryDestroyed(hFb, hEntry);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("err"));
+        }
+        return true;
+    }
+
     int fbSynchAddAllEntries()
     {
         VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR Iter;
@@ -1078,15 +1114,11 @@ protected:
 
         int rc = VINF_SUCCESS;
 
+        CrFbVisitCreatedEntries(mpFb, entriesCreateCb, this);
+
         while ((pEntry = CrVrScrCompositorConstIterNext(&Iter)) != NULL)
         {
             HCR_FRAMEBUFFER_ENTRY hEntry = CrFbEntryFromCompositorEntry(pEntry);
-            rc = EntryCreated(mpFb, hEntry);
-            if (!RT_SUCCESS(rc))
-            {
-                WARN(("err"));
-                break;
-            }
 
             rc = EntryAdded(mpFb, hEntry);
             if (!RT_SUCCESS(rc))
@@ -1100,7 +1132,7 @@ protected:
         return rc;
     }
 
-    int fbCleanupRemoveAllEntries(bool fNotifyDestroy)
+    int fbCleanupRemoveAllEntries()
     {
         VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR Iter;
         const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry;
@@ -1119,15 +1151,7 @@ protected:
                 break;
             }
 
-            if (fNotifyDestroy)
-            {
-                rc = EntryDestroyed(mpFb, hEntry);
-                if (!RT_SUCCESS(rc))
-                {
-                    WARN(("err"));
-                    break;
-                }
-            }
+            CrFbVisitCreatedEntries(mpFb, entriesDestroyCb, this);
         }
 
         return rc;
@@ -1144,7 +1168,6 @@ protected:
 
     static DECLCALLBACK(void) slotEntryReleaseCB(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry, void *pvContext)
     {
-        ((ICrFbDisplay*)pvContext)->EntryDestroyed(hFb, hEntry);
     }
 
     virtual void slotRelease()
@@ -2476,7 +2499,7 @@ protected:
 
     virtual int clearCompositor()
     {
-        return fbCleanupRemoveAllEntries(false);
+        return fbCleanupRemoveAllEntries();
     }
 
     void rootVrTranslateForPos()
@@ -2681,7 +2704,7 @@ protected:
 
     virtual int fbCleanup()
     {
-        int rc = fbCleanupRemoveAllEntries(false);
+        int rc = fbCleanupRemoveAllEntries();
         if (!RT_SUCCESS(rc))
         {
             WARN(("err"));
