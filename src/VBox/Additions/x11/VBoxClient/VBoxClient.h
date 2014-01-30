@@ -32,7 +32,13 @@ public:
     virtual const char *getPidFilePath() = 0;
     /** Run the service main loop */
     virtual int run(bool fDaemonised = false) = 0;
-    /** Clean up any global resources before we shut down hard */
+    /** Pause the service loop.  This must be safe to call on a different thread
+     * and potentially before @run is or after it exits. */
+    virtual void pause() { }
+    /** Resume after pausing.  The same applies here as for @a pause. */
+    virtual void resume() { }
+    /** Clean up any global resources before we shut down hard.  Calling
+     *  @a pause or @a resume later than @a cleanup must not cause errors. */
     virtual void cleanup() = 0;
     /** Virtual destructor.  Not used */
     virtual ~Service() {}
