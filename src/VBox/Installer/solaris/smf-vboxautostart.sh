@@ -1,7 +1,7 @@
 #!/sbin/sh
 # $Id$
 
-# Copyright (C) 2012 Oracle Corporation
+# Copyright (C) 2012-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -24,13 +24,13 @@ VW_EXIT=0
 
 case $VW_OPT in
     start)
-        if [ ! -x /opt/VirtualBox/VBoxAutostart ]; then
+        if [ ! -f /opt/VirtualBox/VBoxAutostart ]; then
             echo "ERROR: /opt/VirtualBox/VBoxAutostart does not exist."
             return $SMF_EXIT_ERR_CONFIG
         fi
 
-        if [ ! -f /opt/VirtualBox/VBoxAutostart ]; then
-            echo "ERROR: /opt/VirtualBox/VBoxAutostart does not exist."
+        if [ ! -x /opt/VirtualBox/VBoxAutostart ]; then
+            echo "ERROR: /opt/VirtualBox/VBoxAutostart is not exectuable."
             return $SMF_EXIT_ERR_CONFIG
         fi
 
@@ -43,17 +43,20 @@ case $VW_OPT in
         [ $? != 0 ] && VW_LOGSIZE=
         VW_LOGINTERVAL=`/usr/bin/svcprop -p config/loginterval $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_LOGINTERVAL=
+        VW_VBOXGROUP=`/usr/bin/svcprop -p config/vboxgroup $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_VBOXGROUP=
 
         # Provide sensible defaults
         [ -z "$VW_CONFIG" ] && VW_CONFIG=/etc/vbox/autostart.cfg
         [ -z "$VW_ROTATE" ] && VW_ROTATE=10
         [ -z "$VW_LOGSIZE" ] && VW_LOGSIZE=104857600
         [ -z "$VW_LOGINTERVAL" ] && VW_LOGINTERVAL=86400
+        [ -z "$VW_VBOXGROUP" ] && VW_VBOXGROUP=staff
 
         # Get all users
-        for VW_USER in `logins -g staff`
+        for VW_USER in `logins -g $VW_VBOXGROUP | cut -d' ' -f1`
         do
-            exec su - "$VW_USER" -c "/opt/VirtualBox/VBoxAutostart --background --start --config \"$VW_CONFIG\" --logrotate \"$VW_ROTATE\" --logsize \"$VW_LOGSIZE\" --loginterval \"$VW_LOGINTERVAL\""
+            su - "$VW_USER" -c "/opt/VirtualBox/VBoxAutostart --background --start --config \"$VW_CONFIG\" --logrotate \"$VW_ROTATE\" --logsize \"$VW_LOGSIZE\" --loginterval \"$VW_LOGINTERVAL\""
 
             VW_EXIT=$?
             if [ $VW_EXIT != 0 ]; then
@@ -64,13 +67,13 @@ case $VW_OPT in
         done
     ;;
     stop)
-        if [ ! -x /opt/VirtualBox/VBoxAutostart ]; then
+        if [ ! -f /opt/VirtualBox/VBoxAutostart ]; then
             echo "ERROR: /opt/VirtualBox/VBoxAutostart does not exist."
             return $SMF_EXIT_ERR_CONFIG
         fi
 
-        if [ ! -f /opt/VirtualBox/VBoxAutostart ]; then
-            echo "ERROR: /opt/VirtualBox/VBoxAutostart does not exist."
+        if [ ! -x /opt/VirtualBox/VBoxAutostart ]; then
+            echo "ERROR: /opt/VirtualBox/VBoxAutostart is not executable."
             return $SMF_EXIT_ERR_CONFIG
         fi
 
@@ -83,17 +86,20 @@ case $VW_OPT in
         [ $? != 0 ] && VW_LOGSIZE=
         VW_LOGINTERVAL=`/usr/bin/svcprop -p config/loginterval $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_LOGINTERVAL=
+        VW_VBOXGROUP=`/usr/bin/svcprop -p config/vboxgroup $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_VBOXGROUP=
 
         # Provide sensible defaults
         [ -z "$VW_CONFIG" ] && VW_CONFIG=/etc/vbox/autostart.cfg
         [ -z "$VW_ROTATE" ] && VW_ROTATE=10
         [ -z "$VW_LOGSIZE" ] && VW_LOGSIZE=104857600
         [ -z "$VW_LOGINTERVAL" ] && VW_LOGINTERVAL=86400
+        [ -z "$VW_VBOXGROUP" ] && VW_VBOXGROUP=staff
 
         # Get all users
-        for VW_USER in `logins -g staff`
+        for VW_USER in `logins -g $VW_VBOXGROUP | cut -d' ' -f1`
         do
-            exec su - "$VW_USER" -c "/opt/VirtualBox/VBoxAutostart --stop --config \"$VW_CONFIG\" --logrotate \"$VW_ROTATE\" --logsize \"$VW_LOGSIZE\" --loginterval \"$VW_LOGINTERVAL\""
+            su - "$VW_USER" -c "/opt/VirtualBox/VBoxAutostart --stop --config \"$VW_CONFIG\" --logrotate \"$VW_ROTATE\" --logsize \"$VW_LOGSIZE\" --loginterval \"$VW_LOGINTERVAL\""
 
             VW_EXIT=$?
             if [ $VW_EXIT != 0 ]; then
