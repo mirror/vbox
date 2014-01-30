@@ -120,6 +120,18 @@ SYSFSCPUPATH g_aAcpiCpuPath[] =
     /** Level 4 */
     {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl4, RT_ELEMENTS(g_aAcpiCpuPathLvl4), NULL, NULL},
 };
+
+/**
+ * Possible directories to get to the topology directory for reading core and package id.
+ *
+ * @remark: This is not part of the path above because the eject file is not in one of the directories
+ *          below and would make the hot unplug code fail.
+ */
+const char *g_apszTopologyPath[] =
+{
+    "sysdev",
+    "physical_node"
+};
 #endif
 
 #ifdef RT_OS_LINUX
@@ -277,10 +289,25 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
                     if (iLvlCurr == RT_ELEMENTS(g_aAcpiCpuPath) - 1)
                     {
                         /* Get the sysdev */
-                        uint32_t idCore    = RTLinuxSysFsReadIntFile(10, "%s/sysdev/topology/core_id",
-                                                                     pszPathCurr);
-                        uint32_t idPackage = RTLinuxSysFsReadIntFile(10, "%s/sysdev/topology/physical_package_id",
-                                                                     pszPathCurr);
+                        uint32_t idCore = 0;
+                        uint32_t idPackage = 0;
+
+                        for (unsigned i = 0; i < RT_ELEMENTS(g_apszTopologyPath); i++)
+                        {
+                            int64_t i64Core    = RTLinuxSysFsReadIntFile(10, "%s/%s/topology/core_id",
+                                                                         pszPathCurr, g_apszTopologyPath[i]);
+                            int64_t i64Package = RTLinuxSysFsReadIntFile(10, "%s/%s/topology/physical_package_id",
+                                                                         pszPathCurr, g_apszTopologyPath[i]);
+
+                            if (   i64Core != -1
+                                && i64Package != -1)
+                            {
+                                idCore = (uint32_t)i64Core;
+                                idPackage = (uint32_t)i64Package;
+                                break;
+                            }
+                        }
+
                         if (   idCore    == idCpuCore
                             && idPackage == idCpuPackage)
                         {
