@@ -93,6 +93,7 @@
 
         <property_group name='config' type='application'>
             <propval name='config' type='astring' value='/etc/vbox/autostart.cfg' />
+            <propval name='vboxgroup' type='astring' value='staff' />
         </property_group>
 
         <template>
