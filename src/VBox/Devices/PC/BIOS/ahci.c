@@ -633,6 +633,9 @@ void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
         uint8_t     cdcount;
         uint8_t     removable;
 
+        /* Clear all errors after the reset. */
+        VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_SERR, 0xffffffff);
+
         devcount_ahci = bios_dsk->ahci_devcnt;
 
         DBG_AHCI("AHCI: Device detected on port %d\n", u8Port);
