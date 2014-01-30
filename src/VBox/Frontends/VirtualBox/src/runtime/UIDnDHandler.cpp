@@ -305,7 +305,7 @@ Qt::DropActions UIDnDHandler::toQtDnDActions(const QVector<KDragAndDropAction> &
         }
     }
 
-    LogFlowFunc(("dropActions=0x%x\n", dropActs));
+    LogFlowFunc(("dropActions=0x%x\n", int(dropActs)));
     return dropActs;
 }
 
