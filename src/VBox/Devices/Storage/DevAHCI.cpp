@@ -1340,11 +1340,36 @@ static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u3
 
         if (u32Value & AHCI_PORT_CMD_ST)
         {
-            ahciLog(("%s: Engine starts\n", __FUNCTION__));
-
-            /* Set engine state to running if there is a device attached. */
-            if (pAhciPort->pDrvBase)
+            /*
+             * Set engine state to running if there is a device attached and
+             * IS.PCS is clear.
+             */
+            if (   pAhciPort->pDrvBase
+                && !(pAhciPort->regIS & AHCI_PORT_IS_PCS))
+            {
+                ahciLog(("%s: Engine starts\n", __FUNCTION__));
                 u32Value |= AHCI_PORT_CMD_CR;
+
+                /* If there is something in CI, kick the I/O thread. */
+                if (   pAhciPort->regCI > 0
+                    && ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping))
+                {
+                    ASMAtomicOrU32(&pAhciPort->u32TasksNew, pAhciPort->regCI);
+#ifdef IN_RC
+                    PDEVPORTNOTIFIERQUEUEITEM pItem = (PDEVPORTNOTIFIERQUEUEITEM)PDMQueueAlloc(ahci->CTX_SUFF(pNotifierQueue));
+                    AssertMsg(VALID_PTR(pItem), ("Allocating item for queue failed\n"));
+
+                    pItem->iPort = pAhciPort->iLUN;
+                    PDMQueueInsert(ahci->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+#else
+                    LogFlowFunc(("Signal event semaphore\n"));
+                    int rc = SUPSemEventSignal(ahci->pSupDrvSession, pAhciPort->hEvtProcess);
+                    AssertRC(rc);
+#endif
+                }
+            }
+            else
+                u32Value &= ~AHCI_PORT_CMD_CR;
         }
         else
         {
@@ -7690,13 +7715,14 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
          * Inform the guest about the removed device.
          */
         pAhciPort->regSSTS = 0;
+        pAhciPort->regSIG = 0;
         /*
          * Clear CR bit too to prevent submission of new commands when CI is written
          * (AHCI Spec 1.2: 7.4 Interaction of the Command List and Port Change Status).
          */
         ASMAtomicAndU32(&pAhciPort->regCMD, ~(AHCI_PORT_CMD_CPS | AHCI_PORT_CMD_CR));
-        ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS);
-        ASMAtomicOrU32(&pAhciPort->regSERR, AHCI_PORT_SERR_N);
+        ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS | AHCI_PORT_IS_PCS);
+        ASMAtomicOrU32(&pAhciPort->regSERR, AHCI_PORT_SERR_X | AHCI_PORT_SERR_N);
         if (   (pAhciPort->regIE & AHCI_PORT_IE_CPDE)
             || (pAhciPort->regIE & AHCI_PORT_IE_PCE)
             || (pAhciPort->regIE & AHCI_PORT_IE_PRCE))
