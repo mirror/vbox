@@ -3614,13 +3614,13 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
             {
                 if (attachmentDeviceType == KDeviceType_DVD)
                 {
-                    if (fSuccess)
+                    if (fSuccess && isMachineOffline())
                     {
                         m_machine.PassthroughDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentPassthrough);
                         /* Check that machine is OK: */
                         fSuccess = m_machine.isOk();
                     }
-                    if (fSuccess)
+                    if (fSuccess && isMachineInValidMode())
                     {
                         m_machine.TemporaryEjectDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentTempEject);
                         /* Check that machine is OK: */
@@ -3629,13 +3629,19 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
                 }
                 else if (attachmentDeviceType == KDeviceType_HardDisk)
                 {
-                    m_machine.NonRotationalDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentNonRotational);
+                    if (fSuccess && isMachineOffline())
+                    {
+                        m_machine.NonRotationalDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentNonRotational);
+                        /* Check that machine is OK: */
+                        fSuccess = m_machine.isOk();
+                    }
+                }
+                if (fSuccess && isMachineOffline())
+                {
+                    m_machine.SetHotPluggableForDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentHotPluggable);
                     /* Check that machine is OK: */
                     fSuccess = m_machine.isOk();
                 }
-                m_machine.SetHotPluggableForDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentHotPluggable);
-                /* Check that machine is OK: */
-                fSuccess = m_machine.isOk();
             }
             else
             {
@@ -3716,9 +3722,12 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
                         fSuccess = m_machine.isOk();
                     }
                 }
-                m_machine.SetHotPluggableForDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentHotPluggable);
-                /* Check that machine is OK: */
-                fSuccess = m_machine.isOk();
+                if (fSuccess && isMachineOffline())
+                {
+                    m_machine.SetHotPluggableForDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentHotPluggable);
+                    /* Check that machine is OK: */
+                    fSuccess = m_machine.isOk();
+                }
             }
             else
             {
