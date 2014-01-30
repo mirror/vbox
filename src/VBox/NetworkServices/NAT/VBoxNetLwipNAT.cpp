@@ -1209,7 +1209,7 @@ static int vboxNetNATLogInit(int argc, char **argv)
     }
 
     char szError[RTPATH_MAX + 128];
-    rc = com::VBoxLogRelCreate("NetNAT",
+    rc = com::VBoxLogRelCreate("NAT Network",
                                szLogFile,
                                RTLOGFLAGS_PREFIX_TIME_PROG,
                                "all all.restrict -default.restrict",
