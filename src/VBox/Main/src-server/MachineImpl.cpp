@@ -12532,7 +12532,7 @@ bool Machine::isControllerHotplugCapable(StorageControllerType_T enmCtrlType)
         return false;
 
     BOOL aHotplugCapable = FALSE;
-    systemProperties->COMGETTER(StorageControllerHotplugCapable)(enmCtrlType, &aHotplugCapable);
+    systemProperties->GetStorageControllerHotplugCapable(enmCtrlType, &aHotplugCapable);
 
     return RT_BOOL(aHotplugCapable);
 }
