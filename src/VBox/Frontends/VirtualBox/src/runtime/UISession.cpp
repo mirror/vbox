@@ -349,6 +349,16 @@ void UISession::powerUp()
                  : "disabled"));
 #endif
 
+/* Check if HID LEDs sync is enabled and add a log message about it. */
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+    if(uimachine()->machineLogic()->isHidLedsSyncEnabled())
+        LogRel(("HID LEDs sync is enabled.\n"));
+    else
+        LogRel(("HID LEDs sync is disabled.\n"));
+#else
+    LogRel(("HID LEDs sync is not supported on this platform.\n"));
+#endif
+
 #ifdef VBOX_GUI_WITH_PIDFILE
     vboxGlobal().createPidfile();
 #endif

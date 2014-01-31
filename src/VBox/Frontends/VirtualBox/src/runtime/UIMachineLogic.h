@@ -97,6 +97,9 @@ public:
     /* API: 3D overlay visibility stuff: */
     virtual void notifyAbout3DOverlayVisibilityChange(bool fVisible);
 
+    /** Performs HID LEDs sync. */
+    bool isHidLedsSyncEnabled();
+
 protected slots:
 
     /** Checks if some visual-state type was requested. */
@@ -132,7 +135,6 @@ protected:
     void setMouseHandler(UIMouseHandler *pMouseHandler);
     void addMachineWindow(UIMachineWindow *pMachineWindow);
     void retranslateUi();
-    bool isHidLedsSyncEnabled();
 #ifdef Q_WS_MAC
     bool isDockIconPreviewEnabled() const { return m_fIsDockIconEnabled; }
     void setDockIconPreviewEnabled(bool fIsDockIconPreviewEnabled) { m_fIsDockIconEnabled = fIsDockIconPreviewEnabled; }
