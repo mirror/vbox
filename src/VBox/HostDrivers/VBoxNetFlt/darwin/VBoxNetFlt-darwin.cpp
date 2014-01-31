@@ -982,6 +982,17 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 }
 
 
+/**
+ * Attempt to detect if a cable is attached to a network card.
+ * There is no direct way to detect this at any time. We assume
+ * if interface's baud rate is not zero then cable is attached.
+ */
+static int vboxNetFltCableAttached(ifnet_t pIfNet)
+{
+    return (ifnet_baudrate(pIfNet) != 0);
+}
+
+
 int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
     NOREF(pvIfData);
@@ -990,6 +1001,15 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
     ifnet_t pIfNet = vboxNetFltDarwinRetainIfNet(pThis);
     if (pIfNet)
     {
+        /*
+         * Do not send any data to a network stack if cable is not attached
+         * to a network card device in order to prevent stuck-in-dock problem. */
+        if (!vboxNetFltCableAttached(pIfNet))
+        {
+            vboxNetFltDarwinReleaseIfNet(pThis, pIfNet);
+            return rc;
+        }
+
         /*
          * Create a mbuf for the gather list and push it onto the wire.
          *
