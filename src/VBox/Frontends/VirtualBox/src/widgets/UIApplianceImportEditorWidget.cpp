@@ -114,9 +114,9 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
         }
         if (!fResult)
         {
-            if (progress.isNull())
+            if (!m_pAppliance->isOk())
                 msgCenter().cannotImportAppliance(*m_pAppliance, this);
-            else
+            else if (!progress.isNull() && (!progress.isOk() || progress.GetResultCode() != 0))
                 msgCenter().cannotImportAppliance(progress, m_pAppliance->GetPath(), this);
             /* Delete the appliance in a case of an error */
             delete m_pAppliance;
