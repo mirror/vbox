@@ -45,6 +45,9 @@
 UIDnDHandler *UIDnDHandler::m_pInstance = NULL;
 
 UIDnDHandler::UIDnDHandler(void)
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+    : pMData(NULL)
+#endif
 {
 }
 
@@ -179,7 +182,7 @@ int UIDnDHandler::dragGHPending(CSession &session, ulong screenId, QWidget *pPar
         const QString &strFmtGuest = vecFmtGuest.at(i);
         LogFlowFunc(("\tFormat %d: %s\n", i,
                      strFmtGuest.toAscii().constData()));
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
         /* CF_TEXT */
         if (   strFmtGuest.contains("text/plain", Qt::CaseInsensitive)
             && !lstFmtNative.contains("text/plain"))
@@ -192,20 +195,20 @@ int UIDnDHandler::dragGHPending(CSession &session, ulong screenId, QWidget *pPar
         {
             lstFmtNative << "text/uri-list";
         }
-#else
+# else
         /* On non-Windows just do a 1:1 mapping. */
         lstFmtNative << strFmtGuest;
-# ifdef RT_OS_MACOS
+#  ifdef RT_OS_MACOS
         /** @todo Does the mapping apply here? Don't think so ... */
-# endif
-#endif
+#  endif
+# endif /* !RT_OS_WINDOWS */
     }
 
     LogFlowFunc(("Number of native formats: %d\n", lstFmtNative.size()));
-#ifdef DEBUG
+# ifdef DEBUG
     for (int i = 0; i < lstFmtNative.size(); i++)
         LogFlowFunc(("\tFormat %d: %s\n", i, lstFmtNative.at(i).toAscii().constData()));
-#endif
+# endif
 
     if (    defaultAction != KDragAndDropAction_Ignore
         && !lstFmtNative.isEmpty())
@@ -237,14 +240,14 @@ int UIDnDHandler::dragGHPending(CSession &session, ulong screenId, QWidget *pPar
             Qt::DropAction dropAction =
                  pDrag->exec(toQtDnDActions(vecActions), toQtDnDAction(defaultAction));
             LogFlowFunc(("dropAction=%ld\n", toVBoxDnDAction(dropAction)));
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
             /* Since the QDrag::exec() call above was blocking on Windows, decide what
              * to do now, e.g. if there was a "drop" action.
              *
              * Note: The UIDnDMimeData object will not be not accessible here anymore,
              *       since QDrag had its ownership and deleted it after the (blocking)
              *       QDrag::exec() call. */
-#endif
+# endif
             rc = VINF_SUCCESS;
         }
         catch (std::bad_alloc)
@@ -255,6 +258,10 @@ int UIDnDHandler::dragGHPending(CSession &session, ulong screenId, QWidget *pPar
     else
         rc = VINF_SUCCESS;
 #else
+    NOREF(session);
+    NOREF(screenId);
+    NOREF(pParent);
+
     rc = VERR_NOT_SUPPORTED;
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
@@ -337,11 +344,13 @@ Qt::DropActions UIDnDHandler::toQtDnDActions(const QVector<KDragAndDropAction> &
 
 void UIDnDHandler::sltDataAvailable(const QString &mimeType)
 {
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
     LogFlowFunc(("pMData=0x%p, mimeType=%s\n",
                  pMData, mimeType.toAscii().constData()));
 
     if (pMData)
         pMData->setData(mimeType);
+#endif
 }
 
 #include "UIDnDHandler.moc"

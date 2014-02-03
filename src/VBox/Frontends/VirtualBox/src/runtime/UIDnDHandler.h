@@ -75,9 +75,10 @@ private:
     static Qt::DropAction              toQtDnDAction(KDragAndDropAction action);
     static Qt::DropActions             toQtDnDActions(const QVector<KDragAndDropAction> &vecActions);
 
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
     UIDnDMimeData *pMData;
-
     friend class UIDnDMimeData;
+#endif
 };
 
 #define gDnD UIDnDHandler::instance()
