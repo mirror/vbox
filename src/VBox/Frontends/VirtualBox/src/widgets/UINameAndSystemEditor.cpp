@@ -197,7 +197,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     else if (strFamilyId == "Windows")
     {
         QString strDefaultID = "WindowsXP";
-        if (ARCH_BITS == 64)
+        if (m_fSupportsHWVirtEx && m_fSupportsLongMode)
             strDefaultID += "_64";
         int iIndexWinXP = m_pTypeCombo->findData(strDefaultID, TypeID);
         if (iIndexWinXP != -1)
@@ -207,7 +207,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     else if (strFamilyId == "Linux")
     {
         QString strDefaultID = "Ubuntu";
-        if (ARCH_BITS == 64)
+        if (m_fSupportsHWVirtEx && m_fSupportsLongMode)
             strDefaultID += "_64";
         int iIndexUbuntu = m_pTypeCombo->findData(strDefaultID, TypeID);
         if (iIndexUbuntu != -1)
