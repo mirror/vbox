@@ -132,8 +132,14 @@ void UIMachineWindowNormal::sltUpdateIndicators()
 
 void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndicator, QContextMenuEvent *pEvent)
 {
+    /* Show hard-disks LED context menu: */
+    if (pIndicator == indicatorsPool()->indicator(IndicatorType_HardDisks))
+    {
+        if (gActionPool->action(UIActionIndexRuntime_Menu_HardDisks)->isEnabled())
+            gActionPool->action(UIActionIndexRuntime_Menu_HardDisks)->menu()->exec(pEvent->globalPos());
+    }
     /* Show optical-disks LED context menu: */
-    if (pIndicator == indicatorsPool()->indicator(IndicatorType_OpticalDisks))
+    else if (pIndicator == indicatorsPool()->indicator(IndicatorType_OpticalDisks))
     {
         if (gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices)->isEnabled())
             gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices)->menu()->exec(pEvent->globalPos());
@@ -248,6 +254,8 @@ void UIMachineWindowNormal::prepareStatusBar()
     if (QIStateIndicator *pLedHardDisks = indicatorsPool()->indicator(IndicatorType_HardDisks))
     {
         pIndicatorBoxHLayout->addWidget(pLedHardDisks);
+        connect(pLedHardDisks, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
+                this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
         fAtLeastOneAddedToLeftSection = true;
     }
 

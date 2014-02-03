@@ -198,6 +198,7 @@ private slots:
 
     /* "Device" menu functionality: */
     void sltOpenVMSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
+    void sltOpenStorageSettingsDialog();
     void sltOpenNetworkAdaptersDialog();
     void sltOpenSharedFoldersDialog();
     void sltPrepareStorageMenu();

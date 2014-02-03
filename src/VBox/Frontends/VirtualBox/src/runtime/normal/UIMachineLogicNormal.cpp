@@ -66,6 +66,14 @@ void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
     }
 }
 
+void UIMachineLogicNormal::sltPrepareHardDisksMenu()
+{
+    QMenu *pMenu = qobject_cast<QMenu*>(sender());
+    AssertMsg(pMenu, ("This slot should be called only on Hard Disks menu show!\n"));
+    pMenu->clear();
+    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_StorageSettings));
+}
+
 void UIMachineLogicNormal::sltPrepareSharedFoldersMenu()
 {
     QMenu *menu = qobject_cast<QMenu*>(sender());
@@ -105,6 +113,8 @@ void UIMachineLogicNormal::prepareActionConnections()
             uisession(), SLOT(sltChangeVisualStateToScale()));
 
     /* "Device" actions connections: */
+    connect(gActionPool->action(UIActionIndexRuntime_Menu_HardDisks)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareHardDisksMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareSharedFoldersMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_VideoCapture)->menu(), SIGNAL(aboutToShow()),
