@@ -60,6 +60,8 @@ protected:
 
     /* Variables: */
     QString m_strGroup;
+    bool m_fSupportsHWVirtEx;
+    bool m_fSupportsLongMode;
 };
 
 /* 1st page of the New Virtual Machine wizard (basic extension): */
