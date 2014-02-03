@@ -385,6 +385,9 @@ typedef DECLCALLBACKPTR(void, PFNCRSCREENSHOTREPORT)(void *pvCtx, uint32_t uScre
                 uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
                 uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
 
+typedef DECLCALLBACKPTR(bool, PFNCRSCREENSHOTBEGIN)(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp);
+typedef DECLCALLBACKPTR(void, PFNCRSCREENSHOTEND)(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp);
+
 #define CRSCREEN_ALL (0xffffffff)
 
 typedef struct
@@ -392,7 +395,9 @@ typedef struct
     /* screen id or CRSCREEN_ALL to specify all enabled */
     uint32_t u32Screen;
     void *pvContext;
-    PFNCRSCREENSHOTREPORT pfnScreenshot;
+    PFNCRSCREENSHOTBEGIN pfnScreenshotBegin;
+    PFNCRSCREENSHOTREPORT pfnScreenshotPerform;
+    PFNCRSCREENSHOTEND pfnScreenshotEnd;
 } CRVBOXHGCMTAKESCREENSHOT;
 
 #endif

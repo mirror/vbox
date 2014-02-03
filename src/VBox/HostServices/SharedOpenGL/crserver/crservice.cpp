@@ -932,6 +932,31 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
     g_pHelpers->pfnCallComplete (callHandle, rc);
 }
 
+static void crScreenshotHandle(CRVBOXHGCMTAKESCREENSHOT *pScreenshot, uint32_t idScreen, uint64_t u64Now)
+{
+    if (!pScreenshot->pfnScreenshotBegin || pScreenshot->pfnScreenshotBegin(pScreenshot->pvContext, idScreen, u64Now))
+    {
+        CR_SCREENSHOT Screenshot;
+
+        int rc = crServerVBoxScreenshotGet(idScreen, &Screenshot);
+        if (RT_SUCCESS(rc))
+        {
+            pScreenshot->pfnScreenshotPerform(pScreenshot->pvContext, idScreen,
+                    0, 0, 32,
+                    Screenshot.Img.pitch, Screenshot.Img.width, Screenshot.Img.height,
+                    (uint8_t*)Screenshot.Img.pvData, u64Now);
+            crServerVBoxScreenshotRelease(&Screenshot);
+        }
+        else
+        {
+            Assert(rc == VERR_INVALID_STATE);
+        }
+
+        if (pScreenshot->pfnScreenshotEnd)
+            pScreenshot->pfnScreenshotEnd(pScreenshot->pvContext, idScreen, u64Now);
+    }
+}
+
 /*
  * We differentiate between a function handler for the guest and one for the host.
  */
@@ -1224,40 +1249,12 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             {
                 for (uint32_t i = 0; i < g_u32ScreenCount; ++i)
                 {
-                    CR_SCREENSHOT Screenshot;
-
-                    int rc = crServerVBoxScreenshotGet(i, &Screenshot);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pScreenshot->pfnScreenshot(pScreenshot->pvContext, i,
-                                0, 0, 32,
-                                Screenshot.Img.pitch, Screenshot.Img.width, Screenshot.Img.height,
-                                (uint8_t*)Screenshot.Img.pvData, u64Now);
-                        crServerVBoxScreenshotRelease(&Screenshot);
-                    }
-                    else
-                    {
-                        Assert(rc == VERR_INVALID_STATE);
-                    }
+                    crScreenshotHandle(pScreenshot, i, u64Now);
                 }
             }
             else if (pScreenshot->u32Screen < g_u32ScreenCount)
             {
-                CR_SCREENSHOT Screenshot;
-
-                int rc = crServerVBoxScreenshotGet(pScreenshot->u32Screen, &Screenshot);
-                if (RT_SUCCESS(rc))
-                {
-                    pScreenshot->pfnScreenshot(pScreenshot->pvContext, pScreenshot->u32Screen,
-                            0, 0, 32,
-                            Screenshot.Img.pitch, Screenshot.Img.width, Screenshot.Img.height,
-                            (uint8_t*)Screenshot.Img.pvData, u64Now);
-                    crServerVBoxScreenshotRelease(&Screenshot);
-                }
-                else
-                {
-                    Assert(rc == VERR_INVALID_STATE);
-                }
+                crScreenshotHandle(pScreenshot, pScreenshot->u32Screen, u64Now);
             }
             else
             {
