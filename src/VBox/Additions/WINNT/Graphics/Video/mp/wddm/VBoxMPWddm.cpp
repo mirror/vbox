@@ -5919,6 +5919,9 @@ DxgkDdiPresentNew(
                     u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, alloc.offVRAM);
             }
 
+            pBlt->Pos.x = pPresent->DstRect.left - pPresent->SrcRect.left;
+            pBlt->Pos.y = pPresent->DstRect.top - pPresent->SrcRect.top;
+
             paRects = pBlt->aRects;
             cbMaxRects = pPresent->DmaBufferPrivateDataSize - RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects);
         }
@@ -5938,6 +5941,9 @@ DxgkDdiPresentNew(
 
             if (VBoxCVDdiFillAllocInfo(pHdr, &pBlt->dst, pDstAlloc, pDst, true))
                 u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, dst.offVRAM);
+
+            pBlt->Pos.x = pPresent->DstRect.left - pPresent->SrcRect.left;
+            pBlt->Pos.y = pPresent->DstRect.top - pPresent->SrcRect.top;
 
             paRects = pBlt->aRects;
             cbMaxRects = pPresent->DmaBufferPrivateDataSize - RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, aRects);

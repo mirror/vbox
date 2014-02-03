@@ -1289,6 +1289,32 @@ VBOXBLITTERDECL(int) CrTdBltDataDiscard(PCR_TEXDATA pTex)
     return VINF_SUCCESS;
 }
 
+VBOXBLITTERDECL(int) CrTdBltDataDiscardNe(PCR_TEXDATA pTex)
+{
+    if (!pTex->Img.pvData)
+        return VINF_SUCCESS;
+
+    bool fEntered = false;
+    if (pTex->idPBO)
+    {
+        int rc = CrTdBltEnter(pTex);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("err"));
+            return rc;
+        }
+
+        fEntered = true;
+    }
+
+    crTdBltImgFree(pTex);
+
+    if (fEntered)
+        CrTdBltLeave(pTex);
+
+    return VINF_SUCCESS;
+}
+
 static void crTdBltDataCleanup(PCR_TEXDATA pTex)
 {
     crTdBltImgFree(pTex);

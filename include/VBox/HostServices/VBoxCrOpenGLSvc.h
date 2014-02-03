@@ -47,6 +47,7 @@
 #define SHCRGL_HOST_FN_CRCMD_NOTIFY_CMDS   (21)
 #define SHCRGL_HOST_FN_DEV_RESIZE          (22)
 #define SHCRGL_HOST_FN_VIEWPORT_CHANGED2 (23)
+#define SHCRGL_HOST_FN_TAKE_SCREENSHOT (24)
 /* crOpenGL guest functions */
 #define SHCRGL_GUEST_FN_WRITE       (2)
 #define SHCRGL_GUEST_FN_READ        (3)
@@ -378,5 +379,20 @@ typedef struct
     uint32_t width;
     uint32_t height;
 } CRVBOXHGCMVIEWPORT;
+
+typedef DECLCALLBACKPTR(void, PFNCRSCREENSHOTREPORT)(void *pvCtx, uint32_t uScreen,
+                uint32_t x, uint32_t y, uint32_t uBitsPerPixel,
+                uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
+                uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
+
+#define CRSCREEN_ALL (0xffffffff)
+
+typedef struct
+{
+    /* screen id or CRSCREEN_ALL to specify all enabled */
+    uint32_t u32Screen;
+    void *pvContext;
+    PFNCRSCREENSHOTREPORT pfnScreenshot;
+} CRVBOXHGCMTAKESCREENSHOT;
 
 #endif
