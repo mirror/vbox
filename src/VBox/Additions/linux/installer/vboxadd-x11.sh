@@ -295,6 +295,11 @@ setup()
     case "`uname -r`" in 2.4.*)
         test -c /dev/psaux && nopsaux="";;
     esac
+    # Should we use the VMSVGA driver instead of VBoxVideo?
+    vmsvga=""
+    if ! grep 80eebeef /proc/bus/pci/devices > /dev/null; then
+        vmsvga="--vmsvga"
+    fi
     # The video driver to install for X.Org 6.9+
     vboxvideo_src=
     # The mouse driver to install for X.Org 6.9+
@@ -339,24 +344,24 @@ setup()
         1.11.* )
             xserver_version="X.Org Server 1.11"
             vboxvideo_src=vboxvideo_drv_111.so
-            test "$system" = "redhat" || setupxorgconf=""
+            test "$system" = "redhat" && test -z "${vmsvga}" || setupxorgconf=""
             ;;
         1.10.* )
             xserver_version="X.Org Server 1.10"
             vboxvideo_src=vboxvideo_drv_110.so
-            test "$system" = "redhat" || setupxorgconf=""
+            test "$system" = "redhat" && test -z "${vmsvga}" || setupxorgconf=""
             ;;
         1.9.* )
             xserver_version="X.Org Server 1.9"
             vboxvideo_src=vboxvideo_drv_19.so
             # Fedora 14 to 16 patched out vboxvideo detection
-            test "$system" = "redhat" || setupxorgconf=""
+            test "$system" = "redhat" && test -z "${vmsvga}" || setupxorgconf=""
             ;;
         1.8.* )
             xserver_version="X.Org Server 1.8"
             vboxvideo_src=vboxvideo_drv_18.so
             # Fedora 13 shipped without vboxvideo detection
-            test "$system" = "redhat" || setupxorgconf=""
+            test "$system" = "redhat" && test -z "${vmsvga}" || setupxorgconf=""
             ;;
         1.7.* )
             xserver_version="X.Org Server 1.7"
@@ -478,7 +483,7 @@ setup()
                     if grep -q "VirtualBox generated" "$i"; then
                         generated="$generated  `printf "$i\n"`"
                     else
-                        "$lib_dir/x11config.sh" $autokeyboard $automouse $nopsaux "$i"
+                        "$lib_dir/x11config.sh" $autokeyboard $automouse $nopsaux $vmsvga "$i"
                     fi
                     configured="true"
                 fi
@@ -491,7 +496,7 @@ setup()
             nobak_cfg="`expr "${main_cfg}" : '\([^.]*\)'`.vbox.nobak"
             if test -z "$configured"; then
                 touch "$main_cfg"
-                "$lib_dir/x11config.sh" $autokeyboard $automouse $nopsaux --noBak "$main_cfg"
+                "$lib_dir/x11config.sh" $autokeyboard $automouse $nopsaux $vmsvga --noBak "$main_cfg"
                 touch "${nobak_cfg}"
             fi
         fi

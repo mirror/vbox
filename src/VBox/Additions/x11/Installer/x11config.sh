@@ -17,6 +17,7 @@ auto_mouse=""
 auto_keyboard=""
 no_bak=""
 old_mouse_dev="/dev/psaux"
+video_driver="vboxvideo"
 
 tab=`printf '\t'`
 
@@ -117,7 +118,7 @@ EndSection
 
 Section "Device"
   BoardName    "VirtualBox Graphics"
-  Driver       "vboxvideo"
+  Driver       "${video_driver}"
   Identifier   "Device[0]"
   VendorName   "Oracle Corporation"
 EndSection
@@ -148,6 +149,8 @@ do
             no_bak=1 ;;
         --nopsaux)
             old_mouse_dev="/dev/input/mice" ;;
+        --vmsvga)
+            video_driver="vmware" ;;
         *)
             reconfigure "$1" ;;
     esac
