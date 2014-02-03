@@ -207,7 +207,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             if (   modeGet() != VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
                 && modeGet() != VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST)
             {
-                LogFlowFunc(("=> ignoring!\n"));
+                LogFlowFunc(("Wrong DnD mode, ignoring request\n"));
                 break;
             }
 
@@ -231,7 +231,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             if (   modeGet() != VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
                 && modeGet() != VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST)
             {
-                LogFlowFunc(("=> ignoring!\n"));
+                LogFlowFunc(("Wrong DnD mode, ignoring request\n"));
                 break;
             }
 
@@ -261,7 +261,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             if (   modeGet() != VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
                 && modeGet() != VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST)
             {
-                LogFlowFunc(("=> ignoring!\n"));
+                LogFlowFunc(("Wrong DnD mode, ignoring request\n"));
                 break;
             }
 
@@ -289,7 +289,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             if (   modeGet() != VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
                 && modeGet() != VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST)
             {
-                LogFlowFunc(("=> ignoring\n"));
+                LogFlowFunc(("Wrong DnD mode, ignoring request\n"));
                 break;
             }
 
@@ -314,7 +314,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             if (   modeGet() != VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
                 && modeGet() != VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST)
             {
-                LogFlowFunc(("=> ignoring!\n"));
+                LogFlowFunc(("Wrong DnD mode, ignoring request\n"));
                 break;
             }
 

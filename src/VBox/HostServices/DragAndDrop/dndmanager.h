@@ -104,23 +104,25 @@ public:
 class DnDHGSendDataMessage: public DnDMessage
 {
 public:
-    DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], PFNDNDPROGRESS pfnProgressCallback, void *pvProgressUser);
-    ~DnDHGSendDataMessage();
 
-    HGCM::Message* nextHGCMMessage();
+    DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], PFNDNDPROGRESS pfnProgressCallback, void *pvProgressUser);
+    virtual ~DnDHGSendDataMessage(void);
+
+    HGCM::Message* nextHGCMMessage(void);
     int currentMessageInfo(uint32_t *puMsg, uint32_t *pcParms);
     int currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
-    bool isMessageWaiting() const { return !!m_pNextPathMsg; }
+    bool isMessageWaiting(void) const { return !!m_pNextPathMsg; }
 
 protected:
+
     struct PathEntry
     {
         PathEntry(const RTCString &strHostPath, const RTCString &strGuestPath, uint32_t fMode, uint64_t cbSize)
-          : m_strHostPath(strHostPath)
-          , m_strGuestPath(strGuestPath)
-          , m_fMode(fMode)
-          , m_cbSize(cbSize) {}
+            : m_strHostPath(strHostPath)
+            , m_strGuestPath(strGuestPath)
+            , m_fMode(fMode)
+            , m_cbSize(cbSize) {}
         RTCString m_strHostPath;
         RTCString m_strGuestPath;
         uint32_t  m_fMode;
@@ -134,8 +136,9 @@ protected:
     RTCList<PathEntry>  m_uriList;
     DnDMessage         *m_pNextPathMsg;
 
-    /* Progress stuff */
+    /* Total size (in bytes). */
     size_t              m_cbAll;
+    /* Transferred size (in bytes). */
     size_t              m_cbTransfered;
     PFNDNDPROGRESS      m_pfnProgressCallback;
     void               *m_pvProgressUser;
