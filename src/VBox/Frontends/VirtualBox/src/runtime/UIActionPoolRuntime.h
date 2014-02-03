@@ -54,6 +54,8 @@ enum UIActionIndexRuntime
 
     /* 'Devices' menu actions: */
     UIActionIndexRuntime_Menu_Devices,
+    UIActionIndexRuntime_Menu_HardDisks,
+    UIActionIndexRuntime_Simple_StorageSettings,
     UIActionIndexRuntime_Menu_OpticalDevices,
     UIActionIndexRuntime_Menu_FloppyDevices,
     UIActionIndexRuntime_Menu_USBDevices,

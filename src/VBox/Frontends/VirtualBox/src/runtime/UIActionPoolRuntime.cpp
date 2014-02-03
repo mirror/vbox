@@ -666,6 +666,50 @@ protected:
     }
 };
 
+class UIActionMenuHardDisks : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuHardDisks(UIActionPool *pParent)
+        : UIActionMenu(pParent, ":/hd_16px.png", ":/hd_disabled_16px.png")
+    {
+        qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi() {}
+};
+
+class UIActionSimpleShowStorageSettingsDialog : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleShowStorageSettingsDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/hd_settings_16px.png", ":/hd_settings_disabled_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("StorageSettingsDialog");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Storage Settings..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Change the settings of storage devices"));
+    }
+};
+
 class UIActionMenuOpticalDevices : public UIActionMenu
 {
     Q_OBJECT;
@@ -1238,6 +1282,7 @@ void UIActionPoolRuntime::createActions()
     m_pool[UIActionIndexRuntime_Simple_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
 
     /* 'Devices' actions: */
+    m_pool[UIActionIndexRuntime_Simple_StorageSettings] = new UIActionSimpleShowStorageSettingsDialog(this);
     m_pool[UIActionIndexRuntime_Simple_NetworkSettings] = new UIActionSimpleShowNetworkSettingsDialog(this);
     m_pool[UIActionIndexRuntime_Simple_SharedFoldersSettings] = new UIActionSimpleShowSharedFoldersSettingsDialog(this);
     m_pool[UIActionIndexRuntime_Toggle_VRDEServer] = new UIActionToggleVRDEServer(this);
@@ -1291,6 +1336,9 @@ void UIActionPoolRuntime::createMenus()
     if (m_pool[UIActionIndexRuntime_Menu_Devices])
         delete m_pool[UIActionIndexRuntime_Menu_Devices];
     m_pool[UIActionIndexRuntime_Menu_Devices] = new UIActionMenuDevices(this);
+    if (m_pool[UIActionIndexRuntime_Menu_HardDisks])
+        delete m_pool[UIActionIndexRuntime_Menu_HardDisks];
+    m_pool[UIActionIndexRuntime_Menu_HardDisks] = new UIActionMenuHardDisks(this);
     if (m_pool[UIActionIndexRuntime_Menu_OpticalDevices])
         delete m_pool[UIActionIndexRuntime_Menu_OpticalDevices];
     m_pool[UIActionIndexRuntime_Menu_OpticalDevices] = new UIActionMenuOpticalDevices(this);
