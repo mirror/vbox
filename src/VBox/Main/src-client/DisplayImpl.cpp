@@ -53,6 +53,14 @@
 # include "VideoRec.h"
 #endif
 
+#ifdef VBOX_WITH_CROGL
+typedef enum
+{
+    CRVREC_STATE_IDLE,
+    CRVREC_STATE_SUBMITTED
+} CRVREC_STATE;
+#endif
+
 /**
  * Display driver instance data.
  *
@@ -136,6 +144,17 @@ HRESULT Display::FinalConstruct()
     mpVideoRecCtx = NULL;
     for (unsigned i = 0; i < RT_ELEMENTS(maVideoRecEnabled); i++)
         maVideoRecEnabled[i] = true;
+#endif
+
+#ifdef VBOX_WITH_CRHGSMI
+    mhCrOglSvc = NULL;
+#endif
+#ifdef VBOX_WITH_CROGL
+    RT_ZERO(mCrOglCallbacks);
+    mfCrOglVideoRecState = CRVREC_STATE_IDLE;
+    mCrOglScreenshotData.u32Screen = CRSCREEN_ALL;
+    mCrOglScreenshotData.pvContext = this;
+    mCrOglScreenshotData.pfnScreenshot = displayCrVRecScreenshot;
 #endif
 
     return BaseFinalConstruct();
@@ -3402,8 +3421,8 @@ void Display::setupCrHgsmiData(void)
     {
         Assert(mhCrOglSvc);
         /* setup command completion callback */
-        VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP_COMPLETION Completion;
-        Completion.Hdr.enmType = VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP_COMPLETION;
+        VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP_MAINCB Completion;
+        Completion.Hdr.enmType = VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP_MAINCB;
         Completion.Hdr.cbCmd = sizeof (Completion);
         Completion.hCompletion = mpDrv->pVBVACallbacks;
         Completion.pfnCompletion = mpDrv->pVBVACallbacks->pfnCrHgsmiCommandCompleteAsync;
@@ -3427,6 +3446,8 @@ void Display::setupCrHgsmiData(void)
                 crViewportNotify(pVMMDev, ul, pFb->pendingViewportInfo.x, pFb->pendingViewportInfo.y, pFb->pendingViewportInfo.width, pFb->pendingViewportInfo.height);
                 pFb->pendingViewportInfo.fPending = false;
             }
+
+            mCrOglCallbacks = Completion.MainInterface;
 
             return;
         }
@@ -3653,40 +3674,83 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 #ifdef VBOX_WITH_VPX
     if (VideoRecIsEnabled(pDisplay->mpVideoRecCtx))
     {
-        uint64_t u64Now = RTTimeProgramMilliTS();
-        for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
-        {
-            if (!pDisplay->maVideoRecEnabled[uScreenId])
-                continue;
-
-            DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
-
-            if (   !pFBInfo->pFramebuffer.isNull()
-                && !pFBInfo->fDisabled
-                && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
+        do {
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+            BOOL is3denabled;
+            pDisplay->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+            if (is3denabled)
             {
-                int rc;
-                if (   pFBInfo->fVBVAEnabled
-                    && pFBInfo->pu8FramebufferVRAM)
+                if (ASMAtomicCmpXchgU32(&pDisplay->mfCrOglVideoRecState, CRVREC_STATE_SUBMITTED, CRVREC_STATE_IDLE))
                 {
-                    rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
-                                              FramebufferPixelFormat_FOURCC_RGB,
-                                              pFBInfo->u16BitsPerPixel,
-                                              pFBInfo->u32LineSize, pFBInfo->w, pFBInfo->h,
-                                              pFBInfo->pu8FramebufferVRAM, u64Now);
+                    if (pDisplay->mCrOglCallbacks.pfnHasData())
+                    {
+                        /* submit */
+
+                        VBOXHGCMSVCPARM parm;
+
+                        parm.type = VBOX_HGCM_SVC_PARM_PTR;
+                        parm.u.pointer.addr = &pDisplay->mCrOglScreenshotData;
+                        parm.u.pointer.size = sizeof (pDisplay->mCrOglScreenshotData);
+
+                        VMMDev *pVMMDev = pDisplay->mParent->getVMMDev();
+                        if (pVMMDev)
+                        {
+                            int rc = pVMMDev->hgcmHostFastCallAsync(pDisplay->mhCrOglSvc, SHCRGL_HOST_FN_TAKE_SCREENSHOT, &parm, displayVRecCompletion, pDisplay);
+                            if (RT_SUCCESS(rc))
+                                break;
+                            else
+                                AssertMsgFailed(("hgcmHostFastCallAsync failed %f\n", rc));
+                        }
+                        else
+                            AssertMsgFailed(("no VMMDev\n"));
+                    }
+
+                    /* no 3D data available, or error has occured,
+                     * go the straight way */
+                    ASMAtomicWriteU32(&pDisplay->mfCrOglVideoRecState, CRVREC_STATE_IDLE);
                 }
                 else
                 {
-                    rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
-                                              FramebufferPixelFormat_FOURCC_RGB,
-                                              pDrv->IConnector.cBits,
-                                              pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
-                                              pDrv->IConnector.cy, pDrv->IConnector.pu8Data, u64Now);
-                }
-                if (rc == VINF_TRY_AGAIN)
+                    /* record request is still in progress, don't do anything */
                     break;
+                }
             }
-        }
+#endif
+            uint64_t u64Now = RTTimeProgramMilliTS();
+            for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
+            {
+                if (!pDisplay->maVideoRecEnabled[uScreenId])
+                    continue;
+
+                DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
+
+                if (   !pFBInfo->pFramebuffer.isNull()
+                    && !pFBInfo->fDisabled
+                    && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
+                {
+                    int rc;
+                    if (   pFBInfo->fVBVAEnabled
+                        && pFBInfo->pu8FramebufferVRAM)
+                    {
+                        rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
+                                                  FramebufferPixelFormat_FOURCC_RGB,
+                                                  pFBInfo->u16BitsPerPixel,
+                                                  pFBInfo->u32LineSize, pFBInfo->w, pFBInfo->h,
+                                                  pFBInfo->pu8FramebufferVRAM, u64Now);
+                    }
+                    else
+                    {
+                        rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
+                                                  FramebufferPixelFormat_FOURCC_RGB,
+                                                  pDrv->IConnector.cBits,
+                                                  pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
+                                                  pDrv->IConnector.cy, pDrv->IConnector.pu8Data, u64Now);
+                    }
+                    if (rc == VINF_TRY_AGAIN)
+                        break;
+                }
+            }
+        } while (0);
     }
 #endif
 
@@ -4138,6 +4202,45 @@ void  Display::handleCrAsyncCmdCompletion(int32_t result, uint32_t u32Function, 
 {
     if (pParam->type == VBOX_HGCM_SVC_PARM_PTR && pParam->u.pointer.addr)
         RTMemFree(pParam->u.pointer.addr);
+}
+
+
+void  Display::handleCrVRecScreenshot(uint32_t uScreen,
+                uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
+                uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
+                uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
+{
+    Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
+    int rc = VideoRecCopyToIntBuf(mpVideoRecCtx, uScreen, x, y,
+                              uPixelFormat,
+                              uBitsPerPixel, uBytesPerLine,
+                              uGuestWidth, uGuestHeight,
+                              pu8BufferAddress, u64TimeStamp);
+    Assert(rc == VINF_SUCCESS || rc == VERR_TRY_AGAIN || rc == VINF_TRY_AGAIN);
+}
+
+void  Display::handleVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)
+{
+    Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
+    ASMAtomicWriteU32(&mfCrOglVideoRecState, CRVREC_STATE_IDLE);
+}
+
+DECLCALLBACK(void) Display::displayCrVRecScreenshot(void *pvCtx, uint32_t uScreen,
+                uint32_t x, uint32_t y, uint32_t uBitsPerPixel,
+                uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
+                uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
+{
+    Display *pDisplay = (Display *)pvCtx;
+    pDisplay->handleCrVRecScreenshot(uScreen,
+            x, y, FramebufferPixelFormat_FOURCC_RGB, uBitsPerPixel,
+            uBytesPerLine, uGuestWidth, uGuestHeight,
+            pu8BufferAddress, u64TimeStamp);
+}
+
+DECLCALLBACK(void)  Display::displayVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)
+{
+    Display *pDisplay = (Display *)pvContext;
+    pDisplay->handleVRecCompletion(result, u32Function, pParam, pvContext);
 }
 
 #endif

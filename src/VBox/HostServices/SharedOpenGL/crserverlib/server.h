@@ -388,6 +388,11 @@ DECLINLINE(void) CrFBmSet(CR_FBMAP *pMap, uint32_t i)
     return ASMBitSet(&pMap->Map, i);
 }
 
+DECLINLINE(void) CrFBmSetAtomic(CR_FBMAP *pMap, uint32_t i)
+{
+    return ASMAtomicBitSet(&pMap->Map, i);
+}
+
 DECLINLINE(void) CrFBmClear(CR_FBMAP *pMap, uint32_t i)
 {
     return ASMBitClear(&pMap->Map, i);
@@ -399,6 +404,7 @@ int CrPMgrHlpGlblUpdateBegin(CR_FBMAP *pMap);
 void CrPMgrHlpGlblUpdateEnd(CR_FBMAP *pMap);
 HCR_FRAMEBUFFER CrPMgrFbGetFirstEnabled();
 HCR_FRAMEBUFFER CrPMgrFbGetNextEnabled(HCR_FRAMEBUFFER hFb);
+HCR_FRAMEBUFFER CrPMgrFbGetEnabled(uint32_t idScreen);
 int CrPMgrModeVrdp(bool fEnable);
 int CrPMgrModeRootVr(bool fEnable);
 int CrPMgrRootVrUpdate();
@@ -415,14 +421,17 @@ void CrPMgrTerm();
 
 typedef DECLCALLBACKPTR(bool, PFNCR_FRAMEBUFFER_ENTRIES_VISITOR_CB)(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry, void *pvContext);
 
+bool CrFbHas3DData(HCR_FRAMEBUFFER hFb);
 void CrFbVisitCreatedEntries(HCR_FRAMEBUFFER hFb, PFNCR_FRAMEBUFFER_ENTRIES_VISITOR_CB pfnVisitorCb, void *pvContext);
 int CrFbResize(HCR_FRAMEBUFFER hFb, const struct VBVAINFOSCREEN * pScreen, void *pvVRAM);
+int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPoint, uint32_t cRects, const RTRECT *pPrects, CR_BLITTER_IMG *pImg);
 bool CrFbIsEnabled(HCR_FRAMEBUFFER hFb);
 int CrFbEntryCreateForTexId(HCR_FRAMEBUFFER hFb, GLuint idTex, uint32_t fFlags, HCR_FRAMEBUFFER_ENTRY *phEntry);
 int CrFbEntryCreateForTexData(HCR_FRAMEBUFFER hFb, struct CR_TEXDATA *pTex, uint32_t fFlags, HCR_FRAMEBUFFER_ENTRY *phEntry);
 void CrFbEntryAddRef(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry);
 void CrFbEntryRelease(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry);
 const struct VBVAINFOSCREEN* CrFbGetScreenInfo(HCR_FRAMEBUFFER hFb);
+void* CrFbGetVRAM(HCR_FRAMEBUFFER hFb);
 const struct VBOXVR_SCR_COMPOSITOR* CrFbGetCompositor(HCR_FRAMEBUFFER hFb);
 const struct VBOXVR_SCR_COMPOSITOR_ENTRY* CrFbEntryGetCompositorEntry(HCR_FRAMEBUFFER_ENTRY hEntry);
 
@@ -450,6 +459,8 @@ void* CrFbDDataEntryGet(HCR_FRAMEBUFFER_ENTRY hEntry, CRHTABLE_HANDLE hSlot);
 
 CR_TEXDATA* CrFbTexDataCreate(const VBOXVR_TEXTURE *pTex);
 void CrFbTexDataInit(CR_TEXDATA* pFbTex, const VBOXVR_TEXTURE *pTex, PFNCRTEXDATA_RELEASED pfnTextureReleased);
+
+int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd);
 
 //#define VBOX_WITH_CRSERVER_DUMPER
 #ifdef VBOX_WITH_CRSERVER_DUMPER

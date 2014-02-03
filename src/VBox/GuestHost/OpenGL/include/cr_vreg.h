@@ -94,6 +94,19 @@ DECLINLINE(void) VBoxRectTranslated(const RTRECT * pRect, int32_t x, int32_t y, 
     VBoxRectTranslate(pResult, x, y);
 }
 
+DECLINLINE(void) VBoxRectInvertY(RTRECT * pRect)
+{
+    int32_t y = pRect->yTop;
+    pRect->yTop = pRect->yBottom;
+    pRect->yBottom = y;
+}
+
+DECLINLINE(void) VBoxRectInvertedY(const RTRECT * pRect, RTRECT * pResult)
+{
+    *pResult = *pRect;
+    VBoxRectInvertY(pResult);
+}
+
 DECLINLINE(void) VBoxRectMove(RTRECT * pRect, int32_t x, int32_t y)
 {
     int32_t w = pRect->xRight - pRect->xLeft;

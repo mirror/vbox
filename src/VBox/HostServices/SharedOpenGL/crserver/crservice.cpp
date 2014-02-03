@@ -42,6 +42,7 @@
 
 PVBOXHGCMSVCHELPERS g_pHelpers;
 static IConsole* g_pConsole = NULL;
+static uint32_t g_u32ScreenCount = 0;
 static PVM g_pVM = NULL;
 
 #ifndef RT_OS_WINDOWS
@@ -1024,6 +1025,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                     crServerVBoxCompositionSetEnableStateGlobal(GL_FALSE);
 
                     g_pConsole = pConsole;
+                    g_u32ScreenCount = monitorCount;
 
                     rc = crVBoxServerSetScreenCount(monitorCount);
                     AssertRCReturn(rc, rc);
@@ -1182,6 +1184,86 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 crServerVBoxCompositionSetEnableStateGlobal(GL_TRUE);
 
                 rc = VINF_SUCCESS;
+            }
+            break;
+        }
+        case SHCRGL_HOST_FN_TAKE_SCREENSHOT:
+        {
+            if (cParms != 1)
+            {
+                LogRel(("SHCRGL_HOST_FN_TAKE_SCREENSHOT: cParms invalid - %d", cParms));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            if (paParms->type != VBOX_HGCM_SVC_PARM_PTR)
+            {
+                AssertMsgFailed(("invalid param\n"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            if (!paParms->u.pointer.addr)
+            {
+                AssertMsgFailed(("invalid param\n"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            if (paParms->u.pointer.size != sizeof (CRVBOXHGCMTAKESCREENSHOT))
+            {
+                AssertMsgFailed(("invalid param\n"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            CRVBOXHGCMTAKESCREENSHOT *pScreenshot = (CRVBOXHGCMTAKESCREENSHOT*)paParms->u.pointer.addr;
+            uint64_t u64Now = RTTimeProgramMilliTS();
+
+            if (pScreenshot->u32Screen == CRSCREEN_ALL)
+            {
+                for (uint32_t i = 0; i < g_u32ScreenCount; ++i)
+                {
+                    CR_SCREENSHOT Screenshot;
+
+                    int rc = crServerVBoxScreenshotGet(i, &Screenshot);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pScreenshot->pfnScreenshot(pScreenshot->pvContext, i,
+                                0, 0, 32,
+                                Screenshot.Img.pitch, Screenshot.Img.width, Screenshot.Img.height,
+                                (uint8_t*)Screenshot.Img.pvData, u64Now);
+                        crServerVBoxScreenshotRelease(&Screenshot);
+                    }
+                    else
+                    {
+                        Assert(rc == VERR_INVALID_STATE);
+                    }
+                }
+            }
+            else if (pScreenshot->u32Screen < g_u32ScreenCount)
+            {
+                CR_SCREENSHOT Screenshot;
+
+                int rc = crServerVBoxScreenshotGet(pScreenshot->u32Screen, &Screenshot);
+                if (RT_SUCCESS(rc))
+                {
+                    pScreenshot->pfnScreenshot(pScreenshot->pvContext, pScreenshot->u32Screen,
+                            0, 0, 32,
+                            Screenshot.Img.pitch, Screenshot.Img.width, Screenshot.Img.height,
+                            (uint8_t*)Screenshot.Img.pvData, u64Now);
+                    crServerVBoxScreenshotRelease(&Screenshot);
+                }
+                else
+                {
+                    Assert(rc == VERR_INVALID_STATE);
+                }
+            }
+            else
+            {
+                AssertMsgFailed(("invalid screen id\n"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
             }
             break;
         }

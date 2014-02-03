@@ -2880,19 +2880,7 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
 
 
 #ifdef VBOX_WITH_CRHGSMI
-/* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.
- *
- * For now we need the notion of CrHgdmi commands in the crserver_lib to be able to complete it asynchronously once it is really processed.
- * This help avoiding the "blocked-client" issues. The client is blocked if another client is doing begin-end stuff.
- * For now we eliminated polling that could occur on block, which caused a higher-priority thread (in guest) polling for the blocked command complition
- * to block the lower-priority thread trying to complete the blocking command.
- * And removed extra memcpy done on blocked command arrival.
- *
- * In the future we will extend CrHgsmi functionality to maintain texture data directly in CrHgsmi allocation to avoid extra memcpy-ing with PBO,
- * implement command completion and stuff necessary for GPU scheduling to work properly for WDDM Windows guests, etc.
- *
- * NOTE: it is ALWAYS responsibility of the crVBoxServerCrHgsmiCmd to complete the command!
- * */
+
 static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCmd)
 {
     int32_t rc;
@@ -3191,6 +3179,77 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCm
 
     return rc;
 }
+
+static int32_t crVBoxServerCrCmdProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
+{
+    switch (pCmd->u8OpCode)
+    {
+        case VBOXCMDVBVA_OPTYPE_CRCMD:
+        {
+            VBOXCMDVBVA_CRCMD *pCrCmdDr = (VBOXCMDVBVA_CRCMD*)pCmd;
+            VBOXCMDVBVA_CRCMD_CMD *pCrCmd = &pCrCmdDr->Cmd;
+            int rc = crVBoxServerCmdVbvaCrCmdProcess(pCrCmd);
+            if (RT_SUCCESS(rc))
+            {
+            /* success */
+                pCmd->i8Result = 0;
+            }
+            else
+            {
+                crWarning("crVBoxServerCmdVbvaCrCmdProcess failed, rc %d", rc);
+                pCmd->i8Result = -1;
+            }
+            break;
+        }
+        case VBOXCMDVBVA_OPTYPE_BLT_OFFPRIMSZFMT_OR_ID:
+        {
+            crVBoxServerCrCmdBltProcess(pCmd, cbCmd);
+            break;
+        }
+        default:
+            WARN(("unsupported command"));
+            pCmd->i8Result = -1;
+    }
+    return VINF_SUCCESS;
+}
+
+int32_t crVBoxServerCrCmdNotifyCmds()
+{
+    PVBOXCMDVBVA_HDR pCmd = NULL;
+    uint32_t cbCmd;
+
+    for (;;)
+    {
+        int rc = cr_server.CltInfo.pfnCmdGet(cr_server.CltInfo.hClient, &pCmd, &cbCmd);
+        if (rc == VINF_EOF)
+            return VINF_SUCCESS;
+        if (!RT_SUCCESS(rc))
+            return rc;
+
+        rc = crVBoxServerCrCmdProcess(pCmd, cbCmd);
+        if (!RT_SUCCESS(rc))
+            return rc;
+    }
+
+    /* should not be here! */
+    AssertFailed();
+    return VERR_INTERNAL_ERROR;
+}
+
+/* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.
+ *
+ * For now we need the notion of CrHgdmi commands in the crserver_lib to be able to complete it asynchronously once it is really processed.
+ * This help avoiding the "blocked-client" issues. The client is blocked if another client is doing begin-end stuff.
+ * For now we eliminated polling that could occur on block, which caused a higher-priority thread (in guest) polling for the blocked command complition
+ * to block the lower-priority thread trying to complete the blocking command.
+ * And removed extra memcpy done on blocked command arrival.
+ *
+ * In the future we will extend CrHgsmi functionality to maintain texture data directly in CrHgsmi allocation to avoid extra memcpy-ing with PBO,
+ * implement command completion and stuff necessary for GPU scheduling to work properly for WDDM Windows guests, etc.
+ *
+ * NOTE: it is ALWAYS responsibility of the crVBoxServerCrHgsmiCmd to complete the command!
+ * */
+
 
 int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t cbCmd)
 {
@@ -3504,6 +3563,20 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
 }
 
+static DECLCALLBACK(bool) crVBoxServerHasData()
+{
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetFirstEnabled();
+    for (;
+            hFb;
+            hFb = CrPMgrFbGetNextEnabled(hFb))
+    {
+        if (CrFbHas3DData(hFb))
+            return true;
+    }
+
+    return false;
+}
+
 int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t cbCtl)
 {
     int rc = VINF_SUCCESS;
@@ -3523,11 +3596,14 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
         case VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_END:
             rc = VINF_SUCCESS;
             break;
-        case VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP_COMPLETION:
+        case VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP_MAINCB:
         {
-            PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP_COMPLETION pSetup = (PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP_COMPLETION)pCtl;
+            PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP_MAINCB pSetup = (PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP_MAINCB)pCtl;
             g_hCrHgsmiCompletion = pSetup->hCompletion;
             g_pfnCrHgsmiCompletion = pSetup->pfnCompletion;
+
+            pSetup->MainInterface.pfnHasData = crVBoxServerHasData;
+
             rc = VINF_SUCCESS;
             break;
         }
@@ -3545,54 +3621,4 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
     return rc;
 }
 
-static int32_t crVBoxServerCrCmdProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
-{
-    switch (pCmd->u8OpCode)
-    {
-        case VBOXCMDVBVA_OPTYPE_CRCMD:
-        {
-            VBOXCMDVBVA_CRCMD *pCrCmdDr = (VBOXCMDVBVA_CRCMD*)pCmd;
-            VBOXCMDVBVA_CRCMD_CMD *pCrCmd = &pCrCmdDr->Cmd;
-            int rc = crVBoxServerCmdVbvaCrCmdProcess(pCrCmd);
-            if (RT_SUCCESS(rc))
-            {
-            /* success */
-                pCmd->i8Result = 0;
-            }
-            else
-            {
-                crWarning("crVBoxServerCmdVbvaCrCmdProcess failed, rc %d", rc);
-                pCmd->i8Result = -1;
-            }
-            break;
-        }
-        default:
-            crWarning("unsupported command");
-            pCmd->i8Result = -1;
-    }
-    return VINF_SUCCESS;
-}
-
-int32_t crVBoxServerCrCmdNotifyCmds()
-{
-    PVBOXCMDVBVA_HDR pCmd = NULL;
-    uint32_t cbCmd;
-
-    for (;;)
-    {
-        int rc = cr_server.CltInfo.pfnCmdGet(cr_server.CltInfo.hClient, &pCmd, &cbCmd);
-        if (rc == VINF_EOF)
-            return VINF_SUCCESS;
-        if (!RT_SUCCESS(rc))
-            return rc;
-
-        rc = crVBoxServerCrCmdProcess(pCmd, cbCmd);
-        if (!RT_SUCCESS(rc))
-            return rc;
-    }
-
-    /* should not be here! */
-    AssertFailed();
-    return VERR_INTERNAL_ERROR;
-}
 #endif

@@ -34,8 +34,6 @@
 #include <VBox/Hardware/VBoxVideoVBE.h>
 #include <VBox/VBoxVideo3D.h>
 
-#include "cr_vreg.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -519,6 +517,16 @@ extern DECLEXPORT(int32_t) crVBoxServerClientSetPID(uint32_t u32ClientID, uint64
 
 extern DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM);
 extern DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version);
+
+typedef struct
+{
+    CR_BLITTER_IMG Img;
+    uint32_t u32Screen;
+    uint32_t fDataIsFbDirect;
+} CR_SCREENSHOT;
+
+extern DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, CR_SCREENSHOT *pScreenshot);
+extern DECLEXPORT(void) crServerVBoxScreenshotRelease(CR_SCREENSHOT *pScreenshot);
 
 extern DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable);
 extern DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount);

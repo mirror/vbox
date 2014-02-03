@@ -653,26 +653,73 @@ static GLboolean crServerIntersectRect(CRrecti *a, CRrecti *b, CRrecti *rect)
     return (rect->x2>rect->x1) && (rect->y2>rect->y1);
 }
 
-static void crServerCopySubImage(char *pDst, char* pSrc, CRrecti *pRect, int srcWidth, int srcHeight)
-{
-    int i;
-    int dstrowsize = 4*(pRect->x2-pRect->x1);
-    int srcrowsize = 4*srcWidth;
-    int height = pRect->y2-pRect->y1;
-
-    pSrc += 4*pRect->x1 + srcrowsize*(srcHeight-1-pRect->y1);
-
-    for (i=0; i<height; ++i)
-    {
-        crMemcpy(pDst, pSrc, dstrowsize);
-
-        pSrc -= srcrowsize;
-        pDst += dstrowsize;
-    }
-}
-
 DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable)
 {
+}
+
+DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, CR_SCREENSHOT *pScreenshot)
+{
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32Screen);
+    if (!hFb)
+        return VERR_INVALID_STATE;
+
+    const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
+
+    if (CrFbHas3DData(hFb))
+    {
+        RTPOINT Pos = {0, 0};
+        RTRECT Rect;
+
+        pScreenshot->Img.cbData = pScreen->u32LineSize * pScreen->u32Height;
+        pScreenshot->Img.pvData = RTMemAlloc(pScreenshot->Img.cbData);
+        if (!pScreenshot->Img.pvData)
+        {
+            WARN(("RTMemAlloc failed"));
+            return VERR_NO_MEMORY;
+        }
+        pScreenshot->Img.enmFormat = GL_BGRA;
+        pScreenshot->Img.width = pScreen->u32Width;
+        pScreenshot->Img.height = pScreen->u32Height;
+        pScreenshot->Img.bpp = pScreen->u16BitsPerPixel;
+        pScreenshot->Img.pitch = pScreen->u32LineSize;
+        Rect.xLeft = 0;
+        Rect.yTop = 0;
+        Rect.xRight = pScreenshot->Img.width;
+        Rect.yBottom = pScreenshot->Img.height;
+        int rc = CrFbBltGetContents(hFb, &Pos, 1, &Rect, &pScreenshot->Img);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("CrFbBltGetContents failed %d", rc));
+            RTMemFree(pScreenshot->Img.pvData);
+            return rc;
+        }
+        pScreenshot->fDataIsFbDirect = 0;
+    }
+    else
+    {
+        pScreenshot->Img.pvData = CrFbGetVRAM(hFb);
+        pScreenshot->Img.cbData = pScreen->u32LineSize * pScreen->u32Height;
+        pScreenshot->Img.enmFormat = GL_BGRA;
+        pScreenshot->Img.width = pScreen->u32Width;
+        pScreenshot->Img.height = pScreen->u32Height;
+        pScreenshot->Img.bpp = pScreen->u16BitsPerPixel;
+        pScreenshot->Img.pitch = pScreen->u32LineSize;
+
+        pScreenshot->fDataIsFbDirect = 1;
+    }
+
+    pScreenshot->u32Screen = u32Screen;
+
+    return VINF_SUCCESS;
+}
+
+DECLEXPORT(void) crServerVBoxScreenshotRelease(CR_SCREENSHOT *pScreenshot)
+{
+    if (!pScreenshot->fDataIsFbDirect)
+    {
+        RTMemFree(pScreenshot->Img.pvData);
+        pScreenshot->fDataIsFbDirect = 1;
+    }
 }
 
 void crServerPresentFBO(CRMuralInfo *mural)

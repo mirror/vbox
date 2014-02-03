@@ -284,6 +284,7 @@ VBOXBLITTERDECL(int) CrTdBltDataRelease(PCR_TEXDATA pTex);
 /* discard the texture data cached with previous CrTdBltDataAcquire.
  * Must be called wit data released (CrTdBltDataRelease) */
 VBOXBLITTERDECL(int) CrTdBltDataDiscard(PCR_TEXDATA pTex);
+VBOXBLITTERDECL(int) CrTdBltDataDiscardNe(PCR_TEXDATA pTex);
 /* does same as CrTdBltDataDiscard, and in addition cleans up.
  * this is kind of a texture destructor, which clients should call on texture object destruction, e.g. from the PFNCRTEXDATA_RELEASED callback */
 VBOXBLITTERDECL(int) CrTdBltDataCleanup(PCR_TEXDATA pTex);
