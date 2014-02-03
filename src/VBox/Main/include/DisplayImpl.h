@@ -177,10 +177,12 @@ public:
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     void  handleCrAsyncCmdCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam);
-    void  handleCrVRecScreenshot(uint32_t uScreen,
+    void  handleCrVRecScreenshotPerform(uint32_t uScreen,
                     uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
                     uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
                     uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
+    bool handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp);
+    void handleCrVRecScreenshotEnd(uint32_t uScreen, uint64_t u64TimeStamp);
     void  handleVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
 #endif
 
@@ -282,10 +284,13 @@ private:
 #endif
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-    static DECLCALLBACK(void) displayCrVRecScreenshot(void *pvCtx, uint32_t uScreen,
+    static DECLCALLBACK(void) displayCrVRecScreenshotPerform(void *pvCtx, uint32_t uScreen,
                     uint32_t x, uint32_t y, uint32_t uBitsPerPixel,
                     uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
                     uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
+    static DECLCALLBACK(bool) displayCrVRecScreenshotBegin(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp);
+    static DECLCALLBACK(void) displayCrVRecScreenshotEnd(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp);
+
     static DECLCALLBACK(void)  displayVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
     static DECLCALLBACK(void)  displayCrAsyncCmdCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
 #endif

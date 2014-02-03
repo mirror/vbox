@@ -154,7 +154,9 @@ HRESULT Display::FinalConstruct()
     mfCrOglVideoRecState = CRVREC_STATE_IDLE;
     mCrOglScreenshotData.u32Screen = CRSCREEN_ALL;
     mCrOglScreenshotData.pvContext = this;
-    mCrOglScreenshotData.pfnScreenshot = displayCrVRecScreenshot;
+    mCrOglScreenshotData.pfnScreenshotBegin = displayCrVRecScreenshotBegin;
+    mCrOglScreenshotData.pfnScreenshotPerform = displayCrVRecScreenshotPerform;
+    mCrOglScreenshotData.pfnScreenshotEnd = displayCrVRecScreenshotEnd;
 #endif
 
     return BaseFinalConstruct();
@@ -4204,8 +4206,16 @@ void  Display::handleCrAsyncCmdCompletion(int32_t result, uint32_t u32Function, 
         RTMemFree(pParam->u.pointer.addr);
 }
 
+bool  Display::handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp)
+{
+    return VideoRecIsReady(mpVideoRecCtx, uScreen, u64TimeStamp);
+}
 
-void  Display::handleCrVRecScreenshot(uint32_t uScreen,
+void  Display::handleCrVRecScreenshotEnd(uint32_t uScreen, uint64_t u64TimeStamp)
+{
+}
+
+void  Display::handleCrVRecScreenshotPerform(uint32_t uScreen,
                 uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
                 uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
                 uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
@@ -4216,7 +4226,7 @@ void  Display::handleCrVRecScreenshot(uint32_t uScreen,
                               uBitsPerPixel, uBytesPerLine,
                               uGuestWidth, uGuestHeight,
                               pu8BufferAddress, u64TimeStamp);
-    Assert(rc == VINF_SUCCESS || rc == VERR_TRY_AGAIN || rc == VINF_TRY_AGAIN);
+    Assert(rc == VINF_SUCCESS/* || rc == VERR_TRY_AGAIN || rc == VINF_TRY_AGAIN*/);
 }
 
 void  Display::handleVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)
@@ -4225,16 +4235,28 @@ void  Display::handleVRecCompletion(int32_t result, uint32_t u32Function, PVBOXH
     ASMAtomicWriteU32(&mfCrOglVideoRecState, CRVREC_STATE_IDLE);
 }
 
-DECLCALLBACK(void) Display::displayCrVRecScreenshot(void *pvCtx, uint32_t uScreen,
+DECLCALLBACK(void) Display::displayCrVRecScreenshotPerform(void *pvCtx, uint32_t uScreen,
                 uint32_t x, uint32_t y, uint32_t uBitsPerPixel,
                 uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
                 uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
 {
     Display *pDisplay = (Display *)pvCtx;
-    pDisplay->handleCrVRecScreenshot(uScreen,
+    pDisplay->handleCrVRecScreenshotPerform(uScreen,
             x, y, FramebufferPixelFormat_FOURCC_RGB, uBitsPerPixel,
             uBytesPerLine, uGuestWidth, uGuestHeight,
             pu8BufferAddress, u64TimeStamp);
+}
+
+DECLCALLBACK(bool) Display::displayCrVRecScreenshotBegin(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp)
+{
+    Display *pDisplay = (Display *)pvCtx;
+    return pDisplay->handleCrVRecScreenshotBegin(uScreen, u64TimeStamp);
+}
+
+DECLCALLBACK(void) Display::displayCrVRecScreenshotEnd(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp)
+{
+    Display *pDisplay = (Display *)pvCtx;
+    pDisplay->handleCrVRecScreenshotEnd(uScreen, u64TimeStamp);
 }
 
 DECLCALLBACK(void)  Display::displayVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)

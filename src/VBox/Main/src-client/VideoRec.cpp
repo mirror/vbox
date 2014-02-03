@@ -602,6 +602,34 @@ bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
 }
 
 /**
+ * VideoRec utility function to check if recording engine is ready to accept a new frame
+ * for the given screen.
+ *
+ * @returns true if recording engine is ready
+ * @param   pCtx   Pointer to video recording context.
+ * @param   uScreen screen id.
+ * @param   u64TimeStamp current time stamp
+ */
+bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeStamp)
+{
+    uint32_t enmState = ASMAtomicReadU32(&g_enmState);
+    if (enmState != VIDREC_IDLE)
+        return false;
+
+    PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
+    if (!pStrm->fEnabled)
+        return false;
+
+    if (u64TimeStamp < pStrm->u64LastTimeStamp + pStrm->uDelay)
+        return false;
+
+    if (ASMAtomicReadBool(&pStrm->fRgbFilled))
+        return false;
+
+    return true;
+}
+
+/**
  * VideoRec utility function to encode the source image and write the encoded
  * image to target file.
  *

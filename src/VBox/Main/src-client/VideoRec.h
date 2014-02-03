@@ -33,6 +33,7 @@ int  VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen,
                           uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
                           uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
                           uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
+bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeStamp);
 
 #endif /* !____H_VIDEOREC */
 
