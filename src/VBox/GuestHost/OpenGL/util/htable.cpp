@@ -65,7 +65,7 @@ int crHTableRealloc(PCRHTABLE pTbl, uint32_t cNewSize)
         void **pvNewData = (void**)RTMemAllocZ(sizeof (pTbl->paData[0]) * cNewSize);
         if (!pvNewData)
         {
-            WARN(("RTMemAllocZ failed for size (%d)", sizeof (pTbl->paData[0]) * cNewSize));
+            WARN(("RTMemAllocZ failed for size (%d)", (int)(sizeof (pTbl->paData[0]) * cNewSize)));
             return VERR_NO_MEMORY;
         }
         memcpy(pvNewData, pTbl->paData, sizeof (pTbl->paData[0]) * pTbl->cSize);
