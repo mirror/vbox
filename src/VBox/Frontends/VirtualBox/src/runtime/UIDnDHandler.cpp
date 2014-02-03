@@ -22,6 +22,7 @@
 #include <QKeyEvent>
 #include <QStringList>
 #include <QTimer>
+#include <QUrl>
 
 #ifdef LOG_GROUP
 # undef LOG_GROUP
@@ -167,7 +168,7 @@ int UIDnDHandler::dragGHPending(CSession &session, ulong screenId, QWidget *pPar
     /*
      * Do guest -> host format conversion, if needed.
      * On X11 this already maps to the Xdnd protocol.
-     ** @todo What about MacOS X Carbon Drag Manager?
+     ** @todo What about the MacOS Carbon Drag Manager? Needs testing.
      *
      * See: https://www.iana.org/assignments/media-types/media-types.xhtml
      */
@@ -175,17 +176,28 @@ int UIDnDHandler::dragGHPending(CSession &session, ulong screenId, QWidget *pPar
     QStringList lstFmtNative;
     for (int i = 0; i < vecFmtGuest.size(); i++)
     {
-        const QString &strFmt = vecFmtGuest.at(i);
+        const QString &strFmtGuest = vecFmtGuest.at(i);
         LogFlowFunc(("\tFormat %d: %s\n", i,
-                     strFmt.toAscii().constData()));
+                     strFmtGuest.toAscii().constData()));
 #ifdef RT_OS_WINDOWS
-        if (   strFmt.contains("text", Qt::CaseInsensitive)
+        /* CF_TEXT */
+        if (   strFmtGuest.contains("text/plain", Qt::CaseInsensitive)
             && !lstFmtNative.contains("text/plain"))
         {
             lstFmtNative << "text/plain";
         }
+        /* CF_HDROP */
+        else if (   strFmtGuest.contains("text/uri-list", Qt::CaseInsensitive)
+                 && !lstFmtNative.contains("text/uri-list"))
+        {
+            lstFmtNative << "text/uri-list";
+        }
 #else
-        lstFmtNative << strFmt;
+        /* On non-Windows just do a 1:1 mapping. */
+        lstFmtNative << strFmtGuest;
+# ifdef RT_OS_MACOS
+        /** @todo Does the mapping apply here? Don't think so ... */
+# endif
 #endif
     }
 
@@ -203,9 +215,14 @@ int UIDnDHandler::dragGHPending(CSession &session, ulong screenId, QWidget *pPar
             QDrag *pDrag = new QDrag(pParent);
 
             /* pMData is transfered to the QDrag object, so no need for deletion. */
-            UIDnDMimeData *pMData = new UIDnDMimeData(session, lstFmtNative,
+            pMData = new UIDnDMimeData(session, lstFmtNative,
                                                       toQtDnDAction(defaultAction),
                                                       toQtDnDActions(vecActions), pParent);
+
+            /* Inform this object that MIME data from the guest is available so that
+             * it can update the MIME data object accordingly. */
+            connect(pMData, SIGNAL(sigDataAvailable(QString)),
+                    this, SLOT(sltDataAvailable(QString)), Qt::DirectConnection);
 
             /* Inform the MIME data object of any changes in the current action. */
             connect(pDrag, SIGNAL(actionChanged(Qt::DropAction)),
@@ -217,8 +234,17 @@ int UIDnDHandler::dragGHPending(CSession &session, ulong screenId, QWidget *pPar
              * DoDragDrop() method, so this call will block until the DnD operation
              * is finished. */
             pDrag->setMimeData(pMData);
-            pDrag->exec(toQtDnDActions(vecActions), toQtDnDAction(defaultAction));
-
+            Qt::DropAction dropAction =
+                 pDrag->exec(toQtDnDActions(vecActions), toQtDnDAction(defaultAction));
+            LogFlowFunc(("dropAction=%ld\n", toVBoxDnDAction(dropAction)));
+#ifdef RT_OS_WINDOWS
+            /* Since the QDrag::exec() call above was blocking on Windows, decide what
+             * to do now, e.g. if there was a "drop" action.
+             *
+             * Note: The UIDnDMimeData object will not be not accessible here anymore,
+             *       since QDrag had its ownership and deleted it after the (blocking)
+             *       QDrag::exec() call. */
+#endif
             rc = VINF_SUCCESS;
         }
         catch (std::bad_alloc)
@@ -307,6 +333,15 @@ Qt::DropActions UIDnDHandler::toQtDnDActions(const QVector<KDragAndDropAction> &
 
     LogFlowFunc(("dropActions=0x%x\n", int(dropActs)));
     return dropActs;
+}
+
+void UIDnDHandler::sltDataAvailable(const QString &mimeType)
+{
+    LogFlowFunc(("pMData=0x%p, mimeType=%s\n",
+                 pMData, mimeType.toAscii().constData()));
+
+    if (pMData)
+        pMData->setData(mimeType);
 }
 
 #include "UIDnDHandler.moc"

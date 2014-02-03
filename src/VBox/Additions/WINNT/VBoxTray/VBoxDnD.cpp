@@ -520,6 +520,42 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     break;
                 }
 
+                case DragAndDropSvc::HOST_DND_GH_RECV_DIR:
+                {
+                    LogFlowThisFunc(("HOST_DND_GH_RECV_DIR\n"));
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+                    if (mMode == GH)
+                    {
+                        rc = OnGhSendDir(pEvent->Event.pszFormats,
+                                         pEvent->Event.cbFormats,
+                                         pEvent->Event.u.a.uDefAction);
+                    }
+                    else
+                        rc = VERR_WRONG_ORDER;
+#else
+                    rc = VERR_NOT_SUPPORTED;
+#endif
+                    break;
+                }
+
+                case DragAndDropSvc::HOST_DND_GH_RECV_FILE:
+                {
+                    LogFlowThisFunc(("HOST_DND_GH_RECV_FILE\n"));
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+                    if (mMode == GH)
+                    {
+                        rc = OnGhSendFile(pEvent->Event.pszFormats,
+                                          pEvent->Event.cbFormats,
+                                          pEvent->Event.u.a.uDefAction);
+                    }
+                    else
+                        rc = VERR_WRONG_ORDER;
+#else
+                    rc = VERR_NOT_SUPPORTED;
+#endif
+                    break;
+                }
+
                 default:
                     rc = VERR_NOT_SUPPORTED;
                     break;
@@ -933,7 +969,6 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
         LogFlowThisFunc(("Client to screen curX=%ld, curY=%ld\n", p.x, p.y));
 #endif
 
-#if 1
         /** @todo Multi-monitor setups? */
         int iScreenX = GetSystemMetrics(SM_CXSCREEN) - 1;
         int iScreenY = GetSystemMetrics(SM_CYSCREEN) - 1;
@@ -962,9 +997,6 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
         }
         else
             LogFlowFunc(("Unable to send input, error=0x%x\n", GetLastError()));
-#else
-        SetCursorPos(p.x, p.y);
-#endif
 
 #ifdef DEBUG_andy
         CURSORINFO ci;
@@ -980,24 +1012,22 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
 
     if (RT_SUCCESS(rc))
     {
-        AssertPtr(pDropTarget);
-
         uint32_t uDefAction = DND_IGNORE_ACTION;
-        RTCString strFormat = "unknown";
-        if (pDropTarget->HasData())
+
+        AssertPtr(pDropTarget);
+        RTCString strFormats = pDropTarget->Formats();
+        if (!strFormats.isEmpty())
         {
             uDefAction = DND_COPY_ACTION;
             uAllActions = uDefAction;
 
-            /** @todo There can be more than one format, separated
-             *        with \r\n. */
-            strFormat = "text/plain;charset=utf-8";
-
-            LogFlowFunc(("Acknowledging pDropTarget=0x%p, uDefAction=0x%x, uAllActions=0x%x, strFormat=%s\n",
-                         pDropTarget, uDefAction, uAllActions, strFormat.c_str()));
+            LogFlowFunc(("Acknowledging pDropTarget=0x%p, uDefAction=0x%x, uAllActions=0x%x, strFormats=%s\n",
+                         pDropTarget, uDefAction, uAllActions, strFormats.c_str()));
             rc = VbglR3DnDGHAcknowledgePending(mClientID,
-                                               uDefAction, uAllActions, strFormat.c_str());
+                                               uDefAction, uAllActions, strFormats.c_str());
         }
+        else
+            LogFlowFunc(("No format data available yet\n"));
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1007,13 +1037,26 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
 int VBoxDnDWnd::OnGhDropped(const char *pszFormats, uint32_t cbFormats,
                             uint32_t uDefAction)
 {
-    LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, cbFormats=%RU32, uDefAction=0x%x\n",
-                     mMode, mState, pDropTarget, cbFormats, uDefAction));
+    AssertPtrReturn(pszFormats, VERR_INVALID_POINTER);
+    AssertReturn(cbFormats, VERR_INVALID_PARAMETER);
+
+    LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, uDefAction=0x%x\n",
+                     mMode, mState, pDropTarget, uDefAction));
+#ifdef DEBUG
+    RTCList<RTCString> lstFormats =
+        RTCString(pszFormats, cbFormats - 1).split("\r\n");
+
+    LogFlow(("cbFormats=%RU32: ", cbFormats));
+    for (size_t i = 0; i < lstFormats.size(); i++)
+        LogFlow(("'%s' ", lstFormats.at(i).c_str()));
+    LogFlow(("\n"));
+#endif
+
     int rc;
     if (mState == Dragging)
     {
         AssertPtr(pDropTarget);
-        rc = pDropTarget->WaitForDrop(30 * 1000 /* Timeout */);
+        rc = pDropTarget->WaitForDrop(30 * 1000 /* Timeout in ms */);
         if (RT_SUCCESS(rc))
         {
             /** @todo Respect uDefAction. */
@@ -1034,6 +1077,22 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormats, uint32_t cbFormats,
     else
         rc = VERR_WRONG_ORDER;
 
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int VBoxDnDWnd::OnGhSendDir(const char *pszFormats, uint32_t cbFormats,
+                            uint32_t uDefAction)
+{
+    int rc = 0;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int VBoxDnDWnd::OnGhSendFile(const char *pszFormats, uint32_t cbFormats,
+                             uint32_t uDefAction)
+{
+    int rc = 0;
     LogFlowFuncLeaveRC(rc);
     return rc;
 }

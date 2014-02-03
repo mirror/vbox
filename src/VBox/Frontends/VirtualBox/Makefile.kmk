@@ -450,6 +450,8 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 endif
 
 ifdef VBOX_WITH_DRAG_AND_DROP
+ VirtualBox_QT_MOCHDRS += \
+	src/runtime/UIDnDHandler.h
  ifdef VBOX_WITH_DRAG_AND_DROP_GH
   VirtualBox_QT_MOCHDRS += \
 	src/runtime/UIDnDMIMEData.h

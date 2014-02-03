@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -721,7 +721,7 @@ VBGLR3DECL(int)     VbglR3DnDProcessNextMessage(uint32_t u32ClientId, CPVBGLR3DN
 VBGLR3DECL(int)     VbglR3DnDHGAcknowledgeOperation(uint32_t u32ClientId, uint32_t uAction);
 VBGLR3DECL(int)     VbglR3DnDHGRequestData(uint32_t u32ClientId, const char* pcszFormat);
 #  ifdef VBOX_WITH_DRAG_AND_DROP_GH
-VBGLR3DECL(int)     VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId, uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormat);
+VBGLR3DECL(int)     VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId, uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormats);
 VBGLR3DECL(int)     VbglR3DnDGHSendData(uint32_t u32ClientId, void *pvData, uint32_t cbData);
 VBGLR3DECL(int)     VbglR3DnDGHErrorEvent(uint32_t u32ClientId, int rcOp);
 #  endif /* VBOX_WITH_DRAG_AND_DROP_GH */
