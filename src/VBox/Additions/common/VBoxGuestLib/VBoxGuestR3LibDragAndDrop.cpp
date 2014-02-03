@@ -328,7 +328,7 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
     if (!pvTmpData)
         return VERR_NO_MEMORY;
 
-    /* Create and query the drop target directory. */
+    /* Create and query the (unique) drop target directory. */
     char pszDropDir[RTPATH_MAX];
     int rc = vbglR3DnDCreateDropDir(pszDropDir, sizeof(pszDropDir));
     if (RT_FAILURE(rc))
@@ -485,7 +485,8 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
         }
     } /* while */
 
-    RTMemFree(pvTmpData);
+    if (pvTmpData)
+        RTMemFree(pvTmpData);
 
     /* Cleanup on failure or if the user has canceled. */
     if (RT_FAILURE(rc))
@@ -508,7 +509,7 @@ static int vbglR3DnDHGProcessDataMessageInternal(uint32_t  uClientId,
                                                  uint32_t *pcbFormatRecv,
                                                  void     *pvData,
                                                  uint32_t  cbData,
-                                                 uint32_t *pcbDataRecv)
+                                                 uint32_t *pcbDataTotal)
 {
     AssertPtrReturn(puScreenId,    VERR_INVALID_POINTER);
     AssertPtrReturn(pszFormat,     VERR_INVALID_POINTER);
@@ -516,7 +517,7 @@ static int vbglR3DnDHGProcessDataMessageInternal(uint32_t  uClientId,
     AssertPtrReturn(pcbFormatRecv, VERR_INVALID_POINTER);
     AssertPtrReturn(pvData,        VERR_INVALID_POINTER);
     AssertReturn(cbData,           VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcbDataRecv,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbDataTotal,  VERR_INVALID_POINTER);
 
     DragAndDropSvc::VBOXDNDHGSENDDATAMSG Msg;
     RT_ZERO(Msg);
@@ -534,16 +535,16 @@ static int vbglR3DnDHGProcessDataMessageInternal(uint32_t  uClientId,
     if (RT_SUCCESS(rc))
     {
         rc = Msg.hdr.result;
-        if (RT_SUCCESS(rc)
+        if (   RT_SUCCESS(rc)
             || rc == VERR_BUFFER_OVERFLOW)
         {
             /* Fetch results */
             rc = Msg.uScreenId.GetUInt32(puScreenId);  AssertRC(rc);
             rc = Msg.cFormat.GetUInt32(pcbFormatRecv); AssertRC(rc);
-            rc = Msg.cData.GetUInt32(pcbDataRecv);     AssertRC(rc);
+            rc = Msg.cData.GetUInt32(pcbDataTotal);     AssertRC(rc);
             /* A little bit paranoia */
             AssertReturn(cbFormat >= *pcbFormatRecv, VERR_TOO_MUCH_DATA);
-            AssertReturn(cbData   >= *pcbDataRecv,   VERR_TOO_MUCH_DATA);
+            AssertReturn(cbData   >= *pcbDataTotal,  VERR_TOO_MUCH_DATA);
         }
     }
 
@@ -663,9 +664,12 @@ static int vbglR3DnDHGProcessSendDataMessage(uint32_t   uClientId,
                                                    pcbDataRecv);
     if (RT_SUCCESS(rc))
     {
-        /* Check if this is a uri-event. If so, let VbglR3 do all the actual
+        /* Check if this is an URI event. If so, let VbglR3 do all the actual
          * data transfer + file /directory creation internally without letting
-         * the caller know. */
+         * the caller know.
+         *
+         * This keeps the actual (guest OS-)dependent client (like VBoxClient /
+         * VBoxTray) small by not having too much redundant code. */
         if (RTStrNICmp(pszFormat, "text/uri-list", *pcbFormatRecv) == 0)
             rc = vbglR3DnDHGProcessURIMessages(uClientId,
                                                puScreenId,
@@ -952,9 +956,9 @@ VBGLR3DECL(int) VbglR3DnDHGRequestData(uint32_t u32ClientId, const char* pcszFor
 
 VBGLR3DECL(int) VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId,
                                               uint32_t uDefAction, uint32_t uAllActions,
-                                              const char* pcszFormat)
+                                              const char* pcszFormats)
 {
-    AssertPtrReturn(pcszFormat, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszFormats, VERR_INVALID_POINTER);
 
     DragAndDropSvc::VBOXDNDGHACKPENDINGMSG Msg;
     RT_ZERO(Msg);
@@ -965,7 +969,7 @@ VBGLR3DECL(int) VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId,
     /* Initialize parameter */
     Msg.uDefAction.SetUInt32(uDefAction);
     Msg.uAllActions.SetUInt32(uAllActions);
-    Msg.pFormat.SetPtr((void*)pcszFormat, (uint32_t)strlen(pcszFormat) + 1);
+    Msg.pFormat.SetPtr((void*)pcszFormats, (uint32_t)strlen(pcszFormats) + 1);
     /* Do request */
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -978,16 +982,6 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId, void *pvData, uint32_t
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData,    VERR_INVALID_PARAMETER);
-
-    /** @todo Add URI support. Currently only data is send over to the host. For URI
-     *        support basically the same as in the H->G case (see
-     *        HostServices/DragAndDrop/dndmanager.h/cpp) has to be done:
-     *        1. Parse the urilist
-     *        2. Recursively send "create dir" and "transfer file" msg to the host
-     *        3. Patch the urilist by removing all base dirnames
-     *        4. On the host all needs to received and the urilist patched afterwards
-     *           to point to the new location
-     */
 
     DragAndDropSvc::VBOXDNDGHSENDDATAMSG Msg;
     RT_ZERO(Msg);
@@ -1041,3 +1035,9 @@ VBGLR3DECL(int) VbglR3DnDGHErrorEvent(uint32_t u32ClientId, int rcOp)
 
     return rc;
 }
+
+VBGLR3DECL(int) VbglR3DnDGHSendFile(uint32_t u32ClientId, const char *pszPath)
+{
+    return 0;
+}
+

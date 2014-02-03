@@ -16,6 +16,7 @@
  */
 #include <windows.h>
 #include <new> /* For bad_alloc. */
+#include <Shlobj.h> /* For DROPFILES and friends. */
 
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
@@ -106,12 +107,17 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
 
     reset();
 
+    /** @todo At the moment we only support one DnD format at a time. */
+
     /* Try different formats. CF_HDROP is the most common one, so start
      * with this. */
-    /** @todo At the moment we only support TYMED_HGLOBAL. */
     FORMATETC fmtEtc = { CF_HDROP, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
     HRESULT hr = pDataObject->QueryGetData(&fmtEtc);
-    if (hr != S_OK)
+    if (hr == S_OK)
+    {
+        mFormats = "text/uri-list";
+    }
+    else
     {
         LogFlowFunc(("CF_HDROP not supported, hr=%Rhrc\n", hr));
 
@@ -124,16 +130,21 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
             LogFlowFunc(("CF_TEXT not supported, hr=%Rhrc\n", hr));
             fmtEtc.cfFormat = 0; /* Mark it to not supported. */
         }
+        else
+        {
+            mFormats = "text/plain;charset=utf-8";
+        }
     }
 
     /* Did we find a format that we support? */
     if (fmtEtc.cfFormat)
     {
-        LogFlowFunc(("Found supported format %RI16\n", fmtEtc.cfFormat));
+        LogFlowFunc(("Found supported format %RI16 (%s)\n",
+                     fmtEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(fmtEtc.cfFormat)));
 
         /* Make a copy of the FORMATETC structure so that we later can
          * use this for comparrison and stuff. */
-        /** Note: The DVTARGETDEVICE member only is a shallow copy! */
+        /** Note: The DVTARGETDEVICE member only is a shallow copy for now! */
         memcpy(&mFormatEtc, &fmtEtc, sizeof(FORMATETC));
 
         /* Which drop effect we're going to use? */
@@ -163,19 +174,20 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
                     FORMATETC curFormatEtc;
                     while (pEnumFormats->Next(1, &curFormatEtc,
                                               NULL /* pceltFetched */) == S_OK)
-                	{
+                    {
                         WCHAR wszCfName[128]; /* 128 chars should be enough, rest will be truncated. */
                         hr2 = GetClipboardFormatNameW(curFormatEtc.cfFormat, wszCfName,
                                                       sizeof(wszCfName) / sizeof(WCHAR));
-                        LogRel(("\tcfFormat=%RI16, tyMed=%RI32, dwAspect=%RI32, strCustomName=%ls, hr=%Rhrc\n",
+                        LogRel(("\tcfFormat=%RI16 (%s), tyMed=%RI32, dwAspect=%RI32, strCustomName=%ls, hr=%Rhrc\n",
                                 curFormatEtc.cfFormat,
+                                VBoxDnDDataObject::ClipboardFormatToString(curFormatEtc.cfFormat),
                                 curFormatEtc.tymed,
                                 curFormatEtc.dwAspect,
                                 wszCfName, hr2));
                     }
 
                     pEnumFormats->Release();
-            	}
+                }
 
                 break;
             }
@@ -235,8 +247,9 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
     AssertPtrReturn(pdwEffect, E_INVALIDARG);
 
 #ifdef DEBUG
-    LogFlowFunc(("mFormatEtc.cfFormat=%RI16, pDataObject=0x%p, grfKeyState=0x%x, x=%ld, y=%ld\n",
-                 mFormatEtc.cfFormat, pDataObject, grfKeyState, pt.x, pt.y));
+    LogFlowFunc(("mFormatEtc.cfFormat=%RI16 (%s), pDataObject=0x%p, grfKeyState=0x%x, x=%ld, y=%ld\n",
+                 mFormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat),
+                 pDataObject, grfKeyState, pt.x, pt.y));
 #endif
     HRESULT hr = S_OK;
 
@@ -247,9 +260,12 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
          * as we got it in DragEnter(). */
         hr = pDataObject->QueryGetData(&mFormatEtc);
         AssertMsg(SUCCEEDED(hr),
-                  ("Data format changed between DragEnter() and Drop(), cfFormat=%RI16, hr=%Rhrc\n",
-                  mFormatEtc.cfFormat, hr));
+                  ("Data format changed between DragEnter() and Drop(), cfFormat=%RI16 (%s), hr=%Rhrc\n",
+                  mFormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat),
+                  hr));
     }
+
+    int rc = VINF_SUCCESS;
 
     if (SUCCEEDED(hr))
     {
@@ -271,40 +287,163 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                     {
                         LogFlowFunc(("Locking HGLOBAL storage failed with %Rrc\n",
                                      RTErrConvertFromWin32(GetLastError())));
-                        hr = ERROR_INVALID_HANDLE;
+                        rc = VERR_INVALID_HANDLE;
+                        hr = E_INVALIDARG; /* Set special hr for OLE. */
                     }
                     break;
 
                 default:
                     AssertMsgFailed(("Storage medium type %RI32 supported\n",
                                      mFormatEtc.tymed));
-                    hr = ERROR_NOT_SUPPORTED;
+                    rc = VERR_NOT_SUPPORTED;
+                    hr = DV_E_TYMED; /* Set special hr for OLE. */
                     break;
             }
 
-            if (SUCCEEDED(hr))
+            if (RT_SUCCESS(rc))
             {
                 /* Second stage: Do the actual copying of the data object's data,
                                  based on the storage medium type. */
                 switch (mFormatEtc.cfFormat)
                 {
+                    /* Handling CF_TEXT means that the system already did some marshalling
+                     * to convert RTF or unicode text to plain ANSI text. */
                     case CF_TEXT:
                     {
-                        LogFlowFunc(("pvData=%s\n", (char*)pvData));
+                        AssertPtr(pvData);
+                        size_t cbSize = GlobalSize(pvData);
+                        LogFlowFunc(("CF_TEXT 0x%p got %zu bytes\n", pvData, cbSize));
+                        if (cbSize)
+                        {
+                            char *pszText = NULL;
+                            rc = RTStrCurrentCPToUtf8(&pszText, (char *)pvData);
+                            if (RT_SUCCESS(rc))
+                            {
+                                mpvData = (void *)pszText;
+                                mcbData = strlen(pszText) + 1;
+                            }
+                        }
 
-                        uint32_t cbSize = strlen((char*)pvData); /** @todo Evil hack, fix this! */
-                        mpvData = RTMemDup(pvData, cbSize);
-                        mcbData = cbSize;
                         break;
                     }
 
                     case CF_HDROP:
+                    {
+                        AssertPtr(pvData);
+
+                        /* Convert to a string list, separated by \r\n. */
+                        DROPFILES *pDropFiles = (DROPFILES *)pvData;
+                        AssertPtr(pDropFiles);
+                        bool fUnicode = RT_BOOL(pDropFiles->fWide);
+
+                        /* Get the offset of the file list. */
+                        Assert(pDropFiles->pFiles >= sizeof(DROPFILES));
+                        /* Note: This is *not* pDropFiles->pFiles! DragQueryFile only
+                         *       will work with the plain storage medium pointer! */
+                        HDROP hDrop = (HDROP)(pvData);
+
+                        /* First, get the file count. */
+                        /** @todo Does this work on Windows 2000 / NT4? */
+                        char *pszFiles = NULL;
+                        uint32_t cchFiles = 0;
+                        UINT cFiles = DragQueryFile(hDrop, UINT32_MAX /* iFile */,
+                                                    NULL /* lpszFile */, 0 /* cchFile */);
+                        LogFlowFunc(("CF_HDROP got %RU16 file(s)\n", cFiles));
+
+                        for (UINT i = 0; i < cFiles; i++)
+                        {
+                            UINT cch = DragQueryFile(hDrop, i /* File index */,
+                                                     NULL /* Query size first */,
+                                                     0 /* cchFile */);
+                            Assert(cch);
+
+                            /* Add separation between filenames. */
+                            if (i > 0)
+                            {
+                                rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */,
+                                                     "\r\n", 2 /* Bytes */);
+                                if (RT_SUCCESS(rc))
+                                    cchFiles += 2; /* Include \r\n */
+                            }
+
+                            if (RT_FAILURE(rc))
+                                return rc;
+
+                            char *pszFile = NULL; /* UTF-8 version. */
+                            UINT cchFile = 0;
+                            if (fUnicode)
+                            {
+                                /* Allocate enough space (including terminator). */
+                                WCHAR *pwszFile = (WCHAR *)RTMemAlloc((cch + 1) * sizeof(WCHAR));
+                                if (pwszFile)
+                                {
+                                    cchFile = DragQueryFileW(hDrop, i /* File index */,
+                                                             pwszFile, cch + 1 /* Include terminator */);
+                                    AssertMsg(cchFile == cch, ("cchCopied (%RU16) does not match cchFile (%RU16)\n",
+                                                               cchFile, cch));
+                                    int rc2 = RTUtf16ToUtf8(pwszFile, &pszFile);
+                                    AssertRC(rc2);
+                                }
+                                else
+                                    rc = VERR_NO_MEMORY;
+                            }
+                            else /* ANSI */
+                            {
+                                /* Allocate enough space (including terminator). */
+                                pszFile = (char *)RTMemAlloc((cch + 1) * sizeof(char));
+                                if (pszFile)
+                                {
+                                    cchFile = DragQueryFileA(hDrop, i /* File index */,
+                                                             pszFile, cchFile + 1 /* Include terminator */);
+                                    AssertMsg(cchFile == cch, ("cchCopied (%RU16) does not match cchFile (%RU16)\n",
+                                                               cchFile, cch));
+                                }
+                                else
+                                    rc = VERR_NO_MEMORY;
+                            }
+
+                            if (RT_SUCCESS(rc))
+                            {
+                                LogFlowFunc(("\tFile: %s (%RU32 characters)\n",
+                                             pszFile, cchFile));
+
+                                rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */,
+                                                     pszFile, cchFile);
+                            }
+
+                            /* Termination. */
+                            pszFiles[cchFiles] = '\0';
+
+                            if (pszFile)
+                                RTMemFree(pszFile);
+
+                            if (RT_FAILURE(rc))
+                                break;
+                        }
+
+                        if (RT_SUCCESS(rc))
+                        {
+                            uint32_t cbSize = cchFiles * sizeof(char);
+                            Assert(cbSize);
+
+                            mpvData = RTMemDup(pszFiles, cbSize);
+                            mcbData = cbSize;
+                        }
+
+                        LogFlowFunc(("Building CF_HDROP list rc=%Rrc, pszFiles=0x%p, cFiles=%RU16, cchFiles=%RU32\n",
+                                     rc, pszFiles, cFiles, cchFiles));
+
+                        if (pszFiles)
+                            RTStrFree(pszFiles);
                         break;
+                    }
 
                     default:
-                        AssertMsgFailed(("Format of type %RI16 supported\n",
-                                         mFormatEtc.cfFormat));
+                        AssertMsgFailed(("Format of type %RI16 (%s) not supported\n",
+                                         mFormatEtc.cfFormat,
+                                         VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat)));
                         hr = ERROR_NOT_SUPPORTED;
+                        hr = DV_E_CLIPFORMAT; /* Set special hr for OLE. */
                         break;
                 }
             }
@@ -319,16 +458,15 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                     break;
 
                 default:
-                    AssertMsgFailed(("Storage medium type %RI32 supported\n",
-                                     mFormatEtc.tymed));
-                    hr = ERROR_NOT_SUPPORTED;
+                    AssertMsgFailed(("Really should not happen -- see init stage!\n"));
                     break;
             }
 
             /* Release storage medium again. */
             ReleaseStgMedium(&stgMed);
 
-            if (SUCCEEDED(hr))
+            /** @todo Signal in any case to avoid hangs/timeouts? */
+            if (RT_SUCCESS(rc))
             {
                 RTSemEventSignal(hEventDrop);
                 fCanDrop = true;
@@ -348,8 +486,10 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
     if (mpWndParent)
         mpWndParent->hide();
 
-    LogFlowFunc(("Returning with mFormatEtc.cfFormat=%RI16, fCanDrop=%RTbool, *pdwEffect=%RI32\n",
-                 mFormatEtc.cfFormat, fCanDrop, *pdwEffect));
+    LogFlowFunc(("Returning with rc=%Rrc, mFormatEtc.cfFormat=%RI16 (%s), fCanDrop=%RTbool, *pdwEffect=%RI32\n",
+                 rc, mFormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat),
+                 fCanDrop, *pdwEffect));
+
     return hr;
 }
 
@@ -394,6 +534,12 @@ void VBoxDnDDropTarget::reset(void)
 
     mcbData = 0;
     RT_ZERO(mFormatEtc);
+    mFormats = "";
+}
+
+RTCString VBoxDnDDropTarget::Formats(void)
+{
+    return mFormats;
 }
 
 int VBoxDnDDropTarget::WaitForDrop(RTMSINTERVAL msTimeout)

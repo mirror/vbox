@@ -23,6 +23,7 @@
 #include <QMimeData>
 #include <QStringList>
 #include <QTimer>
+#include <QUrl>
 
 #ifdef LOG_GROUP
 # undef LOG_GROUP
@@ -106,8 +107,9 @@ bool UIDnDMimeData::hasFormat(const QString &mimeType) const
 QVariant UIDnDMimeData::retrieveData(const QString &mimeType,
                                      QVariant::Type type) const
 {
-    LogFlowFunc(("m_enmState=%d, mimeType=%s, type=%d\n",
-                 m_enmState, mimeType.toStdString().c_str(), type));
+    LogFlowFunc(("m_enmState=%d, mimeType=%s, type=%d (%s)\n",
+                 m_enmState, mimeType.toStdString().c_str(),
+                 type, QVariant::typeToName(type)));
 
     bool fCanDrop = true;
 
@@ -131,15 +133,11 @@ QVariant UIDnDMimeData::retrieveData(const QString &mimeType,
      * routine (called by QtDrag) decides that a drop event just happened.
      * So just update our internal state to reflect the same as on other
      * platforms. */
-    m_enmState = Dropped;
+    fCanDrop = true;
 #else
     /* Mouse button released? See eventFilter for more information. */
     if (m_enmState != Dropped)
         fCanDrop = false;
-#endif
-
-#if defined (RT_OS_WINDOWS) || defined (RT_OS_MACOS)
-    /* Special MIME handling. Later. */
 #endif
 
     /* Do we support the requested MIME type? */
@@ -153,7 +151,8 @@ QVariant UIDnDMimeData::retrieveData(const QString &mimeType,
 
     /* Supported types. See below in the switch statement. */
     if (   fCanDrop
-        && !(   /* Regular text. */
+        && !(
+             /* Plain text. */
                 type == QVariant::String
              /* Binary data. */
              || type == QVariant::ByteArray
@@ -169,69 +168,82 @@ QVariant UIDnDMimeData::retrieveData(const QString &mimeType,
     {
         LogFlowFunc(("Skipping request, m_enmState=%d ...\n",
                      m_enmState));
-        return QVariant();
+        return QMimeData::retrieveData(mimeType, type);
     }
 
-    CGuest guest = m_session.GetConsole().GetGuest();
-    /* Start getting the data from the guest. First inform the guest we
-     * want the data in the specified MIME type. */
-    CProgress progress = guest.DragGHDropped(mimeType,
-                                             UIDnDHandler::toVBoxDnDAction(m_defAction));
-    if (guest.isOk())
+    if (m_enmState == Dragging)
     {
-        msgCenter().showModalProgressDialog(progress,
-                                            tr("Retrieving data ..."), ":/progress_dnd_gh_90px.png",
-                                            m_pParent);
-        if (!progress.GetCanceled())
+        int rc = VINF_SUCCESS;
+
+        CGuest guest = m_session.GetConsole().GetGuest();
+        /* Start getting the data from the guest. First inform the guest we
+         * want the data in the specified MIME type. */
+        CProgress progress = guest.DragGHDropped(mimeType,
+                                                 UIDnDHandler::toVBoxDnDAction(m_defAction));
+        if (guest.isOk())
         {
-            if (   progress.isOk()
-                && progress.GetResultCode() == 0)
+            msgCenter().showModalProgressDialog(progress,
+                                                tr("Retrieving data ..."), ":/progress_dnd_gh_90px.png",
+                                                m_pParent);
+            if (!progress.GetCanceled())
             {
-                /** @todo What about retrieving bigger files? Loop? */
-
-                /* After the data successfully arrived from the guest, we query it from Main. */
-                QVector<uint8_t> data = guest.DragGHGetData();
-                if (!data.isEmpty())
+                if (   progress.isOk()
+                    && progress.GetResultCode() == 0)
                 {
-                    switch (type)
+                    /** @todo What about retrieving bigger files? Loop? */
+
+                    /* After the data successfully arrived from the guest, we query it from Main. */
+                    QVector<uint8_t> data = guest.DragGHGetData();
+                    if (!data.isEmpty())
                     {
-                        case QVariant::String:
+                        switch (type)
                         {
-                            m_data = QVariant(QString(reinterpret_cast<const char*>(data.data())));
-                            break;
-                        }
+                            case QVariant::String:
+                            {
+                                m_data = QVariant(QString(reinterpret_cast<const char*>(data.data())));
+                                break;
+                            }
 
-                        case QVariant::ByteArray:
-                        {
-                            QByteArray ba(reinterpret_cast<const char*>(data.constData()), data.size());
-                            m_data = QVariant(ba);
-                            break;
-                        }
+                            case QVariant::ByteArray:
+                            {
+                                QByteArray ba(reinterpret_cast<const char*>(data.constData()), data.size());
+                                m_data = QVariant(ba);
+                                break;
+                            }
 
-                        case QVariant::List:
-                        {
-                            /** @todo Support URIs. */
-                            break;
-                        }
+                            case QVariant::List:
+                            {
+                                QString strData = QString(reinterpret_cast<const char*>(data.data()));
+                                QStringList lstString = strData.split("\r\n", QString::SkipEmptyParts);
 
-                        default:
-                            AssertMsgFailed(("Should never happen, d'oh!\n"));
-                            break;
+                                m_data = QVariant(lstString);
+                                break;
+                            }
+
+                            default:
+                                AssertMsgFailed(("Should never happen, d'oh!\n"));
+                                rc = VERR_NOT_SUPPORTED;
+                                break;
+                        }
                     }
-                }
-                /** @todo How often to retry on empty data received? */
+                    /** @todo How often to retry on empty data received? */
 
-                m_enmState = Finished;
+                    if (RT_SUCCESS(rc))
+                        emit sigDataAvailable(mimeType);
+
+                    m_enmState = DataRetrieved;
+                }
+                else
+                    msgCenter().cannotDropData(progress, m_pParent);
             }
             else
-                msgCenter().cannotDropData(progress, m_pParent);
+                m_enmState = Canceled;
         }
         else
-            m_enmState = Canceled;
+            msgCenter().cannotDropData(guest, m_pParent);
     }
-    else
-        msgCenter().cannotDropData(guest, m_pParent);
 
+    //return QMimeData::retrieveData(mimeType, type);
     return m_data;
 }
 
@@ -286,4 +298,53 @@ void UIDnDMimeData::sltInstallEventFilter(void)
     qApp->installEventFilter(this);
 }
 #endif /* RT_OS_WINDOWS */
+
+int UIDnDMimeData::setData(const QString &mimeType)
+{
+    LogFlowFunc(("mimeType=%s, dataType=%s\n",
+                 mimeType.toAscii().constData(), m_data.typeName()));
+
+    int rc = VINF_SUCCESS;
+
+    switch (m_data.type())
+    {
+        case QVariant::String: /* Plain text. */
+        {
+            QMimeData::setText(m_data.toString());
+            break;
+        }
+
+        case QVariant::ByteArray: /* Raw byte data. */
+        {
+            QMimeData::setData(mimeType, m_data.toByteArray());
+            break;
+        }
+
+        case QVariant::StringList: /* URI. */
+        {
+            QList<QVariant> lstData = m_data.toList();
+            QList<QUrl> lstURL;
+            for (int i = 0; i < lstData.size(); i++)
+            {
+                QString strURL = lstData.at(i).toString();
+                LogFlowFunc(("\tURL: %s\n",
+                             strURL.toAscii().constData()));
+                lstURL << QUrl(strURL.toAscii());
+            }
+            LogFlowFunc(("Number of URLs: %d\n",  lstURL.size()));
+
+            QMimeData::setUrls(f);
+            break;
+        }
+
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+#include "UIDnDMIMEData.moc"
 

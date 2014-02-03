@@ -154,9 +154,9 @@ protected:
 
 public:
 
-    bool HasData(void) { return RT_BOOL(mFormatEtc.cfFormat != 0); }
     void *DataMutableRaw(void) { return mpvData; }
     uint32_t DataSize(void) { return mcbData; }
+    RTCString Formats(void);
     int WaitForDrop(RTMSINTERVAL msTimeout);
 
 protected:
@@ -169,6 +169,7 @@ protected:
      *  Note: We don't keep the pointer of the
      *        DVTARGETDEVICE here! */
     FORMATETC mFormatEtc;
+    RTCString mFormats;
     void *mpvData;
     uint32_t mcbData;
     RTSEMEVENT hEventDrop;
@@ -337,6 +338,8 @@ public:
     /* G->H */
     int OnGhIsDnDPending(uint32_t uScreenID);
     int OnGhDropped(const char *pszFormats, uint32_t cbFormats, uint32_t uDefAction);
+    int OnGhSendDir(const char *pszFormats, uint32_t cbFormats, uint32_t uDefAction);
+    int OnGhSendFile(const char *pszFormats, uint32_t cbFormats, uint32_t uDefAction);
 #endif
 
     int ProcessEvent(PVBOXDNDEVENT pEvent);

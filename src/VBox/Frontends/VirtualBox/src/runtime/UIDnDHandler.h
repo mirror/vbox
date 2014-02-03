@@ -23,14 +23,16 @@
 /* COM includes: */
 #include "COMEnums.h"
 
-/* Forward declarations. */
+/* Forward declarations: */
 class QMimeData;
 class CSession;
 class CGuest;
+class UIDnDMimeData;
 
-/** @todo Check for making this a full static class when possible. */
 class UIDnDHandler: public QObject
 {
+    Q_OBJECT;
+
 public:
     /* Singleton factory. */
     static UIDnDHandler* instance(void)
@@ -57,6 +59,10 @@ public:
     /* Guest -> Host. */
     int            dragGHPending(CSession &session, ulong screenId, QWidget *pParent = NULL);
 
+public slots:
+
+    void sltDataAvailable(const QString &mimetype);
+
 private:
     static UIDnDHandler *m_pInstance;
 
@@ -68,6 +74,8 @@ private:
     static QVector<KDragAndDropAction> toVBoxDnDActions(Qt::DropActions actions);
     static Qt::DropAction              toQtDnDAction(KDragAndDropAction action);
     static Qt::DropActions             toQtDnDActions(const QVector<KDragAndDropAction> &vecActions);
+
+    UIDnDMimeData *pMData;
 
     friend class UIDnDMimeData;
 };

@@ -67,7 +67,10 @@ enum eHostFn
 {
     HOST_DND_SET_MODE                  = 100,
 
-    /* H->G */
+    /*
+     * Host -> Guest messages
+     */
+
     HOST_DND_HG_EVT_ENTER              = 200,
     HOST_DND_HG_EVT_MOVE,
     HOST_DND_HG_EVT_LEAVE,
@@ -77,19 +80,27 @@ enum eHostFn
      *  the format(s) specified by HOST_DND_HG_EVT_ENTER. */
     HOST_DND_HG_SND_DATA,
     /** Sent when the actual buffer for HOST_DND_HG_SND_DATA
-     *  was too small. */
+     *  was too small, issued by the DnD host service. */
     HOST_DND_HG_SND_MORE_DATA,
+    /** Directory entry to be handled on the guest. */
     HOST_DND_HG_SND_DIR,
+    /** File entry to be handled on the guest. */
     HOST_DND_HG_SND_FILE,
 
-    /* G->H */
+    /*
+     * Guest -> Host messages
+     */
+
     /** The host asks the guest whether a DnD operation
      *  is in progress when the mouse leaves the guest window. */
     HOST_DND_GH_REQ_PENDING            = 600,
     /** The host informs the guest that a DnD drop operation
      *  has been started and that the host wants the data in
      *  a specific mime-type. */
-    HOST_DND_GH_EVT_DROPPED
+    HOST_DND_GH_EVT_DROPPED,
+
+    HOST_DND_GH_RECV_DIR               = 650,
+    HOST_DND_GH_RECV_FILE
 };
 
 /**
@@ -106,7 +117,12 @@ enum eGuestFn
     GUEST_DND_GET_NEXT_HOST_MSG        = 300,
 
     /* H->G */
+    /** The guest acknowledges that the pending DnD data from
+     *  the host can be dropped on the currently selected source
+     *  on the guest. */
     GUEST_DND_HG_ACK_OP                = 400,
+    /** The guest requests the actual DnD data to be sent
+     *  from the host. */
     GUEST_DND_HG_REQ_DATA,
     GUEST_DND_HG_EVT_PROGRESS,
 
@@ -118,7 +134,10 @@ enum eGuestFn
      */
     GUEST_DND_GH_ACK_PENDING           = 500,
     GUEST_DND_GH_SND_DATA,
-    GUEST_DND_GH_EVT_ERROR
+    GUEST_DND_GH_EVT_ERROR,
+
+    GUEST_DND_GH_SND_DIR               = 700,
+    GUEST_DND_GH_SND_FILE
 };
 
 /**
