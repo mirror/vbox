@@ -350,12 +350,12 @@ DnDHGSendDataMessage::DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms,
                 /* Query the path component of a file URI. If this hasn't a
                  * file scheme NULL is returned. */
                 char *pszFilePath;
-                if (pszFilePath = RTUriFilePath(strURI.c_str(), URI_FILE_FORMAT_AUTO))
+                if ((pszFilePath = RTUriFilePath(strURI.c_str(), URI_FILE_FORMAT_AUTO)))
                 {
                     /* Add the path to our internal file list (recursive in
                      * the case of a directory). */
                     char *pszFilename;
-                    if (pszFilename = RTPathFilename(pszFilePath))
+                    if ((pszFilename = RTPathFilename(pszFilePath)))
                     {
                         char *pszNewURI = RTUriFileCreate(pszFilename);
                         if (pszNewURI)
@@ -558,7 +558,7 @@ int DnDHGSendDataMessage::buildFileTree(const char *pcszPath, size_t cbBaseLen)
             case RTDIRENTRYTYPE_FILE:
             {
                 char *pszNewFile;
-                if (pszNewFile = RTStrAPrintf2("%s%c%s", pcszPath, RTPATH_DELIMITER, DirEntry.szName))
+                if ((pszNewFile = RTStrAPrintf2("%s%c%s", pcszPath, RTPATH_DELIMITER, DirEntry.szName)))
                 {
                     /* We need the size and the mode of the file. */
                     RTFSOBJINFO objInfo1;
