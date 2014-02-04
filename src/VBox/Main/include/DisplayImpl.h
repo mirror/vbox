@@ -167,7 +167,7 @@ public:
     int handleVHWACommandProcess(PVBOXVHWACMD pCommand);
 #endif
 #ifdef VBOX_WITH_CRHGSMI
-    int handleCrCmdNotifyCmds();
+    int  handleCrCmdNotifyCmds();
     void handleCrHgsmiCommandProcess(PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd);
     void handleCrHgsmiControlProcess(PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32_t cbCtl);
 
@@ -178,12 +178,12 @@ public:
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     void  handleCrAsyncCmdCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam);
     void  handleCrVRecScreenshotPerform(uint32_t uScreen,
-                    uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
-                    uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
-                    uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
+                                        uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
+                                        uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
+                                        uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
     bool handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp);
     void handleCrVRecScreenshotEnd(uint32_t uScreen, uint64_t u64TimeStamp);
-    void  handleVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
+    void handleVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
 #endif
 
     int notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM);
@@ -285,9 +285,10 @@ private:
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     static DECLCALLBACK(void) displayCrVRecScreenshotPerform(void *pvCtx, uint32_t uScreen,
-                    uint32_t x, uint32_t y, uint32_t uBitsPerPixel,
-                    uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
-                    uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
+                                                             uint32_t x, uint32_t y,
+                                                             uint32_t uBitsPerPixel, uint32_t uBytesPerLine,
+                                                             uint32_t uGuestWidth, uint32_t uGuestHeight,
+                                                             uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
     static DECLCALLBACK(bool) displayCrVRecScreenshotBegin(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp);
     static DECLCALLBACK(void) displayCrVRecScreenshotEnd(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp);
 
