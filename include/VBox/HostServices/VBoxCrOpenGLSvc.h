@@ -83,6 +83,7 @@
 
 /* Names of supported output redirect formats. */
 #define H3DOR_FMT_RGBA_TOPDOWN "H3DOR_FMT_RGBA_TOPDOWN"
+#define H3DOR_FMT_RGBA "H3DOR_FMT_RGBA"
 
 /* Comma separated list of output formats supported by the output redirect target. */
 #define H3DOR_PROP_FORMATS 0
