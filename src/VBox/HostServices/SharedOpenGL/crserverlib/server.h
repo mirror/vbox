@@ -385,17 +385,17 @@ DECLINLINE(bool) CrFBmIsSet(CR_FBMAP *pMap, uint32_t i)
 
 DECLINLINE(void) CrFBmSet(CR_FBMAP *pMap, uint32_t i)
 {
-    return ASMBitSet(&pMap->Map, i);
+    ASMBitSet(&pMap->Map, i);
 }
 
 DECLINLINE(void) CrFBmSetAtomic(CR_FBMAP *pMap, uint32_t i)
 {
-    return ASMAtomicBitSet(&pMap->Map, i);
+    ASMAtomicBitSet(&pMap->Map, i);
 }
 
 DECLINLINE(void) CrFBmClear(CR_FBMAP *pMap, uint32_t i)
 {
-    return ASMBitClear(&pMap->Map, i);
+    ASMBitClear(&pMap->Map, i);
 }
 
 /*helper function that calls CrFbUpdateBegin for all enabled framebuffers */
