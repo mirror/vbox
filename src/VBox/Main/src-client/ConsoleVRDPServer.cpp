@@ -1773,6 +1773,7 @@ typedef struct H3DORInstance
     uint32_t h;
     bool fCreated;
     bool fFallback;
+    bool fTopDown;
 } H3DORInstance;
 
 #define H3DORLOG Log
@@ -1801,6 +1802,12 @@ typedef struct H3DORInstance
         if (RTStrICmp(pszFormat, H3DOR_FMT_RGBA_TOPDOWN) == 0)
         {
             /* Accept it. */
+            p->fTopDown = true;
+        }
+        else if (RTStrICmp(pszFormat, H3DOR_FMT_RGBA) == 0)
+        {
+            /* Accept it. */
+            p->fTopDown = false;
         }
         else
         {
@@ -1986,7 +1993,11 @@ typedef struct H3DORInstance
     image.pvData = pvData;
     image.cbData = cbData;
     image.pvScanLine0 = (uint8_t *)pvData + (p->h - 1) * p->w * 4;
-    image.iScanDelta = -4 * p->w;
+    image.iScanDelta = 4 * p->w;
+    if (p->fTopDown)
+    {
+        image.iScanDelta = -image.iScanDelta;
+    }
 
     p->pThis->m_interfaceImage.VRDEImageUpdate (p->hImageBitmap,
                                                 p->x,
@@ -2024,11 +2035,17 @@ typedef struct H3DORInstance
     if (index == H3DOR_PROP_FORMATS)
     {
         /* Return a comma separated list of supported formats. */
-        static const char *pszSupportedFormats = H3DOR_FMT_RGBA_TOPDOWN;
-        uint32_t cbOut = (uint32_t)strlen(pszSupportedFormats) + 1;
+        uint32_t cbOut =   (uint32_t)strlen(H3DOR_FMT_RGBA_TOPDOWN) + 1
+                         + (uint32_t)strlen(H3DOR_FMT_RGBA) + 1;
         if (cbOut <= cbBuffer)
         {
-            memcpy(pvBuffer, pszSupportedFormats, cbOut);
+            char *pch = (char *)pvBuffer;
+            memcpy(pch, H3DOR_FMT_RGBA_TOPDOWN, strlen(H3DOR_FMT_RGBA_TOPDOWN));
+            pch += strlen(H3DOR_FMT_RGBA_TOPDOWN);
+            *pch++ = ',';
+            memcpy(pch, H3DOR_FMT_RGBA, strlen(H3DOR_FMT_RGBA));
+            pch += strlen(H3DOR_FMT_RGBA);
+            *pch++ = '\0';
         }
         else
         {
