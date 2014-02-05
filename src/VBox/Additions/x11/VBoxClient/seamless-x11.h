@@ -22,7 +22,8 @@
 #include <VBox/log.h>
 #include <iprt/avl.h>
 
-#include "seamless-guest.h"
+#include "seamless-x11.h"
+#include "seamless-host.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -147,7 +148,7 @@ public:
 
 class VBoxGuestSeamlessX11;
 
-class VBoxGuestSeamlessX11 : public VBoxGuestSeamlessGuest
+class VBoxGuestSeamlessX11
 {
 private:
     // We don't want a copy constructor or assignment operator
@@ -155,8 +156,8 @@ private:
     VBoxGuestSeamlessX11& operator=(const VBoxGuestSeamlessX11&);
 
     // Private member variables
-    /** Pointer to the observer class. */
-    VBoxGuestSeamlessObserver *mObserver;
+    /** Pointer to the host class. */
+    VBoxGuestSeamlessHostInt *mHost;
     /** Our connection to the X11 display we are running on. */
     Display *mDisplay;
     /** Class to keep track of visible guest windows. */
@@ -196,22 +197,23 @@ private:
 public:
     /**
      * Initialise the guest and ensure that it is capable of handling seamless mode
-     * @param   pObserver Observer class to connect host and guest interfaces
+     * @param   pHost Host interface class to notify of window configuration
+     *                changes.
      *
      * @returns iprt status code
      */
-    int init(VBoxGuestSeamlessObserver *pObserver);
+    int init(VBoxGuestSeamlessHostInt *pHost);
 
     /**
      * Shutdown seamless event monitoring.
      */
     void uninit(void)
     {
-        if (0 != mObserver)
+        if (0 != mHost)
         {
             stop();
         }
-        mObserver = 0;
+        mHost = 0;
     }
 
     /**
@@ -240,7 +242,7 @@ public:
     void doShapeEvent(Window hWin);
 
     VBoxGuestSeamlessX11(void)
-        : mObserver(0), mDisplay(NULL), mpRects(NULL), mcRects(0),
+        : mHost(0), mDisplay(NULL), mpRects(NULL), mcRects(0),
           mSupportsShape(false), mEnabled(false), mChanged(false) {}
 
     ~VBoxGuestSeamlessX11()
@@ -250,7 +252,5 @@ public:
             XCloseDisplay(mDisplay);
     }
 };
-
-typedef VBoxGuestSeamlessX11 VBoxGuestSeamlessGuestImpl;
 
 #endif /* __Additions_linux_seamless_x11_h not defined */

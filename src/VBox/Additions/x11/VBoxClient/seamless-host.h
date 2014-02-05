@@ -21,7 +21,6 @@
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>      /* for the R3 guest library functions  */
 
-#include "seamless-glue.h"          /* for VBoxGuestSeamlessObserver */
 #include "thread.h"                 /* for VBoxGuestThread */
 
 class VBoxGuestSeamlessHost;
@@ -63,9 +62,20 @@ public:
 };
 
 /**
+ * Small virtual class which provides the interface for notifying the host of
+ * changes to the X11 window configuration, mainly split out from
+ * @a VBoxGuestSeamlessHost to simplify the unit test.
+ */
+class VBoxGuestSeamlessHostInt
+{
+public:
+    virtual void notify(RTRECT *pRects, size_t cRects) = 0;
+};
+
+/**
  * Interface to the host
  */
-class VBoxGuestSeamlessHost
+class VBoxGuestSeamlessHost : public VBoxGuestSeamlessHostInt
 {
     friend class VBoxGuestSeamlessHostThread;
 public:
@@ -85,8 +95,9 @@ private:
     VBoxGuestSeamlessHost(const VBoxGuestSeamlessHost&);
     VBoxGuestSeamlessHost& operator=(const VBoxGuestSeamlessHost&);
 
-    /** Observer to connect guest and host and ferry events back and forth. */
-    VBoxGuestSeamlessObserver *mObserver;
+    /** Thread to start and stop when we enter and leave seamless mode which
+     *  monitors X11 windows in the guest. */
+    VBoxGuestThread *mX11MonitorThread;
     /** Host seamless event (i.e. enter and leave) thread function. */
     VBoxGuestSeamlessHostThread mThreadFunction;
     /** Host seamless event thread. */
@@ -112,19 +123,19 @@ private:
 public:
     /**
      * Initialise the guest and ensure that it is capable of handling seamless mode
-     * @param   pObserver Observer class to connect host and guest interfaces
+     * @param   pX11MonitorThread Thread class to monitor guest windows.
      *
      * @returns iprt status code
      */
-    int init(VBoxGuestSeamlessObserver *pObserver)
+    int init(VBoxGuestThread *pX11MonitorThread)
     {
         LogRelFlowFunc(("\n"));
-        if (mObserver != 0)  /* Assertion */
+        if (mX11MonitorThread != 0)  /* Assertion */
         {
             LogRel(("VBoxClient: ERROR: attempt to initialise seamless host object twice!\n"));
             return VERR_INTERNAL_ERROR;
         }
-        mObserver = pObserver;
+        mX11MonitorThread = pX11MonitorThread;
         LogRelFlowFunc(("returning VINF_SUCCESS\n"));
         return VINF_SUCCESS;
     }
@@ -147,13 +158,13 @@ public:
     /**
      * Update the set of visible rectangles in the host.
      */
-    void updateRects(RTRECT *pRects, size_t cRects);
+    virtual void notify(RTRECT *pRects, size_t cRects);
 
     VBoxGuestSeamlessHost(void) : mThreadFunction(this),
                                   mThread(&mThreadFunction, 0, RTTHREADTYPE_MSG_PUMP,
                                   RTTHREADFLAGS_WAITABLE, "Host events")
     {
-        mObserver = 0;
+        mX11MonitorThread = 0;
         mRunning = false;
         mState = NONE;
     }
