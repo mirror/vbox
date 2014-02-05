@@ -3448,7 +3448,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                 {
                     if (fInSmxMode && !fSmxVmxAllowed)
                         rc = VERR_VMX_MSR_SMX_VMXON_DISABLED;
-                    else if (!fVmxAllowed)
+                    else if (!fInSmxMode && !fVmxAllowed)
                         rc = VERR_VMX_MSR_VMXON_DISABLED;
                     else
                         rc = VINF_SUCCESS;

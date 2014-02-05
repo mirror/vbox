@@ -808,7 +808,7 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
     {
         if (fInSmxMode && !fSmxVmxAllowed)
             rc = VERR_VMX_MSR_SMX_VMXON_DISABLED;
-        else if (!fVmxAllowed)
+        else if (!fInSmxMode && !fVmxAllowed)
             rc = VERR_VMX_MSR_VMXON_DISABLED;
         else
             rc = VINF_SUCCESS;
