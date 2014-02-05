@@ -34,6 +34,7 @@
 #include <VBox/err.h>
 #include <VBox/intnetinline.h>
 #include <VBox/version.h>
+#include <VBox/VBoxNetSend.h>
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
@@ -43,6 +44,7 @@
 #include <iprt/alloca.h>
 #include <iprt/time.h>
 #include <iprt/net.h>
+#include <iprt/thread.h>
 
 #include <mach/kmod.h>
 #include <sys/conf.h>
@@ -882,6 +884,43 @@ static errno_t vboxNetFltDarwinIffInput(void *pvThis, ifnet_t pIfNet, protocol_f
 }
 
 
+/** A worker for vboxNetFltSendDummy() thread. */
+static int vboxNetFltSendDummyWorker(RTTHREAD ThreadSelf, void *pvUser)
+{
+    Assert(pvUser);
+    ifnet_t pIfNet = (ifnet_t)pvUser;
+    return VboxNetSendDummy(pIfNet);
+}
+
+/*
+ * Prevent GUI icon freeze issue when VirtualBoxVM process terminates.
+ *
+ * This function is a workaround for stuck-in-dock issue. The
+ * idea here is to send a dummy packet to an interface from the
+ * context of a kernel thread. Therefore, an XNU's receive
+ * thread (which is created as a result if we are the first who
+ * is communicating with the interface) will be associated with the
+ * kernel thread instead of VirtualBoxVM process.
+ *
+ * @param pIfNet    Interface to be used to send data.
+ */
+static void vboxNetFltSendDummy(ifnet_t pIfNet)
+{
+    RTTHREAD dummyThread;
+    int rc;
+
+    rc = RTThreadCreate(&dummyThread, vboxNetFltSendDummyWorker, (void *)pIfNet, 0,
+        RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "DummyThread");
+
+    if (RT_SUCCESS(rc))
+    {
+        RTThreadWait(dummyThread, RT_INDEFINITE_WAIT, NULL);
+        LogFlow(("vboxNetFltSendDummy: a dummy packet has been successfully sent in order to prevent stuck-in-dock issue\n"));
+    }
+    else
+        LogFlow(("vboxNetFltSendDummy: unable to send dummy packet in order to prevent stuck-in-dock issue\n"));
+}
+
 /**
  * Internal worker for vboxNetFltOsInitInstance and vboxNetFltOsMaybeRediscovered.
  *
@@ -916,6 +955,9 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
     RTSpinlockAcquire(pThis->hSpinlock);
     ASMAtomicUoWritePtr(&pThis->u.s.pIfNet, pIfNet);
     RTSpinlockReleaseNoInts(pThis->hSpinlock);
+
+    /* Prevent stuck-in-dock issue by associating interface receive thread with kernel thread */
+    vboxNetFltSendDummy(pIfNet);
 
     /*
      * Get the mac address while we still have a valid ifnet reference.
@@ -982,17 +1024,6 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 }
 
 
-/**
- * Attempt to detect if a cable is attached to a network card.
- * There is no direct way to detect this at any time. We assume
- * if interface's baud rate is not zero then cable is attached.
- */
-static int vboxNetFltCableAttached(ifnet_t pIfNet)
-{
-    return (ifnet_baudrate(pIfNet) != 0);
-}
-
-
 int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
     NOREF(pvIfData);
@@ -1001,15 +1032,6 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
     ifnet_t pIfNet = vboxNetFltDarwinRetainIfNet(pThis);
     if (pIfNet)
     {
-        /*
-         * Do not send any data to a network stack if cable is not attached
-         * to a network card device in order to prevent stuck-in-dock problem. */
-        if (!vboxNetFltCableAttached(pIfNet))
-        {
-            vboxNetFltDarwinReleaseIfNet(pThis, pIfNet);
-            return rc;
-        }
-
         /*
          * Create a mbuf for the gather list and push it onto the wire.
          *
