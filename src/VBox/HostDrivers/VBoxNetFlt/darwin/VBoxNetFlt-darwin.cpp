@@ -889,7 +889,7 @@ static int vboxNetFltSendDummyWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
     Assert(pvUser);
     ifnet_t pIfNet = (ifnet_t)pvUser;
-    return VboxNetSendDummy(pIfNet);
+    return VBoxNetSendDummy(pIfNet);
 }
 
 /*
