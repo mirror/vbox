@@ -24,6 +24,7 @@
 #include <iprt/err.h>
 
 #include "seamless-host.h"
+#include "seamless-x11.h"
 
 /**
  * Start the service.
@@ -34,7 +35,7 @@ int VBoxGuestSeamlessHost::start(void)
     int rc = VERR_NOT_SUPPORTED;
 
     LogRelFlowFunc(("\n"));
-    if (mRunning)  /* Assertion */
+    if (mThread)  /* Assertion */
     {
         LogRel(("VBoxClient: seamless service started twice!\n"));
         return VERR_INTERNAL_ERROR;
@@ -48,12 +49,10 @@ int VBoxGuestSeamlessHost::start(void)
     if (RT_SUCCESS(rc))
     {
         LogRel(("VBoxClient: enabled seamless capability on host.\n"));
-        rc = mThread.start();
-        if (RT_SUCCESS(rc))
-        {
-            mRunning = true;
-        }
-        else
+        rc = RTThreadCreate(&mThread, threadFunction, this, 0,
+                            RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
+                            "Host events");
+        if (RT_FAILURE(rc))
         {
             LogRel(("VBoxClient: failed to start seamless event thread, rc=%Rrc.  Disabled seamless capability on host again.\n", rc));
             VbglR3SeamlessSetCap(false);
@@ -70,16 +69,15 @@ int VBoxGuestSeamlessHost::start(void)
 /** Stops the service. */
 void VBoxGuestSeamlessHost::stop(RTMSINTERVAL cMillies /* = RT_INDEFINITE_WAIT */)
 {
-    LogRelFlowFunc(("returning\n"));
-    if (!mRunning)  /* Assertion */
-    {
+    LogRelFlowFunc(("\n"));
+    if (!mThread)  /* Assertion */
         LogRel(("VBoxClient: tried to stop seamless service which is not running!\n"));
-        return;
-    }
-    mThread.stop(cMillies, 0);
+    else
+        stopThread(cMillies);
+    if (mX11MonitorRTThread)
+        stopX11Thread();
     VbglR3CtlFilterMask(0, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST);
     VbglR3SeamlessSetCap(false);
-    mRunning = false;
     LogRelFlowFunc(("returning\n"));
 }
 
@@ -105,7 +103,12 @@ int VBoxGuestSeamlessHost::nextEvent(void)
                 LogRelFunc(("VMMDev_Seamless_Visible_Region request received (VBoxClient).\n"));
 #endif
                 mState = ENABLE;
-                mX11MonitorThread->start();
+                mX11ThreadStopping = false;
+                /** @todo Do something on failure, like bail out. */
+                if (RT_FAILURE(RTThreadCreate(&mX11MonitorRTThread,
+                               x11ThreadFunction, this, 0, RTTHREADTYPE_MSG_PUMP,
+                               RTTHREADFLAGS_WAITABLE, "X11 events")))
+                    LogRelFunc(("Warning: failed to start X11 monitor thread (VBoxClient).\n"));
                 break;
             case VMMDev_Seamless_Host_Window:
             /* One host window represents one guest window.  Not yet implemented. */
@@ -119,7 +122,10 @@ int VBoxGuestSeamlessHost::nextEvent(void)
                 LogRelFunc(("VMMDev_Seamless_Disabled set (VBoxClient).\n"));
 #endif
                 mState = DISABLE;
-                mX11MonitorThread->stop(RT_INDEFINITE_WAIT, 0);
+                if (mX11MonitorRTThread)
+                    stopX11Thread();
+                else
+                    LogRelThisFunc(("Attempted to stop X11 monitor thread which is not running (VBoxClient)!\n"));
         }
     }
     else
@@ -145,51 +151,97 @@ void VBoxGuestSeamlessHost::notify(RTRECT *pRects, size_t cRects)
     LogRelFlowFunc(("returning\n"));
 }
 
+
 /**
- * The actual thread function.
- *
- * @returns iprt status code as thread return value
- * @param pParent the VBoxGuestThread running this thread function
+ * The actual event thread function.
  */
-int VBoxGuestSeamlessHostThread::threadFunction(VBoxGuestThread *pThread)
+int VBoxGuestSeamlessHost::threadFunction(RTTHREAD self, void *pvUser)
 {
+    VBoxGuestSeamlessHost *pHost = (VBoxGuestSeamlessHost *)pvUser;
+
     LogRelFlowFunc(("\n"));
-    if (0 != mHost)
+    pHost->mThreadRunning = true;
+    if (0 != pHost)
     {
-        mThread = pThread;
-        while (!mThread->isStopping())
+        while (!pHost->mThreadStopping)
         {
-            if (RT_FAILURE(mHost->nextEvent()) && !mThread->isStopping())
+            if (RT_FAILURE(pHost->nextEvent()) && !pHost->mThreadStopping)
             {
                 /* If we are not stopping, sleep for a bit to avoid using up too
                     much CPU while retrying. */
-                mThread->yield();
+                RTThreadYield();
             }
         }
     }
+    pHost->mThreadRunning = false;
     LogRelFlowFunc(("returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
 /**
+ * Send a signal to the thread that it should exit
+ */
+void VBoxGuestSeamlessHost::stopThread(RTMSINTERVAL cMillies)
+{
+    int rc;
+
+    LogRelFlowFunc(("\n"));
+    /**
+     * @todo is this reasonable?  If the thread is in the event loop then the cancelEvent()
+     *       will cause it to exit.  If it enters or exits the event loop it will also
+     *       notice that we wish it to exit.  And if it is somewhere in-between, the
+     *       yield() should give it time to get to one of places mentioned above.
+     */
+    mThreadStopping = true;
+    for (int i = 0; (i < 5) && mThreadRunning; ++i)
+    {
+        cancelEvent();
+        RTThreadYield();
+    }
+    rc = RTThreadWait(mThread, RT_INDEFINITE_WAIT, NULL);
+    if (RT_SUCCESS(rc))
+        mThread = NIL_RTTHREAD;
+    else
+        LogRelThisFunc(("Failed to stop seamless event thread, rc=%Rrc!\n",
+                        rc));
+    LogRelFlowFunc(("returning\n"));
+}
+
+/**
+ * The actual X11 event thread function.
+ */
+int VBoxGuestSeamlessHost::x11ThreadFunction(RTTHREAD self, void *pvUser)
+{
+    VBoxGuestSeamlessHost *pHost = (VBoxGuestSeamlessHost *)pvUser;
+    int rc = VINF_SUCCESS;
+
+    LogRelFlowFunc(("\n"));
+    rc = pHost->mX11Monitor->start();
+    if (RT_SUCCESS(rc))
+    {
+        while (!pHost->mX11ThreadStopping)
+        {
+            pHost->mX11Monitor->nextEvent();
+        }
+        pHost->mX11Monitor->stop();
+    }
+    LogRelFlowFunc(("returning %Rrc\n", rc));
+    return rc;
+}
+
+/**
  * Send a signal to the thread function that it should exit
  */
-void VBoxGuestSeamlessHostThread::stop(void)
+void VBoxGuestSeamlessHost::stopX11Thread(void)
 {
-    LogRelFlowFunc(("\n"));
-    if (0 != mHost)
-    {
-        /**
-         * @todo is this reasonable?  If the thread is in the event loop then the cancelEvent()
-         *       will cause it to exit.  If it enters or exits the event loop it will also
-         *       notice that we wish it to exit.  And if it is somewhere in-between, the
-         *       yield() should give it time to get to one of places mentioned above.
-         */
-        for (int i = 0; (i < 5) && mThread->isRunning(); ++i)
-        {
-            mHost->cancelEvent();
-            mThread->yield();
-        }
-    }
-    LogRelFlowFunc(("returning\n"));
+    int rc;
+
+    mX11ThreadStopping = true;
+    mX11Monitor->interruptEvent();
+    rc = RTThreadWait(mX11MonitorRTThread, RT_INDEFINITE_WAIT, NULL);
+    if (RT_SUCCESS(rc))
+        mX11MonitorRTThread = NIL_RTTHREAD;
+    else
+        LogRelThisFunc(("Failed to stop X11 monitor thread, rc=%Rrc!\n",
+                        rc));
 }

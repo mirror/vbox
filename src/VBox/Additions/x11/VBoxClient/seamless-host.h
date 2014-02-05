@@ -18,48 +18,12 @@
 #ifndef __Additions_client_seamless_host_h
 # define __Additions_client_seamless_host_h
 
+#include <iprt/thread.h>
+
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>      /* for the R3 guest library functions  */
 
-#include "thread.h"                 /* for VBoxGuestThread */
-
-class VBoxGuestSeamlessHost;
-
-/**
- * Host event (i.e. enter or leave seamless mode) thread function for the main
- * seamless class
- */
-class VBoxGuestSeamlessHostThread : public VBoxGuestThreadFunction
-{
-private:
-    // Copying or assigning a thread object is not sensible
-    VBoxGuestSeamlessHostThread(const VBoxGuestSeamlessHostThread&);
-    VBoxGuestSeamlessHostThread& operator=(const VBoxGuestSeamlessHostThread&);
-
-    // Private member variables
-    /** The host proxy object */
-    VBoxGuestSeamlessHost *mHost;
-
-    /** The thread object running us. */
-    VBoxGuestThread *mThread;
-public:
-    VBoxGuestSeamlessHostThread(VBoxGuestSeamlessHost *pHost)
-    {
-        mHost = pHost;
-    }
-    virtual ~VBoxGuestSeamlessHostThread(void) {}
-    /**
-      * The actual thread function.
-      *
-      * @returns iprt status code as thread return value
-      * @param pParent the VBoxGuestThread running this thread function
-      */
-    virtual int threadFunction(VBoxGuestThread *pThread);
-    /**
-     * Send a signal to the thread function that it should exit
-     */
-    virtual void stop(void);
-};
+class VBoxGuestSeamlessX11;
 
 /**
  * Small virtual class which provides the interface for notifying the host of
@@ -77,7 +41,6 @@ public:
  */
 class VBoxGuestSeamlessHost : public VBoxGuestSeamlessHostInt
 {
-    friend class VBoxGuestSeamlessHostThread;
 public:
     /** Events which can be reported by this class */
     enum meEvent
@@ -97,13 +60,17 @@ private:
 
     /** Thread to start and stop when we enter and leave seamless mode which
      *  monitors X11 windows in the guest. */
-    VBoxGuestThread *mX11MonitorThread;
-    /** Host seamless event (i.e. enter and leave) thread function. */
-    VBoxGuestSeamlessHostThread mThreadFunction;
+    RTTHREAD mX11MonitorRTThread;
+    /** X11 event monitor class */
+    VBoxGuestSeamlessX11 *mX11Monitor;
+    /** Should the X11 monitor thread be stopping? */
+    volatile bool mX11ThreadStopping;
     /** Host seamless event thread. */
-    VBoxGuestThread mThread;
-    /** Is the service running? */
-    bool mRunning;
+    RTTHREAD mThread;
+    /** Is the thread running? */
+    volatile bool mThreadRunning;
+    /** Should the thread be stopping? */
+    volatile bool mThreadStopping;
     /** Last request issued by the host. */
     meEvent mState;
 
@@ -119,23 +86,36 @@ private:
      * Interrupt an event wait and cause nextEvent() to return immediately.
      */
     void cancelEvent(void) { VbglR3InterruptEventWaits(); }
+    
+    /** Thread function to query seamless activation and deactivation events
+     *  from the host. */
+    static DECLCALLBACK(int) threadFunction(RTTHREAD self, void *pvUser);
+
+    /** Helper to stop the event query thread again. */
+    void stopThread(RTMSINTERVAL cMillies);
+
+    /** Thread function to monitor X11 window configuration changes. */
+    static DECLCALLBACK(int) x11ThreadFunction(RTTHREAD self, void *pvUser);
+
+    /** Helper to stop the X11 monitor thread again. */
+    void stopX11Thread(void);
 
 public:
     /**
      * Initialise the guest and ensure that it is capable of handling seamless mode
-     * @param   pX11MonitorThread Thread class to monitor guest windows.
+     * @param   pX11Monitor Object to monitor X11 guest windows.
      *
      * @returns iprt status code
      */
-    int init(VBoxGuestThread *pX11MonitorThread)
+    int init(VBoxGuestSeamlessX11 *pX11Monitor)
     {
         LogRelFlowFunc(("\n"));
-        if (mX11MonitorThread != 0)  /* Assertion */
+        if (mX11Monitor != NULL)  /* Assertion */
         {
             LogRel(("VBoxClient: ERROR: attempt to initialise seamless host object twice!\n"));
             return VERR_INTERNAL_ERROR;
         }
-        mX11MonitorThread = pX11MonitorThread;
+        mX11Monitor = pX11Monitor;
         LogRelFlowFunc(("returning VINF_SUCCESS\n"));
         return VINF_SUCCESS;
     }
@@ -160,19 +140,21 @@ public:
      */
     virtual void notify(RTRECT *pRects, size_t cRects);
 
-    VBoxGuestSeamlessHost(void) : mThreadFunction(this),
-                                  mThread(&mThreadFunction, 0, RTTHREADTYPE_MSG_PUMP,
-                                  RTTHREADFLAGS_WAITABLE, "Host events")
+    VBoxGuestSeamlessHost(void)
     {
-        mX11MonitorThread = 0;
-        mRunning = false;
+        mX11MonitorRTThread = NIL_RTTHREAD;
+        mX11Monitor = NULL;
+        mX11ThreadStopping = false;
+        mThread = NIL_RTTHREAD;
+        mThreadRunning = false;
+        mThreadStopping = false;
         mState = NONE;
     }
 
     ~VBoxGuestSeamlessHost()
     {
         LogRelFlowFunc(("\n"));
-        if (mRunning)  /* Assertion */
+        if (mThread)  /* Assertion */
         {
             LogRel(("VBoxClient: seamless host object still running!  Stopping...\n"));
             stop(2000);

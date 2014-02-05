@@ -23,59 +23,11 @@
 #include "seamless-host.h"
 #include "seamless-x11.h"
 
-/** Thread function class for VBoxGuestSeamlessX11. */
-class VBoxGuestSeamlessGuestThread: public VBoxGuestThreadFunction
-{
-private:
-    /** The guest class "owning" us. */
-    VBoxGuestSeamlessX11 *mGuest;
-    /** Should we exit the thread? */
-    bool mExit;
-
-    // Copying or assigning a thread object is not sensible
-    VBoxGuestSeamlessGuestThread(const VBoxGuestSeamlessGuestThread&);
-    VBoxGuestSeamlessGuestThread& operator=(const VBoxGuestSeamlessGuestThread&);
-
-public:
-    VBoxGuestSeamlessGuestThread(VBoxGuestSeamlessX11 *pGuest)
-    { mGuest = pGuest; mExit = false; }
-    virtual ~VBoxGuestSeamlessGuestThread(void) {}
-    /**
-      * The actual thread function.
-      *
-      * @returns iprt status code as thread return value
-      * @param pParent the VBoxGuestThread running this thread function
-      */
-    virtual int threadFunction(VBoxGuestThread *pThread)
-    {
-        int rc = VINF_SUCCESS;
-
-        LogRelFlowFunc(("\n"));
-        rc = mGuest->start();
-        if (RT_SUCCESS(rc))
-        {
-            while (!pThread->isStopping())
-            {
-                mGuest->nextEvent();
-            }
-            mGuest->stop();
-        }
-        LogRelFlowFunc(("returning %Rrc\n", rc));
-        return rc;
-    }
-    /**
-     * Send a signal to the thread function that it should exit
-     */
-    virtual void stop(void) { mGuest->interruptEvent(); }
-};
-
 class VBoxGuestSeamless
 {
 private:
     VBoxGuestSeamlessHost mHost;
     VBoxGuestSeamlessX11 mGuest;
-    VBoxGuestSeamlessGuestThread mGuestFunction;
-    VBoxGuestThread mGuestThread;
 
     bool isInitialised;
 public:
@@ -91,7 +43,7 @@ public:
         }
         if (RT_SUCCESS(rc))
         {
-            rc = mHost.init(&mGuestThread);
+            rc = mHost.init(&mGuest);
         }
         if (RT_SUCCESS(rc))
         {
@@ -119,19 +71,13 @@ public:
         if (isInitialised)
         {
             mHost.stop(cMillies);
-            mGuestThread.stop(cMillies, 0);
             mGuest.uninit();
             isInitialised = false;
         }
         LogRelFlowFunc(("returning\n"));
     }
 
-    VBoxGuestSeamless() : mGuestFunction(&mGuest),
-                          mGuestThread(&mGuestFunction, 0, RTTHREADTYPE_MSG_PUMP,
-                                       RTTHREADFLAGS_WAITABLE, "Guest events")
-    {
-        isInitialised = false;
-    }
+    VBoxGuestSeamless() { isInitialised = false; }
     ~VBoxGuestSeamless() { uninit(); }
 };
 

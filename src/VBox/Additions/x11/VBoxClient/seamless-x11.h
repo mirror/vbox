@@ -146,8 +146,6 @@ public:
     }
 };
 
-class VBoxGuestSeamlessX11;
-
 class VBoxGuestSeamlessX11
 {
 private:
