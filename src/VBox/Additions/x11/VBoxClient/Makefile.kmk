@@ -61,7 +61,6 @@ ifdef VBOX_X11_SEAMLESS_GUEST
 	seamless.cpp \
 	seamless-host.cpp \
 	seamless-x11.cpp \
-	thread.cpp \
 	display.cpp \
 	hostversion.cpp
  VBoxClient_LIBS += \
@@ -111,8 +110,7 @@ $$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
    tstSeamlessX11_SOURCES = \
            testcase/tstSeamlessX11.cpp \
            seamless-host.cpp \
-           seamless-x11.cpp \
-           thread.cpp
+           seamless-x11.cpp
    tstSeamlessX11_LIBPATH = \
            $(VBOX_LIBPATH_X11)
    tstSeamlessX11_LIBS = \
