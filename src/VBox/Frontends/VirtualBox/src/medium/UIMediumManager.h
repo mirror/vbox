@@ -129,6 +129,11 @@ private:
     /* Handler: Translation stuff: */
     void retranslateUi();
 
+    /** Creates UIMediumItem for corresponding UIMedium. */
+    void createMediumItem(const UIMedium &medium);
+    /** Updates UIMediumItem for corresponding UIMedium. */
+    void updateMediumItem(const UIMedium &medium);
+
     /* Helpers: Medium-modification stuff: */
     bool releaseMediumFrom(const UIMedium &medium, const QString &strMachineId);
     bool releaseHardDiskFrom(const UIMedium &medium, CMachine &machine);

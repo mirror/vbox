@@ -288,58 +288,8 @@ void UIMediumManager::sltHandleMediumCreated(const QString &strMediumID)
     if (isMediumAttachedToHiddenMachinesOnly(medium))
         return;
 
-    /* Prepare medium-item: */
-    UIMediumItem *pMediumItem = 0;
-    switch (medium.type())
-    {
-        case UIMediumType_HardDisk:
-        {
-            pMediumItem = createHardDiskItem(mTwHD, medium);
-            AssertReturnVoid(pMediumItem);
-            if (pMediumItem->id() == m_strSelectedIdHD)
-            {
-                setCurrentItem(mTwHD, pMediumItem);
-                m_strSelectedIdHD = QString();
-            }
-            break;
-        }
-        case UIMediumType_DVD:
-        {
-            pMediumItem = new UIMediumItem(medium, mTwCD);
-            AssertReturnVoid(pMediumItem);
-            if (pMediumItem->id() == m_strSelectedIdCD)
-            {
-                setCurrentItem(mTwCD, pMediumItem);
-                m_strSelectedIdCD = QString();
-            }
-            break;
-        }
-        case UIMediumType_Floppy:
-        {
-            pMediumItem = new UIMediumItem(medium, mTwFD);
-            AssertReturnVoid(pMediumItem);
-            if (pMediumItem->id() == m_strSelectedIdFD)
-            {
-                setCurrentItem(mTwFD, pMediumItem);
-                m_strSelectedIdFD = QString();
-            }
-            break;
-        }
-        default: AssertFailed();
-    }
-    AssertPtrReturnVoid(pMediumItem);
-
-    /* Update tab-icons: */
-    updateTabIcons(pMediumItem, ItemAction_Added);
-
-    /* If the media enumeration process is not started we have to select the
-     * newly added item as the current one for the case of new image was added or created */
-    if (!vboxGlobal().isMediumEnumerationInProgress())
-        setCurrentItem(treeWidget(medium.type()), pMediumItem);
-
-    /* Update stuff if that was current-item added: */
-    if (pMediumItem == currentTreeWidget()->currentItem())
-        sltHandleCurrentItemChanged(pMediumItem);
+    /* Create UIMediumItem for corresponding UIMedium: */
+    createMediumItem(medium);
 }
 
 void UIMediumManager::sltHandleMediumDeleted(const QString &strMediumID)
@@ -423,29 +373,8 @@ void UIMediumManager::sltHandleMediumEnumerated(const QString &strMediumID)
     if (isMediumAttachedToHiddenMachinesOnly(medium))
         return;
 
-    /* Search for corresponding medium-item: */
-    UIMediumItem *pMediumItem = 0;
-    switch (medium.type())
-    {
-        case UIMediumType_HardDisk: pMediumItem = searchItem(mTwHD, CheckIfSuitableByID(medium.id())); break;
-        case UIMediumType_DVD:      pMediumItem = searchItem(mTwCD, CheckIfSuitableByID(medium.id())); break;
-        case UIMediumType_Floppy:   pMediumItem = searchItem(mTwFD, CheckIfSuitableByID(medium.id())); break;
-        default: AssertFailed();
-    }
-
-    /* If medium-item was not found it's time to create it: */
-    if (!pMediumItem)
-        return sltHandleMediumCreated(strMediumID);
-
-    /* Update medium-item: */
-    pMediumItem->setMedium(medium);
-
-    /* Update tab-icons: */
-    updateTabIcons(pMediumItem, ItemAction_Updated);
-
-    /* Update stuff if that was current-item updated: */
-    if (pMediumItem == currentTreeWidget()->currentItem())
-        sltHandleCurrentItemChanged(pMediumItem);
+    /* Update UIMediumItem for corresponding UIMedium: */
+    updateMediumItem(medium);
 
     /* Advance progress-bar: */
     m_pProgressBar->setValue(m_pProgressBar->value() + 1);
@@ -1252,6 +1181,88 @@ void UIMediumManager::retranslateUi()
         refreshAll();
 }
 
+void UIMediumManager::createMediumItem(const UIMedium &medium)
+{
+    /* Prepare medium-item: */
+    UIMediumItem *pMediumItem = 0;
+    switch (medium.type())
+    {
+        /* Of hard-drive type: */
+        case UIMediumType_HardDisk:
+        {
+            pMediumItem = createHardDiskItem(mTwHD, medium);
+            AssertPtrReturnVoid(pMediumItem);
+            if (pMediumItem->id() == m_strSelectedIdHD)
+            {
+                setCurrentItem(mTwHD, pMediumItem);
+                m_strSelectedIdHD = QString();
+            }
+            break;
+        }
+        /* Of optical-image type: */
+        case UIMediumType_DVD:
+        {
+            pMediumItem = new UIMediumItem(medium, mTwCD);
+            LogRel2(("UIMediumManager: Optical medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
+            AssertPtrReturnVoid(pMediumItem);
+            if (pMediumItem->id() == m_strSelectedIdCD)
+            {
+                setCurrentItem(mTwCD, pMediumItem);
+                m_strSelectedIdCD = QString();
+            }
+            break;
+        }
+        /* Of floppy-image type: */
+        case UIMediumType_Floppy:
+        {
+            pMediumItem = new UIMediumItem(medium, mTwFD);
+            LogRel2(("UIMediumManager: Floppy medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
+            AssertPtrReturnVoid(pMediumItem);
+            if (pMediumItem->id() == m_strSelectedIdFD)
+            {
+                setCurrentItem(mTwFD, pMediumItem);
+                m_strSelectedIdFD = QString();
+            }
+            break;
+        }
+        default: AssertFailed();
+    }
+    AssertPtrReturnVoid(pMediumItem);
+
+    /* Update tab-icons: */
+    updateTabIcons(pMediumItem, ItemAction_Added);
+
+    /* If medium-enumeration is not currently in progress we have to select the
+     * newly added item as the 'current-item' (it seems new image was added): */
+    if (!vboxGlobal().isMediumEnumerationInProgress())
+        setCurrentItem(treeWidget(medium.type()), pMediumItem);
+
+    /* Update linked stuff if that was 'current-item' added: */
+    if (pMediumItem == currentTreeWidget()->currentItem())
+        sltHandleCurrentItemChanged(pMediumItem);
+}
+
+void UIMediumManager::updateMediumItem(const UIMedium &medium)
+{
+    /* Search for the existing medium-item: */
+    UIMediumItem *pMediumItem = searchItem(treeWidget(medium.type()), CheckIfSuitableByID(medium.id()));
+
+    /* Create new if was not found: */
+    if (!pMediumItem)
+        return createMediumItem(medium);
+
+    /* Update otherwise: */
+    pMediumItem->setMedium(medium);
+    LogRel2(("UIMediumManager: Medium-item with ID={%s} updated.\n", medium.id().toAscii().constData()));
+
+    /* Update tab-icons: */
+    updateTabIcons(pMediumItem, ItemAction_Updated);
+
+    /* Update linked stuff if that was 'current-item' updated: */
+    if (pMediumItem == currentTreeWidget()->currentItem())
+        sltHandleCurrentItemChanged(pMediumItem);
+}
+
 bool UIMediumManager::releaseMediumFrom(const UIMedium &medium, const QString &strMachineId)
 {
     /* Open session: */
@@ -1509,11 +1520,17 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
             }
             /* If parent medium-item was found: */
             if (pParentMediumItem)
+            {
                 pMediumItem = new UIMediumItem(medium, pParentMediumItem);
+                LogRel2(("UIMediumManager: Child hard-drive medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
+            }
         }
         /* Else just create item as top-level one: */
         if (!pMediumItem)
+        {
             pMediumItem = new UIMediumItem(medium, pTree);
+            LogRel2(("UIMediumManager: Root hard-drive medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
+        }
     }
 
     /* Return medium-item: */
