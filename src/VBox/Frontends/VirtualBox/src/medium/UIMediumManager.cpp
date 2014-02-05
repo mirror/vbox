@@ -398,7 +398,7 @@ void UIMediumManager::sltHandleMediumEnumerationFinish()
 void UIMediumManager::sltCopyMedium()
 {
     /* Get current-item: */
-    UIMediumItem *pMediumItem = toMediumItem(currentTreeWidget()->currentItem());
+    UIMediumItem *pMediumItem = currentMediumItem();
 
     /* Show Clone VD wizard: */
     UISafePointerWizard pWizard = new UIWizardCloneVD(this, pMediumItem->medium().medium());
@@ -413,7 +413,7 @@ void UIMediumManager::sltCopyMedium()
 void UIMediumManager::sltModifyMedium()
 {
     /* Get current-item: */
-    UIMediumItem *pMediumItem = toMediumItem(currentTreeWidget()->currentItem());
+    UIMediumItem *pMediumItem = currentMediumItem();
 
     /* Show Modify VD dialog: */
     UISafePointerDialog pDialog = new UIMediumTypeChangeDialog(this, pMediumItem->id());
@@ -433,7 +433,7 @@ void UIMediumManager::sltModifyMedium()
 void UIMediumManager::sltRemoveMedium()
 {
     /* Get current medium-item: */
-    UIMediumItem *pMediumItem = toMediumItem(currentTreeWidget()->currentItem());
+    UIMediumItem *pMediumItem = currentMediumItem();
     AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
 
     /* Remember ID/type as they may get lost after the closure/deletion: */
@@ -531,7 +531,7 @@ void UIMediumManager::sltRemoveMedium()
 void UIMediumManager::sltReleaseMedium()
 {
     /* Get current medium-item: */
-    UIMediumItem *pMediumItem = toMediumItem(currentTreeWidget()->currentItem());
+    UIMediumItem *pMediumItem = currentMediumItem();
     AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
     AssertReturnVoid(!pMediumItem->id().isNull());
 
@@ -644,7 +644,7 @@ void UIMediumManager::sltHandleCurrentItemChanged(QTreeWidgetItem *pItem,
 void UIMediumManager::sltHandleDoubleClick()
 {
     /* Call for modify-action if hard-disk double-clicked: */
-    if (currentTreeWidgetType() == UIMediumType_HardDisk)
+    if (currentMediumType() == UIMediumType_HardDisk)
         sltModifyMedium();
 }
 
@@ -1079,13 +1079,13 @@ void UIMediumManager::populateTreeWidgets()
 void UIMediumManager::updateActions()
 {
     /* Get current-item: */
-    UIMediumItem *pCurrentItem = toMediumItem(currentTreeWidget()->currentItem());
+    UIMediumItem *pCurrentItem = currentMediumItem();
 
     /* Calculate actions accessibility: */
     bool fNotInEnumeration = !vboxGlobal().isMediumEnumerationInProgress();
-    bool fActionEnabledCopy = currentTreeWidgetType() == UIMediumType_HardDisk &&
+    bool fActionEnabledCopy = currentMediumType() == UIMediumType_HardDisk &&
                               fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Copy);
-    bool fActionEnabledModify = currentTreeWidgetType() == UIMediumType_HardDisk &&
+    bool fActionEnabledModify = currentMediumType() == UIMediumType_HardDisk &&
                                 fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Modify);
     bool fActionEnabledRemove = fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Remove);
     bool fActionEnabledRelease = fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Release);
@@ -1416,37 +1416,52 @@ bool UIMediumManager::releaseFloppyDiskFrom(const UIMedium &medium, CMachine &ma
     return false;
 }
 
-QTreeWidget* UIMediumManager::treeWidget(UIMediumType type) const
+UIMediumType UIMediumManager::currentMediumType() const
 {
-    /* Return corresponding tree-widget: */
-    switch (type)
-    {
-        case UIMediumType_HardDisk: return mTwHD;
-        case UIMediumType_DVD:      return mTwCD;
-        case UIMediumType_Floppy:   return mTwFD;
-        default: AssertMsgFailed(("Medium-type unknown: %d\n", type)); break;
-    }
-    /* Null by default: */
-    return 0;
-}
-
-UIMediumType UIMediumManager::currentTreeWidgetType() const
-{
-    /* Return corresponding medium-type: */
+    /* Return current medium type: */
     switch (mTabWidget->currentIndex())
     {
         case HDTab: return UIMediumType_HardDisk;
         case CDTab: return UIMediumType_DVD;
         case FDTab: return UIMediumType_Floppy;
-        default: AssertMsgFailed(("Page-type unknown: %d\n", mTabWidget->currentIndex())); break;
+        default: AssertMsgFailed(("Unknown page type: %d\n", mTabWidget->currentIndex())); break;
     }
     /* Invalid by default: */
     return UIMediumType_Invalid;
 }
 
+QTreeWidget* UIMediumManager::treeWidget(UIMediumType type) const
+{
+    /* Return corresponding tree-widget for known medium types: */
+    switch (type)
+    {
+        case UIMediumType_HardDisk: return mTwHD;
+        case UIMediumType_DVD:      return mTwCD;
+        case UIMediumType_Floppy:   return mTwFD;
+        default: AssertMsgFailed(("Unknown medium type: %d\n", type)); break;
+    }
+    /* Null by default: */
+    return 0;
+}
+
 QTreeWidget* UIMediumManager::currentTreeWidget() const
 {
-    return treeWidget(currentTreeWidgetType());
+    /* Return current tree-widget: */
+    return treeWidget(currentMediumType());
+}
+
+UIMediumItem* UIMediumManager::mediumItem(UIMediumType type) const
+{
+    /* Get corresponding tree-widget: */
+    QTreeWidget *pTreeWidget = treeWidget(type);
+    /* Return corresponding medium-item: */
+    return pTreeWidget ? toMediumItem(pTreeWidget->currentItem()) : 0;
+}
+
+UIMediumItem* UIMediumManager::currentMediumItem() const
+{
+    /* Return current medium-item: */
+    return mediumItem(currentMediumType());
 }
 
 void UIMediumManager::setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem)
@@ -1460,15 +1475,6 @@ void UIMediumManager::setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem)
     }
     else
         sltHandleCurrentTabChanged();
-}
-
-UIMediumItem* UIMediumManager::toMediumItem(QTreeWidgetItem *pItem) const
-{
-    /* Return UIMediumItem based on QTreeWidgetItem if it is valid: */
-    if (pItem && pItem->type() == UIMediumItem::Type)
-        return static_cast<UIMediumItem*>(pItem);
-    /* Null by default: */
-    return 0;
 }
 
 UIMediumItem* UIMediumManager::searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &functor) const
@@ -1708,13 +1714,13 @@ void UIMediumManager::prepareToRefresh(int iTotal)
 
     /* Store the current list selections: */
     UIMediumItem *pMediumItem = 0;
-    pMediumItem = toMediumItem(mTwHD->currentItem());
+    pMediumItem = mediumItem(UIMediumType_HardDisk);
     if (m_strSelectedIdHD.isNull())
         m_strSelectedIdHD = pMediumItem ? pMediumItem->id() : QString();
-    pMediumItem = toMediumItem(mTwCD->currentItem());
+    pMediumItem = mediumItem(UIMediumType_DVD);
     if (m_strSelectedIdCD.isNull())
         m_strSelectedIdCD = pMediumItem ? pMediumItem->id() : QString();
-    pMediumItem = toMediumItem(mTwFD->currentItem());
+    pMediumItem = mediumItem(UIMediumType_Floppy);
     if (m_strSelectedIdFD.isNull())
         m_strSelectedIdFD = pMediumItem ? pMediumItem->id() : QString();
 
@@ -1731,6 +1737,13 @@ void UIMediumManager::prepareToRefresh(int iTotal)
     mTwHD->blockSignals(false);
     mTwCD->clear();
     mTwFD->clear();
+}
+
+/* static */
+UIMediumItem* UIMediumManager::toMediumItem(QTreeWidgetItem *pItem)
+{
+    /* Cast passed QTreeWidgetItem to UIMediumItem if possible: */
+    return pItem && pItem->type() == UIMediumItem::Type ? static_cast<UIMediumItem*>(pItem) : 0;
 }
 
 /* static */
