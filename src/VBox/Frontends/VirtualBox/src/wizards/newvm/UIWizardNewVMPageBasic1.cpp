@@ -167,7 +167,7 @@ UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
 void UIWizardNewVMPage1::onNameChanged(QString strNewName)
 {
     /* Do not forget about achitecture bits: */
-    strNewName += m_fSupportsHWVirtEx && m_fSupportsLongMode ? "64" : "32";
+    strNewName += ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode ? "64" : "32";
 
     /* Search for a matching OS type based on the string the user typed already. */
     for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
