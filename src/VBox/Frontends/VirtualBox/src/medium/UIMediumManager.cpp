@@ -603,18 +603,8 @@ void UIMediumManager::sltHandleCurrentItemChanged(QTreeWidgetItem *pItem,
         pMediumItem->treeWidget()->scrollToItem(pMediumItem, QAbstractItemView::EnsureVisible);
     }
 
-    /* Update action availability: */
-    bool fNotInEnumeration = !vboxGlobal().isMediumEnumerationInProgress();
-    bool fActionEnabledCopy    = currentTreeWidgetType() == UIMediumType_HardDisk &&
-                                 fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
-    bool fActionEnabledModify  = currentTreeWidgetType() == UIMediumType_HardDisk &&
-                                 fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Modify);
-    bool fActionEnabledRemove  = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Remove);
-    bool fActionEnabledRelease = pMediumItem && checkMediumFor(pMediumItem, Action_Release);
-    m_pActionCopy->setEnabled(fActionEnabledCopy);
-    m_pActionModify->setEnabled(fActionEnabledModify);
-    m_pActionRemove->setEnabled(fActionEnabledRemove);
-    m_pActionRelease->setEnabled(fActionEnabledRelease);
+    /* Update actions: */
+    updateActions();
 
     /* Update information-panes: */
     if (pMediumItem)
@@ -1084,6 +1074,27 @@ void UIMediumManager::populateTreeWidgets()
     if (!mTwFD->currentItem())
         if (QTreeWidgetItem *pItem = mTwFD->topLevelItem(0))
             setCurrentItem(mTwFD, pItem);
+}
+
+void UIMediumManager::updateActions()
+{
+    /* Get current-item: */
+    UIMediumItem *pCurrentItem = toMediumItem(currentTreeWidget()->currentItem());
+
+    /* Calculate actions accessibility: */
+    bool fNotInEnumeration = !vboxGlobal().isMediumEnumerationInProgress();
+    bool fActionEnabledCopy = currentTreeWidgetType() == UIMediumType_HardDisk &&
+                              fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Copy);
+    bool fActionEnabledModify = currentTreeWidgetType() == UIMediumType_HardDisk &&
+                                fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Modify);
+    bool fActionEnabledRemove = fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Remove);
+    bool fActionEnabledRelease = fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Release);
+
+    /* Update actions: */
+    m_pActionCopy->setEnabled(fActionEnabledCopy);
+    m_pActionModify->setEnabled(fActionEnabledModify);
+    m_pActionRemove->setEnabled(fActionEnabledRemove);
+    m_pActionRelease->setEnabled(fActionEnabledRelease);
 }
 
 #ifdef Q_WS_MAC

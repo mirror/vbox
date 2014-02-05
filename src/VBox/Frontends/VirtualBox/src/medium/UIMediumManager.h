@@ -120,6 +120,9 @@ private:
     /* Helper: Populate stuff: */
     void populateTreeWidgets();
 
+    /** Creates UIMediumItem for corresponding UIMedium. */
+    void updateActions();
+
     /* Helpers: Cleanup stuff: */
 #ifdef Q_WS_MAC
     void cleanupMacWindowMenu();
