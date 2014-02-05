@@ -374,13 +374,13 @@ int handleImportAppliance(HandlerArg *arg)
                 com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
                 com::SafeArray<BSTR> aRefs;
                 com::SafeArray<BSTR> aOvfValues;
-                com::SafeArray<BSTR> aVboxValues;
+                com::SafeArray<BSTR> aVBoxValues;
                 com::SafeArray<BSTR> aExtraConfigValues;
                 CHECK_ERROR_BREAK(aVirtualSystemDescriptions[i],
                                   GetDescription(ComSafeArrayAsOutParam(retTypes),
                                                  ComSafeArrayAsOutParam(aRefs),
                                                  ComSafeArrayAsOutParam(aOvfValues),
-                                                 ComSafeArrayAsOutParam(aVboxValues),
+                                                 ComSafeArrayAsOutParam(aVBoxValues),
                                                  ComSafeArrayAsOutParam(aExtraConfigValues)));
 
                 RTPrintf("Virtual system %u:\n", i);
@@ -401,7 +401,7 @@ int handleImportAppliance(HandlerArg *arg)
 
                     Utf8Str strOverride;
 
-                    Bstr bstrFinalValue = aVboxValues[a];
+                    Bstr bstrFinalValue = aVBoxValues[a];
 
                     bool fIgnoreThis = mapIgnoresMapsPerVsys[i][a];
 
@@ -437,27 +437,27 @@ int handleImportAppliance(HandlerArg *arg)
 
                         case VirtualSystemDescriptionType_Product:
                             RTPrintf("%2u: Product (ignored): %ls\n",
-                                     a, aVboxValues[a]);
+                                     a, aVBoxValues[a]);
                         break;
 
                         case VirtualSystemDescriptionType_ProductUrl:
                             RTPrintf("%2u: ProductUrl (ignored): %ls\n",
-                                     a, aVboxValues[a]);
+                                     a, aVBoxValues[a]);
                         break;
 
                         case VirtualSystemDescriptionType_Vendor:
                             RTPrintf("%2u: Vendor (ignored): %ls\n",
-                                     a, aVboxValues[a]);
+                                     a, aVBoxValues[a]);
                         break;
 
                         case VirtualSystemDescriptionType_VendorUrl:
                             RTPrintf("%2u: VendorUrl (ignored): %ls\n",
-                                     a, aVboxValues[a]);
+                                     a, aVBoxValues[a]);
                         break;
 
                         case VirtualSystemDescriptionType_Version:
                             RTPrintf("%2u: Version (ignored): %ls\n",
-                                     a, aVboxValues[a]);
+                                     a, aVBoxValues[a]);
                         break;
 
                         case VirtualSystemDescriptionType_Description:
@@ -550,14 +550,14 @@ int handleImportAppliance(HandlerArg *arg)
                             {
                                 RTPrintf("%2u: IDE controller, type %ls -- disabled\n",
                                          a,
-                                         aVboxValues[a]);
+                                         aVBoxValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
                                 RTPrintf("%2u: IDE controller, type %ls"
                                          "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                          a,
-                                         aVboxValues[a],
+                                         aVBoxValues[a],
                                          i, a);
                         break;
 
@@ -566,14 +566,14 @@ int handleImportAppliance(HandlerArg *arg)
                             {
                                 RTPrintf("%2u: SATA controller, type %ls -- disabled\n",
                                          a,
-                                         aVboxValues[a]);
+                                         aVBoxValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
                                 RTPrintf("%2u: SATA controller, type %ls"
                                         "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                         a,
-                                        aVboxValues[a],
+                                        aVBoxValues[a],
                                         i, a);
                         break;
 
@@ -582,14 +582,14 @@ int handleImportAppliance(HandlerArg *arg)
                             {
                                 RTPrintf("%2u: SAS controller, type %ls -- disabled\n",
                                          a,
-                                         aVboxValues[a]);
+                                         aVBoxValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
                                 RTPrintf("%2u: SAS controller, type %ls"
                                         "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                         a,
-                                        aVboxValues[a],
+                                        aVBoxValues[a],
                                         i, a);
                         break;
 
@@ -598,7 +598,7 @@ int handleImportAppliance(HandlerArg *arg)
                             {
                                 RTPrintf("%2u: SCSI controller, type %ls -- disabled\n",
                                          a,
-                                         aVboxValues[a]);
+                                         aVBoxValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
@@ -617,7 +617,7 @@ int handleImportAppliance(HandlerArg *arg)
                                             "\n    (change with \"--vsys %u --unit %u --scsitype {BusLogic|LsiLogic}\";"
                                             "\n    disable with \"--vsys %u --unit %u --ignore\")\n",
                                             a,
-                                            aVboxValues[a],
+                                            aVBoxValues[a],
                                             i, a, i, a);
                             }
                         break;
@@ -671,7 +671,7 @@ int handleImportAppliance(HandlerArg *arg)
                                     RTPrintf("%2u: Hard disk image: source image=%ls, target path=%ls, %ls\n",
                                             a,
                                             aOvfValues[a],
-                                            aVboxValues[a],
+                                            aVBoxValues[a],
                                             aExtraConfigValues[a]);
                                 }
 #endif
@@ -681,7 +681,7 @@ int handleImportAppliance(HandlerArg *arg)
                                             "\n    disable with \"--vsys %u --unit %u --ignore\")\n",
                                             a,
                                             aOvfValues[a],
-                                            aVboxValues[a],
+                                            aVBoxValues[a],
                                             aExtraConfigValues[a],
                                             i, a, i, a);
                             }
@@ -717,7 +717,7 @@ int handleImportAppliance(HandlerArg *arg)
                             RTPrintf("%2u: Network adapter: orig %ls, config %ls, extra %ls\n",   // @todo implement once we have a plan for the back-end
                                      a,
                                      aOvfValues[a],
-                                     aVboxValues[a],
+                                     aVBoxValues[a],
                                      aExtraConfigValues[a]);
                         break;
 

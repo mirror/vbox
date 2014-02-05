@@ -611,7 +611,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
 int VBoxClipboardInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
-    Log(("VBoxTray: VboxClipboardInit\n"));
+    Log(("VBoxTray: VBoxClipboardInit\n"));
     if (gCtx.pEnv)
     {
         /* Clipboard was already initialized. 2 or more instances are not supported. */

@@ -14,10 +14,10 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef ___VboxNetFltNobjRc_h___
-#define ___VboxNetFltNobjRc_h___
+#ifndef ___VBoxNetFltNobjRc_h___
+#define ___VBoxNetFltNobjRc_h___
 
 /* registry script rc ID */
 #define IDR_VBOXNETFLT_NOBJ 101
 
-#endif /* #ifndef ___VboxNetFltNobjRc_h___ */
+#endif /* #ifndef ___VBoxNetFltNobjRc_h___ */

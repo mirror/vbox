@@ -360,7 +360,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
 
 #ifndef VBOX_NO_MESA_PATCH_REPORTS
     crDebug("Mesa Entry: %p, start: %p(%s:%s), size: %li", pMesaEntry, dlip.dli_saddr, dlip.dli_fname, dlip.dli_sname, sym->st_size);
-    crDebug("Vbox code: start: %p, end %p, size: %li", pStart, pEnd, pEnd-pStart);
+    crDebug("VBox code: start: %p, end %p, size: %li", pStart, pEnd, pEnd-pStart);
 #endif
 
 #ifndef VBOX_OGL_GLX_USE_CSTUBS
