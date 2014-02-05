@@ -14,8 +14,8 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef ___VboxNetFltNobj_h___
-#define ___VboxNetFltNobj_h___
+#ifndef ___VBoxNetFltNobj_h___
+#define ___VBoxNetFltNobj_h___
 
 #include <windows.h>
 /* atl stuff */
@@ -70,4 +70,4 @@ private:
     BOOL mbInstalling;
 };
 
-#endif /* #ifndef ___VboxNetFltNobj_h___ */
+#endif /* #ifndef ___VBoxNetFltNobj_h___ */

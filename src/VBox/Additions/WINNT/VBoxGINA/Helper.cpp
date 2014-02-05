@@ -26,7 +26,7 @@
 #include "VBoxGINA.h"
 
 #include <VBox/log.h>
-#include <VBox/VboxGuestLib.h>
+#include <VBox/VBoxGuestLib.h>
 
 /** Flag indicating whether remote sessions (over MSRDP) should be
  *  handled or not. Default is disabled. */
