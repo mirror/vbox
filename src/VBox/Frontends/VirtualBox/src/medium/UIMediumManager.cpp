@@ -606,39 +606,8 @@ void UIMediumManager::sltHandleCurrentItemChanged(QTreeWidgetItem *pItem,
     /* Update actions: */
     updateActions();
 
-    /* Update information-panes: */
-    if (pMediumItem)
-    {
-        QString strDetails = pMediumItem->details();
-        QString strUsage = pMediumItem->usage().isNull() ?
-                           formatPaneText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
-                           formatPaneText(pMediumItem->usage());
-        if (pMediumItem->treeWidget() == mTwHD)
-        {
-            m_pTypePane->setText(pMediumItem->hardDiskType());
-            m_pLocationPane->setText(formatPaneText(pMediumItem->location(), true, "end"));
-            m_pFormatPane->setText(pMediumItem->hardDiskFormat());
-            m_pDetailsPane->setText(strDetails);
-            m_pUsagePane->setText(strUsage);
-        }
-        else if (pMediumItem->treeWidget() == mTwCD)
-        {
-            mIpCD1->setText(formatPaneText(pMediumItem->location(), true, "end"));
-            mIpCD2->setText(strUsage);
-        }
-        else if (pMediumItem->treeWidget() == mTwFD)
-        {
-            mIpFD1->setText(formatPaneText(pMediumItem->location(), true, "end"));
-            mIpFD2->setText(strUsage);
-        }
-    }
-    else
-        clearInfoPanes();
-
-    /* Enable/disable information-pane containers: */
-    mHDContainer->setEnabled(pMediumItem);
-    mCDContainer->setEnabled(pMediumItem);
-    mFDContainer->setEnabled(pMediumItem);
+    /* Update current information-panes: */
+    updateInformationPanes(currentMediumType());
 }
 
 void UIMediumManager::sltHandleDoubleClick()
@@ -734,6 +703,9 @@ void UIMediumManager::prepare()
 
     /* Populate content for tree-widgets: */
     populateTreeWidgets();
+
+    /* Update all information-panes: */
+    updateInformationPanes(UIMediumType_All);
 }
 
 void UIMediumManager::prepareThis()
@@ -1179,6 +1151,115 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, ItemAction actio
             break;
         }
     }
+}
+
+void UIMediumManager::updateInformationPanes(UIMediumType type /* = UIMediumType_Invalid */)
+{
+    /* Make sure type is valid: */
+    if (type == UIMediumType_Invalid)
+        type = currentMediumType();
+
+    /* Depending on required type: */
+    switch (type)
+    {
+        case UIMediumType_HardDisk: updateInformationPanesHD(); break;
+        case UIMediumType_DVD:      updateInformationPanesCD(); break;
+        case UIMediumType_Floppy:   updateInformationPanesFD(); break;
+        case UIMediumType_All:
+            updateInformationPanesHD();
+            updateInformationPanesCD();
+            updateInformationPanesFD();
+            break;
+        default: break;
+    }
+}
+
+void UIMediumManager::updateInformationPanesHD()
+{
+    /* Get current HD item: */
+    UIMediumItem *pCurrentItem = mediumItem(UIMediumType_HardDisk);
+
+    /* If current item is not set: */
+    if (!pCurrentItem)
+    {
+        /* Just clear information panes: */
+        m_pTypePane->clear();
+        m_pLocationPane->clear();
+        m_pFormatPane->clear();
+        m_pDetailsPane->clear();
+        m_pUsagePane->clear();
+    }
+    /* If current item is set: */
+    else
+    {
+        /* Acquire required details: */
+        QString strDetails = pCurrentItem->details();
+        QString strUsage = pCurrentItem->usage().isNull() ?
+                           formatPaneText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
+                           formatPaneText(pCurrentItem->usage());
+        m_pTypePane->setText(pCurrentItem->hardDiskType());
+        m_pLocationPane->setText(formatPaneText(pCurrentItem->location(), true, "end"));
+        m_pFormatPane->setText(pCurrentItem->hardDiskFormat());
+        m_pDetailsPane->setText(strDetails);
+        m_pUsagePane->setText(strUsage);
+    }
+
+    /* Enable/disable information-panes container: */
+    mHDContainer->setEnabled(pCurrentItem);
+}
+
+void UIMediumManager::updateInformationPanesCD()
+{
+    /* Get current optical medium-item: */
+    UIMediumItem *pCurrentItem = mediumItem(UIMediumType_DVD);
+
+    /* If current item is not set: */
+    if (!pCurrentItem)
+    {
+        /* Just clear information panes: */
+        mIpCD1->clear();
+        mIpCD2->clear();
+    }
+    /* If current item is set: */
+    else
+    {
+        /* Update required details: */
+        QString strUsage = pCurrentItem->usage().isNull() ?
+                           formatPaneText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
+                           formatPaneText(pCurrentItem->usage());
+        mIpCD1->setText(formatPaneText(pCurrentItem->location(), true, "end"));
+        mIpCD2->setText(strUsage);
+    }
+
+    /* Enable/disable information-panes container: */
+    mCDContainer->setEnabled(pCurrentItem);
+}
+
+void UIMediumManager::updateInformationPanesFD()
+{
+    /* Get current floppy medium-item: */
+    UIMediumItem *pCurrentItem = mediumItem(UIMediumType_Floppy);
+
+    /* If current item is not set: */
+    if (!pCurrentItem)
+    {
+        /* Just clear information panes: */
+        mIpFD1->clear();
+        mIpFD2->clear();
+    }
+    /* If current item is set: */
+    else
+    {
+        /* Update required details: */
+        QString strUsage = pCurrentItem->usage().isNull() ?
+                           formatPaneText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
+                           formatPaneText(pCurrentItem->usage());
+        mIpFD1->setText(formatPaneText(pCurrentItem->location(), true, "end"));
+        mIpFD2->setText(strUsage);
+    }
+
+    /* Enable/disable information-panes container: */
+    mFDContainer->setEnabled(pCurrentItem);
 }
 
 #ifdef Q_WS_MAC
@@ -1686,17 +1767,12 @@ bool UIMediumManager::checkMediumFor(UIMediumItem *pItem, Action action)
     AssertFailedReturn(false);
 }
 
-void UIMediumManager::clearInfoPanes()
+void UIMediumManager::prepareToRefresh(int iTotal)
 {
+    /* Clear information panes: */
     m_pTypePane->clear(); m_pLocationPane->clear(); m_pFormatPane->clear(); m_pDetailsPane->clear(); m_pUsagePane->clear();
     mIpCD1->clear(); mIpCD2->clear();
     mIpFD1->clear(); mIpFD2->clear();
-}
-
-void UIMediumManager::prepareToRefresh(int iTotal)
-{
-    /* Info panel clearing: */
-    clearInfoPanes();
 
     /* Prepare progressbar: */
     if (m_pProgressBar)

@@ -124,6 +124,14 @@ private:
     void updateActions();
     /** Update tab icons according last @a action happened with @a pItem. */
     void updateTabIcons(UIMediumItem *pItem, ItemAction action);
+    /** Update information pane of passed medium @a type. */
+    void updateInformationPanes(UIMediumType type = UIMediumType_Invalid);
+    /** Update information pane for hard-drive tab. */
+    void updateInformationPanesHD();
+    /** Update information pane for optical-disk tab. */
+    void updateInformationPanesCD();
+    /** Update information pane for floppy-disk tab. */
+    void updateInformationPanesFD();
 
     /* Helpers: Cleanup stuff: */
 #ifdef Q_WS_MAC
@@ -167,7 +175,6 @@ private:
 
     /* Helpers: Other stuff: */
     bool checkMediumFor(UIMediumItem *pItem, Action action);
-    void clearInfoPanes();
     void prepareToRefresh(int iTotal = 0);
 
     /** Casts passed QTreeWidgetItem @a pItem to UIMediumItem if possible. */
