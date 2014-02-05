@@ -57,7 +57,7 @@ RT_C_DECLS_BEGIN
  * @param   pIfNet      The interface that will hold the reference to the calling
  *                      thread. We submit dummy as if it was coming from this interface.
  */
-inline int VboxNetSendDummy(ifnet_t pIfNet)
+inline int VBoxNetSendDummy(ifnet_t pIfNet)
 {
     int rc = 0;
     size_t cbTotal = 50; /* No Ethernet header */
