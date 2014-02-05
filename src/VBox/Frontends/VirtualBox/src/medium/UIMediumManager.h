@@ -120,7 +120,7 @@ private:
     /* Helper: Populate stuff: */
     void populateTreeWidgets();
 
-    /** Creates UIMediumItem for corresponding UIMedium. */
+    /** Update actions according currently chosen medium-item. */
     void updateActions();
 
     /* Helpers: Cleanup stuff: */
@@ -143,12 +143,22 @@ private:
     bool releaseOpticalDiskFrom(const UIMedium &medium, CMachine &machine);
     bool releaseFloppyDiskFrom(const UIMedium &medium, CMachine &machine);
 
-    /* Internal API: Tree-widget access stuff: */
+    /** Returns current medium type. */
+    UIMediumType currentMediumType() const;
+
+    /** Returns tree-widget for passed medium @a type. */
     QTreeWidget* treeWidget(UIMediumType type) const;
-    UIMediumType currentTreeWidgetType() const;
+    /** Returns current tree-widget. */
     QTreeWidget* currentTreeWidget() const;
+
+    /** Returns medium-item for passed medium @a type. */
+    UIMediumItem* mediumItem(UIMediumType type) const;
+    /** Returns current medium-item. */
+    UIMediumItem* currentMediumItem() const;
+
+    /** Defines <i>current-item</i> for passed @a pTree as @a pItem. */
     void setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem);
-    UIMediumItem* toMediumItem(QTreeWidgetItem *pItem) const;
+
     UIMediumItem* searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &functor) const;
     UIMediumItem* searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &functor) const;
     UIMediumItem* createHardDiskItem(QTreeWidget *pTree, const UIMedium &medium) const;
@@ -160,6 +170,9 @@ private:
     bool checkMediumFor(UIMediumItem *pItem, Action action);
     void clearInfoPanes();
     void prepareToRefresh(int iTotal = 0);
+
+    /** Casts passed QTreeWidgetItem @a pItem to UIMediumItem if possible. */
+    static UIMediumItem* toMediumItem(QTreeWidgetItem *pItem);
 
     /* Static helper: Formatting stuff: */
     static QString formatPaneText(const QString &strText, bool fCompact = true, const QString &strElipsis = "middle");
