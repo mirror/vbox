@@ -28,6 +28,7 @@
 #include <iprt/string.h>
 
 #include "../seamless.h"
+#include "../seamless-host.h"
 
 #undef DefaultRootWindow
 
@@ -296,17 +297,17 @@ int XFlush(Display *display)
     AssertFailedReturn(0);
 }
 
-/** Dummy observer class */
-class testObserver: public VBoxGuestSeamlessObserver
+/** Dummy host class */
+class testHost: public VBoxGuestSeamlessHostInt
 {
     bool mfNotified;
 public:
-    testObserver() : mfNotified(false) {}
-    virtual void notify(void)
+    testHost() : mfNotified(false) {}
+    virtual void notify(RTRECT *pRects, size_t cRects)
     {
         mfNotified = true;
     }
-    virtual ~testObserver() {}
+    virtual ~testHost() {}
     bool isNotified(void) { return mfNotified; }
 };
 
@@ -598,10 +599,10 @@ static void smlsPrintDiffRects(RTRECT *pExp, RTRECT *pGot)
 static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
 {
     VBoxGuestSeamlessX11 subject;
-    testObserver observer;
+    testHost host;
     unsigned cErrs = 0;
 
-    subject.init(&observer);
+    subject.init(&host);
     smlsSetWindowAttributes(pFixture->paAttribsBefore,
                             pFixture->pahWindowsBefore,
                             pFixture->cWindowsBefore,
@@ -618,14 +619,14 @@ static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
                            pFixture->cShapeRectsAfter,
                            pFixture->paShapeRectsAfter);
     smlsSetNextEvent(pFixture->x11EventType, pFixture->hEventWindow);
-    if (observer.isNotified())  /* Initial window tree rebuild */
+    if (host.isNotified())  /* Initial window tree rebuild */
     {
         RTPrintf("%s: fixture: %s.  Notification was set before the first event!!!\n",
                  g_pszTestName, pszDesc);
         ++cErrs;
     }
     subject.nextEvent();
-    if (!observer.isNotified())
+    if (!host.isNotified())
     {
         RTPrintf("%s: fixture: %s.  No notification was sent for the initial window tree rebuild.\n",
                  g_pszTestName, pszDesc);
@@ -633,7 +634,7 @@ static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
     }
     smlsSetNextEvent(0, 0);
     subject.nextEvent();
-    if (!observer.isNotified())
+    if (!host.isNotified())
     {
         RTPrintf("%s: fixture: %s.  No notification was sent after the event.\n",
                  g_pszTestName, pszDesc);

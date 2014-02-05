@@ -105,7 +105,7 @@ int VBoxGuestSeamlessHost::nextEvent(void)
                 LogRelFunc(("VMMDev_Seamless_Visible_Region request received (VBoxClient).\n"));
 #endif
                 mState = ENABLE;
-                mObserver->notify();
+                mX11MonitorThread->start();
                 break;
             case VMMDev_Seamless_Host_Window:
             /* One host window represents one guest window.  Not yet implemented. */
@@ -119,7 +119,7 @@ int VBoxGuestSeamlessHost::nextEvent(void)
                 LogRelFunc(("VMMDev_Seamless_Disabled set (VBoxClient).\n"));
 #endif
                 mState = DISABLE;
-                mObserver->notify();
+                mX11MonitorThread->stop(RT_INDEFINITE_WAIT, 0);
         }
     }
     else
@@ -133,7 +133,7 @@ int VBoxGuestSeamlessHost::nextEvent(void)
 /**
  * Update the set of visible rectangles in the host.
  */
-void VBoxGuestSeamlessHost::updateRects(RTRECT *pRects, size_t cRects)
+void VBoxGuestSeamlessHost::notify(RTRECT *pRects, size_t cRects)
 {
     LogRelFlowFunc(("\n"));
     if (cRects && !pRects)  /* Assertion */

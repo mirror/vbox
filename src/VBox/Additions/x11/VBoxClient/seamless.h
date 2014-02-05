@@ -21,17 +21,14 @@
 #include <VBox/log.h>
 
 #include "seamless-host.h"
-#include "seamless-guest.h"
-#include "seamless-glue.h"
+#include "seamless-x11.h"
 
-/** Thread function class for VBoxGuestSeamlessGuest. */
+/** Thread function class for VBoxGuestSeamlessX11. */
 class VBoxGuestSeamlessGuestThread: public VBoxGuestThreadFunction
 {
 private:
     /** The guest class "owning" us. */
-    VBoxGuestSeamlessGuestImpl *mGuest;
-    /** The guest observer monitoring the guest. */
-    VBoxGuestSeamlessObserver *mObserver;
+    VBoxGuestSeamlessX11 *mGuest;
     /** Should we exit the thread? */
     bool mExit;
 
@@ -40,9 +37,8 @@ private:
     VBoxGuestSeamlessGuestThread& operator=(const VBoxGuestSeamlessGuestThread&);
 
 public:
-    VBoxGuestSeamlessGuestThread(VBoxGuestSeamlessGuestImpl *pGuest,
-                                 VBoxGuestSeamlessObserver *pObserver)
-    { mGuest = pGuest; mObserver = pObserver; mExit = false; }
+    VBoxGuestSeamlessGuestThread(VBoxGuestSeamlessX11 *pGuest)
+    { mGuest = pGuest; mExit = false; }
     virtual ~VBoxGuestSeamlessGuestThread(void) {}
     /**
       * The actual thread function.
@@ -73,69 +69,13 @@ public:
     virtual void stop(void) { mGuest->interruptEvent(); }
 };
 
-/** Observer for the host class - start and stop seamless reporting in the guest when the
-    host requests. */
-class VBoxGuestSeamlessHostObserver : public VBoxGuestSeamlessObserver
-{
-private:
-    VBoxGuestSeamlessHost *mHost;
-    VBoxGuestThread *mGuestThread;
-
-public:
-    VBoxGuestSeamlessHostObserver(VBoxGuestSeamlessHost *pHost,
-                                  VBoxGuestThread *pGuestThread)
-    {
-        mHost = pHost;
-        mGuestThread = pGuestThread;
-    }
-
-    virtual void notify(void)
-    {
-        switch (mHost->getState())
-        {
-        case VBoxGuestSeamlessHost::ENABLE:
-             mGuestThread->start();
-            break;
-        case VBoxGuestSeamlessHost::DISABLE:
-             mGuestThread->stop(RT_INDEFINITE_WAIT, 0);
-            break;
-        default:
-            break;
-        }
-    }
-};
-
-/** Observer for the guest class - send the host updated seamless rectangle information when
-    it becomes available. */
-class VBoxGuestSeamlessGuestObserver : public VBoxGuestSeamlessObserver
-{
-private:
-    VBoxGuestSeamlessHost *mHost;
-    VBoxGuestSeamlessGuestImpl *mGuest;
-
-public:
-    VBoxGuestSeamlessGuestObserver(VBoxGuestSeamlessHost *pHost,
-                                   VBoxGuestSeamlessGuestImpl *pGuest)
-    {
-        mHost = pHost;
-        mGuest = pGuest;
-    }
-
-    virtual void notify(void)
-    {
-        mHost->updateRects(mGuest->getRects(), mGuest->getRectCount());
-    }
-};
-
 class VBoxGuestSeamless
 {
 private:
     VBoxGuestSeamlessHost mHost;
-    VBoxGuestSeamlessGuestImpl mGuest;
+    VBoxGuestSeamlessX11 mGuest;
     VBoxGuestSeamlessGuestThread mGuestFunction;
     VBoxGuestThread mGuestThread;
-    VBoxGuestSeamlessHostObserver mHostObs;
-    VBoxGuestSeamlessGuestObserver mGuestObs;
 
     bool isInitialised;
 public:
@@ -151,11 +91,11 @@ public:
         }
         if (RT_SUCCESS(rc))
         {
-            rc = mHost.init(&mHostObs);
+            rc = mHost.init(&mGuestThread);
         }
         if (RT_SUCCESS(rc))
         {
-            rc = mGuest.init(&mGuestObs);
+            rc = mGuest.init(&mHost);
         }
         if (RT_SUCCESS(rc))
         {
@@ -186,10 +126,9 @@ public:
         LogRelFlowFunc(("returning\n"));
     }
 
-    VBoxGuestSeamless() : mGuestFunction(&mGuest, &mGuestObs),
+    VBoxGuestSeamless() : mGuestFunction(&mGuest),
                           mGuestThread(&mGuestFunction, 0, RTTHREADTYPE_MSG_PUMP,
-                                       RTTHREADFLAGS_WAITABLE, "Guest events"),
-                          mHostObs(&mHost, &mGuestThread), mGuestObs(&mHost, &mGuest)
+                                       RTTHREADFLAGS_WAITABLE, "Guest events")
     {
         isInitialised = false;
     }

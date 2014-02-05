@@ -23,7 +23,7 @@
 #include <iprt/vector.h>
 #include <VBox/log.h>
 
-#include "seamless-guest.h"
+#include "seamless-x11.h"
 
 #include <X11/Xatom.h>
 #include <X11/Xmu/WinUtil.h>
@@ -70,12 +70,12 @@ static unsigned char *XXGetProperty (Display *aDpy, Window aWnd, Atom aPropType,
   *
   * @returns true if it can handle seamless, false otherwise
   */
-int VBoxGuestSeamlessX11::init(VBoxGuestSeamlessObserver *pObserver)
+int VBoxGuestSeamlessX11::init(VBoxGuestSeamlessHostInt *pHost)
 {
     int rc = VINF_SUCCESS;
 
     LogRelFlowFunc(("\n"));
-    if (0 != mObserver)  /* Assertion */
+    if (0 != mHost)  /* Assertion */
     {
         LogRel(("VBoxClient: ERROR: attempt to initialise seamless guest object twice!\n"));
         return VERR_INTERNAL_ERROR;
@@ -85,7 +85,7 @@ int VBoxGuestSeamlessX11::init(VBoxGuestSeamlessObserver *pObserver)
         LogRel(("VBoxClient: seamless guest object failed to acquire a connection to the display.\n"));
         return VERR_ACCESS_DENIED;
     }
-    mObserver = pObserver;
+    mHost = pHost;
     LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
@@ -298,7 +298,7 @@ void VBoxGuestSeamlessX11::nextEvent(void)
     if (mChanged)
     {
         updateRects();
-        mObserver->notify();
+        mHost->notify(mpRects, mcRects);
     }
     mChanged = false;
     XNextEvent(mDisplay, &event);
