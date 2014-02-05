@@ -122,6 +122,8 @@ private:
 
     /** Update actions according currently chosen medium-item. */
     void updateActions();
+    /** Update tab icons according last @a action happened with @a pItem. */
+    void updateTabIcons(UIMediumItem *pItem, ItemAction action);
 
     /* Helpers: Cleanup stuff: */
 #ifdef Q_WS_MAC
@@ -162,9 +164,6 @@ private:
     UIMediumItem* searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &functor) const;
     UIMediumItem* searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &functor) const;
     UIMediumItem* createHardDiskItem(QTreeWidget *pTree, const UIMedium &medium) const;
-
-    /* Internal API: Tab-widget access stuff: */
-    void updateTabIcons(UIMediumItem *pItem, ItemAction action);
 
     /* Helpers: Other stuff: */
     bool checkMediumFor(UIMediumItem *pItem, Action action);
