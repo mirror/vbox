@@ -1097,6 +1097,90 @@ void UIMediumManager::updateActions()
     m_pActionRelease->setEnabled(fActionEnabledRelease);
 }
 
+void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, ItemAction action)
+{
+    /* Make sure medium-item is valid: */
+    AssertReturnVoid(pMediumItem);
+
+    /* Prepare data for tab: */
+    int iTab = -1;
+    const QIcon *pIcon = 0;
+    bool *pfInaccessible = 0;
+    switch (pMediumItem->mediumType())
+    {
+        case UIMediumType_HardDisk:
+            iTab = HDTab;
+            pIcon = &m_iconHD;
+            pfInaccessible = &m_fInaccessibleHD;
+            break;
+        case UIMediumType_DVD:
+            iTab = CDTab;
+            pIcon = &m_iconCD;
+            pfInaccessible = &m_fInaccessibleCD;
+            break;
+        case UIMediumType_Floppy:
+            iTab = FDTab;
+            pIcon = &m_iconFD;
+            pfInaccessible = &m_fInaccessibleFD;
+            break;
+        default:
+            AssertFailed();
+    }
+    AssertReturnVoid(iTab != -1 && pIcon && pfInaccessible);
+
+    switch (action)
+    {
+        case ItemAction_Added:
+        {
+            /* Does it change the overall state? */
+            if (*pfInaccessible || pMediumItem->state() != KMediumState_Inaccessible)
+                break; /* no */
+
+            *pfInaccessible = true;
+
+            mTabWidget->setTabIcon(iTab, vboxGlobal().warningIcon());
+
+            break;
+        }
+        case ItemAction_Updated:
+        case ItemAction_Removed:
+        {
+            bool fCheckRest = false;
+
+            if (action == ItemAction_Updated)
+            {
+                /* Does it change the overall state? */
+                if ((*pfInaccessible && pMediumItem->state() == KMediumState_Inaccessible) ||
+                    (!*pfInaccessible && pMediumItem->state() != KMediumState_Inaccessible))
+                    break; /* no */
+
+                /* Is the given item in charge? */
+                if (!*pfInaccessible && pMediumItem->state() == KMediumState_Inaccessible)
+                    *pfInaccessible = true; /* yes */
+                else
+                    fCheckRest = true; /* no */
+            }
+            else
+                fCheckRest = true;
+
+            if (fCheckRest)
+            {
+                /* Find the first KMediumState_Inaccessible item to be in charge: */
+                UIMediumItem *pInaccessibleMediumItem =
+                    searchItem(pMediumItem->treeWidget(), CheckIfSuitableByState(KMediumState_Inaccessible));
+                *pfInaccessible = !!pInaccessibleMediumItem;
+            }
+
+            if (*pfInaccessible)
+                mTabWidget->setTabIcon(iTab, vboxGlobal().warningIcon());
+            else
+                mTabWidget->setTabIcon(iTab, *pIcon);
+
+            break;
+        }
+    }
+}
+
 #ifdef Q_WS_MAC
 void UIMediumManager::cleanupMacWindowMenu()
 {
@@ -1552,90 +1636,6 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
 
     /* Return medium-item: */
     return pMediumItem;
-}
-
-void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, ItemAction action)
-{
-    /* Make sure medium-item is valid: */
-    AssertReturnVoid(pMediumItem);
-
-    /* Prepare data for tab: */
-    int iTab = -1;
-    const QIcon *pIcon = 0;
-    bool *pfInaccessible = 0;
-    switch (pMediumItem->mediumType())
-    {
-        case UIMediumType_HardDisk:
-            iTab = HDTab;
-            pIcon = &m_iconHD;
-            pfInaccessible = &m_fInaccessibleHD;
-            break;
-        case UIMediumType_DVD:
-            iTab = CDTab;
-            pIcon = &m_iconCD;
-            pfInaccessible = &m_fInaccessibleCD;
-            break;
-        case UIMediumType_Floppy:
-            iTab = FDTab;
-            pIcon = &m_iconFD;
-            pfInaccessible = &m_fInaccessibleFD;
-            break;
-        default:
-            AssertFailed();
-    }
-    AssertReturnVoid(iTab != -1 && pIcon && pfInaccessible);
-
-    switch (action)
-    {
-        case ItemAction_Added:
-        {
-            /* Does it change the overall state? */
-            if (*pfInaccessible || pMediumItem->state() != KMediumState_Inaccessible)
-                break; /* no */
-
-            *pfInaccessible = true;
-
-            mTabWidget->setTabIcon(iTab, vboxGlobal().warningIcon());
-
-            break;
-        }
-        case ItemAction_Updated:
-        case ItemAction_Removed:
-        {
-            bool fCheckRest = false;
-
-            if (action == ItemAction_Updated)
-            {
-                /* Does it change the overall state? */
-                if ((*pfInaccessible && pMediumItem->state() == KMediumState_Inaccessible) ||
-                    (!*pfInaccessible && pMediumItem->state() != KMediumState_Inaccessible))
-                    break; /* no */
-
-                /* Is the given item in charge? */
-                if (!*pfInaccessible && pMediumItem->state() == KMediumState_Inaccessible)
-                    *pfInaccessible = true; /* yes */
-                else
-                    fCheckRest = true; /* no */
-            }
-            else
-                fCheckRest = true;
-
-            if (fCheckRest)
-            {
-                /* Find the first KMediumState_Inaccessible item to be in charge: */
-                UIMediumItem *pInaccessibleMediumItem =
-                    searchItem(pMediumItem->treeWidget(), CheckIfSuitableByState(KMediumState_Inaccessible));
-                *pfInaccessible = !!pInaccessibleMediumItem;
-            }
-
-            if (*pfInaccessible)
-                mTabWidget->setTabIcon(iTab, vboxGlobal().warningIcon());
-            else
-                mTabWidget->setTabIcon(iTab, *pIcon);
-
-            break;
-        }
-    }
 }
 
 bool UIMediumManager::checkMediumFor(UIMediumItem *pItem, Action action)
