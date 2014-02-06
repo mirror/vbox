@@ -1741,13 +1741,13 @@ VBOX_PYLINT_FLAGS   := --report=n \
        --min-public-methods=0 \
 	--function-rgx='[a-z_][a-zA-Z0-9_]{2,40}$(DOLLAR)' \
 	--method-rgx='[a-z_][a-zA-Z0-9_]{2,40}$(DOLLAR)' \
-	--argument-rgx='([a-z_][a-zA-Z0-9_]{2,30}|rc|hr|s|c|cx|cy|cb|fn)$(DOLLAR)' \
-	--variable-rgx='([a-z_][a-zA-Z0-9_]{2,30}|rc|hr|s|c|cx|cy|cb|fn)$(DOLLAR)' \
+	--argument-rgx='([a-z_][a-zA-Z0-9_]{2,30}|rc|hr|s|c|ch|cx|cy|cb|fn)$(DOLLAR)' \
+	--variable-rgx='([a-z_][a-zA-Z0-9_]{2,30}|rc|hr|s|c|ch|cx|cy|cb|fn)$(DOLLAR)' \
 	--attr-rgx='([a-z_][a-zA-Z0-9_]{2,30}|rc|hr|o)$(DOLLAR)' \
 	--module-rgx='(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+)|(td[A-Z][a-zA-Z0-9]+)|(t(e|)st(-|)[a-zA-Z0-9]+))$(DOLLAR)' \
 	--class-rgx='(td|)[A-Z_][a-zA-Z0-9_]+$(DOLLAR)' \
 	--const-rgx='(g_(k|)[abcdefhmnpilorstu]+[A-Z][a-zA-Z0-9]+|[A-Z_][A-Z0-9_]+|__copyright__|__version__|__file__|__all__)$(DOLLAR)' \
-	--good-names='i,j,k,t,o,c,e,_' \
+	--good-names='i,j,k,t,o,c,e,ch,s,_' \
 	$(if-expr !defined(VBOX_WITH_PYLINT_PRE_V1_0),--class-attribute-rgx='(k[abcdefhmnpilorstu]+[A-Z0-9][a-zA-Z0-9_]{0,32}|[A-Z_][A-Z0-9_]{2,32})',) \
        $(if-expr defined(VBOX_WITH_PYLINT_V1_1_PLUS),--disable=C0326,) \
 	--disable=W0301,W0511,W0603,W0702,W0703,C0321,R0201,I0011 \
