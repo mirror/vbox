@@ -104,7 +104,7 @@ endif
 # Use very generic template to make the build environment similar
 # to the standalone case, to detect if IPRT or glue use sneaks in.
 #
-tstVBoxAPIXPCOM_TEMPLATE = VBoxBldProg
+tstVBoxAPIXPCOM_TEMPLATE = VBOXR3EXE
 tstVBoxAPIXPCOM_INST = $(INST_TESTCASE)
 tstVBoxAPIXPCOM_SOURCES  = tstVBoxAPIXPCOM.cpp
 tstVBoxAPIXPCOM_INCS = \
