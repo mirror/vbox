@@ -28,14 +28,13 @@
 #include <iprt/err.h>
 
 #include "VBoxClient.h"
-#include "seamless-host.h"
-#include "seamless-x11.h"
+#include "seamless.h"
 
 /**
  * Start the service.
  * @returns iprt status value
  */
-int VBoxGuestSeamlessHost::start(void)
+int SeamlessMain::start(void)
 {
     int rc = VERR_NOT_SUPPORTED;
 
@@ -77,7 +76,7 @@ int VBoxGuestSeamlessHost::start(void)
 }
 
 /** Stops the service. */
-void VBoxGuestSeamlessHost::stop()
+void SeamlessMain::stop()
 {
     LogRelFlowFunc(("\n"));
     if (!mThread)  /* Assertion */
@@ -96,7 +95,7 @@ void VBoxGuestSeamlessHost::stop()
  *
  * @returns        IRPT return code.
  */
-int VBoxGuestSeamlessHost::nextEvent(void)
+int SeamlessMain::nextEvent(void)
 {
     VMMDevSeamlessMode newMode = VMMDev_Seamless_Disabled;
 
@@ -147,7 +146,7 @@ int VBoxGuestSeamlessHost::nextEvent(void)
 /**
  * Update the set of visible rectangles in the host.
  */
-void VBoxGuestSeamlessHost::notify(RTRECT *pRects, size_t cRects)
+void SeamlessMain::notify(RTRECT *pRects, size_t cRects)
 {
     LogRelFlowFunc(("\n"));
     if (cRects && !pRects)  /* Assertion */
@@ -163,9 +162,9 @@ void VBoxGuestSeamlessHost::notify(RTRECT *pRects, size_t cRects)
 /**
  * The actual event thread function.
  */
-int VBoxGuestSeamlessHost::threadFunction(RTTHREAD self, void *pvUser)
+int SeamlessMain::threadFunction(RTTHREAD self, void *pvUser)
 {
-    VBoxGuestSeamlessHost *pHost = (VBoxGuestSeamlessHost *)pvUser;
+    SeamlessMain *pHost = (SeamlessMain *)pvUser;
 
     LogRelFlowFunc(("\n"));
     pHost->mThreadRunning = true;
@@ -189,7 +188,7 @@ int VBoxGuestSeamlessHost::threadFunction(RTTHREAD self, void *pvUser)
 /**
  * Send a signal to the thread that it should exit
  */
-void VBoxGuestSeamlessHost::stopThread()
+void SeamlessMain::stopThread()
 {
     int rc;
 
@@ -218,9 +217,9 @@ void VBoxGuestSeamlessHost::stopThread()
 /**
  * The actual X11 event thread function.
  */
-int VBoxGuestSeamlessHost::x11ThreadFunction(RTTHREAD self, void *pvUser)
+int SeamlessMain::x11ThreadFunction(RTTHREAD self, void *pvUser)
 {
-    VBoxGuestSeamlessHost *pHost = (VBoxGuestSeamlessHost *)pvUser;
+    SeamlessMain *pHost = (SeamlessMain *)pvUser;
     int rc = VINF_SUCCESS;
 
     LogRelFlowFunc(("\n"));
@@ -240,7 +239,7 @@ int VBoxGuestSeamlessHost::x11ThreadFunction(RTTHREAD self, void *pvUser)
 /**
  * Send a signal to the thread function that it should exit
  */
-void VBoxGuestSeamlessHost::stopX11Thread(void)
+void SeamlessMain::stopX11Thread(void)
 {
     int rc;
 
@@ -260,7 +259,7 @@ void VBoxGuestSeamlessHost::stopX11Thread(void)
 class SeamlessService : public VBoxClient::Service
 {
 private:
-    VBoxGuestSeamlessHost mSeamless;
+    SeamlessMain mSeamless;
     bool mIsInitialised;
 public:
     virtual const char *getPidFilePath()

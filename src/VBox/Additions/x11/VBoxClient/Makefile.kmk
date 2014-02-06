@@ -58,7 +58,7 @@ VBoxClient_LIBS += \
 ifdef VBOX_X11_SEAMLESS_GUEST
  VBoxClient_DEFS += SEAMLESS_GUEST DYNAMIC_RESIZE
  VBoxClient_SOURCES += \
-	seamless-host.cpp \
+	seamless.cpp \
 	seamless-x11.cpp \
 	display.cpp \
 	hostversion.cpp
@@ -108,7 +108,7 @@ $$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
    tstSeamlessX11_TEMPLATE = VBOXR3TSTEXE
    tstSeamlessX11_SOURCES = \
            testcase/tstSeamlessX11.cpp \
-           seamless-host.cpp \
+           seamless.cpp \
            seamless-x11.cpp
    tstSeamlessX11_LIBPATH = \
            $(VBOX_LIBPATH_X11)
