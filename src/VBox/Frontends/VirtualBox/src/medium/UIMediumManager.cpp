@@ -327,33 +327,26 @@ void UIMediumManager::sltHandleMediumDeleted(const QString &strMediumID)
 
 void UIMediumManager::sltHandleMediumEnumerationStart()
 {
+    /* Disable 'refresh' action: */
+    m_pActionRefresh->setEnabled(false);
+
+    /* Reset and show progress-bar: */
+    m_pProgressBar->setMaximum(vboxGlobal().mediumIDs().size());
+    m_pProgressBar->setValue(0);
+    m_pProgressBar->show();
+
     /* Reset inaccessibility flags: */
     m_fInaccessibleHD =
         m_fInaccessibleCD =
             m_fInaccessibleFD = false;
 
-    /* Load default tab-widget icons: */
+    /* Reset tab-widget icons: */
     mTabWidget->setTabIcon(HDTab, m_iconHD);
     mTabWidget->setTabIcon(CDTab, m_iconCD);
     mTabWidget->setTabIcon(FDTab, m_iconFD);
 
-    /* Repopulate all medium-items: */
-    QList<QString> mediumIDs = vboxGlobal().mediumIDs();
-    prepareToRefresh(mediumIDs.size());
-    foreach (const QString &strMediumID, mediumIDs)
-        sltHandleMediumCreated(strMediumID);
-
-    /* Select the first item to be the current one
-     * if the previous saved item was not selected yet. */
-    if (!mTwHD->currentItem())
-        if (QTreeWidgetItem *pItem = mTwHD->topLevelItem(0))
-            setCurrentItem(mTwHD, pItem);
-    if (!mTwCD->currentItem())
-        if (QTreeWidgetItem *pItem = mTwCD->topLevelItem(0))
-            setCurrentItem(mTwCD, pItem);
-    if (!mTwFD->currentItem())
-        if (QTreeWidgetItem *pItem = mTwFD->topLevelItem(0))
-            setCurrentItem(mTwFD, pItem);
+    /* Repopulate tree-widgets content: */
+    repopulateTreeWidgets();
 
     /* Update current tab: */
     sltHandleCurrentTabChanged();
@@ -387,9 +380,6 @@ void UIMediumManager::sltHandleMediumEnumerationFinish()
 
     /* Enable 'refresh' action: */
     m_pActionRefresh->setEnabled(true);
-
-    /* Unset 'busy' cursor: */
-    unsetCursor();
 
     /* Update current tab: */
     sltHandleCurrentTabChanged();
@@ -701,11 +691,22 @@ void UIMediumManager::prepare()
     /* Center according passed widget: */
     centerAccording(m_pCenterWidget);
 
-    /* Populate content for tree-widgets: */
-    populateTreeWidgets();
-
-    /* Update all information-panes: */
+    /* Initialize information-panes: */
     updateInformationPanes(UIMediumType_All);
+
+    /* Start medium-enumeration (if necessary): */
+    if (m_fRefresh && !vboxGlobal().isMediumEnumerationInProgress())
+        vboxGlobal().startMediumEnumeration();
+    /* Emulate medium-enumeration otherwise: */
+    else
+    {
+        /* Start medium-enumeration: */
+        sltHandleMediumEnumerationStart();
+
+        /* Finish medium-enumeration (if necessary): */
+        if (!vboxGlobal().isMediumEnumerationInProgress())
+            sltHandleMediumEnumerationFinish();
+    }
 }
 
 void UIMediumManager::prepareThis()
@@ -1006,44 +1007,33 @@ void UIMediumManager::prepareMacWindowMenu()
 }
 #endif /* Q_WS_MAC */
 
-void UIMediumManager::populateTreeWidgets()
+void UIMediumManager::repopulateTreeWidgets()
 {
-    /* If refresh was requested and enumeration was not yet started: */
-    if (m_fRefresh && !vboxGlobal().isMediumEnumerationInProgress())
-    {
-        /* Just start medium-enumeration: */
-        vboxGlobal().startMediumEnumeration();
-    }
-    /* If refresh was not requested or enumeration already started: */
-    else
-    {
-        /* Emulate (possible partial) medium-enumeration: */
-        QList<QString> mediumIDs = vboxGlobal().mediumIDs();
-        prepareToRefresh(mediumIDs.size());
-        foreach (const QString &strMediumID, mediumIDs)
-        {
-            /* Get corresponding medium: */
-            const UIMedium medium = vboxGlobal().medium(strMediumID);
-            /* Create corresponding medium-item: */
-            sltHandleMediumCreated(strMediumID);
-            /* Advance progress-bar only for created mediums: */
-            if (medium.state() != KMediumState_NotCreated)
-                m_pProgressBar->setValue(m_pProgressBar->value() + 1);
-        }
-        /* Finally, emulate enumeration finish,
-         * if enumeration already finished or wasn't started: */
-        if (!vboxGlobal().isMediumEnumerationInProgress())
-            sltHandleMediumEnumerationFinish();
-    }
+    /* Remember current medium-items: */
+    if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_HardDisk))
+        m_strSelectedIdHD = pMediumItem->id();
+    if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_DVD))
+        m_strSelectedIdCD = pMediumItem->id();
+    if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_Floppy))
+        m_strSelectedIdFD = pMediumItem->id();
 
-    /* For a newly opened dialog, select the first item: */
-    if (!mTwHD->currentItem())
+    /* Clear tree-widgets: */
+    mTwHD->clear();
+    mTwCD->clear();
+    mTwFD->clear();
+
+    /* Populate all medium-items: */
+    foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
+        sltHandleMediumCreated(strMediumID);
+
+    /* Select first-item as current medium-item if nothing selected: */
+    if (!mediumItem(UIMediumType_HardDisk))
         if (QTreeWidgetItem *pItem = mTwHD->topLevelItem(0))
             setCurrentItem(mTwHD, pItem);
-    if (!mTwCD->currentItem())
+    if (!mediumItem(UIMediumType_DVD))
         if (QTreeWidgetItem *pItem = mTwCD->topLevelItem(0))
             setCurrentItem(mTwCD, pItem);
-    if (!mTwFD->currentItem())
+    if (!mediumItem(UIMediumType_Floppy))
         if (QTreeWidgetItem *pItem = mTwFD->topLevelItem(0))
             setCurrentItem(mTwFD, pItem);
 }
@@ -1765,54 +1755,6 @@ bool UIMediumManager::checkMediumFor(UIMediumItem *pItem, Action action)
     }
 
     AssertFailedReturn(false);
-}
-
-void UIMediumManager::prepareToRefresh(int iTotal)
-{
-    /* Clear information panes: */
-    m_pTypePane->clear(); m_pLocationPane->clear(); m_pFormatPane->clear(); m_pDetailsPane->clear(); m_pUsagePane->clear();
-    mIpCD1->clear(); mIpCD2->clear();
-    mIpFD1->clear(); mIpFD2->clear();
-
-    /* Prepare progressbar: */
-    if (m_pProgressBar)
-    {
-        m_pProgressBar->setMaximum(iTotal);
-        m_pProgressBar->setValue(0);
-        m_pProgressBar->setVisible(true);
-    }
-
-    /* Enable refresh action: */
-    m_pActionRefresh->setEnabled(false);
-
-    /* Set busy cursor: */
-    setCursor(QCursor(Qt::BusyCursor));
-
-    /* Store the current list selections: */
-    UIMediumItem *pMediumItem = 0;
-    pMediumItem = mediumItem(UIMediumType_HardDisk);
-    if (m_strSelectedIdHD.isNull())
-        m_strSelectedIdHD = pMediumItem ? pMediumItem->id() : QString();
-    pMediumItem = mediumItem(UIMediumType_DVD);
-    if (m_strSelectedIdCD.isNull())
-        m_strSelectedIdCD = pMediumItem ? pMediumItem->id() : QString();
-    pMediumItem = mediumItem(UIMediumType_Floppy);
-    if (m_strSelectedIdFD.isNull())
-        m_strSelectedIdFD = pMediumItem ? pMediumItem->id() : QString();
-
-    /* Finally, clear all the lists...
-     * Qt4 has interesting bug here. It sends the currentChanged (cur, prev)
-     * signal during list clearing with 'cur' set to null and 'prev' pointing
-     * to already excluded element if this element is not topLevelItem
-     * (has parent). Cause the Hard Disk list has such elements there is
-     * seg-fault when trying to make 'prev' element the current due to 'cur'
-     * is null and at least one element have to be selected (by policy).
-     * So just blocking any signals outgoing from the list during clearing. */
-    mTwHD->blockSignals(true);
-    mTwHD->clear();
-    mTwHD->blockSignals(false);
-    mTwCD->clear();
-    mTwFD->clear();
 }
 
 /* static */
