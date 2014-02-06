@@ -56,12 +56,12 @@ void HostPowerService::notify(Reason_T aReason)
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
             /* Suspend performance sampling to avoid unnecessary callbacks due to jumps in time. */
-            PerformanceCollector *perfcollector = mVirtualBox->performanceCollector();
+            PerformanceCollector *perfcollector = mVirtualBox->i_performanceCollector();
 
             if (perfcollector)
                 perfcollector->suspendSampling();
 #endif
-            mVirtualBox->getOpenedMachines(machines, &controls);
+            mVirtualBox->i_getOpenedMachines(machines, &controls);
 
             /* pause running VMs */
             for (VirtualBox::InternalControlList::const_iterator it = controls.begin();
@@ -108,7 +108,7 @@ void HostPowerService::notify(Reason_T aReason)
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
             /* Resume the performance sampling. */
-            PerformanceCollector *perfcollector = mVirtualBox->performanceCollector();
+            PerformanceCollector *perfcollector = mVirtualBox->i_performanceCollector();
 
             if (perfcollector)
                 perfcollector->resumeSampling();
@@ -134,7 +134,7 @@ void HostPowerService::notify(Reason_T aReason)
                     fGlobal = -1;
             }
 
-            mVirtualBox->getOpenedMachines(machines, &controls);
+            mVirtualBox->i_getOpenedMachines(machines, &controls);
             size_t saved = 0;
 
             /* save running VMs */

@@ -1401,7 +1401,7 @@ HRESULT NetworkAdapter::i_checkAndSwitchFromNatNetworking(com::Utf8Str networkNa
         Bstr bstrName;
         hrc = mParent->COMGETTER(Name)(bstrName.asOutParam());
         LogRel(("VM '%ls' stops using NAT network '%ls'\n", bstrName.raw(), Bstr(networkName).raw()));
-        int natCount = mParent->getVirtualBox()->natNetworkRefDec(Bstr(networkName).raw());
+        int natCount = mParent->getVirtualBox()->i_natNetworkRefDec(Bstr(networkName).raw());
         if (natCount == -1)
             return E_INVALIDARG; /* no such network */
     }
@@ -1424,7 +1424,7 @@ HRESULT NetworkAdapter::i_switchToNatNetworking(const com::Utf8Str &aNatNetworkN
         Bstr bstrName;
         hrc = mParent->COMGETTER(Name)(bstrName.asOutParam());
         LogRel(("VM '%ls' starts using NAT network '%ls'\n", bstrName.raw(), Bstr(aNatNetworkName).raw()));
-        int natCount = mParent->getVirtualBox()->natNetworkRefInc(Bstr(aNatNetworkName).raw());
+        int natCount = mParent->getVirtualBox()->i_natNetworkRefInc(Bstr(aNatNetworkName).raw());
         if (natCount == -1)
             return E_INVALIDARG; /* not found */
     }

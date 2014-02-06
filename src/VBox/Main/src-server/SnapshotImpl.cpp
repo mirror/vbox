@@ -1252,11 +1252,11 @@ HRESULT SnapshotMachine::onSnapshotChange(Snapshot *aSnapshot)
     {
         // save the global settings
         AutoWriteLock vboxlock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
+        rc = mParent->i_saveSettings();
     }
 
     /* inform callbacks */
-    mParent->onSnapshotChange(uuidMachine, uuidSnapshot);
+    mParent->i_onSnapshotChange(uuidMachine, uuidSnapshot);
 
     return rc;
 }
@@ -1462,7 +1462,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     if (strStateFilePath.isNotEmpty())
     {
         // ensure the directory for the saved state file exists
-        HRESULT rc = VirtualBox::ensureFilePathExists(strStateFilePath, true /* fCreate */);
+        HRESULT rc = VirtualBox::i_ensureFilePathExists(strStateFilePath, true /* fCreate */);
         if (FAILED(rc)) return rc;
     }
 
@@ -1624,8 +1624,8 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
         commitMedia(fOnline);
 
         /* inform callbacks */
-        mParent->onSnapshotTaken(mData->mUuid,
-                                 mConsoleTaskData.mSnapshot->i_getId());
+        mParent->i_onSnapshotTaken(mData->mUuid,
+                                   mConsoleTaskData.mSnapshot->i_getId());
         machineLock.release();
     }
     else
@@ -1659,7 +1659,7 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
 
     /* machineLock has been released already */
 
-    mParent->saveModifiedRegistries();
+    mParent->i_saveModifiedRegistries();
 
     return rc;
 }
@@ -1993,7 +1993,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         // release the locks before updating registry and deleting image files
         alock.release();
 
-        mParent->markRegistryModified(mParent->getGlobalRegistryId());
+        mParent->i_markRegistryModified(mParent->i_getGlobalRegistryId());
 
         // from here on we cannot roll back on failure any more
 
@@ -2032,13 +2032,13 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         }
     }
 
-    mParent->saveModifiedRegistries();
+    mParent->i_saveModifiedRegistries();
 
     /* set the result (this will try to fetch current error info on failure) */
     aTask.pProgress->notifyComplete(rc);
 
     if (SUCCEEDED(rc))
-        mParent->onSnapshotDeleted(mData->mUuid, Guid());
+        mParent->i_onSnapshotDeleted(mData->mUuid, Guid());
 
     LogFlowThisFunc(("Done restoring snapshot (rc=%08X)\n", rc));
 
@@ -2360,7 +2360,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         // once we have this lock, we know that SessionMachine::DeleteSnapshot()
         // has exited after setting the machine state to MachineState_DeletingSnapshot
 
-        AutoWriteLock treeLock(mParent->getMediaTreeLockHandle()
+        AutoWriteLock treeLock(mParent->i_getMediaTreeLockHandle()
                                COMMA_LOCKVAL_SRC_POS);
 
         ComObjPtr<SnapshotMachine> pSnapMachine = aTask.pSnapshot->i_getSnapshotMachine();
@@ -2660,7 +2660,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
                 // machine will need saving now
                 machineLock.release();
-                mParent->markRegistryModified(getId());
+                mParent->i_markRegistryModified(getId());
             }
         }
 
@@ -2691,7 +2691,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             {
                 /* no real merge needed, just updating state and delete
                  * diff files if necessary */
-                AutoMultiWriteLock2 mLock(&mParent->getMediaTreeLockHandle(), pMedium->lockHandle() COMMA_LOCKVAL_SRC_POS);
+                AutoMultiWriteLock2 mLock(&mParent->i_getMediaTreeLockHandle(), pMedium->lockHandle() COMMA_LOCKVAL_SRC_POS);
 
                 Assert(   !it->mfMergeForward
                        || pMedium->i_getChildren().size() == 0);
@@ -2839,7 +2839,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 it->mpSource->uninit();
 
             // One attachment is merged, must save the settings
-            mParent->markRegistryModified(getId());
+            mParent->i_markRegistryModified(getId());
 
             // prevent calling cancelDeleteSnapshotMedium() for this attachment
             it = toDelete.erase(it);
@@ -2859,7 +2859,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             aTask.pSnapshot->uninit();
 
             machineLock.release();
-            mParent->markRegistryModified(getId());
+            mParent->i_markRegistryModified(getId());
         }
     }
     catch (HRESULT aRC) {
@@ -2873,7 +2873,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         ErrorInfoKeeper eik;
 
         AutoMultiWriteLock2 multiLock(this->lockHandle(),                   // machine
-                                      &mParent->getMediaTreeLockHandle()    // media tree
+                                      &mParent->i_getMediaTreeLockHandle()    // media tree
                                       COMMA_LOCKVAL_SRC_POS);
 
         // un-prepare the remaining hard disks
@@ -2901,14 +2901,14 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         setMachineState(aTask.machineStateBackup);
         updateMachineStateOnClient();
 
-        mParent->saveModifiedRegistries();
+        mParent->i_saveModifiedRegistries();
     }
 
     // report the result (this will try to fetch current error info on failure)
     aTask.pProgress->notifyComplete(rc);
 
     if (SUCCEEDED(rc))
-        mParent->onSnapshotDeleted(mData->mUuid, snapshotId);
+        mParent->i_onSnapshotDeleted(mData->mUuid, snapshotId);
 
     LogFlowThisFunc(("Done deleting snapshot (rc=%08X)\n", rc));
     LogFlowThisFuncLeave();
@@ -2964,7 +2964,7 @@ HRESULT SessionMachine::prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD
                                                     MediumLockList * &aMediumLockList,
                                                     ComPtr<IToken> &aHDLockToken)
 {
-    Assert(!mParent->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+    Assert(!mParent->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
     Assert(!fOnlineMergePossible || VALID_PTR(aVMMALockList));
 
     AutoWriteLock alock(aHD COMMA_LOCKVAL_SRC_POS);
@@ -3254,7 +3254,7 @@ void SessionMachine::cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
 {
     if (aMediumLockList == NULL)
     {
-        AutoMultiWriteLock2 mLock(&mParent->getMediaTreeLockHandle(), aHD->lockHandle() COMMA_LOCKVAL_SRC_POS);
+        AutoMultiWriteLock2 mLock(&mParent->i_getMediaTreeLockHandle(), aHD->lockHandle() COMMA_LOCKVAL_SRC_POS);
 
         Assert(aHD->i_getChildren().size() == 0);
 
@@ -3445,7 +3445,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium()
     // all hard disks but the target were successfully deleted by
     // the merge; reparent target if necessary and uninitialize media
 
-    AutoWriteLock treeLock(mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock treeLock(mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     // Declare this here to make sure the object does not get uninitialized
     // before this method completes. Would normally happen as halfway through
@@ -3456,7 +3456,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium()
     {
         // first, unregister the target since it may become a base
         // hard disk which needs re-registration
-        rc = mParent->unregisterMedium(pDeleteRec->mpTarget);
+        rc = mParent->i_unregisterMedium(pDeleteRec->mpTarget);
         AssertComRC(rc);
 
         // then, reparent it and disconnect the deleted branch at
@@ -3467,7 +3467,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium()
             pDeleteRec->mpSource->i_deparent();
 
         // then, register again
-        rc = mParent->registerMedium(pDeleteRec->mpTarget, &pDeleteRec->mpTarget, DeviceType_HardDisk);
+        rc = mParent->i_registerMedium(pDeleteRec->mpTarget, &pDeleteRec->mpTarget, DeviceType_HardDisk);
         AssertComRC(rc);
     }
     else
@@ -3539,7 +3539,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium()
         }
         else
         {
-            rc = mParent->unregisterMedium(pMedium);
+            rc = mParent->i_unregisterMedium(pMedium);
             AssertComRC(rc);
 
             /* now, uninitialize the deleted hard disk (note that

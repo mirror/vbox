@@ -1148,10 +1148,10 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
             d->iface = iface;
             d->vBox = pVirtualBox;
 
-            rc = pVirtualBox->startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
-                                                   netIfNetworkInterfaceHelperClient,
-                                                   static_cast<void *>(d.get()),
-                                                   progress);
+            rc = pVirtualBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
+                                                     netIfNetworkInterfaceHelperClient,
+                                                     static_cast<void *>(d.get()),
+                                                     progress);
             if (SUCCEEDED(rc))
             {
                 /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
@@ -1193,10 +1193,10 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, IN_GUID aId,
             d->msgCode = SVCHlpMsg::RemoveHostOnlyNetworkInterface;
             d->guid = aId;
 
-            rc = pVirtualBox->startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
-                                                   netIfNetworkInterfaceHelperClient,
-                                                   static_cast<void *>(d.get()),
-                                                   progress);
+            rc = pVirtualBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
+                                                     netIfNetworkInterfaceHelperClient,
+                                                     static_cast<void *>(d.get()),
+                                                     progress);
 
             if (SUCCEEDED(rc))
             {
@@ -1250,10 +1250,10 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
                     d->u.StaticIP.IPAddress = ip;
                     d->u.StaticIP.IPNetMask = mask;
 
-                    rc = vBox->startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
-                                                    netIfNetworkInterfaceHelperClient,
-                                                    static_cast<void *>(d.get()),
-                                                    progress);
+                    rc = vBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
+                                                      netIfNetworkInterfaceHelperClient,
+                                                      static_cast<void *>(d.get()),
+                                                      progress);
 
                     if (SUCCEEDED(rc))
                     {
@@ -1311,10 +1311,10 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
                     d->u.StaticIPV6.IPV6Address = aIPV6Address;
                     d->u.StaticIPV6.IPV6NetMaskLength = aIPV6MaskPrefixLength;
 
-                    rc = vBox->startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
-                                                    netIfNetworkInterfaceHelperClient,
-                                                    static_cast<void *>(d.get()),
-                                                    progress);
+                    rc = vBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
+                                                      netIfNetworkInterfaceHelperClient,
+                                                      static_cast<void *>(d.get()),
+                                                      progress);
 
                     if (SUCCEEDED(rc))
                     {
@@ -1370,10 +1370,10 @@ int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
                     d->guid = guid;
                     d->iface = pIf;
 
-                    rc = vBox->startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
-                                                    netIfNetworkInterfaceHelperClient,
-                                                    static_cast<void *>(d.get()),
-                                                    progress);
+                    rc = vBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
+                                                      netIfNetworkInterfaceHelperClient,
+                                                      static_cast<void *>(d.get()),
+                                                      progress);
 
                     if (SUCCEEDED(rc))
                     {
@@ -1429,10 +1429,10 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
                     d->guid = guid;
                     d->iface = pIf;
 
-                    rc = vBox->startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
-                                                    netIfNetworkInterfaceHelperClient,
-                                                    static_cast<void *>(d.get()),
-                                                    progress);
+                    rc = vBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
+                                                      netIfNetworkInterfaceHelperClient,
+                                                      static_cast<void *>(d.get()),
+                                                      progress);
 
                     if (SUCCEEDED(rc))
                     {

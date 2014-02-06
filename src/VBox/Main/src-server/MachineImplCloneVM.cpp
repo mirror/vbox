@@ -1101,7 +1101,7 @@ HRESULT MachineCloneVM::run()
 
                         /* Default format? */
                         Utf8Str strDefaultFormat;
-                        p->mParent->getDefaultHardDiskFormat(strDefaultFormat);
+                        p->mParent->i_getDefaultHardDiskFormat(strDefaultFormat);
                         Bstr bstrSrcFormat(strDefaultFormat);
 
                         ULONG srcVar = MediumVariant_Standard;
@@ -1220,8 +1220,8 @@ HRESULT MachineCloneVM::run()
                         map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pTarget));
                         /* register the new harddisk */
                         {
-                            AutoWriteLock tlock(p->mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-                            rc = p->mParent->registerMedium(pTarget, &pTarget,
+                            AutoWriteLock tlock(p->mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+                            rc = p->mParent->i_registerMedium(pTarget, &pTarget,
                                                             DeviceType_HardDisk);
                             if (FAILED(rc)) throw rc;
                         }
@@ -1303,7 +1303,7 @@ HRESULT MachineCloneVM::run()
                         mlock2.release();
                         trgLock.release();
                         srcLock.release();
-                        p->mParent->markRegistryModified(uuid);
+                        p->mParent->i_markRegistryModified(uuid);
                         srcLock.acquire();
                         trgLock.acquire();
                         mlock2.acquire();
@@ -1372,13 +1372,13 @@ HRESULT MachineCloneVM::run()
                 /* save the global settings; for that we should hold only the
                  * VirtualBox lock */
                 AutoWriteLock vlock(p->mParent COMMA_LOCKVAL_SRC_POS);
-                rc = p->mParent->saveSettings();
+                rc = p->mParent->i_saveSettings();
                 if (FAILED(rc)) throw rc;
             }
         }
 
         /* Any additional machines need saving? */
-        p->mParent->saveModifiedRegistries();
+        p->mParent->i_saveModifiedRegistries();
     }
     catch (HRESULT rc2)
     {
@@ -1417,7 +1417,7 @@ HRESULT MachineCloneVM::run()
         RTDirRemove(strTrgMachineFolder.c_str());
 
         /* Must save the modified registries */
-        p->mParent->saveModifiedRegistries();
+        p->mParent->i_saveModifiedRegistries();
     }
 
     return mrc;

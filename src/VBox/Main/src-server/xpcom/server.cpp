@@ -96,10 +96,6 @@
 
 
 /* implement nsISupports parts of our objects with support for nsIClassInfo */
-
-NS_DECL_CLASSINFO(VirtualBox)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VirtualBox, IVirtualBox)
-
 NS_DECL_CLASSINFO(Machine)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Machine, IMachine)
 

@@ -291,9 +291,9 @@ HRESULT SystemProperties::setExclusiveHwVirt(BOOL aExclusiveHwVirt)
     m->fExclusiveHwVirt = !!aExclusiveHwVirt;
     alock.release();
 
-    // VirtualBox::saveSettings() needs vbox write lock
+    // VirtualBox::i_saveSettings() needs vbox write lock
     AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mParent->saveSettings();
+    HRESULT rc = mParent->i_saveSettings();
 
     return rc;
 }
@@ -601,9 +601,9 @@ HRESULT SystemProperties::setDefaultMachineFolder(const com::Utf8Str &aDefaultMa
     alock.release();
     if (SUCCEEDED(rc))
     {
-        // VirtualBox::saveSettings() needs vbox write lock
+        // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
+        rc = mParent->i_saveSettings();
     }
 
     return rc;
@@ -631,7 +631,7 @@ HRESULT SystemProperties::setLoggingLevel(const com::Utf8Str &aLoggingLevel)
     if (SUCCEEDED(rc))
     {
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
+        rc = mParent->i_saveSettings();
     }
     else
         LogRel(("Cannot set passed logging level=%ls, or the default one - Error=%Rhrc \n", Bstr(aLoggingLevel).raw(), rc));
@@ -664,9 +664,9 @@ HRESULT SystemProperties::setDefaultHardDiskFormat(const com::Utf8Str &aDefaultH
     alock.release();
     if (SUCCEEDED(rc))
     {
-        // VirtualBox::saveSettings() needs vbox write lock
+        // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
+        rc = mParent->i_saveSettings();
     }
 
     return rc;
@@ -732,9 +732,9 @@ HRESULT SystemProperties::setVRDEAuthLibrary(const com::Utf8Str &aVRDEAuthLibrar
     alock.release();
     if (SUCCEEDED(rc))
     {
-        // VirtualBox::saveSettings() needs vbox write lock
+        // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
+        rc = mParent->i_saveSettings();
     }
 
     return rc;
@@ -757,9 +757,9 @@ HRESULT SystemProperties::setWebServiceAuthLibrary(const com::Utf8Str &aWebServi
 
     if (SUCCEEDED(rc))
     {
-        // VirtualBox::saveSettings() needs vbox write lock
+        // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
+        rc = mParent->i_saveSettings();
     }
 
     return rc;
@@ -776,7 +776,7 @@ HRESULT SystemProperties::getDefaultVRDEExtPack(com::Utf8Str &aExtPack)
             hrc = S_OK;
         else
 #ifdef VBOX_WITH_EXTPACK
-            hrc = mParent->getExtPackManager()->checkVrdeExtPack(&strExtPack);
+            hrc = mParent->i_getExtPackManager()->checkVrdeExtPack(&strExtPack);
 #else
             hrc = setError(E_FAIL, tr("The extension pack '%s' does not exist"), strExtPack.c_str());
 #endif
@@ -784,7 +784,7 @@ HRESULT SystemProperties::getDefaultVRDEExtPack(com::Utf8Str &aExtPack)
     else
     {
 #ifdef VBOX_WITH_EXTPACK
-        hrc = mParent->getExtPackManager()->getDefaultVrdeExtPack(&strExtPack);
+        hrc = mParent->i_getExtPackManager()->getDefaultVrdeExtPack(&strExtPack);
 #endif
         if (strExtPack.isEmpty())
         {
@@ -822,7 +822,7 @@ HRESULT SystemProperties::setDefaultVRDEExtPack(const com::Utf8Str &aExtPack)
             hrc = S_OK;
         else
 #ifdef VBOX_WITH_EXTPACK
-            hrc = mParent->getExtPackManager()->checkVrdeExtPack(&aExtPack);
+            hrc = mParent->i_getExtPackManager()->checkVrdeExtPack(&aExtPack);
 #else
             hrc = setError(E_FAIL, tr("The extension pack '%s' does not exist"), aExtPack.c_str());
 #endif
@@ -833,10 +833,10 @@ HRESULT SystemProperties::setDefaultVRDEExtPack(const com::Utf8Str &aExtPack)
         hrc = i_setDefaultVRDEExtPack(aExtPack);
         if (SUCCEEDED(hrc))
         {
-            /* VirtualBox::saveSettings() needs the VirtualBox write lock. */
+            /* VirtualBox::i_saveSettings() needs the VirtualBox write lock. */
             alock.release();
             AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-            hrc = mParent->saveSettings();
+            hrc = mParent->i_saveSettings();
         }
     }
 
@@ -860,9 +860,9 @@ HRESULT SystemProperties::setLogHistoryCount(ULONG count)
     m->ulLogHistoryCount = count;
     alock.release();
 
-    // VirtualBox::saveSettings() needs vbox write lock
+    // VirtualBox::i_saveSettings() needs vbox write lock
     AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mParent->saveSettings();
+    HRESULT rc = mParent->i_saveSettings();
 
     return rc;
 }
@@ -893,9 +893,9 @@ HRESULT SystemProperties::setAutostartDatabasePath(const com::Utf8Str &aAutostar
 
     if (SUCCEEDED(rc))
     {
-        // VirtualBox::saveSettings() needs vbox write lock
+        // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
+        rc = mParent->i_saveSettings();
     }
 
     return rc;
@@ -932,9 +932,9 @@ HRESULT SystemProperties::setDefaultAdditionsISO(const com::Utf8Str &aDefaultAdd
 
     if (SUCCEEDED(rc))
     {
-        // VirtualBox::saveSettings() needs vbox write lock
+        // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
+        rc = mParent->i_saveSettings();
     }
 
     return rc;
@@ -957,9 +957,9 @@ HRESULT SystemProperties::setDefaultFrontend(const com::Utf8Str &aDefaultFronten
 
     if (SUCCEEDED(rc))
     {
-        // VirtualBox::saveSettings() needs vbox write lock
+        // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
+        rc = mParent->i_saveSettings();
     }
 
     return rc;
@@ -1215,7 +1215,7 @@ HRESULT SystemProperties::i_setDefaultVRDEExtPack(const com::Utf8Str &aExtPack)
 HRESULT SystemProperties::i_setAutostartDatabasePath(const com::Utf8Str &aPath)
 {
     HRESULT rc = S_OK;
-    AutostartDb *autostartDb = this->mParent->getAutostartDb();
+    AutostartDb *autostartDb = this->mParent->i_getAutostartDb();
 
     if (!aPath.isEmpty())
     {
@@ -1258,7 +1258,7 @@ HRESULT SystemProperties::i_setDefaultAdditionsISO(const com::Utf8Str &aPath)
 
         vrc = RTPathUserHome(strTemp, sizeof(strTemp));
         AssertRC(vrc);
-        Utf8Str strSrc3 = Utf8StrFmt("%s/VBoxGuestAdditions_%ls.iso", strTemp, Bstr(VirtualBox::getVersionNormalized()).raw());
+        Utf8Str strSrc3 = Utf8StrFmt("%s/VBoxGuestAdditions_%ls.iso", strTemp, Bstr(VirtualBox::i_getVersionNormalized()).raw());
 
         /* Check the standard image locations */
         if (RTFileExists(strSrc1.c_str()))

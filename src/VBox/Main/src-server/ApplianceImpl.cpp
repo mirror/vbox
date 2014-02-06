@@ -371,7 +371,7 @@ Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type)
  * @param anAppliance IAppliance object created if S_OK is returned.
  * @return S_OK or error.
  */
-STDMETHODIMP VirtualBox::CreateAppliance(IAppliance** anAppliance)
+HRESULT VirtualBox::createAppliance(ComPtr<IAppliance> &aAppliance)
 {
     HRESULT rc;
 
@@ -380,7 +380,7 @@ STDMETHODIMP VirtualBox::CreateAppliance(IAppliance** anAppliance)
     rc = appliance->init(this);
 
     if (SUCCEEDED(rc))
-        appliance.queryInterfaceTo(anAppliance);
+        appliance.queryInterfaceTo(aAppliance.asOutParam());
 
     return rc;
 }
@@ -612,7 +612,7 @@ HRESULT Appliance::i_initSetOfSupportedStandardsURI()
         return rc;
 
     /* Get the system properties. */
-    SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
+    SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
     {
         ComObjPtr<MediumFormat> trgFormat = pSysProps->i_mediumFormatFromExtension("iso");
         if (trgFormat.isNull())
@@ -728,7 +728,7 @@ HRESULT Appliance::i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, Com
     HRESULT rc = S_OK;
 
     /* Get the system properties. */
-    SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
+    SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
 
     /* We need a proper source format description */
     /* Which format to use? */

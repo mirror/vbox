@@ -247,12 +247,12 @@ HRESULT NATNetwork::i_saveSettings(settings::NATNetwork &data)
     data.llHostLoopbackOffsetList.assign(m->maNATLoopbackOffsetList.begin(),
                                          m->maNATLoopbackOffsetList.end());
 
-    mVirtualBox->onNATNetworkSetting(Bstr(mName).raw(),
-                                     data.fEnabled ? TRUE : FALSE,
-                                     Bstr(m->IPv4NetworkCidr).raw(),
-                                     Bstr(m->IPv4Gateway).raw(),
-                                     data.fAdvertiseDefaultIPv6Route ? TRUE : FALSE,
-                                     data.fNeedDhcpServer ? TRUE : FALSE);
+    mVirtualBox->i_onNATNetworkSetting(Bstr(mName).raw(),
+                                       data.fEnabled ? TRUE : FALSE,
+                                       Bstr(m->IPv4NetworkCidr).raw(),
+                                       Bstr(m->IPv4Gateway).raw(),
+                                       data.fAdvertiseDefaultIPv6Route ? TRUE : FALSE,
+                                       data.fNeedDhcpServer ? TRUE : FALSE);
 
     /* Notify listerners listening on this network only */
     fireNATNetworkSettingEvent(m->pEventSource,
@@ -289,7 +289,7 @@ HRESULT NATNetwork::setNetworkName(const com::Utf8Str &aNetworkName)
         unconst(mName) = aNetworkName;
     }
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mVirtualBox->saveSettings();
+    HRESULT rc = mVirtualBox->i_saveSettings();
     ComAssertComRCRetRC(rc);
 
     return S_OK;
@@ -313,7 +313,7 @@ HRESULT NATNetwork::setEnabled(const BOOL aEnabled)
     }
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mVirtualBox->saveSettings();
+    HRESULT rc = mVirtualBox->i_saveSettings();
     ComAssertComRCRetRC(rc);
     return S_OK;
 }
@@ -353,7 +353,7 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
     }
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mVirtualBox->saveSettings();
+    HRESULT rc = mVirtualBox->i_saveSettings();
     ComAssertComRCRetRC(rc);
     return S_OK;
 }
@@ -379,7 +379,7 @@ HRESULT NATNetwork::setIPv6Enabled(const BOOL aIPv6Enabled)
     }
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mVirtualBox->saveSettings();
+    HRESULT rc = mVirtualBox->i_saveSettings();
     ComAssertComRCRetRC(rc);
 
     return S_OK;
@@ -412,7 +412,7 @@ HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
     }
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mVirtualBox->saveSettings();
+    HRESULT rc = mVirtualBox->i_saveSettings();
     ComAssertComRCRetRC(rc);
 
     return S_OK;
@@ -440,7 +440,7 @@ HRESULT NATNetwork::setAdvertiseDefaultIPv6RouteEnabled(const BOOL aAdvertiseDef
     }
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mVirtualBox->saveSettings();
+    HRESULT rc = mVirtualBox->i_saveSettings();
     ComAssertComRCRetRC(rc);
 
     return S_OK;
@@ -469,7 +469,7 @@ HRESULT NATNetwork::setNeedDhcpServer(const BOOL aNeedDhcpServer)
     }
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mVirtualBox->saveSettings();
+    HRESULT rc = mVirtualBox->i_saveSettings();
     ComAssertComRCRetRC(rc);
 
     return S_OK;
@@ -534,7 +534,7 @@ HRESULT NATNetwork::addLocalMapping(const com::Utf8Str &aHostId, LONG aOffset)
         }
 
         AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-        return mVirtualBox->saveSettings();
+        return mVirtualBox->i_saveSettings();
     }
 
     /* injection */
@@ -551,7 +551,7 @@ HRESULT NATNetwork::addLocalMapping(const com::Utf8Str &aHostId, LONG aOffset)
     m->maNATLoopbackOffsetList.push_back(off);
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    return mVirtualBox->saveSettings();
+    return mVirtualBox->i_saveSettings();
 }
 
 
@@ -579,7 +579,7 @@ HRESULT NATNetwork::setLoopbackIp6(LONG aLoopbackIp6)
     }
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    return mVirtualBox->saveSettings();
+    return mVirtualBox->i_saveSettings();
 }
 
 
@@ -652,14 +652,14 @@ HRESULT NATNetwork::addPortForwardRule(BOOL aIsIpv6,
     }
     {
         AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-        HRESULT rc = mVirtualBox->saveSettings();
+        HRESULT rc = mVirtualBox->i_saveSettings();
         ComAssertComRCRetRC(rc);
     }
 
-    mVirtualBox->onNATNetworkPortForward(Bstr(mName).raw(), TRUE, aIsIpv6,
-                                         Bstr(aPortForwardRuleName).raw(), aProto,
-                                         Bstr(aHostIp).raw(), aHostPort,
-                                         Bstr(aGuestIp).raw(), aGuestPort);
+    mVirtualBox->i_onNATNetworkPortForward(Bstr(mName).raw(), TRUE, aIsIpv6,
+                                           Bstr(aPortForwardRuleName).raw(), aProto,
+                                           Bstr(aHostIp).raw(), aHostPort,
+                                           Bstr(aGuestIp).raw(), aGuestPort);
 
     /* Notify listerners listening on this network only */
     fireNATNetworkPortForwardEvent(m->pEventSource, Bstr(mName).raw(), TRUE,
@@ -697,14 +697,14 @@ HRESULT NATNetwork::removePortForwardRule(BOOL aIsIpv6, const com::Utf8Str &aPor
 
     {
         AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-        HRESULT rc = mVirtualBox->saveSettings();
+        HRESULT rc = mVirtualBox->i_saveSettings();
         ComAssertComRCRetRC(rc);
     }
 
-    mVirtualBox->onNATNetworkPortForward(Bstr(mName).raw(), FALSE, aIsIpv6,
-                                         Bstr(aPortForwardRuleName).raw(), proto,
-                                         Bstr(strHostIP).raw(), u16HostPort,
-                                         Bstr(strGuestIP).raw(), u16GuestPort);
+    mVirtualBox->i_onNATNetworkPortForward(Bstr(mName).raw(), FALSE, aIsIpv6,
+                                           Bstr(aPortForwardRuleName).raw(), proto,
+                                           Bstr(strHostIP).raw(), u16HostPort,
+                                           Bstr(strGuestIP).raw(), u16GuestPort);
 
     /* Notify listerners listening on this network only */
     fireNATNetworkPortForwardEvent(m->pEventSource, Bstr(mName).raw(), FALSE,
@@ -798,7 +798,7 @@ HRESULT  NATNetwork::start(const com::Utf8Str &aTrunkType)
 
     if (RT_SUCCESS(m->NATRunner.start()))
     {
-        mVirtualBox->onNATNetworkStartStop(Bstr(mName).raw(), TRUE);
+        mVirtualBox->i_onNATNetworkStartStop(Bstr(mName).raw(), TRUE);
         return S_OK;
     }
     /** @todo missing setError()! */
@@ -817,7 +817,7 @@ HRESULT NATNetwork::stop()
 
     if (RT_SUCCESS(m->NATRunner.stop()))
     {
-        mVirtualBox->onNATNetworkStartStop(Bstr(mName).raw(), FALSE);
+        mVirtualBox->i_onNATNetworkStartStop(Bstr(mName).raw(), FALSE);
         return S_OK;
     }
     /** @todo missing setError()! */

@@ -439,10 +439,10 @@ HRESULT Machine::initFromSettings(VirtualBox *aParent,
 
                 // reject VM UUID duplicates, they can happen if someone
                 // tries to register an already known VM config again
-                if (aParent->findMachine(mData->pMachineConfigFile->uuid,
-                                         true /* fPermitInaccessible */,
-                                         false /* aDoSetError */,
-                                         NULL) != VBOX_E_OBJECT_NOT_FOUND)
+                if (aParent->i_findMachine(mData->pMachineConfigFile->uuid,
+                                           true /* fPermitInaccessible */,
+                                           false /* aDoSetError */,
+                                           NULL) != VBOX_E_OBJECT_NOT_FOUND)
                 {
                     throw setError(E_FAIL,
                                    tr("Trying to open a VM config '%s' which has the same UUID as an existing virtual machine"),
@@ -485,7 +485,7 @@ HRESULT Machine::initFromSettings(VirtualBox *aParent,
 
             // uninit media from this machine's media registry, or else
             // reloading the settings will fail
-            mParent->unregisterMachineMedia(getId());
+            mParent->i_unregisterMachineMedia(getId());
         }
     }
 
@@ -521,7 +521,7 @@ HRESULT Machine::init(VirtualBox *aParent,
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     Utf8Str strConfigFile;
-    aParent->getDefaultMachineFolder(strConfigFile);
+    aParent->i_getDefaultMachineFolder(strConfigFile);
     strConfigFile.append(RTPATH_DELIMITER);
     strConfigFile.append(strName);
     strConfigFile.append(RTPATH_DELIMITER);
@@ -575,7 +575,7 @@ HRESULT Machine::init(VirtualBox *aParent,
 
             // uninit media from this machine's media registry, or else
             // reloading the settings will fail
-            mParent->unregisterMachineMedia(getId());
+            mParent->i_unregisterMachineMedia(getId());
         }
     }
 
@@ -615,7 +615,7 @@ HRESULT Machine::initImpl(VirtualBox *aParent,
     mData->m_strConfigFile = strConfigFile;
 
     /* get the full file name */
-    int vrc1 = mParent->calculateFullPath(strConfigFile, mData->m_strConfigFileFull);
+    int vrc1 = mParent->i_calculateFullPath(strConfigFile, mData->m_strConfigFileFull);
     if (RT_FAILURE(vrc1))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Invalid machine settings file name '%s' (%Rrc)"),
@@ -711,7 +711,7 @@ HRESULT Machine::registeredInit()
                                mData->pMachineConfigFile->uuid.raw(),
                                mData->m_strConfigFileFull.c_str(),
                                mData->mUuid.toString().c_str(),
-                               mParent->settingsFilePath().c_str());
+                               mParent->i_settingsFilePath().c_str());
 
             rc = loadMachineDataFromSettings(*mData->pMachineConfigFile,
                                              NULL /* const Guid *puuidRegistry */);
@@ -759,7 +759,7 @@ HRESULT Machine::registeredInit()
 
         // uninit media from this machine's media registry, or else
         // reloading the settings will fail
-        mParent->unregisterMachineMedia(getId());
+        mParent->i_unregisterMachineMedia(getId());
 
         /* uninitialize the common part to make sure all data is reset to
          * default (null) values */
@@ -858,7 +858,7 @@ void Machine::uninit()
      * and therefore also removeBackReference() for all these mediums was not called! */
 
     if (uuidMachine.isValid() && !uuidMachine.isZero())     // can be empty if we're called from a failure of Machine::init
-        mParent->unregisterMachineMedia(uuidMachine);
+        mParent->i_unregisterMachineMedia(uuidMachine);
 
     // has machine been modified?
     if (mData->flModifications)
@@ -905,7 +905,7 @@ STDMETHODIMP Machine::COMGETTER(Accessible)(BOOL *aAccessible)
     /* In some cases (medium registry related), it is necessary to be able to
      * go through the list of all machines. Happens when an inaccessible VM
      * has a sensible medium registry. */
-    AutoReadLock mllock(mParent->getMachinesListLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock mllock(mParent->i_getMachinesListLockHandle() COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
@@ -919,7 +919,7 @@ STDMETHODIMP Machine::COMGETTER(Accessible)(BOOL *aAccessible)
 
 #ifdef DEBUG
         LogFlowThisFunc(("Dumping media backreferences\n"));
-        mParent->dumpAllBackRefs();
+        mParent->i_dumpAllBackRefs();
 #endif
 
         if (mData->pMachineConfigFile)
@@ -938,8 +938,8 @@ STDMETHODIMP Machine::COMGETTER(Accessible)(BOOL *aAccessible)
 
             /* make sure interesting parties will notice the accessibility
              * state change */
-            mParent->onMachineStateChange(mData->mUuid, mData->mMachineState);
-            mParent->onMachineDataChange(mData->mUuid);
+            mParent->i_onMachineStateChange(mData->mUuid, mData->mMachineState);
+            mParent->i_onMachineDataChange(mData->mUuid);
         }
     }
 
@@ -1097,9 +1097,14 @@ STDMETHODIMP Machine::COMSETTER(Groups)(ComSafeArrayIn(IN_BSTR, aGroups))
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    std::vector<com::Utf8Str> tmplist;
+    SafeArray<IN_BSTR> tmp(ComSafeArrayInArg(aGroups));
+    tmplist.resize(tmp.size());
+    for (size_t i = 0; i < tmp.size(); ++i)
+        tmplist[i] = Utf8Str(tmp[i]);
 
     StringsList llGroups;
-    HRESULT rc = mParent->convertMachineGroups(ComSafeArrayInArg(aGroups), &llGroups);
+    HRESULT rc = mParent->i_convertMachineGroups(tmplist, &llGroups);
     if (FAILED(rc))
         return rc;
 
@@ -2230,7 +2235,7 @@ STDMETHODIMP Machine::GetCPUProperty(CPUPropertyType_T property, BOOL *aVal)
                     hrc2 = ptrGuestOSType->COMGETTER(Is64Bit)(&fIs64Bit); AssertComRC(hrc2);
                     if (SUCCEEDED(hrc2) && fIs64Bit)
                     {
-                        ComObjPtr<Host> ptrHost = mParent->host();
+                        ComObjPtr<Host> ptrHost = mParent->i_host();
                         alock.release();
 
                         hrc2 = ptrHost->GetProcessorFeature(ProcessorFeature_LongMode, aVal); AssertComRC(hrc2);
@@ -2708,7 +2713,7 @@ STDMETHODIMP Machine::COMGETTER(USBControllers)(ComSafeArrayOut(IUSBController *
     MultiResult rc(S_OK);
 
 # ifdef VBOX_WITH_USB
-    rc = mParent->host()->i_checkUSBProxyService();
+    rc = mParent->i_host()->i_checkUSBProxyService();
     if (FAILED(rc)) return rc;
 # endif
 
@@ -2738,7 +2743,7 @@ STDMETHODIMP Machine::COMGETTER(USBDeviceFilters)(IUSBDeviceFilters **aUSBDevice
     MultiResult rc(S_OK);
 
 # ifdef VBOX_WITH_USB
-    rc = mParent->host()->i_checkUSBProxyService();
+    rc = mParent->i_host()->i_checkUSBProxyService();
     if (FAILED(rc)) return rc;
 # endif
 
@@ -3827,11 +3832,11 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
          *  tell the client watcher thread to update the set of
          *  machines that have open sessions
          */
-        mParent->updateClientWatcher();
+        mParent->i_updateClientWatcher();
 
         if (oldState != SessionState_Locked)
             /* fire an event */
-            mParent->onSessionStateChange(getId(), SessionState_Locked);
+            mParent->i_onSessionStateChange(getId(), SessionState_Locked);
     }
 
     return rc;
@@ -3930,10 +3935,10 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
                 progress.queryInterfaceTo(aProgress);
 
                 /* signal the client watcher thread */
-                mParent->updateClientWatcher();
+                mParent->i_updateClientWatcher();
 
                 /* fire an event */
-                mParent->onSessionStateChange(getId(), SessionState_Spawning);
+                mParent->i_onSessionStateChange(getId(), SessionState_Spawning);
             }
         }
     }
@@ -3962,7 +3967,7 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
 
         /* signal the client watcher thread, as most likely the client has
          * been terminated */
-        mParent->updateClientWatcher();
+        mParent->i_updateClientWatcher();
     }
 
     return rc;
@@ -4027,8 +4032,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     // request the host lock first, since might be calling Host methods for getting host drives;
     // next, protect the media tree all the while we're in here, as well as our member variables
-    AutoMultiWriteLock2 alock(mParent->host(), this COMMA_LOCKVAL_SRC_POS);
-    AutoWriteLock treeLock(&mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 alock(mParent->i_host(), this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock treeLock(&mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
@@ -4134,7 +4139,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             // because that might make downgrading to pre-4.0 impossible.
             // As a result, we can only use these two new types if the medium is NOT in the
             // global registry:
-            const Guid &uuidGlobalRegistry = mParent->getGlobalRegistryId();
+            const Guid &uuidGlobalRegistry = mParent->i_getGlobalRegistryId();
             if (    medium->i_isInRegistry(uuidGlobalRegistry)
                  || !mData->pMachineConfigFile->canHaveOwnMediaRegistry()
                )
@@ -4580,7 +4585,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         }
     }
 
-    mParent->saveModifiedRegistries();
+    mParent->i_saveModifiedRegistries();
 
     return rc;
 }
@@ -4665,7 +4670,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
     alock.release();
 
-    mParent->saveModifiedRegistries();
+    mParent->i_saveModifiedRegistries();
 
     return rc;
 }
@@ -5037,9 +5042,9 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
 
     // request the host lock first, since might be calling Host methods for getting host drives;
     // next, protect the media tree all the while we're in here, as well as our member variables
-    AutoMultiWriteLock3 multiLock(mParent->host()->lockHandle(),
+    AutoMultiWriteLock3 multiLock(mParent->i_host()->lockHandle(),
                                   this->lockHandle(),
-                                  &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+                                  &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<MediumAttachment> pAttach = findAttachment(mMediaData->mAttachments,
                                                          aControllerName,
@@ -5137,7 +5142,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     mediumLock.release();
     multiLock.release();
 
-    mParent->saveModifiedRegistries();
+    mParent->i_saveModifiedRegistries();
 
     return rc;
 }
@@ -5308,12 +5313,12 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
     if ((fChanged = (strOldValue != strValue)))
     {
         // ask for permission from all listeners outside the locks;
-        // onExtraDataCanChange() only briefly requests the VirtualBox
+        // i_onExtraDataCanChange() only briefly requests the VirtualBox
         // lock to copy the list of callbacks to invoke
         Bstr error;
         Bstr bstrValue(aValue);
 
-        if (!mParent->onExtraDataCanChange(mData->mUuid, aKey, bstrValue.raw(), error))
+        if (!mParent->i_onExtraDataCanChange(mData->mUuid, aKey, bstrValue.raw(), error))
         {
             const char *sep = error.isEmpty() ? "" : ": ";
             CBSTR err = error.raw();
@@ -5350,13 +5355,13 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
             // save the global settings; for that we should hold only the VirtualBox lock
             alock.release();
             AutoWriteLock vboxlock(mParent COMMA_LOCKVAL_SRC_POS);
-            mParent->saveSettings();
+            mParent->i_saveSettings();
         }
     }
 
     // fire notification outside the lock
     if (fChanged)
-        mParent->onExtraDataChange(mData->mUuid, aKey, aValue);
+        mParent->i_onExtraDataChange(mData->mUuid, aKey, aValue);
 
     return S_OK;
 }
@@ -5397,7 +5402,7 @@ STDMETHODIMP Machine::SaveSettings()
     {
         // save the global settings; for that we should hold only the VirtualBox lock
         AutoWriteLock vlock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
+        rc = mParent->i_saveSettings();
     }
 
     return rc;
@@ -5453,7 +5458,7 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
 
         uninit();
 
-        mParent->unregisterMachine(this, id);
+        mParent->i_unregisterMachine(this, id);
             // calls VirtualBox::saveSettings()
 
         return S_OK;
@@ -5550,8 +5555,8 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
     SafeIfaceArray<IMedium> sfaMedia(llMedia);
     sfaMedia.detachTo(ComSafeArrayOutArg(aMedia));
 
-    mParent->unregisterMachine(this, id);
-            // calls VirtualBox::saveSettings() and VirtualBox::saveModifiedRegistries()
+    mParent->i_unregisterMachine(this, id);
+            // calls VirtualBox::saveSettings() and VirtualBox::i_saveModifiedRegistries()
 
     return S_OK;
 }
@@ -5816,7 +5821,7 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
 
         alock.release();
 
-        mParent->saveModifiedRegistries();
+        mParent->i_saveModifiedRegistries();
     }
     catch (HRESULT aRC) { rc = aRC; }
 
@@ -6158,9 +6163,9 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
         {
             alock.release();
 
-            mParent->onGuestPropertyChange(mData->mUuid, aName,
-                                           aValue ? aValue : Bstr("").raw(),
-                                           aFlags ? aFlags : Bstr("").raw());
+            mParent->i_onGuestPropertyChange(mData->mUuid, aName,
+                                             aValue ? aValue : Bstr("").raw(),
+                                             aFlags ? aFlags : Bstr("").raw());
         }
     }
     catch (std::bad_alloc &)
@@ -6658,7 +6663,7 @@ STDMETHODIMP Machine::AddUSBController(IN_BSTR aName, USBControllerType_T aType,
 
     /* Check that we don't exceed the maximum number of USB controllers for the given type. */
     ULONG maxInstances;
-    rc = mParent->getSystemProperties()->GetMaxInstancesOfUSBControllerType(mHWData->mChipsetType, aType, &maxInstances);
+    rc = mParent->i_getSystemProperties()->GetMaxInstancesOfUSBControllerType(mHWData->mChipsetType, aType, &maxInstances);
     if (FAILED(rc))
         return rc;
 
@@ -7483,7 +7488,7 @@ STDMETHODIMP Machine::COMSETTER(AutostartEnabled)(BOOL fEnabled)
         if (   SUCCEEDED(hrc)
             && mHWData->mAutostart.fAutostartEnabled != !!fEnabled)
         {
-            AutostartDb *autostartDb = mParent->getAutostartDb();
+            AutostartDb *autostartDb = mParent->i_getAutostartDb();
             int vrc;
 
             if (fEnabled)
@@ -7574,7 +7579,7 @@ STDMETHODIMP Machine::COMSETTER(AutostopType)(AutostopType_T enmAutostopType)
         if (   SUCCEEDED(hrc)
             && mHWData->mAutostart.enmAutostopType != enmAutostopType)
         {
-            AutostartDb *autostartDb = mParent->getAutostartDb();
+            AutostartDb *autostartDb = mParent->i_getAutostartDb();
             int vrc;
 
             if (enmAutostopType != AutostopType_Disabled)
@@ -8216,7 +8221,7 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
         /* restore the session state */
         mData->mSession.mState = SessionState_Unlocked;
         alock.release();
-        mParent->addProcessToReap(pid);
+        mParent->i_addProcessToReap(pid);
         /* The failure may occur w/o any error info (from RPC), so provide one */
         return setError(VBOX_E_VM_ERROR,
                         tr("Failed to assign the machine to the session (%Rhrc)"), rc);
@@ -8231,7 +8236,7 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     mData->mSession.mType = strFrontend;
 
     alock.release();
-    mParent->addProcessToReap(pid);
+    mParent->i_addProcessToReap(pid);
 
     LogFlowThisFuncLeave();
     return S_OK;
@@ -8390,7 +8395,7 @@ bool Machine::checkForSpawnFailure()
 
         mData->mSession.mPID = NIL_RTPROCESS;
 
-        mParent->onSessionStateChange(mData->mUuid, SessionState_Unlocked);
+        mParent->i_onSessionStateChange(mData->mUuid, SessionState_Unlocked);
         return true;
     }
 
@@ -8688,7 +8693,7 @@ HRESULT Machine::initDataAndChildObjects()
     mUSBControllers.allocate();
 
     /* initialize mOSTypeId */
-    mUserData->s.strOsType = mParent->getUnknownOSType()->i_id();
+    mUserData->s.strOsType = mParent->i_getUnknownOSType()->i_id();
 
     /* create associated BIOS settings object */
     unconst(mBIOSSettings).createObject();
@@ -8946,7 +8951,7 @@ HRESULT Machine::setMachineState(MachineState_T aMachineState)
 
         RTTimeNow(&mData->mLastStateChange);
 
-        mParent->onMachineStateChange(mData->mUuid, aMachineState);
+        mParent->i_onMachineStateChange(mData->mUuid, aMachineState);
     }
 
     LogFlowThisFuncLeave();
@@ -9672,13 +9677,13 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             case DeviceType_Floppy:
             case DeviceType_DVD:
                 if (dev.strHostDriveSrc.isNotEmpty())
-                    rc = mParent->host()->i_findHostDriveByName(dev.deviceType, dev.strHostDriveSrc, false /* fRefresh */, medium);
+                    rc = mParent->i_host()->i_findHostDriveByName(dev.deviceType, dev.strHostDriveSrc, false /* fRefresh */, medium);
                 else
-                    rc = mParent->findRemoveableMedium(dev.deviceType,
-                                                       dev.uuid,
-                                                       false /* fRefresh */,
-                                                       false /* aSetError */,
-                                                       medium);
+                    rc = mParent->i_findRemoveableMedium(dev.deviceType,
+                                                         dev.uuid,
+                                                         false /* fRefresh */,
+                                                         false /* aSetError */,
+                                                         medium);
                 if (rc == VBOX_E_OBJECT_NOT_FOUND)
                     // This is not an error. The host drive or UUID might have vanished, so just go ahead without this removeable medium attachment
                     rc = S_OK;
@@ -9687,7 +9692,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             case DeviceType_HardDisk:
             {
                 /* find a hard disk by UUID */
-                rc = mParent->findHardDiskById(dev.uuid, true /* aDoSetError */, &medium);
+                rc = mParent->i_findHardDiskById(dev.uuid, true /* aDoSetError */, &medium);
                 if (FAILED(rc))
                 {
                     if (isSnapshotMachine())
@@ -10178,14 +10183,14 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             // update m_strConfigFileFull amd mConfigFile
             mData->m_strConfigFileFull = newConfigFile;
             // compute the relative path too
-            mParent->copyPathRelativeToConfig(newConfigFile, mData->m_strConfigFile);
+            mParent->i_copyPathRelativeToConfig(newConfigFile, mData->m_strConfigFile);
 
             // store the old and new so that VirtualBox::saveSettings() can update
             // the media registry
             if (    mData->mRegistered
                  && configDir != newConfigDir)
             {
-                mParent->rememberMachineNameChangeForMedia(configDir, newConfigDir);
+                mParent->i_rememberMachineNameChangeForMedia(configDir, newConfigDir);
 
                 if (pfNeedsGlobalSaveSettings)
                     *pfNeedsGlobalSaveSettings = true;
@@ -10381,7 +10386,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
          * to the client process that creates them) and thus don't need to
          * inform callbacks. */
         if (isSessionMachine())
-            mParent->onMachineDataChange(mData->mUuid);
+            mParent->i_onMachineDataChange(mData->mUuid);
     }
 
     LogFlowThisFunc(("rc=%08X\n", rc));
@@ -10486,9 +10491,9 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
         // determine machine folder
         Utf8Str strMachineFolder = getSettingsFileFull();
         strMachineFolder.stripFilename();
-        mParent->saveMediaRegistry(config.mediaRegistry,
-                                   getId(),             // only media with registry ID == machine UUID
-                                   strMachineFolder);
+        mParent->i_saveMediaRegistry(config.mediaRegistry,
+                                     getId(),             // only media with registry ID == machine UUID
+                                     strMachineFolder);
             // this throws HRESULT
     }
 
@@ -11008,11 +11013,11 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium)
 {
     /* Paranoia checks: do not hold machine or media tree locks. */
     AssertReturnVoid(!isWriteLockOnCurrentThread());
-    AssertReturnVoid(!mParent->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+    AssertReturnVoid(!mParent->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     ComObjPtr<Medium> pBase;
     {
-        AutoReadLock treeLock(&mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        AutoReadLock treeLock(&mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         pBase = pMedium->i_getBase();
     }
 
@@ -11026,17 +11031,17 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium)
         // machine XML is VirtualBox 4.0 or higher:
         uuid = getId();     // machine UUID
     else
-        uuid = mParent->getGlobalRegistryId(); // VirtualBox global registry UUID
+        uuid = mParent->i_getGlobalRegistryId(); // VirtualBox global registry UUID
 
     if (pMedium->i_addRegistry(uuid, false /* fRecurse */))
-        mParent->markRegistryModified(uuid);
+        mParent->i_markRegistryModified(uuid);
 
     /* For more complex hard disk structures it can happen that the base
      * medium isn't yet associated with any medium registry. Do that now. */
     if (pMedium != pBase)
     {
         if (pBase->i_addRegistry(uuid, true /* fRecurse */))
-            mParent->markRegistryModified(uuid);
+            mParent->i_markRegistryModified(uuid);
     }
 }
 
@@ -11081,7 +11086,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoMultiWriteLock2 alock(this->lockHandle(),
-                              &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+                              &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     /* must be in a protective state because we release the lock below */
     AssertReturn(   mData->mMachineState == MachineState_Saving
@@ -11299,7 +11304,7 @@ HRESULT Machine::deleteImplicitDiffs(bool aOnline)
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoMultiWriteLock2 alock(this->lockHandle(),
-                              &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+                              &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     /* We absolutely must have backed up state. */
     AssertReturn(mMediaData.isBackedUp(), E_FAIL);
@@ -12877,7 +12882,7 @@ HRESULT SessionMachine::init(Machine *aMachine)
                 LogRel(("VM '%s' starts using NAT network '%ls'\n",
                         mUserData->s.strName.c_str(), name.raw()));
                 aMachine->lockHandle()->unlockWrite();
-                mParent->natNetworkRefInc(name.raw());
+                mParent->i_natNetworkRefInc(name.raw());
 #ifdef RT_LOCK_STRICT
                 aMachine->lockHandle()->lockWrite(RT_SRC_POS);
 #else
@@ -12977,7 +12982,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         AssertComRC(rc);
         NOREF(rc);
 
-        USBProxyService *service = mParent->host()->i_usbProxyService();
+        USBProxyService *service = mParent->i_host()->i_usbProxyService();
         if (service)
             service->detachAllDevicesFromVM(this, true /* aDone */, true /* aAbnormal */);
     }
@@ -12986,7 +12991,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     // we need to lock this object in uninit() because the lock is shared
     // with mPeer (as well as data we modify below). mParent lock is needed
     // by several calls to it, and USB needs host lock.
-    AutoMultiWriteLock3 multilock(mParent, mParent->host(), this COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock3 multilock(mParent, mParent->i_host(), this COMMA_LOCKVAL_SRC_POS);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     /*
@@ -12994,13 +12999,13 @@ void SessionMachine::uninit(Uninit::Reason aReason)
      * PerformanceCollector::samplerCallback no longer accesses guest methods
      * holding the lock.
      */
-    unregisterMetrics(mParent->performanceCollector(), mPeer);
+    unregisterMetrics(mParent->i_performanceCollector(), mPeer);
     /* The guest must be unregistered after its metrics (@bugref{5949}). */
     LogAleksey(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n",
                 this, __PRETTY_FUNCTION__, mCollectorGuest));
     if (mCollectorGuest)
     {
-        mParent->performanceCollector()->unregisterGuest(mCollectorGuest);
+        mParent->i_performanceCollector()->unregisterGuest(mCollectorGuest);
         // delete mCollectorGuest; => CollectorGuestManager::destroyUnregistered()
         mCollectorGuest = NULL;
     }
@@ -13053,7 +13058,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         /* Uninitialization didn't come from #checkForDeath(), so tell the
          * client watcher thread to update the set of machines that have open
          * sessions. */
-        mParent->updateClientWatcher();
+        mParent->i_updateClientWatcher();
     }
 
     /* uninitialize all remote controls */
@@ -13092,7 +13097,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
                 multilock.release();
                 LogRel(("VM '%s' stops using NAT network '%ls'\n",
                         mUserData->s.strName.c_str(), name.raw()));
-                mParent->natNetworkRefDec(name.raw());
+                mParent->i_natNetworkRefDec(name.raw());
                 multilock.acquire();
             }
         }
@@ -13153,7 +13158,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     }
 
     /* fire an event */
-    mParent->onSessionStateChange(mData->mUuid, SessionState_Unlocked);
+    mParent->i_onSessionStateChange(mData->mUuid, SessionState_Unlocked);
 
     uninitDataAndChildObjects();
 
@@ -13296,7 +13301,7 @@ STDMETHODIMP SessionMachine::EndPowerUp(LONG iResult)
         /* The VM has been powered up successfully, so it makes sense
          * now to offer the performance metrics for a running machine
          * object. Doing it earlier wouldn't be safe. */
-        registerMetrics(mParent->performanceCollector(), mPeer,
+        registerMetrics(mParent->i_performanceCollector(), mPeer,
                         mData->mSession.mPID);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
     }
@@ -13434,10 +13439,10 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice(IN_BSTR aId)
 #ifdef VBOX_WITH_USB
     /* if captureDeviceForVM() fails, it must have set extended error info */
     clearError();
-    MultiResult rc = mParent->host()->i_checkUSBProxyService();
+    MultiResult rc = mParent->i_host()->i_checkUSBProxyService();
     if (FAILED(rc)) return rc;
 
-    USBProxyService *service = mParent->host()->i_usbProxyService();
+    USBProxyService *service = mParent->i_host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
     return service->captureDeviceForVM(this, Guid(aId).ref());
 #else
@@ -13457,7 +13462,7 @@ STDMETHODIMP SessionMachine::DetachUSBDevice(IN_BSTR aId, BOOL aDone)
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
-    USBProxyService *service = mParent->host()->i_usbProxyService();
+    USBProxyService *service = mParent->i_host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
     return service->detachDeviceFromVM(this, Guid(aId).ref(), !!aDone);
 #else
@@ -13487,7 +13492,7 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
     AssertComRC(rc);
     NOREF(rc);
 
-    USBProxyService *service = mParent->host()->i_usbProxyService();
+    USBProxyService *service = mParent->i_host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
     return service->autoCaptureDevicesForVM(this);
 #else
@@ -13517,7 +13522,7 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
     AssertComRC(rc);
     NOREF(rc);
 
-    USBProxyService *service = mParent->host()->i_usbProxyService();
+    USBProxyService *service = mParent->i_host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
     return service->detachAllDevicesFromVM(this, !!aDone, false /* aAbnormal */);
 #else
@@ -13617,7 +13622,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
     }
 
     /* signal the client watcher thread, because the client is going away */
-    mParent->updateClientWatcher();
+    mParent->i_updateClientWatcher();
 
     LogFlowThisFuncLeave();
     return S_OK;
@@ -13885,10 +13890,10 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
         {
             alock.release();
 
-            mParent->onGuestPropertyChange(mData->mUuid,
-                                           aName,
-                                           aValue,
-                                           aFlags);
+            mParent->i_onGuestPropertyChange(mData->mUuid,
+                                             aName,
+                                             aValue,
+                                             aFlags);
         }
     }
     catch (...)
@@ -13907,7 +13912,7 @@ STDMETHODIMP SessionMachine::LockMedia()
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoMultiWriteLock2 alock(this->lockHandle(),
-                              &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+                              &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(   mData->mMachineState == MachineState_Starting
                  || mData->mMachineState == MachineState_Restoring
@@ -13935,9 +13940,9 @@ STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
 
     // request the host lock first, since might be calling Host methods for getting host drives;
     // next, protect the media tree all the while we're in here, as well as our member variables
-    AutoMultiWriteLock3 multiLock(mParent->host()->lockHandle(),
+    AutoMultiWriteLock3 multiLock(mParent->i_host()->lockHandle(),
                                   this->lockHandle(),
-                                  &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+                                  &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<MediumAttachment> pAttach = static_cast<MediumAttachment *>(aAttachment);
 
@@ -14149,7 +14154,7 @@ HRESULT SessionMachine::onNATRedirectRuleChange(ULONG ulSlot, BOOL aNatRuleRemov
      * instead acting like callback we ask IVirtualBox deliver corresponding event
      */
 
-    mParent->onNatRedirectChange(getId(), ulSlot, RT_BOOL(aNatRuleRemove), aRuleName, aProto, aHostIp, (uint16_t)aHostPort, aGuestIp, (uint16_t)aGuestPort);
+    mParent->i_onNatRedirectChange(getId(), ulSlot, RT_BOOL(aNatRuleRemove), aRuleName, aProto, aHostIp, (uint16_t)aHostPort, aGuestIp, (uint16_t)aGuestPort);
     return S_OK;
 }
 
@@ -14691,7 +14696,7 @@ HRESULT SessionMachine::lockMedia()
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoMultiWriteLock2 alock(this->lockHandle(),
-                              &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+                              &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     /* bail out if trying to lock things with already set up locking */
     AssertReturn(mData->mSession.mLockedMedia.IsEmpty(), E_FAIL);

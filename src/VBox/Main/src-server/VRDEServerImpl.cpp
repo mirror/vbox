@@ -536,7 +536,7 @@ HRESULT VRDEServer::getVRDEProperties(std::vector<com::Utf8Str> &aProperties)
     {
 #ifdef VBOX_WITH_EXTPACK
         VirtualBox *pVirtualBox = mParent->getVirtualBox();
-        ExtPackManager *pExtPackMgr = pVirtualBox->getExtPackManager();
+        ExtPackManager *pExtPackMgr = pVirtualBox->i_getExtPackManager();
         vrc = pExtPackMgr->getVrdeLibraryPathForExtPack(&strExtPack, &strVrdeLibrary);
 #else
         vrc = VERR_FILE_NOT_FOUND;
@@ -805,7 +805,7 @@ HRESULT VRDEServer::getVRDEExtPack(com::Utf8Str &aExtPack)
         else
         {
 #ifdef VBOX_WITH_EXTPACK
-            ExtPackManager *pExtPackMgr = mParent->getVirtualBox()->getExtPackManager();
+            ExtPackManager *pExtPackMgr = mParent->getVirtualBox()->i_getExtPackManager();
             hrc = pExtPackMgr->checkVrdeExtPack(&strExtPack);
 #else
             hrc = setError(E_FAIL, tr("Extension pack '%s' does not exist"), strExtPack.c_str());
@@ -850,7 +850,7 @@ HRESULT VRDEServer::setVRDEExtPack(const com::Utf8Str &aExtPack)
             else
             {
 #ifdef VBOX_WITH_EXTPACK
-                ExtPackManager *pExtPackMgr = mParent->getVirtualBox()->getExtPackManager();
+                ExtPackManager *pExtPackMgr = mParent->getVirtualBox()->i_getExtPackManager();
                 hrc = pExtPackMgr->checkVrdeExtPack(&aExtPack);
 #else
                 hrc = setError(E_FAIL, tr("Extension pack '%s' does not exist"), aExtPack.c_str());

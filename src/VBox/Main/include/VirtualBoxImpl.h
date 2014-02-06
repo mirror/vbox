@@ -20,6 +20,7 @@
 
 #include "VirtualBoxBase.h"
 #include "objectslist.h"
+#include "VirtualBoxWrap.h"
 
 #ifdef RT_OS_WINDOWS
 # include "win/resource.h"
@@ -57,8 +58,7 @@ namespace settings
     struct MediaRegistry;
 }
 class ATL_NO_VTABLE VirtualBox :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IVirtualBox)
+    public VirtualBoxWrap
 #ifdef RT_OS_WINDOWS
     , public CComCoClass<VirtualBox, &CLSID_VirtualBox>
 #endif
@@ -72,22 +72,9 @@ public:
     class CallbackEvent;
     friend class CallbackEvent;
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VirtualBox, IVirtualBox)
-
-    DECLARE_CLASSFACTORY_SINGLETON(VirtualBox)
-
-    DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)
-    DECLARE_NOT_AGGREGATABLE(VirtualBox)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(VirtualBox)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IVirtualBox)
-    END_COM_MAP()
 
     // to postpone generation of the default ctor/dtor
-    VirtualBox();
-    ~VirtualBox();
+    DECLARE_EMPTY_CTOR_DTOR(VirtualBox)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -99,75 +86,6 @@ public:
                       const settings::MediaRegistry mediaRegistry,
                       const Utf8Str &strMachineFolder);
     void uninit();
-
-    /* IVirtualBox properties */
-    STDMETHOD(COMGETTER(Version))(BSTR *aVersion);
-    STDMETHOD(COMGETTER(VersionNormalized))(BSTR *aVersionNormalized);
-    STDMETHOD(COMGETTER(Revision))(ULONG *aRevision);
-    STDMETHOD(COMGETTER(PackageType))(BSTR *aPackageType);
-    STDMETHOD(COMGETTER(APIVersion))(BSTR *aAPIVersion);
-    STDMETHOD(COMGETTER(HomeFolder))(BSTR *aHomeFolder);
-    STDMETHOD(COMGETTER(SettingsFilePath))(BSTR *aSettingsFilePath);
-    STDMETHOD(COMGETTER(Host))(IHost **aHost);
-    STDMETHOD(COMGETTER(SystemProperties))(ISystemProperties **aSystemProperties);
-    STDMETHOD(COMGETTER(Machines))(ComSafeArrayOut(IMachine *, aMachines));
-    STDMETHOD(COMGETTER(MachineGroups))(ComSafeArrayOut(BSTR, aMachineGroups));
-    STDMETHOD(COMGETTER(HardDisks))(ComSafeArrayOut(IMedium *, aHardDisks));
-    STDMETHOD(COMGETTER(DVDImages))(ComSafeArrayOut(IMedium *, aDVDImages));
-    STDMETHOD(COMGETTER(FloppyImages))(ComSafeArrayOut(IMedium *, aFloppyImages));
-    STDMETHOD(COMGETTER(ProgressOperations))(ComSafeArrayOut(IProgress *, aOperations));
-    STDMETHOD(COMGETTER(GuestOSTypes))(ComSafeArrayOut(IGuestOSType *, aGuestOSTypes));
-    STDMETHOD(COMGETTER(SharedFolders))(ComSafeArrayOut(ISharedFolder *, aSharedFolders));
-    STDMETHOD(COMGETTER(PerformanceCollector))(IPerformanceCollector **aPerformanceCollector);
-    STDMETHOD(COMGETTER(DHCPServers))(ComSafeArrayOut(IDHCPServer *, aDHCPServers));
-    STDMETHOD(COMGETTER(NATNetworks))(ComSafeArrayOut(INATNetwork *, aNATNetworks));
-    STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
-    STDMETHOD(COMGETTER(ExtensionPackManager))(IExtPackManager **aExtPackManager);
-    STDMETHOD(COMGETTER(InternalNetworks))(ComSafeArrayOut(BSTR, aInternalNetworks));
-    STDMETHOD(COMGETTER(GenericNetworkDrivers))(ComSafeArrayOut(BSTR, aGenericNetworkDrivers));
-
-    /* IVirtualBox methods */
-    STDMETHOD(ComposeMachineFilename)(IN_BSTR aName, IN_BSTR aGroup, IN_BSTR aCreateFlags, IN_BSTR aBaseFolder, BSTR *aFilename);
-    STDMETHOD(CreateMachine)(IN_BSTR aSettingsFile,
-                             IN_BSTR aName,
-                             ComSafeArrayIn(IN_BSTR, aGroups),
-                             IN_BSTR aOsTypeId,
-                             IN_BSTR aCreateFlags,
-                             IMachine **aMachine);
-    STDMETHOD(OpenMachine)(IN_BSTR aSettingsFile, IMachine **aMachine);
-    STDMETHOD(RegisterMachine)(IMachine *aMachine);
-    STDMETHOD(FindMachine)(IN_BSTR aNameOrId, IMachine **aMachine);
-    STDMETHOD(GetMachinesByGroups)(ComSafeArrayIn(IN_BSTR, aGroups), ComSafeArrayOut(IMachine *, aMachines));
-    STDMETHOD(GetMachineStates)(ComSafeArrayIn(IMachine *, aMachines), ComSafeArrayOut(MachineState_T, aStates));
-    STDMETHOD(CreateAppliance)(IAppliance **anAppliance);
-
-    STDMETHOD(CreateHardDisk)(IN_BSTR aFormat,
-                              IN_BSTR aLocation,
-                              IMedium **aHardDisk);
-    STDMETHOD(OpenMedium)(IN_BSTR aLocation,
-                          DeviceType_T deviceType,
-                          AccessMode_T accessMode,
-                          BOOL fForceNewUuid,
-                          IMedium **aMedium);
-
-    STDMETHOD(GetGuestOSType)(IN_BSTR aId, IGuestOSType **aType);
-    STDMETHOD(CreateSharedFolder)(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount);
-    STDMETHOD(RemoveSharedFolder)(IN_BSTR aName);
-    STDMETHOD(GetExtraDataKeys)(ComSafeArrayOut(BSTR, aKeys));
-    STDMETHOD(GetExtraData)(IN_BSTR aKey, BSTR *aValue);
-    STDMETHOD(SetExtraData)(IN_BSTR aKey, IN_BSTR aValue);
-    STDMETHOD(SetSettingsSecret)(IN_BSTR aKey);
-
-    STDMETHOD(CreateDHCPServer)(IN_BSTR aName, IDHCPServer ** aServer);
-    STDMETHOD(FindDHCPServerByNetworkName)(IN_BSTR aName, IDHCPServer ** aServer);
-    STDMETHOD(RemoveDHCPServer)(IDHCPServer * aServer);
-
-    STDMETHOD(CreateNATNetwork)(IN_BSTR aName, INATNetwork ** aNATNetworks);
-    STDMETHOD(FindNATNetworkByName)(IN_BSTR aName, INATNetwork ** aNATNetworks);
-    STDMETHOD(RemoveNATNetwork)(INATNetwork * aNATNetwork);
-
-    STDMETHOD(CheckFirmwarePresent)(FirmwareType_T aFirmwareType, IN_BSTR aVersion,
-                                    BSTR * aUrl, BSTR * aFile, BOOL * aResult);
 
     /* public methods only for internal purposes */
 
@@ -181,189 +99,263 @@ public:
     }
 
 #ifdef DEBUG
-    void dumpAllBackRefs();
+    void i_dumpAllBackRefs();
 #endif
 
-    HRESULT postEvent(Event *event);
+    HRESULT i_postEvent(Event *event);
 
-    HRESULT addProgress(IProgress *aProgress);
-    HRESULT removeProgress(IN_GUID aId);
+    HRESULT i_addProgress(IProgress *aProgress);
+    HRESULT i_removeProgress(IN_GUID aId);
 
 #ifdef RT_OS_WINDOWS
     typedef DECLCALLBACKPTR(HRESULT, SVCHelperClientFunc)
         (SVCHlpClient *aClient, Progress *aProgress, void *aUser, int *aVrc);
-    HRESULT startSVCHelperClient(bool aPrivileged,
-                                 SVCHelperClientFunc aFunc,
-                                 void *aUser, Progress *aProgress);
+    HRESULT i_startSVCHelperClient(bool aPrivileged,
+                                   SVCHelperClientFunc aFunc,
+                                   void *aUser, Progress *aProgress);
 #endif
 
-    void addProcessToReap(RTPROCESS pid);
-    void updateClientWatcher();
+    void i_addProcessToReap(RTPROCESS pid);
+    void i_updateClientWatcher();
 
-    void onMachineStateChange(const Guid &aId, MachineState_T aState);
-    void onMachineDataChange(const Guid &aId, BOOL aTemporary = FALSE);
-    BOOL onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue,
-                              Bstr &aError);
-    void onExtraDataChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue);
-    void onMachineRegistered(const Guid &aId, BOOL aRegistered);
-    void onSessionStateChange(const Guid &aId, SessionState_T aState);
+    void i_onMachineStateChange(const Guid &aId, MachineState_T aState);
+    void i_onMachineDataChange(const Guid &aId, BOOL aTemporary = FALSE);
+    BOOL i_onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue,
+                                Bstr &aError);
+    void i_onExtraDataChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue);
+    void i_onMachineRegistered(const Guid &aId, BOOL aRegistered);
+    void i_onSessionStateChange(const Guid &aId, SessionState_T aState);
 
-    void onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshotId);
-    void onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId);
-    void onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId);
-    void onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue,
-                               IN_BSTR aFlags);
-    void onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
-                                   NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
-                                   IN_BSTR aGuestIp, uint16_t aGuestPort);
-    void onNATNetworkChange(IN_BSTR aNetworkName);
-    void onNATNetworkStartStop(IN_BSTR aNetworkName, BOOL aStart);
-    void onNATNetworkSetting(IN_BSTR aNetworkName, BOOL aEnabled, IN_BSTR aNetwork,
-                             IN_BSTR aGateway, BOOL aAdvertiseDefaultIpv6RouteEnabled,
-                             BOOL fNeedDhcpServer);
-    void onNATNetworkPortForward(IN_BSTR aNetworkName, BOOL create, BOOL fIpv6,
-                                 IN_BSTR aRuleName, NATProtocol_T proto,
-                                 IN_BSTR aHostIp, LONG aHostPort,
-                                 IN_BSTR aGuestIp, LONG aGuestPort);
-    void onHostNameResolutionConfigurationChange();
+    void i_onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshotId);
+    void i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId);
+    void i_onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId);
+    void i_onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue,
+                                 IN_BSTR aFlags);
+    void i_onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
+                                     NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
+                                     IN_BSTR aGuestIp, uint16_t aGuestPort);
+    void i_onNATNetworkChange(IN_BSTR aNetworkName);
+    void i_onNATNetworkStartStop(IN_BSTR aNetworkName, BOOL aStart);
+    void i_onNATNetworkSetting(IN_BSTR aNetworkName, BOOL aEnabled, IN_BSTR aNetwork,
+                               IN_BSTR aGateway, BOOL aAdvertiseDefaultIpv6RouteEnabled,
+                               BOOL fNeedDhcpServer);
+    void i_onNATNetworkPortForward(IN_BSTR aNetworkName, BOOL create, BOOL fIpv6,
+                                   IN_BSTR aRuleName, NATProtocol_T proto,
+                                   IN_BSTR aHostIp, LONG aHostPort,
+                                   IN_BSTR aGuestIp, LONG aGuestPort);
+    void i_onHostNameResolutionConfigurationChange();
 
-    int natNetworkRefInc(IN_BSTR aNetworkName);
-    int natNetworkRefDec(IN_BSTR aNetworkName);
+    int i_natNetworkRefInc(IN_BSTR aNetworkName);
+    int i_natNetworkRefDec(IN_BSTR aNetworkName);
 
-    ComObjPtr<GuestOSType> getUnknownOSType();
+    ComObjPtr<GuestOSType> i_getUnknownOSType();
 
-    void getOpenedMachines(SessionMachinesList &aMachines,
+    void i_getOpenedMachines(SessionMachinesList &aMachines,
                            InternalControlList *aControls = NULL);
-    MachinesOList &getMachinesList();
+    MachinesOList &i_getMachinesList();
 
-    HRESULT findMachine(const Guid &aId,
-                        bool fPermitInaccessible,
-                        bool aSetError,
-                        ComObjPtr<Machine> *aMachine = NULL);
-    HRESULT findMachineByName(const Utf8Str &aName,
-                              bool aSetError,
-                              ComObjPtr<Machine> *aMachine = NULL);
+    HRESULT i_findMachine(const Guid &aId,
+                          bool fPermitInaccessible,
+                          bool aSetError,
+                          ComObjPtr<Machine> *aMachine = NULL);
 
-    HRESULT validateMachineGroup(const Utf8Str &aGroup, bool fPrimary);
-    HRESULT convertMachineGroups(ComSafeArrayIn(IN_BSTR, aMachineGroups), StringsList *pllMachineGroups);
+    HRESULT i_findMachineByName(const Utf8Str &aName,
+                                bool aSetError,
+                                ComObjPtr<Machine> *aMachine = NULL);
 
-    HRESULT findHardDiskById(const Guid &id,
-                             bool aSetError,
-                             ComObjPtr<Medium> *aHardDisk = NULL);
-    HRESULT findHardDiskByLocation(const Utf8Str &strLocation,
+    HRESULT i_validateMachineGroup(const Utf8Str &aGroup, bool fPrimary);
+    HRESULT i_convertMachineGroups(const std::vector<com::Utf8Str> aMachineGroups, StringsList *pllMachineGroups);
+
+    HRESULT i_findHardDiskById(const Guid &id,
+                               bool aSetError,
+                               ComObjPtr<Medium> *aHardDisk = NULL);
+    HRESULT i_findHardDiskByLocation(const Utf8Str &strLocation,
+                                     bool aSetError,
+                                     ComObjPtr<Medium> *aHardDisk = NULL);
+    HRESULT i_findDVDOrFloppyImage(DeviceType_T mediumType,
+                                   const Guid *aId,
+                                   const Utf8Str &aLocation,
                                    bool aSetError,
-                                   ComObjPtr<Medium> *aHardDisk = NULL);
-    HRESULT findDVDOrFloppyImage(DeviceType_T mediumType,
-                                 const Guid *aId,
-                                 const Utf8Str &aLocation,
-                                 bool aSetError,
-                                 ComObjPtr<Medium> *aImage = NULL);
-    HRESULT findRemoveableMedium(DeviceType_T mediumType,
-                                 const Guid &uuid,
-                                 bool fRefresh,
-                                 bool aSetError,
-                                 ComObjPtr<Medium> &pMedium);
+                                   ComObjPtr<Medium> *aImage = NULL);
+    HRESULT i_findRemoveableMedium(DeviceType_T mediumType,
+                                   const Guid &uuid,
+                                   bool fRefresh,
+                                   bool aSetError,
+                                   ComObjPtr<Medium> &pMedium);
 
-    HRESULT findGuestOSType(const Bstr &bstrOSType,
-                            GuestOSType*& pGuestOSType);
+    HRESULT i_findGuestOSType(const Bstr &bstrOSType,
+                              GuestOSType*& pGuestOSType);
 
-    const Guid &getGlobalRegistryId() const;
+    const Guid &i_getGlobalRegistryId() const;
 
-    const ComObjPtr<Host>& host() const;
-    SystemProperties* getSystemProperties() const;
+    const ComObjPtr<Host>& i_host() const;
+    SystemProperties* i_getSystemProperties() const;
 #ifdef VBOX_WITH_EXTPACK
-    ExtPackManager* getExtPackManager() const;
+    ExtPackManager* i_getExtPackManager() const;
 #endif
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    const ComObjPtr<PerformanceCollector>& performanceCollector() const;
+    const ComObjPtr<PerformanceCollector>& i_performanceCollector() const;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-    void getDefaultMachineFolder(Utf8Str &str) const;
-    void getDefaultHardDiskFormat(Utf8Str &str) const;
+    void i_getDefaultMachineFolder(Utf8Str &str) const;
+    void i_getDefaultHardDiskFormat(Utf8Str &str) const;
 
     /** Returns the VirtualBox home directory */
-    const Utf8Str& homeDir() const;
-
-    int calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
-    void copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
-
-    HRESULT registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType);
-    HRESULT unregisterMedium(Medium *pMedium);
-
-    void pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium);
-    HRESULT unregisterMachineMedia(const Guid &id);
-
-    HRESULT unregisterMachine(Machine *pMachine, const Guid &id);
-
-    void rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDir,
-                                           const Utf8Str &strNewConfigDir);
-
-    void saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
-                           const Guid &uuidRegistry,
-                           const Utf8Str &strMachineFolder);
-    HRESULT saveSettings();
-
-    void markRegistryModified(const Guid &uuid);
-    void saveModifiedRegistries();
-
-    static const Bstr &getVersionNormalized();
-
-    static HRESULT ensureFilePathExists(const Utf8Str &strFileName, bool fCreate);
-
-    const Utf8Str& settingsFilePath();
-
-    AutostartDb* getAutostartDb() const;
-
-    RWLockHandle& getMachinesListLockHandle();
-    RWLockHandle& getMediaTreeLockHandle();
-
-    int  encryptSetting(const Utf8Str &aPlaintext, Utf8Str *aCiphertext);
-    int  decryptSetting(Utf8Str *aPlaintext, const Utf8Str &aCiphertext);
-    void storeSettingsKey(const Utf8Str &aKey);
-
-    bool isMediaUuidInUse(const Guid &aId, DeviceType_T deviceType);
+    const Utf8Str& i_homeDir() const;
+    int i_calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
+    void i_copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
+    HRESULT i_registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType);
+    HRESULT i_unregisterMedium(Medium *pMedium);
+    void i_pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium);
+    HRESULT i_unregisterMachineMedia(const Guid &id);
+    HRESULT i_unregisterMachine(Machine *pMachine, const Guid &id);
+    void i_rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDir,
+                                             const Utf8Str &strNewConfigDir);
+    void i_saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
+                             const Guid &uuidRegistry,
+                             const Utf8Str &strMachineFolder);
+    HRESULT i_saveSettings();
+    void i_markRegistryModified(const Guid &uuid);
+    void i_saveModifiedRegistries();
+    static const com::Utf8Str &i_getVersionNormalized();
+    static HRESULT i_ensureFilePathExists(const Utf8Str &strFileName, bool fCreate);
+    const Utf8Str& i_settingsFilePath();
+    AutostartDb* i_getAutostartDb() const;
+    RWLockHandle& i_getMachinesListLockHandle();
+    RWLockHandle& i_getMediaTreeLockHandle();
+    int  i_encryptSetting(const Utf8Str &aPlaintext, Utf8Str *aCiphertext);
+    int  i_decryptSetting(Utf8Str *aPlaintext, const Utf8Str &aCiphertext);
+    void i_storeSettingsKey(const Utf8Str &aKey);
+    bool i_isMediaUuidInUse(const Guid &aId, DeviceType_T deviceType);
 
 private:
     class ClientWatcher;
 
-    static HRESULT setErrorStatic(HRESULT aResultCode,
-                                  const Utf8Str &aText)
+    // wrapped IVirtualBox properties
+    HRESULT getVersion(com::Utf8Str &aVersion);
+    HRESULT getVersionNormalized(com::Utf8Str &aVersionNormalized);
+    HRESULT getRevision(ULONG *aRevision);
+    HRESULT getPackageType(com::Utf8Str &aPackageType);
+    HRESULT getAPIVersion(com::Utf8Str &aAPIVersion);
+    HRESULT getHomeFolder(com::Utf8Str &aHomeFolder);
+    HRESULT getSettingsFilePath(com::Utf8Str &aSettingsFilePath);
+    HRESULT getHost(ComPtr<IHost> &aHost);
+    HRESULT getSystemProperties(ComPtr<ISystemProperties> &aSystemProperties);
+    HRESULT getMachines(std::vector<ComPtr<IMachine> > &aMachines);
+    HRESULT getMachineGroups(std::vector<com::Utf8Str> &aMachineGroups);
+    HRESULT getHardDisks(std::vector<ComPtr<IMedium> > &aHardDisks);
+    HRESULT getDVDImages(std::vector<ComPtr<IMedium> > &aDVDImages);
+    HRESULT getFloppyImages(std::vector<ComPtr<IMedium> > &aFloppyImages);
+    HRESULT getProgressOperations(std::vector<ComPtr<IProgress> > &aProgressOperations);
+    HRESULT getGuestOSTypes(std::vector<ComPtr<IGuestOSType> > &aGuestOSTypes);
+    HRESULT getSharedFolders(std::vector<ComPtr<ISharedFolder> > &aSharedFolders);
+    HRESULT getPerformanceCollector(ComPtr<IPerformanceCollector> &aPerformanceCollector);
+    HRESULT getDHCPServers(std::vector<ComPtr<IDHCPServer> > &aDHCPServers);
+    HRESULT getNATNetworks(std::vector<ComPtr<INATNetwork> > &aNATNetworks);
+    HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
+    HRESULT getExtensionPackManager(ComPtr<IExtPackManager> &aExtensionPackManager);
+    HRESULT getInternalNetworks(std::vector<com::Utf8Str> &aInternalNetworks);
+    HRESULT getGenericNetworkDrivers(std::vector<com::Utf8Str> &aGenericNetworkDrivers);
+
+   // wrapped IVirtualBox methods
+    HRESULT composeMachineFilename(const com::Utf8Str &aName,
+                                   const com::Utf8Str &aGroup,
+                                   const com::Utf8Str &aCreateFlags,
+                                   const com::Utf8Str &aBaseFolder,
+                                   com::Utf8Str &aFile);
+    HRESULT createMachine(const com::Utf8Str &aSettingsFile,
+                          const com::Utf8Str &aName,
+                          const std::vector<com::Utf8Str> &aGroups,
+                          const com::Utf8Str &aOsTypeId,
+                          const com::Utf8Str &aFlags,
+                          ComPtr<IMachine> &aMachine);
+    HRESULT openMachine(const com::Utf8Str &aSettingsFile,
+                        ComPtr<IMachine> &aMachine);
+    HRESULT registerMachine(const ComPtr<IMachine> &aMachine);
+    HRESULT findMachine(const com::Utf8Str &aNameOrId,
+                        ComPtr<IMachine> &aMachine);
+    HRESULT getMachinesByGroups(const std::vector<com::Utf8Str> &aGroups,
+                                std::vector<ComPtr<IMachine> > &aMachines);
+    HRESULT getMachineStates(const std::vector<ComPtr<IMachine> > &aMachines,
+                             std::vector<MachineState_T> &aStates);
+    HRESULT createAppliance(ComPtr<IAppliance> &aAppliance);
+    HRESULT createHardDisk(const com::Utf8Str &aFormat,
+                           const com::Utf8Str &aLocation,
+                           ComPtr<IMedium> &aMedium);
+    HRESULT openMedium(const com::Utf8Str &aLocation,
+                       DeviceType_T aDeviceType,
+                       AccessMode_T aAccessMode,
+                       BOOL aForceNewUuid,
+                       ComPtr<IMedium> &aMedium);
+    HRESULT getGuestOSType(const com::Guid &aId,
+                           ComPtr<IGuestOSType> &aType);
+    HRESULT createSharedFolder(const com::Utf8Str &aName,
+                               const com::Utf8Str &aHostPath,
+                               BOOL aWritable,
+                               BOOL aAutomount);
+    HRESULT removeSharedFolder(const com::Utf8Str &aName);
+    HRESULT getExtraDataKeys(std::vector<com::Utf8Str> &aKeys);
+    HRESULT getExtraData(const com::Utf8Str &aKey,
+                         com::Utf8Str &aValue);
+    HRESULT setExtraData(const com::Utf8Str &aKey,
+                         const com::Utf8Str &aValue);
+    HRESULT setSettingsSecret(const com::Utf8Str &aPassword);
+    HRESULT createDHCPServer(const com::Utf8Str &aName,
+                             ComPtr<IDHCPServer> &aServer);
+    HRESULT findDHCPServerByNetworkName(const com::Utf8Str &aName,
+                                        ComPtr<IDHCPServer> &aServer);
+    HRESULT removeDHCPServer(const ComPtr<IDHCPServer> &aServer);
+    HRESULT createNATNetwork(const com::Utf8Str &aNetworkName,
+                             ComPtr<INATNetwork> &aNetwork);
+    HRESULT findNATNetworkByName(const com::Utf8Str &aNetworkName,
+                                 ComPtr<INATNetwork> &aNetwork);
+    HRESULT removeNATNetwork(const ComPtr<INATNetwork> &aNetwork);
+    HRESULT checkFirmwarePresent(FirmwareType_T aFirmwareType,
+                                 const com::Utf8Str &aVersion,
+                                 com::Utf8Str &aUrl,
+                                 com::Utf8Str &aFile,
+                                 BOOL *aResult);
+
+    static HRESULT i_setErrorStatic(HRESULT aResultCode,
+                                    const Utf8Str &aText)
     {
         return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
     }
 
-    HRESULT registerMachine(Machine *aMachine);
-
-    HRESULT registerDHCPServer(DHCPServer *aDHCPServer,
-                               bool aSaveRegistry = true);
-    HRESULT unregisterDHCPServer(DHCPServer *aDHCPServer,
+    HRESULT i_registerMachine(Machine *aMachine);
+    HRESULT i_registerDHCPServer(DHCPServer *aDHCPServer,
                                  bool aSaveRegistry = true);
-    HRESULT registerNATNetwork(NATNetwork *aNATNetwork,
-                               bool aSaveRegistry = true);
-    HRESULT unregisterNATNetwork(NATNetwork *aNATNetwork,
+    HRESULT i_unregisterDHCPServer(DHCPServer *aDHCPServer,
+                                   bool aSaveRegistry = true);
+    HRESULT i_registerNATNetwork(NATNetwork *aNATNetwork,
                                  bool aSaveRegistry = true);
-    HRESULT checkMediaForConflicts(const Guid &aId,
-                                   const Utf8Str &aLocation,
-                                   Utf8Str &aConflictType,
-                                   ComObjPtr<Medium> *pDupMedium);
-
-    int  decryptSettings();
-    int  decryptMediumSettings(Medium *pMedium);
-    int  decryptSettingBytes(uint8_t *aPlaintext, const uint8_t *aCiphertext,
-                             size_t aCiphertextSize) const;
-    int  encryptSettingBytes(const uint8_t *aPlaintext, uint8_t *aCiphertext,
-                             size_t aPlaintextSize, size_t aCiphertextSize) const;
+    HRESULT i_unregisterNATNetwork(NATNetwork *aNATNetwork,
+                                   bool aSaveRegistry = true);
+    HRESULT i_checkMediaForConflicts(const Guid &aId,
+                                     const Utf8Str &aLocation,
+                                     Utf8Str &aConflictType,
+                                     ComObjPtr<Medium> *pDupMedium);
+    int  i_decryptSettings();
+    int  i_decryptMediumSettings(Medium *pMedium);
+    int  i_decryptSettingBytes(uint8_t *aPlaintext,
+                               const uint8_t *aCiphertext,
+                               size_t aCiphertextSize) const;
+    int  i_encryptSettingBytes(const uint8_t *aPlaintext,
+                               uint8_t *aCiphertext,
+                               size_t aPlaintextSize,
+                               size_t aCiphertextSize) const;
 
     struct Data;            // opaque data structure, defined in VirtualBoxImpl.cpp
+
     Data *m;
 
     /* static variables (defined in VirtualBoxImpl.cpp) */
-    static Bstr sVersion;
-    static Bstr sVersionNormalized;
+    static com::Utf8Str sVersion;
+    static com::Utf8Str sVersionNormalized;
     static ULONG sRevision;
-    static Bstr sPackageType;
-    static Bstr sAPIVersion;
-    static std::map<Bstr, int> sNatNetworkNameToRefCount;
+    static com::Utf8Str sPackageType;
+    static com::Utf8Str sAPIVersion;
+    static std::map<com::Utf8Str, int> sNatNetworkNameToRefCount;
     static RWLockHandle* spMtxNatNetworkNameToRefCountLock;
 
     static DECLCALLBACK(int) AsyncEventHandler(RTTHREAD thread, void *pvUser);

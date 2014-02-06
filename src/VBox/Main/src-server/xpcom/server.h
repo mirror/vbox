@@ -34,3 +34,5 @@
 #define VBOXSVC_STARTUP_PIPE_NAME "vboxsvc:startup-pipe"
 
 #endif /* ____H_LINUX_SERVER */
+HRESULT VirtualBox_GetInterfacesHelper() { return S_OK; }
+nsIClassInfo* VirtualBox_classInfoGlobal;
