@@ -86,7 +86,7 @@ ifndef VBOX_OSE
 #
 INSTALLS += ovf-testcases
 ovf-testcases_MODE = a+r,u+w
-ovf-testcases_INST = $(INST_BIN)ovf-testcases/
+ovf-testcases_INST = $(INST_TESTCASE)ovf-testcases/
 ovf-testcases_SOURCES = \
 	ovf-dummy.vmdk \
 	ovf-joomla-0.9/joomla-1.1.4-ovf.ovf=>ovf-joomla-0.9/joomla-1.1.4-ovf.ovf \

@@ -299,7 +299,7 @@
       <StorageControllers>
         <StorageController name="IDE Controller" type="PIIX3" PortCount="2" useHostIOCache="true">
           <AttachedDevice type="HardDisk" port="0" device="0">
-            <Image uuid="{cf2b9350-4d5f-42a2-be70-b85a00c2ec9f}"/>
+            <Image uuid="{1fc3c37e-079b-477b-a6d7-84c0e8a717ac}"/>
           </AttachedDevice>
           <AttachedDevice type="HardDisk" port="0" device="1">
             <Image uuid="{cf2b9350-4d5f-42a2-be70-b85a00c2ec9f}"/>
