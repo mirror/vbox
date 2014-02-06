@@ -1230,7 +1230,7 @@ Statistics update:  disabled</screen></para>
            when the network type is NAT
            (<computeroutput>keepnatmacs</computeroutput>). If you add
            <computeroutput>keepdisknames</computeroutput> all new disk images
-           are called like the original once, otherwise they are
+           are called like the original ones, otherwise they are
            renamed.</para>
        </listitem>
        <listitem>
@@ -1252,7 +1252,7 @@ Statistics update:  disabled</screen></para>
        <listitem>
            <para><computeroutput>--register</computeroutput>:
            Automatically register the new clone in this VirtualBox
-           installation. If you manually want register the new VM later, see
+           installation. If you manually want to register the new VM later, see
            <xref linkend="vboxmanage-registervm" /> for instructions how to do
            so.</para>
        </listitem>
