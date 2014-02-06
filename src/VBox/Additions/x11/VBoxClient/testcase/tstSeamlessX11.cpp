@@ -34,21 +34,21 @@ int VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects)
                  pRects[i].xLeft, pRects[i].yTop, pRects[i].xRight,
                  pRects[i].yBottom);
     }
-    return true;
+    return VINF_SUCCESS;
 }
 
 int VbglR3SeamlessSetCap(bool bState)
 {
     RTPrintf("%s\n", bState ? "Seamless capability set"
                             : "Seamless capability unset");
-    return true;
+    return VINF_SUCCESS;
 }
 
 int VbglR3CtlFilterMask(uint32_t u32OrMask, uint32_t u32NotMask)
 {
     RTPrintf("IRQ filter mask changed.  Or mask: 0x%x.  Not mask: 0x%x\n",
              u32OrMask, u32NotMask);
-    return true;
+    return VINF_SUCCESS;
 }
 
 int VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
@@ -69,7 +69,7 @@ int VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
             rc = VERR_INTERRUPTED;
         }
     }
-    return true;
+    return rc;
 }
 
 int VbglR3InterruptEventWaits(void)
@@ -120,10 +120,10 @@ int main( int argc, char **argv)
     /** Our instance of the seamless class. */
     SeamlessMain seamless;
     LogRel(("Starting seamless Guest Additions...\n"));
-    rc = seamless.init();
+    rc = seamless.start();
     if (rc != VINF_SUCCESS)
     {
-        RTPrintf("Failed to initialise seamless Additions, rc = %d\n", rc);
+        RTPrintf("Failed to initialise seamless Additions, rc = %Rrc\n", rc);
     }
     RTStrmGetLine(g_pStdIn, ach, sizeof(ach));
     return rc;

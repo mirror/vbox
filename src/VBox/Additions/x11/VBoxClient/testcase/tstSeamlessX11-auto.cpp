@@ -302,7 +302,7 @@ class testHost: public SeamlessHostProxy
     bool mfNotified;
 public:
     testHost() : mfNotified(false) {}
-    virtual void notify(RTRECT *pRects, size_t cRects)
+    virtual void sendRegionUpdate(RTRECT *pRects, size_t cRects)
     {
         mfNotified = true;
     }
@@ -624,7 +624,7 @@ static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
                  g_pszTestName, pszDesc);
         ++cErrs;
     }
-    subject.nextEvent();
+    subject.nextConfigurationEvent();
     if (!host.isNotified())
     {
         RTPrintf("%s: fixture: %s.  No notification was sent for the initial window tree rebuild.\n",
@@ -632,7 +632,7 @@ static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
         ++cErrs;
     }
     smlsSetNextEvent(0, 0);
-    subject.nextEvent();
+    subject.nextConfigurationEvent();
     if (!host.isNotified())
     {
         RTPrintf("%s: fixture: %s.  No notification was sent after the event.\n",
