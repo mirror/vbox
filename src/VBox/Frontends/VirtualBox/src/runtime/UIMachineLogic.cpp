@@ -1101,14 +1101,17 @@ bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
                 /* Handle *window activated* event: */
                 case QEvent::WindowActivate:
                 {
+#ifdef Q_WS_WIN
                     /* We should save current lock states as *previous* and
                      * set current lock states to guest values we have,
                      * As we have no ipc between threads of different VMs
-                     * we are using 300ms timer as lazy sync timout: */
-                    //QTimer::singleShot(300, this, SLOT(sltSwitchKeyboardLedsToGuestLeds()));
-
+                     * we are using 100ms timer as lazy sync timout: */
+                    keyboardHandler()->winSkipKeyboardEvents(true);
+                    QTimer::singleShot(100, this, SLOT(sltSwitchKeyboardLedsToGuestLeds()));
+#else /* Q_WS_WIN */
                     /* Trigger callback synchronously for now! */
                     sltSwitchKeyboardLedsToGuestLeds();
+#endif /* !Q_WS_WIN */
                     break;
                 }
                 /* Handle *window deactivated* event: */
