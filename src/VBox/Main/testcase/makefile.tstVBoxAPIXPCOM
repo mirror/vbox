@@ -2,7 +2,7 @@
 # tstVBoxAPIXPCOM makefile
 #
 #
-# Copyright (C) 2006-2013 Oracle Corporation
+# Copyright (C) 2006-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -30,6 +30,10 @@ INCS_XPCOM     = $(PATH_XPCOM)/include \
 ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
  DEFS_XPCOM   += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 endif
+
+# Adjust this to match your platform, pick from RT_OS_LINUX, RT_OS_WINDOWS,
+# RT_OS_DARWIN, RT_OS_SOLARIS...
+DEFS_XPCOM += RT_OS_LINUX
 
 
 #

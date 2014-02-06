@@ -12,7 +12,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -73,7 +73,7 @@ int listVMs(IVirtualBox *virtualBox)
     if (SUCCEEDED(rc))
     {
         IMachine **machines;
-        rc = SafeArrayAccessData (machinesArray, (void **) &machines);
+        rc = SafeArrayAccessData(machinesArray, (void **) &machines);
         if (SUCCEEDED(rc))
         {
             for (ULONG i = 0; i < machinesArray->rgsabound[0].cElements; ++i)
@@ -88,10 +88,10 @@ int listVMs(IVirtualBox *virtualBox)
                 }
             }
 
-            SafeArrayUnaccessData (machinesArray);
+            SafeArrayUnaccessData(machinesArray);
         }
 
-        SafeArrayDestroy (machinesArray);
+        SafeArrayDestroy(machinesArray);
     }
 
     return 0;
@@ -217,8 +217,8 @@ int testStartVM(IVirtualBox *virtualBox)
             }
 
             /* Wait until VM is running. */
-            printf ("Starting VM, please wait ...\n");
-            rc = progress->WaitForCompletion (-1);
+            printf("Starting VM, please wait ...\n");
+            rc = progress->WaitForCompletion(-1);
 
             /* Get console object. */
             session->get_Console(&console);
@@ -226,15 +226,15 @@ int testStartVM(IVirtualBox *virtualBox)
             /* Bring console window to front. */
             machine->ShowConsoleWindow(0);
 
-            printf ("Press enter to power off VM and close the session...\n");
+            printf("Press enter to power off VM and close the session...\n");
             getchar();
 
             /* Power down the machine. */
             rc = console->PowerDown(&progress);
 
             /* Wait until VM is powered down. */
-            printf ("Powering off VM, please wait ...\n");
-            rc = progress->WaitForCompletion (-1);
+            printf("Powering off VM, please wait ...\n");
+            rc = progress->WaitForCompletion(-1);
 
             /* Close the session. */
             rc = session->UnlockMachine();
