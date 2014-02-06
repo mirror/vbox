@@ -118,7 +118,7 @@ int main( int argc, char **argv)
     RTPrintf("\nPress <Enter> to exit...\n");
     RTSemEventCreate(&eventSem);
     /** Our instance of the seamless class. */
-    VBoxGuestSeamless seamless;
+    SeamlessMain seamless;
     LogRel(("Starting seamless Guest Additions...\n"));
     rc = seamless.init();
     if (rc != VINF_SUCCESS)

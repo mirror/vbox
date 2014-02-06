@@ -1,6 +1,6 @@
 /** @file
- *
- * Guest client: seamless mode.
+ * X11 Guest client - seamless mode, missing proper description while using the
+ * potentially confusing word 'host'.
  */
 
 /*
@@ -15,53 +15,135 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __Additions_xclient_seamless_h
-# define __Additions_xclient_seamless_h
+#ifndef __Additions_client_seamless_host_h
+# define __Additions_client_seamless_host_h
+
+#include <iprt/thread.h>
 
 #include <VBox/log.h>
+#include <VBox/VBoxGuestLib.h>      /* for the R3 guest library functions  */
 
-#include "seamless-host.h"
 #include "seamless-x11.h"
 
-class VBoxGuestSeamless
+/**
+ * Interface to the host
+ */
+class SeamlessMain : public SeamlessHostProxy
 {
-private:
-    VBoxGuestSeamlessHost mHost;
-
-    bool isInitialised;
 public:
+    /** Events which can be reported by this class */
+    enum meEvent
+    {
+        /** Empty event */
+        NONE,
+        /** Request to enable seamless mode */
+        ENABLE,
+        /** Request to disable seamless mode */
+        DISABLE
+    };
+
+private:
+    // We don't want a copy constructor or assignment operator
+    SeamlessMain(const SeamlessMain&);
+    SeamlessMain& operator=(const SeamlessMain&);
+
+    /** Have we been initialised yet? */
+    bool mIsInitialised;
+    /** X11 event monitor object */
+    SeamlessX11 mX11Monitor;
+
+    /** Thread to start and stop when we enter and leave seamless mode which
+     *  monitors X11 windows in the guest. */
+    RTTHREAD mX11MonitorRTThread;
+    /** Should the X11 monitor thread be stopping? */
+    volatile bool mX11ThreadStopping;
+    /** Host seamless event thread. */
+    RTTHREAD mThread;
+    /** Is the thread running? */
+    volatile bool mThreadRunning;
+    /** Should the thread be stopping? */
+    volatile bool mThreadStopping;
+
+    /**
+     * Waits for a seamless state change events from the host and dispatch it.  This is
+     * meant to be called by the host event monitor thread exclusively.
+     *
+     * @returns        IRPT return code.
+     */
+    int nextEvent(void);
+
+    /**
+     * Interrupt an event wait and cause nextEvent() to return immediately.
+     */
+    void cancelEvent(void) { VbglR3InterruptEventWaits(); }
+    
+    /** Thread function to query seamless activation and deactivation events
+     *  from the host. */
+    static DECLCALLBACK(int) threadFunction(RTTHREAD self, void *pvUser);
+
+    /** Helper to stop the event query thread again. */
+    void stopThread();
+
+    /** Thread function to monitor X11 window configuration changes. */
+    static DECLCALLBACK(int) x11ThreadFunction(RTTHREAD self, void *pvUser);
+
+    /** Helper to stop the X11 monitor thread again. */
+    void stopX11Thread(void);
+
+public:
+    /**
+     * Initialise the guest and ensure that it is capable of handling seamless mode
+     * @param   pX11Monitor Object to monitor X11 guest windows.
+     *
+     * @returns iprt status code
+     */
     int init(void)
     {
-        int rc = VINF_SUCCESS;
+        int rc;
 
         LogRelFlowFunc(("\n"));
-        if (isInitialised)  /* Assertion */
-        {
-            LogRelFunc(("error: called a second time! (VBoxClient)\n"));
-            rc = VERR_INTERNAL_ERROR;
-        }
+        if (mIsInitialised)
+            return VERR_INTERNAL_ERROR;
+        rc = mX11Monitor.init(this);
         if (RT_SUCCESS(rc))
-        {
-            rc = mHost.init();
-        }
-        if (RT_SUCCESS(rc))
-        {
-            rc = mHost.start();
-        }
-        if (RT_SUCCESS(rc))
-        {
-            isInitialised = true;
-        }
-        if (RT_FAILURE(rc))
-        {
-            LogRelFunc(("returning %Rrc (VBoxClient)\n", rc));
-        }
-        LogRelFlowFunc(("returning %Rrc\n", rc));
+            mIsInitialised = true;
         return rc;
     }
 
-    VBoxGuestSeamless() { isInitialised = false; }
-    ~VBoxGuestSeamless() { }
+    /**
+      * Start the service.
+      * @returns iprt status value
+      */
+    int start(void);
+
+    /**
+     * Stops the service.
+     * @param cMillies how long to wait for the thread to exit
+     */
+    void stop();
+
+    /**
+     * Update the set of visible rectangles in the host.
+     */
+    virtual void notify(RTRECT *pRects, size_t cRects);
+
+    SeamlessMain(void)
+    {
+        mIsInitialised = false;
+        mX11MonitorRTThread = NIL_RTTHREAD;
+        mX11ThreadStopping = false;
+        mThread = NIL_RTTHREAD;
+        mThreadRunning = false;
+        mThreadStopping = false;
+    }
+
+    ~SeamlessMain()
+    {
+        LogRelFlowFunc(("\n"));
+        if (mThread)
+            stop();
+        LogRelFlowFunc(("returning\n"));
+    }
 };
 
 #endif /* __Additions_xclient_seamless_h not defined */

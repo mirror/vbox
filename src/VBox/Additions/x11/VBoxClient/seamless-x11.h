@@ -154,12 +154,12 @@ public:
     }
 };
 
-class VBoxGuestSeamlessX11
+class SeamlessX11
 {
 private:
     // We don't want a copy constructor or assignment operator
-    VBoxGuestSeamlessX11(const VBoxGuestSeamlessX11&);
-    VBoxGuestSeamlessX11& operator=(const VBoxGuestSeamlessX11&);
+    SeamlessX11(const SeamlessX11&);
+    SeamlessX11& operator=(const SeamlessX11&);
 
     // Private member variables
     /** Pointer to the host class. */
@@ -247,11 +247,11 @@ public:
     void doUnmapEvent(Window hWin);
     void doShapeEvent(Window hWin);
 
-    VBoxGuestSeamlessX11(void)
+    SeamlessX11(void)
         : mHost(0), mDisplay(NULL), mpRects(NULL), mcRects(0),
           mSupportsShape(false), mEnabled(false), mChanged(false) {}
 
-    ~VBoxGuestSeamlessX11()
+    ~SeamlessX11()
     {
         uninit();
         if (mDisplay)
