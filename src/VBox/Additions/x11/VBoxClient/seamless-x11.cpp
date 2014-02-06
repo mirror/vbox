@@ -70,7 +70,7 @@ static unsigned char *XXGetProperty (Display *aDpy, Window aWnd, Atom aPropType,
   *
   * @returns true if it can handle seamless, false otherwise
   */
-int VBoxGuestSeamlessX11::init(VBoxGuestSeamlessHostInt *pHost)
+int VBoxGuestSeamlessX11::init(SeamlessHostProxy *pHost)
 {
     int rc = VINF_SUCCESS;
 

@@ -27,7 +27,6 @@ class VBoxGuestSeamless
 {
 private:
     VBoxGuestSeamlessHost mHost;
-    VBoxGuestSeamlessX11 mGuest;
 
     bool isInitialised;
 public:
@@ -43,11 +42,7 @@ public:
         }
         if (RT_SUCCESS(rc))
         {
-            rc = mHost.init(&mGuest);
-        }
-        if (RT_SUCCESS(rc))
-        {
-            rc = mGuest.init(&mHost);
+            rc = mHost.init();
         }
         if (RT_SUCCESS(rc))
         {
@@ -65,20 +60,8 @@ public:
         return rc;
     }
 
-    void uninit(RTMSINTERVAL cMillies = RT_INDEFINITE_WAIT)
-    {
-        LogRelFlowFunc(("\n"));
-        if (isInitialised)
-        {
-            mHost.stop(cMillies);
-            mGuest.uninit();
-            isInitialised = false;
-        }
-        LogRelFlowFunc(("returning\n"));
-    }
-
     VBoxGuestSeamless() { isInitialised = false; }
-    ~VBoxGuestSeamless() { uninit(); }
+    ~VBoxGuestSeamless() { }
 };
 
 #endif /* __Additions_xclient_seamless_h not defined */

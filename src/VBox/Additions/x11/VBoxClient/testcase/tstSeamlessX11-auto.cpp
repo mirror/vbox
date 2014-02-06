@@ -28,7 +28,6 @@
 #include <iprt/string.h>
 
 #include "../seamless.h"
-#include "../seamless-host.h"
 
 #undef DefaultRootWindow
 
@@ -298,7 +297,7 @@ int XFlush(Display *display)
 }
 
 /** Dummy host class */
-class testHost: public VBoxGuestSeamlessHostInt
+class testHost: public SeamlessHostProxy
 {
     bool mfNotified;
 public:
