@@ -145,17 +145,17 @@ private:
 };
 
 
-/** Functor allowing to check if passed UIMediumItem is suitable by ID. */
+/** Functor allowing to check if passed UIMediumItem is suitable by @a strID. */
 class CheckIfSuitableByID : public CheckIfSuitableBy
 {
 public:
-    /** Constructor. */
+    /** Constructor accepting @a strID to compare with. */
     CheckIfSuitableByID(const QString &strID) : m_strID(strID) {}
 
 private:
-    /** Determines whether passed UIMediumItem is suitable by ID. */
+    /** Determines whether passed UIMediumItem is suitable by @a strID. */
     bool isItSuitable(UIMediumItem *pItem) const { return pItem->id() == m_strID; }
-    /** Holds the ID to compare to. */
+    /** Holds the @a strID to compare to. */
     QString m_strID;
 };
 
@@ -163,7 +163,7 @@ private:
 class CheckIfSuitableByState : public CheckIfSuitableBy
 {
 public:
-    /** Constructor. */
+    /** Constructor accepting @a state to compare with. */
     CheckIfSuitableByState(KMediumState state) : m_state(state) {}
 
 private:
@@ -174,14 +174,15 @@ private:
 };
 
 
-/* Medium manager progress-bar: */
+/** Medium manager progress-bar.
+  * Reflects medium-enumeration progress, stays hidden otherwise. */
 class UIEnumerationProgressBar : public QWidget
 {
     Q_OBJECT;
 
 public:
 
-    /* Constructor: */
+    /** Constructor on the basis of passed @a pParent. */
     UIEnumerationProgressBar(QWidget *pParent)
         : QWidget(pParent)
     {
@@ -189,17 +190,19 @@ public:
         prepare();
     }
 
-    /* API: Text stuff: */
-    void setText(const QString &strText) { mText->setText(strText); }
+    /** Defines progress-bar label-text. */
+    void setText(const QString &strText) { m_pLabel->setText(strText); }
 
-    /* API: Value stuff: */
+    /** Returns progress-bar current-value. */
     int value() const { return m_pProgressBar->value(); }
+    /** Defines progress-bar current-value. */
     void setValue(int iValue) { m_pProgressBar->setValue(iValue); }
+    /** Defines progress-bar maximum-value. */
     void setMaximum(int iValue) { m_pProgressBar->setMaximum(iValue); }
 
 private:
 
-    /* Helper: Prepare stuff: */
+    /** Prepares progress-bar content. */
     void prepare()
     {
         /* Create layout: */
@@ -208,7 +211,7 @@ private:
             /* Configure layout: */
             pLayout->setContentsMargins(0, 0, 0, 0);
             /* Create label: */
-            mText = new QLabel;
+            m_pLabel = new QLabel;
             /* Create progress-bar: */
             m_pProgressBar = new QProgressBar;
             {
@@ -216,13 +219,14 @@ private:
                 m_pProgressBar->setTextVisible(false);
             }
             /* Add widgets into layout: */
-            pLayout->addWidget(mText);
+            pLayout->addWidget(m_pLabel);
             pLayout->addWidget(m_pProgressBar);
         }
     }
 
-    /* Widgets: */
-    QLabel *mText;
+    /** Progress-bar label. */
+    QLabel *m_pLabel;
+    /** Progress-bar itself. */
     QProgressBar *m_pProgressBar;
 };
 
@@ -312,7 +316,7 @@ void UIMediumManager::sltHandleMediumDeleted(const QString &strMediumID)
     /* Update tab-icons: */
     updateTabIcons(pMediumItem, ItemAction_Removed);
 
-    /* We need to silently delete item without selecting
+    /* We need to silently delete medium-item without selecting
      * the new one because of complex selection mechanism
      * which could provoke a segfault choosing the new
      * one item during last item deletion routine. So blocking
@@ -321,7 +325,7 @@ void UIMediumManager::sltHandleMediumDeleted(const QString &strMediumID)
     delete pMediumItem;
     pTree->blockSignals(false);
 
-    /* Set new current-item: */
+    /* Make sure current medium-item is selected: */
     setCurrentItem(pTree, pTree->currentItem());
 }
 
@@ -387,8 +391,10 @@ void UIMediumManager::sltHandleMediumEnumerationFinish()
 
 void UIMediumManager::sltCopyMedium()
 {
-    /* Get current-item: */
+    /* Get current medium-item: */
     UIMediumItem *pMediumItem = currentMediumItem();
+    AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
+    AssertReturnVoid(!pMediumItem->id().isNull());
 
     /* Show Clone VD wizard: */
     UISafePointerWizard pWizard = new UIWizardCloneVD(this, pMediumItem->medium().medium());
@@ -402,17 +408,19 @@ void UIMediumManager::sltCopyMedium()
 
 void UIMediumManager::sltModifyMedium()
 {
-    /* Get current-item: */
+    /* Get current medium-item: */
     UIMediumItem *pMediumItem = currentMediumItem();
+    AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
+    AssertReturnVoid(!pMediumItem->id().isNull());
 
     /* Show Modify VD dialog: */
     UISafePointerDialog pDialog = new UIMediumTypeChangeDialog(this, pMediumItem->id());
     if (pDialog->exec() == QDialog::Accepted)
     {
-        /* Safe spot because if dialog is deleted inside ::exec() =>
-         * returned result will be QDialog::Rejected. */
+        /* Update medium-item: */
         pMediumItem->refreshAll();
-        m_pTypePane->setText(pMediumItem->hardDiskType());
+        /* Update HD information-panes: */
+        updateInformationPanesHD();
     }
 
     /* Delete if still exists: */
@@ -425,6 +433,7 @@ void UIMediumManager::sltRemoveMedium()
     /* Get current medium-item: */
     UIMediumItem *pMediumItem = currentMediumItem();
     AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
+    AssertReturnVoid(!pMediumItem->id().isNull());
 
     /* Remember ID/type as they may get lost after the closure/deletion: */
     QString strMediumID = pMediumItem->id();
@@ -560,36 +569,38 @@ void UIMediumManager::sltReleaseMedium()
 
 void UIMediumManager::sltHandleCurrentTabChanged()
 {
-    /* Get current-tree: */
+    /* Get current tree-widget: */
     QTreeWidget *pTree = currentTreeWidget();
 
-    /* If other tree was focused previously, moving focus to new tree: */
+    /* If another tree-widget was focused before,
+     * move focus to current tree-widget: */
     if (qobject_cast<QTreeWidget*>(focusWidget()))
         pTree->setFocus();
 
-    /* Update current tree-item: */
+    /* Make sure current medium-item is selected: */
     sltHandleCurrentItemChanged(pTree->currentItem());
 }
 
 void UIMediumManager::sltHandleCurrentItemChanged(QTreeWidgetItem *pItem,
                                                   QTreeWidgetItem *pPrevItem /* = 0 */)
 {
-    /* Get medium-item: */
+    /* Get current medium-item: */
     UIMediumItem *pMediumItem = toMediumItem(pItem);
 
-    /* We have to make sure some item is always selected: */
+    /* We have to make sure some medium-item is always selected: */
     if (!pMediumItem && pPrevItem)
     {
-        /* If the new item is 0, set the old item again. */
+        /* If new medium-item is 0, choose the old one again. */
         UIMediumItem *pPrevMediumItem = toMediumItem(pPrevItem);
         setCurrentItem(currentTreeWidget(), pPrevMediumItem);
     }
 
+    /* If item is set: */
     if (pMediumItem)
     {
         /* Set the file for the proxy icon: */
         setFileForProxyIcon(pMediumItem->location());
-        /* Ensures current item visible every time we are switching page: */
+        /* Make sure current medium-item visible: */
         pMediumItem->treeWidget()->scrollToItem(pMediumItem, QAbstractItemView::EnsureVisible);
     }
 
@@ -602,21 +613,21 @@ void UIMediumManager::sltHandleCurrentItemChanged(QTreeWidgetItem *pItem,
 
 void UIMediumManager::sltHandleDoubleClick()
 {
-    /* Call for modify-action if hard-disk double-clicked: */
+    /* Call for modify-action if hard-drive medium-item double-clicked: */
     if (currentMediumType() == UIMediumType_HardDisk)
         sltModifyMedium();
 }
 
 void UIMediumManager::sltHandleContextMenuCall(const QPoint &position)
 {
-    /* Get surrent widget/item: */
+    /* Get corresponding widget/item: */
     QTreeWidget *pTree = currentTreeWidget();
     QTreeWidgetItem *pItem = pTree->itemAt(position);
     if (pItem)
     {
         /* Make sure the item is selected and current: */
         setCurrentItem(pTree, pItem);
-        /* Show context menu: */
+        /* Show item context menu: */
         m_pContextMenu->exec(pTree->viewport()->mapToGlobal(position));
     }
 }
@@ -869,7 +880,7 @@ void UIMediumManager::prepareTabWidget()
 {
     /* Tab-widget created in .ui file. */
     {
-        /* Setup tab-widget: */
+        /* Configure tab-widget: */
         mTabWidget->setFocusPolicy(Qt::TabFocus);
         mTabWidget->setTabIcon(HDTab, m_iconHD);
         mTabWidget->setTabIcon(CDTab, m_iconCD);
@@ -895,7 +906,7 @@ void UIMediumManager::prepareTreeWidgetHD()
 {
     /* HD tree-widget created in .ui file. */
     {
-        /* Setup HD tree-widget: */
+        /* Configure HD tree-widget: */
         mTwHD->setColumnCount(3);
         mTwHD->sortItems(0, Qt::AscendingOrder);
         mTwHD->header()->setResizeMode(0, QHeaderView::Fixed);
@@ -920,7 +931,7 @@ void UIMediumManager::prepareTreeWidgetCD()
 {
     /* CD tree-widget created in .ui file. */
     {
-        /* Setup CD tree-widget: */
+        /* Configure CD tree-widget: */
         mTwCD->setColumnCount(2);
         mTwCD->sortItems(0, Qt::AscendingOrder);
         mTwCD->header()->setResizeMode(0, QHeaderView::Fixed);
@@ -944,7 +955,7 @@ void UIMediumManager::prepareTreeWidgetFD()
 {
     /* FD tree-widget created in .ui file. */
     {
-        /* Setup FD tree-widget: */
+        /* Configure FD tree-widget: */
         mTwFD->setColumnCount(2);
         mTwFD->sortItems(0, Qt::AscendingOrder);
         mTwFD->header()->setResizeMode(0, QHeaderView::Fixed);
@@ -991,9 +1002,8 @@ void UIMediumManager::prepareProgressBar()
     /* Create progress-bar: */
     m_pProgressBar = new UIEnumerationProgressBar(this);
     {
-        /* Hidden by default: */
+        /* Configure progress-bar: */
         m_pProgressBar->hide();
-        /* Integrate to the button-box: */
         mButtonBox->addExtraWidget(m_pProgressBar);
     }
 }
@@ -1022,11 +1032,11 @@ void UIMediumManager::repopulateTreeWidgets()
     mTwCD->clear();
     mTwFD->clear();
 
-    /* Populate all medium-items: */
+    /* Create medium-items: */
     foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
         sltHandleMediumCreated(strMediumID);
 
-    /* Select first-item as current medium-item if nothing selected: */
+    /* Select first medium-item as current one if nothing selected: */
     if (!mediumItem(UIMediumType_HardDisk))
         if (QTreeWidgetItem *pItem = mTwHD->topLevelItem(0))
             setCurrentItem(mTwHD, pItem);
@@ -1040,19 +1050,19 @@ void UIMediumManager::repopulateTreeWidgets()
 
 void UIMediumManager::updateActions()
 {
-    /* Get current-item: */
-    UIMediumItem *pCurrentItem = currentMediumItem();
+    /* Get current medium-item: */
+    UIMediumItem *pMediumItem = currentMediumItem();
 
     /* Calculate actions accessibility: */
     bool fNotInEnumeration = !vboxGlobal().isMediumEnumerationInProgress();
     bool fActionEnabledCopy = currentMediumType() == UIMediumType_HardDisk &&
-                              fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Copy);
+                              fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
     bool fActionEnabledModify = currentMediumType() == UIMediumType_HardDisk &&
-                                fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Modify);
-    bool fActionEnabledRemove = fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Remove);
-    bool fActionEnabledRelease = fNotInEnumeration && pCurrentItem && checkMediumFor(pCurrentItem, Action_Release);
+                                fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Modify);
+    bool fActionEnabledRemove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Remove);
+    bool fActionEnabledRelease = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Release);
 
-    /* Update actions: */
+    /* Apply actions accessibility: */
     m_pActionCopy->setEnabled(fActionEnabledCopy);
     m_pActionModify->setEnabled(fActionEnabledModify);
     m_pActionRemove->setEnabled(fActionEnabledRemove);
@@ -1166,7 +1176,7 @@ void UIMediumManager::updateInformationPanes(UIMediumType type /* = UIMediumType
 
 void UIMediumManager::updateInformationPanesHD()
 {
-    /* Get current HD item: */
+    /* Get current hard-drive medium-item: */
     UIMediumItem *pCurrentItem = mediumItem(UIMediumType_HardDisk);
 
     /* If current item is not set: */
@@ -1668,7 +1678,7 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
     /* Make sure passed medium is valid: */
     AssertReturn(!medium.medium().isNull(), 0);
 
-    /* Search for medium-item: */
+    /* Search for existing medium-item: */
     UIMediumItem *pMediumItem = searchItem(pTree, CheckIfSuitableByID(medium.id()));
 
     /* If medium-item do not exists: */
@@ -1682,7 +1692,7 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
             /* If parent medium-item was not found: */
             if (!pParentMediumItem)
             {
-                /* Make sure such corresponding parent medium is already cached! */
+                /* Make sure corresponding parent medium is already cached! */
                 UIMedium parentMedium = vboxGlobal().medium(medium.parentID());
                 if (parentMedium.isNull())
                     AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toAscii().constData()));
@@ -1705,7 +1715,7 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
         }
     }
 
-    /* Return medium-item: */
+    /* Return created medium-item: */
     return pMediumItem;
 }
 
