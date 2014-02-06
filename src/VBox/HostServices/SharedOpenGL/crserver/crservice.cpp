@@ -368,7 +368,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
         LogRel(("SHARED_CROPENGL svcLoadState: unsupported save state version %d\n", ui32));
 
         /*@todo ugly hack, as we don't know size of stored opengl data try to read untill end of opengl data marker*/
-        /*VboxSharedCrOpenGL isn't last hgcm service now, so can't use SSMR3SkipToEndOfUnit*/
+        /*VBoxSharedCrOpenGL isn't last hgcm service now, so can't use SSMR3SkipToEndOfUnit*/
         {
             const char *pMatch = &gszVBoxOGLSSMMagic[0];
             char current;
