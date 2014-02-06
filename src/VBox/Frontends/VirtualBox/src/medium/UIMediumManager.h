@@ -117,8 +117,8 @@ private:
     void prepareMacWindowMenu();
 #endif /* Q_WS_MAC */
 
-    /* Helper: Populate stuff: */
-    void populateTreeWidgets();
+    /** Repopulates tree-widgets content. */
+    void repopulateTreeWidgets();
 
     /** Update actions according currently chosen medium-item. */
     void updateActions();
@@ -173,9 +173,8 @@ private:
     UIMediumItem* searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &functor) const;
     UIMediumItem* createHardDiskItem(QTreeWidget *pTree, const UIMedium &medium) const;
 
-    /* Helpers: Other stuff: */
+    /* Helper: Other stuff: */
     bool checkMediumFor(UIMediumItem *pItem, Action action);
-    void prepareToRefresh(int iTotal = 0);
 
     /** Casts passed QTreeWidgetItem @a pItem to UIMediumItem if possible. */
     static UIMediumItem* toMediumItem(QTreeWidgetItem *pItem);
