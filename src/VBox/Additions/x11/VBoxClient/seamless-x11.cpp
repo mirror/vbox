@@ -95,7 +95,7 @@ int SeamlessX11::init(SeamlessHostProxy *pHost)
  * events about changes to this information.
  *
  * @note This class does not contain its own event thread, so an external thread must
- *       call nextEvent() for as long as events are wished.
+ *       call nextConfigurationEvent() for as long as events are wished.
  * @todo This function should switch the guest to fullscreen mode.
  */
 int SeamlessX11::start(void)
@@ -288,7 +288,7 @@ void SeamlessX11::freeWindowTree(void)
  *
  * @note Called from the guest event thread.
  */
-void SeamlessX11::nextEvent(void)
+void SeamlessX11::nextConfigurationEvent(void)
 {
     XEvent event;
 
@@ -298,7 +298,7 @@ void SeamlessX11::nextEvent(void)
     if (mChanged)
     {
         updateRects();
-        mHost->notify(mpRects, mcRects);
+        mHost->sendRegionUpdate(mpRects, mcRects);
     }
     mChanged = false;
     XNextEvent(mDisplay, &event);
@@ -527,7 +527,7 @@ int SeamlessX11::updateRects(void)
  *
  * @note This function should only be called from the host event thread.
  */
-bool SeamlessX11::interruptEvent(void)
+bool SeamlessX11::interruptEventWait(void)
 {
     bool rc = false;
 

@@ -40,7 +40,7 @@
 class SeamlessHostProxy
 {
 public:
-    virtual void notify(RTRECT *pRects, size_t cRects) = 0;
+    virtual void sendRegionUpdate(RTRECT *pRects, size_t cRects) = 0;
 };
 
 /** Structure containing information about a guest window's position and visible area.
@@ -215,11 +215,12 @@ public:
      */
     void uninit(void)
     {
-        if (0 != mHost)
-        {
+        if (mHost)
             stop();
-        }
-        mHost = 0;
+        mHost = NULL;
+        if (mDisplay)
+            XCloseDisplay(mDisplay);
+        mDisplay = NULL;
     }
 
     /**
@@ -236,9 +237,9 @@ public:
     size_t getRectCount(void);
 
     /** Process next event in the guest event queue - called by the event thread. */
-    void nextEvent(void);
+    void nextConfigurationEvent(void);
     /** Wake up the event thread if it is waiting for an event so that it can exit. */
-    bool interruptEvent(void);
+    bool interruptEventWait(void);
 
     /* Methods to handle X11 events.  These are public so that the unit test
      * can call them. */
@@ -254,8 +255,6 @@ public:
     ~SeamlessX11()
     {
         uninit();
-        if (mDisplay)
-            XCloseDisplay(mDisplay);
     }
 };
 
