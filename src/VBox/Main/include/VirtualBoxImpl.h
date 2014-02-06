@@ -60,7 +60,7 @@ namespace settings
 class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxWrap
 #ifdef RT_OS_WINDOWS
-    , public CComCoClass<VirtualBox, &CLSID_VirtualBox>
+//     , public CComCoClass<VirtualBox, &CLSID_VirtualBox>
 #endif
 {
 

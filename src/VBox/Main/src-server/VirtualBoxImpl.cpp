@@ -1255,11 +1255,11 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
 /* Helper for VirtualBox::ComposeMachineFilename */
 static void sanitiseMachineFilename(Utf8Str &aName);
 
-STDMETHODIMP VirtualBox::composeMachineFilename(const com::Utf8Str &aName,
-                                                const com::Utf8Str &aGroup,
-                                                const com::Utf8Str &aCreateFlags,
-                                                const com::Utf8Str &aBaseFolder,
-                                                com::Utf8Str       &aFile)
+HRESULT VirtualBox::composeMachineFilename(const com::Utf8Str &aName,
+                                           const com::Utf8Str &aGroup,
+                                           const com::Utf8Str &aCreateFlags,
+                                           const com::Utf8Str &aBaseFolder,
+                                           com::Utf8Str       &aFile)
 {
     LogFlowThisFuncEnter();
 
