@@ -88,7 +88,7 @@ private slots:
 
     /* Handlers: Navigation stuff: */
     void sltHandleCurrentTabChanged();
-    void sltHandleCurrentItemChanged(QTreeWidgetItem *pItem, QTreeWidgetItem *pPrevItem = 0);
+    void sltHandleCurrentItemChanged(QTreeWidgetItem *pItem);
     void sltHandleDoubleClick();
     void sltHandleContextMenuCall(const QPoint &position);
 
@@ -166,8 +166,8 @@ private:
     /** Returns current medium-item. */
     UIMediumItem* currentMediumItem() const;
 
-    /** Defines <i>current-item</i> for passed @a pTree as @a pItem. */
-    void setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem);
+    /** Defines <i>current-item</i> for passed @a pTreeWidget as @a pItem. */
+    void setCurrentItem(QTreeWidget *pTreeWidget, QTreeWidgetItem *pItem);
 
     UIMediumItem* searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &functor) const;
     UIMediumItem* searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &functor) const;

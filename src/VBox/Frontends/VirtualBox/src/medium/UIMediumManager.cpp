@@ -298,35 +298,31 @@ void UIMediumManager::sltHandleMediumCreated(const QString &strMediumID)
 
 void UIMediumManager::sltHandleMediumDeleted(const QString &strMediumID)
 {
-    /* Get tree/item: */
+    /* Get tree-widget / medium-item: */
     QList<UIMediumType> types;
     types << UIMediumType_HardDisk << UIMediumType_DVD << UIMediumType_Floppy;
-    QTreeWidget *pTree = 0;
+    QTreeWidget *pTreeWidget = 0;
     UIMediumItem *pMediumItem = 0;
     foreach (UIMediumType type, types)
     {
-        pTree = treeWidget(type);
-        pMediumItem = searchItem(pTree, CheckIfSuitableByID(strMediumID));
+        pTreeWidget = treeWidget(type);
+        pMediumItem = searchItem(pTreeWidget, CheckIfSuitableByID(strMediumID));
         if (pMediumItem)
             break;
     }
+
+    /* Skip further actions if medium-item was not found: */
     if (!pMediumItem)
         return;
 
     /* Update tab-icons: */
     updateTabIcons(pMediumItem, ItemAction_Removed);
 
-    /* We need to silently delete medium-item without selecting
-     * the new one because of complex selection mechanism
-     * which could provoke a segfault choosing the new
-     * one item during last item deletion routine. So blocking
-     * the tree-view for the time of item removing. */
-    pTree->blockSignals(true);
+    /* Delete medium-item: */
     delete pMediumItem;
-    pTree->blockSignals(false);
 
-    /* Make sure current medium-item is selected: */
-    setCurrentItem(pTree, pTree->currentItem());
+    /* Make sure 'current' or at least 'first available' medium-item is currently selected, if any: */
+    setCurrentItem(pTreeWidget, pTreeWidget->currentItem() ? pTreeWidget->currentItem() : pTreeWidget->topLevelItem(0));
 }
 
 void UIMediumManager::sltHandleMediumEnumerationStart()
@@ -581,21 +577,13 @@ void UIMediumManager::sltHandleCurrentTabChanged()
     sltHandleCurrentItemChanged(pTree->currentItem());
 }
 
-void UIMediumManager::sltHandleCurrentItemChanged(QTreeWidgetItem *pItem,
-                                                  QTreeWidgetItem *pPrevItem /* = 0 */)
+void UIMediumManager::sltHandleCurrentItemChanged(QTreeWidgetItem *pItem)
 {
-    /* Get current medium-item: */
+    /* If item set => make sure it's of valid type: */
     UIMediumItem *pMediumItem = toMediumItem(pItem);
+    AssertReturnVoid(!pItem || pMediumItem);
 
-    /* We have to make sure some medium-item is always selected: */
-    if (!pMediumItem && pPrevItem)
-    {
-        /* If new medium-item is 0, choose the old one again. */
-        UIMediumItem *pPrevMediumItem = toMediumItem(pPrevItem);
-        setCurrentItem(currentTreeWidget(), pPrevMediumItem);
-    }
-
-    /* If item is set: */
+    /* If medium-item set: */
     if (pMediumItem)
     {
         /* Set the file for the proxy icon: */
@@ -620,16 +608,18 @@ void UIMediumManager::sltHandleDoubleClick()
 
 void UIMediumManager::sltHandleContextMenuCall(const QPoint &position)
 {
-    /* Get corresponding widget/item: */
-    QTreeWidget *pTree = currentTreeWidget();
-    QTreeWidgetItem *pItem = pTree->itemAt(position);
-    if (pItem)
-    {
-        /* Make sure the item is selected and current: */
-        setCurrentItem(pTree, pItem);
-        /* Show item context menu: */
-        m_pContextMenu->exec(pTree->viewport()->mapToGlobal(position));
-    }
+    /* Get corresponding tree-widget / item: */
+    QTreeWidget *pTreeWidget = currentTreeWidget();
+    QTreeWidgetItem *pItem = pTreeWidget->itemAt(position);
+
+    /* Skip further actions if item was not found: */
+    if (!pItem)
+        return;
+
+    /* Make sure that item is current one: */
+    setCurrentItem(pTreeWidget, pItem);
+    /* Show item context menu: */
+    m_pContextMenu->exec(pTreeWidget->viewport()->mapToGlobal(position));
 }
 
 void UIMediumManager::sltMakeRequestForTableAdjustment()
@@ -915,7 +905,7 @@ void UIMediumManager::prepareTreeWidgetHD()
         mTwHD->header()->setStretchLastSection(false);
         mTwHD->setSortingEnabled(true);
         connect(mTwHD, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-                this, SLOT(sltHandleCurrentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)));
+                this, SLOT(sltHandleCurrentItemChanged(QTreeWidgetItem*)));
         connect(mTwHD, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
                 this, SLOT(sltHandleDoubleClick()));
         connect(mTwHD, SIGNAL(customContextMenuRequested(const QPoint&)),
@@ -939,7 +929,7 @@ void UIMediumManager::prepareTreeWidgetCD()
         mTwCD->header()->setStretchLastSection(false);
         mTwCD->setSortingEnabled(true);
         connect(mTwCD, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-                this, SLOT(sltHandleCurrentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)));
+                this, SLOT(sltHandleCurrentItemChanged(QTreeWidgetItem*)));
         connect(mTwCD, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
                 this, SLOT(sltHandleDoubleClick()));
         connect(mTwCD, SIGNAL(customContextMenuRequested(const QPoint&)),
@@ -963,7 +953,7 @@ void UIMediumManager::prepareTreeWidgetFD()
         mTwFD->header()->setStretchLastSection(false);
         mTwFD->setSortingEnabled(true);
         connect(mTwFD, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-                this, SLOT(sltHandleCurrentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)));
+                this, SLOT(sltHandleCurrentItemChanged(QTreeWidgetItem*)));
         connect(mTwFD, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
                 this, SLOT(sltHandleDoubleClick()));
         connect(mTwFD, SIGNAL(customContextMenuRequested(const QPoint&)),
@@ -1028,24 +1018,30 @@ void UIMediumManager::repopulateTreeWidgets()
         m_strSelectedIdFD = pMediumItem->id();
 
     /* Clear tree-widgets: */
-    mTwHD->clear();
-    mTwCD->clear();
-    mTwFD->clear();
+    QTreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
+    QTreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
+    QTreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
+    setCurrentItem(pTreeWidgetHD, 0);
+    setCurrentItem(pTreeWidgetCD, 0);
+    setCurrentItem(pTreeWidgetFD, 0);
+    pTreeWidgetHD->clear();
+    pTreeWidgetCD->clear();
+    pTreeWidgetFD->clear();
 
     /* Create medium-items: */
     foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
         sltHandleMediumCreated(strMediumID);
 
-    /* Select first medium-item as current one if nothing selected: */
+    /* Select first item as current one if nothing selected: */
     if (!mediumItem(UIMediumType_HardDisk))
-        if (QTreeWidgetItem *pItem = mTwHD->topLevelItem(0))
-            setCurrentItem(mTwHD, pItem);
+        if (QTreeWidgetItem *pItem = pTreeWidgetHD->topLevelItem(0))
+            setCurrentItem(pTreeWidgetHD, pItem);
     if (!mediumItem(UIMediumType_DVD))
-        if (QTreeWidgetItem *pItem = mTwCD->topLevelItem(0))
-            setCurrentItem(mTwCD, pItem);
+        if (QTreeWidgetItem *pItem = pTreeWidgetCD->topLevelItem(0))
+            setCurrentItem(pTreeWidgetCD, pItem);
     if (!mediumItem(UIMediumType_Floppy))
-        if (QTreeWidgetItem *pItem = mTwFD->topLevelItem(0))
-            setCurrentItem(mTwFD, pItem);
+        if (QTreeWidgetItem *pItem = pTreeWidgetFD->topLevelItem(0))
+            setCurrentItem(pTreeWidgetFD, pItem);
 }
 
 void UIMediumManager::updateActions()
@@ -1413,6 +1409,11 @@ void UIMediumManager::createMediumItem(const UIMedium &medium)
     if (!vboxGlobal().isMediumEnumerationInProgress())
         setCurrentItem(treeWidget(medium.type()), pMediumItem);
 
+    /* If no 'current-item' yet selected
+     * we have to choose newly added as the 'current-item': */
+    if (!treeWidget(medium.type())->currentItem())
+        setCurrentItem(treeWidget(medium.type()), pMediumItem);
+
     /* Update linked stuff if that was 'current-item' added: */
     if (pMediumItem == currentTreeWidget()->currentItem())
         sltHandleCurrentItemChanged(pMediumItem);
@@ -1629,17 +1630,24 @@ UIMediumItem* UIMediumManager::currentMediumItem() const
     return mediumItem(currentMediumType());
 }
 
-void UIMediumManager::setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem)
+void UIMediumManager::setCurrentItem(QTreeWidget *pTreeWidget, QTreeWidgetItem *pItem)
 {
-    if (pTree && pItem)
+    /* Make sure passed tree-widget is valid: */
+    AssertPtrReturnVoid(pTreeWidget);
+
+    /* Make passed item 'current' for passed tree-widget: */
+    pTreeWidget->setCurrentItem(pItem);
+
+    /* If non NULL item was passed: */
+    if (pItem)
     {
+        /* Make sure it's also selected, and visible: */
         pItem->setSelected(true);
-        pTree->setCurrentItem(pItem);
-        pTree->scrollToItem(pItem, QAbstractItemView::EnsureVisible);
-        sltHandleCurrentItemChanged(pItem);
+        pTreeWidget->scrollToItem(pItem, QAbstractItemView::EnsureVisible);
     }
-    else
-        sltHandleCurrentTabChanged();
+
+    /* Update linked stuff: */
+    sltHandleCurrentItemChanged(pItem);
 }
 
 UIMediumItem* UIMediumManager::searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &functor) const
