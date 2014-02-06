@@ -1,10 +1,11 @@
 /** @file
- * X11 Guest client - seamless mode, missing proper description while using the
- * potentially confusing word 'host'.
+ * X11 Guest client - seamless mode: main logic, communication with the host and
+ * wrapper interface for the main code of the VBoxClient deamon.  The
+ * X11-specific parts are split out into their own file for ease of testing.
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,11 +19,15 @@
 /*****************************************************************************
 *   Header files                                                             *
 *****************************************************************************/
+
+#include <X11/Xlib.h>
+
 #include <VBox/log.h>
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/err.h>
 
+#include "VBoxClient.h"
 #include "seamless-host.h"
 #include "seamless-x11.h"
 
@@ -49,6 +54,11 @@ int VBoxGuestSeamlessHost::start(void)
     if (RT_SUCCESS(rc))
     {
         LogRel(("VBoxClient: enabled seamless capability on host.\n"));
+        /* Create a thread to wait for requests from the host.  This is currently
+         * done on a separate thread as the main thread monitors the X11 server
+         * for disconnections. */
+        /** @todo Move the disconnection monitoring to its own thread (better, the
+         *  VT monitor thread) and run this logic on the main service thread. */
         rc = RTThreadCreate(&mThread, threadFunction, this, 0,
                             RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
                             "Host events");
@@ -67,13 +77,13 @@ int VBoxGuestSeamlessHost::start(void)
 }
 
 /** Stops the service. */
-void VBoxGuestSeamlessHost::stop(RTMSINTERVAL cMillies /* = RT_INDEFINITE_WAIT */)
+void VBoxGuestSeamlessHost::stop()
 {
     LogRelFlowFunc(("\n"));
     if (!mThread)  /* Assertion */
         LogRel(("VBoxClient: tried to stop seamless service which is not running!\n"));
     else
-        stopThread(cMillies);
+        stopThread();
     if (mX11MonitorRTThread)
         stopX11Thread();
     VbglR3CtlFilterMask(0, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST);
@@ -102,7 +112,6 @@ int VBoxGuestSeamlessHost::nextEvent(void)
 #ifdef DEBUG
                 LogRelFunc(("VMMDev_Seamless_Visible_Region request received (VBoxClient).\n"));
 #endif
-                mState = ENABLE;
                 mX11ThreadStopping = false;
                 /** @todo Do something on failure, like bail out. */
                 if (RT_FAILURE(RTThreadCreate(&mX11MonitorRTThread,
@@ -121,7 +130,6 @@ int VBoxGuestSeamlessHost::nextEvent(void)
 #ifdef DEBUG
                 LogRelFunc(("VMMDev_Seamless_Disabled set (VBoxClient).\n"));
 #endif
-                mState = DISABLE;
                 if (mX11MonitorRTThread)
                     stopX11Thread();
                 else
@@ -181,7 +189,7 @@ int VBoxGuestSeamlessHost::threadFunction(RTTHREAD self, void *pvUser)
 /**
  * Send a signal to the thread that it should exit
  */
-void VBoxGuestSeamlessHost::stopThread(RTMSINTERVAL cMillies)
+void VBoxGuestSeamlessHost::stopThread()
 {
     int rc;
 
@@ -216,14 +224,14 @@ int VBoxGuestSeamlessHost::x11ThreadFunction(RTTHREAD self, void *pvUser)
     int rc = VINF_SUCCESS;
 
     LogRelFlowFunc(("\n"));
-    rc = pHost->mX11Monitor->start();
+    rc = pHost->mX11Monitor.start();
     if (RT_SUCCESS(rc))
     {
         while (!pHost->mX11ThreadStopping)
         {
-            pHost->mX11Monitor->nextEvent();
+            pHost->mX11Monitor.nextEvent();
         }
-        pHost->mX11Monitor->stop();
+        pHost->mX11Monitor.stop();
     }
     LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
@@ -237,11 +245,62 @@ void VBoxGuestSeamlessHost::stopX11Thread(void)
     int rc;
 
     mX11ThreadStopping = true;
-    mX11Monitor->interruptEvent();
+    mX11Monitor.interruptEvent();
     rc = RTThreadWait(mX11MonitorRTThread, RT_INDEFINITE_WAIT, NULL);
     if (RT_SUCCESS(rc))
         mX11MonitorRTThread = NIL_RTTHREAD;
     else
         LogRelThisFunc(("Failed to stop X11 monitor thread, rc=%Rrc!\n",
                         rc));
+}
+
+/** VBoxClient service class wrapping the logic for the seamless service while
+ *  the main VBoxClient code provides the daemon logic needed by all services.
+ */
+class SeamlessService : public VBoxClient::Service
+{
+private:
+    VBoxGuestSeamlessHost mSeamless;
+    bool mIsInitialised;
+public:
+    virtual const char *getPidFilePath()
+    {
+        return ".vboxclient-seamless.pid";
+    }
+    virtual int run(bool fDaemonised /* = false */)
+    {
+        int rc;
+
+        if (mIsInitialised)  /* Assertion */
+        {
+            LogRelFunc(("error: called a second time! (VBoxClient)\n"));
+            rc = VERR_INTERNAL_ERROR;
+        }
+        if (RT_SUCCESS(rc))
+            rc = mSeamless.init();
+        if (RT_SUCCESS(rc))
+            rc = mSeamless.start();
+        if (RT_SUCCESS(rc))
+            mIsInitialised = true;
+        if (RT_FAILURE(rc))
+        {
+            LogRelFunc(("returning %Rrc (VBoxClient)\n", rc));
+            return rc;
+        }
+        /* Stay running as long as X does... */
+        Display *pDisplay = XOpenDisplay(NULL);
+        XEvent ev;
+        while (true)
+            XNextEvent(pDisplay, &ev);
+        return VERR_INTERRUPTED;
+    }
+    virtual void cleanup()
+    {
+        VbglR3SeamlessSetCap(false);
+    }
+};
+
+VBoxClient::Service *VBoxClient::GetSeamlessService()
+{
+    return new SeamlessService;
 }

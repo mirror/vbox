@@ -22,9 +22,6 @@
 #include <VBox/log.h>
 #include <iprt/avl.h>
 
-#include "seamless-x11.h"
-#include "seamless-host.h"
-
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/shape.h>
@@ -34,6 +31,17 @@
 
 /* This is defined wrong in my X11 header files! */
 #define VBoxShapeNotify 64
+
+/**
+ * Small virtual class which provides the interface for notifying the host of
+ * changes to the X11 window configuration, mainly split out from
+ * @a VBoxGuestSeamlessHost to simplify the unit test.
+ */
+class SeamlessHostProxy
+{
+public:
+    virtual void notify(RTRECT *pRects, size_t cRects) = 0;
+};
 
 /** Structure containing information about a guest window's position and visible area.
     Used inside of VBoxGuestWindowList. */
@@ -155,7 +163,7 @@ private:
 
     // Private member variables
     /** Pointer to the host class. */
-    VBoxGuestSeamlessHostInt *mHost;
+    SeamlessHostProxy *mHost;
     /** Our connection to the X11 display we are running on. */
     Display *mDisplay;
     /** Class to keep track of visible guest windows. */
@@ -200,7 +208,7 @@ public:
      *
      * @returns iprt status code
      */
-    int init(VBoxGuestSeamlessHostInt *pHost);
+    int init(SeamlessHostProxy *pHost);
 
     /**
      * Shutdown seamless event monitoring.

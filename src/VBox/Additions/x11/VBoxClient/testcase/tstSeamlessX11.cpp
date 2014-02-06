@@ -126,6 +126,5 @@ int main( int argc, char **argv)
         RTPrintf("Failed to initialise seamless Additions, rc = %d\n", rc);
     }
     RTStrmGetLine(g_pStdIn, ach, sizeof(ach));
-    seamless.uninit();
     return rc;
 }
