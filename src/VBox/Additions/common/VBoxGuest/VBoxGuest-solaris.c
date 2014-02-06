@@ -121,7 +121,8 @@ static struct dev_ops g_VBoxGuestSolarisDevOps =
     nodev,                  /* reset */
     &g_VBoxGuestSolarisCbOps,
     (struct bus_ops *)0,
-    nodev                   /* power */
+    nodev,                  /* power */
+    ddi_quiesce_not_needed
 };
 
 /**
@@ -810,6 +811,7 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip)
                             /* Remove allocated IRQs, too bad we can free only one handle at a time. */
                             for (int k = 0; k < g_cIntrAllocated; k++)
                                 ddi_intr_free(g_pIntr[k]);
+                            g_cIntrAllocated = 0;
                         }
                         else
                             LogRel((DEVICE_NAME "::AddIRQ: failed to allocated IRQs. count=%d\n", IntrCount));
@@ -852,6 +854,7 @@ static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip)
                 ddi_intr_free(g_pIntr[i]);
         }
     }
+    g_cIntrAllocated = 0;
     RTMemFree(g_pIntr);
     mutex_destroy(&g_IrqMtx);
 }
