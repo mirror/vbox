@@ -1688,7 +1688,7 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
              * Create the output file, including necessary paths.
              * Any existing file will be overwritten.
              */
-            rc = VirtualBox::ensureFilePathExists(Utf8Str(pcszFullFilenameOut), true /*fCreate*/);
+            rc = VirtualBox::i_ensureFilePathExists(Utf8Str(pcszFullFilenameOut), true /*fCreate*/);
             if (RT_SUCCESS(rc))
             {
                 RTVFSIOSTREAM hVfsIosDst;
@@ -1757,7 +1757,7 @@ int copyFileAndCalcShaDigest(const char *pcszSourceFilename, const char *pcszTar
          * Create the output file, including necessary paths.
          * Any existing file will be overwritten.
          */
-        rc = VirtualBox::ensureFilePathExists(Utf8Str(pcszTargetFilename), true /*fCreate*/);
+        rc = VirtualBox::i_ensureFilePathExists(Utf8Str(pcszTargetFilename), true /*fCreate*/);
         if (RT_SUCCESS(rc))
         {
             RTVFSIOSTREAM hVfsIosDst;

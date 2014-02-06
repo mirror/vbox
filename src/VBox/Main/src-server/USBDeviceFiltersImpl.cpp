@@ -50,7 +50,7 @@ struct USBDeviceFilters::Data
 {
     Data(Machine *pMachine)
         : pParent(pMachine),
-          pHost(pMachine->getVirtualBox()->host())
+          pHost(pMachine->getVirtualBox()->i_host())
     { }
 
     ~Data()

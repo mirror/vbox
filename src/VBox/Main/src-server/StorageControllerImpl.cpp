@@ -90,7 +90,7 @@ struct StorageController::Data
           pParent(aMachine)
     {
         unconst(pVirtualBox) = aMachine->getVirtualBox();
-        unconst(pSystemProperties) = pVirtualBox->getSystemProperties();
+        unconst(pSystemProperties) = pVirtualBox->i_getSystemProperties();
     }
 
     VirtualBox * const                  pVirtualBox;
@@ -146,7 +146,7 @@ HRESULT StorageController::init(Machine *aParent,
     HRESULT rc = aParent->COMGETTER(ChipsetType)(&chipsetType);
     if (FAILED(rc))
         return rc;
-    rc = aParent->getVirtualBox()->getSystemProperties()->GetMaxInstancesOfStorageBus(chipsetType, aStorageBus, &maxInstances);
+    rc = aParent->getVirtualBox()->i_getSystemProperties()->GetMaxInstancesOfStorageBus(chipsetType, aStorageBus, &maxInstances);
     if (FAILED(rc))
         return rc;
     if (aInstance >= maxInstances)

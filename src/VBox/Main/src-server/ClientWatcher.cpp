@@ -234,7 +234,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
                     CloseHandle(handles[i]);
 
                 // get reference to the machines list in VirtualBox
-                VirtualBox::MachinesOList &allMachines = that->mVirtualBox->getMachinesList();
+                VirtualBox::MachinesOList &allMachines = that->mVirtualBox->i_getMachinesList();
 
                 // lock the machines list for reading
                 AutoReadLock thatLock(allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -439,7 +439,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
             if (update || updateSpawned)
             {
                 // get reference to the machines list in VirtualBox
-                VirtualBox::MachinesOList &allMachines = that->mVirtualBox->getMachinesList();
+                VirtualBox::MachinesOList &allMachines = that->mVirtualBox->i_getMachinesList();
 
                 // lock the machines list for reading
                 AutoReadLock thatLock(allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -573,7 +573,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
                 /* RT_SUCCESS(rc) means an update event is signaled */
 
                 // get reference to the machines list in VirtualBox
-                VirtualBox::MachinesOList &allMachines = that->mVirtualBox->getMachinesList();
+                VirtualBox::MachinesOList &allMachines = that->mVirtualBox->i_getMachinesList();
 
                 // lock the machines list for reading
                 AutoReadLock thatLock(allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -742,7 +742,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
                 /* RT_SUCCESS(rc) means an update event is signaled */
 
                 // get reference to the machines list in VirtualBox
-                VirtualBox::MachinesOList &allMachines = that->mVirtualBox->getMachinesList();
+                VirtualBox::MachinesOList &allMachines = that->mVirtualBox->i_getMachinesList();
 
                 // lock the machines list for reading
                 AutoReadLock thatLock(allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);

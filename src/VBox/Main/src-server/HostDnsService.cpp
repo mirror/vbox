@@ -261,7 +261,7 @@ void HostDnsMonitorProxy::init(const HostDnsMonitor *mon, const VirtualBox* aPar
 void HostDnsMonitorProxy::notify() const
 {
     m->fModified = true;
-    const_cast<VirtualBox *>(m->virtualbox)->onHostNameResolutionConfigurationChange();
+    const_cast<VirtualBox *>(m->virtualbox)->i_onHostNameResolutionConfigurationChange();
 }
 
 HRESULT HostDnsMonitorProxy::GetNameServers(ComSafeArrayOut(BSTR, aNameServers))

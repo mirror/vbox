@@ -181,7 +181,7 @@ static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList 
     Utf8Str strLibrary;
 
 #ifdef VBOX_WITH_EXTPACK
-    ExtPackManager *pExtPackMgr = pVirtualBox->getExtPackManager();
+    ExtPackManager *pExtPackMgr = pVirtualBox->i_getExtPackManager();
     hr = pExtPackMgr->getLibraryPathForExtPack("VBoxHostWebcam", &strExtPackPuel, &strLibrary);
 #else
     hr = E_NOTIMPL;

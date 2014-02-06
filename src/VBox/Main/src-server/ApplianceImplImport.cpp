@@ -2211,7 +2211,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
     if (FAILED(rc)) throw rc;
 
     /* Get the system properties. */
-    SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
+    SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
 
     /*
      * we put strSourceOVF into the stack.llSrcDisksDigest in the end of this
@@ -2240,7 +2240,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
     int vrc = RTUuidFromStr(&uuid, strTargetPath->c_str());
     if (vrc == VINF_SUCCESS)
     {
-        rc = mVirtualBox->findHardDiskById(Guid(uuid), true, &pTargetHD);
+        rc = mVirtualBox->i_findHardDiskById(Guid(uuid), true, &pTargetHD);
         if (FAILED(rc)) throw rc;
     }
     else

@@ -91,9 +91,6 @@ static bool IsVBoxSVCPathSet = false;
  *  in sync with macros used for VirtualBox in server.cpp for the same purpose.
  */
 
-NS_DECL_CLASSINFO(VirtualBox)
-NS_IMPL_CI_INTERFACE_GETTER1(VirtualBox, IVirtualBox)
-
 static nsresult vboxsvcSpawnDaemon(void)
 {
     PRFileDesc *readable = nsnull, *writable = nsnull;

@@ -294,7 +294,7 @@ HRESULT Host::init(VirtualBox *aParent)
 #endif /* VBOX_WITH_USB */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    i_registerMetrics(aParent->performanceCollector());
+    i_registerMetrics(aParent->i_performanceCollector());
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
     /* Create the list of network interfaces so their metrics get registered. */
     i_updateNetIfList();
@@ -469,7 +469,7 @@ void Host::uninit()
         return;
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    PerformanceCollector *aCollector = m->pParent->performanceCollector();
+    PerformanceCollector *aCollector = m->pParent->i_performanceCollector();
     i_unregisterMetrics(aCollector);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
     /*
@@ -521,7 +521,7 @@ void Host::uninit()
 
 HRESULT Host::getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives)
 {
-    AutoWriteLock alock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
     HRESULT rc = i_getDrives(DeviceType_DVD, true /* fRefresh */, pList);
@@ -544,7 +544,7 @@ HRESULT Host::getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives)
  */
 HRESULT Host::getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives)
 {
-    AutoWriteLock alock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
     HRESULT rc = i_getDrives(DeviceType_Floppy, true /* fRefresh */, pList);
@@ -1417,7 +1417,7 @@ HRESULT Host::insertUSBDeviceFilter(ULONG aPosition,
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
     AutoWriteLock vboxLock(m->pParent COMMA_LOCKVAL_SRC_POS);
-    return rc = m->pParent->saveSettings();
+    return rc = m->pParent->i_saveSettings();
 #else
 
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
@@ -1472,7 +1472,7 @@ HRESULT Host::removeUSBDeviceFilter(ULONG aPosition)
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
     AutoWriteLock vboxLock(m->pParent COMMA_LOCKVAL_SRC_POS);
-    return rc = m->pParent->saveSettings();
+    return rc = m->pParent->i_saveSettings();
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -1802,7 +1802,7 @@ HRESULT Host::i_getDrives(DeviceType_T mediumType,
                           MediaList *&pll)
 {
     HRESULT rc = S_OK;
-    Assert(m->pParent->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+    Assert(m->pParent->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     MediaList llNew;
     MediaList *pllCached;
@@ -1927,7 +1927,7 @@ HRESULT Host::i_findHostDriveById(DeviceType_T mediumType,
 {
     MediaList *pllMedia;
 
-    AutoWriteLock wlock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wlock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = i_getDrives(mediumType, fRefresh, pllMedia);
     if (SUCCEEDED(rc))
     {
@@ -1967,7 +1967,7 @@ HRESULT Host::i_findHostDriveByName(DeviceType_T mediumType,
 {
     MediaList *pllMedia;
 
-    AutoWriteLock wlock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wlock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = i_getDrives(mediumType, fRefresh, pllMedia);
     if (SUCCEEDED(rc))
     {
@@ -2003,7 +2003,7 @@ HRESULT Host::i_findHostDriveByNameOrId(DeviceType_T mediumType,
                                         const Utf8Str &strNameOrId,
                                         ComObjPtr<Medium> &pMedium)
 {
-    AutoWriteLock wlock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wlock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     Guid uuid(strNameOrId);
     if (uuid.isValid() && !uuid.isZero())
@@ -2022,7 +2022,7 @@ HRESULT Host::i_buildDVDDrivesList(MediaList &list)
 {
     HRESULT rc = S_OK;
 
-    Assert(m->pParent->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+    Assert(m->pParent->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     try
     {
@@ -2104,7 +2104,7 @@ HRESULT Host::i_buildFloppyDrivesList(MediaList &list)
 {
     HRESULT rc = S_OK;
 
-    Assert(m->pParent->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+    Assert(m->pParent->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     try
     {
@@ -2246,7 +2246,7 @@ HRESULT Host::i_onUSBDeviceFilterChange(HostUSBDeviceFilter *aFilter,
         // for that we should hold only the VirtualBox lock
         alock.release();
         AutoWriteLock vboxLock(m->pParent COMMA_LOCKVAL_SRC_POS);
-        return m->pParent->saveSettings();
+        return m->pParent->i_saveSettings();
     }
 
     return S_OK;
@@ -2977,7 +2977,7 @@ HRESULT Host::i_updateNetIfList()
     listCopy = list;
     HostNetworkInterfaceList::iterator itOld, itNew;
 # ifdef VBOX_WITH_RESOURCE_USAGE_API
-    PerformanceCollector *aCollector = m->pParent->performanceCollector();
+    PerformanceCollector *aCollector = m->pParent->i_performanceCollector();
 # endif
     for (itOld = m->llNetIfs.begin(); itOld != m->llNetIfs.end(); ++itOld)
     {

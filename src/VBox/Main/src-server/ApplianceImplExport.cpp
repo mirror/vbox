@@ -1871,7 +1871,7 @@ HRESULT Appliance::i_writeFS(TaskOVF *pTask)
 
     // Lock the media tree early to make sure nobody else tries to make changes
     // to the tree. Also lock the IAppliance object for writing.
-    AutoMultiWriteLock2 multiLock(&mVirtualBox->getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 multiLock(&mVirtualBox->i_getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
     // Additional protect the IAppliance object, cause we leave the lock
     // when starting the disk export and we don't won't block other
     // callers on this lengthy operations.
@@ -2054,7 +2054,7 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
         ComObjPtr<MediumFormat> format;
         // Scope for the AutoReadLock
         {
-            SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
+            SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
             AutoReadLock propsLock(pSysProps COMMA_LOCKVAL_SRC_POS);
             // We are always exporting to VMDK stream optimized for now
             formatTemp = pSysProps->i_mediumFormatFromExtension("iso");
@@ -2091,16 +2091,16 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
 
             if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
             {
-                rc = mVirtualBox->findHardDiskByLocation(strSrcFilePath, true, &pSourceDisk);
+                rc = mVirtualBox->i_findHardDiskByLocation(strSrcFilePath, true, &pSourceDisk);
                 if (FAILED(rc)) throw rc;
             }
             else//may be CD or DVD
             {
-                rc = mVirtualBox->findDVDOrFloppyImage(DeviceType_DVD,
-                                                       NULL,
-                                                       strSrcFilePath,
-                                                       true,
-                                                       &pSourceDisk);
+                rc = mVirtualBox->i_findDVDOrFloppyImage(DeviceType_DVD,
+                                                         NULL,
+                                                         strSrcFilePath,
+                                                         true,
+                                                         &pSourceDisk);
                 if (FAILED(rc)) throw rc;
             }
 
