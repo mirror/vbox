@@ -72,6 +72,15 @@ public:
     class CallbackEvent;
     friend class CallbackEvent;
 
+    DECLARE_CLASSFACTORY_SINGLETON(VirtualBox)
+
+    DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)
+
+    // Kind of redundant (VirtualBoxWrap declares itself not aggregatable and
+    // CComCoClass<VirtualBox, &CLSID_VirtualBox> as aggregatable, the former
+    // is the first inheritance), but the C++ multiple inheritance rules and
+    // the class factory in svcmain.cpp needs this to disambiguate.
+    DECLARE_NOT_AGGREGATABLE(VirtualBox)
 
     // to postpone generation of the default ctor/dtor
     DECLARE_EMPTY_CTOR_DTOR(VirtualBox)
