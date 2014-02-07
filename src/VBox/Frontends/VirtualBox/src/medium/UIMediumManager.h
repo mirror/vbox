@@ -64,12 +64,10 @@ public:
     static UIMediumManager* instance();
     static void showModeless(QWidget *pCenterWidget, bool fRefresh = true);
 
-public slots:
-
-    /* Handler: Refresh stuff: */
-    void refreshAll();
-
 private slots:
+
+    /** Fully refreshes medium manager contents. */
+    void sltRefreshAll();
 
     /* Handlers: Medium-processing stuff: */
     void sltHandleMediumCreated(const QString &strMediumID);
@@ -142,10 +140,12 @@ private:
     /* Handler: Translation stuff: */
     void retranslateUi();
 
-    /** Creates UIMediumItem for corresponding UIMedium. */
+    /** Creates UIMediumItem for corresponding @a medium. */
     void createMediumItem(const UIMedium &medium);
-    /** Updates UIMediumItem for corresponding UIMedium. */
+    /** Updates UIMediumItem for corresponding @a medium. */
     void updateMediumItem(const UIMedium &medium);
+    /** Deletes UIMediumItem for corresponding @a strMediumID. */
+    void deleteMediumItem(const QString &strMediumID);
 
     /* Helpers: Medium-modification stuff: */
     bool releaseMediumFrom(const UIMedium &medium, const QString &strMachineId);

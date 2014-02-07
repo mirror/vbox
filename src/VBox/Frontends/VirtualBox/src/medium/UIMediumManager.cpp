@@ -272,7 +272,7 @@ void UIMediumManager::showModeless(QWidget *pCenterWidget /* = 0 */, bool fRefre
     m_spInstance->activateWindow();
 }
 
-void UIMediumManager::refreshAll()
+void UIMediumManager::sltRefreshAll()
 {
     /* Start medium-enumeration: */
     vboxGlobal().startMediumEnumeration();
@@ -292,37 +292,14 @@ void UIMediumManager::sltHandleMediumCreated(const QString &strMediumID)
     if (isMediumAttachedToHiddenMachinesOnly(medium))
         return;
 
-    /* Create UIMediumItem for corresponding UIMedium: */
+    /* Create UIMediumItem for corresponding 'medium': */
     createMediumItem(medium);
 }
 
 void UIMediumManager::sltHandleMediumDeleted(const QString &strMediumID)
 {
-    /* Get tree-widget / medium-item: */
-    QList<UIMediumType> types;
-    types << UIMediumType_HardDisk << UIMediumType_DVD << UIMediumType_Floppy;
-    QTreeWidget *pTreeWidget = 0;
-    UIMediumItem *pMediumItem = 0;
-    foreach (UIMediumType type, types)
-    {
-        pTreeWidget = treeWidget(type);
-        pMediumItem = searchItem(pTreeWidget, CheckIfSuitableByID(strMediumID));
-        if (pMediumItem)
-            break;
-    }
-
-    /* Skip further actions if medium-item was not found: */
-    if (!pMediumItem)
-        return;
-
-    /* Update tab-icons: */
-    updateTabIcons(pMediumItem, ItemAction_Removed);
-
-    /* Delete medium-item: */
-    delete pMediumItem;
-
-    /* Make sure 'current' or at least 'first available' medium-item is currently selected, if any: */
-    setCurrentItem(pTreeWidget, pTreeWidget->currentItem() ? pTreeWidget->currentItem() : pTreeWidget->topLevelItem(0));
+    /* Delete UIMediumItem for corresponding 'strMediumID': */
+    deleteMediumItem(strMediumID);
 }
 
 void UIMediumManager::sltHandleMediumEnumerationStart()
@@ -366,7 +343,7 @@ void UIMediumManager::sltHandleMediumEnumerated(const QString &strMediumID)
     if (isMediumAttachedToHiddenMachinesOnly(medium))
         return;
 
-    /* Update UIMediumItem for corresponding UIMedium: */
+    /* Update UIMediumItem for corresponding 'medium': */
     updateMediumItem(medium);
 
     /* Advance progress-bar: */
@@ -800,7 +777,7 @@ void UIMediumManager::prepareActions()
         m_pActionRefresh->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
                                                           ":/refresh_22px.png", ":/refresh_16px.png",
                                                           ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
-        connect(m_pActionRefresh, SIGNAL(triggered()), this, SLOT(refreshAll()));
+        connect(m_pActionRefresh, SIGNAL(triggered()), this, SLOT(sltRefreshAll()));
     }
 }
 
@@ -1350,14 +1327,19 @@ void UIMediumManager::retranslateUi()
 
     /* Full refresh if there is at least one item present: */
     if (mTwHD->topLevelItemCount() || mTwCD->topLevelItemCount() || mTwFD->topLevelItemCount())
-        refreshAll();
+        sltRefreshAll();
 }
 
 void UIMediumManager::createMediumItem(const UIMedium &medium)
 {
+    /* Get medium type: */
+    UIMediumType type = medium.type();
+    /* Get corresponding tree-widget: */
+    QTreeWidget *pTreeWidget = treeWidget(type);
+
     /* Prepare medium-item: */
     UIMediumItem *pMediumItem = 0;
-    switch (medium.type())
+    switch (type)
     {
         /* Of hard-drive type: */
         case UIMediumType_HardDisk:
@@ -1397,47 +1379,78 @@ void UIMediumManager::createMediumItem(const UIMedium &medium)
             }
             break;
         }
-        default: AssertFailed();
+        default: AssertMsgFailed(("Medium-type unknown: %d\n", type)); break;
     }
     AssertPtrReturnVoid(pMediumItem);
 
     /* Update tab-icons: */
     updateTabIcons(pMediumItem, ItemAction_Added);
 
-    /* If medium-enumeration is not currently in progress we have to select the
-     * newly added item as the 'current-item' (it seems new image was added): */
-    if (!vboxGlobal().isMediumEnumerationInProgress())
-        setCurrentItem(treeWidget(medium.type()), pMediumItem);
+    /* If medium-enumeration is not currently in progress or
+     * if there is no 'current' medium-item yet selected
+     * we have to choose newly added medium-item as 'current' one: */
+    if (   !vboxGlobal().isMediumEnumerationInProgress()
+        || !pTreeWidget->currentItem())
+        setCurrentItem(pTreeWidget, pMediumItem);
 
-    /* If no 'current-item' yet selected
-     * we have to choose newly added as the 'current-item': */
-    if (!treeWidget(medium.type())->currentItem())
-        setCurrentItem(treeWidget(medium.type()), pMediumItem);
-
-    /* Update linked stuff if that was 'current-item' added: */
-    if (pMediumItem == currentTreeWidget()->currentItem())
+    /* Update linked stuff if that was current medium-item created: */
+    if (pMediumItem == currentMediumItem())
         sltHandleCurrentItemChanged(pMediumItem);
 }
 
 void UIMediumManager::updateMediumItem(const UIMedium &medium)
 {
-    /* Search for the existing medium-item: */
+    /* Search for existing medium-item: */
     UIMediumItem *pMediumItem = searchItem(treeWidget(medium.type()), CheckIfSuitableByID(medium.id()));
 
-    /* Create new if was not found: */
+    /* Create medium-item (if it was not found): */
     if (!pMediumItem)
         return createMediumItem(medium);
 
-    /* Update otherwise: */
+    /* Update medium-item: */
     pMediumItem->setMedium(medium);
     LogRel2(("UIMediumManager: Medium-item with ID={%s} updated.\n", medium.id().toAscii().constData()));
 
     /* Update tab-icons: */
     updateTabIcons(pMediumItem, ItemAction_Updated);
 
-    /* Update linked stuff if that was 'current-item' updated: */
-    if (pMediumItem == currentTreeWidget()->currentItem())
+    /* Update linked stuff if that was current medium-item updated: */
+    if (pMediumItem == currentMediumItem())
         sltHandleCurrentItemChanged(pMediumItem);
+}
+
+void UIMediumManager::deleteMediumItem(const QString &strMediumID)
+{
+    /* Search for corresponding tree-widget: */
+    QList<UIMediumType> types;
+    types << UIMediumType_HardDisk << UIMediumType_DVD << UIMediumType_Floppy;
+    QTreeWidget *pTreeWidget = 0;
+    UIMediumItem *pMediumItem = 0;
+    foreach (UIMediumType type, types)
+    {
+        /* Get iterated tree-widget: */
+        pTreeWidget = treeWidget(type);
+        /* Search for existing medium-item: */
+        pMediumItem = searchItem(pTreeWidget, CheckIfSuitableByID(strMediumID));
+        if (pMediumItem)
+            break;
+    }
+
+    /* Ignore medium-item (if it was not found): */
+    if (!pMediumItem)
+        return;
+
+    /* Update tab-icons: */
+    updateTabIcons(pMediumItem, ItemAction_Removed);
+
+    /* Delete medium-item: */
+    delete pMediumItem;
+    LogRel2(("UIMediumManager: Medium-item with ID={%s} deleted.\n", strMediumID.toAscii().constData()));
+
+    /* If there is no 'current' medium-item now selected
+     * we have to choose first-available medium-item as 'current' one: */
+    if (!pTreeWidget->currentItem())
+        setCurrentItem(pTreeWidget, pTreeWidget->topLevelItem(0));
 }
 
 bool UIMediumManager::releaseMediumFrom(const UIMedium &medium, const QString &strMachineId)
