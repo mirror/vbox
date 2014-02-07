@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2013 Oracle Corporation
+ * Copyright (C) 2004-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -94,6 +94,14 @@
 #endif
 # include "NATNetworkImpl.h"
 
+// This needs to stay - it is needed by the service registration below, and
+// is defined in the automatically generated VirtualBoxWrap.cpp
+extern nsIClassInfo *NS_CLASSINFO_NAME(VirtualBoxWrap);
+NS_DECL_CI_INTERFACE_GETTER(VirtualBoxWrap)
+
+// The declarations/implementations of the various XPCOM helper data structures
+// and functions have to be removed bit by bit, as the conversion to the
+// automatically generated wrappers makes them obsolete.
 
 /* implement nsISupports parts of our objects with support for nsIClassInfo */
 NS_DECL_CLASSINFO(Machine)
@@ -833,9 +841,9 @@ int main(int argc, char **argv)
         NULL, // registration function
         NULL, // deregistration function
         VirtualBoxClassFactory::FactoryDestructor, // factory destructor function
-        NS_CI_INTERFACE_GETTER_NAME(VirtualBox),
+        NS_CI_INTERFACE_GETTER_NAME(VirtualBoxWrap),
         NULL, // language helper
-        &NS_CLASSINFO_NAME(VirtualBox),
+        &NS_CLASSINFO_NAME(VirtualBoxWrap),
         0 // flags
     };
 
@@ -855,7 +863,7 @@ int main(int argc, char **argv)
             break;
         }
 
-        nsCOMPtr <nsIComponentRegistrar> registrar;
+        nsCOMPtr<nsIComponentRegistrar> registrar;
         rc = NS_GetComponentRegistrar(getter_AddRefs(registrar));
         if (NS_FAILED(rc))
         {
