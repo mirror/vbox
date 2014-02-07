@@ -56,6 +56,121 @@
 #include "internal/string.h"
 
 
+/**
+ * Helper function to format IPv6 address according to RFC 5952.
+ *
+ * @returns The number of bytes formatted.
+ * @param   pfnOutput       Pointer to output function.
+ * @param   pvArgOutput     Argument for the output function.
+ * @param   pIpv6Addr       IPv6 address
+ */
+static size_t rtstrFormatIPv6(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PCRTNETADDRIPV6 pIpv6Addr)
+{
+    size_t cch = 0; /* result */
+
+    bool fEmbeddedIpv4;
+    size_t cwHexPart;
+    size_t cwZeroRun, cwLongestZeroRun;
+    size_t iZeroStart, iLongestZeroStart;
+    size_t idx;
+
+    Assert(pIpv6Addr != NULL);
+
+    /*
+     * Check for embedded IPv4 address.
+     *
+     * IPv4-compatible - ::11.22.33.44 (obsolete)
+     * IPv4-mapped     - ::ffff:11.22.33.44
+     * IPv4-translated - ::ffff:0:11.22.33.44 (RFC 2765)
+     */
+    fEmbeddedIpv4 = false;
+    cwHexPart = RT_ELEMENTS(pIpv6Addr->au16);
+    if (pIpv6Addr->au64[0] == 0
+        && (   (pIpv6Addr->au32[2] == 0
+                && (   pIpv6Addr->au32[3] != 0
+                    && pIpv6Addr->au32[3] != RT_H2BE_U32_C(1)))
+            || pIpv6Addr->au32[2] == RT_H2BE_U32_C(0x0000ffff)
+            || pIpv6Addr->au32[2] == RT_H2BE_U32_C(0xffff0000)))
+    {
+        fEmbeddedIpv4 = true;
+        cwHexPart -= 2;
+    }
+
+    cwZeroRun = cwLongestZeroRun = 0;
+    iZeroStart = iLongestZeroStart = -1;
+    for (idx = 0; idx <= cwHexPart; ++idx)
+    {
+        if (idx < cwHexPart && pIpv6Addr->au16[idx] == 0)
+        {
+            if (cwZeroRun == 0)
+            {
+                cwZeroRun = 1;
+                iZeroStart = idx;
+            }
+            else
+                ++cwZeroRun;
+        }
+        else
+        {
+            if (cwZeroRun != 0)
+            {
+                if (cwZeroRun > 1 && cwZeroRun > cwLongestZeroRun)
+                {
+                    cwLongestZeroRun = cwZeroRun;
+                    iLongestZeroStart = iZeroStart;
+                }
+                cwZeroRun = 0;
+                iZeroStart = -1;
+            }
+        }
+    }
+
+    if (cwLongestZeroRun == 0)
+    {
+        for (idx = 0; idx < cwHexPart; ++idx)
+            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                               "%s%x",
+                               idx == 0 ? "" : ":",
+                               RT_BE2H_U16(pIpv6Addr->au16[idx]));
+
+        if (fEmbeddedIpv4)
+            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ":");
+    }
+    else
+    {
+        const size_t iLongestZeroEnd = iLongestZeroStart + cwLongestZeroRun;
+
+        if (iLongestZeroStart == 0)
+            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ":");
+        else
+            for (idx = 0; idx < iLongestZeroStart; ++idx)
+                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                   "%x:", RT_BE2H_U16(pIpv6Addr->au16[idx]));
+
+        if (iLongestZeroEnd == cwHexPart)
+            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ":");
+        else
+        {
+            for (idx = iLongestZeroEnd; idx < cwHexPart; ++idx)
+                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                   ":%x", RT_BE2H_U16(pIpv6Addr->au16[idx]));
+
+            if (fEmbeddedIpv4)
+                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ":");
+        }
+    }
+
+    if (fEmbeddedIpv4)
+        cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                           "%u.%u.%u.%u",
+                           pIpv6Addr->au8[12],
+                           pIpv6Addr->au8[13],
+                           pIpv6Addr->au8[14],
+                           pIpv6Addr->au8[15]);
+
+    return cch;
+}
+
 
 /**
  * Callback to format iprt formatting extentions.
@@ -394,24 +509,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     case RTSF_IPV6:
                     {
                         if (VALID_PTR(u.pIpv6Addr))
-                            return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                               "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-                                               u.pIpv6Addr->au8[0],
-                                               u.pIpv6Addr->au8[1],
-                                               u.pIpv6Addr->au8[2],
-                                               u.pIpv6Addr->au8[3],
-                                               u.pIpv6Addr->au8[4],
-                                               u.pIpv6Addr->au8[5],
-                                               u.pIpv6Addr->au8[6],
-                                               u.pIpv6Addr->au8[7],
-                                               u.pIpv6Addr->au8[8],
-                                               u.pIpv6Addr->au8[9],
-                                               u.pIpv6Addr->au8[10],
-                                               u.pIpv6Addr->au8[11],
-                                               u.pIpv6Addr->au8[12],
-                                               u.pIpv6Addr->au8[13],
-                                               u.pIpv6Addr->au8[14],
-                                               u.pIpv6Addr->au8[15]);
+                            return rtstrFormatIPv6(pfnOutput, pvArgOutput, u.pIpv6Addr);
                         return pfnOutput(pvArgOutput, s_szNull, sizeof(s_szNull) - 1);
                     }
 
@@ -453,42 +551,11 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
 
                                 case RTNETADDRTYPE_IPV6:
                                     if (u.pNetAddr->uPort == RTNETADDR_PORT_NA)
-                                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                                           "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-                                                           u.pNetAddr->uAddr.IPv6.au8[0],
-                                                           u.pNetAddr->uAddr.IPv6.au8[1],
-                                                           u.pNetAddr->uAddr.IPv6.au8[2],
-                                                           u.pNetAddr->uAddr.IPv6.au8[3],
-                                                           u.pNetAddr->uAddr.IPv6.au8[4],
-                                                           u.pNetAddr->uAddr.IPv6.au8[5],
-                                                           u.pNetAddr->uAddr.IPv6.au8[6],
-                                                           u.pNetAddr->uAddr.IPv6.au8[7],
-                                                           u.pNetAddr->uAddr.IPv6.au8[8],
-                                                           u.pNetAddr->uAddr.IPv6.au8[9],
-                                                           u.pNetAddr->uAddr.IPv6.au8[10],
-                                                           u.pNetAddr->uAddr.IPv6.au8[11],
-                                                           u.pNetAddr->uAddr.IPv6.au8[12],
-                                                           u.pNetAddr->uAddr.IPv6.au8[13],
-                                                           u.pNetAddr->uAddr.IPv6.au8[14],
-                                                           u.pNetAddr->uAddr.IPv6.au8[15]);
+                                        return rtstrFormatIPv6(pfnOutput, pvArgOutput, &u.pNetAddr->uAddr.IPv6);
+
                                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                                       "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x %u",
-                                                       u.pNetAddr->uAddr.IPv6.au8[0],
-                                                       u.pNetAddr->uAddr.IPv6.au8[1],
-                                                       u.pNetAddr->uAddr.IPv6.au8[2],
-                                                       u.pNetAddr->uAddr.IPv6.au8[3],
-                                                       u.pNetAddr->uAddr.IPv6.au8[4],
-                                                       u.pNetAddr->uAddr.IPv6.au8[5],
-                                                       u.pNetAddr->uAddr.IPv6.au8[6],
-                                                       u.pNetAddr->uAddr.IPv6.au8[7],
-                                                       u.pNetAddr->uAddr.IPv6.au8[8],
-                                                       u.pNetAddr->uAddr.IPv6.au8[9],
-                                                       u.pNetAddr->uAddr.IPv6.au8[10],
-                                                       u.pNetAddr->uAddr.IPv6.au8[11],
-                                                       u.pNetAddr->uAddr.IPv6.au8[12],
-                                                       u.pNetAddr->uAddr.IPv6.au8[13],
-                                                       u.pNetAddr->uAddr.IPv6.au8[14],
-                                                       u.pNetAddr->uAddr.IPv6.au8[15],
+                                                       "[%RTnaipv6]:%u",
+                                                       &u.pNetAddr->uAddr.IPv6,
                                                        u.pNetAddr->uPort);
 
                                 case RTNETADDRTYPE_MAC:
