@@ -657,7 +657,16 @@ DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable)
 {
 }
 
-DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, CR_SCREENSHOT *pScreenshot)
+DECLEXPORT(void) crServerVBoxScreenshotRelease(CR_SCREENSHOT *pScreenshot)
+{
+    if (pScreenshot->fDataAllocated)
+    {
+        RTMemFree(pScreenshot->Img.pvData);
+        pScreenshot->fDataAllocated = 0;
+    }
+}
+
+DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, uint32_t width, uint32_t height, uint32_t pitch, void *pvBuffer, CR_SCREENSHOT *pScreenshot)
 {
     HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32Screen);
     if (!hFb)
@@ -665,61 +674,77 @@ DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, CR_SCREENSHOT *pSc
 
     const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
 
-    if (CrFbHas3DData(hFb))
+    if (!width)
+        width = pScreen->u32Width;
+    if (!height)
+        height = pScreen->u32Height;
+    if (!pitch)
+        pitch = pScreen->u32LineSize;
+
+    if (CrFbHas3DData(hFb)
+            || pScreen->u32Width != width
+            || pScreen->u32Height != height
+            || pScreen->u32LineSize != pitch
+            || pScreen->u16BitsPerPixel != 32)
     {
-        RTPOINT Pos = {0, 0};
         RTRECT Rect;
 
         pScreenshot->Img.cbData = pScreen->u32LineSize * pScreen->u32Height;
-        pScreenshot->Img.pvData = RTMemAlloc(pScreenshot->Img.cbData);
-        if (!pScreenshot->Img.pvData)
+        if (!pvBuffer)
         {
-            WARN(("RTMemAlloc failed"));
-            return VERR_NO_MEMORY;
+            pScreenshot->Img.pvData = RTMemAlloc(pScreenshot->Img.cbData);
+            if (!pScreenshot->Img.pvData)
+            {
+                WARN(("RTMemAlloc failed"));
+                return VERR_NO_MEMORY;
+            }
+            pScreenshot->fDataAllocated = 1;
         }
+        else
+        {
+            pScreenshot->Img.pvData = pvBuffer;
+            pScreenshot->fDataAllocated = 0;
+        }
+
         pScreenshot->Img.enmFormat = GL_BGRA;
-        pScreenshot->Img.width = pScreen->u32Width;
-        pScreenshot->Img.height = pScreen->u32Height;
-        pScreenshot->Img.bpp = pScreen->u16BitsPerPixel;
-        pScreenshot->Img.pitch = pScreen->u32LineSize;
+        pScreenshot->Img.width = width;
+        pScreenshot->Img.height = height;
+        pScreenshot->Img.bpp = 32;
+        pScreenshot->Img.pitch = pitch;
         Rect.xLeft = 0;
         Rect.yTop = 0;
-        Rect.xRight = pScreenshot->Img.width;
-        Rect.yBottom = pScreenshot->Img.height;
-        int rc = CrFbBltGetContents(hFb, &Pos, 1, &Rect, &pScreenshot->Img);
+        Rect.xRight = pScreen->u32Width;
+        Rect.yBottom = pScreen->u32Height;
+        int rc = CrFbBltGetContents(hFb, &Rect, 1, &Rect, &pScreenshot->Img);
         if (!RT_SUCCESS(rc))
         {
             WARN(("CrFbBltGetContents failed %d", rc));
-            RTMemFree(pScreenshot->Img.pvData);
+            crServerVBoxScreenshotRelease(pScreenshot);
             return rc;
         }
-        pScreenshot->fDataIsFbDirect = 0;
     }
     else
     {
-        pScreenshot->Img.pvData = CrFbGetVRAM(hFb);
         pScreenshot->Img.cbData = pScreen->u32LineSize * pScreen->u32Height;
+        if (!pvBuffer)
+            pScreenshot->Img.pvData = CrFbGetVRAM(hFb);
+        else
+        {
+            pScreenshot->Img.pvData = pvBuffer;
+            memcpy(pvBuffer, CrFbGetVRAM(hFb), pScreenshot->Img.cbData);
+        }
         pScreenshot->Img.enmFormat = GL_BGRA;
         pScreenshot->Img.width = pScreen->u32Width;
         pScreenshot->Img.height = pScreen->u32Height;
         pScreenshot->Img.bpp = pScreen->u16BitsPerPixel;
         pScreenshot->Img.pitch = pScreen->u32LineSize;
 
-        pScreenshot->fDataIsFbDirect = 1;
+        pScreenshot->fDataAllocated = 0;
     }
 
     pScreenshot->u32Screen = u32Screen;
 
     return VINF_SUCCESS;
-}
-
-DECLEXPORT(void) crServerVBoxScreenshotRelease(CR_SCREENSHOT *pScreenshot)
-{
-    if (!pScreenshot->fDataIsFbDirect)
-    {
-        RTMemFree(pScreenshot->Img.pvData);
-        pScreenshot->fDataIsFbDirect = 1;
-    }
 }
 
 void crServerPresentFBO(CRMuralInfo *mural)

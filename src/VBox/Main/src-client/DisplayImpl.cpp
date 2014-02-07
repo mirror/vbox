@@ -151,6 +151,7 @@ HRESULT Display::FinalConstruct()
 #endif
 #ifdef VBOX_WITH_CROGL
     RT_ZERO(mCrOglCallbacks);
+    RT_ZERO(mCrOglScreenshotData);
     mfCrOglVideoRecState = CRVREC_STATE_IDLE;
     mCrOglScreenshotData.u32Screen = CRSCREEN_ALL;
     mCrOglScreenshotData.pvContext = this;
@@ -2414,6 +2415,54 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
     return S_OK;
 }
 
+#ifdef VBOX_WITH_CROGL
+BOOL Display::displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreenId, uint8_t *pu8Data, uint32_t u32Width, uint32_t u32Height)
+{
+    BOOL is3denabled;
+    pDisplay->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+    if (is3denabled && pDisplay->mCrOglCallbacks.pfnHasData())
+    {
+        VMMDev *pVMMDev = pDisplay->mParent->getVMMDev();
+        if (pVMMDev)
+        {
+            CRVBOXHGCMTAKESCREENSHOT *pScreenshot = (CRVBOXHGCMTAKESCREENSHOT*)RTMemAlloc(sizeof (*pScreenshot));
+            if (pScreenshot)
+            {
+                /* screen id or CRSCREEN_ALL to specify all enabled */
+                pScreenshot->u32Screen = aScreenId;
+                pScreenshot->u32Width = u32Width;
+                pScreenshot->u32Height = u32Height;
+                pScreenshot->u32Pitch = u32Width * 4;
+                pScreenshot->pvBuffer = pu8Data;
+                pScreenshot->pvContext = NULL;
+                pScreenshot->pfnScreenshotBegin = NULL;
+                pScreenshot->pfnScreenshotPerform = NULL;
+                pScreenshot->pfnScreenshotEnd = NULL;
+
+                VBOXHGCMSVCPARM parm;
+
+                parm.type = VBOX_HGCM_SVC_PARM_PTR;
+                parm.u.pointer.addr = pScreenshot;
+                parm.u.pointer.size = sizeof (*pScreenshot);
+
+                int rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_TAKE_SCREENSHOT, 1, &parm);
+
+                RTMemFree(pScreenshot);
+
+                if (RT_SUCCESS(rc))
+                    return TRUE;
+                else
+                {
+                    AssertMsgFailed(("failed to get screenshot data from crOgl %d\n", rc));
+                    /* fall back to the non-3d mechanism */
+                }
+            }
+        }
+    }
+    return FALSE;
+}
+#endif
+
 int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height)
 {
     int rc;
@@ -2509,6 +2558,11 @@ static int displayTakeScreenshot(PUVM pUVM, Display *pDisplay, struct DRVMAINDIS
     uint32_t cx = 0;
     uint32_t cy = 0;
     int vrc = VINF_SUCCESS;
+
+# if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+    if (Display::displayCheckTakeScreenshotCrOgl(pDisplay, aScreenId, (uint8_t*)address, width, height))
+        return VINF_SUCCESS;
+#endif
 
     int cRetries = 5;
 

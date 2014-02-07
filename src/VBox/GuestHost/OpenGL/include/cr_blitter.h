@@ -79,8 +79,7 @@ typedef union CR_BLITTER_FLAGS
         uint32_t LastWasFBODraw      : 1;
         uint32_t ForceDrawBlit       : 1;
         uint32_t ShadersGloal        : 1;
-        uint32_t Entered             : 1;
-        uint32_t Reserved            : 23;
+        uint32_t Reserved            : 24;
     };
     uint32_t Value;
 } CR_BLITTER_FLAGS, *PCR_BLITTER_FLAGS;
@@ -121,6 +120,7 @@ typedef struct CR_BLITTER
 {
     GLuint idFBO;
     CR_BLITTER_FLAGS Flags;
+    uint32_t cEnters;
     PFNCRBLT_BLITTER pfnBlt;
     CR_BLITTER_BUFFER Verticies;
     CR_BLITTER_BUFFER Indicies;
@@ -151,7 +151,7 @@ DECLINLINE(GLboolean) CrBltSupportsTexTex(PCR_BLITTER pBlitter)
 
 DECLINLINE(GLboolean) CrBltIsEntered(PCR_BLITTER pBlitter)
 {
-    return pBlitter->Flags.Entered;
+    return !!pBlitter->cEnters;
 }
 
 DECLINLINE(GLint) CrBltGetVisBits(PCR_BLITTER pBlitter)
@@ -197,10 +197,11 @@ typedef union CR_TEXDATA_FLAGS
 {
     struct
     {
+        uint32_t DataValid           : 1;
+        uint32_t DataAcquired        : 1;
         uint32_t DataInverted        : 1;
         uint32_t Entered             : 1;
-        uint32_t BltEntered          : 1;
-        uint32_t Reserved            : 29;
+        uint32_t Reserved            : 28;
     };
     uint32_t Value;
 } CR_TEXDATA_FLAGS, *PCR_TEXDATA_FLAGS;
@@ -218,6 +219,7 @@ typedef struct CR_TEXDATA
     CR_BLITTER_IMG Img;
     /*dtor*/
     PFNCRTEXDATA_RELEASED pfnTextureReleased;
+    struct CR_TEXDATA *pStretchedCache;
 } CR_TEXDATA, *PCR_TEXDATA;
 
 DECLINLINE(void) CrTdInit(PCR_TEXDATA pTex, const VBOXVR_TEXTURE *pVrTex, PCR_BLITTER pBlitter, PFNCRTEXDATA_RELEASED pfnTextureReleased)
@@ -234,20 +236,22 @@ DECLINLINE(const VBOXVR_TEXTURE*) CrTdTexGet(const CR_TEXDATA *pTex)
     return &pTex->Tex;
 }
 
+DECLINLINE(PCR_BLITTER) CrTdBlitterGet(CR_TEXDATA *pTex)
+{
+    return pTex->pBlitter;
+}
+
 DECLINLINE(int) CrTdBltEnter(PCR_TEXDATA pTex)
 {
+    int rc;
 	if (pTex->Flags.Entered)
 		return VERR_INVALID_STATE;
-	if (!CrBltIsEntered(pTex->pBlitter))
-	{
-		int rc = CrBltEnter(pTex->pBlitter);
-		if (!RT_SUCCESS(rc))
-		{
-			WARN(("CrBltEnter failed rc %d", rc));
-			return rc;
-		}
-		pTex->Flags.BltEntered = 1;
-	}
+	rc = CrBltEnter(pTex->pBlitter);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("CrBltEnter failed rc %d", rc));
+        return rc;
+    }
 	pTex->Flags.Entered = 1;
 	return VINF_SUCCESS;
 }
@@ -265,27 +269,31 @@ DECLINLINE(void) CrTdBltLeave(PCR_TEXDATA pTex)
 		return;
 	}
 
-	if (pTex->Flags.BltEntered)
-	{
-		CrBltLeave(pTex->pBlitter);
-		pTex->Flags.BltEntered = 0;
-	}
+	CrBltLeave(pTex->pBlitter);
 
 	pTex->Flags.Entered = 0;
 }
 
 /* the CrTdBltXxx calls are done with the entered blitter */
 /* acquire the texture data, returns the cached data in case it is cached.
- * the data remains cached in the CR_TEXDATA object until it is discarded with CrTdBltDataDiscard or CrTdBltDataCleanup.
+ * the data remains cached in the CR_TEXDATA object until it is discarded with CrTdBltDataFree or CrTdBltDataCleanup.
  * */
 VBOXBLITTERDECL(int) CrTdBltDataAcquire(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted, const CR_BLITTER_IMG**ppImg);
-/* release the texture data, the data remains cached in the CR_TEXDATA object until it is discarded with CrTdBltDataDiscard or CrTdBltDataCleanup */
+
+VBOXBLITTERDECL(int) CrTdBltDataAcquireStretched(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted, uint32_t width, uint32_t height, const CR_BLITTER_IMG**ppImg);
+
+VBOXBLITTERDECL(int) CrTdBltDataReleaseStretched(PCR_TEXDATA pTex, const CR_BLITTER_IMG *pImg);
+
+VBOXBLITTERDECL(void) CrTdBltStretchCacheMoveTo(PCR_TEXDATA pTex, PCR_TEXDATA pDstTex);
+
+/* release the texture data, the data remains cached in the CR_TEXDATA object until it is discarded with CrTdBltDataFree or CrTdBltDataCleanup */
 VBOXBLITTERDECL(int) CrTdBltDataRelease(PCR_TEXDATA pTex);
 /* discard the texture data cached with previous CrTdBltDataAcquire.
  * Must be called wit data released (CrTdBltDataRelease) */
-VBOXBLITTERDECL(int) CrTdBltDataDiscard(PCR_TEXDATA pTex);
-VBOXBLITTERDECL(int) CrTdBltDataDiscardNe(PCR_TEXDATA pTex);
-/* does same as CrTdBltDataDiscard, and in addition cleans up.
+VBOXBLITTERDECL(int) CrTdBltDataFree(PCR_TEXDATA pTex);
+VBOXBLITTERDECL(int) CrTdBltDataFreeNe(PCR_TEXDATA pTex);
+VBOXBLITTERDECL(void) CrTdBltDataInvalidateNe(PCR_TEXDATA pTex);
+/* does same as CrTdBltDataFree, and in addition cleans up.
  * this is kind of a texture destructor, which clients should call on texture object destruction, e.g. from the PFNCRTEXDATA_RELEASED callback */
 VBOXBLITTERDECL(int) CrTdBltDataCleanup(PCR_TEXDATA pTex);
 

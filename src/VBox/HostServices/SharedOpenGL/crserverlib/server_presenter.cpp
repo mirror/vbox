@@ -26,6 +26,7 @@
 #include "cr_string.h"
 #include <cr_vreg.h>
 #include <cr_htable.h>
+#include <cr_bmpscale.h>
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
@@ -82,6 +83,36 @@ typedef struct CR_FRAMEBUFFER
     uint32_t cUpdating;
     CRHTABLE SlotTable;
 } CR_FRAMEBUFFER;
+
+typedef union CR_FBENTRY_FLAGS
+{
+    struct {
+        uint32_t fCreateNotified : 1;
+        uint32_t fInList         : 1;
+        uint32_t Reserved        : 30;
+    };
+    uint32_t Value;
+} CR_FBENTRY_FLAGS;
+
+typedef struct CR_FRAMEBUFFER_ENTRY
+{
+    VBOXVR_SCR_COMPOSITOR_ENTRY Entry;
+    RTLISTNODE Node;
+    uint32_t cRefs;
+    CR_FBENTRY_FLAGS Flags;
+    CRHTABLE HTable;
+} CR_FRAMEBUFFER_ENTRY;
+
+typedef struct CR_FBTEX
+{
+    CR_TEXDATA Tex;
+    CRTextureObj *pTobj;
+} CR_FBTEX;
+
+#define PCR_FBTEX_FROM_TEX(_pTex) ((CR_FBTEX*)((uint8_t*)(_pTex) - RT_OFFSETOF(CR_FBTEX, Tex)))
+#define PCR_FRAMEBUFFER_FROM_COMPOSITOR(_pCompositor) ((CR_FRAMEBUFFER*)((uint8_t*)(_pCompositor) - RT_OFFSETOF(CR_FRAMEBUFFER, Compositor)))
+#define PCR_FBENTRY_FROM_ENTRY(_pEntry) ((CR_FRAMEBUFFER_ENTRY*)((uint8_t*)(_pEntry) - RT_OFFSETOF(CR_FRAMEBUFFER_ENTRY, Entry)))
+
 
 typedef struct CR_FBDISPLAY_INFO
 {
@@ -233,11 +264,52 @@ static void crFbBltImg(void *pvSrc, const RTRECT *pSrcDataRect, bool fSrcInvert,
     crFbBltMem(pu8Src, cbSrcPitch, pu8Dst, cbDstPitch, pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
 }
 
-int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPoint, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+static void crFbBltImgStretched(void *pvSrc, const RTRECT *pSrcDataRect, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, float strX, float strY, CR_BLITTER_IMG *pDst)
+{
+    int32_t cbSrcPitch = (pSrcDataRect->xRight - pSrcDataRect->xLeft) * 4;
+    int32_t srcX = pCopyRect->xLeft - pSrcDataRect->xLeft;
+    int32_t srcY = pCopyRect->yTop - pSrcDataRect->yTop;
+    Assert(srcX >= 0);
+    Assert(srcY >= 0);
+    Assert(srcX < pSrcDataRect->xRight - pSrcDataRect->xLeft);
+    Assert(srcY < pSrcDataRect->yBottom - pSrcDataRect->yTop);
+
+    int32_t cbDstPitch = (int32_t)pDst->pitch;
+    int32_t dstX = static_cast<uint32_t>(strX * pCopyRect->xLeft - pDstDataPoint->x);
+    int32_t dstY = static_cast<uint32_t>(strY * pCopyRect->yTop - pDstDataPoint->y);
+    Assert(dstX >= 0);
+    Assert(dstY >= 0);
+
+    uint8_t *pu8Src = ((uint8_t*)pvSrc) + cbSrcPitch * (!fSrcInvert ? srcY : pSrcDataRect->yBottom - pSrcDataRect->yTop - srcY - 1) + srcX * 4;
+    uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + cbDstPitch * dstY + dstX * 4;
+    if (fSrcInvert)
+        cbSrcPitch = -cbSrcPitch;
+
+    int srcW = pCopyRect->xRight - pCopyRect->xLeft;
+    int srcH = pCopyRect->yBottom - pCopyRect->yTop;
+    int dstW = static_cast<uint32_t>(strX * srcW);
+    int dstH = static_cast<uint32_t>(strY * srcH);
+
+    CrBmpScale32(pu8Dst, cbDstPitch,
+                            dstW, dstH,
+                            pu8Src,
+                            cbSrcPitch,
+                            srcW, srcH);
+}
+
+
+static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
 {
     VBOXVR_LIST List;
     uint32_t c2DRects = 0;
     CR_TEXDATA *pEnteredTex = NULL;
+    PCR_BLITTER pEnteredBlitter = NULL;
+
+    VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR Iter;
+    RTPOINT SrcPoint = {pSrcRect->xLeft, pSrcRect->yTop};
+    float strX = ((float)pImg->width) / (pSrcRect->xRight - pSrcRect->xLeft);
+    float strY = ((float)pImg->height) / (pSrcRect->yBottom - pSrcRect->yTop);
+
     VBoxVrListInit(&List);
     int rc = VBoxVrListRectsAdd(&List, 1, CrVrScrCompositorRectGet(&hFb->Compositor), NULL);
     if (!RT_SUCCESS(rc))
@@ -245,8 +317,6 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPoint, uint32_t cRec
         WARN(("VBoxVrListRectsAdd failed rc %d", rc));
         goto end;
     }
-
-    VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR Iter;
 
     CrVrScrCompositorConstIterInit(&hFb->Compositor, &Iter);
 
@@ -270,7 +340,8 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPoint, uint32_t cRec
             goto end;
         }
 
-        Assert(!pEnteredTex);
+        uint32_t width, height;
+        RTRECT SrcRect;
 
         for (uint32_t i = 0; i < cRects; ++i)
         {
@@ -283,11 +354,49 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPoint, uint32_t cRec
                 if (VBoxRectIsZero(&Intersection))
                     continue;
 
+                VBoxRectStretch(&Intersection, strX, strY);
+                if (VBoxRectIsZero(&Intersection))
+                    continue;
+
                 CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(pEntry);
                 const CR_BLITTER_IMG *pSrcImg;
 
-                if (!pEnteredTex)
+                if (pEnteredTex != pTex)
                 {
+                    if (!pEnteredBlitter)
+                    {
+                        pEnteredBlitter = CrTdBlitterGet(pTex);
+                        rc = CrBltEnter(pEnteredBlitter);
+                        if (!RT_SUCCESS(rc))
+                        {
+                            WARN(("CrBltEnter failed %d", rc));
+                            pEnteredBlitter = NULL;
+                            goto end;
+                        }
+                    }
+
+                    if (pEnteredTex)
+                    {
+                        CrTdBltLeave(pEnteredTex);
+
+                        pEnteredTex = NULL;
+
+                        if (pEnteredBlitter != CrTdBlitterGet(pTex))
+                        {
+                            WARN(("blitters not equal!"));
+                            CrBltLeave(pEnteredBlitter);
+
+                            pEnteredBlitter = CrTdBlitterGet(pTex);
+                            rc = CrBltEnter(pEnteredBlitter);
+                             if (!RT_SUCCESS(rc))
+                             {
+                                 WARN(("CrBltEnter failed %d", rc));
+                                 pEnteredBlitter = NULL;
+                                 goto end;
+                             }
+                        }
+                    }
+
                     rc = CrTdBltEnter(pTex);
                     if (!RT_SUCCESS(rc))
                     {
@@ -296,28 +405,27 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPoint, uint32_t cRec
                     }
 
                     pEnteredTex = pTex;
+
+                    const VBOXVR_TEXTURE *pVrTex = CrTdTexGet(pTex);
+
+                    width = static_cast<uint32_t>(strX * pVrTex->width);
+                    height = static_cast<uint32_t>(strY * pVrTex->height);
+                    VBoxRectStretched(CrVrScrCompositorEntryRectGet(pEntry), strX, strY, &SrcRect);
                 }
 
-                rc = CrTdBltDataAcquire(pTex, GL_BGRA, false, &pSrcImg);
+                rc = CrTdBltDataAcquireStretched(pTex, GL_BGRA, false, width, height, &pSrcImg);
                 if (!RT_SUCCESS(rc))
                 {
                     WARN(("CrTdBltDataAcquire failed rc %d", rc));
                     goto end;
                 }
 
-                const RTRECT *pEntryRect = CrVrScrCompositorEntryRectGet(pEntry);
                 bool fInvert = !(CrVrScrCompositorEntryFlagsGet(pEntry) & CRBLT_F_INVERT_SRC_YCOORDS);
 
-                crFbBltImg(pSrcImg->pvData, pEntryRect, fInvert, &Intersection, pPoint, pImg);
+                crFbBltImg(pSrcImg->pvData, &SrcRect, fInvert, &Intersection, &SrcPoint, pImg);
 
-                CrTdBltDataRelease(pTex);
+                CrTdBltDataReleaseStretched(pTex, pSrcImg);
             }
-        }
-
-        if (pEnteredTex)
-        {
-            CrTdBltLeave(pEnteredTex);
-            pEnteredTex = NULL;
         }
     }
 
@@ -350,6 +458,14 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPoint, uint32_t cRec
         }
 
         RTPOINT Pos = {0};
+        const RTRECT *pCompRect = CrVrScrCompositorRectGet(&hFb->Compositor);
+        uint32_t fbPitch = (pCompRect->xRight - pCompRect->xLeft) * 4;
+        uint32_t fbHeight = pCompRect->yBottom - pCompRect->yTop;
+
+        uint32_t dstPitch = static_cast<uint32_t>(strX * fbPitch);
+        uint32_t dstHeight = static_cast<uint32_t>(strY * fbHeight);
+
+        bool fStretch = fbPitch != dstPitch || fbHeight != dstHeight;
 
         for (uint32_t i = 0; i < cRects; ++i)
         {
@@ -362,7 +478,10 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPoint, uint32_t cRec
                 if (VBoxRectIsZero(&Intersection))
                     continue;
 
-                crFbBltImg(hFb->pvVram, CrVrScrCompositorRectGet(&hFb->Compositor), false, &Intersection, pPoint, pImg);
+                if (!fStretch)
+                    crFbBltImg(hFb->pvVram, pCompRect, false, &Intersection, &SrcPoint, pImg);
+                else
+                    crFbBltImgStretched(hFb->pvVram, pCompRect, false, &Intersection, &SrcPoint, strX, strY, pImg);
             }
         }
     }
@@ -372,10 +491,68 @@ end:
     if (pEnteredTex)
         CrTdBltLeave(pEnteredTex);
 
+    if (pEnteredBlitter)
+        CrBltLeave(pEnteredBlitter);
+
     VBoxVrListClear(&List);
 
     return rc;
 }
+
+static int crFbBltGetContentsStretchCPU(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+{
+    uint32_t srcWidth = pSrcRect->xRight - pSrcRect->xLeft;
+    uint32_t srcHeight = pSrcRect->yBottom - pSrcRect->yTop;
+
+    /* destination is bigger than the source, do 3D data stretching with CPU */
+    CR_BLITTER_IMG Img;
+    Img.cbData = srcWidth * srcHeight * 4;
+    Img.pvData = RTMemAlloc(Img.cbData);
+    if (!Img.pvData)
+    {
+        WARN(("RTMemAlloc Failed"));
+        return VERR_NO_MEMORY;
+    }
+    Img.enmFormat = pImg->enmFormat;
+    Img.width = srcWidth;
+    Img.height = srcHeight;
+    Img.bpp = pImg->bpp;
+    Img.pitch = Img.width * 4;
+
+    int rc = CrFbBltGetContents(hFb, pSrcRect, cRects, pRects, &Img);
+    if (RT_SUCCESS(rc))
+    {
+        CrBmpScale32((uint8_t *)pImg->pvData,
+                            pImg->pitch,
+                            pImg->width, pImg->height,
+                            (const uint8_t *)Img.pvData,
+                            Img.pitch,
+                            Img.width, Img.height);
+    }
+    else
+        WARN(("CrFbBltGetContents failed %d", rc));
+
+    RTMemFree(Img.pvData);
+
+    return rc;
+
+}
+
+int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+{
+    uint32_t srcWidth = pSrcRect->xRight - pSrcRect->xLeft;
+    uint32_t srcHeight = pSrcRect->yBottom - pSrcRect->yTop;
+    if ((srcWidth == pImg->width
+            && srcHeight == pImg->height)
+            || !CrFbHas3DData(hFb)
+            || (srcWidth * srcHeight > pImg->width * pImg->height))
+    {
+        return crFbBltGetContentsDirect(hFb, pSrcRect, cRects, pRects, pImg);
+    }
+
+    return crFbBltGetContentsStretchCPU(hFb, pSrcRect, cRects, pRects, pImg);
+}
+
 
 int CrFbResize(CR_FRAMEBUFFER *pFb, const struct VBVAINFOSCREEN * pScreen, void *pvVRAM)
 {
@@ -452,35 +629,6 @@ int CrFbDisplaySet(CR_FRAMEBUFFER *pFb, ICrFbDisplay *pDisplay)
 
     return VINF_SUCCESS;
 }
-
-typedef union CR_FBENTRY_FLAGS
-{
-    struct {
-        uint32_t fCreateNotified : 1;
-        uint32_t fInList         : 1;
-        uint32_t Reserved        : 30;
-    };
-    uint32_t Value;
-} CR_FBENTRY_FLAGS;
-
-typedef struct CR_FRAMEBUFFER_ENTRY
-{
-    VBOXVR_SCR_COMPOSITOR_ENTRY Entry;
-    RTLISTNODE Node;
-    uint32_t cRefs;
-    CR_FBENTRY_FLAGS Flags;
-    CRHTABLE HTable;
-} CR_FRAMEBUFFER_ENTRY;
-
-typedef struct CR_FBTEX
-{
-    CR_TEXDATA Tex;
-    CRTextureObj *pTobj;
-} CR_FBTEX;
-
-#define PCR_FBTEX_FROM_TEX(_pTex) ((CR_FBTEX*)((uint8_t*)(_pTex) - RT_OFFSETOF(CR_FBTEX, Tex)))
-#define PCR_FRAMEBUFFER_FROM_COMPOSITOR(_pCompositor) ((CR_FRAMEBUFFER*)((uint8_t*)(_pCompositor) - RT_OFFSETOF(CR_FRAMEBUFFER, Compositor)))
-#define PCR_FBENTRY_FROM_ENTRY(_pEntry) ((CR_FRAMEBUFFER_ENTRY*)((uint8_t*)(_pEntry) - RT_OFFSETOF(CR_FRAMEBUFFER_ENTRY, Entry)))
 
 #define CR_PMGR_MODE_WINDOW 0x1
 /* mutually exclusive with CR_PMGR_MODE_WINDOW */
@@ -660,7 +808,7 @@ static void crFbEntryMarkDestroyed(CR_FRAMEBUFFER *pFb, CR_FRAMEBUFFER_ENTRY* pE
 
         CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(&pEntry->Entry);
         if (pTex)
-            CrTdBltDataDiscardNe(pTex);
+            CrTdBltDataInvalidateNe(pTex);
     }
 }
 
@@ -701,12 +849,16 @@ static DECLCALLBACK(void) crFbEntryReleased(const struct VBOXVR_SCR_COMPOSITOR *
         crFbEntryMarkDestroyed(pFb, pFbReplacingEntry);
 
         CrHTableMoveTo(&pFbEntry->HTable, &pFbReplacingEntry->HTable);
+
+        CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(&pFbEntry->Entry);
+        CR_TEXDATA *pReplacingTex = CrVrScrCompositorEntryTexGet(&pFbReplacingEntry->Entry);
+
+        CrTdBltStretchCacheMoveTo(pTex, pReplacingTex);
+
         if (pFb->pDisplay)
             pFb->pDisplay->EntryReplaced(pFb, pFbReplacingEntry, pFbEntry);
 
-        CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(&pFbEntry->Entry);
-        if (pTex)
-            CrTdBltDataDiscardNe(pTex);
+        CrTdBltDataInvalidateNe(pTex);
 
         /* 2. mark the replaced entry is destroyed */
         Assert(pFbEntry->Flags.fCreateNotified);
@@ -726,7 +878,7 @@ static DECLCALLBACK(void) crFbEntryReleased(const struct VBOXVR_SCR_COMPOSITOR *
 
             CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(&pFbEntry->Entry);
             if (pTex)
-                CrTdBltDataDiscardNe(pTex);
+                CrTdBltDataInvalidateNe(pTex);
         }
     }
 
@@ -790,7 +942,7 @@ int CrFbEntryTexDataUpdate(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY pEntry, st
 
         CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(&pEntry->Entry);
         if (pTex)
-            CrTdBltDataDiscardNe(pTex);
+            CrTdBltDataInvalidateNe(pTex);
     }
 
     return VINF_SUCCESS;
@@ -930,7 +1082,7 @@ int CrFbEntryRegionsAdd(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry, const
 
                 CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(&hEntry->Entry);
                 if (pTex)
-                    CrTdBltDataDiscardNe(pTex);
+                    CrTdBltDataInvalidateNe(pTex);
             }
         }
     }
@@ -1004,7 +1156,7 @@ int CrFbEntryRegionsSet(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry, const
 
                 CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(&hEntry->Entry);
                 if (pTex)
-                    CrTdBltDataDiscardNe(pTex);
+                    CrTdBltDataInvalidateNe(pTex);
             }
         }
     }
@@ -2790,30 +2942,18 @@ public:
         const VBOXVR_SCR_COMPOSITOR_ENTRY* pNewEntry = CrFbEntryGetCompositorEntry(hNewEntry);
         CR_TEXDATA *pNewTex = CrVrScrCompositorEntryTexGet(pNewEntry);
 
-        rc = CrTdBltEnter(pReplacedTex);
+        CrTdBltDataInvalidateNe(pReplacedTex);
+
+        rc = CrTdBltEnter(pNewTex);
         if (RT_SUCCESS(rc))
         {
-            if (pNewTex != pReplacedTex)
-            {
-                CrTdBltDataDiscard(pReplacedTex);
-                rc = CrTdBltEnter(pNewTex);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = vrdpFrame(hNewEntry);
-                    CrTdBltLeave(pNewTex);
-                }
-                else
-                    WARN(("CrTdBltEnter failed %d", rc));
-            }
-            else
-                rc = vrdpFrame(hNewEntry);
-
-            CrTdBltLeave(pReplacedTex);
+            rc = vrdpFrame(hNewEntry);
+            CrTdBltLeave(pNewTex);
         }
         else
             WARN(("CrTdBltEnter failed %d", rc));
 
-    	return rc;
+        return rc;
     }
 
     virtual int EntryTexChanged(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
@@ -2848,6 +2988,10 @@ public:
             WARN(("err"));
             return rc;
         }
+
+        const VBOXVR_SCR_COMPOSITOR_ENTRY* pEntry = CrFbEntryGetCompositorEntry(hEntry);
+        CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(pEntry);
+        CrTdBltDataInvalidateNe(pTex);
 
         return vrdpRegions(pFb, hEntry);
     }
@@ -2989,7 +3133,7 @@ protected:
         const VBOXVR_SCR_COMPOSITOR_ENTRY* pEntry = CrFbEntryGetCompositorEntry(hEntry);
     	CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(pEntry);
     	const CR_BLITTER_IMG *pImg;
-        CrTdBltDataDiscard(pTex);
+    	CrTdBltDataInvalidateNe(pTex);
     	int rc = CrTdBltDataAcquire(pTex, GL_BGRA, !!(CrVrScrCompositorEntryFlagsGet(pEntry) & CRBLT_F_INVERT_SRC_YCOORDS), &pImg);
     	if (!RT_SUCCESS(rc))
     	{
@@ -3186,6 +3330,33 @@ int crServerDisplayLoadState(PSSMHANDLE pSSM, uint32_t u32Version)
 
 }
 #endif
+
+class CrFbDisplayEntryDataMonitor : public CrFbDisplayBase
+{
+public:
+    virtual int EntryReplaced(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hNewEntry, HCR_FRAMEBUFFER_ENTRY hReplacedEntry)
+    {
+        entryDataChanged(pFb, hReplacedEntry);
+        return VINF_SUCCESS;
+    }
+
+    virtual int EntryTexChanged(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
+    {
+        entryDataChanged(pFb, hEntry);
+        return VINF_SUCCESS;
+    }
+
+    virtual int EntryRemoved(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
+    {
+        entryDataChanged(pFb, hEntry);
+        return VINF_SUCCESS;
+    }
+protected:
+    virtual void entryDataChanged(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry)
+    {
+
+    }
+};
 
 int CrPMgrInit()
 {
@@ -4249,7 +4420,11 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
 
                 uint8_t *pu8Buf = g_pvVRamBase + offVRAM;
 
-                RTPOINT Pos = {pBlt->Pos.x, pBlt->Pos.y};
+                RTRECT Rect;
+                Rect.xLeft = pBlt->Pos.x;
+                Rect.yTop = pBlt->Pos.y;
+                Rect.xRight = Rect.xLeft + pScreen->u32Width;
+                Rect.yBottom = Rect.yTop + pScreen->u32Height;
                 CR_BLITTER_IMG Img;
                 Img.pvData = pu8Buf;
                 Img.cbData = pScreen->u32LineSize * pScreen->u32Height;
@@ -4258,7 +4433,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
                 Img.height = pScreen->u32Height;
                 Img.bpp = pScreen->u16BitsPerPixel;
                 Img.pitch = pScreen->u32LineSize;
-                int rc = CrFbBltGetContents(hFb, &Pos, cRects, pRects, &Img);
+                int rc = CrFbBltGetContents(hFb, &Rect, cRects, pRects, &Img);
                 if (!RT_SUCCESS(rc))
                 {
                     WARN(("CrFbBltGetContents failed %d", rc));

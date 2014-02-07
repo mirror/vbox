@@ -362,6 +362,10 @@ private:
 public:
     static int  displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height);
 
+#ifdef VBOX_WITH_CROGL
+    static BOOL  displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreenId, uint8_t *pu8Data, uint32_t u32Width, uint32_t u32Height);
+#endif
+
 private:
     static void InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll);
     static int  drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
