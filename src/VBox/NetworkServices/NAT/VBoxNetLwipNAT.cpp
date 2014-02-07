@@ -403,6 +403,20 @@ void VBoxNetLwipNAT::onLwipTcpIpInit(void* arg)
 
     AssertPtrReturnVoid(pNetif);
 
+    LogRel(("netif %c%c%d: mac %RTmac\n",
+            pNetif->name[0], pNetif->name[1], pNetif->num,
+            pNetif->hwaddr));
+    LogRel(("netif %c%c%d: inet %RTnaipv4 netmask %RTnaipv4\n",
+            pNetif->name[0], pNetif->name[1], pNetif->num,
+            pNetif->ip_addr, pNetif->netmask));
+    for (int i = 0; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
+        if (!ip6_addr_isinvalid(netif_ip6_addr_state(pNetif, i))) {
+            LogRel(("netif %c%c%d: inet6 %RTnaipv6\n",
+                    pNetif->name[0], pNetif->name[1], pNetif->num,
+                    netif_ip6_addr(pNetif, i)));
+        }
+    }
+
     netif_set_up(pNetif);
     netif_set_link_up(pNetif);
 
