@@ -86,7 +86,7 @@ private slots:
 
     /* Handlers: Navigation stuff: */
     void sltHandleCurrentTabChanged();
-    void sltHandleCurrentItemChanged(QTreeWidgetItem *pItem);
+    void sltHandleCurrentItemChanged();
     void sltHandleDoubleClick();
     void sltHandleContextMenuCall(const QPoint &position);
 
@@ -117,6 +117,13 @@ private:
 
     /** Repopulates tree-widgets content. */
     void repopulateTreeWidgets();
+
+    /** Updates details according latest changes in current medium-item of predefined @a type. */
+    void refetchCurrentMediumItem(UIMediumType type);
+    /** Updates details according latest changes in current medium-item of chosen type. */
+    void refetchCurrentChosenMediumItem();
+    /** Updates details according latest changes in all current medium-items. */
+    void refetchCurrentMediumItems();
 
     /** Update actions according currently chosen medium-item. */
     void updateActions();
@@ -152,6 +159,9 @@ private:
     bool releaseHardDiskFrom(const UIMedium &medium, CMachine &machine);
     bool releaseOpticalDiskFrom(const UIMedium &medium, CMachine &machine);
     bool releaseFloppyDiskFrom(const UIMedium &medium, CMachine &machine);
+
+    /** Determines medium type for passed @a pTreeWidget. */
+    UIMediumType mediumType(QTreeWidget *pTreeWidget) const;
 
     /** Returns current medium type. */
     UIMediumType currentMediumType() const;
