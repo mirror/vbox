@@ -60,9 +60,9 @@ DECLINLINE(int) gdImageGetTrueColorPixel (gdImagePtr im, int x, int y, int w)
     return *(int32_t *)(im + y * w * 4 + x * 4);
 }
 
-DECLINLINE(void) gdImageSetPixel (gdImagePtr im, int x, int y, int color, int w)
+DECLINLINE(void) gdImageSetPixel (gdImagePtr im, int x, int y, int color, int cbLine)
 {
-    *(int32_t *)(im + y * w * 4 + x * 4) = color;
+    *(int32_t *)(im + y * cbLine + x * 4) = color;
 }
 
 #define gdAlphaMax 127
@@ -189,7 +189,7 @@ void gdImageCopyResampled (uint8_t *dst,
                x, y,
                gdTrueColorAlpha ((int) red,
                          (int) green,
-                         (int) blue, (int) alpha), dstW);
+                         (int) blue, (int) alpha), dstW * 4);
     }
     }
 }
