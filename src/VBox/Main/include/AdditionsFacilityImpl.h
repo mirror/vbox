@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,24 +20,14 @@
 #include <vector>
 #include <iprt/time.h>
 
-#include "VirtualBoxBase.h"
+#include "AdditionsFacilityWrap.h"
 
 class Guest;
 
 class ATL_NO_VTABLE AdditionsFacility :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IAdditionsFacility)
+    public AdditionsFacilityWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(AdditionsFacility, IAdditionsFacility)
-
-    DECLARE_NOT_AGGREGATABLE(AdditionsFacility)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(AdditionsFacility)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IAdditionsFacility)
-    END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(AdditionsFacility)
 
@@ -49,12 +39,6 @@ public:
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    // IAdditionsFacility properties
-    STDMETHOD(COMGETTER(ClassType))(AdditionsFacilityClass_T *aClass);
-    STDMETHOD(COMGETTER(LastUpdated))(LONG64 *aTimestamp);
-    STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMGETTER(Status))(AdditionsFacilityStatus_T *aStatus);
-    STDMETHOD(COMGETTER(Type))(AdditionsFacilityType_T *aType);
 
 public:
     /** Facility <-> string mappings. */
@@ -70,15 +54,23 @@ public:
     static const FacilityInfo s_aFacilityInfo[8];
 
     // public internal methods
-    static const AdditionsFacility::FacilityInfo &typeToInfo(AdditionsFacilityType_T aType);
-    AdditionsFacilityClass_T getClass() const;
-    LONG64 getLastUpdated() const;
-    Bstr getName() const;
-    AdditionsFacilityStatus_T getStatus() const;
-    AdditionsFacilityType_T getType() const;
-    void update(AdditionsFacilityStatus_T a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
+    static const AdditionsFacility::FacilityInfo &i_typeToInfo(AdditionsFacilityType_T aType);
+    AdditionsFacilityClass_T i_getClass() const;
+    LONG64 i_getLastUpdated() const;
+    com::Utf8Str i_getName() const;
+    AdditionsFacilityStatus_T i_getStatus() const;
+    AdditionsFacilityType_T i_getType() const;
+    void i_update(AdditionsFacilityStatus_T a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
 
 private:
+
+    // Wrapped IAdditionsFacility properties
+    HRESULT getClassType(AdditionsFacilityClass_T *aClassType);
+    HRESULT getLastUpdated(LONG64 *aLastUpdated);
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT getStatus(AdditionsFacilityStatus_T *aStatus);
+    HRESULT getType(AdditionsFacilityType_T *aType);
+
     /** A structure for keeping a facility status
      *  set at a certain time. Good for book-keeping. */
     struct FacilityState
