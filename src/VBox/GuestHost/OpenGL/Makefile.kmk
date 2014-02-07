@@ -86,6 +86,7 @@ VBoxOGLcrutil_SOURCES       = \
 	util/blitter.cpp \
 	util/compositor.cpp \
 	util/htable.cpp \
+	util/bmpscale.cpp \
 	util/vboxhgcm.c \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
 VBoxOGLcrutil_SOURCES.win.x86 = \

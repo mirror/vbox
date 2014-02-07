@@ -938,13 +938,14 @@ static void crScreenshotHandle(CRVBOXHGCMTAKESCREENSHOT *pScreenshot, uint32_t i
     {
         CR_SCREENSHOT Screenshot;
 
-        int rc = crServerVBoxScreenshotGet(idScreen, &Screenshot);
+        int rc = crServerVBoxScreenshotGet(idScreen, pScreenshot->u32Width, pScreenshot->u32Height, pScreenshot->u32Pitch, pScreenshot->pvBuffer, &Screenshot);
         if (RT_SUCCESS(rc))
         {
-            pScreenshot->pfnScreenshotPerform(pScreenshot->pvContext, idScreen,
-                    0, 0, 32,
-                    Screenshot.Img.pitch, Screenshot.Img.width, Screenshot.Img.height,
-                    (uint8_t*)Screenshot.Img.pvData, u64Now);
+            if (pScreenshot->pfnScreenshotPerform)
+                pScreenshot->pfnScreenshotPerform(pScreenshot->pvContext, idScreen,
+                        0, 0, 32,
+                        Screenshot.Img.pitch, Screenshot.Img.width, Screenshot.Img.height,
+                        (uint8_t*)Screenshot.Img.pvData, u64Now);
             crServerVBoxScreenshotRelease(&Screenshot);
         }
         else

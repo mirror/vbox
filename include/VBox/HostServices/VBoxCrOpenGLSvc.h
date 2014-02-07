@@ -395,6 +395,10 @@ typedef struct
 {
     /* screen id or CRSCREEN_ALL to specify all enabled */
     uint32_t u32Screen;
+    uint32_t u32Width;
+    uint32_t u32Height;
+    uint32_t u32Pitch;
+    void *pvBuffer;
     void *pvContext;
     PFNCRSCREENSHOTBEGIN pfnScreenshotBegin;
     PFNCRSCREENSHOTREPORT pfnScreenshotPerform;

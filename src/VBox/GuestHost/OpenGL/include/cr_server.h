@@ -522,10 +522,10 @@ typedef struct
 {
     CR_BLITTER_IMG Img;
     uint32_t u32Screen;
-    uint32_t fDataIsFbDirect;
+    uint32_t fDataAllocated;
 } CR_SCREENSHOT;
 
-extern DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, CR_SCREENSHOT *pScreenshot);
+extern DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, uint32_t width, uint32_t height, uint32_t pitch, void *pvBuffer, CR_SCREENSHOT *pScreenshot);
 extern DECLEXPORT(void) crServerVBoxScreenshotRelease(CR_SCREENSHOT *pScreenshot);
 
 extern DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable);
