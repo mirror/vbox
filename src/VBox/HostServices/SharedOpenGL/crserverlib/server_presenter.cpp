@@ -240,63 +240,68 @@ static void crFbBltMem(uint8_t *pu8Src, int32_t cbSrcPitch, uint8_t *pu8Dst, int
     }
 }
 
-static void crFbBltImg(void *pvSrc, const RTRECT *pSrcDataRect, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, CR_BLITTER_IMG *pDst)
+static void crFbBltImg(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, CR_BLITTER_IMG *pDst)
 {
-    int32_t cbSrcPitch = (pSrcDataRect->xRight - pSrcDataRect->xLeft) * 4;
-    int32_t srcX = pCopyRect->xLeft - pSrcDataRect->xLeft;
-    int32_t srcY = pCopyRect->yTop - pSrcDataRect->yTop;
+    int32_t srcX = pCopyRect->xLeft - pSrcDataPoint->x;
+    int32_t srcY = pCopyRect->yTop - pSrcDataPoint->y;
     Assert(srcX >= 0);
     Assert(srcY >= 0);
-    Assert(srcX < pSrcDataRect->xRight - pSrcDataRect->xLeft);
-    Assert(srcY < pSrcDataRect->yBottom - pSrcDataRect->yTop);
+    Assert(srcX < pSrc->width);
+    Assert(srcY < pSrc->height);
 
-    uint32_t cbDstPitch = pDst->pitch;
     int32_t dstX = pCopyRect->xLeft - pDstDataPoint->x;
     int32_t dstY = pCopyRect->yTop - pDstDataPoint->y;
     Assert(dstX >= 0);
     Assert(dstY >= 0);
 
-    uint8_t *pu8Src = ((uint8_t*)pvSrc) + cbSrcPitch * (!fSrcInvert ? srcY : pSrcDataRect->yBottom - pSrcDataRect->yTop - srcY - 1) + srcX * 4;
-    uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + cbDstPitch * dstY + dstX * 4;
-    if (fSrcInvert)
-        cbSrcPitch = -cbSrcPitch;
+    uint8_t *pu8Src = ((uint8_t*)pSrc->pvData) + pSrc->pitch * (!fSrcInvert ? srcY : pSrc->height - srcY - 1) + srcX * 4;
+    uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + pDst->pitch * dstY + dstX * 4;
 
-    crFbBltMem(pu8Src, cbSrcPitch, pu8Dst, cbDstPitch, pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
+    crFbBltMem(pu8Src, fSrcInvert ? -pSrc->pitch : pSrc->pitch, pu8Dst, pDst->pitch, pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
 }
 
-static void crFbBltImgStretched(void *pvSrc, const RTRECT *pSrcDataRect, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, float strX, float strY, CR_BLITTER_IMG *pDst)
+static void crFbBltImgStretched(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, float strX, float strY, CR_BLITTER_IMG *pDst)
 {
-    int32_t cbSrcPitch = (pSrcDataRect->xRight - pSrcDataRect->xLeft) * 4;
-    int32_t srcX = pCopyRect->xLeft - pSrcDataRect->xLeft;
-    int32_t srcY = pCopyRect->yTop - pSrcDataRect->yTop;
+    int32_t srcX = pCopyRect->xLeft - pSrcDataPoint->x;
+    int32_t srcY = pCopyRect->yTop - pSrcDataPoint->y;
     Assert(srcX >= 0);
     Assert(srcY >= 0);
-    Assert(srcX < pSrcDataRect->xRight - pSrcDataRect->xLeft);
-    Assert(srcY < pSrcDataRect->yBottom - pSrcDataRect->yTop);
+    Assert(srcX < pSrc->width);
+    Assert(srcY < pSrc->height);
 
-    int32_t cbDstPitch = (int32_t)pDst->pitch;
-    int32_t dstX = static_cast<uint32_t>(strX * pCopyRect->xLeft - pDstDataPoint->x);
-    int32_t dstY = static_cast<uint32_t>(strY * pCopyRect->yTop - pDstDataPoint->y);
+    int32_t dstX = CR_FLOAT_RCAST(int32_t, strX * (pCopyRect->xLeft - pDstDataPoint->x));
+    int32_t dstY = CR_FLOAT_RCAST(int32_t, strY * (pCopyRect->yTop - pDstDataPoint->y));
     Assert(dstX >= 0);
     Assert(dstY >= 0);
 
-    uint8_t *pu8Src = ((uint8_t*)pvSrc) + cbSrcPitch * (!fSrcInvert ? srcY : pSrcDataRect->yBottom - pSrcDataRect->yTop - srcY - 1) + srcX * 4;
-    uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + cbDstPitch * dstY + dstX * 4;
-    if (fSrcInvert)
-        cbSrcPitch = -cbSrcPitch;
+    uint8_t *pu8Src = ((uint8_t*)pSrc->pvData) + pSrc->pitch * (!fSrcInvert ? srcY : pSrc->height - srcY - 1) + srcX * 4;
+    uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + pDst->pitch * dstY + dstX * 4;
 
-    int srcW = pCopyRect->xRight - pCopyRect->xLeft;
-    int srcH = pCopyRect->yBottom - pCopyRect->yTop;
-    int dstW = static_cast<uint32_t>(strX * srcW);
-    int dstH = static_cast<uint32_t>(strY * srcH);
-
-    CrBmpScale32(pu8Dst, cbDstPitch,
-                            dstW, dstH,
-                            pu8Src,
-                            cbSrcPitch,
-                            srcW, srcH);
+    CrBmpScale32(pu8Dst, pDst->pitch,
+                        CR_FLOAT_RCAST(int32_t, strX * pCopyRect->xRight - pCopyRect->xLeft),
+                        CR_FLOAT_RCAST(int32_t, strY * pCopyRect->yBottom - pCopyRect->yTop),
+                        pu8Src,
+                        fSrcInvert ? -pSrc->pitch : pSrc->pitch,
+                        pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
 }
 
+static void crFbImgFromScreenVram(const VBVAINFOSCREEN *pScreen, void *pvVram, CR_BLITTER_IMG *pImg)
+{
+    pImg->pvData = pvVram;
+    pImg->cbData = pScreen->u32LineSize * pScreen->u32Height;
+    pImg->enmFormat = GL_BGRA;
+    pImg->width = pScreen->u32Width;
+    pImg->height = pScreen->u32Height;
+    pImg->bpp = pScreen->u16BitsPerPixel;
+    pImg->pitch = pScreen->u32LineSize;
+}
+
+static void crFbImgFromFb(HCR_FRAMEBUFFER hFb, CR_BLITTER_IMG *pImg)
+{
+    const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
+    void *pvVram = CrFbGetVRAM(hFb);
+    crFbImgFromScreenVram(pScreen, pvVram, pImg);
+}
 
 static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
 {
@@ -309,6 +314,12 @@ static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect,
     RTPOINT SrcPoint = {pSrcRect->xLeft, pSrcRect->yTop};
     float strX = ((float)pImg->width) / (pSrcRect->xRight - pSrcRect->xLeft);
     float strY = ((float)pImg->height) / (pSrcRect->yBottom - pSrcRect->yTop);
+
+    RTPOINT StretchedSrcPoint;
+    StretchedSrcPoint.x = CR_FLOAT_RCAST(int32_t, strX * SrcPoint.x);
+    StretchedSrcPoint.y = CR_FLOAT_RCAST(int32_t, strY * SrcPoint.y);
+
+    RTPOINT ZeroPoint = {0, 0};
 
     VBoxVrListInit(&List);
     int rc = VBoxVrListRectsAdd(&List, 1, CrVrScrCompositorRectGet(&hFb->Compositor), NULL);
@@ -341,7 +352,7 @@ static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect,
         }
 
         uint32_t width, height;
-        RTRECT SrcRect;
+        RTPOINT StretchedEntryPoint;
 
         for (uint32_t i = 0; i < cRects; ++i)
         {
@@ -408,9 +419,10 @@ static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect,
 
                     const VBOXVR_TEXTURE *pVrTex = CrTdTexGet(pTex);
 
-                    width = static_cast<uint32_t>(strX * pVrTex->width);
-                    height = static_cast<uint32_t>(strY * pVrTex->height);
-                    VBoxRectStretched(CrVrScrCompositorEntryRectGet(pEntry), strX, strY, &SrcRect);
+                    width = CR_FLOAT_RCAST(uint32_t, strX * pVrTex->width);
+                    height = CR_FLOAT_RCAST(uint32_t, strY * pVrTex->height);
+                    StretchedEntryPoint.x = CR_FLOAT_RCAST(int32_t, strX * CrVrScrCompositorEntryRectGet(pEntry)->xLeft);
+                    StretchedEntryPoint.y = CR_FLOAT_RCAST(int32_t, strY * CrVrScrCompositorEntryRectGet(pEntry)->yTop);
                 }
 
                 rc = CrTdBltDataAcquireStretched(pTex, GL_BGRA, false, width, height, &pSrcImg);
@@ -422,7 +434,7 @@ static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect,
 
                 bool fInvert = !(CrVrScrCompositorEntryFlagsGet(pEntry) & CRBLT_F_INVERT_SRC_YCOORDS);
 
-                crFbBltImg(pSrcImg->pvData, &SrcRect, fInvert, &Intersection, &SrcPoint, pImg);
+                crFbBltImg(pSrcImg, &StretchedEntryPoint, fInvert, &Intersection, &StretchedSrcPoint, pImg);
 
                 CrTdBltDataReleaseStretched(pTex, pSrcImg);
             }
@@ -459,13 +471,18 @@ static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect,
 
         RTPOINT Pos = {0};
         const RTRECT *pCompRect = CrVrScrCompositorRectGet(&hFb->Compositor);
-        uint32_t fbPitch = (pCompRect->xRight - pCompRect->xLeft) * 4;
+
+        uint32_t fbWidth = (pCompRect->xRight - pCompRect->xLeft);
         uint32_t fbHeight = pCompRect->yBottom - pCompRect->yTop;
 
-        uint32_t dstPitch = static_cast<uint32_t>(strX * fbPitch);
-        uint32_t dstHeight = static_cast<uint32_t>(strY * fbHeight);
+        uint32_t stretchedWidth = CR_FLOAT_RCAST(uint32_t, strX * fbWidth);
+        uint32_t stretchedHeight = CR_FLOAT_RCAST(uint32_t, strY * fbHeight);
 
-        bool fStretch = fbPitch != dstPitch || fbHeight != dstHeight;
+        CR_BLITTER_IMG FbImg;
+
+        bool fStretch = fbWidth != stretchedWidth || fbHeight != stretchedHeight;
+
+        crFbImgFromFb(hFb, &FbImg);
 
         for (uint32_t i = 0; i < cRects; ++i)
         {
@@ -479,9 +496,9 @@ static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect,
                     continue;
 
                 if (!fStretch)
-                    crFbBltImg(hFb->pvVram, pCompRect, false, &Intersection, &SrcPoint, pImg);
+                    crFbBltImg(&FbImg, &ZeroPoint, false, &Intersection, &SrcPoint, pImg);
                 else
-                    crFbBltImgStretched(hFb->pvVram, pCompRect, false, &Intersection, &SrcPoint, strX, strY, pImg);
+                    crFbBltImgStretched(&FbImg, &ZeroPoint, false, &Intersection, &SrcPoint, strX, strY, pImg);
             }
         }
     }
@@ -4426,13 +4443,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
                 Rect.xRight = Rect.xLeft + pScreen->u32Width;
                 Rect.yBottom = Rect.yTop + pScreen->u32Height;
                 CR_BLITTER_IMG Img;
-                Img.pvData = pu8Buf;
-                Img.cbData = pScreen->u32LineSize * pScreen->u32Height;
-                Img.enmFormat = GL_BGRA;
-                Img.width = pScreen->u32Width;
-                Img.height = pScreen->u32Height;
-                Img.bpp = pScreen->u16BitsPerPixel;
-                Img.pitch = pScreen->u32LineSize;
+                crFbImgFromScreenVram(pScreen, pu8Buf, &Img);
                 int rc = CrFbBltGetContents(hFb, &Rect, cRects, pRects, &Img);
                 if (!RT_SUCCESS(rc))
                 {
