@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -759,9 +759,9 @@ STDMETHODIMP Guest::GetFacilityStatus(AdditionsFacilityType_T aType, LONG64 *aTi
     {
         AdditionsFacility *pFacility = it->second;
         ComAssert(pFacility);
-        *aStatus = pFacility->getStatus();
+        *aStatus = pFacility->i_getStatus();
         if (aTimestamp)
-            *aTimestamp = pFacility->getLastUpdated();
+            *aTimestamp = pFacility->i_getLastUpdated();
     }
     else
     {
@@ -1109,7 +1109,7 @@ bool Guest::facilityIsActive(VBoxGuestFacilityType enmFacility)
     if (it != mData.mFacilityMap.end())
     {
         AdditionsFacility *pFac = it->second;
-        return (pFac->getStatus() == AdditionsFacilityStatus_Active);
+        return (pFac->i_getStatus() == AdditionsFacilityStatus_Active);
     }
     return false;
 }
@@ -1124,7 +1124,7 @@ void Guest::facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilit
     if (it != mData.mFacilityMap.end())
     {
         AdditionsFacility *pFac = it->second;
-        pFac->update((AdditionsFacilityStatus_T)a_enmStatus, a_fFlags, a_pTimeSpecTS);
+        pFac->i_update((AdditionsFacilityStatus_T)a_enmStatus, a_fFlags, a_pTimeSpecTS);
     }
     else
     {

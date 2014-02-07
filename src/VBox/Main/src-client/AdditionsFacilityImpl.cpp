@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -98,87 +98,62 @@ void AdditionsFacility::uninit()
     mData.mStates.clear();
 }
 
-STDMETHODIMP AdditionsFacility::COMGETTER(ClassType)(AdditionsFacilityClass_T *aClass)
+HRESULT AdditionsFacility::getClassType(AdditionsFacilityClass_T *aClassType)
 {
     LogFlowThisFuncEnter();
 
-    CheckComArgOutPointerValid(aClass);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aClass = getClass();
+    *aClassType = i_getClass();
 
     return S_OK;
 }
 
-STDMETHODIMP AdditionsFacility::COMGETTER(Name)(BSTR *aName)
+HRESULT AdditionsFacility::getName(com::Utf8Str &aName)
 {
     LogFlowThisFuncEnter();
 
-    CheckComArgOutPointerValid(aName);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Bstr(getName()).cloneTo(aName);
+    aName = i_getName();
 
     return S_OK;
 }
 
-STDMETHODIMP AdditionsFacility::COMGETTER(LastUpdated)(LONG64 *aTimestamp)
+HRESULT AdditionsFacility::getLastUpdated(LONG64 *aLastUpdated)
 {
     LogFlowThisFuncEnter();
 
-    CheckComArgOutPointerValid(aTimestamp);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aTimestamp = getLastUpdated();
+    *aLastUpdated = i_getLastUpdated();
 
     return S_OK;
 }
 
-STDMETHODIMP AdditionsFacility::COMGETTER(Status)(AdditionsFacilityStatus_T *aStatus)
+HRESULT AdditionsFacility::getStatus(AdditionsFacilityStatus_T *aStatus)
 {
     LogFlowThisFuncEnter();
 
-    CheckComArgOutPointerValid(aStatus);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aStatus = getStatus();
+    *aStatus = i_getStatus();
 
     return S_OK;
 }
 
-STDMETHODIMP AdditionsFacility::COMGETTER(Type)(AdditionsFacilityType_T *aType)
+HRESULT AdditionsFacility::getType(AdditionsFacilityType_T *aType)
 {
     LogFlowThisFuncEnter();
 
-    CheckComArgOutPointerValid(aType);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aType = getType();
+    *aType = i_getType();
 
     return S_OK;
 }
 
-const AdditionsFacility::FacilityInfo &AdditionsFacility::typeToInfo(AdditionsFacilityType_T aType)
+const AdditionsFacility::FacilityInfo &AdditionsFacility::i_typeToInfo(AdditionsFacilityType_T aType)
 {
     for (size_t i = 0; i < RT_ELEMENTS(s_aFacilityInfo); ++i)
     {
@@ -188,17 +163,17 @@ const AdditionsFacility::FacilityInfo &AdditionsFacility::typeToInfo(AdditionsFa
     return s_aFacilityInfo[0]; /* Return unknown type. */
 }
 
-AdditionsFacilityClass_T AdditionsFacility::getClass() const
+AdditionsFacilityClass_T AdditionsFacility::i_getClass() const
 {
-    return AdditionsFacility::typeToInfo(mData.mType).mClass;
+    return AdditionsFacility::i_typeToInfo(mData.mType).mClass;
 }
 
-Bstr AdditionsFacility::getName() const
+com::Utf8Str AdditionsFacility::i_getName() const
 {
-    return AdditionsFacility::typeToInfo(mData.mType).mName;
+    return AdditionsFacility::i_typeToInfo(mData.mType).mName;
 }
 
-LONG64 AdditionsFacility::getLastUpdated() const
+LONG64 AdditionsFacility::i_getLastUpdated() const
 {
     if (mData.mStates.size())
         return RTTimeSpecGetMilli(&mData.mStates.front().mTimestamp);
@@ -207,7 +182,7 @@ LONG64 AdditionsFacility::getLastUpdated() const
     return 0; /* Should never happen! */
 }
 
-AdditionsFacilityStatus_T AdditionsFacility::getStatus() const
+AdditionsFacilityStatus_T AdditionsFacility::i_getStatus() const
 {
     if (mData.mStates.size())
         return mData.mStates.back().mStatus;
@@ -216,7 +191,7 @@ AdditionsFacilityStatus_T AdditionsFacility::getStatus() const
     return AdditionsFacilityStatus_Unknown; /* Should never happen! */
 }
 
-AdditionsFacilityType_T AdditionsFacility::getType() const
+AdditionsFacilityType_T AdditionsFacility::i_getType() const
 {
     return mData.mType;
 }
@@ -224,7 +199,7 @@ AdditionsFacilityType_T AdditionsFacility::getType() const
 /**
  * Method used by IGuest::facilityUpdate to make updates.
  */
-void AdditionsFacility::update(AdditionsFacilityStatus_T a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS)
+void AdditionsFacility::i_update(AdditionsFacilityStatus_T a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS)
 {
     FacilityState state;
     state.mStatus    = a_enmStatus;

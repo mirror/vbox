@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -106,8 +106,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS2_CI(ExtPack, IExtPack, IExtPackBase)
 NS_DECL_CLASSINFO(ExtPackManager)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPackManager, IExtPackManager)
  #endif
-NS_DECL_CLASSINFO(AdditionsFacility)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(AdditionsFacility, IAdditionsFacility)
 
 NS_DECL_CLASSINFO(Console)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Console, IConsole)
