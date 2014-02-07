@@ -34,5 +34,17 @@
 #define VBOXSVC_STARTUP_PIPE_NAME "vboxsvc:startup-pipe"
 
 #endif /* ____H_LINUX_SERVER */
-HRESULT VirtualBox_GetInterfacesHelper() { return S_OK; }
+
+/**
+ * Implements NSGetInterfacesProcPtr (nsIGenericFactory.h)
+ * @note: declaration in nsIGenericFactory.h asks for zeroing
+ * count and array, if returning of list of interfaces isn't supported.
+ */
+HRESULT VirtualBox_GetInterfacesHelper(PRUint32 *count, nsIID** *array) 
+{
+    if (count != NULL) *count = 0;
+    if (array != NULL) *array = NULL;
+
+    return S_OK;
+}
 nsIClassInfo* VirtualBox_classInfoGlobal;
