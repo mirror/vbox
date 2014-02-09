@@ -189,8 +189,8 @@ int SeamlessMain::hostEventThread(RTTHREAD self, void *pvUser)
             /* This thread is stopped by setting @a mHostEventThreadStopping
              * and sending a cancel to the state change event wait, see below.
              */
-            if (   RT_FAILURE(pHost->nextStateChangeEvent())
-                && !pHost->mHostEventThreadStopping)
+            int rc = pHost->nextStateChangeEvent();
+            if (RT_FAILURE(rc) && !pHost->mHostEventThreadStopping)
             {
                 /* If we are not stopping, sleep for a bit to avoid using up too
                     much CPU while retrying. */
