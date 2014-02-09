@@ -63,6 +63,13 @@ int SeamlessMain::start(void)
         rc = VERR_INTERNAL_ERROR;
         if (mHostEventThread)  /* Assertion */
             break;
+        pszStage = "Testing event loop cancellation";
+        VbglR3InterruptEventWaits();
+        if (RT_FAILURE(VbglR3WaitEvent(VMMDEV_EVENT_VALID_EVENT_MASK, 0, NULL)))
+            break;
+        if (   VbglR3WaitEvent(VMMDEV_EVENT_VALID_EVENT_MASK, 0, NULL)
+            != VERR_TIMEOUT)
+            break;
         pszStage = "Connecting to the X server";
         rc = mX11Monitor.init(this);
         if (RT_FAILURE(rc))
@@ -220,18 +227,8 @@ void SeamlessMain::stopHostEventThread()
     int rc;
 
     LogRelFlowFunc(("\n"));
-    /**
-     * @todo is this reasonable?  If the thread is in the event loop then the cancelEvent()
-     *       will cause it to exit.  If it enters or exits the event loop it will also
-     *       notice that we wish it to exit.  And if it is somewhere in-between, the
-     *       yield() should give it time to get to one of places mentioned above.
-     */
     mHostEventThreadStopping = true;
-    for (int i = 0; (i < 5) && mHostEventThreadRunning; ++i)
-    {
-        cancelEvent();
-        RTThreadYield();
-    }
+    cancelEvent();
     rc = RTThreadWait(mHostEventThread, RT_INDEFINITE_WAIT, NULL);
     if (RT_SUCCESS(rc))
         mHostEventThread = NIL_RTTHREAD;
