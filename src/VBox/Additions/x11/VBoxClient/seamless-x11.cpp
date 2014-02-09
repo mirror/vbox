@@ -535,8 +535,8 @@ bool SeamlessX11::interruptEventWait(void)
     /* Message contents set to zero. */
     XClientMessageEvent clientMessage = { ClientMessage, 0, 0, 0, 0, 0, 8 };
 
-    if (0 != XSendEvent(mDisplay, DefaultRootWindow(mDisplay), false, PropertyChangeMask,
-                   reinterpret_cast<XEvent *>(&clientMessage)))
+    if (XSendEvent(mDisplay, DefaultRootWindow(mDisplay), false,
+                   SubstructureNotifyMask, (XEvent *)&clientMessage))
     {
         XFlush(mDisplay);
         rc = true;
