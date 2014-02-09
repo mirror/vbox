@@ -62,14 +62,13 @@ int VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
         *pMode = VMMDev_Seamless_Visible_Region;
     }
     else
-    {
         rc = RTSemEventWait(eventSem, RT_INDEFINITE_WAIT);
-        if (RT_SUCCESS(rc))
-        {
-            rc = VERR_INTERRUPTED;
-        }
-    }
     return rc;
+}
+
+int VbglR3WaitEvent(uint32_t , uint32_t cMillies, uint32_t *)
+{
+    return RTSemEventWait(eventSem, cMillies);
 }
 
 int VbglR3InterruptEventWaits(void)
