@@ -236,6 +236,11 @@ typedef struct VBOXGUESTSESSION
 #endif
     /* Guest Caps Acquired & Reported by this session */
     uint32_t                    u32AquiredGuestCaps;
+    /** Whether a CANCEL_ALL_WAITEVENTS is pending.  This happens when
+     * CANCEL_ALL_WAITEVENTS is called, but no call to WAITEVENT is in process
+     * in the current session.  In that case the next call will be interrupted
+     * at once. */
+    bool volatile               fPendingCancelWaitEvents;
 } VBOXGUESTSESSION;
 
 RT_C_DECLS_BEGIN

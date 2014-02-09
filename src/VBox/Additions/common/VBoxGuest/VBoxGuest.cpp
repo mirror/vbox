@@ -1372,7 +1372,7 @@ DECLINLINE(int) WaitEventCheckCondition(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESS
                                         int iEvent, const uint32_t fReqEvents)
 {
     uint32_t fMatches = VBoxGuestCommonGetAndCleanPendingEventsLocked(pDevExt, pSession, fReqEvents);
-    if (fMatches)
+    if (fMatches || pSession->fPendingCancelWaitEvents)
     {
         RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
 
@@ -1382,6 +1382,7 @@ DECLINLINE(int) WaitEventCheckCondition(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESS
             Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns %#x\n", pInfo->u32EventFlagsOut));
         else
             Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns %#x/%d\n", pInfo->u32EventFlagsOut, iEvent));
+        pSession->fPendingCancelWaitEvents = false;
         return VINF_SUCCESS;
     }
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
@@ -1518,6 +1519,11 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
     PVBOXGUESTWAIT          pWait;
     PVBOXGUESTWAIT          pSafe;
     int                     rc = 0;
+    /* Was as least one WAITEVENT in process for this session?  If not we
+     * set a flag that the next call should be interrupted immediately.  This
+     * is needed so that a user thread can reliably interrupt another one in a
+     * WAITEVENT loop. */
+    bool                    fCancelledOne = false;
 
     Log(("VBoxGuestCommonIOCtl: CANCEL_ALL_WAITEVENTS\n"));
 
@@ -1529,6 +1535,7 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
     {
         if (pWait->pSession == pSession)
         {
+            fCancelledOne = true;
             pWait->fResEvents = UINT32_MAX;
             RTListNodeRemove(&pWait->ListNode);
 #ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
@@ -1539,6 +1546,8 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
 #endif
         }
     }
+    if (!fCancelledOne)
+        pSession->fPendingCancelWaitEvents = true;
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
     Assert(rc == 0);
     NOREF(rc);
