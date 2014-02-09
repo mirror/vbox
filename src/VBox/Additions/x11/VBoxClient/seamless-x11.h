@@ -41,6 +41,7 @@ class SeamlessHostProxy
 {
 public:
     virtual void sendRegionUpdate(RTRECT *pRects, size_t cRects) = 0;
+    virtual ~SeamlessHostProxy() {}
 };
 
 /** Structure containing information about a guest window's position and visible area.
