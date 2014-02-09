@@ -85,7 +85,7 @@ private:
 
 public:
     SeamlessMain(void);
-    ~SeamlessMain();
+    virtual ~SeamlessMain();
 
     /**
       * Start the service.
