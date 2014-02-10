@@ -103,7 +103,7 @@
         } \
     } while (0)
 #else
-# define TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pTimer) do { } while (0)
+# define TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer) do { } while (0)
 #endif
 
 
