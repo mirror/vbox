@@ -247,6 +247,47 @@ static int displayMakeThumbnail(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
     return rc;
 }
 
+#ifdef VBOX_WITH_CROGL
+typedef struct
+{
+    CRVBOXHGCMTAKESCREENSHOT Base;
+
+    /* 32bpp small RGB image. */
+    uint8_t *pu8Thumbnail;
+    uint32_t cbThumbnail;
+    uint32_t cxThumbnail;
+    uint32_t cyThumbnail;
+
+    /* PNG screenshot. */
+    uint8_t *pu8PNG;
+    uint32_t cbPNG;
+    uint32_t cxPNG;
+    uint32_t cyPNG;
+} VBOX_DISPLAY_SAVESCREENSHOT_DATA;
+
+static DECLCALLBACK(void) displaySaveScreenshotReport(void *pvCtx, uint32_t uScreen,
+        uint32_t x, uint32_t y, uint32_t uBitsPerPixel,
+        uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
+        uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
+{
+    VBOX_DISPLAY_SAVESCREENSHOT_DATA *pData = (VBOX_DISPLAY_SAVESCREENSHOT_DATA*)pvCtx;
+    displayMakeThumbnail(pu8BufferAddress, uGuestWidth, uGuestHeight, &pData->pu8Thumbnail, &pData->cbThumbnail, &pData->cxThumbnail, &pData->cyThumbnail);
+    int rc = DisplayMakePNG(pu8BufferAddress, uGuestWidth, uGuestHeight, &pData->pu8PNG, &pData->cbPNG, &pData->cxPNG, &pData->cyPNG, 1);
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("DisplayMakePNG failed %d\n", rc));
+        if (pData->pu8PNG)
+        {
+            RTMemFree(pData->pu8PNG);
+            pData->pu8PNG = NULL;
+        }
+        pData->cbPNG = 0;
+        pData->cxPNG = 0;
+        pData->cyPNG = 0;
+    }
+}
+#endif
+
 DECLCALLBACK(void)
 Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
 {
@@ -273,34 +314,96 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
         uint32_t cx = 0;
         uint32_t cy = 0;
 
-        /* SSM code is executed on EMT(0), therefore no need to use VMR3ReqCallWait. */
-        int rc = Display::displayTakeScreenshotEMT(that, VBOX_VIDEO_PRIMARY_SCREEN, &pu8Data, &cbData, &cx, &cy);
-
-        /*
-         * It is possible that success is returned but everything is 0 or NULL.
-         * (no display attached if a VM is running with VBoxHeadless on OSE for example)
-         */
-        if (RT_SUCCESS(rc) && pu8Data)
+#ifdef VBOX_WITH_CROGL
+        BOOL f3DSnapshot = FALSE;
+        BOOL is3denabled;
+        that->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+        if (is3denabled && that->mCrOglCallbacks.pfnHasData())
         {
-            Assert(cx && cy);
-
-            /* Prepare a small thumbnail and a PNG screenshot. */
-            displayMakeThumbnail(pu8Data, cx, cy, &pu8Thumbnail, &cbThumbnail, &cxThumbnail, &cyThumbnail);
-            rc = DisplayMakePNG(pu8Data, cx, cy, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 1);
-            if (RT_FAILURE(rc))
+            VMMDev *pVMMDev = that->mParent->getVMMDev();
+            if (pVMMDev)
             {
-                if (pu8PNG)
+                VBOX_DISPLAY_SAVESCREENSHOT_DATA *pScreenshot = (VBOX_DISPLAY_SAVESCREENSHOT_DATA*)RTMemAllocZ(sizeof (*pScreenshot));
+                if (pScreenshot)
                 {
-                    RTMemFree(pu8PNG);
-                    pu8PNG = NULL;
-                }
-                cbPNG = 0;
-                cxPNG = 0;
-                cyPNG = 0;
-            }
+                    /* screen id or CRSCREEN_ALL to specify all enabled */
+                    pScreenshot->Base.u32Screen = 0;
+                    pScreenshot->Base.u32Width = 0;
+                    pScreenshot->Base.u32Height = 0;
+                    pScreenshot->Base.u32Pitch = 0;
+                    pScreenshot->Base.pvBuffer = NULL;
+                    pScreenshot->Base.pvContext = pScreenshot;
+                    pScreenshot->Base.pfnScreenshotBegin = NULL;
+                    pScreenshot->Base.pfnScreenshotPerform = displaySaveScreenshotReport;
+                    pScreenshot->Base.pfnScreenshotEnd = NULL;
 
-            /* This can be called from any thread. */
-            that->mpDrv->pUpPort->pfnFreeScreenshot(that->mpDrv->pUpPort, pu8Data);
+                    VBOXHGCMSVCPARM parm;
+
+                    parm.type = VBOX_HGCM_SVC_PARM_PTR;
+                    parm.u.pointer.addr = &pScreenshot->Base;
+                    parm.u.pointer.size = sizeof (pScreenshot->Base);
+
+                    int rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_TAKE_SCREENSHOT, 1, &parm);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (pScreenshot->pu8PNG)
+                        {
+                            pu8Thumbnail = pScreenshot->pu8Thumbnail;
+                            cbThumbnail = pScreenshot->cbThumbnail;
+                            cxThumbnail = pScreenshot->cxThumbnail;
+                            cyThumbnail = pScreenshot->cyThumbnail;
+
+                            /* PNG screenshot. */
+                            pu8PNG = pScreenshot->pu8PNG;
+                            cbPNG = pScreenshot->cbPNG;
+                            cxPNG = pScreenshot->cxPNG;
+                            cyPNG = pScreenshot->cyPNG;
+                            f3DSnapshot = TRUE;
+                        }
+                        else
+                            AssertMsgFailed(("no png\n"));
+                    }
+                    else
+                        AssertMsgFailed(("SHCRGL_HOST_FN_TAKE_SCREENSHOT failed %d\n", rc));
+
+
+                    RTMemFree(pScreenshot);
+                }
+            }
+        }
+
+        if (!f3DSnapshot)
+#endif
+        {
+            /* SSM code is executed on EMT(0), therefore no need to use VMR3ReqCallWait. */
+            int rc = Display::displayTakeScreenshotEMT(that, VBOX_VIDEO_PRIMARY_SCREEN, &pu8Data, &cbData, &cx, &cy);
+
+            /*
+             * It is possible that success is returned but everything is 0 or NULL.
+             * (no display attached if a VM is running with VBoxHeadless on OSE for example)
+             */
+            if (RT_SUCCESS(rc) && pu8Data)
+            {
+                Assert(cx && cy);
+
+                /* Prepare a small thumbnail and a PNG screenshot. */
+                displayMakeThumbnail(pu8Data, cx, cy, &pu8Thumbnail, &cbThumbnail, &cxThumbnail, &cyThumbnail);
+                rc = DisplayMakePNG(pu8Data, cx, cy, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 1);
+                if (RT_FAILURE(rc))
+                {
+                    if (pu8PNG)
+                    {
+                        RTMemFree(pu8PNG);
+                        pu8PNG = NULL;
+                    }
+                    cbPNG = 0;
+                    cxPNG = 0;
+                    cyPNG = 0;
+                }
+
+                /* This can be called from any thread. */
+                that->mpDrv->pUpPort->pfnFreeScreenshot(that->mpDrv->pUpPort, pu8Data);
+            }
         }
     }
     else

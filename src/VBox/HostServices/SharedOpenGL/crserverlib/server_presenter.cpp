@@ -4138,6 +4138,8 @@ int CrFbEntryLoadState(CR_FRAMEBUFFER *pFb, PSSMHANDLE pSSM, uint32_t version)
     if (pRects)
         crFree(pRects);
 
+    CrFbEntryRelease(pFb, hEntry);
+
     return VINF_SUCCESS;
 }
 
