@@ -344,7 +344,7 @@ int main()
     Ipv6Addr.au16[5] = RT_H2N_U16_C(0x8a2e);
     Ipv6Addr.au16[6] = RT_H2N_U16_C(0x0370);
     Ipv6Addr.au16[7] = RT_H2N_U16_C(0x7334);
-    CHECK42("%RTnaipv6", &Ipv6Addr, "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+    CHECK42("%RTnaipv6", &Ipv6Addr, "2001:db8:85a3::8a2e:370:7334");
     Ipv6Addr.au64[0] = UINT64_MAX;
     Ipv6Addr.au64[1] = UINT64_MAX;
     CHECK42("%RTnaipv6", &Ipv6Addr, "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
