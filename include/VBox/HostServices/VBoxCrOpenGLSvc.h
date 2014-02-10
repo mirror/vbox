@@ -48,6 +48,7 @@
 #define SHCRGL_HOST_FN_DEV_RESIZE          (22)
 #define SHCRGL_HOST_FN_VIEWPORT_CHANGED2 (23)
 #define SHCRGL_HOST_FN_TAKE_SCREENSHOT (24)
+#define SHCRGL_HOST_FN_WINDOWS_SHOW (25)
 /* crOpenGL guest functions */
 #define SHCRGL_GUEST_FN_WRITE       (2)
 #define SHCRGL_GUEST_FN_READ        (3)

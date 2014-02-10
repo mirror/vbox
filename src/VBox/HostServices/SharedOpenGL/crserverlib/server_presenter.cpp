@@ -135,6 +135,7 @@ typedef struct CR_PRESENTER_GLOBALS
     CR_FBDISPLAY_INFO aDisplayInfos[CR_MAX_GUEST_MONITORS];
     CR_FBMAP FramebufferInitMap;
     CR_FRAMEBUFFER aFramebuffers[CR_MAX_GUEST_MONITORS];
+    bool fWindowsForceHidden;
     uint32_t cbTmpBuf;
     void *pvTmpBuf;
     uint32_t cbTmpBuf2;
@@ -2433,6 +2434,23 @@ public:
         return !CrVrScrCompositorIsEmpty(pCompositor);
     }
 
+    int winVisibilityChanged()
+    {
+        int rc = mpWindow->UpdateBegin();
+        if (RT_SUCCESS(rc))
+        {
+            rc = mpWindow->SetVisible(!g_CrPresenter.fWindowsForceHidden);
+            if (!RT_SUCCESS(rc))
+                WARN(("SetVisible failed, rc %d", rc));
+
+            mpWindow->UpdateEnd();
+        }
+        else
+            WARN(("UpdateBegin failed, rc %d", rc));
+
+        return rc;
+    }
+
 protected:
     virtual void onUpdateEnd()
     {
@@ -2563,7 +2581,7 @@ protected:
             return rc;
         }
 
-        rc = mpWindow->SetVisible(true);
+        rc = mpWindow->SetVisible(!g_CrPresenter.fWindowsForceHidden);
         if (!RT_SUCCESS(rc))
         {
             WARN(("err"));
@@ -3817,6 +3835,28 @@ int CrPMgrModeRootVr(bool fEnable)
     }
 
     return crPMgrModeModifyGlobal(u32ModeAdd, u32ModeRemove);
+}
+
+int CrPMgrModeWinVisible(bool fEnable)
+{
+    if (!g_CrPresenter.fWindowsForceHidden == !!fEnable)
+        return VINF_SUCCESS;
+
+    g_CrPresenter.fWindowsForceHidden = !fEnable;
+
+    for (HCR_FRAMEBUFFER hFb = CrPMgrFbGetFirstEnabled();
+            hFb;
+            hFb = CrPMgrFbGetNextEnabled(hFb))
+    {
+        uint32_t idScreen = CrFbGetScreenInfo(hFb)->u32ViewIndex;
+
+        CR_FBDISPLAY_INFO *pInfo = &g_CrPresenter.aDisplayInfos[idScreen];
+
+        if (pInfo->pDpWin)
+            pInfo->pDpWin->winVisibilityChanged();
+    }
+
+    return VINF_SUCCESS;
 }
 
 int CrPMgrRootVrUpdate()

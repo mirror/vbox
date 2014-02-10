@@ -747,6 +747,11 @@ DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, uint32_t width, ui
     return VINF_SUCCESS;
 }
 
+extern DECLEXPORT(int) crServerVBoxWindowsShow(bool fShow)
+{
+    return CrPMgrModeWinVisible(fShow);
+}
+
 void crServerPresentFBO(CRMuralInfo *mural)
 {
     uint32_t i;
@@ -828,3 +833,4 @@ void crServerMuralFBOSwapBuffers(CRMuralInfo *mural)
     }
     Assert(mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
 }
+

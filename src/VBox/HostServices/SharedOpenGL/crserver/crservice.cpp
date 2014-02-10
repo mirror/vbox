@@ -1444,6 +1444,29 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             }
             break;
         }
+        case SHCRGL_HOST_FN_WINDOWS_SHOW:
+        {
+            /* Verify parameter count and types. */
+            if (cParms != 1)
+            {
+                WARN(("invalid parameter"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            if (paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT)
+            {
+                WARN(("invalid parameter"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            rc = crServerVBoxWindowsShow(paParms[0].u.uint32);
+            if (!RT_SUCCESS(rc))
+                WARN(("crServerVBoxWindowsShow failed rc %d", rc));
+
+            break;
+        }
         default:
             rc = VERR_NOT_IMPLEMENTED;
             break;
