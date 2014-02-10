@@ -278,8 +278,8 @@ static void crFbBltImgStretched(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcD
     uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + pDst->pitch * dstY + dstX * 4;
 
     CrBmpScale32(pu8Dst, pDst->pitch,
-                        CR_FLOAT_RCAST(int32_t, strX * pCopyRect->xRight - pCopyRect->xLeft),
-                        CR_FLOAT_RCAST(int32_t, strY * pCopyRect->yBottom - pCopyRect->yTop),
+                        CR_FLOAT_RCAST(int32_t, strX * (pCopyRect->xRight - pCopyRect->xLeft)),
+                        CR_FLOAT_RCAST(int32_t, strY * (pCopyRect->yBottom - pCopyRect->yTop)),
                         pu8Src,
                         fSrcInvert ? -pSrc->pitch : pSrc->pitch,
                         pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
