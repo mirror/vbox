@@ -37,6 +37,11 @@
            (bug #12379)</para>
       </listitem>
 
+      <listitem>
+        <para>API: fix crashes in Java API clients using the XPCOM binding,
+           happened with output parameters only (bug #11232)</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
