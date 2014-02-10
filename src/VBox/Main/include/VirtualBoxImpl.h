@@ -296,7 +296,7 @@ private:
                        AccessMode_T aAccessMode,
                        BOOL aForceNewUuid,
                        ComPtr<IMedium> &aMedium);
-    HRESULT getGuestOSType(const com::Guid &aId,
+    HRESULT getGuestOSType(const com::Utf8Str &aId,
                            ComPtr<IGuestOSType> &aType);
     HRESULT createSharedFolder(const com::Utf8Str &aName,
                                const com::Utf8Str &aHostPath,
