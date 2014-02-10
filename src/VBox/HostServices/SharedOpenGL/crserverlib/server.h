@@ -407,6 +407,7 @@ HCR_FRAMEBUFFER CrPMgrFbGetNextEnabled(HCR_FRAMEBUFFER hFb);
 HCR_FRAMEBUFFER CrPMgrFbGetEnabled(uint32_t idScreen);
 int CrPMgrModeVrdp(bool fEnable);
 int CrPMgrModeRootVr(bool fEnable);
+int CrPMgrModeWinVisible(bool fEnable);
 int CrPMgrRootVrUpdate();
 int CrPMgrViewportUpdate(uint32_t idScreen);
 int CrPMgrScreenChanged(uint32_t idScreen);

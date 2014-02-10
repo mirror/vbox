@@ -330,6 +330,9 @@ private:
     VBVAMEMORY *mpPendingVbvaMemory;
     bool        mfPendingVideoAccelEnable;
     bool        mfMachineRunning;
+#ifdef VBOX_WITH_CROGL
+    bool        mfCrOglDataHidden;
+#endif
 
     uint8_t    *mpu8VbvaPartial;
     uint32_t    mcbVbvaPartial;
@@ -375,6 +378,10 @@ private:
     /* Functions run under VBVA lock. */
     int  videoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory);
     void videoAccelFlush(void);
+
+#ifdef VBOX_WITH_CROGL
+    int crOglWindowsShow(bool fShow);
+#endif
 
 #ifdef VBOX_WITH_HGSMI
     volatile uint32_t mu32UpdateVBVAFlags;

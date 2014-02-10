@@ -115,6 +115,9 @@ HRESULT Display::FinalConstruct()
     mfPendingVideoAccelEnable = false;
 
     mfMachineRunning = false;
+#ifdef VBOX_WITH_CROGL
+    mfCrOglDataHidden = false;
+#endif
 
     mpu8VbvaPartial = NULL;
     mcbVbvaPartial = 0;
@@ -616,6 +619,41 @@ int Display::registerSSM(PUVM pUVM)
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_CROGL
+int Display::crOglWindowsShow(bool fShow)
+{
+    if (!mfCrOglDataHidden == !!fShow)
+        return VINF_SUCCESS;
+
+    VMMDev *pVMMDev = mParent->getVMMDev();
+    if (!pVMMDev)
+    {
+        AssertMsgFailed(("no vmmdev\n"));
+        return VERR_INVALID_STATE;
+    }
+
+    if (!mhCrOglSvc)
+    {
+        AssertMsgFailed(("no mhCrOglSvc\n"));
+        return VERR_INVALID_STATE;
+    }
+
+    VBOXHGCMSVCPARM parm;
+
+    parm.type = VBOX_HGCM_SVC_PARM_32BIT;
+    parm.u.uint32 = (uint32_t)fShow;
+
+    int rc = pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_WINDOWS_SHOW, &parm, NULL, NULL);
+    if (RT_SUCCESS(rc))
+        mfCrOglDataHidden = !fShow;
+    else
+        AssertMsgFailed(("hgcmHostFastCallAsync failed rc %n", rc));
+
+    return rc;
+}
+#endif
+
+
 // IEventListener method
 STDMETHODIMP Display::HandleEvent(IEvent * aEvent)
 {
@@ -638,9 +676,20 @@ STDMETHODIMP Display::HandleEvent(IEvent * aEvent)
                 LogRelFlowFunc(("Machine is running.\n"));
 
                 mfMachineRunning = true;
+
+#ifdef VBOX_WITH_CROGL
+                crOglWindowsShow(true);
+#endif
             }
             else
+            {
                 mfMachineRunning = false;
+
+#ifdef VBOX_WITH_CROGL
+                if (machineState == MachineState_Paused)
+                    crOglWindowsShow(false);
+#endif
+            }
             break;
         }
         default:

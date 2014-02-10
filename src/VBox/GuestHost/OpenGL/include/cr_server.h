@@ -525,6 +525,7 @@ typedef struct
     uint32_t fDataAllocated;
 } CR_SCREENSHOT;
 
+extern DECLEXPORT(int) crServerVBoxWindowsShow(bool fShow);
 extern DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, uint32_t width, uint32_t height, uint32_t pitch, void *pvBuffer, CR_SCREENSHOT *pScreenshot);
 extern DECLEXPORT(void) crServerVBoxScreenshotRelease(CR_SCREENSHOT *pScreenshot);
 
