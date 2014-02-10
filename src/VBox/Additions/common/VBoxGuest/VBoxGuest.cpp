@@ -74,11 +74,16 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 
 #define VBOXGUEST_ACQUIRE_STYLE_EVENTS (VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
 
+/** Return the mask of VMM device events that this session is allowed to see,
+ *  ergo, all events except those in "acquire" mode which have not been acquired
+ *  by this session. */
 DECLINLINE(uint32_t) VBoxGuestCommonGetHandledEventsLocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
     if (!pDevExt->u32AcquireModeGuestCaps)
         return VMMDEV_EVENT_VALID_EVENT_MASK;
 
+    /** @note VMMDEV_EVENT_VALID_EVENT_MASK should actually be the mask of valid
+     *        capabilities, but that doesn't affect this code. */
     uint32_t u32AllowedGuestCaps = pSession->u32AquiredGuestCaps | (VMMDEV_EVENT_VALID_EVENT_MASK & ~pDevExt->u32AcquireModeGuestCaps);
     uint32_t u32CleanupEvents = VBOXGUEST_ACQUIRE_STYLE_EVENTS;
     if (u32AllowedGuestCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS)
@@ -97,6 +102,9 @@ DECLINLINE(uint32_t) VBoxGuestCommonGetAndCleanPendingEventsLocked(PVBOXGUESTDEV
     return fMatches;
 }
 
+/** Puts a capability in "acquire" or "set" mode and returns the mask of
+ * capabilities currently in the other mode.  Once a capability has been put in
+ * one of the two modes it can no longer be removed from that mode. */
 DECLINLINE(bool) VBoxGuestCommonGuestCapsModeSet(PVBOXGUESTDEVEXT pDevExt, uint32_t fCaps, bool fAcquire, uint32_t *pu32OtherVal)
 {
     uint32_t *pVal = fAcquire ? &pDevExt->u32AcquireModeGuestCaps : &pDevExt->u32SetModeGuestCaps;
@@ -2536,6 +2544,18 @@ static bool VBoxGuestCommonGuestCapsValidateValues(uint32_t fCaps)
     return true;
 }
 
+/** Check whether any unreported VMM device events should be reported to any of
+ * the currently listening sessions.  In addition, report any events in
+ * @a fGenFakeEvents.
+ * @note This is called by GUEST_CAPS_ACQUIRE in case any pending events can now
+ *       be dispatched to the session which acquired capabilities.  The fake
+ *       events are a hack to wake up threads in that session which would not
+ *       otherwise be woken.
+ * @todo Why not just use CANCEL_ALL_WAITEVENTS to do the waking up rather than
+ *       adding additional code to the driver?
+ * @todo Why does acquiring capabilities block and unblock events?  Capabilities
+ *       are supposed to control what is reported to the host, we already have
+ *       separate requests for blocking and unblocking events. */
 static void VBoxGuestCommonCheckEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fGenFakeEvents)
 {
     RTSpinlockAcquire(pDevExt->EventSpinlock);
@@ -2573,6 +2593,10 @@ static void VBoxGuestCommonCheckEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
 #endif
 }
 
+/** Switch the capabilities in @a fOrMask to "acquire" mode if they are not
+ * already in "set" mode.  If @a enmFlags is not set to
+ * VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE, also try to acquire those
+ * capabilities for the current session and release those in @a fNotFlag. */
 static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags)
 {
     uint32_t fSetCaps = 0;
