@@ -533,7 +533,12 @@ static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameH
                           unsigned long *pulBitRate, const char **ppszFileName)
 {
     const char *pszEnvTemp;
-
+/** @todo r=bird: This isn't up to scratch. The life time of an RTEnvGet
+ *        return value is only up to the next RTEnv*, *getenv, *putenv,
+ *        setenv call in _any_ process in the system and the it has known and
+ *        documented code page issues.
+ *
+ *        Use RTEnvGetEx instead! */
     if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREWIDTH")) != 0)
     {
         errno = 0;
@@ -649,18 +654,18 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     unsigned fPATM  = ~0U;
     unsigned fCSAM  = ~0U;
 #ifdef VBOX_WITH_VIDEO_REC
-    unsigned fVIDEOREC = 0;
+    bool fVideoRec = 0;
     unsigned long ulFrameWidth = 800;
     unsigned long ulFrameHeight = 600;
-    unsigned long ulBitRate = 300000;
-    char pszMPEGFile[RTPATH_MAX];
+    unsigned long ulBitRate = 300000; /** @todo r=bird: The COM type ULONG isn't unsigned long, it's 32-bit unsigned int. */
+    char szMpegFile[RTPATH_MAX];
     const char *pszFileNameParam = "VBox-%d.vob";
 #endif /* VBOX_WITH_VIDEO_REC */
 
-    LogFlow (("VBoxHeadless STARTED.\n"));
-    RTPrintf (VBOX_PRODUCT " Headless Interface " VBOX_VERSION_STRING "\n"
-              "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-              "All rights reserved.\n\n");
+    LogFlow(("VBoxHeadless STARTED.\n"));
+    RTPrintf(VBOX_PRODUCT " Headless Interface " VBOX_VERSION_STRING "\n"
+             "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
+             "All rights reserved.\n\n");
 
 #ifdef VBOX_WITH_VIDEO_REC
     /* Parse the environment */
@@ -791,7 +796,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
 #ifdef VBOX_WITH_VIDEO_REC
             case 'c':
-                fVIDEOREC = true;
+                fVideoRec = true;
                 break;
             case 'w':
                 ulFrameWidth = ValueUnion.u32;
@@ -855,7 +860,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         LogError("VBoxHeadless: ERROR: Only one format modifier is allowed in the capture file name.", -1);
         return 1;
     }
-    RTStrPrintf(&pszMPEGFile[0], RTPATH_MAX, pszFileNameParam, RTProcSelf());
+    RTStrPrintf(&szMpegFile[0], RTPATH_MAX, pszFileNameParam, RTProcSelf());
 #endif /* defined VBOX_WITH_VIDEO_REC */
 
     if (!pcszNameOrUUID)
@@ -970,7 +975,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         RTLDRMOD hLdrVideoRecFB;
         PFNREGISTERVIDEORECFB pfnRegisterVideoRecFB;
 
-        if (fVIDEOREC)
+        if (fVideoRec)
         {
             HRESULT         rcc = S_OK;
             int             rrc = VINF_SUCCESS;
@@ -994,7 +999,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             {
                 Log2(("VBoxHeadless: calling pfnRegisterVideoRecFB\n"));
                 rcc = pfnRegisterVideoRecFB(ulFrameWidth, ulFrameHeight, ulBitRate,
-                                         pszMPEGFile, &pFramebuffer);
+                                         szMpegFile, &pFramebuffer);
                 if (rcc != S_OK)
                     LogError("Failed to initialise video capturing - make sure that the file format\n"
                              "you wish to use is supported on your system\n", rcc);
@@ -1020,7 +1025,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
         {
 # ifdef VBOX_WITH_VIDEO_REC
-            if (fVIDEOREC && uScreenId == 0)
+            if (fVideoRec && uScreenId == 0)
             {
                 /* Already registered. */
                 continue;
