@@ -336,6 +336,97 @@ int main()
     CHECK42("%RTnaipv4", Ipv4Addr.u, "255.255.255.255");
 
     RTNETADDRIPV6 Ipv6Addr;
+
+    /* any */
+    memset(&Ipv6Addr, 0, sizeof(Ipv6Addr));
+    CHECK42("%RTnaipv6", &Ipv6Addr, "::");
+
+    /* loopback */
+    Ipv6Addr.au8[15] = 1;
+    CHECK42("%RTnaipv6", &Ipv6Addr, "::1");
+
+    /* IPv4-compatible */
+    Ipv6Addr.au8[12] = 1;
+    Ipv6Addr.au8[13] = 1;
+    Ipv6Addr.au8[14] = 1;
+    Ipv6Addr.au8[15] = 1;
+    CHECK42("%RTnaipv6", &Ipv6Addr, "::1.1.1.1");
+
+    /* IPv4-mapped */
+    Ipv6Addr.au16[5] = RT_H2N_U16_C(0xffff);
+    CHECK42("%RTnaipv6", &Ipv6Addr, "::ffff:1.1.1.1");
+
+    /* IPv4-translated */
+    Ipv6Addr.au16[4] = RT_H2N_U16_C(0xffff);
+    Ipv6Addr.au16[5] = RT_H2N_U16_C(0x0000);
+    CHECK42("%RTnaipv6", &Ipv6Addr, "::ffff:0:1.1.1.1");
+
+    /* single zero word is not abbreviated, leading zeroes are not printed */
+    Ipv6Addr.au16[0] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[1] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[2] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[3] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[4] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[5] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[6] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[7] = RT_H2N_U16_C(0x0001);
+    CHECK42("%RTnaipv6", &Ipv6Addr, "0:1:0:1:0:1:0:1");
+
+    /* longest run is abbreviated (here: at the beginning) */
+    Ipv6Addr.au16[0] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[1] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[2] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[3] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[4] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[5] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[6] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[7] = RT_H2N_U16_C(0x0000);
+    CHECK42("%RTnaipv6", &Ipv6Addr, "::1:0:0:1:0");
+
+    /* longest run is abbreviated (here: first) */
+    Ipv6Addr.au16[0] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[1] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[2] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[3] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[4] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[5] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[6] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[7] = RT_H2N_U16_C(0x0001);
+    CHECK42("%RTnaipv6", &Ipv6Addr, "1::1:0:0:1");
+
+    /* longest run is abbreviated (here: second) */
+    Ipv6Addr.au16[0] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[1] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[2] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[3] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[4] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[5] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[6] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[7] = RT_H2N_U16_C(0x0001);
+    CHECK42("%RTnaipv6", &Ipv6Addr, "1:0:0:1::1");
+
+    /* longest run is abbreviated (here: at the end) */
+    Ipv6Addr.au16[0] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[1] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[2] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[3] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[4] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[5] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[6] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[7] = RT_H2N_U16_C(0x0000);
+    CHECK42("%RTnaipv6", &Ipv6Addr, "1:0:0:1::");
+
+    /* first of the two runs of equal length is abbreviated */
+    Ipv6Addr.au16[0] = RT_H2N_U16_C(0x2001);
+    Ipv6Addr.au16[1] = RT_H2N_U16_C(0x0db8);
+    Ipv6Addr.au16[2] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[3] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[4] = RT_H2N_U16_C(0x0001);
+    Ipv6Addr.au16[5] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[6] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[7] = RT_H2N_U16_C(0x0001);
+    CHECK42("%RTnaipv6", &Ipv6Addr, "2001:db8::1:0:0:1");
+
     Ipv6Addr.au16[0] = RT_H2N_U16_C(0x2001);
     Ipv6Addr.au16[1] = RT_H2N_U16_C(0x0db8);
     Ipv6Addr.au16[2] = RT_H2N_U16_C(0x85a3);
@@ -345,9 +436,24 @@ int main()
     Ipv6Addr.au16[6] = RT_H2N_U16_C(0x0370);
     Ipv6Addr.au16[7] = RT_H2N_U16_C(0x7334);
     CHECK42("%RTnaipv6", &Ipv6Addr, "2001:db8:85a3::8a2e:370:7334");
+
     Ipv6Addr.au64[0] = UINT64_MAX;
     Ipv6Addr.au64[1] = UINT64_MAX;
     CHECK42("%RTnaipv6", &Ipv6Addr, "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
+
+    RTNETADDR NetAddr;
+    memset(&NetAddr, 0, sizeof(NetAddr));
+
+    /* plain IPv6 address if port is not specified */
+    NetAddr.enmType = RTNETADDRTYPE_IPV6;
+    NetAddr.uAddr.au16[0] = RT_H2N_U16_C(0x0001);
+    NetAddr.uAddr.au16[7] = RT_H2N_U16_C(0x0001);
+    NetAddr.uPort = RTNETADDR_PORT_NA;
+    CHECK42("%RTnaddr", &NetAddr, "1::1");
+
+    /* square brackets around IPv6 address if port is specified */
+    NetAddr.uPort = 1;
+    CHECK42("%RTnaddr", &NetAddr, "[1::1]:1");
 
     CHECK42("%RTproc", (RTPROCESS)0xffffff, "00ffffff");
     CHECK42("%RTproc", (RTPROCESS)0x43455443, "43455443");
