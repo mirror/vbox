@@ -1755,7 +1755,6 @@ static int tmTimerVirtualSyncStop(PVM pVM, PTMTIMER pTimer)
 {
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerStopVs), a);
     VM_ASSERT_EMT(pVM);
-    Assert(PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock));
     int rc = PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
     AssertRCReturn(rc, rc);
 
