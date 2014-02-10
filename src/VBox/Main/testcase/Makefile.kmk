@@ -26,6 +26,7 @@ ifndef VBOX_ONLY_SDK
  if defined(VBOX_WITH_TESTCASES)
   PROGRAMS       += \
   	tstAPI \
+  	tstVBoxAPI \
   	tstVBoxAPIPerf \
   	$(if $(VBOX_OSE),,tstOVF) \
   	$(if $(VBOX_WITH_XPCOM),tstVBoxAPIXPCOM,tstVBoxAPIWin) \
@@ -65,6 +66,12 @@ tstAPI_TEMPLATE = VBOXMAINCLIENTTSTEXE
 #tstAPI_INST = $(INST_SDK)bindings/gluecom/samples/
 tstAPI_SOURCES  = tstAPI.cpp
 
+#
+# tstVBoxAPI
+#
+tstVBoxAPI_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstVBoxAPI_SOURCES  = \
+	tstVBoxAPI.cpp
 
 #
 # tstVBoxAPIPerf
