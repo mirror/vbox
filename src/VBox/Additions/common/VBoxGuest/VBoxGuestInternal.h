@@ -179,11 +179,15 @@ typedef struct VBOXGUESTDEVEXT
     uint32_t volatile           cISR;
     /** Callback and user data for a kernel mouse handler. */
     VBoxGuestMouseSetNotifyCallback MouseNotifyCallback;
-    /* list of caps used in acquire mode */
+    /** Guest capabilities which have been set to "acquire" mode.  This means
+     * that only one session can use them at a time, and that they will be
+     * automatically cleaned up if that session exits without doing so. */
     uint32_t                    u32AcquireModeGuestCaps;
-    /* list of caps used in set mode */
+    /** Guest capabilities which have been set to "set" mode.  This just means
+     * that they have been blocked from ever being set to "acquire" mode. */
     uint32_t                    u32SetModeGuestCaps;
-    /* currently acquired (and reported) guest caps */
+    /** Mask of all capabilities which are currently acquired by some session
+     * and as such reported to the host. */
     uint32_t                    u32GuestCaps;
 } VBOXGUESTDEVEXT;
 /** Pointer to the VBoxGuest driver data. */
@@ -234,7 +238,8 @@ typedef struct VBOXGUESTSESSION
     /** Whether this session has been opened or not. */
     bool                        fOpened;
 #endif
-    /* Guest Caps Acquired & Reported by this session */
+    /** Mask of guest capabilities acquired by this session.  These will all be
+     *  reported to the host. */
     uint32_t                    u32AquiredGuestCaps;
     /** Whether a CANCEL_ALL_WAITEVENTS is pending.  This happens when
      * CANCEL_ALL_WAITEVENTS is called, but no call to WAITEVENT is in process
