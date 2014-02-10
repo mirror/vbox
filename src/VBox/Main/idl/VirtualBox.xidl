@@ -2381,7 +2381,7 @@
         </result>
 
       </desc>
-      <param name="id" type="uuid" mod="string" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>Guest OS type ID string.</desc>
       </param>
       <param name="type" type="IGuestOSType" dir="return">

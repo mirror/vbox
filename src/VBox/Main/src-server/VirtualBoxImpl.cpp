@@ -1841,12 +1841,11 @@ HRESULT VirtualBox::openMedium(const com::Utf8Str &aLocation,
 
 
 /** @note Locks this object for reading. */
-HRESULT VirtualBox::getGuestOSType(const com::Guid &aId,
+HRESULT VirtualBox::getGuestOSType(const com::Utf8Str &aId,
                                    ComPtr<IGuestOSType> &aType)
 {
     aType = NULL;
     AutoReadLock alock(m->allGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-    IN_BSTR strId = Bstr(aId.toUtf16()).raw();
 
     HRESULT rc = S_OK;
     for (GuestOSTypesOList::iterator it = m->allGuestOSTypes.begin();
@@ -1855,7 +1854,7 @@ HRESULT VirtualBox::getGuestOSType(const com::Guid &aId,
     {
         const Bstr &typeId = (*it)->i_id();
         AssertMsg(!typeId.isEmpty(), ("ID must not be NULL"));
-        if (com::Guid(typeId) == aId)
+        if (typeId == aId)
         {
             (*it).queryInterfaceTo(aType.asOutParam());
             break;
@@ -1863,8 +1862,8 @@ HRESULT VirtualBox::getGuestOSType(const com::Guid &aId,
     }
     return (aType) ? S_OK :
         setError(E_INVALIDARG,
-                 tr("'%ls' is not a valid Guest OS type"),
-                 strId);
+                 tr("'%s' is not a valid Guest OS type"),
+                 aId.c_str());
     return rc;
 }
 
