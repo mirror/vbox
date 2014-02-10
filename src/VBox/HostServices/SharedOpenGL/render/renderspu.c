@@ -301,7 +301,7 @@ renderspuDestroyContext( GLint ctx )
     }
 
     curCtx = GET_CONTEXT_VAL();
-    CRASSERT(curCtx);
+//    CRASSERT(curCtx);
     if (curCtx == context)
     {
         renderspuMakeCurrent( CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID );

@@ -136,6 +136,7 @@ static void crServerTearDown( void )
 {
     GLint i;
     CRClientNode *pNode, *pNext;
+    GLboolean fOldEnableDiff;
 
     /* avoid a race condition */
     if (tearingdown)
@@ -158,11 +159,6 @@ static void crServerTearDown( void )
     cr_server.currentNativeWindow = 0;
     cr_server.currentMural = NULL;
 
-    if (CrBltIsInitialized(&cr_server.Blitter))
-    {
-        CrBltTerm(&cr_server.Blitter);
-    }
-
     /* sync our state with renderspu,
      * do it before mural & context deletion to avoid deleting currently set murals/contexts*/
     cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
@@ -178,16 +174,27 @@ static void crServerTearDown( void )
     /* Free all context info */
     crFreeHashtable(cr_server.contextTable, deleteContextInfoCallback);
 
+    /* synchronize with reality */
+    fOldEnableDiff = crStateEnableDiffOnMakeCurrent(GL_FALSE);
+    Assert(cr_server.MainContextInfo.pContext);
+    crStateMakeCurrent(cr_server.MainContextInfo.pContext);
+    crStateEnableDiffOnMakeCurrent(fOldEnableDiff);
+
     /* Free vertex programs */
     crFreeHashtable(cr_server.programTable, crFree);
-
-    /* Free dummy murals */
-    crFreeHashtable(cr_server.dummyMuralTable, deleteMuralInfoCallback);
 
     /* Free murals */
     crFreeHashtable(cr_server.muralTable, deleteMuralInfoCallback);
 
     CrPMgrTerm();
+
+    if (CrBltIsInitialized(&cr_server.Blitter))
+    {
+        CrBltTerm(&cr_server.Blitter);
+    }
+
+    /* Free dummy murals */
+    crFreeHashtable(cr_server.dummyMuralTable, deleteMuralInfoCallback);
 
     for (i = 0; i < cr_server.numClients; i++) {
         if (cr_server.clients[i]) {
