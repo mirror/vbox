@@ -45,6 +45,13 @@
 /** @todo Merge this with messages from VBoxTray.h. */
 #define WM_VBOXTRAY_DND_MESSAGE       WM_APP + 401
 
+/** Function pointer for SendInput(). This only is available starting
+ *  at NT4 SP3+. */
+typedef BOOL (WINAPI *PFNSENDINPUT)(UINT, LPINPUT, int);
+
+/** Static pointer to SendInput() function. */
+static PFNSENDINPUT s_pfnSendInput = NULL;
+
 static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -334,7 +341,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     DWORD dwEffect;
                     HRESULT hr = DoDragDrop(startupInfo.pDataObject, startupInfo.pDropSource,
                                             startupInfo.dwOKEffects, &dwEffect);
-                    LogFlowThisFunc(("rc=%Rhrc, dwEffect=%RI32\n", hr, dwEffect));
+                    LogFlowThisFunc(("hr=%Rhrc, dwEffect=%RI32\n", hr, dwEffect));
                     switch (hr)
                     {
                         case DRAGDROP_S_DROP:
@@ -772,26 +779,11 @@ int VBoxDnDWnd::OnHgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
     LogFlowThisFunc(("u32xPos=%RU32, u32yPos=%RU32, uAction=0x%x\n",
                      u32xPos, u32yPos, uAction));
 
-    /** @todo Put this block into a function! */
-    /** @todo Multi-monitor setups? */
-    int iScreenX = GetSystemMetrics(SM_CXSCREEN) - 1;
-    int iScreenY = GetSystemMetrics(SM_CYSCREEN) - 1;
-
-    INPUT Input[1] = { 0 };
-    Input[0].type       = INPUT_MOUSE;
-    Input[0].mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_ABSOLUTE;
-    Input[0].mi.dx      = u32xPos * (65535 / iScreenX);
-    Input[0].mi.dy      = u32yPos * (65535 / iScreenY);
-    SendInput(1, Input, sizeof(INPUT));
-
-#ifdef DEBUG_andy
-    POINT p;
-    GetCursorPos(&p);
-    LogFlowThisFunc(("curX=%d, curY=%d\n", p.x, p.y));
-#endif
+    int rc = mouseMove(u32xPos, u32yPos, MOUSEEVENTF_LEFTDOWN);
 
     uint32_t uActionNotify = DND_IGNORE_ACTION;
-    int rc = RTCritSectEnter(&mCritSect);
+    if (RT_SUCCESS(rc))
+        rc = RTCritSectEnter(&mCritSect);
     if (RT_SUCCESS(rc))
     {
         if (   (Dragging == mState)
@@ -888,7 +880,7 @@ int VBoxDnDWnd::OnHgDataReceived(const void *pvData, uint32_t cbData)
         }
     }
 
-    int rc2 = dragRelease();
+    int rc2 = mouseRelease();
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -907,7 +899,7 @@ int VBoxDnDWnd::OnHgCancel(void)
         RTCritSectLeave(&mCritSect);
     }
 
-    int rc2 = dragRelease();
+    int rc2 = mouseRelease();
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -935,7 +927,7 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
              * We have to release the left mouse button to
              * get into our (invisible) proxy window.
              */
-            dragRelease();
+            mouseRelease();
 
             /*
              * Even if we just released the left mouse button
@@ -979,35 +971,8 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
         static LONG py = p.y;
         if (py <= 0)
             py = 1;
-        //px++; py++;
-        LogFlowThisFunc(("px=%ld, py=%ld\n", px, py));
 
-        INPUT Input[1] = { 0 };
-        Input[0].type       = INPUT_MOUSE;
-        Input[0].mi.dwFlags = MOUSEEVENTF_MOVE | /*MOUSEEVENTF_LEFTDOWN |*/ MOUSEEVENTF_ABSOLUTE;
-        Input[0].mi.dx      = px * (65535 / iScreenX);
-        Input[0].mi.dy      = py * (65535 / iScreenY);
-        UINT uiProcessed = SendInput(1, Input, sizeof(INPUT));
-        if (uiProcessed)
-        {
-#ifdef DEBUG_andy
-            LogFlowFunc(("Sent %RU16 mouse input(s), x=%ld, y=%ld, flags=0x%x\n",
-                         uiProcessed, Input[0].mi.dx, Input[0].mi.dy, Input[0].mi.dwFlags));
-#endif
-        }
-        else
-            LogFlowFunc(("Unable to send input, error=0x%x\n", GetLastError()));
-
-#ifdef DEBUG_andy
-        CURSORINFO ci;
-        RT_ZERO(ci);
-        ci.cbSize = sizeof(ci);
-        BOOL fRc = GetCursorInfo(&ci);
-        if (fRc)
-            LogFlowThisFunc(("Cursor shown=%RTbool, cursor=0x%p, x=%d, y=%d\n",
-                             (ci.flags & CURSOR_SHOWING) ? true : false,
-                             ci.hCursor, ci.ptScreenPos.x, ci.ptScreenPos.y));
-#endif
+        rc = mouseMove(px, py, 0 /* dwMouseInputFlags */);
     }
 
     if (RT_SUCCESS(rc))
@@ -1034,23 +999,14 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
     return rc;
 }
 
-int VBoxDnDWnd::OnGhDropped(const char *pszFormats, uint32_t cbFormats,
+int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormats,
                             uint32_t uDefAction)
 {
-    AssertPtrReturn(pszFormats, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
     AssertReturn(cbFormats, VERR_INVALID_PARAMETER);
 
     LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, uDefAction=0x%x\n",
                      mMode, mState, pDropTarget, uDefAction));
-#ifdef DEBUG
-    RTCList<RTCString> lstFormats =
-        RTCString(pszFormats, cbFormats - 1).split("\r\n");
-
-    LogFlow(("cbFormats=%RU32: ", cbFormats));
-    for (size_t i = 0; i < lstFormats.size(); i++)
-        LogFlow(("'%s' ", lstFormats.at(i).c_str()));
-    LogFlow(("\n"));
-#endif
 
     int rc;
     if (mState == Dragging)
@@ -1104,21 +1060,6 @@ int VBoxDnDWnd::ProcessEvent(PVBOXDNDEVENT pEvent)
 
     PostMessage(hWnd, WM_VBOXTRAY_DND_MESSAGE,
                 0 /* wParm */, (LPARAM)pEvent /* lParm */);
-
-    return VINF_SUCCESS;
-}
-
-int VBoxDnDWnd::dragRelease(void)
-{
-#ifdef DEBUG_andy
-    LogFlowFunc(("\n"));
-#endif
-    /* Release mouse button in the guest to start the "drop"
-     * action at the current mouse cursor position. */
-    INPUT Input[1] = { 0 };
-    Input[0].type       = INPUT_MOUSE;
-    Input[0].mi.dwFlags = MOUSEEVENTF_LEFTUP;
-    SendInput(1, Input, sizeof(INPUT));
 
     return VINF_SUCCESS;
 }
@@ -1208,6 +1149,68 @@ int VBoxDnDWnd::makeFullscreen(void)
     return rc;
 }
 
+int VBoxDnDWnd::mouseMove(int x, int y, DWORD dwMouseInputFlags)
+{
+    int iScreenX = GetSystemMetrics(SM_CXSCREEN) - 1;
+    int iScreenY = GetSystemMetrics(SM_CYSCREEN) - 1;
+
+    INPUT Input[1] = { 0 };
+    Input[0].type       = INPUT_MOUSE;
+    Input[0].mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE
+                        | dwMouseInputFlags;
+    Input[0].mi.dx      = x * (65535 / iScreenX);
+    Input[0].mi.dy      = y * (65535 / iScreenY);
+
+    int rc;
+    if (s_pfnSendInput(1 /* Number of inputs */,
+                       Input, sizeof(INPUT)))
+    {
+#ifdef DEBUG_andy
+        CURSORINFO ci;
+        RT_ZERO(ci);
+        ci.cbSize = sizeof(ci);
+        BOOL fRc = GetCursorInfo(&ci);
+        if (fRc)
+            LogFlowThisFunc(("Cursor shown=%RTbool, cursor=0x%p, x=%d, y=%d\n",
+                             (ci.flags & CURSOR_SHOWING) ? true : false,
+                             ci.hCursor, ci.ptScreenPos.x, ci.ptScreenPos.y));
+#endif
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        DWORD dwErr = GetLastError();
+        rc = RTErrConvertFromWin32(dwErr);
+        LogFlowFunc(("SendInput failed with rc=%Rrc\n", rc));
+    }
+
+    return rc;
+}
+
+int VBoxDnDWnd::mouseRelease(void)
+{
+#ifdef DEBUG_andy
+    LogFlowFunc(("\n"));
+#endif
+    int rc;
+
+    /* Release mouse button in the guest to start the "drop"
+     * action at the current mouse cursor position. */
+    INPUT Input[1] = { 0 };
+    Input[0].type       = INPUT_MOUSE;
+    Input[0].mi.dwFlags = MOUSEEVENTF_LEFTUP;
+    if (!s_pfnSendInput(1, Input, sizeof(INPUT)))
+    {
+        DWORD dwErr = GetLastError();
+        rc = RTErrConvertFromWin32(dwErr);
+        LogFlowFunc(("SendInput failed with rc=%Rrc\n", rc));
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    return rc;
+}
+
 void VBoxDnDWnd::reset(void)
 {
     LogFlowThisFunc(("Old mState=%ld\n", mState));
@@ -1271,22 +1274,38 @@ int VBoxDnDInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
     PVBOXDNDCONTEXT pCtx = &gCtx;
 
     int rc;
+    bool fSupportedOS = true;
 
-    /* Create the proxy window. At the moment we
-     * only support one window at a time. */
-    VBoxDnDWnd *pWnd = NULL;
-    try
+    s_pfnSendInput = (PFNSENDINPUT)
+        RTLdrGetSystemSymbol("User32.dll", "SendInput");
+    fSupportedOS = !RT_BOOL(s_pfnSendInput == NULL);
+
+    if (!fSupportedOS)
     {
-        pWnd = new VBoxDnDWnd();
-        rc = pWnd->Initialize(pCtx);
-
-        /* Add proxy window to our proxy windows list. */
-        if (RT_SUCCESS(rc))
-            pCtx->lstWnd.append(pWnd);
+        LogRel(("DnD: Not supported Windows version, disabling drag'n drop support\n"));
+        rc = VERR_NOT_SUPPORTED;
     }
-    catch (std::bad_alloc)
+    else
+        rc = VINF_SUCCESS;
+
+    if (RT_SUCCESS(rc))
     {
-        rc = VERR_NO_MEMORY;
+        /* Create the proxy window. At the moment we
+         * only support one window at a time. */
+        VBoxDnDWnd *pWnd = NULL;
+        try
+        {
+            pWnd = new VBoxDnDWnd();
+            rc = pWnd->Initialize(pCtx);
+
+            /* Add proxy window to our proxy windows list. */
+            if (RT_SUCCESS(rc))
+                pCtx->lstWnd.append(pWnd);
+        }
+        catch (std::bad_alloc)
+        {
+            rc = VERR_NO_MEMORY;
+        }
     }
 
     if (RT_SUCCESS(rc))
@@ -1337,6 +1356,15 @@ void VBoxDnDDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     AssertPtr(pCtx);
 
     int rc = VINF_SUCCESS;
+
+    /** @todo At the moment we only have one DnD proxy window. */
+    Assert(pCtx->lstWnd.size() == 1);
+    VBoxDnDWnd *pWnd = pCtx->lstWnd.first();
+    if (pWnd)
+        delete pWnd;
+
+    if (pCtx->hEvtQueueSem != NIL_RTSEMEVENT)
+        RTSemEventDestroy(pCtx->hEvtQueueSem);
 
     LogFunc(("Destroyed pInstance=%p, rc=%Rrc\n",
              pInstance, rc));

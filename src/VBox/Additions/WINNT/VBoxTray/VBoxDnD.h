@@ -173,6 +173,7 @@ protected:
     void *mpvData;
     uint32_t mcbData;
     RTSEMEVENT hEventDrop;
+    int mDroppedRc;
 };
 
 class VBoxDnDEnumFormatEtc : public IEnumFORMATETC
@@ -337,7 +338,7 @@ public:
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     /* G->H */
     int OnGhIsDnDPending(uint32_t uScreenID);
-    int OnGhDropped(const char *pszFormats, uint32_t cbFormats, uint32_t uDefAction);
+    int OnGhDropped(const char *pszFormat, uint32_t cbFormats, uint32_t uDefAction);
     int OnGhSendDir(const char *pszFormats, uint32_t cbFormats, uint32_t uDefAction);
     int OnGhSendFile(const char *pszFormats, uint32_t cbFormats, uint32_t uDefAction);
 #endif
@@ -350,9 +351,10 @@ public:
 
 protected:
 
-    int dragRelease(void);
     int makeFullscreen(void);
     void reset(void);
+    int mouseMove(int x, int y, DWORD dwMouseInputFlags);
+    int mouseRelease(void);
 
 public: /** @todo Make protected! */
 
@@ -385,7 +387,7 @@ public: /** @todo Make protected! */
 # endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 #else
     /** @todo Implement me. */
-#endif
+#endif /* RT_OS_WINDOWS */
 
     /** The window's own HGCM client ID. */
     uint32_t                   mClientID;

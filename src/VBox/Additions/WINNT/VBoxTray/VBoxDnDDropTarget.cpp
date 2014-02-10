@@ -253,7 +253,6 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
 #endif
     HRESULT hr = S_OK;
 
-    bool fCanDrop = false;
     if (mFormatEtc.cfFormat) /* Did we get a supported format yet? */
     {
         /* Make sure the data object's data format is still the same
@@ -367,7 +366,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                             }
 
                             if (RT_FAILURE(rc))
-                                return rc;
+                                break;
 
                             char *pszFile = NULL; /* UTF-8 version. */
                             UINT cchFile = 0;
@@ -404,15 +403,14 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
 
                             if (RT_SUCCESS(rc))
                             {
-                                LogFlowFunc(("\tFile: %s (%RU32 characters)\n",
+                                LogFlowFunc(("\tFile: %s (cchFile=%RU32)\n",
                                              pszFile, cchFile));
 
                                 rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */,
                                                      pszFile, cchFile);
+                                if (RT_SUCCESS(rc))
+                                    cchFiles += cchFile;
                             }
-
-                            /* Termination. */
-                            pszFiles[cchFiles] = '\0';
 
                             if (pszFile)
                                 RTMemFree(pszFile);
@@ -427,7 +425,12 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                             Assert(cbSize);
 
                             mpvData = RTMemDup(pszFiles, cbSize);
-                            mcbData = cbSize;
+                            if (mpvData)
+                            {
+                                mcbData = cbSize;
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
                         }
 
                         LogFlowFunc(("Building CF_HDROP list rc=%Rrc, pszFiles=0x%p, cFiles=%RU16, cchFiles=%RU32\n",
@@ -439,42 +442,39 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                     }
 
                     default:
+                        /* Note: Should not happen due to the checks done in DragEnter(). */
                         AssertMsgFailed(("Format of type %RI16 (%s) not supported\n",
                                          mFormatEtc.cfFormat,
                                          VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat)));
-                        hr = ERROR_NOT_SUPPORTED;
                         hr = DV_E_CLIPFORMAT; /* Set special hr for OLE. */
+                        break;
+                }
+
+                /*
+                 * Third stage: Release access to the storage medium again.
+                 */
+                switch (mFormatEtc.tymed)
+                {
+                    case TYMED_HGLOBAL:
+                        GlobalUnlock(stgMed.hGlobal);
+                        break;
+
+                    default:
+                        AssertMsgFailed(("Really should not happen -- see init stage!\n"));
                         break;
                 }
             }
 
-            /*
-             * Third stage: Release access to the storage medium again.
-             */
-            switch (mFormatEtc.tymed)
-            {
-                case TYMED_HGLOBAL:
-                    GlobalUnlock(stgMed.hGlobal);
-                    break;
-
-                default:
-                    AssertMsgFailed(("Really should not happen -- see init stage!\n"));
-                    break;
-            }
+            /* Signal waiters. */
+            mDroppedRc = rc;
+            RTSemEventSignal(hEventDrop);
 
             /* Release storage medium again. */
             ReleaseStgMedium(&stgMed);
-
-            /** @todo Signal in any case to avoid hangs/timeouts? */
-            if (RT_SUCCESS(rc))
-            {
-                RTSemEventSignal(hEventDrop);
-                fCanDrop = true;
-            }
         }
     }
 
-    if (fCanDrop)
+    if (RT_SUCCESS(rc))
     {
         /* Note: pt is not used since we don't need to differentiate within our
          *       proxy window. */
@@ -486,9 +486,9 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
     if (mpWndParent)
         mpWndParent->hide();
 
-    LogFlowFunc(("Returning with rc=%Rrc, mFormatEtc.cfFormat=%RI16 (%s), fCanDrop=%RTbool, *pdwEffect=%RI32\n",
-                 rc, mFormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat),
-                 fCanDrop, *pdwEffect));
+    LogFlowFunc(("Returning with hr=%Rhrc (%Rrc), mFormatEtc.cfFormat=%RI16 (%s), *pdwEffect=%RI32\n",
+                 hr, rc, mFormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat),
+                 *pdwEffect));
 
     return hr;
 }
@@ -545,7 +545,11 @@ RTCString VBoxDnDDropTarget::Formats(void)
 int VBoxDnDDropTarget::WaitForDrop(RTMSINTERVAL msTimeout)
 {
     LogFlowFunc(("msTimeout=%RU32\n", msTimeout));
+
     int rc = RTSemEventWait(hEventDrop, msTimeout);
+    if (RT_SUCCESS(rc))
+        rc = mDroppedRc;
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
