@@ -1006,7 +1006,7 @@ FinalizeParams(JNIEnv *env, const nsXPTParamInfo &aParamInfo, PRUint8 aType,
                                                      aVariant.val.u8;
         if (aParamInfo.IsRetval() && !aIsArrayElement) {
           *aParam = env->NewObject(shortClass, shortInitMID, value);
-        } else if ((aParamInfo.IsOut() || aIsArrayElement) && aParam) {
+        } else if ((aParamInfo.IsOut() || aIsArrayElement) && *aParam) {
           env->SetShortArrayRegion((jshortArray) *aParam, aIndex, 1, &value);
         }
       }
@@ -1753,8 +1753,9 @@ JAVAPROXY_NATIVE(callXPCOMMethod) (JNIEnv *env, jclass that, jobject aJavaProxy,
     }
 
     jobject* javaElement;
+    jobject element = nsnull;
     if (!paramInfo.IsRetval()) {
-      jobject element = env->GetObjectArrayElement(aParams, i);
+      element = env->GetObjectArrayElement(aParams, i);
       javaElement = &element;
     } else {
       javaElement = &result;
