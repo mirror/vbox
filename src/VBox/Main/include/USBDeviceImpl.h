@@ -19,27 +19,16 @@
 #ifndef ____H_USBDEVICEIMPL
 #define ____H_USBDEVICEIMPL
 
-#include "VirtualBoxBase.h"
+#include "USBDeviceWrap.h"
 
 /**
  * Object class used for maintaining devices attached to a USB controller.
  * Generally this contains much less information.
  */
 class ATL_NO_VTABLE OUSBDevice :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IUSBDevice)
+    public USBDeviceWrap
 {
 public:
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(OUSBDevice, IUSBDevice)
-
-    DECLARE_NOT_AGGREGATABLE(OUSBDevice)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(OUSBDevice)
-        VBOX_DEFAULT_INTERFACE_ENTRIES (IUSBDevice)
-    END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (OUSBDevice)
 
@@ -50,24 +39,24 @@ public:
     HRESULT init (IUSBDevice *a_pUSBDevice);
     void uninit();
 
-    // IUSBDevice properties
-    STDMETHOD(COMGETTER(Id))(BSTR *aId);
-    STDMETHOD(COMGETTER(VendorId))(USHORT *aVendorId);
-    STDMETHOD(COMGETTER(ProductId))(USHORT *aProductId);
-    STDMETHOD(COMGETTER(Revision))(USHORT *aRevision);
-    STDMETHOD(COMGETTER(Manufacturer))(BSTR *aManufacturer);
-    STDMETHOD(COMGETTER(Product))(BSTR *aProduct);
-    STDMETHOD(COMGETTER(SerialNumber))(BSTR *aSerialNumber);
-    STDMETHOD(COMGETTER(Address))(BSTR *aAddress);
-    STDMETHOD(COMGETTER(Port))(USHORT *aPort);
-    STDMETHOD(COMGETTER(Version))(USHORT *aVersion);
-    STDMETHOD(COMGETTER(PortVersion))(USHORT *aPortVersion);
-    STDMETHOD(COMGETTER(Remote))(BOOL *aRemote);
-
     // public methods only for internal purposes
-    const Guid &id() const { return mData.id; }
+    const Guid &i_id() const { return mData.id; }
 
 private:
+
+    // Wrapped IUSBDevice properties
+    HRESULT getId(com::Guid &aId);
+    HRESULT getVendorId(USHORT *aVendorId);
+    HRESULT getProductId(USHORT *aProductId);
+    HRESULT getRevision(USHORT *aRevision);
+    HRESULT getManufacturer(com::Utf8Str &aManufacturer);
+    HRESULT getProduct(com::Utf8Str &aProduct);
+    HRESULT getSerialNumber(com::Utf8Str &aSerialNumber);
+    HRESULT getAddress(com::Utf8Str &aAddress);
+    HRESULT getPort(USHORT *aPort);
+    HRESULT getVersion(USHORT *aVersion);
+    HRESULT getPortVersion(USHORT *aPortVersion);
+    HRESULT getRemote(BOOL *aRemote);
 
     struct Data
     {
@@ -85,13 +74,13 @@ private:
          * (high byte = integer; low byte = decimal) */
         const USHORT revision;
         /** The Manufacturer string. (Quite possibly NULL.) */
-        const Bstr manufacturer;
+        const com::Utf8Str manufacturer;
         /** The Product string. (Quite possibly NULL.) */
-        const Bstr product;
+        const com::Utf8Str product;
         /** The SerialNumber string. (Quite possibly NULL.) */
-        const Bstr serialNumber;
+        const com::Utf8Str serialNumber;
         /** The host specific address of the device. */
-        const Bstr address;
+        const com::Utf8Str address;
         /** The host port number. */
         const USHORT port;
         /** The major USB version number of the device. */

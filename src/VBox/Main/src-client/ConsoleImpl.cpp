@@ -2937,7 +2937,7 @@ STDMETHODIMP Console::DetachUSBDevice(IN_BSTR aId, IUSBDevice **aDevice)
     Guid uuid(aId);
     while (it != mUSBDevices.end())
     {
-        if ((*it)->id() == uuid)
+        if ((*it)->i_id() == uuid)
         {
             pUSBDevice = *it;
             break;
@@ -5210,8 +5210,8 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
     USBDeviceList::iterator it = mUSBDevices.begin();
     while (it != mUSBDevices.end())
     {
-        LogFlowThisFunc(("it={%RTuuid}\n", (*it)->id().raw()));
-        if ((*it)->id() == Uuid)
+        LogFlowThisFunc(("it={%RTuuid}\n", (*it)->i_id().raw()));
+        if ((*it)->i_id() == Uuid)
         {
             pUSBDevice = *it;
             break;
@@ -8286,7 +8286,7 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         mUSBDevices.push_back(pUSBDevice);
-        LogFlowFunc(("Attached device {%RTuuid}\n", pUSBDevice->id().raw()));
+        LogFlowFunc(("Attached device {%RTuuid}\n", pUSBDevice->i_id().raw()));
 
         /* notify callbacks */
         alock.release();
@@ -8364,7 +8364,7 @@ HRESULT Console::detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("Detaching USB proxy device {%RTuuid}...\n",
-                     aHostDevice->id().raw()));
+                     aHostDevice->i_id().raw()));
 
     /*
      * If this was a remote device, release the backend pointer.
@@ -8376,7 +8376,7 @@ HRESULT Console::detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice)
     if (FAILED(hrc2))
         setErrorStatic(hrc2, "GetRemote() failed");
 
-    PCRTUUID pUuid = aHostDevice->id().raw();
+    PCRTUUID pUuid = aHostDevice->i_id().raw();
     if (fRemote)
     {
         Guid guid(*pUuid);
