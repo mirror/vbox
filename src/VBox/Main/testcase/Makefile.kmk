@@ -26,7 +26,6 @@ ifndef VBOX_ONLY_SDK
  if defined(VBOX_WITH_TESTCASES)
   PROGRAMS       += \
   	tstAPI \
-  	tstVBoxAPI \
   	tstVBoxAPIPerf \
   	$(if $(VBOX_OSE),,tstOVF) \
   	$(if $(VBOX_WITH_XPCOM),tstVBoxAPIXPCOM,tstVBoxAPIWin) \
