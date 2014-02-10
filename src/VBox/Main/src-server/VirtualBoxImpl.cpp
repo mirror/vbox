@@ -1854,7 +1854,7 @@ HRESULT VirtualBox::getGuestOSType(const com::Utf8Str &aId,
     {
         const Bstr &typeId = (*it)->i_id();
         AssertMsg(!typeId.isEmpty(), ("ID must not be NULL"));
-        if (typeId == aId)
+        if (typeId.compare(aId, Bstr::CaseInsensitive) == 0)
         {
             (*it).queryInterfaceTo(aType.asOutParam());
             break;
