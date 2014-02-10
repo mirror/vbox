@@ -31,7 +31,7 @@
 
 bool RTCALL VBoxOglIs3DAccelerationSupported()
 {
-    if (RTEnvGet("VBOX_CROGL_FORCE_SUPPORTED"))
+    if (RTEnvExist("VBOX_CROGL_FORCE_SUPPORTED"))
     {
         LogRel(("VBOX_CROGL_FORCE_SUPPORTED is specified, skipping 3D test, and treating as supported\n"));
         return true;
