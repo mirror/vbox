@@ -72,6 +72,40 @@
 # define TMTIMER_ASSERT_CRITSECT(pTimer) do { } while (0)
 #endif
 
+/** @def TMTIMER_ASSERT_SYNC_CRITSECT_ORDER
+ * Checks for lock order trouble between the timer critsect and the critical
+ * section critsect.  The virtual sync critsect must always be entered before
+ * the one associated with the timer (see TMR3TimerQueuesDo).  It is OK if there
+ * isn't any critical section associated with the timer or if the calling thread
+ * doesn't own it, ASSUMING of course that the thread using this macro is going
+ * to enter the virtual sync critical section anyway.
+ *
+ * @remarks This is a sligtly relaxed timer locking attitude compared to
+ *          TMTIMER_ASSERT_CRITSECT, however, the calling device/whatever code
+ *          should know what it's doing if it's stopping or starting a timer
+ *          without taking the device lock.
+ */
+#ifdef VBOX_STRICT
+# define TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer) \
+    do { \
+        if ((pTimer)->pCritSect) \
+        { \
+            VMSTATE      enmState; \
+            PPDMCRITSECT pCritSect = (PPDMCRITSECT)MMHyperR3ToCC(pVM, (pTimer)->pCritSect); \
+            AssertMsg(   pCritSect \
+                      && (   !PDMCritSectIsOwner(pCritSect) \
+                          || PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock) \
+                          || (enmState = (pVM)->enmVMState) == VMSTATE_CREATING \
+                          || enmState == VMSTATE_RESETTING \
+                          || enmState == VMSTATE_RESETTING_LS ),\
+                      ("pTimer=%p (%s) pCritSect=%p (%s)\n", pTimer, R3STRING(pTimer->pszDesc), \
+                       (pTimer)->pCritSect, R3STRING(PDMR3CritSectName((pTimer)->pCritSect)) )); \
+        } \
+    } while (0)
+#else
+# define TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pTimer) do { } while (0)
+#endif
+
 
 /**
  * Notification that execution is about to start.
@@ -1129,6 +1163,7 @@ static int tmTimerVirtualSyncSet(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire)
 {
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetVs), a);
     VM_ASSERT_EMT(pVM);
+    TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer);
     int rc = PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
     AssertRCReturn(rc, rc);
 
@@ -1427,7 +1462,7 @@ static int tmTimerVirtualSyncSetRelative(PVM pVM, PTMTIMER pTimer, uint64_t cTic
 {
     STAM_PROFILE_START(pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelativeVs), a);
     VM_ASSERT_EMT(pVM);
-    Assert(PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock));
+    TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer);
     int rc = PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
     AssertRCReturn(rc, rc);
 
@@ -1754,6 +1789,7 @@ static int tmTimerVirtualSyncStop(PVM pVM, PTMTIMER pTimer)
 {
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerStopVs), a);
     VM_ASSERT_EMT(pVM);
+    TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer);
     int rc = PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
     AssertRCReturn(rc, rc);
 
