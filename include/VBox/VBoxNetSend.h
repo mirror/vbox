@@ -24,32 +24,34 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef __VBoxNetSend_h__
-#define __VBoxNetSend_h__
+/** @todo move this to src/VBox/HostDrivers/darwin as a .cpp file. */
+#ifndef ___VBox_VBoxNetSend_h
+#define ___VBox_VBoxNetSend_h
 
 #if defined(RT_OS_DARWIN)
 
-#include <iprt/err.h>
-#include <iprt/assert.h>
-#include <iprt/string.h>
+# include <iprt/err.h>
+# include <iprt/assert.h>
+# include <iprt/string.h>
 
-#include <sys/socket.h>
-#include <net/kpi_interface.h>
+# include <sys/socket.h>
+# include <net/kpi_interface.h>
 RT_C_DECLS_BEGIN /* Buggy 10.4 headers, fixed in 10.5. */
-#include <sys/kpi_mbuf.h>
+# include <sys/kpi_mbuf.h>
 RT_C_DECLS_END
-#include <net/if.h>
+# include <net/if.h>
 
 RT_C_DECLS_BEGIN
 
-#if defined(IN_RING0)
+# if defined(IN_RING0)
 
 /**
- * Constructs and submits a dummy packet to ifnet_input(). This is a workaround
- * for "stuck dock icon" issue. When the first packet goes through the interface
- * DLIL grabs a reference to the thread that submits the packet and holds it
- * until the interface is destroyed. By submitting this dummy we make DLIL grab
- * the thread of a non-GUI process.
+ * Constructs and submits a dummy packet to ifnet_input().
+ *
+ * This is a workaround for "stuck dock icon" issue. When the first packet goes
+ * through the interface DLIL grabs a reference to the thread that submits the
+ * packet and holds it until the interface is destroyed. By submitting this
+ * dummy we make DLIL grab the thread of a non-GUI process.
  *
  * Most of this function was copied from vboxNetFltDarwinMBufFromSG().
  *
@@ -57,13 +59,13 @@ RT_C_DECLS_BEGIN
  * @param   pIfNet      The interface that will hold the reference to the calling
  *                      thread. We submit dummy as if it was coming from this interface.
  */
-inline int VBoxNetSendDummy(ifnet_t pIfNet)
+DECLINLINE(int) VBoxNetSendDummy(ifnet_t pIfNet)
 {
-    int rc = 0;
-    size_t cbTotal = 50; /* No Ethernet header */
-    mbuf_how_t How = MBUF_WAITOK;
+    int rc = VINF_SUCCESS;
 
-    mbuf_t pPkt = NULL;
+    size_t      cbTotal = 50; /* No Ethernet header */
+    mbuf_how_t  How     = MBUF_WAITOK;
+    mbuf_t      pPkt    = NULL;
     errno_t err = mbuf_allocpacket(How, cbTotal, NULL, &pPkt);
     if (!err)
     {
@@ -95,10 +97,11 @@ inline int VBoxNetSendDummy(ifnet_t pIfNet)
     return rc;
 }
 
-#endif /* IN_RING0 */
+# endif /* IN_RING0 */
 
 RT_C_DECLS_END
 
 #endif /* RT_OS_DARWIN */
 
-#endif /* __VBoxNetSend_h__ */
+#endif /* !___VBox_VBoxNetSend_h */
+
