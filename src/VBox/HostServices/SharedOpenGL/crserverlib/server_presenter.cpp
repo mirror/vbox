@@ -310,6 +310,8 @@ static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect,
     uint32_t c2DRects = 0;
     CR_TEXDATA *pEnteredTex = NULL;
     PCR_BLITTER pEnteredBlitter = NULL;
+    uint32_t width = 0, height = 0;
+    RTPOINT StretchedEntryPoint = {0};
 
     VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR Iter;
     RTPOINT SrcPoint = {pSrcRect->xLeft, pSrcRect->yTop};
@@ -351,9 +353,6 @@ static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect,
             WARN(("VBoxVrListRectsSubst failed rc %d", rc));
             goto end;
         }
-
-        uint32_t width, height;
-        RTPOINT StretchedEntryPoint;
 
         for (uint32_t i = 0; i < cRects; ++i)
         {
