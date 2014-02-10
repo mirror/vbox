@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2012-2013 Oracle Corporation
+; Copyright (C) 2012-2014 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -826,7 +826,10 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
 
 !if $%VBOX_WITH_WDDM% == "1"
   ${If} $g_bWithWDDM == "true"
-    ; All D3D components are installed with WDDM driver package, nothing to be done here
+    ; Do we need to restore the original d3d8.dll/d3d9.dll files because the guest
+    ; installation was upgraded from XPDM to WDDM driver? In a XPDM installation
+    ; those DLLs were replaced by our own stub files.
+    Call RestoreFilesDirect3D
     Return
   ${EndIf}
 !endif
@@ -1249,7 +1252,7 @@ Function .onInit
   ${If} $g_bWithWDDM == "true" ; D3D / WDDM support
     !insertmacro SelectSection ${SEC03}
   ${EndIf}
-  ; On Windows 8 / 8.1 / Windows Server 2012 R2 we always select the 3D 
+  ; On Windows 8 / 8.1 / Windows Server 2012 R2 we always select the 3D
   ; section and disable it so that it cannot be deselected again
   ${If}   $g_strWinVersion == "8"
   ${OrIf} $g_strWinVersion == "8_1"

@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2013 Oracle Corporation
+; Copyright (C) 2006-2014 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -1018,3 +1018,61 @@ FunctionEnd
 !macroend
 !insertmacro ValidateFilesDirect3D ""
 !insertmacro ValidateFilesDirect3D "un."
+
+;
+; Restores formerly backed up Direct3D original files, which were replaced by
+; a VBox XPDM driver installation before. This might be necessary for upgrading a
+; XPDM installation to a WDDM one.
+; @return  Stack: "0" if files were restored successfully; otherwise "1".
+;
+!macro RestoreFilesDirect3D un
+Function ${un}RestoreFilesDirect3D
+
+  Push $0
+
+  ; We need to switch to 64-bit app mode to handle the "real" 64-bit files in
+  ; ""system32" on a 64-bit guest
+  Call ${un}SetAppMode64
+
+  ; Note: Not finding a file (like *d3d8.dll) on Windows Vista/7 is fine;
+  ;       it simply is not present there.
+
+  ; Note 2: On 64-bit systems there are no 64-bit *d3d8 DLLs, only 32-bit ones
+  ;         in SysWOW64 (or in system32 on 32-bit systems).
+
+!if $%BUILD_TARGET_ARCH% == "x86"
+  ${CopyFileEx} "${un}" "$SYSDIR\msd3d8.dll" "$SYSDIR\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+!endif
+  ${CopyFileEx} "${un}" "$SYSDIR\msd3d9.dll" "$SYSDIR\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+
+  ${If} $g_bCapDllCache == "true"
+!if $%BUILD_TARGET_ARCH% == "x86"
+    ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+!endif
+    ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d9.dll" "$SYSDIR\dllcache\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+  ${EndIf}
+
+!if $%BUILD_TARGET_ARCH% == "amd64"
+  ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d8.dll" "$g_strSysWow64\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+  ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d9.dll" "$g_strSysWow64\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+
+  ${If} $g_bCapDllCache == "true"
+    ${CopyFileEx} "${un}" "$g_strSysWow64\dllcache\msd3d8.dll" "$g_strSysWow64\dllcache\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+    ${CopyFileEx} "${un}" "$g_strSysWow64\dllcache\msd3d9.dll" "$g_strSysWow64\dllcache\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+  ${EndIf}
+!endif
+
+  ; Do a re-validation afterwards.
+  Call ${un}ValidateD3DFiles
+  Pop $0
+  ${If} $0 == "1" ; D3D files are invalid
+    ${LogVerbose} $(VBOX_UNINST_UNABLE_TO_RESTORE_D3D)
+    MessageBox MB_ICONSTOP|MB_OK $(VBOX_UNINST_UNABLE_TO_RESTORE_D3D) /SD IDOK
+  ${EndIf}
+
+  Exch $0
+
+FunctionEnd
+!macroend
+!insertmacro RestoreFilesDirect3D ""
+!insertmacro RestoreFilesDirect3D "un."
