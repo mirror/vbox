@@ -1580,12 +1580,12 @@ static void darwinHidInputCbKeyUp(VBoxKbdState_t *pKbd, uint32_t iKeyCode, VBoxH
              * should not be triggered for this event at all. Threfore, event should be removed from queue. */
             if (!darwinKbdCapsEventMatches(pEvent, pHidState->guestState.fCapsLockOn))
             {
-                free(pEvent);
                 CFArrayRemoveValueAtIndex(pHidState->pFifoEventQueue, iQueue);
 
                 LogRel2(("IOHID: KBD %d: Modifier Key-Up event on Apple keyboard. Key-Down event was triggered %llu ms "
                     "ago. Carbon event should not be triggered, removed from queue\n", (int)pKbd->idxPosition,
                     RTTimeSystemMilliTS() - pEvent->tsKeyDown));
+                free(pEvent);
             }
             else
             {
