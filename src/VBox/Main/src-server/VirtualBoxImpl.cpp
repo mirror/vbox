@@ -4723,7 +4723,6 @@ HRESULT VirtualBox::findDHCPServerByNetworkName(const com::Utf8Str &aName,
                                                 ComPtr<IDHCPServer> &aServer)
 {
     HRESULT rc = S_OK;
-    Bstr bstr;
     ComPtr<DHCPServer> found;
 
     AutoReadLock alock(m->allDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -4732,6 +4731,7 @@ HRESULT VirtualBox::findDHCPServerByNetworkName(const com::Utf8Str &aName,
          it != m->allDHCPServers.end();
          ++it)
     {
+        Bstr bstr;
         rc = (*it)->COMGETTER(NetworkName)(bstr.asOutParam());
         if (FAILED(rc)) return rc;
 
@@ -4886,8 +4886,7 @@ HRESULT VirtualBox::findNATNetworkByName(const com::Utf8Str &aNetworkName,
 {
 #ifdef VBOX_WITH_NAT_SERVICE
 
-    HRESULT rc;
-    Bstr bstr;
+    HRESULT rc = S_OK;
     ComPtr<NATNetwork> found;
 
     AutoReadLock alock(m->allNATNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -4896,6 +4895,7 @@ HRESULT VirtualBox::findNATNetworkByName(const com::Utf8Str &aNetworkName,
          it != m->allNATNetworks.end();
          ++it)
     {
+        Bstr bstr;
         rc = (*it)->COMGETTER(NetworkName)(bstr.asOutParam());
         if (FAILED(rc)) return rc;
 
