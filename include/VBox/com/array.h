@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -641,21 +641,18 @@ public:
      */
     SafeArray(ComSafeArrayIn(T, aArg))
     {
+        if (aArg)
+        {
 #ifdef VBOX_WITH_XPCOM
 
-        AssertReturnVoid(aArg != NULL);
-
-        m.size = aArgSize;
-        m.arr = aArg;
-        m.isWeak = true;
+            m.size = aArgSize;
+            m.arr = aArg;
+            m.isWeak = true;
 
 #else /* !VBOX_WITH_XPCOM */
 
-        AssertReturnVoid(aArg != NULL);
-        SAFEARRAY *arg = aArg;
+            SAFEARRAY *arg = aArg;
 
-        if (arg)
-        {
             AssertReturnVoid(arg->cDims == 1);
 
             VARTYPE vt;
@@ -675,12 +672,12 @@ public:
 # endif
             rc = SafeArrayAccessData(arg, (void HUGEP **)&m.raw);
             AssertComRCReturnVoid(rc);
-        }
 
-        m.arr = arg;
-        m.isWeak = true;
+            m.arr = arg;
+            m.isWeak = true;
 
 #endif /* !VBOX_WITH_XPCOM */
+        }
     }
 
     /**
@@ -1016,7 +1013,7 @@ public:
      */
     virtual SafeArray &detachTo(ComSafeArrayOut(T, aArg))
     {
-        AssertReturn(m.isWeak == false, *this);
+        AssertReturn(!m.isWeak, *this);
 
 #ifdef VBOX_WITH_XPCOM
 
@@ -1592,21 +1589,18 @@ public:
      */
     SafeIfaceArray(ComSafeArrayIn(I *, aArg))
     {
+        if (aArg)
+        {
 #ifdef VBOX_WITH_XPCOM
 
-        AssertReturnVoid(aArg != NULL);
-
-        Base::m.size = aArgSize;
-        Base::m.arr = aArg;
-        Base::m.isWeak = true;
+            Base::m.size = aArgSize;
+            Base::m.arr = aArg;
+            Base::m.isWeak = true;
 
 #else /* !VBOX_WITH_XPCOM */
 
-        AssertReturnVoid(aArg != NULL);
-        SAFEARRAY *arg = aArg;
+            SAFEARRAY *arg = aArg;
 
-        if (arg)
-        {
             AssertReturnVoid(arg->cDims == 1);
 
             VARTYPE vt;
@@ -1624,12 +1618,12 @@ public:
 
             rc = SafeArrayAccessData(arg, (void HUGEP **)&m.raw);
             AssertComRCReturnVoid(rc);
-        }
 
-        m.arr = arg;
-        m.isWeak = true;
+            m.arr = arg;
+            m.isWeak = true;
 
 #endif /* !VBOX_WITH_XPCOM */
+        }
     }
 
     /**
