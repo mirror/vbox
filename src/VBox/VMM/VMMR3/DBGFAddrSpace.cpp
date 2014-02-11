@@ -177,7 +177,7 @@ int dbgfR3AsInit(PUVM pUVM)
     for (unsigned i = 0; i < RT_ELEMENTS(s_aProps); i++)
     {
         char szEnvValue[8192];
-        int rcEnv = RTEnvGetEx(RTENV_DEFAULT, s_aProps[i].pszEnvName, szEnvValue, sizeof(szEnvValue), NULL);
+        rc = RTEnvGetEx(RTENV_DEFAULT, s_aProps[i].pszEnvName, szEnvValue, sizeof(szEnvValue), NULL);
         if (RT_SUCCESS(rc))
         {
             rc = RTDbgCfgChangeString(pUVM->dbgf.s.hDbgCfg, s_aProps[i].enmProp, RTDBGCFGOP_PREPEND, szEnvValue);
