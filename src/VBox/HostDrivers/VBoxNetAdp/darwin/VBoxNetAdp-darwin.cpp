@@ -31,7 +31,6 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
-#include <VBox/VBoxNetSend.h>
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <iprt/semaphore.h>
@@ -39,6 +38,8 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 #include <iprt/alloca.h>
+
+#include "../../darwin/VBoxNetSend.h"
 
 #include <sys/systm.h>
 RT_C_DECLS_BEGIN /* Buggy 10.4 headers, fixed in 10.5. */
