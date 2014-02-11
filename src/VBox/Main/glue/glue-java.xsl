@@ -1599,7 +1599,7 @@
           </xsl:when>
           <xsl:when test="@dir='in'">
             <xsl:if test="(@safearray='yes') and not(@type = 'octet')">
-              <xsl:value-of select="concat(@name, '.size(), ')" />
+              <xsl:value-of select="concat(@name, ' != null ? ', @name, '.size() : 0, ')" />
             </xsl:if>
             <xsl:variable name="unwrapped">
               <xsl:call-template name="cookInParam">
