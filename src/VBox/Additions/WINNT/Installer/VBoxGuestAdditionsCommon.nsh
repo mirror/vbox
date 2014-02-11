@@ -875,7 +875,7 @@ Function ${un}ValidateD3DFiles
   Push $0
 
   ; We need to switch to 64-bit app mode to handle the "real" 64-bit files in
-  ; ""system32" on a 64-bit guest
+  ; "system32" on a 64-bit guest
   Call ${un}SetAppMode64
 
   ; Note: Not finding a file (like *d3d8.dll) on Windows Vista/7 is fine;
@@ -1031,7 +1031,7 @@ Function ${un}RestoreFilesDirect3D
   Push $0
 
   ; We need to switch to 64-bit app mode to handle the "real" 64-bit files in
-  ; ""system32" on a 64-bit guest
+  ; "system32" on a 64-bit guest
   Call ${un}SetAppMode64
 
   ; Note: Not finding a file (like *d3d8.dll) on Windows Vista/7 is fine;
@@ -1053,12 +1053,12 @@ Function ${un}RestoreFilesDirect3D
   ${EndIf}
 
 !if $%BUILD_TARGET_ARCH% == "amd64"
-  ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d8.dll" "$g_strSysWow64\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
-  ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d9.dll" "$g_strSysWow64\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+  ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d8.dll" "$g_strSysWow64\d3d8.dll" "Microsoft Corporation" "x86"
+  ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d9.dll" "$g_strSysWow64\d3d9.dll" "Microsoft Corporation" "x86"
 
   ${If} $g_bCapDllCache == "true"
-    ${CopyFileEx} "${un}" "$g_strSysWow64\dllcache\msd3d8.dll" "$g_strSysWow64\dllcache\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
-    ${CopyFileEx} "${un}" "$g_strSysWow64\dllcache\msd3d9.dll" "$g_strSysWow64\dllcache\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+    ${CopyFileEx} "${un}" "$g_strSysWow64\dllcache\msd3d8.dll" "$g_strSysWow64\dllcache\d3d8.dll" "Microsoft Corporation" "x86"
+    ${CopyFileEx} "${un}" "$g_strSysWow64\dllcache\msd3d9.dll" "$g_strSysWow64\dllcache\d3d9.dll" "Microsoft Corporation" "x86"
   ${EndIf}
 !endif
 
