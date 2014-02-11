@@ -65,21 +65,34 @@ typedef RTNETADDRIPV4 const *PCRTNETADDRIPV4;
  * Tests if the given string is an IPv4 address.
  *
  * @returns boolean.
- * @param   pszAddress          String which may be an IPv4 address.
+ * @param   pcszAddr        String which may be an IPv4 address.
  */
-RTDECL(bool) RTNetIsIPv4AddrStr(const char *pszAddress);
+RTDECL(bool) RTNetIsIPv4AddrStr(const char *pcszAddr);
 
 /**
- * Converts an stringified IPv4 address into the RTNETADDRIPV4 representation.
+ * Parses dotted-decimal IPv4 address into RTNETADDRIPV4 representation.
  *
  * @returns VINF_SUCCESS on success, VERR_INVALID_PARAMETER on
  *          failure.
  *
- * @param   pszAddr         The value to convert.
+ * @param   pcszAddr        The value to convert.
+ * @param   ppszNext        Where to store the pointer to the first char
+ *                            following the address. (Optional)
  * @param   pAddr           Where to store the result.
  */
-RTDECL(int) RTNetStrToIPv4Addr(const char *pszAddr, PRTNETADDRIPV4 pAddr);
+RTDECL(int) RTNetStrToIPv4AddrEx(const char *pcszAddr, PRTNETADDRIPV4 pAddr, char **ppszNext);
 
+/**
+ * Parses dotted-decimal IPv4 address into RTNETADDRIPV4 representation.
+ * Leading and trailing whitespace is ignored.
+ *
+ * @returns VINF_SUCCESS on success, VERR_INVALID_PARAMETER on
+ *          failure.
+ *
+ * @param   pcszAddr        The value to convert.
+ * @param   pAddr           Where to store the result.
+ */
+RTDECL(int) RTNetStrToIPv4Addr(const char *pcszAddr, PRTNETADDRIPV4 pAddr);
 
 /**
  * IPv6 address.

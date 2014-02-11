@@ -35,13 +35,17 @@
 #include <iprt/stream.h>
 #include "internal/string.h"
 
-RTDECL(int) RTNetStrToIPv4Addr(const char *pszAddr, PRTNETADDRIPV4 pAddr)
+
+DECLHIDDEN(int) rtNetStrToIPv4AddrEx(const char *pcszAddr, PRTNETADDRIPV4 pAddr,
+                                     char **ppszNext)
 {
     char *pszNext;
-    AssertPtrReturn(pszAddr, VERR_INVALID_PARAMETER);
+    int rc;
+
+    AssertPtrReturn(pcszAddr, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pAddr, VERR_INVALID_PARAMETER);
 
-    int rc = RTStrToUInt8Ex(RTStrStripL(pszAddr), &pszNext, 10, &pAddr->au8[0]);
+    rc = RTStrToUInt8Ex(pcszAddr, &pszNext, 10, &pAddr->au8[0]);
     if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS)
         return VERR_INVALID_PARAMETER;
     if (*pszNext++ != '.')
@@ -60,13 +64,61 @@ RTDECL(int) RTNetStrToIPv4Addr(const char *pszAddr, PRTNETADDRIPV4 pAddr)
         return VERR_INVALID_PARAMETER;
 
     rc = RTStrToUInt8Ex(pszNext, &pszNext, 10, &pAddr->au8[3]);
-    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_SPACES)
+    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_SPACES && rc != VWRN_TRAILING_CHARS)
         return VERR_INVALID_PARAMETER;
+
+    if (ppszNext != NULL)
+        *ppszNext = pszNext;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTNetStrToIPv4AddrEx(const char *pcszAddr, PRTNETADDRIPV4 pAddr,
+                                 char **ppszNext)
+{
+    return rtNetStrToIPv4AddrEx(pcszAddr, pAddr, ppszNext);
+}
+RT_EXPORT_SYMBOL(RTNetStrToIPv4AddrEx);
+
+
+RTDECL(int) RTNetStrToIPv4Addr(const char *pcszAddr, PRTNETADDRIPV4 pAddr)
+{
+    char *pszNext;
+    int rc;
+
+    AssertPtrReturn(pcszAddr, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pAddr, VERR_INVALID_PARAMETER);
+
+    pcszAddr = RTStrStripL(pcszAddr);
+    rc = rtNetStrToIPv4AddrEx(pcszAddr, pAddr, &pszNext);
+    if (rc != VINF_SUCCESS)
+        return VERR_INVALID_PARAMETER;
+
     pszNext = RTStrStripL(pszNext);
-    if (*pszNext)
+    if (*pszNext != '\0')
         return VERR_INVALID_PARAMETER;
 
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTNetStrToIPv4Addr);
 
+
+RTDECL(bool) RTNetIsIPv4AddrStr(const char *pcszAddr)
+{
+    RTNETADDRIPV4 addrIPv4;
+    char *pszNext;
+    int rc;
+
+    if (pcszAddr == NULL)
+        return false;
+
+    rc = rtNetStrToIPv4AddrEx(pcszAddr, &addrIPv4, &pszNext);
+    if (rc != VINF_SUCCESS)
+        return false;
+
+    if (*pszNext != '\0')
+        return false;
+
+    return true;
+}
+RT_EXPORT_SYMBOL(RTNetIsIPv4AddrStr);

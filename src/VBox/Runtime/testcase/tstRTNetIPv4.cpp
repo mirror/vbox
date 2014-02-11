@@ -65,6 +65,37 @@
     CHECKADDR(String, VERR_INVALID_PARAMETER, 0)
 
 
+#define CHECKADDREX(String, Trailer, rcExpected, ExpectedAddr)          \
+    do {                                                                \
+        RTNETADDRIPV4 Addr;                                             \
+        const char *strAll = String /* concat */ Trailer;               \
+        const char *pTrailer = strAll + sizeof(String) - 1;             \
+        char *pNext = NULL;                                             \
+        int rc2 = RTNetStrToIPv4AddrEx(strAll, &Addr, &pNext);          \
+        if ((rcExpected) && !rc2)                                       \
+        {                                                               \
+            RTTestIFailed("at line %d: '%s': expected %Rrc got %Rrc\n", \
+                          __LINE__, String, (rcExpected), rc2);         \
+        }                                                               \
+        else if ((rcExpected) != rc2                                    \
+                 || (rc2 == VINF_SUCCESS                                \
+                     && (RT_H2N_U32_C(ExpectedAddr) != Addr.u           \
+                         || pTrailer != pNext)))                        \
+        {                                                               \
+            RTTestIFailed("at line %d: '%s': expected %Rrc got %Rrc,"   \
+                          " expected address %RTnaipv4 got %RTnaipv4"   \
+                          " expected trailer \"%s\" got %s%s%s"         \
+                          "\n",                                         \
+                          __LINE__, String, rcExpected, rc2,            \
+                          RT_H2N_U32_C(ExpectedAddr), Addr.u,           \
+                          pTrailer,                                     \
+                          pNext ? "\"" : "",                            \
+                          pNext ? pNext : "(null)",                     \
+                          pNext ? "\"" : "");                           \
+        }                                                               \
+    } while (0)
+
+
 int main()
 {
     RTTEST hTest;
@@ -89,6 +120,15 @@ int main()
     BADADDR("1.666.3.4");
     BADADDR("1.2.666.4");
     BADADDR("1.2.3.666");
+
+    /*
+     * Parsing itself is covered by the tests above, here we only
+     * check trailers
+     */
+    CHECKADDREX("1.2.3.4",  "",   VINF_SUCCESS,           0x01020304);
+    CHECKADDREX("1.2.3.4",  " ",  VINF_SUCCESS,           0x01020304);
+    CHECKADDREX("1.2.3.4",  "x",  VINF_SUCCESS,           0x01020304);
+    CHECKADDREX("1.2.3.444", "",  VERR_INVALID_PARAMETER,          0);
 
     return RTTestSummaryAndDestroy(hTest);
 }

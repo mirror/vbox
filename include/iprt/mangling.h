@@ -984,6 +984,7 @@
 # define RTNetUDPChecksum                               RT_MANGLER(RTNetUDPChecksum)
 # define RTNetStrToMacAddr                              RT_MANGLER(RTNetStrToMacAddr)
 # define RTNetIsIPv4AddrStr                             RT_MANGLER(RTNetIsIPv4AddrStr)
+# define RTNetStrToIPv4AddrEx                           RT_MANGLER(RTNetStrToIPv4AddrEx)
 # define RTNetStrToIPv4Addr                             RT_MANGLER(RTNetStrToIPv4Addr)
 # define RTNetIsIPv6AddrStr                             RT_MANGLER(RTNetIsIPv6AddrStr)
 # define RTOnceSlow                                     RT_MANGLER(RTOnceSlow)
