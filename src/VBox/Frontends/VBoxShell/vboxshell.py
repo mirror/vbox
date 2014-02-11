@@ -177,7 +177,7 @@ def autoCompletion(cmds, ctx):
         readline.parse_and_bind ("bind ^W ed-delete-prev-word")
         # Doesn't work well
         # readline.parse_and_bind ("bind ^R em-inc-search-prev")
-        readline.parse_and_bind("tab: complete")
+    readline.parse_and_bind("tab: complete")
 
 
 g_fVerbose = False
