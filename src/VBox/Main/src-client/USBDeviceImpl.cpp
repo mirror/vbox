@@ -89,10 +89,10 @@ HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
     hrc = aUSBDevice->COMGETTER(Port)(&unconst(mData.port));
     ComAssertComRCRet(hrc, hrc);
 
-    hrc = aUSBDevice->COMGETTER(Port)(&unconst(mData.version));
+    hrc = aUSBDevice->COMGETTER(Version)(&unconst(mData.version));
     ComAssertComRCRet(hrc, hrc);
 
-    hrc = aUSBDevice->COMGETTER(Version)(&unconst(mData.portVersion));
+    hrc = aUSBDevice->COMGETTER(PortVersion)(&unconst(mData.portVersion));
     ComAssertComRCRet(hrc, hrc);
 
     hrc = aUSBDevice->COMGETTER(Remote)(&unconst(mData.remote));
