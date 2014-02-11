@@ -219,7 +219,7 @@ typedef struct CR_TEXDATA
     CR_BLITTER_IMG Img;
     /*dtor*/
     PFNCRTEXDATA_RELEASED pfnTextureReleased;
-    struct CR_TEXDATA *pStretchedCache;
+    struct CR_TEXDATA *pScaledCache;
 } CR_TEXDATA, *PCR_TEXDATA;
 
 DECLINLINE(void) CrTdInit(PCR_TEXDATA pTex, const VBOXVR_TEXTURE *pVrTex, PCR_BLITTER pBlitter, PFNCRTEXDATA_RELEASED pfnTextureReleased)
@@ -280,11 +280,11 @@ DECLINLINE(void) CrTdBltLeave(PCR_TEXDATA pTex)
  * */
 VBOXBLITTERDECL(int) CrTdBltDataAcquire(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted, const CR_BLITTER_IMG**ppImg);
 
-VBOXBLITTERDECL(int) CrTdBltDataAcquireStretched(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted, uint32_t width, uint32_t height, const CR_BLITTER_IMG**ppImg);
+VBOXBLITTERDECL(int) CrTdBltDataAcquireScaled(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted, uint32_t width, uint32_t height, const CR_BLITTER_IMG**ppImg);
 
-VBOXBLITTERDECL(int) CrTdBltDataReleaseStretched(PCR_TEXDATA pTex, const CR_BLITTER_IMG *pImg);
+VBOXBLITTERDECL(int) CrTdBltDataReleaseScaled(PCR_TEXDATA pTex, const CR_BLITTER_IMG *pImg);
 
-VBOXBLITTERDECL(void) CrTdBltStretchCacheMoveTo(PCR_TEXDATA pTex, PCR_TEXDATA pDstTex);
+VBOXBLITTERDECL(void) CrTdBltScaleCacheMoveTo(PCR_TEXDATA pTex, PCR_TEXDATA pDstTex);
 
 /* release the texture data, the data remains cached in the CR_TEXDATA object until it is discarded with CrTdBltDataFree or CrTdBltDataCleanup */
 VBOXBLITTERDECL(int) CrTdBltDataRelease(PCR_TEXDATA pTex);

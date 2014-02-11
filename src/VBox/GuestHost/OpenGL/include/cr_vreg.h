@@ -50,18 +50,18 @@ DECLINLINE(int) VBoxRectCmp(const RTRECT * pRect1, const RTRECT * pRect2)
 #ifndef IN_RING0
 #define CR_FLOAT_RCAST(_t, _v) ((_t)((float)(_v) + 0.5))
 
-DECLINLINE(void) VBoxRectStretch(PRTRECT pRect, float xStretch, float yStretch)
+DECLINLINE(void) VBoxRectScale(PRTRECT pRect, float xScale, float yScale)
 {
-    pRect->xLeft = CR_FLOAT_RCAST(int32_t, pRect->xLeft * xStretch);
-    pRect->yTop = CR_FLOAT_RCAST(int32_t, pRect->yTop * yStretch);
-    pRect->xRight = CR_FLOAT_RCAST(int32_t, pRect->xRight * xStretch);
-    pRect->yBottom = CR_FLOAT_RCAST(int32_t, pRect->yBottom * yStretch);
+    pRect->xLeft = CR_FLOAT_RCAST(int32_t, pRect->xLeft * xScale);
+    pRect->yTop = CR_FLOAT_RCAST(int32_t, pRect->yTop * yScale);
+    pRect->xRight = CR_FLOAT_RCAST(int32_t, pRect->xRight * xScale);
+    pRect->yBottom = CR_FLOAT_RCAST(int32_t, pRect->yBottom * yScale);
 }
 
-DECLINLINE(void) VBoxRectStretched(const RTRECT *pRect, float xStretch, float yStretch, PRTRECT pResult)
+DECLINLINE(void) VBoxRectScaled(const RTRECT *pRect, float xScale, float yScale, PRTRECT pResult)
 {
     *pResult = *pRect;
-    VBoxRectStretch(pResult, xStretch, yStretch);
+    VBoxRectScale(pResult, xScale, yScale);
 }
 #endif
 
