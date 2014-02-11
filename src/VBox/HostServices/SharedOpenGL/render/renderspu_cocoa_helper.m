@@ -1497,7 +1497,7 @@ static int g_cVBoxTgaCtr = 0;
                             
                             VBoxRectTranslate(&DstRect, -RestrictDstRect.xLeft, -RestrictDstRect.yTop);
                             
-                            VBoxRectStretch(&DstRect, m_FBOThumbScaleX, m_FBOThumbScaleY);
+                            VBoxRectScale(&DstRect, m_FBOThumbScaleX, m_FBOThumbScaleY);
                     
                             if (VBoxRectIsZero(&DstRect))
                                 continue;

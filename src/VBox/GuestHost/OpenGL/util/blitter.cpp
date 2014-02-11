@@ -1316,8 +1316,8 @@ static void crTdBltDataFree(PCR_TEXDATA pTex)
 {
     crTdBltImgFree(pTex);
 
-    if (pTex->pStretchedCache)
-        CrTdBltDataFreeNe(pTex->pStretchedCache);
+    if (pTex->pScaledCache)
+        CrTdBltDataFreeNe(pTex->pScaledCache);
 }
 
 /* discard the texture data cached with previous CrTdBltDataAcquire.
@@ -1339,8 +1339,8 @@ VBOXBLITTERDECL(void) CrTdBltDataInvalidateNe(PCR_TEXDATA pTex)
 {
     crTdBltImgRelease(pTex);
 
-    if (pTex->pStretchedCache)
-        CrTdBltDataInvalidateNe(pTex->pStretchedCache);
+    if (pTex->pScaledCache)
+        CrTdBltDataInvalidateNe(pTex->pScaledCache);
 }
 
 VBOXBLITTERDECL(int) CrTdBltDataFreeNe(PCR_TEXDATA pTex)
@@ -1371,11 +1371,11 @@ VBOXBLITTERDECL(int) CrTdBltDataFreeNe(PCR_TEXDATA pTex)
 
 static void crTdBltSdCleanupCacheNe(PCR_TEXDATA pTex)
 {
-    if (pTex->pStretchedCache)
+    if (pTex->pScaledCache)
     {
-        CrTdBltDataCleanupNe(pTex->pStretchedCache);
-        CrTdRelease(pTex->pStretchedCache);
-        pTex->pStretchedCache = NULL;
+        CrTdBltDataCleanupNe(pTex->pScaledCache);
+        CrTdRelease(pTex->pScaledCache);
+        pTex->pScaledCache = NULL;
     }
 }
 
@@ -1539,16 +1539,16 @@ static DECLCALLBACK(void) ctTdBltSdReleased(struct CR_TEXDATA *pTexture)
     RTMemFree(pTexture);
 }
 
-static int ctTdBltSdCreate(PCR_BLITTER pBlitter, uint32_t width, uint32_t height, GLenum enmTarget, PCR_TEXDATA *ppStretchedCache)
+static int ctTdBltSdCreate(PCR_BLITTER pBlitter, uint32_t width, uint32_t height, GLenum enmTarget, PCR_TEXDATA *ppScaledCache)
 {
-    PCR_TEXDATA pStretchedCache;
+    PCR_TEXDATA pScaledCache;
 
     Assert(CrBltIsEntered(pBlitter));
 
-    *ppStretchedCache = NULL;
+    *ppScaledCache = NULL;
 
-    pStretchedCache = (PCR_TEXDATA)RTMemAlloc(sizeof (*pStretchedCache));
-    if (!pStretchedCache)
+    pScaledCache = (PCR_TEXDATA)RTMemAlloc(sizeof (*pScaledCache));
+    if (!pScaledCache)
     {
         WARN(("RTMemAlloc failed"));
         return VERR_NO_MEMORY;
@@ -1562,59 +1562,59 @@ static int ctTdBltSdCreate(PCR_BLITTER pBlitter, uint32_t width, uint32_t height
     if (!Tex.hwid)
     {
         WARN(("Tex create failed"));
-        RTMemFree(pStretchedCache);
+        RTMemFree(pScaledCache);
         return VERR_GENERAL_FAILURE;
     }
 
-    CrTdInit(pStretchedCache, &Tex, pBlitter, ctTdBltSdReleased);
+    CrTdInit(pScaledCache, &Tex, pBlitter, ctTdBltSdReleased);
 
-    *ppStretchedCache = pStretchedCache;
+    *ppScaledCache = pScaledCache;
 
     return VINF_SUCCESS;
 }
 
-static int ctTdBltSdGet(PCR_TEXDATA pTex, uint32_t width, uint32_t height, PCR_TEXDATA *ppStretchedCache)
+static int ctTdBltSdGet(PCR_TEXDATA pTex, uint32_t width, uint32_t height, PCR_TEXDATA *ppScaledCache)
 {
     Assert(pTex->Flags.Entered);
 
-    PCR_TEXDATA pStretchedCache;
+    PCR_TEXDATA pScaledCache;
 
-    *ppStretchedCache = NULL;
+    *ppScaledCache = NULL;
 
-    if (!pTex->pStretchedCache)
+    if (!pTex->pScaledCache)
     {
-        int rc = ctTdBltSdCreate(pTex->pBlitter, width, height, pTex->Tex.target, &pStretchedCache);
+        int rc = ctTdBltSdCreate(pTex->pBlitter, width, height, pTex->Tex.target, &pScaledCache);
         if (!RT_SUCCESS(rc))
         {
             WARN(("ctTdBltSdCreate failed %d", rc));
             return rc;
         }
 
-        pTex->pStretchedCache = pStretchedCache;
+        pTex->pScaledCache = pScaledCache;
     }
     else
     {
-        int cmp = pTex->pStretchedCache->Tex.width - width;
+        int cmp = pTex->pScaledCache->Tex.width - width;
         if (cmp <= 0)
-            cmp = pTex->pStretchedCache->Tex.height - height;
+            cmp = pTex->pScaledCache->Tex.height - height;
 
         if (!cmp)
-            pStretchedCache = pTex->pStretchedCache;
+            pScaledCache = pTex->pScaledCache;
         else if (cmp < 0) /* current cache is "less" than the requested */
         {
-            int rc = ctTdBltSdCreate(pTex->pBlitter, width, height, pTex->Tex.target, &pStretchedCache);
+            int rc = ctTdBltSdCreate(pTex->pBlitter, width, height, pTex->Tex.target, &pScaledCache);
             if (!RT_SUCCESS(rc))
             {
                 WARN(("ctTdBltSdCreate failed %d", rc));
                 return rc;
             }
 
-            pStretchedCache->pStretchedCache = pTex->pStretchedCache;
-            pTex->pStretchedCache = pStretchedCache;
+            pScaledCache->pScaledCache = pTex->pScaledCache;
+            pTex->pScaledCache = pScaledCache;
         }
         else /* cmp > 0 */
         {
-            int rc = ctTdBltSdGet(pTex->pStretchedCache, width, height, &pStretchedCache);
+            int rc = ctTdBltSdGet(pTex->pScaledCache, width, height, &pScaledCache);
             if (!RT_SUCCESS(rc))
             {
                 WARN(("ctTdBltSdGet failed %d", rc));
@@ -1623,7 +1623,7 @@ static int ctTdBltSdGet(PCR_TEXDATA pTex, uint32_t width, uint32_t height, PCR_T
         }
     }
 
-    Assert(pStretchedCache);
+    Assert(pScaledCache);
 
 #if 0
     {
@@ -1638,32 +1638,32 @@ static int ctTdBltSdGet(PCR_TEXDATA pTex, uint32_t width, uint32_t height, PCR_T
             return VERR_GENERAL_FAILURE;
         }
 
-        pTex->pBlitter->pDispatch->DeleteTextures(1, &pTex->pStretchedCache->Tex.hwid);
+        pTex->pBlitter->pDispatch->DeleteTextures(1, &pTex->pScaledCache->Tex.hwid);
 
-        crTdResize(pTex->pStretchedCache, &Tex);
+        crTdResize(pTex->pScaledCache, &Tex);
     }
 #endif
 
-    *ppStretchedCache = pStretchedCache;
+    *ppScaledCache = pScaledCache;
     return VINF_SUCCESS;
 }
 
-static int ctTdBltSdGetUpdated(PCR_TEXDATA pTex, uint32_t width, uint32_t height, PCR_TEXDATA *ppStretchedCache)
+static int ctTdBltSdGetUpdated(PCR_TEXDATA pTex, uint32_t width, uint32_t height, PCR_TEXDATA *ppScaledCache)
 {
-    PCR_TEXDATA pStretchedCache;
+    PCR_TEXDATA pScaledCache;
 
-    *ppStretchedCache = NULL;
-    int rc = ctTdBltSdGet(pTex, width, height, &pStretchedCache);
+    *ppScaledCache = NULL;
+    int rc = ctTdBltSdGet(pTex, width, height, &pScaledCache);
     if (!RT_SUCCESS(rc))
     {
         WARN(("ctTdBltSdGet failed %d", rc));
         return rc;
     }
 
-    Assert(width == pStretchedCache->Tex.width);
-    Assert(height == pStretchedCache->Tex.height);
+    Assert(width == pScaledCache->Tex.width);
+    Assert(height == pScaledCache->Tex.height);
 
-    if (!pStretchedCache->Flags.DataValid)
+    if (!pScaledCache->Flags.DataValid)
     {
         RTRECT SrcRect, DstRect;
 
@@ -1677,15 +1677,15 @@ static int ctTdBltSdGetUpdated(PCR_TEXDATA pTex, uint32_t width, uint32_t height
         DstRect.xRight = width;
         DstRect.yBottom = height;
 
-        CrBltBlitTexTex(pTex->pBlitter, &pTex->Tex, &SrcRect, &pStretchedCache->Tex, &DstRect, 1, 0);
+        CrBltBlitTexTex(pTex->pBlitter, &pTex->Tex, &SrcRect, &pScaledCache->Tex, &DstRect, 1, 0);
     }
 
-    *ppStretchedCache = pStretchedCache;
+    *ppScaledCache = pScaledCache;
 
     return VINF_SUCCESS;
 }
 
-VBOXBLITTERDECL(int) CrTdBltDataAcquireStretched(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted, uint32_t width, uint32_t height, const CR_BLITTER_IMG**ppImg)
+VBOXBLITTERDECL(int) CrTdBltDataAcquireScaled(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted, uint32_t width, uint32_t height, const CR_BLITTER_IMG**ppImg)
 {
     if (pTex->Tex.width == width && pTex->Tex.height == height)
         return CrTdBltDataAcquire(pTex, enmFormat, fInverted, ppImg);
@@ -1696,56 +1696,56 @@ VBOXBLITTERDECL(int) CrTdBltDataAcquireStretched(PCR_TEXDATA pTex, GLenum enmFor
         return VERR_INVALID_STATE;
     }
 
-    PCR_TEXDATA pStretchedCache;
+    PCR_TEXDATA pScaledCache;
 
-    int rc = ctTdBltSdGetUpdated(pTex, width, height, &pStretchedCache);
+    int rc = ctTdBltSdGetUpdated(pTex, width, height, &pScaledCache);
     if (!RT_SUCCESS(rc))
     {
         WARN(("ctTdBltSdGetUpdated failed rc %d", rc));
         return rc;
     }
 
-    rc = CrTdBltEnter(pStretchedCache);
+    rc = CrTdBltEnter(pScaledCache);
     if (!RT_SUCCESS(rc))
     {
         WARN(("CrTdBltEnter failed rc %d", rc));
         return rc;
     }
 
-    rc = CrTdBltDataAcquire(pStretchedCache, enmFormat, fInverted, ppImg);
+    rc = CrTdBltDataAcquire(pScaledCache, enmFormat, fInverted, ppImg);
     if (!RT_SUCCESS(rc))
     {
         WARN(("CrTdBltDataAcquire failed rc %d", rc));
-        CrTdBltLeave(pTex->pStretchedCache);
+        CrTdBltLeave(pTex->pScaledCache);
         return rc;
     }
 
     return VINF_SUCCESS;
 }
 
-VBOXBLITTERDECL(int) CrTdBltDataReleaseStretched(PCR_TEXDATA pTex, const CR_BLITTER_IMG *pImg)
+VBOXBLITTERDECL(int) CrTdBltDataReleaseScaled(PCR_TEXDATA pTex, const CR_BLITTER_IMG *pImg)
 {
-    PCR_TEXDATA pStretchedCache = RT_FROM_MEMBER(pImg, CR_TEXDATA, Img);
-    int rc = CrTdBltDataRelease(pStretchedCache);
+    PCR_TEXDATA pScaledCache = RT_FROM_MEMBER(pImg, CR_TEXDATA, Img);
+    int rc = CrTdBltDataRelease(pScaledCache);
     if (!RT_SUCCESS(rc))
     {
         WARN(("CrTdBltDataRelease failed rc %d", rc));
         return rc;
     }
 
-    if (pStretchedCache != pTex)
-        CrTdBltLeave(pStretchedCache);
+    if (pScaledCache != pTex)
+        CrTdBltLeave(pScaledCache);
 
     return VINF_SUCCESS;
 }
 
-VBOXBLITTERDECL(void) CrTdBltStretchCacheMoveTo(PCR_TEXDATA pTex, PCR_TEXDATA pDstTex)
+VBOXBLITTERDECL(void) CrTdBltScaleCacheMoveTo(PCR_TEXDATA pTex, PCR_TEXDATA pDstTex)
 {
-    if (!pTex->pStretchedCache)
+    if (!pTex->pScaledCache)
         return;
 
     crTdBltSdCleanupCacheNe(pDstTex);
 
-    pDstTex->pStretchedCache = pTex->pStretchedCache;
-    pTex->pStretchedCache = NULL;
+    pDstTex->pScaledCache = pTex->pScaledCache;
+    pTex->pScaledCache = NULL;
 }
