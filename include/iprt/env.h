@@ -89,6 +89,8 @@ RTDECL(int) RTEnvDestroy(RTENV Env);
  * @returns NULL if Env is NULL or invalid.
  *
  * @param   Env     Environment block handle.
+ * @todo    This needs to change to return a copy of the env vars like
+ *          RTEnvQueryUtf16Block does!
  */
 RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env);
 
@@ -120,6 +122,8 @@ RTDECL(void) RTEnvFreeUtf16Block(PRTUTF16 pwszzBlock);
  *          codeset conversion. We'll figure this out when it becomes necessary.
  */
 RTDECL(bool) RTEnvExist(const char *pszVar);
+RTDECL(bool) RTEnvExistsBad(const char *pszVar);
+RTDECL(bool) RTEnvExistsUtf8(const char *pszVar);
 
 /**
  * Checks if an environment variable exists in a specific environment block.
@@ -145,6 +149,8 @@ RTDECL(bool) RTEnvExistEx(RTENV Env, const char *pszVar);
  *          codeset conversion. We'll figure this out when it becomes necessary.
  */
 RTDECL(const char *) RTEnvGet(const char *pszVar);
+RTDECL(const char *) RTEnvGetBad(const char *pszVar);
+RTDECL(int) RTEnvGetUtf8(const char *pszVar, char *pszValue, size_t cbValue, size_t *pcchActual);
 
 /**
  * Gets an environment variable in a specific environment block.
@@ -173,6 +179,8 @@ RTDECL(int) RTEnvGetEx(RTENV Env, const char *pszVar, char *pszValue, size_t cbV
  *          codeset conversion. We'll figure this out when it becomes necessary.
  */
 RTDECL(int) RTEnvPut(const char *pszVarEqualValue);
+RTDECL(int) RTEnvPutBad(const char *pszVarEqualValue);
+RTDECL(int) RTEnvPutUtf8(const char *pszVarEqualValue);
 
 /**
  * Puts a copy of the passed in 'variable=value' string into the environment block.
@@ -197,6 +205,8 @@ RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue);
  *          codeset conversion. We'll figure this out when it becomes necessary.
  */
 RTDECL(int) RTEnvSet(const char *pszVar, const char *pszValue);
+RTDECL(int) RTEnvSetBad(const char *pszVar, const char *pszValue);
+RTDECL(int) RTEnvSetUtf8(const char *pszVar, const char *pszValue);
 
 /**
  * Sets an environment variable (setenv(,,1)).
@@ -221,6 +231,8 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue);
  *          codeset conversion. We'll figure this out when it becomes necessary.
  */
 RTDECL(int) RTEnvUnset(const char *pszVar);
+RTDECL(int) RTEnvUnsetBad(const char *pszVar);
+RTDECL(int) RTEnvUnsetUtf8(const char *pszVar);
 
 /**
  * Removes an environment variable from the specified environment block.

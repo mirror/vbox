@@ -28,22 +28,15 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef RT_OS_DARWIN
-/* pick the correct prototype for unsetenv. */
-# define _POSIX_C_SOURCE 1
-#endif
 #include <iprt/env.h>
-#include <iprt/string.h>
+
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
-#if defined(DEBUG) && defined(RT_OS_LINUX)
-# include <iprt/asm.h>
-#endif
+#include <iprt/string.h>
+#include <iprt/mem.h>
 
 #include <stdlib.h>
 #include <errno.h>
-
-#include "internal/alignmentchecks.h"
 
 
 RTDECL(bool) RTEnvExistsBad(const char *pszVar)
@@ -58,18 +51,57 @@ RTDECL(bool) RTEnvExist(const char *pszVar)
 }
 
 
+RTDECL(bool) RTEnvExistsUtf8(const char *pszVar)
+{
+    PRTUTF16 pwszVar;
+    int rc = RTStrToUtf16(pszVar, &pwszVar);
+    AssertRCReturn(rc, false);
+    bool fRet = _wgetenv(pwszVar) != NULL;
+    RTUtf16Free(pwszVar);
+    return fRet;
+}
+
+
 RTDECL(const char *) RTEnvGetBad(const char *pszVar)
 {
-    IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc causes trouble */
-    const char *pszValue = getenv(pszVar);
-    IPRT_ALIGNMENT_CHECKS_ENABLE();
-    return pszValue;
+    return getenv(pszVar);
 }
 
 
 RTDECL(const char *) RTEnvGet(const char *pszVar)
 {
     return RTEnvGetBad(pszVar);
+}
+
+RTDECL(int) RTEnvGetUtf8(const char *pszVar, char *pszValue, size_t cbValue, size_t *pcchActual)
+{
+    AssertPtrReturn(pszVar, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pszValue, VERR_INVALID_POINTER);
+    AssertReturn(pszValue || !cbValue, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pcchActual, VERR_INVALID_POINTER);
+    AssertReturn(pcchActual || (pszValue && cbValue), VERR_INVALID_PARAMETER);
+
+    if (pcchActual)
+        *pcchActual = 0;
+
+    PRTUTF16 pwszVar;
+    int rc = RTStrToUtf16(pszVar, &pwszVar);
+    AssertRCReturn(rc, false);
+
+    /** @todo Consider _wgetenv_s or GetEnvironmentVariableW here to avoid the
+     *        potential race with a concurrent _wputenv/_putenv. */
+    PCRTUTF16 pwszValue = _wgetenv(pwszVar);
+    RTUtf16Free(pwszVar);
+    if (pwszValue)
+    {
+        if (cbValue)
+            rc = RTUtf16ToUtf8Ex(pwszValue, RTSTR_MAX, &pszValue, cbValue, pcchActual);
+        else
+            rc = RTUtf16CalcUtf8LenEx(pwszValue, RTSTR_MAX, pcchActual);
+    }
+    else
+        rc = VERR_ENV_VAR_NOT_FOUND;
+    return rc;
 }
 
 
@@ -88,9 +120,25 @@ RTDECL(int) RTEnvPut(const char *pszVarEqualValue)
 }
 
 
+RTDECL(int) RTEnvPutUtf8(const char *pszVarEqualValue)
+{
+    PRTUTF16 pwszVarEqualValue;
+    int rc = RTStrToUtf16(pszVarEqualValue, &pwszVarEqualValue);
+    if (RT_SUCCESS(rc))
+    {
+        if (!_wputenv(pwszVarEqualValue))
+            rc = VINF_SUCCESS;
+        else
+            rc = RTErrConvertFromErrno(errno);
+        RTUtf16Free(pwszVarEqualValue);
+    }
+    return rc;
+}
+
+
+
 RTDECL(int) RTEnvSetBad(const char *pszVar, const char *pszValue)
 {
-#if defined(_MSC_VER)
     /* make a local copy and feed it to putenv. */
     const size_t cchVar = strlen(pszVar);
     const size_t cchValue = strlen(pszValue);
@@ -108,12 +156,6 @@ RTDECL(int) RTEnvSetBad(const char *pszVar, const char *pszValue)
     if (!putenv(pszTmp))
         return 0;
     return RTErrConvertFromErrno(errno);
-
-#else
-    if (!setenv(pszVar, pszValue, 1))
-        return VINF_SUCCESS;
-    return RTErrConvertFromErrno(errno);
-#endif
 }
 
 
@@ -121,6 +163,43 @@ RTDECL(int) RTEnvSet(const char *pszVar, const char *pszValue)
 {
     return RTEnvSetBad(pszVar, pszValue);
 }
+
+RTDECL(int) RTEnvSetUtf8(const char *pszVar, const char *pszValue)
+{
+    size_t cwcVar;
+    int rc = RTStrCalcUtf16LenEx(pszVar, RTSTR_MAX, &cwcVar);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cwcValue;
+        rc = RTStrCalcUtf16LenEx(pszVar, RTSTR_MAX, &cwcValue);
+        if (RT_SUCCESS(rc))
+        {
+            PRTUTF16 pwszTmp = (PRTUTF16)RTMemTmpAlloc((cwcVar + 1 + cwcValue + 1) * sizeof(RTUTF16));
+            if (pwszTmp)
+            {
+                rc = RTStrToUtf16Ex(pszVar, RTSTR_MAX, &pwszTmp, cwcVar + 1, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    PRTUTF16 pwszTmpValue = &pwszTmp[cwcVar];
+                    *pwszTmpValue++ = '=';
+                    rc = RTStrToUtf16Ex(pszValue, RTSTR_MAX, &pwszTmpValue, cwcValue + 1, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (!_wputenv(pwszTmp))
+                            rc = VINF_SUCCESS;
+                        else
+                            rc = RTErrConvertFromErrno(errno);
+                    }
+                }
+                RTMemTmpFree(pwszTmp);
+            }
+            else
+                rc = VERR_NO_TMP_MEMORY;
+        }
+    }
+    return rc;
+}
+
 
 RTDECL(int) RTEnvUnsetBad(const char *pszVar)
 {
@@ -155,8 +234,35 @@ RTDECL(int) RTEnvUnsetBad(const char *pszVar)
     return RTErrConvertFromErrno(errno);
 }
 
+
 RTDECL(int) RTEnvUnset(const char *pszVar)
 {
     return RTEnvUnsetBad(pszVar);
+}
+
+
+RTDECL(int) RTEnvUnsetUtf8(const char *pszVar)
+{
+    size_t cwcVar;
+    int rc = RTStrCalcUtf16LenEx(pszVar, RTSTR_MAX, &cwcVar);
+    if (RT_SUCCESS(rc))
+    {
+        PRTUTF16 pwszTmp = (PRTUTF16)RTMemTmpAlloc((cwcVar + 1 + 1) * sizeof(RTUTF16));
+        if (pwszTmp)
+        {
+            rc = RTStrToUtf16Ex(pszVar, RTSTR_MAX, &pwszTmp, cwcVar + 1, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                pwszTmp[cwcVar] = '=';
+                pwszTmp[cwcVar + 1] = '\0';
+                if (!_wputenv(pwszTmp))
+                    rc = VINF_SUCCESS;
+                else
+                    rc = RTErrConvertFromErrno(errno);
+            }
+            RTMemTmpFree(pwszTmp);
+        }
+    }
+    return rc;
 }
 
