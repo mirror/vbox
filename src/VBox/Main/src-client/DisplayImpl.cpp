@@ -728,16 +728,21 @@ int Display::crOglWindowsShow(bool fShow)
     if (!mfCrOglDataHidden == !!fShow)
         return VINF_SUCCESS;
 
+    if (!mhCrOglSvc)
+    {
+        /* no 3D */
+#ifdef DEBUG
+        BOOL is3denabled;
+        mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+        Assert(!is3denabled);
+#endif
+        return VERR_INVALID_STATE;
+    }
+
     VMMDev *pVMMDev = mParent->getVMMDev();
     if (!pVMMDev)
     {
         AssertMsgFailed(("no vmmdev\n"));
-        return VERR_INVALID_STATE;
-    }
-
-    if (!mhCrOglSvc)
-    {
-        AssertMsgFailed(("no mhCrOglSvc\n"));
         return VERR_INVALID_STATE;
     }
 
