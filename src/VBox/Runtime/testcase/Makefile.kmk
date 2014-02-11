@@ -88,6 +88,7 @@ PROGRAMS += \
 	tstRTMemWipe \
 	tstMove \
 	tstRTMp-1 \
+	tstRTNetIPv4 \
 	tstOnce \
 	tstRTPath \
 	tstRTPipe \
@@ -434,6 +435,9 @@ tstMove_SOURCES = tstMove.cpp
 
 tstRTMp-1_TEMPLATE = VBOXR3TSTEXE
 tstRTMp-1_SOURCES = tstRTMp-1.cpp
+
+tstRTNetIPv4_TEMPLATE = VBOXR3TSTEXE
+tstRTNetIPv4_SOURCES = tstRTNetIPv4.cpp
 
 tstNoCrt-1_TEMPLATE = VBOXR3TSTEXE
 tstNoCrt-1_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES
