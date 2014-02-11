@@ -34,7 +34,6 @@
 #include <VBox/err.h>
 #include <VBox/intnetinline.h>
 #include <VBox/version.h>
-#include <VBox/VBoxNetSend.h>
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
@@ -45,6 +44,8 @@
 #include <iprt/time.h>
 #include <iprt/net.h>
 #include <iprt/thread.h>
+
+#include "../../darwin/VBoxNetSend.h"
 
 #include <mach/kmod.h>
 #include <sys/conf.h>
