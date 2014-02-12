@@ -295,11 +295,13 @@ void BandwidthControl::i_commit()
                 newList->push_back(peer);
             }
 
+#if 0
             /* uninit old peer's controllers that are left */
             for (it = m->pPeer->m->llBandwidthGroups->begin();
                  it != m->pPeer->m->llBandwidthGroups->end();
                  ++it)
                 (*it)->uninit();
+#endif
 
             /* attach new list of controllers to our peer */
             m->pPeer->m->llBandwidthGroups.attach(newList);
