@@ -1042,31 +1042,31 @@ Function ${un}RestoreFilesDirect3D
 
   ${LogVerbose} "Restoring original D3D files ..."
 !if $%BUILD_TARGET_ARCH% == "x86"
-  $PrepareWRPFileEx} "${un}" "$SYSDIR\d3d8.dll"
+  ${PrepareWRPFileEx} "${un}" "$SYSDIR\d3d8.dll"
   ${CopyFileEx} "${un}" "$SYSDIR\msd3d8.dll" "$SYSDIR\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
 !endif
-  $PrepareWRPFileEx} "${un}" "$SYSDIR\d3d9.dll"
+  ${PrepareWRPFileEx} "${un}" "$SYSDIR\d3d9.dll"
   ${CopyFileEx} "${un}" "$SYSDIR\msd3d9.dll" "$SYSDIR\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
 
   ${If} $g_bCapDllCache == "true"
 !if $%BUILD_TARGET_ARCH% == "x86"
-    $PrepareWRPFileEx} "${un}" "$SYSDIR\dllcache\d3d8.dll"
+    ${PrepareWRPFileEx} "${un}" "$SYSDIR\dllcache\d3d8.dll"
     ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
 !endif
-    $PrepareWRPFileEx} "${un}" "$SYSDIR\dllcache\d3d9.dll"
+    ${PrepareWRPFileEx} "${un}" "$SYSDIR\dllcache\d3d9.dll"
     ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d9.dll" "$SYSDIR\dllcache\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
   ${EndIf}
 
 !if $%BUILD_TARGET_ARCH% == "amd64"
-  $PrepareWRPFileEx} "${un}" "$g_strSysWow64\d3d8.dll"
+  ${PrepareWRPFileEx} "${un}" "$g_strSysWow64\d3d8.dll"
   ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d8.dll" "$g_strSysWow64\d3d8.dll" "Microsoft Corporation" "x86"
-  $PrepareWRPFileEx} "${un}" "$g_strSysWow64\d3d9.dll"
+  ${PrepareWRPFileEx} "${un}" "$g_strSysWow64\d3d9.dll"
   ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d9.dll" "$g_strSysWow64\d3d9.dll" "Microsoft Corporation" "x86"
 
   ${If} $g_bCapDllCache == "true"
-    $PrepareWRPFileEx} "${un}" "$g_strSysWow64\dllcache\d3d8.dll"
+    ${PrepareWRPFileEx} "${un}" "$g_strSysWow64\dllcache\d3d8.dll"
     ${CopyFileEx} "${un}" "$g_strSysWow64\dllcache\msd3d8.dll" "$g_strSysWow64\dllcache\d3d8.dll" "Microsoft Corporation" "x86"
-    $PrepareWRPFileEx} "${un}" "$g_strSysWow64\dllcache\d3d9.dll"
+    ${PrepareWRPFileEx} "${un}" "$g_strSysWow64\dllcache\d3d9.dll"
     ${CopyFileEx} "${un}" "$g_strSysWow64\dllcache\msd3d9.dll" "$g_strSysWow64\dllcache\d3d9.dll" "Microsoft Corporation" "x86"
   ${EndIf}
 !endif
