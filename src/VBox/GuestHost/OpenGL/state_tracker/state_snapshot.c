@@ -1448,7 +1448,9 @@ static int32_t crStateLoadKeys(CRHashTable *pHash, PSSMHANDLE pSSM, uint32_t u32
             for (i = u32Key; i < u32Count + u32Key; ++i)
             {
                 GLboolean fIsNew = crHashtableAllocRegisterKey(pHash, i);
+#if 0 //def DEBUG_misha
                 CRASSERT(fIsNew);
+#endif
             }
         }
     }
