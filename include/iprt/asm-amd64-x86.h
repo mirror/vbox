@@ -185,6 +185,35 @@ DECLINLINE(void) ASMGetGDTR(PRTGDTR pGdtr)
 }
 #endif
 
+
+/**
+ * Sets the content of the GDTR CPU register.
+ * @param   pIdtr   Where to load the GDTR contents from
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMSetGDTR(const RTGDTR *pGdtr);
+#else
+DECLINLINE(void) ASMSetGDTR(const RTGDTR *pGdtr)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("lgdt %0" : : "m" (*pGdtr));
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     rax, [pGdtr]
+        lgdt    [rax]
+#  else
+        mov     eax, [pGdtr]
+        lgdt    [eax]
+#  endif
+    }
+# endif
+}
+#endif
+
+
+
 /**
  * Get the cs register.
  * @returns cs.
