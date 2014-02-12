@@ -37,79 +37,45 @@
 
 #include "VBoxClient.h"
 
-static int initDisplay(Display *pDisplay)
+/** Tell the VBoxGuest driver we no longer want any events and tell the host
+ * we no longer support any capabilities. */
+static int disableEventsAndCaps()
 {
-    int rc = VINF_SUCCESS;
-    uint32_t fMouseFeatures = 0;
+    int rc, rc2;
+    rc = VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+    rc2 = VbglR3SetMouseStatus(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
+    rc = RT_FAILURE(rc) ? rc : rc2;
+    rc2 = VbglR3CtlFilterMask(0, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
+    rc = RT_FAILURE(rc) ? rc : rc2;
+    return rc;
+}
 
-    LogRelFlowFunc(("testing dynamic resizing\n"));
-    int iDummy;
-    if (!XRRQueryExtension(pDisplay, &iDummy, &iDummy))
-        rc = VERR_NOT_SUPPORTED;
-    if (RT_SUCCESS(rc))
+/** Tell the VBoxGuest driver which events we want and tell the host which
+ * capabilities we support. */
+static int enableEventsAndCaps(Display *pDisplay, bool fFirstTime)
+{
+    int iDummy, rc;
+    uint32_t fFilterMask = VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
+    uint32_t fCapabilities = 0;
+    if (XRRQueryExtension(pDisplay, &iDummy, &iDummy))
     {
-        rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
-#ifdef VBOX_WITH_GUEST_KMS_DRIVER
-        if (RT_SUCCESS(rc))
-            VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0);
-#endif
+        fFilterMask |= VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+        fCapabilities |= VMMDEV_GUEST_SUPPORTS_GRAPHICS;
     }
-    else
-        VbglR3CtlFilterMask(0, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
-    /* Log and ignore the return value, as there is not much we can do with
-     * it. */
-    LogRelFlowFunc(("dynamic resizing: result %Rrc\n", rc));
-    /* Enable support for switching between hardware and software cursors */
-    LogRelFlowFunc(("enabling relative mouse re-capturing support\n"));
-    rc = VbglR3GetMouseStatus(&fMouseFeatures, NULL, NULL);
+    else if (fFirstTime)
+        LogRel(("VBoxClient: guest does not support dynamic resizing.\n"));
+    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     if (RT_SUCCESS(rc))
-    {
-        rc = VbglR3CtlFilterMask(VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED,
-                                 0);
-        if (RT_SUCCESS(rc))
-            rc = VbglR3SetMouseStatus
-                               (  fMouseFeatures
-                                & ~VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
-    }
+        rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0);
+    /** @todo Make sure that VBoxGuest understands
+     * VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR as a "negative" capability: if we
+     * don't advertise it it means we *can* switch to a software cursor and
+     * back. */
+    if (RT_SUCCESS(rc))
+        rc = VbglR3SetMouseStatus(0);
     if (RT_FAILURE(rc))
-    {
-        VbglR3CtlFilterMask(0,   VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED
-                               | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
-#ifdef VBOX_WITH_GUEST_KMS_DRIVER
-        VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
-#endif
-        VbglR3SetMouseStatus(  fMouseFeatures
-                             | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
-    }
-    LogRelFlowFunc(("mouse re-capturing support: result %Rrc\n", rc));
-    return VINF_SUCCESS;
-}
-
-void cleanupDisplay(void)
-{
-    uint32_t fMouseFeatures = 0;
-    LogRelFlowFunc(("\n"));
-    VbglR3CtlFilterMask(0,   VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
-                           | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
-#ifdef VBOX_WITH_GUEST_KMS_DRIVER
-    VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
-#endif
-    int rc = VbglR3GetMouseStatus(&fMouseFeatures, NULL, NULL);
-    if (RT_SUCCESS(rc))
-        VbglR3SetMouseStatus(  fMouseFeatures
-                             | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
-    LogRelFlowFunc(("returning\n"));
-}
-
-/** This thread just runs a dummy X11 event loop to be sure that we get
- * terminated should the X server exit. */
-static int x11ConnectionMonitor(RTTHREAD, void *)
-{
-    XEvent ev;
-    Display *pDisplay = XOpenDisplay(NULL);
-    while (true)
-        XNextEvent(pDisplay, &ev);
-    return 0;
+        disableEventsAndCaps();
+    return rc;
 }
 
 /**
@@ -164,7 +130,7 @@ static void setSize(Display *pDisplay, uint32_t cx, uint32_t cy)
  * loop is identical we ignore it, because it is probably
  * stale.
  */
-static int runDisplay(Display *pDisplay)
+static void runDisplay(Display *pDisplay)
 {
     LogRelFlowFunc(("\n"));
     Cursor hClockCursor = XCreateFontCursor(pDisplay, XC_watch);
@@ -176,19 +142,18 @@ static int runDisplay(Display *pDisplay)
     const char *pcszXrandr = "xrandr";
     if (RTFileExists("/usr/X11/bin/xrandr"))
         pcszXrandr = "/usr/X11/bin/xrandr";
-    int rc = RTThreadCreate(NULL, x11ConnectionMonitor, NULL, 0,
-                   RTTHREADTYPE_INFREQUENT_POLLER, 0, "X11 monitor");
-    if (RT_FAILURE(rc))
-        return rc;
     while (true)
     {
         uint32_t fEvents = 0, cx = 0, cy = 0, cBits = 0, iDisplay = 0, cxOrg = 0, cyOrg = 0;
         bool fEnabled = false;
-        rc = VbglR3WaitEvent(  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
-                             | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED,
-                             RT_INDEFINITE_WAIT, &fEvents);
+        int rc = VbglR3WaitEvent(  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
+                                 | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED,
+                                 RT_INDEFINITE_WAIT, &fEvents);
         if (RT_FAILURE(rc) && rc != VERR_INTERRUPTED)  /* VERR_NO_MEMORY? */
-            return rc;
+        {
+            LogRelFunc(("VBoxClient: VbglR3WaitEvent failed, rc=%Rrc\n", rc));
+            VBoxClient::CleanUp();
+        }
         /* Jiggle the mouse pointer to wake up the driver. */
         XGrabPointer(pDisplay,
                      DefaultRootWindow(pDisplay), true, 0, GrabModeAsync,
@@ -280,31 +245,55 @@ static int runDisplay(Display *pDisplay)
                 }
         }
     }
-    return VINF_SUCCESS;
 }
 
 class DisplayService : public VBoxClient::Service
 {
+    Display *mDisplay;
+    bool mfInit;
 public:
     virtual const char *getPidFilePath()
     {
         return ".vboxclient-display.pid";
     }
+    virtual int init()
+    {
+        int rc;
+        
+        if (mfInit)
+            return VERR_WRONG_ORDER;
+        mDisplay = XOpenDisplay(NULL);
+        if (!mDisplay)
+            return VERR_NOT_FOUND;
+        rc = enableEventsAndCaps(mDisplay, true);
+        if (RT_SUCCESS(rc))
+            mfInit = true;
+        return rc;
+    }
     virtual int run(bool fDaemonised /* = false */)
     {
-        Display *pDisplay = XOpenDisplay(NULL);
-        if (!pDisplay)
-            return VERR_NOT_FOUND;
-        int rc = initDisplay(pDisplay);
-        if (RT_SUCCESS(rc))
-            rc = runDisplay(pDisplay);
-        XCloseDisplay(pDisplay);
-        return rc;
+        if (!mfInit)
+            return VERR_WRONG_ORDER;
+        runDisplay(mDisplay);
+        return VERR_INTERNAL_ERROR;  /* "Should never reach here." */
+    }
+    virtual int pause()
+    {
+        if (!mfInit)
+            return VERR_WRONG_ORDER;
+        return disableEventsAndCaps();
+    }
+    virtual int resume()
+    {
+        if (!mfInit)
+            return VERR_WRONG_ORDER;
+        return enableEventsAndCaps(mDisplay, false);
     }
     virtual void cleanup()
     {
-        cleanupDisplay();
+        disableEventsAndCaps();
     }
+    DisplayService() { mfInit = false; }
 };
 
 VBoxClient::Service *VBoxClient::GetDisplayService()
