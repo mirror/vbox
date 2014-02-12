@@ -176,8 +176,8 @@ static void crServerTearDown( void )
 
     /* synchronize with reality */
     fOldEnableDiff = crStateEnableDiffOnMakeCurrent(GL_FALSE);
-    Assert(cr_server.MainContextInfo.pContext);
-    crStateMakeCurrent(cr_server.MainContextInfo.pContext);
+    if(cr_server.MainContextInfo.pContext)
+        crStateMakeCurrent(cr_server.MainContextInfo.pContext);
     crStateEnableDiffOnMakeCurrent(fOldEnableDiff);
 
     /* Free vertex programs */
