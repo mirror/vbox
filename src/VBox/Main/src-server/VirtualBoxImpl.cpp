@@ -368,7 +368,7 @@ HRESULT VirtualBox::init()
     if (!spMtxNatNetworkNameToRefCountLock)
         spMtxNatNetworkNameToRefCountLock = new RWLockHandle(LOCKCLASS_VIRTUALBOXOBJECT);
 
-    LogFlowThisFunc(("Version: %ls, Package: %ls, API Version: %ls\n", Bstr(sVersion).raw(), Bstr(sPackageType).raw(), Bstr(sAPIVersion).raw()));
+    LogFlowThisFunc(("Version: %s, Package: %s, API Version: %s\n", sVersion.c_str(), sPackageType.c_str(), sAPIVersion.c_str()));
 
     /* Get the VirtualBox home directory. */
     {
@@ -1266,7 +1266,7 @@ HRESULT VirtualBox::composeMachineFilename(const com::Utf8Str &aName,
     Utf8Str strBase = aBaseFolder;
     Utf8Str strName = aName;
 
-    LogFlowThisFunc(("aName=\"%ls\",aBaseFolder=\"%ls\"\n", strName.c_str(), strBase.c_str()));
+    LogFlowThisFunc(("aName=\"%s\",aBaseFolder=\"%s\"\n", strName.c_str(), strBase.c_str()));
 
     Utf8Str strCreateFlags(aCreateFlags);
     Guid id;
@@ -1309,7 +1309,7 @@ HRESULT VirtualBox::composeMachineFilename(const com::Utf8Str &aName,
     {
         /* do something else */
         return setError(E_INVALIDARG,
-                 tr("'%ls' is not a valid Guid"),
+                 tr("'%s' is not a valid Guid"),
                  id.toStringCurly().c_str());
     }
 
@@ -1449,7 +1449,7 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
                                   ComPtr<IMachine> &aMachine)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aSettingsFile=\"%ls\", aName=\"%ls\", aOsTypeId =\"%ls\", aCreateFlags=\"%ls\"\n", Bstr(aSettingsFile).raw(), Bstr(aName).raw(), Bstr(aOsTypeId).raw(), Bstr(aFlags).raw()));
+    LogFlowThisFunc(("aSettingsFile=\"%s\", aName=\"%s\", aOsTypeId =\"%s\", aCreateFlags=\"%s\"\n", aSettingsFile.c_str(), aName.c_str(), aOsTypeId.c_str(), aFlags.c_str()));
     /** @todo tighten checks on aId? */
 
     StringsList llGroups;
@@ -1501,7 +1501,7 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
     {
         /* do something else */
         return setError(E_INVALIDARG,
-                 tr("'%ls' is not a valid Guid"),
+                 tr("'%s' is not a valid Guid"),
                  id.toStringCurly().c_str());
     }
 
@@ -1614,7 +1614,7 @@ HRESULT VirtualBox::findMachine(const com::Utf8Str &aSettingsFile,
                                 ComPtr<IMachine> &aMachine)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aSettingsFile=\"%ls\", aMachine={%p}\n", Bstr(aSettingsFile).raw(), &aMachine));
+    LogFlowThisFunc(("aSettingsFile=\"%s\", aMachine={%p}\n", aSettingsFile.c_str(), &aMachine));
 
     /* start with not found */
     HRESULT rc = S_OK;
@@ -1640,7 +1640,7 @@ HRESULT VirtualBox::findMachine(const com::Utf8Str &aSettingsFile,
     /* this will set (*machine) to NULL if machineObj is null */
     pMachineFound.queryInterfaceTo(aMachine.asOutParam());
 
-    LogFlowThisFunc(("aName=\"%ls\", aMachine=%p, rc=%08X\n", Bstr(aSettingsFile).raw(), &aMachine, rc));
+    LogFlowThisFunc(("aName=\"%s\", aMachine=%p, rc=%08X\n", aSettingsFile.c_str(), &aMachine, rc));
     LogFlowThisFuncLeave();
 
     return rc;
@@ -1961,9 +1961,9 @@ HRESULT VirtualBox::setExtraData(const com::Utf8Str &aKey,
             LogWarningFunc(("Someone vetoed! Change refused%s%ls\n",
                             sep, err));
             return setError(E_ACCESSDENIED,
-                            tr("Could not set extra data because someone refused the requested change of '%ls' to '%ls'%s%ls"),
-                            Bstr(strKey).raw(),
-                            Bstr(strValue).raw(),
+                            tr("Could not set extra data because someone refused the requested change of '%s' to '%s'%s%ls"),
+                            strKey.c_str(),
+                            strValue.c_str(),
                             sep,
                             err);
         }
@@ -3460,7 +3460,7 @@ HRESULT VirtualBox::i_findRemoveableMedium(DeviceType_T mediumType,
     {
         /* handling of case invalid GUID */
         return setError(VBOX_E_OBJECT_NOT_FOUND,
-                            tr("Guid '%ls' is invalid"),
+                            tr("Guid '%s' is invalid"),
                             uuid.toString().c_str());
     }
 
