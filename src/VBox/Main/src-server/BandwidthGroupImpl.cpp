@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -48,8 +48,9 @@ void BandwidthGroup::FinalRelease()
  *
  * @returns COM result indicator.
  * @param aParent       Pointer to our parent object.
- * @param aName         Name of the storage controller.
- * @param aInstance     Instance number of the storage controller.
+ * @param aName         Name of the bandwidth group.
+ * @param aType         Type of the bandwidth group (net, disk).
+ * @param aMaxBytesPerSec Maximum bandwidth for the bandwidth group.
  */
 HRESULT BandwidthGroup::init(BandwidthControl *aParent,
                              const Utf8Str &aName,
@@ -143,7 +144,7 @@ HRESULT BandwidthGroup::init(BandwidthControl *aParent,
 }
 
 /**
- *  Initializes the storage controller object given another guest object
+ *  Initializes the bandwidth group object given another guest object
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
  */
