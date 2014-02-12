@@ -2749,7 +2749,7 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
         if ((selValue) & X86_SEL_LDT) \
         { \
             uint32_t uAttr = ASMGetSegAttr((selValue)); \
-            fValidSelector = RT_BOOL(uAttr != ~0U && (uAttr & X86_DESC_P)); \
+            fValidSelector = RT_BOOL(uAttr != UINT32_MAX && (uAttr & X86_DESC_P)); \
         } \
         if (fValidSelector) \
         { \
@@ -2773,6 +2773,14 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 {
     NOREF(pVM);
     int rc = VERR_INTERNAL_ERROR_5;
+
+    /*
+     * Quick fix for regression #7240.  Restore the host state if we've messed
+     * it up already, otherwise all we'll get it all wrong below!
+     */
+    if (   (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED)
+        && (pVCpu->hm.s.vmx.fRestoreHostFlags & ~VMX_RESTORE_HOST_REQUIRED))
+        VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
 
     /*
      * Host DS, ES, FS and GS segment registers.
@@ -2898,11 +2906,18 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         }
 
         /*
-         * IDT limit is practically 0xfff. Therefore if the host has the limit as 0xfff, VT-x bloating the limit to 0xffff
-         * is not a problem as it's not possible to get at them anyway. See Intel spec. 6.14.1 "64-Bit Mode IDT" and
-         * Intel spec. 6.2 "Exception and Interrupt Vectors".
+         * IDT limit is effectively capped at 0xfff. (See Intel spec. 6.14.1 "64-Bit Mode IDT"
+         * and Intel spec. 6.2 "Exception and Interrupt Vectors".)  Therefore if the host has the limit as 0xfff, VT-x
+         * bloating the limit to 0xffff shouldn't cause any different CPU behavior.  However, several hosts either insists
+         * on 0xfff being the limit (Windows Patch Guard) or uses the limit for other purposes (darwin puts the CPU ID in there
+         * but botches sidt alignment in at least one consumer).  So, we're only allowing IDTR.LIMIT to be left at 0xffff on
+         * hosts where we are pretty sure it won't cause trouble.
          */
-        if (Idtr.cbIdt < 0x0fff)
+# if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+        if (Idtr.cbIdt <  0x0fff)
+# else
+        if (Idtr.cbIdt != 0xffff)
+# endif
         {
             pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_IDTR;
             AssertCompile(sizeof(Idtr) == sizeof(X86XDTR64));
@@ -6637,8 +6652,8 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
     {
         Log4Func(("Restoring Host State: fRestoreHostFlags=%#RX32 HostCpuId=%u\n", pVCpu->hm.s.vmx.fRestoreHostFlags, idCpu));
         VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
-        pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
     }
+    pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
 #endif
 
 #if HC_ARCH_BITS == 64
@@ -6868,10 +6883,9 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
         /* Restore host-state bits that VT-x only restores partially. */
         if (   (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED)
             && (pVCpu->hm.s.vmx.fRestoreHostFlags & ~VMX_RESTORE_HOST_REQUIRED))
-        {
             VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
-            pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
-        }
+        pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
+
         /* Restore the host MSRs as we're leaving VT-x context. */
         if (   pVM->hm.s.fAllow64BitGuests
             && pVCpu->hm.s.vmx.fRestoreHostMsrs)
