@@ -29,16 +29,27 @@ class Service : public RTCNonCopyable
 {
 public:
     /** Get the services default path to pidfile, relative to $HOME */
+    /** @todo Should this also have a component relative to the X server number?
+     */
     virtual const char *getPidFilePath() = 0;
+    /** Special initialisation, if needed.  @a pause and @a resume are
+     * guaranteed not to be called until after this returns. */
+    virtual int init() { return VINF_SUCCESS; }
     /** Run the service main loop */
     virtual int run(bool fDaemonised = false) = 0;
+    /** @todo Note one of these will be called at start-up. */
     /** Pause the service loop.  This must be safe to call on a different thread
-     * and potentially before @run is or after it exits. */
-    virtual void pause() { }
+     * and potentially before @a run is or after it exits.
+     * This is called by the VT monitoring thread to allow the service to disable
+     * itself when the X server is switched out.  If the monitoring functionality
+     * is available then @a pause or @a resume will be called as soon as it starts
+     * up. */
+    virtual int pause() { return VINF_SUCCESS; }
     /** Resume after pausing.  The same applies here as for @a pause. */
-    virtual void resume() { }
-    /** Clean up any global resources before we shut down hard.  Calling
-     *  @a pause or @a resume later than @a cleanup must not cause errors. */
+    virtual int resume() { return VINF_SUCCESS; }
+    /** Clean up any global resources before we shut down hard.  The last calls
+     * to @a pause and @a resume are guaranteed to finish before this is called.
+     */
     virtual void cleanup() = 0;
     /** Virtual destructor.  Not used */
     virtual ~Service() {}
