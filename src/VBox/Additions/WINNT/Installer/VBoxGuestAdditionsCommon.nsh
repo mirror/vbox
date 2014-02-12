@@ -809,7 +809,17 @@ FunctionEnd
   Pop $0
   ${If} $0 == "0"
     ${LogVerbose} "Copying verified file $\"${FileSrc}$\" to $\"${FileDest}$\" ..."
+    ClearErrors
+    SetOverwrite on
     CopyFiles /SILENT "${FileSrc}" "${FileDest}"
+    ${If} ${Errors}
+      CreateDirectory "$TEMP\${PRODUCT_NAME}"
+      ${GetFileName} "${FileSrc}" $0 ; Get the base name
+      CopyFiles /SILENT "${FileSrc}" "$TEMP\${PRODUCT_NAME}\$0"
+      ${LogVerbose} "Immediate installation failed, postponing to next reboot (temporary location is: $\"$TEMP\${PRODUCT_NAME}\$0$\") ..."
+      ;${InstallFileEx} "${un}" "${FileSrc}" "${FileDest}" "$TEMP" ; Only works with compile time files!
+      System::Call "kernel32::MoveFileEx(t '$TEMP\${PRODUCT_NAME}\$0', t '${FileDest}', i 5)"
+    ${EndIf}
   ${Else}
     ${LogVerbose} "Skipping to copy file $\"${FileSrc}$\" to $\"${FileDest}$\" (not Vendor: ${Vendor}, Architecture: ${Architecture})"
   ${EndIf}
