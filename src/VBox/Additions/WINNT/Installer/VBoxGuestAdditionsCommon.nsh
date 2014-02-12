@@ -863,6 +863,62 @@ FunctionEnd
 !macroend
 !define InstallFileVerify "!insertmacro InstallFileVerify"
 
+; Prepares the access rights for replacing
+; a WRP (Windows Resource Protection) protected file
+!macro PrepareWRPFile un
+Function ${un}PrepareWRPFile
+
+  Pop $0
+  Push $1
+
+  ${IfNot} ${FileExists} "$0"
+    ${LogVerbose} "WRP: File $\"$0$\" does not exist, skipping"
+    Return
+  ${EndIf}
+
+  ${If} ${FileExists} "$g_strSystemDir\takeown.exe"
+    ${CmdExecute} "$\"$g_strSystemDir\takeown.exe$\" /F $\"$0$\"" "true"
+  ${Else}
+    ${LogVerbose} "WRP: Warning: takeown.exe not found, skipping"
+  ${EndIf}
+
+  AccessControl::SetFileOwner "$0" "(S-1-5-32-545)"
+  Pop $1
+  ${LogVerbose} "WRP: Setting file owner for $\"$0$\" returned: $1"
+
+  AccessControl::GrantOnFile "$0" "(S-1-5-32-545)" "FullAccess"
+  Pop $1
+  ${LogVerbose} "WRP: Setting access rights for $\"$0$\" returned: $1"
+
+!if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
+  !ifdef WFP_FILE_EXCEPTION
+    VBoxGuestInstallHelper::DisableWFP "$0"
+    Pop $1 ; Get return value (ignored for now)
+    ${LogVerbose} "WRP: Setting WFP exception for $\"$0$\" returned: $1"
+  !endif
+!endif
+
+  Pop $1
+
+FunctionEnd
+!macroend
+!insertmacro PrepareWRPFile ""
+!insertmacro PrepareWRPFile "un."
+
+;
+; Macro for preparing the access rights for replacing
+; a WRP (Windows Resource Protection) protected file.
+; @return  None.
+; @param   Path of file to prepare.
+;
+!macro PrepareWRPFileEx un FileSrc
+  Push $0
+  Push "${FileSrc}"
+  Call ${un}PrepareWRPFile
+  Pop $0
+!macroend
+!define PrepareWRPFileEx "!insertmacro PrepareWRPFileEx"
+
 ;
 ; Validates backed up and replaced Direct3D files; either the d3d*.dll have
 ; to be from Microsoft or the (already) backed up msd3d*.dll files. If both
@@ -1085,59 +1141,3 @@ FunctionEnd
 !macroend
 !insertmacro RestoreFilesDirect3D ""
 !insertmacro RestoreFilesDirect3D "un."
-
-; Prepares the access rights for replacing
-; a WRP (Windows Resource Protection) protected file
-!macro PrepareWRPFile un
-Function ${un}PrepareWRPFile
-
-  Pop $0
-  Push $1
-
-  ${IfNot} ${FileExists} "$0"
-    ${LogVerbose} "WRP: File $\"$0$\" does not exist, skipping"
-    Return
-  ${EndIf}
-
-  ${If} ${FileExists} "$g_strSystemDir\takeown.exe"
-    ${CmdExecute} "$\"$g_strSystemDir\takeown.exe$\" /F $\"$0$\"" "true"
-  ${Else}
-    ${LogVerbose} "WRP: Warning: takeown.exe not found, skipping"
-  ${EndIf}
-
-  AccessControl::SetFileOwner "$0" "(S-1-5-32-545)"
-  Pop $1
-  ${LogVerbose} "WRP: Setting file owner for $\"$0$\" returned: $1"
-
-  AccessControl::GrantOnFile "$0" "(S-1-5-32-545)" "FullAccess"
-  Pop $1
-  ${LogVerbose} "WRP: Setting access rights for $\"$0$\" returned: $1"
-
-!if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
-  !ifdef WFP_FILE_EXCEPTION
-    VBoxGuestInstallHelper::DisableWFP "$0"
-    Pop $1 ; Get return value (ignored for now)
-    ${LogVerbose} "WRP: Setting WFP exception for $\"$0$\" returned: $1"
-  !endif
-!endif
-
-  Pop $1
-
-FunctionEnd
-!macroend
-!insertmacro PrepareWRPFile ""
-!insertmacro PrepareWRPFile "un."
-
-;
-; Macro for preparing the access rights for replacing
-; a WRP (Windows Resource Protection) protected file.
-; @return  None.
-; @param   Path of file to prepare.
-;
-!macro PrepareWRPFileEx un FileSrc
-  Push $0
-  Push "${FileSrc}"
-  Call ${un}PrepareWRPFile
-  Pop $0
-!macroend
-!define PrepareWRPFileEx "!insertmacro PrepareWRPFileEx"
