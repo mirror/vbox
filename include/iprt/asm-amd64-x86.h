@@ -409,11 +409,11 @@ DECLINLINE(RTSEL) ASMGetLDTR(void)
 /**
  * Get the access rights for the segment selector.
  *
- * @returns The access rights on success or ~0U on failure.
+ * @returns The access rights on success or UINT32_MAX on failure.
  * @param   uSel        The selector value.
  *
- * @remarks Using ~0U for failure is chosen because valid access rights always
- *          have bits 0:7 as 0 (on both Intel & AMD).
+ * @remarks Using UINT32_MAX for failure is chosen because valid access rights
+ *          always have bits 0:7 as 0 (on both Intel & AMD).
  */
 #if RT_INLINE_ASM_EXTERNAL
 DECLASM(uint32_t) ASMGetSegAttr(uint32_t uSel);
