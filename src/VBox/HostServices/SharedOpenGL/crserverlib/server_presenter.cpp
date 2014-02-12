@@ -289,7 +289,9 @@ static void crFbBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcData
 
     if (ScaledDstWidth <= 0)
     {
-        WARN(("dst width (%d) <= 0", ScaledDstWidth));
+        LOG(("ScaledDstWidth <= 0"));
+        if (ScaledDstWidth < 0)
+            WARN(("dst width (%d) < 0", ScaledDstWidth));
         return;
     }
 
@@ -300,7 +302,9 @@ static void crFbBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcData
 
     if (ScaledDstHeight <= 0)
     {
-        WARN(("dst height (%d) <= 0", ScaledDstHeight));
+        LOG(("ScaledDstHeight <= 0"));
+        if (ScaledDstHeight < 0)
+            WARN(("dst height (%d) < 0", ScaledDstHeight));
         return;
     }
 
