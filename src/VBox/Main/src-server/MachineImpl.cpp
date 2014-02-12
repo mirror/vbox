@@ -571,6 +571,10 @@ HRESULT Machine::init(VirtualBox *aParent,
             autoInitSpan.setSucceeded();
         else
         {
+            /* Ignore all errors from unregistering, they would destroy
+             * the more interesting error information we already have,
+             * pinpointing the issue with the VM config. */
+            ErrorInfoKeeper eik;
             autoInitSpan.setLimited();
 
             // uninit media from this machine's media registry, or else
