@@ -53,9 +53,9 @@ LangString VBOX_REBOOT_REQUIRED ${LANG_FRENCH}                      "Le système 
 LangString VBOX_EXTRACTION_COMPLETE ${LANG_FRENCH}                  "$(^Name): Les fichiers ont été extrait avec succès dans $\"$INSTDIR$\"!"
 
 LangString VBOX_ERROR_INST_FAILED ${LANG_FRENCH}                    "Une erreur est survenue pendant l'installation!$\r$\nVeuillez consulter le fichier log '$INSTDIR\install_ui.log' pour plus d'informations."
-LangString VBOX_ERROR_OPEN_LINK ${LANG_FRENCH}                      "Impossible d'ouvrir le lien dans le navigateur par defaut."
+LangString VBOX_ERROR_OPEN_LINK ${LANG_FRENCH}                      "Impossible d'ouvrir le lien dans le navigateur par défaut."
 
 LangString VBOX_UNINST_CONFIRM ${LANG_FRENCH}                       "Voulez-vous vraiment désinstaller $(^Name)?"
 LangString VBOX_UNINST_SUCCESS ${LANG_FRENCH}                       "$(^Name) ont été désinstallés."
 LangString VBOX_UNINST_INVALID_D3D ${LANG_FRENCH}                   "Installation incorrecte du support Direct3D detectée; une désinstallation ne sera pas tentée."
-LangString VBOX_UNINST_UNABLE_TO_RESTORE_D3D ${LANG_FRENCH}         "Could not restore original Direct3D files. Please re-install DirectX."
+LangString VBOX_UNINST_UNABLE_TO_RESTORE_D3D ${LANG_FRENCH}         "La restauration des fichiers originaux Direct3D a echoué. Veuillez réinstaller DirectX."
