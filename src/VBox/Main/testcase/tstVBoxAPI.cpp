@@ -38,6 +38,7 @@ using namespace com;
 *   Global Variables                                                           *
 *******************************************************************************/
 static RTTEST g_hTest;
+static Bstr   tstMachineName = "tstVBoxAPI test VM";
 
 
 /** Worker for TST_COM_EXPR(). */
@@ -51,7 +52,6 @@ static HRESULT tstComExpr(HRESULT hrc, const char *pszOperation, int iLine)
 /** Macro that executes the given expression and report any failure.
  *  The expression must return a HRESULT. */
 #define TST_COM_EXPR(expr) tstComExpr(expr, #expr, __LINE__)
-
 
 
 static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
@@ -120,7 +120,6 @@ static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
     /** Create VM */
     RTTestSub(g_hTest, "IVirtualBox::CreateMachine");
     ComPtr<IMachine> ptrMachine;
-    Bstr tstMachineName = "tstVBoxAPI test VM";
     com::SafeArray<BSTR> groups;
     /** Default VM settings */
     CHECK_ERROR(pVBox, CreateMachine(NULL,                          /** Settings */
@@ -180,7 +179,7 @@ static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
             if (machines[i])
             {
                 Bstr tmpName;
-                CHECK_ERROR(machines[i], COMGETTER(Name)(tmpName.asOutParam()));
+                rc = machines[i]->COMGETTER(Name)(tmpName.asOutParam());
                 if (SUCCEEDED(rc))
                 {
                     if (tmpName == tstMachineName)
@@ -332,6 +331,14 @@ static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
     else
         RTTestFailed(g_hTest, "%d: IVirtualBox::genericNetworkDrivers failed", __LINE__);
 
+    return TRUE;
+}
+
+
+static BOOL tstApiClean(IVirtualBox *pVBox)
+{
+    HRESULT rc;
+
     /** Delete created VM and its files */
     ComPtr<IMachine> machine;
     CHECK_ERROR_RET(pVBox, FindMachine(Bstr(tstMachineName).raw(), machine.asOutParam()), FALSE);
@@ -344,7 +351,6 @@ static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
 
     return TRUE;
 }
-
 
 
 int main(int argc, char **argv)
@@ -378,6 +384,10 @@ int main(int argc, char **argv)
 
                 /** Test IVirtualBox interface */
                 tstApiIVirtualBox(ptrVBox);
+
+
+                /** Clean files/configs */
+                tstApiClean(ptrVBox);
             }
         }
 
