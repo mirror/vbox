@@ -517,7 +517,6 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
     }
     RTMemTmpFree(paFiles);
 
-    RTPrintf("rc = %Rrc\n", rc);
     return rc;
 }
 
