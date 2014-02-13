@@ -406,8 +406,8 @@ HRESULT BandwidthControl::createBandwidthGroup(const com::Utf8Str &aName,
 
     if (SUCCEEDED(rc))
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Bandwidth group named '%ls' already exists"),
-                        Bstr(aName).raw());
+                        tr("Bandwidth group named '%s' already exists"),
+                        aName.c_str());
 
     group.createObject();
 
@@ -435,7 +435,7 @@ HRESULT BandwidthControl::deleteBandwidthGroup(const com::Utf8Str &aName)
 
     if (group->i_getReferences() != 0)
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("The bandwidth group '%ls' is still in use"), Bstr(aName).raw());
+                        tr("The bandwidth group '%s' is still in use"), aName.c_str());
 
     /* We can remove it now. */
     m->pParent->setModified(Machine::IsModified_BandwidthControl);
