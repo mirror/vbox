@@ -1112,7 +1112,8 @@ typedef struct VUSBURB
     uint32_t        cbData;
     /** The message data.
      * IN: On host to device transfers, the data to send.
-     * OUT: On device to host transfers, the data to received. */
+     * OUT: On device to host transfers, the data to received.
+     * This array has actually a size of VUsb.cbDataAllocated, not 8KB! */
     uint8_t         abData[8*_1K];
 } VUSBURB;
 
