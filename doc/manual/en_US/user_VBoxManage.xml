@@ -1366,6 +1366,14 @@ Virtual system 0:
     <para>For virtualization products which aren't fully compatible with the
     OVF standard 1.0 you can enable a OVF 0.9 legacy mode with the
     <computeroutput>--legacy09</computeroutput> option.</para>
+
+    <para>To specify options controlling the exact content of the appliance
+    file, you can use <computeroutput>--option</computeroutput> to request the
+    creation of a manifest file (encouraged, allows detection of corrupted
+    appliances on import), the additional export of DVD images, and the
+    exclusion of MAC addresses. You can specify a list of options, e.g.
+    <computeroutput>--option manifest,nomacs</computeroutput>. For details,
+    check the help output of <computeroutput>VBoxManage export</computeroutput>.</para>
   </sect1>
 
   <sect1 id="vboxmanage-startvm">

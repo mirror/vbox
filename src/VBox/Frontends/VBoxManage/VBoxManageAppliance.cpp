@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2013 Oracle Corporation
+ * Copyright (C) 2009-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -787,25 +787,67 @@ int handleImportAppliance(HandlerArg *arg)
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-static const RTGETOPTDEF g_aExportOptions[]
-    = {
-        { "--output",             'o', RTGETOPT_REQ_STRING },
-        { "--legacy09",           'l', RTGETOPT_REQ_NOTHING },
-        { "--ovf09",              'l', RTGETOPT_REQ_NOTHING },
-        { "--ovf10",              '1', RTGETOPT_REQ_NOTHING },
-        { "--ovf20",              '2', RTGETOPT_REQ_NOTHING },
-        { "--manifest",           'm', RTGETOPT_REQ_NOTHING },
-        { "--iso",                'I', RTGETOPT_REQ_NOTHING },
-        { "--vsys",               's', RTGETOPT_REQ_UINT32 },
-        { "--product",            'p', RTGETOPT_REQ_STRING },
-        { "--producturl",         'P', RTGETOPT_REQ_STRING },
-        { "--vendor",             'n', RTGETOPT_REQ_STRING },
-        { "--vendorurl",          'N', RTGETOPT_REQ_STRING },
-        { "--version",            'v', RTGETOPT_REQ_STRING },
-        { "--description",        'd', RTGETOPT_REQ_STRING },
-        { "--eula",               'e', RTGETOPT_REQ_STRING },
-        { "--eulafile",           'E', RTGETOPT_REQ_STRING },
-      };
+static int parseExportOptions(const char *psz, com::SafeArray<ExportOptions_T> *options)
+{
+    int rc = VINF_SUCCESS;
+    while (psz && *psz && RT_SUCCESS(rc))
+    {
+        size_t len;
+        const char *pszComma = strchr(psz, ',');
+        if (pszComma)
+            len = pszComma - psz;
+        else
+            len = strlen(psz);
+        if (len > 0)
+        {
+            if (!RTStrNICmp(psz, "CreateManifest", len))
+                options->push_back(ExportOptions_CreateManifest);
+            else if (!RTStrNICmp(psz, "manifest", len))
+                options->push_back(ExportOptions_CreateManifest);
+            else if (!RTStrNICmp(psz, "ExportDVDImages", len))
+                options->push_back(ExportOptions_ExportDVDImages);
+            else if (!RTStrNICmp(psz, "iso", len))
+                options->push_back(ExportOptions_ExportDVDImages);
+            else if (!RTStrNICmp(psz, "StripAllMACs", len))
+                options->push_back(ExportOptions_StripAllMACs);
+            else if (!RTStrNICmp(psz, "nomacs", len))
+                options->push_back(ExportOptions_StripAllMACs);
+            else if (!RTStrNICmp(psz, "StripAllNonNATMACs", len))
+                options->push_back(ExportOptions_StripAllNonNATMACs);
+            else if (!RTStrNICmp(psz, "nomacsbutnat", len))
+                options->push_back(ExportOptions_StripAllNonNATMACs);
+            else
+                rc = VERR_PARSE_ERROR;
+        }
+        if (pszComma)
+            psz += len + 1;
+        else
+            psz += len;
+    }
+
+    return rc;
+}
+
+static const RTGETOPTDEF g_aExportOptions[] =
+{
+    { "--output",               'o', RTGETOPT_REQ_STRING },
+    { "--legacy09",             'l', RTGETOPT_REQ_NOTHING },
+    { "--ovf09",                'l', RTGETOPT_REQ_NOTHING },
+    { "--ovf10",                '1', RTGETOPT_REQ_NOTHING },
+    { "--ovf20",                '2', RTGETOPT_REQ_NOTHING },
+    { "--manifest",             'm', RTGETOPT_REQ_NOTHING },    // obsoleted by --options
+    { "--iso",                  'I', RTGETOPT_REQ_NOTHING },    // obsoleted by --options
+    { "--vsys",                 's', RTGETOPT_REQ_UINT32 },
+    { "--product",              'p', RTGETOPT_REQ_STRING },
+    { "--producturl",           'P', RTGETOPT_REQ_STRING },
+    { "--vendor",               'n', RTGETOPT_REQ_STRING },
+    { "--vendorurl",            'N', RTGETOPT_REQ_STRING },
+    { "--version",              'v', RTGETOPT_REQ_STRING },
+    { "--description",          'd', RTGETOPT_REQ_STRING },
+    { "--eula",                 'e', RTGETOPT_REQ_STRING },
+    { "--eulafile",             'E', RTGETOPT_REQ_STRING },
+    { "--options",              'O', RTGETOPT_REQ_STRING },
+};
 
 int handleExportAppliance(HandlerArg *a)
 {
@@ -815,6 +857,7 @@ int handleExportAppliance(HandlerArg *a)
     Utf8Str strOvfFormat("ovf-1.0"); // the default export version
     bool fManifest = false; // the default
     bool fExportISOImages = false; // the default
+    com::SafeArray<ExportOptions_T> options;
     std::list< ComPtr<IMachine> > llMachines;
 
     uint32_t ulCurVsys = (uint32_t)-1;
@@ -843,76 +886,81 @@ int handleExportAppliance(HandlerArg *a)
                     break;
 
                 case 'l':   // --legacy09/--ovf09
-                     strOvfFormat = "ovf-0.9";
-                     break;
+                    strOvfFormat = "ovf-0.9";
+                    break;
 
                 case '1':   // --ovf10
-                     strOvfFormat = "ovf-1.0";
-                     break;
+                    strOvfFormat = "ovf-1.0";
+                    break;
 
                 case '2':   // --ovf20
-                     strOvfFormat = "ovf-2.0";
-                     break;
+                    strOvfFormat = "ovf-2.0";
+                    break;
 
                 case 'I':   // --iso
-                     fExportISOImages = true;
-                     break;
+                    fExportISOImages = true;
+                    break;
 
                 case 'm':   // --manifest
-                     fManifest = true;
-                     break;
+                    fManifest = true;
+                    break;
 
                 case 's':   // --vsys
-                     ulCurVsys = ValueUnion.u32;
-                     break;
+                    ulCurVsys = ValueUnion.u32;
+                    break;
 
                 case 'p':   // --product
-                     if (ulCurVsys == (uint32_t)-1)
-                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
-                     mapArgsMapsPerVsys[ulCurVsys]["product"] = ValueUnion.psz;
-                     break;
+                    if (ulCurVsys == (uint32_t)-1)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["product"] = ValueUnion.psz;
+                    break;
 
                 case 'P':   // --producturl
-                     if (ulCurVsys == (uint32_t)-1)
-                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
-                     mapArgsMapsPerVsys[ulCurVsys]["producturl"] = ValueUnion.psz;
-                     break;
+                    if (ulCurVsys == (uint32_t)-1)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["producturl"] = ValueUnion.psz;
+                    break;
 
                 case 'n':   // --vendor
-                     if (ulCurVsys == (uint32_t)-1)
-                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
-                     mapArgsMapsPerVsys[ulCurVsys]["vendor"] = ValueUnion.psz;
-                     break;
+                    if (ulCurVsys == (uint32_t)-1)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["vendor"] = ValueUnion.psz;
+                    break;
 
                 case 'N':   // --vendorurl
-                     if (ulCurVsys == (uint32_t)-1)
-                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
-                     mapArgsMapsPerVsys[ulCurVsys]["vendorurl"] = ValueUnion.psz;
-                     break;
+                    if (ulCurVsys == (uint32_t)-1)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["vendorurl"] = ValueUnion.psz;
+                    break;
 
                 case 'v':   // --version
-                     if (ulCurVsys == (uint32_t)-1)
-                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
-                     mapArgsMapsPerVsys[ulCurVsys]["version"] = ValueUnion.psz;
-                     break;
+                    if (ulCurVsys == (uint32_t)-1)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["version"] = ValueUnion.psz;
+                    break;
 
                 case 'd':   // --description
-                     if (ulCurVsys == (uint32_t)-1)
-                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
-                     mapArgsMapsPerVsys[ulCurVsys]["description"] = ValueUnion.psz;
-                     break;
+                    if (ulCurVsys == (uint32_t)-1)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["description"] = ValueUnion.psz;
+                    break;
 
                 case 'e':   // --eula
-                     if (ulCurVsys == (uint32_t)-1)
-                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
-                     mapArgsMapsPerVsys[ulCurVsys]["eula"] = ValueUnion.psz;
-                     break;
+                    if (ulCurVsys == (uint32_t)-1)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["eula"] = ValueUnion.psz;
+                    break;
 
                 case 'E':   // --eulafile
-                     if (ulCurVsys == (uint32_t)-1)
-                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
-                     mapArgsMapsPerVsys[ulCurVsys]["eulafile"] = ValueUnion.psz;
-                     break;
+                    if (ulCurVsys == (uint32_t)-1)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["eulafile"] = ValueUnion.psz;
+                    break;
+
+                case 'O':   // --options
+                    if (RT_FAILURE(parseExportOptions(ValueUnion.psz, &options)))
+                        return errorArgument("Invalid export options '%s'\n", ValueUnion.psz);
+                    break;
 
                 case VINF_GETOPT_NOT_OPTION:
                 {
@@ -1056,7 +1104,6 @@ int handleExportAppliance(HandlerArg *a)
         if (FAILED(rc))
             break;
 
-        com::SafeArray<ExportOptions_T> options;
         if (fManifest)
             options.push_back(ExportOptions_CreateManifest);
 

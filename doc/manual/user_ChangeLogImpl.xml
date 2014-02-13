@@ -19,6 +19,13 @@
     <itemizedlist>
 
       <listitem>
+        <para>VBoxManage: when exporting an appliance, support the suppression
+           of MAC addresses, which means they will be always recreated on
+           import, avoiding duplicate MAC addresses for VMs which are imported
+           several times</para>
+      </listitem>
+
+      <listitem>
         <para>API: block the removal of the current snapshot if it has child
            snapshots (only relevant for VMs without snapshottable hard disks,
            their presence always prevented removal), which resulted in VM
