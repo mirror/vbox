@@ -235,7 +235,7 @@ static void pollTTYAndXServer(Display *pDisplay, uint32_t cVT)
     pollFD[0].events = POLLIN;
     while (true)
     {
-        if (hFile)
+        if (hFile != NIL_RTFILE)
             checkVTSysfs(hFile, cVT);
         /* The only point of this loop is to trigger the I/O error handler if
          * appropriate. */
