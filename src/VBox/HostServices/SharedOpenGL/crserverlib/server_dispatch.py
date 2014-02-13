@@ -69,6 +69,7 @@ for func_name in keys:
         name = "texCoord"
         type = m.group(3) + m.group(2)
         array = "[texture-GL_TEXTURE0_ARB]"
+        condition = "if (texture >= GL_TEXTURE0_ARB && texture < GL_TEXTURE0_ARB + CR_MAX_TEXTURE_UNITS)"
     m = re.match( r"^(Index)(ub|b|us|s|ui|i|f|d)$", func_name )
     if m :
         current = 1
