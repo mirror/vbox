@@ -33,7 +33,7 @@ MOD_INCL   = $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
 MOD_INCL  += $(addprefix -I$(KBUILD_EXTMOD)/vboxvideo,/ /include /r0drv/linux)
 # Enterprise Linux 6.5 does not include the drm user API headers with the kernel
 # headers.
-MOD_INCL += $(foreach inc,$(KERN_INCL),\
+MOD_INCL += $(foreach inc,$(KERN_INCL) include,\
               $(if $(wildcard $(inc)/linux/utsrelease.h),\
                 $(if $(shell grep '"2.6.32.*el6.*"' $(inc)/linux/utsrelease.h),\
 		      -I/usr/include,),))
