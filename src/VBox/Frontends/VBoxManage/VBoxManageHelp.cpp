@@ -414,6 +414,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--legacy09|--ovf09|--ovf10|--ovf20]\n"
                      "                            [--manifest]\n"
                      "                            [--iso]\n"
+                     "                            [--options manifest|iso|nomacs|nomacsbutnat]\n"
                      "                            [--vsys <number of virtual system>]\n"
                      "                                    [--product <product name>]\n"
                      "                                    [--producturl <product url>]\n"

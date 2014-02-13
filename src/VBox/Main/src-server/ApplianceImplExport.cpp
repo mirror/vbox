@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1834,6 +1834,21 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
         AutoWriteLock machineLock(vsdescThis->m->pMachine COMMA_LOCKVAL_SRC_POS);
         // fill the machine config
         vsdescThis->m->pMachine->copyMachineDataToSettings(*pConfig);
+
+        // Apply export tweaks to machine settings
+        bool fStripAllMACs = m->optListExport.contains(ExportOptions_StripAllMACs);
+        bool fStripAllNonNATMACs = m->optListExport.contains(ExportOptions_StripAllNonNATMACs);
+        if (fStripAllMACs || fStripAllNonNATMACs)
+        {
+            for (settings::NetworkAdaptersList::iterator it = pConfig->hardwareMachine.llNetworkAdapters.begin();
+                 it != pConfig->hardwareMachine.llNetworkAdapters.end();
+                 ++it)
+            {
+                settings::NetworkAdapter &nic = *it;
+                if (fStripAllMACs || (fStripAllNonNATMACs && nic.mode != NetworkAttachmentType_NAT))
+                    nic.strMACAddress.setNull();
+            }
+        }
 
         // write the machine config to the vbox:Machine element
         pConfig->buildMachineXML(*pelmVBoxMachine,
