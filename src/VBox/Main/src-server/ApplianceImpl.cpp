@@ -1483,6 +1483,8 @@ void VirtualSystemDescription::i_addEntry(VirtualSystemDescriptionType_T aType,
         = strExtraConfig;
     vsde.ulSizeMB = ulSizeMB;
 
+    vsde.skipIt = false;
+
     m->maDescriptions.push_back(vsde);
 }
 
