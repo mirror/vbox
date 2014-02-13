@@ -46,6 +46,7 @@ keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
 for func_name in keys:
     current = 0
     array = ""
+    condition = ""
     m = re.search( r"^(Color|Normal)([1234])(ub|b|us|s|ui|i|f|d)$", func_name )
     if m :
         current = 1
@@ -91,18 +92,23 @@ for func_name in keys:
         name = string.lower( m.group(1)[:1] ) + m.group(1)[1:]
         type = m.group(3) + m.group(2)
         array = "[index]"
+        condition = "if (index < CR_MAX_VERTEX_ATTRIBS)"
     if func_name == "VertexAttrib4NubARB":
         current = 1
         name = "vertexAttrib"
         type = "ub4"
         array = "[index]"
+        condition = "if (index < CR_MAX_VERTEX_ATTRIBS)"
 
     if current:
         params = apiutil.Parameters(func_name)
         print 'void SERVER_DISPATCH_APIENTRY crServerDispatch%s( %s )' % ( func_name, apiutil.MakeDeclarationString(params) )
         print '{'
-        print '\tcr_server.head_spu->dispatch_table.%s( %s );' % (func_name, apiutil.MakeCallString(params) )
-        print "\tcr_server.current.c.%s.%s%s = cr_unpackData;" % (name,type,array)
+        print '\t%s' % (condition)
+        print '\t{'
+        print '\n\tcr_server.head_spu->dispatch_table.%s( %s );' % (func_name, apiutil.MakeCallString(params) )
+        print "\t\tcr_server.current.c.%s.%s%s = cr_unpackData;" % (name,type,array)
+        print '\t}'
         print '}\n' 
 
 print """
