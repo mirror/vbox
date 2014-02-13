@@ -138,7 +138,14 @@ for index in range(len(funcs)):
     		*get_values = (%s)CR_MAX_TEXTURE_UNITS;
     	} 
     }
-    """ % (types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index])
+    else if (GL_MAX_VERTEX_ATTRIBS_ARB==pname)
+    {
+        if (CR_MAX_VERTEX_ATTRIBS < (GLuint)*get_values)
+        {
+            *get_values = (%s)CR_MAX_VERTEX_ATTRIBS;
+        } 
+    }
+    """ % (types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index])
     print '\tcrServerReturnValue( get_values, tablesize );'
     print '\tcrFree(get_values);'
     print '}\n'
