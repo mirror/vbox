@@ -610,7 +610,13 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
              ++it)
         {
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-            vsdescThis->i_removeByType(VirtualSystemDescriptionType_CDROM);
+            std::list<VirtualSystemDescriptionEntry*> skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_CDROM);
+            std::list<VirtualSystemDescriptionEntry*>:: iterator pItSkipped = skipped.begin();
+            while (pItSkipped != skipped.end())
+            {
+                (*pItSkipped)->skipIt = true;
+                ++pItSkipped;
+            }
         }
     }
 
@@ -887,7 +893,8 @@ void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
         Bstr bstrSrcFilePath(strSrcFilePath);
 
         //skip empty Medium. There are no information to add into section <References> or <DiskSection>
-        if (strSrcFilePath.isEmpty())
+        if (strSrcFilePath.isEmpty() ||
+            pDiskEntry->skipIt == true)
             continue;
 
         // Do NOT check here whether the file exists. FindMedium will figure
@@ -1517,7 +1524,8 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         lAutomaticAllocation = 1;
 
                         //skip empty Medium. There are no information to add into section <References> or <DiskSection>
-                        if (desc.strVBoxCurrent.isNotEmpty())
+                        if (desc.strVBoxCurrent.isNotEmpty() &&
+                            desc.skipIt == false)
                         {
                             // the following references the "<Disks>" XML block
                             strHostResource = Utf8StrFmt("/disk/%s", strDiskID.c_str());
@@ -2077,7 +2085,8 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             const Utf8Str &strSrcFilePath = pDiskEntry->strVBoxCurrent;
 
             //skip empty Medium. In common, It's may be empty CD/DVD
-            if (strSrcFilePath.isEmpty())
+            if (strSrcFilePath.isEmpty() ||
+                pDiskEntry->skipIt == true)
                 continue;
 
             // Do NOT check here whether the file exists. findHardDisk will

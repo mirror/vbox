@@ -256,6 +256,7 @@ struct VirtualSystemDescriptionEntry
     Utf8Str strExtraConfigCurrent;          ///< extra configuration key=value strings (type-dependent); current value, either from interpret() or setFinalValue()
 
     uint32_t ulSizeMB;                      ///< hard disk images only: a copy of ovf::DiskImage::ulSuggestedSizeMB
+    bool skipIt;                            ///< used during export to skip some parts if it's needed
 };
 
 class ATL_NO_VTABLE VirtualSystemDescription :
