@@ -430,7 +430,11 @@ void UIMediumEnumerator::calculateActualUsage(const QString &strMachineID, CMedi
 {
     /* Search for corresponding machine: */
     CMachine machine = vboxGlobal().virtualBox().FindMachine(strMachineID);
-    AssertReturnVoid(!machine.isNull());
+    if (machine.isNull())
+    {
+        /* Usually means the machine is already gone, not harmful. */
+        return;
+    }
 
     /* Calculate actual usage starting from root-snapshot if necessary: */
     if (!fTakeIntoAccountCurrentStateOnly)
