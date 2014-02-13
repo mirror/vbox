@@ -73,6 +73,8 @@
 #include <vector>
 #include <string>
 
+#include <stdio.h>
+
 #include "../NetLib/VBoxNetLib.h"
 #include "../NetLib/VBoxNetBaseService.h"
 #include "../NetLib/utils.h"
