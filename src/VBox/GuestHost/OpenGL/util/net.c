@@ -1106,12 +1106,18 @@ crNetDefaultRecv( CRConnection *conn, CRMessage *msg, unsigned int len )
         case CR_MESSAGE_READ_PIXELS:
             crError( "Can't handle read pixels" );
             return;
-#ifdef IN_GUEST
         case CR_MESSAGE_WRITEBACK:
+#ifdef IN_GUEST
             crNetRecvWriteback( &(pRealMsg->writeback) );
+#else
+            WARN(("CR_MESSAGE_WRITEBACK not expected\n"));
+#endif
             return;
         case CR_MESSAGE_READBACK:
+#ifdef IN_GUEST
             crNetRecvReadback( &(pRealMsg->readback), len );
+#else
+            WARN(("CR_MESSAGE_READBACK not expected\n"));
 #endif
             return;
         case CR_MESSAGE_CRUT:
