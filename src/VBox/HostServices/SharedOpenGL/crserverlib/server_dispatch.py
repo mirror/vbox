@@ -106,7 +106,7 @@ for func_name in keys:
         print '{'
         print '\t%s' % (condition)
         print '\t{'
-        print '\n\tcr_server.head_spu->dispatch_table.%s( %s );' % (func_name, apiutil.MakeCallString(params) )
+        print '\t\tcr_server.head_spu->dispatch_table.%s( %s );' % (func_name, apiutil.MakeCallString(params) )
         print "\t\tcr_server.current.c.%s.%s%s = cr_unpackData;" % (name,type,array)
         print '\t}'
         print '}\n' 
