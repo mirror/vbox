@@ -331,33 +331,32 @@ void vboxClientUsage(const char *pcszFileName)
 
 /**
  * The main loop for the VBoxClient daemon.
+ * @todo Clean up for readability.
  */
 int main(int argc, char *argv[])
 {
-    if (!XInitThreads())
-        return 1;
+    bool fDaemonise = true;
+    int rc;
+    const char *pcszFileName, *pcszStage;
+
     /* Initialise our runtime before all else. */
-    int rc = RTR3InitExe(argc, &argv, 0);
+    rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
-
-    int rcClipboard;
-    const char *pszFileName = RTPathFilename(argv[0]);
-    bool fDaemonise = true;
-    /* Have any fatal errors occurred yet? */
-    bool fSuccess = true;
-    /* Do we know which service we wish to run? */
-    bool fHaveService = false;
-
-    if (NULL == pszFileName)
-        pszFileName = "VBoxClient";
-
-    /* Initialise our global clean-up critical section */
-    rc = RTCritSectInit(&g_critSect);
+    /* This should never be called twice in one process - in fact one Display
+     * object should probably never be used from multiple threads anyway. */
+    if (!XInitThreads())
+        return 1;
+    /* Get our file name for error output. */
+    pcszFileName = RTPathFilename(argv[0]);
+    if (!pcszFileName)
+        pcszFileName = "VBoxClient";
+    /* Initialise the guest library. */
+    rc = VbglR3InitUser();
     if (RT_FAILURE(rc))
     {
-        /* Of course, this should never happen. */
-        RTPrintf("%s: Failed to initialise the global critical section, rc=%Rrc\n", pszFileName, rc);
+        RTPrintf("%s: failed to connect to the VirtualBox kernel service, rc=%Rrc\n",
+                 pcszFileName, rc);
         return 1;
     }
 
@@ -365,127 +364,120 @@ int main(int argc, char *argv[])
     /** @todo Use RTGetOpt() if the arguments become more complex. */
     for (int i = 1; i < argc; ++i)
     {
+        rc = VERR_INVALID_PARAMETER;
         if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--nodaemon"))
+        {
+            /* If the user is running in "no daemon" mode anyway, send critical
+             * logging to stdout as well. */
+            PRTLOGGER pReleaseLog = RTLogRelDefaultInstance();
+
+            if (pReleaseLog)
+                rc = RTLogDestinations(pReleaseLog, "stdout");
+            if (pReleaseLog && RT_FAILURE(rc))
+                RTPrintf("%s: failed to redivert error output, rc=%Rrc\n",
+                         pcszFileName, rc);
             fDaemonise = false;
+        }
         else if (!strcmp(argv[i], "--clipboard"))
         {
-            if (g_pService == NULL)
-                g_pService = VBoxClient::GetClipboardService();
-            else
-                fSuccess = false;
+            if (g_pService)
+                break;
+            g_pService = VBoxClient::GetClipboardService();
         }
         else if (!strcmp(argv[i], "--display"))
         {
-            if (g_pService == NULL)
-                g_pService = VBoxClient::GetDisplayService();
-            else
-                fSuccess = false;
+            if (g_pService)
+                break;
+            g_pService = VBoxClient::GetDisplayService();
         }
         else if (!strcmp(argv[i], "--seamless"))
         {
-            if (g_pService == NULL)
-                g_pService = VBoxClient::GetSeamlessService();
-            else
-                fSuccess = false;
+            if (g_pService)
+                break;
+            g_pService = VBoxClient::GetSeamlessService();
         }
         else if (!strcmp(argv[i], "--checkhostversion"))
         {
-            if (g_pService == NULL)
-                g_pService = VBoxClient::GetHostVersionService();
-            else
-                fSuccess = false;
+            if (g_pService)
+                break;
+            g_pService = VBoxClient::GetHostVersionService();
         }
 #ifdef VBOX_WITH_DRAG_AND_DROP
         else if (!strcmp(argv[i], "--draganddrop"))
         {
-            if (g_pService == NULL)
-                g_pService = VBoxClient::GetDragAndDropService();
-            else
-                fSuccess = false;
+            if (g_pService)
+                break;
+            g_pService = VBoxClient::GetDragAndDropService();
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
-            vboxClientUsage(pszFileName);
+            vboxClientUsage(pcszFileName);
             return 0;
         }
         else
         {
-            RTPrintf("%s: unrecognized option `%s'\n", pszFileName, argv[i]);
-            RTPrintf("Try `%s --help' for more information\n", pszFileName);
+            RTPrintf("%s: unrecognized option `%s'\n", pcszFileName, argv[i]);
+            RTPrintf("Try `%s --help' for more information\n", pcszFileName);
             return 1;
         }
+        rc = VINF_SUCCESS;
     }
-    if (!fSuccess || !g_pService)
+    if (RT_FAILURE(rc) || !g_pService)
     {
-        vboxClientUsage(pszFileName);
-        return 1;
-    }
-    /* Get the path for the pidfiles */
-    rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("VBoxClient: failed to get home directory, rc=%Rrc.  Exiting.\n", rc);
-        LogRel(("VBoxClient: failed to get home directory, rc=%Rrc.  Exiting.\n", rc));
-        return 1;
-    }
-    rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile), g_pService->getPidFilePath());
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("VBoxClient: RTPathAppend failed with rc=%Rrc.  Exiting.\n", rc);
-        LogRel(("VBoxClient: RTPathAppend failed with rc=%Rrc.  Exiting.\n", rc));
+        vboxClientUsage(pcszFileName);
         return 1;
     }
 
-    /* Initialise the guest library. */
-    if (RT_FAILURE(VbglR3InitUser()))
-    {
-        RTPrintf("Failed to connect to the VirtualBox kernel service\n");
-        LogRel(("Failed to connect to the VirtualBox kernel service\n"));
-        return 1;
-    }
-    if (fDaemonise)
-    {
-        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
+    do {
+        pcszStage = "Initialising critical section";
+        rc = RTCritSectInit(&g_critSect);
         if (RT_FAILURE(rc))
-        {
-            RTPrintf("VBoxClient: failed to daemonize.  Exiting.\n");
-            LogRel(("VBoxClient: failed to daemonize.  Exiting.\n"));
-# ifdef DEBUG
-            RTPrintf("Error %Rrc\n", rc);
-# endif
-            return 1;
-        }
-    }
-    if (g_szPidFile[0] && RT_FAILURE(VbglR3PidFile(g_szPidFile, &g_hPidFile)))
-    {
-        RTPrintf("Failed to create a pidfile.  Exiting.\n");
-        LogRel(("Failed to create a pidfile.  Exiting.\n"));
-        VbglR3Term();
-        return 1;
-    }
-    /* Set signal handlers to clean up on exit. */
-    vboxClientSetSignalHandlers();
-    /* Set an X11 error handler, so that we don't die when we get unavoidable errors. */
-    XSetErrorHandler(vboxClientXLibErrorHandler);
-    /* Set an X11 I/O error handler, so that we can shutdown properly on fatal errors. */
-    XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
-    rc = g_pService->init();
+            break;
+        pcszStage = "Getting home directory for pid-file";
+        rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
+        if (RT_FAILURE(rc))
+            break;
+        pcszStage = "Creating pid-file path";
+        rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile),
+                          g_pService->getPidFilePath());
+        if (RT_FAILURE(rc))
+            break;
+        pcszStage = "Daemonising";
+        if (fDaemonise)
+            rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
+        if (RT_FAILURE(rc))
+            break;
+        pcszStage = "Creating pid-file";
+        if (g_szPidFile[0])
+            rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
+        if (RT_FAILURE(rc))
+            break;
+        /* Set signal handlers to clean up on exit. */
+        vboxClientSetSignalHandlers();
+        /* Set an X11 error handler, so that we don't die when we get unavoidable
+         * errors. */
+        XSetErrorHandler(vboxClientXLibErrorHandler);
+        /* Set an X11 I/O error handler, so that we can shutdown properly on
+         * fatal errors. */
+        XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
+        pcszStage = "Initialising service";
+        rc = g_pService->init();
+    } while (0);
     if (RT_FAILURE(rc))
     {
-        LogRel(("VBoxClient: failed to initialise the service (%Rrc).  Exiting.\n",
-                 rc));
+        LogRelFunc(("VBoxClient: failed at stage: \"%s\" rc: %Rrc\n",
+                    pcszStage, rc));
         VbglR3Term();
         return 1;
     }
+
     rc = startMonitorThread();
     if (RT_FAILURE(rc))
-    {
         LogRel(("Failed to start the monitor thread (%Rrc).  Exiting.\n",
                  rc));
-        VBoxClient::CleanUp();
-    }
-    g_pService->run(fDaemonise);
+    else
+        g_pService->run(fDaemonise);  /* Should never return. */
     VBoxClient::CleanUp();
-    return 1;  /* We should never get here. */
+    return 1;
 }
