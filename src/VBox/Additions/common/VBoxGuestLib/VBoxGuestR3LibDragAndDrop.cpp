@@ -37,9 +37,10 @@
 #include <iprt/cpp/list.h>
 #include <iprt/cpp/ministring.h>
 
+#include <VBox/GuestHost/DragAndDrop.h>
+#include <VBox/HostServices/DragAndDropSvc.h>
+
 #include "VBGLR3Internal.h"
-#include "VBox/GuestHost/DragAndDrop.h"
-#include "VBox/HostServices/DragAndDropSvc.h"
 
 /* Here all the communication with the host over HGCM is handled platform
  * neutral. Also the receiving of URIs content (directory trees and files) is
