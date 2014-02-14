@@ -112,6 +112,33 @@ typedef RTNETADDRIPV6 const *PCRTNETADDRIPV6;
  */
 RTDECL(bool) RTNetIsIPv6AddrStr(const char *pszAddress);
 
+/**
+ * Parses IPv6 address into RTNETADDRIPV6 representation.
+ *
+ * @returns VINF_SUCCESS on success, VERR_INVALID_PARAMETER on
+ *          failure.
+ *
+ * @param   pcszAddr        The value to convert.
+ * @param   ppszNext        Where to store the pointer to the first char
+ *                            following the address. (Optional)
+ * @param   pAddr           Where to store the result.
+ */
+RTDECL(int) RTNetStrToIPv6AddrEx(const char *pcszAddr, PRTNETADDRIPV6 pAddr, char **ppszNext);
+
+/**
+ * Parses IPv6 address into RTNETADDRIPV6 representation.
+ * Leading and trailing whitespace is ignored.
+ *
+ * @returns VINF_SUCCESS on success, VERR_INVALID_PARAMETER on
+ *          failure.
+ *
+ * @param   pcszAddr        The value to convert.
+ * @param   ppszZone        Where to store the pointer to the first char
+ *                            of the zone id.  NULL is stored if there is
+ *                            no zone id.
+ * @param   pAddr           Where to store the result.
+ */
+RTDECL(int) RTNetStrToIPv6Addr(const char *pcszAddr, PRTNETADDRIPV6 pAddr, char **ppszZone);
 
 /**
  * IPX address.
