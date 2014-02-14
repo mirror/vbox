@@ -42,10 +42,8 @@ typedef struct PORTFORWARDRULE
     int        fPfrIPv6;
     /* IPPROTO_{UDP,TCP} */
     int        iPfrProto;
-    RTNETADDRU uPfrHostAddr;
     char       szPfrHostAddr[INET6_ADDRSTRLEN];
     uint16_t   u16PfrHostPort;
-    RTNETADDRU uPfrGuestAddr;
     char       szPfrGuestAddr[INET6_ADDRSTRLEN];
     uint16_t   u16PfrGuestPort;
 } PORTFORWARDRULE, *PPORTFORWARDRULE;
