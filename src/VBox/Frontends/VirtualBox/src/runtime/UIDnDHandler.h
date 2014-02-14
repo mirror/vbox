@@ -34,6 +34,7 @@ class UIDnDHandler: public QObject
     Q_OBJECT;
 
 public:
+
     /* Singleton factory. */
     static UIDnDHandler* instance(void)
     {
@@ -41,6 +42,7 @@ public:
             m_pInstance = new UIDnDHandler();
         return m_pInstance;
     }
+
     static void destroy(void)
     {
         if (m_pInstance)
@@ -49,6 +51,19 @@ public:
             m_pInstance = NULL;
         }
     }
+
+    /**
+     * Current operation mode.
+     */
+    enum Mode
+    {
+        /** Unknown mode. */
+        Unknown = 0,
+        /** Host to guest. */
+        HG,
+        /** Guest to host. */
+        GH
+    };
 
     /* Host -> Guest. */
     Qt::DropAction dragHGEnter(CGuest &guest, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent = NULL);
@@ -59,9 +74,12 @@ public:
     /* Guest -> Host. */
     int            dragGHPending(CSession &session, ulong screenId, QWidget *pParent = NULL);
 
-public slots:
+public:
 
-    void sltDataAvailable(const QString &mimetype);
+    static KDragAndDropAction          toVBoxDnDAction(Qt::DropAction action);
+    static QVector<KDragAndDropAction> toVBoxDnDActions(Qt::DropActions actions);
+    static Qt::DropAction              toQtDnDAction(KDragAndDropAction action);
+    static Qt::DropActions             toQtDnDActions(const QVector<KDragAndDropAction> &vecActions);
 
 private:
     static UIDnDHandler *m_pInstance;
@@ -69,16 +87,8 @@ private:
     UIDnDHandler(void);
     virtual ~UIDnDHandler(void) {}
 
-    /* Private helpers. */
-    static KDragAndDropAction          toVBoxDnDAction(Qt::DropAction action);
-    static QVector<KDragAndDropAction> toVBoxDnDActions(Qt::DropActions actions);
-    static Qt::DropAction              toQtDnDAction(KDragAndDropAction action);
-    static Qt::DropActions             toQtDnDActions(const QVector<KDragAndDropAction> &vecActions);
-
-#ifdef VBOX_WITH_DRAG_AND_DROP_GH
-    UIDnDMimeData *pMData;
-    friend class UIDnDMimeData;
-#endif
+    /** The current operation mode. */
+    Mode mMode;
 };
 
 #define gDnD UIDnDHandler::instance()

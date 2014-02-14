@@ -469,7 +469,7 @@ DECLCALLBACK(int) DragAndDropService::progressCallback(uint32_t uPercentage, uin
                      uPercentage, uState, rc));
         DragAndDropSvc::VBOXDNDCBHGEVTPROGRESSDATA data;
         data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_HG_EVT_PROGRESS;
-        data.uPercentage  = uPercentage;
+        data.uPercentage  = RT_CLAMP(uPercentage, 0, 100);
         data.uState       = uState;
         data.rc           = rc;
 

@@ -38,6 +38,7 @@
 #include <iprt/cpp/ministring.h>
 
 #include "VBGLR3Internal.h"
+#include "VBox/GuestHost/DragAndDrop.h"
 #include "VBox/HostServices/DragAndDropSvc.h"
 
 /* Here all the communication with the host over HGCM is handled platform
@@ -46,62 +47,13 @@
  *
  * Todo:
  * - Sending dirs/files in the G->H case
- * - Maybe the EOL converting of text mime-types (not fully sure, eventually
+ * - Maybe the EOL converting of text MIME types (not fully sure, eventually
  *   better done on the host side)
  */
-
-static int vbglR3DnDPathSanitize(char *pszPath, size_t cbPath);
 
 /******************************************************************************
  *    Private internal functions                                              *
  ******************************************************************************/
-
-static int vbglR3DnDCreateDropDir(char* pszDropDir, size_t cbSize)
-{
-    AssertPtrReturn(pszDropDir, VERR_INVALID_POINTER);
-    AssertReturn(cbSize,        VERR_INVALID_PARAMETER);
-
-    /** @todo On Windows we also could use the registry to override
-     *        this path, on Posix a dotfile and/or a guest property
-     *        can be used. */
-
-    /* Get the users temp directory. Don't use the user's root directory (or
-     * something inside it) because we don't know for how long/if the data will
-     * be kept after the guest OS used it. */
-    int rc = RTPathTemp(pszDropDir, cbSize);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* Append our base drop directory. */
-    rc = RTPathAppend(pszDropDir, cbSize, "VirtualBox Dropped Files");
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* Create it when necessary. */
-    if (!RTDirExists(pszDropDir))
-    {
-        rc = RTDirCreateFullPath(pszDropDir, RTFS_UNIX_IRWXU);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    /* The actually drop directory consist of the current time stamp and a
-     * unique number when necessary. */
-    char pszTime[64];
-    RTTIMESPEC time;
-    if (!RTTimeSpecToString(RTTimeNow(&time), pszTime, sizeof(pszTime)))
-        return VERR_BUFFER_OVERFLOW;
-    rc = vbglR3DnDPathSanitize(pszTime, sizeof(pszTime));
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = RTPathAppend(pszDropDir, cbSize, pszTime);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* Create it (only accessible by the current user) */
-    return RTDirCreateUniqueNumbered(pszDropDir, cbSize, RTFS_UNIX_IRWXU, 3, '-');
-}
 
 static int vbglR3DnDQueryNextHostMessageType(uint32_t uClientId, uint32_t *puMsg, uint32_t *pcParms, bool fWait)
 {
@@ -318,8 +270,12 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
     AssertPtrReturn(cbData, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbDataRecv, VERR_INVALID_POINTER);
 
+    if (!*pcbDataRecv)
+        return VERR_INVALID_PARAMETER;
+
     /* Make a string list out of the uri data. */
-    RTCList<RTCString> uriList = RTCString(static_cast<char*>(*ppvData), *pcbDataRecv - 1).split("\r\n");
+    RTCList<RTCString> uriList =
+        RTCString(static_cast<char*>(*ppvData), *pcbDataRecv - 1).split("\r\n");
     if (uriList.isEmpty())
         return VINF_SUCCESS;
 
@@ -330,7 +286,7 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
 
     /* Create and query the (unique) drop target directory. */
     char pszDropDir[RTPATH_MAX];
-    int rc = vbglR3DnDCreateDropDir(pszDropDir, sizeof(pszDropDir));
+    int rc = DnDDirCreateDroppedFiles(pszDropDir, sizeof(pszDropDir));
     if (RT_FAILURE(rc))
     {
         RTMemFree(pvTmpData);
@@ -348,12 +304,13 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
         char *pszFilePath = RTUriFilePath(strUri.c_str(), URI_FILE_FORMAT_AUTO);
         if (pszFilePath)
         {
-            rc = vbglR3DnDPathSanitize(pszFilePath, strlen(pszFilePath));
+            rc = DnDPathSanitize(pszFilePath, strlen(pszFilePath));
             if (RT_FAILURE(rc))
                 break;
 
             /** @todo Use RTPathJoin? */
-            RTCString strFullPath = RTCString().printf("%s%c%s", pszDropDir, RTPATH_SLASH, pszFilePath);
+            RTCString strFullPath
+                = RTCString().printf("%s%c%s", pszDropDir, RTPATH_SLASH, pszFilePath);
             char *pszNewUri = RTUriFileCreate(strFullPath.c_str());
             if (pszNewUri)
             {
@@ -375,11 +332,11 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
         *pcbDataRecv = newData.length() + 1;
     }
 
-    /* Lists for holding created files & directories in the case of a
-     * rollback. */
+    /* Lists for holding created files & directories
+     * in the case of a rollback. */
     RTCList<RTCString> guestDirList;
     RTCList<RTCString> guestFileList;
-    char pszPathname[RTPATH_MAX];
+    char pszPathName[RTPATH_MAX];
     uint32_t cbPathname = 0;
     bool fLoop = RT_SUCCESS(rc); /* No error occurred yet? */
     while (fLoop)
@@ -395,15 +352,15 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
                 {
                     uint32_t fMode = 0;
                     rc = vbglR3DnDHGProcessSendDirMessage(uClientId,
-                                                          pszPathname,
-                                                          sizeof(pszPathname),
+                                                          pszPathName,
+                                                          sizeof(pszPathName),
                                                           &cbPathname,
                                                           &fMode);
                     if (RT_SUCCESS(rc))
-                        rc = vbglR3DnDPathSanitize(pszPathname, sizeof(pszPathname));
+                        rc = DnDPathSanitize(pszPathName, sizeof(pszPathName));
                     if (RT_SUCCESS(rc))
                     {
-                        char *pszNewDir = RTPathJoinA(pszDropDir, pszPathname);
+                        char *pszNewDir = RTPathJoinA(pszDropDir, pszPathName);
                         if (pszNewDir)
                         {
                             rc = RTDirCreate(pszNewDir, (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRWXU, 0);
@@ -422,18 +379,18 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
                     uint32_t cbDataRecv;
                     uint32_t fMode = 0;
                     rc = vbglR3DnDHGProcessSendFileMessage(uClientId,
-                                                           pszPathname,
-                                                           sizeof(pszPathname),
+                                                           pszPathName,
+                                                           sizeof(pszPathName),
                                                            &cbPathname,
                                                            pvTmpData,
                                                            cbTmpData,
                                                            &cbDataRecv,
                                                            &fMode);
                     if (RT_SUCCESS(rc))
-                        rc = vbglR3DnDPathSanitize(pszPathname, sizeof(pszPathname));
+                        rc = DnDPathSanitize(pszPathName, sizeof(pszPathName));
                     if (RT_SUCCESS(rc))
                     {
-                        char *pszNewFile = RTPathJoinA(pszDropDir, pszPathname);
+                        char *pszNewFile = RTPathJoinA(pszDropDir, pszPathName);
                         if (pszNewFile)
                         {
                             RTFILE hFile;
@@ -665,7 +622,7 @@ static int vbglR3DnDHGProcessSendDataMessage(uint32_t   uClientId,
     if (RT_SUCCESS(rc))
     {
         /* Check if this is an URI event. If so, let VbglR3 do all the actual
-         * data transfer + file /directory creation internally without letting
+         * data transfer + file/directory creation internally without letting
          * the caller know.
          *
          * This keeps the actual (guest OS-)dependent client (like VBoxClient /
@@ -746,23 +703,6 @@ static int vbglR3DnDGHProcessDroppedMessage(uint32_t  uClientId,
         }
     }
 
-    return rc;
-}
-
-static int vbglR3DnDPathSanitize(char *pszPath, size_t cbPath)
-{
-    int rc = VINF_SUCCESS;
-#ifdef RT_OS_WINDOWS
-    /* Filter out characters not allowed on Windows platforms, put in by
-       RTTimeSpecToString(). */
-    /** @todo Use something like RTPathSanitize() when available. Later. */
-    RTUNICP aCpSet[] =
-        { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
-          0xa0, 0xd7af, '\0' };
-    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, aCpSet, '_' /* Replacement */);
-    if (cReplaced < 0)
-        rc = VERR_INVALID_UTF8_ENCODING;
-#endif
     return rc;
 }
 
@@ -885,6 +825,7 @@ VBGLR3DECL(int) VbglR3DnDProcessNextMessage(uint32_t u32ClientId, CPVBGLR3DNDHGC
                 rc = vbglR3DnDHGProcessCancelMessage(u32ClientId);
                 break;
             }
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
             case DragAndDropSvc::HOST_DND_GH_REQ_PENDING:
             {
                 pEvent->uType = uMsg;
@@ -907,9 +848,14 @@ VBGLR3DECL(int) VbglR3DnDProcessNextMessage(uint32_t u32ClientId, CPVBGLR3DNDHGC
                                                           &pEvent->u.a.uDefAction);
                 break;
             }
+#endif
             default:
+            {
+                pEvent->uType = uMsg;
+
                 rc = VERR_NOT_SUPPORTED;
                 break;
+            }
         }
     }
 
@@ -978,7 +924,8 @@ VBGLR3DECL(int) VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId,
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId, void *pvData, uint32_t cbData)
+VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId,
+                                    void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData,    VERR_INVALID_PARAMETER);
@@ -992,28 +939,26 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId, void *pvData, uint32_t
     Msg.uSize.SetUInt32(cbData);
 
     int rc          = VINF_SUCCESS;
-    uint32_t cbMax  = _1M; /** @todo Remove 1 MB limit. */
+    uint32_t cbMax  = _64K; /* Transfer max. 64K chunks per message. */
     uint32_t cbSent = 0;
 
     while (cbSent < cbData)
     {
-        /* Initialize parameter */
         uint32_t cbToSend = RT_MIN(cbData - cbSent, cbMax);
         Msg.pData.SetPtr(static_cast<uint8_t*>(pvData) + cbSent, cbToSend);
-        /* Do request */
+
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
-        {
             rc = Msg.hdr.result;
-            /* Did the host cancel the event? */
-            if (rc == VERR_CANCELLED)
-                break;
-        }
-        else
+
+        if (RT_FAILURE(rc))
             break;
+
         cbSent += cbToSend;
-//        RTThreadSleep(500);
     }
+
+    if (RT_SUCCESS(rc))
+        Assert(cbSent == cbData);
 
     return rc;
 }

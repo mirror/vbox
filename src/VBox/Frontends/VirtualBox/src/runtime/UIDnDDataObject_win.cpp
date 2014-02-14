@@ -1,10 +1,13 @@
 /* $Id$ */
 /** @file
- * VBoxDnDDataObject.cpp - IDataObject implementation.
+ *
+ * VBox frontends: Qt GUI ("VirtualBox"):
+ * UIDnDDrag class implementation. This class implements the
+ * IDataObject interface.
  */
 
 /*
- * Copyright (C) 2013-2014 Oracle Corporation
+ * Copyright (C) 2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,38 +17,43 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+#ifdef LOG_GROUP
+# undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/log.h>
+
 #include <windows.h>
 #include <new> /* For bad_alloc. */
 #include <shlobj.h>
 
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
+#include <iprt/mem.h>
 #include <iprt/uri.h>
 
-#include "VBoxTray.h"
-#include "VBoxHelpers.h"
-#include "VBoxDnD.h"
+#include <QStringList>
 
-#ifdef DEBUG
- /* Enable the following line to get much more debug output about
-  * (un)known clipboard formats. */
- //#define VBOX_DND_DEBUG_FORMATS
-#endif
+#include "UIDnDDataObject_win.h"
+#include "UIDnDEnumFormat_win.h"
 
-/** @todo Implement IDataObjectAsyncCapability interface? */
-
-VBoxDnDDataObject::VBoxDnDDataObject(FORMATETC *pFormatEtc,
-                                     STGMEDIUM *pStgMed, ULONG cFormats)
-    : mStatus(Uninitialized),
+UIDnDDataObject::UIDnDDataObject(const QStringList &lstFormats,
+                                 UIDnDDrag *pParent)
+    : mpParent(pParent),
+      mStatus(Uninitialized),
       mRefCount(1),
       mcFormats(0),
+      mpFormatEtc(NULL),
+      mpStgMedium(NULL),
       mpvData(NULL),
       mcbData(0)
 {
     HRESULT hr;
 
-    /* Make sure that there's enough room for our fixed formats. */
-    ULONG cAllFormats = cFormats + 1;
+    ULONG cAllFormats = lstFormats.size();
+    ULONG cRegisteredFormats = 0;
 
     try
     {
@@ -54,18 +62,36 @@ VBoxDnDDataObject::VBoxDnDDataObject(FORMATETC *pFormatEtc,
         mpStgMedium = new STGMEDIUM[cAllFormats];
         RT_BZERO(mpStgMedium, sizeof(STGMEDIUM) * cAllFormats);
 
-        if (   pFormatEtc
-            && pStgMed)
+        for (int i = 0; i < lstFormats.size(); i++)
         {
-            for (ULONG i = 0; i < cFormats; i++)
+            const QString &strFormat = lstFormats.at(i);
+            if (mlstFormats.contains(strFormat))
+                continue;
+
+            if (strFormat.contains("text/uri-list", Qt::CaseInsensitive))
             {
-                LogFlowFunc(("Format %RU32: cfFormat=%RI16, tyMed=%RU32, dwAspect=%RU32\n",
-                             i, pFormatEtc[i].cfFormat, pFormatEtc[i].tymed, pFormatEtc[i].dwAspect));
-                mpFormatEtc[i] = pFormatEtc[i];
-                mpStgMedium[i] = pStgMed[i];
+                /* URI data ("text/uri-list"). */
+                RegisterFormat(&mpFormatEtc[cRegisteredFormats], CF_HDROP);
+                mpStgMedium[cRegisteredFormats++].tymed = TYMED_HGLOBAL;
+
+                mlstFormats << strFormat;
+            }
+            else if (strFormat.contains("text/plain", Qt::CaseInsensitive))
+            {
+                /* Plain text ("text/plain"). */
+                RegisterFormat(&mpFormatEtc[cRegisteredFormats], CF_TEXT);
+                mpStgMedium[cRegisteredFormats++].tymed = TYMED_HGLOBAL;
+
+                mlstFormats << strFormat;
             }
         }
 
+        LogFlowFunc(("Total registered formats: %RU32 (of %d total)\n",
+                     cRegisteredFormats, lstFormats.size()));
+#ifdef VBOX_STRICT
+        AssertMsg(cRegisteredFormats == cAllFormats,
+                  ("Registered formats count is not matching all formats count\n"));
+#endif
         hr = S_OK;
     }
     catch (std::bad_alloc &)
@@ -78,9 +104,9 @@ VBoxDnDDataObject::VBoxDnDDataObject(FORMATETC *pFormatEtc,
         int rc2 = RTSemEventCreate(&mSemEvent);
         AssertRC(rc2);
 
-        /* Most commonly used format. */
-        RegisterFormat(&mpFormatEtc[cFormats], CF_HDROP);
-        mpStgMedium[cFormats++].tymed = TYMED_HGLOBAL;
+        /*
+         * Other (not so common) formats.
+         */
 #if 0
         /* IStream. */
         RegisterFormat(&mpFormatEtc[cFormats++],
@@ -99,14 +125,17 @@ VBoxDnDDataObject::VBoxDnDDataObject(FORMATETC *pFormatEtc,
         RegisterFormat(&mpFormatEtc[cFormats++],
                        RegisterClipboardFormat(CFSTR_SHELLIDLISTOFFSET));
 #endif
-        mcFormats = cFormats;
-        mStatus = Initialized;
+        mcFormats = cRegisteredFormats;
+
+        /* Put the object in the "dropped" state already. We don't need
+         * to handle the other states here at the moment. */
+        mStatus = Dropped;
     }
 
-    LogFlowFunc(("cFormats=%RU32, hr=%Rhrc\n", cFormats, hr));
+    LogFlowFunc(("hr=%Rhrc\n", hr));
 }
 
-VBoxDnDDataObject::~VBoxDnDDataObject(void)
+UIDnDDataObject::~UIDnDDataObject(void)
 {
     if (mpFormatEtc)
         delete[] mpFormatEtc;
@@ -120,38 +149,16 @@ VBoxDnDDataObject::~VBoxDnDDataObject(void)
     LogFlowFunc(("mRefCount=%RI32\n", mRefCount));
 }
 
-/* static */
-int VBoxDnDDataObject::CreateDataObject(FORMATETC *pFormatEtc, STGMEDIUM *pStgMeds,
-                                        ULONG cFormats, IDataObject **ppDataObject)
-{
-    AssertPtrReturn(pFormatEtc, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStgMeds, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppDataObject, VERR_INVALID_POINTER);
-
-    int rc;
-    try
-    {
-        *ppDataObject = new VBoxDnDDataObject(pFormatEtc, pStgMeds, cFormats);
-        rc = VINF_SUCCESS;
-    }
-    catch(std::bad_alloc &)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-
-    return rc;
-}
-
 /*
  * IUnknown methods.
  */
 
-STDMETHODIMP_(ULONG) VBoxDnDDataObject::AddRef(void)
+STDMETHODIMP_(ULONG) UIDnDDataObject::AddRef(void)
 {
     return InterlockedIncrement(&mRefCount);
 }
 
-STDMETHODIMP_(ULONG) VBoxDnDDataObject::Release(void)
+STDMETHODIMP_(ULONG) UIDnDDataObject::Release(void)
 {
     LONG lCount = InterlockedDecrement(&mRefCount);
     if (lCount == 0)
@@ -163,7 +170,7 @@ STDMETHODIMP_(ULONG) VBoxDnDDataObject::Release(void)
     return lCount;
 }
 
-STDMETHODIMP VBoxDnDDataObject::QueryInterface(REFIID iid, void **ppvObject)
+STDMETHODIMP UIDnDDataObject::QueryInterface(REFIID iid, void **ppvObject)
 {
     AssertPtrReturn(ppvObject, E_INVALIDARG);
 
@@ -188,18 +195,18 @@ STDMETHODIMP VBoxDnDDataObject::QueryInterface(REFIID iid, void **ppvObject)
  * @param   pFormatEtc
  * @param   pMedium
  */
-STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
+STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
 {
     AssertPtrReturn(pFormatEtc, DV_E_FORMATETC);
     AssertPtrReturn(pMedium, DV_E_FORMATETC);
+
+    LogFlowFunc(("pFormatEtc=%p, pMedium=%p\n", pFormatEtc, pMedium));
 
     ULONG lIndex;
     if (!LookupFormatEtc(pFormatEtc, &lIndex)) /* Format supported? */
         return DV_E_FORMATETC;
     if (lIndex >= mcFormats) /* Paranoia. */
         return DV_E_FORMATETC;
-
-    LogFlowFunc(("pFormatEtc=%p, pMedium=%p\n", pFormatEtc, pMedium));
 
     FORMATETC *pThisFormat = &mpFormatEtc[lIndex];
     AssertPtr(pThisFormat);
@@ -219,88 +226,113 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
 
     if (mStatus == Dropped)
     {
+#if 0
+        LogFlowFunc(("Starting to transfer content from the guest ...\n"));
+
+        /*
+         * This is the right time starting to transfer the actual data
+         * from the guest:
+         * - The user just triggered an action that tells us to start, e.g. at
+         *   the moment we only "listen" for releasing the left mouse button.
+         * - We're still in OLE's (modal) drag'n drop context so that all data
+         *   from the guest (hopefully) will be available on the host when the
+         *   drag'n drop operation is about to finish through OLE.
+         *
+         * Note that in the URI case the guest files/dirs must be somewhere
+         * on the host before OLE's drag'n drop operation is finished, otherwise
+         * the whole operation will fail.
+         */
+#endif
         LogFlowFunc(("cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
-                     pThisFormat->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
+                     pThisFormat->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
                      pThisFormat->tymed, pThisFormat->dwAspect));
         LogFlowFunc(("Got strFormat=%s, pvData=%p, cbData=%RU32\n",
-                     mstrFormat.c_str(), mpvData, mcbData));
+                     mstrFormat.toAscii().constData(), mpvData, mcbData));
 
-        if (mstrFormat.equalsIgnoreCase("text/uri-list"))
+        QVariant::Type vaType;
+        QString strMIMEType;
+        if (    (pFormatEtc->tymed & TYMED_HGLOBAL)
+             && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
+             && (   pFormatEtc->cfFormat == CF_TEXT
+                 || pFormatEtc->cfFormat == CF_UNICODETEXT)
+           )
         {
-            RTCList<RTCString> lstFilesURI = RTCString((char*)mpvData, mcbData).split("\r\n");
-            RTCList<RTCString> lstFiles;
-            for (size_t i = 0; i < lstFilesURI.size(); i++)
-            {
-                /* Extract path from URI. */
-                char *pszPath = RTUriPath(lstFilesURI.at(i).c_str());
-                if (   pszPath
-                    && strlen(pszPath) > 1)
-                {
-                    pszPath++; /** @todo Skip first '/' (part of URI). Correct? */
-                    pszPath = RTPathChangeToDosSlashes(pszPath, false /* fForce */);
-                    lstFiles.append(pszPath);
-                }
-            }
-#ifdef DEBUG
-            LogFlowFunc(("Files (%zu)\n", lstFiles.size()));
-            for (size_t i = 0; i < lstFiles.size(); i++)
-                LogFlowFunc(("\tFile: %s\n", lstFiles.at(i).c_str()));
-#endif
-
+            strMIMEType = "text/plain"; /** @todo Indicate UTF8 encoding? */
+            vaType = QVariant::String;
+        }
+        else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
+                 && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
+                 && (pFormatEtc->cfFormat == CF_HDROP))
+        {
+            strMIMEType = "text/uri-list";
+            vaType = QVariant::StringList;
+        }
 #if 0
-            if (   (pFormatEtc->tymed & TYMED_ISTREAM)
+        else if (   (pFormatEtc->tymed & TYMED_ISTREAM)
                 && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
                 && (pFormatEtc->cfFormat == CF_FILECONTENTS))
-            {
+        {
 
-            }
-            else if  (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                      && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                      && (pFormatEtc->cfFormat == CF_FILEDESCRIPTOR))
-            {
+        }
+        else if  (   (pFormatEtc->tymed & TYMED_HGLOBAL)
+                  && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
+                  && (pFormatEtc->cfFormat == CF_FILEDESCRIPTOR))
+        {
 
-            }
-            else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                     && (pFormatEtc->cfFormat == CF_PREFERREDDROPEFFECT))
-            {
-                HGLOBAL hData = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE | GMEM_ZEROINIT, sizeof(DWORD));
-                DWORD *pdwEffect = (DWORD *)GlobalLock(hData);
-                AssertPtr(pdwEffect);
-                *pdwEffect = DROPEFFECT_COPY;
-                GlobalUnlock(hData);
+        }
+        else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
+                 && (pFormatEtc->cfFormat == CF_PREFERREDDROPEFFECT))
+        {
+            HGLOBAL hData = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE | GMEM_ZEROINIT, sizeof(DWORD));
+            DWORD *pdwEffect = (DWORD *)GlobalLock(hData);
+            AssertPtr(pdwEffect);
+            *pdwEffect = DROPEFFECT_COPY;
+            GlobalUnlock(hData);
 
-                pMedium->hGlobal = hData;
-                pMedium->tymed = TYMED_HGLOBAL;
-            }
-            else
+            pMedium->hGlobal = hData;
+            pMedium->tymed = TYMED_HGLOBAL;
+        }
 #endif
-                 if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                     && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                     && (pFormatEtc->cfFormat == CF_TEXT))
+        LogFlowFunc(("strMIMEType=%s, vaType=%ld\n",
+                     strMIMEType.toAscii().constData(), vaType));
+
+        QVariant va;
+        int rc = mpParent->RetrieveData(strMIMEType, vaType, va);
+        if (RT_SUCCESS(rc))
+        {
+            if (   strMIMEType.startsWith("text/uri-list")
+                       /* One item. */
+                && (   va.canConvert(QVariant::String)
+                       /* Multiple items. */
+                    || va.canConvert(QVariant::StringList))
+               )
             {
-                pMedium->hGlobal = GlobalAlloc(GHND, mcbData + 1);
-                if (pMedium->hGlobal)
+                QStringList lstFilesURI = va.toStringList();
+                QStringList lstFiles;
+                for (size_t i = 0; i < lstFilesURI.size(); i++)
                 {
-                    /** @todo Not working yet -- needs URI to plain ASCII conversion. */
-
-                    char *pcDst  = (char *)GlobalLock(pMedium->hGlobal);
-                    memcpy(pcDst, mpvData, mcbData);
-                    pcDst[mcbData] = '\0';
-                    GlobalUnlock(pMedium->hGlobal);
-
-                    hr = S_OK;
+                    /* Extract path from URI. */
+                    char *pszPath = RTUriPath(lstFilesURI.at(i).toAscii().constData());
+                    if (   pszPath
+                        && strlen(pszPath) > 1)
+                    {
+                        pszPath++; /** @todo Skip first '/' (part of URI). Correct? */
+                        pszPath = RTPathChangeToDosSlashes(pszPath, false /* fForce */);
+                        lstFiles.append(pszPath);
+                    }
                 }
-            }
-            else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                     && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                     && (pFormatEtc->cfFormat == CF_HDROP))
-            {
-                int rc = VINF_SUCCESS;
 
+                size_t cFiles = lstFiles.size();
+                Assert(cFiles);
+#ifdef DEBUG
+                LogFlowFunc(("Files (%zu)\n", cFiles));
+                for (size_t i = 0; i < cFiles; i++)
+                    LogFlowFunc(("\tFile: %s\n", lstFiles.at(i).toAscii().constData()));
+#endif
                 size_t cchFiles = 0; /* Number of ASCII characters. */
-                for (size_t i = 0; i < lstFiles.size(); i++)
+                for (size_t i = 0; i < cFiles; i++)
                 {
-                    cchFiles += strlen(lstFiles.at(i).c_str());
+                    cchFiles += strlen(lstFiles.at(i).toAscii().constData());
                     cchFiles += 1; /* Terminating '\0'. */
                 }
 
@@ -314,11 +346,11 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
                     uint8_t *pCurFile = (uint8_t *)pBuf + pBuf->pFiles;
                     AssertPtr(pCurFile);
 
-                    for (size_t i = 0; i < lstFiles.size() && RT_SUCCESS(rc); i++)
+                    for (size_t i = 0; i < cFiles; i++)
                     {
                         size_t cchCurFile;
                         PRTUTF16 pwszFile;
-                        rc = RTStrToUtf16(lstFiles.at(i).c_str(), &pwszFile);
+                        rc = RTStrToUtf16(lstFiles.at(i).toAscii().constData(), &pwszFile);
                         if (RT_SUCCESS(rc))
                         {
                             cchCurFile = RTUtf16Len(pwszFile);
@@ -355,23 +387,70 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
 
                                 hr = S_OK;
                             }
+                            else
+                                rc = VERR_ACCESS_DENIED;
                         }
+                        else
+                            rc = VERR_NO_MEMORY;
                     }
 
                     RTMemFree(pBuf);
                 }
-                else
-                    rc = VERR_NO_MEMORY;
-
-                if (RT_FAILURE(rc))
-                    hr = DV_E_FORMATETC;
             }
+            else if (   strMIMEType.startsWith("text/plain")
+                     && va.canConvert(QVariant::String))
+            {
+                bool fUnicode = pFormatEtc->cfFormat == CF_UNICODETEXT;
+                int cbch = fUnicode
+                         ? sizeof(WCHAR) : sizeof(char);
+
+                QString strText = va.toString();
+                size_t cbSrc = (strText.length() + 1) * cbch;
+                Assert(cbSrc);
+                LPCVOID pvSrc = fUnicode
+                              ? (void *)strText.unicode()
+                              : (void *)strText.toAscii().constData();
+                AssertPtr(pvSrc);
+#ifdef DEBUG_andy
+                LogFlowFunc(("pvSrc=0x%p, cbSrc=%zu, cbch=%d, fUnicode=%RTbool\n",
+                             pvSrc, cbSrc, cbch, fUnicode));
+#endif
+                pMedium->tymed = TYMED_HGLOBAL;
+                pMedium->pUnkForRelease = NULL;
+                pMedium->hGlobal = GlobalAlloc(  GMEM_ZEROINIT
+                                               | GMEM_MOVEABLE
+                                               | GMEM_DDESHARE, cbSrc);
+                if (pMedium->hGlobal)
+                {
+                    LPVOID pvDst = GlobalLock(pMedium->hGlobal);
+                    if (pvDst)
+                    {
+                        memcpy(pvDst, pvSrc, cbSrc);
+                        GlobalUnlock(pMedium->hGlobal);
+                    }
+                    else
+                        rc = VERR_ACCESS_DENIED;
+
+                    hr = S_OK;
+                }
+                else
+                    hr  = E_OUTOFMEMORY;
+            }
+            else
+                LogFlowFunc(("MIME type=%s not supported\n",
+                             strMIMEType.toAscii().constData()));
+
+            LogFlowFunc(("Handling formats ended with rc=%Rrc\n", rc));
         }
     }
 
+    /*
+     * Fallback in error case.
+     */
     if (FAILED(hr))
     {
-        LogFlowFunc(("Copying medium ...\n"));
+        LogFlowFunc(("Error hr=%Rhrc while handling data, copying raw medium data ...\n", hr));
+
         switch (pThisMedium->tymed)
         {
 
@@ -400,7 +479,7 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
  * @param   pFormatEtc
  * @param   pMedium
  */
-STDMETHODIMP VBoxDnDDataObject::GetDataHere(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
+STDMETHODIMP UIDnDDataObject::GetDataHere(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
 {
     LogFlowFunc(("\n"));
     return DATA_E_FORMATETC;
@@ -413,13 +492,13 @@ STDMETHODIMP VBoxDnDDataObject::GetDataHere(FORMATETC *pFormatEtc, STGMEDIUM *pM
  * @return  HRESULT
  * @param   pFormatEtc
  */
-STDMETHODIMP VBoxDnDDataObject::QueryGetData(FORMATETC *pFormatEtc)
+STDMETHODIMP UIDnDDataObject::QueryGetData(FORMATETC *pFormatEtc)
 {
     LogFlowFunc(("\n"));
     return (LookupFormatEtc(pFormatEtc, NULL /* puIndex */)) ? S_OK : DV_E_FORMATETC;
 }
 
-STDMETHODIMP VBoxDnDDataObject::GetCanonicalFormatEtc(FORMATETC *pFormatEct, FORMATETC *pFormatEtcOut)
+STDMETHODIMP UIDnDDataObject::GetCanonicalFormatEtc(FORMATETC *pFormatEct, FORMATETC *pFormatEtcOut)
 {
     LogFlowFunc(("\n"));
 
@@ -428,12 +507,12 @@ STDMETHODIMP VBoxDnDDataObject::GetCanonicalFormatEtc(FORMATETC *pFormatEct, FOR
     return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxDnDDataObject::SetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium,  BOOL fRelease)
+STDMETHODIMP UIDnDDataObject::SetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium, BOOL fRelease)
 {
     return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxDnDDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC **ppEnumFormatEtc)
+STDMETHODIMP UIDnDDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC **ppEnumFormatEtc)
 {
     LogFlowFunc(("dwDirection=%RI32, mcFormats=%RI32, mpFormatEtc=%p\n",
                  dwDirection, mcFormats, mpFormatEtc));
@@ -441,7 +520,7 @@ STDMETHODIMP VBoxDnDDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC 
     HRESULT hr;
     if (dwDirection == DATADIR_GET)
     {
-        hr = VBoxDnDEnumFormatEtc::CreateEnumFormatEtc(mcFormats, mpFormatEtc, ppEnumFormatEtc);
+        hr = UIDnDEnumFormatEtc::CreateEnumFormatEtc(mcFormats, mpFormatEtc, ppEnumFormatEtc);
     }
     else
         hr = E_NOTIMPL;
@@ -450,17 +529,17 @@ STDMETHODIMP VBoxDnDDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC 
     return hr;
 }
 
-STDMETHODIMP VBoxDnDDataObject::DAdvise(FORMATETC *pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection)
+STDMETHODIMP UIDnDDataObject::DAdvise(FORMATETC *pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection)
 {
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
-STDMETHODIMP VBoxDnDDataObject::DUnadvise(DWORD dwConnection)
+STDMETHODIMP UIDnDDataObject::DUnadvise(DWORD dwConnection)
 {
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
-STDMETHODIMP VBoxDnDDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
+STDMETHODIMP UIDnDDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
 {
     return OLE_E_ADVISENOTSUPPORTED;
 }
@@ -469,7 +548,7 @@ STDMETHODIMP VBoxDnDDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
  * Own stuff.
  */
 
-int VBoxDnDDataObject::Abort(void)
+int UIDnDDataObject::Abort(void)
 {
     LogFlowFunc(("Aborting ...\n"));
     mStatus = Aborted;
@@ -477,13 +556,11 @@ int VBoxDnDDataObject::Abort(void)
 }
 
 /* static */
-const char* VBoxDnDDataObject::ClipboardFormatToString(CLIPFORMAT fmt)
+const char* UIDnDDataObject::ClipboardFormatToString(CLIPFORMAT fmt)
 {
-#ifdef VBOX_DND_DEBUG_FORMATS
-    char szFormat[128];
-    if (GetClipboardFormatName(fmt, szFormat, sizeof(szFormat)))
-        LogFlowFunc(("wFormat=%RI16, szName=%s\n", fmt, szFormat));
-#endif
+    WCHAR wszFormat[128];
+    if (GetClipboardFormatNameW(fmt, wszFormat, sizeof(wszFormat) / sizeof(WCHAR)))
+        LogFlowFunc(("wFormat=%RI16, szName=%ls\n", fmt, wszFormat));
 
     switch (fmt)
     {
@@ -559,7 +636,7 @@ const char* VBoxDnDDataObject::ClipboardFormatToString(CLIPFORMAT fmt)
     return "unknown";
 }
 
-bool VBoxDnDDataObject::LookupFormatEtc(FORMATETC *pFormatEtc, ULONG *puIndex)
+bool UIDnDDataObject::LookupFormatEtc(FORMATETC *pFormatEtc, ULONG *puIndex)
 {
     AssertReturn(pFormatEtc, false);
     /* puIndex is optional. */
@@ -571,7 +648,7 @@ bool VBoxDnDDataObject::LookupFormatEtc(FORMATETC *pFormatEtc, ULONG *puIndex)
             && pFormatEtc->dwAspect == mpFormatEtc[i].dwAspect)
         {
             LogFlowFunc(("Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
-                         pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mpFormatEtc[i].cfFormat),
+                         pFormatEtc->tymed, pFormatEtc->cfFormat, UIDnDDataObject::ClipboardFormatToString(mpFormatEtc[i].cfFormat),
                          pFormatEtc->dwAspect, i));
             if (puIndex)
                 *puIndex = i;
@@ -579,16 +656,15 @@ bool VBoxDnDDataObject::LookupFormatEtc(FORMATETC *pFormatEtc, ULONG *puIndex)
         }
     }
 
-#ifdef VBOX_DND_DEBUG_FORMATS
     LogFlowFunc(("Format NOT found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32\n",
-                 pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
+                 pFormatEtc->tymed, pFormatEtc->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
                  pFormatEtc->dwAspect));
-#endif
+
     return false;
 }
 
 /* static */
-HGLOBAL VBoxDnDDataObject::MemDup(HGLOBAL hMemSource)
+HGLOBAL UIDnDDataObject::MemDup(HGLOBAL hMemSource)
 {
     DWORD dwLen    = GlobalSize(hMemSource);
     AssertReturn(dwLen, NULL);
@@ -606,9 +682,9 @@ HGLOBAL VBoxDnDDataObject::MemDup(HGLOBAL hMemSource)
     return NULL;
 }
 
-void VBoxDnDDataObject::RegisterFormat(FORMATETC *pFormatEtc, CLIPFORMAT clipFormat,
-                                       TYMED tyMed, LONG lIndex, DWORD dwAspect,
-                                       DVTARGETDEVICE *pTargetDevice)
+void UIDnDDataObject::RegisterFormat(FORMATETC *pFormatEtc, CLIPFORMAT clipFormat,
+                                     TYMED tyMed, LONG lIndex, DWORD dwAspect,
+                                     DVTARGETDEVICE *pTargetDevice)
 {
     AssertPtr(pFormatEtc);
 
@@ -619,17 +695,17 @@ void VBoxDnDDataObject::RegisterFormat(FORMATETC *pFormatEtc, CLIPFORMAT clipFor
     pFormatEtc->ptd      = pTargetDevice;
 
     LogFlowFunc(("Registered format=%ld, sFormat=%s\n",
-                 pFormatEtc->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat)));
+                 pFormatEtc->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat)));
 }
 
-void VBoxDnDDataObject::SetStatus(Status status)
+void UIDnDDataObject::SetStatus(Status status)
 {
     LogFlowFunc(("Setting status to %ld\n", status));
     mStatus = status;
 }
 
-int VBoxDnDDataObject::Signal(const RTCString &strFormat,
-                              const void *pvData, uint32_t cbData)
+int UIDnDDataObject::Signal(const QString &strFormat,
+                            const void *pvData, uint32_t cbData)
 {
     LogFlowFunc(("Signalling ...\n"));
 

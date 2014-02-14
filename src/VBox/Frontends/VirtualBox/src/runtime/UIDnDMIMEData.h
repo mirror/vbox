@@ -31,6 +31,9 @@
 
 #include "UIDnDHandler.h"
 
+/* Forward declarations: */
+class UIDnDDrag;
+
 /** @todo Subclass QWindowsMime / QMacPasteboardMime
  *  to register own/more MIME types. */
 
@@ -44,9 +47,17 @@ class UIDnDMimeData: public QMimeData
 
     enum State
     {
+        /** Host is in dragging state, without
+         *  having retrieved the metadata from the guest yet. */
         Dragging = 0,
-        DataRetrieved,
+        /** Guest sent over the (MIME) metadata so that the
+         *  host knows which DnD targets can be used. */
+        MetaDataRetrieved,
+        /** There has been a "dropped" action which indicates
+         *  that the guest can continue sending more data (if any)
+         *  over to the host, based on the (MIME) metadata. */
         Dropped,
+        /** The operation has been canceled. */
         Canceled
     };
 
@@ -54,7 +65,7 @@ public:
 
     UIDnDMimeData(CSession &session, QStringList formats,
                   Qt::DropAction defAction,
-                  Qt::DropActions actions, QWidget *pParent);
+                  Qt::DropActions actions, UIDnDDrag *pParent);
 
     int setData(const QString &mimeType);
 
@@ -88,8 +99,7 @@ private slots:
 
 private:
 
-    /* Private members. */
-    QWidget          *m_pParent;
+    UIDnDDrag        *m_pParent;
     CSession          m_session;
     QStringList       m_lstFormats;
     Qt::DropAction    m_defAction;

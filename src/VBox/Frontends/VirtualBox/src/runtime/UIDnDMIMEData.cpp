@@ -19,6 +19,7 @@
 
 /* Qt includes: */
 #include <QApplication>
+#include <QFileInfo>
 #include <QKeyEvent>
 #include <QMimeData>
 #include <QStringList>
@@ -33,11 +34,12 @@
 
 /* GUI includes: */
 #include "UIDnDMIMEData.h"
+#include "UIDnDDrag.h"
 #include "UIMessageCenter.h"
 
 UIDnDMimeData::UIDnDMimeData(CSession &session, QStringList formats,
                              Qt::DropAction defAction, Qt::DropActions actions,
-                             QWidget *pParent)
+                             UIDnDDrag *pParent)
     : m_pParent(pParent)
     , m_session(session)
     , m_lstFormats(formats)
@@ -95,57 +97,43 @@ QStringList UIDnDMimeData::formats(void) const
     return m_lstFormats;
 }
 
-bool UIDnDMimeData::hasFormat(const QString &mimeType) const
+bool UIDnDMimeData::hasFormat(const QString &strMIMEType) const
 {
-    bool fRc = m_lstFormats.contains(mimeType);
+    bool fRc = m_lstFormats.contains(strMIMEType);
     LogFlowFunc(("%s: %RTbool (QtMimeData: %RTbool)\n",
-                 mimeType.toStdString().c_str(),
-                 fRc, QMimeData::hasFormat(mimeType)));
+                 strMIMEType.toStdString().c_str(),
+                 fRc, QMimeData::hasFormat(strMIMEType)));
     return fRc;
 }
 
-QVariant UIDnDMimeData::retrieveData(const QString &mimeType,
+QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
                                      QVariant::Type type) const
 {
     LogFlowFunc(("m_enmState=%d, mimeType=%s, type=%d (%s)\n",
-                 m_enmState, mimeType.toStdString().c_str(),
+                 m_enmState, strMIMEType.toStdString().c_str(),
                  type, QVariant::typeToName(type)));
 
     bool fCanDrop = true;
 
-#if 0
 #ifdef RT_OS_WINDOWS
-    Qt::MouseButtons mouseBtns = Qt::NoButton;
-    bool fLeftBtnDown = RT_BOOL(GetAsyncKeyState(VK_LBUTTON) & 0x8000);
-    if (fLeftBtnDown)
-        mouseBtns |= Qt::LeftButton;
-# ifdef DEBUG_andy
-    LogFlowFunc(("mouseButtons=0x%x, GetAsyncKeyState(VK_LBUTTON)=%RTbool\n",
-                 mouseBtns, fLeftBtnDown));
-# endif
-    if (mouseBtns == Qt::NoButton)
-        m_enmState = Dropped;
-#endif
-#endif
-
-#ifdef RT_OS_WINDOWS
-    /* On Windows we only will get into this function if OLE's DoDragDrop
-     * routine (called by QtDrag) decides that a drop event just happened.
-     * So just update our internal state to reflect the same as on other
-     * platforms. */
+    /* On Windows this function will be called several times by Qt's
+     * OLE-specific internals to figure out which data formats we have
+     * to offer. So just assume we can drop data here for a start.* */
     fCanDrop = true;
 #else
-    /* Mouse button released? See eventFilter for more information. */
+    /* On non-Windows our state gets updated via an own event filter
+     * (see UIDnDMimeData::eventFilter). This filter will update the current
+     * operation state for us (based on the mouse buttons). */
     if (m_enmState != Dropped)
         fCanDrop = false;
 #endif
 
     /* Do we support the requested MIME type? */
     if (   fCanDrop
-        && !m_lstFormats.contains(mimeType))
+        && !m_lstFormats.contains(strMIMEType))
     {
         LogFlowFunc(("Unsupported MIME type=%s\n",
-                     mimeType.toStdString().c_str()));
+                     strMIMEType.toStdString().c_str()));
         fCanDrop = false;
     }
 
@@ -168,83 +156,28 @@ QVariant UIDnDMimeData::retrieveData(const QString &mimeType,
     {
         LogFlowFunc(("Skipping request, m_enmState=%d ...\n",
                      m_enmState));
-        return QMimeData::retrieveData(mimeType, type);
+        return QMimeData::retrieveData(strMIMEType, type);
     }
 
-    if (m_enmState == Dragging)
+    int rc = VINF_SUCCESS;
+    if (m_enmState == Dropped)
     {
-        int rc = VINF_SUCCESS;
-
-        CGuest guest = m_session.GetConsole().GetGuest();
-        /* Start getting the data from the guest. First inform the guest we
-         * want the data in the specified MIME type. */
-        CProgress progress = guest.DragGHDropped(mimeType,
-                                                 UIDnDHandler::toVBoxDnDAction(m_defAction));
-        if (guest.isOk())
+        AssertPtr(m_pParent);
+        rc = m_pParent->RetrieveData(strMIMEType, type, m_data);
+        if (RT_SUCCESS(rc))
         {
-            msgCenter().showModalProgressDialog(progress,
-                                                tr("Retrieving data ..."), ":/progress_dnd_gh_90px.png",
-                                                m_pParent);
-            if (!progress.GetCanceled())
-            {
-                if (   progress.isOk()
-                    && progress.GetResultCode() == 0)
-                {
-                    /** @todo What about retrieving bigger files? Loop? */
-
-                    /* After the data successfully arrived from the guest, we query it from Main. */
-                    QVector<uint8_t> data = guest.DragGHGetData();
-                    if (!data.isEmpty())
-                    {
-                        switch (type)
-                        {
-                            case QVariant::String:
-                            {
-                                m_data = QVariant(QString(reinterpret_cast<const char*>(data.data())));
-                                break;
-                            }
-
-                            case QVariant::ByteArray:
-                            {
-                                QByteArray ba(reinterpret_cast<const char*>(data.constData()), data.size());
-                                m_data = QVariant(ba);
-                                break;
-                            }
-
-                            case QVariant::List:
-                            {
-                                QString strData = QString(reinterpret_cast<const char*>(data.data()));
-                                QStringList lstString = strData.split("\r\n", QString::SkipEmptyParts);
-
-                                m_data = QVariant(lstString);
-                                break;
-                            }
-
-                            default:
-                                AssertMsgFailed(("Should never happen, d'oh!\n"));
-                                rc = VERR_NOT_SUPPORTED;
-                                break;
-                        }
-                    }
-                    /** @todo How often to retry on empty data received? */
-
-                    if (RT_SUCCESS(rc))
-                        emit sigDataAvailable(mimeType);
-
-                    m_enmState = DataRetrieved;
-                }
-                else
-                    msgCenter().cannotDropData(progress, m_pParent);
-            }
-            else
-                m_enmState = Canceled;
+            /* Tell ourselves that data became available. */
+            emit sigDataAvailable(strMIMEType);
         }
         else
-            msgCenter().cannotDropData(guest, m_pParent);
+        {
+            m_enmState = Canceled;
+        }
     }
 
-    //return QMimeData::retrieveData(mimeType, type);
-    return m_data;
+    LogFlowFunc(("Returning rc=%Rrc, m_enmState=%ld\n",
+                 rc, m_enmState));
+    return QMimeData::retrieveData(strMIMEType, type);
 }
 
 #ifndef RT_OS_WINDOWS
@@ -326,14 +259,18 @@ int UIDnDMimeData::setData(const QString &mimeType)
             QList<QUrl> lstURL;
             for (int i = 0; i < lstData.size(); i++)
             {
-                QString strURL = lstData.at(i).toString();
-                LogFlowFunc(("\tURL: %s\n",
-                             strURL.toAscii().constData()));
-                lstURL << QUrl(strURL.toAscii());
+                QFileInfo fileInfo(lstData.at(i).toString());
+#ifdef DEBUG
+                LogFlowFunc(("\tURL: %s (fExists=%RTbool, fIsDir=%RTbool, cb=%RU64)\n",
+                             fileInfo.absoluteFilePath().constData(), fileInfo.exists(),
+                             fileInfo.isDir(), fileInfo.size()));
+#endif
+                lstURL << QUrl::fromLocalFile(fileInfo.absoluteFilePath());
             }
             LogFlowFunc(("Number of URLs: %d\n",  lstURL.size()));
 
-            QMimeData::setUrls(f);
+            if (RT_SUCCESS(rc))
+                QMimeData::setUrls(lstURL);
             break;
         }
 

@@ -454,7 +454,8 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 	src/runtime/UIDnDHandler.h
  ifdef VBOX_WITH_DRAG_AND_DROP_GH
   VirtualBox_QT_MOCHDRS += \
-	src/runtime/UIDnDMIMEData.h
+	src/runtime/UIDnDMIMEData.h \
+	src/runtime/UIDnDDrag.h
  endif
 endif
 
@@ -491,8 +492,11 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 endif
 
 ifdef VBOX_WITH_DRAG_AND_DROP
+ VirtualBox_QT_MOCSRCS += \
+	src/runtime/UIDnDHandler.cpp
  ifdef VBOX_WITH_DRAG_AND_DROP_GH
   VirtualBox_QT_MOCSRCS += \
+	src/runtime/UIDnDDrag.cpp \
 	src/runtime/UIDnDMIMEData.cpp
  endif
 endif
@@ -780,9 +784,12 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 	src/runtime/UIDnDHandler.cpp
  ifdef VBOX_WITH_DRAG_AND_DROP_GH
   VirtualBox_SOURCES += \
-	src/runtime/UIDnDMIMEData.cpp
-  VirtualBox_QT_MOCSRCS += \
-	src/runtime/UIDnDMIMEData.cpp
+	src/runtime/UIDnDMIMEData.cpp \
+	src/runtime/UIDnDDrag.cpp
+  VirtualBox_SOURCES.win += \
+	src/runtime/UIDnDDropSource_win.cpp \
+	src/runtime/UIDnDDataObject_win.cpp \
+	src/runtime/UIDnDEnumFormat_win.cpp
  endif
 endif
 
