@@ -50,6 +50,8 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 	VBoxDnDEnumFormat.cpp \
 	VBoxDnDDropSource.cpp \
 	VBoxDnDDropTarget.cpp
+ VBoxTray_LIBS     += \
+	$(PATH_STAGE_LIB)/additions/VBoxDnDGuestR3Lib$(VBOX_SUFF_LIB)
 endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxTray_DEFS     += _WIN32_IE=0x500 VBOX_WITH_GUEST_PROPS

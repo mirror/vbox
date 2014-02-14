@@ -74,6 +74,8 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
  VBoxClient_SOURCES += \
 	draganddrop.cpp
+ VBoxClient_LIBS     += \
+	$(PATH_STAGE_LIB)/additions/VBoxDnDGuestR3Lib$(VBOX_SUFF_LIB)
 endif
 
 ifdef VBOX_X11_SEAMLESS_GUEST

@@ -96,7 +96,7 @@ enum eHostFn
     HOST_DND_GH_REQ_PENDING            = 600,
     /** The host informs the guest that a DnD drop operation
      *  has been started and that the host wants the data in
-     *  a specific mime-type. */
+     *  a specific MIME type. */
     HOST_DND_GH_EVT_DROPPED,
 
     HOST_DND_GH_RECV_DIR               = 650,
@@ -133,6 +133,11 @@ enum eGuestFn
      * dragged over to the host.
      */
     GUEST_DND_GH_ACK_PENDING           = 500,
+    /**
+     * Sends data of the requsted MIME type to the host. There can
+     * be more than one message if the actual data does not fit
+     * into one.
+     */
     GUEST_DND_GH_SND_DATA,
     GUEST_DND_GH_EVT_ERROR,
 

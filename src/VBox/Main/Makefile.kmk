@@ -391,7 +391,7 @@ VBoxSVC_SOURCES = \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(if $(VBOX_WITH_XPCOM),src-server/xpcom/server.cpp,)
 
-ifn1of ($(KBUILD_TARGET), win darwin) 
+ifn1of ($(KBUILD_TARGET), win darwin)
 	VBoxSVC_SOURCES += $(PATH_ROOT)/src/VBox/Devices/Network/slirp/resolv_conf_parser.c
 endif
 
@@ -662,6 +662,10 @@ endif
 ifdef VBOX_WITH_CROGL
  VBoxC_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
  VBoxC_LDFLAGS.darwin += -framework OpenGL
+endif
+
+ifdef VBOX_WITH_DRAG_AND_DROP
+ VBoxC_LIBS += $(PATH_STAGE_LIB)/VBoxDnDHostR3Lib$(VBOX_SUFF_LIB)
 endif
 
 VBoxC_INTERMEDIATES = \

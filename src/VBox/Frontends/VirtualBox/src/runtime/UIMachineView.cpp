@@ -1091,7 +1091,6 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
-
 void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
 {
     /* The guest object to talk to. */
@@ -1177,7 +1176,6 @@ void UIMachineView::handleGHDnd(void)
      * magic. */
     gDnD->dragGHPending(session(), screenId(), this);
 }
-
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
 #if defined(Q_WS_WIN)

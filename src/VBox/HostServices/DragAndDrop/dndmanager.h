@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,6 +17,7 @@
 #ifndef ___VBox_HostService_DnD_dndmanager_h
 #define ___VBox_HostService_DnD_dndmanager_h
 
+#include <VBox/GuestHost/DragAndDrop.h>
 #include <VBox/HostServices/Service.h>
 #include <VBox/HostServices/DragAndDropSvc.h>
 
@@ -33,19 +34,22 @@ typedef FNDNDPROGRESS *PFNDNDPROGRESS;
 class DnDMessage
 {
 public:
-    DnDMessage()
-      : m_pNextMsg(NULL)
+
+    DnDMessage(void)
+        : m_pNextMsg(NULL)
     {
     }
-    virtual ~DnDMessage()
+
+    virtual ~DnDMessage(void)
     {
         clearNextMsg();
     }
 
-    virtual HGCM::Message* nextHGCMMessage()
+    virtual HGCM::Message* nextHGCMMessage(void)
     {
         return m_pNextMsg;
     }
+
     virtual int currentMessageInfo(uint32_t *puMsg, uint32_t *pcParms)
     {
         AssertPtrReturn(puMsg, VERR_INVALID_POINTER);
@@ -59,7 +63,9 @@ public:
 
         return VINF_SUCCESS;
     }
-    virtual int currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+
+    virtual int currentMessage(uint32_t uMsg, uint32_t cParms,
+                               VBOXHGCMSVCPARM paParms[])
     {
         if (!m_pNextMsg)
             return VERR_NO_DATA;
@@ -70,7 +76,8 @@ public:
 
         return rc;
     }
-    virtual void clearNextMsg()
+
+    virtual void clearNextMsg(void)
     {
         if (m_pNextMsg)
         {
@@ -79,9 +86,10 @@ public:
         }
     }
 
-    virtual bool isMessageWaiting() const { return m_pNextMsg != NULL; }
+    virtual bool isMessageWaiting(void) const { return m_pNextMsg != NULL; }
 
 protected:
+
     HGCM::Message *m_pNextMsg;
 };
 
@@ -105,7 +113,10 @@ class DnDHGSendDataMessage: public DnDMessage
 {
 public:
 
-    DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], PFNDNDPROGRESS pfnProgressCallback, void *pvProgressUser);
+    DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms,
+                         VBOXHGCMSVCPARM paParms[],
+                         PFNDNDPROGRESS pfnProgressCallback, void *pvProgressUser);
+
     virtual ~DnDHGSendDataMessage(void);
 
     HGCM::Message* nextHGCMMessage(void);
@@ -116,30 +127,16 @@ public:
 
 protected:
 
-    struct PathEntry
-    {
-        PathEntry(const RTCString &strHostPath, const RTCString &strGuestPath, uint32_t fMode, uint64_t cbSize)
-            : m_strHostPath(strHostPath)
-            , m_strGuestPath(strGuestPath)
-            , m_fMode(fMode)
-            , m_cbSize(cbSize) {}
-        RTCString m_strHostPath;
-        RTCString m_strGuestPath;
-        uint32_t  m_fMode;
-        uint64_t  m_cbSize;
-    };
-
-    bool hasFileUrls(const char *pcszFormat, size_t cbMax) const;
-    int buildFileTree(const char *pcszPath, size_t cbBaseLen);
     static DECLCALLBACK(int) progressCallback(size_t cbDone, void *pvUser);
 
-    RTCList<PathEntry>  m_uriList;
     DnDMessage         *m_pNextPathMsg;
 
-    /* Total size (in bytes). */
-    size_t              m_cbAll;
-    /* Transferred size (in bytes). */
+    DnDURIList          m_lstURI;
+    /* Total message size (in bytes). */
+    size_t              m_cbTotal;
+    /* Transferred message size (in bytes). */
     size_t              m_cbTransfered;
+
     PFNDNDPROGRESS      m_pfnProgressCallback;
     void               *m_pvProgressUser;
 };
@@ -151,9 +148,12 @@ protected:
 class DnDHGCancelMessage: public DnDMessage
 {
 public:
-    DnDHGCancelMessage()
+
+    DnDHGCancelMessage(void)
     {
-        m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_EVT_CANCEL, 0, 0);
+        m_pNextMsg
+            = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_EVT_CANCEL,
+                                0 /* cParms */, 0 /* aParms */);
     }
 };
 
@@ -164,26 +164,28 @@ public:
 class DnDManager
 {
 public:
+
     DnDManager(PFNDNDPROGRESS pfnProgressCallback, void *pvProgressUser)
-      : m_pCurMsg(0)
-      , m_fOpInProcess(false)
-      , m_pfnProgressCallback(pfnProgressCallback)
-      , m_pvProgressUser(pvProgressUser)
+        : m_pCurMsg(0)
+        , m_fOpInProcess(false)
+        , m_pfnProgressCallback(pfnProgressCallback)
+        , m_pvProgressUser(pvProgressUser)
     {}
-    virtual ~DnDManager()
+
+    virtual ~DnDManager(void)
     {
         clear();
     }
 
     int addMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
-    HGCM::Message *nextHGCMMessage();
+    HGCM::Message *nextHGCMMessage(void);
     int nextMessageInfo(uint32_t *puMsg, uint32_t *pcParms);
     int nextMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
-    void clear();
+    void clear(void);
 
-    bool hasActiveOperation() const { return m_fOpInProcess; }
+    bool hasActiveOperation(void) const { return m_fOpInProcess; }
 
 private:
     DnDMessage           *m_pCurMsg;
@@ -195,6 +197,5 @@ private:
     PFNDNDPROGRESS        m_pfnProgressCallback;
     void                 *m_pvProgressUser;
 };
-
 #endif /* ___VBox_HostService_DnD_dndmanager_h */
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2013 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,15 +47,18 @@ typedef FNDNDPRIVATEPROGRESS *PFNDNDPRIVATEPROGRESS;
 class DnDHGSendDirPrivate: public DnDMessage
 {
 public:
-    DnDHGSendDirPrivate(const RTCString &strPath, uint32_t fMode, uint64_t cbSize, PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser)
-      : m_strPath(strPath)
-      , m_cbSize(cbSize)
-      , m_pfnProgressCallback(pfnProgressCallback)
-      , m_pvProgressUser(pvProgressUser)
+
+    DnDHGSendDirPrivate(const RTCString &strPath,
+                        uint32_t fMode, uint64_t cbSize,
+                        PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser)
+        : m_strPath(strPath)
+        , m_cbSize(cbSize)
+        , m_pfnProgressCallback(pfnProgressCallback)
+        , m_pvProgressUser(pvProgressUser)
     {
         VBOXHGCMSVCPARM paTmpParms[3];
         paTmpParms[0].setString(m_strPath.c_str());
-        paTmpParms[1].setUInt32(m_strPath.length() + 1);
+        paTmpParms[1].setUInt32((uint32_t)(m_strPath.length() + 1));
         paTmpParms[2].setUInt32(fMode);
 
         m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_DIR, 3, paTmpParms);
@@ -73,7 +76,7 @@ public:
     }
 
 protected:
-    RTCString m_strPath;
+    RTCString              m_strPath;
 
     /* Progress stuff */
     size_t                 m_cbSize;
@@ -89,8 +92,12 @@ protected:
 class DnDHGSendFilePrivate: public DnDMessage
 {
 public:
-    DnDHGSendFilePrivate(const RTCString &strHostPath, const RTCString &strGuestPath, uint32_t fMode, uint64_t cbSize, PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser);
-    virtual ~DnDHGSendFilePrivate();
+
+    DnDHGSendFilePrivate(const RTCString &strHostPath,
+                         const RTCString &strGuestPath,
+                         uint32_t fMode, uint64_t cbSize,
+                         PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser);
+    virtual ~DnDHGSendFilePrivate(void);
 
     int currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
@@ -116,7 +123,10 @@ protected:
 class DnDHGSendDataMessagePrivate: public DnDMessage
 {
 public:
-    DnDHGSendDataMessagePrivate(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser);
+
+    DnDHGSendDataMessagePrivate(uint32_t uMsg, uint32_t cParms,
+                                VBOXHGCMSVCPARM paParms[],
+                                PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser);
     int currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
 protected:
@@ -148,7 +158,7 @@ DnDHGSendFilePrivate::DnDHGSendFilePrivate(const RTCString &strHostPath, const R
     , m_pvProgressUser(pvProgressUser)
 {
     m_paSkelParms[0].setString(m_strGuestPath.c_str());
-    m_paSkelParms[1].setUInt32(m_strGuestPath.length() + 1);
+    m_paSkelParms[1].setUInt32((uint32_t)(m_strGuestPath.length() + 1));
     m_paSkelParms[2].setPointer(NULL, 0);
     m_paSkelParms[3].setUInt32(0);
     m_paSkelParms[4].setUInt32(fMode);
@@ -197,13 +207,14 @@ int DnDHGSendFilePrivate::currentMessage(uint32_t uMsg, uint32_t cParms,
             Assert(m_cbFileProcessed <= m_cbFileSize);
 
             /* Tell the guest the actual size. */
-            paParms[3].setUInt32(cbRead);
+            paParms[3].setUInt32((uint32_t)cbRead);
         }
     }
 
     if (RT_SUCCESS(rc))
     {
         /* Check if we are done. */
+        Assert(m_cbFileProcessed <= m_cbFileSize);
         bool fDone = m_cbFileSize == m_cbFileProcessed;
         if (!fDone)
         {
@@ -230,7 +241,7 @@ int DnDHGSendFilePrivate::currentMessage(uint32_t uMsg, uint32_t cParms,
             || RT_FAILURE(rc))
         {
             RTFileClose(m_hCurFile);
-            m_hCurFile = 0;
+            m_hCurFile = NIL_RTFILE;
         }
     }
 
@@ -324,87 +335,68 @@ DnDHGSendDataMessage::DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms,
                                            VBOXHGCMSVCPARM paParms[],
                                            PFNDNDPROGRESS pfnProgressCallback,
                                            void *pvProgressUser)
-    : m_cbAll(0)
+    : m_cbTotal(0)
     , m_cbTransfered(0)
     , m_pfnProgressCallback(pfnProgressCallback)
     , m_pvProgressUser(pvProgressUser)
 {
+    if (cParms < 5) /* Paranoia. */
+        return;
+
+    const char *pszFormat = static_cast<const char*>(paParms[1].u.pointer.addr);
+    uint32_t cbFormat = paParms[1].u.pointer.size;
+
+    int rc = VINF_SUCCESS;
     RTCString strNewURIs;
 
-    /* Check the format for any uri type. */
-    if (hasFileUrls(static_cast<const char*>(paParms[1].u.pointer.addr),
-                    paParms[1].u.pointer.size))
+    /* Do we need to build up a file tree? */
+    if (DnDMIMEHasFileURLs(pszFormat, cbFormat))
     {
-        LogFlowFunc(("Old data: '%s'\n", (char*)paParms[3].u.pointer.addr));
+        const char *pszList = static_cast<const char*>(paParms[3].u.pointer.addr);
+        AssertPtr(pszList);
+        uint32_t cbList = paParms[3].u.pointer.size;
+        Assert(cbList);
+
+        LogFlowFunc(("Old data: '%s'\n", pszList));
 
         /* The list is separated by newline (even if only one file is listed). */
-        RTCList<RTCString> lstURIOrg = RTCString(static_cast<const char*>(paParms[3].u.pointer.addr),
-                                                 paParms[3].u.pointer.size).split("\r\n");
+        RTCList<RTCString> lstURIOrg
+            = RTCString(pszList, cbList).split("\r\n");
         if (!lstURIOrg.isEmpty())
         {
-            RTCList<RTCString> lstURINew;
-            for (size_t i = 0; i < lstURIOrg.size(); ++i)
+            rc = m_lstURI.AppendPathsFromList(lstURIOrg, 0 /* fFlags */);
+            if (RT_SUCCESS(rc))
             {
-                const RTCString &strURI = lstURIOrg.at(i);
+                /* Add the total size of all meta data + files transferred to
+                 * the message's total count. */
+                m_cbTotal += m_lstURI.TotalBytes();
 
-                /* Query the path component of a file URI. If this hasn't a
-                 * file scheme NULL is returned. */
-                char *pszFilePath;
-                if ((pszFilePath = RTUriFilePath(strURI.c_str(), URI_FILE_FORMAT_AUTO)))
-                {
-                    /* Add the path to our internal file list (recursive in
-                     * the case of a directory). */
-                    char *pszFilename;
-                    if ((pszFilename = RTPathFilename(pszFilePath)))
-                    {
-                        char *pszNewURI = RTUriFileCreate(pszFilename);
-                        if (pszNewURI)
-                        {
-                            lstURINew.append(pszNewURI);
-                            RTStrFree(pszNewURI);
+                /* We have to change the actual DnD data. Remove any host paths and
+                 * just decode the filename into the new data. The guest tools will
+                 * add the correct path again, before sending the DnD drop event to
+                 * some window. */
+                strNewURIs = m_lstURI.RootToString();
 
-                            buildFileTree(pszFilePath, pszFilename - pszFilePath);
-                        }
-                    }
+                /* Note: We don't delete the old pointer here, cause this is done
+                 *       by the caller. We just use the RTString data, which has the
+                 *       scope of this ctor. This is enough cause the data is copied in
+                 *       the DnDHGSendDataMessagePrivate anyway. */
+                paParms[3].u.pointer.addr = (void *)strNewURIs.c_str();
+                paParms[3].u.pointer.size = (uint32_t)(strNewURIs.length() + 1);
+                paParms[4].u.uint32       = (uint32_t)(strNewURIs.length() + 1);
 
-                    RTStrFree(pszFilePath);
-                }
-                else /* Just append the raw data. */
-                    lstURINew.append(strURI);
+                LogFlowFunc(("Set new data: '%s'\n", (char*)paParms[3].u.pointer.addr));
             }
-
-            /* We have to change the actual DnD data. Remove any host paths and
-             * just decode the filename into the new data. The guest tools will
-             * add the correct path again, before sending the DnD drop event to
-             * some window. */
-            strNewURIs = RTCString::join(lstURINew, "\r\n") + "\r\n";
-
-            /* Note: We don't delete the old pointer here, cause this is done
-             *       by the caller. We just use the RTString data, which has the
-             *       scope of this ctor. This is enough cause the data is copied in
-             *       the DnDHGSendDataMessagePrivate anyway. */
-            paParms[3].u.pointer.addr = (void*)strNewURIs.c_str();
-            paParms[3].u.pointer.size = strNewURIs.length() + 1;
-            paParms[4].u.uint32       = strNewURIs.length() + 1;
         }
     }
 
     /* Add the size of the data to the todo list. */
-    m_cbAll += paParms[4].u.uint32;
+    m_cbTotal += paParms[4].u.uint32;
+    LogFlowFunc(("cbTotal=%zu\n", m_cbTotal));
 
     /* The first message is the meta info for the data and the data itself. */
     m_pNextPathMsg = new DnDHGSendDataMessagePrivate(uMsg, cParms, paParms,
                                                      &DnDHGSendDataMessage::progressCallback, this);
-#ifdef DEBUG
-    LogFlowFunc(("new data '%s'\n", (char*)paParms[3].u.pointer.addr));
-    LogFlowFunc(("cbAll: %zu\n", m_cbAll));
-    LogFlowFunc(("cbData: %RU32\n", paParms[4].u.uint32));
-
-    for (size_t i = 0; i < m_uriList.size(); ++i)
-        LogFlowFunc(("file: %s : %s - %o - %ld\n",
-                     m_uriList.at(i).m_strHostPath.c_str(), m_uriList.at(i).m_strGuestPath.c_str(),
-                     m_uriList.at(i).m_fMode, m_uriList.at(i).m_cbSize));
-#endif
 }
 
 DnDHGSendDataMessage::~DnDHGSendDataMessage(void)
@@ -429,7 +421,8 @@ int DnDHGSendDataMessage::currentMessageInfo(uint32_t *puMsg, uint32_t *pcParms)
     return m_pNextPathMsg->currentMessageInfo(puMsg, pcParms);
 }
 
-int DnDHGSendDataMessage::currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int DnDHGSendDataMessage::currentMessage(uint32_t uMsg,
+                                         uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     if (!m_pNextPathMsg)
         return VERR_NO_DATA;
@@ -443,149 +436,44 @@ int DnDHGSendDataMessage::currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGC
         m_pNextPathMsg = NULL;
     }
 
-    /* File data to send? */
+    /* File/directory data to send? */
     if (!m_pNextPathMsg)
     {
-        if (m_uriList.isEmpty())
+        if (m_lstURI.IsEmpty())
             return rc;
+
         /* Create new messages based on our internal path list. Currently
          * this could be directories or regular files. */
-        PathEntry nextPath = m_uriList.first();
+        const DnDURIPath &nextPath = m_lstURI.First();
         try
         {
-            if (RTFS_IS_DIRECTORY(nextPath.m_fMode))
-                m_pNextPathMsg = new DnDHGSendDirPrivate(nextPath.m_strGuestPath,
-                                                         nextPath.m_fMode, nextPath.m_cbSize,
-                                                         &DnDHGSendDataMessage::progressCallback, this);
-            else if (RTFS_IS_FILE(nextPath.m_fMode))
-                m_pNextPathMsg = new DnDHGSendFilePrivate(nextPath.m_strHostPath, nextPath.m_strGuestPath,
-                                                          nextPath.m_fMode, nextPath.m_cbSize,
-                                                          &DnDHGSendDataMessage::progressCallback, this);
-            else
-                AssertMsgFailedReturn(("type '%d' is not supported for path '%s'",
-                                       nextPath.m_fMode, nextPath.m_strHostPath.c_str()), VERR_NO_DATA);
+            LogFlowFunc(("Processing srcPath=%s, dstPath=%s, fMode=0x%x, cbSize=%RU32, fIsDir=%RTbool, fIsFile=%RTbool\n",
+                         nextPath.m_strSrcPath.c_str(), nextPath.m_strDstPath.c_str(),
+                         nextPath.m_fMode, nextPath.m_cbSize,
+                         RTFS_IS_DIRECTORY(nextPath.m_fMode), RTFS_IS_FILE(nextPath.m_fMode)));
 
-            m_uriList.removeFirst();
+            if (RTFS_IS_DIRECTORY(nextPath.m_fMode))
+                m_pNextPathMsg = new DnDHGSendDirPrivate(nextPath.m_strDstPath,
+                                                         nextPath.m_fMode, nextPath.m_cbSize,
+                                                         &DnDHGSendDataMessage::progressCallback,
+                                                         this /* pvProgressUser */);
+            else if (RTFS_IS_FILE(nextPath.m_fMode))
+                m_pNextPathMsg = new DnDHGSendFilePrivate(nextPath.m_strSrcPath, nextPath.m_strDstPath,
+                                                          nextPath.m_fMode, nextPath.m_cbSize,
+                                                          &DnDHGSendDataMessage::progressCallback,
+                                                          this /* pvProgressUser */);
+            else
+                AssertMsgFailedReturn(("fMode=0x%x is not supported for srcPath=%s, dstPath=%s\n",
+                                       nextPath.m_fMode, nextPath.m_strSrcPath.c_str(), nextPath.m_strDstPath),
+                                       VERR_NO_DATA);
+
+            m_lstURI.RemoveFirst();
         }
         catch(std::bad_alloc &)
         {
             rc = VERR_NO_MEMORY;
         }
     }
-
-    return rc;
-}
-
-bool DnDHGSendDataMessage::hasFileUrls(const char *pcszFormat, size_t cbMax) const
-{
-    LogFlowFunc(("format %s\n", pcszFormat));
-
-    /** @todo text/uri also an official variant? */
-    return (   RTStrNICmp(pcszFormat, "text/uri-list", cbMax)             == 0
-            || RTStrNICmp(pcszFormat, "x-special/gnome-icon-list", cbMax) == 0);
-}
-
-int DnDHGSendDataMessage::buildFileTree(const char *pcszPath, size_t cbBaseLen)
-{
-    RTFSOBJINFO objInfo;
-    int rc = RTPathQueryInfo(pcszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * These are the types we currently support. Symlinks are not directly
-     * supported. First the guest could be an OS which doesn't support it and
-     * second the symlink could point to a file which is out of the base tree.
-     * Both things are hard to support. For now we just copy the target file in
-     * this case.
-     */
-    if (!(   RTFS_IS_DIRECTORY(objInfo.Attr.fMode)
-          || RTFS_IS_FILE(objInfo.Attr.fMode)
-          || RTFS_IS_SYMLINK(objInfo.Attr.fMode)))
-        return VINF_SUCCESS;
-
-    uint64_t cbSize = 0;
-    rc = RTFileQuerySize(pcszPath, &cbSize);
-    if (rc == VERR_IS_A_DIRECTORY)
-        rc = VINF_SUCCESS;
-
-    if (RT_FAILURE(rc))
-        return rc;
-
-    m_uriList.append(PathEntry(pcszPath, &pcszPath[cbBaseLen], objInfo.Attr.fMode, cbSize));
-    m_cbAll += cbSize;
-    LogFlowFunc(("cbFile: %RU64\n", cbSize));
-
-    PRTDIR hDir;
-    /* We have to try to open even symlinks, cause they could be symlinks
-     * to directories. */
-    rc = RTDirOpen(&hDir, pcszPath);
-    /* The following error happens when this was a symlink to an file or a
-     * regular file. */
-    if (rc == VERR_PATH_NOT_FOUND)
-        return VINF_SUCCESS;
-    if (RT_FAILURE(rc))
-        return rc;
-
-    while (RT_SUCCESS(rc))
-    {
-        RTDIRENTRY DirEntry;
-        rc = RTDirRead(hDir, &DirEntry, NULL);
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_NO_MORE_FILES)
-                rc = VINF_SUCCESS;
-            break;
-        }
-        switch (DirEntry.enmType)
-        {
-            case RTDIRENTRYTYPE_DIRECTORY:
-            {
-                /* Skip "." and ".." entries. */
-                if (   RTStrCmp(DirEntry.szName, ".")  == 0
-                    || RTStrCmp(DirEntry.szName, "..") == 0)
-                    break;
-                if (char *pszRecDir = RTStrAPrintf2("%s%c%s", pcszPath, RTPATH_DELIMITER, DirEntry.szName))
-                {
-                    rc = buildFileTree(pszRecDir, cbBaseLen);
-                    RTStrFree(pszRecDir);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-                break;
-            }
-            case RTDIRENTRYTYPE_SYMLINK:
-            case RTDIRENTRYTYPE_FILE:
-            {
-                char *pszNewFile;
-                if ((pszNewFile = RTStrAPrintf2("%s%c%s", pcszPath, RTPATH_DELIMITER, DirEntry.szName)))
-                {
-                    /* We need the size and the mode of the file. */
-                    RTFSOBJINFO objInfo1;
-                    rc = RTPathQueryInfo(pszNewFile, &objInfo1, RTFSOBJATTRADD_NOTHING);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    rc = RTFileQuerySize(pszNewFile, &cbSize);
-                    if (RT_FAILURE(rc))
-                        break;
-
-                    m_uriList.append(PathEntry(pszNewFile, &pszNewFile[cbBaseLen],
-                                               objInfo1.Attr.fMode, cbSize));
-                    m_cbAll += cbSize;
-
-                    RTStrFree(pszNewFile);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-                break;
-            }
-
-            default:
-                break;
-        }
-    }
-
-    RTDirClose(hDir);
 
     return rc;
 }
@@ -600,12 +488,17 @@ int DnDHGSendDataMessage::progressCallback(size_t cbDone, void *pvUser)
     /* How many bytes are transfered already. */
     pSelf->m_cbTransfered += cbDone;
 
-    /* Advance progress info */
+    /* Advance progress info. */
     int rc = VINF_SUCCESS;
     if (   pSelf->m_pfnProgressCallback
-        && pSelf->m_cbAll)
+        && pSelf->m_cbTotal)
     {
-        rc = pSelf->m_pfnProgressCallback((uint64_t)pSelf->m_cbTransfered * 100 / pSelf->m_cbAll,
+        AssertMsg(pSelf->m_cbTransfered <= pSelf->m_cbTotal,
+                  ("More bytes transferred (%zu) than expected (%zu), cbDone=%zu\n",
+                   pSelf->m_cbTransfered, pSelf->m_cbTotal, cbDone));
+
+        unsigned uPercentage = (unsigned)((uint64_t)pSelf->m_cbTransfered * 100 / pSelf->m_cbTotal);
+        rc = pSelf->m_pfnProgressCallback(RT_CLAMP(uPercentage, 0, 100),
                                           DragAndDropSvc::DND_PROGRESS_RUNNING,
                                           VINF_SUCCESS /* rc */, pSelf->m_pvProgressUser);
     }

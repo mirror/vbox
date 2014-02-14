@@ -23,9 +23,16 @@
 # include "ProgressImpl.h"
 # include "GuestDnDImpl.h"
 
+# include <iprt/dir.h>
+# include <iprt/path.h>
+# include <iprt/stream.h>
+# include <iprt/semaphore.h>
+# include <iprt/cpp/utils.h>
+
 # include <VMMDev.h>
 
 # include <VBox/com/list.h>
+# include <VBox/GuestHost/DragAndDrop.h>
 # include <VBox/HostServices/DragAndDropSvc.h>
 
 # ifdef LOG_GROUP
@@ -33,10 +40,6 @@
 # endif
 # define LOG_GROUP LOG_GROUP_GUEST_DND
 # include <VBox/log.h>
-
-# include <iprt/stream.h>
-# include <iprt/semaphore.h>
-# include <iprt/cpp/utils.h>
 
 /* How does this work:
  *
@@ -208,10 +211,12 @@ private:
     ComObjPtr<Progress>  m_progress;
 };
 
+/** @todo This class needs a major cleanup. Later. */
 class GuestDnDPrivate
 {
 private:
-    /* todo: currently we only support one response. Maybe this needs to be extended at some time. */
+
+    /** @todo Currently we only support one response. Maybe this needs to be extended at some time. */
     GuestDnDPrivate(GuestDnD *q, const ComObjPtr<Guest>& pGuest)
         : q_ptr(q)
         , p(pGuest)
@@ -224,7 +229,7 @@ private:
     void adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) const;
     void hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
 
-    /* Static helper */
+    /* Static helpers. */
     static RTCString           toFormatString(ComSafeArrayIn(IN_BSTR, formats));
     static void                toFormatSafeArray(const RTCString &strFormats, ComSafeArrayOut(BSTR, formats));
 
@@ -237,7 +242,7 @@ private:
     GuestDnD                        *q_ptr;
     ComObjPtr<Guest>                 p;
 
-    /* Private helper members */
+    /* Private helper members. */
     static const RTCList<RTCString>  m_sstrAllowedMimeTypes;
     DnDGuestResponse                *m_pDnDResponse;
 
@@ -395,11 +400,16 @@ void GuestDnDPrivate::adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) cons
      * (depending on the screen number). */
     ComPtr<IDisplay> pDisplay;
     HRESULT rc = p->mParent->COMGETTER(Display)(pDisplay.asOutParam());
-    if (FAILED(rc)) throw rc;
+    if (FAILED(rc))
+        throw rc;
+
     ComPtr<IFramebuffer> pFramebuffer;
     LONG xShift, yShift;
-    rc = pDisplay->GetFramebuffer(uScreenId, pFramebuffer.asOutParam(), &xShift, &yShift);
-    if (FAILED(rc)) throw rc;
+    rc = pDisplay->GetFramebuffer(uScreenId, pFramebuffer.asOutParam(),
+                                  &xShift, &yShift);
+    if (FAILED(rc))
+        throw rc;
+
     *puX += xShift;
     *puY += yShift;
 }
@@ -695,7 +705,12 @@ HRESULT GuestDnD::dragHGLeave(ULONG uScreenId)
     return rc;
 }
 
-HRESULT GuestDnD::dragHGDrop(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAction_T defaultAction, ComSafeArrayIn(DragAndDropAction_T, allowedActions), ComSafeArrayIn(IN_BSTR, formats), BSTR *pstrFormat, DragAndDropAction_T *pResultAction)
+HRESULT GuestDnD::dragHGDrop(ULONG uScreenId, ULONG uX, ULONG uY,
+                             DragAndDropAction_T defaultAction,
+                             ComSafeArrayIn(DragAndDropAction_T, allowedActions),
+                             ComSafeArrayIn(IN_BSTR, formats),
+                             BSTR *pstrFormat,
+                             DragAndDropAction_T *pResultAction)
 {
     DPTR(GuestDnD);
     const ComObjPtr<Guest> &p = d->p;
@@ -782,6 +797,8 @@ HRESULT GuestDnD::dragHGPutData(ULONG uScreenId, IN_BSTR bstrFormat,
         /* Reset any old progress status. */
         pDnD->resetProgress(p);
 
+        /* Note: The actual data transfer of files/directoies is performed by the
+         *       DnD host service. */
         d->hostCall(DragAndDropSvc::HOST_DND_HG_SND_DATA,
                     i,
                     paParms);
@@ -853,17 +870,28 @@ HRESULT GuestDnD::dragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action,
     const ComObjPtr<Guest> &p = d->p;
 
     Utf8Str strFormat(bstrFormat);
-    HRESULT rc = S_OK;
+    HRESULT hr = S_OK;
 
     uint32_t uAction = d->toHGCMAction(action);
     /* If there is no usable action, ignore this request. */
     if (isDnDIgnoreAction(uAction))
         return S_OK;
 
+    const char *pcszFormat = strFormat.c_str();
+    LogFlowFunc(("strFormat=%s, uAction=0x%x\n", pcszFormat, uAction));
+    if (DnDMIMENeedsDropDir(pcszFormat, strlen(pcszFormat)))
+    {
+        char szDropDir[RTPATH_MAX];
+        int rc = DnDDirCreateDroppedFiles(szDropDir, sizeof(szDropDir));
+        if (RT_FAILURE(rc))
+            return p->setError(VBOX_E_IPRT_ERROR,
+                               p->tr("Unable to create the temporary drag'n drop directory \"%s\" (%Rrc)\n"),
+                               szDropDir, rc);
+        LogFlowFunc(("Dropped files directory on the host is: %s\n", szDropDir));
+    }
+
     try
     {
-        LogFlowFunc(("strFormat=%s, uAction=0x%x\n", strFormat.c_str(), uAction));
-
         VBOXHGCMSVCPARM paParms[3];
         int i = 0;
         paParms[i++].setPointer((void*)strFormat.c_str(), (uint32_t)strFormat.length() + 1);
@@ -871,6 +899,7 @@ HRESULT GuestDnD::dragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action,
         paParms[i++].setUInt32(uAction);
 
         DnDGuestResponse *pDnD = d->response();
+
         /* Reset any old data and the progress status. */
         pDnD->reset();
         pDnD->resetProgress(p);
@@ -884,10 +913,10 @@ HRESULT GuestDnD::dragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action,
     }
     catch (HRESULT rc2)
     {
-        rc = rc2;
+        hr = rc2;
     }
 
-    return rc;
+    return hr;
 }
 
 HRESULT GuestDnD::dragGHGetData(ComSafeArrayOut(BYTE, data))
@@ -905,7 +934,7 @@ HRESULT GuestDnD::dragGHGetData(ComSafeArrayOut(BYTE, data))
         uint32_t cbData = pDnD->size();
         if (cbData)
         {
-            /* Copy the data into an safe array of bytes. */
+            /* Copy the data into a safe array of bytes. */
             const void *pvData = pDnD->data();
             if (sfaData.resize(cbData))
                 memcpy(sfaData.raw(), pvData, cbData);
@@ -1005,6 +1034,8 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
             rc = pResp->dataAdd(pCBData->pvData, pCBData->cbData, &cbCurSize);
             if (RT_SUCCESS(rc))
             {
+                /** @todo Store pCBData->cbAllSize in the guest's response struct
+                 *        if not set already. */
                 uint32_t cbTotalSize = pCBData->cbAllSize;
                 unsigned int cPercentage;
                 if (!cbTotalSize) /* Watch out for division by zero. */
@@ -1014,18 +1045,19 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
 
                 /** @todo Don't use anonymous enums. */
                 uint32_t uState = DragAndDropSvc::DND_PROGRESS_RUNNING;
-                if (   pCBData->cbAllSize == cbCurSize
+                if (   cbTotalSize == cbCurSize
                     /* Empty data? Should not happen, but anyway ... */
-                    || !pCBData->cbAllSize)
+                    || !cbTotalSize)
                 {
                     uState = DragAndDropSvc::DND_PROGRESS_COMPLETE;
                 }
 
                 rc = pResp->setProgress(cPercentage, uState);
             }
-            /* Todo: for now we instantly confirm the cancel. Check if the
-             * guest should first clean up stuff itself and than really confirm
-             * the cancel request by an extra message. */
+
+            /** @todo For now we instantly confirm the cancel. Check if the
+             *        guest should first clean up stuff itself and than really confirm
+             *        the cancel request by an extra message. */
             if (rc == VERR_CANCELLED)
                 pResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED);
             break;
@@ -1052,6 +1084,5 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
     LogFlowFunc(("Returning rc=%Rrc\n", rc));
     return rc;
 }
-
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
