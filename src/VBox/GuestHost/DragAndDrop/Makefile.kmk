@@ -33,6 +33,10 @@ ifdef VBOX_WITH_ADDITIONS
  VBoxDnDGuestR3Lib_TEMPLATE = VBOXGUESTR3LIB
  VBoxDnDGuestR3Lib_DEFS     =
  VBoxDnDGuestR3Lib_SOURCES  = $(VBOX_DND_GUESTHOST_FILES)
+
+ LIBRARIES.win.amd64 += VBoxDnDGuestR3Lib-x86
+ VBoxDnDGuestR3Lib-x86_EXTENDS      := VBoxDnDGuestR3Lib
+ VBoxDnDGuestR3Lib-x86_BLD_TRG_ARCH := x86
 endif
 
 #
