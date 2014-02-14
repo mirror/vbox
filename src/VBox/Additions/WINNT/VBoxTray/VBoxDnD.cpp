@@ -57,6 +57,7 @@ static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 
 VBoxDnDWnd::VBoxDnDWnd(void)
     : hWnd(NULL),
+      mpfnEnumDisplayMonitors(NULL),
       mfMouseButtonDown(false),
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
       pDropTarget(NULL),
@@ -83,6 +84,13 @@ int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pContext)
 
     /* Save the context. */
     this->pContext = pContext;
+
+    HMODULE hUser = GetModuleHandle("user32.dll");
+    if (hUser)
+    {
+        *(uintptr_t *)&mpfnEnumDisplayMonitors = (uintptr_t)GetProcAddress(hUser, "EnumDisplayMonitors");
+        Log(("DnD: EnumDisplayMonitors = %p\n", mpfnEnumDisplayMonitors));
+    }
 
     int rc = RTSemEventCreate(&mEventSem);
     if (RT_SUCCESS(rc))
@@ -1085,8 +1093,10 @@ int VBoxDnDWnd::makeFullscreen(void)
     HDC hDC = GetDC(NULL /* Entire screen */);
     if (hDC)
     {
-        fRc = EnumDisplayMonitors(hDC, NULL, VBoxDnDWnd::MonitorEnumProc,
-                                  (LPARAM)&r);
+        fRc = mpfnEnumDisplayMonitors?
+                  mpfnEnumDisplayMonitors(hDC, NULL, VBoxDnDWnd::MonitorEnumProc, (LPARAM)&r):
+                  FALSE;
+
         if (!fRc)
             rc = VERR_NOT_FOUND;
         ReleaseDC(NULL, hDC);
@@ -1098,15 +1108,11 @@ int VBoxDnDWnd::makeFullscreen(void)
     {
         /* If multi-monitor enumeration failed above, try getting at least the
          * primary monitor as a fallback. */
-        MONITORINFO monitor_info;
-        monitor_info.cbSize = sizeof(monitor_info);
-        if (GetMonitorInfo(MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST),
-                           &monitor_info))
-        {
-
-            r = monitor_info.rcMonitor;
-            rc = VINF_SUCCESS;
-        }
+        r.left   = 0;
+        r.top    = 0;
+        r.right  = GetSystemMetrics(SM_CXSCREEN);
+        r.bottom = GetSystemMetrics(SM_CYSCREEN);
+        rc = VINF_SUCCESS;
     }
 
     if (RT_SUCCESS(rc))

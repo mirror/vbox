@@ -365,6 +365,7 @@ public: /** @todo Make protected! */
 #ifdef RT_OS_WINDOWS
     /** The window's handle. */
     HWND                       hWnd;
+    BOOL (WINAPI* mpfnEnumDisplayMonitors)(HDC, LPCRECT, MONITORENUMPROC, LPARAM);
     /** List of allowed MIME types this
      *  client can handle. Make this a per-instance
      *  property so that we can selectively allow/forbid
