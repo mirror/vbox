@@ -114,7 +114,7 @@ int main( int argc, char **argv)
     }
     /* Set an X11 error handler, so that we don't die when we get unavoidable errors. */
     XSetErrorHandler(vboxClientXLibErrorHandler);
-    RTPrintf("\nPress <Enter> to exit...\n");
+    RTPrintf("\nType Ctrl-C to exit...\n");
     RTSemEventCreate(&eventSem);
     /** Our instance of the seamless class. */
     SeamlessMain seamless;
@@ -124,6 +124,5 @@ int main( int argc, char **argv)
     {
         RTPrintf("Failed to initialise seamless Additions, rc = %Rrc\n", rc);
     }
-    RTStrmGetLine(g_pStdIn, ach, sizeof(ach));
     return rc;
 }

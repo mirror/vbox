@@ -43,12 +43,6 @@ private:
     RTTHREAD mX11MonitorThread;
     /** Should the X11 monitor thread be stopping? */
     volatile bool mX11MonitorThreadStopping;
-    /** Host seamless event thread. */
-    RTTHREAD mHostEventThread;
-    /** Is the thread running? */
-    volatile bool mHostEventThreadRunning;
-    /** Should the thread be stopping? */
-    volatile bool mHostEventThreadStopping;
 
     /**
      * Waits for a seamless state change events from the host and dispatch it.  This is
@@ -63,17 +57,6 @@ private:
      */
     void cancelEvent(void) { VbglR3InterruptEventWaits(); }
     
-    /** Thread function to query seamless activation and deactivation events
-     *  from the host. */
-    static DECLCALLBACK(int) hostEventThread(RTTHREAD self, void *pvUser);
-
-    /** Helper to start the seamless state change notification listener
-     * thread. */
-    int startHostEventThread();
-
-    /** Helper to stop the event query thread again. */
-    void stopHostEventThread();
-
     /** Thread function to monitor X11 window configuration changes. */
     static DECLCALLBACK(int) x11MonitorThread(RTTHREAD self, void *pvUser);
 
