@@ -608,8 +608,8 @@ HRESULT USBDeviceFilter::setRemote(const com::Utf8Str &aRemote)
         ComAssertRet(!flt.isNull(), E_FAIL);
         if (!flt.isValid())
             return setError(E_INVALIDARG,
-                            tr("Remote state filter string '%ls' is not valid (error at position %d)"),
-                            bRemote.raw(), flt.errorPosition() + 1);
+                            tr("Remote state filter string '%s' is not valid (error at position %d)"),
+                            aRemote.c_str(), flt.errorPosition() + 1);
 
         m_fModified = true;
         ComObjPtr<Machine> pMachine = mParent->i_getMachine();
