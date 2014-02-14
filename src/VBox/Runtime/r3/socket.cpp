@@ -782,9 +782,8 @@ RTDECL(int) RTSocketQueryAddressStr(const char *pszHost, char *pszResult, size_t
     if (pgrResult->ai_family == AF_INET)
     {
         struct sockaddr_in const *pgrSa = (struct sockaddr_in const *)pgrResult->ai_addr;
-        pbDummy = (uint8_t const *)&pgrSa->sin_addr;
-        cchIpAddress = RTStrPrintf(szIpAddress, sizeof(szIpAddress), "%u.%u.%u.%u",
-                                   pbDummy[0], pbDummy[1], pbDummy[2], pbDummy[3]);
+        cchIpAddress = RTStrPrintf(szIpAddress, sizeof(szIpAddress),
+				   "%RTnaipv4", pgrSa->sin_addr.s_addr);
         Assert(cchIpAddress >= 7 && cchIpAddress < sizeof(szIpAddress) - 1);
         enmAddrType = RTNETADDRTYPE_IPV4;
         rc = VINF_SUCCESS;
@@ -792,27 +791,10 @@ RTDECL(int) RTSocketQueryAddressStr(const char *pszHost, char *pszResult, size_t
     else if (pgrResult->ai_family == AF_INET6)
     {
         struct sockaddr_in6 const *pgrSa6 = (struct sockaddr_in6 const *)pgrResult->ai_addr;
-        pbDummy = (uint8_t const *) &pgrSa6->sin6_addr;
-        char szTmp[32+1];
-        size_t cchTmp = RTStrPrintf(szTmp, sizeof(szTmp),
-                                    "%02x%02x%02x%02x"
-                                    "%02x%02x%02x%02x"
-                                    "%02x%02x%02x%02x"
-                                    "%02x%02x%02x%02x",
-                                    pbDummy[0],  pbDummy[1],  pbDummy[2],  pbDummy[3],
-                                    pbDummy[4],  pbDummy[5],  pbDummy[6],  pbDummy[7],
-                                    pbDummy[8],  pbDummy[9],  pbDummy[10], pbDummy[11],
-                                    pbDummy[12], pbDummy[13], pbDummy[14], pbDummy[15]);
-        Assert(cchTmp == 32);
-        rc = rtStrToIpAddr6Str(szTmp, szIpAddress, sizeof(szIpAddress), NULL, 0, true);
-        if (RT_SUCCESS(rc))
-            cchIpAddress = strlen(szIpAddress);
-        else
-        {
-            szIpAddress[0] = '\0';
-            cchIpAddress = 0;
-        }
+        cchIpAddress = RTStrPrintf(szIpAddress, sizeof(szIpAddress),
+				   "%RTnaipv6", (PRTNETADDRIPV6)&pgrSa6->sin6_addr);
         enmAddrType = RTNETADDRTYPE_IPV6;
+        rc = VINF_SUCCESS;
     }
     else
     {
