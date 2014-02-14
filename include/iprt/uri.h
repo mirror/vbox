@@ -44,7 +44,8 @@ RT_C_DECLS_BEGIN
  */
 
 /**
- * Creates a generic URI.
+ * Creates a generic URI. The returned pointer must be freed
+ * using RTStrFree().
  *
  * @returns the new URI on success, NULL otherwise.
  * @param   pszScheme           The URI scheme.
