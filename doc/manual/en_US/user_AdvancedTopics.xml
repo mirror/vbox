@@ -2804,7 +2804,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           </glossentry>
 
           <glossentry>
-            <glossterm><computeroutput>Restore</computeroutput></glossterm>
+            <glossterm><computeroutput>PowerOffRestoringSnapshot</computeroutput></glossterm>
 
             <glossdef>
               <para>Don't allow the user to return to the last snapshot when
