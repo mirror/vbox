@@ -19,6 +19,26 @@
 #include "VBoxMPHGSMI.h"
 #include "VBoxMPCommon.h"
 #include <VBox/VMMDev.h>
+#include <iprt/alloc.h>
+
+static DECLCALLBACK(void *) hgsmiEnvAlloc(void *pvEnv, HGSMISIZE cb)
+{
+    NOREF(pvEnv);
+    return RTMemAlloc(cb);
+}
+
+static DECLCALLBACK(void) hgsmiEnvFree(void *pvEnv, void *pv)
+{
+    NOREF(pvEnv);
+    RTMemFree(pv);
+}
+
+static HGSMIENV g_hgsmiEnvMP =
+{
+    NULL,
+    hgsmiEnvAlloc,
+    hgsmiEnvFree
+};
 
 /**
  * Helper function to register secondary displays (DualView). Note that this will not
@@ -67,7 +87,8 @@ void VBoxSetupDisplaysHGSMI(PVBOXMP_COMMON pCommon, PHYSICAL_ADDRESS phVRAM, uin
                                             pCommon->pvAdapterInformation,
                                             cbGuestHeapMemory,
                                               offVRAMBaseMapping
-                                            + offGuestHeapMemory);
+                                            + offGuestHeapMemory,
+                                            &g_hgsmiEnvMP);
 
             if (RT_FAILURE(rc))
             {

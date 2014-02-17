@@ -1112,6 +1112,25 @@ int HGSMIHostCommandFree (HGSMIINSTANCE *pIns,
     return hgsmiHostCommandFree (pIns, pvMem);
 }
 
+static DECLCALLBACK(void *) hgsmiEnvAlloc(void *pvEnv, HGSMISIZE cb)
+{
+    NOREF(pvEnv);
+    return RTMemAlloc(cb);
+}
+
+static DECLCALLBACK(void) hgsmiEnvFree(void *pvEnv, void *pv)
+{
+    NOREF(pvEnv);
+    RTMemFree(pv);
+}
+
+static HGSMIENV g_hgsmiEnv =
+{
+    NULL,
+    hgsmiEnvAlloc,
+    hgsmiEnvFree
+};
+
 int HGSMISetupHostHeap (PHGSMIINSTANCE pIns,
                         HGSMIOFFSET    offHeap,
                         HGSMISIZE      cbHeap)
@@ -1143,10 +1162,11 @@ int HGSMISetupHostHeap (PHGSMIINSTANCE pIns,
             else
             {
                 rc = HGSMIHeapSetup (&pIns->hostHeap,
+                                     HGSMI_HEAP_TYPE_OFFSET,
                                      pIns->area.pu8Base+offHeap,
                                      cbHeap,
                                      offHeap,
-                                     true /*fOffsetBased*/);
+                                     &g_hgsmiEnv);
             }
 
             hgsmiHostHeapUnlock (pIns);
@@ -1375,12 +1395,15 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
             pIns->hostHeap.cRefs = 0;
 
             rc = HGSMIHeapRelocate(&pIns->hostHeap,
+                                   u32Version > VGA_SAVEDSTATE_VERSION_HOST_HEAP?
+                                       HGSMI_HEAP_TYPE_OFFSET:
+                                       HGSMI_HEAP_TYPE_POINTER,
                                    pIns->area.pu8Base+offHeap,
                                    off,
                                    uintptr_t(pIns->area.pu8Base) - uintptr_t(oldMem),
                                    cbHeap,
                                    offHeap,
-                                   u32Version > VGA_SAVEDSTATE_VERSION_HOST_HEAP);
+                                   &g_hgsmiEnv);
 
             hgsmiHostHeapUnlock (pIns);
         }
@@ -1680,7 +1703,7 @@ int HGSMICreate (PHGSMIINSTANCE *ppIns,
 
         pIns->pszName        = VALID_PTR(pszName)? pszName: "";
 
-        HGSMIHeapSetupUnitialized (&pIns->hostHeap);
+        HGSMIHeapSetupUninitialized(&pIns->hostHeap);
 
         pIns->pfnNotifyGuest = pfnNotifyGuest;
         pIns->pvNotifyGuest  = pvNotifyGuest;
@@ -1724,7 +1747,7 @@ uint32_t HGSMIReset (PHGSMIINSTANCE pIns)
     while(hgsmiProcessGuestCmdCompletion(pIns) != HGSMIOFFSET_VOID) {}
 #endif
 
-    HGSMIHeapSetupUnitialized (&pIns->hostHeap);
+    HGSMIHeapSetupUninitialized(&pIns->hostHeap);
 
     return flags;
 }

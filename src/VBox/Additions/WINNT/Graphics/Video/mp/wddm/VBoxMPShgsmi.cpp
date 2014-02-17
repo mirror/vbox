@@ -185,10 +185,11 @@ void VBoxSHGSMIHeapBufferFree(PVBOXSHGSMI pHeap, void *pvBuffer)
     KeReleaseSpinLock(&pHeap->HeapLock, OldIrql);
 }
 
-int VBoxSHGSMIInit(PVBOXSHGSMI pHeap, void *pvBase, HGSMISIZE cbArea, HGSMIOFFSET offBase, bool fOffsetBased)
+int VBoxSHGSMIInit(PVBOXSHGSMI pHeap, uint32_t u32HeapType, void *pvBase, HGSMISIZE cbArea, HGSMIOFFSET offBase,
+                   const HGSMIENV *pEnv)
 {
     KeInitializeSpinLock(&pHeap->HeapLock);
-    return HGSMIHeapSetup(&pHeap->Heap, pvBase, cbArea, offBase, fOffsetBased);
+    return HGSMIHeapSetup(&pHeap->Heap, u32HeapType, pvBase, cbArea, offBase, pEnv);
 }
 
 void VBoxSHGSMITerm(PVBOXSHGSMI pHeap)
