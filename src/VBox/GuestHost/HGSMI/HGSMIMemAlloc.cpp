@@ -568,7 +568,7 @@ HGSMIOFFSET HGSMIMAPointerToOffset(const HGSMIMADATA *pMA, const void *pv)
     }
 
     AssertFailed();
-    return NULL;
+    return HGSMIOFFSET_VOID;
 }
 
 void *HGSMIMAOffsetToPointer(const HGSMIMADATA *pMA, HGSMIOFFSET off)
