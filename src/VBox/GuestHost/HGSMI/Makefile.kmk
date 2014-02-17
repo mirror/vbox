@@ -29,7 +29,8 @@ LIBRARIES += HGSMIGuestR0Lib
 HGSMIGuestR0Lib_TEMPLATE     = VBOXGUESTR0LIB
 HGSMIGuestR0Lib_DEFS         =
 HGSMIGuestR0Lib_SOURCES      = \
-	HGSMICommon.cpp
+	HGSMICommon.cpp \
+	HGSMIMemAlloc.cpp
 endif
 
 #
@@ -39,7 +40,8 @@ LIBRARIES += HGSMIHostR3Lib
 HGSMIHostR3Lib_TEMPLATE      = VBOXR3
 HGSMIHostR3Lib_DEFS          =
 HGSMIHostR3Lib_SOURCES       = \
-	HGSMICommon.cpp
+	HGSMICommon.cpp \
+	HGSMIMemAlloc.cpp
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

@@ -108,4 +108,16 @@ AssertCompileSize(HGSMIBUFFERTAIL, 8);
 /* The size of the array of channels. Array indexes are uint8_t. Note: the value must not be changed. */
 #define HGSMI_NUMBER_OF_CHANNELS 0x100
 
+typedef struct HGSMIENV
+{
+    /* Environment context pointer. */
+    void *pvEnv;
+
+    /* Allocate system memory. */
+    DECLCALLBACKMEMBER(void *, pfnAlloc)(void *pvEnv, HGSMISIZE cb);
+
+    /* Free system memory. */
+    DECLCALLBACKMEMBER(void, pfnFree)(void *pvEnv, void *pv);
+} HGSMIENV;
+
 #endif /* !___VBox_HGSMI_HGSMIDefs_h */

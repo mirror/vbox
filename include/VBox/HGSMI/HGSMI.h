@@ -34,6 +34,7 @@
 
 #include <VBox/HGSMI/HGSMIDefs.h>
 #include <VBox/HGSMI/HGSMIChannels.h>
+#include <VBox/HGSMI/HGSMIMemAlloc.h>
 
 /*
  * Basic mechanism for the HGSMI is to prepare and pass data buffer to the host and the guest.
@@ -70,17 +71,24 @@
  *     * the channel information.
  */
 
+/* Heap types. */
+#define HGSMI_HEAP_TYPE_NULL    0 /* Heap not initialized. */
+#define HGSMI_HEAP_TYPE_POINTER 1 /* RTHEAPSIMPLE. Obsolete. */
+#define HGSMI_HEAP_TYPE_OFFSET  2 /* RTHEAPOFFSET. Obsolete. */
+#define HGSMI_HEAP_TYPE_MA      3 /* Memory allocator. */
+
 #pragma pack(1)
-typedef struct _HGSMIHEAP
+typedef struct HGSMIHEAP
 {
     union
     {
-        RTHEAPSIMPLE  hPtr;         /**< Pointer based heap. */
-        RTHEAPOFFSET  hOff;         /**< Offset based heap. */
+        HGSMIMADATA   ma;           /* Memory Allocator */
+        RTHEAPSIMPLE  hPtr;         /* Pointer based heap. */
+        RTHEAPOFFSET  hOff;         /* Offset based heap. */
     } u;
-    HGSMIAREA     area;             /**< Description. */
-    int           cRefs;            /**< Number of heap allocations. */
-    bool          fOffsetBased;     /**< Set if offset based. */
+    HGSMIAREA     area;             /* Description. */
+    int           cRefs;            /* Number of heap allocations. */
+    uint32_t      u32HeapType;      /* HGSMI_HEAP_TYPE_* */
 } HGSMIHEAP;
 #pragma pack()
 
@@ -144,21 +152,21 @@ DECLINLINE(HGSMISIZE) HGSMIBufferRequiredSize (uint32_t u32DataSize)
     return HGSMIBufferMinimumSize () + u32DataSize;
 }
 
-DECLINLINE(HGSMIOFFSET) HGSMIPointerToOffset (const HGSMIAREA *pArea,
-                                              const HGSMIBUFFERHEADER *pHeader)
+DECLINLINE(HGSMIOFFSET) HGSMIPointerToOffset(const HGSMIAREA *pArea,
+                                             const void *pv)
 {
-    return pArea->offBase + (HGSMIOFFSET)((uint8_t *)pHeader - pArea->pu8Base);
+    return pArea->offBase + (HGSMIOFFSET)((uint8_t *)pv - pArea->pu8Base);
 }
 
-DECLINLINE(HGSMIBUFFERHEADER *) HGSMIOffsetToPointer (const HGSMIAREA *pArea,
-                                                      HGSMIOFFSET offBuffer)
+DECLINLINE(void *) HGSMIOffsetToPointer(const HGSMIAREA *pArea,
+                                        HGSMIOFFSET offBuffer)
 {
-    return (HGSMIBUFFERHEADER *)(pArea->pu8Base + (offBuffer - pArea->offBase));
+    return pArea->pu8Base + (offBuffer - pArea->offBase);
 }
 
 DECLINLINE(uint8_t *) HGSMIBufferDataFromOffset (const HGSMIAREA *pArea, HGSMIOFFSET offBuffer)
 {
-    HGSMIBUFFERHEADER *pHeader = HGSMIOffsetToPointer (pArea, offBuffer);
+    HGSMIBUFFERHEADER *pHeader = (HGSMIBUFFERHEADER *)HGSMIOffsetToPointer(pArea, offBuffer);
     Assert(pHeader);
     if(pHeader)
         return HGSMIBufferData(pHeader);
@@ -167,7 +175,7 @@ DECLINLINE(uint8_t *) HGSMIBufferDataFromOffset (const HGSMIAREA *pArea, HGSMIOF
 
 DECLINLINE(uint8_t *) HGSMIBufferDataAndChInfoFromOffset (const HGSMIAREA *pArea, HGSMIOFFSET offBuffer, uint16_t * pChInfo)
 {
-    HGSMIBUFFERHEADER *pHeader = HGSMIOffsetToPointer (pArea, offBuffer);
+    HGSMIBUFFERHEADER *pHeader = (HGSMIBUFFERHEADER *)HGSMIOffsetToPointer (pArea, offBuffer);
     Assert(pHeader);
     if(pHeader)
     {
@@ -190,9 +198,14 @@ int HGSMIAreaInitialize (HGSMIAREA *pArea,
 
 void HGSMIAreaClear (HGSMIAREA *pArea);
 
-DECLINLINE(bool) HGSMIAreaContainsOffset(HGSMIAREA *pArea, HGSMIOFFSET offSet)
+DECLINLINE(bool) HGSMIAreaContainsOffset(const HGSMIAREA *pArea, HGSMIOFFSET off)
 {
-    return pArea->offBase <= offSet && pArea->offBase + pArea->cbArea > offSet;
+    return off >= pArea->offBase && off - pArea->offBase < pArea->cbArea;
+}
+
+DECLINLINE(bool) HGSMIAreaContainsPointer(const HGSMIAREA *pArea, const void *pv)
+{
+    return (uintptr_t)pv >= (uintptr_t)pArea->pu8Base && (uintptr_t)pv - (uintptr_t)pArea->pu8Base < pArea->cbArea;
 }
 
 HGSMIOFFSET HGSMIBufferInitializeSingle (const HGSMIAREA *pArea,
@@ -202,21 +215,22 @@ HGSMIOFFSET HGSMIBufferInitializeSingle (const HGSMIAREA *pArea,
                                          uint16_t u16ChannelInfo);
 
 int HGSMIHeapSetup (HGSMIHEAP *pHeap,
+                    uint32_t u32HeapType,
                     void *pvBase,
                     HGSMISIZE cbArea,
                     HGSMIOFFSET offBase,
-                    bool fOffsetBased);
+                    const HGSMIENV *pEnv);
 
 int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
+                       uint32_t u32HeapType,
                        void *pvBase,
                        uint32_t offHeapHandle,
                        uintptr_t offDelta,
                        HGSMISIZE cbArea,
                        HGSMIOFFSET offBase,
-                       bool fOffsetBased);
+                       const HGSMIENV *pEnv);
 
-void HGSMIHeapSetupUnitialized (HGSMIHEAP *pHeap);
-bool HGSMIHeapIsItialized (HGSMIHEAP *pHeap);
+void HGSMIHeapSetupUninitialized (HGSMIHEAP *pHeap);
 
 void HGSMIHeapDestroy (HGSMIHEAP *pHeap);
 

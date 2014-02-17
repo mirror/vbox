@@ -1450,6 +1450,25 @@ static int vboxVdmaInformHost(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, VBOXV
 }
 #endif
 
+static DECLCALLBACK(void *) hgsmiEnvAlloc(void *pvEnv, HGSMISIZE cb)
+{
+    NOREF(pvEnv);
+    return RTMemAlloc(cb);
+}
+
+static DECLCALLBACK(void) hgsmiEnvFree(void *pvEnv, void *pv)
+{
+    NOREF(pvEnv);
+    RTMemFree(pv);
+}
+
+static HGSMIENV g_hgsmiEnvVdma =
+{
+    NULL,
+    hgsmiEnvAlloc,
+    hgsmiEnvFree
+};
+
 /* create a DMACommand buffer */
 int vboxVdmaCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAINFO *pInfo
 #ifdef VBOX_WITH_VDMA
@@ -1485,10 +1504,11 @@ int vboxVdmaCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAINFO *pInfo
     {
         /* Setup a HGSMI heap within the adapter information area. */
         rc = VBoxSHGSMIInit(&pInfo->CmdHeap,
+                             HGSMI_HEAP_TYPE_POINTER,
                              pvBuffer,
                              cbBuffer,
                              offBuffer,
-                             false /*fOffsetBased*/);
+                             &g_hgsmiEnvVdma);
         Assert(RT_SUCCESS(rc));
         if(RT_SUCCESS(rc))
 #endif
