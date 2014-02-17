@@ -92,6 +92,11 @@ NativeNSStringRef darwinToNativeString(const char* pcszString)
     return [NSString stringWithUTF8String: pcszString];
 }
 
+QString darwinFromNativeString(NativeNSStringRef pString)
+{
+    return [pString cStringUsingEncoding :NSASCIIStringEncoding];
+}
+
 void darwinSetShowsToolbarButtonImpl(NativeNSWindowRef pWindow, bool fEnabled)
 {
     [pWindow setShowsToolbarButton:fEnabled];

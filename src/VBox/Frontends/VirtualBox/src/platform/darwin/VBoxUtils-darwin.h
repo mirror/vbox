@@ -49,6 +49,7 @@ RT_C_DECLS_BEGIN
 NativeNSWindowRef darwinToNativeWindowImpl(NativeNSViewRef pView);
 NativeNSViewRef darwinToNativeViewImpl(NativeNSWindowRef pWindow);
 NativeNSStringRef darwinToNativeString(const char* pcszString);
+QString darwinFromNativeString(NativeNSStringRef pString);
 
 /********************************************************************************
  *
