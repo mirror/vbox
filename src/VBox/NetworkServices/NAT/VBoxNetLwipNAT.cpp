@@ -1251,7 +1251,7 @@ static int fetchNatPortForwardRules(const ComNatPtr& nat, bool fIsIPv6, VECNATSE
         RT_ZERO(Rule);
 
         int rc = netPfStrToPf(com::Utf8Str(rules[idxRules]).c_str(),
-			      fIsIPv6, &Rule.Pfr);
+                              fIsIPv6, &Rule.Pfr);
         if (RT_FAILURE(rc))
             continue;
 
