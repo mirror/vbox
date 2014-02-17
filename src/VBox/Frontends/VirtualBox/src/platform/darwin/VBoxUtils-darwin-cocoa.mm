@@ -189,6 +189,14 @@ void darwinEnableFullscreenSupport(NativeNSWindowRef pWindow)
     [pWindow setCollectionBehavior :NSWindowCollectionBehaviorFullScreenPrimary];
 }
 
+void darwinToggleFullscreenMode(NativeNSWindowRef pWindow)
+{
+    /* Toggle native fullscreen mode for passed pWindow.
+     * This method is available since 10.7 only. */
+    if ([pWindow respondsToSelector: @selector(toggleFullScreen:)])
+        [pWindow performSelector: @selector(toggleFullScreen:) withObject: (id)nil];
+}
+
 void darwinSetDockIconMenu(QMenu* pMenu)
 {
     extern void qt_mac_set_dock_menu(QMenu *);
