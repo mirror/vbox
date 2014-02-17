@@ -123,6 +123,7 @@ vboxvideo_drv_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMICommon.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMIMemAlloc.cpp \
 	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapsimple.cpp \
 	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapoffset.cpp
  # Any global symbols in the driver object files will be added to XFree86's
