@@ -48,6 +48,7 @@
 #include <iprt/req.h>
 #include <iprt/file.h>
 #include <iprt/semaphore.h>
+#include <iprt/cpp/mem.h>
 #include <iprt/cpp/utils.h>
 #define LOG_GROUP LOG_GROUP_NAT_SERVICE
 #include <VBox/log.h>
@@ -238,6 +239,12 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
 
             ComPtr<INATNetworkPortForwardEvent> pfEvt = pEvent;
 
+            hrc = pfEvt->COMGETTER(Create)(&fCreateFW);
+            AssertReturn(SUCCEEDED(hrc), hrc);
+
+            hrc = pfEvt->COMGETTER(Ipv6)(&fIPv6FW);
+            AssertReturn(SUCCEEDED(hrc), hrc);
+
             hrc = pfEvt->COMGETTER(Name)(name.asOutParam());
             AssertReturn(SUCCEEDED(hrc), hrc);
 
@@ -256,25 +263,12 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
             hrc = pfEvt->COMGETTER(GuestPort)(&lGuestPort);
             AssertReturn(SUCCEEDED(hrc), hrc);
 
-            hrc = pfEvt->COMGETTER(Create)(&fCreateFW);
-            AssertReturn(SUCCEEDED(hrc), hrc);
-
-            hrc = pfEvt->COMGETTER(Ipv6)(&fIPv6FW);
-            AssertReturn(SUCCEEDED(hrc), hrc);
-
             VECNATSERVICEPF& rules = (fIPv6FW ?
                                       m_vecPortForwardRule6 :
                                       m_vecPortForwardRule4);
 
             NATSEVICEPORTFORWARDRULE r;
-
             RT_ZERO(r);
-
-            if (name.length() > sizeof(r.Pfr.szPfrName))
-            {
-                hrc = E_INVALIDARG;
-                goto port_forward_done;
-            }
 
             r.Pfr.fPfrIPv6 = fIPv6FW;
 
@@ -286,10 +280,37 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                 case NATProtocol_UDP:
                     r.Pfr.iPfrProto = IPPROTO_UDP;
                     break;
+
                 default:
+                    LogRel(("Event: %s %s rule \"%s\": unknown protocol %d\n",
+                            fCreateFW ? "Add" : "Remove",
+                            fIPv6FW ? "IPv6" : "IPv4",
+                            com::Utf8Str(name).c_str(),
+                            (int)proto));
                     goto port_forward_done;
             }
 
+            LogRel(("Event: %s %s rule \"%s\": %s %s%s%s:%d -> %s%s%s:%d\n",
+                    fCreateFW ? "Add" : "Remove",
+                    fIPv6FW ? "IPv6" : "IPv4",
+                    com::Utf8Str(name).c_str(),
+                    proto == NATProtocol_TCP ? "TCP" : "UDP",
+                    /* from */
+                    fIPv6FW ? "[" : "",
+                    com::Utf8Str(strHostAddr).c_str(),
+                    fIPv6FW ? "]" : "",
+                    lHostPort,
+                    /* to */
+                    fIPv6FW ? "[" : "",
+                    com::Utf8Str(strGuestAddr).c_str(),
+                    fIPv6FW ? "]" : "",
+                    lGuestPort));
+
+            if (name.length() > sizeof(r.Pfr.szPfrName))
+            {
+                hrc = E_INVALIDARG;
+                goto port_forward_done;
+            }
 
             RTStrPrintf(r.Pfr.szPfrName, sizeof(r.Pfr.szPfrName),
                       "%s", com::Utf8Str(name).c_str());
@@ -308,9 +329,9 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
 
             if (fCreateFW) /* Addition */
             {
-                rules.push_back(r);
-
-                natServicePfRegister(rules.back());
+                int rc = natServicePfRegister(r);
+                if (RT_SUCCESS(rc))
+                    rules.push_back(r);
             }
             else /* Deletion */
             {
@@ -325,18 +346,17 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                         && natFw.Pfr.u16PfrGuestPort == r.Pfr.u16PfrGuestPort
                         && (strncmp(natFw.Pfr.szPfrGuestAddr, r.Pfr.szPfrGuestAddr, INET6_ADDRSTRLEN) == 0))
                     {
-                        fwspec *pFwCopy = (fwspec *)RTMemAllocZ(sizeof(fwspec));
-                        if (!pFwCopy)
-                        {
+                        RTCMemAutoPtr<fwspec> pFwCopy;
+                        if (RT_UNLIKELY(!pFwCopy.alloc()))
                             break;
-                        }
-                        memcpy(pFwCopy, &natFw.FWSpec, sizeof(fwspec));
 
-                        /* We shouldn't care about pFwCopy this memory will be freed when
-                         * will message will arrive to the destination.
-                         */
-                        portfwd_rule_del(pFwCopy);
+                        memcpy(pFwCopy.get(), &natFw.FWSpec, sizeof(natFw.FWSpec));
 
+                        int status = portfwd_rule_del(pFwCopy.get());
+                        if (status != 0)
+                            break;
+
+                        pFwCopy.release(); /* owned by lwip thread now */
                         rules.erase(it);
                         break;
                     }
@@ -646,12 +666,10 @@ VBoxNetLwipNAT::~VBoxNetLwipNAT()
 
 int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
 {
-    int lrc = 0;
-    int rc = VINF_SUCCESS;
-    int socketSpec = SOCK_STREAM;
-    const char *pszHostAddr;
-    int sockFamily = (natPf.Pfr.fPfrIPv6 ? PF_INET6 : PF_INET);
+    int lrc;
 
+    int sockFamily = (natPf.Pfr.fPfrIPv6 ? PF_INET6 : PF_INET);
+    int socketSpec;
     switch(natPf.Pfr.iPfrProto)
     {
         case IPPROTO_TCP:
@@ -661,12 +679,17 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
             socketSpec = SOCK_DGRAM;
             break;
         default:
-            return VERR_IGNORED; /* Ah, just ignore the garbage */
+            return VERR_IGNORED;
     }
 
-    pszHostAddr = natPf.Pfr.szPfrHostAddr;
-    if (sockFamily == PF_INET && pszHostAddr[0] == '\0')
-        pszHostAddr = "0.0.0.0";
+    const char *pszHostAddr = natPf.Pfr.szPfrHostAddr;
+    if (pszHostAddr[0] == '\0')
+    {
+        if (sockFamily == PF_INET)
+            pszHostAddr = "0.0.0.0";
+        else
+            pszHostAddr = "::";
+    }
 
     lrc = fwspec_set(&natPf.FWSpec,
                      sockFamily,
@@ -675,22 +698,20 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
                      natPf.Pfr.u16PfrHostPort,
                      natPf.Pfr.szPfrGuestAddr,
                      natPf.Pfr.u16PfrGuestPort);
+    if (lrc != 0)
+        return VERR_IGNORED;
 
-    AssertReturn(!lrc, VERR_IGNORED);
+    RTCMemAutoPtr<fwspec> pFwCopy;
+    if (RT_UNLIKELY(!pFwCopy.alloc()))
+        return VERR_IGNORED;
 
-    fwspec *pFwCopy = (fwspec *)RTMemAllocZ(sizeof(fwspec));
-    AssertPtrReturn(pFwCopy, VERR_IGNORED);
+    memcpy(pFwCopy.get(), &natPf.FWSpec, sizeof(natPf.FWSpec));
 
-    /*
-     * We need pass the copy, because we can't be sure
-     * how much this pointer will be valid in LWIP environment.
-     */
-    memcpy(pFwCopy, &natPf.FWSpec, sizeof(fwspec));
+    lrc = portfwd_rule_add(pFwCopy.get());
+    if (lrc != 0)
+        return VERR_IGNORED;
 
-    lrc = portfwd_rule_add(pFwCopy);
-
-    AssertReturn(!lrc, VERR_IGNORED);
-
+    pFwCopy.release();          /* owned by lwip thread now */
     return VINF_SUCCESS;
 }
 
