@@ -32,6 +32,10 @@
 
 #include "vboxvideo.h"
 
+#ifdef XORG_7X
+# include <stdlib.h>
+#endif
+
 /**************************************************************************
 * Main functions                                                          *
 **************************************************************************/
@@ -142,6 +146,25 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
     return TRUE;
 }
 
+static DECLCALLBACK(void *) hgsmiEnvAlloc(void *pvEnv, HGSMISIZE cb)
+{
+    NOREF(pvEnv);
+    return calloc(1, cb);
+}
+
+static DECLCALLBACK(void) hgsmiEnvFree(void *pvEnv, void *pv)
+{
+    NOREF(pvEnv);
+    free(pv);
+}
+
+static HGSMIENV g_hgsmiEnv =
+{
+    NULL,
+    hgsmiEnvAlloc,
+    hgsmiEnvFree
+};
+
 /**
  * Initialise VirtualBox's accelerated video extensions.
  *
@@ -167,7 +190,8 @@ vboxSetupVRAMVbva(ScrnInfoPtr pScrn, VBOXPtr pVBox)
               cbGuestHeapMemory);
     rc = VBoxHGSMISetupGuestContext(&pVBox->guestCtx, pvGuestHeapMemory,
                                     cbGuestHeapMemory,
-                                    offVRAMBaseMapping + offGuestHeapMemory);
+                                    offVRAMBaseMapping + offGuestHeapMemory,
+                                    &g_hgsmiEnv);
     if (RT_FAILURE(rc))
     {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to set up the guest-to-host communication context, rc=%d\n", rc);
