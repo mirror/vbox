@@ -426,13 +426,12 @@ public:
 
     virtual void cleanup(void)
     {
-        /* Cleanup */
-        x11DragAndDropTerm();
+        /* Nothing to do, everything should be cleaned up automatically when the
+         * user process/X11 client exits. */
     };
 
 private:
     int x11DragAndDropInit(void);
-    int x11DragAndDropTerm(void);
     static int hgcmEventThread(RTTHREAD hThread, void *pvUser);
     static int x11EventThread(RTTHREAD hThread, void *pvUser);
 
@@ -1764,54 +1763,10 @@ int DragAndDropService::x11DragAndDropInit(void)
                             "X11-NOTIFY");
     } while (0);
 
-    /* Cleanup on failure */
-    if (RT_FAILURE(rc))
-        x11DragAndDropTerm();
+    /* No clean-up code for now, as we have no good way of testing it and things
+     * should get cleaned up when the user process/X11 client exits. */
 
     return rc;
-}
-
-int DragAndDropService::x11DragAndDropTerm(void)
-{
-    /* Mark that we are stopping. */
-    ASMAtomicWriteBool(&m_fSrvStopping, true);
-    RTSemEventSignal(m_hEventSem);
-
-    if (m_pDisplay)
-    {
-        /* Send a x11 client messages to the x11 event loop. */
-        XClientMessageEvent m;
-        RT_ZERO(m);
-        m.type         = ClientMessage;
-        m.display      = m_pDisplay;
-        m.window       = None;
-        m.message_type = xAtom(XA_dndstop);
-        m.format       = 32;
-        int xrc = XSendEvent(m_pDisplay, None, True, NoEventMask, reinterpret_cast<XEvent*>(&m));
-        if (RT_UNLIKELY(xrc == 0))
-            LogFlowThisFunc(("Error sending xevent\n"));
-    }
-
-    /* We cannot signal the m_hHGCMThread as it is most likely waiting in vbglR3DoIOCtl() */
-    /** @todo r=michael Don't we have a mechanism for cancelling HGCM calls
-     *                  though? */
-    /* Wait for our event threads to stop. */
-    /** @todo r=michael This routine is generally called on the X11 thread,
-     *                  protected by a mutex, so the following thread wait
-     *                  makes us hang forever. */
-    if (m_hX11Thread)
-        RTThreadWait(m_hX11Thread, RT_INDEFINITE_WAIT, NULL);
-    /* Cleanup */
-    /* todo: This doesn't work. The semaphore was interrupted by the user
-     * signal. It is not possible to destroy a semaphore while it is in interrupted state.
-     * According to Frank, the cleanup stuff done here is done _wrong_. We just
-     * should signal the main loop to stop and do the cleanup there. Needs
-     * adoption in all VBoxClient::Service's. */
-//    if (m_hEventSem)
-//        RTSemEventDestroy(m_hEventSem);
-    if (m_pDisplay)
-        XCloseDisplay(m_pDisplay);
-    return VINF_SUCCESS;
 }
 
 /* static */
@@ -1885,14 +1840,6 @@ int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
             RT_ZERO(e);
             e.type = DnDEvent::X11_Type;
             XNextEvent(pThis->m_pDisplay, &e.x11);
-#if 0
-            /* We never detect the stop event here for some reason */
-            /* Check for a stop message. */
-            if (   e.x11.type == ClientMessage
-                && e.x11.xclient.message_type == xAtom(XA_dndstop))
-                break;
-#endif
-//            if (isDnDRespondEvent(pThis->m_pDisplay, &e.x11, 0))
             {
                 /* Appending makes a copy of the event structure. */
                 pThis->m_eventQueue.append(e);
