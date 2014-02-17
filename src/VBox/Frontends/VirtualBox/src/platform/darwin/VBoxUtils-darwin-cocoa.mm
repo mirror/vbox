@@ -35,6 +35,9 @@
 #include <Carbon/Carbon.h>
 #include "DarwinKeyboard.h"
 
+/** Easy way of dynamical call for 10.7 AppKit functionality we do not yet support. */
+#define NSWindowCollectionBehaviorFullScreenPrimary (1 << 7)
+
 NativeNSWindowRef darwinToNativeWindowImpl(NativeNSViewRef pView)
 {
     NativeNSWindowRef window = NULL;
@@ -179,6 +182,11 @@ void darwinMinaturizeWindow(NativeNSWindowRef pWindow)
 //    [pWindow miniaturize:pWindow];
 //    [[NSApplication sharedApplication] deactivate];
 //    [pWindow performMiniaturize:nil];
+}
+
+void darwinEnableFullscreenSupport(NativeNSWindowRef pWindow)
+{
+    [pWindow setCollectionBehavior :NSWindowCollectionBehaviorFullScreenPrimary];
 }
 
 void darwinSetDockIconMenu(QMenu* pMenu)

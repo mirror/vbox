@@ -138,6 +138,11 @@ void darwinMinaturizeWindow(QWidget *pWidget)
     return ::darwinMinaturizeWindow(::darwinToNativeWindow(pWidget));
 }
 
+void darwinEnableFullscreenSupport(QWidget *pWidget)
+{
+    return ::darwinEnableFullscreenSupport(::darwinToNativeWindow(pWidget));
+}
+
 void darwinInstallResizeDelegate(QWidget *pWidget)
 {
     ::darwinInstallResizeDelegate(::darwinToNativeWindow(pWidget));
