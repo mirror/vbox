@@ -464,7 +464,7 @@ int DnDHGSendDataMessage::currentMessage(uint32_t uMsg,
                                                           this /* pvProgressUser */);
             else
                 AssertMsgFailedReturn(("fMode=0x%x is not supported for srcPath=%s, dstPath=%s\n",
-                                       nextPath.m_fMode, nextPath.m_strSrcPath.c_str(), nextPath.m_strDstPath),
+                                       nextPath.m_fMode, nextPath.m_strSrcPath.c_str(), nextPath.m_strDstPath.c_str()),
                                        VERR_NO_DATA);
 
             m_lstURI.RemoveFirst();
