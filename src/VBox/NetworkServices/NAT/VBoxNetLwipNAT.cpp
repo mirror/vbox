@@ -649,7 +649,7 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
     int lrc = 0;
     int rc = VINF_SUCCESS;
     int socketSpec = SOCK_STREAM;
-    char *pszHostAddr;
+    const char *pszHostAddr;
     int sockFamily = (natPf.Pfr.fPfrIPv6 ? PF_INET6 : PF_INET);
 
     switch(natPf.Pfr.iPfrProto)
@@ -665,14 +665,8 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
     }
 
     pszHostAddr = natPf.Pfr.szPfrHostAddr;
-
-    /* XXX: workaround for inet_pton and an empty ipv4 address
-     * in rule declaration.
-     */
-    if (   sockFamily == PF_INET
-        && pszHostAddr[0] == 0)
-        pszHostAddr = (char *)"0.0.0.0"; /* XXX: fix it! without type cast */
-
+    if (sockFamily == PF_INET && pszHostAddr[0] == '\0')
+        pszHostAddr = "0.0.0.0";
 
     lrc = fwspec_set(&natPf.FWSpec,
                      sockFamily,
