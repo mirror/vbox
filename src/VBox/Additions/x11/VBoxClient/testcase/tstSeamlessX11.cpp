@@ -119,10 +119,15 @@ int main( int argc, char **argv)
     /** Our instance of the seamless class. */
     SeamlessMain seamless;
     LogRel(("Starting seamless Guest Additions...\n"));
-    rc = seamless.start();
+    rc = seamless.init();
     if (rc != VINF_SUCCESS)
     {
         RTPrintf("Failed to initialise seamless Additions, rc = %Rrc\n", rc);
+    }
+    rc = seamless.run();
+    if (rc != VINF_SUCCESS)
+    {
+        RTPrintf("Failed to run seamless Additions, rc = %Rrc\n", rc);
     }
     return rc;
 }
