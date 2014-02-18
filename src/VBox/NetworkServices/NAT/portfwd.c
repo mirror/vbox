@@ -148,7 +148,7 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
 
     status = getaddrinfo(src_addr_str, NULL, &hints, &ai);
     if (status != 0) {
-        DPRINTF(("%s - %s\n", src_addr_str, gai_strerror(status)));
+        LogRel(("\"%s\": %s\n", src_addr_str, gai_strerror(status)));
         return -1;
     }
     LWIP_ASSERT1(ai != NULL);
@@ -159,7 +159,7 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
 
     status = getaddrinfo(dst_addr_str, NULL, &hints, &ai);
     if (status != 0) {
-        DPRINTF(("%s - %s\n", dst_addr_str, gai_strerror(status)));
+        LogRel(("\"%s\": %s\n", dst_addr_str, gai_strerror(status)));
         return -1;
     }
     LWIP_ASSERT1(ai != NULL);
