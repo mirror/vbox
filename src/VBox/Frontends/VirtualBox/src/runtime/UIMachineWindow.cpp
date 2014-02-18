@@ -527,3 +527,16 @@ Qt::Alignment UIMachineWindow::viewAlignment(UIVisualStateType visualStateType)
     return 0;
 }
 
+void UIMachineWindow::handleNativeNotification(const QString &strNativeNotificationName, QWidget *pWidget)
+{
+    /* Redirect arrived notification: */
+    LogRel(("UIMachineWindow::handleNativeNotification: Notification '%s' received.\n",
+            strNativeNotificationName.toAscii().constData()));
+    if (UIMachineWindow *pMachineWindow = qobject_cast<UIMachineWindow*>(pWidget))
+    {
+        LogRel(("UIMachineWindow::handleNativeNotification: Redirecting '%s' notification to corresponding machine-window...\n",
+                strNativeNotificationName.toAscii().constData()));
+        pMachineWindow->handleNativeNotification(strNativeNotificationName);
+    }
+}
+
