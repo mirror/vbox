@@ -96,6 +96,98 @@ bool UIMachineLogicFullscreen::hasHostScreenForGuestScreen(int iScreenId) const
     return m_pScreenLayout->hasHostScreenForGuestScreen(iScreenId);
 }
 
+#ifdef RT_OS_DARWIN
+void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidEnter()
+{
+    /* Make sure this method is only used for ML and next: */
+    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+
+    /* Get sender machine-window: */
+    UIMachineWindow *pMachineWindow = qobject_cast<UIMachineWindow*>(sender());
+    AssertReturnVoid(pMachineWindow);
+
+    /* Add machine-window to corresponding set: */
+    m_fullscreenMachineWindows.insert(pMachineWindow);
+    AssertReturnVoid(m_fullscreenMachineWindows.contains(pMachineWindow));
+}
+
+void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
+{
+    /* Make sure this method is only used for ML and next: */
+    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+
+    /* Get sender machine-window: */
+    UIMachineWindow *pMachineWindow = qobject_cast<UIMachineWindow*>(sender());
+    AssertReturnVoid(pMachineWindow);
+
+    /* Remove machine-window from corresponding set: */
+    bool fResult = m_fullscreenMachineWindows.remove(pMachineWindow);
+    AssertReturnVoid(fResult && !m_fullscreenMachineWindows.contains(pMachineWindow));
+    Q_UNUSED(fResult);
+
+    /* Exit fullscreen mode if there is/are no fullscreen window(s) left: */
+    if (m_fullscreenMachineWindows.isEmpty())
+    {
+        /* Change visual-state to requested: */
+        LogRel(("UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit: "
+                "Machine-window(s) exited fullscreen, changing visual-state to requested...\n"));
+        UIVisualStateType type = uisession()->requestedVisualState();
+        if (type == UIVisualStateType_Invalid)
+            type = UIVisualStateType_Normal;
+        uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
+        uisession()->changeVisualState(type);
+    }
+}
+
+void UIMachineLogicFullscreen::sltChangeVisualStateToNormal()
+{
+    /* Base-class handling for Lion and previous: */
+    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+        UIMachineLogic::sltChangeVisualStateToNormal();
+    /* Special handling for ML and next: */
+    else
+    {
+        /* Request 'normal' (window) visual-state: */
+        uisession()->setRequestedVisualState(UIVisualStateType_Normal);
+        /* Toggle native fullscreen mode for each window: */
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+            darwinToggleFullscreenMode(pMachineWindow);
+    }
+}
+
+void UIMachineLogicFullscreen::sltChangeVisualStateToSeamless()
+{
+    /* Base-class handling for Lion and previous: */
+    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+        UIMachineLogic::sltChangeVisualStateToSeamless();
+    /* Special handling for ML and next: */
+    else
+    {
+        /* Request 'seamless' visual-state: */
+        uisession()->setRequestedVisualState(UIVisualStateType_Seamless);
+        /* Toggle native fullscreen mode for each window: */
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+            darwinToggleFullscreenMode(pMachineWindow);
+    }
+}
+
+void UIMachineLogicFullscreen::sltChangeVisualStateToScale()
+{
+    /* Base-class handling for Lion and previous: */
+    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+        UIMachineLogic::sltChangeVisualStateToScale();
+    /* Special handling for ML and next: */
+    else
+    {
+        /* Request 'scale' visual-state: */
+        uisession()->setRequestedVisualState(UIVisualStateType_Scale);
+        /* Toggle native fullscreen mode for each window: */
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+            darwinToggleFullscreenMode(pMachineWindow);
+    }
+}
+#endif /* RT_OS_DARWIN */
+
 void UIMachineLogicFullscreen::sltMachineStateChanged()
 {
     /* Call to base-class: */
@@ -190,9 +282,10 @@ void UIMachineLogicFullscreen::prepareActionConnections()
 #ifdef Q_WS_MAC
 void UIMachineLogicFullscreen::prepareOtherConnections()
 {
-    /* Presentation mode connection: */
-    connect(gEDataEvents, SIGNAL(sigPresentationModeChange(bool)),
-            this, SLOT(sltChangePresentationMode(bool)));
+    /* Make sure 'presentation mode' is updated for Lion and previous: */
+    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+        connect(gEDataEvents, SIGNAL(sigPresentationModeChange(bool)),
+                this, SLOT(sltChangePresentationMode(bool)));
 }
 #endif /* Q_WS_MAC */
 
@@ -221,12 +314,27 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
                 static_cast<UIMachineWindowFullscreen*>(machineWindows()[i]), SLOT(sltShowInNecessaryMode()));
 
 #ifdef Q_WS_MAC
-    /* If the user change the screen, we have to decide again if the
-     * presentation mode should be changed. */
-    connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChanged()),
-            this, SLOT(sltScreenLayoutChanged()));
-    /* Note: Presentation mode has to be set *after* the windows are created. */
-    setPresentationModeEnabled(true);
+    /* Make sure 'presentation mode' is enabled/updated for Lion and previous: */
+    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+    {
+        connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChanged()),
+                this, SLOT(sltScreenLayoutChanged()));
+        setPresentationModeEnabled(true);
+    }
+#endif /* Q_WS_MAC */
+
+#ifdef Q_WS_MAC
+    /* Keep sync for machine-logic/window(s) in ML and next: */
+    if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
+    {
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        {
+            connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidEnter()),
+                    this, SLOT(sltHandleNativeFullscreenDidEnter()));
+            connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidExit()),
+                    this, SLOT(sltHandleNativeFullscreenDidExit()));
+        }
+    }
 #endif /* Q_WS_MAC */
 
     /* Mark machine-window(s) created: */
@@ -252,12 +360,28 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
     /* Mark machine-window(s) destroyed: */
     setMachineWindowsCreated(false);
 
+#ifdef Q_WS_MAC
+    /* Leave sync for machine-logic/window(s) in ML and next: */
+    if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
+    {
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        {
+            disconnect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidEnter()),
+                       this, SLOT(sltHandleNativeFullscreenDidEnter()));
+            disconnect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidExit()),
+                       this, SLOT(sltHandleNativeFullscreenDidExit()));
+        }
+    }
+#endif/* Q_WS_MAC */
+
     /* Cleanup machine-window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
 
 #ifdef Q_WS_MAC
-    setPresentationModeEnabled(false);
+    /* Make sure 'presentation mode' is disabled for Lion and previous: */
+    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+        setPresentationModeEnabled(false);
 #endif/* Q_WS_MAC */
 }
 
@@ -297,6 +421,9 @@ void UIMachineLogicFullscreen::cleanupActionGroups()
 #ifdef Q_WS_MAC
 void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
 {
+    /* Make sure this method is only used for Lion and previous: */
+    AssertReturnVoid(vboxGlobal().osRelease() <= MacOSXRelease_Lion);
+
     /* First check if we are on a screen which contains the Dock or the
      * Menubar (which hasn't to be the same), only than the
      * presentation mode have to be changed. */
