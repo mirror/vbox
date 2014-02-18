@@ -31,6 +31,10 @@
 #include "UIMachineView.h"
 #include "UIMachineDefs.h"
 #include "UIMiniToolBar.h"
+#ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
+# include "UICocoaApplication.h"
+#endif /* Q_WS_MAC */
 
 /* COM includes: */
 #include "CSnapshot.h"
@@ -41,6 +45,43 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     , m_pMiniToolBar(0)
 {
 }
+
+#ifdef Q_WS_MAC
+void UIMachineWindowFullscreen::handleNativeNotification(const QString &strNativeNotificationName)
+{
+    /* Make sure this method is only used for ML and next: */
+    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+
+    /* Handle arrived notification: */
+    LogRel(("UIMachineWindowFullscreen::handleNativeNotification: Notification '%s' received.\n",
+            strNativeNotificationName.toAscii().constData()));
+    /* Handle 'NSWindowDidEnterFullScreenNotification' notification: */
+    if (strNativeNotificationName == "NSWindowDidEnterFullScreenNotification")
+    {
+        LogRel(("UIMachineWindowFullscreen::handleNativeNotification: "
+                "Native fullscreen mode entered, notifying listener...\n"));
+        emit sigNotifyAboutNativeFullscreenDidEnter();
+    }
+    /* Handle 'NSWindowDidExitFullScreenNotification' notification: */
+    else if (strNativeNotificationName == "NSWindowDidExitFullScreenNotification")
+    {
+        LogRel(("UIMachineWindowFullscreen::handleNativeNotification: "
+                "Native fullscreen mode exited, notifying listener...\n"));
+        emit sigNotifyAboutNativeFullscreenDidExit();
+    }
+}
+#endif /* Q_WS_MAC */
+
+#ifdef RT_OS_DARWIN
+void UIMachineWindowFullscreen::sltToggleNativeFullscreenMode()
+{
+    /* Make sure this method is only used for ML and next: */
+    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+
+    /* Toggle native fullscreen mode: */
+    darwinToggleFullscreenMode(this);
+}
+#endif /* RT_OS_DARWIN */
 
 void UIMachineWindowFullscreen::sltMachineStateChanged()
 {
@@ -87,6 +128,22 @@ void UIMachineWindowFullscreen::prepareVisualState()
 
     /* Prepare mini-toolbar: */
     prepareMiniToolbar();
+
+#ifdef Q_WS_MAC
+    /* Native fullscreen stuff on ML and next: */
+    if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
+    {
+        /* Enable native fullscreen support: */
+        darwinEnableFullscreenSupport(this);
+        /* Register to native fullscreen notifications: */
+        UICocoaApplication::instance()->registerToNativeNotification("NSWindowDidEnterFullScreenNotification", this,
+                                                                     UIMachineWindow::handleNativeNotification);
+        UICocoaApplication::instance()->registerToNativeNotification("NSWindowDidExitFullScreenNotification", this,
+                                                                     UIMachineWindow::handleNativeNotification);
+        /* Asynchronously toggle native fullscreen mode: */
+        QTimer::singleShot(0, this, SLOT(sltToggleNativeFullscreenMode()));
+    }
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineWindowFullscreen::prepareMiniToolbar()
@@ -139,6 +196,16 @@ void UIMachineWindowFullscreen::cleanupMiniToolbar()
 
 void UIMachineWindowFullscreen::cleanupVisualState()
 {
+#ifdef Q_WS_MAC
+    /* Native fullscreen stuff on ML and next: */
+    if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
+    {
+        /* Unregister from native fullscreen notifications: */
+        UICocoaApplication::instance()->unregisterFromNativeNotification("NSWindowDidEnterFullScreenNotification", this);
+        UICocoaApplication::instance()->unregisterFromNativeNotification("NSWindowDidExitFullScreenNotification", this);
+    }
+#endif /* Q_WS_MAC */
+
     /* Cleanup mini-toolbar: */
     cleanupMiniToolbar();
 
@@ -198,8 +265,15 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
                     setWindowState(windowState() | Qt::WindowActive);
 #endif /* Q_WS_WIN */
 
+#ifdef Q_WS_MAC
+                /* ML and next using native stuff, so we can call for simple show(): */
+                if (vboxGlobal().osRelease() > MacOSXRelease_Lion) show();
+                /* Lion and previous still using Qt one, call for showFullScreen(): */
+                else showFullScreen();
+#else /* !Q_WS_MAC */
                 /* Show in fullscreen mode: */
                 showFullScreen();
+#endif /* !Q_WS_MAC */
 
                 /* Make sure the window is placed on valid screen again
                  * after window is shown & window's decorations applied.

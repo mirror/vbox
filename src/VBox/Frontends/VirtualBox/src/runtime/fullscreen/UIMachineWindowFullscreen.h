@@ -30,12 +30,30 @@ class UIMachineWindowFullscreen : public UIMachineWindow
 {
     Q_OBJECT;
 
+#ifdef RT_OS_DARWIN
+signals:
+    /** Mac OS X: Notifies listener about native fullscreen entering. */
+    void sigNotifyAboutNativeFullscreenDidEnter();
+    /** Mac OS X: Notifies listener about native fullscreen exiting. */
+    void sigNotifyAboutNativeFullscreenDidExit();
+#endif /* RT_OS_DARWIN */
+
 protected:
 
     /* Constructor: */
     UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId);
 
+#ifdef Q_WS_MAC
+    /** Mac OS X: Handles native notifications @a strNativeNotificationName for fullscreen window. */
+    void handleNativeNotification(const QString &strNativeNotificationName);
+#endif /* Q_WS_MAC */
+
 private slots:
+
+#ifdef RT_OS_DARWIN
+    /** Mac OS X: Toggles native fullscreen mode. */
+    void sltToggleNativeFullscreenMode();
+#endif /* RT_OS_DARWIN */
 
     /* Session event-handlers: */
     void sltMachineStateChanged();

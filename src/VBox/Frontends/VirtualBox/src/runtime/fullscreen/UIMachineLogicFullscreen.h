@@ -44,6 +44,21 @@ protected:
 
 private slots:
 
+#ifdef RT_OS_DARWIN
+    /** Mac OS X: Marks sender() machine-window as 'fullscreen' one. */
+    void sltHandleNativeFullscreenDidEnter();
+    /** Mac OS X: Marks sender() machine-window as 'non-fullscreen' one,
+      * changes visual-state to requested if there is/are no more fullscreen window(s). */
+    void sltHandleNativeFullscreenDidExit();
+
+    /** Mac OS X: Requests visual-state change from 'fullscreen' to 'normal' (window). */
+    void sltChangeVisualStateToNormal();
+    /** Mac OS X: Requests visual-state change from 'fullscreen' to 'seamless'. */
+    void sltChangeVisualStateToSeamless();
+    /** Mac OS X: Requests visual-state change from 'fullscreen' to 'scale'. */
+    void sltChangeVisualStateToScale();
+#endif /* RT_OS_DARWIN */
+
     /* Handler: Console callback stuff: */
     void sltMachineStateChanged();
 
@@ -80,6 +95,11 @@ private:
 
     /* Variables: */
     UIMultiScreenLayout *m_pScreenLayout;
+
+#ifdef Q_WS_MAC
+    /** Mac OS X: Contains machine-window(s) marked as 'fullscreen'. */
+    QSet<UIMachineWindow*> m_fullscreenMachineWindows;
+#endif /* Q_WS_MAC */
 
     /* Friend classes: */
     friend class UIMachineLogic;
