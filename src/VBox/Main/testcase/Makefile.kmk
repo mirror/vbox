@@ -247,6 +247,7 @@ tstMouseImpl_INCS      = ../include \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
+	$(VBOX_MAIN_APIWRAPPER_INCS) \
 	$(dir $(VBOX_XML_SCHEMADEFS_H))
 tstMouseImpl_LIBS      = \
 	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB) \
