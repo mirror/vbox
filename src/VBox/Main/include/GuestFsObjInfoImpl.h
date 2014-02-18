@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2012-2014 Oracle Corporation
+ * Copyright (C) 2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,48 +19,64 @@
 #ifndef ____H_GUESTFSOBJINFOIMPL
 #define ____H_GUESTFSOBJINFOIMPL
 
-#include "GuestFsObjInfoWrap.h"
+#include "VirtualBoxBase.h"
 #include "GuestCtrlImplPrivate.h"
 
 /**
  * TODO
  */
 class ATL_NO_VTABLE GuestFsObjInfo :
-    public GuestFsObjInfoWrap
+    public VirtualBoxBase,
+    VBOX_SCRIPTABLE_IMPL(IGuestFsObjInfo)
 {
 public:
     /** @name COM and internal init/term/mapping cruft.
      * @{ */
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(GuestFsObjInfo, IGuestFsObjInfo)
+    DECLARE_NOT_AGGREGATABLE(GuestFsObjInfo)
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+    BEGIN_COM_MAP(GuestFsObjInfo)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IGuestFsObjInfo)
+        COM_INTERFACE_ENTRY(IFsObjInfo)
+    END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestFsObjInfo)
 
     int     init(const GuestFsObjData &objData);
     void    uninit(void);
-
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
+    /** @}  */
+
+    /** @name IFsObjInfo interface.
+     * @{ */
+    STDMETHOD(COMGETTER(AccessTime))(LONG64 *aAccessTime);
+    STDMETHOD(COMGETTER(AllocatedSize))(LONG64 *aAllocatedSize);
+    STDMETHOD(COMGETTER(BirthTime))(LONG64 *aBirthTime);
+    STDMETHOD(COMGETTER(ChangeTime))(LONG64 *aChangeTime);
+    STDMETHOD(COMGETTER(DeviceNumber))(ULONG *aDeviceNumber);
+    STDMETHOD(COMGETTER(FileAttributes))(BSTR *aFileAttrs);
+    STDMETHOD(COMGETTER(GenerationId))(ULONG *aGenerationId);
+    STDMETHOD(COMGETTER(GID))(ULONG *aGID);
+    STDMETHOD(COMGETTER(GroupName))(BSTR *aGroupName);
+    STDMETHOD(COMGETTER(HardLinks))(ULONG *aHardLinks);
+    STDMETHOD(COMGETTER(ModificationTime))(LONG64 *aModificationTime);
+    STDMETHOD(COMGETTER(Name))(BSTR *aName);
+    STDMETHOD(COMGETTER(NodeId))(LONG64 *aNodeId);
+    STDMETHOD(COMGETTER(NodeIdDevice))(ULONG *aNodeIdDevice);
+    STDMETHOD(COMGETTER(ObjectSize))(LONG64 *aObjectSize);
+    STDMETHOD(COMGETTER(Type))(FsObjType_T *aType);
+    STDMETHOD(COMGETTER(UID))(ULONG *aUID);
+    STDMETHOD(COMGETTER(UserFlags))(ULONG *aUserFlags);
+    STDMETHOD(COMGETTER(UserName))(BSTR *aUserName);
+    STDMETHOD(COMGETTER(ACL))(BSTR *aACL);
+    /** @}  */
+
+public:
+    /** @name Public internal methods.
+     * @{ */
+    /** @}  */
 
 private:
-
-    // Wrapped GuestFsObjInfo properties.
-    HRESULT getAccessTime(LONG64 *aAccessTime);
-    HRESULT getAllocatedSize(LONG64 *aAllocatedSize);
-    HRESULT getBirthTime(LONG64 *aBirthTime);
-    HRESULT getChangeTime(LONG64 *aChangeTime);
-    HRESULT getDeviceNumber(ULONG *aDeviceNumber);
-    HRESULT getFileAttributes(com::Utf8Str &aFileAttributes);
-    HRESULT getGenerationId(ULONG *aGenerationId);
-    HRESULT getGID(ULONG *aGID);
-    HRESULT getGroupName(com::Utf8Str &aGroupName);
-    HRESULT getHardLinks(ULONG *aHardLinks);
-    HRESULT getModificationTime(LONG64 *aModificationTime);
-    HRESULT getName(com::Utf8Str &aName);
-    HRESULT getNodeId(LONG64 *aNodeId);
-    HRESULT getNodeIdDevice(ULONG *aNodeIdDevice);
-    HRESULT getObjectSize(LONG64 *aObjectSize);
-    HRESULT getType(FsObjType_T *aType);
-    HRESULT getUID(ULONG *aUID);
-    HRESULT getUserFlags(ULONG *aUserFlags);
-    HRESULT getUserName(com::Utf8Str &aUserName);
 
     GuestFsObjData mData;
 };
