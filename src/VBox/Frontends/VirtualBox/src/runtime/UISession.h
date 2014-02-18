@@ -255,15 +255,6 @@ public slots:
 
 private slots:
 
-    /** Requests visual-state change to 'normal' (window). */
-    void sltChangeVisualStateToNormal();
-    /** Requests visual-state change to 'fullscreen'. */
-    void sltChangeVisualStateToFullscreen();
-    /** Requests visual-state change to 'seamless'. */
-    void sltChangeVisualStateToSeamless();
-    /** Requests visual-state change to 'scale'. */
-    void sltChangeVisualStateToScale();
-
     /* Handler: Close Runtime UI stuff: */
     void sltCloseRuntimeUI();
 

@@ -664,38 +664,6 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     }
 }
 
-void UISession::sltChangeVisualStateToNormal()
-{
-    /* Reset requests: */
-    setRequestedVisualState(UIVisualStateType_Invalid);
-    /* Request change: */
-    m_pMachine->asyncChangeVisualState(UIVisualStateType_Normal);
-}
-
-void UISession::sltChangeVisualStateToFullscreen()
-{
-    /* Reset requests: */
-    setRequestedVisualState(UIVisualStateType_Invalid);
-    /* Request change: */
-    m_pMachine->asyncChangeVisualState(UIVisualStateType_Fullscreen);
-}
-
-void UISession::sltChangeVisualStateToSeamless()
-{
-    /* Reset requests: */
-    setRequestedVisualState(UIVisualStateType_Invalid);
-    /* Request change: */
-    m_pMachine->asyncChangeVisualState(UIVisualStateType_Seamless);
-}
-
-void UISession::sltChangeVisualStateToScale()
-{
-    /* Reset requests: */
-    setRequestedVisualState(UIVisualStateType_Invalid);
-    /* Request change: */
-    m_pMachine->asyncChangeVisualState(UIVisualStateType_Scale);
-}
-
 void UISession::sltCloseRuntimeUI()
 {
     /* First, we have to hide any opened modal/popup widgets.

@@ -105,6 +105,15 @@ protected slots:
     /** Checks if some visual-state type was requested. */
     virtual void sltCheckForRequestedVisualStateType() {}
 
+    /** Requests visual-state change to 'normal' (window). */
+    virtual void sltChangeVisualStateToNormal();
+    /** Requests visual-state change to 'fullscreen'. */
+    virtual void sltChangeVisualStateToFullscreen();
+    /** Requests visual-state change to 'seamless'. */
+    virtual void sltChangeVisualStateToSeamless();
+    /** Requests visual-state change to 'scale'. */
+    virtual void sltChangeVisualStateToScale();
+
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();
     virtual void sltAdditionsStateChanged();
