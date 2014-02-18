@@ -527,16 +527,19 @@ Qt::Alignment UIMachineWindow::viewAlignment(UIVisualStateType visualStateType)
     return 0;
 }
 
+#ifdef Q_WS_MAC
 void UIMachineWindow::handleNativeNotification(const QString &strNativeNotificationName, QWidget *pWidget)
 {
-    /* Redirect arrived notification: */
+    /* Handle arrived notification: */
     LogRel(("UIMachineWindow::handleNativeNotification: Notification '%s' received.\n",
             strNativeNotificationName.toAscii().constData()));
     if (UIMachineWindow *pMachineWindow = qobject_cast<UIMachineWindow*>(pWidget))
     {
+        /* Redirect arrived notification: */
         LogRel(("UIMachineWindow::handleNativeNotification: Redirecting '%s' notification to corresponding machine-window...\n",
                 strNativeNotificationName.toAscii().constData()));
         pMachineWindow->handleNativeNotification(strNativeNotificationName);
     }
 }
+#endif /* Q_WS_MAC */
 
