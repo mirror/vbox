@@ -180,11 +180,11 @@ void UIMachineLogicFullscreen::prepareActionConnections()
 
     /* "View" actions connections: */
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
-            uisession(), SLOT(sltChangeVisualStateToNormal()));
+            this, SLOT(sltChangeVisualStateToNormal()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
-            uisession(), SLOT(sltChangeVisualStateToSeamless()));
+            this, SLOT(sltChangeVisualStateToSeamless()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
-            uisession(), SLOT(sltChangeVisualStateToScale()));
+            this, SLOT(sltChangeVisualStateToScale()));
 }
 
 #ifdef Q_WS_MAC
@@ -265,11 +265,11 @@ void UIMachineLogicFullscreen::cleanupActionConnections()
 {
     /* "View" actions disconnections: */
     disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
-               uisession(), SLOT(sltChangeVisualStateToNormal()));
+               this, SLOT(sltChangeVisualStateToNormal()));
     disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
-               uisession(), SLOT(sltChangeVisualStateToSeamless()));
+               this, SLOT(sltChangeVisualStateToSeamless()));
     disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
-               uisession(), SLOT(sltChangeVisualStateToScale()));
+               this, SLOT(sltChangeVisualStateToScale()));
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionConnections();

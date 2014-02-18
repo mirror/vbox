@@ -398,6 +398,30 @@ void UIMachineLogic::notifyAbout3DOverlayVisibilityChange(bool fVisible)
     }
 }
 
+void UIMachineLogic::sltChangeVisualStateToNormal()
+{
+    uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
+    uisession()->changeVisualState(UIVisualStateType_Normal);
+}
+
+void UIMachineLogic::sltChangeVisualStateToFullscreen()
+{
+    uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
+    uisession()->changeVisualState(UIVisualStateType_Fullscreen);
+}
+
+void UIMachineLogic::sltChangeVisualStateToSeamless()
+{
+    uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
+    uisession()->changeVisualState(UIVisualStateType_Seamless);
+}
+
+void UIMachineLogic::sltChangeVisualStateToScale()
+{
+    uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
+    uisession()->changeVisualState(UIVisualStateType_Scale);
+}
+
 void UIMachineLogic::sltMachineStateChanged()
 {
     /* Get machine state: */
