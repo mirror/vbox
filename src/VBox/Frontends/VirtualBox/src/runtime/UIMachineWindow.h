@@ -93,6 +93,12 @@ protected:
 #endif /* Q_WS_X11 */
     void closeEvent(QCloseEvent *pEvent);
 
+#ifdef Q_WS_MAC
+    /** Mac OS X: Handles native notifications.
+      * @param  strNativeNotificationName  Native notification name. */
+    virtual void handleNativeNotification(const QString & /* strNativeNotificationName */) {}
+#endif /* Q_WS_MAC */
+
     /* Prepare helpers: */
     virtual void prepareSessionConnections();
     virtual void prepareMainLayout();
@@ -127,6 +133,13 @@ protected:
     const QString& defaultWindowTitle() const { return m_strWindowTitlePrefix; }
     static Qt::WindowFlags windowFlags(UIVisualStateType visualStateType);
     static Qt::Alignment viewAlignment(UIVisualStateType visualStateType);
+
+#ifdef Q_WS_MAC
+    /** Mac OS X: Handles native notifications.
+      * @param  strNativeNotificationName  Native notification name.
+      * @param  pWidget                    Widget, notification related to. */
+    static void handleNativeNotification(const QString &strNativeNotificationName, QWidget *pWidget);
+#endif /* Q_WS_MAC */
 
     /* Variables: */
     UIMachineLogic *m_pMachineLogic;
