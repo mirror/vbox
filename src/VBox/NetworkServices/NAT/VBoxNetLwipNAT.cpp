@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Must be included before winutils.h (lwip/def.h), otherwise Windows build breaks. */
+#include <iprt/cpp/mem.h>
+
 #include "winutils.h"
 
 #include <VBox/com/assert.h>
@@ -48,7 +51,6 @@
 #include <iprt/req.h>
 #include <iprt/file.h>
 #include <iprt/semaphore.h>
-#include <iprt/cpp/mem.h>
 #include <iprt/cpp/utils.h>
 #define LOG_GROUP LOG_GROUP_NAT_SERVICE
 #include <VBox/log.h>
