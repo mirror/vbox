@@ -37,7 +37,6 @@ public:
     virtual int init() { return VINF_SUCCESS; }
     /** Run the service main loop */
     virtual int run(bool fDaemonised = false) = 0;
-    /** @todo Note one of these will be called at start-up. */
     /** Pause the service loop.  This must be safe to call on a different thread
      * and potentially before @a run is or after it exits.
      * This is called by the VT monitoring thread to allow the service to disable
