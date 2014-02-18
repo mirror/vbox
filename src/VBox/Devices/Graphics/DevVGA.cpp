@@ -5378,26 +5378,30 @@ static DECLCALLBACK(int) vgaR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+
 #ifdef VBOX_WITH_VDMA
     vboxVDMASaveStateExecPrep(pThis->pVdma, pSSM);
 #endif
+
     vgaR3SaveConfig(pThis, pSSM);
     vga_save(pSSM, PDMINS_2_DATA(pDevIns, PVGASTATE));
+
 #ifdef VBOX_WITH_HGSMI
     SSMR3PutBool(pSSM, true);
     int rc = vboxVBVASaveStateExec(pDevIns, pSSM);
 # ifdef VBOX_WITH_VDMA
     vboxVDMASaveStateExecDone(pThis->pVdma, pSSM);
 # endif
-    return rc;
 #else
-    SSMR3PutBool(pSSM, false);
+    int rc = SSMR3PutBool(pSSM, false);
 #endif
+
 #ifdef VBOX_WITH_VMSVGA
     if (    rc == VINF_SUCCESS
         &&  pThis->fVMSVGAEnabled)
         rc = vmsvgaSaveExec(pDevIns, pSSM);
 #endif
+
     return rc;
 }
 
