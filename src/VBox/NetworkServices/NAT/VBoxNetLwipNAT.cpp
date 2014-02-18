@@ -282,7 +282,8 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                     break;
 
                 default:
-                    LogRel(("Event: %s %s rule \"%s\": unknown protocol %d\n",
+                    LogRel(("Event: %s %s port-forwarding rule \"%s\":"
+                            " invalid protocol %d\n",
                             fCreateFW ? "Add" : "Remove",
                             fIPv6FW ? "IPv6" : "IPv4",
                             com::Utf8Str(name).c_str(),
@@ -290,7 +291,8 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                     goto port_forward_done;
             }
 
-            LogRel(("Event: %s %s rule \"%s\": %s %s%s%s:%d -> %s%s%s:%d\n",
+            LogRel(("Event: %s %s port-forwarding rule \"%s\":"
+                    " %s %s%s%s:%d -> %s%s%s:%d\n",
                     fCreateFW ? "Add" : "Remove",
                     fIPv6FW ? "IPv6" : "IPv4",
                     com::Utf8Str(name).c_str(),
@@ -703,7 +705,12 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
 
     RTCMemAutoPtr<fwspec> pFwCopy;
     if (RT_UNLIKELY(!pFwCopy.alloc()))
+    {
+        LogRel(("Unable to allocate memory for %s rule \"%s\"\n",
+                natPf.Pfr.fPfrIPv6 ? "IPv6" : "IPv4",
+                natPf.Pfr.szPfrName));
         return VERR_IGNORED;
+    }
 
     memcpy(pFwCopy.get(), &natPf.FWSpec, sizeof(natPf.FWSpec));
 
@@ -716,18 +723,31 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
 }
 
 
-int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules){
+int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules)
+{
     ITERATORNATSERVICEPF it;
-    for (it = vecRules.begin();
-         it != vecRules.end(); ++it)
+    for (it = vecRules.begin(); it != vecRules.end(); ++it)
     {
-        int rc = natServicePfRegister((*it));
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("PF: %s is ignored\n", (*it).Pfr.szPfrName));
-            continue;
-        }
+        NATSEVICEPORTFORWARDRULE &natPf = *it;
+
+        LogRel(("Loading %s port-forwarding rule \"%s\": %s %s%s%s:%d -> %s%s%s:%d\n",
+                natPf.Pfr.fPfrIPv6 ? "IPv6" : "IPv4",
+                natPf.Pfr.szPfrName,
+                natPf.Pfr.iPfrProto == IPPROTO_TCP ? "TCP" : "UDP",
+                /* from */
+                natPf.Pfr.fPfrIPv6 ? "[" : "",
+                natPf.Pfr.szPfrHostAddr,
+                natPf.Pfr.fPfrIPv6 ? "]" : "",
+                natPf.Pfr.u16PfrHostPort,
+                /* to */
+                natPf.Pfr.fPfrIPv6 ? "[" : "",
+                natPf.Pfr.szPfrGuestAddr,
+                natPf.Pfr.fPfrIPv6 ? "]" : "",
+                natPf.Pfr.u16PfrGuestPort));
+
+        natServicePfRegister(natPf);
     }
+
     return VINF_SUCCESS;
 }
 
