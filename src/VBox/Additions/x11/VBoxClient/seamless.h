@@ -44,6 +44,11 @@ private:
     /** Should the X11 monitor thread be stopping? */
     volatile bool mX11MonitorThreadStopping;
 
+    /** The current seamless mode we are in. */
+    VMMDevSeamlessMode mMode;
+    /** Is the service currently paused? */
+    volatile bool mfPaused;
+
     /**
      * Waits for a seamless state change events from the host and dispatch it.  This is
      * meant to be called by the host event monitor thread exclusively.
@@ -53,9 +58,10 @@ private:
     int nextStateChangeEvent(void);
 
     /**
-     * Interrupt an event wait and cause nextStateChangeEvent() to return immediately.
+     * Interrupt an event wait and cause the current or next
+     * @a nextStateChangeEvent call to return immediately.
      */
-    void cancelEvent(void) { VbglR3InterruptEventWaits(); }
+    int cancelEvent(void);
     
     /** Thread function to monitor X11 window configuration changes. */
     static DECLCALLBACK(int) x11MonitorThread(RTTHREAD self, void *pvUser);
@@ -64,27 +70,51 @@ private:
     int startX11MonitorThread(void);
 
     /** Helper to stop the X11 monitor thread again. */
-    void stopX11MonitorThread(void);
+    int stopX11MonitorThread(void);
+    
+    /** Is the service currently actively monitoring X11 windows? */
+    bool isX11MonitorThreadRunning()
+    {
+        return mX11MonitorThread != NIL_RTTHREAD;
+    }
 
 public:
     SeamlessMain(void);
     virtual ~SeamlessMain();
 
     /**
-      * Start the service.
+      * Initialise the service.
+      */
+    int init(void);
+
+    /**
+      * Run the service.
       * @returns iprt status value
       */
-    int start(void);
+    int run(void);
 
     /**
      * Stops the service.
      */
     void stop();
 
+    /** Pause the service loop.  This must be safe to call on a different thread
+     * and potentially before @a run is or after it exits.
+     * This is called by the VT monitoring thread to allow the service to disable
+     * itself when the X server is switched out.  If the monitoring functionality
+     * is available then @a pause or @a resume will be called as soon as it starts
+     * up. */
+    int pause();
+    /** Resume after pausing.  The same applies here as for @a pause. */
+    int resume();
+
     /**
      * Update the set of visible rectangles in the host.
      */
     virtual void sendRegionUpdate(RTRECT *pRects, size_t cRects);
+
+    /** Run a few tests to be sure everything is working as intended. */
+    int selfTest();
 };
 
 #endif /* __Additions_xclient_seamless_h not defined */

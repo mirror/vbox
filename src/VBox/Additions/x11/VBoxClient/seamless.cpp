@@ -35,6 +35,8 @@ SeamlessMain::SeamlessMain(void)
     LogRelFlowFunc(("\n"));
     mX11MonitorThread = NIL_RTTHREAD;
     mX11MonitorThreadStopping = false;
+    mMode = VMMDev_Seamless_Disabled;
+    mfPaused = false;
 }
 
 SeamlessMain::~SeamlessMain()
@@ -44,57 +46,60 @@ SeamlessMain::~SeamlessMain()
 }
 
 /**
- * Start the main service thread which listens for host state change
+ * initialise the service.
+ */
+int SeamlessMain::init(void)
+{
+    int rc;
+    const char *pcszStage;
+
+    LogRelFlowFunc(("\n"));
+    do {
+        pcszStage = "Connecting to the X server";
+        rc = mX11Monitor.init(this);
+        if (RT_FAILURE(rc))
+            break;
+        pcszStage = "Setting guest IRQ filter mask";
+        rc = VbglR3CtlFilterMask(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST, 0);
+        if (RT_FAILURE(rc))
+            break;
+        pcszStage = "Reporting support for seamless capability";
+        rc = VbglR3SeamlessSetCap(true);
+        if (RT_FAILURE(rc))
+            break;
+    } while(0);
+    if (RT_FAILURE(rc))
+        LogRel(("VBoxClient (seamless): failed to start.  Stage: \"%s\"  Error: %Rrc\n",
+                pcszStage, rc));
+    return rc;
+}
+
+/**
+ * Run the main service thread which listens for host state change
  * notifications.
  * @returns iprt status value.  Service will be set to the stopped state on
  *          failure.
  */
-int SeamlessMain::start(void)
+int SeamlessMain::run(void)
 {
-    int rc;
-    const char *pszStage;
+    int rc = VINF_SUCCESS;
 
     LogRelFlowFunc(("\n"));
-    do {
-        pszStage = "Testing event loop cancellation";
-        VbglR3InterruptEventWaits();
-        if (RT_FAILURE(VbglR3WaitEvent(VMMDEV_EVENT_VALID_EVENT_MASK, 0, NULL)))
-            break;
-        if (   VbglR3WaitEvent(VMMDEV_EVENT_VALID_EVENT_MASK, 0, NULL)
-            != VERR_TIMEOUT)
-            break;
-        pszStage = "Connecting to the X server";
-        rc = mX11Monitor.init(this);
+    /* This will only exit if something goes wrong. */
+    while (RT_SUCCESS(rc) || rc == VERR_INTERRUPTED)
+    {
         if (RT_FAILURE(rc))
-            break;
-        pszStage = "Setting guest IRQ filter mask";
-        rc = VbglR3CtlFilterMask(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST, 0);
-        if (RT_FAILURE(rc))
-            break;
-        pszStage = "Reporting support for seamless capability";
-        rc = VbglR3SeamlessSetCap(true);
-        if (RT_FAILURE(rc))
-            break;
-        pszStage = "Running event loop";
-        /* This will only exit if something goes wrong. */
-        /** @todo Add a "stopping" variable.  Actually "pausing" the service
-         * should be enough. */
-        while (RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN || rc == VERR_INTERRUPTED)
-        {
-            if (RT_FAILURE(rc))
-                /* If we are not stopping, sleep for a bit to avoid using up too
-                    much CPU while retrying. */
-                RTThreadYield();
-            rc = nextStateChangeEvent();
-        }
-    } while(0);
+            /* If we are not stopping, sleep for a bit to avoid using up too
+                much CPU while retrying. */
+            RTThreadYield();
+        rc = nextStateChangeEvent();
+    }
     if (RT_FAILURE(rc))
     {
-        LogRel(("VBoxClient (seamless): failed to start.  Stage: \"%s\"  Error: %Rrc\n",
-                pszStage, rc));
+        LogRel(("VBoxClient (seamless): event loop failed with error: %Rrc\n",
+                rc));
         stop();
     }
-    LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
@@ -122,26 +127,35 @@ int SeamlessMain::nextStateChangeEvent(void)
     int rc = VbglR3SeamlessWaitEvent(&newMode);
     if (RT_SUCCESS(rc))
     {
-        switch(newMode)
+        mMode = newMode;
+        switch (newMode)
         {
             case VMMDev_Seamless_Visible_Region:
-            /* A simplified seamless mode, obtained by making the host VM window borderless and
-              making the guest desktop transparent. */
-                LogRelFlowFunc(("VMMDev_Seamless_Visible_Region request received (VBoxClient).\n"));
-                /** @todo Do something on failure, like bail out. */
-                startX11MonitorThread();
+            /* A simplified seamless mode, obtained by making the host VM window
+             * borderless and making the guest desktop transparent. */
+                LogRelFlowFunc(("\"Visible region\" mode requested (VBoxClient).\n"));
+                break;
+            case VMMDev_Seamless_Disabled:
+                LogRelFlowFunc(("\"Disabled\" mode requested (VBoxClient).\n"));
                 break;
             case VMMDev_Seamless_Host_Window:
             /* One host window represents one guest window.  Not yet implemented. */
-                LogRelFunc(("Warning: VMMDev_Seamless_Host_Window request received (VBoxClient).\n"));
-                /* fall through to default */
+                LogRelFunc(("Unsupported \"host window\" mode requested (VBoxClient).\n"));
+                return VERR_NOT_SUPPORTED;
             default:
-                LogRelFunc(("Warning: unsupported VMMDev_Seamless request %d received (VBoxClient).\n", newMode));
-                /* fall through to case VMMDev_Seamless_Disabled */
-            case VMMDev_Seamless_Disabled:
-                LogRelFlowFunc(("VMMDev_Seamless_Disabled set (VBoxClient).\n"));
-                stopX11MonitorThread();
+                LogRelFunc(("Unsupported mode %d requested (VBoxClient).\n",
+                            newMode));
+                return VERR_NOT_SUPPORTED;
         }
+    }
+    if (RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN)
+    {
+        if (mMode == VMMDev_Seamless_Visible_Region && !mfPaused)
+            /* This does it's own logging on failure. */
+            rc = startX11MonitorThread();
+        else
+            /* This does it's own logging on failure. */
+            rc = stopX11MonitorThread();
     }
     else
     {
@@ -149,6 +163,11 @@ int SeamlessMain::nextStateChangeEvent(void)
     }
     LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
+}
+
+int SeamlessMain::cancelEvent(void)
+{
+    return VbglR3InterruptEventWaits();
 }
 
 /**
@@ -195,6 +214,8 @@ int SeamlessMain::startX11MonitorThread(void)
     int rc;
 
     mX11MonitorThreadStopping = false;
+    if (isX11MonitorThreadRunning())
+        return VINF_SUCCESS;
     rc = RTThreadCreate(&mX11MonitorThread, x11MonitorThread, this, 0,
                         RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
                         "X11 events");
@@ -206,13 +227,13 @@ int SeamlessMain::startX11MonitorThread(void)
 /**
  * Send a signal to the thread function that it should exit
  */
-void SeamlessMain::stopX11MonitorThread(void)
+int SeamlessMain::stopX11MonitorThread(void)
 {
     int rc;
 
     mX11MonitorThreadStopping = true;
-    if (!mX11MonitorThread)
-        return;
+    if (!isX11MonitorThreadRunning())
+        return VINF_SUCCESS;
     mX11Monitor.interruptEventWait();
     rc = RTThreadWait(mX11MonitorThread, RT_INDEFINITE_WAIT, NULL);
     if (RT_SUCCESS(rc))
@@ -220,12 +241,89 @@ void SeamlessMain::stopX11MonitorThread(void)
     else
         LogRelThisFunc(("Failed to stop X11 monitor thread, rc=%Rrc!\n",
                         rc));
+    return rc;
 }
 
-/** @todo Re-arrange the service to support pausing and resuming.  The state
- * needs to become more complex: we need to know: whether seamless is currently
- * requested by the host; whether we are currently in charge of the guest
- * desktop; whether the guest monitoring thead is currently active. */
+/** Pause the service loop. */
+int SeamlessMain::pause()
+{
+    int rc;
+    const char *pcszStage;
+
+    LogRelFlowFunc(("\n"));
+    mfPaused = true;
+    do {
+        pcszStage = "Reporting end of support for seamless capability";
+        rc = VbglR3SeamlessSetCap(false);
+        if (RT_FAILURE(rc))
+            break;
+        pcszStage = "Interrupting the event loop";
+        rc = cancelEvent();
+        if (RT_FAILURE(rc))
+            break;
+    } while (0);
+    if (RT_FAILURE(rc))
+        LogRelFunc(("Failure.  Stage: \"%s\"  Error: %Rrc (VBoxClient)\n",
+                    pcszStage, rc));
+    return rc;
+}
+
+/** Resume after pausing. */
+int SeamlessMain::resume()
+{
+    int rc;
+    const char *pcszStage;
+
+    LogRelFlowFunc(("\n"));
+    mfPaused = false;
+    do {
+        pcszStage = "Reporting support for seamless capability";
+        rc = VbglR3SeamlessSetCap(true);
+        if (RT_FAILURE(rc))
+            break;
+        pcszStage = "Interrupting the event loop";
+        rc = cancelEvent();
+        if (RT_FAILURE(rc))
+            break;
+    } while (0);
+    if (RT_FAILURE(rc))
+        LogRelFunc(("Failure.  Stage: \"%s\"  Error: %Rrc (VBoxClient)\n",
+                    pcszStage, rc));
+    return rc;
+}
+
+/** @todo Expand this? */
+int SeamlessMain::selfTest()
+{
+    int rc = VERR_INTERNAL_ERROR;
+    const char *pcszStage;
+
+    LogRelFlowFunc(("\n"));
+    do {
+        pcszStage = "Testing event loop cancellation";
+        VbglR3InterruptEventWaits();
+        if (RT_FAILURE(VbglR3WaitEvent(VMMDEV_EVENT_VALID_EVENT_MASK, 0, NULL)))
+            break;
+        if (   VbglR3WaitEvent(VMMDEV_EVENT_VALID_EVENT_MASK, 0, NULL)
+            != VERR_TIMEOUT)
+            break;
+        pcszStage = "Testing pause";  /* Other states are dangerous to test. */
+        mMode = VMMDev_Seamless_Visible_Region;
+        pause();
+        if (RT_FAILURE(nextStateChangeEvent()))
+            break;
+        if (isX11MonitorThreadRunning())
+            break;
+        mMode = VMMDev_Seamless_Disabled;
+        mfPaused = false;
+        rc = VINF_SUCCESS;
+    } while(0);
+    if (RT_FAILURE(rc))
+        LogRel(("VBoxClient (seamless): self test failed.  Stage: \"%s\"\n",
+                pcszStage));
+    return rc;
+}
+
 /** VBoxClient service class wrapping the logic for the seamless service while
  *  the main VBoxClient code provides the daemon logic needed by all services.
  */
@@ -239,17 +337,36 @@ public:
     {
         return ".vboxclient-seamless.pid";
     }
+    virtual int init()
+    {
+        int rc;
+
+        if (mIsInitialised)
+            return VERR_INTERNAL_ERROR;
+        rc = mSeamless.init();
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = mSeamless.selfTest();
+        if (RT_FAILURE(rc))
+        {
+            mSeamless.stop();
+            return rc;
+        }
+        mIsInitialised = true;
+        return VINF_SUCCESS;
+    }
     virtual int run(bool fDaemonised /* = false */)
     {
         int rc;
-        if (mIsInitialised)
+        if (!mIsInitialised)
             return VERR_INTERNAL_ERROR;
-        mIsInitialised = true;
-        rc = mSeamless.start();
-        LogRelFunc(("VBoxClient: seamless service failed to start.  Error: %Rrc\n",
-                    rc));
+        /* This only exits on error. */
+        rc = mSeamless.run();
+        mIsInitialised = false;
         return rc;
     }
+    virtual int pause() { return mSeamless.pause(); }
+    virtual int resume() { return mSeamless.resume(); }
     virtual void cleanup()
     {
         VbglR3SeamlessSetCap(false);
