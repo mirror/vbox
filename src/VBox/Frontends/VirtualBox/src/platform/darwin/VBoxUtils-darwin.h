@@ -79,7 +79,9 @@ bool darwinIsToolbarVisible(NativeNSWindowRef pWindow);
 bool darwinIsWindowMaximized(NativeNSWindowRef pWindow);
 void darwinMinaturizeWindow(NativeNSWindowRef pWindow);
 void darwinEnableFullscreenSupport(NativeNSWindowRef pWindow);
+void darwinEnableTransienceSupport(NativeNSWindowRef pWindow);
 void darwinToggleFullscreenMode(NativeNSWindowRef pWindow);
+bool darwinScreensHaveSeparateSpaces();
 
 bool darwinOpenFile(NativeNSStringRef pstrFile);
 
@@ -242,6 +244,7 @@ bool darwinIsToolbarVisible(QToolBar *pToolBar);
 bool darwinIsWindowMaximized(QWidget *pWidget);
 void darwinMinaturizeWindow(QWidget *pWidget);
 void darwinEnableFullscreenSupport(QWidget *pWidget);
+void darwinEnableTransienceSupport(QWidget *pWidget);
 void darwinToggleFullscreenMode(QWidget *pWidget);
 bool darwinOpenFile(const QString &strFile);
 

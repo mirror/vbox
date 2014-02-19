@@ -143,6 +143,11 @@ void darwinEnableFullscreenSupport(QWidget *pWidget)
     return ::darwinEnableFullscreenSupport(::darwinToNativeWindow(pWidget));
 }
 
+void darwinEnableTransienceSupport(QWidget *pWidget)
+{
+    return ::darwinEnableTransienceSupport(::darwinToNativeWindow(pWidget));
+}
+
 void darwinToggleFullscreenMode(QWidget *pWidget)
 {
     return ::darwinToggleFullscreenMode(::darwinToNativeWindow(pWidget));

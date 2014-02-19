@@ -133,15 +133,20 @@ void UIMachineWindowFullscreen::prepareVisualState()
     /* Native fullscreen stuff on ML and next: */
     if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
     {
-        /* Enable native fullscreen support: */
-        darwinEnableFullscreenSupport(this);
+        /* Enable fullscreen support for every screen which requires it: */
+        if (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
+            darwinEnableFullscreenSupport(this);
+        /* Enable transience support for other screens: */
+        else
+            darwinEnableTransienceSupport(this);
         /* Register to native fullscreen notifications: */
         UICocoaApplication::instance()->registerToNativeNotification("NSWindowDidEnterFullScreenNotification", this,
                                                                      UIMachineWindow::handleNativeNotification);
         UICocoaApplication::instance()->registerToNativeNotification("NSWindowDidExitFullScreenNotification", this,
                                                                      UIMachineWindow::handleNativeNotification);
-        /* Asynchronously toggle native fullscreen mode: */
-        QTimer::singleShot(0, this, SLOT(sltToggleNativeFullscreenMode()));
+        /* Asynchronously toggle fullscreen mode for every screen which requires it: */
+        if (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
+            QTimer::singleShot(0, this, SLOT(sltToggleNativeFullscreenMode()));
     }
 #endif /* Q_WS_MAC */
 }
