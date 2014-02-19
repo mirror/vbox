@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,9 @@
 
 /* Forward declaration of the d-pointer. */
 class GuestDnDPrivate;
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+ class DnDGuestResponse;
+#endif
 
 class GuestDnD
 {
@@ -40,6 +43,14 @@ public:
 
     /* Guest response */
     static DECLCALLBACK(int) notifyGuestDragAndDropEvent(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
+
+protected:
+
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+    int onGHSendData(DnDGuestResponse *pResp, const void *pvData, size_t cbData, size_t cbTotalSize);
+    int onGHSendDir(DnDGuestResponse *pResp, const char *pszPath, size_t cbPath, uint32_t fMode);
+    int onGHSendFile(DnDGuestResponse *pResp, const char *pszPath, size_t cbPath, void *pvData, size_t cbData, uint32_t fMode);
+#endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
 private:
 

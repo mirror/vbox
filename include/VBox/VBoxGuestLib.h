@@ -722,7 +722,7 @@ VBGLR3DECL(int)     VbglR3DnDHGAcknowledgeOperation(uint32_t u32ClientId, uint32
 VBGLR3DECL(int)     VbglR3DnDHGRequestData(uint32_t u32ClientId, const char* pcszFormat);
 #  ifdef VBOX_WITH_DRAG_AND_DROP_GH
 VBGLR3DECL(int)     VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId, uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormats);
-VBGLR3DECL(int)     VbglR3DnDGHSendData(uint32_t u32ClientId, void *pvData, uint32_t cbData);
+VBGLR3DECL(int)     VbglR3DnDGHSendData(uint32_t u32ClientId, const char *pszFormat, void *pvData, uint32_t cbData);
 VBGLR3DECL(int)     VbglR3DnDGHErrorEvent(uint32_t u32ClientId, int rcOp);
 #  endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 /** @} */

@@ -37,6 +37,12 @@
 #include <iprt/cpp/list.h>
 #include <iprt/cpp/ministring.h>
 
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/log.h>
+
 #include <VBox/GuestHost/DragAndDrop.h>
 #include <VBox/HostServices/DragAndDropSvc.h>
 
@@ -78,7 +84,6 @@ static int vbglR3DnDQueryNextHostMessageType(uint32_t uClientId, uint32_t *puMsg
         rc = Msg.hdr.result;
         if (RT_SUCCESS(rc))
         {
-            /* Fetch results */
             rc = Msg.msg.GetUInt32(puMsg);         AssertRC(rc);
             rc = Msg.num_parms.GetUInt32(pcParms); AssertRC(rc);
         }
@@ -127,14 +132,13 @@ static int vbglR3DnDHGProcessActionMessage(uint32_t  uClientId,
         rc = Msg.hdr.result;
         if (RT_SUCCESS(rc))
         {
-            /* Fetch results */
             rc = Msg.uScreenId.GetUInt32(puScreenId);     AssertRC(rc);
             rc = Msg.uX.GetUInt32(puX);                   AssertRC(rc);
             rc = Msg.uY.GetUInt32(puY);                   AssertRC(rc);
             rc = Msg.uDefAction.GetUInt32(puDefAction);   AssertRC(rc);
             rc = Msg.uAllActions.GetUInt32(puAllActions); AssertRC(rc);
             rc = Msg.cFormats.GetUInt32(pcbFormatsRecv);  AssertRC(rc);
-            /* A little bit paranoia */
+
             AssertReturn(cbFormats >= *pcbFormatsRecv, VERR_TOO_MUCH_DATA);
         }
     }
@@ -190,7 +194,7 @@ static int vbglR3DnDHGProcessSendDirMessage(uint32_t  uClientId,
     Msg.hdr.cParms      = 3;
 
     Msg.pvName.SetPtr(pszDirname, cbDirname);
-    Msg.cName.SetUInt32(0);
+    Msg.cbName.SetUInt32(0);
     Msg.fMode.SetUInt32(0);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -199,10 +203,9 @@ static int vbglR3DnDHGProcessSendDirMessage(uint32_t  uClientId,
         rc = Msg.hdr.result;
         if (RT_SUCCESS(Msg.hdr.result))
         {
-            /* Fetch results */
-            rc = Msg.cName.GetUInt32(pcbDirnameRecv); AssertRC(rc);
-            rc = Msg.fMode.GetUInt32(pfMode);         AssertRC(rc);
-            /* A little bit paranoia */
+            rc = Msg.cbName.GetUInt32(pcbDirnameRecv); AssertRC(rc);
+            rc = Msg.fMode.GetUInt32(pfMode);          AssertRC(rc);
+
             AssertReturn(cbDirname >= *pcbDirnameRecv, VERR_TOO_MUCH_DATA);
         }
     }
@@ -234,9 +237,9 @@ static int vbglR3DnDHGProcessSendFileMessage(uint32_t  uClientId,
     Msg.hdr.cParms      = 5;
 
     Msg.pvName.SetPtr(pszFilename, cbFilename);
-    Msg.cName.SetUInt32(0);
+    Msg.cbName.SetUInt32(0);
     Msg.pvData.SetPtr(pvData, cbData);
-    Msg.cData.SetUInt32(0);
+    Msg.cbData.SetUInt32(0);
     Msg.fMode.SetUInt32(0);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -245,11 +248,10 @@ static int vbglR3DnDHGProcessSendFileMessage(uint32_t  uClientId,
         rc = Msg.hdr.result;
         if (RT_SUCCESS(rc))
         {
-            /* Fetch results */
-            rc = Msg.cName.GetUInt32(pcbFilenameRecv); AssertRC(rc);
-            rc = Msg.cData.GetUInt32(pcbDataRecv);     AssertRC(rc);
-            rc = Msg.fMode.GetUInt32(pfMode);          AssertRC(rc);
-            /* A little bit paranoia */
+            rc = Msg.cbName.GetUInt32(pcbFilenameRecv); AssertRC(rc);
+            rc = Msg.cbData.GetUInt32(pcbDataRecv);     AssertRC(rc);
+            rc = Msg.fMode.GetUInt32(pfMode);           AssertRC(rc);
+
             AssertReturn(cbFilename >= *pcbFilenameRecv, VERR_TOO_MUCH_DATA);
             AssertReturn(cbData     >= *pcbDataRecv,     VERR_TOO_MUCH_DATA);
         }
@@ -274,12 +276,7 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
     if (!*pcbDataRecv)
         return VERR_INVALID_PARAMETER;
 
-    /* Make a string list out of the uri data. */
-    RTCList<RTCString> uriList =
-        RTCString(static_cast<char*>(*ppvData), *pcbDataRecv - 1).split("\r\n");
-    if (uriList.isEmpty())
-        return VINF_SUCCESS;
-
+    /* Allocate temp buffer. */
     uint32_t cbTmpData = _1M * 10; /** @todo r=andy 10MB, uh, really?? */
     void *pvTmpData = RTMemAlloc(cbTmpData);
     if (!pvTmpData)
@@ -296,41 +293,17 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
 
     /* Patch the old drop data with the new drop directory, so the drop target
      * can find the files. */
-    RTCList<RTCString> guestUriList;
-    for (size_t i = 0; i < uriList.size(); ++i)
-    {
-        const RTCString &strUri = uriList.at(i);
-        /* Query the path component of a file URI. If this hasn't a
-         * file scheme, null is returned. */
-        char *pszFilePath = RTUriFilePath(strUri.c_str(), URI_FILE_FORMAT_AUTO);
-        if (pszFilePath)
-        {
-            rc = DnDPathSanitize(pszFilePath, strlen(pszFilePath));
-            if (RT_FAILURE(rc))
-                break;
-
-            /** @todo Use RTPathJoin? */
-            RTCString strFullPath
-                = RTCString().printf("%s%c%s", pszDropDir, RTPATH_SLASH, pszFilePath);
-            char *pszNewUri = RTUriFileCreate(strFullPath.c_str());
-            if (pszNewUri)
-            {
-                guestUriList.append(pszNewUri);
-                RTStrFree(pszNewUri);
-            }
-        }
-        else
-            guestUriList.append(strUri);
-    }
-
+    DnDURIList lstURI;
+    rc = lstURI.RootFromURIData(*ppvData, *pcbDataRecv,
+                                0 /* fFlags */);
     if (RT_SUCCESS(rc))
     {
         /* Cleanup the old data and write the new data back to the event. */
         RTMemFree(*ppvData);
-        RTCString newData = RTCString::join(guestUriList, "\r\n") + "\r\n";
 
-        *ppvData = RTStrDupN(newData.c_str(), newData.length());
-        *pcbDataRecv = newData.length() + 1;
+        RTCString strData = lstURI.RootToString(pszDropDir);
+        *ppvData = RTStrDupN(strData.c_str(), strData.length());
+        *pcbDataRecv = strData.length() + 1;
     }
 
     /* Lists for holding created files & directories
@@ -402,6 +375,7 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
                                             RTFILE_O_WRITE | RTFILE_O_APPEND | RTFILE_O_DENY_ALL | RTFILE_O_OPEN_CREATE);
                             if (RT_SUCCESS(rc))
                             {
+                                /** @todo r=andy Not very safe to assume that we were last appending to the current file. */
                                 rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, NULL);
                                 if (RT_SUCCESS(rc))
                                 {
@@ -487,7 +461,7 @@ static int vbglR3DnDHGProcessDataMessageInternal(uint32_t  uClientId,
     Msg.pvFormat.SetPtr(pszFormat, cbFormat);
     Msg.cFormat.SetUInt32(0);
     Msg.pvData.SetPtr(pvData, cbData);
-    Msg.cData.SetUInt32(0);
+    Msg.cbData.SetUInt32(0);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -496,11 +470,10 @@ static int vbglR3DnDHGProcessDataMessageInternal(uint32_t  uClientId,
         if (   RT_SUCCESS(rc)
             || rc == VERR_BUFFER_OVERFLOW)
         {
-            /* Fetch results */
             rc = Msg.uScreenId.GetUInt32(puScreenId);  AssertRC(rc);
             rc = Msg.cFormat.GetUInt32(pcbFormatRecv); AssertRC(rc);
-            rc = Msg.cData.GetUInt32(pcbDataTotal);     AssertRC(rc);
-            /* A little bit paranoia */
+            rc = Msg.cbData.GetUInt32(pcbDataTotal);     AssertRC(rc);
+
             AssertReturn(cbFormat >= *pcbFormatRecv, VERR_TOO_MUCH_DATA);
             AssertReturn(cbData   >= *pcbDataTotal,  VERR_TOO_MUCH_DATA);
         }
@@ -525,7 +498,7 @@ static int vbglR3DnDHGProcessMoreDataMessageInternal(uint32_t  uClientId,
     Msg.hdr.cParms      = 2;
 
     Msg.pvData.SetPtr(pvData, cbData);
-    Msg.cData.SetUInt32(0);
+    Msg.cbData.SetUInt32(0);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -534,9 +507,7 @@ static int vbglR3DnDHGProcessMoreDataMessageInternal(uint32_t  uClientId,
         if (   RT_SUCCESS(rc)
             || rc == VERR_BUFFER_OVERFLOW)
         {
-            /* Fetch results */
-            rc = Msg.cData.GetUInt32(pcbDataRecv); AssertRC(rc);
-            /* A little bit paranoia */
+            rc = Msg.cbData.GetUInt32(pcbDataRecv); AssertRC(rc);
             AssertReturn(cbData >= *pcbDataRecv, VERR_TOO_MUCH_DATA);
         }
     }
@@ -628,7 +599,8 @@ static int vbglR3DnDHGProcessSendDataMessage(uint32_t   uClientId,
          *
          * This keeps the actual (guest OS-)dependent client (like VBoxClient /
          * VBoxTray) small by not having too much redundant code. */
-        if (RTStrNICmp(pszFormat, "text/uri-list", *pcbFormatRecv) == 0)
+        AssertPtr(pcbFormatRecv);
+        if (DnDMIMEHasFileURLs(pszFormat, *pcbFormatRecv))
             rc = vbglR3DnDHGProcessURIMessages(uClientId,
                                                puScreenId,
                                                pszFormat,
@@ -660,10 +632,7 @@ static int vbglR3DnDGHProcessRequestPendingMessage(uint32_t  uClientId,
     {
         rc = Msg.hdr.result;
         if (RT_SUCCESS(rc))
-        {
-            /* Fetch results */
             rc = Msg.uScreenId.GetUInt32(puScreenId); AssertRC(rc);
-        }
     }
 
     return rc;
@@ -696,10 +665,9 @@ static int vbglR3DnDGHProcessDroppedMessage(uint32_t  uClientId,
         rc = Msg.hdr.result;
         if (RT_SUCCESS(rc))
         {
-            /* Fetch results */
             rc = Msg.cFormat.GetUInt32(pcbFormatRecv); AssertRC(rc);
             rc = Msg.uAction.GetUInt32(puAction);      AssertRC(rc);
-            /* A little bit paranoia */
+
             AssertReturn(cbFormat >= *pcbFormatRecv, VERR_TOO_MUCH_DATA);
         }
     }
@@ -871,9 +839,9 @@ VBGLR3DECL(int) VbglR3DnDHGAcknowledgeOperation(uint32_t u32ClientId, uint32_t u
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_HG_ACK_OP;
     Msg.hdr.cParms      = 1;
-    /* Initialize parameter */
+
     Msg.uAction.SetUInt32(uAction);
-    /* Do request */
+
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
@@ -891,9 +859,9 @@ VBGLR3DECL(int) VbglR3DnDHGRequestData(uint32_t u32ClientId, const char* pcszFor
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_HG_REQ_DATA;
     Msg.hdr.cParms      = 1;
-    /* Initialize parameter */
+
     Msg.pFormat.SetPtr((void*)pcszFormat, (uint32_t)strlen(pcszFormat) + 1);
-    /* Do request */
+
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
@@ -913,11 +881,11 @@ VBGLR3DECL(int) VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId,
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_GH_ACK_PENDING;
     Msg.hdr.cParms      = 3;
-    /* Initialize parameter */
+
     Msg.uDefAction.SetUInt32(uDefAction);
     Msg.uAllActions.SetUInt32(uAllActions);
     Msg.pFormat.SetPtr((void*)pcszFormats, (uint32_t)strlen(pcszFormats) + 1);
-    /* Do request */
+
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
@@ -925,11 +893,12 @@ VBGLR3DECL(int) VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId,
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId,
-                                    void *pvData, uint32_t cbData)
+static int vbglR3DnDGHSendDataInternal(uint32_t u32ClientId,
+                                       void *pvData, uint32_t cbData,
+                                       uint32_t cbAdditionalData)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn(cbData,    VERR_INVALID_PARAMETER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
     DragAndDropSvc::VBOXDNDGHSENDDATAMSG Msg;
     RT_ZERO(Msg);
@@ -937,16 +906,19 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId,
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_GH_SND_DATA;
     Msg.hdr.cParms      = 2;
-    Msg.uSize.SetUInt32(cbData);
 
-    int rc          = VINF_SUCCESS;
-    uint32_t cbMax  = _64K; /* Transfer max. 64K chunks per message. */
-    uint32_t cbSent = 0;
+    /* Total amount of bytes to send (including this data block). */
+    Msg.cbTotalBytes.SetUInt32(cbData + cbAdditionalData);
+
+    int rc;
+
+    uint32_t cbMaxChunk = _64K; /* Transfer max. 64K chunks per message. */
+    uint32_t cbSent     = 0;
 
     while (cbSent < cbData)
     {
-        uint32_t cbToSend = RT_MIN(cbData - cbSent, cbMax);
-        Msg.pData.SetPtr(static_cast<uint8_t*>(pvData) + cbSent, cbToSend);
+        uint32_t cbCurChunk = RT_MIN(cbData - cbSent, cbMaxChunk);
+        Msg.pvData.SetPtr(static_cast<uint8_t*>(pvData) + cbSent, cbCurChunk);
 
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
@@ -955,11 +927,185 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId,
         if (RT_FAILURE(rc))
             break;
 
-        cbSent += cbToSend;
+        cbSent += cbCurChunk;
     }
 
     if (RT_SUCCESS(rc))
         Assert(cbSent == cbData);
+
+    LogFlowFunc(("Returning rc=%Rrc, cbData=%RU32, cbAddtionalData=%RU32\n",
+                 rc, cbData, cbAdditionalData));
+    return rc;
+}
+
+static int vbglR3DnDGHSendDir(uint32_t u32ClientId, DnDURIObject &obj)
+{
+    AssertReturn(obj.GetType() == DnDURIObject::Directory, VERR_INVALID_PARAMETER);
+
+    DragAndDropSvc::VBOXDNDGHSENDDIRMSG Msg;
+    RT_ZERO(Msg);
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_GH_SND_DIR;
+    Msg.hdr.cParms      = 3;
+
+    RTCString strPath = obj.GetDestPath();
+    LogFlowFunc(("strDir=%s (%zu), fMode=0x%x\n",
+                 strPath.c_str(), strPath.length(), obj.GetMode()));
+
+    Msg.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)(strPath.length() + 1));
+    Msg.cbName.SetUInt32((uint32_t)(strPath.length() + 1));
+    Msg.fMode.SetUInt32(obj.GetMode());
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+        rc = Msg.hdr.result;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vbglR3DnDGHSendFile(uint32_t u32ClientId, DnDURIObject &obj)
+{
+    AssertReturn(obj.GetType() == DnDURIObject::File, VERR_INVALID_PARAMETER);
+
+    uint32_t cbBuf = _64K; /** @todo Make this configurable? */
+    void *pvBuf = RTMemAlloc(cbBuf);
+    if (!pvBuf)
+        return VERR_NO_MEMORY;
+
+    DragAndDropSvc::VBOXDNDGHSENDFILEMSG Msg;
+    RT_ZERO(Msg);
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_GH_SND_FILE;
+    Msg.hdr.cParms      = 5;
+
+    RTCString strPath = obj.GetDestPath();
+    LogFlowFunc(("strFile=%s (%zu), fMode=0x%x\n",
+                 strPath.c_str(), strPath.length(), obj.GetMode()));
+
+    Msg.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)(strPath.length() + 1));
+    Msg.cbName.SetUInt32((uint32_t)(strPath.length() + 1));
+    Msg.fMode.SetUInt32(obj.GetMode());
+
+    int rc = VINF_SUCCESS;
+    uint32_t cbData = obj.GetSize();
+
+    do
+    {
+        uint32_t cbToRead = RT_MIN(cbData, cbBuf);
+        uint32_t cbRead   = 0;
+        if (cbToRead)
+            rc = obj.Read(pvBuf, cbToRead, &cbRead);
+        if (RT_SUCCESS(rc))
+        {
+             Msg.cbData.SetUInt32(cbRead);
+             Msg.pvData.SetPtr(pvBuf, cbRead);
+
+             rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+             if (RT_SUCCESS(rc))
+                 rc = Msg.hdr.result;
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+
+        Assert(cbRead <= cbData);
+        cbData -= cbRead;
+
+    } while (cbData);
+
+    RTMemFree(pvBuf);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vbglR3DnDGHSendURIObject(uint32_t u32ClientId, DnDURIObject &obj)
+{
+    int rc;
+
+    switch (obj.GetType())
+    {
+        case DnDURIObject::Directory:
+            rc = vbglR3DnDGHSendDir(u32ClientId, obj);
+            break;
+
+        case DnDURIObject::File:
+            rc = vbglR3DnDGHSendFile(u32ClientId, obj);
+            break;
+
+        default:
+            AssertMsgFailed(("Type %ld not implemented\n",
+                             obj.GetType()));
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
+    return rc;
+}
+
+static int vbglR3DnDGHProcessURIMessages(uint32_t u32ClientId,
+                                         void *pvData, uint32_t cbData)
+{
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    RTCList<RTCString> lstPaths =
+        RTCString((const char *)pvData, cbData).split("\r\n");
+
+    DnDURIList lstURI;
+    int rc = lstURI.AppendNativePathsFromList(lstPaths, 0 /* fFlags */);
+    if (RT_SUCCESS(rc))
+    {
+        /* Send metadata; in this case it's the (non-recursive) file/directory
+         * URI list the host needs to know to initialize the drag'n drop operation. */
+        RTCString strRootDest = lstURI.RootToString();
+        Assert(strRootDest.isNotEmpty());
+
+        void *pvToSend = (void *)strRootDest.c_str();
+        uint32_t cbToSend = (uint32_t)strRootDest.length() + 1;
+
+        rc = vbglR3DnDGHSendDataInternal(u32ClientId, pvToSend, cbToSend,
+                                         /* Include total bytes of all file paths,
+                                          * file sizes etc. */
+                                         lstURI.TotalBytes());
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        while (!lstURI.IsEmpty())
+        {
+            DnDURIObject &nextObj = lstURI.First();
+
+            rc = vbglR3DnDGHSendURIObject(u32ClientId, nextObj);
+            if (RT_FAILURE(rc))
+                break;
+
+            lstURI.RemoveFirst();
+        }
+    }
+
+    return rc;
+}
+
+VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId,
+                                    const char *pszFormat,
+                                    void *pvData, uint32_t cbData)
+{
+    AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    int rc;
+    if (DnDMIMEHasFileURLs(pszFormat, strlen(pszFormat)))
+    {
+        rc = vbglR3DnDGHProcessURIMessages(u32ClientId, pvData, cbData);
+    }
+    else
+        rc = vbglR3DnDGHSendDataInternal(u32ClientId, pvData, cbData,
+                                         0 /* cbAdditionalData */);
 
     return rc;
 }
@@ -972,18 +1118,13 @@ VBGLR3DECL(int) VbglR3DnDGHErrorEvent(uint32_t u32ClientId, int rcOp)
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_GH_EVT_ERROR;
     Msg.hdr.cParms      = 1;
-    /* Initialize parameter */
+
     Msg.uRC.SetUInt32(rcOp);
-    /* Do request */
+
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
 
     return rc;
-}
-
-VBGLR3DECL(int) VbglR3DnDGHSendFile(uint32_t u32ClientId, const char *pszPath)
-{
-    return 0;
 }
 

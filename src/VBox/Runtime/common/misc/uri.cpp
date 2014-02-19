@@ -136,7 +136,7 @@ static char *rtUriPercentDecodeN(const char *pszString, size_t cchMax)
             szNum[0] = pszString[iIn++];
             szNum[1] = pszString[iIn++];
             szNum[2] = '\0';
-           
+
             uint8_t u8;
             rc = RTStrToUInt8Ex(szNum, NULL, 16, &u8);
             if (RT_FAILURE(rc))
@@ -653,7 +653,7 @@ RTR3DECL(char *) RTUriFileNPath(const char *pszUri, uint32_t uFormat, size_t cch
     if (rtUriCheckPathStart(pszUri, iPos3, cbLen - iPos3, &iPos4))
     {
         uint32_t uFIntern = uFormat;
-        /* Auto is based on the current host OS. */
+        /* Auto is based on the current OS. */
         if (uFormat == URI_FILE_FORMAT_AUTO)
 #ifdef RT_OS_WINDOWS
             uFIntern = URI_FILE_FORMAT_WIN;
