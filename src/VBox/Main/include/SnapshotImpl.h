@@ -58,7 +58,7 @@ public:
      * Override of the default locking class to be used for validating lock
      * order with the standard member lock handle.
      */
-    virtual VBoxLockingClass i_getLockingClass() const
+    virtual VBoxLockingClass getLockingClass() const
     {
         return LOCKCLASS_SNAPSHOTOBJECT;
     }
