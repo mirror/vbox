@@ -1130,7 +1130,7 @@ bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
                      * set current lock states to guest values we have,
                      * As we have no ipc between threads of different VMs
                      * we are using 100ms timer as lazy sync timout: */
-                    
+
                     /* On Windows host we should do that only in case if sync
                      * is enabled. Otherwise, keyboardHandler()->winSkipKeyboardEvents(false)
                      * won't be called in sltSwitchKeyboardLedsToGuestLeds() and guest
