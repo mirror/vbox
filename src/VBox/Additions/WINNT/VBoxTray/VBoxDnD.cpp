@@ -48,16 +48,17 @@
 /** Function pointer for SendInput(). This only is available starting
  *  at NT4 SP3+. */
 typedef BOOL (WINAPI *PFNSENDINPUT)(UINT, LPINPUT, int);
+typedef BOOL (WINAPI* PFNENUMDISPLAYMONITORS)(HDC, LPCRECT, MONITORENUMPROC, LPARAM);
 
 /** Static pointer to SendInput() function. */
 static PFNSENDINPUT s_pfnSendInput = NULL;
+static PFNENUMDISPLAYMONITORS s_pfnEnumDisplayMonitors = NULL;
 
 static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 VBoxDnDWnd::VBoxDnDWnd(void)
     : hWnd(NULL),
-      mpfnEnumDisplayMonitors(NULL),
       mfMouseButtonDown(false),
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
       pDropTarget(NULL),
@@ -84,13 +85,6 @@ int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pContext)
 
     /* Save the context. */
     this->pContext = pContext;
-
-    HMODULE hUser = GetModuleHandle("user32.dll");
-    if (hUser)
-    {
-        *(uintptr_t *)&mpfnEnumDisplayMonitors = (uintptr_t)GetProcAddress(hUser, "EnumDisplayMonitors");
-        Log(("DnD: EnumDisplayMonitors = %p\n", mpfnEnumDisplayMonitors));
-    }
 
     int rc = RTSemEventCreate(&mEventSem);
     if (RT_SUCCESS(rc))
@@ -1013,8 +1007,8 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormats,
     AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
     AssertReturn(cbFormats, VERR_INVALID_PARAMETER);
 
-    LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, uDefAction=0x%x\n",
-                     mMode, mState, pDropTarget, uDefAction));
+    LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, pszFormat=%s, uDefAction=0x%x\n",
+                     mMode, mState, pDropTarget, pszFormat, uDefAction));
 
     int rc;
     if (mState == Dragging)
@@ -1024,14 +1018,12 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormats,
         if (RT_SUCCESS(rc))
         {
             /** @todo Respect uDefAction. */
-            /** @todo Do data checking / conversion based on pszFormats. */
-
             void *pvData = pDropTarget->DataMutableRaw();
             AssertPtr(pvData);
             uint32_t cbData = pDropTarget->DataSize();
             Assert(cbData);
 
-            rc = VbglR3DnDGHSendData(mClientID, pvData, cbData);
+            rc = VbglR3DnDGHSendData(mClientID, pszFormat, pvData, cbData);
             LogFlowFunc(("Sent pvData=0x%p, cbData=%RU32, rc=%Rrc\n",
                          pvData, cbData, rc));
         }
@@ -1093,9 +1085,10 @@ int VBoxDnDWnd::makeFullscreen(void)
     HDC hDC = GetDC(NULL /* Entire screen */);
     if (hDC)
     {
-        fRc = mpfnEnumDisplayMonitors?
-                  mpfnEnumDisplayMonitors(hDC, NULL, VBoxDnDWnd::MonitorEnumProc, (LPARAM)&r):
-                  FALSE;
+        fRc = s_pfnEnumDisplayMonitors
+            /* EnumDisplayMonitors is not available on NT4. */
+            ? s_pfnEnumDisplayMonitors(hDC, NULL, VBoxDnDWnd::MonitorEnumProc, (LPARAM)&r):
+              FALSE;
 
         if (!fRc)
             rc = VERR_NOT_FOUND;
@@ -1285,6 +1278,9 @@ int VBoxDnDInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
     s_pfnSendInput = (PFNSENDINPUT)
         RTLdrGetSystemSymbol("User32.dll", "SendInput");
     fSupportedOS = !RT_BOOL(s_pfnSendInput == NULL);
+    s_pfnEnumDisplayMonitors = (PFNENUMDISPLAYMONITORS)
+        RTLdrGetSystemSymbol("User32.dll", "EnumDisplayMonitors");
+    /* g_pfnEnumDisplayMonitors is optional. */
 
     if (!fSupportedOS)
     {

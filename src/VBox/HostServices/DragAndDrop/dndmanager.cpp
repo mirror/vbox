@@ -48,18 +48,16 @@ class DnDHGSendDirPrivate: public DnDMessage
 {
 public:
 
-    DnDHGSendDirPrivate(const RTCString &strPath,
-                        uint32_t fMode, uint64_t cbSize,
+    DnDHGSendDirPrivate(DnDURIObject URIObject,
                         PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser)
-        : m_strPath(strPath)
-        , m_cbSize(cbSize)
+        : m_URIObject(URIObject)
         , m_pfnProgressCallback(pfnProgressCallback)
         , m_pvProgressUser(pvProgressUser)
     {
         VBOXHGCMSVCPARM paTmpParms[3];
-        paTmpParms[0].setString(m_strPath.c_str());
-        paTmpParms[1].setUInt32((uint32_t)(m_strPath.length() + 1));
-        paTmpParms[2].setUInt32(fMode);
+        paTmpParms[0].setString(m_URIObject.GetDestPath().c_str());
+        paTmpParms[1].setUInt32((uint32_t)(m_URIObject.GetDestPath().length() + 1));
+        paTmpParms[2].setUInt32(m_URIObject.GetMode());
 
         m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_DIR, 3, paTmpParms);
     }
@@ -70,16 +68,16 @@ public:
         /* Advance progress info */
         if (   RT_SUCCESS(rc)
             && m_pfnProgressCallback)
-            rc = m_pfnProgressCallback(m_cbSize, m_pvProgressUser);
+            rc = m_pfnProgressCallback(m_URIObject.GetSize(), m_pvProgressUser);
 
         return rc;
     }
 
 protected:
-    RTCString              m_strPath;
+
+    DnDURIObject           m_URIObject;
 
     /* Progress stuff */
-    size_t                 m_cbSize;
     PFNDNDPRIVATEPROGRESS  m_pfnProgressCallback;
     void                  *m_pvProgressUser;
 };
@@ -93,20 +91,15 @@ class DnDHGSendFilePrivate: public DnDMessage
 {
 public:
 
-    DnDHGSendFilePrivate(const RTCString &strHostPath,
-                         const RTCString &strGuestPath,
-                         uint32_t fMode, uint64_t cbSize,
+    DnDHGSendFilePrivate(DnDURIObject URIObject,
                          PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser);
     virtual ~DnDHGSendFilePrivate(void);
 
     int currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
 protected:
-    RTCString              m_strHostPath;
-    RTCString              m_strGuestPath;
-    uint64_t               m_cbFileSize;
-    uint64_t               m_cbFileProcessed;
-    RTFILE                 m_hCurFile;
+
+    DnDURIObject           m_URIObject;
     VBOXHGCMSVCPARM        m_paSkelParms[5];
 
     /* Progress stuff */
@@ -143,33 +136,26 @@ protected:
  ******************************************************************************/
 
 /******************************************************************************
- *   DnDHGSendFilePrivate                                                *
+ *   DnDHGSendFilePrivate                                                     *
  ******************************************************************************/
 
-DnDHGSendFilePrivate::DnDHGSendFilePrivate(const RTCString &strHostPath, const RTCString &strGuestPath,
-                                           uint32_t fMode, uint64_t cbSize,
+DnDHGSendFilePrivate::DnDHGSendFilePrivate(DnDURIObject URIObject,
                                            PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser)
-    : m_strHostPath(strHostPath)
-    , m_strGuestPath(strGuestPath)
-    , m_cbFileSize(cbSize)
-    , m_cbFileProcessed(0)
-    , m_hCurFile(0)
+    : m_URIObject(URIObject)
     , m_pfnProgressCallback(pfnProgressCallback)
     , m_pvProgressUser(pvProgressUser)
 {
-    m_paSkelParms[0].setString(m_strGuestPath.c_str());
-    m_paSkelParms[1].setUInt32((uint32_t)(m_strGuestPath.length() + 1));
+    m_paSkelParms[0].setString(m_URIObject.GetDestPath().c_str());
+    m_paSkelParms[1].setUInt32((uint32_t)(m_URIObject.GetDestPath().length() + 1));
     m_paSkelParms[2].setPointer(NULL, 0);
     m_paSkelParms[3].setUInt32(0);
-    m_paSkelParms[4].setUInt32(fMode);
+    m_paSkelParms[4].setUInt32(m_URIObject.GetMode());
 
     m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_FILE, 5, m_paSkelParms);
 }
 
 DnDHGSendFilePrivate::~DnDHGSendFilePrivate(void)
 {
-    if (m_hCurFile)
-        RTFileClose(m_hCurFile);
 }
 
 int DnDHGSendFilePrivate::currentMessage(uint32_t uMsg, uint32_t cParms,
@@ -183,15 +169,7 @@ int DnDHGSendFilePrivate::currentMessage(uint32_t uMsg, uint32_t cParms,
     if (RT_FAILURE(rc))
         return rc;
 
-    if (!m_hCurFile)
-    {
-        /* Open files on the host with RTFILE_O_DENY_WRITE to prevent races where the host
-         * writes to the file while the guest transfers it over. */
-        rc = RTFileOpen(&m_hCurFile, m_strHostPath.c_str(),
-                        RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-    }
-
-    size_t cbRead;
+    uint32_t cbRead;
     if (RT_SUCCESS(rc))
     {
         /* Get buffer size + pointer to buffer from guest side. */
@@ -199,13 +177,10 @@ int DnDHGSendFilePrivate::currentMessage(uint32_t uMsg, uint32_t cParms,
         Assert(cbToRead);
         void *pvBuf = paParms[2].u.pointer.addr;
         AssertPtr(pvBuf);
-        rc = RTFileRead(m_hCurFile, pvBuf, cbToRead, &cbRead);
+
+        rc = m_URIObject.Read(pvBuf, cbToRead, &cbRead);
         if (RT_LIKELY(RT_SUCCESS(rc)))
         {
-            /* Advance. */
-            m_cbFileProcessed += cbRead;
-            Assert(m_cbFileProcessed <= m_cbFileSize);
-
             /* Tell the guest the actual size. */
             paParms[3].setUInt32((uint32_t)cbRead);
         }
@@ -213,14 +188,11 @@ int DnDHGSendFilePrivate::currentMessage(uint32_t uMsg, uint32_t cParms,
 
     if (RT_SUCCESS(rc))
     {
-        /* Check if we are done. */
-        Assert(m_cbFileProcessed <= m_cbFileSize);
-        bool fDone = m_cbFileSize == m_cbFileProcessed;
-        if (!fDone)
+        if (!m_URIObject.IsComplete())
         {
             try
             {
-                /* More data! Prepare the next message. */
+                /* More data needed to send over. Prepare the next message. */
                 m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_FILE, 5 /* cParms */,
                                                m_paSkelParms);
             }
@@ -235,13 +207,6 @@ int DnDHGSendFilePrivate::currentMessage(uint32_t uMsg, uint32_t cParms,
             && m_pfnProgressCallback)
         {
             rc = m_pfnProgressCallback(cbRead, m_pvProgressUser);
-        }
-
-        if (   fDone
-            || RT_FAILURE(rc))
-        {
-            RTFileClose(m_hCurFile);
-            m_hCurFile = NIL_RTFILE;
         }
     }
 
@@ -364,16 +329,16 @@ DnDHGSendDataMessage::DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms,
             = RTCString(pszList, cbList).split("\r\n");
         if (!lstURIOrg.isEmpty())
         {
-            rc = m_lstURI.AppendPathsFromList(lstURIOrg, 0 /* fFlags */);
+            rc = m_lstURI.AppendNativePathsFromList(lstURIOrg, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
             {
                 /* Add the total size of all meta data + files transferred to
-                 * the message's total count. */
+                 * the message's total byte count. */
                 m_cbTotal += m_lstURI.TotalBytes();
 
                 /* We have to change the actual DnD data. Remove any host paths and
-                 * just decode the filename into the new data. The guest tools will
-                 * add the correct path again, before sending the DnD drop event to
+                 * just decode the filename into the new data. The Guest Additions will
+                 * add the correct path again before sending the DnD drop event to
                  * some window. */
                 strNewURIs = m_lstURI.RootToString();
 
@@ -444,27 +409,26 @@ int DnDHGSendDataMessage::currentMessage(uint32_t uMsg,
 
         /* Create new messages based on our internal path list. Currently
          * this could be directories or regular files. */
-        const DnDURIPath &nextPath = m_lstURI.First();
+        const DnDURIObject &nextObj = m_lstURI.First();
         try
         {
+            uint32_t fMode = nextObj.GetMode();
             LogFlowFunc(("Processing srcPath=%s, dstPath=%s, fMode=0x%x, cbSize=%RU32, fIsDir=%RTbool, fIsFile=%RTbool\n",
-                         nextPath.m_strSrcPath.c_str(), nextPath.m_strDstPath.c_str(),
-                         nextPath.m_fMode, nextPath.m_cbSize,
-                         RTFS_IS_DIRECTORY(nextPath.m_fMode), RTFS_IS_FILE(nextPath.m_fMode)));
+                         nextObj.GetSourcePath().c_str(), nextObj.GetDestPath().c_str(),
+                         fMode, nextObj.GetSize(),
+                         RTFS_IS_DIRECTORY(fMode), RTFS_IS_FILE(fMode)));
 
-            if (RTFS_IS_DIRECTORY(nextPath.m_fMode))
-                m_pNextPathMsg = new DnDHGSendDirPrivate(nextPath.m_strDstPath,
-                                                         nextPath.m_fMode, nextPath.m_cbSize,
-                                                         &DnDHGSendDataMessage::progressCallback,
+            if (RTFS_IS_DIRECTORY(fMode))
+                m_pNextPathMsg = new DnDHGSendDirPrivate(nextObj,
+                                                         &DnDHGSendDataMessage::progressCallback /* pfnProgressCallback */,
                                                          this /* pvProgressUser */);
-            else if (RTFS_IS_FILE(nextPath.m_fMode))
-                m_pNextPathMsg = new DnDHGSendFilePrivate(nextPath.m_strSrcPath, nextPath.m_strDstPath,
-                                                          nextPath.m_fMode, nextPath.m_cbSize,
-                                                          &DnDHGSendDataMessage::progressCallback,
+            else if (RTFS_IS_FILE(fMode))
+                m_pNextPathMsg = new DnDHGSendFilePrivate(nextObj,
+                                                          &DnDHGSendDataMessage::progressCallback /* pfnProgressCallback */,
                                                           this /* pvProgressUser */);
             else
                 AssertMsgFailedReturn(("fMode=0x%x is not supported for srcPath=%s, dstPath=%s\n",
-                                       nextPath.m_fMode, nextPath.m_strSrcPath.c_str(), nextPath.m_strDstPath.c_str()),
+                                       fMode, nextObj.GetSourcePath().c_str(), nextObj.GetDestPath().c_str()),
                                        VERR_NO_DATA);
 
             m_lstURI.RemoveFirst();

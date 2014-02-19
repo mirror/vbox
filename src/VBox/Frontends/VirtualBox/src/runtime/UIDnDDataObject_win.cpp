@@ -52,15 +52,15 @@ UIDnDDataObject::UIDnDDataObject(const QStringList &lstFormats,
 {
     HRESULT hr;
 
-    ULONG cAllFormats = lstFormats.size();
+    ULONG cMaxFormats = 16; /* Maximum number of registered formats. */
     ULONG cRegisteredFormats = 0;
 
     try
     {
-        mpFormatEtc = new FORMATETC[cAllFormats];
-        RT_BZERO(mpFormatEtc, sizeof(FORMATETC) * cAllFormats);
-        mpStgMedium = new STGMEDIUM[cAllFormats];
-        RT_BZERO(mpStgMedium, sizeof(STGMEDIUM) * cAllFormats);
+        mpFormatEtc = new FORMATETC[cMaxFormats];
+        RT_BZERO(mpFormatEtc, sizeof(FORMATETC) * cMaxFormats);
+        mpStgMedium = new STGMEDIUM[cMaxFormats];
+        RT_BZERO(mpStgMedium, sizeof(STGMEDIUM) * cMaxFormats);
 
         for (int i = 0; i < lstFormats.size(); i++)
         {
@@ -68,18 +68,24 @@ UIDnDDataObject::UIDnDDataObject(const QStringList &lstFormats,
             if (mlstFormats.contains(strFormat))
                 continue;
 
+            /* URI data ("text/uri-list"). */
             if (strFormat.contains("text/uri-list", Qt::CaseInsensitive))
             {
-                /* URI data ("text/uri-list"). */
+                RegisterFormat(&mpFormatEtc[cRegisteredFormats], CF_TEXT);
+                mpStgMedium[cRegisteredFormats++].tymed = TYMED_HGLOBAL;
+                RegisterFormat(&mpFormatEtc[cRegisteredFormats], CF_UNICODETEXT);
+                mpStgMedium[cRegisteredFormats++].tymed = TYMED_HGLOBAL;
                 RegisterFormat(&mpFormatEtc[cRegisteredFormats], CF_HDROP);
                 mpStgMedium[cRegisteredFormats++].tymed = TYMED_HGLOBAL;
 
                 mlstFormats << strFormat;
             }
+            /* Plain text ("text/plain"). */
             else if (strFormat.contains("text/plain", Qt::CaseInsensitive))
             {
-                /* Plain text ("text/plain"). */
                 RegisterFormat(&mpFormatEtc[cRegisteredFormats], CF_TEXT);
+                mpStgMedium[cRegisteredFormats++].tymed = TYMED_HGLOBAL;
+                RegisterFormat(&mpFormatEtc[cRegisteredFormats], CF_UNICODETEXT);
                 mpStgMedium[cRegisteredFormats++].tymed = TYMED_HGLOBAL;
 
                 mlstFormats << strFormat;
@@ -88,10 +94,6 @@ UIDnDDataObject::UIDnDDataObject(const QStringList &lstFormats,
 
         LogFlowFunc(("Total registered formats: %RU32 (of %d total)\n",
                      cRegisteredFormats, lstFormats.size()));
-#ifdef VBOX_STRICT
-        AssertMsg(cRegisteredFormats == cAllFormats,
-                  ("Registered formats count is not matching all formats count\n"));
-#endif
         hr = S_OK;
     }
     catch (std::bad_alloc &)
@@ -200,7 +202,9 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
     AssertPtrReturn(pFormatEtc, DV_E_FORMATETC);
     AssertPtrReturn(pMedium, DV_E_FORMATETC);
 
+#ifdef VBOX_DND_DEBUG_FORMATS
     LogFlowFunc(("pFormatEtc=%p, pMedium=%p\n", pFormatEtc, pMedium));
+#endif
 
     ULONG lIndex;
     if (!LookupFormatEtc(pFormatEtc, &lIndex)) /* Format supported? */
@@ -226,29 +230,13 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
 
     if (mStatus == Dropped)
     {
-#if 0
-        LogFlowFunc(("Starting to transfer content from the guest ...\n"));
-
-        /*
-         * This is the right time starting to transfer the actual data
-         * from the guest:
-         * - The user just triggered an action that tells us to start, e.g. at
-         *   the moment we only "listen" for releasing the left mouse button.
-         * - We're still in OLE's (modal) drag'n drop context so that all data
-         *   from the guest (hopefully) will be available on the host when the
-         *   drag'n drop operation is about to finish through OLE.
-         *
-         * Note that in the URI case the guest files/dirs must be somewhere
-         * on the host before OLE's drag'n drop operation is finished, otherwise
-         * the whole operation will fail.
-         */
-#endif
+#ifdef VBOX_DND_DEBUG_FORMATS
         LogFlowFunc(("cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
                      pThisFormat->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
                      pThisFormat->tymed, pThisFormat->dwAspect));
         LogFlowFunc(("Got strFormat=%s, pvData=%p, cbData=%RU32\n",
                      mstrFormat.toAscii().constData(), mpvData, mcbData));
-
+#endif
         QVariant::Type vaType;
         QString strMIMEType;
         if (    (pFormatEtc->tymed & TYMED_HGLOBAL)
@@ -494,7 +482,6 @@ STDMETHODIMP UIDnDDataObject::GetDataHere(FORMATETC *pFormatEtc, STGMEDIUM *pMed
  */
 STDMETHODIMP UIDnDDataObject::QueryGetData(FORMATETC *pFormatEtc)
 {
-    LogFlowFunc(("\n"));
     return (LookupFormatEtc(pFormatEtc, NULL /* puIndex */)) ? S_OK : DV_E_FORMATETC;
 }
 
@@ -647,19 +634,22 @@ bool UIDnDDataObject::LookupFormatEtc(FORMATETC *pFormatEtc, ULONG *puIndex)
             && pFormatEtc->cfFormat == mpFormatEtc[i].cfFormat
             && pFormatEtc->dwAspect == mpFormatEtc[i].dwAspect)
         {
+#ifdef VBOX_DND_DEBUG_FORMATS
             LogFlowFunc(("Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
                          pFormatEtc->tymed, pFormatEtc->cfFormat, UIDnDDataObject::ClipboardFormatToString(mpFormatEtc[i].cfFormat),
                          pFormatEtc->dwAspect, i));
+#endif
             if (puIndex)
                 *puIndex = i;
             return true;
         }
     }
 
+#ifdef VBOX_DND_DEBUG_FORMATS
     LogFlowFunc(("Format NOT found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32\n",
                  pFormatEtc->tymed, pFormatEtc->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
                  pFormatEtc->dwAspect));
-
+#endif
     return false;
 }
 

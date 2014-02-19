@@ -220,7 +220,7 @@ typedef struct VBOXDNDHGSENDDATAMSG
     HGCMFunctionParameter pvFormat;     /* OUT ptr */
     HGCMFunctionParameter cFormat;      /* OUT uint32_t */
     HGCMFunctionParameter pvData;       /* OUT ptr */
-    HGCMFunctionParameter cData;        /* OUT uint32_t */
+    HGCMFunctionParameter cbData;       /* OUT uint32_t */
 } VBOXDNDHGSENDDATAMSG;
 
 typedef struct VBOXDNDHGSENDMOREDATAMSG
@@ -234,7 +234,7 @@ typedef struct VBOXDNDHGSENDMOREDATAMSG
      * HOST_DND_HG_SND_MORE_DATA
      */
     HGCMFunctionParameter pvData;       /* OUT ptr */
-    HGCMFunctionParameter cData;        /* OUT uint32_t */
+    HGCMFunctionParameter cbData;       /* OUT uint32_t */
 } VBOXDNDHGSENDMOREDATAMSG;
 
 typedef struct VBOXDNDHGSENDDIRMSG
@@ -248,7 +248,7 @@ typedef struct VBOXDNDHGSENDDIRMSG
      * HOST_DND_HG_SND_DIR
      */
     HGCMFunctionParameter pvName;       /* OUT ptr */
-    HGCMFunctionParameter cName;        /* OUT uint32_t */
+    HGCMFunctionParameter cbName;       /* OUT uint32_t */
     HGCMFunctionParameter fMode;        /* OUT uint32_t */
 } VBOXDNDHGSENDDIRMSG;
 
@@ -263,9 +263,9 @@ typedef struct VBOXDNDHGSENDFILEMSG
      * HOST_DND_HG_SND_FILE
      */
     HGCMFunctionParameter pvName;       /* OUT ptr */
-    HGCMFunctionParameter cName;        /* OUT uint32_t */
+    HGCMFunctionParameter cbName;       /* OUT uint32_t */
     HGCMFunctionParameter pvData;       /* OUT ptr */
-    HGCMFunctionParameter cData;        /* OUT uint32_t */
+    HGCMFunctionParameter cbData;       /* OUT uint32_t */
     HGCMFunctionParameter fMode;        /* OUT uint32_t */
 } VBOXDNDHGSENDFILEMSG;
 
@@ -315,6 +315,8 @@ typedef struct VBOXDNDNEXTMSGMSG
     HGCMFunctionParameter msg;          /* OUT uint32_t */
     /** Number of parameters the message needs. */
     HGCMFunctionParameter num_parms;    /* OUT uint32_t */
+    /** Whether or not to block (wait) for a
+     *  new message to arrive. */
     HGCMFunctionParameter block;        /* OUT uint32_t */
 
 } VBOXDNDNEXTMSGMSG;
@@ -370,9 +372,44 @@ typedef struct VBOXDNDGHSENDDATAMSG
      * Used by:
      * GUEST_DND_GH_SND_DATA
      */
-    HGCMFunctionParameter pData;        /* OUT ptr */
-    HGCMFunctionParameter uSize;        /* OUT uint32_t */
+    HGCMFunctionParameter pvData;       /* OUT ptr */
+    /** Total bytes to send. This can be more than
+     *  the data block specified in pvData above, e.g.
+     *  when sending over file objects. */
+    HGCMFunctionParameter cbTotalBytes; /* OUT uint32_t */
 } VBOXDNDGHSENDDATAMSG;
+
+typedef struct VBOXDNDGHSENDDIRMSG
+{
+    VBoxGuestHGCMCallInfo hdr;
+
+    /**
+     * GH Directory event.
+     *
+     * Used by:
+     * GUEST_DND_HG_SND_DIR
+     */
+    HGCMFunctionParameter pvName;       /* OUT ptr */
+    HGCMFunctionParameter cbName;       /* OUT uint32_t */
+    HGCMFunctionParameter fMode;        /* OUT uint32_t */
+} VBOXDNDGHSENDDIRMSG;
+
+typedef struct VBOXDNDGHSENDFILEMSG
+{
+    VBoxGuestHGCMCallInfo hdr;
+
+    /**
+     * GH File event.
+     *
+     * Used by:
+     * GUEST_DND_HG_SND_FILE
+     */
+    HGCMFunctionParameter pvName;       /* OUT ptr */
+    HGCMFunctionParameter cbName;       /* OUT uint32_t */
+    HGCMFunctionParameter pvData;       /* OUT ptr */
+    HGCMFunctionParameter cbData;       /* OUT uint32_t */
+    HGCMFunctionParameter fMode;        /* OUT uint32_t */
+} VBOXDNDGHSENDFILEMSG;
 
 typedef struct VBOXDNDGHEVTERRORMSG
 {
@@ -390,7 +427,7 @@ typedef struct VBOXDNDGHEVTERRORMSG
 #pragma pack()
 
 /*
- * Callback handler
+ * Callback data magics.
  */
 enum
 {
@@ -399,6 +436,8 @@ enum
     CB_MAGIC_DND_HG_EVT_PROGRESS = 0x8c8a6956,
     CB_MAGIC_DND_GH_ACK_PENDING  = 0xbe975a14,
     CB_MAGIC_DND_GH_SND_DATA     = 0x4eb61bff,
+    CB_MAGIC_DND_GH_SND_DIR      = 0x411ca754,
+    CB_MAGIC_DND_GH_SND_FILE     = 0x65e35eaf,
     CB_MAGIC_DND_GH_EVT_ERROR    = 0x117a87c4
 };
 
@@ -453,9 +492,33 @@ typedef struct VBOXDNDCBSNDDATADATA
     VBOXDNDCBHEADERDATA hdr;
     void     *pvData;
     uint32_t  cbData;
-    uint32_t  cbAllSize; /** @todo Why is this transmitted every time? */
+    /** Total metadata size (in bytes). This is transmitted
+     *  with every message because the size can change. */
+    uint32_t  cbTotalSize;
 } VBOXDNDCBSNDDATADATA;
 typedef VBOXDNDCBSNDDATADATA *PVBOXDNDCBSNDDATADATA;
+
+typedef struct VBOXDNDCBSNDDIRDATA
+{
+    /** Callback data header. */
+    VBOXDNDCBHEADERDATA hdr;
+    char     *pszPath;
+    uint32_t  cbPath;
+    uint32_t  fMode;
+} VBOXDNDCBSNDDIRDATA;
+typedef VBOXDNDCBSNDDIRDATA *PVBOXDNDCBSNDDIRDATA;
+
+typedef struct VBOXDNDCBSNDFILEDATA
+{
+    /** Callback data header. */
+    VBOXDNDCBHEADERDATA hdr;
+    char     *pszFilePath;
+    uint32_t  cbFilePath;
+    uint32_t  fMode;
+    void     *pvData;
+    uint32_t  cbData;
+} VBOXDNDCBSNDFILEDATA;
+typedef VBOXDNDCBSNDFILEDATA *PVBOXDNDCBSNDFILEDATA;
 
 typedef struct VBOXDNDCBEVTERRORDATA
 {

@@ -33,6 +33,182 @@
 
 #include <VBox/GuestHost/DragAndDrop.h>
 
+DnDURIObject::DnDURIObject(Type type,
+                           const RTCString &strSrcPath,
+                           const RTCString &strDstPath,
+                           uint32_t fMode, uint64_t cbSize)
+    : m_Type(type)
+    , m_strSrcPath(strSrcPath)
+    , m_strDstPath(strDstPath)
+    , m_fMode(fMode)
+    , m_cbSize(cbSize)
+    , m_cbProcessed(0)
+{
+    RT_ZERO(u);
+}
+
+DnDURIObject::~DnDURIObject(void)
+{
+    closeInternal();
+}
+
+void DnDURIObject::closeInternal(void)
+{
+    if (m_Type == File)
+    {
+        if (u.m_hFile)
+        {
+            RTFileClose(u.m_hFile);
+            u.m_hFile = NULL;
+        }
+    }
+}
+
+bool DnDURIObject::IsComplete(void) const
+{
+    bool fComplete = false;
+
+    Assert(m_cbProcessed <= m_cbSize);
+    if (m_cbProcessed == m_cbSize)
+        fComplete = true;
+
+    switch (m_Type)
+    {
+        case File:
+            if (!fComplete)
+                fComplete = !u.m_hFile;
+            break;
+
+        case Directory:
+            fComplete = true;
+            break;
+
+        default:
+            break;
+    }
+
+    return fComplete;
+}
+
+/* static */
+/** @todo Put this into an own class like DnDURIPath : public RTCString? */
+int DnDURIObject::RebaseURIPath(RTCString &strPath,
+                                const RTCString &strBaseOld,
+                                const RTCString &strBaseNew)
+{
+    int rc;
+    const char *pszPath = RTUriPath(strPath.c_str());
+    if (pszPath)
+    {
+        const char *pszPathStart = pszPath;
+        const char *pszBaseOld = strBaseOld.c_str();
+        if (   pszBaseOld
+            && RTPathStartsWith(pszPath, pszBaseOld))
+        {
+            pszPathStart += strlen(pszBaseOld);
+        }
+
+        rc = VINF_SUCCESS;
+
+        if (RT_SUCCESS(rc))
+        {
+            char *pszPathNew = RTPathJoinA(strBaseNew.c_str(), pszPathStart);
+            if (pszPathNew)
+            {
+                char *pszPathURI = RTUriCreate("file" /* pszScheme */, "/" /* pszAuthority */,
+                                               pszPathNew /* pszPath */,
+                                               NULL /* pszQuery */, NULL /* pszFragment */);
+                if (pszPathURI)
+                {
+#ifdef DEBUG_andy
+                    LogFlowFunc(("Rebasing \"%s\" to \"%s\"", strPath.c_str(), pszPathURI));
+#endif
+                    strPath = RTCString(pszPathURI) + "\r\n";
+                    RTStrFree(pszPathURI);
+
+                    rc = VINF_SUCCESS;
+                }
+                else
+                    rc = VERR_INVALID_PARAMETER;
+
+                RTStrFree(pszPathNew);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+#ifdef DEBUG_andy
+    LogFlowFuncLeaveRC(rc);
+#endif
+    return rc;
+}
+
+int DnDURIObject::Read(void *pvBuf, uint32_t cbToRead, uint32_t *pcbRead)
+{
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbToRead, VERR_INVALID_PARAMETER);
+    /* pcbRead is optional. */
+
+    int rc;
+    switch (m_Type)
+    {
+        case File:
+        {
+            if (!u.m_hFile)
+            {
+                /* Open files on the source with RTFILE_O_DENY_WRITE to prevent races
+                 * where the OS writes to the file while the destination side transfers
+                 * it over. */
+                rc = RTFileOpen(&u.m_hFile, m_strSrcPath.c_str(),
+                                RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+            }
+            else
+                rc = VINF_SUCCESS;
+
+            bool fDone = false;
+            if (RT_SUCCESS(rc))
+            {
+                size_t cbRead;
+                rc = RTFileRead(u.m_hFile, pvBuf, cbToRead, &cbRead);
+                if (RT_SUCCESS(rc))
+                {
+                    if (pcbRead)
+                        *pcbRead = (uint32_t)cbRead;
+
+                    m_cbProcessed += cbRead;
+                    Assert(m_cbProcessed <= m_cbSize);
+
+                    /* End of file reached or error occurred? */
+                    if (   cbRead < cbToRead
+                        || RT_FAILURE(rc))
+                        closeInternal();
+                }
+            }
+
+            break;
+        }
+
+        case Directory:
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        default:
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
+    LogFlowFunc(("Returning strSourcePath=%s, rc=%Rrc\n",
+                 m_strSrcPath.c_str(), rc));
+    return rc;
+}
+
+/*** */
+
 DnDURIList::DnDURIList(void)
     : m_cbTotal(0)
 {
@@ -46,7 +222,6 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
                                     uint32_t fFlags)
 {
     AssertPtrReturn(pcszPath, VERR_INVALID_POINTER);
-    AssertReturn(cbBaseLen, VERR_INVALID_PARAMETER);
 
     RTFSOBJINFO objInfo;
     int rc = RTPathQueryInfo(pcszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
@@ -73,11 +248,14 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
     if (RT_FAILURE(rc))
         return rc;
 
-    m_lstTree.append(DnDURIPath(pcszPath, &pcszPath[cbBaseLen],
-                                objInfo.Attr.fMode, cbSize));
+    m_lstTree.append(DnDURIObject(  RTFS_IS_DIRECTORY(objInfo.Attr.fMode)
+                                  ? DnDURIObject::Directory
+                                  : DnDURIObject::File,
+                                  pcszPath, &pcszPath[cbBaseLen],
+                                  objInfo.Attr.fMode, cbSize));
     m_cbTotal += cbSize;
 #ifdef DEBUG_andy
-    LogFlowFunc(("strHostPath=%s, strGuestPath=%s, fMode=0x%x, cbSize=%RU64, cbTotal=%zu\n",
+    LogFlowFunc(("strSrcPath=%s, strDstPath=%s, fMode=0x%x, cbSize=%RU64, cbTotal=%zu\n",
                  pcszPath, &pcszPath[cbBaseLen], objInfo.Attr.fMode, cbSize, m_cbTotal));
 #endif
 
@@ -139,11 +317,12 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
                     if (RT_FAILURE(rc))
                         break;
 
-                    m_lstTree.append(DnDURIPath(pszNewFile, &pszNewFile[cbBaseLen],
-                                                objInfo1.Attr.fMode, cbSize));
+                    m_lstTree.append(DnDURIObject(DnDURIObject::File,
+                                                  pszNewFile, &pszNewFile[cbBaseLen],
+                                                  objInfo1.Attr.fMode, cbSize));
                     m_cbTotal += cbSize;
 #ifdef DEBUG_andy
-                    LogFlowFunc(("strHostPath=%s, strGuestPath=%s, fMode=0x%x, cbSize=%RU64, cbTotal=%zu\n",
+                    LogFlowFunc(("strSrcPath=%s, strDstPath=%s, fMode=0x%x, cbSize=%RU64, cbTotal=%zu\n",
                                  pszNewFile, &pszNewFile[cbBaseLen], objInfo1.Attr.fMode, cbSize, m_cbTotal));
 #endif
                     RTStrFree(pszNewFile);
@@ -162,18 +341,64 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
     return rc;
 }
 
-int DnDURIList::AppendPath(const char *pszPath, uint32_t fFlags)
+int DnDURIList::AppendNativePath(const char *pszPath, uint32_t fFlags)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
 
+    char *pszPathURI = RTUriCreate("file" /* pszScheme */, "/" /* pszAuthority */,
+                                   pszPath, NULL /* pszQuery */, NULL /* pszFragment */);
+    int rc;
+    if (pszPathURI)
+    {
+        rc = AppendURIPath(pszPathURI, fFlags);
+        RTStrFree(pszPathURI);
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    return rc;
+}
+
+int DnDURIList::AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths,
+                                          uint32_t fFlags)
+{
+    AssertPtrReturn(pszNativePaths, VERR_INVALID_POINTER);
+    AssertReturn(cbNativePaths, VERR_INVALID_PARAMETER);
+
+    RTCList<RTCString> lstPaths
+        = RTCString(pszNativePaths, cbNativePaths - 1).split("\r\n");
+    return AppendNativePathsFromList(lstPaths, fFlags);
+}
+
+int DnDURIList::AppendNativePathsFromList(const RTCList<RTCString> &lstNativePaths,
+                                          uint32_t fFlags)
+{
+    int rc = VINF_SUCCESS;
+
+    for (size_t i = 0; i < lstNativePaths.size(); i++)
+    {
+        const RTCString &strPath = lstNativePaths.at(i);
+        rc = AppendNativePath(strPath.c_str(), fFlags);
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int DnDURIList::AppendURIPath(const char *pszURI, uint32_t fFlags)
+{
+    AssertPtrReturn(pszURI, VERR_INVALID_POINTER);
+
 #ifdef DEBUG_andy
-    LogFlowFunc(("pszPath=%s, fFlags=0x%x\n", pszPath, fFlags));
+    LogFlowFunc(("pszPath=%s, fFlags=0x%x\n", pszURI, fFlags));
 #endif
     int rc = VINF_SUCCESS;
 
     /* Query the path component of a file URI. If this hasn't a
      * file scheme NULL is returned. */
-    char *pszFilePath = RTUriFilePath(pszPath, URI_FILE_FORMAT_AUTO);
+    char *pszFilePath = RTUriFilePath(pszURI, URI_FILE_FORMAT_AUTO);
     if (pszFilePath)
     {
         /* Add the path to our internal file list (recursive in
@@ -181,36 +406,50 @@ int DnDURIList::AppendPath(const char *pszPath, uint32_t fFlags)
         char *pszFileName = RTPathFilename(pszFilePath);
         if (pszFileName)
         {
-            char *pszNewURI = RTUriFileCreate(pszFileName);
-            if (pszNewURI)
-            {
-                m_lstRoot.append(pszNewURI);
-                RTStrFree(pszNewURI);
-
-                rc = appendPathRecursive(pszFilePath,
-                                         pszFileName - pszFilePath,
-                                         fFlags);
-            }
+            Assert(pszFileName >= pszFilePath);
+            char *pszRoot = &pszFilePath[pszFileName - pszFilePath];
+            m_lstRoot.append(pszRoot);
+#ifdef DEBUG_andy
+            LogFlowFunc(("pszFilePath=%s, pszFileName=%s, pszRoot=%s\n",
+                         pszFilePath, pszFileName, pszRoot));
+#endif
+            rc = appendPathRecursive(pszFilePath,
+                                     pszFileName - pszFilePath,
+                                     fFlags);
         }
+        else
+            rc = VERR_NOT_FOUND;
 
         RTStrFree(pszFilePath);
     }
-    else /* Just append the raw data. */
-        m_lstRoot.append(pszPath);
+    else
+        rc = VERR_INVALID_PARAMETER;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int DnDURIList::AppendPathsFromList(const RTCList<RTCString> &lstURI,
-                                    uint32_t fFlags)
+int DnDURIList::AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPaths,
+                                       uint32_t fFlags)
+{
+    AssertPtrReturn(pszURIPaths, VERR_INVALID_POINTER);
+    AssertReturn(cbURIPaths, VERR_INVALID_PARAMETER);
+
+    RTCList<RTCString> lstPaths
+        = RTCString(pszURIPaths, cbURIPaths - 1).split("\r\n");
+    return AppendURIPathsFromList(lstPaths, fFlags);
+}
+
+int DnDURIList::AppendURIPathsFromList(const RTCList<RTCString> &lstURI,
+                                       uint32_t fFlags)
 {
     int rc = VINF_SUCCESS;
 
     for (size_t i = 0; i < lstURI.size(); i++)
     {
-        const RTCString &strURI = lstURI.at(i);
-        rc = AppendPath(strURI.c_str(), fFlags);
+        RTCString strURI = lstURI.at(i);
+        rc = AppendURIPath(strURI.c_str(), fFlags);
+
         if (RT_FAILURE(rc))
             break;
     }
@@ -227,13 +466,146 @@ void DnDURIList::Clear(void)
     m_cbTotal = 0;
 }
 
+#if 0
+int DnDURIList::FromData(const void *pvData, size_t cbData,
+
+                         uint32_t fFlags)
+{
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    RTCList<RTCString> lstURI =
+        RTCString(static_cast<const char*>(pvData), cbData - 1).split("\r\n");
+    if (lstURI.isEmpty())
+        return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
+
+    for (size_t i = 0; i < lstURI.size(); ++i)
+    {
+        const RTCString &strUri = lstURI.at(i);
+        /* Query the path component of a file URI. If this hasn't a
+         * file scheme, null is returned. */
+        char *pszFilePath = RTUriFilePath(strUri.c_str(), URI_FILE_FORMAT_AUTO);
+        if (pszFilePath)
+        {
+            rc = DnDPathSanitize(pszFilePath, strlen(pszFilePath));
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo Use RTPathJoin? */
+                RTCString strFullPath;
+                if (strBasePath.isNotEmpty())
+                    strFullPath = RTCString().printf("%s%c%s", strBasePath.c_str(),
+                                                     RTPATH_SLASH, pszFilePath);
+                else
+                    strFullPath = pszFilePath;
+
+                char *pszNewUri = RTUriFileCreate(strFullPath.c_str());
+                if (pszNewUri)
+                {
+                    m_lstRoot.append(pszNewUri);
+                    RTStrFree(pszNewUri);
+                }
+            }
+        }
+        else
+            rc = VERR_INVALID_PARAMETER;
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    return rc;
+}
+#endif
+
 void DnDURIList::RemoveFirst(void)
 {
-    const DnDURIPath &curPath = m_lstTree.first();
+    DnDURIObject &curPath = m_lstTree.first();
 
-    Assert(m_cbTotal >= curPath.m_cbSize);
-    m_cbTotal -= curPath.m_cbSize; /* Adjust total size. */
+    uint64_t cbSize = curPath.GetSize();
+    Assert(m_cbTotal >= cbSize);
+    m_cbTotal -= cbSize; /* Adjust total size. */
 
     m_lstTree.removeFirst();
+}
+
+int DnDURIList::RootFromURIData(const void *pvData, size_t cbData,
+                                uint32_t fFlags)
+{
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    RTCList<RTCString> lstURI =
+        RTCString(static_cast<const char*>(pvData), cbData - 1).split("\r\n");
+    if (lstURI.isEmpty())
+        return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
+
+    for (size_t i = 0; i < lstURI.size(); ++i)
+    {
+        /* Query the path component of a file URI. If this hasn't a
+         * file scheme, NULL is returned. */
+        const char *pszURI = lstURI.at(i).c_str();
+        char *pszFilePath = RTUriFilePath(pszURI,
+                                          URI_FILE_FORMAT_AUTO);
+#ifdef DEBUG_andy
+        LogFlowFunc(("pszURI=%s, pszFilePath=%s\n", pszURI, pszFilePath));
+#endif
+        if (pszFilePath)
+        {
+            rc = DnDPathSanitize(pszFilePath, strlen(pszFilePath));
+            if (RT_SUCCESS(rc))
+                m_lstRoot.append(pszFilePath);
+
+            RTStrFree(pszFilePath);
+        }
+        else
+            rc = VERR_INVALID_PARAMETER;
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    return rc;
+}
+
+RTCString DnDURIList::RootToString(const RTCString &strBasePath /* = "" */)
+{
+    RTCString strRet;
+    for (size_t i = 0; i < m_lstRoot.size(); i++)
+    {
+        const char *pszCurRoot = m_lstRoot.at(i).c_str();
+        if (strBasePath.isNotEmpty())
+        {
+            char *pszPath = RTPathJoinA(strBasePath.c_str(), pszCurRoot);
+            if (pszPath)
+            {
+                char *pszPathURI = RTUriFileCreate(pszPath);
+                if (pszPathURI)
+                {
+                    strRet += RTCString(pszPathURI) + "\r\n";
+                    RTStrFree(pszPathURI);
+                }
+                RTStrFree(pszPath);
+            }
+            else
+                break;
+        }
+        else
+        {
+            char *pszPathURI = RTUriFileCreate(pszCurRoot);
+            if (pszPathURI)
+            {
+                strRet += RTCString(pszPathURI) + "\r\n";
+                RTStrFree(pszPathURI);
+            }
+            else
+                break;
+        }
+    }
+
+    return strRet;
 }
 
