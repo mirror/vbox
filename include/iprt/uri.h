@@ -120,7 +120,8 @@ RTR3DECL(char *) RTUriFragment(const char *pszUri);
 #define URI_FILE_FORMAT_WIN   UINT32_C(2)
 
 /**
- * Creates a file URI.
+ * Creates a file URI. The returned pointer must be freed
+ * using RTStrFree().
  *
  * @see RTUriCreate
  *
