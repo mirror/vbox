@@ -719,7 +719,7 @@ bool UIMachineLogic::isHidLedsSyncEnabled()
 {
     /** If extra data GUI/HidLedsSync is not present in VM config or set to 1 then sync is enabled. Otherwise, it is disabled. */
     QString strHidLedsSyncSettings = session().GetMachine().GetExtraData(GUI_HidLedsSync);
-    if (strHidLedsSyncSettings == NULL || strHidLedsSyncSettings == "1")
+    if (strHidLedsSyncSettings.isEmpty() || strHidLedsSyncSettings == "1")
         return true;
 
     return false;
