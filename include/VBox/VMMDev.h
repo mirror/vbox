@@ -509,7 +509,7 @@ AssertCompileSize(VMMDevReqGuestCapabilities2, 24+8);
  * not. */
 #define VMMDEV_GUEST_SUPPORTS_GRAPHICS                      RT_BIT_32(2)
 /** The mask of valid events, for sanity checking. */
-#define VMMDEV_GUEST_CAPABILITIES                           UINT32_C(0x00000007)
+#define VMMDEV_GUEST_CAPABILITIES_MASK                      UINT32_C(0x00000007)
 /** @} */
 
 
