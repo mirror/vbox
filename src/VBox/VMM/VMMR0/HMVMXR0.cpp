@@ -1260,7 +1260,7 @@ static bool hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGu
     {
         ++cMsrs;
         int rc = hmR0VmxSetAutoLoadStoreMsrCount(pVCpu, cMsrs);
-        AssertRCReturn(rc, rc);
+        AssertRC(rc);
 
         /* Now that we're swapping MSRs during the world-switch, allow the guest to read/write them without causing VM-exits. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
