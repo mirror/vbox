@@ -1235,14 +1235,15 @@ DECLINLINE(int) hmR0VmxSetAutoLoadStoreMsrCount(PVMCPU pVCpu, uint32_t cMsrs)
  * pair to be swapped during the world-switch as part of the
  * auto-load/store MSR area in the VMCS.
  *
- * @returns VBox status code.
+ * @returns true if the MSR was added -and- its value was updated, false
+ *          otherwise.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   uMsr            The MSR.
  * @param   uGuestMsr       Value of the guest MSR.
  * @param   fUpdateHostMsr  Whether to update the value of the host MSR if
  *                          necessary.
  */
-static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGuestMsrValue, bool fUpdateHostMsr)
+static bool hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGuestMsrValue, bool fUpdateHostMsr)
 {
     PVMXAUTOMSR pGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
     uint32_t    cMsrs     = pVCpu->hm.s.vmx.cMsrs;
@@ -1282,15 +1283,17 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGue
      * adding it to the auto-load/store area. Otherwise, it would have been
      * updated by hmR0VmxSaveHostMsrs(). We do this for performance reasons.
      */
+    bool fUpdatedMsrValue = false;
     if (   fAdded
         && fUpdateHostMsr)
     {
         Assert(!VMMRZCallRing3IsEnabled(pVCpu));
         Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
         pHostMsr->u64Value = ASMRdMsr(pHostMsr->u32Msr);
+        fUpdatedMsrValue = true;
     }
 
-    return VINF_SUCCESS;
+    return fUpdatedMsrValue;
 }
 
 
@@ -2774,13 +2777,14 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     NOREF(pVM);
     int rc = VERR_INTERNAL_ERROR_5;
 
+#if HC_ARCH_BITS == 64
     /*
-     * Quick fix for regression #7240.  Restore the host state if we've messed
-     * it up already, otherwise all we'll get it all wrong below!
+     * If we've executed guest code using VT-x, the host-state bits will be messed up. We
+     * should -not- save the messed up state without restoring the original host-state. See @bugref{7240}.
      */
-    if (   (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED)
-        && (pVCpu->hm.s.vmx.fRestoreHostFlags & ~VMX_RESTORE_HOST_REQUIRED))
-        VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
+    AssertMsgReturn(!(pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED),
+                    ("Re-saving host-state after executing guest code without leaving VT-x!\n"), VERR_WRONG_ORDER);
+#endif
 
     /*
      * Host DS, ES, FS and GS segment registers.
@@ -3024,9 +3028,6 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     if (pVM->hm.s.fAllow64BitGuests)
         hmR0VmxLazySaveHostMsrs(pVCpu);
 #endif
-
-    if (pVCpu->hm.s.vmx.cMsrs > 0)
-        hmR0VmxUpdateAutoLoadStoreHostMsrs(pVCpu);
 
     /*
      * Host Sysenter MSRs.
@@ -4562,7 +4563,8 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0SwitcherStartVM64)
         {
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
-            HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS);
+            /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
+            Assert(HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS));
         }
 #else
         /* 64-bit host or hybrid host. */
@@ -4576,7 +4578,8 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0StartVM32)
         {
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
-            HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS);
+            /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
+            Assert(HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS));
         }
 #else
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
@@ -6673,6 +6676,9 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
     }
 #endif
 
+    /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
+    pVCpu->hm.s.vmx.fUpdatedHostMsrs = false;
+
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
@@ -6893,6 +6899,7 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
             hmR0VmxLazyRestoreHostMsrs(pVCpu);
         }
 #endif
+        pVCpu->hm.s.vmx.fUpdatedHostMsrs = false;
         VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
         if (pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_ACTIVE)
         {
@@ -7076,8 +7083,10 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.Event.fPending)
     {
-#if defined(VBOX_STRICT) || defined(VBOX_WITH_STATISTICS)
+#if defined(DEBUG) || defined(VBOX_STRICT) || defined(VBOX_WITH_STATISTICS)
         uint32_t uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
+#endif
+#if defined(VBOX_STRICT) || defined(VBOX_WITH_STATISTICS)
         if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
             rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
@@ -7093,7 +7102,8 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Assert(!fBlockMovSS);
         }
 #endif
-        Log4(("Injecting pending event vcpu[%RU32] u64IntInfo=%#RX64\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntInfo));
+        Log4(("Injecting pending event vcpu[%RU32] u64IntInfo=%#RX64 Type=%#x\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntInfo,
+              (uint8_t)uIntType));
         rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntInfo, pVCpu->hm.s.Event.cbInstr,
                                     pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress, &uIntrState);
         AssertRCReturn(rc, rc);
@@ -8101,13 +8111,12 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     }
 
     /*
-     * The host MSR values the very first time around won't be updated, so we need to
-     * fill those values in. Subsequently, it's updated as part of the host state.
+     * Lazy-update of the host MSRs values in the auto-load/store MSR area.
      */
     if (   !pVCpu->hm.s.vmx.fUpdatedHostMsrs
         && pVCpu->hm.s.vmx.cMsrs > 0)
     {
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT);
+        hmR0VmxUpdateAutoLoadStoreHostMsrs(pVCpu);
     }
 
     /*
@@ -8180,10 +8189,17 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
             int rc2 = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
             AssertRC(rc2);
             Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS));
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, CPUMR0GetGuestTscAux(pVCpu), true /* fUpdateHostMsr */);
+            bool fMsrUpdated = hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, CPUMR0GetGuestTscAux(pVCpu),
+                                                          true /* fUpdateHostMsr */);
+            Assert(fMsrUpdated || pVCpu->hm.s.vmx.fUpdatedHostMsrs);
+            /* Finally, mark that all host MSR values are updated so we don't redo it without leaving VT-x. See @bugref{6956}. */
+            pVCpu->hm.s.vmx.fUpdatedHostMsrs = true;
         }
         else
+        {
             hmR0VmxRemoveAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX);
+            Assert(!pVCpu->hm.s.vmx.cMsrs || pVCpu->hm.s.vmx.fUpdatedHostMsrs);
+        }
     }
 #ifdef VBOX_STRICT
     hmR0VmxCheckAutoLoadStoreMsrs(pVCpu);
@@ -8241,7 +8257,9 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     }
 #endif
 
+#if HC_ARCH_BITS == 64
     pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;   /* Host state messed up by VT-x, we must restore. */
+#endif
     pVCpu->hm.s.vmx.uVmcsState |= HMVMX_VMCS_STATE_LAUNCHED;          /* Use VMRESUME instead of VMLAUNCH in the next run. */
     ASMSetFlags(pVmxTransient->uEflags);                              /* Enable interrupts. */
     VMMRZCallRing3Enable(pVCpu);                                      /* It is now safe to do longjmps to ring-3!!! */
