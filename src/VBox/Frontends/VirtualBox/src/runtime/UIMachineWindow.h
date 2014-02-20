@@ -55,6 +55,7 @@ public:
     void cleanup();
 
     /* Public getters: */
+    ulong screenId() const { return m_uScreenId; }
     UIMachineView* machineView() const { return m_pMachineView; }
     UIMachineLogic* machineLogic() const { return m_pMachineLogic; }
     UISession* uisession() const;
