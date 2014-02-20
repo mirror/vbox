@@ -419,6 +419,17 @@ typedef struct VBoxGuestCapsAquire
  **/
 #define VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE          VBOXGUEST_IOCTL_CODE(32, sizeof(VBoxGuestCapsAquire))
 
+/** IOCTL to VBoxGuest to set guest capabilities. */
+#define VBOXGUEST_IOCTL_SET_GUEST_CAPABILITIES      VBOXGUEST_IOCTL_CODE_(33, sizeof(VBoxGuestSetCapabilitiesInfo))
+
+/** Input and output buffer layout of the VBOXGUEST_IOCTL_SET_GUEST_CAPABILITIES
+ *  IOCtl. */
+typedef struct VBoxGuestSetCapabilitiesInfo
+{
+    uint32_t u32OrMask;
+    uint32_t u32NotMask;
+} VBoxGuestSetCapabilitiesInfo;
+AssertCompileSize(VBoxGuestSetCapabilitiesInfo, 8);
 
 
 typedef DECLCALLBACK(void) FNVBOXGUESTMOUSENOTIFY(void *pfnUser);
