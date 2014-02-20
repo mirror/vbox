@@ -64,7 +64,6 @@
 #define DEVICE_NAME              "vboxnet"
 /** The module descriptions as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV          "VirtualBox NetAdp"
-#define VBOXNETADP_MTU           1500
 
 
 /*******************************************************************************
