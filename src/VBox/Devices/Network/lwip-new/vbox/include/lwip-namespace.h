@@ -88,11 +88,14 @@
 #define netif_set_netmask lwip_netif_set_netmask
 #define netif_set_up lwip_netif_set_up
 #if MEM_LIBC_MALLOC == 0
-#define mem_free lwip_mem_free
+#if MEM_USE_POOLS == 0
 #define mem_init lwip_mem_init
+#define mem_trim lwip_mem_trim
+#endif  /* !MEM_USE_POOLS */
 #define mem_malloc lwip_mem_malloc
-#define mem_realloc lwip_mem_realloc
-#endif
+#define mem_calloc lwip_mem_calloc
+#define mem_free lwip_mem_free
+#endif  /* !MEM_LIBC_MALLOC */
 #define memp_free lwip_memp_free
 #define memp_init lwip_memp_init
 #define memp_malloc lwip_memp_malloc
