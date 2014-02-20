@@ -59,19 +59,11 @@ VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
  */
 VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
 {
-    VMMDevReqGuestCapabilities2 Req;
-
-    vmmdevInitRequest(&Req.header, VMMDevReq_SetGuestCapabilities);
-    Req.u32OrMask = fOr;
-    Req.u32NotMask = fNot;
-    int rc = vbglR3GRPerform(&Req.header);
-#if defined(DEBUG)
-    if (RT_SUCCESS(rc))
-        LogRel(("Successfully changed guest capabilities: or mask 0x%x, not mask 0x%x.\n", fOr, fNot));
-    else
-        LogRel(("Failed to change guest capabilities: or mask 0x%x, not mask 0x%x.  rc=%Rrc.\n", fOr, fNot, rc));
-#endif
-    return rc;
+    VBoxGuestSetCapabilitiesInfo Info;
+    Info.u32OrMask = fOr;
+    Info.u32NotMask = fNot;
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_SET_GUEST_CAPABILITIES, &Info,
+                         sizeof(Info));
 }
 
 
