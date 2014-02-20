@@ -93,6 +93,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_E1000,
     /** Extensible Firmware Interface Device group. */
     LOG_GROUP_DEV_EFI,
+    /** USB EHCI Device group. */
+    LOG_GROUP_DEV_EHCI,
     /** Floppy Controller Device group. */
     LOG_GROUP_DEV_FDC,
     /** High Precision Event Timer Device group. */
@@ -109,6 +111,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_LSILOGICSCSI,
     /** NE2000 Device group. */
     LOG_GROUP_DEV_NE2000,
+    /** USB OHCI Device group. */
+    LOG_GROUP_DEV_OHCI,
     /** Parallel Device group */
     LOG_GROUP_DEV_PARALLEL,
     /** PC Device group. */
@@ -133,8 +137,6 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_SERIAL,
     /** System Management Controller Device group. */
     LOG_GROUP_DEV_SMC,
-    /** USB Device group. */
-    LOG_GROUP_DEV_USB,
     /** VGA Device group. */
     LOG_GROUP_DEV_VGA,
     /** Virtio PCI Device group. */
@@ -691,6 +693,8 @@ typedef enum LOGGROUP
     LOG_GROUP_USB_MOUSE,
     /** MSD USB device group. */
     LOG_GROUP_USB_MSD,
+    /** USB remote support. */
+    LOG_GROUP_USB_REMOTE,
     /** USB webcam. */
     LOG_GROUP_USB_WEBCAM,
     /** VBox Guest Additions Driver (VBoxGuest). */
@@ -767,6 +771,7 @@ typedef enum LOGGROUP
     "DEV_DMA",      \
     "DEV_E1000",    \
     "DEV_EFI",      \
+    "DEV_EHCI",     \
     "DEV_FDC",      \
     "DEV_HPET",     \
     "DEV_IDE",      \
@@ -775,6 +780,7 @@ typedef enum LOGGROUP
     "DEV_LPC",      \
     "DEV_LSILOGICSCSI", \
     "DEV_NE2000",   \
+    "DEV_OHCI",     \
     "DEV_PARALLEL", \
     "DEV_PC",       \
     "DEV_PC_ARCH",  \
@@ -787,7 +793,6 @@ typedef enum LOGGROUP
     "DEV_RTC",      \
     "DEV_SERIAL",   \
     "DEV_SMC",      \
-    "DEV_USB",      \
     "DEV_VGA",      \
     "DEV_VIRTIO",   \
     "DEV_VIRTIO_NET", \
@@ -1066,6 +1071,7 @@ typedef enum LOGGROUP
     "USB_KBD",      \
     "USB_MOUSE",    \
     "USB_MSD",      \
+    "USB_REMOTE",   \
     "USB_WEBCAM",   \
     "VBGD",         \
     "VBGL",         \

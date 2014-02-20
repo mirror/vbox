@@ -80,7 +80,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_DEV_USB
+#define LOG_GROUP LOG_GROUP_DEV_OHCI
 #include <VBox/pci.h>
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/mm.h>
