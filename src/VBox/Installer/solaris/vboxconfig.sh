@@ -239,7 +239,8 @@ get_sysinfo()
             # The format is "pkg://solaris/system/kernel@0.5.11,5.11-0.161:20110315T070332Z"
             #            or "pkg://solaris/system/kernel@5.12,5.11-5.12.0.0.0.4.1:20120908T030246Z"
             #            or "pkg://solaris/system/kernel@0.5.11,5.11-0.175.0.0.0.1.0:20111012T032837Z"
-            #            or "pkg://solaris/system/kernel@5.12-5.12.0.0.0.9.1.3.0:20121012T032837Z"
+            #            or "pkg://solaris/system/kernel@5.12-5.12.0.0.0.9.1.3.0:20121012T032837Z" [1]
+	    # [1]: The sed below doesn't handle this. It's instead parsed below in the PSARC/2012/240 case.
             STR_KERN_MAJOR=`echo "$PKGFMRI" | sed 's/^.*\@//;s/\,.*//'`
             if test ! -z "$STR_KERN_MAJOR"; then
                 # The format is "0.5.11" or "5.12"
