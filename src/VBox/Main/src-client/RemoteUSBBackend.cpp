@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define LOG_GROUP LOG_GROUP_DEV_USB
+#define LOG_GROUP LOG_GROUP_USB_REMOTE
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "RemoteUSBBackend.h"
