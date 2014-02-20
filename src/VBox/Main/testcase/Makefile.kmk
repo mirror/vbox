@@ -182,7 +182,8 @@ tstGuestCtrlParseBuffer_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_G
 tstGuestCtrlParseBuffer_SOURCES  = \
 	tstGuestCtrlParseBuffer.cpp \
 	../src-client/GuestCtrlPrivate.cpp
-tstGuestCtrlParseBuffer_INCS     = ../include
+tstGuestCtrlParseBuffer_INCS     = ../include \
+								    $(VBOX_MAIN_APIWRAPPER_INCS)
 
 
 #
@@ -194,7 +195,8 @@ tstGuestCtrlContextID_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUE
 tstGuestCtrlContextID_SOURCES  = \
 	tstGuestCtrlContextID.cpp \
 	../src-client/GuestCtrlPrivate.cpp
-tstGuestCtrlContextID_INCS     = ../include
+tstGuestCtrlContextID_INCS     = ../include \
+								  $(VBOX_MAIN_APIWRAPPER_INCS)
 
 
 #
