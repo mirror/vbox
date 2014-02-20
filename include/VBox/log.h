@@ -719,6 +719,8 @@ typedef enum LOGGROUP
     LOG_GROUP_VD_VDI,
     /** VHD virtual disk backend. */
     LOG_GROUP_VD_VHD,
+    /** VHDX virtual disk backend. */
+    LOG_GROUP_VD_VHDX,
     /** VMDK virtual disk backend. */
     LOG_GROUP_VD_VMDK,
     /** VM group. */
@@ -1084,6 +1086,7 @@ typedef enum LOGGROUP
     "VD_RAW",       \
     "VD_VDI",       \
     "VD_VHD",       \
+    "VD_VHDX",      \
     "VD_VMDK",      \
     "VM",           \
     "VMM",          \
