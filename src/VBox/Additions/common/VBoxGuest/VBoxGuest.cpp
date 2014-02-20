@@ -65,10 +65,6 @@
 #ifdef VBOX_WITH_HGCM
 static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User);
 #endif
-#ifdef DEBUG
-static void testSetMouseStatus(void);
-#endif
-static int VBoxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fFeatures);
 
 static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags);
 
@@ -125,6 +121,149 @@ DECLINLINE(bool) VBoxGuestCommonGuestCapsModeSet(PVBOXGUESTDEVEXT pDevExt, uint3
     if (pu32OtherVal)
         *pu32OtherVal = fNotVal;
     return fResult;
+}
+
+
+/**
+ * Sets the interrupt filter mask during initialization and termination.
+ *
+ * This will ASSUME that we're the ones in carge over the mask, so
+ * we'll simply clear all bits we don't set.
+ *
+ * @returns VBox status code (ignored).
+ * @param   fMask       The new mask.
+ */
+static int vboxGuestSetFilterMask(uint32_t fMask)
+{
+    VMMDevCtlGuestFilterMask *pReq;
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_CtlGuestFilterMask);
+    if (RT_SUCCESS(rc))
+    {
+        pReq->u32OrMask = fMask;
+        pReq->u32NotMask = ~fMask;
+        rc = VbglGRPerform(&pReq->header);
+        if (RT_FAILURE(rc))
+            LogRel(("vboxGuestSetFilterMask: failed with rc=%Rrc\n", rc));
+        VbglGRFree(&pReq->header);
+    }
+    return rc;
+}
+
+
+/**
+ * Sets the guest capabilities to the host.
+ *
+ * This will ASSUME that we're the ones in charge of the mask, so
+ * we'll simply clear all bits we don't set.
+ *
+ * @returns VBox status code.
+ * @param   fMask       The new mask.
+ */
+static int vboxGuestSetCapabilities(uint32_t fMask)
+{
+    VMMDevReqGuestCapabilities2 *pReq;
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq),
+                         VMMDevReq_SetGuestCapabilities);
+    if (RT_SUCCESS(rc))
+    {
+        pReq->u32OrMask = fMask;
+        pReq->u32NotMask = ~fMask;
+        rc = VbglGRPerform(&pReq->header);
+        if (RT_FAILURE(rc))
+            LogRelFunc(("failed with rc=%Rrc\n", rc));
+        VbglGRFree(&pReq->header);
+    }
+    return rc;
+}
+
+
+/**
+ * Sets the mouse status to the host.
+ *
+ * This will ASSUME that we're the ones in charge of the mask, so
+ * we'll simply clear all bits we don't set.
+ *
+ * @returns VBox status code.
+ * @param   fMask       The new mask.
+ */
+static int vboxGuestSetMouseStatus(uint32_t fMask)
+{
+    VMMDevReqMouseStatus *pReq;
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq),
+                         VMMDevReq_SetMouseStatus);
+    if (RT_SUCCESS(rc))
+    {
+        pReq->mouseFeatures = fMask;
+        pReq->pointerXPos   = 0;
+        pReq->pointerYPos   = 0;
+        rc = VbglGRPerform(&pReq->header);
+        if (RT_FAILURE(rc))
+            LogRelFunc(("failed with rc=%Rrc\n", rc));
+        VbglGRFree(&pReq->header);
+    }
+    return rc;
+}
+
+
+/** Host flags to be updated by a given invokation of the
+ * vboxGuestUpdateHostFlags() method. */
+enum
+{
+    HostFlags_FilterMask = 1,
+    HostFlags_Capabilities,
+    HostFlags_MouseStatus,
+    HostFlags_SizeHack = (unsigned)-1
+};
+
+
+/** Check which host flags in a given category are being asserted by some guest
+ * session and assert exactly those on the host which are being asserted by one
+ * or more sessions.  pCallingSession is purely for sanity checking and can be
+ * NULL. */
+static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt,
+                                    PVBOXGUESTSESSION pSession,
+                                    unsigned enmFlags)
+{
+    int rc = VINF_SUCCESS;
+    uint32_t fFilterMask = 0, fCapabilities = 0, fMouseStatus = 0;
+    PVBOXGUESTSESSION pIterator;
+    unsigned cSessions = 0;
+
+    RTSpinlockAcquire(pDevExt->SessionSpinlock);
+    RTListForEach(&pDevExt->SessionList, pIterator, VBOXGUESTSESSION, ListNode)
+    {
+        fFilterMask   |= pIterator->fFilterMask;
+        fCapabilities |= pIterator->fCapabilities;
+        fMouseStatus  |= pIterator->fMouseStatus;
+        ++cSessions;
+    }
+    if (!cSessions)
+        if (fFilterMask | fCapabilities | fMouseStatus)
+            rc = VERR_INTERNAL_ERROR;
+    if (cSessions == 1 && pSession)
+        if (   fFilterMask   != pSession->fFilterMask
+            || fCapabilities != pSession->fCapabilities
+            || fMouseStatus  != pSession->fMouseStatus)
+            rc = VERR_INTERNAL_ERROR;
+    if (cSessions > 1 && pSession)
+        if (   ~fFilterMask   & pSession->fFilterMask
+            || ~fCapabilities & pSession->fCapabilities
+            || ~fMouseStatus  & pSession->fMouseStatus)
+            rc = VERR_INTERNAL_ERROR;
+    if (RT_SUCCESS(rc))
+    {
+        if (enmFlags & HostFlags_FilterMask)
+            vboxGuestSetFilterMask(fFilterMask | pDevExt->fFixedEvents);
+        if (enmFlags & HostFlags_Capabilities)
+            vboxGuestSetCapabilities(fCapabilities);
+        /* Since VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR is inverted in the session
+         * capabilities we invert it again before sending it to the host. */
+        fMouseStatus ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
+        if (enmFlags & HostFlags_MouseStatus)
+            vboxGuestSetMouseStatus(fMouseStatus);
+    }
+    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    return rc;
 }
 
 /*******************************************************************************
@@ -327,33 +466,6 @@ static void vboxGuestTermUnfixGuestMappings(PVBOXGUESTDEVEXT pDevExt)
 
         pDevExt->hGuestMappings = NIL_RTR0MEMOBJ;
     }
-}
-
-
-/**
- * Sets the interrupt filter mask during initialization and termination.
- *
- * This will ASSUME that we're the ones in carge over the mask, so
- * we'll simply clear all bits we don't set.
- *
- * @returns VBox status code (ignored).
- * @param   pDevExt     The device extension.
- * @param   fMask       The new mask.
- */
-static int vboxGuestSetFilterMask(PVBOXGUESTDEVEXT pDevExt, uint32_t fMask)
-{
-    VMMDevCtlGuestFilterMask *pReq;
-    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_CtlGuestFilterMask);
-    if (RT_SUCCESS(rc))
-    {
-        pReq->u32OrMask = fMask;
-        pReq->u32NotMask = ~fMask;
-        rc = VbglGRPerform(&pReq->header);
-        if (RT_FAILURE(rc))
-            LogRel(("vboxGuestSetFilterMask: failed with rc=%Rrc\n", rc));
-        VbglGRFree(&pReq->header);
-    }
-    return rc;
 }
 
 
@@ -798,6 +910,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
 #endif
     RTListInit(&pDevExt->WokenUpList);
     RTListInit(&pDevExt->FreeList);
+    RTListInit(&pDevExt->SessionList);
 #ifdef VBOX_WITH_VRDP_SESSION_HANDLING
     pDevExt->fVRDPEnabled = false;
 #endif
@@ -811,9 +924,6 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     pDevExt->MemBalloon.fUseKernelAPI = true;
     pDevExt->MemBalloon.paMemObj = NULL;
     pDevExt->MemBalloon.pOwner = NULL;
-    for (i = 0; i < RT_ELEMENTS(pDevExt->acMouseFeatureUsage); ++i)
-        pDevExt->acMouseFeatureUsage[i] = 0;
-    pDevExt->fMouseStatus = 0;
     pDevExt->MouseNotifyCallback.pfnNotify = NULL;
     pDevExt->MouseNotifyCallback.pvUser = NULL;
     pDevExt->cISR = 0;
@@ -882,21 +992,17 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
             rc = VBoxGuestReportGuestInfo(enmOSType);
             if (RT_SUCCESS(rc))
             {
-                rc = vboxGuestSetFilterMask(pDevExt, fFixedEvents);
+                rc = vboxGuestSetFilterMask(fFixedEvents);
                 if (RT_SUCCESS(rc))
                 {
                     /*
                      * Disable guest graphics capability by default. The guest specific
                      * graphics driver will re-enable this when it is necessary.
                      */
-                    rc = VBoxGuestSetGuestCapabilities(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+                    rc = vboxGuestSetCapabilities(0);
                     if (RT_SUCCESS(rc))
                     {
                         vboxGuestInitFixateGuestMappings(pDevExt);
-
-#ifdef DEBUG
-                        testSetMouseStatus();  /* Other tests? */
-#endif
 
                         rc = VBoxGuestReportDriverStatus(true /* Driver is active */);
                         if (RT_FAILURE(rc))
@@ -906,7 +1012,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                         return VINF_SUCCESS;
                     }
 
-                    LogRel(("VBoxGuestInitDevExt: VBoxGuestSetGuestCapabilities failed, rc=%Rrc\n", rc));
+                    LogRel(("VBoxGuestInitDevExt: vboxGuestSetCapabilities failed, rc=%Rrc\n", rc));
                 }
                 else
                     LogRel(("VBoxGuestInitDevExt: vboxGuestSetFilterMask failed, rc=%Rrc\n", rc));
@@ -973,8 +1079,9 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
      * Clean up the bits that involves the host first.
      */
     vboxGuestTermUnfixGuestMappings(pDevExt);
-    VBoxGuestSetGuestCapabilities(0, UINT32_MAX);       /* clears all capabilities */
-    vboxGuestSetFilterMask(pDevExt, 0);                 /* filter all events */
+    vboxGuestSetCapabilities(0);                  /* clear all Capabilities */
+    vboxGuestSetFilterMask(0);                    /* filter all events */
+    vboxGuestSetMouseStatus(0);                   /* clear all mouse features */
     vboxGuestCloseMemBalloon(pDevExt, (PVBOXGUESTSESSION)NULL);
 
     /*
@@ -993,6 +1100,8 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
 #endif
     VBoxGuestDeleteWaitList(&pDevExt->WokenUpList);
     VBoxGuestDeleteWaitList(&pDevExt->FreeList);
+    /** @todo We do not assert that the session list is empty, because probably
+     * no one would notice. */
 
     VbglTerminate();
 
@@ -1031,6 +1140,9 @@ int VBoxGuestCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSe
     pSession->Process = RTProcSelf();
     pSession->R0Process = RTR0ProcHandleSelf();
     pSession->pDevExt = pDevExt;
+    RTSpinlockAcquire(pDevExt->SessionSpinlock);
+    RTListAppend(&pDevExt->SessionList, &pSession->ListNode);
+    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
 
     *ppSession = pSession;
     LogFlow(("VBoxGuestCreateUserSession: pSession=%p proc=%RTproc (%d) r0proc=%p\n",
@@ -1061,6 +1173,9 @@ int VBoxGuestCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *pp
     pSession->Process = NIL_RTPROCESS;
     pSession->R0Process = NIL_RTR0PROCESS;
     pSession->pDevExt = pDevExt;
+    RTSpinlockAcquire(pDevExt->SessionSpinlock);
+    RTListAppend(&pDevExt->SessionList, &pSession->ListNode);
+    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
 
     *ppSession = pSession;
     LogFlow(("VBoxGuestCreateKernelSession: pSession=%p proc=%RTproc (%d) r0proc=%p\n",
@@ -1082,6 +1197,9 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
     Log(("VBoxGuestCloseSession: pSession=%p proc=%RTproc (%d) r0proc=%p\n",
          pSession, pSession->Process, (int)pSession->Process, (uintptr_t)pSession->R0Process)); /** @todo %RTr0proc */
 
+    RTSpinlockAcquire(pDevExt->SessionSpinlock);
+    RTListNodeRemove(&pSession->ListNode);
+    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
     VBoxGuestCommonGuestCapsAcquire(pDevExt, pSession, 0, UINT32_MAX, VBOXGUESTCAPSACQUIRE_FLAGS_NONE);
 
     VBoxGuestCommonIOCtl_CancelAllWaitEvents(pDevExt, pSession);
@@ -1103,8 +1221,9 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
     pSession->Process = NIL_RTPROCESS;
     pSession->R0Process = NIL_RTR0PROCESS;
     vboxGuestCloseMemBalloon(pDevExt, pSession);
-    /* Reset any mouse status flags which the session may have set. */
-    VBoxGuestCommonIOCtl_SetMouseStatus(pDevExt, pSession, 0);
+    /* Update the host flags (mouse status etc) not to reflect this session. */
+    vboxGuestUpdateHostFlags(pDevExt, NULL,
+         HostFlags_FilterMask | HostFlags_Capabilities | HostFlags_MouseStatus);
     RTMemFree(pSession);
 }
 
@@ -1825,25 +1944,66 @@ static int VBoxGuestCommonIOCtl_VMMRequest(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 }
 
 
-static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt, VBoxGuestFilterMaskInfo *pInfo)
+static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt,
+                                              PVBOXGUESTSESSION pSession,
+                                              VBoxGuestFilterMaskInfo *pInfo)
 {
-    VMMDevCtlGuestFilterMask *pReq;
-    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_CtlGuestFilterMask);
-    if (RT_FAILURE(rc))
-    {
-        Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: failed to allocate %u (%#x) bytes to cache the request. rc=%Rrc!!\n",
-             sizeof(*pReq), sizeof(*pReq), rc));
-        return rc;
-    }
+    int rc;
 
-    pReq->u32OrMask = pInfo->u32OrMask;
-    pReq->u32NotMask = pInfo->u32NotMask;
-    pReq->u32NotMask &= ~pDevExt->fFixedEvents; /* don't permit these to be cleared! */
-    rc = VbglGRPerform(&pReq->header);
-    if (RT_FAILURE(rc))
-        Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: VbglGRPerform failed, rc=%Rrc!\n", rc));
+    if ((pInfo->u32OrMask | pInfo->u32NotMask) & ~VMMDEV_EVENT_VALID_EVENT_MASK)
+        return VERR_INVALID_PARAMETER;
+    RTSpinlockAcquire(pDevExt->SessionSpinlock);
+    pSession->fFilterMask |= pInfo->u32OrMask;
+    pSession->fFilterMask &= ~pInfo->u32NotMask;
+    rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_FilterMask);
+    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    return rc;
+}
 
-    VbglGRFree(&pReq->header);
+
+static int VBoxGuestCommonIOCtl_SetCapabilities(PVBOXGUESTDEVEXT pDevExt,
+                                            PVBOXGUESTSESSION pSession,
+                                            VBoxGuestSetCapabilitiesInfo *pInfo)
+{
+    int rc;
+
+    if (  (pInfo->u32OrMask | pInfo->u32NotMask)
+        & ~VMMDEV_GUEST_CAPABILITIES_MASK)
+        return VERR_INVALID_PARAMETER;
+    RTSpinlockAcquire(pDevExt->SessionSpinlock);
+    pSession->fCapabilities |= pInfo->u32OrMask;
+    pSession->fCapabilities &= ~pInfo->u32NotMask;
+    rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_Capabilities);
+    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    return rc;
+}
+
+
+/**
+ * Sets the mouse status features for this session and updates them
+ * globally.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevExt             The device extention.
+ * @param   pSession            The session.
+ * @param   fFeatures           New bitmap of enabled features.
+ */
+static int vboxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt,
+                                               PVBOXGUESTSESSION pSession,
+                                               uint32_t fFeatures)
+{
+    int rc;
+
+    if (fFeatures & ~VMMDEV_MOUSE_GUEST_MASK)
+        return VERR_INVALID_PARAMETER;
+    /* Since this is more of a negative feature we invert it to get the real
+     * feature (when the guest does not need the host cursor). */
+    fFeatures ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
+    RTSpinlockAcquire(pDevExt->SessionSpinlock);
+    pSession->fMouseStatus = fFeatures;
+    rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_MouseStatus);
+    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
     return rc;
 }
 
@@ -2339,179 +2499,6 @@ static int VBoxGuestCommonIOCtl_DisableVRDPSession(VBOXGUESTDEVEXT pDevExt, PVBO
 }
 #endif /* VBOX_WITH_VRDP_SESSION_HANDLING */
 
-#ifdef DEBUG
-/** Unit test SetMouseStatus instead of really executing the request. */
-static bool     g_test_fSetMouseStatus = false;
-/** When unit testing SetMouseStatus, the fake RC for the GR to return. */
-static int      g_test_SetMouseStatusGRRC;
-/** When unit testing SetMouseStatus this will be set to the status passed to
- * the GR. */
-static uint32_t g_test_statusSetMouseStatus;
-#endif
-
-static int vboxguestcommonSetMouseStatus(uint32_t fFeatures)
-{
-    VMMDevReqMouseStatus *pReq;
-    int rc;
-
-    LogRelFlowFunc(("fFeatures=%u\n", (int) fFeatures));
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_SetMouseStatus);
-    if (RT_SUCCESS(rc))
-    {
-        pReq->mouseFeatures = fFeatures;
-        pReq->pointerXPos = 0;
-        pReq->pointerYPos = 0;
-#ifdef DEBUG
-        if (g_test_fSetMouseStatus)
-        {
-            g_test_statusSetMouseStatus = pReq->mouseFeatures;
-            rc = g_test_SetMouseStatusGRRC;
-        }
-        else
-#endif
-            rc = VbglGRPerform(&pReq->header);
-        VbglGRFree(&pReq->header);
-    }
-    LogRelFlowFunc(("rc=%Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Sets the mouse status features for this session and updates them
- * globally.  We aim to ensure that if several threads call this in
- * parallel the most recent status will always end up being set.
- *
- * @returns VBox status code.
- *
- * @param   pDevExt             The device extention.
- * @param   pSession            The session.
- * @param   fFeatures           New bitmap of enabled features.
- */
-static int VBoxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fFeatures)
-{
-    uint32_t    fNewDevExtStatus = 0;
-    unsigned    i;
-    int         rc;
-    /* Exit early if nothing has changed - hack to work around the
-     * Windows Additions not using the common code. */
-    bool        fNoAction;
-
-    RTSpinlockAcquire(pDevExt->SessionSpinlock);
-
-    /* For all the bits which the guest is allowed to set, check whether the
-     * requested value is different to the current one and adjust the global
-     * usage counter and if appropriate the global state if so. */
-    for (i = 0; i < sizeof(fFeatures) * 8; i++)
-    {
-        if (RT_BIT_32(i) & VMMDEV_MOUSE_GUEST_MASK)
-        {
-            if (   (RT_BIT_32(i) & fFeatures)
-                && !(RT_BIT_32(i) & pSession->fMouseStatus))
-                pDevExt->acMouseFeatureUsage[i]++;
-            else if (   !(RT_BIT_32(i) & fFeatures)
-                     && (RT_BIT_32(i) & pSession->fMouseStatus))
-                pDevExt->acMouseFeatureUsage[i]--;
-        }
-        if (pDevExt->acMouseFeatureUsage[i] > 0)
-            fNewDevExtStatus |= RT_BIT_32(i);
-    }
-
-    pSession->fMouseStatus = fFeatures & VMMDEV_MOUSE_GUEST_MASK;
-    fNoAction = (pDevExt->fMouseStatus == fNewDevExtStatus);
-    pDevExt->fMouseStatus = fNewDevExtStatus;
-
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
-    if (fNoAction)
-        return VINF_SUCCESS;
-
-    do
-    {
-        fNewDevExtStatus = pDevExt->fMouseStatus;
-        rc = vboxguestcommonSetMouseStatus(fNewDevExtStatus);
-    } while (   RT_SUCCESS(rc)
-             && fNewDevExtStatus != pDevExt->fMouseStatus);
-
-    return rc;
-}
-
-
-#ifdef DEBUG
-/** Unit test for the SET_MOUSE_STATUS IoCtl.  Since this is closely tied to
- * the code in question it probably makes most sense to keep it next to the
- * code. */
-static void testSetMouseStatus(void)
-{
-    uint32_t u32Data;
-    int rc;
-    RTSPINLOCK Spinlock;
-
-    g_test_fSetMouseStatus = true;
-    rc = RTSpinlockCreate(&Spinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "VBoxGuestTest");
-    AssertRCReturnVoid(rc);
-    {
-        VBOXGUESTDEVEXT  DevExt  = { 0 };
-        VBOXGUESTSESSION Session = { 0 };
-
-        g_test_statusSetMouseStatus = ~0;
-        g_test_SetMouseStatusGRRC = VINF_SUCCESS;
-        DevExt.SessionSpinlock = Spinlock;
-        u32Data = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
-        rc = VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &DevExt,
-                                  &Session, &u32Data, sizeof(u32Data), NULL);
-        AssertRCSuccess(rc);
-        AssertMsg(   g_test_statusSetMouseStatus
-                  == VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE,
-                  ("Actual status: 0x%x\n", g_test_statusSetMouseStatus));
-        DevExt.acMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR) - 1] = 1;
-        rc = VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &DevExt,
-                                  &Session, &u32Data, sizeof(u32Data), NULL);
-        AssertRCSuccess(rc);
-        AssertMsg(   g_test_statusSetMouseStatus
-                  == (  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                      | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR),
-                  ("Actual status: 0x%x\n", g_test_statusSetMouseStatus));
-        u32Data = VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE;  /* Can't change this */
-        rc = VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &DevExt,
-                                  &Session, &u32Data, sizeof(u32Data), NULL);
-        AssertRCSuccess(rc);
-        AssertMsg(   g_test_statusSetMouseStatus
-                  == VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR,
-                  ("Actual status: 0x%x\n", g_test_statusSetMouseStatus));
-        u32Data = VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
-        rc = VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &DevExt,
-                                  &Session, &u32Data, sizeof(u32Data), NULL);
-        AssertRCSuccess(rc);
-        AssertMsg(   g_test_statusSetMouseStatus
-                  == VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR,
-                  ("Actual status: 0x%x\n", g_test_statusSetMouseStatus));
-        u32Data = 0;
-        rc = VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &DevExt,
-                                  &Session, &u32Data, sizeof(u32Data), NULL);
-        AssertRCSuccess(rc);
-        AssertMsg(   g_test_statusSetMouseStatus
-                  == VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR,
-                  ("Actual status: 0x%x\n", g_test_statusSetMouseStatus));
-        AssertMsg(DevExt.acMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR) - 1] == 1,
-                  ("Actual value: %d\n", DevExt.acMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR)]));
-        g_test_SetMouseStatusGRRC = VERR_UNRESOLVED_ERROR;
-        /* This should succeed as the host request should not be made
-         * since nothing has changed. */
-        rc = VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &DevExt,
-                                  &Session, &u32Data, sizeof(u32Data), NULL);
-        AssertRCSuccess(rc);
-        /* This should fail with VERR_UNRESOLVED_ERROR as set above. */
-        u32Data = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
-        rc = VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &DevExt,
-                                  &Session, &u32Data, sizeof(u32Data), NULL);
-        AssertMsg(rc == VERR_UNRESOLVED_ERROR, ("rc == %Rrc\n", rc));
-        /* Untested paths: out of memory; race setting status to host */
-   }
-    RTSpinlockDestroy(Spinlock);
-    g_test_fSetMouseStatus = false;
-}
-#endif
-
 
 /**
  * Guest backdoor logging.
@@ -2881,8 +2868,10 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
                 break;
 
             case VBOXGUEST_IOCTL_CTL_FILTER_MASK:
-                CHECKRET_MIN_SIZE("CTL_FILTER_MASK", sizeof(VBoxGuestFilterMaskInfo));
-                rc = VBoxGuestCommonIOCtl_CtlFilterMask(pDevExt, (VBoxGuestFilterMaskInfo *)pvData);
+                CHECKRET_MIN_SIZE("CTL_FILTER_MASK",
+                                  sizeof(VBoxGuestFilterMaskInfo));
+                rc = VBoxGuestCommonIOCtl_CtlFilterMask(pDevExt, pSession,
+                                             (VBoxGuestFilterMaskInfo *)pvData);
                 break;
 
 #ifdef VBOX_WITH_HGCM
@@ -2929,7 +2918,7 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
 #endif /* VBOX_WITH_VRDP_SESSION_HANDLING */
             case VBOXGUEST_IOCTL_SET_MOUSE_STATUS:
                 CHECKRET_SIZE("SET_MOUSE_STATUS", sizeof(uint32_t));
-                rc = VBoxGuestCommonIOCtl_SetMouseStatus(pDevExt, pSession,
+                rc = vboxGuestCommonIOCtl_SetMouseStatus(pDevExt, pSession,
                                                          *(uint32_t *)pvData);
                 break;
 
@@ -2944,6 +2933,13 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
                 CHECKRET_SIZE("GUEST_CAPS_ACQUIRE", sizeof(VBoxGuestCapsAquire));
                 rc = VBoxGuestCommonIOCTL_GuestCapsAcquire(pDevExt, pSession, (VBoxGuestCapsAquire*)pvData);
                 *pcbDataReturned = sizeof(VBoxGuestCapsAquire);
+                break;
+
+            case VBOXGUEST_IOCTL_SET_GUEST_CAPABILITIES:
+                CHECKRET_MIN_SIZE("SET_GUEST_CAPABILITIES",
+                                  sizeof(VBoxGuestSetCapabilitiesInfo));
+                rc = VBoxGuestCommonIOCtl_SetCapabilities(pDevExt, pSession,
+                                        (VBoxGuestSetCapabilitiesInfo *)pvData);
                 break;
 
             default:
