@@ -72,6 +72,7 @@
 # undef LOG_GROUP
 # include "../USB/DevOHCI.cpp"
 # ifdef VBOX_WITH_EHCI_IMPL
+#  undef LOG_GROUP
 #  include "../USB/DevEHCI.cpp"
 # endif
 #endif
