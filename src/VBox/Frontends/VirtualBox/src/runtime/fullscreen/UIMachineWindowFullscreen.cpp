@@ -72,18 +72,6 @@ void UIMachineWindowFullscreen::handleNativeNotification(const QString &strNativ
 }
 #endif /* Q_WS_MAC */
 
-#ifdef RT_OS_DARWIN
-void UIMachineWindowFullscreen::sltToggleNativeFullscreenMode()
-{
-    /* Make sure this method is only used for ML and next: */
-    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
-
-    /* Enter native fullscreen mode: */
-    if (!darwinIsInFullscreenMode(this))
-        darwinToggleFullscreenMode(this);
-}
-#endif /* RT_OS_DARWIN */
-
 void UIMachineWindowFullscreen::sltMachineStateChanged()
 {
     /* Call to base-class: */
@@ -145,9 +133,6 @@ void UIMachineWindowFullscreen::prepareVisualState()
                                                                      UIMachineWindow::handleNativeNotification);
         UICocoaApplication::instance()->registerToNativeNotification("NSWindowDidExitFullScreenNotification", this,
                                                                      UIMachineWindow::handleNativeNotification);
-        /* Asynchronously toggle fullscreen mode for every screen which requires it: */
-        if (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
-            QTimer::singleShot(0, this, SLOT(sltToggleNativeFullscreenMode()));
     }
 #endif /* Q_WS_MAC */
 }

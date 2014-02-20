@@ -335,15 +335,20 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
 #endif /* Q_WS_MAC */
 
 #ifdef Q_WS_MAC
-    /* Keep sync for machine-logic/window(s) in ML and next: */
+    /* On ML and later: */
     if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
     {
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
         {
+            /* Keep sync for machine-logic/window(s): */
             connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidEnter()),
                     this, SLOT(sltHandleNativeFullscreenDidEnter()));
             connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidExit()),
                     this, SLOT(sltHandleNativeFullscreenDidExit()));
+            /* Enter native fullscreen mode: */
+            if (darwinScreensHaveSeparateSpaces() || pMachineWindow->screenId() == 0)
+                if (!darwinIsInFullscreenMode(pMachineWindow))
+                    darwinToggleFullscreenMode(pMachineWindow);
         }
     }
 #endif /* Q_WS_MAC */
@@ -372,11 +377,12 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
     setMachineWindowsCreated(false);
 
 #ifdef Q_WS_MAC
-    /* Leave sync for machine-logic/window(s) in ML and next: */
+    /* On ML and later: */
     if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
     {
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
         {
+            /* Leave sync for machine-logic/window(s): */
             disconnect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidEnter()),
                        this, SLOT(sltHandleNativeFullscreenDidEnter()));
             disconnect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidExit()),

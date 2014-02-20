@@ -50,11 +50,6 @@ protected:
 
 private slots:
 
-#ifdef RT_OS_DARWIN
-    /** Mac OS X: Toggles native fullscreen mode. */
-    void sltToggleNativeFullscreenMode();
-#endif /* RT_OS_DARWIN */
-
     /* Session event-handlers: */
     void sltMachineStateChanged();
 
