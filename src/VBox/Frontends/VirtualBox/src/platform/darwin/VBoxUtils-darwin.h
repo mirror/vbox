@@ -81,6 +81,7 @@ void darwinMinaturizeWindow(NativeNSWindowRef pWindow);
 void darwinEnableFullscreenSupport(NativeNSWindowRef pWindow);
 void darwinEnableTransienceSupport(NativeNSWindowRef pWindow);
 void darwinToggleFullscreenMode(NativeNSWindowRef pWindow);
+bool darwinIsInFullscreenMode(NativeNSWindowRef pWindow);
 bool darwinScreensHaveSeparateSpaces();
 
 bool darwinOpenFile(NativeNSStringRef pstrFile);
@@ -246,6 +247,7 @@ void darwinMinaturizeWindow(QWidget *pWidget);
 void darwinEnableFullscreenSupport(QWidget *pWidget);
 void darwinEnableTransienceSupport(QWidget *pWidget);
 void darwinToggleFullscreenMode(QWidget *pWidget);
+bool darwinIsInFullscreenMode(QWidget *pWidget);
 bool darwinOpenFile(const QString &strFile);
 
 QString darwinSystemLanguage(void);

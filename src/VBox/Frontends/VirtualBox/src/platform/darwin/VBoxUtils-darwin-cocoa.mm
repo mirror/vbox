@@ -37,6 +37,7 @@
 
 /** Easy way of dynamical call for 10.7 AppKit functionality we do not yet support. */
 #define NSWindowCollectionBehaviorFullScreenPrimary (1 << 7)
+#define NSFullScreenWindowMask (1 << 14)
 
 NativeNSWindowRef darwinToNativeWindowImpl(NativeNSViewRef pView)
 {
@@ -200,6 +201,12 @@ void darwinToggleFullscreenMode(NativeNSWindowRef pWindow)
      * This method is available since 10.7 only. */
     if ([pWindow respondsToSelector: @selector(toggleFullScreen:)])
         [pWindow performSelector: @selector(toggleFullScreen:) withObject: (id)nil];
+}
+
+bool darwinIsInFullscreenMode(NativeNSWindowRef pWindow)
+{
+    /* Check whether passed pWindow is in native fullscreen mode. */
+    return [pWindow styleMask] & NSFullScreenWindowMask;
 }
 
 bool darwinScreensHaveSeparateSpaces()
