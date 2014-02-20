@@ -22,7 +22,8 @@
 #ifndef Graphics_DevVGASavedState_h
 #define Graphics_DevVGASavedState_h
 
-#define VGA_SAVEDSTATE_VERSION              11
+#define VGA_SAVEDSTATE_VERSION              12
+#define VGA_SAVEDSTATE_VERSION_HGSMIMA      12 /* HGSMI memory allocator. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA       11
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_2D    10 /* <- internal build with 2d state only */
 #define VGA_SAVEDSTATE_VERSION_WITH_PENDVHWA 10

@@ -200,8 +200,7 @@ int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
                        uint32_t offHeapHandle,
                        uintptr_t offDelta,
                        HGSMISIZE cbArea,
-                       HGSMIOFFSET offBase,
-                       const HGSMIENV *pEnv)
+                       HGSMIOFFSET offBase)
 {
     if (   !pHeap
         || !pvBase)
@@ -213,12 +212,7 @@ int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
 
     if (RT_SUCCESS (rc))
     {
-        if (u32HeapType == HGSMI_HEAP_TYPE_MA)
-        {
-            /* @todo rc = HGSMIMAInit(&pHeap->u.ma, &pHeap->area, NULL, 0, 0, pEnv); */
-            rc = VERR_NOT_IMPLEMENTED;
-        }
-        else if (u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
+        if (u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
         {
             pHeap->u.hOff = (RTHEAPOFFSET)((uint8_t *)pvBase + offHeapHandle);
         }
@@ -229,6 +223,7 @@ int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
         }
         else
         {
+            /* HGSMI_HEAP_TYPE_MA does not need the relocation. */
             rc = VERR_NOT_SUPPORTED;
         }
 
@@ -240,6 +235,35 @@ int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
         else
         {
             HGSMIAreaClear (&pHeap->area);
+        }
+    }
+
+    return rc;
+}
+
+int HGSMIHeapRestoreMA(HGSMIHEAP *pHeap,
+                       void *pvBase,
+                       HGSMISIZE cbArea,
+                       HGSMIOFFSET offBase,
+                       uint32_t cBlocks,
+                       HGSMIOFFSET *paDescriptors,
+                       HGSMISIZE cbMaxBlock,
+                       HGSMIENV *pEnv)
+{
+    int rc = HGSMIAreaInitialize(&pHeap->area, pvBase, cbArea, offBase);
+
+    if (RT_SUCCESS (rc))
+    {
+        rc = HGSMIMAInit(&pHeap->u.ma, &pHeap->area, paDescriptors, cBlocks, cbMaxBlock, pEnv);
+
+        if (RT_SUCCESS(rc))
+        {
+            pHeap->cRefs = 0;
+            pHeap->u32HeapType = HGSMI_HEAP_TYPE_MA;
+        }
+        else
+        {
+            HGSMIAreaClear(&pHeap->area);
         }
     }
 
