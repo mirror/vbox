@@ -183,7 +183,7 @@ tstGuestCtrlParseBuffer_SOURCES  = \
 	tstGuestCtrlParseBuffer.cpp \
 	../src-client/GuestCtrlPrivate.cpp
 tstGuestCtrlParseBuffer_INCS     = ../include \
-								    $(VBOX_MAIN_APIWRAPPER_INCS)
+    $(VBOX_MAIN_APIWRAPPER_INCS)
 
 
 #
@@ -196,7 +196,7 @@ tstGuestCtrlContextID_SOURCES  = \
 	tstGuestCtrlContextID.cpp \
 	../src-client/GuestCtrlPrivate.cpp
 tstGuestCtrlContextID_INCS     = ../include \
-								  $(VBOX_MAIN_APIWRAPPER_INCS)
+     $(VBOX_MAIN_APIWRAPPER_INCS)
 
 
 #
