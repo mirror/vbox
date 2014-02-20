@@ -1063,10 +1063,10 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
             /* Validate checksum. */
             u32ChkSumSaved = pHdr1->u32Checksum;
             pHdr1->u32Checksum = 0;
-            //u32ChkSum = RTCrc32C(pHdr1, RT_OFFSETOF(VhdxHeader, u8Reserved[502]));
+            u32ChkSum = RTCrc32C(pHdr1, sizeof(VhdxHeader));
 
             if (   pHdr1->u32Signature == VHDX_HEADER_SIGNATURE
-                /*&& u32ChkSum == u32ChkSumSaved*/)
+                && u32ChkSum == u32ChkSumSaved)
                 fHdr1Valid = true;
         }
 
@@ -1080,10 +1080,10 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
             /* Validate checksum. */
             u32ChkSumSaved = pHdr2->u32Checksum;
             pHdr2->u32Checksum = 0;
-            //u32ChkSum = RTCrc32C(pHdr2, RT_OFFSETOF(VhdxHeader, u8Reserved[502]));
+            u32ChkSum = RTCrc32C(pHdr2, sizeof(VhdxHeader));
 
             if (   pHdr2->u32Signature == VHDX_HEADER_SIGNATURE
-                /*&& u32ChkSum == u32ChkSumSaved*/)
+                && u32ChkSum == u32ChkSumSaved)
                 fHdr2Valid = true;
         }
 
@@ -1570,18 +1570,16 @@ static int vhdxLoadRegionTable(PVHDXIMAGE pImage)
             pRegionTblHdr->u32Checksum = 0;
 
             /* Verify the region table integrity. */
-            //u32ChkSum = RTCrc32C(pbRegionTbl, VHDX_REGION_TBL_SIZE_MAX);
+            u32ChkSum = RTCrc32C(pbRegionTbl, VHDX_REGION_TBL_SIZE_MAX);
 
             if (RegionTblHdr.u32Signature != VHDX_REGION_TBL_HDR_SIGNATURE)
                 rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
                                "VHDX: Invalid signature for region table header of image \'%s\'",
                                pImage->pszFilename);
-#if 0
             else if (u32ChkSum != RegionTblHdr.u32Checksum)
                 rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
                                "VHDX: CRC32 checksum mismatch for the region table of image \'%s\' (expected %#x got %#x)",
                                pImage->pszFilename, RegionTblHdr.u32Checksum, u32ChkSum);
-#endif
             else if (RegionTblHdr.u32EntryCount > VHDX_REGION_TBL_HDR_ENTRY_COUNT_MAX)
                 rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
                                "VHDX: Invalid entry count field in the region table header of image \'%s\'",

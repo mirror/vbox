@@ -263,6 +263,7 @@ RuntimeR3_SOURCES       = \
 	common/alloc/memtracker.cpp \
 	common/checksum/adler32.cpp \
 	common/checksum/crc32.cpp \
+	common/checksum/crc32c.cpp \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/md5str.cpp \
