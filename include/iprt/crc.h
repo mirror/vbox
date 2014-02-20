@@ -152,6 +152,45 @@ RTDECL(uint32_t)    RTCrcAdler32Finish(uint32_t uCrc);
 
 /** @} */
 
+
+/** @defgroup grp_rt_crc32c  CRC-32C
+ * @{ */
+/**
+ * Calculate CRC-32C for a memory block.
+ *
+ * @returns CRC-32C for the memory block.
+ * @param   pv      Pointer to the memory block.
+ * @param   cb      Size of the memory block in bytes.
+ */
+RTDECL(uint32_t)    RTCrc32C(const void *pv, size_t cb);
+
+/**
+ * Start a multiblock CRC-32 calculation.
+ *
+ * @returns Start CRC-32.
+ */
+RTDECL(uint32_t)    RTCrc32CStart(void);
+
+/**
+ * Processes a multiblock of a CRC-32C calculation.
+ *
+ * @returns Intermediate CRC-32C value.
+ * @param   uCRC32C Current CRC-32C intermediate value.
+ * @param   pv      The data block to process.
+ * @param   cb      The size of the data block in bytes.
+ */
+RTDECL(uint32_t)    RTCrc32CProcess(uint32_t uCRC32C, const void *pv, size_t cb);
+
+/**
+ * Complete a multiblock CRC-32 calculation.
+ *
+ * @returns CRC-32 value.
+ * @param   uCRC32  Current CRC-32 intermediate value.
+ */
+RTDECL(uint32_t)    RTCrc32CFinish(uint32_t uCRC32);
+
+/** @} */
+
 /** @} */
 
 RT_C_DECLS_END
