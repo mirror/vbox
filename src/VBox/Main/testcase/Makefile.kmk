@@ -177,6 +177,7 @@ tstCollector_LDFLAGS.win     = psapi.lib powrprof.lib
 # tstGuestCtrlParseBuffer
 #
 tstGuestCtrlParseBuffer_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstGuestCtrlParseBuffer_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 tstGuestCtrlParseBuffer_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlParseBuffer_SOURCES  = \
 	tstGuestCtrlParseBuffer.cpp \
@@ -188,6 +189,7 @@ tstGuestCtrlParseBuffer_INCS     = ../include
 # tstGuestCtrlContextID
 #
 tstGuestCtrlContextID_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstGuestCtrlContextID_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 tstGuestCtrlContextID_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlContextID_SOURCES  = \
 	tstGuestCtrlContextID.cpp \
