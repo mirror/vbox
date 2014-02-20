@@ -157,9 +157,10 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToNormal()
     {
         /* Request 'normal' (window) visual-state: */
         uisession()->setRequestedVisualState(UIVisualStateType_Normal);
-        /* Toggle native fullscreen mode for each window: */
+        /* Exit native fullscreen mode for each window: */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            darwinToggleFullscreenMode(pMachineWindow);
+            if (darwinIsInFullscreenMode(pMachineWindow))
+                darwinToggleFullscreenMode(pMachineWindow);
     }
 }
 
@@ -173,9 +174,10 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToSeamless()
     {
         /* Request 'seamless' visual-state: */
         uisession()->setRequestedVisualState(UIVisualStateType_Seamless);
-        /* Toggle native fullscreen mode for each window: */
+        /* Exit native fullscreen mode for each window: */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            darwinToggleFullscreenMode(pMachineWindow);
+            if (darwinIsInFullscreenMode(pMachineWindow))
+                darwinToggleFullscreenMode(pMachineWindow);
     }
 }
 
@@ -189,9 +191,10 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToScale()
     {
         /* Request 'scale' visual-state: */
         uisession()->setRequestedVisualState(UIVisualStateType_Scale);
-        /* Toggle native fullscreen mode for each window: */
+        /* Exit native fullscreen mode for each window: */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            darwinToggleFullscreenMode(pMachineWindow);
+            if (darwinIsInFullscreenMode(pMachineWindow))
+                darwinToggleFullscreenMode(pMachineWindow);
     }
 }
 #endif /* RT_OS_DARWIN */

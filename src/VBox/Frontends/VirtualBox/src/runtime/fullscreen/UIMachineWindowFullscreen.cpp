@@ -78,8 +78,9 @@ void UIMachineWindowFullscreen::sltToggleNativeFullscreenMode()
     /* Make sure this method is only used for ML and next: */
     AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
 
-    /* Toggle native fullscreen mode: */
-    darwinToggleFullscreenMode(this);
+    /* Enter native fullscreen mode: */
+    if (!darwinIsInFullscreenMode(this))
+        darwinToggleFullscreenMode(this);
 }
 #endif /* RT_OS_DARWIN */
 
