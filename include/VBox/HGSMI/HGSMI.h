@@ -227,8 +227,16 @@ int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
                        uint32_t offHeapHandle,
                        uintptr_t offDelta,
                        HGSMISIZE cbArea,
+                       HGSMIOFFSET offBase);
+
+int HGSMIHeapRestoreMA(HGSMIHEAP *pHeap,
+                       void *pvBase,
+                       HGSMISIZE cbArea,
                        HGSMIOFFSET offBase,
-                       const HGSMIENV *pEnv);
+                       uint32_t cBlocks,
+                       HGSMIOFFSET *paDescriptors,
+                       HGSMISIZE cbMaxBlock,
+                       HGSMIENV *pEnv);
 
 void HGSMIHeapSetupUninitialized (HGSMIHEAP *pHeap);
 
@@ -257,16 +265,23 @@ DECLINLINE(HGSMIOFFSET) HGSMIHeapOffset(HGSMIHEAP *pHeap)
 }
 
 #ifdef IN_RING3
-/* needed for heap relocation */
+/* Needed for heap relocation: offset of the heap handle relative to the start of heap area. */
 DECLINLINE(HGSMIOFFSET) HGSMIHeapHandleLocationOffset(HGSMIHEAP *pHeap)
 {
-#if (__GNUC__ * 100 + __GNUC_MINOR__) < 405
-    /* does not work with gcc-4.5 */
-    AssertCompile((uintptr_t)NIL_RTHEAPSIMPLE == (uintptr_t)NIL_RTHEAPOFFSET);
-#endif
-    return pHeap->u.hPtr != NIL_RTHEAPSIMPLE
-        ? (HGSMIOFFSET)(pHeap->area.pu8Base - (uint8_t*)pHeap->u.hPtr)
-        : HGSMIOFFSET_VOID;
+    HGSMIOFFSET offHeapHandle;
+    if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_POINTER)
+    {
+        offHeapHandle = (HGSMIOFFSET)((uintptr_t)pHeap->u.hPtr - (uintptr_t)pHeap->area.pu8Base);
+    }
+    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
+    {
+        offHeapHandle = (HGSMIOFFSET)((uintptr_t)pHeap->u.hOff - (uintptr_t)pHeap->area.pu8Base);
+    }
+    else
+    {
+        offHeapHandle = HGSMIOFFSET_VOID;
+    }
+    return offHeapHandle;
 }
 #endif /* IN_RING3 */
 

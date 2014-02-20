@@ -1326,16 +1326,78 @@ static int hgsmiHostLoadGuestCmdCompletedFifoLocked (PHGSMIINSTANCE pIns, HGSMIL
     return rc;
 }
 
+static int hgsmiHostSaveMA(PSSMHANDLE pSSM, HGSMIMADATA *pMA)
+{
+    int rc = SSMR3PutU32(pSSM, pMA->cBlocks);
+    if (RT_SUCCESS(rc))
+    {
+        HGSMIMABLOCK *pIter;
+        RTListForEach(&pMA->listBlocks, pIter, HGSMIMABLOCK, nodeBlock)
+        {
+            SSMR3PutU32(pSSM, pIter->descriptor);
+        }
+
+        rc = SSMR3PutU32(pSSM, pMA->cbMaxBlock);
+    }
+
+    return rc;
+}
+
+static int hgsmiHostLoadMA(PSSMHANDLE pSSM, uint32_t *pcBlocks, HGSMIOFFSET **ppaDescriptors, HGSMISIZE *pcbMaxBlock)
+{
+    int rc = SSMR3GetU32(pSSM, pcBlocks);
+    if (RT_SUCCESS(rc))
+    {
+        HGSMIOFFSET *paDescriptors = NULL;
+        if (*pcBlocks > 0)
+        {
+            paDescriptors = (HGSMIOFFSET *)RTMemAlloc(*pcBlocks * sizeof(HGSMIOFFSET));
+            if (paDescriptors)
+            {
+                uint32_t i;
+                for (i = 0; i < *pcBlocks; ++i)
+                {
+                    SSMR3GetU32(pSSM, &paDescriptors[i]);
+                }
+            }
+            else
+            {
+                rc = VERR_NO_MEMORY;
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            rc = SSMR3GetU32(pSSM, pcbMaxBlock);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            *ppaDescriptors = paDescriptors;
+        }
+        else
+        {
+            RTMemFree(paDescriptors);
+        }
+    }
+
+    return rc;
+}
+
 int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
 {
     VBOXHGSMI_SAVE_START(pSSM);
 
     int rc;
 
+    SSMR3PutU32(pSSM, pIns->hostHeap.u32HeapType);
+
     HGSMIOFFSET off = pIns->pHGFlags ? HGSMIPointerToOffset(&pIns->area, (const HGSMIBUFFERHEADER *)pIns->pHGFlags) : HGSMIOFFSET_VOID;
     SSMR3PutU32 (pSSM, off);
 
-    off = HGSMIHeapHandleLocationOffset(&pIns->hostHeap);
+    off = pIns->hostHeap.u32HeapType == HGSMI_HEAP_TYPE_MA?
+              0:
+              HGSMIHeapHandleLocationOffset(&pIns->hostHeap);
     rc = SSMR3PutU32 (pSSM, off);
     if(off != HGSMIOFFSET_VOID)
     {
@@ -1355,6 +1417,14 @@ int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
 
             hgsmiFIFOUnlock (pIns);
         }
+
+        if (RT_SUCCESS(rc))
+        {
+            if (pIns->hostHeap.u32HeapType == HGSMI_HEAP_TYPE_MA)
+            {
+                rc = hgsmiHostSaveMA(pSSM, &pIns->hostHeap.u.ma);
+            }
+        }
     }
 
     VBOXHGSMI_SAVE_STOP(pSSM);
@@ -1371,6 +1441,14 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
 
     int rc;
     HGSMIOFFSET off;
+    uint32_t u32HeapType = HGSMI_HEAP_TYPE_NULL;
+
+    if (u32Version >= VGA_SAVEDSTATE_VERSION_HGSMIMA)
+    {
+        rc = SSMR3GetU32(pSSM, &u32HeapType);
+        AssertRCReturn(rc, rc);
+    }
+
     rc = SSMR3GetU32(pSSM, &off);
     AssertRCReturn(rc, rc);
     pIns->pHGFlags = (off != HGSMIOFFSET_VOID) ? (HGSMIHOSTFLAGS*)HGSMIOffsetToPointer (&pIns->area, off) : NULL;
@@ -1380,6 +1458,14 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
     AssertRCReturn(rc, rc);
     if(off != HGSMIOFFSET_VOID)
     {
+        /* There is a saved heap. */
+        if (u32HeapType == HGSMI_HEAP_TYPE_NULL)
+        {
+            u32HeapType = u32Version > VGA_SAVEDSTATE_VERSION_HOST_HEAP?
+                              HGSMI_HEAP_TYPE_OFFSET:
+                              HGSMI_HEAP_TYPE_POINTER;
+        }
+
         HGSMIOFFSET offHeap;
         SSMR3GetU32(pSSM, &offHeap);
         uint32_t cbHeap;
@@ -1387,26 +1473,6 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
         uint64_t oldMem;
         rc = SSMR3GetU64(pSSM, &oldMem);
         AssertRCReturn(rc, rc);
-
-        rc = hgsmiHostHeapLock (pIns);
-        if (RT_SUCCESS (rc))
-        {
-            Assert(!pIns->hostHeap.cRefs);
-            pIns->hostHeap.cRefs = 0;
-
-            rc = HGSMIHeapRelocate(&pIns->hostHeap,
-                                   u32Version > VGA_SAVEDSTATE_VERSION_HOST_HEAP?
-                                       HGSMI_HEAP_TYPE_OFFSET:
-                                       HGSMI_HEAP_TYPE_POINTER,
-                                   pIns->area.pu8Base+offHeap,
-                                   off,
-                                   uintptr_t(pIns->area.pu8Base) - uintptr_t(oldMem),
-                                   cbHeap,
-                                   offHeap,
-                                   &g_hgsmiEnv);
-
-            hgsmiHostHeapUnlock (pIns);
-        }
 
         if (RT_SUCCESS(rc))
         {
@@ -1424,6 +1490,50 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
 #endif
 
                 hgsmiFIFOUnlock (pIns);
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            if (u32HeapType == HGSMI_HEAP_TYPE_MA)
+            {
+                uint32_t cBlocks = 0;
+                HGSMISIZE cbMaxBlock = 0;
+                HGSMIOFFSET *paDescriptors = NULL;
+                rc = hgsmiHostLoadMA(pSSM, &cBlocks, &paDescriptors, &cbMaxBlock);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = HGSMIHeapRestoreMA(&pIns->hostHeap,
+                                            pIns->area.pu8Base+offHeap,
+                                            cbHeap,
+                                            offHeap,
+                                            cBlocks,
+                                            paDescriptors,
+                                            cbMaxBlock,
+                                            &g_hgsmiEnv);
+
+                    RTMemFree(paDescriptors);
+                }
+            }
+            else if (   u32HeapType == HGSMI_HEAP_TYPE_OFFSET
+                     || u32HeapType == HGSMI_HEAP_TYPE_POINTER)
+            {
+                rc = hgsmiHostHeapLock (pIns);
+                if (RT_SUCCESS (rc))
+                {
+                    Assert(!pIns->hostHeap.cRefs);
+                    pIns->hostHeap.cRefs = 0;
+
+                    rc = HGSMIHeapRelocate(&pIns->hostHeap,
+                                           u32HeapType,
+                                           pIns->area.pu8Base+offHeap,
+                                           off,
+                                           uintptr_t(pIns->area.pu8Base) - uintptr_t(oldMem),
+                                           cbHeap,
+                                           offHeap);
+
+                    hgsmiHostHeapUnlock (pIns);
+                }
             }
         }
     }
@@ -1747,6 +1857,8 @@ uint32_t HGSMIReset (PHGSMIINSTANCE pIns)
     while(hgsmiProcessGuestCmdCompletion(pIns) != HGSMIOFFSET_VOID) {}
 #endif
 
+    HGSMIHeapDestroy(&pIns->hostHeap);
+
     HGSMIHeapSetupUninitialized(&pIns->hostHeap);
 
     return flags;
@@ -1758,6 +1870,8 @@ void HGSMIDestroy (PHGSMIINSTANCE pIns)
 
     if (pIns)
     {
+        HGSMIHeapDestroy(&pIns->hostHeap);
+
         if (RTCritSectIsInitialized (&pIns->hostHeapCritSect))
         {
             RTCritSectDelete (&pIns->hostHeapCritSect);
