@@ -325,10 +325,10 @@ RTDECL(int) VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     /** @todo should we be using a fixed ISA port value here? */
     pCtx->port = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
 #ifdef VBOX_WDDM_MINIPORT
-    return VBoxSHGSMIInit(&pCtx->heapCtx, HGSMI_HEAP_TYPE_POINTER, pvGuestHeapMemory,
+    return VBoxSHGSMIInit(&pCtx->heapCtx, HGSMI_HEAP_TYPE_MA, pvGuestHeapMemory,
                           cbGuestHeapMemory, offVRAMGuestHeapMemory, pEnv);
 #else
-    return HGSMIHeapSetup(&pCtx->heapCtx, HGSMI_HEAP_TYPE_POINTER, pvGuestHeapMemory,
+    return HGSMIHeapSetup(&pCtx->heapCtx, HGSMI_HEAP_TYPE_MA, pvGuestHeapMemory,
                           cbGuestHeapMemory, offVRAMGuestHeapMemory, pEnv);
 #endif
 }
