@@ -42,9 +42,6 @@ private slots:
     void sltMachineStateChanged();
 #endif /* !Q_WS_MAC */
 
-    /* Show in necessary mode: */
-    void sltShowInNecessaryMode() { showInNecessaryMode(); }
-
     /* Popup main menu: */
     void sltPopupMainMenu();
 

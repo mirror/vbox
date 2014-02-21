@@ -53,6 +53,9 @@ private slots:
     /* Handler: Console callback stuff: */
     void sltMachineStateChanged();
 
+    /** Updates machine-window(s) location/size on screen-layout changes. */
+    void sltScreenLayoutChanged();
+
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
     void sltHostScreenCountChanged();
 
