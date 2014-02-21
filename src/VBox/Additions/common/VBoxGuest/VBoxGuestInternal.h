@@ -169,9 +169,6 @@ typedef struct VBOXGUESTDEVEXT
     bool                        fLoggingEnabled;
     /** Memory balloon information for RTR0MemObjAllocPhysNC(). */
     VBOXGUESTMEMBALLOON         MemBalloon;
-    /** Counter of number of active ISRs.  Currently used for safely removing
-     * the mouse handler callback. */
-    uint32_t volatile           cISR;
     /** Callback and user data for a kernel mouse handler. */
     VBoxGuestMouseSetNotifyCallback MouseNotifyCallback;
     /** Guest capabilities which have been set to "acquire" mode.  This means

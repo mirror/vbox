@@ -377,7 +377,26 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 #endif
 
 /** IOCTL to for setting the mouse driver callback. (kernel only) */
+/** @note The callback will be called in interrupt context with the VBoxGuest
+ * device event spinlock held. */
 #define VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK   VBOXGUEST_IOCTL_CODE(31, sizeof(VBoxGuestMouseSetNotifyCallback))
+
+typedef DECLCALLBACK(void) FNVBOXGUESTMOUSENOTIFY(void *pfnUser);
+typedef FNVBOXGUESTMOUSENOTIFY *PFNVBOXGUESTMOUSENOTIFY;
+
+/** Input buffer for VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_CALLBACK. */
+typedef struct VBoxGuestMouseSetNotifyCallback
+{
+    /**
+     * Mouse notification callback.
+     *
+     * @param   pvUser      The callback argument.
+     */
+    PFNVBOXGUESTMOUSENOTIFY      pfnNotify;
+    /** The callback argument*/
+    void                       *pvUser;
+} VBoxGuestMouseSetNotifyCallback;
+
 
 typedef enum VBOXGUESTCAPSACQUIRE_FLAGS
 {
@@ -430,23 +449,6 @@ typedef struct VBoxGuestSetCapabilitiesInfo
     uint32_t u32NotMask;
 } VBoxGuestSetCapabilitiesInfo;
 AssertCompileSize(VBoxGuestSetCapabilitiesInfo, 8);
-
-
-typedef DECLCALLBACK(void) FNVBOXGUESTMOUSENOTIFY(void *pfnUser);
-typedef FNVBOXGUESTMOUSENOTIFY *PFNVBOXGUESTMOUSENOTIFY;
-
-/** Input buffer for VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_CALLBACK. */
-typedef struct VBoxGuestMouseSetNotifyCallback
-{
-    /**
-     * Mouse notification callback.
-     *
-     * @param   pvUser      The callback argument.
-     */
-    PFNVBOXGUESTMOUSENOTIFY      pfnNotify;
-    /** The callback argument*/
-    void                       *pvUser;
-} VBoxGuestMouseSetNotifyCallback;
 
 
 #ifdef RT_OS_OS2
