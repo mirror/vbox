@@ -2779,7 +2779,7 @@ STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, IN_BSTR aFilter, ComSafe
                break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestDirectory::i_setErrorExternal(this, guestRc);
+                hr = GuestDirectory::setErrorExternal(this, guestRc);
                 break;
 
             default:
@@ -2884,7 +2884,7 @@ STDMETHODIMP GuestSession::DirectoryRemove(IN_BSTR aPath)
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestDirectory::i_setErrorExternal(this, guestRc);
+                hr = GuestDirectory::setErrorExternal(this, guestRc);
                 break;
 
             default:
