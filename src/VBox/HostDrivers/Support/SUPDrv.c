@@ -3393,7 +3393,7 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
  *
  * @returns VBox status code.
  * @retval  VERR_VMX_NO_VMX
- * @retval  VERR_VMX_MSR_SMX_VMXON_DISABLED
+ * @retval  VERR_VMX_MSR_ALL_VMXON_DISABLED
  * @retval  VERR_VMX_MSR_VMXON_DISABLED
  * @retval  VERR_VMX_MSR_LOCKING_FAILED
  * @retval  VERR_SVM_NO_SVM
@@ -3406,7 +3406,8 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
  */
 SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
 {
-    int rc = VERR_UNSUPPORTED_CPU;
+    int  rc = VERR_UNSUPPORTED_CPU;
+    bool fIsSmxModeAmbiguous = false;
     RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
 
     /*
@@ -3438,7 +3439,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
             {
                 /** @todo Unify code with hmR0InitIntelCpu(). */
                 uint64_t   u64FeatMsr     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-                bool const fInSmxMode     = RT_BOOL(ASMGetCR4() & X86_CR4_SMXE);
+                bool const fMaybeSmxMode  = RT_BOOL(ASMGetCR4() & X86_CR4_SMXE);
                 bool       fMsrLocked     = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
                 bool       fSmxVmxAllowed = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
                 bool       fVmxAllowed    = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
@@ -3446,26 +3447,41 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                 /* Check if the LOCK bit is set but excludes the required VMXON bit. */
                 if (fMsrLocked)
                 {
-                    if (fInSmxMode && !fSmxVmxAllowed)
-                        rc = VERR_VMX_MSR_SMX_VMXON_DISABLED;
-                    else if (!fInSmxMode && !fVmxAllowed)
-                        rc = VERR_VMX_MSR_VMXON_DISABLED;
-                    else
+                    if (fVmxAllowed && fSmxVmxAllowed)
                         rc = VINF_SUCCESS;
+                    else if (!fVmxAllowed && !fSmxVmxAllowed)
+                        rc = VERR_VMX_MSR_ALL_VMXON_DISABLED;
+                    else if (!fMaybeSmxMode)
+                    {
+                        if (fVmxAllowed)
+                            rc = VINF_SUCCESS;
+                        else
+                            rc = VERR_VMX_MSR_VMXON_DISABLED;
+                    }
+                    else
+                    {
+                        /*
+                         * CR4.SMXE is set but this doesn't mean the CPU is necessarily in SMX mode. We shall assume
+                         * that it is -not- and that it is a stupid BIOS/OS setting CR4.SMXE for no good reason.
+                         * See @bugref{6873}.
+                         */
+                        Assert(fMaybeSmxMode == true);
+                        fIsSmxModeAmbiguous = true;
+                        rc = VINF_SUCCESS;
+                    }
                 }
                 else
                 {
                     /*
                      * MSR is not yet locked; we can change it ourselves here.
                      * Once the lock bit is set, this MSR can no longer be modified.
+                     *
+                     * Set both the VMXON and SMX_VMXON bits as we can't determine SMX mode
+                     * accurately. See @bugref{6873}.
                      */
-                    bool fAllowed;
-                    u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_LOCK;
-                    if (fInSmxMode)
-                        u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_SMX_VMXON;
-                    else
-                        u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_VMXON;
-
+                    u64FeatMsr |=   MSR_IA32_FEATURE_CONTROL_LOCK
+                                  | MSR_IA32_FEATURE_CONTROL_SMX_VMXON
+                                  | MSR_IA32_FEATURE_CONTROL_VMXON;
                     ASMWrMsr(MSR_IA32_FEATURE_CONTROL, u64FeatMsr);
 
                     /* Verify. */
@@ -3473,8 +3489,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                     fMsrLocked     = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
                     fSmxVmxAllowed = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
                     fVmxAllowed    = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
-                    fAllowed       = fInSmxMode ? fSmxVmxAllowed : fVmxAllowed;
-                    if (fAllowed)
+                    if (fSmxVmxAllowed && fVmxAllowed)
                         rc = VINF_SUCCESS;
                     else
                         rc = VERR_VMX_MSR_LOCKING_FAILED;
@@ -3534,6 +3549,8 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
     }
 
     RTThreadPreemptRestore(&PreemptState);
+    if (fIsSmxModeAmbiguous)
+        SUPR0Printf(("Warning!!! CR4 hints SMX mode but your CPU is too secretive. Proceeding anyway... Wish us luck!\n"));
     return rc;
 }
 
