@@ -594,6 +594,7 @@ public:
     HRESULT enqueue(IEvent *aEvent);
     HRESULT dequeue(IEvent **aEvent, LONG aTimeout, AutoLockBase &aAlock);
     HRESULT eventProcessed(IEvent *aEvent, PendingEventsMap::iterator &pit);
+    void shutdown();
 
     void addRef()
     {
@@ -675,12 +676,13 @@ typedef std::map<IEventListener *, RecordHolder<ListenerRecord> > Listeners;
 
 struct EventSource::Data
 {
-    Data()
+    Data() : fShutdown(false)
     {}
 
     Listeners                     mListeners;
     EventMap                      mEvMap;
     PendingEventsMap              mPendingMap;
+    bool                          fShutdown;
 };
 
 /**
@@ -789,8 +791,8 @@ ListenerRecord::~ListenerRecord()
         }
 
         ::RTCritSectDelete(&mcsQLock);
-        ::RTSemEventDestroy(mQEvent);
     }
+    shutdown();
 }
 
 HRESULT ListenerRecord::process(IEvent *aEvent,
@@ -909,6 +911,16 @@ HRESULT ListenerRecord::eventProcessed(IEvent *aEvent, PendingEventsMap::iterato
     return S_OK;
 }
 
+void ListenerRecord::shutdown()
+{
+    if (mQEvent != NIL_RTSEMEVENT)
+    {
+        RTSEMEVENT tmp = mQEvent;
+        mQEvent = NIL_RTSEMEVENT;
+        ::RTSemEventDestroy(tmp);
+    }
+}
+
 EventSource::EventSource()
 {}
 
@@ -942,6 +954,26 @@ HRESULT EventSource::init()
 
 void EventSource::uninit()
 {
+    {
+        // First of all (before even thinking about entering the uninit span):
+        // make sure that all listeners are are shut down (no pending events or
+        // wait calls), because they cannot be alive without the associated
+        // event source. Otherwise API clients which use long-term (or
+        // indefinite) waits will block VBoxSVC termination (just one example)
+        // for a long time or even infinitely long.
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (!m->fShutdown)
+        {
+            m->fShutdown = true;
+            for (Listeners::iterator it = m->mListeners.begin();
+                 it != m->mListeners.end();
+                 ++it)
+            {
+                it->second.obj()->shutdown();
+            }
+        }
+    }
+
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
@@ -963,6 +995,10 @@ STDMETHODIMP EventSource::RegisterListener(IEventListener *aListener,
 
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        if (m->fShutdown)
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("This event source is already shut down"));
 
         Listeners::const_iterator it = m->mListeners.find(aListener);
         if (it != m->mListeners.end())
@@ -997,6 +1033,7 @@ STDMETHODIMP EventSource::UnregisterListener(IEventListener *aListener)
 
         if (it != m->mListeners.end())
         {
+            it->second.obj()->shutdown();
             m->mListeners.erase(it);
             // destructor removes refs from the event map
             rc = S_OK;
@@ -1035,6 +1072,10 @@ STDMETHODIMP EventSource::FireEvent(IEvent *aEvent,
 
     do {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        if (m->fShutdown)
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("This event source is already shut down"));
 
         VBoxEventType_T evType;
         hrc = aEvent->COMGETTER(Type)(&evType);
@@ -1082,7 +1123,10 @@ STDMETHODIMP EventSource::FireEvent(IEvent *aEvent,
             {
                 Listeners::iterator lit = m->mListeners.find(record.obj()->mListener);
                 if (lit != m->mListeners.end())
+                {
+                    lit->second.obj()->shutdown();
                     m->mListeners.erase(lit);
+                }
             }
             // anything else to do with cbRc?
         }
@@ -1111,6 +1155,10 @@ STDMETHODIMP EventSource::GetEvent(IEventListener *aListener,
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    if (m->fShutdown)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("This event source is already shut down"));
+
     Listeners::iterator it = m->mListeners.find(aListener);
     HRESULT rc;
 
@@ -1137,6 +1185,10 @@ STDMETHODIMP EventSource::EventProcessed(IEventListener *aListener,
         return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->fShutdown)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("This event source is already shut down"));
 
     Listeners::iterator it = m->mListeners.find(aListener);
     HRESULT rc;
