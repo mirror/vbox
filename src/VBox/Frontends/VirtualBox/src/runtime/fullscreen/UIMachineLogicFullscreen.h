@@ -102,6 +102,8 @@ private:
 #ifdef Q_WS_MAC
     /** Mac OS X: Contains machine-window(s) marked as 'fullscreen'. */
     QSet<UIMachineWindow*> m_fullscreenMachineWindows;
+    /** Mac OS X: Holds 'fullscreen' mode invalidation status. */
+    bool m_fIsFullscreenInvalidated;
 #endif /* Q_WS_MAC */
 
     /* Friend classes: */
