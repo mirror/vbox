@@ -145,6 +145,13 @@ void UIMachineLogicSeamless::sltMachineStateChanged()
     }
 }
 
+void UIMachineLogicSeamless::sltScreenLayoutChanged()
+{
+    /* Update machine-window(s) location/size: */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->showInNecessaryMode();
+}
+
 void UIMachineLogicSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
 {
     LogRelFlow(("UIMachineLogicSeamless: Guest-screen count changed.\n"));
@@ -212,23 +219,22 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     if (isMachineWindowsCreated())
         return;
 
-#ifdef Q_WS_MAC // TODO: Is that really need here?
+#ifdef Q_WS_MAC
     /* We have to make sure that we are getting the front most process.
      * This is necessary for Qt versions > 4.3.3: */
-    ::darwinSetFrontMostProcess();
+    darwinSetFrontMostProcess();
 #endif /* Q_WS_MAC */
 
     /* Update the multi-screen layout: */
     m_pScreenLayout->update();
 
-    /* Create machine window(s): */
+    /* Create machine-window(s): */
     for (uint cScreenId = 0; cScreenId < session().GetMachine().GetMonitorCount(); ++cScreenId)
         addMachineWindow(UIMachineWindow::create(this, cScreenId));
 
     /* Connect multi-screen layout change handler: */
-    for (int i = 0; i < machineWindows().size(); ++i)
-        connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChanged()),
-                static_cast<UIMachineWindowSeamless*>(machineWindows()[i]), SLOT(sltShowInNecessaryMode()));
+    connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChanged()),
+            this, SLOT(sltScreenLayoutChanged()));
 
     /* Mark machine-window(s) created: */
     setMachineWindowsCreated(true);
@@ -253,7 +259,7 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
     /* Mark machine-window(s) destroyed: */
     setMachineWindowsCreated(false);
 
-    /* Cleanup machine-window(s): */
+    /* Destroy machine-window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
 }

@@ -64,8 +64,11 @@ private slots:
 
 #ifdef Q_WS_MAC
     void sltChangePresentationMode(bool fEnabled);
-    void sltScreenLayoutChanged();
 #endif /* Q_WS_MAC */
+
+    /** Updates machine-window(s) location/size on screen-layout changes. */
+    void sltScreenLayoutChanged();
+
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
     void sltHostScreenCountChanged();
 

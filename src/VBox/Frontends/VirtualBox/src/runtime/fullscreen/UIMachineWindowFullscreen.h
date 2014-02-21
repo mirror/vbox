@@ -53,9 +53,6 @@ private slots:
     /* Session event-handlers: */
     void sltMachineStateChanged();
 
-    /* Show in necessary mode: */
-    void sltShowInNecessaryMode() { showInNecessaryMode(); }
-
     /* Popup main-menu: */
     void sltPopupMainMenu();
 
