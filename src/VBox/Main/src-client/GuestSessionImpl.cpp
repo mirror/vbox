@@ -211,7 +211,7 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
             rc = VERR_NO_MEMORY;
         else
         {
-            hr = mEventSource->init(static_cast<IGuestSession*>(this));
+            hr = mEventSource->init();
             if (FAILED(hr))
                 rc = VERR_COM_UNEXPECTED;
         }

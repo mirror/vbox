@@ -144,7 +144,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(IUnknown *aParent);
+    HRESULT init();
     void uninit();
 
     // IEventSource methods

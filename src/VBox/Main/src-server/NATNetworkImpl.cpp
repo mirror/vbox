@@ -151,7 +151,7 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox, com::Utf8Str aName)
     HRESULT hrc = unconst(m->pEventSource).createObject();
     if (FAILED(hrc)) throw hrc;
 
-    hrc = m->pEventSource->init(static_cast<INATNetwork *>(this));
+    hrc = m->pEventSource->init();
     if (FAILED(hrc)) throw hrc;
 
     /* Confirm a successful initialization */
@@ -206,7 +206,7 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox,
     HRESULT hrc = unconst(m->pEventSource).createObject();
     if (FAILED(hrc)) throw hrc;
 
-    hrc = m->pEventSource->init(static_cast<INATNetwork *>(this));
+    hrc = m->pEventSource->init();
     if (FAILED(hrc)) throw hrc;
 
     autoInitSpan.setSucceeded();

@@ -111,7 +111,7 @@ HRESULT Guest::init(Console *aParent)
 #ifdef VBOX_WITH_GUEST_CONTROL
     hr = unconst(mEventSource).createObject();
     if (SUCCEEDED(hr))
-        hr = mEventSource->init(static_cast<IGuest*>(this));
+        hr = mEventSource->init();
 #else
     hr = S_OK;
 #endif

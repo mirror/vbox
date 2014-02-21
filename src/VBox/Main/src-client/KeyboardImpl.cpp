@@ -112,7 +112,7 @@ HRESULT Keyboard::init(Console *aParent)
     unconst(mParent) = aParent;
 
     unconst(mEventSource).createObject();
-    HRESULT rc = mEventSource->init(static_cast<IKeyboard*>(this));
+    HRESULT rc = mEventSource->init();
     AssertComRCReturnRC(rc);
 
     /* Confirm a successful initialization */
