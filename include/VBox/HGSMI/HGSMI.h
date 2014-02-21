@@ -73,8 +73,8 @@
 
 /* Heap types. */
 #define HGSMI_HEAP_TYPE_NULL    0 /* Heap not initialized. */
-#define HGSMI_HEAP_TYPE_POINTER 1 /* RTHEAPSIMPLE. Obsolete. */
-#define HGSMI_HEAP_TYPE_OFFSET  2 /* RTHEAPOFFSET. Obsolete. */
+#define HGSMI_HEAP_TYPE_POINTER 1 /* Deprecated. RTHEAPSIMPLE. */
+#define HGSMI_HEAP_TYPE_OFFSET  2 /* Deprecated. RTHEAPOFFSET. */
 #define HGSMI_HEAP_TYPE_MA      3 /* Memory allocator. */
 
 #pragma pack(1)

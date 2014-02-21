@@ -1162,7 +1162,7 @@ int HGSMISetupHostHeap (PHGSMIINSTANCE pIns,
             else
             {
                 rc = HGSMIHeapSetup (&pIns->hostHeap,
-                                     HGSMI_HEAP_TYPE_OFFSET,
+                                     HGSMI_HEAP_TYPE_MA,
                                      pIns->area.pu8Base+offHeap,
                                      cbHeap,
                                      offHeap,
