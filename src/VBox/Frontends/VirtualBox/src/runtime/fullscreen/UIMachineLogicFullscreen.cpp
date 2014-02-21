@@ -34,6 +34,9 @@
 
 UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Fullscreen)
+#ifdef Q_WS_MAC
+    , m_fIsFullscreenInvalidated(false)
+#endif /* Q_WS_MAC */
 {
     /* Create multiscreen layout: */
     m_pScreenLayout = new UIMultiScreenLayout(this);
@@ -136,14 +139,32 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
     /* If there is/are no more fullscreen window(s) left: */
     else
     {
-        /* Change visual-state to requested: */
-        LogRel(("UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit: "
-                "Machine-window(s) exited fullscreen, changing visual-state to requested...\n"));
-        UIVisualStateType type = uisession()->requestedVisualState();
-        if (type == UIVisualStateType_Invalid)
-            type = UIVisualStateType_Normal;
-        uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
-        uisession()->changeVisualState(type);
+        /* If fullscreen mode was just invalidated: */
+        if (m_fIsFullscreenInvalidated)
+        {
+            /* Mark fullscreen mode valid again and re-enter it: */
+            LogRel(("UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit: "
+                    "Machine-window(s) exited invalidated fullscreen, enter again...\n"));
+            m_fIsFullscreenInvalidated = false;
+            foreach (UIMachineWindow *pMachineWindow, machineWindows())
+                pMachineWindow->showInNecessaryMode();
+            foreach (UIMachineWindow *pMachineWindow, machineWindows())
+                if (   (darwinScreensHaveSeparateSpaces() || pMachineWindow->screenId() == 0)
+                    && !darwinIsInFullscreenMode(pMachineWindow))
+                    darwinToggleFullscreenMode(pMachineWindow);
+        }
+        /* If fullscreen mode was manually exited: */
+        else
+        {
+            /* Change visual-state to requested: */
+            LogRel(("UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit: "
+                    "Machine-window(s) exited fullscreen, changing visual-state to requested...\n"));
+            UIVisualStateType type = uisession()->requestedVisualState();
+            if (type == UIVisualStateType_Invalid)
+                type = UIVisualStateType_Normal;
+            uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
+            uisession()->changeVisualState(type);
+        }
     }
 }
 
@@ -230,15 +251,30 @@ void UIMachineLogicFullscreen::sltChangePresentationMode(bool /* fEnabled */)
 
 void UIMachineLogicFullscreen::sltScreenLayoutChanged()
 {
+#ifdef Q_WS_MAC
+    /* For Lion and previous: */
+    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+    {
+        /* Update machine-window(s) location/size: */
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+            pMachineWindow->showInNecessaryMode();
+        /* Update 'presentation mode': */
+        setPresentationModeEnabled(true);
+    }
+    /* For ML and next: */
+    else
+    {
+        /* Invalidate and exit fullscreen mode: */
+        m_fIsFullscreenInvalidated = true;
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+            if (darwinIsInFullscreenMode(pMachineWindow))
+                darwinToggleFullscreenMode(pMachineWindow);
+    }
+#else /* !Q_WS_MAC */
     /* Update machine-window(s) location/size: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         pMachineWindow->showInNecessaryMode();
-
-#ifdef Q_WS_MAC
-    /* Update 'presentation mode' for Lion and previous: */
-    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
-        setPresentationModeEnabled(true);
-#endif /* Q_WS_MAC */
+#endif /* !Q_WS_MAC */
 }
 
 void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
