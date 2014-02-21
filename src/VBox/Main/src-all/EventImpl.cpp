@@ -411,7 +411,8 @@ public:
 
     void release()
     {
-        if (ASMAtomicDecS32(&mRefCnt) <= 0) delete this;
+        if (ASMAtomicDecS32(&mRefCnt) <= 0)
+            delete this;
     }
 
     // Called when an element is no longer needed
@@ -593,15 +594,18 @@ public:
     HRESULT enqueue(IEvent *aEvent);
     HRESULT dequeue(IEvent **aEvent, LONG aTimeout, AutoLockBase &aAlock);
     HRESULT eventProcessed(IEvent *aEvent, PendingEventsMap::iterator &pit);
+
     void addRef()
     {
         ASMAtomicIncS32(&mRefCnt);
     }
+
     void release()
     {
         if (ASMAtomicDecS32(&mRefCnt) <= 0)
             delete this;
     }
+
     BOOL isActive()
     {
         return mActive;
@@ -671,7 +675,9 @@ typedef std::map<IEventListener *, RecordHolder<ListenerRecord> > Listeners;
 
 struct EventSource::Data
 {
-    Data() {}
+    Data()
+    {}
+
     Listeners                     mListeners;
     EventMap                      mEvMap;
     PendingEventsMap              mPendingMap;
@@ -742,7 +748,7 @@ ListenerRecord::ListenerRecord(IEventListener *aListener,
     }
     else
     {
-        mQEvent =NIL_RTSEMEVENT;
+        mQEvent = NIL_RTSEMEVENT;
         RT_ZERO(mcsQLock);
         mLastRead = 0;
     }
@@ -939,6 +945,7 @@ void EventSource::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
     m->mListeners.clear();
     // m->mEvMap shall be cleared at this point too by destructors, assert?
 }
