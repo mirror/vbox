@@ -205,7 +205,7 @@ static int vboxGuestSetMouseStatus(uint32_t fMask)
 }
 
 
-/** Host flags to be updated by a given invokation of the
+/** Host flags to be updated by a given invocation of the
  * vboxGuestUpdateHostFlags() method. */
 enum
 {
@@ -216,20 +216,16 @@ enum
 };
 
 
-/** Check which host flags in a given category are being asserted by some guest
- * session and assert exactly those on the host which are being asserted by one
- * or more sessions.  pCallingSession is purely for sanity checking and can be
- * NULL. */
-static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt,
-                                    PVBOXGUESTSESSION pSession,
-                                    unsigned enmFlags)
+/** Unlocked version of and worker for vboxGuestUpdateHostFlags() below. */
+static int vboxGuestUpdateHostFlagsUnlocked(PVBOXGUESTDEVEXT pDevExt,
+                                            PVBOXGUESTSESSION pSession,
+                                            unsigned enmFlags)
 {
     int rc = VINF_SUCCESS;
     uint32_t fFilterMask = 0, fCapabilities = 0, fMouseStatus = 0;
     PVBOXGUESTSESSION pIterator;
     unsigned cSessions = 0;
 
-    RTSpinlockAcquire(pDevExt->SessionSpinlock);
     RTListForEach(&pDevExt->SessionList, pIterator, VBOXGUESTSESSION, ListNode)
     {
         fFilterMask   |= pIterator->fFilterMask;
@@ -262,6 +258,22 @@ static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt,
         if (enmFlags & HostFlags_MouseStatus)
             vboxGuestSetMouseStatus(fMouseStatus);
     }
+    return rc;
+}
+
+
+/** Check which host flags in a given category are being asserted by some guest
+ * session and assert exactly those on the host which are being asserted by one
+ * or more sessions.  pCallingSession is purely for sanity checking and can be
+ * NULL. */
+static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt,
+                                    PVBOXGUESTSESSION pSession,
+                                    unsigned enmFlags)
+{
+    int rc;
+
+    RTSpinlockAcquire(pDevExt->SessionSpinlock);
+    rc = vboxGuestUpdateHostFlagsUnlocked(pDevExt, pSession, enmFlags);
     RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
     return rc;
 }
@@ -1941,7 +1953,8 @@ static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt,
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     pSession->fFilterMask |= pInfo->u32OrMask;
     pSession->fFilterMask &= ~pInfo->u32NotMask;
-    rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_FilterMask);
+    rc = vboxGuestUpdateHostFlagsUnlocked(pDevExt, pSession,
+                                          HostFlags_FilterMask);
     RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
     return rc;
 }
@@ -1959,7 +1972,8 @@ static int VBoxGuestCommonIOCtl_SetCapabilities(PVBOXGUESTDEVEXT pDevExt,
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     pSession->fCapabilities |= pInfo->u32OrMask;
     pSession->fCapabilities &= ~pInfo->u32NotMask;
-    rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_Capabilities);
+    rc = vboxGuestUpdateHostFlagsUnlocked(pDevExt, pSession,
+                                          HostFlags_Capabilities);
     RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
     return rc;
 }
@@ -1988,7 +2002,8 @@ static int vboxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt,
     fFeatures ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     pSession->fMouseStatus = fFeatures;
-    rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_MouseStatus);
+    rc = vboxGuestUpdateHostFlagsUnlocked(pDevExt, pSession,
+                                          HostFlags_MouseStatus);
     RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
     return rc;
 }
