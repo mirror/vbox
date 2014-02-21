@@ -197,10 +197,10 @@ void darwinEnableTransienceSupport(NativeNSWindowRef pWindow)
 
 void darwinToggleFullscreenMode(NativeNSWindowRef pWindow)
 {
-    /* Toggle native fullscreen mode for passed pWindow.
-     * This method is available since 10.7 only. */
+    /* Toggle native fullscreen mode for passed pWindow. This method is available since 10.7 only.
+     * To automatically sync this method subsequent calls we performing it on the main (GUI) thread. */
     if ([pWindow respondsToSelector: @selector(toggleFullScreen:)])
-        [pWindow performSelector: @selector(toggleFullScreen:) withObject: (id)nil];
+        [pWindow performSelectorOnMainThread: @selector(toggleFullScreen:) withObject: (id)nil waitUntilDone :NO];
 }
 
 bool darwinIsInFullscreenMode(NativeNSWindowRef pWindow)
