@@ -142,37 +142,27 @@ void GuestDirectory::uninit(void)
     LogFlowThisFuncLeave();
 }
 
-// implementation of public getters/setters for attributes
+// implementation of private wrapped getters/setters for attributes
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP GuestDirectory::COMGETTER(DirectoryName)(BSTR *aName)
+HRESULT GuestDirectory::getDirectoryName(com::Utf8Str &aDirectoryName)
 {
     LogFlowThisFuncEnter();
 
-    CheckComArgOutPointerValid(aName);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mOpenInfo.mPath.cloneTo(aName);
+    aDirectoryName = mData.mOpenInfo.mPath;
 
     return S_OK;
 }
 
-STDMETHODIMP GuestDirectory::COMGETTER(Filter)(BSTR *aFilter)
+HRESULT GuestDirectory::getFilter(com::Utf8Str &aFilter)
 {
     LogFlowThisFuncEnter();
 
-    CheckComArgOutPointerValid(aFilter);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mOpenInfo.mFilter.cloneTo(aFilter);
+    aFilter = mData.mOpenInfo.mFilter;
 
     return S_OK;
 }
@@ -228,7 +218,7 @@ int GuestDirectory::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUES
 }
 
 /* static */
-Utf8Str GuestDirectory::guestErrorToString(int guestRc)
+Utf8Str GuestDirectory::i_guestErrorToString(int guestRc)
 {
     Utf8Str strError;
 
@@ -262,18 +252,17 @@ int GuestDirectory::onRemove(void)
 }
 
 /* static */
-HRESULT GuestDirectory::setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
+HRESULT GuestDirectory::i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
 {
     AssertPtr(pInterface);
     AssertMsg(RT_FAILURE(guestRc), ("Guest rc does not indicate a failure when setting error\n"));
 
-    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestDirectory::guestErrorToString(guestRc).c_str());
+    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestDirectory::i_guestErrorToString(guestRc).c_str());
 }
 
 // implementation of public methods
 /////////////////////////////////////////////////////////////////////////////
-
-STDMETHODIMP GuestDirectory::Close(void)
+HRESULT GuestDirectory::close()
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -318,7 +307,7 @@ STDMETHODIMP GuestDirectory::Close(void)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
+HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -369,7 +358,7 @@ STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
                 if (RT_SUCCESS(rc))
                 {
                     /* Return info object to the caller. */
-                    hr2 = pFsObjInfo.queryInterfaceTo(aInfo);
+                    hr2 = pFsObjInfo.queryInterfaceTo(aObjInfo.asOutParam());
                     if (FAILED(hr2))
                         rc = VERR_COM_UNEXPECTED;
                 }
