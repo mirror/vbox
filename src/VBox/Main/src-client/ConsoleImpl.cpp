@@ -489,7 +489,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
 
     // Event source may be needed by other children
     unconst(mEventSource).createObject();
-    rc = mEventSource->init(static_cast<IConsole*>(this));
+    rc = mEventSource->init();
     AssertComRCReturnRC(rc);
 
     mcAudioRefs = 0;

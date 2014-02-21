@@ -112,7 +112,7 @@ HRESULT Mouse::init (ConsoleMouseInterface *parent)
     unconst(mParent) = parent;
 
     unconst(mEventSource).createObject();
-    HRESULT rc = mEventSource->init(static_cast<IMouse*>(this));
+    HRESULT rc = mEventSource->init();
     AssertComRCReturnRC(rc);
     mMouseEvent.init(mEventSource, VBoxEventType_OnGuestMouse,
                      0, 0, 0, 0, 0, 0);

@@ -81,7 +81,7 @@ HRESULT VirtualBoxClient::init()
 
     rc = unconst(mData.m_pEventSource).createObject();
     AssertComRCReturnRC(rc);
-    rc = mData.m_pEventSource->init(static_cast<IVirtualBoxClient *>(this));
+    rc = mData.m_pEventSource->init();
     AssertComRCReturnRC(rc);
 
     /* Setting up the VBoxSVC watcher thread. If anything goes wrong here it

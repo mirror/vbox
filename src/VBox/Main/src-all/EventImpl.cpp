@@ -928,7 +928,7 @@ void EventSource::FinalRelease()
     BaseFinalRelease();
 }
 
-HRESULT EventSource::init(IUnknown *)
+HRESULT EventSource::init()
 {
     HRESULT rc = S_OK;
 
@@ -1409,7 +1409,7 @@ HRESULT EventSourceAggregator::init(ComSafeArrayIn(IEventSource *, aSourcesIn))
     rc = mSource.createObject();
     ComAssertMsgRet(SUCCEEDED(rc), ("Could not create source (%Rhrc)", rc),
                     E_FAIL);
-    rc = mSource->init((IEventSource *)this);
+    rc = mSource->init();
     ComAssertMsgRet(SUCCEEDED(rc), ("Could not init source (%Rhrc)", rc),
                     E_FAIL);
 

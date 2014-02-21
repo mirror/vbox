@@ -160,7 +160,7 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession,
         mData.mOpenInfo = openInfo;
 
         unconst(mEventSource).createObject();
-        HRESULT hr = mEventSource->init(static_cast<IGuestFile*>(this));
+        HRESULT hr = mEventSource->init();
         if (FAILED(hr))
             vrc = VERR_COM_UNEXPECTED;
     }

@@ -188,7 +188,7 @@ int GuestProcess::init(Console *aConsole, GuestSession *aSession,
             vrc = VERR_NO_MEMORY;
         else
         {
-            hr = mEventSource->init(static_cast<IGuestProcess*>(this));
+            hr = mEventSource->init();
             if (FAILED(hr))
                 vrc = VERR_COM_UNEXPECTED;
         }

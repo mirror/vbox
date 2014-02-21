@@ -504,7 +504,7 @@ HRESULT VirtualBox::init()
 
         /* events */
         if (SUCCEEDED(rc = unconst(m->pEventSource).createObject()))
-            rc = m->pEventSource->init(static_cast<IVirtualBox*>(this));
+            rc = m->pEventSource->init();
         if (FAILED(rc)) throw rc;
 
 #ifdef VBOX_WITH_EXTPACK
