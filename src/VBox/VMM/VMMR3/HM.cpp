@@ -507,8 +507,8 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                     pszMsg = "VT-x is disabled in the BIOS.";
                     break;
 
-                case VERR_VMX_MSR_SMX_VMXON_DISABLED:
-                    pszMsg = "VT-x is disabled in the BIOS for Safer-Mode/Trusted Extensions.";
+                case VERR_VMX_MSR_ALL_VMXON_DISABLED:
+                    pszMsg = "VT-x is disabled in the BIOS for all CPU modes.";
                     break;
 
                 case VERR_VMX_MSR_LOCKING_FAILED:
@@ -916,8 +916,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is not available.");
             case VERR_VMX_MSR_VMXON_DISABLED:
                 return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is disabled in the BIOS.");
-            case VERR_VMX_MSR_SMX_VMXON_DISABLED:
-                return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is disabled in the BIOS for Safer-Mode/Trusted Extensions.");
+            case VERR_VMX_MSR_ALL_VMXON_DISABLED:
+                return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is disabled in the BIOS for all CPU modes.");
             case VERR_VMX_MSR_LOCKING_FAILED:
                 return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "Failed to enable and lock VT-x features.");
 

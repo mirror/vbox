@@ -1946,8 +1946,8 @@
 #define VERR_HMVMX_IPE_4                            (-4026)
 /** Internal VMX processing error no 1. */
 #define VERR_HMVMX_IPE_5                            (-4027)
-/** VT-x features for SMX operation disabled by the BIOS. */
-#define VERR_VMX_MSR_SMX_VMXON_DISABLED             (-4028)
+/** VT-x features for all modes (SMX and non-SMX) disabled by the BIOS. */
+#define VERR_VMX_MSR_ALL_VMXON_DISABLED             (-4028)
 /** VT-x features disabled by the BIOS. */
 #define VERR_VMX_MSR_VMXON_DISABLED                 (-4029)
 /** @} */
