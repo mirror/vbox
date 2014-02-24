@@ -25,6 +25,13 @@
 #include <QMap>
 #include <QSet>
 
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
+/* Forward declarations: */
+class UIHostComboEditorPrivate;
+class QIToolButton;
+
 /* Native hot-key namespace to unify
  * all the related hot-key processing stuff: */
 namespace UINativeHotKey
@@ -68,16 +75,45 @@ private:
 };
 Q_DECLARE_METATYPE(UIHostComboWrapper);
 
-/* Host-combo editor widget: */
-class UIHostComboEditor : public QLineEdit
+/** Host-combo editor widget. */
+class UIHostComboEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
     Q_PROPERTY(UIHostComboWrapper combo READ combo WRITE setCombo USER true);
 
 public:
 
+    /** Constructs host-combo editor for passed @a pParent. */
     UIHostComboEditor(QWidget *pParent);
-    ~UIHostComboEditor();
+
+private:
+
+    /** Prepares widget content. */
+    void prepare();
+
+    /** Translates widget content. */
+    void retranslateUi();
+
+    /** Defines host-combo sequence. */
+    void setCombo(const UIHostComboWrapper &strCombo);
+    /** Returns host-combo sequence. */
+    UIHostComboWrapper combo() const;
+
+    /** UIHostComboEditorPrivate instance. */
+    UIHostComboEditorPrivate *m_pEditor;
+    /** <b>Clear</b> QIToolButton instance. */
+    QIToolButton *m_pButtonClear;
+};
+
+/* Host-combo editor widget private stuff: */
+class UIHostComboEditorPrivate : public QLineEdit
+{
+    Q_OBJECT;
+
+public:
+
+    UIHostComboEditorPrivate();
+    ~UIHostComboEditorPrivate();
 
     void setCombo(const UIHostComboWrapper &strCombo);
     UIHostComboWrapper combo() const;
