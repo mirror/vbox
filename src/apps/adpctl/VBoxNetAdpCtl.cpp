@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #ifdef RT_OS_LINUX
 # include <net/if.h>
@@ -61,8 +62,9 @@ typedef struct VBoxNetAdpReq
 } VBOXNETADPREQ;
 typedef VBOXNETADPREQ *PVBOXNETADPREQ;
 
-
-#define VBOXADPCTL_IFCONFIG_PATH "/sbin/ifconfig"
+#define VBOXADPCTL_IFCONFIG_PATH1 "/sbin/ifconfig"
+#define VBOXADPCTL_IFCONFIG_PATH2 "/bin/ifconfig"
+static char *g_pszIfConfig;
 
 #if defined(RT_OS_LINUX)
 # define VBOXADPCTL_DEL_CMD "del"
@@ -82,6 +84,16 @@ static void showUsage(void)
     fprintf(stderr, "     | VBoxNetAdpCtl <adapter> remove\n");
 }
 
+static void setPathIfConfig(void)
+{
+    struct stat s;
+    if (   !stat(VBOXADPCTL_IFCONFIG_PATH1, &s)
+        && S_ISREG(s.st_mode))
+        g_pszIfConfig = (char*)VBOXADPCTL_IFCONFIG_PATH1;
+    else
+        g_pszIfConfig = (char*)VBOXADPCTL_IFCONFIG_PATH2;
+}
+
 static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
                            const char *pcszArg2 = NULL,
                            const char *pcszArg3 = NULL,
@@ -90,7 +102,7 @@ static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
 {
     const char * const argv[] =
     {
-        VBOXADPCTL_IFCONFIG_PATH,
+        g_pszIfConfig,
         pcszAdapterName,
         pcszArg1, /* [address family] */
         pcszArg2, /* address */
@@ -109,7 +121,7 @@ static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
             rc = EXIT_FAILURE;
             break;
         case 0: /* Child process. */
-            if (execve(VBOXADPCTL_IFCONFIG_PATH, (char * const*)argv, envp) == -1)
+            if (execve(argv[0], (char * const*)argv, envp) == -1)
                 rc = EXIT_FAILURE;
             break;
         default: /* Parent process. */
@@ -129,7 +141,7 @@ static bool removeAddresses(char *pszAdapterName)
     char aszAddresses[MAX_ADDRESSES][MAX_ADDRLEN];
     int rc;
     int fds[2];
-    char * const argv[] = { (char*)VBOXADPCTL_IFCONFIG_PATH, pszAdapterName, NULL };
+    char * const argv[] = { g_pszIfConfig, pszAdapterName, NULL };
     char * const envp[] = { (char*)"LC_ALL=C", NULL };
 
     memset(aszAddresses, 0, sizeof(aszAddresses));
@@ -149,7 +161,7 @@ static bool removeAddresses(char *pszAdapterName)
         close(STDOUT_FILENO);
         rc = dup2(fds[1], STDOUT_FILENO);
         if (rc >= 0)
-            execve(VBOXADPCTL_IFCONFIG_PATH, argv, envp);
+            execve(argv[0], argv, envp);
         return false;
     }
 
@@ -249,6 +261,8 @@ int main(int argc, char *argv[])
     int rc = EXIT_SUCCESS;
     bool fRemove = false;
     VBOXNETADPREQ Req;
+
+    setPathIfConfig();
 
     switch (argc)
     {
