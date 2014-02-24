@@ -166,6 +166,7 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
         && machineState != KMachineState_Running
         && machineState != KMachineState_Teleporting
         && machineState != KMachineState_LiveSnapshotting
+        && machineState != KMachineState_DeletingSnapshotOnline
         /* paused */
         && machineState != KMachineState_Paused
         && machineState != KMachineState_TeleportingPausedVM
