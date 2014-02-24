@@ -227,8 +227,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_DEFS           += VBOX_WITH_HGSMI
   VBoxDD_SOURCES        += \
  	Graphics/DevVGA_VBVA.cpp \
- 	Graphics/HGSMI/HGSMIHost.cpp \
- 	Graphics/HGSMI/HGSMIHostHlp.cpp
+ 	Graphics/HGSMI/HGSMIHost.cpp
   VBoxDD_LIBS           += \
  	$(PATH_STAGE_LIB)/HGSMIHostR3Lib$(VBOX_SUFF_LIB)
  endif
