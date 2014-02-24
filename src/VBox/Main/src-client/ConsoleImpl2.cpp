@@ -1291,6 +1291,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         PCFGMNODE pLunL2 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/Config/ */
         PCFGMNODE pBiosCfg = NULL;      /* /Devices/pcbios/0/Config/ */
         PCFGMNODE pNetBootCfg = NULL;   /* /Devices/pcbios/0/Config/NetBoot/ */
+        bool fHaveBiosScsiConfig = false;
 
         InsertConfigNode(pRoot, "Devices", &pDevices);
 
@@ -1954,12 +1955,17 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
-                    if (pBiosCfg)
+                    /* BIOS configuration values, first controller only. */
+                    if (!pBusMgr->hasPCIDevice("lsilogicscsi", 1) && pBiosCfg)
                     {
-                        InsertConfigString(pBiosCfg, "ScsiHardDiskDevice", "lsilogicscsi");
-                    }
+                        if (!fHaveBiosScsiConfig)
+                        {
+                            fHaveBiosScsiConfig = true;
+                            InsertConfigString(pBiosCfg, "ScsiHardDiskDevice", "lsilogicscsi");
 
-                    hrc = SetBiosDiskInfo(pMachine, pCfg, pBiosCfg, controllerName, apszBiosConfigScsi);    H();
+                            hrc = SetBiosDiskInfo(pMachine, pCfg, pBiosCfg, controllerName, apszBiosConfigScsi);    H();
+                        }
+                    }
 
                     /* Attach the status driver */
                     Assert(cLedScsi >= 16);
@@ -1975,12 +1981,17 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
-                    if (pBiosCfg)
+                    /* BIOS configuration values, first controller only. */
+                    if (!pBusMgr->hasPCIDevice("buslogic", 1) && pBiosCfg)
                     {
-                        InsertConfigString(pBiosCfg, "ScsiHardDiskDevice", "buslogic");
-                    }
+                        if (!fHaveBiosScsiConfig)
+                        {
+                            fHaveBiosScsiConfig = true;
+                            InsertConfigString(pBiosCfg, "ScsiHardDiskDevice", "buslogic");
 
-                    hrc = SetBiosDiskInfo(pMachine, pCfg, pBiosCfg, controllerName, apszBiosConfigScsi);    H();
+                            hrc = SetBiosDiskInfo(pMachine, pCfg, pBiosCfg, controllerName, apszBiosConfigScsi);    H();
+                        }
+                    }
 
                     /* Attach the status driver */
                     Assert(cLedScsi >= 16);
@@ -2066,12 +2077,17 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigString(pCfg,  "ControllerType", "SAS1068");
                     InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
-                    if (pBiosCfg)
+                    /* BIOS configuration values, first controller only. */
+                    if (!pBusMgr->hasPCIDevice("lsilogicsas", 1) && pBiosCfg)
                     {
-                        InsertConfigString(pBiosCfg, "ScsiHardDiskDevice", "lsilogicsas");
-                    }
+                        if (!fHaveBiosScsiConfig)
+                        {
+                            fHaveBiosScsiConfig = true;
+                            InsertConfigString(pBiosCfg, "ScsiHardDiskDevice", "lsilogicsas");
 
-                    hrc = SetBiosDiskInfo(pMachine, pCfg, pBiosCfg, controllerName, apszBiosConfigScsi);    H();
+                            hrc = SetBiosDiskInfo(pMachine, pCfg, pBiosCfg, controllerName, apszBiosConfigScsi);    H();
+                        }
+                    }
 
                     ULONG cPorts = 0;
                     hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
