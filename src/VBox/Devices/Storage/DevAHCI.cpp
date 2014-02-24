@@ -6050,6 +6050,9 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
             RTMemFree(pAhciReq);
     }
 
+    if (pAhciPort->cTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
+        PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
+
     return fCanceled;
 }
 
@@ -6069,11 +6072,9 @@ static DECLCALLBACK(int) ahciR3TransferCompleteNotify(PPDMIBLOCKASYNCPORT pInter
     ahciLog(("%s: pInterface=%p pvUser=%p uTag=%u\n",
              __FUNCTION__, pInterface, pvUser, pAhciReq->uTag));
 
-    int rc = ahciTransferComplete(pAhciPort, pAhciReq, rcReq, true);
+    ahciTransferComplete(pAhciPort, pAhciReq, rcReq, true);
 
-    if (pAhciPort->cTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
-        PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -6538,6 +6539,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         idx = ASMBitFirstSetU32(u32Tasks);
         while (idx)
         {
+            bool fReqCanceled = false;
             AHCITXDIR enmTxDir;
             PAHCIREQ pAhciReq;
 
@@ -6674,9 +6676,9 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                                                                               pAhciReq);
                             }
                             if (rc == VINF_VD_ASYNC_IO_FINISHED)
-                                rc = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS, true);
+                                fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS, true);
                             else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-                                rc = ahciTransferComplete(pAhciPort, pAhciReq, rc, true);
+                                fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, rc, true);
                         }
                         else
                         {
@@ -6709,13 +6711,20 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                                                                     pAhciReq->cbTransfer);
                                 pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 0;
                             }
-                            rc = ahciTransferComplete(pAhciPort, pAhciReq, rc, true);
+                            fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, rc, true);
                         }
                     }
                 }
                 else
-                    rc = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS, true);
+                    fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS, true);
             } /* Command */
+
+            /*
+             * Don't process other requests if the last one was canceled,
+             * the others are not valid anymore.
+             */
+            if (fReqCanceled)
+                break;
 
             u32Tasks &= ~RT_BIT_32(idx); /* Clear task bit. */
             idx = ASMBitFirstSetU32(u32Tasks);
