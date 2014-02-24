@@ -1164,11 +1164,12 @@ static int vboxserviceVMInfoWriteNetwork(void)
     while (cbLeft >= sizeof(*pCur))
     {
         /* Figure the size of the current request. */
-        size_t const cbCur = RT_OFFSETOF(struct ifreq, ifr_addr)
-# ifdef SA_LEN
-                           + RT_MAX(sizeof(struct sockaddr), SA_LEN(pCur->ifr_addr));
+        size_t cbCur = RT_OFFSETOF(struct ifreq, ifr_addr);
+# if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) /* No sa_len on this platforms. */
+        Assert(pCur->ifr_addr.sa_family == AF_INET);
+        cbCur += sizeof(struct sockaddr);
 # else
-                           + RT_MAX(sizeof(struct sockaddr), pCur->ifr_addr.sa_len);
+        cbCur += RT_MAX(sizeof(struct sockaddr), pCur->ifr_addr.sa_len);
 # endif
         AssertBreak(cbCur <= cbLeft);
 
