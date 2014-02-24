@@ -238,8 +238,8 @@ private:
 
     DnDGuestResponse *response(void) const { return m_pDnDResponse; }
 
-    void adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) const;
-    void hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
+    HRESULT adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) const;
+    int hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
 
     /* Static helpers. */
     static RTCString           toFormatString(ComSafeArrayIn(IN_BSTR, formats));
@@ -309,11 +309,11 @@ int DnDGuestResponse::notifyAboutGuestResponse()
 
 int DnDGuestResponse::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 500 */)
 {
-    int vrc = RTSemEventWait(m_EventSem, msTimeout);
+    int rc = RTSemEventWait(m_EventSem, msTimeout);
 #ifdef DEBUG_andy
-    LogFlowFunc(("msTimeout=%RU32, rc=%Rrc\n", msTimeout, vrc));
+    LogFlowFunc(("msTimeout=%RU32, rc=%Rrc\n", msTimeout, rc));
 #endif
-    return vrc;
+    return rc;
 }
 
 int DnDGuestResponse::dataAdd(const void *pvData, uint32_t cbData,
@@ -349,8 +349,10 @@ void DnDGuestResponse::reset(void)
         RTMemFree(m_pvData);
         m_pvData = NULL;
     }
-
     m_cbData = 0;
+
+    m_cbDataCurrent = 0;
+    m_cbDataTotal = 0;
 }
 
 HRESULT DnDGuestResponse::resetProgress(const ComObjPtr<Guest>& pParent)
@@ -376,34 +378,33 @@ int DnDGuestResponse::setProgress(unsigned uPercentage,
     if (!m_progress.isNull())
     {
         BOOL fCompleted;
-        HRESULT rc = m_progress->COMGETTER(Completed)(&fCompleted);
+        HRESULT hr = m_progress->COMGETTER(Completed)(&fCompleted);
         if (!fCompleted)
         {
             if (uState == DragAndDropSvc::DND_PROGRESS_ERROR)
             {
-                rc = m_progress->notifyComplete(E_FAIL,
+                hr = m_progress->notifyComplete(E_FAIL,
                                                 COM_IIDOF(IGuest),
                                                 m_parent->getComponentName(),
                                                 m_parent->tr("Drag'n drop guest error (%Rrc)"), rcOp);
+                reset();
             }
             else if (uState == DragAndDropSvc::DND_PROGRESS_CANCELLED)
             {
-                rc = m_progress->Cancel();
-                vrc = VERR_CANCELLED;
+                hr = m_progress->Cancel();
+                if (SUCCEEDED(hr))
+                    vrc = VERR_CANCELLED;
+
+                reset();
             }
             else /* uState == DragAndDropSvc::DND_PROGRESS_RUNNING */
             {
-                rc = m_progress->SetCurrentOperationProgress(uPercentage);
-#ifndef DEBUG_andy
-                Assert(SUCCEEDED(rc));
-#endif
+                hr = m_progress->SetCurrentOperationProgress(uPercentage);
+                AssertComRC(hr);
                 if (   uState      == DragAndDropSvc::DND_PROGRESS_COMPLETE
                     || uPercentage >= 100)
-                    rc = m_progress->notifyComplete(S_OK);
+                    hr = m_progress->notifyComplete(S_OK);
             }
-#ifndef DEBUG_andy
-            Assert(SUCCEEDED(rc));
-#endif
         }
     }
 
@@ -414,10 +415,12 @@ int DnDGuestResponse::dataSetStatus(size_t cbDataAdd, size_t cbDataTotal /* = 0 
 {
     if (cbDataTotal)
     {
-        AssertMsg(m_cbDataTotal <= cbDataTotal, ("New data size size must not be smaller (%zu) than old value (%zu)\n",
+#ifndef DEBUG_andy
+        AssertMsg(m_cbDataTotal <= cbDataTotal, ("New data size must not be smaller (%zu) than old value (%zu)\n",
                                                  cbDataTotal, m_cbDataTotal));
+#endif
+        LogFlowFunc(("Updating total data size from %zu to %zu\n", m_cbDataTotal, cbDataTotal));
         m_cbDataTotal = cbDataTotal;
-        LogFlowFunc(("Updating total data size to: %zu\n", m_cbDataTotal));
     }
     AssertMsg(m_cbDataTotal, ("m_cbDataTotal must not be <= 0\n"));
 
@@ -432,12 +435,11 @@ int DnDGuestResponse::dataSetStatus(size_t cbDataAdd, size_t cbDataTotal /* = 0 
 #ifdef DEBUG_andy
     LogFlowFunc(("Updating transfer status (%zu/%zu), status=%ld\n",
                  m_cbDataCurrent, m_cbDataTotal, uStatus));
-#endif
-
+#else
     AssertMsg(m_cbDataCurrent <= m_cbDataTotal,
               ("More data transferred (%RU32) than initially announced (%RU32)\n",
               m_cbDataCurrent, m_cbDataTotal));
-
+#endif
     int rc = setProgress(cPercentage, uStatus);
 
     /** @todo For now we instantly confirm the cancel. Check if the
@@ -454,29 +456,32 @@ HRESULT DnDGuestResponse::queryProgressTo(IProgress **ppProgress)
     return m_progress.queryInterfaceTo(ppProgress);
 }
 
-void GuestDnDPrivate::adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) const
+HRESULT GuestDnDPrivate::adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) const
 {
     /* For multi-monitor support we need to add shift values to the coordinates
      * (depending on the screen number). */
     ComPtr<IDisplay> pDisplay;
-    HRESULT rc = p->mParent->COMGETTER(Display)(pDisplay.asOutParam());
-    if (FAILED(rc))
-        throw rc;
+    HRESULT hr = p->mParent->COMGETTER(Display)(pDisplay.asOutParam());
+    if (FAILED(hr))
+        return hr;
 
     ComPtr<IFramebuffer> pFramebuffer;
     LONG xShift, yShift;
-    rc = pDisplay->GetFramebuffer(uScreenId, pFramebuffer.asOutParam(),
+    hr = pDisplay->GetFramebuffer(uScreenId, pFramebuffer.asOutParam(),
                                   &xShift, &yShift);
-    if (FAILED(rc))
-        throw rc;
+    if (FAILED(hr))
+        return hr;
 
     *puX += xShift;
     *puY += yShift;
+
+    return hr;
 }
 
-void GuestDnDPrivate::hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const
+int GuestDnDPrivate::hostCall(uint32_t u32Function, uint32_t cParms,
+                              PVBOXHGCMSVCPARM paParms) const
 {
-    VMMDev *vmmDev = NULL;
+    VMMDev *pVMMDev = NULL;
     {
         /* Make sure mParent is valid, so set the read lock while using.
          * Do not keep this lock while doing the actual call, because in the meanwhile
@@ -485,23 +490,25 @@ void GuestDnDPrivate::hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMS
 
         /* Forward the information to the VMM device. */
         AssertPtr(p->mParent);
-        vmmDev = p->mParent->getVMMDev();
+        pVMMDev = p->mParent->getVMMDev();
     }
 
-    if (!vmmDev)
+    if (!pVMMDev)
         throw p->setError(VBOX_E_VM_ERROR,
                           p->tr("VMM device is not available (is the VM running?)"));
 
     LogFlowFunc(("hgcmHostCall msg=%RU32, numParms=%RU32\n", u32Function, cParms));
-    int vrc = vmmDev->hgcmHostCall("VBoxDragAndDropSvc",
+    int rc = pVMMDev->hgcmHostCall("VBoxDragAndDropSvc",
                                    u32Function,
                                    cParms, paParms);
-    if (RT_FAILURE(vrc))
+    if (RT_FAILURE(rc))
     {
-        LogFlowFunc(("hgcmHostCall error: %Rrc\n", vrc));
+        LogFlowFunc(("hgcmHostCall error: %Rrc\n", rc));
         throw p->setError(VBOX_E_VM_ERROR,
-                          p->tr("hgcmHostCall failed (%Rrc)"), vrc);
+                          p->tr("hgcmHostCall failed (%Rrc)"), rc);
     }
+
+    return rc;
 }
 
 /* static */
@@ -652,7 +659,7 @@ HRESULT GuestDnD::dragHGEnter(ULONG uScreenId, ULONG uX, ULONG uY,
     if (strFormats.isEmpty())
         return S_OK;
 
-    HRESULT rc = S_OK;
+    HRESULT hr = S_OK;
 
     try
     {
@@ -673,21 +680,21 @@ HRESULT GuestDnD::dragHGEnter(ULONG uScreenId, ULONG uX, ULONG uY,
                     i,
                     paParms);
 
-        DnDGuestResponse *pDnD = d->response();
+        DnDGuestResponse *pResp = d->response();
         /* This blocks until the request is answered (or timeout). */
-        if (pDnD->waitForGuestResponse() == VERR_TIMEOUT)
+        if (pResp->waitForGuestResponse() == VERR_TIMEOUT)
             return S_OK;
 
         /* Copy the response info */
-        *pResultAction = d->toMainAction(pDnD->defAction());
+        *pResultAction = d->toMainAction(pResp->defAction());
         LogFlowFunc(("*pResultAction=%ld\n", *pResultAction));
     }
-    catch (HRESULT rc2)
+    catch (HRESULT hr2)
     {
-        rc = rc2;
+        hr = hr2;
     }
 
-    return rc;
+    return hr;
 }
 
 HRESULT GuestDnD::dragHGMove(ULONG uScreenId, ULONG uX, ULONG uY,
@@ -716,7 +723,7 @@ HRESULT GuestDnD::dragHGMove(ULONG uScreenId, ULONG uX, ULONG uY,
     if (strFormats.isEmpty())
         return S_OK;
 
-    HRESULT rc = S_OK;
+    HRESULT hr = S_OK;
 
     try
     {
@@ -737,21 +744,21 @@ HRESULT GuestDnD::dragHGMove(ULONG uScreenId, ULONG uX, ULONG uY,
                     i,
                     paParms);
 
-        DnDGuestResponse *pDnD = d->response();
+        DnDGuestResponse *pResp = d->response();
         /* This blocks until the request is answered (or timeout). */
-        if (pDnD->waitForGuestResponse() == VERR_TIMEOUT)
+        if (pResp->waitForGuestResponse() == VERR_TIMEOUT)
             return S_OK;
 
         /* Copy the response info */
-        *pResultAction = d->toMainAction(pDnD->defAction());
+        *pResultAction = d->toMainAction(pResp->defAction());
         LogFlowFunc(("*pResultAction=%ld\n", *pResultAction));
     }
-    catch (HRESULT rc2)
+    catch (HRESULT hr2)
     {
-        rc = rc2;
+        hr = hr2;
     }
 
-    return rc;
+    return hr;
 }
 
 HRESULT GuestDnD::dragHGLeave(ULONG uScreenId)
@@ -759,7 +766,7 @@ HRESULT GuestDnD::dragHGLeave(ULONG uScreenId)
     DPTR(GuestDnD);
     const ComObjPtr<Guest> &p = d->p;
 
-    HRESULT rc = S_OK;
+    HRESULT hr = S_OK;
 
     try
     {
@@ -767,16 +774,16 @@ HRESULT GuestDnD::dragHGLeave(ULONG uScreenId)
                     0,
                     NULL);
 
-        DnDGuestResponse *pDnD = d->response();
+        DnDGuestResponse *pResp = d->response();
         /* This blocks until the request is answered (or timeout). */
-        pDnD->waitForGuestResponse();
+        pResp->waitForGuestResponse();
     }
-    catch (HRESULT rc2)
+    catch (HRESULT hr2)
     {
-        rc = rc2;
+        hr = hr2;
     }
 
-    return rc;
+    return hr;
 }
 
 HRESULT GuestDnD::dragHGDrop(ULONG uScreenId, ULONG uX, ULONG uY,
@@ -806,7 +813,7 @@ HRESULT GuestDnD::dragHGDrop(ULONG uScreenId, ULONG uX, ULONG uY,
     if (strFormats.isEmpty())
         return S_OK;
 
-    HRESULT rc = S_OK;
+    HRESULT hr = S_OK;
 
     try
     {
@@ -827,23 +834,23 @@ HRESULT GuestDnD::dragHGDrop(ULONG uScreenId, ULONG uX, ULONG uY,
                     i,
                     paParms);
 
-        DnDGuestResponse *pDnD = d->response();
+        DnDGuestResponse *pResp = d->response();
         /* This blocks until the request is answered (or timeout). */
-        if (pDnD->waitForGuestResponse() == VERR_TIMEOUT)
+        if (pResp->waitForGuestResponse() == VERR_TIMEOUT)
             return S_OK;
 
         /* Copy the response info */
-        *pResultAction = d->toMainAction(pDnD->defAction());
-        Bstr(pDnD->format()).cloneTo(pstrFormat);
+        *pResultAction = d->toMainAction(pResp->defAction());
+        Bstr(pResp->format()).cloneTo(pstrFormat);
 
         LogFlowFunc(("*pResultAction=%ld\n", *pResultAction));
     }
-    catch (HRESULT rc2)
+    catch (HRESULT hr2)
     {
-        rc = rc2;
+        hr = hr2;
     }
 
-    return rc;
+    return hr;
 }
 
 HRESULT GuestDnD::dragHGPutData(ULONG uScreenId, IN_BSTR bstrFormat,
@@ -852,7 +859,7 @@ HRESULT GuestDnD::dragHGPutData(ULONG uScreenId, IN_BSTR bstrFormat,
     DPTR(GuestDnD);
     const ComObjPtr<Guest> &p = d->p;
 
-    HRESULT rc = S_OK;
+    HRESULT hr = S_OK;
 
     try
     {
@@ -867,9 +874,9 @@ HRESULT GuestDnD::dragHGPutData(ULONG uScreenId, IN_BSTR bstrFormat,
         paParms[i++].setPointer((void*)sfaData.raw(), (uint32_t)sfaData.size());
         paParms[i++].setUInt32((uint32_t)sfaData.size());
 
-        DnDGuestResponse *pDnD = d->response();
+        DnDGuestResponse *pResp = d->response();
         /* Reset any old progress status. */
-        pDnD->resetProgress(p);
+        pResp->resetProgress(p);
 
         /* Note: The actual data transfer of files/directoies is performed by the
          *       DnD host service. */
@@ -878,14 +885,14 @@ HRESULT GuestDnD::dragHGPutData(ULONG uScreenId, IN_BSTR bstrFormat,
                     paParms);
 
         /* Query the progress object to the caller. */
-        pDnD->queryProgressTo(ppProgress);
+        pResp->queryProgressTo(ppProgress);
     }
-    catch (HRESULT rc2)
+    catch (HRESULT hr2)
     {
-        rc = rc2;
+        hr = hr2;
     }
 
-    return rc;
+    return hr;
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -900,7 +907,7 @@ HRESULT GuestDnD::dragGHPending(ULONG uScreenId,
     /* Default is ignoring */
     *pDefaultAction = DragAndDropAction_Ignore;
 
-    HRESULT rc = S_OK;
+    HRESULT hr = S_OK;
 
     try
     {
@@ -912,29 +919,27 @@ HRESULT GuestDnD::dragGHPending(ULONG uScreenId,
                     i,
                     paParms);
 
-        DnDGuestResponse *pDnD = d->response();
-        /* This blocks until the request is answered (or timeout). */
-        if (pDnD->waitForGuestResponse() == VERR_TIMEOUT)
+        /* This blocks until the request is answered (or timed out). */
+        DnDGuestResponse *pResp = d->response();
+        if (pResp->waitForGuestResponse() == VERR_TIMEOUT)
             return S_OK;
 
-        if (isDnDIgnoreAction(pDnD->defAction()))
+        if (isDnDIgnoreAction(pResp->defAction()))
             return S_OK;
 
         /* Fetch the default action to use. */
-        *pDefaultAction = d->toMainAction(pDnD->defAction());
-        /* Convert the formats strings to a vector of strings. */
-        d->toFormatSafeArray(pDnD->format(), ComSafeArrayOutArg(formats));
-        /* Convert the action bit field to a vector of actions. */
-        d->toMainActions(pDnD->allActions(), ComSafeArrayOutArg(allowedActions));
+        *pDefaultAction = d->toMainAction(pResp->defAction());
+        d->toFormatSafeArray(pResp->format(), ComSafeArrayOutArg(formats));
+        d->toMainActions(pResp->allActions(), ComSafeArrayOutArg(allowedActions));
 
         LogFlowFunc(("*pDefaultAction=0x%x\n", *pDefaultAction));
     }
-    catch (HRESULT rc2)
+    catch (HRESULT hr2)
     {
-        rc = rc2;
+        hr = hr2;
     }
 
-    return rc;
+    return hr;
 }
 
 HRESULT GuestDnD::dragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action,
@@ -956,8 +961,10 @@ HRESULT GuestDnD::dragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action,
     LogFlowFunc(("strFormat=%s, uAction=0x%x, fNeedsDropDir=%RTbool\n",
                  pcszFormat, uAction, fNeedsDropDir));
 
-    DnDGuestResponse *pDnD = d->response();
-    AssertPtr(pDnD);
+    DnDGuestResponse *pResp = d->response();
+    AssertPtr(pResp);
+
+    pResp->reset();
 
     if (fNeedsDropDir)
     {
@@ -969,7 +976,7 @@ HRESULT GuestDnD::dragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action,
                                szDropDir, rc);
         LogFlowFunc(("Dropped files directory on the host is: %s\n", szDropDir));
 
-        pDnD->setDropDir(szDropDir);
+        pResp->setDropDir(szDropDir);
     }
 
     try
@@ -981,19 +988,19 @@ HRESULT GuestDnD::dragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action,
         paParms[i++].setUInt32(uAction);
 
         /* Reset any old data and the progress status. */
-        pDnD->reset();
-        pDnD->resetProgress(p);
+        pResp->reset();
+        pResp->resetProgress(p);
 
         d->hostCall(DragAndDropSvc::HOST_DND_GH_EVT_DROPPED,
                     i,
                     paParms);
 
         /* Query the progress object to the caller. */
-        pDnD->queryProgressTo(ppProgress);
+        pResp->queryProgressTo(ppProgress);
     }
-    catch (HRESULT rc2)
+    catch (HRESULT hr2)
     {
-        hr = rc2;
+        hr = hr2;
     }
 
     return hr;
@@ -1018,18 +1025,21 @@ HRESULT GuestDnD::dragGHGetData(ComSafeArrayOut(BYTE, data))
             AssertPtr(pvData);
 
             Utf8Str strFormat = pResp->format();
-            LogFlowFunc(("strFormat=%s, strDropDir=%s\n",
-                         strFormat.c_str(), pResp->dropDir().c_str()));
+            LogFlowFunc(("strFormat=%s, cbData=%zu, pvData=0x%p\n",
+                         strFormat.c_str(), cbData, pvData));
 
             if (DnDMIMEHasFileURLs(strFormat.c_str(), strFormat.length()))
             {
+                LogFlowFunc(("strDropDir=%s\n", pResp->dropDir().c_str()));
+
                 DnDURIList lstURI;
                 int rc2 = lstURI.RootFromURIData(pvData, cbData, 0 /* fFlags */);
                 if (RT_SUCCESS(rc2))
                 {
                     Utf8Str strURIs = lstURI.RootToString(pResp->dropDir());
-                    if (sfaData.resize(strURIs.length()))
-                        memcpy(sfaData.raw(), strURIs.c_str(), strURIs.length());
+                    size_t cbURIs = strURIs.length();
+                    if (sfaData.resize(cbURIs + 1 /* Include termination */))
+                        memcpy(sfaData.raw(), strURIs.c_str(), cbURIs);
                     else
                         hr = E_OUTOFMEMORY;
                 }
@@ -1047,8 +1057,6 @@ HRESULT GuestDnD::dragGHGetData(ComSafeArrayOut(BYTE, data))
                     hr = E_OUTOFMEMORY;
             }
         }
-
-        LogFlowFunc(("cbData=%zu\n", cbData));
 
         /* Detach in any case, regardless of data size. */
         sfaData.detachTo(ComSafeArrayOutArg(data));

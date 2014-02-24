@@ -1316,7 +1316,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
 
     /* Inform the host on error */
     if (RT_FAILURE(rc))
-        VbglR3DnDGHErrorEvent(rc);
+        VbglR3DnDGHSendError(rc);
 
     /* At this point, we have either successfully transfered any data or not.
      * So reset our internal state, cause we are done. */

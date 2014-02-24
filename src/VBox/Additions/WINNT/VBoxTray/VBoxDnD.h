@@ -339,8 +339,6 @@ public:
     /* G->H */
     int OnGhIsDnDPending(uint32_t uScreenID);
     int OnGhDropped(const char *pszFormat, uint32_t cbFormats, uint32_t uDefAction);
-    int OnGhSendDir(const char *pszFormats, uint32_t cbFormats, uint32_t uDefAction);
-    int OnGhSendFile(const char *pszFormats, uint32_t cbFormats, uint32_t uDefAction);
 #endif
 
     int ProcessEvent(PVBOXDNDEVENT pEvent);
@@ -352,9 +350,10 @@ public:
 protected:
 
     int makeFullscreen(void);
-    void reset(void);
     int mouseMove(int x, int y, DWORD dwMouseInputFlags);
     int mouseRelease(void);
+    void reset(void);
+    int setMode(Mode enmMode);
 
 public: /** @todo Make protected! */
 
@@ -395,6 +394,7 @@ public: /** @todo Make protected! */
     Mode                       mMode;
     /** The current state. */
     State                      mState;
+    bool                       mInFlight;
     RTCString                  mFormatRequested;
     RTCList<RTCString>         mLstFormats;
     RTCList<RTCString>         mLstActions;

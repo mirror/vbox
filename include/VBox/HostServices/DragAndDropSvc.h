@@ -72,20 +72,20 @@ enum eHostFn
      */
 
     HOST_DND_HG_EVT_ENTER              = 200,
-    HOST_DND_HG_EVT_MOVE,
-    HOST_DND_HG_EVT_LEAVE,
-    HOST_DND_HG_EVT_DROPPED,
-    HOST_DND_HG_EVT_CANCEL,
+    HOST_DND_HG_EVT_MOVE               = 201,
+    HOST_DND_HG_EVT_LEAVE              = 202,
+    HOST_DND_HG_EVT_DROPPED            = 203,
+    HOST_DND_HG_EVT_CANCEL             = 204,
     /** Gets the actual MIME data, based on
      *  the format(s) specified by HOST_DND_HG_EVT_ENTER. */
-    HOST_DND_HG_SND_DATA,
+    HOST_DND_HG_SND_DATA               = 205,
     /** Sent when the actual buffer for HOST_DND_HG_SND_DATA
      *  was too small, issued by the DnD host service. */
-    HOST_DND_HG_SND_MORE_DATA,
+    HOST_DND_HG_SND_MORE_DATA          = 206,
     /** Directory entry to be handled on the guest. */
-    HOST_DND_HG_SND_DIR,
+    HOST_DND_HG_SND_DIR                = 207,
     /** File entry to be handled on the guest. */
-    HOST_DND_HG_SND_FILE,
+    HOST_DND_HG_SND_FILE               = 208,
 
     /*
      * Guest -> Host messages
@@ -100,7 +100,7 @@ enum eHostFn
     HOST_DND_GH_EVT_DROPPED,
 
     HOST_DND_GH_RECV_DIR               = 650,
-    HOST_DND_GH_RECV_FILE
+    HOST_DND_GH_RECV_FILE              = 670
 };
 
 /**
@@ -123,8 +123,8 @@ enum eGuestFn
     GUEST_DND_HG_ACK_OP                = 400,
     /** The guest requests the actual DnD data to be sent
      *  from the host. */
-    GUEST_DND_HG_REQ_DATA,
-    GUEST_DND_HG_EVT_PROGRESS,
+    GUEST_DND_HG_REQ_DATA              = 401,
+    GUEST_DND_HG_EVT_PROGRESS          = 402,
 
     /* G->H */
     /**
@@ -134,15 +134,15 @@ enum eGuestFn
      */
     GUEST_DND_GH_ACK_PENDING           = 500,
     /**
-     * Sends data of the requsted MIME type to the host. There can
+     * Sends data of the requested format to the host. There can
      * be more than one message if the actual data does not fit
      * into one.
      */
-    GUEST_DND_GH_SND_DATA,
-    GUEST_DND_GH_EVT_ERROR,
+    GUEST_DND_GH_SND_DATA              = 501,
+    GUEST_DND_GH_EVT_ERROR             = 502,
 
     GUEST_DND_GH_SND_DIR               = 700,
-    GUEST_DND_GH_SND_FILE
+    GUEST_DND_GH_SND_FILE              = 701
 };
 
 /**
@@ -375,7 +375,7 @@ typedef struct VBOXDNDGHSENDDATAMSG
     HGCMFunctionParameter pvData;       /* OUT ptr */
     /** Total bytes to send. This can be more than
      *  the data block specified in pvData above, e.g.
-     *  when sending over file objects. */
+     *  when sending over file objects afterwards. */
     HGCMFunctionParameter cbTotalBytes; /* OUT uint32_t */
 } VBOXDNDGHSENDDATAMSG;
 
@@ -416,10 +416,10 @@ typedef struct VBOXDNDGHEVTERRORMSG
     VBoxGuestHGCMCallInfo hdr;
 
     /**
-     * GH Cancel Data event.
+     * GH Error event.
      *
      * Used by:
-     * GUEST_DND_GH_EVT_CANCEL
+     * GUEST_DND_GH_EVT_ERROR
      */
     HGCMFunctionParameter uRC;          /* OUT uint32_t */
 } VBOXDNDGHEVTERRORMSG;

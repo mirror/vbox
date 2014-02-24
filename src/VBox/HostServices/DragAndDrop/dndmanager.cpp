@@ -40,7 +40,8 @@ typedef DECLCALLBACK(int) FNDNDPRIVATEPROGRESS(size_t cbDone, void *pvUser);
 typedef FNDNDPRIVATEPROGRESS *PFNDNDPRIVATEPROGRESS;
 
 /**
- * Internal DnD message class for informing the guest about a new directory.
+ * Internal DnD message class for informing the
+ * guest about a new directory.
  *
  * @see DnDHGSendDataMessage
  */
@@ -54,13 +55,18 @@ public:
         , m_pfnProgressCallback(pfnProgressCallback)
         , m_pvProgressUser(pvProgressUser)
     {
+        RTCString strPath = m_URIObject.GetDestPath();
+        LogFlowFunc(("strPath=%s (%zu)\n", strPath.c_str(), strPath.length()));
+
         VBOXHGCMSVCPARM paTmpParms[3];
-        paTmpParms[0].setString(m_URIObject.GetDestPath().c_str());
-        paTmpParms[1].setUInt32((uint32_t)(m_URIObject.GetDestPath().length() + 1));
+        paTmpParms[0].setString(strPath.c_str());
+        paTmpParms[1].setUInt32((uint32_t)(strPath.length() + 1));
         paTmpParms[2].setUInt32(m_URIObject.GetMode());
 
         m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_DIR, 3, paTmpParms);
     }
+
+public:
 
     int currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     {
@@ -77,7 +83,7 @@ protected:
 
     DnDURIObject           m_URIObject;
 
-    /* Progress stuff */
+    /* Progress stuff. */
     PFNDNDPRIVATEPROGRESS  m_pfnProgressCallback;
     void                  *m_pvProgressUser;
 };
@@ -95,14 +101,18 @@ public:
                          PFNDNDPRIVATEPROGRESS pfnProgressCallback, void *pvProgressUser);
     virtual ~DnDHGSendFilePrivate(void);
 
+public:
+
     int currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
 protected:
 
     DnDURIObject           m_URIObject;
-    VBOXHGCMSVCPARM        m_paSkelParms[5];
+    /** Skeleton parameters for the next upcoming message in case
+     *  the file data didn't fit completely into the first one. */
+    VBOXHGCMSVCPARM        m_aSkelParms[5];
 
-    /* Progress stuff */
+    /* Progress stuff. */
     PFNDNDPRIVATEPROGRESS  m_pfnProgressCallback;
     void                  *m_pvProgressUser;
 };
@@ -126,7 +136,7 @@ protected:
     size_t                 m_cbSize;
     size_t                 m_cbDone;
 
-    /* Progress stuff */
+    /* Progress stuff. */
     PFNDNDPRIVATEPROGRESS  m_pfnProgressCallback;
     void                  *m_pvProgressUser;
 };
@@ -145,13 +155,16 @@ DnDHGSendFilePrivate::DnDHGSendFilePrivate(DnDURIObject URIObject,
     , m_pfnProgressCallback(pfnProgressCallback)
     , m_pvProgressUser(pvProgressUser)
 {
-    m_paSkelParms[0].setString(m_URIObject.GetDestPath().c_str());
-    m_paSkelParms[1].setUInt32((uint32_t)(m_URIObject.GetDestPath().length() + 1));
-    m_paSkelParms[2].setPointer(NULL, 0);
-    m_paSkelParms[3].setUInt32(0);
-    m_paSkelParms[4].setUInt32(m_URIObject.GetMode());
+    LogFlowFunc(("strPath=%s (%zu)\n",
+                 m_URIObject.GetDestPath().c_str(), m_URIObject.GetDestPath().length()));
 
-    m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_FILE, 5, m_paSkelParms);
+    m_aSkelParms[0].setString(m_URIObject.GetDestPath().c_str()); /* pvName */
+    m_aSkelParms[1].setUInt32((uint32_t)(m_URIObject.GetDestPath().length() + 1)); /* cbName */
+    m_aSkelParms[2].setPointer(NULL, 0); /* pvData */
+    m_aSkelParms[3].setUInt32(0); /* cbData */
+    m_aSkelParms[4].setUInt32(m_URIObject.GetMode()); /* fMode */
+
+    m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_FILE, 5, m_aSkelParms);
 }
 
 DnDHGSendFilePrivate::~DnDHGSendFilePrivate(void)
@@ -173,16 +186,19 @@ int DnDHGSendFilePrivate::currentMessage(uint32_t uMsg, uint32_t cParms,
     if (RT_SUCCESS(rc))
     {
         /* Get buffer size + pointer to buffer from guest side. */
-        uint32_t cbToRead = paParms[2].u.pointer.size;
+        uint32_t cbToRead = paParms[2].u.pointer.size; /* cbData */
         Assert(cbToRead);
-        void *pvBuf = paParms[2].u.pointer.addr;
+        void *pvBuf = paParms[2].u.pointer.addr; /* pvData */
         AssertPtr(pvBuf);
 
         rc = m_URIObject.Read(pvBuf, cbToRead, &cbRead);
+        LogFlowFunc(("Read %RU32 bytes (%RU32 bytes buffer) for \"%s\", rc=%Rrc\n",
+                     cbRead, cbToRead, m_URIObject.GetDestPath().c_str(), rc));
+
         if (RT_LIKELY(RT_SUCCESS(rc)))
         {
-            /* Tell the guest the actual size. */
-            paParms[3].setUInt32((uint32_t)cbRead);
+            /* Tell the guest the actual size read. */
+            paParms[3].setUInt32((uint32_t)cbRead); /* cbData */
         }
     }
 
@@ -194,7 +210,7 @@ int DnDHGSendFilePrivate::currentMessage(uint32_t uMsg, uint32_t cParms,
             {
                 /* More data needed to send over. Prepare the next message. */
                 m_pNextMsg = new HGCM::Message(DragAndDropSvc::HOST_DND_HG_SND_FILE, 5 /* cParms */,
-                                               m_paSkelParms);
+                                               m_aSkelParms);
             }
             catch(std::bad_alloc &)
             {
@@ -322,14 +338,14 @@ DnDHGSendDataMessage::DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms,
         uint32_t cbList = paParms[3].u.pointer.size;
         Assert(cbList);
 
-        LogFlowFunc(("Old data: '%s'\n", pszList));
+        LogFlowFunc(("Old data (%RU32 bytes): '%s'\n", cbList, pszList));
 
         /* The list is separated by newline (even if only one file is listed). */
         RTCList<RTCString> lstURIOrg
             = RTCString(pszList, cbList).split("\r\n");
         if (!lstURIOrg.isEmpty())
         {
-            rc = m_lstURI.AppendNativePathsFromList(lstURIOrg, 0 /* fFlags */);
+            rc = m_lstURI.AppendURIPathsFromList(lstURIOrg, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
             {
                 /* Add the total size of all meta data + files transferred to
@@ -350,7 +366,9 @@ DnDHGSendDataMessage::DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms,
                 paParms[3].u.pointer.size = (uint32_t)(strNewURIs.length() + 1);
                 paParms[4].u.uint32       = (uint32_t)(strNewURIs.length() + 1);
 
-                LogFlowFunc(("Set new data: '%s'\n", (char*)paParms[3].u.pointer.addr));
+                LogFlowFunc(("Set new data (%RU32 bytes): '%s'\n",
+                            paParms[3].u.pointer.size,
+                            (const char*)paParms[3].u.pointer.addr));
             }
         }
     }
