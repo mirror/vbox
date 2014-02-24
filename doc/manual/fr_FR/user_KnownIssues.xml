@@ -254,6 +254,12 @@
               </listitem>
     
               <listitem>
+                <para>Le passthrough de la webcam hôte se limite aux résolutions
+                640x480 avec 20 images par secondes à cause de ;imites de l'API
+                V4L2 de Solaris. Il se peut que cela change dans une future
+                version de Solaris.</para>
+              </listitem>
+              <listitem>
                 <para>Aucune informations d'ACPI (état de la batterie, source
                 d'énergie) n'est signalée à l'invité.</para>
               </listitem>
