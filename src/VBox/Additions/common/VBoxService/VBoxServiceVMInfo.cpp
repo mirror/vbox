@@ -1123,10 +1123,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
 
     for (int i = 0; i < cIfacesSystem; ++i)
     {
-# ifdef RT_OS_OS2
-        ifreq IfReqCopy = ifrequest[i];
-# endif
-        /* Get the interface flags. */
+        /* Get the interface flags - ASSUMES the address isn't really overwritten (ugly). */
         if (ioctl(sd, SIOCGIFFLAGS, &ifrequest[i]) < 0)
         {
 # ifdef RT_OS_OS2 /* Ignore errors when querying flags for non-existing interfaces. */
@@ -1142,9 +1139,8 @@ static int vboxserviceVMInfoWriteNetwork(void)
 
         bool const fIfUp = !!(ifrequest[i].ifr_flags & IFF_UP);
 
-# ifdef RT_OS_OS2 /* I think this should be done everywhere. */
-        /* Get the address. */
-        ifrequest[i] = IfReqCopy;
+# ifdef RT_OS_OS2
+        /* Don't know what OS/2 returns in SIOCGIFCONF, but it isn't the address.  Get it. */
         if (ioctl(sd, SIOCGIFADDR, &ifrequest[i]) < 0)
         {
             rc = RTErrConvertFromErrno(errno);
