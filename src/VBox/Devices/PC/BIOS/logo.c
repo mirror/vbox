@@ -234,7 +234,7 @@ void print_detected_harddisks(void)
         {
             if (sata_ctrl_printed == 0)
             {
-                printf("\n\nAHCI controller:\n");
+                printf("\n\n  AHCI controller:");
                 sata_ctrl_printed = 1;
             }
 
@@ -248,7 +248,7 @@ void print_detected_harddisks(void)
         {
             if (scsi_ctrl_printed == 0)
             {
-                printf("\n\nSCSI controller:\n");
+                printf("\n\n  SCSI controller:");
                 scsi_ctrl_printed = 1;
             }
 
@@ -261,7 +261,7 @@ void print_detected_harddisks(void)
 
             if ((device < 4) && (ide_ctrl_printed == 0))
             {
-                printf("IDE controller:\n");
+                printf("  IDE controller:");
                 ide_ctrl_printed = 1;
             }
             else if ((device >= 4) && (sata_ctrl_printed == 0))
