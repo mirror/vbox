@@ -1374,6 +1374,15 @@ Virtual system 0:
     <para>Pour les produits de virtualisation non pleinement compatibles avec
     le standard OVF 1.0, vous pouvez activer un mode OVF 0.9 basique avec
     l'option <computeroutput>--legacy09</computeroutput>.</para>
+
+    <para>Pour spécifier des options contrôlant le contenu exact du fichier
+    d'applicatif, vous pouvez utiliser <computeroutput>--option</computeroutput>
+    pour demander la création d'un fichier manifeste (on vous y encourage, cela
+    permet la détection d'applicatifs corrompus lors de l'importation), l'export
+    d'images de DVD supplémentaires, et l'inclusion des adresses MAC. Vous pouvez
+    spécifier une liste d'options comme <computeroutput>--option manifest,nomacs</computeroutput>. Pour des détails,
+    consultez la sortie de l'aide de
+    <computeroutput>--option manifest,nomacs</computeroutput>. For details, +    check the help output of <computeroutput>VBoxManage export</computeroutput>.</para>
   </sect1>
 
   <sect1 id="vboxmanage-startvm">

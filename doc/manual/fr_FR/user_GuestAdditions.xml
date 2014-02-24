@@ -1124,6 +1124,13 @@
           <para>Actuellement, seuls les suppléments invité pour Linux et Solaris
           supportent les liens symboliques.</para>
         </listitem>
+        <listitem>
+          <para>Pour des raisons de sécurité, l'OS invité n'est pas autorisé par
+          défaut à créer des liens symboliques. Si vous faites confiance à l'OS
+          invité pour ne pas abuser la fonction, vous pouvez autoriser la
+          création de liens symboliques pour "nomdupartage" avec :
+          <screen>VBoxManage setextradata "VM name" VBoxInternal2/SharedFoldersEnableSymlinksCreate/sharename 1</screen></para>
+        </listitem>
       </orderedlist></para>
 
     <sect2 id="sf_mount_manual">

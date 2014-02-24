@@ -830,17 +830,15 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>La première ligne
     <sect2 id="solaris-zones">
       <title>Configurer un espace pour exécuter VirtualBox</title>
 
-      <para>À partir de VirtualBox 1.6, il est possible d'exécuter VirtualBox
-      depuis des espaces Solaris. Pour une introduction aux espaces Solaris, 
-      merci de vous reporter à <ulink
-      url="http://www.sun.com/bigadmin/features/articles/solaris_zones.jsp">http://www.sun.com/bigadmin/features/articles/solaris_zones.jsp</ulink>.</para>
-
       <para>En supposant que VirtualBox a déjà été installé dans votre espace,
       vous devez donner au n&#x153;ud de périphérique de VirtualBox un accès à la
       zone. Ceci se fait en effectuant les étapes suivantes. Démarrez une
       session administrateur en terminal et exécutez&#xA0;:</para>
 
       <screen>zonecfg -z vboxzone</screen>
+
+      <para>Remplacez "vboxzone" par le nom de la zone où vous souhaitez lancer
+      VirtualBox.</para>
 
       <para>Dans l'invite <computeroutput>zonecfg</computeroutput>, ajoutez la
       ressource <computeroutput>device</computeroutput> et les propriétés
@@ -857,13 +855,12 @@ zonecfg:vboxzone&gt;verify
 zonecfg:vboxzone&gt;exit</screen>
 
       <para>Si vous exécutez VirtualBox 2.2.0 ou supérieur sur des hôtes Solaris
-      11 ou Nevada, vous devriez aussi ajouter un périphérique pour 
+      11 ou supérieur, vous pouvez aussi ajouter un périphérique pour 
       <computeroutput>/dev/vboxusbmon</computeroutput>, identique à ce qui est
       indiqué ci-dessus. Cela ne s'applique pas aux hôtes Solaris 10 à cause de
       l'absence du support USB.</para>
 
-      <para>Remplacez "vboxzone" par le nom de l'espace dans lequel vous souhaitez
-      exécuter VirtualBox. Ensuite, redémarrez l'espace en utilisant
+      <para>Ensuite, redémarrez l'espace en utilisant
       <computeroutput>zoneadm</computeroutput> et vous devriez pouvoir lancer
       VirtualBox depuis l'espace configuré.</para>
     </sect2>

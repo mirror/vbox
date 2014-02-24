@@ -25,7 +25,7 @@
     <itemizedlist>
 
       <listitem>
-        <para>placeholder</para>
+        <para>GUI : support du branchement à chaud des disques SATA</para>
       </listitem>
 
     </itemizedlist>
@@ -34,6 +34,12 @@
 
     <itemizedlist>
 
+      <listitem>
+        <para>VBoxManage : lors de l'export d'un applicatif, support de la
+        suppression des adresses MAC, ce qui signifie qu'elles seront toujours
+        recréées au moment de l'importation, évitant des doublons d'adresses MAC
+        entre les VMs importées plusieurs fois.</para>
+      </listitem>
       <listitem>
         <para>API : blocage de la suppression de l'instantané actuel s'il a des
 +           instantanés fils (pertinent seulement pour les VMs où aucun instantané
@@ -52,6 +58,11 @@
         automatiquement (seulement avec XPCOM, l'hîte Windows n'était pas concerné),
         ce qui provoquait des erreurs de récupération d'attributs par le service
            Web (bogue #12379)</para>
+      </listitem>
+      <listitem>
+        <para>API : correction de plantages des clients de l'API Java qui
+        utilisent les bindings XPCOM et qui survenaient surtout dans la sortie
+        des paramètres (bogue #11232)</para>
       </listitem>
 
     </itemizedlist>

@@ -992,7 +992,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     </sect2>
 
     <sect2>
-      <title>Hôtes Linux</title>
+      <title>Hôtes Linux et Solaris</title>
 
       <para>Quand on déconnecte la webcam de l'hôte, la webcam émulée n'est automatiquement
       déconnectée de de l'invité que si la webcam est en train de transmettre
@@ -2555,7 +2555,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
           </glossentry>
 
           <glossentry>
-            <glossterm><computeroutput>Restore</computeroutput></glossterm>
+            <glossterm><computeroutput>PowerOffRestoringSnapshot</computeroutput></glossterm>
 
             <glossdef>
               <para>N'autorise pas l'utilisateur à revenir au dernier instantané
@@ -3154,4 +3154,75 @@ alice = {
     que la VM est en pause en utilisant :</para>
     <screen>VBoxManage storageattach ...</screen>
   </sect1>
+
+  <sect1 id="hostpowertweaks">
+    <title>Prise en charge des événements de gestion de l'énergie de l'hôte</title>
+
+    <para>Certains événements de la gestion d'énergie de l'hôte sont gérés par 
+    VirtualBox. Le comportement dépend en fait de la plateforme :</para>
+
+    <para>
+      <glosslist>
+        <glossentry>
+          <glossterm>Mise en veille prolongée de l'hôte</glossterm>
+           <glossdef>
+             <para>
+               Cet événement est généré quand l'hîte va se mettre en veille prolongée,
+               c'est-à-dire quand l'hôte sauvegarde son état sur un support
+               de stockage non volatile puis s'éteint.
+             </para>
+             <para>
+               Cet événement n'est actuellement géré que sur les hôtes Windows 
+               et Mac OS X. Quand il est généré, VirtualBox mettra en pause toutes
+               les VMs en fonction.
+             </para>
+           </glossdef>
+         </glossentry>
+         <glossentry>
+           <glossterm>Réveil de l'hôte</glossterm>
+           <glossdef>
+             <para>
+               Cet événement est généré lorsque l'hôte sort d'une mise en veille
+               prolongée.
+             </para>
+             <para>
+               Cet événement n'est actuellement géré que sur les hôtes Windows 
+               et Mac OS X.
+               Quand cet événement est généré, VirtualBox réveillera les VMs qui
+               ont été mises en pause. 
+             </para>
+           </glossdef>
+         </glossentry>
+         <glossentry>
+           <glossterm>Batterie faible</glossterm>
+           <glossdef>
+             <para>
+               Le niveau de la batterie a atteint un seuil critique (en général
+               moins de 5 pour cent de sa charge).
+             </para>
+             <para>
+               Cet événement n'est actuellement géré que sur les hôtes Windows 
+               et Mac OS X.
+               Quand cet événement est généré, VirtualBox sauvegardera l'état et
+               terminera toutes les VMs pour préparer une coupure potentielle de
+               l'hôte 
+         </para>
+             <para>Ce comportement est configurable. En utilisant la commande
+             suivante, aucune VM n'est sauvegardé :</para>
+             <screen>VBoxManage setextradata global "VBoxInternal2/SavestateOnBatteryLow" 0</screen>
+             <para>Il s'agit d'un réglage global ou individuel aux VMs. La valeur
+               individuelle à une VM est prioritaire sur celle globale. La commande
+               suivante sauvegardera l'état de toutes les VMs, sauf celui de la VM
+               "foo" :</para>
+             <screen>VBoxManage setextradata global "VBoxInternal2/SavestateOnBatteryLow" 1
+VBoxManage setextradata "foo" "VBoxInternal2/SavestateOnBatteryLow" 0</screen>
+             <para>La première ligne n'est pas vraiment obligatoire puisque par
+             défaut, c'est une sauvegarde qui est effectuée.</para>
+           </glossdef>
+         </glossentry>
+       </glosslist>
+     </para>
+
+   </sect1>
+
 </chapter>
