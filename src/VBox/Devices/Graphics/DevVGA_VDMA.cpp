@@ -23,7 +23,6 @@
 
 #include "DevVGA.h"
 #include "HGSMI/SHGSMIHost.h"
-#include "HGSMI/HGSMIHostHlp.h"
 
 #include <VBox/VBoxVideo3D.h>
 

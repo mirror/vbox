@@ -25,8 +25,8 @@
 #include <VBox/HGSMI/HGSMI.h>
 #include <VBox/HGSMI/HGSMIChSetup.h>
 
-struct _HGSMIINSTANCE;
-typedef struct _HGSMIINSTANCE *PHGSMIINSTANCE;
+struct HGSMIINSTANCE;
+typedef struct HGSMIINSTANCE *PHGSMIINSTANCE;
 
 /* Callback for the guest notification about a new host buffer. */
 typedef DECLCALLBACK(void) FNHGSMINOTIFYGUEST(void *pvCallback);
