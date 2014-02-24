@@ -2686,6 +2686,14 @@ int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_
                 else
                 {
                     RTMemFree(pu8Data);
+
+                    /* CopyRect can fail if VBVA was paused in VGA device, retry using the generic method. */
+                    if (   rc == VERR_INVALID_STATE
+                        && aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+                    {
+                        rc = pDisplay->mpDrv->pUpPort->pfnTakeScreenshot(pDisplay->mpDrv->pUpPort,
+                                                                         ppu8Data, pcbData, pu32Width, pu32Height);
+                    }
                 }
             }
         }

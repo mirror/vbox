@@ -5159,6 +5159,13 @@ static DECLCALLBACK(int) vgaPortCopyRect (PPDMIDISPLAYPORT pInterface,
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
+    /* This method only works if the VGA device is in a VBE mode. */
+    if ((pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) == 0)
+    {
+        PDMCritSectLeave(&pThis->CritSect);
+        return VERR_INVALID_STATE;
+    }
+
     vga_draw_line = vga_draw_line_table[v * 4 + get_depth_index(u32DstBitsPerPixel)];
 
     /* Compute source and destination addresses and pitches. */
