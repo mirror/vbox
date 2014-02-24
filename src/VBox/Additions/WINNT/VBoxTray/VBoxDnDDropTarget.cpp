@@ -119,20 +119,31 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
     }
     else
     {
-        LogFlowFunc(("CF_HDROP not supported, hr=%Rhrc\n", hr));
+        LogFlowFunc(("CF_HDROP not wanted, hr=%Rhrc\n", hr));
 
         /* So we couldn't retrieve the data in CF_HDROP format; try with
-         * CF_TEXT format now. Rest stays the same. */
-        fmtEtc.cfFormat = CF_TEXT;
+         * CF_UNICODETEXT + CF_TEXT formats now. Rest stays the same. */
+        fmtEtc.cfFormat = CF_UNICODETEXT;
         hr = pDataObject->QueryGetData(&fmtEtc);
-        if (hr != S_OK)
+        if (hr == S_OK)
         {
-            LogFlowFunc(("CF_TEXT not supported, hr=%Rhrc\n", hr));
-            fmtEtc.cfFormat = 0; /* Mark it to not supported. */
+            mFormats = "text/plain;charset=utf-8";
         }
         else
         {
-            mFormats = "text/plain;charset=utf-8";
+            LogFlowFunc(("CF_UNICODETEXT not wanted, hr=%Rhrc\n", hr));
+
+            fmtEtc.cfFormat = CF_TEXT;
+            hr = pDataObject->QueryGetData(&fmtEtc);
+            if (hr == S_OK)
+            {
+                mFormats = "text/plain;charset=utf-8";
+            }
+            else
+            {
+                LogFlowFunc(("CF_TEXT not wanted, hr=%Rhrc\n", hr));
+                fmtEtc.cfFormat = 0; /* Mark it to not supported. */
+            }
         }
     }
 
@@ -305,8 +316,27 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                                  based on the storage medium type. */
                 switch (mFormatEtc.cfFormat)
                 {
-                    /* Handling CF_TEXT means that the system already did some marshalling
-                     * to convert RTF or unicode text to plain ANSI text. */
+                    case CF_UNICODETEXT:
+                    {
+                        AssertPtr(pvData);
+                        size_t cbSize = GlobalSize(pvData);
+                        LogFlowFunc(("CF_UNICODETEXT 0x%p got %zu bytes\n", pvData, cbSize));
+                        if (cbSize)
+                        {
+                            char *pszText = NULL;
+                            rc = RTUtf16ToUtf8((PCRTUTF16)pvData, &pszText);
+                            if (RT_SUCCESS(rc))
+                            {
+                                mpvData = (void *)pszText;
+                                mcbData = strlen(pszText) + 1; /* Include termination. */
+
+                                /* Note: Don't free data of pszText, mpvData now owns it. */
+                            }
+                        }
+
+                        break;
+                    }
+
                     case CF_TEXT:
                     {
                         AssertPtr(pvData);
@@ -319,7 +349,9 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                             if (RT_SUCCESS(rc))
                             {
                                 mpvData = (void *)pszText;
-                                mcbData = strlen(pszText) + 1;
+                                mcbData = strlen(pszText) + 1; /* Include termination. */
+
+                                /* Note: Don't free data of pszText, mpvData now owns it. */
                             }
                         }
 
@@ -411,13 +443,10 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
 
                             /* Add separation between filenames.
                              * Note: Also do this for the last element of the list. */
-                            if (i > 0)
-                            {
-                                rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */,
-                                                     "\r\n", 2 /* Bytes */);
-                                if (RT_SUCCESS(rc))
-                                    cchFiles += 2; /* Include \r\n */
-                            }
+                            rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */,
+                                                 "\r\n", 2 /* Bytes */);
+                            if (RT_SUCCESS(rc))
+                                cchFiles += 2; /* Include \r\n */
                         }
 
                         if (RT_SUCCESS(rc))

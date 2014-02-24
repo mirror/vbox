@@ -55,8 +55,8 @@ public:
 
 public:
 
-    RTCString GetSourcePath(void) const { return m_strSrcPath; }
-    RTCString GetDestPath(void) const { return m_strDstPath; }
+    const RTCString &GetSourcePath(void) const { return m_strSrcPath; }
+    const RTCString &GetDestPath(void) const { return m_strDstPath; }
     uint32_t GetMode(void) const { return m_fMode; }
     uint64_t GetSize(void) const { return m_cbSize; }
     Type GetType(void) const { return m_Type; }
@@ -109,7 +109,7 @@ public:
     bool IsEmpty(void) { return m_lstTree.isEmpty(); }
     void RemoveFirst(void);
     int RootFromURIData(const void *pvData, size_t cbData, uint32_t fFlags);
-    RTCString RootToString(const RTCString &strBasePath = "");
+    RTCString RootToString(const RTCString &strBasePath = "", const RTCString &strSeparator = "\r\n");
     size_t RootCount(void) { return m_lstRoot.size(); }
     size_t TotalBytes(void) { return m_cbTotal; }
 

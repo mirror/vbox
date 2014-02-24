@@ -230,13 +230,12 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
 
     if (mStatus == Dropped)
     {
-#ifdef VBOX_DND_DEBUG_FORMATS
         LogFlowFunc(("cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
                      pThisFormat->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
                      pThisFormat->tymed, pThisFormat->dwAspect));
         LogFlowFunc(("Got strFormat=%s, pvData=%p, cbData=%RU32\n",
                      mstrFormat.toAscii().constData(), mpvData, mcbData));
-#endif
+
         QVariant::Type vaType;
         QString strMIMEType;
         if (    (pFormatEtc->tymed & TYMED_HGLOBAL)
@@ -255,7 +254,7 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
             strMIMEType = "text/uri-list";
             vaType = QVariant::StringList;
         }
-#if 0
+#if 0 /* More formats; not needed right now. */
         else if (   (pFormatEtc->tymed & TYMED_ISTREAM)
                 && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
                 && (pFormatEtc->cfFormat == CF_FILECONTENTS))
@@ -284,18 +283,22 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
         LogFlowFunc(("strMIMEType=%s, vaType=%ld\n",
                      strMIMEType.toAscii().constData(), vaType));
 
-        QVariant va;
-        int rc = mpParent->RetrieveData(strMIMEType, vaType, va);
+        int rc;
+        if (!mVaData.isValid())
+            rc = mpParent->RetrieveData(strMIMEType, vaType, mVaData);
+        else
+            rc = VINF_SUCCESS; /* Data already retrieved. */
+
         if (RT_SUCCESS(rc))
         {
             if (   strMIMEType.startsWith("text/uri-list")
                        /* One item. */
-                && (   va.canConvert(QVariant::String)
+                && (   mVaData.canConvert(QVariant::String)
                        /* Multiple items. */
-                    || va.canConvert(QVariant::StringList))
+                    || mVaData.canConvert(QVariant::StringList))
                )
             {
-                QStringList lstFilesURI = va.toStringList();
+                QStringList lstFilesURI = mVaData.toStringList();
                 QStringList lstFiles;
                 for (size_t i = 0; i < lstFilesURI.size(); i++)
                 {
@@ -325,13 +328,13 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
                 }
 
                 size_t cbBuf = sizeof(DROPFILES) + ((cchFiles + 1) * sizeof(RTUTF16));
-                DROPFILES *pBuf = (DROPFILES *)RTMemAllocZ(cbBuf);
-                if (pBuf)
+                DROPFILES *pDropFiles = (DROPFILES *)RTMemAllocZ(cbBuf);
+                if (pDropFiles)
                 {
-                    pBuf->pFiles = sizeof(DROPFILES);
-                    pBuf->fWide = 1; /* We use unicode. Always. */
+                    pDropFiles->pFiles = sizeof(DROPFILES);
+                    pDropFiles->fWide = 1; /* We use unicode. Always. */
 
-                    uint8_t *pCurFile = (uint8_t *)pBuf + pBuf->pFiles;
+                    uint8_t *pCurFile = (uint8_t *)pDropFiles + pDropFiles->pFiles;
                     AssertPtr(pCurFile);
 
                     for (size_t i = 0; i < cFiles; i++)
@@ -367,10 +370,10 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
                                                        | GMEM_DDESHARE, cbBuf);
                         if (pMedium->hGlobal)
                         {
-                            LPVOID pMem = GlobalLock(pMedium->hGlobal);
-                            if (pMem)
+                            LPVOID pvMem = GlobalLock(pMedium->hGlobal);
+                            if (pvMem)
                             {
-                                memcpy(pMem, pBuf, cbBuf);
+                                memcpy(pvMem, pDropFiles, cbBuf);
                                 GlobalUnlock(pMedium->hGlobal);
 
                                 hr = S_OK;
@@ -382,32 +385,33 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
                             rc = VERR_NO_MEMORY;
                     }
 
-                    RTMemFree(pBuf);
+                    RTMemFree(pDropFiles);
                 }
             }
             else if (   strMIMEType.startsWith("text/plain")
-                     && va.canConvert(QVariant::String))
+                     && mVaData.canConvert(QVariant::String))
             {
                 bool fUnicode = pFormatEtc->cfFormat == CF_UNICODETEXT;
-                int cbch = fUnicode
+                int cbCh = fUnicode
                          ? sizeof(WCHAR) : sizeof(char);
 
-                QString strText = va.toString();
-                size_t cbSrc = (strText.length() + 1) * cbch;
+                QString strText = mVaData.toString();
+                size_t cbSrc = strText.length() * cbCh;
                 Assert(cbSrc);
                 LPCVOID pvSrc = fUnicode
                               ? (void *)strText.unicode()
                               : (void *)strText.toAscii().constData();
                 AssertPtr(pvSrc);
-#ifdef DEBUG_andy
+
                 LogFlowFunc(("pvSrc=0x%p, cbSrc=%zu, cbch=%d, fUnicode=%RTbool\n",
-                             pvSrc, cbSrc, cbch, fUnicode));
-#endif
+                             pvSrc, cbSrc, cbCh, fUnicode));
+
                 pMedium->tymed = TYMED_HGLOBAL;
                 pMedium->pUnkForRelease = NULL;
                 pMedium->hGlobal = GlobalAlloc(  GMEM_ZEROINIT
                                                | GMEM_MOVEABLE
-                                               | GMEM_DDESHARE, cbSrc);
+                                               | GMEM_DDESHARE,
+                                               cbSrc);
                 if (pMedium->hGlobal)
                 {
                     LPVOID pvDst = GlobalLock(pMedium->hGlobal);
@@ -422,7 +426,7 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
                     hr = S_OK;
                 }
                 else
-                    hr  = E_OUTOFMEMORY;
+                    hr  = VERR_NO_MEMORY;
             }
             else
                 LogFlowFunc(("MIME type=%s not supported\n",
@@ -444,18 +448,19 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
 
         case TYMED_HGLOBAL:
             pMedium->hGlobal = (HGLOBAL)OleDuplicateData(pThisMedium->hGlobal,
-                                                         pThisFormat->cfFormat, NULL);
+                                                         pThisFormat->cfFormat,
+                                                         0 /* Flags */);
             break;
 
         default:
             break;
         }
 
-        pMedium->tymed          = pThisFormat->tymed;
+        pMedium->tymed          = pFormatEtc->tymed;
         pMedium->pUnkForRelease = NULL;
     }
 
-    LogFlowFunc(("hr=%Rhrc\n", hr));
+    LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
 }
 

@@ -277,7 +277,7 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
         return VERR_INVALID_PARAMETER;
 
     /* Allocate temp buffer. */
-    uint32_t cbTmpData = _1M * 10; /** @todo r=andy 10MB, uh, really?? */
+    uint32_t cbTmpData = _64K; /** @todo Make this configurable? */
     void *pvTmpData = RTMemAlloc(cbTmpData);
     if (!pvTmpData)
         return VERR_NO_MEMORY;
@@ -310,8 +310,10 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
      * in the case of a rollback. */
     RTCList<RTCString> guestDirList;
     RTCList<RTCString> guestFileList;
-    char pszPathName[RTPATH_MAX];
-    uint32_t cbPathname = 0;
+
+    char szPathName[RTPATH_MAX];
+    uint32_t cbPathName = 0;
+
     bool fLoop = RT_SUCCESS(rc); /* No error occurred yet? */
     while (fLoop)
     {
@@ -326,15 +328,19 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
                 {
                     uint32_t fMode = 0;
                     rc = vbglR3DnDHGProcessSendDirMessage(uClientId,
-                                                          pszPathName,
-                                                          sizeof(pszPathName),
-                                                          &cbPathname,
+                                                          szPathName,
+                                                          sizeof(szPathName),
+                                                          &cbPathName,
                                                           &fMode);
+#ifdef DEBUG_andy
+                    LogFlowFunc(("HOST_DND_HG_SND_DIR pszPathName=%s, cbPathName=%RU32, fMode=0x%x, rc=%Rrc\n",
+                                 szPathName, cbPathName, fMode, rc));
+#endif
                     if (RT_SUCCESS(rc))
-                        rc = DnDPathSanitize(pszPathName, sizeof(pszPathName));
+                        rc = DnDPathSanitize(szPathName, sizeof(szPathName));
                     if (RT_SUCCESS(rc))
                     {
-                        char *pszNewDir = RTPathJoinA(pszDropDir, pszPathName);
+                        char *pszNewDir = RTPathJoinA(pszDropDir, szPathName);
                         if (pszNewDir)
                         {
                             rc = RTDirCreate(pszNewDir, (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRWXU, 0);
@@ -353,25 +359,29 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
                     uint32_t cbDataRecv;
                     uint32_t fMode = 0;
                     rc = vbglR3DnDHGProcessSendFileMessage(uClientId,
-                                                           pszPathName,
-                                                           sizeof(pszPathName),
-                                                           &cbPathname,
+                                                           szPathName,
+                                                           sizeof(szPathName),
+                                                           &cbPathName,
                                                            pvTmpData,
                                                            cbTmpData,
                                                            &cbDataRecv,
                                                            &fMode);
+#ifdef DEBUG_andy
+                    LogFlowFunc(("HOST_DND_HG_SND_FILE pszPathName=%s, cbPathName=%RU32, pvData=0x%p, cbDataRecv=%RU32, fMode=0x%x, rc=%Rrc\n",
+                                 szPathName, cbPathName, pvTmpData, cbDataRecv, fMode, rc));
+#endif
                     if (RT_SUCCESS(rc))
-                        rc = DnDPathSanitize(pszPathName, sizeof(pszPathName));
+                        rc = DnDPathSanitize(szPathName, sizeof(szPathName));
                     if (RT_SUCCESS(rc))
                     {
-                        char *pszNewFile = RTPathJoinA(pszDropDir, pszPathName);
-                        if (pszNewFile)
+                        char *pszPathAbs = RTPathJoinA(pszDropDir, szPathName);
+                        if (pszPathAbs)
                         {
                             RTFILE hFile;
                             /** @todo r=andy Keep the file open and locked during the actual file transfer. Otherwise this will
                              *               create all sorts of funny races because we don't know if the guest has
                              *               modified the file in between the file data send calls. */
-                            rc = RTFileOpen(&hFile, pszNewFile,
+                            rc = RTFileOpen(&hFile, pszPathAbs,
                                             RTFILE_O_WRITE | RTFILE_O_APPEND | RTFILE_O_DENY_ALL | RTFILE_O_OPEN_CREATE);
                             if (RT_SUCCESS(rc))
                             {
@@ -385,12 +395,17 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
                                         && (fMode & RTFS_UNIX_MASK))
                                         rc = RTFileSetMode(hFile, (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
                                 }
-                                RTFileClose(hFile);
-                                if (!guestFileList.contains(pszNewFile))
-                                    guestFileList.append(pszNewFile);
-                            }
 
-                            RTStrFree(pszNewFile);
+                                RTFileClose(hFile);
+
+                                if (!guestFileList.contains(pszPathAbs))
+                                    guestFileList.append(pszPathAbs);
+                            }
+#ifdef DEBUG
+                            else
+                                LogFlowFunc(("Opening file failed with rc=%Rrc\n", rc));
+#endif
+                            RTStrFree(pszPathAbs);
                         }
                         else
                             rc = VERR_NO_MEMORY;
@@ -415,6 +430,10 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
                 rc = VINF_SUCCESS;
             break;
         }
+
+        if (RT_FAILURE(rc))
+            break;
+
     } /* while */
 
     if (pvTmpData)
@@ -429,6 +448,8 @@ static int vbglR3DnDHGProcessURIMessages(uint32_t   uClientId,
         for (size_t i = 0; i < guestDirList.size(); ++i)
             RTDirRemove(guestDirList.at(i).c_str());
         RTDirRemove(pszDropDir);
+
+        LogFlowFunc(("Failed with rc=%Rrc\n", rc));
     }
 
     return rc;
@@ -472,7 +493,7 @@ static int vbglR3DnDHGProcessDataMessageInternal(uint32_t  uClientId,
         {
             rc = Msg.uScreenId.GetUInt32(puScreenId);  AssertRC(rc);
             rc = Msg.cFormat.GetUInt32(pcbFormatRecv); AssertRC(rc);
-            rc = Msg.cbData.GetUInt32(pcbDataTotal);     AssertRC(rc);
+            rc = Msg.cbData.GetUInt32(pcbDataTotal);   AssertRC(rc);
 
             AssertReturn(cbFormat >= *pcbFormatRecv, VERR_TOO_MUCH_DATA);
             AssertReturn(cbData   >= *pcbDataTotal,  VERR_TOO_MUCH_DATA);
@@ -786,6 +807,18 @@ VBGLR3DECL(int) VbglR3DnDProcessNextMessage(uint32_t u32ClientId, CPVBGLR3DNDHGC
                                                            &pEvent->u.b.pvData,
                                                            ccbData,
                                                            &pEvent->u.b.cbData);
+                break;
+            }
+            case DragAndDropSvc::HOST_DND_HG_SND_MORE_DATA:
+            case DragAndDropSvc::HOST_DND_HG_SND_DIR:
+            case DragAndDropSvc::HOST_DND_HG_SND_FILE:
+            {
+                pEvent->uType = uMsg;
+
+                /* All messages in this case are handled internally
+                 * by vbglR3DnDHGProcessSendDataMessage() and must
+                 * be specified by a preceding HOST_DND_HG_SND_DATA call. */
+                rc = VERR_WRONG_ORDER;
                 break;
             }
             case DragAndDropSvc::HOST_DND_HG_EVT_CANCEL:
@@ -1106,11 +1139,17 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId,
     else
         rc = vbglR3DnDGHSendDataInternal(u32ClientId, pvData, cbData,
                                          0 /* cbAdditionalData */);
+    if (RT_FAILURE(rc))
+    {
+        int rc2 = VbglR3DnDGHSendError(u32ClientId, rc);
+        if (RT_SUCCESS(rc2))
+            rc2 = rc;
+    }
 
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3DnDGHErrorEvent(uint32_t u32ClientId, int rcOp)
+VBGLR3DECL(int) VbglR3DnDGHSendError(uint32_t u32ClientId, int rcErr)
 {
     DragAndDropSvc::VBOXDNDGHEVTERRORMSG Msg;
     RT_ZERO(Msg);
@@ -1119,12 +1158,13 @@ VBGLR3DECL(int) VbglR3DnDGHErrorEvent(uint32_t u32ClientId, int rcOp)
     Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_GH_EVT_ERROR;
     Msg.hdr.cParms      = 1;
 
-    Msg.uRC.SetUInt32(rcOp);
+    Msg.uRC.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
 
+    LogFlowFunc(("Sending error %Rrc returned with rc=%Rrc\n", rcErr, rc));
     return rc;
 }
 

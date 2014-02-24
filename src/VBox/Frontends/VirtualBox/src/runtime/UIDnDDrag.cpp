@@ -88,7 +88,8 @@ int UIDnDDrag::DoDragDrop(void)
         DWORD dwEffect;
         HRESULT hr = ::DoDragDrop(pDataObject, pDropSource,
                                   dwOKEffects, &dwEffect);
-        LogFlowThisFunc(("hr=%Rhrc, dwEffect=%RI32\n", hr, dwEffect));
+        LogFlowThisFunc(("DoDragDrop ended with hr=%Rhrc, dwEffect=%RI32\n",
+                         hr, dwEffect));
 
         if (pDropSource)
             pDropSource->Release();
@@ -149,7 +150,7 @@ int UIDnDDrag::RetrieveData(const QString &strMimeType,
     if (guest.isOk())
     {
         msgCenter().showModalProgressDialog(progress,
-                                            tr("Retrieving metadata ..."), ":/progress_dnd_gh_90px.png",
+                                            tr("Retrieving data ..."), ":/progress_dnd_gh_90px.png",
                                             m_pParent);
         if (!progress.GetCanceled())
         {
@@ -160,27 +161,27 @@ int UIDnDDrag::RetrieveData(const QString &strMimeType,
             if (RT_SUCCESS(rc))
             {
                 /* After the data successfully arrived from the guest, we query it from Main. */
-                QVector<uint8_t> data = guest.DragGHGetData();
-                if (!data.isEmpty())
+                QVector<uint8_t> vecData = guest.DragGHGetData();
+                if (!vecData.isEmpty())
                 {
                     switch (vaType)
                     {
                         case QVariant::String:
                         {
-                            vaData = QVariant(QString(reinterpret_cast<const char*>(data.data())));
+                            vaData = QVariant(QString(reinterpret_cast<const char*>(vecData.constData())));
                             break;
                         }
 
                         case QVariant::ByteArray:
                         {
-                            QByteArray ba(reinterpret_cast<const char*>(data.constData()), data.size());
+                            QByteArray ba(reinterpret_cast<const char*>(vecData.constData()), vecData.size());
                             vaData = QVariant(ba);
                             break;
                         }
 
                         case QVariant::StringList:
                         {
-                            QString strData = QString(reinterpret_cast<const char*>(data.data()));
+                            QString strData = QString(reinterpret_cast<const char*>(vecData.constData()));
                             QStringList lstString = strData.split("\r\n", QString::SkipEmptyParts);
 
                             vaData = QVariant(lstString);

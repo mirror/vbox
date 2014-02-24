@@ -42,9 +42,9 @@ class Message
 {
 public:
     Message(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[])
-      : m_uMsg(0)
-      , m_cParms(0)
-      , m_paParms(0)
+        : m_uMsg(0)
+        , m_cParms(0)
+        , m_paParms(0)
     {
         setData(uMsg, cParms, aParms);
     }
