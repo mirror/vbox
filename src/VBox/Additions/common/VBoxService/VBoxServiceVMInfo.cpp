@@ -1033,8 +1033,8 @@ static int vboxserviceVMInfoWriteNetwork(void)
     {
         /*
          * Only AF_INET and no loopback interfaces
-         * @todo: IPv6 interfaces
          */
+        /** @todo: IPv6 interfaces */
         if (   pIfCurr->ifa_addr->sa_family == AF_INET
             && !(pIfCurr->ifa_flags & IFF_LOOPBACK))
         {
@@ -1109,27 +1109,54 @@ static int vboxserviceVMInfoWriteNetwork(void)
         return rc;
     }
 
-    ifreq* ifrequest = ifcfg.ifc_req;
+    ifreq *ifrequest = ifcfg.ifc_req;
     int cIfacesSystem = ifcfg.ifc_len / sizeof(ifreq);
+
+# ifdef RT_OS_OS2 /* Get the physical addresses. */
+    struct ifmib IfStats;
+    if (ioctl(sd, SIOSTATIF, &IfStats) < 0)
+    {
+        VBoxServiceError("VMInfo/Network: Failed to ioctl(SIOSTATIF): errno=%d\n", errno);
+        RT_ZERO(IfStats);
+    }
+# endif
 
     for (int i = 0; i < cIfacesSystem; ++i)
     {
-        sockaddr_in *pAddress;
+# ifdef RT_OS_OS2
+        ifreq IfReqCopy = ifrequest[i];
+# endif
+        /* Get the interface flags. */
         if (ioctl(sd, SIOCGIFFLAGS, &ifrequest[i]) < 0)
         {
+# ifdef RT_OS_OS2 /* Ignore errors when querying flags for non-existing interfaces. */
+            if (errno == ENXIO)
+                continue;
+# endif
             rc = RTErrConvertFromErrno(errno);
-            VBoxServiceError("VMInfo/Network: Failed to ioctl(SIOCGIFFLAGS) on socket: Error %Rrc\n", rc);
+            VBoxServiceError("VMInfo/Network: Failed to ioctl(SIOCGIFFLAGS,#%u) on socket: Error %Rrc\n", i, rc);
             break;
         }
         if (ifrequest[i].ifr_flags & IFF_LOOPBACK) /* Skip the loopback device. */
             continue;
 
-        bool fIfUp = !!(ifrequest[i].ifr_flags & IFF_UP);
-        pAddress = ((sockaddr_in *)&ifrequest[i].ifr_addr);
-        Assert(pAddress);
+        bool const fIfUp = !!(ifrequest[i].ifr_flags & IFF_UP);
+
+# ifdef RT_OS_OS2 /* I think this should be done everywhere. */
+        /* Get the address. */
+        ifrequest[i] = IfReqCopy;
+        if (ioctl(sd, SIOCGIFADDR, &ifrequest[i]) < 0)
+        {
+            rc = RTErrConvertFromErrno(errno);
+            VBoxServiceError("VMInfo/Network: Failed to ioctl(SIOCGIFADDR) on socket: Error %Rrc\n", rc);
+            break;
+        }
+# endif
+        sockaddr_in *pAddress = ((sockaddr_in *)&ifrequest[i].ifr_addr);
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/IP", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
+        /* Get the broadcast address. */
         if (ioctl(sd, SIOCGIFBRDADDR, &ifrequest[i]) < 0)
         {
             rc = RTErrConvertFromErrno(errno);
@@ -1140,6 +1167,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Broadcast", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
+        /* Get the net mask. */
         if (ioctl(sd, SIOCGIFNETMASK, &ifrequest[i]) < 0)
         {
             rc = RTErrConvertFromErrno(errno);
@@ -1151,7 +1179,6 @@ static int vboxserviceVMInfoWriteNetwork(void)
 # else
         pAddress = (sockaddr_in *)&ifrequest[i].ifr_netmask;
 # endif
-
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Netmask", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
@@ -1163,7 +1190,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
          * But, if it has not acquired an IP address we cannot obtain it's MAC
          * address this way, so we just use all zeros there.
          */
-        RTMAC IfMac;
+        RTMAC   IfMac;
         RT_ZERO(IfMac);
         struct lifreq IfReq;
         RT_ZERO(IfReq);
@@ -1189,29 +1216,24 @@ static int vboxserviceVMInfoWriteNetwork(void)
             VBoxServiceVerbose(2, "VMInfo/Network: Interface %d has no assigned IP address, skipping ...\n", i);
             continue;
         }
-# else
-#  ifndef RT_OS_OS2 /** @todo port this to OS/2 */
+# elif defined(RT_OS_OS2)
+        RTMAC   IfMac;
+        uint32_t iIfStat = RT_MIN((unsigned)IfStats.ifNumber, IFMIB_ENTRIES); /* paranoia */
+        while (iIfStat-- > 0) /** @todo test this code with more than one interface. */
+            if (IfStats.iftable[iIfStat].iftIndex == i)
+                memcpy(&IfMac, IfStats.iftable[iIfStat].iftPhysAddr, sizeof(IfMac));
+#else
         if (ioctl(sd, SIOCGIFHWADDR, &ifrequest[i]) < 0)
         {
             rc = RTErrConvertFromErrno(errno);
             VBoxServiceError("VMInfo/Network: Failed to ioctl(SIOCGIFHWADDR) on socket: Error %Rrc\n", rc);
             break;
         }
-#  endif
+        RTMAC IfMac = *(PRTMAC)&ifrequest[i].ifr_hwaddr.sa_data[0];
 # endif
-
-# ifndef RT_OS_OS2 /** @todo port this to OS/2 */
-        char szMac[32];
-#  if defined(RT_OS_SOLARIS)
-        uint8_t *pu8Mac = IfMac.au8;
-#  else
-        uint8_t *pu8Mac = (uint8_t*)&ifrequest[i].ifr_hwaddr.sa_data[0];        /* @todo see above */
-#  endif
-        RTStrPrintf(szMac, sizeof(szMac), "%02X%02X%02X%02X%02X%02X",
-                    pu8Mac[0], pu8Mac[1], pu8Mac[2], pu8Mac[3],  pu8Mac[4], pu8Mac[5]);
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/MAC", cIfacesReport);
-        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szMac);
-# endif /* !OS/2*/
+        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%02X%02X%02X%02X%02X%02X",
+                                   IfMac.au8[0], IfMac.au8[1], IfMac.au8[2], IfMac.au8[3], IfMac.au8[4], IfMac.au8[5]);
 
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/Status", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, fIfUp ? "Up" : "Down");
