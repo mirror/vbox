@@ -1156,25 +1156,29 @@ static int vboxserviceVMInfoWriteNetwork(void)
      *       This means that guest assigning more than one address to an
      *       interface will get multiple entries for one physical interface.
      */
-#ifdef RT_OS_OS2
+# ifdef RT_OS_OS2
     struct ifreq   *pPrevLinkAddr = NULL;
-#endif
+# endif
     struct ifreq   *pCur   = IfConf.ifc_req;
     size_t          cbLeft = IfConf.ifc_len;
     while (cbLeft >= sizeof(*pCur))
     {
         /* Figure the size of the current request. */
         size_t const cbCur = RT_OFFSETOF(struct ifreq, ifr_addr)
+# ifdef SA_LEN
+                           + RT_MAX(sizeof(struct sockaddr), SA_LEN(pCur->ifr_addr));
+# else
                            + RT_MAX(sizeof(struct sockaddr), pCur->ifr_addr.sa_len);
+# endif
         AssertBreak(cbCur <= cbLeft);
 
-#ifdef RT_OS_OS2
+# ifdef RT_OS_OS2
         /* On OS/2 we get the MAC address in the AF_LINK that the BSD 4.4 stack
            emits.  We boldly ASSUME these always comes first. */
         if (   pCur->ifr_addr.sa_family == AF_LINK
             && ((struct sockaddr_dl *)&pCur->ifr_addr)->sdl_alen == 6)
             pPrevLinkAddr = pCur;
-#endif
+# endif
 
         /* Skip it if it's not the kind of address we're looking for. */
         struct ifreq IfReqTmp;
