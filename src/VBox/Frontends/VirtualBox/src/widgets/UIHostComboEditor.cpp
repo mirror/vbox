@@ -27,6 +27,8 @@
 /* GUI includes: */
 #include "UIHostComboEditor.h"
 #include "VBoxGlobal.h"
+#include "QIToolButton.h"
+#include "UIIconPool.h"
 
 #ifdef Q_WS_WIN
 # undef LOWORD
@@ -313,13 +315,71 @@ bool UIHostCombo::isValidKeyCombo(const QString &strKeyCombo)
 
 
 UIHostComboEditor::UIHostComboEditor(QWidget *pParent)
-    : QLineEdit(pParent)
-    , m_pReleaseTimer(0)
+    : QIWithRetranslateUI<QWidget>(pParent)
+{
+    /* Prepare: */
+    prepare();
+}
+
+void UIHostComboEditor::prepare()
+{
+    /* Configure self: */
+    setAutoFillBackground(true);
+    /* Create layout: */
+    QHBoxLayout *pLayout = new QHBoxLayout(this);
+    {
+        /* Configure layout: */
+        pLayout->setSpacing(4);
+        pLayout->setContentsMargins(0, 0, 0, 0);
+        /* Create UIHostComboEditorPrivate instance: */
+        m_pEditor = new UIHostComboEditorPrivate;
+        {
+            /* Configure UIHostComboEditorPrivate instance: */
+            setFocusProxy(m_pEditor);
+        }
+        /* Create 'clear' tool-button: */
+        m_pButtonClear = new QIToolButton;
+        {
+            /* Configure 'clear' tool-button: */
+            m_pButtonClear->removeBorder();
+            m_pButtonClear->setIcon(UIIconPool::iconSet(":/eraser_16px.png"));
+            connect(m_pButtonClear, SIGNAL(clicked(bool)), m_pEditor, SLOT(sltClear()));
+        }
+        /* Add widgets to layout: */
+        pLayout->addWidget(m_pEditor);
+        pLayout->addWidget(m_pButtonClear);
+    }
+    /* Translate finally: */
+    retranslateUi();
+}
+
+void UIHostComboEditor::retranslateUi()
+{
+    /* Translate 'clear' tool-button: */
+    m_pButtonClear->setToolTip(QApplication::translate("UIHotKeyEditor", "Unset shortcut"));
+}
+
+void UIHostComboEditor::setCombo(const UIHostComboWrapper &strCombo)
+{
+    /* Pass combo to child: */
+    m_pEditor->setCombo(strCombo);
+}
+
+UIHostComboWrapper UIHostComboEditor::combo() const
+{
+    /* Acquire combo from child: */
+    return m_pEditor->combo();
+}
+
+
+UIHostComboEditorPrivate::UIHostComboEditorPrivate()
+    : m_pReleaseTimer(0)
     , m_fStartNewSequence(true)
 {
     /* Configure widget: */
     setAttribute(Qt::WA_NativeWindow);
     setContextMenuPolicy(Qt::NoContextMenu);
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
     connect(this, SIGNAL(selectionChanged()), this, SLOT(sltDeselect()));
 
     /* Setup release-pending-keys timer: */
@@ -334,20 +394,20 @@ UIHostComboEditor::UIHostComboEditor(QWidget *pParent)
 
 #ifdef Q_WS_MAC
     m_uDarwinKeyModifiers = 0;
-    UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditor::darwinEventHandlerProc, this);
+    UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
     ::DarwinGrabKeyboard(false /* just modifiers */);
 #endif /* Q_WS_MAC */
 }
 
-UIHostComboEditor::~UIHostComboEditor()
+UIHostComboEditorPrivate::~UIHostComboEditorPrivate()
 {
 #ifdef Q_WS_MAC
     ::DarwinReleaseKeyboard();
-    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditor::darwinEventHandlerProc, this);
+    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
 #endif /* Q_WS_MAC */
 }
 
-void UIHostComboEditor::setCombo(const UIHostComboWrapper &strCombo)
+void UIHostComboEditorPrivate::setCombo(const UIHostComboWrapper &strCombo)
 {
     /* Cleanup old combo: */
     m_shownKeys.clear();
@@ -360,7 +420,7 @@ void UIHostComboEditor::setCombo(const UIHostComboWrapper &strCombo)
     updateText();
 }
 
-UIHostComboWrapper UIHostComboEditor::combo() const
+UIHostComboWrapper UIHostComboEditorPrivate::combo() const
 {
     /* Compose current combination: */
     QStringList keyCodeStringList;
@@ -371,15 +431,19 @@ UIHostComboWrapper UIHostComboEditor::combo() const
     return keyCodeStringList.isEmpty() ? "0" : keyCodeStringList.join(",");
 }
 
-void UIHostComboEditor::sltDeselect()
+void UIHostComboEditorPrivate::sltDeselect()
 {
     deselect();
 }
 
-void UIHostComboEditor::sltClear()
+void UIHostComboEditorPrivate::sltClear()
 {
+    /* Cleanup combo: */
     m_shownKeys.clear();
+    /* Update text: */
     updateText();
+    /* Move the focus to text-field: */
+    setFocus();
 }
 
 #ifdef Q_WS_WIN
@@ -452,7 +516,7 @@ static bool isSyntheticLCtrl(MSG *pMsg)
     return true;
 }
 
-bool UIHostComboEditor::winEvent(MSG *pMsg, long* /* pResult */)
+bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
 {
     switch (pMsg->message)
     {
@@ -483,7 +547,7 @@ bool UIHostComboEditor::winEvent(MSG *pMsg, long* /* pResult */)
 #ifdef Q_WS_X11
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-bool UIHostComboEditor::x11Event(XEvent *pEvent)
+bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
 {
     switch (pEvent->type)
     {
@@ -510,9 +574,9 @@ bool UIHostComboEditor::x11Event(XEvent *pEvent)
 
 #ifdef Q_WS_MAC
 /* static */
-bool UIHostComboEditor::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
+bool UIHostComboEditorPrivate::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
-    UIHostComboEditor *pEditor = static_cast<UIHostComboEditor*>(pvUser);
+    UIHostComboEditorPrivate *pEditor = static_cast<UIHostComboEditorPrivate*>(pvUser);
     EventRef inEvent = (EventRef)pvCarbonEvent;
     UInt32 EventClass = ::GetEventClass(inEvent);
     if (EventClass == kEventClassKeyboard)
@@ -520,7 +584,7 @@ bool UIHostComboEditor::darwinEventHandlerProc(const void *pvCocoaEvent, const v
     return false;
 }
 
-bool UIHostComboEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
+bool UIHostComboEditorPrivate::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
 {
     /* Ignore key changes unless we're the focus widget: */
     if (!hasFocus())
@@ -566,11 +630,13 @@ bool UIHostComboEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
 }
 #endif /* Q_WS_MAC */
 
-void UIHostComboEditor::keyPressEvent(QKeyEvent *pEvent)
+void UIHostComboEditorPrivate::keyPressEvent(QKeyEvent *pEvent)
 {
     /* Ignore most of key presses... */
     switch (pEvent->key())
     {
+        case Qt::Key_Enter:
+        case Qt::Key_Return:
         case Qt::Key_Tab:
         case Qt::Key_Backtab:
         case Qt::Key_Escape:
@@ -586,7 +652,7 @@ void UIHostComboEditor::keyPressEvent(QKeyEvent *pEvent)
     }
 }
 
-void UIHostComboEditor::keyReleaseEvent(QKeyEvent *pEvent)
+void UIHostComboEditorPrivate::keyReleaseEvent(QKeyEvent *pEvent)
 {
     /* Ignore most of key presses... */
     switch (pEvent->key())
@@ -606,19 +672,19 @@ void UIHostComboEditor::keyReleaseEvent(QKeyEvent *pEvent)
     }
 }
 
-void UIHostComboEditor::mousePressEvent(QMouseEvent *pEvent)
+void UIHostComboEditorPrivate::mousePressEvent(QMouseEvent *pEvent)
 {
     /* Handle like for usual QWidget: */
     QWidget::mousePressEvent(pEvent);
 }
 
-void UIHostComboEditor::mouseReleaseEvent(QMouseEvent *pEvent)
+void UIHostComboEditorPrivate::mouseReleaseEvent(QMouseEvent *pEvent)
 {
     /* Handle like for usual QWidget: */
     QWidget::mouseReleaseEvent(pEvent);
 }
 
-void UIHostComboEditor::sltReleasePendingKeys()
+void UIHostComboEditorPrivate::sltReleasePendingKeys()
 {
     /* Stop the timer, we process all pending keys at once: */
     m_pReleaseTimer->stop();
@@ -641,7 +707,7 @@ void UIHostComboEditor::sltReleasePendingKeys()
     updateText();
 }
 
-bool UIHostComboEditor::processKeyEvent(int iKeyCode, bool fKeyPress)
+bool UIHostComboEditorPrivate::processKeyEvent(int iKeyCode, bool fKeyPress)
 {
     /* Check if symbol is valid else pass it to Qt: */
     if (!UINativeHotKey::isValidKey(iKeyCode))
@@ -694,9 +760,9 @@ bool UIHostComboEditor::processKeyEvent(int iKeyCode, bool fKeyPress)
     return true;
 }
 
-void UIHostComboEditor::updateText()
+void UIHostComboEditorPrivate::updateText()
 {
     QStringList shownKeyNames(m_shownKeys.values());
-    setText(shownKeyNames.isEmpty() ? tr("None") : shownKeyNames.join(" + "));
+    setText(shownKeyNames.isEmpty() ? UIHostComboEditor::tr("None") : shownKeyNames.join(" + "));
 }
 
