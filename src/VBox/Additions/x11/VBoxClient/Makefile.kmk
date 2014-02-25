@@ -29,9 +29,6 @@ ifdef VBOX_WITH_DBUS
  VBoxClient_DEFS += VBOX_WITH_DBUS
 endif
 VBoxClient_DEFS.linux += _GNU_SOURCE
-ifdef VBOX_WITH_GUEST_KMS_DRIVER
- VBoxClient_DEFS += VBOX_WITH_GUEST_KMS_DRIVER
-endif
 VBoxClient_SOURCES = \
 	main.cpp
 VBoxClient_SOURCES += \
