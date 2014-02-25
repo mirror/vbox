@@ -9,7 +9,7 @@
 'choiceVBoxCLI_title' = '@VBOX_PRODUCT@ Command Line Utilities';
 'choiceVBoxCLI_msg' = 'Installs the @VBOX_PRODUCT@ command line utilities into /usr/bin.';
 
-'RUNNING_VMS_TLE' = "Running VirtualBox VM's detected!";
+'RUNNING_VMS_TLE' = "Running VirtualBox VMs detected!";
 'RUNNING_VMS_MSG' = "The installer has detected running Virtual Machines. Please shut down all running VirtualBox machines and then restart the installation.";
 
 'UNSUPPORTED_HW_MACHINE_TLE' = "Unsupported hardware architecture detected!";
