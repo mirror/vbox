@@ -145,10 +145,7 @@ VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
     if (HMIsEnabled(pVM))
     {
         pVM->fPATMEnabled = false;
-        return SSMR3RegisterInternal(pVM, "PATM", 0, PATM_SSM_VERSION, 0,
-                                     NULL, NULL, NULL,
-                                     NULL, NULL, NULL,
-                                     NULL, patmR3LoadDummy, NULL);
+        return SSMR3RegisterStub(pVM, "PATM", 0);
     }
 
     /*
