@@ -1575,6 +1575,50 @@ static DECLCALLBACK(int) cpumMsrRd_IntelPlatformInfo133MHz(PVMCPU pVCpu, uint32_
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelFlexRatio100MHz(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    uint64_t uValue = pRange->uValue & ~UINT64_C(0x1ff00);
+
+    uint64_t uTscHz = TMCpuTicksPerSecond(pVCpu->CTX_SUFF(pVM));
+    uint8_t  uTsc100MHz = (uint8_t)(uTscHz / UINT32_C(100000000));
+    uValue |= (uint32_t)uTsc100MHz << 8;
+
+    *puValue = uValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelFlexRatio100MHz(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+{
+    /** @todo implement writing MSR_FLEX_RATIO. */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelFlexRatio133MHz(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    uint64_t uValue = pRange->uValue & ~UINT64_C(0x1ff00);
+
+    uint64_t uTscHz = TMCpuTicksPerSecond(pVCpu->CTX_SUFF(pVM));
+    uint8_t  uTsc133MHz = (uint8_t)(uTscHz / UINT32_C(133333333));
+    uValue |= (uint32_t)uTsc133MHz << 8;
+
+    *puValue = uValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_IntelFlexRatio133MHz(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+{
+    /** @todo implement writing MSR_FLEX_RATIO. */
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(int) cpumMsrRd_IntelPkgCStConfigControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     *puValue = pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl;
@@ -4345,6 +4389,8 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_IntelP4EbcFrequencyId,
     cpumMsrRd_IntelPlatformInfo100MHz,
     cpumMsrRd_IntelPlatformInfo133MHz,
+    cpumMsrRd_IntelFlexRatio100MHz,
+    cpumMsrRd_IntelFlexRatio133MHz,
     cpumMsrRd_IntelPkgCStConfigControl,
     cpumMsrRd_IntelPmgIoCaptureBase,
     cpumMsrRd_IntelLastBranchFromToN,
@@ -4580,6 +4626,8 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_IntelP4EbcHardPowerOn,
     cpumMsrWr_IntelP4EbcSoftPowerOn,
     cpumMsrWr_IntelP4EbcFrequencyId,
+    cpumMsrWr_IntelFlexRatio100MHz,
+    cpumMsrWr_IntelFlexRatio133MHz,
     cpumMsrWr_IntelPkgCStConfigControl,
     cpumMsrWr_IntelPmgIoCaptureBase,
     cpumMsrWr_IntelLastBranchFromToN,
@@ -5031,6 +5079,8 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(IntelP4EbcFrequencyId);
     CPUM_ASSERT_RD_MSR_FN(IntelPlatformInfo100MHz);
     CPUM_ASSERT_RD_MSR_FN(IntelPlatformInfo133MHz);
+    CPUM_ASSERT_RD_MSR_FN(IntelFlexRatio100MHz);
+    CPUM_ASSERT_RD_MSR_FN(IntelFlexRatio133MHz);
     CPUM_ASSERT_RD_MSR_FN(IntelPkgCStConfigControl);
     CPUM_ASSERT_RD_MSR_FN(IntelPmgIoCaptureBase);
     CPUM_ASSERT_RD_MSR_FN(IntelLastBranchFromToN);
@@ -5255,6 +5305,8 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(IntelP4EbcHardPowerOn);
     CPUM_ASSERT_WR_MSR_FN(IntelP4EbcSoftPowerOn);
     CPUM_ASSERT_WR_MSR_FN(IntelP4EbcFrequencyId);
+    CPUM_ASSERT_WR_MSR_FN(IntelFlexRatio100MHz);
+    CPUM_ASSERT_WR_MSR_FN(IntelFlexRatio133MHz);
     CPUM_ASSERT_WR_MSR_FN(IntelPkgCStConfigControl);
     CPUM_ASSERT_WR_MSR_FN(IntelPmgIoCaptureBase);
     CPUM_ASSERT_WR_MSR_FN(IntelLastBranchFromToN);
@@ -5397,6 +5449,29 @@ int cpumR3MsrStrictInitChecks(void)
     return VINF_SUCCESS;
 }
 #endif /* VBOX_STRICT && IN_RING3 */
+
+
+/**
+ * Gets the bus frequency.
+ *
+ * The bus frequency is used as a base in several MSRs that gives the CPU and
+ * other frequency ratios.
+ *
+ * @returns Bus frequency in Hz.
+ * @param   pVM                 Pointer to the shared VM structure.
+ */
+VMMDECL(uint64_t) CPUMGetGuestBusFrequency(PVM pVM)
+{
+    if (CPUMMICROARCH_IS_INTEL_CORE7(pVM->cpum.s.GuestFeatures.enmMicroarch))
+    {
+        return pVM->cpum.s.GuestFeatures.enmMicroarch >= kCpumMicroarch_Intel_Core7_SandyBridge
+            ? UINT64_C(100000000)  /* 100MHz */
+            : UINT64_C(133333333); /* 133MHz */
+    }
+
+    /* 133MHz */
+    return UINT64_C(133333333);
+}
 
 
 #ifdef IN_RING0
