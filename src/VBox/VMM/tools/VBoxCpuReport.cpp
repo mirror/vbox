@@ -694,7 +694,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x000000c7: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First ? "IA32_PMC6" : "P6_UNK_0000_00c7"; /* P6_M_Dothan. */
         case 0x000000c8: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First ? "IA32_PMC7" : NULL;
         case 0x000000cd: return "P6_UNK_0000_00cd"; /* P6_M_Dothan. */
-        case 0x000000ce: return "P6_UNK_0000_00ce"; /* P6_M_Dothan. */
+        case 0x000000ce: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First ? "IA32_PLATFORM_INFO" : "P6_UNK_0000_00ce"; /* P6_M_Dothan. */
         case 0x000000cf: return "C2_UNK_0000_00cf"; /* Core2_Penryn. */
         case 0x000000e0: return "C2_UNK_0000_00e0"; /* Core2_Penryn. */
         case 0x000000e1: return "C2_UNK_0000_00e1"; /* Core2_Penryn. */
@@ -1842,6 +1842,11 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
                 return "Ia32PmcN";
             return NULL;
 
+        case 0x000000ce: return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch)
+                              ? (g_enmMicroarch >= kCpumMicroarch_Intel_Core7_SandyBridge
+                                 ? "IntelPlatformInfo100MHz" : "IntelPlatformInfo133MHz")
+                              : NULL;
+
         case 0x000000e2: return "IntelPkgCStConfigControl";
         case 0x000000e3: return "IntelCore2SmmCStMiscInfo";
         case 0x000000e4: return "IntelPmgIoCaptureBase";
@@ -1876,6 +1881,12 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x00000186: return "Ia32PerfEvtSelN";
         case 0x00000187: return "Ia32PerfEvtSelN";
         case 0x00000193: return /*g_fIntelNetBurst ? NULL :*/ NULL /* Core2_Penryn. */;
+        case 0x00000194:
+            if (g_fIntelNetBurst)
+                break;
+            *pfTakesValue = true;
+            return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch) && g_enmMicroarch >= kCpumMicroarch_Intel_Core7_SandyBridge
+                 ? "IntelFlexRatio100MHz" : "IntelFlexRatio133MHz";
         case 0x00000198: *pfTakesValue = true; return "Ia32PerfStatus";
         case 0x00000199: *pfTakesValue = true; return "Ia32PerfCtl";
         case 0x0000019a: *pfTakesValue = true; return "Ia32ClockModulation";

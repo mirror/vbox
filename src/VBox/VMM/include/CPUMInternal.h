@@ -210,6 +210,8 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_IntelP4EbcFrequencyId,
     kCpumMsrRdFn_IntelPlatformInfo100MHz,
     kCpumMsrRdFn_IntelPlatformInfo133MHz,
+    kCpumMsrRdFn_IntelFlexRatio100MHz,      /**< Takes real value as reference. */
+    kCpumMsrRdFn_IntelFlexRatio133MHz,      /**< Takes real value as reference. */
     kCpumMsrRdFn_IntelPkgCStConfigControl,
     kCpumMsrRdFn_IntelPmgIoCaptureBase,
     kCpumMsrRdFn_IntelLastBranchFromToN,
@@ -453,6 +455,8 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_IntelP4EbcHardPowerOn,
     kCpumMsrWrFn_IntelP4EbcSoftPowerOn,
     kCpumMsrWrFn_IntelP4EbcFrequencyId,
+    kCpumMsrWrFn_IntelFlexRatio100MHz,
+    kCpumMsrWrFn_IntelFlexRatio133MHz,
     kCpumMsrWrFn_IntelPkgCStConfigControl,
     kCpumMsrWrFn_IntelPmgIoCaptureBase,
     kCpumMsrWrFn_IntelLastBranchFromToN,

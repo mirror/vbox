@@ -676,6 +676,7 @@ VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu);
 VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu);
 VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);
+VMMDECL(uint64_t)       CPUMGetGuestBusFrequency(PVM pVM);
 
 
 #ifdef IN_RING3
