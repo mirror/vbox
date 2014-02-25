@@ -18,6 +18,7 @@
     <installation-check script="checkPrerequisite()"></installation-check>
     <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
     <script>
+//<![CDATA[
     /* js:pkmk:start */
     function checkPrerequisite()
     {
@@ -90,6 +91,7 @@
        return result;
     }
     /* js:pkmk:end */
+//]]>
     </script>
     <background file="background.tif" alignment="topleft" scaling="none"/>
     <welcome file="Welcome.rtf" mime-type="text/rtf" uti="public.rtf"/>
