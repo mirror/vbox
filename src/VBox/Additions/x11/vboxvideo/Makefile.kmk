@@ -30,9 +30,6 @@ vboxvideo_70_DEFS := \
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
  vboxvideo_70_DEFS += __EXTENSIONS__  ## @todo Why this?
 endif
-ifdef VBOX_WITH_GUEST_KMS_DRIVER
- vboxvideo_70_DEFS += VBOX_WITH_GUEST_KMS_DRIVER
-endif
 vboxvideo_13_DEFS := $(vboxvideo_70_DEFS) VBOXVIDEO_13
 vboxvideo_15_DEFS := \
 	$(vboxvideo_13_DEFS) NO_ANSIC PCIACCESS XSERVER_LIBPCIACCESS
@@ -79,9 +76,6 @@ vboxvideo_drv_DEFS = \
 	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
 	IN_MODULE XFree86Module IN_XF86_MODULE IN_RT_STATIC
 vboxvideo_drv_DEFS += memset=xf86memset memcpy=xf86memcpy
-ifdef VBOX_WITH_GUEST_KMS_DRIVER
- vboxvideo_drv_DEFS += VBOX_WITH_GUEST_KMS_DRIVER
-endif
 vboxvideo_drv_INCS = \
 	$(VBOX_PATH_X11_XFREE_4_3)/include \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/X11 \
