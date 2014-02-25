@@ -20,6 +20,7 @@
 
 #include <iprt/asm-math.h>
 #include <iprt/cpp/utils.h>
+#include <VBox/com/string.h>
 
 #include "../NetLib/cpp/utils.h"
 
@@ -426,7 +427,7 @@ public:
     static ConfigurationManager* getConfigurationManager();
     static int extractRequestList(PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg, RawOption& rawOpt);
 
-    int loadFromFile(const std::string&);
+    int loadFromFile(const com::Utf8Str&);
     int saveToFile();
     /**
      *

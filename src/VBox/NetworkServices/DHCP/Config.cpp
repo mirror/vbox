@@ -143,7 +143,7 @@ struct ConfigurationManager::Data
 
     std::string          m_domainName;
     VecClient            m_clients;
-    std::string          m_leaseStorageFilename;
+    com::Utf8Str         m_leaseStorageFilename;
     bool                 fFileExists;
 };
 
@@ -186,7 +186,7 @@ const std::string tagXMLLeaseOptions = "Options";
  *   </Lease>
  * </Leases>
  */
-int ConfigurationManager::loadFromFile(const std::string& leaseStorageFileName)
+int ConfigurationManager::loadFromFile(const com::Utf8Str& leaseStorageFileName)
 {
     m->m_leaseStorageFilename = leaseStorageFileName;
 
@@ -249,7 +249,7 @@ int ConfigurationManager::loadFromFile(const std::string& leaseStorageFileName)
 
 int ConfigurationManager::saveToFile()
 {
-    if (m->m_leaseStorageFilename.empty())
+    if (m->m_leaseStorageFilename.isEmpty())
         return VINF_SUCCESS;
 
     xml::Document doc;
