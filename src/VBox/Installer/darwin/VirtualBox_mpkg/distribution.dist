@@ -73,7 +73,7 @@
        {
            /* Embedded scripts are not available here. So, just do a command
               line checking for running VMs instead. */
-           rcScript = system.run('/bin/sh', '-c', '/bin/ps -e | /usr/bin/grep -E \'V[i]rtualBox.*startvm|VBoxNetDHCP|VBoxNetNAT|VBoxHeadless|VBoxSVC\'');
+           rcScript = system.run('/bin/sh', '-c', '/bin/ps -e | /usr/bin/grep -E \'[V]irtualBox.*startvm|[V]BoxNetDHCP|[V]BoxNetNAT|[V]BoxHeadless|[V]BoxSVC\'');
            result = (rcScript != 0);
            system.log("system.run /bin/sh .. returned: " + rcScript + " result=" + result);
        } catch (e) { system.log(e); result = false; }
