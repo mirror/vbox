@@ -236,7 +236,7 @@ tstMediumLock_SOURCES  = tstMediumLock.cpp
 #
 # tstMouseImpl
 #
-tstMouseImpl_TEMPLATE = VBOXMAINTSTEXE
+tstMouseImpl_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstMouseImpl_SOURCES  = \
 	tstMouseImpl.cpp \
 	../src-client/MouseImpl.cpp \
