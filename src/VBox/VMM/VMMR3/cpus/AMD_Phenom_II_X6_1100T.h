@@ -252,6 +252,7 @@ static CPUMDBENTRY const g_Entry_AMD_Phenom_II_X6_1100T =
     /*.uModel           = */ 10,
     /*.uStepping        = */ 0,
     /*.enmMicroarch     = */ kCpumMicroarch_AMD_K10,
+    /*.uScalableBusFreq = */ CPUM_SBUSFREQ_UNKNOWN,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 48,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_AMD_Phenom_II_X6_1100T),

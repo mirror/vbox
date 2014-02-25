@@ -129,6 +129,7 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_Ia32P5McAddr,
     kCpumMsrRdFn_Ia32P5McType,
     kCpumMsrRdFn_Ia32TimestampCounter,
+    kCpumMsrRdFn_Ia32PlatformId,            /**< Takes real CPU value for reference. */
     kCpumMsrRdFn_Ia32ApicBase,
     kCpumMsrRdFn_Ia32FeatureControl,
     kCpumMsrRdFn_Ia32BiosSignId,            /**< Range value returned. */
@@ -208,10 +209,9 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_IntelP4EbcHardPowerOn,
     kCpumMsrRdFn_IntelP4EbcSoftPowerOn,
     kCpumMsrRdFn_IntelP4EbcFrequencyId,
-    kCpumMsrRdFn_IntelPlatformInfo100MHz,
-    kCpumMsrRdFn_IntelPlatformInfo133MHz,
-    kCpumMsrRdFn_IntelFlexRatio100MHz,      /**< Takes real value as reference. */
-    kCpumMsrRdFn_IntelFlexRatio133MHz,      /**< Takes real value as reference. */
+    kCpumMsrRdFn_IntelP6FsbFrequency,       /**< Takes real value as reference. */
+    kCpumMsrRdFn_IntelPlatformInfo,
+    kCpumMsrRdFn_IntelFlexRatio,            /**< Takes real value as reference. */
     kCpumMsrRdFn_IntelPkgCStConfigControl,
     kCpumMsrRdFn_IntelPmgIoCaptureBase,
     kCpumMsrRdFn_IntelLastBranchFromToN,
@@ -455,8 +455,7 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_IntelP4EbcHardPowerOn,
     kCpumMsrWrFn_IntelP4EbcSoftPowerOn,
     kCpumMsrWrFn_IntelP4EbcFrequencyId,
-    kCpumMsrWrFn_IntelFlexRatio100MHz,
-    kCpumMsrWrFn_IntelFlexRatio133MHz,
+    kCpumMsrWrFn_IntelFlexRatio,
     kCpumMsrWrFn_IntelPkgCStConfigControl,
     kCpumMsrWrFn_IntelPmgIoCaptureBase,
     kCpumMsrWrFn_IntelLastBranchFromToN,
@@ -745,13 +744,15 @@ typedef struct CPUMINFO
     /** The index of the first extended CPUID leaf in the array.
      *  Set to cCpuIdLeaves if none present. */
     uint32_t                    iFirstExtCpuIdLeaf;
+    /** Alignment padding.  */
+    uint32_t                    uPadding;
     /** How to handle unknown CPUID leaves. */
     CPUMUKNOWNCPUID             enmUnknownCpuIdMethod;
     /** For use with CPUMUKNOWNCPUID_DEFAULTS. */
     CPUMCPUID                   DefCpuId;
 
-    /** Alignment padding.  */
-    uint32_t                    uPadding;
+    /** Scalable bus frequency used for reporting other frequencies. */
+    uint64_t                    uScalableBusFreq;
 
     /** Pointer to the MSR ranges (ring-0 pointer). */
     R0PTRTYPE(PCPUMMSRRANGE)    paMsrRangesR0;

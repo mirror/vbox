@@ -204,6 +204,7 @@ static CPUMDBENTRY const g_Entry_AMD_Athlon_64_3200 =
     /*.uModel           = */ 4,
     /*.uStepping        = */ 8,
     /*.enmMicroarch     = */ kCpumMicroarch_AMD_K8_130nm,
+    /*.uScalableBusFreq = */ CPUM_SBUSFREQ_UNKNOWN,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 40,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_AMD_Athlon_64_3200),

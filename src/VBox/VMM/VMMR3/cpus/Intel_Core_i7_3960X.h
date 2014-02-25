@@ -72,7 +72,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3960X[] =
     MFX(0x00000001, "IA32_P5_MC_TYPE", Ia32P5McType, Ia32P5McType, 0, 0, UINT64_MAX), /* value=0x0 */
     MFX(0x00000006, "IA32_MONITOR_FILTER_LINE_SIZE", Ia32MonitorFilterLineSize, Ia32MonitorFilterLineSize, 0, 0, UINT64_C(0xffffffffffff0000)), /* value=0x40 */
     MFN(0x00000010, "IA32_TIME_STAMP_COUNTER", Ia32TimestampCounter, Ia32TimestampCounter), /* value=0x177ab4`48466b19 */
-    MVO(0x00000017, "IA32_PLATFORM_ID", UINT64_C(0x8000000000000)),
+    MFV(0x00000017, "IA32_PLATFORM_ID", Ia32PlatformId, ReadOnly, UINT64_C(0x8000000000000)),
     MFX(0x0000001b, "IA32_APIC_BASE", Ia32ApicBase, Ia32ApicBase, UINT32_C(0xfee00800), 0, UINT64_C(0xffffc000000002ff)),
     MFX(0x0000002a, "EBL_CR_POWERON", IntelEblCrPowerOn, ReadOnly, 0, 0, 0), /* value=0x0 */
     MVX(0x0000002e, "I7_UNK_0000_002e", 0, 0x400, UINT64_C(0xfffffffffffffbff)),
@@ -85,7 +85,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3960X[] =
     MVX(0x0000008b, "BBL_CR_D3|BIOS_SIGN", UINT64_C(0x61600000000), 0, UINT32_C(0xfffffffe)),
     MFO(0x0000009b, "IA32_SMM_MONITOR_CTL", Ia32SmmMonitorCtl), /* value=0x0 */
     RSN(0x000000c1, 0x000000c4, "IA32_PMCn", Ia32PmcN, Ia32PmcN, 0x0, ~(uint64_t)UINT32_MAX, 0),
-    MFO(0x000000ce, "MSR_PLATFORM_INFO", IntelPlatformInfo100MHz), /* value=0xc00'70012100*/
+    MFO(0x000000ce, "MSR_PLATFORM_INFO", IntelPlatformInfo), /* value=0xc00'70012100*/
     MFX(0x000000e2, "MSR_PKG_CST_CONFIG_CONTROL", IntelPkgCStConfigControl, IntelPkgCStConfigControl, 0, 0, UINT64_C(0xffffffffe1ffffff)), /* value=0x1e008400 */
     MFX(0x000000e4, "MSR_PMG_IO_CAPTURE_BASE", IntelPmgIoCaptureBase, IntelPmgIoCaptureBase, 0, 0, UINT64_C(0xfffffffffff80000)), /* value=0x20414 */
     MFN(0x000000e7, "IA32_MPERF", Ia32MPerf, Ia32MPerf), /* value=0x2be98e4 */
@@ -102,7 +102,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3960X[] =
     MFX(0x0000017a, "IA32_MCG_STATUS", Ia32McgStatus, Ia32McgStatus, 0, 0, UINT64_C(0xfffffffffffffff8)), /* value=0x0 */
     MFX(0x0000017f, "I7_SB_ERROR_CONTROL", IntelI7SandyErrorControl, IntelI7SandyErrorControl, 0, 0xc, UINT64_C(0xffffffffffffffe1)), /* value=0x0 */
     RSN(0x00000186, 0x00000189, "IA32_PERFEVTSELn", Ia32PerfEvtSelN, Ia32PerfEvtSelN, 0x0, 0, UINT64_C(0xffffffff00080000)),
-    MFX(0x00000194, "CLOCK_FLEX_MAX", IntelFlexRatio100MHz, IntelFlexRatio100MHz, 0xf2100, 0xe0000, UINT64_C(0xfffffffffff00000)),
+    MFX(0x00000194, "CLOCK_FLEX_MAX", IntelFlexRatio, IntelFlexRatio, 0xf2100, 0xe0000, UINT64_C(0xfffffffffff00000)),
     MFX(0x00000198, "IA32_PERF_STATUS", Ia32PerfStatus, ReadOnly, UINT64_C(0x288300002400), 0, 0), /* value=0x2883`00002400 */
     MFX(0x00000199, "IA32_PERF_CTL", Ia32PerfCtl, Ia32PerfCtl, 0x2700, 0, 0), /* Might bite. value=0x2700 */
     MFX(0x0000019a, "IA32_CLOCK_MODULATION", Ia32ClockModulation, Ia32ClockModulation, 0, 0, UINT64_C(0xffffffffffffffe0)), /* value=0x0 */
@@ -349,6 +349,7 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i7_3960X =
     /*.uModel           = */ 45,
     /*.uStepping        = */ 6,
     /*.enmMicroarch     = */ kCpumMicroarch_Intel_Core7_SandyBridge,
+    /*.uScalableBusFreq = */ CPUM_SBUSFREQ_100MHZ,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 46,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Core_i7_3960X),

@@ -2241,7 +2241,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     pThis->u64TscFrequency = TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
     pThis->u64CpuFrequency = pThis->u64TscFrequency;
-    pThis->u64FsbFrequency = CPUMGetGuestBusFrequency(PDMDevHlpGetVM(pDevIns));
+    pThis->u64FsbFrequency = CPUMGetGuestScalableBusFrequency(PDMDevHlpGetVM(pDevIns));
 
     /*
      * GOP graphics.

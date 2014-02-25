@@ -63,7 +63,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3820QM[] =
     MFX(0x00000001, "IA32_P5_MC_TYPE", Ia32P5McType, Ia32P5McType, 0, 0, UINT64_MAX), /* value=0x0 */
     MFX(0x00000006, "IA32_MONITOR_FILTER_LINE_SIZE", Ia32MonitorFilterLineSize, Ia32MonitorFilterLineSize, 0, 0, UINT64_C(0xffffffffffff0000)), /* value=0x40 */
     MFX(0x00000010, "IA32_TIME_STAMP_COUNTER", Ia32TimestampCounter, Ia32TimestampCounter, 0, 0, 0),
-    MVO(0x00000017, "IA32_PLATFORM_ID", UINT64_C(0x10000000000000)),
+    MFV(0x00000017, "IA32_PLATFORM_ID", Ia32PlatformId, ReadOnly, UINT64_C(0x10000000000000)),
     MFX(0x0000001b, "IA32_APIC_BASE", Ia32ApicBase, Ia32ApicBase, UINT32_C(0xfee00900), 0, UINT64_C(0xfffffff0000002ff)),
     MFX(0x0000002a, "EBL_CR_POWERON", IntelEblCrPowerOn, ReadOnly, 0, 0, 0), /* value=0x0 */
     MVX(0x0000002e, "I7_UNK_0000_002e", 0, 0x400, UINT64_C(0xfffffffffffffbff)),
@@ -361,6 +361,7 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i7_3820QM =
     /*.uModel           = */ 58,
     /*.uStepping        = */ 9,
     /*.enmMicroarch     = */ kCpumMicroarch_Intel_Core7_IvyBridge,
+    /*.uScalableBusFreq = */ CPUM_SBUSFREQ_UNKNOWN,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 36,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Core_i7_3820QM),

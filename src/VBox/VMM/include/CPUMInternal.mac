@@ -89,7 +89,7 @@ struc CPUM
     .abPadding2           resb    4
 %endif
 
-    .GuestInfo            resb    RTHCPTR_CB*4 + RTRCPTR_CB*2 + 4*10
+    .GuestInfo            resb    RTHCPTR_CB*4 + RTRCPTR_CB*2 + 4*12
     .GuestFeatures        resb    32
     .HostFeatures         resb    32
 

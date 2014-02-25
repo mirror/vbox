@@ -79,7 +79,7 @@ static CPUMMSRRANGE const g_aMsrRanges_VIA_QuadCore_L4700_1_2_GHz[] =
     RVI(0x0000009c, 0x000000c0, "ZERO_0000_009c_THRU_0000_00c0", 0),
     RSN(0x000000c1, 0x000000c3, "IA32_PMCn", Ia32PmcN, Ia32PmcN, 0x0, UINT64_C(0xffffff0000000000), 0), /* XXX: The range ended earlier than expected! */
     RVI(0x000000c4, 0x000000cc, "ZERO_0000_00c4_THRU_0000_00cc", 0),
-    MVO(0x000000cd, "P6_UNK_0000_00cd", 0),
+    MFX(0x000000cd, "MSR_FSB_FREQ", IntelP6FsbFrequency, ReadOnly, 0, 0, 0),
     RVI(0x000000ce, 0x000000e1, "ZERO_0000_00ce_THRU_0000_00e1", 0),
     MFI(0x000000e2, "MSR_PKG_CST_CONFIG_CONTROL", IntelPkgCStConfigControl), /* value=0x6a204 */
     MFX(0x000000e3, "C2_SMM_CST_MISC_INFO", IntelCore2SmmCStMiscInfo, IntelCore2SmmCStMiscInfo, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x0 */
@@ -384,6 +384,7 @@ static CPUMDBENTRY const g_Entry_VIA_QuadCore_L4700_1_2_GHz =
     /*.uModel           = */ 15,
     /*.uStepping        = */ 13,
     /*.enmMicroarch     = */ kCpumMicroarch_VIA_Isaiah,
+    /*.uScalableBusFreq = */ CPUM_SBUSFREQ_267MHZ, /*??*/
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 36,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_VIA_QuadCore_L4700_1_2_GHz),
