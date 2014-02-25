@@ -1471,6 +1471,37 @@ VMMR3DECL(int) SSMR3RegisterExternal(PUVM pUVM, const char *pszName, uint32_t uI
 
 
 /**
+ * @callback_method_impl{FNSSMINTLOADEXEC,
+ * Stub that skips the whole unit (see SSMR3RegisterStub).}
+ */
+static DECLCALLBACK(int) ssmR3LoadExecStub(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    NOREF(pVM); NOREF(uVersion); NOREF(uPass);
+    return SSMR3SkipToEndOfUnit(pSSM);
+}
+
+
+/**
+ * Registers a stub state loader for working around legacy.
+ *
+ * This is used to deal with irelevant PATM and CSAM saved state units in HM
+ * mode and when built without raw-mode.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pszName             Data unit name.
+ * @param   uInstance           Instance number.
+ */
+VMMR3DECL(int) SSMR3RegisterStub(PVM pVM, const char *pszName, uint32_t uInstance)
+{
+    return SSMR3RegisterInternal(pVM, pszName, uInstance, UINT32_MAX, 0,
+                                 NULL, NULL, NULL,
+                                 NULL, NULL, NULL,
+                                 NULL, ssmR3LoadExecStub, NULL);
+}
+
+
+/**
  * Deregister one or more PDM Device data units.
  *
  * @returns VBox status.

@@ -71,7 +71,6 @@
 *******************************************************************************/
 static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-static DECLCALLBACK(int) csamR3LoadDummy(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 static DECLCALLBACK(int) CSAMCodePageInvalidate(PVM pVM, RTGCPTR GCPtr);
 
@@ -231,10 +230,7 @@ VMMR3_INT_DECL(int) CSAMR3Init(PVM pVM)
     if (HMIsEnabled(pVM))
     {
         pVM->fCSAMEnabled = false;
-        return SSMR3RegisterInternal(pVM, "CSAM", 0, CSAM_SSM_VERSION, 0,
-                                     NULL, NULL, NULL,
-                                     NULL, NULL, NULL,
-                                     NULL, csamR3LoadDummy, NULL);
+        return SSMR3RegisterStub(pVM, "CSAM", 0);
     }
 
     /*
@@ -565,15 +561,6 @@ static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM)
 
     /** @note we don't restore aDangerousInstr; it will be recreated automatically. */
     return VINF_SUCCESS;
-}
-
-
-/**
- * @callback_method_impl{FNSSMINTLOADEXEC, Dummy load function for HM mode.}
- */
-DECLCALLBACK(int) csamR3LoadDummy(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
-{
-    return SSMR3SkipToEndOfUnit(pSSM);
 }
 
 

@@ -803,15 +803,6 @@ DECLCALLBACK(int) patmR3Save(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * @callback_method_impl{FNSSMINTLOADEXEC, Dummy load function for HM mode.}
- */
-DECLCALLBACK(int) patmR3LoadDummy(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
-{
-    return SSMR3SkipToEndOfUnit(pSSM);
-}
-
-
-/**
  * Execute state load operation.
  *
  * @returns VBox status code.
