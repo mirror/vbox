@@ -338,7 +338,7 @@ DECLCALLBACK(void) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface
      */
     Mouse *pMouse = pConsole->getMouse();
     if (pMouse)  /** @todo and if not?  Can that actually happen? */
-        pMouse->i_onVMMDevGuestCapsChange(fNewCaps & VMMDEV_MOUSE_GUEST_MASK);
+        pMouse->onVMMDevGuestCapsChange(fNewCaps & VMMDEV_MOUSE_GUEST_MASK);
 }
 
 /**

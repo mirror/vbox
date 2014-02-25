@@ -29,6 +29,10 @@
 #include <iprt/assert.h>
 #include <iprt/test.h>
 
+#ifndef RT_OS_WINDOWS
+NS_DECL_CLASSINFO(Mouse)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Mouse, IMouse)
+#endif
 
 PDMIVMMDEVPORT VMMDevPort;
 
@@ -318,8 +322,8 @@ static void testAbsToVMMDevNewProtocol(RTTEST hTest)
     pConnector = (PPDMIMOUSECONNECTOR)pBase->pfnQueryInterface(pBase,
                                                  PDMIMOUSECONNECTOR_IID);
     pConnector->pfnReportModes(pConnector, true, false, false);
-    pMouse->i_onVMMDevGuestCapsChange(  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                      | VMMDEV_MOUSE_NEW_PROTOCOL);
+    pMouse->onVMMDevGuestCapsChange(  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
+                                    | VMMDEV_MOUSE_NEW_PROTOCOL);
     pMouse->PutMouseEventAbsolute(0, 0, 0, 0, 0);
     RTTESTI_CHECK_MSG(approxEq(absoluteMouse.x, 0x8000, 200),
                       ("absoluteMouse.x=%d\n", absoluteMouse.x));
@@ -349,7 +353,7 @@ static void testAbsToVMMDevOldProtocol(RTTEST hTest)
     pConnector = (PPDMIMOUSECONNECTOR)pBase->pfnQueryInterface(pBase,
                                                  PDMIMOUSECONNECTOR_IID);
     pConnector->pfnReportModes(pConnector, true, false, false);
-    pMouse->i_onVMMDevGuestCapsChange(VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE);
+    pMouse->onVMMDevGuestCapsChange(VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE);
     pMouse->PutMouseEventAbsolute(320, 240, 0, 0, 0);
     RTTESTI_CHECK_MSG(approxEq(absoluteMouse.x, 0x8000, 200),
                       ("absoluteMouse.x=%d\n", absoluteMouse.x));
@@ -379,7 +383,7 @@ static void testAbsToAbsDev(RTTEST hTest)
     pConnector = (PPDMIMOUSECONNECTOR)pBase->pfnQueryInterface(pBase,
                                                  PDMIMOUSECONNECTOR_IID);
     pConnector->pfnReportModes(pConnector, false, true, false);
-    pMouse->i_onVMMDevGuestCapsChange(VMMDEV_MOUSE_NEW_PROTOCOL);
+    pMouse->onVMMDevGuestCapsChange(VMMDEV_MOUSE_NEW_PROTOCOL);
     pMouse->PutMouseEventAbsolute(0, 0, 0, 0, 0);
     RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.cx, 0x8000, 200),
                       ("mouseEventAbs.cx=%d\n", mouseEventAbs.cx));
