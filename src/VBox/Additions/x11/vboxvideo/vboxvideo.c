@@ -1052,9 +1052,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 
     if (vbox_open (pScrn, pScreen, pVBox)) {
         vboxEnableVbva(pScrn);
-#ifndef VBOX_WITH_GUEST_KMS_DRIVER
-        vboxEnableGraphicsCap(pVBox);
-#endif
     }
 
 #ifdef VBOXVIDEO_13
@@ -1222,9 +1219,6 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
     if (pVBox->fHaveHGSMI)
         vboxDisableVbva(pScrn);
     vboxClearVRAM(pScrn, 0, 0);
-#ifndef VBOX_WITH_GUEST_KMS_DRIVER
-    vboxDisableGraphicsCap(pVBox);
-#endif
 #ifdef VBOX_DRI_OLD
     if (pVBox->useDRI)
         DRILock(xf86ScrnToScreen(pScrn), 0);
@@ -1249,10 +1243,6 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
     {
         if (pVBox->fHaveHGSMI)
             vboxDisableVbva(pScrn);
-#ifndef VBOX_WITH_GUEST_KMS_DRIVER
-        if (pScrn->vtSema)
-            vboxDisableGraphicsCap(pVBox);
-#endif
         vboxClearVRAM(pScrn, 0, 0);
     }
 #ifdef VBOX_DRI
