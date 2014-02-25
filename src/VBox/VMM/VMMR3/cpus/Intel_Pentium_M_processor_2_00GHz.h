@@ -47,7 +47,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Pentium_M_processor_2_00GHz[] =
     MFI(0x00000000, "IA32_P5_MC_ADDR", Ia32P5McAddr), /* value=0x0 */
     MFI(0x00000001, "IA32_P5_MC_TYPE", Ia32P5McType), /* value=0x0 */
     MFX(0x00000010, "IA32_TIME_STAMP_COUNTER", Ia32TimestampCounter, Ia32TimestampCounter, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x22`4d44782e */
-    MVO(0x00000017, "IA32_PLATFORM_ID", UINT64_C(0x140000d0248a28)),
+    MFV(0x00000017, "IA32_PLATFORM_ID", Ia32PlatformId, ReadOnly, UINT64_C(0x140000d0248a28)),
     MVX(0x00000018, "P6_UNK_0000_0018", 0, 0, 0),
     MFX(0x0000001b, "IA32_APIC_BASE", Ia32ApicBase, Ia32ApicBase, UINT32_C(0xfee00100), UINT64_C(0xffffffff00000600), 0xff),
     MFX(0x0000002a, "EBL_CR_POWERON", IntelEblCrPowerOn, IntelEblCrPowerOn, 0x45080000, UINT64_C(0xfffffffffff7ff7e), 0), /* value=0x45080000 */
@@ -88,7 +88,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Pentium_M_processor_2_00GHz[] =
     MFX(0x000000c1, "IA32_PMC0", Ia32PmcN, Ia32PmcN, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x0 */
     MFX(0x000000c2, "IA32_PMC1", Ia32PmcN, Ia32PmcN, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x0 */
     MVI(0x000000c7, "P6_UNK_0000_00c7", UINT64_C(0x5a000000ac000000)),
-    MVO(0x000000cd, "P6_UNK_0000_00cd", 0),
+    MFX(0x000000cd, "MSR_FSB_FREQ", IntelP6FsbFrequency, ReadOnly, 0, 0, 0),
     MVO(0x000000ce, "P6_UNK_0000_00ce", UINT64_C(0x2812140000000000)),
     MFX(0x000000fe, "IA32_MTRRCAP", Ia32MtrrCap, ReadOnly, 0x508, 0, 0), /* value=0x508 */
     MVX(0x00000116, "BBL_CR_ADDR", UINT32_C(0xfe7efff0), UINT64_C(0xffffffff0000000f), 0),
@@ -196,6 +196,7 @@ static CPUMDBENTRY const g_Entry_Intel_Pentium_M_processor_2_00GHz =
     /*.uModel           = */ 13,
     /*.uStepping        = */ 6,
     /*.enmMicroarch     = */ kCpumMicroarch_Intel_P6_M_Dothan,
+    /*.uScalableBusFreq = */ CPUM_SBUSFREQ_UNKNOWN,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 32,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Pentium_M_processor_2_00GHz),

@@ -71,6 +71,9 @@ static PRTSTREAM        g_pReportOut;
 /** The alternative debug stream. */
 static PRTSTREAM        g_pDebugOut;
 
+/** Snooping info storage for vbCpuRepGuessScalableBusFrequencyName. */
+static uint64_t         g_uMsrIntelP6FsbFrequency = UINT64_MAX;
+
 
 static void vbCpuRepDebug(const char *pszMsg, ...)
 {
@@ -693,7 +696,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x000000c6: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First ? "IA32_PMC5" : NULL;
         case 0x000000c7: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First ? "IA32_PMC6" : "P6_UNK_0000_00c7"; /* P6_M_Dothan. */
         case 0x000000c8: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First ? "IA32_PMC7" : NULL;
-        case 0x000000cd: return "P6_UNK_0000_00cd"; /* P6_M_Dothan. */
+        case 0x000000cd: return "MSR_FSB_FREQ"; /* P6_M_Dothan. */
         case 0x000000ce: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First ? "IA32_PLATFORM_INFO" : "P6_UNK_0000_00ce"; /* P6_M_Dothan. */
         case 0x000000cf: return "C2_UNK_0000_00cf"; /* Core2_Penryn. */
         case 0x000000e0: return "C2_UNK_0000_00e0"; /* Core2_Penryn. */
@@ -1800,6 +1803,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
                 return NULL; /* TR4 / cache tag on Pentium, but that's for later. */
             return "Ia32MonitorFilterLineSize";
         case 0x00000010: return "Ia32TimestampCounter";
+        case 0x00000017: *pfTakesValue = true; return "Ia32PlatformId";
         case 0x0000001b: return "Ia32ApicBase";
         case 0x0000002a: *pfTakesValue = true; return g_fIntelNetBurst ? "IntelP4EbcHardPowerOn" : "IntelEblCrPowerOn";
         case 0x0000002b: *pfTakesValue = true; return g_fIntelNetBurst ? "IntelP4EbcSoftPowerOn" : NULL;
@@ -1842,11 +1846,8 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
                 return "Ia32PmcN";
             return NULL;
 
-        case 0x000000ce: return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch)
-                              ? (g_enmMicroarch >= kCpumMicroarch_Intel_Core7_SandyBridge
-                                 ? "IntelPlatformInfo100MHz" : "IntelPlatformInfo133MHz")
-                              : NULL;
-
+        case 0x000000cd: *pfTakesValue = true; return "IntelP6FsbFrequency";
+        case 0x000000ce: return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch)  ? "IntelPlatformInfo" : NULL;
         case 0x000000e2: return "IntelPkgCStConfigControl";
         case 0x000000e3: return "IntelCore2SmmCStMiscInfo";
         case 0x000000e4: return "IntelPmgIoCaptureBase";
@@ -1881,12 +1882,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x00000186: return "Ia32PerfEvtSelN";
         case 0x00000187: return "Ia32PerfEvtSelN";
         case 0x00000193: return /*g_fIntelNetBurst ? NULL :*/ NULL /* Core2_Penryn. */;
-        case 0x00000194:
-            if (g_fIntelNetBurst)
-                break;
-            *pfTakesValue = true;
-            return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch) && g_enmMicroarch >= kCpumMicroarch_Intel_Core7_SandyBridge
-                 ? "IntelFlexRatio100MHz" : "IntelFlexRatio133MHz";
+        case 0x00000194: if (g_fIntelNetBurst) break;   *pfTakesValue = true; return "IntelFlexRatio";
         case 0x00000198: *pfTakesValue = true; return "Ia32PerfStatus";
         case 0x00000199: *pfTakesValue = true; return "Ia32PerfCtl";
         case 0x0000019a: *pfTakesValue = true; return "Ia32ClockModulation";
@@ -4096,6 +4092,12 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
 
         if (RT_FAILURE(rc))
             return rc;
+
+        /*
+         *  A little ugly snooping.
+         */
+        if (uMsr == 0x000000cd && !(fFlags & VBCPUREPMSR_F_WRITE_ONLY))
+            g_uMsrIntelP6FsbFrequency = uValue;
     }
 
     return VINF_SUCCESS;
@@ -4315,6 +4317,32 @@ static const char *cpuVendorToString(CPUMCPUVENDOR enmCpuVendor)
 }
 
 
+/**
+ * Takes a shot a the bus frequency name (last part).
+ *
+ * @returns Name suffix.
+ */
+static const char *vbCpuRepGuessScalableBusFrequencyName(void)
+{
+    if (CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch))
+        return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_SandyBridge ? "100MHZ" : "133MHZ";
+
+    if (g_uMsrIntelP6FsbFrequency != UINT64_MAX)
+        switch (g_uMsrIntelP6FsbFrequency & 0x7)
+        {
+            case 5: return "100MHZ";
+            case 1: return "133MHZ";
+            case 3: return "167MHZ";
+            case 2: return "200MHZ";
+            case 0: return "267MHZ";
+            case 4: return "333MHZ";
+            case 6: return "400MHZ";
+        }
+
+    return "UNKNOWN";
+}
+
+
 static int produceCpuReport(void)
 {
     /*
@@ -4507,6 +4535,7 @@ static int produceCpuReport(void)
                    "    /*.uModel           = */ %u,\n"
                    "    /*.uStepping        = */ %u,\n"
                    "    /*.enmMicroarch     = */ kCpumMicroarch_%s,\n"
+                   "    /*.uScalableBusFreq = */ CPUM_SBUSFREQ_%s,\n"
                    "    /*.fFlags           = */ 0,\n"
                    "    /*.cMaxPhysAddrWidth= */ %u,\n"
                    "    /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_%s),\n"
@@ -4529,6 +4558,7 @@ static int produceCpuReport(void)
                    ASMGetCpuModel(uEax, enmVendor == CPUMCPUVENDOR_INTEL),
                    ASMGetCpuStepping(uEax),
                    CPUMR3MicroarchName(enmMicroarch),
+                   vbCpuRepGuessScalableBusFrequencyName(),
                    vbCpuRepGetPhysAddrWidth(),
                    szNameC,
                    szNameC,

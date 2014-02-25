@@ -57,7 +57,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Pentium_4_3_00GHz[] =
     MFO(0x00000001, "IA32_P5_MC_TYPE", Ia32P5McType), /* value=0xbe000300`1008081f */
     MFX(0x00000006, "IA32_MONITOR_FILTER_LINE_SIZE", Ia32MonitorFilterLineSize, Ia32MonitorFilterLineSize, 0, UINT64_C(0xffffffffffff0000), 0), /* value=0x40 */
     MFN(0x00000010, "IA32_TIME_STAMP_COUNTER", Ia32TimestampCounter, Ia32TimestampCounter), /* value=0x1ac`2077a134 */
-    MVI(0x00000017, "IA32_PLATFORM_ID", UINT64_C(0x12000000000000)),
+    MFV(0x00000017, "IA32_PLATFORM_ID", Ia32PlatformId, ReadOnly, UINT64_C(0x12000000000000)),
     MFX(0x0000001b, "IA32_APIC_BASE", Ia32ApicBase, Ia32ApicBase, UINT32_C(0xfee00800), 0x600, UINT64_C(0xffffff00000000ff)),
     MFX(0x0000002a, "P4_EBC_HARD_POWERON", IntelP4EbcHardPowerOn, IntelP4EbcHardPowerOn, 0, UINT64_MAX, 0), /* value=0x0 */
     MFX(0x0000002b, "P4_EBC_SOFT_POWERON", IntelP4EbcSoftPowerOn, IntelP4EbcSoftPowerOn, 0x7e, UINT64_C(0xffffffffffffff80), 0), /* value=0x7e */
@@ -257,6 +257,7 @@ static CPUMDBENTRY const g_Entry_Intel_Pentium_4_3_00GHz =
     /*.uModel           = */ 4,
     /*.uStepping        = */ 3,
     /*.enmMicroarch     = */ kCpumMicroarch_Intel_NB_Prescott2M,
+    /*.uScalableBusFreq = */ CPUM_SBUSFREQ_UNKNOWN,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 36,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Pentium_4_3_00GHz),

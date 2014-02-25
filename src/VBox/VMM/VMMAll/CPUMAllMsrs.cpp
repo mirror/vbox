@@ -181,6 +181,21 @@ static DECLCALLBACK(int) cpumMsrWr_Ia32TimestampCounter(PVMCPU pVCpu, uint32_t i
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_Ia32PlatformId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    uint64_t uValue = pRange->uValue;
+    if (uValue & 0x1f00)
+    {
+        /* Max allowed bus ratio present. */
+        /** @todo Implement scaled BUS frequency. */
+    }
+
+    *puValue = uValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(int) cpumMsrRd_Ia32ApicBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -713,8 +728,20 @@ static DECLCALLBACK(int) cpumMsrWr_Ia32PerfEvtSelN(PVMCPU pVCpu, uint32_t idMsr,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(int) cpumMsrRd_Ia32PerfStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    /** @todo implement IA32_PERFSTATUS. */
-    *puValue = pRange->uValue;
+    uint64_t uValue = pRange->uValue;
+
+    /* Always provide the max bus ratio for now.  XNU expects it. */
+    uValue &= ~((UINT64_C(0x1f) << 40) | RT_BIT_64(46));
+
+    PVM      pVM            = pVCpu->CTX_SUFF(pVM);
+    uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVM);
+    uint64_t uTscHz         = TMCpuTicksPerSecond(pVM);
+    uint8_t  uTscRatio      = (uint8_t)((uTscHz + uScalableBusHz / 2) / uScalableBusHz);
+    if (uTscRatio > 0x1f)
+        uTscRatio = 0x1f;
+    uValue |= (uint64_t)uTscRatio << 40;
+
+    *puValue = uValue;
     return VINF_SUCCESS;
 }
 
@@ -1529,8 +1556,57 @@ static DECLCALLBACK(int) cpumMsrWr_IntelP4EbcSoftPowerOn(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(int) cpumMsrRd_IntelP4EbcFrequencyId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    /** @todo P4 bus frequency config  */
-    *puValue = pRange->uValue;
+    uint64_t uValue;
+    PVM      pVM            = pVCpu->CTX_SUFF(pVM);
+    uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVM);
+    if (pVM->cpum.s.GuestFeatures.uModel >= 2)
+    {
+        if (uScalableBusHz <= CPUM_SBUSFREQ_100MHZ && pVM->cpum.s.GuestFeatures.uModel <= 2)
+        {
+            uScalableBusHz = CPUM_SBUSFREQ_100MHZ;
+            uValue = 0;
+        }
+        else if (uScalableBusHz <= CPUM_SBUSFREQ_133MHZ)
+        {
+            uScalableBusHz = CPUM_SBUSFREQ_133MHZ;
+            uValue = 1;
+        }
+        else if (uScalableBusHz <= CPUM_SBUSFREQ_167MHZ)
+        {
+            uScalableBusHz = CPUM_SBUSFREQ_167MHZ;
+            uValue = 3;
+        }
+        else if (uScalableBusHz <= CPUM_SBUSFREQ_200MHZ)
+        {
+            uScalableBusHz = CPUM_SBUSFREQ_200MHZ;
+            uValue = 2;
+        }
+        else if (uScalableBusHz <= CPUM_SBUSFREQ_267MHZ && pVM->cpum.s.GuestFeatures.uModel > 2)
+        {
+            uScalableBusHz = CPUM_SBUSFREQ_267MHZ;
+            uValue = 0;
+        }
+        else
+        {
+            uScalableBusHz = CPUM_SBUSFREQ_333MHZ;
+            uValue = 6;
+        }
+        uValue <<= 16;
+
+        uint64_t uTscHz    = TMCpuTicksPerSecond(pVM);
+        uint8_t  uTscRatio = (uint8_t)((uTscHz + uScalableBusHz / 2) / uScalableBusHz);
+        uValue |= (uint32_t)uTscRatio << 24;
+
+        uValue |= pRange->uValue & ~UINT64_C(0xff0f0000);
+    }
+    else
+    {
+        /* Probably more stuff here, but intel doesn't want to tell us. */
+        uValue = pRange->uValue;
+        uValue &= ~(RT_BIT_64(21) | RT_BIT_64(22) | RT_BIT_64(23)); /* 100 MHz is only documented value */
+    }
+
+    *puValue = uValue;
     return VINF_SUCCESS;
 }
 
@@ -1544,44 +1620,61 @@ static DECLCALLBACK(int) cpumMsrWr_IntelP4EbcFrequencyId(PVMCPU pVCpu, uint32_t 
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(int) cpumMsrRd_IntelPlatformInfo100MHz(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+static DECLCALLBACK(int) cpumMsrRd_IntelP6FsbFrequency(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    /* Convert the scalable bus frequency to the encoding in the intel manual (for core+). */
+    uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVCpu->CTX_SUFF(pVM));
+    if (uScalableBusHz <= CPUM_SBUSFREQ_100MHZ)
+        *puValue = 5;
+    else if (uScalableBusHz <= CPUM_SBUSFREQ_133MHZ)
+        *puValue = 1;
+    else if (uScalableBusHz <= CPUM_SBUSFREQ_167MHZ)
+        *puValue = 3;
+    else if (uScalableBusHz <= CPUM_SBUSFREQ_200MHZ)
+        *puValue = 2;
+    else if (uScalableBusHz <= CPUM_SBUSFREQ_267MHZ)
+        *puValue = 0;
+    else if (uScalableBusHz <= CPUM_SBUSFREQ_333MHZ)
+        *puValue = 4;
+    else /*if (uScalableBusHz <= CPUM_SBUSFREQ_400MHZ)*/
+        *puValue = 6;
 
+    *puValue |= pRange->uValue & ~UINT64_C(0x7);
+
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelPlatformInfo(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
     /* Just indicate a fixed TSC, no turbo boost, no programmable anything. */
-    uint64_t uTscHz = TMCpuTicksPerSecond(pVM);
-    uint8_t  uTsc100MHz = (uint8_t)(uTscHz / UINT32_C(100000000));
-    *puValue = ((uint32_t)uTsc100MHz << 8)   /* TSC invariant frequency. */
-             | ((uint64_t)uTsc100MHz << 40); /* The max turbo frequency. */
+    PVM      pVM            = pVCpu->CTX_SUFF(pVM);
+    uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVM);
+    uint64_t uTscHz         = TMCpuTicksPerSecond(pVM);
+    uint8_t  uTscRatio      = (uint8_t)((uTscHz + uScalableBusHz / 2) / uScalableBusHz);
+    uint64_t uValue         = ((uint32_t)uTscRatio << 8)   /* TSC invariant frequency. */
+                            | ((uint64_t)uTscRatio << 40); /* The max turbo frequency. */
 
     /* Ivy bridge has a minimum operating ratio as well. */
     if (true) /** @todo detect sandy bridge. */
-        *puValue |= (uint64_t)uTsc100MHz << 48;
+        uValue |= (uint64_t)uTscRatio << 48;
 
+    *puValue = uValue;
     return VINF_SUCCESS;
 }
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(int) cpumMsrRd_IntelPlatformInfo133MHz(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
-{
-    /* Just indicate a fixed TSC, no turbo boost, no programmable anything. */
-    uint64_t uTscHz = TMCpuTicksPerSecond(pVCpu->CTX_SUFF(pVM));
-    uint8_t  uTsc133MHz = (uint8_t)(uTscHz / UINT32_C(133333333));
-    *puValue = ((uint32_t)uTsc133MHz << 8)   /* TSC invariant frequency. */
-             | ((uint64_t)uTsc133MHz << 40); /* The max turbo frequency. */
-    return VINF_SUCCESS;
-}
-
-
-/** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(int) cpumMsrRd_IntelFlexRatio100MHz(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+static DECLCALLBACK(int) cpumMsrRd_IntelFlexRatio(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     uint64_t uValue = pRange->uValue & ~UINT64_C(0x1ff00);
 
-    uint64_t uTscHz = TMCpuTicksPerSecond(pVCpu->CTX_SUFF(pVM));
-    uint8_t  uTsc100MHz = (uint8_t)(uTscHz / UINT32_C(100000000));
-    uValue |= (uint32_t)uTsc100MHz << 8;
+    PVM      pVM            = pVCpu->CTX_SUFF(pVM);
+    uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVM);
+    uint64_t uTscHz         = TMCpuTicksPerSecond(pVM);
+    uint8_t  uTscRatio      = (uint8_t)((uTscHz + uScalableBusHz / 2) / uScalableBusHz);
+    uValue |= (uint32_t)uTscRatio << 8;
 
     *puValue = uValue;
     return VINF_SUCCESS;
@@ -1589,29 +1682,7 @@ static DECLCALLBACK(int) cpumMsrRd_IntelFlexRatio100MHz(PVMCPU pVCpu, uint32_t i
 
 
 /** @callback_method_impl{FNCPUMWRMSR} */
-static DECLCALLBACK(int) cpumMsrWr_IntelFlexRatio100MHz(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
-{
-    /** @todo implement writing MSR_FLEX_RATIO. */
-    return VINF_SUCCESS;
-}
-
-
-/** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(int) cpumMsrRd_IntelFlexRatio133MHz(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
-{
-    uint64_t uValue = pRange->uValue & ~UINT64_C(0x1ff00);
-
-    uint64_t uTscHz = TMCpuTicksPerSecond(pVCpu->CTX_SUFF(pVM));
-    uint8_t  uTsc133MHz = (uint8_t)(uTscHz / UINT32_C(133333333));
-    uValue |= (uint32_t)uTsc133MHz << 8;
-
-    *puValue = uValue;
-    return VINF_SUCCESS;
-}
-
-
-/** @callback_method_impl{FNCPUMWRMSR} */
-static DECLCALLBACK(int) cpumMsrWr_IntelFlexRatio133MHz(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+static DECLCALLBACK(int) cpumMsrWr_IntelFlexRatio(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
     /** @todo implement writing MSR_FLEX_RATIO. */
     return VINF_SUCCESS;
@@ -4308,6 +4379,7 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_Ia32P5McAddr,
     cpumMsrRd_Ia32P5McType,
     cpumMsrRd_Ia32TimestampCounter,
+    cpumMsrRd_Ia32PlatformId,
     cpumMsrRd_Ia32ApicBase,
     cpumMsrRd_Ia32FeatureControl,
     cpumMsrRd_Ia32BiosSignId,
@@ -4387,10 +4459,9 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_IntelP4EbcHardPowerOn,
     cpumMsrRd_IntelP4EbcSoftPowerOn,
     cpumMsrRd_IntelP4EbcFrequencyId,
-    cpumMsrRd_IntelPlatformInfo100MHz,
-    cpumMsrRd_IntelPlatformInfo133MHz,
-    cpumMsrRd_IntelFlexRatio100MHz,
-    cpumMsrRd_IntelFlexRatio133MHz,
+    cpumMsrRd_IntelP6FsbFrequency,
+    cpumMsrRd_IntelPlatformInfo,
+    cpumMsrRd_IntelFlexRatio,
     cpumMsrRd_IntelPkgCStConfigControl,
     cpumMsrRd_IntelPmgIoCaptureBase,
     cpumMsrRd_IntelLastBranchFromToN,
@@ -4626,8 +4697,7 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_IntelP4EbcHardPowerOn,
     cpumMsrWr_IntelP4EbcSoftPowerOn,
     cpumMsrWr_IntelP4EbcFrequencyId,
-    cpumMsrWr_IntelFlexRatio100MHz,
-    cpumMsrWr_IntelFlexRatio133MHz,
+    cpumMsrWr_IntelFlexRatio,
     cpumMsrWr_IntelPkgCStConfigControl,
     cpumMsrWr_IntelPmgIoCaptureBase,
     cpumMsrWr_IntelLastBranchFromToN,
@@ -4999,6 +5069,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(Ia32P5McAddr);
     CPUM_ASSERT_RD_MSR_FN(Ia32P5McType);
     CPUM_ASSERT_RD_MSR_FN(Ia32TimestampCounter);
+    CPUM_ASSERT_RD_MSR_FN(Ia32PlatformId);
     CPUM_ASSERT_RD_MSR_FN(Ia32ApicBase);
     CPUM_ASSERT_RD_MSR_FN(Ia32FeatureControl);
     CPUM_ASSERT_RD_MSR_FN(Ia32BiosSignId);
@@ -5077,10 +5148,9 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(IntelP4EbcHardPowerOn);
     CPUM_ASSERT_RD_MSR_FN(IntelP4EbcSoftPowerOn);
     CPUM_ASSERT_RD_MSR_FN(IntelP4EbcFrequencyId);
-    CPUM_ASSERT_RD_MSR_FN(IntelPlatformInfo100MHz);
-    CPUM_ASSERT_RD_MSR_FN(IntelPlatformInfo133MHz);
-    CPUM_ASSERT_RD_MSR_FN(IntelFlexRatio100MHz);
-    CPUM_ASSERT_RD_MSR_FN(IntelFlexRatio133MHz);
+    CPUM_ASSERT_RD_MSR_FN(IntelP6FsbFrequency);
+    CPUM_ASSERT_RD_MSR_FN(IntelPlatformInfo);
+    CPUM_ASSERT_RD_MSR_FN(IntelFlexRatio);
     CPUM_ASSERT_RD_MSR_FN(IntelPkgCStConfigControl);
     CPUM_ASSERT_RD_MSR_FN(IntelPmgIoCaptureBase);
     CPUM_ASSERT_RD_MSR_FN(IntelLastBranchFromToN);
@@ -5305,8 +5375,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(IntelP4EbcHardPowerOn);
     CPUM_ASSERT_WR_MSR_FN(IntelP4EbcSoftPowerOn);
     CPUM_ASSERT_WR_MSR_FN(IntelP4EbcFrequencyId);
-    CPUM_ASSERT_WR_MSR_FN(IntelFlexRatio100MHz);
-    CPUM_ASSERT_WR_MSR_FN(IntelFlexRatio133MHz);
+    CPUM_ASSERT_WR_MSR_FN(IntelFlexRatio);
     CPUM_ASSERT_WR_MSR_FN(IntelPkgCStConfigControl);
     CPUM_ASSERT_WR_MSR_FN(IntelPmgIoCaptureBase);
     CPUM_ASSERT_WR_MSR_FN(IntelLastBranchFromToN);
@@ -5452,25 +5521,20 @@ int cpumR3MsrStrictInitChecks(void)
 
 
 /**
- * Gets the bus frequency.
+ * Gets the scalable bus frequency.
  *
  * The bus frequency is used as a base in several MSRs that gives the CPU and
  * other frequency ratios.
  *
- * @returns Bus frequency in Hz.
+ * @returns Scalable bus frequency in Hz. Will not return CPUM_SBUSFREQ_UNKNOWN.
  * @param   pVM                 Pointer to the shared VM structure.
  */
-VMMDECL(uint64_t) CPUMGetGuestBusFrequency(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestScalableBusFrequency(PVM pVM)
 {
-    if (CPUMMICROARCH_IS_INTEL_CORE7(pVM->cpum.s.GuestFeatures.enmMicroarch))
-    {
-        return pVM->cpum.s.GuestFeatures.enmMicroarch >= kCpumMicroarch_Intel_Core7_SandyBridge
-            ? UINT64_C(100000000)  /* 100MHz */
-            : UINT64_C(133333333); /* 133MHz */
-    }
-
-    /* 133MHz */
-    return UINT64_C(133333333);
+    uint64_t uFreq = pVM->cpum.s.GuestInfo.uScalableBusFreq;
+    if (uFreq == CPUM_SBUSFREQ_UNKNOWN)
+        uFreq = CPUM_SBUSFREQ_100MHZ;
+    return uFreq;
 }
 
 

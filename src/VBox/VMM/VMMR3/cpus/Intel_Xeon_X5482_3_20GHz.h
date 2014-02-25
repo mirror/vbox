@@ -60,7 +60,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Xeon_X5482_3_20GHz[] =
     MFX(0x00000001, "IA32_P5_MC_TYPE", Ia32P5McType, Ia32P5McType, 0, 0, UINT64_MAX), /* value=0x0 */
     MFX(0x00000006, "IA32_MONITOR_FILTER_LINE_SIZE", Ia32MonitorFilterLineSize, Ia32MonitorFilterLineSize, 0, 0, UINT64_C(0xffffffffffff0000)), /* value=0x40 */
     MFN(0x00000010, "IA32_TIME_STAMP_COUNTER", Ia32TimestampCounter, Ia32TimestampCounter), /* value=0x1358`d28c2c60 */
-    MVO(0x00000017, "IA32_PLATFORM_ID", UINT64_C(0x18000088e40822)),
+    MFV(0x00000017, "IA32_PLATFORM_ID", Ia32PlatformId, ReadOnly, UINT64_C(0x18000088e40822)),
     MFX(0x0000001b, "IA32_APIC_BASE", Ia32ApicBase, Ia32ApicBase, UINT32_C(0xfee00800), 0, UINT64_C(0xffffffc0000006ff)),
     MVX(0x00000021, "C2_UNK_0000_0021", 0, 0, UINT64_C(0xffffffffffffffc0)),
     MFX(0x0000002a, "EBL_CR_POWERON", IntelEblCrPowerOn, IntelEblCrPowerOn, UINT32_C(0xc2383400), UINT64_C(0xffffffffdff7df00), 0), /* value=0xc2383400 */
@@ -82,7 +82,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Xeon_X5482_3_20GHz[] =
     MFX(0x000000ad, "C2_EMTTM_CR_TABLES_5", IntelCore2EmttmCrTablesN, IntelCore2EmttmCrTablesN, 0x612, ~(uint64_t)UINT32_MAX, 0), /* value=0x612 */
     RSN(0x000000c1, 0x000000c2, "IA32_PMCn", Ia32PmcN, Ia32PmcN, 0x0, ~(uint64_t)UINT32_MAX, 0),
     MVI(0x000000c7, "P6_UNK_0000_00c7", UINT64_C(0x2300000052000000)),
-    MVO(0x000000cd, "P6_UNK_0000_00cd", 0x806),
+    MFX(0x000000cd, "P6_MSR_FSB_FREQ", IntelP6FsbFrequency, ReadOnly, 0x806, 0, 0),
     MVO(0x000000ce, "P6_UNK_0000_00ce", UINT64_C(0x1208227f7f0710)),
     MVO(0x000000cf, "C2_UNK_0000_00cf", 0),
     MVO(0x000000e0, "C2_UNK_0000_00e0", 0x18820f0),
@@ -225,6 +225,7 @@ static CPUMDBENTRY const g_Entry_Intel_Xeon_X5482_3_20GHz =
     /*.uModel           = */ 23,
     /*.uStepping        = */ 6,
     /*.enmMicroarch     = */ kCpumMicroarch_Intel_Core2_Penryn,
+    /*.uScalableBusFreq = */ CPUM_SBUSFREQ_400MHZ,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 38,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Xeon_X5482_3_20GHz),

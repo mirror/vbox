@@ -48,6 +48,8 @@ typedef struct CPUMDBENTRY
     uint8_t         uStepping;
     /** The microarchitecture. */
     CPUMMICROARCH   enmMicroarch;
+    /** Scalable bus frequency used for reporting other frequencies. */
+    uint64_t        uScalableBusFreq;
     /** Flags (TBD). */
     uint32_t        fFlags;
     /** The maximum physical address with of the CPU.  This should correspond to
@@ -667,6 +669,7 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
     pInfo->fMsrMask             = pEntry->fMsrMask;
     pInfo->iFirstExtCpuIdLeaf   = 0; /* Set by caller. */
     pInfo->uPadding             = 0;
+    pInfo->uScalableBusFreq     = pEntry->uScalableBusFreq;
     pInfo->paCpuIdLeavesR0      = NIL_RTR0PTR;
     pInfo->paMsrRangesR0        = NIL_RTR0PTR;
     pInfo->paCpuIdLeavesRC      = NIL_RTRCPTR;

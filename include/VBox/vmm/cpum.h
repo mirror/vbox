@@ -676,7 +676,21 @@ VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu);
 VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu);
 VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);
-VMMDECL(uint64_t)       CPUMGetGuestBusFrequency(PVM pVM);
+VMMDECL(uint64_t)       CPUMGetGuestScalableBusFrequency(PVM pVM);
+
+/** @name Typical scalable bus frequency values.
+ * @{ */
+/** Special internal value indicating that we don't know the frequency.
+ *  @internal  */
+#define CPUM_SBUSFREQ_UNKNOWN       UINT64_C(1)
+#define CPUM_SBUSFREQ_100MHZ        UINT64_C(100000000)
+#define CPUM_SBUSFREQ_133MHZ        UINT64_C(133333333)
+#define CPUM_SBUSFREQ_167MHZ        UINT64_C(166666666)
+#define CPUM_SBUSFREQ_200MHZ        UINT64_C(200000000)
+#define CPUM_SBUSFREQ_267MHZ        UINT64_C(266666666)
+#define CPUM_SBUSFREQ_333MHZ        UINT64_C(333333333)
+#define CPUM_SBUSFREQ_400MHZ        UINT64_C(400000000)
+/** @} */
 
 
 #ifdef IN_RING3
