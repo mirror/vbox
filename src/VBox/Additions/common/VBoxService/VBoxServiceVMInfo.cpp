@@ -1267,7 +1267,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
             }
             else
             {
-                VBoxServiceVerbose(2, "VMInfo/Network: Interface %d has no assigned IP address, skipping ...\n", i);
+                VBoxServiceVerbose(2, "VMInfo/Network: Interface \"%s\" has no assigned IP address, skipping ...\n", pCur->ifr_name);
                 continue;
             }
 # elif defined(RT_OS_OS2)
