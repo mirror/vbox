@@ -42,14 +42,14 @@ public:
     void uninit();
 
     /* Public method for internal use. */
-    static DECLCALLBACK(int) eusbCallback(void *pv, const char *pszId, uint32_t iEvent,
-                                          const void *pvData, uint32_t cbData);
+    static DECLCALLBACK(int) i_eusbCallback(void *pv, const char *pszId, uint32_t iEvent,
+                                            const void *pvData, uint32_t cbData);
 
-    HRESULT webcamAttachInternal(const com::Utf8Str &aPath,
-                                 const com::Utf8Str &aSettings,
-                                 const char *pszDriver,
-                                 void *pvObject);
-    HRESULT webcamDetachInternal(const com::Utf8Str &aPath);
+    HRESULT i_webcamAttachInternal(const com::Utf8Str &aPath,
+                                   const com::Utf8Str &aSettings,
+                                   const char *pszDriver,
+                                   void *pvObject);
+    HRESULT i_webcamDetachInternal(const com::Utf8Str &aPath);
 
 private:
 
