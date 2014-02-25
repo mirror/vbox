@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 #
-# Copyright (C) 2008-2012 Oracle Corporation
+# Copyright (C) 2008-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -53,9 +53,27 @@
 
        try
        {
+           /* The following shell script uses tools which were added in 10.8
+              (Mountain Lion) and later, in particular pgrep and pkill. */
+           if (system.compareVersions(system.version['ProductVersion'], '10.8') >= 0)
+           {
+               /* Embedded scripts are not available here. So, just do a
+                  command line checking if any VBoxXPCOMIPCD has more than one
+                  client, and if there are none, kill all the usual suspects to
+                  get a clean slate. This is done because the VirtualBox event
+                  handling had a bug which allowed no longer present passive
+                  event listeners to block VBoxSVC processes from exiting until
+                  the waiting time was elapsed. In the extreme case this was
+                  infinitely long, blocking updates. */
+               system.run('/bin/sh', '-c', 'pids=`/usr/bin/pgrep VBoxXPCOMIPCD` rc=0; [ -n "$pid" ] || for i in $pids; do c=`/usr/sbin/lsof -p $i | /usr/bin/grep -E \'^[^ ]+ +[^ ]+ +[^ ]+ +[^ ]+ +unix\' | wc -l`; [ $c -le 2 ] || rc=1; done; if [ $rc -eq 0 ]; then pkill \'^(VirtualBox)|(VBoxNetDHCP)|(VBoxNetNAT)|(VBoxHeadless)|(VBoxXPCOMIPCD)|(VBoxSVC)$\'; sleep 1; fi');
+           }
+       } catch (e) { system.log(e); }
+
+       try
+       {
            /* Embedded scripts are not available here. So, just do a command
               line checking for running VMs instead. */
-           rcScript = system.run('/bin/sh', '-c', '/bin/ps -e | /usr/bin/grep -E "VirtualBox.*startvm|VBoxNetDHCP|VBoxNetNAT|VBoxHeadless|VBoxSVC" | /usr/bin/grep -qv grep');
+           rcScript = system.run('/bin/sh', '-c', '/bin/ps -e | /usr/bin/grep -E \'V[i]rtualBox.*startvm|VBoxNetDHCP|VBoxNetNAT|VBoxHeadless|VBoxSVC\'');
            result = (rcScript != 0);
            system.log("system.run /bin/sh .. returned: " + rcScript + " result=" + result);
        } catch (e) { system.log(e); result = false; }
