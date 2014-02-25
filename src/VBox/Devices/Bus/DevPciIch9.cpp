@@ -1347,7 +1347,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PICH9PCIBUS pBus, PSSMHANDLE pS
             pDev = pBus->apDevices[i];
             if (pDev)
             {
-                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pDev->name,
+                LogRel(("PCI: New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pDev->name,
                         PCIDevGetVendorId(pDev), PCIDevGetDeviceId(pDev)));
                 if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
                 {
@@ -1391,7 +1391,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PICH9PCIBUS pBus, PSSMHANDLE pS
         pDev = pBus->apDevices[i];
         if (!pDev)
         {
-            LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
+            LogRel(("PCI: Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
                     PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp)));
             if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
             {
@@ -1841,7 +1841,7 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
 {
     if ((u32Address + len) > 256 && (u32Address + len) < 4096)
     {
-        LogRel(("Read from extended register %d fallen back to generic code\n",
+        LogRel(("PCI: Read from extended register %d fallen back to generic code\n",
                 u32Address));
         return 0;
     }
@@ -1934,7 +1934,7 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
 
     if ((u32Address + len) > 256 && (u32Address + len) < 4096)
     {
-        LogRel(("Write to extended register %d fallen back to generic code\n",
+        LogRel(("PCI: Write to extended register %d fallen back to generic code\n",
                 u32Address));
         return;
     }
