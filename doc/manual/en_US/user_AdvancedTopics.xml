@@ -3144,12 +3144,14 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
       <table>
         <title>VirtualBox watchdog configuration parameters</title>
         <tgroup cols="3">
-          <tbody>
+          <thead>
             <row>
               <entry><emphasis role="bold">Parameter</emphasis></entry>
               <entry><emphasis role="bold">Description</emphasis></entry>
               <entry><emphasis role="bold">Default</emphasis></entry>
             </row>
+          </thead>
+          <tbody>
             <row>
               <entry><computeroutput>USER</computeroutput></entry>
               <entry>The user as which the watchdog service runs</entry>
