@@ -188,19 +188,23 @@
     <sect2>
       <title>Summary of 4.0 configuration changes</title>
 
+      <para>The following table gives a brief overview of the configuration
+      changes between older versions and version 4.0 or above:</para>
+
       <table>
-        <title>ignoreme</title>
+        <title>Configuration changes in version 4.0 or above</title>
 
         <tgroup cols="3">
-          <tbody>
+          <thead>
             <row>
-              <entry></entry>
+              <entry><emphasis role="bold">Setting</emphasis></entry>
 
               <entry><emphasis role="bold">Before 4.0</emphasis></entry>
 
               <entry><emphasis role="bold">4.0 or above</emphasis></entry>
             </row>
-
+          </thead>
+          <tbody>
             <row>
               <entry>Default machines folder</entry>
 

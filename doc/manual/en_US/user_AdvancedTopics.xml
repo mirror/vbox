@@ -2639,14 +2639,16 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           host key shortcut. Setting an action to <emphasis>None</emphasis> will disable
           that host key action.</para>
         <table>
-          <title>ignoreme</title>
+          <title>Host Key customization</title>
           <tgroup cols="3">
-            <tbody>
+            <thead>
               <row>
                 <entry><emphasis role="bold">Action</emphasis></entry>
                 <entry><emphasis role="bold">Default Key</emphasis></entry>
                 <entry><emphasis role="bold">Action</emphasis></entry>
               </row>
+            </thead>
+            <tbody>
               <row>
                 <entry><computeroutput>TakeSnapshot</computeroutput></entry>
                 <entry>T</entry>
@@ -2842,14 +2844,16 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
       (<computeroutput>VBOXWEB_HOST</computeroutput>,
       <computeroutput>VBOXWEB_PORT</computeroutput> etc.):
       <table>
-        <title>ignored</title>
+        <title>Web service configuration parameters</title>
         <tgroup cols="3">
-          <tbody>
+          <thead>
             <row>
               <entry><emphasis role="bold">Parameter</emphasis></entry>
               <entry><emphasis role="bold">Description</emphasis></entry>
               <entry><emphasis role="bold">Default</emphasis></entry>
             </row>
+          </thead>
+          <tbody>
             <row>
               <entry><computeroutput>USER</computeroutput></entry>
               <entry>The user as which the web service runs</entry>
@@ -3138,7 +3142,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
       <computeroutput>VBOXBALLOONCTRL_INTERVAL</computeroutput> etc. parameters
       can still be used):
       <table>
-        <title>ignored</title>
+        <title>VirtualBox watchdog configuration parameters</title>
         <tgroup cols="3">
           <tbody>
             <row>
