@@ -94,6 +94,9 @@ private:
 
 #ifdef Q_WS_MAC
     void setPresentationModeEnabled(bool fEnabled);
+
+    /** Mac OS X: Invalidates 'fullscreen' mode. */
+    void invalidateFullscreenMode();
 #endif /* Q_WS_MAC */
 
     /* Variables: */
