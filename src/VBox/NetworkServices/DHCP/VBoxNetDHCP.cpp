@@ -537,8 +537,8 @@ int VBoxNetDhcp::initWithMain()
 
     com::Bstr bstr;
     hrc = virtualbox->COMGETTER(HomeFolder)(bstr.asOutParam());
-    std::string strXmlLeaseFile(com::Utf8StrFmt("%ls%c%s.leases",
-                                                bstr.raw(), RTPATH_DELIMITER, networkName.c_str()).c_str());
+    com::Utf8StrFmt strXmlLeaseFile("%ls%c%s.leases",
+                                    bstr.raw(), RTPATH_DELIMITER, networkName.c_str());
     confManager->loadFromFile(strXmlLeaseFile);
 
     return VINF_SUCCESS;
