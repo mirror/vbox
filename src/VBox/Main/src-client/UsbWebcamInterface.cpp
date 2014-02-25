@@ -258,7 +258,7 @@ void EmWebcam::EmWebcamCbDeviceDesc(int rcRequest, void *pDeviceCtx, void *pvUse
 
         /* Try to attach the device. */
         EmulatedUSB *pEUSB = mParent->getConsole()->getEmulatedUSB();
-        pEUSB->webcamAttachInternal("", "", "EmWebcam", pRemote);
+        pEUSB->i_webcamAttachInternal("", "", "EmWebcam", pRemote);
     }
     else
     {

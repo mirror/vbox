@@ -156,7 +156,7 @@ static int emulatedWebcamInsertSettings(PCFGMNODE pConfig, EUSBSettingsMap *pSet
     PCFGMNODE pEUSB;
     CFGMR3InsertNode(pConfig,       "EmulatedUSB", &pEUSB);
     CFGMR3InsertString(pEUSB,         "Id", pThis->mszUuid);
-    CFGMR3InsertInteger(pEUSB,        "pfnCallback", (uintptr_t)EmulatedUSB::eusbCallback);
+    CFGMR3InsertInteger(pEUSB,        "pfnCallback", (uintptr_t)EmulatedUSB::i_eusbCallback);
     CFGMR3InsertInteger(pEUSB,        "pvCallback", (uintptr_t)pThis->mpEmulatedUSB);
 
     PCFGMNODE pLunL0;
@@ -441,13 +441,13 @@ static const Utf8Str s_pathDefault(".0");
 HRESULT EmulatedUSB::webcamAttach(const com::Utf8Str &aPath,
                                   const com::Utf8Str &aSettings)
 {
-    return webcamAttachInternal(aPath, aSettings, "HostWebcam", NULL);
+    return i_webcamAttachInternal(aPath, aSettings, "HostWebcam", NULL);
 }
 
-HRESULT EmulatedUSB::webcamAttachInternal(const com::Utf8Str &aPath,
-                                          const com::Utf8Str &aSettings,
-                                          const char *pszDriver,
-                                          void *pvObject)
+HRESULT EmulatedUSB::i_webcamAttachInternal(const com::Utf8Str &aPath,
+                                            const com::Utf8Str &aSettings,
+                                            const char *pszDriver,
+                                            void *pvObject)
 {
     HRESULT hrc = S_OK;
 
@@ -523,10 +523,10 @@ HRESULT EmulatedUSB::webcamAttachInternal(const com::Utf8Str &aPath,
 
 HRESULT EmulatedUSB::webcamDetach(const com::Utf8Str &aPath)
 {
-    return webcamDetachInternal(aPath);
+    return i_webcamDetachInternal(aPath);
 }
 
-HRESULT EmulatedUSB::webcamDetachInternal(const com::Utf8Str &aPath)
+HRESULT EmulatedUSB::i_webcamDetachInternal(const com::Utf8Str &aPath)
 {
     HRESULT hrc = S_OK;
 
@@ -604,8 +604,8 @@ HRESULT EmulatedUSB::webcamDetachInternal(const com::Utf8Str &aPath)
     return rc;
 }
 
-/* static */ DECLCALLBACK(int) EmulatedUSB::eusbCallback(void *pv, const char *pszId, uint32_t iEvent,
-                                                         const void *pvData, uint32_t cbData)
+/* static */ DECLCALLBACK(int) EmulatedUSB::i_eusbCallback(void *pv, const char *pszId, uint32_t iEvent,
+                                                           const void *pvData, uint32_t cbData)
 {
     /* Make a copy of parameters, forward to EMT and leave the callback to not hold any lock in the device. */
     int rc = VINF_SUCCESS;
