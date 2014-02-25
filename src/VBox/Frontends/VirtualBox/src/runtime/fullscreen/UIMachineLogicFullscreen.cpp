@@ -149,7 +149,8 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
             foreach (UIMachineWindow *pMachineWindow, machineWindows())
                 pMachineWindow->showInNecessaryMode();
             foreach (UIMachineWindow *pMachineWindow, machineWindows())
-                if (   (darwinScreensHaveSeparateSpaces() || pMachineWindow->screenId() == 0)
+                if (   uisession()->isScreenVisible(pMachineWindow->screenId())
+                    && (darwinScreensHaveSeparateSpaces() || pMachineWindow->screenId() == 0)
                     && !darwinIsInFullscreenMode(pMachineWindow))
                     darwinToggleFullscreenMode(pMachineWindow);
         }
@@ -261,15 +262,8 @@ void UIMachineLogicFullscreen::sltScreenLayoutChanged()
         /* Update 'presentation mode': */
         setPresentationModeEnabled(true);
     }
-    /* For ML and next: */
-    else
-    {
-        /* Invalidate and exit fullscreen mode: */
-        m_fIsFullscreenInvalidated = true;
-        foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            if (darwinIsInFullscreenMode(pMachineWindow))
-                darwinToggleFullscreenMode(pMachineWindow);
-    }
+    /* Invalidate fullscreen mode for ML and next: */
+    else invalidateFullscreenMode();
 #else /* !Q_WS_MAC */
     /* Update machine-window(s) location/size: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -286,8 +280,16 @@ void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventTy
         changeType == KGuestMonitorChangedEventType_Disabled)
         m_pScreenLayout->rebuild();
 
+#ifdef Q_WS_MAC
+    /* Call to base-class for Lion and previous: */
+    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+        UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
+    /* Invalidate fullscreen mode for ML and next: */
+    else invalidateFullscreenMode();
+#else /* !Q_WS_MAC */
     /* Call to base-class: */
     UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
+#endif /* !Q_WS_MAC */
 }
 
 void UIMachineLogicFullscreen::sltHostScreenCountChanged()
@@ -297,8 +299,16 @@ void UIMachineLogicFullscreen::sltHostScreenCountChanged()
     /* Update multi-screen layout before any window update: */
     m_pScreenLayout->rebuild();
 
+#ifdef Q_WS_MAC
+    /* Call to base-class for Lion and previous: */
+    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+        UIMachineLogic::sltHostScreenCountChanged();
+    /* Invalidate fullscreen mode for ML and next: */
+    else invalidateFullscreenMode();
+#else /* !Q_WS_MAC */
     /* Call to base-class: */
     UIMachineLogic::sltHostScreenCountChanged();
+#endif /* !Q_WS_MAC */
 }
 
 void UIMachineLogicFullscreen::prepareActionGroups()
@@ -478,6 +488,21 @@ void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
     }
     else
         SetSystemUIMode(kUIModeNormal, 0);
+}
+
+void UIMachineLogicFullscreen::invalidateFullscreenMode()
+{
+    /* Make sure 'fullscreen' mode is not invalidated yet: */
+    if (m_fIsFullscreenInvalidated)
+        return;
+
+    /* Mark 'fullscreen' mode as invalidated: */
+    m_fIsFullscreenInvalidated = true;
+
+    /* Exit fullscreen mode: */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        if (darwinIsInFullscreenMode(pMachineWindow))
+            darwinToggleFullscreenMode(pMachineWindow);
 }
 #endif /* Q_WS_MAC */
 
