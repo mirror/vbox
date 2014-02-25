@@ -184,11 +184,8 @@ VBoxProc(DeviceIntPtr device, int what)
         if (device->public.on)
             break;
         /* Tell the host that we want absolute co-ordinates */
-        rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-        if (RT_SUCCESS(rc))
-            rc = VbglR3SetMouseStatus(  fFeatures
-                                      | VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                      | VMMDEV_MOUSE_NEW_PROTOCOL);
+        rc = VbglR3SetMouseStatus(  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
+                                  | VMMDEV_MOUSE_NEW_PROTOCOL);
         if (!RT_SUCCESS(rc)) {
             xf86Msg(X_ERROR, "%s: Failed to switch guest mouse into absolute mode\n",
                     pInfo->name);
