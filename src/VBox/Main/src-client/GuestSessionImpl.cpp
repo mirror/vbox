@@ -292,7 +292,7 @@ void GuestSession::uninit(void)
     {
         Assert(mData.mNumObjects);
         mData.mNumObjects--;
-        itDirs->second->onRemove();
+        itDirs->second->i_onRemove();
         itDirs->second->uninit();
     }
     mData.mDirectories.clear();
@@ -304,7 +304,7 @@ void GuestSession::uninit(void)
     {
         Assert(mData.mNumObjects);
         mData.mNumObjects--;
-        itFiles->second->onRemove();
+        itFiles->second->i_onRemove();
         itFiles->second->uninit();
     }
     mData.mFiles.clear();
@@ -316,7 +316,7 @@ void GuestSession::uninit(void)
     {
         Assert(mData.mNumObjects);
         mData.mNumObjects--;
-        itProcs->second->onRemove();
+        itProcs->second->i_onRemove();
         itProcs->second->uninit();
     }
     mData.mProcesses.clear();
@@ -809,7 +809,7 @@ int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
             LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %zu processes, %RU32 objects)\n",
                          Utf8Str(strName).c_str(), mData.mSession.mID, mData.mDirectories.size() - 1, mData.mNumObjects - 1));
 
-            rc = pDirectory->onRemove();
+            rc = pDirectory->i_onRemove();
             mData.mDirectories.erase(itDirs);
             mData.mNumObjects--;
 
@@ -1042,7 +1042,7 @@ int GuestSession::dispatchToDirectory(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUEST
 
         alock.release();
 
-        rc = pDirectory->callbackDispatcher(pCtxCb, pSvcCb);
+        rc = pDirectory->i_callbackDispatcher(pCtxCb, pSvcCb);
     }
     else
         rc = VERR_NOT_FOUND;
@@ -1075,7 +1075,7 @@ int GuestSession::dispatchToFile(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLH
 
         alock.release();
 
-        rc = pFile->callbackDispatcher(pCtxCb, pSvcCb);
+        rc = pFile->i_callbackDispatcher(pCtxCb, pSvcCb);
     }
     else
         rc = VERR_NOT_FOUND;
@@ -1166,7 +1166,7 @@ int GuestSession::dispatchToProcess(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCT
         pCtxCb->uProtocol = mData.mProtocolVersion;
 
         alock.release();
-        rc = pProcess->callbackDispatcher(pCtxCb, pSvcCb);
+        rc = pProcess->i_callbackDispatcher(pCtxCb, pSvcCb);
     }
     else
         rc = VERR_NOT_FOUND;
@@ -1246,7 +1246,7 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
             LogFlowThisFunc(("Removing guest file \"%s\" (Session: %RU32) (now total %zu files, %RU32 objects)\n",
                              Utf8Str(strName).c_str(), mData.mSession.mID, mData.mFiles.size() - 1, mData.mNumObjects - 1));
 
-            rc = pFile->onRemove();
+            rc = pFile->i_onRemove();
             mData.mFiles.erase(itFiles);
             mData.mNumObjects--;
 
@@ -1384,7 +1384,7 @@ int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo,
     if (RT_SUCCESS(rc))
     {
         int guestRc;
-        rc = pFile->openFile(30 * 1000 /* 30s timeout */, &guestRc);
+        rc = pFile->i_openFile(30 * 1000 /* 30s timeout */, &guestRc);
         if (   rc == VERR_GSTCTL_GUEST_ERROR
             && pGuestRc)
         {
@@ -1874,7 +1874,7 @@ int GuestSession::processRemoveFromList(GuestProcess *pProcess)
             LogFlowFunc(("Removing process ID=%RU32 (Session: %RU32), guest PID=%RU32 (now total %zu processes, %RU32 objects)\n",
                          pProcess->getObjectID(), mData.mSession.mID, uPID, mData.mProcesses.size() - 1, mData.mNumObjects - 1));
 
-            rc = pProcess->onRemove();
+            rc = pProcess->i_onRemove();
             mData.mProcesses.erase(itProcs);
             mData.mNumObjects--;
 
@@ -2947,7 +2947,7 @@ STDMETHODIMP GuestSession::DirectoryRemoveRecursive(IN_BSTR aPath, ComSafeArrayI
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestFile::setErrorExternal(this, guestRc);
+                hr = GuestFile::i_setErrorExternal(this, guestRc);
                 break;
 
             default:
@@ -3284,7 +3284,7 @@ STDMETHODIMP GuestSession::FileOpenEx(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR 
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestFile::setErrorExternal(this, guestRc);
+                hr = GuestFile::i_setErrorExternal(this, guestRc);
                 break;
 
             default:
