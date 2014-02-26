@@ -946,7 +946,7 @@ static int vbglR3DnDGHSendDataInternal(uint32_t u32ClientId,
 
     int rc;
 
-    uint32_t cbMaxChunk = _64K; /* Transfer max. 64K chunks per message. */
+    uint32_t cbMaxChunk = _64K; /** @todo Transfer max. 64K chunks per message. Configurable? */
     uint32_t cbSent     = 0;
 
     while (cbSent < cbData)
@@ -967,8 +967,8 @@ static int vbglR3DnDGHSendDataInternal(uint32_t u32ClientId,
     if (RT_SUCCESS(rc))
         Assert(cbSent == cbData);
 
-    LogFlowFunc(("Returning rc=%Rrc, cbData=%RU32, cbAddtionalData=%RU32\n",
-                 rc, cbData, cbAdditionalData));
+    LogFlowFunc(("Returning rc=%Rrc, cbData=%RU32, cbAddtionalData=%RU32, cbSent=%RU32\n",
+                 rc, cbData, cbAdditionalData, cbSent));
     return rc;
 }
 
@@ -1143,8 +1143,7 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(uint32_t u32ClientId,
     if (RT_FAILURE(rc))
     {
         int rc2 = VbglR3DnDGHSendError(u32ClientId, rc);
-        if (RT_SUCCESS(rc2))
-            rc2 = rc;
+        AssertRC(rc2);
     }
 
     return rc;

@@ -55,12 +55,6 @@ public:
     int RetrieveData(const QString &strMimeType,
                      QVariant::Type vaType, QVariant &vaData);
 
-public slots:
-
-#ifndef RT_OS_WINDOWS
-    void sltDataAvailable(const QString &mimetype);
-#endif
-
 private:
 
     QWidget          *m_pParent;

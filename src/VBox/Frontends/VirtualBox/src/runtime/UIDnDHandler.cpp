@@ -233,19 +233,12 @@ int UIDnDHandler::dragGHPending(CSession &session, ulong screenId, QWidget *pPar
 
     if (!lstFmtNative.isEmpty())
     {
-        try
-        {
-            UIDnDDrag *pDrag = new UIDnDDrag(session, lstFmtNative,
-                                             toQtDnDAction(defaultAction),
-                                             toQtDnDActions(vecActions), pParent);
-            rc = pDrag->DoDragDrop();
+        UIDnDDrag *pDrag = new UIDnDDrag(session, lstFmtNative,
+                                         toQtDnDAction(defaultAction),
+                                         toQtDnDActions(vecActions), pParent);
+        rc = pDrag->DoDragDrop();
 
-            delete pDrag;
-        }
-        catch (std::bad_alloc)
-        {
-            rc = VERR_NO_MEMORY;
-        }
+        delete pDrag;
     }
     else
         rc = VINF_SUCCESS;

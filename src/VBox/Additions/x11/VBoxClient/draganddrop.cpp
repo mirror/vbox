@@ -1033,12 +1033,7 @@ int DragInstance::hgDataReceived(void *pvData, uint32_t cData)
     return VINF_SUCCESS;
 }
 
-
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-/*
- * Guest -> Host
- */
-
 int DragInstance::ghIsDnDPending(void)
 {
     int rc = VINF_SUCCESS;
@@ -1083,7 +1078,10 @@ int DragInstance::ghIsDnDPending(void)
                 }
                 else
                 {
-                    xrc = XGetWindowProperty(m_pDisplay, wndOwner, xAtom(XA_XdndTypeList), 0, VBOX_MAX_XPROPERTIES, False, XA_ATOM, &type, &f, &n, &a, &ret);
+                    xrc = XGetWindowProperty(m_pDisplay, wndOwner, 
+                                             xAtom(XA_XdndTypeList), 
+                                             0, VBOX_MAX_XPROPERTIES, 
+                                             False, XA_ATOM, &type, &f, &n, &a, &ret);
                     if (   xrc == Success
                         && n > 0
                         && ret)
@@ -1097,8 +1095,12 @@ int DragInstance::ghIsDnDPending(void)
                         XFree(ret);
                     }
                 }
+
                 /* Fetch the possible list of actions, if this property is set. */
-                xrc = XGetWindowProperty(m_pDisplay, wndOwner, xAtom(XA_XdndActionList), 0, VBOX_MAX_XPROPERTIES, False, XA_ATOM, &type, &f, &n, &a, &ret);
+                xrc = XGetWindowProperty(m_pDisplay, wndOwner, 
+                                         xAtom(XA_XdndActionList), 
+                                         0, VBOX_MAX_XPROPERTIES, 
+                                         False, XA_ATOM, &type, &f, &n, &a, &ret);
                 if (   xrc == Success
                     && n > 0
                     && ret)
@@ -1109,11 +1111,13 @@ int DragInstance::ghIsDnDPending(void)
                         LogFlowThisFunc(("Receive actions: %s\n", gX11->xAtomToString(data[i]).c_str()));
                         m_actions.append(data[i]);
                     }
+
                     XFree(ret);
                 }
 
                 m_state = Dragging;
                 m_mode  = GH;
+
                 /* Acknowledge the event by sending a Status msg back to the
                  * window. */
                 XClientMessageEvent m;
@@ -1151,9 +1155,10 @@ int DragInstance::ghIsDnDPending(void)
             {
             }
         }
+
         hideProxyWin();
 
-        rc = VbglR3DnDGHAcknowledgePending(DND_COPY_ACTION, toHGCMActions(m_actions),
+        rc = VbglR3DnDGHAcknowledgePending(m_uClientID, DND_COPY_ACTION, toHGCMActions(m_actions),
                                            gX11->xAtomListToString(m_formats).c_str());
     }
 
@@ -1161,18 +1166,22 @@ int DragInstance::ghIsDnDPending(void)
     return rc;
 }
 
-int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
+int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
 {
-    LogFlowThisFunc(("format='%s' action=%d\n", strFormat.c_str(), action));
+    LogFlowThisFunc(("strFormat=%s, uAction=%RU32\n", 
+                     strFormat.c_str(), uAction));
+
     int rc = VINF_SUCCESS;
 
     /* Show the proxy window, so that the source will find it. */
     int rx, ry;
     showProxyWin(rx, ry);
     XFlush(m_pDisplay);
+
     /* We send a fake release event to the current window, cause
      * this should have the grab. */
     sendButtonEvent(m_wndCur, rx, ry, 1, false);
+
     /* The fake button release event, should lead to an XdndDrop event from the
      * source. Because of the showing of the proxy window, sometimes other Xdnd
      * events occurs before, like a XdndPosition event. We are not interested
@@ -1180,8 +1189,9 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
     XEvent e;
     XClientMessageEvent *clme = 0;
     RT_ZERO(e);
-    int tries = 3;
-    do
+
+    int cRetries = 3;
+    for (int i = 0; i < cRetries; i++) 
     {
         if (m_pParent->waitForXMsg(e, ClientMessage))
         {
@@ -1191,7 +1201,8 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
                 break;
             }
         }
-    } while (tries--);
+    }
+
     if (clme)
     {
         /* Make some paranoid checks. */
@@ -1201,7 +1212,11 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
              * place it to our proxy window as property. */
             Window srcWin = m_wndCur;//clme->data.l[0];
             Atom aFormat  = gX11->stringToxAtom(strFormat.c_str());
-            XConvertSelection(m_pDisplay, xAtom(XA_XdndSelection), aFormat, xAtom(XA_XdndSelection), m_wndProxy, clme->data.l[2]);
+
+            XConvertSelection(m_pDisplay, xAtom(XA_XdndSelection), 
+                              aFormat, xAtom(XA_XdndSelection), 
+                              m_wndProxy, clme->data.l[2]);
+
             /* Wait for the selection notify event. */
             RT_ZERO(e);
             if (m_pParent->waitForXMsg(e, SelectionNotify))
@@ -1214,6 +1229,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
                     && e.xselection.target    == aFormat)
                 {
                     LogFlowThisFunc(("Selection notfiy (from: %x)\n", m_wndCur));
+
                     Atom type;
                     int format;
                     unsigned long cItems, cbRemaining;
@@ -1241,16 +1257,21 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
                             {
                                 memcpy(ucData1, ucData, cbData);
                                 ucData1[cbData++] = '\0';
+
                                 /* Got the data and its fully transfered. */
-                                rc = VbglR3DnDGHSendData(ucData1, cbData);
+                                rc = VbglR3DnDGHSendData(m_uClientID, strFormat.c_str(), 
+                                                         ucData1, cbData);
                                 RTMemFree(ucData1);
                             }
                             else
                                 rc = VERR_NO_MEMORY;
                         }
                         else
+                        {
                             /* Just send the data to the host. */
-                            rc = VbglR3DnDGHSendData(ucData, cbData);
+                            rc = VbglR3DnDGHSendData(m_uClientID, strFormat.c_str(),
+                                                     ucData, cbData);
+                        }
 
                         LogFlowThisFunc(("send responce\n"));
                         /* Confirm the result of the transfer to the source window. */
@@ -1263,7 +1284,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
                         m.format       = 32;
                         m.data.l[0]    = m_wndProxy;
                         m.data.l[1]    = RT_SUCCESS(rc) ?                   1 : 0;    /* Confirm or deny success */
-                        m.data.l[2]    = RT_SUCCESS(rc) ? toX11Action(action) : None; /* Action used on success */
+                        m.data.l[2]    = RT_SUCCESS(rc) ? toX11Action(uAction) : None; /* Action used on success */
 
                         int xrc = XSendEvent(m_pDisplay, srcWin, True, NoEventMask, reinterpret_cast<XEvent*>(&m));
                         if (RT_UNLIKELY(xrc == 0))
@@ -1273,7 +1294,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
                     {
                         if (type == xAtom(XA_INCR))
                         {
-                            /* Todo: */
+                            /** @todo Support incremental transfers. */
                             AssertMsgFailed(("Incrementally transfers are not supported, yet\n"));
                             rc = VERR_NOT_IMPLEMENTED;
                         }
@@ -1282,6 +1303,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
                             AssertMsgFailed(("Not supported data type\n"));
                             rc = VERR_INVALID_PARAMETER;
                         }
+
                         /* Cancel this. */
                         XClientMessageEvent m;
                         RT_ZERO(m);
@@ -1293,11 +1315,13 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
                         m.data.l[0]    = m_wndProxy;
                         m.data.l[1]    = 0;
                         m.data.l[2]    = None;
+
                         int xrc = XSendEvent(m_pDisplay, srcWin, False, NoEventMask, reinterpret_cast<XEvent*>(&m));
                         if (RT_UNLIKELY(xrc == 0))
                             LogFlowThisFunc(("Error sending xevent\n"));
                         m_wndCur = 0;
                     }
+
                     /* Cleanup */
                     if (ucData)
                         XFree(ucData);
@@ -1314,9 +1338,9 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
     else
         rc = VERR_TIMEOUT;
 
-    /* Inform the host on error */
+    /* Inform the host on error. */
     if (RT_FAILURE(rc))
-        VbglR3DnDGHSendError(rc);
+        VbglR3DnDGHSendError(m_uClientID, rc);
 
     /* At this point, we have either successfully transfered any data or not.
      * So reset our internal state, cause we are done. */
@@ -1325,7 +1349,6 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
 /*
