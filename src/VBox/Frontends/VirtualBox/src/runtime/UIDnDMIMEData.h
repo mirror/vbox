@@ -50,9 +50,6 @@ class UIDnDMimeData: public QMimeData
         /** Host is in dragging state, without
          *  having retrieved the metadata from the guest yet. */
         Dragging = 0,
-        /** Guest sent over the (MIME) metadata so that the
-         *  host knows which DnD targets can be used. */
-        MetaDataRetrieved,
         /** There has been a "dropped" action which indicates
          *  that the guest can continue sending more data (if any)
          *  over to the host, based on the (MIME) metadata. */
@@ -65,7 +62,7 @@ public:
 
     UIDnDMimeData(CSession &session, QStringList formats,
                   Qt::DropAction defAction,
-                  Qt::DropActions actions, UIDnDDrag *pParent);
+                  Qt::DropActions actions, QWidget *pParent);
 
     int setData(const QString &mimeType);
 
@@ -97,9 +94,13 @@ private slots:
     void sltInstallEventFilter(void);
 #endif
 
+protected:
+
+    int retrieveDataInternal(const QString &strMimeType, QVariant::Type vaType, QVariant &vaData) const;
+
 private:
 
-    UIDnDDrag        *m_pParent;
+    QWidget          *m_pParent;
     CSession          m_session;
     QStringList       m_lstFormats;
     Qt::DropAction    m_defAction;

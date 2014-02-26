@@ -127,7 +127,7 @@ int DragAndDropService::uninit(void)
 
 int DragAndDropService::clientConnect(uint32_t u32ClientID, void *pvClient)
 {
-    LogFlowFunc(("New client (%ld) connected\n", u32ClientID));
+    LogFlowFunc(("New client (%RU32) connected\n", u32ClientID));
     if (m_cClients < UINT32_MAX)
         m_cClients++;
     else

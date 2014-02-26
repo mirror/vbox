@@ -371,7 +371,7 @@ HRESULT DnDGuestResponse::resetProgress(const ComObjPtr<Guest>& pParent)
 int DnDGuestResponse::setProgress(unsigned uPercentage,
                                   uint32_t uState, int rcOp /* = VINF_SUCCESS */)
 {
-    LogFlowFunc(("uPercentage=%RU32, uState=%ld, rcOp=%Rrc\n",
+    LogFlowFunc(("uPercentage=%RU32, uState=%RU32, rcOp=%Rrc\n",
                  uPercentage, uState, rcOp));
 
     int vrc = VINF_SUCCESS;
@@ -437,8 +437,8 @@ int DnDGuestResponse::dataSetStatus(size_t cbDataAdd, size_t cbDataTotal /* = 0 
                  m_cbDataCurrent, m_cbDataTotal, uStatus));
 #else
     AssertMsg(m_cbDataCurrent <= m_cbDataTotal,
-              ("More data transferred (%RU32) than initially announced (%RU32)\n",
-              m_cbDataCurrent, m_cbDataTotal));
+              ("More data transferred (%zu) than initially announced (%zu), cbDataAdd=%zu\n",
+              m_cbDataCurrent, m_cbDataTotal, cbDataAdd));
 #endif
     int rc = setProgress(cPercentage, uStatus);
 
@@ -448,6 +448,7 @@ int DnDGuestResponse::dataSetStatus(size_t cbDataAdd, size_t cbDataTotal /* = 0 
     if (rc == VERR_CANCELLED)
         rc = setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED);
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -1096,7 +1097,7 @@ int GuestDnD::onGHSendDir(DnDGuestResponse *pResp,
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cbPath, VERR_INVALID_PARAMETER);
 
-    LogFlowFunc(("strDir=%s, cbPath=%zu, fMode=0x%x\n",
+    LogFlowFunc(("pszPath=%s, cbPath=%zu, fMode=0x%x\n",
                  pszPath, cbPath, fMode));
 
     int rc;
@@ -1124,7 +1125,7 @@ int GuestDnD::onGHSendFile(DnDGuestResponse *pResp,
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cbPath, VERR_INVALID_PARAMETER);
 
-    LogFlowFunc(("strFile=%s, cbPath=%zu, fMode=0x%x\n",
+    LogFlowFunc(("pszPath=%s, cbPath=%zu, fMode=0x%x\n",
                  pszPath, cbPath, fMode));
 
     /** @todo Add file locking between calls! */
