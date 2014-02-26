@@ -122,5 +122,83 @@ int UIDnDDrag::DoDragDrop(void)
     return rc;
 }
 
+int UIDnDDrag::RetrieveData(const QString &strMimeType,
+                            QVariant::Type vaType, QVariant &vaData)
+{
+    LogFlowFunc(("Retrieving data as type=%s (variant type=%ld)\n",
+                 strMimeType.toAscii().constData(), vaType));
+
+    int rc = VINF_SUCCESS;
+    CGuest guest = m_session.GetConsole().GetGuest();
+
+    /* Start getting the data from the guest. First inform the guest we
+     * want the data in the specified MIME type. */
+    CProgress progress = guest.DragGHDropped(strMimeType,
+                                             UIDnDHandler::toVBoxDnDAction(m_defAction));
+    if (guest.isOk())
+    {
+        msgCenter().showModalProgressDialog(progress,
+                                            tr("Retrieving data ..."), ":/progress_dnd_gh_90px.png",
+                                            m_pParent);
+        if (!progress.GetCanceled())
+        {
+            rc =   (   progress.isOk()
+                    && progress.GetResultCode() == 0)
+                 ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Fudge; do a GetResultCode() to rc translation. */
+
+            if (RT_SUCCESS(rc))
+            {
+                /* After the data successfully arrived from the guest, we query it from Main. */
+                QVector<uint8_t> vecData = guest.DragGHGetData();
+                if (!vecData.isEmpty())
+                {
+                    switch (vaType)
+                    {
+                        case QVariant::String:
+                        {
+                            vaData = QVariant(QString(reinterpret_cast<const char*>(vecData.constData())));
+                            break;
+                        }
+
+                        case QVariant::ByteArray:
+                        {
+                            QByteArray ba(reinterpret_cast<const char*>(vecData.constData()), vecData.size());
+                            vaData = QVariant(ba);
+                            break;
+                        }
+
+                        case QVariant::StringList:
+                        {
+                            QString strData = QString(reinterpret_cast<const char*>(vecData.constData()));
+                            QStringList lstString = strData.split("\r\n", QString::SkipEmptyParts);
+
+                            vaData = QVariant(lstString);
+                            break;
+                        }
+
+                        default:
+                            rc = VERR_NOT_SUPPORTED;
+                            break;
+                    }
+                }
+                else
+                    rc = VERR_NO_DATA;
+            }
+            else
+                msgCenter().cannotDropData(progress, m_pParent);
+        }
+        else
+            rc = VERR_CANCELLED;
+    }
+    else
+    {
+        msgCenter().cannotDropData(guest, m_pParent);
+        rc = VERR_GENERAL_FAILURE; /** @todo Fudge; do a GetResultCode() to rc translation. */
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 #include "UIDnDDrag.moc"
 
