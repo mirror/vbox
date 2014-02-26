@@ -241,7 +241,6 @@ VMMR3_INT_DECL(bool)            HMR3IsVmxPreemptionTimerUsed(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0SetupVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu);
 VMMR0_INT_DECL(int)             HMR0Enter(PVM pVM, PVMCPU pVCpu);
-VMMR0_INT_DECL(int)             HMR0Leave(PVM pVM, PVMCPU pVCpu);
 VMMR0_INT_DECL(int)             HMR0EnterCpu(PVMCPU pVCpu);
 VMMR0_INT_DECL(int)             HMR0LeaveCpu(PVMCPU pVCpu);
 VMMR0_INT_DECL(void)            HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser);
