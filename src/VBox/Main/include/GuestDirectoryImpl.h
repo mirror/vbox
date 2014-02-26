@@ -47,8 +47,8 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
-    int            callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
-    int            onRemove(void);
+    int            i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
+    int            i_onRemove(void);
 
     static Utf8Str i_guestErrorToString(int guestRc);
     static HRESULT i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc);

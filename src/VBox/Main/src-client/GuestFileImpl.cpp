@@ -240,16 +240,11 @@ void GuestFile::uninit(void)
 // implementation of public getters/setters for attributes
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP GuestFile::COMGETTER(CreationMode)(ULONG *aCreationMode)
+HRESULT GuestFile::getCreationMode(ULONG *aCreationMode)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    CheckComArgOutPointerValid(aCreationMode);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aCreationMode = mData.mOpenInfo.mCreationMode;
@@ -258,87 +253,62 @@ STDMETHODIMP GuestFile::COMGETTER(CreationMode)(ULONG *aCreationMode)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::COMGETTER(Disposition)(BSTR *aDisposition)
+HRESULT GuestFile::getDisposition(com::Utf8Str &aDisposition)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    CheckComArgOutPointerValid(aDisposition);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mOpenInfo.mDisposition.cloneTo(aDisposition);
+    aDisposition = mData.mOpenInfo.mDisposition;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::COMGETTER(EventSource)(IEventSource ** aEventSource)
+HRESULT GuestFile::getEventSource(ComPtr<IEventSource> &aEventSource)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    CheckComArgOutPointerValid(aEventSource);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* No need to lock - lifetime constant. */
-    mEventSource.queryInterfaceTo(aEventSource);
+    mEventSource.queryInterfaceTo(aEventSource.asOutParam());
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::COMGETTER(FileName)(BSTR *aFileName)
+HRESULT GuestFile::getFileName(com::Utf8Str &aFileName)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    CheckComArgOutPointerValid(aFileName);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mOpenInfo.mFileName.cloneTo(aFileName);
+    aFileName = mData.mOpenInfo.mFileName;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::COMGETTER(Id)(ULONG *aID)
+HRESULT GuestFile::getId(ULONG *aId)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    CheckComArgOutPointerValid(aID);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aID = mData.mID;
+    *aId = mData.mID;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::COMGETTER(InitialSize)(LONG64 *aInitialSize)
+HRESULT GuestFile::getInitialSize(LONG64 *aInitialSize)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    CheckComArgOutPointerValid(aInitialSize);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aInitialSize = mData.mInitialSize;
@@ -347,16 +317,11 @@ STDMETHODIMP GuestFile::COMGETTER(InitialSize)(LONG64 *aInitialSize)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::COMGETTER(Offset)(LONG64 *aOffset)
+HRESULT GuestFile::getOffset(LONG64 *aOffset)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    CheckComArgOutPointerValid(aOffset);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aOffset = mData.mOffCurrent;
@@ -365,33 +330,25 @@ STDMETHODIMP GuestFile::COMGETTER(Offset)(LONG64 *aOffset)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::COMGETTER(OpenMode)(BSTR *aOpenMode)
+HRESULT GuestFile::getOpenMode(com::Utf8Str &aOpenMode)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    CheckComArgOutPointerValid(aOpenMode);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mOpenInfo.mOpenMode.cloneTo(aOpenMode);
+    aOpenMode = mData.mOpenInfo.mOpenMode;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::COMGETTER(Status)(FileStatus_T *aStatus)
+HRESULT GuestFile::getStatus(FileStatus_T *aStatus)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     LogFlowThisFuncEnter();
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -404,7 +361,7 @@ STDMETHODIMP GuestFile::COMGETTER(Status)(FileStatus_T *aStatus)
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
-int GuestFile::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
+int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
@@ -416,11 +373,11 @@ int GuestFile::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
     switch (pCbCtx->uFunction)
     {
         case GUEST_DISCONNECTED:
-            vrc = onGuestDisconnected(pCbCtx, pSvcCb);
+            vrc = i_onGuestDisconnected(pCbCtx, pSvcCb);
             break;
 
         case GUEST_FILE_NOTIFY:
-            vrc = onFileNotify(pCbCtx, pSvcCb);
+            vrc = i_onFileNotify(pCbCtx, pSvcCb);
             break;
 
         default:
@@ -435,7 +392,7 @@ int GuestFile::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
     return vrc;
 }
 
-int GuestFile::closeFile(int *pGuestRc)
+int GuestFile::i_closeFile(int *pGuestRc)
 {
     LogFlowThisFunc(("strFile=%s\n", mData.mOpenInfo.mFileName.c_str()));
 
@@ -465,8 +422,8 @@ int GuestFile::closeFile(int *pGuestRc)
 
     vrc = sendCommand(HOST_FILE_CLOSE, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = waitForStatusChange(pEvent, 30 * 1000 /* Timeout in ms */,
-                                  NULL /* FileStatus */, pGuestRc);
+        vrc = i_waitForStatusChange(pEvent, 30 * 1000 /* Timeout in ms */,
+                                    NULL /* FileStatus */, pGuestRc);
     unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
@@ -474,7 +431,7 @@ int GuestFile::closeFile(int *pGuestRc)
 }
 
 /* static */
-Utf8Str GuestFile::guestErrorToString(int guestRc)
+Utf8Str GuestFile::i_guestErrorToString(int guestRc)
 {
     Utf8Str strError;
 
@@ -505,7 +462,7 @@ Utf8Str GuestFile::guestErrorToString(int guestRc)
     return strError;
 }
 
-int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
+int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
@@ -531,7 +488,7 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
 
     if (RT_FAILURE(guestRc))
     {
-        int rc2 = setFileStatus(FileStatus_Error, guestRc);
+        int rc2 = i_setFileStatus(FileStatus_Error, guestRc);
         AssertRC(rc2);
 
         rc2 = signalWaitEventInternal(pCbCtx,
@@ -545,7 +502,7 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
     {
         case GUEST_FILE_NOTIFYTYPE_ERROR:
         {
-            int rc2 = setFileStatus(FileStatus_Error, guestRc);
+            int rc2 = i_setFileStatus(FileStatus_Error, guestRc);
             AssertRC(rc2);
 
             break;
@@ -569,7 +526,7 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
                 }
 
                 /* Set the process status. */
-                int rc2 = setFileStatus(FileStatus_Open, guestRc);
+                int rc2 = i_setFileStatus(FileStatus_Open, guestRc);
                 AssertRC(rc2);
             }
             else
@@ -580,7 +537,7 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
 
         case GUEST_FILE_NOTIFYTYPE_CLOSE:
         {
-            int rc2 = setFileStatus(FileStatus_Closed, guestRc);
+            int rc2 = i_setFileStatus(FileStatus_Closed, guestRc);
             AssertRC(rc2);
 
             break;
@@ -691,12 +648,12 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
     return vrc;
 }
 
-int GuestFile::onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
+int GuestFile::i_onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
 
-    int vrc = setFileStatus(FileStatus_Down, VINF_SUCCESS);
+    int vrc = i_setFileStatus(FileStatus_Down, VINF_SUCCESS);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -706,7 +663,7 @@ int GuestFile::onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTR
  * Called by IGuestSession right before this file gets removed
  * from the public file list.
  */
-int GuestFile::onRemove(void)
+int GuestFile::i_onRemove(void)
 {
     LogFlowThisFuncEnter();
 
@@ -730,7 +687,7 @@ int GuestFile::onRemove(void)
     return vrc;
 }
 
-int GuestFile::openFile(uint32_t uTimeoutMS, int *pGuestRc)
+int GuestFile::i_openFile(uint32_t uTimeoutMS, int *pGuestRc)
 {
     LogFlowThisFuncEnter();
 
@@ -776,8 +733,8 @@ int GuestFile::openFile(uint32_t uTimeoutMS, int *pGuestRc)
 
     vrc = sendCommand(HOST_FILE_OPEN, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = waitForStatusChange(pEvent, uTimeoutMS,
-                                  NULL /* FileStatus */, pGuestRc);
+        vrc = i_waitForStatusChange(pEvent, uTimeoutMS,
+                                    NULL /* FileStatus */, pGuestRc);
 
     unregisterWaitEvent(pEvent);
 
@@ -785,8 +742,8 @@ int GuestFile::openFile(uint32_t uTimeoutMS, int *pGuestRc)
     return vrc;
 }
 
-int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS,
-                        void* pvData, uint32_t cbData, uint32_t* pcbRead)
+int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
+                          void* pvData, uint32_t cbData, uint32_t* pcbRead)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -827,7 +784,7 @@ int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS,
     uint32_t cbRead;
     vrc = sendCommand(HOST_FILE_READ, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = waitForRead(pEvent, uTimeoutMS, pvData, cbData, &cbRead);
+        vrc = i_waitForRead(pEvent, uTimeoutMS, pvData, cbData, &cbRead);
 
     if (RT_SUCCESS(vrc))
     {
@@ -843,8 +800,8 @@ int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS,
     return vrc;
 }
 
-int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
-                          void* pvData, size_t cbData, size_t* pcbRead)
+int GuestFile::i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
+                            void* pvData, size_t cbData, size_t* pcbRead)
 {
     LogFlowThisFunc(("uOffset=%RU64, uSize=%RU32, uTimeoutMS=%RU32, pvData=%p, cbData=%zu\n",
                      uOffset, uSize, uTimeoutMS, pvData, cbData));
@@ -883,7 +840,7 @@ int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
     uint32_t cbRead;
     vrc = sendCommand(HOST_FILE_READ_AT, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = waitForRead(pEvent, uTimeoutMS, pvData, cbData, &cbRead);
+        vrc = i_waitForRead(pEvent, uTimeoutMS, pvData, cbData, &cbRead);
 
     if (RT_SUCCESS(vrc))
     {
@@ -899,8 +856,8 @@ int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
     return vrc;
 }
 
-int GuestFile::seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
-                      uint32_t uTimeoutMS, uint64_t *puOffset)
+int GuestFile::i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
+                        uint32_t uTimeoutMS, uint64_t *puOffset)
 {
     LogFlowThisFunc(("iOffset=%RI64, uTimeoutMS=%RU32\n",
                      iOffset, uTimeoutMS));
@@ -939,7 +896,7 @@ int GuestFile::seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
 
     vrc = sendCommand(HOST_FILE_SEEK, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = waitForOffsetChange(pEvent, uTimeoutMS, puOffset);
+        vrc = i_waitForOffsetChange(pEvent, uTimeoutMS, puOffset);
 
     unregisterWaitEvent(pEvent);
 
@@ -948,15 +905,15 @@ int GuestFile::seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
 }
 
 /* static */
-HRESULT GuestFile::setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
+HRESULT GuestFile::i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
 {
     AssertPtr(pInterface);
     AssertMsg(RT_FAILURE(guestRc), ("Guest rc does not indicate a failure when setting error\n"));
 
-    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestFile::guestErrorToString(guestRc).c_str());
+    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestFile::i_guestErrorToString(guestRc).c_str());
 }
 
-int GuestFile::setFileStatus(FileStatus_T fileStatus, int fileRc)
+int GuestFile::i_setFileStatus(FileStatus_T fileStatus, int fileRc)
 {
     LogFlowThisFuncEnter();
 
@@ -986,7 +943,7 @@ int GuestFile::setFileStatus(FileStatus_T fileStatus, int fileRc)
         {
             hr = errorInfo->initEx(VBOX_E_IPRT_ERROR, fileRc,
                                    COM_IIDOF(IGuestFile), getComponentName(),
-                                   guestErrorToString(fileRc));
+                                   i_guestErrorToString(fileRc));
             ComAssertComRC(hr);
         }
 
@@ -999,8 +956,8 @@ int GuestFile::setFileStatus(FileStatus_T fileStatus, int fileRc)
     return VINF_SUCCESS;
 }
 
-int GuestFile::waitForOffsetChange(GuestWaitEvent *pEvent,
-                                   uint32_t uTimeoutMS, uint64_t *puOffset)
+int GuestFile::i_waitForOffsetChange(GuestWaitEvent *pEvent,
+                                     uint32_t uTimeoutMS, uint64_t *puOffset)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
@@ -1028,9 +985,8 @@ int GuestFile::waitForOffsetChange(GuestWaitEvent *pEvent,
     return vrc;
 }
 
-int GuestFile::waitForRead(GuestWaitEvent *pEvent,
-                           uint32_t uTimeoutMS,
-                           void *pvData, size_t cbData, uint32_t *pcbRead)
+int GuestFile::i_waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
+                             void *pvData, size_t cbData, uint32_t *pcbRead)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
@@ -1073,8 +1029,8 @@ int GuestFile::waitForRead(GuestWaitEvent *pEvent,
     return vrc;
 }
 
-int GuestFile::waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
-                                   FileStatus_T *pFileStatus, int *pGuestRc)
+int GuestFile::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
+                                     FileStatus_T *pFileStatus, int *pGuestRc)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
     /* pFileStatus is optional. */
@@ -1117,8 +1073,8 @@ int GuestFile::waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
     return vrc;
 }
 
-int GuestFile::waitForWrite(GuestWaitEvent *pEvent,
-                            uint32_t uTimeoutMS, uint32_t *pcbWritten)
+int GuestFile::i_waitForWrite(GuestWaitEvent *pEvent,
+                              uint32_t uTimeoutMS, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
@@ -1146,8 +1102,8 @@ int GuestFile::waitForWrite(GuestWaitEvent *pEvent,
     return vrc;
 }
 
-int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
-                         uint32_t *pcbWritten)
+int GuestFile::i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
+                           uint32_t *pcbWritten)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -1189,7 +1145,7 @@ int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
     uint32_t cbWritten;
     vrc = sendCommand(HOST_FILE_WRITE, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = waitForWrite(pEvent, uTimeoutMS, &cbWritten);
+        vrc = i_waitForWrite(pEvent, uTimeoutMS, &cbWritten);
 
     if (RT_SUCCESS(vrc))
     {
@@ -1205,8 +1161,8 @@ int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
     return vrc;
 }
 
-int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
-                           void *pvData, uint32_t cbData, uint32_t *pcbWritten)
+int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
+                             void *pvData, uint32_t cbData, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -1249,7 +1205,7 @@ int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
     uint32_t cbWritten;
     vrc = sendCommand(HOST_FILE_WRITE_AT, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = waitForWrite(pEvent, uTimeoutMS, &cbWritten);
+        vrc = i_waitForWrite(pEvent, uTimeoutMS, &cbWritten);
 
     if (RT_SUCCESS(vrc))
     {
@@ -1265,22 +1221,18 @@ int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
     return vrc;
 }
 
-// implementation of public methods
+// Wrapped IGuestFile methods
 /////////////////////////////////////////////////////////////////////////////
-
-STDMETHODIMP GuestFile::Close(void)
+HRESULT GuestFile::close()
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     LogFlowThisFuncEnter();
 
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* Close file on guest. */
     int guestRc;
-    int rc = closeFile(&guestRc);
+    int rc = i_closeFile(&guestRc);
     /* On failure don't return here, instead do all the cleanup
      * work first and then return an error. */
 
@@ -1292,7 +1244,7 @@ STDMETHODIMP GuestFile::Close(void)
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_GSTCTL_GUEST_ERROR)
-            return GuestFile::setErrorExternal(this, guestRc);
+            return GuestFile::i_setErrorExternal(this, guestRc);
 
         return setError(VBOX_E_IPRT_ERROR,
                         tr("Closing guest file failed with %Rrc\n"), rc);
@@ -1303,29 +1255,22 @@ STDMETHODIMP GuestFile::Close(void)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::QueryInfo(IFsObjInfo **aInfo)
+HRESULT GuestFile::queryInfo(ComPtr<IFsObjInfo> &aObjInfo)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::Read(ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData))
+HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
-    CheckComArgOutSafeArrayPointerValid(aData);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     com::SafeArray<BYTE> data((size_t)aToRead);
     Assert(data.size() >= aToRead);
@@ -1333,13 +1278,16 @@ STDMETHODIMP GuestFile::Read(ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BY
     HRESULT hr = S_OK;
 
     uint32_t cbRead;
-    int vrc = readData(aToRead, aTimeoutMS,
-                       data.raw(), aToRead, &cbRead);
+    int vrc = i_readData(aToRead, aTimeoutMS,
+                         data.raw(), aToRead, &cbRead);
+
     if (RT_SUCCESS(vrc))
     {
         if (data.size() != cbRead)
             data.resize(cbRead);
-        data.detachTo(ComSafeArrayOutArg(aData));
+        aData.resize(data.size());
+        for(size_t i = 0; i < data.size(); ++i)
+            aData[i] = data[i];
     }
     else
     {
@@ -1357,18 +1305,14 @@ STDMETHODIMP GuestFile::Read(ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BY
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
+HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 
-STDMETHODIMP GuestFile::ReadAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
-    CheckComArgOutSafeArrayPointerValid(aData);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     com::SafeArray<BYTE> data((size_t)aToRead);
     Assert(data.size() >= aToRead);
@@ -1376,13 +1320,15 @@ STDMETHODIMP GuestFile::ReadAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, 
     HRESULT hr = S_OK;
 
     size_t cbRead;
-    int vrc = readDataAt(aOffset, aToRead, aTimeoutMS,
-                         data.raw(), aToRead, &cbRead);
+    int vrc = i_readDataAt(aOffset, aToRead, aTimeoutMS,
+                           data.raw(), aToRead, &cbRead);
     if (RT_SUCCESS(vrc))
     {
         if (data.size() != cbRead)
             data.resize(cbRead);
-        data.detachTo(ComSafeArrayOutArg(aData));
+        aData.resize(data.size());
+        for(size_t i = 0; i < data.size(); ++i)
+            aData[i] = data[i];
     }
     else
     {
@@ -1401,20 +1347,17 @@ STDMETHODIMP GuestFile::ReadAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, 
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::Seek(LONG64 aOffset, FileSeekType_T aType)
+HRESULT GuestFile::seek(LONG64 aOffset, FileSeekType_T aWhence)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     LogFlowThisFuncEnter();
 
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     HRESULT hr = S_OK;
 
     GUEST_FILE_SEEKTYPE eSeekType;
-    switch (aType)
+    switch (aWhence)
     {
         case FileSeekType_Set:
             eSeekType = GUEST_FILE_SEEKTYPE_BEGIN;
@@ -1429,8 +1372,8 @@ STDMETHODIMP GuestFile::Seek(LONG64 aOffset, FileSeekType_T aType)
             break; /* Never reached. */
     }
 
-    int vrc = seekAt(aOffset, eSeekType,
-                     30 * 1000 /* 30s timeout */, NULL /* puOffset */);
+    int vrc = i_seekAt(aOffset, eSeekType,
+                       30 * 1000 /* 30s timeout */, NULL /* puOffset */);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
@@ -1448,36 +1391,27 @@ STDMETHODIMP GuestFile::Seek(LONG64 aOffset, FileSeekType_T aType)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::SetACL(IN_BSTR aACL)
+HRESULT GuestFile::setACL(const com::Utf8Str &aAcl)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::Write(ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten)
+HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG *aWritten)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     LogFlowThisFuncEnter();
 
-    CheckComArgSafeArrayNotNull(aData);
-    CheckComArgOutPointerValid(aWritten);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     HRESULT hr = S_OK;
 
-    com::SafeArray<BYTE> data(ComSafeArrayInArg(aData));
-    int vrc = writeData(aTimeoutMS, data.raw(), (uint32_t)data.size(),
-                        (uint32_t*)aWritten);
+    com::SafeArray<BYTE> data(aData);
+    int vrc = i_writeData(aTimeoutMS, data.raw(), (uint32_t)data.size(),
+                          (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
@@ -1495,24 +1429,19 @@ STDMETHODIMP GuestFile::Write(ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULO
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::WriteAt(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten)
+HRESULT GuestFile::writeAt(LONG64 aOffset, const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG *aWritten)
+
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     LogFlowThisFuncEnter();
 
-    CheckComArgSafeArrayNotNull(aData);
-    CheckComArgOutPointerValid(aWritten);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     HRESULT hr = S_OK;
 
-    com::SafeArray<BYTE> data(ComSafeArrayInArg(aData));
-    int vrc = writeData(aTimeoutMS, data.raw(), (uint32_t)data.size(),
-                         (uint32_t*)aWritten);
+    com::SafeArray<BYTE> data(aData);
+    int vrc = i_writeData(aTimeoutMS, data.raw(), (uint32_t)data.size(),
+                          (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)

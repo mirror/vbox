@@ -23,6 +23,7 @@
 #include "EventImpl.h"
 
 #include "GuestCtrlImplPrivate.h"
+#include "GuestFileWrap.h"
 
 class Console;
 class GuestSession;
@@ -32,75 +33,79 @@ class GuestProcess;
  * TODO
  */
 class ATL_NO_VTABLE GuestFile :
-    public VirtualBoxBase,
-    public GuestObject,
-    VBOX_SCRIPTABLE_IMPL(IGuestFile)
+    public GuestFileWrap,
+    public GuestObject
 {
 public:
     /** @name COM and internal init/term/mapping cruft.
      * @{ */
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(GuestFile, IGuestFile)
-    DECLARE_NOT_AGGREGATABLE(GuestFile)
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-    BEGIN_COM_MAP(GuestFile)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IGuestFile)
-        COM_INTERFACE_ENTRY(IFile)
-    END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestFile)
 
     int     init(Console *pConsole, GuestSession *pSession, ULONG uFileID, const GuestFileOpenInfo &openInfo);
     void    uninit(void);
+
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
     /** @}  */
 
-    /** @name IFile interface.
-     * @{ */
-    STDMETHOD(COMGETTER(CreationMode))(ULONG *aCreationMode);
-    STDMETHOD(COMGETTER(Disposition))(BSTR *aDisposition);
-    STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
-    STDMETHOD(COMGETTER(FileName))(BSTR *aFileName);
-    STDMETHOD(COMGETTER(Id))(ULONG *aID);
-    STDMETHOD(COMGETTER(InitialSize))(LONG64 *aInitialSize);
-    STDMETHOD(COMGETTER(Offset))(LONG64 *aOffset);
-    STDMETHOD(COMGETTER(OpenMode))(BSTR *aOpenMode);
-    STDMETHOD(COMGETTER(Status))(FileStatus_T *aStatus);
-
-    STDMETHOD(Close)(void);
-    STDMETHOD(QueryInfo)(IFsObjInfo **aInfo);
-    STDMETHOD(Read)(ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
-    STDMETHOD(ReadAt)(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
-    STDMETHOD(Seek)(LONG64 aOffset, FileSeekType_T aType);
-    STDMETHOD(SetACL)(IN_BSTR aACL);
-    STDMETHOD(Write)(ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
-    STDMETHOD(WriteAt)(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
-    /** @}  */
 
 public:
     /** @name Public internal methods.
      * @{ */
-    int             callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
-    int             closeFile(int *pGuestRc);
-    EventSource    *getEventSource(void) { return mEventSource; }
-    static Utf8Str  guestErrorToString(int guestRc);
-    int             onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int             onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int             onRemove(void);
-    int             openFile(uint32_t uTimeoutMS, int *pGuestRc);
-    int             readData(uint32_t uSize, uint32_t uTimeoutMS, void* pvData, uint32_t cbData, uint32_t* pcbRead);
-    int             readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS, void* pvData, size_t cbData, size_t* pcbRead);
-    int             seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType, uint32_t uTimeoutMS, uint64_t *puOffset);
-    static HRESULT  setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
-    int             setFileStatus(FileStatus_T fileStatus, int fileRc);
-    int             waitForOffsetChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, uint64_t *puOffset);
-    int             waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead);
-    int             waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, FileStatus_T *pFileStatus, int *pGuestRc);
-    int             waitForWrite(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, uint32_t *pcbWritten);
-    int             writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData, uint32_t *pcbWritten);
-    int             writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS, void *pvData, uint32_t cbData, uint32_t *pcbWritten);
+    int             i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
+    int             i_closeFile(int *pGuestRc);
+    EventSource    *i_getEventSource(void) { return mEventSource; }
+    static Utf8Str  i_guestErrorToString(int guestRc);
+    int             i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int             i_onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int             i_onRemove(void);
+    int             i_openFile(uint32_t uTimeoutMS, int *pGuestRc);
+    int             i_readData(uint32_t uSize, uint32_t uTimeoutMS, void* pvData, uint32_t cbData, uint32_t* pcbRead);
+    int             i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS, void* pvData, size_t cbData, size_t* pcbRead);
+    int             i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType, uint32_t uTimeoutMS, uint64_t *puOffset);
+    static HRESULT  i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
+    int             i_setFileStatus(FileStatus_T fileStatus, int fileRc);
+    int             i_waitForOffsetChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, uint64_t *puOffset);
+    int             i_waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead);
+    int             i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, FileStatus_T *pFileStatus, int *pGuestRc);
+    int             i_waitForWrite(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, uint32_t *pcbWritten);
+    int             i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData, uint32_t *pcbWritten);
+    int             i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS, void *pvData, uint32_t cbData, uint32_t *pcbWritten);
     /** @}  */
 
 private:
+
+    // Wrapped IGuestFile properties.
+    HRESULT getCreationMode(ULONG *aCreationMode);
+    HRESULT getDisposition(com::Utf8Str &aDisposition);
+    HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
+    HRESULT getFileName(com::Utf8Str &aFileName);
+    HRESULT getId(ULONG *aId);
+    HRESULT getInitialSize(LONG64 *aInitialSize);
+    HRESULT getOpenMode(com::Utf8Str &aOpenMode);
+    HRESULT getOffset(LONG64 *aOffset);
+    HRESULT getStatus(FileStatus_T *aStatus);
+
+    // Wrapped IGuestFile methods.
+    HRESULT close();
+    HRESULT queryInfo(ComPtr<IFsObjInfo> &aObjInfo);
+    HRESULT read(ULONG aToRead,
+                 ULONG aTimeoutMS,
+                 std::vector<BYTE> &aData);
+    HRESULT readAt(LONG64 aOffset,
+                   ULONG aToRead,
+                   ULONG aTimeoutMS,
+                   std::vector<BYTE> &aData);
+    HRESULT seek(LONG64 aOffset,
+                 FileSeekType_T aWhence);
+    HRESULT setACL(const com::Utf8Str &aAcl);
+    HRESULT write(const std::vector<BYTE> &aData,
+                  ULONG aTimeoutMS,
+                  ULONG *aWritten);
+    HRESULT writeAt(LONG64 aOffset,
+                    const std::vector<BYTE> &aData,
+                    ULONG aTimeoutMS,
+                    ULONG *aWritten);
 
     /** This can safely be used without holding any locks.
      * An AutoCaller suffices to prevent it being destroy while in use and
