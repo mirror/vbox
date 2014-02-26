@@ -6951,8 +6951,24 @@ DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
             pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT;
             int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
             AssertRC(rc);
+            Log4(("Setup interrupt-window exiting\n"));
         }
     } /* else we will deliver interrupts whenever the guest exits next and is in a state to receive events. */
+}
+
+
+/**
+ * Clears the interrupt-window exiting control in the VMCS.
+ *
+ * @param pVCpu             Pointer to the VMCPU.
+ */
+DECLINLINE(void) hmR0VmxClearIntWindowExitVmcs(PVMCPU pVCpu)
+{
+    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT);
+    pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT;
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+    AssertRC(rc);
+    Log4(("Cleared interrupt-window exiting\n"));
 }
 
 
@@ -7085,9 +7101,19 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.Event.fPending)
     {
-#if defined(DEBUG) || defined(VBOX_STRICT) || defined(VBOX_WITH_STATISTICS)
+        /*
+         * Clear any interrupt-window exiting control if we're going to inject an interrupt. Saves one extra
+         * VM-exit in situations where we previously setup interrupt-window exiting but got other VM-exits and
+         * ended up enabling interrupts outside VT-x.
+         */
         uint32_t uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
-#endif
+        if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT)
+            && (   uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT
+                || uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI))
+        {
+            Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT);
+            hmR0VmxClearIntWindowExitVmcs(pVCpu);
+        }
 #if defined(VBOX_STRICT) || defined(VBOX_WITH_STATISTICS)
         if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
@@ -7097,11 +7123,13 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Assert(!fBlockInt);
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
+            Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT));
         }
         else if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
         {
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
+            Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT));
         }
 #endif
         Log4(("Injecting pending event vcpu[%RU32] u64IntInfo=%#RX64 Type=%#x\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntInfo,
@@ -7528,11 +7556,7 @@ static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
 
     /* Clear interrupt-window exiting control. */
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT)
-    {
-        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT;
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
-        AssertRC(rc);
-    }
+        hmR0VmxClearIntWindowExitVmcs(pVCpu);
 
     if (!pVCpu->hm.s.Event.fPending)
         return;
@@ -9442,10 +9466,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIntWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
     /* Indicate that we no longer need to VM-exit when the guest is ready to receive interrupts, it is now ready. */
-    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT);
-    pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT;
-    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
-    AssertRCReturn(rc, rc);
+    hmR0VmxClearIntWindowExitVmcs(pVCpu);
 
     /* Deliver the pending interrupt via hmR0VmxPreRunGuest()->hmR0VmxInjectEvent() and resume guest execution. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIntWindow);
