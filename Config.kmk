@@ -613,7 +613,7 @@ VBOX_WITH_S3 = 1
 # Enable Host=>Guest Drag'n'Drop
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_DRAG_AND_DROP = 1
- ifeq ($(KBUILD_TARGET),win)
+ if1of ($(KBUILD_TARGET), linux win)
   VBOX_WITH_DRAG_AND_DROP_GH = 1
  endif
 endif
