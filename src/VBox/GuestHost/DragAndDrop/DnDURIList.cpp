@@ -314,13 +314,21 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
                     if (RT_FAILURE(rc))
                         return rc;
                     rc = RTFileQuerySize(pszNewFile, &cbSize);
+                    if (rc == VERR_IS_A_DIRECTORY) /* Happens for symlinks. */
+                        rc = VINF_SUCCESS;
+
                     if (RT_FAILURE(rc))
                         break;
 
-                    m_lstTree.append(DnDURIObject(DnDURIObject::File,
-                                                  pszNewFile, &pszNewFile[cbBaseLen],
-                                                  objInfo1.Attr.fMode, cbSize));
-                    m_cbTotal += cbSize;
+                    if (RTFS_IS_FILE(objInfo.Attr.fMode))
+                    {
+                        m_lstTree.append(DnDURIObject(DnDURIObject::File,
+                                                      pszNewFile, &pszNewFile[cbBaseLen],
+                                                      objInfo1.Attr.fMode, cbSize));
+                        m_cbTotal += cbSize;
+                    }
+                    else /* Handle symlink directories. */
+                        rc = appendPathRecursive(pszNewFile, cbBaseLen, fFlags);
 #ifdef DEBUG_andy
                     LogFlowFunc(("strSrcPath=%s, strDstPath=%s, fMode=0x%x, cbSize=%RU64, cbTotal=%zu\n",
                                  pszNewFile, &pszNewFile[cbBaseLen], objInfo1.Attr.fMode, cbSize, m_cbTotal));
