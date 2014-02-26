@@ -31,7 +31,7 @@
 
 #include "UIDnDDropSource_win.h"
 
-UIDnDDropSource::UIDnDDropSource(UIDnDDrag *pParent)
+UIDnDDropSource::UIDnDDropSource(QWidget *pParent)
     : mRefCount(1),
       mpParent(pParent),
       mdwCurEffect(0),

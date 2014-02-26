@@ -37,16 +37,17 @@
 #include "UIDnDDrag.h"
 #include "UIMessageCenter.h"
 
-UIDnDMimeData::UIDnDMimeData(CSession &session, QStringList formats,
+UIDnDMimeData::UIDnDMimeData(CSession &session, 
+                             QStringList formats,
                              Qt::DropAction defAction, Qt::DropActions actions,
-                             UIDnDDrag *pParent)
-    : m_pParent(pParent)
-    , m_session(session)
+                             QWidget *pParent)
+    : m_Session(session)
     , m_lstFormats(formats)
     , m_defAction(defAction)
     , m_actions(actions)
+    , m_pParent(pParent)
     , m_enmState(Dragging)
-    , m_data(QVariant::Invalid)
+    , m_vaData(QVariant::Invalid)
 {
     LogFlowThisFuncEnter();
 
@@ -107,11 +108,11 @@ bool UIDnDMimeData::hasFormat(const QString &strMIMEType) const
 }
 
 QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
-                                     QVariant::Type type) const
+                                     QVariant::Type vaType) const
 {
     LogFlowFunc(("m_enmState=%d, mimeType=%s, type=%d (%s)\n",
                  m_enmState, strMIMEType.toStdString().c_str(),
-                 type, QVariant::typeToName(type)));
+                 vaType, QVariant::typeToName(vaType)));
 
     bool fCanDrop = true;
 
@@ -141,14 +142,14 @@ QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
     if (   fCanDrop
         && !(
              /* Plain text. */
-                type == QVariant::String
+                vaType == QVariant::String
              /* Binary data. */
-             || type == QVariant::ByteArray
+             || vaType == QVariant::ByteArray
              /* URI list. */
-             || type == QVariant::List))
+             || vaType == QVariant::List))
     {
         LogFlowFunc(("Unsupported data type=%d (%s)\n",
-                     type, QVariant::typeToName(type)));
+                     vaType, QVariant::typeToName(vaType)));
         fCanDrop = false;
     }
 
@@ -156,14 +157,16 @@ QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
     {
         LogFlowFunc(("Skipping request, m_enmState=%d ...\n",
                      m_enmState));
-        return QMimeData::retrieveData(strMIMEType, type);
+        return QMimeData::retrieveData(strMIMEType, vaType);
     }
 
     int rc = VINF_SUCCESS;
     if (m_enmState == Dropped)
     {
-        AssertPtr(m_pParent);
-        rc = m_pParent->RetrieveData(strMIMEType, type, m_data);
+        rc = UIDnDDrag::RetrieveData(m_Session,
+                                     m_defAction,
+                                     strMIMEType, vaType, m_vaData,
+                                     m_pParent);
         if (RT_SUCCESS(rc))
         {
             /* Tell ourselves that data became available. */
@@ -177,7 +180,7 @@ QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
 
     LogFlowFunc(("Returning rc=%Rrc, m_enmState=%ld\n",
                  rc, m_enmState));
-    return m_data;
+    return m_vaData;
 }
 
 #ifndef RT_OS_WINDOWS
@@ -235,27 +238,27 @@ void UIDnDMimeData::sltInstallEventFilter(void)
 int UIDnDMimeData::setData(const QString &mimeType)
 {
     LogFlowFunc(("mimeType=%s, dataType=%s\n",
-                 mimeType.toAscii().constData(), m_data.typeName()));
+                 mimeType.toAscii().constData(), m_vaData.typeName()));
 
     int rc = VINF_SUCCESS;
 
-    switch (m_data.type())
+    switch (m_vaData.type())
     {
         case QVariant::String: /* Plain text. */
         {
-            QMimeData::setText(m_data.toString());
+            QMimeData::setText(m_vaData.toString());
             break;
         }
 
         case QVariant::ByteArray: /* Raw byte data. */
         {
-            QMimeData::setData(mimeType, m_data.toByteArray());
+            QMimeData::setData(mimeType, m_vaData.toByteArray());
             break;
         }
 
         case QVariant::StringList: /* URI. */
         {
-            QList<QVariant> lstData = m_data.toList();
+            QList<QVariant> lstData = m_vaData.toList();
             QList<QUrl> lstURL;
             for (int i = 0; i < lstData.size(); i++)
             {

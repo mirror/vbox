@@ -26,7 +26,7 @@ class UIDnDDropSource : public IDropSource
 {
 public:
 
-    UIDnDDropSource(UIDnDDrag *pParent);
+    UIDnDDropSource(QWidget *pParent);
     virtual ~UIDnDDropSource(void);
 
 public:
@@ -47,7 +47,7 @@ public: /* IDropSource methods. */
 protected:
 
     LONG mRefCount;
-    UIDnDDrag *mpParent;
+    QWidget *mpParent;
     DWORD mdwCurEffect;
     Qt::DropActions muCurAction;
 };
