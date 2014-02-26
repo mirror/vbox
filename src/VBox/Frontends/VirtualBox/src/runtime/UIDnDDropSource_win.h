@@ -20,6 +20,9 @@
 #ifndef ___UIDnDDropSource_win_h___
 #define ___UIDnDDropSource_win_h___
 
+/* COM includes: */
+#include "COMEnums.h"
+
 class UIDnDDropSource : public IDropSource
 {
 public:

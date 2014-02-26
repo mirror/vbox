@@ -39,7 +39,7 @@
 #include "UIDnDDataObject_win.h"
 #include "UIDnDEnumFormat_win.h"
 
-UIDnDDataObject::UIDnDDataObject(CSession &session, 
+UIDnDDataObject::UIDnDDataObject(CSession &session,
                                  const QStringList &lstFormats,
                                  QWidget *pParent)
     : mSession(session),
@@ -289,7 +289,7 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
         if (!mVaData.isValid())
         {
             rc = UIDnDDrag::RetrieveData(mSession,
-                                         DropAction::CopyAction,
+                                         Qt::CopyAction,
                                          strMIMEType, vaType, mVaData,
                                          mpParent);
         }
