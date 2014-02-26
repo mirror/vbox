@@ -222,8 +222,18 @@ void UIMachineWindowFullscreen::placeOnScreen()
     QRect workingArea = QApplication::desktop()->screenGeometry(iScreen);
     /* Move to the appropriate position: */
     move(workingArea.topLeft());
+#ifdef Q_WS_MAC
+    /* Resize to the appropriate size on Lion and previous: */
+    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+        resize(workingArea.size());
+    /* Resize to the appropriate size on ML and next
+     * only if that screen has no own user-space: */
+    else if (!darwinScreensHaveSeparateSpaces() && m_uScreenId != 0)
+        resize(workingArea.size());
+#else /* !Q_WS_MAC */
     /* Resize to the appropriate size: */
     resize(workingArea.size());
+#endif /* !Q_WS_MAC */
     /* Adjust guest screen size if necessary: */
     machineView()->maybeAdjustGuestScreenSize();
     /* Move mini-toolbar into appropriate place: */
