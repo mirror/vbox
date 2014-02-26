@@ -78,7 +78,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3960X[] =
     MVX(0x0000002e, "I7_UNK_0000_002e", 0, 0x400, UINT64_C(0xfffffffffffffbff)),
     MVX(0x00000033, "TEST_CTL", 0, 0, UINT64_C(0xffffffff7fffffff)),
     MVO(0x00000034, "P6_UNK_0000_0034", 0x4cb),
-    MVO(0x00000035, "P6_UNK_0000_0035", 0x6000c),
+    MFO(0x00000035, "MSR_CORE_THREAD_COUNT", IntelI7CoreThreadCount), /* value=0x6000c*/
     MFO(0x0000003a, "IA32_FEATURE_CONTROL", Ia32FeatureControl), /* value=0x5 */
     MVX(0x0000003e, "I7_UNK_0000_003e", 0x1, 0, UINT64_C(0xfffffffffffffffe)),
     MFN(0x00000079, "IA32_BIOS_UPDT_TRIG", WriteOnly, Ia32BiosUpdateTrigger),

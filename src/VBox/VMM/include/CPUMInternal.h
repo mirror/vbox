@@ -206,6 +206,7 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_Amd64TscAux,
 
     kCpumMsrRdFn_IntelEblCrPowerOn,
+    kCpumMsrRdFn_IntelI7CoreThreadCount,
     kCpumMsrRdFn_IntelP4EbcHardPowerOn,
     kCpumMsrRdFn_IntelP4EbcSoftPowerOn,
     kCpumMsrRdFn_IntelP4EbcFrequencyId,

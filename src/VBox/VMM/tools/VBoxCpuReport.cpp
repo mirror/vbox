@@ -626,7 +626,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000032: return "P6_UNK_0000_0032"; /* P6_M_Dothan. */
         case 0x00000033: return "TEST_CTL";
         case 0x00000034: return "P6_UNK_0000_0034"; /* P6_M_Dothan. */
-        case 0x00000035: return "P6_UNK_0000_0035"; /* P6_M_Dothan. */
+        case 0x00000035: return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch) ? "MSR_CORE_THREAD_COUNT" : "P6_UNK_0000_0035"; /* P6_M_Dothan. */
         case 0x00000036: return "I7_UNK_0000_0036"; /* SandyBridge, IvyBridge. */
         case 0x00000039: return "C2_UNK_0000_0039"; /* Core2_Penryn */
         case 0x0000003a: return "IA32_FEATURE_CONTROL";
@@ -1809,6 +1809,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x0000002b: *pfTakesValue = true; return g_fIntelNetBurst ? "IntelP4EbcSoftPowerOn" : NULL;
         case 0x0000002c: *pfTakesValue = true; return g_fIntelNetBurst ? "IntelP4EbcFrequencyId" : NULL;
         //case 0x00000033: return "IntelTestCtl";
+        case 0x00000035: return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch) ? "IntelI7CoreThreadCount" : NULL;
         case 0x0000003a: return "Ia32FeatureControl";
 
         case 0x00000040:
