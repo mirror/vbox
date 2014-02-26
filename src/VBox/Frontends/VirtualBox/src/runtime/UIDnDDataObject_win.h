@@ -44,7 +44,7 @@ public:
 
 public:
 
-    UIDnDDataObject(const QStringList &lstFormats, UIDnDDrag *pParent);
+    UIDnDDataObject(CSession &session, const QStringList &lstFormats, QWidget *pParent);
     virtual ~UIDnDDataObject(void);
 
 public: /* IUnknown methods. */
@@ -80,7 +80,8 @@ protected:
     void RegisterFormat(FORMATETC *pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
 
-    UIDnDDrag  *mpParent;
+    QWidget    *mpParent;
+    CSession    mSession;
     Status      mStatus;
     LONG        mRefCount;
     /** Number of native formats registered. This

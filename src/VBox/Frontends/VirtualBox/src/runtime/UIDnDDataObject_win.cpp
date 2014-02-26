@@ -39,9 +39,11 @@
 #include "UIDnDDataObject_win.h"
 #include "UIDnDEnumFormat_win.h"
 
-UIDnDDataObject::UIDnDDataObject(const QStringList &lstFormats,
-                                 UIDnDDrag *pParent)
-    : mpParent(pParent),
+UIDnDDataObject::UIDnDDataObject(CSession &session, 
+                                 const QStringList &lstFormats,
+                                 QWidget *pParent)
+    : mSession(session),
+      mpParent(pParent),
       mStatus(Uninitialized),
       mRefCount(1),
       mcFormats(0),
@@ -285,7 +287,12 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
 
         int rc;
         if (!mVaData.isValid())
-            rc = mpParent->RetrieveData(strMIMEType, vaType, mVaData);
+        {
+            rc = UIDnDDrag::RetrieveData(mSession,
+                                         DropAction::CopyAction,
+                                         strMIMEType, vaType, mVaData,
+                                         mpParent);
+        }
         else
             rc = VINF_SUCCESS; /* Data already retrieved. */
 
