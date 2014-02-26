@@ -203,6 +203,10 @@ public:
     HRESULT resetProgress(const ComObjPtr<Guest>& pParent);
     HRESULT queryProgressTo(IProgress **ppProgress);
 
+public:
+
+    Utf8Str errorToString(const ComObjPtr<Guest>& pGuest, int guestRc);
+
 private:
     RTSEMEVENT           m_EventSem;
     uint32_t             m_defAction;
@@ -295,25 +299,11 @@ DnDGuestResponse::DnDGuestResponse(const ComObjPtr<Guest>& pGuest)
     AssertRC(rc);
 }
 
-DnDGuestResponse::~DnDGuestResponse()
+DnDGuestResponse::~DnDGuestResponse(void)
 {
     reset();
     int rc = RTSemEventDestroy(m_EventSem);
     AssertRC(rc);
-}
-
-int DnDGuestResponse::notifyAboutGuestResponse()
-{
-    return RTSemEventSignal(m_EventSem);
-}
-
-int DnDGuestResponse::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 500 */)
-{
-    int rc = RTSemEventWait(m_EventSem, msTimeout);
-#ifdef DEBUG_andy
-    LogFlowFunc(("msTimeout=%RU32, rc=%Rrc\n", msTimeout, rc));
-#endif
-    return rc;
 }
 
 int DnDGuestResponse::dataAdd(const void *pvData, uint32_t cbData,
@@ -340,6 +330,32 @@ int DnDGuestResponse::dataAdd(const void *pvData, uint32_t cbData,
         rc = VERR_NO_MEMORY;
 
     return rc;
+}
+
+/* static */
+Utf8Str DnDGuestResponse::errorToString(const ComObjPtr<Guest>& pGuest, int guestRc)
+{
+    Utf8Str strError;
+
+    switch (guestRc)
+    {
+        case VERR_SHARING_VIOLATION:
+            strError += Utf8StrFmt(pGuest->tr("One or more guest files or directories selected for transferring to the host were locked. "
+                                              "Please make sure that all selected elements can be accessed and that your guest user has "
+                                              "the appropriate rights."));
+            break;
+
+        default:
+            strError += Utf8StrFmt("Drag'n drop guest error (%Rrc)", guestRc);
+            break;
+    }
+
+    return strError;
+}
+
+int DnDGuestResponse::notifyAboutGuestResponse(void)
+{
+    return RTSemEventSignal(m_EventSem);
 }
 
 void DnDGuestResponse::reset(void)
@@ -383,10 +399,10 @@ int DnDGuestResponse::setProgress(unsigned uPercentage,
         {
             if (uState == DragAndDropSvc::DND_PROGRESS_ERROR)
             {
-                hr = m_progress->notifyComplete(E_FAIL,
+                hr = m_progress->notifyComplete(VBOX_E_IPRT_ERROR,
                                                 COM_IIDOF(IGuest),
                                                 m_parent->getComponentName(),
-                                                m_parent->tr("Drag'n drop guest error (%Rrc)"), rcOp);
+                                                DnDGuestResponse::errorToString(m_parent, rcOp).c_str());
                 reset();
             }
             else if (uState == DragAndDropSvc::DND_PROGRESS_CANCELLED)
@@ -457,6 +473,17 @@ HRESULT DnDGuestResponse::queryProgressTo(IProgress **ppProgress)
     return m_progress.queryInterfaceTo(ppProgress);
 }
 
+int DnDGuestResponse::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 500 */)
+{
+    int rc = RTSemEventWait(m_EventSem, msTimeout);
+#ifdef DEBUG_andy
+    LogFlowFunc(("msTimeout=%RU32, rc=%Rrc\n", msTimeout, rc));
+#endif
+    return rc;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 HRESULT GuestDnDPrivate::adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) const
 {
     /* For multi-monitor support we need to add shift values to the coordinates
@@ -498,14 +525,14 @@ int GuestDnDPrivate::hostCall(uint32_t u32Function, uint32_t cParms,
         throw p->setError(VBOX_E_VM_ERROR,
                           p->tr("VMM device is not available (is the VM running?)"));
 
-    LogFlowFunc(("hgcmHostCall msg=%RU32, numParms=%RU32\n", u32Function, cParms));
+    LogFlowFunc(("hgcmHostCall uMsg=%RU32, cParms=%RU32\n", u32Function, cParms));
     int rc = pVMMDev->hgcmHostCall("VBoxDragAndDropSvc",
                                    u32Function,
                                    cParms, paParms);
     if (RT_FAILURE(rc))
     {
-        LogFlowFunc(("hgcmHostCall error: %Rrc\n", rc));
-        throw p->setError(VBOX_E_VM_ERROR,
+        LogFlowFunc(("hgcmHostCall failed with rc=%Rrc\n", rc));
+        throw p->setError(VBOX_E_IPRT_ERROR,
                           p->tr("hgcmHostCall failed (%Rrc)"), rc);
     }
 
