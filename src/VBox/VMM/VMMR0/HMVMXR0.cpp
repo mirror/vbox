@@ -5595,11 +5595,17 @@ static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     NOREF(pMixedCtx);
 
-    int rc = VINF_SUCCESS:
+    /*
+     * While in the middle of saving guest-CR0, we could get preempted and re-invoked from the preemption hook,
+     * see hmR0VmxLeave(). Safer to just make this code non-preemptible.
+     */
+    VMMRZCallRing3Disable(pVCpu);
+    HM_DISABLE_PREEMPT_IF_NEEDED();
+
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR0))
     {
         uint32_t uVal    = 0;
-        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR0,            &uVal);
+        int rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR0,            &uVal);
         AssertRCReturn(rc, rc);
 
         uint32_t uShadow = 0;
@@ -5610,7 +5616,10 @@ static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         CPUMSetGuestCR0(pVCpu, uVal);
         HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR0);
     }
-    return rc;
+
+    HM_RESTORE_PREEMPT_IF_NEEDED();
+    VMMRZCallRing3Enable(pVCpu);
+    return VINF_SUCCESS;
 }
 
 
