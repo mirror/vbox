@@ -1520,6 +1520,18 @@ static DECLCALLBACK(int) cpumMsrWr_IntelEblCrPowerOn(PVMCPU pVCpu, uint32_t idMs
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_IntelI7CoreThreadCount(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    /* Note! According to cpuid_set_info in XNU (10.7.0), Westmere CPU only
+             have a 4-bit core count. */
+    uint16_t cCores   = pVCpu->CTX_SUFF(pVM)->cCpus;
+    uint16_t cThreads = cCores; /** @todo hyper-threading. */
+    *puValue = RT_MAKE_U32(cThreads, cCores);
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(int) cpumMsrRd_IntelP4EbcHardPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     /** @todo P4 hard power on config */
@@ -4456,6 +4468,7 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_Amd64TscAux,
 
     cpumMsrRd_IntelEblCrPowerOn,
+    cpumMsrRd_IntelI7CoreThreadCount,
     cpumMsrRd_IntelP4EbcHardPowerOn,
     cpumMsrRd_IntelP4EbcSoftPowerOn,
     cpumMsrRd_IntelP4EbcFrequencyId,
@@ -5145,6 +5158,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(Amd64TscAux);
 
     CPUM_ASSERT_RD_MSR_FN(IntelEblCrPowerOn);
+    CPUM_ASSERT_RD_MSR_FN(IntelI7CoreThreadCount);
     CPUM_ASSERT_RD_MSR_FN(IntelP4EbcHardPowerOn);
     CPUM_ASSERT_RD_MSR_FN(IntelP4EbcSoftPowerOn);
     CPUM_ASSERT_RD_MSR_FN(IntelP4EbcFrequencyId);
