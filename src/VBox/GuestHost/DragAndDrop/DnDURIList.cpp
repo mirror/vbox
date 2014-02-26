@@ -292,8 +292,8 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
                     || RTStrCmp(DirEntry.szName, "..") == 0)
                     break;
 
-                char *pszRecDir = RTStrAPrintf2("%s%c%s", pcszPath,
-                                                RTPATH_DELIMITER, DirEntry.szName);
+                char *pszRecDir = RTStrAPrintf2("%s/%s", pcszPath,
+                                                DirEntry.szName);
                 if (pszRecDir)
                 {
                     rc = appendPathRecursive(pszRecDir, cbBaseLen, fFlags);
@@ -306,8 +306,8 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
             case RTDIRENTRYTYPE_SYMLINK:
             case RTDIRENTRYTYPE_FILE:
             {
-                char *pszNewFile = RTStrAPrintf2("%s%c%s",
-                                                 pcszPath, RTPATH_DELIMITER, DirEntry.szName);
+                char *pszNewFile = RTStrAPrintf2("%s/%s",
+                                                 pcszPath, DirEntry.szName);
                 if (pszNewFile)
                 {
                     /* We need the size and the mode of the file. */
@@ -349,7 +349,7 @@ int DnDURIList::AppendNativePath(const char *pszPath, uint32_t fFlags)
 
     int rc;
     char *pszPathNative = RTStrDup(pszPath);
-    if (pszPathNative) 
+    if (pszPathNative)
     {
         RTPathChangeToUnixSlashes(pszPathNative, true /* fForce */);
 
