@@ -20,8 +20,6 @@
 #ifndef ___UIDnDDropSource_win_h___
 #define ___UIDnDDropSource_win_h___
 
-#include "UIDnDDrag.h"
-
 class UIDnDDropSource : public IDropSource
 {
 public:
