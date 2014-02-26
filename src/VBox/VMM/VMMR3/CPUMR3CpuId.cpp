@@ -770,6 +770,7 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
 {
     *pfFinalEcxUnchanged = false;
 
+    uint32_t auCur[4];
     uint32_t auPrev[4];
     ASMCpuIdExSlow(uLeaf, 0, 0, 0, &auPrev[0], &auPrev[1], &auPrev[2], &auPrev[3]);
 
@@ -777,7 +778,6 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
     uint32_t uSubLeaf = 1;
     for (;;)
     {
-        uint32_t auCur[4];
         ASMCpuIdExSlow(uLeaf, 0, uSubLeaf, 0, &auCur[0], &auCur[1], &auCur[2], &auCur[3]);
         if (memcmp(auCur, auPrev, sizeof(auCur)))
             break;
@@ -792,33 +792,74 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
     }
 
     /* Count sub-leaves. */
+    uint32_t cRepeats = 0;
     uSubLeaf = 0;
     for (;;)
     {
-        uint32_t auCur[4];
         ASMCpuIdExSlow(uLeaf, 0, uSubLeaf, 0, &auCur[0], &auCur[1], &auCur[2], &auCur[3]);
 
-        /* Exactly when this terminates isn't quite consistent.  When working
-           0xb, we should probably only check if ebx == 0... */
+        /* Figuring out when to stop isn't entirely straight forward as we need
+           to cover undocumented behavior up to a point and implementation shortcuts. */
+
+        /* 1. Look for zero values. */
         if (   auCur[0] == 0
             && auCur[1] == 0
             && (auCur[2] == 0 || auCur[2] == uSubLeaf)
-            && (auCur[3] == 0 || uLeaf == 0xb) )
-        {
-            if (auCur[2] == uSubLeaf)
-                *pfFinalEcxUnchanged = true;
-            *pcSubLeaves = uSubLeaf + 1;
-            return true;
-        }
+            && (auCur[3] == 0 || uLeaf == 0xb /* edx is fixed */) )
+            break;
 
-        /* Advance / give up. */
-        uSubLeaf++;
+        /* 2. Look for more than 4 repeating value sets. */
+        if (   auCur[0] == auPrev[0]
+            && auCur[1] == auPrev[1]
+            && (auCur[2] == auPrev[2] || (auCur[2] == uSubLeaf && auPrev[1] == uSubLeaf - 1))
+            && auCur[3] == auPrev[3])
+        {
+            cRepeats++;
+            if (cRepeats > 4)
+                break;
+        }
+        else
+            cRepeats = 0;
+
+        /* 3. Leaf 0xb level type 0 check. */
+        if (   uLeaf == 0xb
+            && (auCur[3]  & 0xff00) == 0
+            && (auPrev[3] & 0xff00) == 0)
+            break;
+
+        /* 99. Give up. */
         if (uSubLeaf >= 128)
         {
+#ifndef IN_VBOX_CPU_REPORT
+            /* Ok, limit it according to the documentation if possible just to
+               avoid annoying users with these detection issues. */
+            uint32_t cDocLimit = UINT32_MAX;
+            if (uLeaf == 0x4)
+                cDocLimit = 4;
+            else if (uLeaf == 0x7)
+                cDocLimit = 1;
+            else if (uLeaf == 0xf)
+                cDocLimit = 2;
+            if (cDocLimit != UINT32_MAX)
+            {
+                *pfFinalEcxUnchanged = auCur[2] == uSubLeaf;
+                *pcSubLeaves = cDocLimit + 3;
+                return true;
+            }
+#endif
             *pcSubLeaves = UINT32_MAX;
             return true;
         }
+
+        /* Advance. */
+        uSubLeaf++;
+        memcpy(auPrev, auCur, sizeof(auCur));
     }
+
+    /* Standard exit. */
+    *pfFinalEcxUnchanged = auCur[2] == uSubLeaf;
+    *pcSubLeaves = uSubLeaf + 1 - cRepeats;
+    return true;
 }
 
 
