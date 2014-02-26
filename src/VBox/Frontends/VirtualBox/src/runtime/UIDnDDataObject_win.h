@@ -26,6 +26,9 @@
 #include <QStringList>
 #include <QVariant>
 
+/* COM includes: */
+#include "CSession.h"
+
 /* Forward declarations: */
 class UIDnDDrag;
 
