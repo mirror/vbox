@@ -27,6 +27,7 @@
 #include <QVariant>
 
 /* COM includes: */
+#include "COMEnums.h"
 #include "CSession.h"
 
 /* Forward declarations: */
