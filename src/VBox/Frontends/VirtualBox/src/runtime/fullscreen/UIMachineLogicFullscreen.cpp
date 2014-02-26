@@ -142,10 +142,14 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
         /* If fullscreen mode was just invalidated: */
         if (m_fIsFullscreenInvalidated)
         {
-            /* Mark fullscreen mode valid again and re-enter it: */
             LogRel(("UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit: "
                     "Machine-window(s) exited invalidated fullscreen, enter again...\n"));
+
+            /* Mark fullscreen mode valid again: */
             m_fIsFullscreenInvalidated = false;
+            /* Reactivate 'presentation mode': */
+            setPresentationModeEnabled(true);
+            /* Re-enter fullscreen mode: */
             foreach (UIMachineWindow *pMachineWindow, machineWindows())
                 pMachineWindow->showInNecessaryMode();
             foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -157,9 +161,10 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
         /* If fullscreen mode was manually exited: */
         else
         {
-            /* Change visual-state to requested: */
             LogRel(("UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit: "
                     "Machine-window(s) exited fullscreen, changing visual-state to requested...\n"));
+
+            /* Change visual-state to requested: */
             UIVisualStateType type = uisession()->requestedVisualState();
             if (type == UIVisualStateType_Invalid)
                 type = UIVisualStateType_Normal;
@@ -347,7 +352,8 @@ void UIMachineLogicFullscreen::prepareActionConnections()
 #ifdef Q_WS_MAC
 void UIMachineLogicFullscreen::prepareOtherConnections()
 {
-    /* Make sure 'presentation mode' is updated for Lion and previous: */
+    /* Make sure 'presentation mode' preference handling
+     * is updated at runtime for Lion and previous: */
     if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
         connect(gEDataEvents, SIGNAL(sigPresentationModeChange(bool)),
                 this, SLOT(sltChangePresentationMode(bool)));
@@ -378,11 +384,10 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
             this, SLOT(sltScreenLayoutChanged()));
 
 #ifdef Q_WS_MAC
-    /* Activate 'presentation mode' for Lion and previous: */
-    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
-        setPresentationModeEnabled(true);
+    /* Activate 'presentation mode': */
+    setPresentationModeEnabled(true);
     /* For ML and next: */
-    else
+    if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
     {
         /* For all the machine-window(s): */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -428,9 +433,8 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
         UIMachineWindow::destroy(pMachineWindow);
 
 #ifdef Q_WS_MAC
-    /* Deactivate 'presentation mode' for Lion and previous: */
-    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
-        setPresentationModeEnabled(false);
+    /* Deactivate 'presentation mode': */
+    setPresentationModeEnabled(false);
 #endif/* Q_WS_MAC */
 }
 
@@ -470,24 +474,36 @@ void UIMachineLogicFullscreen::cleanupActionGroups()
 #ifdef Q_WS_MAC
 void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
 {
-    /* Make sure this method is only used for Lion and previous: */
-    AssertReturnVoid(vboxGlobal().osRelease() <= MacOSXRelease_Lion);
-
-    /* First check if we are on a screen which contains the Dock or the
-     * Menubar (which hasn't to be the same), only than the
-     * presentation mode have to be changed. */
-    if (   fEnabled
-        && m_pScreenLayout->isHostTaskbarCovert())
+    /* Should we enable it? */
+    if (fEnabled)
     {
-        QString testStr = vboxGlobal().virtualBox().GetExtraData(GUI_PresentationModeEnabled).toLower();
-        /* Default to false if it is an empty value */
-        if (testStr.isEmpty() || testStr == "false")
-            SetSystemUIMode(kUIModeAllHidden, 0);
+        /* For Lion and previous: */
+        if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+        {
+            /* Check if we have screen which contains the Dock or the Menubar (which hasn't to be the same),
+             * only than the 'presentation mode' have to be changed. */
+            if (m_pScreenLayout->isHostTaskbarCovert())
+            {
+                /* Load 'presentation mode' preference: */
+                QString strPresentationMode = vboxGlobal().virtualBox().GetExtraData(GUI_PresentationModeEnabled).toLower();
+                /* Default to 'false' if it is an empty value: */
+                if (strPresentationMode.isEmpty() || strPresentationMode == "false")
+                    SetSystemUIMode(kUIModeAllHidden, 0);
+                else
+                    SetSystemUIMode(kUIModeAllSuppressed, 0);
+            }
+        }
+        /* For ML and next: */
         else
+        {
+            /* I am not sure we have to check anything here.
+             * Without 'presentation mode' native fullscreen works pretty bad,
+             * so we have to enable it anyway: */
             SetSystemUIMode(kUIModeAllSuppressed, 0);
+        }
     }
-    else
-        SetSystemUIMode(kUIModeNormal, 0);
+    /* Should we disable it? */
+    else SetSystemUIMode(kUIModeNormal, 0);
 }
 
 void UIMachineLogicFullscreen::invalidateFullscreenMode()
