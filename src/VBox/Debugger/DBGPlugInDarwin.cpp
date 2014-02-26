@@ -271,7 +271,7 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
     /*
      * Process the load commands.
      */
-    RTDBGSEGMENT    aSegs[12];
+    RTDBGSEGMENT    aSegs[24];
     uint32_t        cSegs  = 0;
     RTUUID          Uuid   = RTUUID_INITIALIZE_NULL;
     uint32_t        cLeft  = uBuf.Hdr32.ncmds;
@@ -730,7 +730,7 @@ static DECLCALLBACK(bool)  dbgDiggerDarwinProbe(PUVM pUVM, void *pvData)
             if (uBuf.Hdr32.ncmds > 256)
                 continue;
             AssertCompileMembersSameSizeAndOffset(mach_header_64_t, sizeofcmds, mach_header_32_t, sizeofcmds);
-            if (uBuf.Hdr32.sizeofcmds > X86_PAGE_4K_SIZE - sizeof(mach_header_64_t))
+            if (uBuf.Hdr32.sizeofcmds > X86_PAGE_4K_SIZE * 2 - sizeof(mach_header_64_t))
                 continue;
 
             /* Seems good enough for now.
