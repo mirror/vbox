@@ -281,6 +281,21 @@ crServerDeleteClient( CRClient *client )
         pNode->next = cr_server.pCleanupClient;
         cr_server.pCleanupClient = pNode;
     }
+
+    if (!cr_server.numClients)
+    {
+        /* if no clients, the guest driver may be unloaded,
+         * and thus the visible regions situation might not be under control anymore,
+         * so cleanup the 3D framebuffer data here
+         * @todo: what really should happen is that guest driver on unload
+         * posts some request to host that would copy the current framebuffer 3D data to the 2D buffer
+         * (i.e. to the memory used by the standard IFramebuffer API) */
+        HCR_FRAMEBUFFER hFb;
+        for (hFb = CrPMgrFbGetFirstEnabled(); hFb; hFb = CrPMgrFbGetNextEnabled(hFb))
+        {
+            CrFbRegionsClear(hFb);
+        }
+    }
 }
 
 /**

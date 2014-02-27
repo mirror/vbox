@@ -155,6 +155,8 @@ HCR_FRAMEBUFFER CrPMgrFbGetNextEnabled(HCR_FRAMEBUFFER hFb);
 HCR_FRAMEBUFFER CrPMgrFbGetFirstInitialized();
 HCR_FRAMEBUFFER CrPMgrFbGetNextInitialized(HCR_FRAMEBUFFER hFb);
 
+int CrFbRegionsClear(HCR_FRAMEBUFFER hFb);
+
 
 #define CR_SERVER_FBO_BB_IDX(_mural) ((_mural)->iBbBuffer)
 #define CR_SERVER_FBO_FB_IDX(_mural) (((_mural)->iBbBuffer + 1) % ((_mural)->cBuffers))

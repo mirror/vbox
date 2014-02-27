@@ -2599,8 +2599,6 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 
     if (version >= SHCROGL_SSM_VERSION_WITH_SCREEN_INFO)
     {
-        HCR_FRAMEBUFFER hFb;
-
         rc = CrPMgrLoadState(pSSM, version);
         AssertRCReturn(rc, rc);
     }
