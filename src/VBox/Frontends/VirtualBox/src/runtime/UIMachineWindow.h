@@ -120,10 +120,6 @@ protected:
     virtual void cleanupMainLayout() {}
     virtual void cleanupSessionConnections() {}
 
-    /* Visibility stuff: */
-    void handleScreenCountChange();
-    void handleScreenGeometryChange();
-
     /* Update stuff: */
     virtual void updateAppearanceOf(int iElement);
 #ifdef VBOX_WITH_DEBUGGER_GUI

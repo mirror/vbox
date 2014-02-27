@@ -596,25 +596,29 @@ void UIMachineLogic::sltShowWindows()
 
 void UIMachineLogic::sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)
 {
-    /* Deliver event to all machine-windows: */
+    LogRel(("UIMachineLogic: Guest-screen count changed.\n"));
+
+    /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->handleScreenCountChange();
+        pMachineWindow->showInNecessaryMode();
 }
 
 void UIMachineLogic::sltHostScreenCountChanged()
 {
-    /* Deliver event to all machine-windows: */
+    LogRel(("UIMachineLogic: Host-screen count changed.\n"));
+
+    /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->handleScreenCountChange();
+        pMachineWindow->showInNecessaryMode();
 }
 
 void UIMachineLogic::sltHostScreenGeometryChanged()
 {
-    LogRelFlow(("UIMachineLogic: Host-screen geometry changed.\n"));
+    LogRel(("UIMachineLogic: Host-screen geometry changed.\n"));
 
-    /* Deliver event to all machine-windows: */
+    /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->handleScreenGeometryChange();
+        pMachineWindow->showInNecessaryMode();
 }
 
 UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualStateType visualStateType)

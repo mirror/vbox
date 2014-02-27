@@ -441,26 +441,6 @@ void UIMachineWindow::cleanupMachineView()
     m_pMachineView = 0;
 }
 
-void UIMachineWindow::handleScreenCountChange()
-{
-    /* Ignore if window is minimized: */
-    if (isMinimized())
-        return;
-
-    /* Make sure window is in necessary mode: */
-    showInNecessaryMode();
-}
-
-void UIMachineWindow::handleScreenGeometryChange()
-{
-    /* Ignore if window is minimized: */
-    if (isMinimized())
-        return;
-
-    /* Make sure window is in necessary mode: */
-    showInNecessaryMode();
-}
-
 void UIMachineWindow::updateAppearanceOf(int iElement)
 {
     /* Update window title: */
