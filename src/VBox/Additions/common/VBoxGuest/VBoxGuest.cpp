@@ -133,19 +133,16 @@ DECLINLINE(bool) VBoxGuestCommonGuestCapsModeSet(PVBOXGUESTDEVEXT pDevExt, uint3
  * @returns VBox status code (ignored).
  * @param   fMask       The new mask.
  */
-static int vboxGuestSetFilterMask(uint32_t fMask)
+static int vboxGuestSetFilterMask(VMMDevCtlGuestFilterMask *pReq,
+                                  uint32_t fMask)
 {
-    VMMDevCtlGuestFilterMask *pReq;
-    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_CtlGuestFilterMask);
-    if (RT_SUCCESS(rc))
-    {
-        pReq->u32OrMask = fMask;
-        pReq->u32NotMask = ~fMask;
-        rc = VbglGRPerform(&pReq->header);
-        if (RT_FAILURE(rc))
-            LogRel(("vboxGuestSetFilterMask: failed with rc=%Rrc\n", rc));
-        VbglGRFree(&pReq->header);
-    }
+    int rc;
+
+    pReq->u32OrMask = fMask;
+    pReq->u32NotMask = ~fMask;
+    rc = VbglGRPerform(&pReq->header);
+    if (RT_FAILURE(rc))
+        LogRel(("vboxGuestSetFilterMask: failed with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -159,20 +156,16 @@ static int vboxGuestSetFilterMask(uint32_t fMask)
  * @returns VBox status code.
  * @param   fMask       The new mask.
  */
-static int vboxGuestSetCapabilities(uint32_t fMask)
+static int vboxGuestSetCapabilities(VMMDevReqGuestCapabilities2 *pReq,
+                                    uint32_t fMask)
 {
-    VMMDevReqGuestCapabilities2 *pReq;
-    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq),
-                         VMMDevReq_SetGuestCapabilities);
-    if (RT_SUCCESS(rc))
-    {
-        pReq->u32OrMask = fMask;
-        pReq->u32NotMask = ~fMask;
-        rc = VbglGRPerform(&pReq->header);
-        if (RT_FAILURE(rc))
-            LogRelFunc(("failed with rc=%Rrc\n", rc));
-        VbglGRFree(&pReq->header);
-    }
+    int rc;
+
+    pReq->u32OrMask = fMask;
+    pReq->u32NotMask = ~fMask;
+    rc = VbglGRPerform(&pReq->header);
+    if (RT_FAILURE(rc))
+        LogRelFunc(("failed with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -186,21 +179,16 @@ static int vboxGuestSetCapabilities(uint32_t fMask)
  * @returns VBox status code.
  * @param   fMask       The new mask.
  */
-static int vboxGuestSetMouseStatus(uint32_t fMask)
+static int vboxGuestSetMouseStatus(VMMDevReqMouseStatus *pReq, uint32_t fMask)
 {
-    VMMDevReqMouseStatus *pReq;
-    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq),
-                         VMMDevReq_SetMouseStatus);
-    if (RT_SUCCESS(rc))
-    {
-        pReq->mouseFeatures = fMask;
-        pReq->pointerXPos   = 0;
-        pReq->pointerYPos   = 0;
-        rc = VbglGRPerform(&pReq->header);
-        if (RT_FAILURE(rc))
-            LogRelFunc(("failed with rc=%Rrc\n", rc));
-        VbglGRFree(&pReq->header);
-    }
+    int rc;
+
+    pReq->mouseFeatures = fMask;
+    pReq->pointerXPos   = 0;
+    pReq->pointerYPos   = 0;
+    rc = VbglGRPerform(&pReq->header);
+    if (RT_FAILURE(rc))
+        LogRelFunc(("failed with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -209,22 +197,24 @@ static int vboxGuestSetMouseStatus(uint32_t fMask)
  * vboxGuestUpdateHostFlags() method. */
 enum
 {
-    HostFlags_FilterMask = 1,
-    HostFlags_Capabilities,
-    HostFlags_MouseStatus,
+    HostFlags_FilterMask   = 1,
+    HostFlags_Capabilities = 2,
+    HostFlags_MouseStatus  = 4,
+    HostFlags_All          = 7,
     HostFlags_SizeHack = (unsigned)-1
 };
 
 
-/** Unlocked version of and worker for vboxGuestUpdateHostFlags() below. */
-static int vboxGuestUpdateHostFlagsUnlocked(PVBOXGUESTDEVEXT pDevExt,
-                                            PVBOXGUESTSESSION pSession,
-                                            unsigned enmFlags)
+static int vboxGuestGetHostFlagsFromSessions(PVBOXGUESTDEVEXT pDevExt,
+                                             PVBOXGUESTSESSION pSession,
+                                             uint32_t *pfFilterMask,
+                                             uint32_t *pfCapabilities,
+                                             uint32_t *pfMouseStatus)
 {
-    int rc = VINF_SUCCESS;
-    uint32_t fFilterMask = 0, fCapabilities = 0, fMouseStatus = 0;
     PVBOXGUESTSESSION pIterator;
+    uint32_t fFilterMask = 0, fCapabilities = 0, fMouseStatus = 0;
     unsigned cSessions = 0;
+    int rc = VINF_SUCCESS;
 
     RTListForEach(&pDevExt->SessionList, pIterator, VBOXGUESTSESSION, ListNode)
     {
@@ -246,18 +236,9 @@ static int vboxGuestUpdateHostFlagsUnlocked(PVBOXGUESTDEVEXT pDevExt,
             || ~fCapabilities & pSession->fCapabilities
             || ~fMouseStatus  & pSession->fMouseStatus)
             rc = VERR_INTERNAL_ERROR;
-    if (RT_SUCCESS(rc))
-    {
-        if (enmFlags & HostFlags_FilterMask)
-            vboxGuestSetFilterMask(fFilterMask | pDevExt->fFixedEvents);
-        if (enmFlags & HostFlags_Capabilities)
-            vboxGuestSetCapabilities(fCapabilities);
-        /* Since VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR is inverted in the session
-         * capabilities we invert it again before sending it to the host. */
-        fMouseStatus ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
-        if (enmFlags & HostFlags_MouseStatus)
-            vboxGuestSetMouseStatus(fMouseStatus);
-    }
+    *pfFilterMask = fFilterMask;
+    *pfCapabilities = fCapabilities;
+    *pfMouseStatus = fMouseStatus;
     return rc;
 }
 
@@ -265,18 +246,55 @@ static int vboxGuestUpdateHostFlagsUnlocked(PVBOXGUESTDEVEXT pDevExt,
 /** Check which host flags in a given category are being asserted by some guest
  * session and assert exactly those on the host which are being asserted by one
  * or more sessions.  pCallingSession is purely for sanity checking and can be
- * NULL. */
+ * NULL.
+ * @note Takes the session spin-lock.
+ */
 static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt,
                                     PVBOXGUESTSESSION pSession,
                                     unsigned enmFlags)
 {
     int rc;
+    VMMDevCtlGuestFilterMask    *pFilterReq = NULL;
+    VMMDevReqGuestCapabilities2 *pCapabilitiesReq = NULL;
+    VMMDevReqMouseStatus        *pStatusReq = NULL;
+    uint32_t fFilterMask = 0, fCapabilities = 0, fMouseStatus = 0;
 
+    rc = VbglGRAlloc((VMMDevRequestHeader **)&pFilterReq, sizeof(*pFilterReq),
+                     VMMDevReq_CtlGuestFilterMask);
+    if (RT_SUCCESS(rc))
+        rc = VbglGRAlloc((VMMDevRequestHeader **)&pCapabilitiesReq,
+                         sizeof(*pCapabilitiesReq),
+                         VMMDevReq_SetGuestCapabilities);
+    if (RT_SUCCESS(rc))
+        rc = VbglGRAlloc((VMMDevRequestHeader **)&pStatusReq,
+                         sizeof(*pStatusReq), VMMDevReq_SetMouseStatus);
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
-    rc = vboxGuestUpdateHostFlagsUnlocked(pDevExt, pSession, enmFlags);
+    if (RT_SUCCESS(rc))
+        rc = vboxGuestGetHostFlagsFromSessions(pDevExt, pSession, &fFilterMask,
+                                               &fCapabilities, &fMouseStatus);
+    if (RT_SUCCESS(rc))
+    {
+        fFilterMask |= pDevExt->fFixedEvents;
+        /* Since VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR is inverted in the session
+         * capabilities we invert it again before sending it to the host. */
+        fMouseStatus ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
+        if (enmFlags & HostFlags_FilterMask)
+            vboxGuestSetFilterMask(pFilterReq, fFilterMask);
+        if (enmFlags & HostFlags_Capabilities)
+            vboxGuestSetCapabilities(pCapabilitiesReq, fCapabilities);
+        if (enmFlags & HostFlags_MouseStatus)
+            vboxGuestSetMouseStatus(pStatusReq, fMouseStatus);
+    }
     RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    if (pFilterReq)
+        VbglGRFree(&pFilterReq->header);
+    if (pCapabilitiesReq)
+        VbglGRFree(&pCapabilitiesReq->header);
+    if (pStatusReq)
+        VbglGRFree(&pStatusReq->header);
     return rc;
 }
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -1003,30 +1021,25 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
             rc = VBoxGuestReportGuestInfo(enmOSType);
             if (RT_SUCCESS(rc))
             {
-                rc = vboxGuestSetFilterMask(fFixedEvents);
+                /* Set the fixed event and disable the guest graphics capability
+                 * by default. The guest specific graphics driver will re-enable
+                 * the graphics capability if and when appropriate. */
+                rc = vboxGuestUpdateHostFlags(pDevExt, NULL,
+                                                HostFlags_FilterMask
+                                              | HostFlags_Capabilities);
                 if (RT_SUCCESS(rc))
                 {
-                    /*
-                     * Disable guest graphics capability by default. The guest specific
-                     * graphics driver will re-enable this when it is necessary.
-                     */
-                    rc = vboxGuestSetCapabilities(0);
-                    if (RT_SUCCESS(rc))
-                    {
-                        vboxGuestInitFixateGuestMappings(pDevExt);
+                    vboxGuestInitFixateGuestMappings(pDevExt);
 
-                        rc = VBoxGuestReportDriverStatus(true /* Driver is active */);
-                        if (RT_FAILURE(rc))
-                            LogRel(("VBoxGuestInitDevExt: VBoxReportGuestDriverStatus failed, rc=%Rrc\n", rc));
+                    rc = VBoxGuestReportDriverStatus(true /* Driver is active */);
+                    if (RT_FAILURE(rc))
+                        LogRel(("VBoxGuestInitDevExt: VBoxReportGuestDriverStatus failed, rc=%Rrc\n", rc));
 
-                        Log(("VBoxGuestInitDevExt: returns success\n"));
-                        return VINF_SUCCESS;
-                    }
-
-                    LogRel(("VBoxGuestInitDevExt: vboxGuestSetCapabilities failed, rc=%Rrc\n", rc));
+                    Log(("VBoxGuestInitDevExt: returns success\n"));
+                    return VINF_SUCCESS;
                 }
                 else
-                    LogRel(("VBoxGuestInitDevExt: vboxGuestSetFilterMask failed, rc=%Rrc\n", rc));
+                    LogRelFunc(("failed to set host flags, rc=%Rrc\n", rc));
             }
             else
                 LogRel(("VBoxGuestInitDevExt: VBoxReportGuestInfo failed, rc=%Rrc\n", rc));
@@ -1090,9 +1103,14 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
      * Clean up the bits that involves the host first.
      */
     vboxGuestTermUnfixGuestMappings(pDevExt);
-    vboxGuestSetCapabilities(0);                  /* clear all Capabilities */
-    vboxGuestSetFilterMask(0);                    /* filter all events */
-    vboxGuestSetMouseStatus(0);                   /* clear all mouse features */
+    if (!RTListIsEmpty(&pDevExt->SessionList))
+    {
+        LogRelFunc(("session list not empty!\n"));
+        RTListInit(&pDevExt->SessionList);
+    }
+    /* Update the host flags (mouse status etc) not to reflect this session. */
+    pDevExt->fFixedEvents = 0;
+    vboxGuestUpdateHostFlags(pDevExt, NULL, HostFlags_All);
     vboxGuestCloseMemBalloon(pDevExt, (PVBOXGUESTSESSION)NULL);
 
     /*
@@ -1111,8 +1129,6 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
 #endif
     VBoxGuestDeleteWaitList(&pDevExt->WokenUpList);
     VBoxGuestDeleteWaitList(&pDevExt->FreeList);
-    /** @todo We do not assert that the session list is empty, because probably
-     * no one would notice. */
 
     VbglTerminate();
 
@@ -1232,10 +1248,9 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
     pSession->Process = NIL_RTPROCESS;
     pSession->R0Process = NIL_RTR0PROCESS;
     vboxGuestCloseMemBalloon(pDevExt, pSession);
-    /* Update the host flags (mouse status etc) not to reflect this session. */
-    vboxGuestUpdateHostFlags(pDevExt, NULL,
-         HostFlags_FilterMask | HostFlags_Capabilities | HostFlags_MouseStatus);
     RTMemFree(pSession);
+    /* Update the host flags (mouse status etc) not to reflect this session. */
+    vboxGuestUpdateHostFlags(pDevExt, NULL, HostFlags_All);
 }
 
 
@@ -1953,9 +1968,8 @@ static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt,
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     pSession->fFilterMask |= pInfo->u32OrMask;
     pSession->fFilterMask &= ~pInfo->u32NotMask;
-    rc = vboxGuestUpdateHostFlagsUnlocked(pDevExt, pSession,
-                                          HostFlags_FilterMask);
     RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_FilterMask);
     return rc;
 }
 
@@ -1972,9 +1986,8 @@ static int VBoxGuestCommonIOCtl_SetCapabilities(PVBOXGUESTDEVEXT pDevExt,
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     pSession->fCapabilities |= pInfo->u32OrMask;
     pSession->fCapabilities &= ~pInfo->u32NotMask;
-    rc = vboxGuestUpdateHostFlagsUnlocked(pDevExt, pSession,
-                                          HostFlags_Capabilities);
     RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_Capabilities);
     return rc;
 }
 
@@ -2002,9 +2015,8 @@ static int vboxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt,
     fFeatures ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     pSession->fMouseStatus = fFeatures;
-    rc = vboxGuestUpdateHostFlagsUnlocked(pDevExt, pSession,
-                                          HostFlags_MouseStatus);
     RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_MouseStatus);
     return rc;
 }
 
