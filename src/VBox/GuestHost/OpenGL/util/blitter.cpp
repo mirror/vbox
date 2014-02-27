@@ -1575,7 +1575,7 @@ static int ctTdBltSdCreate(PCR_BLITTER pBlitter, uint32_t width, uint32_t height
 
 static int ctTdBltSdGet(PCR_TEXDATA pTex, uint32_t width, uint32_t height, PCR_TEXDATA *ppScaledCache)
 {
-    Assert(pTex->Flags.Entered);
+    Assert(CrBltIsEntered(pTex->pBlitter));
 
     PCR_TEXDATA pScaledCache;
 
