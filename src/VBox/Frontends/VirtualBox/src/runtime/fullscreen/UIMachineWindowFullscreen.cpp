@@ -91,6 +91,43 @@ void UIMachineWindowFullscreen::sltPopupMainMenu()
     }
 }
 
+#ifdef Q_WS_MAC
+void UIMachineWindowFullscreen::sltEnterNativeFullscreen()
+{
+    /* Make sure this slot is called only under ML and next: */
+    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+
+    /* Make sure this window should be shown at all: */
+    if (!uisession()->isScreenVisible(m_uScreenId))
+        return;
+
+    /* Make sure this window has fullscreen logic: */
+    UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
+    if (!pFullscreenLogic)
+        return;
+
+    /* Make sure this window mapped to some host-screen: */
+    if (!pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
+        return;
+
+    /* Enter native fullscreen mode if necessary: */
+    if (   (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
+        && !darwinIsInFullscreenMode(this))
+        darwinToggleFullscreenMode(this);
+}
+
+void UIMachineWindowFullscreen::sltExitNativeFullscreen()
+{
+    /* Make sure this slot is called only under ML and next: */
+    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+
+    /* Exit native fullscreen mode if necessary: */
+    if (   (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
+        && darwinIsInFullscreenMode(this))
+        darwinToggleFullscreenMode(this);
+}
+#endif /* Q_WS_MAC */
+
 void UIMachineWindowFullscreen::prepareMenu()
 {
     /* Call to base-class: */
