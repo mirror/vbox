@@ -256,6 +256,36 @@ RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar);
  */
 RTDECL(char *) RTEnvDupEx(RTENV Env, const char *pszVar);
 
+/**
+ * Counts the variables in the environment.
+ *
+ * @returns Number of variables in the environment. UINT32_MAX on error.
+ * @param   hEnv        The environment handle.
+ *                      RTENV_DEFAULT is currently not accepted.
+ */
+RTDECL(uint32_t) RTEnvCountEx(RTENV hEnv);
+
+/**
+ * Queries an environment variable by it's index.
+ *
+ * This can be used together with RTEnvCount to enumerate the environment block.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_ENV_VAR_NOT_FOUND if the index is out of bounds, output buffers
+ *          untouched.
+ * @retval  VERR_BUFFER_OVERFLOW if one of the buffers are too small.  We'll
+ *          fill it with as much we can in RTStrCopy fashion.
+ *
+ * @param   hEnv        The environment handle.
+ *                      RTENV_DEFAULT is currently not accepted.
+ * @param   iVar        The variable index.
+ * @param   pszVar      Variable name buffer.
+ * @param   cbVar       The size of the variable name buffer.
+ * @param   pszValue    Value buffer.
+ * @param   cbValue     The size of the value buffer.
+ */
+RTDECL(uint32_t) RTEnvGetByIndexEx(RTENV hEnv, uint32_t iVar, char *pszVar, size_t cbVar, char *pszValue, size_t cbValue);
+
 #endif /* IN_RING3 */
 
 /** @} */

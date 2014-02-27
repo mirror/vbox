@@ -233,7 +233,7 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone)
         pIntEnvToClone = NULL;
 #ifdef RTENV_HAVE_WENVIRON
         papszEnv  = NULL;
-        papwszEnv = (PCRTUTF16 * const )_wenviron;
+        papwszEnv = (PCRTUTF16 * const)_wenviron;
         if (papwszEnv)
             while (papwszEnv[cVars])
                 cVars++;
@@ -840,4 +840,61 @@ RTDECL(void) RTEnvFreeUtf16Block(PRTUTF16 pwszzBlock)
     RTMemFree(pwszzBlock);
 }
 RT_EXPORT_SYMBOL(RTEnvFreeUtf16Block);
+
+
+RTDECL(uint32_t) RTEnvCountEx(RTENV hEnv)
+{
+    PRTENVINTERNAL pIntEnv = hEnv;
+    AssertPtrReturn(pIntEnv, UINT32_MAX);
+    AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, UINT32_MAX);
+
+    RTENV_LOCK(pIntEnv);
+    uint32_t cVars = (uint32_t)pIntEnv->cVars;
+    RTENV_UNLOCK(pIntEnv);
+
+    return cVars;
+}
+RT_EXPORT_SYMBOL(RTEnvCountEx);
+
+
+RTDECL(uint32_t) RTEnvGetByIndexEx(RTENV hEnv, uint32_t iVar, char *pszVar, size_t cbVar, char *pszValue, size_t cbValue)
+{
+    PRTENVINTERNAL pIntEnv = hEnv;
+    AssertPtrReturn(pIntEnv, UINT32_MAX);
+    AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, UINT32_MAX);
+    if (cbVar)
+        AssertPtrReturn(pszVar, VERR_INVALID_POINTER);
+    if (cbValue)
+        AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
+
+    RTENV_LOCK(pIntEnv);
+
+    int rc;
+    if (iVar < pIntEnv->cVars)
+    {
+        const char *pszSrcVar   = pIntEnv->papszEnv[iVar];
+        const char *pszSrcValue = strchr(pszSrcVar, '=');
+        bool        fHasEqual   = pszSrcValue != NULL;
+        if (pszSrcValue)
+            pszSrcValue++;
+        else
+            pszSrcValue = strchr(pszSrcVar, '\0');
+        rc = VINF_SUCCESS;
+        if (cbVar)
+            rc = RTStrCopyEx(pszVar, cbVar, pszSrcVar, pszSrcValue - pszSrcVar - fHasEqual);
+        if (cbValue)
+        {
+            int rc2 = RTStrCopy(pszValue, cbValue, pszSrcValue);
+            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                rc = rc2;
+        }
+    }
+    else
+        rc = VERR_ENV_VAR_NOT_FOUND;
+
+    RTENV_UNLOCK(pIntEnv);
+
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTEnvGetByIndexEx);
 
