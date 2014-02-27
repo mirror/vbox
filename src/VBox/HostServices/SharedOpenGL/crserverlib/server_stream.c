@@ -293,7 +293,14 @@ crServerDeleteClient( CRClient *client )
         HCR_FRAMEBUFFER hFb;
         for (hFb = CrPMgrFbGetFirstEnabled(); hFb; hFb = CrPMgrFbGetNextEnabled(hFb))
         {
-            CrFbRegionsClear(hFb);
+            int rc = CrFbUpdateBegin(hFb);
+            if (RT_SUCCESS(rc))
+            {
+                CrFbRegionsClear(hFb);
+                CrFbUpdateEnd(hFb);
+            }
+            else
+                WARN(("CrFbUpdateBegin failed %d", rc));
         }
     }
 }
