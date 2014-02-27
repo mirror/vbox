@@ -5772,7 +5772,6 @@ DxgkDdiRenderLegacy(
             pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_NOP;
 
             pRender->pDmaBufferPrivateData = (uint8_t*)pRender->pDmaBufferPrivateData + sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR);
-            memset(pRender->pDmaBuffer, 0, pRender->CommandLength);
             pRender->pDmaBuffer = ((uint8_t*)pRender->pDmaBuffer) + pRender->CommandLength;
             Assert(pRender->DmaSize >= pRender->CommandLength);
             Assert(pRender->PatchLocationListOutSize >= pRender->PatchLocationListInSize);
