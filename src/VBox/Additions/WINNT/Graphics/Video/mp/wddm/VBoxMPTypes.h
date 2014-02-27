@@ -111,6 +111,11 @@ typedef struct VBOXWDDM_ALLOC_DATA
     struct VBOXWDDM_SWAPCHAIN *pSwapchain;
 } VBOXWDDM_ALLOC_DATA, *PVBOXWDDM_ALLOC_DATA;
 
+#define VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS 0x01
+#define VBOXWDDM_HGSYNC_F_SYNCED_LOCATION   0x02
+#define VBOXWDDM_HGSYNC_F_SYNCED_ALL        (VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS | VBOXWDDM_HGSYNC_F_SYNCED_LOCATION)
+#define VBOXWDDM_HGSYNC_F_CHANGED_LOCATION_ONLY        (VBOXWDDM_HGSYNC_F_SYNCED_ALL & ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION)
+
 typedef struct VBOXWDDM_SOURCE
 {
     struct VBOXWDDM_ALLOCATION * pPrimaryAllocation;
@@ -118,8 +123,8 @@ typedef struct VBOXWDDM_SOURCE
     struct VBOXWDDM_ALLOCATION * pShadowAllocation;
 #endif
     VBOXWDDM_ALLOC_DATA AllocData;
+    uint8_t u8SyncState;
     BOOLEAN bVisible;
-    char fGhSynced;
     /* specifies whether the source has 3D overlay data visible */
     BOOLEAN fHas3DVrs;
     VBOXVR_LIST VrList;
@@ -139,11 +144,10 @@ typedef struct VBOXWDDM_SOURCE
 
 typedef struct VBOXWDDM_TARGET
 {
-    uint32_t ScanLineState;
     uint32_t HeightVisible;
     uint32_t HeightTotal;
     /* since there coul be multiple state changes on auto-resize,
-     * we pend notifying host to avoi flickering */
+     * we pend notifying host to avoid flickering */
     volatile bool fStateSyncPening;
     bool fConnected;
     bool fConfigured;

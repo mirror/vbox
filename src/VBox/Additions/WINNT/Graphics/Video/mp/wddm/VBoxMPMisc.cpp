@@ -1894,16 +1894,24 @@ static int vboxWddmSlConfigure(PVBOXMP_DEVEXT pDevExt, uint32_t fFlags)
 
 NTSTATUS VBoxWddmSlEnableVSyncNotification(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnable)
 {
+    if (!pDevExt->bVSyncTimerEnabled == !fEnable)
+        return STATUS_SUCCESS;
+
     if (!fEnable)
     {
         KeCancelTimer(&pDevExt->VSyncTimer);
     }
     else
     {
+        KeQuerySystemTime(&pDevExt->VSyncTime);
+
         LARGE_INTEGER DueTime;
         DueTime.QuadPart = -166666LL; /* 60 Hz */
         KeSetTimerEx(&pDevExt->VSyncTimer, DueTime, 16, &pDevExt->VSyncDpc);
     }
+
+    pDevExt->bVSyncTimerEnabled = !!fEnable;
+
     return STATUS_SUCCESS;
 }
 
@@ -1914,16 +1922,37 @@ NTSTATUS VBoxWddmSlGetScanLine(PVBOXMP_DEVEXT pDevExt, DXGKARG_GETSCANLINE *pGet
     Assert(pTarget->HeightTotal);
     Assert(pTarget->HeightVisible);
     Assert(pTarget->HeightTotal >= pTarget->HeightVisible);
-    Assert(pTarget->ScanLineState < pTarget->HeightTotal);
     if (pTarget->HeightTotal)
     {
-        uint32_t curScanLine = pTarget->ScanLineState;
-        ++pTarget->ScanLineState;
-        if (pTarget->ScanLineState >= pTarget->HeightTotal)
-            pTarget->ScanLineState = 0;
+        uint32_t curScanLine;
+        BOOL bVBlank;
+        LARGE_INTEGER DevVSyncTime;
+        DevVSyncTime.QuadPart =  ASMAtomicReadU64((volatile uint64_t*)&pDevExt->VSyncTime.QuadPart);
+        LARGE_INTEGER VSyncTime;
+        KeQuerySystemTime(&VSyncTime);
 
+        if (VSyncTime.QuadPart < DevVSyncTime.QuadPart)
+        {
+            WARN(("vsync time is less than the one stored in device"));
+            curScanLine = 0;
+        }
+        else
+        {
+            VSyncTime.QuadPart = VSyncTime.QuadPart - DevVSyncTime.QuadPart;
+            /* time is in 100ns, */
+            curScanLine = (uint32_t)((pTarget->HeightTotal * VSyncTime.QuadPart) / DevVSyncTime.QuadPart);
+            if (pDevExt->bVSyncTimerEnabled)
+            {
+                if (curScanLine >= pTarget->HeightTotal)
+                    curScanLine = 0;
+            }
+            else
+            {
+                curScanLine %= pTarget->HeightTotal;
+            }
+        }
 
-        BOOL bVBlank = (!curScanLine || curScanLine > pTarget->HeightVisible);
+        bVBlank = (!curScanLine || curScanLine > pTarget->HeightVisible);
         pGetScanLine->ScanLine = curScanLine;
         pGetScanLine->InVerticalBlank = bVBlank;
     }
@@ -1935,6 +1964,32 @@ NTSTATUS VBoxWddmSlGetScanLine(PVBOXMP_DEVEXT pDevExt, DXGKARG_GETSCANLINE *pGet
     return STATUS_SUCCESS;
 }
 
+static BOOLEAN vboxWddmSlVSyncIrqCb(PVOID pvContext)
+{
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvContext;
+    DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
+    BOOLEAN bNeedDpc = FALSE;
+    for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+    {
+        PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[i];
+        if (pTarget->fConnected)
+        {
+            memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
+            notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
+            notify.CrtcVsync.VidPnTargetId = i;
+            pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
+            bNeedDpc = TRUE;
+        }
+    }
+
+    if (bNeedDpc)
+    {
+        pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+    }
+
+    return FALSE;
+}
+
 static VOID vboxWddmSlVSyncDpc(
   __in      struct _KDPC *Dpc,
   __in_opt  PVOID DeferredContext,
@@ -1943,39 +1998,31 @@ static VOID vboxWddmSlVSyncDpc(
 )
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)DeferredContext;
-    DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
-    BOOLEAN bNeedDpc = FALSE;
-    for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
-    {
-        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
-        PVBOXWDDM_ALLOCATION pPrimary = vboxWddmAquirePrimary(pDevExt, pSource, i);
-        if (pPrimary)
-        {
-            VBOXVIDEOOFFSET offVram = pPrimary->AllocData.Addr.offVram;
-            if (offVram != VBOXVIDEOOFFSET_VOID)
-            {
-                memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
-                notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
-                /* @todo: !!!this is not correct in case we want source[i]->target[i!=j] mapping */
-                notify.CrtcVsync.VidPnTargetId = i;
-                notify.CrtcVsync.PhysicalAddress.QuadPart = offVram;
-                /* yes, we can report VSync at dispatch */
-                pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
-                bNeedDpc = TRUE;
-            }
+    Assert(!pDevExt->fVSyncInVBlank);
+    ASMAtomicWriteU32(&pDevExt->fVSyncInVBlank, 1);
 
-            vboxWddmAllocationRelease(pPrimary);
-        }
-    }
+    BOOLEAN bDummy;
+    NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
+            pDevExt->u.primary.DxgkInterface.DeviceHandle,
+            vboxWddmSlVSyncIrqCb,
+            pDevExt,
+            0, /* IN ULONG MessageNumber */
+            &bDummy);
+    if (!NT_SUCCESS(Status))
+        WARN(("DxgkCbSynchronizeExecution failed Status %#x", Status));
 
-    if (bNeedDpc)
-    {
-        pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
-    }
+    LARGE_INTEGER VSyncTime;
+    KeQuerySystemTime(&VSyncTime);
+    ASMAtomicWriteU64((volatile uint64_t*)&pDevExt->VSyncTime.QuadPart, VSyncTime.QuadPart);
+
+    ASMAtomicWriteU32(&pDevExt->fVSyncInVBlank, 0);
 }
 
 NTSTATUS VBoxWddmSlInit(PVBOXMP_DEVEXT pDevExt)
 {
+    pDevExt->bVSyncTimerEnabled = FALSE;
+    pDevExt->fVSyncInVBlank = 0;
+    KeQuerySystemTime(&pDevExt->VSyncTime);
     KeInitializeTimer(&pDevExt->VSyncTimer);
     KeInitializeDpc(&pDevExt->VSyncDpc, vboxWddmSlVSyncDpc, pDevExt);
     return STATUS_SUCCESS;
@@ -2034,7 +2081,7 @@ void vboxWddmDmAdjustDefaultVramLocations(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_P
         pSource = &pDevExt->aSources[i];
         if (pSource->AllocData.Addr.offVram != PhAddr.QuadPart
                 || pSource->AllocData.Addr.SegmentId != 1)
-            pSource->fGhSynced = 0;
+            pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;
         pSource->AllocData.Addr.SegmentId = 1;
         pSource->AllocData.Addr.offVram = PhAddr.QuadPart;
     }
