@@ -234,6 +234,11 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone)
 #ifdef RTENV_HAVE_WENVIRON
         papszEnv  = NULL;
         papwszEnv = (PCRTUTF16 * const)_wenviron;
+        if (!papwszEnv)
+        {
+            _wgetenv(L"Path"); /* Force the CRT to initalize it. */
+            papwszEnv = (PCRTUTF16 * const)_wenviron;
+        }
         if (papwszEnv)
             while (papwszEnv[cVars])
                 cVars++;
