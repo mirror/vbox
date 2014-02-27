@@ -14,6 +14,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <errno.h>
+#include <poll.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 //#include <X11/extensions/XTest.h>
@@ -415,7 +418,6 @@ public:
       , m_hX11Thread(NIL_RTTHREAD)
       , m_hEventSem(NIL_RTSEMEVENT)
       , m_pCurDnD(0)
-      , m_fSrvStopping(false)
     {}
 
     virtual const char *getPidFilePath() { return ".vboxclient-draganddrop.pid"; }
@@ -464,7 +466,6 @@ private:
     RTTHREAD             m_hX11Thread;
     RTSEMEVENT           m_hEventSem;
     DragInstance        *m_pCurDnD;
-    bool                 m_fSrvStopping;
 
     friend class DragInstance;
 };
@@ -1748,7 +1749,8 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                     }
                 }
             }
-        } while (!ASMAtomicReadBool(&m_fSrvStopping));
+            XFlush(m_pDisplay);
+        } while (1);
     } while (0);
 
     LogFlowFuncLeaveRC(rc);
@@ -1838,7 +1840,7 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
             }
         }
 
-    } while (!ASMAtomicReadBool(&pThis->m_fSrvStopping));
+    } while (1);
 
     VbglR3DnDDisconnect(uClientID);
 
@@ -1853,11 +1855,12 @@ int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
     DnDEvent e;
     do
     {
-        /* Wait for new events. We can't use XIfEvent here, cause this locks
+        /* Wait for new events. We can't use XIfEvent here, because this locks
          * the window connection with a mutex and if no X11 events occurs this
-         * blocks any other calls we made to X11. So instead check for new
-         * events and if there are not any new one, sleep for a certain amount
-         * of time. */
+         * blocks any other calls we made to X11. So instead poll for new events
+         * on the connection file descriptor. */
+        /** @todo Make sure the locking is right - Xlib displays should never be
+         * used from two threads at once. */
         if (XEventsQueued(pThis->m_pDisplay, QueuedAfterFlush) > 0)
         {
             RT_ZERO(e);
@@ -1872,8 +1875,21 @@ int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
             }
         }
         else
-            RTThreadSleep(25);
-    } while (!ASMAtomicReadBool(&pThis->m_fSrvStopping));
+        {
+            struct pollfd pollFD;
+
+            pollFD.fd = ConnectionNumber(pThis->m_pDisplay);
+            pollFD.events = POLLIN | POLLPRI;
+            if (   (poll(&pollFD, 1, -1) < 0 && errno != EINTR)
+                || pollFD.revents & POLLNVAL)
+            {
+                LogRel(("X11 event thread: poll failed, stopping.\n"));
+                /** @todo Just stop the whole service.  What use is it just
+                 *        to stop one thread? */
+                return RTErrConvertFromErrno(errno);
+            }
+        }
+    } while (1);
 
     return VINF_SUCCESS;
 }
