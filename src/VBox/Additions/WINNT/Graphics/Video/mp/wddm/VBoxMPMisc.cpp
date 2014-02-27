@@ -1903,7 +1903,7 @@ NTSTATUS VBoxWddmSlEnableVSyncNotification(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnab
     }
     else
     {
-        KeQuerySystemTime(&pDevExt->VSyncTime);
+        KeQuerySystemTime((PLARGE_INTEGER)&pDevExt->VSyncTime);
 
         LARGE_INTEGER DueTime;
         DueTime.QuadPart = -166666LL; /* 60 Hz */
@@ -2022,7 +2022,7 @@ NTSTATUS VBoxWddmSlInit(PVBOXMP_DEVEXT pDevExt)
 {
     pDevExt->bVSyncTimerEnabled = FALSE;
     pDevExt->fVSyncInVBlank = 0;
-    KeQuerySystemTime(&pDevExt->VSyncTime);
+    KeQuerySystemTime((PLARGE_INTEGER)&pDevExt->VSyncTime);
     KeInitializeTimer(&pDevExt->VSyncTimer);
     KeInitializeDpc(&pDevExt->VSyncDpc, vboxWddmSlVSyncDpc, pDevExt);
     return STATUS_SUCCESS;
