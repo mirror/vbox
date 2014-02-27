@@ -192,50 +192,56 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                  u32ClientID, u32Function, cParms));
 
     /* Check if we've the right mode set. */
-    bool fIgnoreRequest = true; /* Play safe. */
+    int rc = VERR_ACCESS_DENIED; /* Play safe. */
     switch (u32Function)
     {
         case DragAndDropSvc::GUEST_DND_GET_NEXT_HOST_MSG:
             if (modeGet() != VBOX_DRAG_AND_DROP_MODE_OFF)
             {
-                fIgnoreRequest = false;
+                rc = VINF_SUCCESS;
             }
             else
-                LogFlowFunc(("Drag'n drop disabled, ignoring request\n"));
+            {
+                LogFlowFunc(("DnD disabled, deferring request\n"));
+                rc = VINF_HGCM_ASYNC_EXECUTE;
+            }
             break;
         case DragAndDropSvc::GUEST_DND_HG_ACK_OP:
         case DragAndDropSvc::GUEST_DND_HG_REQ_DATA:
             if (   modeGet() == VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
                 || modeGet() == VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST)
             {
-                fIgnoreRequest = false;
+                rc = VINF_SUCCESS;
             }
             else
-                LogFlowFunc(("Host -> guest DnD mode disabled, ignoring request\n"));
+                LogFlowFunc(("Host -> Guest DnD mode disabled, ignoring request\n"));
             break;
-#ifdef VBOX_WITH_DRAG_AND_DROP_GH
         case DragAndDropSvc::GUEST_DND_GH_ACK_PENDING:
         case DragAndDropSvc::GUEST_DND_GH_SND_DATA:
         case DragAndDropSvc::GUEST_DND_GH_SND_DIR:
         case DragAndDropSvc::GUEST_DND_GH_SND_FILE:
         case DragAndDropSvc::GUEST_DND_GH_EVT_ERROR:
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
             if (   modeGet() == VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
                 || modeGet() == VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST)
             {
-                fIgnoreRequest = false;
+                rc = VINF_SUCCESS;
             }
             else
-                LogFlowFunc(("Guest -> host DnD mode disabled, ignoring request\n"));
-            break;
 #endif
+                LogFlowFunc(("Guest -> Host DnD mode disabled, ignoring request\n"));
+            break;
         default:
             /* Reach through to DnD manager. */
-            fIgnoreRequest = false;
+            rc = VINF_SUCCESS;
             break;
     }
 
-    int rc;
-    if (!fIgnoreRequest)
+#ifdef DEBUG_andy
+    LogFlowFunc(("Mode check rc=%Rrc\n", rc));
+#endif
+
+    if (rc == VINF_SUCCESS) /* Note: rc might be VINF_HGCM_ASYNC_EXECUTE! */
     {
         switch (u32Function)
         {
@@ -258,8 +264,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     if (   RT_FAILURE(rc)
                         && paParms[2].u.uint32) /* Blocking? */
                     {
-                        m_clientQueue.append(new HGCM::Client(u32ClientID, callHandle,
-                                                              u32Function, cParms, paParms));
+                        /* Defer client returning. */
                         rc = VINF_HGCM_ASYNC_EXECUTE;
                     }
                 }
@@ -275,10 +280,9 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 {
                     DragAndDropSvc::VBOXDNDCBHGACKOPDATA data;
                     data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_HG_ACK_OP;
-                    paParms[0].getUInt32(&data.uAction);
+                    paParms[0].getUInt32(&data.uAction); /* Get drop action. */
                     if (m_pfnHostCallback)
                         rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
-    //                m_pHelpers->pfnCallComplete(callHandle, rc);
                 }
                 break;
             }
@@ -296,11 +300,6 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     paParms[0].getPointer((void**)&data.pszFormat, &cTmp);
                     if (m_pfnHostCallback)
                         rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
-    //                m_pHelpers->pfnCallComplete(callHandle, rc);
-    //                if (data.pszFormat)
-    //                    RTMemFree(data.pszFormat);
-    //                if (data.pszTmpPath)
-    //                    RTMemFree(data.pszTmpPath);
                 }
                 break;
             }
@@ -427,12 +426,16 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             }
         }
     }
-    else
-        rc = VERR_ACCESS_DENIED;
 
-    /* If async execute is requested, we didn't notify the guest about
+    /* If async execution is requested, we didn't notify the guest yet about
      * completion. The client is queued into the waiters list and will be
      * notified as soon as a new event is available. */
+    if (rc == VINF_HGCM_ASYNC_EXECUTE)
+    {
+        m_clientQueue.append(new HGCM::Client(u32ClientID, callHandle,
+                                              u32Function, cParms, paParms));
+    }
+
     if (   rc != VINF_HGCM_ASYNC_EXECUTE
         && m_pHelpers)
     {
