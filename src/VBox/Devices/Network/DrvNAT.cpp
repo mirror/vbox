@@ -1106,10 +1106,9 @@ DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(PDRVN
                     drvNATNotifyNATThread(pThis,
                                           "drvNATHostNetworkConfigurationChangeEventStrategySelector");
 
-
                 return;
-
             }
+
         case VBOX_NAT_HNCE_EXSPOSED_NAME_RESOLUTION_INFO:
             /*
              * Host resumed from a suspend and the network might have changed.
@@ -1120,6 +1119,7 @@ DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(PDRVN
                 pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig,
                                                       PDMNETWORKLINKSTATE_DOWN_RESUME);
             return;
+
         case VBOX_NAT_HNCE_HOSTRESOLVER:
         default:
             return;
