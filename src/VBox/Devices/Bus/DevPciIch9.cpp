@@ -1889,10 +1889,10 @@ DECLINLINE(void) ich9pciWriteBarByte(PCIDevice *aDev, int iRegion, int iOffset, 
          iRegion, iOffset, u8Val, iRegionSize));
 
     if (iOffset > 3)
-        Assert((aDev->Int.s.aIORegions[iRegion].type & PCI_ADDRESS_SPACE_BAR64) != 0);
+        Assert((pRegion->type & PCI_ADDRESS_SPACE_BAR64) != 0);
 
     /* Check if we're writing to upper part of 64-bit BAR. */
-    if (aDev->Int.s.aIORegions[iRegion].type == 0xff)
+    if (pRegion->type == 0xff)
     {
         ich9pciWriteBarByte(aDev, iRegion-1, iOffset+4, u8Val);
         return;
