@@ -195,8 +195,8 @@ bool UIDnDMimeData::eventFilter(QObject * /* pObject */, QEvent *pEvent)
             {
                 QMouseEvent *pMouseEvent = (QMouseEvent*)(pEvent);
                 AssertPtr(pMouseEvent);
-                LogFlowFunc(("MouseMove: x=%d, y=%d, buttons=0x%x\n",
-                             pMouseEvent->globalX(), pMouseEvent->globalY(), pMouseEvent->buttons()));
+                LogFlowFunc(("MouseMove: x=%d, y=%d\n",
+                             pMouseEvent->globalX(), pMouseEvent->globalY()));
                 break;
             }
 #endif
