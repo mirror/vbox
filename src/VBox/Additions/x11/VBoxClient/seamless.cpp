@@ -307,6 +307,7 @@ int SeamlessMain::selfTest()
         if (   VbglR3WaitEvent(VMMDEV_EVENT_VALID_EVENT_MASK, 0, NULL)
             != VERR_TIMEOUT)
             break;
+        rc = VINF_SUCCESS;
     } while(0);
     if (RT_FAILURE(rc))
         LogRel(("VBoxClient (seamless): self test failed.  Stage: \"%s\"\n",
