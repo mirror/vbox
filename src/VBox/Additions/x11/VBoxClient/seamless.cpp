@@ -307,16 +307,6 @@ int SeamlessMain::selfTest()
         if (   VbglR3WaitEvent(VMMDEV_EVENT_VALID_EVENT_MASK, 0, NULL)
             != VERR_TIMEOUT)
             break;
-        pcszStage = "Testing pause";  /* Other states are dangerous to test. */
-        mMode = VMMDev_Seamless_Visible_Region;
-        pause();
-        if (RT_FAILURE(nextStateChangeEvent()))
-            break;
-        if (isX11MonitorThreadRunning())
-            break;
-        mMode = VMMDev_Seamless_Disabled;
-        mfPaused = false;
-        rc = VINF_SUCCESS;
     } while(0);
     if (RT_FAILURE(rc))
         LogRel(("VBoxClient (seamless): self test failed.  Stage: \"%s\"\n",
