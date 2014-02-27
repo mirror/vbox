@@ -1076,13 +1076,13 @@ static DECLCALLBACK(int) drvNATReinitializeHostNameResolving(PDRVNAT pThis)
  * - drvNATResume (EMT?)
  * - drvNatDnsChanged (darwin, GUI or main) "listener"
  * When Main's interface IHost will support host network configuration change event on every host,
- * we won't call it from drvNATResume, but from listener of Main event in the similar way it done 
+ * we won't call it from drvNATResume, but from listener of Main event in the similar way it done
  * for port-forwarding, and it wan't be on GUI/main thread, but on EMT thread only.
  *
- * Thread here is important, because we need to change DNS server list and domain name (+ perhaps, 
+ * Thread here is important, because we need to change DNS server list and domain name (+ perhaps,
  * search string) at runtime (VBOX_NAT_ENFORCE_INTERNAL_DNS_UPDATE), we can do it safely on NAT thread,
- * so with changing other variables (place where we handle update) the main mechanism of update 
- * _won't_ be changed, the only thing will change is drop of fHostNetworkConfigurationEventListener parameter. 
+ * so with changing other variables (place where we handle update) the main mechanism of update
+ * _won't_ be changed, the only thing will change is drop of fHostNetworkConfigurationEventListener parameter.
  */
 DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(PDRVNAT pThis,
                                                                         bool fHostNetworkConfigurationEventListener)
@@ -1090,20 +1090,20 @@ DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(PDRVN
     int strategy = slirp_host_network_configuration_change_strategy_selector(pThis->pNATState);
     switch (strategy)
     {
-                 
+
         case VBOX_NAT_HNCE_DNSPROXY:
             {
                 /**
                  * It's unsafe to to do it directly on non-NAT thread
-                 * so we schedule the worker and kick the NAT thread. 
+                 * so we schedule the worker and kick the NAT thread.
                  */
                 RTREQQUEUE hQueue = pThis->hSlirpReqQueue;
-                
-                int rc = RTReqQueueCallEx(hQueue, NULL /*ppReq*/, 0 /*cMillies*/, 
+
+                int rc = RTReqQueueCallEx(hQueue, NULL /*ppReq*/, 0 /*cMillies*/,
                                           RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                                           (PFNRT)drvNATReinitializeHostNameResolving, 1, pThis);
                 if (RT_SUCCESS(rc))
-                    drvNATNotifyNATThread(pThis, 
+                    drvNATNotifyNATThread(pThis,
                                           "drvNATHostNetworkConfigurationChangeEventStrategySelector");
 
 
