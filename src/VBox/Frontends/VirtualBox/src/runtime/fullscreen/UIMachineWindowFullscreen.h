@@ -56,6 +56,13 @@ private slots:
     /* Popup main-menu: */
     void sltPopupMainMenu();
 
+#ifdef RT_OS_DARWIN
+    /** Mac OS X: Commands window to enter native 'fullscreen' mode if possible. */
+    void sltEnterNativeFullscreen();
+    /** Mac OS X: Commands window to exit native 'fullscreen' mode if possible. */
+    void sltExitNativeFullscreen();
+#endif /* RT_OS_DARWIN */
+
 private:
 
     /* Prepare helpers: */

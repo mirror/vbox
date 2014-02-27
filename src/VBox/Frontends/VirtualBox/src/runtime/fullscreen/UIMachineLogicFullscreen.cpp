@@ -131,10 +131,9 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
     /* If there is/are still fullscreen window(s) present: */
     if (!m_fullscreenMachineWindows.isEmpty())
     {
-        /* Ask remain window(s) to exit fullscreen too: */
-        foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            if (darwinIsInFullscreenMode(pMachineWindow))
-                darwinToggleFullscreenMode(pMachineWindow);
+        /* Exit fullscreen mode if it was not invalidated yet: */
+        if (!m_fIsFullscreenInvalidated)
+            emit sigNotifyAboutNativeFullscreenShouldBeExited();
     }
     /* If there is/are no more fullscreen window(s) left: */
     else
@@ -152,12 +151,8 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
             /* Make sure all machine-window(s) have proper geometry: */
             foreach (UIMachineWindow *pMachineWindow, machineWindows())
                 pMachineWindow->showInNecessaryMode();
-            /* Re-enter fullscreen mode: */
-            foreach (UIMachineWindow *pMachineWindow, machineWindows())
-                if (   uisession()->isScreenVisible(pMachineWindow->screenId())
-                    && (darwinScreensHaveSeparateSpaces() || pMachineWindow->screenId() == 0)
-                    && !darwinIsInFullscreenMode(pMachineWindow))
-                    darwinToggleFullscreenMode(pMachineWindow);
+            /* Ask all window(s) to re-enter fullscreen mode: */
+            emit sigNotifyAboutNativeFullscreenShouldBeEntered();
         }
         /* If fullscreen mode was manually exited: */
         else
@@ -185,10 +180,8 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToNormal()
     {
         /* Request 'normal' (window) visual-state: */
         uisession()->setRequestedVisualState(UIVisualStateType_Normal);
-        /* Exit native fullscreen mode for each window: */
-        foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            if (darwinIsInFullscreenMode(pMachineWindow))
-                darwinToggleFullscreenMode(pMachineWindow);
+        /* Ask all window(s) to exit fullscreen mode: */
+        emit sigNotifyAboutNativeFullscreenShouldBeExited();
     }
 }
 
@@ -202,10 +195,8 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToSeamless()
     {
         /* Request 'seamless' visual-state: */
         uisession()->setRequestedVisualState(UIVisualStateType_Seamless);
-        /* Exit native fullscreen mode for each window: */
-        foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            if (darwinIsInFullscreenMode(pMachineWindow))
-                darwinToggleFullscreenMode(pMachineWindow);
+        /* Ask all window(s) to exit fullscreen mode: */
+        emit sigNotifyAboutNativeFullscreenShouldBeExited();
     }
 }
 
@@ -219,10 +210,8 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToScale()
     {
         /* Request 'scale' visual-state: */
         uisession()->setRequestedVisualState(UIVisualStateType_Scale);
-        /* Exit native fullscreen mode for each window: */
-        foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            if (darwinIsInFullscreenMode(pMachineWindow))
-                darwinToggleFullscreenMode(pMachineWindow);
+        /* Ask all window(s) to exit fullscreen mode: */
+        emit sigNotifyAboutNativeFullscreenShouldBeExited();
     }
 }
 #endif /* RT_OS_DARWIN */
@@ -269,7 +258,14 @@ void UIMachineLogicFullscreen::sltScreenLayoutChanged()
         setPresentationModeEnabled(true);
     }
     /* Invalidate fullscreen mode for ML and next: */
-    else invalidateFullscreenMode();
+    else if (shouldWeInvalidateFullscreenMode())
+        invalidateFullscreenMode();
+    else
+    {
+        /* Make sure all machine-window(s) have proper geometry: */
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+            pMachineWindow->showInNecessaryMode();
+    }
 #else /* !Q_WS_MAC */
     /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -291,7 +287,10 @@ void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventTy
     if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
         UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
     /* Invalidate fullscreen mode for ML and next: */
-    else invalidateFullscreenMode();
+    else if (shouldWeInvalidateFullscreenMode())
+        invalidateFullscreenMode();
+    /* Call to base-class otherwise: */
+    else UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
 #else /* !Q_WS_MAC */
     /* Call to base-class: */
     UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
@@ -310,7 +309,10 @@ void UIMachineLogicFullscreen::sltHostScreenCountChanged()
     if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
         UIMachineLogic::sltHostScreenCountChanged();
     /* Invalidate fullscreen mode for ML and next: */
-    else invalidateFullscreenMode();
+    else if (shouldWeInvalidateFullscreenMode())
+        invalidateFullscreenMode();
+    /* Call to base-class otherwise: */
+    else UIMachineLogic::sltHostScreenCountChanged();
 #else /* !Q_WS_MAC */
     /* Call to base-class: */
     UIMachineLogic::sltHostScreenCountChanged();
@@ -390,19 +392,22 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     /* For ML and next: */
     if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
     {
-        /* For all the machine-window(s): */
+        /* Enable native fullscreen support: */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
         {
-            /* Watch for native fullscreen signals: */
+            /* Logic => window signals: */
+            connect(this, SIGNAL(sigNotifyAboutNativeFullscreenShouldBeEntered()),
+                    pMachineWindow, SLOT(sltEnterNativeFullscreen()));
+            connect(this, SIGNAL(sigNotifyAboutNativeFullscreenShouldBeExited()),
+                    pMachineWindow, SLOT(sltExitNativeFullscreen()));
+            /* Window => logic signals: */
             connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidEnter()),
                     this, SLOT(sltHandleNativeFullscreenDidEnter()));
             connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidExit()),
                     this, SLOT(sltHandleNativeFullscreenDidExit()));
-            /* Enter native fullscreen mode: */
-            if (   (darwinScreensHaveSeparateSpaces() || pMachineWindow->screenId() == 0)
-                && !darwinIsInFullscreenMode(pMachineWindow))
-                darwinToggleFullscreenMode(pMachineWindow);
         }
+        /* Ask all window(s) to enter fullscreen mode: */
+        emit sigNotifyAboutNativeFullscreenShouldBeEntered();
     }
 #endif /* Q_WS_MAC */
 
@@ -507,19 +512,64 @@ void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
     else SetSystemUIMode(kUIModeNormal, 0);
 }
 
+bool UIMachineLogicFullscreen::shouldWeInvalidateFullscreenMode() const
+{
+    /* Prepare result: */
+    bool fSomethingInvalid = false;
+
+    /* Enumerate windows: */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+    {
+        /* Get screen ID: */
+        ulong uScreenID = pMachineWindow->screenId();
+        /* Check window which can be fullscreen: */
+        if (uScreenID == 0 || darwinScreensHaveSeparateSpaces())
+        {
+            /* Check window which is not in fullscreen: */
+            if (!darwinIsInFullscreenMode(pMachineWindow))
+            {
+                /* Check if that window should really
+                 * be shown and is mapped to some host-screen: */
+                if (   uisession()->isScreenVisible(uScreenID)
+                    && hasHostScreenForGuestScreen(uScreenID))
+                {
+                    fSomethingInvalid = true;
+                    break;
+                }
+            }
+            /* Check window which is in fullscreen: */
+            else
+            {
+                /* Check if that window shouldn't really
+                 * be shown or isn't mapped to some host-screen: */
+                if (   !uisession()->isScreenVisible(uScreenID)
+                    || !hasHostScreenForGuestScreen(uScreenID))
+                {
+                    fSomethingInvalid = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    /* Return result: */
+    return fSomethingInvalid;
+}
+
 void UIMachineLogicFullscreen::invalidateFullscreenMode()
 {
     /* Make sure 'fullscreen' mode is not invalidated yet: */
     if (m_fIsFullscreenInvalidated)
         return;
 
+    LogRel(("UIMachineLogicFullscreen::invalidateFullscreenMode: "
+            "Fullscreen mode invalidated...\n"));
+
     /* Mark 'fullscreen' mode as invalidated: */
     m_fIsFullscreenInvalidated = true;
 
-    /* Exit fullscreen mode: */
-    foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        if (darwinIsInFullscreenMode(pMachineWindow))
-            darwinToggleFullscreenMode(pMachineWindow);
+    /* Ask all window(s) to exit fullscreen mode: */
+    emit sigNotifyAboutNativeFullscreenShouldBeExited();
 }
 #endif /* Q_WS_MAC */
 

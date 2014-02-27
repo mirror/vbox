@@ -28,6 +28,14 @@ class UIMachineLogicFullscreen : public UIMachineLogic
 {
     Q_OBJECT;
 
+#ifdef RT_OS_DARWIN
+signals:
+    /** Mac OS X: Notifies listener about native fullscreen mode should be entered. */
+    void sigNotifyAboutNativeFullscreenShouldBeEntered();
+    /** Mac OS X: Notifies listener about native fullscreen mode should be exited. */
+    void sigNotifyAboutNativeFullscreenShouldBeExited();
+#endif /* RT_OS_DARWIN */
+
 protected:
 
     /* Constructor/destructor: */
@@ -95,6 +103,8 @@ private:
 #ifdef Q_WS_MAC
     void setPresentationModeEnabled(bool fEnabled);
 
+    /** Mac OS X: Checks if 'fullscreen' mode should be invalidated. */
+    bool shouldWeInvalidateFullscreenMode() const;
     /** Mac OS X: Invalidates 'fullscreen' mode. */
     void invalidateFullscreenMode();
 #endif /* Q_WS_MAC */
