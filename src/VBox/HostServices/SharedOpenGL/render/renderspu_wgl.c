@@ -1232,13 +1232,42 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     return GL_TRUE;
 }
 
+static void renderspuWindowRgnApply(WindowInfo *window)
+{
+    HRGN hRgn = window->hRgn;
+    if (hRgn)
+    {
+        /* note: according to the docs, SetWindowRgn owns the regions after it is called,
+         * and the regions will be freed automatically when needed,
+         * i.e. the caller should not do that.
+         * this is why we need to make a copy of the regions to be passed in */
+
+        int result;
+        hRgn = CreateRectRgn(0, 0, 0, 0);
+        if (!hRgn)
+        {
+            WARN(("CreateRectRgn failed"));
+            return;
+        }
+
+        result =  CombineRgn(hRgn, window->hRgn, NULL, RGN_COPY);
+        if (result == ERROR)
+        {
+            WARN(("CombineRgn failed"));
+            return;
+        }
+    }
+
+    SetWindowRgn(window->hWnd, hRgn, true);
+}
+
 /* Either show or hide the render SPU's window. */
 void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
 {
     if (showIt)
     {
         crDebug("SHOW renderspu_SystemShowWindow: %x", window->hWnd);
-        SetWindowRgn(window->hWnd, window->hRgn, true);
+        renderspuWindowRgnApply(window);
     }
     else
     {
@@ -1246,7 +1275,9 @@ void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
         crDebug("HIDE renderspu_SystemShowWindow: %x", window->hWnd);
         hRgn = CreateRectRgn(0, 0, 0, 0);
         SetWindowRgn(window->hWnd, hRgn, true);
-        DeleteObject(hRgn);
+        /* note: according to the docs, SetWindowRgn owns the regions after it is called,
+         * and the regions will be freed automatically when needed,
+         * i.e. the caller should not do that */
     }
     window->visible = showIt;
 }
@@ -1571,12 +1602,12 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, const
         DeleteObject(hTmpRgn);
     }
 
+    window->hRgn = hRgn;
+
     if (window->visible)
-        SetWindowRgn(window->hWnd, hRgn, true);
+        renderspuWindowRgnApply(window);
 
     crDebug("Render SPU: SetWindowRgn (%x, cRects=%i)", window->hWnd, cRects);
-
-    window->hRgn = hRgn;
 }
 
 static void renderspuHandleWindowMessages( HWND hWnd )
