@@ -2089,19 +2089,47 @@ NTSTATUS vboxVidPnEnumPaths(D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VI
 
 NTSTATUS vboxVidPnSetupSourceInfo(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, PVBOXWDDM_SOURCE pSource, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation)
 {
-    vboxWddmAssignPrimary(pDevExt, pSource, pAllocation, srcId);
     /* pVidPnSourceModeInfo could be null if STATUS_GRAPHICS_MODE_NOT_PINNED,
      * see vboxVidPnCommitSourceModeForSrcId */
+    uint8_t fChanges = 0;
     if (pVidPnSourceModeInfo)
     {
-        pSource->AllocData.SurfDesc.width = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx;
-        pSource->AllocData.SurfDesc.height = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy;
-        pSource->AllocData.SurfDesc.format = pVidPnSourceModeInfo->Format.Graphics.PixelFormat;
-        pSource->AllocData.SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pVidPnSourceModeInfo->Format.Graphics.PixelFormat);
-        pSource->AllocData.SurfDesc.pitch = pVidPnSourceModeInfo->Format.Graphics.Stride;
+        if (pSource->AllocData.SurfDesc.width != pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx)
+        {
+            fChanges |= VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
+            pSource->AllocData.SurfDesc.width = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx;
+        }
+        if (pSource->AllocData.SurfDesc.height != pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy)
+        {
+            fChanges |= VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
+            pSource->AllocData.SurfDesc.height = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy;
+        }
+        if (pSource->AllocData.SurfDesc.format != pVidPnSourceModeInfo->Format.Graphics.PixelFormat)
+        {
+            fChanges |= VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
+            pSource->AllocData.SurfDesc.format = pVidPnSourceModeInfo->Format.Graphics.PixelFormat;
+        }
+        if (pSource->AllocData.SurfDesc.bpp != vboxWddmCalcBitsPerPixel(pVidPnSourceModeInfo->Format.Graphics.PixelFormat))
+        {
+            fChanges |= VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
+            pSource->AllocData.SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pVidPnSourceModeInfo->Format.Graphics.PixelFormat);
+        }
+        if(pSource->AllocData.SurfDesc.pitch != pVidPnSourceModeInfo->Format.Graphics.Stride)
+        {
+            fChanges |= VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
+            pSource->AllocData.SurfDesc.pitch = pVidPnSourceModeInfo->Format.Graphics.Stride;
+        }
         pSource->AllocData.SurfDesc.depth = 1;
-        pSource->AllocData.SurfDesc.slicePitch = pVidPnSourceModeInfo->Format.Graphics.Stride;
-        pSource->AllocData.SurfDesc.cbSize = pVidPnSourceModeInfo->Format.Graphics.Stride * pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy;
+        if (pSource->AllocData.SurfDesc.slicePitch != pVidPnSourceModeInfo->Format.Graphics.Stride)
+        {
+            fChanges |= VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
+            pSource->AllocData.SurfDesc.slicePitch = pVidPnSourceModeInfo->Format.Graphics.Stride;
+        }
+        if (pSource->AllocData.SurfDesc.cbSize != pVidPnSourceModeInfo->Format.Graphics.Stride * pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy)
+        {
+            fChanges |= VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
+            pSource->AllocData.SurfDesc.cbSize = pVidPnSourceModeInfo->Format.Graphics.Stride * pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy;
+        }
 #ifdef VBOX_WDDM_WIN8
         if (g_VBoxDisplayOnly)
         {
@@ -2112,9 +2140,13 @@ NTSTATUS vboxVidPnSetupSourceInfo(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_S
     else
     {
         Assert(!pAllocation);
+        fChanges |= VBOXWDDM_HGSYNC_F_SYNCED_ALL;
     }
+
+    vboxWddmAssignPrimary(pDevExt, pSource, pAllocation, srcId);
+
     Assert(pSource->AllocData.SurfDesc.VidPnSourceId == srcId);
-    pSource->fGhSynced = 0;
+    pSource->u8SyncState &= ~fChanges;
     return STATUS_SUCCESS;
 }
 
@@ -2160,7 +2192,6 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCommitTargetModeEnum(PVBOXMP_DEVEXT pDevExt, D3DK
             {
                 pTarget->HeightVisible = pPinnedVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy;
                 pTarget->HeightTotal = pPinnedVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy;
-                pTarget->ScanLineState = 0;
             }
             pVidPnTargetModeSetInterface->pfnReleaseModeInfo(hVidPnTargetModeSet, pPinnedVidPnTargetModeInfo);
         }

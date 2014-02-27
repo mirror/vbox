@@ -149,7 +149,9 @@ typedef struct _VBOXMP_DEVEXT
    PKTHREAD pWdThread;
    KEVENT WdEvent;
 #endif
-
+   BOOL bVSyncTimerEnabled;
+   volatile uint32_t fVSyncInVBlank;
+   volatile LARGE_INTEGER VSyncTime;
    KTIMER VSyncTimer;
    KDPC VSyncDpc;
 

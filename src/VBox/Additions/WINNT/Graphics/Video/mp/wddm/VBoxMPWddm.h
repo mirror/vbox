@@ -133,7 +133,7 @@ DECLINLINE(void) vboxWddmAssignShadow(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE p
         return;
     }
 
-    if (pSource->pShadowAllocation == pAllocation && pSource->fGhSynced > 0)
+    if (pSource->pShadowAllocation == pAllocation)
     {
         Assert(pAllocation->bAssigned);
         return;
@@ -161,14 +161,20 @@ DECLINLINE(void) vboxWddmAssignShadow(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE p
         pAllocation->bVisible = pSource->bVisible;
 
         if(!vboxWddmAddrVramEqual(&pSource->AllocData.Addr, &pAllocation->AllocData.Addr))
-            pSource->fGhSynced = 0; /* force guest->host notification */
-        pSource->AllocData.Addr = pAllocation->AllocData.Addr;
+        {
+            pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION; /* force guest->host notification */
+            pSource->AllocData.Addr = pAllocation->AllocData.Addr;
+        }
+        if (pSource->AllocData.hostID != pAllocation->AllocData.hostID)
+        {
+            pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION; /* force guest->host notification */
+            pSource->AllocData.hostID = pAllocation->AllocData.hostID;
+        }
     }
+    else
+        pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION; /* force guest->host notification */
 
     pSource->pShadowAllocation = pAllocation;
-
-    Assert(!pSource->AllocData.pSwapchain);
-    Assert(!pSource->AllocData.hostID);
 }
 #endif
 
@@ -196,19 +202,25 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE 
         pAllocation->bVisible = pSource->bVisible;
 
         if(!vboxWddmAddrVramEqual(&pSource->AllocData.Addr, &pAllocation->AllocData.Addr))
-            pSource->fGhSynced = 0; /* force guest->host notification */
-        pSource->AllocData.Addr = pAllocation->AllocData.Addr;
+        {
+            pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION; /* force guest->host notification */
+            pSource->AllocData.Addr = pAllocation->AllocData.Addr;
+        }
+        if (pSource->AllocData.hostID != pAllocation->AllocData.hostID)
+        {
+            pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION; /* force guest->host notification */
+            pSource->AllocData.hostID = pAllocation->AllocData.hostID;
+        }
 
         vboxWddmAllocationRetain(pAllocation);
     }
+    else
+        pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION; /* force guest->host notification */
 
     KIRQL OldIrql;
     KeAcquireSpinLock(&pSource->AllocationLock, &OldIrql);
     pSource->pPrimaryAllocation = pAllocation;
     KeReleaseSpinLock(&pSource->AllocationLock, OldIrql);
-
-    Assert(!pSource->AllocData.pSwapchain);
-    Assert(!pSource->AllocData.hostID);
 }
 
 DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)

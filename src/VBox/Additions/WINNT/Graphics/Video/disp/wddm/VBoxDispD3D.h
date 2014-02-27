@@ -211,6 +211,8 @@ typedef struct VBOXWDDMDISP_DEVICE
     UINT cSamplerTextures;
     struct VBOXWDDMDISP_RESOURCE *aSamplerTextures[VBOXWDDMDISP_TOTAL_SAMPLERS];
 
+    struct VBOXWDDMDISP_RESOURCE *pDepthStencilRc;
+
     HMODULE hHgsmiTransportModule;
 
 #ifdef VBOX_WDDMDISP_WITH_PROFILE
@@ -269,7 +271,9 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     VBOXDISP_D3DIFTYPE enmD3DIfType;
     /* list entry used to add allocation to the dirty alloc list */
     RTLISTNODE DirtyAllocListEntry;
+    BOOLEAN fEverWritten;
     BOOLEAN fDirtyWrite;
+    BOOLEAN fAllocLocked;
     HANDLE hSharedHandle;
     VBOXWDDMDISP_LOCKINFO LockInfo;
     VBOXWDDM_DIRTYREGION DirtyRegion; /* <- dirty region to notify host about */
