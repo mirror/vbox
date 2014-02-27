@@ -194,7 +194,6 @@ static int crServerRedirMuralDbSyncFb(CRMuralInfo *mural, HCR_FRAMEBUFFER hFb, C
         for (uint32_t i = 0; i < mural->cBuffers; ++i)
         {
             VBOXVR_TEXTURE Tex;
-            int rc;
             Tex.width = mural->width;
             Tex.height = mural->height;
             Tex.hwid = mural->aidColorTexs[i];

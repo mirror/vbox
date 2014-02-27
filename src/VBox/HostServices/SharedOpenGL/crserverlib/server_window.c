@@ -24,7 +24,6 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     GLint dims[2];
     GLint windowID = -1;
     GLint spuWindow;
-    int rc;
     GLint realVisBits = visBits;
 
     crMemset(mural, 0, sizeof (*mural));
@@ -181,7 +180,7 @@ void crServerMuralTerm(CRMuralInfo *mural)
          * which might lead to muralFBO (offscreen rendering) gl entities being created in a scope of that context */
         cr_server.head_spu->dispatch_table.MakeCurrent(dummyMural->spuWindow, 0, cr_server.MainContextInfo.SpuContext);
         cr_server.currentWindow = -1;
-        cr_server.currentMural = NULL;
+        cr_server.currentMural = dummyMural;
     }
     else
     {
