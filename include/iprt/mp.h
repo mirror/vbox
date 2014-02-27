@@ -215,7 +215,8 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu);
  * The CPU must be online.
  *
  * @returns IPRT status code.
- * @param   idCpu       The identifier of the CPU.
+ * @param   idCpu       The identifier of the CPU.  NIL_RTCPUID can be used to
+ *                      indicate the current CPU.
  * @param   pszBuf      The output buffer.
  * @param   cbBuf       The size of the output buffer.
  */
