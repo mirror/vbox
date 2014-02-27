@@ -1749,6 +1749,9 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                     }
                 }
             }
+            /* Make sure that any X11 requests have actually been sent to the
+             * server, since we are waiting for responses using poll() on
+             * another thread which will not automatically trigger flushing. */
             XFlush(m_pDisplay);
         } while (1);
     } while (0);
