@@ -138,7 +138,8 @@ static struct dev_ops g_VBoxDrvSolarisDevOps =
     nodev,                  /* reset */
     &g_VBoxDrvSolarisCbOps,
     (struct bus_ops *)0,
-    nodev                   /* power */
+    nodev,                  /* power */
+    ddi_quiesce_not_needed
 };
 
 /**
@@ -437,7 +438,6 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             return DDI_FAILURE;
     }
 }
-
 
 
 /**
