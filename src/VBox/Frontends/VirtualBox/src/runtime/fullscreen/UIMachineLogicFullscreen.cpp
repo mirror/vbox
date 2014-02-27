@@ -84,9 +84,9 @@ void UIMachineLogicFullscreen::maybeAdjustGuestScreenSize()
 {
     /* We should rebuild screen-layout: */
     m_pScreenLayout->rebuild();
-    /* And update machine-windows sizes finally: */
+    /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->handleScreenGeometryChange();
+        pMachineWindow->showInNecessaryMode();
 }
 
 int UIMachineLogicFullscreen::hostScreenForGuestScreen(int iScreenId) const
@@ -149,9 +149,10 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
             m_fIsFullscreenInvalidated = false;
             /* Reactivate 'presentation mode': */
             setPresentationModeEnabled(true);
-            /* Re-enter fullscreen mode: */
+            /* Make sure all machine-window(s) have proper geometry: */
             foreach (UIMachineWindow *pMachineWindow, machineWindows())
                 pMachineWindow->showInNecessaryMode();
+            /* Re-enter fullscreen mode: */
             foreach (UIMachineWindow *pMachineWindow, machineWindows())
                 if (   uisession()->isScreenVisible(pMachineWindow->screenId())
                     && (darwinScreensHaveSeparateSpaces() || pMachineWindow->screenId() == 0)
@@ -242,9 +243,9 @@ void UIMachineLogicFullscreen::sltMachineStateChanged()
         uisession()->forgetPreviousMachineState();
         /* We should rebuild screen-layout: */
         m_pScreenLayout->rebuild();
-        /* We should update machine-windows sizes: */
+        /* Make sure all machine-window(s) have proper geometry: */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            pMachineWindow->handleScreenGeometryChange();
+            pMachineWindow->showInNecessaryMode();
     }
 }
 
@@ -261,7 +262,7 @@ void UIMachineLogicFullscreen::sltScreenLayoutChanged()
     /* For Lion and previous: */
     if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
     {
-        /* Update machine-window(s) location/size: */
+        /* Make sure all machine-window(s) have proper geometry: */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
             pMachineWindow->showInNecessaryMode();
         /* Update 'presentation mode': */
@@ -270,7 +271,7 @@ void UIMachineLogicFullscreen::sltScreenLayoutChanged()
     /* Invalidate fullscreen mode for ML and next: */
     else invalidateFullscreenMode();
 #else /* !Q_WS_MAC */
-    /* Update machine-window(s) location/size: */
+    /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         pMachineWindow->showInNecessaryMode();
 #endif /* !Q_WS_MAC */

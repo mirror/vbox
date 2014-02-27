@@ -213,28 +213,28 @@ void UIMachineWindowSeamless::placeOnScreen()
 
 void UIMachineWindowSeamless::showInNecessaryMode()
 {
-    /* Should we show window?: */
-    if (uisession()->isScreenVisible(m_uScreenId))
-    {
-        /* Do we have the seamless logic? */
-        if (UIMachineLogicSeamless *pSeamlessLogic = qobject_cast<UIMachineLogicSeamless*>(machineLogic()))
-        {
-            /* Is this guest screen has own host screen? */
-            if (pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
-            {
-                /* Make sure the window is maximized and placed on valid screen: */
-                placeOnScreen();
+    /* Make sure this window should be shown at all: */
+    if (!uisession()->isScreenVisible(m_uScreenId))
+        return hide();
 
-                /* Show in normal mode: */
-                show();
+    /* Make sure this window has seamless logic: */
+    UIMachineLogicSeamless *pSeamlessLogic = qobject_cast<UIMachineLogicSeamless*>(machineLogic());
+    if (!pSeamlessLogic)
+        return hide();
 
-                /* Return early: */
-                return;
-            }
-        }
-    }
-    /* Hide in other cases: */
-    hide();
+    /* Make sure this window mapped to some host-screen: */
+    if (!pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
+        return hide();
+
+    /* Make sure this window is not minimized: */
+    if (isMinimized())
+        return;
+
+    /* Make sure this window is maximized and placed on valid screen: */
+    placeOnScreen();
+
+    /* Show in normal mode: */
+    show();
 }
 
 #ifndef Q_WS_MAC

@@ -81,9 +81,9 @@ void UIMachineLogicSeamless::maybeAdjustGuestScreenSize()
 {
     /* We should rebuild screen-layout: */
     m_pScreenLayout->rebuild();
-    /* We should update machine-windows sizes: */
+    /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->handleScreenGeometryChange();
+        pMachineWindow->showInNecessaryMode();
 }
 
 int UIMachineLogicSeamless::hostScreenForGuestScreen(int iScreenId) const
@@ -139,15 +139,15 @@ void UIMachineLogicSeamless::sltMachineStateChanged()
         uisession()->forgetPreviousMachineState();
         /* We should rebuild screen-layout: */
         m_pScreenLayout->rebuild();
-        /* We should update machine-windows sizes: */
+        /* Make sure all machine-window(s) have proper geometry: */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            pMachineWindow->handleScreenGeometryChange();
+            pMachineWindow->showInNecessaryMode();
     }
 }
 
 void UIMachineLogicSeamless::sltScreenLayoutChanged()
 {
-    /* Update machine-window(s) location/size: */
+    /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         pMachineWindow->showInNecessaryMode();
 }

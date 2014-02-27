@@ -245,49 +245,50 @@ void UIMachineWindowFullscreen::placeOnScreen()
 
 void UIMachineWindowFullscreen::showInNecessaryMode()
 {
-    /* Should we show window?: */
-    if (uisession()->isScreenVisible(m_uScreenId))
-    {
-        /* Do we have the seamless logic? */
-        if (UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic()))
-        {
-            /* Is this guest screen has own host screen? */
-            if (pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
-            {
-                /* Make sure the window is maximized and placed on valid screen: */
-                placeOnScreen();
+    /* Make sure this window should be shown at all: */
+    if (!uisession()->isScreenVisible(m_uScreenId))
+        return hide();
+
+    /* Make sure this window has fullscreen logic: */
+    UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
+    if (!pFullscreenLogic)
+        return hide();
+
+    /* Make sure this window mapped to some host-screen: */
+    if (!pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
+        return hide();
+
+    /* Make sure this window is not minimized: */
+    if (isMinimized())
+        return;
+
+    /* Make sure this window is maximized and placed on valid screen: */
+    placeOnScreen();
 
 #ifdef Q_WS_WIN
-                /* On Windows we should activate main window first,
-                 * because entering fullscreen there doesn't means window will be auto-activated,
-                 * so no window-activation event will be received
-                 * and no keyboard-hook created otherwise... */
-                if (m_uScreenId == 0)
-                    setWindowState(windowState() | Qt::WindowActive);
+    /* On Windows we should activate main window first,
+     * because entering fullscreen there doesn't means window will be auto-activated,
+     * so no window-activation event will be received and no keyboard-hook created otherwise... */
+    if (m_uScreenId == 0)
+        setWindowState(windowState() | Qt::WindowActive);
 #endif /* Q_WS_WIN */
 
 #ifdef Q_WS_MAC
-                /* ML and next using native stuff, so we can call for simple show(): */
-                if (vboxGlobal().osRelease() > MacOSXRelease_Lion) show();
-                /* Lion and previous still using Qt one, call for showFullScreen(): */
-                else showFullScreen();
+    /* ML and next using native stuff, so we can call for simple show(): */
+    if (vboxGlobal().osRelease() > MacOSXRelease_Lion) show();
+    /* Lion and previous using Qt stuff, so we should call for showFullScreen(): */
+    else showFullScreen();
 #else /* !Q_WS_MAC */
-                /* Show in fullscreen mode: */
-                showFullScreen();
+    /* Show in fullscreen mode: */
+    showFullScreen();
 #endif /* !Q_WS_MAC */
 
-                /* Make sure the window is placed on valid screen again
-                 * after window is shown & window's decorations applied.
-                 * That is required (still?) due to X11 Window Geometry Rules. */
-                placeOnScreen();
-
-                /* Return early: */
-                return;
-            }
-        }
-    }
-    /* Hide in other cases: */
-    hide();
+#ifdef Q_WS_X11
+    /* Make sure the window is placed on valid screen again
+     * after window is shown & window's decorations applied.
+     * That is required (still?) due to X11 Window Geometry Rules. */
+    placeOnScreen();
+#endif /* Q_WS_X11 */
 }
 
 void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)
