@@ -122,7 +122,8 @@ static struct dev_ops g_VBoxUSBMonSolarisDevOps =
     nodev,                      /* reset */
     &g_VBoxUSBMonSolarisCbOps,
     (struct bus_ops *)0,
-    nodev                       /* power */
+    nodev,                      /* power */
+    ddi_quiesce_not_needed
 };
 
 /**
