@@ -236,7 +236,7 @@ typedef DECLCALLBACK(int) FNIOMMMIOREAD(PPDMDEVINS pDevIns, void *pvUser, RTGCPH
 typedef FNIOMMMIOREAD *PFNIOMMMIOREAD;
 
 /**
- * Port I/O Handler for write operations.
+ * Memory mapped I/O Handler for write operations.
  *
  * @returns VBox status code.
  *
@@ -252,7 +252,7 @@ typedef DECLCALLBACK(int) FNIOMMMIOWRITE(PPDMDEVINS pDevIns, void *pvUser, RTGCP
 typedef FNIOMMMIOWRITE *PFNIOMMMIOWRITE;
 
 /**
- * Port I/O Handler for memset operations, actually for REP STOS* instructions handling.
+ * Memory mapped I/O Handler for memset operations, actually for REP STOS* instructions handling.
  *
  * @returns VBox status code.
  *
