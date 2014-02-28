@@ -3270,7 +3270,7 @@ static int reportMsr_Ia32MtrrPhysBaseMaskN(VBCPUREPMSR const *paMsrs, uint32_t c
     /* Probing the mask is relatively straight forward. */
     uint64_t fIgnMask = 0;
     uint64_t fGpMask  = 0;
-    rc = msrProberModifyBitChanges(uMsr + iGuineaPig + 1, &fIgnMask, &fGpMask, 0);
+    rc = msrProberModifyBitChanges(uMsr + iGuineaPig + 1, &fIgnMask, &fGpMask, 0x800); /* enabling it may cause trouble */
     if (RT_FAILURE(rc))
         return rc;
     vbCpuRepDebug("fIgnMask=%#llx fGpMask=%#llx\n", fIgnMask, fGpMask);
@@ -3346,7 +3346,11 @@ static int reportMsr_Ia32MtrrFixedOrPat(uint32_t uMsr)
     /* Had a spot of trouble on an old macbook pro with core2 duo T9900 (penryn)
        running 64-bit win81pe. Not giving PAT such a scrutiny fixes it. */
     if (   uMsr != 0x00000277
-        || g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First)
+        || (  g_enmVendor == CPUMCPUVENDOR_INTEL
+            ? g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First
+            : g_enmVendor == CPUMCPUVENDOR_AMD
+            ? g_enmMicroarch != kCpumMicroarch_AMD_K8_90nm_AMDV
+            : true) )
     {
         /* Every 8 bytes is a type, check the type ranges one by one. */
         for (uint32_t iBit = 0; iBit < 64; iBit += 8)
@@ -3369,16 +3373,25 @@ static int reportMsr_Ia32MtrrFixedOrPat(uint32_t uMsr)
  */
 static int reportMsr_Ia32MtrrDefType(uint32_t uMsr)
 {
-    int rc = msrVerifyMtrrTypeGPs(uMsr, 0, 7);
-    if (RT_FAILURE(rc))
-        return rc;
-
     uint64_t fGpMask  = 0;
     uint64_t fIgnMask = 0;
-    rc = msrProberModifyBitChanges(uMsr, &fIgnMask, &fGpMask, 0x7);
-    if (RT_FAILURE(rc))
-        return rc;
-    Assert(!(fGpMask & 7)); Assert(!(fIgnMask & 7));
+    if (g_enmMicroarch == kCpumMicroarch_AMD_K8_90nm_AMDV)
+    {
+        /* Problematic CPU! Fake it for now. */
+        fGpMask = ~(uint64_t)0xc07;
+        fIgnMask = 0;
+    }
+    else
+    {
+        int rc = msrVerifyMtrrTypeGPs(uMsr, 0, 7);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        rc = msrProberModifyBitChanges(uMsr, &fIgnMask, &fGpMask, 0x7);
+        if (RT_FAILURE(rc))
+            return rc;
+        Assert(!(fGpMask & 7)); Assert(!(fIgnMask & 7));
+    }
 
     return printMsrFunctionCpumCpuEx(uMsr, NULL, NULL, NULL, fIgnMask, fGpMask, NULL);
 }
@@ -3621,7 +3634,7 @@ static int reportMsr_AmdK8SysCfg(uint32_t uMsr, uint64_t uValue)
 
     /* Turns out there are more killer bits here, at least on Opteron 2384.
        Skipping all known bits. */
-    if (g_enmMicroarch >= kCpumMicroarch_AMD_K8_65nm /* Not sure when introduced - harmless? */)
+    if (g_enmMicroarch >= kCpumMicroarch_AMD_K8_90nm_AMDV /* Not sure when introduced - harmless? */)
         fSkipMask |= RT_BIT(22); /* Tom2ForceMemTypeWB */
     if (g_enmMicroarch >= kCpumMicroarch_AMD_K8_First)
         fSkipMask |= RT_BIT(21); /* MtrrTom2En */
@@ -3941,9 +3954,9 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
         uint64_t    uValue     = paMsrs[i].uValue;
         int         rc;
 #if 0
-        if (uMsr < 0x00003170)
-            continue;
-        if (uMsr >= 0x00003170)
+        //if (uMsr < 0x00000000)
+        //    continue;
+        if (uMsr >= 0x00000277)
         {
             vbCpuRepDebug("produceMsrReport: uMsr=%#x (%s)...\n", uMsr, getMsrNameHandled(uMsr));
             RTThreadSleep(1000);
@@ -4134,13 +4147,10 @@ static int hackingMsrs(void)
     }
 #else
 
-    uint32_t uMsr = 0xc0000080;
+    uint32_t uMsr = 0xc0010010;
     uint64_t uValue = 0;
     msrProberRead(uMsr, &uValue);
-    /* Try for a triple fault... */
-    msrProberWrite(uMsr, uValue ^ MSR_K6_EFER_LME);
-    msrProberRead(uMsr, &uValue);
-    msrProberWrite(uMsr, uValue ^ MSR_K6_EFER_NXE);
+    reportMsr_AmdK8SysCfg(uMsr, uValue);
 #endif
     return VINF_SUCCESS;
 }

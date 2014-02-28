@@ -183,6 +183,7 @@ typedef struct CPUMDBENTRY
 #include "cpus/AMD_FX_8150_Eight_Core.h"
 #include "cpus/AMD_Phenom_II_X6_1100T.h"
 #include "cpus/Quad_Core_AMD_Opteron_2384.h"
+#include "cpus/AMD_Athlon_64_X2_Dual_Core_4200.h"
 #include "cpus/AMD_Athlon_64_3200.h"
 
 #include "cpus/VIA_QuadCore_L4700_1_2_GHz.h"
@@ -227,6 +228,9 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 #endif
 #ifdef VBOX_CPUDB_Quad_Core_AMD_Opteron_2384
     &g_Entry_Quad_Core_AMD_Opteron_2384,
+#endif
+#ifdef VBOX_CPUDB_AMD_Athlon_64_X2_Dual_Core_4200
+    &g_Entry_AMD_Athlon_64_X2_Dual_Core_4200,
 #endif
 #ifdef VBOX_CPUDB_AMD_Athlon_64_3200
     &g_Entry_AMD_Athlon_64_3200,
