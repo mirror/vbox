@@ -36,8 +36,8 @@ BEGINCODE
 ;
 ; @param    uOperator   x86:ebp+8   gcc:rdi      msc:rcx
 ; @param    uInitEBX    x86:ebp+c   gcc:rsi      msc:rdx
-; @param    uInitECX    x86:ebp+10  gcc:rcx      msc:r8
-; @param    uInitEDX    x86:ebp+14  gcc:rdx      msc:r9
+; @param    uInitECX    x86:ebp+10  gcc:rdx      msc:r8
+; @param    uInitEDX    x86:ebp+14  gcc:rcx      msc:r9
 ; @param    pvEAX       x86:ebp+18  gcc:r8       msc:rbp+30h
 ; @param    pvEBX       x86:ebp+1c  gcc:r9       msc:rbp+38h
 ; @param    pvECX       x86:ebp+20  gcc:rbp+10h  msc:rbp+40h
@@ -65,6 +65,7 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
 %elifdef ASM_CALL64_GCC
         mov     eax, edi
         mov     ebx, esi
+        xchg    ecx, edx
         mov     r10, [rbp + 10h]
         mov     r11, [rbp + 18h]
 %elifdef RT_ARCH_X86
