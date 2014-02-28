@@ -12872,28 +12872,6 @@ HRESULT SessionMachine::init(Machine *aMachine)
     {
         unconst(mNetworkAdapters[slot]).createObject();
         mNetworkAdapters[slot]->init(this, aMachine->mNetworkAdapters[slot]);
-
-        NetworkAttachmentType_T type;
-        HRESULT hrc;
-        hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
-        if (   SUCCEEDED(hrc)
-            && type == NetworkAttachmentType_NATNetwork)
-        {
-            Bstr name;
-            hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
-            if (SUCCEEDED(hrc))
-            {
-                LogRel(("VM '%s' starts using NAT network '%ls'\n",
-                        mUserData->s.strName.c_str(), name.raw()));
-                aMachine->lockHandle()->unlockWrite();
-                mParent->i_natNetworkRefInc(name.raw());
-#ifdef RT_LOCK_STRICT
-                aMachine->lockHandle()->lockWrite(RT_SRC_POS);
-#else
-                aMachine->lockHandle()->lockWrite();
-#endif
-            }
-        }
     }
 
     /* create another bandwidth control object that will be mutable */
@@ -13085,26 +13063,30 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         mData->mSession.mRemoteControls.clear();
     }
 
-    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
+    if (iNATNetworksStarted)
     {
-        NetworkAttachmentType_T type;
-        HRESULT hrc;
-
-        hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
-        if (   SUCCEEDED(hrc)
-            && type == NetworkAttachmentType_NATNetwork)
+        for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
         {
-            Bstr name;
-            hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
-            if (SUCCEEDED(hrc))
+            NetworkAttachmentType_T type;
+            HRESULT hrc;
+
+            hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
+            if (   SUCCEEDED(hrc)
+                && type == NetworkAttachmentType_NATNetwork)
             {
-                multilock.release();
-                LogRel(("VM '%s' stops using NAT network '%ls'\n",
-                        mUserData->s.strName.c_str(), name.raw()));
-                mParent->i_natNetworkRefDec(name.raw());
-                multilock.acquire();
+                Bstr name;
+                hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
+                if (SUCCEEDED(hrc))
+                {
+                    multilock.release();
+                    LogRel(("VM '%s' stops using NAT network '%ls'\n",
+                            mUserData->s.strName.c_str(), name.raw()));
+                    mParent->i_natNetworkRefDec(name.raw());
+                    multilock.acquire();
+                }
             }
         }
+        iNATNetworksStarted--;
     }
 
     /*
@@ -13274,6 +13256,33 @@ STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
 
     if (!mData->mSession.mProgress.isNull())
         mData->mSession.mProgress->setOtherProgressObject(aProgress);
+
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
+    {
+        NetworkAttachmentType_T type;
+        HRESULT hrc;
+        hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
+        if (   SUCCEEDED(hrc)
+            && type == NetworkAttachmentType_NATNetwork)
+        {
+            Bstr name;
+            hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
+            if (SUCCEEDED(hrc))
+            {
+                LogRel(("VM '%s' starts using NAT network '%ls'\n",
+                        mUserData->s.strName.c_str(), name.raw()));
+                mPeer->lockHandle()->unlockWrite();
+                mParent->i_natNetworkRefInc(name.raw());
+#ifdef RT_LOCK_STRICT
+                mPeer->lockHandle()->lockWrite(RT_SRC_POS);
+#else
+                mPeer->lockHandle()->lockWrite();
+#endif
+            }
+        }
+    }
+
+    iNATNetworksStarted++;
 
     LogFlowThisFunc(("returns S_OK.\n"));
     return S_OK;

@@ -288,7 +288,7 @@ HRESULT HostDnsMonitorProxy::GetDomainName(BSTR *aDomainName)
     if (m->fModified)
         updateInfo();
 
-    LogRel(("HostDnsMonitorProxy::GetDomainName:%s\n", m->info->domain.c_str()));
+    LogRel(("HostDnsMonitorProxy::GetDomainName: %s\n", m->info->domain.c_str()));
 
     Utf8Str(m->info->domain.c_str()).cloneTo(aDomainName);
 
@@ -355,7 +355,7 @@ static void dumpHostDnsInformation(const HostDnsInformation& info)
 
 static void dumpHostDnsStrVector(const std::string& prefix, const std::vector<std::string>& v)
 {
-    int i = 0;
+    int i = 1;
     for (std::vector<std::string>::const_iterator it = v.begin();
          it != v.end();
          ++it, ++i)
