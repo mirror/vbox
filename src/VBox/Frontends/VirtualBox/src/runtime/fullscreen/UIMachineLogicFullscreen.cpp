@@ -514,12 +514,16 @@ void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
 
 bool UIMachineLogicFullscreen::shouldWeInvalidateFullscreenMode() const
 {
-    /* Prepare result: */
-    bool fSomethingInvalid = false;
-
     /* Enumerate windows: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
     {
+        /* Cast to 'fullscreen' window: */
+        UIMachineWindowFullscreen *pFullscreenMachineWindow =
+            qobject_cast<UIMachineWindowFullscreen*>(pMachineWindow);
+        /* Ignore window(s) which are in 'fullscreen transition': */
+        if (pFullscreenMachineWindow->isInFullscreenTransition())
+            continue;
+
         /* Get screen ID: */
         ulong uScreenID = pMachineWindow->screenId();
         /* Check window which can be fullscreen: */
@@ -532,10 +536,7 @@ bool UIMachineLogicFullscreen::shouldWeInvalidateFullscreenMode() const
                  * be shown and is mapped to some host-screen: */
                 if (   uisession()->isScreenVisible(uScreenID)
                     && hasHostScreenForGuestScreen(uScreenID))
-                {
-                    fSomethingInvalid = true;
-                    break;
-                }
+                    return true;
             }
             /* Check window which is in fullscreen: */
             else
@@ -544,24 +545,18 @@ bool UIMachineLogicFullscreen::shouldWeInvalidateFullscreenMode() const
                  * be shown or isn't mapped to some host-screen: */
                 if (   !uisession()->isScreenVisible(uScreenID)
                     || !hasHostScreenForGuestScreen(uScreenID))
-                {
-                    fSomethingInvalid = true;
-                    break;
-                }
+                    return true;
                 /* Check if that window should be located
                  * on another host-screen than currently. */
                 if (hostScreenForGuestScreen((int)uScreenID) !=
                     QApplication::desktop()->screenNumber(pMachineWindow))
-                {
-                    fSomethingInvalid = true;
-                    break;
-                }
+                    return true;
             }
         }
     }
 
-    /* Return result: */
-    return fSomethingInvalid;
+    /* False by default: */
+    return false;
 }
 
 void UIMachineLogicFullscreen::invalidateFullscreenMode()

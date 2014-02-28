@@ -43,6 +43,9 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     : UIMachineWindow(pMachineLogic, uScreenId)
     , m_pMainMenu(0)
     , m_pMiniToolBar(0)
+#ifdef Q_WS_MAC
+    , m_fIsInFullscreenTransition(false)
+#endif /* Q_WS_MAC */
 {
 }
 
@@ -52,12 +55,15 @@ void UIMachineWindowFullscreen::handleNativeNotification(const QString &strNativ
     /* Make sure this method is only used for ML and next: */
     AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
 
-    /* Handle arrived notification: */
+    /* Log all arrived notifications: */
     LogRel(("UIMachineWindowFullscreen::handleNativeNotification: Notification '%s' received.\n",
             strNativeNotificationName.toAscii().constData()));
+
     /* Handle 'NSWindowDidEnterFullScreenNotification' notification: */
     if (strNativeNotificationName == "NSWindowDidEnterFullScreenNotification")
     {
+        /* Mark window transition complete: */
+        m_fIsInFullscreenTransition = false;
         LogRel(("UIMachineWindowFullscreen::handleNativeNotification: "
                 "Native fullscreen mode entered, notifying listener...\n"));
         emit sigNotifyAboutNativeFullscreenDidEnter();
@@ -65,6 +71,8 @@ void UIMachineWindowFullscreen::handleNativeNotification(const QString &strNativ
     /* Handle 'NSWindowDidExitFullScreenNotification' notification: */
     else if (strNativeNotificationName == "NSWindowDidExitFullScreenNotification")
     {
+        /* Mark window transition complete: */
+        m_fIsInFullscreenTransition = false;
         LogRel(("UIMachineWindowFullscreen::handleNativeNotification: "
                 "Native fullscreen mode exited, notifying listener...\n"));
         emit sigNotifyAboutNativeFullscreenDidExit();
@@ -110,6 +118,9 @@ void UIMachineWindowFullscreen::sltEnterNativeFullscreen()
     if (!pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
         return;
 
+    /* Mark window 'transitioned to fullscreen': */
+    m_fIsInFullscreenTransition = true;
+
     /* Enter native fullscreen mode if necessary: */
     if (   (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
         && !darwinIsInFullscreenMode(this))
@@ -120,6 +131,9 @@ void UIMachineWindowFullscreen::sltExitNativeFullscreen()
 {
     /* Make sure this slot is called only under ML and next: */
     AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+
+    /* Mark window 'transitioned from fullscreen': */
+    m_fIsInFullscreenTransition = true;
 
     /* Exit native fullscreen mode if necessary: */
     if (   (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
