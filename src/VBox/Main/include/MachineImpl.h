@@ -1219,6 +1219,8 @@ private:
     /** client token for this machine */
     ClientToken *mClientToken;
 
+    int iNATNetworksStarted;
+
     static DECLCALLBACK(int) taskHandler(RTTHREAD thread, void *pvUser);
 };
 
