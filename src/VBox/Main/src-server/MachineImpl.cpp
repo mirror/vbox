@@ -13065,6 +13065,8 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         mData->mSession.mRemoteControls.clear();
     }
 
+    /* Remove all references to the NAT network service. The service will stop
+     * if all references (also from other VMs) are removed. */
     for (; miNATNetworksStarted > 0; miNATNetworksStarted--)
     {
         for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
@@ -13258,32 +13260,36 @@ STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
     if (!mData->mSession.mProgress.isNull())
         mData->mSession.mProgress->setOtherProgressObject(aProgress);
 
-    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
+    /* If we didn't reference the NAT network service yet, add a reference to
+     * force a start */
+    if (miNATNetworksStarted < 1)
     {
-        NetworkAttachmentType_T type;
-        HRESULT hrc;
-        hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
-        if (   SUCCEEDED(hrc)
-            && type == NetworkAttachmentType_NATNetwork)
+        for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
         {
-            Bstr name;
-            hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
-            if (SUCCEEDED(hrc))
+            NetworkAttachmentType_T type;
+            HRESULT hrc;
+            hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
+            if (   SUCCEEDED(hrc)
+                && type == NetworkAttachmentType_NATNetwork)
             {
-                LogRel(("VM '%s' starts using NAT network '%ls'\n",
-                        mUserData->s.strName.c_str(), name.raw()));
-                mPeer->lockHandle()->unlockWrite();
-                mParent->i_natNetworkRefInc(name.raw());
+                Bstr name;
+                hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
+                if (SUCCEEDED(hrc))
+                {
+                    LogRel(("VM '%s' starts using NAT network '%ls'\n",
+                            mUserData->s.strName.c_str(), name.raw()));
+                    mPeer->lockHandle()->unlockWrite();
+                    mParent->i_natNetworkRefInc(name.raw());
 #ifdef RT_LOCK_STRICT
-                mPeer->lockHandle()->lockWrite(RT_SRC_POS);
+                    mPeer->lockHandle()->lockWrite(RT_SRC_POS);
 #else
-                mPeer->lockHandle()->lockWrite();
+                    mPeer->lockHandle()->lockWrite();
 #endif
+                }
             }
         }
+        miNATNetworksStarted++;
     }
-
-    miNATNetworksStarted++;
 
     LogFlowThisFunc(("returns S_OK.\n"));
     return S_OK;
