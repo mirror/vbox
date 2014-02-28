@@ -950,7 +950,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000394: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "I7_UNC_PERF_FIXED_CTR"  /* X */    : "I7_UNC_PERF_FIXED_CTR_CTRL"; /* >= S,H */
         case 0x00000395: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "I7_UNC_PERF_FIXED_CTR_CTRL" /* X*/ : "I7_UNC_PERF_FIXED_CTR";      /* >= S,H */
         case 0x00000396: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? "I7_UNC_ADDR_OPCODE_MATCH" /* X */  : "I7_UNC_CBO_CONFIG";          /* >= S,H */
-        case 0x00000397: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_IvyBridge   ? NULL                                : "I7_IB_UNK_0000_0397";
+        case 0x00000397: return g_enmMicroarch < kCpumMicroarch_Intel_Core7_SandyBridge ? NULL                                : "I7_SB_UNK_0000_0397";
         case 0x0000039c: return "I7_SB_MSR_PEBS_NUM_ALT";
         case 0x000003a0: return g_fIntelNetBurst ? "P4_MSR_BSU_ESCR0"   : NULL;
         case 0x000003a1: return g_fIntelNetBurst ? "P4_MSR_BSU_ESCR1"   : NULL;
@@ -1058,6 +1058,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000603: return "I7_SB_MSR_VR_MISC_CONFIG"; /* SandyBridge, IvyBridge. */
         case 0x00000604: return "I7_IB_UNK_0000_0602";
         case 0x00000606: return "I7_SB_MSR_RAPL_POWER_UNIT"; /* SandyBridge, IvyBridge. */
+        case 0x00000609: return "I7_SB_UNK_0000_0609";  /* SandyBridge (non EP). */
         case 0x0000060a: return "I7_SB_MSR_PKGC3_IRTL"; /* SandyBridge, IvyBridge. */
         case 0x0000060b: return "I7_SB_MSR_PKGC6_IRTL"; /* SandyBridge, IvyBridge. */
         case 0x0000060c: return "I7_SB_MSR_PKGC7_IRTL"; /* SandyBridge, IvyBridge. */
@@ -1579,6 +1580,66 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0xc0011073: return "AMD_15H_UNK_c001_1073";
         case 0xc0011080: return "AMD_15H_UNK_c001_1080";
     }
+
+    /*
+     * Uncore stuff on Sandy. Putting it here to avoid ugly microarch checks for each register.
+     * Note! These are found on model 42 (2a) but not 45 (2d), the latter is the EP variant.
+     */
+    if (g_enmMicroarch == kCpumMicroarch_Intel_Core7_SandyBridge)
+        switch (uMsr)
+        {
+            case 0x00000700: return "MSR_UNC_CBO_0_PERFEVTSEL0";
+            case 0x00000701: return "MSR_UNC_CBO_0_PERFEVTSEL1";
+            case 0x00000702: return "MSR_UNC_CBO_0_PERFEVTSEL2?";
+            case 0x00000703: return "MSR_UNC_CBO_0_PERFEVTSEL3?";
+            case 0x00000704: return "MSR_UNC_CBO_0_UNK_4";
+            case 0x00000705: return "MSR_UNC_CBO_0_UNK_5";
+            case 0x00000706: return "MSR_UNC_CBO_0_PER_CTR0";
+            case 0x00000707: return "MSR_UNC_CBO_0_PER_CTR1";
+            case 0x00000708: return "MSR_UNC_CBO_0_PER_CTR2?";
+            case 0x00000709: return "MSR_UNC_CBO_0_PER_CTR3?";
+            case 0x00000710: return "MSR_UNC_CBO_1_PERFEVTSEL0";
+            case 0x00000711: return "MSR_UNC_CBO_1_PERFEVTSEL1";
+            case 0x00000712: return "MSR_UNC_CBO_1_PERFEVTSEL2?";
+            case 0x00000713: return "MSR_UNC_CBO_1_PERFEVTSEL3?";
+            case 0x00000714: return "MSR_UNC_CBO_1_UNK_4";
+            case 0x00000715: return "MSR_UNC_CBO_1_UNK_5";
+            case 0x00000716: return "MSR_UNC_CBO_1_PER_CTR0";
+            case 0x00000717: return "MSR_UNC_CBO_1_PER_CTR1";
+            case 0x00000718: return "MSR_UNC_CBO_1_PER_CTR2?";
+            case 0x00000719: return "MSR_UNC_CBO_1_PER_CTR3?";
+            case 0x00000720: return "MSR_UNC_CBO_2_PERFEVTSEL0";
+            case 0x00000721: return "MSR_UNC_CBO_2_PERFEVTSEL1";
+            case 0x00000722: return "MSR_UNC_CBO_2_PERFEVTSEL2?";
+            case 0x00000723: return "MSR_UNC_CBO_2_PERFEVTSEL3?";
+            case 0x00000724: return "MSR_UNC_CBO_2_UNK_4";
+            case 0x00000725: return "MSR_UNC_CBO_2_UNK_5";
+            case 0x00000726: return "MSR_UNC_CBO_2_PER_CTR0";
+            case 0x00000727: return "MSR_UNC_CBO_2_PER_CTR1";
+            case 0x00000728: return "MSR_UNC_CBO_2_PER_CTR2?";
+            case 0x00000729: return "MSR_UNC_CBO_2_PER_CTR3?";
+            case 0x00000730: return "MSR_UNC_CBO_3_PERFEVTSEL0";
+            case 0x00000731: return "MSR_UNC_CBO_3_PERFEVTSEL1";
+            case 0x00000732: return "MSR_UNC_CBO_3_PERFEVTSEL2?";
+            case 0x00000733: return "MSR_UNC_CBO_3_PERFEVTSEL3?";
+            case 0x00000734: return "MSR_UNC_CBO_3_UNK_4";
+            case 0x00000735: return "MSR_UNC_CBO_3_UNK_5";
+            case 0x00000736: return "MSR_UNC_CBO_3_PER_CTR0";
+            case 0x00000737: return "MSR_UNC_CBO_3_PER_CTR1";
+            case 0x00000738: return "MSR_UNC_CBO_3_PER_CTR2?";
+            case 0x00000739: return "MSR_UNC_CBO_3_PER_CTR3?";
+            case 0x00000740: return "MSR_UNC_CBO_4_PERFEVTSEL0?";
+            case 0x00000741: return "MSR_UNC_CBO_4_PERFEVTSEL1?";
+            case 0x00000742: return "MSR_UNC_CBO_4_PERFEVTSEL2?";
+            case 0x00000743: return "MSR_UNC_CBO_4_PERFEVTSEL3?";
+            case 0x00000744: return "MSR_UNC_CBO_4_UNK_4";
+            case 0x00000745: return "MSR_UNC_CBO_4_UNK_5";
+            case 0x00000746: return "MSR_UNC_CBO_4_PER_CTR0?";
+            case 0x00000747: return "MSR_UNC_CBO_4_PER_CTR1?";
+            case 0x00000748: return "MSR_UNC_CBO_4_PER_CTR2?";
+            case 0x00000749: return "MSR_UNC_CBO_4_PER_CTR3?";
+
+        }
 
     /*
      * Bunch of unknown sandy bridge registers.  They might seem like the
