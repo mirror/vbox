@@ -548,6 +548,14 @@ bool UIMachineLogicFullscreen::shouldWeInvalidateFullscreenMode() const
                     fSomethingInvalid = true;
                     break;
                 }
+                /* Check if that window should be located
+                 * on another host-screen than currently. */
+                if (hostScreenForGuestScreen((int)uScreenID) !=
+                    QApplication::desktop()->screenNumber(pMachineWindow))
+                {
+                    fSomethingInvalid = true;
+                    break;
+                }
             }
         }
     }
