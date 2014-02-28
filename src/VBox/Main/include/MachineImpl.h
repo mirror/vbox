@@ -1219,7 +1219,7 @@ private:
     /** client token for this machine */
     ClientToken *mClientToken;
 
-    int iNATNetworksStarted;
+    int miNATNetworksStarted;
 
     static DECLCALLBACK(int) taskHandler(RTTHREAD thread, void *pvUser);
 };
