@@ -32,9 +32,9 @@ class UIMachineWindowFullscreen : public UIMachineWindow
 
 #ifdef RT_OS_DARWIN
 signals:
-    /** Mac OS X: Notifies listener about native fullscreen entering. */
+    /** Mac OS X: Notifies listener about native 'fullscreen' entered. */
     void sigNotifyAboutNativeFullscreenDidEnter();
-    /** Mac OS X: Notifies listener about native fullscreen exiting. */
+    /** Mac OS X: Notifies listener about native 'fullscreen' exited. */
     void sigNotifyAboutNativeFullscreenDidExit();
 #endif /* RT_OS_DARWIN */
 
@@ -44,8 +44,10 @@ protected:
     UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId);
 
 #ifdef Q_WS_MAC
-    /** Mac OS X: Handles native notifications @a strNativeNotificationName for fullscreen window. */
+    /** Mac OS X: Handles native notifications @a strNativeNotificationName for 'fullscreen' window. */
     void handleNativeNotification(const QString &strNativeNotificationName);
+    /** Mac OS X: Returns whether window is in 'fullscreen' transition. */
+    bool isInFullscreenTransition() const { return m_fIsInFullscreenTransition; }
 #endif /* Q_WS_MAC */
 
 private slots:
@@ -85,6 +87,13 @@ private:
     /* Widgets: */
     QMenu *m_pMainMenu;
     UIRuntimeMiniToolBar *m_pMiniToolBar;
+
+#ifdef Q_WS_MAC
+    /** Mac OS X: Reflects whether window is in 'fullscreen' transition. */
+    bool m_fIsInFullscreenTransition;
+    /** Mac OS X: Allows 'fullscreen' API access: */
+    friend class UIMachineLogicFullscreen;
+#endif /* Q_WS_MAC */
 
     /* Factory support: */
     friend class UIMachineWindow;
