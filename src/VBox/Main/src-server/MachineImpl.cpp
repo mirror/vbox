@@ -12884,6 +12884,8 @@ HRESULT SessionMachine::init(Machine *aMachine)
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
+    miNATNetworksStarted = 0;
+
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -13063,7 +13065,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         mData->mSession.mRemoteControls.clear();
     }
 
-    if (iNATNetworksStarted)
+    for (; miNATNetworksStarted > 0; miNATNetworksStarted--)
     {
         for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
         {
@@ -13086,7 +13088,6 @@ void SessionMachine::uninit(Uninit::Reason aReason)
                 }
             }
         }
-        iNATNetworksStarted--;
     }
 
     /*
@@ -13282,7 +13283,7 @@ STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
         }
     }
 
-    iNATNetworksStarted++;
+    miNATNetworksStarted++;
 
     LogFlowThisFunc(("returns S_OK.\n"));
     return S_OK;
