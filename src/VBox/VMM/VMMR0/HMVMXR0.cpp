@@ -2104,7 +2104,7 @@ DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     /* VMCPU_FF_TLB_SHOOTDOWN is unused. */
     Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN));
 
-    /* Don't assert that VMCPU_FF_TLB_FLUSH should no longer pending. It can be set by other EMTs. */
+    /* Don't assert that VMCPU_FF_TLB_FLUSH should no longer be pending. It can be set by other EMTs. */
 }
 
 
@@ -4562,9 +4562,13 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         /* 32-bit host. We need to switch to 64-bit before running the 64-bit guest. */
         if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0SwitcherStartVM64)
         {
+            if (pVCpu->hm.s.vmx.pfnStartVM != NULL) /* Very first entry would have saved host-state already, ignore it. */
+            {
+                /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
+                AssertMsg(HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS),
+                          ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
+            }
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
-            /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
-            Assert(HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS));
         }
 #else
         /* 64-bit host or hybrid host. */
@@ -4577,9 +4581,13 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0StartVM32)
         {
+            if (pVCpu->hm.s.vmx.pfnStartVM != NULL) /* Very first entry would have saved host-state already, ignore it. */
+            {
+                /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
+                AssertMsg(HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS),
+                          ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
+            }
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
-            /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
-            Assert(HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS));
         }
 #else
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
