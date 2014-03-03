@@ -100,8 +100,11 @@
 # define _HAVE_STRING_ARCH_strsep /* bits/string2.h, __strsep_1c. */
 # include "xf86Crtc.h"
 # include "xf86Modes.h"
-# include <X11/Xatom.h>
 #endif
+
+/* For setting the root window property. */
+#include <X11/Xatom.h>
+#include "property.h"
 
 #ifdef VBOX_DRI
 # include "xf86drm.h"
@@ -666,6 +669,26 @@ static void VBOXFreeScreenIndex(int scrnIndex, int flags)
 # define SCRNINDEXAPI(pfn) pfn
 #endif /* XF86_SCRN_INTERFACE */
 
+/** Helper to work round different ways of getting the root window in different
+ * server versions. */
+#if defined(XORG_VERSION_CURRENT) && XORG_VERSION_CURRENT < 700000000 \
+    && XORG_VERSION_CURRENT >= 100900000
+# define ROOT_WINDOW(pScrn) xf86ScrnToScreen(pScrn)->root
+#else
+# define ROOT_WINDOW(pScrn) WindowTable[xf86ScrnToScreen(pScrn)->myNum]
+#endif
+
+/** Helper to work round different prototypes for DeleteProperty in different
+ * server versions. */
+#if defined(XORG_VERSION_CURRENT) && XORG_VERSION_CURRENT < 700000000 \
+    && XORG_VERSION_CURRENT >= 100500000
+# define DELETE_PROPERTY(client, window, prop) \
+    DeleteProperty(client, window, prop)
+#else
+# define DELETE_PROPERTY(client, window, prop) \
+    DeleteProperty(window, prop)
+#endif
+
 static void setScreenFunctions(ScrnInfoPtr pScrn, xf86ProbeProc pfnProbe)
 {
     pScrn->driverVersion = VBOX_VERSION;
@@ -1180,6 +1203,28 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     return (TRUE);
 }
 
+/** FEATURE: Set a property on the root window if the server VT is currently
+ * switched out.  This should be called from the EnterVT/LeaveVT hooks.
+ * TESTING: the feature works if seamless mode and dynamic resizing are
+ *   disabled on the host when a VT switch to a text console is done on an old
+ *   X11 guest.  When the vboxvideo DDX is running the property created should
+ *   exist exactly when the X server is switched out. */
+static Bool setVTRootProperty(ScrnInfoPtr pScrn, BOOL fLeave)
+{
+    Atom propertyName = MakeAtom("XFree86_NO_VT", sizeof("XFree86_NO_VT") - 1,
+                                 TRUE);
+    int32_t cValue = 0;
+    int rc;
+
+    if (propertyName == BAD_RESOURCE)
+        return FALSE;
+    rc =   fLeave
+         ? ChangeWindowProperty(ROOT_WINDOW(pScrn), propertyName, XA_INTEGER,
+                                32, PropModeReplace, 1, &cValue, TRUE)
+         : DELETE_PROPERTY(serverClient, ROOT_WINDOW(pScrn), propertyName);
+    return rc == Success;
+}
+
 static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
@@ -1208,6 +1253,7 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
                      pScrn->frameY0))
         return FALSE;
 #endif
+    setVTRootProperty(pScrn, FALSE);
     return TRUE;
 }
 
@@ -1229,6 +1275,7 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
         || drmIoctl(pVBox->drmFD, VBOXVIDEO_IOCTL_ENABLE_HGSMI, NULL) < 0)
 #endif
         VBOXRestoreMode(pScrn);
+    setVTRootProperty(pScrn, TRUE);
     TRACE_EXIT();
 }
 
