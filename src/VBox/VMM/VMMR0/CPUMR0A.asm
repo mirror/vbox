@@ -121,7 +121,7 @@ BEGINCODE
 ; Saves the host FPU/XMM state and restores the guest state.
 ;
 ; @returns  0
-; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
+; @param    pCPUMCPU  x86:[esp+4] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
 BEGINPROC cpumR0SaveHostRestoreGuestFPUState
@@ -205,7 +205,7 @@ ENDPROC   cpumR0SaveHostRestoreGuestFPUState
 ; Saves the host FPU/XMM state
 ;
 ; @returns  0
-; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
+; @param    pCPUMCPU  x86:[esp+4] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
 BEGINPROC cpumR0SaveHostFPUState
@@ -238,7 +238,7 @@ ENDPROC   cpumR0SaveHostFPUState
 ; Saves the guest FPU/XMM state and restores the host state.
 ;
 ; @returns  0
-; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
+; @param    pCPUMCPU  x86:[esp+4] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
 BEGINPROC cpumR0SaveGuestRestoreHostFPUState
@@ -309,7 +309,7 @@ ENDPROC   cpumR0SaveGuestRestoreHostFPUState
 ; Sets the host's FPU/XMM state
 ;
 ; @returns  0
-; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
+; @param    pCPUMCPU  x86:[esp+4] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
 BEGINPROC cpumR0RestoreHostFPUState

@@ -32,7 +32,7 @@ BEGINCODE
 ; Computes lrd * 2^exp
 ; @returns st(0)
 ; @param    lrd     [rbp + xCB*2]
-; @param    exp     [ebp + 14h]  GCC:edi  MSC:ecx
+; @param    exp     [ebp + 14h]  gcc:edi  msc:ecx
 BEGINPROC RT_NOCRT(ldexpl)
     push    xBP
     mov     xBP, xSP

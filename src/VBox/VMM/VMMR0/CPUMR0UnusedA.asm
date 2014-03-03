@@ -47,7 +47,7 @@ extern NAME(g_fCPUMIs64bitHost)
 ;;
 ; Restores the guest's FPU/XMM state
 ;
-; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
+; @param    pCtx  x86:[esp+4] gcc:rdi msc:rcx     CPUMCTX pointer
 ;
 ; @remarks Used by the disabled CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE code.
 ;
@@ -91,7 +91,7 @@ ENDPROC     cpumR0LoadFPU
 ;;
 ; Restores the guest's FPU/XMM state
 ;
-; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
+; @param    pCtx  x86:[esp+4] gcc:rdi msc:rcx     CPUMCTX pointer
 ;
 ; @remarks Used by the disabled CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE code.
 ;
@@ -134,7 +134,7 @@ ENDPROC cpumR0SaveFPU
 ;;
 ; Restores the guest's XMM state
 ;
-; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
+; @param    pCtx  x86:[esp+4] gcc:rdi msc:rcx     CPUMCTX pointer
 ;
 ; @remarks  Used by the disabled CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE code.
 ;
@@ -220,7 +220,7 @@ ENDPROC     cpumR0LoadXMM
 ;;
 ; Restores the guest's XMM state
 ;
-; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
+; @param    pCtx  x86:[esp+4] gcc:rdi msc:rcx     CPUMCTX pointer
 ;
 ; @remarks  Used by the disabled CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE code.
 ;
@@ -308,7 +308,7 @@ ENDPROC     cpumR0SaveXMM
 ;;
 ; Set the FPU control word; clearing exceptions first
 ;
-; @param  u16FCW    x86:[esp+4] GCC:rdi MSC:rcx     New FPU control word
+; @param  u16FCW    x86:[esp+4] gcc:rdi msc:rcx     New FPU control word
 align 16
 BEGINPROC cpumR0SetFCW
 %ifdef RT_ARCH_AMD64
@@ -342,7 +342,7 @@ ENDPROC   cpumR0GetFCW
 ;;
 ; Set the MXCSR;
 ;
-; @param  u32MXCSR    x86:[esp+4] GCC:rdi MSC:rcx     New MXCSR
+; @param  u32MXCSR    x86:[esp+4] gcc:rdi msc:rcx     New MXCSR
 align 16
 BEGINPROC cpumR0SetMXCSR
 %ifdef RT_ARCH_AMD64

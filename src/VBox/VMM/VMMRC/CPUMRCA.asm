@@ -81,7 +81,7 @@ BEGINCODE
 ;
 ; @returns  0 if caller should continue execution.
 ; @returns  VINF_EM_RAW_GUEST_TRAP if a guest trap should be generated.
-; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
+; @param    pCPUMCPU  x86:[esp+4] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
 BEGINPROC   cpumHandleLazyFPUAsm
