@@ -185,7 +185,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 
     /* Allocate physically contiguous (< 4GB) page-aligned memory. */
     uint64_t uPhys;
-    void *pvMem = rtR0SolMemAlloc((uint64_t)_4G - 1, &uPhys, cb, PAGESIZE, true);
+    void *pvMem = rtR0SolMemAlloc((uint64_t)_4G - 1, &uPhys, cb, PAGESIZE, true /* fContig */);
     if (RT_UNLIKELY(!pvMem))
     {
         LogRel(("RTMemContAlloc failed to allocate %u bytes\n", cb));
