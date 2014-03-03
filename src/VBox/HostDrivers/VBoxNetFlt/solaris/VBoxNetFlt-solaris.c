@@ -127,6 +127,7 @@ typedef struct VLANHEADER *PVLANHEADER;
 static int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
 static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 static int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
+static int VBoxNetFltSolarisQuiesceNotNeeded(dev_info_t *pDip);
 
 /**
  * Stream Module hooks.
@@ -231,7 +232,7 @@ static struct dev_ops g_VBoxNetFltSolarisDevOps =
     &g_VBoxNetFltSolarisCbOps,
     (struct bus_ops *)0,
     nodev,                          /* power */
-    ddi_quiesce_not_needed
+    VBoxNetFltSolarisQuiesceNotNeeded
 };
 
 /**
@@ -690,6 +691,20 @@ static int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
         default:
             return DDI_FAILURE;
     }
+}
+
+
+/**
+ * Quiesce not-needed entry point, as Solaris 10 doesn't have any
+ * ddi_quiesce_not_needed() function.
+ *
+ * @param   pDip            The module structure instance.
+ *
+ * @return  corresponding solaris error code.
+ */
+static int VBoxNetFltSolarisQuiesceNotNeeded(dev_info_t *pDip)
+{
+    return DDI_SUCCESS;
 }
 
 
