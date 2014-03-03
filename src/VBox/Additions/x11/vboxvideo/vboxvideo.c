@@ -433,7 +433,7 @@ vbox_output_add_mode (VBOXPtr pVBox, DisplayModePtr *pModes,
                       const char *pszName, int x, int y,
                       Bool isPreferred, Bool isUserDef)
 {
-    TRACE_LOG("pszName=%s, x=%d, y=%d\n", pszName, x, y);
+    TRACE_LOG("pszName=%s, x=%d, y=%d\n", pszName ? pszName : "(null)", x, y);
     DisplayModePtr pMode = xnfcalloc(1, sizeof(DisplayModeRec));
 
     pMode->status        = MODE_OK;
