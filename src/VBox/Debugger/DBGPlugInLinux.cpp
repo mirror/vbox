@@ -197,17 +197,34 @@ static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PUVM pUVM, void *pvData)
         DBGFADDRESS KernelAddr;
         DBGFR3AddrFromFlat(pUVM, &KernelAddr, g_au64LnxKernelAddresses[i]);
         DBGFADDRESS HitAddr;
-        static const uint8_t s_abLinuxVersion[] = "Linux version 2.";
+        static const uint8_t s_abLinuxVersion2x[] = "Linux version 2.";
         int rc = DBGFR3MemScan(pUVM, 0, &KernelAddr, LNX_MAX_KERNEL_SIZE, 1,
-                               s_abLinuxVersion, sizeof(s_abLinuxVersion) - 1, &HitAddr);
+                               s_abLinuxVersion2x, sizeof(s_abLinuxVersion2x) - 1, &HitAddr);
         if (RT_SUCCESS(rc))
         {
             char szTmp[128];
-            char const *pszY = &szTmp[sizeof(s_abLinuxVersion) - 1];
+            char const *pszY = &szTmp[sizeof(s_abLinuxVersion2x) - 1];
             rc = DBGFR3MemReadString(pUVM, 0, &HitAddr, szTmp, sizeof(szTmp));
             if (    RT_SUCCESS(rc)
                 &&  *pszY >= '0'
                 &&  *pszY <= '6')
+            {
+                pThis->AddrKernelBase  = KernelAddr;
+                pThis->AddrLinuxBanner = HitAddr;
+                return true;
+            }
+        }
+        static const uint8_t s_abLinuxVersion3x[] = "Linux version 3.";
+        rc = DBGFR3MemScan(pUVM, 0, &KernelAddr, LNX_MAX_KERNEL_SIZE, 1,
+                           s_abLinuxVersion3x, sizeof(s_abLinuxVersion3x) - 1, &HitAddr);
+        if (RT_SUCCESS(rc))
+        {
+            char szTmp[128];
+            char const *pszY = &szTmp[sizeof(s_abLinuxVersion3x) - 1];
+            rc = DBGFR3MemReadString(pUVM, 0, &HitAddr, szTmp, sizeof(szTmp));
+            if (    RT_SUCCESS(rc)
+                &&  *pszY >= '0'
+                &&  *pszY <= '9')
             {
                 pThis->AddrKernelBase  = KernelAddr;
                 pThis->AddrLinuxBanner = HitAddr;
