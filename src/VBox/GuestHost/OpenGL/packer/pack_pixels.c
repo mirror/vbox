@@ -143,7 +143,8 @@ void PACK_APIENTRY crPackBitmap(GLsizei width, GLsizei height,
     WRITE_DATA( 24, GLuint, noimagedata );
     WRITE_DATA( 28, GLint, (GLint) (uintptr_t) bitmap);
 
-    crBitmapCopy(width, height, (GLubyte *)(data_ptr + 32), bitmap, unpack);
+    if (!noimagedata)
+        crBitmapCopy(width, height, (GLubyte *)(data_ptr + 32), bitmap, unpack);
 
     crHugePacket( CR_BITMAP_OPCODE, data_ptr );
     crPackFree( data_ptr );
