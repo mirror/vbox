@@ -36,8 +36,8 @@ BEGINCODE
 ;
 ; @param    uOperator   x86:ebp+8   gcc:rdi  msc:rcx
 ; @param    uIdxECX     x86:ebp+c   gcc:rsi  msc:rdx
-; @param    pvEAX       x86:ebp+10  gcc:rcx  msc:r8
-; @param    pvEBX       x86:ebp+14  gcc:rdx  msc:r9
+; @param    pvEAX       x86:ebp+10  gcc:rdx  msc:r8
+; @param    pvEBX       x86:ebp+14  gcc:rcx  msc:r9
 ; @param    pvECX       x86:ebp+18  gcc:r8   msc:rsp+28h
 ; @param    pvEDX       x86:ebp+1c  gcc:r9   msc:rsp+30h
 ;
@@ -64,10 +64,10 @@ BEGINPROC_EXPORTED ASMCpuId_Idx_ECX
         mov     [rbx], edx
 
  %else
+        mov     rsi, rdx
+        mov     r11, rcx
         mov     eax, edi
-        xchg    rcx, rsi
-        mov     ecx, ecx                ; paranoia: clear upper bits
-        mov     r11, rdx
+        mov     ecx, esi
         xor     ebx, ebx
         xor     edx, edx
 
