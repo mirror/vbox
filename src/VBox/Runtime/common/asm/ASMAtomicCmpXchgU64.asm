@@ -36,7 +36,7 @@ BEGINCODE
 ;
 ; @param    pu64     x86:ebp+8   gcc:rdi  msc:rcx
 ; @param    u64New   x86:ebp+c   gcc:rsi  msc:rdx
-; @param    u64Old   x86:ebp+14  gcc:rcx  msc:r8
+; @param    u64Old   x86:ebp+14  gcc:rdx  msc:r8
 ;
 ; @returns  bool result: true if successfully exchanged, false if not.
 ;           x86:al
@@ -47,7 +47,7 @@ BEGINPROC_EXPORTED ASMAtomicCmpXchgU64
         mov     rax, r8
         lock cmpxchg [rcx], rdx
  %else
-        mov     rax, rcx
+        mov     rax, rdx
         lock cmpxchg [rdi], rsi
  %endif
         setz    al
