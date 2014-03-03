@@ -92,6 +92,7 @@ static int VBoxDrvSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArgs, int mode, cre
 
 static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t Cmd);
 static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t Cmd);
+static int VBoxDrvSolarisQuiesceNotNeeded(dev_info_t *pDip);
 
 static int VBoxSupDrvErr2SolarisErr(int rc);
 static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, intptr_t pArgs);
@@ -107,20 +108,20 @@ static struct cb_ops g_VBoxDrvSolarisCbOps =
 {
     VBoxDrvSolarisOpen,
     VBoxDrvSolarisClose,
-    nodev,                  /* b strategy */
-    nodev,                  /* b dump */
-    nodev,                  /* b print */
+    nodev,                        /* b strategy */
+    nodev,                        /* b dump */
+    nodev,                        /* b print */
     VBoxDrvSolarisRead,
     VBoxDrvSolarisWrite,
     VBoxDrvSolarisIOCtl,
-    nodev,                  /* c devmap */
-    nodev,                  /* c mmap */
-    nodev,                  /* c segmap */
-    nochpoll,               /* c poll */
-    ddi_prop_op,            /* property ops */
-    NULL,                   /* streamtab  */
-    D_NEW | D_MP,          /* compat. flag */
-    CB_REV                  /* revision */
+    nodev,                        /* c devmap */
+    nodev,                        /* c mmap */
+    nodev,                        /* c segmap */
+    nochpoll,                     /* c poll */
+    ddi_prop_op,                  /* property ops */
+    NULL,                         /* streamtab  */
+    D_NEW | D_MP,                 /* compat. flag */
+    CB_REV                        /* revision */
 };
 
 /**
@@ -128,18 +129,18 @@ static struct cb_ops g_VBoxDrvSolarisCbOps =
  */
 static struct dev_ops g_VBoxDrvSolarisDevOps =
 {
-    DEVO_REV,               /* driver build revision */
-    0,                      /* ref count */
-    nulldev,                /* get info */
-    nulldev,                /* identify */
-    nulldev,                /* probe */
+    DEVO_REV,                     /* driver build revision */
+    0,                            /* ref count */
+    nulldev,                      /* get info */
+    nulldev,                      /* identify */
+    nulldev,                      /* probe */
     VBoxDrvSolarisAttach,
     VBoxDrvSolarisDetach,
-    nodev,                  /* reset */
+    nodev,                        /* reset */
     &g_VBoxDrvSolarisCbOps,
     (struct bus_ops *)0,
-    nodev,                  /* power */
-    ddi_quiesce_not_needed
+    nodev,                        /* power */
+    VBoxDrvSolarisQuiesceNotNeeded
 };
 
 /**
@@ -147,7 +148,7 @@ static struct dev_ops g_VBoxDrvSolarisDevOps =
  */
 static struct modldrv g_VBoxDrvSolarisModule =
 {
-    &mod_driverops,         /* extern from kernel */
+    &mod_driverops,               /* extern from kernel */
     DEVICE_DESC " " VBOX_VERSION_STRING "r" RT_XSTR(VBOX_SVN_REV),
     &g_VBoxDrvSolarisDevOps
 };
@@ -160,7 +161,7 @@ static struct modlinkage g_VBoxDrvSolarisModLinkage =
     MODREV_1,                     /* loadable module system revision */
     {
         &g_VBoxDrvSolarisModule,
-        NULL                     /* terminate array of linkage structures */
+        NULL                      /* terminate array of linkage structures */
     }
 };
 
@@ -177,7 +178,7 @@ typedef struct
 /** State info. for each driver instance. */
 typedef struct
 {
-    dev_info_t     *pDip;   /* Device handle */
+    dev_info_t     *pDip;         /* Device handle */
 } vbox_devstate_t;
 #endif
 
@@ -437,6 +438,20 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
         default:
             return DDI_FAILURE;
     }
+}
+
+
+/**
+ * Quiesce not-needed entry point, as Solaris 10 doesn't have any
+ * ddi_quiesce_not_needed() function.
+ *
+ * @param   pDip            The module structure instance.
+ *
+ * @return  corresponding solaris error code.
+ */
+static int VBoxDrvSolarisQuiesceNotNeeded(dev_info_t *pDip)
+{
+    return DDI_SUCCESS;
 }
 
 

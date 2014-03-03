@@ -71,6 +71,7 @@
 *******************************************************************************/
 static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
+static int VBoxNetAdpSolarisQuiesceNotNeeded(dev_info_t *pDip);
 
 /**
  * Streams: module info.
@@ -163,7 +164,7 @@ static struct dev_ops g_VBoxNetAdpSolarisDevOps =
     &g_VBoxNetAdpSolarisCbOps,
     (struct bus_ops *)0,
     nodev,                          /* power */
-    ddi_quiesce_not_needed
+    VBoxNetAdpSolarisQuiesceNotNeeded
 };
 
 /**
@@ -439,6 +440,20 @@ static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
         default:
             return DDI_FAILURE;
     }
+}
+
+
+/**
+ * Quiesce not-needed entry point, as Solaris 10 doesn't have any
+ * ddi_quiesce_not_needed() function.
+ *
+ * @param   pDip            The module structure instance.
+ *
+ * @return  corresponding solaris error code.
+ */
+static int VBoxNetAdpSolarisQuiesceNotNeeded(dev_info_t *pDip)
+{
+    return DDI_SUCCESS;
 }
 
 
