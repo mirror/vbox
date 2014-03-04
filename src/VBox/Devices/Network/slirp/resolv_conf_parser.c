@@ -28,6 +28,8 @@
 
 #include "resolv_conf_parser.h"
 
+/* XXX: it's required to add the aliases for keywords and
+ * types to handle conditions more clearly */
 enum RCP_TOKEN
 {
   tok_eof = -1, /* EOF */
@@ -37,6 +39,7 @@ enum RCP_TOKEN
   tok_ipv4_port = -5, /* ipv4 port */
   tok_ipv6 = -6, /* ipv6 */
   tok_ipv6_port = -7, /* ipv6 port */
+  /* keywords */
   tok_nameserver = -8, /* nameserver */
   tok_port = -9, /* port, Mac OSX specific */
   tok_domain = -10, /* domain */
@@ -381,6 +384,7 @@ static enum RCP_TOKEN rcp_parse_domain(struct rcp_parser *parser)
  * "The search list is currently limited to six domains with a total of 256 characters."
  * @note: resolv.conf (5) Linux:
  * "The search list is currently limited to six domains with a total of 256 characters."
+ * @note: 'search' parameter could contains numbers only hex or decimal, 1c1e or 111
  */
 static enum RCP_TOKEN rcp_parse_search(struct rcp_parser *parser)
 {
@@ -392,32 +396,53 @@ static enum RCP_TOKEN rcp_parse_search(struct rcp_parser *parser)
     Assert(parser->rcpp_state);
     st = parser->rcpp_state;
 
-    /**
-     * We asume that duplication of search list in resolv.conf isn't correct.
-     */
     if (   tok == tok_eof
-        || tok == tok_error
-        || tok != tok_string
-        || st->rcps_searchlist[0] != NULL)
+        || tok == tok_error)
         return tok_error;
 
-    i = 0;
-    trailing = RCPS_BUFFER_SIZE;
-    do {
+    /* just ignore "too many search list" */
+    if (st->rcps_num_searchlist >= RCPS_MAX_SEARCHLIST)
+        return rcp_get_token(parser);
+    
+    /* we don't want accept keywords */
+    if (tok <= tok_nameserver)
+        return tok;
+
+    /* if there're several entries of "search" we compose them together */
+    i = st->rcps_num_searchlist;
+    if ( i == 0)
+        trailing = RCPS_BUFFER_SIZE;
+    else
+    {
+        ptr = st->rcps_searchlist[i - 1];
+        trailing = RCPS_BUFFER_SIZE - (ptr -
+                                       st->rcps_searchlist_buffer + strlen(ptr) + 1);
+    }
+
+    while (1)
+    {
         len = strlen(parser->rcpp_str_buffer);
 
         if (len + 1 > trailing)
             break; /* not enough room for new entry */
+
+        if (i >= RCPS_MAX_SEARCHLIST)
+            break; /* not enought free entries for 'search' items */
 
         ptr = st->rcps_searchlist_buffer + RCPS_BUFFER_SIZE - trailing;
         strcpy(ptr, parser->rcpp_str_buffer);
 
         trailing -= len + 1; /* 1 reserved for '\0' */
 
-        st->rcps_searchlist[i] = ptr;
+        st->rcps_searchlist[i++] = ptr;
+        tok = rcp_get_token(parser);
 
-    } while(  (tok = rcp_get_token(parser)) == tok_string
-            && ++i != RCPS_MAX_SEARCHLIST);
+        /* token filter */
+        if (   tok == tok_eof
+            || tok == tok_error
+            || tok <= tok_nameserver)
+            break;
+    }
 
     st->rcps_num_searchlist = i;
 
