@@ -55,6 +55,7 @@
 #include "UIConverter.h"
 #include "UIModalWindowManager.h"
 #include "UIMedium.h"
+#include "UIExtraDataEventHandler.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 # include "UIExtraDataEventHandler.h"
@@ -534,6 +535,11 @@ void UIMachineLogic::sltMouseCapabilityChanged()
         pAction->setChecked(false);
 }
 
+void UIMachineLogic::sltHidLedsSyncStateChanged(bool fEnabled)
+{
+    m_isHidLedsSyncEnabled = fEnabled;
+}
+
 void UIMachineLogic::sltKeyboardLedsChanged()
 {
     /* Here we have to update host LED lock states using values provided by UISession:
@@ -646,7 +652,26 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_DockIconPreviewMonitor(0)
 #endif /* Q_WS_MAC */
     , m_pHostLedsState(NULL)
+    , m_isHidLedsSyncEnabled(false)
 {
+    /* Setup HID LEDs synchronization. */
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+    /* Read initial extradata value. */
+    QString strHidLedsSyncSettings = session().GetMachine().GetExtraData(GUI_HidLedsSync);
+
+    /* If extra data GUI/HidLedsSync is not present in VM config or set
+     * to 1 then sync is enabled. Otherwise, it is disabled. */
+    if (strHidLedsSyncSettings.isEmpty() || strHidLedsSyncSettings == "1")
+        m_isHidLedsSyncEnabled = true;
+    else
+        m_isHidLedsSyncEnabled = false;
+
+    /* Subscribe to GUI_HidLedsSync extradata changes in order to
+     * be able to enable or disable feature dynamically. */
+    connect(gEDataEvents, SIGNAL(sigHidLedsSyncStateChanged(bool)), this, SLOT(sltHidLedsSyncStateChanged(bool)));
+#else
+    m_isHidLedsSyncEnabled = false;
+#endif
 }
 
 void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
@@ -717,16 +742,6 @@ void UIMachineLogic::retranslateUi()
         foreach (QAction *pAction, m_pDragAndDropActions->actions())
             pAction->setText(gpConverter->toString(pAction->data().value<KDragAndDropMode>()));
     }
-}
-
-bool UIMachineLogic::isHidLedsSyncEnabled()
-{
-    /** If extra data GUI/HidLedsSync is not present in VM config or set to 1 then sync is enabled. Otherwise, it is disabled. */
-    QString strHidLedsSyncSettings = session().GetMachine().GetExtraData(GUI_HidLedsSync);
-    if (strHidLedsSyncSettings.isEmpty() || strHidLedsSyncSettings == "1")
-        return true;
-
-    return false;
 }
 
 #ifdef Q_WS_MAC

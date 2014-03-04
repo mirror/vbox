@@ -98,7 +98,7 @@ public:
     virtual void notifyAbout3DOverlayVisibilityChange(bool fVisible);
 
     /** Performs HID LEDs sync. */
-    bool isHidLedsSyncEnabled();
+    bool isHidLedsSyncEnabled() { return m_isHidLedsSyncEnabled; };
 
 protected slots:
 
@@ -244,6 +244,7 @@ private slots:
 #endif /* RT_OS_DARWIN */
 
     /* Handlers: Keyboard LEDs sync logic: */
+    void sltHidLedsSyncStateChanged(bool fEnabled);
     void sltSwitchKeyboardLedsToGuestLeds();
     void sltSwitchKeyboardLedsToPreviousLeds();
 
@@ -289,6 +290,7 @@ private:
 #endif /* Q_WS_MAC */
 
     void *m_pHostLedsState;
+    bool m_isHidLedsSyncEnabled;
 
     /* Friend classes: */
     friend class UIMachineWindow;

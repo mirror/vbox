@@ -38,6 +38,7 @@ signals:
     void sigGUILanguageChange(QString strLang);
     void sigSelectorShortcutsChanged();
     void sigMachineShortcutsChanged();
+    void sigHidLedsSyncStateChanged(bool fEnabled);
 #ifdef RT_OS_DARWIN
     void sigPresentationModeChange(bool fEnabled);
     void sigDockIconAppearanceChange(bool fEnabled);
