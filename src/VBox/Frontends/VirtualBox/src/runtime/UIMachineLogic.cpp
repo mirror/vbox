@@ -661,7 +661,9 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
 
     /* If extra data GUI/HidLedsSync is not present in VM config or set
      * to 1 then sync is enabled. Otherwise, it is disabled. */
-    if (strHidLedsSyncSettings.isEmpty() || strHidLedsSyncSettings == "1")
+
+    /* (temporary disabled by default) */
+    if (strHidLedsSyncSettings == "1")
         m_isHidLedsSyncEnabled = true;
     else
         m_isHidLedsSyncEnabled = false;
