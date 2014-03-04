@@ -102,9 +102,7 @@ public slots:
             {
                 /* If extra data GUI/HidLedsSync is not present in VM config or set
                  * to 1 then sync is enabled. Otherwise, it is disabled. */
-
-                /* (temporary disabled by default) */
-                bool f = (strValue == "1") ? true : false;
+                bool f = (strValue.isEmpty() || strValue == "1") ? true : false;
                 emit sigHidLedsSyncStateChanged(f);
             }
 
