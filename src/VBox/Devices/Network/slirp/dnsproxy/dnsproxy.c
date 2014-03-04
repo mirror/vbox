@@ -120,9 +120,8 @@ timeout(PNATState pData, struct socket *so, void *arg)
     /* be paranoid */
     AssertPtrReturnVoid(arg);
 
-    de = TAILQ_PREV(req->dns_server, dns_list_head, de_list);
-
-    if (de == NULL)
+    if (   req->dns_server == NULL
+        || (de = TAILQ_PREV(req->dns_server, dns_list_head, de_list)) == NULL)
     {
         hash_remove_request(pData, req);
         RTMemFree(req);
