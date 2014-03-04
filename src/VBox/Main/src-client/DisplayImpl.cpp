@@ -4301,28 +4301,6 @@ void Display::handleCrHgsmiControlCompletion(int32_t result, uint32_t u32Functio
     mpDrv->pVBVACallbacks->pfnCrHgsmiControlCompleteAsync(mpDrv->pVBVACallbacks, (PVBOXVDMACMD_CHROMIUM_CTL)pParam->u.pointer.addr, result);
 }
 
-int Display::handleCrCmdNotifyCmds()
-{
-    int rc = VERR_INVALID_FUNCTION;
-
-    if (mhCrOglSvc)
-    {
-        VBOXHGCMSVCPARM dummy;
-        VMMDev *pVMMDev = mParent->getVMMDev();
-        if (pVMMDev)
-        {
-            /* no completion callback is specified with this call,
-             * the CrOgl code will complete the CrHgsmi command once it processes it */
-            rc = pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_CRCMD_NOTIFY_CMDS, &dummy, NULL, NULL);
-            AssertRC(rc);
-        }
-        else
-            rc = VERR_INVALID_STATE;
-    }
-
-    return rc;
-}
-
 void Display::handleCrHgsmiCommandProcess(PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd)
 {
     int rc = VERR_INVALID_FUNCTION;
@@ -4375,13 +4353,6 @@ void Display::handleCrHgsmiControlProcess(PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32
 
     /* we are here because something went wrong with command processing, complete it */
     handleCrHgsmiControlCompletion(rc, SHCRGL_HOST_FN_CRHGSMI_CTL, &parm);
-}
-
-DECLCALLBACK(int)  Display::displayCrCmdNotifyCmds(PPDMIDISPLAYCONNECTOR pInterface)
-{
-    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
-
-    return pDrv->pDisplay->handleCrCmdNotifyCmds();
 }
 
 DECLCALLBACK(void) Display::displayCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd)
@@ -5032,7 +5003,6 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IConnector.pfnVHWACommandProcess    = Display::displayVHWACommandProcess;
 #endif
 #ifdef VBOX_WITH_CRHGSMI
-    pThis->IConnector.pfnCrCmdNotifyCmds =  Display::displayCrCmdNotifyCmds;
     pThis->IConnector.pfnCrHgsmiCommandProcess = Display::displayCrHgsmiCommandProcess;
     pThis->IConnector.pfnCrHgsmiControlProcess = Display::displayCrHgsmiControlProcess;
 #endif
