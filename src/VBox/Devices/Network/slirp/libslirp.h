@@ -96,6 +96,18 @@ void slirp_info(PNATState pData, const void *pvArg, const char *pszArgs);
 void slirp_set_somaxconn(PNATState pData, int iSoMaxConn);
 
 /**
+ * This macrodefinition is shortcut for check of hosts where Slirp,
+ * receives notifications from host. For now it's Darwin only. But
+ * Main API has primitives for listening DNS change event since 4.3.
+ */
+#if (defined(RT_OS_DARWIN))
+# define HAVE_NOTIFICATION_FOR_DNS_UPDATE 1
+#else
+# define HAVE_NOTIFICATION_FOR_DNS_UPDATE 0
+#endif
+
+
+/**
  * This method help DrvNAT to select strategy: about VMRESUMEREASON_HOST_RESUME:
  * - proceed with link termination (we let guest track host DNS settings)
  *    VBOX_NAT_HNCE_EXPOSED_NAME_RESOLVING_INFO
