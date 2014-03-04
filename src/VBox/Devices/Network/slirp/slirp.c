@@ -63,7 +63,15 @@
 #include <alias.h>
 
 #ifndef RT_OS_WINDOWS
+/** 
+ * XXX: It shouldn't be non-Windows specific.
+ * resolv_conf_parser.h client's structure isn't OS specific, it's just need to be generalized a
+ * a bit to replace slirp_state.h DNS server (domain) lists with rcp_state like structure.  
+ */
+# include "resolv_conf_parser.h"
+#endif
 
+#ifndef RT_OS_WINDOWS
 # define DO_ENGAGE_EVENT1(so, fdset, label)                        \
    do {                                                            \
        if (   so->so_poll_index != -1                              \
@@ -2038,10 +2046,39 @@ void slirp_info(PNATState pData, const void *pvArg, const char *pszArgs)
     }
 }
 
-
+/**
+ * @note: NATState::fUseHostResolver could be changed in bootp.c::dhcp_decode
+ * @note: this function is executed on GUI/VirtualBox or main/VBoxHeadless thread.
+ * @note: this function can potentially race with bootp.c::dhcp_decode (except Darwin)
+ */
 int slirp_host_network_configuration_change_strategy_selector(const PNATState pData)
 {
-    if (pData->fUseHostResolver) return VBOX_NAT_HNCE_HOSTRESOLVER;
-    if (pData->fUseDnsProxy) return VBOX_NAT_HNCE_DNSPROXY;
+    if (pData->fUseHostResolverPermanent) return VBOX_NAT_HNCE_HOSTRESOLVER;
+    if (pData->fUseDnsProxy) {
+#if HAVE_NOTIFICATION_FOR_DNS_UPDATE
+        /* We dont conflict with bootp.c::dhcp_decode */
+        struct rcp_state rcp_state;
+        int rc;
+        
+        rcp_state.rcps_flags |= RCPSF_IGNORE_IPV6;
+        rc = rcp_parse(&rcp_state, RESOLV_CONF_FILE);
+        LogRelFunc(("NAT: rcp_parse:%Rrc old domain:%s new domain:%s\n",
+                    rc, LIST_FIRST(&pData->pDomainList)->dd_pszDomain,
+                    rcp_state.rcps_domain));
+        if (   RT_FAILURE(rc)
+            || LIST_EMPTY(&pData->pDomainList))
+            return VBOX_NAT_HNCE_DNSPROXY;
+        
+        if (   rcp_state.rcps_domain
+            && strcmp(rcp_state.rcps_domain, LIST_FIRST(&pData->pDomainList)->dd_pszDomain) == 0)
+            return VBOX_NAT_HNCE_DNSPROXY;
+        else
+            return VBOX_NAT_HNCE_EXSPOSED_NAME_RESOLUTION_INFO; /* XXX: rename it */
+#else
+        /* copy domain name */
+        /* domain only compare with coy version */
+        return VBOX_NAT_HNCE_DNSPROXY;
+#endif
+    }
     return VBOX_NAT_HNCE_EXSPOSED_NAME_RESOLUTION_INFO;
 }
