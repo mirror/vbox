@@ -30,10 +30,10 @@ class UIMachineLogicFullscreen : public UIMachineLogic
 
 #ifdef RT_OS_DARWIN
 signals:
-    /** Mac OS X: Notifies listener about native fullscreen mode should be entered. */
-    void sigNotifyAboutNativeFullscreenShouldBeEntered();
-    /** Mac OS X: Notifies listener about native fullscreen mode should be exited. */
-    void sigNotifyAboutNativeFullscreenShouldBeExited();
+    /** Mac OS X: Notifies listeners about native fullscreen mode should be entered on @a pMachineWindow. */
+    void sigNotifyAboutNativeFullscreenShouldBeEntered(UIMachineWindow *pMachineWindow = 0);
+    /** Mac OS X: Notifies listeners about native fullscreen mode should be exited on @a pMachineWindow. */
+    void sigNotifyAboutNativeFullscreenShouldBeExited(UIMachineWindow *pMachineWindow = 0);
 #endif /* RT_OS_DARWIN */
 
 protected:
@@ -103,10 +103,10 @@ private:
 #ifdef Q_WS_MAC
     void setPresentationModeEnabled(bool fEnabled);
 
-    /** Mac OS X: Checks if 'fullscreen' mode should be invalidated. */
-    bool shouldWeInvalidateFullscreenMode() const;
-    /** Mac OS X: Invalidates 'fullscreen' mode. */
-    void invalidateFullscreenMode();
+    /** Mac OS X: Revalidates 'fullscreen' mode for @a pMachineWindow. */
+    void revalidateFullscreenWindow(UIMachineWindow *pMachineWindow);
+    /** Mac OS X: Revalidates 'fullscreen' mode for all windows. */
+    void revalidateFullscreenWindows();
 #endif /* Q_WS_MAC */
 
     /* Variables: */
@@ -115,8 +115,8 @@ private:
 #ifdef Q_WS_MAC
     /** Mac OS X: Contains machine-window(s) marked as 'fullscreen'. */
     QSet<UIMachineWindow*> m_fullscreenMachineWindows;
-    /** Mac OS X: Holds 'fullscreen' mode invalidation status. */
-    bool m_fIsFullscreenInvalidated;
+    /** Mac OS X: Contains machine-window(s) marked as 'invalid fullscreen'. */
+    QSet<UIMachineWindow*> m_invalidFullscreenMachineWindows;
 #endif /* Q_WS_MAC */
 
     /* Friend classes: */
