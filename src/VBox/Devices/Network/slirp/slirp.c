@@ -358,12 +358,6 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
 
-    if (!fUseHostResolver)
-    {
-        rc = slirpInitializeDnsSettings(pData);
-        AssertRCReturn(rc, VINF_NAT_DNS);
-    }
-
     rc = slirpTftpInit(pData);
     AssertRCReturn(rc, VINF_NAT_DNS);
 
@@ -451,7 +445,14 @@ void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 void slirp_link_up(PNATState pData)
 {
     struct arp_cache_entry *ac;
+    
+    if (link_up == 1)
+        return;
+
     link_up = 1;
+
+    if (!pData->fUseHostResolverPermanent)
+        slirpInitializeDnsSettings(pData);
 
     if (LIST_EMPTY(&pData->arp_cache))
         return;
@@ -470,6 +471,11 @@ void slirp_link_down(PNATState pData)
     struct socket *so;
     struct port_forward_rule *rule;
 
+    if (link_up == 0)
+        return;
+
+    slirpReleaseDnsSettings(pData);
+    
     while ((so = tcb.so_next) != &tcb)
     {
         /* Don't miss TCB releasing */
@@ -507,7 +513,6 @@ void slirp_term(PNATState pData)
     icmp_finit(pData);
 
     slirp_link_down(pData);
-    slirpReleaseDnsSettings(pData);
     ftp_alias_unload(pData);
     nbt_alias_unload(pData);
     if (pData->fUseHostResolver)
