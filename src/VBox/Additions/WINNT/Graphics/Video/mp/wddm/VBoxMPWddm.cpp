@@ -1316,6 +1316,13 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
         return FALSE;
     }
 
+    VBOXVTLIST CtlList;
+    vboxVtListInit(&CtlList);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    VBOXVTLIST VhwaCmdList;
+    vboxVtListInit(&VhwaCmdList);
+#endif
+
     uint32_t flags = VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
     bOur = (flags & HGSMIHOSTFLAGS_IRQ);
 
@@ -1324,10 +1331,108 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
 
     bNeedDpc |= VBoxCmdVbvaCheckCompletedIrq(pDevExt, &pDevExt->CmdVbva);
 
+    do {
+        if (flags & HGSMIHOSTFLAGS_GCOMMAND_COMPLETED)
+        {
+            /* read the command offset */
+            HGSMIOFFSET offCmd = VBoxVideoCmnPortReadUlong(VBoxCommonFromDeviceExt(pDevExt)->guestCtx.port);
+            if (offCmd == HGSMIOFFSET_VOID)
+            {
+                WARN(("void command offset!"));
+                continue;
+            }
+
+            uint16_t chInfo;
+            uint8_t *pvCmd = HGSMIBufferDataAndChInfoFromOffset (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx.Heap.area, offCmd, &chInfo);
+            if (!pvCmd)
+            {
+                WARN(("zero cmd"));
+                continue;
+            }
+
+            switch (chInfo)
+            {
+                case VBVA_VBVACMD_CTL:
+                {
+                    int rc = VBoxSHGSMICommandProcessCompletion (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, (VBOXSHGSMIHEADER*)pvCmd, TRUE /*bool bIrq*/ , &CtlList);
+                    AssertRC(rc);
+                    break;
+                }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                case VBVA_VHWA_CMD:
+                {
+                    vboxVhwaPutList(&VhwaCmdList, (VBOXVHWACMD*)pvCmd);
+                    break;
+                }
+#endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
+                default:
+                    AssertBreakpoint();
+            }
+        }
+        else if (flags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
+        {
+            AssertBreakpoint();
+            /* @todo: FIXME: implement !!! */
+        }
+        else
+            break;
+
+        flags = VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
+
+    } while (1);
+
+    if (!vboxVtListIsEmpty(&CtlList))
+    {
+        vboxVtListCat(&pDevExt->CtlList, &CtlList);
+        bNeedDpc = TRUE;
+        ASMAtomicWriteU32(&pDevExt->fCompletingCommands, 1);
+    }
+
+    if (!vboxVtListIsEmpty(&VhwaCmdList))
+    {
+        vboxVtListCat(&pDevExt->VhwaCmdList, &VhwaCmdList);
+        bNeedDpc = TRUE;
+        ASMAtomicWriteU32(&pDevExt->fCompletingCommands, 1);
+    }
+
+    bNeedDpc |= !vboxVdmaDdiCmdIsCompletedListEmptyIsr(pDevExt);
+
+    if (bOur)
+    {
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+        if (flags & HGSMIHOSTFLAGS_WATCHDOG)
+        {
+            Assert(0);
+        }
+#endif
+        if (flags & HGSMIHOSTFLAGS_VSYNC)
+        {
+            Assert(0);
+            DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
+            for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+            {
+                PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
+                PVBOXWDDM_ALLOCATION pPrimary = pSource->pPrimaryAllocation;
+                if (pPrimary && pPrimary->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID)
+                {
+                    memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
+                    notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
+                    /* @todo: !!!this is not correct in case we want source[i]->target[i!=j] mapping */
+                    notify.CrtcVsync.VidPnTargetId = i;
+                    notify.CrtcVsync.PhysicalAddress.QuadPart = pPrimary->AllocData.Addr.offVram;
+                    pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
+
+                    bNeedDpc = TRUE;
+                }
+            }
+        }
+    }
+
+    if (pDevExt->bNotifyDxDpc)
+        bNeedDpc = TRUE;
+
     if (bNeedDpc)
         pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
-
-//    LOGF(("LEAVE, context(0x%p), bOur(0x%x)", MiniportDeviceContext, (ULONG)bOur));
 
     return bOur;
 }
@@ -1553,6 +1658,9 @@ BOOLEAN vboxWddmGetDPCDataCallback(PVOID Context)
 
     pdc->data.bNotifyDpc = pdc->pDevExt->bNotifyDxDpc;
     pdc->pDevExt->bNotifyDxDpc = FALSE;
+
+    ASMAtomicWriteU32(&pdc->pDevExt->fCompletingCommands, 0);
+
     return TRUE;
 }
 
@@ -1568,6 +1676,39 @@ static VOID DxgkDdiDpcRoutineNew(
 
     pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
 
+    if (ASMAtomicReadU32(&pDevExt->fCompletingCommands))
+    {
+        VBOXWDDM_GETDPCDATA_CONTEXT context = {0};
+        BOOLEAN bRet;
+
+        context.pDevExt = pDevExt;
+
+        /* get DPC data at IRQL */
+        NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
+                pDevExt->u.primary.DxgkInterface.DeviceHandle,
+                vboxWddmGetDPCDataCallback,
+                &context,
+                0, /* IN ULONG MessageNumber */
+                &bRet);
+        Assert(Status == STATUS_SUCCESS);
+
+    //    if (context.data.bNotifyDpc)
+        pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+
+        if (!vboxVtListIsEmpty(&context.data.CtlList))
+        {
+            int rc = VBoxSHGSMICommandPostprocessCompletion (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, &context.data.CtlList);
+            AssertRC(rc);
+        }
+    #ifdef VBOX_WITH_VIDEOHWACCEL
+        if (!vboxVtListIsEmpty(&context.data.VhwaCmdList))
+        {
+            vboxVhwaCompletionListProcess(pDevExt, &context.data.VhwaCmdList);
+        }
+    #endif
+
+        vboxVdmaDdiCmdHandleCompletedList(pDevExt, &context.data.CompletedDdiCmdQueue);
+    }
 //    LOGF(("LEAVE, context(0x%p)", MiniportDeviceContext));
 }
 
@@ -5737,6 +5878,12 @@ DxgkDdiRenderNew(
     return STATUS_SUCCESS;
 }
 
+static void vboxWddmPatchLocationInit(D3DDDI_PATCHLOCATIONLIST *pPatchLocationListOut, UINT idx, UINT offPatch)
+{
+    memset(pPatchLocationListOut, 0, sizeof (*pPatchLocationListOut));
+    pPatchLocationListOut->AllocationIndex = idx;
+    pPatchLocationListOut->PatchOffset = offPatch;
+}
 
 static NTSTATUS
 APIENTRY
@@ -5751,42 +5898,80 @@ DxgkDdiRenderLegacy(
     {
         WARN(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXWDDM_DMA_PRIVATEDATA_BASEHDR (%d)",
                 pRender->DmaBufferPrivateDataSize , sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
-        /* @todo: can this actually happen? what status to return? */
         return STATUS_INVALID_PARAMETER;
     }
     if (pRender->CommandLength < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR))
     {
         WARN(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXWDDM_DMA_PRIVATEDATA_BASEHDR (%d)",
                 pRender->DmaBufferPrivateDataSize , sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
-        /* @todo: can this actually happen? what status to return? */
+        return STATUS_INVALID_PARAMETER;
+    }
+    if (pRender->DmaSize < pRender->CommandLength)
+    {
+        WARN(("pRender->DmaSize(%d) < pRender->CommandLength(%d)",
+                pRender->DmaSize, pRender->CommandLength));
+        return STATUS_INVALID_PARAMETER;
+    }
+    if (pRender->PatchLocationListOutSize < pRender->PatchLocationListInSize)
+    {
+        WARN(("pRender->PatchLocationListOutSize(%d) < pRender->PatchLocationListInSize(%d)",
+                pRender->PatchLocationListOutSize, pRender->PatchLocationListInSize));
+        return STATUS_INVALID_PARAMETER;
+    }
+    if (pRender->AllocationListSize != pRender->PatchLocationListInSize)
+    {
+        WARN(("pRender->AllocationListSize(%d) != pRender->PatchLocationListInSize(%d)",
+                pRender->AllocationListSize, pRender->PatchLocationListInSize));
         return STATUS_INVALID_PARAMETER;
     }
 
-    PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pInputHdr = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)pRender->pCommand;
     NTSTATUS Status = STATUS_SUCCESS;
-    switch (pInputHdr->enmCmd)
-    {
-        case VBOXVDMACMD_TYPE_DMA_NOP:
-        {
-            PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pPrivateData = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)pRender->pDmaBufferPrivateData;
-            pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_NOP;
 
-            pRender->pDmaBufferPrivateData = (uint8_t*)pRender->pDmaBufferPrivateData + sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR);
-            pRender->pDmaBuffer = ((uint8_t*)pRender->pDmaBuffer) + pRender->CommandLength;
-            Assert(pRender->DmaSize >= pRender->CommandLength);
-            Assert(pRender->PatchLocationListOutSize >= pRender->PatchLocationListInSize);
-            UINT cbPLL = pRender->PatchLocationListInSize * sizeof (pRender->pPatchLocationListOut[0]);
-            memcpy(pRender->pPatchLocationListOut, pRender->pPatchLocationListIn, cbPLL);
-            pRender->pPatchLocationListOut += pRender->PatchLocationListInSize;
-            break;
-        }
-        default:
+    __try
+    {
+        PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pInputHdr = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)pRender->pCommand;
+        switch (pInputHdr->enmCmd)
         {
-            WARN(("unsupported command %d", pInputHdr->enmCmd));
-            return STATUS_INVALID_PARAMETER;
+            case VBOXVDMACMD_TYPE_DMA_NOP:
+            {
+                PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pPrivateData = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)pRender->pDmaBufferPrivateData;
+                pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_NOP;
+                pRender->pDmaBufferPrivateData = (uint8_t*)pRender->pDmaBufferPrivateData + sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR);
+                pRender->pDmaBuffer = ((uint8_t*)pRender->pDmaBuffer) + pRender->CommandLength;
+                for (UINT i = 0; i < pRender->PatchLocationListInSize; ++i)
+                {
+                    UINT offPatch = i * 4;
+                    if (offPatch + 4 > pRender->CommandLength)
+                    {
+                        WARN(("wrong offPatch"));
+                        return STATUS_INVALID_PARAMETER;
+                    }
+                    if (offPatch != pRender->pPatchLocationListIn[i].PatchOffset)
+                    {
+                        WARN(("wrong PatchOffset"));
+                        return STATUS_INVALID_PARAMETER;
+                    }
+                    if (i != pRender->pPatchLocationListIn[i].AllocationIndex)
+                    {
+                        WARN(("wrong AllocationIndex"));
+                        return STATUS_INVALID_PARAMETER;
+                    }
+                    vboxWddmPatchLocationInit(&pRender->pPatchLocationListOut[i], i, offPatch);
+                }
+                break;
+            }
+            default:
+            {
+                WARN(("unsupported command %d", pInputHdr->enmCmd));
+                return STATUS_INVALID_PARAMETER;
+            }
         }
     }
-
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = STATUS_INVALID_PARAMETER;
+        WARN(("invalid parameter"));
+    }
 //    LOGF(("LEAVE, hContext(0x%x)", hContext));
 
     return Status;

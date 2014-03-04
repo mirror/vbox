@@ -855,6 +855,7 @@ typedef struct VBVABUFFER
 #define VBVA_CMDVBVA_ENABLE  15 /* enables command ring buffer VBVA */
 #define VBVA_CMDVBVA_SUBMIT  16 /* inform host about VBVA Command submission */
 #define VBVA_CMDVBVA_FLUSH   17 /* inform host about VBVA Command submission */
+#define VBVA_VBVACMD_CTL     18
 
 /* host->guest commands */
 #define VBVAHG_EVENT              1
