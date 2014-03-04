@@ -749,6 +749,7 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
      *  - Windows_Win7.7600.16385.090713-1255.X64CHK
      *  - Windows_Win7SP1.7601.17514.101119-1850.AMD64FRE
      *  - Windows_Win8.9200.16384.120725-1247.X86CHK
+     *  - en_windows_8_1_symbols_debug_checked_x64_2712568
      */
     bool fFound = false;
     uint32_t i = u.Split.cComps - 1;
@@ -784,10 +785,11 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
             { RT_STR_TUPLE("Windows_Winmain.7100"),             6, 1, 0, 7100 }, /* RC */
             { RT_STR_TUPLE("Windows_Win7.7600"),                6, 1, 0, 7600 }, /* RC */
             { RT_STR_TUPLE("Windows_Win7SP1.7601"),             6, 1, 1, 7601 }, /* RC */
-            { RT_STR_TUPLE("Windows_Winmain.8102"),             6, 1, 0, 8102 }, /* preview */
-            { RT_STR_TUPLE("Windows_Winmain.8250"),             6, 1, 0, 8250 }, /* beta */
-            { RT_STR_TUPLE("Windows_Winmain.8400"),             6, 1, 0, 8400 }, /* RC */
-            { RT_STR_TUPLE("Windows_Win8.9200"),                6, 1, 0, 9200 }, /* RTM */
+            { RT_STR_TUPLE("Windows_Winmain.8102"),             6, 2, 0, 8102 }, /* preview */
+            { RT_STR_TUPLE("Windows_Winmain.8250"),             6, 2, 0, 8250 }, /* beta */
+            { RT_STR_TUPLE("Windows_Winmain.8400"),             6, 2, 0, 8400 }, /* RC */
+            { RT_STR_TUPLE("Windows_Win8.9200"),                6, 2, 0, 9200 }, /* RTM */
+            { RT_STR_TUPLE("en_windows_8_1"),                   6, 3, 0, 9600 }, /* RTM */
         };
 
         const char *pszComp  = u.Split.apszComps[i];
@@ -822,6 +824,7 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
             || RTStrIStr(pszComp, "_x86chk_")
             || RTStrIStr(pszComp, "-x86-DEBUG")
             || (RTStrIStr(pszComp, "-x86-") && RTStrIStr(pszComp, "-DEBUG"))
+            || RTStrIStr(pszComp, "_debug_checked_x86")
            )
         {
             pVerInfo->fChecked = true;
@@ -831,6 +834,7 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
                  || RTStrIStr(pszComp, ".amd64chk.")
                  || RTStrIStr(pszComp, ".x64.chk.")
                  || RTStrIStr(pszComp, ".x64chk.")
+                 || RTStrIStr(pszComp, "_debug_checked_x64")
                 )
         {
             pVerInfo->fChecked = true;
@@ -851,6 +855,11 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
         {
             pVerInfo->fChecked = true;
             *penmArch = MYARCH_X86;
+        }
+        else if (RTStrIStr(pszComp, "_x64"))
+        {
+            pVerInfo->fChecked = false;
+            *penmArch = MYARCH_AMD64;
         }
         else
         {
