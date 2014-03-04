@@ -2741,7 +2741,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
-            /* .uMinorVer = */ 1,
+            /* .uMinorVer = */ 2,
             /* .fChecked  = */ false,
             /* .fSmp      = */ true,
             /* .uCsdNo    = */ 0,
@@ -2763,7 +2763,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
-            /* .uMinorVer = */ 1,
+            /* .uMinorVer = */ 2,
             /* .fChecked  = */ false,
             /* .fSmp      = */ true,
             /* .uCsdNo    = */ 0,
@@ -2785,7 +2785,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
-            /* .uMinorVer = */ 1,
+            /* .uMinorVer = */ 2,
             /* .fChecked  = */ true,
             /* .fSmp      = */ true,
             /* .uCsdNo    = */ 0,
@@ -2807,7 +2807,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
-            /* .uMinorVer = */ 1,
+            /* .uMinorVer = */ 2,
             /* .fChecked  = */ true,
             /* .fSmp      = */ true,
             /* .uCsdNo    = */ 0,
@@ -2820,6 +2820,94 @@ const RTNTSDBSET g_artNtSdbSets[] =
             /* .offDpcQueueDepth             = */ 0x2d98,
             /* .cbDpcQueueDepth              = */ 0x0004,
             /* .offVendorString              = */ 0x5948,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\u\en_windows_8_1_symbols_x86_2712593\ntkrpamp.pdb\9DC1F995475C456C8D1AA9606E3106931\ntkrpamp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 6,
+            /* .uMinorVer = */ 3,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 0,
+            /* .uBuildNo  = */ 9600,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x2239,
+            /* .cbQuantumEnd                 = */ 0x0001,
+            /* .offDpcQueueDepth             = */ 0x21ec,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x3c7c,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_AMD64
+    {   /* Source: s:\WinSyms\u\en_windows_8_1_symbols_x64_2712576\ntkrnlmp.pdb\A9BBA3C139724A738BE17665DB4393CA1\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 6,
+            /* .uMinorVer = */ 3,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 0,
+            /* .uBuildNo  = */ 9600,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x2de9,
+            /* .cbQuantumEnd                 = */ 0x0001,
+            /* .offDpcQueueDepth             = */ 0x2d98,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x5958,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\u\en_windows_8_1_symbols_debug_checked_x86_2712583\ntkrpamp.pdb\77DAB075113647B5888133D3F79B7B171\ntkrpamp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 6,
+            /* .uMinorVer = */ 3,
+            /* .fChecked  = */ true,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 0,
+            /* .uBuildNo  = */ 9600,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x2239,
+            /* .cbQuantumEnd                 = */ 0x0001,
+            /* .offDpcQueueDepth             = */ 0x21ec,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x3c7c,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_AMD64
+    {   /* Source: s:\WinSyms\u\en_windows_8_1_symbols_debug_checked_x64_2712568\ntkrnlmp.pdb\4C5FFE3E839647C5B9471D0C8F9710E11\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 6,
+            /* .uMinorVer = */ 3,
+            /* .fChecked  = */ true,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 0,
+            /* .uBuildNo  = */ 9600,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x2de9,
+            /* .cbQuantumEnd                 = */ 0x0001,
+            /* .offDpcQueueDepth             = */ 0x2d98,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x5958,
             /* .cbVendorString               = */ 0x000d,
         },
     },
