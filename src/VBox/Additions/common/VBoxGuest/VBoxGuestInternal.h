@@ -37,7 +37,7 @@
 
 /** @def VBOXGUEST_USE_WAKE_UP_LIST
  * Defer wake-up of waiting thread when defined. */
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
 # define VBOXGUEST_USE_DEFERRED_WAKE_UP
 #endif
 
