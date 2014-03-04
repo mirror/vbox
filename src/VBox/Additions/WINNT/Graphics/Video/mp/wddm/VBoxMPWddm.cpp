@@ -3226,7 +3226,7 @@ DxgkDdiSubmitCommandLegacy(
                     vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
                 }
 
-                Assert(pSource->u8SyncState == VBOXWDDM_HGSYNC_F_SYNCED_ALL);
+                Assert(pSource->u8SyncState == VBOXWDDM_HGSYNC_F_SYNCED_ALL || pDevExt->aTargets[pDstAlloc->AllocData.SurfDesc.VidPnSourceId].fStateSyncPening);
             }
 
             Status = vboxVdmaProcessBltCmd(pDevExt, pContext, pBlt);
