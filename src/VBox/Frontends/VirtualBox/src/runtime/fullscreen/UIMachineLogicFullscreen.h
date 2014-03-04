@@ -17,8 +17,13 @@
 #ifndef ___UIMachineLogicFullscreen_h___
 #define ___UIMachineLogicFullscreen_h___
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIMachineLogic.h"
+
+/* Other includes: */
+#ifdef Q_WS_MAC
+# include <ApplicationServices/ApplicationServices.h>
+#endif /* Q_WS_MAC */
 
 /* Forward declarations: */
 class UIMultiScreenLayout;
@@ -53,10 +58,13 @@ protected:
 private slots:
 
 #ifdef RT_OS_DARWIN
-    /** Mac OS X: Marks sender() machine-window as 'fullscreen' one. */
+    /** Mac OS X: Handles native notification about 'fullscreen' will be entered. */
+    void sltHandleNativeFullscreenWillEnter();
+    /** Mac OS X: Handles native notification about 'fullscreen' entered. */
     void sltHandleNativeFullscreenDidEnter();
-    /** Mac OS X: Marks sender() machine-window as 'non-fullscreen' one,
-      * changes visual-state to requested if there is/are no more fullscreen window(s). */
+    /** Mac OS X: Handles native notification about 'fullscreen' will be exited. */
+    void sltHandleNativeFullscreenWillExit();
+    /** Mac OS X: Handles native notification about 'fullscreen' exited. */
     void sltHandleNativeFullscreenDidExit();
 
     /** Mac OS X: Requests visual-state change from 'fullscreen' to 'normal' (window). */
@@ -103,6 +111,11 @@ private:
 #ifdef Q_WS_MAC
     void setPresentationModeEnabled(bool fEnabled);
 
+    /** Mac OS X: Performs fade to black if possible. */
+    void fadeToBlack();
+    /** Mac OS X: Performs fade to normal if possible. */
+    void fadeToNormal();
+
     /** Mac OS X: Revalidates 'fullscreen' mode for @a pMachineWindow. */
     void revalidateFullscreenWindow(UIMachineWindow *pMachineWindow);
     /** Mac OS X: Revalidates 'fullscreen' mode for all windows. */
@@ -113,6 +126,9 @@ private:
     UIMultiScreenLayout *m_pScreenLayout;
 
 #ifdef Q_WS_MAC
+    /** Mac OS X: Fade token. */
+    CGDisplayFadeReservationToken m_fadeToken;
+
     /** Mac OS X: Contains machine-window(s) marked as 'fullscreen'. */
     QSet<UIMachineWindow*> m_fullscreenMachineWindows;
     /** Mac OS X: Contains machine-window(s) marked as 'invalid fullscreen'. */
