@@ -17,12 +17,16 @@
 
 #ifndef DEV_CODEC_H
 #define DEV_CODEC_H
-
+//#include <VBox/vmm/pdmdev.h>
 /** The ICH HDA (Intel) codec state. */
 typedef struct HDACODEC HDACODEC;
 /** Pointer to the Intel ICH HDA codec state. */
 typedef HDACODEC *PHDACODEC;
-
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+typedef struct PDMIAUDIOCONNECTOR * PPDMIAUDIOCONNECTOR;
+typedef struct PDMGSTVOICEOUT *PPDMGSTVOICEOUT;
+typedef struct PDMGSTVOICEIN  *PPDMGSTVOICEIN;
+#endif
 /**
  * Verb processor method.
  */
@@ -71,6 +75,12 @@ typedef struct HDACODEC
     uint16_t                u16DeviceId;
     uint8_t                 u8BSKU;
     uint8_t                 u8AssemblyId;
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    R3PTRTYPE(PPDMIAUDIOCONNECTOR)     pDrv;
+    /** Pointer to the attached audio driver. */
+    R3PTRTYPE(PPDMIBASE)               pDrvBase;
+#endif
+
 #ifndef VBOX_WITH_HDA_CODEC_EMU
     CODECVERB const        *paVerbs;
     int                     cVerbs;
@@ -78,11 +88,19 @@ typedef struct HDACODEC
     PCODECEMU               pCodecBackend;
 #endif
     PCODECNODE              paNodes;
+
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    /** PCM in */
+    R3PTRTYPE(PPDMGSTVOICEIN)         SwVoiceIn;
+    /** PCM out */
+    R3PTRTYPE(PPDMGSTVOICEOUT)        SwVoiceOut;
+#else
     QEMUSoundCard           card;
     /** PCM in */
     SWVoiceIn               *SwVoiceIn;
     /** PCM out */
     SWVoiceOut              *SwVoiceOut;
+#endif
     void                   *pvHDAState;
     bool                    fInReset;
 #ifndef VBOX_WITH_HDA_CODEC_EMU

@@ -55,7 +55,11 @@
 #include "USBDeviceImpl.h"
 #include "RemoteUSBDeviceImpl.h"
 #include "SharedFolderImpl.h"
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+#include "DrvAudioVRDE.h"
+#else
 #include "AudioSnifferInterface.h"
+#endif
 #include "Nvram.h"
 #ifdef VBOX_WITH_USB_CARDREADER
 # include "UsbCardReader.h"
@@ -403,7 +407,9 @@ Console::Console()
     , mfPowerOffCausedByReset(false)
     , mpVmm2UserMethods(NULL)
     , m_pVMMDev(NULL)
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
     , mAudioSniffer(NULL)
+#endif
     , mNvram(NULL)
 #ifdef VBOX_WITH_USB_CARDREADER
     , mUsbCardReader(NULL)
@@ -563,8 +569,13 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         //     unconst(m_pVMMDev) = new VMMDev(this);
         //     AssertReturn(mVMMDev, E_FAIL);
 
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        unconst(mAudioVRDE) = new AudioVRDE(this);
+        AssertComRCReturnRC(rc);
+#else
         unconst(mAudioSniffer) = new AudioSniffer(this);
         AssertReturn(mAudioSniffer, E_FAIL);
+#endif
 
         FirmwareType_T enmFirmwareType;
         mMachine->COMGETTER(FirmwareType)(&enmFirmwareType);
@@ -682,12 +693,13 @@ void Console::uninit()
         unconst(mUsbCardReader) = NULL;
     }
 #endif
-
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
     if (mAudioSniffer)
     {
         delete mAudioSniffer;
         unconst(mAudioSniffer) = NULL;
     }
+#endif
 
     // if the VM had a VMMDev with an HGCM thread, then remove that here
     if (m_pVMMDev)
@@ -1388,6 +1400,7 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
 
         if (mcAudioRefs <= 0)
         {
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
             if (mAudioSniffer)
             {
                 PPDMIAUDIOSNIFFERPORT port = mAudioSniffer->getAudioSnifferPort();
@@ -1396,6 +1409,7 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
                     port->pfnSetup(port, false, false);
                 }
             }
+#endif
         }
     }
 
@@ -1429,15 +1443,17 @@ void Console::VRDPInterceptAudio(uint32_t u32ClientId)
 
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
-
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
     LogFlowFunc(("mAudioSniffer %p, u32ClientId %d.\n",
                  mAudioSniffer, u32ClientId));
     NOREF(u32ClientId);
+#endif
 
     ++mcAudioRefs;
 
     if (mcAudioRefs == 1)
     {
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
         if (mAudioSniffer)
         {
             PPDMIAUDIOSNIFFERPORT port = mAudioSniffer->getAudioSnifferPort();
@@ -1446,6 +1462,7 @@ void Console::VRDPInterceptAudio(uint32_t u32ClientId)
                 port->pfnSetup(port, true, true);
             }
         }
+#endif
     }
 
     LogFlowFuncLeave();

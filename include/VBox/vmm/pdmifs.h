@@ -2532,6 +2532,7 @@ typedef struct PDMIVMMDEVCONNECTOR
 #define PDMIVMMDEVCONNECTOR_IID                 "aff90240-a443-434e-9132-80c186ab97d4"
 
 
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
 /** Pointer to a network connector interface */
 typedef struct PDMIAUDIOCONNECTOR *PPDMIAUDIOCONNECTOR;
 /**
@@ -2549,6 +2550,7 @@ typedef struct PDMIAUDIOCONNECTOR
 #define PDMIAUDIOCONNECTOR_IID                  "85d52af5-b3aa-4b3e-b176-4b5ebfc52f47"
 
 
+#endif
 /** @todo r=bird: the two following interfaces are hacks to work around the missing audio driver
  * interface. This should be addressed rather than making more temporary hacks. */
 

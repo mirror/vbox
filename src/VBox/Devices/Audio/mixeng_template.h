@@ -113,9 +113,17 @@ static inline IN_T glue (clip_, ET) (int64_t v)
 #endif
 
 static void glue (glue (conv_, ET), _to_stereo)
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    (PPDMHOSTSTEREOSAMPLE dst, const void *src, int samples, volume_t *vol)
+#else
     (st_sample_t *dst, const void *src, int samples, volume_t *vol)
+#endif
 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    PPDMHOSTSTEREOSAMPLE out = dst;
+#else
     st_sample_t *out = dst;
+#endif
     IN_T *in = (IN_T *) src;
 #ifndef NOVOL
     if (vol->mute) {
@@ -126,16 +134,29 @@ static void glue (glue (conv_, ET), _to_stereo)
     (void) vol;
 #endif
     while (samples--) {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        out->u64LSample = VOL (glue (conv_, ET) (*in++), vol->l);
+        out->u64RSample = VOL (glue (conv_, ET) (*in++), vol->r);
+#else
         out->l = VOL (glue (conv_, ET) (*in++), vol->l);
         out->r = VOL (glue (conv_, ET) (*in++), vol->r);
+#endif
         out += 1;
     }
 }
 
 static void glue (glue (conv_, ET), _to_mono)
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    (PPDMHOSTSTEREOSAMPLE dst, const void *src, int samples, volume_t *vol)
+#else
     (st_sample_t *dst, const void *src, int samples, volume_t *vol)
+#endif
 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    PPDMHOSTSTEREOSAMPLE out = dst;
+#else
     st_sample_t *out = dst;
+#endif
     IN_T *in = (IN_T *) src;
 #ifndef NOVOL
     if (vol->mute) {
@@ -146,8 +167,14 @@ static void glue (glue (conv_, ET), _to_mono)
     (void) vol;
 #endif
     while (samples--) {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        out->u64LSample = VOL (glue (conv_, ET) (in[0]), vol->l);
+        out->u64RSample = out->u64LSample;
+#else
         out->l = VOL (glue (conv_, ET) (in[0]), vol->l);
         out->r = out->l;
+
+#endif
         out += 1;
         in += 1;
     }

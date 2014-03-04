@@ -28,7 +28,9 @@ struct HWVoiceOut;
 
 #ifdef VBOX
 /* use faster ASMMult2xS32RetS64 */
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
 typedef struct { int mute;  uint32_t r; uint32_t l; } volume_t;
+#endif
 typedef struct { int64_t l; int64_t r; } st_sample_t;
 #else /* !VBOX */
 #ifdef FLOAT_MIXENG
@@ -40,9 +42,10 @@ typedef struct { int mute; int64_t r; int64_t l; } volume_t;
 typedef struct { int64_t l; int64_t r; } st_sample_t;
 #endif
 #endif /* VBOX */
-
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
 typedef void (t_sample) (st_sample_t *dst, const void *src,
                          int samples, volume_t *vol);
+#endif
 typedef void (f_sample) (void *dst, const st_sample_t *src, int samples);
 
 extern t_sample *mixeng_conv[2][2][2][3];
@@ -54,7 +57,12 @@ void st_rate_flow (void *opaque, st_sample_t *ibuf, st_sample_t *obuf,
 void st_rate_flow_mix (void *opaque, st_sample_t *ibuf, st_sample_t *obuf,
                        int *isamp, int *osamp);
 void st_rate_stop (void *opaque);
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+void mixeng_clear(PPDMHOSTSTEREOSAMPLE buf, int len);
+void mixeng_sniff_and_clear(PPDMHOSTVOICEOUT hw, PPDMHOSTSTEREOSAMPLE src, int len);
+# else
 void mixeng_clear (st_sample_t *buf, int len);
 void mixeng_sniff_and_clear (struct HWVoiceOut *hw, st_sample_t *src, int len);
+# endif
 
 #endif  /* mixeng.h */

@@ -2502,6 +2502,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          */
         attachStatusDriver(pInst, &mapSharedFolderLed, 0, 0, NULL, NULL, 0);
 
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
         /*
          * Audio Sniffer Device
          */
@@ -2515,6 +2516,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         InsertConfigNode(pLunL0,   "Config", &pCfg);
         AudioSniffer *pAudioSniffer = mAudioSniffer;
         InsertConfigInteger(pCfg,  "Object", (uintptr_t)pAudioSniffer);
+#endif
 
         /*
          * AC'97 ICH / SoundBlaster16 audio / Intel HD Audio
@@ -2568,7 +2570,13 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
             /* the Audio driver */
             InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-            InsertConfigString(pLunL0, "Driver",               "AUDIO");
+            InsertConfigString(pLunL0, "Driver", "AUDIO");
+
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver", "PulseAudio");
+#endif
+
             InsertConfigNode(pLunL0,   "Config", &pCfg);
 
             AudioDriverType_T audioDriver;
@@ -2590,7 +2598,11 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #endif
                 case AudioDriverType_DirectSound:
                 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    InsertConfigString(pCfg, "AudioDriver", "DSoundAudio");
+#else
                     InsertConfigString(pCfg, "AudioDriver", "dsound");
+#endif
                     break;
                 }
 #endif /* RT_OS_WINDOWS */
@@ -2605,14 +2617,22 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 # ifdef VBOX_WITH_ALSA
                 case AudioDriverType_ALSA:
                 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    InsertConfigString(pCfg, "AudioDriver", "AlsaAudio");
+#else
                     InsertConfigString(pCfg, "AudioDriver", "alsa");
+#endif
                     break;
                 }
 # endif
 # ifdef VBOX_WITH_PULSE
                 case AudioDriverType_Pulse:
                 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    InsertConfigString(pCfg, "AudioDriver", "PulseAudio");
+#else
                     InsertConfigString(pCfg, "AudioDriver", "pulse");
+#endif
                     break;
                 }
 # endif
@@ -2628,7 +2648,11 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 # ifdef VBOX_WITH_PULSE
                 case AudioDriverType_Pulse:
                 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    InsertConfigString(pCfg, "AudioDriver", "PulseAudio");
+#else
                     InsertConfigString(pCfg, "AudioDriver", "pulse");
+#endif
                     break;
                 }
 # endif
@@ -2643,6 +2667,20 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
             hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                             H();
             InsertConfigString(pCfg, "StreamName", bstr);
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            /* the Audio driver */
+            InsertConfigNode(pInst, "LUN#1", &pLunL0);
+            InsertConfigString(pLunL0, "Driver", "AUDIO");
+            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver", "AudioVRDE");
+            InsertConfigNode(pLunL0, "Config", &pCfg);
+            InsertConfigString(pCfg, "AudioDriver", "AudioVRDE");
+            InsertConfigString(pCfg, "StreamName", bstr);
+            InsertConfigNode(pLunL1, "Config", &pCfg);
+            InsertConfigInteger(pCfg,  "Object", (uintptr_t)mAudioVRDE);
+            InsertConfigInteger(pCfg,  "ObjectVRDPServer", (uintptr_t)mConsoleVRDPServer);
+
+#endif
         }
 
         /*

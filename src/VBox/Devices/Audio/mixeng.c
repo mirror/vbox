@@ -25,14 +25,18 @@
 
 #include "VBoxDD.h"
 #include "vl_vbox.h"
-#include "audio.h"
 #ifdef VBOX
 # include <iprt/asm-math.h>
 # include <iprt/mem.h>
 #endif
 
 #define AUDIO_CAP "mixeng"
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+#include "DrvAudio.h"
+#else
+#include "audio.h"
 #include "audio_int.h"
+#endif
 
 #ifndef VBOX
 #define NOVOL
@@ -308,11 +312,14 @@ struct rate {
  */
 void *st_rate_start (int inrate, int outrate)
 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    struct rate *rate = (struct rate *)RTMemAllocZ(1 * sizeof (*rate));
+#else
     struct rate *rate = audio_calloc (AUDIO_FUNC, 1, sizeof (*rate));
+#endif
 
     if (!rate) {
-        dolog ("Could not allocate resampler (%" FMTZ "u bytes)\n",
-               sizeof (*rate));
+        LogFlow(("Could not allocate resampler %u bytes)\n", sizeof (*rate)));
         return NULL;
     }
 
@@ -337,16 +344,34 @@ void *st_rate_start (int inrate, int outrate)
 
 void st_rate_stop (void *opaque)
 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    RTMemFree(opaque);
+#else
     qemu_free (opaque);
+#endif
 }
 
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+void mixeng_clear(PPDMHOSTSTEREOSAMPLE buf, int len)
+{
+    memset (buf, 0, len * sizeof (PDMHOSTSTEREOSAMPLE));
+}
+#else
 void mixeng_clear (st_sample_t *buf, int len)
 {
     memset (buf, 0, len * sizeof (st_sample_t));
 }
+#endif
 
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+void mixeng_sniff_and_clear (PPDMHOSTVOICEOUT hw, PPDMHOSTSTEREOSAMPLE src, int len)
+#else
 void mixeng_sniff_and_clear (HWVoiceOut *hw, st_sample_t *src, int len)
+#endif
 {
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
+    LogFlow(("mixeng: sniffer_run_out\n"));
     sniffer_run_out (hw, src, len);
+#endif
     mixeng_clear (src, len);
 }
