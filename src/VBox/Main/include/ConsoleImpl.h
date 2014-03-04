@@ -33,7 +33,11 @@ class RemoteUSBDevice;
 class SharedFolder;
 class VRDEServerInfo;
 class EmulatedUSB;
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+class AudioVRDE;
+#else
 class AudioSniffer;
+#endif
 class Nvram;
 #ifdef VBOX_WITH_USB_CARDREADER
 class UsbCardReader;
@@ -189,7 +193,11 @@ public:
     Mouse *getMouse() const { return mMouse; }
     Display *getDisplay() const { return mDisplay; }
     MachineDebugger *getMachineDebugger() const { return mDebugger; }
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    AudioVRDE *getAudioVRDE() const { return mAudioVRDE; }
+#else
     AudioSniffer *getAudioSniffer() const { return mAudioSniffer; }
+#endif
 
     const ComPtr<IMachine> &machine() const { return mMachine; }
 
@@ -234,7 +242,12 @@ public:
                               IProgress *aProgress);
     int hgcmLoadService(const char *pszServiceLibrary, const char *pszServiceName);
     VMMDev *getVMMDev() { return m_pVMMDev; }
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    AudioVRDE *getAudioVRDE() { return mAudioVRDE; }
+#else
     AudioSniffer *getAudioSniffer() { return mAudioSniffer; }
+#endif
+
 #ifdef VBOX_WITH_EXTPACK
     ExtPackManager *getExtPackManager();
 #endif
@@ -824,7 +837,11 @@ private:
     NetworkAttachmentTypeVector meAttachmentType;
 
     VMMDev * m_pVMMDev;
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    AudioVRDE * const mAudioVRDE;
+#else
     AudioSniffer * const mAudioSniffer;
+#endif
     Nvram   * const mNvram;
 #ifdef VBOX_WITH_USB_CARDREADER
     UsbCardReader * const mUsbCardReader;

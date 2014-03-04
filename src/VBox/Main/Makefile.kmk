@@ -281,6 +281,7 @@ VBoxSVC_DEFS = \
 	$(if $(VBOX_WITH_VUSB),VBOX_WITH_VUSB,) \
 	$(if $(VBOX_WITH_S3),VBOX_WITH_S3,) \
 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,) \
+	$(if $(VBOX_WITH_PDM_AUDIO_DRIVER),VBOX_WITH_PDM_AUDIO_DRIVER,) \
 	$(if $(VBOX_WITH_NAT_SERVICE),VBOX_WITH_NAT_SERVICE,) \
 	$(if $(VBOX_WITH_CROGL),VBOX_WITH_CROGL,) \
 	$(if $(VBOX_WITH_CRHGSMI),VBOX_WITH_CRHGSMI,)
@@ -614,7 +615,8 @@ VBoxC_DEFS = \
 	$(if-expr defined(VBOX_WITH_EHCI) && defined(VBOX_WITH_USB),VBOX_WITH_EHCI,) \
 	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK,) \
 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,) \
-	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX,)
+	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX,) \
+	$(if $(VBOX_WITH_PDM_AUDIO_DRIVER),VBOX_WITH_PDM_AUDIO_DRIVER,)
 ifdef VBOX_WITH_CRHGSMI
  VBoxC_DEFS += VBOX_WITH_CRHGSMI
 endif
@@ -692,7 +694,6 @@ VBoxC_SOURCES = \
 	$(if $(VBOX_WITH_USB_CARDREADER),src-client/UsbCardReader.cpp,) \
 	src-client/Nvram.cpp \
 	src-client/AdditionsFacilityImpl.cpp \
-	src-client/AudioSnifferInterface.cpp \
 	src-client/BusAssignmentManager.cpp \
 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),src-client/PCIRawDevImpl.cpp,) \
 	src-client/ClientTokenHolder.cpp \
@@ -720,6 +721,13 @@ VBoxC_SOURCES = \
 	src-client/VMMDevInterface.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
+ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+ VBoxC_SOURCES += \
+	src-client/DrvAudioVRDE.cpp
+else
+ VBoxC_SOURCES += \
+	src-client/AudioSnifferInterface.cpp
+endif 
 VBoxC_SOURCES.win = \
 	src-client/win/dllmain.cpp \
 	src-client/win/VBoxC.def \

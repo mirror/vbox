@@ -24,6 +24,9 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/vmm/pdmdev.h>
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+#include <VBox/vmm/pdmaudioifs.h>
+#endif
 #include <VBox/version.h>
 
 #include <iprt/assert.h>
@@ -37,9 +40,11 @@
 
 #include "VBoxDD.h"
 
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
 extern "C" {
 #include "audio.h"
 }
+#endif
 #include "DevIchHdaCodec.h"
 
 
@@ -546,7 +551,11 @@ typedef struct HDASTATE
     uint32_t                           u32Padding;
 
     /** Pointer to the connector of the attached audio driver. */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    R3PTRTYPE(PPDMIAUDIOCONNECTOR)     pDrv[2];
+#else
     R3PTRTYPE(PPDMIAUDIOCONNECTOR)     pDrv;
+#endif
     /** Pointer to the attached audio driver. */
     R3PTRTYPE(PPDMIBASE)               pDrvBase;
     /** The base interface for LUN\#0. */
@@ -576,8 +585,12 @@ typedef struct HDASTATE
     bool                               fR0Enabled;
     /** Flag whether the RC part is enabled. */
     bool                               fRCEnabled;
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     /** The HDA codec state. */
+    R3PTRTYPE(PHDACODEC)               pCodec[2];
+#else
     R3PTRTYPE(PHDACODEC)               pCodec;
+#endif
     uint64_t                           u64BaseTS;
     /** 1.2.3.4.5.6.7. - someone please tell me what I'm counting! - .8.9.10... */
     uint8_t                            u8Counter;
@@ -1107,14 +1120,26 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
         pfn = NULL;
         corbRp++;
         cmd = pThis->pu32CorbBuf[corbRp];
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        for (uint32_t lun = 0; lun < 1; lun++)
+            rc = pThis->pCodec[lun]->pfnLookup(pThis->pCodec[lun], cmd, &pfn);
+#else
         rc = pThis->pCodec->pfnLookup(pThis->pCodec, cmd, &pfn);
+#endif
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
         Assert(pfn);
         (rirbWp)++;
 
         if (RT_LIKELY(pfn))
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        {
+            for (uint32_t lun = 0; lun < 1; lun++)
+                rc = pfn(pThis->pCodec[lun], cmd, &resp);
+        }
+#else
             rc = pfn(pThis->pCodec, cmd, &resp);
+#endif
         else
             rc = VERR_INVALID_FUNCTION;
 
@@ -1432,10 +1457,20 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             switch (iReg)
             {
                 case HDA_REG_SD0CTL:
+ #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    for (uint32_t lun = 0; lun < 1; lun++)
+                        pThis->pDrv[lun]->pfnEnableIn(pThis->pDrv[lun], pThis->pCodec[lun]->SwVoiceIn, fRun);
+ #else
                     AUD_set_active_in(pThis->pCodec->SwVoiceIn, fRun);
+ #endif
                     break;
                 case HDA_REG_SD4CTL:
+ #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    for (uint32_t lun = 0; lun < 1; lun++)
+                        pThis->pDrv[lun]->pfnEnableOut(pThis->pDrv[lun], pThis->pCodec[lun]->SwVoiceOut, fRun);
+ #else
                     AUD_set_active_out(pThis->pCodec->SwVoiceOut, fRun);
+ #endif
                     break;
                 default:
                     Log(("hda: changing RUN bit on non-attached stream\n"));
@@ -1523,10 +1558,16 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 }
 
 #ifdef IN_RING3
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, uint32_t * pFrequency, uint32_t * pChannels, audfmt_e *pFormat, uint32_t *pEndian)
+# else
 static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
+# endif
 {
+# ifndef VBOX_WITH_PDM_AUDIO_DRIVER
     Assert((pAudSetting));
-#define EXTRACT_VALUE(v, mask, shift) ((v & ((mask) << (shift))) >> (shift))
+# endif
+# define EXTRACT_VALUE(v, mask, shift) ((v & ((mask) << (shift))) >> (shift))
     uint32_t u32Hz = (u32SdFmt & HDA_SDFMT_BASE_RATE_SHIFT) ? 44100 : 48000;
     uint32_t u32HzMult = 1;
     uint32_t u32HzDiv = 1;
@@ -1550,17 +1591,29 @@ static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
         case 6: u32HzDiv = 7; break;
         case 7: u32HzDiv = 8; break;
     }
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    *pFrequency = u32Hz * u32HzMult / u32HzDiv;
+# else
     pAudSetting->freq = u32Hz * u32HzMult / u32HzDiv;
+# endif
 
     switch (EXTRACT_VALUE(u32SdFmt, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT))
     {
         case 0:
             Log(("hda: %s requested 8-bit\n", __FUNCTION__));
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            *pFormat = AUD_FMT_S8;
+# else
             pAudSetting->fmt = AUD_FMT_S8;
+# endif
             break;
         case 1:
             Log(("hda: %s requested 16-bit\n", __FUNCTION__));
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            *pFormat = AUD_FMT_S16;
+# else
             pAudSetting->fmt = AUD_FMT_S16;
+# endif
             break;
         case 2:
             Log(("hda: %s requested 20-bit\n", __FUNCTION__));
@@ -1570,15 +1623,25 @@ static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
             break;
         case 4:
             Log(("hda: %s requested 32-bit\n", __FUNCTION__));
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            *pFormat = AUD_FMT_S32;
+# else
             pAudSetting->fmt = AUD_FMT_S32;
+# endif
             break;
         default:
             AssertMsgFailed(("Unsupported"));
     }
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    *pChannels = (u32SdFmt & 0xf) + 1;
+    *pFormat = AUD_FMT_S16;
+    *pEndian = 0;
+# else
     pAudSetting->nchannels = (u32SdFmt & 0xf) + 1;
     pAudSetting->fmt = AUD_FMT_S16;
     pAudSetting->endianness = 0;
-#undef EXTRACT_VALUE
+# endif
+# undef EXTRACT_VALUE
 }
 #endif
 
@@ -1588,18 +1651,36 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 # ifdef VBOX_WITH_HDA_CODEC_EMU
     /** @todo a bit more investigation is required here. */
     int rc = 0;
-    audsettings_t as;
     /* no reason to reopen voice with same settings */
     if (u32Value == HDA_REG_IND(pThis, iReg))
         return VINF_SUCCESS;
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    uint32_t uFrequency;
+    uint32_t cChannels;
+    audfmt_e Format;
+    uint32_t Endian;
+    hdaSdFmtToAudSettings(u32Value, &uFrequency, &cChannels, &Format, &Endian);
+# else
+    audsettings_t as;
     hdaSdFmtToAudSettings(u32Value, &as);
+# endif
     switch (iReg)
     {
         case HDA_REG_SD0FMT:
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            for (uint32_t lun = 0; lun < 1; lun++)
+                rc = hdaCodecOpenVoice(pThis->pCodec[lun], PI_INDEX, uFrequency, cChannels, Format, Endian);
+# else
             rc = hdaCodecOpenVoice(pThis->pCodec, PI_INDEX, &as);
+# endif
             break;
         case HDA_REG_SD4FMT:
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            for (uint32_t lun = 0; lun < 1; lun++)
+                rc = hdaCodecOpenVoice(pThis->pCodec[lun], PO_INDEX, uFrequency, cChannels, Format, Endian);
+# else
             rc = hdaCodecOpenVoice(pThis->pCodec, PO_INDEX, &as);
+# endif
             break;
         default:
             Log(("HDA: attempt to change format on %d\n", iReg));
@@ -1667,10 +1748,20 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         }
         HDA_REG(pThis, IRS) = HDA_REG_FIELD_FLAG_MASK(IRS, ICB);  /* busy */
         Log(("hda: IC:%x\n", cmd));
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        for (uint32_t lun = 0; lun < 1; lun++)
+            rc = pThis->pCodec[lun]->pfnLookup(pThis->pCodec[lun], cmd, &pfn);
+# else
         rc = pThis->pCodec->pfnLookup(pThis->pCodec, cmd, &pfn);
+# endif
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        for (uint32_t lun = 0; lun < 1; lun++)
+            rc = pfn(pThis->pCodec[lun], cmd, &resp);
+#else
         rc = pfn(pThis->pCodec, cmd, &resp);
+#endif
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
         HDA_REG(pThis, IR) = (uint32_t)resp;
@@ -1973,7 +2064,12 @@ static uint32_t hdaReadAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc
         /*
          * read from backend input line to the last unreported position or at the begining.
          */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        //cbBackendCopy = pThis->pDrv[0]->pfnRead(pThis->pDrv[0], pThis->pCodec[0]->SwVoiceIn, pBdle->au8HdaBuffer, cb2Copy);
+        //cbBackendCopy = pThis->pDrv[0]->pfnRead(pThis->pDrv[0], pThis->pCodec[1]->SwVoiceIn, pBdle->au8HdaBuffer, cb2Copy);
+#else
         cbBackendCopy = AUD_read(pThis->pCodec->SwVoiceIn, pBdle->au8HdaBuffer, cb2Copy);
+#endif
         /*
          * write the HDA DMA buffer
          */
@@ -2024,7 +2120,13 @@ static uint32_t hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDes
             /*
              * Feed the newly fetched samples, including unreported ones, to the backend.
              */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            for (uint32_t lun = 0; lun < 1; lun++)
+                cbBackendCopy = pThis->pDrv[lun]->pfnWrite(pThis->pDrv[lun], pThis->pCodec[lun]->SwVoiceOut, pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW);
+            LogFlow(("cbBackendCopy write %d bytes \n", cbBackendCopy));
+#else
             cbBackendCopy = AUD_write (pThis->pCodec->SwVoiceOut, pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW);
+#endif
             hdaBackendWriteTransferReported(pBdle, cb2Copy, cbBackendCopy, &cbTransferred, pu32Avail);
         }
         else
@@ -2547,7 +2649,11 @@ static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
     /* Save Codec nodes states */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    hdaCodecSaveState(pThis->pCodec[0], pSSM);
+#else
     hdaCodecSaveState(pThis->pCodec, pSSM);
+#endif
 
     /* Save MMIO registers */
     AssertCompile(RT_ELEMENTS(pThis->au32Regs) >= HDA_NREGS_SAVED);
@@ -2574,7 +2680,11 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     /*
      * Load Codec nodes states.
      */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    int rc = hdaCodecLoadState(pThis->pCodec[0], pSSM, uVersion);
+#else
     int rc = hdaCodecLoadState(pThis->pCodec, pSSM, uVersion);
+#endif
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2636,8 +2746,16 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     /*
      * Update stuff after the state changes.
      */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    for (uint32_t lun = 0; lun < 1; lun++)
+    {
+        pThis->pDrv[lun]->pfnEnableIn(pThis->pDrv[lun], pThis->pCodec[lun]->SwVoiceIn, SDCTL(pThis, 0) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+        pThis->pDrv[lun]->pfnEnableOut(pThis->pDrv[lun], pThis->pCodec[lun]->SwVoiceOut, SDCTL(pThis, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+    }
+#else
     AUD_set_active_in(pThis->pCodec->SwVoiceIn, SDCTL(pThis, 0) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
     AUD_set_active_out(pThis->pCodec->SwVoiceOut, SDCTL(pThis, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+#endif
 
     pThis->u64CORBBase = RT_MAKE_U64(HDA_REG(pThis, CORBLBASE), HDA_REG(pThis, CORBUBASE));
     pThis->u64RIRBBase = RT_MAKE_U64(HDA_REG(pThis, RIRBLBASE), HDA_REG(pThis, RIRBUBASE));
@@ -2812,10 +2930,18 @@ static DECLCALLBACK(void) hdaInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
 static DECLCALLBACK(void) hdaInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    for (uint32_t lun = 0; lun < 1; lun++)
+        if (pThis->pCodec[lun]->pfnCodecDbgListNodes)
+            pThis->pCodec[lun]->pfnCodecDbgListNodes(pThis->pCodec[lun], pHlp, pszArgs);
+        else
+            pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback.\n");
+#else
     if (pThis->pCodec->pfnCodecDbgListNodes)
         pThis->pCodec->pfnCodecDbgListNodes(pThis->pCodec, pHlp, pszArgs);
     else
         pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback.\n");
+#endif
 }
 
 
@@ -2825,10 +2951,18 @@ static DECLCALLBACK(void) hdaInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 static DECLCALLBACK(void) hdaInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    for (uint32_t lun = 0; lun < 1; lun++)
+        if (pThis->pCodec[lun]->pfnCodecDbgSelector)
+            pThis->pCodec[lun]->pfnCodecDbgSelector(pThis->pCodec[lun], pHlp, pszArgs);
+        else
+            pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback.\n");
+#else
     if (pThis->pCodec->pfnCodecDbgSelector)
         pThis->pCodec->pfnCodecDbgSelector(pThis->pCodec, pHlp, pszArgs);
     else
         pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback.\n");
+#endif
 }
 
 
@@ -2921,6 +3055,18 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    for (uint32_t lun = 0; lun < 1; lun++)
+    {
+        if (pThis->pCodec[lun])
+        {
+            int rc = hdaCodecDestruct(pThis->pCodec[lun]);
+            AssertRC(rc);
+            RTMemFree(pThis->pCodec[lun]);
+            pThis->pCodec[lun] = NULL;
+        }
+    }
+#else
     if (pThis->pCodec)
     {
         int rc = hdaCodecDestruct(pThis->pCodec);
@@ -2929,6 +3075,7 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
         RTMemFree(pThis->pCodec);
         pThis->pCodec = NULL;
     }
+#endif
 
     RTMemFree(pThis->pu32CorbBuf);
     pThis->pu32CorbBuf = NULL;
@@ -3081,7 +3228,48 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = PDMDevHlpSSMRegister(pDevIns, HDA_SSM_VERSION, sizeof(*pThis), hdaSaveExec, hdaLoadExec);
     if (RT_FAILURE(rc))
         return rc;
-
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    //for (iter = 0; i < 3; i++)
+    {
+        /*
+        * Attach driver.
+        */
+        rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Audio Driver Port");
+        if (RT_SUCCESS(rc))
+        {
+            pThis->pDrv[0] = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIAUDIOCONNECTOR);
+            AssertMsgReturn(pThis->pDrv,
+                            ("Configuration error: instance %d has no host audio interface!\n", iInstance),
+                            VERR_PDM_MISSING_INTERFACE);
+        }
+        else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        {
+            Log(("ac97: No attached driver!\n"));
+        }
+        else if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Failed to attach AC97 LUN #0! rc=%Rrc\n", rc));
+            return rc;
+        }
+        rc = PDMDevHlpDriverAttach(pDevIns, 1, &pThis->IBase, &pThis->pDrvBase, "Audio Driver Port");
+        if (RT_SUCCESS(rc))
+        {
+            pThis->pDrv[1] = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIAUDIOCONNECTOR);
+            AssertMsgReturn(pThis->pDrv[1],
+                            ("Configuration error: instance %d has no host audio interface!\n", iInstance),
+                            VERR_PDM_MISSING_INTERFACE);
+        }
+        else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        {
+            Log(("ac97: No attached driver! LUN#1\n"));
+        }
+        else if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Failed to attach AC97 LUN #1! rc=%Rrc\n", rc));
+            return rc;
+        }
+    }
+#else
     /*
      * Attach driver.
      */
@@ -3093,8 +3281,49 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         AssertMsgFailed(("Failed to attach Intel HDA LUN #0! rc=%Rrc\n", rc));
         return rc;
     }
-
+#endif
     /* Construct codec state. */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    pThis->pCodec[0] = (PHDACODEC)RTMemAllocZ(sizeof(HDACODEC));
+    if (!pThis->pCodec[0])
+        return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("HDA: Out of memory allocating codec state"));
+    pThis->pCodec[1] = (PHDACODEC)RTMemAllocZ(sizeof(HDACODEC));
+    if (!pThis->pCodec[1])
+        return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("HDA: Out of memory allocating codec state"));
+
+    pThis->pCodec[0]->pvHDAState = pThis;
+    pThis->pCodec[1]->pvHDAState = pThis;
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    pThis->pCodec[0]->pDrv = pThis->pDrv[0];
+    //pThis->pCodec[1]->pDrv = pThis->pDrv[1];
+#endif
+    rc = hdaCodecConstruct(pDevIns, pThis->pCodec[0], pCfgHandle);
+    if (RT_FAILURE(rc))
+        AssertRCReturn(rc, rc);
+    rc = hdaCodecConstruct(pDevIns, pThis->pCodec[1], pCfgHandle);
+    if (RT_FAILURE(rc))
+        AssertRCReturn(rc, rc);
+
+    /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
+       verb F20 should provide device/codec recognition. */
+    Assert(pThis->pCodec[0]->u16VendorId);
+    Assert(pThis->pCodec[0]->u16DeviceId);
+    Assert(pThis->pCodec[1]->u16VendorId);
+    Assert(pThis->pCodec[1]->u16DeviceId);
+    PCIDevSetSubSystemVendorId(&pThis->PciDev, pThis->pCodec[0]->u16VendorId); /* 2c ro - intel.) */
+    PCIDevSetSubSystemId(      &pThis->PciDev, pThis->pCodec[0]->u16DeviceId); /* 2e ro. */
+    PCIDevSetSubSystemVendorId(&pThis->PciDev, pThis->pCodec[1]->u16VendorId); /* 2c ro - intel.) */
+    PCIDevSetSubSystemId(      &pThis->PciDev, pThis->pCodec[1]->u16DeviceId); /* 2e ro. */
+
+    hdaReset(pDevIns);
+    pThis->pCodec[0]->id = 0;
+    pThis->pCodec[0]->pfnTransfer = hdaTransfer;
+    pThis->pCodec[0]->pfnReset = hdaCodecReset;
+    pThis->pCodec[1]->id = 0;
+    pThis->pCodec[1]->pfnTransfer = hdaTransfer;
+    pThis->pCodec[1]->pfnReset = hdaCodecReset;
+#else
+
     pThis->pCodec = (PHDACODEC)RTMemAllocZ(sizeof(HDACODEC));
     if (!pThis->pCodec)
         return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("HDA: Out of memory allocating codec state"));
@@ -3122,7 +3351,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      */
     HDA_REG(pThis, WAKEEN)   = 0x0;
     HDA_REG(pThis, STATESTS) = 0x0;
-
+#endif
     /*
      * Debug and string formatter types.
      */

@@ -20,7 +20,11 @@
 #include "DisplayImpl.h"
 #include "KeyboardImpl.h"
 #include "MouseImpl.h"
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+#include "DrvAudioVRDE.h"
+#else
 #include "AudioSnifferInterface.h"
+#endif
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
@@ -946,6 +950,9 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
         Log(("AUDIOIN: disconnected client %u\n", u32ClientId));
         ASMAtomicWriteU32(&server->mu32AudioInputClientId, 0);
 
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        server->mConsole->getAudioVRDE()->handleVRDESvrCmdAudioInputIntercept(false);
+#else
         PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
         if (pPort)
         {
@@ -955,6 +962,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
         {
             AssertFailed();
         }
+#endif
     }
 
     int c = ASMAtomicDecS32(&server->mcClients);
@@ -1009,7 +1017,9 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, ui
             if (ASMAtomicCmpXchgU32(&server->mu32AudioInputClientId, u32ClientId, 0) == true)
             {
                 Log(("AUDIOIN: connected client %u\n", u32ClientId));
-
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                server->mConsole->getAudioVRDE()->handleVRDESvrCmdAudioInputIntercept(true);
+#else
                 PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
                 if (pPort)
                 {
@@ -1025,6 +1035,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, ui
                     ASMAtomicWriteU32(&server->mu32AudioInputClientId, 0);
                     rc = VERR_NOT_SUPPORTED;
                 }
+#endif
             }
             else
             {
@@ -1293,31 +1304,48 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
                                                           uint32_t cbData)
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
-
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
     PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
+#endif
 
     switch (u32Event)
     {
         case VRDE_AUDIOIN_BEGIN:
         {
             const VRDEAUDIOINBEGIN *pParms = (const VRDEAUDIOINBEGIN *)pvData;
-
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            server->mConsole->getAudioVRDE()->handleVRDESvrCmdAudioInputEventBegin(pvCtx,
+                                                                                   VRDE_AUDIO_FMT_SAMPLE_FREQ(pParms->fmt),
+                                                                                   VRDE_AUDIO_FMT_CHANNELS(pParms->fmt),
+                                                                                   VRDE_AUDIO_FMT_BITS_PER_SAMPLE(pParms->fmt),
+                                                                                   VRDE_AUDIO_FMT_SIGNED(pParms->fmt)
+                                                                                  );
+#else
             pPort->pfnAudioInputEventBegin (pPort, pvCtx,
                                             VRDE_AUDIO_FMT_SAMPLE_FREQ(pParms->fmt),
                                             VRDE_AUDIO_FMT_CHANNELS(pParms->fmt),
                                             VRDE_AUDIO_FMT_BITS_PER_SAMPLE(pParms->fmt),
                                             VRDE_AUDIO_FMT_SIGNED(pParms->fmt)
                                            );
+#endif
         } break;
 
         case VRDE_AUDIOIN_DATA:
         {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            server->mConsole->getAudioVRDE()->handleVRDESvrCmdAudioInputEventData(pvCtx, pvData, cbData);
+#else
             pPort->pfnAudioInputEventData (pPort, pvCtx, pvData, cbData);
+#endif
         } break;
 
         case VRDE_AUDIOIN_END:
         {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            server->mConsole->getAudioVRDE()->handleVRDESvrCmdAudioInputEventEnd(pvCtx);
+#else
             pPort->pfnAudioInputEventEnd (pPort, pvCtx);
+#endif
         } break;
 
         default:
@@ -1335,7 +1363,6 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
 
     mcClipboardRefs = 0;
     mpfnClipboardCallback = NULL;
-
 #ifdef VBOX_WITH_USB
     mUSBBackends.pHead = NULL;
     mUSBBackends.pTail = NULL;
@@ -3879,10 +3906,14 @@ int ConsoleVRDPServer::SendAudioInputBegin(void **ppvUserCtx,
                                             u32ClientId,
                                             audioFormat,
                                             cSamples);
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            //*ppvUserCtx = NULL;
+#else
             *ppvUserCtx = NULL; /* This is the ConsoleVRDPServer context.
-                                 * Currently not used because only one client is allowed to
-                                 * do audio input and the client id is saved by the ConsoleVRDPServer.
-                                 */
+-                                * Currently not used because only one client is allowed to
+-                                * do audio input and the client id is saved by the ConsoleVRDPServer.
+-                                */
+#endif
 
             return VINF_SUCCESS;
         }

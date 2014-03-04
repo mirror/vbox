@@ -408,6 +408,8 @@ VBOX_WITH_ALSA = 1
 VBOX_WITH_PULSE = 1
 # Enable PCI passthrough support.
 VBOX_WITH_PCI_PASSTHROUGH = 1
+# Enable PDM based audio driver
+VBOX_WITH_PDM_AUDIO_DRIVER  =
 # Enable statically linked dbus support.
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_DBUS = 1
