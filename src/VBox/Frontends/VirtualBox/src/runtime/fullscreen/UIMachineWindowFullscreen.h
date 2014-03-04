@@ -32,8 +32,12 @@ class UIMachineWindowFullscreen : public UIMachineWindow
 
 #ifdef RT_OS_DARWIN
 signals:
+    /** Mac OS X: Notifies listener about native 'fullscreen' will be entered. */
+    void sigNotifyAboutNativeFullscreenWillEnter();
     /** Mac OS X: Notifies listener about native 'fullscreen' entered. */
     void sigNotifyAboutNativeFullscreenDidEnter();
+    /** Mac OS X: Notifies listener about native 'fullscreen' will be exited. */
+    void sigNotifyAboutNativeFullscreenWillExit();
     /** Mac OS X: Notifies listener about native 'fullscreen' exited. */
     void sigNotifyAboutNativeFullscreenDidExit();
 #endif /* RT_OS_DARWIN */

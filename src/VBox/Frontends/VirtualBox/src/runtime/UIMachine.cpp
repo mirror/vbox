@@ -22,9 +22,6 @@
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
-#ifdef Q_WS_MAC
-# include <ApplicationServices/ApplicationServices.h>
-#endif /* Q_WS_MAC */
 
 /* Visual state interface: */
 class UIVisualState : public QObject
@@ -39,9 +36,6 @@ public:
         , m_type(type)
         , m_pSession(pSession)
         , m_pMachineLogic(0)
-#ifdef Q_WS_MAC
-        , m_fadeToken(kCGDisplayFadeReservationInvalidToken)
-#endif /* Q_WS_MAC */
     {
     }
 
@@ -65,26 +59,10 @@ public:
     UIMachineLogic* machineLogic() const { return m_pMachineLogic; }
 
     /* Method to prepare change one visual state to another: */
-    bool prepareChange(UIVisualStateType previousVisualStateType)
+    bool prepareChange()
     {
         m_pMachineLogic = UIMachineLogic::create(this, m_pSession, visualStateType());
-        bool fResult = m_pMachineLogic->checkAvailability();
-#ifdef Q_WS_MAC
-        /* If the new is or the old type was fullscreen we add the blending
-         * transition between the mode switches.
-         * TODO: make this more general. */
-        if (   fResult
-            && (   visualStateType() == UIVisualStateType_Fullscreen
-                || previousVisualStateType == UIVisualStateType_Fullscreen))
-        {
-            /* Fade to black */
-            CGAcquireDisplayFadeReservation(kCGMaxDisplayReservationInterval, &m_fadeToken);
-            CGDisplayFade(m_fadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
-        }
-#else /* Q_WS_MAC */
-        Q_UNUSED(previousVisualStateType);
-#endif /* !Q_WS_MAC */
-        return fResult;
+        return m_pMachineLogic->checkAvailability();
     }
 
     /* Method to change one visual state to another: */
@@ -94,31 +72,12 @@ public:
         m_pMachineLogic->prepare();
     }
 
-    /* Method to finish change one visual state to another: */
-    void finishChange()
-    {
-#ifdef Q_WS_MAC
-        /* If there is a valid fade token, fade back to normal color in any
-         * case. */
-        if (m_fadeToken != kCGDisplayFadeReservationInvalidToken)
-        {
-            /* Fade back to the normal gamma */
-            CGDisplayFade(m_fadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false);
-            CGReleaseDisplayFadeReservation(m_fadeToken);
-            m_fadeToken = kCGDisplayFadeReservationInvalidToken;
-        }
-#endif /* Q_WS_MAC */
-    }
-
 protected:
 
     /* Variables: */
     UIVisualStateType m_type;
     UISession *m_pSession;
     UIMachineLogic *m_pMachineLogic;
-#ifdef Q_WS_MAC
-    CGDisplayFadeReservationToken m_fadeToken;
-#endif /* Q_WS_MAC */
 };
 
 UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
@@ -199,12 +158,9 @@ void UIMachine::sltChangeVisualState(UIVisualStateType newVisualStateType)
     /* Create new state: */
     UIVisualState *pNewVisualState = new UIVisualState(this, m_pSession, newVisualStateType);
 
-    /* Get previous visual state type: */
-    UIVisualStateType previousVisualStateType = m_pVisualState ? m_pVisualState->visualStateType() : UIVisualStateType_Normal;
-
     /* First we have to check if the selected mode is available at all.
      * Only then we delete the old mode and switch to the new mode. */
-    if (pNewVisualState->prepareChange(previousVisualStateType))
+    if (pNewVisualState->prepareChange())
     {
         /* Delete previous state: */
         delete m_pVisualState;
@@ -212,9 +168,6 @@ void UIMachine::sltChangeVisualState(UIVisualStateType newVisualStateType)
         /* Set the new mode as current mode: */
         m_pVisualState = pNewVisualState;
         m_pVisualState->change();
-
-        /* Finish any setup: */
-        m_pVisualState->finishChange();
     }
     else
     {
