@@ -649,27 +649,27 @@ static int VbgdDarwinErr2DarwinErr(int rc)
  */
 
 /**
- * Just a plug
+ * Perform pending wake ups in work loop context.
  */
 static void
-interruptHandler(OSObject *pOwner, IOInterruptEventSource *pSrc, int cInts)
+deferredInterruptHandler(OSObject *pOwner, IOInterruptEventSource *pSrc, int cInts)
 {
-    NOREF(pOwner);
-    NOREF(pSrc);
-    NOREF(cInts);
+    NOREF(pOwner); NOREF(pSrc); NOREF(cInts);
+
+    VBoxGuestWaitDoWakeUps(&g_DevExt);
 }
 
 /**
  * Callback triggered when interrupt occurs.
  */
 static bool
-checkForInterrupt(OSObject *pOwner, IOFilterInterruptEventSource *pSrc)
+directInterruptHandler(OSObject *pOwner, IOFilterInterruptEventSource *pSrc)
 {
     if (!pSrc)
         return false;
 
     bool fTaken = VBoxGuestCommonISR(&g_DevExt);
-    if (!fTaken)
+    if (!fTaken) /** @todo r=bird: This looks bogus as we might actually be sharing interrupts with someone. */
         printf("VBoxGuestCommonISR error\n");
 
     return fTaken;
@@ -684,8 +684,8 @@ org_virtualbox_VBoxGuest::setupVmmDevInterrupts(IOService *pProvider)
         return false;
 
     m_pInterruptSrc = IOFilterInterruptEventSource::filterInterruptEventSource(this,
-                                                                               &interruptHandler,
-                                                                               &checkForInterrupt,
+                                                                               &deferredInterruptHandler,
+                                                                               &directInterruptHandler,
                                                                                pProvider);
 
     if (kIOReturnSuccess != pWorkLoop->addEventSource(m_pInterruptSrc))
