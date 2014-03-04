@@ -1871,10 +1871,10 @@ DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
        ".byte    0xF3, 0x0F, 0xC7, 0x34, 0x24  # VMXON [esp]    \n\t"
        "ja       2f                                             \n\t"
        "je       1f                                             \n\t"
-       "movl     $"RT_XSTR(VERR_VMX_INVALID_VMXON_PTR)", %0     \n\t"
+       "movl     $" RT_XSTR(VERR_VMX_INVALID_VMXON_PTR)", %0    \n\t"
        "jmp      2f                                             \n\t"
        "1:                                                      \n\t"
-       "movl     $"RT_XSTR(VERR_VMX_VMXON_FAILED)", %0          \n\t"
+       "movl     $" RT_XSTR(VERR_VMX_VMXON_FAILED)", %0         \n\t"
        "2:                                                      \n\t"
        "add      $8, %%esp                                      \n\t"
        :"=rm"(rc)
@@ -1964,7 +1964,7 @@ DECLINLINE(int) VMXClearVmcs(RTHCPHYS pVMCS)
        "push    %2                                              \n\t"
        ".byte   0x66, 0x0F, 0xC7, 0x34, 0x24  # VMCLEAR [esp]   \n\t"
        "jnc     1f                                              \n\t"
-       "movl    $"RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0       \n\t"
+       "movl    $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0      \n\t"
        "1:                                                      \n\t"
        "add     $8, %%esp                                       \n\t"
        :"=rm"(rc)
@@ -2021,7 +2021,7 @@ DECLINLINE(int) VMXActivateVmcs(RTHCPHYS pVMCS)
        "push    %2                                              \n\t"
        ".byte   0x0F, 0xC7, 0x34, 0x24  # VMPTRLD [esp]         \n\t"
        "jnc     1f                                              \n\t"
-       "movl    $"RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0       \n\t"
+       "movl    $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0      \n\t"
        "1:                                                      \n\t"
        "add     $8, %%esp                                       \n\t"
        :"=rm"(rc)
@@ -2091,10 +2091,10 @@ DECLINLINE(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val)
        ".byte  0x0F, 0x79, 0xC2        # VMWRITE eax, edx       \n\t"
        "ja     2f                                               \n\t"
        "je     1f                                               \n\t"
-       "movl   $"RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0        \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0       \n\t"
        "jmp    2f                                               \n\t"
        "1:                                                      \n\t"
-       "movl   $"RT_XSTR(VERR_VMX_INVALID_VMCS_FIELD)", %0      \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_FIELD)", %0     \n\t"
        "2:                                                      \n\t"
        :"=rm"(rc)
        :"0"(VINF_SUCCESS),
@@ -2219,14 +2219,14 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
 # if RT_INLINE_ASM_GNU_STYLE
     int rc = VINF_SUCCESS;
     __asm__ __volatile__ (
-       "movl   $"RT_XSTR(VINF_SUCCESS)", %0                      \n\t"
+       "movl   $" RT_XSTR(VINF_SUCCESS)", %0                     \n\t"
        ".byte  0x0F, 0x78, 0xc2        # VMREAD eax, edx         \n\t"
        "ja     2f                                                \n\t"
        "je     1f                                                \n\t"
-       "movl   $"RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0         \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0        \n\t"
        "jmp    2f                                                \n\t"
        "1:                                                       \n\t"
-       "movl   $"RT_XSTR(VERR_VMX_INVALID_VMCS_FIELD)", %0       \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_FIELD)", %0      \n\t"
        "2:                                                       \n\t"
        :"=&r"(rc),
         "=d"(*pData)
