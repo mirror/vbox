@@ -69,6 +69,19 @@
 #define DEVICE_NAME_USR     "vboxguestu"
 
 
+/** PINFO() - always does printf(). */
+#define PINFO(fmt, args...) \
+    printf(fmt "\n", ## args)
+
+/** PDEBUG() - does printf() with extra debug data on DEBUG build and keep silence on a release one. */
+#if DEBUG
+# define MODULE_NAME "VBoxGuest"
+# define PDEBUG(fmt, args...) \
+     printf(MODULE_NAME ": DEBUG: %s:%d %s(): " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ## args)
+#else
+# define PDEBUG(fmt, args...) { ; }
+#endif
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -216,19 +229,17 @@ static IONotifier          *g_pSleepNotifier    = NULL;
  */
 static kern_return_t    VbgdDarwinStart(struct kmod_info *pKModInfo, void *pvData)
 {
-#ifdef DEBUG
-    printf("VbgdDarwinStart\n");
-#endif
-
     /*
      * Initialize IPRT.
      */
     int rc = RTR0Init(0);
     if (RT_FAILURE(rc))
     {
-        printf("VBoxGuest: RTR0Init failed with rc=%d\n", rc);
+        PDEBUG("VBoxGuest: RTR0Init failed with rc=%d\n", rc);
         return KMOD_RETURN_FAILURE;
     }
+
+    PDEBUG("VBoxGuest: driver loaded\n");
 
     return KMOD_RETURN_SUCCESS;
 }
@@ -279,9 +290,9 @@ static int VbgdDarwinCharDevInit(void)
 static kern_return_t VbgdDarwinStop(struct kmod_info *pKModInfo, void *pvData)
 {
     RTR0TermForced();
-#ifdef DEBUG
-    printf("VbgdDarwinStop - done\n");
-#endif
+
+    PDEBUG("VBoxGuest: driver unloaded\n");
+
     return KMOD_RETURN_SUCCESS;
 }
 
@@ -670,7 +681,7 @@ directInterruptHandler(OSObject *pOwner, IOFilterInterruptEventSource *pSrc)
 
     bool fTaken = VBoxGuestCommonISR(&g_DevExt);
     if (!fTaken) /** @todo r=bird: This looks bogus as we might actually be sharing interrupts with someone. */
-        printf("VBoxGuestCommonISR error\n");
+        PDEBUG("VBoxGuestCommonISR error\n");
 
     return fTaken;
 }
@@ -798,7 +809,7 @@ bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
                             {
                                 /* register the service. */
                                 registerService();
-                                LogRel(("VBoxGuest: Successfully started I/O kit class instance.\n"));
+                                LogRel(("VBoxGuest: IOService started\n"));
                                 return true;
                             }
 
@@ -843,13 +854,15 @@ bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
  */
 void org_virtualbox_VBoxGuest::stop(IOService *pProvider)
 {
-    LogFlow(("org_virtualbox_VBoxGuest::stop([%p], %p)\n", this, pProvider));
+    /* Do not use Log*() here (in IOService instance) because its instance
+     * already terminated in BSD's module unload callback! */
+    PDEBUG("org_virtualbox_VBoxGuest::stop([%p], %p)\n", this, pProvider);
 
     AssertReturnVoid(ASMAtomicReadBool(&g_fInstantiated));
 
     /* Low level termination should be performed only once */
     if (!disableVmmDevInterrupts())
-        LogRel(("vboxguest: unable to unregister interrupt handler\n"));
+        PDEBUG("VBoxGuest: unable to unregister interrupt handler\n");
 
     VbgdDarwinCharDevRemove();
     VBoxGuestDeleteDevExt(&g_DevExt);
@@ -864,7 +877,7 @@ void org_virtualbox_VBoxGuest::stop(IOService *pProvider)
 
     ASMAtomicWriteBool(&g_fInstantiated, false);
 
-    LogRel(("vboxguest module unloaded\n"));
+    PINFO("VBoxGuest: IOService stopped\n");
 }
 
 
@@ -876,15 +889,18 @@ void org_virtualbox_VBoxGuest::stop(IOService *pProvider)
  */
 bool org_virtualbox_VBoxGuest::terminate(IOOptionBits fOptions)
 {
+    /* Do not use Log*() here (in IOService instance) because its instance
+     * already terminated in BSD's module unload callback! */
+
     bool fRc;
-    LogFlow(("org_virtualbox_VBoxGuest::terminate: reference_count=%d g_cSessions=%d (fOptions=%#x)\n",
-             KMOD_INFO_NAME.reference_count, ASMAtomicUoReadS32(&g_cSessions), fOptions));
+    PDEBUG("org_virtualbox_VBoxGuest::terminate: reference_count=%d g_cSessions=%d (fOptions=%#x)\n",
+             KMOD_INFO_NAME.reference_count, ASMAtomicUoReadS32(&g_cSessions), fOptions);
     if (    KMOD_INFO_NAME.reference_count != 0
         ||  ASMAtomicUoReadS32(&g_cSessions))
         fRc = false;
     else
         fRc = IOService::terminate(fOptions);
-    LogFlow(("org_virtualbox_SupDrv::terminate: returns %d\n", fRc));
+    PDEBUG("org_virtualbox_SupDrv::terminate: returns %d\n", fRc);
     return fRc;
 }
 
