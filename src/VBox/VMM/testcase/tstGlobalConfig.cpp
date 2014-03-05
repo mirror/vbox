@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2012 Oracle Corporation
+ * Copyright (C) 2007-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
     }
     if (cch >= sizeof(Req.szName))
     {
-        RTPrintf("syntax error: the name is too long. (max %zu chars)\n", argv[1], sizeof(Req.szName) - 1);
+        RTPrintf("syntax error: the name '%s' is too long. (max %zu chars)\n", argv[1], sizeof(Req.szName) - 1);
         return 1;
     }
     memcpy(&Req.szName[0], argv[1], cch + 1);

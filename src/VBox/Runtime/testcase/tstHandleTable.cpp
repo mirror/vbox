@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2011 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -119,7 +119,7 @@ static int tstHandleTableTest1(uint32_t uBase, uint32_t cMax, uint32_t cDelta, u
     RTPrintf(" c=%#x\n", c);
     if (fCallbacks && cRetainerCalls != 0)
     {
-        RTPrintf("tstHandleTable: FAILURE (%d) - cRetainerCalls=%#x expected 0!\n", __LINE__, i, cRetainerCalls);
+        RTPrintf("tstHandleTable: FAILURE (%d) - cRetainerCalls=%#x expected 0!\n", __LINE__, cRetainerCalls);
         g_cErrors++;
     }
 
@@ -243,7 +243,7 @@ static int tstHandleTableTest1(uint32_t uBase, uint32_t cMax, uint32_t cDelta, u
                          &&  RTHandleTableLookupWithCtx(hHT, hLookup, &i))
                 {
                     RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, j=%d, RTHandleTableLookupWithCtx: succeeded with bad context\n",
-                             __LINE__, i, j, pvObj, pvExpect);
+                             __LINE__, i, j);
                     g_cErrors++;
                 }
             }

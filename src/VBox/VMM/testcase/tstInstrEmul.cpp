@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     if (    !(eflags & X86_EFL_ZF)
         ||  val != UINT64_C(0x200000001))
     {
-        RTPrintf("tstInstrEmul: FAILURE - Lock cmpxchg8b failed the equal case! (val=%x%x)\n", val);
+        RTPrintf("tstInstrEmul: FAILURE - Lock cmpxchg8b failed the equal case! (val=%RX64)\n", val);
         return 1;
     }
     val = UINT64_C(0x123456789);
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
         ||  eax != 0x23456789
         ||  edx != 0x1)
     {
-        RTPrintf("tstInstrEmul: FAILURE - Lock cmpxchg8b failed the non-equal case! (val=%x%x)\n", val);
+        RTPrintf("tstInstrEmul: FAILURE - Lock cmpxchg8b failed the non-equal case! (val=%RX64)\n", val);
         return 1;
     }
     RTPrintf("tstInstrEmul: Testing lock cmpxchg instruction emulation - SUCCESS\n");
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     if (    !(eflags & X86_EFL_ZF)
         ||  val != UINT64_C(0x200000001))
     {
-        RTPrintf("tstInstrEmul: FAILURE - Cmpxchg8b failed the equal case! (val=%x%x)\n", val);
+        RTPrintf("tstInstrEmul: FAILURE - Cmpxchg8b failed the equal case! (val=%RX64)\n", val);
         return 1;
     }
     val = UINT64_C(0x123456789);
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
         ||  eax != 0x23456789
         ||  edx != 0x1)
     {
-        RTPrintf("tstInstrEmul: FAILURE - Cmpxchg8b failed the non-equal case! (val=%x%x)\n", val);
+        RTPrintf("tstInstrEmul: FAILURE - Cmpxchg8b failed the non-equal case! (val=%RX64)\n", val);
         return 1;
     }
     RTPrintf("tstInstrEmul: Testing cmpxchg instruction emulation - SUCCESS\n");
