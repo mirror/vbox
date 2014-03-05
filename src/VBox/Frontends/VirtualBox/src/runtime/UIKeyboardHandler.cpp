@@ -1212,15 +1212,11 @@ bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags
      * we are updating the list of pressed keys and preparing scancodes: */
     if ((fFlags & KeyPressed) || (m_pressedKeys[uScan] & uWhatPressed))
     {
-        /* Check if the guest has the same view on the modifier keys
-         * (NumLock, CapsLock, ScrollLock) as the X server. */
-#if !defined(Q_WS_MAC)
-        /* If there is no HID LEDs sync enabled or supported
-         * we should re-sync keyboard LEDs and state following this way. */
+        /* If HID LEDs sync is disabled or not supported, check if the guest has the
+         * same view on the modifier keys (NumLock, CapsLock, ScrollLock) as the host. */
         if (!machineLogic()->isHidLedsSyncEnabled())
             if (fFlags & KeyPressed)
                 fixModifierState(pCodes, puCodesCount);
-#endif
 
         /* Prepend 'extended' scancode if needed: */
         if (fFlags & KeyExtended)
