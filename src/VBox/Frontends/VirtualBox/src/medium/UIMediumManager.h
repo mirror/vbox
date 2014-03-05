@@ -49,10 +49,11 @@ class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>, public Ui::UI
 {
     Q_OBJECT;
 
-    /* Enumerators: */
-    enum TabIndex { HDTab = 0, CDTab, FDTab };
-    enum ItemAction { ItemAction_Added, ItemAction_Updated, ItemAction_Removed };
-    enum Action { Action_Edit, Action_Copy, Action_Modify, Action_Remove, Action_Release };
+    /** Tab index enumerator. */
+    enum TabIndex { TabIndex_HD = 0, TabIndex_CD, TabIndex_FD };
+
+    /** Item action enumerator. */
+    enum Action { Action_Add, Action_Edit, Action_Copy, Action_Modify, Action_Remove, Action_Release };
 
     /* Constructor/destructor: */
     UIMediumManager(QWidget *pCenterWidget, bool fRefresh = true);
@@ -128,7 +129,7 @@ private:
     /** Update actions according currently chosen medium-item. */
     void updateActions();
     /** Update tab icons according last @a action happened with @a pItem. */
-    void updateTabIcons(UIMediumItem *pItem, ItemAction action);
+    void updateTabIcons(UIMediumItem *pItem, Action action);
     /** Update information pane of passed medium @a type. */
     void updateInformationPanes(UIMediumType type = UIMediumType_Invalid);
     /** Update information pane for hard-drive tab. */
