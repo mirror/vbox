@@ -752,7 +752,7 @@ int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode
     }
 
     if (RT_SUCCESS(vrc))
-        vrc = GuestProcessTool::Run(this, procInfo, pGuestRc);
+        vrc = GuestProcessTool::i_run(this, procInfo, pGuestRc);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -897,9 +897,9 @@ int GuestSession::objectCreateTempInternal(const Utf8Str &strTemplate, const Utf
      *        we now can run in a user-dedicated session. */
     int guestRc; GuestCtrlStreamObjects stdOut;
     if (RT_SUCCESS(vrc))
-        vrc = GuestProcessTool::RunEx(this, procInfo,
-                                      &stdOut, 1 /* cStrmOutObjects */,
-                                      &guestRc);
+        vrc = GuestProcessTool::i_runEx(this, procInfo,
+                                        &stdOut, 1 /* cStrmOutObjects */,
+                                        &guestRc);
     if (   RT_SUCCESS(vrc)
         && RT_SUCCESS(guestRc))
     {
@@ -1288,7 +1288,7 @@ int GuestSession::fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
     }
 
     if (RT_SUCCESS(vrc))
-        vrc = GuestProcessTool::Run(this, procInfo, pGuestRc);
+        vrc = GuestProcessTool::i_run(this, procInfo, pGuestRc);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1447,9 +1447,9 @@ int GuestSession::fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &ob
 
     int guestRc; GuestCtrlStreamObjects stdOut;
     if (RT_SUCCESS(vrc))
-        vrc = GuestProcessTool::RunEx(this, procInfo,
-                                      &stdOut, 1 /* cStrmOutObjects */,
-                                      &guestRc);
+        vrc = GuestProcessTool::i_runEx(this, procInfo,
+                                        &stdOut, 1 /* cStrmOutObjects */,
+                                        &guestRc);
     if (   RT_SUCCESS(vrc)
         && RT_SUCCESS(guestRc))
     {
@@ -2673,7 +2673,7 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
         switch (rc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::setErrorExternal(this, guestRc);
+                hr = GuestProcess::i_setErrorExternal(this, guestRc);
                 break;
 
             default:
@@ -2714,7 +2714,7 @@ STDMETHODIMP GuestSession::DirectoryExists(IN_BSTR aPath, BOOL *aExists)
         switch (rc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::setErrorExternal(this, guestRc);
+                hr = GuestProcess::i_setErrorExternal(this, guestRc);
                 break;
 
             default:
@@ -2833,7 +2833,7 @@ STDMETHODIMP GuestSession::DirectoryQueryInfo(IN_BSTR aPath, IGuestFsObjInfo **a
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::setErrorExternal(this, guestRc);
+                hr = GuestProcess::i_setErrorExternal(this, guestRc);
                 break;
 
             case VERR_NOT_A_DIRECTORY:
@@ -3156,7 +3156,7 @@ STDMETHODIMP GuestSession::FileExists(IN_BSTR aPath, BOOL *aExists)
     switch (vrc)
     {
         case VERR_GSTCTL_GUEST_ERROR:
-            hr = GuestProcess::setErrorExternal(this, guestRc);
+            hr = GuestProcess::i_setErrorExternal(this, guestRc);
             break;
 
         case VERR_NOT_A_FILE:
@@ -3195,7 +3195,7 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::setErrorExternal(this, guestRc);
+                hr = GuestProcess::i_setErrorExternal(this, guestRc);
                 break;
 
             default:
@@ -3335,7 +3335,7 @@ STDMETHODIMP GuestSession::FileQueryInfo(IN_BSTR aPath, IGuestFsObjInfo **aInfo)
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::setErrorExternal(this, guestRc);
+                hr = GuestProcess::i_setErrorExternal(this, guestRc);
                 break;
 
             case VERR_NOT_A_FILE:
@@ -3379,7 +3379,7 @@ STDMETHODIMP GuestSession::FileQuerySize(IN_BSTR aPath, LONG64 *aSize)
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::setErrorExternal(this, guestRc);
+                hr = GuestProcess::i_setErrorExternal(this, guestRc);
                 break;
 
             default:
@@ -3553,7 +3553,7 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
                 rc = VERR_COM_OBJECT_NOT_FOUND;
 
             if (RT_SUCCESS(rc))
-                rc = pProcess->startProcessAsync();
+                rc = pProcess->i_startProcessAsync();
         }
     }
 

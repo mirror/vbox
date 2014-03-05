@@ -275,13 +275,13 @@ HRESULT GuestDirectory::close()
     HRESULT hr = S_OK;
 
     int guestRc;
-    int rc = mData.mProcessTool.Terminate(30 * 1000, &guestRc);
+    int rc = mData.mProcessTool.i_terminate(30 * 1000, &guestRc);
     if (RT_FAILURE(rc))
     {
         switch (rc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::setErrorExternal(this, guestRc);
+                hr = GuestProcess::i_setErrorExternal(this, guestRc);
                 break;
 
             case VERR_NOT_SUPPORTED:
@@ -320,17 +320,17 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
     GuestProcessStreamBlock curBlock;
     int guestRc;
 
-    int rc = mData.mProcessTool.WaitEx(GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK,
-                                       &curBlock, &guestRc);
+    int rc = mData.mProcessTool.i_waitEx(GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK,
+                                         &curBlock, &guestRc);
 
     /*
      * Note: The guest process can still be around to serve the next
      *       upcoming stream block next time.
      */
     if (   RT_SUCCESS(rc)
-        && !mData.mProcessTool.IsRunning())
+        && !mData.mProcessTool.i_isRunning())
     {
-        rc = mData.mProcessTool.TerminatedOk(NULL /* Exit code */);
+        rc = mData.mProcessTool.i_terminatedOk(NULL /* Exit code */);
         if (rc == VERR_NOT_EQUAL)
             rc = VERR_ACCESS_DENIED;
     }
@@ -378,7 +378,7 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
         switch (rc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::setErrorExternal(this, guestRc);
+                hr = GuestProcess::i_setErrorExternal(this, guestRc);
                 break;
 
             case VERR_ACCESS_DENIED:

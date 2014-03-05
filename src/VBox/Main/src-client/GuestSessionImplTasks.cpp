@@ -322,8 +322,8 @@ int SessionTaskCopyTo::Run(void)
     if (RT_SUCCESS(rc))
     {
         Assert(!pProcess.isNull());
-        rc = pProcess->startProcess(30 * 1000 /* 30s timeout */,
-                                    &guestRc);
+        rc = pProcess->i_startProcess(30 * 1000 /* 30s timeout */,
+                                      &guestRc);
     }
 
     if (RT_FAILURE(rc))
@@ -332,7 +332,7 @@ int SessionTaskCopyTo::Run(void)
         {
             case VERR_GSTCTL_GUEST_ERROR:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    GuestProcess::guestErrorToString(guestRc));
+                                    GuestProcess::i_guestErrorToString(guestRc));
                 break;
 
             default:
@@ -354,8 +354,8 @@ int SessionTaskCopyTo::Run(void)
 
         for (;;)
         {
-            rc = pProcess->waitFor(ProcessWaitForFlag_StdIn,
-                                   30 * 1000 /* Timeout */, waitRes, &guestRc);
+            rc = pProcess->i_waitFor(ProcessWaitForFlag_StdIn,
+                                     30 * 1000 /* Timeout */, waitRes, &guestRc);
             if (   RT_FAILURE(rc)
                 || (   waitRes != ProcessWaitResult_StdIn
                     && waitRes != ProcessWaitResult_WaitFlagNotSupported))
@@ -418,16 +418,16 @@ int SessionTaskCopyTo::Run(void)
 
             uint32_t cbWritten;
             Assert(sizeof(byBuf) >= cbRead);
-            rc = pProcess->writeData(0 /* StdIn */, fFlags,
-                                     byBuf, cbRead,
-                                     30 * 1000 /* Timeout */, &cbWritten, &guestRc);
+            rc = pProcess->i_writeData(0 /* StdIn */, fFlags,
+                                       byBuf, cbRead,
+                                       30 * 1000 /* Timeout */, &cbWritten, &guestRc);
             if (RT_FAILURE(rc))
             {
                 switch (rc)
                 {
                     case VERR_GSTCTL_GUEST_ERROR:
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            GuestProcess::guestErrorToString(guestRc));
+                                            GuestProcess::i_guestErrorToString(guestRc));
                         break;
 
                     default:
@@ -498,8 +498,8 @@ int SessionTaskCopyTo::Run(void)
             }
             else
             {
-                rc = pProcess->waitFor(ProcessWaitForFlag_Terminate,
-                                       30 * 1000 /* Timeout */, waitRes, &guestRc);
+                rc = pProcess->i_waitFor(ProcessWaitForFlag_Terminate,
+                                         30 * 1000 /* Timeout */, waitRes, &guestRc);
                 if (   RT_FAILURE(rc)
                     || waitRes != ProcessWaitResult_Terminate)
                 {
@@ -642,15 +642,15 @@ int SessionTaskCopyFrom::Run(void)
             ComObjPtr<GuestProcess> pProcess;
             rc = pSession->processCreateExInteral(procInfo, pProcess);
             if (RT_SUCCESS(rc))
-                rc = pProcess->startProcess(30 * 1000 /* 30s timeout */,
-                                            &guestRc);
+                rc = pProcess->i_startProcess(30 * 1000 /* 30s timeout */,
+                                              &guestRc);
             if (RT_FAILURE(rc))
             {
                 switch (rc)
                 {
                     case VERR_GSTCTL_GUEST_ERROR:
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            GuestProcess::guestErrorToString(guestRc));
+                                            GuestProcess::i_guestErrorToString(guestRc));
                         break;
 
                     default:
@@ -671,15 +671,15 @@ int SessionTaskCopyFrom::Run(void)
 
                 for (;;)
                 {
-                    rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
-                                           30 * 1000 /* Timeout */, waitRes, &guestRc);
+                    rc = pProcess->i_waitFor(ProcessWaitForFlag_StdOut,
+                                             30 * 1000 /* Timeout */, waitRes, &guestRc);
                     if (RT_FAILURE(rc))
                     {
                         switch (rc)
                         {
                             case VERR_GSTCTL_GUEST_ERROR:
                                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                    GuestProcess::guestErrorToString(guestRc));
+                                                    GuestProcess::i_guestErrorToString(guestRc));
                                 break;
 
                             default:
@@ -701,16 +701,16 @@ int SessionTaskCopyFrom::Run(void)
                             RTThreadYield(); /* Optional, don't check rc. */
 
                         uint32_t cbRead = 0; /* readData can return with VWRN_GSTCTL_OBJECTSTATE_CHANGED. */
-                        rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
-                                                30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
-                                                &cbRead, &guestRc);
+                        rc = pProcess->i_readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
+                                                  30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
+                                                  &cbRead, &guestRc);
                         if (RT_FAILURE(rc))
                         {
                             switch (rc)
                             {
                                 case VERR_GSTCTL_GUEST_ERROR:
                                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                        GuestProcess::guestErrorToString(guestRc));
+                                                        GuestProcess::i_guestErrorToString(guestRc));
                                     break;
 
                                 default:
@@ -987,7 +987,7 @@ int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFS
                 {
                     case VERR_GSTCTL_GUEST_ERROR:
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            GuestProcess::guestErrorToString(guestRc));
+                                            GuestProcess::i_guestErrorToString(guestRc));
                         break;
 
                     default:
@@ -1021,9 +1021,9 @@ int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProc
     if (RT_SUCCESS(vrc))
     {
         if (RT_SUCCESS(guestRc))
-            vrc = procTool.Wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
+            vrc = procTool.i_wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
         if (RT_SUCCESS(vrc))
-            vrc = procTool.TerminatedOk(&exitCode);
+            vrc = procTool.i_terminatedOk(&exitCode);
     }
 
     if (RT_FAILURE(vrc))
@@ -1038,7 +1038,7 @@ int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProc
 
             case VERR_GSTCTL_GUEST_ERROR:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    GuestProcess::guestErrorToString(guestRc));
+                                    GuestProcess::i_guestErrorToString(guestRc));
                 break;
 
             case VERR_INVALID_STATE: /** @todo Special guest control rc needed! */
@@ -1287,7 +1287,7 @@ int SessionTaskUpdateAdditions::Run(void)
                 {
                     case VERR_GSTCTL_GUEST_ERROR:
                         hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                 GuestProcess::guestErrorToString(guestRc));
+                                                 GuestProcess::i_guestErrorToString(guestRc));
                         break;
 
                     default:
