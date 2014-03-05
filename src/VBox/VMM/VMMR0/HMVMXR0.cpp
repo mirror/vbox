@@ -1778,6 +1778,7 @@ static void hmR0VmxFlushTaggedTlbNone(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
     pVCpu->hm.s.TlbShootdown.cPages = 0;
 #endif
 
+    Assert(pCpu->idCpu != NIL_RTCPUID);
     pVCpu->hm.s.idLastCpu           = pCpu->idCpu;
     pVCpu->hm.s.cTlbFlushes         = pCpu->cTlbFlushes;
     pVCpu->hm.s.fForceTLBFlush      = false;
@@ -1814,6 +1815,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
     AssertPtr(pVM);
     AssertPtr(pCpu);
     AssertPtr(pVCpu);
+    Assert(pCpu->idCpu != NIL_RTCPUID);
     AssertMsg(pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid,
               ("hmR0VmxFlushTaggedTlbBoth cannot be invoked unless NestedPaging & VPID are enabled."
                "fNestedPaging=%RTbool fVpid=%RTbool", pVM->hm.s.fNestedPaging, pVM->hm.s.vmx.fVpid));
@@ -1926,6 +1928,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCp
     AssertPtr(pVM);
     AssertPtr(pVCpu);
     AssertPtr(pCpu);
+    Assert(pCpu->idCpu != NIL_RTCPUID);
     AssertMsg(pVM->hm.s.fNestedPaging, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked with NestedPaging disabled."));
     AssertMsg(!pVM->hm.s.vmx.fVpid, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked with VPID enabled."));
 
@@ -1992,6 +1995,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
     AssertPtr(pVM);
     AssertPtr(pVCpu);
     AssertPtr(pCpu);
+    Assert(pCpu->idCpu != NIL_RTCPUID);
     AssertMsg(pVM->hm.s.vmx.fVpid, ("hmR0VmxFlushTlbVpid cannot be invoked with VPID disabled."));
     AssertMsg(!pVM->hm.s.fNestedPaging, ("hmR0VmxFlushTlbVpid cannot be invoked with NestedPaging enabled"));
 
