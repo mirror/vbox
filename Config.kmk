@@ -1725,7 +1725,7 @@ if !defined(VBOX_WITH_PYLINT) && defined(VBOX_PYLINT)
 endif
 VBOX_PYLINT_FLAGS   := --report=n \
 	$(if-expr !defined(VBOX_WITH_PYLINT_PRE_V1_0)\
-	  ,--msg-template='{path}:{line}: {msg_id}({obj}:{symbol}): {msg}' \
+	  ,--msg-template='{path}:{line}: <{msg_id}>({obj}:{symbol}): {msg}' \
 	  ,--output-format=msvs --include-ids=y) \
 	--persistent=n \
 	--rcfile=$(PATH_ROOT)/tools/pylintrc \
