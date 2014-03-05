@@ -340,8 +340,6 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
 
-    link_up = 1;
-
     rc = bootp_dhcp_init(pData);
     if (RT_FAILURE(rc))
     {
@@ -408,6 +406,8 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     pData->pInSockAddrHomeAddress[0].sin_len = sizeof(struct sockaddr_in);
 # endif
 #endif
+
+    slirp_link_up(pData);
     return VINF_SUCCESS;
 }
 
