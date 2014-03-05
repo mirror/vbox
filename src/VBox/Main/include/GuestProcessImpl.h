@@ -19,8 +19,8 @@
 #ifndef ____H_GUESTPROCESSIMPL
 #define ____H_GUESTPROCESSIMPL
 
-#include "VirtualBoxBase.h"
 #include "GuestCtrlImplPrivate.h"
+#include "GuestProcessWrap.h"
 
 class Console;
 class GuestSession;
@@ -29,20 +29,12 @@ class GuestSession;
  * Class for handling a guest process.
  */
 class ATL_NO_VTABLE GuestProcess :
-    public VirtualBoxBase,
-    public GuestObject,
-    VBOX_SCRIPTABLE_IMPL(IGuestProcess)
+    public GuestProcessWrap,
+    public GuestObject
 {
 public:
     /** @name COM and internal init/term/mapping cruft.
      * @{ */
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(GuestProcess, IGuestProcess)
-    DECLARE_NOT_AGGREGATABLE(GuestProcess)
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-    BEGIN_COM_MAP(GuestProcess)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IGuestProcess)
-        COM_INTERFACE_ENTRY(IProcess)
-    END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestProcess)
 
     int     init(Console *aConsole, GuestSession *aSession, ULONG aProcessID, const GuestProcessStartupInfo &aProcInfo);
@@ -51,63 +43,79 @@ public:
     void    FinalRelease(void);
     /** @}  */
 
-    /** @name IProcess interface.
-     * @{ */
-    STDMETHOD(COMGETTER(Arguments))(ComSafeArrayOut(BSTR, aArguments));
-    STDMETHOD(COMGETTER(Environment))(ComSafeArrayOut(BSTR, aEnvironment));
-    STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
-    STDMETHOD(COMGETTER(ExecutablePath))(BSTR *aExecutablePath);
-    STDMETHOD(COMGETTER(ExitCode))(LONG *aExitCode);
-    STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMGETTER(PID))(ULONG *aPID);
-    STDMETHOD(COMGETTER(Status))(ProcessStatus_T *aStatus);
-
-    STDMETHOD(Read)(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
-    STDMETHOD(Terminate)(void);
-    STDMETHOD(WaitFor)(ULONG aWaitFlags, ULONG aTimeoutMS, ProcessWaitResult_T *aReason);
-    STDMETHOD(WaitForArray)(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitResult_T *aReason);
-    STDMETHOD(Write)(ULONG aHandle, ULONG aFlags, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
-    STDMETHOD(WriteArray)(ULONG aHandle, ComSafeArrayIn(ProcessInputFlag_T, aFlags), ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
-    /** @}  */
 
 public:
     /** @name Public internal methods.
      * @{ */
     int i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
-    inline int checkPID(uint32_t uPID);
-    static Utf8Str guestErrorToString(int guestRc);
+    inline int i_checkPID(uint32_t uPID);
+    static Utf8Str i_guestErrorToString(int guestRc);
     int i_onRemove(void);
-    int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead, int *pGuestRc);
-    static HRESULT setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
-    int startProcess(uint32_t uTimeoutMS, int *pGuestRc);
-    int startProcessAsync(void);
-    int terminateProcess(uint32_t uTimeoutMS, int *pGuestRc);
-    static ProcessWaitResult_T waitFlagsToResultEx(uint32_t fWaitFlags, ProcessStatus_T oldStatus, ProcessStatus_T newStatus, uint32_t uProcFlags, uint32_t uProtocol);
-    ProcessWaitResult_T waitFlagsToResult(uint32_t fWaitFlags);
-    int waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pGuestRc);
-    int waitForInputNotify(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, ProcessInputStatus_T *pInputStatus, uint32_t *pcbProcessed);
-    int waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, void* pvData, size_t cbData, uint32_t *pcbRead);
-    int waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, ProcessStatus_T *pProcessStatus, int *pGuestRc);
-    static bool waitResultImpliesEx(ProcessWaitResult_T waitResult, ProcessStatus_T procStatus, uint32_t uProcFlags, uint32_t uProtocol);
-    int writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *pGuestRc);
+    int i_readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead, int *pGuestRc);
+    static HRESULT i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
+    int i_startProcess(uint32_t uTimeoutMS, int *pGuestRc);
+    int i_startProcessAsync(void);
+    int i_terminateProcess(uint32_t uTimeoutMS, int *pGuestRc);
+    static ProcessWaitResult_T i_waitFlagsToResultEx(uint32_t fWaitFlags, ProcessStatus_T oldStatus, ProcessStatus_T newStatus, uint32_t uProcFlags, uint32_t uProtocol);
+    ProcessWaitResult_T i_waitFlagsToResult(uint32_t fWaitFlags);
+    int i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pGuestRc);
+    int i_waitForInputNotify(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, ProcessInputStatus_T *pInputStatus, uint32_t *pcbProcessed);
+    int i_waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, void* pvData, size_t cbData, uint32_t *pcbRead);
+    int i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, ProcessStatus_T *pProcessStatus, int *pGuestRc);
+    static bool i_waitResultImpliesEx(ProcessWaitResult_T waitResult, ProcessStatus_T procStatus, uint32_t uProcFlags, uint32_t uProtocol);
+    int i_writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *pGuestRc);
     /** @}  */
 
 protected:
     /** @name Protected internal methods.
      * @{ */
-    inline bool isAlive(void);
-    inline bool hasEnded(void);
-    int onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int onProcessNotifyIO(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
-    int setProcessStatus(ProcessStatus_T procStatus, int procRc);
-    static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
+    inline bool i_isAlive(void);
+    inline bool i_hasEnded(void);
+    int i_onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int i_onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int i_onProcessNotifyIO(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int i_onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int i_onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int i_prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
+    int i_setProcessStatus(ProcessStatus_T procStatus, int procRc);
+    static DECLCALLBACK(int) i_startProcessThread(RTTHREAD Thread, void *pvUser);
     /** @}  */
 
 private:
+    /** Wrapped @name IProcess data .
+     * @{ */
+     HRESULT getArguments(std::vector<com::Utf8Str> &aArguments);
+     HRESULT getEnvironment(std::vector<com::Utf8Str> &aEnvironment);
+     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
+     HRESULT getExecutablePath(com::Utf8Str &aExecutablePath);
+     HRESULT getExitCode(LONG *aExitCode);
+     HRESULT getName(com::Utf8Str &aName);
+     HRESULT getPID(ULONG *aPID);
+     HRESULT getStatus(ProcessStatus_T *aStatus);
+
+    /** Wrapped @name IProcess methods.
+     * @{ */
+     HRESULT waitFor(ULONG aWaitFor,
+                     ULONG aTimeoutMS,
+                     ProcessWaitResult_T *aReason);
+     HRESULT waitForArray(const std::vector<ProcessWaitForFlag_T> &aWaitFor,
+                          ULONG aTimeoutMS,
+                          ProcessWaitResult_T *aReason);
+     HRESULT read(ULONG aHandle,
+                  ULONG aToRead,
+                  ULONG aTimeoutMS,
+                  std::vector<BYTE> &aData);
+     HRESULT write(ULONG aHandle,
+                   ULONG aFlags,
+                   const std::vector<BYTE> &aData,
+                   ULONG aTimeoutMS,
+                   ULONG *aWritten);
+     HRESULT writeArray(ULONG aHandle,
+                        const std::vector<ProcessInputFlag_T> &aFlags,
+                        const std::vector<BYTE> &aData,
+                        ULONG aTimeoutMS,
+                        ULONG *aWritten);
+     HRESULT terminate();
 
     /**
      * This can safely be used without holding any locks.
@@ -159,26 +167,26 @@ public:
 
     int Init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, bool fAsync, int *pGuestRc);
 
-    GuestProcessStream &GetStdOut(void) { return mStdOut; }
+    GuestProcessStream &i_getStdOut(void) { return mStdOut; }
 
-    GuestProcessStream &GetStdErr(void) { return mStdErr; }
+    GuestProcessStream &i_getStdErr(void) { return mStdErr; }
 
-    int Wait(uint32_t fFlags, int *pGuestRc);
+    int i_wait(uint32_t fFlags, int *pGuestRc);
 
-    int WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBlock, int *pGuestRc);
+    int i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBlock, int *pGuestRc);
 
-    int GetCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock);
+    int i_getCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock);
 
-    bool IsRunning(void);
+    bool i_isRunning(void);
 
-    static int Run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pGuestRc);
+    static int i_run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pGuestRc);
 
-    static int RunEx(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, GuestCtrlStreamObjects *pStrmOutObjects,
-                     uint32_t cStrmOutObjects, int *pGuestRc);
+    static int i_runEx(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, GuestCtrlStreamObjects *pStrmOutObjects,
+                       uint32_t cStrmOutObjects, int *pGuestRc);
 
-    int TerminatedOk(LONG *pExitCode);
+    int i_terminatedOk(LONG *pExitCode);
 
-    int Terminate(uint32_t uTimeoutMS, int *pGuestRc);
+    int i_terminate(uint32_t uTimeoutMS, int *pGuestRc);
 
 protected:
 
