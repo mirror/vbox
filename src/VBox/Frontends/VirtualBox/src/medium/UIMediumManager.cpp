@@ -266,7 +266,7 @@ UIMediumManager::~UIMediumManager()
 /* static */
 void UIMediumManager::showModeless(QWidget *pCenterWidget /* = 0 */, bool fRefresh /* = true */)
 {
-    /* Prepare instance if not prepared: */
+    /* Create instance if not yet created: */
     if (!m_spInstance)
         m_spInstance = new UIMediumManager(pCenterWidget, fRefresh);
 
