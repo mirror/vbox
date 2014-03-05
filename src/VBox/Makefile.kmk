@@ -89,8 +89,10 @@ else
  ifdef VBOX_WITH_TESTSUITE
   include $(PATH_SUB_CURRENT)/Testsuite/Makefile.kmk
  endif
- if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
-  include $(PATH_SUB_CURRENT)/NetworkServices/Makefile.kmk
+ ifdef VBOX_WITH_MAIN
+  if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+   include $(PATH_SUB_CURRENT)/NetworkServices/Makefile.kmk
+  endif
  endif
  include $(PATH_SUB_CURRENT)/ExtPacks/Makefile.kmk
  ifdef VBOX_WITH_INSTALLER
