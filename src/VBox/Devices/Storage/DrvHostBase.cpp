@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -872,7 +872,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
                     else
                     {
                         strcpy(szName1, *pszVendor ? pszVendor : pszProduct);
-                        RTStrPrintf(szName2, sizeof(szName2), "%s %s (#%u)", *pszVendor ? pszVendor : pszProduct, i);
+                        RTStrPrintf(szName2, sizeof(szName2), "%s (#%u)", *pszVendor ? pszVendor : pszProduct, i);
                     }
                 }
                 else
