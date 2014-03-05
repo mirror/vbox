@@ -44,7 +44,7 @@ public:
     virtual bool isItSuitable(UIMediumItem *pItem) const = 0;
 };
 
-/* Medium Manager Dialog: */
+/** Medium Manager dialog. */
 class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>, public Ui::UIMediumManager
 {
     Q_OBJECT;
@@ -55,14 +55,16 @@ class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>, public Ui::UI
     /** Item action enumerator. */
     enum Action { Action_Add, Action_Edit, Action_Copy, Action_Modify, Action_Remove, Action_Release };
 
-    /* Constructor/destructor: */
+    /** Constructor for Medium Manager dialog. */
     UIMediumManager(QWidget *pCenterWidget, bool fRefresh = true);
+    /** Destructor for Medium Manager dialog. */
     ~UIMediumManager();
 
 public:
 
-    /* Static API: Singleton stuff: */
+    /** Returns Medium Manager singleton instance. */
     static UIMediumManager* instance();
+    /** Shows Medium Manager singleton instance, creates new if necessary. */
     static void showModeless(QWidget *pCenterWidget, bool fRefresh = true);
 
 private slots:
@@ -70,19 +72,25 @@ private slots:
     /** Fully refreshes medium manager contents. */
     void sltRefreshAll();
 
-    /* Handlers: Medium-processing stuff: */
+    /** Handles VBoxGlobal::sigMediumCreated signal. */
     void sltHandleMediumCreated(const QString &strMediumID);
+    /** Handles VBoxGlobal::sigMediumDeleted signal. */
     void sltHandleMediumDeleted(const QString &strMediumID);
 
-    /* Handlers: Medium-enumeration stuff: */
+    /** Handles VBoxGlobal::sigMediumEnumerationStarted signal. */
     void sltHandleMediumEnumerationStart();
+    /** Handles VBoxGlobal::sigMediumEnumerated signal. */
     void sltHandleMediumEnumerated(const QString &strMediumID);
+    /** Handles VBoxGlobal::sigMediumEnumerationFinished signal. */
     void sltHandleMediumEnumerationFinish();
 
-    /* Handlers: Medium-modification stuff: */
+    /** Calls for clone VD wizard to copy chosen medium. */
     void sltCopyMedium();
+    /** Calls for medium-type change dialog for chosen medium. */
     void sltModifyMedium();
+    /** Calls for remove medium dialog for chosen medium. */
     void sltRemoveMedium();
+    /** Calls for medium release dialog for chosen medium. */
     void sltReleaseMedium();
 
     /* Handlers: Navigation stuff: */
