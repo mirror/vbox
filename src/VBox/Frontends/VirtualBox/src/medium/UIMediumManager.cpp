@@ -73,6 +73,9 @@ public:
         , m_medium(medium)
     { refresh(); }
 
+    /** Removes UIMedium wrapped by <i>this</i> item. */
+    virtual bool remove() = 0;
+
     /** Refreshes item fully. */
     void refreshAll()
     {
@@ -146,6 +149,181 @@ private:
 
     /** UIMedium wrapped by <i>this</i> item. */
     UIMedium m_medium;
+};
+
+
+/** UIMediumItem extension representing hard-disk item. */
+class UIMediumItemHD : public UIMediumItem
+{
+public:
+
+    /** Constructor for top-level item. */
+    UIMediumItemHD(const UIMedium &medium, QTreeWidget *pParent)
+        : UIMediumItem(medium, pParent)
+    {}
+
+    /** Constructor for child item. */
+    UIMediumItemHD(const UIMedium &medium, UIMediumItem *pParent)
+        : UIMediumItem(medium, pParent)
+    {}
+
+private:
+
+    /** Removes UIMedium wrapped by <i>this</i> item. */
+    bool remove()
+    {
+        /* Confirm medium removal: */
+        if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
+            return false;
+
+        /* Remember some of hard-disk attributes: */
+        CMedium hardDisk = medium().medium();
+        QString strMediumID = id();
+
+        /* Propose to remove medium storage: */
+        if (!maybeRemoveStorage())
+            return false;
+
+        /* Close hard-disk: */
+        hardDisk.Close();
+        if (!hardDisk.isOk())
+        {
+            msgCenter().cannotCloseMedium(medium(), hardDisk, treeWidget());
+            return false;
+        }
+
+        /* Remove UIMedium finally: */
+        vboxGlobal().deleteMedium(strMediumID);
+
+        /* True by default: */
+        return true;
+    }
+
+    /** Proposes user to remove CMedium storage wrapped by <i>this</i> item. */
+    bool maybeRemoveStorage()
+    {
+        /* Remember some of hard-disk attributes: */
+        CMedium hardDisk = medium().medium();
+        QString strLocation = location();
+
+        /* We don't want to try to delete inaccessible storage as it will most likely fail.
+         * Note that UIMessageCenter::confirmMediumRemoval() is aware of that and
+         * will give a corresponding hint. Therefore, once the code is changed below,
+         * the hint should be re-checked for validity. */
+        bool fDeleteStorage = false;
+        qulonglong uCapability = 0;
+        QVector<KMediumFormatCapabilities> capabilities = hardDisk.GetMediumFormat().GetCapabilities();
+        foreach (KMediumFormatCapabilities capability, capabilities)
+            uCapability |= capability;
+        if (state() != KMediumState_Inaccessible && uCapability & MediumFormatCapabilities_File)
+        {
+            int rc = msgCenter().confirmDeleteHardDiskStorage(strLocation, treeWidget());
+            if (rc == AlertButton_Cancel)
+                return false;
+            fDeleteStorage = rc == AlertButton_Choice1;
+        }
+
+        /* If user wish to delete storage: */
+        if (fDeleteStorage)
+        {
+            /* Prepare delete storage progress: */
+            CProgress progress = hardDisk.DeleteStorage();
+            if (!hardDisk.isOk())
+            {
+                msgCenter().cannotDeleteHardDiskStorage(hardDisk, strLocation, treeWidget());
+                return false;
+            }
+            /* Show delete storage progress: */
+            msgCenter().showModalProgressDialog(progress, UIMediumManager::tr("Removing medium..."),
+                                                ":/progress_media_delete_90px.png", treeWidget());
+            if (!progress.isOk() || progress.GetResultCode() != 0)
+            {
+                msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, treeWidget());
+                return false;
+            }
+        }
+
+        /* True by default: */
+        return true;
+    }
+};
+
+/** UIMediumItem extension representing optical-disk item. */
+class UIMediumItemCD : public UIMediumItem
+{
+public:
+
+    /** Constructor for top-level item. */
+    UIMediumItemCD(const UIMedium &medium, QTreeWidget *pParent)
+        : UIMediumItem(medium, pParent)
+    {}
+
+private:
+
+    /** Removes UIMedium wrapped by <i>this</i> item. */
+    bool remove()
+    {
+        /* Confirm medium removal: */
+        if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
+            return false;
+
+        /* Remember some of optical-disk attributes: */
+        CMedium image = medium().medium();
+        QString strMediumID = id();
+
+        /* Close optical-disk: */
+        image.Close();
+        if (!image.isOk())
+        {
+            msgCenter().cannotCloseMedium(medium(), image, treeWidget());
+            return false;
+        }
+
+        /* Remove UIMedium finally: */
+        vboxGlobal().deleteMedium(strMediumID);
+
+        /* True by default: */
+        return true;
+    }
+};
+
+/** UIMediumItem extension representing floppy-disk item. */
+class UIMediumItemFD : public UIMediumItem
+{
+public:
+
+    /** Constructor for top-level item. */
+    UIMediumItemFD(const UIMedium &medium, QTreeWidget *pParent)
+        : UIMediumItem(medium, pParent)
+    {}
+
+private:
+
+    /** Removes UIMedium wrapped by <i>this</i> item. */
+    bool remove()
+    {
+        /* Confirm medium removal: */
+        if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
+            return false;
+
+        /* Remember some of floppy-disk attributes: */
+        CMedium image = medium().medium();
+        QString strMediumID = id();
+
+        /* Close floppy-disk: */
+        image.Close();
+        if (!image.isOk())
+        {
+            msgCenter().cannotCloseMedium(medium(), image, treeWidget());
+            return false;
+        }
+
+        /* Remove UIMedium finally: */
+        vboxGlobal().deleteMedium(strMediumID);
+
+        /* True by default: */
+        return true;
+    }
 };
 
 
@@ -412,96 +590,8 @@ void UIMediumManager::sltRemoveMedium()
     AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
     AssertReturnVoid(!pMediumItem->id().isNull());
 
-    /* Remember ID/type as they may get lost after the closure/deletion: */
-    QString strMediumID = pMediumItem->id();
-    AssertReturnVoid(!strMediumID.isNull());
-    UIMediumType type = pMediumItem->mediumType();
-
-    /* Confirm medium removal: */
-    if (!msgCenter().confirmMediumRemoval(pMediumItem->medium(), this))
-        return;
-
-    /* Prepare result: */
-    COMResult result;
-    switch (type)
-    {
-        case UIMediumType_HardDisk:
-        {
-            /* We don't want to try to delete inaccessible storage as it will most likely fail.
-             * Note that UIMessageCenter::confirmMediumRemoval() is aware of that and
-             * will give a corresponding hint. Therefore, once the code is changed below,
-             * the hint should be re-checked for validity. */
-            bool fDeleteStorage = false;
-            qulonglong uCapability = 0;
-            QVector<KMediumFormatCapabilities> capabilities = pMediumItem->medium().medium().GetMediumFormat().GetCapabilities();
-            foreach (KMediumFormatCapabilities capability, capabilities)
-                uCapability |= capability;
-            if (pMediumItem->state() != KMediumState_Inaccessible &&
-                uCapability & MediumFormatCapabilities_File)
-            {
-                int rc = msgCenter().confirmDeleteHardDiskStorage(pMediumItem->location(), this);
-                if (rc == AlertButton_Cancel)
-                    return;
-                fDeleteStorage = rc == AlertButton_Choice1;
-            }
-
-            /* Get hard-disk: */
-            CMedium hardDisk = pMediumItem->medium().medium();
-
-            if (fDeleteStorage)
-            {
-                /* Remember hard-disk attributes: */
-                QString strLocation = hardDisk.GetLocation();
-                /* Prepare delete storage progress: */
-                CProgress progress = hardDisk.DeleteStorage();
-                if (hardDisk.isOk())
-                {
-                    /* Show delete storage progress: */
-                    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_delete_90px.png", this);
-                    if (!progress.isOk() || progress.GetResultCode() != 0)
-                    {
-                        msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, this);
-                        return;
-                    }
-                }
-                else
-                {
-                    msgCenter().cannotDeleteHardDiskStorage(hardDisk, strLocation, this);
-                    return;
-                }
-            }
-
-            /* Close hard-disk: */
-            hardDisk.Close();
-            result = hardDisk;
-            break;
-        }
-        case UIMediumType_DVD:
-        {
-            /* Get optical-disk: */
-            CMedium image = pMediumItem->medium().medium();
-            /* Close optical-disk: */
-            image.Close();
-            result = image;
-            break;
-        }
-        case UIMediumType_Floppy:
-        {
-            /* Get floppy-disk: */
-            CMedium image = pMediumItem->medium().medium();
-            /* Close floppy-disk: */
-            image.Close();
-            result = image;
-            break;
-        }
-        default: AssertFailedReturnVoid();
-    }
-
-    /* Verify result: */
-    if (result.isOk())
-        vboxGlobal().deleteMedium(strMediumID);
-    else
-        msgCenter().cannotCloseMedium(pMediumItem->medium(), result, this);
+    /* Remove current medium-item: */
+    pMediumItem->remove();
 }
 
 void UIMediumManager::sltReleaseMedium()
@@ -1380,7 +1470,7 @@ void UIMediumManager::createMediumItem(const UIMedium &medium)
         /* Of optical-image type: */
         case UIMediumType_DVD:
         {
-            pMediumItem = new UIMediumItem(medium, mTwCD);
+            pMediumItem = new UIMediumItemCD(medium, mTwCD);
             LogRel2(("UIMediumManager: Optical medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
             AssertPtrReturnVoid(pMediumItem);
             if (pMediumItem->id() == m_strSelectedIdCD)
@@ -1393,7 +1483,7 @@ void UIMediumManager::createMediumItem(const UIMedium &medium)
         /* Of floppy-image type: */
         case UIMediumType_Floppy:
         {
-            pMediumItem = new UIMediumItem(medium, mTwFD);
+            pMediumItem = new UIMediumItemFD(medium, mTwFD);
             LogRel2(("UIMediumManager: Floppy medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
             AssertPtrReturnVoid(pMediumItem);
             if (pMediumItem->id() == m_strSelectedIdFD)
@@ -1763,14 +1853,14 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
             /* If parent medium-item was found: */
             if (pParentMediumItem)
             {
-                pMediumItem = new UIMediumItem(medium, pParentMediumItem);
+                pMediumItem = new UIMediumItemHD(medium, pParentMediumItem);
                 LogRel2(("UIMediumManager: Child hard-drive medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
             }
         }
         /* Else just create item as top-level one: */
         if (!pMediumItem)
         {
-            pMediumItem = new UIMediumItem(medium, pTree);
+            pMediumItem = new UIMediumItemHD(medium, pTree);
             LogRel2(("UIMediumManager: Root hard-drive medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
         }
     }
