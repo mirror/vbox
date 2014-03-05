@@ -53,69 +53,73 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/* Medium-item: */
+/** QTreeWidgetItem extension representing Medium Manager item. */
 class UIMediumItem : public QTreeWidgetItem
 {
 public:
 
-    /* Medium-item type: */
+    /** UIMediumItem type for rtti needs. */
     enum { Type = QTreeWidgetItem::UserType + 1 };
 
-    /* Constructor: Top-level item: */
+    /** Constructor for top-level item. */
     UIMediumItem(const UIMedium &medium, QTreeWidget *pParent)
         : QTreeWidgetItem(pParent, Type)
         , m_medium(medium)
     { refresh(); }
 
-    /* Constructor: Child item: */
+    /** Constructor for child item. */
     UIMediumItem(const UIMedium &medium, UIMediumItem *pParent)
         : QTreeWidgetItem(pParent, Type)
         , m_medium(medium)
     { refresh(); }
 
-    /* API: Refresh stuff: */
+    /** Refreshes item fully. */
     void refreshAll()
     {
         m_medium.refresh();
         refresh();
     }
 
-    /* API: Medium stuff: */
+    /** Returns UIMedium wrapped by <i>this</i> item. */
     const UIMedium& medium() const { return m_medium; }
+    /** Defines UIMedium wrapped by <i>this</i> item. */
     void setMedium(const UIMedium &medium)
     {
         m_medium = medium;
         refresh();
     }
 
-    /* API: Medium-type stuff: */
+    /** Returns UIMediumType of the wrapped UIMedium. */
     UIMediumType mediumType() const { return m_medium.type(); }
 
-    /* API: State stuff: */
+    /** Returns KMediumState of the wrapped UIMedium. */
     KMediumState state() const { return m_medium.state(); }
 
-    /* API: ID stuff: */
+    /** Returns QString <i>ID</i> of the wrapped UIMedium. */
     QString id() const { return m_medium.id(); }
 
-    /* API: Location stuff: */
+    /** Returns QString <i>location</i> of the wrapped UIMedium. */
     QString location() const { return m_medium.location(); }
 
-    /* API: Hard-disk stuff: */
+    /** Returns QString <i>hard-disk format</i> of the wrapped UIMedium. */
     QString hardDiskFormat() const { return m_medium.hardDiskFormat(); }
+    /** Returns QString <i>hard-disk type</i> of the wrapped UIMedium. */
     QString hardDiskType() const { return m_medium.hardDiskType(); }
 
-    /* API: Details stuff: */
+    /** Returns QString <i>storage details</i> of the wrapped UIMedium. */
     QString details() const { return m_medium.storageDetails(); }
 
-    /* API: Tool-tip stuff: */
+    /** Returns QString <i>tool-tip</i> of the wrapped UIMedium. */
     QString toolTip() const { return m_medium.toolTip(); }
 
-    /* API: Usage stuff: */
+    /** Returns QString <i>usage</i> of the wrapped UIMedium. */
     QString usage() const { return m_medium.usage(); }
+    /** Returns whether wrapped UIMedium is used or not. */
     bool isUsed() const { return m_medium.isUsed(); }
+    /** Returns whether wrapped UIMedium is used in snapshots or not. */
     bool isUsedInSnapshots() const { return m_medium.isUsedInSnapshots(); }
 
-    /* API: Sorting stuff: */
+    /** Operator< reimplementation used for sorting purposes. */
     bool operator<(const QTreeWidgetItem &other) const
     {
         int column = treeWidget()->sortColumn();
@@ -126,7 +130,7 @@ public:
 
 private:
 
-    /* Helper: Refresh stuff: */
+    /** Refreshes item information such as icon, text and tool-tip. */
     void refresh()
     {
         /* Fill-in columns: */
@@ -140,7 +144,7 @@ private:
             setToolTip(i, strToolTip);
     }
 
-    /* Variables: */
+    /** UIMedium wrapped by <i>this</i> item. */
     UIMedium m_medium;
 };
 
