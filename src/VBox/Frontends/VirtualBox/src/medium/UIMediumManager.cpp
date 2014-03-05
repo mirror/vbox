@@ -322,9 +322,9 @@ void UIMediumManager::sltHandleMediumEnumerationStart()
             m_fInaccessibleFD = false;
 
     /* Reset tab-widget icons: */
-    mTabWidget->setTabIcon(HDTab, m_iconHD);
-    mTabWidget->setTabIcon(CDTab, m_iconCD);
-    mTabWidget->setTabIcon(FDTab, m_iconFD);
+    mTabWidget->setTabIcon(TabIndex_HD, m_iconHD);
+    mTabWidget->setTabIcon(TabIndex_CD, m_iconCD);
+    mTabWidget->setTabIcon(TabIndex_FD, m_iconFD);
 
     /* Repopulate tree-widgets content: */
     repopulateTreeWidgets();
@@ -840,9 +840,9 @@ void UIMediumManager::prepareTabWidget()
     {
         /* Configure tab-widget: */
         mTabWidget->setFocusPolicy(Qt::TabFocus);
-        mTabWidget->setTabIcon(HDTab, m_iconHD);
-        mTabWidget->setTabIcon(CDTab, m_iconCD);
-        mTabWidget->setTabIcon(FDTab, m_iconFD);
+        mTabWidget->setTabIcon(TabIndex_HD, m_iconHD);
+        mTabWidget->setTabIcon(TabIndex_CD, m_iconCD);
+        mTabWidget->setTabIcon(TabIndex_FD, m_iconFD);
         connect(mTabWidget, SIGNAL(currentChanged(int)), this, SLOT(sltHandleCurrentTabChanged()));
     }
 }
@@ -1066,7 +1066,7 @@ void UIMediumManager::updateActions()
     m_pActionRelease->setEnabled(fActionEnabledRelease);
 }
 
-void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, ItemAction action)
+void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, Action action)
 {
     /* Make sure medium-item is valid: */
     AssertReturnVoid(pMediumItem);
@@ -1078,17 +1078,17 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, ItemAction actio
     switch (pMediumItem->mediumType())
     {
         case UIMediumType_HardDisk:
-            iTab = HDTab;
+            iTab = TabIndex_HD;
             pIcon = &m_iconHD;
             pfInaccessible = &m_fInaccessibleHD;
             break;
         case UIMediumType_DVD:
-            iTab = CDTab;
+            iTab = TabIndex_CD;
             pIcon = &m_iconCD;
             pfInaccessible = &m_fInaccessibleCD;
             break;
         case UIMediumType_Floppy:
-            iTab = FDTab;
+            iTab = TabIndex_FD;
             pIcon = &m_iconFD;
             pfInaccessible = &m_fInaccessibleFD;
             break;
@@ -1099,7 +1099,7 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, ItemAction actio
 
     switch (action)
     {
-        case ItemAction_Added:
+        case Action_Add:
         {
             /* Does it change the overall state? */
             if (*pfInaccessible || pMediumItem->state() != KMediumState_Inaccessible)
@@ -1111,12 +1111,12 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, ItemAction actio
 
             break;
         }
-        case ItemAction_Updated:
-        case ItemAction_Removed:
+        case Action_Edit:
+        case Action_Remove:
         {
             bool fCheckRest = false;
 
-            if (action == ItemAction_Updated)
+            if (action == Action_Edit)
             {
                 /* Does it change the overall state? */
                 if ((*pfInaccessible && pMediumItem->state() == KMediumState_Inaccessible) ||
@@ -1408,7 +1408,7 @@ void UIMediumManager::createMediumItem(const UIMedium &medium)
     AssertPtrReturnVoid(pMediumItem);
 
     /* Update tab-icons: */
-    updateTabIcons(pMediumItem, ItemAction_Added);
+    updateTabIcons(pMediumItem, Action_Add);
 
     /* If medium-enumeration is not currently in progress or
      * if there is no current medium-item yet selected
@@ -1439,7 +1439,7 @@ void UIMediumManager::updateMediumItem(const UIMedium &medium)
     LogRel2(("UIMediumManager: Medium-item with ID={%s} updated.\n", medium.id().toAscii().constData()));
 
     /* Update tab-icons: */
-    updateTabIcons(pMediumItem, ItemAction_Updated);
+    updateTabIcons(pMediumItem, Action_Edit);
 
     /* Re-fetch medium-item if it is current one updated: */
     if (pMediumItem == mediumItem(type))
@@ -1468,7 +1468,7 @@ void UIMediumManager::deleteMediumItem(const QString &strMediumID)
         return;
 
     /* Update tab-icons: */
-    updateTabIcons(pMediumItem, ItemAction_Removed);
+    updateTabIcons(pMediumItem, Action_Remove);
 
     /* Delete medium-item: */
     delete pMediumItem;
@@ -1639,9 +1639,9 @@ UIMediumType UIMediumManager::currentMediumType() const
     /* Return current medium type: */
     switch (mTabWidget->currentIndex())
     {
-        case HDTab: return UIMediumType_HardDisk;
-        case CDTab: return UIMediumType_DVD;
-        case FDTab: return UIMediumType_Floppy;
+        case TabIndex_HD: return UIMediumType_HardDisk;
+        case TabIndex_CD: return UIMediumType_DVD;
+        case TabIndex_FD: return UIMediumType_Floppy;
         default: AssertMsgFailed(("Unknown page type: %d\n", mTabWidget->currentIndex())); break;
     }
     /* Invalid by default: */
