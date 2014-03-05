@@ -375,7 +375,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
                              , bool bAccelerate2DVideo
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                              )
-    : QAbstractScrollArea(pMachineWindow)
+    : QAbstractScrollArea(pMachineWindow->centralWidget())
     , m_pMachineWindow(pMachineWindow)
     , m_uScreenId(uScreenId)
     , m_pFrameBuffer(0)
