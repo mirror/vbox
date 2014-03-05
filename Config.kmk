@@ -1728,7 +1728,7 @@ VBOX_PYLINT_FLAGS   := --report=n \
 	  ,--msg-template='{path}:{line}: {msg_id}({obj}:{symbol}): {msg}' \
 	  ,--output-format=msvs --include-ids=y) \
 	--persistent=n \
-	--rcfile=$(if-expr "$(KBUILD_HOST)" == "win",nul,/dev/null) \
+	--rcfile=$(PATH_ROOT)/tools/pylintrc \
 	--max-line-length=130 \
 	--max-attributes=20 \
 	--max-branch$(if-expr !defined(VBOX_WITH_PYLINT_PRE_V1_0),e,)s=50 \
