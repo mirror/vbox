@@ -843,7 +843,7 @@ static void write_bup(PAC97STATE pThis, int elapsed)
                 LogFlow(("DevIchAC97: write_silence LUN##%d , copied=%d\n", lun, copied));
             }
 #else
-            int copied = AUD_write(pThis->voice_po, pThis->silence, temp);
+            copied = AUD_write(pThis->voice_po, pThis->silence, temp);
 #endif
             if (!copied)
                 return;
