@@ -123,10 +123,14 @@ private:
     bool disableVmmDevInterrupts(void);
     bool isVmmDev(IOPCIDevice *pIOPCIDevice);
 
+protected:
+    IOWorkLoop                *m_pWorkLoop;
+
 public:
     virtual bool start(IOService *pProvider);
     virtual void stop(IOService *pProvider);
     virtual bool terminate(IOOptionBits fOptions);
+    IOWorkLoop * getWorkLoop();
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_VBoxGuest, IOService);
@@ -222,6 +226,13 @@ static bool volatile        g_fInstantiated     = 0;
 /** The notifier handle for the sleep callback handler. */
 static IONotifier          *g_pSleepNotifier    = NULL;
 
+/* States of atimic variable aimed to protect dynamic object allocation in SMP environment. */
+#define VBOXGUEST_OBJECT_UNINITIALIZED  (0)
+#define VBOXGUEST_OBJECT_INITIALIZING   (1)
+#define VBOXGUEST_OBJECT_INITIALIZED    (2)
+#define VBOXGUEST_OBJECT_INVALID        (3)
+/** Atomic variable used to protect work loop allocation when multiple threads attempt to obtain it. */
+static uint8_t volatile     g_fWorkLoopCreated  = VBOXGUEST_OBJECT_UNINITIALIZED;
 
 
 /**
@@ -659,6 +670,50 @@ static int VbgdDarwinErr2DarwinErr(int rc)
  *
  */
 
+
+IOWorkLoop *
+org_virtualbox_VBoxGuest::getWorkLoop()
+{
+    /* Handle the case when work loop was not created yet */
+    if(ASMAtomicCmpXchgU8(&g_fWorkLoopCreated, VBOXGUEST_OBJECT_INITIALIZING, VBOXGUEST_OBJECT_UNINITIALIZED))
+    {
+        m_pWorkLoop = IOWorkLoop::workLoop();
+        if (m_pWorkLoop)
+        {
+            /* Notify the rest of threads about the fact that work
+             * loop was successully allocated and can be safely used */
+            PDEBUG("created new work loop\n");
+            ASMAtomicWriteU8(&g_fWorkLoopCreated, VBOXGUEST_OBJECT_INITIALIZED);
+        }
+        else
+        {
+            /* Notify the rest of threads about the fact that there was
+             * an error during allocation of a work loop */
+            PDEBUG("unable new work loop\n");
+            ASMAtomicWriteU8(&g_fWorkLoopCreated, VBOXGUEST_OBJECT_UNINITIALIZED);
+        }
+    }
+    else
+    {
+        /* Handle the case when work loop is currently being
+         * created or it was previously failed to create */
+        uint8_t fWorkLoopCreated = VBOXGUEST_OBJECT_INVALID;
+        while (fWorkLoopCreated != VBOXGUEST_OBJECT_INITIALIZED
+            && fWorkLoopCreated != VBOXGUEST_OBJECT_UNINITIALIZED)
+        {
+            fWorkLoopCreated = ASMAtomicReadU8(&g_fWorkLoopCreated);
+            thread_block(0);
+        }
+        if (fWorkLoopCreated == VBOXGUEST_OBJECT_INITIALIZED)
+            PDEBUG("returned existing work loop");
+        else
+            PDEBUG("work loop was not allocated correctly");
+    }
+
+    return m_pWorkLoop;
+}
+
+
 /**
  * Perform pending wake ups in work loop context.
  */
@@ -689,7 +744,7 @@ directInterruptHandler(OSObject *pOwner, IOFilterInterruptEventSource *pSrc)
 bool
 org_virtualbox_VBoxGuest::setupVmmDevInterrupts(IOService *pProvider)
 {
-    IOWorkLoop *pWorkLoop = (IOWorkLoop *)getWorkLoop();
+    IOWorkLoop *pWorkLoop = getWorkLoop();
 
     if (!pWorkLoop)
         return false;
