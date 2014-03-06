@@ -1238,8 +1238,9 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, Action action)
             if (fCheckRest)
             {
                 /* Find the first KMediumState_Inaccessible item to be in charge: */
-                UIMediumItem *pInaccessibleMediumItem =
-                    searchItem(pMediumItem->treeWidget(), CheckIfSuitableByState(KMediumState_Inaccessible));
+                CheckIfSuitableByState lookForState(KMediumState_Inaccessible);
+                CheckIfSuitableByID ignoreID(pMediumItem->id());
+                UIMediumItem *pInaccessibleMediumItem = searchItem(pMediumItem->treeWidget(), lookForState, &ignoreID);
                 *pfInaccessible = !!pInaccessibleMediumItem;
             }
 
@@ -1797,17 +1798,17 @@ void UIMediumManager::setCurrentItem(QTreeWidget *pTreeWidget, QTreeWidgetItem *
     refetchCurrentChosenMediumItem();
 }
 
-UIMediumItem* UIMediumManager::searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &functor) const
+UIMediumItem* UIMediumManager::searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException) const
 {
     /* Make sure argument is valid: */
     if (!pTree)
         return 0;
 
     /* Return wrapper: */
-    return searchItem(pTree->invisibleRootItem(), functor);
+    return searchItem(pTree->invisibleRootItem(), condition, pException);
 }
 
-UIMediumItem* UIMediumManager::searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &functor) const
+UIMediumItem* UIMediumManager::searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException) const
 {
     /* Make sure argument is valid: */
     if (!pParentItem)
@@ -1815,13 +1816,14 @@ UIMediumItem* UIMediumManager::searchItem(QTreeWidgetItem *pParentItem, const Ch
 
     /* Verify passed item if it is of 'medium' type too: */
     if (UIMediumItem *pMediumParentItem = toMediumItem(pParentItem))
-        if (functor.isItSuitable(pMediumParentItem))
+        if (   condition.isItSuitable(pMediumParentItem)
+            && (!pException || !pException->isItSuitable(pMediumParentItem)))
             return pMediumParentItem;
 
     /* Iterate other all the children: */
     for (int iChildIndex = 0; iChildIndex < pParentItem->childCount(); ++iChildIndex)
         if (UIMediumItem *pMediumChildItem = toMediumItem(pParentItem->child(iChildIndex)))
-            if (UIMediumItem *pRequiredMediumChildItem = searchItem(pMediumChildItem, functor))
+            if (UIMediumItem *pRequiredMediumChildItem = searchItem(pMediumChildItem, condition, pException))
                 return pRequiredMediumChildItem;
 
     /* Null by default: */
