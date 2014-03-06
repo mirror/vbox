@@ -16898,7 +16898,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="OHCI"      value="1"/>
     <const name="EHCI"      value="2"/>
-    <const name="Last"      value="3">
+    <const name="XHCI"      value="3"/>
+    <const name="Last"      value="4">
       <desc>Last element (invalid). Used for parameter checks.</desc>
     </const>
   </enum>

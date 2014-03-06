@@ -160,6 +160,7 @@ enum
     MODIFYVM_VRDE_EXTPACK,
     MODIFYVM_VRDE,
     MODIFYVM_RTCUSEUTC,
+    MODIFYVM_USBXHCI,
     MODIFYVM_USBEHCI,
     MODIFYVM_USB,
     MODIFYVM_SNAPSHOTFOLDER,
@@ -322,6 +323,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdevideochannelquality",  MODIFYVM_VRDEVIDEOCHANNELQUALITY,   RTGETOPT_REQ_STRING },
     { "--vrdeextpack",              MODIFYVM_VRDE_EXTPACK,              RTGETOPT_REQ_STRING },
     { "--vrde",                     MODIFYVM_VRDE,                      RTGETOPT_REQ_BOOL_ONOFF },
+    { "--usbxhci",                  MODIFYVM_USBXHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--usb",                      MODIFYVM_USB,                       RTGETOPT_REQ_BOOL_ONOFF },
     { "--snapshotfolder",           MODIFYVM_SNAPSHOTFOLDER,            RTGETOPT_REQ_STRING },
@@ -2359,6 +2361,24 @@ int handleModifyVM(HandlerArg *a)
                 ASSERT(vrdeServer);
 
                 CHECK_ERROR(vrdeServer, COMSETTER(Enabled)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_USBXHCI:
+            {
+                ULONG cXhciCtrls = 0;
+                rc = machine->GetUSBControllerCountByType(USBControllerType_XHCI, &cXhciCtrls);
+                if (SUCCEEDED(rc))
+                {
+                    if (!cXhciCtrls && ValueUnion.f)
+                    {
+                        ComPtr<IUSBController> UsbCtl;
+                        CHECK_ERROR(machine, AddUSBController(Bstr("XHCI").raw(), USBControllerType_XHCI,
+                                                              UsbCtl.asOutParam()));
+                    }
+                    else if (cXhciCtrls && !ValueUnion.f)
+                        CHECK_ERROR(machine, RemoveUSBController(Bstr("XHCI").raw()));
+                }
                 break;
             }
 

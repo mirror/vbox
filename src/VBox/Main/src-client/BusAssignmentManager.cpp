@@ -71,6 +71,7 @@ static const DeviceAssignmentRule aGenericRules[] =
     /* USB controllers */
     {"usb-ohci",      0,  6,  0, 0},
     {"usb-ehci",      0, 11,  0, 0},
+    {"usb-xhci",      0, 12,  0, 0},
 
     /* ACPI controller */
     {"acpi",          0,  7,  0, 0},

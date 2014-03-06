@@ -574,6 +574,7 @@ HRESULT SystemProperties::getMaxInstancesOfUSBControllerType(ChipsetType_T aChip
     {
         case USBControllerType_OHCI:
         case USBControllerType_EHCI:
+        case USBControllerType_XHCI:
         {
             cCtrs = 1;
             break;

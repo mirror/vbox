@@ -1776,6 +1776,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     {
         bool fOhciEnabled = false;
         bool fEhciEnabled = false;
+        bool fXhciEnabled = false;
 
         for (unsigned i = 0; i < USBCtlColl.size(); i++)
         {
@@ -1792,6 +1793,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     case USBControllerType_EHCI:
                         fEhciEnabled = true;
                         break;
+                    case USBControllerType_XHCI:
+                        fXhciEnabled = true;
+                        break;
                     default:
                         break;
                 }
@@ -1807,6 +1811,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             RTPrintf("ehci=\"%s\"\n", fEhciEnabled ? "on" : "off");
         else
             RTPrintf("EHCI:            %s\n", fEhciEnabled ? "enabled" : "disabled");
+
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("xhci=\"%s\"\n", fXhciEnabled ? "on" : "off");
+        else
+            RTPrintf("XHCI:            %s\n", fXhciEnabled ? "enabled" : "disabled");
     }
 
     ComPtr<IUSBDeviceFilters> USBFlts;
