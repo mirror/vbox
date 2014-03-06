@@ -7077,7 +7077,7 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(void) hmR0VmxSetPendingDebugXcpt(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RFLAGS);
+    Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RFLAGS));
     if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
     {
         int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
@@ -7829,7 +7829,7 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Load the guest-state into the VMCS.
      * Any ordering dependency among the sub-functions below must be explicitly stated using comments.
-     * Ideally, assert that the cross-dependent bits are up to date at the point of using it.
+     * Ideally, assert that the cross-dependent bits are up-to-date at the point of using it.
      */
     int rc = hmR0VmxSetupVMRunHandler(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
