@@ -75,6 +75,8 @@ public:
 
     /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() = 0;
+    /** Copy UIMedium wrapped by <i>this</i> item. */
+    virtual bool copy() = 0;
 
     /** Refreshes item fully. */
     void refreshAll()
@@ -167,7 +169,7 @@ public:
         : UIMediumItem(medium, pParent)
     {}
 
-private:
+protected:
 
     /** Removes UIMedium wrapped by <i>this</i> item. */
     bool remove()
@@ -198,6 +200,24 @@ private:
         /* True by default: */
         return true;
     }
+
+    /** Copy UIMedium wrapped by <i>this</i> item. */
+    bool copy()
+    {
+        /* Show Clone VD wizard: */
+        UISafePointerWizard pWizard = new UIWizardCloneVD(treeWidget(), medium().medium());
+        pWizard->prepare();
+        pWizard->exec();
+
+        /* Delete if still exists: */
+        if (pWizard)
+            delete pWizard;
+
+        /* True by default: */
+        return true;
+    }
+
+private:
 
     /** Proposes user to remove CMedium storage wrapped by <i>this</i> item. */
     bool maybeRemoveStorage()
@@ -258,7 +278,7 @@ public:
         : UIMediumItem(medium, pParent)
     {}
 
-private:
+protected:
 
     /** Removes UIMedium wrapped by <i>this</i> item. */
     bool remove()
@@ -285,6 +305,12 @@ private:
         /* True by default: */
         return true;
     }
+
+    /** Copy UIMedium wrapped by <i>this</i> item. */
+    bool copy()
+    {
+        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
+    }
 };
 
 /** UIMediumItem extension representing floppy-disk item. */
@@ -297,7 +323,7 @@ public:
         : UIMediumItem(medium, pParent)
     {}
 
-private:
+protected:
 
     /** Removes UIMedium wrapped by <i>this</i> item. */
     bool remove()
@@ -323,6 +349,12 @@ private:
 
         /* True by default: */
         return true;
+    }
+
+    /** Copy UIMedium wrapped by <i>this</i> item. */
+    bool copy()
+    {
+        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
     }
 };
 
@@ -491,7 +523,7 @@ void UIMediumManager::sltHandleMediumCreated(const QString &strMediumID)
 
 void UIMediumManager::sltHandleMediumDeleted(const QString &strMediumID)
 {
-    /* Delete UIMediumItem for corresponding 'strMediumID': */
+    /* Make sure corresponding medium-item deleted: */
     deleteMediumItem(strMediumID);
 }
 
@@ -536,7 +568,7 @@ void UIMediumManager::sltHandleMediumEnumerated(const QString &strMediumID)
     if (isMediumAttachedToHiddenMachinesOnly(medium))
         return;
 
-    /* Update UIMediumItem for corresponding 'medium': */
+    /* Update medium-item for corresponding medium: */
     updateMediumItem(medium);
 
     /* Advance progress-bar: */
@@ -562,14 +594,8 @@ void UIMediumManager::sltCopyMedium()
     AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
     AssertReturnVoid(!pMediumItem->id().isNull());
 
-    /* Show Clone VD wizard: */
-    UISafePointerWizard pWizard = new UIWizardCloneVD(this, pMediumItem->medium().medium());
-    pWizard->prepare();
-    pWizard->exec();
-
-    /* Delete if still exists: */
-    if (pWizard)
-        delete pWizard;
+    /* Copy current medium-item: */
+    pMediumItem->copy();
 }
 
 void UIMediumManager::sltModifyMedium()
