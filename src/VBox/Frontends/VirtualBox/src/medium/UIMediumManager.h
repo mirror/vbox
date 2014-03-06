@@ -157,7 +157,7 @@ private:
     void retranslateUi();
 
     /** Creates UIMediumItem for corresponding @a medium. */
-    void createMediumItem(const UIMedium &medium);
+    UIMediumItem* createMediumItem(const UIMedium &medium);
     /** Updates UIMediumItem for corresponding @a medium. */
     void updateMediumItem(const UIMedium &medium);
     /** Deletes UIMediumItem for corresponding @a strMediumID. */
@@ -211,6 +211,7 @@ private:
     CVirtualBox m_vbox;
     QWidget *m_pCenterWidget;
     bool m_fRefresh;
+    bool m_fPreventChangeCurrentItem;
 
     /* Variables: Tab-widget stuff: */
     bool m_fInaccessibleHD;
