@@ -114,7 +114,7 @@ Py_nsIID::IIDFromPyObject(PyObject *ob, nsIID *pRet) {
 		}
 	} else if (ob->ob_type == &type) {
 		iid = ((Py_nsIID *)ob)->m_iid;
-	} else if (PyInstance_Check(ob)) {
+	} else if (PyObject_HasAttrString(ob, "__class__")) {
 		// Get the _iidobj_ attribute
 		PyObject *use_ob = PyObject_GetAttrString(ob, "_iidobj_");
 		if (use_ob==NULL) {

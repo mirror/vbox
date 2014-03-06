@@ -195,7 +195,8 @@ void *PyG_Base::ThisAsIID( const nsIID &iid )
 PyG_Base::AutoWrapPythonInstance(PyObject *ob, const nsIID &iid, nsISupports **ppret)
 {
 	NS_PRECONDITION(ppret!=NULL, "null pointer when wrapping a Python instance!");
-	NS_PRECONDITION(ob && PyInstance_Check(ob), "AutoWrapPythonInstance is expecting an non-NULL instance!");
+	NS_PRECONDITION(ob && PyObject_HasAttrString(ob, "__class__"),
+			"AutoWrapPythonInstance is expecting an non-NULL instance!");
 	PRBool ok = PR_FALSE;
     // XXX - todo - this static object leaks! (but Python on Windows leaks 2000+ objects as it is ;-)
 	static PyObject *func = NULL; // fetch this once and remember!
