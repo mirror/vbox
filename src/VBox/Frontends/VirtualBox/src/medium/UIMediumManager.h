@@ -188,8 +188,8 @@ private:
     /** Defines <i>current-item</i> for passed @a pTreeWidget as @a pItem. */
     void setCurrentItem(QTreeWidget *pTreeWidget, QTreeWidgetItem *pItem);
 
-    UIMediumItem* searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &functor) const;
-    UIMediumItem* searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &functor) const;
+    UIMediumItem* searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException = 0) const;
+    UIMediumItem* searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException = 0) const;
     UIMediumItem* createHardDiskItem(QTreeWidget *pTree, const UIMedium &medium) const;
 
     /* Helper: Other stuff: */
