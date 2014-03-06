@@ -73,10 +73,12 @@ public:
         , m_medium(medium)
     { refresh(); }
 
-    /** Removes UIMedium wrapped by <i>this</i> item. */
-    virtual bool remove() = 0;
     /** Copy UIMedium wrapped by <i>this</i> item. */
     virtual bool copy() = 0;
+    /** Modify UIMedium wrapped by <i>this</i> item. */
+    virtual bool modify() = 0;
+    /** Remove UIMedium wrapped by <i>this</i> item. */
+    virtual bool remove() = 0;
 
     /** Refreshes item fully. */
     void refreshAll()
@@ -171,7 +173,47 @@ public:
 
 protected:
 
-    /** Removes UIMedium wrapped by <i>this</i> item. */
+    /** Copy UIMedium wrapped by <i>this</i> item. */
+    bool copy()
+    {
+        /* Show Clone VD wizard: */
+        UISafePointerWizard pWizard = new UIWizardCloneVD(treeWidget(), medium().medium());
+        pWizard->prepare();
+        pWizard->exec();
+
+        /* Delete if still exists: */
+        if (pWizard)
+            delete pWizard;
+
+        /* True by default: */
+        return true;
+    }
+
+    /** Modify UIMedium wrapped by <i>this</i> item. */
+    bool modify()
+    {
+        /* False by default: */
+        bool fResult = false;
+
+        /* Show Modify VD dialog: */
+        UISafePointerDialog pDialog = new UIMediumTypeChangeDialog(treeWidget(), id());
+        if (pDialog->exec() == QDialog::Accepted)
+        {
+            /* Update medium-item: */
+            refreshAll();
+            /* Change to passed: */
+            fResult = true;
+        }
+
+        /* Delete if still exists: */
+        if (pDialog)
+            delete pDialog;
+
+        /* Return result: */
+        return fResult;
+    }
+
+    /** Remove UIMedium wrapped by <i>this</i> item. */
     bool remove()
     {
         /* Confirm medium removal: */
@@ -196,22 +238,6 @@ protected:
 
         /* Remove UIMedium finally: */
         vboxGlobal().deleteMedium(strMediumID);
-
-        /* True by default: */
-        return true;
-    }
-
-    /** Copy UIMedium wrapped by <i>this</i> item. */
-    bool copy()
-    {
-        /* Show Clone VD wizard: */
-        UISafePointerWizard pWizard = new UIWizardCloneVD(treeWidget(), medium().medium());
-        pWizard->prepare();
-        pWizard->exec();
-
-        /* Delete if still exists: */
-        if (pWizard)
-            delete pWizard;
 
         /* True by default: */
         return true;
@@ -280,7 +306,19 @@ public:
 
 protected:
 
-    /** Removes UIMedium wrapped by <i>this</i> item. */
+    /** Copy UIMedium wrapped by <i>this</i> item. */
+    bool copy()
+    {
+        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
+    }
+
+    /** Modify UIMedium wrapped by <i>this</i> item. */
+    bool modify()
+    {
+        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
+    }
+
+    /** Remove UIMedium wrapped by <i>this</i> item. */
     bool remove()
     {
         /* Confirm medium removal: */
@@ -305,12 +343,6 @@ protected:
         /* True by default: */
         return true;
     }
-
-    /** Copy UIMedium wrapped by <i>this</i> item. */
-    bool copy()
-    {
-        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
-    }
 };
 
 /** UIMediumItem extension representing floppy-disk item. */
@@ -325,7 +357,19 @@ public:
 
 protected:
 
-    /** Removes UIMedium wrapped by <i>this</i> item. */
+    /** Copy UIMedium wrapped by <i>this</i> item. */
+    bool copy()
+    {
+        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
+    }
+
+    /** Modify UIMedium wrapped by <i>this</i> item. */
+    bool modify()
+    {
+        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
+    }
+
+    /** Remove UIMedium wrapped by <i>this</i> item. */
     bool remove()
     {
         /* Confirm medium removal: */
@@ -349,12 +393,6 @@ protected:
 
         /* True by default: */
         return true;
-    }
-
-    /** Copy UIMedium wrapped by <i>this</i> item. */
-    bool copy()
-    {
-        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
     }
 };
 
@@ -605,19 +643,12 @@ void UIMediumManager::sltModifyMedium()
     AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
     AssertReturnVoid(!pMediumItem->id().isNull());
 
-    /* Show Modify VD dialog: */
-    UISafePointerDialog pDialog = new UIMediumTypeChangeDialog(this, pMediumItem->id());
-    if (pDialog->exec() == QDialog::Accepted)
-    {
-        /* Update medium-item: */
-        pMediumItem->refreshAll();
-        /* Update HD information-panes: */
-        updateInformationPanesHD();
-    }
+    /* Modify current medium-item: */
+    bool fResult = pMediumItem->modify();
 
-    /* Delete if still exists: */
-    if (pDialog)
-        delete pDialog;
+    /* Update HD information-panes: */
+    if (fResult)
+        updateInformationPanesHD();
 }
 
 void UIMediumManager::sltRemoveMedium()
