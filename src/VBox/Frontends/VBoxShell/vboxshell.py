@@ -377,7 +377,7 @@ def monitorSource(ctx, eventSource, active, dur):
             if mtev:
                 printMultiTouchEvent(ctx, mtev)
 
-    class EventListener:
+    class EventListener(object):
         def __init__(self, arg):
             pass
 
