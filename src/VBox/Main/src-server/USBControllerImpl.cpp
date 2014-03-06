@@ -100,7 +100,7 @@ HRESULT USBController::init(Machine *aParent, const Utf8Str &aName, USBControlle
 
     ComAssertRet(aParent && !aName.isEmpty(), E_INVALIDARG);
     if (   (enmType <= USBControllerType_Null)
-        || (enmType >  USBControllerType_EHCI))
+        || (enmType >  USBControllerType_XHCI))
         return setError(E_INVALIDARG,
                         tr("Invalid USB controller type"));
 
@@ -262,6 +262,9 @@ HRESULT USBController::getUSBStandard(USHORT *aUSBStandard)
             *aUSBStandard = 0x0101;
             break;
         case USBControllerType_EHCI:
+            *aUSBStandard = 0x0200;
+            break;
+        case USBControllerType_XHCI:
             *aUSBStandard = 0x0200;
             break;
         default:

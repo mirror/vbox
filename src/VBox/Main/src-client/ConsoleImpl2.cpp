@@ -1690,6 +1690,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         com::SafeIfaceArray<IUSBController> usbCtrls;
         hrc = pMachine->COMGETTER(USBControllers)(ComSafeArrayAsOutParam(usbCtrls));        H();
         bool fOhciPresent = false; /**< Flag whether at least one OHCI controller is present. */
+        bool fXhciPresent = false; /**< Flag whether at least one XHCI controller is present. */
 
         for (size_t i = 0; i < usbCtrls.size(); ++i)
         {
@@ -1700,13 +1701,17 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 fOhciPresent = true;
                 break;
             }
+            else if (enmCtrlType == USBControllerType_XHCI)
+            {
+                fXhciPresent = true;
+                break;
+            }
         }
 
         /*
-         * Currently EHCI is only enabled when a OHCI controller is present too.
-         * This might change when XHCI is supported.
+         * Currently EHCI is only enabled when an OHCI or XHCI controller is present as well.
          */
-        if (fOhciPresent)
+        if (fOhciPresent || fXhciPresent)
             mfVMHasUsbController = true;
 
         PCFGMNODE pUsbDevices = NULL; /**< Required for USB storage controller later. */
@@ -1780,6 +1785,50 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 # endif
                 }
 #endif
+                else if (enmCtrlType == USBControllerType_XHCI)
+                {
+                    /*
+                     * USB 3.0 is only available if the proper ExtPack is installed.
+                     *
+                     * Note. Configuring EHCI here and providing messages about
+                     * the missing extpack isn't exactly clean, but it is a
+                     * necessary evil to patch over legacy compatability issues
+                     * introduced by the new distribution model.
+                     */
+                    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
+# ifdef VBOX_WITH_EXTPACK
+                    if (mptrExtPackManager->isExtPackUsable(s_pszUsbExtPackName))
+# endif
+                    {
+                        InsertConfigNode(pDevices, "usb-xhci", &pDev);
+                        InsertConfigNode(pDev,     "0", &pInst);
+                        InsertConfigNode(pInst,    "Config", &pCfg);
+                        InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
+                        hrc = pBusMgr->assignPCIDevice("usb-xhci", pInst);                  H();
+
+                        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                        InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
+                        InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+                        /*
+                         * Attach the status driver.
+                         */
+                        attachStatusDriver(pInst, &mapUSBLed[1], 0, 0, NULL, NULL, 0);
+                    }
+# ifdef VBOX_WITH_EXTPACK
+                    else
+                    {
+                        /* Always fatal. */
+                        return VMR3SetError(pUVM, VERR_NOT_FOUND, RT_SRC_POS,
+                                N_("Implementation of the USB 3.0 controller not found!\n"
+                                   "Because the USB 3.0 controller state is part of the saved "
+                                   "VM state, the VM cannot be started. To fix "
+                                   "this problem, either install the '%s' or disable USB 3.0 "
+                                   "support in the VM settings"),
+                                s_pszUsbExtPackName);
+                    }
+# endif
+                }
             } /* for every USB controller. */
 
 
