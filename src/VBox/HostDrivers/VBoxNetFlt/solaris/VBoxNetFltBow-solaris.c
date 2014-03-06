@@ -81,7 +81,7 @@
  *  @todo move this define into a common header. */
 #define VBOXBOW_VNIC_NAME               "vboxvnic"
 /** The VirtualBox VNIC template name (hardcoded in NetIf-solaris.cpp).
- *   *  @todo move this define into a common header. */
+ *  @todo move this define into a common header. */
 #define VBOXBOW_VNIC_TEMPLATE_NAME      "vboxvnic_template"
 /** Debugging switch for using symbols in kmdb */
 # define LOCAL                          static
