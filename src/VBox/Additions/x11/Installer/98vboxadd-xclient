@@ -15,13 +15,10 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-# It can happen that pidfiles from a sudo session can land in the user's
-# home directory and prevent new ones from being created.  This is not really
-# our fault, but the user may not quite appreciate that...
+# Sanity check: if non-writeable PID-files are present in the user home
+# directory VBoxClient will fail to start.
 for i in $HOME/.vboxclient-*.pid; do
-  if test -r $i && ! ps -e | grep `cat $i`; then
-    rm -f $i
-  fi
+    test -w $i || rm -f $i
 done
 
 # Check whether the display we are running on running a known buggy version
