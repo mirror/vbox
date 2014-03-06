@@ -163,12 +163,6 @@ private:
     /** Deletes UIMediumItem for corresponding @a strMediumID. */
     void deleteMediumItem(const QString &strMediumID);
 
-    /* Helpers: Medium-modification stuff: */
-    bool releaseMediumFrom(const UIMedium &medium, const QString &strMachineId);
-    bool releaseHardDiskFrom(const UIMedium &medium, CMachine &machine);
-    bool releaseOpticalDiskFrom(const UIMedium &medium, CMachine &machine);
-    bool releaseFloppyDiskFrom(const UIMedium &medium, CMachine &machine);
-
     /** Determines medium type for passed @a pTreeWidget. */
     UIMediumType mediumType(QTreeWidget *pTreeWidget) const;
 

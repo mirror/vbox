@@ -79,8 +79,30 @@ public:
     virtual bool modify() = 0;
     /** Remove UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() = 0;
+    /** Release UIMedium wrapped by <i>this</i> item. */
+    virtual bool release()
+    {
+        /* Refresh: */
+        refreshAll();
 
-    /** Refreshes item fully. */
+        /* Make sure medium was not released yet: */
+        if (medium().curStateMachineIds().isEmpty())
+            return true;
+
+        /* Confirm release: */
+        if (!msgCenter().confirmMediumRelease(medium(), treeWidget()))
+            return false;
+
+        /* Release: */
+        foreach (const QString &strMachineID, medium().curStateMachineIds())
+            if (!releaseFrom(strMachineID))
+                return false;
+
+        /* True by default: */
+        return true;
+    }
+
+    /** Refresh item fully. */
     void refreshAll()
     {
         m_medium.refresh();
@@ -135,9 +157,14 @@ public:
         return thisValue && thatValue ? thisValue < thatValue : QTreeWidgetItem::operator<(other);
     }
 
+protected:
+
+    /** Release UIMedium wrapped by <i>this</i> item from virtual @a machine. */
+    virtual bool releaseFrom(CMachine machine) = 0;
+
 private:
 
-    /** Refreshes item information such as icon, text and tool-tip. */
+    /** Refresh item information such as icon, text and tool-tip. */
     void refresh()
     {
         /* Fill-in columns: */
@@ -149,6 +176,38 @@ private:
         QString strToolTip = m_medium.toolTip();
         for (int i = 0; i < treeWidget()->columnCount(); ++i)
             setToolTip(i, strToolTip);
+    }
+
+    /** Release UIMedium wrapped by <i>this</i> item from virtual machine with @a strMachineID. */
+    bool releaseFrom(const QString &strMachineID)
+    {
+        /* Open session: */
+        CSession session = vboxGlobal().openSession(strMachineID);
+        if (session.isNull())
+            return false;
+
+        /* Get machine: */
+        CMachine machine = session.GetMachine();
+
+        /* Prepare result: */
+        bool fSuccess = false;
+
+        /* Release medium from machine: */
+        if (releaseFrom(machine))
+        {
+            /* Save machine settings: */
+            machine.SaveSettings();
+            if (!machine.isOk())
+                msgCenter().cannotSaveMachineSettings(machine, treeWidget());
+            else
+                fSuccess = true;
+        }
+
+        /* Close session: */
+        session.UnlockMachine();
+
+        /* Return result: */
+        return fSuccess;
     }
 
     /** UIMedium wrapped by <i>this</i> item. */
@@ -241,6 +300,43 @@ protected:
 
         /* True by default: */
         return true;
+    }
+
+    /** Release UIMedium wrapped by <i>this</i> item from virtual @a machine. */
+    bool releaseFrom(CMachine machine)
+    {
+        /* Enumerate attachments: */
+        CMediumAttachmentVector attachments = machine.GetMediumAttachments();
+        foreach (const CMediumAttachment &attachment, attachments)
+        {
+            /* Skip non-hard-disks: */
+            if (attachment.GetType() != KDeviceType_HardDisk)
+                continue;
+
+            /* Skip unrelated hard-disks: */
+            if (attachment.GetMedium().GetId() != id())
+                continue;
+
+            /* Remember controller: */
+            CStorageController controller = machine.GetStorageControllerByName(attachment.GetController());
+
+            /* Try to detach device: */
+            machine.DetachDevice(attachment.GetController(), attachment.GetPort(), attachment.GetDevice());
+            if (!machine.isOk())
+            {
+                /* Return failure: */
+                msgCenter().cannotDetachDevice(machine, UIMediumType_HardDisk, location(),
+                                               StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice()),
+                                               treeWidget());
+                return false;
+            }
+
+            /* Return success: */
+            return true;
+        }
+
+        /* False by default: */
+        return false;
     }
 
 private:
@@ -343,6 +439,38 @@ protected:
         /* True by default: */
         return true;
     }
+
+    /** Release UIMedium wrapped by <i>this</i> item from virtual @a machine. */
+    bool releaseFrom(CMachine machine)
+    {
+        /* Enumerate attachments: */
+        CMediumAttachmentVector attachments = machine.GetMediumAttachments();
+        foreach (const CMediumAttachment &attachment, attachments)
+        {
+            /* Skip non-optical-disks: */
+            if (attachment.GetType() != KDeviceType_DVD)
+                continue;
+
+            /* Skip unrelated optical-disks: */
+            if (attachment.GetMedium().GetId() != id())
+                continue;
+
+            /* Try to unmount device: */
+            machine.MountMedium(attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
+            if (!machine.isOk())
+            {
+                /* Return failure: */
+                msgCenter().cannotRemountMedium(machine, medium(), false /* mount? */, false /* retry? */, treeWidget());
+                return false;
+            }
+
+            /* Return success: */
+            return true;
+        }
+
+        /* Return failure: */
+        return false;
+    }
 };
 
 /** UIMediumItem extension representing floppy-disk item. */
@@ -393,6 +521,38 @@ protected:
 
         /* True by default: */
         return true;
+    }
+
+    /** Release UIMedium wrapped by <i>this</i> item from virtual @a machine. */
+    bool releaseFrom(CMachine machine)
+    {
+        /* Enumerate attachments: */
+        CMediumAttachmentVector attachments = machine.GetMediumAttachments();
+        foreach (const CMediumAttachment &attachment, attachments)
+        {
+            /* Skip non-floppy-disks: */
+            if (attachment.GetType() != KDeviceType_Floppy)
+                continue;
+
+            /* Skip unrelated floppy-disks: */
+            if (attachment.GetMedium().GetId() != id())
+                continue;
+
+            /* Try to unmount device: */
+            machine.MountMedium(attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
+            if (!machine.isOk())
+            {
+                /* Return failure: */
+                msgCenter().cannotRemountMedium(machine, medium(), false /* mount? */, false /* retry? */, treeWidget());
+                return false;
+            }
+
+            /* Return success: */
+            return true;
+        }
+
+        /* Return failure: */
+        return false;
     }
 };
 
@@ -669,36 +829,12 @@ void UIMediumManager::sltReleaseMedium()
     AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
     AssertReturnVoid(!pMediumItem->id().isNull());
 
-    /* Refresh attached VM id list: */
-    pMediumItem->refreshAll();
-    const QList<QString> machineIds(pMediumItem->medium().curStateMachineIds());
-    /* If the machine id list is empty: */
-    if (machineIds.isEmpty())
-    {
-        /* This may happen if medium was already released by a third party,
-         * re-fetch currently chosen medium-item and silently return. */
-        return refetchCurrentChosenMediumItem();
-    }
+    /* Remove current medium-item: */
+    bool fResult = pMediumItem->release();
 
-    /* Gather usage list: */
-    QStringList usage;
-    foreach (const QString &strMachineId, machineIds)
-    {
-        CMachine machine = m_vbox.FindMachine(strMachineId);
-        if (!m_vbox.isOk())
-            continue;
-        usage << machine.GetName();
-    }
-    AssertReturnVoid(!usage.isEmpty());
-
-    /* Confirm release: */
-    if (!msgCenter().confirmMediumRelease(pMediumItem->medium(), usage.join(", "), this))
-        return;
-
-    /* Release: */
-    foreach (const QString &strMachineId, machineIds)
-        if (!releaseMediumFrom(pMediumItem->medium(), strMachineId))
-            break;
+    /* Refetch currently chosen medium-item: */
+    if (fResult)
+        refetchCurrentChosenMediumItem();
 }
 
 void UIMediumManager::sltHandleCurrentTabChanged()
@@ -1631,148 +1767,6 @@ void UIMediumManager::deleteMediumItem(const QString &strMediumID)
      * we have to choose first-available medium-item as current one: */
     if (!pTreeWidget->currentItem())
         setCurrentItem(pTreeWidget, pTreeWidget->topLevelItem(0));
-}
-
-bool UIMediumManager::releaseMediumFrom(const UIMedium &medium, const QString &strMachineId)
-{
-    /* Open session: */
-    CSession session = vboxGlobal().openSession(strMachineId);
-    if (session.isNull())
-        return false;
-
-    /* Get machine: */
-    CMachine machine = session.GetMachine();
-
-    /* Prepare result: */
-    bool fSuccess = true;
-
-    /* Depending on medium-type: */
-    switch (medium.type())
-    {
-        case UIMediumType_HardDisk: fSuccess = releaseHardDiskFrom(medium, machine); break;
-        case UIMediumType_DVD:      fSuccess = releaseOpticalDiskFrom(medium, machine); break;
-        case UIMediumType_Floppy:   fSuccess = releaseFloppyDiskFrom(medium, machine); break;
-        default: AssertMsgFailed(("Medium-type unknown: %d\n", medium.type())); break;
-    }
-
-    /* If medium was released: */
-    if (fSuccess)
-    {
-        /* Save machine settings: */
-        machine.SaveSettings();
-        if (!machine.isOk())
-        {
-            msgCenter().cannotSaveMachineSettings(machine, this);
-            fSuccess = false;
-        }
-    }
-
-    /* Close session: */
-    session.UnlockMachine();
-
-    /* Return result: */
-    return fSuccess;
-}
-
-bool UIMediumManager::releaseHardDiskFrom(const UIMedium &medium, CMachine &machine)
-{
-    /* Enumerate attachments: */
-    CMediumAttachmentVector attachments = machine.GetMediumAttachments();
-    foreach (const CMediumAttachment &attachment, attachments)
-    {
-        /* Skip non-hard-disks: */
-        if (attachment.GetType() != KDeviceType_HardDisk)
-            continue;
-
-        /* Skip unrelated hard-disks: */
-        if (attachment.GetMedium().GetId() != medium.id())
-            continue;
-
-        /* Try detaching device: */
-        machine.DetachDevice(attachment.GetController(), attachment.GetPort(), attachment.GetDevice());
-        if (machine.isOk())
-        {
-            /* Return success: */
-            return true;
-        }
-        else
-        {
-            /* Show error: */
-            CStorageController controller = machine.GetStorageControllerByName(attachment.GetController());
-            msgCenter().cannotDetachDevice(machine, UIMediumType_HardDisk, medium.location(),
-                                           StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice()), this);
-            /* Return failure: */
-            return false;
-        }
-    }
-    /* Return failure: */
-    return false;
-}
-
-bool UIMediumManager::releaseOpticalDiskFrom(const UIMedium &medium, CMachine &machine)
-{
-    /* Enumerate attachments: */
-    CMediumAttachmentVector attachments = machine.GetMediumAttachments();
-    foreach (const CMediumAttachment &attachment, attachments)
-    {
-        /* Skip non-optical-disks: */
-        if (attachment.GetType() != KDeviceType_DVD)
-            continue;
-
-        /* Skip unrelated optical-disks: */
-        if (attachment.GetMedium().GetId() != medium.id())
-            continue;
-
-        /* Try device unmounting: */
-        machine.MountMedium(attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
-        if (machine.isOk())
-        {
-            /* Return success: */
-            return true;
-        }
-        else
-        {
-            /* Show error: */
-            msgCenter().cannotRemountMedium(machine, medium, false /* mount? */, false /* retry? */, this);
-            /* Return failure: */
-            return false;
-        }
-    }
-    /* Return failure: */
-    return false;
-}
-
-bool UIMediumManager::releaseFloppyDiskFrom(const UIMedium &medium, CMachine &machine)
-{
-    /* Enumerate attachments: */
-    CMediumAttachmentVector attachments = machine.GetMediumAttachments();
-    foreach (const CMediumAttachment &attachment, attachments)
-    {
-        /* Skip non-floppy-disks: */
-        if (attachment.GetType() != KDeviceType_Floppy)
-            continue;
-
-        /* Skip unrelated floppy-disks: */
-        if (attachment.GetMedium().GetId() != medium.id())
-            continue;
-
-        /* Try device unmounting: */
-        machine.MountMedium(attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
-        if (machine.isOk())
-        {
-            /* Return success: */
-            return true;
-        }
-        else
-        {
-            /* Show error: */
-            msgCenter().cannotRemountMedium(machine, medium, false /* mount? */, false /* retry? */, this);
-            /* Return failure: */
-            return false;
-        }
-    }
-    /* Return failure: */
-    return false;
 }
 
 UIMediumType UIMediumManager::mediumType(QTreeWidget *pTreeWidget) const

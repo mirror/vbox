@@ -1166,8 +1166,18 @@ void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType 
           formatErrorInfo(medium));
 }
 
-bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, const QString &strUsage, QWidget *pParent /* = 0*/) const
+bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, QWidget *pParent /* = 0*/) const
 {
+    /* Prepare the usage: */
+    QStringList usage;
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    foreach (const QString &strMachineID, medium.curStateMachineIds())
+    {
+        CMachine machine = vbox.FindMachine(strMachineID);
+        if (!vbox.isOk() || machine.isNull())
+            continue;
+        usage << machine.GetName();
+    }
     /* Prepare the message: */
     QString strMessage;
     switch (medium.type())
@@ -1195,7 +1205,7 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, const QString
     }
     /* Show the question: */
     return questionBinary(pParent, MessageType_Question,
-                          strMessage.arg(medium.location(), strUsage),
+                          strMessage.arg(medium.location(), usage.join(", ")),
                           0 /* auto-confirm id */,
                           tr("Release", "detach medium"));
 }
