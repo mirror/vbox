@@ -321,7 +321,7 @@ Py_nsISupports::InterfaceFromPyObject(PyObject *ob,
 	// support nsIVariant
 	if (iid.Equals(NS_GET_IID(nsIVariant)) || iid.Equals(NS_GET_IID(nsIWritableVariant))) {
 		// Check it is not already nsIVariant
-		if (PyInstance_Check(ob)) {
+		if (PyObject_HasAttrString(ob, "__class__")) {
 			PyObject *sub_ob = PyObject_GetAttrString(ob, "_comobj_");
 			if (sub_ob==NULL) {
 				PyErr_Clear();
@@ -344,7 +344,7 @@ Py_nsISupports::InterfaceFromPyObject(PyObject *ob,
 	}
 	// end of variant support.
 
-	if (PyInstance_Check(ob)) {
+	if (PyObject_HasAttrString(ob, "__class__")) {
 		// Get the _comobj_ attribute
 		PyObject *use_ob = PyObject_GetAttrString(ob, "_comobj_");
 		if (use_ob==NULL) {
