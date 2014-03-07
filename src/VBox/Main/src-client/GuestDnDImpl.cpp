@@ -366,6 +366,9 @@ int DnDGuestResponse::notifyAboutGuestResponse(void)
 
 void DnDGuestResponse::reset(void)
 {
+    m_strDropDir = "";
+    m_strFormat = "";
+
     if (m_pvData)
     {
         RTMemFree(m_pvData);
@@ -998,7 +1001,13 @@ HRESULT GuestDnD::dragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action,
     DnDGuestResponse *pResp = d->response();
     AssertPtr(pResp);
 
+    /* Reset any old data. */
     pResp->reset();
+    pResp->resetProgress(p);
+
+    /* Set the format we are going to retrieve to have it around
+     * when retrieving the data later. */
+    pResp->setFormat(strFormat);
 
     if (fNeedsDropDir)
     {
@@ -1020,10 +1029,6 @@ HRESULT GuestDnD::dragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action,
         paParms[i++].setPointer((void*)strFormat.c_str(), (uint32_t)strFormat.length() + 1);
         paParms[i++].setUInt32((uint32_t)strFormat.length() + 1);
         paParms[i++].setUInt32(uAction);
-
-        /* Reset any old data and the progress status. */
-        pResp->reset();
-        pResp->resetProgress(p);
 
         d->hostCall(DragAndDropSvc::HOST_DND_GH_EVT_DROPPED,
                     i,

@@ -47,7 +47,15 @@ VBoxClient_LIBS = \
 	X11 \
 	Xrandr \
 	Xt
-#	Xtst
+
+ifdef VBOX_WITH_DRAG_AND_DROP
+ ifdef VBOX_DND_WITH_XTEST
+ VBoxClient_DEFS += VBOX_DND_WITH_XTEST
+ VBoxClient_LIBS += \
+	Xtst
+ endif
+endif
+
 # These are static replacements for gcc-specific parts of libstdc++
 VBoxClient_LIBS += \
 	supc++ \
