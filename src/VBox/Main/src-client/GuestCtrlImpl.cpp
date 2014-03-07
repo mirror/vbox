@@ -192,7 +192,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(IN_BSTR
     {
         Assert(!pSession.isNull());
         int guestRc;
-        rc = pSession->startSessionInternal(&guestRc);
+        rc = pSession->i_startSessionInternal(&guestRc);
         if (RT_FAILURE(rc))
         {
             /** @todo Handle guestRc! */
@@ -206,7 +206,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(IN_BSTR
                 ComObjPtr<Progress> pProgress;
                 SessionTaskUpdateAdditions *pTask = new SessionTaskUpdateAdditions(pSession /* GuestSession */,
                                                                                    Utf8Str(aSource), aArgs, fFlags);
-                rc = pSession->startTaskAsync(tr("Updating Guest Additions"), pTask, pProgress);
+                rc = pSession->i_startTaskAsync(tr("Updating Guest Additions"), pTask, pProgress);
                 if (RT_SUCCESS(rc))
                 {
                     /* Return progress to the caller. */
@@ -293,22 +293,22 @@ int Guest::dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTC
             switch (pCtxCb->uFunction)
             {
                 case GUEST_DISCONNECTED:
-                    rc = pSession->dispatchToThis(pCtxCb, pSvcCb);
+                    rc = pSession->i_dispatchToThis(pCtxCb, pSvcCb);
                     break;
 
                 case GUEST_EXEC_STATUS:
                 case GUEST_EXEC_OUTPUT:
                 case GUEST_EXEC_INPUT_STATUS:
                 case GUEST_EXEC_IO_NOTIFY:
-                    rc = pSession->dispatchToProcess(pCtxCb, pSvcCb);
+                    rc = pSession->i_dispatchToProcess(pCtxCb, pSvcCb);
                     break;
 
                 case GUEST_FILE_NOTIFY:
-                    rc = pSession->dispatchToFile(pCtxCb, pSvcCb);
+                    rc = pSession->i_dispatchToFile(pCtxCb, pSvcCb);
                     break;
 
                 case GUEST_SESSION_NOTIFY:
-                    rc = pSession->dispatchToThis(pCtxCb, pSvcCb);
+                    rc = pSession->i_dispatchToThis(pCtxCb, pSvcCb);
                     break;
 
                 default:
@@ -319,7 +319,7 @@ int Guest::dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTC
                      * by the approprirate object, try handling it
                      * in this session object.
                      */
-                    rc = pSession->dispatchToObject(pCtxCb, pSvcCb);
+                    rc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
                     if (   rc == VERR_NOT_FOUND
                         || rc == VERR_NOT_SUPPORTED)
                     {
@@ -354,7 +354,7 @@ int Guest::sessionRemove(GuestSession *pSession)
 
     int rc = VERR_NOT_FOUND;
 
-    LogFlowThisFunc(("Removing session (ID=%RU32) ...\n", pSession->getId()));
+    LogFlowThisFunc(("Removing session (ID=%RU32) ...\n", pSession->i_getId()));
 
     GuestSessions::iterator itSessions = mData.mGuestSessions.begin();
     while (itSessions != mData.mGuestSessions.end())
@@ -372,9 +372,9 @@ int Guest::sessionRemove(GuestSession *pSession)
             ComObjPtr<GuestSession> pCurSession = pSession;
 
             LogFlowThisFunc(("Removing session (pSession=%p, ID=%RU32) (now total %ld sessions)\n",
-                             pSession, pSession->getId(), mData.mGuestSessions.size() - 1));
+                             pSession, pSession->i_getId(), mData.mGuestSessions.size() - 1));
 
-            rc = pSession->onRemove();
+            rc = pSession->i_onRemove();
             mData.mGuestSessions.erase(itSessions);
 
             alock.release(); /* Release lock before firing off event. */
@@ -524,7 +524,7 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
     {
         /* Start (fork) the session asynchronously
          * on the guest. */
-        rc = pSession->startSessionAsync();
+        rc = pSession->i_startSessionAsync();
     }
 
     HRESULT hr = S_OK;
@@ -569,7 +569,7 @@ STDMETHODIMP Guest::FindSession(IN_BSTR aSessionName, ComSafeArrayOut(IGuestSess
     GuestSessions::const_iterator itSessions = mData.mGuestSessions.begin();
     while (itSessions != mData.mGuestSessions.end())
     {
-        if (strName.contains(itSessions->second->getName())) /** @todo Use a (simple) pattern match (IPRT?). */
+        if (strName.contains(itSessions->second->i_getName())) /** @todo Use a (simple) pattern match (IPRT?). */
             listSessions.push_back(itSessions->second);
         itSessions++;
     }

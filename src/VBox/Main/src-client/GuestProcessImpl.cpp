@@ -883,7 +883,7 @@ int GuestProcess::i_readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeout
          * So just skip checking for process status change and only wait for the
          * output event.
          */
-        if (mSession->getProtocolVersion() >= 2)
+        if (mSession->i_getProtocolVersion() >= 2)
             eventTypes.push_back(VBoxEventType_OnGuestProcessStateChanged);
         eventTypes.push_back(VBoxEventType_OnGuestProcessOutput);
 
@@ -999,7 +999,7 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
 {
     LogFlowThisFunc(("uTimeoutMS=%RU32, procCmd=%s, procTimeoutMS=%RU32, procFlags=%x, sessionID=%RU32\n",
                      uTimeoutMS, mData.mProcess.mCommand.c_str(), mData.mProcess.mTimeoutMS, mData.mProcess.mFlags,
-                     mSession->getId()));
+                     mSession->i_getId()));
 
     /* Wait until the caller function (if kicked off by a thread)
      * has returned and continue operation. */
@@ -1028,7 +1028,7 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
     GuestSession *pSession = mSession;
     AssertPtr(pSession);
 
-    const GuestCredentials &sessionCreds = pSession->getCredentials();
+    const GuestCredentials &sessionCreds = pSession->i_getCredentials();
 
     /* Prepare arguments. */
     char *pszArgs = NULL;
@@ -1076,7 +1076,7 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
     if (RT_SUCCESS(vrc))
     {
         AssertPtr(mSession);
-        uint32_t uProtocol = mSession->getProtocolVersion();
+        uint32_t uProtocol = mSession->i_getProtocolVersion();
 
         /* Prepare HGCM call. */
         VBOXHGCMSVCPARM paParms[16];
@@ -1214,7 +1214,7 @@ int GuestProcess::i_terminateProcess(uint32_t uTimeoutMS, int *pGuestRc)
         AssertPtr(mSession);
         /* Note: VBox < 4.3 (aka protocol version 1) does not
          *       support this, so just skip. */
-        if (mSession->getProtocolVersion() < 2)
+        if (mSession->i_getProtocolVersion() < 2)
             vrc = VERR_NOT_SUPPORTED;
 
         if (RT_SUCCESS(vrc))
@@ -1359,7 +1359,7 @@ ProcessWaitResult_T GuestProcess::i_waitFlagsToResult(uint32_t fWaitFlags)
     AssertPtr(mSession);
     return GuestProcess::i_waitFlagsToResultEx(fWaitFlags,
                                                mData.mStatus /* curStatus */, mData.mStatus /* newStatus */,
-                                               mData.mProcess.mFlags, mSession->getProtocolVersion());
+                                               mData.mProcess.mFlags, mSession->i_getProtocolVersion());
 }
 
 int GuestProcess::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS,
@@ -1443,7 +1443,7 @@ int GuestProcess::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS,
             alock.acquire();
 
             waitResult = i_waitFlagsToResultEx(fWaitFlags, curStatus, newStatus,
-                                               mData.mProcess.mFlags, mSession->getProtocolVersion());
+                                               mData.mProcess.mFlags, mSession->i_getProtocolVersion());
 #ifdef DEBUG
             LogFlowThisFunc(("Got new status change: fWaitFlags=0x%x, newStatus=%RU32, waitResult=%RU32\n",
                              fWaitFlags, newStatus, waitResult));
@@ -1689,7 +1689,7 @@ int GuestProcess::i_writeData(uint32_t uHandle, uint32_t uFlags,
          * So just skip checking for process status change and only wait for the
          * input event.
          */
-        if (mSession->getProtocolVersion() >= 2)
+        if (mSession->i_getProtocolVersion() >= 2)
             eventTypes.push_back(VBoxEventType_OnGuestProcessStateChanged);
         eventTypes.push_back(VBoxEventType_OnGuestProcessInputNotify);
 
@@ -1823,7 +1823,7 @@ HRESULT GuestProcess::terminate()
     /* Remove process from guest session list. Now only API clients
      * still can hold references to it. */
     AssertPtr(mSession);
-    int rc2 = mSession->processRemoveFromList(this);
+    int rc2 = mSession->i_processRemoveFromList(this);
     if (RT_SUCCESS(vrc))
         vrc = rc2;
 
@@ -1978,7 +1978,7 @@ int GuestProcessTool::Init(GuestSession *pGuestSession, const GuestProcessStartu
     /* Make sure the process is hidden. */
     mStartupInfo.mFlags |= ProcessCreateFlag_Hidden;
 
-    int vrc = pSession->processCreateExInteral(mStartupInfo, pProcess);
+    int vrc = pSession->i_processCreateExInteral(mStartupInfo, pProcess);
     if (RT_SUCCESS(vrc))
         vrc = fAsync
             ? pProcess->i_startProcessAsync()

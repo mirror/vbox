@@ -1237,7 +1237,7 @@ HRESULT GuestFile::close()
      * work first and then return an error. */
 
     AssertPtr(mSession);
-    int rc2 = mSession->fileRemoveFromList(this);
+    int rc2 = mSession->i_fileRemoveFromList(this);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
