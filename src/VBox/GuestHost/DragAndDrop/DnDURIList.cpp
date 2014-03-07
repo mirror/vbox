@@ -484,59 +484,6 @@ void DnDURIList::Clear(void)
     m_cbTotal = 0;
 }
 
-#if 0
-int DnDURIList::FromData(const void *pvData, size_t cbData,
-
-                         uint32_t fFlags)
-{
-    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn(cbData, VERR_INVALID_PARAMETER);
-
-    RTCList<RTCString> lstURI =
-        RTCString(static_cast<const char*>(pvData), cbData - 1).split("\r\n");
-    if (lstURI.isEmpty())
-        return VINF_SUCCESS;
-
-    int rc = VINF_SUCCESS;
-
-    for (size_t i = 0; i < lstURI.size(); ++i)
-    {
-        const RTCString &strUri = lstURI.at(i);
-        /* Query the path component of a file URI. If this hasn't a
-         * file scheme, null is returned. */
-        char *pszFilePath = RTUriFilePath(strUri.c_str(), URI_FILE_FORMAT_AUTO);
-        if (pszFilePath)
-        {
-            rc = DnDPathSanitize(pszFilePath, strlen(pszFilePath));
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Use RTPathJoin? */
-                RTCString strFullPath;
-                if (strBasePath.isNotEmpty())
-                    strFullPath = RTCString().printf("%s%c%s", strBasePath.c_str(),
-                                                     RTPATH_SLASH, pszFilePath);
-                else
-                    strFullPath = pszFilePath;
-
-                char *pszNewUri = RTUriFileCreate(strFullPath.c_str());
-                if (pszNewUri)
-                {
-                    m_lstRoot.append(pszNewUri);
-                    RTStrFree(pszNewUri);
-                }
-            }
-        }
-        else
-            rc = VERR_INVALID_PARAMETER;
-
-        if (RT_FAILURE(rc))
-            break;
-    }
-
-    return rc;
-}
-#endif
-
 void DnDURIList::RemoveFirst(void)
 {
     DnDURIObject &curPath = m_lstTree.first();
@@ -605,6 +552,9 @@ RTCString DnDURIList::RootToString(const RTCString &strBasePath /* = "" */,
                 if (pszPathURI)
                 {
                     strRet += RTCString(pszPathURI) + strSeparator;
+#ifdef DEBUG_andy
+                    LogFlowFunc(("URI: %s\n", strRet.c_str()));
+#endif
                     RTStrFree(pszPathURI);
                 }
                 else
@@ -620,6 +570,9 @@ RTCString DnDURIList::RootToString(const RTCString &strBasePath /* = "" */,
             if (pszPathURI)
             {
                 strRet += RTCString(pszPathURI) + strSeparator;
+#ifdef DEBUG_andy
+                LogFlowFunc(("URI: %s\n", strRet.c_str()));
+#endif
                 RTStrFree(pszPathURI);
             }
             else

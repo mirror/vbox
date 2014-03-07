@@ -238,7 +238,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
     }
 
 #ifdef DEBUG_andy
-    LogFlowFunc(("Mode check rc=%Rrc\n", rc));
+    LogFlowFunc(("Mode (%RU32) check rc=%Rrc\n", modeGet(), rc));
 #endif
 
     if (rc == VINF_SUCCESS) /* Note: rc might be VINF_HGCM_ASYNC_EXECUTE! */

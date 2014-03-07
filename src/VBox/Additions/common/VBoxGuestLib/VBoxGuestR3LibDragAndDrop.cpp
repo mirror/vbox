@@ -1090,7 +1090,7 @@ static int vbglR3DnDGHProcessURIMessages(uint32_t u32ClientId,
         RTCString((const char *)pvData, cbData).split("\r\n");
 
     DnDURIList lstURI;
-    int rc = lstURI.AppendNativePathsFromList(lstPaths, 0 /* fFlags */);
+    int rc = lstURI.AppendURIPathsFromList(lstPaths, 0 /* fFlags */);
     if (RT_SUCCESS(rc))
     {
         /* Send metadata; in this case it's the (non-recursive) file/directory
