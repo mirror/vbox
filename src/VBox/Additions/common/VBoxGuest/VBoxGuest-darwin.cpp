@@ -77,9 +77,11 @@
 #if DEBUG
 # define MODULE_NAME "VBoxGuest"
 # define PDEBUG(fmt, args...) \
-     printf(MODULE_NAME ": DEBUG: %s:%d %s(): " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ## args)
+  do { \
+      printf(MODULE_NAME ": DEBUG: %s:%d %s(): " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ## args); \
+  } while (0)
 #else
-# define PDEBUG(fmt, args...) { ; }
+# define PDEBUG(fmt, args...) do {} while (0)
 #endif
 
 
