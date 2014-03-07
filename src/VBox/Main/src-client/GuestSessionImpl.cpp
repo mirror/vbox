@@ -2360,7 +2360,7 @@ int GuestSession::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFl
 // implementation of public methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP GuestSession::close(void)
+STDMETHODIMP GuestSession::close()
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
