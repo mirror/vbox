@@ -118,3 +118,4 @@ void handleArgs(int argc, char *argv[], int *pfNoLogo)
     }
     *pfNoLogo = fNoLogo;
 }
+
