@@ -185,7 +185,7 @@ int SessionTaskOpen::Run(int *pGuestRc)
     AutoCaller autoCaller(pSession);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int vrc = pSession->startSessionInternal(pGuestRc);
+    int vrc = pSession->i_startSessionInternal(pGuestRc);
     /* Nothing to do here anymore. */
 
     LogFlowFuncLeaveRC(vrc);
@@ -318,7 +318,7 @@ int SessionTaskCopyTo::Run(void)
     /* Startup process. */
     ComObjPtr<GuestProcess> pProcess; int guestRc;
     if (RT_SUCCESS(rc))
-        rc = pSession->processCreateExInteral(procInfo, pProcess);
+        rc = pSession->i_processCreateExInteral(procInfo, pProcess);
     if (RT_SUCCESS(rc))
     {
         Assert(!pProcess.isNull());
@@ -602,7 +602,7 @@ int SessionTaskCopyFrom::Run(void)
      ** @todo Use the IGuestFile API for locking down the file on the guest!
      */
     GuestFsObjData objData; int guestRc;
-    int rc = pSession->fileQueryInfoInternal(Utf8Str(mSource), objData, &guestRc);
+    int rc = pSession->i_fileQueryInfoInternal(Utf8Str(mSource), objData, &guestRc);
     if (RT_FAILURE(rc))
     {
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -640,7 +640,7 @@ int SessionTaskCopyFrom::Run(void)
 
             /* Startup process. */
             ComObjPtr<GuestProcess> pProcess;
-            rc = pSession->processCreateExInteral(procInfo, pProcess);
+            rc = pSession->i_processCreateExInteral(procInfo, pProcess);
             if (RT_SUCCESS(rc))
                 rc = pProcess->i_startProcess(30 * 1000 /* 30s timeout */,
                                               &guestRc);
@@ -857,8 +857,8 @@ SessionTaskUpdateAdditions::~SessionTaskUpdateAdditions(void)
 
 }
 
-int SessionTaskUpdateAdditions::addProcessArguments(ProcessArguments &aArgumentsDest,
-                                                    const ProcessArguments &aArgumentsSource)
+int SessionTaskUpdateAdditions::i_addProcessArguments(ProcessArguments &aArgumentsDest,
+                                                      const ProcessArguments &aArgumentsSource)
 {
     int rc = VINF_SUCCESS;
 
@@ -896,9 +896,9 @@ int SessionTaskUpdateAdditions::addProcessArguments(ProcessArguments &aArguments
     return rc;
 }
 
-int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO,
-                                                Utf8Str const &strFileSource, const Utf8Str &strFileDest,
-                                                bool fOptional, uint32_t *pcbSize)
+int SessionTaskUpdateAdditions::i_copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO,
+                                                  Utf8Str const &strFileSource, const Utf8Str &strFileDest,
+                                                  bool fOptional, uint32_t *pcbSize)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pISO, VERR_INVALID_POINTER);
@@ -934,9 +934,9 @@ int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFS
             AssertPtrReturn(pTask, VERR_NO_MEMORY);
 
             ComObjPtr<Progress> pProgressCopyTo;
-            rc = pSession->startTaskAsync(Utf8StrFmt(GuestSession::tr("Copying Guest Additions installer file \"%s\" to \"%s\" on guest"),
-                                                     mSource.c_str(), strFileDest.c_str()),
-                                                     pTask, pProgressCopyTo);
+            rc = pSession->i_startTaskAsync(Utf8StrFmt(GuestSession::tr("Copying Guest Additions installer file \"%s\" to \"%s\" on guest"),
+                                                       mSource.c_str(), strFileDest.c_str()),
+                                                       pTask, pProgressCopyTo);
             if (RT_SUCCESS(rc))
             {
                 BOOL fCanceled = FALSE;
@@ -966,7 +966,7 @@ int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFS
 
         GuestFsObjData objData;
         int64_t cbSizeOnGuest; int guestRc;
-        rc = pSession->fileQuerySizeInternal(strFileDest, &cbSizeOnGuest, &guestRc);
+        rc = pSession->i_fileQuerySizeInternal(strFileDest, &cbSizeOnGuest, &guestRc);
         if (   RT_SUCCESS(rc)
             && cbSize == (uint64_t)cbSizeOnGuest)
         {
@@ -1009,7 +1009,7 @@ int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFS
     return rc;
 }
 
-int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo)
+int SessionTaskUpdateAdditions::i_runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
@@ -1076,7 +1076,7 @@ int SessionTaskUpdateAdditions::Run(void)
 
     LogRel(("Automatic update of Guest Additions started, using \"%s\"\n", mSource.c_str()));
 
-    ComObjPtr<Guest> pGuest(mSession->getParent());
+    ComObjPtr<Guest> pGuest(mSession->i_getParent());
 #if 0
     /*
      * Wait for the guest being ready within 30 seconds.
@@ -1279,8 +1279,8 @@ int SessionTaskUpdateAdditions::Run(void)
 
             /* Create the installation directory. */
             int guestRc;
-            rc = pSession->directoryCreateInternal(strUpdateDir,
-                                                   755 /* Mode */, DirectoryCreateFlag_Parents, &guestRc);
+            rc = pSession->i_directoryCreateInternal(strUpdateDir,
+                                                     755 /* Mode */, DirectoryCreateFlag_Parents, &guestRc);
             if (RT_FAILURE(rc))
             {
                 switch (rc)
@@ -1377,7 +1377,7 @@ int SessionTaskUpdateAdditions::Run(void)
                         siInstaller.mArguments.push_back(Utf8Str("/post_installstatus"));
                         /* Add optional installer command line arguments from the API to the
                          * installer's startup info. */
-                        rc = addProcessArguments(siInstaller.mArguments, mArguments);
+                        rc = i_addProcessArguments(siInstaller.mArguments, mArguments);
                         AssertRC(rc);
                         /* If the caller does not want to wait for out guest update process to end,
                          * complete the progress object now so that the caller can do other work. */
@@ -1417,8 +1417,8 @@ int SessionTaskUpdateAdditions::Run(void)
                         bool fOptional = false;
                         if (itFiles->fFlags & UPDATEFILE_FLAG_OPTIONAL)
                             fOptional = true;
-                        rc = copyFileToGuest(pSession, &iso, itFiles->strSource, itFiles->strDest,
-                                             fOptional, NULL /* cbSize */);
+                        rc = i_copyFileToGuest(pSession, &iso, itFiles->strSource, itFiles->strDest,
+                                               fOptional, NULL /* cbSize */);
                         if (RT_FAILURE(rc))
                         {
                             hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -1454,7 +1454,7 @@ int SessionTaskUpdateAdditions::Run(void)
                 {
                     if (itFiles->fFlags & UPDATEFILE_FLAG_EXECUTE)
                     {
-                        rc = runFileOnGuest(pSession, itFiles->mProcInfo);
+                        rc = i_runFileOnGuest(pSession, itFiles->mProcInfo);
                         if (RT_FAILURE(rc))
                             break;
                     }
