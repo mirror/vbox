@@ -162,7 +162,8 @@ EOF
     for i in $DEFAULT_VERSIONED_FILE_NAMES; do
         rm -f "$i-"* 2> /dev/null
     done
-    rm -f "/usr/lib/$PACKAGE" "/usr/lib64/$PACKAGE" "/usr/share/$PACKAGE"
+    rm -f "/usr/lib/$PACKAGE" "/usr/lib64/$PACKAGE" "/usr/share/$PACKAGE" \
+        "/usr/lib/i386-linux-gnu/$PACKAGE" "/usr/lib/x86_64-linux-gnu/$PACKAGE"
 
     # And any packages left under /opt
     for i in "/opt/$PACKAGE-"*; do
@@ -180,15 +181,11 @@ cpu=`uname -m`;
 case "$cpu" in
   i[3456789]86|x86)
     cpu="x86"
-    lib_path="/usr/lib"
+    lib_candidates="/usr/lib/i386-linux-gnu /usr/lib /lib"
     ;;
   x86_64|amd64)
     cpu="amd64"
-    if test -d "/usr/lib64"; then
-      lib_path="/usr/lib64"
-    else
-      lib_path="/usr/lib"
-    fi
+    lib_candidates="/usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib64 /lib"
     ;;
   *)
     cpu="unknown"
@@ -196,6 +193,20 @@ esac
 ARCH_PACKAGE="$PACKAGE-$cpu.tar.bz2"
 if [ ! -r "$ARCH_PACKAGE" ]; then
   info "Detected unsupported $cpu machine type."
+  exit 1
+fi
+# Find the most appropriate libary folder by seeing which of the candidate paths
+# are actually in the shared linker path list and choosing the first.  We look
+# for Debian-specific paths first, then LSB ones, then the new RedHat ones.
+libs=`ldconfig -v 2>/dev/null | grep -v ^$'\t'`
+for i in $lib_candidates; do
+  if echo $libs | grep -q $i; then
+    lib_path=$i
+    break
+  fi
+done
+if [ ! -x "$lib_path" ]; then
+  info "Unable to determine correct library path."
   exit 1
 fi
 

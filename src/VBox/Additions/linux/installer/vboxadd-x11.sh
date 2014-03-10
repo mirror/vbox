@@ -38,17 +38,19 @@ cpu=`uname -m`;
 case "$cpu" in
   i[3456789]86|x86)
     cpu="x86"
-    LIB="/usr/lib"
+    lib_candidates="/usr/lib/i386-linux-gnu /usr/lib /lib"
     ;;
   x86_64|amd64)
     cpu="amd64"
-    if test -d "/usr/lib64"; then
-      LIB="/usr/lib64"
-    else
-      LIB="/usr/lib"
-    fi
+    lib_candidates="/usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib64 /lib"
     ;;
 esac
+for i in $lib_candidates; do
+  if test -d "$i/VBoxGuestAdditions"; then
+    LIB=$i
+    break
+  fi
+done
 
 # Find the version of X installed
 # The last of the three is for the X.org 6.7 included in Fedora Core 2
