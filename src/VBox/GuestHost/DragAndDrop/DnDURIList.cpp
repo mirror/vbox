@@ -409,6 +409,7 @@ int DnDURIList::AppendURIPath(const char *pszURI, uint32_t fFlags)
 {
     AssertPtrReturn(pszURI, VERR_INVALID_POINTER);
 
+    /** @todo Check for string termination?  */
 #ifdef DEBUG_andy
     LogFlowFunc(("pszPath=%s, fFlags=0x%x\n", pszURI, fFlags));
 #endif
@@ -421,22 +422,28 @@ int DnDURIList::AppendURIPath(const char *pszURI, uint32_t fFlags)
     {
         /* Add the path to our internal file list (recursive in
          * the case of a directory). */
-        char *pszFileName = RTPathFilename(pszFilePath);
-        if (pszFileName)
+        size_t cbPathLen = RTPathStripTrailingSlash(pszFilePath);
+        if (cbPathLen)
         {
-            Assert(pszFileName >= pszFilePath);
-            char *pszRoot = &pszFilePath[pszFileName - pszFilePath];
-            m_lstRoot.append(pszRoot);
+            char *pszFileName = RTPathFilename(pszFilePath);
+            if (pszFileName)
+            {
+                Assert(pszFileName >= pszFilePath);
+                char *pszRoot = &pszFilePath[pszFileName - pszFilePath];
+                m_lstRoot.append(pszRoot);
 #ifdef DEBUG_andy
-            LogFlowFunc(("pszFilePath=%s, pszFileName=%s, pszRoot=%s\n",
-                         pszFilePath, pszFileName, pszRoot));
+                LogFlowFunc(("pszFilePath=%s, pszFileName=%s, pszRoot=%s\n",
+                             pszFilePath, pszFileName, pszRoot));
 #endif
-            rc = appendPathRecursive(pszFilePath,
-                                     pszFileName - pszFilePath,
-                                     fFlags);
+                rc = appendPathRecursive(pszFilePath,
+                                         pszFileName - pszFilePath,
+                                         fFlags);
+            }
+            else
+                rc = VERR_NOT_FOUND;
         }
         else
-            rc = VERR_NOT_FOUND;
+            rc = VERR_INVALID_PARAMETER;
 
         RTStrFree(pszFilePath);
     }

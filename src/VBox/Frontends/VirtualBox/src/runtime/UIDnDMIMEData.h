@@ -80,7 +80,7 @@ protected:
     virtual QVariant retrieveData(const QString &mimeType, QVariant::Type type) const;
 
 #ifndef RT_OS_WINDOWS
-    bool eventFilter(QObject * /* pObject */, QEvent *pEvent);
+    bool eventFilter(QObject *pObject, QEvent *pEvent);
 #endif
     /** @}  */
 

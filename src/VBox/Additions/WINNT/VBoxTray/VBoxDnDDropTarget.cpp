@@ -463,7 +463,6 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                             {
                                 RTCString strRoot = lstURI.RootToString();
                                 size_t cbRoot = strRoot.length() + 1; /* Include termination */
-                                Assert(cbRoot);
 
                                 mpvData = RTMemAlloc(cbRoot);
                                 if (mpvData)
