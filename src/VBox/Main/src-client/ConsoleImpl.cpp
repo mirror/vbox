@@ -3543,7 +3543,7 @@ HRESULT Console::convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG 
  * @param pfSuspend         where to store the information if we need to resume
  *                          afterwards.
  */
-int Console::suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, bool *pfResume)
+HRESULT Console::suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, bool *pfResume)
 {
     *pfResume = false;
     VMSTATE enmVMState = VMR3GetStateU(pUVM);
@@ -3568,10 +3568,16 @@ int Console::suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, bool *p
         case VMSTATE_SUSPENDED:
             break;
         default:
-            return VERR_INVALID_STATE;
+            return setErrorInternal(VBOX_E_INVALID_VM_STATE,
+                                    COM_IIDOF(IConsole),
+                                    getStaticComponentName(),
+                                    Utf8StrFmt("Invalid state '%s' for changing medium",
+                                        VMR3GetStateName(enmVMState)),
+                                    false /*aWarning*/,
+                                    true /*aLogIt*/);
     }
 
-    return VINF_SUCCESS;
+    return S_OK;
 }
 
 /**
@@ -3671,9 +3677,9 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
      * pending I/O to the drive which is being changed.
      */
     bool fResume = false;
-    int vrc = suspendBeforeConfigChange(pUVM, &alock, &fResume);
-    if (RT_FAILURE(vrc))
-        return vrc;
+    rc = suspendBeforeConfigChange(pUVM, &alock, &fResume);
+    if (FAILED(rc))
+        return rc;
 
     /*
      * Call worker in EMT, that's faster and safer than doing everything
@@ -3681,9 +3687,9 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    vrc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                       (PFNRT)changeRemovableMedium, 8,
-                       this, pUVM, pszDevice, uInstance, enmBus, fUseHostIOCache, aMediumAttachment, fForce);
+    int vrc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                           (PFNRT)changeRemovableMedium, 8,
+                           this, pUVM, pszDevice, uInstance, enmBus, fUseHostIOCache, aMediumAttachment, fForce);
 
     /* release the lock before waiting for a result (EMT will call us back!) */
     alock.release();
@@ -3864,9 +3870,9 @@ HRESULT Console::doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PUV
      * pending I/O to the drive which is being changed.
      */
     bool fResume = false;
-    int vrc = suspendBeforeConfigChange(pUVM, &alock, &fResume);
-    if (RT_FAILURE(vrc))
-        return vrc;
+    rc = suspendBeforeConfigChange(pUVM, &alock, &fResume);
+    if (FAILED(rc))
+        return rc;
 
     /*
      * Call worker in EMT, that's faster and safer than doing everything
@@ -3874,9 +3880,9 @@ HRESULT Console::doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PUV
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    vrc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                       (PFNRT)attachStorageDevice, 8,
-                       this, pUVM, pszDevice, uInstance, enmBus, fUseHostIOCache, aMediumAttachment, fSilent);
+    int vrc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                           (PFNRT)attachStorageDevice, 8,
+                           this, pUVM, pszDevice, uInstance, enmBus, fUseHostIOCache, aMediumAttachment, fSilent);
 
     /* release the lock before waiting for a result (EMT will call us back!) */
     alock.release();
@@ -4056,9 +4062,9 @@ HRESULT Console::doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PUV
      * pending I/O to the drive which is being changed.
      */
     bool fResume = false;
-    int vrc = suspendBeforeConfigChange(pUVM, &alock, &fResume);
-    if (RT_FAILURE(vrc))
-        return vrc;
+    rc = suspendBeforeConfigChange(pUVM, &alock, &fResume);
+    if (FAILED(rc))
+        return rc;
 
     /*
      * Call worker in EMT, that's faster and safer than doing everything
@@ -4066,9 +4072,9 @@ HRESULT Console::doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PUV
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    vrc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                       (PFNRT)detachStorageDevice, 7,
-                       this, pUVM, pszDevice, uInstance, enmBus, aMediumAttachment, fSilent);
+    int vrc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                           (PFNRT)detachStorageDevice, 7,
+                           this, pUVM, pszDevice, uInstance, enmBus, aMediumAttachment, fSilent);
 
     /* release the lock before waiting for a result (EMT will call us back!) */
     alock.release();
@@ -4445,9 +4451,9 @@ HRESULT Console::doNetworkAdapterChange(PUVM pUVM,
      * Suspend the VM first.
      */
     bool fResume = false;
-    int vrc = suspendBeforeConfigChange(pUVM, NULL, &fResume);
-    if (RT_FAILURE(vrc))
-        return vrc;
+    int rc = suspendBeforeConfigChange(pUVM, NULL, &fResume);
+    if (FAILED(rc))
+        return rc;
 
     /*
      * Call worker in EMT, that's faster and safer than doing everything
@@ -4455,9 +4461,9 @@ HRESULT Console::doNetworkAdapterChange(PUVM pUVM,
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    vrc = VMR3ReqCallU(pUVM, 0 /*idDstCpu*/, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                       (PFNRT)changeNetworkAttachment, 6,
-                       this, pUVM, pszDevice, uInstance, uLun, aNetworkAdapter);
+    int vrc = VMR3ReqCallU(pUVM, 0 /*idDstCpu*/, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                           (PFNRT)changeNetworkAttachment, 6,
+                           this, pUVM, pszDevice, uInstance, uLun, aNetworkAdapter);
 
     if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
     {
