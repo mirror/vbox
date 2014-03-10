@@ -184,7 +184,7 @@ QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
 }
 
 #ifndef RT_OS_WINDOWS
-bool UIDnDMimeData::eventFilter(QObject * /* pObject */, QEvent *pEvent)
+bool UIDnDMimeData::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     if (pEvent)
     {
@@ -197,14 +197,18 @@ bool UIDnDMimeData::eventFilter(QObject * /* pObject */, QEvent *pEvent)
                 AssertPtr(pMouseEvent);
                 LogFlowFunc(("MouseMove: x=%d, y=%d\n",
                              pMouseEvent->globalX(), pMouseEvent->globalY()));
-                break;
+                
+                return true;
+                /* Never reached. */
             }
 #endif
             case QEvent::MouseButtonRelease:
             {
                 LogFlowFunc(("MouseButtonRelease\n"));
                 m_enmState = Dropped;
-                break;
+                
+                return true;
+                /* Never reached. */
             }
 
             case QEvent::KeyPress:
@@ -215,7 +219,9 @@ bool UIDnDMimeData::eventFilter(QObject * /* pObject */, QEvent *pEvent)
                     LogFlowFunc(("ESC pressed, cancelling drag'n drop operation\n"));
                     m_enmState = Canceled;
                 }
-                break;
+                
+                return true;
+                /* Never reached. */
             }
 
             default:
@@ -223,8 +229,7 @@ bool UIDnDMimeData::eventFilter(QObject * /* pObject */, QEvent *pEvent)
         }
     }
 
-    /* Propagate the event further. */
-    return false;
+    return QObject::eventFilter(pObject, pEvent);
 }
 
 void UIDnDMimeData::sltInstallEventFilter(void)

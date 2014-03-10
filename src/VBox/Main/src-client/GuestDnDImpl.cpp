@@ -203,6 +203,8 @@ public:
     HRESULT resetProgress(const ComObjPtr<Guest>& pParent);
     HRESULT queryProgressTo(IProgress **ppProgress);
 
+    int writeToFile(const char *pszPath, size_t cbPath, void *pvData, size_t cbData, uint32_t fMode);
+
 public:
 
     Utf8Str errorToString(const ComObjPtr<Guest>& pGuest, int guestRc);
@@ -222,6 +224,10 @@ private:
     size_t               m_cbDataTotal;
     /** Dropped files directory on the host. */
     Utf8Str              m_strDropDir;
+    /** The handle of the currently opened file being written to
+     *  or read from. */
+    RTFILE               m_hFile;
+    Utf8Str              m_strFile;
 
     ComObjPtr<Guest>     m_parent;
     ComObjPtr<Progress>  m_progress;
@@ -293,6 +299,7 @@ DnDGuestResponse::DnDGuestResponse(const ComObjPtr<Guest>& pGuest)
   , m_cbData(0)
   , m_cbDataCurrent(0)
   , m_cbDataTotal(0)
+  , m_hFile(NIL_RTFILE)
   , m_parent(pGuest)
 {
     int rc = RTSemEventCreate(&m_EventSem);
@@ -302,6 +309,7 @@ DnDGuestResponse::DnDGuestResponse(const ComObjPtr<Guest>& pGuest)
 DnDGuestResponse::~DnDGuestResponse(void)
 {
     reset();
+
     int rc = RTSemEventDestroy(m_EventSem);
     AssertRC(rc);
 }
@@ -345,6 +353,13 @@ Utf8Str DnDGuestResponse::errorToString(const ComObjPtr<Guest>& pGuest, int gues
                                               "elements can be accessed and that your guest user has the appropriate rights."));
             break;
 
+        case VERR_NOT_FOUND:
+            /* Should not happen due to file locking on the guest, but anyway ... */
+            strError += Utf8StrFmt(pGuest->tr("One or more guest files or directories selected for transferring to the host were not"
+                                              "found on the guest anymore. This can be the case if the guest files were moved and/or"
+                                              "altered while the drag'n drop operation was in progress."));
+            break;
+
         case VERR_SHARING_VIOLATION:
             strError += Utf8StrFmt(pGuest->tr("One or more guest files or directories selected for transferring to the host were locked. "
                                               "Please make sure that all selected elements can be accessed and that your guest user has "
@@ -366,6 +381,11 @@ int DnDGuestResponse::notifyAboutGuestResponse(void)
 
 void DnDGuestResponse::reset(void)
 {
+    LogFlowThisFuncEnter();
+
+    m_defAction = 0;
+    m_allActions = 0;
+
     m_strDropDir = "";
     m_strFormat = "";
 
@@ -374,10 +394,16 @@ void DnDGuestResponse::reset(void)
         RTMemFree(m_pvData);
         m_pvData = NULL;
     }
-    m_cbData = 0;
-
+    m_cbData = 0;    
     m_cbDataCurrent = 0;
     m_cbDataTotal = 0;
+
+    if (m_hFile != NIL_RTFILE)
+    {
+        RTFileClose(m_hFile);
+        m_hFile = NIL_RTFILE;
+    }
+    m_strFile = "";
 }
 
 HRESULT DnDGuestResponse::resetProgress(const ComObjPtr<Guest>& pParent)
@@ -488,6 +514,59 @@ int DnDGuestResponse::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 500 */)
 #ifdef DEBUG_andy
     LogFlowFunc(("msTimeout=%RU32, rc=%Rrc\n", msTimeout, rc));
 #endif
+    return rc;
+}
+
+int DnDGuestResponse::writeToFile(const char *pszPath, size_t cbPath, 
+                                  void *pvData, size_t cbData, uint32_t fMode)
+{
+    /** @todo Support locking more than one file at a time! We
+     *        might want to have a table in DnDGuestImpl which
+     *        keeps those file pointers around, or extend the
+     *        actual protocol for explicit open calls.
+     *  
+     *        For now we only keep one file open at a time, so if
+     *        a client does alternating writes to different files
+     *        this function will close the old and re-open the new
+     *        file on every call. */
+    int rc;
+    if (   m_hFile == NIL_RTFILE
+        || m_strFile != pszPath) 
+    {
+        char *pszFile = RTPathJoinA(m_strDropDir.c_str(), pszPath);
+        if (pszFile)
+        {
+            RTFILE hFile;
+            /** @todo Respect fMode!  */
+            rc = RTFileOpen(&hFile, pszFile,
+                              RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE 
+                            | RTFILE_O_WRITE | RTFILE_O_APPEND);
+            if (RT_SUCCESS(rc))
+            {
+                LogFlowFunc(("Opening \"%s\" (fMode=0x%x) for writing ...\n", 
+                             pszFile, fMode));
+
+                m_hFile = hFile;
+                m_strFile = pszPath;
+            }
+
+            RTStrFree(pszFile);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileWrite(m_hFile, pvData, cbData,
+                         NULL /* No partial writes */);
+
+        if (RT_SUCCESS(rc))
+            rc = dataSetStatus(cbData);
+    }
+
     return rc;
 }
 
@@ -718,7 +797,6 @@ HRESULT GuestDnD::dragHGEnter(ULONG uScreenId, ULONG uX, ULONG uY,
                     paParms);
 
         DnDGuestResponse *pResp = d->response();
-        /* This blocks until the request is answered (or timeout). */
         if (pResp->waitForGuestResponse() == VERR_TIMEOUT)
             return S_OK;
 
@@ -782,7 +860,6 @@ HRESULT GuestDnD::dragHGMove(ULONG uScreenId, ULONG uX, ULONG uY,
                     paParms);
 
         DnDGuestResponse *pResp = d->response();
-        /* This blocks until the request is answered (or timeout). */
         if (pResp->waitForGuestResponse() == VERR_TIMEOUT)
             return S_OK;
 
@@ -812,7 +889,6 @@ HRESULT GuestDnD::dragHGLeave(ULONG uScreenId)
                     NULL);
 
         DnDGuestResponse *pResp = d->response();
-        /* This blocks until the request is answered (or timeout). */
         pResp->waitForGuestResponse();
     }
     catch (HRESULT hr2)
@@ -872,15 +948,16 @@ HRESULT GuestDnD::dragHGDrop(ULONG uScreenId, ULONG uX, ULONG uY,
                     paParms);
 
         DnDGuestResponse *pResp = d->response();
-        /* This blocks until the request is answered (or timeout). */
         if (pResp->waitForGuestResponse() == VERR_TIMEOUT)
             return S_OK;
 
-        /* Copy the response info */
+        /* Get the resulting action from the guest. */
         *pResultAction = d->toMainAction(pResp->defAction());
-        Bstr(pResp->format()).cloneTo(pstrFormat);
 
-        LogFlowFunc(("*pResultAction=%ld\n", *pResultAction));
+        LogFlowFunc(("resFormat=%s, resAction=%RU32\n", 
+                     pResp->format().c_str(), pResp->defAction()));
+
+        Bstr(pResp->format()).cloneTo(pstrFormat);
     }
     catch (HRESULT hr2)
     {
@@ -956,7 +1033,6 @@ HRESULT GuestDnD::dragGHPending(ULONG uScreenId,
                     i,
                     paParms);
 
-        /* This blocks until the request is answered (or timed out). */
         DnDGuestResponse *pResp = d->response();
         if (pResp->waitForGuestResponse() == VERR_TIMEOUT)
             return S_OK;
@@ -1166,27 +1242,7 @@ int GuestDnD::onGHSendFile(DnDGuestResponse *pResp,
     LogFlowFunc(("pszPath=%s, cbPath=%zu, fMode=0x%x\n",
                  pszPath, cbPath, fMode));
 
-    /** @todo Add file locking between calls! */
-    int rc;
-    char *pszFile = RTPathJoinA(pResp->dropDir().c_str(), pszPath);
-    if (pszFile)
-    {
-        RTFILE hFile;
-        rc = RTFileOpen(&hFile, pszFile,
-                        RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE | RTFILE_O_WRITE);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTFileWrite(hFile, pvData, cbData,
-                             NULL /* No partial writes */);
-            RTFileClose(hFile);
-        }
-        RTStrFree(pszFile);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    if (RT_SUCCESS(rc))
-        rc = pResp->dataSetStatus(cbData);
+    int rc = pResp->writeToFile(pszPath, cbPath, pvData, cbData, fMode);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
