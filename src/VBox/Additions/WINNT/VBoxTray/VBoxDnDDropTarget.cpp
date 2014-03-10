@@ -22,6 +22,7 @@
 #include "VBoxHelpers.h"
 #include "VBoxDnD.h"
 
+#include "VBox/GuestHost/DragAndDrop.h"
 #include "VBox/HostServices/DragAndDropSvc.h"
 
 
@@ -451,16 +452,27 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
 
                         if (RT_SUCCESS(rc))
                         {
-                            uint32_t cbSize = cchFiles * sizeof(char);
-                            Assert(cbSize);
+                            uint32_t cbFiles = cchFiles * sizeof(char);
+                            Assert(cbFiles);
 
-                            mpvData = RTMemDup(pszFiles, cbSize);
-                            if (mpvData)
+                            /* Translate the list into URI elements. */
+                            DnDURIList lstURI;
+                            rc = lstURI.AppendNativePathsFromList(pszFiles, cbFiles, 
+                                                                  0 /* Flags */);
+                            if (RT_SUCCESS(rc))
                             {
-                                mcbData = cbSize;
+                                RTCString strRoot = lstURI.RootToString();
+                                size_t cbRoot = strRoot.length();
+
+                                mpvData = RTMemAllocZ(cbRoot + 1 /* Include termination */);
+                                if (mpvData)
+                                {
+                                    memcpy(mpvData, strRoot.raw(), cbRoot);
+                                    mcbData = cbRoot + 1;
+                                }
+                                else
+                                    rc = VERR_NO_MEMORY;
                             }
-                            else
-                                rc = VERR_NO_MEMORY;
                         }
 
                         LogFlowFunc(("Building CF_HDROP list rc=%Rrc, pszFiles=0x%p, cFiles=%RU16, cchFiles=%RU32\n",
