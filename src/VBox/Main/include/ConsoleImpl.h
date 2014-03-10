@@ -569,8 +569,8 @@ private:
     HRESULT createSharedFolder(const Utf8Str &strName, const SharedFolderData &aData);
     HRESULT removeSharedFolder(const Utf8Str &strName);
 
-    int  suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, bool *pfResume);
-    void resumeAfterConfigChange(PUVM pUVM);
+    HRESULT suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, bool *pfResume);
+    void    resumeAfterConfigChange(PUVM pUVM);
 
     static DECLCALLBACK(int) configConstructor(PUVM pUVM, PVM pVM, void *pvConsole);
     int configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock);
