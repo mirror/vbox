@@ -3561,7 +3561,13 @@ HRESULT Console::suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, boo
             if (pAlock)
                 pAlock->acquire();
             mVMStateChangeCallbackDisabled = false;
-            AssertRCReturn(rc, rc);
+            if (RT_FAILURE(rc))
+                return setErrorInternal(VBOX_E_INVALID_VM_STATE,
+                                        COM_IIDOF(IConsole),
+                                        getStaticComponentName(),
+                                        Utf8StrFmt("Could suspend VM for medium change (%Rrc)", rc),
+                                        false /*aWarning*/,
+                                        true /*aLogIt*/);
             *pfResume = true;
             break;
         }
