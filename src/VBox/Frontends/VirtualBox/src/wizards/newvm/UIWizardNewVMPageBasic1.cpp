@@ -85,6 +85,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp( "OS[/|!-]{,1}2.*W",          Qt::CaseInsensitive), "OS2Warp3" },
     { QRegExp("(OS[/|!-]{,1}2.*e)|(eCS.*)", Qt::CaseInsensitive), "OS2eCS" },
     { QRegExp( "OS[/|!-]{,1}2",             Qt::CaseInsensitive), "OS2" },
+    { QRegExp( "eComS.*",                   Qt::CaseInsensitive), "OS2eCS" },
 
     /* Other: Must come before Ubuntu/Maverick and before Linux??? */
     { QRegExp("QN", Qt::CaseInsensitive), "QNX" },
