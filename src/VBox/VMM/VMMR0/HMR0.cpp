@@ -1470,12 +1470,13 @@ VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
         int rc = hmR0DisableCpu(idCpu);
         AssertRCReturn(rc, rc);
         Assert(!pCpu->fConfigured);
+
+        /* For obtaining a non-zero ASID/VPID on next re-entry. */
+        pVCpu->hm.s.idLastCpu = NIL_RTCPUID;
     }
 
-    /* Reset these to force a TLB flush for the next entry. */
-    pVCpu->hm.s.idLastCpu    = NIL_RTCPUID;
+    /* Clear it while leaving HM context, hmPokeCpuForTlbFlush() relies on this. */
     pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     /* Clear the VCPU <-> host CPU mapping as we've left HM context. */
     ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
