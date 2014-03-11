@@ -36,8 +36,6 @@
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
-/* Warning!!! Temporary setting of explicit TLB flush for test build. */
-# define HMVMX_ALWAYS_FLUSH_TLB
 #ifdef DEBUG_ramshankar
 # define HMVMX_SAVE_FULL_GUEST_STATE
 # define HMVMX_SYNC_FULL_GUEST_STATE
@@ -45,6 +43,7 @@
 # define HMVMX_ALWAYS_TRAP_ALL_XCPTS
 # define HMVMX_ALWAYS_TRAP_PF
 # define HMVMX_ALWAYS_SWAP_FPU_STATE
+# define HMVMX_ALWAYS_FLUSH_TLB
 #endif
 
 
