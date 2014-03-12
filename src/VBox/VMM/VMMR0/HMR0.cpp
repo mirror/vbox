@@ -1007,8 +1007,10 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
          */
         rc = SUPR0EnableVTx(true /* fEnable */);
         if (RT_SUCCESS(rc))
+        {
             /* If the host provides a VT-x init API, then we'll rely on that for global init. */
             g_HvmR0.fGlobalInit = pVM->hm.s.fGlobalInit = true;
+        }
         else
             AssertMsgFailed(("hmR0EnableAllCpuOnce/SUPR0EnableVTx: rc=%Rrc\n", rc));
     }
@@ -1059,8 +1061,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
  */
 VMMR0_INT_DECL(int) HMR0EnableAllCpus(PVM pVM)
 {
-    /* Make sure we don't touch HM after we've disabled HM in
-       preparation of a suspend. */
+    /* Make sure we don't touch HM after we've disabled HM in preparation of a suspend. */
     if (ASMAtomicReadBool(&g_HvmR0.fSuspended))
         return VERR_HM_SUSPEND_PENDING;
 
@@ -1329,8 +1330,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
     Log(("HMR0SetupVM: %p\n", pVM));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* Make sure we don't touch HM after we've disabled HM in
-       preparation of a suspend. */
+    /* Make sure we don't touch HM after we've disabled HM in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
 
     /* On first entry we'll sync everything. */
@@ -1390,7 +1390,7 @@ VMMR0_INT_DECL(int) HMR0EnterCpu(PVMCPU pVCpu)
     if (!pCpu->fConfigured)
         rc = hmR0EnableCpu(pVCpu->CTX_SUFF(pVM), idCpu);
 
-    /* Reload host-context (back from ring-3/migrated CPUs), reload host context & shared bits. */
+    /* Reload host-state (back from ring-3/migrated CPUs) and shared guest/host bits. */
     HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE);
     pVCpu->hm.s.idEnteredCpu = idCpu;
     return rc;
@@ -1429,7 +1429,7 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
     rc = g_HvmR0.pfnEnterSession(pVM, pVCpu, pCpu);
     AssertMsgRCReturn(rc, ("pfnEnterSession failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
 
-    /* Load the host as we may be resuming code after a longjmp and quite
+    /* Load the host-state as we may be resuming code after a longjmp and quite
        possibly now be scheduled on a different CPU. */
     rc = g_HvmR0.pfnSaveHostState(pVM, pVCpu);
     AssertMsgRCReturn(rc, ("pfnSaveHostState failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
@@ -1439,8 +1439,7 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
         PGMRZDynMapReleaseAutoSet(pVCpu);
 #endif
 
-    /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness
-       and ring-3 calls. */
+    /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
     if (RT_FAILURE(rc))
         pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
     return rc;
@@ -1894,12 +1893,10 @@ VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *psz
 
 # if HC_ARCH_BITS == 64
     uint64_t    u32Base  = X86DESC64_BASE(pDesc);
-
     Log(("%s %04x - %RX64 %RX64 - base=%RX64 limit=%08x dpl=%d %s\n", pszMsg,
          Sel, pDesc->au64[0], pDesc->au64[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
 # else
     uint32_t    u32Base  = X86DESC_BASE(pDesc);
-
     Log(("%s %04x - %08x %08x - base=%08x limit=%08x dpl=%d %s\n", pszMsg,
          Sel, pDesc->au32[0], pDesc->au32[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
 # endif
@@ -1925,28 +1922,28 @@ VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         const char *pszSet; const char *pszClear; uint32_t fFlag;
     } const s_aFlags[] =
     {
-        { "vip",NULL, X86_EFL_VIP },
-        { "vif",NULL, X86_EFL_VIF },
-        { "ac", NULL, X86_EFL_AC },
-        { "vm", NULL, X86_EFL_VM },
-        { "rf", NULL, X86_EFL_RF },
-        { "nt", NULL, X86_EFL_NT },
-        { "ov", "nv", X86_EFL_OF },
-        { "dn", "up", X86_EFL_DF },
-        { "ei", "di", X86_EFL_IF },
-        { "tf", NULL, X86_EFL_TF },
-        { "nt", "pl", X86_EFL_SF },
-        { "nz", "zr", X86_EFL_ZF },
-        { "ac", "na", X86_EFL_AF },
-        { "po", "pe", X86_EFL_PF },
-        { "cy", "nc", X86_EFL_CF },
+        { "vip", NULL, X86_EFL_VIP },
+        { "vif", NULL, X86_EFL_VIF },
+        { "ac",  NULL, X86_EFL_AC },
+        { "vm",  NULL, X86_EFL_VM },
+        { "rf",  NULL, X86_EFL_RF },
+        { "nt",  NULL, X86_EFL_NT },
+        { "ov",  "nv", X86_EFL_OF },
+        { "dn",  "up", X86_EFL_DF },
+        { "ei",  "di", X86_EFL_IF },
+        { "tf",  NULL, X86_EFL_TF },
+        { "nt",  "pl", X86_EFL_SF },
+        { "nz",  "zr", X86_EFL_ZF },
+        { "ac",  "na", X86_EFL_AF },
+        { "po",  "pe", X86_EFL_PF },
+        { "cy",  "nc", X86_EFL_CF },
     };
     char szEFlags[80];
     char *psz = szEFlags;
-    uint32_t efl = pCtx->eflags.u32;
+    uint32_t uEFlags = pCtx->eflags.u32;
     for (unsigned i = 0; i < RT_ELEMENTS(s_aFlags); i++)
     {
-        const char *pszAdd = s_aFlags[i].fFlag & efl ? s_aFlags[i].pszSet : s_aFlags[i].pszClear;
+        const char *pszAdd = s_aFlags[i].fFlag & uEFlags ? s_aFlags[i].pszSet : s_aFlags[i].pszClear;
         if (pszAdd)
         {
             strcpy(psz, pszAdd);
@@ -1984,7 +1981,7 @@ VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
              pCtx->rax, pCtx->rbx, pCtx->rcx, pCtx->rdx, pCtx->rsi, pCtx->rdi,
              pCtx->r8, pCtx->r9, pCtx->r10, pCtx->r11, pCtx->r12, pCtx->r13,
              pCtx->r14, pCtx->r15,
-             pCtx->rip, pCtx->rsp, pCtx->rbp, X86_EFL_GET_IOPL(efl), 31, szEFlags,
+             pCtx->rip, pCtx->rsp, pCtx->rbp, X86_EFL_GET_IOPL(uEFlags), 31, szEFlags,
              pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u,
              pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u,
              pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u,
@@ -1994,7 +1991,7 @@ VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
              pCtx->cr0,  pCtx->cr2, pCtx->cr3,  pCtx->cr4,
              pCtx->dr[0],  pCtx->dr[1], pCtx->dr[2],  pCtx->dr[3],
              pCtx->dr[4],  pCtx->dr[5], pCtx->dr[6],  pCtx->dr[7],
-             pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, efl,
+             pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, uEFlags,
              pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
              pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
              pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp));
@@ -2014,14 +2011,14 @@ VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
              "SysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
              ,
              pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
-             pCtx->eip, pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(efl), 31, szEFlags,
+             pCtx->eip, pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(uEFlags), 31, szEFlags,
              pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u, pCtx->dr[0],  pCtx->dr[1],
              pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u, pCtx->dr[2],  pCtx->dr[3],
              pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u, pCtx->dr[4],  pCtx->dr[5],
              pCtx->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u, pCtx->dr[6],  pCtx->dr[7],
              pCtx->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u, pCtx->cr0,  pCtx->cr2,
              pCtx->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u, pCtx->cr3,  pCtx->cr4,
-             pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, efl,
+             pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, uEFlags,
              pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
              pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
              pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp));
@@ -2035,7 +2032,6 @@ VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pCtx->fpu.FOP, pCtx->fpu.FPUIP, pCtx->fpu.CS, pCtx->fpu.Rsrvd1,
         pCtx->fpu.FPUDP, pCtx->fpu.DS, pCtx->fpu.Rsrvd2,
         pCtx->fpu.MXCSR, pCtx->fpu.MXCSR_MASK));
-
 
     Log(("MSR:\n"
         "EFER         =%016RX64\n"
@@ -2052,7 +2048,6 @@ VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pCtx->msrLSTAR,
         pCtx->msrSFMASK,
         pCtx->msrKERNELGSBASE));
-
 }
 
 #endif /* VBOX_STRICT */
