@@ -292,7 +292,8 @@ typedef struct VGAState {
 # if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI))
     /** LUN\#0: VBVA callbacks interface */
     PDMIDISPLAYVBVACALLBACKS    IVBVACallbacks;
-# elif HC_ARCH_BITS == 32
+# endif
+# if HC_ARCH_BITS == 32
     uint32_t                    Padding0;
 # endif
     /** Pointer to base interface of the driver. */
