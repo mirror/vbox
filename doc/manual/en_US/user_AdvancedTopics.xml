@@ -2301,7 +2301,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
         <glossentry>
           <glossterm><computeroutput>Multiscreen</computeroutput></glossterm>
           <glossdef>
-            <para>Don't show the <emphasis>Multiscreen</emphasis> menu item in this menu (only visible in fullscreen/seamless mode).</para>
+            <para>Don't show the <emphasis>Multiscreen</emphasis> menu item in this menu (only visible in full screen / seamless mode).</para>
           </glossdef>
         </glossentry>
       </glosslist>
@@ -2597,7 +2597,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
         <glossentry>
           <glossterm><computeroutput>Fullscreen</computeroutput></glossterm>
           <glossdef>
-            <para>Don't allow to switch the VM into fullscreen mode.</para>
+            <para>Don't allow to switch the VM into full screen mode.</para>
           </glossdef>
         </glossentry>
 
@@ -2707,7 +2707,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
               <row>
                 <entry><computeroutput>FullscreenMode</computeroutput></entry>
                 <entry>F</entry>
-                <entry>switch the VM into fullscreen</entry>
+                <entry>switch the VM into full screen</entry>
               </row>
               <row>
                 <entry><computeroutput>SeamlessMode</computeroutput></entry>
@@ -2732,7 +2732,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
               <row>
                 <entry><computeroutput>PopupMenu</computeroutput></entry>
                 <entry>Home</entry>
-                <entry>show popup menu in fullscreen / seaml. mode</entry>
+                <entry>show popup menu in full screen / seaml. mode</entry>
               </row>
               <row>
                 <entry><computeroutput>SettingsDialog</computeroutput></entry>
@@ -2763,7 +2763,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           </tgroup>
         </table>
 
-        <para>To disable the fullscreen mode as well as the seamless mode, use the following command:
+        <para>To disable the full screen mode as well as the seamless mode, use the following command:
           <screen>VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=None,SeamlessMode=None"</screen>
         </para>
 
