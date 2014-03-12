@@ -1697,7 +1697,7 @@ VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pf
 {
     NOREF(pVM);
 
-    Assert(!(ASMGetFlags() & X86_EFL_IF) || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     *pfVTxDisabled = false;
 
@@ -1761,7 +1761,7 @@ VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pf
  */
 VMMR0_INT_DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
 {
-    Assert(!(ASMGetFlags() & X86_EFL_IF));
+    Assert(!ASMIntAreEnabled());
 
     if (!fVTxDisabled)
         return;         /* nothing to do */
