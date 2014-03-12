@@ -427,7 +427,7 @@ typedef DECLCALLBACKPTR(bool, PFNCR_FRAMEBUFFER_ENTRIES_VISITOR_CB)(HCR_FRAMEBUF
 bool CrFbHas3DData(HCR_FRAMEBUFFER hFb);
 void CrFbVisitCreatedEntries(HCR_FRAMEBUFFER hFb, PFNCR_FRAMEBUFFER_ENTRIES_VISITOR_CB pfnVisitorCb, void *pvContext);
 int CrFbResize(HCR_FRAMEBUFFER hFb, const struct VBVAINFOSCREEN * pScreen, void *pvVRAM);
-int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, uint32_t cRects, const RTRECT *pPrects, CR_BLITTER_IMG *pImg);
+int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pPrects, CR_BLITTER_IMG *pImg);
 bool CrFbIsEnabled(HCR_FRAMEBUFFER hFb);
 int CrFbEntryCreateForTexId(HCR_FRAMEBUFFER hFb, GLuint idTex, uint32_t fFlags, HCR_FRAMEBUFFER_ENTRY *phEntry);
 int CrFbEntryCreateForTexData(HCR_FRAMEBUFFER hFb, struct CR_TEXDATA *pTex, uint32_t fFlags, HCR_FRAMEBUFFER_ENTRY *phEntry);

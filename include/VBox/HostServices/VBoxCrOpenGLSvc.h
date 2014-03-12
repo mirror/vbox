@@ -32,6 +32,7 @@
 #include <VBox/VBoxGuest2.h>
 #include <VBox/hgcmsvc.h>
 #include <VBox/VBoxVideo.h>
+#include <VBox/VBoxVideoHost3D.h>
 
 /* crOpenGL host functions */
 #define SHCRGL_HOST_FN_SET_CONSOLE (1)
@@ -44,11 +45,11 @@
 #endif
 #define SHCRGL_HOST_FN_VIEWPORT_CHANGED (15)
 #define SHCRGL_HOST_FN_SET_OUTPUT_REDIRECT (20)
-#define SHCRGL_HOST_FN_CRCMD_NOTIFY_CMDS   (21)
 #define SHCRGL_HOST_FN_DEV_RESIZE          (22)
 #define SHCRGL_HOST_FN_VIEWPORT_CHANGED2 (23)
 #define SHCRGL_HOST_FN_TAKE_SCREENSHOT (24)
 #define SHCRGL_HOST_FN_WINDOWS_SHOW (25)
+#define SHCRGL_HOST_FN_CTL          (26)
 /* crOpenGL guest functions */
 #define SHCRGL_GUEST_FN_WRITE       (2)
 #define SHCRGL_GUEST_FN_READ        (3)

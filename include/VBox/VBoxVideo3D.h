@@ -141,36 +141,4 @@ struct VBOXTLSREFDATA_DUMMY
 #define VBOX3D_NOTIFY_EVENT_TYPE_TEST_FUNCTIONAL 3
 
 
-/* interface between the VGA device and 3D Server Backend
- * VGA device and 3D backend work together in processing the VBVA-based ring buffer commands comming from guest.
- * With this interaction VGA device acts like a client, while 3D backend acts as a server.
- * VGA device can process some commands itself, while some of them are delegated to the 3D backend.
- *
- * */
-/* client handle, passed to client callbacks (see below) */
-typedef struct VBOXVDMAHOST *HVBOXCRCMDCLT;
-
-
-typedef struct VBOXCMDVBVA_HDR *PVBOXCMDVBVA_HDR;
-
-/* server queries client for the next command,
- * the obtained command must be returned to the client right after it gets processed,
- * the next PFNVBOXCRCMD_CLT_CMDGET call completes the previously submitted command,
- * Must not be called from the EMT thread.*/
-typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_CLT_CMDGET)(HVBOXCRCMDCLT hClt, PVBOXCMDVBVA_HDR *ppNextCmd, uint32_t *pcbNextCmd);
-
-struct VBVAINFOSCREEN;
-/* server queries for display mode.*/
-typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_CLT_DMGET)(HVBOXCRCMDCLT hClt, uint32_t idScreen, struct VBVAINFOSCREEN *pScreen, void **ppvVram);
-
-/* Client callbacks (i.e. those client exposes to the server) */
-typedef struct VBOXCRCMD_CLTINFO
-{
-    HVBOXCRCMDCLT hClient;
-    PFNVBOXCRCMD_CLT_CMDGET pfnCmdGet;
-    PFNVBOXCRCMD_CLT_DMGET pfnDmGet;
-} VBOXCRCMD_CLTINFO;
-
-
-
 #endif /* #ifndef ___VBox_VBoxVideo3D_h */

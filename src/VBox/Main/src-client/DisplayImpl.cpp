@@ -4303,7 +4303,7 @@ void Display::handleCrHgsmiControlCompletion(int32_t result, uint32_t u32Functio
 
 void Display::handleCrHgsmiCommandProcess(PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd)
 {
-    int rc = VERR_INVALID_FUNCTION;
+    int rc = VERR_NOT_SUPPORTED;
     VBOXHGCMSVCPARM parm;
     parm.type = VBOX_HGCM_SVC_PARM_PTR;
     parm.u.pointer.addr = pCmd;
@@ -4331,7 +4331,7 @@ void Display::handleCrHgsmiCommandProcess(PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32
 
 void Display::handleCrHgsmiControlProcess(PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32_t cbCtl)
 {
-    int rc = VERR_INVALID_FUNCTION;
+    int rc = VERR_NOT_SUPPORTED;
     VBOXHGCMSVCPARM parm;
     parm.type = VBOX_HGCM_SVC_PARM_PTR;
     parm.u.pointer.addr = pCtl;
@@ -4382,6 +4382,48 @@ DECLCALLBACK(void) Display::displayCrHgsmiControlCompletion(int32_t result, uint
     pDisplay->handleCrHgsmiControlCompletion(result, u32Function, pParam);
 }
 #endif
+
+DECLCALLBACK(void)  Display::displayCrHgcmCtlSubmitCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)
+{
+    VBOXCRCMDCTL *pCmd = (VBOXCRCMDCTL*)pParam->u.pointer.addr;
+    if (pCmd->pfnInternal)
+        ((PFNCRCTLCOMPLETION)pCmd->pfnInternal)(pCmd, pParam->u.pointer.size, result, pvContext);
+}
+
+int  Display::handleCrHgcmCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
+                                        PFNCRCTLCOMPLETION pfnCompletion,
+                                        void *pvCompletion)
+{
+    VMMDev *pVMMDev = mParent->getVMMDev();
+    if (!pVMMDev)
+    {
+        AssertMsgFailed(("no vmmdev\n"));
+        return VERR_INVALID_STATE;
+    }
+
+    Assert(mhCrOglSvc);
+    VBOXHGCMSVCPARM parm;
+    parm.type = VBOX_HGCM_SVC_PARM_PTR;
+    parm.u.pointer.addr = pCmd;
+    parm.u.pointer.size = cbCmd;
+
+    pCmd->pfnInternal = (void(*)())pfnCompletion;
+    int rc = pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_CTL, &parm, displayCrHgcmCtlSubmitCompletion, pvCompletion);
+    if (!RT_SUCCESS(rc))
+        AssertMsgFailed(("hgcmHostFastCallAsync failed rc %n", rc));
+
+    return rc;
+}
+
+DECLCALLBACK(int)  Display::displayCrHgcmCtlSubmit(PPDMIDISPLAYCONNECTOR pInterface,
+                                    struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
+                                    PFNCRCTLCOMPLETION pfnCompletion,
+                                    void *pvCompletion)
+{
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+    return pThis->handleCrHgcmCtlSubmit(pCmd, cbCmd, pfnCompletion, pvCompletion);
+}
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
 DECLCALLBACK(void)  Display::displayCrAsyncCmdCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)
@@ -5006,6 +5048,7 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IConnector.pfnCrHgsmiCommandProcess = Display::displayCrHgsmiCommandProcess;
     pThis->IConnector.pfnCrHgsmiControlProcess = Display::displayCrHgsmiControlProcess;
 #endif
+    pThis->IConnector.pfnCrHgcmCtlSubmit       = Display::displayCrHgcmCtlSubmit;
 #ifdef VBOX_WITH_HGSMI
     pThis->IConnector.pfnVBVAEnable            = Display::displayVBVAEnable;
     pThis->IConnector.pfnVBVADisable           = Display::displayVBVADisable;

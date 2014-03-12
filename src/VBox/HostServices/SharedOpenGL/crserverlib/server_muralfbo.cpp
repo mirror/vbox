@@ -686,7 +686,8 @@ DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, uint32_t width, ui
             || pScreen->u32LineSize != pitch
             || pScreen->u16BitsPerPixel != 32)
     {
-        RTRECT Rect;
+        RTRECT SrcRect;
+        RTRECT DstRect;
 
         pScreenshot->Img.cbData = pScreen->u32LineSize * pScreen->u32Height;
         if (!pvBuffer)
@@ -710,11 +711,15 @@ DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, uint32_t width, ui
         pScreenshot->Img.height = height;
         pScreenshot->Img.bpp = 32;
         pScreenshot->Img.pitch = pitch;
-        Rect.xLeft = 0;
-        Rect.yTop = 0;
-        Rect.xRight = pScreen->u32Width;
-        Rect.yBottom = pScreen->u32Height;
-        int rc = CrFbBltGetContents(hFb, &Rect, 1, &Rect, &pScreenshot->Img);
+        SrcRect.xLeft = 0;
+        SrcRect.yTop = 0;
+        SrcRect.xRight = pScreen->u32Width;
+        SrcRect.yBottom = pScreen->u32Height;
+        DstRect.xLeft = 0;
+        DstRect.yTop = 0;
+        DstRect.xRight = width;
+        DstRect.yBottom = height;
+        int rc = CrFbBltGetContents(hFb, &SrcRect, &DstRect, 1, &DstRect, &pScreenshot->Img);
         if (!RT_SUCCESS(rc))
         {
             WARN(("CrFbBltGetContents failed %d", rc));
