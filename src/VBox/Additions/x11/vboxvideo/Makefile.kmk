@@ -377,7 +377,7 @@ ifdef VBOX_USE_SYSTEM_XORG_HEADERS
         /usr/include/libdrm \
         /usr/include/xorg \
         /usr/include/pixman-1
- vboxvideo_drv_system_SOURCES := $(vboxvideo_drv_15_SOURCES)
+ vboxvideo_drv_system_SOURCES := $(vboxvideo_drv_17_SOURCES)
 endif
 
 
