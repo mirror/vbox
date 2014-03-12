@@ -73,8 +73,7 @@
 
       <listitem>
         <para>VMM: experimental support for SSE 4.1 / SSE 4.2 passthrough, see
-          <xref linkend="sse412passthrough" xreflabel="here"/> how to
-          enable it (bug #8651)</para>
+          the user manual how to enable it (bug #8651)</para>
       </listitem>
 
       <listitem>
@@ -83,7 +82,7 @@
 
       <listitem>
         <para>GUI: experimental HID LEDs synchronization for Windows hosts, see
-          <xref linkend="hidledssync" xreflabel="here"/></para>
+          the user manual</para>
       </listitem>
 
       <listitem>
