@@ -215,6 +215,7 @@ public:
 <xsl:template name="translatepublictype">
     <xsl:param name="type"/>
     <xsl:param name="dir"/>
+    <xsl:param name="mod"/>
 
     <!-- get C++ glue type from IDL type from table in typemap-shared.inc.xsl -->
     <xsl:variable name="gluetypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@gluename"/>
@@ -249,11 +250,15 @@ public:
             </xsl:call-template>
         </xsl:otherwise>
     </xsl:choose>
+    <xsl:if test="$mod='ptr'">
+        <xsl:text> *</xsl:text>
+    </xsl:if>
 </xsl:template>
 
 <xsl:template name="translatewrappedtype">
     <xsl:param name="type"/>
     <xsl:param name="dir"/>
+    <xsl:param name="mod"/>
     <xsl:param name="safearray"/>
 
     <!-- get C++ wrap type from IDL type from table in typemap-shared.inc.xsl -->
@@ -297,18 +302,22 @@ public:
             </xsl:call-template>
         </xsl:otherwise>
     </xsl:choose>
+    <xsl:if test="$mod='ptr'">
+        <xsl:text> *</xsl:text>
+    </xsl:if>
 </xsl:template>
 
 <xsl:template name="translatefmtspectype">
     <xsl:param name="type"/>
     <xsl:param name="dir"/>
-    <xsl:param name="safearray"/>
     <xsl:param name="mod"/>
+    <xsl:param name="safearray"/>
+    <xsl:param name="isref"/>
 
     <!-- get C format string for IDL type from table in typemap-shared.inc.xsl -->
     <xsl:variable name="wrapfmt" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@gluefmt"/>
     <xsl:choose>
-        <xsl:when test="$mod='ref' and $dir!='in'">
+        <xsl:when test="$mod='ptr' or ($isref='yes' and $dir!='in')">
             <xsl:text>%p</xsl:text>
         </xsl:when>
         <xsl:when test="$safearray='yes'">
@@ -334,6 +343,22 @@ public:
     </xsl:choose>
 </xsl:template>
 
+<!-- - - - - - - - - - - - - - - - - - - - - - -
+  templates for handling entire interfaces and their contents
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
+<xsl:template name="emitInterface">
+    <xsl:param name="iface"/>
+
+    <xsl:call-template name="emitHeader">
+        <xsl:with-param name="iface" select="$iface"/>
+    </xsl:call-template>
+
+    <xsl:call-template name="emitCode">
+        <xsl:with-param name="iface" select="$iface"/>
+    </xsl:call-template>
+</xsl:template>
+
 <xsl:template match="attribute/@type | param/@type" mode="public">
     <xsl:param name="dir"/>
 
@@ -341,6 +366,7 @@ public:
         <xsl:call-template name="translatepublictype">
             <xsl:with-param name="type" select="."/>
             <xsl:with-param name="dir" select="$dir"/>
+            <xsl:with-param name="mod" select="../@mod"/>
         </xsl:call-template>
     </xsl:variable>
 
@@ -388,6 +414,7 @@ public:
         <xsl:call-template name="translatewrappedtype">
             <xsl:with-param name="type" select="."/>
             <xsl:with-param name="dir" select="$dir"/>
+            <xsl:with-param name="mod" select="../@mod"/>
             <xsl:with-param name="safearray" select="../@safearray"/>
         </xsl:call-template>
     </xsl:variable>
@@ -446,9 +473,9 @@ public:
 
 <xsl:template match="attribute/@type | param/@type" mode="logparamtext">
     <xsl:param name="dir"/>
-    <xsl:param name="mod"/>
+    <xsl:param name="isref"/>
 
-    <xsl:if test="$mod!='ref' and ($dir='out' or $dir='ret')">
+    <xsl:if test="$isref!='yes' and ($dir='out' or $dir='ret')">
         <xsl:text>*</xsl:text>
     </xsl:if>
     <xsl:text>a</xsl:text>
@@ -459,23 +486,24 @@ public:
     <xsl:call-template name="translatefmtspectype">
         <xsl:with-param name="type" select="."/>
         <xsl:with-param name="dir" select="$dir"/>
+        <xsl:with-param name="mod" select="../@mod"/>
         <xsl:with-param name="safearray" select="../@safearray"/>
-        <xsl:with-param name="mod" select="$mod"/>
+        <xsl:with-param name="isref" select="$isref"/>
     </xsl:call-template>
 </xsl:template>
 
 <xsl:template match="attribute/@type | param/@type" mode="logparamval">
     <xsl:param name="dir"/>
-    <xsl:param name="mod"/>
+    <xsl:param name="isref"/>
 
     <xsl:choose>
-        <xsl:when test="../@safearray='yes' and $mod!='ref'">
+        <xsl:when test="../@safearray='yes' and $isref!='yes'">
             <xsl:text>ComSafeArraySize(</xsl:text>
-            <xsl:if test="$mod!='ref' and $dir!='in'">
+            <xsl:if test="$isref!='yes' and $dir!='in'">
                 <xsl:text>*</xsl:text>
             </xsl:if>
         </xsl:when>
-        <xsl:when test="$mod!='ref' and $dir!='in'">
+        <xsl:when test="$isref!='yes' and $dir!='in'">
             <xsl:text>*</xsl:text>
         </xsl:when>
     </xsl:choose>
@@ -484,7 +512,7 @@ public:
         <xsl:with-param name="str" select="../@name"/>
     </xsl:call-template>
     <xsl:choose>
-        <xsl:when test="../@safearray='yes' and $mod!='ref'">
+        <xsl:when test="../@safearray='yes' and $isref!='yes'">
             <xsl:text>)</xsl:text>
         </xsl:when>
     </xsl:choose>
@@ -497,6 +525,7 @@ public:
         <xsl:call-template name="translatepublictype">
             <xsl:with-param name="type" select="."/>
             <xsl:with-param name="dir" select="$dir"/>
+            <xsl:with-param name="mod" select="../@mod"/>
         </xsl:call-template>
     </xsl:variable>
     <xsl:variable name="type" select="."/>
@@ -744,13 +773,13 @@ public:
     LogRelFlow(("{%p} %s: enter </xsl:text>
     <xsl:apply-templates select="@type" mode="logparamtext">
         <xsl:with-param name="dir" select="'out'"/>
-        <xsl:with-param name="mod" select="'ref'"/>
+        <xsl:with-param name="isref" select="'yes'"/>
     </xsl:apply-templates>
     <xsl:text>\n", this, </xsl:text>
     <xsl:value-of select="concat('&quot;', $topclass, '::get', $attrbasename, '&quot;, ')"/>
     <xsl:apply-templates select="@type" mode="logparamval">
         <xsl:with-param name="dir" select="'out'"/>
-        <xsl:with-param name="mod" select="'ref'"/>
+        <xsl:with-param name="isref" select="'yes'"/>
     </xsl:apply-templates>
     <xsl:text>));
 
@@ -796,11 +825,13 @@ public:
     LogRelFlow(("{%p} %s: leave </xsl:text>
     <xsl:apply-templates select="@type" mode="logparamtext">
         <xsl:with-param name="dir" select="'out'"/>
+        <xsl:with-param name="isref" select="''"/>
     </xsl:apply-templates>
     <xsl:text> hrc=%Rhrc\n", this, </xsl:text>
     <xsl:value-of select="concat('&quot;', $topclass, '::get', $attrbasename, '&quot;, ')"/>
     <xsl:apply-templates select="@type" mode="logparamval">
         <xsl:with-param name="dir" select="'out'"/>
+        <xsl:with-param name="isref" select="''"/>
     </xsl:apply-templates>
     <xsl:text>, hrc));
     return hrc;
@@ -818,11 +849,13 @@ public:
     LogRelFlow(("{%p} %s: enter </xsl:text>
         <xsl:apply-templates select="@type" mode="logparamtext">
             <xsl:with-param name="dir" select="'in'"/>
+            <xsl:with-param name="isref" select="''"/>
         </xsl:apply-templates>
         <xsl:text>\n", this, </xsl:text>
         <xsl:value-of select="concat('&quot;', $topclass, '::set', $attrbasename, '&quot;, ')"/>
         <xsl:apply-templates select="@type" mode="logparamval">
             <xsl:with-param name="dir" select="'in'"/>
+            <xsl:with-param name="isref" select="''"/>
         </xsl:apply-templates>
         <xsl:text>));
 
@@ -1020,7 +1053,7 @@ public:
         <xsl:text> </xsl:text>
         <xsl:apply-templates select="@type" mode="logparamtext">
             <xsl:with-param name="dir" select="@dir"/>
-            <xsl:with-param name="mod" select="'ref'"/>
+            <xsl:with-param name="isref" select="'yes'"/>
         </xsl:apply-templates>
     </xsl:for-each>
     <xsl:text>\n", this</xsl:text>
@@ -1029,7 +1062,7 @@ public:
         <xsl:text>, </xsl:text>
         <xsl:apply-templates select="@type" mode="logparamval">
             <xsl:with-param name="dir" select="@dir"/>
-            <xsl:with-param name="mod" select="'ref'"/>
+            <xsl:with-param name="isref" select="'yes'"/>
         </xsl:apply-templates>
     </xsl:for-each>
     <xsl:text>));
@@ -1100,6 +1133,7 @@ public:
             <xsl:text> </xsl:text>
             <xsl:apply-templates select="@type" mode="logparamtext">
                 <xsl:with-param name="dir" select="@dir"/>
+                <xsl:with-param name="isref" select="''"/>
             </xsl:apply-templates>
         </xsl:if>
     </xsl:for-each>
@@ -1110,6 +1144,7 @@ public:
             <xsl:text>, </xsl:text>
             <xsl:apply-templates select="@type" mode="logparamval">
                 <xsl:with-param name="dir" select="@dir"/>
+                <xsl:with-param name="isref" select="''"/>
             </xsl:apply-templates>
         </xsl:if>
     </xsl:for-each>
@@ -1345,16 +1380,12 @@ private:</xsl:text>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  library match
+  interface match
  - - - - - - - - - - - - - - - - - - - - - - -->
 
 <xsl:template match="interface">
-    <xsl:if test="not(@supportsErrorInfo='no')">
-        <xsl:call-template name="emitHeader">
-            <xsl:with-param name="iface" select="."/>
-        </xsl:call-template>
-
-        <xsl:call-template name="emitCode">
+    <xsl:if test="not(@internal='yes') and not(@supportsErrorInfo='no')">
+        <xsl:call-template name="emitInterface">
             <xsl:with-param name="iface" select="."/>
         </xsl:call-template>
     </xsl:if>
