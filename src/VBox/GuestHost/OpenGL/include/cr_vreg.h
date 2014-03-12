@@ -63,6 +63,20 @@ DECLINLINE(void) VBoxRectScaled(const RTRECT *pRect, float xScale, float yScale,
     *pResult = *pRect;
     VBoxRectScale(pResult, xScale, yScale);
 }
+
+DECLINLINE(void) VBoxRectUnscale(PRTRECT pRect, float xScale, float yScale)
+{
+    pRect->xLeft = CR_FLOAT_RCAST(int32_t, pRect->xLeft / xScale);
+    pRect->yTop = CR_FLOAT_RCAST(int32_t, pRect->yTop / yScale);
+    pRect->xRight = CR_FLOAT_RCAST(int32_t, pRect->xRight / xScale);
+    pRect->yBottom = CR_FLOAT_RCAST(int32_t, pRect->yBottom / yScale);
+}
+
+DECLINLINE(void) VBoxRectUnscaled(const RTRECT *pRect, float xScale, float yScale, PRTRECT pResult)
+{
+    *pResult = *pRect;
+    VBoxRectUnscale(pResult, xScale, yScale);
+}
 #endif
 
 DECLINLINE(void) VBoxRectIntersect(PRTRECT pRect1, const RTRECT * pRect2)

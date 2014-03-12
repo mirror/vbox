@@ -113,48 +113,125 @@ DECLINLINE(void) vboxVBVAExFlush(struct VBVAEXBUFFERCONTEXT *pCtx, PHGSMIGUESTCO
     pCtx->pfnFlush(pCtx, pHGSMICtx, pCtx->pvFlush);
 }
 
-static bool vboxVBVAExInformHost(PVBVAEXBUFFERCONTEXT pCtx,
-                               PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, bool bEnable)
+static int vboxCmdVbvaSubmitHgsmi(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, HGSMIOFFSET offDr)
 {
-    bool bRc = false;
+    VBoxVideoCmnPortWriteUlong(pHGSMICtx->port, offDr);
+    return VINF_SUCCESS;
+}
+#define vboxCmdVbvaSubmit vboxCmdVbvaSubmitHgsmi
 
-#if 0  /* All callers check this */
-    if (ppdev->bHGSMISupported)
-#endif
+static VBOXCMDVBVA_CTL * vboxCmdVbvaCtlCreate(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, uint32_t cbCtl)
+{
+    Assert(cbCtl >= sizeof (VBOXCMDVBVA_CTL));
+    return (VBOXCMDVBVA_CTL*)VBoxSHGSMICommandAlloc(&pHGSMICtx->heapCtx, cbCtl, HGSMI_CH_VBVA, VBVA_CMDVBVA_CTL);
+}
+
+static void vboxCmdVbvaCtlFree(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CTL * pCtl)
+{
+    VBoxSHGSMICommandFree(&pHGSMICtx->heapCtx, pCtl);
+}
+
+static int vboxCmdVbvaCtlSubmitSync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CTL * pCtl)
+{
+    const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepSynch(&pHGSMICtx->heapCtx, pCtl);
+    if (!pHdr)
     {
-        void *p = VBoxHGSMIBufferAlloc(pHGSMICtx,
-                                       sizeof (VBVAENABLE_EX),
-                                       HGSMI_CH_VBVA,
-                                       pCtx->u16EnableOp);
-        if (!p)
-        {
-            LogFunc(("HGSMIHeapAlloc failed\n"));
-        }
-        else
-        {
-            VBVAENABLE_EX *pEnable = (VBVAENABLE_EX *)p;
-
-            pEnable->Base.u32Flags  = bEnable? VBVA_F_ENABLE: VBVA_F_DISABLE;
-            pEnable->Base.u32Offset = pCtx->offVRAMBuffer;
-            pEnable->Base.i32Result = VERR_NOT_SUPPORTED;
-            pEnable->Base.u32Flags |= VBVA_F_ABSOFFSET;
-
-            VBoxHGSMIBufferSubmit(pHGSMICtx, p);
-
-            if (bEnable)
-            {
-                bRc = RT_SUCCESS(pEnable->Base.i32Result);
-            }
-            else
-            {
-                bRc = true;
-            }
-
-            VBoxHGSMIBufferFree(pHGSMICtx, p);
-        }
+        WARN(("VBoxSHGSMICommandPrepSynch returnd NULL"));
+        return VERR_INVALID_PARAMETER;
     }
 
-    return bRc;
+    HGSMIOFFSET offCmd = VBoxSHGSMICommandOffset(&pHGSMICtx->heapCtx, pHdr);
+    if (offCmd == HGSMIOFFSET_VOID)
+    {
+        WARN(("VBoxSHGSMICommandOffset returnd NULL"));
+        VBoxSHGSMICommandCancelSynch(&pHGSMICtx->heapCtx, pHdr);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    int rc = vboxCmdVbvaSubmit(pHGSMICtx, offCmd);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VBoxSHGSMICommandDoneSynch(&pHGSMICtx->heapCtx, pHdr);
+        if (RT_SUCCESS(rc))
+        {
+            rc = pCtl->i32Result;
+            if (!RT_SUCCESS(rc))
+                WARN(("pCtl->i32Result %d", pCtl->i32Result));
+
+            return rc;
+        }
+        else
+            WARN(("VBoxSHGSMICommandDoneSynch returnd %d", rc));
+    }
+    else
+        WARN(("vboxCmdVbvaSubmit returnd %d", rc));
+
+    VBoxSHGSMICommandCancelSynch(&pHGSMICtx->heapCtx, pHdr);
+
+    return rc;
+}
+
+static int vboxCmdVbvaCtlSubmitAsync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CTL * pCtl, PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCompletionIrq, void *pvCompletionIrq)
+{
+    const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepAsynchIrq(&pHGSMICtx->heapCtx, pCtl, pfnCompletionIrq, pvCompletionIrq, VBOXSHGSMI_FLAG_GH_ASYNCH_FORCE);
+    if (!pHdr)
+    {
+        WARN(("VBoxSHGSMICommandPrepAsynchIrq returnd NULL"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    HGSMIOFFSET offCmd = VBoxSHGSMICommandOffset(&pHGSMICtx->heapCtx, pHdr);
+    if (offCmd == HGSMIOFFSET_VOID)
+    {
+        WARN(("VBoxSHGSMICommandOffset returnd NULL"));
+        VBoxSHGSMICommandCancelAsynch(&pHGSMICtx->heapCtx, pHdr);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    int rc = vboxCmdVbvaSubmit(pHGSMICtx, offCmd);
+    if (RT_SUCCESS(rc))
+    {
+        VBoxSHGSMICommandDoneAsynch(&pHGSMICtx->heapCtx, pHdr);
+        return rc;
+    }
+    else
+        WARN(("vboxCmdVbvaSubmit returnd %d", rc));
+
+    VBoxSHGSMICommandCancelAsynch(&pHGSMICtx->heapCtx, pHdr);
+
+    return rc;
+}
+
+static int vboxVBVAExCtlSubmitEnableDisable(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, bool fEnable)
+{
+    VBOXCMDVBVA_CTL_ENABLE *pCtl = (VBOXCMDVBVA_CTL_ENABLE*)vboxCmdVbvaCtlCreate(pHGSMICtx, sizeof (*pCtl));
+    if (!pCtl)
+    {
+        WARN(("vboxCmdVbvaCtlCreate failed"));
+        return VERR_NO_MEMORY;
+    }
+
+    pCtl->Hdr.u32Type = VBOXCMDVBVACTL_TYPE_ENABLE;
+    pCtl->Hdr.i32Result = VERR_NOT_IMPLEMENTED;
+    memset(&pCtl->Enable, 0, sizeof (pCtl->Enable));
+    pCtl->Enable.u32Flags  = fEnable? VBVA_F_ENABLE: VBVA_F_DISABLE;
+    pCtl->Enable.u32Offset = pCtx->offVRAMBuffer;
+    pCtl->Enable.i32Result = VERR_NOT_SUPPORTED;
+    pCtl->Enable.u32Flags |= VBVA_F_ABSOFFSET;
+
+    int rc = vboxCmdVbvaCtlSubmitSync(pHGSMICtx, &pCtl->Hdr);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pCtl->Hdr.i32Result;
+        if (!RT_SUCCESS(rc))
+            WARN(("vboxCmdVbvaCtlSubmitSync Disable failed %d", rc));
+    }
+    else
+        WARN(("vboxCmdVbvaCtlSubmitSync returnd %d", rc));
+
+    vboxCmdVbvaCtlFree(pHGSMICtx, &pCtl->Hdr);
+
+    return rc;
 }
 
 /*
@@ -188,7 +265,7 @@ RTDECL(bool) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx,
         pCtx->pRecord    = NULL;
         pCtx->pVBVA      = pVBVA;
 
-        bRc = vboxVBVAExInformHost(pCtx, pHGSMICtx, true);
+        bRc = vboxVBVAExCtlSubmitEnableDisable(pCtx, pHGSMICtx, true);
     }
 
     if (!bRc)
@@ -208,7 +285,7 @@ RTDECL(void) VBoxVBVAExDisable(PVBVAEXBUFFERCONTEXT pCtx,
     pCtx->pRecord           = NULL;
     pCtx->pVBVA             = NULL;
 
-    vboxVBVAExInformHost(pCtx, pHGSMICtx, false);
+    vboxVBVAExCtlSubmitEnableDisable(pCtx, pHGSMICtx, false);
 
     return;
 }
@@ -538,13 +615,11 @@ RTDECL(void) VBoxVBVAExSetupBufferContext(PVBVAEXBUFFERCONTEXT pCtx,
                                         uint32_t offVRAMBuffer,
                                         uint32_t cbBuffer,
                                         PFNVBVAEXBUFFERFLUSH pfnFlush,
-                                        void *pvFlush,
-                                        uint16_t u16EnableOp)
+                                        void *pvFlush)
 {
     memset(pCtx, 0, RT_OFFSETOF(VBVAEXBUFFERCONTEXT, pVBVA));
     pCtx->offVRAMBuffer = offVRAMBuffer;
     pCtx->cbBuffer      = cbBuffer;
-    pCtx->u16EnableOp   = u16EnableOp;
     pCtx->pfnFlush = pfnFlush;
     pCtx->pvFlush = pvFlush;
 }
@@ -823,7 +898,7 @@ int VBoxCmdVbvaCreate(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, ULONG offBuffe
     if (RT_SUCCESS(rc))
     {
         Assert(pVbva->Vbva.pVBVA);
-        VBoxVBVAExSetupBufferContext(&pVbva->Vbva, offBuffer, cbBuffer, voxCmdVbvaFlushCb, pDevExt, VBVA_CMDVBVA_ENABLE);
+        VBoxVBVAExSetupBufferContext(&pVbva->Vbva, offBuffer, cbBuffer, voxCmdVbvaFlushCb, pDevExt);
     }
     else
     {

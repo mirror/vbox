@@ -3185,8 +3185,48 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCm
     return rc;
 }
 
-static int32_t crVBoxServerCrCmdProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
+static DECLCALLBACK(int) crVBoxCrCmdEnable(HVBOXCRCMDSVR hSvr, VBOXCRCMD_SVRENABLE_INFO *pInfo)
 {
+    cr_server.CrCmdClientInfo = *pInfo;
+    AssertFailed();
+    return VERR_NOT_IMPLEMENTED;
+}
+
+static DECLCALLBACK(int) crVBoxCrCmdDisable(HVBOXCRCMDSVR hSvr)
+{
+    AssertFailed();
+    memset(&cr_server.CrCmdClientInfo, 0, sizeof (cr_server.CrCmdClientInfo));
+    return VERR_NOT_IMPLEMENTED;
+}
+
+static DECLCALLBACK(int) crVBoxCrCmdHostCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, uint32_t cbCmd)
+{
+    AssertFailed();
+    return VERR_NOT_IMPLEMENTED;
+}
+
+static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, uint32_t cbCmd)
+{
+    AssertFailed();
+    return VERR_NOT_IMPLEMENTED;
+}
+
+static DECLCALLBACK(int) crVBoxCrCmdSaveState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM)
+{
+    AssertFailed();
+    return VERR_NOT_IMPLEMENTED;
+}
+
+static DECLCALLBACK(int) crVBoxCrCmdLoadState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    AssertFailed();
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+static DECLCALLBACK(int) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
+{
+    AssertFailed();
     switch (pCmd->u8OpCode)
     {
         case VBOXCMDVBVA_OPTYPE_CRCMD:
@@ -3216,29 +3256,6 @@ static int32_t crVBoxServerCrCmdProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
             pCmd->i8Result = -1;
     }
     return VINF_SUCCESS;
-}
-
-int32_t crVBoxServerCrCmdNotifyCmds()
-{
-    PVBOXCMDVBVA_HDR pCmd = NULL;
-    uint32_t cbCmd;
-
-    for (;;)
-    {
-        int rc = cr_server.CltInfo.pfnCmdGet(cr_server.CltInfo.hClient, &pCmd, &cbCmd);
-        if (rc == VINF_EOF)
-            return VINF_SUCCESS;
-        if (!RT_SUCCESS(rc))
-            return rc;
-
-        rc = crVBoxServerCrCmdProcess(pCmd, cbCmd);
-        if (!RT_SUCCESS(rc))
-            return rc;
-    }
-
-    /* should not be here! */
-    AssertFailed();
-    return VERR_INTERNAL_ERROR;
 }
 
 /* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.
@@ -3593,7 +3610,14 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
             PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP pSetup = (PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP)pCtl;
             g_pvVRamBase = (uint8_t*)pSetup->pvVRamBase;
             g_cbVRam = pSetup->cbVRam;
-            cr_server.CltInfo = *pSetup->pCrCmdClientInfo;
+            pSetup->CrCmdServerInfo.hSvr = NULL;
+            pSetup->CrCmdServerInfo.pfnEnable = crVBoxCrCmdEnable;
+            pSetup->CrCmdServerInfo.pfnDisable = crVBoxCrCmdDisable;
+            pSetup->CrCmdServerInfo.pfnCmd = crVBoxCrCmdCmd;
+            pSetup->CrCmdServerInfo.pfnHostCtl = crVBoxCrCmdHostCtl;
+            pSetup->CrCmdServerInfo.pfnGuestCtl = crVBoxCrCmdGuestCtl;
+            pSetup->CrCmdServerInfo.pfnSaveState = crVBoxCrCmdSaveState;
+            pSetup->CrCmdServerInfo.pfnLoadState = crVBoxCrCmdLoadState;
             rc = VINF_SUCCESS;
             break;
         }

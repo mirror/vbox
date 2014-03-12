@@ -1939,6 +1939,32 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
 
     switch (u16ChannelInfo)
     {
+        case VBVA_CMDVBVA_SUBMIT:
+        {
+            rc = vboxCmdVBVACmdSubmit(pVGAState);
+            break;
+        }
+        case VBVA_CMDVBVA_FLUSH:
+        {
+            rc =vboxCmdVBVACmdFlush(pVGAState);
+            break;
+        }
+        case VBVA_CMDVBVA_CTL:
+        {
+            if (cbBuffer < VBoxSHGSMIBufferHeaderSize() + sizeof (VBOXCMDVBVA_CTL))
+            {
+                Log(("buffer too small\n"));
+#ifdef DEBUG_misha
+                AssertMsgFailed(("buffer too small\n"));
+#endif
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            VBOXCMDVBVA_CTL *pCtl = (VBOXCMDVBVA_CTL*)VBoxSHGSMIBufferData((PVBOXSHGSMIHEADER)pvBuffer);
+            rc = vboxCmdVBVACmdCtl(pVGAState, pCtl, cbBuffer - VBoxSHGSMIBufferHeaderSize());
+            break;
+        }
 #ifdef VBOX_WITH_VDMA
         case VBVA_VDMA_CMD:
         {
@@ -2252,54 +2278,6 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             pCaps->rc = VINF_SUCCESS;
         } break;
 #endif
-
-        case VBVA_CMDVBVA_ENABLE:
-        {
-            if (cbBuffer < sizeof (VBVAENABLE))
-            {
-                rc = VERR_INVALID_PARAMETER;
-                break;
-            }
-
-            VBVAENABLE *pEnable = (VBVAENABLE *)pvBuffer;
-
-            if ((pEnable->u32Flags & (VBVA_F_ENABLE | VBVA_F_DISABLE)) == VBVA_F_ENABLE)
-            {
-                uint32_t u32Offset = pEnable->u32Offset;
-                VBVABUFFER *pVBVA = (VBVABUFFER *)HGSMIOffsetToPointerHost (pIns, u32Offset);
-
-                if (pVBVA)
-                    rc = vboxCmdVBVAEnable(pVGAState, pVBVA);
-                else
-                {
-                    LogRel(("Invalid VBVABUFFER offset 0x%x!!!\n",
-                         pEnable->u32Offset));
-                    rc = VERR_INVALID_PARAMETER;
-                }
-            }
-            else if ((pEnable->u32Flags & (VBVA_F_ENABLE | VBVA_F_DISABLE)) == VBVA_F_DISABLE)
-            {
-                rc = vboxCmdVBVADisable(pVGAState);
-            }
-            else
-            {
-                LogRel(("Invalid VBVA_ENABLE flags 0x%x!!!\n", pEnable->u32Flags));
-                rc = VERR_INVALID_PARAMETER;
-            }
-
-            pEnable->i32Result = rc;
-            break;
-        }
-        case VBVA_CMDVBVA_SUBMIT:
-        {
-            rc = vboxCmdVBVACmdSubmit(pVGAState);
-            break;
-        }
-        case VBVA_CMDVBVA_FLUSH:
-        {
-            rc =vboxCmdVBVACmdFlush(pVGAState);
-            break;
-        }
         case VBVA_SCANLINE_CFG:
         {
             if (cbBuffer < sizeof (VBVASCANLINECFG))

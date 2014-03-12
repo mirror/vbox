@@ -1352,7 +1352,7 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
 
             switch (chInfo)
             {
-                case VBVA_VBVACMD_CTL:
+                case VBVA_CMDVBVA_CTL:
                 {
                     int rc = VBoxSHGSMICommandProcessCompletion (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, (VBOXSHGSMIHEADER*)pvCmd, TRUE /*bool bIrq*/ , &CtlList);
                     AssertRC(rc);

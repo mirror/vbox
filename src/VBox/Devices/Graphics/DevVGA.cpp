@@ -5498,6 +5498,9 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     char           *pchEnd;
     LogFlow(("vgaReset\n"));
 
+    if (pThis->pVdma)
+        vboxVDMAReset(pThis->pVdma);
+
 #ifdef VBOX_WITH_HGSMI
     VBVAReset(pThis);
 #endif /* VBOX_WITH_HGSMI */
@@ -5948,6 +5951,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->IVBVACallbacks.pfnCrHgsmiControlCompleteAsync = vboxVDMACrHgsmiControlCompleteAsync;
 # endif
 #endif
+    pThis->IVBVACallbacks.pfnCrCtlSubmit = vboxCmdVBVACmdHostCtl;
 
     /*
      * We use our own critical section to avoid unncessary pointer indirections

@@ -33,6 +33,7 @@
 #include <VBox/VBoxVideo.h>
 #include <VBox/Hardware/VBoxVideoVBE.h>
 #include <VBox/VBoxVideo3D.h>
+#include <VBox/VBoxVideoHost3D.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -406,8 +407,6 @@ typedef struct {
     uint32_t fBlitterMode;
     CR_BLITTER Blitter;
 
-    VBOXCRCMD_CLTINFO CltInfo;
-
     CR_SERVER_RPW RpwWorker;
 
     /** configuration options */
@@ -484,6 +483,8 @@ typedef struct {
     PFNCRSERVERNOTIFYEVENT pfnNotifyEventCB;
 
     SPUDispatchTable TmpCtxDispatch;
+
+    VBOXCRCMD_SVRENABLE_INFO CrCmdClientInfo;
 
 #ifdef VBOX_WITH_CRSERVER_DUMPER
     CR_RECORDER Recorder;
@@ -565,7 +566,6 @@ extern DECLEXPORT(void) crServerVBoxSetNotifyEventCB(PFNCRSERVERNOTIFYEVENT pfnC
 extern DECLEXPORT(int32_t) crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t cbCmd);
 extern DECLEXPORT(int32_t) crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t cbCtl);
 
-extern DECLEXPORT(int32_t) crVBoxServerCrCmdNotifyCmds();
 #endif
 
 #ifdef __cplusplus

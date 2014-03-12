@@ -852,10 +852,9 @@ typedef struct VBVABUFFER
 #define VBVA_INFO_CAPS   12 /* informs host about HGSMI caps. see VBVACAPS below */
 #define VBVA_SCANLINE_CFG    13 /* configures scanline, see VBVASCANLINECFG below */
 #define VBVA_SCANLINE_INFO   14 /* requests scanline info, see VBVASCANLINEINFO below */
-#define VBVA_CMDVBVA_ENABLE  15 /* enables command ring buffer VBVA */
 #define VBVA_CMDVBVA_SUBMIT  16 /* inform host about VBVA Command submission */
 #define VBVA_CMDVBVA_FLUSH   17 /* inform host about VBVA Command submission */
-#define VBVA_VBVACMD_CTL     18
+#define VBVA_CMDVBVA_CTL     18 /* G->H DMA command             */
 
 /* host->guest commands */
 #define VBVAHG_EVENT              1
@@ -1449,18 +1448,6 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL
     uint32_t cbCmd;
 } VBOXVDMACMD_CHROMIUM_CTL, *PVBOXVDMACMD_CHROMIUM_CTL;
 
-typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP
-{
-    VBOXVDMACMD_CHROMIUM_CTL Hdr;
-    union
-    {
-        void *pvVRamBase;
-        uint64_t uAlignment;
-    };
-    uint64_t cbVRam;
-    struct VBOXCRCMD_CLTINFO *pCrCmdClientInfo;
-} VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP, *PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP;
-
 
 typedef struct PDMIDISPLAYVBVACALLBACKS *HCRHGSMICMDCOMPLETION;
 typedef DECLCALLBACK(int) FNCRHGSMICMDCOMPLETION(HCRHGSMICMDCOMPLETION hCompletion, PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc);
@@ -1745,6 +1732,21 @@ typedef struct VBOXCMDVBVA_PAGING_FILL
     /* paging transfer can NOT be initiated for allocations having host 3D object (hostID) associated */
     VBOXCMDVBVAOFFSET offVRAM;
 } VBOXCMDVBVA_PAGING_FILL;
+
+#define VBOXCMDVBVACTL_TYPE_ENABLE     1
+#define VBOXCMDVBVACTL_TYPE_3DCTL      2
+
+typedef struct VBOXCMDVBVA_CTL
+{
+    uint32_t u32Type;
+    int32_t i32Result;
+} VBOXCMDVBVA_CTL;
+
+typedef struct VBOXCMDVBVA_CTL_ENABLE
+{
+    VBOXCMDVBVA_CTL Hdr;
+    VBVAENABLE Enable;
+} VBOXCMDVBVA_CTL_ENABLE;
 
 # pragma pack()
 
