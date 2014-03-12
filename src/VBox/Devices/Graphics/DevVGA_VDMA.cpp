@@ -159,7 +159,7 @@ static int VBoxVBVAExHSLoadState(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t* pu
 static VBVAEXHOSTCTL* VBoxVBVAExHCtlAlloc(VBVAEXHOSTCONTEXT *pCmdVbva)
 {
 #ifndef VBOXVDBG_MEMCACHE_DISABLE
-    return (VBVAEXHOSTCONTEXT*)RTMemCacheAlloc(pCmdVbva->CtlCache);
+    return (VBVAEXHOSTCTL*)RTMemCacheAlloc(pCmdVbva->CtlCache);
 #else
     return (VBVAEXHOSTCTL*)RTMemAlloc(sizeof (VBVAEXHOSTCTL));
 #endif
