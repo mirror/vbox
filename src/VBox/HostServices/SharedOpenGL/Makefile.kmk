@@ -264,6 +264,12 @@ VBoxOGLrenderspu_OBJCFLAGS.darwin = -Wno-shadow
 VBoxOGLrenderspu_SOURCES.darwin  = \
 	render/renderspu_cocoa.c \
 	render/renderspu_cocoa_helper.m
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLrenderspu_DEFS += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_VDMA
+VBoxOGLrenderspu_DEFS += VBOX_WITH_VDMA
+endif
 VBoxOGLrenderspu_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLrenderspu.dylib
 VBoxOGLrenderspu_LIBS = \
 	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
