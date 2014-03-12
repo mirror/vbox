@@ -1414,8 +1414,7 @@ typedef struct VBOXVDMACMD_CHILD_STATUS_IRQ
 # pragma pack()
 #endif /* #ifdef VBOX_WITH_VDMA */
 
-#ifdef VBOX_WITH_CRHGSMI
-# pragma pack(1)
+#pragma pack(1)
 typedef struct VBOXVDMACMD_CHROMIUM_BUFFER
 {
     VBOXVIDEOOFFSET offBuffer;
@@ -1748,9 +1747,8 @@ typedef struct VBOXCMDVBVA_CTL_ENABLE
     VBVAENABLE Enable;
 } VBOXCMDVBVA_CTL_ENABLE;
 
-# pragma pack()
+#pragma pack()
 
-#endif
 
 #ifdef VBOXVDMA_WITH_VBVA
 # pragma pack(1)
