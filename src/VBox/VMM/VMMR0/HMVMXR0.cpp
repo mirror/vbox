@@ -2039,7 +2039,20 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
         pVCpu->hm.s.cTlbFlushes    = pCpu->cTlbFlushes;
         pVCpu->hm.s.uCurrentAsid   = pCpu->uCurrentAsid;
         if (pCpu->fFlushAsidBeforeUse)
-            hmR0VmxFlushVpid(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVpid, 0 /* GCPtr */);
+        {
+            if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_SINGLE_CONTEXT)
+                hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_SINGLE_CONTEXT, 0 /* GCPtr */);
+            else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_ALL_CONTEXTS)
+            {
+                hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_ALL_CONTEXTS, 0 /* GCPtr */);
+                pCpu->fFlushAsidBeforeUse = false;
+            }
+            else
+            {
+                /* hmR0VmxSetupTaggedTlb() ensures we never get here. Paranoia. */
+                AssertMsgFailed(("Unsupported VPID-flush context type.\n"));
+            }
+        }
     }
     /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere. See hmQueueInvlPage()
      *        where it is commented out. Support individual entry flushing
