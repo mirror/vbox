@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -612,22 +612,28 @@ static void rtProcWinUserLogoff(HANDLE hToken)
 
 
 /**
- * Creates an environment block out of a handed in Unicode and RTENV block.
- * The RTENV block can overwrite entries already present in the Unicode block.
+ * Creates an environment block out of a handed-in Unicode and 
+ * RTENV block. The RTENV block can overwrite entries already 
+ * present in the Unicode block. 
  *
  * @return  IPRT status code.
  *
- * @param   pvBlock         Unicode block (array) of environment entries; name=value
- * @param   hEnv            Handle of an existing RTENV block to use.
- * @param   ppwszBlock      Pointer to the final output.
+ * @param   pvEnvBlock          Unicode block (array) of environment entries;
+ *                              in form of "FOO=BAR\0BAR=BAZ".
+ * @param   hEnv                Handle of an existing RTENV block to use. 
+ * @param   fOverwriteExisting  Whether to overwrite existing values of hEnv 
+ *                              with the ones defined in pvEnvBlock. 
+ * @param   ppwszBlock          Pointer to the final output. 
  */
-static int rtProcWinEnvironmentCreateInternal(VOID *pvBlock, RTENV hEnv, PRTUTF16 *ppwszBlock)
+static int rtProcWinEnvironmentCreateInternal(VOID *pvEnvBlock, RTENV hEnv,
+                                              bool fOverwriteExisting,
+                                              PRTUTF16 *ppwszBlock)
 {
     RTENV hEnvTemp;
     int rc = RTEnvClone(&hEnvTemp, hEnv);
     if (RT_SUCCESS(rc))
     {
-        PCRTUTF16 pwch = (PCRTUTF16)pvBlock;
+        PCRTUTF16 pwch = (PCRTUTF16)pvEnvBlock;
         while (   pwch
                && RT_SUCCESS(rc))
         {
@@ -637,10 +643,31 @@ static int rtProcWinEnvironmentCreateInternal(VOID *pvBlock, RTENV hEnv, PRTUTF1
                 rc = RTUtf16ToUtf8(pwch, &pszEntry);
                 if (RT_SUCCESS(rc))
                 {
-                    /* Don't overwrite values which we already have set to a custom value
-                     * specified in hEnv ... */
-                    if (!RTEnvExistEx(hEnv, pszEntry))
-                        rc = RTEnvPutEx(hEnvTemp, pszEntry);
+                    const char *pszEq = strchr(pszEntry, '=');
+                    if (   !pszEq
+                        && fOverwriteExisting)
+                    {
+                        rc = RTEnvUnset(pszEntry);
+                    }
+                    else if (pszEq) 
+                    {
+                        const char *pszValue = pszEq + 1;
+                        size_t cchVar = pszEq - pszEntry;
+                        char *pszVar = (char *)RTMemAlloc(cchVar + 1);
+                        if (pszVar) 
+                        {
+                            memcpy(pszVar, pszEntry, cchVar);
+                            pszVar[cchVar] = '\0';
+                            if (   !RTEnvExistEx(hEnv, pszVar)
+                                || fOverwriteExisting)
+                            {
+                                rc = RTEnvSetEx(hEnvTemp, pszVar, pszValue);
+                            }
+                            RTMemFree(pszVar);
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
                     RTStrFree(pszEntry);
                 }
             }
@@ -693,7 +720,9 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppws
                 LPVOID pvEnvBlockProfile = NULL;
                 if (pfnCreateEnvironmentBlock(&pvEnvBlockProfile, hToken, FALSE /* Don't inherit from parent. */))
                 {
-                    rc = rtProcWinEnvironmentCreateInternal(pvEnvBlockProfile, hEnv, ppwszBlock);
+                    rc = rtProcWinEnvironmentCreateInternal(pvEnvBlockProfile, hEnv, 
+                                                            false /* fOverwriteExisting */,
+                                                            ppwszBlock);
                     pfnDestroyEnvironmentBlock(pvEnvBlockProfile);
                 }
                 else
