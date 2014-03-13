@@ -62,9 +62,6 @@ public:
 
 private slots:
 
-    /** Handles UIMediumManager::m_pActionRefresh action triggering. */
-    void sltRefreshAll();
-
     /** Handles VBoxGlobal::sigMediumCreated signal. */
     void sltHandleMediumCreated(const QString &strMediumID);
     /** Handles VBoxGlobal::sigMediumDeleted signal. */
@@ -85,6 +82,8 @@ private slots:
     void sltRemoveMedium();
     /** Handles UIMediumManager::m_pActionRelease action triggering. */
     void sltReleaseMedium();
+    /** Handles UIMediumManager::m_pActionRefresh action triggering. */
+    void sltRefreshAll();
 
     /** Handles tab change case. */
     void sltHandleCurrentTabChanged();
@@ -168,6 +167,8 @@ private:
 
     /** Creates UIMediumItem for corresponding @a medium. */
     UIMediumItem* createMediumItem(const UIMedium &medium);
+    /** Creates UIMediumItemHD for corresponding @a medium. */
+    UIMediumItem* createHardDiskItem(const UIMedium &medium);
     /** Updates UIMediumItem for corresponding @a medium. */
     void updateMediumItem(const UIMedium &medium);
     /** Deletes UIMediumItem for corresponding @a strMediumID. */
@@ -196,8 +197,6 @@ private:
     static UIMediumItem* searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException = 0);
     /** Performs search for the @a pParentItem child which corresponds to the @a condition but not @a pException. */
     static UIMediumItem* searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException = 0);
-    /** Creates UIMediumItemHD for corresponding @a medium. */
-    UIMediumItem* createHardDiskItem(const UIMedium &medium);
 
     /** Checks if @a action can be used for @a pItem. */
     static bool checkMediumFor(UIMediumItem *pItem, Action action);
