@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIMediumManager class implementation
+ * VBox Qt GUI - UIMediumManager class implementation.
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,7 +25,6 @@
 #include <QMenuBar>
 #include <QHeaderView>
 #include <QPushButton>
-#include <QTimer>
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -42,6 +39,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CMachine.h"
 #include "CMediumFormat.h"
 #include "CStorageController.h"
 #include "CMediumAttachment.h"
@@ -649,7 +647,7 @@ UIMediumManager* UIMediumManager::instance() { return m_spInstance; }
 
 UIMediumManager::UIMediumManager(QWidget *pCenterWidget, bool fRefresh /* = true */)
     : QIWithRetranslateUI2<QIMainDialog>(0, Qt::Dialog)
-    , m_pCenterWidget(pCenterWidget)
+    , m_pPseudoParentWidget(pCenterWidget)
     , m_fRefresh(fRefresh)
     , m_fPreventChangeCurrentItem(false)
     , m_fInaccessibleHD(false)
@@ -840,12 +838,12 @@ void UIMediumManager::sltReleaseMedium()
 void UIMediumManager::sltHandleCurrentTabChanged()
 {
     /* Get current tree-widget: */
-    QTreeWidget *pTree = currentTreeWidget();
+    QTreeWidget *pTreeWidget = currentTreeWidget();
 
     /* If another tree-widget was focused before,
      * move focus to current tree-widget: */
     if (qobject_cast<QTreeWidget*>(focusWidget()))
-        pTree->setFocus();
+        pTreeWidget->setFocus();
 
     /* Re-fetch currently chosen medium-item: */
     refetchCurrentChosenMediumItem();
@@ -853,7 +851,7 @@ void UIMediumManager::sltHandleCurrentTabChanged()
 
 void UIMediumManager::sltHandleCurrentItemChanged()
 {
-    /* Determine tree-widget sender: */
+    /* Get sender() tree-widget: */
     QTreeWidget *pTreeWidget = qobject_cast<QTreeWidget*>(sender());
     AssertMsgReturnVoid(pTreeWidget, ("This slot should be called by tree-widget only!\n"));
 
@@ -870,7 +868,7 @@ void UIMediumManager::sltHandleDoubleClick()
 
 void UIMediumManager::sltHandleContextMenuCall(const QPoint &position)
 {
-    /* Get corresponding tree-widget / item: */
+    /* Get current tree-widget / item: */
     QTreeWidget *pTreeWidget = currentTreeWidget();
     QTreeWidgetItem *pItem = pTreeWidget->itemAt(position);
 
@@ -884,13 +882,6 @@ void UIMediumManager::sltHandleContextMenuCall(const QPoint &position)
     m_pContextMenu->exec(pTreeWidget->viewport()->mapToGlobal(position));
 }
 
-void UIMediumManager::sltMakeRequestForTableAdjustment()
-{
-    /* We have to perform tables adjustment only after all the [auto]resize
-     * events processed for every column of corresponding table. */
-    QTimer::singleShot(0, this, SLOT(sltPerformTablesAdjustment()));
-}
-
 void UIMediumManager::sltPerformTablesAdjustment()
 {
     /* Get all the tree-widgets: */
@@ -901,21 +892,21 @@ void UIMediumManager::sltPerformTablesAdjustment()
 
     /* Calculate deduction for every header: */
     QList<int> deductions;
-    foreach (QITreeWidget *pTree, trees)
+    foreach (QTreeWidget *pTreeWidget, trees)
     {
         int iDeduction = 0;
-        for (int iHeaderIndex = 1; iHeaderIndex < pTree->header()->count(); ++iHeaderIndex)
-            iDeduction += pTree->header()->sectionSize(iHeaderIndex);
+        for (int iHeaderIndex = 1; iHeaderIndex < pTreeWidget->header()->count(); ++iHeaderIndex)
+            iDeduction += pTreeWidget->header()->sectionSize(iHeaderIndex);
         deductions << iDeduction;
     }
 
     /* Adjust the table's first column: */
     for (int iTreeIndex = 0; iTreeIndex < trees.size(); ++iTreeIndex)
     {
-        QITreeWidget *pTree = trees[iTreeIndex];
-        int iSize0 = pTree->viewport()->width() - deductions[iTreeIndex];
-        if (pTree->header()->sectionSize(0) != iSize0)
-            pTree->header()->resizeSection(0, iSize0);
+        QTreeWidget *pTreeWidget = trees[iTreeIndex];
+        int iSize0 = pTreeWidget->viewport()->width() - deductions[iTreeIndex];
+        if (pTreeWidget->header()->sectionSize(0) != iSize0)
+            pTreeWidget->header()->resizeSection(0, iSize0);
     }
 }
 
@@ -951,8 +942,8 @@ void UIMediumManager::prepare()
     prepareMacWindowMenu();
 #endif /* Q_WS_MAC */
 
-    /* Center according passed widget: */
-    centerAccording(m_pCenterWidget);
+    /* Center according pseudo-parent widget: */
+    centerAccording(m_pPseudoParentWidget);
 
     /* Initialize information-panes: */
     updateInformationPanes(UIMediumType_All);
@@ -988,10 +979,6 @@ void UIMediumManager::prepareThis()
 
     /* Apply UI decorations: */
     Ui::UIMediumManager::setupUi(this);
-
-    /* Prepare some global stuff: */
-    m_vbox = vboxGlobal().virtualBox();
-    Assert(!m_vbox.isNull());
 
     /* Configure medium-processing connections: */
     connect(&vboxGlobal(), SIGNAL(sigMediumCreated(const QString&)),
@@ -1173,9 +1160,9 @@ void UIMediumManager::prepareTreeWidgetHD()
         connect(mTwHD, SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltHandleContextMenuCall(const QPoint&)));
         connect(mTwHD, SIGNAL(resized(const QSize&, const QSize&)),
-                this, SLOT(sltMakeRequestForTableAdjustment()));
+                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
         connect(mTwHD->header(), SIGNAL(sectionResized(int, int, int)),
-                this, SLOT(sltMakeRequestForTableAdjustment()));
+                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
     }
 }
 
@@ -1197,9 +1184,9 @@ void UIMediumManager::prepareTreeWidgetCD()
         connect(mTwCD, SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltHandleContextMenuCall(const QPoint&)));
         connect(mTwCD, SIGNAL(resized(const QSize&, const QSize&)),
-                this, SLOT(sltMakeRequestForTableAdjustment()));
+                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
         connect(mTwCD->header(), SIGNAL(sectionResized(int, int, int)),
-                this, SLOT(sltMakeRequestForTableAdjustment()));
+                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
     }
 }
 
@@ -1221,9 +1208,9 @@ void UIMediumManager::prepareTreeWidgetFD()
         connect(mTwFD, SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltHandleContextMenuCall(const QPoint&)));
         connect(mTwFD, SIGNAL(resized(const QSize&, const QSize&)),
-                this, SLOT(sltMakeRequestForTableAdjustment()));
+                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
         connect(mTwFD->header(), SIGNAL(sectionResized(int, int, int)),
-                this, SLOT(sltMakeRequestForTableAdjustment()));
+                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
     }
 }
 
@@ -1273,11 +1260,11 @@ void UIMediumManager::repopulateTreeWidgets()
 {
     /* Remember current medium-items: */
     if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_HardDisk))
-        m_strSelectedIdHD = pMediumItem->id();
+        m_strCurrentIdHD = pMediumItem->id();
     if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_DVD))
-        m_strSelectedIdCD = pMediumItem->id();
+        m_strCurrentIdCD = pMediumItem->id();
     if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_Floppy))
-        m_strSelectedIdFD = pMediumItem->id();
+        m_strCurrentIdFD = pMediumItem->id();
 
     /* Clear tree-widgets: */
     QTreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
@@ -1663,12 +1650,12 @@ UIMediumItem* UIMediumManager::createMediumItem(const UIMedium &medium)
         /* Of hard-drive type: */
         case UIMediumType_HardDisk:
         {
-            pMediumItem = createHardDiskItem(mTwHD, medium);
+            pMediumItem = createHardDiskItem(medium);
             AssertPtrReturn(pMediumItem, 0);
-            if (pMediumItem->id() == m_strSelectedIdHD)
+            if (pMediumItem->id() == m_strCurrentIdHD)
             {
                 setCurrentItem(mTwHD, pMediumItem);
-                m_strSelectedIdHD = QString();
+                m_strCurrentIdHD = QString();
             }
             break;
         }
@@ -1678,10 +1665,10 @@ UIMediumItem* UIMediumManager::createMediumItem(const UIMedium &medium)
             pMediumItem = new UIMediumItemCD(medium, mTwCD);
             LogRel2(("UIMediumManager: Optical medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
             AssertPtrReturn(pMediumItem, 0);
-            if (pMediumItem->id() == m_strSelectedIdCD)
+            if (pMediumItem->id() == m_strCurrentIdCD)
             {
                 setCurrentItem(mTwCD, pMediumItem);
-                m_strSelectedIdCD = QString();
+                m_strCurrentIdCD = QString();
             }
             break;
         }
@@ -1691,10 +1678,10 @@ UIMediumItem* UIMediumManager::createMediumItem(const UIMedium &medium)
             pMediumItem = new UIMediumItemFD(medium, mTwFD);
             LogRel2(("UIMediumManager: Floppy medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
             AssertPtrReturn(pMediumItem, 0);
-            if (pMediumItem->id() == m_strSelectedIdFD)
+            if (pMediumItem->id() == m_strCurrentIdFD)
             {
                 setCurrentItem(mTwFD, pMediumItem);
-                m_strSelectedIdFD = QString();
+                m_strCurrentIdFD = QString();
             }
             break;
         }
@@ -1849,17 +1836,19 @@ void UIMediumManager::setCurrentItem(QTreeWidget *pTreeWidget, QTreeWidgetItem *
     refetchCurrentChosenMediumItem();
 }
 
-UIMediumItem* UIMediumManager::searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException) const
+/* static */
+UIMediumItem* UIMediumManager::searchItem(QTreeWidget *pTreeWidget, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException)
 {
     /* Make sure argument is valid: */
-    if (!pTree)
+    if (!pTreeWidget)
         return 0;
 
     /* Return wrapper: */
-    return searchItem(pTree->invisibleRootItem(), condition, pException);
+    return searchItem(pTreeWidget->invisibleRootItem(), condition, pException);
 }
 
-UIMediumItem* UIMediumManager::searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException) const
+/* static */
+UIMediumItem* UIMediumManager::searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException)
 {
     /* Make sure argument is valid: */
     if (!pParentItem)
@@ -1881,13 +1870,13 @@ UIMediumItem* UIMediumManager::searchItem(QTreeWidgetItem *pParentItem, const Ch
     return 0;
 }
 
-UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMedium &medium) const
+UIMediumItem* UIMediumManager::createHardDiskItem(const UIMedium &medium)
 {
     /* Make sure passed medium is valid: */
     AssertReturn(!medium.medium().isNull(), 0);
 
     /* Search for existing medium-item: */
-    UIMediumItem *pMediumItem = searchItem(pTree, CheckIfSuitableByID(medium.id()));
+    UIMediumItem *pMediumItem = searchItem(mTwHD, CheckIfSuitableByID(medium.id()));
 
     /* If medium-item do not exists: */
     if (!pMediumItem)
@@ -1896,7 +1885,7 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
         if (medium.parentID() != UIMedium::nullID())
         {
             /* Try to find parent medium-item: */
-            UIMediumItem *pParentMediumItem = searchItem(pTree, CheckIfSuitableByID(medium.parentID()));
+            UIMediumItem *pParentMediumItem = searchItem(mTwHD, CheckIfSuitableByID(medium.parentID()));
             /* If parent medium-item was not found: */
             if (!pParentMediumItem)
             {
@@ -1906,7 +1895,7 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
                     AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toAscii().constData()));
                 /* Try to create parent medium-item: */
                 else
-                    pParentMediumItem = createHardDiskItem(pTree, parentMedium);
+                    pParentMediumItem = createHardDiskItem(parentMedium);
             }
             /* If parent medium-item was found: */
             if (pParentMediumItem)
@@ -1918,7 +1907,7 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
         /* Else just create item as top-level one: */
         if (!pMediumItem)
         {
-            pMediumItem = new UIMediumItemHD(medium, pTree);
+            pMediumItem = new UIMediumItemHD(medium, mTwHD);
             LogRel2(("UIMediumManager: Root hard-drive medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
         }
     }
@@ -1927,6 +1916,7 @@ UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMe
     return pMediumItem;
 }
 
+/* static */
 bool UIMediumManager::checkMediumFor(UIMediumItem *pItem, Action action)
 {
     /* Make sure passed ID is valid: */
