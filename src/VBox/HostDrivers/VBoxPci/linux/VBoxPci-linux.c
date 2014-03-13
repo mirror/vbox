@@ -651,6 +651,17 @@ int  vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
 
     if (pPciDev)
     {
+        int iRegion;
+        for (iRegion = 0; iRegion < 7; ++iRegion)
+        {
+            if (pIns->aRegionR0Mapping[iRegion])
+            {
+                iounmap(pIns->aRegionR0Mapping[iRegion]);
+                pIns->aRegionR0Mapping[iRegion] = 0;
+                pci_release_region(pPciDev, iRegion);
+            }
+        }
+
         vboxPciOsDevUnregisterWithIommu(pIns);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 1)
@@ -737,13 +748,13 @@ int  vboxPciOsDevMapRegion(PVBOXRAWPCIINS pIns,
                            RTR0PTR        *pRegionBase)
 {
     struct pci_dev  *pPciDev = pIns->pPciDev;
-    struct resource *pRegion;
     RTR0PTR          result = 0;
+    int              error;
 
     printk(KERN_DEBUG "linux vboxPciOsDevMapRegion: reg=%d start=%llx size=%lld\n", iRegion, RegionStart, u64RegionSize);
 
     if (!pPciDev)
-        return 0;
+        return VERR_INVALID_PARAMETER;
 
     if (iRegion < 0 || iRegion > 6)
     {
@@ -751,27 +762,44 @@ int  vboxPciOsDevMapRegion(PVBOXRAWPCIINS pIns,
         return VERR_INVALID_PARAMETER;
     }
 
-    pRegion = request_mem_region(RegionStart, u64RegionSize, "vboxpci");
-    if (!pRegion)
+    if (pci_resource_flags(pPciDev, iRegion) & IORESOURCE_IO)
+        return VERR_INVALID_PARAMETER;
+
+    if (RegionStart != pci_resource_start(pPciDev, iRegion))
+        return VERR_INVALID_PARAMETER;
+
+    if (u64RegionSize != pci_resource_len(pPciDev, iRegion))
+        return VERR_INVALID_PARAMETER;
+
+    /*
+     * XXX: Current code never calls unmap.  To avoid leaking mappings
+     * only request and map resources once.
+     */
+    if (pIns->aRegionR0Mapping[iRegion])
     {
-        /** @todo: need to make sure if thise error indeed can be ignored. */
-        printk(KERN_DEBUG "request_mem_region() failed, don't care\n");
+        *pRegionBase = pIns->aRegionR0Mapping[iRegion];
+        return VINF_SUCCESS;
     }
 
+
+    error = pci_request_region(pPciDev, iRegion, "vboxpci");
+    if (error)
+        return VERR_RESOURCE_BUSY;
+
     /* For now no caching, try to optimize later. */
-    result = ioremap_nocache(RegionStart, u64RegionSize);
+    result = ioremap_nocache(pci_resource_start(pPciDev, iRegion),
+                             pci_resource_len(pPciDev, iRegion));
 
     if (!result)
     {
         printk(KERN_DEBUG "cannot ioremap_nocache\n");
-        if (pRegion)
-            release_mem_region(RegionStart, u64RegionSize);
-        return 0;
+        pci_release_region(pPciDev, iRegion);
+        return VERR_MAP_FAILED;
     }
 
-    *pRegionBase = result;
+    *pRegionBase = pIns->aRegionR0Mapping[iRegion] = result;
 
-    return 0;
+    return VINF_SUCCESS;
 }
 
 int  vboxPciOsDevUnmapRegion(PVBOXRAWPCIINS pIns,
@@ -780,11 +808,8 @@ int  vboxPciOsDevUnmapRegion(PVBOXRAWPCIINS pIns,
                              uint64_t       u64RegionSize,
                              RTR0PTR        RegionBase)
 {
-
-    iounmap(RegionBase);
-    release_mem_region(RegionStart, u64RegionSize);
-
-    return VINF_SUCCESS;
+    /* XXX: Current code never calls unmap. */
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int  vboxPciOsDevPciCfgWrite(PVBOXRAWPCIINS pIns, uint32_t Register, PCIRAWMEMLOC *pValue)
