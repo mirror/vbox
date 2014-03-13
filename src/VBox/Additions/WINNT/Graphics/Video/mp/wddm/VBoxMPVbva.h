@@ -129,7 +129,7 @@ typedef struct VBOXCMDVBVA
 
 /** @name VBVAEx APIs
  * @{ */
-RTDECL(bool) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx,
+RTDECL(int) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx,
                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
                             struct VBVABUFFER *pVBVA);
 RTDECL(void) VBoxVBVAExDisable(PVBVAEXBUFFERCONTEXT pCtx,
