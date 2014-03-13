@@ -81,8 +81,8 @@ typedef struct VBVAEXHOSTCONTEXT
     volatile uint32_t u32cCtls;
     /* critical section for accessing ctl lists */
     RTCRITSECT CltCritSect;
-    RTLISTNODE GuestCtlList;
-    RTLISTNODE HostCtlList;
+    RTLISTANCHOR GuestCtlList;
+    RTLISTANCHOR HostCtlList;
 #ifndef VBOXVDBG_MEMCACHE_DISABLE
     RTMEMCACHE CtlCache;
 #endif
