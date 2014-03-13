@@ -280,6 +280,7 @@ static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt,
         fMouseStatus ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
         if (enmFlags & HostFlags_FilterMask)
             vboxGuestSetFilterMask(pFilterReq, fFilterMask);
+        fCapabilities |= pDevExt->u32GuestCaps;
         if (enmFlags & HostFlags_Capabilities)
             vboxGuestSetCapabilities(pCapabilitiesReq, fCapabilities);
         if (enmFlags & HostFlags_MouseStatus)
@@ -1250,7 +1251,11 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
     vboxGuestCloseMemBalloon(pDevExt, pSession);
     RTMemFree(pSession);
     /* Update the host flags (mouse status etc) not to reflect this session. */
-    vboxGuestUpdateHostFlags(pDevExt, NULL, HostFlags_All);
+    vboxGuestUpdateHostFlags(pDevExt, NULL, HostFlags_All
+#ifdef RT_OS_WINDOWS
+                & (~HostFlags_MouseStatus)
+#endif
+            );
 }
 
 
