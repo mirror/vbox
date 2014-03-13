@@ -530,6 +530,61 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** @} */
 
 
+/** @name CPUID Structured Extended Feature information.
+ * CPUID query with EAX=7.
+ * @{
+ */
+/** EBX Bit 0 - FSGSBASE - Supports RDFSBASE/RDGSBASE/WRFSBASE/WRGSBASE. */
+#define X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE          RT_BIT(0)
+/** EBX Bit 1 - TSCADJUST - Supports MSR_IA32_TSC_ADJUST. */
+#define X86_CPUID_STEXT_FEATURE_EBX_TSC_ADJUST        RT_BIT(1)
+/** EBX Bit 3 - BMI1 - Advanced Bit Manipulation extension 1. */
+#define X86_CPUID_STEXT_FEATURE_EBX_BMI1              RT_BIT(3)
+/** EBX Bit 4 - HLE - Hardware Lock Elision. */
+#define X86_CPUID_STEXT_FEATURE_EBX_HLE               RT_BIT(4)
+/** EBX Bit 5 - AVX2 - Advanced Vector Extensions 2. */
+#define X86_CPUID_STEXT_FEATURE_EBX_AVX2              RT_BIT(5)
+/** EBX Bit 7 - SMEP - Supervisor Mode Execution Prevention. */
+#define X86_CPUID_STEXT_FEATURE_EBX_SMEP              RT_BIT(7)
+/** EBX Bit 8 - BMI2 - Advanced Bit Manipulation extension 2. */
+#define X86_CPUID_STEXT_FEATURE_EBX_BMI2              RT_BIT(8)
+/** EBX Bit 9 - ERMS - Supports Enhanced REP MOVSB/STOSB. */
+#define X86_CPUID_STEXT_FEATURE_EBX_ERMS              RT_BIT(9)
+/** EBX Bit 10 - INVPCID - Supports INVPCID. */
+#define X86_CPUID_STEXT_FEATURE_EBX_INVPCID           RT_BIT(10)
+/** EBX Bit 11 - RTM - Supports Restricted Transactional Memory. */
+#define X86_CPUID_STEXT_FEATURE_EBX_RTM               RT_BIT(11)
+/** EBX Bit 12 - PQM - Supports Platform Quality of Service Monitoring. */
+#define X86_CPUID_STEXT_FEATURE_EBX_PQM               RT_BIT(12)
+/** EBX Bit 13 - DEPFPU_CS_DS - Deprecates FPU CS, FPU DS values if set. */
+#define X86_CPUID_STEXT_FEATURE_EBX_DEPR_FPU_CS_DS    RT_BIT(13)
+/** EBX Bit 14 - MPE - Supports Intel Memory Protection Extensions. */
+#define X86_CPUID_STEXT_FEATURE_EBX_MPE               RT_BIT(14)
+/** EBX Bit 15 - PQE - Supports Platform Quality of Service Enforcement. */
+#define X86_CPUID_STEXT_FEATURE_EBX_PQE               RT_BIT(15)
+/** EBX Bit 16 - AVX512F - Supports AVX512F. */
+#define X86_CPUID_STEXT_FEATURE_EBX_AVX512F           RT_BIT(16)
+/** EBX Bit 18 - RDSEED - Supports RDSEED. */
+#define X86_CPUID_STEXT_FEATURE_EBX_RDSEED            RT_BIT(18)
+/** EBX Bit 19 - ADX - Supports ADCX/ADOX. */
+#define X86_CPUID_STEXT_FEATURE_EBX_ADX               RT_BIT(19)
+/** EBX Bit 20 - SMAP - Supports Supervisor Mode Access Prevention. */
+#define X86_CPUID_STEXT_FEATURE_EBX_SMAP              RT_BIT(20)
+/** EBX Bit 23 - CLFLUSHOPT - Supports CLFLUSHOPT (Cache Line Flush). */
+#define X86_CPUID_STEXT_FEATURE_EBX_CLFLUSHOPT        RT_BIT(23)
+/** EBX Bit 25 - INTEL_PT - Supports Intel Processor Trace. */
+#define X86_CPUID_STEXT_FEATURE_EBX_INTEL_PT          RT_BIT(25)
+/** EBX Bit 26 - AVX512PF - Supports AVX512PF. */
+#define X86_CPUID_STEXT_FEATURE_EBX_AVX512PF          RT_BIT(26)
+/** EBX Bit 27 - AVX512ER - Supports AVX512ER. */
+#define X86_CPUID_STEXT_FEATURE_EBX_AVX512ER          RT_BIT(27)
+/** EBX Bit 28 - AVX512CD - Supports AVX512CD. */
+#define X86_CPUID_STEXT_FEATURE_EBX_AVX512CD          RT_BIT(28)
+/** EBX Bit 29 - SHA - Supports Secure Hash Algorithm extensions. */
+#define X86_CPUID_STEXT_FEATURE_EBX_SHA               RT_BIT(29)
+/** @} */
+
+
 /** @name CPUID Extended Feature information.
  *  CPUID query with EAX=0x80000001.
  *  @{
@@ -741,6 +796,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CR4_OSXSAVE                     RT_BIT(18)
 /** Bit 20 - SMEP - Supervisor-mode Execution Prevention enabled. */
 #define X86_CR4_SMEP                        RT_BIT(20)
+/** Bit 21 - SMAP - Supervisor-mode Access Prevention enabled. */
+#define X86_CR4_SMAP                        RT_BIT(21)
 /** @} */
 
 
@@ -963,6 +1020,9 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_FEATURE_CONTROL_LOCK       RT_BIT(0)
 #define MSR_IA32_FEATURE_CONTROL_SMX_VMXON  RT_BIT(1)
 #define MSR_IA32_FEATURE_CONTROL_VMXON      RT_BIT(2)
+
+/** Per-processor TSC adjust MSR. */
+#define MSR_IA32_TSC_ADJUST                 0x3B
 
 /** BIOS update trigger (microcode update). */
 #define MSR_IA32_BIOS_UPDT_TRIG             0x79

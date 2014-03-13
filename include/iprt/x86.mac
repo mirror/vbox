@@ -210,6 +210,7 @@
 %define X86_CR4_PCIDE                       RT_BIT(17)
 %define X86_CR4_OSXSAVE                     RT_BIT(18)
 %define X86_CR4_SMEP                        RT_BIT(20)
+%define X86_CR4_SMAP                        RT_BIT(21)
 %define X86_DR6_B0                          RT_BIT(0)
 %define X86_DR6_B1                          RT_BIT(1)
 %define X86_DR6_B2                          RT_BIT(2)
