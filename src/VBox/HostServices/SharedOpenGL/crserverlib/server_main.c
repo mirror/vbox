@@ -3237,12 +3237,12 @@ static DECLCALLBACK(int) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR pCm
             if (RT_SUCCESS(rc))
             {
             /* success */
-                pCmd->i8Result = 0;
+                pCmd->u.i8Result = 0;
             }
             else
             {
                 crWarning("crVBoxServerCmdVbvaCrCmdProcess failed, rc %d", rc);
-                pCmd->i8Result = -1;
+                pCmd->u.i8Result = -1;
             }
             break;
         }
@@ -3253,7 +3253,7 @@ static DECLCALLBACK(int) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR pCm
         }
         default:
             WARN(("unsupported command"));
-            pCmd->i8Result = -1;
+            pCmd->u.i8Result = -1;
     }
     return VINF_SUCCESS;
 }
