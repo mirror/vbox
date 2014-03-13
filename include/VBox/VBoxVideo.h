@@ -1623,7 +1623,7 @@ typedef struct VBOXCMDVBVA_HDR
         /* result, 0 on success, otherwise contains the failure code TBD */
         int8_t i8Result;
         uint8_t u8PrimaryID;
-    };
+    } u;
     /* DXGK DDI fence ID */
     volatile uint32_t u32FenceID;
 } VBOXCMDVBVA_HDR;
@@ -1655,7 +1655,7 @@ typedef struct VBOXCMDVBVA_ALLOCINFO
     {
         VBOXCMDVBVAOFFSET offVRAM;
         uint32_t id;
-    };
+    } u;
 } VBOXCMDVBVA_ALLOCINFO;
 
 typedef struct VBOXCMDVBVA_RECT

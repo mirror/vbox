@@ -1179,7 +1179,7 @@ static int vboxVDMACrCmdProcess(struct VBOXVDMAHOST *pVdma, uint8_t* pu8Cmd, uin
     switch (pCmd->u8OpCode)
     {
         case VBOXCMDVBVA_OPTYPE_NOPCMD:
-            pCmd->i8Result = 0;
+            pCmd->u.i8Result = 0;
             return VINF_EOF;
         default:
             return VINF_SUCCESS;
@@ -1213,7 +1213,7 @@ static DECLCALLBACK(int) vboxVDMACrCmdCmd(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR p
 #endif
         default:
             WARN(("unsupported command\n"));
-            pCmd->i8Result = -1;
+            pCmd->u.i8Result = -1;
     }
     return VINF_SUCCESS;
 }

@@ -3433,7 +3433,7 @@ DxgkDdiBuildPagingBufferNew(
             uint32_t cPagesWritten;
             offVRAM += pBuildPagingBuffer->Transfer.TransferOffset + pBuildPagingBuffer->MultipassOffset;
 
-            pPaging->Alloc.offVRAM = offVRAM;
+            pPaging->Alloc.u.offVRAM = offVRAM;
             if (fIn)
                 pPaging->Hdr.u8Flags |= VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN;
             cbPrivateData = VBoxCVDdiPTransferVRamSysBuildEls(pPaging, pMdl, iFirstPage, cPages, pBuildPagingBuffer->DmaBufferPrivateDataSize, &cPagesWritten);
@@ -6019,12 +6019,12 @@ DECLINLINE(bool) VBoxCVDdiFillAllocInfo(VBOXCMDVBVA_HDR* pHdr,
     if (pAlloc->AllocData.hostID)
     {
         pHdr->u8Flags |= (fDst ? VBOXCMDVBVA_OPF_ALLOC_DSTID : VBOXCMDVBVA_OPF_ALLOC_SRCID);
-        pInfo->id = pAlloc->AllocData.hostID;
+        pInfo->u.id = pAlloc->AllocData.hostID;
         return false;
     }
 
     Assert(!pList->PhysicalAddress.HighPart);
-    pInfo->offVRAM = pList->PhysicalAddress.LowPart;
+    pInfo->u.offVRAM = pList->PhysicalAddress.LowPart;
     return true;
 }
 
@@ -6120,24 +6120,24 @@ DxgkDdiPresentNew(
             if (fSrcPrimary)
             {
                 pBlt->Hdr.u8Flags |= VBOXCMDVBVA_OPF_ALLOC_SRCPRIMARY;
-                pBlt->Hdr.u8PrimaryID = pSrcAlloc->AllocData.SurfDesc.VidPnSourceId;
+                pBlt->Hdr.u.u8PrimaryID = pSrcAlloc->AllocData.SurfDesc.VidPnSourceId;
 
                 if (fDstPrimary)
                 {
                     pBlt->Hdr.u8Flags |= VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY;
-                    pBlt->alloc.id = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
+                    pBlt->alloc.u.id = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
                 }
                 else if (VBoxCVDdiFillAllocInfo(pHdr, &pBlt->alloc, pDstAlloc, pDst, true))
-                    u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, alloc.offVRAM);
+                    u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, alloc.u.offVRAM);
             }
             else
             {
                 Assert(fDstPrimary);
                 pBlt->Hdr.u8Flags |= VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY;
-                pBlt->Hdr.u8PrimaryID = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
+                pBlt->Hdr.u.u8PrimaryID = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
 
                 if (VBoxCVDdiFillAllocInfo(pHdr, &pBlt->alloc, pSrcAlloc, pSrc, false))
-                    u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, alloc.offVRAM);
+                    u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, alloc.u.offVRAM);
             }
 
             pBlt->Pos.x = (int16_t)(pPresent->DstRect.left - pPresent->SrcRect.left);
@@ -6158,10 +6158,10 @@ DxgkDdiPresentNew(
             VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID *pBlt = (VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID*)pHdr;
 
             if (VBoxCVDdiFillAllocInfo(pHdr, &pBlt->src, pSrcAlloc, pSrc, false))
-                u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, src.offVRAM);
+                u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, src.u.offVRAM);
 
             if (VBoxCVDdiFillAllocInfo(pHdr, &pBlt->dst, pDstAlloc, pDst, true))
-                u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, dst.offVRAM);
+                u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, dst.u.offVRAM);
 
             pBlt->Pos.x = (int16_t)(pPresent->DstRect.left - pPresent->SrcRect.left);
             pBlt->Pos.y = (int16_t)(pPresent->DstRect.top - pPresent->SrcRect.top);
@@ -6199,7 +6199,7 @@ DxgkDdiPresentNew(
         VBOXCMDVBVA_FLIP *pFlip = (VBOXCMDVBVA_FLIP*)pHdr;
 
         if (VBoxCVDdiFillAllocInfo(pHdr, &pFlip->src, pSrcAlloc, pSrc, false))
-            u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_FLIP, src.offVRAM);
+            u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_FLIP, src.u.offVRAM);
     }
     else if (pPresent->Flags.ColorFill)
     {
@@ -6228,7 +6228,7 @@ DxgkDdiPresentNew(
         VBOXCMDVBVA_CLRFILL *pCFill = (VBOXCMDVBVA_CLRFILL*)pHdr;
 
         if (VBoxCVDdiFillAllocInfo(pHdr, &pCFill->dst, pDstAlloc, pDst, true))
-            u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL, dst.offVRAM);
+            u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL, dst.u.offVRAM);
 
         paRects = pCFill->aRects;
         cbMaxRects = pPresent->DmaBufferPrivateDataSize - RT_OFFSETOF(VBOXCMDVBVA_CLRFILL, aRects);

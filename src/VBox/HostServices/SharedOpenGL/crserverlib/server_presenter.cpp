@@ -247,8 +247,8 @@ static void crFbBltImg(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint,
     int32_t srcY = pCopyRect->yTop - pSrcDataPoint->y;
     Assert(srcX >= 0);
     Assert(srcY >= 0);
-    Assert(srcX < pSrc->width);
-    Assert(srcY < pSrc->height);
+    Assert(srcX < (int32_t)pSrc->width);
+    Assert(srcY < (int32_t)pSrc->height);
 
     int32_t dstX = pCopyRect->xLeft - pDstDataPoint->x;
     int32_t dstY = pCopyRect->yTop - pDstDataPoint->y;
@@ -258,7 +258,7 @@ static void crFbBltImg(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint,
     uint8_t *pu8Src = ((uint8_t*)pSrc->pvData) + pSrc->pitch * (!fSrcInvert ? srcY : pSrc->height - srcY - 1) + srcX * 4;
     uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + pDst->pitch * dstY + dstX * 4;
 
-    crFbBltMem(pu8Src, fSrcInvert ? -pSrc->pitch : pSrc->pitch, pu8Dst, pDst->pitch, pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
+    crFbBltMem(pu8Src, fSrcInvert ? -((int32_t)pSrc->pitch) : (int32_t)pSrc->pitch, pu8Dst, pDst->pitch, pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
 }
 
 static void crFbBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, float strX, float strY, CR_BLITTER_IMG *pDst)
@@ -267,8 +267,8 @@ static void crFbBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcData
     int32_t srcY = pCopyRect->yTop - pSrcDataPoint->y;
     Assert(srcX >= 0);
     Assert(srcY >= 0);
-    Assert(srcX < pSrc->width);
-    Assert(srcY < pSrc->height);
+    Assert(srcX < (int32_t)pSrc->width);
+    Assert(srcY < (int32_t)pSrc->height);
 
     RTPOINT ScaledDtsDataPoint;
     RTRECT ScaledCopyRect;
@@ -315,7 +315,7 @@ static void crFbBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcData
                         ScaledDstWidth,
                         ScaledDstHeight,
                         pu8Src,
-                        fSrcInvert ? -pSrc->pitch : pSrc->pitch,
+                        fSrcInvert ? -((int32_t)pSrc->pitch) : (int32_t)pSrc->pitch,
                         pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
 }
 
@@ -3824,7 +3824,7 @@ HCR_FRAMEBUFFER CrPMgrFbGetEnabled(uint32_t idScreen)
 
 static HCR_FRAMEBUFFER crPMgrFbGetNextEnabled(uint32_t i)
 {
-    for (;i < cr_server.screenCount; ++i)
+    for (;i < (uint32_t)cr_server.screenCount; ++i)
     {
         HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(i);
         if (hFb)
@@ -3836,7 +3836,7 @@ static HCR_FRAMEBUFFER crPMgrFbGetNextEnabled(uint32_t i)
 
 static HCR_FRAMEBUFFER crPMgrFbGetNextInitialized(uint32_t i)
 {
-    for (;i < cr_server.screenCount; ++i)
+    for (;i < (uint32_t)cr_server.screenCount; ++i)
     {
         HCR_FRAMEBUFFER hFb = CrPMgrFbGetInitialized(i);
         if (hFb)
@@ -4184,7 +4184,7 @@ int CrPMgrHlpGlblUpdateBegin(CR_FBMAP *pMap)
 /*helper function that calls CrFbUpdateEnd for all framebuffers being updated */
 void CrPMgrHlpGlblUpdateEnd(CR_FBMAP *pMap)
 {
-    for (uint32_t i = 0; i < cr_server.screenCount; ++i)
+    for (uint32_t i = 0; i < (uint32_t)cr_server.screenCount; ++i)
     {
         if (!CrFBmIsSet(pMap, i))
             continue;
@@ -4653,12 +4653,12 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
     if (u8Flags & (VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY | VBOXCMDVBVA_OPF_ALLOC_SRCPRIMARY))
     {
         VBOXCMDVBVA_BLT_PRIMARY *pBlt = (VBOXCMDVBVA_BLT_PRIMARY*)pCmd;
-        uint8_t u8PrimaryID = pBlt->Hdr.u8PrimaryID;
+        uint8_t u8PrimaryID = pBlt->Hdr.u.u8PrimaryID;
         HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u8PrimaryID);
         if (!hFb)
         {
             WARN(("request to present on disabled framebuffer, ignore"));
-            pCmd->i8Result = -1;
+            pCmd->u.i8Result = -1;
             return VINF_SUCCESS;
         }
 
@@ -4676,7 +4676,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
             {
                 WARN(("RTMemAlloc failed!"));
                 g_CrPresenter.cbTmpBuf = 0;
-                pCmd->i8Result = -1;
+                pCmd->u.i8Result = -1;
                 return VINF_SUCCESS;
             }
         }
@@ -4696,18 +4696,18 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
                 if (u8Flags & VBOXCMDVBVA_OPF_ALLOC_DSTID)
                 {
                     /* TexPresent */
-                    texId = pBlt->alloc.id;
+                    texId = pBlt->alloc.u.id;
                 }
                 else
                 {
-                    VBOXCMDVBVAOFFSET offVRAM = pBlt->alloc.offVRAM;
+                    VBOXCMDVBVAOFFSET offVRAM = pBlt->alloc.u.offVRAM;
                     const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
                     uint32_t cbScreen = pScreen->u32LineSize * pScreen->u32Height;
                     if (offVRAM >= g_cbVRam
                             || offVRAM + cbScreen >= g_cbVRam)
                     {
                         WARN(("invalid param"));
-                        pCmd->i8Result = -1;
+                        pCmd->u.i8Result = -1;
                         return VINF_SUCCESS;
                     }
 
@@ -4723,7 +4723,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
             {
                 /* blit from one primary to another primary, wow */
                 WARN(("not implemented"));
-                pCmd->i8Result = -1;
+                pCmd->u.i8Result = -1;
                 return VINF_SUCCESS;
             }
         }
@@ -4733,21 +4733,21 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
             /* blit from primary to non-primary */
             if (u8Flags & VBOXCMDVBVA_OPF_ALLOC_DSTID)
             {
-                uint32_t texId = pBlt->alloc.id;
+                uint32_t texId = pBlt->alloc.u.id;
                 WARN(("not implemented"));
-                pCmd->i8Result = -1;
+                pCmd->u.i8Result = -1;
                 return VINF_SUCCESS;
             }
             else
             {
-                VBOXCMDVBVAOFFSET offVRAM = pBlt->alloc.offVRAM;
+                VBOXCMDVBVAOFFSET offVRAM = pBlt->alloc.u.offVRAM;
                 const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
                 uint32_t cbScreen = pScreen->u32LineSize * pScreen->u32Height;
                 if (offVRAM >= g_cbVRam
                         || offVRAM + cbScreen >= g_cbVRam)
                 {
                     WARN(("invalid param"));
-                    pCmd->i8Result = -1;
+                    pCmd->u.i8Result = -1;
                     return VINF_SUCCESS;
                 }
 
@@ -4769,7 +4769,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
                 if (!RT_SUCCESS(rc))
                 {
                     WARN(("CrFbBltGetContents failed %d", rc));
-                    pCmd->i8Result = -1;
+                    pCmd->u.i8Result = -1;
                     return VINF_SUCCESS;
                 }
             }
@@ -4778,10 +4778,10 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
     else
     {
         WARN(("not implemented"));
-        pCmd->i8Result = -1;
+        pCmd->u.i8Result = -1;
         return VINF_SUCCESS;
     }
 
-    pCmd->i8Result = 0;
+    pCmd->u.i8Result = 0;
     return VINF_SUCCESS;
 }
