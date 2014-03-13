@@ -683,12 +683,6 @@ void UIMediumManager::showModeless(QWidget *pCenterWidget /* = 0 */, bool fRefre
     m_spInstance->activateWindow();
 }
 
-void UIMediumManager::sltRefreshAll()
-{
-    /* Start medium-enumeration: */
-    vboxGlobal().startMediumEnumeration();
-}
-
 void UIMediumManager::sltHandleMediumCreated(const QString &strMediumID)
 {
     /* Search for corresponding medium: */
@@ -833,6 +827,12 @@ void UIMediumManager::sltReleaseMedium()
     /* Refetch currently chosen medium-item: */
     if (fResult)
         refetchCurrentChosenMediumItem();
+}
+
+void UIMediumManager::sltRefreshAll()
+{
+    /* Start medium-enumeration: */
+    vboxGlobal().startMediumEnumeration();
 }
 
 void UIMediumManager::sltHandleCurrentTabChanged()
@@ -1700,6 +1700,52 @@ UIMediumItem* UIMediumManager::createMediumItem(const UIMedium &medium)
     return pMediumItem;
 }
 
+UIMediumItem* UIMediumManager::createHardDiskItem(const UIMedium &medium)
+{
+    /* Make sure passed medium is valid: */
+    AssertReturn(!medium.medium().isNull(), 0);
+
+    /* Search for existing medium-item: */
+    UIMediumItem *pMediumItem = searchItem(mTwHD, CheckIfSuitableByID(medium.id()));
+
+    /* If medium-item do not exists: */
+    if (!pMediumItem)
+    {
+        /* If medium have a parent: */
+        if (medium.parentID() != UIMedium::nullID())
+        {
+            /* Try to find parent medium-item: */
+            UIMediumItem *pParentMediumItem = searchItem(mTwHD, CheckIfSuitableByID(medium.parentID()));
+            /* If parent medium-item was not found: */
+            if (!pParentMediumItem)
+            {
+                /* Make sure corresponding parent medium is already cached! */
+                UIMedium parentMedium = vboxGlobal().medium(medium.parentID());
+                if (parentMedium.isNull())
+                    AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toAscii().constData()));
+                /* Try to create parent medium-item: */
+                else
+                    pParentMediumItem = createHardDiskItem(parentMedium);
+            }
+            /* If parent medium-item was found: */
+            if (pParentMediumItem)
+            {
+                pMediumItem = new UIMediumItemHD(medium, pParentMediumItem);
+                LogRel2(("UIMediumManager: Child hard-drive medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
+            }
+        }
+        /* Else just create item as top-level one: */
+        if (!pMediumItem)
+        {
+            pMediumItem = new UIMediumItemHD(medium, mTwHD);
+            LogRel2(("UIMediumManager: Root hard-drive medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
+        }
+    }
+
+    /* Return created medium-item: */
+    return pMediumItem;
+}
+
 void UIMediumManager::updateMediumItem(const UIMedium &medium)
 {
     /* Get medium type: */
@@ -1868,52 +1914,6 @@ UIMediumItem* UIMediumManager::searchItem(QTreeWidgetItem *pParentItem, const Ch
 
     /* Null by default: */
     return 0;
-}
-
-UIMediumItem* UIMediumManager::createHardDiskItem(const UIMedium &medium)
-{
-    /* Make sure passed medium is valid: */
-    AssertReturn(!medium.medium().isNull(), 0);
-
-    /* Search for existing medium-item: */
-    UIMediumItem *pMediumItem = searchItem(mTwHD, CheckIfSuitableByID(medium.id()));
-
-    /* If medium-item do not exists: */
-    if (!pMediumItem)
-    {
-        /* If medium have a parent: */
-        if (medium.parentID() != UIMedium::nullID())
-        {
-            /* Try to find parent medium-item: */
-            UIMediumItem *pParentMediumItem = searchItem(mTwHD, CheckIfSuitableByID(medium.parentID()));
-            /* If parent medium-item was not found: */
-            if (!pParentMediumItem)
-            {
-                /* Make sure corresponding parent medium is already cached! */
-                UIMedium parentMedium = vboxGlobal().medium(medium.parentID());
-                if (parentMedium.isNull())
-                    AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toAscii().constData()));
-                /* Try to create parent medium-item: */
-                else
-                    pParentMediumItem = createHardDiskItem(parentMedium);
-            }
-            /* If parent medium-item was found: */
-            if (pParentMediumItem)
-            {
-                pMediumItem = new UIMediumItemHD(medium, pParentMediumItem);
-                LogRel2(("UIMediumManager: Child hard-drive medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
-            }
-        }
-        /* Else just create item as top-level one: */
-        if (!pMediumItem)
-        {
-            pMediumItem = new UIMediumItemHD(medium, mTwHD);
-            LogRel2(("UIMediumManager: Root hard-drive medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
-        }
-    }
-
-    /* Return created medium-item: */
-    return pMediumItem;
 }
 
 /* static */
