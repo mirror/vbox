@@ -883,7 +883,7 @@ typedef struct PDMIDISPLAYCONNECTOR
     /** @} */
 } PDMIDISPLAYCONNECTOR;
 /** PDMIDISPLAYCONNECTOR interface ID. */
-#define PDMIDISPLAYCONNECTOR_IID                "c7a1b36d-8dfc-421d-b71f-3a0eeaf733e6"
+#define PDMIDISPLAYCONNECTOR_IID                "05ba9649-302e-43dd-b9ff-60b6fb311d97"
 
 
 /** Pointer to a block port interface. */
