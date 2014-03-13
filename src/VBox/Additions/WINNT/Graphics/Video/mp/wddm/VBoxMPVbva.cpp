@@ -237,11 +237,11 @@ static int vboxVBVAExCtlSubmitEnableDisable(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUE
 /*
  * Public hardware buffer methods.
  */
-RTDECL(bool) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx,
+RTDECL(int) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx,
                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
                             VBVABUFFER *pVBVA)
 {
-    bool bRc = false;
+    int rc = VERR_GENERAL_FAILURE;
 
     LogFlowFunc(("pVBVA %p\n", pVBVA));
 
@@ -265,15 +265,16 @@ RTDECL(bool) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx,
         pCtx->pRecord    = NULL;
         pCtx->pVBVA      = pVBVA;
 
-        bRc = vboxVBVAExCtlSubmitEnableDisable(pCtx, pHGSMICtx, true);
+        rc = vboxVBVAExCtlSubmitEnableDisable(pCtx, pHGSMICtx, true);
     }
 
-    if (!bRc)
+    if (!RT_SUCCESS(rc))
     {
+        WARN(("enable failed %d", rc));
         VBoxVBVAExDisable(pCtx, pHGSMICtx);
     }
 
-    return bRc;
+    return rc;
 }
 
 RTDECL(void) VBoxVBVAExDisable(PVBVAEXBUFFERCONTEXT pCtx,
@@ -716,11 +717,7 @@ RTDECL(void*) VBoxVBVAExCFIterNext(PVBVAEXBUFFERFORWARDITER pIter, uint32_t *pcb
 
 int VBoxCmdVbvaEnable(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva)
 {
-    if (VBoxVBVAExEnable(&pVbva->Vbva, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pVbva->Vbva.pVBVA))
-        return VINF_SUCCESS;
-
-    WARN(("VBoxVBVAExEnable failed!"));
-    return VERR_GENERAL_FAILURE;
+    return VBoxVBVAExEnable(&pVbva->Vbva, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pVbva->Vbva.pVBVA);
 }
 
 int VBoxCmdVbvaDisable(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva)
