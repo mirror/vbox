@@ -861,9 +861,12 @@ void UIMediumManager::sltHandleCurrentItemChanged()
 
 void UIMediumManager::sltHandleDoubleClick()
 {
-    /* Call for modify-action if hard-drive medium-item double-clicked: */
-    if (currentMediumType() == UIMediumType_HardDisk)
-        sltModifyMedium();
+    /* Skip for non-hard-drives: */
+    if (currentMediumType() != UIMediumType_HardDisk)
+        return;
+
+    /* Call for modify-action: */
+    sltModifyMedium();
 }
 
 void UIMediumManager::sltHandleContextMenuCall(const QPoint &position)
@@ -885,10 +888,10 @@ void UIMediumManager::sltHandleContextMenuCall(const QPoint &position)
 void UIMediumManager::sltPerformTablesAdjustment()
 {
     /* Get all the tree-widgets: */
-    QList<QITreeWidget*> trees;
-    trees << mTwHD;
-    trees << mTwCD;
-    trees << mTwFD;
+    QList<QTreeWidget*> trees;
+    trees << treeWidget(UIMediumType_HardDisk);
+    trees << treeWidget(UIMediumType_DVD);
+    trees << treeWidget(UIMediumType_Floppy);
 
     /* Calculate deduction for every header: */
     QList<int> deductions;
@@ -1146,22 +1149,23 @@ void UIMediumManager::prepareTreeWidgetHD()
     /* HD tree-widget created in .ui file. */
     {
         /* Configure HD tree-widget: */
-        mTwHD->setColumnCount(3);
-        mTwHD->sortItems(0, Qt::AscendingOrder);
-        mTwHD->header()->setResizeMode(0, QHeaderView::Fixed);
-        mTwHD->header()->setResizeMode(1, QHeaderView::ResizeToContents);
-        mTwHD->header()->setResizeMode(2, QHeaderView::ResizeToContents);
-        mTwHD->header()->setStretchLastSection(false);
-        mTwHD->setSortingEnabled(true);
-        connect(mTwHD, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
+        QTreeWidget *pTreeWidget = treeWidget(UIMediumType_HardDisk);
+        pTreeWidget->setColumnCount(3);
+        pTreeWidget->sortItems(0, Qt::AscendingOrder);
+        pTreeWidget->header()->setResizeMode(0, QHeaderView::Fixed);
+        pTreeWidget->header()->setResizeMode(1, QHeaderView::ResizeToContents);
+        pTreeWidget->header()->setResizeMode(2, QHeaderView::ResizeToContents);
+        pTreeWidget->header()->setStretchLastSection(false);
+        pTreeWidget->setSortingEnabled(true);
+        connect(pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
                 this, SLOT(sltHandleCurrentItemChanged()));
-        connect(mTwHD, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
+        connect(pTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
                 this, SLOT(sltHandleDoubleClick()));
-        connect(mTwHD, SIGNAL(customContextMenuRequested(const QPoint&)),
+        connect(pTreeWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltHandleContextMenuCall(const QPoint&)));
-        connect(mTwHD, SIGNAL(resized(const QSize&, const QSize&)),
+        connect(pTreeWidget, SIGNAL(resized(const QSize&, const QSize&)),
                 this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
-        connect(mTwHD->header(), SIGNAL(sectionResized(int, int, int)),
+        connect(pTreeWidget->header(), SIGNAL(sectionResized(int, int, int)),
                 this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
     }
 }
@@ -1171,21 +1175,22 @@ void UIMediumManager::prepareTreeWidgetCD()
     /* CD tree-widget created in .ui file. */
     {
         /* Configure CD tree-widget: */
-        mTwCD->setColumnCount(2);
-        mTwCD->sortItems(0, Qt::AscendingOrder);
-        mTwCD->header()->setResizeMode(0, QHeaderView::Fixed);
-        mTwCD->header()->setResizeMode(1, QHeaderView::ResizeToContents);
-        mTwCD->header()->setStretchLastSection(false);
-        mTwCD->setSortingEnabled(true);
-        connect(mTwCD, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
+        QTreeWidget *pTreeWidget = treeWidget(UIMediumType_DVD);
+        pTreeWidget->setColumnCount(2);
+        pTreeWidget->sortItems(0, Qt::AscendingOrder);
+        pTreeWidget->header()->setResizeMode(0, QHeaderView::Fixed);
+        pTreeWidget->header()->setResizeMode(1, QHeaderView::ResizeToContents);
+        pTreeWidget->header()->setStretchLastSection(false);
+        pTreeWidget->setSortingEnabled(true);
+        connect(pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
                 this, SLOT(sltHandleCurrentItemChanged()));
-        connect(mTwCD, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
+        connect(pTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
                 this, SLOT(sltHandleDoubleClick()));
-        connect(mTwCD, SIGNAL(customContextMenuRequested(const QPoint&)),
+        connect(pTreeWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltHandleContextMenuCall(const QPoint&)));
-        connect(mTwCD, SIGNAL(resized(const QSize&, const QSize&)),
+        connect(pTreeWidget, SIGNAL(resized(const QSize&, const QSize&)),
                 this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
-        connect(mTwCD->header(), SIGNAL(sectionResized(int, int, int)),
+        connect(pTreeWidget->header(), SIGNAL(sectionResized(int, int, int)),
                 this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
     }
 }
@@ -1195,21 +1200,22 @@ void UIMediumManager::prepareTreeWidgetFD()
     /* FD tree-widget created in .ui file. */
     {
         /* Configure FD tree-widget: */
-        mTwFD->setColumnCount(2);
-        mTwFD->sortItems(0, Qt::AscendingOrder);
-        mTwFD->header()->setResizeMode(0, QHeaderView::Fixed);
-        mTwFD->header()->setResizeMode(1, QHeaderView::ResizeToContents);
-        mTwFD->header()->setStretchLastSection(false);
-        mTwFD->setSortingEnabled(true);
-        connect(mTwFD, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
+        QTreeWidget *pTreeWidget = treeWidget(UIMediumType_Floppy);
+        pTreeWidget->setColumnCount(2);
+        pTreeWidget->sortItems(0, Qt::AscendingOrder);
+        pTreeWidget->header()->setResizeMode(0, QHeaderView::Fixed);
+        pTreeWidget->header()->setResizeMode(1, QHeaderView::ResizeToContents);
+        pTreeWidget->header()->setStretchLastSection(false);
+        pTreeWidget->setSortingEnabled(true);
+        connect(pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
                 this, SLOT(sltHandleCurrentItemChanged()));
-        connect(mTwFD, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
+        connect(pTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
                 this, SLOT(sltHandleDoubleClick()));
-        connect(mTwFD, SIGNAL(customContextMenuRequested(const QPoint&)),
+        connect(pTreeWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltHandleContextMenuCall(const QPoint&)));
-        connect(mTwFD, SIGNAL(resized(const QSize&, const QSize&)),
+        connect(pTreeWidget, SIGNAL(resized(const QSize&, const QSize&)),
                 this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
-        connect(mTwFD->header(), SIGNAL(sectionResized(int, int, int)),
+        connect(pTreeWidget->header(), SIGNAL(sectionResized(int, int, int)),
                 this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
     }
 }
@@ -1601,22 +1607,25 @@ void UIMediumManager::retranslateUi()
     /* Translations moved from VBoxMediaManagerDlg.ui file to keep old translation context: */
     setWindowTitle(QApplication::translate("VBoxMediaManagerDlg", "Virtual Media Manager"));
     mTabWidget->setTabText(0, tr("&Hard drives"));
-    mTwHD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
-    mTwHD->headerItem()->setText(1, QApplication::translate("VBoxMediaManagerDlg", "Virtual Size"));
-    mTwHD->headerItem()->setText(2, QApplication::translate("VBoxMediaManagerDlg", "Actual Size"));
+    QTreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
+    pTreeWidgetHD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
+    pTreeWidgetHD->headerItem()->setText(1, QApplication::translate("VBoxMediaManagerDlg", "Virtual Size"));
+    pTreeWidgetHD->headerItem()->setText(2, QApplication::translate("VBoxMediaManagerDlg", "Actual Size"));
     m_pTypeLabel->setText(QApplication::translate("VBoxMediaManagerDlg", "Type:"));
     m_pLocationLabel->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
     m_pFormatLabel->setText(QApplication::translate("VBoxMediaManagerDlg", "Format:"));
     m_pDetailsLabel->setText(QApplication::translate("VBoxMediaManagerDlg", "Storage details:"));
     m_pUsageLabel->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
     mTabWidget->setTabText(1, tr("&Optical disks"));
-    mTwCD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
-    mTwCD->headerItem()->setText(1, QApplication::translate("VBoxMediaManagerDlg", "Size"));
+    QTreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
+    pTreeWidgetCD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
+    pTreeWidgetCD->headerItem()->setText(1, QApplication::translate("VBoxMediaManagerDlg", "Size"));
     mLbCD1->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
     mLbCD2->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
     mTabWidget->setTabText(2, tr("&Floppy disks"));
-    mTwFD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
-    mTwFD->headerItem()->setText(1, QApplication::translate("VBoxMediaManagerDlg", "Size"));
+    QTreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
+    pTreeWidgetFD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
+    pTreeWidgetFD->headerItem()->setText(1, QApplication::translate("VBoxMediaManagerDlg", "Size"));
     mLbFD1->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
     mLbFD2->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
 
@@ -1634,7 +1643,7 @@ void UIMediumManager::retranslateUi()
     mButtonBox->button(QDialogButtonBox::Ok)->setText(tr("C&lose"));
 
     /* Full refresh if there is at least one item present: */
-    if (mTwHD->topLevelItemCount() || mTwCD->topLevelItemCount() || mTwFD->topLevelItemCount())
+    if (pTreeWidgetHD->topLevelItemCount() || pTreeWidgetCD->topLevelItemCount() || pTreeWidgetFD->topLevelItemCount())
         sltRefreshAll();
 }
 
@@ -1654,7 +1663,7 @@ UIMediumItem* UIMediumManager::createMediumItem(const UIMedium &medium)
             AssertPtrReturn(pMediumItem, 0);
             if (pMediumItem->id() == m_strCurrentIdHD)
             {
-                setCurrentItem(mTwHD, pMediumItem);
+                setCurrentItem(treeWidget(UIMediumType_HardDisk), pMediumItem);
                 m_strCurrentIdHD = QString();
             }
             break;
@@ -1662,12 +1671,12 @@ UIMediumItem* UIMediumManager::createMediumItem(const UIMedium &medium)
         /* Of optical-image type: */
         case UIMediumType_DVD:
         {
-            pMediumItem = new UIMediumItemCD(medium, mTwCD);
+            pMediumItem = new UIMediumItemCD(medium, treeWidget(UIMediumType_DVD));
             LogRel2(("UIMediumManager: Optical medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
             AssertPtrReturn(pMediumItem, 0);
             if (pMediumItem->id() == m_strCurrentIdCD)
             {
-                setCurrentItem(mTwCD, pMediumItem);
+                setCurrentItem(treeWidget(UIMediumType_DVD), pMediumItem);
                 m_strCurrentIdCD = QString();
             }
             break;
@@ -1675,12 +1684,12 @@ UIMediumItem* UIMediumManager::createMediumItem(const UIMedium &medium)
         /* Of floppy-image type: */
         case UIMediumType_Floppy:
         {
-            pMediumItem = new UIMediumItemFD(medium, mTwFD);
+            pMediumItem = new UIMediumItemFD(medium, treeWidget(UIMediumType_Floppy));
             LogRel2(("UIMediumManager: Floppy medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
             AssertPtrReturn(pMediumItem, 0);
             if (pMediumItem->id() == m_strCurrentIdFD)
             {
-                setCurrentItem(mTwFD, pMediumItem);
+                setCurrentItem(treeWidget(UIMediumType_Floppy), pMediumItem);
                 m_strCurrentIdFD = QString();
             }
             break;
@@ -1705,8 +1714,11 @@ UIMediumItem* UIMediumManager::createHardDiskItem(const UIMedium &medium)
     /* Make sure passed medium is valid: */
     AssertReturn(!medium.medium().isNull(), 0);
 
+    /* Get corresponding tree-widget: */
+    QTreeWidget *pTreeWidget = treeWidget(UIMediumType_HardDisk);
+
     /* Search for existing medium-item: */
-    UIMediumItem *pMediumItem = searchItem(mTwHD, CheckIfSuitableByID(medium.id()));
+    UIMediumItem *pMediumItem = searchItem(pTreeWidget, CheckIfSuitableByID(medium.id()));
 
     /* If medium-item do not exists: */
     if (!pMediumItem)
@@ -1715,7 +1727,7 @@ UIMediumItem* UIMediumManager::createHardDiskItem(const UIMedium &medium)
         if (medium.parentID() != UIMedium::nullID())
         {
             /* Try to find parent medium-item: */
-            UIMediumItem *pParentMediumItem = searchItem(mTwHD, CheckIfSuitableByID(medium.parentID()));
+            UIMediumItem *pParentMediumItem = searchItem(pTreeWidget, CheckIfSuitableByID(medium.parentID()));
             /* If parent medium-item was not found: */
             if (!pParentMediumItem)
             {
@@ -1737,7 +1749,7 @@ UIMediumItem* UIMediumManager::createHardDiskItem(const UIMedium &medium)
         /* Else just create item as top-level one: */
         if (!pMediumItem)
         {
-            pMediumItem = new UIMediumItemHD(medium, mTwHD);
+            pMediumItem = new UIMediumItemHD(medium, pTreeWidget);
             LogRel2(("UIMediumManager: Root hard-drive medium-item with ID={%s} created.\n", medium.id().toAscii().constData()));
         }
     }
@@ -1805,11 +1817,11 @@ void UIMediumManager::deleteMediumItem(const QString &strMediumID)
 UIMediumType UIMediumManager::mediumType(QTreeWidget *pTreeWidget) const
 {
     /* Hard-drive tree-widget: */
-    if (pTreeWidget == mTwHD) return UIMediumType_HardDisk;
+    if (pTreeWidget == treeWidget(UIMediumType_HardDisk)) return UIMediumType_HardDisk;
     /* Optical-image tree-widget: */
-    if (pTreeWidget == mTwCD) return UIMediumType_DVD;
+    if (pTreeWidget == treeWidget(UIMediumType_DVD)) return UIMediumType_DVD;
     /* Floppy-image tree-widget: */
-    if (pTreeWidget == mTwFD) return UIMediumType_Floppy;
+    if (pTreeWidget == treeWidget(UIMediumType_Floppy)) return UIMediumType_Floppy;
     /* Invalid by default: */
     AssertFailedReturn(UIMediumType_Invalid);
 }
