@@ -258,7 +258,7 @@ public:
 
 private:
 
-    // Wrapped GuuestSession Properties
+    // Wrapped GuestSession Properties
     HRESULT getUser(com::Utf8Str &aUser);
     HRESULT getDomain(com::Utf8Str &aDomain);
     HRESULT getName(com::Utf8Str &aName);
@@ -274,7 +274,7 @@ private:
     HRESULT getFiles(std::vector<ComPtr<IGuestFile> > &aFiles);
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
 
-    // Wrapped GuuestSession Methods
+    // Wrapped GuestSession Methods
     HRESULT close();
     HRESULT copyFrom(const com::Utf8Str &aSource,
                      const com::Utf8Str &aDest,
