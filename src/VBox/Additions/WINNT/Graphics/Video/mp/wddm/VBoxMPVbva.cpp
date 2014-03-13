@@ -1091,7 +1091,7 @@ static uint32_t vboxCVDdiSysMemElBuild(VBOXCMDVBVA_SYSMEMEL *pEl, PMDL pMdl, uin
     pEl->iPage1 = (uint32_t)(cur & 0xfffff);
     pEl->iPage2 = (uint32_t)(cur >> 20);
     --cPages;
-    for ( ; cPages && cStoredPages < VBOXCMDVBVA_SYSMEMEL_CPAGES_MAX; --cPages, ++cStoredPages, cur = next;)
+    for ( ; cPages && cStoredPages < VBOXCMDVBVA_SYSMEMEL_CPAGES_MAX; --cPages, ++cStoredPages, cur = next)
     {
         next = MmGetMdlPfnArray(pMdl)[iPfn+cStoredPages];
         if (next != cur+1)
