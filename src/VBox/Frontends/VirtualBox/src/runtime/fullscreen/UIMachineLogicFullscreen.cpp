@@ -631,8 +631,16 @@ void UIMachineLogicFullscreen::revalidateFullscreenWindow(UIMachineWindow *pMach
                 /* Ask window to enter 'fullscreen' mode: */
                 emit sigNotifyAboutNativeFullscreenShouldBeEntered(pMachineWindow);
             }
-            /* Else make sure that window is hidden: */
-            else pMachineWindow->showInNecessaryMode();
+            /* If that window
+             * is shown while shouldn't: */
+            else if (pMachineWindow->isVisible())
+            {
+                /* Else make sure that window is hidden: */
+                pMachineWindow->showInNecessaryMode();
+
+                /* Fade to normal: */
+                fadeToNormal();
+            }
         }
         /* Validate window which is in fullscreen: */
         else
