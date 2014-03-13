@@ -94,6 +94,8 @@ typedef struct VBOXRAWPCIINS
 
     /** Pointer to per-VM context in hypervisor data. */
     PRAWPCIPERVM       pVmCtx;
+
+    RTR0PTR            aRegionR0Mapping[/* XXX: magic */ 7];
 } VBOXRAWPCIINS;
 
 /**
