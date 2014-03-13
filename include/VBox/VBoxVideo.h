@@ -1710,7 +1710,8 @@ typedef struct VBOXCMDVBVA_CLRFILL
 typedef struct VBOXCMDVBVA_SYSMEMEL
 {
     uint32_t cPagesAfterFirst  : 12;
-    VBOXCMDVBVAPHADDR iPage    : 52;
+    uint32_t iPage1            : 20;
+    uint32_t iPage2;
 } VBOXCMDVBVA_SYSMEMEL;
 
 typedef struct VBOXCMDVBVA_PAGING_TRANSFER
