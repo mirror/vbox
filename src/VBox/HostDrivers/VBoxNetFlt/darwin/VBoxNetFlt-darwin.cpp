@@ -205,10 +205,6 @@ static void vboxNetFltDarwinDetectPCountOffset(ifnet_t pIfNet)
         offTry2 = vboxNetFltDarwinSetAndDiff(pIfNet, 1);
         offTry3 = vboxNetFltDarwinSetAndDiff(pIfNet, 0);
         offTry4 = vboxNetFltDarwinSetAndDiff(pIfNet, 0);
-
-        /* If any attempt has failed we won't continue as our algorithm is flawed. */
-        if (!offTry1 || !offTry2 || !offTry3 || !offTry4)
-            break;
         if (offTry1 == offTry2 && offTry2 == offTry3 && offTry3 == offTry4)
         {
             if (g_offIfNetPCount != offTry1)
