@@ -71,9 +71,9 @@ VBoxMMRHook_INCS := \
 	$(SUB_DEPTH)/include
 
 VBoxMMRHook_LIBS.x86  := \
-	$(VBOX_PATH_PSDK_v71)/Lib/WS2_32.lib
+	$(VBOX_PATH_PSDK_v71)/Lib/WS2_32.Lib
 VBoxMMRHook_LIBS.amd64  := \
-	$(VBOX_PATH_PSDK_v71)/Lib/x64/WS2_32.lib
+	$(VBOX_PATH_PSDK_v71)/Lib/x64/WS2_32.Lib
 
 VBoxMMRHook_LIBS    += \
  	$(VBOX_LIB_IPRT_GUEST_R3) \
