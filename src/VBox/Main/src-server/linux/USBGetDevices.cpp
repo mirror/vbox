@@ -881,10 +881,10 @@ static int addIfDevice(const char *pcszDevicesRoot,
         return VINF_SUCCESS;
     char szDevPath[RTPATH_MAX];
     ssize_t cchDevPath;
-    cchDevPath = RTLinuxFindDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
-                                       szDevPath, sizeof(szDevPath),
-                                       "%s/%.3d/%.3d",
-                                       pcszDevicesRoot, bus, device);
+    cchDevPath = RTLinuxCheckDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
+                                        szDevPath, sizeof(szDevPath),
+                                        "%s/%.3d/%.3d",
+                                        pcszDevicesRoot, bus, device);
     if (cchDevPath < 0)
         return VINF_SUCCESS;
 

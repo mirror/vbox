@@ -85,8 +85,6 @@ static void setNoProbe(bool val) { (void)val; }
 
 static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList,
                                bool isDVD, bool *pfSuccess);
-static int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD,
-                               bool *pfSuccess);
 static int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD,
                                  bool *pfSuccess);
 
@@ -468,9 +466,6 @@ int VBoxMainDriveInfo::updateDVDs ()
             setNoProbe(true);
             rc = getDriveInfoFromSysfs(&mDVDList, true /* isDVD */, &success);
         }
-        /* Walk through the /dev subtree if nothing else has helped. */
-        if (RT_SUCCESS(rc) && (!success | testing()))
-            rc = getDriveInfoFromDev(&mDVDList, true /* isDVD */, &success);
     }
     catch(std::bad_alloc &e)
     {
@@ -500,10 +495,6 @@ int VBoxMainDriveInfo::updateFloppies ()
             setNoProbe(true);
             rc = getDriveInfoFromSysfs(&mFloppyList, false /* isDVD */, &success);
         }
-        /* Walk through the /dev subtree if nothing else has helped. */
-        if (   RT_SUCCESS(rc) && (!success || testing()))
-            rc = getDriveInfoFromDev(&mFloppyList, false /* isDVD */,
-                                     &success);
     }
     catch(std::bad_alloc &e)
     {
@@ -621,8 +612,8 @@ private:
             misConsistent = false;
             return false;
         }
-        if (RTLinuxFindDevicePath(dev, RTFS_TYPE_DEV_BLOCK, mszNode,
-                                  sizeof(mszNode), "%s", mpcszName) < 0)
+        if (RTLinuxCheckDevicePath(dev, RTFS_TYPE_DEV_BLOCK, mszNode,
+                                   sizeof(mszNode), "%s", mpcszName) < 0)
             return false;
         return true;
     }
@@ -804,170 +795,6 @@ int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
     if (pfSuccess)
         *pfSuccess = fSuccess;
     LogFlow (("rc=%Rrc, fSuccess=%u\n", rc, (unsigned) fSuccess));
-    return rc;
-}
-
-
-/** Structure for holding information about a drive we have found */
-struct deviceNodeInfo
-{
-    /** The device number */
-    dev_t Device;
-    /** The device node path */
-    char szPath[RTPATH_MAX];
-    /** The device description */
-    char szDesc[256];
-    /** The device UDI */
-    char szUdi[256];
-};
-
-/** The maximum number of devices we will search for. */
-enum { MAX_DEVICE_NODES = 8 };
-/** An array of MAX_DEVICE_NODES devices */
-typedef struct deviceNodeInfo deviceNodeArray[MAX_DEVICE_NODES];
-
-/**
- * Recursive worker function to walk the /dev tree looking for DVD or floppy
- * devices.
- * @returns true if we have already found MAX_DEVICE_NODES devices, false
- *          otherwise
- * @param   pszPath   the path to start recursing.  The function can modify
- *                    this string at and after the terminating zero
- * @param   cchPath   the size of the buffer (not the string!) in @a pszPath
- * @param   aDevices  where to fill in information about devices that we have
- *                    found
- * @param   wantDVD   are we looking for DVD devices (or floppies)?
- */
-static bool devFindDeviceRecursive(char *pszPath, size_t cchPath,
-                                   deviceNodeArray aDevices, bool wantDVD)
-{
-    /*
-     * Check assumptions made by the code below.
-     */
-    size_t const cchBasePath = strlen(pszPath);
-    AssertReturn(cchBasePath < RTPATH_MAX - 10U, false);
-    AssertReturn(pszPath[cchBasePath - 1] != '/', false);
-
-    PRTDIR  pDir;
-    if (RT_FAILURE(RTDirOpen(&pDir, pszPath)))
-        return false;
-    for (;;)
-    {
-        RTDIRENTRY Entry;
-        RTFSOBJINFO ObjInfo;
-        int rc = RTDirRead(pDir, &Entry, NULL);
-        if (RT_FAILURE(rc))
-            break;
-        if (Entry.enmType == RTDIRENTRYTYPE_UNKNOWN)
-        {
-            if (RT_FAILURE(RTPathQueryInfo(pszPath, &ObjInfo,
-                           RTFSOBJATTRADD_UNIX)))
-                continue;
-            if (RTFS_IS_SYMLINK(ObjInfo.Attr.fMode))
-                continue;
-        }
-
-        if (Entry.enmType == RTDIRENTRYTYPE_SYMLINK)
-            continue;
-        pszPath[cchBasePath] = '\0';
-        if (RT_FAILURE(RTPathAppend(pszPath, cchPath, Entry.szName)))
-            break;
-
-        /* Do the matching. */
-        dev_t DevNode;
-        char szDesc[256], szUdi[256];
-        if (!devValidateDevice(pszPath, wantDVD, &DevNode, szDesc,
-                               sizeof(szDesc), szUdi, sizeof(szUdi)))
-            continue;
-        unsigned i;
-        for (i = 0; i < MAX_DEVICE_NODES; ++i)
-            if (!aDevices[i].Device || (aDevices[i].Device == DevNode))
-                break;
-        AssertBreak(i < MAX_DEVICE_NODES);
-        if (aDevices[i].Device)
-            continue;
-        aDevices[i].Device = DevNode;
-        RTStrPrintf(aDevices[i].szPath, sizeof(aDevices[i].szPath),
-                    "%s", pszPath);
-        AssertCompile(sizeof(aDevices[i].szDesc) == sizeof(szDesc));
-        strcpy(aDevices[i].szDesc, szDesc);
-        AssertCompile(sizeof(aDevices[i].szUdi) == sizeof(szUdi));
-        strcpy(aDevices[i].szUdi, szUdi);
-        if (i == MAX_DEVICE_NODES - 1)
-            break;
-        continue;
-
-        /* Recurse into subdirectories. */
-        if (   (Entry.enmType == RTDIRENTRYTYPE_UNKNOWN)
-            && !RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
-            continue;
-        if (Entry.enmType != RTDIRENTRYTYPE_DIRECTORY)
-            continue;
-        if (Entry.szName[0] == '.')
-            continue;
-
-        if (devFindDeviceRecursive(pszPath, cchPath, aDevices, wantDVD))
-            break;
-    }
-    RTDirClose(pDir);
-    return aDevices[MAX_DEVICE_NODES - 1].Device ? true : false;
-}
-
-
-/**
- * Recursively walk through the /dev tree and add any DVD or floppy drives we
- * find and can access to our list.  (If we can't access them we can't check
- * whether or not they are really DVD or floppy drives).
- * @note  this is rather slow (a couple of seconds) for DVD probing on
- *        systems with a static /dev tree, as the current code tries to open
- *        any device node with a major/minor combination that could belong to
- *        a CD-ROM device, and opening a non-existent device can take a non.
- *        negligible time on Linux.  If it is ever necessary to improve this
- *        (static /dev trees are no longer very fashionable these days, and
- *        sysfs looks like it will be with us for a while), we could further
- *        reduce the number of device nodes we open by checking whether the
- *        driver is actually loaded in /proc/devices, and by counting the
- *        of currently attached SCSI CD-ROM devices in /proc/scsi/scsi (yes,
- *        there is a race, but it is probably not important for us).
- * @returns iprt status code
- * @param   pList      the list to append the drives found to
- * @param   isDVD      are we looking for DVD drives or for floppies?
- * @param   pfSuccess  this will be set to true if we found at least one drive
- *                     and to false otherwise.  Optional.
- */
-/* static */
-int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
-{
-    AssertPtrReturn(pList, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER);
-    LogFlowFunc(("pList=%p, isDVD=%d, pfSuccess=%p\n", pList, isDVD,
-                 pfSuccess));
-    int rc = VINF_SUCCESS;
-    bool success = false;
-
-    char szPath[RTPATH_MAX] = "/dev";
-    deviceNodeArray aDevices;
-    RT_ZERO(aDevices);
-    devFindDeviceRecursive(szPath, sizeof(szPath), aDevices, isDVD);
-    try
-    {
-        for (unsigned i = 0; i < MAX_DEVICE_NODES; ++i)
-        {
-            if (aDevices[i].Device)
-            {
-                pList->push_back(DriveInfo(aDevices[i].szPath,
-                                 aDevices[i].szUdi, aDevices[i].szDesc));
-                success = true;
-            }
-        }
-        if (pfSuccess != NULL)
-            *pfSuccess = success;
-    }
-    catch(std::bad_alloc &e)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-    LogFlowFunc (("rc=%Rrc, success=%d\n", rc, success));
     return rc;
 }
 
