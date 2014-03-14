@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -581,63 +581,55 @@ static void usbLibDevCfgDrFree(PUSB_CONFIGURATION_DESCRIPTOR pDr)
 
 static int usbLibDevStrDrEntryGet(HANDLE hHub, ULONG iPort, ULONG iDr, USHORT idLang, PVBOXUSB_STRING_DR_ENTRY *ppList)
 {
-    char Buf[sizeof (USB_DESCRIPTOR_REQUEST) + MAXIMUM_USB_STRING_LENGTH];
-    PUSB_DESCRIPTOR_REQUEST pRq = (PUSB_DESCRIPTOR_REQUEST)Buf;
-    PUSB_STRING_DESCRIPTOR pDr = (PUSB_STRING_DESCRIPTOR)(Buf + sizeof (*pRq));
-    memset (&Buf, 0, sizeof (Buf));
+    char szBuf[sizeof (USB_DESCRIPTOR_REQUEST) + MAXIMUM_USB_STRING_LENGTH];
+    RT_ZERO(szBuf);
+
+    PUSB_DESCRIPTOR_REQUEST pRq = (PUSB_DESCRIPTOR_REQUEST)szBuf;
+    PUSB_STRING_DESCRIPTOR pDr = (PUSB_STRING_DESCRIPTOR)(szBuf + sizeof (*pRq));
+    RT_BZERO(pDr, sizeof(USB_STRING_DESCRIPTOR));
+
     pRq->ConnectionIndex = iPort;
     pRq->SetupPacket.wValue = (USB_STRING_DESCRIPTOR_TYPE << 8) | iDr;
     pRq->SetupPacket.wIndex = idLang;
-    pRq->SetupPacket.wLength = sizeof (Buf) - sizeof (*pRq);
+    pRq->SetupPacket.wLength = sizeof (szBuf) - sizeof (*pRq);
+
     DWORD cbReturned = 0;
-    if (!DeviceIoControl(hHub, IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, pRq, sizeof (Buf),
-                                    pRq, sizeof (Buf),
-                                    &cbReturned, NULL))
+    if (!DeviceIoControl(hHub, IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, pRq, sizeof (szBuf),
+                         pRq, sizeof(szBuf),
+                         &cbReturned, NULL))
     {
-        DWORD winEr = GetLastError();
-        LogRel((__FUNCTION__": DeviceIoControl 1 fail winEr (%d)\n", winEr));
-#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
-            AssertFailed();
-#endif
-        return VERR_GENERAL_FAILURE;
+        DWORD dwErr = GetLastError();
+        AssertMsgFailed(("Getting USB descriptor failed with error %ld\n", dwErr));
+        return RTErrConvertFromWin32(dwErr);
     }
 
-    if (cbReturned < sizeof (*pDr) + 2)
-    {
-        AssertFailed();
-        return VERR_GENERAL_FAILURE;
-    }
-
-    if (!!(pDr->bLength % 2))
-    {
-        AssertFailed();
-        return VERR_GENERAL_FAILURE;
-    }
-
-    if (pDr->bLength != cbReturned - sizeof (*pRq))
-    {
-        AssertFailed();
-        return VERR_GENERAL_FAILURE;
-    }
-
+    /* Wrong descriptor type at the requested port index? Bail out. */
     if (pDr->bDescriptorType != USB_STRING_DESCRIPTOR_TYPE)
+        return VERR_NOT_FOUND;
+
+    /* Some more sanity checks. */
+    if (   (cbReturned < sizeof (*pDr) + 2)
+        || (!!(pDr->bLength % 2))
+        || (pDr->bLength != cbReturned - sizeof(*pRq)))
     {
-        AssertFailed();
-        return VERR_GENERAL_FAILURE;
+        AssertMsgFailed(("Sanity check failed for string descriptor: cbReturned=%RI32, cbDevReq=%zu, type=%RU8, len=%RU8, port=%RU32, index=%RU32, lang=%RU32\n",
+                         cbReturned, sizeof(*pRq), pDr->bDescriptorType, pDr->bLength, iPort, iDr, idLang));
+        return VERR_INVALID_PARAMETER;
     }
 
-    PVBOXUSB_STRING_DR_ENTRY pEntry = (PVBOXUSB_STRING_DR_ENTRY)RTMemAllocZ(sizeof (*pEntry) + pDr->bLength + 2);
-    Assert(pEntry);
+    PVBOXUSB_STRING_DR_ENTRY pEntry =
+        (PVBOXUSB_STRING_DR_ENTRY)RTMemAllocZ(sizeof(VBOXUSB_STRING_DR_ENTRY) + pDr->bLength + 2);
+    AssertPtr(pEntry);
     if (!pEntry)
-    {
-        return VERR_OUT_OF_RESOURCES;
-    }
+        return VERR_NO_MEMORY;
 
     pEntry->pNext = *ppList;
     pEntry->iDr = iDr;
     pEntry->idLang = idLang;
     memcpy(&pEntry->StrDr, pDr, pDr->bLength);
+
     *ppList = pEntry;
+
     return VINF_SUCCESS;
 }
 
@@ -667,10 +659,8 @@ static int usbLibDevStrDrEntryGetForLangs(HANDLE hHub, ULONG iPort, ULONG iDr, U
 
 static int usbLibDevStrDrEntryGetAll(HANDLE hHub, ULONG iPort, PUSB_DEVICE_DESCRIPTOR pDevDr, PUSB_CONFIGURATION_DESCRIPTOR pCfgDr, PVBOXUSB_STRING_DR_ENTRY *ppList)
 {
+    /* Read string descriptor zero to determine what languages are available. */
     int rc = usbLibDevStrDrEntryGet(hHub, iPort, 0, 0, ppList);
-#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
-    AssertRC(rc);
-#endif
     if (RT_FAILURE(rc))
         return rc;
 
