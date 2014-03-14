@@ -216,7 +216,7 @@ int vboxPciOsDevRegisterWithIommu(PVBOXRAWPCIINS pIns)
     {
         printk(KERN_DEBUG "vboxpci: iommu_attach_device() success\n");
         pIns->fIommuUsed = true;
-        rc = VINF_SUCCESS;;
+        rc = VINF_SUCCESS;
     }
     else
     {
