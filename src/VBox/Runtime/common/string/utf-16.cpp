@@ -38,6 +38,66 @@
 #include "internal/string.h"
 
 
+/**
+ * Get get length in code points of an UTF-16 encoded string, validating the
+ * string while doing so.
+ *
+ * @returns IPRT status code.
+ * @param   pwsz            Pointer to the UTF-16 string.
+ * @param   cwc             The max length of the string in UTF-16 units.  Use
+ *                          RTSTR_MAX if all of the string is to be examined.
+ * @param   pcuc            Where to store the length in unicode code points.
+ * @param   pcwcActual      Where to store the actual size of the UTF-16 string
+ *                          on success. Optional.
+ */
+static int rtUtf16Length(PCRTUTF16 pwsz, size_t cwc, size_t *pcuc, size_t *pcwcActual)
+{
+    PCRTUTF16 pwszStart   = pwsz;
+    size_t    cCodePoints = 0;
+    while (cwc > 0)
+    {
+        RTUTF16 wc = *pwsz;
+        if (!wc)
+            break;
+        if (wc < 0xd800 || wc > 0xdfff)
+        {
+            cCodePoints++;
+            pwsz++;
+            cwc--;
+        }
+        /* Surrogate pair: */
+        else if (wc >= 0xdc00)
+        {
+            RTStrAssertMsgFailed(("Lone UTF-16 trail surrogate: %#x (%.*Rhxs)\n", wc, RT_MIN(cwc * 2, 10), pwsz));
+            return VERR_INVALID_UTF16_ENCODING;
+        }
+        else if (cwc < 2)
+        {
+            RTStrAssertMsgFailed(("Lone UTF-16 lead surrogate: %#x\n", wc));
+            return VERR_INVALID_UTF16_ENCODING;
+        }
+        else
+        {
+            RTUTF16 wcTrail = pwsz[1];
+            if (wcTrail < 0xdc00 || wcTrail > 0xdfff)
+            {
+                RTStrAssertMsgFailed(("Invalid UTF-16 trail surrogate: %#x (lead %#x)\n", wcTrail, wc));
+                return VERR_INVALID_UTF16_ENCODING;
+            }
+
+            cCodePoints++;
+            pwsz += 2;
+            cwc -= 2;
+        }
+    }
+
+    /* done */
+    *pcuc = cCodePoints;
+    if (pcwcActual)
+        *pcwcActual = pwsz - pwszStart;
+    return VINF_SUCCESS;
+}
+
 
 RTDECL(void)  RTUtf16Free(PRTUTF16 pwszString)
 {
@@ -247,6 +307,43 @@ RTDECL(PRTUTF16) RTUtf16ToUpper(PRTUTF16 pwsz)
     return pwsz;
 }
 RT_EXPORT_SYMBOL(RTUtf16ToUpper);
+
+
+RTDECL(int) RTUtf16ValidateEncoding(PCRTUTF16 pwsz)
+{
+    return RTUtf16ValidateEncodingEx(pwsz, RTSTR_MAX, 0);
+}
+RT_EXPORT_SYMBOL(RTUtf16ValidateEncoding);
+
+
+RTDECL(int) RTUtf16ValidateEncodingEx(PCRTUTF16 pwsz, size_t cwc, uint32_t fFlags)
+{
+    AssertReturn(!(fFlags & ~(RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED)), VERR_INVALID_PARAMETER);
+    AssertPtr(pwsz);
+
+    /*
+     * Use rtUtf16Length for the job.
+     */
+    size_t cwcActual;
+    size_t cCpsIgnored;
+    int rc = rtUtf16Length(pwsz, cwc, &cCpsIgnored, &cwcActual);
+    if (RT_SUCCESS(rc))
+    {
+        if (    (fFlags & RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED)
+            &&  cwcActual >= cwc)
+            rc = VERR_BUFFER_OVERFLOW;
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTUtf16ValidateEncodingEx);
+
+
+RTDECL(bool) RTUtf16IsValidEncoding(PCRTUTF16 pwsz)
+{
+    int rc = RTUtf16ValidateEncodingEx(pwsz, RTSTR_MAX, 0);
+    return RT_SUCCESS(rc);
+}
+RT_EXPORT_SYMBOL(RTUtf16IsValidEncoding);
 
 
 RTDECL(ssize_t) RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidSet, char chReplacement)
