@@ -325,7 +325,7 @@ RTDECL(int) RTUtf16ValidateEncodingEx(PCRTUTF16 pwsz, size_t cwc, uint32_t fFlag
     /*
      * Use rtUtf16Length for the job.
      */
-    size_t cwcActual;
+    size_t cwcActual = 0; /* Shut up cc1plus. */
     size_t cCpsIgnored;
     int rc = rtUtf16Length(pwsz, cwc, &cCpsIgnored, &cwcActual);
     if (RT_SUCCESS(rc))
