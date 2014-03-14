@@ -46,6 +46,7 @@ BIN_IFCONFIG=/sbin/ifconfig
 BIN_SVCS=/usr/bin/svcs
 BIN_ID=/usr/bin/id
 BIN_PKILL=/usr/bin/pkill
+BIN_PGREP=/usr/bin/pgrep
 
 # "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
 MOD_VBOXDRV=vboxdrv
@@ -202,6 +203,10 @@ find_bins()
 
     if test ! -x "$BIN_PKILL"; then
         BIN_PKILL=`find_bin_path "$BIN_PKILL"`
+    fi
+
+    if test ! -x "$BIN_PGREP"; then
+        BIN_PGREP=`find_bin_path "$BIN_PGREP"`
     fi
 }
 
@@ -836,9 +841,9 @@ is_process_running()
         exit 1
     fi
 
-    procname=$1
-    procpid=`ps -eo pid,fname | grep $procname | grep -v grep | awk '{ print $1 }'`
-    if test ! -z "$procpid" && test "$procpid" -ge 0; then
+    procname="$1"
+    $BIN_PGREP "$procname" > /dev/null 2>&1
+    if test "$?" -eq 0; then
         return 1
     fi
     return 0
@@ -854,14 +859,13 @@ stop_process()
         exit 1
     fi
 
-    # @todo use is_process_running()
-    procname=$1
-    procpid=`ps -eo pid,fname | grep $procname | grep -v grep | awk '{ print $1 }'`
-    if test ! -z "$procpid" && test "$procpid" -ge 0; then
+    procname="$1"
+    is_process_running "$procname"
+    if test "$?" -eq 1; then
         $BIN_PKILL "$procname"
         sleep 2
-        procpid=`ps -eo pid,fname | grep $procname | grep -v grep | awk '{ print $1 }'`
-        if test ! -z "$procpid" && test "$procpid" -ge 0; then
+        is_process_running "$procname"
+        if test "$?" -eq 1; then
             subprint "Terminating: $procname  ...FAILED!"
             if test "$fatal" = "$FATALOP"; then
                 exit 1
