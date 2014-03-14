@@ -547,13 +547,25 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 case QEvent::MouseMove:
                 case QEvent::MouseButtonRelease:
                 {
+                    /* Get mouse-event: */
+                    QMouseEvent *pOldMouseEvent = static_cast<QMouseEvent*>(pEvent);
+
+                    /* Check which viewport(s) we *probably* hover: */
+                    QWidgetList probablyHoveredViewports;
+                    foreach (QWidget *pViewport, m_viewports)
+                    {
+                        QPoint posInViewport = pViewport->mapFromGlobal(pOldMouseEvent->globalPos());
+                        if (pViewport->geometry().contains(posInViewport))
+                            probablyHoveredViewports << pViewport;
+                    }
+                    /* Determine actually hovered viewport: */
+                    QWidget *pHoveredWidget = probablyHoveredViewports.isEmpty() ? 0 :
+                                              probablyHoveredViewports.contains(pWatchedWidget) ? pWatchedWidget :
+                                              probablyHoveredViewports.first();
+
                     /* Check if we should propagate this event to another window: */
-                    QWidget *pHoveredWidget = QApplication::widgetAt(QCursor::pos());
                     if (pHoveredWidget && pHoveredWidget != pWatchedWidget && m_viewports.values().contains(pHoveredWidget))
                     {
-                        /* Get current mouse-move event: */
-                        QMouseEvent *pOldMouseEvent = static_cast<QMouseEvent*>(pEvent);
-
                         /* Prepare redirected mouse-move event: */
                         QMouseEvent *pNewMouseEvent = new QMouseEvent(pOldMouseEvent->type(),
                                                                       pHoveredWidget->mapFromGlobal(pOldMouseEvent->globalPos()),
