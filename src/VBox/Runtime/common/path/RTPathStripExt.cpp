@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTPathStripExt
+ * IPRT - RTPathStripSuffix
  */
 
 /*
