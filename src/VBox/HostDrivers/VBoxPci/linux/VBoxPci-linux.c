@@ -351,7 +351,7 @@ int vboxPciOsDevDetachHostDriver(PVBOXRAWPCIINS pIns)
     uint8_t uDevFn = (pIns->HostPciAddress) & 0xff;
     const char* currentDriver;
     uint16_t uVendor, uDevice;
-    int fDetach = 0;
+    bool fDetach = 0;
 
     if (!g_VBoxPciGlobals.fPciStubModuleAvail)
     {
@@ -378,7 +378,7 @@ int vboxPciOsDevDetachHostDriver(PVBOXRAWPCIINS pIns)
            uVendor, uDevice, uBus, uDevFn>>3, uDevFn&7,
            currentDriver ? currentDriver : "<none>");
 
-    fDetach = (currentDriver == NULL  || (strcmp(currentDriver, PCI_STUB_MODULE) != 0)) ? 1 : 0;
+    fDetach = (currentDriver == NULL || (strcmp(currentDriver, PCI_STUB_MODULE) != 0));
 
     /* Init previous driver data. */
     pIns->szPrevDriver[0] = '\0';
