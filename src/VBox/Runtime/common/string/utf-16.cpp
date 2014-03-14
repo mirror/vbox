@@ -318,7 +318,8 @@ RT_EXPORT_SYMBOL(RTUtf16ValidateEncoding);
 
 RTDECL(int) RTUtf16ValidateEncodingEx(PCRTUTF16 pwsz, size_t cwc, uint32_t fFlags)
 {
-    AssertReturn(!(fFlags & ~(RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED | RTSTR_VALIDATE_ENCODING_EXACT_LENGTH)),
+                 VERR_INVALID_PARAMETER);
     AssertPtr(pwsz);
 
     /*
@@ -329,8 +330,19 @@ RTDECL(int) RTUtf16ValidateEncodingEx(PCRTUTF16 pwsz, size_t cwc, uint32_t fFlag
     int rc = rtUtf16Length(pwsz, cwc, &cCpsIgnored, &cwcActual);
     if (RT_SUCCESS(rc))
     {
-        if (    (fFlags & RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED)
-            &&  cwcActual >= cwc)
+        if (fFlags & RTSTR_VALIDATE_ENCODING_EXACT_LENGTH)
+        {
+            if (fFlags & RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED)
+                cwcActual++;
+            if (cwcActual == cwc)
+                rc = VINF_SUCCESS;
+            else if (cwcActual < cwc)
+                rc = VERR_BUFFER_UNDERFLOW;
+            else
+                rc = VERR_BUFFER_OVERFLOW;
+        }
+        else if (    (fFlags & RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED)
+                 &&  cwcActual >= cwc)
             rc = VERR_BUFFER_OVERFLOW;
     }
     return rc;

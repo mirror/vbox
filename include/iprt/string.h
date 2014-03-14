@@ -676,6 +676,11 @@ RTDECL(int) RTStrValidateEncoding(const char *psz);
 /** Check that the string is zero terminated within the given size.
  * VERR_BUFFER_OVERFLOW will be returned if the check fails. */
 #define RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED     RT_BIT_32(0)
+/** Check that the string is exactly the given length.
+ * If it terminates early, VERR_BUFFER_UNDERFLOW will be returned.  When used
+ * together with RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED, the given length must
+ * include the terminator or VERR_BUFFER_OVERFLOW will be returned. */
+#define RTSTR_VALIDATE_ENCODING_EXACT_LENGTH        RT_BIT_32(1)
 /** @} */
 
 /**
@@ -683,7 +688,8 @@ RTDECL(int) RTStrValidateEncoding(const char *psz);
  *
  * @returns iprt status code.
  * @param   psz         The string.
- * @param   cch         The max string length. Use RTSTR_MAX to process the entire string.
+ * @param   cch         The max string length (/ size).  Use RTSTR_MAX to
+ *                      process the entire string.
  * @param   fFlags      Combination of RTSTR_VALIDATE_ENCODING_XXX flags.
  */
 RTDECL(int) RTStrValidateEncodingEx(const char *psz, size_t cch, uint32_t fFlags);
@@ -3357,7 +3363,8 @@ RTDECL(int) RTUtf16ValidateEncoding(PCRTUTF16 pwsz);
  *
  * @returns iprt status code.
  * @param   pwsz        The string.
- * @param   cch         The max string length. Use RTSTR_MAX to process the entire string.
+ * @param   cwc         The max string length (/ size) in UTF-16 units. Use
+ *                      RTSTR_MAX to process the entire string.
  * @param   fFlags      Combination of RTSTR_VALIDATE_ENCODING_XXX flags.
  */
 RTDECL(int) RTUtf16ValidateEncodingEx(PCRTUTF16 pwsz, size_t cwc, uint32_t fFlags);
