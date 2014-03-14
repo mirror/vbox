@@ -906,10 +906,10 @@ start_service()
     if test "$success" -eq 0; then
         $BIN_SVCADM enable -s "$3"
         if test "$?" -eq 0; then
-            subprint "Loaded: $1"
+            subprint "Enabled: $1"
             return 0
         else
-            warnprint "Loading $1  ...FAILED."
+            warnprint "Enabling $1  ...FAILED."
             warnprint "Refer $4 for details."
         fi
     else
@@ -934,9 +934,9 @@ stop_service()
         # Don't delete the manifest, this is handled by the manifest class action
         # $BIN_SVCCFG delete "$3"
         if test "$?" -eq 0; then
-            subprint "Unloaded: $1"
+            subprint "Disabled: $1"
         else
-            subprint "Unloading: $1  ...ERROR(S)."
+            subprint "Disabling: $1  ...ERROR(S)."
         fi
     fi
 }
@@ -958,6 +958,13 @@ cleanup_install()
     stop_service "Balloon control service" "virtualbox/balloonctrl" "svc:/application/virtualbox/balloonctrl:default"
     stop_service "Autostart service" "virtualbox/autostart" "svc:/application/virtualbox/autostart:default"
     stop_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default"
+
+    # DEBUG x4600b: verify that the ZoneAccess process is really gone
+    is_process_running "VBoxZoneAccess"
+    if test "$?" -eq 1; then
+        warnprint "VBoxZoneAccess is alive despite its service being dead. Killing..."
+        stop_process "VBoxZoneAccess"
+    fi
 
     # unplumb all vboxnet instances for non-remote installs
     inst=0
