@@ -250,7 +250,8 @@ bool UIMachineWindowScale::winEvent(MSG *pMessage, long *pResult)
      * 1. machine view exists and 2. event-type is WM_SIZING and 3. shift key is NOT pressed: */
     if (machineView() && pMessage->message == WM_SIZING && !(QApplication::keyboardModifiers() & Qt::ShiftModifier))
     {
-        if (double dAspectRatio = machineView()->aspectRatio())
+        double dAspectRatio = machineView()->aspectRatio();
+        if (dAspectRatio)
         {
             RECT *pRect = reinterpret_cast<RECT*>(pMessage->lParam);
             switch (pMessage->wParam)
