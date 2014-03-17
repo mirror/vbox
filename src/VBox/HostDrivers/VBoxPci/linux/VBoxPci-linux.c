@@ -617,8 +617,6 @@ int  vboxPciOsDevInit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
     struct pci_dev *pPciDev = NULL;
     int rc;
 
-    printk(KERN_DEBUG "vboxpci: vboxPciOsDevInit: dev=%x\n", pIns->HostPciAddress);
-
     if (fFlags & PCIRAWDRIVERRFLAG_DETACH_HOST_DRIVER)
     {
         rc = vboxPciOsDevDetachHostDriver(pIns);
@@ -634,20 +632,17 @@ int  vboxPciOsDevInit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
     pPciDev = PCI_DEV_GET_SLOT((pIns->HostPciAddress) >> 8,
                                (pIns->HostPciAddress) & 0xff);
 
-    printk(KERN_DEBUG "vboxpci: vboxPciOsDevInit: dev=%x pdev=%p\n",
-           pIns->HostPciAddress, pPciDev);
-
     if (!pPciDev)
         return 0;
 
     pIns->pPciDev = pPciDev;
+    vbpci_printk(KERN_DEBUG, pPciDev, "%s\n", __func__);
 
     rc = pci_enable_device(pPciDev);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 1)
     if (pci_enable_msi(pPciDev) == 0)
     {
-        vbpci_printk(KERN_DEBUG, pPciDev, "enabled MSI\n");
         pIns->fMsiUsed = true;
     }
 #endif
