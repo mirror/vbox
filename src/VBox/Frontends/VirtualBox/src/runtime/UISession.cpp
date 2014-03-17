@@ -820,11 +820,9 @@ void UISession::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, 
     /* Ignore KGuestMonitorChangedEventType_NewOrigin change event: */
     if (changeType == KGuestMonitorChangedEventType_NewOrigin)
         return;
-    /* Ignore KGuestMonitorChangedEventType_Disabled event if there is only one window visible: */
+    /* Ignore KGuestMonitorChangedEventType_Disabled event for primary screen: */
     AssertMsg(countOfVisibleWindows() > 0, ("All machine windows are hidden!"));
-    if (   changeType == KGuestMonitorChangedEventType_Disabled
-        && countOfVisibleWindows() == 1
-        && isScreenVisible(uScreenId))
+    if (changeType == KGuestMonitorChangedEventType_Disabled && uScreenId == 0)
         return;
 
     /* Process KGuestMonitorChangedEventType_Enabled change event: */
