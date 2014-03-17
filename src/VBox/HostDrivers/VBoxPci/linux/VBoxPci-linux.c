@@ -292,7 +292,8 @@ int vboxPciOsDevReset(PVBOXRAWPCIINS pIns)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
         if (pci_reset_function(pIns->pPciDev))
         {
-            printk(KERN_DEBUG "vboxpci: pci_reset_function() failed\n");
+            vbpci_printk(KERN_DEBUG, pIns->pPciDev,
+                         "pci_reset_function() failed\n");
             rc = VERR_INTERNAL_ERROR;
         }
 #else
@@ -538,7 +539,8 @@ int vboxPciOsDevReattachHostDriver(PVBOXRAWPCIINS pIns)
         uint8_t            uBus =   (pIns->HostPciAddress) >> 8;
         uint8_t            uDevFn = (pIns->HostPciAddress) & 0xff;
 
-        printk(KERN_DEBUG "vboxpci: reattaching old host driver %s\n", pIns->szPrevDriver);
+        vbpci_printk(KERN_DEBUG, pPciDev,
+                     "reattaching old host driver %s\n", pIns->szPrevDriver);
         /*
          * Now perform kernel analog of:
          *
@@ -766,14 +768,15 @@ int  vboxPciOsDevMapRegion(PVBOXRAWPCIINS pIns,
     RTR0PTR          result = 0;
     int              error;
 
-    printk(KERN_DEBUG "linux vboxPciOsDevMapRegion: reg=%d start=%llx size=%lld\n", iRegion, RegionStart, u64RegionSize);
+    vbpci_printk(KERN_DEBUG, pPciDev, "reg=%d start=%llx size=%lld\n",
+                 iRegion, RegionStart, u64RegionSize);
 
     if (!pPciDev)
         return VERR_INVALID_PARAMETER;
 
     if (iRegion < 0 || iRegion > 6)
     {
-        printk(KERN_DEBUG "vboxPciOsDevMapRegion: invalid region: %d\n", iRegion);
+        vbpci_printk(KERN_DEBUG, pPciDev, "invalid region %d\n", iRegion);
         return VERR_INVALID_PARAMETER;
     }
 
@@ -807,7 +810,7 @@ int  vboxPciOsDevMapRegion(PVBOXRAWPCIINS pIns,
 
     if (!result)
     {
-        printk(KERN_DEBUG "cannot ioremap_nocache\n");
+        vbpci_printk(KERN_DEBUG, pPciDev, "ioremap_nocache() failed\n");
         pci_release_region(pPciDev, iRegion);
         return VERR_MAP_FAILED;
     }
