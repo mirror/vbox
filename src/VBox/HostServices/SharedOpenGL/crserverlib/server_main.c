@@ -3650,4 +3650,67 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
     return rc;
 }
 
+void crVBoxServerDefaultContextSet()
+{
+    GLint spuWindow, spuCtx;
+
+    if (cr_server.MainContextInfo.SpuContext)
+    {
+        CRMuralInfo *pMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
+        if (!pMural)
+        {
+            WARN(("dummy mural is NULL"));
+            spuCtx = CR_RENDER_DEFAULT_CONTEXT_ID;
+            spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
+        }
+        else
+        {
+            spuCtx = cr_server.MainContextInfo.SpuContext;
+            spuWindow = pMural->CreateInfo.realVisualBits;
+        }
+    }
+    else
+    {
+        spuCtx = CR_RENDER_DEFAULT_CONTEXT_ID;
+        spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
+    }
+
+    cr_server.head_spu->dispatch_table.MakeCurrent(spuWindow, 0, spuCtx);
+}
+
+int32_t crVBoxServerHgcmEnable(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hRHCmd, PFNVBOXCRCMDCTL_REMAINING_HOST_COMMAND pfnRHCmd)
+{
+    int rc = VINF_SUCCESS;
+    uint8_t* pCtl;
+    uint32_t cbCtl;
+
+    if (cr_server.numClients)
+    {
+        WARN(("cr_server.numClients(%d) is not NULL", cr_server.numClients));
+        return VERR_INVALID_STATE;
+    }
+
+    for (pCtl = pfnRHCmd(hRHCmd, &cbCtl, rc); pCtl; pCtl = pfnRHCmd(hRHCmd, &cbCtl, rc))
+    {
+        rc = crVBoxCrCmdHostCtl(NULL, pCtl, cbCtl);
+    }
+
+    crVBoxServerDefaultContextSet();
+
+    return VINF_SUCCESS;
+}
+
+int32_t crVBoxServerHgcmDisable()
+{
+    if (cr_server.numClients)
+    {
+        WARN(("cr_server.numClients(%d) is not NULL", cr_server.numClients));
+        return VERR_INVALID_STATE;
+    }
+
+    cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
+
+    return VINF_SUCCESS;
+}
+
 #endif
