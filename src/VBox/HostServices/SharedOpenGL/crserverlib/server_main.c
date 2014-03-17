@@ -1004,7 +1004,14 @@ CRMuralInfo * crServerGetDummyMural(GLint visualBits)
             crWarning("crCalloc failed!");
             return NULL;
         }
-        id = crServerMuralInit(pMural, "", visualBits, 0);
+        id = crServerMuralInit(pMural,
+#ifdef RT_OS_DARWIN
+                /* tested on darwin only so far */
+                NULL
+#else
+                ""
+#endif
+                , visualBits, 0);
         if (id < 0)
         {
             crWarning("crServerMuralInit failed!");
