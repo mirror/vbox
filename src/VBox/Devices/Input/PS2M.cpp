@@ -47,9 +47,9 @@
  * Upon reset, the mouse is always in the standard PS/2 mode. A special 'knock'
  * sequence can be used to switch to ImPS/2 or ImEx mode. Three consecutive
  * Set Sampling Rate (0F3h) commands with arguments 200, 100, 80 switch to ImPS/2
- * mode. While in ImPS/2 mode, three consecutive Set Sampling Rate commands with
- * arguments 200, 200, 80 switch to ImEx mode. The Read ID (0F2h) command will
- * report the currently selected protocol.
+ * mode. While in ImPS/2 or PS/2 mode, three consecutive Set Sampling Rate
+ * commands with arguments 200, 200, 80 switch to ImEx mode. The Read ID (0F2h)
+ * command will report the currently selected protocol.
  *
  *
  * Standard PS/2 pointing device three-byte report packet format:
@@ -196,9 +196,8 @@ typedef enum {
 /* Protocol selection 'knock' states. */
 typedef enum {
     PS2M_KNOCK_INITIAL,
-    PS2M_KNOCK_IMPS2_1ST,
+    PS2M_KNOCK_1ST,
     PS2M_KNOCK_IMPS2_2ND,
-    PS2M_KNOCK_IMEX_1ST,
     PS2M_KNOCK_IMEX_2ND
 } PS2M_KNOCK_STATE;
 
@@ -458,53 +457,37 @@ static void ps2mSetDefaults(PPS2M pThis)
 /* Handle the sampling rate 'knock' sequence which selects protocol. */
 static void ps2mRateProtocolKnock(PPS2M pThis, uint8_t rate)
 {
-    if (pThis->enmProtocol == PS2M_PROTO_PS2STD)
+    switch (pThis->enmKnockState)
     {
-        switch (pThis->enmKnockState)
-        {
-        case PS2M_KNOCK_INITIAL:
-            if (rate == 200)
-                pThis->enmKnockState = PS2M_KNOCK_IMPS2_1ST;
-            break;
-        case PS2M_KNOCK_IMPS2_1ST:
-            if (rate == 100)
-                pThis->enmKnockState = PS2M_KNOCK_IMPS2_2ND;
-            else
-                pThis->enmKnockState = PS2M_KNOCK_INITIAL;
-            break;
-        case PS2M_KNOCK_IMPS2_2ND:
-            if (rate == 80)
-            {
-                pThis->enmProtocol = PS2M_PROTO_IMPS2;
-                LogRelFlow(("PS2M: Switching mouse to ImPS/2 protocol.\n"));
-            }
-        default:
+    case PS2M_KNOCK_INITIAL:
+        if (rate == 200)
+            pThis->enmKnockState = PS2M_KNOCK_1ST;
+        break;
+    case PS2M_KNOCK_1ST:
+        if (rate == 100)
+            pThis->enmKnockState = PS2M_KNOCK_IMPS2_2ND;
+        else if (rate == 200)
+            pThis->enmKnockState = PS2M_KNOCK_IMEX_2ND;
+        else
             pThis->enmKnockState = PS2M_KNOCK_INITIAL;
-        }
-    }
-    else if (pThis->enmProtocol == PS2M_PROTO_IMPS2)
-    {
-        switch (pThis->enmKnockState)
+        break;
+    case PS2M_KNOCK_IMPS2_2ND:
+        if (rate == 80)
         {
-        case PS2M_KNOCK_INITIAL:
-            if (rate == 200)
-                pThis->enmKnockState = PS2M_KNOCK_IMEX_1ST;
-            break;
-        case PS2M_KNOCK_IMEX_1ST:
-            if (rate == 200)
-                pThis->enmKnockState = PS2M_KNOCK_IMEX_2ND;
-            else
-                pThis->enmKnockState = PS2M_KNOCK_INITIAL;
-            break;
-        case PS2M_KNOCK_IMEX_2ND:
-            if (rate == 80)
-            {
-                pThis->enmProtocol = PS2M_PROTO_IMEX;
-                LogRelFlow(("PS2M: Switching mouse to ImEx protocol.\n"));
-            }
-        default:
-            pThis->enmKnockState = PS2M_KNOCK_INITIAL;
+            pThis->enmProtocol = PS2M_PROTO_IMPS2;
+            LogRelFlow(("PS2M: Switching mouse to ImPS/2 protocol.\n"));
         }
+        pThis->enmKnockState = PS2M_KNOCK_INITIAL;
+        break;
+    case PS2M_KNOCK_IMEX_2ND:
+        if (rate == 80)
+        {
+            pThis->enmProtocol = PS2M_PROTO_IMEX;
+            LogRelFlow(("PS2M: Switching mouse to ImEx protocol.\n"));
+        }
+        /* Fall through! */
+    default:
+        pThis->enmKnockState = PS2M_KNOCK_INITIAL;
     }
 }
 
