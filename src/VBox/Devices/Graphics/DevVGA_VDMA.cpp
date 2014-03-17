@@ -941,7 +941,7 @@ static int vboxVDMACrHgcmSubmitSync(struct VBOXVDMAHOST *pVdma, VBOXCRCMDCTL* pC
     return rc;
 }
 
-static DECLCALLBACK(VBOXCRCMDCTL*) vboxVDMACrHgcmHandleEnableRemainingHostCommand(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hClient, uint32_t *pcbCtl, int prevCmdRc)
+static DECLCALLBACK(uint8_t*) vboxVDMACrHgcmHandleEnableRemainingHostCommand(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hClient, uint32_t *pcbCtl, int prevCmdRc)
 {
     struct VBOXVDMAHOST *pVdma = hClient;
     if (!pVdma->pCurRemainingHostCtl)
@@ -958,7 +958,7 @@ static DECLCALLBACK(VBOXCRCMDCTL*) vboxVDMACrHgcmHandleEnableRemainingHostComman
     if (pVdma->pCurRemainingHostCtl)
     {
         *pcbCtl = pVdma->pCurRemainingHostCtl->u.cmd.cbCmd;
-        return (VBOXCRCMDCTL*)pVdma->pCurRemainingHostCtl->u.cmd.pu8Cmd;
+        return pVdma->pCurRemainingHostCtl->u.cmd.pu8Cmd;
     }
 
     *pcbCtl = 0;
