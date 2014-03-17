@@ -613,7 +613,10 @@ VMMR0_INT_DECL(int) HMR0Init(void)
     static RTONCE s_OnceInit = RTONCE_INITIALIZER;
     g_HvmR0.EnableAllCpusOnce = s_OnceInit;
     for (unsigned i = 0; i < RT_ELEMENTS(g_HvmR0.aCpuInfo); i++)
+    {
         g_HvmR0.aCpuInfo[i].hMemObj = NIL_RTR0MEMOBJ;
+        g_HvmR0.aCpuInfo[i].idCpu   = NIL_RTCPUID;
+    }
 
     /* Fill in all callbacks with placeholders. */
     g_HvmR0.pfnEnterSession      = hmR0DummyEnter;
@@ -1100,6 +1103,7 @@ static int hmR0DisableCpu(RTCPUID idCpu)
         AssertRCReturn(rc, rc);
 
         pCpu->fConfigured = false;
+        pCpu->idCpu = NIL_RTCPUID;
     }
     else
         rc = VINF_SUCCESS; /* nothing to do */
@@ -1389,6 +1393,8 @@ VMMR0_INT_DECL(int) HMR0EnterCpu(PVMCPU pVCpu)
 
     /* Reload host-state (back from ring-3/migrated CPUs) and shared guest/host bits. */
     HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE);
+
+    Assert(pCpu->idCpu == idCpu && pCpu->idCpu != NIL_RTCPUID);
     pVCpu->hm.s.idEnteredCpu = idCpu;
     return rc;
 }
@@ -1466,6 +1472,7 @@ VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
         int rc = hmR0DisableCpu(idCpu);
         AssertRCReturn(rc, rc);
         Assert(!pCpu->fConfigured);
+        Assert(pCpu->idCpu == NIL_RTCPUID);
 
         /* For obtaining a non-zero ASID/VPID on next re-entry. */
         pVCpu->hm.s.idLastCpu = NIL_RTCPUID;
