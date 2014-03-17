@@ -23,7 +23,7 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     CRMuralInfo *defaultMural;
     GLint dims[2];
     GLint windowID = -1;
-    GLint spuWindow;
+    GLint spuWindow = 0;
     GLint realVisBits = visBits;
 
     crMemset(mural, 0, sizeof (*mural));
@@ -31,12 +31,25 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     if (cr_server.fVisualBitsDefault)
         realVisBits = cr_server.fVisualBitsDefault;
 
-    /*
-     * Have first SPU make a new window.
-     */
-    spuWindow = cr_server.head_spu->dispatch_table.WindowCreate( dpyName, realVisBits );
-    if (spuWindow < 0) {
-        return spuWindow;
+    if (!dpyName)
+    {
+        /*
+         * Have first SPU make a new window.
+         */
+        spuWindow = cr_server.head_spu->dispatch_table.WindowCreate( dpyName, realVisBits );
+        if (spuWindow < 0) {
+            return spuWindow;
+        }
+    }
+    else
+    {
+        CRMuralInfo *dummy = crServerGetDummyMural(visBits);
+        if (!dummy)
+        {
+            WARN(("crServerGetDummyMural failed"));
+            return -1;
+        }
+        spuWindow = dummy->spuWindow;
     }
 
     /* get initial window size */
@@ -201,7 +214,10 @@ void crServerMuralTerm(CRMuralInfo *mural)
     	}
     }
 
-    cr_server.head_spu->dispatch_table.WindowDestroy( mural->spuWindow );
+    if (!mural->CreateInfo.pszDpyName)
+        cr_server.head_spu->dispatch_table.WindowDestroy( mural->spuWindow );
+
+    mural->spuWindow = 0;
 
     if (mural->pVisibleRects)
     {
