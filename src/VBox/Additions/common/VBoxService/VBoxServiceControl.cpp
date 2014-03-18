@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -207,6 +207,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
     /* Set default protocol version to 1. */
     ctxHost.uProtocol = 1;
 
+    int cRetrievalFailed = 0; /* Number of failed message retrievals in a row. */
     for (;;)
     {
         VBoxServiceVerbose(3, "Waiting for host msg ...\n");
@@ -216,15 +217,60 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
         if (rc == VERR_TOO_MUCH_DATA)
         {
 #ifdef DEBUG
-            VBoxServiceVerbose(4, "Message requires %ld parameters, but only 2 supplied -- retrying request (no error!)...\n", cParms);
+            VBoxServiceVerbose(4, "Message requires %ld parameters, but only 2 supplied -- retrying request (no error!)...\n",
+                               cParms);
 #endif
             rc = VINF_SUCCESS; /* Try to get "real" message in next block below. */
         }
         else if (RT_FAILURE(rc))
-            VBoxServiceVerbose(3, "Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
+        {
+            /* Note: VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
+            VBoxServiceError("Getting host message failed with %Rrc\n", rc);
+
+            /* Check for VM session change. */
+            uint64_t idNewSession = g_idControlSession;
+            int rc2 = VbglR3GetSessionId(&idNewSession);
+            if (   RT_SUCCESS(rc2)
+                && (idNewSession != g_idControlSession))
+            {
+                VBoxServiceVerbose(1, "The VM session ID changed\n");
+                g_idControlSession = idNewSession;
+
+                /* Close all opened guest sessions -- all context IDs, sessions etc.
+                 * are now invalid. */
+                rc2 = GstCntlSessionClose(&g_Session);
+                AssertRC(rc2);
+
+                /* Do a reconnect. */
+                VBoxServiceVerbose(1, "Reconnecting to HGCM service ...\n");
+                rc2 = VbglR3GuestCtrlConnect(&g_uControlSvcClientID);
+                if (RT_SUCCESS(rc2))
+                {
+                    VBoxServiceVerbose(3, "Guest control service client ID=%RU32\n",
+                                       g_uControlSvcClientID);
+                    cRetrievalFailed = 0;
+                    continue; /* Skip waiting. */
+                }
+                else
+                {
+                    VBoxServiceError("Unable to re-connect to HGCM service, rc=%Rrc, bailing out\n", rc);
+                    break;
+                }
+            }
+
+            if (++cRetrievalFailed > 16) /** @todo Make this configurable? */
+            {
+                VBoxServiceError("Too many failed attempts in a row to get next message, bailing out\n");
+                break;
+            }
+
+            RTThreadSleep(1000); /* Wait a bit before retrying. */
+        }
+
         if (RT_SUCCESS(rc))
         {
             VBoxServiceVerbose(4, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
+            cRetrievalFailed = 0; /* Reset failed retrieval count. */
 
             /* Set number of parameters for current host context. */
             ctxHost.uNumParms = cParms;
