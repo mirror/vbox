@@ -163,7 +163,7 @@ static void crServerTearDown( void )
 
     /* sync our state with renderspu,
      * do it before mural & context deletion to avoid deleting currently set murals/contexts*/
-    cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
+    cr_server.head_spu->dispatch_table.MakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
 
     /* Deallocate all semaphores */
     crFreeHashtable(cr_server.semaphores, crFree);
