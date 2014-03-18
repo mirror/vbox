@@ -42,6 +42,7 @@ GLint crServerMuralInit(CRMuralInfo *mural, GLboolean fGuestWindow, GLint visBit
             return -1;
         }
         spuWindow = dummy->spuWindow;
+        mural->fIsDummyRefference = GL_TRUE;
     }
     else
 #endif
@@ -53,6 +54,7 @@ GLint crServerMuralInit(CRMuralInfo *mural, GLboolean fGuestWindow, GLint visBit
         if (spuWindow < 0) {
             return spuWindow;
         }
+        mural->fIsDummyRefference = GL_FALSE;
     }
 
     /* get initial window size */
@@ -217,7 +219,7 @@ void crServerMuralTerm(CRMuralInfo *mural)
     	}
     }
 
-    if (!mural->CreateInfo.pszDpyName)
+    if (!mural->fIsDummyRefference)
         cr_server.head_spu->dispatch_table.WindowDestroy( mural->spuWindow );
 
     mural->spuWindow = 0;
