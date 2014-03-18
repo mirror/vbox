@@ -115,7 +115,7 @@ GLboolean crServerClientInBeginEnd(const CRClient *client);
 
 GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLint shareCtx, GLint preloadCtxID, int32_t internalID);
 GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preloadWinID);
-GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID);
+GLint crServerMuralInit(CRMuralInfo *mural, GLboolean fGuestWindow, GLint visBits, GLint preloadWinID);
 void crServerMuralTerm(CRMuralInfo *mural);
 GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
 void crServerMuralPosition(CRMuralInfo *mural, GLint x, GLint y);

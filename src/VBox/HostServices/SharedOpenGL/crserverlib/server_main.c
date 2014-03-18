@@ -59,6 +59,8 @@ CRServer cr_server;
 
 int tearingdown = 0; /* can't be static */
 
+static DECLCALLBACK(int) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd);
+
 DECLINLINE(int32_t) crVBoxServerClientGet(uint32_t u32ClientID, CRClient **ppClient)
 {
     CRClient *pClient = NULL;
@@ -529,6 +531,38 @@ GLboolean crVBoxServerInit(void)
     return GL_TRUE;
 }
 
+static int32_t crVBoxServerAddClientObj(uint32_t u32ClientID, CRClient **ppNewClient)
+{
+    CRClient *newClient;
+
+    if (cr_server.numClients>=CR_MAX_CLIENTS)
+    {
+        if (ppNewClient)
+            *ppNewClient = NULL;
+        return VERR_MAX_THRDS_REACHED;
+    }
+
+    newClient = (CRClient *) crCalloc(sizeof(CRClient));
+    crDebug("crServer: AddClient u32ClientID=%d", u32ClientID);
+
+    newClient->spu_id = 0;
+    newClient->currentCtxInfo = &cr_server.MainContextInfo;
+    newClient->currentContextNumber = -1;
+    newClient->conn = crNetAcceptClient(cr_server.protocol, NULL,
+                                        cr_server.tcpip_port,
+                                        cr_server.mtu, 0);
+    newClient->conn->u32ClientID = u32ClientID;
+
+    cr_server.clients[cr_server.numClients++] = newClient;
+
+    crServerAddToRunQueue(newClient);
+
+    if (ppNewClient)
+        *ppNewClient = newClient;
+
+    return VINF_SUCCESS;
+}
+
 int32_t crVBoxServerAddClient(uint32_t u32ClientID)
 {
     CRClient *newClient;
@@ -744,6 +778,17 @@ extern DECLEXPORT(int32_t) crVBoxServerClientGetCaps(uint32_t u32ClientID, uint3
     return VINF_SUCCESS;
 }
 
+static int32_t crVBoxServerClientObjSetVersion(CRClient *pClient, uint32_t vMajor, uint32_t vMinor)
+{
+    pClient->conn->vMajor = vMajor;
+    pClient->conn->vMinor = vMinor;
+
+    if (vMajor != CR_PROTOCOL_VERSION_MAJOR
+        || vMinor != CR_PROTOCOL_VERSION_MINOR)
+        return VERR_NOT_SUPPORTED;
+    return VINF_SUCCESS;
+}
+
 int32_t crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint32_t vMinor)
 {
     CRClient *pClient=NULL;
@@ -760,15 +805,14 @@ int32_t crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint
     }
     if (!pClient) return VERR_INVALID_PARAMETER;
 
-    pClient->conn->vMajor = vMajor;
-    pClient->conn->vMinor = vMinor;
+    return crVBoxServerClientObjSetVersion(pClient, vMajor, vMinor);
+}
 
-    if (vMajor != CR_PROTOCOL_VERSION_MAJOR
-        || vMinor != CR_PROTOCOL_VERSION_MINOR)
-    {
-        return VERR_NOT_SUPPORTED;
-    }
-    else return VINF_SUCCESS;
+static int32_t crVBoxServerClientObjSetPID(CRClient *pClient, uint64_t pid)
+{
+    pClient->pid = pid;
+
+    return VINF_SUCCESS;
 }
 
 int32_t crVBoxServerClientSetPID(uint32_t u32ClientID, uint64_t pid)
@@ -787,9 +831,7 @@ int32_t crVBoxServerClientSetPID(uint32_t u32ClientID, uint64_t pid)
     }
     if (!pClient) return VERR_INVALID_PARAMETER;
 
-    pClient->pid = pid;
-
-    return VINF_SUCCESS;
+    return crVBoxServerClientObjSetPID(pClient, pid);
 }
 
 int
@@ -1004,14 +1046,7 @@ CRMuralInfo * crServerGetDummyMural(GLint visualBits)
             crWarning("crCalloc failed!");
             return NULL;
         }
-        id = crServerMuralInit(pMural,
-#ifdef RT_OS_DARWIN
-                /* tested on darwin only so far */
-                NULL
-#else
-                ""
-#endif
-                , visualBits, 0);
+        id = crServerMuralInit(pMural, GL_FALSE, visualBits, 0);
         if (id < 0)
         {
             crWarning("crServerMuralInit failed!");
@@ -2890,10 +2925,37 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
     return VINF_SUCCESS;
 }
 
+static void crVBoxServerDefaultContextSet()
+{
+    GLint spuWindow, spuCtx;
+
+    if (cr_server.MainContextInfo.SpuContext)
+    {
+        CRMuralInfo *pMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
+        if (!pMural)
+        {
+            WARN(("dummy mural is NULL"));
+            spuCtx = CR_RENDER_DEFAULT_CONTEXT_ID;
+            spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
+        }
+        else
+        {
+            spuCtx = cr_server.MainContextInfo.SpuContext;
+            spuWindow = pMural->CreateInfo.realVisualBits;
+        }
+    }
+    else
+    {
+        spuCtx = CR_RENDER_DEFAULT_CONTEXT_ID;
+        spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
+    }
+
+    cr_server.head_spu->dispatch_table.MakeCurrent(spuWindow, 0, spuCtx);
+}
 
 #ifdef VBOX_WITH_CRHGSMI
 
-static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCmd)
+static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCmd, uint32_t cbCmd)
 {
     int32_t rc;
     uint32_t cBuffers = pCmd->cBuffers;
@@ -2906,29 +2968,35 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCm
 
     if (!g_pvVRamBase)
     {
-        crWarning("g_pvVRamBase is not initialized");
+        WARN(("g_pvVRamBase is not initialized"));
         return VERR_INVALID_STATE;
     }
 
     if (!cBuffers)
     {
-        crWarning("zero buffers passed in!");
+        WARN(("zero buffers passed in!"));
         return VERR_INVALID_PARAMETER;
     }
 
     cParams = cBuffers-1;
 
+    if (cbCmd != RT_OFFSETOF(VBOXCMDVBVA_CRCMD_CMD, aBuffers[cBuffers]))
+    {
+        WARN(("invalid buffer size"));
+        return VERR_INVALID_PARAMETER;
+    }
+
     cbHdr = pCmd->aBuffers[0].cbBuffer;
     pHdr = VBOXCRHGSMI_PTR_SAFE(pCmd->aBuffers[0].offBuffer, cbHdr, CRVBOXHGSMIHDR);
     if (!pHdr)
     {
-        crWarning("invalid header buffer!");
+        WARN(("invalid header buffer!"));
         return VERR_INVALID_PARAMETER;
     }
 
     if (cbHdr < sizeof (*pHdr))
     {
-        crWarning("invalid header buffer size!");
+        WARN(("invalid header buffer size!"));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -3195,27 +3263,64 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCm
 static DECLCALLBACK(int) crVBoxCrCmdEnable(HVBOXCRCMDSVR hSvr, VBOXCRCMD_SVRENABLE_INFO *pInfo)
 {
     cr_server.CrCmdClientInfo = *pInfo;
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+
+    crVBoxServerDefaultContextSet();
+
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) crVBoxCrCmdDisable(HVBOXCRCMDSVR hSvr)
 {
-    AssertFailed();
+    cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
+
     memset(&cr_server.CrCmdClientInfo, 0, sizeof (cr_server.CrCmdClientInfo));
-    return VERR_NOT_IMPLEMENTED;
+
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) crVBoxCrCmdHostCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, uint32_t cbCmd)
 {
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return crVBoxServerHostCtl((VBOXCRCMDCTL*)pCmd, cbCmd);
 }
 
 static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, uint32_t cbCmd)
 {
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    VBOXCMDVBVA_3DCTL *pCtl = (VBOXCMDVBVA_3DCTL*)pCmd;
+    if (cbCmd < sizeof (VBOXCMDVBVA_3DCTL))
+    {
+        WARN(("invalid buffer size"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    switch (pCtl->u32Type)
+    {
+        case VBOXCMDVBVA3DCTL_TYPE_CONNECT:
+        {
+            VBOXCMDVBVA_3DCTL_CONNECT *pConnect = (VBOXCMDVBVA_3DCTL_CONNECT*)pCtl;
+
+            return VERR_NOT_SUPPORTED;
+        }
+        case VBOXCMDVBVA3DCTL_TYPE_DISCONNECT:
+        {
+            return VERR_NOT_SUPPORTED;
+        }
+        case VBOXCMDVBVA3DCTL_TYPE_CMD:
+        {
+            VBOXCMDVBVA_3DCTL_CMD *p3DCmd;
+            if (cbCmd < sizeof (VBOXCMDVBVA_3DCTL_CMD))
+            {
+                WARN(("invalid size"));
+                return VERR_INVALID_PARAMETER;
+            }
+
+            p3DCmd = (VBOXCMDVBVA_3DCTL_CMD*)pCmd;
+
+            return crVBoxCrCmdCmd(NULL, &p3DCmd->Cmd, cbCmd - RT_OFFSETOF(VBOXCMDVBVA_3DCTL_CMD, Cmd));
+        }
+        default:
+            WARN(("invalid function"));
+            return VERR_INVALID_PARAMETER;
+    }
 }
 
 static DECLCALLBACK(int) crVBoxCrCmdSaveState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM)
@@ -3238,9 +3343,18 @@ static DECLCALLBACK(int) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR pCm
     {
         case VBOXCMDVBVA_OPTYPE_CRCMD:
         {
-            VBOXCMDVBVA_CRCMD *pCrCmdDr = (VBOXCMDVBVA_CRCMD*)pCmd;
-            VBOXCMDVBVA_CRCMD_CMD *pCrCmd = &pCrCmdDr->Cmd;
-            int rc = crVBoxServerCmdVbvaCrCmdProcess(pCrCmd);
+            VBOXCMDVBVA_CRCMD *pCrCmdDr;
+            VBOXCMDVBVA_CRCMD_CMD *pCrCmd;
+            int rc;
+            pCrCmdDr = (VBOXCMDVBVA_CRCMD*)pCmd;
+            pCrCmd = &pCrCmdDr->Cmd;
+            if (cbCmd < sizeof (VBOXCMDVBVA_CRCMD))
+            {
+                WARN(("invalid buffer size"));
+                pCmd->u.i8Result = -1;
+                break;
+            }
+            rc = crVBoxServerCmdVbvaCrCmdProcess(pCrCmd, cbCmd - RT_OFFSETOF(VBOXCMDVBVA_CRCMD, Cmd));
             if (RT_SUCCESS(rc))
             {
             /* success */
@@ -3248,7 +3362,7 @@ static DECLCALLBACK(int) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR pCm
             }
             else
             {
-                crWarning("crVBoxServerCmdVbvaCrCmdProcess failed, rc %d", rc);
+                WARN(("crVBoxServerCmdVbvaCrCmdProcess failed, rc %d", rc));
                 pCmd->u.i8Result = -1;
             }
             break;
@@ -3294,7 +3408,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
     if (!g_pvVRamBase)
     {
-        crWarning("g_pvVRamBase is not initialized");
+        WARN(("g_pvVRamBase is not initialized"));
 
         crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_STATE);
         return VINF_SUCCESS;
@@ -3302,7 +3416,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
     if (!cBuffers)
     {
-        crWarning("zero buffers passed in!");
+        WARN(("zero buffers passed in!"));
 
         crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
         return VINF_SUCCESS;
@@ -3310,11 +3424,20 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
     cParams = cBuffers-1;
 
+#if 0
+    if (cbCmd != RT_OFFSETOF(VBOXCMDVBVA_CRCMD_CMD, aBuffers[cBuffers]))
+    {
+        WARN(("invalid buffer size"));
+        crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
+        return VINF_SUCCESS;
+    }
+#endif
+
     cbHdr = pCmd->aBuffers[0].cbBuffer;
     pHdr = VBOXCRHGSMI_PTR_SAFE(pCmd->aBuffers[0].offBuffer, cbHdr, CRVBOXHGSMIHDR);
     if (!pHdr)
     {
-        crWarning("invalid header buffer!");
+        WARN(("invalid header buffer!"));
 
         crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
         return VINF_SUCCESS;
@@ -3322,7 +3445,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
     if (cbHdr < sizeof (*pHdr))
     {
-        crWarning("invalid header buffer size!");
+        WARN(("invalid header buffer size!"));
 
         crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
         return VINF_SUCCESS;
@@ -3655,34 +3778,6 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
      * E.g. ctl commands can be both Hgcm Host synchronous commands that do not require completion at all,
      * or Hgcm Host Fast Call commands that do require completion. All this details are hidden here */
     return rc;
-}
-
-void crVBoxServerDefaultContextSet()
-{
-    GLint spuWindow, spuCtx;
-
-    if (cr_server.MainContextInfo.SpuContext)
-    {
-        CRMuralInfo *pMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
-        if (!pMural)
-        {
-            WARN(("dummy mural is NULL"));
-            spuCtx = CR_RENDER_DEFAULT_CONTEXT_ID;
-            spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
-        }
-        else
-        {
-            spuCtx = cr_server.MainContextInfo.SpuContext;
-            spuWindow = pMural->CreateInfo.realVisualBits;
-        }
-    }
-    else
-    {
-        spuCtx = CR_RENDER_DEFAULT_CONTEXT_ID;
-        spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
-    }
-
-    cr_server.head_spu->dispatch_table.MakeCurrent(spuWindow, 0, spuCtx);
 }
 
 int32_t crVBoxServerHgcmEnable(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hRHCmd, PFNVBOXCRCMDCTL_REMAINING_HOST_COMMAND pfnRHCmd)

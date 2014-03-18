@@ -2212,7 +2212,7 @@ static int vdmaVBVACtlOpaqueHostSubmit(PVBOXVDMAHOST pVdma, struct VBOXCRCMDCTL*
     return VINF_SUCCESS;
 }
 
-static int vdmaVBVACtlEnableDisableSubmitInternal(PVBOXVDMAHOST pVdma, VBOXCMDVBVA_CTL_ENABLE *pEnable, PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
+static int vdmaVBVACtlEnableDisableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABLE *pEnable, PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
 {
     VBVAEXHOSTCTL* pHCtl = VBoxVBVAExHCtlCreate(&pVdma->CmdVbva, VBVAEXHOSTCTL_TYPE_GH_ENABLE_DISABLE);
     if (!pHCtl)
@@ -2221,8 +2221,8 @@ static int vdmaVBVACtlEnableDisableSubmitInternal(PVBOXVDMAHOST pVdma, VBOXCMDVB
         return VERR_NO_MEMORY;
     }
 
-    pHCtl->u.cmd.pu8Cmd = (uint8_t*)&pEnable->Enable;
-    pHCtl->u.cmd.cbCmd = sizeof (pEnable->Enable);
+    pHCtl->u.cmd.pu8Cmd = (uint8_t*)pEnable;
+    pHCtl->u.cmd.cbCmd = sizeof (*pEnable);
     int rc = vdmaVBVACtlSubmit(pVdma, pHCtl, VBVAEXHOSTCTL_SOURCE_GUEST, pfnComplete, pvComplete);
     if (!RT_SUCCESS(rc))
     {
@@ -2235,7 +2235,7 @@ static int vdmaVBVACtlEnableDisableSubmitInternal(PVBOXVDMAHOST pVdma, VBOXCMDVB
 static int vdmaVBVACtlEnableDisableSubmit(PVBOXVDMAHOST pVdma, VBOXCMDVBVA_CTL_ENABLE *pEnable)
 {
     VBoxSHGSMICommandMarkAsynchCompletion(&pEnable->Hdr);
-    int rc = vdmaVBVACtlEnableDisableSubmitInternal(pVdma, pEnable, vboxCmdVBVACmdCtlGuestCompletion, pVdma);
+    int rc = vdmaVBVACtlEnableDisableSubmitInternal(pVdma, &pEnable->Enable, vboxCmdVBVACmdCtlGuestCompletion, pVdma);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
