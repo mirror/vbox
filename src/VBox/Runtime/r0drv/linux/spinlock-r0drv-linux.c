@@ -130,7 +130,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
     AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC,
               ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
 
-#if defined(CONFIG_PROVE_LOCKING) && !defined(RT_STRICT)
+#ifdef CONFIG_PROVE_LOCKING
     lockdep_off();
 #endif
     if (pThis->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)
@@ -141,7 +141,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
     }
     else
         spin_lock(&pThis->Spinlock);
-#if defined(CONFIG_PROVE_LOCKING) && !defined(RT_STRICT)
+#ifdef CONFIG_PROVE_LOCKING
     lockdep_on();
 #endif
 
@@ -158,7 +158,7 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
               ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
     RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
 
-#if defined(CONFIG_PROVE_LOCKING) && !defined(RT_STRICT)
+#ifdef CONFIG_PROVE_LOCKING
     lockdep_off();
 #endif
     if (pThis->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)
@@ -169,7 +169,7 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
     }
     else
         spin_unlock(&pThis->Spinlock);
-#if defined(CONFIG_PROVE_LOCKING) && !defined(RT_STRICT)
+#ifdef CONFIG_PROVE_LOCKING
     lockdep_on();
 #endif
 
