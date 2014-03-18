@@ -571,6 +571,8 @@ extern DECLEXPORT(int32_t) crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CT
 extern DECLEXPORT(int32_t) crVBoxServerHgcmEnable(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hRHCmd, PFNVBOXCRCMDCTL_REMAINING_HOST_COMMAND pfnRHCmd);
 extern DECLEXPORT(int32_t) crVBoxServerHgcmDisable();
 
+extern int crVBoxServerHostCtl(VBOXCRCMDCTL *pCtl, uint32_t cbCtl);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1748,6 +1748,30 @@ typedef struct VBOXCMDVBVA_CTL_ENABLE
     VBVAENABLE Enable;
 } VBOXCMDVBVA_CTL_ENABLE;
 
+#define VBOXCMDVBVA3DCTL_TYPE_CONNECT     1
+#define VBOXCMDVBVA3DCTL_TYPE_DISCONNECT  2
+#define VBOXCMDVBVA3DCTL_TYPE_CMD         3
+
+typedef struct VBOXCMDVBVA_3DCTL
+{
+    uint32_t u32Type;
+    uint32_t u32CmdClientId;
+} VBOXCMDVBVA_3DCTL;
+
+typedef struct VBOXCMDVBVA_3DCTL_CONNECT
+{
+    VBOXCMDVBVA_3DCTL Hdr;
+    uint32_t u32MajorVersion;
+    uint32_t u32MinorVersion;
+    uint64_t u64Pid;
+} VBOXCMDVBVA_3DCTL_CONNECT;
+
+typedef struct VBOXCMDVBVA_3DCTL_CMD
+{
+    VBOXCMDVBVA_3DCTL Hdr;
+    VBOXCMDVBVA_HDR Cmd;
+} VBOXCMDVBVA_3DCTL_CMD;
+
 #pragma pack()
 
 

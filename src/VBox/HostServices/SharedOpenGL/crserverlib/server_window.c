@@ -18,30 +18,22 @@ crServerDispatchWindowCreate(const char *dpyName, GLint visBits)
     return crServerDispatchWindowCreateEx(dpyName, visBits, -1);
 }
 
-GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID)
+GLint crServerMuralInit(CRMuralInfo *mural, GLboolean fGuestWindow, GLint visBits, GLint preloadWinID)
 {
     CRMuralInfo *defaultMural;
     GLint dims[2];
     GLint windowID = -1;
     GLint spuWindow = 0;
     GLint realVisBits = visBits;
+    const char *dpyName = "";
 
     crMemset(mural, 0, sizeof (*mural));
 
     if (cr_server.fVisualBitsDefault)
         realVisBits = cr_server.fVisualBitsDefault;
 
-    if (!dpyName)
-    {
-        /*
-         * Have first SPU make a new window.
-         */
-        spuWindow = cr_server.head_spu->dispatch_table.WindowCreate( dpyName, realVisBits );
-        if (spuWindow < 0) {
-            return spuWindow;
-        }
-    }
-    else
+#ifdef RT_OS_DARWIN
+    if (fGuestWindow)
     {
         CRMuralInfo *dummy = crServerGetDummyMural(visBits);
         if (!dummy)
@@ -50,6 +42,17 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
             return -1;
         }
         spuWindow = dummy->spuWindow;
+    }
+    else
+#endif
+    {
+        /*
+         * Have first SPU make a new window.
+         */
+        spuWindow = cr_server.head_spu->dispatch_table.WindowCreate( dpyName, realVisBits );
+        if (spuWindow < 0) {
+            return spuWindow;
+        }
     }
 
     /* get initial window size */
@@ -133,7 +136,7 @@ GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint p
         return -1;
     }
 
-    windowID = crServerMuralInit(mural, dpyName, visBits, preloadWinID);
+    windowID = crServerMuralInit(mural, GL_TRUE, visBits, preloadWinID);
     if (windowID < 0)
     {
         crWarning("crServerMuralInit failed!");
