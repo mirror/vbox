@@ -3424,15 +3424,6 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
     cParams = cBuffers-1;
 
-#if 0
-    if (cbCmd != RT_OFFSETOF(VBOXCMDVBVA_CRCMD_CMD, aBuffers[cBuffers]))
-    {
-        WARN(("invalid buffer size"));
-        crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
-        return VINF_SUCCESS;
-    }
-#endif
-
     cbHdr = pCmd->aBuffers[0].cbBuffer;
     pHdr = VBOXCRHGSMI_PTR_SAFE(pCmd->aBuffers[0].offBuffer, cbHdr, CRVBOXHGSMIHDR);
     if (!pHdr)
