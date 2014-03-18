@@ -915,7 +915,7 @@ Statistics update:  disabled</screen></para>
             </listitem>
 
             <listitem>
-              <para><computeroutput>--natnatsettings&lt;1-N&gt;
+              <para><computeroutput>--natsettings&lt;1-N&gt;
               [&lt;mtu&gt;],[&lt;socksnd&gt;],[&lt;sockrcv&gt;],[&lt;tcpsnd&gt;],
               [&lt;tcprcv&gt;]</computeroutput>: This option controls several
               NAT settings (please see <xref linkend="nat-adv-settings" /> for
