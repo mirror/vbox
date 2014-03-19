@@ -74,9 +74,6 @@ public:
 
 protected slots:
 
-    /** Sets the top-level widget containing this widget to be the active window. */
-    void sltActivateWindow() { activateWindow(); }
-
     /* Session event-handlers: */
     virtual void sltMachineStateChanged();
 
