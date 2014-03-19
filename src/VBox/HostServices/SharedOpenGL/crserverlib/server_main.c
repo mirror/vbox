@@ -3354,11 +3354,23 @@ static int crVBoxCrConnect(VBOXCMDVBVA_3DCTL_CONNECT *pConnect)
         rc = crVBoxServerAddClientObj(u32ClientId, &pClient);
         if (RT_SUCCESS(rc))
         {
-            rc = CrHTablePutToSlot(&cr_server.clientTable, u32ClientId, pClient);
+            rc = crVBoxServerClientObjSetVersion(pClient, pConnect->u32MajorVersion, pConnect->u32MinorVersion);
             if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
+            {
+                rc = crVBoxServerClientObjSetPID(pClient, pConnect->u64Pid);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = CrHTablePutToSlot(&cr_server.clientTable, u32ClientId, pClient);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    else
+                        WARN(("CrHTablePutToSlot failed %d", rc));
+                }
+                else
+                    WARN(("crVBoxServerClientObjSetPID failed %d", rc));
+            }
             else
-                WARN(("CrHTablePutToSlot failed %d", rc));
+                WARN(("crVBoxServerClientObjSetVersion failed %d", rc));
 
             crVBoxServerRemoveClientObj(pClient);
         }
