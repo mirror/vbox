@@ -61,31 +61,43 @@ int tearingdown = 0; /* can't be static */
 
 static DECLCALLBACK(int) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd);
 
-DECLINLINE(int32_t) crVBoxServerClientGet(uint32_t u32ClientID, CRClient **ppClient)
+DECLINLINE(CRClient*) crVBoxServerClientById(uint32_t u32ClientID)
 {
-    CRClient *pClient = NULL;
     int32_t i;
 
-    *ppClient = NULL;
+    if (cr_server.fCrCmdEnabled)
+        return CrHTableGet(&cr_server.clientTable, u32ClientID);
 
     for (i = 0; i < cr_server.numClients; i++)
     {
         if (cr_server.clients[i] && cr_server.clients[i]->conn
             && cr_server.clients[i]->conn->u32ClientID==u32ClientID)
         {
-            pClient = cr_server.clients[i];
-            break;
+            return cr_server.clients[i];
         }
     }
+
+    return NULL;
+}
+
+DECLINLINE(int32_t) crVBoxServerClientGet(uint32_t u32ClientID, CRClient **ppClient)
+{
+    CRClient *pClient = NULL;
+    int32_t i;
+
+    pClient = crVBoxServerClientById(u32ClientID);
+
     if (!pClient)
     {
-        crWarning("client not found!");
+        WARN(("client not found!"));
+        *ppClient = NULL;
         return VERR_INVALID_PARAMETER;
     }
 
     if (!pClient->conn->vMajor)
     {
-        crWarning("no major version specified for client!");
+        WARN(("no major version specified for client!"));
+        *ppClient = NULL;
         return VERR_NOT_SUPPORTED;
     }
 
@@ -336,6 +348,9 @@ crServerInit(int argc, char *argv[])
     }
 #endif
 
+    cr_server.fCrCmdEnabled = GL_FALSE;
+    CrHTableCreate(&cr_server.clientTable, CR_MAX_CLIENTS);
+
     cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
 
     if (cr_server.bUseMultipleContexts)
@@ -439,6 +454,9 @@ GLboolean crVBoxServerInit(void)
         _FPU_SETCW(mask);
     }
 #endif
+
+    cr_server.fCrCmdEnabled = GL_FALSE;
+    CrHTableCreate(&cr_server.clientTable, CR_MAX_CLIENTS);
 
     cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
 
@@ -590,6 +608,29 @@ int32_t crVBoxServerAddClient(uint32_t u32ClientID)
     return VINF_SUCCESS;
 }
 
+static void crVBoxServerRemoveClientObj(CRClient *pClient)
+{
+#ifdef VBOX_WITH_CRHGSMI
+    CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
+#endif
+
+    /* Disconnect the client */
+    pClient->conn->Disconnect(pClient->conn);
+
+    /* Let server clear client from the queue */
+    crServerDeleteClient(pClient);
+}
+
+static void crVBoxServerRemoveAllClients()
+{
+    int32_t i;
+    for (i = cr_server.numClients - 1; i >= 0; --i)
+    {
+        Assert(cr_server.clients[i]);
+        crVBoxServerRemoveClientObj(cr_server.clients[i]);
+    }
+}
+
 void crVBoxServerRemoveClient(uint32_t u32ClientID)
 {
     CRClient *pClient=NULL;
@@ -609,19 +650,11 @@ void crVBoxServerRemoveClient(uint32_t u32ClientID)
     //if (!pClient) return VERR_INVALID_PARAMETER;
     if (!pClient)
     {
-        crWarning("Invalid client id %u passed to crVBoxServerRemoveClient", u32ClientID);
+        WARN(("Invalid client id %u passed to crVBoxServerRemoveClient", u32ClientID));
         return;
     }
 
-#ifdef VBOX_WITH_CRHGSMI
-    CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
-#endif
-
-    /* Disconnect the client */
-    pClient->conn->Disconnect(pClient->conn);
-
-    /* Let server clear client from the queue */
-    crServerDeleteClient(pClient);
+    crVBoxServerRemoveClientObj(pClient);
 }
 
 static int32_t crVBoxServerInternalClientWriteRead(CRClient *pClient)
@@ -3262,18 +3295,31 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCm
 
 static DECLCALLBACK(int) crVBoxCrCmdEnable(HVBOXCRCMDSVR hSvr, VBOXCRCMD_SVRENABLE_INFO *pInfo)
 {
+    Assert(!cr_server.fCrCmdEnabled);
+    Assert(!cr_server.numClients);
+
     cr_server.CrCmdClientInfo = *pInfo;
 
     crVBoxServerDefaultContextSet();
+
+    cr_server.fCrCmdEnabled = GL_TRUE;
 
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) crVBoxCrCmdDisable(HVBOXCRCMDSVR hSvr)
 {
+    Assert(cr_server.fCrCmdEnabled);
+
+    crVBoxServerRemoveAllClients();
+
+    CrHTableEmpty(&cr_server.clientTable);
+
     cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
 
     memset(&cr_server.CrCmdClientInfo, 0, sizeof (cr_server.CrCmdClientInfo));
+
+    cr_server.fCrCmdEnabled = GL_FALSE;
 
     return VINF_SUCCESS;
 }
@@ -3281,6 +3327,53 @@ static DECLCALLBACK(int) crVBoxCrCmdDisable(HVBOXCRCMDSVR hSvr)
 static DECLCALLBACK(int) crVBoxCrCmdHostCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, uint32_t cbCmd)
 {
     return crVBoxServerHostCtl((VBOXCRCMDCTL*)pCmd, cbCmd);
+}
+
+static int crVBoxCrDisconnect(uint32_t u32Client)
+{
+    CRClient *pClient = (CRClient*)CrHTableRemove(&cr_server.clientTable, u32Client);
+    if (!pClient)
+    {
+        WARN(("invalid client id"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    crVBoxServerRemoveClientObj(pClient);
+
+    return VINF_SUCCESS;
+}
+
+static int crVBoxCrConnect(VBOXCMDVBVA_3DCTL_CONNECT *pConnect)
+{
+    CRClient *pClient;
+    int rc;
+    /* allocate client id */
+    uint32_t u32ClientId =  CrHTablePut(&cr_server.clientTable, (void*)1);
+    if (u32ClientId != CRHTABLE_HANDLE_INVALID)
+    {
+        rc = crVBoxServerAddClientObj(u32ClientId, &pClient);
+        if (RT_SUCCESS(rc))
+        {
+            rc = CrHTablePutToSlot(&cr_server.clientTable, u32ClientId, pClient);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+            else
+                WARN(("CrHTablePutToSlot failed %d", rc));
+
+            crVBoxServerRemoveClientObj(pClient);
+        }
+        else
+            WARN(("crVBoxServerAddClientObj failed %d", rc));
+
+        CrHTableRemove(&cr_server.clientTable, u32ClientId);
+    }
+    else
+    {
+        WARN(("CrHTablePut failed"));
+        rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
 }
 
 static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, uint32_t cbCmd)
@@ -3296,13 +3389,23 @@ static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, 
     {
         case VBOXCMDVBVA3DCTL_TYPE_CONNECT:
         {
-            VBOXCMDVBVA_3DCTL_CONNECT *pConnect = (VBOXCMDVBVA_3DCTL_CONNECT*)pCtl;
+            if (cbCmd != sizeof (VBOXCMDVBVA_3DCTL_CONNECT))
+            {
+                WARN(("invalid command size"));
+                return VERR_INVALID_PARAMETER;
+            }
 
-            return VERR_NOT_SUPPORTED;
+            return crVBoxCrConnect((VBOXCMDVBVA_3DCTL_CONNECT*)pCtl);
         }
         case VBOXCMDVBVA3DCTL_TYPE_DISCONNECT:
         {
-            return VERR_NOT_SUPPORTED;
+            if (cbCmd != sizeof (VBOXCMDVBVA_3DCTL))
+            {
+                WARN(("invalid command size"));
+                return VERR_INVALID_PARAMETER;
+            }
+
+            return crVBoxCrDisconnect(pCtl->u32CmdClientId);
         }
         case VBOXCMDVBVA3DCTL_TYPE_CMD:
         {
@@ -3777,6 +3880,8 @@ int32_t crVBoxServerHgcmEnable(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hRHCmd, PFNV
     uint8_t* pCtl;
     uint32_t cbCtl;
 
+    Assert(!cr_server.fCrCmdEnabled);
+
     if (cr_server.numClients)
     {
         WARN(("cr_server.numClients(%d) is not NULL", cr_server.numClients));
@@ -3795,6 +3900,8 @@ int32_t crVBoxServerHgcmEnable(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hRHCmd, PFNV
 
 int32_t crVBoxServerHgcmDisable()
 {
+    Assert(!cr_server.fCrCmdEnabled);
+
     if (cr_server.numClients)
     {
         WARN(("cr_server.numClients(%d) is not NULL", cr_server.numClients));

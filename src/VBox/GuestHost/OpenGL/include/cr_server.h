@@ -14,6 +14,7 @@
 #include "cr_glstate.h"
 #include "cr_vreg.h"
 #include "cr_blitter.h"
+#include "cr_htable.h"
 #include "spu_dispatch_table.h"
 #include "cr_dump.h"
 
@@ -353,10 +354,13 @@ typedef struct {
     CRScreenViewportInfo screenVieport[CR_MAX_GUEST_MONITORS];
     int          screenCount;
 
+    GLboolean fCrCmdEnabled;
+
     int numClients;
     CRClient *clients[CR_MAX_CLIENTS];  /**< array [numClients] */
     CRClient *curClient;
     CRClientNode *pCleanupClient;  /*list of clients with pending clean up*/
+    CRHTABLE clientTable;
     CRCurrentStatePointers current;
 
     GLboolean firstCallCreateContext;
