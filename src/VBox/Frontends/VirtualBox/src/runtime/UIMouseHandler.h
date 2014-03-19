@@ -24,6 +24,7 @@
 #include <QPoint>
 #include <QMap>
 #include <QRect>
+#include <QPointer>
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -85,6 +86,9 @@ protected slots:
     /* Mouse pointer-shape-change handler: */
     virtual void sltMousePointerShapeChanged();
 
+    /** Activate hovered window if any. */
+    void sltMaybeActivateHoveredWindow();
+
 protected:
 
     /* Mouse-handler constructor/destructor: */
@@ -124,6 +128,9 @@ protected:
     QMap<ulong, UIMachineView*> m_views;
     /* Registered machine-view-viewport(s): */
     QMap<ulong, QWidget*> m_viewports;
+
+    /** Hovered window to be activated. */
+    QPointer<QWidget> m_pHoveredWindow;
 
     /* Other mouse variables: */
     QPoint m_lastMousePos;

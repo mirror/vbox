@@ -21,6 +21,7 @@
 #include <QDesktopWidget>
 #include <QMouseEvent>
 #include <QTouchEvent>
+#include <QTimer>
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -425,6 +426,21 @@ void UIMouseHandler::sltMousePointerShapeChanged()
     }
 }
 
+void UIMouseHandler::sltMaybeActivateHoveredWindow()
+{
+    /* Are we still have hovered window to activate? */
+    if (m_pHoveredWindow && !m_pHoveredWindow->isActiveWindow())
+    {
+        /* Activate it: */
+        m_pHoveredWindow->activateWindow();
+#ifdef Q_WS_X11
+        /* On X11 its not enough to just activate window if you
+         * want to raise it also, so we will make it separately: */
+        m_pHoveredWindow->raise();
+#endif /* Q_WS_X11 */
+    }
+}
+
 /* Mouse-handler constructor: */
 UIMouseHandler::UIMouseHandler(UIMachineLogic *pMachineLogic)
     : QObject(pMachineLogic)
@@ -596,13 +612,14 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                         m_windows.values().contains(pWatchedWidget->window()) &&
                         QApplication::activeWindow() != pWatchedWidget->window())
                     {
-                        /* Activating hovered machine window: */
-                        pWatchedWidget->window()->activateWindow();
-#ifdef Q_WS_X11
-                        /* On X11 its not enough to just activate window if you
-                         * want to raise it also, so we will make it separately: */
-                        pWatchedWidget->window()->raise();
-#endif /* Q_WS_X11 */
+                        /* Put request for hovered window activation in 300msec: */
+                        m_pHoveredWindow = pWatchedWidget->window();
+                        QTimer::singleShot(300, this, SLOT(sltMaybeActivateHoveredWindow()));
+                    }
+                    else
+                    {
+                        /* Revoke request for hovered window activation: */
+                        m_pHoveredWindow = 0;
                     }
 
                     /* This event should be also processed using next 'case': */
