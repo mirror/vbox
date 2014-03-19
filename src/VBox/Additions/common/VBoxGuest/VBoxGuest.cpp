@@ -907,13 +907,26 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
      * Create the release log.
      */
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    RTUINT fFlags =   RTLOGFLAGS_PREFIX_TIME | RTLOGFLAGS_PREFIX_TID
+                    | RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
     PRTLOGGER pRelLogger;
-    rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
-                     "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
+    rc = RTLogCreate(&pRelLogger, fFlags, "all",
+#ifdef DEBUG
+                     "VBOXGUEST_LOG",
+#else
+                     "VBOXGUEST_RELEASE_LOG",
+#endif
+                     RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                     RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
     if (RT_SUCCESS(rc))
+    {
         RTLogRelSetDefaultInstance(pRelLogger);
+
+        /* Explicitly flush the log in case of VBOXGUEST_RELEASE_LOG=buffered. */
+        RTLogFlush(pRelLogger);
+    }
     /** @todo Add native hook for getting logger config parameters and setting
-     *        them. On linux we should use the module parameter stuff... */
+     *        them. On Linux we use the module parameter stuff (see vboxguestLinuxModInit). */
 #endif
 
     /*
@@ -1223,8 +1236,8 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
 void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
     unsigned i; NOREF(i);
-    Log(("VBoxGuestCloseSession: pSession=%p proc=%RTproc (%d) r0proc=%p\n",
-         pSession, pSession->Process, (int)pSession->Process, (uintptr_t)pSession->R0Process)); /** @todo %RTr0proc */
+    LogFlowFunc(("pSession=%p proc=%RTproc (%d) r0proc=%p\n",
+                 pSession, pSession->Process, (int)pSession->Process, (uintptr_t)pSession->R0Process)); /** @todo %RTr0proc */
 
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     RTListNodeRemove(&pSession->ListNode);
@@ -1241,7 +1254,7 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
             Info.result = 0;
             Info.u32ClientID = pSession->aHGCMClientIds[i];
             pSession->aHGCMClientIds[i] = 0;
-            Log(("VBoxGuestCloseSession: disconnecting client id %#RX32\n", Info.u32ClientID));
+            LogFlowFunc(("Disconnecting client ID=%#RX32\n", Info.u32ClientID));
             VbglR0HGCMInternalDisconnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
         }
 #endif
@@ -3029,8 +3042,9 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
             PVBOXGUESTWAIT  pWait;
             PVBOXGUESTWAIT  pSafe;
 
+#ifndef DEBUG_andy
             LogFlowFunc(("Acknowledge events succeeded: %#RX32\n", fEvents));
-
+#endif
             /*
              * VMMDEV_EVENT_MOUSE_POSITION_CHANGED can only be polled for.
              */
