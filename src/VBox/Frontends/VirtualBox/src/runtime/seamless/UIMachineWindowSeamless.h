@@ -45,6 +45,9 @@ private slots:
     /* Popup main menu: */
     void sltPopupMainMenu();
 
+    /** Revokes keyboard-focus. */
+    void sltRevokeFocus();
+
 private:
 
     /* Prepare helpers: */

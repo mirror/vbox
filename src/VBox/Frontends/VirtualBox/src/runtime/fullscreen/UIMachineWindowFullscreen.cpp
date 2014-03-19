@@ -164,6 +164,12 @@ void UIMachineWindowFullscreen::sltExitNativeFullscreen(UIMachineWindow *pMachin
 }
 #endif /* Q_WS_MAC */
 
+void UIMachineWindowFullscreen::sltRevokeFocus()
+{
+    /* Revoke stolen focus: */
+    m_pMachineView->setFocus();
+}
+
 void UIMachineWindowFullscreen::prepareMenu()
 {
     /* Call to base-class: */
@@ -247,6 +253,7 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
             gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SLOT(trigger()));
     connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
             gActionPool->action(UIActionIndexRuntime_Simple_Close), SLOT(trigger()));
+    connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()), this, SLOT(sltRevokeFocus()));
 }
 
 void UIMachineWindowFullscreen::cleanupMiniToolbar()
@@ -343,14 +350,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 
     /* Make sure this window is maximized and placed on valid screen: */
     placeOnScreen();
-
-#ifdef Q_WS_WIN
-    /* On Windows we should activate main window first,
-     * because entering fullscreen there doesn't means window will be auto-activated,
-     * so no window-activation event will be received and no keyboard-hook created otherwise... */
-    if (m_uScreenId == 0)
-        setWindowState(windowState() | Qt::WindowActive);
-#endif /* Q_WS_WIN */
 
 #ifdef Q_WS_MAC
     /* ML and next using native stuff, so we can call for simple show(): */
