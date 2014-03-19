@@ -283,6 +283,14 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
  */
 STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
+    /* Retina screens with physical-to-logical scaling requires
+     * odd/even pixel updates to be taken into account,
+     * otherwise we have artifacts on the borders of incoming rectangle. */
+    uX = qMax(0, (int)uX - 1);
+    uY = qMax(0, (int)uY - 1);
+    uWidth = qMin((int)m_width, (int)uWidth + 2);
+    uHeight = qMin((int)m_height, (int)uHeight + 2);
+
     LogRel2(("UIFrameBuffer::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu\n",
              (unsigned long)uX, (unsigned long)uY,
              (unsigned long)uWidth, (unsigned long)uHeight));
