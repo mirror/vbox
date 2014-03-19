@@ -44,6 +44,7 @@ PVBOXHGCMSVCHELPERS g_pHelpers;
 static IConsole* g_pConsole = NULL;
 static uint32_t g_u32ScreenCount = 0;
 static PVM g_pVM = NULL;
+static uint32_t g_u32fCrHgcmDisabled = 0;
 
 #ifndef RT_OS_WINDOWS
 # define DWORD int
@@ -557,6 +558,12 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
     int rc = VINF_SUCCESS;
 
     NOREF(pvClient);
+
+    if (g_u32fCrHgcmDisabled)
+    {
+        WARN(("cr hgcm disabled!"));
+        return;
+    }
 
     Log(("SHARED_CROPENGL svcCall: u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n", u32ClientID, u32Function, cParms, paParms));
 
@@ -1518,14 +1525,24 @@ static DECLCALLBACK(int) svcHostCall(void *, uint32_t u32Function, uint32_t cPar
                 {
                     if (paParms->u.pointer.size != sizeof (VBOXCRCMDCTL))
                         WARN(("invalid param size"));
-                    return crVBoxServerHgcmDisable();
+                    int rc = crVBoxServerHgcmDisable();
+                    if (RT_SUCCESS(rc))
+                        g_u32fCrHgcmDisabled = 1;
+                    else
+                        WARN(("crVBoxServerHgcmDisable failed %d", rc));
+                    return rc;
                 }
                 case VBOXCRCMDCTL_TYPE_ENABLE:
                 {
                     if (paParms->u.pointer.size != sizeof (VBOXCRCMDCTL_ENABLE))
                         WARN(("invalid param size"));
                     VBOXCRCMDCTL_ENABLE *pEnable = (VBOXCRCMDCTL_ENABLE*)pCtl;
-                    return crVBoxServerHgcmEnable(pEnable->hRHCmd, pEnable->pfnRHCmd);
+                    int rc = crVBoxServerHgcmEnable(pEnable->hRHCmd, pEnable->pfnRHCmd);
+                    if (RT_SUCCESS(rc))
+                        g_u32fCrHgcmDisabled = 0;
+                    else
+                        WARN(("crVBoxServerHgcmEnable failed %d", rc));
+                    return rc;
                 }
                 default:
                     WARN(("invalid function"));
@@ -1535,6 +1552,11 @@ static DECLCALLBACK(int) svcHostCall(void *, uint32_t u32Function, uint32_t cPar
             return VERR_INTERNAL_ERROR;
         }
         default:
+            if (g_u32fCrHgcmDisabled)
+            {
+                WARN(("cr hgcm disabled!"));
+                return VERR_INVALID_STATE;
+            }
             return svcHostCallPerform(u32Function, cParms, paParms);
     }
 }
@@ -1561,6 +1583,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         else
         {
             g_pHelpers = ptable->pHelpers;
+
+            g_u32fCrHgcmDisabled = 0;
 
             ptable->cbClient = sizeof (void*);
 
