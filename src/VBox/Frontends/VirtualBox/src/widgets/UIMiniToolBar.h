@@ -63,6 +63,9 @@ signals:
     void sigHoverEnter();
     void sigHoverLeave();
 
+    /** Notifies listeners about we stole focus. */
+    void sigNotifyAboutFocusStolen();
+
 public:
 
     /* Constructor/destructor: */
@@ -108,6 +111,10 @@ private:
     /* Handlers: Event-processing stuff: */
     void enterEvent(QEvent *pEvent);
     void leaveEvent(QEvent *pEvent);
+
+    /** Filters @a pEvent if <i>this</i> object has been
+      * installed as an event-filter for the @a pWatched. */
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
     /* Helper: Hover stuff: */
     void updateAutoHideAnimationBounds();

@@ -69,6 +69,9 @@ private slots:
     void sltExitNativeFullscreen(UIMachineWindow *pMachineWindow);
 #endif /* RT_OS_DARWIN */
 
+    /** Revokes keyboard-focus. */
+    void sltRevokeFocus();
+
 private:
 
     /* Prepare helpers: */

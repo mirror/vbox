@@ -70,6 +70,12 @@ void UIMachineWindowSeamless::sltPopupMainMenu()
     }
 }
 
+void UIMachineWindowSeamless::sltRevokeFocus()
+{
+    /* Revoke stolen focus: */
+    m_pMachineView->setFocus();
+}
+
 void UIMachineWindowSeamless::prepareMenu()
 {
     /* Call to base-class: */
@@ -151,6 +157,7 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
             gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SLOT(trigger()));
     connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
             gActionPool->action(UIActionIndexRuntime_Simple_Close), SLOT(trigger()));
+    connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()), this, SLOT(sltRevokeFocus()));
 }
 #endif /* !Q_WS_MAC */
 
