@@ -1580,6 +1580,8 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
 #define VBOXCMDVBVA_OPTYPE_PAGING_FILL                  6
 /* same as VBOXCMDVBVA_OPTYPE_NOP, but contains VBOXCMDVBVA_HDR data */
 #define VBOXCMDVBVA_OPTYPE_NOPCMD                       7
+/* actual command is stored in guest system memory */
+#define VBOXCMDVBVA_OPTYPE_SYSMEMCMD                    8
 
 /* nop - is a one-bit command. The buffer size to skip is determined by VBVA buffer size */
 #define VBOXCMDVBVA_OPTYPE_NOP                          0x80
@@ -1720,7 +1722,7 @@ typedef struct VBOXCMDVBVA_PAGING_TRANSFER
     /* for now can only contain offVRAM.
      * paging transfer can NOT be initiated for allocations having host 3D object (hostID) associated */
     VBOXCMDVBVA_ALLOCINFO Alloc;
-    uint32_t cSysMem;
+    uint32_t u32Reserved;
     VBOXCMDVBVA_SYSMEMEL aSysMem[1];
 } VBOXCMDVBVA_PAGING_TRANSFER;
 
@@ -1732,6 +1734,12 @@ typedef struct VBOXCMDVBVA_PAGING_FILL
     /* paging transfer can NOT be initiated for allocations having host 3D object (hostID) associated */
     VBOXCMDVBVAOFFSET offVRAM;
 } VBOXCMDVBVA_PAGING_FILL;
+
+typedef struct VBOXCMDVBVA_SYSMEMCMD
+{
+    VBOXCMDVBVA_HDR Hdr;
+    VBOXCMDVBVAPHADDR phSysMem;
+} VBOXCMDVBVA_SYSMEMCMD;
 
 #define VBOXCMDVBVACTL_TYPE_ENABLE     1
 #define VBOXCMDVBVACTL_TYPE_3DCTL      2

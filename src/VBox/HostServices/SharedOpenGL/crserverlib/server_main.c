@@ -59,7 +59,7 @@ CRServer cr_server;
 
 int tearingdown = 0; /* can't be static */
 
-static DECLCALLBACK(int) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd);
+static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd);
 
 DECLINLINE(CRClient*) crVBoxServerClientById(uint32_t u32ClientID)
 {
@@ -2988,7 +2988,7 @@ static void crVBoxServerDefaultContextSet()
 
 #ifdef VBOX_WITH_CRHGSMI
 
-static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCmd, uint32_t cbCmd)
+static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CMD *pCmd, uint32_t cbCmd)
 {
     int32_t rc;
     uint32_t cBuffers = pCmd->cBuffers;
@@ -3046,7 +3046,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCm
             if (cParams == 1)
             {
                 CRVBOXHGSMIWRITE* pFnCmd = (CRVBOXHGSMIWRITE*)pHdr;
-                VBOXCMDVBVA_CRCMD_BUFFER *pBuf = &pCmd->aBuffers[1];
+                const VBOXCMDVBVA_CRCMD_BUFFER *pBuf = &pCmd->aBuffers[1];
                 /* Fetch parameters. */
                 uint32_t cbBuffer = pBuf->cbBuffer;
                 uint8_t *pBuffer  = VBOXCRHGSMI_PTR_SAFE(pBuf->offBuffer, cbBuffer, uint8_t);
@@ -3102,7 +3102,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCm
                 CRVBOXHGSMIINJECT *pFnCmd = (CRVBOXHGSMIINJECT*)pHdr;
                 /* Fetch parameters. */
                 uint32_t u32InjectClientID = pFnCmd->u32ClientID;
-                VBOXCMDVBVA_CRCMD_BUFFER *pBuf = &pCmd->aBuffers[1];
+                const VBOXCMDVBVA_CRCMD_BUFFER *pBuf = &pCmd->aBuffers[1];
                 uint32_t cbBuffer = pBuf->cbBuffer;
                 uint8_t *pBuffer  = VBOXCRHGSMI_PTR_SAFE(pBuf->offBuffer, cbBuffer, uint8_t);
 
@@ -3152,7 +3152,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCm
             if (cParams == 1)
             {
                 CRVBOXHGSMIREAD *pFnCmd = (CRVBOXHGSMIREAD*)pHdr;
-                VBOXCMDVBVA_CRCMD_BUFFER *pBuf = &pCmd->aBuffers[1];
+                const VBOXCMDVBVA_CRCMD_BUFFER *pBuf = &pCmd->aBuffers[1];
                 /* Fetch parameters. */
                 uint32_t cbBuffer = pBuf->cbBuffer;
                 uint8_t *pBuffer  = VBOXCRHGSMI_PTR_SAFE(pBuf->offBuffer, cbBuffer, uint8_t);
@@ -3206,8 +3206,8 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(struct VBOXCMDVBVA_CRCMD_CMD *pCm
             if (cParams == 2)
             {
                 CRVBOXHGSMIWRITEREAD *pFnCmd = (CRVBOXHGSMIWRITEREAD*)pHdr;
-                VBOXCMDVBVA_CRCMD_BUFFER *pBuf = &pCmd->aBuffers[1];
-                VBOXCMDVBVA_CRCMD_BUFFER *pWbBuf = &pCmd->aBuffers[2];
+                const VBOXCMDVBVA_CRCMD_BUFFER *pBuf = &pCmd->aBuffers[1];
+                const VBOXCMDVBVA_CRCMD_BUFFER *pWbBuf = &pCmd->aBuffers[2];
 
                 /* Fetch parameters. */
                 uint32_t cbBuffer = pBuf->cbBuffer;
@@ -3451,47 +3451,44 @@ static DECLCALLBACK(int) crVBoxCrCmdLoadState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSS
 }
 
 
-static DECLCALLBACK(int) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
+static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd)
 {
     AssertFailed();
     switch (pCmd->u8OpCode)
     {
         case VBOXCMDVBVA_OPTYPE_CRCMD:
         {
-            VBOXCMDVBVA_CRCMD *pCrCmdDr;
-            VBOXCMDVBVA_CRCMD_CMD *pCrCmd;
+            const VBOXCMDVBVA_CRCMD *pCrCmdDr;
+            const VBOXCMDVBVA_CRCMD_CMD *pCrCmd;
             int rc;
-            pCrCmdDr = (VBOXCMDVBVA_CRCMD*)pCmd;
+            pCrCmdDr = (const VBOXCMDVBVA_CRCMD*)pCmd;
             pCrCmd = &pCrCmdDr->Cmd;
             if (cbCmd < sizeof (VBOXCMDVBVA_CRCMD))
             {
                 WARN(("invalid buffer size"));
-                pCmd->u.i8Result = -1;
-                break;
+                return -1;
             }
             rc = crVBoxServerCmdVbvaCrCmdProcess(pCrCmd, cbCmd - RT_OFFSETOF(VBOXCMDVBVA_CRCMD, Cmd));
             if (RT_SUCCESS(rc))
             {
-            /* success */
-                pCmd->u.i8Result = 0;
+                /* success */
+                return 0;
             }
-            else
-            {
-                WARN(("crVBoxServerCmdVbvaCrCmdProcess failed, rc %d", rc));
-                pCmd->u.i8Result = -1;
-            }
-            break;
+
+            WARN(("crVBoxServerCmdVbvaCrCmdProcess failed, rc %d", rc));
+            return -1;
         }
         case VBOXCMDVBVA_OPTYPE_BLT_OFFPRIMSZFMT_OR_ID:
         {
-            crVBoxServerCrCmdBltProcess(pCmd, cbCmd);
-            break;
+            return crVBoxServerCrCmdBltProcess(pCmd, cbCmd);
         }
         default:
             WARN(("unsupported command"));
-            pCmd->u.i8Result = -1;
+            return -1;
     }
-    return VINF_SUCCESS;
+
+    WARN(("internal error"));
+    return -1;
 }
 
 /* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.

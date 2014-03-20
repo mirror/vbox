@@ -57,7 +57,7 @@ typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_ENABLE)(HVBOXCRCMDSVR hSvr, VBOXCR
 /* Opposite to Enable (see above) */
 typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_DISABLE)(HVBOXCRCMDSVR hSvr);
 /* process command */
-typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_CMD)(HVBOXCRCMDSVR hSvr, PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd);
+typedef DECLCALLBACKPTR(int8_t, PFNVBOXCRCMD_SVR_CMD)(HVBOXCRCMDSVR hSvr, const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd);
 /* process host control */
 typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_HOSTCTL)(HVBOXCRCMDSVR hSvr, uint8_t* pCtl, uint32_t cbCmd);
 /* process guest control */
