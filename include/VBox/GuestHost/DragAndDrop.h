@@ -36,6 +36,9 @@ bool DnDMIMENeedsDropDir(const char *pcszFormat, size_t cchFormatMax);
 int DnDPathSanitizeFilename(char *pszPath, size_t cbPath);
 int DnDPathSanitize(char *pszPath, size_t cbPath);
 
+/** Keep the original paths, don't convert paths to relative ones. */
+#define DNDURILIST_FLAGS_ABSOLUTE_PATHS         RT_BIT(0)
+
 class DnDURIObject
 {
 public:
@@ -119,7 +122,9 @@ protected:
 
 protected:
 
-    /** List of all top-level file/directory entries. */
+    /** List of all top-level file/directory entries.
+     *  Note: All paths are kept internally as UNIX paths for
+     *        easier conversion/handling!  */
     RTCList<RTCString>     m_lstRoot;
     /** List of all URI objects added. */
     RTCList<DnDURIObject>  m_lstTree;

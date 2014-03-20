@@ -1081,7 +1081,7 @@ static int vbglR3DnDGHSendURIObject(uint32_t u32ClientId, DnDURIObject &obj)
 }
 
 static int vbglR3DnDGHProcessURIMessages(uint32_t u32ClientId,
-                                         void *pvData, uint32_t cbData)
+                                         const void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
