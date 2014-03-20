@@ -60,7 +60,6 @@ GLuint crServerTranslateProgramID( GLuint id )
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchNewList( GLuint list, GLenum mode )
 {
-    Assert(0);
     if (mode == GL_COMPILE_AND_EXECUTE)
         crWarning("using glNewList(GL_COMPILE_AND_EXECUTE) can confuse the crserver");
 
