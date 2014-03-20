@@ -979,7 +979,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
     AssertRelease(!maFramebuffers[uScreenId].pendingResize.fPending);
 
     /* The method also unlocks the framebuffer. */
-    handleResizeCompletedEMT();
+    handleResizeCompletedEMT(uScreenId);
 
     return VINF_SUCCESS;
 }
@@ -990,13 +990,17 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
  *
  *  @thread EMT
  */
-void Display::handleResizeCompletedEMT (void)
+void Display::handleResizeCompletedEMT(unsigned uScreenId)
 {
     LogRelFlowFunc(("\n"));
 
-    unsigned uScreenId;
-    for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
+    do /* to use 'break' */
     {
+        if (uScreenId >= mcMonitors)
+        {
+            break;
+        }
+
         DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
 
         /* Try to into non resizing state. */
@@ -1005,7 +1009,8 @@ void Display::handleResizeCompletedEMT (void)
         if (f == false)
         {
             /* This is not the display that has completed resizing. */
-            continue;
+            AssertFailed();
+            break;
         }
 
         /* Check whether a resize is pending for this framebuffer. */
@@ -1020,7 +1025,7 @@ void Display::handleResizeCompletedEMT (void)
             pFBInfo->pendingResize.fPending = false;
             handleDisplayResize (uScreenId, pFBInfo->pendingResize.bpp, pFBInfo->pendingResize.pvVRAM,
                                  pFBInfo->pendingResize.cbLine, pFBInfo->pendingResize.w, pFBInfo->pendingResize.h, pFBInfo->pendingResize.flags);
-            continue;
+            break;
         }
 
         /* Inform VRDP server about the change of display parameters.
@@ -1072,9 +1077,6 @@ void Display::handleResizeCompletedEMT (void)
                 pFBInfo->pFramebuffer->NotifyUpdate(0, 0, pFBInfo->w, pFBInfo->h);
         }
         LogRelFlow(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
-
-        /* Repaint the display because VM continued to run during the framebuffer resize. */
-        InvalidateAndUpdateEMT(this, uScreenId, false);
 
         /* Handle the case if there are some saved visible region that needs to be
          * applied after the resize of the framebuffer is completed
@@ -1130,7 +1132,7 @@ void Display::handleResizeCompletedEMT (void)
             }
         }
 #endif /* VBOX_WITH_CROGL */
-    }
+    } while(0);
 }
 
 static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy)
@@ -3838,12 +3840,16 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             LogRelFlowFunc(("ResizeStatus_UpdateDisplayData %d\n", uScreenId));
             fNoUpdate = true; /* Always set it here, because pfnUpdateDisplayAll can cause a new resize. */
             /* The framebuffer was resized and display data need to be updated. */
-            pDisplay->handleResizeCompletedEMT ();
+            pDisplay->handleResizeCompletedEMT(uScreenId);
             if (pFBInfo->u32ResizeStatus != ResizeStatus_Void)
             {
                 /* The resize status could be not Void here because a pending resize is issued. */
                 continue;
             }
+
+            /* Repaint the display because VM continued to run during the framebuffer resize. */
+            pDisplay->InvalidateAndUpdateEMT(pDisplay, uScreenId, false);
+
             /* Continue with normal processing because the status here is ResizeStatus_Void. */
         }
         else if (u32ResizeStatus == ResizeStatus_InProgress)

@@ -354,7 +354,7 @@ private:
     bool vbvaFetchCmd(VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
     void vbvaReleaseCmd(VBVACMDHDR *pHdr, int32_t cbCmd);
 
-    void handleResizeCompletedEMT(void);
+    void handleResizeCompletedEMT(unsigned uScreenId);
 
     RTCRITSECT mVBVALock;
     volatile uint32_t mfu32PendingVideoAccelDisable;
