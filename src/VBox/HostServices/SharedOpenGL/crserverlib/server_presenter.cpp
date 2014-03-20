@@ -4628,7 +4628,7 @@ DECLINLINE(void) crVBoxPRectUnpacks(const VBOXCMDVBVA_RECT *paVbvaRects, RTRECT 
     }
 }
 
-int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
+int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd)
 {
     uint8_t u8Flags = pCmd->u8Flags;
     if (u8Flags & (VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY | VBOXCMDVBVA_OPF_ALLOC_SRCPRIMARY))
@@ -4639,8 +4639,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
         if (!hFb)
         {
             WARN(("request to present on disabled framebuffer, ignore"));
-            pCmd->u.i8Result = -1;
-            return VINF_SUCCESS;
+            return -1;
         }
 
         const VBOXCMDVBVA_RECT *pPRects = pBlt->aRects;
@@ -4657,8 +4656,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
             {
                 WARN(("RTMemAlloc failed!"));
                 g_CrPresenter.cbTmpBuf = 0;
-                pCmd->u.i8Result = -1;
-                return VINF_SUCCESS;
+                return -1;
             }
         }
 
@@ -4689,8 +4687,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
                             || offVRAM + cbScreen >= g_cbVRam)
                     {
                         WARN(("invalid param"));
-                        pCmd->u.i8Result = -1;
-                        return VINF_SUCCESS;
+                        return -1;
                     }
 
                     uint8_t *pu8Buf = g_pvVRamBase + offVRAM;
@@ -4701,7 +4698,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
                     if (!RT_SUCCESS(rc))
                     {
                         WARN(("CrFbBltPutContentsNe failed %d", rc));
-                        return rc;
+                        return -1;
                     }
 
                     if (cRects)
@@ -4765,14 +4762,13 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
                         }
                     }
                 }
-                return VINF_SUCCESS;
+                return 0;
             }
             else
             {
                 /* blit from one primary to another primary, wow */
                 WARN(("not implemented"));
-                pCmd->u.i8Result = -1;
-                return VINF_SUCCESS;
+                return -1;
             }
         }
         else
@@ -4783,8 +4779,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
             {
                 uint32_t texId = pBlt->alloc.u.id;
                 WARN(("not implemented"));
-                pCmd->u.i8Result = -1;
-                return VINF_SUCCESS;
+                return -1;
             }
             else
             {
@@ -4795,8 +4790,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
                         || offVRAM + cbScreen >= g_cbVRam)
                 {
                     WARN(("invalid param"));
-                    pCmd->u.i8Result = -1;
-                    return VINF_SUCCESS;
+                    return -1;
                 }
 
                 uint8_t *pu8Buf = g_pvVRamBase + offVRAM;
@@ -4817,8 +4811,7 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
                 if (!RT_SUCCESS(rc))
                 {
                     WARN(("CrFbBltGetContents failed %d", rc));
-                    pCmd->u.i8Result = -1;
-                    return VINF_SUCCESS;
+                    return -1;
                 }
             }
         }
@@ -4826,10 +4819,8 @@ int32_t crVBoxServerCrCmdBltProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
     else
     {
         WARN(("not implemented"));
-        pCmd->u.i8Result = -1;
-        return VINF_SUCCESS;
+        return -1;
     }
 
-    pCmd->u.i8Result = 0;
-    return VINF_SUCCESS;
+    return 0;
 }

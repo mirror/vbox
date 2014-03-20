@@ -1115,14 +1115,11 @@ uint32_t VBoxCVDdiPTransferVRamSysBuildEls(VBOXCMDVBVA_PAGING_TRANSFER *pCmd, PM
     }
 
     cbBuffer -= RT_OFFSETOF(VBOXCMDVBVA_PAGING_TRANSFER, aSysMem);
-    uint32_t i = 0;
 
-    for (; cPages && cbBuffer >= sizeof (VBOXCMDVBVA_PAGING_TRANSFER); ++cEls, cbBuffer-=sizeof (VBOXCMDVBVA_SYSMEMEL), ++pEl, ++i)
+    for (; cPages && cbBuffer >= sizeof (VBOXCMDVBVA_SYSMEMEL); ++cEls, cbBuffer-=sizeof (VBOXCMDVBVA_SYSMEMEL), ++pEl)
     {
         cPages = vboxCVDdiSysMemElBuild(pEl, pMdl, iPfn + cInitPages - cPages, cPages);
     }
-
-    pCmd->cSysMem = i;
 
 done:
     *pcPagesWritten = cInitPages - cPages;

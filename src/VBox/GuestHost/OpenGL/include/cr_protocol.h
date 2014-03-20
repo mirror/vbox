@@ -102,7 +102,7 @@ typedef struct CRVBOXHGSMI_CMDDATA {
     {
         struct VBOXVDMACMD_CHROMIUM_CMD *pHgsmiCmd;
         struct VBOXCMDVBVA_CRCMD_CMD *pVbvaCmd;
-        void *pvCmd;
+        const void *pvCmd;
     };
     int          *pCmdRc;
     char         *pWriteback;
