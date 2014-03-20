@@ -429,14 +429,16 @@ int DnDURIList::AppendURIPath(const char *pszURI, uint32_t fFlags)
             if (pszFileName)
             {
                 Assert(pszFileName >= pszFilePath);
-                char *pszRoot = &pszFilePath[pszFileName - pszFilePath];
+                size_t cbBase = (fFlags & DNDURILIST_FLAGS_ABSOLUTE_PATHS)
+                              ? 0 /* Use start of path as root. */
+                              : pszFileName - pszFilePath;
+                char *pszRoot = &pszFilePath[cbBase];
                 m_lstRoot.append(pszRoot);
 #ifdef DEBUG_andy
                 LogFlowFunc(("pszFilePath=%s, pszFileName=%s, pszRoot=%s\n",
                              pszFilePath, pszFileName, pszRoot));
 #endif
-                rc = appendPathRecursive(pszFilePath,
-                                         pszFileName - pszFilePath,
+                rc = appendPathRecursive(pszFilePath, cbBase,
                                          fFlags);
             }
             else
@@ -550,6 +552,9 @@ RTCString DnDURIList::RootToString(const RTCString &strBasePath /* = "" */,
     for (size_t i = 0; i < m_lstRoot.size(); i++)
     {
         const char *pszCurRoot = m_lstRoot.at(i).c_str();
+#ifdef DEBUG_andy
+        LogFlowFunc(("pszCurRoot=%s\n", pszCurRoot));
+#endif
         if (strBasePath.isNotEmpty())
         {
             char *pszPath = RTPathJoinA(strBasePath.c_str(), pszCurRoot);

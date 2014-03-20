@@ -452,13 +452,16 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
 
                         if (RT_SUCCESS(rc))
                         {
+                            cchFiles += 1; /* Add string termination. */
                             uint32_t cbFiles = cchFiles * sizeof(char);
-                            Assert(cbFiles);
+
+                            LogFlowFunc(("cFiles=%u, cchFiles=%RU32, cbFiles=%RU32, pszFiles=0x%p\n",
+                                         cFiles, cchFiles, cbFiles, pszFiles));
 
                             /* Translate the list into URI elements. */
                             DnDURIList lstURI;
-                            rc = lstURI.AppendNativePathsFromList(pszFiles, cbFiles, 
-                                                                  0 /* Flags */);
+                            rc = lstURI.AppendNativePathsFromList(pszFiles, cbFiles,
+                                                                  DNDURILIST_FLAGS_ABSOLUTE_PATHS);
                             if (RT_SUCCESS(rc))
                             {
                                 RTCString strRoot = lstURI.RootToString();
@@ -493,7 +496,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                 }
 
                 /*
-                 * Third stage: Release access to the storage medium again.
+                 * Third stage: Unlock + release access to the storage medium again.
                  */
                 switch (mFormatEtc.tymed)
                 {
@@ -507,12 +510,12 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                 }
             }
 
+            /* Release storage medium again. */
+            ReleaseStgMedium(&stgMed);
+
             /* Signal waiters. */
             mDroppedRc = rc;
             RTSemEventSignal(hEventDrop);
-
-            /* Release storage medium again. */
-            ReleaseStgMedium(&stgMed);
         }
     }
 
