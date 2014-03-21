@@ -281,6 +281,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/sha256str.cpp \
 	common/checksum/sha512.cpp \
 	common/checksum/sha512str.cpp \
+	common/checksum/x509.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgas.cpp \
 	common/dbg/dbgcfg.cpp \

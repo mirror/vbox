@@ -46,6 +46,7 @@
 #include <VBox/version.h>
 #include <VBox/settings.h>
 
+#include <iprt/x509.h>
 #include <set>
 
 using namespace std;
@@ -1516,6 +1517,8 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
                 if (FAILED(rc)) throw rc;
 
                 /* verify Certificate */
+                rc = i_verifyCertificateFile(pvCertBuf, cbCertFile, &storage);
+                if (FAILED(rc)) throw rc;
             }
         }
         else
@@ -1587,6 +1590,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     void *pvMfBuf = NULL;
     void *pvCertBuf = NULL;
     Utf8Str OVFfilename;
+    void  *pSignatureRSA = NULL;
 
     writeLock.release();
 
@@ -1692,7 +1696,9 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
                     if (pvCertBuf)
                     {
-                    /* verify the certificate */
+                        /* verify the certificate */
+                        rc = i_verifyCertificateFile(pvCertBuf, cbCertFile, pStorage);
+                        if (FAILED(rc)) throw rc;
                     }
                 }
             }
@@ -1737,7 +1743,9 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
                         if (pvCertBuf)
                         {
-                        /* verify the certificate */
+                            /* verify the certificate */
+                            rc = i_verifyCertificateFile(pvCertBuf, cbCertFile, pStorage);
+                            if (FAILED(rc)) throw rc;
                         }
                     }
                 }
@@ -2036,6 +2044,8 @@ HRESULT Appliance::i_readTarFileToBuf(PFSSRDONLYINTERFACEIO pTarIo,
 
 HRESULT Appliance::i_verifyManifestFile(const Utf8Str &strFile, ImportStack &stack, void *pvBuf, size_t cbSize)
 {
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", this));
     HRESULT rc = S_OK;
 
     PRTMANIFESTTEST paTests = (PRTMANIFESTTEST)RTMemAlloc(sizeof(RTMANIFESTTEST) * stack.llSrcDisksDigest.size());
@@ -2063,7 +2073,101 @@ HRESULT Appliance::i_verifyManifestFile(const Utf8Str &strFile, ImportStack &sta
                       RTPathFilename(strFile.c_str()), vrc);
 
     RTMemFree(paTests);
+    LogFlowFuncLeave();
 
+    return rc;
+}
+
+HRESULT Appliance::i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORAGE pStorage)
+{
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", this));
+    HRESULT rc = S_OK;
+
+    int vrc = 0;
+    RTDIGESTTYPE digestType;
+    void * pvCertBuf = pvBuf;
+    size_t cbCertSize = cbSize;
+    Utf8Str manifestDigest = pStorage->strDigest;
+
+    vrc = RTManifestVerifyDigestType(pvCertBuf, cbCertSize, &digestType);
+    if (RT_FAILURE(vrc))
+    {
+        rc = setError(VBOX_E_FILE_ERROR, tr("Digest type of certificate is unknown"));
+    }
+    else
+    {
+        RTX509PrepareOpenSSL();
+
+        vrc = RTRSAVerify(pvCertBuf, (unsigned int)cbCertSize, manifestDigest.c_str(), digestType);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTX509CertificateVerify(pvCertBuf, (unsigned int)cbCertSize);
+        }
+
+        /* After first unsuccessful operation */
+        if (RT_FAILURE(vrc))
+        {
+            {
+                /* first stage for getting possible error code and it's description using native openssl method */
+                char* errStrDesc = NULL;
+                unsigned long errValue = RTX509GetErrorDescription(&errStrDesc);
+
+                if(errValue != 0)
+                {
+                    rc = setError(VBOX_E_FILE_ERROR, tr(errStrDesc));
+                    LogFlowFunc(("Error during verifying X509 certificate(internal openssl description): %s\n", errStrDesc));
+                }
+
+                RTMemFree(errStrDesc);
+            }
+
+            {
+                /* second stage for getting possible error code using our defined errors codes. The original error description
+                   will be replaced by our description */
+
+                Utf8Str errStrDesc;
+                switch(vrc)
+                {
+                    case VERR_READING_CERT_FROM_BIO:
+                        errStrDesc = "Error during reading a certificate in PEM format from BIO ";
+                        break;
+                    case VERR_EXTRACT_PUBKEY_FROM_CERT:
+                        errStrDesc = "Error during extraction a public key from the certificate ";
+                        break;
+                    case VERR_EXTRACT_RSA_FROM_PUBLIC_KEY:
+                        errStrDesc = "Error during extraction RSA from the public key ";
+                        break;
+                    case VERR_RSA_VERIFICATION_FUILURE:
+                        errStrDesc = "RSA verification failure ";
+                        break;
+                    case VERR_NO_BASIC_CONSTARAINTS:
+                        errStrDesc = "Basic constraints were not found ";
+                        break;
+                    case VERR_GETTING_EXTENSION_FROM_CERT:
+                        errStrDesc = "Error during getting extensions from the certificate ";
+                        break;
+                    case VERR_GETTING_DATA_FROM_EXTENSION:
+                        errStrDesc = "Error during extraction data from the extension ";
+                        break;
+                    case VERR_PRINT_EXTENSION_TO_BIO:
+                        errStrDesc = "Error during print out an extension to BIO ";
+                        break;
+                    case VERR_X509_CERTIFICATE_VERIFICATION_FAILURE:
+                        errStrDesc = "X509 certificate verification failure ";
+                        break;
+                    case VERR_NOT_SELFSIGNED_X509_CERTIFICATE:
+                        errStrDesc = "Only self signed X509 certificates are supported at moment";
+                        break;
+                    default:
+                        errStrDesc = "Unknown error during X509 certificate verification";
+                }
+                rc = setError(VBOX_E_FILE_ERROR, tr(errStrDesc.c_str()));
+            }
+        }
+    }
+
+    LogFlowFuncLeave();
     return rc;
 }
 

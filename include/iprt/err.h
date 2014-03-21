@@ -1878,6 +1878,29 @@ RT_C_DECLS_END
 #define VERR_XAR_ARCHIVED_AND_EXTRACTED_SIZES_MISMATCH (-22739)
 /** @} */
 
+/** @name RTX509 status codes
+ * @{ */
+/** Error during reading a certificate in PEM format from BIO */
+#define VERR_READING_CERT_FROM_BIO                  (-22800)
+/** Error extract a public key from the certificate */
+#define VERR_EXTRACT_PUBKEY_FROM_CERT               (-22801)
+/** Error extract RSA from the public key */
+#define VERR_EXTRACT_RSA_FROM_PUBLIC_KEY            (-22802)
+/** Error the signature verification */
+#define VERR_RSA_VERIFICATION_FUILURE               (-22803)
+/** Error basic constraints were not found */
+#define VERR_NO_BASIC_CONSTARAINTS                  (-22804)
+/** Error getting extensions from the certificate */
+#define VERR_GETTING_EXTENSION_FROM_CERT            (-22805)
+/** Error getting a data from the extension */
+#define VERR_GETTING_DATA_FROM_EXTENSION            (-22806)
+/** Error print out an extension to BIO */
+#define VERR_PRINT_EXTENSION_TO_BIO                 (-22807)
+/** Error X509 certificate verification */
+#define VERR_X509_CERTIFICATE_VERIFICATION_FAILURE  (-22808)
+/** Error X509 certificate isn't self signed */
+#define VERR_NOT_SELFSIGNED_X509_CERTIFICATE        (-22809)
+/** @} */
 
 /* SED-END */
 

@@ -181,6 +181,8 @@ private:
                                PSHASTORAGE pStorage);
     HRESULT i_verifyManifestFile(const Utf8Str &strFile, ImportStack &stack, void *pvBuf, size_t cbSize);
 
+    HRESULT i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORAGE pStorage);
+
     void i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                        uint32_t ulAddressOnParent,
                                        Bstr &controllerType,
