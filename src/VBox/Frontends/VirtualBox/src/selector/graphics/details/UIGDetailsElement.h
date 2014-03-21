@@ -30,6 +30,7 @@
 class UIGDetailsSet;
 class CMachine;
 class UIGraphicsRotatorButton;
+class UIGraphicsTextPane;
 class QTextLayout;
 class QStateMachine;
 class QPropertyAnimation;
@@ -37,7 +38,6 @@ class QPropertyAnimation;
 /* Typedefs: */
 typedef QPair<QString, QString> UITextTableLine;
 typedef QList<UITextTableLine> UITextTable;
-Q_DECLARE_METATYPE(UITextTable);
 
 /* Details element
  * for graphics details model/view architecture: */
@@ -103,14 +103,15 @@ protected:
         ElementData_MinimumTextColumnWidth
     };
 
+    /** This event handler is delivered after the widget has been resized. */
+    void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
+
     /* Data provider: */
     QVariant data(int iKey) const;
 
     /* Helpers: Update stuff: */
     void updateMinimumHeaderWidth();
     void updateMinimumHeaderHeight();
-    void updateMinimumTextWidth();
-    void updateMinimumTextHeight();
 
     /* API: Icon stuff: */
     void setIcon(const QIcon &icon);
@@ -119,7 +120,7 @@ protected:
     void setName(const QString &strName);
 
     /* API: Text stuff: */
-    UITextTable text() const { return m_text; }
+    const UITextTable& text() const;
     void setText(const UITextTable &text);
 
     /* API: Machine stuff: */
@@ -155,6 +156,7 @@ private:
     /* Helpers: Prepare stuff: */
     void prepareElement();
     void prepareButton();
+    void prepareTextPane();
 
     /* Helpers: Paint stuff: */
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
@@ -173,10 +175,6 @@ private:
     void handleHoverEvent(QGraphicsSceneHoverEvent *pEvent);
     void updateNameHoverLink();
 
-    /* Helper: Layout stuff: */
-    static QTextLayout* prepareTextLayout(const QFont &font, QPaintDevice *pPaintDevice,
-                                          const QString &strText, int iWidth, int &iHeight);
-
     /* Helper: Animation stuff: */
     void updateAnimationParameters();
 
@@ -185,7 +183,6 @@ private:
     DetailsElementType m_type;
     QPixmap m_pixmap;
     QString m_strName;
-    UITextTable m_text;
     int m_iCornerRadius;
     QFont m_nameFont;
     QFont m_textFont;
@@ -194,14 +191,15 @@ private:
     QSize m_buttonSize;
     int m_iMinimumHeaderWidth;
     int m_iMinimumHeaderHeight;
-    int m_iMinimumTextWidth;
-    int m_iMinimumTextHeight;
 
-    /* Variables: Toggle stuff: */
-    bool m_fClosed;
+    /* Variables: Toggle-button stuff: */
     UIGraphicsRotatorButton *m_pButton;
+    bool m_fClosed;
     int m_iAdditionalHeight;
     bool m_fAnimationRunning;
+
+    /* Variables: Text-pane stuff: */
+    UIGraphicsTextPane *m_pTextPane;
 
     /* Variables: Hover stuff: */
     bool m_fHovered;

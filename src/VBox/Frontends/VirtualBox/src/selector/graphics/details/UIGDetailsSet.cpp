@@ -514,8 +514,6 @@ void UIGDetailsSet::updateLayout()
                 {
                     /* Resize element to required width: */
                     pElement->resize(iWidth, pElement->geometry().height());
-                    /* Update minimum-height-hint: */
-                    pElement->updateMinimumTextHeight();
                 }
                 /* Acquire required height: */
                 int iHeight = pElement->minimumHeightHint();
