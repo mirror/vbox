@@ -764,7 +764,7 @@ int DragInstance::onX11SelectionNotify(const XEvent &e)
 
     LogFlowThisFunc(("m_mode=%d, m_state=%d\n", m_mode, m_state));
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     switch (m_mode)
     {
@@ -1410,7 +1410,7 @@ int DragInstance::ghIsDnDPending(void)
                         && ret)
                     {
                         Atom *data = reinterpret_cast<Atom*>(ret);
-                        for (int i = 0; i < RT_MIN(VBOX_MAX_XPROPERTIES, n); ++i)
+                        for (unsigned i = 0; i < RT_MIN(VBOX_MAX_XPROPERTIES, n); ++i)
                         {
                             LogFlowThisFunc(("Received format via XdndTypeList: %s\n", 
                                              gX11->xAtomToString(data[i]).c_str()));
@@ -1432,7 +1432,7 @@ int DragInstance::ghIsDnDPending(void)
                     && ret)
                 {
                     Atom *data = reinterpret_cast<Atom*>(ret);
-                    for (int i = 0; i < RT_MIN(VBOX_MAX_XPROPERTIES, n); ++i)
+                    for (unsigned i = 0; i < RT_MIN(VBOX_MAX_XPROPERTIES, n); ++i)
                     {
                         LogFlowThisFunc(("Received action: %s\n", 
                                          gX11->xAtomToString(data[i]).c_str()));
