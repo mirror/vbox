@@ -42,6 +42,8 @@ public:
 
     /** Graphics text-pane constructor. */
     UIGraphicsTextPane(QIGraphicsWidget *pParent, QPaintDevice *pPaintDevice);
+    /** Graphics text-pane destructor. */
+    ~UIGraphicsTextPane();
 
     /** Returns whether contained text is empty. */
     bool isEmpty() const { return m_text.isEmpty(); }
@@ -52,12 +54,11 @@ public:
 
 private:
 
+    /** Update text-layout. */
+    void updateTextLayout(bool fFull = false);
+
     /** Notifies listeners about size-hint changes. */
     void updateGeometry();
-    /** Updates minimum text width hint. */
-    void updateMinimumTextWidthHint();
-    /** Updates minimum text height hint. */
-    void updateMinimumTextHeightHint();
     /** Returns the size-hint to constrain the content. */
     QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
 
@@ -92,6 +93,10 @@ private:
 
     /** Contained text. */
     UITextTable m_text;
+    /** Left text-layout list. */
+    QList<QTextLayout*> m_leftList;
+    /** Right text-layout list. */
+    QList<QTextLayout*> m_rightList;
 };
 
 #endif /* !___UIGraphicsTextPane_h___ */
