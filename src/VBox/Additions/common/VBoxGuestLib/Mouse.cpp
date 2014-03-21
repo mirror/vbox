@@ -45,9 +45,7 @@ DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify,
 {
     VBoxGuestMouseSetNotifyCallback NotifyCallback;
     VBGLDRIVER *pDriver;
-    int rc;
-
-    rc = vbglGetDriver(&pDriver);
+    int rc = vbglGetDriver(&pDriver);
     if (RT_FAILURE(rc))
         return rc;
     NotifyCallback.pfnNotify = pfnNotify;
@@ -84,6 +82,8 @@ DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px,
                          &Req.header, sizeof(Req));
     if (RT_FAILURE(rc))
         return rc;
+    if (RT_FAILURE(Req.header.rc))
+        return Req.header.rc;
     if (pfFeatures)
         *pfFeatures = Req.mouseFeatures;
     if (px)
