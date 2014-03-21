@@ -28,6 +28,7 @@
 #include "VBoxGlobal.h"
 #include "UIIconPool.h"
 #include "UIConverter.h"
+#include "UIGraphicsTextPane.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
