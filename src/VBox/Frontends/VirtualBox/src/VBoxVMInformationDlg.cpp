@@ -47,6 +47,8 @@
 #include "CNetworkAdapter.h"
 #include "CVRDEServerInfo.h"
 
+#include <iprt/time.h>
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxVMInformationDlg::InfoDlgMap VBoxVMInformationDlg::mSelfArray = InfoDlgMap();
@@ -475,6 +477,18 @@ void VBoxVMInformationDlg::refreshStatistics()
         resolution += QString (" @%1,%2")
                           .arg (xOrigin)
                           .arg (yOrigin);
+        /* this page is refreshed every 5 seconds, round */
+        uint32_t uUpSecs = (RTTimeProgramSecTS() / 5) * 5;
+        char szUptime[32];
+        uint32_t uUpDays = uUpSecs / (60 * 60 * 24);
+        uUpSecs -= uUpDays * 60 * 60 * 24;
+        uint32_t uUpHours = uUpSecs / (60 * 60);
+        uUpSecs -= uUpHours * 60 * 60;
+        uint32_t uUpMins  = uUpSecs / 60;
+        uUpSecs -= uUpMins * 60;
+        RTStrPrintf(szUptime, sizeof(szUptime), "%dd %02d:%02d:%02d",
+                    uUpDays, uUpHours, uUpMins, uUpSecs);
+        QString uptime = QString(szUptime);
 
         QString clipboardMode = gpConverter->toString(m.GetClipboardMode());
         QString dragAndDropMode = gpConverter->toString(m.GetDragAndDropMode());
@@ -513,7 +527,7 @@ void VBoxVMInformationDlg::refreshStatistics()
 
         /* Searching for longest string */
         QStringList valuesList;
-        valuesList << resolution << virtualization << nested << unrestricted << addVersionStr << osType << vrdeInfo;
+        valuesList << resolution << uptime << virtualization << nested << unrestricted << addVersionStr << osType << vrdeInfo;
         int maxLength = 0;
         foreach (const QString &value, valuesList)
             maxLength = maxLength < fontMetrics().width (value) ?
@@ -521,6 +535,7 @@ void VBoxVMInformationDlg::refreshStatistics()
 
         result += hdrRow.arg (":/state_running_16px.png").arg (tr ("Runtime Attributes"));
         result += formatValue (tr ("Screen Resolution"), resolution, maxLength);
+        result += formatValue (tr ("VM Uptime"), uptime, maxLength);
         result += formatValue (tr ("Clipboard Mode"), clipboardMode, maxLength);
         result += formatValue (tr ("Drag'n'Drop Mode"), dragAndDropMode, maxLength);
         result += formatValue (VBoxGlobal::tr ("VT-x/AMD-V", "details report"), virtualization, maxLength);
