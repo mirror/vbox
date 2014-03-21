@@ -74,4 +74,3 @@ BEGINPROC_EXPORTED ASMAtomicUoAndU64
         ret
 ENDPROC ASMAtomicUoAndU64
 
-
