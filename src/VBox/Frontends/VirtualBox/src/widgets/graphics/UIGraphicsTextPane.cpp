@@ -29,6 +29,7 @@ UIGraphicsTextPane::UIGraphicsTextPane(QIGraphicsWidget *pParent, QPaintDevice *
     , m_iMargin(0)
     , m_iSpacing(10)
     , m_iMinimumTextColumnWidth(100)
+    , m_fMinimumSizeHintInvalidated(true)
     , m_iMinimumTextWidth(0)
     , m_iMinimumTextHeight(0)
 {
@@ -62,13 +63,17 @@ void UIGraphicsTextPane::setText(const UITextTable &text)
         }
     }
 
-    /* Update minimum text size-hint: */
+    /* Update minimum size-hint: */
     updateMinimumTextWidthHint();
     updateMinimumTextHeightHint();
+    updateGeometry();
 }
 
 void UIGraphicsTextPane::updateGeometry()
 {
+    /* Discard cached minimum size-hint: */
+    m_fMinimumSizeHintInvalidated = true;
+
     /* Call to base-class to notify layout if any: */
     QIGraphicsWidget::updateGeometry();
 
@@ -120,9 +125,6 @@ void UIGraphicsTextPane::updateMinimumTextWidthHint()
 
     /* Remember new value: */
     m_iMinimumTextWidth = iMinimumTextWidth;
-
-    /* Notify listeners: */
-    updateGeometry();
 }
 
 void UIGraphicsTextPane::updateMinimumTextHeightHint()
@@ -197,28 +199,33 @@ void UIGraphicsTextPane::updateMinimumTextHeightHint()
 
     /* Remember new value: */
     m_iMinimumTextHeight = iMinimumTextHeight;
-
-    /* Notify listeners: */
-    updateGeometry();
 }
 
 QSizeF UIGraphicsTextPane::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
 {
-    /* Calculate minimum size-hint: */
+    /* For minimum size-hint: */
     if (which == Qt::MinimumSize)
     {
-        int iWidth = 2 * m_iMargin + m_iMinimumTextWidth;
-        int iHeight = 2 * m_iMargin + m_iMinimumTextHeight;
-        return QSize(iWidth, iHeight);
+        /* If minimum size-hint invalidated: */
+        if (m_fMinimumSizeHintInvalidated)
+        {
+            /* Recache minimum size-hint: */
+            m_minimumSizeHint = QSizeF(2 * m_iMargin + m_iMinimumTextWidth,
+                                       2 * m_iMargin + m_iMinimumTextHeight);
+            m_fMinimumSizeHintInvalidated = false;
+        }
+        /* Return cached minimum size-hint: */
+        return m_minimumSizeHint;
     }
-    /* Call to base-class: */
+    /* Call to base-class for other size-hints: */
     return QIGraphicsWidget::sizeHint(which, constraint);
 }
 
 void UIGraphicsTextPane::resizeEvent(QGraphicsSceneResizeEvent*)
 {
-    /* Update minimum text height-hint: */
+    /* Update minimum height-hint: */
     updateMinimumTextHeightHint();
+    updateGeometry();
 }
 
 void UIGraphicsTextPane::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*, QWidget*)
