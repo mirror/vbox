@@ -33,6 +33,11 @@ class UIGraphicsTextPane : public QIGraphicsWidget
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about size-hint changes. */
+    void sigGeometryChanged();
+
 public:
 
     /** Graphics text-pane constructor. */
@@ -47,6 +52,8 @@ public:
 
 private:
 
+    /** Notifies listeners about size-hint changes. */
+    void updateGeometry();
     /** Updates minimum text width hint. */
     void updateMinimumTextWidthHint();
     /** Updates minimum text height hint. */
