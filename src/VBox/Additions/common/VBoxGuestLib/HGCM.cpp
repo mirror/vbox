@@ -146,16 +146,20 @@ DECLVBGL(int) VbglHGCMConnect (VBGLHGCMHANDLE *pHandle, VBoxGuestHGCMConnectInfo
         if (RT_SUCCESS(rc))
         {
             rc = vbglDriverIOCtl (&pHandleData->driver, VBOXGUEST_IOCTL_HGCM_CONNECT, pData, sizeof (*pData));
-            if (   RT_SUCCESS(rc)
-                && RT_SUCCESS(pData->result))
+            if (RT_SUCCESS(rc))
+                rc = pData->result;
+            if (RT_SUCCESS(rc))
             {
                 *pHandle = pHandleData;
                 return rc;
             }
+
+            vbglDriverClose (&pHandleData->driver);
         }
+
+        vbglHGCMHandleFree (pHandleData);
     }
-    vbglDriverClose (&pHandleData->driver);
-    vbglHGCMHandleFree (pHandleData);
+
     return rc;
 }
 
