@@ -81,6 +81,10 @@ private:
     /** Minimum text-column width: */
     const int m_iMinimumTextColumnWidth;
 
+    /** Minimum size-hint invalidation flag. */
+    mutable bool m_fMinimumSizeHintInvalidated;
+    /** Minimum size-hint cache. */
+    mutable QSizeF m_minimumSizeHint;
     /** Minimum text-width. */
     int m_iMinimumTextWidth;
     /** Minimum text-height. */
