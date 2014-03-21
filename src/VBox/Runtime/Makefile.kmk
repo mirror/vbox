@@ -363,6 +363,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathAppend.cpp \
 	common/path/RTPathAppendEx.cpp \
 	common/path/RTPathCalcRelative.cpp \
+	common/path/RTPathCheck.cpp \
 	common/path/RTPathChangeToDosSlashes.cpp \
 	common/path/RTPathChangeToUnixSlashes.cpp \
 	common/path/RTPathCopyComponents.cpp \
@@ -1113,6 +1114,7 @@ RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/checksum/RTSha1Digest.cpp \
 	common/checksum/RTSha256Digest.cpp \
 	common/checksum/sha% \
+	common/checksum/x509.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	r3/xml.cpp \
 	common/zip/xarvfs.cpp \
