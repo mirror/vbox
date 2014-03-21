@@ -54,4 +54,3 @@ BEGINPROC_EXPORTED ASMAtomicUoOrU32
         ret
 ENDPROC ASMAtomicUoOrU32
 
-
