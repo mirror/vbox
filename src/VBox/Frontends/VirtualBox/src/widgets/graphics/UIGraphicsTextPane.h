@@ -20,6 +20,9 @@
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
 
+/* Forward declarations: */
+class QTextLayout;
+
 /* Typedefs: */
 typedef QPair<QString, QString> UITextTableLine;
 typedef QList<UITextTableLine> UITextTable;
@@ -61,6 +64,9 @@ private:
     static QTextLayout* buildTextLayout(const QFont &font, QPaintDevice *pPaintDevice,
                                         const QString &strText, int iWidth, int &iHeight);
 
+    /** Paint-device to scale to. */
+    QPaintDevice *m_pPaintDevice;
+
     /** Margin. */
     const int m_iMargin;
     /** Spacing. */
@@ -72,9 +78,6 @@ private:
     int m_iMinimumTextWidth;
     /** Minimum text-height. */
     int m_iMinimumTextHeight;
-
-    /** Paint-device to scale to. */
-    QPaintDevice *m_pPaintDevice;
 
     /** Contained text. */
     UITextTable m_text;
