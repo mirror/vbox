@@ -92,6 +92,9 @@ protected slots:
     void sltElementToggleStart();
     void sltElementToggleFinish(bool fToggled);
 
+    /** Handles children geometry changes. */
+    void sltUpdateGeometry() { updateGeometry(); }
+
 protected:
 
     /* Data enumerator: */
