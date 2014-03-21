@@ -35,6 +35,13 @@ UIGraphicsTextPane::UIGraphicsTextPane(QIGraphicsWidget *pParent, QPaintDevice *
 {
 }
 
+UIGraphicsTextPane::~UIGraphicsTextPane()
+{
+    /* Clear text-layouts: */
+    while (!m_leftList.isEmpty()) delete m_leftList.takeLast();
+    while (!m_rightList.isEmpty()) delete m_rightList.takeLast();
+}
+
 void UIGraphicsTextPane::setText(const UITextTable &text)
 {
     /* Clear text: */
@@ -63,10 +70,114 @@ void UIGraphicsTextPane::setText(const UITextTable &text)
         }
     }
 
+    /* Update text-layout: */
+    updateTextLayout(true);
+
     /* Update minimum size-hint: */
-    updateMinimumTextWidthHint();
-    updateMinimumTextHeightHint();
     updateGeometry();
+}
+
+void UIGraphicsTextPane::updateTextLayout(bool fFull /* = false */)
+{
+    /* Prepare variables: */
+    QFontMetrics fm(font(), m_pPaintDevice);
+    int iMaximumTextWidth = (int)size().width() - 2 * m_iMargin - m_iSpacing;
+
+    /* Search for the maximum column widths: */
+    int iMaximumLeftColumnWidth = 0;
+    int iMaximumRightColumnWidth = 0;
+    bool fSingleColumnText = true;
+    foreach (const UITextTableLine &line, m_text)
+    {
+        bool fRightColumnPresent = !line.second.isEmpty();
+        if (fRightColumnPresent)
+            fSingleColumnText = false;
+        QString strLeftLine = fRightColumnPresent ? line.first + ":" : line.first;
+        QString strRightLine = line.second;
+        iMaximumLeftColumnWidth = qMax(iMaximumLeftColumnWidth, fm.width(strLeftLine));
+        iMaximumRightColumnWidth = qMax(iMaximumRightColumnWidth, fm.width(strRightLine));
+    }
+    iMaximumLeftColumnWidth += 1;
+    iMaximumRightColumnWidth += 1;
+
+    /* Calculate text attributes: */
+    int iLeftColumnWidth = 0;
+    int iRightColumnWidth = 0;
+    /* Left column only: */
+    if (fSingleColumnText)
+    {
+        /* Full update? */
+        if (fFull)
+        {
+            /* Minimum width for left column: */
+            int iMinimumLeftColumnWidth = qMin(m_iMinimumTextColumnWidth, iMaximumLeftColumnWidth);
+            /* Minimum width for whole text: */
+            m_iMinimumTextWidth = iMinimumLeftColumnWidth;
+        }
+
+        /* Current width for left column: */
+        iLeftColumnWidth = qMax(m_iMinimumTextColumnWidth, iMaximumTextWidth);
+    }
+    /* Two columns: */
+    else
+    {
+        /* Full update? */
+        if (fFull)
+        {
+            /* Minimum width for left column: */
+            int iMinimumLeftColumnWidth = iMaximumLeftColumnWidth;
+            /* Minimum width for right column: */
+            int iMinimumRightColumnWidth = qMin(m_iMinimumTextColumnWidth, iMaximumRightColumnWidth);
+            /* Minimum width for whole text: */
+            m_iMinimumTextWidth = iMinimumLeftColumnWidth + m_iSpacing + iMinimumRightColumnWidth;
+        }
+
+        /* Current width for left column: */
+        iLeftColumnWidth = iMaximumLeftColumnWidth;
+        /* Current width for right column: */
+        iRightColumnWidth = iMaximumTextWidth - iLeftColumnWidth;
+    }
+
+    /* Clear old text-layouts: */
+    while (!m_leftList.isEmpty()) delete m_leftList.takeLast();
+    while (!m_rightList.isEmpty()) delete m_rightList.takeLast();
+
+    /* Prepare new text-layouts: */
+    int iTextX = m_iMargin;
+    int iTextY = m_iMargin;
+    /* Populate text-layouts: */
+    m_iMinimumTextHeight = 0;
+    foreach (const UITextTableLine &line, m_text)
+    {
+        /* Left layout: */
+        int iLeftColumnHeight = 0;
+        if (!line.first.isEmpty())
+        {
+            bool fRightColumnPresent = !line.second.isEmpty();
+            m_leftList << buildTextLayout(font(), m_pPaintDevice,
+                                          fRightColumnPresent ? line.first + ":" : line.first,
+                                          iLeftColumnWidth, iLeftColumnHeight);
+            m_leftList.last()->setPosition(QPointF(iTextX, iTextY));
+        }
+
+        /* Right layout: */
+        int iRightColumnHeight = 0;
+        if (!line.second.isEmpty())
+        {
+            m_rightList << buildTextLayout(font(), m_pPaintDevice,
+                                           line.second,
+                                           iRightColumnWidth, iRightColumnHeight);
+            m_rightList.last()->setPosition(QPointF(iTextX + iLeftColumnWidth + m_iSpacing, iTextY));
+        }
+
+        /* Maximum colum height? */
+        int iMaximumColumnHeight = qMax(iLeftColumnHeight, iRightColumnHeight);
+
+        /* Indent Y: */
+        iTextY += iMaximumColumnHeight;
+        /* Append summary text height: */
+        m_iMinimumTextHeight += iMaximumColumnHeight;
+    }
 }
 
 void UIGraphicsTextPane::updateGeometry()
@@ -79,126 +190,6 @@ void UIGraphicsTextPane::updateGeometry()
 
     /* And notify listeners which are not layouts: */
     emit sigGeometryChanged();
-}
-
-void UIGraphicsTextPane::updateMinimumTextWidthHint()
-{
-    /* Prepare variables: */
-    QFontMetrics fm(font(), m_pPaintDevice);
-
-    /* Search for the maximum line widths: */
-    int iMaximumLeftLineWidth = 0;
-    int iMaximumRightLineWidth = 0;
-    bool fSingleColumnText = true;
-    foreach (const UITextTableLine &line, m_text)
-    {
-        bool fRightColumnPresent = !line.second.isEmpty();
-        if (fRightColumnPresent)
-            fSingleColumnText = false;
-        QString strLeftLine = fRightColumnPresent ? line.first + ":" : line.first;
-        QString strRightLine = line.second;
-        iMaximumLeftLineWidth = qMax(iMaximumLeftLineWidth, fm.width(strLeftLine));
-        iMaximumRightLineWidth = qMax(iMaximumRightLineWidth, fm.width(strRightLine));
-    }
-    iMaximumLeftLineWidth += 1;
-    iMaximumRightLineWidth += 1;
-
-    /* Calculate minimum-text-width: */
-    int iMinimumTextWidth = 0;
-    if (fSingleColumnText)
-    {
-        /* Take into account only left column: */
-        int iMinimumLeftColumnWidth = qMin(iMaximumLeftLineWidth, m_iMinimumTextColumnWidth);
-        iMinimumTextWidth = iMinimumLeftColumnWidth;
-    }
-    else
-    {
-        /* Take into account both columns, but wrap only right one: */
-        int iMinimumLeftColumnWidth = iMaximumLeftLineWidth;
-        int iMinimumRightColumnWidth = qMin(iMaximumRightLineWidth, m_iMinimumTextColumnWidth);
-        iMinimumTextWidth = iMinimumLeftColumnWidth + m_iSpacing + iMinimumRightColumnWidth;
-    }
-
-    /* Make sure something changed: */
-    if (m_iMinimumTextWidth == iMinimumTextWidth)
-        return;
-
-    /* Remember new value: */
-    m_iMinimumTextWidth = iMinimumTextWidth;
-}
-
-void UIGraphicsTextPane::updateMinimumTextHeightHint()
-{
-    /* Prepare variables: */
-    int iMaximumTextWidth = (int)size().width() - 2 * m_iMargin - m_iSpacing;
-    QFontMetrics fm(font(), m_pPaintDevice);
-
-    /* Search for the maximum line widths: */
-    int iMaximumLeftLineWidth = 0;
-    int iMaximumRightLineWidth = 0;
-    bool fSingleColumnText = true;
-    foreach (const UITextTableLine &line, m_text)
-    {
-        bool fRightColumnPresent = !line.second.isEmpty();
-        if (fRightColumnPresent)
-            fSingleColumnText = false;
-        QString strFirstLine = fRightColumnPresent ? line.first + ":" : line.first;
-        QString strSecondLine = line.second;
-        iMaximumLeftLineWidth = qMax(iMaximumLeftLineWidth, fm.width(strFirstLine));
-        iMaximumRightLineWidth = qMax(iMaximumRightLineWidth, fm.width(strSecondLine));
-    }
-    iMaximumLeftLineWidth += 1;
-    iMaximumRightLineWidth += 1;
-
-    /* Calculate column widths: */
-    int iLeftColumnWidth = 0;
-    int iRightColumnWidth = 0;
-    if (fSingleColumnText)
-    {
-        /* Take into account only left column: */
-        iLeftColumnWidth = qMax(m_iMinimumTextColumnWidth, iMaximumTextWidth);
-    }
-    else
-    {
-        /* Take into account both columns, but wrap only right one: */
-        iLeftColumnWidth = iMaximumLeftLineWidth;
-        iRightColumnWidth = iMaximumTextWidth - iLeftColumnWidth;
-    }
-
-    /* Calculate minimum-text-height: */
-    int iMinimumTextHeight = 0;
-    foreach (const UITextTableLine line, m_text)
-    {
-        /* First layout: */
-        int iLeftColumnHeight = 0;
-        if (!line.first.isEmpty())
-        {
-            bool fRightColumnPresent = !line.second.isEmpty();
-            QTextLayout *pTextLayout = buildTextLayout(font(), m_pPaintDevice,
-                                                       fRightColumnPresent ? line.first + ":" : line.first,
-                                                       iLeftColumnWidth, iLeftColumnHeight);
-            delete pTextLayout;
-        }
-
-        /* Second layout: */
-        int iRightColumnHeight = 0;
-        if (!line.second.isEmpty())
-        {
-            QTextLayout *pTextLayout = buildTextLayout(font(), m_pPaintDevice, line.second,
-                                                       iRightColumnWidth, iRightColumnHeight);
-            delete pTextLayout;
-        }
-
-        /* Append summary text height: */
-        iMinimumTextHeight += qMax(iLeftColumnHeight, iRightColumnHeight);
-    }
-
-    /* Make sure something changed: */
-    if (m_iMinimumTextHeight == iMinimumTextHeight)
-        return;
-
-    /* Remember new value: */
-    m_iMinimumTextHeight = iMinimumTextHeight;
 }
 
 QSizeF UIGraphicsTextPane::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
@@ -223,81 +214,20 @@ QSizeF UIGraphicsTextPane::sizeHint(Qt::SizeHint which, const QSizeF &constraint
 
 void UIGraphicsTextPane::resizeEvent(QGraphicsSceneResizeEvent*)
 {
-    /* Update minimum height-hint: */
-    updateMinimumTextHeightHint();
+    /* Update text-layout: */
+    updateTextLayout();
+
+    /* Update minimum size-hint: */
     updateGeometry();
 }
 
 void UIGraphicsTextPane::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    /* Prepare variables: */
-    int iMaximumTextWidth = (int)size().width() - 2 * m_iMargin - m_iSpacing;
-    QFontMetrics fm(font(), m_pPaintDevice);
-
-    /* Where to paint? */
-    int iTextX = m_iMargin;
-    int iTextY = m_iMargin;
-
-    /* Search for the maximum line widths: */
-    int iMaximumLeftLineWidth = 0;
-    int iMaximumRightLineWidth = 0;
-    bool fSingleColumnText = true;
-    foreach (const UITextTableLine line, m_text)
-    {
-        bool fRightColumnPresent = !line.second.isEmpty();
-        if (fRightColumnPresent)
-            fSingleColumnText = false;
-        QString strFirstLine = fRightColumnPresent ? line.first + ":" : line.first;
-        QString strSecondLine = line.second;
-        iMaximumLeftLineWidth = qMax(iMaximumLeftLineWidth, fm.width(strFirstLine));
-        iMaximumRightLineWidth = qMax(iMaximumRightLineWidth, fm.width(strSecondLine));
-    }
-    iMaximumLeftLineWidth += 1;
-    iMaximumRightLineWidth += 1;
-
-    /* Calculate column widths: */
-    int iLeftColumnWidth = 0;
-    int iRightColumnWidth = 0;
-    if (fSingleColumnText)
-    {
-        /* Take into account only left column: */
-        iLeftColumnWidth = qMax(m_iMinimumTextColumnWidth, iMaximumTextWidth);
-    }
-    else
-    {
-        /* Take into account both columns, but wrap only right one: */
-        iLeftColumnWidth = iMaximumLeftLineWidth;
-        iRightColumnWidth = iMaximumTextWidth - iLeftColumnWidth;
-    }
-
-    /* For each the line: */
-    foreach (const UITextTableLine line, m_text)
-    {
-        /* First layout: */
-        int iLeftColumnHeight = 0;
-        if (!line.first.isEmpty())
-        {
-            bool fRightColumnPresent = !line.second.isEmpty();
-            QTextLayout *pTextLayout = buildTextLayout(font(), m_pPaintDevice,
-                                                       fRightColumnPresent ? line.first + ":" : line.first,
-                                                       iLeftColumnWidth, iLeftColumnHeight);
-            pTextLayout->draw(pPainter, QPointF(iTextX, iTextY));
-            delete pTextLayout;
-        }
-
-        /* Second layout: */
-        int iRightColumnHeight = 0;
-        if (!line.second.isEmpty())
-        {
-            QTextLayout *pTextLayout = buildTextLayout(font(), m_pPaintDevice,
-                                                       line.second, iRightColumnWidth, iRightColumnHeight);
-            pTextLayout->draw(pPainter, QPointF(iTextX + iLeftColumnWidth + m_iSpacing, iTextY));
-            delete pTextLayout;
-        }
-
-        /* Indent Y: */
-        iTextY += qMax(iLeftColumnHeight, iRightColumnHeight);
-    }
+    /* Draw all the text-layouts: */
+    foreach (QTextLayout *pTextLayout, m_leftList)
+        pTextLayout->draw(pPainter, QPoint(0, 0));
+    foreach (QTextLayout *pTextLayout, m_rightList)
+        pTextLayout->draw(pPainter, QPoint(0, 0));
 }
 
 /* static  */
