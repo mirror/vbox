@@ -219,6 +219,7 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
     list[5] = QApplication::translate("VBoxGlobal", "SCSI Port %1", "StorageSlot");
     list[6] = QApplication::translate("VBoxGlobal", "SAS Port %1", "StorageSlot");
     list[7] = QApplication::translate("VBoxGlobal", "Floppy Device %1", "StorageSlot");
+    list[8] = QApplication::translate("VBoxGlobal", "USB Port %1", "StorageSlot");
     int index = -1;
     QRegExp regExp;
     for (int i = 0; i < list.size(); ++i)
@@ -314,6 +315,22 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
             LONG iPort = 0;
             LONG iDevice = regExp.cap(1).toInt();
             if (iDevice < 0 || iDevice > iMaxDevice)
+            {
+                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toAscii().constData()));
+                break;
+            }
+            result.bus = bus;
+            result.port = iPort;
+            result.device = iDevice;
+            break;
+        }
+        case 8:
+        {
+            KStorageBus bus = KStorageBus_USB;
+            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus);
+            LONG iPort = regExp.cap(1).toInt();
+            LONG iDevice = 0;
+            if (iPort < 0 || iPort > iMaxPort)
             {
                 AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toAscii().constData()));
                 break;
