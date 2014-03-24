@@ -320,11 +320,12 @@ R0PTRTYPE(void *)           g_pvIOBitmap      = NULL;
 VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
                               void *pvArg)
 {
+    Assert(!fEnabledByHost);
+    Assert(HCPhysCpuPage && HCPhysCpuPage != NIL_RTHCPHYS);
+    Assert(RT_ALIGN_T(HCPhysCpuPage, _4K, RTHCPHYS) == HCPhysCpuPage);
+    Assert(pvCpuPage);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    AssertReturn(!fEnabledByHost, VERR_INVALID_PARAMETER);
-    AssertReturn(   HCPhysCpuPage
-                 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
-    AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
+
     NOREF(pvArg);
     NOREF(fEnabledByHost);
 

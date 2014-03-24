@@ -741,8 +741,9 @@ DECLINLINE(int) hmR0VmxReadIdtVectoringErrorCodeVmcs(PVMXTRANSIENT pVmxTransient
  */
 static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage)
 {
-    AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
-    AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
+    Assert(HCPhysCpuPage && HCPhysCpuPage != NIL_RTHCPHYS);
+    Assert(RT_ALIGN_T(HCPhysCpuPage, _4K, RTHCPHYS) == HCPhysCpuPage);
+    Assert(pvCpuPage);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     if (pVM)
@@ -1045,8 +1046,8 @@ VMMR0DECL(void) VMXR0GlobalTerm()
 VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
                               void *pvMsrs)
 {
-    AssertReturn(pCpu, VERR_INVALID_PARAMETER);
-    AssertReturn(pvMsrs, VERR_INVALID_PARAMETER);
+    Assert(pCpu);
+    Assert(pvMsrs);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* Enable VT-x if it's not already enabled by the host. */
