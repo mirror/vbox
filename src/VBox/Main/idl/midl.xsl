@@ -243,6 +243,9 @@
   <xsl:choose>
     <xsl:when test="@extends='$unknown'">IDispatch</xsl:when>
     <xsl:when test="@extends='$errorinfo'">IErrorInfo</xsl:when>
+    <!-- TODO/FIXME/BUGBUG: The above $errorinfo value causes the following warning (/W4):
+warning MIDL2460 : dual interface should be derived from IDispatch : IVirtualBoxErrorInfo [ Interface 'IVirtualBoxErrorInfo'  ]
+    -->
     <xsl:otherwise><xsl:value-of select="@extends"/></xsl:otherwise>
   </xsl:choose>
   <xsl:text>&#x0A;{&#x0A;</xsl:text>
