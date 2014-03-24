@@ -293,9 +293,6 @@ typedef struct VGAState {
     /** LUN\#0: VBVA callbacks interface */
     PDMIDISPLAYVBVACALLBACKS    IVBVACallbacks;
 # endif
-# if HC_ARCH_BITS == 32
-    uint32_t                    Padding0;
-# endif
     /** Pointer to base interface of the driver. */
     R3PTRTYPE(PPDMIBASE)        pDrvBase;
     /** Pointer to display connector interface of the driver. */
