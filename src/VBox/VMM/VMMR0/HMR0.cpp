@@ -1029,7 +1029,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
 
             if (RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(i)))
             {
-                rc = RTR0MemObjAllocCont(&g_HvmR0.aCpuInfo[i].hMemObj, PAGE_SIZE, true /* executable R0 mapping */);
+                rc = RTR0MemObjAllocCont(&g_HvmR0.aCpuInfo[i].hMemObj, PAGE_SIZE, false /* executable R0 mapping */);
                 AssertLogRelRCReturn(rc, rc);
 
                 void *pvR0 = RTR0MemObjAddress(g_HvmR0.aCpuInfo[i].hMemObj); Assert(pvR0);
