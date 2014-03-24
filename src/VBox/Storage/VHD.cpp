@@ -2463,7 +2463,7 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
         if (pfnParentRead)
         {
             pvParent = RTMemTmpAlloc(pImage->cbDataBlock);
-            AssertBreakStmt(VALID_PTR(pvBuf), rc = VERR_NO_MEMORY);
+            AssertBreakStmt(VALID_PTR(pvParent), rc = VERR_NO_MEMORY);
         }
         pvBuf = RTMemTmpAlloc(pImage->cbDataBlock);
         AssertBreakStmt(VALID_PTR(pvBuf), rc = VERR_NO_MEMORY);
