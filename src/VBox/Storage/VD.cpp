@@ -1911,7 +1911,7 @@ static int vdParentRead(void *pvUser, uint64_t uOffset, void *pvBuf,
     Segment.cbSeg = cbRead;
     RTSgBufInit(&SgBuf, &Segment, 1);
     vdIoCtxInit(&IoCtx, pParentState->pDisk, VDIOCTXTXDIR_READ, uOffset, cbRead, pParentState->pImage,
-                &SgBuf, NULL, NULL, VDIOCTX_FLAGS_SYNC);
+                &SgBuf, NULL, NULL, VDIOCTX_FLAGS_SYNC | VDIOCTX_FLAGS_ZERO_FREE_BLOCKS);
     int rc = vdReadHelperAsync(&IoCtx);
     ASMAtomicXchgBool(&pParentState->pDisk->fLocked, false);
     return rc;
