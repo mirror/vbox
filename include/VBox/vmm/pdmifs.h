@@ -3075,9 +3075,12 @@ typedef struct PDMIDISPLAYVBVACALLBACKS
                                                                    struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
                                                                    PFNCRCTLCOMPLETION pfnCompletion,
                                                                    void *pvCompletion));
+
+    DECLR3CALLBACKMEMBER(int, pfnCrCtlSubmitSync, (PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                                                   struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd));
 } PDMIDISPLAYVBVACALLBACKS;
 /** PDMIDISPLAYVBVACALLBACKS  */
-#define PDMIDISPLAYVBVACALLBACKS_IID            "b78b81d2-c821-4e66-96ff-dbafa76343a5"
+#define PDMIDISPLAYVBVACALLBACKS_IID            "193b2975-215f-480a-abef-42f029ae890f"
 
 /** Pointer to a PCI raw connector interface. */
 typedef struct PDMIPCIRAWCONNECTOR *PPDMIPCIRAWCONNECTOR;

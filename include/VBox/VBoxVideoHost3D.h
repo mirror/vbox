@@ -27,6 +27,7 @@
 #define ___VBox_VBoxVideoHost3D_h
 #include <iprt/cdefs.h>
 #include <VBox/VBoxVideo.h>
+#include <VBox/hgcmsvc.h>
 
 /* screen update instance */
 typedef struct PDMIDISPLAYCONNECTOR *HVBOXCRCMDCLTSCR;
@@ -111,8 +112,14 @@ typedef struct VBOXCRCMDCTL
     {
         void(*pfnInternal)();
         void* pvInternal;
-    };
+    } u;
 } VBOXCRCMDCTL;
+
+typedef struct VBOXCRCMDCTL_HGCM
+{
+    VBOXCRCMDCTL Hdr;
+    VBOXHGCMSVCPARM aParms[1];
+} VBOXCRCMDCTL_HGCM;
 
 typedef struct VBOXVDMAHOST * HVBOXCRCMDCTL_REMAINING_HOST_COMMAND;
 
