@@ -25,6 +25,7 @@
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxVideo.h>
+#include <VBox/vmm/pdmifs.h>
 
 #ifdef VBOX_WITH_CROGL
 # include <VBox/HostServices/VBoxCrOpenGLSvc.h>
@@ -167,17 +168,15 @@ public:
     int handleVHWACommandProcess(PVBOXVHWACMD pCommand);
 #endif
 #ifdef VBOX_WITH_CRHGSMI
-    void handleCrHgsmiCommandProcess(PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd);
-    void handleCrHgsmiControlProcess(PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32_t cbCtl);
-
     void handleCrHgsmiCommandCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam);
     void handleCrHgsmiControlCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam);
+    void handleCrHgsmiCommandProcess(PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd);
+    void handleCrHgsmiControlProcess(PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32_t cbCtl);
 #endif
     int  handleCrHgcmCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
                                         PFNCRCTLCOMPLETION pfnCompletion,
                                         void *pvCompletion);
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-    void  handleCrAsyncCmdCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam);
     void  handleCrVRecScreenshotPerform(uint32_t uScreen,
                                         uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
                                         uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
@@ -297,8 +296,8 @@ private:
     static DECLCALLBACK(void) displayCrVRecScreenshotEnd(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp);
 
     static DECLCALLBACK(void)  displayVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
-    static DECLCALLBACK(void)  displayCrAsyncCmdCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
 #endif
+    static DECLCALLBACK(void) displayCrCmdFree(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, int rc, void *pvCompletion);
 
     static DECLCALLBACK(void)  displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser);
     static DECLCALLBACK(int)   displaySSMLoadScreenshot(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass);
@@ -349,6 +348,7 @@ private:
     CR_MAIN_INTERFACE mCrOglCallbacks;
     volatile uint32_t mfCrOglVideoRecState;
     CRVBOXHGCMTAKESCREENSHOT mCrOglScreenshotData;
+    VBOXCRCMDCTL_HGCM mCrOglScreenshotCtl;
 #endif
 
     bool vbvaFetchCmd(VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
@@ -372,6 +372,9 @@ public:
 #ifdef VBOX_WITH_CROGL
     static BOOL  displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreenId, uint8_t *pu8Data, uint32_t u32Width, uint32_t u32Height);
 #endif
+
+    int crCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion);
+    int crCtlSubmitSync(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd);
 
 private:
     static void InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll);

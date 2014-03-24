@@ -2130,25 +2130,15 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
         RT_ZERO(outputRedirect);
     }
 
-    VBOXHGCMSVCPARM parm;
+    VBOXCRCMDCTL_HGCM data;
+    data.Hdr.enmType = VBOXCRCMDCTL_TYPE_HGCM;
+    data.Hdr.u32Function = SHCRGL_HOST_FN_SET_OUTPUT_REDIRECT;
 
-    parm.type = VBOX_HGCM_SVC_PARM_PTR;
-    parm.u.pointer.addr = &outputRedirect;
-    parm.u.pointer.size = sizeof(outputRedirect);
+    data.aParms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+    data.aParms[0].u.pointer.addr = &outputRedirect;
+    data.aParms[0].u.pointer.size = sizeof(outputRedirect);
 
-    VMMDev *pVMMDev = mConsole->getVMMDev();
-
-    if (!pVMMDev)
-    {
-        AssertMsgFailed(("remote3DRedirect no vmmdev\n"));
-        return;
-    }
-
-    int rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL",
-                                   SHCRGL_HOST_FN_SET_OUTPUT_REDIRECT,
-                                   SHCRGL_CPARMS_SET_OUTPUT_REDIRECT,
-                                   &parm);
-
+    int rc = mConsole->getDisplay()->crCtlSubmitSync(&data.Hdr, sizeof (data));
     if (!RT_SUCCESS(rc))
     {
         Log(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));
@@ -2156,6 +2146,9 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
     }
 
     LogRel(("VRDE: %s 3D redirect.\n", fEnable? "Enabled": "Disabled"));
+#ifdef DEBUG_misha
+    AssertFailed();
+#endif
 
     return;
 }
