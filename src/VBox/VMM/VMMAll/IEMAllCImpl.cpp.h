@@ -4255,6 +4255,9 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
         {
             uint64_t const uOldCrX = pCtx->cr4;
 
+            /** @todo Shouldn't this look at the guest CPUID bits to determine
+             *        valid bits? e.g. if guest CPUID doesn't allow X86_CR4_OSXMMEEXCPT, we
+             *        should #GP(0). */
             /* reserved bits */
             uint32_t fValid = X86_CR4_VME | X86_CR4_PVI
                             | X86_CR4_TSD | X86_CR4_DE
