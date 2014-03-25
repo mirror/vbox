@@ -923,6 +923,7 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     Assert(!pCpu->fConfigured);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     pCpu->idCpu = idCpu;
     /* Do NOT reset cTlbFlushes here, see @bugref{6255}. */
@@ -934,7 +935,7 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
     {
         AssertLogRelMsgReturn(pCpu->hMemObj != NIL_RTR0MEMOBJ, ("hmR0EnableCpu failed idCpu=%u.\n", idCpu), VERR_HM_IPE_1);
         void    *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
-        RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
+        RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0 /* iPage */);
 
         if (g_HvmR0.vmx.fSupported)
             rc = g_HvmR0.pfnEnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage, false, &g_HvmR0.vmx.Msrs);
