@@ -265,6 +265,19 @@ public:
     UIMedium medium(const QString &strMediumID) const;
     QList<QString> mediumIDs() const;
 
+    /** Prepares storage menu according passed parameters.
+      * @param menu              QMenu being prepared.
+      * @param pListener         Listener QObject, this menu being prepared for.
+      * @param pszSlotName       SLOT in the @a pListener above, this menu will be handled with.
+      * @param machine           CMachine object, this menu being prepared for.
+      * @param strControllerName The name of the CStorageController in the @a machine above.
+      * @param storageSlot       The StorageSlot of the CStorageController called @a strControllerName above. */
+    void prepareStorageMenu(QMenu &menu,
+                            QObject *pListener, const char *pszSlotName,
+                            const CMachine &machine, const QString &strControllerName, const StorageSlot &storageSlot);
+    /** Updates @a constMachine storage with data described by @a target. */
+    void updateMachineStorage(const CMachine &constMachine, const UIMediumTarget &target);
+
     /* various helpers */
 
     QString languageName() const;

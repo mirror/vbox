@@ -1927,6 +1927,276 @@ QList<QString> VBoxGlobal::mediumIDs() const
     return QList<QString>();
 }
 
+void VBoxGlobal::prepareStorageMenu(QMenu &menu,
+                                    QObject *pListener, const char *pszSlotName,
+                                    const CMachine &machine, const QString &strControllerName, const StorageSlot &storageSlot)
+{
+    /* Current attachment attributes: */
+    const CMediumAttachment currentAttachment = machine.GetMediumAttachment(strControllerName, storageSlot.port, storageSlot.device);
+    const CMedium currentMedium = currentAttachment.GetMedium();
+    const QString strCurrentID = currentMedium.isNull() ? QString() : currentMedium.GetId();
+    const QString strCurrentLocation = currentMedium.isNull() ? QString() : currentMedium.GetLocation();
+
+    /* Other medium-attachments of same machine: */
+    const CMediumAttachmentVector attachments = machine.GetMediumAttachments();
+
+    /* Determine device & medium types: */
+    const KDeviceType deviceType = currentAttachment.GetType();
+    const UIMediumType mediumType = deviceType == KDeviceType_DVD    ? UIMediumType_DVD :
+                                    deviceType == KDeviceType_Floppy ? UIMediumType_Floppy :
+                                                                       UIMediumType_Invalid;
+    AssertMsgReturnVoid(deviceType != KDeviceType_Null, ("Incorrect storage device type!\n"));
+    AssertMsgReturnVoid(mediumType != UIMediumType_Invalid, ("Incorrect storage medium type!\n"));
+
+
+    /* Prepare open-existing-medium action: */
+    QAction *pActionOpenExistingMedium = menu.addAction(QIcon(":/select_file_16px.png"), QString(), pListener, pszSlotName);
+    pActionOpenExistingMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(),
+                                                                          currentAttachment.GetDevice(), mediumType)));
+
+
+    /* Insert separator: */
+    menu.addSeparator();
+
+
+    /* Get existing-host-drive vector: */
+    CMediumVector mediums;
+    switch (mediumType)
+    {
+        case UIMediumType_DVD: mediums = vboxGlobal().host().GetDVDDrives(); break;
+        case UIMediumType_Floppy: mediums = vboxGlobal().host().GetFloppyDrives(); break;
+        default: break;
+    }
+    /* Prepare choose-existing-host-drive actions: */
+    foreach (const CMedium &medium, mediums)
+    {
+        /* Make sure host-drive usage is unique: */
+        bool fIsHostDriveUsed = false;
+        foreach (const CMediumAttachment &otherAttachment, attachments)
+        {
+            if (otherAttachment != currentAttachment)
+            {
+                const CMedium &otherMedium = otherAttachment.GetMedium();
+                if (!otherMedium.isNull() && otherMedium.GetId() == medium.GetId())
+                {
+                    fIsHostDriveUsed = true;
+                    break;
+                }
+            }
+        }
+        /* If host-drives usage is unique: */
+        if (!fIsHostDriveUsed)
+        {
+            QAction *pActionChooseHostDrive = menu.addAction(UIMedium(medium, mediumType).name(), pListener, pszSlotName);
+            pActionChooseHostDrive->setCheckable(true);
+            pActionChooseHostDrive->setChecked(!currentMedium.isNull() && medium.GetId() == strCurrentID);
+            pActionChooseHostDrive->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(),
+                                                                               currentAttachment.GetDevice(), medium.GetId())));
+        }
+    }
+
+
+    /* Get recent-medium list: */
+    QString strRecentMediumAddress;
+    switch (mediumType)
+    {
+        case UIMediumType_DVD: strRecentMediumAddress = GUI_RecentListCD; break;
+        case UIMediumType_Floppy: strRecentMediumAddress = GUI_RecentListFD; break;
+        default: break;
+    }
+    const QStringList recentMediumList = vboxGlobal().virtualBox().GetExtraData(strRecentMediumAddress).split(';');
+    /* Prepare choose-recent-medium actions: */
+    foreach (const QString &strRecentMediumLocationBase, recentMediumList)
+    {
+        /* Convert separators to native: */
+        const QString strRecentMediumLocation = QDir::toNativeSeparators(strRecentMediumLocationBase);
+        /* Confirm medium presence: */
+        if (!QFile::exists(strRecentMediumLocation))
+            continue;
+        /* Make sure recent-medium usage is unique: */
+        bool fIsRecentMediumUsed = false;
+        foreach (const CMediumAttachment &otherAttachment, attachments)
+        {
+            if (otherAttachment != currentAttachment)
+            {
+                const CMedium &otherMedium = otherAttachment.GetMedium();
+                if (!otherMedium.isNull() && otherMedium.GetLocation() == strRecentMediumLocation)
+                {
+                    fIsRecentMediumUsed = true;
+                    break;
+                }
+            }
+        }
+        /* If recent-medium usage is unique: */
+        if (!fIsRecentMediumUsed)
+        {
+            QAction *pActionChooseRecentMedium = menu.addAction(QFileInfo(strRecentMediumLocation).fileName(), pListener, pszSlotName);
+            pActionChooseRecentMedium->setCheckable(true);
+            pActionChooseRecentMedium->setChecked(!currentMedium.isNull() && strRecentMediumLocation == strCurrentLocation);
+            pActionChooseRecentMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(),
+                                                                                  currentAttachment.GetDevice(), mediumType,
+                                                                                  strRecentMediumLocation)));
+            pActionChooseRecentMedium->setToolTip(strRecentMediumLocation);
+        }
+    }
+
+
+    /* Insert separator: */
+    menu.addSeparator();
+
+
+    /* Prepare unmount-current-medium action: */
+    QAction *pActionUnmountMedium = menu.addAction(QString(), pListener, pszSlotName);
+    pActionUnmountMedium->setEnabled(!currentMedium.isNull());
+    pActionUnmountMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName,
+                                                                     currentAttachment.GetPort(), currentAttachment.GetDevice())));
+
+
+    /* Switch CD/FD names/icons: */
+    switch (mediumType)
+    {
+        case UIMediumType_DVD:
+            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual CD/DVD disk file..."));
+            pActionUnmountMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
+            pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/cd_unmount_16px.png", ":/cd_unmount_dis_16px.png"));
+            break;
+        case UIMediumType_Floppy:
+            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual floppy disk file..."));
+            pActionUnmountMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
+            pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/fd_unmount_16px.png", ":/fd_unmount_dis_16px.png"));
+            break;
+        default:
+            break;
+    }
+}
+
+void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMediumTarget &target)
+{
+    /* Mount (by default): */
+    bool fMount = true;
+    /* Null medium (by default): */
+    CMedium cmedium;
+    /* With null ID (by default): */
+    QString strActualID;
+
+    /* Current mount-target attributes: */
+    const CMediumAttachment currentAttachment = constMachine.GetMediumAttachment(target.name, target.port, target.device);
+    const CMedium currentMedium = currentAttachment.GetMedium();
+    const QString strCurrentID = currentMedium.isNull() ? QString() : currentMedium.GetId();
+
+    /* Which additional info do we have? */
+    switch (target.type)
+    {
+        /* Do we have an exact ID? */
+        case UIMediumTarget::UIMediumTargetType_WithID:
+        {
+            /* New mount-target attributes: */
+            QString strNewID;
+            const bool fSelectWithMediaManager = target.mediumType != UIMediumType_Invalid;
+
+            /* Invoke file-open dialog to choose medium ID: */
+            if (fSelectWithMediaManager)
+            {
+                /* Keyboard can be captured by machine-view.
+                 * So we should clear machine-view focus to let file-open dialog get it.
+                 * That way the keyboard will be released too.. */
+                QWidget *pLastFocusedWidget = 0;
+                if (QApplication::focusWidget())
+                {
+                    pLastFocusedWidget = QApplication::focusWidget();
+                    pLastFocusedWidget->clearFocus();
+                }
+                /* Call for file-open dialog: */
+                const QString strMachineFolder(QFileInfo(constMachine.GetSettingsFilePath()).absolutePath());
+                const QString strMediumID = vboxGlobal().openMediumWithFileOpenDialog(target.mediumType, activeMachineWindow(),
+                                                                                      strMachineFolder);
+                /* Return focus back: */
+                if (pLastFocusedWidget)
+                    pLastFocusedWidget->setFocus();
+                /* Accept new medium ID: */
+                if (!strMediumID.isNull())
+                    strNewID = strMediumID;
+                /* Else just exit: */
+                else return;
+            }
+            /* Use medium ID which was passed: */
+            else if (!target.data.isNull() && target.data != strCurrentID)
+                strNewID = target.data;
+
+            /* Should we mount or unmount? */
+            fMount = !strNewID.isEmpty();
+
+            /* Prepare target medium: */
+            const UIMedium uimedium = vboxGlobal().medium(strNewID);
+            cmedium = uimedium.medium();
+            strActualID = fMount ? strNewID : strCurrentID;
+            break;
+        }
+        /* Do we have a resent location? */
+        case UIMediumTarget::UIMediumTargetType_WithLocation:
+        {
+            /* Open medium by location and get new medium ID if any: */
+            const QString strNewID = vboxGlobal().openMedium(target.mediumType, target.data);
+            /* Else just exit: */
+            if (strNewID.isEmpty())
+                return;
+
+            /* Should we mount or unmount? */
+            fMount = strNewID != strCurrentID;
+
+            /* Prepare target medium: */
+            const UIMedium uimedium = fMount ? vboxGlobal().medium(strNewID) : UIMedium();
+            cmedium = fMount ? uimedium.medium() : CMedium();
+            strActualID = fMount ? strNewID : strCurrentID;
+            break;
+        }
+    }
+
+    /* Get editable machine: */
+    CSession session;
+    CMachine machine = constMachine;
+    KSessionState sessionState = machine.GetSessionState();
+    if (sessionState == KSessionState_Unlocked)
+    {
+        session = openSession(machine.GetId());
+        AssertReturnVoid(!session.isNull());
+        machine = session.GetMachine();
+    }
+
+    /* Remount medium to the predefined port/device: */
+    bool fWasMounted = false;
+    machine.MountMedium(target.name, target.port, target.device, cmedium, false /* force? */);
+    if (machine.isOk())
+        fWasMounted = true;
+    else
+    {
+        /* Ask for force remounting: */
+        if (msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(strActualID),
+                                            fMount, true /* retry? */, activeMachineWindow()))
+        {
+            /* Force remount medium to the predefined port/device: */
+            machine.MountMedium(target.name, target.port, target.device, cmedium, true /* force? */);
+            if (machine.isOk())
+                fWasMounted = true;
+            else
+                msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(strActualID),
+                                                fMount, false /* retry? */, activeMachineWindow());
+        }
+    }
+
+    /* Save settings: */
+    if (fWasMounted)
+    {
+        machine.SaveSettings();
+        if (!machine.isOk())
+            msgCenter().cannotSaveMachineSettings(machine, activeMachineWindow());
+    }
+
+    /* Close session to editable machine if necessary: */
+    if (!session.isNull())
+        session.UnlockMachine();
+}
+
 /**
  *  Native language name of the currently installed translation.
  *  Returns "English" if no translation is installed

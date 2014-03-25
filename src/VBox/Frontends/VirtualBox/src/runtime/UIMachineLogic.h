@@ -212,7 +212,6 @@ private slots:
     void sltOpenSharedFoldersDialog();
     void sltPrepareStorageMenu();
     void sltMountStorageMedium();
-    void sltMountRecentStorageMedium();
     void sltPrepareUSBMenu();
     void sltPrepareWebCamMenu();
     void sltAttachUSBDevice();
