@@ -496,10 +496,13 @@ void UIHotKeyTableModel::sort(int iColumn, Qt::SortOrder order /* = Qt::Ascendin
 
 void UIHotKeyTableModel::applyFilter()
 {
-    /* Erase items first: */
-    beginRemoveRows(QModelIndex(), 0, m_filteredShortcuts.size() - 1);
-    m_filteredShortcuts.clear();
-    endRemoveRows();
+    /* Erase items first if necessary: */
+    if (!m_filteredShortcuts.isEmpty())
+    {
+        beginRemoveRows(QModelIndex(), 0, m_filteredShortcuts.size() - 1);
+        m_filteredShortcuts.clear();
+        endRemoveRows();
+    }
 
     /* If filter is empty: */
     if (m_strFilter.isEmpty())
@@ -520,8 +523,13 @@ void UIHotKeyTableModel::applyFilter()
             m_filteredShortcuts << item;
         }
     }
-    beginInsertRows(QModelIndex(), 0, m_filteredShortcuts.size() - 1);
-    endInsertRows();
+
+    /* Add items finally if necessary: */
+    if (!m_filteredShortcuts.isEmpty())
+    {
+        beginInsertRows(QModelIndex(), 0, m_filteredShortcuts.size() - 1);
+        endInsertRows();
+    }
 }
 
 
