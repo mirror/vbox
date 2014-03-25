@@ -1446,6 +1446,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
 {
     uint64_t oldval;
     uint64_t msrEFER;
+    uint32_t fValid;
     int      rc, rc2;
     NOREF(pVM);
 
@@ -1537,6 +1538,24 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
             &&  (oldval & X86_CR4_PAE)
             &&  !(val & X86_CR4_PAE))
         {
+            return VERR_EM_INTERPRETER; /** @todo generate #GP(0) */
+        }
+
+        /* From IEM iemCImpl_load_CrX. */
+        /** @todo Check guest CPUID bits for determining corresponding valid bits. */
+        fValid = X86_CR4_VME | X86_CR4_PVI
+               | X86_CR4_TSD | X86_CR4_DE
+               | X86_CR4_PSE | X86_CR4_PAE
+               | X86_CR4_MCE | X86_CR4_PGE
+               | X86_CR4_PCE | X86_CR4_OSFSXR
+               | X86_CR4_OSXMMEEXCPT;
+        //if (xxx)
+        //    fValid |= X86_CR4_VMXE;
+        //if (xxx)
+        //    fValid |= X86_CR4_OSXSAVE;
+        if (val & ~(uint64_t)fValid)
+        {
+            Log(("Trying to set reserved CR4 bits: NewCR4=%#llx InvalidBits=%#llx\n", val, val & ~(uint64_t)fValid));
             return VERR_EM_INTERPRETER; /** @todo generate #GP(0) */
         }
 
