@@ -233,7 +233,8 @@ HRESULT ExtPackFile::FinalConstruct()
  * @param   a_pExtPackMgr   Pointer to the extension pack manager.
  * @param   a_pVirtualBox   Pointer to the VirtualBox object.
  */
-HRESULT ExtPackFile::initWithFile(const char *a_pszFile, const char *a_pszDigest, ExtPackManager *a_pExtPackMgr, VirtualBox *a_pVirtualBox)
+HRESULT ExtPackFile::initWithFile(const char *a_pszFile, const char *a_pszDigest, ExtPackManager *a_pExtPackMgr,
+                                  VirtualBox *a_pVirtualBox)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -312,8 +313,12 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile, const char *a_pszDigest
     /** @todo drop this restriction after the old install interface is
      *        dropped. */
     if (!strSavedName.equalsIgnoreCase(m->Desc.strName))
-        return initFailed(tr("Extension pack name mismatch between the downloaded file and the XML inside it (xml='%s' file='%s')"),
-                          m->Desc.strName.c_str(), strSavedName.c_str());
+    {
+        Utf8Str str;
+        str = "Extension pack name mismatch between the downloaded file";
+        str += "and the XML inside it (xml='%s' file='%s')";
+        return initFailed(tr(str.c_str()), m->Desc.strName.c_str(), strSavedName.c_str());
+    }
 
     m->fUsable = true;
     m->strWhyUnusable.setNull();
@@ -529,12 +534,14 @@ STDMETHODIMP ExtPackFile::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s_%s.%s",
                     strPreferredLocale.c_str(), strPreferredLanguage.c_str(), strFormat.c_str());
     else if (strPreferredLocale.isNotEmpty())
-        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s.%s",  strPreferredLocale.c_str(), strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s.%s",
+                    strPreferredLocale.c_str(), strFormat.c_str());
     else if (strPreferredLanguage.isNotEmpty())
-        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-_%s.%s", strPreferredLocale.c_str(), strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-_%s.%s",
+                    strPreferredLocale.c_str(), strFormat.c_str());
     else
-        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX ".%s",     strFormat.c_str());
-
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX ".%s",
+                    strFormat.c_str());
     /*
      * Lock the extension pack. We need a write lock here as there must not be
      * concurrent accesses to the tar file handle.
@@ -1253,11 +1260,14 @@ void ExtPack::probeAndLoad(void)
     if (!RTFS_IS_DIRECTORY(m->ObjInfoExtPack.Attr.fMode))
     {
         if (RTFS_IS_SYMLINK(m->ObjInfoExtPack.Attr.fMode))
-            m->strWhyUnusable.printf(tr("'%s' is a symbolic link, this is not allowed"), m->strExtPackPath.c_str(), vrc);
+            m->strWhyUnusable.printf(tr("'%s' is a symbolic link, this is not allowed"),
+                                     m->strExtPackPath.c_str(), vrc);
         else if (RTFS_IS_FILE(m->ObjInfoExtPack.Attr.fMode))
-            m->strWhyUnusable.printf(tr("'%s' is a symbolic file, not a directory"), m->strExtPackPath.c_str(), vrc);
+            m->strWhyUnusable.printf(tr("'%s' is a symbolic file, not a directory"),
+                                     m->strExtPackPath.c_str(), vrc);
         else
-            m->strWhyUnusable.printf(tr("'%s' is not a directory (fMode=%#x)"), m->strExtPackPath.c_str(), m->ObjInfoExtPack.Attr.fMode);
+            m->strWhyUnusable.printf(tr("'%s' is not a directory (fMode=%#x)"),
+                                     m->strExtPackPath.c_str(), m->ObjInfoExtPack.Attr.fMode);
         return;
     }
 
@@ -1812,11 +1822,14 @@ STDMETHODIMP ExtPack::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_bstr
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s_%s.%s",
                     strPreferredLocale.c_str(), strPreferredLanguage.c_str(), strFormat.c_str());
     else if (strPreferredLocale.isNotEmpty())
-        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s.%s",  strPreferredLocale.c_str(), strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s.%s",
+                    strPreferredLocale.c_str(), strFormat.c_str());
     else if (strPreferredLanguage.isNotEmpty())
-        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-_%s.%s", strPreferredLocale.c_str(), strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-_%s.%s",
+                    strPreferredLocale.c_str(), strFormat.c_str());
     else
-        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX ".%s",     strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX ".%s",
+                    strFormat.c_str());
 
     /*
      * Effectuate the query.
@@ -2661,7 +2674,7 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnusableIs
 {
     PEXTPACKINSTALLJOB pJob = (PEXTPACKINSTALLJOB)pvJob;
     HRESULT hrc = pJob->ptrExtPackMgr->doInstall(pJob->ptrExtPackFile, pJob->fReplace, &pJob->strDisplayInfo);
-    pJob->ptrProgress->notifyComplete(hrc);
+    pJob->ptrProgress->i_notifyComplete(hrc);
     delete pJob;
 
     NOREF(hThread);
@@ -2792,7 +2805,7 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, 
 {
     PEXTPACKUNINSTALLJOB pJob = (PEXTPACKUNINSTALLJOB)pvJob;
     HRESULT hrc = pJob->ptrExtPackMgr->doUninstall(&pJob->strName, pJob->fForcedRemoval, &pJob->strDisplayInfo);
-    pJob->ptrProgress->notifyComplete(hrc);
+    pJob->ptrProgress->i_notifyComplete(hrc);
     delete pJob;
 
     NOREF(hThread);
@@ -3093,7 +3106,8 @@ int ExtPackManager::getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, U
         if (pExtPack)
             hrc = pExtPack->getVrdpLibraryName(a_pstrVrdeLibrary);
         else
-            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"), a_pstrExtPack->c_str());
+            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"),
+                           a_pstrExtPack->c_str());
     }
 
     return hrc;
@@ -3108,7 +3122,8 @@ int ExtPackManager::getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, U
  * @param   a_pstrExtPack       The extension pack.
  * @param   a_pstrVrdeLibrary   Where to return the path.
  */
-HRESULT ExtPackManager::getLibraryPathForExtPack(const char *a_pszModuleName, Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrLibrary)
+HRESULT ExtPackManager::getLibraryPathForExtPack(const char *a_pszModuleName, Utf8Str const *a_pstrExtPack,
+                                                 Utf8Str *a_pstrLibrary)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();

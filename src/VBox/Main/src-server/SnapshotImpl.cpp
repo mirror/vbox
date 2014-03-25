@@ -1421,8 +1421,11 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     if (   mData->mCurrentSnapshot
         && mData->mCurrentSnapshot->i_getDepth() >= SETTINGS_SNAPSHOT_DEPTH_MAX)
     {
+        Utf8Str str;
+        str = "Cannot take another snapshot for machine '%s', because it exceeds the maximum";
+        str += "snapshot depth limit. Please delete some earlier snapshot which you no longer need";
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot take another snapshot for machine '%s', because it exceeds the maximum snapshot depth limit. Please delete some earlier snapshot which you no longer need"),
+                        tr(str.c_str()),
                         mUserData->s.strName.c_str());
     }
 
@@ -1730,7 +1733,8 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
             ++ulOpCount;
             ++ulTotalWeight;         // assume one MB weight for each differencing hard disk to manage
             Assert(pAttach->i_getMedium());
-            LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount, pAttach->i_getMedium()->i_getName().c_str()));
+            LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount,
+                             pAttach->i_getMedium()->i_getName().c_str()));
         }
     }
 
@@ -1799,10 +1803,10 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */
-        aTask.pProgress->notifyComplete(E_FAIL,
-                                        COM_IIDOF(IMachine),
-                                        getComponentName(),
-                                        tr("The session has been accidentally closed"));
+        aTask.pProgress->i_notifyComplete(E_FAIL,
+                                          COM_IIDOF(IMachine),
+                                          getComponentName(),
+                                          tr("The session has been accidentally closed"));
 
         LogFlowThisFuncLeave();
         return;
@@ -2035,7 +2039,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     mParent->i_saveModifiedRegistries();
 
     /* set the result (this will try to fetch current error info on failure) */
-    aTask.pProgress->notifyComplete(rc);
+    aTask.pProgress->i_notifyComplete(rc);
 
     if (SUCCEEDED(rc))
         mParent->i_onSnapshotDeleted(mData->mUuid, Guid());
@@ -2109,20 +2113,29 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     if (FAILED(rc)) return rc;
 
     AutoWriteLock snapshotLock(pSnapshot COMMA_LOCKVAL_SRC_POS);
+    Utf8Str str;
 
     size_t childrenCount = pSnapshot->i_getChildrenCount();
     if (childrenCount > 1)
+    {
+        str = "Snapshot '%s' of the machine '%s' cannot be deleted, because it has %d child snapshots,";
+        str += "which is more than the one snapshot allowed for deletion";
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Snapshot '%s' of the machine '%s' cannot be deleted, because it has %d child snapshots, which is more than the one snapshot allowed for deletion"),
+                        tr(str.c_str()),
                         pSnapshot->i_getName().c_str(),
                         mUserData->s.strName.c_str(),
                         childrenCount);
+    }
 
     if (pSnapshot == mData->mCurrentSnapshot && childrenCount >= 1)
+    {
+        str = "Snapshot '%s' of the machine '%s' cannot be deleted, because it is the current";
+        str += "snapshot and has one child snapshot";
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Snapshot '%s' of the machine '%s' cannot be deleted, because it is the current snapshot and has one child snapshot"),
+                        tr(str.c_str()),
                         pSnapshot->i_getName().c_str(),
                         mUserData->s.strName.c_str());
+    }
 
     /* If the snapshot being deleted is the current one, ensure current
      * settings are committed and saved.
@@ -2339,10 +2352,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */
-        aTask.pProgress->notifyComplete(E_FAIL,
-                                        COM_IIDOF(IMachine),
-                                        getComponentName(),
-                                        tr("The session has been accidentally closed"));
+        aTask.pProgress->i_notifyComplete(E_FAIL,
+                                          COM_IIDOF(IMachine),
+                                          getComponentName(),
+                                          tr("The session has been accidentally closed"));
         LogFlowThisFuncLeave();
         return;
     }
@@ -2905,7 +2918,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
     }
 
     // report the result (this will try to fetch current error info on failure)
-    aTask.pProgress->notifyComplete(rc);
+    aTask.pProgress->i_notifyComplete(rc);
 
     if (SUCCEEDED(rc))
         mParent->i_onSnapshotDeleted(mData->mUuid, snapshotId);

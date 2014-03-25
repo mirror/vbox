@@ -139,7 +139,7 @@ g_osTypes[] =
     { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2008_64,        VBOXOSTYPE_Win2k8_x64 },
     { ovf::CIMOSType_CIMOS_FreeBSD_64,                           VBOXOSTYPE_FreeBSD_x64 },
     { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS },
-    { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS_x64 },            // there is no CIM 64-bit type for this
+    { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS_x64 }, // there is no CIM 64-bit type for this
     { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS106 },
     { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS106_x64 },
     { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS107_x64 },
@@ -188,7 +188,8 @@ g_osTypes[] =
     { ovf::CIMOSType_CIMOS_WindowsServer2008R2,                  VBOXOSTYPE_Win2k8 },           // duplicate, see above
 //     { ovf::CIMOSType_CIMOS_VMwareESXi = 104,                                                 // we can't run ESX in a VM
     { ovf::CIMOSType_CIMOS_Windows7,                             VBOXOSTYPE_Win7 },
-    { ovf::CIMOSType_CIMOS_Windows7,                             VBOXOSTYPE_Win7_x64 },         // there is no CIM 64-bit type for this
+    { ovf::CIMOSType_CIMOS_Windows7,                             VBOXOSTYPE_Win7_x64 },         // there is no
+                                                                                                // CIM 64-bit type for this
     { ovf::CIMOSType_CIMOS_CentOS,                               VBOXOSTYPE_RedHat },
     { ovf::CIMOSType_CIMOS_CentOS_64,                            VBOXOSTYPE_RedHat_x64 },
     { ovf::CIMOSType_CIMOS_OracleEnterpriseLinux,                VBOXOSTYPE_Oracle },
@@ -814,8 +815,8 @@ HRESULT Appliance::i_searchUniqueDiskImageFilePath(Utf8Str& aName) const
      * already */
     /** @todo: Maybe too cost-intensive; try to find a lighter way */
     while (    RTPathExists(tmpName)
-            || mVirtualBox->OpenMedium(Bstr(tmpName).raw(), DeviceType_HardDisk, AccessMode_ReadWrite, FALSE /* fForceNewUuid */,  &harddisk) != VBOX_E_OBJECT_NOT_FOUND
-          )
+            || mVirtualBox->OpenMedium(Bstr(tmpName).raw(), DeviceType_HardDisk, AccessMode_ReadWrite,
+                                       FALSE /* fForceNewUuid */,  &harddisk) != VBOX_E_OBJECT_NOT_FOUND)
     {
         RTStrFree(tmpName);
         char *tmpDir = RTStrDup(aName.c_str());
@@ -887,7 +888,8 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
             {
                 ++cOperations;          // another one for creating the manifest
 
-                m->ulWeightForManifestOperation = (ULONG)((double)m->ulTotalDisksMB * .1 / 100);    // use .5% of the progress for the manifest
+                m->ulWeightForManifestOperation = (ULONG)((double)m->ulTotalDisksMB * .1 / 100);    // use .5% of the
+                                                                                                    // progress for the manifest
                 ulTotalOperationsWeight += m->ulWeightForManifestOperation;
             }
             break;
@@ -915,7 +917,10 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
 
             if (m->ulTotalDisksMB)
             {
-                m->ulWeightForXmlOperation = (ULONG)((double)m->ulTotalDisksMB * 1  / 100);    // use 1% of the progress for OVF file upload (we didn't know the size at this point)
+                m->ulWeightForXmlOperation = (ULONG)((double)m->ulTotalDisksMB * 1  / 100);    // use 1% of the progress
+                                                                                               // for OVF file upload
+                                                                                               // (we didn't know the
+                                                                                               // size at this point)
                 ulTotalOperationsWeight = m->ulTotalDisksMB + m->ulWeightForXmlOperation;
             }
             else
@@ -924,14 +929,18 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
                 ulTotalOperationsWeight = 1;
                 m->ulWeightForXmlOperation = 1;
             }
-            ULONG ulOVFCreationWeight = (ULONG)((double)ulTotalOperationsWeight * 50.0 / 100.0); /* Use 50% for the creation of the OVF & the disks */
+            ULONG ulOVFCreationWeight = (ULONG)((double)ulTotalOperationsWeight * 50.0 / 100.0); /* Use 50% for the
+                                                                                                    creation of the OVF
+                                                                                                    & the disks */
             ulTotalOperationsWeight += ulOVFCreationWeight;
             break;
         }
     }
 
-    Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n",
-         m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightForXmlOperation));
+    Utf8Str str;
+    str = "Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d,";
+    str +=  "ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n";
+    Log((str.c_str(), m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightForXmlOperation));
 
     rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
                          bstrDescription.raw(),
@@ -1171,7 +1180,7 @@ DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, 
     task->rc = taskrc;
 
     if (!task->pProgress.isNull())
-        task->pProgress->notifyComplete(taskrc);
+        task->pProgress->i_notifyComplete(taskrc);
 
     LogFlowFuncLeave();
 

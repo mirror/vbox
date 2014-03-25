@@ -394,8 +394,10 @@ public:
     int                     i_directoryRemoveFromList(GuestDirectory *pDirectory);
     int                     i_directoryRemoveInternal(const Utf8Str &strPath, uint32_t uFlags, int *pGuestRc);
     int                     i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pGuestRc);
-    int                     i_objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory, Utf8Str &strName, int *pGuestRc);
-    int                     i_directoryOpenInternal(const GuestDirectoryOpenInfo &openInfo, ComObjPtr<GuestDirectory> &pDirectory, int *pGuestRc);
+    int                     i_objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory,
+                                                       Utf8Str &strName, int *pGuestRc);
+    int                     i_directoryOpenInternal(const GuestDirectoryOpenInfo &openInfo,
+                                                    ComObjPtr<GuestDirectory> &pDirectory, int *pGuestRc);
     int                     i_directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
     int                     i_dispatchToDirectory(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int                     i_dispatchToFile(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
@@ -424,7 +426,8 @@ public:
                             i_startSessionThread(RTTHREAD Thread, void *pvUser);
     Guest                  *i_getParent(void) { return mParent; }
     uint32_t                i_getProtocolVersion(void) { return mData.mProtocolVersion; }
-    int                     i_pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *pGuestRc);
+    int                     i_pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags,
+                                                 int *pGuestRc);
     int                     i_processRemoveFromList(GuestProcess *pProcess);
     int                     i_processCreateExInteral(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             i_processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);
@@ -433,10 +436,12 @@ public:
     static HRESULT          i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int                     i_setSessionStatus(GuestSessionStatus_T sessionStatus, int sessionRc);
     int                     i_signalWaiters(GuestSessionWaitResult_T enmWaitResult, int rc /*= VINF_SUCCESS */);
-    int                     i_startTaskAsync(const Utf8Str &strTaskDesc, GuestSessionTask *pTask, ComObjPtr<Progress> &pProgress);
+    int                     i_startTaskAsync(const Utf8Str &strTaskDesc, GuestSessionTask *pTask,
+                                             ComObjPtr<Progress> &pProgress);
     int                     i_queryInfo(void);
     int                     i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWaitResult_T &waitResult, int *pGuestRc);
-    int                     i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlags, uint32_t uTimeoutMS, GuestSessionStatus_T *pSessionStatus, int *pGuestRc);
+    int                     i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlags, uint32_t uTimeoutMS,
+                                                  GuestSessionStatus_T *pSessionStatus, int *pGuestRc);
     /** @}  */
 
 private:

@@ -394,7 +394,7 @@ void DnDGuestResponse::reset(void)
         RTMemFree(m_pvData);
         m_pvData = NULL;
     }
-    m_cbData = 0;    
+    m_cbData = 0;
     m_cbDataCurrent = 0;
     m_cbDataTotal = 0;
 
@@ -434,10 +434,10 @@ int DnDGuestResponse::setProgress(unsigned uPercentage,
         {
             if (uState == DragAndDropSvc::DND_PROGRESS_ERROR)
             {
-                hr = m_progress->notifyComplete(VBOX_E_IPRT_ERROR,
-                                                COM_IIDOF(IGuest),
-                                                m_parent->getComponentName(),
-                                                DnDGuestResponse::errorToString(m_parent, rcOp).c_str());
+                hr = m_progress->i_notifyComplete(VBOX_E_IPRT_ERROR,
+                                                  COM_IIDOF(IGuest),
+                                                  m_parent->getComponentName(),
+                                                  DnDGuestResponse::errorToString(m_parent, rcOp).c_str());
                 reset();
             }
             else if (uState == DragAndDropSvc::DND_PROGRESS_CANCELLED)
@@ -454,7 +454,7 @@ int DnDGuestResponse::setProgress(unsigned uPercentage,
                 AssertComRC(hr);
                 if (   uState      == DragAndDropSvc::DND_PROGRESS_COMPLETE
                     || uPercentage >= 100)
-                    hr = m_progress->notifyComplete(S_OK);
+                    hr = m_progress->i_notifyComplete(S_OK);
             }
         }
     }
@@ -517,21 +517,21 @@ int DnDGuestResponse::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 500 */)
     return rc;
 }
 
-int DnDGuestResponse::writeToFile(const char *pszPath, size_t cbPath, 
+int DnDGuestResponse::writeToFile(const char *pszPath, size_t cbPath,
                                   void *pvData, size_t cbData, uint32_t fMode)
 {
     /** @todo Support locking more than one file at a time! We
      *        might want to have a table in DnDGuestImpl which
      *        keeps those file pointers around, or extend the
      *        actual protocol for explicit open calls.
-     *  
+     *
      *        For now we only keep one file open at a time, so if
      *        a client does alternating writes to different files
      *        this function will close the old and re-open the new
      *        file on every call. */
     int rc;
     if (   m_hFile == NIL_RTFILE
-        || m_strFile != pszPath) 
+        || m_strFile != pszPath)
     {
         char *pszFile = RTPathJoinA(m_strDropDir.c_str(), pszPath);
         if (pszFile)
@@ -539,11 +539,11 @@ int DnDGuestResponse::writeToFile(const char *pszPath, size_t cbPath,
             RTFILE hFile;
             /** @todo Respect fMode!  */
             rc = RTFileOpen(&hFile, pszFile,
-                              RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE 
+                              RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE
                             | RTFILE_O_WRITE | RTFILE_O_APPEND);
             if (RT_SUCCESS(rc))
             {
-                LogFlowFunc(("Opening \"%s\" (fMode=0x%x) for writing ...\n", 
+                LogFlowFunc(("Opening \"%s\" (fMode=0x%x) for writing ...\n",
                              pszFile, fMode));
 
                 m_hFile = hFile;
@@ -954,7 +954,7 @@ HRESULT GuestDnD::dragHGDrop(ULONG uScreenId, ULONG uX, ULONG uY,
         /* Get the resulting action from the guest. */
         *pResultAction = d->toMainAction(pResp->defAction());
 
-        LogFlowFunc(("resFormat=%s, resAction=%RU32\n", 
+        LogFlowFunc(("resFormat=%s, resAction=%RU32\n",
                      pResp->format().c_str(), pResp->defAction()));
 
         Bstr(pResp->format()).cloneTo(pstrFormat);

@@ -2155,9 +2155,12 @@ int GuestSession::i_queryInfo(void)
     static short s_gctrlLegacyWarning = 0;
     if (   mData.mProtocolVersion < 2
         && s_gctrlLegacyWarning++ < 3) /** @todo Find a bit nicer text. */
-        LogRel((tr("Warning: Guest Additions are older (%ld.%ld) than host capabilities for guest control, please upgrade them. Using protocol version %ld now\n"),
-                uVBoxMajor, uVBoxMinor, mData.mProtocolVersion));
-
+    {
+        Utf8Str str;
+        str = "Warning: Guest Additions are older (%ld.%ld) than host";
+        str += " capabilities for guest control, please upgrade them. Using protocol version %ld now\n";
+        LogRel((tr(str.c_str()), uVBoxMajor, uVBoxMinor, mData.mProtocolVersion));
+    }
     return VINF_SUCCESS;
 }
 
@@ -2412,7 +2415,9 @@ HRESULT GuestSession::close()
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::copyFrom(const com::Utf8Str &aSource, const com::Utf8Str &aDest, const std::vector<CopyFileFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
+HRESULT GuestSession::copyFrom(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
+                               const std::vector<CopyFileFlag_T> &aFlags,
+                               ComPtr<IProgress> &aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2441,8 +2446,8 @@ HRESULT GuestSession::copyFrom(const com::Utf8Str &aSource, const com::Utf8Str &
         ComObjPtr<Progress> pProgress;
         SessionTaskCopyFrom *pTask = new SessionTaskCopyFrom(this /* GuestSession */,
                                                              aSource, aDest, fFlags);
-        int rc = i_startTaskAsync(Utf8StrFmt(tr("Copying \"%s\" from guest to \"%s\" on the host"), aSource.c_str(), aDest.c_str()),
-                                pTask, pProgress);
+        int rc = i_startTaskAsync(Utf8StrFmt(tr("Copying \"%s\" from guest to \"%s\" on the host"), aSource.c_str(),
+                                  aDest.c_str()), pTask, pProgress);
         if (RT_SUCCESS(rc))
             /* Return progress to the caller. */
             hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
@@ -2459,7 +2464,8 @@ HRESULT GuestSession::copyFrom(const com::Utf8Str &aSource, const com::Utf8Str &
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::copyTo(const com::Utf8Str &aSource, const com::Utf8Str &aDest, const std::vector<CopyFileFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
+HRESULT GuestSession::copyTo(const com::Utf8Str &aSource, const com::Utf8Str &aDest, const std::vector<CopyFileFlag_T> &aFlags,
+                             ComPtr<IProgress> &aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2489,8 +2495,8 @@ HRESULT GuestSession::copyTo(const com::Utf8Str &aSource, const com::Utf8Str &aD
         SessionTaskCopyTo *pTask = new SessionTaskCopyTo(this /* GuestSession */,
                                                          aSource, aDest, fFlags);
         AssertPtrReturn(pTask, E_OUTOFMEMORY);
-        int rc = i_startTaskAsync(Utf8StrFmt(tr("Copying \"%s\" from host to \"%s\" on the guest"), aSource.c_str(), aDest.c_str()),
-                                pTask, pProgress);
+        int rc = i_startTaskAsync(Utf8StrFmt(tr("Copying \"%s\" from host to \"%s\" on the guest"), aSource.c_str(),
+                                  aDest.c_str()), pTask, pProgress);
         if (RT_SUCCESS(rc))
         {
             /* Return progress to the caller. */
@@ -2562,7 +2568,8 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath, BOOL aSecure, com::Utf8Str &aDirectory)
+HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath,
+                                          BOOL aSecure, com::Utf8Str &aDirectory)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2634,7 +2641,8 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL *aExists)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8Str &aFilter, const std::vector<DirectoryOpenFlag_T> &aFlags, ComPtr<IGuestDirectory> &aDirectory)
+HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8Str &aFilter,
+                                    const std::vector<DirectoryOpenFlag_T> &aFlags, ComPtr<IGuestDirectory> &aDirectory)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2792,7 +2800,8 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const std::vector<DirectoryRemoveRecFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
+HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const std::vector<DirectoryRemoveRecFlag_T> &aFlags,
+                                               ComPtr<IProgress> &aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2819,7 +2828,7 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
      *       deleting a guest directory recursively. So just complete
      *       the progress object right now. */
      /** @todo Implement progress reporting on guest directory deletion! */
-    hr = pProgress->notifyComplete(S_OK);
+    hr = pProgress->i_notifyComplete(S_OK);
     if (FAILED(hr))
         return hr;
 
@@ -2987,7 +2996,8 @@ HRESULT GuestSession::environmentUnset(const com::Utf8Str &aName)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::fileCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath, BOOL aSecure, ComPtr<IGuestFile> &aFile)
+HRESULT GuestSession::fileCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath, BOOL aSecure,
+                                     ComPtr<IGuestFile> &aFile)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -3072,7 +3082,8 @@ HRESULT GuestSession::fileRemove(const com::Utf8Str &aPath)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::fileOpen(const com::Utf8Str &aPath, const com::Utf8Str &aOpenMode, const com::Utf8Str &aDisposition, ULONG aCreationMode, ComPtr<IGuestFile> &aFile)
+HRESULT GuestSession::fileOpen(const com::Utf8Str &aPath, const com::Utf8Str &aOpenMode, const com::Utf8Str &aDisposition,
+                               ULONG aCreationMode, ComPtr<IGuestFile> &aFile)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -3086,7 +3097,9 @@ HRESULT GuestSession::fileOpen(const com::Utf8Str &aPath, const com::Utf8Str &aO
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, const com::Utf8Str &aOpenMode, const com::Utf8Str &aDisposition, const com::Utf8Str &aSharingMode, ULONG aCreationMode, LONG64 aOffset, ComPtr<IGuestFile> &aFile)
+HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, const com::Utf8Str &aOpenMode, const com::Utf8Str &aDisposition,
+                                 const com::Utf8Str &aSharingMode, ULONG aCreationMode, LONG64 aOffset,
+                                 ComPtr<IGuestFile> &aFile)
 
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -3239,7 +3252,8 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, LONG64 *aSize)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::fileRename(const com::Utf8Str &aSource, const com::Utf8Str &aDest, const std::vector<PathRenameFlag_T> &aFlags)
+HRESULT GuestSession::fileRename(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
+                                 const std::vector<PathRenameFlag_T> &aFlags)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -3297,7 +3311,10 @@ HRESULT GuestSession::fileSetACL(const com::Utf8Str &aFile, const com::Utf8Str &
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::processCreate(const com::Utf8Str &aCommand, const std::vector<com::Utf8Str> &aArguments, const std::vector<com::Utf8Str> &aEnvironment, const std::vector<ProcessCreateFlag_T> &aFlags, ULONG aTimeoutMS, ComPtr<IGuestProcess> &aGuestProcess)
+HRESULT GuestSession::processCreate(const com::Utf8Str &aCommand, const std::vector<com::Utf8Str> &aArguments,
+                                    const std::vector<com::Utf8Str> &aEnvironment,
+                                    const std::vector<ProcessCreateFlag_T> &aFlags,
+                                    ULONG aTimeoutMS, ComPtr<IGuestProcess> &aGuestProcess)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -3306,11 +3323,16 @@ HRESULT GuestSession::processCreate(const com::Utf8Str &aCommand, const std::vec
 
     std::vector<LONG> affinityIgnored;
 
-    return processCreateEx(aCommand, aArguments, aEnvironment, aFlags, aTimeoutMS, ProcessPriority_Default, affinityIgnored, aGuestProcess);
+    return processCreateEx(aCommand, aArguments, aEnvironment, aFlags, aTimeoutMS, ProcessPriority_Default,
+                           affinityIgnored, aGuestProcess);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::processCreateEx(const com::Utf8Str &aCommand, const std::vector<com::Utf8Str> &aArguments, const std::vector<com::Utf8Str> &aEnvironment, const std::vector<ProcessCreateFlag_T> &aFlags, ULONG aTimeoutMS, ProcessPriority_T aPriority, const std::vector<LONG> &aAffinity, ComPtr<IGuestProcess> &aGuestProcess)
+HRESULT GuestSession::processCreateEx(const com::Utf8Str &aCommand, const std::vector<com::Utf8Str> &aArguments,
+                                      const std::vector<com::Utf8Str> &aEnvironment,
+                                      const std::vector<ProcessCreateFlag_T> &aFlags, ULONG aTimeoutMS,
+                                      ProcessPriority_T aPriority, const std::vector<LONG> &aAffinity,
+                                      ComPtr<IGuestProcess> &aGuestProcess)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -3449,7 +3471,8 @@ HRESULT GuestSession::symlinkExists(const com::Utf8Str &aSymlink, BOOL *aExists)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::symlinkRead(const com::Utf8Str &aSymlink, const std::vector<SymlinkReadFlag_T> &aFlags, com::Utf8Str &aTarget)
+HRESULT GuestSession::symlinkRead(const com::Utf8Str &aSymlink, const std::vector<SymlinkReadFlag_T> &aFlags,
+                                  com::Utf8Str &aTarget)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -3526,7 +3549,8 @@ HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWait
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::waitForArray(const std::vector<GuestSessionWaitForFlag_T> &aWaitFor, ULONG aTimeoutMS, GuestSessionWaitResult_T *aReason)
+HRESULT GuestSession::waitForArray(const std::vector<GuestSessionWaitForFlag_T> &aWaitFor, ULONG aTimeoutMS,
+                                   GuestSessionWaitResult_T *aReason)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();

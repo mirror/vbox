@@ -486,8 +486,10 @@ inline int GuestProcess::i_checkPID(uint32_t uPID)
     {
         if (RT_UNLIKELY(mData.mPID != uPID))
         {
-            LogFlowFunc(("Stale guest process (PID=%RU32) sent data to a newly started process (pProcesS=%p, PID=%RU32, status=%RU32)\n",
-                         uPID, this, mData.mPID, mData.mStatus));
+            Utf8Str str;
+            str  = "Stale guest process (PID=%RU32) sent data to newly started";
+            str += " process (pProcesS=%p, PID=%RU32, status=%RU32)\n";
+            LogFlowFunc((str.c_str(), uPID, this, mData.mPID, mData.mStatus));
             rc = VERR_NOT_FOUND;
         }
     }
@@ -1377,7 +1379,9 @@ int GuestProcess::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS,
     if (curStatus == ProcessStatus_Error)
     {
         waitResult = ProcessWaitResult_Error;
-        AssertMsg(RT_FAILURE(mData.mLastError), ("No error rc (%Rrc) set when guest process indicated an error\n", mData.mLastError));
+        Utf8Str str;
+        str  = "No error rc (%Rrc) set when guest process indicated an error\n";
+        AssertMsg(RT_FAILURE(mData.mLastError), (str.c_str(), mData.mLastError));
         if (pGuestRc)
             *pGuestRc = mData.mLastError; /* Return last set error. */
         LogFlowThisFunc(("Process is in error state (guestRc=%Rrc)\n", mData.mLastError));
@@ -1661,8 +1665,9 @@ bool GuestProcess::i_waitResultImpliesEx(ProcessWaitResult_T waitResult,
 int GuestProcess::i_writeData(uint32_t uHandle, uint32_t uFlags,
                               void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *pGuestRc)
 {
-    LogFlowThisFunc(("uPID=%RU32, uHandle=%RU32, uFlags=%RU32, pvData=%p, cbData=%RU32, uTimeoutMS=%RU32, puWritten=%p, pGuestRc=%p\n",
-                     mData.mPID, uHandle, uFlags, pvData, cbData, uTimeoutMS, puWritten, pGuestRc));
+    Utf8Str str;
+    str = "uPID=%RU32, uHandle=%RU32, uFlags=%RU32, pvData=%p, cbData=%RU32, uTimeoutMS=%RU32, puWritten=%p, pGuestRc=%p\n";
+    LogFlowThisFunc((str.c_str(), mData.mPID, uHandle, uFlags, pvData, cbData, uTimeoutMS, puWritten, pGuestRc));
     /* All is optional. There can be 0 byte writes. */
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1876,8 +1881,8 @@ HRESULT GuestProcess::waitFor(ULONG aWaitFor,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestProcess::waitForArray(const std::vector<ProcessWaitForFlag_T> &aWaitFor, ULONG aTimeoutMS, ProcessWaitResult_T *aReason)
-
+HRESULT GuestProcess::waitForArray(const std::vector<ProcessWaitForFlag_T> &aWaitFor,
+                                   ULONG aTimeoutMS, ProcessWaitResult_T *aReason)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
