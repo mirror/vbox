@@ -1083,7 +1083,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{CPUM/GuestCpuName, string}
-     * The name of of the CPU we're to emulate.  The default is the host CPU.
+     * The name of the CPU we're to emulate.  The default is the host CPU.
      * Note! CPUs other than "host" one is currently unsupported. */
     char szCpuName[128];
     rc = CFGMR3QueryStringDef(pCpumCfg, "GuestCpuName", szCpuName, sizeof(szCpuName), "host");
