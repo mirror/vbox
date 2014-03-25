@@ -33,6 +33,7 @@
 #include "UIGraphicsTextPane.h"
 #include "UIIconPool.h"
 #include "UIConverter.h"
+#include "VBoxGlobal.h"
 
 UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType type, bool fOpened)
     : UIGDetailsItem(pParent)
@@ -130,6 +131,29 @@ void UIGDetailsElement::sltElementToggleFinish(bool fToggled)
 
     /* Notify about finishing: */
     emit sigToggleElementFinished();
+}
+
+void UIGDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
+{
+    /* Current anchor role: */
+    QString strRole = strAnchor.section(',', 0, 0);
+
+    /* Handle known roles: */
+    if (strRole == "#choose")
+        handleAnchorClickedRoleChoose(strAnchor.section(',', 1));
+}
+
+void UIGDetailsElement::sltMountStorageMedium()
+{
+    /* Sender action: */
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    AssertMsgReturnVoid(pAction, ("This slot should only be called by menu action!\n"));
+
+    /* Current mount-target: */
+    const UIMediumTarget target = pAction->data().value<UIMediumTarget>();
+
+    /* Update current machine mount-target: */
+    vboxGlobal().updateMachineStorage(machine(), target);
 }
 
 void UIGDetailsElement::resizeEvent(QGraphicsSceneResizeEvent*)
@@ -391,6 +415,7 @@ void UIGDetailsElement::prepareTextPane()
     /* Create text-pane: */
     m_pTextPane = new UIGraphicsTextPane(this, model()->paintDevice());
     connect(m_pTextPane, SIGNAL(sigGeometryChanged()), this, SLOT(sltUpdateGeometry()));
+    connect(m_pTextPane, SIGNAL(sigAnchorClicked(const QString&)), this, SLOT(sltHandleAnchorClicked(const QString&)));
 }
 
 void UIGDetailsElement::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget*)
@@ -622,5 +647,23 @@ void UIGDetailsElement::updateAnimationParameters()
     else
         m_iAdditionalHeight = iAdditionalHeight;
     m_pButton->setAnimationRange(0, iAdditionalHeight);
+}
+
+void UIGDetailsElement::handleAnchorClickedRoleChoose(const QString &strData)
+{
+    /* Prepare storage-menu: */
+    QMenu menu;
+
+    /* Storage-controller name: */
+    QString strControllerName = strData.section(',', 0, 0);
+    /* Storage-slot: */
+    StorageSlot storageSlot = gpConverter->fromString<StorageSlot>(strData.section(',', 1));
+
+    /* Fill storage-menu: */
+    vboxGlobal().prepareStorageMenu(menu, this, SLOT(sltMountStorageMedium()),
+                                    machine(), strControllerName, storageSlot);
+
+    /* Exec menu: */
+    menu.exec(QCursor::pos());
 }
 

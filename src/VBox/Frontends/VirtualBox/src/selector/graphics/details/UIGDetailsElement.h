@@ -95,6 +95,12 @@ protected slots:
     /** Handles children geometry changes. */
     void sltUpdateGeometry() { updateGeometry(); }
 
+    /** Handles children anchor clicks. */
+    void sltHandleAnchorClicked(const QString &strAnchor);
+
+    /** Handles mount storage medium requests. */
+    void sltMountStorageMedium();
+
 protected:
 
     /* Data enumerator: */
@@ -180,6 +186,9 @@ private:
 
     /* Helper: Animation stuff: */
     void updateAnimationParameters();
+
+    /** Handle clicked anchor with role '#choose'. */
+    void handleAnchorClickedRoleChoose(const QString &strData);
 
     /* Variables: */
     UIGDetailsSet *m_pSet;
