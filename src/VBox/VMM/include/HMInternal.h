@@ -223,7 +223,7 @@ typedef struct HMGLOBALCPUINFO
 {
     /** The CPU ID. */
     RTCPUID             idCpu;
-    /** The memory object   */
+    /** The VM_HSAVE_AREA (AMD-V) / VMXON region (Intel) memory backing. */
     RTR0MEMOBJ          hMemObj;
     /** Current ASID (AMD-V) / VPID (Intel). */
     uint32_t            uCurrentAsid;
@@ -961,7 +961,7 @@ typedef struct HMCPU
     STAMPROFILEADV          StatExitDispatch;
 #endif
 } HMCPU;
-/** Pointer to HM VM instance data. */
+/** Pointer to HM VMCPU instance data. */
 typedef HMCPU *PHMCPU;
 
 
