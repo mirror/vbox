@@ -127,7 +127,8 @@ if !defined(VBOX_ONLY_SDK)
   endif
   tstCAPIGlue_INTERMEDIATES = \
   	$(VBOX_PATH_SDK)/bindings/c/glue/VBoxCAPIGlue.h \
-  	$(VBOX_PATH_SDK)/bindings/c/include/VBoxCAPI_v$(VBOX_API_VERSION).h
+  	$(VBOX_PATH_SDK)/bindings/c/include/VBoxCAPI_v$(VBOX_API_VERSION).h \
+       $(if-expr !defined(VBOX_WITH_XPCOM),$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h,)
   tstCAPIGlue_SOURCES = \
   	tstCAPIGlue.c
   tstCAPIGlue_LIBS = \
