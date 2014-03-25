@@ -329,7 +329,11 @@ static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvCl
 {
     VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
 
+    LogRel2(("svcDisconnect: u32ClientID = %d\n", u32ClientID));
+
     vboxSvcClipboardReportMsg (pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT, 0);
+
+    vboxSvcClipboardCompleteReadData(pClient, VERR_NO_DATA, 0);
 
     vboxClipboardDisconnect (pClient);
 
@@ -760,16 +764,11 @@ static SSMFIELD const g_aClipboardClientDataFields[] =
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
 #ifndef UNIT_TEST
-    /* If there are any pending requests, they must be completed here. Since
-     * the service is single threaded, there could be only requests
-     * which the service itself has postponed.
-     *
-     * HGCM knows that the state is being saved and that the pfnComplete
-     * calls are just clean ups. These requests are saved by the VMMDev.
-     *
-     * When the state will be restored, these requests will be reissued
+    /* 
+     * When the state will be restored, pending requests will be reissued
      * by VMMDev. The service therefore must save state as if there were no
      * pending request.
+     * Pending requests, if any, will be completed in svcDisconnect.
      */
     LogRel2 (("svcSaveState: u32ClientID = %d\n", u32ClientID));
 
@@ -780,15 +779,6 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     SSMR3PutU32 (pSSM, UINT32_C (0x80000002));
     int rc = SSMR3PutStructEx (pSSM, pClient, sizeof(*pClient), 0 /*fFlags*/, &g_aClipboardClientDataFields[0], NULL);
     AssertRCReturn (rc, rc);
-
-    if (pClient->fAsync)
-    {
-        g_pHelpers->pfnCallComplete (pClient->async.callHandle, VINF_SUCCESS /* error code is not important here. */);
-        pClient->fAsync = false;
-    }
-
-    vboxSvcClipboardCompleteReadData (pClient, VINF_SUCCESS, 0);
-
 #endif /* !UNIT_TEST */
     return VINF_SUCCESS;
 }
