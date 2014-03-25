@@ -141,7 +141,7 @@ struct MachineCloneVMPrivate
 
 HRESULT MachineCloneVMPrivate::createMachineList(const ComPtr<ISnapshot> &pSnapshot,
                                                  RTCList< ComObjPtr<Machine> > &machineList) const
- {
+{
     HRESULT rc = S_OK;
     Bstr name;
     rc = pSnapshot->COMGETTER(Name)(name.asOutParam());
