@@ -77,7 +77,8 @@ VFSExplorer::~VFSExplorer()
  * @param
  * @return
  */
-HRESULT VFSExplorer::init(VFSType_T aType, Utf8Str aFilePath, Utf8Str aHostname, Utf8Str aUsername, Utf8Str aPassword, VirtualBox *aVirtualBox)
+HRESULT VFSExplorer::init(VFSType_T aType, Utf8Str aFilePath, Utf8Str aHostname, Utf8Str aUsername,
+                          Utf8Str aPassword, VirtualBox *aVirtualBox)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -311,7 +312,9 @@ HRESULT VFSExplorer::i_updateFS(TaskVFSExplorer *aTask)
                 Utf8Str name(entry.szName);
                 if (   name != "."
                     && name != "..")
-                    fileList.push_back(VFSExplorer::Data::DirEntry(name, i_RTToVFSFileType(entry.Info.Attr.fMode), entry.Info.cbObject, entry.Info.Attr.fMode & (RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXG | RTFS_UNIX_IRWXO)));
+                    fileList.push_back(VFSExplorer::Data::DirEntry(name, i_RTToVFSFileType(entry.Info.Attr.fMode),
+                                       entry.Info.cbObject,
+                                       entry.Info.Attr.fMode & (RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXG | RTFS_UNIX_IRWXO)));
             }
         }
         if (aTask->progress)
@@ -338,7 +341,7 @@ HRESULT VFSExplorer::i_updateFS(TaskVFSExplorer *aTask)
     aTask->rc = rc;
 
     if (!aTask->progress.isNull())
-        aTask->progress->notifyComplete(rc);
+        aTask->progress->i_notifyComplete(rc);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -385,7 +388,7 @@ HRESULT VFSExplorer::i_deleteFS(TaskVFSExplorer *aTask)
     aTask->rc = rc;
 
     if (!aTask->progress.isNull())
-        aTask->progress->notifyComplete(rc);
+        aTask->progress->i_notifyComplete(rc);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -427,7 +430,8 @@ HRESULT VFSExplorer::i_updateS3(TaskVFSExplorer *aTask)
             while (pBuckets)
             {
                 /* Set always read/write permissions of the current logged in user. */
-                fileList.push_back(VFSExplorer::Data::DirEntry(pBuckets->pszName, VFSFileType_Directory, 0, RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR));
+                fileList.push_back(VFSExplorer::Data::DirEntry(pBuckets->pszName, VFSFileType_Directory,
+                                   0, RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR));
                 pBuckets = pBuckets->pNext;
             }
             RTS3BucketsDestroy(pTmpBuckets);
@@ -444,7 +448,8 @@ HRESULT VFSExplorer::i_updateS3(TaskVFSExplorer *aTask)
             {
                 Utf8Str name(pKeys->pszName);
                 /* Set always read/write permissions of the current logged in user. */
-                fileList.push_back(VFSExplorer::Data::DirEntry(pKeys->pszName, VFSFileType_File, pKeys->cbFile, RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR));
+                fileList.push_back(VFSExplorer::Data::DirEntry(pKeys->pszName, VFSFileType_File, pKeys->cbFile,
+                                   RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR));
                 pKeys = pKeys->pNext;
             }
             RTS3KeysDestroy(pTmpKeys);
@@ -465,7 +470,7 @@ HRESULT VFSExplorer::i_updateS3(TaskVFSExplorer *aTask)
     aTask->rc = rc;
 
     if (!aTask->progress.isNull())
-        aTask->progress->notifyComplete(rc);
+        aTask->progress->i_notifyComplete(rc);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -519,7 +524,7 @@ HRESULT VFSExplorer::i_deleteS3(TaskVFSExplorer *aTask)
         RTS3Destroy(hS3);
 
     if (!aTask->progress.isNull())
-        aTask->progress->notifyComplete(rc);
+        aTask->progress->i_notifyComplete(rc);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();

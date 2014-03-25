@@ -61,7 +61,8 @@ typedef struct
 
 struct MachineCloneVMPrivate
 {
-    MachineCloneVMPrivate(MachineCloneVM *a_q, ComObjPtr<Machine> &a_pSrcMachine, ComObjPtr<Machine> &a_pTrgMachine, CloneMode_T a_mode, const RTCList<CloneOptions_T> &opts)
+    MachineCloneVMPrivate(MachineCloneVM *a_q, ComObjPtr<Machine> &a_pSrcMachine, ComObjPtr<Machine> &a_pTrgMachine,
+                          CloneMode_T a_mode, const RTCList<CloneOptions_T> &opts)
       : q_ptr(a_q)
       , p(a_pSrcMachine)
       , pSrcMachine(a_pSrcMachine)
@@ -89,7 +90,7 @@ struct MachineCloneVMPrivate
 
         HRESULT rc = pTask->q_ptr->run();
 
-        pTask->pProgress->notifyComplete(rc);
+        pTask->pProgress->i_notifyComplete(rc);
 
         pTask->q_ptr->destroy();
 
@@ -103,9 +104,12 @@ struct MachineCloneVMPrivate
     inline void updateProgressStats(MEDIUMTASKCHAIN &mtc, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight) const;
     inline HRESULT addSaveState(const ComObjPtr<Machine> &machine, ULONG &uCount, ULONG &uTotalWeight);
     inline HRESULT queryBaseName(const ComPtr<IMedium> &pMedium, Utf8Str &strBaseName) const;
-    HRESULT queryMediasForMachineState(const RTCList<ComObjPtr<Machine> > &machineList, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
-    HRESULT queryMediasForMachineAndChildStates(const RTCList<ComObjPtr<Machine> > &machineList, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
-    HRESULT queryMediasForAllStates(const RTCList<ComObjPtr<Machine> > &machineList, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
+    HRESULT queryMediasForMachineState(const RTCList<ComObjPtr<Machine> > &machineList,
+                                       bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
+    HRESULT queryMediasForMachineAndChildStates(const RTCList<ComObjPtr<Machine> > &machineList,
+                                                bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
+    HRESULT queryMediasForAllStates(const RTCList<ComObjPtr<Machine> > &machineList, bool fAttachLinked, ULONG &uCount,
+                                    ULONG &uTotalWeight);
 
     /* MachineCloneVM::run helper: */
     bool findSnapshot(const settings::SnapshotsList &snl, const Guid &id, settings::Snapshot &sn) const;
@@ -114,7 +118,9 @@ struct MachineCloneVMPrivate
     void updateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
     void updateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
     void updateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const;
-    HRESULT createDifferencingMedium(const ComObjPtr<Machine> &pMachine, const ComObjPtr<Medium> &pParent, const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia, ComObjPtr<Medium> *ppDiff) const;
+    HRESULT createDifferencingMedium(const ComObjPtr<Machine> &pMachine, const ComObjPtr<Medium> &pParent,
+                                     const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia,
+                                     ComObjPtr<Medium> *ppDiff) const;
     static int copyStateFileProgress(unsigned uPercentage, void *pvUser);
 
     /* Private q and parent pointer */
@@ -133,8 +139,9 @@ struct MachineCloneVMPrivate
     RTCList<SAVESTATETASK>      llSaveStateFiles; /* Snapshot UUID -> File path */
 };
 
-HRESULT MachineCloneVMPrivate::createMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComObjPtr<Machine> > &machineList) const
-{
+HRESULT MachineCloneVMPrivate::createMachineList(const ComPtr<ISnapshot> &pSnapshot,
+                                                 RTCList< ComObjPtr<Machine> > &machineList) const
+ {
     HRESULT rc = S_OK;
     Bstr name;
     rc = pSnapshot->COMGETTER(Name)(name.asOutParam());
@@ -157,7 +164,8 @@ HRESULT MachineCloneVMPrivate::createMachineList(const ComPtr<ISnapshot> &pSnaps
     return rc;
 }
 
-void MachineCloneVMPrivate::updateProgressStats(MEDIUMTASKCHAIN &mtc, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight) const
+void MachineCloneVMPrivate::updateProgressStats(MEDIUMTASKCHAIN &mtc, bool fAttachLinked,
+                                                ULONG &uCount, ULONG &uTotalWeight) const
 {
     if (fAttachLinked)
     {
@@ -204,7 +212,8 @@ HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, U
         uint64_t cbSize;
         int vrc = RTFileQuerySize(sst.strSaveStateFile.c_str(), &cbSize);
         if (RT_FAILURE(vrc))
-            return p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not query file size of '%s' (%Rrc)"), sst.strSaveStateFile.c_str(), vrc);
+            return p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not query file size of '%s' (%Rrc)"),
+                               sst.strSaveStateFile.c_str(), vrc);
         /* same rule as above: count both the data which needs to
          * be read and written */
         sst.uWeight = (ULONG)(2 * (cbSize + _1M - 1) / _1M);
@@ -227,7 +236,8 @@ HRESULT MachineCloneVMPrivate::queryBaseName(const ComPtr<IMedium> &pMedium, Utf
     return rc;
 }
 
-HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPtr<Machine> > &machineList, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
+HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPtr<Machine> > &machineList,
+                                                          bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
 {
     /* This mode is pretty straightforward. We didn't need to know about any
      * parent/children relationship and therefor simply adding all directly
@@ -305,7 +315,8 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPt
     return rc;
 }
 
-HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList<ComObjPtr<Machine> > &machineList, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
+HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList<ComObjPtr<Machine> > &machineList,
+                                                                   bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
 {
     /* This is basically a three step approach. First select all medias
      * directly or indirectly involved in the clone. Second create a histogram
@@ -467,7 +478,8 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
     return rc;
 }
 
-HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<Machine> > &machineList, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
+HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<Machine> > &machineList,
+                                                       bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
 {
     /* In this case we create a exact copy of the original VM. This means just
      * adding all directly and indirectly attached disk images to the worker
@@ -596,7 +608,8 @@ void MachineCloneVMPrivate::updateMACAddresses(settings::SnapshotsList &sl) cons
     }
 }
 
-void MachineCloneVMPrivate::updateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const
+void MachineCloneVMPrivate::updateStorageLists(settings::StorageControllersList &sc,
+                                               const Bstr &bstrOldId, const Bstr &bstrNewId) const
 {
     settings::StorageControllersList::iterator it3;
     for (it3 = sc.begin();
@@ -618,7 +631,8 @@ void MachineCloneVMPrivate::updateStorageLists(settings::StorageControllersList 
     }
 }
 
-void MachineCloneVMPrivate::updateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const
+void MachineCloneVMPrivate::updateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId,
+                                                       const Bstr &bstrNewId) const
 {
     settings::SnapshotsList::iterator it;
     for (  it  = sl.begin();
@@ -643,7 +657,9 @@ void MachineCloneVMPrivate::updateStateFile(settings::SnapshotsList &snl, const 
     }
 }
 
-HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine> &pMachine, const ComObjPtr<Medium> &pParent, const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia, ComObjPtr<Medium> *ppDiff) const
+HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine> &pMachine, const ComObjPtr<Medium> &pParent,
+                                                        const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia,
+                                                        ComObjPtr<Medium> *ppDiff) const
 {
     HRESULT rc = S_OK;
     try
@@ -715,8 +731,9 @@ int MachineCloneVMPrivate::copyStateFileProgress(unsigned uPercentage, void *pvU
 // The public class
 /////////////////////////////////////////////////////////////////////////////
 
-MachineCloneVM::MachineCloneVM(ComObjPtr<Machine> pSrcMachine, ComObjPtr<Machine> pTrgMachine, CloneMode_T mode, const RTCList<CloneOptions_T> &opts)
-    : d_ptr(new MachineCloneVMPrivate(this, pSrcMachine, pTrgMachine, mode, opts))
+MachineCloneVM::MachineCloneVM(ComObjPtr<Machine> pSrcMachine, ComObjPtr<Machine> pTrgMachine, CloneMode_T mode,
+                               const RTCList<CloneOptions_T> &opts) :
+                               d_ptr(new MachineCloneVMPrivate(this, pSrcMachine, pTrgMachine, mode, opts))
 {
 }
 
@@ -880,9 +897,15 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
         bool fAttachLinked = d->options.contains(CloneOptions_Link); /* Linked clones requested? */
         switch (d->mode)
         {
-            case CloneMode_MachineState:          d->queryMediasForMachineState(machineList, fAttachLinked, uCount, uTotalWeight); break;
-            case CloneMode_MachineAndChildStates: d->queryMediasForMachineAndChildStates(machineList, fAttachLinked, uCount, uTotalWeight); break;
-            case CloneMode_AllStates:             d->queryMediasForAllStates(machineList, fAttachLinked, uCount, uTotalWeight); break;
+            case CloneMode_MachineState:          d->queryMediasForMachineState(machineList, fAttachLinked,
+                                                                                uCount, uTotalWeight);
+                                                  break;
+            case CloneMode_MachineAndChildStates: d->queryMediasForMachineAndChildStates(machineList, fAttachLinked,
+                                                                                         uCount, uTotalWeight);
+                                                  break;
+            case CloneMode_AllStates:             d->queryMediasForAllStates(machineList, fAttachLinked, uCount,
+                                                                             uTotalWeight);
+                                                  break;
         }
 
         /* Now create the progress project, so the user knows whats going on. */
@@ -1012,7 +1035,8 @@ HRESULT MachineCloneVM::run()
         rc = d->pSrcMachine->COMGETTER(SnapshotFolder)(bstrSrcSnapshotFolder.asOutParam());
         if (FAILED(rc)) throw rc;
         /* The absolute name of the snapshot folder. */
-        strTrgSnapshotFolder = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, trgMCF.machineUserData.strSnapshotFolder.c_str());
+        strTrgSnapshotFolder = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER,
+                                                    trgMCF.machineUserData.strSnapshotFolder.c_str());
 
         /* Should we rename the disk names. */
         bool fKeepDiskNames = d->options.contains(CloneOptions_KeepDiskNames);
@@ -1040,7 +1064,8 @@ HRESULT MachineCloneVM::run()
                 rc = pMedium->COMGETTER(Name)(bstrSrcName.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Cloning Disk '%ls' ..."), bstrSrcName.raw()).raw(), mt.uWeight);
+                rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Cloning Disk '%ls' ..."), bstrSrcName.raw()).raw(),
+                                                    mt.uWeight);
                 if (FAILED(rc)) throw rc;
 
                 Bstr bstrSrcId;
@@ -1141,7 +1166,8 @@ HRESULT MachineCloneVM::run()
                              * For all other disks we rename them with this
                              * template: "new name-disk1.vdi". */
                             if (strSrcTest == strOldVMName)
-                                strNewName = Utf8StrFmt("%s%s", trgMCF.machineUserData.strName.c_str(), RTPathSuffix(Utf8Str(bstrSrcName).c_str()));
+                                strNewName = Utf8StrFmt("%s%s", trgMCF.machineUserData.strName.c_str(),
+                                                                RTPathSuffix(Utf8Str(bstrSrcName).c_str()));
                             else if (   strSrcTest.startsWith("{")
                                      && strSrcTest.endsWith("}"))
                             {
@@ -1149,7 +1175,8 @@ HRESULT MachineCloneVM::run()
 
                                 Guid temp_guid(strSrcTest);
                                 if (temp_guid.isValid() && !temp_guid.isZero())
-                                    strNewName = Utf8StrFmt("%s%s", newId.toStringCurly().c_str(), RTPathSuffix(strNewName.c_str()));
+                                    strNewName = Utf8StrFmt("%s%s", newId.toStringCurly().c_str(),
+                                                                    RTPathSuffix(strNewName.c_str()));
                             }
                             else
                                 strNewName = Utf8StrFmt("%s-disk%d%s", trgMCF.machineUserData.strName.c_str(), ++cDisks,
@@ -1321,24 +1348,29 @@ HRESULT MachineCloneVM::run()
             int vrc = RTDirCreateFullPath(strTrgSnapshotFolder.c_str(), 0700);
             if (RT_FAILURE(vrc))
                 throw p->setError(VBOX_E_IPRT_ERROR,
-                                  p->tr("Could not create snapshots folder '%s' (%Rrc)"), strTrgSnapshotFolder.c_str(), vrc);
+                                  p->tr("Could not create snapshots folder '%s' (%Rrc)"),
+                                  strTrgSnapshotFolder.c_str(), vrc);
         }
         /* Clone all save state files. */
         for (size_t i = 0; i < d->llSaveStateFiles.size(); ++i)
         {
             SAVESTATETASK sst = d->llSaveStateFiles.at(i);
-            const Utf8Str &strTrgSaveState = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER, RTPathFilename(sst.strSaveStateFile.c_str()));
+            const Utf8Str &strTrgSaveState = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER,
+                                                        RTPathFilename(sst.strSaveStateFile.c_str()));
 
             /* Move to next sub-operation. */
-            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Copy save state file '%s' ..."), RTPathFilename(sst.strSaveStateFile.c_str())).raw(), sst.uWeight);
+            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Copy save state file '%s' ..."),
+                                                RTPathFilename(sst.strSaveStateFile.c_str())).raw(), sst.uWeight);
             if (FAILED(rc)) throw rc;
             /* Copy the file only if it was not copied already. */
             if (!newFiles.contains(strTrgSaveState.c_str()))
             {
-                int vrc = RTFileCopyEx(sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), 0, MachineCloneVMPrivate::copyStateFileProgress, &d->pProgress);
+                int vrc = RTFileCopyEx(sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), 0,
+                                       MachineCloneVMPrivate::copyStateFileProgress, &d->pProgress);
                 if (RT_FAILURE(vrc))
                     throw p->setError(VBOX_E_IPRT_ERROR,
-                                      p->tr("Could not copy state file '%s' to '%s' (%Rrc)"), sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), vrc);
+                                      p->tr("Could not copy state file '%s' to '%s' (%Rrc)"),
+                                            sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), vrc);
                 newFiles.append(strTrgSaveState);
             }
             /* Update the path in the configuration either for the current
@@ -1350,7 +1382,8 @@ HRESULT MachineCloneVM::run()
         }
 
         {
-            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Create Machine Clone '%s' ..."), trgMCF.machineUserData.strName.c_str()).raw(), 1);
+            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Create Machine Clone '%s' ..."),
+                                                trgMCF.machineUserData.strName.c_str()).raw(), 1);
             if (FAILED(rc)) throw rc;
             /* After modifying the new machine config, we can copy the stuff
              * over to the new machine. The machine have to be mutable for

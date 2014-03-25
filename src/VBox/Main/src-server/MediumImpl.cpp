@@ -681,10 +681,8 @@ DECLCALLBACK(int) Medium::Task::fntMediumTask(RTTHREAD aThread, void *pvUser)
 
     /* complete the progress if run asynchronously */
     if (pTask->isAsync())
-    {
         if (!pTask->mProgress.isNull())
-            pTask->mProgress->notifyComplete(rc);
-    }
+            pTask->mProgress->i_notifyComplete(rc);
 
     /* pTask is no longer needed, delete it. */
     delete pTask;

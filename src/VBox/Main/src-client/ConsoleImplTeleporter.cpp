@@ -711,7 +711,7 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
     /*
      * We're at the point of no return.
      */
-    if (!pState->mptrProgress->notifyPointOfNoReturn())
+    if (!pState->mptrProgress->i_notifyPointOfNoReturn())
     {
         teleporterSrcSubmitCommand(pState, "cancel", false /*fWaitForAck*/);
         return E_FAIL;
@@ -783,10 +783,10 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
     /* Aaarg! setMachineState trashes error info on Windows, so we have to
        complete things here on failure instead of right before cleanup. */
     if (FAILED(hrc))
-        pState->mptrProgress->notifyComplete(hrc);
+        pState->mptrProgress->i_notifyComplete(hrc);
 
     /* We can no longer be canceled (success), or it doesn't matter any longer (failure). */
-    pState->mptrProgress->setCancelCallback(NULL, NULL);
+    pState->mptrProgress->i_setCancelCallback(NULL, NULL);
 
     /*
      * Write lock the console before resetting mptrCancelableProgress and
@@ -818,7 +818,7 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
         autoLock.acquire();
         pState->mptrConsole->mVMIsAlreadyPoweringOff = false;
 
-        pState->mptrProgress->notifyComplete(hrc);
+        pState->mptrProgress->i_notifyComplete(hrc);
     }
     else
     {
@@ -990,7 +990,7 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxD
     pState->mcMsMaxDowntime = aMaxDowntime;
 
     void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
-    ptrProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser);
+    ptrProgress->i_setCancelCallback(teleporterProgressCancelCallback, pvUser);
 
     int vrc = RTThreadCreate(NULL, Console::teleporterSrcThreadWrapper, (void *)pState, 0 /*cbStack*/,
                              RTTHREADTYPE_EMULATION, 0 /*fFlags*/, "Teleport");
@@ -1010,7 +1010,7 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxD
     }
     else
     {
-        ptrProgress->setCancelCallback(NULL, NULL);
+        ptrProgress->i_setCancelCallback(NULL, NULL);
         delete pState;
         hrc = setError(E_FAIL, tr("RTThreadCreate -> %Rrc"), vrc);
     }
@@ -1114,14 +1114,14 @@ Console::teleporterTrg(PUVM pUVM, IMachine *pMachine, Utf8Str *pErrorMsg, bool f
             theState.mhServer          = hServer;
 
             void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(&theState));
-            if (pProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser))
+            if (pProgress->i_setCancelCallback(teleporterProgressCancelCallback, pvUser))
             {
                 LogRel(("Teleporter: Waiting for incoming VM...\n"));
                 hrc = pProgress->SetNextOperation(Bstr(tr("Waiting for incoming VM")).raw(), 1);
                 if (SUCCEEDED(hrc))
                 {
                     vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &theState);
-                    pProgress->setCancelCallback(NULL, NULL);
+                    pProgress->i_setCancelCallback(NULL, NULL);
 
                     if (vrc == VERR_TCP_SERVER_STOP)
                     {
@@ -1409,7 +1409,7 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
              *       NACK) the request since this would reduce latency and
              *       make it possible to recover from some VMR3Resume failures.
              */
-            if (   pState->mptrProgress->notifyPointOfNoReturn()
+            if (   pState->mptrProgress->i_notifyPointOfNoReturn()
                 && pState->mfLockedMedia)
             {
                 vrc = teleporterTcpWriteACK(pState);

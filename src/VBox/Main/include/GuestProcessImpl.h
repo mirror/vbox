@@ -51,19 +51,27 @@ public:
     inline int i_checkPID(uint32_t uPID);
     static Utf8Str i_guestErrorToString(int guestRc);
     int i_onRemove(void);
-    int i_readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead, int *pGuestRc);
+    int i_readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData,
+                   size_t cbData, uint32_t *pcbRead, int *pGuestRc);
     static HRESULT i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int i_startProcess(uint32_t uTimeoutMS, int *pGuestRc);
     int i_startProcessAsync(void);
     int i_terminateProcess(uint32_t uTimeoutMS, int *pGuestRc);
-    static ProcessWaitResult_T i_waitFlagsToResultEx(uint32_t fWaitFlags, ProcessStatus_T oldStatus, ProcessStatus_T newStatus, uint32_t uProcFlags, uint32_t uProtocol);
+    static ProcessWaitResult_T i_waitFlagsToResultEx(uint32_t fWaitFlags, ProcessStatus_T oldStatus,
+                                                     ProcessStatus_T newStatus, uint32_t uProcFlags,
+                                                     uint32_t uProtocol);
     ProcessWaitResult_T i_waitFlagsToResult(uint32_t fWaitFlags);
     int i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pGuestRc);
-    int i_waitForInputNotify(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, ProcessInputStatus_T *pInputStatus, uint32_t *pcbProcessed);
-    int i_waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, void* pvData, size_t cbData, uint32_t *pcbRead);
-    int i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, ProcessStatus_T *pProcessStatus, int *pGuestRc);
-    static bool i_waitResultImpliesEx(ProcessWaitResult_T waitResult, ProcessStatus_T procStatus, uint32_t uProcFlags, uint32_t uProtocol);
-    int i_writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *pGuestRc);
+    int i_waitForInputNotify(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS,
+                             ProcessInputStatus_T *pInputStatus, uint32_t *pcbProcessed);
+    int i_waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS,
+                        void* pvData, size_t cbData, uint32_t *pcbRead);
+    int i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
+                              ProcessStatus_T *pProcessStatus, int *pGuestRc);
+    static bool i_waitResultImpliesEx(ProcessWaitResult_T waitResult, ProcessStatus_T procStatus,
+                                      uint32_t uProcFlags, uint32_t uProtocol);
+    int i_writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData,
+                    uint32_t uTimeoutMS, uint32_t *puWritten, int *pGuestRc);
     /** @}  */
 
 protected:
@@ -181,8 +189,8 @@ public:
 
     static int i_run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pGuestRc);
 
-    static int i_runEx(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, GuestCtrlStreamObjects *pStrmOutObjects,
-                       uint32_t cStrmOutObjects, int *pGuestRc);
+    static int i_runEx(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
+                       GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, int *pGuestRc);
 
     int i_terminatedOk(LONG *pExitCode);
 

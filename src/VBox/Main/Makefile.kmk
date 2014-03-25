@@ -728,7 +728,7 @@ ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 else
  VBoxC_SOURCES += \
 	src-client/AudioSnifferInterface.cpp
-endif 
+endif
 VBoxC_SOURCES.win = \
 	src-client/win/dllmain.cpp \
 	src-client/win/VBoxC.def \
@@ -840,7 +840,8 @@ endif
 #
 LIBRARIES += VBoxCOM
 VBoxCOM_TEMPLATE        = VBoxMainLib
-VBoxCOM_INTERMEDIATES   = $(VBOX_MAIN_PREREQS)
+VBoxCOM_INTERMEDIATES   = $(VBOX_MAIN_PREREQS) \
+                          $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 VBoxCOM_SOURCES         = \
 	glue/com.cpp \
 	glue/initterm.cpp \
@@ -850,7 +851,7 @@ VBoxCOM_SOURCES         = \
 	glue/NativeEventQueue.cpp \
 	glue/ErrorInfo.cpp \
 	glue/errorprint.cpp
-VBoxCOM_INCS          += \
+VBoxCOM_INCS          += $(VBOX_MAIN_APIWRAPPER_INCS) \
 	include
 ifeq ($(KBUILD_TARGET),win)
  VBoxCOM_DEFS.x86       = _WIN32_WINNT=0x0500

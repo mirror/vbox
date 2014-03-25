@@ -5661,7 +5661,7 @@ DECLCALLBACK(int) Machine::deleteThread(RTTHREAD Thread, void *pvUser)
     Assert(pTask->pProgress);
 
     HRESULT rc = pTask->pMachine->deleteTaskWorker(*pTask);
-    pTask->pProgress->notifyComplete(rc);
+    pTask->pProgress->i_notifyComplete(rc);
 
     delete pTask;
 
@@ -8393,7 +8393,7 @@ bool Machine::checkForSpawnFailure()
         /* finalize the progress after setting the state */
         if (!mData->mSession.mProgress.isNull())
         {
-            mData->mSession.mProgress->notifyComplete(rc);
+            mData->mSession.mProgress->i_notifyComplete(rc);
             mData->mSession.mProgress.setNull();
         }
 
@@ -13121,12 +13121,12 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     if (mData->mSession.mProgress)
     {
         if (aReason == Uninit::Normal)
-            mData->mSession.mProgress->notifyComplete(S_OK);
+            mData->mSession.mProgress->i_notifyComplete(S_OK);
         else
-            mData->mSession.mProgress->notifyComplete(E_FAIL,
-                                                      COM_IIDOF(ISession),
-                                                      getComponentName(),
-                                                      tr("The VM session was aborted"));
+            mData->mSession.mProgress->i_notifyComplete(E_FAIL,
+                                                       COM_IIDOF(ISession),
+                                                       getComponentName(),
+                                                       tr("The VM session was aborted"));
         mData->mSession.mProgress.setNull();
     }
 
@@ -13311,7 +13311,7 @@ STDMETHODIMP SessionMachine::EndPowerUp(LONG iResult)
     /* Finalize the LaunchVMProcess progress object. */
     if (mData->mSession.mProgress)
     {
-        mData->mSession.mProgress->notifyComplete((HRESULT)iResult);
+        mData->mSession.mProgress->i_notifyComplete((HRESULT)iResult);
         mData->mSession.mProgress.setNull();
     }
 
@@ -13395,17 +13395,17 @@ STDMETHODIMP SessionMachine::EndPoweringDown(LONG iResult, IN_BSTR aErrMsg)
     /* notify the progress object about operation completion */
     Assert(mConsoleTaskData.mProgress);
     if (SUCCEEDED(iResult))
-        mConsoleTaskData.mProgress->notifyComplete(S_OK);
+        mConsoleTaskData.mProgress->i_notifyComplete(S_OK);
     else
     {
         Utf8Str strErrMsg(aErrMsg);
         if (strErrMsg.length())
-            mConsoleTaskData.mProgress->notifyComplete(iResult,
-                                                       COM_IIDOF(ISession),
-                                                       getComponentName(),
-                                                       strErrMsg.c_str());
+            mConsoleTaskData.mProgress->i_notifyComplete(iResult,
+                                                         COM_IIDOF(ISession),
+                                                         getComponentName(),
+                                                         strErrMsg.c_str());
         else
-            mConsoleTaskData.mProgress->notifyComplete(iResult);
+            mConsoleTaskData.mProgress->i_notifyComplete(iResult);
     }
 
     /* clear out the temporary saved state data */
@@ -13600,10 +13600,10 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
         {
             /* finalize the progress, someone might wait if a frontend
              * closes the session before powering on the VM. */
-            mData->mSession.mProgress->notifyComplete(E_FAIL,
-                                                      COM_IIDOF(ISession),
-                                                      getComponentName(),
-                                                      tr("The VM session was closed before any attempt to power it on"));
+            mData->mSession.mProgress->i_notifyComplete(E_FAIL,
+                                                        COM_IIDOF(ISession),
+                                                        getComponentName(),
+                                                        tr("The VM session was closed before any attempt to power it on"));
             mData->mSession.mProgress.setNull();
         }
 
@@ -14643,16 +14643,16 @@ HRESULT SessionMachine::endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
     /* notify the progress object about operation completion */
     Assert(mConsoleTaskData.mProgress);
     if (SUCCEEDED(aRc))
-        mConsoleTaskData.mProgress->notifyComplete(S_OK);
+        mConsoleTaskData.mProgress->i_notifyComplete(S_OK);
     else
     {
         if (aErrMsg.length())
-            mConsoleTaskData.mProgress->notifyComplete(aRc,
-                                                       COM_IIDOF(ISession),
-                                                       getComponentName(),
-                                                       aErrMsg.c_str());
+            mConsoleTaskData.mProgress->i_notifyComplete(aRc,
+                                                         COM_IIDOF(ISession),
+                                                         getComponentName(),
+                                                         aErrMsg.c_str());
         else
-            mConsoleTaskData.mProgress->notifyComplete(aRc);
+            mConsoleTaskData.mProgress->i_notifyComplete(aRc);
     }
 
     /* clear out the temporary saved state data */

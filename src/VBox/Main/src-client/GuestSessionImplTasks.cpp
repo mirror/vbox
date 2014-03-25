@@ -127,7 +127,7 @@ int GuestSessionTask::setProgressSuccess(void)
         && SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
         && !fCompleted)
     {
-        HRESULT hr = mProgress->notifyComplete(S_OK);
+        HRESULT hr = mProgress->i_notifyComplete(S_OK);
         if (FAILED(hr))
             return VERR_COM_UNEXPECTED; /** @todo Find a better rc. */
     }
@@ -150,10 +150,10 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
         && SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
         && !fCompleted)
     {
-        HRESULT hr2 = mProgress->notifyComplete(hr,
-                                                COM_IIDOF(IGuestSession),
-                                                GuestSession::getStaticComponentName(),
-                                                strMsg.c_str());
+        HRESULT hr2 = mProgress->i_notifyComplete(hr,
+                                                  COM_IIDOF(IGuestSession),
+                                                  GuestSession::getStaticComponentName(),
+                                                  strMsg.c_str());
         if (FAILED(hr2))
             return hr2;
     }

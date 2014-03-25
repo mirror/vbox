@@ -2559,7 +2559,7 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
         d->func(NULL, NULL, d->user, NULL);
     }
 
-    d->progress->notifyComplete(rc);
+    d->progress->i_notifyComplete(rc);
 
     LogFlowFuncLeave();
     return 0;

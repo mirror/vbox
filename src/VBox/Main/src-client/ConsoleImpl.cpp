@@ -3533,7 +3533,7 @@ HRESULT Console::convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG 
 
 // private methods
 /////////////////////////////////////////////////////////////////////////////
-    
+
 /**
  * Suspend the VM before we do any medium or network attachment change.
  *
@@ -6907,7 +6907,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
         /* The progress object will fetch the current error info */
         if (!pPowerupProgress.isNull())
-            pPowerupProgress->notifyComplete(rc);
+            pPowerupProgress->i_notifyComplete(rc);
 
         /* Save the error info across the IPC below. Can't be done before the
          * progress notification above, as saving the error info deletes it
@@ -9175,7 +9175,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         if (SUCCEEDED(rc))
                             rc = pMachine->COMGETTER(FaultTolerancePassword)(bstrPassword.asOutParam());
                     }
-                    if (task->mProgress->setCancelCallback(faultToleranceProgressCancelCallback, pConsole->mpUVM))
+                    if (task->mProgress->i_setCancelCallback(faultToleranceProgressCancelCallback, pConsole->mpUVM))
                     {
                         if (SUCCEEDED(rc))
                         {
@@ -9197,7 +9197,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                                                    pszPassword);
                             AssertLogRelRC(vrc);
                         }
-                        task->mProgress->setCancelCallback(NULL, NULL);
+                        task->mProgress->i_setCancelCallback(NULL, NULL);
                     }
                     else
                         rc = E_FAIL;
@@ -9315,12 +9315,12 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
     if (SUCCEEDED(rc))
     {
         /* Notify the progress object of the success */
-        task->mProgress->notifyComplete(S_OK);
+        task->mProgress->i_notifyComplete(S_OK);
     }
     else
     {
         /* The progress object will fetch the current error info */
-        task->mProgress->notifyComplete(rc);
+        task->mProgress->i_notifyComplete(rc);
         LogRel(("Power up failed (vrc=%Rrc, rc=%Rhrc (%#08X))\n", vrc, rc, rc));
     }
 
@@ -9517,7 +9517,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
             {
                 Utf8Str strSavedStateFile(pTask->bstrSavedStateFile);
 
-                pTask->mProgress->setCancelCallback(takesnapshotProgressCancelCallback, ptrVM.rawUVM());
+                pTask->mProgress->i_setCancelCallback(takesnapshotProgressCancelCallback, ptrVM.rawUVM());
 
                 alock.release();
                 LogFlowFunc(("VMR3Save...\n"));
@@ -9533,12 +9533,12 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                          tr("Failed to save the machine state to '%s' (%Rrc)"),
                                          strSavedStateFile.c_str(), vrc);
 
-                pTask->mProgress->setCancelCallback(NULL, NULL);
+                pTask->mProgress->i_setCancelCallback(NULL, NULL);
             }
             else
                 LogRel(("Console: skipped saving state as part of online snapshot\n"));
 
-            if (!pTask->mProgress->notifyPointOfNoReturn())
+            if (!pTask->mProgress->i_notifyPointOfNoReturn())
                 throw setErrorStatic(E_FAIL, tr("Canceled"));
             that->mptrCancelableProgress.setNull();
 
@@ -9637,7 +9637,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
     Assert(alock.isWriteLockOnCurrentThread());
 
     if (FAILED(rc)) /* Must come before calling setMachineState. */
-        pTask->mProgress->notifyComplete(rc);
+        pTask->mProgress->i_notifyComplete(rc);
 
     /*
      * Fix up the machine state.
@@ -9668,7 +9668,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 if (RT_FAILURE(vrc))
                 {
                     rc = setErrorStatic(VBOX_E_VM_ERROR, tr("Could not resume the machine execution (%Rrc)"), vrc);
-                    pTask->mProgress->notifyComplete(rc);
+                    pTask->mProgress->i_notifyComplete(rc);
                     if (that->mMachineState == MachineState_Saving)
                         that->setMachineStateLocally(MachineState_Paused);
                 }
@@ -9745,7 +9745,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
 
 
     if (SUCCEEDED(rc)) /* The failure cases are handled above. */
-        pTask->mProgress->notifyComplete(rc);
+        pTask->mProgress->i_notifyComplete(rc);
 
     delete pTask;
 
