@@ -268,7 +268,7 @@
     </xsl:otherwise>
   </xsl:choose>
 
-  <xsl:for-each select="//interface[@name=$name]/attribute">
+  <xsl:for-each select="//interface[@name=$name]/attribute[@name != 'midlDoesNotLikEmptyInterfaces']">
     <xsl:variable name="aName" select="concat('a_',@name)"/>
     <xsl:variable name="aTypeName">
       <xsl:call-template name="typeIdl2Back">
@@ -582,6 +582,14 @@ private:
 ]]></xsl:text>
     </xsl:otherwise>
   </xsl:choose>
+
+  <!-- Before we generate attribute code, we check and make sure there are attributes here. -->
+  <xsl:if test="count(attribute) = 0 and @name != 'INATNetworkAlterEvent'">
+    <xsl:call-template name="fatalError">
+      <xsl:with-param name="msg">error: <xsl:value-of select="@name"/> has no attributes</xsl:with-param>
+    </xsl:call-template>
+  </xsl:if>
+
   <xsl:call-template name="genAttrCode">
     <xsl:with-param name="name" select="@name" />
   </xsl:call-template>
@@ -766,7 +774,7 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
     </xsl:otherwise>
   </xsl:choose>
 
-  <xsl:for-each select="//interface[@name=$name]/attribute">
+  <xsl:for-each select="//interface[@name=$name]/attribute[@name != 'midlDoesNotLikEmptyInterfaces']">
     <xsl:variable name="aName" select="concat('a_',@name)"/>
     <xsl:variable name="aTypeName">
       <xsl:call-template name="typeIdl2Back">
@@ -804,7 +812,7 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
     </xsl:otherwise>
   </xsl:choose>
 
-  <xsl:for-each select="//interface[@name=$name]/attribute">
+  <xsl:for-each select="//interface[@name=$name]/attribute[@name != 'midlDoesNotLikEmptyInterfaces']">
     <xsl:variable name="aName" select="concat('a_',@name)"/>
     <xsl:choose>
       <xsl:when test="@safearray='yes'">
