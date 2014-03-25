@@ -7294,11 +7294,13 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
  * Injects a general-protection (#GP) fault into the VM.
  *
  * @returns VBox status code (informational status code included).
- * @param   pVCpu           Pointer to the VMCPU.
- * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
- *                          out-of-sync. Make sure to update the required fields
- *                          before using them.
- * @param   u32ErrorCode    The error code associated with the #GP.
+ * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pMixedCtx           Pointer to the guest-CPU context. The data may be
+ *                              out-of-sync. Make sure to update the required fields
+ *                              before using them.
+ * @param   fErrorCodeValid     Whether the error code is valid (depends on the CPU
+ *                              mode, i.e. in real-mode it's not valid).
+ * @param   u32ErrorCode        The error code associated with the #GP.
  */
 DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErrorCodeValid, uint32_t u32ErrorCode,
                                     uint32_t *puIntrState)
@@ -7309,6 +7311,26 @@ DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErro
         u32IntInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
     return hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntInfo, 0 /* cbInstr */, u32ErrorCode, 0 /* GCPtrFaultAddress */,
                                   puIntrState);
+}
+
+
+/**
+ * Sets a general-protection (#GP) exception as pending-for-injection into the
+ * VM.
+ *
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
+ *                          out-of-sync. Make sure to update the required fields
+ *                          before using them.
+ * @param   u32ErrorCode    The error code associated with the #GP.
+ */
+DECLINLINE(void) hmR0VmxSetPendingXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t u32ErrorCode)
+{
+    NOREF(pMixedCtx);
+    uint32_t u32IntInfo  = X86_XCPT_GP | VMX_EXIT_INTERRUPTION_INFO_VALID;
+    u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+    u32IntInfo          |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, u32ErrorCode, 0 /* GCPtrFaultAddress */);
 }
 
 
