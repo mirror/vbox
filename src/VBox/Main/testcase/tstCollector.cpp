@@ -379,7 +379,7 @@ int main(int argc, char *argv[])
     pm::CollectorHAL *collector = pm::createHAL();
     if (!collector)
     {
-        RTPrintf("tstCollector: createMetricFactory() failed\n", rc);
+        RTPrintf("tstCollector: createMetricFactory() failed\n");
         return 1;
     }
 
