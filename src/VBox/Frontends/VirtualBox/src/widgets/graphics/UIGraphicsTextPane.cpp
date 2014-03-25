@@ -16,9 +16,11 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QFontMetrics>
 #include <QTextLayout>
 #include <QPainter>
+#include <QGraphicsSceneHoverEvent>
 
 /* GUI includes: */
 #include "UIGraphicsTextPane.h"
@@ -32,7 +34,10 @@ UIGraphicsTextPane::UIGraphicsTextPane(QIGraphicsWidget *pParent, QPaintDevice *
     , m_fMinimumSizeHintInvalidated(true)
     , m_iMinimumTextWidth(0)
     , m_iMinimumTextHeight(0)
+    , m_fAnchorCanBeHovered(true)
 {
+    /* We do support hover-events: */
+    setAcceptHoverEvents(true);
 }
 
 UIGraphicsTextPane::~UIGraphicsTextPane()
@@ -156,7 +161,8 @@ void UIGraphicsTextPane::updateTextLayout(bool fFull /* = false */)
             bool fRightColumnPresent = !line.second.isEmpty();
             m_leftList << buildTextLayout(font(), m_pPaintDevice,
                                           fRightColumnPresent ? line.first + ":" : line.first,
-                                          iLeftColumnWidth, iLeftColumnHeight);
+                                          iLeftColumnWidth, iLeftColumnHeight,
+                                          m_strHoveredAnchor);
             m_leftList.last()->setPosition(QPointF(iTextX, iTextY));
         }
 
@@ -166,7 +172,8 @@ void UIGraphicsTextPane::updateTextLayout(bool fFull /* = false */)
         {
             m_rightList << buildTextLayout(font(), m_pPaintDevice,
                                            line.second,
-                                           iRightColumnWidth, iRightColumnHeight);
+                                           iRightColumnWidth, iRightColumnHeight,
+                                           m_strHoveredAnchor);
             m_rightList.last()->setPosition(QPointF(iTextX + iLeftColumnWidth + m_iSpacing, iTextY));
         }
 
@@ -221,6 +228,101 @@ void UIGraphicsTextPane::resizeEvent(QGraphicsSceneResizeEvent*)
     updateGeometry();
 }
 
+void UIGraphicsTextPane::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
+{
+    /* Redirect to common handler: */
+    handleHoverEvent(pEvent);
+}
+
+void UIGraphicsTextPane::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
+{
+    /* Redirect to common handler: */
+    handleHoverEvent(pEvent);
+}
+
+void UIGraphicsTextPane::handleHoverEvent(QGraphicsSceneHoverEvent *pEvent)
+{
+    /* Ignore if anchor can't be hovered: */
+    if (!m_fAnchorCanBeHovered)
+        return;
+
+    /* Prepare variables: */
+    QPoint mousePosition = pEvent->pos().toPoint();
+
+    /* If we currently have no anchor hovered: */
+    if (m_strHoveredAnchor.isNull())
+    {
+        /* Search it in the left list: */
+        m_strHoveredAnchor = searchForHoveredAnchor(m_pPaintDevice, m_leftList, mousePosition);
+        if (!m_strHoveredAnchor.isNull())
+            return updateHoverStuff();
+        /* Then search it in the right one: */
+        m_strHoveredAnchor = searchForHoveredAnchor(m_pPaintDevice, m_rightList, mousePosition);
+        if (!m_strHoveredAnchor.isNull())
+            return updateHoverStuff();
+    }
+    /* If we currently have some anchor hovered: */
+    else
+    {
+        QString strHoveredAnchorName;
+        /* Validate it through the left list: */
+        strHoveredAnchorName = searchForHoveredAnchor(m_pPaintDevice, m_leftList, mousePosition);
+        if (!strHoveredAnchorName.isNull())
+        {
+            m_strHoveredAnchor = strHoveredAnchorName;
+            return updateHoverStuff();
+        }
+        /* Then validate it through the right one: */
+        strHoveredAnchorName = searchForHoveredAnchor(m_pPaintDevice, m_rightList, mousePosition);
+        if (!strHoveredAnchorName.isNull())
+        {
+            m_strHoveredAnchor = strHoveredAnchorName;
+            return updateHoverStuff();
+        }
+        /* Finally clear it for good: */
+        m_strHoveredAnchor.clear();
+        return updateHoverStuff();
+    }
+}
+
+void UIGraphicsTextPane::updateHoverStuff()
+{
+    /* Update mouse-cursor: */
+    if (m_strHoveredAnchor.isNull())
+        unsetCursor();
+    else
+        setCursor(Qt::PointingHandCursor);
+
+    /* Update text-layout: */
+    updateTextLayout();
+
+    /* Update text-pane: */
+    update();
+}
+
+void UIGraphicsTextPane::mousePressEvent(QGraphicsSceneMouseEvent*)
+{
+    /* Make sure some anchor hovered: */
+    if (m_strHoveredAnchor.isNull())
+        return;
+
+    /* Restrict anchor hovering: */
+    m_fAnchorCanBeHovered = false;
+
+    /* Cache clicked anchor: */
+    QString strClickedAnchor = m_strHoveredAnchor;
+
+    /* Clear hovered anchor: */
+    m_strHoveredAnchor.clear();
+    updateHoverStuff();
+
+    /* Notify listeners about anchor clicked: */
+    emit sigAnchorClicked(strClickedAnchor);
+
+    /* Allow anchor hovering again: */
+    m_fAnchorCanBeHovered = true;
+}
+
 void UIGraphicsTextPane::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*, QWidget*)
 {
     /* Draw all the text-layouts: */
@@ -232,16 +334,18 @@ void UIGraphicsTextPane::paint(QPainter *pPainter, const QStyleOptionGraphicsIte
 
 /* static  */
 QTextLayout* UIGraphicsTextPane::buildTextLayout(const QFont &font, QPaintDevice *pPaintDevice,
-                                                 const QString &strText, int iWidth, int &iHeight)
+                                                 const QString &strText, int iWidth, int &iHeight,
+                                                 const QString &strHoveredAnchor)
 {
     /* Prepare variables: */
     QFontMetrics fm(font, pPaintDevice);
     int iLeading = fm.leading();
-
-    /* Only bold sub-strings are currently handled: */
     QString strModifiedText(strText);
-    QRegExp boldRegExp("<b>([\\s\\S]+)</b>");
     QList<QTextLayout::FormatRange> formatRangeList;
+
+    /* Handle bold sub-strings: */
+    QRegExp boldRegExp("<b>([\\s\\S]+)</b>");
+    boldRegExp.setMinimal(true);
     while (boldRegExp.indexIn(strModifiedText) != -1)
     {
         /* Prepare format: */
@@ -255,6 +359,25 @@ QTextLayout* UIGraphicsTextPane::buildTextLayout(const QFont &font, QPaintDevice
         formatRangeList << formatRange;
         /* Replace sub-string: */
         strModifiedText.replace(boldRegExp.cap(0), boldRegExp.cap(1));
+    }
+
+    /* Handle anchored sub-strings: */
+    QRegExp anchoredRegExp("<a href=([^>]+)>([^<>]+)</a>");
+    anchoredRegExp.setMinimal(true);
+    while (anchoredRegExp.indexIn(strModifiedText) != -1)
+    {
+        /* Prepare format: */
+        QTextLayout::FormatRange formatRange;
+        formatRange.format.setAnchor(true);
+        formatRange.format.setAnchorHref(anchoredRegExp.cap(1));
+        if (formatRange.format.anchorHref() == strHoveredAnchor)
+            formatRange.format.setForeground(qApp->palette().color(QPalette::Link));
+        formatRange.start = anchoredRegExp.pos(0);
+        formatRange.length = anchoredRegExp.cap(2).size();
+        /* Add format range to list: */
+        formatRangeList << formatRange;
+        /* Replace sub-string: */
+        strModifiedText.replace(anchoredRegExp.cap(0), anchoredRegExp.cap(2));
     }
 
     /* Create layout; */
@@ -283,5 +406,50 @@ QTextLayout* UIGraphicsTextPane::buildTextLayout(const QFont &font, QPaintDevice
 
     /* Return layout: */
     return pTextLayout;
+}
+
+/* static */
+QString UIGraphicsTextPane::searchForHoveredAnchor(QPaintDevice *pPaintDevice, const QList<QTextLayout*> &list, const QPoint &mousePosition)
+{
+    /* Analyze passed text-layouts: */
+    foreach (QTextLayout *pTextLayout, list)
+    {
+        /* Prepare variables: */
+        QFontMetrics fm(pTextLayout->font(), pPaintDevice);
+
+        /* Text-layout attributes: */
+        const QPoint layoutPosition = pTextLayout->position().toPoint();
+        const QString strLayoutText = pTextLayout->text();
+
+        /* Enumerate format ranges: */
+        foreach (const QTextLayout::FormatRange &range, pTextLayout->additionalFormats())
+        {
+            /* Skip unrelated formats: */
+            if (!range.format.isAnchor())
+                continue;
+
+            /* Parse 'anchor' format: */
+            const int iStart = range.start;
+            const int iLength = range.length;
+            QRegion formatRegion;
+            for (int iTextPosition = iStart; iTextPosition < iStart + iLength; ++iTextPosition)
+            {
+                QTextLine layoutLine = pTextLayout->lineForTextPosition(iTextPosition);
+                QPoint linePosition = layoutLine.position().toPoint();
+                int iSymbolX = (int)layoutLine.cursorToX(iTextPosition);
+                QRect symbolRect = QRect(layoutPosition.x() + linePosition.x() + iSymbolX,
+                                         layoutPosition.y() + linePosition.y(),
+                                         fm.width(strLayoutText[iTextPosition]) + 1, fm.height());
+                formatRegion += symbolRect;
+            }
+
+            /* Is that something we looking for? */
+            if (formatRegion.contains(mousePosition))
+                return range.format.anchorHref();
+        }
+    }
+
+    /* Null string by default: */
+    return QString();
 }
 
