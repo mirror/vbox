@@ -31,47 +31,14 @@ void VBoxMpCrCtlConInit();
 
 bool VBoxMpCrCtlConIs3DSupported();
 
-int VBoxMpCrCtlConConnect(PVBOXMP_CRCTLCON pCrCtlCon,
+int VBoxMpCrCtlConConnect(PVBOXMP_DEVEXT pDevExt, PVBOXMP_CRCTLCON pCrCtlCon,
         uint32_t crVersionMajor, uint32_t crVersionMinor,
         uint32_t *pu32ClientID);
-int VBoxMpCrCtlConDisconnect(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID);
+int VBoxMpCrCtlConDisconnect(PVBOXMP_DEVEXT pDevExt, PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID);
 int VBoxMpCrCtlConCall(PVBOXMP_CRCTLCON pCrCtlCon, struct VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
 int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, struct VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
 
 # include <cr_pack.h>
-
-typedef struct VBOXMP_CRDATACON
-{
-    PVBOXMP_CRCTLCON pCtl;
-    uint32_t u32ClientID;
-} VBOXMP_CRDATACON, *PVBOXMP_CRDATACON;
-
-DECLINLINE(int) VBoxMpCrDataConCreate(PVBOXMP_CRDATACON pDataCon, PVBOXMP_CRCTLCON pCtlCon)
-{
-    int rc = VBoxMpCrCtlConConnect(pCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pDataCon->u32ClientID);
-    if (RT_SUCCESS(rc))
-    {
-        Assert(pDataCon->u32ClientID);
-        pDataCon->pCtl = pCtlCon;
-        return VINF_SUCCESS;
-    }
-    WARN(("VBoxMpCrCtlConConnect failed, rc %d", rc));
-    return rc;
-}
-
-DECLINLINE(int) VBoxMpCrDataConDestroy(PVBOXMP_CRDATACON pDataCon)
-{
-    int rc = VBoxMpCrCtlConDisconnect(pDataCon->pCtl, pDataCon->u32ClientID);
-    if (RT_SUCCESS(rc))
-    {
-        /* sanity */
-        pDataCon->pCtl = NULL;
-        pDataCon->u32ClientID = 0;
-        return VINF_SUCCESS;
-    }
-    WARN(("VBoxMpCrCtlConDisconnect failed, rc %d", rc));
-    return rc;
-}
 
 typedef struct VBOXMP_CRSHGSMICON_BUFDR
 {

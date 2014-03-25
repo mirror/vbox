@@ -171,15 +171,9 @@ static int vboxCmdVbvaCtlSubmitSync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMD
     return rc;
 }
 
-static int vboxCmdVbvaCtlSubmitAsync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CTL * pCtl, PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCompletionIrq, void *pvCompletionIrq)
+static int vboxCmdVbvaCtlSubmitAsync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CTL * pCtl, FNVBOXSHGSMICMDCOMPLETION pfnCompletion, void *pvCompletion)
 {
-    const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepAsynchIrq(&pHGSMICtx->heapCtx, pCtl, pfnCompletionIrq, pvCompletionIrq, VBOXSHGSMI_FLAG_GH_ASYNCH_FORCE);
-    if (!pHdr)
-    {
-        WARN(("VBoxSHGSMICommandPrepAsynchIrq returnd NULL"));
-        return VERR_INVALID_PARAMETER;
-    }
-
+    const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepAsynch(&pHGSMICtx->heapCtx, pCtl, pfnCompletion, pvCompletion, 0);
     HGSMIOFFSET offCmd = VBoxSHGSMICommandOffset(&pHGSMICtx->heapCtx, pHdr);
     if (offCmd == HGSMIOFFSET_VOID)
     {
@@ -1126,3 +1120,133 @@ done:
     return cbInitBuffer - cbBuffer;
 }
 
+int vboxCmdVbvaConConnect(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
+        uint32_t crVersionMajor, uint32_t crVersionMinor,
+        uint32_t *pu32ClientID)
+{
+    VBOXCMDVBVA_CTL_3DCTL_CONNECT *pConnect = (VBOXCMDVBVA_CTL_3DCTL_CONNECT*)vboxCmdVbvaCtlCreate(pHGSMICtx, sizeof (VBOXCMDVBVA_CTL_3DCTL_CONNECT));
+    if (!pConnect)
+    {
+        WARN(("vboxCmdVbvaCtlCreate failed"));
+        return VERR_OUT_OF_RESOURCES;
+    }
+    pConnect->Hdr.u32Type = VBOXCMDVBVACTL_TYPE_3DCTL;
+    pConnect->Hdr.i32Result = VERR_NOT_SUPPORTED;
+    pConnect->Connect.Hdr.u32Type = VBOXCMDVBVA3DCTL_TYPE_CONNECT;
+    pConnect->Connect.Hdr.u32CmdClientId = 0;
+    pConnect->Connect.u32MajorVersion = crVersionMajor;
+    pConnect->Connect.u32MinorVersion = crVersionMinor;
+    pConnect->Connect.u64Pid = (uint64_t)PsGetCurrentProcessId();
+
+    int rc = vboxCmdVbvaCtlSubmitSync(pHGSMICtx, &pConnect->Hdr);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pConnect->Hdr.i32Result;
+        if (RT_SUCCESS(rc))
+            *pu32ClientID = pConnect->Connect.Hdr.u32CmdClientId;
+        else
+            WARN(("VBOXCMDVBVA3DCTL_TYPE_CONNECT Disable failed %d", rc));
+    }
+    else
+        WARN(("vboxCmdVbvaCtlSubmitSync returnd %d", rc));
+
+    vboxCmdVbvaCtlFree(pHGSMICtx, &pConnect->Hdr);
+
+    return rc;
+}
+
+int vboxCmdVbvaConDisconnect(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, uint32_t u32ClientID)
+{
+    VBOXCMDVBVA_CTL_3DCTL *pDisconnect = (VBOXCMDVBVA_CTL_3DCTL*)vboxCmdVbvaCtlCreate(pHGSMICtx, sizeof (VBOXCMDVBVA_CTL_3DCTL));
+    if (!pDisconnect)
+    {
+        WARN(("vboxCmdVbvaCtlCreate failed"));
+        return VERR_OUT_OF_RESOURCES;
+    }
+    pDisconnect->Hdr.u32Type = VBOXCMDVBVACTL_TYPE_3DCTL;
+    pDisconnect->Hdr.i32Result = VERR_NOT_SUPPORTED;
+    pDisconnect->Ctl.u32Type = VBOXCMDVBVA3DCTL_TYPE_DISCONNECT;
+    pDisconnect->Ctl.u32CmdClientId = u32ClientID;
+
+    int rc = vboxCmdVbvaCtlSubmitSync(pHGSMICtx, &pDisconnect->Hdr);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pDisconnect->Hdr.i32Result;
+        if (!RT_SUCCESS(rc))
+            WARN(("VBOXCMDVBVA3DCTL_TYPE_DISCONNECT Disable failed %d", rc));
+    }
+    else
+        WARN(("vboxCmdVbvaCtlSubmitSync returnd %d", rc));
+
+    vboxCmdVbvaCtlFree(pHGSMICtx, &pDisconnect->Hdr);
+
+    return rc;
+}
+
+int VBoxCmdVbvaConConnect(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva,
+        uint32_t crVersionMajor, uint32_t crVersionMinor,
+        uint32_t *pu32ClientID)
+{
+    return vboxCmdVbvaConConnect(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, crVersionMajor, crVersionMinor, pu32ClientID);
+}
+
+int VBoxCmdVbvaConDisconnect(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32ClientID)
+{
+    return vboxCmdVbvaConDisconnect(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, u32ClientID);
+}
+
+VBOXCMDVBVA_CRCMD_CMD* vboxCmdVbvaConCmdAlloc(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, uint32_t cbCmd)
+{
+    VBOXCMDVBVA_CTL_3DCTL_CMD *pCmd = (VBOXCMDVBVA_CTL_3DCTL_CMD*)vboxCmdVbvaCtlCreate(pHGSMICtx, sizeof (VBOXCMDVBVA_CTL_3DCTL_CMD) + cbCmd);
+    if (!pCmd)
+    {
+        WARN(("vboxCmdVbvaCtlCreate failed"));
+        return NULL;
+    }
+    pCmd->Hdr.u32Type = VBOXCMDVBVACTL_TYPE_3DCTL;
+    pCmd->Hdr.i32Result = VERR_NOT_SUPPORTED;
+    pCmd->Cmd.Hdr.u32Type = VBOXCMDVBVA3DCTL_TYPE_CMD;
+    pCmd->Cmd.Hdr.u32CmdClientId = 0;
+    pCmd->Cmd.Cmd.u8OpCode = VBOXCMDVBVA_OPTYPE_CRCMD;
+    pCmd->Cmd.Cmd.u8Flags = 0;
+    pCmd->Cmd.Cmd.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+    pCmd->Cmd.Cmd.u.i8Result = -1;
+    pCmd->Cmd.Cmd.u32FenceID = 0;
+
+    return (VBOXCMDVBVA_CRCMD_CMD*)(pCmd+1);
+}
+
+void vboxCmdVbvaConCmdFree(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CRCMD_CMD *pCmd)
+{
+    VBOXCMDVBVA_CTL_3DCTL_CMD *pHdr = ((VBOXCMDVBVA_CTL_3DCTL_CMD*)pCmd)-1;
+    vboxCmdVbvaCtlFree(pHGSMICtx, &pHdr->Hdr);
+}
+
+int vboxCmdVbvaConSubmitAsync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CRCMD_CMD* pCmd, FNVBOXSHGSMICMDCOMPLETION pfnCompletion, void *pvCompletion)
+{
+    VBOXCMDVBVA_CTL_3DCTL_CMD *pHdr = ((VBOXCMDVBVA_CTL_3DCTL_CMD*)pCmd)-1;
+    return vboxCmdVbvaCtlSubmitAsync(pHGSMICtx, &pHdr->Hdr, pfnCompletion, pvCompletion);
+}
+
+VBOXCMDVBVA_CRCMD_CMD* VBoxCmdVbvaConCmdAlloc(PVBOXMP_DEVEXT pDevExt, uint32_t cbCmd)
+{
+    return vboxCmdVbvaConCmdAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, cbCmd);
+}
+
+void VBoxCmdVbvaConCmdFree(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA_CRCMD_CMD *pCmd)
+{
+    vboxCmdVbvaConCmdFree(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pCmd);
+}
+
+int VBoxCmdVbvaConCmdSubmitAsync(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA_CRCMD_CMD* pCmd, FNVBOXSHGSMICMDCOMPLETION pfnCompletion, void *pvCompletion)
+{
+    return vboxCmdVbvaConSubmitAsync(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pCmd, pfnCompletion, pvCompletion);
+}
+
+int VBoxCmdVbvaConCmdCompletionData(void *pvCmd, VBOXCMDVBVA_CRCMD_CMD **ppCmd)
+{
+    VBOXCMDVBVA_CTL_3DCTL_CMD *pCmd = (VBOXCMDVBVA_CTL_3DCTL_CMD*)pvCmd;
+    if (ppCmd)
+        *ppCmd = (VBOXCMDVBVA_CRCMD_CMD*)(pCmd+1);
+    return pCmd->Hdr.i32Result;
+}

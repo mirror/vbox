@@ -3088,17 +3088,64 @@ DxgkDdiSubmitCommandNew(
 
     /* the DMA command buffer is located in system RAM, the host will need to pick it from there */
     //BufInfo.fFlags = 0; /* see VBOXVDMACBUF_FLAG_xx */
+    VBOXCMDVBVA_HDR *pHdr;
+    VBOXCMDVBVA_SYSMEMCMD SysMem;
     uint32_t cbCmd = pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset - pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset;
-    if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
+    if (!cbCmd)
     {
-        WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
-                pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset,
-                pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset,
-                sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
-        return STATUS_INVALID_PARAMETER;
-    }
+        cbCmd = pSubmitCommand->DmaBufferSubmissionEndOffset - pSubmitCommand->DmaBufferSubmissionStartOffset;
+        if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
+        {
+            WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
+                    pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset,
+                    pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset,
+                    sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
+            return STATUS_INVALID_PARAMETER;
+        }
 
-    VBOXCMDVBVA_HDR *pHdr = (VBOXCMDVBVA_HDR*)((uint8_t*)pSubmitCommand->pDmaBufferPrivateData + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
+        if (cbCmd > 0xffff)
+        {
+            WARN(("cbCmd too big"));
+            return STATUS_INVALID_PARAMETER;
+        }
+
+        if (VBOXWDDM_DUMMY_DMABUFFER_SIZE == cbCmd)
+        {
+            SysMem.Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
+            SysMem.Hdr.u8Flags = 0;
+            SysMem.Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+            cbCmd = sizeof (SysMem.Hdr);
+        }
+        else
+        {
+            SysMem.Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_SYSMEMCMD;
+            SysMem.Hdr.u8Flags = cbCmd & 0xff;
+            SysMem.Hdr.u.u8PrimaryID = (cbCmd >> 8) & 0xff;
+            SysMem.Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+            SysMem.phSysMem = pSubmitCommand->DmaBufferPhysicalAddress.QuadPart + pSubmitCommand->DmaBufferSubmissionStartOffset;
+            if (SysMem.phSysMem & PAGE_OFFSET_MASK)
+            {
+                WARN(("command should be page aligned for now"));
+                return STATUS_INVALID_PARAMETER;
+            }
+        }
+
+        pHdr = &SysMem.Hdr;
+        cbCmd = sizeof (SysMem);
+    }
+    else
+    {
+        if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
+        {
+            WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
+                    pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset,
+                    pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset,
+                    sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
+            return STATUS_INVALID_PARAMETER;
+        }
+
+        pHdr = (VBOXCMDVBVA_HDR*)((uint8_t*)pSubmitCommand->pDmaBufferPrivateData + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
+    }
     pHdr->u32FenceID = pSubmitCommand->SubmissionFenceId;
     int rc = VBoxCmdVbvaSubmit(pDevExt, &pDevExt->CmdVbva, pHdr, cbCmd);
     if (RT_SUCCESS(rc))
@@ -3367,12 +3414,6 @@ DxgkDdiBuildPagingBufferNew(
     {
         case DXGK_OPERATION_TRANSFER:
         {
-            VBOXCMDVBVA_HDR *pHdr = (VBOXCMDVBVA_HDR*)pBuildPagingBuffer->pDmaBuffer;
-            pHdr->u8Flags = 0;
-            pHdr->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-            /* sanity */
-            pHdr->u32FenceID = 0;
-
             if ((!pBuildPagingBuffer->Transfer.Source.SegmentId) == (!pBuildPagingBuffer->Transfer.Destination.SegmentId))
             {
                 WARN(("we only support RAM <-> VRAM moves, Src Seg(%d), Dst Seg(%d)", pBuildPagingBuffer->Transfer.Source.SegmentId, pBuildPagingBuffer->Transfer.Destination.SegmentId));
@@ -3388,21 +3429,24 @@ DxgkDdiBuildPagingBufferNew(
 
             if (pAlloc->AllocData.hostID)
             {
-                pHdr->u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
                 cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
-                cbPrivateData = sizeof (*pHdr);
                 break;
             }
 
-            if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_PAGING_TRANSFER))
+            if (pBuildPagingBuffer->DmaSize < sizeof (VBOXCMDVBVA_PAGING_TRANSFER))
             {
-                WARN(("pBuildPagingBuffer->DmaBufferPrivateDataSize(%d) < sizeof VBOXCMDVBVA_PAGING_TRANSFER (%d)", pBuildPagingBuffer->DmaBufferPrivateDataSize , sizeof (VBOXCMDVBVA_PAGING_TRANSFER)));
+                WARN(("pBuildPagingBuffer->DmaSize(%d) < sizeof VBOXCMDVBVA_PAGING_TRANSFER (%d)", pBuildPagingBuffer->DmaSize , sizeof (VBOXCMDVBVA_PAGING_TRANSFER)));
                 /* @todo: can this actually happen? what status to return? */
                 return STATUS_INVALID_PARAMETER;
             }
 
             VBOXCMDVBVA_PAGING_TRANSFER *pPaging = (VBOXCMDVBVA_PAGING_TRANSFER*)pBuildPagingBuffer->pDmaBuffer;
             pPaging->Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_PAGING_TRANSFER;
+            /* sanity */
+            pPaging->Hdr.u8Flags = 0;
+            pPaging->Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+            pPaging->Hdr.u32FenceID = 0;
+
 
             PMDL pMdl;
             uint32_t offVRAM;
@@ -3436,13 +3480,12 @@ DxgkDdiBuildPagingBufferNew(
             pPaging->Alloc.u.offVRAM = offVRAM;
             if (fIn)
                 pPaging->Hdr.u8Flags |= VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN;
-            cbPrivateData = VBoxCVDdiPTransferVRamSysBuildEls(pPaging, pMdl, iFirstPage, cPages, pBuildPagingBuffer->DmaBufferPrivateDataSize, &cPagesWritten);
+            cbBuffer = VBoxCVDdiPTransferVRamSysBuildEls(pPaging, pMdl, iFirstPage, cPages, pBuildPagingBuffer->DmaBufferPrivateDataSize, &cPagesWritten);
             if (cPagesWritten != cPages)
                 pBuildPagingBuffer->MultipassOffset += cPagesWritten;
             else
                 pBuildPagingBuffer->MultipassOffset = 0;
 
-            cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
             break;
         }
         case DXGK_OPERATION_FILL:
@@ -3474,6 +3517,8 @@ DxgkDdiBuildPagingBufferNew(
             break;
         }
     }
+
+    Assert(!cbPrivateData);
 
     pBuildPagingBuffer->pDmaBuffer = ((uint8_t*)pBuildPagingBuffer->pDmaBuffer) + cbBuffer;
     pBuildPagingBuffer->pDmaBufferPrivateData = ((uint8_t*)pBuildPagingBuffer->pDmaBufferPrivateData) + cbPrivateData;
@@ -6607,7 +6652,7 @@ DxgkDdiCreateContext(
             if (!VBOXWDDM_IS_DISPLAYONLY() && pDevExt->f3DEnabled)
             {
                 VBoxMpCrPackerInit(&pContext->CrPacker);
-                int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pContext->u32CrConClientID);
+                int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pContext->u32CrConClientID);
                 if (!RT_SUCCESS(rc))
                     WARN(("VBoxMpCrCtlConConnect failed rc (%d), ignoring for system context", rc));
             }
@@ -6643,7 +6688,7 @@ DxgkDdiCreateContext(
                                     {
                                         if (pDevExt->f3DEnabled)
                                         {
-                                            int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
+                                            int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
                                                 pInfo->crVersionMajor, pInfo->crVersionMinor,
                                                 &pContext->u32CrConClientID);
                                             if (RT_SUCCESS(rc))
@@ -6688,7 +6733,7 @@ DxgkDdiCreateContext(
                             {
                                 if (pDevExt->f3DEnabled)
                                 {
-                                    int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
+                                    int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
                                         pInfo->crVersionMajor, pInfo->crVersionMinor,
                                         &pContext->u32CrConClientID);
                                     if (!RT_SUCCESS(rc))
@@ -6824,7 +6869,7 @@ DxgkDdiDestroyContext(
 
     if (pContext->u32CrConClientID)
     {
-        VBoxMpCrCtlConDisconnect(&pDevExt->CrCtlCon, pContext->u32CrConClientID);
+        VBoxMpCrCtlConDisconnect(pDevExt, &pDevExt->CrCtlCon, pContext->u32CrConClientID);
     }
 
     vboxWddmModeRenderFromShadowDisableUnregister(pDevExt, pContext);

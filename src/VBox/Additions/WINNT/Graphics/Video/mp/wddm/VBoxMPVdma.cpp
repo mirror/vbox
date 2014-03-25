@@ -357,13 +357,13 @@ NTSTATUS vboxVdmaCrSubmitWriteReadAsync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER 
             {
                 return STATUS_SUCCESS;
             }
-            WARN(("VBoxMpCrShgsmiTransportCmdSubmitWriteAsync failed, rc %d", rc));
+            WARN(("VBoxMpCrShgsmiTransportCmdSubmitWriteReadAsync failed, rc %d", rc));
             Status = STATUS_UNSUCCESSFUL;
             VBoxMpCrShgsmiTransportCmdTermWriteReadAsync(&pDevExt->CrHgsmiTransport, pvCompletionData);
         }
         else
         {
-            WARN(("VBoxMpCrShgsmiTransportCmdCreateWriteAsync failed"));
+            WARN(("VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync failed"));
             Status = STATUS_INSUFFICIENT_RESOURCES;
         }
     }
@@ -1040,7 +1040,7 @@ static NTSTATUS vboxVdmaCrCtlGetDefaultCtxId(PVBOXMP_DEVEXT pDevExt, int32_t *pi
         VBOXMP_CRPACKER CrPacker;
         VBoxMpCrPackerInit(&CrPacker);
 
-        int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pDevExt->u32CrConDefaultClientID);
+        int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pDevExt->u32CrConDefaultClientID);
         if (!RT_SUCCESS(rc))
         {
             WARN(("VBoxMpCrCtlConConnect failed, rc %d", rc));
@@ -1098,7 +1098,7 @@ static NTSTATUS vboxVdmaCrCtlGetDefaultClientId(PVBOXMP_DEVEXT pDevExt, uint32_t
             return STATUS_UNSUCCESSFUL;
         }
 
-        int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pDevExt->u32CrConDefaultClientID);
+        int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pDevExt->u32CrConDefaultClientID);
         if (!RT_SUCCESS(rc))
         {
             WARN(("VBoxMpCrCtlConConnect failed, rc %d", rc));
@@ -1615,8 +1615,7 @@ static DECLCALLBACK(void) vboxVdmaCBufDrCompletion(PVBOXSHGSMI pHeap, void *pvCm
     vboxVdmaCBufDrFree (pInfo, (PVBOXVDMACBUF_DR)pvCmd);
 }
 
-static DECLCALLBACK(void) vboxVdmaCBufDrCompletionIrq(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext,
-                                        PFNVBOXSHGSMICMDCOMPLETION *ppfnCompletion, void **ppvCompletion)
+static DECLCALLBACK(PFNVBOXSHGSMICMDCOMPLETION) vboxVdmaCBufDrCompletionIrq(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext, void **ppvCompletion)
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvContext;
     PVBOXVDMAINFO pVdma = &pDevExt->u.primary.Vdma;
@@ -1645,7 +1644,7 @@ static DECLCALLBACK(void) vboxVdmaCBufDrCompletionIrq(PVBOXSHGSMI pHeap, void *p
     }
 
     /* inform SHGSMI we DO NOT want to be called at DPC later */
-    *ppfnCompletion = NULL;
+    return NULL;
 //    *ppvCompletion = pvContext;
 }
 
