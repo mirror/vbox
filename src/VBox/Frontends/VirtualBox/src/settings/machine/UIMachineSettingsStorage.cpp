@@ -122,9 +122,9 @@ PixmapPool::PixmapPool (QObject *aParent)
     mPool [HDNewEn]                  = QPixmap (":/hd_new_16px.png");
     mPool [HDNewDis]                 = QPixmap (":/hd_new_disabled_16px.png");
     mPool [CDUnmountEnabled]         = QPixmap (":/cd_unmount_16px.png");
-    mPool [CDUnmountDisabled]        = QPixmap (":/cd_unmount_dis_16px.png");
+    mPool [CDUnmountDisabled]        = QPixmap (":/cd_unmount_disabled_16px.png");
     mPool [FDUnmountEnabled]         = QPixmap (":/fd_unmount_16px.png");
-    mPool [FDUnmountDisabled]        = QPixmap (":/fd_unmount_dis_16px.png");
+    mPool [FDUnmountDisabled]        = QPixmap (":/fd_unmount_disabled_16px.png");
 }
 
 QPixmap PixmapPool::pixmap (PixmapType aType) const
