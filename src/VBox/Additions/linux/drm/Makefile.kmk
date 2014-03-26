@@ -84,6 +84,7 @@ else
    ../../common/VBoxVideo/Modesetting.cpp \
    ../../common/VBoxVideo/VBVABase.cpp \
    ../../../GuestHost/HGSMI/HGSMICommon.cpp \
+   ../../../GuestHost/HGSMI/HGSMIMemAlloc.cpp \
    ../../../Runtime/common/alloc/heapoffset.cpp \
  	vbox_drv.c \
  	vbox_fb.c \
