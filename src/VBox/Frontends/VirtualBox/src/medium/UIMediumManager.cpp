@@ -1006,8 +1006,8 @@ void UIMediumManager::prepareActions()
         /* Configure copy-action: */
         m_pActionCopy->setShortcut(QKeySequence("Ctrl+O"));
         m_pActionCopy->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                       ":/hd_add_22px.png", ":/hd_add_16px.png",
-                                                       ":/hd_add_disabled_22px.png", ":/hd_add_disabled_16px.png"));
+                                                       ":/hd_copy_22px.png", ":/hd_copy_16px.png",
+                                                       ":/hd_copy_disabled_22px.png", ":/hd_copy_disabled_16px.png"));
         connect(m_pActionCopy, SIGNAL(triggered()), this, SLOT(sltCopyMedium()));
     }
 
