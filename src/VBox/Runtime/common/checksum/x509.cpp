@@ -361,10 +361,14 @@ RTDECL(int) RTX509CertificateVerify(void *pvBuf, unsigned int cbSize)
                 else
                     rc = VERR_X509_CERTIFICATE_VERIFICATION_FAILURE;
             }
+            else
+            {
+                rc = VINF_NOT_SELFSIGNED_X509_CERTIFICATE;
+            }
         }
         else
         {
-            rc = VERR_NOT_SELFSIGNED_X509_CERTIFICATE;
+            rc = VINF_NOT_SELFSIGNED_X509_CERTIFICATE;
         }
 
         break;
