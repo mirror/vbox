@@ -88,6 +88,9 @@ PixmapPool::PixmapPool (QObject *aParent)
     mPool [SCSIControllerNormal]     = QPixmap (":/scsi_16px.png");
     mPool [SCSIControllerExpand]     = QPixmap (":/scsi_expand_16px.png");
     mPool [SCSIControllerCollapse]   = QPixmap (":/scsi_collapse_16px.png");
+    mPool [USBControllerNormal]      = QPixmap (":/usb_16px.png");
+    mPool [USBControllerExpand]      = QPixmap (":/usb_expand_16px.png");
+    mPool [USBControllerCollapse]    = QPixmap (":/usb_collapse_16px.png");
     mPool [FloppyControllerNormal]   = QPixmap (":/floppy_16px.png");
     mPool [FloppyControllerExpand]   = QPixmap (":/floppy_expand_16px.png");
     mPool [FloppyControllerCollapse] = QPixmap (":/floppy_collapse_16px.png");
@@ -98,6 +101,8 @@ PixmapPool::PixmapPool (QObject *aParent)
     mPool [SATAControllerAddDis]     = QPixmap (":/sata_add_disabled_16px.png");
     mPool [SCSIControllerAddEn]      = QPixmap (":/scsi_add_16px.png");
     mPool [SCSIControllerAddDis]     = QPixmap (":/scsi_add_disabled_16px.png");
+    mPool [USBControllerAddEn]       = QPixmap (":/usb_add_16px.png");
+    mPool [USBControllerAddDis]      = QPixmap (":/usb_add_disabled_16px.png");
     mPool [FloppyControllerAddEn]    = QPixmap (":/floppy_add_16px.png");
     mPool [FloppyControllerAddDis]   = QPixmap (":/floppy_add_disabled_16px.png");
 
@@ -156,7 +161,7 @@ AbstractControllerType::AbstractControllerType (KStorageBus aBusType, KStorageCo
                 mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SATAControllerNormal + i);
                 break;
             case KStorageBus_USB:
-                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SATAControllerNormal + i);
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::USBControllerNormal + i);
                 break;
             default:
                 break;
@@ -1844,8 +1849,8 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
                                                   PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddDis)));
 
     mAddUSBCtrAction = new QAction (this);
-    mAddUSBCtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddEn),
-                                                  PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddDis)));
+    mAddUSBCtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::USBControllerAddEn),
+                                                  PixmapPool::pool()->pixmap (PixmapPool::USBControllerAddDis)));
 
     mDelCtrAction = new QAction (this);
     mDelCtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::ControllerDelEn),
