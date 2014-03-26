@@ -426,6 +426,7 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
         mActionGroup->addAction (item->action());
         mTbSelector->addAction (item->action());
         QITabWidget *tabWidget= new QITabWidget();
+        tabWidget->setIconSize(QSize(24, 24));
         tabWidget->setContentsMargins (0, 0, 0, 0);
 //        connect (tabWidget, SIGNAL (currentChanged (int)),
 //                 this, SLOT (settingsGroupChanged (int)));
