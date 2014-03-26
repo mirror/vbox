@@ -678,14 +678,10 @@ typedef struct VBOXVDMAHOST
 int VBoxVDMAThreadNotifyConstructSucceeded(PVBOXVDMATHREAD pThread)
 {
     Assert(pThread->u32State == VBOXVDMATHREAD_STATE_TERMINATED);
+    pThread->u32State = VBOXVDMATHREAD_STATE_CREATED;
     int rc = RTSemEventSignal(pThread->hClientEvent);
     AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-        pThread->u32State = VBOXVDMATHREAD_STATE_CREATED;
-        return VINF_SUCCESS;
-    }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 int VBoxVDMAThreadNotifyConstructFailed(PVBOXVDMATHREAD pThread)
@@ -1278,7 +1274,7 @@ static int8_t vboxVDMACrCmdVbvaPagingDataInit(PVGASTATE pVGAState, const VBOXCMD
     }
 
     uint8_t *pu8Vram = pu8VramBase + pTransfer->Alloc.u.offVRAM;
-    bool fIn = (pTransfer->Hdr.u8Flags & VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN);
+    bool fIn = !!(pTransfer->Hdr.u8Flags & VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN);
 
     *ppSysMem = pSysMem;
     *pcSysMem = cSysMem;
