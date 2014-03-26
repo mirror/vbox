@@ -2102,6 +2102,10 @@ HRESULT Appliance::i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORA
         vrc = RTRSAVerify(pvCertBuf, (unsigned int)cbCertSize, manifestDigest.c_str(), digestType);
         if (RT_SUCCESS(vrc))
         {
+            /*
+             * possible step in the future. Not obligatory due to OVF2.0 standard
+             * OVF2.0:"A consumer of the OVF package shall verify the signature and should validate the certificate"
+             */
             vrc = RTX509CertificateVerify(pvCertBuf, (unsigned int)cbCertSize);
         }
 
@@ -2156,13 +2160,20 @@ HRESULT Appliance::i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORA
                     case VERR_X509_CERTIFICATE_VERIFICATION_FAILURE:
                         errStrDesc = "X509 certificate verification failure ";
                         break;
-                    case VERR_NOT_SELFSIGNED_X509_CERTIFICATE:
-                        errStrDesc = "Only self signed X509 certificates are supported at moment";
-                        break;
                     default:
                         errStrDesc = "Unknown error during X509 certificate verification";
                 }
                 rc = setError(VBOX_E_FILE_ERROR, tr(errStrDesc.c_str()));
+            }
+        }
+        else
+        {
+            if(vrc == VINF_NOT_SELFSIGNED_X509_CERTIFICATE)
+            {
+                setWarning(VBOX_E_FILE_ERROR, 
+                           tr("Signature from the X509 certificate has been verified. "
+                              "But VirtualBox can't validate the given X509 certificate. "
+                              "Only self signed X509 certificates are supported at moment. \n"));
             }
         }
     }
