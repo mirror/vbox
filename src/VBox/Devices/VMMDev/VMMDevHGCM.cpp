@@ -92,9 +92,6 @@ struct VBOXHGCMCMD
     /** Whether the command is in the active commands list. */
     bool fInList;
 
-    /** Whether the command was saved. */
-    bool fSaved;
-
     /** GC physical address of the guest request. */
     RTGCPHYS        GCPhys;
 
@@ -1955,9 +1952,9 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
     VBOXDD_HGCMCALL_COMPLETED_EMT(pCmd, result);
     vmmdevHGCMRemoveCommand (pThis, pCmd);
 
-    if (pCmd->fCancelled || pCmd->fSaved)
+    if (pCmd->fCancelled)
     {
-        LogFlowFunc(("A cancelled command %p: %d %d\n", pCmd, pCmd->fCancelled, pCmd->fSaved));
+        LogFlowFunc(("A cancelled command %p: %d\n", pCmd, pCmd->fCancelled));
     }
     else
     {
@@ -2507,12 +2504,6 @@ int vmmdevHGCMSaveState(PVMMDEV pThis, PSSMHANDLE pSSM)
             rc = SSMR3PutU32(pSSM, 0);
             AssertRCReturn(rc, rc);
 
-            /* Mark the command as saved to make sure that it will not be
-             * completed later by a still running host service.
-             */
-            pIter->fSaved = true;
-            vmmdevHGCMRemoveCommand (pThis, pIter);
-
             pIter = pNext;
         }
     }
@@ -2986,4 +2977,26 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis, PSSMHANDLE pSSM)
     }
 
     return rc;
+}
+
+void vmmdevHGCMDestroy(PVMMDEV pThis)
+{
+    LogFlowFunc(("\n"));
+
+    PVBOXHGCMCMD pIter = pThis->pHGCMCmdList;
+
+    while (pIter)
+    {
+        PVBOXHGCMCMD pNext = pIter->pNext;
+
+        vmmdevHGCMRemoveCommand(pThis, pIter);
+
+        /* Deallocate the command memory. */
+        RTMemFree(pIter->paLinPtrs);
+        RTMemFree(pIter);
+
+        pIter = pNext;
+    }
+
+    return;
 }
