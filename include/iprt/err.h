@@ -1900,6 +1900,8 @@ RT_C_DECLS_END
 #define VERR_X509_CERTIFICATE_VERIFICATION_FAILURE  (-22808)
 /** Error X509 certificate isn't self signed */
 #define VERR_NOT_SELFSIGNED_X509_CERTIFICATE        (-22809)
+/** Warning X509 certificate isn't self signed  */
+#define VINF_NOT_SELFSIGNED_X509_CERTIFICATE        (22809)
 /** @} */
 
 /* SED-END */
