@@ -158,8 +158,7 @@ HRESULT Progress::getTimeRemaining(LONG *aTimeRemaining)
             uint64_t ullTimeTotal = (uint64_t)(ullTimeElapsed * 100 / dPercentDone);
             uint64_t ullTimeRemaining = ullTimeTotal - ullTimeElapsed;
 
-//          Log(("Progress::GetTimeRemaining: dPercentDone %RI32, ullTimeNow =
-//          %RI64, ullTimeElapsed = %RI64, ullTimeTotal = %RI64, ullTimeRemaining = %RI64\n",
+//          Log(("Progress::GetTimeRemaining: dPercentDone %RI32, ullTimeNow = %RI64, ullTimeElapsed = %RI64, ullTimeTotal = %RI64, ullTimeRemaining = %RI64\n",
 //          (uint32_t)dPercentDone, ullTimeNow, ullTimeElapsed, ullTimeTotal, ullTimeRemaining));
 
             *aTimeRemaining = (LONG)(ullTimeRemaining / 1000);
@@ -443,8 +442,7 @@ HRESULT Progress::init(
                        ULONG ulFirstOperationWeight,
                        OUT_GUID aId /* = NULL */)
 {
-    Utf8Str str = "aDescription=\"%s\", cOperations=%d, ulTotalOperationsWeight=%d, ";
-    LogFlowThisFunc((str.c_str(),
+    LogFlowThisFunc(("aDescription=\"%ls\", cOperations=%d, ulTotalOperationsWeight=%d, bstrFirstOperationDescription=\"%ls\", ulFirstOperationWeight=%d\n",
                      aDescription.c_str(),
                      cOperations,
                      ulTotalOperationsWeight,
@@ -907,11 +905,8 @@ HRESULT Progress::setNextOperation(const com::Utf8Str &aNextOperationDescription
     m_ulCurrentOperationWeight = aNextOperationsWeight;
     m_ulOperationPercent = 0;
 
-    Utf8Str str;
-    str = "Progress::setNextOperation(%s): ulNextOperationsWeight = %d; m_ulCurrentOperation is now %d,";
-    str += "m_ulOperationsCompletedWeight is now %d\n";
-    Log((str.c_str(), m_operationDescription.c_str(), aNextOperationsWeight, m_ulCurrentOperation,
-         m_ulOperationsCompletedWeight));
+    Log(("Progress::setNextOperation(%s): aNextOperationsWeight = %d; m_ulCurrentOperation is now %d, m_ulOperationsCompletedWeight is now %d\n",
+         m_operationDescription.c_str(), aNextOperationsWeight, m_ulCurrentOperation, m_ulOperationsCompletedWeight));
 
     /* wake up all waiting threads */
     if (mWaitersCount > 0)

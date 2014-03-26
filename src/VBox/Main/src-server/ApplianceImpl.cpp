@@ -936,11 +936,8 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
             break;
         }
     }
-
-    Utf8Str str;
-    str = "Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d,";
-    str +=  "ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n";
-    Log((str.c_str(), m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightForXmlOperation));
+    Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n",
+         m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightForXmlOperation));
 
     rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
                          bstrDescription.raw(),

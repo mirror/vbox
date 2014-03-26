@@ -2155,12 +2155,9 @@ int GuestSession::i_queryInfo(void)
     static short s_gctrlLegacyWarning = 0;
     if (   mData.mProtocolVersion < 2
         && s_gctrlLegacyWarning++ < 3) /** @todo Find a bit nicer text. */
-    {
-        Utf8Str str;
-        str = "Warning: Guest Additions are older (%ld.%ld) than host";
-        str += " capabilities for guest control, please upgrade them. Using protocol version %ld now\n";
-        LogRel((tr(str.c_str()), uVBoxMajor, uVBoxMinor, mData.mProtocolVersion));
-    }
+        LogRel((tr("Warning: Guest Additions are older (%ld.%ld) than host capabilities for guest control, please upgrade them. Using protocol version %ld now\n"),
+                uVBoxMajor, uVBoxMinor, mData.mProtocolVersion));
+
     return VINF_SUCCESS;
 }
 

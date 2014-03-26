@@ -313,12 +313,9 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile, const char *a_pszDigest
     /** @todo drop this restriction after the old install interface is
      *        dropped. */
     if (!strSavedName.equalsIgnoreCase(m->Desc.strName))
-    {
-        Utf8Str str;
-        str = "Extension pack name mismatch between the downloaded file";
-        str += "and the XML inside it (xml='%s' file='%s')";
-        return initFailed(tr(str.c_str()), m->Desc.strName.c_str(), strSavedName.c_str());
-    }
+        return initFailed(tr("Extension pack name mismatch between the downloaded file and the XML inside it (xml='%s' file='%s')"),
+                          m->Desc.strName.c_str(), strSavedName.c_str());
+
 
     m->fUsable = true;
     m->strWhyUnusable.setNull();
