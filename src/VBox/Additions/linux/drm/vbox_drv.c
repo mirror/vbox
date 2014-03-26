@@ -101,18 +101,37 @@ static struct drm_ioctl_desc vbox_ioctls[] =
                       DRM_UNLOCKED|DRM_ROOT_ONLY)
 };
 
+/* Intercept the old-style cursor IOCtl which does not pass the hot-spot to stop
+ * the kernel from translating it to a new-style one with a zero hot-spot, which
+ * we do not want. */
+static long vbox_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+    if (cmd != DRM_IOCTL_MODE_CURSOR)
+        return drm_ioctl(filp, cmd, arg);
+    return -EINVAL;
+}
+
+#ifdef CONFIG_COMPAT
+static long vbox_compat_ioctl(struct file *filp, unsigned int cmd, 
+                              unsigned long arg)
+{
+    if (cmd != DRM_IOCTL_MODE_CURSOR)
+        return drm_compat_ioctl(filp, cmd, arg);
+    return -EINVAL;
+}
+#endif
 
 static const struct file_operations vbox_fops =
 {
     .owner = THIS_MODULE,
     .open = drm_open,
     .release = drm_release,
-    .unlocked_ioctl = drm_ioctl,
+    .unlocked_ioctl = vbox_ioctl,
     .mmap = vbox_mmap,
     .poll = drm_poll,
     .fasync = drm_fasync,
 #ifdef CONFIG_COMPAT
-    .compat_ioctl = drm_compat_ioctl,
+    .compat_ioctl = vbox_compat_ioctl,
 #endif
     .read = drm_read,
 };

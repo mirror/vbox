@@ -77,6 +77,9 @@
 #define DRIVER_MINOR        0
 #define DRIVER_PATCHLEVEL   0
 
+#define VBOX_MAX_CURSOR_WIDTH  64
+#define VBOX_MAX_CURSOR_HEIGHT 64
+
 struct vbox_fbdev;
 
 struct vbox_private
@@ -107,10 +110,6 @@ struct vbox_private
         struct ttm_bo_device bdev;
     } ttm;
 
-    struct drm_gem_object *cursor_cache;
-    uint64_t cursor_cache_gpu_addr;
-    struct ttm_bo_kmap_obj cache_kmap;
-    int next_cursor;
     spinlock_t dev_lock;
 };
 
