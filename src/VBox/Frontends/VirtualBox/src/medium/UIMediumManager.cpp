@@ -1017,8 +1017,8 @@ void UIMediumManager::prepareActions()
         /* Configure modify-action: */
         m_pActionModify->setShortcut(QKeySequence("Ctrl+Space"));
         m_pActionModify->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                         ":/hd_new_22px.png", ":/hd_new_16px.png",
-                                                         ":/hd_new_disabled_22px.png", ":/hd_new_disabled_16px.png"));
+                                                         ":/hd_modify_22px.png", ":/hd_modify_16px.png",
+                                                         ":/hd_modify_disabled_22px.png", ":/hd_modify_disabled_16px.png"));
         connect(m_pActionModify, SIGNAL(triggered()), this, SLOT(sltModifyMedium()));
     }
 
