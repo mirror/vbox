@@ -494,7 +494,6 @@ RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * Pass the host a new mouse pointer shape via an HGSMI command.
  *
  * @returns  success or failure
- * @todo  why not return an iprt status code?
  * @param  fFlags    cursor flags, @see VMMDevReqMousePointer::fFlags
  * @param  cHotX     horizontal position of the hot spot
  * @param  cHotY     vertical position of the hot spot
@@ -503,7 +502,7 @@ RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  pPixels   pixel data, @see VMMDevReqMousePointer for the format
  * @param  cbLength  size in bytes of the pixel data
  */
-RTDECL(bool) VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+RTDECL(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                          uint32_t fFlags,
                                          uint32_t cHotX,
                                          uint32_t cHotY,
@@ -531,7 +530,7 @@ RTDECL(bool) VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     {
         LogFunc(("calculated pointer data size is too big (%d bytes, limit %d)\n",
                  cbData, cbLength));
-        return false;
+        return VERR_INVALID_PARAMETER;
     }
     /* Allocate the IO buffer. */
     p = (VBVAMOUSEPOINTERSHAPE *)VBoxHGSMIBufferAlloc(pCtx,
@@ -562,7 +561,7 @@ RTDECL(bool) VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     else
         rc = VERR_NO_MEMORY;
     LogFlowFunc(("rc %d\n", rc));
-    return RT_SUCCESS(rc);
+    return rc;
 }
 
 

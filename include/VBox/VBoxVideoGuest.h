@@ -245,7 +245,7 @@ RTDECL(int)      VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                           uint32_t cbHostArea);
 RTDECL(int)      VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                     uint32_t u32Index, uint32_t *pulValue);
-RTDECL(bool)     VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+RTDECL(int)      VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint32_t fFlags,
                                              uint32_t cHotX,
                                              uint32_t cHotY,

@@ -68,12 +68,14 @@ VP_STATUS VBoxMPCmnRegQueryDword(IN VBOXMPCMNREGISTRY Reg, PWSTR pName, uint32_t
 /* Pointer related */
 inline bool VBoxMPCmnUpdatePointerShape(PVBOXMP_COMMON pCommon, PVIDEO_POINTER_ATTRIBUTES pAttrs, uint32_t cbLength)
 {
-    return VBoxHGSMIUpdatePointerShape(&pCommon->guestCtx,
+    int rc;
+    rc =   VBoxHGSMIUpdatePointerShape(&pCommon->guestCtx,
                                        pAttrs->Enable & 0x0000FFFF,
                                        (pAttrs->Enable >> 16) & 0xFF,
                                        (pAttrs->Enable >> 24) & 0xFF,
                                        pAttrs->Width, pAttrs->Height, pAttrs->Pixels,
                                        cbLength - sizeof(VIDEO_POINTER_ATTRIBUTES));
+    return RT_SUCCESS(rc);
 }
 
 RT_C_DECLS_END

@@ -531,8 +531,8 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
         pm += (w + 7) / 8;
     }
 
-    rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, fFlags, bitsp->xhot,
-                                     bitsp->yhot, w, h, p, sizeData);
+    VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, fFlags, bitsp->xhot,
+                                bitsp->yhot, w, h, p, sizeData);
     free(p);
 }
 #endif
