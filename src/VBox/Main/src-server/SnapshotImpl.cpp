@@ -1421,11 +1421,9 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     if (   mData->mCurrentSnapshot
         && mData->mCurrentSnapshot->i_getDepth() >= SETTINGS_SNAPSHOT_DEPTH_MAX)
     {
-        Utf8Str str;
-        str = "Cannot take another snapshot for machine '%s', because it exceeds the maximum";
-        str += "snapshot depth limit. Please delete some earlier snapshot which you no longer need";
+
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr(str.c_str()),
+                        tr("Cannot take another snapshot for machine '%s', because it exceeds the maximum snapshot depth limit. Please delete some earlier snapshot which you no longer need"),
                         mUserData->s.strName.c_str());
     }
 
@@ -2117,25 +2115,17 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
 
     size_t childrenCount = pSnapshot->i_getChildrenCount();
     if (childrenCount > 1)
-    {
-        str = "Snapshot '%s' of the machine '%s' cannot be deleted, because it has %d child snapshots,";
-        str += "which is more than the one snapshot allowed for deletion";
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr(str.c_str()),
+                        tr("Snapshot '%s' of the machine '%s' cannot be deleted, because it has %d child snapshots, which is more than the one snapshot allowed for deletion"),
                         pSnapshot->i_getName().c_str(),
                         mUserData->s.strName.c_str(),
                         childrenCount);
-    }
 
     if (pSnapshot == mData->mCurrentSnapshot && childrenCount >= 1)
-    {
-        str = "Snapshot '%s' of the machine '%s' cannot be deleted, because it is the current";
-        str += "snapshot and has one child snapshot";
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr(str.c_str()),
+                        tr("Snapshot '%s' of the machine '%s' cannot be deleted, because it is the current snapshot and has one child snapshot"),
                         pSnapshot->i_getName().c_str(),
                         mUserData->s.strName.c_str());
-    }
 
     /* If the snapshot being deleted is the current one, ensure current
      * settings are committed and saved.

@@ -676,7 +676,7 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine>
         rc = diff->init(p->getVirtualBox(),
                         pParent->i_getPreferredDiffFormat(),
                         Utf8StrFmt("%s%c", strSnapshotFolder.c_str(), RTPATH_DELIMITER),
-                        Guid::Empty /* empty media registry */);
+                                   Guid::Empty /* empty media registry */);
         if (FAILED(rc)) throw rc;
 
         MediumLockList *pMediumLockList(new MediumLockList());
@@ -1036,7 +1036,7 @@ HRESULT MachineCloneVM::run()
         if (FAILED(rc)) throw rc;
         /* The absolute name of the snapshot folder. */
         strTrgSnapshotFolder = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER,
-                                                    trgMCF.machineUserData.strSnapshotFolder.c_str());
+                                          trgMCF.machineUserData.strSnapshotFolder.c_str());
 
         /* Should we rename the disk names. */
         bool fKeepDiskNames = d->options.contains(CloneOptions_KeepDiskNames);
@@ -1167,7 +1167,7 @@ HRESULT MachineCloneVM::run()
                              * template: "new name-disk1.vdi". */
                             if (strSrcTest == strOldVMName)
                                 strNewName = Utf8StrFmt("%s%s", trgMCF.machineUserData.strName.c_str(),
-                                                                RTPathSuffix(Utf8Str(bstrSrcName).c_str()));
+                                                        RTPathSuffix(Utf8Str(bstrSrcName).c_str()));
                             else if (   strSrcTest.startsWith("{")
                                      && strSrcTest.endsWith("}"))
                             {
@@ -1176,7 +1176,7 @@ HRESULT MachineCloneVM::run()
                                 Guid temp_guid(strSrcTest);
                                 if (temp_guid.isValid() && !temp_guid.isZero())
                                     strNewName = Utf8StrFmt("%s%s", newId.toStringCurly().c_str(),
-                                                                    RTPathSuffix(strNewName.c_str()));
+                                                            RTPathSuffix(strNewName.c_str()));
                             }
                             else
                                 strNewName = Utf8StrFmt("%s-disk%d%s", trgMCF.machineUserData.strName.c_str(), ++cDisks,
@@ -1349,7 +1349,7 @@ HRESULT MachineCloneVM::run()
             if (RT_FAILURE(vrc))
                 throw p->setError(VBOX_E_IPRT_ERROR,
                                   p->tr("Could not create snapshots folder '%s' (%Rrc)"),
-                                  strTrgSnapshotFolder.c_str(), vrc);
+                                        strTrgSnapshotFolder.c_str(), vrc);
         }
         /* Clone all save state files. */
         for (size_t i = 0; i < d->llSaveStateFiles.size(); ++i)
@@ -1360,7 +1360,7 @@ HRESULT MachineCloneVM::run()
 
             /* Move to next sub-operation. */
             rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Copy save state file '%s' ..."),
-                                                RTPathFilename(sst.strSaveStateFile.c_str())).raw(), sst.uWeight);
+                                                        RTPathFilename(sst.strSaveStateFile.c_str())).raw(), sst.uWeight);
             if (FAILED(rc)) throw rc;
             /* Copy the file only if it was not copied already. */
             if (!newFiles.contains(strTrgSaveState.c_str()))

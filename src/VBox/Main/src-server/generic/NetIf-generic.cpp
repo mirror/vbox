@@ -257,8 +257,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
                             progress->i_notifyComplete(E_FAIL,
                                                        COM_IIDOF(IHostNetworkInterface),
                                                        HostNetworkInterface::getStaticComponentName(),
-                                                       "Failed to get config info for %s (as reported by '"
-                                                       VBOXNETADPCTL_NAME " add')\n", szBuf);
+                                                       "Failed to get config info for %s (as reported by '" VBOXNETADPCTL_NAME " add')\n", szBuf);
                         }
                         else
                         {
@@ -288,8 +287,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
                     progress->i_notifyComplete(E_FAIL,
                                                COM_IIDOF(IHostNetworkInterface),
                                                HostNetworkInterface::getStaticComponentName(),
-                                               "Failed to execute '" VBOXNETADPCTL_NAME
-                                               " add' (exit status: %d). Check permissions!", rc);
+                                               "Failed to execute '" VBOXNETADPCTL_NAME " add' (exit status: %d). Check permissions!", rc);
                     pclose(fp);
                 }
             }
