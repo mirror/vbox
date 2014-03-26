@@ -775,7 +775,7 @@ void UIGlobalSettingsNetwork::sltAddNetworkHost()
     CProgress progress = host.CreateHostOnlyNetworkInterface(iface);
     if (!host.isOk())
         return msgCenter().cannotCreateHostInterface(host, this);
-    msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/nw_32px.png", this, 0); // TODO: Change icon!
+    msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/progress_network_interface_90px.png", this, 0);
     if (!progress.isOk() || progress.GetResultCode() != 0)
         return msgCenter().cannotCreateHostInterface(progress, this);
 
@@ -827,7 +827,7 @@ void UIGlobalSettingsNetwork::sltDelNetworkHost()
     CProgress progress = host.RemoveHostOnlyNetworkInterface(iface.GetId());
     if (!host.isOk())
         return msgCenter().cannotRemoveHostInterface(host, strInterfaceName, this);
-    msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/nw_32px.png", this, 0); // TODO: Change icon!
+    msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/progress_network_interface_90px.png", this, 0);
     if (!progress.isOk() || progress.GetResultCode() != 0)
         return msgCenter().cannotRemoveHostInterface(progress, strInterfaceName, this);
 
