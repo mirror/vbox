@@ -1646,20 +1646,21 @@ typedef struct VBOXWDDM_GETDPCDATA_CONTEXT
 BOOLEAN vboxWddmGetDPCDataCallback(PVOID Context)
 {
     PVBOXWDDM_GETDPCDATA_CONTEXT pdc = (PVBOXWDDM_GETDPCDATA_CONTEXT)Context;
-
-    vboxVtListDetach2List(&pdc->pDevExt->CtlList, &pdc->data.CtlList);
+    PVBOXMP_DEVEXT pDevExt = pdc->pDevExt;
+    vboxVtListDetach2List(&pDevExt->CtlList, &pdc->data.CtlList);
 #ifdef VBOX_WITH_VDMA
-    vboxVtListDetach2List(&pdc->pDevExt->DmaCmdList, &pdc->data.DmaCmdList);
+    vboxVtListDetach2List(&pDevExt->DmaCmdList, &pdc->data.DmaCmdList);
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    vboxVtListDetach2List(&pdc->pDevExt->VhwaCmdList, &pdc->data.VhwaCmdList);
+    vboxVtListDetach2List(&pDevExt->VhwaCmdList, &pdc->data.VhwaCmdList);
 #endif
-    vboxVdmaDdiCmdGetCompletedListIsr(pdc->pDevExt, &pdc->data.CompletedDdiCmdQueue);
+    if (!pDevExt->fCmdVbvaEnabled)
+        vboxVdmaDdiCmdGetCompletedListIsr(pDevExt, &pdc->data.CompletedDdiCmdQueue);
 
-    pdc->data.bNotifyDpc = pdc->pDevExt->bNotifyDxDpc;
-    pdc->pDevExt->bNotifyDxDpc = FALSE;
+    pdc->data.bNotifyDpc = pDevExt->bNotifyDxDpc;
+    pDevExt->bNotifyDxDpc = FALSE;
 
-    ASMAtomicWriteU32(&pdc->pDevExt->fCompletingCommands, 0);
+    ASMAtomicWriteU32(&pDevExt->fCompletingCommands, 0);
 
     return TRUE;
 }
@@ -1700,14 +1701,12 @@ static VOID DxgkDdiDpcRoutineNew(
             int rc = VBoxSHGSMICommandPostprocessCompletion (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, &context.data.CtlList);
             AssertRC(rc);
         }
-    #ifdef VBOX_WITH_VIDEOHWACCEL
+#ifdef VBOX_WITH_VIDEOHWACCEL
         if (!vboxVtListIsEmpty(&context.data.VhwaCmdList))
         {
             vboxVhwaCompletionListProcess(pDevExt, &context.data.VhwaCmdList);
         }
-    #endif
-
-        vboxVdmaDdiCmdHandleCompletedList(pDevExt, &context.data.CompletedDdiCmdQueue);
+#endif
     }
 //    LOGF(("LEAVE, context(0x%p)", MiniportDeviceContext));
 }
@@ -3033,9 +3032,10 @@ typedef struct VBOXWDDM_CALL_ISR
 static BOOLEAN vboxWddmCallIsrCb(PVOID Context)
 {
     PVBOXWDDM_CALL_ISR pdc = (PVBOXWDDM_CALL_ISR)Context;
-    if (pdc->pDevExt->fCmdVbvaEnabled)
-        return DxgkDdiInterruptRoutineNew(pdc->pDevExt, pdc->MessageNumber);
-    return DxgkDdiInterruptRoutineLegacy(pdc->pDevExt, pdc->MessageNumber);
+    PVBOXMP_DEVEXT pDevExt = pdc->pDevExt;
+    if (pDevExt->fCmdVbvaEnabled)
+        return DxgkDdiInterruptRoutineNew(pDevExt, pdc->MessageNumber);
+    return DxgkDdiInterruptRoutineLegacy(pDevExt, pdc->MessageNumber);
 }
 
 NTSTATUS vboxWddmCallIsr(PVBOXMP_DEVEXT pDevExt)
@@ -4745,8 +4745,9 @@ typedef struct VBOXWDDM_QUERYCURFENCE_CB
 static BOOLEAN vboxWddmQueryCurrentFenceCb(PVOID Context)
 {
     PVBOXWDDM_QUERYCURFENCE_CB pdc = (PVBOXWDDM_QUERYCURFENCE_CB)Context;
-    BOOL bRc = DxgkDdiInterruptRoutineLegacy(pdc->pDevExt, pdc->MessageNumber);
-    pdc->uLastCompletedCmdFenceId = pdc->pDevExt->u.primary.Vdma.uLastCompletedPagingBufferCmdFenceId;
+    PVBOXMP_DEVEXT pDevExt = pdc->pDevExt;
+    BOOL bRc = DxgkDdiInterruptRoutineLegacy(pDevExt, pdc->MessageNumber);
+    pdc->uLastCompletedCmdFenceId = pDevExt->u.primary.Vdma.uLastCompletedPagingBufferCmdFenceId;
     return bRc;
 }
 
@@ -7143,8 +7144,8 @@ static NTSTATUS vboxWddmInitDisplayOnlyDriver(IN PDRIVER_OBJECT pDriverObject, I
     DriverInitializationData.DxgkDdiStopDevice = DxgkDdiStopDevice;
     DriverInitializationData.DxgkDdiRemoveDevice = DxgkDdiRemoveDevice;
     DriverInitializationData.DxgkDdiDispatchIoRequest = DxgkDdiDispatchIoRequest;
-    DriverInitializationData.DxgkDdiInterruptRoutine = DxgkDdiInterruptRoutineNew;
-    DriverInitializationData.DxgkDdiDpcRoutine = DxgkDdiDpcRoutineNew;
+    DriverInitializationData.DxgkDdiInterruptRoutine = DxgkDdiInterruptRoutineLegacy;
+    DriverInitializationData.DxgkDdiDpcRoutine = DxgkDdiDpcRoutineLegacy;
     DriverInitializationData.DxgkDdiQueryChildRelations = DxgkDdiQueryChildRelations;
     DriverInitializationData.DxgkDdiQueryChildStatus = DxgkDdiQueryChildStatus;
     DriverInitializationData.DxgkDdiQueryDeviceDescriptor = DxgkDdiQueryDeviceDescriptor;
