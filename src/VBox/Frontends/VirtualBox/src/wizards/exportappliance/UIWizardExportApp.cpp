@@ -86,7 +86,7 @@ bool UIWizardExportApp::exportAppliance()
     {
         /* Show some progress, so the user know whats going on: */
         msgCenter().showModalProgressDialog(progress, QApplication::translate("UIWizardExportApp", "Checking files ..."),
-                                            ":/refresh_32px.png", this);
+                                            ":/progress_refresh_90px.png", this);
         if (progress.GetCanceled())
             return false;
         if (!progress.isOk() || progress.GetResultCode() != 0)
@@ -108,7 +108,7 @@ bool UIWizardExportApp::exportAppliance()
         {
             /* Show some progress, so the user know whats going on: */
             msgCenter().showModalProgressDialog(progress1, QApplication::translate("UIWizardExportApp", "Removing files ..."),
-                                                ":/vm_delete_32px.png", this);
+                                                ":/progress_delete_90px.png", this);
             if (progress1.GetCanceled())
                 return false;
             if (!progress1.isOk() || progress1.GetResultCode() != 0)
