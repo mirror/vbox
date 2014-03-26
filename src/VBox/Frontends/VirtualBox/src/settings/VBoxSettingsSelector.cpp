@@ -189,6 +189,7 @@ VBoxSettingsTreeViewSelector::VBoxSettingsTreeViewSelector (QWidget *aParent /* 
     mTwSelector->setHorizontalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
     mTwSelector->setRootIsDecorated (false);
     mTwSelector->setUniformRowHeights (true);
+    mTwSelector->setIconSize(QSize(24, 24));
     /* Add the columns */
     mTwSelector->headerItem()->setText (treeWidget_Category, "Category");
     mTwSelector->headerItem()->setText (treeWidget_Id, "[id]");
@@ -208,9 +209,7 @@ QWidget *VBoxSettingsTreeViewSelector::widget() const
 }
 
 QWidget *VBoxSettingsTreeViewSelector::addItem (const QString & /* aBigIcon */,
-                                                const QString & /* aBigIconDisabled */,
                                                 const QString &aSmallIcon,
-                                                const QString &aSmallIconDisabled,
                                                 int aId,
                                                 const QString &aLink,
                                                 UISettingsPage* aPage /* = NULL */,
@@ -220,8 +219,6 @@ QWidget *VBoxSettingsTreeViewSelector::addItem (const QString & /* aBigIcon */,
     if (aPage != NULL)
     {
         QIcon icon (aSmallIcon);
-        if (aSmallIconDisabled.isEmpty())
-            icon.addFile (aSmallIconDisabled, QSize(), QIcon::Disabled);
 
         SelectorItem *item = new SelectorItem (icon, "", aId, aLink, aPage, aParentId);
         mItemList.append (item);
@@ -287,7 +284,7 @@ void VBoxSettingsTreeViewSelector::polish()
 {
     /* Get recommended size hint: */
     int iItemWidth = static_cast<QAbstractItemView*>(mTwSelector)->sizeHintForColumn(treeWidget_Category);
-    int iItemHeight = qMax(16 /* icon height */, mTwSelector->fontMetrics().height() /* text height */);
+    int iItemHeight = qMax(24 /* icon height */, mTwSelector->fontMetrics().height() /* text height */);
     /* Add some margin to every item in the tree: */
     iItemHeight += 4 /* margin itself */ * 2 /* margin count */;
     /* Set final size hint for items: */
@@ -402,17 +399,13 @@ QWidget *VBoxSettingsToolBarSelector::widget() const
 }
 
 QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
-                                               const QString &aBigIconDisabled,
                                                const QString &aSmallIcon,
-                                               const QString &aSmallIconDisabled,
                                                int aId,
                                                const QString &aLink,
                                                UISettingsPage* aPage /* = NULL */,
                                                int aParentId /* = -1 */)
 {
     QIcon icon (aBigIcon);
-    if (!aBigIconDisabled.isEmpty())
-        icon.addFile (aBigIconDisabled, QSize(), QIcon::Disabled);
 
     QWidget *result = NULL;
     SelectorActionItem *item = new SelectorActionItem (icon, "", aId, aLink, aPage, aParentId, this);
@@ -448,8 +441,6 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
             aPage->setContentsMargins (9, 5, 9, 9);
             aPage->layout()->setContentsMargins(0, 0, 0, 0);
             QIcon icon1 (aSmallIcon);
-            if (!aSmallIconDisabled.isEmpty())
-                icon1.addFile (aSmallIconDisabled, QSize(), QIcon::Disabled);
             if (tabWidget)
                 tabWidget->addTab (aPage, icon1, "");
         }

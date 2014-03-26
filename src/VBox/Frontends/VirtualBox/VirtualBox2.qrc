@@ -73,11 +73,12 @@
         <file alias="os_macosx.png">images/os_macosx.png</file>
         <file alias="os_macosx_64.png">images/os_macosx_64.png</file>
         <file alias="hd_16px.png">images/hd_16px.png</file>
+        <file alias="hd_24px.png">images/hd_24px.png</file>
+        <file alias="hd_32px.png">images/hd_32px.png</file>
         <file alias="hd_disabled_16px.png">images/hd_disabled_16px.png</file>
+        <file alias="hd_disabled_32px.png">images/hd_disabled_32px.png</file>
         <file alias="hd_settings_16px.png">images/hd_settings_16px.png</file>
         <file alias="hd_settings_disabled_16px.png">images/hd_settings_disabled_16px.png</file>
-        <file alias="hd_32px.png">images/hd_32px.png</file>
-        <file alias="hd_disabled_32px.png">images/hd_disabled_32px.png</file>
         <file alias="hd_read_16px.png">images/hd_read_16px.png</file>
         <file alias="hd_write_16px.png">images/hd_write_16px.png</file>
         <file alias="hd_add_16px.png">images/hd_add_16px.png</file>
@@ -133,8 +134,9 @@
         <file alias="mouse_can_seamless_on_disabled_16px.png">images/mouse_can_seamless_on_disabled_16px.png</file>
         <file alias="mouse_can_seamless_uncaptured_16px.png">images/mouse_can_seamless_uncaptured_16px.png</file>
         <file alias="hostkey_16px.png">images/hostkey_16px.png</file>
-        <file alias="hostkey_disabled_16px.png">images/hostkey_disabled_16px.png</file>
+        <file alias="hostkey_24px.png">images/hostkey_24px.png</file>
         <file alias="hostkey_32px.png">images/hostkey_32px.png</file>
+        <file alias="hostkey_disabled_16px.png">images/hostkey_disabled_16px.png</file>
         <file alias="hostkey_disabled_32px.png">images/hostkey_disabled_32px.png</file>
         <file alias="hostkey_pressed_16px.png">images/hostkey_pressed_16px.png</file>
         <file alias="hostkey_captured_16px.png">images/hostkey_captured_16px.png</file>
@@ -185,8 +187,9 @@
         <file alias="status_error_16px.png">images/status_error_16px.png</file>
         <file alias="status_error_32px.png">images/status_error_32px.png</file>
         <file alias="extension_pack_16px.png">images/extension_pack_16px.png</file>
-        <file alias="extension_pack_disabled_16px.png">images/extension_pack_disabled_16px.png</file>
+        <file alias="extension_pack_24px.png">images/extension_pack_24px.png</file>
         <file alias="extension_pack_32px.png">images/extension_pack_32px.png</file>
+        <file alias="extension_pack_disabled_16px.png">images/extension_pack_disabled_16px.png</file>
         <file alias="extension_pack_disabled_32px.png">images/extension_pack_disabled_32px.png</file>
         <file alias="extension_pack_install_16px.png">images/extension_pack_install_16px.png</file>
         <file alias="extension_pack_install_disabled_16px.png">images/extension_pack_install_disabled_16px.png</file>
@@ -197,8 +200,9 @@
         <file alias="extension_pack_uninstall_32px.png">images/extension_pack_uninstall_32px.png</file>
         <file alias="extension_pack_uninstall_disabled_32px.png">images/extension_pack_uninstall_disabled_32px.png</file>
         <file alias="proxy_16px.png">images/proxy_16px.png</file>
-        <file alias="proxy_disabled_16px.png">images/proxy_disabled_16px.png</file>
+        <file alias="proxy_24px.png">images/proxy_24px.png</file>
         <file alias="proxy_32px.png">images/proxy_32px.png</file>
+        <file alias="proxy_disabled_16px.png">images/proxy_disabled_16px.png</file>
         <file alias="proxy_disabled_32px.png">images/proxy_disabled_32px.png</file>
         <file alias="nw_error_16px.png">images/nw_error_16px.png</file>
         <file alias="nw_loading_16px.png">images/nw_loading_16px.png</file>

@@ -344,8 +344,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                 case GlobalSettingsPageType_General:
                 {
                     pSettingsPage = new UIGlobalSettingsGeneral;
-                    addItem(":/machine_32px.png", ":/machine_disabled_32px.png",
-                            ":/machine_16px.png", ":/machine_disabled_16px.png",
+                    addItem(":/machine_32px.png", ":/machine_24px.png",
                             iPageIndex, "#general", pSettingsPage);
                     break;
                 }
@@ -353,8 +352,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                 case GlobalSettingsPageType_Input:
                 {
                     pSettingsPage = new UIGlobalSettingsInput;
-                    addItem(":/hostkey_32px.png", ":/hostkey_disabled_32px.png",
-                            ":/hostkey_16px.png", ":/hostkey_disabled_16px.png",
+                    addItem(":/hostkey_32px.png", ":/hostkey_24px.png",
                             iPageIndex, "#input", pSettingsPage);
                     break;
                 }
@@ -363,8 +361,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                 case GlobalSettingsPageType_Update:
                 {
                     pSettingsPage = new UIGlobalSettingsUpdate;
-                    addItem(":/refresh_32px.png", ":/refresh_disabled_32px.png",
-                            ":/refresh_16px.png", ":/refresh_disabled_16px.png",
+                    addItem(":/refresh_32px.png", ":/refresh_24px.png",
                             iPageIndex, "#update", pSettingsPage);
                     break;
                 }
@@ -373,8 +370,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                 case GlobalSettingsPageType_Language:
                 {
                     pSettingsPage = new UIGlobalSettingsLanguage;
-                    addItem(":/site_32px.png", ":/site_disabled_32px.png",
-                            ":/site_16px.png", ":/site_disabled_16px.png",
+                    addItem(":/site_32px.png", ":/site_24px.png",
                             iPageIndex, "#language", pSettingsPage);
                     break;
                 }
@@ -382,8 +378,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                 case GlobalSettingsPageType_Display:
                 {
                     pSettingsPage = new UIGlobalSettingsDisplay;
-                    addItem(":/vrdp_32px.png", ":/vrdp_disabled_32px.png",
-                            ":/vrdp_16px.png", ":/vrdp_disabled_16px.png",
+                    addItem(":/vrdp_32px.png", ":/vrdp_24px.png",
                             iPageIndex, "#display", pSettingsPage);
                     break;
                 }
@@ -391,8 +386,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                 case GlobalSettingsPageType_Network:
                 {
                     pSettingsPage = new UIGlobalSettingsNetwork;
-                    addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
-                            ":/nw_16px.png", ":/nw_disabled_16px.png",
+                    addItem(":/nw_32px.png", ":/nw_24px.png",
                             iPageIndex, "#network", pSettingsPage);
                     break;
                 }
@@ -400,8 +394,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                 case GlobalSettingsPageType_Extensions:
                 {
                     pSettingsPage = new UIGlobalSettingsExtension;
-                    addItem(":/extension_pack_32px.png", ":/extension_pack_disabled_32px.png",
-                            ":/extension_pack_16px.png", ":/extension_pack_disabled_16px.png",
+                    addItem(":/extension_pack_32px.png", ":/extension_pack_24px.png",
                             iPageIndex, "#extensions", pSettingsPage);
                     break;
                 }
@@ -410,8 +403,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                 case GlobalSettingsPageType_Proxy:
                 {
                     pSettingsPage = new UIGlobalSettingsProxy;
-                    addItem(":/proxy_32px.png", ":/proxy_disabled_32px.png",
-                            ":/proxy_16px.png", ":/proxy_disabled_16px.png",
+                    addItem(":/proxy_32px.png", ":/proxy_24px.png",
                             iPageIndex, "#proxy", pSettingsPage);
                     break;
                 }
@@ -592,8 +584,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 case MachineSettingsPageType_General:
                 {
                     pSettingsPage = new UIMachineSettingsGeneral;
-                    addItem(":/machine_32px.png", ":/machine_disabled_32px.png",
-                            ":/machine_16px.png", ":/machine_disabled_16px.png",
+                    addItem(":/machine_32px.png", ":/machine_24px.png",
                             iPageIndex, "#general", pSettingsPage);
                     break;
                 }
@@ -601,8 +592,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 case MachineSettingsPageType_System:
                 {
                     pSettingsPage = new UIMachineSettingsSystem;
-                    addItem(":/chipset_32px.png", ":/chipset_disabled_32px.png",
-                            ":/chipset_16px.png", ":/chipset_disabled_16px.png",
+                    addItem(":/chipset_32px.png", ":/chipset_24px.png",
                             iPageIndex, "#system", pSettingsPage);
                     break;
                 }
@@ -610,8 +600,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 case MachineSettingsPageType_Display:
                 {
                     pSettingsPage = new UIMachineSettingsDisplay;
-                    addItem(":/vrdp_32px.png", ":/vrdp_disabled_32px.png",
-                            ":/vrdp_16px.png", ":/vrdp_disabled_16px.png",
+                    addItem(":/vrdp_32px.png", ":/vrdp_24px.png",
                             iPageIndex, "#display", pSettingsPage);
                     break;
                 }
@@ -620,8 +609,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 {
                     pSettingsPage = new UIMachineSettingsStorage;
                     connect(pSettingsPage, SIGNAL(storageChanged()), this, SLOT(sltResetFirstRunFlag()));
-                    addItem(":/hd_32px.png", ":/hd_disabled_32px.png",
-                            ":/hd_16px.png", ":/hd_disabled_16px.png",
+                    addItem(":/hd_32px.png", ":/hd_24px.png",
                             iPageIndex, "#storage", pSettingsPage);
                     break;
                 }
@@ -629,8 +617,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 case MachineSettingsPageType_Audio:
                 {
                     pSettingsPage = new UIMachineSettingsAudio;
-                    addItem(":/sound_32px.png", ":/sound_disabled_32px.png",
-                            ":/sound_16px.png", ":/sound_disabled_16px.png",
+                    addItem(":/sound_32px.png", ":/sound_24px.png",
                             iPageIndex, "#audio", pSettingsPage);
                     break;
                 }
@@ -638,16 +625,14 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 case MachineSettingsPageType_Network:
                 {
                     pSettingsPage = new UIMachineSettingsNetworkPage;
-                    addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
-                            ":/nw_16px.png", ":/nw_disabled_16px.png",
+                    addItem(":/nw_32px.png", ":/nw_24px.png",
                             iPageIndex, "#network", pSettingsPage);
                     break;
                 }
                 /* Ports page: */
                 case MachineSettingsPageType_Ports:
                 {
-                    addItem(":/serial_port_32px.png", ":/serial_port_disabled_32px.png",
-                            ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
+                    addItem(":/serial_port_32px.png", ":/serial_port_24px.png",
                             iPageIndex, "#ports");
                     break;
                 }
@@ -655,8 +640,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 case MachineSettingsPageType_Serial:
                 {
                     pSettingsPage = new UIMachineSettingsSerialPage;
-                    addItem(":/serial_port_32px.png", ":/serial_port_disabled_32px.png",
-                            ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
+                    addItem(":/serial_port_32px.png", ":/serial_port_24px.png",
                             iPageIndex, "#serialPorts", pSettingsPage, MachineSettingsPageType_Ports);
                     break;
                 }
@@ -664,8 +648,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 case MachineSettingsPageType_Parallel:
                 {
                     pSettingsPage = new UIMachineSettingsParallelPage;
-                    addItem(":/parallel_port_32px.png", ":/parallel_port_disabled_32px.png",
-                            ":/parallel_port_16px.png", ":/parallel_port_disabled_16px.png",
+                    addItem(":/parallel_port_32px.png", ":/parallel_port_24px.png",
                             iPageIndex, "#parallelPorts", pSettingsPage, MachineSettingsPageType_Ports);
                     break;
                 }
@@ -673,8 +656,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 case MachineSettingsPageType_USB:
                 {
                     pSettingsPage = new UIMachineSettingsUSB;
-                    addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
-                            ":/usb_16px.png", ":/usb_disabled_16px.png",
+                    addItem(":/usb_32px.png", ":/usb_24px.png",
                             iPageIndex, "#usb", pSettingsPage, MachineSettingsPageType_Ports);
                     break;
                 }
@@ -682,8 +664,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 case MachineSettingsPageType_SF:
                 {
                     pSettingsPage = new UIMachineSettingsSF;
-                    addItem(":/sf_32px.png", ":/sf_disabled_32px.png",
-                            ":/sf_16px.png", ":/sf_disabled_16px.png",
+                    addItem(":/sf_32px.png", ":/sf_24px.png",
                             iPageIndex, "#sharedFolders", pSettingsPage);
                     break;
                 }
