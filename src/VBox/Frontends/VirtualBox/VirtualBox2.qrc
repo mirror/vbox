@@ -88,6 +88,10 @@
         <file alias="hd_copy_disabled_16px.png">images/hd_copy_disabled_16px.png</file>
         <file alias="hd_copy_22px.png">images/hd_copy_22px.png</file>
         <file alias="hd_copy_disabled_22px.png">images/hd_copy_disabled_22px.png</file>
+        <file alias="hd_modify_16px.png">images/hd_modify_16px.png</file>
+        <file alias="hd_modify_disabled_16px.png">images/hd_modify_disabled_16px.png</file>
+        <file alias="hd_modify_22px.png">images/hd_modify_22px.png</file>
+        <file alias="hd_modify_disabled_22px.png">images/hd_modify_disabled_22px.png</file>
         <file alias="hd_new_16px.png">images/hd_new_16px.png</file>
         <file alias="hd_new_disabled_16px.png">images/hd_new_disabled_16px.png</file>
         <file alias="hd_new_22px.png">images/hd_new_22px.png</file>
