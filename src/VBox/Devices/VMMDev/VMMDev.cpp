@@ -3665,6 +3665,8 @@ static DECLCALLBACK(int) vmmdevDestruct(PPDMDEVINS pDevIns)
         pThis->pCredentials = NULL;
     }
 
+    vmmdevHGCMDestroy(pThis);
+
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     /*
      * Clean up the testing device.
