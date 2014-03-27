@@ -136,11 +136,27 @@ void UIGDetailsElement::sltElementToggleFinish(bool fToggled)
 void UIGDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
 {
     /* Current anchor role: */
-    QString strRole = strAnchor.section(',', 0, 0);
+    const QString strRole = strAnchor.section(',', 0, 0);
+    const QString strData = strAnchor.section(',', 1);
 
     /* Handle known roles: */
     if (strRole == "#choose")
-        handleAnchorClickedRoleChoose(strAnchor.section(',', 1));
+    {
+        /* Prepare storage-menu: */
+        QMenu menu;
+
+        /* Storage-controller name: */
+        QString strControllerName = strData.section(',', 0, 0);
+        /* Storage-slot: */
+        StorageSlot storageSlot = gpConverter->fromString<StorageSlot>(strData.section(',', 1));
+
+        /* Fill storage-menu: */
+        vboxGlobal().prepareStorageMenu(menu, this, SLOT(sltMountStorageMedium()),
+                                        machine(), strControllerName, storageSlot);
+
+        /* Exec menu: */
+        menu.exec(QCursor::pos());
+    }
 }
 
 void UIGDetailsElement::sltMountStorageMedium()
@@ -648,23 +664,5 @@ void UIGDetailsElement::updateAnimationParameters()
     else
         m_iAdditionalHeight = iAdditionalHeight;
     m_pButton->setAnimationRange(0, iAdditionalHeight);
-}
-
-void UIGDetailsElement::handleAnchorClickedRoleChoose(const QString &strData)
-{
-    /* Prepare storage-menu: */
-    QMenu menu;
-
-    /* Storage-controller name: */
-    QString strControllerName = strData.section(',', 0, 0);
-    /* Storage-slot: */
-    StorageSlot storageSlot = gpConverter->fromString<StorageSlot>(strData.section(',', 1));
-
-    /* Fill storage-menu: */
-    vboxGlobal().prepareStorageMenu(menu, this, SLOT(sltMountStorageMedium()),
-                                    machine(), strControllerName, storageSlot);
-
-    /* Exec menu: */
-    menu.exec(QCursor::pos());
 }
 
