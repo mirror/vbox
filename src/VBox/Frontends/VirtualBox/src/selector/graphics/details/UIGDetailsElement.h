@@ -187,9 +187,6 @@ private:
     /* Helper: Animation stuff: */
     void updateAnimationParameters();
 
-    /** Handle clicked anchor with role '#choose'. */
-    void handleAnchorClickedRoleChoose(const QString &strData);
-
     /* Variables: */
     UIGDetailsSet *m_pSet;
     DetailsElementType m_type;
