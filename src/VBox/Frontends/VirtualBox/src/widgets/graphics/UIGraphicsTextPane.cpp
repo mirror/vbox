@@ -82,6 +82,24 @@ void UIGraphicsTextPane::setText(const UITextTable &text)
     updateGeometry();
 }
 
+void UIGraphicsTextPane::setAnchorRoleRestricted(const QString &strAnchorRole, bool fRestricted)
+{
+    /* Make sure something changed: */
+    if (   (fRestricted && m_restrictedAnchorRoles.contains(strAnchorRole))
+        || (!fRestricted && !m_restrictedAnchorRoles.contains(strAnchorRole)))
+        return;
+
+    /* Apply new value: */
+    if (fRestricted)
+        m_restrictedAnchorRoles << strAnchorRole;
+    else
+        m_restrictedAnchorRoles.remove(strAnchorRole);
+
+    /* Reset hovered anchor: */
+    m_strHoveredAnchor.clear();
+    updateHoverStuff();
+}
+
 void UIGraphicsTextPane::updateTextLayout(bool fFull /* = false */)
 {
     /* Prepare variables: */
@@ -248,38 +266,30 @@ void UIGraphicsTextPane::handleHoverEvent(QGraphicsSceneHoverEvent *pEvent)
 
     /* Prepare variables: */
     QPoint mousePosition = pEvent->pos().toPoint();
+    QString strHoveredAnchor;
+    QString strHoveredAnchorRole;
 
-    /* If we currently have no anchor hovered: */
-    if (m_strHoveredAnchor.isNull())
+    /* Search for hovered-anchor in the left list: */
+    strHoveredAnchor = searchForHoveredAnchor(m_pPaintDevice, m_leftList, mousePosition);
+    strHoveredAnchorRole = strHoveredAnchor.section(',', 0, 0);
+    if (!strHoveredAnchor.isNull() && !m_restrictedAnchorRoles.contains(strHoveredAnchorRole))
     {
-        /* Search it in the left list: */
-        m_strHoveredAnchor = searchForHoveredAnchor(m_pPaintDevice, m_leftList, mousePosition);
-        if (!m_strHoveredAnchor.isNull())
-            return updateHoverStuff();
-        /* Then search it in the right one: */
-        m_strHoveredAnchor = searchForHoveredAnchor(m_pPaintDevice, m_rightList, mousePosition);
-        if (!m_strHoveredAnchor.isNull())
-            return updateHoverStuff();
+        m_strHoveredAnchor = strHoveredAnchor;
+        return updateHoverStuff();
     }
-    /* If we currently have some anchor hovered: */
-    else
+
+    /* Then search for hovered-anchor in the right one: */
+    strHoveredAnchor = searchForHoveredAnchor(m_pPaintDevice, m_rightList, mousePosition);
+    strHoveredAnchorRole = strHoveredAnchor.section(',', 0, 0);
+    if (!strHoveredAnchor.isNull() && !m_restrictedAnchorRoles.contains(strHoveredAnchorRole))
     {
-        QString strHoveredAnchorName;
-        /* Validate it through the left list: */
-        strHoveredAnchorName = searchForHoveredAnchor(m_pPaintDevice, m_leftList, mousePosition);
-        if (!strHoveredAnchorName.isNull())
-        {
-            m_strHoveredAnchor = strHoveredAnchorName;
-            return updateHoverStuff();
-        }
-        /* Then validate it through the right one: */
-        strHoveredAnchorName = searchForHoveredAnchor(m_pPaintDevice, m_rightList, mousePosition);
-        if (!strHoveredAnchorName.isNull())
-        {
-            m_strHoveredAnchor = strHoveredAnchorName;
-            return updateHoverStuff();
-        }
-        /* Finally clear it for good: */
+        m_strHoveredAnchor = strHoveredAnchor;
+        return updateHoverStuff();
+    }
+
+    /* Finally clear it for good: */
+    if (!m_strHoveredAnchor.isNull())
+    {
         m_strHoveredAnchor.clear();
         return updateHoverStuff();
     }

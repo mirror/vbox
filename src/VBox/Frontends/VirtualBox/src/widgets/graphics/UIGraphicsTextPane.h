@@ -55,6 +55,9 @@ public:
     /** Defines contained text. */
     void setText(const UITextTable &text);
 
+    /** Defines whether passed @a strAnchorRole is @a fRestricted. */
+    void setAnchorRoleRestricted(const QString &strAnchorRole, bool fRestricted);
+
 private:
 
     /** Update text-layout. */
@@ -119,6 +122,8 @@ private:
 
     /** Holds whether anchor can be hovered. */
     bool m_fAnchorCanBeHovered;
+    /** Holds restricted anchor roles. */
+    QSet<QString> m_restrictedAnchorRoles;
     /** Holds currently hovered anchor. */
     QString m_strHoveredAnchor;
 };
