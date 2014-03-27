@@ -294,7 +294,7 @@ AssertCompileSize(VMXRESTOREHOST, 56);
 /** V86 mode SS.Base invalid. */
 #define VMX_IGS_V86_SS_BASE_INVALID                             57
 /** V86 mode SS.Limit invalid. */
-#define VMX_IGS_V86_SS_LIMIT_INVALID                            59
+#define VMX_IGS_V86_SS_LIMIT_INVALID                            58
 /** V86 mode SS.Attr invalid. */
 #define VMX_IGS_V86_SS_ATTR_INVALID                             59
 /** V86 mode DS.Base invalid. */
