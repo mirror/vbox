@@ -76,6 +76,7 @@
 #include "UIConverter.h"
 #include "UIMediumEnumerator.h"
 #include "UIMedium.h"
+#include "UIModalWindowManager.h"
 
 #ifdef Q_WS_X11
 # include "UIHostComboEditor.h"
@@ -1951,6 +1952,9 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
                                                                           mediumType)));
     switch (mediumType)
     {
+        case UIMediumType_HardDisk:
+            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual hard disk file..."));
+            break;
         case UIMediumType_DVD:
             pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual CD/DVD disk file..."));
             break;
@@ -2007,8 +2011,9 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     QString strRecentMediumAddress;
     switch (mediumType)
     {
-        case UIMediumType_DVD:    strRecentMediumAddress = GUI_RecentListCD; break;
-        case UIMediumType_Floppy: strRecentMediumAddress = GUI_RecentListFD; break;
+        case UIMediumType_HardDisk: strRecentMediumAddress = GUI_RecentListHD; break;
+        case UIMediumType_DVD:      strRecentMediumAddress = GUI_RecentListCD; break;
+        case UIMediumType_Floppy:   strRecentMediumAddress = GUI_RecentListFD; break;
         default: break;
     }
     const QStringList recentMediumList = vboxGlobal().virtualBox().GetExtraData(strRecentMediumAddress).split(';');
@@ -2047,19 +2052,22 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     }
 
 
-    /* Insert separator: */
-    menu.addSeparator();
+    /* Last action for optical/floppy attachments only: */
+    if (mediumType == UIMediumType_DVD || mediumType == UIMediumType_Floppy)
+    {
+        /* Insert separator: */
+        menu.addSeparator();
 
-
-    /* Prepare unmount-current-medium action: */
-    QAction *pActionUnmountMedium = menu.addAction(QString(), pListener, pszSlotName);
-    pActionUnmountMedium->setEnabled(!currentMedium.isNull());
-    pActionUnmountMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(), currentAttachment.GetDevice())));
-    pActionUnmountMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
-    if (mediumType == UIMediumType_DVD)
-        pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/cd_unmount_16px.png", ":/cd_unmount_disabled_16px.png"));
-    else if (mediumType == UIMediumType_Floppy)
-        pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/fd_unmount_16px.png", ":/fd_unmount_disabled_16px.png"));
+        /* Prepare unmount-current-medium action: */
+        QAction *pActionUnmountMedium = menu.addAction(QString(), pListener, pszSlotName);
+        pActionUnmountMedium->setEnabled(!currentMedium.isNull());
+        pActionUnmountMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(), currentAttachment.GetDevice())));
+        pActionUnmountMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
+        if (mediumType == UIMediumType_DVD)
+            pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/cd_unmount_16px.png", ":/cd_unmount_disabled_16px.png"));
+        else if (mediumType == UIMediumType_Floppy)
+            pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/fd_unmount_16px.png", ":/fd_unmount_disabled_16px.png"));
+    }
 }
 
 void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMediumTarget &target)
@@ -2072,9 +2080,12 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
     QString strActualID;
 
     /* Current mount-target attributes: */
+    const CStorageController currentController = constMachine.GetStorageControllerByName(target.name);
+    const KStorageBus currentStorageBus = currentController.GetBus();
     const CMediumAttachment currentAttachment = constMachine.GetMediumAttachment(target.name, target.port, target.device);
     const CMedium currentMedium = currentAttachment.GetMedium();
     const QString strCurrentID = currentMedium.isNull() ? QString() : currentMedium.GetId();
+    const QString strCurrentLocation = currentMedium.isNull() ? QString() : currentMedium.GetLocation();
 
     /* Which additional info do we have? */
     switch (target.type)
@@ -2099,7 +2110,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
                 }
                 /* Call for file-open dialog: */
                 const QString strMachineFolder(QFileInfo(constMachine.GetSettingsFilePath()).absolutePath());
-                const QString strMediumID = vboxGlobal().openMediumWithFileOpenDialog(target.mediumType, activeMachineWindow(),
+                const QString strMediumID = vboxGlobal().openMediumWithFileOpenDialog(target.mediumType, windowManager().mainWindowShown(),
                                                                                       strMachineFolder);
                 /* Return focus back: */
                 if (pLastFocusedWidget)
@@ -2143,6 +2154,10 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
         }
     }
 
+    /* Do not unmount hard-drives: */
+    if (target.mediumType == UIMediumType_HardDisk && !fMount)
+        return;
+
     /* Get editable machine: */
     CSession session;
     CMachine machine = constMachine;
@@ -2168,21 +2183,44 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
 
     /* Remount medium to the predefined port/device: */
     bool fWasMounted = false;
-    /* Remounting: */
-    machine.MountMedium(target.name, target.port, target.device, cmedium, false /* force? */);
-    fWasMounted = machine.isOk();
-    if (!fWasMounted)
+    /* Hard drive case: */
+    if (target.mediumType == UIMediumType_HardDisk)
     {
-        /* Ask for force remounting: */
-        if (msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(strActualID),
-                                            fMount, true /* retry? */))
+        /* Detaching: */
+        machine.DetachDevice(target.name, target.port, target.device);
+        fWasMounted = machine.isOk();
+        if (!fWasMounted)
+            msgCenter().cannotDetachDevice(machine, UIMediumType_HardDisk, strCurrentLocation,
+                                           StorageSlot(currentStorageBus, target.port, target.device));
+        else
         {
-            /* Force remounting: */
-            machine.MountMedium(target.name, target.port, target.device, cmedium, true /* force? */);
+            /* Attaching: */
+            machine.AttachDevice(target.name, target.port, target.device, KDeviceType_HardDisk, cmedium);
             fWasMounted = machine.isOk();
             if (!fWasMounted)
-                msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(strActualID),
-                                                fMount, false /* retry? */);
+                msgCenter().cannotAttachDevice(machine, UIMediumType_HardDisk, strCurrentLocation,
+                                               StorageSlot(currentStorageBus, target.port, target.device));
+        }
+    }
+    /* Optical/floppy drive case: */
+    else
+    {
+        /* Remounting: */
+        machine.MountMedium(target.name, target.port, target.device, cmedium, false /* force? */);
+        fWasMounted = machine.isOk();
+        if (!fWasMounted)
+        {
+            /* Ask for force remounting: */
+            if (msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(strActualID),
+                                                fMount, true /* retry? */))
+            {
+                /* Force remounting: */
+                machine.MountMedium(target.name, target.port, target.device, cmedium, true /* force? */);
+                fWasMounted = machine.isOk();
+                if (!fWasMounted)
+                    msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(strActualID),
+                                                    fMount, false /* retry? */);
+            }
         }
     }
 
