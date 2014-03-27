@@ -25,7 +25,7 @@
 /* Settings page constructor, hidden: */
 UISettingsPage::UISettingsPage(UISettingsPageType pageType)
     : m_pageType(pageType)
-    , m_dialogType(SettingsDialogType_Wrong)
+    , m_configurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_cId(-1)
     , m_fProcessed(false)
     , m_fFailed(false)

@@ -51,7 +51,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     , m_pSelector(0)
     , m_pStack(0)
     /* Common variables: */
-    , m_dialogType(SettingsDialogType_Wrong)
+    , m_configurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_fPolished(false)
     /* Loading/saving stuff: */
     , m_fLoaded(false)
@@ -245,14 +245,18 @@ void UISettingsDialog::retranslateUi()
     revalidate();
 }
 
-void UISettingsDialog::setDialogType(SettingsDialogType settingsDialogType)
+void UISettingsDialog::setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel)
 {
-    /* Remember new dialog-type: */
-    m_dialogType = settingsDialogType;
+    /* Make sure something changed: */
+    if (m_configurationAccessLevel == newConfigurationAccessLevel)
+        return;
 
-    /* Propagate it to settings-page(s): */
+    /* Apply new configuration access level: */
+    m_configurationAccessLevel = newConfigurationAccessLevel;
+
+    /* And propagate it to settings-page(s): */
     foreach (UISettingsPage *pPage, m_pSelector->settingPages())
-        pPage->setDialogType(dialogType());
+        pPage->setConfigurationAccessLevel(configurationAccessLevel());
 }
 
 QString UISettingsDialog::titleExtension() const
