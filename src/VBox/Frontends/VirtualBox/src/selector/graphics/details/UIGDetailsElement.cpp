@@ -620,7 +620,8 @@ void UIGDetailsElement::handleHoverEvent(QGraphicsSceneHoverEvent *pEvent)
     /* Simulate hyperlink hovering: */
     QPoint point = pEvent->pos().toPoint();
     bool fNameHovered = QRect(QPoint(iElementNameX, iElementNameY), m_nameSize).contains(point);
-    if (m_pSet->elementNameHoverable() && m_fNameHovered != fNameHovered)
+    if (   m_pSet->configurationAccessLevel() != ConfigurationAccessLevel_Null
+        && m_fNameHovered != fNameHovered)
     {
         m_fNameHovered = fNameHovered;
         updateNameHoverLink();

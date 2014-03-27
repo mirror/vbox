@@ -32,8 +32,9 @@
 
 UIGDetailsSet::UIGDetailsSet(UIGDetailsItem *pParent)
     : UIGDetailsItem(pParent)
-    , m_fElementNameHoverable(false)
+    , m_pMachineItem(0)
     , m_fHasDetails(false)
+    , m_configurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_fFullSet(true)
     , m_pBuildStep(0)
     , m_iLastStepNumber(-1)
@@ -60,9 +61,9 @@ UIGDetailsSet::~UIGDetailsSet()
 void UIGDetailsSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QStringList &settings)
 {
     /* Remember passed arguments: */
-    m_machine = pMachineItem->machine();
-    m_fElementNameHoverable = pMachineItem->reconfigurable();
-    m_fHasDetails = pMachineItem->hasDetails();
+    m_pMachineItem = pMachineItem;
+    m_machine = m_pMachineItem->machine();
+    m_fHasDetails = m_pMachineItem->hasDetails();
     m_fFullSet = fFullSet;
     m_settings = settings;
 
@@ -553,6 +554,9 @@ void UIGDetailsSet::rebuildSet()
     /* Make sure we have details: */
     if (!m_fHasDetails)
         return;
+
+    /* Recache properties: */
+    m_configurationAccessLevel = m_pMachineItem->configurationAccessLevel();
 
     /* Cleanup build-step: */
     delete m_pBuildStep;
