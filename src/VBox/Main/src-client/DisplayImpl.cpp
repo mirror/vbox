@@ -3332,7 +3332,9 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpda
     {
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
 
-        if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && !pFBInfo->pFramebuffer.isNull())
+        if (   !pFBInfo->fVBVAEnabled
+            && uScreenId == VBOX_VIDEO_PRIMARY_SCREEN
+            && !pFBInfo->pFramebuffer.isNull())
         {
             pDisplay->mpDrv->pUpPort->pfnUpdateDisplayAll(pDisplay->mpDrv->pUpPort);
         }
