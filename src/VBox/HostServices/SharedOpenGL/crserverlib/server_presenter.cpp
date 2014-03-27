@@ -371,7 +371,7 @@ static void crFbBltImgScaledRects(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSr
                         pCopyRect->xRight - pCopyRect->xLeft,
                         pCopyRect->yBottom - pCopyRect->yTop,
                         pu8Src,
-                        fSrcInvert ? -pSrc->pitch : pSrc->pitch,
+                        fSrcInvert ? -((GLint)pSrc->pitch) : pSrc->pitch,
                         UnscaledSrcWidth,
                         UnscaledSrcHeight
                         );

@@ -1523,9 +1523,10 @@ static DECLCALLBACK(int) svcHostCall(void *, uint32_t u32Function, uint32_t cPar
                 }
                 case VBOXCRCMDCTL_TYPE_DISABLE:
                 {
-                    if (paParms->u.pointer.size != sizeof (VBOXCRCMDCTL))
+                    if (paParms->u.pointer.size != sizeof (VBOXCRCMDCTL_DISABLE))
                         WARN(("invalid param size"));
-                    int rc = crVBoxServerHgcmDisable();
+                    VBOXCRCMDCTL_DISABLE *pDisable = (VBOXCRCMDCTL_DISABLE*)pCtl;
+                    int rc = crVBoxServerHgcmDisable(&pDisable->Data);
                     if (RT_SUCCESS(rc))
                         g_u32fCrHgcmDisabled = 1;
                     else
@@ -1537,7 +1538,7 @@ static DECLCALLBACK(int) svcHostCall(void *, uint32_t u32Function, uint32_t cPar
                     if (paParms->u.pointer.size != sizeof (VBOXCRCMDCTL_ENABLE))
                         WARN(("invalid param size"));
                     VBOXCRCMDCTL_ENABLE *pEnable = (VBOXCRCMDCTL_ENABLE*)pCtl;
-                    int rc = crVBoxServerHgcmEnable(pEnable->hRHCmd, pEnable->pfnRHCmd);
+                    int rc = crVBoxServerHgcmEnable(&pEnable->Data);
                     if (RT_SUCCESS(rc))
                         g_u32fCrHgcmDisabled = 0;
                     else

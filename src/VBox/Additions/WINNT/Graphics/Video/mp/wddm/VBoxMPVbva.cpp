@@ -173,7 +173,7 @@ static int vboxCmdVbvaCtlSubmitSync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMD
 
 static int vboxCmdVbvaCtlSubmitAsync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CTL * pCtl, FNVBOXSHGSMICMDCOMPLETION pfnCompletion, void *pvCompletion)
 {
-    const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepAsynch(&pHGSMICtx->heapCtx, pCtl, pfnCompletion, pvCompletion, 0);
+    const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepAsynch(&pHGSMICtx->heapCtx, pCtl, pfnCompletion, pvCompletion, VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ);
     HGSMIOFFSET offCmd = VBoxSHGSMICommandOffset(&pHGSMICtx->heapCtx, pHdr);
     if (offCmd == HGSMIOFFSET_VOID)
     {
@@ -292,8 +292,11 @@ RTDECL(bool) VBoxVBVAExBufferBeginUpdate(PVBVAEXBUFFERCONTEXT pCtx,
 
     // LogFunc(("flags = 0x%08X\n", pCtx->pVBVA? pCtx->pVBVA->u32HostEvents: -1));
 
-    if (   pCtx->pVBVA
-        && (pCtx->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
+    Assert(pCtx->pVBVA);
+    /* we do not use u32HostEvents & VBVA_F_MODE_ENABLED,
+     * VBVA stays enabled once ENABLE call succeeds, until it is disabled with DISABLED call */
+//    if (   pCtx->pVBVA
+//        && (pCtx->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
     {
         uint32_t indexRecordNext;
 
@@ -365,17 +368,23 @@ DECLINLINE(bool) vboxVBVAExIsEntryInRange(uint32_t u32First, uint32_t u32Entry, 
            );
 }
 
+DECLINLINE(bool) vboxVBVAExIsEntryInRangeOrEmpty(uint32_t u32First, uint32_t u32Entry, uint32_t u32Free)
+{
+    return vboxVBVAExIsEntryInRange(u32First, u32Entry, u32Free)
+            || (    u32First == u32Entry
+                 && u32Entry == u32Free);
+}
 #ifdef DEBUG
 
 DECLINLINE(void) vboxHwBufferVerifyCompleted(PVBVAEXBUFFERCONTEXT pCtx)
 {
     VBVABUFFER *pVBVA = pCtx->pVBVA;
-    if (!vboxVBVAExIsEntryInRange(pCtx->indexRecordFirstUncompleted, pVBVA->indexRecordFirst, pVBVA->indexRecordFree))
+    if (!vboxVBVAExIsEntryInRangeOrEmpty(pCtx->indexRecordFirstUncompleted, pVBVA->indexRecordFirst, pVBVA->indexRecordFree))
     {
         WARN(("invalid record set"));
     }
 
-    if (!vboxVBVAExIsEntryInRange(pCtx->off32DataUncompleted, pVBVA->off32Data, pVBVA->off32Free))
+    if (!vboxVBVAExIsEntryInRangeOrEmpty(pCtx->off32DataUncompleted, pVBVA->off32Data, pVBVA->off32Free))
     {
         WARN(("invalid data set"));
     }
@@ -903,10 +912,12 @@ int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMD
 {
     int rc = VINF_SUCCESS;
 
+    Assert(pCmd->u32FenceID);
+
     pCmd->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
     pVbva->u32FenceSubmitted = pCmd->u32FenceID;
 
-    if (VBoxVBVAExGetSize(&pVbva->Vbva) > cbCmd)
+    if (VBoxVBVAExGetSize(&pVbva->Vbva) < cbCmd)
     {
         WARN(("buffer does not fit the vbva buffer, we do not support splitting buffers"));
         return VERR_NOT_SUPPORTED;
@@ -1072,7 +1083,7 @@ uint32_t VBoxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, b
     return vboxCmdVbvaCheckCompleted(pDevExt, pVbva, fPingHost, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx, false /* fBufferOverflow */);
 }
 
-
+#if 0
 static uint32_t vboxCVDdiSysMemElBuild(VBOXCMDVBVA_SYSMEMEL *pEl, PMDL pMdl, uint32_t iPfn, uint32_t cPages)
 {
     PFN_NUMBER cur = MmGetMdlPfnArray(pMdl)[iPfn];
@@ -1102,11 +1113,7 @@ uint32_t VBoxCVDdiPTransferVRamSysBuildEls(VBOXCMDVBVA_PAGING_TRANSFER *pCmd, PM
     uint32_t cEls = 0;
     VBOXCMDVBVA_SYSMEMEL *pEl = pCmd->aSysMem;
 
-    if (cbBuffer < sizeof (VBOXCMDVBVA_PAGING_TRANSFER))
-    {
-        WARN(("cbBuffer < sizeof (VBOXCMDVBVA_PAGING_TRANSFER)"));
-        goto done;
-    }
+    Assert(cbBuffer >= sizeof (VBOXCMDVBVA_PAGING_TRANSFER));
 
     cbBuffer -= RT_OFFSETOF(VBOXCMDVBVA_PAGING_TRANSFER, aSysMem);
 
@@ -1115,10 +1122,29 @@ uint32_t VBoxCVDdiPTransferVRamSysBuildEls(VBOXCMDVBVA_PAGING_TRANSFER *pCmd, PM
         cPages = vboxCVDdiSysMemElBuild(pEl, pMdl, iPfn + cInitPages - cPages, cPages);
     }
 
-done:
     *pcPagesWritten = cInitPages - cPages;
     return cbInitBuffer - cbBuffer;
 }
+#endif
+
+uint32_t VBoxCVDdiPTransferVRamSysBuildEls(VBOXCMDVBVA_PAGING_TRANSFER *pCmd, PMDL pMdl, uint32_t iPfn, uint32_t cPages, uint32_t cbBuffer, uint32_t *pcPagesWritten)
+{
+    uint32_t cbInitBuffer = cbBuffer;
+    uint32_t i = 0;
+    VBOXCMDVBVAPAGEIDX *pPageNumbers = pCmd->aPageNumbers;
+
+    cbBuffer -= RT_OFFSETOF(VBOXCMDVBVA_PAGING_TRANSFER, aPageNumbers);
+
+    for (; i < cPages && cbBuffer >= sizeof (*pPageNumbers); ++i, cbBuffer -= sizeof (*pPageNumbers))
+    {
+        pPageNumbers[i] = (VBOXCMDVBVAPAGEIDX)(MmGetMdlPfnArray(pMdl)[iPfn + i]);
+    }
+
+    *pcPagesWritten = i;
+    Assert(cbInitBuffer - cbBuffer == RT_OFFSETOF(VBOXCMDVBVA_PAGING_TRANSFER, aPageNumbers[i]));
+    return cbInitBuffer - cbBuffer;
+}
+
 
 int vboxCmdVbvaConConnect(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
         uint32_t crVersionMajor, uint32_t crVersionMinor,
@@ -1143,7 +1169,10 @@ int vboxCmdVbvaConConnect(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
     {
         rc = pConnect->Hdr.i32Result;
         if (RT_SUCCESS(rc))
+        {
+            Assert(pConnect->Connect.Hdr.u32CmdClientId);
             *pu32ClientID = pConnect->Connect.Hdr.u32CmdClientId;
+        }
         else
             WARN(("VBOXCMDVBVA3DCTL_TYPE_CONNECT Disable failed %d", rc));
     }
