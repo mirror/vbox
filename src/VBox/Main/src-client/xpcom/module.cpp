@@ -83,10 +83,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDEServerInfo, IVRDEServerInfo)
 // deliberately omit ExtPackFile as it's unusable in the client context
 // NS_DECL_CLASSINFO(ExtPackFile)
 // NS_IMPL_THREADSAFE_ISUPPORTS2_CI(ExtPackFile, IExtPackFile, IExtPackBase)
-NS_DECL_CLASSINFO(ExtPack)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(ExtPack, IExtPack, IExtPackBase)
-NS_DECL_CLASSINFO(ExtPackManager)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPackManager, IExtPackManager)
  #endif
 
 NS_DECL_CLASSINFO(Console)

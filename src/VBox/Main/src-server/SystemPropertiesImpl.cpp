@@ -777,7 +777,7 @@ HRESULT SystemProperties::getDefaultVRDEExtPack(com::Utf8Str &aExtPack)
             hrc = S_OK;
         else
 #ifdef VBOX_WITH_EXTPACK
-            hrc = mParent->i_getExtPackManager()->checkVrdeExtPack(&strExtPack);
+            hrc = mParent->i_getExtPackManager()->i_checkVrdeExtPack(&strExtPack);
 #else
             hrc = setError(E_FAIL, tr("The extension pack '%s' does not exist"), strExtPack.c_str());
 #endif
@@ -785,7 +785,7 @@ HRESULT SystemProperties::getDefaultVRDEExtPack(com::Utf8Str &aExtPack)
     else
     {
 #ifdef VBOX_WITH_EXTPACK
-        hrc = mParent->i_getExtPackManager()->getDefaultVrdeExtPack(&strExtPack);
+        hrc = mParent->i_getExtPackManager()->i_getDefaultVrdeExtPack(&strExtPack);
 #endif
         if (strExtPack.isEmpty())
         {
@@ -823,7 +823,7 @@ HRESULT SystemProperties::setDefaultVRDEExtPack(const com::Utf8Str &aExtPack)
             hrc = S_OK;
         else
 #ifdef VBOX_WITH_EXTPACK
-            hrc = mParent->i_getExtPackManager()->checkVrdeExtPack(&aExtPack);
+            hrc = mParent->i_getExtPackManager()->i_checkVrdeExtPack(&aExtPack);
 #else
             hrc = setError(E_FAIL, tr("The extension pack '%s' does not exist"), aExtPack.c_str());
 #endif

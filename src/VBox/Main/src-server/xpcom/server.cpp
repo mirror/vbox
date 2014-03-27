@@ -130,18 +130,6 @@ NS_DECL_CLASSINFO(PerformanceMetric)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PerformanceMetric, IPerformanceMetric)
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-#ifdef VBOX_WITH_EXTPACK
-NS_DECL_CLASSINFO(ExtPackFile)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPackFile, IExtPackFile)
-
-NS_DECL_CLASSINFO(ExtPack)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPack, IExtPack)
-
-NS_DECL_CLASSINFO(ExtPackManager)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPackManager, IExtPackManager)
-#endif
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 static bool gAutoShutdown = false;
