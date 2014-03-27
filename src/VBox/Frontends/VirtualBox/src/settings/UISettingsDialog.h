@@ -74,9 +74,11 @@ protected:
     /* UI translator: */
     virtual void retranslateUi();
 
-    /* Dialog type: */
-    SettingsDialogType dialogType() { return m_dialogType; }
-    void setDialogType(SettingsDialogType settingsDialogType);
+    /** Returns configuration access level. */
+    ConfigurationAccessLevel configurationAccessLevel() { return m_configurationAccessLevel; }
+    /** Defines configuration access level. */
+    void setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel);
+
     /* Dialog title: */
     virtual QString title() const = 0;
     /* Dialog title extension: */
@@ -118,8 +120,10 @@ private:
     /* Helper: Validation stuff: */
     void assignValidator(UISettingsPage *pPage);
 
+    /** Holds configuration access level. */
+    ConfigurationAccessLevel m_configurationAccessLevel;
+
     /* Global Flags: */
-    SettingsDialogType m_dialogType;
     bool m_fPolished;
 
     /* Loading/saving stuff: */

@@ -90,7 +90,9 @@ private:
 
     bool isPageAvailable(int iPageId);
     bool isSettingsChanged();
-    void updateDialogType();
+
+    /* Recalculates configuration access level. */
+    void updateConfigurationAccessLevel();
 
     QString m_strMachineId;
     KSessionState m_sessionState;

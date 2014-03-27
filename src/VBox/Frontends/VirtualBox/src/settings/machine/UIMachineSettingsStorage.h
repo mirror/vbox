@@ -541,7 +541,8 @@ public:
     KChipsetType chipsetType() const;
     void setChipsetType(KChipsetType type);
 
-    void setDialogType(SettingsDialogType settingsDialogType);
+    /** Defines configuration access level. */
+    void setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel);
 
     void clear();
 
@@ -563,7 +564,9 @@ private:
     ToolTipType mToolTipType;
 
     KChipsetType m_chipsetType;
-    SettingsDialogType m_dialogType;
+
+    /** Holds configuration access level. */
+    ConfigurationAccessLevel m_configurationAccessLevel;
 };
 Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 
@@ -783,7 +786,9 @@ private:
     bool isControllerCouldBeUpdated(const UICacheSettingsMachineStorageController &controllerCache) const;
     bool isAttachmentCouldBeUpdated(const UICacheSettingsMachineStorageAttachment &attachmentCache) const;
 
-    void setDialogType(SettingsDialogType settingsDialogType);
+    /** Defines configuration access level. */
+    void setConfigurationAccessLevel(ConfigurationAccessLevel configurationAccessLevel);
+
     void polishPage();
 
     QString m_strMachineId;

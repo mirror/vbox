@@ -322,9 +322,6 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
     setWindowIcon(QIcon(":/global_settings_16px.png"));
 #endif /* !Q_WS_MAC */
 
-    /* Assign default dialog type: */
-    setDialogType(SettingsDialogType_Offline);
-
     /* Creating settings pages: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     QList<GlobalSettingsPageType> restrictedGlobalSettingsPages = vboxGlobal().restrictedGlobalSettingsPages(vbox);
@@ -411,10 +408,11 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                 default:
                     break;
             }
-            if (pSettingsPage)
-                pSettingsPage->setDialogType(dialogType());
         }
     }
+
+    /* Assign default (full) configuration access level: */
+    setConfigurationAccessLevel(ConfigurationAccessLevel_Full);
 
     /* Retranslate UI: */
     retranslateUi();
@@ -563,8 +561,6 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
     AssertMsg(!m_machine.isNull(), ("Can't find corresponding machine!\n"));
     m_sessionState = m_machine.GetSessionState();
     m_machineState = m_machine.GetState();
-    /* Recalculate current dialog-type: */
-    updateDialogType();
 
     /* Creating settings pages: */
     QList<MachineSettingsPageType> restrictedMachineSettingsPages = vboxGlobal().restrictedMachineSettingsPages(m_machine);
@@ -671,10 +667,11 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 default:
                     break;
             }
-            if (pSettingsPage)
-                pSettingsPage->setDialogType(dialogType());
         }
     }
+
+    /* Recalculate configuration access level: */
+    updateConfigurationAccessLevel();
 
     /* Retranslate UI: */
     retranslateUi();
@@ -733,7 +730,7 @@ void UISettingsDialogMachine::loadData()
     gVBoxEvents->disconnect(this);
 
     /* Prepare session: */
-    m_session = dialogType() == SettingsDialogType_Wrong ? CSession() : vboxGlobal().openExistingSession(m_strMachineId);
+    m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() : vboxGlobal().openExistingSession(m_strMachineId);
     /* Check that session was created: */
     if (m_session.isNull())
         return;
@@ -741,7 +738,7 @@ void UISettingsDialogMachine::loadData()
     /* Get machine from session: */
     m_machine = m_session.GetMachine();
     /* Get console from session: */
-    m_console = dialogType() == SettingsDialogType_Offline ? CConsole() : m_session.GetConsole();
+    m_console = configurationAccessLevel() == ConfigurationAccessLevel_Full ? CConsole() : m_session.GetConsole();
 
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
@@ -772,9 +769,9 @@ void UISettingsDialogMachine::saveData()
     gVBoxEvents->disconnect(this);
 
     /* Prepare session: */
-    if (dialogType() == SettingsDialogType_Wrong)
+    if (configurationAccessLevel() == ConfigurationAccessLevel_Null)
         m_session = CSession();
-    else if (dialogType() != SettingsDialogType_Offline)
+    else if (configurationAccessLevel() != ConfigurationAccessLevel_Full)
         m_session = vboxGlobal().openExistingSession(m_strMachineId);
     else
         m_session = vboxGlobal().openSession(m_strMachineId);
@@ -785,7 +782,7 @@ void UISettingsDialogMachine::saveData()
     /* Get machine from session: */
     m_machine = m_session.GetMachine();
     /* Get console from session: */
-    m_console = dialogType() == SettingsDialogType_Offline ? CConsole() : m_session.GetConsole();
+    m_console = configurationAccessLevel() == ConfigurationAccessLevel_Full ? CConsole() : m_session.GetConsole();
 
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
@@ -1010,8 +1007,8 @@ void UISettingsDialogMachine::sltSessionStateChanged(QString strMachineId, KSess
     /* Update current session state: */
     m_sessionState = sessionState;
 
-    /* Update dialog-type if necessary: */
-    updateDialogType();
+    /* Recalculate configuration access level: */
+    updateConfigurationAccessLevel();
 }
 
 void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMachineState machineState)
@@ -1027,8 +1024,8 @@ void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMach
     /* Update current machine state: */
     m_machineState = machineState;
 
-    /* Update dialog-type if necessary: */
-    updateDialogType();
+    /* Recalculate configuration access level: */
+    updateConfigurationAccessLevel();
 }
 
 void UISettingsDialogMachine::sltMachineDataChanged(QString strMachineId)
@@ -1126,23 +1123,23 @@ bool UISettingsDialogMachine::isSettingsChanged()
     return fIsSettingsChanged;
 }
 
-void UISettingsDialogMachine::updateDialogType()
+void UISettingsDialogMachine::updateConfigurationAccessLevel()
 {
-    /* Get new dialog type: */
-    SettingsDialogType newDialogType = determineSettingsDialogType(m_sessionState, m_machineState);
+    /* Determine new configuration access level: */
+    ConfigurationAccessLevel newConfigurationAccessLevel = ::configurationAccessLevel(m_sessionState, m_machineState);
 
-    /* Ignore if dialog type was NOT actually changed: */
-    if (dialogType() == newDialogType)
+    /* Make sure someting changed: */
+    if (configurationAccessLevel() == newConfigurationAccessLevel)
         return;
 
-    /* Should we show a warning about leaving 'offline' state? */
-    bool fShouldWe = dialogType() == SettingsDialogType_Offline;
+    /* Should we warn a user about access level decrease? */
+    bool fShouldWeWarn = configurationAccessLevel() == ConfigurationAccessLevel_Full;
 
-    /* Update current dialog type: */
-    setDialogType(newDialogType);
+    /* Apply new configuration access level: */
+    setConfigurationAccessLevel(newConfigurationAccessLevel);
 
-    /* Show a warning about leaving 'offline' state if we should: */
-    if (isSettingsChanged() && fShouldWe)
+    /* Show a warning about access level decrease if we should: */
+    if (isSettingsChanged() && fShouldWeWarn)
         msgCenter().warnAboutStateChange(this);
 }
 

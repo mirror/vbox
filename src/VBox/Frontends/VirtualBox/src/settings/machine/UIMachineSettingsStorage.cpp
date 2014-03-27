@@ -863,7 +863,7 @@ StorageModel::StorageModel (QObject *aParent)
     , mRootItem (new RootItem)
     , mToolTipType (DefaultToolTip)
     , m_chipsetType(KChipsetType_PIIX3)
-    , m_dialogType(SettingsDialogType_Wrong)
+    , m_configurationAccessLevel(ConfigurationAccessLevel_Null)
 {
 }
 
@@ -1033,37 +1033,37 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         }
         case R_IsMoreIDEControllersPossible:
         {
-            return (m_dialogType == SettingsDialogType_Offline) &&
+            return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_IDE) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_IDE));
         }
         case R_IsMoreSATAControllersPossible:
         {
-            return (m_dialogType == SettingsDialogType_Offline) &&
+            return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SATA) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SATA));
         }
         case R_IsMoreSCSIControllersPossible:
         {
-            return (m_dialogType == SettingsDialogType_Offline) &&
+            return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SCSI) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SCSI));
         }
         case R_IsMoreFloppyControllersPossible:
         {
-            return (m_dialogType == SettingsDialogType_Offline) &&
+            return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_Floppy) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_Floppy));
         }
         case R_IsMoreSASControllersPossible:
         {
-            return (m_dialogType == SettingsDialogType_Offline) &&
+            return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SAS) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SAS));
         }
         case R_IsMoreUSBControllersPossible:
         {
-            return (m_dialogType == SettingsDialogType_Offline) &&
+            return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_USB) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_USB));
         }
@@ -1075,12 +1075,12 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                 {
                     ControllerItem *ctr = static_cast <ControllerItem*> (item);
                     CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
-                    switch (m_dialogType)
+                    switch (m_configurationAccessLevel)
                     {
-                        case SettingsDialogType_Offline: return ((uint)rowCount(aIndex) < sp.GetMaxPortCountForStorageBus(ctr->ctrBusType()) *
-                                                                                          sp.GetMaxDevicesPerPortForStorageBus(ctr->ctrBusType()));
-                        case SettingsDialogType_Online: return (ctr->ctrBusType() == KStorageBus_SATA) &&
-                                                               ((uint)rowCount(aIndex) < ctr->portCount());
+                        case ConfigurationAccessLevel_Full: return ((uint)rowCount(aIndex) < sp.GetMaxPortCountForStorageBus(ctr->ctrBusType()) *
+                                                                                             sp.GetMaxDevicesPerPortForStorageBus(ctr->ctrBusType()));
+                        case ConfigurationAccessLevel_Runtime: return (ctr->ctrBusType() == KStorageBus_SATA) &&
+                                                                      ((uint)rowCount(aIndex) < ctr->portCount());
                         default: break;
                     }
                     return false;
@@ -1503,7 +1503,7 @@ QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDevic
         QModelIndex parentIndex = index (parentPosition, 0, root());
         beginInsertRows (parentIndex, parent->childCount(), parent->childCount());
         AttachmentItem *pItem = new AttachmentItem (parent, aDeviceType);
-        pItem->setAttIsHotPluggable(m_dialogType != SettingsDialogType_Offline);
+        pItem->setAttIsHotPluggable(m_configurationAccessLevel != ConfigurationAccessLevel_Full);
         pItem->setAttMediumId(strMediumId);
         endInsertRows();
         return index (parent->childCount() - 1, 0, parentIndex);
@@ -1616,9 +1616,9 @@ void StorageModel::setChipsetType(KChipsetType type)
     m_chipsetType = type;
 }
 
-void StorageModel::setDialogType(SettingsDialogType dialogType)
+void StorageModel::setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel)
 {
-    m_dialogType = dialogType;
+    m_configurationAccessLevel = newConfigurationAccessLevel;
 }
 
 void StorageModel::clear()
@@ -3811,12 +3811,12 @@ bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UICacheSettingsM
            (currentAttachmentDeviceType == KDeviceType_Floppy || currentAttachmentDeviceType == KDeviceType_DVD);
 }
 
-void UIMachineSettingsStorage::setDialogType(SettingsDialogType settingsDialogType)
+void UIMachineSettingsStorage::setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel)
 {
-    /* Update model 'settings window type': */
-    mStorageModel->setDialogType(settingsDialogType);
-    /* Update 'settings window type' of base class: */
-    UISettingsPageMachine::setDialogType(settingsDialogType);
+    /* Update model 'configuration access level': */
+    mStorageModel->setConfigurationAccessLevel(newConfigurationAccessLevel);
+    /* Update 'configuration access level' of base class: */
+    UISettingsPageMachine::setConfigurationAccessLevel(newConfigurationAccessLevel);
 }
 
 void UIMachineSettingsStorage::polishPage()

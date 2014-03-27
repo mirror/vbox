@@ -107,12 +107,12 @@ public:
     /* Settings page type stuff: */
     UISettingsPageType pageType() const { return m_pageType; }
 
-    /* Settings dialog type stuff: */
-    SettingsDialogType dialogType() const { return m_dialogType; }
-    virtual void setDialogType(SettingsDialogType settingsDialogType) { m_dialogType = settingsDialogType; polishPage(); }
-    bool isMachineOffline() const { return dialogType() == SettingsDialogType_Offline; }
-    bool isMachineSaved() const { return dialogType() == SettingsDialogType_Saved; }
-    bool isMachineOnline() const { return dialogType() == SettingsDialogType_Online; }
+    /* Configuration access level stuff: */
+    ConfigurationAccessLevel configurationAccessLevel() const { return m_configurationAccessLevel; }
+    virtual void setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel) { m_configurationAccessLevel = newConfigurationAccessLevel; polishPage(); }
+    bool isMachineOffline() const { return configurationAccessLevel() == ConfigurationAccessLevel_Full; }
+    bool isMachineSaved() const { return configurationAccessLevel() == ConfigurationAccessLevel_Saved; }
+    bool isMachineOnline() const { return configurationAccessLevel() == ConfigurationAccessLevel_Runtime; }
     bool isMachineInValidMode() const { return isMachineOffline() || isMachineSaved() || isMachineOnline(); }
 
     /* Page changed: */
@@ -153,7 +153,7 @@ private:
 
     /* Variables: */
     UISettingsPageType m_pageType;
-    SettingsDialogType m_dialogType;
+    ConfigurationAccessLevel m_configurationAccessLevel;
     int m_cId;
     bool m_fProcessed;
     bool m_fFailed;
