@@ -1941,11 +1941,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     const CMediumAttachmentVector attachments = machine.GetMediumAttachments();
 
     /* Determine device & medium types: */
-    const KDeviceType deviceType = currentAttachment.GetType();
-    const UIMediumType mediumType = deviceType == KDeviceType_DVD    ? UIMediumType_DVD :
-                                    deviceType == KDeviceType_Floppy ? UIMediumType_Floppy :
-                                                                       UIMediumType_Invalid;
-    AssertMsgReturnVoid(deviceType != KDeviceType_Null, ("Incorrect storage device type!\n"));
+    const UIMediumType mediumType = mediumTypeToLocal(currentAttachment.GetType());
     AssertMsgReturnVoid(mediumType != UIMediumType_Invalid, ("Incorrect storage medium type!\n"));
 
 
@@ -1953,6 +1949,17 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     QAction *pActionOpenExistingMedium = menu.addAction(QIcon(":/select_file_16px.png"), QString(), pListener, pszSlotName);
     pActionOpenExistingMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(), currentAttachment.GetDevice(),
                                                                           mediumType)));
+    switch (mediumType)
+    {
+        case UIMediumType_DVD:
+            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual CD/DVD disk file..."));
+            break;
+        case UIMediumType_Floppy:
+            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual floppy disk file..."));
+            break;
+        default:
+            break;
+    }
 
 
     /* Insert separator: */
@@ -1963,7 +1970,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     CMediumVector mediums;
     switch (mediumType)
     {
-        case UIMediumType_DVD: mediums = vboxGlobal().host().GetDVDDrives(); break;
+        case UIMediumType_DVD:    mediums = vboxGlobal().host().GetDVDDrives(); break;
         case UIMediumType_Floppy: mediums = vboxGlobal().host().GetFloppyDrives(); break;
         default: break;
     }
@@ -2000,7 +2007,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     QString strRecentMediumAddress;
     switch (mediumType)
     {
-        case UIMediumType_DVD: strRecentMediumAddress = GUI_RecentListCD; break;
+        case UIMediumType_DVD:    strRecentMediumAddress = GUI_RecentListCD; break;
         case UIMediumType_Floppy: strRecentMediumAddress = GUI_RecentListFD; break;
         default: break;
     }
@@ -2048,24 +2055,11 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     QAction *pActionUnmountMedium = menu.addAction(QString(), pListener, pszSlotName);
     pActionUnmountMedium->setEnabled(!currentMedium.isNull());
     pActionUnmountMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(), currentAttachment.GetDevice())));
-
-
-    /* Switch CD/FD names/icons: */
-    switch (mediumType)
-    {
-        case UIMediumType_DVD:
-            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual CD/DVD disk file..."));
-            pActionUnmountMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
-            pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/cd_unmount_16px.png", ":/cd_unmount_disabled_16px.png"));
-            break;
-        case UIMediumType_Floppy:
-            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual floppy disk file..."));
-            pActionUnmountMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
-            pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/fd_unmount_16px.png", ":/fd_unmount_disabled_16px.png"));
-            break;
-        default:
-            break;
-    }
+    pActionUnmountMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
+    if (mediumType == UIMediumType_DVD)
+        pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/cd_unmount_16px.png", ":/cd_unmount_disabled_16px.png"));
+    else if (mediumType == UIMediumType_Floppy)
+        pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/fd_unmount_16px.png", ":/fd_unmount_disabled_16px.png"));
 }
 
 void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMediumTarget &target)
@@ -2090,10 +2084,9 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
         {
             /* New mount-target attributes: */
             QString strNewID;
-            const bool fSelectWithMediaManager = target.mediumType != UIMediumType_Invalid && target.data.isNull();
 
             /* Invoke file-open dialog to choose medium ID: */
-            if (fSelectWithMediaManager)
+            if (target.mediumType != UIMediumType_Invalid && target.data.isNull())
             {
                 /* Keyboard can be captured by machine-view.
                  * So we should clear machine-view focus to let file-open dialog get it.
@@ -2175,22 +2168,21 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
 
     /* Remount medium to the predefined port/device: */
     bool fWasMounted = false;
+    /* Remounting: */
     machine.MountMedium(target.name, target.port, target.device, cmedium, false /* force? */);
-    if (machine.isOk())
-        fWasMounted = true;
-    else
+    fWasMounted = machine.isOk();
+    if (!fWasMounted)
     {
         /* Ask for force remounting: */
         if (msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(strActualID),
-                                            fMount, true /* retry? */, activeMachineWindow()))
+                                            fMount, true /* retry? */))
         {
-            /* Force remount medium to the predefined port/device: */
+            /* Force remounting: */
             machine.MountMedium(target.name, target.port, target.device, cmedium, true /* force? */);
-            if (machine.isOk())
-                fWasMounted = true;
-            else
+            fWasMounted = machine.isOk();
+            if (!fWasMounted)
                 msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(strActualID),
-                                                fMount, false /* retry? */, activeMachineWindow());
+                                                fMount, false /* retry? */);
         }
     }
 
