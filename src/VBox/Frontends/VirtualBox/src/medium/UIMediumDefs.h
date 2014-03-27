@@ -48,43 +48,14 @@ struct UIMediumTarget
     /** Medium-target types. */
     enum UIMediumTargetType { UIMediumTargetType_WithID, UIMediumTargetType_WithLocation };
 
-    /** Default medium-target constructor. */
-    UIMediumTarget()
-        : type(UIMediumTargetType_WithID)
-        , name(QString()), port(0), device(0), mediumType(UIMediumType_Invalid)
-        , data(QString())
+    /** Medium-target constructor. */
+    UIMediumTarget(const QString &strName = QString(), LONG iPort = 0, LONG iDevice = 0,
+                   UIMediumType aMediumType = UIMediumType_Invalid,
+                   UIMediumTargetType aType = UIMediumTargetType_WithID, const QString &strData = QString())
+        : name(strName), port(iPort), device(iDevice)
+        , mediumType(aMediumType)
+        , type(aType), data(strData)
     {}
-
-    /** Unmount medium-target constructor. */
-    UIMediumTarget(const QString &strName, LONG iPort, LONG iDevice)
-        : type(UIMediumTargetType_WithID)
-        , name(strName), port(iPort), device(iDevice), mediumType(UIMediumType_Invalid)
-        , data(QString())
-    {}
-
-    /** Open medium-target constructor. */
-    UIMediumTarget(const QString &strName, LONG iPort, LONG iDevice, UIMediumType otherMediumType)
-        : type(UIMediumTargetType_WithID)
-        , name(strName), port(iPort), device(iDevice), mediumType(otherMediumType)
-        , data(QString())
-    {}
-
-    /** Predefined medium-target constructor. */
-    UIMediumTarget(const QString &strName, LONG iPort, LONG iDevice, const QString &strID)
-        : type(UIMediumTargetType_WithID)
-        , name(strName), port(iPort), device(iDevice), mediumType(UIMediumType_Invalid)
-        , data(strID)
-    {}
-
-    /** Recent medium-target constructor. */
-    UIMediumTarget(const QString &strName, LONG iPort, LONG iDevice, UIMediumType otherMediumType, const QString &strLocation)
-        : type(UIMediumTargetType_WithLocation)
-        , name(strName), port(iPort), device(iDevice), mediumType(otherMediumType)
-        , data(strLocation)
-    {}
-
-    /** Determines medium-target type. */
-    UIMediumTargetType type;
 
     /** Determines controller name. */
     QString name;
@@ -96,6 +67,8 @@ struct UIMediumTarget
     /** Determines medium-target medium-type. */
     UIMediumType mediumType;
 
+    /** Determines medium-target type. */
+    UIMediumTargetType type;
     /** Depending on medium-target type holds <i>ID</i> or <i>location</i>. */
     QString data;
 };

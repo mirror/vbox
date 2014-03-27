@@ -1951,8 +1951,8 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
 
     /* Prepare open-existing-medium action: */
     QAction *pActionOpenExistingMedium = menu.addAction(QIcon(":/select_file_16px.png"), QString(), pListener, pszSlotName);
-    pActionOpenExistingMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(),
-                                                                          currentAttachment.GetDevice(), mediumType)));
+    pActionOpenExistingMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(), currentAttachment.GetDevice(),
+                                                                          mediumType)));
 
 
     /* Insert separator: */
@@ -1990,8 +1990,8 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
             QAction *pActionChooseHostDrive = menu.addAction(UIMedium(medium, mediumType).name(), pListener, pszSlotName);
             pActionChooseHostDrive->setCheckable(true);
             pActionChooseHostDrive->setChecked(!currentMedium.isNull() && medium.GetId() == strCurrentID);
-            pActionChooseHostDrive->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(),
-                                                                               currentAttachment.GetDevice(), medium.GetId())));
+            pActionChooseHostDrive->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(), currentAttachment.GetDevice(),
+                                                                               mediumType, UIMediumTarget::UIMediumTargetType_WithID, medium.GetId())));
         }
     }
 
@@ -2033,9 +2033,8 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
             QAction *pActionChooseRecentMedium = menu.addAction(QFileInfo(strRecentMediumLocation).fileName(), pListener, pszSlotName);
             pActionChooseRecentMedium->setCheckable(true);
             pActionChooseRecentMedium->setChecked(!currentMedium.isNull() && strRecentMediumLocation == strCurrentLocation);
-            pActionChooseRecentMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(),
-                                                                                  currentAttachment.GetDevice(), mediumType,
-                                                                                  strRecentMediumLocation)));
+            pActionChooseRecentMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(), currentAttachment.GetDevice(),
+                                                                                  mediumType, UIMediumTarget::UIMediumTargetType_WithLocation, strRecentMediumLocation)));
             pActionChooseRecentMedium->setToolTip(strRecentMediumLocation);
         }
     }
@@ -2048,8 +2047,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     /* Prepare unmount-current-medium action: */
     QAction *pActionUnmountMedium = menu.addAction(QString(), pListener, pszSlotName);
     pActionUnmountMedium->setEnabled(!currentMedium.isNull());
-    pActionUnmountMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName,
-                                                                     currentAttachment.GetPort(), currentAttachment.GetDevice())));
+    pActionUnmountMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(), currentAttachment.GetDevice())));
 
 
     /* Switch CD/FD names/icons: */
@@ -2092,7 +2090,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
         {
             /* New mount-target attributes: */
             QString strNewID;
-            const bool fSelectWithMediaManager = target.mediumType != UIMediumType_Invalid;
+            const bool fSelectWithMediaManager = target.mediumType != UIMediumType_Invalid && target.data.isNull();
 
             /* Invoke file-open dialog to choose medium ID: */
             if (fSelectWithMediaManager)
