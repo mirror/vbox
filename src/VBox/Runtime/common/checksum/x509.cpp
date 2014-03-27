@@ -81,7 +81,7 @@ static int RTX509ReadCertificateFromPEM(void *pvBuf, unsigned int cbSize, X509**
     *out_cert = PEM_read_bio_X509(bio_memory,NULL,0,NULL);
     BIO_free(bio_memory);
     if(!*out_cert)
-        rc = VERR_READING_CERT_FROM_BIO;
+        rc = VERR_X509_READING_CERT_FROM_BIO;
 
     return rc;
 }
@@ -203,14 +203,14 @@ RTDECL(int) RTRSAVerify(void *pvBuf, unsigned int cbSize, const char* pManifestD
         evp_key = X509_get_pubkey(certificate);
         if (evp_key == NULL)
         {
-            rc = VERR_EXTRACT_PUBKEY_FROM_CERT;
+            rc = VERR_X509_EXTRACT_PUBKEY_FROM_CERT;
             break;
         }
 
         rsa_key = EVP_PKEY_get1_RSA(evp_key);
         if (rsa_key == NULL)
         {
-            rc = VERR_EXTRACT_RSA_FROM_PUBLIC_KEY;
+            rc = VERR_X509_EXTRACT_RSA_FROM_PUBLIC_KEY;
             break;
         }
 
@@ -223,7 +223,7 @@ RTDECL(int) RTRSAVerify(void *pvBuf, unsigned int cbSize, const char* pManifestD
 
         if (rc != 1)
         {
-            rc = VERR_RSA_VERIFICATION_FUILURE;
+            rc = VERR_X509_RSA_VERIFICATION_FUILURE;
         }
 
         break;
@@ -273,28 +273,28 @@ static int RTX509GetBasicConstraints(void *pvBuf, unsigned int cbSize, unsigned 
 
         if(loc == -1)
         {
-            rc = VERR_NO_BASIC_CONSTARAINTS;
+            rc = VERR_X509_NO_BASIC_CONSTARAINTS;
             break;
         }
 
         X509_EXTENSION *ext = X509_get_ext(certificate, loc);
         if(!ext)
         {
-            rc = VERR_GETTING_EXTENSION_FROM_CERT;
+            rc = VERR_X509_GETTING_EXTENSION_FROM_CERT;
             break;
         }
 
         ASN1_OCTET_STRING *extdata = X509_EXTENSION_get_data(ext);
         if(!extdata)
         {
-            rc = VERR_GETTING_DATA_FROM_EXTENSION;
+            rc = VERR_X509_GETTING_DATA_FROM_EXTENSION;
             break;
         }
 
         bio_memory = BIO_new(BIO_s_mem());
         if(!X509V3_EXT_print(bio_memory, ext, 0, 0))
         {
-            rc = VERR_PRINT_EXTENSION_TO_BIO;
+            rc = VERR_X509_PRINT_EXTENSION_TO_BIO;
             break;
         }
         BIO_ctrl(bio_memory,BIO_CTRL_FLUSH,0,NULL);
@@ -363,12 +363,12 @@ RTDECL(int) RTX509CertificateVerify(void *pvBuf, unsigned int cbSize)
             }
             else
             {
-                rc = VINF_NOT_SELFSIGNED_X509_CERTIFICATE;
+                rc = VINF_X509_NOT_SELFSIGNED_CERTIFICATE;
             }
         }
         else
         {
-            rc = VINF_NOT_SELFSIGNED_X509_CERTIFICATE;
+            rc = VINF_X509_NOT_SELFSIGNED_CERTIFICATE;
         }
 
         break;

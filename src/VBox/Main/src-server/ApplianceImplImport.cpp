@@ -2133,28 +2133,28 @@ HRESULT Appliance::i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORA
                 Utf8Str errStrDesc;
                 switch(vrc)
                 {
-                    case VERR_READING_CERT_FROM_BIO:
+                    case VERR_X509_READING_CERT_FROM_BIO:
                         errStrDesc = "Error during reading a certificate in PEM format from BIO ";
                         break;
-                    case VERR_EXTRACT_PUBKEY_FROM_CERT:
+                    case VERR_X509_EXTRACT_PUBKEY_FROM_CERT:
                         errStrDesc = "Error during extraction a public key from the certificate ";
                         break;
-                    case VERR_EXTRACT_RSA_FROM_PUBLIC_KEY:
+                    case VERR_X509_EXTRACT_RSA_FROM_PUBLIC_KEY:
                         errStrDesc = "Error during extraction RSA from the public key ";
                         break;
-                    case VERR_RSA_VERIFICATION_FUILURE:
+                    case VERR_X509_RSA_VERIFICATION_FUILURE:
                         errStrDesc = "RSA verification failure ";
                         break;
-                    case VERR_NO_BASIC_CONSTARAINTS:
+                    case VERR_X509_NO_BASIC_CONSTARAINTS:
                         errStrDesc = "Basic constraints were not found ";
                         break;
-                    case VERR_GETTING_EXTENSION_FROM_CERT:
+                    case VERR_X509_GETTING_EXTENSION_FROM_CERT:
                         errStrDesc = "Error during getting extensions from the certificate ";
                         break;
-                    case VERR_GETTING_DATA_FROM_EXTENSION:
+                    case VERR_X509_GETTING_DATA_FROM_EXTENSION:
                         errStrDesc = "Error during extraction data from the extension ";
                         break;
-                    case VERR_PRINT_EXTENSION_TO_BIO:
+                    case VERR_X509_PRINT_EXTENSION_TO_BIO:
                         errStrDesc = "Error during print out an extension to BIO ";
                         break;
                     case VERR_X509_CERTIFICATE_VERIFICATION_FAILURE:
@@ -2168,7 +2168,7 @@ HRESULT Appliance::i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORA
         }
         else
         {
-            if(vrc == VINF_NOT_SELFSIGNED_X509_CERTIFICATE)
+            if(vrc == VINF_X509_NOT_SELFSIGNED_CERTIFICATE)
             {
                 setWarning(VBOX_E_FILE_ERROR, 
                            tr("Signature from the X509 certificate has been verified. "
