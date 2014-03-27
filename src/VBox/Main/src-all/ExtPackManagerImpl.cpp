@@ -367,353 +367,274 @@ void ExtPackFile::uninit()
     }
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(Name)(BSTR *a_pbstrName)
+HRESULT ExtPackFile::getName(com::Utf8Str &aName)
 {
-    CheckComArgOutPointerValid(a_pbstrName);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Bstr str(m->Desc.strName);
-        str.cloneTo(a_pbstrName);
-    }
-    return hrc;
+    aName = m->Desc.strName;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(Description)(BSTR *a_pbstrDescription)
+HRESULT ExtPackFile::getDescription(com::Utf8Str &aDescription)
 {
-    CheckComArgOutPointerValid(a_pbstrDescription);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Bstr str(m->Desc.strDescription);
-        str.cloneTo(a_pbstrDescription);
-    }
-    return hrc;
+    aDescription = m->Desc.strDescription;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(Version)(BSTR *a_pbstrVersion)
+HRESULT ExtPackFile::getVersion(com::Utf8Str &aVersion)
 {
-    CheckComArgOutPointerValid(a_pbstrVersion);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Bstr str(m->Desc.strVersion);
-        str.cloneTo(a_pbstrVersion);
-    }
-    return hrc;
+    aVersion = m->Desc.strVersion;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(Edition)(BSTR *a_pbstrEdition)
+HRESULT ExtPackFile::getEdition(com::Utf8Str &aEdition)
 {
-    CheckComArgOutPointerValid(a_pbstrEdition);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Bstr str(m->Desc.strEdition);
-        str.cloneTo(a_pbstrEdition);
-    }
-    return hrc;
+    aEdition = m->Desc.strEdition;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(Revision)(ULONG *a_puRevision)
+HRESULT ExtPackFile::getRevision(ULONG *aRevision)
 {
-    CheckComArgOutPointerValid(a_puRevision);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        *a_puRevision = m->Desc.uRevision;
-    return hrc;
+    *aRevision = m->Desc.uRevision;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(VRDEModule)(BSTR *a_pbstrVrdeModule)
+HRESULT ExtPackFile::getVRDEModule(com::Utf8Str &aVRDEModule)
 {
-    CheckComArgOutPointerValid(a_pbstrVrdeModule);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Bstr str(m->Desc.strVrdeModule);
-        str.cloneTo(a_pbstrVrdeModule);
-    }
-    return hrc;
+    aVRDEModule = m->Desc.strVrdeModule;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(PlugIns)(ComSafeArrayOut(IExtPackPlugIn *, a_paPlugIns))
+HRESULT ExtPackFile::getPlugIns(std::vector<ComPtr<IExtPackPlugIn> > &aPlugIns)
 {
     /** @todo implement plug-ins. */
 #ifdef VBOX_WITH_XPCOM
-    NOREF(a_paPlugIns);
-    NOREF(a_paPlugInsSize);
+    NOREF(aPlugIns);
 #endif
+    NOREF(aPlugIns);
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(Usable)(BOOL *a_pfUsable)
+HRESULT ExtPackFile::getUsable(BOOL *aUsable)
 {
-    CheckComArgOutPointerValid(a_pfUsable);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        *a_pfUsable = m->fUsable;
-    return hrc;
+    *aUsable = m->fUsable;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(WhyUnusable)(BSTR *a_pbstrWhy)
+HRESULT ExtPackFile::getWhyUnusable(com::Utf8Str &aWhyUnusable)
 {
-    CheckComArgOutPointerValid(a_pbstrWhy);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        m->strWhyUnusable.cloneTo(a_pbstrWhy);
-    return hrc;
+    aWhyUnusable = m->strWhyUnusable;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(ShowLicense)(BOOL *a_pfShowIt)
+HRESULT  ExtPackFile::getShowLicense(BOOL *aShowLicense)
 {
-    CheckComArgOutPointerValid(a_pfShowIt);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        *a_pfShowIt = m->Desc.fShowLicense;
-    return hrc;
+    *aShowLicense = m->Desc.fShowLicense;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(License)(BSTR *a_pbstrHtmlLicense)
+HRESULT ExtPackFile::getLicense(com::Utf8Str &aLicense)
 {
-    Bstr bstrHtml("html");
-    return QueryLicense(Bstr::Empty.raw(), Bstr::Empty.raw(), bstrHtml.raw(), a_pbstrHtmlLicense);
+    Utf8Str strHtml("html");
+    Utf8Str str("");
+    return queryLicense(str, str, strHtml, aLicense);
 }
 
 /* Same as ExtPack::QueryLicense, should really explore the subject of base classes here... */
-STDMETHODIMP ExtPackFile::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_bstrPreferredLanguage, IN_BSTR a_bstrFormat,
-                                       BSTR *a_pbstrLicense)
+HRESULT ExtPackFile::queryLicense(const com::Utf8Str &aPreferredLocale, const com::Utf8Str &aPreferredLanguage,
+                                  const com::Utf8Str &aFormat, com::Utf8Str &aLicenseText)
 {
+    HRESULT hrc = S_OK;
+
     /*
      * Validate input.
      */
-    CheckComArgOutPointerValid(a_pbstrLicense);
-    CheckComArgNotNull(a_bstrPreferredLocale);
-    CheckComArgNotNull(a_bstrPreferredLanguage);
-    CheckComArgNotNull(a_bstrFormat);
 
-    Utf8Str strPreferredLocale(a_bstrPreferredLocale);
-    if (strPreferredLocale.length() != 2 && strPreferredLocale.length() != 0)
+    if (aPreferredLocale.length() != 2 && aPreferredLocale.length() != 0)
         return setError(E_FAIL, tr("The preferred locale is a two character string or empty."));
 
-    Utf8Str strPreferredLanguage(a_bstrPreferredLanguage);
-    if (strPreferredLanguage.length() != 2 && strPreferredLanguage.length() != 0)
+    if (aPreferredLanguage.length() != 2 && aPreferredLanguage.length() != 0)
         return setError(E_FAIL, tr("The preferred lanuage is a two character string or empty."));
 
-    Utf8Str strFormat(a_bstrFormat);
-    if (   !strFormat.equals("html")
-        && !strFormat.equals("rtf")
-        && !strFormat.equals("txt"))
+    if (   !aFormat.equals("html")
+        && !aFormat.equals("rtf")
+        && !aFormat.equals("txt"))
         return setError(E_FAIL, tr("The license format can only have the values 'html', 'rtf' and 'txt'."));
 
     /*
      * Combine the options to form a file name before locking down anything.
      */
     char szName[sizeof(VBOX_EXTPACK_LICENSE_NAME_PREFIX "-de_DE.html") + 2];
-    if (strPreferredLocale.isNotEmpty() && strPreferredLanguage.isNotEmpty())
+    if (aPreferredLocale.isNotEmpty() && aPreferredLanguage.isNotEmpty())
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s_%s.%s",
-                    strPreferredLocale.c_str(), strPreferredLanguage.c_str(), strFormat.c_str());
-    else if (strPreferredLocale.isNotEmpty())
+                    aPreferredLocale.c_str(), aPreferredLanguage.c_str(), aFormat.c_str());
+    else if (aPreferredLocale.isNotEmpty())
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s.%s",
-                    strPreferredLocale.c_str(), strFormat.c_str());
-    else if (strPreferredLanguage.isNotEmpty())
+                    aPreferredLocale.c_str(), aFormat.c_str());
+    else if (aPreferredLanguage.isNotEmpty())
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-_%s.%s",
-                    strPreferredLocale.c_str(), strFormat.c_str());
+                    aPreferredLocale.c_str(), aFormat.c_str());
     else
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX ".%s",
-                    strFormat.c_str());
+                    aFormat.c_str());
     /*
      * Lock the extension pack. We need a write lock here as there must not be
      * concurrent accesses to the tar file handle.
      */
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
+    AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+    /*
+     * Do not permit this query on a pack that isn't considered usable (could
+     * be marked so because of bad license files).
+     */
+    if (!m->fUsable)
+        hrc = setError(E_FAIL, tr("%s"), m->strWhyUnusable.c_str());
+    else
     {
-        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
-
         /*
-         * Do not permit this query on a pack that isn't considered usable (could
-         * be marked so because of bad license files).
+         * Look it up in the manifest before scanning the tarball for it
          */
-        if (!m->fUsable)
-            hrc = setError(E_FAIL, tr("%s"), m->strWhyUnusable.c_str());
-        else
+        if (RTManifestEntryExists(m->hOurManifest, szName))
         {
-            /*
-             * Look it up in the manifest before scanning the tarball for it
-             */
-            if (RTManifestEntryExists(m->hOurManifest, szName))
+            RTVFSFSSTREAM   hTarFss;
+            char            szError[8192];
+            int vrc = VBoxExtPackOpenTarFss(m->hExtPackFile, szError, sizeof(szError), &hTarFss, NULL);
+            if (RT_SUCCESS(vrc))
             {
-                RTVFSFSSTREAM   hTarFss;
-                char            szError[8192];
-                int vrc = VBoxExtPackOpenTarFss(m->hExtPackFile, szError, sizeof(szError), &hTarFss, NULL);
-                if (RT_SUCCESS(vrc))
+                for (;;)
                 {
-                    for (;;)
+                    /* Get the first/next. */
+                    char           *pszName;
+                    RTVFSOBJ        hVfsObj;
+                    RTVFSOBJTYPE    enmType;
+                    vrc = RTVfsFsStrmNext(hTarFss, &pszName, &enmType, &hVfsObj);
+                    if (RT_FAILURE(vrc))
                     {
-                        /* Get the first/next. */
-                        char           *pszName;
-                        RTVFSOBJ        hVfsObj;
-                        RTVFSOBJTYPE    enmType;
-                        vrc = RTVfsFsStrmNext(hTarFss, &pszName, &enmType, &hVfsObj);
-                        if (RT_FAILURE(vrc))
-                        {
-                            if (vrc != VERR_EOF)
-                                hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsFsStrmNext failed: %Rrc"), vrc);
-                            else
-                                hrc = setError(E_UNEXPECTED, tr("'%s' was found in the manifest but not in the tarball"), szName);
-                            break;
-                        }
+                        if (vrc != VERR_EOF)
+                            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsFsStrmNext failed: %Rrc"), vrc);
+                        else
+                            hrc = setError(E_UNEXPECTED, tr("'%s' was found in the manifest but not in the tarball"), szName);
+                        break;
+                    }
 
-                        /* Is this it? */
-                        const char *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
-                        if (   !strcmp(pszAdjName, szName)
-                            && (   enmType == RTVFSOBJTYPE_IO_STREAM
-                                || enmType == RTVFSOBJTYPE_FILE))
-                        {
-                            RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
-                            RTVfsObjRelease(hVfsObj);
-                            RTStrFree(pszName);
-
-                            /* Load the file into memory. */
-                            RTFSOBJINFO ObjInfo;
-                            vrc = RTVfsIoStrmQueryInfo(hVfsIos, &ObjInfo, RTFSOBJATTRADD_NOTHING);
-                            if (RT_SUCCESS(vrc))
-                            {
-                                size_t cbFile = (size_t)ObjInfo.cbObject;
-                                void  *pvFile = RTMemAllocZ(cbFile + 1);
-                                if (pvFile)
-                                {
-                                    vrc = RTVfsIoStrmRead(hVfsIos, pvFile, cbFile, true /*fBlocking*/, NULL);
-                                    if (RT_SUCCESS(vrc))
-                                    {
-                                        /* try translate it into a string we can return. */
-                                        Bstr bstrLicense((const char *)pvFile, cbFile);
-                                        if (bstrLicense.isNotEmpty())
-                                        {
-                                            bstrLicense.detachTo(a_pbstrLicense);
-                                            hrc = S_OK;
-                                        }
-                                        else
-                                            hrc = setError(VBOX_E_IPRT_ERROR,
-                                                           tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
-                                                           szName);
-                                    }
-                                    else
-                                        hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to read '%s': %Rrc"), szName, vrc);
-                                    RTMemFree(pvFile);
-                                }
-                                else
-                                    hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate %zu bytes for '%s'"), cbFile, szName);
-                            }
-                            else
-                                hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsIoStrmQueryInfo on '%s': %Rrc"), szName, vrc);
-                            RTVfsIoStrmRelease(hVfsIos);
-                            break;
-                        }
-
-                        /* Release current. */
+                    /* Is this it? */
+                    const char *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
+                    if (   !strcmp(pszAdjName, szName)
+                        && (   enmType == RTVFSOBJTYPE_IO_STREAM
+                            || enmType == RTVFSOBJTYPE_FILE))
+                    {
+                        RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
                         RTVfsObjRelease(hVfsObj);
                         RTStrFree(pszName);
+
+                        /* Load the file into memory. */
+                        RTFSOBJINFO ObjInfo;
+                        vrc = RTVfsIoStrmQueryInfo(hVfsIos, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+                        if (RT_SUCCESS(vrc))
+                        {
+                            size_t cbFile = (size_t)ObjInfo.cbObject;
+                            void  *pvFile = RTMemAllocZ(cbFile + 1);
+                            if (pvFile)
+                            {
+                                vrc = RTVfsIoStrmRead(hVfsIos, pvFile, cbFile, true /*fBlocking*/, NULL);
+                                if (RT_SUCCESS(vrc))
+                                {
+                                    /* try translate it into a string we can return. */
+                                    Bstr bstrLicense((const char *)pvFile, cbFile);
+                                    if (bstrLicense.isNotEmpty())
+                                    {
+                                        aLicenseText = Utf8Str(bstrLicense);
+                                        hrc = S_OK;
+                                    }
+                                    else
+                                        hrc = setError(VBOX_E_IPRT_ERROR,
+                                                       tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
+                                                       szName);
+                                }
+                                else
+                                    hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to read '%s': %Rrc"), szName, vrc);
+                                RTMemFree(pvFile);
+                            }
+                            else
+                                hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate %zu bytes for '%s'"), cbFile, szName);
+                        }
+                        else
+                            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsIoStrmQueryInfo on '%s': %Rrc"), szName, vrc);
+                        RTVfsIoStrmRelease(hVfsIos);
+                            break;
                     }
-                    RTVfsFsStrmRelease(hTarFss);
+
+                    /* Release current. */
+                    RTVfsObjRelease(hVfsObj);
+                    RTStrFree(pszName);
                 }
-                else
-                    hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s"), szError);
+                RTVfsFsStrmRelease(hTarFss);
             }
             else
-                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in '%s'"),
+                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s"), szError);
+        }
+            else
+            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in '%s'"),
                                szName, m->strExtPackFile.c_str());
-        }
     }
     return hrc;
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(FilePath)(BSTR *a_pbstrPath)
+HRESULT ExtPackFile::getFilePath(com::Utf8Str &aFilePath)
 {
-    CheckComArgOutPointerValid(a_pbstrPath);
 
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        m->strExtPackFile.cloneTo(a_pbstrPath);
-    return hrc;
+    aFilePath = m->strExtPackFile;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackFile::Install(BOOL a_fReplace, IN_BSTR a_bstrDisplayInfo, IProgress **a_ppProgress)
+HRESULT ExtPackFile::install(BOOL aReplace, const com::Utf8Str &aDisplayInfo, ComPtr<IProgress> &aProgress)
 {
-    if (a_ppProgress)
-        *a_ppProgress = NULL;
+    HRESULT hrc = S_OK;
 
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
+    if (m->fUsable)
     {
-        if (m->fUsable)
+        PEXTPACKINSTALLJOB pJob = NULL;
+        try
         {
-            PEXTPACKINSTALLJOB pJob = NULL;
-            try
+            pJob = new EXTPACKINSTALLJOB;
+            pJob->ptrExtPackFile    = this;
+            pJob->fReplace          = aReplace != FALSE;
+            pJob->strDisplayInfo    = aDisplayInfo;
+            pJob->ptrExtPackMgr     = m->ptrExtPackMgr;
+            hrc = pJob->ptrProgress.createObject();
+            if (SUCCEEDED(hrc))
             {
-                pJob = new EXTPACKINSTALLJOB;
-                pJob->ptrExtPackFile    = this;
-                pJob->fReplace          = a_fReplace != FALSE;
-                pJob->strDisplayInfo    = a_bstrDisplayInfo;
-                pJob->ptrExtPackMgr     = m->ptrExtPackMgr;
-                hrc = pJob->ptrProgress.createObject();
-                if (SUCCEEDED(hrc))
-                {
-                    Bstr bstrDescription = tr("Installing extension pack");
-                    hrc = pJob->ptrProgress->init(
+                Bstr bstrDescription = tr("Installing extension pack");
+                hrc = pJob->ptrProgress->init(
 #ifndef VBOX_COM_INPROC
-                                                  m->pVirtualBox,
+                                              m->pVirtualBox,
 #endif
-                                                  static_cast<IExtPackFile *>(this),
-                                                  bstrDescription.raw(),
-                                                  FALSE /*aCancelable*/,
-                                                  NULL /*aId*/);
-                }
-                if (SUCCEEDED(hrc))
-                {
-                    ComPtr<Progress> ptrProgress = pJob->ptrProgress;
-                    int vrc = RTThreadCreate(NULL /*phThread*/, ExtPackManager::doInstallThreadProc, pJob, 0,
-                                             RTTHREADTYPE_DEFAULT, 0 /*fFlags*/, "ExtPackInst");
-                    if (RT_SUCCESS(vrc))
-                    {
-                        pJob = NULL; /* the thread deletes it */
-                        ptrProgress.queryInterfaceTo(a_ppProgress);
-                    }
-                    else
-                        hrc = setError(VBOX_E_IPRT_ERROR, tr("RTThreadCreate failed with %Rrc"), vrc);
-                }
+                                              static_cast<IExtPackFile *>(this),
+                                              bstrDescription.raw(),
+                                              FALSE /*aCancelable*/,
+                                              NULL /*aId*/);
             }
-            catch (std::bad_alloc)
+            if (SUCCEEDED(hrc))
             {
-                hrc = E_OUTOFMEMORY;
+                ComPtr<Progress> ptrProgress = pJob->ptrProgress;
+                int vrc = RTThreadCreate(NULL /*phThread*/, ExtPackManager::i_doInstallThreadProc, pJob, 0,
+                                         RTTHREADTYPE_DEFAULT, 0 /*fFlags*/, "ExtPackInst");
+                if (RT_SUCCESS(vrc))
+                {
+                    pJob = NULL; /* the thread deletes it */
+                    ptrProgress.queryInterfaceTo(aProgress.asOutParam());
+                }
+                else
+                    hrc = setError(VBOX_E_IPRT_ERROR, tr("RTThreadCreate failed with %Rrc"), vrc);
             }
-            if (pJob)
-                delete pJob;
         }
-        else
-            hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
+        catch (std::bad_alloc)
+        {
+            hrc = E_OUTOFMEMORY;
+        }
+        if (pJob)
+            delete pJob;
     }
+    else
+        hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
     return hrc;
 }
 
@@ -759,18 +680,18 @@ HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName,
         /* uVBoxVersionRevision = */ 0,
         /* u32Padding           = */ 0,
         /* pszVBoxVersion       = */ "",
-        /* pfnFindModule        = */ ExtPack::hlpFindModule,
-        /* pfnGetFilePath       = */ ExtPack::hlpGetFilePath,
-        /* pfnGetContext        = */ ExtPack::hlpGetContext,
-        /* pfnLoadHGCMService   = */ ExtPack::hlpLoadHGCMService,
-        /* pfnReserved1         = */ ExtPack::hlpReservedN,
-        /* pfnReserved2         = */ ExtPack::hlpReservedN,
-        /* pfnReserved3         = */ ExtPack::hlpReservedN,
-        /* pfnReserved4         = */ ExtPack::hlpReservedN,
-        /* pfnReserved5         = */ ExtPack::hlpReservedN,
-        /* pfnReserved6         = */ ExtPack::hlpReservedN,
-        /* pfnReserved7         = */ ExtPack::hlpReservedN,
-        /* pfnReserved8         = */ ExtPack::hlpReservedN,
+        /* pfnFindModule        = */ ExtPack::i_hlpFindModule,
+        /* pfnGetFilePath       = */ ExtPack::i_hlpGetFilePath,
+        /* pfnGetContext        = */ ExtPack::i_hlpGetContext,
+        /* pfnLoadHGCMService   = */ ExtPack::i_hlpLoadHGCMService,
+        /* pfnReserved1         = */ ExtPack::i_hlpReservedN,
+        /* pfnReserved2         = */ ExtPack::i_hlpReservedN,
+        /* pfnReserved3         = */ ExtPack::i_hlpReservedN,
+        /* pfnReserved4         = */ ExtPack::i_hlpReservedN,
+        /* pfnReserved5         = */ ExtPack::i_hlpReservedN,
+        /* pfnReserved6         = */ ExtPack::i_hlpReservedN,
+        /* pfnReserved7         = */ ExtPack::i_hlpReservedN,
+        /* pfnReserved8         = */ ExtPack::i_hlpReservedN,
         /* u32EndMarker         = */ VBOXEXTPACKHLP_VERSION
     };
 
@@ -799,7 +720,7 @@ HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName,
     /*
      * Probe the extension pack (this code is shared with refresh()).
      */
-    probeAndLoad();
+    i_probeAndLoad();
 
     autoInitSpan.setSucceeded();
     return S_OK;
@@ -849,7 +770,7 @@ void ExtPack::uninit()
  * @param   a_pLock             The write lock held by the caller.
  * @param   pErrInfo            Where to return error information.
  */
-bool    ExtPack::callInstalledHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock, PRTERRINFO pErrInfo)
+bool    ExtPack::i_callInstalledHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock, PRTERRINFO pErrInfo)
 {
     if (   m != NULL
         && m->hMainMod != NIL_RTLDRMOD)
@@ -876,7 +797,7 @@ bool    ExtPack::callInstalledHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_
  *                              uninstall hook.
  * @remarks The caller holds the manager's write lock, not released.
  */
-HRESULT ExtPack::callUninstallHookAndClose(IVirtualBox *a_pVirtualBox, bool a_fForcedRemoval)
+HRESULT ExtPack::i_callUninstallHookAndClose(IVirtualBox *a_pVirtualBox, bool a_fForcedRemoval)
 {
     HRESULT hrc = S_OK;
 
@@ -911,7 +832,7 @@ HRESULT ExtPack::callUninstallHookAndClose(IVirtualBox *a_pVirtualBox, bool a_fF
  * @param   a_pVirtualBox       The VirtualBox interface.
  * @param   a_pLock             The write lock held by the caller.
  */
-bool ExtPack::callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock)
+bool ExtPack::i_callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock)
 {
     if (    m != NULL
         &&  m->fUsable
@@ -937,7 +858,7 @@ bool ExtPack::callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox, AutoWriteLock 
  * @param   a_pConsole          The Console interface.
  * @param   a_pLock             The write lock held by the caller.
  */
-bool ExtPack::callConsoleReadyHook(IConsole *a_pConsole, AutoWriteLock *a_pLock)
+bool ExtPack::i_callConsoleReadyHook(IConsole *a_pConsole, AutoWriteLock *a_pLock)
 {
     if (    m != NULL
         &&  m->fUsable
@@ -964,7 +885,7 @@ bool ExtPack::callConsoleReadyHook(IConsole *a_pConsole, AutoWriteLock *a_pLock)
  * @param   a_pMachine          The machine interface of the new VM.
  * @param   a_pLock             The write lock held by the caller.
  */
-bool ExtPack::callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachine, AutoWriteLock *a_pLock)
+bool ExtPack::i_callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachine, AutoWriteLock *a_pLock)
 {
     if (   m != NULL
         && m->fUsable)
@@ -992,7 +913,7 @@ bool ExtPack::callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachine
  *                              callback.  This is always set.  LogRel is
  *                              called on if a failure status is returned.
  */
-bool ExtPack::callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc)
+bool ExtPack::i_callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc)
 {
     *a_pvrc = VINF_SUCCESS;
     if (   m != NULL
@@ -1024,7 +945,7 @@ bool ExtPack::callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteL
  *                              callback.  This is always set.  LogRel is
  *                              called on if a failure status is returned.
  */
-bool ExtPack::callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc)
+bool ExtPack::i_callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc)
 {
     *a_pvrc = VINF_SUCCESS;
     if (   m != NULL
@@ -1053,7 +974,7 @@ bool ExtPack::callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *
  * @param   a_pVM               The VM handle.
  * @param   a_pLock             The write lock held by the caller.
  */
-bool ExtPack::callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock)
+bool ExtPack::i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock)
 {
     if (   m != NULL
         && m->fUsable)
@@ -1078,7 +999,7 @@ bool ExtPack::callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock 
  * @remarks Caller holds the extension manager lock for reading, no locking
  *          necessary.
  */
-HRESULT ExtPack::checkVrde(void)
+HRESULT ExtPack::i_checkVrde(void)
 {
     HRESULT hrc;
     if (   m != NULL
@@ -1103,13 +1024,13 @@ HRESULT ExtPack::checkVrde(void)
  * @remarks Caller holds the extension manager lock for reading, no locking
  *          necessary.
  */
-HRESULT ExtPack::getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary)
+HRESULT ExtPack::i_getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary)
 {
-    HRESULT hrc = checkVrde();
+    HRESULT hrc = i_checkVrde();
     if (SUCCEEDED(hrc))
     {
-        if (findModule(m->Desc.strVrdeModule.c_str(), NULL, VBOXEXTPACKMODKIND_R3,
-                       a_pstrVrdeLibrary, NULL /*a_pfNative*/, NULL /*a_pObjInfo*/))
+        if (i_findModule(m->Desc.strVrdeModule.c_str(), NULL, VBOXEXTPACKMODKIND_R3,
+                         a_pstrVrdeLibrary, NULL /*a_pfNative*/, NULL /*a_pObjInfo*/))
             hrc = S_OK;
         else
             hrc = setError(E_FAIL, tr("Failed to locate the VRDE module '%s' in extension pack '%s'"),
@@ -1128,11 +1049,11 @@ HRESULT ExtPack::getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary)
  * @remarks Caller holds the extension manager lock for reading, no locking
  *          necessary.
  */
-HRESULT ExtPack::getLibraryName(const char *a_pszModuleName, Utf8Str *a_pstrLibrary)
+HRESULT ExtPack::i_getLibraryName(const char *a_pszModuleName, Utf8Str *a_pstrLibrary)
 {
     HRESULT hrc;
-    if (findModule(a_pszModuleName, NULL, VBOXEXTPACKMODKIND_R3,
-                   a_pstrLibrary, NULL /*a_pfNative*/, NULL /*a_pObjInfo*/))
+    if (i_findModule(a_pszModuleName, NULL, VBOXEXTPACKMODKIND_R3,
+                     a_pstrLibrary, NULL /*a_pfNative*/, NULL /*a_pObjInfo*/))
         hrc = S_OK;
     else
         hrc = setError(E_FAIL, tr("Failed to locate the module '%s' in extension pack '%s'"),
@@ -1149,7 +1070,7 @@ HRESULT ExtPack::getLibraryName(const char *a_pszModuleName, Utf8Str *a_pstrLibr
  * @remarks Caller holds the extension manager lock for reading, no locking
  *          necessary.
  */
-bool ExtPack::wantsToBeDefaultVrde(void) const
+bool ExtPack::i_wantsToBeDefaultVrde(void) const
 {
     return m->fUsable
         && m->Desc.strVrdeModule.isNotEmpty();
@@ -1167,7 +1088,7 @@ bool ExtPack::wantsToBeDefaultVrde(void) const
  * @remarks Caller holds the extension manager lock for writing.
  * @remarks Only called in VBoxSVC.
  */
-HRESULT ExtPack::refresh(bool *a_pfCanDelete)
+HRESULT ExtPack::i_refresh(bool *a_pfCanDelete)
 {
     if (a_pfCanDelete)
         *a_pfCanDelete = false;
@@ -1212,10 +1133,10 @@ HRESULT ExtPack::refresh(bool *a_pfCanDelete)
     if (m->fUsable)
     {
         if (m->hMainMod == NIL_RTLDRMOD)
-            probeAndLoad();
-        else if (   !objinfoIsEqual(&ObjInfoDesc,    &m->ObjInfoDesc)
-                 || !objinfoIsEqual(&ObjInfoMainMod, &m->ObjInfoMainMod)
-                 || !objinfoIsEqual(&ObjInfoExtPack, &m->ObjInfoExtPack) )
+            i_probeAndLoad();
+        else if (   !i_objinfoIsEqual(&ObjInfoDesc,    &m->ObjInfoDesc)
+                 || !i_objinfoIsEqual(&ObjInfoMainMod, &m->ObjInfoMainMod)
+                 || !i_objinfoIsEqual(&ObjInfoExtPack, &m->ObjInfoExtPack) )
         {
             /** @todo not important, so it can wait. */
         }
@@ -1224,10 +1145,10 @@ HRESULT ExtPack::refresh(bool *a_pfCanDelete)
      * Ok, it is currently not usable.  If anything has changed since last time
      * reprobe the extension pack.
      */
-    else if (   !objinfoIsEqual(&ObjInfoDesc,    &m->ObjInfoDesc)
-             || !objinfoIsEqual(&ObjInfoMainMod, &m->ObjInfoMainMod)
-             || !objinfoIsEqual(&ObjInfoExtPack, &m->ObjInfoExtPack) )
-        probeAndLoad();
+    else if (   !i_objinfoIsEqual(&ObjInfoDesc,    &m->ObjInfoDesc)
+             || !i_objinfoIsEqual(&ObjInfoMainMod, &m->ObjInfoMainMod)
+             || !i_objinfoIsEqual(&ObjInfoExtPack, &m->ObjInfoExtPack) )
+        i_probeAndLoad();
 
     return S_OK;
 }
@@ -1239,7 +1160,7 @@ HRESULT ExtPack::refresh(bool *a_pfCanDelete)
  * This updates the state accordingly, the strWhyUnusable and fUnusable members
  * being the most important ones.
  */
-void ExtPack::probeAndLoad(void)
+void ExtPack::i_probeAndLoad(void)
 {
     m->fUsable = false;
     m->fMadeReadyCall = false;
@@ -1306,8 +1227,8 @@ void ExtPack::probeAndLoad(void)
      * Load the main DLL and call the predefined entry point.
      */
     bool fIsNative;
-    if (!findModule(m->Desc.strMainModule.c_str(), NULL /* default extension */, VBOXEXTPACKMODKIND_R3,
-                    &m->strMainModPath, &fIsNative, &m->ObjInfoMainMod))
+    if (!i_findModule(m->Desc.strMainModule.c_str(), NULL /* default extension */, VBOXEXTPACKMODKIND_R3,
+                      &m->strMainModPath, &fIsNative, &m->ObjInfoMainMod))
     {
         m->strWhyUnusable.printf(tr("Failed to locate the main module ('%s')"), m->Desc.strMainModule.c_str());
         return;
@@ -1407,8 +1328,8 @@ void ExtPack::probeAndLoad(void)
  * @param   a_pObjInfo          Where to return the file system object info for
  *                              the module. Optional.
  */
-bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt, VBOXEXTPACKMODKIND a_enmKind,
-                         Utf8Str *a_pStrFound, bool *a_pfNative, PRTFSOBJINFO a_pObjInfo) const
+bool ExtPack::i_findModule(const char *a_pszName, const char *a_pszExt, VBOXEXTPACKMODKIND a_enmKind,
+                           Utf8Str *a_pStrFound, bool *a_pfNative, PRTFSOBJINFO a_pObjInfo) const
 {
     /*
      * Try the native path first.
@@ -1499,7 +1420,7 @@ bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt, VBOXEXTPAC
  * @param   pObjInfo2           The second.
  * @todo    IPRT should do this, really.
  */
-/* static */ bool ExtPack::objinfoIsEqual(PCRTFSOBJINFO pObjInfo1, PCRTFSOBJINFO pObjInfo2)
+/* static */ bool ExtPack::i_objinfoIsEqual(PCRTFSOBJINFO pObjInfo1, PCRTFSOBJINFO pObjInfo2)
 {
     if (!RTTimeSpecIsEqual(&pObjInfo1->ModificationTime,   &pObjInfo2->ModificationTime))
         return false;
@@ -1539,8 +1460,8 @@ bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt, VBOXEXTPAC
  * @interface_method_impl{VBOXEXTPACKHLP,pfnFindModule}
  */
 /*static*/ DECLCALLBACK(int)
-ExtPack::hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt, VBOXEXTPACKMODKIND enmKind,
-                       char *pszFound, size_t cbFound, bool *pfNative)
+ExtPack::i_hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt, VBOXEXTPACKMODKIND enmKind,
+                         char *pszFound, size_t cbFound, bool *pfNative)
 {
     /*
      * Validate the input and get our bearings.
@@ -1562,13 +1483,13 @@ ExtPack::hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *p
      * This is just a wrapper around findModule.
      */
     Utf8Str strFound;
-    if (pThis->findModule(pszName, pszExt, enmKind, &strFound, pfNative, NULL))
+    if (pThis->i_findModule(pszName, pszExt, enmKind, &strFound, pfNative, NULL))
         return RTStrCopy(pszFound, cbFound, strFound.c_str());
     return VERR_FILE_NOT_FOUND;
 }
 
 /*static*/ DECLCALLBACK(int)
-ExtPack::hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath)
+ExtPack::i_hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath)
 {
     /*
      * Validate the input and get our bearings.
@@ -1594,7 +1515,7 @@ ExtPack::hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *ps
 }
 
 /*static*/ DECLCALLBACK(VBOXEXTPACKCTX)
-ExtPack::hlpGetContext(PCVBOXEXTPACKHLP pHlp)
+ExtPack::i_hlpGetContext(PCVBOXEXTPACKHLP pHlp)
 {
     /*
      * Validate the input and get our bearings.
@@ -1610,8 +1531,8 @@ ExtPack::hlpGetContext(PCVBOXEXTPACKHLP pHlp)
 }
 
 /*static*/ DECLCALLBACK(int)
-ExtPack::hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole) *pConsole,
-                            const char *pszServiceLibrary, const char *pszServiceName)
+ExtPack::i_hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole) *pConsole,
+                              const char *pszServiceLibrary, const char *pszServiceName)
 {
 #ifdef VBOX_COM_INPROC
     /*
@@ -1637,7 +1558,7 @@ ExtPack::hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole) *
 }
 
 /*static*/ DECLCALLBACK(int)
-ExtPack::hlpReservedN(PCVBOXEXTPACKHLP pHlp)
+ExtPack::i_hlpReservedN(PCVBOXEXTPACKHLP pHlp)
 {
     /*
      * Validate the input and get our bearings.
@@ -1655,253 +1576,174 @@ ExtPack::hlpReservedN(PCVBOXEXTPACKHLP pHlp)
 
 
 
-
-STDMETHODIMP ExtPack::COMGETTER(Name)(BSTR *a_pbstrName)
+HRESULT ExtPack::getName(com::Utf8Str &aName)
 {
-    CheckComArgOutPointerValid(a_pbstrName);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Bstr str(m->Desc.strName);
-        str.cloneTo(a_pbstrName);
-    }
-    return hrc;
+    aName = m->Desc.strName;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPack::COMGETTER(Description)(BSTR *a_pbstrDescription)
+HRESULT ExtPack::getDescription(com::Utf8Str &aDescription)
 {
-    CheckComArgOutPointerValid(a_pbstrDescription);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Bstr str(m->Desc.strDescription);
-        str.cloneTo(a_pbstrDescription);
-    }
-    return hrc;
+    aDescription = m->Desc.strDescription;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPack::COMGETTER(Version)(BSTR *a_pbstrVersion)
+HRESULT ExtPack::getVersion(com::Utf8Str &aVersion)
 {
-    CheckComArgOutPointerValid(a_pbstrVersion);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Bstr str(m->Desc.strVersion);
-        str.cloneTo(a_pbstrVersion);
-    }
-    return hrc;
+    aVersion = m->Desc.strVersion;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPack::COMGETTER(Revision)(ULONG *a_puRevision)
+HRESULT ExtPack::getRevision(ULONG *aRevision)
 {
-    CheckComArgOutPointerValid(a_puRevision);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        *a_puRevision = m->Desc.uRevision;
-    return hrc;
+    *aRevision = m->Desc.uRevision;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPack::COMGETTER(Edition)(BSTR *a_pbstrEdition)
+HRESULT ExtPack::getEdition(com::Utf8Str &aEdition)
 {
-    CheckComArgOutPointerValid(a_pbstrEdition);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Bstr str(m->Desc.strEdition);
-        str.cloneTo(a_pbstrEdition);
-    }
-    return hrc;
+    aEdition = m->Desc.strEdition;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPack::COMGETTER(VRDEModule)(BSTR *a_pbstrVrdeModule)
+HRESULT ExtPack::getVRDEModule(com::Utf8Str &aVRDEModule)
 {
-    CheckComArgOutPointerValid(a_pbstrVrdeModule);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Bstr str(m->Desc.strVrdeModule);
-        str.cloneTo(a_pbstrVrdeModule);
-    }
-    return hrc;
+    aVRDEModule = m->Desc.strVrdeModule;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPack::COMGETTER(PlugIns)(ComSafeArrayOut(IExtPackPlugIn *, a_paPlugIns))
+HRESULT ExtPack::getPlugIns(std::vector<ComPtr<IExtPackPlugIn> > &aPlugIns)
 {
     /** @todo implement plug-ins. */
 #ifdef VBOX_WITH_XPCOM
-    NOREF(a_paPlugIns);
-    NOREF(a_paPlugInsSize);
+    NOREF(aPlugIns);
 #endif
+    NOREF(aPlugIns);
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP ExtPack::COMGETTER(Usable)(BOOL *a_pfUsable)
+HRESULT ExtPack::getUsable(BOOL *aUsable)
 {
-    CheckComArgOutPointerValid(a_pfUsable);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        *a_pfUsable = m->fUsable;
-    return hrc;
+    *aUsable = m->fUsable;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPack::COMGETTER(WhyUnusable)(BSTR *a_pbstrWhy)
+HRESULT ExtPack::getWhyUnusable(com::Utf8Str &aWhyUnusable)
 {
-    CheckComArgOutPointerValid(a_pbstrWhy);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        m->strWhyUnusable.cloneTo(a_pbstrWhy);
-    return hrc;
+    aWhyUnusable = m->strWhyUnusable;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPack::COMGETTER(ShowLicense)(BOOL *a_pfShowIt)
+HRESULT ExtPack::getShowLicense(BOOL *aShowLicense)
 {
-    CheckComArgOutPointerValid(a_pfShowIt);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        *a_pfShowIt = m->Desc.fShowLicense;
-    return hrc;
+    *aShowLicense = m->Desc.fShowLicense;
+    return S_OK;
 }
 
-STDMETHODIMP ExtPack::COMGETTER(License)(BSTR *a_pbstrHtmlLicense)
+HRESULT ExtPack::getLicense(com::Utf8Str &aLicense)
 {
-    Bstr bstrHtml("html");
-    return QueryLicense(Bstr::Empty.raw(), Bstr::Empty.raw(), bstrHtml.raw(), a_pbstrHtmlLicense);
+    Utf8Str strHtml("html");
+    Utf8Str str("");
+    return queryLicense(str, str, strHtml, aLicense);
 }
 
-STDMETHODIMP ExtPack::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_bstrPreferredLanguage, IN_BSTR a_bstrFormat,
-                                   BSTR *a_pbstrLicense)
+HRESULT ExtPack::queryLicense(const com::Utf8Str &aPreferredLocale, const com::Utf8Str &aPreferredLanguage,
+                              const com::Utf8Str &aFormat, com::Utf8Str &aLicenseText)
 {
+    HRESULT hrc = S_OK;
+
     /*
      * Validate input.
      */
-    CheckComArgOutPointerValid(a_pbstrLicense);
-    CheckComArgNotNull(a_bstrPreferredLocale);
-    CheckComArgNotNull(a_bstrPreferredLanguage);
-    CheckComArgNotNull(a_bstrFormat);
-
-    Utf8Str strPreferredLocale(a_bstrPreferredLocale);
-    if (strPreferredLocale.length() != 2 && strPreferredLocale.length() != 0)
+    if (aPreferredLocale.length() != 2 && aPreferredLocale.length() != 0)
         return setError(E_FAIL, tr("The preferred locale is a two character string or empty."));
 
-    Utf8Str strPreferredLanguage(a_bstrPreferredLanguage);
-    if (strPreferredLanguage.length() != 2 && strPreferredLanguage.length() != 0)
+    if (aPreferredLanguage.length() != 2 && aPreferredLanguage.length() != 0)
         return setError(E_FAIL, tr("The preferred lanuage is a two character string or empty."));
 
-    Utf8Str strFormat(a_bstrFormat);
-    if (   !strFormat.equals("html")
-        && !strFormat.equals("rtf")
-        && !strFormat.equals("txt"))
+    if (   !aFormat.equals("html")
+        && !aFormat.equals("rtf")
+        && !aFormat.equals("txt"))
         return setError(E_FAIL, tr("The license format can only have the values 'html', 'rtf' and 'txt'."));
 
     /*
      * Combine the options to form a file name before locking down anything.
      */
     char szName[sizeof(VBOX_EXTPACK_LICENSE_NAME_PREFIX "-de_DE.html") + 2];
-    if (strPreferredLocale.isNotEmpty() && strPreferredLanguage.isNotEmpty())
+    if (aPreferredLocale.isNotEmpty() && aPreferredLanguage.isNotEmpty())
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s_%s.%s",
-                    strPreferredLocale.c_str(), strPreferredLanguage.c_str(), strFormat.c_str());
-    else if (strPreferredLocale.isNotEmpty())
+                    aPreferredLocale.c_str(), aPreferredLanguage.c_str(), aFormat.c_str());
+    else if (aPreferredLocale.isNotEmpty())
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s.%s",
-                    strPreferredLocale.c_str(), strFormat.c_str());
-    else if (strPreferredLanguage.isNotEmpty())
+                    aPreferredLocale.c_str(), aFormat.c_str());
+    else if (aPreferredLanguage.isNotEmpty())
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-_%s.%s",
-                    strPreferredLocale.c_str(), strFormat.c_str());
+                    aPreferredLocale.c_str(), aFormat.c_str());
     else
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX ".%s",
-                    strFormat.c_str());
+                    aFormat.c_str());
 
     /*
      * Effectuate the query.
      */
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS); /* paranoia */
+    AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS); /* paranoia */
 
-        if (!m->fUsable)
-            hrc = setError(E_FAIL, tr("%s"), m->strWhyUnusable.c_str());
-        else
+    if (!m->fUsable)
+        hrc = setError(E_FAIL, tr("%s"), m->strWhyUnusable.c_str());
+    else
+    {
+        char szPath[RTPATH_MAX];
+        int vrc = RTPathJoin(szPath, sizeof(szPath), m->strExtPackPath.c_str(), szName);
+        if (RT_SUCCESS(vrc))
         {
-            char szPath[RTPATH_MAX];
-            int vrc = RTPathJoin(szPath, sizeof(szPath), m->strExtPackPath.c_str(), szName);
+            void   *pvFile;
+            size_t  cbFile;
+            vrc = RTFileReadAllEx(szPath, 0, RTFOFF_MAX, RTFILE_RDALL_O_DENY_READ, &pvFile, &cbFile);
             if (RT_SUCCESS(vrc))
             {
-                void   *pvFile;
-                size_t  cbFile;
-                vrc = RTFileReadAllEx(szPath, 0, RTFOFF_MAX, RTFILE_RDALL_O_DENY_READ, &pvFile, &cbFile);
-                if (RT_SUCCESS(vrc))
+                Bstr bstrLicense((const char *)pvFile, cbFile);
+                if (bstrLicense.isNotEmpty())
                 {
-                    Bstr bstrLicense((const char *)pvFile, cbFile);
-                    if (bstrLicense.isNotEmpty())
-                    {
-                        bstrLicense.detachTo(a_pbstrLicense);
-                        hrc = S_OK;
-                    }
-                    else
-                        hrc = setError(VBOX_E_IPRT_ERROR, tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
-                                       szPath);
-                    RTFileReadAllFree(pvFile, cbFile);
+                    aLicenseText = Utf8Str(bstrLicense);
+                    hrc = S_OK;
                 }
-                else if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
-                    hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in extension pack '%s'"),
-                                   szName, m->Desc.strName.c_str());
                 else
-                    hrc = setError(VBOX_E_FILE_ERROR, tr("Failed to open the license file '%s': %Rrc"), szPath, vrc);
+                    hrc = setError(VBOX_E_IPRT_ERROR, tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
+                                   szPath);
+                RTFileReadAllFree(pvFile, cbFile);
             }
+            else if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in extension pack '%s'"),
+                               szName, m->Desc.strName.c_str());
             else
-                hrc = setError(VBOX_E_IPRT_ERROR, tr("RTPathJoin failed: %Rrc"), vrc);
+                hrc = setError(VBOX_E_FILE_ERROR, tr("Failed to open the license file '%s': %Rrc"), szPath, vrc);
         }
+        else
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTPathJoin failed: %Rrc"), vrc);
     }
     return hrc;
 }
 
-
-STDMETHODIMP ExtPack::QueryObject(IN_BSTR a_bstrObjectId, IUnknown **a_ppUnknown)
+HRESULT ExtPack::queryObject(const com::Utf8Str &aObjUuid, ComPtr<IUnknown> &aReturnInterface)
 {
     com::Guid ObjectId;
-    CheckComArgGuid(a_bstrObjectId, ObjectId);
-    CheckComArgOutPointerValid(a_ppUnknown);
+    CheckComArgGuid(aObjUuid, ObjectId);
 
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
+    HRESULT hrc  S_OK;
+
+    if (   m->pReg
+        && m->pReg->pfnQueryObject)
     {
-        if (   m->pReg
-            && m->pReg->pfnQueryObject)
-        {
-            void *pvUnknown = m->pReg->pfnQueryObject(m->pReg, ObjectId.raw());
-            if (pvUnknown)
-                *a_ppUnknown = (IUnknown *)pvUnknown;
-            else
-                hrc = E_NOINTERFACE;
-        }
+        void *pvUnknown = m->pReg->pfnQueryObject(m->pReg, ObjectId.raw());
+        if (pvUnknown)
+             aReturnInterface = (IUnknown *)pvUnknown;
         else
             hrc = E_NOINTERFACE;
     }
+    else
+        hrc = E_NOINTERFACE;
     return hrc;
 }
-
-
-
 
 DEFINE_EMPTY_CTOR_DTOR(ExtPackManager)
 
@@ -2056,52 +1898,40 @@ void ExtPackManager::uninit()
     }
 }
 
-
-STDMETHODIMP ExtPackManager::COMGETTER(InstalledExtPacks)(ComSafeArrayOut(IExtPack *, a_paExtPacks))
+HRESULT ExtPackManager::getInstalledExtPacks(std::vector<ComPtr<IExtPack> > &aInstalledExtPacks)
 {
-    CheckComArgOutSafeArrayPointerValid(a_paExtPacks);
     Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
 
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
 
-        SafeIfaceArray<IExtPack> SaExtPacks(m->llInstalledExtPacks);
-        SaExtPacks.detachTo(ComSafeArrayOutArg(a_paExtPacks));
-    }
+
+    SafeIfaceArray<IExtPack> SaExtPacks(m->llInstalledExtPacks);
+    aInstalledExtPacks.resize(SaExtPacks.size());
+    for(size_t i = 0; i < SaExtPacks.size(); ++i)
+        aInstalledExtPacks[i] = SaExtPacks[i];
+
+    return S_OK;
+}
+
+HRESULT ExtPackManager::find(const com::Utf8Str &aName, ComPtr<IExtPack> &aReturnData)
+{
+    HRESULT hrc = S_OK;
+
+    Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
+
+    AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+    ComPtr<ExtPack> ptrExtPack = i_findExtPack(aName.c_str());
+    if (!ptrExtPack.isNull())
+        ptrExtPack.queryInterfaceTo(aReturnData.asOutParam());
+    else
+        hrc = VBOX_E_OBJECT_NOT_FOUND;
 
     return hrc;
 }
 
-STDMETHODIMP ExtPackManager::Find(IN_BSTR a_bstrName, IExtPack **a_pExtPack)
+HRESULT ExtPackManager::openExtPackFile(const com::Utf8Str &aPath, ComPtr<IExtPackFile> &aFile)
 {
-    CheckComArgNotNull(a_bstrName);
-    CheckComArgOutPointerValid(a_pExtPack);
-    Utf8Str strName(a_bstrName);
-    Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
-
-        ComPtr<ExtPack> ptrExtPack = findExtPack(strName.c_str());
-        if (!ptrExtPack.isNull())
-            ptrExtPack.queryInterfaceTo(a_pExtPack);
-        else
-            hrc = VBOX_E_OBJECT_NOT_FOUND;
-    }
-
-    return hrc;
-}
-
-STDMETHODIMP ExtPackManager::OpenExtPackFile(IN_BSTR a_bstrTarballAndDigest, IExtPackFile **a_ppExtPackFile)
-{
-    CheckComArgNotNull(a_bstrTarballAndDigest);
-    CheckComArgOutPointerValid(a_ppExtPackFile);
     AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
 
 #if !defined(VBOX_COM_INPROC)
@@ -2110,14 +1940,13 @@ STDMETHODIMP ExtPackManager::OpenExtPackFile(IN_BSTR a_bstrTarballAndDigest, IEx
        backporting, in 4.2 we'll add another parameter to the method. */
     Utf8Str strTarball;
     Utf8Str strDigest;
-    Utf8Str strTarballAndDigest(a_bstrTarballAndDigest);
-    size_t offSha256 = strTarballAndDigest.find("::SHA-256=");
+    size_t offSha256 = aPath.find("::SHA-256=");
     if (offSha256 == Utf8Str::npos)
-        strTarball = strTarballAndDigest;
+        strTarball = aPath;
     else
     {
-        strTarball = strTarballAndDigest.substr(0, offSha256);
-        strDigest  = strTarballAndDigest.substr(offSha256 + sizeof("::SHA-256=") - 1);
+        strTarball = aPath.substr(0, offSha256);
+        strDigest  = aPath.substr(offSha256 + sizeof("::SHA-256=") - 1);
     }
 
     ComObjPtr<ExtPackFile> NewExtPackFile;
@@ -2125,7 +1954,7 @@ STDMETHODIMP ExtPackManager::OpenExtPackFile(IN_BSTR a_bstrTarballAndDigest, IEx
     if (SUCCEEDED(hrc))
         hrc = NewExtPackFile->initWithFile(strTarball.c_str(), strDigest.c_str(), this, m->pVirtualBox);
     if (SUCCEEDED(hrc))
-        NewExtPackFile.queryInterfaceTo(a_ppExtPackFile);
+        NewExtPackFile.queryInterfaceTo(aFile.asOutParam());
 
     return hrc;
 #else
@@ -2133,61 +1962,55 @@ STDMETHODIMP ExtPackManager::OpenExtPackFile(IN_BSTR a_bstrTarballAndDigest, IEx
 #endif
 }
 
-STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval, IN_BSTR a_bstrDisplayInfo,
-                                       IProgress **a_ppProgress)
+HRESULT ExtPackManager::uninstall(const com::Utf8Str &aName, BOOL aForcedRemoval,
+                                  const com::Utf8Str &aDisplayInfo, ComPtr<IProgress> &aProgress)
 {
-    CheckComArgNotNull(a_bstrName);
-    if (a_ppProgress)
-        *a_ppProgress = NULL;
+    HRESULT hrc = S_OK;
+
     Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
 
 #if !defined(VBOX_COM_INPROC)
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
+    PEXTPACKUNINSTALLJOB pJob = NULL;
+    try
     {
-        PEXTPACKUNINSTALLJOB pJob = NULL;
-        try
+        pJob = new EXTPACKUNINSTALLJOB;
+        pJob->ptrExtPackMgr     = this;
+        pJob->strName           = aName;
+        pJob->fForcedRemoval    = aForcedRemoval != FALSE;
+        pJob->strDisplayInfo    = aDisplayInfo;
+        hrc = pJob->ptrProgress.createObject();
+        if (SUCCEEDED(hrc))
         {
-            pJob = new EXTPACKUNINSTALLJOB;
-            pJob->ptrExtPackMgr     = this;
-            pJob->strName           = a_bstrName;
-            pJob->fForcedRemoval    = a_fForcedRemoval != FALSE;
-            pJob->strDisplayInfo    = a_bstrDisplayInfo;
-            hrc = pJob->ptrProgress.createObject();
-            if (SUCCEEDED(hrc))
-            {
-                Bstr bstrDescription = tr("Uninstalling extension pack");
-                hrc = pJob->ptrProgress->init(
+            Bstr bstrDescription = tr("Uninstalling extension pack");
+            hrc = pJob->ptrProgress->init(
 #ifndef VBOX_COM_INPROC
-                                              m->pVirtualBox,
+                                          m->pVirtualBox,
 #endif
-                                              static_cast<IExtPackManager *>(this),
-                                              bstrDescription.raw(),
-                                              FALSE /*aCancelable*/,
-                                              NULL /*aId*/);
-            }
-            if (SUCCEEDED(hrc))
-            {
-                ComPtr<Progress> ptrProgress = pJob->ptrProgress;
-                int vrc = RTThreadCreate(NULL /*phThread*/, ExtPackManager::doUninstallThreadProc, pJob, 0,
-                                         RTTHREADTYPE_DEFAULT, 0 /*fFlags*/, "ExtPackUninst");
-                if (RT_SUCCESS(vrc))
-                {
-                    pJob = NULL; /* the thread deletes it */
-                    ptrProgress.queryInterfaceTo(a_ppProgress);
-                }
-                else
-                    hrc = setError(VBOX_E_IPRT_ERROR, tr("RTThreadCreate failed with %Rrc"), vrc);
-            }
+                                          static_cast<IExtPackManager *>(this),
+                                          bstrDescription.raw(),
+                                          FALSE /*aCancelable*/,
+                                          NULL /*aId*/);
         }
-        catch (std::bad_alloc)
+        if (SUCCEEDED(hrc))
         {
-            hrc = E_OUTOFMEMORY;
+            ComPtr<Progress> ptrProgress = pJob->ptrProgress;
+            int vrc = RTThreadCreate(NULL /*phThread*/, ExtPackManager::i_doUninstallThreadProc, pJob, 0,
+                                     RTTHREADTYPE_DEFAULT, 0 /*fFlags*/, "ExtPackUninst");
+            if (RT_SUCCESS(vrc))
+            {
+                pJob = NULL; /* the thread deletes it */
+                ptrProgress.queryInterfaceTo(aProgress.asOutParam());
+            }
+            else
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("RTThreadCreate failed with %Rrc"), vrc);
         }
-        if (pJob)
-            delete pJob;
     }
+    catch (std::bad_alloc)
+    {
+        hrc = E_OUTOFMEMORY;
+    }
+    if (pJob)
+        delete pJob;
 
     return hrc;
 #else
@@ -2195,7 +2018,7 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
 #endif
 }
 
-STDMETHODIMP ExtPackManager::Cleanup(void)
+HRESULT ExtPackManager::cleanup(void)
 {
     Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
 
@@ -2210,38 +2033,24 @@ STDMETHODIMP ExtPackManager::Cleanup(void)
          * VBoxSVC instance.
          */
         AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
-        hrc = runSetUidToRootHelper(NULL,
-                                    "cleanup",
-                                    "--base-dir", m->strBaseDir.c_str(),
-                                    (const char *)NULL);
+        hrc = i_runSetUidToRootHelper(NULL,
+                                      "cleanup",
+                                      "--base-dir", m->strBaseDir.c_str(),
+                                      (const char *)NULL);
     }
 
     return hrc;
 }
 
-STDMETHODIMP ExtPackManager::QueryAllPlugInsForFrontend(IN_BSTR a_bstrFrontend, ComSafeArrayOut(BSTR, a_pabstrPlugInModules))
+HRESULT ExtPackManager::queryAllPlugInsForFrontend(const com::Utf8Str &aFrontendName, std::vector<com::Utf8Str> &aPlugInModules)
 {
-    CheckComArgNotNull(a_bstrFrontend);
-    Utf8Str strName(a_bstrFrontend);
-    CheckComArgOutSafeArrayPointerValid(a_pabstrPlugInModules);
-    Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        com::SafeArray<BSTR> saPaths((size_t)0);
-        /** @todo implement plug-ins */
-        saPaths.detachTo(ComSafeArrayOutArg(a_pabstrPlugInModules));
-    }
-    return hrc;
+    aPlugInModules.resize(0);
+    return S_OK;
 }
 
-STDMETHODIMP ExtPackManager::IsExtPackUsable(IN_BSTR a_bstrExtPack, BOOL *aUsable)
+HRESULT ExtPackManager::isExtPackUsable(const com::Utf8Str &aName, BOOL *aUsable)
 {
-    CheckComArgNotNull(a_bstrExtPack);
-    Utf8Str strExtPack(a_bstrExtPack);
-    *aUsable = isExtPackUsable(strExtPack.c_str());
+    *aUsable = i_isExtPackUsable(aName.c_str());
     return S_OK;
 }
 
@@ -2274,7 +2083,7 @@ static char *findSuccessIndicator(char *psz, size_t cch)
  *                              command. Maximum is about 16.  Terminated by a
  *                              NULL.
  */
-HRESULT ExtPackManager::runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo, const char *a_pszCommand, ...)
+HRESULT ExtPackManager::i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo, const char *a_pszCommand, ...)
 {
     /*
      * Calculate the path to the helper application.
@@ -2482,7 +2291,7 @@ HRESULT ExtPackManager::runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo, 
  *          counting problem here since the caller must be holding the lock.)
  * @param   a_pszName       The name of the extension pack.
  */
-ExtPack *ExtPackManager::findExtPack(const char *a_pszName)
+ExtPack *ExtPackManager::i_findExtPack(const char *a_pszName)
 {
     size_t cchName = strlen(a_pszName);
 
@@ -2506,7 +2315,7 @@ ExtPack *ExtPackManager::findExtPack(const char *a_pszName)
  *
  * @param   a_pszName       The name of the extension pack.
  */
-void ExtPackManager::removeExtPack(const char *a_pszName)
+void ExtPackManager::i_removeExtPack(const char *a_pszName)
 {
     size_t cchName = strlen(a_pszName);
 
@@ -2546,24 +2355,24 @@ void ExtPackManager::removeExtPack(const char *a_pszName)
  * @remarks Caller holds the extension manager lock.
  * @remarks Only called in VBoxSVC.
  */
-HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnusableIsError, ExtPack **a_ppExtPack)
+HRESULT ExtPackManager::i_refreshExtPack(const char *a_pszName, bool a_fUnusableIsError, ExtPack **a_ppExtPack)
 {
     Assert(m->pVirtualBox != NULL); /* Only called from VBoxSVC. */
 
     HRESULT hrc;
-    ExtPack *pExtPack = findExtPack(a_pszName);
+    ExtPack *pExtPack = i_findExtPack(a_pszName);
     if (pExtPack)
     {
         /*
          * Refresh existing object.
          */
         bool fCanDelete;
-        hrc = pExtPack->refresh(&fCanDelete);
+        hrc = pExtPack->i_refresh(&fCanDelete);
         if (SUCCEEDED(hrc))
         {
             if (fCanDelete)
             {
-                removeExtPack(a_pszName);
+                i_removeExtPack(a_pszName);
                 pExtPack = NULL;
             }
         }
@@ -2667,10 +2476,10 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnusableIs
  * @param   hThread             The thread handle (ignored).
  * @param   pvJob               The job structure.
  */
-/*static*/ DECLCALLBACK(int) ExtPackManager::doInstallThreadProc(RTTHREAD hThread, void *pvJob)
+/*static*/ DECLCALLBACK(int) ExtPackManager::i_doInstallThreadProc(RTTHREAD hThread, void *pvJob)
 {
     PEXTPACKINSTALLJOB pJob = (PEXTPACKINSTALLJOB)pvJob;
-    HRESULT hrc = pJob->ptrExtPackMgr->doInstall(pJob->ptrExtPackFile, pJob->fReplace, &pJob->strDisplayInfo);
+    HRESULT hrc = pJob->ptrExtPackMgr->i_doInstall(pJob->ptrExtPackFile, pJob->fReplace, &pJob->strDisplayInfo);
     pJob->ptrProgress->i_notifyComplete(hrc);
     delete pJob;
 
@@ -2692,7 +2501,7 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnusableIs
  * @param   a_ppProgress        Where to return a progress object some day. Can
  *                              be NULL.
  */
-HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo)
+HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo)
 {
     AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
     RTCString const * const pStrName          = &a_pExtPackFile->m->Desc.strName;
@@ -2710,11 +2519,11 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, 
          * may be made stale by direct meddling or some other user.
          */
         ExtPack *pExtPack;
-        hrc = refreshExtPack(pStrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+        hrc = i_refreshExtPack(pStrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
         if (SUCCEEDED(hrc))
         {
             if (pExtPack && a_fReplace)
-                hrc = pExtPack->callUninstallHookAndClose(m->pVirtualBox, false /*a_ForcedRemoval*/);
+                hrc = pExtPack->i_callUninstallHookAndClose(m->pVirtualBox, false /*a_ForcedRemoval*/);
             else if (pExtPack)
                 hrc = setError(E_FAIL,
                                tr("Extension pack '%s' is already installed."
@@ -2728,23 +2537,23 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, 
              * installation.  Then create an object for the packet (we do this
              * even on failure, to be on the safe side).
              */
-            hrc = runSetUidToRootHelper(a_pstrDisplayInfo,
-                                        "install",
-                                        "--base-dir",   m->strBaseDir.c_str(),
-                                        "--cert-dir",   m->strCertificatDirPath.c_str(),
-                                        "--name",       pStrName->c_str(),
-                                        "--tarball",    pStrTarball->c_str(),
-                                        "--sha-256",    pStrTarballDigest->c_str(),
-                                        pExtPack ? "--replace" : (const char *)NULL,
-                                        (const char *)NULL);
+            hrc = i_runSetUidToRootHelper(a_pstrDisplayInfo,
+                                          "install",
+                                          "--base-dir",   m->strBaseDir.c_str(),
+                                          "--cert-dir",   m->strCertificatDirPath.c_str(),
+                                          "--name",       pStrName->c_str(),
+                                          "--tarball",    pStrTarball->c_str(),
+                                          "--sha-256",    pStrTarballDigest->c_str(),
+                                          pExtPack ? "--replace" : (const char *)NULL,
+                                          (const char *)NULL);
             if (SUCCEEDED(hrc))
             {
-                hrc = refreshExtPack(pStrName->c_str(), true /*a_fUnusableIsError*/, &pExtPack);
+                hrc = i_refreshExtPack(pStrName->c_str(), true /*a_fUnusableIsError*/, &pExtPack);
                 if (SUCCEEDED(hrc) && pExtPack)
                 {
                     RTERRINFOSTATIC ErrInfo;
                     RTErrInfoInitStatic(&ErrInfo);
-                    pExtPack->callInstalledHook(m->pVirtualBox, &autoLock, &ErrInfo.Core);
+                    pExtPack->i_callInstalledHook(m->pVirtualBox, &autoLock, &ErrInfo.Core);
                     if (RT_SUCCESS(ErrInfo.Core.rc))
                         LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
                     else
@@ -2756,12 +2565,12 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, 
                          * Uninstall the extpack if the error indicates that.
                          */
                         if (ErrInfo.Core.rc == VERR_EXTPACK_UNSUPPORTED_HOST_UNINSTALL)
-                            runSetUidToRootHelper(a_pstrDisplayInfo,
-                                                  "uninstall",
-                                                  "--base-dir", m->strBaseDir.c_str(),
-                                                  "--name",     pStrName->c_str(),
-                                                  "--forced",
-                                                  (const char *)NULL);
+                            i_runSetUidToRootHelper(a_pstrDisplayInfo,
+                                                    "uninstall",
+                                                    "--base-dir", m->strBaseDir.c_str(),
+                                                    "--name",     pStrName->c_str(),
+                                                    "--forced",
+                                                    (const char *)NULL);
                         hrc = setError(E_FAIL, tr("The installation hook failed: %Rrc - %s"),
                                        ErrInfo.Core.rc, ErrInfo.Core.pszMsg);
                     }
@@ -2773,7 +2582,7 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, 
             else
             {
                 ErrorInfoKeeper Eik;
-                refreshExtPack(pStrName->c_str(), false /*a_fUnusableIsError*/, NULL);
+                i_refreshExtPack(pStrName->c_str(), false /*a_fUnusableIsError*/, NULL);
             }
         }
 
@@ -2784,7 +2593,7 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, 
         if (m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
         {
             autoLock.release();
-            callAllVirtualBoxReadyHooks();
+            i_callAllVirtualBoxReadyHooks();
         }
     }
 
@@ -2798,10 +2607,10 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, 
  * @param   hThread             The thread handle (ignored).
  * @param   pvJob               The job structure.
  */
-/*static*/ DECLCALLBACK(int) ExtPackManager::doUninstallThreadProc(RTTHREAD hThread, void *pvJob)
+/*static*/ DECLCALLBACK(int) ExtPackManager::i_doUninstallThreadProc(RTTHREAD hThread, void *pvJob)
 {
     PEXTPACKUNINSTALLJOB pJob = (PEXTPACKUNINSTALLJOB)pvJob;
-    HRESULT hrc = pJob->ptrExtPackMgr->doUninstall(&pJob->strName, pJob->fForcedRemoval, &pJob->strDisplayInfo);
+    HRESULT hrc = pJob->ptrExtPackMgr->i_doUninstall(&pJob->strName, pJob->fForcedRemoval, &pJob->strDisplayInfo);
     pJob->ptrProgress->i_notifyComplete(hrc);
     delete pJob;
 
@@ -2821,7 +2630,7 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, 
  *                              extension pack hooks.
  * @param   a_pstrDisplayInfo   Host specific display information hacks.
  */
-HRESULT ExtPackManager::doUninstall(Utf8Str const *a_pstrName, bool a_fForcedRemoval, Utf8Str const *a_pstrDisplayInfo)
+HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedRemoval, Utf8Str const *a_pstrDisplayInfo)
 {
     Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
 
@@ -2836,7 +2645,7 @@ HRESULT ExtPackManager::doUninstall(Utf8Str const *a_pstrName, bool a_fForcedRem
          * stale by direct meddling or some other user.
          */
         ExtPack *pExtPack;
-        hrc = refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+        hrc = i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
         if (SUCCEEDED(hrc))
         {
             if (!pExtPack)
@@ -2849,7 +2658,7 @@ HRESULT ExtPackManager::doUninstall(Utf8Str const *a_pstrName, bool a_fForcedRem
                 /*
                  * Call the uninstall hook and unload the main dll.
                  */
-                hrc = pExtPack->callUninstallHookAndClose(m->pVirtualBox, a_fForcedRemoval);
+                hrc = pExtPack->i_callUninstallHookAndClose(m->pVirtualBox, a_fForcedRemoval);
                 if (SUCCEEDED(hrc))
                 {
                     /*
@@ -2860,15 +2669,15 @@ HRESULT ExtPackManager::doUninstall(Utf8Str const *a_pstrName, bool a_fForcedRem
                      * the don't-do-that variety.
                      */
                     const char *pszForcedOpt = a_fForcedRemoval ? "--forced" : NULL;
-                    hrc = runSetUidToRootHelper(a_pstrDisplayInfo,
-                                                "uninstall",
-                                                "--base-dir", m->strBaseDir.c_str(),
-                                                "--name",     a_pstrName->c_str(),
-                                                pszForcedOpt, /* Last as it may be NULL. */
-                                                (const char *)NULL);
+                    hrc = i_runSetUidToRootHelper(a_pstrDisplayInfo,
+                                                  "uninstall",
+                                                  "--base-dir", m->strBaseDir.c_str(),
+                                                  "--name",     a_pstrName->c_str(),
+                                                  pszForcedOpt, /* Last as it may be NULL. */
+                                                  (const char *)NULL);
                     if (SUCCEEDED(hrc))
                     {
-                        hrc = refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+                        hrc = i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
                         if (SUCCEEDED(hrc))
                         {
                             if (!pExtPack)
@@ -2882,7 +2691,7 @@ HRESULT ExtPackManager::doUninstall(Utf8Str const *a_pstrName, bool a_fForcedRem
                     else
                     {
                         ErrorInfoKeeper Eik;
-                        refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, NULL);
+                        i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, NULL);
                     }
                 }
             }
@@ -2895,7 +2704,7 @@ HRESULT ExtPackManager::doUninstall(Utf8Str const *a_pstrName, bool a_fForcedRem
         if (m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
         {
             autoLock.release();
-            callAllVirtualBoxReadyHooks();
+            i_callAllVirtualBoxReadyHooks();
         }
     }
 
@@ -2908,7 +2717,7 @@ HRESULT ExtPackManager::doUninstall(Utf8Str const *a_pstrName, bool a_fForcedRem
  *
  * @remarks The caller must not hold any locks.
  */
-void ExtPackManager::callAllVirtualBoxReadyHooks(void)
+void ExtPackManager::i_callAllVirtualBoxReadyHooks(void)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -2921,7 +2730,7 @@ void ExtPackManager::callAllVirtualBoxReadyHooks(void)
          it != m->llInstalledExtPacks.end();
          /* advancing below */)
     {
-        if ((*it)->callVirtualBoxReadyHook(m->pVirtualBox, &autoLock))
+        if ((*it)->i_callVirtualBoxReadyHook(m->pVirtualBox, &autoLock))
             it = m->llInstalledExtPacks.begin();
         else
             it++;
@@ -2935,7 +2744,7 @@ void ExtPackManager::callAllVirtualBoxReadyHooks(void)
  * @param   a_pConsole          The console interface.
  * @remarks The caller must not hold any locks.
  */
-void ExtPackManager::callAllConsoleReadyHooks(IConsole *a_pConsole)
+void ExtPackManager::i_callAllConsoleReadyHooks(IConsole *a_pConsole)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -2948,7 +2757,7 @@ void ExtPackManager::callAllConsoleReadyHooks(IConsole *a_pConsole)
          it != m->llInstalledExtPacks.end();
          /* advancing below */)
     {
-        if ((*it)->callConsoleReadyHook(a_pConsole, &autoLock))
+        if ((*it)->i_callConsoleReadyHook(a_pConsole, &autoLock))
             it = m->llInstalledExtPacks.begin();
         else
             it++;
@@ -2961,7 +2770,7 @@ void ExtPackManager::callAllConsoleReadyHooks(IConsole *a_pConsole)
  *
  * @param   a_pMachine          The machine interface of the new VM.
  */
-void ExtPackManager::callAllVmCreatedHooks(IMachine *a_pMachine)
+void ExtPackManager::i_callAllVmCreatedHooks(IMachine *a_pMachine)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -2972,7 +2781,7 @@ void ExtPackManager::callAllVmCreatedHooks(IMachine *a_pMachine)
     ExtPackList             llExtPacks = m->llInstalledExtPacks;
 
     for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); it++)
-        (*it)->callVmCreatedHook(m->pVirtualBox, a_pMachine, &autoLock);
+        (*it)->i_callVmCreatedHook(m->pVirtualBox, a_pMachine, &autoLock);
 }
 #endif
 
@@ -2984,7 +2793,7 @@ void ExtPackManager::callAllVmCreatedHooks(IMachine *a_pMachine)
  * @param   a_pConsole          The console interface for the VM.
  * @param   a_pVM               The VM handle.
  */
-int ExtPackManager::callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM)
+int ExtPackManager::i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -2997,7 +2806,7 @@ int ExtPackManager::callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM)
     for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); it++)
     {
         int vrc;
-        (*it)->callVmConfigureVmmHook(a_pConsole, a_pVM, &autoLock, &vrc);
+        (*it)->i_callVmConfigureVmmHook(a_pConsole, a_pVM, &autoLock, &vrc);
         if (RT_FAILURE(vrc))
             return vrc;
     }
@@ -3013,7 +2822,7 @@ int ExtPackManager::callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM)
  * @param   a_pConsole          The console interface for the VM.
  * @param   a_pVM               The VM handle.
  */
-int ExtPackManager::callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM)
+int ExtPackManager::i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -3026,7 +2835,7 @@ int ExtPackManager::callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM)
     for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); it++)
     {
         int vrc;
-        (*it)->callVmPowerOnHook(a_pConsole, a_pVM, &autoLock, &vrc);
+        (*it)->i_callVmPowerOnHook(a_pConsole, a_pVM, &autoLock, &vrc);
         if (RT_FAILURE(vrc))
             return vrc;
     }
@@ -3040,7 +2849,7 @@ int ExtPackManager::callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM)
  * @param   a_pConsole          The console interface for the VM.
  * @param   a_pVM               The VM handle. Can be NULL.
  */
-void ExtPackManager::callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM)
+void ExtPackManager::i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -3051,7 +2860,7 @@ void ExtPackManager::callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM)
     ExtPackList             llExtPacks = m->llInstalledExtPacks;
 
     for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); it++)
-        (*it)->callVmPowerOffHook(a_pConsole, a_pVM, &autoLock);
+        (*it)->i_callVmPowerOffHook(a_pConsole, a_pVM, &autoLock);
 }
 
 
@@ -3062,7 +2871,7 @@ void ExtPackManager::callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM)
  * @returns S_OK if ok, appropriate failure status code with details.
  * @param   a_pstrExtPack   The name of the extension pack.
  */
-HRESULT ExtPackManager::checkVrdeExtPack(Utf8Str const *a_pstrExtPack)
+HRESULT ExtPackManager::i_checkVrdeExtPack(Utf8Str const *a_pstrExtPack)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -3070,9 +2879,9 @@ HRESULT ExtPackManager::checkVrdeExtPack(Utf8Str const *a_pstrExtPack)
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
 
-        ExtPack *pExtPack = findExtPack(a_pstrExtPack->c_str());
+        ExtPack *pExtPack = i_findExtPack(a_pstrExtPack->c_str());
         if (pExtPack)
-            hrc = pExtPack->checkVrde();
+            hrc = pExtPack->i_checkVrde();
         else
             hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"), a_pstrExtPack->c_str());
     }
@@ -3091,7 +2900,7 @@ HRESULT ExtPackManager::checkVrdeExtPack(Utf8Str const *a_pstrExtPack)
  * @param   a_pstrExtPack       The extension pack.
  * @param   a_pstrVrdeLibrary   Where to return the path.
  */
-int ExtPackManager::getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary)
+int ExtPackManager::i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -3099,9 +2908,9 @@ int ExtPackManager::getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, U
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
 
-        ExtPack *pExtPack = findExtPack(a_pstrExtPack->c_str());
+        ExtPack *pExtPack = i_findExtPack(a_pstrExtPack->c_str());
         if (pExtPack)
-            hrc = pExtPack->getVrdpLibraryName(a_pstrVrdeLibrary);
+            hrc = pExtPack->i_getVrdpLibraryName(a_pstrVrdeLibrary);
         else
             hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"),
                            a_pstrExtPack->c_str());
@@ -3119,8 +2928,8 @@ int ExtPackManager::getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, U
  * @param   a_pstrExtPack       The extension pack.
  * @param   a_pstrVrdeLibrary   Where to return the path.
  */
-HRESULT ExtPackManager::getLibraryPathForExtPack(const char *a_pszModuleName, Utf8Str const *a_pstrExtPack,
-                                                 Utf8Str *a_pstrLibrary)
+HRESULT ExtPackManager::i_getLibraryPathForExtPack(const char *a_pszModuleName, Utf8Str const *a_pstrExtPack,
+                                                   Utf8Str *a_pstrLibrary)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -3128,9 +2937,9 @@ HRESULT ExtPackManager::getLibraryPathForExtPack(const char *a_pszModuleName, Ut
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
 
-        ExtPack *pExtPack = findExtPack(a_pstrExtPack->c_str());
+        ExtPack *pExtPack = i_findExtPack(a_pstrExtPack->c_str());
         if (pExtPack)
-            hrc = pExtPack->getLibraryName(a_pszModuleName, a_pstrLibrary);
+            hrc = pExtPack->i_getLibraryName(a_pszModuleName, a_pstrLibrary);
         else
             hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"), a_pstrExtPack->c_str());
     }
@@ -3146,7 +2955,7 @@ HRESULT ExtPackManager::getLibraryPathForExtPack(const char *a_pszModuleName, Ut
  *                          empty if no extension pack wishes to be the default
  *                          VRDP provider.
  */
-HRESULT ExtPackManager::getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack)
+HRESULT ExtPackManager::i_getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack)
 {
     a_pstrExtPack->setNull();
 
@@ -3160,7 +2969,7 @@ HRESULT ExtPackManager::getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack)
              it != m->llInstalledExtPacks.end();
              it++)
         {
-            if ((*it)->wantsToBeDefaultVrde())
+            if ((*it)->i_wantsToBeDefaultVrde())
             {
                 *a_pstrExtPack = (*it)->m->Desc.strName;
                 break;
@@ -3176,7 +2985,7 @@ HRESULT ExtPackManager::getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack)
  * @returns @c true if it is, otherwise @c false.
  * @param   a_pszExtPack    The name of the extension pack.
  */
-bool ExtPackManager::isExtPackUsable(const char *a_pszExtPack)
+bool ExtPackManager::i_isExtPackUsable(const char *a_pszExtPack)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -3184,7 +2993,7 @@ bool ExtPackManager::isExtPackUsable(const char *a_pszExtPack)
         return false;
     AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
 
-    ExtPack *pExtPack = findExtPack(a_pszExtPack);
+    ExtPack *pExtPack = i_findExtPack(a_pszExtPack);
     return pExtPack != NULL
         && pExtPack->m->fUsable;
 }
@@ -3192,7 +3001,7 @@ bool ExtPackManager::isExtPackUsable(const char *a_pszExtPack)
 /**
  * Dumps all extension packs to the release log.
  */
-void ExtPackManager::dumpAllToReleaseLog(void)
+void ExtPackManager::i_dumpAllToReleaseLog(void)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();

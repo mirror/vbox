@@ -627,7 +627,7 @@ HRESULT Console::attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr, P
      */
 # ifdef VBOX_WITH_EXTPACK
     static const char *s_pszPCIRawExtPackName = "Oracle VM VirtualBox Extension Pack";
-    if (!mptrExtPackManager->isExtPackUsable(s_pszPCIRawExtPackName))
+    if (!mptrExtPackManager->i_isExtPackUsable(s_pszPCIRawExtPackName))
         /* Always fatal! */
         return VMR3SetError(pUVM, VERR_NOT_FOUND, RT_SRC_POS,
                 N_("Implementation of the PCI passthrough framework not found!\n"
@@ -1751,7 +1751,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                      */
                     static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
 # ifdef VBOX_WITH_EXTPACK
-                    if (mptrExtPackManager->isExtPackUsable(s_pszUsbExtPackName))
+                    if (mptrExtPackManager->i_isExtPackUsable(s_pszUsbExtPackName))
 # endif
                     {
                         InsertConfigNode(pDevices, "usb-ehci", &pDev);
@@ -1797,7 +1797,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                      */
                     static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
 # ifdef VBOX_WITH_EXTPACK
-                    if (mptrExtPackManager->isExtPackUsable(s_pszUsbExtPackName))
+                    if (mptrExtPackManager->i_isExtPackUsable(s_pszUsbExtPackName))
 # endif
                     {
                         InsertConfigNode(pDevices, "usb-xhci", &pDev);
@@ -3036,7 +3036,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     if (RT_SUCCESS(rc))
     {
         pAlock->release();
-        rc = mptrExtPackManager->callAllVmConfigureVmmHooks(this, pVM);
+        rc = mptrExtPackManager->i_callAllVmConfigureVmmHooks(this, pVM);
         pAlock->acquire();
     }
 #endif

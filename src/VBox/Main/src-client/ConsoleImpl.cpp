@@ -617,7 +617,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
 #ifdef VBOX_WITH_EXTPACK
     /* Let the extension packs have a go at things (hold no locks). */
     if (SUCCEEDED(rc))
-        mptrExtPackManager->callAllConsoleReadyHooks(this);
+        mptrExtPackManager->i_callAllConsoleReadyHooks(this);
 #endif
 
     LogFlowThisFuncLeave();
@@ -5819,7 +5819,7 @@ HRESULT Console::resume(Reason_T aReason)
     if (VMR3GetStateU(ptrVM.rawUVM()) == VMSTATE_CREATED)
     {
 #ifdef VBOX_WITH_EXTPACK
-        vrc = mptrExtPackManager->callAllVmPowerOnHooks(this, VMR3GetVM(ptrVM.rawUVM()));
+        vrc = mptrExtPackManager->i_callAllVmPowerOnHooks(this, VMR3GetVM(ptrVM.rawUVM()));
 #else
         vrc = VINF_SUCCESS;
 #endif
@@ -6692,7 +6692,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
          * asynchronously */
 
 #ifdef VBOX_WITH_EXTPACK
-        mptrExtPackManager->dumpAllToReleaseLog();
+        mptrExtPackManager->i_dumpAllToReleaseLog();
 #endif
 
 #ifdef RT_OS_SOLARIS
@@ -7091,7 +7091,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
         alock.release();
         vrc = VMR3PowerOff(pUVM);
 #ifdef VBOX_WITH_EXTPACK
-        mptrExtPackManager->callAllVmPowerOffHooks(this, VMR3GetVM(pUVM));
+        mptrExtPackManager->i_callAllVmPowerOffHooks(this, VMR3GetVM(pUVM));
 #endif
         alock.acquire();
     }
@@ -9125,7 +9125,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         {
                             /* Start/Resume the VM execution */
 #ifdef VBOX_WITH_EXTPACK
-                            vrc = pConsole->mptrExtPackManager->callAllVmPowerOnHooks(pConsole, pVM);
+                            vrc = pConsole->mptrExtPackManager->i_callAllVmPowerOnHooks(pConsole, pVM);
 #endif
                             if (RT_SUCCESS(vrc))
                                 vrc = VMR3Resume(pConsole->mpUVM, VMRESUMEREASON_STATE_RESTORED);
@@ -9138,7 +9138,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     {
                         int vrc2 = VMR3PowerOff(pConsole->mpUVM); AssertLogRelRC(vrc2);
 #ifdef VBOX_WITH_EXTPACK
-                        pConsole->mptrExtPackManager->callAllVmPowerOffHooks(pConsole, pVM);
+                        pConsole->mptrExtPackManager->i_callAllVmPowerOffHooks(pConsole, pVM);
 #endif
                     }
                 }
@@ -9153,7 +9153,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         ErrorInfoKeeper eik;
                         int vrc2 = VMR3PowerOff(pConsole->mpUVM); AssertLogRelRC(vrc2);
 #ifdef VBOX_WITH_EXTPACK
-                        pConsole->mptrExtPackManager->callAllVmPowerOffHooks(pConsole, pVM);
+                        pConsole->mptrExtPackManager->i_callAllVmPowerOffHooks(pConsole, pVM);
 #endif
                     }
                 }
@@ -9186,7 +9186,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
                             /* Power on the FT enabled VM. */
 #ifdef VBOX_WITH_EXTPACK
-                            vrc = pConsole->mptrExtPackManager->callAllVmPowerOnHooks(pConsole, pVM);
+                            vrc = pConsole->mptrExtPackManager->i_callAllVmPowerOnHooks(pConsole, pVM);
 #endif
                             if (RT_SUCCESS(vrc))
                                 vrc = FTMR3PowerOn(pConsole->mpUVM,
@@ -9209,7 +9209,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 {
                     /* Power on the VM (i.e. start executing) */
 #ifdef VBOX_WITH_EXTPACK
-                    vrc = pConsole->mptrExtPackManager->callAllVmPowerOnHooks(pConsole, pVM);
+                    vrc = pConsole->mptrExtPackManager->i_callAllVmPowerOnHooks(pConsole, pVM);
 #endif
                     if (RT_SUCCESS(vrc))
                         vrc = VMR3PowerOn(pConsole->mpUVM);

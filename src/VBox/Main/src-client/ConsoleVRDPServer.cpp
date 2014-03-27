@@ -1515,7 +1515,7 @@ int ConsoleVRDPServer::Launch(void)
     {
 #ifdef VBOX_WITH_EXTPACK
         ExtPackManager *pExtPackMgr = mConsole->getExtPackManager();
-        vrc = pExtPackMgr->getVrdeLibraryPathForExtPack(&strExtPack, &strVrdeLibrary);
+        vrc = pExtPackMgr->i_getVrdeLibraryPathForExtPack(&strExtPack, &strVrdeLibrary);
 #else
         vrc = VERR_FILE_NOT_FOUND;
 #endif
