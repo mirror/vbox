@@ -256,9 +256,12 @@ bool UIVMItem::recache()
 #endif
         }
 
-        /* Should we allow reconfiguration for this item? */
-        m_fReconfigurable = m_machineState != KMachineState_Stuck &&
-                            VBoxGlobal::shouldWeAllowMachineReconfiguration(m_machine);
+        /* Determine configuration access level: */
+        m_configurationAccessLevel = ::configurationAccessLevel(m_sessionState, m_machineState);
+        /* Also take restrictions into account: */
+        if (   m_configurationAccessLevel != ConfigurationAccessLevel_Null
+            && !VBoxGlobal::shouldWeAllowMachineReconfiguration(m_machine))
+            m_configurationAccessLevel = ConfigurationAccessLevel_Null;
 
         /* Should we show details for this item? */
         m_fHasDetails = VBoxGlobal::shouldWeShowDetails(m_machine);
@@ -286,8 +289,8 @@ bool UIVMItem::recache()
         mWinId = (WId) ~0;
 #endif
 
-        /* Should we allow reconfiguration for this item? */
-        m_fReconfigurable = false;
+        /* Set configuration access level to NULL: */
+        m_configurationAccessLevel = ConfigurationAccessLevel_Null;
 
         /* Should we show details for this item? */
         m_fHasDetails = true;
