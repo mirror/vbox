@@ -1978,8 +1978,13 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
 #ifdef VBOX_WDDM_WIN8
             memset(pCaps, 0, sizeof (*pCaps));
 #endif
-
-            pCaps->HighestAcceptableAddress.QuadPart = ~((uintptr_t)0);
+            pCaps->HighestAcceptableAddress.LowPart = ~0UL;
+#ifdef RT_ARCH_AMD64
+            /* driver talks to host in terms of page numbers when reffering to RAM
+             * we use uint32_t field to pass page index to host, so max would be (~0UL) << PAGE_OFFSET,
+             * which seems quite enough */
+            pCaps->HighestAcceptableAddress.HighPart = PAGE_OFFSET_MASK;
+#endif
             pCaps->MaxPointerWidth  = VBOXWDDM_C_POINTER_MAX_WIDTH;
             pCaps->MaxPointerHeight = VBOXWDDM_C_POINTER_MAX_HEIGHT;
             pCaps->PointerCaps.Value = 3; /* Monochrome , Color*/ /* MaskedColor == Value | 4, disable for now */
@@ -3094,22 +3099,7 @@ DxgkDdiSubmitCommandNew(
     if (!cbCmd)
     {
         cbCmd = pSubmitCommand->DmaBufferSubmissionEndOffset - pSubmitCommand->DmaBufferSubmissionStartOffset;
-        if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
-        {
-            WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
-                    pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset,
-                    pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset,
-                    sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        if (cbCmd > 0xffff)
-        {
-            WARN(("cbCmd too big"));
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        if (VBOXWDDM_DUMMY_DMABUFFER_SIZE == cbCmd)
+        if (!cbCmd || VBOXWDDM_DUMMY_DMABUFFER_SIZE == cbCmd)
         {
             SysMem.Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
             SysMem.Hdr.u8Flags = 0;
@@ -3118,20 +3108,36 @@ DxgkDdiSubmitCommandNew(
         }
         else
         {
+            if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
+            {
+                WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
+                        pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset,
+                        pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset,
+                        sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
+                return STATUS_INVALID_PARAMETER;
+            }
+
+            if (cbCmd > 0xffff)
+            {
+                WARN(("cbCmd too big"));
+                return STATUS_INVALID_PARAMETER;
+            }
+
             SysMem.Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_SYSMEMCMD;
             SysMem.Hdr.u8Flags = cbCmd & 0xff;
             SysMem.Hdr.u.u8PrimaryID = (cbCmd >> 8) & 0xff;
             SysMem.Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-            SysMem.phSysMem = pSubmitCommand->DmaBufferPhysicalAddress.QuadPart + pSubmitCommand->DmaBufferSubmissionStartOffset;
-            if (SysMem.phSysMem & PAGE_OFFSET_MASK)
+            if (pSubmitCommand->DmaBufferPhysicalAddress.QuadPart & PAGE_OFFSET_MASK)
             {
                 WARN(("command should be page aligned for now"));
                 return STATUS_INVALID_PARAMETER;
             }
+            SysMem.iPage = (VBOXCMDVBVAPAGEIDX)(pSubmitCommand->DmaBufferPhysicalAddress.QuadPart >> PAGE_SHIFT);
+
+            cbCmd = sizeof (SysMem);
         }
 
         pHdr = &SysMem.Hdr;
-        cbCmd = sizeof (SysMem);
     }
     else
     {
@@ -3402,14 +3408,6 @@ DxgkDdiBuildPagingBufferNew(
 
     LOGF(("ENTER, context(0x%x)", hAdapter));
 
-    /* paging buffer transfer is nop for hostID allocations */
-    if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_HDR))
-    {
-        WARN(("pBuildPagingBuffer->DmaBufferPrivateDataSize(%d) < sizeof VBOXCMDVBVA_HDR (%d)", pBuildPagingBuffer->DmaBufferPrivateDataSize , sizeof (VBOXCMDVBVA_HDR)));
-        /* @todo: can this actually happen? what status to return? */
-        return STATUS_INVALID_PARAMETER;
-    }
-
     switch (pBuildPagingBuffer->Operation)
     {
         case DXGK_OPERATION_TRANSFER:
@@ -3470,17 +3468,19 @@ DxgkDdiBuildPagingBufferNew(
                 fIn = TRUE;
             }
 
-            uint32_t cPages = (uint32_t)((pBuildPagingBuffer->Transfer.TransferSize + 0xfff) >> PAGE_SHIFT);
-            uint32_t cTotalPages = cPages;
+            Assert(!(pBuildPagingBuffer->Transfer.TransferSize & PAGE_OFFSET_MASK));
+            Assert(!(offVRAM & PAGE_OFFSET_MASK));
+            uint32_t cPages = (uint32_t)(pBuildPagingBuffer->Transfer.TransferSize >> PAGE_SHIFT);
+            Assert(cPages > pBuildPagingBuffer->MultipassOffset);
             cPages -= pBuildPagingBuffer->MultipassOffset;
-            uint32_t iFirstPage = pBuildPagingBuffer->Transfer.MdlOffset + pBuildPagingBuffer->MultipassOffset;
+            uint32_t iFirstPage = pBuildPagingBuffer->MultipassOffset;
             uint32_t cPagesWritten;
-            offVRAM += pBuildPagingBuffer->Transfer.TransferOffset + pBuildPagingBuffer->MultipassOffset;
+            offVRAM += pBuildPagingBuffer->Transfer.TransferOffset + (pBuildPagingBuffer->MultipassOffset << PAGE_SHIFT);
 
             pPaging->Alloc.u.offVRAM = offVRAM;
             if (fIn)
                 pPaging->Hdr.u8Flags |= VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN;
-            cbBuffer = VBoxCVDdiPTransferVRamSysBuildEls(pPaging, pMdl, iFirstPage, cPages, pBuildPagingBuffer->DmaBufferPrivateDataSize, &cPagesWritten);
+            cbBuffer = VBoxCVDdiPTransferVRamSysBuildEls(pPaging, pMdl, iFirstPage, cPages, pBuildPagingBuffer->DmaSize, &cPagesWritten);
             if (cPagesWritten != cPages)
                 pBuildPagingBuffer->MultipassOffset += cPagesWritten;
             else
@@ -3499,6 +3499,7 @@ DxgkDdiBuildPagingBufferNew(
             }
             /** @todo: add necessary bits */
             WARN(("Impl!"));
+            cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
             break;
         }
         case DXGK_OPERATION_DISCARD_CONTENT:
@@ -3509,6 +3510,7 @@ DxgkDdiBuildPagingBufferNew(
                 WARN(("allocation is null"));
                 return STATUS_INVALID_PARAMETER;
             }
+            WARN(("Do we need to do anything here?"));
             break;
         }
         default:
@@ -3520,6 +3522,7 @@ DxgkDdiBuildPagingBufferNew(
 
     Assert(!cbPrivateData);
 
+    Assert(pBuildPagingBuffer->Operation == DXGK_OPERATION_DISCARD_CONTENT || cbBuffer);
     pBuildPagingBuffer->pDmaBuffer = ((uint8_t*)pBuildPagingBuffer->pDmaBuffer) + cbBuffer;
     pBuildPagingBuffer->pDmaBufferPrivateData = ((uint8_t*)pBuildPagingBuffer->pDmaBufferPrivateData) + cbPrivateData;
 
@@ -6087,11 +6090,13 @@ DxgkDdiPresentNew(
 
 //    LOGF(("ENTER, hContext(0x%x)", hContext));
 
-    vboxVDbgBreakFv();
+    vboxVDbgBreakF();
 
     PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
     PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
     PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
+    uint32_t cbBuffer = 0;
+    uint32_t cbPrivateData = 0;
 
     if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_HDR))
     {
@@ -6190,7 +6195,8 @@ DxgkDdiPresentNew(
             pBlt->Pos.y = (int16_t)(pPresent->DstRect.top - pPresent->SrcRect.top);
 
             paRects = pBlt->aRects;
-            cbMaxRects = pPresent->DmaBufferPrivateDataSize - RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects);
+            cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects);
+            cbMaxRects = pPresent->DmaBufferPrivateDataSize - cbPrivateData;
         }
         else
         {
@@ -6213,8 +6219,11 @@ DxgkDdiPresentNew(
             pBlt->Pos.y = (int16_t)(pPresent->DstRect.top - pPresent->SrcRect.top);
 
             paRects = pBlt->aRects;
-            cbMaxRects = pPresent->DmaBufferPrivateDataSize - RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, aRects);
+            cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, aRects);
+            cbMaxRects = pPresent->DmaBufferPrivateDataSize - cbPrivateData;
         }
+
+        cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
     }
     else if (pPresent->Flags.Flip)
     {
@@ -6246,6 +6255,9 @@ DxgkDdiPresentNew(
 
         if (VBoxCVDdiFillAllocInfo(pHdr, &pFlip->src, pSrcAlloc, pSrc, false))
             u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_FLIP, src.u.offVRAM);
+
+        cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+        cbPrivateData = sizeof (*pFlip);
     }
     else if (pPresent->Flags.ColorFill)
     {
@@ -6277,7 +6289,10 @@ DxgkDdiPresentNew(
             u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL, dst.u.offVRAM);
 
         paRects = pCFill->aRects;
-        cbMaxRects = pPresent->DmaBufferPrivateDataSize - RT_OFFSETOF(VBOXCMDVBVA_CLRFILL, aRects);
+        cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL, aRects);
+        cbMaxRects = pPresent->DmaBufferPrivateDataSize - cbPrivateData;
+
+        cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
     }
     else
     {
@@ -6299,8 +6314,10 @@ DxgkDdiPresentNew(
         else
             pPresent->MultipassOffset = 0;
 
+        Assert(cRects);
         const RECT *paDstSubRects = &pPresent->pDstSubRects[iStartRect];
         VBoxCVDdiPackRects(paRects, paDstSubRects, cRects);
+        cbPrivateData += (cRects * sizeof (VBOXCMDVBVA_RECT));
     }
 
     if (fPatchSrc)
@@ -6323,7 +6340,10 @@ DxgkDdiPresentNew(
     /* sanity */
     pHdr->u32FenceID = 0;
 
-    pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+    Assert(cbBuffer);
+    Assert(cbPrivateData);
+    pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + cbBuffer;
+    pPresent->pDmaBufferPrivateData = ((uint8_t*)pPresent->pDmaBufferPrivateData) + cbPrivateData;
 
     if (pPresent->MultipassOffset)
         return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;

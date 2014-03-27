@@ -83,7 +83,6 @@ DECLINLINE(CRClient*) crVBoxServerClientById(uint32_t u32ClientID)
 DECLINLINE(int32_t) crVBoxServerClientGet(uint32_t u32ClientID, CRClient **ppClient)
 {
     CRClient *pClient = NULL;
-    int32_t i;
 
     pClient = crVBoxServerClientById(u32ClientID);
 
@@ -157,6 +156,26 @@ static void crServerTearDown( void )
         return;
 
     tearingdown = 1;
+
+    if (cr_server.DisableData.hNotifyTerm)
+    {
+        VBOXCRCMDCTL_HGCMENABLE_DATA EnableData;
+        int rc = cr_server.DisableData.pfnNotifyTerm(cr_server.DisableData.hNotifyTerm, &EnableData);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("pfnNotifyTerm failed %d", rc));
+            return;
+        }
+
+        rc = crVBoxServerHgcmEnable(&EnableData);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("crVBoxServerHgcmEnable failed %d", rc));
+            return;
+        }
+
+        cr_server.DisableData.pfnNotifyTermDone(cr_server.DisableData.hNotifyTerm);
+    }
 
     crStateSetCurrent( NULL );
 
@@ -2974,7 +2993,7 @@ static void crVBoxServerDefaultContextSet()
         else
         {
             spuCtx = cr_server.MainContextInfo.SpuContext;
-            spuWindow = pMural->CreateInfo.realVisualBits;
+            spuWindow = pMural->spuWindow;
         }
     }
     else
@@ -3013,7 +3032,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
 
     cParams = cBuffers-1;
 
-    if (cbCmd != RT_OFFSETOF(VBOXCMDVBVA_CRCMD_CMD, aBuffers[cBuffers]))
+    if (cbCmd < RT_OFFSETOF(VBOXCMDVBVA_CRCMD_CMD, aBuffers[cBuffers]))
     {
         WARN(("invalid buffer size"));
         return VERR_INVALID_PARAMETER;
@@ -3362,7 +3381,10 @@ static int crVBoxCrConnect(VBOXCMDVBVA_3DCTL_CONNECT *pConnect)
                 {
                     rc = CrHTablePutToSlot(&cr_server.clientTable, u32ClientId, pClient);
                     if (RT_SUCCESS(rc))
+                    {
+                        pConnect->Hdr.u32CmdClientId = u32ClientId;
                         return VINF_SUCCESS;
+                    }
                     else
                         WARN(("CrHTablePutToSlot failed %d", rc));
                 }
@@ -3453,7 +3475,6 @@ static DECLCALLBACK(int) crVBoxCrCmdLoadState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSS
 
 static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd)
 {
-    AssertFailed();
     switch (pCmd->u8OpCode)
     {
         case VBOXCMDVBVA_OPTYPE_CRCMD:
@@ -3883,11 +3904,13 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
     return rc;
 }
 
-int32_t crVBoxServerHgcmEnable(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hRHCmd, PFNVBOXCRCMDCTL_REMAINING_HOST_COMMAND pfnRHCmd)
+int32_t crVBoxServerHgcmEnable(VBOXCRCMDCTL_HGCMENABLE_DATA *pData)
 {
     int rc = VINF_SUCCESS;
     uint8_t* pCtl;
     uint32_t cbCtl;
+    HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hRHCmd = pData->hRHCmd;
+    PFNVBOXCRCMDCTL_REMAINING_HOST_COMMAND pfnRHCmd = pData->pfnRHCmd;
 
     Assert(!cr_server.fCrCmdEnabled);
 
@@ -3907,7 +3930,7 @@ int32_t crVBoxServerHgcmEnable(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hRHCmd, PFNV
     return VINF_SUCCESS;
 }
 
-int32_t crVBoxServerHgcmDisable()
+int32_t crVBoxServerHgcmDisable(VBOXCRCMDCTL_HGCMDISABLE_DATA *pData)
 {
     Assert(!cr_server.fCrCmdEnabled);
 
@@ -3918,6 +3941,8 @@ int32_t crVBoxServerHgcmDisable()
     }
 
     cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
+
+    cr_server.DisableData = *pData;
 
     return VINF_SUCCESS;
 }

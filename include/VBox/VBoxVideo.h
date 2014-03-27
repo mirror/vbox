@@ -1632,6 +1632,7 @@ typedef struct VBOXCMDVBVA_HDR
 
 typedef uint32_t VBOXCMDVBVAOFFSET;
 typedef uint64_t VBOXCMDVBVAPHADDR;
+typedef uint32_t VBOXCMDVBVAPAGEIDX;
 
 typedef struct VBOXCMDVBVA_CRCMD_BUFFER
 {
@@ -1707,6 +1708,7 @@ typedef struct VBOXCMDVBVA_CLRFILL
     VBOXCMDVBVA_RECT aRects[1];
 } VBOXCMDVBVA_CLRFILL;
 
+#if 0
 #define VBOXCMDVBVA_SYSMEMEL_CPAGES_MAX  0x1000
 
 typedef struct VBOXCMDVBVA_SYSMEMEL
@@ -1715,6 +1717,7 @@ typedef struct VBOXCMDVBVA_SYSMEMEL
     uint32_t iPage1            : 20;
     uint32_t iPage2;
 } VBOXCMDVBVA_SYSMEMEL;
+#endif
 
 typedef struct VBOXCMDVBVA_PAGING_TRANSFER
 {
@@ -1722,8 +1725,7 @@ typedef struct VBOXCMDVBVA_PAGING_TRANSFER
     /* for now can only contain offVRAM.
      * paging transfer can NOT be initiated for allocations having host 3D object (hostID) associated */
     VBOXCMDVBVA_ALLOCINFO Alloc;
-    uint32_t u32Reserved;
-    VBOXCMDVBVA_SYSMEMEL aSysMem[1];
+    VBOXCMDVBVAPAGEIDX aPageNumbers[1];
 } VBOXCMDVBVA_PAGING_TRANSFER;
 
 typedef struct VBOXCMDVBVA_PAGING_FILL
@@ -1738,7 +1740,7 @@ typedef struct VBOXCMDVBVA_PAGING_FILL
 typedef struct VBOXCMDVBVA_SYSMEMCMD
 {
     VBOXCMDVBVA_HDR Hdr;
-    VBOXCMDVBVAPHADDR phSysMem;
+    VBOXCMDVBVAPAGEIDX iPage;
 } VBOXCMDVBVA_SYSMEMCMD;
 
 #define VBOXCMDVBVACTL_TYPE_ENABLE     1

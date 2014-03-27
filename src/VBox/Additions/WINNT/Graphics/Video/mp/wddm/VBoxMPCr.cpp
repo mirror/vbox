@@ -518,7 +518,7 @@ static DECLCALLBACK(VOID) vboxMpCrShgsmiTransportVbvaSendWriteAsyncCompletion(PV
     /* we should be called from our DPC routine */
     Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
 
-    PVBOXMP_CRSHGSMITRANSPORT pCon;
+    PVBOXMP_CRSHGSMITRANSPORT pCon = (PVBOXMP_CRSHGSMITRANSPORT)pvContext;
     PVBOXMP_DEVEXT pDevExt = pCon->pDevExt;
     VBOXCMDVBVA_CRCMD_CMD *pCmd;
     int rc = VBoxCmdVbvaConCmdCompletionData(pvCmd, &pCmd);
@@ -1030,7 +1030,7 @@ void VBoxMpCrCtlConInit()
         g_VBoxMpCrHostCaps = 0;
     }
 
-#if 1 /*def DEBUG_misha*/
+#ifndef DEBUG_misha
     g_VBoxMpCrHostCaps &= ~CR_VBOX_CAP_CMDVBVA;
 #endif
 
