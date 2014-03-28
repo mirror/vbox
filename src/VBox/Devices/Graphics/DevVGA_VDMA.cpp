@@ -1211,7 +1211,7 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
  */
 static int vboxVDMACrCmdVbvaProcessPagingEl(PPDMDEVINS pDevIns, VBOXCMDVBVAPAGEIDX iPage, uint8_t *pu8Vram, bool fIn)
 {
-    RTGCPHYS phPage = (RTGCPHYS)(iPage >> PAGE_SHIFT);
+    RTGCPHYS phPage = (RTGCPHYS)(iPage << PAGE_SHIFT);
     PGMPAGEMAPLOCK Lock;
     int rc;
 
@@ -1249,7 +1249,7 @@ static int vboxVDMACrCmdVbvaProcessPagingEl(PPDMDEVINS pDevIns, VBOXCMDVBVAPAGEI
 
 static int vboxVDMACrCmdVbvaProcessPagingEls(PPDMDEVINS pDevIns, const VBOXCMDVBVAPAGEIDX *piPages, uint32_t cPages, uint8_t *pu8Vram, bool fIn)
 {
-    for (uint32_t i = 0; i < cPages; ++i)
+    for (uint32_t i = 0; i < cPages; ++i, pu8Vram += PAGE_SIZE)
     {
         int rc = vboxVDMACrCmdVbvaProcessPagingEl(pDevIns, piPages[i], pu8Vram, fIn);
         if (!RT_SUCCESS(rc))

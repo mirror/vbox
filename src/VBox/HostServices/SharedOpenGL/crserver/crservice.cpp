@@ -1464,7 +1464,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
                 break;
             }
 
-            rc = crServerVBoxWindowsShow(paParms[0].u.uint32);
+            rc = crServerVBoxWindowsShow(!!paParms[0].u.uint32);
             if (!RT_SUCCESS(rc))
                 WARN(("crServerVBoxWindowsShow failed rc %d", rc));
 

@@ -464,6 +464,7 @@ CR_TEXDATA* CrFbTexDataCreate(const VBOXVR_TEXTURE *pTex);
 void CrFbTexDataInit(CR_TEXDATA* pFbTex, const VBOXVR_TEXTURE *pTex, PFNCRTEXDATA_RELEASED pfnTextureReleased);
 
 int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd);
+int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip);
 
 //#define VBOX_WITH_CRSERVER_DUMPER
 #ifdef VBOX_WITH_CRSERVER_DUMPER
