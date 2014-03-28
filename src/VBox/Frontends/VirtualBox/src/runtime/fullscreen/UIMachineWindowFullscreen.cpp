@@ -325,8 +325,6 @@ void UIMachineWindowFullscreen::placeOnScreen()
     /* Move mini-toolbar into appropriate place: */
     if (m_pMiniToolBar)
         m_pMiniToolBar->adjustGeometry();
-    /* Process pending move & resize events: */
-    qApp->processEvents();
 }
 
 void UIMachineWindowFullscreen::showInNecessaryMode()

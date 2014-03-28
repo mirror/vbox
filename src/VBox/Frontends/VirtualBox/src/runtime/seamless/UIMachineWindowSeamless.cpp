@@ -214,8 +214,6 @@ void UIMachineWindowSeamless::placeOnScreen()
     if (m_pMiniToolBar)
         m_pMiniToolBar->adjustGeometry();
 #endif /* !Q_WS_MAC */
-    /* Process pending move & resize events: */
-    qApp->processEvents();
 }
 
 void UIMachineWindowSeamless::showInNecessaryMode()
