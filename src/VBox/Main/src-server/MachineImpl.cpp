@@ -9497,7 +9497,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
             ComObjPtr<PCIDeviceAttachment> pda;
 
             pda.createObject();
-            pda->loadSettings(this, hpda);
+            pda->i_loadSettings(this, hpda);
             mHWData->mPCIDeviceAssignments.push_back(pda);
         }
 
@@ -10790,7 +10790,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
             ComObjPtr<PCIDeviceAttachment> pda = *it;
             settings::HostPCIDeviceAttachment hpda;
 
-            rc = pda->saveSettings(hpda);
+            rc = pda->i_saveSettings(hpda);
             if (FAILED(rc)) throw rc;
 
             data.pciAttachments.push_back(hpda);
