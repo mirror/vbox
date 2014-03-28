@@ -2954,7 +2954,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
      * Host TR base. Verify that TR selector doesn't point past the GDT. Masking off the TI and RPL bits
      * is effectively what the CPU does for "scaling by 8". TI is always 0 and RPL should be too in most cases.
      */
-    if ((uSelTR & X86_SEL_MASK) > Gdtr.cbGdt)
+    if ((uSelTR | X86_SEL_RPL_LDT) > Gdtr.cbGdt)
     {
         AssertMsgFailed(("hmR0VmxSaveHostSegmentRegs: TR selector exceeds limit. TR=%RTsel cbGdt=%#x\n", uSelTR, Gdtr.cbGdt));
         return VERR_VMX_INVALID_HOST_STATE;
@@ -7042,14 +7042,13 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         else
             hmR0VmxSetIntWindowExitVmcs(pVCpu);
     }
+    /*
+     * Check if the guest can receive external interrupts (PIC/APIC). Once we do PDMGetInterrupt() we -must- deliver
+     * the interrupt ASAP. We must not execute any guest code until we inject the interrupt.
+     */
     else if (   VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
              && !pVCpu->hm.s.fSingleInstruction)
     {
-        /*
-         * Check if the guest can receive external interrupts (PIC/APIC). Once we do PDMGetInterrupt() we -must- deliver
-         * the interrupt ASAP. We must not execute any guest code until we inject the interrupt which is why it is
-         * evaluated here and not set as pending, solely based on the force-flags.
-         */
         int rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
         AssertRC(rc);
         const bool fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
@@ -7625,6 +7624,9 @@ static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
     /* Clear the pending debug exception field. */
     rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);
     AssertRC(rc);
+
+    /* We deliberately don't clear "hm.s.Event.fPending" here, it's taken
+       care of in hmR0VmxExitToRing3() converting the pending event to TRPM. */
 }
 
 
@@ -8120,6 +8122,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
         return VINF_EM_RAW_TO_R3;
     }
+
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
         hmR0VmxClearEventVmcs(pVCpu);
