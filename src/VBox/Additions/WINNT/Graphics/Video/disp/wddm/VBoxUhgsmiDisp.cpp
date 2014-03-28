@@ -130,6 +130,8 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf, 
             pBuf->BasePrivate.Base.fType = fType;
             pBuf->BasePrivate.Base.cbBuffer = cbBuf;
 
+            pBuf->BasePrivate.pHgsmi = &pPrivate->BasePrivate;
+
             pBuf->hAllocation = DdiAllocInfo.hAllocation;
 
             *ppBuf = &pBuf->BasePrivate.Base;
@@ -198,15 +200,6 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferSubmit(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_BUFF
     return VERR_GENERAL_FAILURE;
 }
 
-void vboxUhgsmiD3DInit(PVBOXUHGSMI_PRIVATE_D3D pHgsmi, PVBOXWDDMDISP_DEVICE pDevice)
-{
-    pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiD3DBufferCreate;
-    pHgsmi->BasePrivate.Base.pfnBufferSubmit = vboxUhgsmiD3DBufferSubmit;
-    /* no escapes (for now) */
-    pHgsmi->BasePrivate.pfnEscape = NULL;
-    pHgsmi->pDevice = pDevice;
-}
-
 static DECLCALLBACK(int) vboxCrHhgsmiDispEscape(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, void *pvData, uint32_t cbData, BOOL fHwAccess)
 {
     PVBOXUHGSMI_PRIVATE_D3D pPrivate = VBOXUHGSMID3D_GET(pHgsmi);
@@ -227,6 +220,14 @@ static DECLCALLBACK(int) vboxCrHhgsmiDispEscape(struct VBOXUHGSMI_PRIVATE_BASE *
     return VERR_GENERAL_FAILURE;
 }
 
+void vboxUhgsmiD3DInit(PVBOXUHGSMI_PRIVATE_D3D pHgsmi, PVBOXWDDMDISP_DEVICE pDevice)
+{
+    pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiD3DBufferCreate;
+    pHgsmi->BasePrivate.Base.pfnBufferSubmit = vboxUhgsmiD3DBufferSubmit;
+    /* escape is still needed, since Ugfsmi uses it e.g. to query connection id */
+    pHgsmi->BasePrivate.pfnEscape = vboxCrHhgsmiDispEscape;
+    pHgsmi->pDevice = pDevice;
+}
 
 void vboxUhgsmiD3DEscInit(PVBOXUHGSMI_PRIVATE_D3D pHgsmi, struct VBOXWDDMDISP_DEVICE *pDevice)
 {

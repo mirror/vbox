@@ -148,7 +148,10 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf, 
         pBuf->BasePrivate.Base.fType = fType;
         pBuf->BasePrivate.Base.cbBuffer = cbBuf;
 
+        pBuf->BasePrivate.pHgsmi = &pPrivate->BasePrivate;
+
         pBuf->hAllocation = DdiAllocInfo.hAllocation;
+
 
         *ppBuf = &pBuf->BasePrivate.Base;
 
@@ -278,8 +281,8 @@ static void vboxUhgsmiKmtSetupCallbacks(PVBOXUHGSMI_PRIVATE_KMT pHgsmi)
 {
     pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiKmtBufferCreate;
     pHgsmi->BasePrivate.Base.pfnBufferSubmit = vboxUhgsmiKmtBufferSubmit;
-     /* no escapes (for now) */
-    pHgsmi->BasePrivate.pfnEscape = NULL;
+    /* escape is still needed, since Ugfsmi uses it e.g. to query connection id */
+    pHgsmi->BasePrivate.pfnEscape = vboxCrHhgsmiKmtEscape;
 }
 
 static void vboxUhgsmiKmtEscSetupCallbacks(PVBOXUHGSMI_PRIVATE_KMT pHgsmi)

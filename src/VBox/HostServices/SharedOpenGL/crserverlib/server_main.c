@@ -3072,7 +3072,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
 
                 if (cbHdr < sizeof (*pFnCmd))
                 {
-                    crWarning("invalid write cmd buffer size!");
+                    WARN(("invalid write cmd buffer size!"));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
@@ -3080,7 +3080,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 CRASSERT(cbBuffer);
                 if (!pBuffer)
                 {
-                    crWarning("invalid buffer data received from guest!");
+                    WARN(("invalid buffer data received from guest!"));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
@@ -3088,6 +3088,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 rc = crVBoxServerClientGet(u32ClientID, &pClient);
                 if (RT_FAILURE(rc))
                 {
+                    WARN(("crVBoxServerClientGet failed %d", rc));
                     break;
                 }
 
@@ -3100,14 +3101,16 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 CRVBOXHGSMI_CMDDATA_SET(&pClient->conn->CmdData, pCmd, pHdr, false);
                 rc = crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
-                return rc;
-            }
-            else
-            {
-                crWarning("invalid number of args");
-                rc = VERR_INVALID_PARAMETER;
+                if (RT_FAILURE(rc))
+                {
+                    WARN(("crVBoxServerInternalClientWriteRead failed %d", rc));
+                    break;
+                }
                 break;
             }
+
+            WARN(("invalid number of args"));
+            rc = VERR_INVALID_PARAMETER;
             break;
         }
 
@@ -3127,7 +3130,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
 
                 if (cbHdr < sizeof (*pFnCmd))
                 {
-                    crWarning("invalid inject cmd buffer size!");
+                    WARN(("invalid inject cmd buffer size!"));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
@@ -3135,7 +3138,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 CRASSERT(cbBuffer);
                 if (!pBuffer)
                 {
-                    crWarning("invalid buffer data received from guest!");
+                    WARN(("invalid buffer data received from guest!"));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
@@ -3143,6 +3146,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 rc = crVBoxServerClientGet(u32InjectClientID, &pClient);
                 if (RT_FAILURE(rc))
                 {
+                    WARN(("crVBoxServerClientGet failed %d", rc));
                     break;
                 }
 
@@ -3155,10 +3159,16 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 CRVBOXHGSMI_CMDDATA_SET(&pClient->conn->CmdData, pCmd, pHdr, false);
                 rc = crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
-                return rc;
+                if (RT_FAILURE(rc))
+                {
+                    WARN(("crVBoxServerInternalClientWriteRead failed %d", rc));
+                    break;
+                }
+
+                break;
             }
 
-            crWarning("invalid number of args");
+            WARN(("invalid number of args"));
             rc = VERR_INVALID_PARAMETER;
             break;
         }
@@ -3178,15 +3188,14 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
 
                 if (cbHdr < sizeof (*pFnCmd))
                 {
-                    crWarning("invalid read cmd buffer size!");
+                    WARN(("invalid read cmd buffer size!"));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
 
-
                 if (!pBuffer)
                 {
-                    crWarning("invalid buffer data received from guest!");
+                    WARN(("invalid buffer data received from guest!"));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
@@ -3194,6 +3203,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 rc = crVBoxServerClientGet(u32ClientID, &pClient);
                 if (RT_FAILURE(rc))
                 {
+                    WARN(("crVBoxServerClientGet failed %d", rc));
                     break;
                 }
 
@@ -3207,9 +3217,13 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
 
                 /* the read command is never pended, complete it right away */
-                pHdr->result = rc;
+                if (RT_FAILURE(rc))
+                {
+                    WARN(("crVBoxServerInternalClientRead failed %d", rc));
+                    break;
+                }
 
-                return VINF_SUCCESS;
+                break;
             }
 
             crWarning("invalid number of args");
@@ -3237,16 +3251,15 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
 
                 if (cbHdr < sizeof (*pFnCmd))
                 {
-                    crWarning("invalid write_read cmd buffer size!");
+                    WARN(("invalid write_read cmd buffer size!"));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
 
-
                 CRASSERT(cbBuffer);
                 if (!pBuffer)
                 {
-                    crWarning("invalid write buffer data received from guest!");
+                    WARN(("invalid write buffer data received from guest!"));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
@@ -3254,15 +3267,16 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 CRASSERT(cbWriteback);
                 if (!pWriteback)
                 {
-                    crWarning("invalid writeback buffer data received from guest!");
+                    WARN(("invalid writeback buffer data received from guest!"));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
+
                 rc = crVBoxServerClientGet(u32ClientID, &pClient);
                 if (RT_FAILURE(rc))
                 {
-                    pHdr->result = rc;
-                    return VINF_SUCCESS;
+                    WARN(("crVBoxServerClientGet failed %d", rc));
+                    break;
                 }
 
                 /* This should never fire unless we start to multithread */
@@ -3274,7 +3288,14 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 CRVBOXHGSMI_CMDDATA_SETWB(&pClient->conn->CmdData, pCmd, pHdr, pWriteback, cbWriteback, &pFnCmd->cbWriteback, false);
                 rc = crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
-                return rc;
+
+                if (RT_FAILURE(rc))
+                {
+                    WARN(("crVBoxServerInternalClientWriteRead failed %d", rc));
+                    break;
+                }
+
+                break;
             }
 
             crWarning("invalid number of args");
@@ -3305,11 +3326,9 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
 
     }
 
-    /* we can be on fail only here */
-    CRASSERT(RT_FAILURE(rc));
     pHdr->result = rc;
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) crVBoxCrCmdEnable(HVBOXCRCMDSVR hSvr, VBOXCRCMD_SVRENABLE_INFO *pInfo)
@@ -3498,6 +3517,19 @@ static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, const VBOXCMDVBVA
 
             WARN(("crVBoxServerCmdVbvaCrCmdProcess failed, rc %d", rc));
             return -1;
+        }
+        case VBOXCMDVBVA_OPTYPE_FLIP:
+        {
+            const VBOXCMDVBVA_FLIP *pFlip;
+
+            if (cbCmd < sizeof (VBOXCMDVBVA_FLIP))
+            {
+                WARN(("invalid buffer size"));
+                return -1;
+            }
+
+            pFlip = (const VBOXCMDVBVA_FLIP*)pCmd;
+            return crVBoxServerCrCmdFlipProcess(pFlip);
         }
         case VBOXCMDVBVA_OPTYPE_BLT_OFFPRIMSZFMT_OR_ID:
         {
