@@ -1413,29 +1413,20 @@ static void biosfn_write_teletype(uint8_t car, uint8_t page, uint8_t attr, uint8
 
  switch(car)
   {
-   case 7:
+   case '\a':   // ASCII 0x07, BEL
     //FIXME should beep
     break;
 
-   case 8:
+   case '\b':   // ASCII 0x08, BS
     if(xcurs>0)xcurs--;
     break;
 
-   case '\r':
-    xcurs=0;
-    break;
-
-   case '\n':
+   case '\n':   // ASCII 0x0A, LF
     ycurs++;
     break;
 
-   case '\t':
-    do
-     {
-      biosfn_write_teletype(' ',page,attr,flag);
-      vga_get_cursor_pos(page,&dummy,&cursor);
-      xcurs=cursor&0x00ff;ycurs=(cursor&0xff00)>>8;
-     }while(xcurs%8==0);
+   case '\r':   // ASCII 0x0D, CR
+    xcurs=0;
     break;
 
    default:
@@ -1475,12 +1466,11 @@ static void biosfn_write_teletype(uint8_t car, uint8_t page, uint8_t attr, uint8
        }
      }
     xcurs++;
-  }
-
- // Do we need to wrap ?
- if(xcurs==nbcols)
-  {xcurs=0;
-   ycurs++;
+    // Do we need to wrap ?
+    if(xcurs==nbcols)
+     {xcurs=0;
+      ycurs++;
+     }
   }
 
  // Do we need to scroll ?
