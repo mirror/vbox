@@ -2354,7 +2354,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
 
         case X86_SEL_TYPE_SYS_TASK_GATE:
             /** @todo task gates. */
-            AssertFailedReturn(VERR_NOT_SUPPORTED);
+            IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Task gates\n")); /** @todo Implement task gate support. */
 
         case X86_SEL_TYPE_SYS_286_TRAP_GATE:
             f32BitGate = false;
