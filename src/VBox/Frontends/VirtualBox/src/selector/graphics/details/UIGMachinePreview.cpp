@@ -111,8 +111,19 @@ UIGMachinePreview::~UIGMachinePreview()
 
 void UIGMachinePreview::setMachine(const CMachine& machine)
 {
+    /* Pause: */
     stop();
+
+    /* Assign new machine: */
     m_machine = machine;
+
+    /* Fetch machine data: */
+    m_strPreviewName = tr("No preview");
+    if (!m_machine.isNull())
+        m_strPreviewName = m_machine.GetAccessible() ? m_machine.GetName() :
+                           QApplication::translate("UIVMListView", "Inaccessible");
+
+    /* Resume: */
     restart();
 }
 
@@ -298,12 +309,7 @@ void UIGMachinePreview::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
         /* Draw full background: */
         pPainter->drawPixmap(cr.x() + m_iMargin, cr.y() + m_iMargin, *m_pbgFullImage);
 
-        /* Compose name: */
-        QString strName = tr("No preview");
-        if (!m_machine.isNull())
-            strName = m_machine.GetAccessible() ? m_machine.GetName() :
-                      QApplication::translate("UIVMListView", "Inaccessible");
-        /* Paint that name: */
+        /* Paint preview name: */
         QFont font = pPainter->font();
         font.setBold(true);
         int fFlags = Qt::AlignCenter | Qt::TextWordWrap;
@@ -317,11 +323,11 @@ void UIGMachinePreview::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
             h = h * .8;
             font.setPixelSize((int)h);
             pPainter->setFont(font);
-            r = pPainter->boundingRect(m_vRect, fFlags, strName);
+            r = pPainter->boundingRect(m_vRect, fFlags, m_strPreviewName);
         }
         while ((r.height() > m_vRect.height() || r.width() > m_vRect.width()) && cMax-- != 0);
         pPainter->setPen(Qt::white);
-        pPainter->drawText(m_vRect, fFlags, strName);
+        pPainter->drawText(m_vRect, fFlags, m_strPreviewName);
     }
 }
 
