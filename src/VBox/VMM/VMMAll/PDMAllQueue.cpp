@@ -67,6 +67,26 @@ VMMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
 
 
 /**
+ * Sets the FFs and fQueueFlushed.
+ *
+ * @param   pQueue              The PDM queue.
+ */
+static void pdmQueueSetFF(PPDMQUEUE pQueue)
+{
+    PVM pVM = pQueue->CTX_SUFF(pVM);
+    Log2(("PDMQueueInsert: VM_FF_PDM_QUEUES %d -> 1\n", VM_FF_IS_SET(pVM, VM_FF_PDM_QUEUES)));
+    VM_FF_SET(pVM, VM_FF_PDM_QUEUES);
+    ASMAtomicBitSet(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT);
+#ifdef IN_RING3
+# ifdef VBOX_WITH_REM
+    REMR3NotifyQueuePending(pVM); /** @todo r=bird: we can remove REMR3NotifyQueuePending and let VMR3NotifyFF do the work. */
+# endif
+    VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
+#endif
+}
+
+
+/**
  * Queue an item.
  * The item must have been obtained using PDMQueueAlloc(). Once the item
  * have been passed to this function it must not be touched!
@@ -97,18 +117,7 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 #endif
 
     if (!pQueue->pTimer)
-    {
-        PVM pVM = pQueue->CTX_SUFF(pVM);
-        Log2(("PDMQueueInsert: VM_FF_PDM_QUEUES %d -> 1\n", VM_FF_IS_SET(pVM, VM_FF_PDM_QUEUES)));
-        VM_FF_SET(pVM, VM_FF_PDM_QUEUES);
-        ASMAtomicBitSet(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT);
-#ifdef IN_RING3
-# ifdef VBOX_WITH_REM
-        REMR3NotifyQueuePending(pVM); /** @todo r=bird: we can remove REMR3NotifyQueuePending and let VMR3NotifyFF do the work. */
-# endif
-        VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
-#endif
-    }
+        pdmQueueSetFF(pQueue);
     STAM_REL_COUNTER_INC(&pQueue->StatInsert);
     STAM_STATS({ ASMAtomicIncU32(&pQueue->cStatPending); });
 }
@@ -181,5 +190,25 @@ VMMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
 #else
     return MMHyperCCToR0(pQueue->CTX_SUFF(pVM), pQueue);
 #endif
+}
+
+
+/**
+ * Schedule the queue for flushing (processing) if necessary.
+ *
+ * @returns @c true if necessary, @c false if not.
+ * @param   pQueue              The queue.
+ */
+VMMDECL(bool) PDMQueueFlushIfNecessary(PPDMQUEUE pQueue)
+{
+    AssertPtr(pQueue);
+    if (   pQueue->pPendingR3 != NIL_RTR3PTR
+        || pQueue->pPendingR0 != NIL_RTR0PTR
+        || pQueue->pPendingRC != NIL_RTRCPTR)
+    {
+        pdmQueueSetFF(pQueue);
+        return false;
+    }
+    return false;
 }
 
