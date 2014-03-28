@@ -2522,12 +2522,12 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                 /* VT-x also chokes on invalid TR or LDTR selectors (minix). */
                 if (pCtx->gdtr.cbGdt)
                 {
-                    if (pCtx->tr.Sel > pCtx->gdtr.cbGdt)
+                    if ((pCtx->tr.Sel | X86_SEL_RPL_LDT) > pCtx->gdtr.cbGdt)
                     {
                         STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadTr);
                         return false;
                     }
-                    else if (pCtx->ldtr.Sel > pCtx->gdtr.cbGdt)
+                    else if ((pCtx->ldtr.Sel | X86_SEL_RPL_LDT) > pCtx->gdtr.cbGdt)
                     {
                         STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadLdt);
                         return false;
