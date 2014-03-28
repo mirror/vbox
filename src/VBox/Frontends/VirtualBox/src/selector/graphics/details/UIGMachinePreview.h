@@ -112,6 +112,7 @@ private:
     QPixmap *m_pbgEmptyImage;
     QPixmap *m_pbgFullImage;
     QImage *m_pPreviewImg;
+    QString m_strPreviewName;
     static UpdateIntervalMap m_intervals;
 };
 
