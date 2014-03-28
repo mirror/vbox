@@ -1611,22 +1611,22 @@ Console::saveStateFileExec(PSSMHANDLE pSSM, void *pvUser)
         AutoCaller sfCaller(pSF);
         AutoReadLock sfLock(pSF COMMA_LOCKVAL_SRC_POS);
 
-        Utf8Str name = pSF->getName();
+        Utf8Str name = pSF->i_getName();
         vrc = SSMR3PutU32(pSSM, (uint32_t)name.length() + 1 /* term. 0 */);
         AssertRC(vrc);
         vrc = SSMR3PutStrZ(pSSM, name.c_str());
         AssertRC(vrc);
 
-        Utf8Str hostPath = pSF->getHostPath();
+        Utf8Str hostPath = pSF->i_getHostPath();
         vrc = SSMR3PutU32(pSSM, (uint32_t)hostPath.length() + 1 /* term. 0 */);
         AssertRC(vrc);
         vrc = SSMR3PutStrZ(pSSM, hostPath.c_str());
         AssertRC(vrc);
 
-        vrc = SSMR3PutBool(pSSM, !!pSF->isWritable());
+        vrc = SSMR3PutBool(pSSM, !!pSF->i_isWritable());
         AssertRC(vrc);
 
-        vrc = SSMR3PutBool(pSSM, !!pSF->isAutoMounted());
+        vrc = SSMR3PutBool(pSSM, !!pSF->i_isAutoMounted());
         AssertRC(vrc);
     }
 
@@ -6603,9 +6603,9 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                 SharedFolder *pSF = it->second;
                 AutoCaller sfCaller(pSF);
                 AutoReadLock sfLock(pSF COMMA_LOCKVAL_SRC_POS);
-                sharedFolders[it->first] = SharedFolderData(pSF->getHostPath(),
-                                                            pSF->isWritable(),
-                                                            pSF->isAutoMounted());
+                sharedFolders[it->first] = SharedFolderData(pSF->i_getHostPath(),
+                                                            pSF->i_isWritable(),
+                                                            pSF->i_isAutoMounted());
             }
         }
 

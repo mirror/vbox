@@ -8987,7 +8987,7 @@ HRESULT Machine::findSharedFolder(const Utf8Str &aName,
     {
         SharedFolder *pSF = *it;
         AutoCaller autoCaller(pSF);
-        if (pSF->getName() == aName)
+        if (pSF->i_getName() == aName)
         {
             aSharedFolder = pSF;
             rc = S_OK;
@@ -10757,10 +10757,10 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
             AutoCaller sfCaller(pSF);
             AutoReadLock sfLock(pSF COMMA_LOCKVAL_SRC_POS);
             settings::SharedFolder sf;
-            sf.strName = pSF->getName();
-            sf.strHostPath = pSF->getHostPath();
-            sf.fWritable = !!pSF->isWritable();
-            sf.fAutoMount = !!pSF->isAutoMounted();
+            sf.strName = pSF->i_getName();
+            sf.strHostPath = pSF->i_getHostPath();
+            sf.fWritable = !!pSF->i_isWritable();
+            sf.fAutoMount = !!pSF->i_isAutoMounted();
 
             data.llSharedFolders.push_back(sf);
         }

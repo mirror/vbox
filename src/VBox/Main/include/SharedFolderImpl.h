@@ -18,26 +18,15 @@
 #ifndef ____H_SHAREDFOLDERIMPL
 #define ____H_SHAREDFOLDERIMPL
 
-#include "VirtualBoxBase.h"
+#include "SharedFolderWrap.h"
 #include <VBox/shflsvc.h>
 
 class Console;
 
 class ATL_NO_VTABLE SharedFolder :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(ISharedFolder)
+    public SharedFolderWrap
 {
 public:
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(SharedFolder, ISharedFolder)
-
-    DECLARE_NOT_AGGREGATABLE(SharedFolder)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(SharedFolder)
-        VBOX_DEFAULT_INTERFACE_ENTRIES  (ISharedFolder)
-    END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (SharedFolder)
 
@@ -51,14 +40,6 @@ public:
 //     HRESULT init(VirtualBox *aVirtualBox, const Utf8Str &aName, const Utf8Str &aHostPath, bool aWritable, bool aAutoMount, bool fFailOnError);
     void uninit();
 
-    // ISharedFolder properties
-    STDMETHOD(COMGETTER(Name)) (BSTR *aName);
-    STDMETHOD(COMGETTER(HostPath)) (BSTR *aHostPath);
-    STDMETHOD(COMGETTER(Accessible)) (BOOL *aAccessible);
-    STDMETHOD(COMGETTER(Writable)) (BOOL *aWritable);
-    STDMETHOD(COMGETTER(AutoMount)) (BOOL *aAutoMount);
-    STDMETHOD(COMGETTER(LastAccessError)) (BSTR *aLastAccessError);
-
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
@@ -66,35 +47,43 @@ public:
      * Public internal method. Returns the shared folder's name. Needs caller! Locking not necessary.
      * @return
      */
-    const Utf8Str& getName() const;
+    const Utf8Str& i_getName() const;
 
     /**
      * Public internal method. Returns the shared folder's host path. Needs caller! Locking not necessary.
      * @return
      */
-    const Utf8Str& getHostPath() const;
+    const Utf8Str& i_getHostPath() const;
 
     /**
      * Public internal method. Returns true if the shared folder is writable. Needs caller and locking!
      * @return
      */
-    bool isWritable() const;
+    bool i_isWritable() const;
 
     /**
      * Public internal method. Returns true if the shared folder is auto-mounted. Needs caller and locking!
      * @return
      */
-    bool isAutoMounted() const;
+    bool i_isAutoMounted() const;
 
 protected:
 
-    HRESULT protectedInit(VirtualBoxBase *aParent,
-                          const Utf8Str &aName,
-                          const Utf8Str &aHostPath,
-                          bool aWritable,
-                          bool aAutoMount,
-                          bool fFailOnError);
+    HRESULT i_protectedInit(VirtualBoxBase *aParent,
+                            const Utf8Str &aName,
+                            const Utf8Str &aHostPath,
+                            bool aWritable,
+                            bool aAutoMount,
+                            bool fFailOnError);
 private:
+
+    // wrapped ISharedFolder properies.
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT getHostPath(com::Utf8Str &aHostPath);
+    HRESULT getAccessible(BOOL *aAccessible);
+    HRESULT getWritable(BOOL *aWritable);
+    HRESULT getAutoMount(BOOL *aAutoMount);
+    HRESULT getLastAccessError(com::Utf8Str &aLastAccessError);
 
     VirtualBoxBase * const mParent;
 
