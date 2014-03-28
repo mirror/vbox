@@ -110,7 +110,7 @@ HRESULT SharedFolder::init(Machine *aMachine,
 
     unconst(mMachine) = aMachine;
 
-    HRESULT rc = protectedInit(aMachine, aName, aHostPath, aWritable, aAutoMount, fFailOnError);
+    HRESULT rc = i_protectedInit(aMachine, aName, aHostPath, aWritable, aAutoMount, fFailOnError);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -139,12 +139,12 @@ HRESULT SharedFolder::initCopy(Machine *aMachine, SharedFolder *aThat)
 
     unconst(mMachine) = aMachine;
 
-    HRESULT rc = protectedInit(aMachine,
-                               aThat->m->strName,
-                               aThat->m->strHostPath,
-                               aThat->m->fWritable,
-                               aThat->m->fAutoMount,
-                               false /* fFailOnError */ );
+    HRESULT rc = i_protectedInit(aMachine,
+                                 aThat->m->strName,
+                                 aThat->m->strHostPath,
+                                 aThat->m->fWritable,
+                                 aThat->m->fAutoMount,
+                                 false /* fFailOnError */ );
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -220,7 +220,7 @@ HRESULT SharedFolder::init(Console *aConsole,
 
     unconst(mConsole) = aConsole;
 
-    HRESULT rc = protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount, fFailOnError);
+    HRESULT rc = i_protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount, fFailOnError);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -236,12 +236,12 @@ HRESULT SharedFolder::init(Console *aConsole,
  *  @note
  *      Must be called from under the object's lock!
  */
-HRESULT SharedFolder::protectedInit(VirtualBoxBase *aParent,
-                                    const Utf8Str &aName,
-                                    const Utf8Str &aHostPath,
-                                    bool aWritable,
-                                    bool aAutoMount,
-                                    bool fFailOnError)
+HRESULT SharedFolder::i_protectedInit(VirtualBoxBase *aParent,
+                                      const Utf8Str &aName,
+                                      const Utf8Str &aHostPath,
+                                      bool aWritable,
+                                      bool aAutoMount,
+                                      bool fFailOnError)
 {
     LogFlowThisFunc(("aName={%s}, aHostPath={%s}, aWritable={%d}, aAutoMount={%d}\n",
                       aName.c_str(), aHostPath.c_str(), aWritable, aAutoMount));
@@ -321,42 +321,26 @@ void SharedFolder::uninit()
 #endif
 }
 
-// ISharedFolder properties
+// wrapped ISharedFolder properties
 /////////////////////////////////////////////////////////////////////////////
-
-STDMETHODIMP SharedFolder::COMGETTER(Name) (BSTR *aName)
+HRESULT SharedFolder::getName(com::Utf8Str &aName)
 {
-    CheckComArgOutPointerValid(aName);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* mName is constant during life time, no need to lock */
-    m->strName.cloneTo(aName);
+    aName = m->strName;
 
     return S_OK;
 }
 
-STDMETHODIMP SharedFolder::COMGETTER(HostPath) (BSTR *aHostPath)
+HRESULT SharedFolder::getHostPath(com::Utf8Str &aHostPath)
 {
-    CheckComArgOutPointerValid(aHostPath);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* mHostPath is constant during life time, no need to lock */
-    m->strHostPath.cloneTo(aHostPath);
+    aHostPath = m->strHostPath;
 
     return S_OK;
 }
 
-STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
+HRESULT SharedFolder::getAccessible(BOOL *aAccessible)
 {
-    CheckComArgOutPointerValid(aAccessible);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* mName and mHostPath are constant during life time, no need to lock */
 
     /* check whether the host path exists */
@@ -381,16 +365,12 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     LogWarningThisFunc(("m.lastAccessError=\"%s\"\n", m->strLastAccessError.c_str()));
 
     *aAccessible = FALSE;
+
     return S_OK;
 }
 
-STDMETHODIMP SharedFolder::COMGETTER(Writable) (BOOL *aWritable)
+HRESULT SharedFolder::getWritable(BOOL *aWritable)
 {
-    CheckComArgOutPointerValid(aWritable);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aWritable = !!m->fWritable;
@@ -398,13 +378,8 @@ STDMETHODIMP SharedFolder::COMGETTER(Writable) (BOOL *aWritable)
     return S_OK;
 }
 
-STDMETHODIMP SharedFolder::COMGETTER(AutoMount) (BOOL *aAutoMount)
+HRESULT SharedFolder::getAutoMount(BOOL *aAutoMount)
 {
-    CheckComArgOutPointerValid(aAutoMount);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAutoMount = !!m->fAutoMount;
@@ -412,36 +387,32 @@ STDMETHODIMP SharedFolder::COMGETTER(AutoMount) (BOOL *aAutoMount)
     return S_OK;
 }
 
-STDMETHODIMP SharedFolder::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
+HRESULT SharedFolder::getLastAccessError(com::Utf8Str &aLastAccessError)
 {
-    CheckComArgOutPointerValid(aLastAccessError);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->strLastAccessError.cloneTo(aLastAccessError);
+    aLastAccessError = m->strLastAccessError;
 
     return S_OK;
 }
 
-const Utf8Str& SharedFolder::getName() const
+
+const Utf8Str& SharedFolder::i_getName() const
 {
     return m->strName;
 }
 
-const Utf8Str& SharedFolder::getHostPath() const
+const Utf8Str& SharedFolder::i_getHostPath() const
 {
     return m->strHostPath;
 }
 
-bool SharedFolder::isWritable() const
+bool SharedFolder::i_isWritable() const
 {
     return m->fWritable;
 }
 
-bool SharedFolder::isAutoMounted() const
+bool SharedFolder::i_isAutoMounted() const
 {
     return m->fAutoMount;
 }
