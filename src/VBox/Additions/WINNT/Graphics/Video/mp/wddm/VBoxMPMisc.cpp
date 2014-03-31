@@ -1256,7 +1256,8 @@ static PVBOXVIDEOCM_ALLOC_REF vboxVideoAMgrCtxAllocRefAcquire(PVBOXVIDEOCM_ALLOC
 {
     ExAcquireFastMutex(&pContext->Mutex);
     PVBOXVIDEOCM_ALLOC_REF pAllocRef = (PVBOXVIDEOCM_ALLOC_REF)vboxWddmHTableGet(&pContext->AllocTable, hSesionHandle);
-    ASMAtomicIncU32(&pAllocRef->cRefs);
+    if (pAllocRef)
+        ASMAtomicIncU32(&pAllocRef->cRefs);
     ExReleaseFastMutex(&pContext->Mutex);
     return pAllocRef;
 }
