@@ -358,6 +358,7 @@ bzip2 -d -c "$ARCH_PACKAGE" | tar -xf - -C "$INSTALLATION_DIR" || exit 1
 link_into_fs "bin" "/usr/bin"
 link_into_fs "sbin" "/usr/sbin"
 link_into_fs "lib" "$lib_path"
+add_symlink "$INSTALLATION_DIR/lib/$PACKAGE" /usr/lib/"$PACKAGE"
 link_into_fs "share" "/usr/share"
 link_into_fs "src" "/usr/src"
 
