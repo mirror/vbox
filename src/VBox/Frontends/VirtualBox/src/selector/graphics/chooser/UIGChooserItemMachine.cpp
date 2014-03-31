@@ -215,13 +215,12 @@ void UIGChooserItemMachine::updatePixmaps()
 void UIGChooserItemMachine::updatePixmap()
 {
     /* Get new pixmap and pixmap-size: */
-    QIcon icon = osIcon();
-    QSize iconSize = icon.availableSizes().first();
-    QPixmap pixmap = icon.pixmap(iconSize);
+    QSize pixmapSize;
+    QPixmap pixmap = osPixmap(&pixmapSize);
     /* Update linked values: */
-    if (m_pixmapSize != iconSize)
+    if (m_pixmapSize != pixmapSize)
     {
-        m_pixmapSize = iconSize;
+        m_pixmapSize = pixmapSize;
         updateFirstRowMaximumWidth();
         updateGeometry();
     }

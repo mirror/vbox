@@ -412,6 +412,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         QApplication a(argc, argv);
 #endif /* Q_WS_X11 */
 
+#ifdef Q_WS_MAC
+        /* Enable HiDPI icons. */
+        qApp->setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif /* Q_WS_MAC */
+
 #ifdef Q_OS_SOLARIS
         /* Use plastique look&feel for Solaris instead of the default motif (Qt 4.7.x): */
         QApplication::setStyle(new QPlastiqueStyle);

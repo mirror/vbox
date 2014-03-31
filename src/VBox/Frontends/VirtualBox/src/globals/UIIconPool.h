@@ -19,11 +19,11 @@
 
 /* Qt includes: */
 #include <QIcon>
+#include <QPixmap>
+#include <QHash>
 
-/** General icon-pool which provides GUI with:
-  * 1. necessary cached icons and
-  * 2. ways to dynamically open/read/create icons at runtime
-  *    depending on current style. */
+/** Interface which provides GUI with static API
+  * allowing to dynamically compose icons at runtime. */
 class UIIconPool
 {
 public:
@@ -74,13 +74,41 @@ public:
       * based on passed @a pWidget style (if any) or application style (otherwise). */
     static QIcon defaultIcon(UIDefaultIconType defaultIconType, const QWidget *pWidget = 0);
 
-private:
+protected:
 
     /** Icon-pool constructor. */
     UIIconPool() {};
 
     /** Icon-pool destructor. */
-    ~UIIconPool() {};
+    virtual ~UIIconPool() {};
+
+private:
+
+    /** Adds resource named @a strName to passed @a icon
+      * for @a mode (QIcon::Normal by default) and @a state (QIcon::Off by default). */
+    static void addName(QIcon &icon, const QString &strName,
+                        QIcon::Mode mode = QIcon::Normal, QIcon::State state = QIcon::Off);
+};
+
+/** UIIconPool interface extension used as general GUI icon-pool.
+  * Provides GUI with guest OS types pixmap cache. */
+class UIIconPoolGeneral : public UIIconPool
+{
+public:
+
+    /** General icon-pool constructor. */
+    UIIconPoolGeneral();
+
+    /** Returns pixmap corresponding to passed @a strOSTypeID.
+      * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
+    QPixmap guestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
+
+private:
+
+    /** Guest OS type icon-names cache. */
+    QHash<QString, QString> m_guestOSTypeIconNames;
+    /** Guest OS type icons cache. */
+    mutable QHash<QString, QIcon> m_guestOSTypeIcons;
 };
 
 #endif /* !___UIIconPool_h___ */

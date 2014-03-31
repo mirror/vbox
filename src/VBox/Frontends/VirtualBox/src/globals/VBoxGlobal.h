@@ -31,6 +31,7 @@
 
 /* GUI includes: */
 #include "UIDefs.h"
+#include "UIIconPool.h"
 #include "UIMediumDefs.h"
 #include "VBoxGlobalSettings.h"
 
@@ -159,7 +160,11 @@ public:
 
     QList <CGuestOSType> vmGuestOSFamilyList() const;
     QList <CGuestOSType> vmGuestOSTypeList (const QString &aFamilyId) const;
-    QPixmap vmGuestOSTypeIcon (const QString &aTypeId) const;
+
+    /** Returns pixmap corresponding to passed @a strOSTypeID.
+      * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
+    QPixmap vmGuestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
+
     CGuestOSType vmGuestOSType (const QString &aTypeId,
                                 const QString &aFamilyId = QString::null) const;
     QString vmGuestOSTypeDescription (const QString &aTypeId) const;
@@ -513,7 +518,6 @@ private:
 
     QList <QString> mFamilyIDs;
     QList <QList <CGuestOSType> > mTypes;
-    QHash <QString, QPixmap *> mOsTypeIcons;
 
     QPixmap mOfflineSnapshotIcon, mOnlineSnapshotIcon;
 
@@ -531,6 +535,9 @@ private:
 
     char mSettingsPw[256];
     bool mSettingsPwSet;
+
+    /** General icon-pool. */
+    UIIconPoolGeneral *m_pIconPool;
 
     /* API: Instance stuff: */
     static bool m_sfCleanupInProgress;
