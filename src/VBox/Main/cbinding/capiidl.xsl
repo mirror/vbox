@@ -1357,10 +1357,10 @@ typedef struct VBOXCAPI
      * @param ppSession             output parameter for Session reference,
      *          owned by C bindings
      */
-    void  (*pfnComInitialize)(const char *pszVirtualBoxIID,
-                              IVirtualBox **ppVirtualBox,
-                              const char *pszSessionIID,
-                              ISession **ppSession);
+    void (*pfnComInitialize)(const char *pszVirtualBoxIID,
+                             IVirtualBox **ppVirtualBox,
+                             const char *pszSessionIID,
+                             ISession **ppSession);
     /**
      * Deprecated way to uninitialize the C bindings for an API client.
      * Kept for backwards compatibility and must be used if the C bindings
@@ -1372,7 +1372,7 @@ typedef struct VBOXCAPI
      *
      * @param pwsz          pointer to string to be freed
      */
-    void  (*pfnComUnallocString)(BSTR pwsz);
+    void (*pfnComUnallocString)(BSTR pwsz);
 #ifndef WIN32
     /** Legacy function, was always for freeing strings only. */
 #define pfnComUnallocMem(pv) pfnComUnallocString((BSTR)(pv))
@@ -1385,7 +1385,7 @@ typedef struct VBOXCAPI
      * @param ppszString    output string
      * @returns IPRT status code
      */
-    int   (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
+    int (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
     /**
      * Convert string from UTF-8 encoding to UTF-16 encoding.
      *
@@ -1393,19 +1393,19 @@ typedef struct VBOXCAPI
      * @param ppwszString   output string
      * @returns IPRT status code
      */
-    int   (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);
+    int (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);
     /**
      * Free memory returned by pfnUtf16ToUtf8. Do not use for anything else.
      *
      * @param pszString     string to be freed.
      */
-    void  (*pfnUtf8Free)(char *pszString);
+    void (*pfnUtf8Free)(char *pszString);
     /**
      * Free memory returned by pfnUtf8ToUtf16. Do not use for anything else.
      *
      * @param pwszString    string to be freed.
      */
-    void  (*pfnUtf16Free)(BSTR pwszString);
+    void (*pfnUtf16Free)(BSTR pwszString);
 
     /**
      * Create a safearray (used for passing arrays to COM/XPCOM)
@@ -1440,7 +1440,7 @@ typedef struct VBOXCAPI
      * Copy a safearray into a C array (for getting an output parameter)
      *
      * @param ppv           output pointer to newly created array, which has to
-     *          be freed with free().
+     *          be freed with pfnArrayOutFree.
      * @param pcb           number of bytes in the output buffer.
      * @param vt            variant type, defines the size of the elements
      * @param psa           pointer to safearray for getting the data
@@ -1451,7 +1451,7 @@ typedef struct VBOXCAPI
      * Copy a safearray into a C array (special variant for interface pointers)
      *
      * @param ppaObj        output pointer to newly created array, which has
-     *          to be freed with free(). Note that it's the caller's
+     *          to be freed with pfnArrayOutFree. Note that it's the caller's
      *          responsibility to call Release() on each non-NULL interface
      *          pointer before freeing.
      * @param pcObj         number of pointers in the output buffer.
@@ -1462,10 +1462,18 @@ typedef struct VBOXCAPI
     /**
      * Free a safearray
      *
-     * @param psa           pointer to safearray for getting the data
+     * @param psa           pointer to safearray
      * @returns COM/XPCOM error code
      */
     HRESULT (*pfnSafeArrayDestroy)(SAFEARRAY *psa);
+    /**
+     * Free an out array created by pfnSafeArrayCopyOutParamHelper or
+     * pdnSafeArrayCopyOutIfaceParamHelper.
+     *
+     * @param psa           pointer to memory block
+     * @returns COM/XPCOM error code
+     */
+    HRESULT (*pfnArrayOutFree)(void *pv);
 
 #ifndef WIN32
     /**
@@ -1474,7 +1482,7 @@ typedef struct VBOXCAPI
      * @param ppEventQueue      output parameter for nsIEventQueue reference,
      *              owned by C bindings.
      */
-    void  (*pfnGetEventQueue)(nsIEventQueue **ppEventQueue);
+    void (*pfnGetEventQueue)(nsIEventQueue **ppEventQueue);
 #endif /* !WIN32 */
 
     /**
