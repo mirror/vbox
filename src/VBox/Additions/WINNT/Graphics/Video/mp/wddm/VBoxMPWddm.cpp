@@ -3108,9 +3108,6 @@ DxgkDdiSubmitCommandNew(
         }
         else
         {
-            Assert(!pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
-            Assert(!pSubmitCommand->DmaBufferSubmissionStartOffset);
-
             if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
             {
                 WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
@@ -3144,9 +3141,6 @@ DxgkDdiSubmitCommandNew(
     }
     else
     {
-        Assert(!pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
-        Assert(!pSubmitCommand->DmaBufferSubmissionStartOffset);
-
         if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
         {
             WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
@@ -3419,11 +3413,13 @@ DxgkDdiBuildPagingBufferNew(
     {
         case DXGK_OPERATION_TRANSFER:
         {
+#if 0
             if (!pBuildPagingBuffer->Transfer.Flags.AllocationIsIdle)
             {
                 WARN(("allocation is not idle"));
                 return STATUS_GRAPHICS_ALLOCATION_BUSY;
             }
+#endif
 
             Assert(!pBuildPagingBuffer->Transfer.MdlOffset);
 
