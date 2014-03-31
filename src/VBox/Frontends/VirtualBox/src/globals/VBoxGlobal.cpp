@@ -77,6 +77,7 @@
 #include "UIMediumEnumerator.h"
 #include "UIMedium.h"
 #include "UIModalWindowManager.h"
+#include "UIIconPool.h"
 
 #ifdef Q_WS_X11
 # include "UIHostComboEditor.h"
