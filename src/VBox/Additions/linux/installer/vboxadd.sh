@@ -43,17 +43,19 @@ cpu=`uname -m`;
 case "$cpu" in
   i[3456789]86|x86)
     cpu="x86"
-    lib_path="/usr/lib"
+    lib_candidates="/usr/lib/i386-linux-gnu /usr/lib /lib"
     ;;
   x86_64|amd64)
     cpu="amd64"
-    if test -d "/usr/lib64"; then
-      lib_path="/usr/lib64"
-    else
-      lib_path="/usr/lib"
-    fi
+    lib_candidates="/usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib64 /lib"
     ;;
 esac
+for i in $lib_candidates; do
+  if test -d "$i/VBoxGuestAdditions"; then
+    lib_path=$i
+    break
+  fi
+done
 
 if [ -f /etc/arch-release ]; then
     system=arch
