@@ -676,7 +676,7 @@ void crVBoxServerRemoveClient(uint32_t u32ClientID)
     crVBoxServerRemoveClientObj(pClient);
 }
 
-static int32_t crVBoxServerInternalClientWriteRead(CRClient *pClient)
+static void crVBoxServerInternalClientWriteRead(CRClient *pClient)
 {
 #ifdef VBOXCR_LOGFPS
     uint64_t tstart, tend;
@@ -755,8 +755,6 @@ static int32_t crVBoxServerInternalClientWriteRead(CRClient *pClient)
     pClient->timeUsed += tend-tstart;
 #endif
     /*crDebug("<=crServer: ClientWrite u32ClientID=%d", u32ClientID);*/
-
-    return VINF_SUCCESS;
 }
 
 
@@ -780,7 +778,9 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
     CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
 #endif
 
-    return crVBoxServerInternalClientWriteRead(pClient);
+    crVBoxServerInternalClientWriteRead(pClient);
+
+    return VINF_SUCCESS;
 }
 
 int32_t crVBoxServerInternalClientRead(CRClient *pClient, uint8_t *pBuffer, uint32_t *pcbBuffer)
@@ -3099,14 +3099,9 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 pClient->conn->pBuffer = pBuffer;
                 pClient->conn->cbBuffer = cbBuffer;
                 CRVBOXHGSMI_CMDDATA_SET(&pClient->conn->CmdData, pCmd, pHdr, false);
-                rc = crVBoxServerInternalClientWriteRead(pClient);
+                crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
-                if (RT_FAILURE(rc))
-                {
-                    WARN(("crVBoxServerInternalClientWriteRead failed %d", rc));
-                    break;
-                }
-                break;
+                return VINF_SUCCESS;
             }
 
             WARN(("invalid number of args"));
@@ -3116,7 +3111,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
 
         case SHCRGL_GUEST_FN_INJECT:
         {
-            Log(("svcCall: SHCRGL_GUEST_FN_INJECT\n"));
+            WARN(("svcCall: SHCRGL_GUEST_FN_INJECT\n"));
 
             /* @todo: Verify  */
             if (cParams == 1)
@@ -3157,15 +3152,9 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 pClient->conn->pBuffer = pBuffer;
                 pClient->conn->cbBuffer = cbBuffer;
                 CRVBOXHGSMI_CMDDATA_SET(&pClient->conn->CmdData, pCmd, pHdr, false);
-                rc = crVBoxServerInternalClientWriteRead(pClient);
+                crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
-                if (RT_FAILURE(rc))
-                {
-                    WARN(("crVBoxServerInternalClientWriteRead failed %d", rc));
-                    break;
-                }
-
-                break;
+                return VINF_SUCCESS;
             }
 
             WARN(("invalid number of args"));
@@ -3286,16 +3275,9 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
                 pClient->conn->pBuffer = pBuffer;
                 pClient->conn->cbBuffer = cbBuffer;
                 CRVBOXHGSMI_CMDDATA_SETWB(&pClient->conn->CmdData, pCmd, pHdr, pWriteback, cbWriteback, &pFnCmd->cbWriteback, false);
-                rc = crVBoxServerInternalClientWriteRead(pClient);
+                crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
-
-                if (RT_FAILURE(rc))
-                {
-                    WARN(("crVBoxServerInternalClientWriteRead failed %d", rc));
-                    break;
-                }
-
-                break;
+                return VINF_SUCCESS;
             }
 
             crWarning("invalid number of args");
@@ -3653,9 +3635,9 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
                 pClient->conn->pBuffer = pBuffer;
                 pClient->conn->cbBuffer = cbBuffer;
                 CRVBOXHGSMI_CMDDATA_SET(&pClient->conn->CmdData, pCmd, pHdr, true);
-                rc = crVBoxServerInternalClientWriteRead(pClient);
+                crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
-                return rc;
+                return VINF_SUCCESS;
             }
             else
             {
@@ -3708,9 +3690,9 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
                 pClient->conn->pBuffer = pBuffer;
                 pClient->conn->cbBuffer = cbBuffer;
                 CRVBOXHGSMI_CMDDATA_SET(&pClient->conn->CmdData, pCmd, pHdr, true);
-                rc = crVBoxServerInternalClientWriteRead(pClient);
+                crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
-                return rc;
+                return VINF_SUCCESS;
             }
 
             crWarning("invalid number of args");
@@ -3829,9 +3811,9 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
                 pClient->conn->pBuffer = pBuffer;
                 pClient->conn->cbBuffer = cbBuffer;
                 CRVBOXHGSMI_CMDDATA_SETWB(&pClient->conn->CmdData, pCmd, pHdr, pWriteback, cbWriteback, &pFnCmd->cbWriteback, true);
-                rc = crVBoxServerInternalClientWriteRead(pClient);
+                crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
-                return rc;
+                return VINF_SUCCESS;
             }
 
             crWarning("invalid number of args");
