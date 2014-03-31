@@ -78,8 +78,8 @@ public:
         m_pNextPrevButtons->setEnabled(1, false);
 #ifndef Q_WS_MAC
         /* No icons on the Mac: */
-        m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::ArrowBackIcon, this));
-        m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::ArrowForwardIcon, this));
+        m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
+        m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
 #endif /* !Q_WS_MAC */
 
         /* Case sensitive check-box: */
@@ -89,7 +89,7 @@ public:
         m_pWarningSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
         m_pWarningIcon = new QLabel(this);
         m_pWarningIcon->hide();
-        QIcon icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon, this);
+        QIcon icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning, this);
         if (!icon.isNull())
             m_pWarningIcon->setPixmap(icon.pixmap(16, 16));
         m_pWarningLabel = new QLabel(this);
