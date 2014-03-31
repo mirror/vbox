@@ -2307,10 +2307,10 @@ void VBoxGlobal::retranslateUi()
 
     mUserDefinedPortName = tr ("User-defined", "serial port");
 
-    mWarningIcon = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon).pixmap (16, 16);
+    mWarningIcon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning).pixmap (16, 16);
     Assert (!mWarningIcon.isNull());
 
-    mErrorIcon = UIIconPool::defaultIcon(UIIconPool::MessageBoxCriticalIcon).pixmap (16, 16);
+    mErrorIcon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxCritical).pixmap (16, 16);
     Assert (!mErrorIcon.isNull());
 
     /* Re-enumerate uimedium since they contain some translations too: */

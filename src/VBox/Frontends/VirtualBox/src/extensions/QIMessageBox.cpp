@@ -25,6 +25,7 @@
 #include <QTextEdit>
 #include <QCheckBox>
 #include <QPushButton>
+#include <QStyle>
 
 /* GUI includes: */
 #include "QIMessageBox.h"
@@ -410,10 +411,10 @@ QPixmap QIMessageBox::standardPixmap(AlertIconType iconType, QWidget *pWidget /*
     QIcon icon;
     switch (iconType)
     {
-        case AlertIconType_Information:    icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxInformationIcon, pWidget); break;
-        case AlertIconType_Warning:        icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon, pWidget); break;
-        case AlertIconType_Critical:       icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxCriticalIcon, pWidget); break;
-        case AlertIconType_Question:       icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxQuestionIcon, pWidget); break;
+        case AlertIconType_Information:    icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxInformation, pWidget); break;
+        case AlertIconType_Warning:        icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning, pWidget); break;
+        case AlertIconType_Critical:       icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxCritical, pWidget); break;
+        case AlertIconType_Question:       icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxQuestion, pWidget); break;
         case AlertIconType_GuruMeditation: icon = UIIconPool::iconSet(":/meditation_32px.png"); break;
         default: break;
     }

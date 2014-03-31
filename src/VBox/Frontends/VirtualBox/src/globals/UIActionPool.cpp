@@ -350,7 +350,7 @@ class UIActionSimpleContents : public UIActionSimple
 public:
 
     UIActionSimpleContents(UIActionPool *pParent)
-        : UIActionSimple(pParent, UIIconPool::defaultIcon(UIIconPool::DialogHelpIcon))
+        : UIActionSimple(pParent, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_DialogHelp))
     {
         retranslateUi();
     }

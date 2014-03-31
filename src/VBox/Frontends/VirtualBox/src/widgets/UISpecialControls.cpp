@@ -124,7 +124,7 @@ UIMiniCancelButton::UIMiniCancelButton(QWidget *pParent /* = 0 */)
     setAutoRaise(true);
     setFocusPolicy(Qt::TabFocus);
     setShortcut(QKeySequence(Qt::Key_Escape));
-    setIcon(UIIconPool::defaultIcon(UIIconPool::DialogCancelIcon));
+    setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_DialogCancel));
 }
 
 /********************************************************************************

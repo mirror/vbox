@@ -1,11 +1,9 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIIconPool class declarations
+ * VBox Qt GUI - UIIconPool class declaration.
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,55 +14,73 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIIconPool_h__
-#define __UIIconPool_h__
+#ifndef ___UIIconPool_h___
+#define ___UIIconPool_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QIcon>
-#include <QStyle>
 
+/** General icon-pool which provides GUI with:
+  * 1. necessary cached icons and
+  * 2. ways to dynamically open/read/create icons at runtime
+  *    depending on current style. */
 class UIIconPool
 {
 public:
 
-    enum UIDefaultIcon
+    /** Default icon types. */
+    enum UIDefaultIconType
     {
-        MessageBoxInformationIcon,
-        MessageBoxQuestionIcon,
-        MessageBoxWarningIcon,
-        MessageBoxCriticalIcon,
-        DialogCancelIcon,
-        DialogHelpIcon,
-        ArrowBackIcon,
-        ArrowForwardIcon
+        /* Message-box related stuff: */
+        UIDefaultIconType_MessageBoxInformation,
+        UIDefaultIconType_MessageBoxQuestion,
+        UIDefaultIconType_MessageBoxWarning,
+        UIDefaultIconType_MessageBoxCritical,
+        /* Dialog related stuff: */
+        UIDefaultIconType_DialogCancel,
+        UIDefaultIconType_DialogHelp,
+        UIDefaultIconType_ArrowBack,
+        UIDefaultIconType_ArrowForward
     };
 
-    static QIcon iconSet(const QPixmap &normal,
-                         const QPixmap &disabled = QPixmap(),
-                         const QPixmap &active = QPixmap());
+    /** Creates icon from passed pixmap names for
+      * @a strNormal, @a strDisabled and @a strActive icon states. */
     static QIcon iconSet(const QString &strNormal,
                          const QString &strDisabled = QString(),
                          const QString &strActive = QString());
-    static QIcon iconSetOnOff(const QString &strNormal, const QString strNormalOff,
-                              const QString &strDisabled = QString(),
-                              const QString &strDisabledOff = QString(),
-                              const QString &strActive = QString(),
-                              const QString &strActiveOff = QString());
-    static QIcon iconSetFull(const QSize &normalSize, const QSize &smallSize,
-                             const QString &strNormal, const QString &strSmallNormal,
-                             const QString &strDisabled = QString(),
-                             const QString &strSmallDisabled = QString(),
-                             const QString &strActive = QString(),
-                             const QString &strSmallActive = QString());
 
-    static QIcon defaultIcon(UIDefaultIcon def, const QWidget *pWidget = 0);
+    /** Creates icon from passed pixmap names for
+      * @a strNormal, @a strDisabled, @a strActive icon states and
+      * their analogs for toggled-off case. Used for toggle actions. */
+    static QIcon iconSetOnOff(const QString &strNormal, const QString strNormalOff,
+                              const QString &strDisabled = QString(), const QString &strDisabledOff = QString(),
+                              const QString &strActive = QString(), const QString &strActiveOff = QString());
+
+    /** Creates icon from passed pixmap names for
+      * @a strNormal, @a strDisabled, @a strActive icon states and
+      * their analogs for small-icon case. Used for setting pages. */
+    static QIcon iconSetFull(const QSize &size, const QSize &smallSize,
+                             const QString &strNormal, const QString &strSmallNormal,
+                             const QString &strDisabled = QString(), const QString &strSmallDisabled = QString(),
+                             const QString &strActive = QString(), const QString &strSmallActive = QString());
+
+    /** Creates icon from passed pixmaps for
+      * @a normal, @a disabled and @a active icon states. */
+    static QIcon iconSet(const QPixmap &normal,
+                         const QPixmap &disabled = QPixmap(),
+                         const QPixmap &active = QPixmap());
+
+    /** Creates icon of passed @a defaultIconType
+      * based on passed @a pWidget style (if any) or application style (otherwise). */
+    static QIcon defaultIcon(UIDefaultIconType defaultIconType, const QWidget *pWidget = 0);
 
 private:
 
+    /** Icon-pool constructor. */
     UIIconPool() {};
-    UIIconPool(const UIIconPool& /* pool */) {};
+
+    /** Icon-pool destructor. */
     ~UIIconPool() {};
 };
 
-#endif /* !__UIIconPool_h__ */
-
+#endif /* !___UIIconPool_h___ */
