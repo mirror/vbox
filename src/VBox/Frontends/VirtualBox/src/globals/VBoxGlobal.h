@@ -31,7 +31,6 @@
 
 /* GUI includes: */
 #include "UIDefs.h"
-#include "UIIconPool.h"
 #include "UIMediumDefs.h"
 #include "VBoxGlobalSettings.h"
 
@@ -54,6 +53,7 @@ class CHostVideoInputDevice;
 class QSpinBox;
 class UIMediumEnumerator;
 class UIMedium;
+class UIIconPoolGeneral;
 
 // VBoxGlobal class
 ////////////////////////////////////////////////////////////////////////////////
