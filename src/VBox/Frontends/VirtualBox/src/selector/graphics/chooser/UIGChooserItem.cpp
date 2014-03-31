@@ -353,9 +353,9 @@ void UIGChooserItem::paintFrameRect(QPainter *pPainter, const QRect &rect, bool 
 }
 
 /* static */
-void UIGChooserItem::paintPixmap(QPainter *pPainter, const QRect &rect, const QPixmap &pixmap)
+void UIGChooserItem::paintPixmap(QPainter *pPainter, const QPoint &point, const QPixmap &pixmap)
 {
-    pPainter->drawPixmap(rect, pixmap);
+    pPainter->drawPixmap(point, pixmap);
 }
 
 /* static */

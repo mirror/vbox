@@ -951,8 +951,8 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
         /* Paint pixmap: */
         paintPixmap(/* Painter: */
                     pPainter,
-                    /* Rectangle to paint in: */
-                    QRect(QPoint(iMachinePixmapX, iMachinePixmapY), m_pixmapSize),
+                    /* Point to paint in: */
+                    QPoint(iMachinePixmapX, iMachinePixmapY),
                     /* Pixmap to paint: */
                     m_pixmap);
     }
@@ -1028,8 +1028,8 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
                 /* Paint state pixmap: */
                 paintPixmap(/* Painter: */
                             pPainter,
-                            /* Rectangle to paint in: */
-                            QRect(QPoint(iMachineStatePixmapX, iMachineStatePixmapY), m_statePixmapSize),
+                            /* Point to paint in: */
+                            QPoint(iMachineStatePixmapX, iMachineStatePixmapY),
                             /* Pixmap to paint: */
                             m_statePixmap);
             }

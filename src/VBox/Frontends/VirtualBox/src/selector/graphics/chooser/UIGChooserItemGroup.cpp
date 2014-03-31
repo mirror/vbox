@@ -1734,8 +1734,8 @@ void UIGChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
                                   iVerticalMargin : iVerticalMargin + (iFullHeaderHeight - m_pixmapSizeMachines.height()) / 2;
             paintPixmap(/* Painter: */
                         pPainter,
-                        /* Rectangle to paint in: */
-                        QRect(QPoint(iMachinePixmapX, iMachinePixmapY), m_pixmapSizeMachines),
+                        /* Point to paint in: */
+                        QPoint(iMachinePixmapX, iMachinePixmapY),
                         /* Pixmap to paint: */
                         m_machinesPixmap);
         }
@@ -1764,8 +1764,8 @@ void UIGChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
                                 iVerticalMargin : iVerticalMargin + (iFullHeaderHeight - m_pixmapSizeGroups.height()) / 2;
             paintPixmap(/* Painter: */
                         pPainter,
-                        /* Rectangle to paint in: */
-                        QRect(QPoint(iGroupPixmapX, iGroupPixmapY), m_pixmapSizeGroups),
+                        /* Point to paint in: */
+                        QPoint(iGroupPixmapX, iGroupPixmapY),
                         /* Pixmap to paint: */
                         m_groupsPixmap);
         }
