@@ -161,7 +161,7 @@ protected:
     /* Static paint stuff: */
     static void configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, int iRadius);
     static void paintFrameRect(QPainter *pPainter, const QRect &rect, bool fIsSelected, int iRadius);
-    static void paintPixmap(QPainter *pPainter, const QRect &rect, const QPixmap &pixmap);
+    static void paintPixmap(QPainter *pPainter, const QPoint &point, const QPixmap &pixmap);
     static void paintText(QPainter *pPainter, QPoint point,
                           const QFont &font, QPaintDevice *pPaintDevice,
                           const QString &strText);
