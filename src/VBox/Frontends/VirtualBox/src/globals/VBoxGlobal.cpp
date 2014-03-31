@@ -268,6 +268,7 @@ VBoxGlobal::VBoxGlobal()
     , mVerString("1.0")
     , m3DAvailable(-1)
     , mSettingsPwSet(false)
+    , m_pIconPool(0)
 {
     /* Assign instance: */
     m_spInstance = this;
@@ -789,15 +790,16 @@ QList<CGuestOSType> VBoxGlobal::vmGuestOSTypeList(const QString &aFamilyId) cons
            mTypes[mFamilyIDs.indexOf(aFamilyId)] : QList<CGuestOSType>();
 }
 
-/**
- *  Returns the icon corresponding to the given guest OS type id.
- */
-QPixmap VBoxGlobal::vmGuestOSTypeIcon(const QString &aTypeId) const
+QPixmap VBoxGlobal::vmGuestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize /* = 0 */) const
 {
-    static const QPixmap none;
-    QPixmap *p = mOsTypeIcons.value(aTypeId);
-    AssertMsg(p, ("Icon for type '%s' must be defined.", aTypeId.toLatin1().constData()));
-    return p ? *p : none;
+    /* Prepare fallback pixmap: */
+    static QPixmap nullPixmap;
+
+    /* Make sure general icon-pool initialized: */
+    AssertReturn(m_pIconPool, nullPixmap);
+
+    /* Redirect to general icon-pool: */
+    return m_pIconPool->guestOSTypeIcon(strOSTypeID, pLogicalSize);
 }
 
 /**
@@ -4423,97 +4425,8 @@ void VBoxGlobal::prepare()
         }
     }
 
-    /* Fill in OS type icon dictionary. */
-    static const char * const s_kOSTypeIcons[][2] =
-    {
-        {"Other",           ":/os_other.png"},
-        {"Other_64",        ":/os_other_64.png"},
-        {"DOS",             ":/os_dos.png"},
-        {"Netware",         ":/os_netware.png"},
-        {"L4",              ":/os_l4.png"},
-        {"Windows31",       ":/os_win31.png"},
-        {"Windows95",       ":/os_win95.png"},
-        {"Windows98",       ":/os_win98.png"},
-        {"WindowsMe",       ":/os_winme.png"},
-        {"WindowsNT4",      ":/os_winnt4.png"},
-        {"Windows2000",     ":/os_win2k.png"},
-        {"WindowsXP",       ":/os_winxp.png"},
-        {"WindowsXP_64",    ":/os_winxp_64.png"},
-        {"Windows2003",     ":/os_win2k3.png"},
-        {"Windows2003_64",  ":/os_win2k3_64.png"},
-        {"WindowsVista",    ":/os_winvista.png"},
-        {"WindowsVista_64", ":/os_winvista_64.png"},
-        {"Windows2008",     ":/os_win2k8.png"},
-        {"Windows2008_64",  ":/os_win2k8_64.png"},
-        {"Windows7",        ":/os_win7.png"},
-        {"Windows7_64",     ":/os_win7_64.png"},
-        {"Windows8",        ":/os_win8.png"},
-        {"Windows8_64",     ":/os_win8_64.png"},
-        {"Windows81",       ":/os_win8.png"},
-        {"Windows81_64",    ":/os_win8_64.png"},
-        {"Windows2012_64",  ":/os_win2k12_64.png"},
-        {"WindowsNT",       ":/os_win_other.png"},
-        {"WindowsNT_64",    ":/os_win_other.png"}, /// @todo os_win_other_64.png
-        {"OS2Warp3",        ":/os_os2warp3.png"},
-        {"OS2Warp4",        ":/os_os2warp4.png"},
-        {"OS2Warp45",       ":/os_os2warp45.png"},
-        {"OS2eCS",          ":/os_os2ecs.png"},
-        {"OS21x",           ":/os_os2_other.png"},
-        {"OS2",             ":/os_os2_other.png"},
-        {"Linux22",         ":/os_linux22.png"},
-        {"Linux24",         ":/os_linux24.png"},
-        {"Linux24_64",      ":/os_linux24_64.png"},
-        {"Linux26",         ":/os_linux26.png"},
-        {"Linux26_64",      ":/os_linux26_64.png"},
-        {"ArchLinux",       ":/os_archlinux.png"},
-        {"ArchLinux_64",    ":/os_archlinux_64.png"},
-        {"Debian",          ":/os_debian.png"},
-        {"Debian_64",       ":/os_debian_64.png"},
-        {"OpenSUSE",        ":/os_opensuse.png"},
-        {"OpenSUSE_64",     ":/os_opensuse_64.png"},
-        {"Fedora",          ":/os_fedora.png"},
-        {"Fedora_64",       ":/os_fedora_64.png"},
-        {"Gentoo",          ":/os_gentoo.png"},
-        {"Gentoo_64",       ":/os_gentoo_64.png"},
-        {"Mandriva",        ":/os_mandriva.png"},
-        {"Mandriva_64",     ":/os_mandriva_64.png"},
-        {"RedHat",          ":/os_redhat.png"},
-        {"RedHat_64",       ":/os_redhat_64.png"},
-        {"Turbolinux",      ":/os_turbolinux.png"},
-        {"Turbolinux_64",   ":/os_turbolinux_64.png"},
-        {"Ubuntu",          ":/os_ubuntu.png"},
-        {"Ubuntu_64",       ":/os_ubuntu_64.png"},
-        {"Xandros",         ":/os_xandros.png"},
-        {"Xandros_64",      ":/os_xandros_64.png"},
-        {"Oracle",          ":/os_oracle.png"},
-        {"Oracle_64",       ":/os_oracle_64.png"},
-        {"Linux",           ":/os_linux_other.png"},
-        {"Linux_64",        ":/os_linux_other.png"}, /// @todo os_linux_other_64.png
-        {"FreeBSD",         ":/os_freebsd.png"},
-        {"FreeBSD_64",      ":/os_freebsd_64.png"},
-        {"OpenBSD",         ":/os_openbsd.png"},
-        {"OpenBSD_64",      ":/os_openbsd_64.png"},
-        {"NetBSD",          ":/os_netbsd.png"},
-        {"NetBSD_64",       ":/os_netbsd_64.png"},
-        {"Solaris",         ":/os_solaris.png"},
-        {"Solaris_64",      ":/os_solaris_64.png"},
-        {"OpenSolaris",     ":/os_oraclesolaris.png"},
-        {"OpenSolaris_64",  ":/os_oraclesolaris_64.png"},
-        {"Solaris11_64",    ":/os_oraclesolaris_64.png"},
-        {"QNX",             ":/os_qnx.png"},
-        {"MacOS",           ":/os_macosx.png"},
-        {"MacOS_64",        ":/os_macosx_64.png"},
-        {"MacOS106",        ":/os_macosx.png"},
-        {"MacOS106_64",     ":/os_macosx_64.png"},
-        {"MacOS107_64",     ":/os_macosx_64.png"},
-        {"MacOS108_64",     ":/os_macosx_64.png"},
-        {"MacOS109_64",     ":/os_macosx_64.png"},
-        {"JRockitVE",       ":/os_jrockitve.png"},
-    };
-    for (uint n = 0; n < SIZEOF_ARRAY(s_kOSTypeIcons); ++ n)
-    {
-        mOsTypeIcons.insert(s_kOSTypeIcons[n][0], new QPixmap(s_kOSTypeIcons[n][1]));
-    }
+    /* Prepare general icon-pool: */
+    m_pIconPool = new UIIconPoolGeneral;
 
     /* online/offline snapshot icons */
     mOfflineSnapshotIcon = QPixmap (":/snapshot_offline_16px.png");
@@ -4880,8 +4793,9 @@ void VBoxGlobal::cleanup()
     /* Destroy whatever this converter stuff is: */
     UIConverter::cleanup();
 
-    /* Ensure mOsTypeIcons is cleaned up: */
-    qDeleteAll(mOsTypeIcons);
+    /* Cleanup general icon-pool: */
+    delete m_pIconPool;
+    m_pIconPool = 0;
 
     /* ensure CGuestOSType objects are no longer used */
     mFamilyIDs.clear();

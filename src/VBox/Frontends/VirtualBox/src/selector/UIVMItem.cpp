@@ -152,10 +152,10 @@ UIVMItem::~UIVMItem()
 // public members
 ////////////////////////////////////////////////////////////////////////////////
 
-QIcon UIVMItem::osIcon() const
+QPixmap UIVMItem::osPixmap(QSize *pLogicalSize /* = 0 */) const
 {
-    return m_fAccessible ? vboxGlobal().vmGuestOSTypeIcon(m_strOSTypeId) :
-                           QPixmap(":/os_other.png");
+    return m_fAccessible ? vboxGlobal().vmGuestOSTypeIcon(m_strOSTypeId, pLogicalSize) :
+                           vboxGlobal().vmGuestOSTypeIcon("Other", pLogicalSize);
 }
 
 QString UIVMItem::machineStateName() const

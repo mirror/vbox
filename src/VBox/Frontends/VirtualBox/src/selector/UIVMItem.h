@@ -44,7 +44,7 @@ public:
     CMachine machine() const { return m_machine; }
 
     QString name() const { return m_strName; }
-    QIcon osIcon() const;
+    QPixmap osPixmap(QSize *pLogicalSize = 0) const;
     QString osTypeId() const { return m_strOSTypeId; }
     QString id() const { return m_strId; }
 
