@@ -739,12 +739,37 @@ static void startVM(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
     IProgress *progress   = NULL;
     BSTR env              = NULL;
     BSTR sessionType;
+    SAFEARRAY *groupsSA = g_pVBoxFuncs->pfnSafeArrayOutParamAlloc();
 
     rc = IVirtualBox_FindMachine(virtualBox, id, &machine);
     if (FAILED(rc) || !machine)
     {
         PrintErrorInfo(argv0, "Error: Couldn't get the Machine reference", rc);
         return;
+    }
+
+    rc = IMachine_get_Groups(machine, ComSafeArrayAsOutParam(groupsSA));
+    if (SUCCEEDED(rc))
+    {
+        BSTR *groups = NULL;
+        ULONG cbGroups = 0;
+        ULONG i, cGroups;
+        g_pVBoxFuncs->pfnSafeArrayCopyOutParamHelper((void **)&groups, &cbGroups, VT_BSTR, groupsSA);
+        cGroups = cbGroups / sizeof(groups[0]);
+        for (i = 0; i < cGroups; ++i)
+        {
+            /* Note that the use of %S might be tempting, but it is not
+             * available on all platforms, and even where it is usable it
+             * may depend on correct compiler options to make wchar_t a
+             * 16 bit number. So better play safe and use UTF-8. */
+            char *group;
+            g_pVBoxFuncs->pfnUtf16ToUtf8(groups[i], &group);
+            printf("Groups[%d]: %s\n", i, group);
+            g_pVBoxFuncs->pfnUtf8Free(group);
+        }
+        for (i = 0; i < cGroups; ++i)
+            g_pVBoxFuncs->pfnComUnallocString(groups[i]);
+        g_pVBoxFuncs->pfnArrayOutFree(groups);
     }
 
     g_pVBoxFuncs->pfnUtf8ToUtf16("gui", &sessionType);
@@ -834,6 +859,7 @@ static void listVMs(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
 
     if (!machineCnt)
     {
+        g_pVBoxFuncs->pfnArrayOutFree(machines);
         printf("\tNo VMs\n");
         return;
     }
@@ -961,8 +987,7 @@ static void listVMs(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
             IMachine_Release(machine);
         }
     }
-    if (machines)
-        free(machines);
+    g_pVBoxFuncs->pfnArrayOutFree(machines);
 }
 
 /* Main - Start the ball rolling. */

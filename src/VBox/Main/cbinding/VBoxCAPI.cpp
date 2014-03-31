@@ -231,10 +231,20 @@ VBoxSafeArrayCopyOutParamHelper(void **ppv, ULONG *pcb, VARTYPE vt, SAFEARRAY *p
         return E_POINTER;
     ULONG cbElement = VBoxVTElemSize(vt);
     if (!cbElement)
+    {
+        *ppv = NULL;
+        if (pcb)
+            *pcb = 0;
         return E_INVALIDARG;
+    }
 #ifndef VBOX_WITH_XPCOM
     if (psa->cDims != 1)
+    {
+        *ppv = NULL;
+        if (pcb)
+            *pcb = 0;
         return E_INVALIDARG;
+    }
     Assert(cbElement = psa->cbElements);
 #endif /* !VBOX_WITH_XPCOM */
     void *pData;
@@ -245,18 +255,32 @@ VBoxSafeArrayCopyOutParamHelper(void **ppv, ULONG *pcb, VARTYPE vt, SAFEARRAY *p
 #else /* !VBOX_WITH_XPCOM */
     HRESULT rc = SafeArrayAccessData(psa, &pData);
     if (FAILED(rc))
+    {
+        *ppv = NULL;
+        if (pcb)
+            *pcb = 0;
         return rc;
+    }
     cElements = psa->rgsabound[0].cElements;
 #endif /* !VBOX_WITH_XPCOM */
     size_t cbTotal = cbElement * cElements;
-    void *pv = malloc(cbTotal);
-    if (pv)
+    void *pv = NULL;
+    if (cbTotal)
     {
-        memcpy(pv, pData, cbTotal);
-        *ppv = pv;
-        if (pcb)
-            *pcb = (ULONG)cbTotal;
+        pv = malloc(cbTotal);
+        if (!pv)
+        {
+            *ppv = NULL;
+            if (pcb)
+                *pcb = 0;
+            return E_OUTOFMEMORY;
+        }
+        else
+            memcpy(pv, pData, cbTotal);
     }
+    *ppv = pv;
+    if (pcb)
+        *pcb = (ULONG)cbTotal;
 #ifndef VBOX_WITH_XPCOM
     SafeArrayUnaccessData(psa);
 #endif /* !VBOX_WITH_XPCOM */
@@ -269,7 +293,11 @@ VBoxSafeArrayCopyOutIfaceParamHelper(IUnknown ***ppaObj, ULONG *pcObj, SAFEARRAY
     ULONG mypcb;
     HRESULT rc = VBoxSafeArrayCopyOutParamHelper((void **)ppaObj, &mypcb, VT_UNKNOWN, psa);
     if (FAILED(rc))
+    {
+        if (pcObj)
+            *pcObj = 0;
         return rc;
+    }
     ULONG cElements = mypcb / sizeof(void *);
     if (pcObj)
         *pcObj = cElements;
@@ -285,6 +313,13 @@ VBoxSafeArrayCopyOutIfaceParamHelper(IUnknown ***ppaObj, ULONG *pcObj, SAFEARRAY
             pObj->AddRef();
     }
 #endif /* VBOX_WITH_XPCOM */
+    return S_OK;
+}
+
+static HRESULT
+VBoxArrayOutFree(void *pv)
+{
+    free(pv);
     return S_OK;
 }
 
@@ -714,6 +749,7 @@ VBoxGetCAPIFunctions(unsigned uVersion)
         VBoxSafeArrayCopyOutParamHelper,
         VBoxSafeArrayCopyOutIfaceParamHelper,
         VBoxSafeArrayDestroy,
+        VBoxArrayOutFree,
 
 #ifdef VBOX_WITH_XPCOM
         VBoxGetEventQueue,
@@ -728,6 +764,100 @@ VBoxGetCAPIFunctions(unsigned uVersion)
 
     if ((uVersion & 0xffff0000U) == (VBOX_CAPI_VERSION & 0xffff0000U))
         return &s_Functions;
+
+    /*
+     * Legacy interface version 4.0.
+     */
+    static const struct VBOXCAPIV4
+    {
+        /** The size of the structure. */
+        unsigned cb;
+        /** The structure version. */
+        unsigned uVersion;
+
+        unsigned int (*pfnGetVersion)(void);
+        unsigned int (*pfnGetAPIVersion)(void);
+
+        HRESULT (*pfnClientInitialize)(const char *pszVirtualBoxClientIID,
+                                       IVirtualBoxClient **ppVirtualBoxClient);
+        HRESULT (*pfnClientThreadInitialize)(void);
+        HRESULT (*pfnClientThreadUninitialize)(void);
+        void (*pfnClientUninitialize)(void);
+
+        void  (*pfnComInitialize)(const char *pszVirtualBoxIID,
+                                  IVirtualBox **ppVirtualBox,
+                                  const char *pszSessionIID,
+                                  ISession **ppSession);
+
+        void  (*pfnComUninitialize)(void);
+
+        void (*pfnComUnallocString)(BSTR pwsz);
+
+        int   (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
+        int   (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);
+        void  (*pfnUtf8Free)(char *pszString);
+        void  (*pfnUtf16Free)(BSTR pwszString);
+
+        SAFEARRAY *(*pfnSafeArrayCreateVector)(VARTYPE vt, LONG lLbound, ULONG cElements);
+        SAFEARRAY *(*pfnSafeArrayOutParamAlloc)(void);
+        HRESULT (*pfnSafeArrayCopyInParamHelper)(SAFEARRAY *psa, const void *pv, ULONG cb);
+        HRESULT (*pfnSafeArrayCopyOutParamHelper)(void **ppv, ULONG *pcb, VARTYPE vt, SAFEARRAY *psa);
+        HRESULT (*pfnSafeArrayCopyOutIfaceParamHelper)(IUnknown ***ppaObj, ULONG *pcObj, SAFEARRAY *psa);
+        HRESULT (*pfnSafeArrayDestroy)(SAFEARRAY *psa);
+
+#ifdef VBOX_WITH_XPCOM
+        void  (*pfnGetEventQueue)(nsIEventQueue **ppEventQueue);
+#endif /* VBOX_WITH_XPCOM */
+        HRESULT (*pfnGetException)(IErrorInfo **ppException);
+        HRESULT (*pfnClearException)(void);
+        int (*pfnProcessEventQueue)(LONG64 iTimeoutMS);
+        int (*pfnInterruptEventQueueProcessing)(void);
+
+        /** Tail version, same as uVersion. */
+        unsigned uEndVersion;
+    } s_Functions_v4_0 =
+    {
+        sizeof(s_Functions_v4_0),
+        0x00040000U,
+
+        VBoxVersion,
+        VBoxAPIVersion,
+
+        VBoxClientInitialize,
+        VBoxClientThreadInitialize,
+        VBoxClientThreadUninitialize,
+        VBoxClientUninitialize,
+
+        VBoxComInitialize,
+        VBoxComUninitialize,
+
+        VBoxComUnallocString,
+
+        VBoxUtf16ToUtf8,
+        VBoxUtf8ToUtf16,
+        VBoxUtf8Free,
+        VBoxUtf16Free,
+
+        VBoxSafeArrayCreateVector,
+        VBoxSafeArrayOutParamAlloc,
+        VBoxSafeArrayCopyInParamHelper,
+        VBoxSafeArrayCopyOutParamHelper,
+        VBoxSafeArrayCopyOutIfaceParamHelper,
+        VBoxSafeArrayDestroy,
+
+#ifdef VBOX_WITH_XPCOM
+        VBoxGetEventQueue,
+#endif /* VBOX_WITH_XPCOM */
+        VBoxGetException,
+        VBoxClearException,
+        VBoxProcessEventQueue,
+        VBoxInterruptEventQueueProcessing,
+
+        0x00040000U
+    };
+
+    if ((uVersion & 0xffff0000U) == 0x00040000U)
+        return (PCVBOXCAPI)&s_Functions_v4_0;
 
     /*
      * Legacy interface version 3.0.
