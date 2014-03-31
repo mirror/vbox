@@ -1262,7 +1262,7 @@ static int vboxVDMACrCmdVbvaProcessPagingEls(PPDMDEVINS pDevIns, const VBOXCMDVB
     return VINF_SUCCESS;
 }
 
-static int8_t vboxVDMACrCmdVbvaPagingDataInit(PVGASTATE pVGAState, const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd,
+static int8_t vboxVDMACrCmdVbvaPagingDataInit(PVGASTATE pVGAState, const VBOXCMDVBVA_HDR *pHdr, const VBOXCMDVBVA_PAGING_TRANSFER_DATA *pData, uint32_t cbCmd,
                             const VBOXCMDVBVAPAGEIDX **ppPages, VBOXCMDVBVAPAGEIDX *pcPages,
                             uint8_t **ppu8Vram, bool *pfIn)
 {
@@ -1272,7 +1272,7 @@ static int8_t vboxVDMACrCmdVbvaPagingDataInit(PVGASTATE pVGAState, const VBOXCMD
         return -1;
     }
 
-    VBOXCMDVBVAPAGEIDX cPages = cbCmd - RT_OFFSETOF(VBOXCMDVBVA_PAGING_TRANSFER, aPageNumbers);
+    VBOXCMDVBVAPAGEIDX cPages = cbCmd - RT_OFFSETOF(VBOXCMDVBVA_PAGING_TRANSFER, Data.aPageNumbers);
     if (cPages % sizeof (VBOXCMDVBVAPAGEIDX))
     {
         WARN(("invalid cmd size"));
@@ -1280,14 +1280,13 @@ static int8_t vboxVDMACrCmdVbvaPagingDataInit(PVGASTATE pVGAState, const VBOXCMD
     }
     cPages /= sizeof (VBOXCMDVBVAPAGEIDX);
 
-    VBOXCMDVBVA_PAGING_TRANSFER *pTransfer = (VBOXCMDVBVA_PAGING_TRANSFER*)pCmd;
-    VBOXCMDVBVAOFFSET offVRAM = pTransfer->Alloc.u.offVRAM;
+    VBOXCMDVBVAOFFSET offVRAM = pData->Alloc.u.offVRAM;
     if (offVRAM & PAGE_OFFSET_MASK)
     {
         WARN(("offVRAM address is not on page boundary\n"));
         return -1;
     }
-    const VBOXCMDVBVAPAGEIDX *pPages = pTransfer->aPageNumbers;
+    const VBOXCMDVBVAPAGEIDX *pPages = pData->aPageNumbers;
 
     uint8_t * pu8VramBase = pVGAState->vram_ptrR3;
     uint8_t *pu8VramMax = pu8VramBase + pVGAState->vram_size;
@@ -1304,7 +1303,7 @@ static int8_t vboxVDMACrCmdVbvaPagingDataInit(PVGASTATE pVGAState, const VBOXCMD
     }
 
     uint8_t *pu8Vram = pu8VramBase + offVRAM;
-    bool fIn = !!(pTransfer->Hdr.u8Flags & VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN);
+    bool fIn = !!(pHdr->u8Flags & VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN);
 
     *ppPages = pPages;
     *pcPages = cPages;
@@ -1326,7 +1325,7 @@ static int8_t vboxVDMACrCmdVbvaProcessCmdData(struct VBOXVDMAHOST *pVdma, const 
             uint32_t cPages;
             uint8_t *pu8Vram;
             bool fIn;
-            int8_t i8Result = vboxVDMACrCmdVbvaPagingDataInit(pVGAState, pCmd, cbCmd,
+            int8_t i8Result = vboxVDMACrCmdVbvaPagingDataInit(pVGAState, pCmd, &((VBOXCMDVBVA_PAGING_TRANSFER*)pCmd)->Data, cbCmd,
                                                                 &pPages, &cPages,
                                                                 &pu8Vram, &fIn);
             if (i8Result < 0)
@@ -1379,7 +1378,7 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
         case VBOXCMDVBVA_OPTYPE_SYSMEMCMD:
         {
             VBOXCMDVBVA_SYSMEMCMD *pSysmemCmd = (VBOXCMDVBVA_SYSMEMCMD*)pCmd;
-            const VBOXCMDVBVA_HDR *pRealCmd;
+            const VBOXCMDVBVA_HDR *pRealCmdHdr;
             uint32_t cbRealCmd = pCmd->u8Flags;
             cbRealCmd |= (pCmd->u.u8PrimaryID << 8);
             if (cbRealCmd < sizeof (VBOXCMDVBVA_HDR))
@@ -1388,32 +1387,65 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
                 return -1;
             }
 
-            VBOXCMDVBVAPAGEIDX iPage = pSysmemCmd->iPage;
-            RTGCPHYS phPage = (RTGCPHYS)(iPage << PAGE_SHIFT);
+            RTGCPHYS phCmd = (RTGCPHYS)pSysmemCmd->phCmd;
 
             PGMPAGEMAPLOCK Lock;
             PVGASTATE pVGAState = pVdma->pVGAState;
             PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
             const void * pvCmd;
-            int rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, phPage, 0, &pvCmd, &Lock);
+            int rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, phCmd, 0, &pvCmd, &Lock);
             if (!RT_SUCCESS(rc))
             {
                 WARN(("PDMDevHlpPhysGCPhys2CCPtrReadOnly failed %d\n", rc));
                 return -1;
             }
 
-            pRealCmd = (const VBOXCMDVBVA_HDR *)pvCmd;
+            Assert((phCmd & PAGE_OFFSET_MASK) == (((uintptr_t)pvCmd) & PAGE_OFFSET_MASK));
 
-            if (cbRealCmd <= PAGE_SIZE)
+            uint32_t cbCmdPart = PAGE_SIZE - (((uintptr_t)pvCmd) & PAGE_OFFSET_MASK);
+
+            if (cbRealCmd <= cbCmdPart)
             {
-                uint8_t i8Result = vboxVDMACrCmdVbvaProcessCmdData(pVdma, pRealCmd, cbRealCmd);
+                pRealCmdHdr = (const VBOXCMDVBVA_HDR *)pvCmd;
+                uint8_t i8Result = vboxVDMACrCmdVbvaProcessCmdData(pVdma, pRealCmdHdr, cbRealCmd);
                 PDMDevHlpPhysReleasePageMappingLock(pDevIns, &Lock);
                 return i8Result;
             }
 
+            VBOXCMDVBVA_HDR Hdr;
+            const void *pvCurCmdTail;
+            uint32_t cbCurCmdTail;
+            if (cbCmdPart >= sizeof (*pRealCmdHdr))
+            {
+                pRealCmdHdr = (const VBOXCMDVBVA_HDR *)pvCmd;
+                pvCurCmdTail = (const void*)(pRealCmdHdr + 1);
+                cbCurCmdTail = cbCmdPart - sizeof (*pRealCmdHdr);
+            }
+            else
+            {
+                memcpy(&Hdr, pvCmd, cbCmdPart);
+                PDMDevHlpPhysReleasePageMappingLock(pDevIns, &Lock);
+                phCmd += cbCmdPart;
+                Assert(!(phCmd & PAGE_OFFSET_MASK));
+                rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, phCmd, 0, &pvCmd, &Lock);
+                if (!RT_SUCCESS(rc))
+                {
+                    WARN(("PDMDevHlpPhysGCPhys2CCPtrReadOnly failed %d\n", rc));
+                    return -1;
+                }
+
+                cbCmdPart = sizeof (*pRealCmdHdr) - cbCmdPart;
+                memcpy(((uint8_t*)(&Hdr)) + cbCmdPart, pvCmd, cbCmdPart);
+                pvCurCmdTail = (const void*)(((uint8_t*)pvCmd) + cbCmdPart);
+                cbCurCmdTail = PAGE_SIZE - cbCmdPart;
+            }
+
+            if (cbCurCmdTail > cbRealCmd - sizeof (*pRealCmdHdr))
+                cbCurCmdTail = cbRealCmd - sizeof (*pRealCmdHdr);
+
             int8_t i8Result = 0;
 
-            switch (pRealCmd->u8OpCode)
+            switch (pRealCmdHdr->u8OpCode)
             {
                 case VBOXCMDVBVA_OPTYPE_PAGING_TRANSFER:
                 {
@@ -1421,17 +1453,25 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
                     uint32_t cPages;
                     uint8_t *pu8Vram;
                     bool fIn;
-                    i8Result = vboxVDMACrCmdVbvaPagingDataInit(pVGAState, pCmd, cbCmd,
+                    i8Result = vboxVDMACrCmdVbvaPagingDataInit(pVGAState, pRealCmdHdr, (const VBOXCMDVBVA_PAGING_TRANSFER_DATA*)pvCurCmdTail, cbRealCmd,
                                                                         &pPages, &cPages,
                                                                         &pu8Vram, &fIn);
                     if (i8Result < 0)
                     {
                         WARN(("vboxVDMACrCmdVbvaPagingDataInit failed %d", i8Result));
-                        return i8Result;
+                        /* we need to break, not return, to ensure currently locked page is released */
+                        break;
                     }
 
-                    uint32_t cCurPages = PAGE_SIZE - RT_OFFSETOF(VBOXCMDVBVA_PAGING_TRANSFER, aPageNumbers);
-                    cCurPages /= sizeof (VBOXCMDVBVAPAGEIDX);
+                    if (cbCurCmdTail & 3)
+                    {
+                        WARN(("command is not alligned properly %d", cbCurCmdTail));
+                        i8Result = -1;
+                        /* we need to break, not return, to ensure currently locked page is released */
+                        break;
+                    }
+
+                    uint32_t cCurPages = cbCurCmdTail / sizeof (VBOXCMDVBVAPAGEIDX);
                     Assert(cCurPages < cPages);
 
                     do
@@ -1441,6 +1481,7 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
                         {
                             WARN(("vboxVDMACrCmdVbvaProcessPagingEls failed %d", rc));
                             i8Result = -1;
+                            /* we need to break, not return, to ensure currently locked page is released */
                             break;
                         }
 
@@ -1452,13 +1493,16 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
 
                         PDMDevHlpPhysReleasePageMappingLock(pDevIns, &Lock);
 
-                        phPage += PAGE_SIZE;
+                        Assert(!(phCmd & PAGE_OFFSET_MASK));
+
+                        phCmd += PAGE_SIZE;
                         pu8Vram += (cCurPages << PAGE_SHIFT);
 
-                        rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, phPage, 0, &pvCmd, &Lock);
+                        rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, phCmd, 0, &pvCmd, &Lock);
                         if (!RT_SUCCESS(rc))
                         {
                             WARN(("PDMDevHlpPhysGCPhys2CCPtrReadOnly failed %d\n", rc));
+                            /* the page is not locked, return */
                             return -1;
                         }
 

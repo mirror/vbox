@@ -1637,7 +1637,6 @@ static void _crVBoxHGSMIFree(CRConnection *conn, void *buf)
     {
         PVBOXUHGSMI_BUFFER pBuf = _crVBoxHGSMIBufFromHdr(hgcm_buffer);
         PCRVBOXHGSMI_CLIENT pClient = (PCRVBOXHGSMI_CLIENT)pBuf->pvUserData;
-        pBuf->pfnUnlock(pBuf);
         _crVBoxHGSMIBufFree(pClient, pBuf);
     }
     else

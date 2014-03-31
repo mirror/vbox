@@ -3108,6 +3108,9 @@ DxgkDdiSubmitCommandNew(
         }
         else
         {
+            Assert(!pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
+            Assert(!pSubmitCommand->DmaBufferSubmissionStartOffset);
+
             if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
             {
                 WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
@@ -3132,7 +3135,7 @@ DxgkDdiSubmitCommandNew(
                 WARN(("command should be page aligned for now"));
                 return STATUS_INVALID_PARAMETER;
             }
-            SysMem.iPage = (VBOXCMDVBVAPAGEIDX)(pSubmitCommand->DmaBufferPhysicalAddress.QuadPart >> PAGE_SHIFT);
+            SysMem.phCmd = (VBOXCMDVBVAPHADDR)(pSubmitCommand->DmaBufferPhysicalAddress.QuadPart + pSubmitCommand->DmaBufferSubmissionStartOffset);
 
             cbCmd = sizeof (SysMem);
         }
@@ -3141,6 +3144,9 @@ DxgkDdiSubmitCommandNew(
     }
     else
     {
+        Assert(!pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
+        Assert(!pSubmitCommand->DmaBufferSubmissionStartOffset);
+
         if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
         {
             WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
@@ -3152,6 +3158,7 @@ DxgkDdiSubmitCommandNew(
 
         pHdr = (VBOXCMDVBVA_HDR*)((uint8_t*)pSubmitCommand->pDmaBufferPrivateData + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
     }
+
     pHdr->u32FenceID = pSubmitCommand->SubmissionFenceId;
     int rc = VBoxCmdVbvaSubmit(pDevExt, &pDevExt->CmdVbva, pHdr, cbCmd);
     if (RT_SUCCESS(rc))
@@ -3412,6 +3419,14 @@ DxgkDdiBuildPagingBufferNew(
     {
         case DXGK_OPERATION_TRANSFER:
         {
+            if (!pBuildPagingBuffer->Transfer.Flags.AllocationIsIdle)
+            {
+                WARN(("allocation is not idle"));
+                return STATUS_GRAPHICS_ALLOCATION_BUSY;
+            }
+
+            Assert(!pBuildPagingBuffer->Transfer.MdlOffset);
+
             if ((!pBuildPagingBuffer->Transfer.Source.SegmentId) == (!pBuildPagingBuffer->Transfer.Destination.SegmentId))
             {
                 WARN(("we only support RAM <-> VRAM moves, Src Seg(%d), Dst Seg(%d)", pBuildPagingBuffer->Transfer.Source.SegmentId, pBuildPagingBuffer->Transfer.Destination.SegmentId));
@@ -3477,7 +3492,7 @@ DxgkDdiBuildPagingBufferNew(
             uint32_t cPagesWritten;
             offVRAM += pBuildPagingBuffer->Transfer.TransferOffset + (pBuildPagingBuffer->MultipassOffset << PAGE_SHIFT);
 
-            pPaging->Alloc.u.offVRAM = offVRAM;
+            pPaging->Data.Alloc.u.offVRAM = offVRAM;
             if (fIn)
                 pPaging->Hdr.u8Flags |= VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN;
             cbBuffer = VBoxCVDdiPTransferVRamSysBuildEls(pPaging, pMdl, iFirstPage, cPages, pBuildPagingBuffer->DmaSize, &cPagesWritten);

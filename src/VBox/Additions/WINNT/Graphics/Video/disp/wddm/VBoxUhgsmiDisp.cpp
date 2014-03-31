@@ -35,6 +35,9 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
     HRESULT hr = pDevice->RtCallbacks.pfnDeallocateCb(pDevice->hDevice, &DdiDealloc);
     if (hr == S_OK)
     {
+#ifdef DEBUG_misha
+        memset(pBuffer, 0, sizeof (*pBuffer));
+#endif
         RTMemFree(pBuffer);
         return VINF_SUCCESS;
     }
