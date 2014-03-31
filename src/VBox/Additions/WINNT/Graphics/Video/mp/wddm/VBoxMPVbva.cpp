@@ -999,6 +999,7 @@ bool VBoxCmdVbvaPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32
     uint32_t cbBuffer;
     bool fProcessed;
     uint8_t* pu8Cmd;
+    bool fFenceFound = false;
 
     while ((pu8Cmd = (uint8_t*)VBoxVBVAExBIterNext(&Iter, &cbBuffer, &fProcessed)) != NULL)
     {
@@ -1010,6 +1011,8 @@ bool VBoxCmdVbvaPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32
         if (pCmd->u32FenceID != u32FenceID)
             continue;
 
+        fFenceFound = true;
+
         if (!ASMAtomicCmpXchgU8(&pCmd->u8State, VBOXCMDVBVA_STATE_CANCELLED, VBOXCMDVBVA_STATE_SUBMITTED))
         {
             Assert(pCmd->u8State == VBOXCMDVBVA_STATE_IN_PROGRESS);
@@ -1020,6 +1023,9 @@ bool VBoxCmdVbvaPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32
         vboxCmdVbvaDdiNotifyComplete(pDevExt, pVbva, &pCmd->u32FenceID, DXGK_INTERRUPT_DMA_PREEMPTED);
         return true;
     }
+
+    if (!fFenceFound)
+        vboxCmdVbvaDdiNotifyComplete(pDevExt, pVbva, &u32FenceID, DXGK_INTERRUPT_DMA_PREEMPTED);
 
     return false;
 }
