@@ -144,6 +144,8 @@ private:
 
     /** Update actions according currently chosen item. */
     void updateActions();
+    /** Update action icons according currently chosen tab. */
+    void updateActionIcons();
     /** Update tab icons according last @a action happened with @a pItem. */
     void updateTabIcons(UIMediumItem *pItem, Action action);
     /** Update information pane of passed medium @a type. */
