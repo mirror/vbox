@@ -1670,7 +1670,7 @@ void UIMachineLogic::sltPrepareWebCamMenu()
         pEmptyMenuAction->setEnabled(false);
         pEmptyMenuAction->setText(tr("No Webcams Connected"));
         pEmptyMenuAction->setToolTip(tr("No supported webcams connected to the host PC"));
-        pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/vm_delete_16px.png", ":/vm_delete_disabled_16px.png")); // TODO: Change icon!
+        pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/web_camera_unavailable_16px.png", ":/web_camera_unavailable_disabled_16px.png"));
         pMenu->addAction(pEmptyMenuAction);
     }
     /* If webcam list is NOT empty: */

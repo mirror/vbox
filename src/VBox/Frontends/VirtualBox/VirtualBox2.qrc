@@ -243,5 +243,7 @@
         <file alias="reset_warnings_16px.png">images/reset_warnings_16px.png</file>
         <file alias="web_camera_16px.png">images/web_camera_16px.png</file>
         <file alias="web_camera_disabled_16px.png">images/web_camera_disabled_16px.png</file>
+        <file alias="web_camera_unavailable_16px.png">images/web_camera_unavailable_16px.png</file>
+        <file alias="web_camera_unavailable_disabled_16px.png">images/web_camera_unavailable_disabled_16px.png</file>
     </qresource>
 </RCC>
