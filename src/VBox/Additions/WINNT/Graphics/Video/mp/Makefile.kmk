@@ -122,7 +122,7 @@ ifdef VBOX_WITH_WDDM
  	
  if defined(VBOX_WITH_CROGL)
    VBoxVideoWddm_SOURCES   += \
-	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/util/vreg.cpp
+	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/util/vreg.cpp \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_buffer.c \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_bounds.c \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_visibleregion.c \
