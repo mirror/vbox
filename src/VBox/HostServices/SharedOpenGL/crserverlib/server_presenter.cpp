@@ -247,8 +247,16 @@ static void crFbBltImg(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint,
     int32_t srcY = pCopyRect->yTop - pSrcDataPoint->y;
     Assert(srcX >= 0);
     Assert(srcY >= 0);
-    Assert(srcX < (int32_t)pSrc->width);
-    Assert(srcY < (int32_t)pSrc->height);
+    if(srcX >= (int32_t)pSrc->width)
+    {
+        WARN(("invalid x"));
+        return;
+    }
+    if(srcY >= (int32_t)pSrc->height)
+    {
+        WARN(("invalid y"));
+        return;
+    }
 
     int32_t dstX = pCopyRect->xLeft - pDstDataPoint->x;
     int32_t dstY = pCopyRect->yTop - pDstDataPoint->y;
