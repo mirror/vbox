@@ -314,7 +314,7 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
         uint32_t cx = 0;
         uint32_t cy = 0;
 
-#ifdef VBOX_WITH_CROGL
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
         BOOL f3DSnapshot = FALSE;
         BOOL is3denabled;
         that->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
@@ -730,7 +730,7 @@ DECLCALLBACK(void) Display::displayCrCmdFree(struct VBOXCRCMDCTL* pCmd, uint32_t
     RTMemFree(pvCompletion);
 }
 
-#ifdef VBOX_WITH_CROGL
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
 int Display::crOglWindowsShow(bool fShow)
 {
     if (!mfCrOglDataHidden == !!fShow)
@@ -2445,7 +2445,7 @@ STDMETHODIMP Display::SetFramebuffer(ULONG aScreenId, IFramebuffer *aFramebuffer
                 alock.acquire();
             }
         }
-#endif /* VBOX_WITH_CROGL */
+#endif /* #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL) */
     }
     else
     {
@@ -2596,7 +2596,7 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
     return S_OK;
 }
 
-#ifdef VBOX_WITH_CROGL
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
 BOOL Display::displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreenId, uint8_t *pu8Data, uint32_t u32Width, uint32_t u32Height)
 {
     BOOL is3denabled;
@@ -3609,7 +3609,7 @@ int Display::updateDisplayData(void)
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_CROGL
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
 void Display::crViewportNotify(VMMDev *pVMMDev, ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
 {
     struct {
@@ -4393,6 +4393,7 @@ DECLCALLBACK(void) Display::displayCrHgsmiControlCompletion(int32_t result, uint
 }
 #endif
 
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
 DECLCALLBACK(void)  Display::displayCrHgcmCtlSubmitCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)
 {
     VBOXCRCMDCTL *pCmd = (VBOXCRCMDCTL*)pParam->u.pointer.addr;
@@ -4445,7 +4446,6 @@ int Display::crCtlSubmitSync(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
     return mpDrv->pVBVACallbacks->pfnCrCtlSubmitSync(mpDrv->pVBVACallbacks, pCmd, cbCmd);
 }
 
-#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
 bool  Display::handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp)
 {
 # if VBOX_WITH_VPX
@@ -5055,7 +5055,9 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IConnector.pfnCrHgsmiCommandProcess = Display::displayCrHgsmiCommandProcess;
     pThis->IConnector.pfnCrHgsmiControlProcess = Display::displayCrHgsmiControlProcess;
 #endif
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     pThis->IConnector.pfnCrHgcmCtlSubmit       = Display::displayCrHgcmCtlSubmit;
+#endif
 #ifdef VBOX_WITH_HGSMI
     pThis->IConnector.pfnVBVAEnable            = Display::displayVBVAEnable;
     pThis->IConnector.pfnVBVADisable           = Display::displayVBVADisable;

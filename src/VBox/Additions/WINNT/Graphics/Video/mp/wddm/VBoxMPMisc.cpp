@@ -179,7 +179,7 @@ PVOID vboxWddmHTableIterRemoveCur(PVBOXWDDM_HTABLE_ITERATOR pIter)
     }
     return NULL;
 }
-
+#ifdef VBOX_WITH_CROGL
 PVBOXWDDM_SWAPCHAIN vboxWddmSwapchainCreate(UINT w, UINT h)
 {
     PVBOXWDDM_SWAPCHAIN pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmMemAllocZero(sizeof (VBOXWDDM_SWAPCHAIN));
@@ -571,7 +571,7 @@ VOID vboxWddmSwapchainCtxTerm(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext
     vboxWddmSwapchainCtxDestroyAll(pDevExt, pContext);
     vboxWddmHTableDestroy(&pContext->Swapchains);
 }
-
+#endif
 NTSTATUS vboxWddmRegQueryDrvKeyName(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
 {
     WCHAR fallBackBuf[2];

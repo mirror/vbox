@@ -18,6 +18,8 @@
 #ifndef ___VBoxMPCr_h__
 #define ___VBoxMPCr_h__
 
+#ifdef VBOX_WITH_CROGL
+
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxGuestR0LibCrOgl.h>
 
@@ -214,5 +216,7 @@ uint32_t VBoxMpCrGetHostCaps();
 #define VBOXMP_CRCMD_SIZE_WINDOWDESTROY (12 + 4)
 #define VBOXMP_CRCMD_SIZE_CREATECONTEXT (256 + 32 + 4)
 #define VBOXMP_CRCMD_SIZE_DESTROYCONTEXT (12 + 4)
+
+#endif /* #ifdef VBOX_WITH_CROGL */
 
 #endif /* #ifndef ___VBoxMPCr_h__ */

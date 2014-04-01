@@ -20,7 +20,9 @@
 #define ___VBoxMPTypes_h___
 
 typedef struct _VBOXMP_DEVEXT *PVBOXMP_DEVEXT;
+#ifdef VBOX_WITH_CROGL
 typedef struct VBOXWDDM_SWAPCHAIN *PVBOXWDDM_SWAPCHAIN;
+#endif
 typedef struct VBOXWDDM_CONTEXT *PVBOXWDDM_CONTEXT;
 typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 
@@ -32,7 +34,9 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include "VBoxMPVbva.h"
 #include "VBoxMPCr.h"
 
+#ifdef VBOX_WITH_CROGL
 #include <cr_vreg.h>
+#endif
 
 #ifdef DEBUG_misha
 extern DWORD g_VBoxDbgBreakModes;
@@ -125,9 +129,11 @@ typedef struct VBOXWDDM_SOURCE
     VBOXWDDM_ALLOC_DATA AllocData;
     uint8_t u8SyncState;
     BOOLEAN bVisible;
+#ifdef VBOX_WITH_CROGL
     /* specifies whether the source has 3D overlay data visible */
     BOOLEAN fHas3DVrs;
     VBOXVR_LIST VrList;
+#endif
     VBOXVBVAINFO Vbva;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* @todo: in our case this seems more like a target property,
@@ -230,6 +236,7 @@ typedef enum
 
 #define VBOXWDDM_INVALID_COORD ((LONG)((~0UL) >> 1))
 
+#ifdef VBOX_WITH_CROGL
 typedef struct VBOXWDDM_SWAPCHAIN
 {
     LIST_ENTRY DevExtListEntry;
@@ -246,6 +253,7 @@ typedef struct VBOXWDDM_SWAPCHAIN
     UINT height;
     VBOXVR_LIST VisibleRegions;
 }VBOXWDDM_SWAPCHAIN, *PVBOXWDDM_SWAPCHAIN;
+#endif
 
 typedef struct VBOXWDDM_CONTEXT
 {
@@ -255,10 +263,12 @@ typedef struct VBOXWDDM_CONTEXT
     UINT  NodeOrdinal;
     UINT  EngineAffinity;
     BOOLEAN fRenderFromShadowDisabled;
+#ifdef VBOX_WITH_CROGL
     int32_t hostID;
     uint32_t u32CrConClientID;
     VBOXMP_CRPACKER CrPacker;
     VBOXWDDM_HTABLE Swapchains;
+#endif
     VBOXVIDEOCM_CTX CmContext;
     VBOXVIDEOCM_ALLOC_CONTEXT AllocContext;
 } VBOXWDDM_CONTEXT, *PVBOXWDDM_CONTEXT;

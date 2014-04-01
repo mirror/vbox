@@ -1478,7 +1478,11 @@ HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP
             //            params.FullScreen_PresentationInterval;
             if (!pDevice->pDevice9If)
             {
+#ifdef VBOX_WITH_CRHGSMI
                 Params.pHgsmi = &pDevice->Uhgsmi.BasePrivate.Base;
+#else
+                Params.pHgsmi = NULL;
+#endif
                 hr = pAdapter->D3D.pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, NULL, fFlags, &Params.Base, &pDevice9If);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
@@ -4690,6 +4694,7 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
             uint32_t cCPS = (((uint64_t)cCals) * 1000ULL)/TimeMs;
         }
 #endif
+#ifdef VBOX_WITH_CROGL
         if (pAdapter->u32VBox3DCaps & CR_VBOX_CAP_TEX_PRESENT)
         {
             IDirect3DSurface9 *pSrcSurfIf = NULL;
@@ -4708,6 +4713,7 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
             pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9FlushToHost((IDirect3DDevice9Ex*)pDevice->pDevice9If);
         }
         else
+#endif
         {
             pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9FlushToHost((IDirect3DDevice9Ex*)pDevice->pDevice9If);
             PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;

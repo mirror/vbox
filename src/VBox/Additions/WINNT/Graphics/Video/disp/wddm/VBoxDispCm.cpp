@@ -22,7 +22,9 @@
 
 #include <iprt/list.h>
 
+#ifdef VBOX_WITH_CROGL
 #include <cr_protocol.h>
+#endif
 
 typedef struct VBOXDISPCM_SESSION
 {
@@ -120,8 +122,14 @@ HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT 
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
         Info.enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
+#ifdef VBOX_WITH_CROGL
         Info.crVersionMajor = CR_PROTOCOL_VERSION_MAJOR;
         Info.crVersionMinor = CR_PROTOCOL_VERSION_MINOR;
+#else
+        WARN(("not expected"));
+        Info.crVersionMajor = 0;
+        Info.crVersionMinor = 0;
+#endif
         fIsCrContext = TRUE;
     }
     else
@@ -165,10 +173,12 @@ HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT 
         pContext->pDevice = pDevice;
         if (fIsCrContext)
         {
+#ifdef VBOX_WITH_CRHGSMI
             if (pDevice->pAdapter->u32VBox3DCaps & CR_VBOX_CAP_CMDVBVA)
                 vboxUhgsmiD3DInit(&pDevice->Uhgsmi, pDevice);
             else
                 vboxUhgsmiD3DEscInit(&pDevice->Uhgsmi, pDevice);
+#endif
         }
     }
     else

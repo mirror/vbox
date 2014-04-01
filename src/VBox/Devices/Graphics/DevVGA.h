@@ -621,13 +621,13 @@ int vboxVBVASaveStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 # ifdef VBOX_WITH_CRHGSMI
 int vboxVDMACrHgsmiCommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc);
 int vboxVDMACrHgsmiControlCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCmd, int rc);
-# endif
 int vboxCmdVBVACmdHostCtl(PPDMIDISPLAYVBVACALLBACKS pInterface,
                                                                struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
                                                                PFNCRCTLCOMPLETION pfnCompletion,
                                                                void *pvCompletion);
 int vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface,
                                                                struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd);
+# endif
 
 int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version);
@@ -644,11 +644,12 @@ int vboxVDMASaveStateExecPrep(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM);
 int vboxVDMASaveStateExecDone(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM);
 # endif /* VBOX_WITH_VDMA */
 
+# ifdef VBOX_WITH_CRHGSMI
 int vboxCmdVBVACmdSubmit(PVGASTATE pVGAState);
 int vboxCmdVBVACmdFlush(PVGASTATE pVGAState);
 void vboxCmdVBVACmdTimer(PVGASTATE pVGAState);
 int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL *pCtl, uint32_t cbCtl);
-
+# endif /* VBOX_WITH_CRHGSMI */
 #endif /* VBOX_WITH_HGSMI */
 
 # ifdef VBOX_WITH_VMSVGA

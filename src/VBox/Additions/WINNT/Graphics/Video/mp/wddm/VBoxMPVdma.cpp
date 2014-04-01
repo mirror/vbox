@@ -22,8 +22,11 @@
 #include "VBoxMPVhwa.h"
 #include <iprt/asm.h>
 #include "VBoxMPCr.h"
+#include <iprt/mem.h>
 
+#ifdef VBOX_WITH_CROGL
 # include <packer.h>
+#endif
 
 NTSTATUS vboxVdmaPipeConstruct(PVBOXVDMAPIPE pPipe)
 {
@@ -262,7 +265,7 @@ DECLINLINE(bool) vboxVdmaDirtyRectsIsCover(const RECT *paRects, uint32_t cRects,
     }
     return true;
 }
-
+#ifdef VBOX_WITH_CROGL
 NTSTATUS vboxVdmaPostHideSwapchain(PVBOXWDDM_SWAPCHAIN pSwapchain)
 {
     Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
@@ -282,7 +285,7 @@ NTSTATUS vboxVdmaPostHideSwapchain(PVBOXWDDM_SWAPCHAIN pSwapchain)
     }
     return STATUS_NO_MEMORY;
 }
-
+#endif
 static VOID vboxWddmBltPipeRectsTranslate(VBOXVDMAPIPE_RECTS *pRects, int x, int y)
 {
     vboxWddmRectTranslate(&pRects->ContextRect, x, y);
@@ -305,7 +308,7 @@ static VBOXVDMAPIPE_RECTS * vboxWddmBltPipeRectsDup(const VBOXVDMAPIPE_RECTS *pR
     memcpy(pDup, pRects, cbDup);
     return pDup;
 }
-
+#ifdef VBOX_WITH_CROGL
 typedef struct VBOXMP_VDMACR_WRITECOMPLETION
 {
     void *pvBufferToFree;
@@ -639,6 +642,7 @@ done:
 
     return Status;
 }
+#endif
 
 static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXMP_DEVEXT pDevExt, VBOXVDMA_CLRFILL *pCF)
 {
@@ -844,6 +848,7 @@ static NTSTATUS vboxVdmaGgDmaBlt(PVBOXMP_DEVEXT pDevExt, PVBOXVDMA_BLT pBlt)
     return Status;
 }
 
+#ifdef VBOX_WITH_CROGL
 typedef struct VBOXVDMA_CRRXGENERICSYNC
 {
     int rc;
@@ -1276,6 +1281,7 @@ static void vboxVdmaBltDirtyRectsUpdate(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_SOURCE 
         VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, pSource, &rect);
     }
 }
+#endif
 
 NTSTATUS vboxVdmaProcessBltCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, VBOXWDDM_DMA_PRIVATEDATA_BLT *pBlt)
 {
@@ -1284,14 +1290,16 @@ NTSTATUS vboxVdmaProcessBltCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContex
     PVBOXWDDM_ALLOCATION pSrcAlloc = pBlt->Blt.SrcAlloc.pAlloc;
     BOOLEAN fRenderFromSharedDisabled = pDevExt->fRenderToShadowDisabled;
     BOOLEAN fVRAMUpdated = FALSE;
-
+#ifdef VBOX_WITH_CROGL
     if (!pDstAlloc->AllocData.hostID && !pSrcAlloc->AllocData.hostID)
+#endif
     {
         /* the allocations contain a real data in VRAM, do blitting */
         vboxVdmaGgDmaBlt(pDevExt, &pBlt->Blt);
         fVRAMUpdated = TRUE;
     }
 
+#ifdef VBOX_WITH_CROGL
     if (VBOXWDDM_IS_REAL_FB_ALLOCATION(pDevExt, pDstAlloc)
             && pDstAlloc->bVisible)
     {
@@ -1310,7 +1318,7 @@ NTSTATUS vboxVdmaProcessBltCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContex
                 WARN(("vboxVdmaProcessVRegCmd failed Status 0x%x", Status));
         }
     }
-
+#endif
     return Status;
 }
 
@@ -1320,6 +1328,7 @@ NTSTATUS vboxVdmaProcessFlipCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pConte
     PVBOXWDDM_ALLOCATION pAlloc = pFlip->Flip.Alloc.pAlloc;
     VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pAlloc->AllocData.SurfDesc.VidPnSourceId];
     vboxWddmAssignPrimary(pDevExt, pSource, pAlloc, pAlloc->AllocData.SurfDesc.VidPnSourceId);
+#ifdef VBOX_WITH_CROGL
     if (pAlloc->AllocData.hostID)
     {
         RECT SrcRect;
@@ -1340,7 +1349,10 @@ NTSTATUS vboxVdmaProcessFlipCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pConte
             WARN(("vboxVdmaProcessVRegCmd failed Status 0x%x", Status));
     }
     else
+#endif
+    {
         WARN(("unexpected flip request"));
+    }
 
     return Status;
 }
@@ -1349,15 +1361,18 @@ NTSTATUS vboxVdmaProcessClrFillCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pCo
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_ALLOCATION pAlloc = pCF->ClrFill.Alloc.pAlloc;
-
+#ifdef VBOX_WITH_CROGL
     if (!pAlloc->AllocData.hostID)
+#endif
     {
         Status = vboxVdmaGgDmaColorFill(pDevExt, &pCF->ClrFill);
         if (!NT_SUCCESS(Status))
             WARN(("vboxVdmaGgDmaColorFill failed Status 0x%x", Status));
     }
+#ifdef VBOX_WITH_CROGL
     else
         WARN(("unexpected clrfill request"));
+#endif
 
     return Status;
 }
