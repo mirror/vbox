@@ -115,6 +115,14 @@ typedef struct VBVAEXBUFFERBACKWARDITER
 
 #define VBOXCMDVBVA_BUFFERSIZE(_cbCmdApprox) (RT_OFFSETOF(VBVABUFFER, au8Data) + ((RT_SIZEOFMEMB(VBVABUFFER, aRecords)/RT_SIZEOFMEMB(VBVABUFFER, aRecords[0])) * (_cbCmdApprox)))
 
+typedef struct VBOXCMDVBVA_PREEMPT_EL
+{
+    uint32_t u32SubmitFence;
+    uint32_t u32PreemptFence;
+} VBOXCMDVBVA_PREEMPT_EL;
+
+#define VBOXCMDVBVA_PREEMPT_EL_SIZE 16
+
 typedef struct VBOXCMDVBVA
 {
     VBVAEXBUFFERCONTEXT Vbva;
@@ -126,6 +134,10 @@ typedef struct VBOXCMDVBVA
 
     /* node ordinal */
     uint32_t idNode;
+
+    uint32_t cPreempt;
+    uint32_t iCurPreempt;
+    VBOXCMDVBVA_PREEMPT_EL aPreempt[VBOXCMDVBVA_PREEMPT_EL_SIZE];
 } VBOXCMDVBVA;
 
 /** @name VBVAEx APIs

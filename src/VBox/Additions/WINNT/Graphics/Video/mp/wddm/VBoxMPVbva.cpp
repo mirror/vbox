@@ -770,43 +770,59 @@ static void vboxCmdVbvaDdiNotifyCompleteIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA 
     pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
 }
 
-typedef struct VBOXCMDVBVA_NOTIFYCOMPLETED_CB
+typedef struct VBOXCMDVBVA_NOTIFYPREEMPT_CB
 {
     PVBOXMP_DEVEXT pDevExt;
     VBOXCMDVBVA *pVbva;
-    volatile UINT *pu32FenceId;
-    DXGK_INTERRUPT_TYPE enmComplType;
-} VBOXCMDVBVA_NOTIFYCOMPLETED_CB, *PVBOXCMDVBVA_NOTIFYCOMPLETED_CB;
+    int rc;
+    UINT u32SubmitFenceId;
+    UINT u32PreemptFenceId;
+} VBOXCMDVBVA_NOTIFYPREEMPT_CB;
 
-static BOOLEAN vboxCmdVbvaDdiNotifyCompleteCb(PVOID pvContext)
+static BOOLEAN vboxCmdVbvaDdiNotifyPreemptCb(PVOID pvContext)
 {
-    PVBOXCMDVBVA_NOTIFYCOMPLETED_CB pData = (PVBOXCMDVBVA_NOTIFYCOMPLETED_CB)pvContext;
-    if (*pData->pu32FenceId)
+    VBOXCMDVBVA_NOTIFYPREEMPT_CB* pData = (VBOXCMDVBVA_NOTIFYPREEMPT_CB*)pvContext;
+    PVBOXMP_DEVEXT pDevExt = pData->pDevExt;
+    VBOXCMDVBVA *pVbva = pData->pVbva;
+    if (!pData->u32SubmitFenceId || pVbva->u32FenceCompleted == pData->u32SubmitFenceId)
     {
-        UINT u32FenceId = *pData->pu32FenceId;
-        *pData->pu32FenceId = 0;
+        vboxCmdVbvaDdiNotifyCompleteIrq(pDevExt, pVbva, pData->u32PreemptFenceId, DXGK_INTERRUPT_DMA_PREEMPTED);
 
-        vboxCmdVbvaDdiNotifyCompleteIrq(pData->pDevExt, pData->pVbva, u32FenceId, pData->enmComplType);
-
-        pData->pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pData->pDevExt->u.primary.DxgkInterface.DeviceHandle);
-
-        return TRUE;
+        pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+    }
+    else
+    {
+        Assert(pVbva->u32FenceCompleted < pData->u32SubmitFenceId);
+        Assert(pVbva->cPreempt <= VBOXCMDVBVA_PREEMPT_EL_SIZE);
+        if (pVbva->cPreempt == VBOXCMDVBVA_PREEMPT_EL_SIZE)
+        {
+            WARN(("no more free elements in preempt map"));
+            pData->rc = VERR_BUFFER_OVERFLOW;
+            return FALSE;
+        }
+        uint32_t iNewEl = (pVbva->iCurPreempt + pVbva->cPreempt) % VBOXCMDVBVA_PREEMPT_EL_SIZE;
+        Assert(iNewEl < VBOXCMDVBVA_PREEMPT_EL_SIZE);
+        pVbva->aPreempt[iNewEl].u32SubmitFence = pData->u32SubmitFenceId;
+        pVbva->aPreempt[iNewEl].u32PreemptFence = pData->u32PreemptFenceId;
+        ++pVbva->cPreempt;
     }
 
-    return FALSE;
+    pData->rc = VINF_SUCCESS;
+    return TRUE;
 }
 
-static int vboxCmdVbvaDdiNotifyComplete(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, volatile UINT *pu32FenceId, DXGK_INTERRUPT_TYPE enmComplType)
+static int vboxCmdVbvaDdiNotifyPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, UINT u32SubmitFenceId, UINT u32PreemptFenceId)
 {
-    VBOXCMDVBVA_NOTIFYCOMPLETED_CB Data;
+    VBOXCMDVBVA_NOTIFYPREEMPT_CB Data;
     Data.pDevExt = pDevExt;
     Data.pVbva = pVbva;
-    Data.pu32FenceId = pu32FenceId;
-    Data.enmComplType = enmComplType;
+    Data.rc = VERR_INTERNAL_ERROR;
+    Data.u32SubmitFenceId = u32SubmitFenceId;
+    Data.u32PreemptFenceId = u32PreemptFenceId;
     BOOLEAN bDummy;
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
             pDevExt->u.primary.DxgkInterface.DeviceHandle,
-            vboxCmdVbvaDdiNotifyCompleteCb,
+            vboxCmdVbvaDdiNotifyPreemptCb,
             &Data,
             0, /* IN ULONG MessageNumber */
             &bDummy);
@@ -815,7 +831,14 @@ static int vboxCmdVbvaDdiNotifyComplete(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVb
         WARN(("DxgkCbSynchronizeExecution failed Status %#x", Status));
         return VERR_GENERAL_FAILURE;
     }
-    return Status;
+
+    if (!RT_SUCCESS(Data.rc))
+    {
+        WARN(("vboxCmdVbvaDdiNotifyPreemptCb failed rc %d", Data.rc));
+        return Data.rc;
+    }
+
+    return VINF_SUCCESS;
 }
 
 static int vboxCmdVbvaFlush(PVBOXMP_DEVEXT pDevExt, HGSMIGUESTCOMMANDCONTEXT *pCtx, bool fBufferOverflow)
@@ -1003,8 +1026,9 @@ bool VBoxCmdVbvaPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32
     uint32_t cbBuffer;
     bool fProcessed;
     uint8_t* pu8Cmd;
-    bool fFenceFound = false;
+    uint32_t u32SubmitFence = 0;
 
+    /* we can do it right here */
     while ((pu8Cmd = (uint8_t*)VBoxVBVAExBIterNext(&Iter, &cbBuffer, &fProcessed)) != NULL)
     {
         if (*pu8Cmd == VBOXCMDVBVA_OPTYPE_NOP)
@@ -1012,24 +1036,17 @@ bool VBoxCmdVbvaPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32
 
         VBOXCMDVBVA_HDR *pCmd = (VBOXCMDVBVA_HDR*)pu8Cmd;
 
-        if (pCmd->u32FenceID != u32FenceID)
+        if (ASMAtomicCmpXchgU8(&pCmd->u8State, VBOXCMDVBVA_STATE_CANCELLED, VBOXCMDVBVA_STATE_SUBMITTED)
+                || pCmd->u8State == VBOXCMDVBVA_STATE_CANCELLED)
             continue;
 
-        fFenceFound = true;
+        Assert(pCmd->u8State == VBOXCMDVBVA_STATE_IN_PROGRESS);
 
-        if (!ASMAtomicCmpXchgU8(&pCmd->u8State, VBOXCMDVBVA_STATE_CANCELLED, VBOXCMDVBVA_STATE_SUBMITTED))
-        {
-            Assert(pCmd->u8State == VBOXCMDVBVA_STATE_IN_PROGRESS);
-            break;
-        }
-
-        /* we have canceled the command successfully */
-        vboxCmdVbvaDdiNotifyComplete(pDevExt, pVbva, &pCmd->u32FenceID, DXGK_INTERRUPT_DMA_PREEMPTED);
-        return true;
+        u32SubmitFence = ASMAtomicUoReadU32(&pCmd->u32FenceID);
+        break;
     }
 
-    if (!fFenceFound)
-        vboxCmdVbvaDdiNotifyComplete(pDevExt, pVbva, &u32FenceID, DXGK_INTERRUPT_DMA_PREEMPTED);
+    vboxCmdVbvaDdiNotifyPreempt(pDevExt, pVbva, u32SubmitFence, u32FenceID);
 
     return false;
 }
@@ -1060,29 +1077,40 @@ bool VBoxCmdVbvaCheckCompletedIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva)
                 || u8State == VBOXCMDVBVA_STATE_CANCELLED);
         Assert(u32FenceID);
         VBoxVBVAExCBufferCompleted(&pVbva->Vbva);
-        DXGK_INTERRUPT_TYPE enmDdiNotify;
 
         if (u8State == VBOXCMDVBVA_STATE_IN_PROGRESS)
         {
-            if (u32FenceID)
-            {
+            Assert(u32FenceID);
+            if (!u32FenceID)
+                continue;
+
 #ifdef DEBUG_misha
-                Assert(u32FenceID == pVbva->u32FenceCompleted + 1);
+            Assert(u32FenceID == pVbva->u32FenceCompleted + 1);
 #endif
-                pVbva->u32FenceCompleted = u32FenceID;
-            }
-            enmDdiNotify = DXGK_INTERRUPT_DMA_COMPLETED;
+            pVbva->u32FenceCompleted = u32FenceID;
         }
         else
         {
             Assert(u8State == VBOXCMDVBVA_STATE_CANCELLED);
-            enmDdiNotify = DXGK_INTERRUPT_DMA_PREEMPTED;
-            /* to prevent concurrent notifications from DdiPreemptCommand */
-            pCmd->u32FenceID = 0;
+            continue;
         }
 
-        if (u32FenceID)
-            vboxCmdVbvaDdiNotifyCompleteIrq(pDevExt, pVbva, u32FenceID, enmDdiNotify);
+        Assert(u32FenceID);
+        vboxCmdVbvaDdiNotifyCompleteIrq(pDevExt, pVbva, u32FenceID, DXGK_INTERRUPT_DMA_COMPLETED);
+
+        if (pVbva->cPreempt && pVbva->aPreempt[pVbva->iCurPreempt].u32SubmitFence == u32FenceID)
+        {
+            Assert(pVbva->aPreempt[pVbva->iCurPreempt].u32PreemptFence);
+            vboxCmdVbvaDdiNotifyCompleteIrq(pDevExt, pVbva, pVbva->aPreempt[pVbva->iCurPreempt].u32PreemptFence, DXGK_INTERRUPT_DMA_PREEMPTED);
+            --pVbva->cPreempt;
+            if (!pVbva->cPreempt)
+                pVbva->iCurPreempt = 0;
+            else
+            {
+                ++pVbva->iCurPreempt;
+                pVbva->iCurPreempt %= VBOXCMDVBVA_PREEMPT_EL_SIZE;
+            }
+        }
 
         fHasCommandsCompletedPreempted = true;
     }
