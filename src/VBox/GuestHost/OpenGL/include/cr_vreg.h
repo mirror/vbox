@@ -87,6 +87,9 @@ DECLINLINE(void) VBoxRectIntersect(PRTRECT pRect1, const RTRECT * pRect2)
     pRect1->yTop = RT_MAX(pRect1->yTop, pRect2->yTop);
     pRect1->xRight = RT_MIN(pRect1->xRight, pRect2->xRight);
     pRect1->yBottom = RT_MIN(pRect1->yBottom, pRect2->yBottom);
+    /* ensure the rect is valid */
+    pRect1->xRight = RT_MAX(pRect1->xRight, pRect1->xLeft);
+    pRect1->yBottom = RT_MAX(pRect1->yBottom, pRect1->yTop);
 }
 
 DECLINLINE(void) VBoxRectIntersected(const RTRECT *pRect1, const RTRECT * pRect2, RTRECT *pResult)
