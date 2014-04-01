@@ -49,52 +49,17 @@
  *    Gareth Hughes <gareth@valinux.com>
  */
 
-#include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
-# include <generated/autoconf.h>
-#else
-# ifndef AUTOCONF_INCLUDED
-#  include <linux/autoconf.h>
-# endif
-#endif
-#include <linux/module.h>
 #include "version-generated.h"
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
-#  ifdef RHEL_RELEASE_CODE
-#   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6, 1)
-#    define DRM_RHEL61
-#   endif
-#   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6, 3)
-#    define DRM_FOPS_AS_POINTER
-#   endif
-#   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6, 4)
-#    define DRM_NO_RECLAIM_BUFFERS
-#   endif
-#  endif
-# endif
-
-#include "drm/drmP.h"
+#include <linux/module.h>
+#include <drm/drmP.h>
 #include "vboxvideo_drm.h"
 
-# ifndef RHEL_RELEASE_CODE
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 39) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
-#   if defined(DRM_MODE_OBJECT_PLANE) && defined(DRM_IOCTL_MODE_ADDFB2)
-#    define DRM_FOPS_AS_POINTER
-#   endif
-#  endif
-# endif
-
-#ifdef CONFIG_SUSE_KERNEL
-/* This is to cover the SLES 11 SP3 kernel back-ports. */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,61)
-#  if LINUX_VERSION_CODE < KERNEL_VERSION(3,1,0)
-#    define DRM_FOPS_AS_POINTER
-#    define DRM_NO_RECLAIM_BUFFERS
-#  endif
-# endif
+/* This definition and the file-operations-as-pointer change were both added in
+ * kernel 3.3.  All back-ports of the structure change to distribution kernels
+ * that I have checked also back-ported the definition at the same time. */
+#ifdef DRM_IOCTL_MODE_ADDFB2
+# define DRM_FOPS_AS_POINTER
 #endif
 
 static struct pci_device_id pciidlist[] = {
@@ -105,13 +70,10 @@ MODULE_DEVICE_TABLE(pci, pciidlist);
 
 int vboxvideo_driver_load(struct drm_device * dev, unsigned long flags)
 {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
-    return drm_vblank_init(dev, 1);
-#else
     return 0;
-#endif
 }
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0) || defined(DRM_FOPS_AS_POINTER)
+
+#ifdef DRM_FOPS_AS_POINTER
 /* since linux-3.3.0-rc1 drm_driver::fops is pointer */
 static struct file_operations driver_fops =
 {
@@ -128,15 +90,7 @@ static struct drm_driver driver =
 {
     /* .driver_features = DRIVER_USE_MTRR, */
     .load = vboxvideo_driver_load,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0) && !defined(DRM_NO_RECLAIM_BUFFERS)
-    .reclaim_buffers = drm_core_reclaim_buffers,
-#endif
-    /* As of Linux 2.6.37, always the internal functions are used. */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37) && !defined(DRM_RHEL61)
-    .get_map_ofs = drm_core_get_map_ofs,
-    .get_reg_ofs = drm_core_get_reg_ofs,
-#endif
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0) && !defined(DRM_FOPS_AS_POINTER)
+# ifndef DRM_FOPS_AS_POINTER
     .fops =
     {
         .owner = THIS_MODULE,
@@ -144,7 +98,7 @@ static struct drm_driver driver =
         .release = drm_release,
         /* This was changed with Linux 2.6.33 but Fedora backported this
          * change to their 2.6.32 kernel. */
-#if defined(DRM_UNLOCKED) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
+#if defined(DRM_UNLOCKED)
         .unlocked_ioctl = drm_ioctl,
 #else
         .ioctl = drm_ioctl,
@@ -152,7 +106,7 @@ static struct drm_driver driver =
         .mmap = drm_mmap,
         .poll = drm_poll,
     },
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0) || defined(DRM_FOPS_AS_POINTER) */
+#else /* defined(DRM_FOPS_AS_POINTER) */
     .fops = &driver_fops,
 #endif
 #ifndef DRIVER_BUS_PCI
@@ -201,9 +155,6 @@ module_exit(vboxvideo_exit);
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
-
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
-
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING);
 #endif
