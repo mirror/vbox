@@ -913,6 +913,9 @@ int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMD
     Assert(pCmd->u32FenceID);
 
     pCmd->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+#ifdef DEBUG_misha
+    Assert(pCmd->u32FenceID == pVbva->u32FenceSubmitted + 1);
+#endif
     pVbva->u32FenceSubmitted = pCmd->u32FenceID;
 
     if (VBoxVBVAExGetSize(&pVbva->Vbva) < cbCmd)
@@ -1062,7 +1065,12 @@ bool VBoxCmdVbvaCheckCompletedIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva)
         if (u8State == VBOXCMDVBVA_STATE_IN_PROGRESS)
         {
             if (u32FenceID)
+            {
+#ifdef DEBUG_misha
+                Assert(u32FenceID == pVbva->u32FenceCompleted + 1);
+#endif
                 pVbva->u32FenceCompleted = u32FenceID;
+            }
             enmDdiNotify = DXGK_INTERRUPT_DMA_COMPLETED;
         }
         else
