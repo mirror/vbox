@@ -845,6 +845,9 @@ void UIMediumManager::sltHandleCurrentTabChanged()
     if (qobject_cast<QTreeWidget*>(focusWidget()))
         pTreeWidget->setFocus();
 
+    /* Update action icons: */
+    updateActionIcons();
+
     /* Re-fetch currently chosen medium-item: */
     refetchCurrentChosenMediumItem();
 }
@@ -1005,9 +1008,6 @@ void UIMediumManager::prepareActions()
     {
         /* Configure copy-action: */
         m_pActionCopy->setShortcut(QKeySequence("Ctrl+O"));
-        m_pActionCopy->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                       ":/hd_copy_22px.png", ":/hd_copy_16px.png",
-                                                       ":/hd_copy_disabled_22px.png", ":/hd_copy_disabled_16px.png"));
         connect(m_pActionCopy, SIGNAL(triggered()), this, SLOT(sltCopyMedium()));
     }
 
@@ -1016,9 +1016,6 @@ void UIMediumManager::prepareActions()
     {
         /* Configure modify-action: */
         m_pActionModify->setShortcut(QKeySequence("Ctrl+Space"));
-        m_pActionModify->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                         ":/hd_modify_22px.png", ":/hd_modify_16px.png",
-                                                         ":/hd_modify_disabled_22px.png", ":/hd_modify_disabled_16px.png"));
         connect(m_pActionModify, SIGNAL(triggered()), this, SLOT(sltModifyMedium()));
     }
 
@@ -1027,9 +1024,6 @@ void UIMediumManager::prepareActions()
     {
         /* Configure remove-action: */
         m_pActionRemove->setShortcut(QKeySequence(QKeySequence::Delete));
-        m_pActionRemove->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                         ":/hd_remove_22px.png", ":/hd_remove_16px.png",
-                                                         ":/hd_remove_disabled_22px.png", ":/hd_remove_disabled_16px.png"));
         connect(m_pActionRemove, SIGNAL(triggered()), this, SLOT(sltRemoveMedium()));
     }
 
@@ -1038,9 +1032,6 @@ void UIMediumManager::prepareActions()
     {
         /* Configure release-action: */
         m_pActionRelease->setShortcut(QKeySequence("Ctrl+L"));
-        m_pActionRelease->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                          ":/hd_release_22px.png", ":/hd_release_16px.png",
-                                                          ":/hd_release_disabled_22px.png", ":/hd_release_disabled_16px.png"));
         connect(m_pActionRelease, SIGNAL(triggered()), this, SLOT(sltReleaseMedium()));
     }
 
@@ -1049,11 +1040,11 @@ void UIMediumManager::prepareActions()
     {
         /* Configure refresh-action: */
         m_pActionRefresh->setShortcut(QKeySequence(QKeySequence::Refresh));
-        m_pActionRefresh->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                          ":/refresh_22px.png", ":/refresh_16px.png",
-                                                          ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
         connect(m_pActionRefresh, SIGNAL(triggered()), this, SLOT(sltRefreshAll()));
     }
+
+    /* Update action icons: */
+    updateActionIcons();
 }
 
 void UIMediumManager::prepareMenuBar()
@@ -1353,6 +1344,43 @@ void UIMediumManager::updateActions()
     m_pActionModify->setEnabled(fActionEnabledModify);
     m_pActionRemove->setEnabled(fActionEnabledRemove);
     m_pActionRelease->setEnabled(fActionEnabledRelease);
+}
+
+void UIMediumManager::updateActionIcons()
+{
+    QString strPrefix;
+    switch (currentMediumType())
+    {
+        case UIMediumType_HardDisk: strPrefix = "hd"; break;
+        case UIMediumType_DVD:      strPrefix = "cd"; break;
+        case UIMediumType_Floppy:   strPrefix = "fd"; break;
+        default: break;
+    }
+    AssertReturnVoid(!strPrefix.isNull());
+    m_pActionCopy->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
+                                                   QString(":/%1_copy_22px.png").arg(strPrefix),
+                                                   QString(":/%1_copy_16px.png").arg(strPrefix),
+                                                   QString(":/%1_copy_disabled_22px.png").arg(strPrefix),
+                                                   QString(":/%1_copy_disabled_16px.png").arg(strPrefix)));
+    m_pActionModify->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
+                                                     QString(":/%1_modify_22px.png").arg(strPrefix),
+                                                     QString(":/%1_modify_16px.png").arg(strPrefix),
+                                                     QString(":/%1_modify_disabled_22px.png").arg(strPrefix),
+                                                     QString(":/%1_modify_disabled_16px.png").arg(strPrefix)));
+    m_pActionRemove->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
+                                                     QString(":/%1_remove_22px.png").arg(strPrefix),
+                                                     QString(":/%1_remove_16px.png").arg(strPrefix),
+                                                     QString(":/%1_remove_disabled_22px.png").arg(strPrefix),
+                                                     QString(":/%1_remove_disabled_16px.png").arg(strPrefix)));
+    m_pActionRelease->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
+                                                      QString(":/%1_release_22px.png").arg(strPrefix),
+                                                      QString(":/%1_release_16px.png").arg(strPrefix),
+                                                      QString(":/%1_release_disabled_22px.png").arg(strPrefix),
+                                                      QString(":/%1_release_disabled_16px.png").arg(strPrefix)));
+    if (m_pActionRefresh->icon().isNull())
+        m_pActionRefresh->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
+                                                          ":/refresh_22px.png", ":/refresh_16px.png",
+                                                          ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
 }
 
 void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, Action action)
