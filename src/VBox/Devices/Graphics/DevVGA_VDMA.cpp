@@ -665,16 +665,20 @@ typedef struct VBOXVDMAHOST
 {
     PHGSMIINSTANCE pHgsmi;
     PVGASTATE pVGAState;
+#ifdef VBOX_WITH_CRHGSMI
     VBVAEXHOSTCONTEXT CmdVbva;
     VBOXVDMATHREAD Thread;
     VBOXCRCMD_SVRINFO CrSrvInfo;
     VBVAEXHOSTCTL* pCurRemainingHostCtl;
     RTSEMEVENTMULTI HostCrCtlCompleteEvent;
     int32_t volatile i32cHostCrCtlCompleted;
+#endif
 #ifdef VBOX_VDMA_WITH_WATCHDOG
     PTMTIMERR3 WatchDogTimer;
 #endif
 } VBOXVDMAHOST, *PVBOXVDMAHOST;
+
+#ifdef VBOX_WITH_CRHGSMI
 
 int VBoxVDMAThreadNotifyConstructSucceeded(PVBOXVDMATHREAD pThread)
 {
@@ -777,8 +781,6 @@ void VBoxVDMAThreadTerm(PVBOXVDMATHREAD pThread)
 }
 
 static int vdmaVBVACtlSubmitSync(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL* pCtl, VBVAEXHOSTCTL_SOURCE enmSource);
-
-#ifdef VBOX_WITH_CRHGSMI
 
 typedef DECLCALLBACK(void) FNVBOXVDMACRCTL_CALLBACK(PVGASTATE pVGAState, PVBOXVDMACMD_CHROMIUM_CTL pCmd, void* pvContext);
 typedef FNVBOXVDMACRCTL_CALLBACK *PFNVBOXVDMACRCTL_CALLBACK;
@@ -1705,36 +1707,6 @@ int vboxVDMACrHgsmiControlCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PV
     return VINF_SUCCESS;
 }
 
-#endif
-
-#ifdef VBOX_VDMA_WITH_WORKERTHREAD
-/* to simplify things and to avoid extra backend if modifications we assume the VBOXVDMA_RECTL is the same as VBVACMDHDR */
-AssertCompile(sizeof(VBOXVDMA_RECTL) == sizeof(VBVACMDHDR));
-AssertCompile(RT_SIZEOFMEMB(VBOXVDMA_RECTL, left) == RT_SIZEOFMEMB(VBVACMDHDR, x));
-AssertCompile(RT_SIZEOFMEMB(VBOXVDMA_RECTL, top) == RT_SIZEOFMEMB(VBVACMDHDR, y));
-AssertCompile(RT_SIZEOFMEMB(VBOXVDMA_RECTL, width) == RT_SIZEOFMEMB(VBVACMDHDR, w));
-AssertCompile(RT_SIZEOFMEMB(VBOXVDMA_RECTL, height) == RT_SIZEOFMEMB(VBVACMDHDR, h));
-AssertCompile(RT_OFFSETOF(VBOXVDMA_RECTL, left) == RT_OFFSETOF(VBVACMDHDR, x));
-AssertCompile(RT_OFFSETOF(VBOXVDMA_RECTL, top) == RT_OFFSETOF(VBVACMDHDR, y));
-AssertCompile(RT_OFFSETOF(VBOXVDMA_RECTL, width) == RT_OFFSETOF(VBVACMDHDR, w));
-AssertCompile(RT_OFFSETOF(VBOXVDMA_RECTL, height) == RT_OFFSETOF(VBVACMDHDR, h));
-
-static int vboxVDMANotifyPrimaryUpdate (PVGASTATE pVGAState, unsigned uScreenId, const VBOXVDMA_RECTL * pRectl)
-{
-    pVGAState->pDrv->pfnVBVAUpdateBegin (pVGAState->pDrv, uScreenId);
-
-    /* Updates the rectangle and sends the command to the VRDP server. */
-    pVGAState->pDrv->pfnVBVAUpdateProcess (pVGAState->pDrv, uScreenId,
-            (const PVBVACMDHDR)pRectl /* <- see above AssertCompile's and comments */,
-            sizeof (VBOXVDMA_RECTL));
-
-    pVGAState->pDrv->pfnVBVAUpdateEnd (pVGAState->pDrv, uScreenId, pRectl->left, pRectl->top,
-                                               pRectl->width, pRectl->height);
-
-    return VINF_SUCCESS;
-}
-#endif
-
 static int vboxVDMACmdExecBltPerform(PVBOXVDMAHOST pVdma,
         uint8_t *pvDstSurf, const uint8_t *pvSrcSurf,
         const PVBOXVDMA_SURF_DESC pDstDesc, const PVBOXVDMA_SURF_DESC pSrcDesc,
@@ -1888,12 +1860,6 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
 
         vboxVDMARectlUnite(&updateRectl, &pBlt->dstRectl);
     }
-
-#ifdef VBOX_VDMA_WITH_WORKERTHREAD
-    int iView = 0;
-    /* @todo: fixme: check if update is needed and get iView */
-    vboxVDMANotifyPrimaryUpdate (pVdma->pVGAState, iView, &updateRectl);
-#endif
 
     return cbBlt;
 }
@@ -2191,6 +2157,8 @@ static void vboxVDMAControlProcess(PVBOXVDMAHOST pVdma, PVBOXVDMA_CTL pCmd)
     AssertRC(rc);
 }
 
+#endif /* #ifdef VBOX_WITH_CRHGSMI */
+
 #ifdef VBOX_VDMA_WITH_WATCHDOG
 static DECLCALLBACK(void) vboxVDMAWatchDogTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
@@ -2213,26 +2181,24 @@ static int vboxVDMAWatchDogCtl(struct VBOXVDMAHOST *pVdma, uint32_t cMillis)
 int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
 {
     int rc;
-#ifdef VBOX_VDMA_WITH_WORKERTHREAD
-    PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)RTMemAllocZ(RT_OFFSETOF(VBOXVDMAHOST, CmdPool.aCmds[cPipeElements]));
-#else
     PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)RTMemAllocZ(sizeof(*pVdma));
-#endif
     Assert(pVdma);
     if (pVdma)
     {
         pVdma->pHgsmi = pVGAState->pHGSMI;
         pVdma->pVGAState = pVGAState;
 
-        rc = RTSemEventMultiCreate(&pVdma->HostCrCtlCompleteEvent);
-        if (RT_SUCCESS(rc))
-        {
 #ifdef VBOX_VDMA_WITH_WATCHDOG
             rc = PDMDevHlpTMTimerCreate(pVGAState->pDevInsR3, TMCLOCK_REAL, vboxVDMAWatchDogTimer,
                                         pVdma, TMTIMER_FLAGS_NO_CRIT_SECT,
                                         "VDMA WatchDog Timer", &pVdma->WatchDogTimer);
             AssertRC(rc);
 #endif
+
+#ifdef VBOX_WITH_CRHGSMI
+        rc = RTSemEventMultiCreate(&pVdma->HostCrCtlCompleteEvent);
+        if (RT_SUCCESS(rc))
+        {
             rc = VBoxVBVAExHSInit(&pVdma->CmdVbva);
             if (RT_SUCCESS(rc))
             {
@@ -2240,9 +2206,7 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
                 if (RT_SUCCESS(rc))
                 {
                     pVGAState->pVdma = pVdma;
-#ifdef VBOX_WITH_CRHGSMI
                     int rcIgnored = vboxVDMACrCtlHgsmiSetup(pVdma); NOREF(rcIgnored); /** @todo is this ignoring intentional? */
-#endif
                     return VINF_SUCCESS;
                 }
                 else
@@ -2260,6 +2224,10 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
 
 
         RTMemFree(pVdma);
+#else
+        pVGAState->pVdma = pVdma;
+        return VINF_SUCCESS;
+#endif
     }
     else
         rc = VERR_OUT_OF_RESOURCES;
@@ -2269,6 +2237,7 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
 
 int vboxVDMAReset(struct VBOXVDMAHOST *pVdma)
 {
+#ifdef VBOX_WITH_CRHGSMI
     VBVAEXHOSTCTL Ctl;
     Ctl.enmType = VBVAEXHOSTCTL_TYPE_HH_RESET;
     int rc = vdmaVBVACtlSubmitSync(pVdma, &Ctl, VBVAEXHOSTCTL_SOURCE_HOST_ANY);
@@ -2277,11 +2246,13 @@ int vboxVDMAReset(struct VBOXVDMAHOST *pVdma)
         WARN(("vdmaVBVACtlSubmitSync failed %d\n", rc));
         return rc;
     }
+#endif
     return VINF_SUCCESS;
 }
 
 int vboxVDMADestruct(struct VBOXVDMAHOST *pVdma)
 {
+#ifdef VBOX_WITH_CRHGSMI
     VBVAEXHOSTCTL Ctl;
     Ctl.enmType = VBVAEXHOSTCTL_TYPE_HH_TERM;
     int rc = vdmaVBVACtlSubmitSync(pVdma, &Ctl, VBVAEXHOSTCTL_SOURCE_HOST_ANY);
@@ -2293,6 +2264,7 @@ int vboxVDMADestruct(struct VBOXVDMAHOST *pVdma)
     VBoxVDMAThreadTerm(&pVdma->Thread);
     VBoxVBVAExHSTerm(&pVdma->CmdVbva);
     RTSemEventMultiDestroy(pVdma->HostCrCtlCompleteEvent);
+#endif
     RTMemFree(pVdma);
     return VINF_SUCCESS;
 }
@@ -2347,7 +2319,6 @@ int vboxVDMASaveStateExecDone(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
 
 void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd, uint32_t cbCmd)
 {
-#if 1
     PHGSMIINSTANCE pIns = pVdma->pHgsmi;
 
     switch (pCmd->enmCtl)
@@ -2367,40 +2338,12 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd, uint32_t cb
             break;
 #endif
         default:
-            AssertBreakpoint();
+            WARN(("cmd not supported"));
             pCmd->i32Result = VERR_NOT_SUPPORTED;
     }
 
     int rc = VBoxSHGSMICommandComplete (pIns, pCmd);
     AssertRC(rc);
-#else
-    /* test asinch completion */
-    VBOXVDMACMD_SUBMIT_CONTEXT Context;
-    Context.pVdma = pVdma;
-    Context.Cmd.enmType = VBOXVDMAPIPE_CMD_TYPE_DMACTL;
-    Context.Cmd.u.pCtl = pCmd;
-
-    int rc = vboxVDMAPipeModifyClient(&pVdma->Pipe, vboxVDMACommandSubmitCb, &Context);
-    AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-        Assert(Context.bQueued);
-        if (Context.bQueued)
-        {
-            /* success */
-            return;
-        }
-        rc = VERR_OUT_OF_RESOURCES;
-    }
-
-    /* failure */
-    Assert(RT_FAILURE(rc));
-    PHGSMIINSTANCE pIns = pVdma->pHgsmi;
-    pCmd->i32Result = rc;
-    int tmpRc = VBoxSHGSMICommandComplete (pIns, pCmd);
-    AssertRC(tmpRc);
-
-#endif
 }
 
 void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd, uint32_t cbCmd)
@@ -2421,44 +2364,17 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd, uint32_t
         AssertRC(rc);
         return;
     }
-#endif
 
-#ifndef VBOX_VDMA_WITH_WORKERTHREAD
     vboxVDMACommandProcess(pVdma, pCmd, cbCmd);
 #else
-
-# ifdef DEBUG_misha
-    Assert(0);
-# endif
-
-    VBOXVDMACMD_SUBMIT_CONTEXT Context;
-    Context.pVdma = pVdma;
-    Context.Cmd.enmType = VBOXVDMAPIPE_CMD_TYPE_DMACMD;
-    Context.Cmd.u.pDr = pCmd;
-
-    rc = vboxVDMAPipeModifyClient(&pVdma->Pipe, vboxVDMACommandSubmitCb, &Context);
-    AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-        Assert(Context.bQueued);
-        if (Context.bQueued)
-        {
-            /* success */
-            return;
-        }
-        rc = VERR_OUT_OF_RESOURCES;
-    }
-    /* failure */
-    Assert(RT_FAILURE(rc));
-    PHGSMIINSTANCE pIns = pVdma->pHgsmi;
     pCmd->rc = rc;
-    int tmpRc = VBoxSHGSMICommandComplete (pIns, pCmd);
-    AssertRC(tmpRc);
+    rc = VBoxSHGSMICommandComplete (pVdma->pHgsmi, pCmd);
+    AssertRC(rc);
 #endif
 }
 
 /**/
-
+#ifdef VBOX_WITH_CRHGSMI
 static int vdmaVBVACtlSubmit(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL* pCtl, VBVAEXHOSTCTL_SOURCE enmSource, PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
 {
     int rc = VBoxVBVAExHCtlSubmit(&pVdma->CmdVbva, pCtl, enmSource, pfnComplete, pvComplete);
@@ -2793,3 +2709,5 @@ void vboxCmdVBVACmdTimer(PVGASTATE pVGAState)
         return;
     vboxVDMACmdSubmitPerform(pVGAState->pVdma);
 }
+
+#endif

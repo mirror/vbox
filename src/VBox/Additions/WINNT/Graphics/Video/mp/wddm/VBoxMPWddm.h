@@ -127,11 +127,13 @@ DECLINLINE(VBOXVIDEOOFFSET) vboxWddmVramAddrToOffset(PVBOXMP_DEVEXT pDevExt, PHY
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
 DECLINLINE(void) vboxWddmAssignShadow(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
+#ifdef VBOX_WITH_CROGL
     if (pDevExt->fCmdVbvaEnabled)
     {
         WARN(("Trying to assign shadow surface for CmdVbva enabled mode!"));
         return;
     }
+#endif
 
     if (pSource->pShadowAllocation == pAllocation)
     {
@@ -237,12 +239,14 @@ DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, P
 
 bool vboxWddmGhDisplayCheckSetInfoFromSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource);
 
+#ifdef VBOX_WITH_CROGL
 #define VBOXWDDMENTRY_2_SWAPCHAIN(_pE) ((PVBOXWDDM_SWAPCHAIN)((uint8_t*)(_pE) - RT_OFFSETOF(VBOXWDDM_SWAPCHAIN, DevExtListEntry)))
 
 BOOLEAN DxgkDdiInterruptRoutineNew(
     IN CONST PVOID MiniportDeviceContext,
     IN ULONG MessageNumber
     );
+#endif
 
 #ifdef VBOX_WDDM_WIN8
 # define VBOXWDDM_IS_DISPLAYONLY() (g_VBoxDisplayOnly)

@@ -570,7 +570,11 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
             PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
             HANDLE hSharedHandle = pAllocation->hSharedHandle;
             IDirect3DSurface9* pD3D9Surf;
-            if ((pDevice->pAdapter->u32VBox3DCaps & CR_VBOX_CAP_TEX_PRESENT) || pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
+            if (
+#ifdef VBOX_WITH_CROGL
+                    (pDevice->pAdapter->u32VBox3DCaps & CR_VBOX_CAP_TEX_PRESENT) ||
+#endif
+                    pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
             {
                 hr = pDevice9If->CreateRenderTarget(pAllocation->SurfDesc.width,
                         pAllocation->SurfDesc.height,
@@ -824,7 +828,11 @@ HRESULT VBoxD3DIfDeviceCreateDummy(PVBOXWDDMDISP_DEVICE pDevice)
     Assert(!pDevice->pDevice9If);
     VBOXWINEEX_D3DPRESENT_PARAMETERS Params;
     VBoxD3DIfFillPresentParams(&Params.Base, &Rc, 2);
+#ifdef VBOX_WITH_CRHGSMI
     Params.pHgsmi = &pDevice->Uhgsmi.BasePrivate.Base;
+#else
+    Params.pHgsmi = NULL;
+#endif
     DWORD fFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
     PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
     IDirect3DDevice9 * pDevice9If = NULL;

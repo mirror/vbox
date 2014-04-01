@@ -5231,7 +5231,9 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
     vbvaTimerCb(pThis);
 #endif
 
+#ifdef VBOX_WITH_CRHGSMI
     vboxCmdVBVACmdTimer(pThis);
+#endif
 }
 
 #ifdef VBOX_WITH_VMSVGA
@@ -5951,11 +5953,11 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #if defined(VBOX_WITH_CRHGSMI)
     pThis->IVBVACallbacks.pfnCrHgsmiCommandCompleteAsync = vboxVDMACrHgsmiCommandCompleteAsync;
     pThis->IVBVACallbacks.pfnCrHgsmiControlCompleteAsync = vboxVDMACrHgsmiControlCompleteAsync;
-# endif
-#endif
+
     pThis->IVBVACallbacks.pfnCrCtlSubmit = vboxCmdVBVACmdHostCtl;
     pThis->IVBVACallbacks.pfnCrCtlSubmitSync = vboxCmdVBVACmdHostCtlSync;
-
+# endif
+#endif
     /*
      * We use our own critical section to avoid unncessary pointer indirections
      * in interface methods (as we all as for historical reasons).
