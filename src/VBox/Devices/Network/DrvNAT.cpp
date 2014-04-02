@@ -220,9 +220,7 @@ typedef DRVNAT *PDRVNAT;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho);
-DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(
-  PDRVNAT pThis,
-  bool fFlapLink);
+DECLINLINE(void) drvNATUpdateDNS(PDRVNAT pThis, bool fFlapLink);
 static DECLCALLBACK(int) drvNATReinitializeHostNameResolving(PDRVNAT pThis);
 
 
@@ -978,7 +976,7 @@ static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRe
     {
         CFArrayRef hArrAddresses = (CFArrayRef)CFDictionaryGetValue(hDnsDict, kSCPropNetDNSServerAddresses);
         if (hArrAddresses)
-            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, /* fFlapLink */ true);
+            drvNATUpdateDNS(pThis, /* fFlapLink */ true);
 
         CFRelease(hDnsDict);
     }
@@ -1059,7 +1057,7 @@ static DECLCALLBACK(void) drvNATResume(PPDMDRVINS pDrvIns)
             /* XXX: when in doubt, use brute force */
             fFlapLink = true;
 #endif
-            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, fFlapLink);
+            drvNATUpdateDNS(pThis, fFlapLink);
             return;
         default: /* Ignore every other resume reason. */
             /* do nothing */
@@ -1088,8 +1086,7 @@ static DECLCALLBACK(int) drvNATReinitializeHostNameResolving(PDRVNAT pThis)
  * so with changing other variables (place where we handle update) the main mechanism of update
  * _won't_ be changed, the only thing will change is drop of fFlapLink parameter.
  */
-DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(PDRVNAT pThis,
-                                                                        bool fFlapLink)
+DECLINLINE(void) drvNATUpdateDNS(PDRVNAT pThis, bool fFlapLink)
 {
     int strategy = slirp_host_network_configuration_change_strategy_selector(pThis->pNATState);
     switch (strategy)
@@ -1113,8 +1110,7 @@ DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(PDRVN
                                           RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                                           (PFNRT)drvNATReinitializeHostNameResolving, 1, pThis);
                 if (RT_SUCCESS(rc))
-                    drvNATNotifyNATThread(pThis,
-                                          "drvNATHostNetworkConfigurationChangeEventStrategySelector");
+                    drvNATNotifyNATThread(pThis, "drvNATUpdateDNS");
 
                 return;
             }
