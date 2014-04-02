@@ -29,14 +29,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "internal/iprt.h"
-
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <openssl/pem.h>
-#include <openssl/x509.h>
-#include <openssl/x509v3.h>
-
 #include <iprt/x509.h>
+
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/err.h>
@@ -44,47 +38,53 @@
 #include <iprt/manifest.h>
 #include <iprt/string.h>
 
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+
+
 /**
  * Preparation before start to work with openssl
  *
- * @returns none
- *
+ * @returns IPRT status code.
  */
-RTDECL(void) RTX509PrepareOpenSSL()
+RTDECL(int) RTX509PrepareOpenSSL(void)
 {
     OpenSSL_add_all_digests();
     ERR_load_BIO_strings();
     ERR_load_crypto_strings();
+    return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTX509PrepareOpenSSL);
 
+
 /**
- * Read X509 certificate from the given memory buffer into the 
- * internal structure.
+ * Read X509 certificate from the given memory buffer into the internal
+ * structure.
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  *
- * @param   pvBuf                 string representation
- *                                containing X509 certificate
- *                                in PEM format
- * @param   cbSize                The amount of data (in bytes)
- * @param   out_cert              pointer to the structure where 
- *                                the info about X509
- *                                certificate will be stored
+ * @param   pvBuf           String representation containing X509
+ *                          certificate in PEM format.
+ * @param   cbBuf           The amount of data @a pvBuf points to.
+ * @param   ppOutCert       Where to store the pointer to the structure where
+ *                          the info about X509 certificate will be stored.
  */
-static int RTX509ReadCertificateFromPEM(void *pvBuf, unsigned int cbSize, X509** out_cert)
+static int rtX509ReadCertificateFromPEM(void const *pvPem, unsigned int cbPem, X509 **ppOutCert)
 {
-    int rc = VINF_SUCCESS;
+    BIO *pBio = BIO_new(BIO_s_mem());
+    if (!pBio)
+        return VERR_NO_MEMORY;
 
-    BIO *bio_memory = BIO_new(BIO_s_mem());
-    int cbytes = BIO_write(bio_memory,(const void*)pvBuf ,cbSize) ;
-    *out_cert = PEM_read_bio_X509(bio_memory,NULL,0,NULL);
-    BIO_free(bio_memory);
-    if(!*out_cert)
-        rc = VERR_X509_READING_CERT_FROM_BIO;
+    int cb = BIO_write(pBio, pvPem, cbPem);
+    *ppOutCert = PEM_read_bio_X509(pBio, NULL, 0, NULL);
+    BIO_free(pBio);
 
-    return rc;
+    return *ppOutCert ? VINF_SUCCESS : VERR_X509_READING_CERT_FROM_BIO;
 }
+
 
 /**
  * Convert X509 certificate from string to binary representation
@@ -193,7 +193,7 @@ RTDECL(int) RTRSAVerify(void *pvBuf, unsigned int cbSize, const char* pManifestD
             break;
         }
 
-        rc = RTX509ReadCertificateFromPEM(pvBuf, cbSize, &certificate);
+        rc = rtX509ReadCertificateFromPEM(pvBuf, cbSize, &certificate);
         if (RT_FAILURE(rc))
         {
             /*memory for certificate isn't allocated in this case, thus there is no need to free it*/
@@ -266,9 +266,9 @@ static int RTX509GetBasicConstraints(void *pvBuf, unsigned int cbSize, unsigned 
     char *errDesc = NULL;
     BIO *bio_memory = NULL;
 
-    while (1)
+    for (;;)
     {
-        rc = RTX509ReadCertificateFromPEM(pvBuf, cbSize, &certificate);
+        rc = rtX509ReadCertificateFromPEM(pvBuf, cbSize, &certificate);
         int loc = X509_get_ext_by_NID(certificate, NID_basic_constraints,-1);
 
         if(loc == -1)
@@ -331,7 +331,7 @@ RTDECL(int) RTX509CertificateVerify(void *pvBuf, unsigned int cbSize)
 
     while(1)
     {
-        rc = RTX509ReadCertificateFromPEM(pvBuf, cbSize, &certificate);
+        rc = rtX509ReadCertificateFromPEM(pvBuf, cbSize, &certificate);
         if (RT_FAILURE(rc))
         {
             break;
@@ -383,8 +383,8 @@ RTDECL(int) RTX509CertificateVerify(void *pvBuf, unsigned int cbSize)
 
     return rc;
 }
-
 RT_EXPORT_SYMBOL(RTX509CertificateVerify);
+
 
 RTDECL(unsigned long) RTX509GetErrorDescription(char** pErrorDesc)
 {

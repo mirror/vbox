@@ -37,7 +37,14 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-RTDECL(void) RTX509PrepareOpenSSL();
+/**
+ * Preparation before start to work with openssl
+ *
+ * @todo This should return a status and check that X509 code seems sane.  This
+ *       would allow dynamic linking if necessary at some point.
+ */
+RTDECL(int) RTX509PrepareOpenSSL(void);
+
 /**
  * Verify RSA signature for the given memory buffer.
  *
@@ -63,6 +70,7 @@ RTDECL(int) RTRSAVerify(void *pvBuf, unsigned int cbSize,  const char* pManifest
  */
 RTDECL(int) RTX509CertificateVerify(void *pvBuf, unsigned int cbSize);
 
+/** @todo document me. */
 RTDECL(unsigned long) RTX509GetErrorDescription(char** pErrorDesc);
 
 /** @} */
