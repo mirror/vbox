@@ -1888,19 +1888,19 @@ RT_C_DECLS_END
 #define VERR_X509_EXTRACT_RSA_FROM_PUBLIC_KEY            (-23002)
 /** Signature verification failed. */
 #define VERR_X509_RSA_VERIFICATION_FUILURE               (-23003)
-/** Error basic constraints were not found */
+/** Basic constraints were not found. */
 #define VERR_X509_NO_BASIC_CONSTARAINTS                  (-23004)
-/** Error getting extensions from the certificate */
+/** Error getting extensions from the certificate. */
 #define VERR_X509_GETTING_EXTENSION_FROM_CERT            (-23005)
-/** Error getting a data from the extension */
+/** Error getting a data from the extension. */
 #define VERR_X509_GETTING_DATA_FROM_EXTENSION            (-23006)
-/** Error print out an extension to BIO */
+/** Error formatting an extension. */
 #define VERR_X509_PRINT_EXTENSION_TO_BIO                 (-23007)
-/** Error X509 certificate verification */
+/** X509 certificate verification error. */
 #define VERR_X509_CERTIFICATE_VERIFICATION_FAILURE       (-23008)
-/** Error X509 certificate isn't self signed */
+/** X509 certificate isn't self signed. */
 #define VERR_X509_NOT_SELFSIGNED_CERTIFICATE             (-23009)
-/** Warning X509 certificate isn't self signed  */
+/** Warning X509 certificate isn't self signed.  */
 #define VINF_X509_NOT_SELFSIGNED_CERTIFICATE             23009
 /** @} */
 
