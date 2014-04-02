@@ -2053,7 +2053,9 @@ void slirp_info(PNATState pData, const void *pvArg, const char *pszArgs)
  */
 int slirp_host_network_configuration_change_strategy_selector(const PNATState pData)
 {
-    if (pData->fUseHostResolverPermanent) return VBOX_NAT_HNCE_HOSTRESOLVER;
+    if (pData->fUseHostResolverPermanent)
+        return VBOX_NAT_DNS_HOSTRESOLVER;
+
     if (pData->fUseDnsProxy) {
 #if HAVE_NOTIFICATION_FOR_DNS_UPDATE
         /* We dont conflict with bootp.c::dhcp_decode */
@@ -2067,18 +2069,18 @@ int slirp_host_network_configuration_change_strategy_selector(const PNATState pD
                     rcp_state.rcps_domain));
         if (   RT_FAILURE(rc)
             || LIST_EMPTY(&pData->pDomainList))
-            return VBOX_NAT_HNCE_DNSPROXY;
+            return VBOX_NAT_DNS_DNSPROXY;
         
         if (   rcp_state.rcps_domain
             && strcmp(rcp_state.rcps_domain, LIST_FIRST(&pData->pDomainList)->dd_pszDomain) == 0)
-            return VBOX_NAT_HNCE_DNSPROXY;
+            return VBOX_NAT_DNS_DNSPROXY;
         else
-            return VBOX_NAT_HNCE_EXSPOSED_NAME_RESOLUTION_INFO; /* XXX: rename it */
+            return VBOX_NAT_DNS_EXTERNAL;
 #else
         /* copy domain name */
         /* domain only compare with coy version */
-        return VBOX_NAT_HNCE_DNSPROXY;
+        return VBOX_NAT_DNS_DNSPROXY;
 #endif
     }
-    return VBOX_NAT_HNCE_EXSPOSED_NAME_RESOLUTION_INFO;
+    return VBOX_NAT_DNS_EXTERNAL;
 }
