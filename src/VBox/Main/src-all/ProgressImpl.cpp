@@ -442,7 +442,7 @@ HRESULT Progress::init(
                        ULONG ulFirstOperationWeight,
                        OUT_GUID aId /* = NULL */)
 {
-    LogFlowThisFunc(("aDescription=\"%ls\", cOperations=%d, ulTotalOperationsWeight=%d, bstrFirstOperationDescription=\"%ls\", ulFirstOperationWeight=%d\n",
+    LogFlowThisFunc(("aDescription=\"%s\", cOperations=%d, ulTotalOperationsWeight=%d, aFirstOperationDescription=\"%s\", ulFirstOperationWeight=%d\n",
                      aDescription.c_str(),
                      cOperations,
                      ulTotalOperationsWeight,
