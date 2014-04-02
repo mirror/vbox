@@ -222,7 +222,7 @@ typedef DRVNAT *PDRVNAT;
 static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho);
 DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(
   PDRVNAT pThis,
-  bool fHostNetworkConfigurationEventListener);
+  bool fFlapLink);
 static DECLCALLBACK(int) drvNATReinitializeHostNameResolving(PDRVNAT pThis);
 
 
@@ -978,7 +978,7 @@ static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRe
     {
         CFArrayRef hArrAddresses = (CFArrayRef)CFDictionaryGetValue(hDnsDict, kSCPropNetDNSServerAddresses);
         if (hArrAddresses)
-            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, /* RT_OS_DARWIN */ true);
+            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, /* fFlapLink */ true);
 
         CFRelease(hDnsDict);
     }
@@ -1051,11 +1051,15 @@ static DECLCALLBACK(void) drvNATResume(PPDMDRVINS pDrvIns)
     switch (enmReason)
     {
         case VMRESUMEREASON_HOST_RESUME:
+            bool fFlapLink;
 #if RT_OS_DARWIN
-            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, false);
+            /* let drvNatDnsChanged event handler do it if necessary */
+            fFlapLink = false;
 #else
-            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, true);
+            /* XXX: when in doubt, use brute force */
+            fFlapLink = true;
 #endif
+            drvNATHostNetworkConfigurationChangeEventStrategySelector(pThis, fFlapLink);
             return;
         default: /* Ignore every other resume reason. */
             /* do nothing */
@@ -1082,10 +1086,10 @@ static DECLCALLBACK(int) drvNATReinitializeHostNameResolving(PDRVNAT pThis)
  * Thread here is important, because we need to change DNS server list and domain name (+ perhaps,
  * search string) at runtime (VBOX_NAT_ENFORCE_INTERNAL_DNS_UPDATE), we can do it safely on NAT thread,
  * so with changing other variables (place where we handle update) the main mechanism of update
- * _won't_ be changed, the only thing will change is drop of fHostNetworkConfigurationEventListener parameter.
+ * _won't_ be changed, the only thing will change is drop of fFlapLink parameter.
  */
 DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(PDRVNAT pThis,
-                                                                        bool fHostNetworkConfigurationEventListener)
+                                                                        bool fFlapLink)
 {
     int strategy = slirp_host_network_configuration_change_strategy_selector(pThis->pNATState);
     switch (strategy)
@@ -1121,7 +1125,7 @@ DECLINLINE(void) drvNATHostNetworkConfigurationChangeEventStrategySelector(PDRVN
              * Disconnect the guest from the network temporarily to let it pick up the changes.
              */
 
-            if (fHostNetworkConfigurationEventListener)
+            if (fFlapLink)
                 pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig,
                                                       PDMNETWORKLINKSTATE_DOWN_RESUME);
             return;
