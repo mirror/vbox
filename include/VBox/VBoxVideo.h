@@ -1569,7 +1569,7 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
 #define VBOXCMDVBVA_OPTYPE_CRCMD                        1
 /* blit command that does blitting of allocations identified by VRAM offset or host id
  * for VRAM-offset ones the size and format are same as primary */
-#define VBOXCMDVBVA_OPTYPE_BLT_OFFPRIMSZFMT_OR_ID       2
+#define VBOXCMDVBVA_OPTYPE_BLT                          2
 /* flip */
 #define VBOXCMDVBVA_OPTYPE_FLIP                         3
 /* ColorFill */
@@ -1586,21 +1586,34 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
 /* nop - is a one-bit command. The buffer size to skip is determined by VBVA buffer size */
 #define VBOXCMDVBVA_OPTYPE_NOP                          0x80
 
-/* u8Flags flags */
-/* source allocation is specified with the host id. if not set - source allocation is specified with VRAM offset */
-#define VBOXCMDVBVA_OPF_ALLOC_SRCID                     0x80
-/* destination allocation is specified with the host id. if not set - destination allocation is specified with VRAM offset */
-#define VBOXCMDVBVA_OPF_ALLOC_DSTID                     0x40
+///* u8Flags flags */
+///* source allocation is specified with the host id. if not set - source allocation is specified with VRAM offset */
+//#define VBOXCMDVBVA_OPF_ALLOC_SRCID                     0x80
+///* destination allocation is specified with the host id. if not set - destination allocation is specified with VRAM offset */
+//#define VBOXCMDVBVA_OPF_ALLOC_DSTID                     0x40
+//
+///* transfer from RAM to Allocation */
+#define VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN                  0x80
+//
+///* VBOXCMDVBVA_OPTYPE_BLT_PRIMARY specific flags*/
+///* if set - src is a primary id */
+//#define VBOXCMDVBVA_OPF_ALLOC_SRCPRIMARY               0x20
+///* if set - dst is a primary id */
+//#define VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY               0x10
 
-/* transfer from RAM to Allocation */
-#define VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN              0x20
+#define VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY                    0
+#define VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_GENERIC_A8R8G8B8   1
+#define VBOXCMDVBVA_OPF_BLT_TYPE_OFFPRIMSZFMT_OR_ID         2
+#define VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8           3
+#define VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_PRIMARY            4
 
-/* VBOXCMDVBVA_OPTYPE_BLT_PRIMARY specific flags*/
-/* if set - src is a primary id */
-#define VBOXCMDVBVA_OPF_ALLOC_SRCPRIMARY               0x20
-/* if set - dst is a primary id */
-#define VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY               0x10
-
+#define VBOXCMDVBVA_OPF_BLT_TYPE_MASK                       7
+/* blit direction is from first operand to second */
+#define VBOXCMDVBVA_OPF_BLT_DIR_IN_2                        0x10
+/* operand 1 contains host id */
+#define VBOXCMDVBVA_OPF_OPERAND1_ISID                       0x20
+/* operand 2 contains host id */
+#define VBOXCMDVBVA_OPF_OPERAND2_ISID                       0x40
 
 /* trying to make the header as small as possible,
  * we'd have pretty few op codes actually, so 8bit is quite enough,
@@ -1611,8 +1624,7 @@ typedef struct VBOXCMDVBVA_HDR
     uint8_t u8OpCode;
     /* command-specific
      * VBOXCMDVBVA_OPTYPE_CRCMD                     - must be null
-     * VBOXCMDVBVA_OPTYPE_BLT_PRIMARY             - OR-ed VBOXCMDVBVA_OPF_ALLOC_XXX flags
-     * VBOXCMDVBVA_OPTYPE_BLT_OFFPRIMSZFMT_OR_ID    - OR-ed VBOXCMDVBVA_OPF_ALLOC_XXX flags
+     * VBOXCMDVBVA_OPTYPE_BLT                       - OR-ed VBOXCMDVBVA_OPF_ALLOC_XXX flags
      * VBOXCMDVBVA_OPTYPE_PAGING_TRANSFER           - must be null
      * VBOXCMDVBVA_OPTYPE_PAGING_FILL               - must be null
      * VBOXCMDVBVA_OPTYPE_NOPCMD                    - must be null
@@ -1661,6 +1673,13 @@ typedef struct VBOXCMDVBVA_ALLOCINFO
     } u;
 } VBOXCMDVBVA_ALLOCINFO;
 
+typedef struct VBOXCMDVBVA_ALLOCDESC
+{
+    VBOXCMDVBVA_ALLOCINFO Info;
+    uint16_t width;
+    uint16_t height;
+} VBOXCMDVBVA_ALLOCDESC;
+
 typedef struct VBOXCMDVBVA_RECT
 {
    /** Coordinates of affected rectangle. */
@@ -1676,24 +1695,47 @@ typedef struct VBOXCMDVBVA_POINT
    int16_t y;
 } VBOXCMDVBVA_POINT;
 
-typedef struct VBOXCMDVBVA_BLT_PRIMARY
+typedef struct VBOXCMDVBVA_BLT_HDR
 {
     VBOXCMDVBVA_HDR Hdr;
-    VBOXCMDVBVA_ALLOCINFO alloc;
     VBOXCMDVBVA_POINT Pos;
+} VBOXCMDVBVA_BLT_HDR;
+
+typedef struct VBOXCMDVBVA_BLT_PRIMARY
+{
+    VBOXCMDVBVA_BLT_HDR Hdr;
+    VBOXCMDVBVA_ALLOCINFO alloc;
     /* the rects count is determined from the command size */
     VBOXCMDVBVA_RECT aRects[1];
 } VBOXCMDVBVA_BLT_PRIMARY;
 
+typedef struct VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8
+{
+    VBOXCMDVBVA_BLT_HDR Hdr;
+    VBOXCMDVBVA_ALLOCDESC alloc;
+    /* the rects count is determined from the command size */
+    VBOXCMDVBVA_RECT aRects[1];
+} VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8;
+
 typedef struct VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID
 {
-    VBOXCMDVBVA_HDR Hdr;
-    VBOXCMDVBVA_ALLOCINFO src;
-    VBOXCMDVBVA_ALLOCINFO dst;
-    VBOXCMDVBVA_POINT Pos;
+    VBOXCMDVBVA_BLT_HDR Hdr;
+    VBOXCMDVBVA_ALLOCINFO alloc;
+    uint32_t id;
     /* the rects count is determined from the command size */
     VBOXCMDVBVA_RECT aRects[1];
 } VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID;
+
+typedef struct VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8
+{
+    VBOXCMDVBVA_BLT_HDR Hdr;
+    VBOXCMDVBVA_ALLOCDESC alloc1;
+    VBOXCMDVBVA_ALLOCDESC alloc2;
+    /* the rects count is determined from the command size */
+    VBOXCMDVBVA_RECT aRects[1];
+} VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8;
+
+#define VBOXCMDVBVA_SIZEOF_BLTSTRUCT_MAX (sizeof (VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8))
 
 typedef struct VBOXCMDVBVA_FLIP
 {

@@ -6073,22 +6073,117 @@ DECLINLINE(BOOLEAN) vboxWddmPixFormatConversionSupported(D3DDDIFORMAT From, D3DD
     return From == To;
 }
 
-DECLINLINE(bool) VBoxCVDdiFillAllocInfo(VBOXCMDVBVA_HDR* pHdr,
-        VBOXCMDVBVA_ALLOCINFO *pInfo, PVBOXWDDM_ALLOCATION pAlloc, DXGK_ALLOCATIONLIST *pList, bool fDst)
-{
-    if (pAlloc->AllocData.hostID)
-    {
-        pHdr->u8Flags |= (fDst ? VBOXCMDVBVA_OPF_ALLOC_DSTID : VBOXCMDVBVA_OPF_ALLOC_SRCID);
-        pInfo->u.id = pAlloc->AllocData.hostID;
-        return false;
-    }
+#ifdef VBOX_WITH_CROGL
 
-    Assert(!pList->PhysicalAddress.HighPart);
-    pInfo->u.offVRAM = pList->PhysicalAddress.LowPart;
-    return true;
+DECLINLINE(void) VBoxCVDdiFillAllocDescHostID(VBOXCMDVBVA_ALLOCDESC *pDesc, const VBOXWDDM_ALLOCATION *pAlloc)
+{
+    pDesc->Info.u.id = pAlloc->AllocData.hostID;
+    /* we do not care about wdth and height, zero them up though */
+    pDesc->width = 0;
+    pDesc->height = 0;
 }
 
-#ifdef VBOX_WITH_CROGL
+DECLINLINE(void) VBoxCVDdiFillAllocInfoOffVRAM(VBOXCMDVBVA_ALLOCINFO *pInfo, const DXGK_ALLOCATIONLIST *pList)
+{
+    Assert(!pList->PhysicalAddress.HighPart);
+    pInfo->u.offVRAM = pList->PhysicalAddress.LowPart;
+}
+
+DECLINLINE(void) VBoxCVDdiFillAllocDescOffVRAM(VBOXCMDVBVA_ALLOCDESC *pDesc, const VBOXWDDM_ALLOCATION *pAlloc, const DXGK_ALLOCATIONLIST *pList)
+{
+    VBoxCVDdiFillAllocInfoOffVRAM(&pDesc->Info, pList);
+    pDesc->width = (uint16_t)pAlloc->AllocData.SurfDesc.width;
+    pDesc->height = (uint16_t)pAlloc->AllocData.SurfDesc.height;
+}
+
+static NTSTATUS vboxWddmCmCmdBltPrimNotPrimFill(VBOXCMDVBVA_BLT_HDR *pBltHdr, const VBOXWDDM_ALLOCATION *pPrimary, const VBOXWDDM_ALLOCATION *pAlloc, const DXGK_ALLOCATIONLIST *pList,
+                            BOOLEAN fToPrimary, uint32_t *poffPatch, uint32_t *poffRects)
+{
+    uint8_t fFlags;
+    pBltHdr->Hdr.u.u8PrimaryID = pPrimary->AllocData.SurfDesc.VidPnSourceId;
+    if (pAlloc->AllocData.hostID)
+    {
+        fFlags = VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY | VBOXCMDVBVA_OPF_OPERAND2_ISID;
+        VBOXCMDVBVA_BLT_PRIMARY *pBlt = (VBOXCMDVBVA_BLT_PRIMARY*)pBltHdr;
+        pBlt->alloc.u.id = pAlloc->AllocData.hostID;
+        *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects);
+    }
+    else
+    {
+        D3DDDIFORMAT enmFormat = vboxWddmFmtNoAlphaFormat(pAlloc->AllocData.SurfDesc.format);
+        if (enmFormat != D3DDDIFMT_X8R8G8B8)
+        {
+            WARN(("unsupported format"));
+            return STATUS_INVALID_PARAMETER;
+        }
+
+        if (pPrimary->AllocData.SurfDesc.width == pAlloc->AllocData.SurfDesc.width
+                && pPrimary->AllocData.SurfDesc.height == pAlloc->AllocData.SurfDesc.height)
+        {
+            fFlags = VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY;
+            VBOXCMDVBVA_BLT_PRIMARY *pBlt = (VBOXCMDVBVA_BLT_PRIMARY*)pBltHdr;
+            VBoxCVDdiFillAllocInfoOffVRAM(&pBlt->alloc, pList);
+            *poffPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, alloc.u.offVRAM);
+            *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects);
+        }
+        else
+        {
+            fFlags = VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_GENERIC_A8R8G8B8;
+            VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8*)pBltHdr;
+            VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc, pAlloc, pList);
+            *poffPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8, alloc.Info.u.offVRAM);
+            *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8, aRects);
+        }
+    }
+
+    if (!fToPrimary)
+        fFlags |= VBOXCMDVBVA_OPF_BLT_DIR_IN_2;
+
+    pBltHdr->Hdr.u8Flags |= fFlags;
+    return STATUS_SUCCESS;
+}
+
+static NTSTATUS vboxWddmCmCmdBltIdNotIdFill(VBOXCMDVBVA_BLT_HDR *pBltHdr, const VBOXWDDM_ALLOCATION *pIdAlloc, const VBOXWDDM_ALLOCATION *pAlloc, const DXGK_ALLOCATIONLIST *pList,
+                            BOOLEAN fToId, uint32_t *poffPatch, uint32_t *poffRects)
+{
+    uint8_t fFlags;
+    Assert(pIdAlloc->AllocData.hostID);
+    Assert(!pAlloc->AllocData.hostID);
+
+    D3DDDIFORMAT enmFormat = vboxWddmFmtNoAlphaFormat(pAlloc->AllocData.SurfDesc.format);
+    if (enmFormat != D3DDDIFMT_X8R8G8B8)
+    {
+        WARN(("unsupported format"));
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if (pIdAlloc->AllocData.SurfDesc.width == pAlloc->AllocData.SurfDesc.width
+            && pIdAlloc->AllocData.SurfDesc.height == pAlloc->AllocData.SurfDesc.height)
+    {
+        fFlags = VBOXCMDVBVA_OPF_BLT_TYPE_OFFPRIMSZFMT_OR_ID | VBOXCMDVBVA_OPF_OPERAND2_ISID;
+        VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID *pBlt = (VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID*)pBltHdr;
+        VBoxCVDdiFillAllocInfoOffVRAM(&pBlt->alloc, pList);
+        pBlt->id = pIdAlloc->AllocData.hostID;
+        *poffPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, alloc.u.offVRAM);
+        *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, aRects);
+    }
+    else
+    {
+        fFlags = VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8 | VBOXCMDVBVA_OPF_OPERAND2_ISID;
+        VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8*)pBltHdr;
+        VBoxCVDdiFillAllocDescHostID(&pBlt->alloc2, pIdAlloc);
+        VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc1, pAlloc, pList);
+        *poffPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc1.Info.u.offVRAM);
+        *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, aRects);
+    }
+
+    if (fToId)
+        fFlags |= VBOXCMDVBVA_OPF_BLT_DIR_IN_2;
+
+    pBltHdr->Hdr.u8Flags |= fFlags;
+    return STATUS_SUCCESS;
+}
+
 /**
  * DxgkDdiPresent
  */
@@ -6124,7 +6219,6 @@ DxgkDdiPresentNew(
     BOOLEAN fPatchSrc = false;
     BOOLEAN fPatchDst = false;
     VBOXCMDVBVA_RECT *paRects = NULL;
-    uint32_t cbMaxRects;
 
     if (pPresent->DmaSize < VBOXWDDM_DUMMY_DMABUFFER_SIZE)
     {
@@ -6164,79 +6258,99 @@ DxgkDdiPresentNew(
                 && pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
                 && pSrcAlloc->bAssigned);
 
-        pHdr->u8OpCode = VBOXCMDVBVA_OPTYPE_BLT_OFFPRIMSZFMT_OR_ID;
+        pHdr->u8OpCode = VBOXCMDVBVA_OPTYPE_BLT;
         pHdr->u8Flags = 0;
 
-        if (fDstPrimary || fSrcPrimary)
+        VBOXCMDVBVA_BLT_HDR *pBltHdr = (VBOXCMDVBVA_BLT_HDR*)pHdr;
+        pBltHdr->Pos.x = (int16_t)(pPresent->DstRect.left - pPresent->SrcRect.left);
+        pBltHdr->Pos.y = (int16_t)(pPresent->DstRect.top - pPresent->SrcRect.top);
+
+        if (pPresent->DmaBufferPrivateDataSize < VBOXCMDVBVA_SIZEOF_BLTSTRUCT_MAX)
         {
-            if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_BLT_PRIMARY))
-            {
-                WARN(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXCMDVBVA_BLT_PRIMARY (%d)", pPresent->DmaBufferPrivateDataSize , sizeof (VBOXCMDVBVA_BLT_PRIMARY)));
-                /* @todo: can this actually happen? what status to return? */
-                return STATUS_INVALID_PARAMETER;
-            }
+            WARN(("Present->DmaBufferPrivateDataSize(%d) < (%d)", pPresent->DmaBufferPrivateDataSize , VBOXCMDVBVA_SIZEOF_BLTSTRUCT_MAX));
+            /* @todo: can this actually happen? what status to return? */
+            return STATUS_INVALID_PARAMETER;
+        }
 
-            VBOXCMDVBVA_BLT_PRIMARY *pBlt = (VBOXCMDVBVA_BLT_PRIMARY*)pHdr;
-
-            /* this is the most common case, so we optimize it a bit with VBOXCMDVBVA_BLT_PRIMARY */
-
+        if (fDstPrimary)
+        {
             if (fSrcPrimary)
             {
-                pBlt->Hdr.u8Flags |= VBOXCMDVBVA_OPF_ALLOC_SRCPRIMARY;
-                Assert((UINT)pSrcAlloc->AllocData.SurfDesc.VidPnSourceId < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
-                pBlt->Hdr.u.u8PrimaryID = pSrcAlloc->AllocData.SurfDesc.VidPnSourceId;
-
-                if (fDstPrimary)
-                {
-                    pBlt->Hdr.u8Flags |= VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY;
-                    pBlt->alloc.u.id = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
-                }
-                else if (VBoxCVDdiFillAllocInfo(pHdr, &pBlt->alloc, pDstAlloc, pDst, true))
-                    u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, alloc.u.offVRAM);
+                pHdr->u.u8PrimaryID = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
+                pHdr->u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_PRIMARY;
+                VBOXCMDVBVA_BLT_PRIMARY *pBlt = (VBOXCMDVBVA_BLT_PRIMARY*)pBltHdr;
+                pBlt->alloc.u.id = pSrcAlloc->AllocData.SurfDesc.VidPnSourceId;
+                cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects);
             }
             else
             {
-                Assert(fDstPrimary);
-                pBlt->Hdr.u8Flags |= VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY;
-                Assert((UINT)pDstAlloc->AllocData.SurfDesc.VidPnSourceId < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
-                pBlt->Hdr.u.u8PrimaryID = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
-
-                if (VBoxCVDdiFillAllocInfo(pHdr, &pBlt->alloc, pSrcAlloc, pSrc, false))
-                    u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, alloc.u.offVRAM);
+                NTSTATUS Status = vboxWddmCmCmdBltPrimNotPrimFill(pBltHdr, pDstAlloc, pSrcAlloc, pSrc, TRUE, &u32SrcPatch, &cbPrivateData);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("vboxWddmCmCmdBltPrimNotPrimFill failed, %#x", Status));
+                    return Status;
+                }
             }
-
-            pBlt->Pos.x = (int16_t)(pPresent->DstRect.left - pPresent->SrcRect.left);
-            pBlt->Pos.y = (int16_t)(pPresent->DstRect.top - pPresent->SrcRect.top);
-
-            paRects = pBlt->aRects;
-            cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects);
-            cbMaxRects = pPresent->DmaBufferPrivateDataSize - cbPrivateData;
         }
         else
         {
-            if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID))
+            if (fSrcPrimary)
             {
-                WARN(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID (%d)", pPresent->DmaBufferPrivateDataSize , sizeof (VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID)));
-                /* @todo: can this actually happen? what status to return? */
-                return STATUS_INVALID_PARAMETER;
+                NTSTATUS Status = vboxWddmCmCmdBltPrimNotPrimFill(pBltHdr, pSrcAlloc, pDstAlloc, pDst, FALSE, &u32DstPatch, &cbPrivateData);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("vboxWddmCmCmdBltPrimNotPrimFill failed, %#x", Status));
+                    return Status;
+                }
             }
-
-            VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID *pBlt = (VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID*)pHdr;
-
-            if (VBoxCVDdiFillAllocInfo(pHdr, &pBlt->src, pSrcAlloc, pSrc, false))
-                u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, src.u.offVRAM);
-
-            if (VBoxCVDdiFillAllocInfo(pHdr, &pBlt->dst, pDstAlloc, pDst, true))
-                u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, dst.u.offVRAM);
-
-            pBlt->Pos.x = (int16_t)(pPresent->DstRect.left - pPresent->SrcRect.left);
-            pBlt->Pos.y = (int16_t)(pPresent->DstRect.top - pPresent->SrcRect.top);
-
-            paRects = pBlt->aRects;
-            cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, aRects);
-            cbMaxRects = pPresent->DmaBufferPrivateDataSize - cbPrivateData;
+            else
+            {
+                if (pSrcAlloc->AllocData.hostID)
+                {
+                    if (pDstAlloc->AllocData.hostID)
+                    {
+                        VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID *pBlt = (VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID*)pBltHdr;
+                        pHdr->u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_OFFPRIMSZFMT_OR_ID | VBOXCMDVBVA_OPF_OPERAND1_ISID | VBOXCMDVBVA_OPF_OPERAND2_ISID;
+                        pBlt->id = pDstAlloc->AllocData.hostID;
+                        pBlt->alloc.u.id = pSrcAlloc->AllocData.hostID;
+                        cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, aRects);
+                    }
+                    else
+                    {
+                        NTSTATUS Status = vboxWddmCmCmdBltIdNotIdFill(pBltHdr, pSrcAlloc, pDstAlloc, pDst, FALSE, &u32DstPatch, &cbPrivateData);
+                        if (!NT_SUCCESS(Status))
+                        {
+                            WARN(("vboxWddmCmCmdBltIdNotIdFill failed, %#x", Status));
+                            return Status;
+                        }
+                    }
+                }
+                else
+                {
+                    if (pDstAlloc->AllocData.hostID)
+                    {
+                        NTSTATUS Status = vboxWddmCmCmdBltIdNotIdFill(pBltHdr, pDstAlloc, pSrcAlloc, pSrc, TRUE, &u32SrcPatch, &cbPrivateData);
+                        if (!NT_SUCCESS(Status))
+                        {
+                            WARN(("vboxWddmCmCmdBltIdNotIdFill failed, %#x", Status));
+                            return Status;
+                        }
+                    }
+                    else
+                    {
+                        pBltHdr->Hdr.u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8;
+                        VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8*)pBltHdr;
+                        VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc1, pDstAlloc, pDst);
+                        VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc2, pSrcAlloc, pSrc);
+                        u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc1.Info.u.offVRAM);
+                        u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc2.Info.u.offVRAM);
+                        cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, aRects);
+                    }
+                }
+            }
         }
 
+        paRects = (VBOXCMDVBVA_RECT*)(((uint8_t*)pPresent->pDmaBufferPrivateData) + cbPrivateData);
         cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
     }
     else if (pPresent->Flags.Flip)
@@ -6264,14 +6378,20 @@ DxgkDdiPresentNew(
 
         Assert(pDevExt->cContexts3D);
         pHdr->u8OpCode = VBOXCMDVBVA_OPTYPE_FLIP;
-        pHdr->u8Flags = 0;
         Assert((UINT)pSrcAlloc->AllocData.SurfDesc.VidPnSourceId < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
         pHdr->u.u8PrimaryID = pSrcAlloc->AllocData.SurfDesc.VidPnSourceId;
         VBOXCMDVBVA_FLIP *pFlip = (VBOXCMDVBVA_FLIP*)pHdr;
 
-        if (VBoxCVDdiFillAllocInfo(pHdr, &pFlip->src, pSrcAlloc, pSrc, false))
+        if (pSrcAlloc->AllocData.hostID)
+        {
+            pHdr->u8Flags = VBOXCMDVBVA_OPF_OPERAND1_ISID;
+            pFlip->src.u.id = pSrcAlloc->AllocData.hostID;
+        }
+        else
         {
             WARN(("VBoxCVDdiFillAllocInfo reported no host id for flip!"));
+            pHdr->u8Flags = 0;
+            VBoxCVDdiFillAllocInfoOffVRAM(&pFlip->src, pSrc);
             u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_FLIP, src.u.offVRAM);
         }
 
@@ -6280,6 +6400,8 @@ DxgkDdiPresentNew(
     }
     else if (pPresent->Flags.ColorFill)
     {
+        WARN(("test color fill!"));
+#if 0
         if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_CLRFILL))
         {
             WARN(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXCMDVBVA_CLRFILL (%d)", pPresent->DmaBufferPrivateDataSize , sizeof (VBOXCMDVBVA_CLRFILL)));
@@ -6309,8 +6431,7 @@ DxgkDdiPresentNew(
 
         paRects = pCFill->aRects;
         cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL, aRects);
-        cbMaxRects = pPresent->DmaBufferPrivateDataSize - cbPrivateData;
-
+#endif
         cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
     }
     else
@@ -6321,6 +6442,7 @@ DxgkDdiPresentNew(
 
     if (paRects)
     {
+        uint32_t cbMaxRects = pPresent->DmaBufferPrivateDataSize - cbPrivateData;
         UINT iStartRect = pPresent->MultipassOffset;
         UINT cMaxRects = cbMaxRects / sizeof (VBOXCMDVBVA_RECT);
         Assert(pPresent->SubRectCnt > iStartRect);
