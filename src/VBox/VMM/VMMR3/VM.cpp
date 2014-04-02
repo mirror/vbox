@@ -66,6 +66,7 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/ftm.h>
 #include <VBox/vmm/hm.h>
+#include <VBox/vmm/gim.h>
 #include "VMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
@@ -987,36 +988,45 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                     rc = PDMR3Init(pVM);
                                                                     if (RT_SUCCESS(rc))
                                                                     {
-                                                                        rc = PGMR3InitDynMap(pVM);
+                                                                        /* GIM must be init'd after PDM, relies on PDMR3 for
+                                                                           symbol resolution.*/
+                                                                        rc = GIMR3Init(pVM);
                                                                         if (RT_SUCCESS(rc))
-                                                                            rc = MMR3HyperInitFinalize(pVM);
+                                                                        {
+                                                                            rc = PGMR3InitDynMap(pVM);
+                                                                            if (RT_SUCCESS(rc))
+                                                                                rc = MMR3HyperInitFinalize(pVM);
 #ifdef VBOX_WITH_RAW_MODE
-                                                                        if (RT_SUCCESS(rc))
-                                                                            rc = PATMR3InitFinalize(pVM);
+                                                                            if (RT_SUCCESS(rc))
+                                                                                rc = PATMR3InitFinalize(pVM);
 #endif
-                                                                        if (RT_SUCCESS(rc))
-                                                                            rc = PGMR3InitFinalize(pVM);
-                                                                        if (RT_SUCCESS(rc))
-                                                                            rc = SELMR3InitFinalize(pVM);
-                                                                        if (RT_SUCCESS(rc))
-                                                                            rc = TMR3InitFinalize(pVM);
+                                                                            if (RT_SUCCESS(rc))
+                                                                                rc = PGMR3InitFinalize(pVM);
+                                                                            if (RT_SUCCESS(rc))
+                                                                                rc = SELMR3InitFinalize(pVM);
+                                                                            if (RT_SUCCESS(rc))
+                                                                                rc = TMR3InitFinalize(pVM);
 #ifdef VBOX_WITH_REM
-                                                                        if (RT_SUCCESS(rc))
-                                                                            rc = REMR3InitFinalize(pVM);
+                                                                            if (RT_SUCCESS(rc))
+                                                                                rc = REMR3InitFinalize(pVM);
 #endif
-                                                                        if (RT_SUCCESS(rc))
-                                                                        {
-                                                                            PGMR3MemSetup(pVM, false /*fAtReset*/);
-                                                                            PDMR3MemSetup(pVM, false /*fAtReset*/);
-                                                                        }
-                                                                        if (RT_SUCCESS(rc))
-                                                                            rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
-                                                                        if (RT_SUCCESS(rc))
-                                                                        {
-                                                                            LogFlow(("vmR3InitRing3: returns %Rrc\n", VINF_SUCCESS));
-                                                                            return VINF_SUCCESS;
-                                                                        }
 
+                                                                            if (RT_SUCCESS(rc))
+                                                                            {
+                                                                                PGMR3MemSetup(pVM, false /*fAtReset*/);
+                                                                                PDMR3MemSetup(pVM, false /*fAtReset*/);
+                                                                            }
+                                                                            if (RT_SUCCESS(rc))
+                                                                                rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
+                                                                            if (RT_SUCCESS(rc))
+                                                                            {
+                                                                                LogFlow(("vmR3InitRing3: returns %Rrc\n", VINF_SUCCESS));
+                                                                                return VINF_SUCCESS;
+                                                                            }
+
+                                                                            int rc2 = GIMR3Term(pVM);
+                                                                            AssertRC(rc2);
+                                                                        }
                                                                         int rc2 = PDMR3Term(pVM);
                                                                         AssertRC(rc2);
                                                                     }

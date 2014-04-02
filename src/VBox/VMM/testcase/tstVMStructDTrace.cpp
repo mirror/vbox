@@ -44,6 +44,7 @@
 #include "HMInternal.h"
 #include "VMMInternal.h"
 #include "DBGFInternal.h"
+#include "GIMInternal.h"
 #include "STAMInternal.h"
 #include "EMInternal.h"
 #include "IEMInternal.h"

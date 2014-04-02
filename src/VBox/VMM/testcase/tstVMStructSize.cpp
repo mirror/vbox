@@ -43,6 +43,7 @@
 #include "HMInternal.h"
 #include "VMMInternal.h"
 #include "DBGFInternal.h"
+#include "GIMInternal.h"
 #include "STAMInternal.h"
 #include "VMInternal.h"
 #include "EMInternal.h"
@@ -225,6 +226,7 @@ int main()
     CHECK_PADDING_VM(64, tm);
     PRINT_OFFSET(VM, tm.s.VirtualSyncLock);
     CHECK_PADDING_VM(64, dbgf);
+    CHECK_PADDING_VM(64, gim);
     CHECK_PADDING_VM(64, ssm);
     CHECK_PADDING_VM(64, rem);
     CHECK_PADDING_VM(8, vm);
@@ -241,6 +243,7 @@ int main()
     CHECK_PADDING_VMCPU(64, pdm);
     CHECK_PADDING_VMCPU(64, iom);
     CHECK_PADDING_VMCPU(64, dbgf);
+    CHECK_PADDING_VMCPU(64, gim);
 #if 0
     PRINT_OFFSET(VMCPU, abAlignment2);
 #endif

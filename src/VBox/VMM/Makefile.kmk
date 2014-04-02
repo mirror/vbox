@@ -146,6 +146,8 @@ VBoxVMM_SOURCES  = \
 	$(if $(VBOX_WITH_RAW_MODE),VMMR3/EMRaw.cpp) \
 	VMMR3/EMHM.cpp \
 	VMMR3/FTM.cpp \
+	VMMR3/GIM.cpp \
+	VMMR3/GIMHv.cpp \
 	VMMR3/IEMR3.cpp \
 	VMMR3/IOM.cpp \
 	VMMR3/GMM.cpp \
@@ -222,6 +224,8 @@ VBoxVMM_SOURCES  = \
 	VMMAll/EMAll.cpp \
 	VMMAll/EMAllA.asm \
 	VMMAll/FTMAll.cpp \
+	VMMAll/GIMAll.cpp \
+	VMMAll/GIMAllHv.cpp \
 	VMMAll/TMAll.cpp \
 	VMMAll/TMAllCpu.cpp \
 	VMMAll/TMAllReal.cpp \
@@ -460,6 +464,8 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/EMAll.cpp \
  	VMMAll/EMAllA.asm \
 	VMMAll/FTMAll.cpp \
+	VMMAll/GIMAll.cpp \
+	VMMAll/GIMAllHv.cpp \
  	VMMAll/MMAll.cpp \
  	VMMAll/MMAllHyper.cpp \
  	VMMAll/PDMAll.cpp \
@@ -562,6 +568,8 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMAll/EMAll.cpp \
  	VMMAll/EMAllA.asm \
  	VMMAll/FTMAll.cpp \
+	VMMAll/GIMAll.cpp \
+	VMMAll/GIMAllHv.cpp \
  	VMMAll/HMAll.cpp \
 	VMMAll/IEMAll.cpp \
 	VMMAll/IEMAllAImpl.asm \
