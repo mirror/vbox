@@ -224,8 +224,17 @@ typedef struct VMCPU
         uint8_t             padding[64];        /* multiple of 64 */
     } dbgf;
 
+    /** GIM part. */
+    union
+    {
+#ifdef ___GIMInternal_h
+        struct GIMCPU s;
+#endif
+        uint8_t             padding[64];      /* multiple of 64 */
+    } gim;
+
     /** Align the following members on page boundary. */
-    uint8_t                 abAlignment2[128];
+    uint8_t                 abAlignment2[64];
 
     /** PGM part. */
     union
@@ -655,10 +664,9 @@ typedef struct VMCPU
                                                       RTThreadNativeSelf(), (pVCpu) ? (pVCpu)->hNativeThreadR0 : 0, \
                                                       (pVCpu) ? (pVCpu)->idCpu : 0))
 #else
-# define VMCPU_ASSERT_EMT(pVCpu) \
-    AssertMsg(VMCPU_IS_EMT(pVCpu), \
-              ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%#x\n", \
-              RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu))
+# define VMCPU_ASSERT_EMT(pVCpu)            AssertMsg(VMCPU_IS_EMT(pVCpu), \
+                                                      ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%#x\n", \
+                                                      RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu))
 #endif
 
 /** @def VM_ASSERT_EMT_RETURN
@@ -1108,6 +1116,14 @@ typedef struct VM
         uint8_t     padding[0x11100];   /* multiple of 64 */
     } rem;
 
+    union
+    {
+#ifdef ___GIMInternal_h
+        struct GIM s;
+#endif
+        uint8_t     padding[64];        /* multiple of 64 */
+    } gim;
+
     /* ---- begin small stuff ---- */
 
     /** VM part. */
@@ -1130,7 +1146,7 @@ typedef struct VM
 
 
     /** Padding for aligning the cpu array on a page boundary. */
-    uint8_t         abAlignment2[414];
+    uint8_t         abAlignment2[350];
 
     /* ---- end small stuff ---- */
 

@@ -73,6 +73,7 @@ AssertCompileSize(RTHCPHYS, 8);
 #include "PATMInternal.h"
 #include "VMMInternal.h"
 #include "DBGFInternal.h"
+#include "GIMInternal.h"
 #include "STAMInternal.h"
 #include "CSAMInternal.h"
 #include "EMInternal.h"
