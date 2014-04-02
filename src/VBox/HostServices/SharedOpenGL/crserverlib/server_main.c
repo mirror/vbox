@@ -3513,9 +3513,15 @@ static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, const VBOXCMDVBVA
             pFlip = (const VBOXCMDVBVA_FLIP*)pCmd;
             return crVBoxServerCrCmdFlipProcess(pFlip);
         }
-        case VBOXCMDVBVA_OPTYPE_BLT_OFFPRIMSZFMT_OR_ID:
+        case VBOXCMDVBVA_OPTYPE_BLT:
         {
-            return crVBoxServerCrCmdBltProcess(pCmd, cbCmd);
+            if (cbCmd < sizeof (VBOXCMDVBVA_BLT_HDR))
+            {
+                WARN(("invalid buffer size"));
+                return -1;
+            }
+
+            return crVBoxServerCrCmdBltProcess((const VBOXCMDVBVA_BLT_HDR*)pCmd, cbCmd);
         }
         default:
             WARN(("unsupported command"));

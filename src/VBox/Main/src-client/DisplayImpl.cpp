@@ -772,7 +772,7 @@ int Display::crOglWindowsShow(bool fShow)
         mfCrOglDataHidden = !fShow;
     else
     {
-        AssertMsgFailed(("crCtlSubmit failed rc %n", rc));
+        AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
         RTMemFree(pData);
     }
 
@@ -884,7 +884,7 @@ int Display::notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN 
                     rc = crCtlSubmit(&pCtl->Hdr, sizeof (*pCtl), displayCrCmdFree, pCtl);
                     if (!RT_SUCCESS(rc))
                     {
-                        AssertMsgFailed(("crCtlSubmit failed rc %n", rc));
+                        AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
                         RTMemFree(pCtl);
                     }
                 }
@@ -1478,7 +1478,7 @@ int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
                 int rc = crCtlSubmit(&pCtl->Hdr, sizeof (*pCtl), displayCrCmdFree, pCtl);
                 if (!RT_SUCCESS(rc))
                 {
-                    AssertMsgFailed(("crCtlSubmit failed rc %n", rc));
+                    AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
                     RTMemFree(pCtl);
                 }
             }
@@ -2587,7 +2587,7 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
             int rc = crCtlSubmit(&pData->Hdr, sizeof (*pData), displayCrCmdFree, pData);
             if (!RT_SUCCESS(rc))
             {
-                AssertMsgFailed(("crCtlSubmit failed rc %n", rc));
+                AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
                 RTMemFree(pData);
             }
         }
@@ -3915,7 +3915,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                         pData->aParms[0].u.pointer.size = sizeof (pDisplay->mCrOglScreenshotData);
                         int rc = pDisplay->crCtlSubmit(&pData->Hdr, sizeof (*pData), displayCrCmdFree, pData);
                         if (!RT_SUCCESS(rc))
-                            AssertMsgFailed(("crCtlSubmit failed rc %n", rc));
+                            AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
                     }
 
                     /* no 3D data available, or error has occured,
@@ -4421,7 +4421,7 @@ int  Display::handleCrHgcmCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
     pCmd->u.pfnInternal = (void(*)())pfnCompletion;
     int rc = pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_CTL, &parm, displayCrHgcmCtlSubmitCompletion, pvCompletion);
     if (!RT_SUCCESS(rc))
-        AssertMsgFailed(("hgcmHostFastCallAsync failed rc %n", rc));
+        AssertMsgFailed(("hgcmHostFastCallAsync failed rc %d\n", rc));
 
     return rc;
 }

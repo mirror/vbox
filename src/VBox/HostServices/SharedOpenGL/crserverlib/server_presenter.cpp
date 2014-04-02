@@ -396,11 +396,69 @@ static void crFbImgFromScreenVram(const VBVAINFOSCREEN *pScreen, void *pvVram, C
     pImg->pitch = pScreen->u32LineSize;
 }
 
+static void crFbImgFromDimVramBGRA(void *pvVram, uint32_t width, uint32_t height, CR_BLITTER_IMG *pImg)
+{
+    pImg->pvData = pvVram;
+    pImg->cbData = width * height * 4;
+    pImg->enmFormat = GL_BGRA;
+    pImg->width = width;
+    pImg->height = height;
+    pImg->bpp = 32;
+    pImg->pitch = width * 4;
+}
+
 static void crFbImgFromFb(HCR_FRAMEBUFFER hFb, CR_BLITTER_IMG *pImg)
 {
     const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
     void *pvVram = CrFbGetVRAM(hFb);
     crFbImgFromScreenVram(pScreen, pvVram, pImg);
+}
+
+static int crFbTexDataGetContents(CR_TEXDATA *pTex, const RTRECT *pSrcRect, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+{
+    PCR_BLITTER pEnteredBlitter = NULL;
+    uint32_t width = 0, height = 0;
+    RTPOINT ScaledEntryPoint = {0};
+
+    int32_t srcWidth = pSrcRect->xRight - pSrcRect->xLeft;
+    int32_t srcHeight = pSrcRect->yBottom - pSrcRect->yTop;
+    int32_t dstWidth = pDstRect->xRight - pDstRect->xLeft;
+    int32_t dstHeight = pDstRect->yBottom - pDstRect->yTop;
+
+    RTPOINT DstPoint = {pDstRect->xLeft, pDstRect->yTop};
+    float strX = ((float)dstWidth) / srcWidth;
+    float strY = ((float)dstHeight) / srcHeight;
+    bool fScale = (dstWidth != srcWidth || dstHeight != srcHeight);
+
+    const RTPOINT ZeroPoint = {0, 0};
+
+    const VBOXVR_TEXTURE *pVrTex = CrTdTexGet(pTex);
+
+    width = CR_FLOAT_RCAST(uint32_t, strX * pVrTex->width);
+    height = CR_FLOAT_RCAST(uint32_t, strY * pVrTex->height);
+    ScaledEntryPoint.x = pDstRect->xLeft;
+    ScaledEntryPoint.y = pDstRect->yTop;
+    const CR_BLITTER_IMG *pSrcImg;
+    int rc = CrTdBltDataAcquireScaled(pTex, GL_BGRA, false, width, height, &pSrcImg);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("CrTdBltDataAcquire failed rc %d", rc));
+        return rc;
+    }
+
+    for (uint32_t i = 0; i < cRects; ++i)
+    {
+        RTRECT Intersection;
+        VBoxRectIntersected(pDstRect, &pRects[i], &Intersection);
+        if (VBoxRectIsZero(&Intersection))
+            continue;
+
+        crFbBltImg(pSrcImg, &ScaledEntryPoint, false, &Intersection, &ZeroPoint, pImg);
+    }
+
+    CrTdBltDataReleaseScaled(pTex, pSrcImg);
+
+    return VINF_SUCCESS;
 }
 
 static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
@@ -1076,6 +1134,18 @@ static CR_FBTEX* crFbTexAcquire(GLuint idTexture)
     crHashtableAdd(g_CrPresenter.pFbTexMap, idTexture, pFbTex);
 
     return pFbTex;
+}
+
+static CR_TEXDATA* CrFbTexDataAcquire(GLuint idTexture)
+{
+    CR_FBTEX* pTex = crFbTexAcquire(idTexture);
+    if (!pTex)
+    {
+        WARN(("crFbTexAcquire failed for %d", idTexture));
+        return NULL;
+    }
+
+    return &pTex->Tex;
 }
 
 static void crFbEntryMarkDestroyed(CR_FRAMEBUFFER *pFb, CR_FRAMEBUFFER_ENTRY* pEntry)
@@ -4636,213 +4706,532 @@ DECLINLINE(void) crVBoxPRectUnpacks(const VBOXCMDVBVA_RECT *paVbvaRects, RTRECT 
     }
 }
 
-int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd)
+static RTRECT * crVBoxServerCrCmdBltRecsUnpack(const VBOXCMDVBVA_RECT *pPRects, uint32_t cRects)
 {
-    uint8_t u8Flags = pCmd->u8Flags;
-    if (u8Flags & (VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY | VBOXCMDVBVA_OPF_ALLOC_SRCPRIMARY))
+    if (g_CrPresenter.cbTmpBuf < cRects * sizeof (RTRECT))
     {
-        VBOXCMDVBVA_BLT_PRIMARY *pBlt = (VBOXCMDVBVA_BLT_PRIMARY*)pCmd;
-        uint8_t u8PrimaryID = pBlt->Hdr.u.u8PrimaryID;
-        HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u8PrimaryID);
-        if (!hFb)
+        if (g_CrPresenter.pvTmpBuf)
+            RTMemFree(g_CrPresenter.pvTmpBuf);
+
+        g_CrPresenter.cbTmpBuf = (cRects + 10) * sizeof (RTRECT);
+        g_CrPresenter.pvTmpBuf = RTMemAlloc(g_CrPresenter.cbTmpBuf);
+        if (!g_CrPresenter.pvTmpBuf)
         {
-            WARN(("request to present on disabled framebuffer, ignore"));
-            return -1;
+            WARN(("RTMemAlloc failed!"));
+            g_CrPresenter.cbTmpBuf = 0;
+            return NULL;
         }
+    }
 
-        const VBOXCMDVBVA_RECT *pPRects = pBlt->aRects;
-        uint32_t cRects = (cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects)) / sizeof (VBOXCMDVBVA_RECT);
-        RTRECT *pRects;
-        if (g_CrPresenter.cbTmpBuf < cRects * sizeof (RTRECT))
+    RTRECT *pRects = (RTRECT *)g_CrPresenter.pvTmpBuf;
+    crVBoxPRectUnpacks(pPRects, pRects, cRects);
+
+    return pRects;
+}
+
+static void crVBoxServerCrCmdBltPrimaryUpdate(const RTRECT *pRects, uint32_t cRects, uint32_t u32PrimaryID)
+{
+    if (!cRects)
+        return;
+
+    bool fDirtyEmpty = true;
+    RTRECT dirtyRect;
+    cr_server.CrCmdClientInfo.pfnCltScrUpdateBegin(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID);
+
+    VBVACMDHDR hdr;
+    for (uint32_t i = 0; i < cRects; ++i)
+    {
+        hdr.x = pRects[i].xLeft;
+        hdr.y = pRects[i].yTop;
+        hdr.w = hdr.x + pRects[i].xRight;
+        hdr.h = hdr.y + pRects[i].yBottom;
+
+        cr_server.CrCmdClientInfo.pfnCltScrUpdateProcess(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID, &hdr, sizeof (hdr));
+
+        if (fDirtyEmpty)
         {
-            if (g_CrPresenter.pvTmpBuf)
-                RTMemFree(g_CrPresenter.pvTmpBuf);
-
-            g_CrPresenter.cbTmpBuf = (cRects + 10) * sizeof (RTRECT);
-            g_CrPresenter.pvTmpBuf = RTMemAlloc(g_CrPresenter.cbTmpBuf);
-            if (!g_CrPresenter.pvTmpBuf)
-            {
-                WARN(("RTMemAlloc failed!"));
-                g_CrPresenter.cbTmpBuf = 0;
-                return -1;
-            }
-        }
-
-        pRects = (RTRECT *)g_CrPresenter.pvTmpBuf;
-
-        crVBoxPRectUnpacks(pPRects, pRects, cRects);
-
-        Assert(!((cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects)) % sizeof (VBOXCMDVBVA_RECT)));
-
-        if (u8Flags & VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY)
-        {
-            if (!(u8Flags & VBOXCMDVBVA_OPF_ALLOC_SRCPRIMARY))
-            {
-                /* blit to primary from non-primary */
-                if (u8Flags & VBOXCMDVBVA_OPF_ALLOC_SRCID)
-                {
-                    /* TexPresent */
-                    uint32_t texId = pBlt->alloc.u.id;
-                    if (!texId)
-                    {
-                        WARN(("texId is NULL!\n"));
-                        return -1;
-                    }
-
-                    crServerDispatchVBoxTexPresent(texId, u8PrimaryID, pBlt->Pos.x, pBlt->Pos.y, cRects, (const GLint*)pRects);
-                }
-                else
-                {
-                    VBOXCMDVBVAOFFSET offVRAM = pBlt->alloc.u.offVRAM;
-                    const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
-                    uint32_t cbScreen = pScreen->u32LineSize * pScreen->u32Height;
-                    if (offVRAM >= g_cbVRam
-                            || offVRAM + cbScreen >= g_cbVRam)
-                    {
-                        WARN(("invalid param"));
-                        return -1;
-                    }
-
-                    uint8_t *pu8Buf = g_pvVRamBase + offVRAM;
-                    const RTRECT *pCompRect = CrVrScrCompositorRectGet(&hFb->Compositor);
-                    CR_BLITTER_IMG Img;
-                    crFbImgFromScreenVram(pScreen, pu8Buf, &Img);
-                    int rc = CrFbBltPutContentsNe(hFb, pCompRect, pCompRect, cRects, pRects, &Img);
-                    if (!RT_SUCCESS(rc))
-                    {
-                        WARN(("CrFbBltPutContentsNe failed %d", rc));
-                        return -1;
-                    }
-
-                    if (cRects)
-                    {
-                        bool fDirtyEmpty = true;
-                        RTRECT dirtyRect;
-                        cr_server.CrCmdClientInfo.pfnCltScrUpdateBegin(cr_server.CrCmdClientInfo.hCltScr, u8PrimaryID);
-
-                        VBVACMDHDR hdr;
-                        for (uint32_t i = 0; i < cRects; ++i)
-                        {
-                            hdr.x = pRects[i].xLeft;
-                            hdr.y = pRects[i].yTop;
-                            hdr.w = hdr.x + pRects[i].xRight;
-                            hdr.h = hdr.y + pRects[i].yBottom;
-
-                            cr_server.CrCmdClientInfo.pfnCltScrUpdateProcess(cr_server.CrCmdClientInfo.hCltScr, u8PrimaryID, &hdr, sizeof (hdr));
-
-                            if (fDirtyEmpty)
-                            {
-                                /* This is the first rectangle to be added. */
-                                dirtyRect.xLeft   = pRects[i].xLeft;
-                                dirtyRect.yTop    = pRects[i].yTop;
-                                dirtyRect.xRight  = pRects[i].xRight;
-                                dirtyRect.yBottom = pRects[i].yBottom;
-                                fDirtyEmpty       = false;
-                            }
-                            else
-                            {
-                                /* Adjust region coordinates. */
-                                if (dirtyRect.xLeft > pRects[i].xLeft)
-                                {
-                                    dirtyRect.xLeft = pRects[i].xLeft;
-                                }
-
-                                if (dirtyRect.yTop > pRects[i].yTop)
-                                {
-                                    dirtyRect.yTop = pRects[i].yTop;
-                                }
-
-                                if (dirtyRect.xRight < pRects[i].xRight)
-                                {
-                                    dirtyRect.xRight = pRects[i].xRight;
-                                }
-
-                                if (dirtyRect.yBottom < pRects[i].yBottom)
-                                {
-                                    dirtyRect.yBottom = pRects[i].yBottom;
-                                }
-                            }
-                        }
-
-                        if (dirtyRect.xRight - dirtyRect.xLeft)
-                        {
-                            cr_server.CrCmdClientInfo.pfnCltScrUpdateEnd(cr_server.CrCmdClientInfo.hCltScr, u8PrimaryID, dirtyRect.xLeft, dirtyRect.yTop,
-                                                               dirtyRect.xRight - dirtyRect.xLeft, dirtyRect.yBottom - dirtyRect.yTop);
-                        }
-                        else
-                        {
-                            cr_server.CrCmdClientInfo.pfnCltScrUpdateEnd(cr_server.CrCmdClientInfo.hCltScr, u8PrimaryID, 0, 0, 0, 0);
-                        }
-                    }
-                }
-                return 0;
-            }
-            else
-            {
-                /* blit from one primary to another primary, wow */
-                WARN(("not implemented"));
-                return -1;
-            }
+            /* This is the first rectangle to be added. */
+            dirtyRect.xLeft   = pRects[i].xLeft;
+            dirtyRect.yTop    = pRects[i].yTop;
+            dirtyRect.xRight  = pRects[i].xRight;
+            dirtyRect.yBottom = pRects[i].yBottom;
+            fDirtyEmpty       = false;
         }
         else
         {
-            Assert(u8Flags & VBOXCMDVBVA_OPF_ALLOC_SRCPRIMARY);
-            /* blit from primary to non-primary */
-            if (u8Flags & VBOXCMDVBVA_OPF_ALLOC_DSTID)
+            /* Adjust region coordinates. */
+            if (dirtyRect.xLeft > pRects[i].xLeft)
             {
-                uint32_t texId = pBlt->alloc.u.id;
-                WARN(("not implemented"));
-                return -1;
+                dirtyRect.xLeft = pRects[i].xLeft;
             }
-            else
+
+            if (dirtyRect.yTop > pRects[i].yTop)
             {
-                VBOXCMDVBVAOFFSET offVRAM = pBlt->alloc.u.offVRAM;
-                const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
-                uint32_t cbScreen = pScreen->u32LineSize * pScreen->u32Height;
-                if (offVRAM >= g_cbVRam
-                        || offVRAM + cbScreen >= g_cbVRam)
-                {
-                    WARN(("invalid param"));
-                    return -1;
-                }
+                dirtyRect.yTop = pRects[i].yTop;
+            }
 
-                uint8_t *pu8Buf = g_pvVRamBase + offVRAM;
+            if (dirtyRect.xRight < pRects[i].xRight)
+            {
+                dirtyRect.xRight = pRects[i].xRight;
+            }
 
-                RTRECT SrcRect;
-                SrcRect.xLeft = 0;
-                SrcRect.yTop = 0;
-                SrcRect.xRight = pScreen->u32Width;
-                SrcRect.yBottom = pScreen->u32Height;
-                RTRECT DstRect;
-                DstRect.xLeft = pBlt->Pos.x;
-                DstRect.yTop = pBlt->Pos.y;
-                DstRect.xRight = DstRect.xLeft + pScreen->u32Width;
-                DstRect.yBottom = DstRect.yTop + pScreen->u32Height;
-                CR_BLITTER_IMG Img;
-                crFbImgFromScreenVram(pScreen, pu8Buf, &Img);
-                int rc = CrFbBltGetContents(hFb, &SrcRect, &DstRect, cRects, pRects, &Img);
-                if (!RT_SUCCESS(rc))
-                {
-                    WARN(("CrFbBltGetContents failed %d", rc));
-                    return -1;
-                }
+            if (dirtyRect.yBottom < pRects[i].yBottom)
+            {
+                dirtyRect.yBottom = pRects[i].yBottom;
             }
         }
     }
+
+    if (dirtyRect.xRight - dirtyRect.xLeft)
+    {
+        cr_server.CrCmdClientInfo.pfnCltScrUpdateEnd(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID, dirtyRect.xLeft, dirtyRect.yTop,
+                                           dirtyRect.xRight - dirtyRect.xLeft, dirtyRect.yBottom - dirtyRect.yTop);
+    }
     else
     {
-        WARN(("not implemented"));
+        cr_server.CrCmdClientInfo.pfnCltScrUpdateEnd(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID, 0, 0, 0, 0);
+    }
+}
+
+static int8_t crVBoxServerCrCmdBltPrimaryVramGenericProcess(uint32_t u32PrimaryID, VBOXCMDVBVAOFFSET offVRAM, uint32_t width, uint32_t height, uint32_t xPos, uint32_t yPos, const RTRECT *pRects, uint32_t cRects, bool fToPrimary)
+{
+    CR_BLITTER_IMG Img;
+    uint32_t cbBuff = width * height * 4;
+    if (offVRAM >= g_cbVRam
+            || offVRAM + cbBuff >= g_cbVRam)
+    {
+        WARN(("invalid param"));
+        return -1;
+    }
+
+    uint8_t *pu8Buf = g_pvVRamBase + offVRAM;
+    RTRECT SrcRect, DstRect;
+
+    SrcRect.xLeft = 0;
+    SrcRect.yTop = 0;
+    SrcRect.xRight = width;
+    SrcRect.yBottom = height;
+
+    DstRect.xLeft = xPos;
+    DstRect.yTop = yPos;
+    DstRect.xRight = DstRect.xLeft + width;
+    DstRect.yBottom = DstRect.yTop + height;
+
+    crFbImgFromDimVramBGRA(pu8Buf, width, height, &Img);
+
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32PrimaryID);
+    if (!hFb)
+    {
+        WARN(("request to present on disabled framebuffer"));
+        return -1;
+    }
+
+    if (!fToPrimary)
+    {
+
+        int rc = CrFbBltGetContents(hFb, &SrcRect, &DstRect, cRects, pRects, &Img);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("CrFbBltGetContents failed %d", rc));
+            return -1;
+        }
+
+        return 0;
+    }
+
+    int rc = CrFbBltPutContentsNe(hFb, &SrcRect, &DstRect, cRects, pRects, &Img);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("CrFbBltPutContentsNe failed %d", rc));
         return -1;
     }
 
     return 0;
 }
 
+static int8_t crVBoxServerCrCmdBltPrimaryProcess(const VBOXCMDVBVA_BLT_PRIMARY *pCmd, uint32_t cbCmd)
+{
+    uint32_t u32PrimaryID = (uint32_t)pCmd->Hdr.Hdr.u.u8PrimaryID;
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32PrimaryID);
+    if (!hFb)
+    {
+        WARN(("request to present on disabled framebuffer, ignore"));
+        return 0;
+    }
+
+    uint32_t cRects;
+    const VBOXCMDVBVA_RECT *pPRects = pCmd->aRects;
+    if ((cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects)) % sizeof (VBOXCMDVBVA_RECT))
+    {
+        WARN(("invalid argument size"));
+        return -1;
+    }
+
+    cRects = (cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects)) / sizeof (VBOXCMDVBVA_RECT);
+
+    RTRECT *pRects = crVBoxServerCrCmdBltRecsUnpack(pPRects, cRects);
+    if (!pRects)
+    {
+        WARN(("crVBoxServerCrCmdBltRecsUnpack failed"));
+        return -1;
+    }
+
+    uint8_t u8Flags = pCmd->Hdr.Hdr.u8Flags;
+
+    if (u8Flags & VBOXCMDVBVA_OPF_OPERAND2_ISID)
+    {
+        uint32_t texId = pCmd->alloc.u.id;
+        if (!texId)
+        {
+            WARN(("texId is NULL!\n"));
+            return -1;
+        }
+
+        if (u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2)
+        {
+            WARN(("blit from primary to texture not implemented"));
+            return -1;
+        }
+
+        crServerDispatchVBoxTexPresent(texId, u32PrimaryID, pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y, cRects, (const GLint*)pRects);
+    }
+    else
+    {
+        const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
+        uint32_t width = pScreen->u32Width, height = pScreen->u32Height;
+        VBOXCMDVBVAOFFSET offVRAM = pCmd->alloc.u.offVRAM;
+
+        bool fToPrymary = !(u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2);
+        int8_t i8Result = crVBoxServerCrCmdBltPrimaryVramGenericProcess(u32PrimaryID, offVRAM, width, height, pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y, pRects, cRects, fToPrymary);
+        if (i8Result < 0)
+        {
+            WARN(("crVBoxServerCrCmdBltPrimaryVramGenericProcess failed"));
+            return i8Result;
+        }
+
+        if (!fToPrymary)
+            return 0;
+    }
+
+    crVBoxServerCrCmdBltPrimaryUpdate(pRects, cRects, u32PrimaryID);
+
+    return 0;
+}
+
+static int8_t crVBoxServerCrCmdBltOffIdProcess(const VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID *pCmd, uint32_t cbCmd)
+{
+    uint32_t cRects;
+    const VBOXCMDVBVA_RECT *pPRects = pCmd->aRects;
+    if ((cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, aRects)) % sizeof (VBOXCMDVBVA_RECT))
+    {
+        WARN(("invalid argument size"));
+        return -1;
+    }
+
+    cRects = (cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, aRects)) / sizeof (VBOXCMDVBVA_RECT);
+
+    RTRECT *pRects = crVBoxServerCrCmdBltRecsUnpack(pPRects, cRects);
+    if (!pRects)
+    {
+        WARN(("crVBoxServerCrCmdBltRecsUnpack failed"));
+        return -1;
+    }
+
+    uint8_t u8Flags = pCmd->Hdr.Hdr.u8Flags;
+    uint32_t hostId = pCmd->id;
+
+    Assert(u8Flags & VBOXCMDVBVA_OPF_OPERAND2_ISID);
+
+    if (!hostId)
+    {
+        WARN(("zero host id"));
+        return -1;
+    }
+
+    if (u8Flags & VBOXCMDVBVA_OPF_OPERAND1_ISID)
+    {
+        WARN(("blit from texture to texture not implemented"));
+        return -1;
+    }
+
+    if (u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2)
+    {
+        WARN(("blit to texture not implemented"));
+        return -1;
+    }
+
+    CR_TEXDATA* pTex = CrFbTexDataAcquire(hostId);
+    if (!pTex)
+    {
+        WARN(("pTex failed for %d", hostId));
+        return -1;
+    }
+
+    const VBOXVR_TEXTURE *pVrTex = CrTdTexGet(pTex);
+    RTRECT SrcRect, DstRect;
+    uint32_t width = pVrTex->width;
+    uint32_t height = pVrTex->height;
+
+    SrcRect.xLeft = 0;
+    SrcRect.yTop = 0;
+    SrcRect.xRight = width;
+    SrcRect.yBottom = height;
+
+    DstRect.xLeft = pCmd->Hdr.Pos.x;
+    DstRect.yTop = pCmd->Hdr.Pos.y;
+    DstRect.xRight = DstRect.xLeft + width;
+    DstRect.yBottom = DstRect.yTop + height;
+
+    VBOXCMDVBVAOFFSET offVRAM = pCmd->alloc.u.offVRAM;
+    uint32_t cbBuff = width * height * 4;
+    if (offVRAM >= g_cbVRam
+            || offVRAM + cbBuff >= g_cbVRam)
+    {
+        WARN(("invalid param"));
+        return -1;
+    }
+
+    int rc = CrTdBltEnter(pTex);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("CrTdBltEnter failed %d", rc));
+        return -1;
+    }
+
+    uint8_t *pu8Buf = g_pvVRamBase + offVRAM;
+    CR_BLITTER_IMG Img;
+    crFbImgFromDimVramBGRA(pu8Buf, width, height, &Img);
+
+    rc = crFbTexDataGetContents(pTex, &SrcRect, &DstRect, cRects, pRects, &Img);
+
+    CrTdBltLeave(pTex);
+
+    CrTdRelease(pTex);
+
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("crFbTexDataGetContents failed %d", rc));
+        return -1;
+    }
+
+    return 0;
+}
+
+static int8_t crVBoxServerCrCmdBltPrimaryGenericBGRAProcess(const VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8 *pCmd, uint32_t cbCmd)
+{
+    uint32_t u32PrimaryID = pCmd->Hdr.Hdr.u.u8PrimaryID;
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32PrimaryID);
+    if (!hFb)
+    {
+        WARN(("request to present on disabled framebuffer, ignore"));
+        return 0;
+    }
+
+    uint32_t cRects;
+    const VBOXCMDVBVA_RECT *pPRects = pCmd->aRects;
+    if ((cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8, aRects)) % sizeof (VBOXCMDVBVA_RECT))
+    {
+        WARN(("invalid argument size"));
+        return -1;
+    }
+
+    cRects = (cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8, aRects)) / sizeof (VBOXCMDVBVA_RECT);
+
+    RTRECT *pRects = crVBoxServerCrCmdBltRecsUnpack(pPRects, cRects);
+    if (!pRects)
+    {
+        WARN(("crVBoxServerCrCmdBltRecsUnpack failed"));
+        return -1;
+    }
+
+    uint8_t u8Flags = pCmd->Hdr.Hdr.u8Flags;
+
+    if (u8Flags & VBOXCMDVBVA_OPF_OPERAND2_ISID)
+    {
+        WARN(("blit tex-primary generic is somewhat unexpected"));
+
+        uint32_t texId = pCmd->alloc.Info.u.id;
+        if (!texId)
+        {
+            WARN(("texId is NULL!\n"));
+            return -1;
+        }
+
+        if (u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2)
+        {
+            WARN(("blit from primary to texture not implemented"));
+            return -1;
+        }
+
+        crServerDispatchVBoxTexPresent(texId, u32PrimaryID, pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y, cRects, (const GLint*)pRects);
+    }
+    else
+    {
+        bool fToPrymary = !(u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2);
+        uint32_t width, height;
+        if (fToPrymary)
+        {
+            width = pCmd->alloc.width;
+            height = pCmd->alloc.height;
+        }
+        else
+        {
+            const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
+            width = pScreen->u32Width;
+            height = pScreen->u32Height;
+        }
+
+        VBOXCMDVBVAOFFSET offVRAM = pCmd->alloc.Info.u.offVRAM;
+
+        int8_t i8Result = crVBoxServerCrCmdBltPrimaryVramGenericProcess(u32PrimaryID, offVRAM, width, height, pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y, pRects, cRects, fToPrymary);
+        if (i8Result < 0)
+        {
+            WARN(("crVBoxServerCrCmdBltPrimaryVramGenericProcess failed"));
+            return i8Result;
+        }
+
+        if (!fToPrymary)
+            return 0;
+    }
+
+    crVBoxServerCrCmdBltPrimaryUpdate(pRects, cRects, u32PrimaryID);
+
+    return 0;
+}
+
+static int8_t crVBoxServerCrCmdBltGenericBGRAProcess(const VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8 *pCmd, uint32_t cbCmd)
+{
+    uint32_t cRects;
+    const VBOXCMDVBVA_RECT *pPRects = pCmd->aRects;
+    if ((cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, aRects)) % sizeof (VBOXCMDVBVA_RECT))
+    {
+        WARN(("invalid argument size"));
+        return -1;
+    }
+
+    cRects = (cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, aRects)) / sizeof (VBOXCMDVBVA_RECT);
+
+    RTRECT *pRects = crVBoxServerCrCmdBltRecsUnpack(pPRects, cRects);
+    if (!pRects)
+    {
+        WARN(("crVBoxServerCrCmdBltRecsUnpack failed"));
+        return -1;
+    }
+
+    uint8_t u8Flags = pCmd->Hdr.Hdr.u8Flags;
+
+    WARN(("crVBoxServerCrCmdBltGenericBGRAProcess: not supported"));
+    return -1;
+}
+
+static int8_t crVBoxServerCrCmdBltPrimaryPrimaryProcess(const VBOXCMDVBVA_BLT_PRIMARY *pCmd, uint32_t cbCmd)
+{
+    uint8_t u8PrimaryID = pCmd->Hdr.Hdr.u.u8PrimaryID;
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u8PrimaryID);
+    if (!hFb)
+    {
+        WARN(("request to present on disabled framebuffer, ignore"));
+        return -1;
+    }
+
+    uint32_t cRects;
+    const VBOXCMDVBVA_RECT *pPRects = pCmd->aRects;
+    if ((cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects)) % sizeof (VBOXCMDVBVA_RECT))
+    {
+        WARN(("invalid argument size"));
+        return -1;
+    }
+
+    cRects = (cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects)) / sizeof (VBOXCMDVBVA_RECT);
+
+    RTRECT *pRects = crVBoxServerCrCmdBltRecsUnpack(pPRects, cRects);
+    if (!pRects)
+    {
+        WARN(("crVBoxServerCrCmdBltRecsUnpack failed"));
+        return -1;
+    }
+
+    uint8_t u8Flags = pCmd->Hdr.Hdr.u8Flags;
+
+    WARN(("crVBoxServerCrCmdBltPrimaryPrimaryProcess: not supported"));
+    return -1;
+}
+
+int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_BLT_HDR *pCmd, uint32_t cbCmd)
+{
+    uint8_t u8Flags = pCmd->Hdr.u8Flags;
+    uint8_t u8Cmd = (VBOXCMDVBVA_OPF_BLT_TYPE_MASK & u8Flags);
+
+    switch (u8Cmd)
+    {
+        case VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY:
+        {
+            if (cbCmd < sizeof (VBOXCMDVBVA_BLT_PRIMARY))
+            {
+                WARN(("VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY: invalid command size"));
+                return -1;
+            }
+
+            return crVBoxServerCrCmdBltPrimaryProcess((const VBOXCMDVBVA_BLT_PRIMARY*)pCmd, cbCmd);
+        }
+        case VBOXCMDVBVA_OPF_BLT_TYPE_OFFPRIMSZFMT_OR_ID:
+        {
+            if (cbCmd < sizeof (VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID))
+            {
+                WARN(("VBOXCMDVBVA_OPF_BLT_TYPE_OFFPRIMSZFMT_OR_ID: invalid command size"));
+                return -1;
+            }
+
+            return crVBoxServerCrCmdBltOffIdProcess((const VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID *)pCmd, cbCmd);
+        }
+        case VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_GENERIC_A8R8G8B8:
+        {
+            if (cbCmd < sizeof (VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8))
+            {
+                WARN(("VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_GENERIC_A8R8G8B8: invalid command size"));
+                return -1;
+            }
+
+            return crVBoxServerCrCmdBltPrimaryGenericBGRAProcess((const VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8 *)pCmd, cbCmd);
+        }
+        case VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8:
+        {
+            if (cbCmd < sizeof (VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8))
+            {
+                WARN(("VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8: invalid command size"));
+                return -1;
+            }
+
+            return crVBoxServerCrCmdBltGenericBGRAProcess((const VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8 *)pCmd, cbCmd);
+        }
+        case VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_PRIMARY:
+        {
+            if (cbCmd < sizeof (VBOXCMDVBVA_BLT_PRIMARY))
+            {
+                WARN(("VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_PRIMARY: invalid command size"));
+                return -1;
+            }
+
+            return crVBoxServerCrCmdBltPrimaryPrimaryProcess((const VBOXCMDVBVA_BLT_PRIMARY *)pCmd, cbCmd);
+        }
+        default:
+            WARN(("unsupported command"));
+            return -1;
+    }
+}
+
 int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip)
 {
     uint32_t hostId;
-    if (pFlip->Hdr.u8Flags & VBOXCMDVBVA_OPF_ALLOC_SRCID)
+    if (pFlip->Hdr.u8Flags & VBOXCMDVBVA_OPF_OPERAND1_ISID)
+    {
         hostId = pFlip->src.u.id;
+        if (!hostId)
+        {
+            WARN(("hostId is NULL"));
+            return -1;
+        }
+    }
     else
     {
         WARN(("VBOXCMDVBVA_OPF_ALLOC_SRCID not specified"));
