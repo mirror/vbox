@@ -210,7 +210,7 @@ STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn(LONG, scancodes),
 
     uint32_t sent;
     for (sent = 0; (sent < keys.size()) && RT_SUCCESS(vrc); sent++)
-        vrc = pUpPort->pfnPutEvent(pUpPort, (uint8_t)keys[sent]);
+        vrc = pUpPort->pfnPutEventScan(pUpPort, (uint8_t)keys[sent]);
 
     if (codesStored)
         *codesStored = sent;

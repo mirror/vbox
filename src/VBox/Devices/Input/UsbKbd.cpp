@@ -132,13 +132,6 @@ typedef struct USBHIDK_REPORT
     uint8_t     aKeys[6];       /**< Normal keys */
 } USBHIDK_REPORT, *PUSBHIDK_REPORT;
 
-/** Scancode translator state.  */
-typedef enum {
-    SS_IDLE,    /**< Starting state. */
-    SS_EXT,     /**< E0 byte was received. */
-    SS_EXT1     /**< E1 byte was received. */
-} scan_state_t;
-
 /**
  * The USB HID instance data.
  */
@@ -159,9 +152,6 @@ typedef struct USBHID
     USBHIDEP            aEps[2];
     /** The state of the HID (state machine).*/
     USBHIDREQSTATE      enmState;
-
-    /** State of the scancode translation. */
-    scan_state_t        XlatState;
 
     /** Pending to-host queue.
      * The URBs waiting here are waiting for data to become available.
@@ -357,110 +347,6 @@ static const PDMUSBDESCCACHE g_UsbHidDescCache =
     /* .fUseCachedStringsDescriptors = */ true
 };
 
-
-/*
- * Because of historical reasons and poor design, VirtualBox internally uses BIOS
- * PC/XT style scan codes to represent keyboard events. Each key press and release is
- * represented as a stream of bytes, typically only one byte but up to four-byte
- * sequences are possible. In the typical case, the GUI front end generates the stream
- * of scan codes which we need to translate back to a single up/down event.
- *
- * This function could possibly live somewhere else.
- */
-
-/** Lookup table for converting PC/XT scan codes to USB HID usage codes. */
-/** We map the scan codes for F13 to F23 to the usage codes for Sun keyboard
- *  left-hand side function keys rather than to the standard F13 to F23 usage
- *  codes, since we suspect that there are more people wanting Sun keyboard
- *  emulation than emulation of other keyboards with extended function keys. */
-static uint8_t aScancode2Hid[] =
-{
-    0x00, 0x29, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, /* 00-07 */
-    0x24, 0x25, 0x26, 0x27, 0x2d, 0x2e, 0x2a, 0x2b, /* 08-1F */
-    0x14, 0x1a, 0x08, 0x15, 0x17, 0x1c, 0x18, 0x0c, /* 10-17 */
-    0x12, 0x13, 0x2f, 0x30, 0x28, 0xe0, 0x04, 0x16, /* 18-1F */
-    0x07, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x33, /* 20-27 */
-    0x34, 0x35, 0xe1, 0x31, 0x1d, 0x1b, 0x06, 0x19, /* 28-2F */
-    0x05, 0x11, 0x10, 0x36, 0x37, 0x38, 0xe5, 0x55, /* 30-37 */
-    0xe2, 0x2c, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, /* 38-3F */
-    0x3f, 0x40, 0x41, 0x42, 0x43, 0x53, 0x47, 0x5f, /* 40-47 */
-    0x60, 0x61, 0x56, 0x5c, 0x5d, 0x5e, 0x57, 0x59, /* 48-4F */
-    0x5a, 0x5b, 0x62, 0x63, 0x46, 0x00, 0x64, 0x44, /* 50-57 */
-    0x45, 0x67, 0x00, 0x00, 0x8c, 0x00, 0x00, 0x00, /* 58-5F */
-               /* Sun keys: Props Undo  Front Copy */
-    0x00, 0x00, 0x00, 0x00, 0x76, 0x7a, 0x77, 0x7c, /* 60-67 */
- /* Open  Paste Find  Cut   Stop  Again Help */
-    0x74, 0x7d, 0x7e, 0x7b, 0x78, 0x79, 0x75, 0x00, /* 68-6F */
-    0x88, 0x91, 0x90, 0x87, 0x00, 0x00, 0x00, 0x00, /* 70-77 */
-    0x00, 0x8a, 0x00, 0x8b, 0x00, 0x89, 0x85, 0x00  /* 78-7F */
-};
-
-/** Lookup table for extended scancodes (arrow keys etc.). */
-static uint8_t aExtScan2Hid[] =
-{
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 00-07 */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 08-1F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 10-17 */
-    0x00, 0x00, 0x00, 0x00, 0x58, 0xe4, 0x00, 0x00, /* 18-1F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 20-27 */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 28-2F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x54, 0x00, 0x46, /* 30-37 */
-    0xe6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 38-3F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x00, 0x4a, /* 40-47 */
-    0x52, 0x4b, 0x00, 0x50, 0x00, 0x4f, 0x00, 0x4d, /* 48-4F */
-    0x51, 0x4e, 0x49, 0x4c, 0x00, 0x00, 0x00, 0x00, /* 50-57 */
-    0x00, 0x00, 0x00, 0xe3, 0xe7, 0x65, 0x66, 0x00, /* 58-5F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 60-67 */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 68-6F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 70-77 */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  /* 78-7F */
-};
-
-/**
- * Convert a PC scan code to a USB HID usage byte.
- *
- * @param state         Current state of the translator (scan_state_t).
- * @param scanCode      Incoming scan code.
- * @param pUsage        Pointer to usage; high bit set for key up events. The
- *                      contents are only valid if returned state is SS_IDLE.
- *
- * @return scan_state_t New state of the translator.
- */
-static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uint32_t *pUsage)
-{
-    uint32_t    keyUp;
-    uint8_t     usage;
-
-    Assert(pUsage);
-
-    /* Isolate the scan code and key break flag. */
-    keyUp = (scanCode & 0x80) << 24;
-
-    switch (state) {
-    case SS_IDLE:
-        if (scanCode == 0xE0) {
-            state = SS_EXT;
-        } else if (scanCode == 0xE1) {
-            state = SS_EXT1;
-        } else {
-            usage = aScancode2Hid[scanCode & 0x7F];
-            *pUsage = usage | keyUp;
-            /* Remain in SS_IDLE state. */
-        }
-        break;
-    case SS_EXT:
-        usage = aExtScan2Hid[scanCode & 0x7F];
-        *pUsage = usage | keyUp;
-        state = SS_IDLE;
-        break;
-    case SS_EXT1:
-        Assert(0);  //@todo - sort out the Pause key
-        *pUsage = 0;
-        state = SS_IDLE;
-        break;
-    }
-    return state;
-}
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -932,19 +818,18 @@ static DECLCALLBACK(void *) usbHidKeyboardQueryInterface(PPDMIBASE pInterface, c
  *
  * @returns VBox status code.
  * @param   pInterface      Pointer to the keyboard port interface (KBDState::Keyboard.IPort).
- * @param   u8KeyCode       The keycode.
+ * @param   u32UsageCode    The key usage ID.
  */
-static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, uint8_t u8KeyCode)
+static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, uint32_t u32UsageCode)
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
-    uint32_t    u32Usage = 0;
     uint8_t     u8HidCode;
     int         fKeyDown;
     bool        fHaveEvent = true;
 
     RTCritSectEnter(&pThis->CritSect);
 
-    if (RT_UNLIKELY(u8KeyCode == KRSP_BAT_FAIL))
+    if (RT_UNLIKELY(u32UsageCode == KRSP_BAT_FAIL))
     {
         /* Clear all currently depressed and unreported keys. */
         RT_ZERO(pThis->abDepressedKeys);
@@ -953,62 +838,54 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     }
     else
     {
+        fKeyDown = !(u32UsageCode & 0x80000000);
+        u8HidCode = u32UsageCode & 0xFF;
+        AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
 
-        pThis->XlatState = ScancodeToHidUsage(pThis->XlatState, u8KeyCode, &u32Usage);
+        LogFlowFunc(("key %s: 0x%x\n", fKeyDown ? "down" : "up", u8HidCode));
 
-        if (pThis->XlatState == SS_IDLE)
+        if (fKeyDown)
         {
-            /* The usage code is valid. */
-            fKeyDown = !(u32Usage & 0x80000000);
-            u8HidCode = u32Usage & 0xFF;
-            AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
-
-            LogFlowFunc(("key %s: 0x%x->0x%x\n",
-                            fKeyDown ? "down" : "up", u8KeyCode, u8HidCode));
-
-            if (fKeyDown)
+            /* Due to host key repeat, we can get key events for keys which are
+             * already depressed. */
+            if (!pThis->abDepressedKeys[u8HidCode])
             {
-                /* Due to host key repeat, we can get key events for keys which are
-                 * already depressed. */
-                if (!pThis->abDepressedKeys[u8HidCode])
+                pThis->abUnreportedKeys[u8HidCode] = 1;
+
+                /* If a non-modifier key is being marked as unreported, also set
+                 * all currently depressed modifer keys as unreported. This avoids
+                 * problems where a simulated key sequence is sent too fast and
+                 * by the time the key is reported, some previously reported
+                 * modifiers are already released. This helps ensure that the guest
+                 * sees the entire modifier(s)+key sequence in a single report.
+                 */
+                if (!usbHidUsageCodeIsModifier(u8HidCode))
                 {
-                    pThis->abUnreportedKeys[u8HidCode] = 1;
+                    int     iModKey;
 
-                    /* If a non-modifier key is being marked as unreported, also set
-                     * all currently depressed modifer keys as unreported. This avoids
-                     * problems where a simulated key sequence is sent too fast and
-                     * by the time the key is reported, some previously reported
-                     * modifiers are already released. This helps ensure that the guest
-                     * sees the entire modifier(s)+key sequence in a single report.
-                     */
-                    if (!usbHidUsageCodeIsModifier(u8HidCode))
-                    {
-                        int     iModKey;
-
-                        for (iModKey = USBHID_MODIFIER_FIRST; iModKey <= USBHID_MODIFIER_LAST; ++iModKey)
-                            if (pThis->abDepressedKeys[iModKey])
-                                pThis->abUnreportedKeys[iModKey] = 1;
-                    }
+                    for (iModKey = USBHID_MODIFIER_FIRST; iModKey <= USBHID_MODIFIER_LAST; ++iModKey)
+                        if (pThis->abDepressedKeys[iModKey])
+                            pThis->abUnreportedKeys[iModKey] = 1;
                 }
-                else
-                    fHaveEvent = false;
-                pThis->abDepressedKeys[u8HidCode] = 1;
             }
             else
-            {
-                /* For stupid Korean keyboards, we have to fake a key up/down sequence
-                 * because they only send break codes for Hangul/Hanja keys.
-                 */
-                if (u8HidCode == 0x90 || u8HidCode == 0x91)
-                    pThis->abUnreportedKeys[u8HidCode] = 1;
-                pThis->abDepressedKeys[u8HidCode] = 0;
-            }
-
-
-            /* Send a report if the host is already waiting for it. */
-            if (fHaveEvent)
-                usbHidSendReport(pThis);
+                fHaveEvent = false;
+            pThis->abDepressedKeys[u8HidCode] = 1;
         }
+        else
+        {
+            /* For stupid Korean keyboards, we have to fake a key up/down sequence
+             * because they only send break codes for Hangul/Hanja keys.
+             */
+            if (u8HidCode == 0x90 || u8HidCode == 0x91)
+                pThis->abUnreportedKeys[u8HidCode] = 1;
+            pThis->abDepressedKeys[u8HidCode] = 0;
+        }
+
+
+        /* Send a report if the host is already waiting for it. */
+        if (fHaveEvent)
+            usbHidSendReport(pThis);
     }
 
     RTCritSectLeave(&pThis->CritSect);
@@ -1503,7 +1380,6 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
      */
     pThis->pUsbIns                                  = pUsbIns;
     pThis->hEvtDoneQueue                            = NIL_RTSEMEVENT;
-    pThis->XlatState                                = SS_IDLE;
     usbHidQueueInit(&pThis->ToHostQueue);
     usbHidQueueInit(&pThis->DoneQueue);
 
@@ -1521,7 +1397,7 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
         return rc;
 
     pThis->Lun0.IBase.pfnQueryInterface = usbHidKeyboardQueryInterface;
-    pThis->Lun0.IPort.pfnPutEvent       = usbHidKeyboardPutEvent;
+    pThis->Lun0.IPort.pfnPutEventHid    = usbHidKeyboardPutEvent;
 
     /*
      * Attach the keyboard driver.

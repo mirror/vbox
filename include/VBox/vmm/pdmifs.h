@@ -398,7 +398,7 @@ typedef struct PDMIKEYBOARDPORT *PPDMIKEYBOARDPORT;
 typedef struct PDMIKEYBOARDPORT
 {
     /**
-     * Puts a keyboard event.
+     * Puts a scan code based keyboard event.
      *
      * This is called by the source of keyboard events. The event will be passed up
      * until the topmost driver, which then calls the registered event handler.
@@ -407,9 +407,23 @@ typedef struct PDMIKEYBOARDPORT
      *          event now and want it to be repeated at a later point.
      *
      * @param   pInterface          Pointer to this interface structure.
-     * @param   u8KeyCode           The keycode to queue.
+     * @param   u8ScanCode          The scan code to queue.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPutEvent,(PPDMIKEYBOARDPORT pInterface, uint8_t u8KeyCode));
+    DECLR3CALLBACKMEMBER(int, pfnPutEventScan,(PPDMIKEYBOARDPORT pInterface, uint8_t u8KeyCode));
+
+    /**
+     * Puts a USB HID usage ID based keyboard event.
+     *
+     * This is called by the source of keyboard events. The event will be passed up
+     * until the topmost driver, which then calls the registered event handler.
+     *
+     * @returns VBox status code.  Return VERR_TRY_AGAIN if you cannot process the
+     *          event now and want it to be repeated at a later point.
+     *
+     * @param   pInterface          Pointer to this interface structure.
+     * @param   u32UsageID          The HID usage code event to queue.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPutEventHid,(PPDMIKEYBOARDPORT pInterface, uint32_t u32UsageID));
 } PDMIKEYBOARDPORT;
 /** PDMIKEYBOARDPORT interface ID. */
 #define PDMIKEYBOARDPORT_IID                    "2a0844f0-410b-40ab-a6ed-6575f3aa3e29"
