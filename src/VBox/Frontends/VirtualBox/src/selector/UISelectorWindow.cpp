@@ -25,6 +25,7 @@
 #include <QDesktopWidget>
 #include <QDesktopServices>
 #include <QMenuBar>
+#include <QStatusBar>
 #include <QResizeEvent>
 #include <QStackedWidget>
 #include <QTimer>

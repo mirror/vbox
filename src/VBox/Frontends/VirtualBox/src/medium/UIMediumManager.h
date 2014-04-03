@@ -18,7 +18,7 @@
 #define ___UIMediumManager_h___
 
 /* GUI includes: */
-#include "UIMediumManager.gen.h"
+
 #include "QIWithRetranslateUI.h"
 #include "QIMainDialog.h"
 #include "UIMediumDefs.h"
@@ -28,6 +28,13 @@ class UIMedium;
 class UIMediumItem;
 class UIToolBar;
 class UIEnumerationProgressBar;
+class QTabWidget;
+class QTreeWidget;
+class QTreeWidgetItem;
+class QFrame;
+class QLabel;
+class QILabel;
+class QIDialogButtonBox;
 
 /** Functor interface allowing to check if passed UIMediumItem is suitable. */
 class CheckIfSuitableBy
@@ -38,7 +45,7 @@ public:
 };
 
 /** Medium Manager dialog. */
-class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>, public Ui::UIMediumManager
+class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>
 {
     Q_OBJECT;
 
@@ -145,14 +152,14 @@ private:
     void updateActionIcons();
     /** Update tab icons according last @a action happened with @a pItem. */
     void updateTabIcons(UIMediumItem *pItem, Action action);
-    /** Update information pane of passed medium @a type. */
-    void updateInformationPanes(UIMediumType type = UIMediumType_Invalid);
-    /** Update information pane for hard-drive tab. */
-    void updateInformationPanesHD();
-    /** Update information pane for optical-disk tab. */
-    void updateInformationPanesCD();
-    /** Update information pane for floppy-disk tab. */
-    void updateInformationPanesFD();
+    /** Update information fields of passed medium @a type. */
+    void updateInformationFields(UIMediumType type = UIMediumType_Invalid);
+    /** Update information fields for hard-drive tab. */
+    void updateInformationFieldsHD();
+    /** Update information fields for optical-disk tab. */
+    void updateInformationFieldsCD();
+    /** Update information fields for floppy-disk tab. */
+    void updateInformationFieldsFD();
 
 #ifdef Q_WS_MAC
     /** Mac OS X: Cleanup <i>Window</i> menu. */
@@ -173,6 +180,8 @@ private:
     /** Deletes UIMediumItem for corresponding @a strMediumID. */
     void deleteMediumItem(const QString &strMediumID);
 
+    /** Returns tab for passed medium @a type. */
+    QWidget* tab(UIMediumType type) const;
     /** Returns tree-widget for passed medium @a type. */
     QTreeWidget* treeWidget(UIMediumType type) const;
     /** Returns item for passed medium @a type. */
@@ -213,8 +222,8 @@ private:
     /** Casts passed QTreeWidgetItem @a pItem to UIMediumItem if possible. */
     static UIMediumItem* toMediumItem(QTreeWidgetItem *pItem);
 
-    /** Format information-pane content. */
-    static QString formatPaneText(const QString &strText, bool fCompact = true, const QString &strElipsis = "middle");
+    /** Format information-field content. */
+    static QString formatFieldText(const QString &strText, bool fCompact = true, const QString &strElipsis = "middle");
 
     /** Determines if passed @a medium attached to hidden machines only. */
     static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
@@ -234,6 +243,18 @@ private:
 
     /** @name Tab-widget variables.
      * @{ */
+    /** Tab-widget itself. */
+    QTabWidget *m_pTabWidget;
+    /** Tab-widget tab-count. */
+    const int m_iTabCount;
+    /** Tree-widgets. */
+    QMap<int, QTreeWidget*> m_trees;
+    /** Information-containers. */
+    QMap<int, QFrame*> m_containers;
+    /** Information-container labels. */
+    QMap<int, QList<QLabel*> > m_labels;
+    /** Information-container fields. */
+    QMap<int, QList<QILabel*> > m_fields;
     /** Holds whether hard-drive tab-widget have inaccessible item. */
     bool m_fInaccessibleHD;
     /** Holds whether optical-disk tab-widget have inaccessible item. */
@@ -274,8 +295,10 @@ private:
     QAction *m_pActionRefresh;
     /** @} */
 
-    /** @name Progress-bar variables.
+    /** @name Button-box variables.
      * @{ */
+    /** Dialog button-box. */
+    QIDialogButtonBox *m_pButtonBox;
     /** Progress-bar widget. */
     UIEnumerationProgressBar *m_pProgressBar;
     /** @} */
