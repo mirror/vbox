@@ -52,12 +52,15 @@
 #include "VBoxDD.h"
 #include "PS2Dev.h"
 
-/* Do not remove this (unless eliminating the corresponding ifdefs), it willi
+/* Do not remove this (unless eliminating the corresponding ifdefs), it will
  * cause instant triple faults when booting Windows VMs. */
 #define TARGET_I386
 
+#ifndef VBOX_WITH_NEW_PS2M
 #define PCKBD_SAVED_STATE_VERSION 7
-
+#else
+#define PCKBD_SAVED_STATE_VERSION 8
+#endif
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
@@ -1180,6 +1183,36 @@ static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
     s->mouse_event_queue.count = 0;
     s->mouse_event_queue.rptr = 0;
     s->mouse_event_queue.wptr = 0;
+#else
+    if (version_id <= 7)
+    {
+        int32_t     i32Dummy;
+        SSMR3GetU32(pSSM, &u32Dummy);
+        SSMR3GetU8(pSSM, &u8Dummy);
+        SSMR3GetU8(pSSM, &u8Dummy);
+        SSMR3GetU8(pSSM, &u8Dummy);
+        SSMR3GetU8(pSSM, &u8Dummy);
+        SSMR3GetU8(pSSM, &u8Dummy);
+        SSMR3GetU8(pSSM, &u8Dummy);
+        SSMR3GetS32(pSSM, &i32Dummy);
+        SSMR3GetS32(pSSM, &i32Dummy);
+        SSMR3GetS32(pSSM, &i32Dummy);
+        if (version_id > 2)
+        {
+            SSMR3GetS32(pSSM, &i32Dummy);
+            SSMR3GetS32(pSSM, &i32Dummy);
+        }
+        SSMR3GetU8(pSSM, &u8Dummy);
+        if (version_id == 4)
+        {
+            SSMR3GetU32(pSSM, &u32Dummy);
+            SSMR3GetU32(pSSM, &u32Dummy);
+        }
+        if (version_id > 3)
+            SSMR3GetU8(pSSM, &u8Dummy);
+        if (version_id == 4)
+            SSMR3GetU8(pSSM, &u8Dummy);
+    }
 #endif
 
     /* Determine the translation state. */
@@ -1239,7 +1272,7 @@ static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
     s->mouse_event_queue.count = u32;
     Log(("kbd_load: %d mouse event queue items loaded\n", u32));
 #else
-    if (version_id <= 6)
+    if (version_id <= 7)
     {
         rc = SSMR3GetU32(pSSM, &u32);
         if (RT_FAILURE(rc))
@@ -1251,6 +1284,17 @@ static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
                 return rc;
         }
         Log(("kbd_load: %d mouse event queue items discarded from old saved state\n", u32));
+
+        rc = SSMR3GetU32(pSSM, &u32);
+        if (RT_FAILURE(rc))
+            return rc;
+        for (i = 0; i < u32; i++)
+        {
+            rc = SSMR3GetU8(pSSM, &u8Dummy);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        Log(("kbd_load: %d mouse command queue items discarded from old saved state\n", u32));
     }
 #endif
 
@@ -1418,7 +1462,7 @@ static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     if (uVersion >= 6)
         rc = PS2KLoadState(&pThis->Kbd, pSSM, uVersion);
 #ifdef VBOX_WITH_NEW_PS2M
-    if (uVersion >= 7)
+    if (uVersion >= 8)
         rc = PS2MLoadState(&pThis->Aux, pSSM, uVersion);
 #endif
     return rc;
