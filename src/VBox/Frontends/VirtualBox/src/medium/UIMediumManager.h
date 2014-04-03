@@ -117,16 +117,12 @@ private:
     void prepareToolBar();
     /** Prepare tab-widget. */
     void prepareTabWidget();
-    /** Prepare tree-widgets. */
-    void prepareTreeWidgets();
-    /** Prepare hard-drive tree-widget. */
-    void prepareTreeWidgetHD();
-    /** Prepare optical-disk tree-widget. */
-    void prepareTreeWidgetCD();
-    /** Prepare floppy-disk tree-widget. */
-    void prepareTreeWidgetFD();
-    /** Prepare information-panes. */
-    void prepareInformationPanes();
+    /** Prepare tab-widget's tab. */
+    void prepareTab(UIMediumType type);
+    /** Prepare tab-widget's tree-widget. */
+    void prepareTreeWidget(UIMediumType type, int iColumns);
+    /** Prepare tab-widget's information-container. */
+    void prepareInformationContainer(UIMediumType type, int iFields);
     /** Prepare button-box. */
     void prepareButtonBox();
     /** Prepare progress-bar. */
@@ -180,12 +176,13 @@ private:
     /** Deletes UIMediumItem for corresponding @a strMediumID. */
     void deleteMediumItem(const QString &strMediumID);
 
-    /** Returns medium type for passed @a pTreeWidget. */
-    UIMediumType mediumType(QTreeWidget *pTreeWidget) const;
     /** Returns tree-widget for passed medium @a type. */
     QTreeWidget* treeWidget(UIMediumType type) const;
     /** Returns item for passed medium @a type. */
     UIMediumItem* mediumItem(UIMediumType type) const;
+
+    /** Returns medium type for passed @a pTreeWidget. */
+    UIMediumType mediumType(QTreeWidget *pTreeWidget) const;
 
     /** Returns current medium type. */
     UIMediumType currentMediumType() const;

@@ -21,10 +21,10 @@
 
 /* Qt includes: */
 #include <QLabel>
-#include <QProgressBar>
 #include <QMenuBar>
 #include <QHeaderView>
 #include <QPushButton>
+#include <QProgressBar>
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -32,7 +32,6 @@
 #include "UIWizardCloneVD.h"
 #include "UIMessageCenter.h"
 #include "UIToolBar.h"
-#include "QILabel.h"
 #include "UIIconPool.h"
 #include "UIMediumTypeChangeDialog.h"
 #include "UIMedium.h"
@@ -593,7 +592,7 @@ class UIEnumerationProgressBar : public QWidget
 public:
 
     /** Constructor on the basis of passed @a pParent. */
-    UIEnumerationProgressBar(QWidget *pParent)
+    UIEnumerationProgressBar(QWidget *pParent = 0)
         : QWidget(pParent)
     {
         /* Prepare: */
@@ -656,6 +655,13 @@ UIMediumManager::UIMediumManager(QWidget *pCenterWidget, bool fRefresh /* = true
     , m_iconHD(UIIconPool::iconSet(":/hd_16px.png", ":/hd_disabled_16px.png"))
     , m_iconCD(UIIconPool::iconSet(":/cd_16px.png", ":/cd_disabled_16px.png"))
     , m_iconFD(UIIconPool::iconSet(":/fd_16px.png", ":/fd_disabled_16px.png"))
+    , m_pToolBar(0)
+    , m_pContextMenu(0)
+    , m_pMenu(0)
+    , m_pActionCopy(0), m_pActionModify(0)
+    , m_pActionRemove(0), m_pActionRelease(0)
+    , m_pActionRefresh(0)
+    , m_pProgressBar(0)
 {
     /* Prepare: */
     prepare();
@@ -1045,10 +1051,10 @@ void UIMediumManager::prepareActions()
 
 void UIMediumManager::prepareMenuBar()
 {
-    /* Create actions-menu for menu-bar: */
+    /* Create menu-bar-menu: */
     m_pMenu = menuBar()->addMenu(QString());
     {
-        /* Configure menu-bar menu: */
+        /* Configure menu-bar-menu: */
         m_pMenu->addAction(m_pActionCopy);
         m_pMenu->addAction(m_pActionModify);
         m_pMenu->addAction(m_pActionRemove);
@@ -1097,7 +1103,6 @@ void UIMediumManager::prepareToolBar()
         m_pToolBar->addAction(m_pActionRefresh);
         /* Integrate tool-bar into dialog: */
         QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
-        Assert(pMainLayout);
 #if MAC_LEOPARD_STYLE
         /* Enable unified tool-bars on Mac OS X. Available on Qt >= 4.3: */
         addToolBar(m_pToolBar);
@@ -1111,7 +1116,7 @@ void UIMediumManager::prepareToolBar()
         /* Set spacing/margin like in the selector window: */
         pMainLayout->setSpacing(5);
         pMainLayout->setContentsMargins(5, 5, 5, 5);
-#endif /* MAC_LEOPARD_STYLE */
+#endif /* !MAC_LEOPARD_STYLE */
     }
 }
 
@@ -1119,43 +1124,51 @@ void UIMediumManager::prepareTabWidget()
 {
     /* Tab-widget created in .ui file. */
     {
+        /* Prepare tabs: */
+        for (int i = (int)UIMediumType_HardDisk; i <= (int)UIMediumType_Floppy; ++i)
+            prepareTab((UIMediumType)i);
         /* Configure tab-widget: */
         mTabWidget->setFocusPolicy(Qt::TabFocus);
         mTabWidget->setTabIcon(TabIndex_HD, m_iconHD);
         mTabWidget->setTabIcon(TabIndex_CD, m_iconCD);
         mTabWidget->setTabIcon(TabIndex_FD, m_iconFD);
         connect(mTabWidget, SIGNAL(currentChanged(int)), this, SLOT(sltHandleCurrentTabChanged()));
-        /* Prepare tree-widgets: */
-        prepareTreeWidgets();
-        /* Prepare information-panes: */
-        prepareInformationPanes();
+        /* Focus current tree-widget: */
+        if (currentTreeWidget())
+            currentTreeWidget()->setFocus();
+        /* Update other widgets according chosen tab: */
+        sltHandleCurrentTabChanged();
     }
 }
 
-void UIMediumManager::prepareTreeWidgets()
+void UIMediumManager::prepareTab(UIMediumType type)
 {
-    /* Prepare tree-widget HD: */
-    prepareTreeWidgetHD();
-    /* Prepare tree-widget CD: */
-    prepareTreeWidgetCD();
-    /* Prepare tree-widget FD: */
-    prepareTreeWidgetFD();
-
-    /* Focus current tree-widget: */
-    currentTreeWidget()->setFocus();
+    /* Tab created in .ui file. */
+    {
+        /* Tab layout created in .ui file. */
+        {
+            /* Prepare tree-widget: */
+            prepareTreeWidget(type, type == UIMediumType_HardDisk ? 3 : 2);
+            /* Prepare information-container: */
+            prepareInformationContainer(type, type == UIMediumType_HardDisk ? 5 : 2);
+        }
+    }
 }
 
-void UIMediumManager::prepareTreeWidgetHD()
+void UIMediumManager::prepareTreeWidget(UIMediumType type, int iColumns)
 {
-    /* HD tree-widget created in .ui file. */
+    /* Tree-widget created in .ui file. */
     {
-        /* Configure HD tree-widget: */
-        QTreeWidget *pTreeWidget = treeWidget(UIMediumType_HardDisk);
-        pTreeWidget->setColumnCount(3);
+        /* Configure tree-widget: */
+        QTreeWidget *pTreeWidget = treeWidget(type);
+        pTreeWidget->setColumnCount(iColumns);
         pTreeWidget->sortItems(0, Qt::AscendingOrder);
-        pTreeWidget->header()->setResizeMode(0, QHeaderView::Fixed);
-        pTreeWidget->header()->setResizeMode(1, QHeaderView::ResizeToContents);
-        pTreeWidget->header()->setResizeMode(2, QHeaderView::ResizeToContents);
+        if (iColumns > 0)
+            pTreeWidget->header()->setResizeMode(0, QHeaderView::Fixed);
+        if (iColumns > 1)
+            pTreeWidget->header()->setResizeMode(1, QHeaderView::ResizeToContents);
+        if (iColumns > 2)
+            pTreeWidget->header()->setResizeMode(2, QHeaderView::ResizeToContents);
         pTreeWidget->header()->setStretchLastSection(false);
         pTreeWidget->setSortingEnabled(true);
         connect(pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
@@ -1171,57 +1184,7 @@ void UIMediumManager::prepareTreeWidgetHD()
     }
 }
 
-void UIMediumManager::prepareTreeWidgetCD()
-{
-    /* CD tree-widget created in .ui file. */
-    {
-        /* Configure CD tree-widget: */
-        QTreeWidget *pTreeWidget = treeWidget(UIMediumType_DVD);
-        pTreeWidget->setColumnCount(2);
-        pTreeWidget->sortItems(0, Qt::AscendingOrder);
-        pTreeWidget->header()->setResizeMode(0, QHeaderView::Fixed);
-        pTreeWidget->header()->setResizeMode(1, QHeaderView::ResizeToContents);
-        pTreeWidget->header()->setStretchLastSection(false);
-        pTreeWidget->setSortingEnabled(true);
-        connect(pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-                this, SLOT(sltHandleCurrentItemChanged()));
-        connect(pTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
-                this, SLOT(sltHandleDoubleClick()));
-        connect(pTreeWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
-                this, SLOT(sltHandleContextMenuCall(const QPoint&)));
-        connect(pTreeWidget, SIGNAL(resized(const QSize&, const QSize&)),
-                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
-        connect(pTreeWidget->header(), SIGNAL(sectionResized(int, int, int)),
-                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
-    }
-}
-
-void UIMediumManager::prepareTreeWidgetFD()
-{
-    /* FD tree-widget created in .ui file. */
-    {
-        /* Configure FD tree-widget: */
-        QTreeWidget *pTreeWidget = treeWidget(UIMediumType_Floppy);
-        pTreeWidget->setColumnCount(2);
-        pTreeWidget->sortItems(0, Qt::AscendingOrder);
-        pTreeWidget->header()->setResizeMode(0, QHeaderView::Fixed);
-        pTreeWidget->header()->setResizeMode(1, QHeaderView::ResizeToContents);
-        pTreeWidget->header()->setStretchLastSection(false);
-        pTreeWidget->setSortingEnabled(true);
-        connect(pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-                this, SLOT(sltHandleCurrentItemChanged()));
-        connect(pTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
-                this, SLOT(sltHandleDoubleClick()));
-        connect(pTreeWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
-                this, SLOT(sltHandleContextMenuCall(const QPoint&)));
-        connect(pTreeWidget, SIGNAL(resized(const QSize&, const QSize&)),
-                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
-        connect(pTreeWidget->header(), SIGNAL(sectionResized(int, int, int)),
-                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
-    }
-}
-
-void UIMediumManager::prepareInformationPanes()
+void UIMediumManager::prepareInformationContainer(UIMediumType, int)
 {
     /* Information-panes created in .ui file. */
     {
@@ -1238,8 +1201,8 @@ void UIMediumManager::prepareButtonBox()
     {
         /* Configure button-box: */
         mButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
-        connect(mButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
         connect(mButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
+        connect(mButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
         /* Prepare progress-bar: */
         prepareProgressBar();
     }
@@ -1248,10 +1211,11 @@ void UIMediumManager::prepareButtonBox()
 void UIMediumManager::prepareProgressBar()
 {
     /* Create progress-bar: */
-    m_pProgressBar = new UIEnumerationProgressBar(this);
+    m_pProgressBar = new UIEnumerationProgressBar;
     {
         /* Configure progress-bar: */
         m_pProgressBar->hide();
+        /* Add progress-bar into button-box layout: */
         mButtonBox->addExtraWidget(m_pProgressBar);
     }
 }
@@ -1854,18 +1818,6 @@ void UIMediumManager::deleteMediumItem(const QString &strMediumID)
         setCurrentItem(pTreeWidget, pTreeWidget->topLevelItem(0));
 }
 
-UIMediumType UIMediumManager::mediumType(QTreeWidget *pTreeWidget) const
-{
-    /* Hard-drive tree-widget: */
-    if (pTreeWidget == treeWidget(UIMediumType_HardDisk)) return UIMediumType_HardDisk;
-    /* Optical-image tree-widget: */
-    if (pTreeWidget == treeWidget(UIMediumType_DVD)) return UIMediumType_DVD;
-    /* Floppy-image tree-widget: */
-    if (pTreeWidget == treeWidget(UIMediumType_Floppy)) return UIMediumType_Floppy;
-    /* Invalid by default: */
-    AssertFailedReturn(UIMediumType_Invalid);
-}
-
 QTreeWidget* UIMediumManager::treeWidget(UIMediumType type) const
 {
     /* Return corresponding tree-widget for known medium types: */
@@ -1886,6 +1838,18 @@ UIMediumItem* UIMediumManager::mediumItem(UIMediumType type) const
     QTreeWidget *pTreeWidget = treeWidget(type);
     /* Return corresponding medium-item: */
     return pTreeWidget ? toMediumItem(pTreeWidget->currentItem()) : 0;
+}
+
+UIMediumType UIMediumManager::mediumType(QTreeWidget *pTreeWidget) const
+{
+    /* Hard-drive tree-widget: */
+    if (pTreeWidget == treeWidget(UIMediumType_HardDisk)) return UIMediumType_HardDisk;
+    /* Optical-image tree-widget: */
+    if (pTreeWidget == treeWidget(UIMediumType_DVD)) return UIMediumType_DVD;
+    /* Floppy-image tree-widget: */
+    if (pTreeWidget == treeWidget(UIMediumType_Floppy)) return UIMediumType_Floppy;
+    /* Invalid by default: */
+    AssertFailedReturn(UIMediumType_Invalid);
 }
 
 UIMediumType UIMediumManager::currentMediumType() const
