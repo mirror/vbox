@@ -1215,14 +1215,17 @@ void UIMediumManager::prepareTreeWidget(UIMediumType type, int iColumns)
     }
 }
 
-void UIMediumManager::prepareInformationContainer(UIMediumType, int)
+void UIMediumManager::prepareInformationContainer(UIMediumType type, int iFields)
 {
     /* Information-panes created in .ui file. */
     {
         /* Configure information-panes: */
-        QList<QILabel*> panes = findChildren<QILabel*>();
-        foreach (QILabel *pPane, panes)
-            pPane->setFullSizeSelection(true);
+        for (int i = 0; i < iFields; ++i)
+        {
+            QILabel *pField = infoField(type, i);
+            if (pField)
+                pField->setFullSizeSelection(true);
+        }
     }
 }
 
@@ -1534,16 +1537,8 @@ void UIMediumManager::updateInformationPanesHD()
     if (!pCurrentItem)
     {
         /* Just clear information panes: */
-        if (m_pTypePane)
-            m_pTypePane->clear();
-        if (m_pLocationPane)
-            m_pLocationPane->clear();
-        if (m_pFormatPane)
-            m_pFormatPane->clear();
-        if (m_pDetailsPane)
-            m_pDetailsPane->clear();
-        if (m_pUsagePane)
-            m_pUsagePane->clear();
+        for (int i = 0; i < 5; ++i)
+            infoField(UIMediumType_HardDisk, i)->clear();
     }
     /* If current item is set: */
     else
@@ -1553,21 +1548,21 @@ void UIMediumManager::updateInformationPanesHD()
         QString strUsage = pCurrentItem->usage().isNull() ?
                            formatPaneText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
                            formatPaneText(pCurrentItem->usage());
-        if (m_pTypePane)
-            m_pTypePane->setText(pCurrentItem->hardDiskType());
-        if (m_pLocationPane)
-            m_pLocationPane->setText(formatPaneText(pCurrentItem->location(), true, "end"));
-        if (m_pFormatPane)
-            m_pFormatPane->setText(pCurrentItem->hardDiskFormat());
-        if (m_pDetailsPane)
-            m_pDetailsPane->setText(strDetails);
-        if (m_pUsagePane)
-            m_pUsagePane->setText(strUsage);
+        if (infoField(UIMediumType_HardDisk, 0))
+            infoField(UIMediumType_HardDisk, 0)->setText(pCurrentItem->hardDiskType());
+        if (infoField(UIMediumType_HardDisk, 1))
+            infoField(UIMediumType_HardDisk, 1)->setText(formatPaneText(pCurrentItem->location(), true, "end"));
+        if (infoField(UIMediumType_HardDisk, 2))
+            infoField(UIMediumType_HardDisk, 2)->setText(pCurrentItem->hardDiskFormat());
+        if (infoField(UIMediumType_HardDisk, 3))
+            infoField(UIMediumType_HardDisk, 3)->setText(strDetails);
+        if (infoField(UIMediumType_HardDisk, 4))
+            infoField(UIMediumType_HardDisk, 4)->setText(strUsage);
     }
 
     /* Enable/disable information-panes container: */
-    if (mHDContainer)
-        mHDContainer->setEnabled(pCurrentItem);
+    if (infoContainer(UIMediumType_HardDisk))
+        infoContainer(UIMediumType_HardDisk)->setEnabled(pCurrentItem);
 }
 
 void UIMediumManager::updateInformationPanesCD()
@@ -1579,10 +1574,8 @@ void UIMediumManager::updateInformationPanesCD()
     if (!pCurrentItem)
     {
         /* Just clear information panes: */
-        if (mIpCD1)
-            mIpCD1->clear();
-        if (mIpCD2)
-            mIpCD2->clear();
+        for (int i = 0; i < 2; ++i)
+            infoField(UIMediumType_DVD, i)->clear();
     }
     /* If current item is set: */
     else
@@ -1591,15 +1584,15 @@ void UIMediumManager::updateInformationPanesCD()
         QString strUsage = pCurrentItem->usage().isNull() ?
                            formatPaneText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
                            formatPaneText(pCurrentItem->usage());
-        if (mIpCD1)
-            mIpCD1->setText(formatPaneText(pCurrentItem->location(), true, "end"));
-        if (mIpCD2)
-            mIpCD2->setText(strUsage);
+        if (infoField(UIMediumType_DVD, 0))
+            infoField(UIMediumType_DVD, 0)->setText(formatPaneText(pCurrentItem->location(), true, "end"));
+        if (infoField(UIMediumType_DVD, 1))
+            infoField(UIMediumType_DVD, 1)->setText(strUsage);
     }
 
     /* Enable/disable information-panes container: */
-    if (mCDContainer)
-        mCDContainer->setEnabled(pCurrentItem);
+    if (infoContainer(UIMediumType_DVD))
+        infoContainer(UIMediumType_DVD)->setEnabled(pCurrentItem);
 }
 
 void UIMediumManager::updateInformationPanesFD()
@@ -1611,10 +1604,8 @@ void UIMediumManager::updateInformationPanesFD()
     if (!pCurrentItem)
     {
         /* Just clear information panes: */
-        if (mIpFD1)
-            mIpFD1->clear();
-        if (mIpFD2)
-            mIpFD2->clear();
+        for (int i = 0; i < 2; ++i)
+            infoField(UIMediumType_Floppy, i)->clear();
     }
     /* If current item is set: */
     else
@@ -1623,15 +1614,15 @@ void UIMediumManager::updateInformationPanesFD()
         QString strUsage = pCurrentItem->usage().isNull() ?
                            formatPaneText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
                            formatPaneText(pCurrentItem->usage());
-        if (mIpFD1)
-            mIpFD1->setText(formatPaneText(pCurrentItem->location(), true, "end"));
-        if (mIpFD2)
-            mIpFD2->setText(strUsage);
+        if (infoField(UIMediumType_Floppy, 0))
+            infoField(UIMediumType_Floppy, 0)->setText(formatPaneText(pCurrentItem->location(), true, "end"));
+        if (infoField(UIMediumType_Floppy, 1))
+            infoField(UIMediumType_Floppy, 1)->setText(strUsage);
     }
 
     /* Enable/disable information-panes container: */
-    if (mFDContainer)
-        mFDContainer->setEnabled(pCurrentItem);
+    if (infoContainer(UIMediumType_Floppy))
+        infoContainer(UIMediumType_Floppy)->setEnabled(pCurrentItem);
 }
 
 #ifdef Q_WS_MAC
@@ -1726,16 +1717,16 @@ void UIMediumManager::retranslateUi()
     }
 
     /* Translate HD information-labels: */
-    if (m_pTypeLabel)
-        m_pTypeLabel->setText(QApplication::translate("VBoxMediaManagerDlg", "Type:"));
-    if (m_pLocationLabel)
-        m_pLocationLabel->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
-    if (m_pFormatLabel)
-        m_pFormatLabel->setText(QApplication::translate("VBoxMediaManagerDlg", "Format:"));
-    if (m_pDetailsLabel)
-        m_pDetailsLabel->setText(QApplication::translate("VBoxMediaManagerDlg", "Storage details:"));
-    if (m_pUsageLabel)
-        m_pUsageLabel->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
+    if (infoLabel(UIMediumType_HardDisk, 0))
+        infoLabel(UIMediumType_HardDisk, 0)->setText(QApplication::translate("VBoxMediaManagerDlg", "Type:"));
+    if (infoLabel(UIMediumType_HardDisk, 1))
+        infoLabel(UIMediumType_HardDisk, 1)->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
+    if (infoLabel(UIMediumType_HardDisk, 2))
+        infoLabel(UIMediumType_HardDisk, 2)->setText(QApplication::translate("VBoxMediaManagerDlg", "Format:"));
+    if (infoLabel(UIMediumType_HardDisk, 3))
+        infoLabel(UIMediumType_HardDisk, 3)->setText(QApplication::translate("VBoxMediaManagerDlg", "Storage details:"));
+    if (infoLabel(UIMediumType_HardDisk, 4))
+        infoLabel(UIMediumType_HardDisk, 4)->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
 
     /* Translate CD tree-widget: */
     QTreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
@@ -1746,10 +1737,10 @@ void UIMediumManager::retranslateUi()
     }
 
     /* Translate CD information-labels: */
-    if (mLbCD1)
-        mLbCD1->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
-    if (mLbCD2)
-        mLbCD2->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
+    if (infoLabel(UIMediumType_DVD, 0))
+        infoLabel(UIMediumType_DVD, 0)->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
+    if (infoLabel(UIMediumType_DVD, 1))
+        infoLabel(UIMediumType_DVD, 1)->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
 
     /* Translate FD tree-widget: */
     QTreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
@@ -1760,10 +1751,10 @@ void UIMediumManager::retranslateUi()
     }
 
     /* Translate FD information-labels: */
-    if (mLbFD1)
-        mLbFD1->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
-    if (mLbFD2)
-        mLbFD2->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
+    if (infoLabel(UIMediumType_Floppy, 0))
+        infoLabel(UIMediumType_Floppy, 0)->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
+    if (infoLabel(UIMediumType_Floppy, 1))
+        infoLabel(UIMediumType_Floppy, 1)->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
 
     /* Translate progress-bar: */
     if (m_pProgressBar)
@@ -2011,6 +2002,108 @@ UIMediumItem* UIMediumManager::mediumItem(UIMediumType type) const
     QTreeWidget *pTreeWidget = treeWidget(type);
     /* Return corresponding medium-item: */
     return pTreeWidget ? toMediumItem(pTreeWidget->currentItem()) : 0;
+}
+
+QFrame* UIMediumManager::infoContainer(UIMediumType type) const
+{
+    /* Return corresponding tree-widget for known medium types: */
+    switch (type)
+    {
+        case UIMediumType_HardDisk: return mHDContainer;
+        case UIMediumType_DVD:      return mCDContainer;
+        case UIMediumType_Floppy:   return mFDContainer;
+        default: AssertMsgFailed(("Unknown medium type: %d\n", type)); break;
+    }
+    /* Null by default: */
+    return 0;
+}
+
+QLabel* UIMediumManager::infoLabel(UIMediumType type, int iLabelIndex) const
+{
+    /* Return corresponding tree-widget for known medium types: */
+    switch (type)
+    {
+        case UIMediumType_HardDisk:
+        {
+            switch (iLabelIndex)
+            {
+                case 0: return m_pTypeLabel;
+                case 1: return m_pLocationLabel;
+                case 2: return m_pFormatLabel;
+                case 3: return m_pDetailsLabel;
+                case 4: return m_pUsageLabel;
+                default: AssertMsgFailed(("Label index out of bounds: %d\n", iLabelIndex)); break;
+            }
+            break;
+        }
+        case UIMediumType_DVD:
+        {
+            switch (iLabelIndex)
+            {
+                case 0: return mLbCD1;
+                case 1: return mLbCD2;
+                default: AssertMsgFailed(("Label index out of bounds: %d\n", iLabelIndex)); break;
+            }
+            break;
+        }
+        case UIMediumType_Floppy:
+        {
+            switch (iLabelIndex)
+            {
+                case 0: return mLbFD1;
+                case 1: return mLbFD2;
+                default: AssertMsgFailed(("Label index out of bounds: %d\n", iLabelIndex)); break;
+            }
+            break;
+        }
+        default: AssertMsgFailed(("Unknown medium type: %d\n", type)); break;
+    }
+    /* Null by default: */
+    return 0;
+}
+
+QILabel* UIMediumManager::infoField(UIMediumType type, int iFieldIndex) const
+{
+    /* Return corresponding tree-widget for known medium types: */
+    switch (type)
+    {
+        case UIMediumType_HardDisk:
+        {
+            switch (iFieldIndex)
+            {
+                case 0: return m_pTypePane;
+                case 1: return m_pLocationPane;
+                case 2: return m_pFormatPane;
+                case 3: return m_pDetailsPane;
+                case 4: return m_pUsagePane;
+                default: AssertMsgFailed(("Field index out of bounds: %d\n", iFieldIndex)); break;
+            }
+            break;
+        }
+        case UIMediumType_DVD:
+        {
+            switch (iFieldIndex)
+            {
+                case 0: return mIpCD1;
+                case 1: return mIpCD2;
+                default: AssertMsgFailed(("Field index out of bounds: %d\n", iFieldIndex)); break;
+            }
+            break;
+        }
+        case UIMediumType_Floppy:
+        {
+            switch (iFieldIndex)
+            {
+                case 0: return mIpFD1;
+                case 1: return mIpFD2;
+                default: AssertMsgFailed(("Field index out of bounds: %d\n", iFieldIndex)); break;
+            }
+            break;
+        }
+        default: AssertMsgFailed(("Unknown medium type: %d\n", type)); break;
+    }
+    /* Null by default: */
+    return 0;
 }
 
 UIMediumType UIMediumManager::mediumType(QTreeWidget *pTreeWidget) const
