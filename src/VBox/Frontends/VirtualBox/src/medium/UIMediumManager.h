@@ -103,14 +103,18 @@ private:
     void prepare();
     /** Prepare dialog. */
     void prepareThis();
+    /** Prepare connections. */
+    void prepareConnections();
     /** Prepare actions. */
     void prepareActions();
     /** Prepare menu-bar. */
     void prepareMenuBar();
-    /** Prepare tool-bar. */
-    void prepareToolBar();
     /** Prepare context-menu. */
     void prepareContextMenu();
+    /** Prepare central-widget. */
+    void prepareCentralWidget();
+    /** Prepare tool-bar. */
+    void prepareToolBar();
     /** Prepare tab-widget. */
     void prepareTabWidget();
     /** Prepare tree-widgets. */
@@ -176,19 +180,17 @@ private:
     /** Deletes UIMediumItem for corresponding @a strMediumID. */
     void deleteMediumItem(const QString &strMediumID);
 
-    /** Determines medium type for passed @a pTreeWidget. */
+    /** Returns medium type for passed @a pTreeWidget. */
     UIMediumType mediumType(QTreeWidget *pTreeWidget) const;
+    /** Returns tree-widget for passed medium @a type. */
+    QTreeWidget* treeWidget(UIMediumType type) const;
+    /** Returns item for passed medium @a type. */
+    UIMediumItem* mediumItem(UIMediumType type) const;
 
     /** Returns current medium type. */
     UIMediumType currentMediumType() const;
-
-    /** Returns tree-widget for passed medium @a type. */
-    QTreeWidget* treeWidget(UIMediumType type) const;
     /** Returns current tree-widget. */
     QTreeWidget* currentTreeWidget() const;
-
-    /** Returns item for passed medium @a type. */
-    UIMediumItem* mediumItem(UIMediumType type) const;
     /** Returns current item. */
     UIMediumItem* currentMediumItem() const;
 
