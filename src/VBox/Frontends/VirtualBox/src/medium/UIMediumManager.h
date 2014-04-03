@@ -177,6 +177,12 @@ private:
     QTreeWidget* treeWidget(UIMediumType type) const;
     /** Returns item for passed medium @a type. */
     UIMediumItem* mediumItem(UIMediumType type) const;
+    /** Returns information-container for passed medium @a type. */
+    QFrame* infoContainer(UIMediumType type) const;
+    /** Returns information-label for passed medium @a type and @a iLabelIndex. */
+    QLabel* infoLabel(UIMediumType type, int iLabelIndex) const;
+    /** Returns information-field for passed medium @a type and @a iFieldIndex. */
+    QILabel* infoField(UIMediumType type, int iFieldIndex) const;
 
     /** Returns medium type for passed @a pTreeWidget. */
     UIMediumType mediumType(QTreeWidget *pTreeWidget) const;
