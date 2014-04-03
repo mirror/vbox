@@ -748,9 +748,9 @@ void UIMediumManager::sltHandleMediumEnumerationStart()
     /* Reset tab-widget icons: */
     if (mTabWidget)
     {
-        mTabWidget->setTabIcon(TabIndex_HD, m_iconHD);
-        mTabWidget->setTabIcon(TabIndex_CD, m_iconCD);
-        mTabWidget->setTabIcon(TabIndex_FD, m_iconFD);
+        mTabWidget->setTabIcon(tabIndex(UIMediumType_HardDisk), m_iconHD);
+        mTabWidget->setTabIcon(tabIndex(UIMediumType_DVD), m_iconCD);
+        mTabWidget->setTabIcon(tabIndex(UIMediumType_Floppy), m_iconFD);
     }
 
     /* Repopulate tree-widgets content: */
@@ -1160,9 +1160,9 @@ void UIMediumManager::prepareTabWidget()
             prepareTab((UIMediumType)i);
         /* Configure tab-widget: */
         mTabWidget->setFocusPolicy(Qt::TabFocus);
-        mTabWidget->setTabIcon(TabIndex_HD, m_iconHD);
-        mTabWidget->setTabIcon(TabIndex_CD, m_iconCD);
-        mTabWidget->setTabIcon(TabIndex_FD, m_iconFD);
+        mTabWidget->setTabIcon(tabIndex(UIMediumType_HardDisk), m_iconHD);
+        mTabWidget->setTabIcon(tabIndex(UIMediumType_DVD), m_iconCD);
+        mTabWidget->setTabIcon(tabIndex(UIMediumType_Floppy), m_iconFD);
         connect(mTabWidget, SIGNAL(currentChanged(int)), this, SLOT(sltHandleCurrentTabChanged()));
         /* Focus current tree-widget: */
         if (currentTreeWidget())
@@ -1424,30 +1424,27 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, Action action)
     AssertReturnVoid(pMediumItem);
 
     /* Prepare data for tab: */
-    int iTab = -1;
     const QIcon *pIcon = 0;
     bool *pfInaccessible = 0;
-    switch (pMediumItem->mediumType())
+    const UIMediumType mediumType = pMediumItem->mediumType();
+    switch (mediumType)
     {
         case UIMediumType_HardDisk:
-            iTab = TabIndex_HD;
             pIcon = &m_iconHD;
             pfInaccessible = &m_fInaccessibleHD;
             break;
         case UIMediumType_DVD:
-            iTab = TabIndex_CD;
             pIcon = &m_iconCD;
             pfInaccessible = &m_fInaccessibleCD;
             break;
         case UIMediumType_Floppy:
-            iTab = TabIndex_FD;
             pIcon = &m_iconFD;
             pfInaccessible = &m_fInaccessibleFD;
             break;
         default:
             AssertFailed();
     }
-    AssertReturnVoid(iTab != -1 && pIcon && pfInaccessible);
+    AssertReturnVoid(pIcon && pfInaccessible);
 
     switch (action)
     {
@@ -1460,7 +1457,7 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, Action action)
             *pfInaccessible = true;
 
             if (mTabWidget)
-                mTabWidget->setTabIcon(iTab, vboxGlobal().warningIcon());
+                mTabWidget->setTabIcon(tabIndex(mediumType), vboxGlobal().warningIcon());
 
             break;
         }
@@ -1497,9 +1494,9 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, Action action)
             if (mTabWidget)
             {
                 if (*pfInaccessible)
-                    mTabWidget->setTabIcon(iTab, vboxGlobal().warningIcon());
+                    mTabWidget->setTabIcon(tabIndex(mediumType), vboxGlobal().warningIcon());
                 else
-                    mTabWidget->setTabIcon(iTab, *pIcon);
+                    mTabWidget->setTabIcon(tabIndex(mediumType), *pIcon);
             }
 
             break;
@@ -1714,9 +1711,9 @@ void UIMediumManager::retranslateUi()
     /* Translate tab-widget: */
     if (mTabWidget)
     {
-        mTabWidget->setTabText(TabIndex_HD, tr("&Hard drives"));
-        mTabWidget->setTabText(TabIndex_CD, tr("&Optical disks"));
-        mTabWidget->setTabText(TabIndex_FD, tr("&Floppy disks"));
+        mTabWidget->setTabText(tabIndex(UIMediumType_HardDisk), tr("&Hard drives"));
+        mTabWidget->setTabText(tabIndex(UIMediumType_DVD), tr("&Optical disks"));
+        mTabWidget->setTabText(tabIndex(UIMediumType_Floppy), tr("&Floppy disks"));
     }
 
     /* Translate HD tree-widget: */
@@ -2035,15 +2032,7 @@ UIMediumType UIMediumManager::currentMediumType() const
         return UIMediumType_Invalid;
 
     /* Return current medium type: */
-    switch (mTabWidget->currentIndex())
-    {
-        case TabIndex_HD: return UIMediumType_HardDisk;
-        case TabIndex_CD: return UIMediumType_DVD;
-        case TabIndex_FD: return UIMediumType_Floppy;
-        default: AssertMsgFailed(("Unknown page type: %d\n", mTabWidget->currentIndex())); break;
-    }
-    /* Invalid by default: */
-    return UIMediumType_Invalid;
+    return mediumType(mTabWidget->currentIndex());
 }
 
 QTreeWidget* UIMediumManager::currentTreeWidget() const
@@ -2076,6 +2065,38 @@ void UIMediumManager::setCurrentItem(QTreeWidget *pTreeWidget, QTreeWidgetItem *
 
     /* Re-fetch currently chosen medium-item: */
     refetchCurrentChosenMediumItem();
+}
+
+/* static */
+int UIMediumManager::tabIndex(UIMediumType type)
+{
+    /* Return tab index corresponding to known medium type: */
+    switch (type)
+    {
+        case UIMediumType_HardDisk: return 0;
+        case UIMediumType_DVD:      return 1;
+        case UIMediumType_Floppy:   return 2;
+        default: break;
+    }
+
+    /* -1 by default: */
+    return -1;
+}
+
+/* static */
+UIMediumType UIMediumManager::mediumType(int iIndex)
+{
+    /* Return medium type corresponding to known tab index: */
+    switch (iIndex)
+    {
+        case 0: return UIMediumType_HardDisk;
+        case 1: return UIMediumType_DVD;
+        case 2: return UIMediumType_Floppy;
+        default: break;
+    }
+
+    /* Invalid by default: */
+    return UIMediumType_Invalid;
 }
 
 /* static */

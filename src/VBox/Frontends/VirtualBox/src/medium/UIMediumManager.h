@@ -42,9 +42,6 @@ class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>, public Ui::UI
 {
     Q_OBJECT;
 
-    /** Tab index enumerator. */
-    enum TabIndex { TabIndex_HD = 0, TabIndex_CD, TabIndex_FD };
-
     /** Item action enumerator. */
     enum Action { Action_Add, Action_Edit, Action_Copy, Action_Modify, Action_Remove, Action_Release };
 
@@ -193,6 +190,11 @@ private:
 
     /** Defines current item for passed @a pTreeWidget as @a pItem. */
     void setCurrentItem(QTreeWidget *pTreeWidget, QTreeWidgetItem *pItem);
+
+    /** Returns tab index for passed UIMediumType. */
+    static int tabIndex(UIMediumType type);
+    /** Returns UIMediumType for passed tab index. */
+    static UIMediumType mediumType(int iIndex);
 
     /** Performs search for the @a pTree child which corresponds to the @a condition but not @a pException. */
     static UIMediumItem* searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException = 0);
