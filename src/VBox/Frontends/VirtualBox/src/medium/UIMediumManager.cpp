@@ -920,24 +920,6 @@ void UIMediumManager::prepare()
 {
     /* Prepare this: */
     prepareThis();
-    /* Prepare actions: */
-    prepareActions();
-    /* Prepare menu-bar: */
-    prepareMenuBar();
-    /* Prepare tool-bar: */
-    prepareToolBar();
-    /* Prepare context-menu: */
-    prepareContextMenu();
-    /* Prepare tab-widget: */
-    prepareTabWidget();
-    /* Prepare tree-widgets: */
-    prepareTreeWidgets();
-    /* Prepare information-panes: */
-    prepareInformationPanes();
-    /* Prepare button-box: */
-    prepareButtonBox();
-    /* Prepare progress-bar: */
-    prepareProgressBar();
 
     /* Translate dialog: */
     retranslateUi();
@@ -973,7 +955,6 @@ void UIMediumManager::prepareThis()
 {
     /* Dialog should delete itself on 'close': */
     setAttribute(Qt::WA_DeleteOnClose);
-
     /* And no need to count it as important for application.
      * This way it will NOT be taken into account
      * when other top-level windows will be closed: */
@@ -986,6 +967,16 @@ void UIMediumManager::prepareThis()
     /* Apply UI decorations: */
     Ui::UIMediumManager::setupUi(this);
 
+    /* Prepare connections: */
+    prepareConnections();
+    /* Prepare actions: */
+    prepareActions();
+    /* Prepare central-widget: */
+    prepareCentralWidget();
+}
+
+void UIMediumManager::prepareConnections()
+{
     /* Configure medium-processing connections: */
     connect(&vboxGlobal(), SIGNAL(sigMediumCreated(const QString&)),
             this, SLOT(sltHandleMediumCreated(const QString&)));
@@ -1045,6 +1036,11 @@ void UIMediumManager::prepareActions()
 
     /* Update action icons: */
     updateActionIcons();
+
+    /* Prepare menu-bar: */
+    prepareMenuBar();
+    /* Prepare context-menu: */
+    prepareContextMenu();
 }
 
 void UIMediumManager::prepareMenuBar()
@@ -1059,6 +1055,29 @@ void UIMediumManager::prepareMenuBar()
         m_pMenu->addAction(m_pActionRelease);
         m_pMenu->addAction(m_pActionRefresh);
     }
+}
+
+void UIMediumManager::prepareContextMenu()
+{
+    /* Create context-menu: */
+    m_pContextMenu = new QMenu(this);
+    {
+        /* Configure contex-menu: */
+        m_pContextMenu->addAction(m_pActionCopy);
+        m_pContextMenu->addAction(m_pActionModify);
+        m_pContextMenu->addAction(m_pActionRemove);
+        m_pContextMenu->addAction(m_pActionRelease);
+    }
+}
+
+void UIMediumManager::prepareCentralWidget()
+{
+    /* Prepare tool-bar: */
+    prepareToolBar();
+    /* Prepare tab-widget: */
+    prepareTabWidget();
+    /* Prepare button-box: */
+    prepareButtonBox();
 }
 
 void UIMediumManager::prepareToolBar()
@@ -1096,19 +1115,6 @@ void UIMediumManager::prepareToolBar()
     }
 }
 
-void UIMediumManager::prepareContextMenu()
-{
-    /* Create context-menu: */
-    m_pContextMenu = new QMenu(this);
-    {
-        /* Configure contex-menu: */
-        m_pContextMenu->addAction(m_pActionCopy);
-        m_pContextMenu->addAction(m_pActionModify);
-        m_pContextMenu->addAction(m_pActionRemove);
-        m_pContextMenu->addAction(m_pActionRelease);
-    }
-}
-
 void UIMediumManager::prepareTabWidget()
 {
     /* Tab-widget created in .ui file. */
@@ -1119,6 +1125,10 @@ void UIMediumManager::prepareTabWidget()
         mTabWidget->setTabIcon(TabIndex_CD, m_iconCD);
         mTabWidget->setTabIcon(TabIndex_FD, m_iconFD);
         connect(mTabWidget, SIGNAL(currentChanged(int)), this, SLOT(sltHandleCurrentTabChanged()));
+        /* Prepare tree-widgets: */
+        prepareTreeWidgets();
+        /* Prepare information-panes: */
+        prepareInformationPanes();
     }
 }
 
@@ -1230,6 +1240,8 @@ void UIMediumManager::prepareButtonBox()
         mButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
         connect(mButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
         connect(mButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
+        /* Prepare progress-bar: */
+        prepareProgressBar();
     }
 }
 
@@ -1854,20 +1866,6 @@ UIMediumType UIMediumManager::mediumType(QTreeWidget *pTreeWidget) const
     AssertFailedReturn(UIMediumType_Invalid);
 }
 
-UIMediumType UIMediumManager::currentMediumType() const
-{
-    /* Return current medium type: */
-    switch (mTabWidget->currentIndex())
-    {
-        case TabIndex_HD: return UIMediumType_HardDisk;
-        case TabIndex_CD: return UIMediumType_DVD;
-        case TabIndex_FD: return UIMediumType_Floppy;
-        default: AssertMsgFailed(("Unknown page type: %d\n", mTabWidget->currentIndex())); break;
-    }
-    /* Invalid by default: */
-    return UIMediumType_Invalid;
-}
-
 QTreeWidget* UIMediumManager::treeWidget(UIMediumType type) const
 {
     /* Return corresponding tree-widget for known medium types: */
@@ -1882,18 +1880,32 @@ QTreeWidget* UIMediumManager::treeWidget(UIMediumType type) const
     return 0;
 }
 
-QTreeWidget* UIMediumManager::currentTreeWidget() const
-{
-    /* Return current tree-widget: */
-    return treeWidget(currentMediumType());
-}
-
 UIMediumItem* UIMediumManager::mediumItem(UIMediumType type) const
 {
     /* Get corresponding tree-widget: */
     QTreeWidget *pTreeWidget = treeWidget(type);
     /* Return corresponding medium-item: */
     return pTreeWidget ? toMediumItem(pTreeWidget->currentItem()) : 0;
+}
+
+UIMediumType UIMediumManager::currentMediumType() const
+{
+    /* Return current medium type: */
+    switch (mTabWidget->currentIndex())
+    {
+        case TabIndex_HD: return UIMediumType_HardDisk;
+        case TabIndex_CD: return UIMediumType_DVD;
+        case TabIndex_FD: return UIMediumType_Floppy;
+        default: AssertMsgFailed(("Unknown page type: %d\n", mTabWidget->currentIndex())); break;
+    }
+    /* Invalid by default: */
+    return UIMediumType_Invalid;
+}
+
+QTreeWidget* UIMediumManager::currentTreeWidget() const
+{
+    /* Return current tree-widget: */
+    return treeWidget(currentMediumType());
 }
 
 UIMediumItem* UIMediumManager::currentMediumItem() const
