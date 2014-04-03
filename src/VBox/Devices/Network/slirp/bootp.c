@@ -316,9 +316,7 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
         }
     }
 
-    if (   pData->fPassDomain
-        && !pData->fUseHostResolver
-        && !LIST_EMPTY(&pData->pDomainList))
+    if (pData->fPassDomain && !pData->fUseHostResolver)
     {
         LIST_FOREACH(dd, &pData->pDomainList, dd_list)
         {
