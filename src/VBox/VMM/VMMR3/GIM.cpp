@@ -100,14 +100,14 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     /** @cfgm{GIM/Provider, string}
      * The name of the GIM provider. The default is "none". */
     char szProvider[64];
-    rc = CFGMR3QueryStringDef(pCfgNode, "Provider", szProvider, sizeof(szProvider), "none");
+    rc = CFGMR3QueryStringDef(pCfgNode, "Provider", szProvider, sizeof(szProvider), "None");
     AssertLogRelRCReturn(rc, rc);
 
     /*
      * Setup the GIM provider for this VM.
      */
     LogRel(("GIM: Using provider \"%s\"\n", szProvider));
-    if (!RTStrCmp(szProvider, "none"))
+    if (!RTStrCmp(szProvider, "None"))
     {
         Assert(!pVM->gim.s.fEnabled);
         pVM->gim.s.enmProvider = GIMPROVIDER_NONE;
