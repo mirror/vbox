@@ -1586,20 +1586,9 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
 /* nop - is a one-bit command. The buffer size to skip is determined by VBVA buffer size */
 #define VBOXCMDVBVA_OPTYPE_NOP                          0x80
 
-///* u8Flags flags */
-///* source allocation is specified with the host id. if not set - source allocation is specified with VRAM offset */
-//#define VBOXCMDVBVA_OPF_ALLOC_SRCID                     0x80
-///* destination allocation is specified with the host id. if not set - destination allocation is specified with VRAM offset */
-//#define VBOXCMDVBVA_OPF_ALLOC_DSTID                     0x40
-//
-///* transfer from RAM to Allocation */
+/* u8Flags flags */
+/* transfer from RAM to Allocation */
 #define VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN                  0x80
-//
-///* VBOXCMDVBVA_OPTYPE_BLT_PRIMARY specific flags*/
-///* if set - src is a primary id */
-//#define VBOXCMDVBVA_OPF_ALLOC_SRCPRIMARY               0x20
-///* if set - dst is a primary id */
-//#define VBOXCMDVBVA_OPF_ALLOC_DSTPRIMARY               0x10
 
 #define VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY                    0
 #define VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_GENERIC_A8R8G8B8   1
