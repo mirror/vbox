@@ -461,112 +461,6 @@ static const   key_def   aPS2ModKeys[] = {
 *   Global Variables                                                           *
 *******************************************************************************/
 
-/*
- * Because of historical reasons and poor design, VirtualBox internally uses BIOS
- * PC/XT style scan codes to represent keyboard events. Each key press and release is
- * represented as a stream of bytes, typically only one byte but up to four-byte
- * sequences are possible. In the typical case, the GUI front end generates the stream
- * of scan codes which we need to translate back to a single up/down event.
- *
- * This function could possibly live somewhere else.
- */
-
-/** Lookup table for converting PC/XT scan codes to USB HID usage codes. */
-static uint8_t aScancode2Hid[] =
-{
-    0x00, 0x29, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, /* 00-07 */
-    0x24, 0x25, 0x26, 0x27, 0x2d, 0x2e, 0x2a, 0x2b, /* 08-1F */
-    0x14, 0x1a, 0x08, 0x15, 0x17, 0x1c, 0x18, 0x0c, /* 10-17 */
-    0x12, 0x13, 0x2f, 0x30, 0x28, 0xe0, 0x04, 0x16, /* 18-1F */
-    0x07, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x33, /* 20-27 */
-    0x34, 0x35, 0xe1, 0x31, 0x1d, 0x1b, 0x06, 0x19, /* 28-2F */
-    0x05, 0x11, 0x10, 0x36, 0x37, 0x38, 0xe5, 0x55, /* 30-37 */
-    0xe2, 0x2c, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, /* 38-3F */
-    0x3f, 0x40, 0x41, 0x42, 0x43, 0x53, 0x47, 0x5f, /* 40-47 */
-    0x60, 0x61, 0x56, 0x5c, 0x5d, 0x5e, 0x57, 0x59, /* 48-4F */
-    0x5a, 0x5b, 0x62, 0x63, 0x46, 0x00, 0x64, 0x44, /* 50-57 */
-    0x45, 0x67, 0x00, 0x00, 0x8c, 0x00, 0x00, 0x00, /* 58-5F */
-    0x00, 0x00, 0x00, 0x00, 0x68, 0x69, 0x6a, 0x6b, /* 60-67 */
-    0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x00, /* 68-6F */
-    0x88, 0x91, 0x90, 0x87, 0x00, 0x00, 0x00, 0x00, /* 70-77 */
-    0x00, 0x8a, 0x00, 0x8b, 0x00, 0x89, 0x85, 0x00  /* 78-7F */
-};
-
-/** Lookup table for extended scancodes (arrow keys etc.). */
-static uint8_t aExtScan2Hid[] =
-{
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 00-07 */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 08-1F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 10-17 */
-    0x00, 0x00, 0x00, 0x00, 0x58, 0xe4, 0x00, 0x00, /* 18-1F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 20-27 */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 28-2F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x54, 0x00, 0x46, /* 30-37 */
-    /* Sun-specific keys.  Most of the XT codes are made up  */
-    0xe6, 0x00, 0x00, 0x75, 0x76, 0x77, 0xA3, 0x78, /* 38-3F */
-    0x80, 0x81, 0x82, 0x79, 0x00, 0x00, 0x48, 0x4a, /* 40-47 */
-    0x52, 0x4b, 0x00, 0x50, 0x00, 0x4f, 0x00, 0x4d, /* 48-4F */
-    0x51, 0x4e, 0x49, 0x4c, 0x00, 0x00, 0x00, 0x00, /* 50-57 */
-    0x00, 0x00, 0x00, 0xe3, 0xe7, 0x65, 0x66, 0x00, /* 58-5F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 60-67 */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 68-6F */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 70-77 */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  /* 78-7F */
-};
-
-/**
- * Convert a PC scan code to a USB HID usage byte.
- *
- * @param state         Current state of the translator (scan_state_t).
- * @param scanCode      Incoming scan code.
- * @param pUsage        Pointer to usage; high bit set for key up events. The
- *                      contents are only valid if returned state is SS_IDLE.
- *
- * @return scan_state_t New state of the translator.
- */
-static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uint32_t *pUsage)
-{
-    uint32_t    keyUp;
-    uint8_t     usage;
-
-    Assert(pUsage);
-
-    /* Isolate the scan code and key break flag. */
-    keyUp = (scanCode & 0x80) << 24;
-
-    switch (state) {
-    case SS_IDLE:
-        if (scanCode == 0xE0) {
-            state = SS_EXT;
-        } else if (scanCode == 0xE1) {
-            state = SS_EXT1;
-        } else {
-            usage = aScancode2Hid[scanCode & 0x7F];
-            *pUsage = usage | keyUp;
-            /* Remain in SS_IDLE state. */
-        }
-        break;
-    case SS_EXT:
-        usage = aExtScan2Hid[scanCode & 0x7F];
-        *pUsage = usage | keyUp;
-        state = SS_IDLE;
-        break;
-    case SS_EXT1:
-        /* The sequence is E1 1D 45 E1 9D C5. We take the easy way out and remain
-         * in the SS_EXT1 state until 45 or C5 is received.
-         */
-        if ((scanCode & 0x7F) == 0x45) {
-            *pUsage = 0x48;
-            if (scanCode == 0xC5)
-                *pUsage |= keyUp;
-            state = SS_IDLE;
-        }
-        /* Else remain in SS_EXT1 state. */
-        break;
-    }
-    return state;
-}
-
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -883,7 +777,7 @@ int PS2KByteFromKbd(PPS2K pThis, uint8_t *pb)
 
 #ifdef IN_RING3
 
-static int psk2ProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
+static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
 {
     unsigned int    i = 0;
     key_def const   *pKeyDef;
@@ -1115,7 +1009,7 @@ static DECLCALLBACK(void) ps2kTypematicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
 
         if (pThis->enmTypematicState == KBD_TMS_REPEAT)
         {
-            psk2ProcessKeyEvent(pThis, pThis->u8TypematicKey, true /* Key down */ );
+            ps2kProcessKeyEvent(pThis, pThis->u8TypematicKey, true /* Key down */ );
             TMTimerSetMillies(pThis->CTX_SUFF(pKbdTypematicTimer), pThis->uTypematicRepeat);
         }
     }
@@ -1147,13 +1041,11 @@ static DECLCALLBACK(void) ps2kDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 static void ps2kReleaseKeys(PPS2K pThis)
 {
     LogFlowFunc(("Releasing keys...\n"));
-    LogRel(("Releasing keys...\n"));
 
     for (unsigned uKey = 0; uKey < sizeof(pThis->abDepressedKeys); ++uKey)
         if (pThis->abDepressedKeys[uKey])
         {
-            LogRel(("Releasing key %02X\n", uKey));
-            psk2ProcessKeyEvent(pThis, uKey, false /* key up */);
+            ps2kProcessKeyEvent(pThis, uKey, false /* key up */);
             pThis->abDepressedKeys[uKey] = 0;
         }
     LogFlowFunc(("Done releasing keys\n"));
@@ -1246,7 +1138,7 @@ static int ps2kPutEventWorker(PPS2K pThis, uint32_t u32Usage)
         rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
         AssertReleaseRC(rc);
 
-        rc = psk2ProcessKeyEvent(pThis, u8HidCode, fKeyDown);
+        rc = ps2kProcessKeyEvent(pThis, u8HidCode, fKeyDown);
 
         PDMCritSectLeave(pThis->pCritSectR3);
     }
@@ -1254,39 +1146,33 @@ static int ps2kPutEventWorker(PPS2K pThis, uint32_t u32Usage)
     return rc;
 }
 
-static DECLCALLBACK(int) ps2kPutEventWrapper(PPDMIKEYBOARDPORT pInterface, uint8_t u8KeyCode)
+static DECLCALLBACK(int) ps2kPutEventWrapper(PPDMIKEYBOARDPORT pInterface, uint32_t u32UsageCode)
 {
     PPS2K       pThis = RT_FROM_MEMBER(pInterface, PS2K, Keyboard.IPort);
-    uint32_t    u32Usage = 0;
     int         rc;
 
-    LogFlowFunc(("key code %02X\n", u8KeyCode));
+    LogFlowFunc(("key code %08X\n", u32UsageCode));
+
+    rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
+    AssertReleaseRC(rc);
 
     /* The 'BAT fail' scancode is reused as a signal to release keys. No actual
      * key is allowed to use this scancode.
      */
-    if (RT_UNLIKELY(u8KeyCode == KRSP_BAT_FAIL))
+    if (RT_UNLIKELY(u32UsageCode == KRSP_BAT_FAIL))
     {
-        rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
-        AssertReleaseRC(rc);
-
         ps2kReleaseKeys(pThis);
-
-        PDMCritSectLeave(pThis->pCritSectR3);
     }
     else
     {
-        pThis->XlatState = ScancodeToHidUsage(pThis->XlatState, u8KeyCode, &u32Usage);
+        /* Stupid Korean key hack: convert a lone break key into a press/release sequence. */
+        if (u32UsageCode == 0x80000090 || u32UsageCode == 0x80000091)
+            ps2kPutEventWorker(pThis, u32UsageCode & ~0x80000000);
 
-        if (pThis->XlatState == SS_IDLE)
-        {
-            /* Stupid Korean key hack: convert a lone break key into a press/release sequence. */
-            if (u32Usage == 0x80000090 || u32Usage == 0x80000091)
-                ps2kPutEventWorker(pThis, u32Usage & ~0x80000000);
-
-            ps2kPutEventWorker(pThis, u32Usage);
-        }
+        ps2kPutEventWorker(pThis, u32UsageCode);
     }
+
+    PDMCritSectLeave(pThis->pCritSectR3);
 
     return VINF_SUCCESS;
 }
@@ -1499,7 +1385,7 @@ int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
     pThis->cmdQ.cSize = KBD_CMD_QUEUE_SIZE;
 
     pThis->Keyboard.IBase.pfnQueryInterface = ps2kQueryInterface;
-    pThis->Keyboard.IPort.pfnPutEvent       = ps2kPutEventWrapper;
+    pThis->Keyboard.IPort.pfnPutEventHid    = ps2kPutEventWrapper;
 
     /*
      * Initialize the critical section pointer(s).
