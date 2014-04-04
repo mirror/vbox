@@ -128,6 +128,7 @@ VBOX_ADD_STRIP_SBIN += \
 	VBoxService \
 	$(if $(VBOX_WITH_LIGHTDM_GREETER),vbox-greeter)
 
+ifdef VBOX_WITH_CROGL
 VBOX_ADD_STRIP_LIB += \
 	VBoxOGLarrayspu.so \
 	VBoxOGLcrutil.so \
@@ -136,6 +137,7 @@ VBOX_ADD_STRIP_LIB += \
 	VBoxOGLpackspu.so \
 	VBoxOGLpassthroughspu.so \
 	VBoxOGL.so
+endif
 
 VBOX_ADD_STRIP_MOD.linux = \
 	vboxmouse_drv_70.so \
