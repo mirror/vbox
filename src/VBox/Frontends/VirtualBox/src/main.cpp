@@ -413,8 +413,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
+# ifndef VBOX_OSE
         /* Enable HiDPI icons. */
         qApp->setAttribute(Qt::AA_UseHighDpiPixmaps);
+# endif /* !VBOX_OSE */
 #endif /* Q_WS_MAC */
 
 #ifdef Q_OS_SOLARIS
