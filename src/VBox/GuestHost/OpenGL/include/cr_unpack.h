@@ -36,28 +36,7 @@ typedef enum
     CR_UNPACK_BUFFER_TYPE_CMDBLOCK_END
 } CR_UNPACK_BUFFER_TYPE;
 
-DECLINLINE(CR_UNPACK_BUFFER_TYPE) crUnpackGetBufferType(const void *opcodes, unsigned int num_opcodes)
-{
-    const uint8_t *pu8Codes = (const uint8_t *)opcodes;
-
-    CR_UNPACK_BUFFER_TYPE enmType;
-    uint8_t first;
-    uint8_t last;
-
-    if (!num_opcodes)
-        return CR_UNPACK_BUFFER_TYPE_GENERIC;
-
-    first = pu8Codes[0];
-    last = pu8Codes[1-(int)num_opcodes];
-
-    enmType = (first != CR_CMDBLOCKBEGIN_OPCODE) ? CR_UNPACK_BUFFER_TYPE_GENERIC : CR_UNPACK_BUFFER_TYPE_CMDBLOCK_BEGIN;
-
-    if (last != CR_CMDBLOCKEND_OPCODE)
-        return enmType;
-
-    /* last is CMDBLOCKEND*/
-    return (enmType == CR_UNPACK_BUFFER_TYPE_CMDBLOCK_BEGIN) ? CR_UNPACK_BUFFER_TYPE_GENERIC : CR_UNPACK_BUFFER_TYPE_CMDBLOCK_END;
-}
+DECLEXPORT(CR_UNPACK_BUFFER_TYPE) crUnpackGetBufferType(const void *opcodes, unsigned int num_opcodes);
 
 extern CRNetworkPointer * return_ptr;
 extern CRNetworkPointer * writeback_ptr;

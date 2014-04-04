@@ -52,9 +52,7 @@ ifdef VBOX_WITH_XPCOM
  VBoxSharedCrOpenGL_CXXFLAGS = -Wno-non-virtual-dtor
 endif
 VBoxSharedCrOpenGL_INTERMEDIATES = \
-	$(TEMPLATE_VBOXMAINEXE_INTERMEDIATES) \
-	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h
-
+	$(TEMPLATE_VBOXMAINEXE_INTERMEDIATES)
 VBoxSharedCrOpenGL_INCS.win = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
 	$(VBOX_PATH_SDK)/bindings/mscom/include
