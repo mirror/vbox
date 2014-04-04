@@ -274,7 +274,7 @@ private:
 
         /* Get script path: */
         char szAppPrivPath[RTPATH_MAX];
-        vrc = RTPathAppPrivateNoArch(szAppPrivPath, sizeof(szAppPrivPath)); AssertRC(rc);
+        vrc = RTPathAppPrivateNoArch(szAppPrivPath, sizeof(szAppPrivPath)); AssertRC(vrc);
         if (RT_SUCCESS(vrc))
         {
             /* Run script: */
