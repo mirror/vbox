@@ -35,6 +35,7 @@
 
 #include <iprt/types.h>
 #include <iprt/thread.h>
+#include <iprt/list.h>
     
 #ifdef __cplusplus
 extern "C" {
@@ -244,6 +245,7 @@ struct CRConnection {
     struct _crclient *pClient; /* back reference, just for simplicity */
     CRVBOXHGSMI_CMDDATA CmdData;
 # endif
+    RTLISTANCHOR PendingMsgList;
 #endif
     /* Used on host side to indicate that we are not allowed to store above pointers for later use
      * in crVBoxHGCMReceiveMessage. As those messages are going to be processed after the corresponding 

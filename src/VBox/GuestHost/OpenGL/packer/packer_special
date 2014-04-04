@@ -180,3 +180,5 @@ VBoxTexPresent
 WindowPosition
 WindowShow
 WindowSize
+BeginQueryARB
+EndQueryARB

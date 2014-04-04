@@ -415,13 +415,62 @@ getNextClient(GLboolean block)
     /* return NULL; */
 }
 
+typedef struct CR_SERVER_PENDING_MSG
+{
+    RTLISTNODE Node;
+    CRMessage Msg;
+} CR_SERVER_PENDING_MSG;
+
+static int crServerPendMsg(CRConnection *conn, const CRMessage *msg, int cbMsg)
+{
+    CR_SERVER_PENDING_MSG *pMsg = (CR_SERVER_PENDING_MSG*)RTMemAlloc(cbMsg + RT_OFFSETOF(CR_SERVER_PENDING_MSG, Msg));
+    if (!pMsg)
+    {
+        WARN(("RTMemAlloc failed"));
+        return VERR_NO_MEMORY;
+    }
+
+    memcpy(&pMsg->Msg, msg, cbMsg);
+
+    RTListAppend(&conn->PendingMsgList, &pMsg->Node);
+
+    return VINF_SUCCESS;
+}
+
+static void crServerPendProcess(CRConnection *conn)
+{
+    CR_SERVER_PENDING_MSG *pIter, *pNext;
+    RTListForEachSafe(&conn->PendingMsgList, pIter, pNext, CR_SERVER_PENDING_MSG, Node)
+    {
+        CRMessage *msg = &pIter->Msg;
+        const CRMessageOpcodes *msg_opcodes;
+        int opcodeBytes;
+        const char *data_ptr;
+
+        RTListNodeRemove(&pIter->Node);
+
+        CRASSERT(msg->header.type == CR_MESSAGE_OPCODES);
+
+        msg_opcodes = (const CRMessageOpcodes *) msg;
+        opcodeBytes = (msg_opcodes->numOpcodes + 3) & ~0x03;
+
+        data_ptr = (const char *) msg_opcodes + sizeof (CRMessageOpcodes) + opcodeBytes;
+
+        crUnpack(data_ptr,                 /* first command's operands */
+                 data_ptr - 1,             /* first command's opcode */
+                 msg_opcodes->numOpcodes,  /* how many opcodes */
+                 &(cr_server.dispatch));   /* the CR dispatch table */
+
+        RTMemFree(pIter);
+    }
+}
 
 /**
  * This function takes the given message (which should be a buffer of
  * rendering commands) and executes it.
  */
 static void
-crServerDispatchMessage(CRConnection *conn, CRMessage *msg)
+crServerDispatchMessage(CRConnection *conn, CRMessage *msg, int cbMsg)
 {
     const CRMessageOpcodes *msg_opcodes;
     int opcodeBytes;
@@ -429,6 +478,8 @@ crServerDispatchMessage(CRConnection *conn, CRMessage *msg)
 #ifdef VBOX_WITH_CRHGSMI
     PCRVBOXHGSMI_CMDDATA pCmdData = NULL;
 #endif
+    CR_UNPACK_BUFFER_TYPE enmType;
+    bool fUnpack = true;
 
     if (msg->header.type == CR_MESSAGE_REDIR_PTR)
     {
@@ -449,10 +500,64 @@ crServerDispatchMessage(CRConnection *conn, CRMessage *msg)
 #endif
 
     data_ptr = (const char *) msg_opcodes + sizeof(CRMessageOpcodes) + opcodeBytes;
-    crUnpack(data_ptr,                 /* first command's operands */
-             data_ptr - 1,             /* first command's opcode */
-             msg_opcodes->numOpcodes,  /* how many opcodes */
-             &(cr_server.dispatch));   /* the CR dispatch table */
+
+    enmType = crUnpackGetBufferType(data_ptr - 1,             /* first command's opcode */
+                msg_opcodes->numOpcodes  /* how many opcodes */);
+    switch (enmType)
+    {
+        case CR_UNPACK_BUFFER_TYPE_GENERIC:
+        {
+            if (RTListIsEmpty(&conn->PendingMsgList))
+                break;
+
+            if (RT_SUCCESS(crServerPendMsg(conn, msg, cbMsg)))
+            {
+                fUnpack = false;
+                break;
+            }
+
+            WARN(("crServerPendMsg failed"));
+            crServerPendProcess(conn);
+            break;
+        }
+        case CR_UNPACK_BUFFER_TYPE_CMDBLOCK_BEGIN:
+        {
+            if (RTListIsEmpty(&conn->PendingMsgList))
+            {
+                if (RT_SUCCESS(crServerPendMsg(conn, msg, cbMsg)))
+                {
+                    Assert(!RTListIsEmpty(&conn->PendingMsgList));
+                    fUnpack = false;
+                    break;
+                }
+                else
+                    WARN(("crServerPendMsg failed"));
+            }
+            else
+                WARN(("Pend List is NOT empty, drain the current list, and ignore this command"));
+
+            crServerPendProcess(conn);
+            break;
+        }
+        case CR_UNPACK_BUFFER_TYPE_CMDBLOCK_END:
+        {
+            CRASSERT(!RTListIsEmpty(&conn->PendingMsgList));
+            crServerPendProcess(conn);
+            Assert(RTListIsEmpty(&conn->PendingMsgList));
+            break;
+        }
+        default:
+            WARN(("unsupported buffer type"));
+            break;
+    }
+
+    if (fUnpack)
+    {
+        crUnpack(data_ptr,                 /* first command's operands */
+                 data_ptr - 1,             /* first command's opcode */
+                 msg_opcodes->numOpcodes,  /* how many opcodes */
+                 &(cr_server.dispatch));   /* the CR dispatch table */
+    }
 
 #ifdef VBOX_WITH_CRHGSMI
     if (pCmdData)
@@ -583,7 +688,7 @@ crServerServiceClient(const RunQueue *qEntry)
         cr_server.currentSerialNo = 0;
 
         /* Commands get dispatched here */
-        crServerDispatchMessage( conn, msg );
+        crServerDispatchMessage( conn, msg, len );
 
         crNetFree( conn, msg );
 
