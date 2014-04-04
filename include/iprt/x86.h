@@ -3292,6 +3292,23 @@ AssertCompileSize(X86TSS64, 136);
 /** @} */
 
 
+/** @name Task Descriptors.
+ * @{
+ */
+
+/**
+ * The minimum TSS descriptor limit for 286 tasks.
+ */
+#define X86_SEL_TYPE_SYS_286_TSS_LIMIT      0x2c
+
+/**
+ * The minimum TSS descriptor segment limit for 386 tasks.
+ */
+#define X86_SEL_TYPE_SYS_386_TSS_LIMIT      0x67
+
+/** @} */
+
+
 /**
  * x86 Exceptions/Faults/Traps.
  */
