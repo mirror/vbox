@@ -1,5 +1,3 @@
-ChangeWindowProperty
-DeleteProperty
 DRI2CloseScreen
 DRI2ScreenInit
 DRICloseScreen
@@ -20,7 +18,6 @@ PixmapWidthPaddingInfo
 RRChangeOutputProperty
 ShadowFBInit2
 VErrorF
-WindowTable
 XNFcalloc
 XNFstrdup
 Xalloc
@@ -99,7 +96,6 @@ __realpath_chk
 rename
 resVgaShared
 screenInfo
-serverClient
 serverGeneration
 setenv
 sigdelset
