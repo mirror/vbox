@@ -47,15 +47,15 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Windows DLL loader protection level. */
-DECLHIDDEN(RTR3WINLDRPROT)  g_enmWinLdrProt = RTR3WINLDRPROT_NONE;
+DECLHIDDEN(RTR3WINLDRPROT)      g_enmWinLdrProt = RTR3WINLDRPROT_NONE;
 /** Our simplified windows version.    */
-DECLHIDDEN(RTWINOSTYPE)     g_enmWinVer = kRTWinOSType_UNKNOWN;
+DECLHIDDEN(RTWINOSTYPE)         g_enmWinVer = kRTWinOSType_UNKNOWN;
 /** Extended windows version information. */
-DECLHIDDEN(OSVERSIONINFOEX) g_WinOsInfoEx;
+DECLHIDDEN(OSVERSIONINFOEXW)    g_WinOsInfoEx;
 /** The native kernel32.dll handle. */
-DECLHIDDEN(HMODULE)         g_hModKernel32 = NULL;
+DECLHIDDEN(HMODULE)             g_hModKernel32 = NULL;
 /** The native ntdll.dll handle. */
-DECLHIDDEN(HMODULE)         g_hModNtDll = NULL;
+DECLHIDDEN(HMODULE)             g_hModNtDll = NULL;
 
 
 
@@ -91,7 +91,7 @@ CE 2.1         3              2               1
 CE 3.0         3              3               0
 </pre>
  */
-static RTWINOSTYPE rtR3InitWinSimplifiedVersion(OSVERSIONINFOEX const *pOSInfoEx)
+static RTWINOSTYPE rtR3InitWinSimplifiedVersion(OSVERSIONINFOEXW const *pOSInfoEx)
 {
     RTWINOSTYPE enmVer         = kRTWinOSType_UNKNOWN;
     BYTE  const bProductType   = pOSInfoEx->wProductType;
@@ -168,37 +168,67 @@ static RTWINOSTYPE rtR3InitWinSimplifiedVersion(OSVERSIONINFOEX const *pOSInfoEx
 }
 
 
-DECLHIDDEN(int) rtR3InitNativeObtrusiveWorker(void)
+/**
+ * Initializes the global variables related to windows version.
+ */
+static void rtR3InitWindowsVersion(void)
+{
+    Assert(g_hModNtDll != NULL);
+
+    /*
+     * ASSUMES OSVERSIONINFOEX starts with the exact same layout as OSVERSIONINFO (safe).
+     */
+    AssertCompileMembersSameSizeAndOffset(OSVERSIONINFOEX, szCSDVersion, OSVERSIONINFO, szCSDVersion);
+    AssertCompileMemberOffset(OSVERSIONINFOEX, wServicePackMajor, sizeof(OSVERSIONINFO));
+
+    /*
+     * Use the NT version of GetVersionExW so we don't get fooled by
+     * compatability shims.
+     */
+    RT_ZERO(g_WinOsInfoEx);
+    g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+
+    LONG (__stdcall *pfnRtlGetVersion)(OSVERSIONINFOEXW *);
+    *(FARPROC *)&pfnRtlGetVersion = GetProcAddress(g_hModNtDll, "RtlGetVersion");
+    LONG rcNt = -1;
+    if (pfnRtlGetVersion)
+        rcNt = pfnRtlGetVersion(&g_WinOsInfoEx);
+    if (rcNt != 0)
+    {
+        /*
+         * Couldn't find it or it failed, try the windows version of the API.
+         */
+        RT_ZERO(g_WinOsInfoEx);
+        g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+        if (!GetVersionExW((POSVERSIONINFOW)&g_WinOsInfoEx))
+        {
+            /*
+             * If that didn't work either, just get the basic version bits.
+             */
+            RT_ZERO(g_WinOsInfoEx);
+            g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+            if (GetVersionExA((POSVERSIONINFOA)&g_WinOsInfoEx))
+                Assert(g_WinOsInfoEx.dwPlatformId != VER_PLATFORM_WIN32_NT || g_WinOsInfoEx.dwMajorVersion < 5);
+            else
+            {
+                AssertBreakpoint();
+                RT_ZERO(g_WinOsInfoEx);
+            }
+        }
+    }
+
+    if (g_WinOsInfoEx.dwOSVersionInfoSize)
+        g_enmWinVer = rtR3InitWinSimplifiedVersion(&g_WinOsInfoEx);
+}
+
+
+static int rtR3InitNativeObtrusiveWorker(void)
 {
     /*
      * Disable error popups.
      */
     UINT fOldErrMode = SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
     SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX | fOldErrMode);
-
-    /*
-     * Query the Windows version.
-     * ASSUMES OSVERSIONINFOEX starts with the exact same layout as OSVERSIONINFO (safe).
-     */
-    AssertCompileMembersSameSizeAndOffset(OSVERSIONINFOEX, szCSDVersion, OSVERSIONINFO, szCSDVersion);
-    AssertCompileMemberOffset(OSVERSIONINFOEX, wServicePackMajor, sizeof(OSVERSIONINFO));
-    RT_ZERO(g_WinOsInfoEx);
-    g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-    if (!GetVersionExA((POSVERSIONINFOA)&g_WinOsInfoEx))
-    {
-        /* Fallback, just get the basic info. */
-        RT_ZERO(g_WinOsInfoEx);
-        g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        if (GetVersionExA((POSVERSIONINFOA)&g_WinOsInfoEx))
-            Assert(g_WinOsInfoEx.dwPlatformId != VER_PLATFORM_WIN32_NT || g_WinOsInfoEx.dwMajorVersion < 5);
-        else
-        {
-            AssertBreakpoint();
-            RT_ZERO(g_WinOsInfoEx);
-        }
-    }
-    if (g_WinOsInfoEx.dwOSVersionInfoSize)
-        g_enmWinVer = rtR3InitWinSimplifiedVersion(&g_WinOsInfoEx);
 
     /*
      * Restrict DLL searching for the process on windows versions which allow
@@ -250,6 +280,8 @@ DECLHIDDEN(int) rtR3InitNativeFirst(uint32_t fFlags)
     g_hModNtDll    = GetModuleHandleW(L"ntdll.dll");
     if (g_hModNtDll == NULL)
         return VERR_INTERNAL_ERROR_2;
+
+    rtR3InitWindowsVersion();
 
     int rc = VINF_SUCCESS;
     if (!(fFlags & RTR3INIT_FLAGS_UNOBTRUSIVE))
