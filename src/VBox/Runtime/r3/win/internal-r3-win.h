@@ -59,12 +59,12 @@ typedef enum RTR3WINLDRPROT
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-extern DECLHIDDEN(RTR3WINLDRPROT)  g_enmWinLdrProt;
-extern DECLHIDDEN(RTWINOSTYPE)     g_enmWinVer;
+extern DECLHIDDEN(RTR3WINLDRPROT)   g_enmWinLdrProt;
+extern DECLHIDDEN(RTWINOSTYPE)      g_enmWinVer;
 #ifdef _WINDEF_
-extern DECLHIDDEN(HMODULE)         g_hModKernel32;
-extern DECLHIDDEN(HMODULE)         g_hModNtDll;
-extern DECLHIDDEN(OSVERSIONINFOEX) g_WinOsInfoEx;
+extern DECLHIDDEN(HMODULE)          g_hModKernel32;
+extern DECLHIDDEN(HMODULE)          g_hModNtDll;
+extern DECLHIDDEN(OSVERSIONINFOEXW) g_WinOsInfoEx;
 #endif
 
 
