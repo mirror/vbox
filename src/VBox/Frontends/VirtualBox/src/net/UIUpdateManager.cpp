@@ -266,85 +266,50 @@ private:
         strPlatform += QString(".%1").arg(ARCH_BITS);
 
         /* Add more system information: */
-#if defined (Q_OS_WIN)
-        OSVERSIONINFO versionInfo;
-        ZeroMemory(&versionInfo, sizeof(OSVERSIONINFO));
-        versionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        GetVersionEx(&versionInfo);
-        int iMajor = versionInfo.dwMajorVersion;
-        int iMinor = versionInfo.dwMinorVersion;
-        int iBuild = versionInfo.dwBuildNumber;
-        QString strVersionInfo = QString::fromUtf16((ushort*)versionInfo.szCSDVersion);
+        int vrc;
+#if defined(Q_OS_LINUX)
+        /* On linux we wish to send information about the distribution
+           and such like, so we try invoke a helper script that retrives
+           and formats it for us. */
 
-        QString strDistributiveInfo;
-        if (iMajor == 6)
-        {
-            if (iMinor >= 3)
-                strDistributiveInfo = QString("Windows 8.1 %1");
-            else if (iMinor == 2)
-                strDistributiveInfo = QString("Windows 8 %1");
-            else if (iMinor == 1)
-                strDistributiveInfo = QString("Windows 7 %1");
-            else
-                strDistributiveInfo = QString("Windows Vista %1");
-        }
-        else if (iMajor == 5)
-        {
-            if (iMinor == 2)
-                strDistributiveInfo = QString("Windows Server 2003 %1");
-            else if (iMinor == 1)
-                strDistributiveInfo = QString("Windows XP %1");
-            else if (iMinor == 0)
-                strDistributiveInfo = QString("Windows 2000 %1");
-            else
-                strDistributiveInfo = QString("Unknown %1");
-        }
-        else if (iMajor == 4)
-        {
-            if (iMinor == 90)
-                strDistributiveInfo = QString("Windows Me %1");
-            else if (iMinor == 10)
-                strDistributiveInfo = QString("Windows 98 %1");
-            else if (iMinor == 0)
-                strDistributiveInfo = QString("Windows 95 %1");
-            else
-                strDistributiveInfo = QString("Unknown %1");
-        }
-        else strDistributiveInfo = QString("Unknown %1");
-        // TODO: Windows Server 2008 == Vista? */
-        strDistributiveInfo = strDistributiveInfo.arg(strVersionInfo);
-        QString strVersion = QString("%1.%2").arg(iMajor).arg(iMinor);
-        QString strKernel = QString("%1").arg(iBuild);
-        strPlatform += QString(" [Distribution: %1 | Version: %2 | Build: %3]")
-            .arg(strDistributiveInfo).arg(strVersion).arg(strKernel);
-#elif defined (Q_OS_LINUX)
         /* Get script path: */
         char szAppPrivPath[RTPATH_MAX];
-        int rc = RTPathAppPrivateNoArch(szAppPrivPath, sizeof(szAppPrivPath)); NOREF(rc);
-        AssertRC(rc);
-        /* Run script: */
-        QByteArray result = QIProcess::singleShot(QString(szAppPrivPath) + "/VBoxSysInfo.sh");
-        if (!result.isNull())
-            strPlatform += QString(" [%1]").arg(QString(result).trimmed());
-#else
-        /* Use RTSystemQueryOSInfo: */
-        char szTmp[256];
-        QStringList components;
-        int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
-        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-            components << QString("Product: %1").arg(szTmp);
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
-        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-            components << QString("Release: %1").arg(szTmp);
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
-        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-            components << QString("Version: %1").arg(szTmp);
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
-        if ((RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-            components << QString("SP: %1").arg(szTmp);
-        if (!components.isEmpty())
-            strPlatform += QString(" [%1]").arg(components.join(" | "));
+        vrc = RTPathAppPrivateNoArch(szAppPrivPath, sizeof(szAppPrivPath)); AssertRC(rc);
+        if (RT_SUCCESS(vrc))
+        {
+            /* Run script: */
+            QByteArray result = QIProcess::singleShot(QString(szAppPrivPath) + "/VBoxSysInfo.sh");
+            if (!result.isNull())
+                strPlatform += QString(" [%1]").arg(QString(result).trimmed());
+            else
+                vrc = VERR_TRY_AGAIN; /* (take the fallback path) */
+        }
+        if (RT_FAILURE(vrc))
 #endif
+        {
+            /* Use RTSystemQueryOSInfo: */
+            char szTmp[256];
+            QStringList components;
+
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
+            if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
+                components << QString("Product: %1").arg(szTmp);
+
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
+            if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
+                components << QString("Release: %1").arg(szTmp);
+
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
+            if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
+                components << QString("Version: %1").arg(szTmp);
+
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
+            if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
+                components << QString("SP: %1").arg(szTmp);
+
+            if (!components.isEmpty())
+                strPlatform += QString(" [%1]").arg(components.join(" | "));
+        }
 
         return strPlatform;
     }
