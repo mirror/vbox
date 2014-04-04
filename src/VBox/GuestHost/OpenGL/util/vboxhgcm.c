@@ -2440,6 +2440,10 @@ void crVBoxHGCMConnection(CRConnection *conn
     CRASSERT(conn->pHostBuffer);
     conn->cbHostBuffer = 0;
 
+#if !defined(IN_GUEST)
+    RTListInit(&conn->PendingMsgList);
+#endif
+
 #ifdef CHROMIUM_THREADSAFE
     crLockMutex(&g_crvboxhgcm.mutex);
 #endif

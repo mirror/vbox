@@ -187,3 +187,30 @@ void PACK_APIENTRY crPackWindowSize( CR_PACKER_CONTEXT_ARGDECL GLint window, GLi
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
+
+void PACK_APIENTRY crPackBeginQueryARB( CR_PACKER_CONTEXT_ARGDECL GLenum target, GLuint id )
+{
+    CR_GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    (void) pc;
+    CR_GET_BUFFERED_POINTER( pc, 16 );
+    WRITE_DATA( 0, GLint, 16 );
+    WRITE_DATA( 4, GLenum, CR_BEGINQUERYARB_EXTEND_OPCODE );
+    WRITE_DATA( 8, GLenum, target );
+    WRITE_DATA( 12, GLuint, id );
+    WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
+}
+
+void PACK_APIENTRY crPackEndQueryARB( CR_PACKER_CONTEXT_ARGDECL GLenum target )
+{
+    CR_GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    (void) pc;
+    CR_GET_BUFFERED_POINTER( pc, 12 );
+    WRITE_DATA( 0, GLint, 12 );
+    WRITE_DATA( 4, GLenum, CR_ENDQUERYARB_EXTEND_OPCODE );
+    WRITE_DATA( 8, GLenum, target );
+    WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
+}

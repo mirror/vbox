@@ -33,7 +33,13 @@ for func in keys:
 		print "\t%s = %d," % ( apiutil.OpcodeName(func), enum_index )
 		enum_index = enum_index + 1
 
-if enum_index > 255:
+print "\tCR_EXTEND_OPCODE=%d," % enum_index
+enum_index = enum_index + 1
+print "\tCR_CMDBLOCKBEGIN_OPCODE=%d," % enum_index
+enum_index = enum_index + 1
+print "\tCR_CMDBLOCKEND_OPCODE=%d," % enum_index
+print "\tCR_NOP_OPCODE=255"
+if enum_index > 254:
 	# This would have saved Mike some grief if it had been here earlier.
 	print >> sys.stderr, "You have more than 255 opcodes!  You've been adding functions to"
 	print >> sys.stderr, "glapi_parser/APIspec!  Each new function you add"
@@ -45,7 +51,6 @@ if enum_index > 255:
 	print >> sys.stderr, "this even if you're doing a 'make -k.'"
 	print "#error -- more than 255 opcodes!"
 	sys.exit(-1)
-print "\tCR_EXTEND_OPCODE=%d" % enum_index
 print "} CROpcode;\n"
 
 # count up number of extended opcode commands

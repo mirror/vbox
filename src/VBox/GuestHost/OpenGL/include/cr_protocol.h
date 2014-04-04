@@ -23,9 +23,20 @@ extern "C" {
 #define CR_PROTOCOL_VERSION_MINOR 1
 
 /* new TexPresent mechanism is available */
-#define CR_VBOX_CAP_TEX_PRESENT    0x00000001
+#define CR_VBOX_CAP_TEX_PRESENT         0x00000001
 /* vbva command submission mechanism supported */
-#define CR_VBOX_CAP_CMDVBVA        0x00000002
+#define CR_VBOX_CAP_CMDVBVA             0x00000002
+/* host supports Command Blocks, i.e. CR_CMDBLOCKBEGIN_OPCODE and CR_CMDBLOCKEND_OPCODE opcodes.
+ * Command Block can be used by guest to prevent clients from blocking each other.
+ * The Command Block allows multiple command buffers to be processed with one run.
+ * Command Block commands have to obey to the following rules:
+ * CR_CMDBLOCKBEGIN_OPCODE - must be the first command in the command buffer, specifying the command block start
+ * CR_CMDBLOCKEND_OPCODE - must be the last command in the command buffer, specifying the command block end
+ * If not placed accordingly, CR_CMDBLOCK** commands are ignored.
+ * Server copies the command block buffer commands to its internal storage
+ * and processes them with one run when the command block end is signalled
+ */
+#define CR_VBOX_CAP_CMDBLOCKS            0x00000004
 
 
 #define CR_PRESENT_SCREEN_MASK 0xffff

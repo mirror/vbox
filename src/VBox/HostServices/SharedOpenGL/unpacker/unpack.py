@@ -262,6 +262,11 @@ print """
                     crUnpackExtend();
                 #endif
                 break;
+            case CR_CMDBLOCKBEGIN_OPCODE:
+            case CR_CMDBLOCKEND_OPCODE:
+            case CR_NOP_OPCODE:
+                INCR_DATA_PTR_NO_ARGS( );
+                break;
             default:
                 crError( "Unknown opcode: %d", *unpack_opcodes );
                 break;

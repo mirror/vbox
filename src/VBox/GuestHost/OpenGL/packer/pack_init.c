@@ -17,6 +17,8 @@ int _PackerTSD;         /* dummy - for the sake of packer.def */  /* drm1 */
 DLLDATA(CRPackContext) cr_packer_globals;
 #endif
 
+int cr_packer_cmd_blocks_enabled = 0;
+
 CRPackContext *crPackNewContext( int swapping )
 {
 #ifdef CHROMIUM_THREADSAFE
@@ -28,7 +30,7 @@ CRPackContext *crPackNewContext( int swapping )
     GET_PACKER_CONTEXT(pc);
         crMemZero( pc, sizeof(CRPackContext));
 #endif
-    pc->enmBeginEndState = CRPackBeginEndStateNone;
+    pc->u32CmdBlockState = 0;
     pc->swapping = swapping;
     pc->Flush = NULL;
     pc->SendHuge = NULL;
