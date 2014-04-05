@@ -609,148 +609,107 @@ done:
 
 void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, int minsize, const char *message)
 {
-    unsigned hlen, shlen, s_ip_len;
-    register struct ip *ip;
-    register struct icmp *icp;
-    register struct mbuf *m;
-    int new_ip_size = 0;
-    int new_m_size = 0;
-    int size = 0;
+    unsigned ohlen, olen;
+    struct mbuf *m;
+    struct ip *oip, *ip;
+    struct icmp *icp;
+    void *payload;
 
-    LogFlow(("icmp_error: msrc = %lx, msrc_len = %d\n", (long)msrc, msrc ? msrc->m_len : 0));
-    if (msrc != NULL)
-        M_ASSERTPKTHDR(msrc);
+    LogFlow(("icmp_error: msrc = %p, msrc_len = %d\n",
+             (void *)msrc, msrc ? msrc->m_len : 0));
+
+    if (RT_UNLIKELY(msrc == NULL))
+        goto end_error;
+
+    M_ASSERTPKTHDR(msrc);
 
     if (   type != ICMP_UNREACH
         && type != ICMP_TIMXCEED
         && type != ICMP_SOURCEQUENCH)
         goto end_error;
 
-    /* check msrc */
-    if (!msrc)
+    oip = mtod(msrc, struct ip *);
+    LogFunc(("msrc: %RTnaipv4 -> %RTnaipv4\n", oip->ip_src, oip->ip_dst));
+
+    if (oip->ip_src.s_addr == INADDR_ANY)
         goto end_error;
 
-    ip = mtod(msrc, struct ip *);
-    LogFunc(("msrc: %RTnaipv4 -> %RTnaipv4\n", ip->ip_src, ip->ip_dst));
-
-    /* if source IP datagram hasn't got src address don't bother with sending ICMP error */
-    if (ip->ip_src.s_addr == INADDR_ANY)
-        goto end_error;
-
-    if (   ip->ip_off & IP_OFFMASK
-        && type != ICMP_SOURCEQUENCH)
+    if (oip->ip_off & IP_OFFMASK)
         goto end_error;    /* Only reply to fragment 0 */
 
-    shlen = ip->ip_hl << 2;
-    s_ip_len = ip->ip_len;
-    if (ip->ip_p == IPPROTO_ICMP)
+    ohlen = oip->ip_hl * 4;
+    AssertStmt(ohlen >= sizeof(struct ip), goto end_error);
+
+    olen = oip->ip_len;
+    AssertStmt(olen >= ohlen, goto end_error);
+
+    if (oip->ip_p == IPPROTO_ICMP)
     {
-        icp = (struct icmp *)((char *)ip + shlen);
+        struct icmp *oicp = (struct icmp *)((char *)oip + ohlen);
         /*
          *  Assume any unknown ICMP type is an error. This isn't
          *  specified by the RFC, but think about it..
          */
-        if (icp->icmp_type>18 || icmp_flush[icp->icmp_type])
+        if (oicp->icmp_type > ICMP_MAXTYPE || icmp_flush[oicp->icmp_type])
             goto end_error;
     }
 
+    /* undo byte order conversions done in ip_input() */
+    HTONS(oip->ip_len);
+    HTONS(oip->ip_id);
+    HTONS(oip->ip_off);
+
     m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
-    if (!m)
+    if (RT_UNLIKELY(m == NULL))
         goto end_error;
 
     m->m_flags |= M_SKIP_FIREWALL;
     m->m_data += if_maxlinkhdr;
-    m->m_pkthdr.header = mtod(m, void *);
 
-    memcpy(m->m_pkthdr.header, ip, shlen); /* initialize respond IP header with data from original one. */
+    ip = mtod(m, struct ip *);
+    m->m_pkthdr.header = (void *)ip;
 
-    ip   = mtod(m, struct ip *); /* ip points to new IP header */
-    hlen = sizeof(struct ip);  /* trim the IP header no options in reply */
+    /* fill in ip (ip_output0() does the boilerplate for us) */
+    ip->ip_tos = ((oip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
+    /* ip->ip_len will be set later */
+    ip->ip_off = 0;
+    ip->ip_ttl = MAXTTL;
+    ip->ip_p = IPPROTO_ICMP;
+    ip->ip_src = alias_addr;
+    ip->ip_dst = oip->ip_src;
 
     /* fill in icmp */
-    m->m_data += hlen; /* shifts m_data to ICMP header */
-    icp = mtod(m, struct icmp *); /* _icp_: points to the ICMP header */
-    m->m_data += RT_OFFSETOF(struct icmp, icmp_ip); /* shifts m_data to IP header payload */
-
+    icp = (struct icmp *)((char *)ip + sizeof(*ip));
     icp->icmp_type = type;
     icp->icmp_code = code;
     icp->icmp_id = 0;
     icp->icmp_seq = 0;
 
-    HTONS(icp->icmp_ip.ip_len);
-    HTONS(icp->icmp_ip.ip_id);
-    HTONS(icp->icmp_ip.ip_off);
+    /* fill in icmp payload: original ip header plus 8 bytes of its payload */
+    if (olen > ohlen + 8)
+        olen = ohlen + 8;
+    payload = (void *)((char *)icp + ICMP_MINLEN);
+    memcpy(payload, oip, olen);
 
-    memcpy(mtod(m, void *), mtod(msrc, void *), shlen);  /* copy original IP header (with options) */
-    msrc->m_data += shlen; /* _msrc_: shifts m_data of original mbuf to the end of original IP header */
-    msrc->m_len -= shlen; /* _msrc_: alter m_len to size of original IP datagram payload */
-    m->m_data += shlen; /* _m_: shifts m_data to the end of reported IP datagram */
-    /* initialize reported payload of original datagram  with MUST size RFC792 or with rest of allocated mbuf */
-    s_ip_len = minsize ? 8 : M_TRAILINGSPACE(m);
-    /* trims original IP datagram's payload to the lenght of its mbuf size or already reserved space if it's smaller */
-    s_ip_len = RT_MIN(s_ip_len, msrc->m_len);
-    memcpy(mtod(m, void *), mtod(msrc, void *), s_ip_len);
-
-#if DEBUG
-    if (message)
-    {
-
-        size_t message_len;
-        /**
-         * Trim reported payload to first eight bytes (RFC792) to let sniffering tools do
-         * their audit duties, and add hint message to the tail of mandatory piece.
-         */
-        s_ip_len = 8;
-        /**
-         * _m_: shifts m_data to the end of mandatory 8b piece to let M_TRAILINGSPACE
-         * to returns available space with counting mandatory region.
-         */
-        m->m_data += s_ip_len;
-        message_len = strlen(message);
-        if (message_len > M_TRAILINGSPACE(m))
-            message_len = M_TRAILINGSPACE(m);
-   
-        /**
-         * m->m_data points to the end of 8 bytes payload, and m->m_len is length of appended 
-         * message.
-         */
-        m_append(pData, m, (int)message_len, message);
-        m->m_data -= s_ip_len; /* now we're ready for further processing, with pointing to mandatory payload */
-    }
-#else
-    NOREF(message);
-#endif
-    
-    m->m_data -= shlen + RT_OFFSETOF(struct icmp, icmp_ip); /* _m_: shifts m_data to the start of ICMP header */
-    m->m_len += s_ip_len + shlen + RT_OFFSETOF(struct icmp, icmp_ip); /* _m_: m_len counts bytes in IP payload */
-
-    /**
-     * It asserts if calculation above is wrong. 
+    /*
+     * Original code appended this message after the payload.  This
+     * might have been a good idea for real slirp, as it provided a
+     * communication channel with the remote host.  But 90s are over.
      */
-    Assert(icp == mtod(m, struct icmp*));
+    NOREF(message);
+
+    /* hide ip header for icmp checksum calculation */
+    m->m_data += sizeof(struct ip);
+    m->m_len = ICMP_MINLEN + /* truncated */ olen;
 
     icp->icmp_cksum = 0;
     icp->icmp_cksum = cksum(m, m->m_len);
 
-    /* fill in ip */
-    ip->ip_hl = hlen >> 2;
+    /* reveal ip header */
+    m->m_data -= sizeof(struct ip);
+    m->m_len += sizeof(struct ip);
     ip->ip_len = m->m_len;
 
-    ip->ip_tos = ((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
-
-    ip->ip_ttl = MAXTTL;
-    ip->ip_p = IPPROTO_ICMP;
-    ip->ip_dst = ip->ip_src;    /* ip adresses */
-    ip->ip_src = alias_addr;
-
-    /* returns pointer back. */
-    m->m_data -= hlen;
-    m->m_len  += hlen;
-    
-    /**
-     * paranoid. if something goes wrong previous assert should be triggered.
-     */
-    Assert(ip == mtod(m, struct ip*));
     (void) ip_output0(pData, (struct socket *)NULL, m, 1);
 
     icmpstat.icps_reflect++;
