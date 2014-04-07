@@ -559,6 +559,25 @@ QString UIMedium::nullID()
     return m_sstrNullID;
 }
 
+/* static */
+bool UIMedium::isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium)
+{
+    /* Iterate till the root: */
+    UIMedium mediumIterator = medium;
+    do
+    {
+        /* Ignore medium if its hidden
+         * or attached to hidden machines only: */
+        if (mediumIterator.isHidden())
+            return true;
+        /* Move iterator to parent: */
+        mediumIterator = mediumIterator.parent();
+    }
+    while (!mediumIterator.isNull());
+    /* False by default: */
+    return false;
+}
+
 /**
  * Checks if m_noDiffs is filled in and does it if not.
  *
