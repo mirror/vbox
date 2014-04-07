@@ -1562,13 +1562,18 @@ static void crStateDumpClientPointer(CRClientPointer *cp, const char *name, int 
   }
 }
 
+#ifdef DEBUG_misha
+/* debugging */
+# define CR_NO_SERVER_ARRAYS
+#endif
+
 /*
  * Determine if the enabled arrays all live on the server
  * (via GL_ARB_vertex_buffer_object).
  */
 GLboolean crStateUseServerArrays(void)
 {
-#ifdef CR_ARB_vertex_buffer_object
+#if defined(CR_ARB_vertex_buffer_object) && !defined(CR_NO_SERVER_ARRAYS)
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
     int i;
