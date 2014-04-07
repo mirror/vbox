@@ -224,6 +224,9 @@ public:
     /* Static API: Null medium ID: */
     static QString nullID();
 
+    /** Determines if passed @a medium attached to hidden machines only. */
+    static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
+
 private:
 
     void checkNoDiffs(bool fNoDiffs);

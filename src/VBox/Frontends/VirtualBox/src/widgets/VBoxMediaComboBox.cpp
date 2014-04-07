@@ -172,6 +172,11 @@ void VBoxMediaComboBox::sltHandleMediumCreated(const QString &strMediumID)
     /* Search for corresponding medium: */
     UIMedium medium = vboxGlobal().medium(strMediumID);
 
+    /* Ignore mediums (and their children) which are
+     * marked as hidden or attached to hidden machines only: */
+    if (UIMedium::isMediumAttachedToHiddenMachinesOnly(medium))
+        return;
+
     /* Add only 1. NULL medium and 2. mediums of required type: */
     if (!medium.isNull() && medium.type() != mType)
         return;

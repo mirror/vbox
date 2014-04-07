@@ -225,9 +225,6 @@ private:
     /** Format information-field content. */
     static QString formatFieldText(const QString &strText, bool fCompact = true, const QString &strElipsis = "middle");
 
-    /** Determines if passed @a medium attached to hidden machines only. */
-    static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
-
     /** UIMediumManager singleton instance. */
     static UIMediumManager *m_spInstance;
 
