@@ -805,14 +805,12 @@ int vmmdevHGCMCall (PVMMDEV pThis, VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCal
         return rc;
     }
 
-    PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAlloc (cbCmdSize);
+    PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ(cbCmdSize);
 
     if (pCmd == NULL)
     {
         return VERR_NO_MEMORY;
     }
-
-    memset (pCmd, 0, sizeof (*pCmd));
 
     pCmd->paHostParms = NULL;
     pCmd->cLinPtrs    = cLinPtrs;
@@ -820,8 +818,8 @@ int vmmdevHGCMCall (PVMMDEV pThis, VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCal
 
     if (cLinPtrs > 0)
     {
-        pCmd->paLinPtrs = (VBOXHGCMLINPTR *)RTMemAlloc (  sizeof (VBOXHGCMLINPTR) * cLinPtrs
-                                                          + sizeof (RTGCPHYS) * cLinPtrPages);
+        pCmd->paLinPtrs = (VBOXHGCMLINPTR *)RTMemAllocZ(  sizeof (VBOXHGCMLINPTR) * cLinPtrs
+                                                        + sizeof (RTGCPHYS) * cLinPtrPages);
 
         if (pCmd->paLinPtrs == NULL)
         {
