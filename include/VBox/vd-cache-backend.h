@@ -65,11 +65,6 @@ typedef struct VDCACHEBACKEND
     PCVDCONFIGINFO paConfigInfo;
 
     /**
-     * Handle of loaded plugin library, NIL_RTLDRMOD for static backends.
-     */
-    RTLDRMOD hPlugin;
-
-    /**
      * Probes the given image.
      *
      * @returns VBox status code.
@@ -317,21 +312,9 @@ typedef struct VDCACHEBACKEND
     DECLR3CALLBACKMEMBER(int, pfnComposeName, (PVDINTERFACE pConfig, char **pszName));
 
 } VDCACHEBACKEND;
-
-/** Pointer to VD backend. */
+/** Pointer to VD cache backend. */
 typedef VDCACHEBACKEND *PVDCACHEBACKEND;
-
 /** Constant pointer to VD backend. */
 typedef const VDCACHEBACKEND *PCVDCACHEBACKEND;
-
-/** Initialization entry point. */
-typedef DECLCALLBACK(int) FNVDCACHEFORMATLOAD(PVDCACHEBACKEND *ppBackendTable);
-typedef FNVDCACHEFORMATLOAD *PFNVDCACHEFORMATLOAD;
-#define VD_CACHEFORMAT_LOAD_NAME "VDCacheFormatLoad"
-
-/** The prefix to identify Storage Plugins. */
-#define VD_CACHEFORMAT_PLUGIN_PREFIX "VDCache"
-/** The size of the prefix excluding the '\\0' terminator. */
-#define VD_CACHEFORMAT_PLUGIN_PREFIX_LENGTH (sizeof(VD_CACHEFORMAT_PLUGIN_PREFIX)-1)
 
 #endif

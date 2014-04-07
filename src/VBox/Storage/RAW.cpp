@@ -27,6 +27,8 @@
 #include <iprt/alloc.h>
 #include <iprt/path.h>
 
+#include "VDBackends.h"
+
 /*******************************************************************************
 *   Constants And Macros, Structures and Typedefs                              *
 *******************************************************************************/
@@ -1126,7 +1128,7 @@ static void rawDump(void *pBackendData)
 
 
 
-VBOXHDDBACKEND g_RawBackend =
+const VBOXHDDBACKEND g_RawBackend =
 {
     /* pszBackendName */
     "RAW",
@@ -1138,8 +1140,6 @@ VBOXHDDBACKEND g_RawBackend =
     s_aRawFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* hPlugin */
-    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     rawCheckIfValid,
     /* pfnOpen */
@@ -1221,5 +1221,7 @@ VBOXHDDBACKEND g_RawBackend =
     /* pfnResize */
     NULL,
     /* pfnRepair */
+    NULL,
+    /* pfnTraverseMetadata */
     NULL
 };

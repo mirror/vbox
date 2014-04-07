@@ -34,6 +34,7 @@
 #include <iprt/zip.h>
 #include <iprt/formats/xar.h>
 
+#include "VDBackends.h"
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -2470,7 +2471,7 @@ static DECLCALLBACK(void) dmgDump(void *pBackendData)
 }
 
 
-VBOXHDDBACKEND g_DmgBackend =
+const VBOXHDDBACKEND g_DmgBackend =
 {
     /* pszBackendName */
     "DMG",
@@ -2482,8 +2483,6 @@ VBOXHDDBACKEND g_DmgBackend =
     s_aDmgFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* hPlugin */
-    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     dmgCheckIfValid,
     /* pfnOpen */
@@ -2565,6 +2564,8 @@ VBOXHDDBACKEND g_DmgBackend =
     /* pfnResize */
     NULL,
     /* pfnRepair */
+    NULL,
+    /* pfnTraverseMetadata */
     NULL
 };
 

@@ -67,6 +67,8 @@ typedef enum VDINTERFACETYPE
     VDINTERFACETYPE_IOINT,
     /** Interface to query the use of block ranges on the disk. Per-operation. */
     VDINTERFACETYPE_QUERYRANGEUSE,
+    /** Interface for the metadata traverse callback. Per-operation. */
+    VDINTERFACETYPE_TRAVERSEMETADATA,
     /** invalid interface. */
     VDINTERFACETYPE_INVALID
 } VDINTERFACETYPE;

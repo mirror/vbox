@@ -30,6 +30,8 @@
 #include <iprt/uuid.h>
 #include <iprt/crc.h>
 
+#include "VDBackends.h"
+
 /*******************************************************************************
 *   On disk data structures                                                    *
 *******************************************************************************/
@@ -2428,7 +2430,7 @@ static void vhdxDump(void *pBackendData)
 }
 
 
-VBOXHDDBACKEND g_VhdxBackend =
+const VBOXHDDBACKEND g_VhdxBackend =
 {
     /* pszBackendName */
     "VHDX",
@@ -2440,8 +2442,6 @@ VBOXHDDBACKEND g_VhdxBackend =
     s_aVhdxFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* hPlugin */
-    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     vhdxCheckIfValid,
     /* pfnOpen */
@@ -2523,5 +2523,7 @@ VBOXHDDBACKEND g_VhdxBackend =
     /* pfnResize */
     NULL,
     /* pfnRepair */
+    NULL,
+    /* pfnTraverseMetadata */
     NULL
 };

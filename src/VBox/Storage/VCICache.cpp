@@ -19,7 +19,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VD_RAW /** @todo logging group */
-#include <VBox/vd-cache-plugin.h>
+#include <VBox/vd-cache-backend.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
@@ -27,6 +27,8 @@
 #include <iprt/alloc.h>
 #include <iprt/file.h>
 #include <iprt/asm.h>
+
+#include "VDBackends.h"
 
 /*******************************************************************************
 * On disk data structures                                                      *
@@ -1956,7 +1958,7 @@ static void vciDump(void *pBackendData)
 }
 
 
-VDCACHEBACKEND g_VciCacheBackend =
+const VDCACHEBACKEND g_VciCacheBackend =
 {
     /* pszBackendName */
     "vci",
@@ -1968,8 +1970,6 @@ VDCACHEBACKEND g_VciCacheBackend =
     s_apszVciFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* hPlugin */
-    NIL_RTLDRMOD,
     /* pfnProbe */
     vciProbe,
     /* pfnOpen */
