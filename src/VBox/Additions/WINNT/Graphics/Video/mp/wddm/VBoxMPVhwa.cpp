@@ -537,6 +537,12 @@ int vboxVhwaHlpPopulateSurInfo(VBOXVHWA_SURFACEDESC *pInfo, PVBOXWDDM_ALLOCATION
 {
     memset(pInfo, 0, sizeof(VBOXVHWA_SURFACEDESC));
 
+    if (pSurf->AllocData.Addr.SegmentId != 1)
+    {
+        WARN(("invalid segment id!"));
+        return VERR_INVALID_PARAMETER;
+    }
+
     pInfo->height = pSurf->AllocData.SurfDesc.height;
     pInfo->width = pSurf->AllocData.SurfDesc.width;
     pInfo->flags |= VBOXVHWA_SD_HEIGHT | VBOXVHWA_SD_WIDTH;
@@ -813,6 +819,13 @@ int vboxVhwaHlpOverlayFlip(PVBOXWDDM_OVERLAY pOverlay, const DXGKARG_FLIPOVERLAY
     Assert(pOverlay->pCurentAlloc->pResource == pOverlay->pResource);
     Assert(pOverlay->pCurentAlloc != pAlloc);
     int rc = VINF_SUCCESS;
+
+    if (pFbSurf->AllocData.Addr.SegmentId != 1)
+    {
+        WARN(("invalid segment id on flip"));
+        return VERR_INVALID_PARAMETER;
+    }
+
     if (pFlipInfo->PrivateDriverDataSize == sizeof (VBOXWDDM_OVERLAYFLIP_INFO))
     {
         PVBOXWDDM_OVERLAYFLIP_INFO pOurInfo = (PVBOXWDDM_OVERLAYFLIP_INFO)pFlipInfo->pPrivateDriverData;
@@ -888,6 +901,13 @@ int vboxVhwaHlpColorFill(PVBOXWDDM_OVERLAY pOverlay, PVBOXWDDM_DMA_PRIVATEDATA_C
         }
     }
 #endif
+
+    if (pAlloc->AllocData.Addr.SegmentId != 1)
+    {
+        WARN(("invalid segment id on color fill"));
+        return VERR_INVALID_PARAMETER;
+    }
+
     Assert(pAlloc->hHostHandle);
     Assert(pAlloc->pResource);
     Assert(pAlloc->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
@@ -970,6 +990,13 @@ int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO 
     Assert(pFbSurf->hHostHandle);
     Assert(pFbSurf->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
     int rc = VINF_SUCCESS;
+
+    if (pFbSurf->AllocData.Addr.SegmentId != 1)
+    {
+        WARN(("invalid segment id on overlay update"));
+        return VERR_INVALID_PARAMETER;
+    }
+
     if (pOverlayInfo->PrivateDriverDataSize == sizeof (VBOXWDDM_OVERLAY_INFO))
     {
         PVBOXWDDM_OVERLAY_INFO pOurInfo = (PVBOXWDDM_OVERLAY_INFO)pOverlayInfo->pPrivateDriverData;
