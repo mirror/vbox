@@ -599,10 +599,13 @@ done:
  * Send ICMP_UNREACH back to the source regarding msrc.
  * It is reported as the bad ip packet.  The header should
  * be fully correct and in host byte order.
- * ICMP fragmentation is illegal.  All machines must accept 576 bytes in one
- * packet.  The maximum payload is 576-20(ip hdr)-8(icmp hdr)=548
- * @note: implementation note: MSIZE is 256 bytes (minimal buffer), m_getjcl we allocate two mbufs on: clust_zone 
- * and mbuf_zone. the maximum payload 256 - 14 (Ethernet header) - 20 (IPv4 hdr) - 8 (ICMPv4 header) = 214
+ * ICMP fragmentation is illegal.
+ *
+ * @note: implementation note: MSIZE is 256 bytes (minimal buffer).
+ * We always truncate original payload to 8 bytes required by the RFC,
+ * so the largest possible datagram is 14 (ethernet) + 20 (ip) +
+ * 8 (icmp) + 60 (max original ip with options) + 8 (original payload)
+ * = 110 bytes which fits into sinlge mbuf.
  *
  * @note This function will free msrc!
  */
