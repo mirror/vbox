@@ -68,3 +68,7 @@ CRPackContext *crPackGetContext( void )
 #endif
 }
 
+void crPackCmdBlocksEnable()
+{
+    cr_packer_cmd_blocks_enabled = 1;
+}

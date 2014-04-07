@@ -111,7 +111,18 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConGetClientID(PVBOXUHGSMI pHgsmi, uint32_t 
     int rc = vboxCrHgsmiPrivateCtlConGetClientID(pHgsmiPrivate, pu32ClientID);
     if (!RT_SUCCESS(rc))
     {
-        WARN(("VBoxCrHgsmiPrivateCtlConCall failed with rc (%d)", rc));
+        WARN(("vboxCrHgsmiPrivateCtlConGetClientID failed with rc (%d)", rc));
+    }
+    return rc;
+}
+
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConGetHostCaps(PVBOXUHGSMI pHgsmi, uint32_t *pu32HostCaps)
+{
+    PVBOXUHGSMI_PRIVATE_BASE pHgsmiPrivate = (PVBOXUHGSMI_PRIVATE_BASE)pHgsmi;
+    int rc = vboxCrHgsmiPrivateCtlConGetHostCaps(pHgsmiPrivate, pu32HostCaps);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("vboxCrHgsmiPrivateCtlConGetHostCaps failed with rc (%d)", rc));
     }
     return rc;
 }

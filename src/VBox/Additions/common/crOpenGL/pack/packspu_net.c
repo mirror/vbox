@@ -241,6 +241,12 @@ static void packspuFirstConnectToServer( CRNetServer *server
                 , pHgsmi
 #endif
             );
+    if (server->conn)
+    {
+        uint32_t u32HostCaps = crNetHostCapsGet();
+        if (u32HostCaps & CR_VBOX_CAP_CMDBLOCKS)
+            crPackCmdBlocksEnable();
+    }
 }
 
 void packspuConnectToServer( CRNetServer *server

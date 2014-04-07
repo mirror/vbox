@@ -1275,6 +1275,18 @@ void crNetReadline( CRConnection *conn, void *buf )
     }
 }
 
+#ifdef IN_GUEST
+uint32_t crNetHostCapsGet()
+{
+#ifdef VBOX_WITH_HGCM
+    if ( cr_net.use_hgcm )
+        return crVBoxHGCMHostCapsGet();
+#endif
+    WARN(("HostCaps supportted for HGCM only!"));
+    return 0;
+}
+#endif
+
 /**
  * The big boy -- call this function to see (non-blocking) if there is
  * any pending work.  If there is, the networking layer's "work received"
