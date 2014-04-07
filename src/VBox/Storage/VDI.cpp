@@ -30,6 +30,8 @@
 #include <iprt/string.h>
 #include <iprt/asm.h>
 
+#include "VDBackends.h"
+
 #define VDI_IMAGE_DEFAULT_BLOCK_SIZE _1M
 
 /** Macros for endianess conversion. */
@@ -3193,7 +3195,7 @@ static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
     return rc;
 }
 
-VBOXHDDBACKEND g_VDIBackend =
+const VBOXHDDBACKEND g_VDIBackend =
 {
     /* pszBackendName */
     "VDI",
@@ -3206,8 +3208,6 @@ VBOXHDDBACKEND g_VDIBackend =
     s_aVdiFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* hPlugin */
-    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     vdiCheckIfValid,
     /* pfnOpen */
@@ -3289,5 +3289,7 @@ VBOXHDDBACKEND g_VDIBackend =
     /* pfnResize */
     vdiResize,
     /* pfnRepair */
-    vdiRepair
+    vdiRepair,
+    /* pfnTraverseMetadata */
+    NULL
 };

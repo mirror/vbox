@@ -30,6 +30,8 @@
 #include <iprt/path.h>
 #include <iprt/list.h>
 
+#include "VDBackends.h"
+
 /**
  * The QED backend implements support for the qemu enhanced disk format (short QED)
  * The specification for the format is available under http://wiki.qemu.org/Features/QED/Specification
@@ -2597,7 +2599,7 @@ static int qedResize(void *pBackendData, uint64_t cbSize,
 }
 
 
-VBOXHDDBACKEND g_QedBackend =
+const VBOXHDDBACKEND g_QedBackend =
 {
     /* pszBackendName */
     "QED",
@@ -2609,8 +2611,6 @@ VBOXHDDBACKEND g_QedBackend =
     s_aQedFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* hPlugin */
-    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     qedCheckIfValid,
     /* pfnOpen */
@@ -2692,5 +2692,7 @@ VBOXHDDBACKEND g_QedBackend =
     /* pfnResize */
     qedResize,
     /* pfnRepair */
+    NULL,
+    /* pfnTraverseMetadata */
     NULL
 };

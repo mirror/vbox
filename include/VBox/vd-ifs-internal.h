@@ -585,6 +585,51 @@ DECLINLINE(bool) vdIfIoIntIoCtxIsZero(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCt
 }
 
 
+/**
+ * Interface for the metadata traverse callback.
+ *
+ * Per-operation interface. Present only for the metadata traverse callback.
+ */
+typedef struct VDINTERFACETRAVERSEMETADATA
+{
+    /**
+     * Common interface header.
+     */
+    VDINTERFACE    Core;
+
+    /**
+     * Traverse callback.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          The opaque data passed for the operation.
+     * @param   pvMetadataChunk Pointer to a chunk of the image metadata.
+     * @param   cbMetadataChunk Size of the metadata chunk
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMetadataCallback, (void *pvUser, const void *pvMetadataChunk,
+                                                    size_t cbMetadataChunk));
+
+} VDINTERFACETRAVERSEMETADATA, *PVDINTERFACETRAVERSEMETADATA;
+
+
+/**
+ * Get parent state interface from interface list.
+ *
+ * @return Pointer to the first parent state interface in the list.
+ * @param  pVDIfs    Pointer to the interface list.
+ */
+DECLINLINE(PVDINTERFACETRAVERSEMETADATA) VDIfTraverseMetadataGet(PVDINTERFACE pVDIfs)
+{
+    PVDINTERFACE pIf = VDInterfaceGet(pVDIfs, VDINTERFACETYPE_TRAVERSEMETADATA);
+
+    /* Check that the interface descriptor the correct interface. */
+    AssertMsgReturn(   !pIf
+                    || (   (pIf->enmInterface == VDINTERFACETYPE_TRAVERSEMETADATA)
+                        && (pIf->cbSize == sizeof(VDINTERFACETRAVERSEMETADATA))),
+                    ("Not a traverse metadata interface"), NULL);
+
+    return (PVDINTERFACETRAVERSEMETADATA)pIf;
+}
+
 RT_C_DECLS_END
 
 /** @} */

@@ -1,9 +1,9 @@
 /** @file
- * Internal hard disk format support API for VBoxHDD.
+ * VD: Image backend interface.
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef __VBoxHDD_Plugin_h__
-#define __VBoxHDD_Plugin_h__
+#ifndef __vd_image_backend_h__
+#define __vd_image_backend_h__
 
 #include <VBox/vd.h>
 #include <VBox/vd-ifs-internal.h>
@@ -49,6 +49,13 @@
 #define VD_DISCARD_MARK_UNUSED RT_BIT(0)
 /** @}*/
 
+/** @name VBox HDD backend metadata traverse flags
+ * @{
+ */
+/** Include per block metadata while traversing the metadata.
+ * This might take much longer instead of traversing just global metadata. */
+#define VD_TRAVERSE_METADATA_INCLUDE_PER_BLOCK_METADATA RT_BIT(0)
+/** @}*/
 
 /**
  * Image format backend interface used by VBox HDD Container implementation.
@@ -84,11 +91,6 @@ typedef struct VBOXHDDBACKEND
      * Mandatory if the backend sets VD_CAP_CONFIG.
      */
     PCVDCONFIGINFO paConfigInfo;
-
-    /**
-     * Handle of loaded plugin library, NIL_RTLDRMOD for static backends.
-     */
-    RTLDRMOD hPlugin;
 
     /**
      * Check if a file is valid for the backend.
@@ -565,11 +567,25 @@ typedef struct VBOXHDDBACKEND
     DECLR3CALLBACKMEMBER(int, pfnRepair, (const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                                           PVDINTERFACE pVDIfsImage, uint32_t fFlags));
 
+    /**
+     * Traverse all metadata of the opened image.
+     *
+     * @returns VBox status code.
+     * @param   pBackendData    Opaque state data for this image.
+     * @param   fFlags          Traverse flags, combination of VD_TRAVERSE_METDATA_* defines.
+     * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+     * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+     * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTraverseMetadata, (void *pBackendData, uint32_t fFlags,
+                                                    PVDINTERFACE pVDIfsDisk,
+                                                    PVDINTERFACE pVDIfsImage,
+                                                    PVDINTERFACE pVDIfsOperation));
+
 } VBOXHDDBACKEND;
 
 /** Pointer to VD backend. */
 typedef VBOXHDDBACKEND *PVBOXHDDBACKEND;
-
 /** Constant pointer to VD backend. */
 typedef const VBOXHDDBACKEND *PCVBOXHDDBACKEND;
 
@@ -585,15 +601,5 @@ DECLINLINE(int) genericFileComposeName(PVDINTERFACE pConfig, char **pszName)
     *pszName = NULL;
     return VINF_SUCCESS;
 }
-
-/** Initialization entry point. */
-typedef DECLCALLBACK(int) VBOXHDDFORMATLOAD(PVBOXHDDBACKEND *ppBackendTable);
-typedef VBOXHDDFORMATLOAD *PFNVBOXHDDFORMATLOAD;
-#define VBOX_HDDFORMAT_LOAD_NAME "VBoxHDDFormatLoad"
-
-/** The prefix to identify Storage Plugins. */
-#define VBOX_HDDFORMAT_PLUGIN_PREFIX "VBoxHDD"
-/** The size of the prefix excluding the '\\0' terminator. */
-#define VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH (sizeof(VBOX_HDDFORMAT_PLUGIN_PREFIX)-1)
 
 #endif

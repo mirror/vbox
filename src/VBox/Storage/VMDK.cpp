@@ -32,6 +32,8 @@
 #include <iprt/zip.h>
 #include <iprt/asm.h>
 
+#include "VDBackends.h"
+
 /*******************************************************************************
 *   Constants And Macros, Structures and Typedefs                              *
 *******************************************************************************/
@@ -6560,7 +6562,7 @@ static void vmdkDump(void *pBackendData)
 
 
 
-VBOXHDDBACKEND g_VmdkBackend =
+const VBOXHDDBACKEND g_VmdkBackend =
 {
     /* pszBackendName */
     "VMDK",
@@ -6574,8 +6576,6 @@ VBOXHDDBACKEND g_VmdkBackend =
     s_aVmdkFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* hPlugin */
-    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     vmdkCheckIfValid,
     /* pfnOpen */
@@ -6657,5 +6657,7 @@ VBOXHDDBACKEND g_VmdkBackend =
     /* pfnResize */
     NULL,
     /* pfnRepair */
+    NULL,
+    /* pfnTraverseMetadata */
     NULL
 };

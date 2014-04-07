@@ -28,6 +28,8 @@
 #include <iprt/string.h>
 #include <iprt/asm.h>
 
+#include "VDBackends.h"
+
 #define PARALLELS_HEADER_MAGIC "WithoutFreeSpace"
 #define PARALLELS_DISK_VERSION 2
 
@@ -1202,7 +1204,7 @@ static void parallelsDump(void *pBackendData)
 
 
 
-VBOXHDDBACKEND g_ParallelsBackend =
+const VBOXHDDBACKEND g_ParallelsBackend =
 {
     /* pszBackendName */
     "Parallels",
@@ -1214,8 +1216,6 @@ VBOXHDDBACKEND g_ParallelsBackend =
     s_aParallelsFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* hPlugin */
-    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     parallelsCheckIfValid,
     /* pfnOpen */
@@ -1297,5 +1297,7 @@ VBOXHDDBACKEND g_ParallelsBackend =
     /* pfnResize */
     NULL,
     /* pfnRepair */
+    NULL,
+    /* pfnTraverseMetadata */
     NULL
 };

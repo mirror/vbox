@@ -41,7 +41,8 @@
 #include <iprt/semaphore.h>
 
 #include <VBox/vd-plugin.h>
-#include <VBox/vd-cache-plugin.h>
+
+#include "VDBackends.h"
 
 /** Disable dynamic backends on non x86 architectures. This feature
  * requires the SUPR3 library which is not available there.
@@ -551,20 +552,28 @@ typedef struct VDMETAXFER
 #define VDMETAXFER_TXDIR_GET(flags)      ((flags) & VDMETAXFER_TXDIR_MASK)
 #define VDMETAXFER_TXDIR_SET(flags, dir) ((flags) = (flags & ~VDMETAXFER_TXDIR_MASK) | (dir))
 
-extern VBOXHDDBACKEND g_RawBackend;
-extern VBOXHDDBACKEND g_VmdkBackend;
-extern VBOXHDDBACKEND g_VDIBackend;
-extern VBOXHDDBACKEND g_VhdBackend;
-extern VBOXHDDBACKEND g_ParallelsBackend;
-extern VBOXHDDBACKEND g_DmgBackend;
-extern VBOXHDDBACKEND g_ISCSIBackend;
-extern VBOXHDDBACKEND g_QedBackend;
-extern VBOXHDDBACKEND g_QCowBackend;
-extern VBOXHDDBACKEND g_VhdxBackend;
+/**
+ * Plugin structure.
+ */
+typedef struct VDPLUGIN
+{
+    /** Pointer to the next plugin structure. */
+    RTLISTNODE NodePlugin;
+    /** Handle of loaded plugin library. */
+    RTLDRMOD   hPlugin;
+} VDPLUGIN;
+/** Pointer to a plugin structure. */
+typedef VDPLUGIN *PVDPLUGIN;
 
+/** Head of loaded plugin list. */
+static RTLISTANCHOR g_ListPluginsLoaded;
+
+/** Number of image backends supported. */
 static unsigned g_cBackends = 0;
-static PVBOXHDDBACKEND *g_apBackends = NULL;
-static PVBOXHDDBACKEND aStaticBackends[] =
+/** Array of pointers to the image backends. */
+static PCVBOXHDDBACKEND *g_apBackends = NULL;
+/** Builtin image backends. */
+static PCVBOXHDDBACKEND aStaticBackends[] =
 {
     &g_VmdkBackend,
     &g_VDIBackend,
@@ -578,14 +587,12 @@ static PVBOXHDDBACKEND aStaticBackends[] =
     &g_ISCSIBackend
 };
 
-/**
- * Supported backends for the disk cache.
- */
-extern VDCACHEBACKEND g_VciCacheBackend;
-
+/** Number of supported cache backends. */
 static unsigned g_cCacheBackends = 0;
-static PVDCACHEBACKEND *g_apCacheBackends = NULL;
-static PVDCACHEBACKEND aStaticCacheBackends[] =
+/** Array of pointers to the cache backends. */
+static PCVDCACHEBACKEND *g_apCacheBackends = NULL;
+/** Builtin cache backends. */
+static PCVDCACHEBACKEND aStaticCacheBackends[] =
 {
     &g_VciCacheBackend
 };
@@ -600,14 +607,14 @@ static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int 
 /**
  * internal: add several backends.
  */
-static int vdAddBackends(PVBOXHDDBACKEND *ppBackends, unsigned cBackends)
+static int vdAddBackends(PCVBOXHDDBACKEND *ppBackends, unsigned cBackends)
 {
-    PVBOXHDDBACKEND *pTmp = (PVBOXHDDBACKEND*)RTMemRealloc(g_apBackends,
-           (g_cBackends + cBackends) * sizeof(PVBOXHDDBACKEND));
+    PCVBOXHDDBACKEND *pTmp = (PCVBOXHDDBACKEND*)RTMemRealloc(g_apBackends,
+           (g_cBackends + cBackends) * sizeof(PCVBOXHDDBACKEND));
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
     g_apBackends = pTmp;
-    memcpy(&g_apBackends[g_cBackends], ppBackends, cBackends * sizeof(PVBOXHDDBACKEND));
+    memcpy(&g_apBackends[g_cBackends], ppBackends, cBackends * sizeof(PCVBOXHDDBACKEND));
     g_cBackends += cBackends;
     return VINF_SUCCESS;
 }
@@ -615,7 +622,7 @@ static int vdAddBackends(PVBOXHDDBACKEND *ppBackends, unsigned cBackends)
 /**
  * internal: add single backend.
  */
-DECLINLINE(int) vdAddBackend(PVBOXHDDBACKEND pBackend)
+DECLINLINE(int) vdAddBackend(PCVBOXHDDBACKEND pBackend)
 {
     return vdAddBackends(&pBackend, 1);
 }
@@ -623,14 +630,14 @@ DECLINLINE(int) vdAddBackend(PVBOXHDDBACKEND pBackend)
 /**
  * internal: add several cache backends.
  */
-static int vdAddCacheBackends(PVDCACHEBACKEND *ppBackends, unsigned cBackends)
+static int vdAddCacheBackends(PCVDCACHEBACKEND *ppBackends, unsigned cBackends)
 {
-    PVDCACHEBACKEND *pTmp = (PVDCACHEBACKEND*)RTMemRealloc(g_apCacheBackends,
-           (g_cCacheBackends + cBackends) * sizeof(PVDCACHEBACKEND));
+    PCVDCACHEBACKEND *pTmp = (PCVDCACHEBACKEND*)RTMemRealloc(g_apCacheBackends,
+           (g_cCacheBackends + cBackends) * sizeof(PCVDCACHEBACKEND));
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
     g_apCacheBackends = pTmp;
-    memcpy(&g_apCacheBackends[g_cCacheBackends], ppBackends, cBackends * sizeof(PVDCACHEBACKEND));
+    memcpy(&g_apCacheBackends[g_cCacheBackends], ppBackends, cBackends * sizeof(PCVDCACHEBACKEND));
     g_cCacheBackends += cBackends;
     return VINF_SUCCESS;
 }
@@ -638,7 +645,7 @@ static int vdAddCacheBackends(PVDCACHEBACKEND *ppBackends, unsigned cBackends)
 /**
  * internal: add single cache backend.
  */
-DECLINLINE(int) vdAddCacheBackend(PVDCACHEBACKEND pBackend)
+DECLINLINE(int) vdAddCacheBackend(PCVDCACHEBACKEND pBackend)
 {
     return vdAddCacheBackends(&pBackend, 1);
 }
@@ -3184,8 +3191,68 @@ static int vdDiscardHelperAsync(PVDIOCTX pIoCtx)
     return rc;
 }
 
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
 /**
- * internal: scans plugin directory and loads the backends have been found.
+ * @copydoc VDPLUGIN::pfnRegisterImage
+ */
+static DECLCALLBACK(int) vdPluginRegisterImage(void *pvUser, PCVBOXHDDBACKEND pBackend)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pBackend->cbSize == sizeof(VBOXHDDBACKEND))
+        vdAddBackend(pBackend);
+    else
+    {
+        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize));
+        rc = VERR_IGNORED;
+    }
+
+    return rc;
+}
+
+/**
+ * @copydoc VDPLUGIN::pfnRegisterCache
+ */
+static DECLCALLBACK(int) vdPluginRegisterCache(void *pvUser, PCVDCACHEBACKEND pBackend)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pBackend->cbSize == sizeof(VDCACHEBACKEND))
+        vdAddCacheBackend(pBackend);
+    else
+    {
+        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize));
+        rc = VERR_IGNORED;
+    }
+
+    return rc;
+}
+
+/**
+ * Adds a plugin to the list of loaded plugins.
+ *
+ * @returns VBox status code.
+ * @param   hPlugin    PLugin handle to add.
+ */
+static int vdAddPlugin(RTLDRMOD hPlugin)
+{
+    int rc = VINF_SUCCESS;
+    PVDPLUGIN pPlugin = (PVDPLUGIN)RTMemAllocZ(sizeof(VDPLUGIN));
+
+    if (pPlugin)
+    {
+        pPlugin->hPlugin = hPlugin;
+        RTListAppend(&g_ListPluginsLoaded, &pPlugin->NodePlugin);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+#endif
+
+/**
+ * internal: scans plugin directory and loads found plugins.
  */
 static int vdLoadDynamicBackends()
 {
@@ -3200,7 +3267,7 @@ static int vdLoadDynamicBackends()
         return rc;
 
     /* To get all entries with VBoxHDD as prefix. */
-    char *pszPluginFilter = RTPathJoinA(szPath, VBOX_HDDFORMAT_PLUGIN_PREFIX "*");
+    char *pszPluginFilter = RTPathJoinA(szPath, VD_PLUGIN_PREFIX "*");
     if (!pszPluginFilter)
         return VERR_NO_STR_MEMORY;
 
@@ -3226,8 +3293,6 @@ static int vdLoadDynamicBackends()
     while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
     {
         RTLDRMOD hPlugin = NIL_RTLDRMOD;
-        PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
-        PVBOXHDDBACKEND pBackend = NULL;
         char *pszPluginPath = NULL;
 
         if (rc == VERR_BUFFER_OVERFLOW)
@@ -3263,10 +3328,18 @@ static int vdLoadDynamicBackends()
         rc = SUPR3HardenedLdrLoadPlugIn(pszPluginPath, &hPlugin, NULL);
         if (RT_SUCCESS(rc))
         {
-            rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
-            if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
+            VDBACKENDREGISTER BackendRegister;
+            PFNVDPLUGINLOAD pfnVDPluginLoad = NULL;
+
+            BackendRegister.pfnRegisterImage = vdPluginRegisterImage;
+            BackendRegister.pfnRegisterCache = vdPluginRegisterCache;
+            /** @todo: Filter plugins. */
+
+            rc = RTLdrGetSymbol(hPlugin, VD_PLUGIN_LOAD_NAME, (void**)&pfnVDPluginLoad);
+            if (RT_FAILURE(rc) || !pfnVDPluginLoad)
             {
-                LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
+                LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnVDPluginLoad=%#p\n",
+                         VD_PLUGIN_LOAD_NAME, pPluginDirEntry->szName, rc, pfnVDPluginLoad));
                 if (RT_SUCCESS(rc))
                     rc = VERR_SYMBOL_NOT_FOUND;
             }
@@ -3274,144 +3347,15 @@ static int vdLoadDynamicBackends()
             if (RT_SUCCESS(rc))
             {
                 /* Get the function table. */
-                rc = pfnHDDFormatLoad(&pBackend);
-                if (RT_SUCCESS(rc) && pBackend->cbSize == sizeof(VBOXHDDBACKEND))
-                {
-                    pBackend->hPlugin = hPlugin;
-                    vdAddBackend(pBackend);
-                }
-                else
-                    LogFunc(("ignored plugin '%s': pBackend->cbSize=%d rc=%Rrc\n", pszPluginPath, pBackend->cbSize, rc));
+                rc = pfnVDPluginLoad(NULL, &BackendRegister);
             }
             else
                 LogFunc(("ignored plugin '%s': rc=%Rrc\n", pszPluginPath, rc));
 
-            if (RT_FAILURE(rc))
-                RTLdrClose(hPlugin);
-        }
-        RTStrFree(pszPluginPath);
-    }
-out:
-    if (rc == VERR_NO_MORE_FILES)
-        rc = VINF_SUCCESS;
-    RTStrFree(pszPluginFilter);
-    if (pPluginDirEntry)
-        RTMemFree(pPluginDirEntry);
-    if (pPluginDir)
-        RTDirClose(pPluginDir);
-    return rc;
-#else
-    return VINF_SUCCESS;
-#endif
-}
-
-/**
- * internal: scans plugin directory and loads the cache backends have been found.
- */
-static int vdLoadDynamicCacheBackends()
-{
-#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
-    int rc = VINF_SUCCESS;
-    PRTDIR pPluginDir = NULL;
-
-    /* Enumerate plugin backends. */
-    char szPath[RTPATH_MAX];
-    rc = RTPathAppPrivateArch(szPath, sizeof(szPath));
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* To get all entries with VBoxHDD as prefix. */
-    char *pszPluginFilter = RTPathJoinA(szPath, VD_CACHEFORMAT_PLUGIN_PREFIX "*");
-    if (!pszPluginFilter)
-    {
-        rc = VERR_NO_STR_MEMORY;
-        return rc;
-    }
-
-    PRTDIRENTRYEX pPluginDirEntry = NULL;
-    size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
-    /* The plugins are in the same directory as the other shared libs. */
-    rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0);
-    if (RT_FAILURE(rc))
-    {
-        /* On Windows the above immediately signals that there are no
-         * files matching, while on other platforms enumerating the
-         * files below fails. Either way: no plugins. */
-        goto out;
-    }
-
-    pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
-    if (!pPluginDirEntry)
-    {
-        rc = VERR_NO_MEMORY;
-        goto out;
-    }
-
-    while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
-    {
-        RTLDRMOD hPlugin = NIL_RTLDRMOD;
-        PFNVDCACHEFORMATLOAD pfnVDCacheLoad = NULL;
-        PVDCACHEBACKEND pBackend = NULL;
-        char *pszPluginPath = NULL;
-
-        if (rc == VERR_BUFFER_OVERFLOW)
-        {
-            /* allocate new buffer. */
-            RTMemFree(pPluginDirEntry);
-            pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
-            if (!pPluginDirEntry)
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
-            /* Retry. */
-            rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-            if (RT_FAILURE(rc))
-                break;
-        }
-        else if (RT_FAILURE(rc))
-            break;
-
-        /* We got the new entry. */
-        if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
-            continue;
-
-        /* Prepend the path to the libraries. */
-        pszPluginPath = RTPathJoinA(szPath, pPluginDirEntry->szName);
-        if (!pszPluginPath)
-        {
-            rc = VERR_NO_STR_MEMORY;
-            break;
-        }
-
-        rc = SUPR3HardenedLdrLoadPlugIn(pszPluginPath, &hPlugin, NULL);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTLdrGetSymbol(hPlugin, VD_CACHEFORMAT_LOAD_NAME, (void**)&pfnVDCacheLoad);
-            if (RT_FAILURE(rc) || !pfnVDCacheLoad)
-            {
-                LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnVDCacheLoad=%#p\n",
-                         VD_CACHEFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnVDCacheLoad));
-                if (RT_SUCCESS(rc))
-                    rc = VERR_SYMBOL_NOT_FOUND;
-            }
-
+            /* Create a plugin entry on success. */
             if (RT_SUCCESS(rc))
-            {
-                /* Get the function table. */
-                rc = pfnVDCacheLoad(&pBackend);
-                if (RT_SUCCESS(rc) && pBackend->cbSize == sizeof(VDCACHEBACKEND))
-                {
-                    pBackend->hPlugin = hPlugin;
-                    vdAddCacheBackend(pBackend);
-                }
-                else
-                    LogFunc(("ignored plugin '%s': pBackend->cbSize=%d rc=%Rrc\n", pszPluginPath, pBackend->cbSize, rc));
-            }
+                vdAddPlugin(hPlugin);
             else
-                LogFunc(("ignored plugin '%s': rc=%Rrc\n", pszPluginPath, rc));
-
-            if (RT_FAILURE(rc))
                 RTLdrClose(hPlugin);
         }
         RTStrFree(pszPluginPath);
@@ -5055,9 +4999,8 @@ VBOXDDU_DECL(int) VDInit(void)
         rc = vdAddCacheBackends(aStaticCacheBackends, RT_ELEMENTS(aStaticCacheBackends));
         if (RT_SUCCESS(rc))
         {
+            RTListInit(&g_ListPluginsLoaded);
             rc = vdLoadDynamicBackends();
-            if (RT_SUCCESS(rc))
-                rc = vdLoadDynamicCacheBackends();
         }
     }
     LogRel(("VDInit finished\n"));
@@ -5071,36 +5014,35 @@ VBOXDDU_DECL(int) VDInit(void)
  */
 VBOXDDU_DECL(int) VDShutdown(void)
 {
-    PVBOXHDDBACKEND *pBackends = g_apBackends;
-    PVDCACHEBACKEND *pCacheBackends = g_apCacheBackends;
+    PCVBOXHDDBACKEND *pBackends = g_apBackends;
+    PCVDCACHEBACKEND *pCacheBackends = g_apCacheBackends;
     unsigned cBackends = g_cBackends;
 
-    if (!pBackends)
+    if (!g_apBackends)
         return VERR_INTERNAL_ERROR;
+
+    if (g_apCacheBackends)
+        RTMemFree(g_apCacheBackends);
+    RTMemFree(g_apBackends);
 
     g_cBackends = 0;
     g_apBackends = NULL;
 
-#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
-    for (unsigned i = 0; i < cBackends; i++)
-        if (pBackends[i]->hPlugin != NIL_RTLDRMOD)
-            RTLdrClose(pBackends[i]->hPlugin);
-#endif
-
     /* Clear the supported cache backends. */
-    cBackends = g_cCacheBackends;
     g_cCacheBackends = 0;
     g_apCacheBackends = NULL;
 
 #ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
-    for (unsigned i = 0; i < cBackends; i++)
-        if (pCacheBackends[i]->hPlugin != NIL_RTLDRMOD)
-            RTLdrClose(pCacheBackends[i]->hPlugin);
+    PVDPLUGIN pPlugin, pPluginNext;
+
+    RTListForEachSafe(&g_ListPluginsLoaded, pPlugin, pPluginNext, VDPLUGIN, NodePlugin)
+    {
+        RTLdrClose(pPlugin->hPlugin);
+        RTListNodeRemove(&pPlugin->NodePlugin);
+        RTMemFree(pPlugin);
+    }
 #endif
 
-    if (pCacheBackends)
-        RTMemFree(pCacheBackends);
-    RTMemFree(pBackends);
     return VINF_SUCCESS;
 }
 
