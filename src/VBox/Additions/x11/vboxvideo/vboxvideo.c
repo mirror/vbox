@@ -65,6 +65,12 @@
 # include "xf86Resources.h"
 #endif
 
+/* This was accepted upstream in X.Org Server 1.16 which bumped the video
+ * driver ABI to 17. */
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 17
+# define SET_HAVE_VT_PROPERTY
+#endif
+
 #ifndef PCIACCESS
 /* Drivers for PCI hardware need this */
 # include "xf86PciInfo.h"
@@ -100,8 +106,11 @@
 # define _HAVE_STRING_ARCH_strsep /* bits/string2.h, __strsep_1c. */
 # include "xf86Crtc.h"
 # include "xf86Modes.h"
-# include <X11/Xatom.h>
 #endif
+
+/* For setting the root window property. */
+#include <X11/Xatom.h>
+#include "property.h"
 
 #ifdef VBOX_DRI
 # include "xf86drm.h"
@@ -978,6 +987,52 @@ vboxLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
     (void)pVisual;
 }
 
+#ifdef SET_HAVE_VT_PROPERTY
+# define HAS_VT_ATOM_NAME "XFree86_has_VT"
+/* The memory storing the initial value of the XFree86_has_VT root window
+ * property.  This has to remain available until server start-up, so we just
+ * use a global. */
+static CARD32 HasVTValue = 1;
+
+/** Initialise a flag property on the root window to say whether the server VT
+ *  is currently the active one as some clients need to know this. */
+static void initialiseHasVTProperty(ScrnInfoPtr pScrn)
+{
+    Atom HasVTAtom = -1;
+    CARD32 *HasVT = &HasVTValue;
+    HasVTAtom = MakeAtom(HAS_VT_ATOM_NAME, sizeof(HAS_VT_ATOM_NAME) - 1, TRUE);
+    if (!xf86RegisterRootWindowProperty(pScrn->scrnIndex, HasVTAtom, XA_INTEGER,
+                                        32, 1, HasVT))
+        xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+                   "Failed to register VT property\n");
+}
+
+/** Helper to work round different ways of getting the root window in different
+ * server versions. */
+#if defined(XORG_VERSION_CURRENT) && XORG_VERSION_CURRENT < 700000000 \
+    && XORG_VERSION_CURRENT >= 100900000
+# define ROOT_WINDOW(pScrn) xf86ScrnToScreen(pScrn)->root
+#else
+# define ROOT_WINDOW(pScrn) WindowTable[xf86ScrnToScreen(pScrn)->myNum]
+#endif
+
+/** Update a flag property on the root window to say whether the server VT
+ *  is currently the active one as some clients need to know this. */
+static void updateHasVTProperty(ScrnInfoPtr pScrn, Bool hasVT)
+{
+    Atom property_name;
+    int32_t value = hasVT ? 1 : 0;
+    int i;
+
+    property_name = MakeAtom(HAS_VT_ATOM_NAME, sizeof(HAS_VT_ATOM_NAME) - 1,
+                             FALSE);
+    if (property_name == BAD_RESOURCE)
+        FatalError("Failed to retrieve \"HAS_VT\" atom\n");
+    ChangeWindowProperty(ROOT_WINDOW(pScrn), property_name, XA_INTEGER, 32,
+                         PropModeReplace, 1, &value, TRUE);
+}
+#endif /* SET_HAVE_VT_PROPERTY */
+
 /*
  * QUOTE from the XFree86 DESIGN document:
  *
@@ -1177,6 +1232,11 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     if (pVBox->useDRI)
         pVBox->useDRI = VBOXDRIFinishScreenInit(pScreen);
 #endif
+
+#ifdef SET_HAVE_VT_PROPERTY
+    initialiseHasVTProperty(pScrn);
+#endif
+
     return (TRUE);
 }
 
@@ -1208,6 +1268,9 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
                      pScrn->frameY0))
         return FALSE;
 #endif
+#ifdef SET_HAVE_VT_PROPERTY
+    updateHasVTProperty(pScrn, TRUE);
+#endif
     return TRUE;
 }
 
@@ -1229,6 +1292,9 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
         || drmIoctl(pVBox->drmFD, VBOXVIDEO_IOCTL_ENABLE_HGSMI, NULL) < 0)
 #endif
         VBOXRestoreMode(pScrn);
+#ifdef SET_HAVE_VT_PROPERTY
+    updateHasVTProperty(pScrn, FALSE);
+#endif
     TRACE_EXIT();
 }
 
