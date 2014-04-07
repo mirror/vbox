@@ -237,6 +237,13 @@ DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, P
     return pPrimary;
 }
 
+DECLINLINE(VBOXVIDEOOFFSET) vboxWddmAddrFramOffset(const VBOXWDDM_ADDR *pAddr)
+{
+    return (pAddr->offVram != VBOXVIDEOOFFSET_VOID && pAddr->SegmentId) ?
+            (pAddr->SegmentId == 1 ? pAddr->offVram : 0)
+            : VBOXVIDEOOFFSET_VOID;
+}
+
 bool vboxWddmGhDisplayCheckSetInfoFromSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource);
 
 #ifdef VBOX_WITH_CROGL

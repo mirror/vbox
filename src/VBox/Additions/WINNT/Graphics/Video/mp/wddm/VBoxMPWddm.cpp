@@ -262,7 +262,7 @@ BOOL vboxWddmGhDisplayCheckCompletePeningScreenInfo(PVBOXMP_DEVEXT pDevExt, D3DD
 
 NTSTATUS vboxWddmGhDisplayPostInfoView(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData)
 {
-    VBOXVIDEOOFFSET offVram = pAllocData->Addr.offVram;
+    VBOXVIDEOOFFSET offVram = vboxWddmAddrFramOffset(&pAllocData->Addr);
     if (offVram == VBOXVIDEOOFFSET_VOID)
     {
         WARN(("offVram == VBOXVIDEOOFFSET_VOID"));
@@ -299,9 +299,10 @@ NTSTATUS vboxWddmGhDisplaySetMode(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_D
     if (/*pPrimaryInfo->*/pAllocData->SurfDesc.VidPnSourceId)
         return STATUS_SUCCESS;
 
-    if (pAllocData->Addr.offVram == VBOXVIDEOOFFSET_VOID)
+    VBOXVIDEOOFFSET offVram = vboxWddmAddrFramOffset(&pAllocData->Addr);;
+    if (offVram == VBOXVIDEOOFFSET_VOID)
     {
-        WARN(("pAllocData->Addr.offVram == VBOXVIDEOOFFSET_VOID"));
+        WARN(("offVram == VBOXVIDEOOFFSET_VOID"));
         return STATUS_UNSUCCESSFUL;
     }
 
@@ -309,8 +310,8 @@ NTSTATUS vboxWddmGhDisplaySetMode(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_D
     USHORT height = pAllocData->SurfDesc.height;
     USHORT bpp    = pAllocData->SurfDesc.bpp;
     ULONG cbLine  = VBOXWDDM_ROUNDBOUND(((width * bpp) + 7) / 8, 4);
-    ULONG yOffset = (ULONG)pAllocData->Addr.offVram / cbLine;
-    ULONG xOffset = (ULONG)pAllocData->Addr.offVram % cbLine;
+    ULONG yOffset = (ULONG)offVram / cbLine;
+    ULONG xOffset = (ULONG)offVram % cbLine;
 
     if (bpp == 4)
     {
@@ -412,7 +413,7 @@ bool vboxWddmGhDisplaySetInfoFromSourceTarget(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_
         if (!pFbAlloc)
             pFbAlloc = pRealFbAlloc;
 
-        if (!pFbAlloc || pFbAlloc->AllocData.Addr.offVram == VBOXVIDEOOFFSET_VOID)
+        if (!pFbAlloc || vboxWddmAddrFramOffset(&pFbAlloc->AllocData.Addr) == VBOXVIDEOOFFSET_VOID)
         {
             return false;
         }
@@ -473,10 +474,8 @@ static VOID vboxWddmModeRenderFromShadowDisableOnSubmitCommand(PVBOXMP_DEVEXT pD
             pFromAllocation = pSource->pPrimaryAllocation;
         }
 
-        Assert(pToAllocation->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
-        Assert(pFromAllocation->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
-        if (pToAllocation->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID
-                && pFromAllocation->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID)
+        if (pToAllocation->AllocData.Addr.SegmentId == 1 && pToAllocation->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID
+                && pFromAllocation->AllocData.Addr.SegmentId == 1 && pFromAllocation->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID)
         {
             RECT Rect;
             Rect.left = 0;
@@ -486,6 +485,8 @@ static VOID vboxWddmModeRenderFromShadowDisableOnSubmitCommand(PVBOXMP_DEVEXT pD
             vboxVdmaGgDmaBltPerform(pDevExt, &pFromAllocation->AllocData, &Rect,
                     &pToAllocation->AllocData, &Rect);
         }
+        else
+            WARN(("invalid allocation data"));
 
         /* ensure we issue resize command on next update */
         pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;
@@ -1424,17 +1425,13 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
             DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
             for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
             {
-                PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
-                PVBOXWDDM_ALLOCATION pPrimary = pSource->pPrimaryAllocation;
-                if (pPrimary && pPrimary->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID)
+                PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[i];
+                if (pTarget->fConnected)
                 {
                     memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
                     notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
-                    /* @todo: !!!this is not correct in case we want source[i]->target[i!=j] mapping */
                     notify.CrtcVsync.VidPnTargetId = i;
-                    notify.CrtcVsync.PhysicalAddress.QuadPart = pPrimary->AllocData.Addr.offVram;
                     pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
-
                     bNeedDpc = TRUE;
                 }
             }
@@ -1595,18 +1592,14 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
                 DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
                 for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
                 {
-                    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
-                    PVBOXWDDM_ALLOCATION pPrimary = pSource->pPrimaryAllocation;
-                    if (pPrimary && pPrimary->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID)
+                    PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[i];
+                    if (pTarget->fConnected)
                     {
                         memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
                         notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
-                        /* @todo: !!!this is not correct in case we want source[i]->target[i!=j] mapping */
                         notify.CrtcVsync.VidPnTargetId = i;
-                        notify.CrtcVsync.PhysicalAddress.QuadPart = pPrimary->AllocData.Addr.offVram;
                         pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
-
-                        pDevExt->bNotifyDxDpc = TRUE;
+                        bNeedDpc = TRUE;
                     }
                 }
             }
@@ -2063,11 +2056,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             /* no need for DXGK_QUERYSEGMENTIN as it contains AGP aperture info, which (AGP aperture) we do not support
              * DXGK_QUERYSEGMENTIN *pQsIn = (DXGK_QUERYSEGMENTIN*)pQueryAdapterInfo->pInputData; */
             DXGK_QUERYSEGMENTOUT *pQsOut = (DXGK_QUERYSEGMENTOUT*)pQueryAdapterInfo->pOutputData;
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
 # define VBOXWDDM_SEGMENTS_COUNT 2
-#else
-# define VBOXWDDM_SEGMENTS_COUNT 1
-#endif
             if (!pQsOut->pSegmentDescriptor)
             {
                 /* we are requested to provide the number of segments we support */
@@ -2075,8 +2064,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             }
             else if (pQsOut->NbSegment != VBOXWDDM_SEGMENTS_COUNT)
             {
-                AssertBreakpoint();
-                LOGREL(("NbSegment (%d) != 1", pQsOut->NbSegment));
+                WARN(("NbSegment (%d) != 1", pQsOut->NbSegment));
                 Status = STATUS_INVALID_PARAMETER;
             }
             else
@@ -2093,7 +2081,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pDr->CommitLimit = pDr->Size;
                 pDr->Flags.Value = 0;
                 pDr->Flags.CpuVisible = 1;
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+
                 ++pDr;
                 /* create cpu-invisible segment of the same size */
                 pDr->BaseAddress.QuadPart = 0;
@@ -2105,11 +2093,10 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pDr->pBankRangeTable = 0;
                 pDr->CommitLimit = pDr->Size;
                 pDr->Flags.Value = 0;
-#endif
 
                 pQsOut->PagingBufferSegmentId = 0;
-                pQsOut->PagingBufferSize = 1024;
-                pQsOut->PagingBufferPrivateDataSize = 0; /* @todo: do we need a private buffer ? */
+                pQsOut->PagingBufferSize = 0xc00;
+                pQsOut->PagingBufferPrivateDataSize = 0;
             }
             }
 #ifdef VBOX_WDDM_WIN8
@@ -2419,13 +2406,6 @@ NTSTATUS vboxWddmAllocationCreate(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_RESOURCE pRe
                     switch (pAllocInfo->enmType)
                     {
                         case VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE:
-#if 0 //defined(VBOXWDDM_RENDER_FROM_SHADOW)
-                            pAllocationInfo->SupportedReadSegmentSet = 2;
-                            pAllocationInfo->SupportedWriteSegmentSet = 2;
-#endif
-#ifndef VBOXWDDM_RENDER_FROM_SHADOW
-                            pAllocationInfo->Flags.CpuVisible = 1;
-#endif
                             break;
                         case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -2454,11 +2434,13 @@ NTSTATUS vboxWddmAllocationCreate(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_RESOURCE pRe
                                 Assert(pAllocation->AllocData.SurfDesc.bpp);
                                 Assert(pAllocation->AllocData.SurfDesc.pitch);
                                 Assert(pAllocation->AllocData.SurfDesc.cbSize);
-                                if (!pAllocInfo->fFlags.SharedResource)
-                                {
-                                    pAllocationInfo->Flags.CpuVisible = 1;
-                                }
-                                else
+
+//                                if (!pAllocInfo->fFlags.SharedResource && !pAllocInfo->hostID)
+//                                    pAllocationInfo->Flags.CpuVisible = 1;
+
+                                Assert(!pAllocationInfo->Flags.CpuVisible);
+
+                                if (pAllocInfo->fFlags.SharedResource)
                                 {
                                     pAllocation->hSharedHandle = (HANDLE)pAllocInfo->hSharedHandle;
 #if 0
@@ -2467,6 +2449,12 @@ NTSTATUS vboxWddmAllocationCreate(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_RESOURCE pRe
                                         vboxShRcTreePut(pDevExt, pAllocation);
                                     }
 #endif
+                                }
+
+//                                if (pAllocInfo->hostID)
+                                {
+                                    pAllocationInfo->SupportedReadSegmentSet = 2;
+                                    pAllocationInfo->SupportedWriteSegmentSet = 2;
                                 }
                             }
                             break;
@@ -3492,9 +3480,11 @@ DxgkDdiBuildPagingBufferNew(
             PMDL pMdl;
             uint32_t offVRAM;
             BOOLEAN fIn;
+            UINT SegmentId;
 
             if (pBuildPagingBuffer->Transfer.Source.SegmentId)
             {
+                SegmentId = pBuildPagingBuffer->Transfer.Source.SegmentId;
                 Assert(!pBuildPagingBuffer->Transfer.Destination.SegmentId);
                 Assert(!pBuildPagingBuffer->Transfer.Source.SegmentAddress.HighPart);
                 offVRAM = pBuildPagingBuffer->Transfer.Source.SegmentAddress.LowPart;
@@ -3503,12 +3493,20 @@ DxgkDdiBuildPagingBufferNew(
             }
             else
             {
+                SegmentId = pBuildPagingBuffer->Transfer.Destination.SegmentId;
                 Assert(pBuildPagingBuffer->Transfer.Destination.SegmentId);
                 Assert(!pBuildPagingBuffer->Transfer.Source.SegmentId);
                 Assert(!pBuildPagingBuffer->Transfer.Destination.SegmentAddress.HighPart);
                 offVRAM = pBuildPagingBuffer->Transfer.Destination.SegmentAddress.LowPart;
                 pMdl = pBuildPagingBuffer->Transfer.Source.pMdl;
                 fIn = TRUE;
+            }
+
+            if (SegmentId != 1)
+            {
+                WARN(("SegmentId"));
+                cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+                break;
             }
 
             Assert(!(pBuildPagingBuffer->Transfer.TransferSize & PAGE_OFFSET_MASK));
@@ -7167,7 +7165,7 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pPresentDisplayOnly->VidPnSourceId];
-    Assert(pSource->AllocData.Addr.SegmentId);
+    Assert(pSource->AllocData.Addr.SegmentId == 1);
     VBOXWDDM_ALLOC_DATA SrcAllocData;
     SrcAllocData.SurfDesc.width = pPresentDisplayOnly->Pitch * pPresentDisplayOnly->BytesPerPixel;
     SrcAllocData.SurfDesc.height = ~0UL;

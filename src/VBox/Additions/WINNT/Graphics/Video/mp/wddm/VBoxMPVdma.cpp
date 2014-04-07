@@ -651,11 +651,17 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXMP_DEVEXT pDevExt, VBOXVDMA_CLRFILL 
     if (pDevExt->pvVisibleVram)
     {
         PVBOXWDDM_ALLOCATION pAlloc = pCF->Alloc.pAlloc;
-        Assert(pAlloc->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
-        if (pAlloc->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID)
+        if (pAlloc->AllocData.Addr.SegmentId && pAlloc->AllocData.Addr.SegmentId != 1)
+        {
+            WARN(("request to collor fill invalid allocation"));
+            return STATUS_INVALID_PARAMETER;
+        }
+
+        VBOXVIDEOOFFSET offVram = vboxWddmAddrFramOffset(&pAlloc->AllocData.Addr);
+        if (offVram != VBOXVIDEOOFFSET_VOID)
         {
             RECT UnionRect = {0};
-            uint8_t *pvMem = pDevExt->pvVisibleVram + pAlloc->AllocData.Addr.offVram;
+            uint8_t *pvMem = pDevExt->pvVisibleVram + offVram;
             UINT bpp = pAlloc->AllocData.SurfDesc.bpp;
             Assert(bpp);
             Assert(((bpp * pAlloc->AllocData.SurfDesc.width) >> 3) == pAlloc->AllocData.SurfDesc.pitch);
@@ -720,6 +726,8 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXMP_DEVEXT pDevExt, VBOXVDMA_CLRFILL 
                 }
             }
         }
+        else
+            WARN(("invalid offVram"));
     }
 
     return Status;
@@ -742,6 +750,18 @@ NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOC_DATA pS
 
     enmSrcFormat = pSrcAlloc->SurfDesc.format;
     enmDstFormat = pDstAlloc->SurfDesc.format;
+
+    if (pDstAlloc->Addr.SegmentId && pDstAlloc->Addr.SegmentId != 1)
+    {
+        WARN(("request to collor blit invalid allocation"));
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if (pSrcAlloc->Addr.SegmentId && pSrcAlloc->Addr.SegmentId != 1)
+    {
+        WARN(("request to collor blit invalid allocation"));
+        return STATUS_INVALID_PARAMETER;
+    }
 
     if (enmSrcFormat != enmDstFormat)
     {
@@ -2034,12 +2054,16 @@ NTSTATUS vboxVdmaHlpUpdatePrimary(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_S
     if (!pSource->pShadowAllocation)
         return STATUS_INVALID_PARAMETER;
 
-    Assert(pSource->pPrimaryAllocation->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
-    Assert(pSource->pShadowAllocation->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
-    if (pSource->pPrimaryAllocation->AllocData.Addr.offVram == VBOXVIDEOOFFSET_VOID)
+    if (vboxWddmAddrFramOffset(&pSource->pPrimaryAllocation->AllocData.Addr) == VBOXVIDEOOFFSET_VOID)
+    {
+        WARN(("invalid primary"));
         return STATUS_INVALID_PARAMETER;
-    if (pSource->pShadowAllocation->AllocData.Addr.offVram == VBOXVIDEOOFFSET_VOID)
+    }
+    if (vboxWddmAddrFramOffset(&pSource->pShadowAllocation->AllocData.Addr) == VBOXVIDEOOFFSET_VOID)
+    {
+        WARN(("invalid secondary"));
         return STATUS_INVALID_PARAMETER;
+    }
 
     NTSTATUS Status = vboxVdmaGgDmaBltPerform(pDevExt, &pSource->pShadowAllocation->AllocData, pRect, &pSource->pPrimaryAllocation->AllocData, pRect);
     Assert(Status == STATUS_SUCCESS);
