@@ -305,6 +305,9 @@ extern DECLEXPORT(int) crNetRecv(
     } while (0)
 
 #endif
+#ifdef IN_GUEST
+extern DECLEXPORT(uint32_t) crNetHostCapsGet();
+#endif
 extern DECLEXPORT(void) crNetDefaultRecv( CRConnection *conn, CRMessage *msg, unsigned int len );
 extern DECLEXPORT(void) crNetDispatchMessage( CRNetReceiveFuncList *rfl, CRConnection *conn, CRMessage *msg, unsigned int len );
 

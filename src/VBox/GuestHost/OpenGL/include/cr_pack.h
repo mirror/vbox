@@ -136,10 +136,6 @@ extern DECLEXPORT(void) crPackInitBuffer( CRPackBuffer *buffer, void *buf, int s
         , unsigned int num_opcodes
 #endif
         );
-DECLINLINE(bool) crPackBufferIsEmpty(CRPackBuffer *buffer)
-{
-    return (buffer->opcode_current == buffer->data_current -1);
-}
 
 extern DECLEXPORT(void) crPackFlushFunc( CRPackContext *pc, CRPackFlushFunc ff );
 extern DECLEXPORT(void) crPackFlushArg( CRPackContext *pc, void *flush_arg );
@@ -194,6 +190,8 @@ extern DECLEXPORT(void) crPackExpandMultiDrawArraysEXTSWAP( GLenum mode, GLint *
 extern DECLEXPORT(void) crPackExpandMultiDrawElementsEXT( GLenum mode, const GLsizei *count, GLenum type, const GLvoid **indices, GLsizei primcount, CRClientState *c );
 extern DECLEXPORT(void) crPackExpandMultiDrawElementsEXTSWAP( GLenum mode, const GLsizei *count, GLenum type, const GLvoid **indices, GLsizei primcount, CRClientState *c );
 
+extern DECLEXPORT(void) crPackCmdBlocksEnable();
+
 
 /**
  * Return number of opcodes in given buffer.
@@ -205,6 +203,10 @@ crPackNumOpcodes(const CRPackBuffer *buffer)
     return buffer->opcode_start - buffer->opcode_current;
 }
 
+DECLINLINE(bool) crPackBufferIsEmpty(CRPackBuffer *buffer)
+{
+    return crPackNumOpcodes(buffer) == 0;
+}
 
 /**
  * Return amount of data (in bytes) in buffer.

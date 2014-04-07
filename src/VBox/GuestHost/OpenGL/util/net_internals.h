@@ -101,6 +101,9 @@ extern int crVBoxHGCMRecv(
         CRConnection *conn
 #endif
         );
+#ifdef IN_GUEST
+extern uint32_t crVBoxHGCMHostCapsGet();
+#endif
 extern CRConnection** crVBoxHGCMDump( int *num );
 extern void crVBoxHGCMTearDown(void);
 #endif

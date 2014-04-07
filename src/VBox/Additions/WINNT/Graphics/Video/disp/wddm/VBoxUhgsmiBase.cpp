@@ -276,3 +276,22 @@ int vboxCrHgsmiPrivateCtlConGetClientID(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, 
     }
     return rc;
 }
+
+int vboxCrHgsmiPrivateCtlConGetHostCaps(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, uint32_t *pu32HostCaps)
+{
+    VBOXDISPIFESCAPE GetHostCaps = {0};
+    GetHostCaps.escapeCode = VBOXESC_CRHGSMICTLCON_GETHOSTCAPS;
+
+    int rc = vboxCrHgsmiPrivateEscape(pHgsmi, &GetHostCaps, sizeof (GetHostCaps), FALSE);
+    if (RT_SUCCESS(rc))
+    {
+        *pu32HostCaps = GetHostCaps.u32CmdSpecific;
+        return VINF_SUCCESS;
+    }
+    else
+    {
+        *pu32HostCaps = 0;
+        WARN(("vboxCrHgsmiPrivateEscape failed, rc (%d)", rc));
+    }
+    return rc;
+}

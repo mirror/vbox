@@ -184,6 +184,10 @@ typedef struct {
 #else
     int                  iGuestDrv;
 #endif
+#ifdef IN_GUEST
+    uint32_t             u32HostCaps;
+    bool                 fHostCapsInitialized;
+#endif
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
     bool bHgsmiOn;
 #endif
@@ -1262,18 +1266,61 @@ static int crVBoxHGCMSetVersion(CRConnection *conn, unsigned int vMajor, unsigne
 
     rc = crVBoxHGCMCall(conn, &parms, sizeof(parms));
 
-    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
+    if (RT_SUCCESS(rc))
     {
-        crWarning("Host doesn't accept our version %d.%d. Make sure you have appropriate additions installed!",
-                  parms.vMajor.u.value32, parms.vMinor.u.value32);
+        rc =  parms.hdr.result;
+        if (RT_SUCCESS(rc))
+        {
+            conn->vMajor = CR_PROTOCOL_VERSION_MAJOR;
+            conn->vMinor = CR_PROTOCOL_VERSION_MINOR;
+
+            return VINF_SUCCESS;
+        }
+        else
+            WARN(("Host doesn't accept our version %d.%d. Make sure you have appropriate additions installed!",
+                  parms.vMajor.u.value32, parms.vMinor.u.value32));
+    }
+    else
+        WARN(("crVBoxHGCMCall failed %d", rc));
+
+    return rc;
+}
+
+static int crVBoxHGCMGetHostCaps(CRConnection *conn, uint32_t *pu32HostCaps)
+{
+    CRVBOXHGCMGETCAPS caps;
+    int rc;
+
+    caps.hdr.result      = VERR_WRONG_ORDER;
+    caps.hdr.u32ClientID = conn->u32ClientID;
+    caps.hdr.u32Function = SHCRGL_GUEST_FN_GET_CAPS;
+    caps.hdr.cParms      = SHCRGL_CPARMS_GET_CAPS;
+
+    caps.Caps.type       = VMMDevHGCMParmType_32bit;
+    caps.Caps.u.value32  = 0;
+
+    rc = crVBoxHGCMCall(conn, &caps, sizeof(caps));
+
+    if (RT_SUCCESS(rc))
+    {
+        rc =  caps.hdr.result;
+        if (RT_SUCCESS(rc))
+        {
+            *pu32HostCaps = caps.Caps.u.value32;
+            return VINF_SUCCESS;
+        }
+        else
+            WARN(("SHCRGL_GUEST_FN_GET_CAPS failed %d", rc));
         return FALSE;
     }
+    else
+        WARN(("crVBoxHGCMCall failed %d", rc));
 
-    conn->vMajor = CR_PROTOCOL_VERSION_MAJOR;
-    conn->vMinor = CR_PROTOCOL_VERSION_MINOR;
+    *pu32HostCaps = 0;
 
-    return TRUE;
+    return rc;
 }
+
 
 static int crVBoxHGCMSetPID(CRConnection *conn, unsigned long long pid)
 {
@@ -1379,8 +1426,9 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
             crDebug("HGCM connect was successful: client id =0x%x\n", conn->u32ClientID);
 
             rc = crVBoxHGCMSetVersion(conn, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR);
-            if (!rc)
+            if (RT_FAILURE(rc))
             {
+                WARN(("crVBoxHGCMSetVersion failed %d", rc));
                 return rc;
             }
 #ifdef RT_OS_WINDOWS
@@ -1388,6 +1436,26 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
 #else
             rc = crVBoxHGCMSetPID(conn, crGetPID());
 #endif
+            if (RT_FAILURE(rc))
+            {
+                WARN(("crVBoxHGCMSetPID failed %d", rc));
+                return rc;
+            }
+
+            if (!g_crvboxhgcm.fHostCapsInitialized)
+            {
+                rc = crVBoxHGCMGetHostCaps(conn, &g_crvboxhgcm.u32HostCaps);
+                if (RT_FAILURE(rc))
+                {
+                    WARN(("VBoxCrHgsmiCtlConGetHostCaps failed %d", rc));
+                    g_crvboxhgcm.u32HostCaps = 0;
+                }
+
+                /* host may not support it, ignore any failures */
+                g_crvboxhgcm.fHostCapsInitialized = true;
+                rc = VINF_SUCCESS;
+            }
+
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return rc;
         }
@@ -2195,9 +2263,31 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
 
     pClient = _crVBoxHGSMIClientGet(conn);
     if (pClient)
+    {
         rc = VBoxCrHgsmiCtlConGetClientID(pClient->pHgsmi, &conn->u32ClientID);
+        if (RT_FAILURE(rc))
+        {
+            WARN(("VBoxCrHgsmiCtlConGetClientID failed %d", rc));
+        }
+        if (!g_crvboxhgcm.fHostCapsInitialized)
+        {
+            rc = VBoxCrHgsmiCtlConGetHostCaps(pClient->pHgsmi, &g_crvboxhgcm.u32HostCaps);
+            if (RT_SUCCESS(rc))
+            {
+                g_crvboxhgcm.fHostCapsInitialized = true;
+            }
+            else
+            {
+                WARN(("VBoxCrHgsmiCtlConGetHostCaps failed %d", rc));
+                g_crvboxhgcm.u32HostCaps = 0;
+            }
+        }
+    }
     else
+    {
+        WARN(("_crVBoxHGSMIClientGet failed %d", rc));
         rc = VERR_GENERAL_FAILURE;
+    }
 
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 
@@ -2304,6 +2394,11 @@ void crVBoxHGCMInit(CRNetReceiveFuncList *rfl, CRNetCloseFuncList *cfl, unsigned
     crInitMutex(&g_crvboxhgcm.recvmutex);
 #endif
     g_crvboxhgcm.bufpool = crBufferPoolInit(16);
+
+#ifdef IN_GUEST
+    g_crvboxhgcm.fHostCapsInitialized = false;
+    g_crvboxhgcm.u32HostCaps = 0;
+#endif
 }
 
 /* Callback function used to free buffer pool entries */
@@ -2502,6 +2597,14 @@ void _crVBoxHGCMPerformReceiveMessage(CRConnection *conn)
         _crVBoxHGCMReceiveMessage(conn);
     }
 }
+
+#ifdef IN_GUEST
+uint32_t crVBoxHGCMHostCapsGet()
+{
+    Assert(g_crvboxhgcm.fHostCapsInitialized);
+    return g_crvboxhgcm.u32HostCaps;
+}
+#endif
 
 int crVBoxHGCMRecv(
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)

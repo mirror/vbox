@@ -4206,9 +4206,30 @@ DxgkDdiEscape(
             case VBOXESC_CRHGSMICTLCON_GETCLIENTID:
             {
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+                if (!pContext)
+                {
+                    WARN(("context not specified"));
+                    return STATUS_INVALID_PARAMETER;
+                }
                 if (pEscape->PrivateDriverDataSize == sizeof (*pEscapeHdr))
                 {
                     pEscapeHdr->u32CmdSpecific = pContext->u32CrConClientID;
+                    Status = STATUS_SUCCESS;
+                }
+                else
+                {
+                    WARN(("unexpected buffer size!"));
+                    Status = STATUS_INVALID_PARAMETER;
+                }
+
+                break;
+            }
+
+            case VBOXESC_CRHGSMICTLCON_GETHOSTCAPS:
+            {
+                if (pEscape->PrivateDriverDataSize == sizeof (*pEscapeHdr))
+                {
+                    pEscapeHdr->u32CmdSpecific = VBoxMpCrGetHostCaps();
                     Status = STATUS_SUCCESS;
                 }
                 else
