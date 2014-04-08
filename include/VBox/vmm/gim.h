@@ -43,6 +43,8 @@ typedef enum GIMPROVIDER
 {
     /** None. */
     GIMPROVIDER_NONE = 0,
+    /** Minimal. */
+    GIMPROVIDER_MINIMAL,
     /** Microsoft Hyper-V. */
     GIMPROVIDER_HYPERV,
     /** Linux KVM Interface. */
