@@ -650,7 +650,7 @@ UIMediumManager* UIMediumManager::m_spInstance = 0;
 UIMediumManager* UIMediumManager::instance() { return m_spInstance; }
 
 UIMediumManager::UIMediumManager(QWidget *pCenterWidget, bool fRefresh /* = true */)
-    : QIWithRetranslateUI2<QIMainDialog>(0, Qt::Dialog)
+    : QIWithRetranslateUI<QMainWindow>(0)
     , m_pPseudoParentWidget(pCenterWidget)
     , m_fRefresh(fRefresh)
     , m_fPreventChangeCurrentItem(false)
@@ -960,7 +960,7 @@ void UIMediumManager::prepare()
 #endif /* Q_WS_MAC */
 
     /* Center according pseudo-parent widget: */
-    centerAccording(m_pPseudoParentWidget);
+    VBoxGlobal::centerWidget(this, m_pPseudoParentWidget, false);
 
     /* Initialize information-panes: */
     updateInformationFields(UIMediumType_All);
@@ -1302,7 +1302,7 @@ void UIMediumManager::prepareButtonBox()
     {
         /* Configure button-box: */
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Close);
-        m_pButtonBox->button(QDialogButtonBox::Close)->setDefault(true);
+        m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
         connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
         connect(m_pButtonBox, SIGNAL(rejected()), this, SLOT(close()));
         /* Add button-box into central layout: */
