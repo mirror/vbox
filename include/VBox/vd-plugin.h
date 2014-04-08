@@ -29,6 +29,7 @@
 #include <VBox/vd.h>
 #include <VBox/vd-image-backend.h>
 #include <VBox/vd-cache-backend.h>
+#include <VBox/vd-filter-backend.h>
 
 /**
  * Backend register callbacks structure.
@@ -54,8 +55,11 @@ typedef struct VDBACKENDREGISTER
     DECLR3CALLBACKMEMBER(int, pfnRegisterCache, (void *pvUser, PCVDCACHEBACKEND pBackend));
 
     /**
-     * @todo: Register filter plugin.
+     * Registers a new filter plugin.
+     * @param   pvUser    Opaque user data given in the plugin load callback.
+     * @param   pBackend  The filter backend to register.
      */
+    DECLR3CALLBACKMEMBER(int, pfnRegisterFilter, (void *pvUser, PCVDFILTERBACKEND pBackend));
 
 } VDBACKENDREGISTER;
 /** Pointer to a backend register callbacks structure. */
