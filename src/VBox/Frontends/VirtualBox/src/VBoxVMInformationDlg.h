@@ -19,9 +19,11 @@
 #ifndef __VBoxVMInformationDlg_h__
 #define __VBoxVMInformationDlg_h__
 
-/* Local includes: */
+/* Qt includes: */
+#include <QMainWindow>
+
+/* GUI includes: */
 #include "VBoxVMInformationDlg.gen.h"
-#include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
 
 /* COM includes: */
@@ -31,7 +33,7 @@
 class UIMachineWindow;
 class QTimer;
 
-class VBoxVMInformationDlg : public QIWithRetranslateUI2 <QIMainDialog>, public Ui::VBoxVMInformationDlg
+class VBoxVMInformationDlg : public QIWithRetranslateUI<QMainWindow>, public Ui::VBoxVMInformationDlg
 {
     Q_OBJECT;
 
@@ -46,7 +48,7 @@ public:
 
 protected:
 
-    VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt::WindowFlags aFlags);
+    VBoxVMInformationDlg(UIMachineWindow *pMachineWindow);
    ~VBoxVMInformationDlg();
 
     void retranslateUi();
@@ -73,6 +75,9 @@ private:
     QString composeArticle (const QString &aBelongsTo, int aSpacesCount = 0);
 
     static InfoDlgMap  mSelfArray;
+
+    /** Widget to center UIMediumManager according. */
+    QWidget           *m_pPseudoParentWidget;
 
     CSession           mSession;
     bool               mIsPolished;
