@@ -394,6 +394,7 @@ memory_cleared:
 		;; Initialize PCI devices. This can and should be done early.
 		call	pcibios_init_iomem_bases
 		call	pcibios_init_irqs
+		SET_INT_VECTOR 1Ah, BIOSSEG, int1a_handler
 
 		;; PIT setup
 		SET_INT_VECTOR 08h, BIOSSEG, int08_handler
@@ -485,7 +486,6 @@ memory_cleared:
 		mov	ds:[410h], ax
 
 		;; CMOS RTC
-		SET_INT_VECTOR 1Ah, BIOSSEG, int1a_handler
 		SET_INT_VECTOR 4Ah, BIOSSEG, dummy_iret	; TODO: redundant?
 		SET_INT_VECTOR 70h, BIOSSEG, int70_handler
 		;; BIOS DATA AREA 4CEh ???
