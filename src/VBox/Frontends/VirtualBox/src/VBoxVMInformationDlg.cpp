@@ -24,6 +24,7 @@
 /* Qt includes: */
 #include <QTimer>
 #include <QScrollBar>
+#include <QPushButton>
 
 /* GUI includes: */
 #include "UIIconPool.h"
@@ -59,9 +60,7 @@ void VBoxVMInformationDlg::createInformationDlg(UIMachineWindow *pMachineWindow)
     if (mSelfArray.find (machine.GetName()) == mSelfArray.end())
     {
         /* Creating new information dialog if there is no one existing */
-        VBoxVMInformationDlg *id = new VBoxVMInformationDlg(pMachineWindow, Qt::Window);
-        id->centerAccording (pMachineWindow);
-        // TODO_NEW_CORE: this seems not necessary, cause we set WA_DeleteOnClose.
+        VBoxVMInformationDlg *id = new VBoxVMInformationDlg(pMachineWindow);
         id->setAttribute (Qt::WA_DeleteOnClose);
         mSelfArray [machine.GetName()] = id;
     }
@@ -73,12 +72,9 @@ void VBoxVMInformationDlg::createInformationDlg(UIMachineWindow *pMachineWindow)
     info->activateWindow();
 }
 
-VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt::WindowFlags aFlags)
-# ifdef Q_WS_MAC
-    : QIWithRetranslateUI2 <QIMainDialog> (pMachineWindow, aFlags)
-# else /* Q_WS_MAC */
-    : QIWithRetranslateUI2 <QIMainDialog> (0, aFlags)
-# endif /* Q_WS_MAC */
+VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow)
+    : QIWithRetranslateUI<QMainWindow>(0)
+    , m_pPseudoParentWidget(pMachineWindow)
     , mSession (pMachineWindow->session())
     , mIsPolished (false)
     , mStatTimer (new QTimer (this))
@@ -95,9 +91,6 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt:
                                           ":/session_info_32px.png", ":/session_info_16px.png"));
 #endif
 
-    /* Enable size grip without using a status bar. */
-    setSizeGripEnabled (true);
-
     /* Setup focus-proxy for pages */
     mPage1->setFocusProxy (mDetailsText);
     mPage2->setFocusProxy (mStatisticText);
@@ -109,6 +102,9 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt:
     /* Setup margins */
     mDetailsText->setViewportMargins (5, 5, 5, 5);
     mStatisticText->setViewportMargins (5, 5, 5, 5);
+
+    /* Configure dialog button-box: */
+    mButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
 
     /* Setup handlers */
     connect (pMachineWindow->uisession(), SIGNAL (sigMediumChange(const CMediumAttachment&)), this, SLOT (updateDetails()));
@@ -330,7 +326,7 @@ void VBoxVMInformationDlg::retranslateUi()
 
 bool VBoxVMInformationDlg::event (QEvent *aEvent)
 {
-    bool result = QIMainDialog::event (aEvent);
+    bool result = QMainWindow::event (aEvent);
     switch (aEvent->type())
     {
         case QEvent::WindowStateChange:
@@ -349,7 +345,7 @@ bool VBoxVMInformationDlg::event (QEvent *aEvent)
 
 void VBoxVMInformationDlg::resizeEvent (QResizeEvent *aEvent)
 {
-    QIMainDialog::resizeEvent (aEvent);
+    QMainWindow::resizeEvent (aEvent);
 
     /* Store dialog size for this vm */
     if (mIsPolished && !isMaximized())
@@ -368,15 +364,16 @@ void VBoxVMInformationDlg::showEvent (QShowEvent *aEvent)
      * we provide our own "polish" implementation */
     if (!mIsPolished)
     {
-        /* Load window size and state */
+        /* Load window size, adjust position and load window state finally: */
         resize (mWidth, mHeight);
+        vboxGlobal().centerWidget(this, m_pPseudoParentWidget, false);
         if (mMax)
             QTimer::singleShot (0, this, SLOT (showMaximized()));
         else
             mIsPolished = true;
     }
 
-    QIMainDialog::showEvent (aEvent);
+    QMainWindow::showEvent (aEvent);
 }
 
 
