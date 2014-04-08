@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -675,6 +675,58 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &f),  "largepages",   "Large Pages");
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_VPID, &f),        "vtxvpid",      "VT-x VPID");
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &f), "vtxux", "VT-x unr. exec.");
+
+    ParavirtProvider_T paravirtProvider;
+    CHECK_ERROR2_RET(machine, COMGETTER(ParavirtProvider)(&paravirtProvider), hrcCheck);
+    const char *pszParavirtProvider;
+    switch (paravirtProvider)
+    {
+        case ParavirtProvider_None:
+            if (details == VMINFO_MACHINEREADABLE)
+                pszParavirtProvider = "none";
+            else
+                pszParavirtProvider = "None";
+            break;
+
+        case ParavirtProvider_Default:
+            if (details == VMINFO_MACHINEREADABLE)
+                pszParavirtProvider = "default";
+            else
+                pszParavirtProvider = "Default";
+            break;
+
+        case ParavirtProvider_Legacy:
+            if (details == VMINFO_MACHINEREADABLE)
+                pszParavirtProvider = "legacy";
+            else
+                pszParavirtProvider = "Legacy";
+            break;
+
+        case ParavirtProvider_Minimal:
+            if (details == VMINFO_MACHINEREADABLE)
+                pszParavirtProvider = "minimal";
+            else
+                pszParavirtProvider = "Minimal";
+            break;
+
+        case ParavirtProvider_HyperV:
+            if (details == VMINFO_MACHINEREADABLE)
+                pszParavirtProvider = "hyperv";
+            else
+                pszParavirtProvider = "HyperV";
+            break;
+
+        default:
+            if (details == VMINFO_MACHINEREADABLE)
+                pszParavirtProvider = "unknown";
+            else
+                pszParavirtProvider = "Unknown";
+    }
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("paravirtprovider=\"%s\"\n", pszParavirtProvider);
+    else
+        RTPrintf("Paravirt. Provider:  %s\n", pszParavirtProvider);
+
 
     MachineState_T machineState;
     CHECK_ERROR2_RET(machine, COMGETTER(State)(&machineState), hrcCheck);

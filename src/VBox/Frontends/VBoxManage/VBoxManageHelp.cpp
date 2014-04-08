@@ -178,6 +178,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--ioapic on|off]\n"
                      "                            [--hpet on|off]\n"
                      "                            [--triplefaultreset on|off]\n"
+                     "                            [--paravirtprovider none|default|legacy|minimal|\n"
+                     "                                                hyperv]\n"
                      "                            [--hwvirtex on|off]\n"
                      "                            [--nestedpaging on|off]\n"
                      "                            [--largepages on|off]\n"
@@ -327,7 +329,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--audiocontroller ac97|hda|sb16]\n"
                      "                            [--clipboard disabled|hosttoguest|guesttohost|\n"
                      "                                         bidirectional]\n"
-                     "                            [--draganddrop disabled|hosttoguest\n");
+                     "                            [--draganddrop disabled|hosttoguest]\n");
         RTStrmPrintf(pStrm,
                      "                            [--vrde on|off]\n"
                      "                            [--vrdeextpack default|<name>\n"

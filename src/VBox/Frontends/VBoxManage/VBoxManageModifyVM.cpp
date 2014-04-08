@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -61,6 +61,7 @@ enum
     MODIFYVM_LONGMODE,
     MODIFYVM_SYNTHCPU,
     MODIFYVM_TFRESET,
+    MODIFYVM_PARAVIRTPROVIDER,
     MODIFYVM_HWVIRTEX,
     MODIFYVM_NESTEDPAGING,
     MODIFYVM_LARGEPAGES,
@@ -221,7 +222,8 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--pae",                      MODIFYVM_PAE,                       RTGETOPT_REQ_BOOL_ONOFF },
     { "--longmode",                 MODIFYVM_LONGMODE,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--synthcpu",                 MODIFYVM_SYNTHCPU,                  RTGETOPT_REQ_BOOL_ONOFF },
-    { "--triplefaultreset",         MODIFYVM_TFRESET,                  RTGETOPT_REQ_BOOL_ONOFF },
+    { "--triplefaultreset",         MODIFYVM_TFRESET,                   RTGETOPT_REQ_BOOL_ONOFF },
+    { "--paravirtprovider",         MODIFYVM_PARAVIRTPROVIDER,          RTGETOPT_REQ_STRING },
     { "--hwvirtex",                 MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--largepages",               MODIFYVM_LARGEPAGES,                RTGETOPT_REQ_BOOL_ONOFF },
@@ -627,6 +629,27 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_TFRESET:
             {
                 CHECK_ERROR(machine, SetCPUProperty(CPUPropertyType_TripleFaultReset, ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_PARAVIRTPROVIDER:
+            {
+                if (   !RTStrICmp(ValueUnion.psz, "none")
+                    || !RTStrICmp(ValueUnion.psz, "disabled"))
+                    CHECK_ERROR(machine, COMSETTER(ParavirtProvider)(ParavirtProvider_None));
+                else if (!RTStrICmp(ValueUnion.psz, "default"))
+                    CHECK_ERROR(machine, COMSETTER(ParavirtProvider)(ParavirtProvider_Default));
+                else if (!RTStrICmp(ValueUnion.psz, "legacy"))
+                    CHECK_ERROR(machine, COMSETTER(ParavirtProvider)(ParavirtProvider_Legacy));
+                else if (!RTStrICmp(ValueUnion.psz, "minimal"))
+                    CHECK_ERROR(machine, COMSETTER(ParavirtProvider)(ParavirtProvider_Minimal));
+                else if (!RTStrICmp(ValueUnion.psz, "hyperv"))
+                    CHECK_ERROR(machine, COMSETTER(ParavirtProvider)(ParavirtProvider_HyperV));
+                else
+                {
+                    errorArgument("Invalid --paravirtprovider argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
                 break;
             }
 

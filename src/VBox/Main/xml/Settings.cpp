@@ -54,7 +54,7 @@
  */
 
 /*
- * Copyright (C) 2007-2013 Oracle Corporation
+ * Copyright (C) 2007-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1912,6 +1912,7 @@ Hardware::Hardware()
           pointingHIDType(PointingHIDType_PS2Mouse),
           keyboardHIDType(KeyboardHIDType_PS2Keyboard),
           chipsetType(ChipsetType_PIIX3),
+          paravirtProvider(ParavirtProvider_Legacy),
           fEmulatedUSBCardReader(false),
           clipboardMode(ClipboardMode_Disabled),
           dragAndDropMode(DragAndDropMode_Disabled),
@@ -1986,6 +1987,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (pointingHIDType           == h.pointingHIDType)
                   && (keyboardHIDType           == h.keyboardHIDType)
                   && (chipsetType               == h.chipsetType)
+                  && (paravirtProvider          == h.paravirtProvider)
                   && (fEmulatedUSBCardReader    == h.fEmulatedUSBCardReader)
                   && (vrdeSettings              == h.vrdeSettings)
                   && (biosSettings              == h.biosSettings)
@@ -2811,6 +2813,28 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                                           pelmHwChild,
                                           N_("Invalid value '%s' in Chipset/@type"),
                                           strChipsetType.c_str());
+            }
+        }
+        else if (pelmHwChild->nameEquals("Paravirt"))
+        {
+            Utf8Str strProvider;
+            if (pelmHwChild->getAttributeValue("provider", strProvider))
+            {
+                if (strProvider == "None")
+                    hw.paravirtProvider = ParavirtProvider_None;
+                else if (strProvider == "Default")
+                    hw.paravirtProvider = ParavirtProvider_Default;
+                else if (strProvider == "Legacy")
+                    hw.paravirtProvider = ParavirtProvider_Legacy;
+                else if (strProvider == "Minimal")
+                    hw.paravirtProvider = ParavirtProvider_Minimal;
+                else if (strProvider == "HyperV")
+                    hw.paravirtProvider = ParavirtProvider_HyperV;
+                else
+                    throw ConfigFileError(this,
+                                          pelmHwChild,
+                                          N_("Invalid value '%s' in Paravirt/@provider attribute"),
+                                          strProvider.c_str());
             }
         }
         else if (pelmHwChild->nameEquals("HPET"))
@@ -4115,6 +4139,25 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
          pelmChipset->setAttribute("type", pcszChipset);
     }
 
+    if (    (m->sv >= SettingsVersion_v1_15)
+        && !hw.areParavirtDefaultSettings()
+       )
+    {
+        const char *pcszParavirtProvider;
+        switch (hw.paravirtProvider)
+        {
+            case ParavirtProvider_None:         pcszParavirtProvider = "None";     break;
+            case ParavirtProvider_Default:      pcszParavirtProvider = "Default";  break;
+            case ParavirtProvider_Legacy:       pcszParavirtProvider = "Legacy";   break;
+            case ParavirtProvider_Minimal:      pcszParavirtProvider = "Minimal";  break;
+            case ParavirtProvider_HyperV:       pcszParavirtProvider = "HyperV";   break;
+            default:            Assert(false);  pcszParavirtProvider = "None";     break;
+        }
+
+        xml::ElementNode *pelmParavirt = pelmHardware->createChild("Paravirt");
+        pelmParavirt->setAttribute("provider", pcszParavirtProvider);
+    }
+
     xml::ElementNode *pelmBoot = pelmHardware->createChild("Boot");
     for (BootOrderMap::const_iterator it = hw.mapBootOrder.begin();
          it != hw.mapBootOrder.end();
@@ -5367,37 +5410,45 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (m->sv < SettingsVersion_v1_15)
     {
         /*
-         * Check whether the hotpluggable flag of all storage devices differs
-         * from the default for old settings.
-         * AHCI ports are hotpluggable by default every other device is not.
+         * Check whether a paravirtualization provider other than "Legacy" is used, if so bump the version.
          */
-        for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
-             it != storageMachine.llStorageControllers.end();
-             ++it)
+        if (hardwareMachine.paravirtProvider != ParavirtProvider_Legacy)
+            m->sv = SettingsVersion_v1_15;
+        else
         {
-            bool fSettingsBumped = false;
-            const StorageController &sctl = *it;
-
-            for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
-                 it2 != sctl.llAttachedDevices.end();
-                 ++it2)
+            /*
+             * Check whether the hotpluggable flag of all storage devices differs
+             * from the default for old settings.
+             * AHCI ports are hotpluggable by default every other device is not.
+             */
+            for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
+                 it != storageMachine.llStorageControllers.end();
+                 ++it)
             {
-                const AttachedDevice &att = *it2;
+                bool fSettingsBumped = false;
+                const StorageController &sctl = *it;
 
-                if (   (   att.fHotPluggable
-                        && sctl.controllerType != StorageControllerType_IntelAhci)
-                    || (   !att.fHotPluggable
-                        && sctl.controllerType == StorageControllerType_IntelAhci))
+                for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
+                     it2 != sctl.llAttachedDevices.end();
+                     ++it2)
                 {
-                    m->sv = SettingsVersion_v1_15;
-                    fSettingsBumped = true;
-                    break;
-                }
-            }
+                    const AttachedDevice &att = *it2;
 
-            /* Abort early if possible. */
-            if (fSettingsBumped)
-                break;
+                    if (   (   att.fHotPluggable
+                            && sctl.controllerType != StorageControllerType_IntelAhci)
+                        || (   !att.fHotPluggable
+                            && sctl.controllerType == StorageControllerType_IntelAhci))
+                    {
+                        m->sv = SettingsVersion_v1_15;
+                        fSettingsBumped = true;
+                        break;
+                    }
+                }
+
+                /* Abort early if possible. */
+                if (fSettingsBumped)
+                    break;
+            }
         }
     }
 
