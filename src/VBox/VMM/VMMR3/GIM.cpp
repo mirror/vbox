@@ -55,6 +55,7 @@
 #include <iprt/string.h>
 
 /* Include all GIM providers. */
+#include "GIMMinimalInternal.h"
 #include "GIMHvInternal.h"
 
 /*******************************************************************************
@@ -115,7 +116,12 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     else
     {
         pVM->gim.s.fEnabled = true;
-        if (!RTStrCmp(szProvider, "HyperV"))
+        if (!RTStrCmp(szProvider, "Minimal"))
+        {
+            pVM->gim.s.enmProvider = GIMPROVIDER_MINIMAL;
+            rc = GIMR3MinimalInit(pVM);
+        }
+        else if (!RTStrCmp(szProvider, "HyperV"))
         {
             pVM->gim.s.enmProvider = GIMPROVIDER_HYPERV;
             rc = GIMR3HvInit(pVM);
@@ -133,9 +139,9 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
 
 
 /**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate it self inside the GC.
+ * Applies relocations to data and code managed by this component. This function
+ * will be called at init and whenever the VMM need to relocate itself inside
+ * the GC.
  *
  * @param   pVM         Pointer to the VM.
  * @param   offDelta    Relocation delta relative to old location.
@@ -152,6 +158,12 @@ VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
     switch (pVM->gim.s.enmProvider)
     {
+        case GIMPROVIDER_MINIMAL:
+        {
+            GIMR3MinimalRelocate(pVM, offDelta);
+            break;
+        }
+
         case GIMPROVIDER_HYPERV:
         {
             GIMR3HvRelocate(pVM, offDelta);
