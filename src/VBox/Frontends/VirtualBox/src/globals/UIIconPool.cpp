@@ -218,6 +218,7 @@ void UIIconPool::addName(QIcon &icon, const QString &strName,
     icon.addPixmap(pixmap, mode, state);
 
 #ifdef Q_WS_MAC
+# ifndef VBOX_OSE
     /* Test if HiDPI icons are enabled. Works only with a patched version of Qt 4.x
      * with the changes from https://codereview.qt-project.org/#change,54636 applied. */
     if (qApp->testAttribute(Qt::AA_UseHighDpiPixmaps))
@@ -231,6 +232,7 @@ void UIIconPool::addName(QIcon &icon, const QString &strName,
         if (!pixmapHiDPI.isNull())
             icon.addPixmap(pixmapHiDPI, mode, state);
     }
+# endif
 #endif /* Q_WS_MAC */
 }
 
