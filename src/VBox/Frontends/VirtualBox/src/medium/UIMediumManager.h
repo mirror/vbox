@@ -17,10 +17,11 @@
 #ifndef ___UIMediumManager_h___
 #define ___UIMediumManager_h___
 
-/* GUI includes: */
+/* Qt includes: */
+#include <QMainWindow>
 
+/* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "QIMainDialog.h"
 #include "UIMediumDefs.h"
 
 /* Forward declarations: */
@@ -45,7 +46,7 @@ public:
 };
 
 /** Medium Manager dialog. */
-class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>
+class UIMediumManager : public QIWithRetranslateUI<QMainWindow>
 {
     Q_OBJECT;
 
