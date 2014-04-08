@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2013 Oracle Corporation
+ * Copyright (C) 2004-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -205,6 +205,7 @@ Machine::HWData::HWData()
     mKeyboardHIDType = KeyboardHIDType_PS2Keyboard;
     mPointingHIDType = PointingHIDType_PS2Mouse;
     mChipsetType = ChipsetType_PIIX3;
+    mParavirtProvider = ParavirtProvider_Default;
     mEmulatedUSBCardReaderEnabled = FALSE;
 
     for (size_t i = 0; i < RT_ELEMENTS(mCPUAttached); i++)
@@ -1303,6 +1304,39 @@ STDMETHODIMP Machine::COMSETTER(ChipsetType)(ChipsetType_T aChipsetType)
                 mNetworkAdapters[slot]->init(this, slot);
             }
         }
+    }
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(ParavirtProvider)(ParavirtProvider_T *aParavirtProvider)
+{
+    CheckComArgOutPointerValid(aParavirtProvider);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aParavirtProvider = mHWData->mParavirtProvider;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(ParavirtProvider)(ParavirtProvider_T aParavirtProvider)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    if (aParavirtProvider != mHWData->mParavirtProvider)
+    {
+        setModified(IsModified_MachineData);
+        mHWData.backup();
+        mHWData->mParavirtProvider = aParavirtProvider;
     }
 
     return S_OK;
@@ -9361,6 +9395,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mPointingHIDType = data.pointingHIDType;
         mHWData->mKeyboardHIDType = data.keyboardHIDType;
         mHWData->mChipsetType = data.chipsetType;
+        mHWData->mParavirtProvider = data.paravirtProvider;
         mHWData->mEmulatedUSBCardReaderEnabled = data.fEmulatedUSBCardReader;
         mHWData->mHPETEnabled = data.fHPETEnabled;
 
@@ -10635,6 +10670,9 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
 
         // chipset
         data.chipsetType = mHWData->mChipsetType;
+
+        // paravirt
+        data.paravirtProvider = mHWData->mParavirtProvider;
 
         data.fEmulatedUSBCardReader = !!mHWData->mEmulatedUSBCardReaderEnabled;
 

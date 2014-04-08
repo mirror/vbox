@@ -871,6 +871,9 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     uint64_t uMcfgBase     = 0;
     uint32_t cbMcfgLength  = 0;
 
+    ParavirtProvider_T paravirtProvider;
+    hrc = pMachine->COMGETTER(ParavirtProvider)(&paravirtProvider);                         H();
+
     ChipsetType_T chipsetType;
     hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                   H();
     if (chipsetType == ChipsetType_ICH9)
@@ -1180,7 +1183,45 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         if (isResetTurnedIntoPowerOff())
             InsertConfigInteger(pRoot, "PowerOffInsteadOfReset", 1);
 
+        /*
+         * Paravirt. provider.
+         */
+        PCFGMNODE pParavirtNode;
+        InsertConfigNode(pRoot, "GIM", &pParavirtNode);
+        const char *pcszParavirtProvider;
+        switch (paravirtProvider)
+        {
+            case ParavirtProvider_None:
+                pcszParavirtProvider = "None";
+                break;
 
+            case ParavirtProvider_Default:  /** @todo Choose a provider based on guest OS type. There is no "Default" provider. */
+                pcszParavirtProvider = "None";
+                break;
+
+            case ParavirtProvider_Legacy:
+            {
+                if (fOsXGuest)
+                    pcszParavirtProvider = "Minimal";
+                else
+                    pcszParavirtProvider = "None";
+                break;
+            }
+
+            case ParavirtProvider_Minimal:
+                pcszParavirtProvider = "Minimal";
+                break;
+
+            case ParavirtProvider_HyperV:
+                pcszParavirtProvider = "HyperV";
+                break;
+
+            default:
+                AssertMsgFailed(("Invalid paravirtProvider=%d\n", paravirtProvider));
+                return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Invalid paravirt. provider '%d'"),
+                                    paravirtProvider);
+        }
+        InsertConfigString(pParavirtNode, "Provider", pcszParavirtProvider);
 
         /*
          * MM values.
