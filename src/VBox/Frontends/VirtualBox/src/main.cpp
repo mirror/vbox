@@ -414,7 +414,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
 #ifdef Q_WS_MAC
 # ifndef VBOX_OSE
-        /* Enable HiDPI icons. */
+        /* Enable HiDPI icons. For this we require a patched version of Qt 4.x with
+         * the changes from https://codereview.qt-project.org/#change,54636 applied. */
         qApp->setAttribute(Qt::AA_UseHighDpiPixmaps);
 # endif /* !VBOX_OSE */
 #endif /* Q_WS_MAC */
