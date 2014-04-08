@@ -1387,14 +1387,15 @@ void UIMediumManager::refetchCurrentMediumItem(UIMediumType type)
     /* Get corresponding medium-item: */
     UIMediumItem *pMediumItem = mediumItem(type);
 
-    /* If medium-item set: */
+#ifdef Q_WS_MAC
+    /* Set the file for the proxy icon: */
+    if (pMediumItem == currentMediumItem())
+        setWindowFilePath(pMediumItem ? pMediumItem->location() : QString());
+#endif /* Q_WS_MAC */
+
+    /* Make sure current medium-item visible: */
     if (pMediumItem)
-    {
-        /* Set the file for the proxy icon: */
-        setFileForProxyIcon(pMediumItem->location());
-        /* Make sure current medium-item visible: */
         treeWidget(type)->scrollToItem(pMediumItem, QAbstractItemView::EnsureVisible);
-    }
 
     /* Update actions: */
     updateActions();
