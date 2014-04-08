@@ -449,9 +449,9 @@ static void ps2mSetDefaults(PPS2M pThis)
     /* Sample rate 100 reports per second. */
     ps2mSetRate(pThis, 100);
 
-    /* Accumulators and button status bits are cleared. */
+    /* Event queue, eccumulators, and button status bits are cleared. */
     ps2kClearQueue((GeneriQ *)&pThis->evtQ);
-    //@todo accumulators/current state
+    pThis->iAccumX = pThis->iAccumY = pThis->iAccumZ = pThis->fAccumB = 0;
 }
 
 /* Handle the sampling rate 'knock' sequence which selects protocol. */
@@ -506,11 +506,13 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
 //LogRel(("aux: cmd=0x%02X, active cmd=0x%02X\n", cmd, pThis->u8CurrCmd));
 
     if (pThis->enmMode == AUX_MODE_RESET)
-    {
         /* In reset mode, do not respond at all. */
         return VINF_SUCCESS;
-    }
-    else if (pThis->enmMode == AUX_MODE_WRAP)
+
+    /* If there's anything left in the command response queue, trash it. */
+    ps2kClearQueue((GeneriQ *)&pThis->cmdQ);
+
+    if (pThis->enmMode == AUX_MODE_WRAP)
     {
         /* In wrap mode, bounce most data right back.*/
         if (cmd == ACMD_RESET || cmd == ACMD_RESET_WRAP)
@@ -858,7 +860,7 @@ static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
     pThis->fAccumB |= fButtons & PS2M_STD_BTN_MASK; //@todo: accumulate based on current protocol?
 
 #if 1
-    /* Report the event and the throttle timer unless it's already running. */
+    /* Report the event and start the throttle timer unless it's already running. */
     if (!pThis->fThrottleActive)
     {
         ps2mReportAccumulatedEvents(pThis);
