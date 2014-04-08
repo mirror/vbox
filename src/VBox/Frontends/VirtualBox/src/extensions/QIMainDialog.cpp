@@ -86,16 +86,6 @@ QDialog::DialogCode QIMainDialog::result() const
     return mRescode;
 }
 
-void QIMainDialog::setFileForProxyIcon (const QString& aFile)
-{
-    mFileForProxyIcon = aFile;
-}
-
-QString QIMainDialog::fileForProxyIcon() const
-{
-    return mFileForProxyIcon;
-}
-
 void QIMainDialog::setSizeGripEnabled (bool aEnabled)
 {
     if (!mSizeGrip && aEnabled)
@@ -141,65 +131,6 @@ bool QIMainDialog::event (QEvent *aEvent)
 {
      switch (aEvent->type())
      {
-#ifdef Q_WS_MAC
-          case QEvent::IconDrag:
-          {
-              Qt::KeyboardModifiers currentModifiers = qApp->keyboardModifiers();
-
-              if (currentModifiers == Qt::NoModifier)
-              {
-                  if (!mFileForProxyIcon.isEmpty())
-                  {
-                      aEvent->accept();
-                      /* Create a drag object we can use */
-                      QDrag *drag = new QDrag (this);
-                      QMimeData *data = new QMimeData();
-                      /* Set the appropriate url data */
-                      data->setUrls (QList<QUrl>() << QUrl::fromLocalFile (mFileForProxyIcon));
-                      drag->setMimeData (data);
-                      /* Make a nice looking DnD icon */
-                      QFileInfo fi (mFileForProxyIcon);
-                      QPixmap cursorPixmap (::darwinCreateDragPixmap (QPixmap (windowIcon().pixmap (16, 16)), fi.fileName()));
-                      drag->setPixmap (cursorPixmap);
-                      drag->setHotSpot (QPoint (5, cursorPixmap.height() - 5));
-                      /* Start the DnD action */
-                      drag->start (Qt::LinkAction | Qt::CopyAction);
-                      return true;
-                  }
-              }
-              else if (currentModifiers == Qt::ControlModifier)
-              {
-                  if (!mFileForProxyIcon.isEmpty())
-                  {
-                      aEvent->accept();
-                      /* Create the proxy icon menu */
-                      QMenu menu (this);
-                      connect (&menu, SIGNAL (triggered (QAction*)),
-                               this, SLOT (openAction (QAction*)));
-                      /* Add the file with the disk icon to the menu */
-                      QFileInfo fi (mFileForProxyIcon);
-                      QAction *action = menu.addAction (fi.fileName());
-                      action->setIcon (windowIcon());
-                      /* Create some nice looking menu out of the other
-                       * directory parts. */
-                      QDir dir (fi.absolutePath());
-                      do
-                      {
-                          if (dir.isRoot())
-                              action = menu.addAction ("/");
-                          else
-                              action = menu.addAction (dir.dirName());
-                          action->setIcon (vboxGlobal().icon(QFileInfo (dir, "")));
-                      }
-                      while (dir.cdUp());
-                      /* Show the menu */
-                      menu.exec (QPoint (QCursor::pos().x() - 20, frameGeometry().y() - 5));
-                      return true;
-                  }
-              }
-              break;
-          }
-#endif /* Q_WS_MAC */
           case QEvent::Polish:
           {
               /* Initially search for the default button. */
@@ -381,25 +312,5 @@ void QIMainDialog::done (QDialog::DialogCode aResult)
 void QIMainDialog::setResult (QDialog::DialogCode aRescode)
 {
     mRescode = aRescode;
-}
-
-void QIMainDialog::openAction (QAction *aAction)
-{
-#ifdef Q_WS_MAC
-    if (!mFileForProxyIcon.isEmpty())
-    {
-        QString path = mFileForProxyIcon.left (mFileForProxyIcon.indexOf (aAction->text())) + aAction->text();
-        /* Check for the first item */
-        if (mFileForProxyIcon != path)
-        {
-            /* @todo: vboxGlobal().openURL (path); should be able to open paths */
-            QProcess process;
-            process.start ("/usr/bin/open", QStringList() << path, QIODevice::ReadOnly);
-            process.waitForFinished();
-        }
-    }
-#else /* Q_WS_MAC */
-    NOREF (aAction);
-#endif /* Q_WS_MAC */
 }
 

@@ -38,9 +38,6 @@ public:
     QDialog::DialogCode exec();
     QDialog::DialogCode result() const;
 
-    void setFileForProxyIcon (const QString &aFile);
-    QString fileForProxyIcon () const;
-
     void setSizeGripEnabled (bool aEnabled);
     bool isSizeGripEnabled () const;
 
@@ -73,15 +70,11 @@ protected slots:
     void done (QDialog::DialogCode aRescode);
     void setResult (QDialog::DialogCode aRescode);
 
-    void openAction (QAction *aAction);
-
 private:
 
     /* Private member vars */
     QDialog::DialogCode mRescode;
     QPointer<QEventLoop> mEventLoop;
-
-    QString mFileForProxyIcon;
 
     QPointer<QSizeGrip> mSizeGrip;
     QPointer<QPushButton> mDefaultButton;
