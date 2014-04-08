@@ -129,6 +129,9 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_pMenuPool(0)
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(session().GetMachine().GetState())
+#ifndef Q_WS_MAC
+    , m_pMachineWindowIcon(0)
+#endif /* !Q_WS_MAC */
     , m_fIsExtensionPackUsable(false)
     , m_requestedVisualStateType(UIVisualStateType_Invalid)
 #ifdef Q_WS_WIN
@@ -1116,6 +1119,16 @@ void UISession::loadSessionSettings()
         /* Temporary: */
         QString strSettings;
 
+#ifndef Q_WS_MAC
+        /* Load/prepare user's machine-window icon: */
+        QIcon icon;
+        foreach (const QString &strIconName, VBoxGlobal::machineWindowIconNames(machine))
+            if (!strIconName.isEmpty())
+                icon.addFile(strIconName);
+        if (!icon.isNull())
+            m_pMachineWindowIcon = new QIcon(icon);
+#endif /* !Q_WS_MAC */
+
         /* Is there should be First RUN Wizard? */
         strSettings = machine.GetExtraData(GUI_FirstRun);
         if (strSettings == "yes")
@@ -1178,6 +1191,12 @@ void UISession::saveSessionSettings()
         SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, true, 0, 0);
 # endif /* Q_WS_WIN */
 #endif
+
+#ifndef Q_WS_MAC
+        /* Cleanup user's machine-window icon: */
+        delete m_pMachineWindowIcon;
+        m_pMachineWindowIcon = 0;
+#endif /* !Q_WS_MAC */
     }
 }
 

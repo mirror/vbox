@@ -4083,6 +4083,15 @@ QList<MachineSettingsPageType> VBoxGlobal::restrictedMachineSettingsPages(CMachi
     return result;
 }
 
+#ifndef Q_WS_MAC
+/* static */
+QStringList VBoxGlobal::machineWindowIconNames(CMachine &machine)
+{
+    /* Return result: */
+    return machine.GetExtraDataStringList(GUI_MachineWindowIcons);
+}
+#endif /* !Q_WS_MAC */
+
 #ifdef RT_OS_LINUX
 /* static */
 void VBoxGlobal::checkForWrongUSBMounted()

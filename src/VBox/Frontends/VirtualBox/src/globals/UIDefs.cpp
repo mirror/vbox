@@ -50,6 +50,9 @@ const char* UIDefs::GUI_PreventSnapshotOperations = "GUI/PreventSnapshotOperatio
 const char* UIDefs::GUI_HideDetails = "GUI/HideDetails";
 
 /* Machine-window definitions: */
+#ifndef Q_WS_MAC
+const char* UIDefs::GUI_MachineWindowIcons = "GUI/MachineWindowIcons";
+#endif /* !Q_WS_MAC */
 const char* UIDefs::GUI_RestrictedRuntimeMenus = "GUI/RestrictedRuntimeMenus";
 #ifdef Q_WS_MAC
 const char* UIDefs::GUI_RestrictedRuntimeApplicationMenuActions = "GUI/RestrictedRuntimeApplicationMenuActions";
