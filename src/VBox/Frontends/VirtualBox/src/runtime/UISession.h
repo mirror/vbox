@@ -40,6 +40,9 @@ class CSession;
 class CUSBDevice;
 class CNetworkAdapter;
 class CMediumAttachment;
+#ifndef Q_WS_MAC
+class QIcon;
+#endif /* !Q_WS_MAC */
 
 /* CConsole callback event types: */
 enum UIConsoleEventType
@@ -92,6 +95,14 @@ public:
     QMenu* newMenu(RuntimeMenuType fOptions = RuntimeMenuType_All);
     QMenuBar* newMenuBar(RuntimeMenuType fOptions = RuntimeMenuType_All);
     QCursor cursor() const { return m_cursor; }
+
+#ifndef Q_WS_MAC
+    /** @name Branding stuff.
+     ** @{ */
+    /** Returns redefined machine-window icon. */
+    QIcon* machineWindowIcon() const { return m_pMachineWindowIcon; }
+    /** @} */
+#endif /* !Q_WS_MAC */
 
     /** @name Extension Pack stuff.
      ** @{ */
@@ -328,6 +339,14 @@ private:
     KMachineState m_machineStatePrevious;
     KMachineState m_machineState;
     QCursor m_cursor;
+
+#ifndef Q_WS_MAC
+    /** @name Branding variables.
+     ** @{ */
+    /** Holds redefined machine-window icon. */
+    QIcon *m_pMachineWindowIcon;
+    /** @} */
+#endif /* !Q_WS_MAC */
 
     /** @name Extension Pack variables.
      ** @{ */

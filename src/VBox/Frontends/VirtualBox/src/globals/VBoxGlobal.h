@@ -396,6 +396,10 @@ public:
     static MachineCloseAction restrictedMachineCloseActions(CMachine &machine);
     static QList<GlobalSettingsPageType> restrictedGlobalSettingsPages(CVirtualBox &vbox);
     static QList<MachineSettingsPageType> restrictedMachineSettingsPages(CMachine &machine);
+#ifndef Q_WS_MAC
+    /** Loads redefined machine-window icon names. */
+    static QStringList machineWindowIconNames(CMachine &machine);
+#endif /* !Q_WS_MAC */
 
 #ifdef RT_OS_LINUX
     static void checkForWrongUSBMounted();

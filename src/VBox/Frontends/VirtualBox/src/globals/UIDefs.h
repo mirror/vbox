@@ -119,6 +119,9 @@ namespace UIDefs
     extern const char* GUI_HideDetails;
 
     /* Machine-window declarations: */
+#ifndef Q_WS_MAC
+    extern const char* GUI_MachineWindowIcons;
+#endif /* !Q_WS_MAC */
     extern const char* GUI_RestrictedRuntimeMenus;
 #ifdef Q_WS_MAC
     extern const char* GUI_RestrictedRuntimeApplicationMenuActions;
