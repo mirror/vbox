@@ -429,6 +429,12 @@ memory_cleared:
 		mov	bx, 3Eh
 		mov	ds:[482h], bx	; keyboard buffer end
 
+		;; store CMOS equipment byte in BDA
+		mov	al, 14h
+		out	CMOS_ADDR, al
+		in	al, CMOS_DATA
+		mov	ds:[410h], al
+
 		push	ds
 		C_SETUP
 
@@ -441,13 +447,6 @@ memory_cleared:
 		;; Initialize the keyboard
 		call	_keyboard_init
 		pop	ds
-
-
-		;; store CMOS equipment byte in BDA
-		mov	al, 14h
-		out	CMOS_ADDR, al
-		in	al, CMOS_DATA
-		mov	ds:[410h], al
 
 		;; parallel setup
 		SET_INT_VECTOR 0Fh, BIOSSEG, dummy_iret
