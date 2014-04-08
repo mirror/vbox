@@ -2037,7 +2037,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
     }
     if (RT_UNLIKELY(!RT_VALID_PTR(pSession)))
     {
-        OSDBGPRINT(("vboxdrv: Invalid pSession valud %p (ioctl=%p)\n", pSession, (void *)uIOCtl));
+        OSDBGPRINT(("vboxdrv: Invalid pSession value %p (ioctl=%p)\n", pSession, (void *)uIOCtl));
         VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VINF_SUCCESS);
         return VERR_INVALID_PARAMETER;
     }
