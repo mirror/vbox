@@ -5398,11 +5398,23 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 #ifdef VBOX_WITH_HGSMI
     SSMR3PutBool(pSSM, true);
     int rc = vboxVBVASaveStateExec(pDevIns, pSSM);
-# ifdef VBOX_WITH_VDMA
-    vboxVDMASaveStateExecDone(pThis->pVdma, pSSM);
-# endif
 #else
     int rc = SSMR3PutBool(pSSM, false);
+#endif
+
+    AssertRCReturn(rc, rc);
+
+#ifdef VBOX_WITH_VDMA
+    rc = SSMR3PutU32(pSSM, 1);
+    AssertRCReturn(rc, rc);
+    rc = vboxVDMASaveStateExecPerform(pThis->pVdma, pSSM);
+#else
+    rc = SSMR3PutU32(pSSM, 0);
+#endif
+    AssertRCReturn(rc, rc);
+
+#ifdef VBOX_WITH_VDMA
+    vboxVDMASaveStateExecDone(pThis->pVdma, pSSM);
 #endif
 
 #ifdef VBOX_WITH_VMSVGA
@@ -5462,6 +5474,28 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("HGSMI is not compiled in, but it is present in the saved state"));
 #endif
         }
+
+        if (uVersion >= VGA_SAVEDSTATE_VERSION_3D)
+        {
+            uint32_t u32;
+            rc = SSMR3GetU32(pSSM, &u32);
+            if (u32)
+            {
+#ifdef VBOX_WITH_VDMA
+                if (u32 == 1)
+                {
+                    rc = vboxVDMASaveLoadExecPerform(pThis->pVdma, pSSM, uVersion);
+                    AssertRCReturn(rc, rc);
+                }
+                else
+#endif
+                {
+                    LogRel(("invalid CmdVbva version info\n"));
+                    return VERR_VERSION_MISMATCH;
+                }
+            }
+        }
+
 #ifdef VBOX_WITH_VMSVGA
         if (    uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_2D
             &&  pThis->fVMSVGAEnabled)

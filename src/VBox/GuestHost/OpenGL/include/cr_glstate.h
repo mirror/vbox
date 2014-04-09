@@ -213,6 +213,7 @@ DECLEXPORT(CRContext *) crStateCreateContext(const CRLimitsState *limits, GLint 
 DECLEXPORT(CRContext *) crStateCreateContextEx(const CRLimitsState *limits, GLint visBits, CRContext *share, GLint presetID);
 DECLEXPORT(void) crStateMakeCurrent(CRContext *ctx);
 DECLEXPORT(void) crStateSetCurrent(CRContext *ctx);
+DECLEXPORT(void) crStateCleanupCurrent();
 DECLEXPORT(CRContext *) crStateGetCurrent(void);
 DECLEXPORT(void) crStateDestroyContext(CRContext *ctx);
 DECLEXPORT(GLboolean) crStateEnableDiffOnMakeCurrent(GLboolean fEnable);
