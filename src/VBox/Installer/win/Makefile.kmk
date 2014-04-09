@@ -458,12 +458,15 @@ endif
 define def_vbox_compile_wixobj
 $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 			$(PATH_SUB_CURRENT)/VirtualBox.wxs \
+			$(PATH_SUB_CURRENT)/UserInterface.wxi \
 			$(if $(VBOX_WITH_MSM_INSTALL), \
 				$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
 					$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm), \
+				$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi \
+				$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \
+				$(if $(VBOX_WITH_32_ON_64_MAIN_API),$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi,) \
 				$(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi \
-				$(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi \
-				$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi) \
+				$(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi) \
 			$(VBOX_VERSION_STAMP) \
 			| $$$$(dir $$$$@)
 	$(QUIET)$(RM) -f $@

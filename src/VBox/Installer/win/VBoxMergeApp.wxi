@@ -64,7 +64,7 @@
                   DiskId="$(var.Property_DiskIdCommon)">
             </File>
             <?include $(env.PATH_TARGET)\VirtualBox_TypeLib_x86.wxi ?>
-<?if $(env.VBOX_VCC_TOOL_STEM) = "VCC100" ?>
+    <?if $(env.VBOX_VCC_TOOL_STEM) = "VCC100" ?>
             <!-- MS C/C++ v10.0 32 bit Runtime DLL files. -->
             <File Id="file_msvcr100.dll_x86" Name="msvcr100.dll"
                   Source="$(env.PATH_OUT)\bin\x86\msvcr100.dll"
@@ -72,8 +72,8 @@
             <File Id="file_msvcp100.dll_x86" Name="msvcp100.dll"
                   Source="$(env.PATH_OUT)\bin\x86\msvcp100.dll"
                   DiskId="$(var.Property_DiskIdCommon)" />
-<?endif?>
-<?if $(env.VBOX_VCC_TOOL_STEM) = "VCC110" ?>
+    <?endif?>
+    <?if $(env.VBOX_VCC_TOOL_STEM) = "VCC110" ?>
             <!-- MS C/C++ v11.0 Runtime DLL files. -->
             <File Id="file_msvcr110.dll_x86" Name="msvcr110.dll"
                   Source="$(env.PATH_OUT)\bin\x86\msvcr110.dll"
@@ -81,7 +81,7 @@
             <File Id="file_msvcp110.dll_x86" Name="msvcp110.dll"
                   Source="$(env.PATH_OUT)\bin\x86\msvcp110.dll"
                   DiskId="$(var.Property_DiskIdCommon)" />
-<?endif?>
+    <?endif?>
         </Component>
     </Directory>
 <?endif?>
