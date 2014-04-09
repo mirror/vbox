@@ -5821,145 +5821,145 @@ DxgkDdiRenderNew(
 
     __try
     {
-    PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pInputHdr = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)pRender->pCommand;
-    NTSTATUS Status = STATUS_SUCCESS;
+        PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pInputHdr = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)pRender->pCommand;
+        NTSTATUS Status = STATUS_SUCCESS;
 
-    uint32_t cbBuffer = 0;
-    uint32_t cbPrivateData = 0;
-    VBOXCMDVBVA_HDR* pCmd = (VBOXCMDVBVA_HDR*)pRender->pDmaBufferPrivateData;
+        uint32_t cbBuffer = 0;
+        uint32_t cbPrivateData = 0;
+        VBOXCMDVBVA_HDR* pCmd = (VBOXCMDVBVA_HDR*)pRender->pDmaBufferPrivateData;
 
-    switch (pInputHdr->enmCmd)
-    {
-        case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
+        switch (pInputHdr->enmCmd)
         {
-            if (pRender->AllocationListSize >= (UINT32_MAX - RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos))/ RT_SIZEOFMEMB(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos[0]))
+            case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
             {
-                WARN(("Invalid AllocationListSize %d", pRender->AllocationListSize));
-                return STATUS_INVALID_PARAMETER;
-            }
-
-            if (pRender->CommandLength != RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos[pRender->AllocationListSize]))
-            {
-                WARN(("pRender->CommandLength (%d) != RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos[pRender->AllocationListSize](%d)",
-                        pRender->CommandLength, RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos[pRender->AllocationListSize])));
-                return STATUS_INVALID_PARAMETER;
-            }
-
-            if (pRender->AllocationListSize >= (UINT32_MAX - RT_OFFSETOF(VBOXCMDVBVA_CRCMD, Cmd.aBuffers))/ RT_SIZEOFMEMB(VBOXCMDVBVA_CRCMD, Cmd.aBuffers[0]))
-            {
-                WARN(("Invalid AllocationListSize %d", pRender->AllocationListSize));
-                return STATUS_INVALID_PARAMETER;
-            }
-
-            cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
-            cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_CRCMD, Cmd.aBuffers[pRender->AllocationListSize]);
-
-            if (pRender->DmaBufferPrivateDataSize < cbPrivateData)
-            {
-                WARN(("pRender->DmaBufferPrivateDataSize too small %d, requested %d", pRender->DmaBufferPrivateDataSize, cbPrivateData));
-                return STATUS_INVALID_PARAMETER;
-            }
-
-            if (pRender->DmaSize < cbBuffer)
-            {
-                WARN(("dma buffer %d too small", pRender->DmaSize));
-                return STATUS_INVALID_PARAMETER;
-            }
-
-//            Assert(pRender->PatchLocationListOutSize == pRender->AllocationListSize);
-
-            if (pRender->PatchLocationListOutSize < pRender->AllocationListSize)
-            {
-                WARN(("pRender->PatchLocationListOutSize too small %d, requested %d", pRender->PatchLocationListOutSize, pRender->AllocationListSize));
-                return STATUS_INVALID_PARAMETER;
-            }
-
-            PVBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD pUmCmd = (PVBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD)pInputHdr;
-            VBOXCMDVBVA_CRCMD* pChromiumCmd = (VBOXCMDVBVA_CRCMD*)pRender->pDmaBufferPrivateData;
-
-            PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
-            PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
-            PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
-
-            pChromiumCmd->Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_CRCMD;
-            pChromiumCmd->Hdr.u8Flags = 0;
-            pChromiumCmd->Cmd.cBuffers = pRender->AllocationListSize;
-
-            DXGK_ALLOCATIONLIST *pAllocationList = pRender->pAllocationList;
-            VBOXCMDVBVA_CRCMD_BUFFER *pSubmInfo = pChromiumCmd->Cmd.aBuffers;
-            PVBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO pSubmUmInfo = pUmCmd->aBufInfos;
-
-            for (UINT i = 0; i < pRender->AllocationListSize; ++i, ++pRender->pPatchLocationListOut, ++pAllocationList, ++pSubmInfo, ++pSubmUmInfo)
-            {
-                VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO SubmUmInfo = *pSubmUmInfo;
-                D3DDDI_PATCHLOCATIONLIST* pPLL = pRender->pPatchLocationListOut;
-                PVBOXWDDM_ALLOCATION pAlloc = vboxWddmGetAllocationFromAllocList(pDevExt, pAllocationList);
-                if (SubmUmInfo.offData >= pAlloc->AllocData.SurfDesc.cbSize
-                        || SubmUmInfo.cbData > pAlloc->AllocData.SurfDesc.cbSize
-                        || SubmUmInfo.offData + SubmUmInfo.cbData > pAlloc->AllocData.SurfDesc.cbSize)
+                if (pRender->AllocationListSize >= (UINT32_MAX - RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos))/ RT_SIZEOFMEMB(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos[0]))
                 {
-                    WARN(("invalid data"));
+                    WARN(("Invalid AllocationListSize %d", pRender->AllocationListSize));
                     return STATUS_INVALID_PARAMETER;
                 }
 
-                memset(pPLL, 0, sizeof (*pPLL));
+                if (pRender->CommandLength != RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos[pRender->AllocationListSize]))
+                {
+                    WARN(("pRender->CommandLength (%d) != RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos[pRender->AllocationListSize](%d)",
+                            pRender->CommandLength, RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos[pRender->AllocationListSize])));
+                    return STATUS_INVALID_PARAMETER;
+                }
 
-                if (pAllocationList->SegmentId)
-                    pSubmInfo->offBuffer = pAllocationList->PhysicalAddress.LowPart + SubmUmInfo.offData;
+                if (pRender->AllocationListSize >= (UINT32_MAX - RT_OFFSETOF(VBOXCMDVBVA_CRCMD, Cmd.aBuffers))/ RT_SIZEOFMEMB(VBOXCMDVBVA_CRCMD, Cmd.aBuffers[0]))
+                {
+                    WARN(("Invalid AllocationListSize %d", pRender->AllocationListSize));
+                    return STATUS_INVALID_PARAMETER;
+                }
 
-                pSubmInfo->cbBuffer = SubmUmInfo.cbData;
+                cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+                cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_CRCMD, Cmd.aBuffers[pRender->AllocationListSize]);
 
-                pPLL->AllocationIndex = i;
-                pPLL->PatchOffset = RT_OFFSETOF(VBOXCMDVBVA_CRCMD, Cmd.aBuffers[i].offBuffer);
-                pPLL->AllocationOffset = SubmUmInfo.offData;
+                if (pRender->DmaBufferPrivateDataSize < cbPrivateData)
+                {
+                    WARN(("pRender->DmaBufferPrivateDataSize too small %d, requested %d", pRender->DmaBufferPrivateDataSize, cbPrivateData));
+                    return STATUS_INVALID_PARAMETER;
+                }
+
+                if (pRender->DmaSize < cbBuffer)
+                {
+                    WARN(("dma buffer %d too small", pRender->DmaSize));
+                    return STATUS_INVALID_PARAMETER;
+                }
+
+    //            Assert(pRender->PatchLocationListOutSize == pRender->AllocationListSize);
+
+                if (pRender->PatchLocationListOutSize < pRender->AllocationListSize)
+                {
+                    WARN(("pRender->PatchLocationListOutSize too small %d, requested %d", pRender->PatchLocationListOutSize, pRender->AllocationListSize));
+                    return STATUS_INVALID_PARAMETER;
+                }
+
+                PVBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD pUmCmd = (PVBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD)pInputHdr;
+                VBOXCMDVBVA_CRCMD* pChromiumCmd = (VBOXCMDVBVA_CRCMD*)pRender->pDmaBufferPrivateData;
+
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
+                PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
+                PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
+
+                pChromiumCmd->Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_CRCMD;
+                pChromiumCmd->Hdr.u8Flags = 0;
+                pChromiumCmd->Cmd.cBuffers = pRender->AllocationListSize;
+
+                DXGK_ALLOCATIONLIST *pAllocationList = pRender->pAllocationList;
+                VBOXCMDVBVA_CRCMD_BUFFER *pSubmInfo = pChromiumCmd->Cmd.aBuffers;
+                PVBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO pSubmUmInfo = pUmCmd->aBufInfos;
+
+                for (UINT i = 0; i < pRender->AllocationListSize; ++i, ++pRender->pPatchLocationListOut, ++pAllocationList, ++pSubmInfo, ++pSubmUmInfo)
+                {
+                    VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO SubmUmInfo = *pSubmUmInfo;
+                    D3DDDI_PATCHLOCATIONLIST* pPLL = pRender->pPatchLocationListOut;
+                    PVBOXWDDM_ALLOCATION pAlloc = vboxWddmGetAllocationFromAllocList(pDevExt, pAllocationList);
+                    if (SubmUmInfo.offData >= pAlloc->AllocData.SurfDesc.cbSize
+                            || SubmUmInfo.cbData > pAlloc->AllocData.SurfDesc.cbSize
+                            || SubmUmInfo.offData + SubmUmInfo.cbData > pAlloc->AllocData.SurfDesc.cbSize)
+                    {
+                        WARN(("invalid data"));
+                        return STATUS_INVALID_PARAMETER;
+                    }
+
+                    memset(pPLL, 0, sizeof (*pPLL));
+
+                    if (pAllocationList->SegmentId)
+                        pSubmInfo->offBuffer = pAllocationList->PhysicalAddress.LowPart + SubmUmInfo.offData;
+
+                    pSubmInfo->cbBuffer = SubmUmInfo.cbData;
+
+                    pPLL->AllocationIndex = i;
+                    pPLL->PatchOffset = RT_OFFSETOF(VBOXCMDVBVA_CRCMD, Cmd.aBuffers[i].offBuffer);
+                    pPLL->AllocationOffset = SubmUmInfo.offData;
+                }
+
+                break;
             }
+            case VBOXVDMACMD_TYPE_DMA_NOP:
+            {
+                cbPrivateData = sizeof (VBOXCMDVBVA_HDR);
+                cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
 
-            break;
+                if (pRender->DmaBufferPrivateDataSize < cbPrivateData)
+                {
+                    WARN(("pRender->DmaBufferPrivateDataSize too small %d, requested %d", pRender->DmaBufferPrivateDataSize, cbPrivateData));
+                    return STATUS_INVALID_PARAMETER;
+                }
+
+                if (pRender->DmaSize < cbBuffer)
+                {
+                    WARN(("dma buffer %d too small", pRender->DmaSize));
+                    return STATUS_INVALID_PARAMETER;
+                }
+
+                pCmd->u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
+                pCmd->u8Flags = 0;
+
+                for (UINT i = 0; i < pRender->AllocationListSize; ++i, ++pRender->pPatchLocationListOut)
+                {
+                    D3DDDI_PATCHLOCATIONLIST* pPLL = pRender->pPatchLocationListOut;
+                    memset(pPLL, 0, sizeof (*pPLL));
+                    pPLL->AllocationIndex = i;
+                    pPLL->PatchOffset = ~0UL;
+                    pPLL->AllocationOffset = 0;
+                }
+
+                break;
+            }
+            default:
+             {
+                 WARN(("unsupported render command %d", pInputHdr->enmCmd));
+                 return STATUS_INVALID_PARAMETER;
+             }
         }
-        case VBOXVDMACMD_TYPE_DMA_NOP:
-        {
-            cbPrivateData = sizeof (VBOXCMDVBVA_HDR);
-            cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
 
-            if (pRender->DmaBufferPrivateDataSize < cbPrivateData)
-            {
-                WARN(("pRender->DmaBufferPrivateDataSize too small %d, requested %d", pRender->DmaBufferPrivateDataSize, cbPrivateData));
-                return STATUS_INVALID_PARAMETER;
-            }
+        pRender->pDmaBufferPrivateData = ((uint8_t*)pRender->pDmaBufferPrivateData) + cbPrivateData;
+        pRender->pDmaBuffer = ((uint8_t*)pRender->pDmaBuffer) + cbBuffer;
 
-            if (pRender->DmaSize < cbBuffer)
-            {
-                WARN(("dma buffer %d too small", pRender->DmaSize));
-                return STATUS_INVALID_PARAMETER;
-            }
-
-            pCmd->u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
-            pCmd->u8Flags = 0;
-
-            for (UINT i = 0; i < pRender->AllocationListSize; ++i, ++pRender->pPatchLocationListOut)
-            {
-                D3DDDI_PATCHLOCATIONLIST* pPLL = pRender->pPatchLocationListOut;
-                memset(pPLL, 0, sizeof (*pPLL));
-                pPLL->AllocationIndex = i;
-                pPLL->PatchOffset = ~0UL;
-                pPLL->AllocationOffset = 0;
-            }
-
-            break;
-        }
-        default:
-         {
-             WARN(("unsupported render command %d", pInputHdr->enmCmd));
-             return STATUS_INVALID_PARAMETER;
-         }
-    }
-
-    pRender->pDmaBufferPrivateData = ((uint8_t*)pRender->pDmaBufferPrivateData) + cbPrivateData;
-    pRender->pDmaBuffer = ((uint8_t*)pRender->pDmaBuffer) + cbBuffer;
-
-    pCmd->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-    /* sanity */
-    pCmd->u32FenceID = 0;
+        pCmd->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+        /* sanity */
+        pCmd->u32FenceID = 0;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
