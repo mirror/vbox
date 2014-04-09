@@ -907,7 +907,7 @@ int VBoxVDMAThreadTerm(PVBOXVDMATHREAD pThread, PFNVBOXVDMATHREAD_CHANGED pfnTer
         switch (u32State)
         {
             case VBOXVDMATHREAD_STATE_CREATED:
-                pThread->pvChanged = pfnTerminated;
+                pThread->pfnChanged = pfnTerminated;
                 pThread->pvChanged = pvTerminated;
                 ASMAtomicWriteU32(&pThread->u32State, VBOXVDMATHREAD_STATE_TERMINATING);
                 if (fNotify)
