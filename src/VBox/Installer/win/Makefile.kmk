@@ -365,9 +365,10 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm: \
 	$(call VBOX_SIGN_FILE_FN,$$@,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)))
 endef
 
-$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
-	$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
-		$(eval $(def_vbox_link_msm))))
+$(if $(VBOX_WITH_MSM_INSTALL), \
+	$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
+		$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
+			$(eval $(def_vbox_link_msm)))),)
 
 #
 # Load and adjust the MSI compile step dependencies.
@@ -457,8 +458,12 @@ endif
 define def_vbox_compile_wixobj
 $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 			$(PATH_SUB_CURRENT)/VirtualBox.wxs \
-			$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
-				$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm) \
+			$(if $(VBOX_WITH_MSM_INSTALL), \
+				$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
+					$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm), \
+				$(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi \
+				$(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi \
+				$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi) \
 			$(VBOX_VERSION_STAMP) \
 			| $$$$(dir $$$$@)
 	$(QUIET)$(RM) -f $@
@@ -484,8 +489,9 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 		-E 'VBOX_VERSION_MINOR_INST=$(VBOX_VERSION_MINOR)' \
 		-E 'VBOX_SIGNING_MODE=$(strip $(if $(VBOX_SIGNING_MODE),$(VBOX_SIGNING_MODE),none))' \
 		-E 'VBOX_GUI_USE_QGL=$(if $(VBOX_GUI_USE_QGL),yes,no)' \
-		$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
-			-E 'VBOX_WIN_INST_MERGE_$(toupper $(module))=$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm') \
+		$(if $(VBOX_WITH_MSM_INSTALL), \
+			$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
+				-E 'VBOX_WIN_INST_MERGE_$(toupper $(module))=$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm'),) \
 		-E 'VBOX_WITH_32_ON_64_MAIN_API=$(if $(VBOX_WITH_32_ON_64_MAIN_API),yes,no)' \
 		-E 'VBOX_WITH_ADDITIONS_PACKING=$(if $(VBOX_WITH_ADDITIONS_PACKING),yes,no)' \
 		-E 'VBOX_WITH_COMBINED_PACKAGE=$(if $(VBOX_WITH_COMBINED_PACKAGE),yes,no)' \
@@ -504,6 +510,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 		-E 'VBOX_WITH_VRDP=$(if-expr defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL),yes,no)' \
 		-E 'VBOX_WITH_WEBSERVICES=$(if $(VBOX_WITH_WEBSERVICES),yes,no)' \
 		-E 'VBOX_WITH_SECURELABEL=$(if $(VBOX_WITH_SECURELABEL),yes,no)' \
+		-E 'VBOX_WITH_MSM_INSTALL=$(if $(VBOX_WITH_MSM_INSTALL),yes,no)' \
 		-E 'VBOX_WITH_SERIALNUMBER_INSTALL=$(if $(VBOX_WITH_SERIALNUMBER_INSTALL),yes,no)' \
 		-E 'VBOX_WITH_LICENSE_DISPLAY=$(if $(VBOX_WITH_LICENSE_DISPLAY),yes,no)' \
 		-E 'VBOX_WINDOWS_ICON_FILE=$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))' \
@@ -633,7 +640,6 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi: \
 	$(VBOX_XSLTPROC) --stringparam "a_sTarget" "VBoxClient-x86"  -o $@.tmp $< $(VBOX_XIDL_FILE)
 	$(SED) -e 's/VBoxC/VBoxClient_x86/g' --output $@ $@.tmp
 	$(RM) -f $@.tmp
-
 
 #
 # Construct the list of GUI translations.
