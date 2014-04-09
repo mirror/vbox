@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<WixLocalization xmlns="http://schemas.microsoft.com/wix/2003/11/localization" Codepage="1254" Culture="tr_TR">
+<WixLocalization xmlns="http://schemas.microsoft.com/wix/2006/localization" Codepage="1254" Culture="tr_TR">
 
     <!--
             Language Definition Include for VirtualBox WiX script.
@@ -52,58 +52,58 @@
     <String Id="VB_NetAdpDriver">Sadece-Anamakine Ağı Oluşturma için [ProductName] sanal ağ bağdaştırıcısı sürücüsü.</String>
 
     <String Id="VB_Python">VirtualBox için Python desteği.</String>
-    
+
 	<!---->
-    
+
 	<String Id="NeedAdmin">[ProductName] yüklemek(kaldırmak) için yönetici haklarına sahip olmanız gerekir! Bu kur şimdi iptal edilecek.</String>
     <String Id="WrongOS">Bu uygulama sadece Windows XP veya üzerinde çalışır.</String>
     <String Id="Only32Bit">Bu uygulama sadece 32-bit Windows sistemlerinde çalışır. Lütfen [ProductName] 64-bit sürümünü yükleyin!</String>
     <String Id="Only64Bit">Bu uygulama sadece 64-bit Windows sistemlerinde çalışır. Lütfen [ProductName] 32-bit sürümünü yükleyin!</String>
     <String Id="SunFound">Bu makinede eski bir Sun VirtualBox kurulumu bulundu. Lütfen önce bu paketi kaldırın ve sonra [ProductName] yükleyin!</String>
     <String Id="InnotekFound">Bu makinede eski bir innotek VirtualBox kurulumu bulundu. Lütfen önce bu paketi kaldırın ve sonra [ProductName] yükleyin!</String>
-   
+
 	<!---->
-    
+
 	<String Id="CancelDlg_Question">[ProductName] kurulumunu iptal etmek istediğinize emin misiniz?</String>
-    
+
 	<!---->
-    
+
 	<String Id="WelcomeDlg_Header">[ProductName] Kur Sihirbazına Hoş Geldiniz</String>
     <String Id="WelcomeDlg_Body">Kur Sihirbazı bilgisayarınıza [ProductName] kuracak. Devam etmek için İleri'ye veya Kur Sihirbazından çıkmak için İptal'e tıklayın.</String>
-    
+
 	<!---->
-    
+
 	<String Id="LicenseAgreementDlg_Header">Son Kullanıcı Lisans Sözleşmesi</String>
     <String Id="LicenseAgreementDlg_Body">Lütfen aşağıdaki lisans sözleşmesini dikkatlice okuyun.</String>
     <String Id="LicenseAgreementDlg_Accept">Lisans Sözleşmesi içindeki şartları kabul e&amp;diyorum</String>
     <String Id="LicenseAgreementDlg_Decline">Lisans Sözleşmesi içindeki şartları kabul e&amp;tmiyorum</String>
 
     <!---->
-    
+
 	<String Id="CheckSerialDlg_Header">Seri Numara</String>
     <String Id="CheckSerialDlg_Body">Lütfen aşağıdaki alana seri numaranızı girin. You'll find it on the sticker inside the VirtualBox CD kutusu içerisindeki etikette bulacaksınız.</String>
     <String Id="CheckSerialDlg_Footer">Seri numarasını girmeniz bittiğinde, aşağıdaki "Kontrol Et" düğmesine basın".</String>
-    
+
 	<!---->
-    
+
 	<String Id="WrongSerialDlg_Header">Girilen seri numarası geçersiz!</String>
     <String Id="WrongSerialDlg_Desc1">Seri numaranızı tekrar girmek için lütfen geri gidin.</String>
     <String Id="WrongSerialDlg_Desc2">Seri numarasını etiket üzerine basıldığı gibi aynen hecesi hecesine yazılmak zorunda olduğunu aklınızdan çıkarmayın.</String>
-    
+
 	<!---->
-    
+
 	<String Id="WarnSaveStatesDlg_Header">Uyarı:</String>
     <String Id="WarnSaveStatesDlg_Header2">Uyumsuz Kaydedilmiş Durum!</String>
     <String Id="WarnSaveStatesDlg_Desc">[ProductName] yükseltildiğinde, zaten mevcut makinelerinizden kaydedilmiş tüm durumlar bundan böyle çalışmayacak! Kurulumdan sonra bunlardan el ile vazgeçmek zorundasınız.</String>
     <String Id="WarnSaveStatesDlg_Proceed">Hemen kuruluma devam edilsin mi?</String>
-    
+
 	<!---->
-    
+
 	<String Id="WarnTAPDevicesDlg_Header">Anamakine Arayüzleri</String>
     <String Id="WarnTAPDevicesDlg_Desc">Önceki sürümdeki makineleriniz için bazı anamakine arayüzleri kullandıysanız, bu kurulumdan sonra onları el ile yeniden oluşturmak zorundasınız.</String>
-    
+
 	<!---->
-    
+
 	<String Id="NetCfgLocked">Şurda belirtilen uygulama yüklemeye devam etmeden önce kapatılmalıdır: "[2]"</String>
 
 	<!---->
@@ -118,76 +118,76 @@
     <String Id="CustomizeDlg_SelItemPath">CustomizeDlgLocation-CustomizeDlgLocation</String>
 
     <!---->
-    
+
 	<String Id="Customize2Dlg_Header">Özelleştir</String>
     <String Id="Customize2Dlg_Desc">Lütfen aşağıdaki seçeneklerden seçin:</String>
     <String Id="Customize2Dlg_CreateShortcut">Masaüstüne kısayol oluştur</String>
     <String Id="Customize2Dlg_CreateQuickLaunch">Hızlı Başlat Çubuğuna kısayol oluştur</String>
-    
+
 	<!---->
-    
+
 	<String Id="WarnDisconNetIfacesDlg_Title">Uyarı:</String>
     <String Id="WarnDisconNetIfacesDlg_Title2">Ağ Arayüzleri</String>
     <String Id="WarnDisconNetIfacesDlg_Desc">[ProductName] Ağ Oluşturma özelliği kurulumu ağ bağlantınızı sıfırlayacak ve geçici olarak ağınızın bağlantısını kesecek.</String>
     <String Id="WarnDisconNetIfacesDlg_Question">Hemen kuruluma devam edilsin mi?</String>
-    
+
 	<!---->
-    
+
 	<String Id="DiskCostDlg_SpaceRequired">Seçilen özelliklerin kurulumu için gereken disk alanı.</String>
     <String Id="DiskCostDlg_NotEnoughSpace">Vurgulanan bölümler (eğer varsa) şu anki seçilen özellikler için kullanılabilir yeterli disk alanına sahip değil. Ya vurgulanan bölümlerden bazı dosyaları kaldırabilirsiniz ya da yerel sürücüye(lere) daha az özellik yüklemeyi seçebilirsiniz ya da farklı hedef sürücü(leri) seçebilirsiniz.</String>
     <String Id="DiskCostDlg_SpaceRequirements">Disk Alanı Gereksinimleri</String>
     <String Id="DiskCostDlg_VolumeList">{120}{70}{70}{70}{70}</String>
-    
+
 	<!---->
-    
+
 	<String Id="BrowseDlg_BrowseDestFolder">Hedef klasöre gözat</String>
     <String Id="BrowseDlg_ChangeCurFolder">Şu anki hedef klasörü değiştir</String>
     <String Id="BrowseDlg_UpOneLevelTooltip">Bir seviye yukarı</String>
     <String Id="BrowseDlg_CreateNewFolderTooltip">Yeni bir klasör oluştur</String>
     <String Id="BrowseDlg_LookIn">&amp;Bakılan yer:</String>
     <String Id="BrowseDlg_FolderName">&amp;Klasör adı:</String>
-    
+
 	<!---->
-    
+
 	<String Id="VerifyReadyDlg_ReadyToBegin">Kur Sihirbazı [InstallMode] kurulumuna başlamaya hazır.</String>
     <String Id="VerifyReadyDlg_ClickInstall">Kuruluma başlamak için Yükle'ye tıklayın. Eğer herhangi bir kurulum ayarınızı gözden geçirmek veya değiştirmek istiyorsanız, Geri'ye tıklayın. Sihirbazdan çıkmak için İptal'e tıklayın.</String>
     <String Id="VerifyReadyDlg_ReadyToInstall">Yüklemek için hazır</String>
-    
+
 	<!---->
-    
+
 	<String Id="ExitDlg_ClickFinish">Kur Sihirbazından çıkmak için Bitir düğmesine tıklayın.</String>
     <String Id="ExitDlg_InstComplete">[ProductName] kurulumu tamamlandı.</String>
     <String Id="ExitDlg_StartVBox">Kurulumdan sonra [ProductName] uygulamasını başlat</String>
-    
+
 	<!---->
-    
+
 	<String Id="FatalErrorDlg_Header">[ProductName] Kur Sihirbazı zamansız sonlandı</String>
     <String Id="FatalErrorDlg_Desc">[ProductName] kur bir hata yüzünden zamansız sonlandı. Sisteminiz değiştirilmedi. Bu programı daha sonraki bir zamanda yüklemek için lütfen kurulumu tekrar çalıştırın.</String>
     <String Id="FatalErrorDlg_Footer">Kur Sihirbazından çıkmak için Bitir düğmesine tıklayın.</String>
-   
+
 	<!---->
-    
+
 	<String Id="FilesInUse_Text">Bu kur tarafından güncellenmesi gereken dosyaları aşağıdaki uygulamalar kullanıyor. Bu uygulamaları kapatın ve sonra kuruluma devam etmek için &amp;Yeniden Dene'ye veya çıkmak için İptal'e tıklayın.</String>
     <String Id="FilesInUse_Description">Şu anda kullanımda olan bazı dosyaların güncellenmesi gerek.</String>
     <String Id="FilesInUse_Title">Kullanımda olan Dosyalar</String>
-    
+
 	<!---->
-    
+
 	<String Id="UserExitDlg_Header">[ProductName] Kur Sihirbazı yarıda kesildi</String>
     <String Id="UserExitDlg_Desc">[ProductName] kur yarıda kesildi. Sisteminiz değiştirilmedi. Bu programı daha sonraki bir zamanda yüklemek için lütfen kurulumu tekrar çalıştırın.</String>
     <String Id="UserExitDlg_Footer">Kur Sihirbazından çıkmak için Bitir düğmesine tıklayın.</String>
-    
+
 	<!---->
-    
+
 	<String Id="ProgressDlg_PleaseWait">Kur Sihirbazı [ProductName] yüklerken lütfen bekleyin. Bu birkaç dakika alabilir.</String>
-    
+
 	<!---->
-    
+
 	<String Id="ResumeDlg_Header">[ProductName] Kur Sihirbazına Devam Ediliyor</String>
     <String Id="ResumeDlg_Desc">Kur Sihirbazı [ProductName] uygulamasının bilgisayarınıza kurulumunu tamamlayacak. Devam etmek için Yükle'ye veya Kur Sihirbazından çıkmak için İptal'e tıklayın.</String>
-    
+
 	<!---->
-    
+
 	<String Id="MaintenanceTypeDlg_Header">Kurulumu Değiştir, Onar veya Kaldır</String>
     <String Id="MaintenanceTypeDlg_SelOption">Uygulanmasını istediğiniz işlemi seçin.</String>
     <String Id="MaintenanceTypeDlg_Repair">&amp;Onar</String>
@@ -200,43 +200,43 @@
     <String Id="MaintenanceTypeDlg_RemoveTooltip">Kurulumu kaldır</String>
     <String Id="MaintenanceTypeDlg_RemoveProgress1">Kaldırılıyor</String>
     <String Id="MaintenanceTypeDlg_RemoveProgress2">kaldırma</String>
-    
+
 	<!---->
-    
+
 	<String Id="MaintenanceWelcomeDlg_Header">[ProductName] Kur Sihirbazına Hoş Geldiniz</String>
     <String Id="MaintenanceWelcomeDlg_Desc">Kur Sihirbazı şu anki kurulumunuzu onarmanıza veya [ProductName] uygulamasını bilgisayarınızdan kaldırmanıza izin verecek. Devam etmek için İleri'ye veya Kur Sihirbazından çıkmak için İptal'e tıklayın.</String>
-    
+
 	<!---->
 
     <String Id="OutOfDiskDlg_InstallationExceeds">Kurulum için gereken disk alanı mevcut disk alanını aşıyor.</String>
     <String Id="OutOfDiskDlg_NotEnoughDiskSpace">Vurgulanan bölümler şu anki seçilen özellikler için kullanılabilir yeterli disk alanına sahip değil. Ya vurgulanan bölümlerden bazı dosyaları kaldırabilirsiniz ya da yerel sürücüye(lere) daha az özellik yüklemeyi seçebilirsiniz ya da farklı hedef sürücü(leri) seçebilirsiniz.</String>
     <String Id="OutOfDiskDlg_OutOfDiskSpace">Yetersiz Disk Alanı</String>
-    
+
 	<!---->
 
     <String Id="OutOfRbDiskDlg_InstallationExceeds">Kurulum için gereken disk alanı mevcut disk alanını aşıyor.</String>
     <String Id="OutOfRbDiskDlg_NotEnoughDiskSpace">Vurgulanan bölümler şu anki seçilen özellikler için kullanılabilir yeterli disk alanına sahip değil. Ya vurgulanan bölümlerden bazı dosyaları kaldırabilirsiniz ya da yerel sürücüye(lere) daha az özellik yüklemeyi seçebilirsiniz ya da farklı hedef sürücü(leri) seçebilirsiniz.</String>
     <String Id="OutOfRbDiskDlg_OutOfDiskSpace">Yetersiz Disk Alanı</String>
     <String Id="OutOfRbDiskDlg_Desc">Alternatif olarak, yükleyicinin geriye alma işlevselliğini etkisizleştirmeyi seçebilirsiniz. Bu, herhangi bir şekilde kurulumun yarıda kesilmesiyle yükleyicinin bilgisayarınızın orijinal durumuna geri yüklenmesi için izin verir. Geri almayı etkisizleştirme riskini almak isterseniz Evet'e tıklayın.</String>
-    
+
 	<!---->
-    
+
 	<String Id="VerifyRemoveDlg_Header">[ProductName] Kaldır</String>
     <String Id="VerifyRemoveDlg_Desc">Programı bilgisayarınızdan kaldırmayı seçmektesiniz.</String>
     <String Id="VerifyRemoveDlg_ClickRemove">[ProductName] uygulamasını bilgisayarınızdan kaldırmak için Kaldır'a tıklayın. Eğer herhangi bir kurulum ayarınızı gözden geçirmek veya değiştirmek istiyorsanız, Geri'ye tıklayın. Sihirbazdan çıkmak için İptal'e tıklayın.</String>
-    
+
 	<!---->
-    
+
 	<String Id="VerifyRepairDlg_Header">[ProductName] Onar</String>
     <String Id="VerifyRepairDlg_ReadyToBegin">Kur Sihirbazı [ProductName] uygulamasının onarılmasına başlamak için hazır.</String>
     <String Id="VerifyRepairDlg_ClickRepair">[ProductName] kurulumunu onarmak için Onar'a tıklayın. Eğer herhangi bir kurulum ayarınızı gözden geçirmek veya değiştirmek istiyorsanız, Geri'ye tıklayın. Sihirbazdan çıkmak için İptal'e tıklayın.</String>
-    
+
 	<!---->
 
     	<String Id="WaitForCostingDlg_PleaseWait">Yükleyici disk alanı gereksinimlerinizi belirlemeyi bitirirken lütfen bekleyin.</String>
-    
+
 	<!---->
-    
+
 	<String Id="MsiRMFilesInUse_Text">Bu kur tarafından güncellenmesi gereken dosyaları aşağıdaki uygulamalar kullanıyor. Kur Sihirbazına onları kapatması ve yeniden başlatmayı denemesi veya daha sonra makineyi yeniden başlatması için izin verebilirsiniz.</String>
     <String Id="MsiRMFilesInUse_Description">Şu anda kullanımda olan bazı dosyaların güncellenmesi gerek.</String>
     <String Id="MsiRMFilesInUse_Title">Kullanımda olan Dosyalar</String>
@@ -402,7 +402,7 @@
     <String Id="Error1933">Windows Yükleyici hizmeti bir ya da daha fazla korunan Windows dosyasını güncelleyemiyor. {{SFP Dizgisi: [2]. Korunan dosyaların listesi:\r\n[3]}}</String>
     <String Id="Error1934">Kullanıcı kurulumları makinedeki ilke yoluyla etkisizleştirildi.</String>
     <String Id="Error1935">[2] çevirme bileşenlerinin kurulumu sırasında bir hata meydana geldi. HSONUCU: [3]. {{çevirme arayüzü: [4], işlev: [5], çevirme adı: [6]}}</String>
-    
+
 	<!-- Own / special errors -->
     <String Id="Error25001">"[2]" uygulamasının kuruluma devam etmesi için kapatılması gerekiyor.</String>
 
@@ -532,7 +532,7 @@
     <String Id="ProgressTextUnmoveFiles">Taşınmış dosyalar kaldırılıyor</String>
     <String Id="ProgressTextUnmoveFilesTemplate">Dosya: [1], Dizin: [9]</String>
     <String Id="ProgressTextUnpublishProduct">Ürün bilgisi yayından kaldırılıyor</String>
-    
+
 	<String Id="UITextbytes">bayt</String>
     <String Id="UITextGB">GB</String>
     <String Id="UITextKB">KB</String>
