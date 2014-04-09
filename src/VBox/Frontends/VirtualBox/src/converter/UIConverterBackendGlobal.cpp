@@ -49,6 +49,7 @@ template<> bool canConvert<GlobalSettingsPageType>() { return true; }
 template<> bool canConvert<MachineSettingsPageType>() { return true; }
 template<> bool canConvert<IndicatorType>() { return true; }
 template<> bool canConvert<MachineCloseAction>() { return true; }
+template<> bool canConvert<GuruMeditationHandlerType>() { return true; }
 
 /* QString <= SizeSuffix: */
 template<> QString toString(const SizeSuffix &sizeSuffix)
@@ -1042,5 +1043,39 @@ template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QStri
         return MachineCloseAction_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strMachineCloseAction, Qt::CaseInsensitive)));
+}
+
+/* QString <= GuruMeditationHandlerType: */
+template<> QString toInternalString(const GuruMeditationHandlerType &guruMeditationHandlerType)
+{
+    QString strResult;
+    switch (guruMeditationHandlerType)
+    {
+        case GuruMeditationHandlerType_Default:  strResult = "Default"; break;
+        case GuruMeditationHandlerType_PowerOff: strResult = "PowerOff"; break;
+        case GuruMeditationHandlerType_Ignore:   strResult = "Ignore"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for indicator type=%d", guruMeditationHandlerType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* GuruMeditationHandlerType <= QString: */
+template<> GuruMeditationHandlerType fromInternalString<GuruMeditationHandlerType>(const QString &strGuruMeditationHandlerType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;   QList<GuruMeditationHandlerType> values;
+    keys << "Default";  values << GuruMeditationHandlerType_Default;
+    keys << "PowerOff"; values << GuruMeditationHandlerType_PowerOff;
+    keys << "Ignore";   values << GuruMeditationHandlerType_Ignore;
+    /* Default type for unknown words: */
+    if (!keys.contains(strGuruMeditationHandlerType, Qt::CaseInsensitive))
+        return GuruMeditationHandlerType_Default;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strGuruMeditationHandlerType, Qt::CaseInsensitive)));
 }
 
