@@ -3539,7 +3539,7 @@ DxgkDdiBuildPagingBufferNew(
                 return STATUS_INVALID_PARAMETER;
             }
             /** @todo: add necessary bits */
-            WARN(("Impl!"));
+//            WARN(("Impl!"));
             cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
             break;
         }
@@ -3551,7 +3551,7 @@ DxgkDdiBuildPagingBufferNew(
                 WARN(("allocation is null"));
                 return STATUS_INVALID_PARAMETER;
             }
-            WARN(("Do we need to do anything here?"));
+//            WARN(("Do we need to do anything here?"));
             break;
         }
         default:
@@ -5808,10 +5808,19 @@ DxgkDdiRenderNew(
     {
         WARN(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXWDDM_DMA_PRIVATEDATA_BASEHDR (%d)",
                 pRender->DmaBufferPrivateDataSize , sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
-        /* @todo: can this actually happen? what status to return? */
+        return STATUS_INVALID_PARAMETER;
+    }
+    if (pRender->PatchLocationListOutSize < pRender->AllocationListSize)
+    {
+        WARN(("pRender->PatchLocationListOutSize(%d) < pRender->AllocationListSize(%d)",
+                pRender->PatchLocationListOutSize, pRender->AllocationListSize));
         return STATUS_INVALID_PARAMETER;
     }
 
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    __try
+    {
     PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pInputHdr = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)pRender->pCommand;
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -5882,11 +5891,12 @@ DxgkDdiRenderNew(
 
             for (UINT i = 0; i < pRender->AllocationListSize; ++i, ++pRender->pPatchLocationListOut, ++pAllocationList, ++pSubmInfo, ++pSubmUmInfo)
             {
+                VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO SubmUmInfo = *pSubmUmInfo;
                 D3DDDI_PATCHLOCATIONLIST* pPLL = pRender->pPatchLocationListOut;
                 PVBOXWDDM_ALLOCATION pAlloc = vboxWddmGetAllocationFromAllocList(pDevExt, pAllocationList);
-                if (pSubmUmInfo->offData >= pAlloc->AllocData.SurfDesc.cbSize
-                        || pSubmUmInfo->cbData > pAlloc->AllocData.SurfDesc.cbSize
-                        || pSubmUmInfo->offData + pSubmUmInfo->cbData > pAlloc->AllocData.SurfDesc.cbSize)
+                if (SubmUmInfo.offData >= pAlloc->AllocData.SurfDesc.cbSize
+                        || SubmUmInfo.cbData > pAlloc->AllocData.SurfDesc.cbSize
+                        || SubmUmInfo.offData + SubmUmInfo.cbData > pAlloc->AllocData.SurfDesc.cbSize)
                 {
                     WARN(("invalid data"));
                     return STATUS_INVALID_PARAMETER;
@@ -5895,13 +5905,13 @@ DxgkDdiRenderNew(
                 memset(pPLL, 0, sizeof (*pPLL));
 
                 if (pAllocationList->SegmentId)
-                    pSubmInfo->offBuffer = pAllocationList->PhysicalAddress.LowPart + pSubmUmInfo->offData;
+                    pSubmInfo->offBuffer = pAllocationList->PhysicalAddress.LowPart + SubmUmInfo.offData;
 
-                pSubmInfo->cbBuffer = pSubmUmInfo->cbData;
+                pSubmInfo->cbBuffer = SubmUmInfo.cbData;
 
                 pPLL->AllocationIndex = i;
                 pPLL->PatchOffset = RT_OFFSETOF(VBOXCMDVBVA_CRCMD, Cmd.aBuffers[i].offBuffer);
-                pPLL->AllocationOffset = pSubmUmInfo->offData;
+                pPLL->AllocationOffset = SubmUmInfo.offData;
             }
 
             break;
@@ -5938,10 +5948,10 @@ DxgkDdiRenderNew(
             break;
         }
         default:
-        {
-            WARN(("unsupported render command %d", pInputHdr->enmCmd));
-            return STATUS_INVALID_PARAMETER;
-        }
+         {
+             WARN(("unsupported render command %d", pInputHdr->enmCmd));
+             return STATUS_INVALID_PARAMETER;
+         }
     }
 
     pRender->pDmaBufferPrivateData = ((uint8_t*)pRender->pDmaBufferPrivateData) + cbPrivateData;
@@ -5950,10 +5960,19 @@ DxgkDdiRenderNew(
     pCmd->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
     /* sanity */
     pCmd->u32FenceID = 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = STATUS_INVALID_PARAMETER;
+        WARN(("invalid parameter"));
+    }
+//    LOGF(("LEAVE, hContext(0x%x)", hContext));
+
+    return Status;
 
 //    LOGF(("LEAVE, hContext(0x%x)", hContext));
 
-    return STATUS_SUCCESS;
+    return Status;
 }
 #endif
 
@@ -5972,7 +5991,6 @@ DxgkDdiRenderLegacy(
 {
 //    LOGF(("ENTER, hContext(0x%x)", hContext));
 
-    Assert(pRender->DmaBufferPrivateDataSize >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR));
     if (pRender->DmaBufferPrivateDataSize < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR))
     {
         WARN(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXWDDM_DMA_PRIVATEDATA_BASEHDR (%d)",
