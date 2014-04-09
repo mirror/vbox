@@ -677,17 +677,15 @@ void crStateMakeCurrent( CRContext *ctx )
 /*
  * As above, but don't call crStateSwitchContext().
  */
-void crStateSetCurrent( CRContext *ctx )
+static void crStateSetCurrentEx( CRContext *ctx, GLboolean fCleanupDefault )
 {
     CRContext *current = GetCurrentContext();
 
-    if (ctx == NULL)
+    if (ctx == NULL && !fCleanupDefault)
         ctx = defaultContext;
 
     if (current == ctx)
         return; /* no-op */
-
-    CRASSERT(ctx);
 
 #ifdef CHROMIUM_THREADSAFE
     SetCurrentContext(ctx);
@@ -695,8 +693,21 @@ void crStateSetCurrent( CRContext *ctx )
     __currentContext = ctx;
 #endif
 
-    /* ensure matrix state is also current */
-    crStateMatrixMode(ctx->transform.matrixMode);
+    if (ctx)
+    {
+        /* ensure matrix state is also current */
+        crStateMatrixMode(ctx->transform.matrixMode);
+    }
+}
+
+void crStateSetCurrent( CRContext *ctx )
+{
+    crStateSetCurrentEx( ctx, GL_FALSE );
+}
+
+void crStateCleanupCurrent()
+{
+    crStateSetCurrentEx( NULL, GL_TRUE );
 }
 
 

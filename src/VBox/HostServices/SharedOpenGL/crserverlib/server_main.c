@@ -1649,7 +1649,7 @@ static void crVBoxServerCheckConsistency()
 
 static uint32_t g_hackVBoxServerSaveLoadCallsLeft = 0;
 
-DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
+static int32_t crVBoxServerSaveStatePerform(PSSMHANDLE pSSM)
 {
     int32_t  rc, i;
     uint32_t ui32;
@@ -1670,7 +1670,7 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
 #endif
 
     /* We shouldn't be called if there's no clients at all*/
-    CRASSERT(cr_server.numClients>0);
+    CRASSERT(cr_server.numClients > 0);
 
     /* @todo it's hack atm */
     /* We want to be called only once to save server state but atm we're being called from svcSaveState
@@ -1684,7 +1684,8 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
         rc = SSMR3PutU32(pSSM, (uint32_t) cr_server.numClients);
         AssertRCReturn(rc, rc);
 
-        g_hackVBoxServerSaveLoadCallsLeft = cr_server.numClients;
+        /* we get called only once for CrCmd case, so disable the hack */
+        g_hackVBoxServerSaveLoadCallsLeft = cr_server.fCrCmdEnabled ? 1 : cr_server.numClients;
     }
 
     g_hackVBoxServerSaveLoadCallsLeft--;
@@ -1828,6 +1829,17 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
 #endif
 
     return VINF_SUCCESS;
+}
+
+DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
+{
+    if (cr_server.fCrCmdEnabled)
+    {
+        WARN(("we should not be called with cmd enabled!"));
+        return VERR_INTERNAL_ERROR;
+    }
+
+    return crVBoxServerSaveStatePerform(pSSM);
 }
 
 static DECLCALLBACK(CRContext*) crVBoxServerGetContextCB(void* pvData)
@@ -2352,7 +2364,7 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
     return VINF_SUCCESS;
 }
 
-DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
+static int32_t crVBoxServerLoadStatePerform(PSSMHANDLE pSSM, uint32_t version)
 {
     int32_t  rc, i;
     uint32_t ui, uiNumElems;
@@ -2368,6 +2380,11 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         /* Read number of clients */
         rc = SSMR3GetU32(pSSM, &g_hackVBoxServerSaveLoadCallsLeft);
         AssertRCReturn(rc, rc);
+
+        Assert(g_hackVBoxServerSaveLoadCallsLeft);
+        /* we get called only once for CrCmd */
+        if (cr_server.fCrCmdEnabled)
+            g_hackVBoxServerSaveLoadCallsLeft = 1;
     }
 
     g_hackVBoxServerSaveLoadCallsLeft--;
@@ -2717,6 +2734,17 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
     return VINF_SUCCESS;
 }
 
+DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
+{
+    if (cr_server.fCrCmdEnabled)
+    {
+        WARN(("CrCmd enabled"));
+        return VERR_INTERNAL_ERROR;
+    }
+
+    return crVBoxServerLoadStatePerform(pSSM, version);
+}
+
 #define SCREEN(i) (cr_server.screen[i])
 #define MAPPED(screen) ((screen).winID != 0)
 
@@ -2980,6 +3008,7 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
 static void crVBoxServerDefaultContextSet()
 {
     GLint spuWindow, spuCtx;
+    CRContext *ctx = NULL;
 
     if (cr_server.MainContextInfo.SpuContext)
     {
@@ -2994,6 +3023,8 @@ static void crVBoxServerDefaultContextSet()
         {
             spuCtx = cr_server.MainContextInfo.SpuContext;
             spuWindow = pMural->spuWindow;
+            ctx = cr_server.MainContextInfo.pContext;
+            Assert(ctx);
         }
     }
     else
@@ -3003,6 +3034,8 @@ static void crVBoxServerDefaultContextSet()
     }
 
     cr_server.head_spu->dispatch_table.MakeCurrent(spuWindow, 0, spuCtx);
+    crStateSetCurrent(ctx);
+
 }
 
 #ifdef VBOX_WITH_CRHGSMI
@@ -3336,6 +3369,7 @@ static DECLCALLBACK(int) crVBoxCrCmdDisable(HVBOXCRCMDSVR hSvr)
     CrHTableEmpty(&cr_server.clientTable);
 
     cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
+    crStateCleanupCurrent();
 
     memset(&cr_server.CrCmdClientInfo, 0, sizeof (cr_server.CrCmdClientInfo));
 
@@ -3363,52 +3397,59 @@ static int crVBoxCrDisconnect(uint32_t u32Client)
     return VINF_SUCCESS;
 }
 
-static int crVBoxCrConnect(VBOXCMDVBVA_3DCTL_CONNECT *pConnect)
+static int crVBoxCrConnectEx(VBOXCMDVBVA_3DCTL_CONNECT *pConnect, uint32_t u32ClientId)
 {
     CRClient *pClient;
     int rc;
-    /* allocate client id */
-    uint32_t u32ClientId =  CrHTablePut(&cr_server.clientTable, (void*)1);
-    if (u32ClientId != CRHTABLE_HANDLE_INVALID)
+
+    if (u32ClientId == CRHTABLE_HANDLE_INVALID)
     {
-        rc = crVBoxServerAddClientObj(u32ClientId, &pClient);
+        /* allocate client id */
+        u32ClientId =  CrHTablePut(&cr_server.clientTable, (void*)1);
+        if (u32ClientId == CRHTABLE_HANDLE_INVALID)
+        {
+            WARN(("CrHTablePut failed"));
+            return VERR_NO_MEMORY;
+        }
+    }
+
+    rc = crVBoxServerAddClientObj(u32ClientId, &pClient);
+    if (RT_SUCCESS(rc))
+    {
+        rc = crVBoxServerClientObjSetVersion(pClient, pConnect->u32MajorVersion, pConnect->u32MinorVersion);
         if (RT_SUCCESS(rc))
         {
-            rc = crVBoxServerClientObjSetVersion(pClient, pConnect->u32MajorVersion, pConnect->u32MinorVersion);
+            rc = crVBoxServerClientObjSetPID(pClient, pConnect->u64Pid);
             if (RT_SUCCESS(rc))
             {
-                rc = crVBoxServerClientObjSetPID(pClient, pConnect->u64Pid);
+                rc = CrHTablePutToSlot(&cr_server.clientTable, u32ClientId, pClient);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = CrHTablePutToSlot(&cr_server.clientTable, u32ClientId, pClient);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pConnect->Hdr.u32CmdClientId = u32ClientId;
-                        return VINF_SUCCESS;
-                    }
-                    else
-                        WARN(("CrHTablePutToSlot failed %d", rc));
+                    pConnect->Hdr.u32CmdClientId = u32ClientId;
+                    return VINF_SUCCESS;
                 }
                 else
-                    WARN(("crVBoxServerClientObjSetPID failed %d", rc));
+                    WARN(("CrHTablePutToSlot failed %d", rc));
             }
             else
-                WARN(("crVBoxServerClientObjSetVersion failed %d", rc));
-
-            crVBoxServerRemoveClientObj(pClient);
+                WARN(("crVBoxServerClientObjSetPID failed %d", rc));
         }
         else
-            WARN(("crVBoxServerAddClientObj failed %d", rc));
+            WARN(("crVBoxServerClientObjSetVersion failed %d", rc));
 
-        CrHTableRemove(&cr_server.clientTable, u32ClientId);
+        crVBoxServerRemoveClientObj(pClient);
     }
     else
-    {
-        WARN(("CrHTablePut failed"));
-        rc = VERR_NO_MEMORY;
-    }
+        WARN(("crVBoxServerAddClientObj failed %d", rc));
+
+    CrHTableRemove(&cr_server.clientTable, u32ClientId);
 
     return rc;
+}
+
+static int crVBoxCrConnect(VBOXCMDVBVA_3DCTL_CONNECT *pConnect)
+{
+    return crVBoxCrConnectEx(pConnect, CRHTABLE_HANDLE_INVALID);
 }
 
 static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, uint32_t cbCmd)
@@ -3461,16 +3502,203 @@ static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, 
     }
 }
 
+static const char* gszVBoxOGLSSMMagic = "***OpenGL state data***";
+
+static int crVBoxCrCmdSaveClients(PSSMHANDLE pSSM)
+{
+    int i;
+    int rc = SSMR3PutU32(pSSM, cr_server.numClients);
+    AssertRCReturn(rc, rc);
+
+    for (i = 0; i < cr_server.numClients; i++)
+    {
+        CRClient * pClient = cr_server.clients[i];
+        Assert(pClient);
+
+        rc = SSMR3PutU32(pSSM, pClient->conn->u32ClientID);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU32(pSSM, pClient->conn->vMajor);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU32(pSSM, pClient->conn->vMinor);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU64(pSSM, pClient->pid);
+        AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
+}
+
+static int crVBoxCrCmdLoadClients(PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    uint32_t i;
+    uint32_t u32;
+    VBOXCMDVBVA_3DCTL_CONNECT Connect;
+    int rc = SSMR3GetU32(pSSM, &u32);
+    AssertRCReturn(rc, rc);
+
+    for (i = 0; i < u32; i++)
+    {
+        uint32_t u32ClientID;
+        Connect.Hdr.u32Type = VBOXCMDVBVA3DCTL_TYPE_CONNECT;
+        Connect.Hdr.u32CmdClientId = 0;
+
+        rc = SSMR3GetU32(pSSM, &u32ClientID);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetU32(pSSM, &Connect.u32MajorVersion);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetU32(pSSM, &Connect.u32MinorVersion);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetU64(pSSM, &Connect.u64Pid);
+        AssertRCReturn(rc, rc);
+
+        rc = crVBoxCrConnectEx(&Connect, u32ClientID);
+        AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 static DECLCALLBACK(int) crVBoxCrCmdSaveState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM)
 {
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+
+    Assert(cr_server.fCrCmdEnabled);
+
+    /* Start*/
+    rc = SSMR3PutStrZ(pSSM, gszVBoxOGLSSMMagic);
+    AssertRCReturn(rc, rc);
+
+    if (!cr_server.numClients)
+    {
+        rc = SSMR3PutU32(pSSM, 0);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutStrZ(pSSM, gszVBoxOGLSSMMagic);
+        AssertRCReturn(rc, rc);
+
+        return VINF_SUCCESS;
+    }
+
+    rc = SSMR3PutU32(pSSM, 1);
+    AssertRCReturn(rc, rc);
+
+    /* Version */
+    rc = SSMR3PutU32(pSSM, (uint32_t) SHCROGL_SSM_VERSION);
+    AssertRCReturn(rc, rc);
+
+    rc = crVBoxCrCmdSaveClients(pSSM);
+    AssertRCReturn(rc, rc);
+
+    /* The state itself */
+    rc = crVBoxServerSaveStatePerform(pSSM);
+    AssertRCReturn(rc, rc);
+
+    /* Save svc buffers info */
+    {
+        rc = SSMR3PutU32(pSSM, 0);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, 0);
+        AssertRCReturn(rc, rc);
+    }
+
+    /* End */
+    rc = SSMR3PutStrZ(pSSM, gszVBoxOGLSSMMagic);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) crVBoxCrCmdLoadState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM, uint32_t u32Version)
 {
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+
+    char psz[2000];
+    uint32_t ui32;
+
+    Assert(cr_server.fCrCmdEnabled);
+
+    /* Start of data */
+    rc = SSMR3GetStrZEx(pSSM, psz, 2000, NULL);
+    AssertRCReturn(rc, rc);
+    if (strcmp(gszVBoxOGLSSMMagic, psz))
+    {
+        WARN(("unexpected data"));
+        return VERR_SSM_UNEXPECTED_DATA;
+    }
+
+    /* num clients */
+    rc = SSMR3GetU32(pSSM, &ui32);
+    AssertRCReturn(rc, rc);
+
+    if (!ui32)
+    {
+        /* no clients, dummy stub */
+        rc = SSMR3GetStrZEx(pSSM, psz, 2000, NULL);
+        AssertRCReturn(rc, rc);
+        if (strcmp(gszVBoxOGLSSMMagic, psz))
+        {
+            WARN(("unexpected data"));
+            return VERR_SSM_UNEXPECTED_DATA;
+        }
+
+        return VINF_SUCCESS;
+    }
+    if (ui32 != 1)
+    {
+        WARN(("invalid id"));
+        return VERR_SSM_UNEXPECTED_DATA;
+    }
+
+    /* Version */
+    rc = SSMR3GetU32(pSSM, &ui32);
+    AssertRCReturn(rc, rc);
+
+    if (ui32 < SHCROGL_SSM_VERSION_CRCMD)
+    {
+        WARN(("unexpected version"));
+        return VERR_SSM_UNEXPECTED_DATA;
+    }
+
+    rc = crVBoxCrCmdLoadClients(pSSM, u32Version);
+    AssertRCReturn(rc, rc);
+
+    /* The state itself */
+    rc = crVBoxServerLoadStatePerform(pSSM, ui32);
+    AssertRCReturn(rc, rc);
+
+    /* Save svc buffers info */
+    {
+        rc = SSMR3GetU32(pSSM, &ui32);
+        AssertRCReturn(rc, rc);
+
+        if (ui32)
+        {
+            WARN(("unexpected data1"));
+            return VERR_SSM_UNEXPECTED_DATA;
+        }
+
+        rc = SSMR3GetU32(pSSM, &ui32);
+        AssertRCReturn(rc, rc);
+
+        if (ui32)
+        {
+            WARN(("unexpected data1"));
+            return VERR_SSM_UNEXPECTED_DATA;
+        }
+    }
+
+    /* End */
+    rc = SSMR3GetStrZEx(pSSM, psz, 2000, NULL);
+    AssertRCReturn(rc, rc);
+    if (strcmp(gszVBoxOGLSSMMagic, psz))
+    {
+        WARN(("unexpected data"));
+        return VERR_SSM_UNEXPECTED_DATA;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -3961,6 +4189,7 @@ int32_t crVBoxServerHgcmDisable(VBOXCRCMDCTL_HGCMDISABLE_DATA *pData)
     }
 
     cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
+    crStateCleanupCurrent();
 
     cr_server.DisableData = *pData;
 
