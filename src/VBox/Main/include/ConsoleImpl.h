@@ -330,7 +330,7 @@ private:
     class AutoVMCallerBase
     {
     public:
-        AutoVMCallerBase(Console *aThat) : mThat(aThat), mRC(S_OK)
+        AutoVMCallerBase(Console *aThat) : mThat(aThat), mRC(E_FAIL)
         {
             Assert(aThat);
             mRC = aThat->addVMCaller(taQuiet, taAllowNullVM);
@@ -427,7 +427,7 @@ private:
     {
         typedef AutoVMCallerBase<taQuiet, true> Base;
     public:
-        SafeVMPtrBase(Console *aThat) : Base(aThat), mRC(S_OK), mpUVM(NULL)
+        SafeVMPtrBase(Console *aThat) : Base(aThat), mRC(E_FAIL), mpUVM(NULL)
         {
             if (Base::isOk())
                 mRC = aThat->safeVMPtrRetainer(&mpUVM, taQuiet);
