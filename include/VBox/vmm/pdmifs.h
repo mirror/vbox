@@ -3072,11 +3072,8 @@ typedef struct PDMIDISPLAYVBVACALLBACKS
      * @param   pInterface          Pointer to this interface.
      * @param   pCmd                The Video HW Acceleration Command that was
      *                              completed.
-     * @todo r=bird: if async means asynchronous; then
-     *                   s/pfnVHWACommandCompleteAsynch/pfnVHWACommandCompleteAsync/;
-     *               fi
      */
-    DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsynch, (PPDMIDISPLAYVBVACALLBACKS pInterface,
+    DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsync, (PPDMIDISPLAYVBVACALLBACKS pInterface,
                                                              PVBOXVHWACMD pCmd));
 
     DECLR3CALLBACKMEMBER(int, pfnCrHgsmiCommandCompleteAsync, (PPDMIDISPLAYVBVACALLBACKS pInterface,
@@ -3094,7 +3091,7 @@ typedef struct PDMIDISPLAYVBVACALLBACKS
                                                                    struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd));
 } PDMIDISPLAYVBVACALLBACKS;
 /** PDMIDISPLAYVBVACALLBACKS  */
-#define PDMIDISPLAYVBVACALLBACKS_IID            "193b2975-215f-480a-abef-42f029ae890f"
+#define PDMIDISPLAYVBVACALLBACKS_IID            "ddac0bd0-332d-4671-8853-732921a80216"
 
 /** Pointer to a PCI raw connector interface. */
 typedef struct PDMIPCIRAWCONNECTOR *PPDMIPCIRAWCONNECTOR;
