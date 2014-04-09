@@ -1027,7 +1027,7 @@ void VBoxMpCrCtlConInit()
         g_VBoxMpCrHostCaps = 0;
     }
 
-#ifndef DEBUG_misha
+#if 0 //ndef DEBUG_misha
     g_VBoxMpCrHostCaps &= ~CR_VBOX_CAP_CMDVBVA;
 #endif
 
