@@ -178,8 +178,8 @@ proxy_create_socket(int sdom, int stype)
     {
         int sflags;
 
-        status = fcntl(s, F_GETFL, &sflags);
-        if (status < 0) {
+        sflags = fcntl(s, F_GETFL, 0);
+        if (sflags < 0) {
             perror("F_GETFL");
             closesocket(s);
             return INVALID_SOCKET;
