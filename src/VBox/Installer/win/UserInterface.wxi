@@ -327,15 +327,15 @@
                  change their Windows color scheme.
                  Also see: http://osdir.com/ml/windows.devel.wix.user/2005-02/msg00300.html -->
             <Control Id="DesktopShortcutCheckBox" Type="CheckBox" X="25" Y="95" Width="200" Height="17"
-                Property="INSTALLDESKTOPSHORTCUT" CheckBoxValue="1">
+                Property="VBOX_INSTALLDESKTOPSHORTCUT" CheckBoxValue="1">
                 <Text>!(loc.Customize2Dlg_CreateShortcut)</Text>
             </Control>
             <Control Id="QuicklaunchShortcutCheckBox" Type="CheckBox" X="25" Y="115" Width="200" Height="17"
-                     Property="INSTALLQUICKLAUNCHSHORTCUT" CheckBoxValue="1">
+                     Property="VBOX_INSTALLQUICKLAUNCHSHORTCUT" CheckBoxValue="1">
                 <Text>!(loc.Customize2Dlg_CreateQuickLaunch)</Text>
             </Control>
             <Control Id="RegisterFileExtensionsCheckBox" Type="CheckBox" X="25" Y="135" Width="200" Height="17"
-                     Property="REGISTERFILEEXTENSIONS" CheckBoxValue="1">
+                     Property="VBOX_REGISTERFILEEXTENSIONS" CheckBoxValue="1">
                 <Text>!(loc.Customize2Dlg_RegisterFileExtensions)</Text>
             </Control>
 
@@ -508,7 +508,7 @@
         <!-- This dialog is called after successful installation -->
         <Dialog Id="VBoxExitDlg" Width="370" Height="270" Title="[ProductName] !(loc.Setup)" NoMinimize="yes">
             <Control Id="Finish" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="!(loc.ButtonText_Finish)">
-                <Publish Event="DoAction" Value="ca_StartVBox"><![CDATA[STARTVBOX]]></Publish>
+                <Publish Event="DoAction" Value="ca_StartVBox"><![CDATA[VBOX_STARTVBOX]]></Publish>
                 <Publish Event="EndDialog" Value="Return">1</Publish>
             </Control>
 
@@ -532,7 +532,7 @@
                  change their Windows color scheme.
                  Also see: http://osdir.com/ml/windows.devel.wix.user/2005-02/msg00300.html -->
             <Control Id="StartVBoxCheckBox" Type="CheckBox" X="135" Y="115" Width="200" Height="17"
-                Property="STARTVBOX" CheckBoxValue="1">
+                Property="VBOX_STARTVBOX" CheckBoxValue="1">
                 <Text>!(loc.ExitDlg_StartVBox)</Text>
                 <Condition Action="hide">
                     <![CDATA[(InstallMode="Repair") OR (InstallMode="Remove") OR
