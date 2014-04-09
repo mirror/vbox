@@ -4092,6 +4092,13 @@ QStringList VBoxGlobal::machineWindowIconNames(CMachine &machine)
 }
 #endif /* !Q_WS_MAC */
 
+/* static */
+GuruMeditationHandlerType VBoxGlobal::guruMeditationHandlerType(CMachine &machine)
+{
+    /* Return result: */
+    return gpConverter->fromInternalString<GuruMeditationHandlerType>(machine.GetExtraData(GUI_GuruMeditationHandler));
+}
+
 #ifdef RT_OS_LINUX
 /* static */
 void VBoxGlobal::checkForWrongUSBMounted()

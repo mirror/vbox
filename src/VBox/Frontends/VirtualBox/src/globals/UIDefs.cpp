@@ -82,6 +82,7 @@ const char* UIDefs::GUI_PassCAD = "GUI/PassCAD";
 const char* UIDefs::GUI_DefaultCloseAction = "GUI/DefaultCloseAction";
 const char* UIDefs::GUI_RestrictedStatusBarIndicators = "GUI/RestrictedStatusBarIndicators";
 const char* UIDefs::GUI_HidLedsSync = "GUI/HidLedsSync";
+const char* UIDefs::GUI_GuruMeditationHandler = "GUI/GuruMeditationHandler";
 
 /* Settings dialogs stuff: */
 const char* UIDefs::GUI_RestrictedGlobalSettingsPages = "GUI/RestrictedGlobalSettingsPages";

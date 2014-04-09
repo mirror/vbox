@@ -104,6 +104,12 @@ public:
     /** @} */
 #endif /* !Q_WS_MAC */
 
+    /** @name Runtime workflow stuff.
+     ** @{ */
+    /** Returns Guru Meditation handler type. */
+    GuruMeditationHandlerType guruMeditationHandlerType() const { return m_guruMeditationHandlerType; }
+    /** @} */
+
     /** @name Extension Pack stuff.
      ** @{ */
     /** Determines whether extension pack installed and usable. */
@@ -347,6 +353,12 @@ private:
     QIcon *m_pMachineWindowIcon;
     /** @} */
 #endif /* !Q_WS_MAC */
+
+    /** @name Runtime workflow variables.
+     ** @{ */
+    /** Holds Guru Meditation handler type. */
+    GuruMeditationHandlerType m_guruMeditationHandlerType;
+    /** @} */
 
     /** @name Extension Pack variables.
      ** @{ */

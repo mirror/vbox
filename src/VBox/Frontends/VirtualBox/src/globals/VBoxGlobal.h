@@ -400,6 +400,8 @@ public:
     /** Loads redefined machine-window icon names. */
     static QStringList machineWindowIconNames(CMachine &machine);
 #endif /* !Q_WS_MAC */
+    /** Loads redefined guru-meditation handler type. */
+    static GuruMeditationHandlerType guruMeditationHandlerType(CMachine &machine);
 
 #ifdef RT_OS_LINUX
     static void checkForWrongUSBMounted();

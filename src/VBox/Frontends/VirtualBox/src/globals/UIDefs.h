@@ -151,6 +151,7 @@ namespace UIDefs
     extern const char* GUI_DefaultCloseAction;
     extern const char* GUI_RestrictedStatusBarIndicators;
     extern const char* GUI_HidLedsSync;
+    extern const char* GUI_GuruMeditationHandler;
 
     /* Settings dialogs stuff: */
     extern const char* GUI_RestrictedGlobalSettingsPages;
@@ -471,6 +472,14 @@ enum MachineCloseAction
     MachineCloseAction_All                        = 0xFF
 };
 Q_DECLARE_METATYPE(MachineCloseAction);
+
+/** Guru Meditation handler types. */
+enum GuruMeditationHandlerType
+{
+    GuruMeditationHandlerType_Default,
+    GuruMeditationHandlerType_PowerOff,
+    GuruMeditationHandlerType_Ignore
+};
 
 #endif /* !___UIDefs_h___ */
 

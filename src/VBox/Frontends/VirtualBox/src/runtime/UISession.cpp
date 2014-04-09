@@ -132,6 +132,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
 #ifndef Q_WS_MAC
     , m_pMachineWindowIcon(0)
 #endif /* !Q_WS_MAC */
+    , m_guruMeditationHandlerType(GuruMeditationHandlerType_Default)
     , m_fIsExtensionPackUsable(false)
     , m_requestedVisualStateType(UIVisualStateType_Invalid)
 #ifdef Q_WS_WIN
@@ -1128,6 +1129,9 @@ void UISession::loadSessionSettings()
         if (!icon.isNull())
             m_pMachineWindowIcon = new QIcon(icon);
 #endif /* !Q_WS_MAC */
+
+        /* Determine Guru Meditation handler type: */
+        m_guruMeditationHandlerType = VBoxGlobal::guruMeditationHandlerType(machine);
 
         /* Is there should be First RUN Wizard? */
         strSettings = machine.GetExtraData(GUI_FirstRun);
