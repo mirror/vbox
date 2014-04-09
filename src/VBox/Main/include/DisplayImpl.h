@@ -243,7 +243,7 @@ private:
 #endif
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-    void crViewportNotify(class VMMDev *pVMMDev, ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height);
+    int crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height);
 #endif
 
     static DECLCALLBACK(int)   changeFramebuffer(Display *that, IFramebuffer *aFB, unsigned uScreenId);
@@ -345,6 +345,7 @@ private:
 #ifdef VBOX_WITH_CRHGSMI
     /* for fast host hgcm calls */
     HGCMCVSHANDLE mhCrOglSvc;
+    RTCRITSECTRW mCrOglLock;
 #endif
 #ifdef VBOX_WITH_CROGL
     CR_MAIN_INTERFACE mCrOglCallbacks;

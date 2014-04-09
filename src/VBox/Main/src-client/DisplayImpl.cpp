@@ -151,6 +151,8 @@ HRESULT Display::FinalConstruct()
 
 #ifdef VBOX_WITH_CRHGSMI
     mhCrOglSvc = NULL;
+    rc = RTCritSectRwInit(&mCrOglLock);
+    AssertRC(rc);
 #endif
 #ifdef VBOX_WITH_CROGL
     RT_ZERO(mCrOglCallbacks);
@@ -181,6 +183,14 @@ void Display::FinalRelease()
         RTCritSectDelete(&mSaveSeamlessRectLock);
         RT_ZERO(mSaveSeamlessRectLock);
     }
+
+#ifdef VBOX_WITH_CRHGSMI
+    if (RTCritSectRwIsInitialized (&mCrOglLock))
+    {
+        RTCritSectRwDelete (&mCrOglLock);
+        RT_ZERO(mCrOglLock);
+    }
+#endif
     BaseFinalRelease();
 }
 
@@ -3485,7 +3495,7 @@ STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
 STDMETHODIMP Display::CompleteVHWACommand(BYTE *pCommand)
 {
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    mpDrv->pVBVACallbacks->pfnVHWACommandCompleteAsynch(mpDrv->pVBVACallbacks, (PVBOXVHWACMD)pCommand);
+    mpDrv->pVBVACallbacks->pfnVHWACommandCompleteAsync(mpDrv->pVBVACallbacks, (PVBOXVHWACMD)pCommand);
     return S_OK;
 #else
     return E_NOTIMPL;
@@ -3507,13 +3517,8 @@ STDMETHODIMP Display::ViewportChanged(ULONG aScreenId, ULONG x, ULONG y, ULONG w
 
     if (is3denabled)
     {
-        VMMDev *pVMMDev = mParent->getVMMDev();
-
-        if (pVMMDev)
-        {
-            crViewportNotify(pVMMDev, aScreenId, x, y, width, height);
-        }
-        else
+        int rc = crViewportNotify(aScreenId, x, y, width, height);
+        if (RT_FAILURE(rc))
         {
             DISPLAYFBINFO *pFb = &maFramebuffers[aScreenId];
             pFb->pendingViewportInfo.fPending = true;
@@ -3610,8 +3615,12 @@ int Display::updateDisplayData(void)
 }
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-void Display::crViewportNotify(VMMDev *pVMMDev, ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
+int Display::crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
 {
+    VMMDev *pVMMDev = mParent->getVMMDev();
+    if (!pVMMDev)
+        return VERR_INVALID_STATE;
+
     struct {
         VBOXCRCMDCTL_HGCM data;
         VBOXHGCMSVCPARM aParms[4];
@@ -3635,7 +3644,7 @@ void Display::crViewportNotify(VMMDev *pVMMDev, ULONG aScreenId, ULONG x, ULONG 
     s.data.aParms[4].type = VBOX_HGCM_SVC_PARM_32BIT;
     s.data.aParms[4].u.uint32 = height;
 
-    crCtlSubmitSync(&s.data.Hdr, RT_OFFSETOF(VBOXCRCMDCTL_HGCM, aParms[5]));
+    return crCtlSubmitSync(&s.data.Hdr, RT_OFFSETOF(VBOXCRCMDCTL_HGCM, aParms[5]));
 }
 #endif
 
@@ -3644,9 +3653,13 @@ void Display::setupCrHgsmiData(void)
 {
     VMMDev *pVMMDev = mParent->getVMMDev();
     Assert(pVMMDev);
-    int rc = VERR_GENERAL_FAILURE;
+    int rc = RTCritSectRwEnterExcl(&mCrOglLock);
+    AssertRC(rc);
+
     if (pVMMDev)
         rc = pVMMDev->hgcmHostSvcHandleCreate("VBoxSharedCrOpenGL", &mhCrOglSvc);
+    else
+        rc = VERR_GENERAL_FAILURE;
 
     if (RT_SUCCESS(rc))
     {
@@ -3665,21 +3678,23 @@ void Display::setupCrHgsmiData(void)
 
         rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_CRHGSMI_CTL, 1, &parm);
         if (RT_SUCCESS(rc))
-        {
             mCrOglCallbacks = Completion.MainInterface;
-
-            return;
-        }
-
-        AssertMsgFailed(("VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP_COMPLETION failed rc %d", rc));
+        else
+            AssertMsgFailed(("VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP_COMPLETION failed rc %d", rc));
     }
 
-    mhCrOglSvc = NULL;
+    if (RT_FAILURE(rc))
+        mhCrOglSvc = NULL;
+
+    RTCritSectRwLeaveExcl(&mCrOglLock);
 }
 
 void Display::destructCrHgsmiData(void)
 {
+    int rc = RTCritSectRwEnterExcl(&mCrOglLock);
+    AssertRC(rc);
     mhCrOglSvc = NULL;
+    RTCritSectRwLeaveExcl(&mCrOglLock);
 }
 #endif
 
@@ -4349,8 +4364,14 @@ void Display::handleCrHgsmiControlProcess(PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32
                         if (!pFb->pendingViewportInfo.fPending)
                             continue;
 
-                        crViewportNotify(pVMMDev, ul, pFb->pendingViewportInfo.x, pFb->pendingViewportInfo.y, pFb->pendingViewportInfo.width, pFb->pendingViewportInfo.height);
-                        pFb->pendingViewportInfo.fPending = false;
+                        rc = crViewportNotify(ul, pFb->pendingViewportInfo.x, pFb->pendingViewportInfo.y, pFb->pendingViewportInfo.width, pFb->pendingViewportInfo.height);
+                        if (RT_SUCCESS(rc))
+                            pFb->pendingViewportInfo.fPending = false;
+                        else
+                        {
+                            AssertMsgFailed(("crViewportNotify failed %d\n", rc));
+                            rc = VINF_SUCCESS;
+                        }
                     }
                 }
                 return;
@@ -4438,12 +4459,32 @@ DECLCALLBACK(int)  Display::displayCrHgcmCtlSubmit(PPDMIDISPLAYCONNECTOR pInterf
 
 int Display::crCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion)
 {
-    return mpDrv->pVBVACallbacks->pfnCrCtlSubmit(mpDrv->pVBVACallbacks, pCmd, cbCmd, pfnCompletion, pvCompletion);
+    int rc = RTCritSectRwEnterShared(&mCrOglLock);
+    if (RT_SUCCESS(rc))
+    {
+        if (mhCrOglSvc)
+            rc = mpDrv->pVBVACallbacks->pfnCrCtlSubmit(mpDrv->pVBVACallbacks, pCmd, cbCmd, pfnCompletion, pvCompletion);
+        else
+            rc = VERR_NOT_SUPPORTED;
+
+        RTCritSectRwLeaveShared(&mCrOglLock);
+    }
+    return rc;
 }
 
 int Display::crCtlSubmitSync(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
 {
-    return mpDrv->pVBVACallbacks->pfnCrCtlSubmitSync(mpDrv->pVBVACallbacks, pCmd, cbCmd);
+    int rc = RTCritSectRwEnterShared(&mCrOglLock);
+    if (RT_SUCCESS(rc))
+    {
+        if (mhCrOglSvc)
+            rc = mpDrv->pVBVACallbacks->pfnCrCtlSubmitSync(mpDrv->pVBVACallbacks, pCmd, cbCmd);
+        else
+            rc = VERR_NOT_SUPPORTED;
+
+        RTCritSectRwLeaveShared(&mCrOglLock);
+    }
+    return rc;
 }
 
 bool  Display::handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp)

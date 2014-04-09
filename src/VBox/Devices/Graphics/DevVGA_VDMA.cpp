@@ -1333,7 +1333,7 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
                 return rc;
             }
 
-            rc = VBoxVDMAThreadTerm(&pVdma->Thread, NULL, NULL, false);
+            rc = VBoxVDMAThreadTerm(&pVdma->Thread, NULL, NULL, true);
             if (RT_FAILURE(rc))
             {
                 WARN(("VBoxVDMAThreadTerm failed %d\n", rc));
@@ -2751,7 +2751,7 @@ static int vdmaVBVACtlSubmitSync(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL* pCtl, VBVAE
             WARN(("RTSemEventWait failed %d\n", rc));
     }
     else
-        WARN(("vdmaVBVACtlSubmit failed %d\n", rc));
+        Log(("vdmaVBVACtlSubmit failed %d\n", rc));
 
     RTSemEventDestroy(Data.hEvent);
 

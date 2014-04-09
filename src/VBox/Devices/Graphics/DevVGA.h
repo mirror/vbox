@@ -604,7 +604,7 @@ void VBVARaiseIrqNoWait(PVGASTATE pVGAState, uint32_t fFlags);
 uint32_t HGSMIReset (PHGSMIINSTANCE pIns);
 
 # ifdef VBOX_WITH_VIDEOHWACCEL
-int vbvaVHWACommandCompleteAsynch(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd);
+int vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd);
 int vbvaVHWAConstruct (PVGASTATE pVGAState);
 int vbvaVHWAReset (PVGASTATE pVGAState);
 

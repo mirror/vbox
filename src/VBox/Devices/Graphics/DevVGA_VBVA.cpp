@@ -801,7 +801,7 @@ static void vbvaVHWACommandComplete(PVGASTATE pVGAState, PVBOXVHWACMD pCommand, 
     if (fAsyncCommand)
     {
         Assert(pCommand->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH);
-        vbvaVHWACommandCompleteAsynch(&pVGAState->IVBVACallbacks, pCommand);
+        vbvaVHWACommandCompleteAsync(&pVGAState->IVBVACallbacks, pCommand);
     }
     else
     {
@@ -1240,7 +1240,7 @@ int vboxVBVASaveStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return vbvaVHWAEnable(PDMINS_2_DATA(pDevIns, PVGASTATE), true);
 }
 
-int vbvaVHWACommandCompleteAsynch(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd)
+int vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd)
 {
     int rc;
     Log(("VGA Command <<< Async rc %d %#p, %d\n", pCmd->rc, pCmd, pCmd->enmCmd));
