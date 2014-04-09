@@ -230,9 +230,7 @@ void crServerSetVBoxConfiguration()
     else
     {
         cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT
-#ifdef DEBUG_misha
                 | CR_VBOX_CAP_CMDVBVA | CR_VBOX_CAP_CMDBLOCKS
-#endif
                 ;
 
     }
@@ -381,9 +379,7 @@ void crServerSetVBoxConfigurationHGCM()
     else
     {
         cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT
-#ifdef DEBUG_misha
                 | CR_VBOX_CAP_CMDVBVA | CR_VBOX_CAP_CMDBLOCKS
-#endif
                 ;
     }
 
