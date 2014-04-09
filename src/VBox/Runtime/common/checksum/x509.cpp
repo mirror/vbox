@@ -29,7 +29,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "internal/iprt.h"
-#include <iprt/x509.h>
+#include <iprt/x509-branch-collision.h>
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>

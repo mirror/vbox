@@ -46,7 +46,7 @@
 #include <VBox/version.h>
 #include <VBox/settings.h>
 
-#include <iprt/x509.h>
+#include <iprt/x509-branch-collision.h>
 #include <set>
 
 using namespace std;
