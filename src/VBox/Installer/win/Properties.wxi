@@ -13,7 +13,8 @@
     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 -->
 
-<Include>
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wix"
+         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
   <!-- TODO: Add "VBox" prefix! -->
   <?define Property_RegKey = "Software\$(env.VBOX_VENDOR_SHORT)\VirtualBox" ?>
