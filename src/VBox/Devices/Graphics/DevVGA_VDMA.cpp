@@ -2945,7 +2945,7 @@ int vboxVDMASaveStateExecPrep(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
     Assert(pCmd);
     if (pCmd)
     {
-        int rc = vboxVDMACrCtlPost(pVGAState, pCmd, sizeof (*pCmd));
+        rc = vboxVDMACrCtlPost(pVGAState, pCmd, sizeof (*pCmd));
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
