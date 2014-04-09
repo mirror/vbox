@@ -93,12 +93,6 @@
         NOT VBOXINNOTEK
     </Condition>
 
-    <Media Id="1" Cabinet="product.cab" EmbedCab="yes" DiskPrompt="Installation Media" />
-    <Property Id="DiskPrompt" Value="Oracle VM VirtualBox Installation" />
-<?if $(env.VBOX_WITH_COMBINED_PACKAGE) = "yes" ?>
-        <Media Id="2" Cabinet="common.cab" EmbedCab="no" CompressionLevel="high" />
-<?endif ?>
-
     <!-- *************************** Upgrade packages only ******************************* -->
     <!-- Minimum and Maximum specify the range of versions we are supposed to update with this upgrade.
          IncludeMaximum and IncludeMinimum specify whether the bound value is actually included in the range or not
@@ -121,6 +115,11 @@
     <!-- The product's icon table -->
     <Icon Id="IconVirtualBox" SourceFile="$(env.VBOX_WINDOWS_ICON_FILE)" />
 
+    <!-- The media/binary IDs -->
+    <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
+<?if $(env.VBOX_WITH_COMBINED_PACKAGE) = "yes" ?>
+        <Media Id="2" Cabinet="common.cab" EmbedCab="no" CompressionLevel="high" />
+<?endif ?>
     <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
 
     <!-- Custom actions -->

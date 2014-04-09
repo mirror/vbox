@@ -45,10 +45,10 @@
                                       Source="$(env.PATH_OUT)\bin\VBoxNetAdp.sys" Checksum="yes"/>
                                 <File Id="file_VBoxNetAdp.inf" Name="VBoxNetAdp.inf"
                                       Source="$(env.PATH_OUT)\bin\VBoxNetAdp.inf" />
-                <?if $(env.VBOX_SIGNING_MODE) != none ?>
+<?if $(env.VBOX_SIGNING_MODE) != none ?>
                                 <File Id="file_VBoxNetAdp.cat" Name="VBoxNetAdp.cat"
                                       Source="$(env.PATH_OUT)\bin\VBoxNetAdp.cat" />
-                <?endif ?>
+<?endif ?>
                             </Component>
                         </Directory>
                     </Directory>
