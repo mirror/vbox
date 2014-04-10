@@ -1666,7 +1666,6 @@ VBoxManage setextradata "VM name"
       <para><glosslist>
           <glossentry>
             <glossterm><computeroutput>--timesync-interval</computeroutput></glossterm>
-
             <glossdef>
               <para>Specifies the interval at which to synchronize the time
               with the host. The default is 10000 ms (10 seconds).</para>
@@ -1675,17 +1674,14 @@ VBoxManage setextradata "VM name"
 
           <glossentry>
             <glossterm><computeroutput>--timesync-min-adjust</computeroutput></glossterm>
-
             <glossdef>
               <para>The minimum absolute drift value measured in milliseconds
               to make adjustments for. The default is 1000 ms on OS/2 and 100
               ms elsewhere.</para>
             </glossdef>
           </glossentry>
-
           <glossentry>
             <glossterm><computeroutput>--timesync-latency-factor</computeroutput></glossterm>
-
             <glossdef>
               <para>The factor to multiply the time query latency with to
               calculate the dynamic minimum adjust time. The default is 8
@@ -1700,7 +1696,6 @@ VBoxManage setextradata "VM name"
 
           <glossentry>
             <glossterm><computeroutput>--timesync-max-latency</computeroutput></glossterm>
-
             <glossdef>
               <para>The max host timer query latency to accept. The default is
               250 ms.</para>
@@ -1709,7 +1704,6 @@ VBoxManage setextradata "VM name"
 
           <glossentry>
             <glossterm><computeroutput>--timesync-set-threshold</computeroutput></glossterm>
-
             <glossdef>
               <para>The absolute drift threshold, given as milliseconds where
               to start setting the time instead of trying to smoothly adjust
@@ -1719,7 +1713,6 @@ VBoxManage setextradata "VM name"
 
           <glossentry>
             <glossterm><computeroutput>--timesync-set-start</computeroutput></glossterm>
-
             <glossdef>
               <para>Set the time when starting the time sync service.</para>
             </glossdef>
@@ -1728,7 +1721,6 @@ VBoxManage setextradata "VM name"
           <glossentry>
             <glossterm><computeroutput>--timesync-set-on-restore
             0|1</computeroutput></glossterm>
-
             <glossdef>
               <para>Set the time after the VM was restored from a saved state
               when passing 1 as parameter (default). Disable by passing 0. In
@@ -1936,7 +1928,6 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
       following keywords:<glosslist>
           <glossentry>
             <glossterm><computeroutput>noSelector</computeroutput></glossterm>
-
             <glossdef>
               <para>Don't allow to start the VirtualBox manager. Trying to do so
               will show a window containing a proper error message.</para>
@@ -1945,7 +1936,6 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
           <glossentry>
             <glossterm><computeroutput>noMenuBar</computeroutput></glossterm>
-
             <glossdef>
               <para>VM windows will not contain a menu bar.</para>
             </glossdef>
@@ -1953,7 +1943,6 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
           <glossentry>
             <glossterm><computeroutput>noStatusBar</computeroutput></glossterm>
-
             <glossdef>
               <para>VM windows will not contain a status bar.</para>
             </glossdef>
@@ -2781,7 +2770,6 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           following keywords:</para><glosslist>
           <glossentry>
             <glossterm><computeroutput>SaveState</computeroutput></glossterm>
-
             <glossdef>
               <para>Don't allow the user to save the VM state when terminating
               the VM.</para>
@@ -2790,7 +2778,6 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
           <glossentry>
             <glossterm><computeroutput>Shutdown</computeroutput></glossterm>
-
             <glossdef>
               <para>Don't allow the user to shutdown the VM by sending the ACPI
               power-off event to the guest.</para>
@@ -2799,7 +2786,6 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
           <glossentry>
             <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
-
             <glossdef>
               <para>Don't allow the user to power off the VM.</para>
             </glossdef>
@@ -2807,7 +2793,6 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
           <glossentry>
             <glossterm><computeroutput>PowerOffRestoringSnapshot</computeroutput></glossterm>
-
             <glossdef>
               <para>Don't allow the user to return to the last snapshot when
                 powering off the VM.</para>
@@ -2817,6 +2802,47 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
         <para>This is a per-VM setting. Any combination of the above is allowed. If all
           options are specified, the VM cannot be shut down at all.</para>
+      </sect2>
+
+      <sect2>
+        <title>Action for handling a Guru Meditation</title>
+
+        <para>A VM runs into a Guru Meditation if there is a problem which
+          cannot be fixed by other means than terminating the process. The
+          default is to show a message window which instructs the user to
+          open a bug report.</para>
+        <para>This behavior can be configured:</para>
+          
+        <para><screen>VBoxManage setextradata "VM name" GUI/GuruMeditationHandler MODE</screen></para>
+
+        <para>where <computeroutput>MODE</computeroutput> is one of the
+          following keywords:</para><glosslist>
+          <glossentry>
+            <glossterm><computeroutput>Default</computeroutput></glossterm>
+            <glossdef>
+              <para>A message window is shown. After the user confirmed, the
+                VM is terminated.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
+            <glossdef>
+              <para>The VM is immediately powered-off without showing any message
+                window. The VM logfile will show information about what happend.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm><computeroutput>Ignore</computeroutput></glossterm>
+            <glossdef>
+              <para>The VM is left in stuck mode. Execution is stopped but no
+              message window is shown. The VM has to be powered off manually.</para>
+            </glossdef>
+          </glossentry>
+        </glosslist>
+
+        <para>This is a per-VM setting.</para>
     </sect2>
   </sect1>
 
