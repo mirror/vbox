@@ -186,7 +186,7 @@ static void rtR3InitWindowsVersion(void)
      * compatability shims.
      */
     RT_ZERO(g_WinOsInfoEx);
-    g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
 
     LONG (__stdcall *pfnRtlGetVersion)(OSVERSIONINFOEXW *);
     *(FARPROC *)&pfnRtlGetVersion = GetProcAddress(g_hModNtDll, "RtlGetVersion");
@@ -199,15 +199,15 @@ static void rtR3InitWindowsVersion(void)
          * Couldn't find it or it failed, try the windows version of the API.
          */
         RT_ZERO(g_WinOsInfoEx);
-        g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+        g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
         if (!GetVersionExW((POSVERSIONINFOW)&g_WinOsInfoEx))
         {
             /*
              * If that didn't work either, just get the basic version bits.
              */
             RT_ZERO(g_WinOsInfoEx);
-            g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-            if (GetVersionExA((POSVERSIONINFOA)&g_WinOsInfoEx))
+            g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+            if (GetVersionExW((POSVERSIONINFOW)&g_WinOsInfoEx))
                 Assert(g_WinOsInfoEx.dwPlatformId != VER_PLATFORM_WIN32_NT || g_WinOsInfoEx.dwMajorVersion < 5);
             else
             {
