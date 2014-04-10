@@ -929,26 +929,53 @@ int VBoxCmdVbvaCreate(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, ULONG offBuffe
     return rc;
 }
 
-int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMDVBVA_HDR *pCmd, uint32_t u32FenceID, uint32_t cbCmd)
+void VBoxCmdVbvaSubmitUnlock(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, VBOXCMDVBVA_HDR* pCmd, uint32_t u32FenceID)
 {
-    int rc = VINF_SUCCESS;
-
-    Assert(u32FenceID);
+    if (u32FenceID)
+        pVbva->u32FenceSubmitted = u32FenceID;
+    else
+        WARN(("no cmd fence specified"));
 
     pCmd->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-#ifdef DEBUG_misha
-    Assert(u32FenceID == pVbva->u32FenceSubmitted + 1);
-#endif
+
+    pCmd->u32FenceID = u32FenceID;
+
+    VBoxVBVAExBufferEndUpdate(&pVbva->Vbva);
+
+    if (!VBoxVBVAExIsProcessing(&pVbva->Vbva))
+    {
+        /* Issue the submit command. */
+        HGSMIGUESTCOMMANDCONTEXT *pCtx = &VBoxCommonFromDeviceExt(pDevExt)->guestCtx;
+        VBVACMDVBVASUBMIT *pSubmit = (VBVACMDVBVASUBMIT*)VBoxHGSMIBufferAlloc(pCtx,
+                                       sizeof (VBVACMDVBVASUBMIT),
+                                       HGSMI_CH_VBVA,
+                                       VBVA_CMDVBVA_SUBMIT);
+        if (!pSubmit)
+        {
+            WARN(("VBoxHGSMIBufferAlloc failed\n"));
+            return;
+        }
+
+        pSubmit->u32Reserved = 0;
+
+        VBoxHGSMIBufferSubmit(pCtx, pSubmit);
+
+        VBoxHGSMIBufferFree(pCtx, pSubmit);
+    }
+}
+
+VBOXCMDVBVA_HDR* VBoxCmdVbvaSubmitLock(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t cbCmd)
+{
     if (VBoxVBVAExGetSize(&pVbva->Vbva) < cbCmd)
     {
         WARN(("buffer does not fit the vbva buffer, we do not support splitting buffers"));
-        return VERR_NOT_SUPPORTED;
+        NULL;
     }
 
     if (!VBoxVBVAExBufferBeginUpdate(&pVbva->Vbva, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx))
     {
         WARN(("VBoxVBVAExBufferBeginUpdate failed!"));
-        return VERR_GENERAL_FAILURE;
+        return NULL;
     }
 
     void* pvBuffer = VBoxVBVAExAllocContiguous(&pVbva->Vbva, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx, cbCmd);
@@ -959,7 +986,7 @@ int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMD
         if (!cbTail)
         {
             WARN(("this is not a free tail case, cbTail is NULL"));
-            return VERR_BUFFER_OVERFLOW;
+            return NULL;
         }
 
         Assert(cbTail < cbCmd);
@@ -975,47 +1002,35 @@ int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMD
         if (!VBoxVBVAExBufferBeginUpdate(&pVbva->Vbva, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx))
         {
             WARN(("VBoxVBVAExBufferBeginUpdate 2 failed!"));
-            return VERR_GENERAL_FAILURE;
+            return NULL;
         }
 
         pvBuffer = VBoxVBVAExAllocContiguous(&pVbva->Vbva, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx, cbCmd);
         if (!pvBuffer)
         {
             WARN(("failed to allocate contiguous buffer, failing"));
-            return VERR_GENERAL_FAILURE;
+            return NULL;
         }
     }
-
-    pVbva->u32FenceSubmitted = u32FenceID;
 
     Assert(pvBuffer);
 
-    memcpy(pvBuffer, pCmd, cbCmd);
+    return (VBOXCMDVBVA_HDR*)pvBuffer;
+}
 
-    ((VBOXCMDVBVA_HDR*)pvBuffer)->u32FenceID = u32FenceID;
+int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMDVBVA_HDR *pCmd, uint32_t u32FenceID, uint32_t cbCmd)
+{
+    VBOXCMDVBVA_HDR* pHdr = VBoxCmdVbvaSubmitLock(pDevExt, pVbva, cbCmd);
 
-    VBoxVBVAExBufferEndUpdate(&pVbva->Vbva);
-
-    if (!VBoxVBVAExIsProcessing(&pVbva->Vbva))
+    if (!pHdr)
     {
-        /* Issue the submit command. */
-        HGSMIGUESTCOMMANDCONTEXT *pCtx = &VBoxCommonFromDeviceExt(pDevExt)->guestCtx;
-        VBVACMDVBVASUBMIT *pSubmit = (VBVACMDVBVASUBMIT*)VBoxHGSMIBufferAlloc(pCtx,
-                                       sizeof (VBVACMDVBVASUBMIT),
-                                       HGSMI_CH_VBVA,
-                                       VBVA_CMDVBVA_SUBMIT);
-        if (!pSubmit)
-        {
-            WARN(("VBoxHGSMIBufferAlloc failed\n"));
-            return VERR_OUT_OF_RESOURCES;
-        }
-
-        pSubmit->u32Reserved = 0;
-
-        VBoxHGSMIBufferSubmit(pCtx, pSubmit);
-
-        VBoxHGSMIBufferFree(pCtx, pSubmit);
+        WARN(("VBoxCmdVbvaSubmitLock failed"));
+        return VERR_GENERAL_FAILURE;
     }
+
+    memcpy(pHdr, pCmd, cbCmd);
+
+    VBoxCmdVbvaSubmitUnlock(pDevExt, pVbva, pCmd, u32FenceID);
 
     return VINF_SUCCESS;
 }
@@ -1082,13 +1097,12 @@ bool VBoxCmdVbvaCheckCompletedIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva)
 
         if (u8State == VBOXCMDVBVA_STATE_IN_PROGRESS)
         {
-            Assert(u32FenceID);
             if (!u32FenceID)
+            {
+                WARN(("fence is NULL"));
                 continue;
+            }
 
-#ifdef DEBUG_misha
-            Assert(u32FenceID == pVbva->u32FenceCompleted + 1);
-#endif
             pVbva->u32FenceCompleted = u32FenceID;
         }
         else

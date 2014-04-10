@@ -1582,6 +1582,11 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
 #define VBOXCMDVBVA_OPTYPE_NOPCMD                       7
 /* actual command is stored in guest system memory */
 #define VBOXCMDVBVA_OPTYPE_SYSMEMCMD                    8
+/* complex command - i.e. can contain multiple commands
+ * i.e. the VBOXCMDVBVA_OPTYPE_COMPLEXCMD VBOXCMDVBVA_HDR is followed
+ * by one or more VBOXCMDVBVA_HDR commands.
+ * Each command's size is specified in it's VBOXCMDVBVA_HDR's u32FenceID field */
+#define VBOXCMDVBVA_OPTYPE_COMPLEXCMD                   9
 
 /* nop - is a one-bit command. The buffer size to skip is determined by VBVA buffer size */
 #define VBOXCMDVBVA_OPTYPE_NOP                          0x80
@@ -1628,7 +1633,7 @@ typedef struct VBOXCMDVBVA_HDR
         uint8_t u8PrimaryID;
     } u;
     /* DXGK DDI fence ID */
-    volatile uint32_t u32FenceID;
+    uint32_t u32FenceID;
 } VBOXCMDVBVA_HDR;
 
 typedef uint32_t VBOXCMDVBVAOFFSET;
