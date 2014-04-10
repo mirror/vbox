@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,35 +26,57 @@
 /* Forward declarations: */
 class UIExtraDataEventHandler;
 
-class UIExtraDataManager: public QObject
+/** Singleton QObject extension
+  * providing GUI with corresponding extra-data values,
+  * and notifying it whenever any of those values changed. */
+class UIExtraDataManager : public QObject
 {
     Q_OBJECT;
 
-public:
-    static UIExtraDataManager* instance();
-    static void destroy();
-
 signals:
-    /* Specialized extra data signals */
-    void sigGUILanguageChange(QString strLang);
-    void sigSelectorShortcutsChanged();
-    void sigMachineShortcutsChanged();
-    void sigHidLedsSyncStateChanged(bool fEnabled);
+
+    /** Notifies about GUI language change. */
+    void sigLanguageChange(QString strLanguage);
+
+    /** Notifies about Selector UI keyboard shortcut change. */
+    void sigSelectorUIShortcutChange();
+    /** Notifies about Runtime UI keyboard shortcut change. */
+    void sigRuntimeUIShortcutChange();
+
+    /** Notifies about HID LED sync state change. */
+    void sigHIDLedsSyncStateChange(bool fEnabled);
+
 #ifdef RT_OS_DARWIN
+    /** Mac OS X: Notifies about 'presentation mode' status change. */
     void sigPresentationModeChange(bool fEnabled);
+    /** Mac OS X: Notifies about 'dock icon' appearance change. */
     void sigDockIconAppearanceChange(bool fEnabled);
 #endif /* RT_OS_DARWIN */
 
+public:
+
+    /** Static Extra-data Manager instance/constructor. */
+    static UIExtraDataManager* instance();
+    /** Static Extra-data Manager destructor. */
+    static void destroy();
+
 private:
+
+    /** Extra-data Manager constructor. */
     UIExtraDataManager();
+    /** Extra-data Manager destructor. */
     ~UIExtraDataManager();
 
-    /* Private member vars */
+    /** Singleton Extra-data Manager instance. */
     static UIExtraDataManager *m_pInstance;
-    CEventListener m_mainEventListener;
+
+    /** Main event-listener instance. */
+    CEventListener m_listener;
+    /** Extra-data event-handler instance. */
     UIExtraDataEventHandler *m_pHandler;
 };
 
+/** Singleton Extra-data Manager 'official' name. */
 #define gEDataManager UIExtraDataManager::instance()
 
 #endif /* !___UIExtraDataManager_h___ */

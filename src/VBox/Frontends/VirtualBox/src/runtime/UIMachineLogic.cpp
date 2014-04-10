@@ -656,7 +656,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
 
     /* Subscribe to GUI_HidLedsSync extradata changes in order to
      * be able to enable or disable feature dynamically. */
-    connect(gEDataManager, SIGNAL(sigHidLedsSyncStateChanged(bool)), this, SLOT(sltHidLedsSyncStateChanged(bool)));
+    connect(gEDataManager, SIGNAL(sigHIDLedsSyncStateChange(bool)), this, SLOT(sltHidLedsSyncStateChanged(bool)));
 #else
     m_isHidLedsSyncEnabled = false;
 #endif
