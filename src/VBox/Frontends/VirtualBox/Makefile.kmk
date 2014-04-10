@@ -493,16 +493,6 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 	src/net/UIUpdateManager.cpp
 endif
 
-ifdef VBOX_WITH_DRAG_AND_DROP
- VirtualBox_QT_MOCSRCS += \
-	src/runtime/UIDnDHandler.cpp
- ifdef VBOX_WITH_DRAG_AND_DROP_GH
-  VirtualBox_QT_MOCSRCS += \
-	src/runtime/UIDnDDrag.cpp \
-	src/runtime/UIDnDMIMEData.cpp
- endif
-endif
-
 VirtualBox_QT_MOCSRCS.darwin += \
     src/platform/darwin/UIWindowMenuManager.cpp
 VirtualBox_QT_MOCSRCS.win += \
