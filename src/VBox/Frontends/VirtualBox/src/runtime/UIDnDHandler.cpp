@@ -331,5 +331,3 @@ Qt::DropActions UIDnDHandler::toQtDnDActions(const QVector<KDragAndDropAction> &
     return dropActs;
 }
 
-#include "UIDnDHandler.moc"
-

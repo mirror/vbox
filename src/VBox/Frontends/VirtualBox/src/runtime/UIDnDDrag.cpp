@@ -208,5 +208,3 @@ int UIDnDDrag::RetrieveData(const CSession &session,
     return rc;
 }
 
-#include "UIDnDDrag.moc"
-

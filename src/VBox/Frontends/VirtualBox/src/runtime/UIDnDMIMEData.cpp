@@ -291,5 +291,3 @@ int UIDnDMimeData::setData(const QString &mimeType)
     return rc;
 }
 
-#include "UIDnDMIMEData.moc"
-
