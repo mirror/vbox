@@ -2095,8 +2095,8 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pDr->Flags.Value = 0;
 
                 pQsOut->PagingBufferSegmentId = 0;
-                pQsOut->PagingBufferSize = 0xc00;
-                pQsOut->PagingBufferPrivateDataSize = 0;
+                pQsOut->PagingBufferSize = PAGE_SIZE;
+                pQsOut->PagingBufferPrivateDataSize = PAGE_SIZE;
             }
             }
 #ifdef VBOX_WDDM_WIN8
@@ -3106,70 +3106,60 @@ DxgkDdiSubmitCommandNew(
     Assert(!pSubmitCommand->DmaBufferSegmentId);
 #endif
 
-    /* the DMA command buffer is located in system RAM, the host will need to pick it from there */
-    //BufInfo.fFlags = 0; /* see VBOXVDMACBUF_FLAG_xx */
-    VBOXCMDVBVA_HDR *pHdr;
-    VBOXCMDVBVA_SYSMEMCMD SysMem;
     uint32_t cbCmd = pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset - pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset;
-    if (!cbCmd)
+    uint32_t cbDma = pSubmitCommand->DmaBufferSubmissionEndOffset - pSubmitCommand->DmaBufferSubmissionStartOffset;
+    VBOXCMDVBVA_HDR *pHdr;
+    VBOXCMDVBVA_HDR NopCmd;
+    if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
     {
-        cbCmd = pSubmitCommand->DmaBufferSubmissionEndOffset - pSubmitCommand->DmaBufferSubmissionStartOffset;
-        if (!cbCmd || VBOXWDDM_DUMMY_DMABUFFER_SIZE == cbCmd)
+        if (cbCmd)
         {
-            SysMem.Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
-            SysMem.Hdr.u8Flags = 0;
-            SysMem.Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-            cbCmd = sizeof (SysMem.Hdr);
+            WARN(("invalid command data"));
+            return STATUS_INVALID_PARAMETER;
         }
-        else
+        NopCmd.u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
+        NopCmd.u8Flags = 0;
+        NopCmd.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+        NopCmd.u32FenceID = sizeof (VBOXCMDVBVA_HDR);
+        cbCmd = sizeof (VBOXCMDVBVA_HDR);
+        pHdr = &NopCmd;
+    }
+    else
+    {
+        pHdr = (VBOXCMDVBVA_HDR*)(((uint8_t*)pSubmitCommand->pDmaBufferPrivateData) + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
+        if (cbCmd != pHdr->u32FenceID)
         {
-            if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
-            {
-                WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
-                        pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset,
-                        pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset,
-                        sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
-                return STATUS_INVALID_PARAMETER;
-            }
+            WARN(("partial submission start!"));
+            cbCmd = pHdr->u32FenceID;
+        }
+    }
 
-            if (cbCmd > 0xffff)
-            {
-                WARN(("cbCmd too big"));
-                return STATUS_INVALID_PARAMETER;
-            }
-
-            SysMem.Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_SYSMEMCMD;
-            SysMem.Hdr.u8Flags = cbCmd & 0xff;
-            SysMem.Hdr.u.u8PrimaryID = (cbCmd >> 8) & 0xff;
-            SysMem.Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+    switch (pHdr->u8OpCode)
+    {
+        case VBOXCMDVBVA_OPTYPE_SYSMEMCMD:
+        {
+            VBOXCMDVBVA_SYSMEMCMD *pSysMem = (VBOXCMDVBVA_SYSMEMCMD*)pHdr;
             if (pSubmitCommand->DmaBufferPhysicalAddress.QuadPart & PAGE_OFFSET_MASK)
             {
                 WARN(("command should be page aligned for now"));
                 return STATUS_INVALID_PARAMETER;
             }
-            SysMem.phCmd = (VBOXCMDVBVAPHADDR)(pSubmitCommand->DmaBufferPhysicalAddress.QuadPart + pSubmitCommand->DmaBufferSubmissionStartOffset);
-
-            cbCmd = sizeof (SysMem);
+            pSysMem->phCmd = (VBOXCMDVBVAPHADDR)(pSubmitCommand->DmaBufferPhysicalAddress.QuadPart + pSubmitCommand->DmaBufferSubmissionStartOffset);
+#ifdef DEBUG
+            {
+                uint32_t cbRealDmaCmd = (pSysMem->Hdr.u8Flags | (pSysMem->Hdr.u.u8PrimaryID << 8));
+                Assert(cbRealDmaCmd >= cbDma);
+                if (cbDma < cbRealDmaCmd)
+                    WARN(("parrtial sysmem transfer"));
+            }
+#endif
+            break;
         }
-
-        pHdr = &SysMem.Hdr;
-    }
-    else
-    {
-        if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
-        {
-            WARN(("DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXCMDVBVA_HDR) (%d)",
-                    pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset,
-                    pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset,
-                    sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        pHdr = (VBOXCMDVBVA_HDR*)((uint8_t*)pSubmitCommand->pDmaBufferPrivateData + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
+        default:
+            break;
     }
 
-    pHdr->u32FenceID = pSubmitCommand->SubmissionFenceId;
-    int rc = VBoxCmdVbvaSubmit(pDevExt, &pDevExt->CmdVbva, pHdr, cbCmd);
+    int rc = VBoxCmdVbvaSubmit(pDevExt, &pDevExt->CmdVbva, pHdr, pSubmitCommand->SubmissionFenceId, cbCmd);
     if (RT_SUCCESS(rc))
         return STATUS_SUCCESS;
 
@@ -3441,6 +3431,12 @@ DxgkDdiBuildPagingBufferNew(
             }
 #endif
 
+            if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_SYSMEMCMD))
+            {
+                WARN(("private data too small"));
+                return STATUS_INVALID_PARAMETER;
+            }
+
             Assert(!pBuildPagingBuffer->Transfer.MdlOffset);
 
             if ((!pBuildPagingBuffer->Transfer.Source.SegmentId) == (!pBuildPagingBuffer->Transfer.Destination.SegmentId))
@@ -3475,7 +3471,6 @@ DxgkDdiBuildPagingBufferNew(
             pPaging->Hdr.u8Flags = 0;
             pPaging->Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
             pPaging->Hdr.u32FenceID = 0;
-
 
             PMDL pMdl;
             uint32_t offVRAM;
@@ -3527,6 +3522,16 @@ DxgkDdiBuildPagingBufferNew(
             else
                 pBuildPagingBuffer->MultipassOffset = 0;
 
+            VBOXCMDVBVA_SYSMEMCMD *pSysMemCmd = (VBOXCMDVBVA_SYSMEMCMD*)pBuildPagingBuffer->pDmaBufferPrivateData;
+            pSysMemCmd->Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_SYSMEMCMD;
+            pSysMemCmd->Hdr.u8Flags = cbBuffer & 0xff;
+            pSysMemCmd->Hdr.u.u8PrimaryID = (cbBuffer >> 8) & 0xff;
+            pSysMemCmd->Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+            pSysMemCmd->Hdr.u32FenceID = sizeof (*pSysMemCmd);
+            pSysMemCmd->phCmd = 0;
+
+            cbPrivateData = sizeof (*pSysMemCmd);
+
             break;
         }
         case DXGK_OPERATION_FILL:
@@ -3538,6 +3543,21 @@ DxgkDdiBuildPagingBufferNew(
                 WARN(("allocation is null"));
                 return STATUS_INVALID_PARAMETER;
             }
+
+            if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_HDR))
+            {
+                WARN(("private data too small"));
+                return STATUS_INVALID_PARAMETER;
+            }
+
+            VBOXCMDVBVA_HDR *pHdr = (VBOXCMDVBVA_HDR*)pBuildPagingBuffer->pDmaBufferPrivateData;
+            pHdr->u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
+            pHdr->u8Flags = 0;
+            pHdr->u.u8PrimaryID = 0;
+            pHdr->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+            pHdr->u32FenceID = sizeof (*pHdr);
+
+            cbPrivateData = sizeof (*pHdr);
             /** @todo: add necessary bits */
 //            WARN(("Impl!"));
             cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
@@ -3561,9 +3581,10 @@ DxgkDdiBuildPagingBufferNew(
         }
     }
 
-    Assert(!cbPrivateData);
-
     Assert(pBuildPagingBuffer->Operation == DXGK_OPERATION_DISCARD_CONTENT || cbBuffer);
+    Assert(cbBuffer <= pBuildPagingBuffer->DmaSize);
+    Assert(cbBuffer == 0 || cbBuffer >= sizeof (VBOXCMDVBVA_PAGING_TRANSFER) || cbBuffer == VBOXWDDM_DUMMY_DMABUFFER_SIZE);
+    AssertCompile(VBOXWDDM_DUMMY_DMABUFFER_SIZE < 8);
     pBuildPagingBuffer->pDmaBuffer = ((uint8_t*)pBuildPagingBuffer->pDmaBuffer) + cbBuffer;
     pBuildPagingBuffer->pDmaBufferPrivateData = ((uint8_t*)pBuildPagingBuffer->pDmaBufferPrivateData) + cbPrivateData;
 
@@ -5826,6 +5847,7 @@ DxgkDdiRenderNew(
 
         uint32_t cbBuffer = 0;
         uint32_t cbPrivateData = 0;
+        uint32_t cbCmd = 0;
         VBOXCMDVBVA_HDR* pCmd = (VBOXCMDVBVA_HDR*)pRender->pDmaBufferPrivateData;
 
         switch (pInputHdr->enmCmd)
@@ -5914,6 +5936,8 @@ DxgkDdiRenderNew(
                     pPLL->AllocationOffset = SubmUmInfo.offData;
                 }
 
+                cbCmd = cbPrivateData;
+
                 break;
             }
             case VBOXVDMACMD_TYPE_DMA_NOP:
@@ -5945,6 +5969,8 @@ DxgkDdiRenderNew(
                     pPLL->AllocationOffset = 0;
                 }
 
+                cbCmd = cbPrivateData;
+
                 break;
             }
             default:
@@ -5958,18 +5984,13 @@ DxgkDdiRenderNew(
         pRender->pDmaBuffer = ((uint8_t*)pRender->pDmaBuffer) + cbBuffer;
 
         pCmd->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-        /* sanity */
-        pCmd->u32FenceID = 0;
+        pCmd->u32FenceID = cbPrivateData;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
         Status = STATUS_INVALID_PARAMETER;
         WARN(("invalid parameter"));
     }
-//    LOGF(("LEAVE, hContext(0x%x)", hContext));
-
-    return Status;
-
 //    LOGF(("LEAVE, hContext(0x%x)", hContext));
 
     return Status;
@@ -6515,8 +6536,8 @@ DxgkDdiPresentNew(
     }
 
     pHdr->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-    /* sanity */
-    pHdr->u32FenceID = 0;
+
+    pHdr->u32FenceID = cbPrivateData;
 
     Assert(cbBuffer);
     Assert(cbPrivateData);

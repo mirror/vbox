@@ -929,18 +929,16 @@ int VBoxCmdVbvaCreate(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, ULONG offBuffe
     return rc;
 }
 
-int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd)
+int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMDVBVA_HDR *pCmd, uint32_t u32FenceID, uint32_t cbCmd)
 {
     int rc = VINF_SUCCESS;
 
-    Assert(pCmd->u32FenceID);
+    Assert(u32FenceID);
 
     pCmd->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
 #ifdef DEBUG_misha
-    Assert(pCmd->u32FenceID == pVbva->u32FenceSubmitted + 1);
+    Assert(u32FenceID == pVbva->u32FenceSubmitted + 1);
 #endif
-    pVbva->u32FenceSubmitted = pCmd->u32FenceID;
-
     if (VBoxVBVAExGetSize(&pVbva->Vbva) < cbCmd)
     {
         WARN(("buffer does not fit the vbva buffer, we do not support splitting buffers"));
@@ -988,9 +986,13 @@ int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMD
         }
     }
 
+    pVbva->u32FenceSubmitted = u32FenceID;
+
     Assert(pvBuffer);
 
     memcpy(pvBuffer, pCmd, cbCmd);
+
+    ((VBOXCMDVBVA_HDR*)pvBuffer)->u32FenceID = u32FenceID;
 
     VBoxVBVAExBufferEndUpdate(&pVbva->Vbva);
 
@@ -1186,6 +1188,7 @@ uint32_t VBoxCVDdiPTransferVRamSysBuildEls(VBOXCMDVBVA_PAGING_TRANSFER *pCmd, PM
 
     *pcPagesWritten = i;
     Assert(cbInitBuffer - cbBuffer == RT_OFFSETOF(VBOXCMDVBVA_PAGING_TRANSFER, Data.aPageNumbers[i]));
+    Assert(cbInitBuffer - cbBuffer >= sizeof (VBOXCMDVBVA_PAGING_TRANSFER));
     return cbInitBuffer - cbBuffer;
 }
 
