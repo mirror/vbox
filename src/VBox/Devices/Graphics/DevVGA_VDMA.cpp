@@ -1556,6 +1556,11 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
     {
         case VBOXCMDVBVA_OPTYPE_SYSMEMCMD:
         {
+            if (cbCmd < sizeof (VBOXCMDVBVA_SYSMEMCMD))
+            {
+                WARN(("invalid command size"));
+                return -1;
+            }
             VBOXCMDVBVA_SYSMEMCMD *pSysmemCmd = (VBOXCMDVBVA_SYSMEMCMD*)pCmd;
             const VBOXCMDVBVA_HDR *pRealCmdHdr;
             uint32_t cbRealCmd = pCmd->u8Flags;
@@ -1699,6 +1704,36 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
 
             PDMDevHlpPhysReleasePageMappingLock(pDevIns, &Lock);
             return i8Result;
+        }
+        case VBOXCMDVBVA_OPTYPE_COMPLEXCMD:
+        {
+            Assert(cbCmd >= sizeof (VBOXCMDVBVA_HDR));
+            ++pCmd;
+            cbCmd -= sizeof (*pCmd);
+            uint32_t cbCurCmd = 0;
+            for ( ; cbCmd; cbCmd -= cbCurCmd, pCmd = (VBOXCMDVBVA_HDR*)(((uint8_t*)pCmd) + cbCurCmd))
+            {
+                if (cbCmd < sizeof (VBOXCMDVBVA_HDR))
+                {
+                    WARN(("invalid command size"));
+                    return -1;
+                }
+
+                cbCurCmd = pCmd->u32FenceID;
+                if (cbCmd < cbCurCmd)
+                {
+                    WARN(("invalid command size"));
+                    return -1;
+                }
+
+                int8_t i8Result = vboxVDMACrCmdVbvaProcess(pVdma, pCmd, cbCurCmd);
+                if (i8Result < 0)
+                {
+                    WARN(("vboxVDMACrCmdVbvaProcess failed"));
+                    return i8Result;
+                }
+            }
+            return 0;
         }
         default:
             return vboxVDMACrCmdVbvaProcessCmdData(pVdma, pCmd, cbCmd);
