@@ -1899,10 +1899,11 @@ HRESULT VirtualBox::getExtraDataKeys(std::vector<com::Utf8Str> &aKeys)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    std::vector<com::Utf8Str> saKeys(m->pMainConfigFile->mapExtraDataItems.size());
-    aKeys.resize(saKeys.size());
-    for (size_t i = 0; i < saKeys.size(); i++)
-        aKeys[i] = saKeys[i];
+    aKeys.resize(m->pMainConfigFile->mapExtraDataItems.size());
+    size_t i = 0;
+    for (StringsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.begin();
+         it != m->pMainConfigFile->mapExtraDataItems.end(); ++it, ++i)
+        aKeys[i] = it->first;
 
     return S_OK;
 }
