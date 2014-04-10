@@ -20,7 +20,7 @@
 /* GUI includes: */
 #include "UIShortcutPool.h"
 #include "UIActionPool.h"
-#include "UIExtraDataEventHandler.h"
+#include "UIExtraDataManager.h"
 
 void UIShortcut::setDescription(const QString &strDescription)
 {
@@ -222,8 +222,8 @@ void UIShortcutPool::prepare()
 void UIShortcutPool::prepareConnections()
 {
     /* Connect to extra-data signals: */
-    connect(gEDataEvents, SIGNAL(sigSelectorShortcutsChanged()), this, SLOT(sltReloadSelectorShortcuts()));
-    connect(gEDataEvents, SIGNAL(sigMachineShortcutsChanged()), this, SLOT(sltReloadMachineShortcuts()));
+    connect(gEDataManager, SIGNAL(sigSelectorShortcutsChanged()), this, SLOT(sltReloadSelectorShortcuts()));
+    connect(gEDataManager, SIGNAL(sigMachineShortcutsChanged()), this, SLOT(sltReloadMachineShortcuts()));
 }
 
 void UIShortcutPool::loadDefaults()

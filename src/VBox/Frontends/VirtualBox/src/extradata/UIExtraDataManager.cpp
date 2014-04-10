@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIExtraDataEventHandler class implementation
+ * UIExtraDataManager class implementation
  */
 
 /*
@@ -21,7 +21,7 @@
 #include <QMutex>
 
 /* GUI includes: */
-#include "UIExtraDataEventHandler.h"
+#include "UIExtraDataManager.h"
 #include "UIMainEventListener.h"
 #include "VBoxGlobal.h"
 #include "VBoxGlobalSettings.h"
@@ -31,13 +31,13 @@
 #include "COMEnums.h"
 #include "CEventSource.h"
 
-class UIExtraDataEventHandlerPrivate: public QObject
+class UIExtraDataEventHandler: public QObject
 {
     Q_OBJECT;
 
 public:
 
-    UIExtraDataEventHandlerPrivate(QObject *pParent = 0)
+    UIExtraDataEventHandler(QObject *pParent = 0)
         : QObject(pParent)
     {}
 
@@ -139,18 +139,18 @@ private:
 };
 
 /* static */
-UIExtraDataEventHandler *UIExtraDataEventHandler::m_pInstance = 0;
+UIExtraDataManager *UIExtraDataManager::m_pInstance = 0;
 
 /* static */
-UIExtraDataEventHandler* UIExtraDataEventHandler::instance()
+UIExtraDataManager* UIExtraDataManager::instance()
 {
     if (!m_pInstance)
-        m_pInstance = new UIExtraDataEventHandler();
+        m_pInstance = new UIExtraDataManager();
     return m_pInstance;
 }
 
 /* static */
-void UIExtraDataEventHandler::destroy()
+void UIExtraDataManager::destroy()
 {
     if (m_pInstance)
     {
@@ -159,8 +159,8 @@ void UIExtraDataEventHandler::destroy()
     }
 }
 
-UIExtraDataEventHandler::UIExtraDataEventHandler()
-  : m_pHandler(new UIExtraDataEventHandlerPrivate(this))
+UIExtraDataManager::UIExtraDataManager()
+  : m_pHandler(new UIExtraDataEventHandler(this))
 {
 //    RTPrintf("Self add: %RTthrd\n", RTThreadSelf());
     const CVirtualBox &vbox = vboxGlobal().virtualBox();
@@ -215,10 +215,10 @@ UIExtraDataEventHandler::UIExtraDataEventHandler()
 #endif /* Q_WS_MAC */
 }
 
-UIExtraDataEventHandler::~UIExtraDataEventHandler()
+UIExtraDataManager::~UIExtraDataManager()
 {
     const CVirtualBox &vbox = vboxGlobal().virtualBox();
     vbox.GetEventSource().UnregisterListener(m_mainEventListener);
 }
 
-#include "UIExtraDataEventHandler.moc"
+#include "UIExtraDataManager.moc"

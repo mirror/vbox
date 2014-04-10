@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIExtraDataEventHandler class declaration
+ * VBox Qt GUI - UIExtraDataManager class declaration.
  */
 
 /*
@@ -16,21 +14,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIExtraDataEventHandler_h__
-#define __UIExtraDataEventHandler_h__
+#ifndef ___UIExtraDataManager_h___
+#define ___UIExtraDataManager_h___
+
+/* Qt includes: */
+#include <QObject>
 
 /* COM includes: */
 #include "CEventListener.h"
 
 /* Forward declarations: */
-class UIExtraDataEventHandlerPrivate;
+class UIExtraDataEventHandler;
 
-class UIExtraDataEventHandler: public QObject
+class UIExtraDataManager: public QObject
 {
     Q_OBJECT;
 
 public:
-    static UIExtraDataEventHandler* instance();
+    static UIExtraDataManager* instance();
     static void destroy();
 
 signals:
@@ -45,16 +46,15 @@ signals:
 #endif /* RT_OS_DARWIN */
 
 private:
-    UIExtraDataEventHandler();
-    ~UIExtraDataEventHandler();
+    UIExtraDataManager();
+    ~UIExtraDataManager();
 
     /* Private member vars */
-    static UIExtraDataEventHandler *m_pInstance;
+    static UIExtraDataManager *m_pInstance;
     CEventListener m_mainEventListener;
-    UIExtraDataEventHandlerPrivate *m_pHandler;
+    UIExtraDataEventHandler *m_pHandler;
 };
 
-#define gEDataEvents UIExtraDataEventHandler::instance()
+#define gEDataManager UIExtraDataManager::instance()
 
-#endif /* !__UIExtraDataEventHandler_h__ */
-
+#endif /* !___UIExtraDataManager_h___ */
