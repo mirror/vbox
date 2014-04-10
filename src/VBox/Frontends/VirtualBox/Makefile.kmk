@@ -144,6 +144,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/converter \
 	./src/extensions \
 	./src/extensions/graphics \
+	./src/extradata \
 	./src/globals \
 	./src/medium \
 	./src/platform \
@@ -276,9 +277,9 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIWidgetValidator.h \
 	src/extensions/QIAdvancedToolBar.h \
 	src/extensions/graphics/QIGraphicsWidget.h \
+	src/extradata/UIExtraDataEventHandler.h \
 	src/globals/UIActionPool.h \
 	src/globals/UIAnimationFramework.h \
-	src/globals/UIExtraDataEventHandler.h \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
@@ -469,8 +470,8 @@ VirtualBox_QT_MOCSRCS = \
 	src/UIVMLogViewer.cpp \
 	src/extensions/QISplitter.cpp \
 	src/extensions/QIAdvancedToolBar.cpp \
+	src/extradata/UIExtraDataEventHandler.cpp \
 	src/globals/UIActionPool.cpp \
-	src/globals/UIExtraDataEventHandler.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumManager.cpp \
@@ -542,11 +543,11 @@ VirtualBox_SOURCES = \
 	src/extensions/QIWidgetValidator.cpp \
 	src/extensions/QIAdvancedToolBar.cpp \
 	src/extensions/graphics/QIGraphicsWidget.cpp \
+	src/extradata/UIExtraDataEventHandler.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/COMDefs.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIAnimationFramework.cpp \
-	src/globals/UIExtraDataEventHandler.cpp \
 	src/globals/UIIconPool.cpp \
 	src/globals/UIImageTools.cpp \
 	src/globals/UIMainEventListener.cpp \
