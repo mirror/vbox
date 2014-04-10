@@ -92,7 +92,7 @@ fi # $1 = "configure"
 if [ "$1" = "configure" ]; then
   # Start vboxdrv/vboxballoonctrl/vboxweb-service manually as we use our own error handling in postrm
   if [ -x "/etc/init.d/vboxdrv" ]; then
-    update-rc.d vboxdrv defaults >/dev/null
+    update-rc.d vboxdrv defaults 20 80 >/dev/null
 
     BUILD_MODULES=0
     REGISTER_MODULES=1
@@ -142,7 +142,7 @@ EOF
     fi
   fi
   if [ -x "/etc/init.d/vboxballoonctrl-service" ]; then
-    update-rc.d vboxballoonctrl-service defaults >/dev/null
+    update-rc.d vboxballoonctrl-service defaults 35 65 >/dev/null
     if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
         invoke-rc.d vboxballoonctrl-service start || exit $?
     else
@@ -150,7 +150,7 @@ EOF
     fi
   fi
   if [ -x "/etc/init.d/vboxautostart-service" ]; then
-    update-rc.d vboxautostart-service defaults >/dev/null
+    update-rc.d vboxautostart-service defaults 35 65 >/dev/null
     if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
         invoke-rc.d vboxautostart-service start || exit $?
     else
@@ -158,7 +158,7 @@ EOF
     fi
   fi
   if [ -x "/etc/init.d/vboxweb-service" ]; then
-    update-rc.d vboxweb-service defaults >/dev/null
+    update-rc.d vboxweb-service defaults 35 65 >/dev/null
     if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
         invoke-rc.d vboxweb-service start || exit $?
     else
