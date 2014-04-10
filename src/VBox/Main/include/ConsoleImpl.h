@@ -446,7 +446,7 @@ private:
         }
 
         /** The combined result of Console::addVMCaller() and Console::safeVMPtrRetainer */
-        HRESULT rc() const { return SUCCEEDED(mRC)? Base::rc(): mRC; }
+        HRESULT rc() const { return Base::isOk()? mRC: Base::rc(); }
         /** Shortcut to SUCCEEDED(rc()) */
         bool isOk() const { return SUCCEEDED(mRC) && Base::isOk(); }
 
