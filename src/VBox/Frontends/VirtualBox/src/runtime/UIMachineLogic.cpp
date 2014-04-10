@@ -55,10 +55,10 @@
 #include "UIConverter.h"
 #include "UIModalWindowManager.h"
 #include "UIMedium.h"
-#include "UIExtraDataEventHandler.h"
+#include "UIExtraDataManager.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
-# include "UIExtraDataEventHandler.h"
+# include "UIExtraDataManager.h"
 #endif /* Q_WS_MAC */
 
 /* COM includes: */
@@ -656,7 +656,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
 
     /* Subscribe to GUI_HidLedsSync extradata changes in order to
      * be able to enable or disable feature dynamically. */
-    connect(gEDataEvents, SIGNAL(sigHidLedsSyncStateChanged(bool)), this, SLOT(sltHidLedsSyncStateChanged(bool)));
+    connect(gEDataManager, SIGNAL(sigHidLedsSyncStateChanged(bool)), this, SLOT(sltHidLedsSyncStateChanged(bool)));
 #else
     m_isHidLedsSyncEnabled = false;
 #endif
@@ -1005,7 +1005,7 @@ void UIMachineLogic::prepareDock()
 
     connect(pDockPreviewModeGroup, SIGNAL(triggered(QAction*)),
             this, SLOT(sltDockPreviewModeChanged(QAction*)));
-    connect(gEDataEvents, SIGNAL(sigDockIconAppearanceChange(bool)),
+    connect(gEDataManager, SIGNAL(sigDockIconAppearanceChange(bool)),
             this, SLOT(sltChangeDockIconUpdate(bool)));
 
     /* Monitor selection if there are more than one monitor */

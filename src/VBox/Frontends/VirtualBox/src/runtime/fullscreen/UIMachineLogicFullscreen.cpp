@@ -27,7 +27,7 @@
 #include "UIMachineWindowFullscreen.h"
 #include "UIMultiScreenLayout.h"
 #ifdef Q_WS_MAC
-# include "UIExtraDataEventHandler.h"
+# include "UIExtraDataManager.h"
 # include "VBoxUtils.h"
 # include "UIFrameBuffer.h"
 # include <Carbon/Carbon.h>
@@ -385,7 +385,7 @@ void UIMachineLogicFullscreen::prepareOtherConnections()
     /* Make sure 'presentation mode' preference handling
      * is updated at runtime for Lion and previous: */
     if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
-        connect(gEDataEvents, SIGNAL(sigPresentationModeChange(bool)),
+        connect(gEDataManager, SIGNAL(sigPresentationModeChange(bool)),
                 this, SLOT(sltChangePresentationMode(bool)));
 }
 #endif /* Q_WS_MAC */

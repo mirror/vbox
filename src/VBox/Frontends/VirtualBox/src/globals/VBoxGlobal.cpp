@@ -65,7 +65,7 @@
 #include "UIShortcutPool.h"
 #include "UIActionPoolSelector.h"
 #include "UIActionPoolRuntime.h"
-#include "UIExtraDataEventHandler.h"
+#include "UIExtraDataManager.h"
 #include "QIFileDialog.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UINetworkManager.h"
@@ -4412,7 +4412,7 @@ void VBoxGlobal::prepare()
 
     retranslateUi();
 
-    connect(gEDataEvents, SIGNAL(sigGUILanguageChange(QString)),
+    connect(gEDataManager, SIGNAL(sigGUILanguageChange(QString)),
             this, SLOT(sltGUILanguageChange(QString)));
 
     /* Initialize guest OS Type list. */
@@ -4785,7 +4785,7 @@ void VBoxGlobal::cleanup()
 #endif
 
     /* Destroy our event handlers */
-    UIExtraDataEventHandler::destroy();
+    UIExtraDataManager::destroy();
 
     /* Destroy the GUI root windows _BEFORE_ the media-mess, because there is
        code in the GUI that's using the media code an will be racing us! */
