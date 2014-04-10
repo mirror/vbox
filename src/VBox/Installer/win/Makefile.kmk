@@ -58,6 +58,16 @@ VBOX_INSTALLER_LANGUAGES += $(VBOX_INSTALLER_ADD_LANGUAGES)
 VBOX_INSTALLER_MERGE_MODULES = App USB NetAdp NetFlt Python
 
 #
+# Use merge modules if we're not doing an official release.
+# This will increase the overall installer size significantly because
+# merge modules are not able to use a common .cab file to reduce their
+# size.
+#
+ifneq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
+ VBOX_WITH_MSM_INSTALL := 1
+endif
+
+#
 # We don't have the license text in another language than English yet,
 # so just define the branding targets to use the English one for now.
 #
@@ -143,13 +153,13 @@ else
 endif
 
 ifdef VBOX_WITH_MSM_INSTALL
- $(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
- 	$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
-		OTHER_CLEAN += \
-			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module).msm.dep \
-			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm \
-			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj \
-			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixpdb))
+ OTHER_CLEAN += \
+  $(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
+   $(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
+		$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module).msm.dep \
+		$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm \
+		$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj \
+		$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixpdb))
 endif
 
 ifdef VBOX_WITH_BUNDLED_INSTALLER
@@ -632,7 +642,7 @@ ifeq ($(lang),en_US)
 	$(APPEND) -t $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module).msm.dep 'VBOX_MSI_DEPENDENCIES = \'
 	$(SED) -f $(VBOX_PATH_WIN_INST_SRC)/dep.sed \
 		--append $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module).msm.dep \
-		$(VBOX_PATH_WIN_INST_SRC)/VBoxMerge$(module).wxs \
+		$(VBOX_PATH_WIN_INST_SRC)/VBoxMerge$(module).wxi \
 		$(VBOX_PATH_WIN_INST_SRC)/UserInterface.wxi \
 		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \
 		$(if $(VBOX_WITH_32_ON_64_MAIN_API),$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi,)

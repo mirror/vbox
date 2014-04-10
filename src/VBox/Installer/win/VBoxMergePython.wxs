@@ -38,10 +38,11 @@
             <Directory Id="MergeRedirectFolder" FileSource=".">
 
                 <?include VBoxMergePython.wxi ?>
-                <?include VBoxMergePythonCA.wxi ?>
 
             </Directory> <!-- MergeRedirectFolder -->
         </Directory> <!-- TARGETDIR -->
+
+        <?include VBoxMergePythonCA.wxi ?>
 
     </Module>
 </Wix>

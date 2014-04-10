@@ -53,10 +53,11 @@
             <Directory Id="MergeRedirectFolder" FileSource=".">
 
                 <?include VBoxMergeApp.wxi ?>
-                <?include VBoxMergeAppCA.wxi ?>
 
             </Directory> <!-- MergeRedirectFolder directory -->
         </Directory> <!-- TARGETDIR -->
+
+        <?include VBoxMergeAppCA.wxi ?>
 
     </Module>
 </Wix>
