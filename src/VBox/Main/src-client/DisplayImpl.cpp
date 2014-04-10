@@ -4609,7 +4609,7 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
         /* Force full screen update, because VGA device must take control, do resize, etc. */
-        pThis->InvalidateAndUpdateEMT(pThis, VBOX_VIDEO_PRIMARY_SCREEN, false);
+        pThis->mpDrv->pUpPort->pfnUpdateDisplayAll(pThis->mpDrv->pUpPort);
     }
 }
 
