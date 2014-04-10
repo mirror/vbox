@@ -4412,7 +4412,7 @@ void VBoxGlobal::prepare()
 
     retranslateUi();
 
-    connect(gEDataManager, SIGNAL(sigGUILanguageChange(QString)),
+    connect(gEDataManager, SIGNAL(sigLanguageChange(QString)),
             this, SLOT(sltGUILanguageChange(QString)));
 
     /* Initialize guest OS Type list. */
