@@ -47,8 +47,9 @@ include $(PATH_SUB_CURRENT)/Resources/Makefile.kmk
 
 #
 # Globals and targets.
+# Note: en_US *must* come first for the dependency file generation.
 #
-VBOX_INSTALLER_LANGUAGES  = de_DE en_US fr_FR it_IT zh_TW
+VBOX_INSTALLER_LANGUAGES  = en_US de_DE fr_FR it_IT zh_TW
 VBOX_INSTALLER_LANGUAGES += $(VBOX_INSTALLER_ADD_LANGUAGES)
 
 #
@@ -123,6 +124,7 @@ OTHER_CLEAN += \
 		$(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi) \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi \
+	$(VBOX_WIN_INST_OUT_DIR)/Files_Main.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi
 
 ifdef VBOX_WITH_COMBINED_PACKAGE
@@ -138,6 +140,16 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 else
  OTHER_CLEAN += \
 	$(PACKAGE_NAME_FINAL)
+endif
+
+ifdef VBOX_WITH_MSM_INSTALL
+ $(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
+ 	$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
+		OTHER_CLEAN += \
+			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module).msm.dep \
+			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm \
+			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj \
+			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixpdb))
 endif
 
 ifdef VBOX_WITH_BUNDLED_INSTALLER
@@ -387,7 +399,7 @@ ifdef VBOX_USE_VCC110
 	$(PATH_OUT)/bin/msvcr100.dll \
 	$(PATH_OUT)/bin/msvcp100.dll \
 	, $(VBOX_MSI_DEPENDENCIES))
-else
+else # VCC100
  VBOX_MSI_DEPENDENCIES := $(filter-out \
 	$(PATH_OUT)/bin/msvcr110.dll \
 	$(PATH_OUT)/bin/msvcp110.dll \
@@ -466,7 +478,8 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 				$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \
 				$(if $(VBOX_WITH_32_ON_64_MAIN_API),$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi,) \
 				$(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi \
-				$(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi) \
+				$(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi \
+				$(VBOX_MSI_DEPENDENCIES)) \
 			$(VBOX_VERSION_STAMP) \
 			| $$$$(dir $$$$@)
 	$(QUIET)$(RM) -f $@
@@ -532,9 +545,12 @@ ifeq ($(lang),en_US)
 	$(APPEND) -t $(VBOX_WIN_INST_OUT_DIR)/VirtualBox.wixobj.dep 'VBOX_MSI_DEPENDENCIES = \'
 	$(SED) -f $(VBOX_PATH_WIN_INST_SRC)/dep.sed \
 		--append $(VBOX_WIN_INST_OUT_DIR)/VirtualBox.wixobj.dep \
+		$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
+			$(VBOX_PATH_WIN_INST_SRC)/VBoxMerge$(module).wxi) \
 		$(VBOX_PATH_WIN_INST_SRC)/VirtualBox.wxs \
 		$(VBOX_PATH_WIN_INST_SRC)/UserInterface.wxi \
-		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi
+		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \
+		$(if $(VBOX_WITH_32_ON_64_MAIN_API),$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi,)
 	$(APPEND) $(VBOX_WIN_INST_OUT_DIR)/VirtualBox.wixobj.dep ''
 endif
 endef
@@ -618,7 +634,8 @@ ifeq ($(lang),en_US)
 		--append $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module).msm.dep \
 		$(VBOX_PATH_WIN_INST_SRC)/VBoxMerge$(module).wxs \
 		$(VBOX_PATH_WIN_INST_SRC)/UserInterface.wxi \
-		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi
+		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \
+		$(if $(VBOX_WITH_32_ON_64_MAIN_API),$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi,)
 	$(APPEND) $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module).msm.dep ''
 endif
 endef
