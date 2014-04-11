@@ -278,14 +278,15 @@
              Description="!(loc.VB_App)"
              ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
              Absent="disallow" AllowAdvertise="no" >
- <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
         <MergeRef Id="msm_VBoxApp" />
 <?else ?>
         <ComponentRef Id="cp_StartMenuVBox" />
         <ComponentRef Id="cp_DesktopShortcut" />
         <ComponentRef Id="cp_QuickLaunchVBox" />
+    <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <ComponentRef Id="cp_RegisterExtensions" />
-
+    <?endif ?>
     <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
         <ComponentRef Id="cp_Docs" />
     <?endif ?>

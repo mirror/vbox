@@ -293,7 +293,11 @@
         <?endif ?>
             </Control>
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)">
+        <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
                 <Publish Event="NewDialog" Value="VBoxCustomize2Dlg">1</Publish>
+        <?else ?>
+                <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
+        <?endif ?>
                 <Subscribe Event="SelectionNoItems" Attribute="Enabled" />
             </Control>
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_Cancel)">
@@ -338,15 +342,14 @@
                      Property="VBOX_REGISTERFILEEXTENSIONS" CheckBoxValue="1">
                 <Text>!(loc.Customize2Dlg_RegisterFileExtensions)</Text>
             </Control>
-
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17"
                 Default="yes" Cancel="yes" Text="!(loc.ButtonText_Next)">
-<?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
+            <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
                 <Publish Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg"><![CDATA[(&VBoxNetworkFlt=3) AND NOT(!VBoxNetworkFlt=3)]]></Publish>
                 <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(&VBoxNetworkFlt<3)]]></Publish>
-<?else ?>
+            <?else ?>
                 <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
-<?endif?>
+            <?endif?>
             </Control>
             <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17"
                 Text="!(loc.ButtonText_Back)">
@@ -493,7 +496,11 @@
                 <Publish Event="SpawnDialog" Value="VBoxOutOfDiskDlg"><![CDATA[(OutOfDiskSpace = 1 AND OutOfNoRbDiskSpace = 1) OR (OutOfDiskSpace = 1 AND PROMPTROLLBACKCOST="F")]]></Publish>
             </Control>
             <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)">
+        <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
                 <Publish Event="NewDialog" Value="VBoxCustomize2Dlg"><![CDATA[InstallMode = "!(loc.InstallModeCustom)"]]></Publish>
+        <?else ?>
+                <Publish Event="NewDialog" Value="VBoxCustomizeDlg">1</Publish>
+        <?endif ?>
             </Control>
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_Cancel)">
                 <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
