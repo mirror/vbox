@@ -40,6 +40,11 @@ class UIExtraDataManager : public QObject
 {
     Q_OBJECT;
 
+    /** Extra-data Manager constructor. */
+    UIExtraDataManager();
+    /** Extra-data Manager destructor. */
+    ~UIExtraDataManager();
+
 signals:
 
     /** Notifies about GUI language change. */
@@ -129,11 +134,6 @@ public:
     GuruMeditationHandlerType guruMeditationHandlerType(const QString &strID) const;
 
 private:
-
-    /** Extra-data Manager constructor. */
-    UIExtraDataManager();
-    /** Extra-data Manager destructor. */
-    ~UIExtraDataManager();
 
     /** Prepare Extra-data Manager. */
     void prepare();
