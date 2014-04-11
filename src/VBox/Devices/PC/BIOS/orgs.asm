@@ -197,16 +197,9 @@ BIOSSEG		segment	'CODE'
 		assume	cs:BIOSSEG
 
 ;;
-;; Start of fixed code - eoi_jmp_post is kept here to allow short jumps.
+;; Start of fixed code - eoi_jmp_post is kept near here to allow short jumps.
 ;;
 		BIOSORG	0E030h
-eoi_jmp_post:
-		call	eoi_both_pics
-		xor	ax, ax
-		mov	ds, ax
-		jmp	dword ptr ds:[0467h]
-
-eoi_both_pics:
 		mov	al, PIC_CMD_EOI
 		out	PIC_SLAVE, al
 eoi_master_pic:
@@ -227,6 +220,13 @@ set_int_vects	proc	near
 
 set_int_vects	endp
 
+eoi_jmp_post:
+		call	eoi_both_pics
+		xor	ax, ax
+		mov	ds, ax
+		jmp	dword ptr ds:[0467h]
+
+eoi_both_pics:
 ;; --------------------------------------------------------
 ;; POST entry point
 ;; --------------------------------------------------------
@@ -242,15 +242,13 @@ post:
 
 		;; Reset processor to get out of protected mode. Use system
 		;; port instead of KBC.
-		;; NB: We only need bit 0 to be set in AL, which we just
-		;; determined to be the case.
+reset_sys:
+		mov	al, 1
 		out	92h, al
 		jmp	$		; not strictly necessary in a VM
 		
 		
 in_real_mode:
-		;; TODO: Check KBC system flag first
-
 		;; read the CMOS shutdown status
 		mov	al, 0Fh
 		out	CMOS_ADDR, al
@@ -259,6 +257,27 @@ in_real_mode:
 		;; save status
 		xchg	ah, al
 
+		;; Check KBC self-test/shutdown flag. If it is set, we need
+		;; to check for a reboot attempt.
+		in	al, 64h
+		test	al, 4		; clear flag indicates cold boot
+		jz	cont_post
+
+		;; Warm boot, check the shutdown byte.
+		mov	al, ah
+		or	al, al
+		jnz	cont_post
+
+		;; Warm boot but shutdown byte is zero. This is either a warm
+		;; boot request or an attempt to reset the system via triple
+		;; faulting the CPU or similar. Check reboot flag.
+		;; NB: At this point, registers need not be preserved.
+		push	40h
+		pop	ds
+		cmp	word ptr ds:[72h], 1234h
+		jnz	reset_sys	; trigger system reset
+
+cont_post:
 		;; reset the shutdown status in CMOS
 		mov	al, 0Fh
 		out	CMOS_ADDR, al
@@ -490,14 +509,6 @@ memory_cleared:
 		;; BIOS DATA AREA 4CEh ???
 		call	rtc_post
 
-		;; PS/2 mouse setup
-		SET_INT_VECTOR 74h, BIOSSEG, int74_handler
-
-		;; IRQ 13h (FPU exception) setup
-		SET_INT_VECTOR 75h, BIOSSEG, int75_handler
-
-		call	init_pic
-
 		jmp	norm_post_cont
 
 
@@ -543,6 +554,14 @@ hard_drive_post	endp
 
 
 norm_post_cont:
+		;; PS/2 mouse setup
+		SET_INT_VECTOR 74h, BIOSSEG, int74_handler
+
+		;; IRQ 13h (FPU exception) setup
+		SET_INT_VECTOR 75h, BIOSSEG, int75_handler
+
+		call	init_pic
+
 		C_SETUP
 		;; ATA/ATAPI driver setup
 		call	_ata_init
