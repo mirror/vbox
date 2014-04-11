@@ -64,10 +64,10 @@
     <Property Id='REINSTALLMODE' Value='amus'/>
 
     <!-- VirtualBox properties -->
-    <Property Id="VBOX_INSTALLDESKTOPSHORTCUT" Value="1"></Property>
-    <Property Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" Value="1"></Property>
-    <Property Id="VBOX_REGISTERFILEEXTENSIONS" Value="1"></Property>
-    <Property Id="VBOX_STARTVBOX" Value="1"></Property>
+    <Property Id="VBOX_INSTALLDESKTOPSHORTCUT" Value="1" />
+    <Property Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" Value="1" />
+    <Property Id="VBOX_REGISTERFILEEXTENSIONS" Value="1" />
+    <Property Id="VBOX_STARTVBOX" Value="1" />
 
     <!-- Make sure installation will not start on anything other but the NT family -->
 <?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
@@ -278,12 +278,15 @@
              Description="!(loc.VB_App)"
              ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
              Absent="disallow" AllowAdvertise="no" >
-<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <MergeRef Id="msm_VBoxApp" />
-<?else ?>
+        <!-- Components which are handled only by this installer itself -->
         <ComponentRef Id="cp_StartMenuVBox" />
         <ComponentRef Id="cp_DesktopShortcut" />
         <ComponentRef Id="cp_QuickLaunchVBox" />
+        <!-- Components handled either by the installer itself or
+             the merge module -->
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+        <MergeRef Id="msm_VBoxApp" />
+<?else ?>
     <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <ComponentRef Id="cp_RegisterExtensions" />
     <?endif ?>
@@ -409,11 +412,10 @@
 
         <!-- AppSearch must be done before "RemoveExistingProducts" and before "FindRelatedProducts" -->
         <AppSearch Sequence="1"></AppSearch>
-        <LaunchConditions Sequence="2" />
+        <LaunchConditions After="AppSearch" />
 
         <!-- First install the new version and then remove the old version. This is more efficient -->
-        <RemoveExistingProducts Sequence="3" />
-        <InstallValidate Sequence="4" />
+        <RemoveExistingProducts Before="InstallValidate" />
 
         <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
         <Custom Action="ca_DefaultTargetDir" Before="FileCost" ><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>

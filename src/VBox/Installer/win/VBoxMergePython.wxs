@@ -44,6 +44,7 @@
 
         <!-- Custom actions -->
         <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
+        <Property Id="VBOX_FEATURE_PYTHON" Value="1" />
         <?include VBoxMergePythonCA.wxi ?>
 
         <InstallExecuteSequence>
