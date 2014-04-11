@@ -57,7 +57,13 @@
             </Directory> <!-- MergeRedirectFolder directory -->
         </Directory> <!-- TARGETDIR -->
 
+        <!-- Custom actions -->
+        <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
         <?include VBoxMergeAppCA.wxi ?>
+
+        <InstallExecuteSequence>
+            <?include VBoxMergeAppSeq.wxi ?>
+        </InstallExecuteSequence>
 
     </Module>
 </Wix>

@@ -171,6 +171,11 @@
 
     <CustomAction Id="ca_UninstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="UninstallBranding" Execute="deferred" Return="check" Impersonate="no"/>
     <CustomAction Id="ca_UninstallBrandingArgs" Property="ca_UninstallBranding" Value="[INSTALLDIR]" Execute="immediate"/>
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
+    <?include VBoxMergeAppCA.wxi ?>
+    <?include VBoxMergeNetFltCA.wxi ?>
+    <?include VBoxMergePythonCA.wxi ?>
+<?endif ?>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
         <Directory Id="$(var.Property_ProgramFiles)" Name="PFiles">
@@ -282,30 +287,30 @@
         <ComponentRef Id="cp_RegisterExtensions" />
 
     <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
-            <ComponentRef Id="cp_Docs" />
-    <?endif?>
-            <ComponentRef Id="cp_NLS" />
+        <ComponentRef Id="cp_Docs" />
+    <?endif ?>
+        <ComponentRef Id="cp_NLS" />
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
-            <ComponentRef Id="cp_MainCOM_x86" />
-    <?endif?>
-            <ComponentRef Id="cp_MainCOM" />
-            <ComponentRef Id="cp_MainBinaries" />
+        <ComponentRef Id="cp_MainCOM_x86" />
+    <?endif ?>
+        <ComponentRef Id="cp_MainCOM" />
+        <ComponentRef Id="cp_MainBinaries" />
     <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-            <ComponentRef Id="cp_QtAccessible" />
-    <?endif?>
+        <ComponentRef Id="cp_QtAccessible" />
+    <?endif ?>
     <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-            <ComponentRef Id="cp_VBoxPyInst" />
-            <ComponentRef Id="cp_VBoxPyMod" />
-    <?endif?>
+        <ComponentRef Id="cp_VBoxPyInst" />
+        <ComponentRef Id="cp_VBoxPyMod" />
+    <?endif ?>
 
     <?if $(env.VBOX_WITH_CROGL) = "yes" ?>
-            <ComponentRef Id="cp_VBoxCROpenGL" />
-    <?endif?>
-            <ComponentRef Id="cp_VBoxSDLBinaries" />
+        <ComponentRef Id="cp_VBoxCROpenGL" />
+    <?endif ?>
+        <ComponentRef Id="cp_VBoxSDLBinaries" />
     <?if $(env.VBOX_WITH_WEBSERVICES) = "yes" ?>
-            <ComponentRef Id="cp_VBoxWebService" />
-    <?endif?>
-            <ComponentRef Id="cp_VBoxDrv" />
+        <ComponentRef Id="cp_VBoxWebService" />
+    <?endif ?>
+        <ComponentRef Id="cp_VBoxDrv" />
     <?endif ?>
 
         <Feature Id="VBoxUSB" Title="VirtualBox USB Support" Level="1"
@@ -346,7 +351,7 @@
     <?endif ?>
             </Feature>
         </Feature>
-<?endif?>
+<?endif ?>
 
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
         <Feature Id="VBoxPython" Title="VirtualBox Python 2.x Support" Level="1"
@@ -359,7 +364,7 @@
                 <ComponentRef Id="cp_VBoxPythonBinding" />
     <?endif ?>
         </Feature>
-<?endif?>
+<?endif ?>
     </Feature>
 
     <!-- Include user interface definition -->
@@ -418,6 +423,12 @@
         <!-- Uninstall branding on complete uninstall, not on update -->
         <Custom Action="ca_UninstallBrandingArgs" Before="ca_UninstallBranding" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
         <Custom Action="ca_UninstallBranding" Before="InstallFinalize" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
+
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
+        <?include VBoxMergeAppSeq.wxi ?>
+        <?include VBoxMergeNetFltSeq.wxi ?>
+        <?include VBoxMergePythonSeq.wxi ?>
+<?endif ?>
 
     </InstallExecuteSequence>
 

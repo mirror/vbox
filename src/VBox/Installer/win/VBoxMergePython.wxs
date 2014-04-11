@@ -42,7 +42,13 @@
             </Directory> <!-- MergeRedirectFolder -->
         </Directory> <!-- TARGETDIR -->
 
+        <!-- Custom actions -->
+        <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
         <?include VBoxMergePythonCA.wxi ?>
+
+        <InstallExecuteSequence>
+            <?include VBoxMergePythonSeq.wxi ?>
+        </InstallExecuteSequence>
 
     </Module>
 </Wix>

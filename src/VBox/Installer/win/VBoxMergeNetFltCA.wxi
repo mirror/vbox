@@ -16,8 +16,6 @@
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
-    <!-- Custom actions -->
-    <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
     <CustomAction Id="ca_CreateHostOnlyInterface" BinaryKey="VBoxInstallHelper" DllEntry="CreateHostOnlyInterface" Execute="deferred" Return="check" Impersonate="no"/>
     <CustomAction Id="ca_CreateHostOnlyInterfaceArgs" Property="ca_CreateHostOnlyInterface" Value="[INSTALLDIR]" Execute="immediate"/>
@@ -40,30 +38,5 @@
     <CustomAction Id="ca_RollbackUninstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="InstallNetFlt" Execute="rollback" Impersonate="no"/>
     <CustomAction Id="ca_RollbackUninstallNetFltArgs" Property="ca_RollbackUninstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
 <?endif ?>
-
-    <InstallExecuteSequence>
-<?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-        <!-- Create host-only interfaces on first-time install. -->
-        <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
-        <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
-        <!-- Don't remove the host-only interfaces on update, only on uninstall. -->
-        <Custom Action="ca_RemoveHostOnlyInterfaces" After="ca_UninstallNetFlt" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
-        <!-- First stop the existing host-only interfaces on update ... -->
-        <Custom Action="ca_StopHostOnlyInterfaces" Before="ca_UpdateHostOnlyInterfaces" ><![CDATA[UPGRADINGPRODUCTCODE]]></Custom>
-        <!-- ... then do the actual driver update. -->
-        <Custom Action="ca_UpdateHostOnlyInterfacesArgs" Before="ca_UpdateHostOnlyInterfaces" ><![CDATA[Installed AND UPGRADINGPRODUCTCODE]]></Custom>
-        <Custom Action="ca_UpdateHostOnlyInterfaces" Before="InstallFiles" ><![CDATA[Installed AND UPGRADINGPRODUCTCODE]]></Custom>
-
-        <Custom Action="ca_RollbackInstallNetFltArgs" Before="ca_RollbackInstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
-        <Custom Action="ca_RollbackInstallNetFlt" Before="ca_InstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
-        <Custom Action="ca_InstallNetFltArgs" Before="ca_InstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
-        <Custom Action="ca_InstallNetFlt" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
-
-        <Custom Action="ca_RollbackUninstallNetFltArgs" Before="ca_RollbackUninstallNetFlt" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
-        <Custom Action="ca_RollbackUninstallNetFlt" Before="ca_UninstallNetFlt" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
-        <Custom Action="ca_UninstallNetFltArgs" Before="ca_UninstallNetFlt" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
-        <Custom Action="ca_UninstallNetFlt" After="InstallInitialize" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
-<?endif?>
-    </InstallExecuteSequence>
 
 </Include>
