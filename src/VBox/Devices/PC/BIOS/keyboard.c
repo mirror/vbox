@@ -468,8 +468,11 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
         break;
 
     case 0x53: /* Del press */
-        if ((shift_flags & 0x0c) == 0x0c)
+        if ((shift_flags & 0x0c) == 0x0c) {
+            /* Indicate a warm boot. */
+            write_word(0x0040,0x0072, 0x1234);
             jmp_post();
+        }
         /* fall through */
 
     default:
