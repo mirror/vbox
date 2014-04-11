@@ -785,9 +785,6 @@ void UISession::sltStateChange(KMachineState state)
         m_machineStatePrevious = m_machineState;
         m_machineState = state;
 
-        /* Update session settings: */
-        updateSessionSettings();
-
         /* Notify listeners about machine state changed: */
         emit sigMachineStateChange();
     }
@@ -1149,8 +1146,9 @@ void UISession::loadSessionSettings()
         pGuestAutoresizeSwitch->setChecked(strSettings != "off");
 
         /* Should we allow reconfiguration? */
-        m_fReconfigurable = VBoxGlobal::shouldWeAllowMachineReconfiguration(machine);
-        updateSessionSettings();
+        m_fReconfigurable =  VBoxGlobal::shouldWeAllowMachineReconfiguration(machine);
+        /* Should we allow snapshot operations? */
+        m_fSnapshotOperationsAllowed = vboxGlobal().shouldWeAllowSnapshotOperations(machine);
 
         /* What is the default close action and the restricted are? */
         m_defaultCloseAction = vboxGlobal().defaultMachineCloseAction(machine);
@@ -1161,9 +1159,6 @@ void UISession::loadSessionSettings()
                                      // Close VM Dialog hides PowerOff_RestoringSnapshot implicitly if PowerOff is hidden..
                                      // && (m_restrictedCloseActions & MachineCloseAction_PowerOff_RestoringSnapshot);
 
-        /* Should we allow snapshot operations? */
-        m_fSnapshotOperationsAllowed = vboxGlobal().shouldWeAllowSnapshotOperations(machine);
-
 #if 0 /* Disabled for now! */
 # ifdef Q_WS_WIN
         /* Disable host screen-saver if requested: */
@@ -1172,6 +1167,9 @@ void UISession::loadSessionSettings()
 # endif /* Q_WS_WIN */
 #endif
     }
+
+    /* Update session settings: */
+    updateSessionSettings();
 }
 
 void UISession::saveSessionSettings()
@@ -1246,12 +1244,14 @@ void UISession::cleanupConnections()
 
 void UISession::updateSessionSettings()
 {
-    bool fAllowReconfiguration = m_machineState != KMachineState_Stuck && m_fReconfigurable;
-    gActionPool->action(UIActionIndexRuntime_Simple_SettingsDialog)->setEnabled(fAllowReconfiguration);
-    gActionPool->action(UIActionIndexRuntime_Simple_StorageSettings)->setEnabled(fAllowReconfiguration);
-    gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersSettings)->setEnabled(fAllowReconfiguration);
-    gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureSettings)->setEnabled(fAllowReconfiguration);
-    gActionPool->action(UIActionIndexRuntime_Simple_NetworkSettings)->setEnabled(fAllowReconfiguration);
+    /* Particularly enable/disable reconfigurable action: */
+    gActionPool->action(UIActionIndexRuntime_Simple_SettingsDialog)->setEnabled(m_fReconfigurable);
+    gActionPool->action(UIActionIndexRuntime_Simple_StorageSettings)->setEnabled(m_fReconfigurable);
+    gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersSettings)->setEnabled(m_fReconfigurable);
+    gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureSettings)->setEnabled(m_fReconfigurable);
+    gActionPool->action(UIActionIndexRuntime_Simple_NetworkSettings)->setEnabled(m_fReconfigurable);
+    /* Particularly enable/disable snapshot related action: */
+    gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot)->setEnabled(m_fSnapshotOperationsAllowed);
 }
 
 WId UISession::winId() const
