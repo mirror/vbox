@@ -29,6 +29,7 @@
 #include "VBoxGlobal.h"
 #include "UIConverter.h"
 #include "UIMessageCenter.h"
+#include "UIExtraDataManager.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -275,7 +276,7 @@ void UIMedium::refresh()
                 }
 
                 /* Finally, we are checking if current machine overrides this flag: */
-                if (m_fAttachedToHiddenMachinesOnly && vboxGlobal().shouldWeShowMachine(machine))
+                if (m_fAttachedToHiddenMachinesOnly && gEDataManager->shouldWeShowMachine(strMachineID))
                     m_fAttachedToHiddenMachinesOnly = false;
 
                 QString strName = machine.GetName();

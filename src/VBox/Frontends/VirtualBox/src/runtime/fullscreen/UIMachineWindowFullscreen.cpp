@@ -24,6 +24,7 @@
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
+#include "UIExtraDataManager.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicFullscreen.h"
@@ -176,8 +177,7 @@ void UIMachineWindowFullscreen::prepareMenu()
     UIMachineWindow::prepareMenu();
 
     /* Prepare menu: */
-    CMachine machine = session().GetMachine();
-    RuntimeMenuType restrictedMenus = VBoxGlobal::restrictedRuntimeMenuTypes(machine);
+    RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
     RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
     m_pMainMenu = uisession()->newMenu(allowedMenus);
 }
@@ -240,7 +240,7 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
                                               IntegrationMode_Embedded,
                                               fIsAutoHide);
     QList<QMenu*> menus;
-    RuntimeMenuType restrictedMenus = VBoxGlobal::restrictedRuntimeMenuTypes(m);
+    RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
     RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
     QList<QAction*> actions = uisession()->newMenu(allowedMenus)->actions();
     for (int i=0; i < actions.size(); ++i)

@@ -35,6 +35,7 @@
 #include "UIDefs.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIExtraDataManager.h"
 #include "UIActionPoolSelector.h"
 #include "UIGChooserHandlerMouse.h"
 #include "UIGChooserHandlerKeyboard.h"
@@ -596,7 +597,7 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
         /* Search for corresponding machine: */
         CMachine machine = vboxGlobal().virtualBox().FindMachine(strId);
         /* Should we show this machine? */
-        if (VBoxGlobal::shouldWeShowMachine(machine))
+        if (gEDataManager->shouldWeShowMachine(strId))
         {
             /* Add new machine-item: */
             addMachineIntoTheTree(machine, true);
@@ -882,7 +883,7 @@ void UIGChooserModel::sltReloadMachine(const QString &strId)
 
     /* Show machine if we should: */
     CMachine machine = vboxGlobal().virtualBox().FindMachine(strId);
-    if (VBoxGlobal::shouldWeShowMachine(machine))
+    if (gEDataManager->shouldWeShowMachine(strId))
         addMachineIntoTheTree(machine);
 
     /* And update model: */
@@ -1610,7 +1611,7 @@ void UIGChooserModel::loadGroupTree()
     /* Add all the approved machines we have into the group-tree: */
     LogRelFlow(("UIGChooserModel: Loading VMs...\n"));
     foreach (CMachine machine, vboxGlobal().virtualBox().GetMachines())
-        if (VBoxGlobal::shouldWeShowMachine(machine))
+        if (gEDataManager->shouldWeShowMachine(machine.GetId()))
             addMachineIntoTheTree(machine);
     LogRelFlow(("UIGChooserModel: VMs loaded.\n"));
 }

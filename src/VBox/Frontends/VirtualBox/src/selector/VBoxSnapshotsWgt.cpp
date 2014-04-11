@@ -41,6 +41,7 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIConverter.h"
 #include "UIModalWindowManager.h"
+#include "UIExtraDataManager.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -448,7 +449,7 @@ void VBoxSnapshotsWgt::setMachine (const CMachine &aMachine)
     {
         mMachineId = aMachine.GetId();
         mSessionState = aMachine.GetSessionState();
-        m_fShapshotOperationsAllowed = vboxGlobal().shouldWeAllowSnapshotOperations(mMachine);
+        m_fShapshotOperationsAllowed = gEDataManager->shouldWeAllowMachineSnapshotOperations(mMachineId);
     }
 
     refreshAll();

@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "UIIndicatorsPool.h"
 #include "VBoxGlobal.h"
+#include "UIExtraDataManager.h"
 #include "UIMachineDefs.h"
 #include "UIConverter.h"
 #include "UIAnimationFramework.h"
@@ -808,8 +809,7 @@ QIStateIndicator* UIIndicatorsPool::indicator(IndicatorType index)
 void UIIndicatorsPool::prepare()
 {
     /* Get the list of restricted indicators: */
-    CMachine machine = m_session.GetMachine();
-    QList<IndicatorType> restrictedIndicators = vboxGlobal().restrictedStatusBarIndicators(machine);
+    QList<IndicatorType> restrictedIndicators = gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
 
     /* Populate indicator-pool: */
     for (int iIndex = 0; iIndex < IndicatorType_Max; ++iIndex)

@@ -24,6 +24,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxGlobalSettings.h"
 #include "UIActionPool.h"
+#include "UIConverter.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -193,6 +194,245 @@ void UIExtraDataManager::destroy()
         m_pInstance->cleanup();
         delete m_pInstance;
     }
+}
+
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+bool UIExtraDataManager::shouldWeAllowApplicationUpdate() const
+{
+    /* Allow unless 'forbidden' flag is set: */
+    return !isFeatureAllowed(GUI_PreventApplicationUpdate);
+}
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+bool UIExtraDataManager::shouldWeShowMachine(const QString &strID) const
+{
+    /* Show unless 'forbidden' flag is set: */
+    return !isFeatureAllowed(GUI_HideFromManager, strID);
+}
+
+bool UIExtraDataManager::shouldWeShowMachineDetails(const QString &strID) const
+{
+    /* Show unless 'forbidden' flag is set: */
+    return !isFeatureAllowed(GUI_HideDetails, strID);
+}
+
+bool UIExtraDataManager::shouldWeAllowMachineReconfiguration(const QString &strID) const
+{
+    /* Show unless 'forbidden' flag is set: */
+    return !isFeatureAllowed(GUI_PreventReconfiguration, strID);
+}
+
+bool UIExtraDataManager::shouldWeAllowMachineSnapshotOperations(const QString &strID) const
+{
+    /* Show unless 'forbidden' flag is set: */
+    return !isFeatureAllowed(GUI_PreventSnapshotOperations, strID);
+}
+
+bool UIExtraDataManager::shouldWeAutoMountGuestScreens(const QString &strID) const
+{
+    /* Show only if 'allowed' flag is set: */
+    return isFeatureAllowed(GUI_AutomountGuestScreens, strID);
+}
+
+RuntimeMenuType UIExtraDataManager::restrictedRuntimeMenuTypes(const QString &strID) const
+{
+    /* Prepare result: */
+    RuntimeMenuType result = RuntimeMenuType_Invalid;
+    /* Load restricted runtime-menu-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeMenus, strID))
+    {
+        RuntimeMenuType value = gpConverter->fromInternalString<RuntimeMenuType>(strValue);
+        if (value != RuntimeMenuType_Invalid)
+            result = static_cast<RuntimeMenuType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+#ifdef Q_WS_MAC
+RuntimeMenuApplicationActionType UIExtraDataManager::restrictedRuntimeMenuApplicationActionTypes(const QString &strID) const
+{
+    /* Prepare result: */
+    RuntimeMenuApplicationActionType result = RuntimeMenuApplicationActionType_Invalid;
+    /* Load restricted runtime-application-menu action-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeApplicationMenuActions, strID))
+    {
+        RuntimeMenuApplicationActionType value = gpConverter->fromInternalString<RuntimeMenuApplicationActionType>(strValue);
+        if (value != RuntimeMenuApplicationActionType_Invalid)
+            result = static_cast<RuntimeMenuApplicationActionType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+#endif /* Q_WS_MAC */
+
+RuntimeMenuMachineActionType UIExtraDataManager::restrictedRuntimeMenuMachineActionTypes(const QString &strID) const
+{
+    /* Prepare result: */
+    RuntimeMenuMachineActionType result = RuntimeMenuMachineActionType_Invalid;
+    /* Load restricted runtime-machine-menu action-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeMachineMenuActions, strID))
+    {
+        RuntimeMenuMachineActionType value = gpConverter->fromInternalString<RuntimeMenuMachineActionType>(strValue);
+        if (value != RuntimeMenuMachineActionType_Invalid)
+            result = static_cast<RuntimeMenuMachineActionType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+RuntimeMenuViewActionType UIExtraDataManager::restrictedRuntimeMenuViewActionTypes(const QString &strID) const
+{
+    /* Prepare result: */
+    RuntimeMenuViewActionType result = RuntimeMenuViewActionType_Invalid;
+    /* Load restricted runtime-view-menu action-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeViewMenuActions, strID))
+    {
+        RuntimeMenuViewActionType value = gpConverter->fromInternalString<RuntimeMenuViewActionType>(strValue);
+        if (value != RuntimeMenuViewActionType_Invalid)
+            result = static_cast<RuntimeMenuViewActionType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+RuntimeMenuDevicesActionType UIExtraDataManager::restrictedRuntimeMenuDevicesActionTypes(const QString &strID) const
+{
+    /* Prepare result: */
+    RuntimeMenuDevicesActionType result = RuntimeMenuDevicesActionType_Invalid;
+    /* Load restricted runtime-devices-menu action-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeDevicesMenuActions, strID))
+    {
+        RuntimeMenuDevicesActionType value = gpConverter->fromInternalString<RuntimeMenuDevicesActionType>(strValue);
+        if (value != RuntimeMenuDevicesActionType_Invalid)
+            result = static_cast<RuntimeMenuDevicesActionType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+RuntimeMenuDebuggerActionType UIExtraDataManager::restrictedRuntimeMenuDebuggerActionTypes(const QString &strID) const
+{
+    /* Prepare result: */
+    RuntimeMenuDebuggerActionType result = RuntimeMenuDebuggerActionType_Invalid;
+    /* Load restricted runtime-debugger-menu action-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeDebuggerMenuActions, strID))
+    {
+        RuntimeMenuDebuggerActionType value = gpConverter->fromInternalString<RuntimeMenuDebuggerActionType>(strValue);
+        if (value != RuntimeMenuDebuggerActionType_Invalid)
+            result = static_cast<RuntimeMenuDebuggerActionType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
+RuntimeMenuHelpActionType UIExtraDataManager::restrictedRuntimeMenuHelpActionTypes(const QString &strID) const
+{
+    /* Prepare result: */
+    RuntimeMenuHelpActionType result = RuntimeMenuHelpActionType_Invalid;
+    /* Load restricted runtime-help-menu action-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeHelpMenuActions, strID))
+    {
+        RuntimeMenuHelpActionType value = gpConverter->fromInternalString<RuntimeMenuHelpActionType>(strValue);
+        if (value != RuntimeMenuHelpActionType_Invalid)
+            result = static_cast<RuntimeMenuHelpActionType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+UIVisualStateType UIExtraDataManager::restrictedVisualStateTypes(const QString &strID) const
+{
+    /* Prepare result: */
+    UIVisualStateType result = UIVisualStateType_Invalid;
+    /* Load restricted visual-state-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedVisualStates, strID))
+    {
+        UIVisualStateType value = gpConverter->fromInternalString<UIVisualStateType>(strValue);
+        if (value != UIVisualStateType_Invalid)
+            result = static_cast<UIVisualStateType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+MachineCloseAction UIExtraDataManager::defaultMachineCloseAction(const QString &strID) const
+{
+    return gpConverter->fromInternalString<MachineCloseAction>(extraDataString(GUI_DefaultCloseAction, strID));
+}
+
+MachineCloseAction UIExtraDataManager::restrictedMachineCloseActions(const QString &strID) const
+{
+    /* Prepare result: */
+    MachineCloseAction result = MachineCloseAction_Invalid;
+    /* Load restricted machine-close-actions: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedCloseActions, strID))
+    {
+        MachineCloseAction value = gpConverter->fromInternalString<MachineCloseAction>(strValue);
+        if (value != MachineCloseAction_Invalid)
+            result = static_cast<MachineCloseAction>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+QList<IndicatorType> UIExtraDataManager::restrictedStatusBarIndicators(const QString &strID) const
+{
+    /* Prepare result: */
+    QList<IndicatorType> result;
+    /* Load restricted status-bar-indicators: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedStatusBarIndicators, strID))
+    {
+        IndicatorType value = gpConverter->fromInternalString<IndicatorType>(strValue);
+        if (value != IndicatorType_Invalid)
+            result << value;
+    }
+    /* Return result: */
+    return result;
+}
+
+QList<GlobalSettingsPageType> UIExtraDataManager::restrictedGlobalSettingsPages() const
+{
+    /* Prepare result: */
+    QList<GlobalSettingsPageType> result;
+    /* Load restricted global-settings-pages: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedGlobalSettingsPages))
+    {
+        GlobalSettingsPageType value = gpConverter->fromInternalString<GlobalSettingsPageType>(strValue);
+        if (value != GlobalSettingsPageType_Invalid)
+            result << value;
+    }
+    /* Return result: */
+    return result;
+}
+
+QList<MachineSettingsPageType> UIExtraDataManager::restrictedMachineSettingsPages(const QString &strID) const
+{
+    /* Prepare result: */
+    QList<MachineSettingsPageType> result;
+    /* Load restricted machine-settings-pages: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedMachineSettingsPages, strID))
+    {
+        MachineSettingsPageType value = gpConverter->fromInternalString<MachineSettingsPageType>(strValue);
+        if (value != MachineSettingsPageType_Invalid)
+            result << value;
+    }
+    /* Return result: */
+    return result;
+}
+
+#ifndef Q_WS_MAC
+QStringList UIExtraDataManager::machineWindowIconNames(const QString &strID) const
+{
+    return extraDataStringList(GUI_MachineWindowIcons, strID);
+}
+#endif /* !Q_WS_MAC */
+
+GuruMeditationHandlerType UIExtraDataManager::guruMeditationHandlerType(const QString &strID) const
+{
+    return gpConverter->fromInternalString<GuruMeditationHandlerType>(extraDataString(GUI_GuruMeditationHandler, strID));
 }
 
 UIExtraDataManager::UIExtraDataManager()
