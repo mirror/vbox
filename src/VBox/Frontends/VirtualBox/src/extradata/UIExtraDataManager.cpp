@@ -28,6 +28,8 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CEventSource.h"
+#include "CVirtualBox.h"
+#include "CMachine.h"
 
 
 /** QObject extension
@@ -212,6 +214,8 @@ void UIExtraDataManager::prepare()
     prepareMainEventListener();
     /* Prepare extra-data event-handler: */
     prepareExtraDataEventHandler();
+    /* Prepare extra-data map: */
+    prepareExtraDataMap();
 }
 
 void UIExtraDataManager::prepareMainEventListener()
@@ -270,6 +274,30 @@ void UIExtraDataManager::prepareExtraDataEventHandler()
             this, SIGNAL(sigDockIconAppearanceChange(bool)),
             Qt::QueuedConnection);
 #endif /* Q_WS_MAC */
+}
+
+void UIExtraDataManager::prepareExtraDataMap()
+{
+    /* Get CVirtualBox: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    /* Load extra-data map: */
+    if (!vboxGlobal().isVMConsoleProcess())
+    {
+        /* From CVirtualBox for Selector UI: */
+        foreach (const QString &strKey, vbox.GetExtraDataKeys())
+            m_data[strKey] = vbox.GetExtraData(strKey);
+    }
+    else
+    {
+        /* From CMachine for Runtime UI: */
+        const QString strMachineID = vboxGlobal().managedVMUuid();
+        CMachine machine = vbox.FindMachine(strMachineID);
+        AssertMsgReturnVoid(vbox.isOk() && !machine.isNull(),
+                            ("Machine with ID={%s} was not found!\n",
+                             strMachineID.toAscii().constData()));
+        foreach (const QString &strKey, machine.GetExtraDataKeys())
+            m_data[strKey] = machine.GetExtraData(strKey);
+    }
 }
 
 void UIExtraDataManager::cleanup()
