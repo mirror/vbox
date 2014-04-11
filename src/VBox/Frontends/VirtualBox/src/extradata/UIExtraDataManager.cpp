@@ -214,8 +214,8 @@ void UIExtraDataManager::prepare()
     prepareMainEventListener();
     /* Prepare extra-data event-handler: */
     prepareExtraDataEventHandler();
-    /* Prepare extra-data map: */
-    prepareExtraDataMap();
+    /* Prepare global extra-data map: */
+    prepareGlobalExtraDataMap();
 }
 
 void UIExtraDataManager::prepareMainEventListener()
@@ -276,28 +276,14 @@ void UIExtraDataManager::prepareExtraDataEventHandler()
 #endif /* Q_WS_MAC */
 }
 
-void UIExtraDataManager::prepareExtraDataMap()
+void UIExtraDataManager::prepareGlobalExtraDataMap()
 {
     /* Get CVirtualBox: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    /* Load extra-data map: */
-    if (!vboxGlobal().isVMConsoleProcess())
-    {
-        /* From CVirtualBox for Selector UI: */
-        foreach (const QString &strKey, vbox.GetExtraDataKeys())
-            m_data[strKey] = vbox.GetExtraData(strKey);
-    }
-    else
-    {
-        /* From CMachine for Runtime UI: */
-        const QString strMachineID = vboxGlobal().managedVMUuid();
-        CMachine machine = vbox.FindMachine(strMachineID);
-        AssertMsgReturnVoid(vbox.isOk() && !machine.isNull(),
-                            ("Machine with ID={%s} was not found!\n",
-                             strMachineID.toAscii().constData()));
-        foreach (const QString &strKey, machine.GetExtraDataKeys())
-            m_data[strKey] = machine.GetExtraData(strKey);
-    }
+
+    /* Load global extra-data map: */
+    foreach (const QString &strKey, vbox.GetExtraDataKeys())
+        m_data[QString()][strKey] = vbox.GetExtraData(strKey);
 }
 
 void UIExtraDataManager::cleanup()
@@ -311,6 +297,83 @@ void UIExtraDataManager::cleanupMainEventListener()
     /* Unregister Main event-listener:  */
     const CVirtualBox &vbox = vboxGlobal().virtualBox();
     vbox.GetEventSource().UnregisterListener(m_listener);
+}
+
+void UIExtraDataManager::hotloadMachineExtraDataMap(const QString &strID) const
+{
+    /* Make sure it is not yet loaded: */
+    AssertReturnVoid(!strID.isNull() && !m_data.contains(strID));
+
+    /* Search for corresponding machine: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CMachine machine = vbox.FindMachine(strID);
+    AssertReturnVoid(vbox.isOk() && !machine.isNull());
+
+    /* Make sure at least empty map is created: */
+    m_data[strID] = ExtraDataMap();
+
+    /* Do not handle inaccessible machine: */
+    if (!machine.GetAccessible())
+        return;
+
+    /* Load machine extra-data map: */
+    foreach (const QString &strKey, machine.GetExtraDataKeys())
+        m_data[strID][strKey] = machine.GetExtraData(strKey);
+}
+
+bool UIExtraDataManager::isFeatureAllowed(const QString &strKey, const QString &strID /* = QString() */) const
+{
+    /* Hot-load machine extra-data map if necessary: */
+    if (!strID.isNull() && !m_data.contains(strID))
+        hotloadMachineExtraDataMap(strID);
+
+    /* Access corresponding map: */
+    ExtraDataMap &data = m_data[strID];
+
+    /* 'false' if value was not set: */
+    if (!data.contains(strKey))
+        return false;
+
+    /* Check corresponding value: */
+    const QString &strValue = data[strKey];
+    return    strValue.compare("true", Qt::CaseInsensitive) == 0
+           || strValue.compare("yes", Qt::CaseInsensitive) == 0
+           || strValue.compare("on", Qt::CaseInsensitive) == 0
+           || strValue == "1";
+}
+
+QString UIExtraDataManager::extraDataString(const QString &strKey, const QString &strID /* = QString() */) const
+{
+    /* Hot-load machine extra-data map if necessary: */
+    if (!strID.isNull() && !m_data.contains(strID))
+        hotloadMachineExtraDataMap(strID);
+
+    /* Access corresponding map: */
+    ExtraDataMap &data = m_data[strID];
+
+    /* QString() if value was not set: */
+    if (!data.contains(strKey))
+        return QString();
+
+    /* Returns corresponding value: */
+    return data[strKey];
+}
+
+QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const QString &strID /* = QString() */) const
+{
+    /* Hot-load machine extra-data map if necessary: */
+    if (!strID.isNull() && !m_data.contains(strID))
+        hotloadMachineExtraDataMap(strID);
+
+    /* Access corresponding map: */
+    ExtraDataMap &data = m_data[strID];
+
+    /* QStringList() if machine value was not set: */
+    if (!data.contains(strKey))
+        return QStringList();
+
+    /* Returns corresponding value: */
+    return data[strKey].split(',', QString::SkipEmptyParts);
 }
 
 #include "UIExtraDataManager.moc"

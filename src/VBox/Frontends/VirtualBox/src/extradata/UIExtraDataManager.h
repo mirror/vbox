@@ -27,6 +27,9 @@
 /* Forward declarations: */
 class UIExtraDataEventHandler;
 
+/* Type definitions: */
+typedef QMap<QString, QString> ExtraDataMap;
+
 /** Singleton QObject extension
   * providing GUI with corresponding extra-data values,
   * and notifying it whenever any of those values changed. */
@@ -74,8 +77,8 @@ private:
     void prepareMainEventListener();
     /** Prepare extra-data event-handler. */
     void prepareExtraDataEventHandler();
-    /** Prepare extra-data map. */
-    void prepareExtraDataMap();
+    /** Prepare global extra-data map. */
+    void prepareGlobalExtraDataMap();
 
     /** Cleanup Extra-data Manager. */
     void cleanup();
@@ -86,6 +89,21 @@ private:
     // /** Cleanup extra-data map. */
     // void cleanupExtraDataMap();
 
+    /** Hot-load machine extra-data map. */
+    void hotloadMachineExtraDataMap(const QString &strID) const;
+
+    /** Determines whether feature corresponding to passed @a strKey is allowed.
+      * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
+    bool isFeatureAllowed(const QString &strKey, const QString &strID = QString()) const;
+
+    /** Returns extra-data value corresponding to passed @a strKey as QString.
+      * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
+    QString extraDataString(const QString &strKey, const QString &strID = QString()) const;
+
+    /** Returns extra-data value corresponding to passed @a strKey as QStringList.
+      * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
+    QStringList extraDataStringList(const QString &strKey, const QString &strID = QString()) const;
+
     /** Singleton Extra-data Manager instance. */
     static UIExtraDataManager *m_pInstance;
 
@@ -95,7 +113,7 @@ private:
     UIExtraDataEventHandler *m_pHandler;
 
     /** Extra-data map. */
-    QMap<QString, QString> m_data;
+    mutable QMap<QString, ExtraDataMap> m_data;
 };
 
 /** Singleton Extra-data Manager 'official' name. */
