@@ -44,7 +44,6 @@
 
         <!-- Custom actions -->
         <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
-        <Property Id="VBOX_FEATURE_NETADP" Value="1" />
         <?include VBoxMergeNetAdpCA.wxi ?>
 
         <InstallExecuteSequence>

@@ -44,7 +44,6 @@
 
         <!-- Custom actions -->
         <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
-        <Property Id="VBOX_FEATURE_NETFLT" Value="1" />
         <?include VBoxMergeNetFltCA.wxi ?>
 
         <InstallExecuteSequence>
