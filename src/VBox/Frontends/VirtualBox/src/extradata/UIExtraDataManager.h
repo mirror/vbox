@@ -19,6 +19,7 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QMap>
 
 /* COM includes: */
 #include "CEventListener.h"
@@ -73,13 +74,17 @@ private:
     void prepareMainEventListener();
     /** Prepare extra-data event-handler. */
     void prepareExtraDataEventHandler();
+    /** Prepare extra-data map. */
+    void prepareExtraDataMap();
 
     /** Cleanup Extra-data Manager. */
     void cleanup();
     /** Cleanup Main event-listener. */
     void cleanupMainEventListener();
     // /** Cleanup extra-data event-handler. */
-    // void cleanupExtraDataEventHandler() {}
+    // void cleanupExtraDataEventHandler();
+    // /** Cleanup extra-data map. */
+    // void cleanupExtraDataMap();
 
     /** Singleton Extra-data Manager instance. */
     static UIExtraDataManager *m_pInstance;
@@ -88,6 +93,9 @@ private:
     CEventListener m_listener;
     /** Extra-data event-handler instance. */
     UIExtraDataEventHandler *m_pHandler;
+
+    /** Extra-data map. */
+    QMap<QString, QString> m_data;
 };
 
 /** Singleton Extra-data Manager 'official' name. */
