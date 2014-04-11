@@ -289,7 +289,9 @@
     <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
         <ComponentRef Id="cp_Docs" />
     <?endif ?>
+    <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <ComponentRef Id="cp_NLS" />
+    <?endif ?>
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
         <ComponentRef Id="cp_MainCOM_x86" />
     <?endif ?>

@@ -43,6 +43,7 @@
         </Directory>
     </Directory> <!-- Directory "drivers" -->
 
+<?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
     <!-- National Language Support directory -->
     <Directory Id="dir_VBoxAppNLS" Name="nls">
         <Component Id="cp_NLS" Guid="D63517D7-1CF3-4D06-B3EE-C561E323069B" Win64="$(var.Property_Win64)">
@@ -50,6 +51,7 @@
             <?include $(env.PATH_TARGET)\VBoxGuiNLS.wxi ?>
         </Component>
     </Directory>
+<?endif ?>
 
 <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
     <Directory Id="dir_VBoxAppX86" Name="x86">
