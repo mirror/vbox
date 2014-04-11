@@ -282,7 +282,7 @@ $(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi: $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(APPEND) $@ '	<File Id="file_License_en_US.rtf" Name="License_en_US.rtf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(VBOX_BRAND_LICENSE_RTF)">' \
 	             '	</File>'
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
-	             '	<File Id="file_License_$(lang).rtf" Name="License_$(lang).rtf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(VBOX_BRAND_$(lang)_LICENSE_RTF)"/>' \
+	             '	<File Id="file_License_$(lang).rtf" Name="License_$(lang).rtf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(VBOX_BRAND_$(lang)_LICENSE_RTF)">' \
 	             '	</File>')
 	$(APPEND) $@ '</Include>'
 
