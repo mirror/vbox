@@ -196,6 +196,19 @@ void UIExtraDataManager::destroy()
     }
 }
 
+UIExtraDataManager::UIExtraDataManager()
+    : m_pHandler(new UIExtraDataEventHandler(this))
+{
+    /* Connect to static instance: */
+    m_pInstance = this;
+}
+
+UIExtraDataManager::~UIExtraDataManager()
+{
+    /* Disconnect from static instance: */
+    m_pInstance = 0;
+}
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 bool UIExtraDataManager::shouldWeAllowApplicationUpdate() const
 {
@@ -435,19 +448,6 @@ GuruMeditationHandlerType UIExtraDataManager::guruMeditationHandlerType(const QS
     return gpConverter->fromInternalString<GuruMeditationHandlerType>(extraDataString(GUI_GuruMeditationHandler, strID));
 }
 
-UIExtraDataManager::UIExtraDataManager()
-    : m_pHandler(new UIExtraDataEventHandler(this))
-{
-    /* Connect to static instance: */
-    m_pInstance = this;
-}
-
-UIExtraDataManager::~UIExtraDataManager()
-{
-    /* Disconnect from static instance: */
-    m_pInstance = 0;
-}
-
 void UIExtraDataManager::prepare()
 {
     /* Prepare Main event-listener: */
@@ -520,6 +520,9 @@ void UIExtraDataManager::prepareGlobalExtraDataMap()
 {
     /* Get CVirtualBox: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
+
+    /* Make sure at least empty map is created: */
+    m_data[QString()] = ExtraDataMap();
 
     /* Load global extra-data map: */
     foreach (const QString &strKey, vbox.GetExtraDataKeys())
