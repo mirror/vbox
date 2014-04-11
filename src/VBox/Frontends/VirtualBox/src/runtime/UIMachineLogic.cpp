@@ -975,8 +975,7 @@ void UIMachineLogic::prepareMenu()
 {
 #ifdef Q_WS_MAC
     /* Prepare native menu-bar: */
-    CMachine machine = session().GetMachine();
-    RuntimeMenuType restrictedMenus = VBoxGlobal::restrictedRuntimeMenuTypes(machine);
+    RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
     RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
     m_pMenuBar = uisession()->newMenuBar(allowedMenus);
 #endif /* Q_WS_MAC */
