@@ -25,6 +25,7 @@
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
+#include "UIExtraDataManager.h"
 #include "UISession.h"
 #include "UIMachine.h"
 #include "UIMedium.h"
@@ -1093,25 +1094,25 @@ void UISession::loadSessionSettings()
         /* Runtime menu settings: */
 #ifdef Q_WS_MAC
         m_allowedActionsMenuApplication = (RuntimeMenuApplicationActionType)
-                                          (vboxGlobal().restrictedRuntimeMenuApplicationActionTypes(machine) ^
+                                          (gEDataManager->restrictedRuntimeMenuApplicationActionTypes(vboxGlobal().managedVMUuid()) ^
                                            RuntimeMenuApplicationActionType_All);
 #endif /* Q_WS_MAC */
         m_allowedActionsMenuMachine     = (RuntimeMenuMachineActionType)
-                                          (vboxGlobal().restrictedRuntimeMenuMachineActionTypes(machine) ^
+                                          (gEDataManager->restrictedRuntimeMenuMachineActionTypes(vboxGlobal().managedVMUuid()) ^
                                            RuntimeMenuMachineActionType_All);
         m_allowedActionsMenuView        = (RuntimeMenuViewActionType)
-                                          (vboxGlobal().restrictedRuntimeMenuViewActionTypes(machine) ^
+                                          (gEDataManager->restrictedRuntimeMenuViewActionTypes(vboxGlobal().managedVMUuid()) ^
                                            RuntimeMenuViewActionType_All);
         m_allowedActionsMenuDevices     = (RuntimeMenuDevicesActionType)
-                                          (vboxGlobal().restrictedRuntimeMenuDevicesActionTypes(machine) ^
+                                          (gEDataManager->restrictedRuntimeMenuDevicesActionTypes(vboxGlobal().managedVMUuid()) ^
                                            RuntimeMenuDevicesActionType_All);
 #ifdef VBOX_WITH_DEBUGGER_GUI
         m_allowedActionsMenuDebugger    = (RuntimeMenuDebuggerActionType)
-                                          (vboxGlobal().restrictedRuntimeMenuDebuggerActionTypes(machine) ^
+                                          (gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(vboxGlobal().managedVMUuid()) ^
                                            RuntimeMenuDebuggerActionType_All);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
         m_allowedActionsMenuHelp        = (RuntimeMenuHelpActionType)
-                                          (vboxGlobal().restrictedRuntimeMenuHelpActionTypes(machine) ^
+                                          (gEDataManager->restrictedRuntimeMenuHelpActionTypes(vboxGlobal().managedVMUuid()) ^
                                            RuntimeMenuHelpActionType_All);
 
         /* Temporary: */
@@ -1120,7 +1121,7 @@ void UISession::loadSessionSettings()
 #ifndef Q_WS_MAC
         /* Load/prepare user's machine-window icon: */
         QIcon icon;
-        foreach (const QString &strIconName, VBoxGlobal::machineWindowIconNames(machine))
+        foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(vboxGlobal().managedVMUuid()))
             if (!strIconName.isEmpty())
                 icon.addFile(strIconName);
         if (!icon.isNull())
@@ -1128,7 +1129,7 @@ void UISession::loadSessionSettings()
 #endif /* !Q_WS_MAC */
 
         /* Determine Guru Meditation handler type: */
-        m_guruMeditationHandlerType = VBoxGlobal::guruMeditationHandlerType(machine);
+        m_guruMeditationHandlerType = gEDataManager->guruMeditationHandlerType(vboxGlobal().managedVMUuid());
 
         /* Is there should be First RUN Wizard? */
         strSettings = machine.GetExtraData(GUI_FirstRun);
@@ -1146,13 +1147,13 @@ void UISession::loadSessionSettings()
         pGuestAutoresizeSwitch->setChecked(strSettings != "off");
 
         /* Should we allow reconfiguration? */
-        m_fReconfigurable =  VBoxGlobal::shouldWeAllowMachineReconfiguration(machine);
+        m_fReconfigurable = gEDataManager->shouldWeAllowMachineReconfiguration(vboxGlobal().managedVMUuid());
         /* Should we allow snapshot operations? */
-        m_fSnapshotOperationsAllowed = vboxGlobal().shouldWeAllowSnapshotOperations(machine);
+        m_fSnapshotOperationsAllowed = gEDataManager->shouldWeAllowMachineSnapshotOperations(vboxGlobal().managedVMUuid());
 
         /* What is the default close action and the restricted are? */
-        m_defaultCloseAction = vboxGlobal().defaultMachineCloseAction(machine);
-        m_restrictedCloseActions = vboxGlobal().restrictedMachineCloseActions(machine);
+        m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(vboxGlobal().managedVMUuid());
+        m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(vboxGlobal().managedVMUuid());
         m_fAllCloseActionsRestricted =  (m_restrictedCloseActions & MachineCloseAction_SaveState)
                                      && (m_restrictedCloseActions & MachineCloseAction_Shutdown)
                                      && (m_restrictedCloseActions & MachineCloseAction_PowerOff);

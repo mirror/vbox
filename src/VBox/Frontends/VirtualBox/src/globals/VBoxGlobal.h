@@ -365,43 +365,6 @@ public:
     /* Returns full medium-format name for the given base medium-format name: */
     static QString fullMediumFormatName(const QString &strBaseMediumFormatName);
 
-    /* Extra-data settings stuff: */
-    static bool isApprovedByExtraData(CVirtualBox &vbox, const QString &strExtraDataKey);
-    static bool isApprovedByExtraData(CMachine &machine, const QString &strExtraDataKey);
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    static bool shouldWeAllowApplicationUpdate(CVirtualBox &vbox);
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-    static bool shouldWeShowMachine(CMachine &machine);
-    static bool shouldWeAllowMachineReconfiguration(CMachine &machine,
-                                                    bool fIncludingMachineGeneralCheck = false,
-                                                    bool fIncludingMachineStateCheck = false);
-    static bool shouldWeShowDetails(CMachine &machine,
-                                    bool fIncludingMachineGeneralCheck = false);
-    static bool shouldWeAutoMountGuestScreens(CMachine &machine, bool fIncludingSanityCheck = true);
-    static bool shouldWeAllowSnapshotOperations(CMachine &machine, bool fIncludingSanityCheck = true);
-    static MachineCloseAction defaultMachineCloseAction(CMachine &machine);
-    static RuntimeMenuType restrictedRuntimeMenuTypes(CMachine &machine);
-#ifdef Q_WS_MAC
-    static RuntimeMenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(CMachine &machine);
-#endif /* Q_WS_MAC */
-    static RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(CMachine &machine);
-    static RuntimeMenuViewActionType restrictedRuntimeMenuViewActionTypes(CMachine &machine);
-    static RuntimeMenuDevicesActionType restrictedRuntimeMenuDevicesActionTypes(CMachine &machine);
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    static RuntimeMenuDebuggerActionType restrictedRuntimeMenuDebuggerActionTypes(CMachine &machine);
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-    static RuntimeMenuHelpActionType restrictedRuntimeMenuHelpActionTypes(CMachine &machine);
-    static UIVisualStateType restrictedVisualStateTypes(CMachine &machine);
-    static QList<IndicatorType> restrictedStatusBarIndicators(CMachine &machine);
-    static MachineCloseAction restrictedMachineCloseActions(CMachine &machine);
-    static QList<GlobalSettingsPageType> restrictedGlobalSettingsPages(CVirtualBox &vbox);
-    static QList<MachineSettingsPageType> restrictedMachineSettingsPages(CMachine &machine);
-#ifndef Q_WS_MAC
-    /** Loads redefined machine-window icon names. */
-    static QStringList machineWindowIconNames(CMachine &machine);
-#endif /* !Q_WS_MAC */
-    /** Loads redefined guru-meditation handler type. */
-    static GuruMeditationHandlerType guruMeditationHandlerType(CMachine &machine);
 
 #ifdef RT_OS_LINUX
     static void checkForWrongUSBMounted();

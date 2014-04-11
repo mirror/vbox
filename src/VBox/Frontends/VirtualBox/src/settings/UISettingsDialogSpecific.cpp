@@ -29,6 +29,7 @@
 #include "UISettingsDefs.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIExtraDataManager.h"
 #include "QIWidgetValidator.h"
 #include "VBoxSettingsSelector.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -323,8 +324,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
 #endif /* !Q_WS_MAC */
 
     /* Creating settings pages: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    QList<GlobalSettingsPageType> restrictedGlobalSettingsPages = vboxGlobal().restrictedGlobalSettingsPages(vbox);
+    QList<GlobalSettingsPageType> restrictedGlobalSettingsPages = gEDataManager->restrictedGlobalSettingsPages();
     for (int iPageIndex = GlobalSettingsPageType_General; iPageIndex < GlobalSettingsPageType_Max; ++iPageIndex)
     {
         /* Make sure page was not restricted: */
@@ -563,7 +563,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
     m_machineState = m_machine.GetState();
 
     /* Creating settings pages: */
-    QList<MachineSettingsPageType> restrictedMachineSettingsPages = vboxGlobal().restrictedMachineSettingsPages(m_machine);
+    QList<MachineSettingsPageType> restrictedMachineSettingsPages = gEDataManager->restrictedMachineSettingsPages(m_strMachineId);
     for (int iPageIndex = MachineSettingsPageType_General; iPageIndex < MachineSettingsPageType_Max; ++iPageIndex)
     {
         /* Make sure page was not restricted: */

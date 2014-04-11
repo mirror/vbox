@@ -21,6 +21,9 @@
 #include <QObject>
 #include <QMap>
 
+/* GUI includes: */
+#include "UIDefs.h"
+
 /* COM includes: */
 #include "CEventListener.h"
 
@@ -63,6 +66,67 @@ public:
     static UIExtraDataManager* instance();
     /** Static Extra-data Manager destructor. */
     static void destroy();
+
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    /** Returns whether we should allow Application Update. */
+    bool shouldWeAllowApplicationUpdate() const;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+    /** Returns whether we should show machine. */
+    bool shouldWeShowMachine(const QString &strID) const;
+    /** Returns whether we should show machine details. */
+    bool shouldWeShowMachineDetails(const QString &strID) const;
+
+    /** Returns whether we should allow machine reconfiguration. */
+    bool shouldWeAllowMachineReconfiguration(const QString &strID) const;
+    /** Returns whether we should allow machine snapshot operations. */
+    bool shouldWeAllowMachineSnapshotOperations(const QString &strID) const;
+
+    /** Returns whether we should automatically mount/unmount guest-screens. */
+    bool shouldWeAutoMountGuestScreens(const QString &strID) const;
+
+    /** Returns restricted Runtime UI menu types. */
+    RuntimeMenuType restrictedRuntimeMenuTypes(const QString &strID) const;
+#ifdef Q_WS_MAC
+    /** Mac OS X: Returns restricted Runtime UI action types for Application menu. */
+    RuntimeMenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QString &strID) const;
+#endif /* Q_WS_MAC */
+    /** Returns restricted Runtime UI action types for Machine menu. */
+    RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(const QString &strID) const;
+    /** Returns restricted Runtime UI action types for View menu. */
+    RuntimeMenuViewActionType restrictedRuntimeMenuViewActionTypes(const QString &strID) const;
+    /** Returns restricted Runtime UI action types for Devices menu. */
+    RuntimeMenuDevicesActionType restrictedRuntimeMenuDevicesActionTypes(const QString &strID) const;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Returns restricted Runtime UI action types for Debugger menu. */
+    RuntimeMenuDebuggerActionType restrictedRuntimeMenuDebuggerActionTypes(const QString &strID) const;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    /** Returns restricted Runtime UI action types for Help menu. */
+    RuntimeMenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QString &strID) const;
+
+    /** Returns restricted Runtime UI visual-state types. */
+    UIVisualStateType restrictedVisualStateTypes(const QString &strID) const;
+
+    /** Returns default machine close action. */
+    MachineCloseAction defaultMachineCloseAction(const QString &strID) const;
+    /** Returns restricted machine close actions. */
+    MachineCloseAction restrictedMachineCloseActions(const QString &strID) const;
+
+    /** Returns restricted Runtime UI status-bar indicators. */
+    QList<IndicatorType> restrictedStatusBarIndicators(const QString &strID) const;
+
+    /** Returns global settings pages. */
+    QList<GlobalSettingsPageType> restrictedGlobalSettingsPages() const;
+    /** Returns machine settings pages. */
+    QList<MachineSettingsPageType> restrictedMachineSettingsPages(const QString &strID) const;
+
+#ifndef Q_WS_MAC
+    /** Except Mac OS X: Returns redefined machine-window icon names. */
+    QStringList machineWindowIconNames(const QString &strID) const;
+#endif /* !Q_WS_MAC */
+
+    /** Returns redefined guru-meditation handler type. */
+    GuruMeditationHandlerType guruMeditationHandlerType(const QString &strID) const;
 
 private:
 

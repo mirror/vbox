@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
+#include "UIExtraDataManager.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindowScale.h"
@@ -71,8 +72,7 @@ void UIMachineWindowScale::prepareMenu()
     UIMachineWindow::prepareMenu();
 
     /* Prepare menu: */
-    CMachine machine = session().GetMachine();
-    RuntimeMenuType restrictedMenus = VBoxGlobal::restrictedRuntimeMenuTypes(machine);
+    RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
     RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
     m_pMainMenu = uisession()->newMenu(allowedMenus);
 }
