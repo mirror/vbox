@@ -720,7 +720,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
                 rc = VINF_SUCCESS;
             else if (RT_FAILURE(rc))
             {
-                rc = vmR3FatalWaitError(pUVCpu, "VMMR0_DO_GVMM_SCHED_HALT->%Rrc\n", rc);
+                rc = vmR3FatalWaitError(pUVCpu, "vmR3HaltGlobal1Halt: VMMR0_DO_GVMM_SCHED_HALT->%Rrc\n", rc);
                 break;
             }
             else
@@ -786,7 +786,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Wait(PUVMCPU pUVCpu)
             rc = VINF_SUCCESS;
         else if (RT_FAILURE(rc))
         {
-            rc = vmR3FatalWaitError(pUVCpu, "VMMR0_DO_GVMM_SCHED_HALT->%Rrc\n", rc);
+            rc = vmR3FatalWaitError(pUVCpu, "vmR3HaltGlobal1Wait: VMMR0_DO_GVMM_SCHED_HALT->%Rrc\n", rc);
             break;
         }
     }
