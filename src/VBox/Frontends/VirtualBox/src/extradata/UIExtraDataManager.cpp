@@ -48,6 +48,7 @@ signals:
 
     /** Notifies about HID LED sync state change. */
     void sigHIDLedsSyncStateChange(bool fEnabled);
+
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Notifies about 'presentation mode' status change. */
     void sigPresentationModeChange(bool fEnabled);
@@ -171,9 +172,12 @@ UIExtraDataManager *UIExtraDataManager::m_pInstance = 0;
 /* static */
 UIExtraDataManager* UIExtraDataManager::instance()
 {
-    /* Create instance if not yet exists: */
+    /* Create/prepare instance if not yet exists: */
     if (!m_pInstance)
-        m_pInstance = new UIExtraDataManager();
+    {
+        new UIExtraDataManager;
+        m_pInstance->prepare();
+    }
     /* Return instance: */
     return m_pInstance;
 }
@@ -181,16 +185,36 @@ UIExtraDataManager* UIExtraDataManager::instance()
 /* static */
 void UIExtraDataManager::destroy()
 {
-    /* Destroy instance if still exists: */
+    /* Destroy/cleanup instance if still exists: */
     if (m_pInstance)
     {
+        m_pInstance->cleanup();
         delete m_pInstance;
-        m_pInstance = 0;
     }
 }
 
 UIExtraDataManager::UIExtraDataManager()
     : m_pHandler(new UIExtraDataEventHandler(this))
+{
+    /* Connect to static instance: */
+    m_pInstance = this;
+}
+
+UIExtraDataManager::~UIExtraDataManager()
+{
+    /* Disconnect from static instance: */
+    m_pInstance = 0;
+}
+
+void UIExtraDataManager::prepare()
+{
+    /* Prepare Main event-listener: */
+    prepareMainEventListener();
+    /* Prepare extra-data event-handler: */
+    prepareExtraDataEventHandler();
+}
+
+void UIExtraDataManager::prepareMainEventListener()
 {
     /* Register Main event-listener:  */
     const CVirtualBox &vbox = vboxGlobal().virtualBox();
@@ -213,7 +237,10 @@ UIExtraDataManager::UIExtraDataManager()
     connect(pListener->getWrapped(), SIGNAL(sigExtraDataChange(QString, QString, QString)),
             m_pHandler, SLOT(sltExtraDataChange(QString, QString, QString)),
             Qt::DirectConnection);
+}
 
+void UIExtraDataManager::prepareExtraDataEventHandler()
+{
     /* Language change signal: */
     connect(m_pHandler, SIGNAL(sigLanguageChange(QString)),
             this, SIGNAL(sigLanguageChange(QString)),
@@ -245,7 +272,13 @@ UIExtraDataManager::UIExtraDataManager()
 #endif /* Q_WS_MAC */
 }
 
-UIExtraDataManager::~UIExtraDataManager()
+void UIExtraDataManager::cleanup()
+{
+    /* Cleanup Main event-listener: */
+    cleanupMainEventListener();
+}
+
+void UIExtraDataManager::cleanupMainEventListener()
 {
     /* Unregister Main event-listener:  */
     const CVirtualBox &vbox = vboxGlobal().virtualBox();

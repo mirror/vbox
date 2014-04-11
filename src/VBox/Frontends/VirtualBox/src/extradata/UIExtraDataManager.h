@@ -67,6 +67,20 @@ private:
     /** Extra-data Manager destructor. */
     ~UIExtraDataManager();
 
+    /** Prepare Extra-data Manager. */
+    void prepare();
+    /** Prepare Main event-listener. */
+    void prepareMainEventListener();
+    /** Prepare extra-data event-handler. */
+    void prepareExtraDataEventHandler();
+
+    /** Cleanup Extra-data Manager. */
+    void cleanup();
+    /** Cleanup Main event-listener. */
+    void cleanupMainEventListener();
+    // /** Cleanup extra-data event-handler. */
+    // void cleanupExtraDataEventHandler() {}
+
     /** Singleton Extra-data Manager instance. */
     static UIExtraDataManager *m_pInstance;
 
