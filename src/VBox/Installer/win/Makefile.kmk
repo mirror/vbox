@@ -417,6 +417,7 @@ else # VCC100
 endif
 # TODO: Add filtering out more dependencies here!
 ifndef VBOX_WITH_QTGUI
+ VBOX_MSI_DEPENDENCIES := $(filter-out \
 	$(PATH_OUT)/bin/VirtualBox.exe \
 	$(PATH_OUT)/bin/VBoxTestOGL.exe \
 	$(PATH_OUT)/bin/QtCoreVBox4.dll \
@@ -767,7 +768,7 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL): \
 			-target-x86 $(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.x86) \
 			-target-amd64 $(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.amd64) \
 			$(if $(VBOX_WITH_MSM_INSTALL),,-target-all $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_MULTIARCH_COMMONCAB)) \
-			-stub $(PATH_STAGE_BIN)/VBoxStub.exe
+			-stub $(PATH_STAGE_BIN)/VBoxStub.exe)
 	$(call VBOX_SIGN_FILE_FN,$@)
 endif
 
