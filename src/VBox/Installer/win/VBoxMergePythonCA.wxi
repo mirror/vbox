@@ -17,6 +17,6 @@
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
     <CustomAction Id="ca_InstallPythonAPI" BinaryKey="VBoxInstallHelper" DllEntry="InstallPythonAPI" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_InstallPythonAPIArgs" Property="ca_InstallPythonAPI" Value="[INSTALLDIR]" Execute="immediate"/>
+    <CustomAction Id="ca_InstallPythonAPIArgs" Property="ca_InstallPythonAPI" Value="[MergeRedirectFolder]" Execute="immediate"/>
 
 </Include>

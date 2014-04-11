@@ -17,26 +17,17 @@
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-    <CustomAction Id="ca_CreateHostOnlyInterface" BinaryKey="VBoxInstallHelper" DllEntry="CreateHostOnlyInterface" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_CreateHostOnlyInterfaceArgs" Property="ca_CreateHostOnlyInterface" Value="[INSTALLDIR]" Execute="immediate"/>
-
-    <CustomAction Id="ca_RemoveHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="RemoveHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_StopHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="StopHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
-
-    <CustomAction Id="ca_UpdateHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="UpdateHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_UpdateHostOnlyInterfacesArgs" Property="ca_UpdateHostOnlyInterfaces" Value="[INSTALLDIR]" Execute="immediate"/>
-
     <CustomAction Id="ca_InstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="InstallNetFlt" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_InstallNetFltArgs" Property="ca_InstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
+    <CustomAction Id="ca_InstallNetFltArgs" Property="ca_InstallNetFlt" Value="[MergeRedirectFolder]" Execute="immediate"/>
 
     <CustomAction Id="ca_RollbackInstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetFlt" Execute="rollback" Impersonate="no"/>
-    <CustomAction Id="ca_RollbackInstallNetFltArgs" Property="ca_RollbackInstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
+    <CustomAction Id="ca_RollbackInstallNetFltArgs" Property="ca_RollbackInstallNetFlt" Value="[MergeRedirectFolder]" Execute="immediate"/>
 
     <CustomAction Id="ca_UninstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetFlt" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_UninstallNetFltArgs" Property="ca_UninstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
+    <CustomAction Id="ca_UninstallNetFltArgs" Property="ca_UninstallNetFlt" Value="[MergeRedirectFolder]" Execute="immediate"/>
 
     <CustomAction Id="ca_RollbackUninstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="InstallNetFlt" Execute="rollback" Impersonate="no"/>
-    <CustomAction Id="ca_RollbackUninstallNetFltArgs" Property="ca_RollbackUninstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
+    <CustomAction Id="ca_RollbackUninstallNetFltArgs" Property="ca_RollbackUninstallNetFlt" Value="[MergeRedirectFolder]" Execute="immediate"/>
 <?endif ?>
 
 </Include>
