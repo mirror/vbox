@@ -200,6 +200,7 @@ BIOSSEG		segment	'CODE'
 ;; Start of fixed code - eoi_jmp_post is kept near here to allow short jumps.
 ;;
 		BIOSORG	0E030h
+eoi_both_pics:
 		mov	al, PIC_CMD_EOI
 		out	PIC_SLAVE, al
 eoi_master_pic:
@@ -226,7 +227,6 @@ eoi_jmp_post:
 		mov	ds, ax
 		jmp	dword ptr ds:[0467h]
 
-eoi_both_pics:
 ;; --------------------------------------------------------
 ;; POST entry point
 ;; --------------------------------------------------------
