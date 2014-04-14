@@ -422,10 +422,10 @@ HCR_FRAMEBUFFER CrPMgrFbGet(uint32_t idScreen);
 /*cleanup stuff*/
 
 
-int CrPMgrDisable();
-int CrPMgrEnable();
 int CrPMgrInit();
 void CrPMgrTerm();
+int CrPMgrDisable();
+int CrPMgrEnable();
 
 typedef DECLCALLBACKPTR(bool, PFNCR_FRAMEBUFFER_ENTRIES_VISITOR_CB)(HCR_FRAMEBUFFER hFb, HCR_FRAMEBUFFER_ENTRY hEntry, void *pvContext);
 

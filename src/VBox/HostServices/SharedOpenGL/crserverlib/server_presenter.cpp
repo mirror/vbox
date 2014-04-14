@@ -2598,6 +2598,28 @@ public:
         mpWindow->UpdateEnd();
     }
 
+    virtual int RegionsChanged(struct CR_FRAMEBUFFER *pFb)
+    {
+        int rc = CrFbDisplayBase::RegionsChanged(pFb);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("err"));
+            return rc;
+        }
+
+        if (mpWindow->GetParentId())
+        {
+            rc = mpWindow->Create();
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
+                return rc;
+            }
+        }
+
+        return VINF_SUCCESS;
+    }
+
     virtual int EntryCreated(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
     {
         int rc = CrFbDisplayBase::EntryCreated(pFb, hEntry);
@@ -2937,9 +2959,31 @@ protected:
             return rc;
         }
 
-        mu32Screen = CrFbGetScreenInfo(getFramebuffer())->u32ViewIndex;
+        HCR_FRAMEBUFFER hFb = getFramebuffer();
 
-        return windowSync();
+        mu32Screen = CrFbGetScreenInfo(hFb)->u32ViewIndex;
+
+        rc = windowSync();
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("windowSync failed %d", rc));
+            return rc;
+        }
+
+        if (CrFbHas3DData(hFb))
+        {
+            if (mpWindow->GetParentId())
+            {
+                rc = mpWindow->Create();
+                if (!RT_SUCCESS(rc))
+                {
+                    WARN(("err"));
+                    return rc;
+                }
+            }
+        }
+
+        return VINF_SUCCESS;
     }
 
     virtual const struct RTRECT* getRect()
@@ -3645,59 +3689,6 @@ void crDbgDumpRects(uint32_t cRects, const RTRECT *paRects)
     crDebug("End Dumping rects (%d)", cRects);
 }
 
-int crServerDisplaySaveState(PSSMHANDLE pSSM)
-{
-    int rc;
-    int cDisplays = 0, i;
-    for (i = 0; i < cr_server.screenCount; ++i)
-    {
-        if (ASMBitTest(cr_server.DisplaysInitMap, i) && !CrDpIsEmpty(&cr_server.aDispplays[i]))
-            ++cDisplays;
-    }
-
-    rc = SSMR3PutS32(pSSM, cDisplays);
-    AssertRCReturn(rc, rc);
-
-    if (!cDisplays)
-        return VINF_SUCCESS;
-
-    rc = SSMR3PutS32(pSSM, cr_server.screenCount);
-    AssertRCReturn(rc, rc);
-
-    for (i = 0; i < cr_server.screenCount; ++i)
-    {
-        rc = SSMR3PutS32(pSSM, cr_server.screen[i].x);
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutS32(pSSM, cr_server.screen[i].y);
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutU32(pSSM, cr_server.screen[i].w);
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutU32(pSSM, cr_server.screen[i].h);
-        AssertRCReturn(rc, rc);
-    }
-
-    for (i = 0; i < cr_server.screenCount; ++i)
-    {
-        if (ASMBitTest(cr_server.DisplaysInitMap, i) && !CrDpIsEmpty(&cr_server.aDispplays[i]))
-        {
-            rc = SSMR3PutS32(pSSM, i);
-            AssertRCReturn(rc, rc);
-
-            rc = CrDpSaveState(&cr_server.aDispplays[i], pSSM);
-            AssertRCReturn(rc, rc);
-        }
-    }
-
-    return VINF_SUCCESS;
-}
-
-int crServerDisplayLoadState(PSSMHANDLE pSSM, uint32_t u32Version)
-{
-
-}
 #endif
 
 class CrFbDisplayEntryDataMonitor : public CrFbDisplayBase
@@ -4246,6 +4237,9 @@ int CrPMgrRootVrUpdate()
             hFb;
             hFb = CrPMgrFbGetNextEnabled(hFb))
     {
+        if (!CrFbHas3DData(hFb))
+            continue;
+
         uint32_t idScreen = CrFbGetScreenInfo(hFb)->u32ViewIndex;
         CR_FBDISPLAY_INFO *pInfo = &g_CrPresenter.aDisplayInfos[idScreen];
         int rc = CrFbUpdateBegin(hFb);
@@ -4527,6 +4521,7 @@ int CrFbEntryLoadState(CR_FRAMEBUFFER *pFb, PSSMHANDLE pSSM, uint32_t version)
 
 int CrFbLoadState(CR_FRAMEBUFFER *pFb, PSSMHANDLE pSSM, uint32_t version)
 {
+    Assert(0);
     uint32_t u32 = 0;
     int rc = SSMR3GetU32(pSSM, &u32);
     AssertRCReturn(rc, rc);
@@ -4541,7 +4536,6 @@ int CrFbLoadState(CR_FRAMEBUFFER *pFb, PSSMHANDLE pSSM, uint32_t version)
     {
         rc = CrFbEntryLoadState(pFb, pSSM, version);
         AssertRCReturn(rc, rc);
-
     }
 
     CrFbUpdateEnd(pFb);
