@@ -281,6 +281,9 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParameteriCR(GLenum target
     case GL_HH_SET_DEFAULT_SHARED_CTX:
         crWarning("Recieved GL_HH_SET_DEFAULT_SHARED_CTX from guest, ignoring");
         break;
+    case GL_HH_RENDERTHREAD_INFORM:
+        crWarning("Recieved GL_HH_RENDERTHREAD_INFORM from guest, ignoring");
+        break;
     default:
         /* Pass the parameter info to the head SPU */
         cr_server.head_spu->dispatch_table.ChromiumParameteriCR( target, value );

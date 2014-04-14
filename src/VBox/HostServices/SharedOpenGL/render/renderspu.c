@@ -598,16 +598,21 @@ static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, voi
     }
 }
 
+void renderspuWindowTermBase( WindowInfo *window )
+{
+    renderspuVBoxCompositorSet(window, NULL);
+    renderspuVBoxPresentBlitterCleanup(window);
+    renderspu_SystemDestroyWindow( window );
+    RTCritSectDelete(&window->CompositorLock);
+}
+
 void renderspuWindowTerm( WindowInfo *window )
 {
     GET_CONTEXT(pOldCtx);
     WindowInfo * pOldWindow = pOldCtx ? pOldCtx->currentWindow : NULL;
     CRASSERT(!pOldCtx == !pOldWindow);
     /* ensure no concurrent draws can take place */
-    renderspuVBoxCompositorSet(window, NULL);
-    renderspuVBoxPresentBlitterCleanup(window);
-    renderspu_SystemDestroyWindow( window );
-    RTCritSectDelete(&window->CompositorLock);
+    renderspuWindowTermBase(window);
     /* check if this window is bound to some ctx. Note: window pointer is already freed here */
     crHashtableWalk(render_spu.contextTable, renderspuCheckCurrentCtxWindowCB, window);
     /* restore current context */
@@ -1366,10 +1371,8 @@ void renderspuSetDefaultSharedContext(ContextInfo *pCtx)
     render_spu.defaultSharedContext = pCtx;
 }
 
-
 static void RENDER_APIENTRY renderspuChromiumParameteriCR(GLenum target, GLint value)
 {
-
     switch (target)
     {
         case GL_HH_SET_DEFAULT_SHARED_CTX:
@@ -1381,6 +1384,23 @@ static void RENDER_APIENTRY renderspuChromiumParameteriCR(GLenum target, GLint v
                 crWarning("invalid default shared context id %d", value);
 
             renderspuSetDefaultSharedContext(pCtx);
+            break;
+        }
+        case GL_HH_RENDERTHREAD_INFORM:
+        {
+            if (value)
+            {
+                int rc = renderspuDefaultCtxInit();
+                if (RT_FAILURE(rc))
+                {
+                    WARN(("renderspuDefaultCtxInit failed"));
+                    break;
+                }
+            }
+            else
+            {
+                renderspuCleanupBase(false);
+            }
             break;
         }
         default:
@@ -1752,8 +1772,13 @@ renderspuGetString(GLenum pname)
 static void renderspuReparentWindowCB(unsigned long key, void *data1, void *data2)
 {
     WindowInfo *pWindow = (WindowInfo *)data1;
+    CRHashTable *pTable = (CRHashTable*)data2;
 
-    renderspu_SystemReparentWindow(pWindow);
+    crHashtableDelete(pTable, key, NULL);
+
+    renderspuWindowTerm(pWindow);
+
+    crFree(pWindow);
 }
 
 DECLEXPORT(void) renderspuReparentWindow(GLint window)

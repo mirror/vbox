@@ -3005,37 +3005,80 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
     return VINF_SUCCESS;
 }
 
-static void crVBoxServerDefaultContextSet()
+static void crVBoxServerDeleteMuralCb(unsigned long key, void *data1, void *data2)
 {
-    GLint spuWindow, spuCtx;
-    CRContext *ctx = NULL;
+    CRHashTable *h = (CRHashTable*)data2;
+    CRMuralInfo *m = (CRMuralInfo *) data1;
+    if (m->spuWindow == CR_RENDER_DEFAULT_WINDOW_ID)
+        return;
 
-    if (cr_server.MainContextInfo.SpuContext)
+    crHashtableDelete(h, key, NULL);
+    crServerMuralTerm(m);
+    crFree(m);
+}
+
+static void crVBoxServerDefaultContextClear()
+{
+    HCR_FRAMEBUFFER hFb;
+    int rc = CrPMgrDisable();
+    if (RT_FAILURE(rc))
     {
-        CRMuralInfo *pMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.realVisualBits);
-        if (!pMural)
+        WARN(("CrPMgrDisable failed %d", rc));
+        return;
+    }
+
+    for (hFb = CrPMgrFbGetFirstEnabled(); hFb; hFb = CrPMgrFbGetNextEnabled(hFb))
+    {
+        int rc = CrFbUpdateBegin(hFb);
+        if (RT_SUCCESS(rc))
         {
-            WARN(("dummy mural is NULL"));
-            spuCtx = CR_RENDER_DEFAULT_CONTEXT_ID;
-            spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
+            CrFbRegionsClear(hFb);
+            CrFbUpdateEnd(hFb);
         }
         else
-        {
-            spuCtx = cr_server.MainContextInfo.SpuContext;
-            spuWindow = pMural->spuWindow;
-            ctx = cr_server.MainContextInfo.pContext;
-            Assert(ctx);
-        }
+            WARN(("CrFbUpdateBegin failed %d", rc));
     }
-    else
+
+    cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
+
+    /* note: we need to clean all contexts, since otherwise renderspu leanup won't work,
+     * i.e. renderspu would need to clean up its own internal windows, it won't be able to do that if
+     * some those windows is associated with any context.  */
+    if (cr_server.MainContextInfo.SpuContext)
     {
-        spuCtx = CR_RENDER_DEFAULT_CONTEXT_ID;
-        spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
+        cr_server.head_spu->dispatch_table.DestroyContext(cr_server.MainContextInfo.SpuContext);
+        memset(&cr_server.MainContextInfo, 0, sizeof (cr_server.MainContextInfo));
     }
 
-    cr_server.head_spu->dispatch_table.MakeCurrent(spuWindow, 0, spuCtx);
-    crStateSetCurrent(ctx);
+    CRASSERT(!cr_server.curClient);
 
+    cr_server.currentCtxInfo = NULL;
+    cr_server.currentWindow = 0;
+    cr_server.currentNativeWindow = 0;
+    cr_server.currentMural = NULL;
+
+    crStateCleanupCurrent();
+
+    if (CrBltIsInitialized(&cr_server.Blitter))
+    {
+        CrBltTerm(&cr_server.Blitter);
+        Assert(!CrBltIsInitialized(&cr_server.Blitter));
+    }
+
+    crHashtableWalk(cr_server.dummyMuralTable, crVBoxServerDeleteMuralCb, cr_server.dummyMuralTable);
+
+    cr_server.head_spu->dispatch_table.ChromiumParameteriCR(GL_HH_RENDERTHREAD_INFORM, 0);
+}
+
+static void crVBoxServerDefaultContextSet()
+{
+    cr_server.head_spu->dispatch_table.ChromiumParameteriCR(GL_HH_RENDERTHREAD_INFORM, 1);
+
+    CRASSERT(!cr_server.MainContextInfo.SpuContext);
+
+    crStateSetCurrent(NULL);
+
+    CrPMgrEnable();
 }
 
 #ifdef VBOX_WITH_CRHGSMI
@@ -3368,8 +3411,7 @@ static DECLCALLBACK(int) crVBoxCrCmdDisable(HVBOXCRCMDSVR hSvr)
 
     CrHTableEmpty(&cr_server.clientTable);
 
-    cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
-    crStateCleanupCurrent();
+    crVBoxServerDefaultContextClear();
 
     memset(&cr_server.CrCmdClientInfo, 0, sizeof (cr_server.CrCmdClientInfo));
 
@@ -4188,8 +4230,7 @@ int32_t crVBoxServerHgcmDisable(VBOXCRCMDCTL_HGCMDISABLE_DATA *pData)
         return VERR_INVALID_STATE;
     }
 
-    cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
-    crStateCleanupCurrent();
+    crVBoxServerDefaultContextClear();
 
     cr_server.DisableData = *pData;
 

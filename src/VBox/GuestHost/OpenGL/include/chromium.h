@@ -727,6 +727,8 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 #define GL_HH_SET_DEFAULT_SHARED_CTX  0x8B2D
 
 #define GL_HH_SET_TMPCTX_MAKE_CURRENT 0x8B2E
+/* inform renderspu about the current render thread */
+#define GL_HH_RENDERTHREAD_INFORM     0x8B2F
 
 /**********************************************************************/
 /*****                Chromium-specific API                       *****/

@@ -133,13 +133,48 @@ static DWORD WINAPI renderSPUWindowThreadProc(void* unused)
 }
 #endif
 
+int renderspuDefaultCtxInit()
+{
+    GLint defaultWin, defaultCtx;
+    WindowInfo *windowInfo;
+
+    /*
+     * Create the default window and context.  Their indexes are zero and
+     * a client can use them without calling CreateContext or WindowCreate.
+     */
+    crDebug("Render SPU: Creating default window (visBits=0x%x, id=0)",
+            render_spu.default_visual);
+    defaultWin = renderspuWindowCreateEx( NULL, render_spu.default_visual, CR_RENDER_DEFAULT_WINDOW_ID );
+    if (defaultWin != CR_RENDER_DEFAULT_WINDOW_ID) {
+        crError("Render SPU: Couldn't get a double-buffered, RGB visual with Z!");
+        return VERR_GENERAL_FAILURE;
+    }
+    crDebug( "Render SPU: WindowCreate returned %d (0=normal)", defaultWin );
+
+    crDebug("Render SPU: Creating default context, visBits=0x%x",
+            render_spu.default_visual );
+    defaultCtx = renderspuCreateContextEx( NULL, render_spu.default_visual, CR_RENDER_DEFAULT_CONTEXT_ID, 0 );
+    if (defaultCtx != CR_RENDER_DEFAULT_CONTEXT_ID) {
+        crError("Render SPU: failed to create default context!");
+        return VERR_GENERAL_FAILURE;
+    }
+
+    renderspuMakeCurrent( defaultWin, 0, defaultCtx );
+
+    /* Get windowInfo for the default window */
+    windowInfo = (WindowInfo *) crHashtableSearch(render_spu.windowTable, CR_RENDER_DEFAULT_WINDOW_ID);
+    CRASSERT(windowInfo);
+    windowInfo->mapPending = GL_TRUE;
+
+    return VINF_SUCCESS;
+}
+
 static SPUFunctions *
 renderSPUInit( int id, SPU *child, SPU *self,
                unsigned int context_id, unsigned int num_contexts )
 {
     int numFuncs, numSpecial;
-    GLint defaultWin, defaultCtx;
-    WindowInfo *windowInfo;
+
     const char * pcpwSetting;
     int rc;
 
@@ -266,33 +301,12 @@ renderSPUInit( int id, SPU *child, SPU *self,
 # endif /* VBOX_WITH_COCOA_QT */
 #endif /* DARWIN */
 
-    /*
-     * Create the default window and context.  Their indexes are zero and
-     * a client can use them without calling CreateContext or WindowCreate.
-     */
-    crDebug("Render SPU: Creating default window (visBits=0x%x, id=0)",
-            render_spu.default_visual);
-    defaultWin = renderspuWindowCreateEx( NULL, render_spu.default_visual, CR_RENDER_DEFAULT_WINDOW_ID );
-    if (defaultWin != CR_RENDER_DEFAULT_WINDOW_ID) {
-        crError("Render SPU: Couldn't get a double-buffered, RGB visual with Z!");
+    rc = renderspuDefaultCtxInit();
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("renderspuDefaultCtxInit failed %d", rc));
         return NULL;
     }
-    crDebug( "Render SPU: WindowCreate returned %d (0=normal)", defaultWin );
-
-    crDebug("Render SPU: Creating default context, visBits=0x%x",
-            render_spu.default_visual );
-    defaultCtx = renderspuCreateContextEx( NULL, render_spu.default_visual, CR_RENDER_DEFAULT_CONTEXT_ID, 0 );
-    if (defaultCtx != CR_RENDER_DEFAULT_CONTEXT_ID) {
-        crError("Render SPU: failed to create default context!");
-        return NULL;
-    }
-
-    renderspuMakeCurrent( defaultWin, 0, defaultCtx );
-
-    /* Get windowInfo for the default window */
-    windowInfo = (WindowInfo *) crHashtableSearch(render_spu.windowTable, CR_RENDER_DEFAULT_WINDOW_ID);
-    CRASSERT(windowInfo);
-    windowInfo->mapPending = GL_TRUE;
 
     /*
      * Get the OpenGL extension functions.
@@ -413,7 +427,7 @@ static void DeleteContextCallback( void *data )
 static void DeleteWindowCallback( void *data )
 {
     WindowInfo *window = (WindowInfo *) data;
-    renderspu_SystemDestroyWindow(window);
+    renderspuWindowTermBase(window);
     crFree(window);
 }
 
@@ -432,14 +446,60 @@ static void renderspuBlitterCleanupCB(unsigned long key, void *data1, void *data
     renderspuVBoxPresentBlitterCleanup( window );
 }
 
-static int renderSPUCleanup(void)
+
+static void renderspuDeleteBlitterCB(unsigned long key, void *data1, void *data2)
+{
+    CRHashTable *pTbl = (CRHashTable*)data2;
+
+    crHashtableDelete( pTbl, key, NULL );
+
+    DeleteBlitterCallback(data1);
+}
+
+
+static void renderspuDeleteWindowCB(unsigned long key, void *data1, void *data2)
+{
+    CRHashTable *pTbl = (CRHashTable*)data2;
+
+    crHashtableDelete( pTbl, key, NULL );
+
+    DeleteWindowCallback(data1);
+}
+
+static void renderspuDeleteBarierCB(unsigned long key, void *data1, void *data2)
+{
+    CRHashTable *pTbl = (CRHashTable*)data2;
+
+    crHashtableDelete( pTbl, key, NULL );
+
+    crFree(data1);
+}
+
+
+static void renderspuDeleteContextCB(unsigned long key, void *data1, void *data2)
+{
+    CRHashTable *pTbl = (CRHashTable*)data2;
+
+    crHashtableDelete( pTbl, key, NULL );
+
+    DeleteContextCallback(data1);
+}
+
+void renderspuCleanupBase(bool fDeleteTables)
 {
     renderspuVBoxCompositorClearAll();
 
     if (render_spu.blitterTable)
     {
-        crFreeHashtable(render_spu.blitterTable, DeleteBlitterCallback);
-        render_spu.blitterTable = NULL;
+        if (fDeleteTables)
+        {
+            crFreeHashtable(render_spu.blitterTable, DeleteBlitterCallback);
+            render_spu.blitterTable = NULL;
+        }
+        else
+        {
+            crHashtableWalk(render_spu.blitterTable, renderspuDeleteBlitterCB, render_spu.contextTable);
+        }
     }
     else
     {
@@ -450,14 +510,29 @@ static int renderSPUCleanup(void)
 
     renderspuSetDefaultSharedContext(NULL);
 
-    crFreeHashtable(render_spu.contextTable, DeleteContextCallback);
-    render_spu.contextTable = NULL;
-    crFreeHashtable(render_spu.windowTable, DeleteWindowCallback);
-    render_spu.windowTable = NULL;
-    crFreeHashtable(render_spu.dummyWindowTable, DeleteWindowCallback);
-    render_spu.dummyWindowTable = NULL;
-    crFreeHashtable(render_spu.barrierHash, crFree);
-    render_spu.barrierHash = NULL;
+    if (fDeleteTables)
+    {
+        crFreeHashtable(render_spu.contextTable, DeleteContextCallback);
+        render_spu.contextTable = NULL;
+        crFreeHashtable(render_spu.windowTable, DeleteWindowCallback);
+        render_spu.windowTable = NULL;
+        crFreeHashtable(render_spu.dummyWindowTable, DeleteWindowCallback);
+        render_spu.dummyWindowTable = NULL;
+        crFreeHashtable(render_spu.barrierHash, crFree);
+        render_spu.barrierHash = NULL;
+    }
+    else
+    {
+        crHashtableWalk(render_spu.contextTable, renderspuDeleteContextCB, render_spu.contextTable);
+        crHashtableWalk(render_spu.windowTable, renderspuDeleteWindowCB, render_spu.windowTable);
+        crHashtableWalk(render_spu.dummyWindowTable, renderspuDeleteWindowCB, render_spu.dummyWindowTable);
+        crHashtableWalk(render_spu.barrierHash, renderspuDeleteBarierCB, render_spu.barrierHash);
+    }
+}
+
+static int renderSPUCleanup(void)
+{
+    renderspuCleanupBase(true);
 
 #ifdef RT_OS_DARWIN
 # ifndef VBOX_WITH_COCOA_QT
