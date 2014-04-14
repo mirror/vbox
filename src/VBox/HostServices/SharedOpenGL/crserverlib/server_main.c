@@ -3050,6 +3050,10 @@ static void crVBoxServerDefaultContextClear()
         memset(&cr_server.MainContextInfo, 0, sizeof (cr_server.MainContextInfo));
     }
 
+    cr_server.firstCallCreateContext = GL_TRUE;
+    cr_server.firstCallMakeCurrent = GL_TRUE;
+    cr_server.bForceMakeCurrentOnClientSwitch = GL_FALSE;
+
     CRASSERT(!cr_server.curClient);
 
     cr_server.currentCtxInfo = NULL;
