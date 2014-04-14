@@ -421,6 +421,9 @@ int CrPMgrLoadState(PSSMHANDLE pSSM, uint32_t version);
 HCR_FRAMEBUFFER CrPMgrFbGet(uint32_t idScreen);
 /*cleanup stuff*/
 
+
+int CrPMgrDisable();
+int CrPMgrEnable();
 int CrPMgrInit();
 void CrPMgrTerm();
 
