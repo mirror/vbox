@@ -169,8 +169,8 @@
     <Component Id="cp_MainBinaries" Guid="5C8FE57A-F744-4DE0-AA3F-A563F486AD98" Win64="$(var.Property_Win64)">
 
         <!-- Set required environment variables. -->
-        <Environment Id="env_VBoxInstallDir" Action="set" Name="VBOX_INSTALL_PATH"
-                     System="yes" Part="last" Permanent="no" Value="MergeRedirectFolder" />
+        <Environment Id="env_VBoxInstallDir" Action="set" Name="VBOX_MSI_INSTALL_PATH"
+                     System="yes" Part="last" Permanent="no" Value="[MergeRedirectFolder]" />
 
         <!-- Files -->
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
