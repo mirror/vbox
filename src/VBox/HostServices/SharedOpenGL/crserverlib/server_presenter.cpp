@@ -4521,7 +4521,6 @@ int CrFbEntryLoadState(CR_FRAMEBUFFER *pFb, PSSMHANDLE pSSM, uint32_t version)
 
 int CrFbLoadState(CR_FRAMEBUFFER *pFb, PSSMHANDLE pSSM, uint32_t version)
 {
-    Assert(0);
     uint32_t u32 = 0;
     int rc = SSMR3GetU32(pSSM, &u32);
     AssertRCReturn(rc, rc);
