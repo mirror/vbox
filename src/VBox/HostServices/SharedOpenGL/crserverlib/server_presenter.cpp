@@ -131,6 +131,8 @@ typedef struct CR_PRESENTER_GLOBALS
     RTMEMCACHE CEntryLookasideList;
 #endif
     uint32_t u32DisplayMode;
+    uint32_t u32DisabledDisplayMode;
+    bool fEnabled;
     CRHashTable *pFbTexMap;
     CR_FBDISPLAY_INFO aDisplayInfos[CR_MAX_GUEST_MONITORS];
     CR_FBMAP FramebufferInitMap;
@@ -3725,10 +3727,50 @@ protected:
     }
 };
 
+int CrPMgrDisable()
+{
+    if (!g_CrPresenter.fEnabled)
+        return VINF_SUCCESS;
+
+    g_CrPresenter.u32DisabledDisplayMode = g_CrPresenter.u32DisplayMode;
+
+    int rc = crPMgrModeModifyGlobal(0, CR_PMGR_MODE_WINDOW);
+    if (RT_FAILURE(rc))
+    {
+        WARN(("crPMgrModeModifyGlobal failed %d", rc));
+        return rc;
+    }
+
+    g_CrPresenter.fEnabled = false;
+
+    return VINF_SUCCESS;
+}
+
+int CrPMgrEnable()
+{
+    if (g_CrPresenter.fEnabled)
+        return VINF_SUCCESS;
+
+    g_CrPresenter.fEnabled = true;
+
+    int rc = crPMgrModeModifyGlobal(g_CrPresenter.u32DisabledDisplayMode, 0);
+    if (RT_FAILURE(rc))
+    {
+        WARN(("crPMgrModeModifyGlobal failed %d", rc));
+        g_CrPresenter.fEnabled = false;
+        return rc;
+    }
+
+    g_CrPresenter.u32DisabledDisplayMode = 0;
+
+    return VINF_SUCCESS;
+}
+
 int CrPMgrInit()
 {
     int rc = VINF_SUCCESS;
     memset(&g_CrPresenter, 0, sizeof (g_CrPresenter));
+    g_CrPresenter.fEnabled = true;
     g_CrPresenter.pFbTexMap = crAllocHashtable();
     if (g_CrPresenter.pFbTexMap)
     {
@@ -4124,7 +4166,14 @@ int CrPMgrModeModify(HCR_FRAMEBUFFER hFb, uint32_t u32ModeAdd, uint32_t u32ModeR
 
 static int crPMgrModeModifyGlobal(uint32_t u32ModeAdd, uint32_t u32ModeRemove)
 {
-    g_CrPresenter.u32DisplayMode = (g_CrPresenter.u32DisplayMode | u32ModeAdd) & ~u32ModeRemove;
+    uint32_t u32DisplayMode = (g_CrPresenter.u32DisplayMode | u32ModeAdd) & ~u32ModeRemove;
+    if (!g_CrPresenter.fEnabled)
+    {
+        g_CrPresenter.u32DisabledDisplayMode = u32DisplayMode;
+        return VINF_SUCCESS;
+    }
+
+    g_CrPresenter.u32DisplayMode = u32DisplayMode;
 
     for (HCR_FRAMEBUFFER hFb = CrPMgrFbGetFirstEnabled();
             hFb;

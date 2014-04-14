@@ -423,6 +423,7 @@ void renderspuVBoxPresentBlitterCleanup( WindowInfo *window );
 extern int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter, int32_t i32MakeCurrentUserData );
 extern PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window, int32_t i32MakeCurrentUserData );
 extern PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window, int32_t i32MakeCurrentUserData );
+void renderspuWindowTermBase( WindowInfo *window );
 extern void renderspuWindowTerm( WindowInfo *window );
 extern WindowInfo* renderspuGetDummyWindow(GLint visBits);
 extern void renderspuPerformMakeCurrent(WindowInfo *window, GLint nativeWindow, ContextInfo *context);
@@ -441,6 +442,9 @@ extern void RENDER_APIENTRY renderspuMakeCurrent(GLint crWindow, GLint nativeWin
 extern void RENDER_APIENTRY renderspuSwapBuffers( GLint window, GLint flags );
 
 extern uint32_t renderspuContextMarkDeletedAndRelease( ContextInfo *context );
+
+int renderspuDefaultCtxInit();
+void renderspuCleanupBase(bool fDeleteTables);
 
 ContextInfo * renderspuDefaultSharedContextAcquire();
 void renderspuDefaultSharedContextRelease(ContextInfo * pCtx);

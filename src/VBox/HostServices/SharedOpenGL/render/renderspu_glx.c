@@ -672,23 +672,23 @@ int renderspu_SystemInit()
         rc = RTThreadCreate(&render_spu.hWinCmdThread, renderspuWinCmdThreadProc, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VBoxCrWinCmd");
 	if (RT_SUCCESS(rc))
 	{
-            rc = RTSemEventWait(render_spu.hWinCmdCompleteEvent, RT_INDEFINITE_WAIT);
+	    rc = RTSemEventWait(render_spu.hWinCmdCompleteEvent, RT_INDEFINITE_WAIT);
 	    if (RT_SUCCESS(rc))
 	    {
-                return VINF_SUCCESS;
-            }
+	        return VINF_SUCCESS;
+	    }
 	    else
 	    {
-                crWarning("RTSemEventWait failed rc %d", rc);
-            }
+            crWarning("RTSemEventWait failed rc %d", rc);
+        }
 
-	    RTThreadWait(render_spu.hWinCmdThread, RT_INDEFINITE_WAIT, NULL);
+        RTThreadWait(render_spu.hWinCmdThread, RT_INDEFINITE_WAIT, NULL);
         }
         else
         {
             crWarning("RTThreadCreate failed rc %d", rc);
         }
-	RTSemEventDestroy(render_spu.hWinCmdCompleteEvent);
+	    RTSemEventDestroy(render_spu.hWinCmdCompleteEvent);
     }
     else
     {

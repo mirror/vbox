@@ -202,7 +202,7 @@ void crServerMuralTerm(CRMuralInfo *mural)
     }
     else
     {
-        CRASSERT(cr_server.currentWindow != mural->CreateInfo.externalID);
+        CRASSERT(cr_server.currentMural != mural);
     }
 
     pBlitter = crServerVBoxBlitterGetInitialized();
