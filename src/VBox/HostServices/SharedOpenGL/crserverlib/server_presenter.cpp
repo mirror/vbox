@@ -5284,7 +5284,7 @@ int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip)
     HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(idScreen);
     if (!hFb)
     {
-        WARN(("request to present on disabled framebuffer, ignore"));
+        LOG(("request to present on disabled framebuffer, ignore"));
         return 0;
     }
 
