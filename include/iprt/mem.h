@@ -505,6 +505,91 @@ RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect) RT_NO_THROW;
  */
 RTDECL(void) RTMemWipeThoroughly(void *pv, size_t cb, size_t cMinPasses) RT_NO_THROW;
 
+/**
+ * Allocate locked memory with default tag - extended version.
+ *
+ * @returns IPRT status code.
+ * @param   cb      The amount of memory to allocate.
+ * @param   ppv     Where to store the pointer to the allocated memory on success.
+ */
+#define RTMemLockedAllocEx(cb, ppv) RTMemLockedAllocExTag((cb), RTMEM_TAG, (ppv))
+
+/**
+ * Allocate locked memory - extended version.
+ *
+ * @returns IPRT status code.
+ * @param   cb      The amount of memory to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ * @param   ppv     Where to store the pointer to the allocated memory on success.
+ */
+RTDECL(int) RTMemLockedAllocExTag(size_t cb, const char *pszTag, void **ppv) RT_NO_THROW;
+
+/**
+ * Allocate zeroed locked memory with default tag - extended version.
+ *
+ * @returns IPRT status code.
+ * @param   cb      The amount of memory to allocate.
+ * @param   ppv     Where to store the pointer to the allocated memory on success.
+ */
+#define RTMemLockedAllocZEx(cb, ppv) RTMemLockedAllocZExTag((cb), RTMEM_TAG, (ppv))
+
+/**
+ * Allocate zeroed locked memory - extended version.
+ *
+ * @returns IPRT status code.
+ * @param   cb      The amount of memory to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ * @param   ppv     Where to store the pointer to the allocated memory on success.
+ */
+RTDECL(int) RTMemLockedAllocZExTag(size_t cb, const char *pszTag, void **ppv) RT_NO_THROW;
+
+/**
+ * Allocate locked memory with the default tag - shortcut for RTMemLockedAllocExTag().
+ *
+ * @returns Pointer to allocated memory on success.
+ * @returns NULL on failure (use RTMemLockedAllocExTag() if the specific reason is required)
+ * @param   cb      The amount of memory to allocate.
+ */
+#define RTMemLockedAlloc(cb) RTMemLockedAllocTag((cb), RTMEM_TAG)
+
+/**
+ * Allocate locked memory - shortcut for RTMemLockedAllocExTag().
+ *
+ * @returns Pointer to allocated memory on success.
+ * @returns NULL on failure (use RTMemLockedAllocExTag() if the specific reason is required)
+ * @param   cb      The amount of memory to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *) RTMemLockedAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
+
+/**
+ * Allocate locked zeroed memory with the default tag - shortcut for RTMemLockedAllocZExTag().
+ *
+ * @returns Pointer to allocated memory on success.
+ * @returns NULL on failure (use RTMemLockedAllocZExTag() if the specific reason is required)
+ * @param   cb      The amount of memory to allocate.
+ */
+#define RTMemLockedAllocZ(cb) RTMemLockedAllocZTag((cb), RTMEM_TAG)
+
+/**
+ * Allocate locked zeroed memory - shortcut for RTMemLockedAllocZExTag().
+ *
+ * @returns Pointer to allocated memory on success.
+ * @returns NULL on failure (use RTMemLockedAllocZExTag() if the specific reason is required)
+ * @param   cb      The amount of memory to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *) RTMemLockedAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW;
+
+/**
+ * Frees memory allocated with any of the RTMemLockedAlloc* API.
+ *
+ * @returns nothing.
+ * @param   pv    Pointer to the memory block to free.
+ */
+RTDECL(void) RTMemLockedFree(void *pv) RT_NO_THROW;
+
+
 #ifdef IN_RING0
 
 /**
