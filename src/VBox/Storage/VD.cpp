@@ -205,6 +205,10 @@ typedef struct VDFILTER
     void              *pvBackendData;
     /** Pointer to the filter backend interface. */
     PCVDFILTERBACKEND  pBackend;
+    /** Pointer to list of VD interfaces, per-filter. */
+    PVDINTERFACE        pVDIfsFilter;
+    /** I/O related things. */
+    VDIO                VDIo;
 } VDFILTER;
 /** Pointer to a VD filter instance. */
 typedef VDFILTER *PVDFILTER;
@@ -991,6 +995,9 @@ static int vdFilterChainApplyRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRea
     if (pDisk->pFilterHead)
     {
         PVDFILTER pFilterCurr = pDisk->pFilterHead;
+
+        /* Reset buffer before starting. */
+        RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
 
         do
         {
@@ -4841,9 +4848,13 @@ static size_t vdIOIntIoCtxSegArrayCreate(void *pvUser, PVDIOCTX pIoCtx,
     PVBOXHDD pDisk = pVDIo->pDisk;
     size_t cbCreated = 0;
 
+    /** @todo: It is possible that this gets called from a filter plugin
+     * outside of the disk lock. Refine assertion or remove completely. */
+#if 0
     /** @todo: Enable check for sync I/O later. */
     if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC))
         VD_IS_LOCKED(pDisk);
+#endif
 
     cbCreated = RTSgBufSegArrayCreate(&pIoCtx->Req.Io.SgBuf, paSeg, pcSeg, cbData);
     Assert(!paSeg || cbData == cbCreated);
@@ -6173,7 +6184,17 @@ VBOXDDU_DECL(int) VDFilterAdd(PVBOXHDD pDisk, const char *pszFilter,
             break;
         }
 
-        rc = pFilter->pBackend->pfnCreate(pDisk->pVDIfsDisk, pVDIfsFilter,
+        pFilter->VDIo.pDisk   = pDisk;
+        pFilter->pVDIfsFilter = pVDIfsFilter;
+
+        /* Set up the internal I/O interface. */
+        AssertBreakStmt(!VDIfIoIntGet(pVDIfsFilter), rc = VERR_INVALID_PARAMETER);
+        vdIfIoIntCallbacksSetup(&pFilter->VDIo.VDIfIoInt);
+        rc = VDInterfaceAdd(&pFilter->VDIo.VDIfIoInt.Core, "VD_IOINT", VDINTERFACETYPE_IOINT,
+                            &pFilter->VDIo, sizeof(VDINTERFACEIOINT), &pFilter->pVDIfsFilter);
+        AssertRC(rc);
+
+        rc = pFilter->pBackend->pfnCreate(pDisk->pVDIfsDisk, pFilter->pVDIfsFilter,
                                           &pFilter->pvBackendData);
 
         /* If the open in read-write mode failed, retry in read-only mode. */
@@ -9971,7 +9992,13 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
         if (rc == VINF_VD_ASYNC_IO_FINISHED)
         {
             if (ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
+            {
+                rc2 = vdFilterChainApplyRead(pDisk, pIoCtx->Req.Io.uOffsetXferOrig,
+                                             pIoCtx->Req.Io.cbXferOrig, pIoCtx);
+                if (RT_FAILURE(rc2))
+                    rc = rc2;
                 vdIoCtxFree(pDisk, pIoCtx);
+            }
             else
                 rc = VERR_VD_ASYNC_IO_IN_PROGRESS; /* Let the other handler complete the request. */
         }
