@@ -1590,7 +1590,7 @@ static HRESULT volumetexture_init(struct wined3d_texture *texture, const struct 
                 tmp_w, tmp_h, tmp_d, desc->format, desc->pool, desc->usage, &volume
 #ifdef VBOX_WITH_WDDM
                 , shared_handle
-                , pavClientMem
+                , pavClientMem ? pavClientMem[i] : NULL
 #endif
                 );
         if (FAILED(hr))
