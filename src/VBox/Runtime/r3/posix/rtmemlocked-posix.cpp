@@ -39,7 +39,7 @@
 
 #include <sys/types.h>
 #include <sys/mman.h>
-#include <sys/errno.h>
+#include <errno.h>
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
 # define MAP_ANONYMOUS MAP_ANON
 #endif
