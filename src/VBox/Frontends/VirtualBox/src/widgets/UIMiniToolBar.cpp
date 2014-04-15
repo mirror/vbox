@@ -314,6 +314,14 @@ void UIRuntimeMiniToolBar::cleanup()
         m_pHoverEnterTimer->stop();
     if (m_pHoverLeaveTimer->isActive())
         m_pHoverLeaveTimer->stop();
+
+    /* Destroy animation before mdi-toolbar: */
+    delete m_pAnimation;
+    m_pAnimation = 0;
+
+    /* Destroy mdi-toolbar after animation: */
+    delete m_pEmbeddedToolbar;
+    m_pEmbeddedToolbar = 0;
 }
 
 void UIRuntimeMiniToolBar::enterEvent(QEvent*)
@@ -383,11 +391,8 @@ void UIRuntimeMiniToolBar::simulateToolbarAutoHiding()
 
 void UIRuntimeMiniToolBar::setToolbarPosition(QPoint point)
 {
-    /* Make sure toolbar exists: */
-    if (!m_pEmbeddedToolbar)
-        return;
-
     /* Update position: */
+    AssertPtrReturnVoid(m_pEmbeddedToolbar);
     m_pEmbeddedToolbar->move(point);
 
 #ifdef Q_WS_X11
@@ -401,11 +406,8 @@ void UIRuntimeMiniToolBar::setToolbarPosition(QPoint point)
 
 QPoint UIRuntimeMiniToolBar::toolbarPosition() const
 {
-    /* Make sure toolbar exists: */
-    if (!m_pEmbeddedToolbar)
-        return QPoint();
-
     /* Return position: */
+    AssertPtrReturn(m_pEmbeddedToolbar, QPoint());
     return m_pEmbeddedToolbar->pos();
 }
 
