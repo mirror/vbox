@@ -1839,7 +1839,8 @@ HRESULT Appliance::i_importS3(TaskOVF *pTask)
              ++it)
         {
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
+            std::list<VirtualSystemDescriptionEntry*> avsdeHDs =
+                vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
             std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
             for (itH = avsdeHDs.begin();
                  itH != avsdeHDs.end();
@@ -2170,7 +2171,7 @@ HRESULT Appliance::i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORA
         {
             if(vrc == VINF_X509_NOT_SELFSIGNED_CERTIFICATE)
             {
-                setWarning(VBOX_E_FILE_ERROR, 
+                setWarning(VBOX_E_FILE_ERROR,
                            tr("Signature from the X509 certificate has been verified. "
                               "But VirtualBox can't validate the given X509 certificate. "
                               "Only self signed X509 certificates are supported at moment. \n"));
@@ -2865,7 +2866,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     }
 
     // IDE Hard disk controller
-    std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE =
+        vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
     /*
      * In OVF (at least VMware's version of it), an IDE controller has two ports,
      * so VirtualBox's single IDE controller with two channels and two ports each counts as
@@ -2897,7 +2899,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     }
 
     /* Hard disk controller SATA */
-    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA =
+        vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
     if (vsdeHDCSATA.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many SATA controllers in OVF; import facility only supports one"));
@@ -2919,7 +2922,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     }
 
     /* Hard disk controller SCSI */
-    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI =
+        vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
     if (vsdeHDCSCSI.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many SCSI controllers in OVF; import facility only supports one"));
@@ -2953,7 +2957,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     }
 
     /* Hard disk controller SAS */
-    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSAS = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSAS);
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSAS =
+        vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSAS);
     if (vsdeHDCSAS.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many SAS controllers in OVF; import facility only supports one"));
@@ -3069,11 +3074,13 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             if (LogIsEnabled())
             {
                 size_t i = 0;
-                for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD = avsdeHDs.begin(); itHD != avsdeHDs.end(); ++itHD, i++)
-                    Log(("avsdeHDs[%zu]: strRef=%s strOvf=%s\n", i, (*itHD)->strRef.c_str(), (*itHD)->strOvf.c_str()));
+                for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD =
+                     avsdeHDs.begin(); itHD != avsdeHDs.end(); ++itHD, i++)
+                     Log(("avsdeHDs[%zu]: strRef=%s strOvf=%s\n", i, (*itHD)->strRef.c_str(), (*itHD)->strOvf.c_str()));
                 i = 0;
                 for (ovf::DiskImagesMap::const_iterator itDisk = stack.mapDisks.begin(); itDisk != stack.mapDisks.end(); ++itDisk)
-                    Log(("mapDisks[%zu]: strDiskId=%s strHref=%s\n", i, itDisk->second.strDiskId.c_str(), itDisk->second.strHref.c_str()));
+                    Log(("mapDisks[%zu]: strDiskId=%s strHref=%s\n",
+                         i, itDisk->second.strDiskId.c_str(), itDisk->second.strHref.c_str()));
 
             }
 #endif
@@ -3443,8 +3450,8 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
     /* USB controller */
     if (stack.fUSBEnabled)
     {
-        /** @todo r=klaus add support for arbitrary USB controller types, this can't handle multiple controllers due to its design anyway */
-
+        /** @todo r=klaus add support for arbitrary USB controller types, this can't handle
+         *  multiple controllers due to its design anyway */
         /* usually the OHCI controller is enabled already, need to check */
         bool fOHCIEnabled = false;
         settings::USBControllerList &llUSBControllers = config.hardwareMachine.usbSettings.llUSBControllers;
@@ -4003,19 +4010,22 @@ void Appliance::i_importMachines(ImportStack &stack,
 
 #ifdef VBOX_WITH_USB
         // USB controller
-        std::list<VirtualSystemDescriptionEntry*> vsdeUSBController = vsdescThis->i_findByType(VirtualSystemDescriptionType_USBController);
+        std::list<VirtualSystemDescriptionEntry*> vsdeUSBController =
+            vsdescThis->i_findByType(VirtualSystemDescriptionType_USBController);
         // USB support is enabled if there's at least one such entry; to disable USB support,
         // the type of the USB item would have been changed to "ignore"
         stack.fUSBEnabled = vsdeUSBController.size() > 0;
 #endif
         // audio adapter
-        std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->i_findByType(VirtualSystemDescriptionType_SoundCard);
+        std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter =
+            vsdescThis->i_findByType(VirtualSystemDescriptionType_SoundCard);
         /* @todo: we support one audio adapter only */
         if (vsdeAudioAdapter.size() > 0)
             stack.strAudioAdapter = vsdeAudioAdapter.front()->strVBoxCurrent;
 
         // for the description of the new machine, always use the OVF entry, the user may have changed it in the import config
-        std::list<VirtualSystemDescriptionEntry*> vsdeDescription = vsdescThis->i_findByType(VirtualSystemDescriptionType_Description);
+        std::list<VirtualSystemDescriptionEntry*> vsdeDescription =
+            vsdescThis->i_findByType(VirtualSystemDescriptionType_Description);
         if (vsdeDescription.size())
             stack.strDescription = vsdeDescription.front()->strVBoxCurrent;
 

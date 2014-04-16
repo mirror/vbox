@@ -505,12 +505,14 @@ int SessionTaskCopyTo::Run(void)
                 {
                     if (RT_FAILURE(rc))
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Waiting on termination for copying file \"%s\" failed: %Rrc"),
+                                            Utf8StrFmt(GuestSession::tr(
+                                            "Waiting on termination for copying file \"%s\" failed: %Rrc"),
                                                        mSource.c_str(), rc));
                     else
                     {
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Waiting on termination for copying file \"%s\" failed with wait result %ld"),
+                                            Utf8StrFmt(GuestSession::tr(
+                                            "Waiting on termination for copying file \"%s\" failed with wait result %ld"),
                                                        mSource.c_str(), waitRes));
                         rc = VERR_GENERAL_FAILURE; /* Fudge. */
                     }
@@ -527,11 +529,13 @@ int SessionTaskCopyTo::Run(void)
                        )
                     {
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Copying file \"%s\" failed with status %ld, exit code %ld"),
+                                            Utf8StrFmt(GuestSession::tr(
+                                                       "Copying file \"%s\" failed with status %ld, exit code %ld"),
                                                        mSource.c_str(), procStatus, exitCode)); /**@todo Add stringify methods! */
                         rc = VERR_GENERAL_FAILURE; /* Fudge. */
                     }
                 }
+
 
                 if (RT_SUCCESS(rc))
                     rc = setProgressSuccess();
@@ -607,7 +611,7 @@ int SessionTaskCopyFrom::Run(void)
     {
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                             Utf8StrFmt(GuestSession::tr("Querying guest file information for \"%s\" failed: %Rrc"),
-                            mSource.c_str(), rc));
+                                       mSource.c_str(), rc));
     }
     else if (objData.mType != FsObjType_File) /* Only single files are supported at the moment. */
     {
@@ -630,8 +634,8 @@ int SessionTaskCopyFrom::Run(void)
         else
         {
             GuestProcessStartupInfo procInfo;
-            procInfo.mName      = Utf8StrFmt(GuestSession::tr("Copying file \"%s\" from guest to the host to \"%s\" (%RI64 bytes)"),
-                                                              mSource.c_str(), mDest.c_str(), objData.mObjectSize);
+            procInfo.mName = Utf8StrFmt(GuestSession::tr("Copying file \"%s\" from guest to the host to \"%s\" (%RI64 bytes)"),
+                                        mSource.c_str(), mDest.c_str(), objData.mObjectSize);
             procInfo.mCommand   = Utf8Str(VBOXSERVICE_TOOL_CAT);
             procInfo.mFlags     = ProcessCreateFlag_Hidden | ProcessCreateFlag_WaitForStdOut;
 
@@ -684,7 +688,8 @@ int SessionTaskCopyFrom::Run(void)
 
                             default:
                                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                    Utf8StrFmt(GuestSession::tr("Error while creating guest process for copying file \"%s\" from guest to host: %Rrc"),
+                                                    Utf8StrFmt(GuestSession::tr(
+                                                               "Error while creating guest process for copying file \"%s\" from guest to host: %Rrc"),
                                                                mSource.c_str(), rc));
                                 break;
                         }
@@ -715,7 +720,8 @@ int SessionTaskCopyFrom::Run(void)
 
                                 default:
                                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                        Utf8StrFmt(GuestSession::tr("Reading from file \"%s\" (offset %RU64) failed: %Rrc"),
+                                                        Utf8StrFmt(GuestSession::tr(
+                                                                   "Reading from file \"%s\" (offset %RU64) failed: %Rrc"),
                                                                    mSource.c_str(), cbWrittenTotal, rc));
                                     break;
                             }
@@ -729,8 +735,9 @@ int SessionTaskCopyFrom::Run(void)
                             if (RT_FAILURE(rc))
                             {
                                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                    Utf8StrFmt(GuestSession::tr("Error writing to file \"%s\" (%RU64 bytes left): %Rrc"),
-                                                    mDest.c_str(), cbToRead, rc));
+                                                    Utf8StrFmt(GuestSession::tr(
+                                                               "Error writing to file \"%s\" (%RU64 bytes left): %Rrc"),
+                                                                mDest.c_str(), cbToRead, rc));
                                 break;
                             }
 
@@ -783,8 +790,9 @@ int SessionTaskCopyFrom::Run(void)
                     {
                         /* If we did not copy all let the user know. */
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Copying file \"%s\" failed (%RU64/%RI64 bytes transfered)"),
-                                            mSource.c_str(), cbWrittenTotal, objData.mObjectSize));
+                                            Utf8StrFmt(GuestSession::tr(
+                                                       "Copying file \"%s\" failed (%RU64/%RI64 bytes transfered)"),
+                                                       mSource.c_str(), cbWrittenTotal, objData.mObjectSize));
                         rc = VERR_GENERAL_FAILURE; /* Fudge. */
                     }
                     else
@@ -798,8 +806,10 @@ int SessionTaskCopyFrom::Run(void)
                            )
                         {
                             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                Utf8StrFmt(GuestSession::tr("Copying file \"%s\" failed with status %ld, exit code %d"),
-                                                mSource.c_str(), procStatus, exitCode)); /**@todo Add stringify methods! */
+                                                Utf8StrFmt(GuestSession::tr(
+                                                           "Copying file \"%s\" failed with status %ld, exit code %d"),
+                                                           mSource.c_str(), procStatus, exitCode)); /**@todo Add
+                                                                                                       stringify methods! */
                             rc = VERR_GENERAL_FAILURE; /* Fudge. */
                         }
                         else /* Yay, success! */
@@ -934,7 +944,8 @@ int SessionTaskUpdateAdditions::i_copyFileToGuest(GuestSession *pSession, PRTISO
             AssertPtrReturn(pTask, VERR_NO_MEMORY);
 
             ComObjPtr<Progress> pProgressCopyTo;
-            rc = pSession->i_startTaskAsync(Utf8StrFmt(GuestSession::tr("Copying Guest Additions installer file \"%s\" to \"%s\" on guest"),
+            rc = pSession->i_startTaskAsync(Utf8StrFmt(GuestSession::tr(
+                                                       "Copying Guest Additions installer file \"%s\" to \"%s\" on guest"),
                                                        mSource.c_str(), strFileDest.c_str()),
                                                        pTask, pProgressCopyTo);
             if (RT_SUCCESS(rc))
@@ -1032,7 +1043,8 @@ int SessionTaskUpdateAdditions::i_runFileOnGuest(GuestSession *pSession, GuestPr
         {
             case VERR_NOT_EQUAL: /** @todo Special guest control rc needed! */
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Running update file \"%s\" on guest terminated with exit code %ld"),
+                                    Utf8StrFmt(GuestSession::tr(
+                                               "Running update file \"%s\" on guest terminated with exit code %ld"),
                                                procInfo.mCommand.c_str(), exitCode));
                 break;
 
@@ -1043,13 +1055,15 @@ int SessionTaskUpdateAdditions::i_runFileOnGuest(GuestSession *pSession, GuestPr
 
             case VERR_INVALID_STATE: /** @todo Special guest control rc needed! */
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Update file \"%s\" reported invalid running state"),
+                                    Utf8StrFmt(GuestSession::tr(
+                                               "Update file \"%s\" reported invalid running state"),
                                                procInfo.mCommand.c_str()));
                 break;
 
             default:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Error while running update file \"%s\" on guest: %Rrc"),
+                                    Utf8StrFmt(GuestSession::tr(
+                                               "Error while running update file \"%s\" on guest: %Rrc"),
                                                procInfo.mCommand.c_str(), vrc));
                 break;
         }
@@ -1112,10 +1126,12 @@ int SessionTaskUpdateAdditions::Run(void)
     {
         if (addsRunLevel == AdditionsRunLevelType_System)
             hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                     Utf8StrFmt(GuestSession::tr("Guest Additions are installed but not fully loaded yet, aborting automatic update")));
+                                     Utf8StrFmt(GuestSession::tr(
+                                                "Guest Additions are installed but not fully loaded yet, aborting automatic update")));
         else
             hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                     Utf8StrFmt(GuestSession::tr("Guest Additions not installed or ready, aborting automatic update")));
+                                     Utf8StrFmt(GuestSession::tr(
+                                                "Guest Additions not installed or ready, aborting automatic update")));
         rc = VERR_NOT_SUPPORTED;
     }
 #endif
@@ -1161,7 +1177,7 @@ int SessionTaskUpdateAdditions::Run(void)
                 if (RT_FAILURE(rc))
                 {
                     hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                         Utf8StrFmt(GuestSession::tr("Unable to detected guest OS version, please update manually")));
+                                             Utf8StrFmt(GuestSession::tr("Unable to detected guest OS version, please update manually")));
                     rc = VERR_NOT_SUPPORTED;
                 }
 
@@ -1181,7 +1197,8 @@ int SessionTaskUpdateAdditions::Run(void)
                         if (!(mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
                         {
                             hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                                     Utf8StrFmt(GuestSession::tr("Windows 2000 and XP are not supported for automatic updating due to WHQL interaction, please update manually")));
+                                                     Utf8StrFmt(GuestSession::tr(
+                                                                "Windows 2000 and XP are not supported for automatic updating due to WHQL interaction, please update manually")));
                             rc = VERR_NOT_SUPPORTED;
                         }
                     }
@@ -1189,7 +1206,8 @@ int SessionTaskUpdateAdditions::Run(void)
                 else
                 {
                     hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                             Utf8StrFmt(GuestSession::tr("%s (%s) not supported for automatic updating, please update manually"),
+                                             Utf8StrFmt(GuestSession::tr(
+                                                        "%s (%s) not supported for automatic updating, please update manually"),
                                                         strOSType.c_str(), strOSVer.c_str()));
                     rc = VERR_NOT_SUPPORTED;
                 }
@@ -1292,8 +1310,9 @@ int SessionTaskUpdateAdditions::Run(void)
 
                     default:
                         hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                 Utf8StrFmt(GuestSession::tr("Error creating installation directory \"%s\" on the guest: %Rrc"),
-                                                 strUpdateDir.c_str(), rc));
+                                                 Utf8StrFmt(GuestSession::tr(
+                                                            "Error creating installation directory \"%s\" on the guest: %Rrc"),
+                                                            strUpdateDir.c_str(), rc));
                         break;
                 }
             }
@@ -1337,7 +1356,8 @@ int SessionTaskUpdateAdditions::Run(void)
                             siCertUtilRem.mArguments.push_back(Utf8Str(strUpdateDir + "oracle-vbox.cer"));
                             mFiles.push_back(InstallerFile("CERT/VBOXCERTUTIL.EXE",
                                                            strUpdateDir + "VBoxCertUtil.exe",
-                                                           UPDATEFILE_FLAG_COPY_FROM_ISO | UPDATEFILE_FLAG_EXECUTE | UPDATEFILE_FLAG_OPTIONAL,
+                                                           UPDATEFILE_FLAG_COPY_FROM_ISO | UPDATEFILE_FLAG_EXECUTE |
+                                                           UPDATEFILE_FLAG_OPTIONAL,
                                                            siCertUtilRem));
                             /* Second pass: Only execute (but don't copy) again, this time installng the
                              *              recent certificates just copied over. */
@@ -1422,7 +1442,8 @@ int SessionTaskUpdateAdditions::Run(void)
                         if (RT_FAILURE(rc))
                         {
                             hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                     Utf8StrFmt(GuestSession::tr("Error while copying file \"%s\" to \"%s\" on the guest: %Rrc"),
+                                                     Utf8StrFmt(GuestSession::tr(
+                                                                "Error while copying file \"%s\" to \"%s\" on the guest: %Rrc"),
                                                                 itFiles->strSource.c_str(), itFiles->strDest.c_str(), rc));
                             break;
                         }

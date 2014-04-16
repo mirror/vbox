@@ -565,7 +565,8 @@ HRESULT HostUSBDevice::i_onDetachFromVM(SessionMachine *aMachine, bool aDone, bo
                             mName, mId.raw(), i_getStateName());
     }
     else
-        AssertMsgReturn(    mUniState == kHostUSBDeviceState_DetachingFromVM /** @todo capturing for VM ends up here on termination. */
+        AssertMsgReturn(    mUniState == kHostUSBDeviceState_DetachingFromVM /** @todo capturing for VM
+                                                                                 ends up here on termination. */
                         ||  (mUniState == kHostUSBDeviceState_UsedByVM && aAbnormal),
                         ("{%s} %s\n", mName, i_getStateName()), E_UNEXPECTED);
     AssertMsgReturn((mMachine == aMachine), ("%p != %p\n", (void *)mMachine, aMachine), E_FAIL);
@@ -1404,7 +1405,8 @@ bool HostUSBDevice::i_updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMa
     else
     {
         LogFlowThisFunc(("%p {%s} %s - no change %d\n", this, mName, i_getStateName(), enmOldState));
-        /** @todo might have to handle some stuff here too if we cannot make the release/capture handling deal with that above ... */
+        /** @todo might have to handle some stuff here too if we cannot make the release/capture
+         *  handling deal with that above ... */
     }
 
     return fIsImportant;
@@ -2106,7 +2108,8 @@ bool HostUSBDevice::i_setState(HostUSBDeviceState aNewState, HostUSBDeviceState 
                          i_stateName(mPrevUniState), i_stateName(NewPrevState), mName));
     else
         LogFlowThisFunc(("%s -> %s (prev: %s) [%s]\n",
-                         i_getStateName(), i_stateName(aNewState, aNewPendingState, aNewSubState), i_stateName(NewPrevState), mName));
+                         i_getStateName(), i_stateName(aNewState, aNewPendingState, aNewSubState),
+                         i_stateName(NewPrevState), mName));
     mPrevUniState = NewPrevState;
     mUniState = aNewState;
     mUniSubState = aNewSubState;
@@ -2200,7 +2203,8 @@ bool HostUSBDevice::i_advanceTransition(bool aSkipReAttach /* = false */)
                             enmPending = kHostUSBDeviceState_Invalid;
                             break;
                         default:
-                            AssertMsgFailedReturn(("this=%p invalid pending state %d: %s\n", this, enmPending, i_getStateName()), false);
+                            AssertMsgFailedReturn(("this=%p invalid pending state %d: %s\n",
+                                                   this, enmPending, i_getStateName()), false);
                     }
                     break;
                 default:
@@ -2228,7 +2232,8 @@ bool HostUSBDevice::i_advanceTransition(bool aSkipReAttach /* = false */)
                             enmPending = kHostUSBDeviceState_Invalid;
                             break;
                         default:
-                            AssertMsgFailedReturn(("this=%p invalid pending state %d: %s\n", this, enmPending, i_getStateName()), false);
+                            AssertMsgFailedReturn(("this=%p invalid pending state %d: %s\n",
+                                                   this, enmPending, i_getStateName()), false);
                     }
                     break;
                 default:
@@ -2253,7 +2258,8 @@ bool HostUSBDevice::i_advanceTransition(bool aSkipReAttach /* = false */)
                             enmPending = kHostUSBDeviceState_Invalid;
                             break;
                         default:
-                            AssertMsgFailedReturn(("this=%p invalid pending state %d: %s\n", this, enmPending, i_getStateName()), false);
+                            AssertMsgFailedReturn(("this=%p invalid pending state %d: %s\n",
+                                                   this, enmPending, i_getStateName()), false);
                     }
                     break;
                 default:
@@ -2281,7 +2287,8 @@ bool HostUSBDevice::i_advanceTransition(bool aSkipReAttach /* = false */)
                             enmState = kHostUSBDeviceState_ReleasingToHost;
                             break;
                         default:
-                            AssertMsgFailedReturn(("this=%p invalid pending state %d: %s\n", this, enmPending, i_getStateName()), false);
+                            AssertMsgFailedReturn(("this=%p invalid pending state %d: %s\n",
+                                                   this, enmPending, i_getStateName()), false);
                     }
                     break;
                 default:
@@ -2300,7 +2307,8 @@ bool HostUSBDevice::i_advanceTransition(bool aSkipReAttach /* = false */)
                             enmPending = kHostUSBDeviceState_Invalid;
                             break;
                         default:
-                            AssertMsgFailedReturn(("this=%p invalid pending state %d: %s\n", this, enmPending, i_getStateName()), false);
+                            AssertMsgFailedReturn(("this=%p invalid pending state %d: %s\n",
+                                                   this, enmPending, i_getStateName()), false);
                     }
                     break;
                 default:

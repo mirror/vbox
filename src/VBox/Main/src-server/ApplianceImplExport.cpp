@@ -432,7 +432,8 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                         lControllerVsys = lIDEControllerPrimaryIndex;
                         lChannelVsys = 1;
                     }
-                    else if (lChannel == 1 && lDevice == 0) // secondary master; by default this is the CD-ROM but as of VirtualBox 3.1 that can change
+                    else if (lChannel == 1 && lDevice == 0) // secondary master; by default this is the CD-ROM but
+                                                            // as of VirtualBox 3.1 that can change
                     {
                         lControllerVsys = lIDEControllerSecondaryIndex;
                         lChannelVsys = 0;
@@ -444,7 +445,7 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                     }
                     else
                         throw setError(VBOX_E_NOT_SUPPORTED,
-                                    tr("Cannot handle medium attachment: channel is %d, device is %d"), lChannel, lDevice);
+                                       tr("Cannot handle medium attachment: channel is %d, device is %d"), lChannel, lDevice);
                 break;
 
                 case StorageBus_SATA:
@@ -465,7 +466,8 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
 
                 default:
                     throw setError(VBOX_E_NOT_SUPPORTED,
-                                tr("Cannot handle medium attachment: storageBus is %d, channel is %d, device is %d"), storageBus, lChannel, lDevice);
+                                   tr("Cannot handle medium attachment: storageBus is %d, channel is %d, device is %d"),
+                                   storageBus, lChannel, lDevice);
                 break;
             }
 
@@ -598,7 +600,8 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
         }
     }
 
-//  AssertReturn(!(m->optListExport.contains(ExportOptions_CreateManifest) && m->optListExport.contains(ExportOptions_ExportDVDImages)), E_INVALIDARG);
+//  AssertReturn(!(m->optListExport.contains(ExportOptions_CreateManifest)
+//  && m->optListExport.contains(ExportOptions_ExportDVDImages)), E_INVALIDARG);
 
     m->fExportISOImages = m->optListExport.contains(ExportOptions_ExportDVDImages);
 
@@ -1302,7 +1305,8 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         type = ovf::ResourceType_Processor; // 3
                         desc.strVBoxCurrent.toInt(uTemp);
                         lVirtualQuantity = (int32_t)uTemp;
-                        strCaption = Utf8StrFmt("%d virtual CPU", lVirtualQuantity);     // without this ovftool won't eat the item
+                        strCaption = Utf8StrFmt("%d virtual CPU", lVirtualQuantity);     // without this ovftool
+                                                                                         // won't eat the item
                     }
                 break;
 
@@ -1323,7 +1327,8 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         desc.strVBoxCurrent.toInt(uTemp);
                         lVirtualQuantity = (int32_t)(uTemp / _1M);
                         strAllocationUnits = "MegaBytes";
-                        strCaption = Utf8StrFmt("%d MB of memory", lVirtualQuantity);     // without this ovftool won't eat the item
+                        strCaption = Utf8StrFmt("%d MB of memory", lVirtualQuantity);     // without this ovftool
+                                                                                          // won't eat the item
                     }
                 break;
 
@@ -1432,7 +1437,8 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                             strResourceSubType = "lsilogicsas";
                         else
                             throw setError(VBOX_E_NOT_SUPPORTED,
-                                            tr("Invalid config string \"%s\" in SCSI/SAS controller"), desc.strVBoxCurrent.c_str());
+                                           tr("Invalid config string \"%s\" in SCSI/SAS controller"),
+                                           desc.strVBoxCurrent.c_str());
 
                         // remember this ID
                         idSCSIController = ulInstanceID;
@@ -1481,13 +1487,15 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                             RTStrToInt32Ex(desc.strExtraConfigCurrent.c_str() + pos2 + 8, NULL, 0, &lAddressOnParent);
 
                         LogFlowFunc(("HardDiskImage details: pos1=%d, pos2=%d, lControllerIndex=%d, lIDEPrimaryControllerIndex=%d, lIDESecondaryControllerIndex=%d, ulParent=%d, lAddressOnParent=%d\n",
-                                     pos1, pos2, lControllerIndex, lIDEPrimaryControllerIndex, lIDESecondaryControllerIndex, ulParent, lAddressOnParent));
+                                     pos1, pos2, lControllerIndex, lIDEPrimaryControllerIndex, lIDESecondaryControllerIndex,
+                                     ulParent, lAddressOnParent));
 
                         if (    !ulParent
                              || lAddressOnParent == -1
                            )
                             throw setError(VBOX_E_NOT_SUPPORTED,
-                                            tr("Missing or bad extra config string in hard disk image: \"%s\""), desc.strExtraConfigCurrent.c_str());
+                                           tr("Missing or bad extra config string in hard disk image: \"%s\""),
+                                           desc.strExtraConfigCurrent.c_str());
 
                         stack.mapDisks[strDiskID] = &desc;
                     }
@@ -1551,13 +1559,15 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                             RTStrToInt32Ex(desc.strExtraConfigCurrent.c_str() + pos2 + 8, NULL, 0, &lAddressOnParent);
 
                         LogFlowFunc(("DVD drive details: pos1=%d, pos2=%d, lControllerIndex=%d, lIDEPrimaryControllerIndex=%d, lIDESecondaryControllerIndex=%d, ulParent=%d, lAddressOnParent=%d\n",
-                                     pos1, pos2, lControllerIndex, lIDEPrimaryControllerIndex, lIDESecondaryControllerIndex, ulParent, lAddressOnParent));
+                                     pos1, pos2, lControllerIndex, lIDEPrimaryControllerIndex,
+                                     lIDESecondaryControllerIndex, ulParent, lAddressOnParent));
 
                         if (    !ulParent
                              || lAddressOnParent == -1
                            )
                             throw setError(VBOX_E_NOT_SUPPORTED,
-                                            tr("Missing or bad extra config string in DVD drive medium: \"%s\""), desc.strExtraConfigCurrent.c_str());
+                                           tr("Missing or bad extra config string in DVD drive medium: \"%s\""),
+                                           desc.strExtraConfigCurrent.c_str());
 
                         stack.mapDisks[strDiskID] = &desc;
                         // there is no DVD drive map to update because it is
@@ -2148,15 +2158,17 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                 // advance to the next operation
                 pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"),
                                                            RTPathFilename(strTargetFilePath.c_str())).raw(),
-                                                   pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally
+                                                   pDiskEntry->ulSizeMB);     // operation's weight, as set up
+                                                                              // with the IProgress originally
 
                 // create a flat copy of the source disk image
                 if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
                 {
                     ComObjPtr<Progress> pProgress2;
                     pProgress2.createObject();
-                    rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"),
-                                                                                               strTargetFilePath.c_str()).raw(), TRUE);
+                    rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this),
+                                          BstrFmt(tr("Creating medium '%s'"),
+                                          strTargetFilePath.c_str()).raw(), TRUE);
                     if (FAILED(rc)) throw rc;
 
                     rc = pSourceDisk->i_exportFile(strTargetFilePath.c_str(),

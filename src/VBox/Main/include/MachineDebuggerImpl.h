@@ -20,27 +20,17 @@
 #ifndef ____H_MACHINEDEBUGGER
 #define ____H_MACHINEDEBUGGER
 
-#include "VirtualBoxBase.h"
+#include "MachineDebuggerWrap.h"
 #include <iprt/log.h>
 #include <VBox/vmm/em.h>
 
 class Console;
 
 class ATL_NO_VTABLE MachineDebugger :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IMachineDebugger)
+    public MachineDebuggerWrap
 {
+
 public:
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (MachineDebugger, IMachineDebugger)
-
-    DECLARE_NOT_AGGREGATABLE (MachineDebugger)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(MachineDebugger)
-        VBOX_DEFAULT_INTERFACE_ENTRIES (IMachineDebugger)
-    END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (MachineDebugger)
 
@@ -51,75 +41,100 @@ public:
     HRESULT init (Console *aParent);
     void uninit();
 
-    // IMachineDebugger properties
-    STDMETHOD(COMGETTER(SingleStep))(BOOL *a_pfEnabled);
-    STDMETHOD(COMSETTER(SingleStep))(BOOL a_fEnable);
-    STDMETHOD(COMGETTER(RecompileUser))(BOOL *a_pfEnabled);
-    STDMETHOD(COMSETTER(RecompileUser))(BOOL a_fEnable);
-    STDMETHOD(COMGETTER(RecompileSupervisor))(BOOL *a_pfEnabled);
-    STDMETHOD(COMSETTER(RecompileSupervisor))(BOOL a_fEnable);
-    STDMETHOD(COMGETTER(ExecuteAllInIEM))(BOOL *a_pfEnabled);
-    STDMETHOD(COMSETTER(ExecuteAllInIEM))(BOOL a_fEnable);
-    STDMETHOD(COMGETTER(PATMEnabled))(BOOL *a_pfEnabled);
-    STDMETHOD(COMSETTER(PATMEnabled))(BOOL a_fEnable);
-    STDMETHOD(COMGETTER(CSAMEnabled))(BOOL *a_pfEnabled);
-    STDMETHOD(COMSETTER(CSAMEnabled))(BOOL a_fEnable);
-    STDMETHOD(COMGETTER(LogEnabled))(BOOL *a_pfEnabled);
-    STDMETHOD(COMSETTER(LogEnabled))(BOOL a_fEnable);
-    STDMETHOD(COMGETTER(LogDbgFlags))(BSTR *a_pbstrSettings);
-    STDMETHOD(COMGETTER(LogDbgGroups))(BSTR *a_pbstrSettings);
-    STDMETHOD(COMGETTER(LogDbgDestinations))(BSTR *a_pbstrSettings);
-    STDMETHOD(COMGETTER(LogRelFlags))(BSTR *a_pbstrSettings);
-    STDMETHOD(COMGETTER(LogRelGroups))(BSTR *a_pbstrSettings);
-    STDMETHOD(COMGETTER(LogRelDestinations))(BSTR *a_pbstrSettings);
-    STDMETHOD(COMGETTER(HWVirtExEnabled))(BOOL *a_pfEnabled);
-    STDMETHOD(COMGETTER(HWVirtExNestedPagingEnabled))(BOOL *a_pfEnabled);
-    STDMETHOD(COMGETTER(HWVirtExVPIDEnabled))(BOOL *a_pfEnabled);
-    STDMETHOD(COMGETTER(HWVirtExUXEnabled))(BOOL *a_pfEnabled);
-    STDMETHOD(COMGETTER(PAEEnabled))(BOOL *a_pfEnabled);
-    STDMETHOD(COMGETTER(OSName))(BSTR *a_pbstrName);
-    STDMETHOD(COMGETTER(OSVersion))(BSTR *a_pbstrVersion);
-    STDMETHOD(COMGETTER(VirtualTimeRate))(ULONG *a_puPct);
-    STDMETHOD(COMSETTER(VirtualTimeRate))(ULONG a_uPct);
-    STDMETHOD(COMGETTER(VM))(LONG64 *a_u64Vm);
-
-    // IMachineDebugger methods
-    STDMETHOD(DumpGuestCore)(IN_BSTR a_bstrFilename, IN_BSTR a_bstrCompression);
-    STDMETHOD(DumpHostProcessCore)(IN_BSTR a_bstrFilename, IN_BSTR a_bstrCompression);
-    STDMETHOD(Info)(IN_BSTR a_bstrName, IN_BSTR a_bstrArgs, BSTR *a_bstrInfo);
-    STDMETHOD(InjectNMI)();
-    STDMETHOD(ModifyLogFlags)(IN_BSTR a_bstrSettings);
-    STDMETHOD(ModifyLogGroups)(IN_BSTR a_bstrSettings);
-    STDMETHOD(ModifyLogDestinations)(IN_BSTR a_bstrSettings);
-    STDMETHOD(ReadPhysicalMemory)(LONG64 a_Address, ULONG a_cbRead, ComSafeArrayOut(BYTE, a_abData));
-    STDMETHOD(WritePhysicalMemory)(LONG64 a_Address, ULONG a_cbRead, ComSafeArrayIn(BYTE, a_abData));
-    STDMETHOD(ReadVirtualMemory)(ULONG a_idCpu, LONG64 a_Address, ULONG a_cbRead, ComSafeArrayOut(BYTE, a_abData));
-    STDMETHOD(WriteVirtualMemory)(ULONG a_idCpu, LONG64 a_Address, ULONG a_cbRead, ComSafeArrayIn(BYTE, a_abData));
-    STDMETHOD(DetectOS)(BSTR *a_pbstrName);
-    STDMETHOD(GetRegister)(ULONG a_idCpu, IN_BSTR a_bstrName, BSTR *a_pbstrValue);
-    STDMETHOD(GetRegisters)(ULONG a_idCpu, ComSafeArrayOut(BSTR, a_bstrNames), ComSafeArrayOut(BSTR, a_bstrValues));
-    STDMETHOD(SetRegister)(ULONG a_idCpu, IN_BSTR a_bstrName, IN_BSTR a_bstrValue);
-    STDMETHOD(SetRegisters)(ULONG a_idCpu, ComSafeArrayIn(IN_BSTR, a_bstrNames), ComSafeArrayIn(IN_BSTR, a_bstrValues));
-    STDMETHOD(DumpGuestStack)(ULONG a_idCpu, BSTR *a_pbstrStack);
-    STDMETHOD(ResetStats)(IN_BSTR aPattern);
-    STDMETHOD(DumpStats)(IN_BSTR aPattern);
-    STDMETHOD(GetStats)(IN_BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats);
-
-
     // "public-private methods"
-    void flushQueuedSettings();
+    void i_flushQueuedSettings();
 
 private:
+
+    // wrapped IMachineDeugger properties
+    HRESULT getSingleStep(BOOL *aSingleStep);
+    HRESULT setSingleStep(BOOL aSingleStep);
+    HRESULT getRecompileUser(BOOL *aRecompileUser);
+    HRESULT setRecompileUser(BOOL aRecompileUser);
+    HRESULT getRecompileSupervisor(BOOL *aRecompileSupervisor);
+    HRESULT setRecompileSupervisor(BOOL aRecompileSupervisor);
+    HRESULT getExecuteAllInIEM(BOOL *aExecuteAllInIEM);
+    HRESULT setExecuteAllInIEM(BOOL aExecuteAllInIEM);
+    HRESULT getPATMEnabled(BOOL *aPATMEnabled);
+    HRESULT setPATMEnabled(BOOL aPATMEnabled);
+    HRESULT getCSAMEnabled(BOOL *aCSAMEnabled);
+    HRESULT setCSAMEnabled(BOOL aCSAMEnabled);
+    HRESULT getLogEnabled(BOOL *aLogEnabled);
+    HRESULT setLogEnabled(BOOL aLogEnabled);
+    HRESULT getLogDbgFlags(com::Utf8Str &aLogDbgFlags);
+    HRESULT getLogDbgGroups(com::Utf8Str &aLogDbgGroups);
+    HRESULT getLogDbgDestinations(com::Utf8Str &aLogDbgDestinations);
+    HRESULT getLogRelFlags(com::Utf8Str &aLogRelFlags);
+    HRESULT getLogRelGroups(com::Utf8Str &aLogRelGroups);
+    HRESULT getLogRelDestinations(com::Utf8Str &aLogRelDestinations);
+    HRESULT getHWVirtExEnabled(BOOL *aHWVirtExEnabled);
+    HRESULT getHWVirtExNestedPagingEnabled(BOOL *aHWVirtExNestedPagingEnabled);
+    HRESULT getHWVirtExVPIDEnabled(BOOL *aHWVirtExVPIDEnabled);
+    HRESULT getHWVirtExUXEnabled(BOOL *aHWVirtExUXEnabled);
+    HRESULT getOSName(com::Utf8Str &aOSName);
+    HRESULT getOSVersion(com::Utf8Str &aOSVersion);
+    HRESULT getPAEEnabled(BOOL *aPAEEnabled);
+    HRESULT getVirtualTimeRate(ULONG *aVirtualTimeRate);
+    HRESULT setVirtualTimeRate(ULONG aVirtualTimeRate);
+    HRESULT getVM(LONG64 *aVM);
+
+    // wrapped IMachineDeugger properties
+    HRESULT dumpGuestCore(const com::Utf8Str &aFilename,
+                          const com::Utf8Str &aCompression);
+    HRESULT dumpHostProcessCore(const com::Utf8Str &aFilename,
+                                const com::Utf8Str &aCompression);
+    HRESULT info(const com::Utf8Str &aName,
+                 const com::Utf8Str &aArgs,
+                 com::Utf8Str &aInfo);
+    HRESULT injectNMI();
+    HRESULT modifyLogGroups(const com::Utf8Str &aSettings);
+    HRESULT modifyLogFlags(const com::Utf8Str &aSettings);
+    HRESULT modifyLogDestinations(const com::Utf8Str &aSettings);
+    HRESULT readPhysicalMemory(LONG64 aAddress,
+                               ULONG aSize,
+                               std::vector<BYTE> &aBytes);
+    HRESULT writePhysicalMemory(LONG64 aAddress,
+                                ULONG aSize,
+                                const std::vector<BYTE> &aBytes);
+    HRESULT readVirtualMemory(ULONG aCpuId,
+                              LONG64 aAddress,
+                              ULONG aSize,
+                              std::vector<BYTE> &aBytes);
+    HRESULT writeVirtualMemory(ULONG aCpuId,
+                               LONG64 aAddress,
+                               ULONG aSize,
+                               const std::vector<BYTE> &aBytes);
+    HRESULT detectOS(com::Utf8Str &aOs);
+    HRESULT getRegister(ULONG aCpuId,
+                        const com::Utf8Str &aName,
+                        com::Utf8Str &aValue);
+    HRESULT getRegisters(ULONG aCpuId,
+                         std::vector<com::Utf8Str> &aNames,
+                         std::vector<com::Utf8Str> &aValues);
+    HRESULT setRegister(ULONG aCpuId,
+                        const com::Utf8Str &aName,
+                        const com::Utf8Str &aValue);
+    HRESULT setRegisters(ULONG aCpuId,
+                         const std::vector<com::Utf8Str> &aNames,
+                         const std::vector<com::Utf8Str> &aValues);
+    HRESULT dumpGuestStack(ULONG aCpuId,
+                           com::Utf8Str &aStack);
+    HRESULT resetStats(const com::Utf8Str &aPattern);
+    HRESULT dumpStats(const com::Utf8Str &aPattern);
+    HRESULT getStats(const com::Utf8Str &aPattern,
+                     BOOL aWithDescriptions,
+                     com::Utf8Str &aStats);
+
     // private methods
-    bool queueSettings() const;
-    HRESULT getEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL *pfEnforced);
-    HRESULT setEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL fEnforce);
+    bool i_queueSettings() const;
+    HRESULT i_getEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL *pfEnforced);
+    HRESULT i_setEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL fEnforce);
 
     /** RTLogGetFlags, RTLogGetGroupSettings and RTLogGetDestinations function. */
     typedef DECLCALLBACK(int) FNLOGGETSTR(PRTLOGGER, char *, size_t);
     /** Function pointer.  */
     typedef FNLOGGETSTR *PFNLOGGETSTR;
-    HRESULT logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLogGetStr, const char *pszLogGetStr, BSTR *a_bstrSettings);
+    HRESULT i_logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLogGetStr, const char *pszLogGetStr, Utf8Str aSettings);
 
     Console * const mParent;
     /** @name Flags whether settings have been queued because they could not be sent

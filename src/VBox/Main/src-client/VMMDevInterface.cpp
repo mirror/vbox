@@ -626,7 +626,9 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
 
 /* HGCM connector interface */
 
-static DECLCALLBACK(int) iface_hgcmConnect (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, PHGCMSERVICELOCATION pServiceLocation, uint32_t *pu32ClientID)
+static DECLCALLBACK(int) iface_hgcmConnect(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd,
+                                           PHGCMSERVICELOCATION pServiceLocation,
+                                           uint32_t *pu32ClientID)
 {
     LogSunlover(("Enter\n"));
 
@@ -645,7 +647,7 @@ static DECLCALLBACK(int) iface_hgcmConnect (PPDMIHGCMCONNECTOR pInterface, PVBOX
     return HGCMGuestConnect(pDrv->pHGCMPort, pCmd, pServiceLocation->u.host.achName, pu32ClientID);
 }
 
-static DECLCALLBACK(int) iface_hgcmDisconnect (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID)
+static DECLCALLBACK(int) iface_hgcmDisconnect(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID)
 {
     LogSunlover(("Enter\n"));
 
@@ -657,8 +659,8 @@ static DECLCALLBACK(int) iface_hgcmDisconnect (PPDMIHGCMCONNECTOR pInterface, PV
     return HGCMGuestDisconnect(pDrv->pHGCMPort, pCmd, u32ClientID);
 }
 
-static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID, uint32_t u32Function,
-                                         uint32_t cParms, PVBOXHGCMSVCPARM paParms)
+static DECLCALLBACK(int) iface_hgcmCall(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID,
+                                        uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms)
 {
     LogSunlover(("Enter\n"));
 
@@ -717,7 +719,7 @@ int VMMDev::hgcmHostCall(const char *pszServiceName, uint32_t u32Function,
 {
     if (!hgcmIsActive())
         return VERR_INVALID_STATE;
-    return HGCMHostCall (pszServiceName, u32Function, cParms, paParms);
+    return HGCMHostCall(pszServiceName, u32Function, cParms, paParms);
 }
 
 void VMMDev::hgcmShutdown(void)
@@ -727,21 +729,22 @@ void VMMDev::hgcmShutdown(void)
 }
 
 # ifdef VBOX_WITH_CRHGSMI
-int VMMDev::hgcmHostSvcHandleCreate (const char *pszServiceName, HGCMCVSHANDLE * phSvc)
+int VMMDev::hgcmHostSvcHandleCreate(const char *pszServiceName, HGCMCVSHANDLE * phSvc)
 {
     if (!hgcmIsActive())
         return VERR_INVALID_STATE;
     return HGCMHostSvcHandleCreate(pszServiceName, phSvc);
 }
 
-int VMMDev::hgcmHostSvcHandleDestroy (HGCMCVSHANDLE hSvc)
+int VMMDev::hgcmHostSvcHandleDestroy(HGCMCVSHANDLE hSvc)
 {
     if (!hgcmIsActive())
         return VERR_INVALID_STATE;
     return HGCMHostSvcHandleDestroy(hSvc);
 }
 
-int VMMDev::hgcmHostFastCallAsync (HGCMCVSHANDLE hSvc, uint32_t function, PVBOXHGCMSVCPARM pParm, PHGCMHOSTFASTCALLCB pfnCompletion, void *pvCompletion)
+int VMMDev::hgcmHostFastCallAsync(HGCMCVSHANDLE hSvc, uint32_t function, PVBOXHGCMSVCPARM pParm,
+                                  PHGCMHOSTFASTCALLCB pfnCompletion, void *pvCompletion)
 {
     if (!hgcmIsActive())
         return VERR_INVALID_STATE;

@@ -152,7 +152,7 @@ static void qurbFree (REMOTEUSBQURB *pQURB)
 
 
 /* Called by VRDP server when the client responds to a request on USB channel. */
-DECLCALLBACK(int) USBClientResponseCallback (void *pv, uint32_t u32ClientId, uint8_t code, const void *pvRet, uint32_t cbRet)
+DECLCALLBACK(int) USBClientResponseCallback(void *pv, uint32_t u32ClientId, uint8_t code, const void *pvRet, uint32_t cbRet)
 {
     int rc = VINF_SUCCESS;
 
@@ -165,21 +165,21 @@ DECLCALLBACK(int) USBClientResponseCallback (void *pv, uint32_t u32ClientId, uin
     {
         case VRDE_USB_REQ_DEVICE_LIST:
         {
-            rc = pThis->saveDeviceList (pvRet, cbRet);
+            rc = pThis->saveDeviceList(pvRet, cbRet);
         } break;
 
         case VRDE_USB_REQ_NEGOTIATE:
         {
-            if (pvRet && cbRet >= sizeof (VRDEUSBREQNEGOTIATERET))
+            if (pvRet && cbRet >= sizeof(VRDEUSBREQNEGOTIATERET))
             {
                 VRDEUSBREQNEGOTIATERET *pret = (VRDEUSBREQNEGOTIATERET *)pvRet;
 
-                rc = pThis->negotiateResponse (pret, cbRet);
+                rc = pThis->negotiateResponse(pret, cbRet);
             }
             else
             {
                 Log(("USBClientResponseCallback: WARNING: not enough data in response: pv = %p, cb = %d, expected %d.\n",
-                     pvRet, cbRet, sizeof (VRDEUSBREQNEGOTIATERET)));
+                     pvRet, cbRet, sizeof(VRDEUSBREQNEGOTIATERET)));
 
                 rc = VERR_INVALID_PARAMETER;
             }
@@ -187,7 +187,7 @@ DECLCALLBACK(int) USBClientResponseCallback (void *pv, uint32_t u32ClientId, uin
 
         case VRDE_USB_REQ_REAP_URB:
         {
-            rc = pThis->reapURB (pvRet, cbRet);
+            rc = pThis->reapURB(pvRet, cbRet);
 
             LogFlow(("USBClientResponseCallback: reap URB, rc = %Rrc.\n", rc));
         } break;
@@ -211,13 +211,13 @@ DECLCALLBACK(int) USBClientResponseCallback (void *pv, uint32_t u32ClientId, uin
             /*
              * Device specific responses with status codes.
              */
-            if (pvRet && cbRet >= sizeof (VRDEUSBREQRETHDR))
+            if (pvRet && cbRet >= sizeof(VRDEUSBREQRETHDR))
             {
                 VRDEUSBREQRETHDR *pret = (VRDEUSBREQRETHDR *)pvRet;
 
                 if (pret->status != VRDE_USB_STATUS_SUCCESS)
                 {
-                    REMOTEUSBDEVICE *pDevice = pThis->deviceFromId (pret->id);
+                    REMOTEUSBDEVICE *pDevice = pThis->deviceFromId(pret->id);
 
                     if (!pDevice)
                     {
@@ -234,7 +234,7 @@ DECLCALLBACK(int) USBClientResponseCallback (void *pv, uint32_t u32ClientId, uin
             else
             {
                 Log(("USBClientResponseCallback: WARNING: not enough data in response: pv = %p, cb = %d, expected %d.\n",
-                     pvRet, cbRet, sizeof (VRDEUSBREQRETHDR)));
+                     pvRet, cbRet, sizeof(VRDEUSBREQRETHDR)));
             }
         } break;
 
@@ -250,13 +250,14 @@ DECLCALLBACK(int) USBClientResponseCallback (void *pv, uint32_t u32ClientId, uin
 /*
  * Backend entry points.
  */
-static DECLCALLBACK(int) iface_Open (PREMOTEUSBBACKEND pInstance, const char *pszAddress, size_t cbAddress, PREMOTEUSBDEVICE *ppDevice)
+static DECLCALLBACK(int) iface_Open(PREMOTEUSBBACKEND pInstance, const char *pszAddress,
+                                    size_t cbAddress, PREMOTEUSBDEVICE *ppDevice)
 {
     int rc = VINF_SUCCESS;
 
     RemoteUSBBackend *pThis = (RemoteUSBBackend *)pInstance;
 
-    REMOTEUSBDEVICE *pDevice = (REMOTEUSBDEVICE *)RTMemAllocZ (sizeof (REMOTEUSBDEVICE));
+    REMOTEUSBDEVICE *pDevice = (REMOTEUSBDEVICE *)RTMemAllocZ(sizeof(REMOTEUSBDEVICE));
 
     if (!pDevice)
     {
@@ -268,7 +269,7 @@ static DECLCALLBACK(int) iface_Open (PREMOTEUSBBACKEND pInstance, const char *ps
          * The format is "REMOTEUSB0xAAAABBBB&0xCCCCDDDD", where AAAABBBB is hex device identifier
          * and CCCCDDDD is hex client id.
          */
-        if (strncmp (pszAddress, REMOTE_USB_BACKEND_PREFIX_S, REMOTE_USB_BACKEND_PREFIX_LEN) != 0)
+        if (strncmp(pszAddress, REMOTE_USB_BACKEND_PREFIX_S, REMOTE_USB_BACKEND_PREFIX_LEN) != 0)
         {
             AssertFailed();
             rc = VERR_INVALID_PARAMETER;
@@ -284,26 +285,26 @@ static DECLCALLBACK(int) iface_Open (PREMOTEUSBBACKEND pInstance, const char *ps
 
             if (RT_SUCCESS(rc))
             {
-                pDevice->id = RTStrToUInt32 (&pszAddress[REMOTE_USB_BACKEND_PREFIX_LEN]);
+                pDevice->id = RTStrToUInt32(&pszAddress[REMOTE_USB_BACKEND_PREFIX_LEN]);
 
-                size_t l = strlen (pszAddress);
+                size_t l = strlen(pszAddress);
 
-                if (l >= REMOTE_USB_BACKEND_PREFIX_LEN + strlen ("0x12345678&0x87654321"))
+                if (l >= REMOTE_USB_BACKEND_PREFIX_LEN + strlen("0x12345678&0x87654321"))
                 {
-                    const char *p = &pszAddress[REMOTE_USB_BACKEND_PREFIX_LEN + strlen ("0x12345678")];
+                    const char *p = &pszAddress[REMOTE_USB_BACKEND_PREFIX_LEN + strlen("0x12345678")];
                     if (*p == '&')
                     {
-                        pDevice->u32ClientId = RTStrToUInt32 (p + 1);
+                        pDevice->u32ClientId = RTStrToUInt32(p + 1);
                     }
                     else
                     {
-                        AssertFailed ();
+                        AssertFailed();
                         rc = VERR_INVALID_PARAMETER;
                     }
                 }
                 else
                 {
-                    AssertFailed ();
+                    AssertFailed();
                     rc = VERR_INVALID_PARAMETER;
                 }
 
@@ -314,7 +315,7 @@ static DECLCALLBACK(int) iface_Open (PREMOTEUSBBACKEND pInstance, const char *ps
                     parm.code = VRDE_USB_REQ_OPEN;
                     parm.id = pDevice->id;
 
-                    pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+                    pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
                 }
             }
         }
@@ -324,17 +325,17 @@ static DECLCALLBACK(int) iface_Open (PREMOTEUSBBACKEND pInstance, const char *ps
     {
         *ppDevice = pDevice;
 
-        pThis->addDevice (pDevice);
+        pThis->addDevice(pDevice);
     }
     else
     {
-        RTMemFree (pDevice);
+        RTMemFree(pDevice);
     }
 
     return rc;
 }
 
-static DECLCALLBACK(void) iface_Close (PREMOTEUSBDEVICE pDevice)
+static DECLCALLBACK(void) iface_Close(PREMOTEUSBDEVICE pDevice)
 {
     RemoteUSBBackend *pThis = pDevice->pOwner;
 
@@ -343,21 +344,21 @@ static DECLCALLBACK(void) iface_Close (PREMOTEUSBDEVICE pDevice)
     parm.code = VRDE_USB_REQ_CLOSE;
     parm.id = pDevice->id;
 
-    pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+    pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
 
-    pThis->removeDevice (pDevice);
+    pThis->removeDevice(pDevice);
 
-    if (RTCritSectIsInitialized (&pDevice->critsect))
+    if (RTCritSectIsInitialized(&pDevice->critsect))
     {
-        RTCritSectDelete (&pDevice->critsect);
+        RTCritSectDelete(&pDevice->critsect);
     }
 
-    RTMemFree (pDevice);
+    RTMemFree(pDevice);
 
     return;
 }
 
-static DECLCALLBACK(int) iface_Reset (PREMOTEUSBDEVICE pDevice)
+static DECLCALLBACK(int) iface_Reset(PREMOTEUSBDEVICE pDevice)
 {
     RemoteUSBBackend *pThis = pDevice->pOwner;
 
@@ -371,12 +372,12 @@ static DECLCALLBACK(int) iface_Reset (PREMOTEUSBDEVICE pDevice)
     parm.code = VRDE_USB_REQ_RESET;
     parm.id = pDevice->id;
 
-    pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+    pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) iface_SetConfig (PREMOTEUSBDEVICE pDevice, uint8_t u8Cfg)
+static DECLCALLBACK(int) iface_SetConfig(PREMOTEUSBDEVICE pDevice, uint8_t u8Cfg)
 {
     RemoteUSBBackend *pThis = pDevice->pOwner;
 
@@ -391,12 +392,12 @@ static DECLCALLBACK(int) iface_SetConfig (PREMOTEUSBDEVICE pDevice, uint8_t u8Cf
     parm.id = pDevice->id;
     parm.configuration = u8Cfg;
 
-    pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+    pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) iface_ClaimInterface (PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum)
+static DECLCALLBACK(int) iface_ClaimInterface(PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum)
 {
     RemoteUSBBackend *pThis = pDevice->pOwner;
 
@@ -411,12 +412,12 @@ static DECLCALLBACK(int) iface_ClaimInterface (PREMOTEUSBDEVICE pDevice, uint8_t
     parm.id = pDevice->id;
     parm.iface = u8Ifnum;
 
-    pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+    pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) iface_ReleaseInterface (PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum)
+static DECLCALLBACK(int) iface_ReleaseInterface(PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum)
 {
     RemoteUSBBackend *pThis = pDevice->pOwner;
 
@@ -431,12 +432,12 @@ static DECLCALLBACK(int) iface_ReleaseInterface (PREMOTEUSBDEVICE pDevice, uint8
     parm.id = pDevice->id;
     parm.iface = u8Ifnum;
 
-    pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+    pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) iface_InterfaceSetting (PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum, uint8_t u8Setting)
+static DECLCALLBACK(int) iface_InterfaceSetting(PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum, uint8_t u8Setting)
 {
     RemoteUSBBackend *pThis = pDevice->pOwner;
 
@@ -452,12 +453,12 @@ static DECLCALLBACK(int) iface_InterfaceSetting (PREMOTEUSBDEVICE pDevice, uint8
     parm.iface = u8Ifnum;
     parm.setting = u8Setting;
 
-    pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+    pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) iface_ClearHaltedEP (PREMOTEUSBDEVICE pDevice, uint8_t u8Ep)
+static DECLCALLBACK(int) iface_ClearHaltedEP(PREMOTEUSBDEVICE pDevice, uint8_t u8Ep)
 {
     RemoteUSBBackend *pThis = pDevice->pOwner;
 
@@ -472,12 +473,12 @@ static DECLCALLBACK(int) iface_ClearHaltedEP (PREMOTEUSBDEVICE pDevice, uint8_t 
     parm.id = pDevice->id;
     parm.ep = u8Ep;
 
-    pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+    pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(void) iface_CancelURB (PREMOTEUSBDEVICE pDevice, PREMOTEUSBQURB pRemoteURB)
+static DECLCALLBACK(void) iface_CancelURB(PREMOTEUSBDEVICE pDevice, PREMOTEUSBQURB pRemoteURB)
 {
     RemoteUSBBackend *pThis = pDevice->pOwner;
 
@@ -487,9 +488,9 @@ static DECLCALLBACK(void) iface_CancelURB (PREMOTEUSBDEVICE pDevice, PREMOTEUSBQ
     parm.id = pDevice->id;
     parm.handle = pRemoteURB->u32Handle;
 
-    pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+    pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
 
-    requestDevice (pDevice);
+    requestDevice(pDevice);
 
     /* Remove this urb from the queue. It is safe because if
      * client will return the URB, it will be just ignored
@@ -513,19 +514,21 @@ static DECLCALLBACK(void) iface_CancelURB (PREMOTEUSBDEVICE pDevice, PREMOTEUSBQ
         pDevice->pTailQURBs = pRemoteURB->prev;
     }
 
-    qurbFree (pRemoteURB);
+    qurbFree(pRemoteURB);
 
-    releaseDevice (pDevice);
+    releaseDevice(pDevice);
 
     return;
 }
 
-static DECLCALLBACK(int) iface_QueueURB (PREMOTEUSBDEVICE pDevice, uint8_t u8Type, uint8_t u8Ep, uint8_t u8Direction, uint32_t u32Len, void *pvData, void *pvURB, PREMOTEUSBQURB *ppRemoteURB)
+static DECLCALLBACK(int) iface_QueueURB(PREMOTEUSBDEVICE pDevice, uint8_t u8Type, uint8_t u8Ep, uint8_t u8Direction,
+                                        uint32_t u32Len, void *pvData, void *pvURB, PREMOTEUSBQURB *ppRemoteURB)
 {
     int rc = VINF_SUCCESS;
 
 #ifdef DEBUG_sunlover
-    LogFlow(("RemoteUSBBackend::iface_QueueURB: u8Type = %d, u8Ep = %d, u8Direction = %d, data\n%.*Rhxd\n", u8Type, u8Ep, u8Direction, u32Len, pvData));
+    LogFlow(("RemoteUSBBackend::iface_QueueURB: u8Type = %d, u8Ep = %d, u8Direction = %d, data\n%.*Rhxd\n",
+             u8Type, u8Ep, u8Direction, u32Len, pvData));
 #endif /* DEBUG_sunlover */
 
     if (pDevice->fFailed)
@@ -539,7 +542,7 @@ static DECLCALLBACK(int) iface_QueueURB (PREMOTEUSBDEVICE pDevice, uint8_t u8Typ
     uint32_t u32Handle = 0;
     uint32_t u32DataLen = 0;
 
-    REMOTEUSBQURB *qurb = qurbAlloc (pDevice);
+    REMOTEUSBQURB *qurb = qurbAlloc(pDevice);
 
     if (qurb == NULL)
     {
@@ -643,16 +646,16 @@ static DECLCALLBACK(int) iface_QueueURB (PREMOTEUSBDEVICE pDevice, uint8_t u8Typ
 
     pDevice->pTailQURBs = qurb;
 
-    releaseDevice (pDevice);
+    releaseDevice(pDevice);
 
     *ppRemoteURB = qurb;
 
-    pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+    pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
 
 l_leave:
     if (RT_FAILURE(rc))
     {
-        qurbFree (qurb);
+        qurbFree(qurb);
     }
 
     return rc;
@@ -661,7 +664,8 @@ l_leave:
 /* The function checks the URB queue for completed URBs. Also if the client
  * has requested URB polling, the function will send URB poll requests.
  */
-static DECLCALLBACK(int) iface_ReapURB (PREMOTEUSBDEVICE pDevice, uint32_t u32Millies, void **ppvURB, uint32_t *pu32Len, uint32_t *pu32Err)
+static DECLCALLBACK(int) iface_ReapURB(PREMOTEUSBDEVICE pDevice, uint32_t u32Millies, void **ppvURB,
+                                       uint32_t *pu32Len, uint32_t *pu32Err)
 {
     int rc = VINF_SUCCESS;
 
@@ -675,15 +679,15 @@ static DECLCALLBACK(int) iface_ReapURB (PREMOTEUSBDEVICE pDevice, uint32_t u32Mi
     RemoteUSBBackend *pThis = pDevice->pOwner;
 
     /* Wait for transaction completion. */
-    uint64_t u64StartTime = RTTimeMilliTS ();
+    uint64_t u64StartTime = RTTimeMilliTS();
 
-    if (pThis->pollingEnabledURB ())
+    if (pThis->pollingEnabledURB())
     {
         VRDE_USB_REQ_REAP_URB_PARM parm;
 
         parm.code = VRDE_USB_REQ_REAP_URB;
 
-        pThis->VRDPServer()->SendUSBRequest (pDevice->u32ClientId, &parm, sizeof (parm));
+        pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
     }
 
     REMOTEUSBQURB *qurb = NULL;
@@ -696,7 +700,7 @@ static DECLCALLBACK(int) iface_ReapURB (PREMOTEUSBDEVICE pDevice, uint32_t u32Mi
             break;
 
         /* Scan queued URBs, look for completed. */
-        requestDevice (pDevice);
+        requestDevice(pDevice);
 
         u32ClientId = pDevice->u32ClientId;
 
@@ -734,13 +738,13 @@ static DECLCALLBACK(int) iface_ReapURB (PREMOTEUSBDEVICE pDevice, uint32_t u32Mi
             qurb = qurb->next;
         }
 
-        releaseDevice (pDevice);
+        releaseDevice(pDevice);
 
         if (   qurb
             || !pDevice->pHeadQURBs
             || u32Millies == 0
             || pDevice->fFailed
-            || (RTTimeMilliTS () - u64StartTime >= (uint64_t)u32Millies))
+            || (RTTimeMilliTS() - u64StartTime >= (uint64_t)u32Millies))
         {
             /* Got an URB or do not have to wait for an URB. */
             break;
@@ -748,15 +752,15 @@ static DECLCALLBACK(int) iface_ReapURB (PREMOTEUSBDEVICE pDevice, uint32_t u32Mi
 
         LogFlow(("RemoteUSBBackend::iface_ReapURB iteration.\n"));
 
-        RTThreadSleep (10);
+        RTThreadSleep(10);
 
-        if (pThis->pollingEnabledURB ())
+        if (pThis->pollingEnabledURB())
         {
             VRDE_USB_REQ_REAP_URB_PARM parm;
 
             parm.code = VRDE_USB_REQ_REAP_URB;
 
-            pThis->VRDPServer()->SendUSBRequest (u32ClientId, &parm, sizeof (parm));
+            pThis->VRDPServer()->SendUSBRequest(u32ClientId, &parm, sizeof(parm));
         }
     }
 
@@ -782,24 +786,24 @@ static DECLCALLBACK(int) iface_ReapURB (PREMOTEUSBDEVICE pDevice, uint32_t u32Mi
         }
 #endif
 
-        qurbFree (qurb);
+        qurbFree(qurb);
     }
 
     return rc;
 }
 
-static DECLCALLBACK(int) iface_Wakeup (PREMOTEUSBDEVICE pDevice)
+static DECLCALLBACK(int) iface_Wakeup(PREMOTEUSBDEVICE pDevice)
 {
     ASMAtomicXchgBool(&pDevice->fWokenUp, true);
     return VINF_SUCCESS;
 }
 
-void RemoteUSBBackend::AddRef (void)
+void RemoteUSBBackend::AddRef(void)
 {
     cRefs++;
 }
 
-void RemoteUSBBackend::Release (void)
+void RemoteUSBBackend::Release(void)
 {
     cRefs--;
 
@@ -809,22 +813,22 @@ void RemoteUSBBackend::Release (void)
     }
 }
 
-void RemoteUSBBackend::PollRemoteDevices (void)
+void RemoteUSBBackend::PollRemoteDevices(void)
 {
     if (   mfWillBeDeleted
         && menmPollRemoteDevicesStatus != PollRemoteDevicesStatus_Dereferenced)
     {
         /* Unmount all remote USB devices. */
-        mConsole->processRemoteUSBDevices (mu32ClientId, NULL, 0, false);
+        mConsole->processRemoteUSBDevices(mu32ClientId, NULL, 0, false);
 
         menmPollRemoteDevicesStatus = PollRemoteDevicesStatus_Dereferenced;
 
-        Release ();
+        Release();
 
         return;
     }
 
-    switch (menmPollRemoteDevicesStatus)
+    switch(menmPollRemoteDevicesStatus)
     {
         case PollRemoteDevicesStatus_Negotiate:
         {
@@ -835,13 +839,13 @@ void RemoteUSBBackend::PollRemoteDevices (void)
             /* VRDE_USB_VERSION_3: support VRDE_USB_REQ_DEVICE_LIST_EXT_RET. */
             parm.flags = VRDE_USB_SERVER_CAPS_PORT_VERSION;
 
-            mServer->SendUSBRequest (mu32ClientId, &parm, sizeof (parm));
+            mServer->SendUSBRequest(mu32ClientId, &parm, sizeof(parm));
 
             /* Reference the object. When the client disconnects and
              * the backend is about to be deleted, the method must be called
              * to disconnect the USB devices (as stated above).
              */
-            AddRef ();
+            AddRef();
 
             /* Goto the disabled state. When a response will be received
              * the state will be changed to the SendRequest.
@@ -864,7 +868,7 @@ void RemoteUSBBackend::PollRemoteDevices (void)
 
             parm.code = VRDE_USB_REQ_DEVICE_LIST;
 
-            mServer->SendUSBRequest (mu32ClientId, &parm, sizeof (parm));
+            mServer->SendUSBRequest(mu32ClientId, &parm, sizeof(parm));
 
             menmPollRemoteDevicesStatus = PollRemoteDevicesStatus_WaitResponse;
         } break;
@@ -875,7 +879,7 @@ void RemoteUSBBackend::PollRemoteDevices (void)
 
             if (mfHasDeviceList)
             {
-                mConsole->processRemoteUSBDevices (mu32ClientId, (VRDEUSBDEVICEDESC *)mpvDeviceList, mcbDeviceList, mfDescExt);
+                mConsole->processRemoteUSBDevices(mu32ClientId, (VRDEUSBDEVICEDESC *)mpvDeviceList, mcbDeviceList, mfDescExt);
                 LogFlow(("USB::PollRemoteDevices: WaitResponse after process\n"));
 
                 menmPollRemoteDevicesStatus = PollRemoteDevicesStatus_SendRequest;
@@ -892,12 +896,12 @@ void RemoteUSBBackend::PollRemoteDevices (void)
 
         default:
         {
-           AssertFailed ();
+           AssertFailed();
         } break;
     }
 }
 
-void RemoteUSBBackend::NotifyDelete (void)
+void RemoteUSBBackend::NotifyDelete(void)
 {
     mfWillBeDeleted = true;
 }
@@ -906,7 +910,7 @@ void RemoteUSBBackend::NotifyDelete (void)
  * The backend maintains a list of UUIDs of devices
  * which are managed by the backend.
  */
-bool RemoteUSBBackend::addUUID (const Guid *pUuid)
+bool RemoteUSBBackend::addUUID(const Guid *pUuid)
 {
     unsigned i;
     for (i = 0; i < RT_ELEMENTS(aGuids); i++)
@@ -921,7 +925,7 @@ bool RemoteUSBBackend::addUUID (const Guid *pUuid)
     return false;
 }
 
-bool RemoteUSBBackend::findUUID (const Guid *pUuid)
+bool RemoteUSBBackend::findUUID(const Guid *pUuid)
 {
     unsigned i;
     for (i = 0; i < RT_ELEMENTS(aGuids); i++)
@@ -935,14 +939,14 @@ bool RemoteUSBBackend::findUUID (const Guid *pUuid)
     return false;
 }
 
-void RemoteUSBBackend::removeUUID (const Guid *pUuid)
+void RemoteUSBBackend::removeUUID(const Guid *pUuid)
 {
     unsigned i;
     for (i = 0; i < RT_ELEMENTS(aGuids); i++)
     {
         if (aGuids[i] == *pUuid)
         {
-            aGuids[i].clear ();
+            aGuids[i].clear();
             break;
         }
     }
@@ -950,28 +954,28 @@ void RemoteUSBBackend::removeUUID (const Guid *pUuid)
 
 RemoteUSBBackend::RemoteUSBBackend(Console *console, ConsoleVRDPServer *server, uint32_t u32ClientId)
     :
-    mConsole (console),
-    mServer (server),
-    cRefs (0),
-    mu32ClientId (u32ClientId),
-    mfHasDeviceList (false),
-    mpvDeviceList (NULL),
-    mcbDeviceList (0),
-    menmPollRemoteDevicesStatus (PollRemoteDevicesStatus_Negotiate),
-    mfPollURB (true),
-    mpDevices (NULL),
-    mfWillBeDeleted (false),
-    mClientVersion (0),                   /* VRDE_USB_VERSION_2: the client version. */
-    mfDescExt (false)                     /* VRDE_USB_VERSION_3: VRDE_USB_REQ_DEVICE_LIST_EXT_RET. */
+    mConsole(console),
+    mServer(server),
+    cRefs(0),
+    mu32ClientId(u32ClientId),
+    mfHasDeviceList(false),
+    mpvDeviceList(NULL),
+    mcbDeviceList(0),
+    menmPollRemoteDevicesStatus(PollRemoteDevicesStatus_Negotiate),
+    mfPollURB(true),
+    mpDevices(NULL),
+    mfWillBeDeleted(false),
+    mClientVersion(0),                   /* VRDE_USB_VERSION_2: the client version. */
+    mfDescExt(false)                     /* VRDE_USB_VERSION_3: VRDE_USB_REQ_DEVICE_LIST_EXT_RET. */
 {
     Assert(console);
     Assert(server);
 
-    int rc = RTCritSectInit (&mCritsect);
+    int rc = RTCritSectInit(&mCritsect);
 
     if (RT_FAILURE(rc))
     {
-        AssertFailed ();
+        AssertFailed();
         RT_ZERO(mCritsect);
     }
 
@@ -994,17 +998,17 @@ RemoteUSBBackend::~RemoteUSBBackend()
 {
     Assert(cRefs == 0);
 
-    if (RTCritSectIsInitialized (&mCritsect))
+    if (RTCritSectIsInitialized(&mCritsect))
     {
-        RTCritSectDelete (&mCritsect);
+        RTCritSectDelete(&mCritsect);
     }
 
-    RTMemFree (mpvDeviceList);
+    RTMemFree(mpvDeviceList);
 
-    mServer->usbBackendRemoveFromList (this);
+    mServer->usbBackendRemoveFromList(this);
 }
 
-int RemoteUSBBackend::negotiateResponse (const VRDEUSBREQNEGOTIATERET *pret, uint32_t cbRet)
+int RemoteUSBBackend::negotiateResponse(const VRDEUSBREQNEGOTIATERET *pret, uint32_t cbRet)
 {
     int rc = VINF_SUCCESS;
 
@@ -1027,7 +1031,7 @@ int RemoteUSBBackend::negotiateResponse (const VRDEUSBREQNEGOTIATERET *pret, uin
     if (pret->flags & VRDE_USB_CAPS2_FLAG_VERSION)
     {
         /* This could be a client version > 1. */
-        if (cbRet >= sizeof (VRDEUSBREQNEGOTIATERET_2))
+        if (cbRet >= sizeof(VRDEUSBREQNEGOTIATERET_2))
         {
             VRDEUSBREQNEGOTIATERET_2 *pret2 = (VRDEUSBREQNEGOTIATERET_2 *)pret;
 
@@ -1061,7 +1065,7 @@ int RemoteUSBBackend::negotiateResponse (const VRDEUSBREQNEGOTIATERET *pret, uin
         /* VRDE_USB_VERSION_3: check the client capabilities: VRDE_USB_CLIENT_CAPS_*. */
         if (mClientVersion == VRDE_USB_VERSION_3)
         {
-            if (cbRet >= sizeof (VRDEUSBREQNEGOTIATERET_3))
+            if (cbRet >= sizeof(VRDEUSBREQNEGOTIATERET_3))
             {
                 VRDEUSBREQNEGOTIATERET_3 *pret3 = (VRDEUSBREQNEGOTIATERET_3 *)pret;
 
@@ -1080,21 +1084,21 @@ int RemoteUSBBackend::negotiateResponse (const VRDEUSBREQNEGOTIATERET *pret, uin
     return rc;
 }
 
-int RemoteUSBBackend::saveDeviceList (const void *pvList, uint32_t cbList)
+int RemoteUSBBackend::saveDeviceList(const void *pvList, uint32_t cbList)
 {
     Log(("RemoteUSBBackend::saveDeviceList: pvList = %p, cbList = %d\n", pvList, cbList));
 
     if (!mfHasDeviceList)
     {
-        RTMemFree (mpvDeviceList);
+        RTMemFree(mpvDeviceList);
         mpvDeviceList = NULL;
 
         mcbDeviceList = cbList;
 
         if (cbList > 0)
         {
-            mpvDeviceList = RTMemAlloc (cbList);
-            memcpy (mpvDeviceList, pvList, cbList);
+            mpvDeviceList = RTMemAlloc(cbList);
+            memcpy(mpvDeviceList, pvList, cbList);
         }
 
         mfHasDeviceList = true;
@@ -1103,20 +1107,20 @@ int RemoteUSBBackend::saveDeviceList (const void *pvList, uint32_t cbList)
     return VINF_SUCCESS;
 }
 
-void RemoteUSBBackend::request (void)
+void RemoteUSBBackend::request(void)
 {
     int rc = RTCritSectEnter(&mCritsect);
     AssertRC(rc);
 }
 
-void RemoteUSBBackend::release (void)
+void RemoteUSBBackend::release(void)
 {
     RTCritSectLeave(&mCritsect);
 }
 
-PREMOTEUSBDEVICE RemoteUSBBackend::deviceFromId (VRDEUSBDEVID id)
+PREMOTEUSBDEVICE RemoteUSBBackend::deviceFromId(VRDEUSBDEVID id)
 {
-    request ();
+    request();
 
     REMOTEUSBDEVICE *pDevice = mpDevices;
 
@@ -1125,14 +1129,14 @@ PREMOTEUSBDEVICE RemoteUSBBackend::deviceFromId (VRDEUSBDEVID id)
         pDevice = pDevice->next;
     }
 
-    release ();
+    release();
 
     return pDevice;
 }
 
-void RemoteUSBBackend::addDevice (PREMOTEUSBDEVICE pDevice)
+void RemoteUSBBackend::addDevice(PREMOTEUSBDEVICE pDevice)
 {
-    request ();
+    request();
 
     pDevice->next = mpDevices;
 
@@ -1143,12 +1147,12 @@ void RemoteUSBBackend::addDevice (PREMOTEUSBDEVICE pDevice)
 
     mpDevices = pDevice;
 
-    release ();
+    release();
 }
 
-void RemoteUSBBackend::removeDevice (PREMOTEUSBDEVICE pDevice)
+void RemoteUSBBackend::removeDevice(PREMOTEUSBDEVICE pDevice)
 {
-    request ();
+    request();
 
     if (pDevice->prev)
     {
@@ -1164,10 +1168,10 @@ void RemoteUSBBackend::removeDevice (PREMOTEUSBDEVICE pDevice)
         pDevice->next->prev = pDevice->prev;
     }
 
-    release ();
+    release();
 }
 
-int RemoteUSBBackend::reapURB (const void *pvBody, uint32_t cbBody)
+int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
 {
     int rc = VINF_SUCCESS;
 
@@ -1175,7 +1179,7 @@ int RemoteUSBBackend::reapURB (const void *pvBody, uint32_t cbBody)
 
     VRDEUSBREQREAPURBBODY *pBody = (VRDEUSBREQREAPURBBODY *)pvBody;
 
-    while (cbBody >= sizeof (VRDEUSBREQREAPURBBODY))
+    while (cbBody >= sizeof(VRDEUSBREQREAPURBBODY))
     {
         Log(("RemoteUSBBackend::reapURB: id = %d,  flags = %02X, error = %d, handle %d, len = %d.\n",
              pBody->id, pBody->flags, pBody->error, pBody->handle, pBody->len));
@@ -1193,7 +1197,7 @@ int RemoteUSBBackend::reapURB (const void *pvBody, uint32_t cbBody)
 
         /* Verify client's data. */
         if (   (pBody->flags & ~fu8ReapValidFlags) != 0
-            || sizeof (VRDEUSBREQREAPURBBODY) > cbBody
+            || sizeof(VRDEUSBREQREAPURBBODY) > cbBody
             || pBody->handle == 0)
         {
             LogFlow(("RemoteUSBBackend::reapURB: WARNING: invalid reply data. Skipping the reply.\n"));
@@ -1201,7 +1205,7 @@ int RemoteUSBBackend::reapURB (const void *pvBody, uint32_t cbBody)
             break;
         }
 
-        PREMOTEUSBDEVICE pDevice = deviceFromId (pBody->id);
+        PREMOTEUSBDEVICE pDevice = deviceFromId(pBody->id);
 
         if (!pDevice)
         {
@@ -1212,7 +1216,7 @@ int RemoteUSBBackend::reapURB (const void *pvBody, uint32_t cbBody)
 
         uint32_t cbBodyData = 0; /* Data contained in the URB body structure for input URBs. */
 
-        requestDevice (pDevice);
+        requestDevice(pDevice);
 
         /* Search the queued URB for given handle. */
         REMOTEUSBQURB *qurb = pDevice->pHeadQURBs;

@@ -123,7 +123,8 @@ static void queryIfaceSpeed(PNETIFINFO pInfo)
 
 static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNetworkInterfaceList)
 {
-    std::list<ComObjPtr<HostNetworkInterface> > *pList = (std::list<ComObjPtr<HostNetworkInterface> > *)pvHostNetworkInterfaceList;
+    std::list<ComObjPtr<HostNetworkInterface> > *pList =
+        (std::list<ComObjPtr<HostNetworkInterface> > *)pvHostNetworkInterfaceList;
     Assert(pList);
 
     typedef std::map <std::string, std::string> NICMap;

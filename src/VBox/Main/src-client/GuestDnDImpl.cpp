@@ -258,7 +258,9 @@ private:
     static DragAndDropAction_T toMainAction(uint32_t uAction);
     static void                toMainActions(uint32_t uActions, ComSafeArrayOut(DragAndDropAction_T, actions));
     static uint32_t            toHGCMAction(DragAndDropAction_T action);
-    static void                toHGCMActions(DragAndDropAction_T inDefAction, uint32_t *pOutDefAction, ComSafeArrayIn(DragAndDropAction_T, inAllowedActions), uint32_t *pOutAllowedActions);
+    static void                toHGCMActions(DragAndDropAction_T inDefAction, uint32_t *pOutDefAction,
+                                             ComSafeArrayIn(DragAndDropAction_T, inAllowedActions),
+                                             uint32_t *pOutAllowedActions);
 
     /* Private q and parent pointer */
     GuestDnD                        *q_ptr;
@@ -677,7 +679,8 @@ uint32_t GuestDnDPrivate::toHGCMAction(DragAndDropAction_T action)
     {
         case DragAndDropAction_Copy:   a = DND_COPY_ACTION; break;
         case DragAndDropAction_Move:   a = DND_MOVE_ACTION; break;
-        case DragAndDropAction_Link:   /* For now it doesn't seems useful to allow a link action between host & guest. Maybe later! */
+        case DragAndDropAction_Link:   /* For now it doesn't seems useful to allow a link
+                                          action between host & guest. Maybe later! */
         case DragAndDropAction_Ignore: /* Ignored */ break;
         default: AssertMsgFailed(("Action %u not recognized!\n", action)); break;
     }
@@ -1301,7 +1304,8 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
 
         case DragAndDropSvc::GUEST_DND_HG_EVT_PROGRESS:
         {
-            DragAndDropSvc::PVBOXDNDCBHGEVTPROGRESSDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBHGEVTPROGRESSDATA>(pvParms);
+            DragAndDropSvc::PVBOXDNDCBHGEVTPROGRESSDATA pCBData =
+                reinterpret_cast <DragAndDropSvc::PVBOXDNDCBHGEVTPROGRESSDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGEVTPROGRESSDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_EVT_PROGRESS == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
@@ -1313,7 +1317,8 @@ DECLCALLBACK(int) GuestDnD::notifyGuestDragAndDropEvent(void *pvExtension, uint3
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
         case DragAndDropSvc::GUEST_DND_GH_ACK_PENDING:
         {
-            DragAndDropSvc::PVBOXDNDCBGHACKPENDINGDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBGHACKPENDINGDATA>(pvParms);
+            DragAndDropSvc::PVBOXDNDCBGHACKPENDINGDATA pCBData =
+                reinterpret_cast <DragAndDropSvc::PVBOXDNDCBGHACKPENDINGDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBGHACKPENDINGDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_ACK_PENDING == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);

@@ -146,7 +146,8 @@ int USBProxyServiceFreeBSD::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-bool USBProxyServiceFreeBSD::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
+bool USBProxyServiceFreeBSD::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
+                                               SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
@@ -160,7 +161,8 @@ bool USBProxyServiceFreeBSD::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVIC
  *
  * See USBProxyService::deviceAdded for details.
  */
-void USBProxyServiceFreeBSD::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice)
+void USBProxyServiceFreeBSD::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines,
+                                         PUSBDEVICE aUSBDevice)
 {
     USBProxyService::deviceAdded(aDevice, llOpenedMachines, aUSBDevice);
 }

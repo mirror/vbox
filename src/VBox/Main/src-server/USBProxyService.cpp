@@ -355,7 +355,8 @@ HRESULT USBProxyService::detachAllDevicesFromVM(SessionMachine *aMachine, bool a
             if (    SUCCEEDED(hrc)
                 &&  fRunFilters)
             {
-                Assert(aDone && pHostDevice->i_getUnistate() == kHostUSBDeviceState_HeldByProxy && pHostDevice->i_getMachine().isNull());
+                Assert(aDone && pHostDevice->i_getUnistate() ==
+                    kHostUSBDeviceState_HeldByProxy && pHostDevice->i_getMachine().isNull());
                 devLock.release();
                 alock.release();
                 HRESULT hrc2 = runAllFiltersOnDevice(pHostDevice, llOpenedMachines, aMachine);
@@ -403,7 +404,8 @@ HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), E_FAIL);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
-    AssertMsgReturn(aDevice->i_isCapturableOrHeld(), ("{%s} %s\n", aDevice->i_getName().c_str(), aDevice->i_getStateName()), E_FAIL);
+    AssertMsgReturn(aDevice->i_isCapturableOrHeld(), ("{%s} %s\n", aDevice->i_getName().c_str(),
+                                                      aDevice->i_getStateName()), E_FAIL);
 
     /*
      * Get the lists we'll iterate.
@@ -1080,7 +1082,8 @@ void USBProxyService::deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice)
  * @param   pUSBDevice  The USB device structure for the last enumeration.
  * @param   aRunFilters Whether or not to run filters.
  */
-bool USBProxyService::updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
+bool USBProxyService::updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
+                                            SessionMachine **aIgnoreMachine)
 {
     *aRunFilters = false;
     *aIgnoreMachine = NULL;
@@ -1105,7 +1108,8 @@ bool USBProxyService::updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE a
  * @param   aRunFilters     Whether or not to run filters.
  * @param   aIgnoreMachine  Machine to ignore when running filters.
  */
-bool USBProxyService::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
+bool USBProxyService::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
+                                        SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
@@ -1124,7 +1128,8 @@ bool USBProxyService::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBD
  * @param   pllOpenedMachines list of running session machines (VirtualBox::getOpenedMachines()); if NULL, we don't run filters
  * @param   aIgnoreMachine  Machine to ignore when running filters.
  */
-void USBProxyService::deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList *pllOpenedMachines, SessionMachine *aIgnoreMachine)
+void USBProxyService::deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList *pllOpenedMachines,
+                                    SessionMachine *aIgnoreMachine)
 {
     /*
      * Validate preconditions.

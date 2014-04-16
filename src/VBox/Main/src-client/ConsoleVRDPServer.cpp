@@ -196,7 +196,8 @@ void dumpPointer(const uint8_t *pu8Shape, uint32_t width, uint32_t height, bool 
 #define dumpPointer(a, b, c, d) do {} while (0)
 #endif /* DEBUG_sunlover */
 
-static void findTopLeftBorder(const uint8_t *pu8AndMask, const uint8_t *pu8XorMask, uint32_t width, uint32_t height, uint32_t *pxSkip, uint32_t *pySkip)
+static void findTopLeftBorder(const uint8_t *pu8AndMask, const uint8_t *pu8XorMask, uint32_t width,
+                              uint32_t height, uint32_t *pxSkip, uint32_t *pySkip)
 {
     /*
      * Find the top border of the AND mask. First assign to special value.
@@ -364,7 +365,8 @@ STDMETHODIMP VRDPConsoleListener::OnMousePointerShapeChange(BOOL visible,
                                                             ULONG height,
                                                             ComSafeArrayIn(BYTE,inShape))
 {
-    LogSunlover(("VRDPConsoleListener::OnMousePointerShapeChange: %d, %d, %lux%lu, @%lu,%lu\n", visible, alpha, width, height, xHot, yHot));
+    LogSunlover(("VRDPConsoleListener::OnMousePointerShapeChange: %d, %d, %lux%lu, @%lu,%lu\n",
+                 visible, alpha, width, height, xHot, yHot));
 
     if (m_server)
     {
@@ -556,7 +558,8 @@ VRDECALLBACKS_4 ConsoleVRDPServer::mCallbacks =
     ConsoleVRDPServer::VRDECallbackAudioIn
 };
 
-DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut)
+DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback, uint32_t index, void *pvBuffer,
+                                                               uint32_t cbBuffer, uint32_t *pcbOut)
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
@@ -674,7 +677,8 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
         case VRDE_QP_VIDEO_CHANNEL:
         {
             com::Bstr bstr;
-            HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("VideoChannel/Enabled").raw(), bstr.asOutParam());
+            HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("VideoChannel/Enabled").raw(),
+                                                                             bstr.asOutParam());
 
             if (hrc != S_OK)
             {
@@ -702,7 +706,8 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
         case VRDE_QP_VIDEO_CHANNEL_QUALITY:
         {
             com::Bstr bstr;
-            HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("VideoChannel/Quality").raw(), bstr.asOutParam());
+            HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("VideoChannel/Quality").raw(),
+                                                                             bstr.asOutParam());
 
             if (hrc != S_OK)
             {
@@ -814,7 +819,8 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
             {
                 /* Generic properties. */
                 const char *pszPropertyName = &pFeature->achInfo[9];
-                HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr(pszPropertyName).raw(), bstrValue.asOutParam());
+                HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr(pszPropertyName).raw(),
+                                                                                 bstrValue.asOutParam());
                 if (FAILED(hrc))
                 {
                     rc = VERR_NOT_SUPPORTED;
@@ -915,7 +921,8 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
     return rc;
 }
 
-DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackClientLogon(void *pvCallback, uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain)
+DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackClientLogon(void *pvCallback, uint32_t u32ClientId, const char *pszUser,
+                                                             const char *pszPassword, const char *pszDomain)
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
@@ -939,7 +946,8 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientConnect(void *pvCallback
     }
 }
 
-DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercepted)
+DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallback, uint32_t u32ClientId,
+                                                                   uint32_t fu32Intercepted)
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
@@ -973,7 +981,8 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
     }
 }
 
-DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercept, void **ppvIntercept)
+DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercept,
+                                                           void **ppvIntercept)
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
@@ -1051,7 +1060,8 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, ui
     return rc;
 }
 
-DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackUSB(void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint8_t u8Code, const void *pvRet, uint32_t cbRet)
+DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackUSB(void *pvCallback, void *pvIntercept, uint32_t u32ClientId,
+                                                     uint8_t u8Code, const void *pvRet, uint32_t cbRet)
 {
 #ifdef VBOX_WITH_USB
     return USBClientResponseCallback(pvIntercept, u32ClientId, u8Code, pvRet, cbRet);
@@ -1060,12 +1070,15 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackUSB(void *pvCallback, void *pv
 #endif
 }
 
-DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackClipboard(void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData)
+DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackClipboard(void *pvCallback, void *pvIntercept, uint32_t u32ClientId,
+                                                           uint32_t u32Function, uint32_t u32Format,
+                                                           const void *pvData, uint32_t cbData)
 {
     return ClipboardCallback(pvIntercept, u32ClientId, u32Function, u32Format, pvData, cbData);
 }
 
-DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery(void *pvCallback, unsigned uScreenId, VRDEFRAMEBUFFERINFO *pInfo)
+DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery(void *pvCallback, unsigned uScreenId,
+                                                                   VRDEFRAMEBUFFERINFO *pInfo)
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
@@ -1230,7 +1243,8 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput(void *pvCallback, int ty
 
                 if (server->m_fGuestWantsAbsolute)
                 {
-                    pConsole->getMouse()->PutMouseEventAbsolute(pInputPoint->x + 1, pInputPoint->y + 1, iWheel, 0 /* Horizontal wheel */, mouseButtons);
+                    pConsole->getMouse()->PutMouseEventAbsolute(pInputPoint->x + 1, pInputPoint->y + 1, iWheel,
+                                                                0 /* Horizontal wheel */, mouseButtons);
                 } else
                 {
                     pConsole->getMouse()->PutMouseEvent(pInputPoint->x - server->m_mousex,
@@ -1287,7 +1301,8 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput(void *pvCallback, int ty
     }
 }
 
-DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint(void *pvCallback, unsigned cWidth, unsigned cHeight, unsigned cBitsPerPixel, unsigned uScreenId)
+DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint(void *pvCallback, unsigned cWidth, unsigned cHeight,
+                                                                unsigned cBitsPerPixel, unsigned uScreenId)
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
