@@ -3040,6 +3040,7 @@ static void crVBoxServerDefaultContextClear()
     }
 
     cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
+    crStateCleanupCurrent();
 
     /* note: we need to clean all contexts, since otherwise renderspu leanup won't work,
      * i.e. renderspu would need to clean up its own internal windows, it won't be able to do that if
@@ -3065,8 +3066,8 @@ static void crVBoxServerDefaultContextClear()
     cr_server.currentNativeWindow = 0;
     cr_server.currentMural = NULL;
 
-//    crStateDestroy();
-    crStateCleanupCurrent();
+    crStateDestroy();
+//    crStateCleanupCurrent();
 
     if (CrBltIsInitialized(&cr_server.Blitter))
     {
@@ -3085,8 +3086,9 @@ static void crVBoxServerDefaultContextSet()
 
     CRASSERT(!cr_server.MainContextInfo.SpuContext);
 
-    crStateSetCurrent(NULL);
-//    crStateInit();
+//    crStateSetCurrent(NULL);
+    crStateInit();
+    crStateDiffAPI( &(cr_server.head_spu->dispatch_table) );
 
     CrPMgrEnable();
 }
