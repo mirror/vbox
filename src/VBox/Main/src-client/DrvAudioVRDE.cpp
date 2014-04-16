@@ -569,7 +569,8 @@ static int fltRecordingCallback(PVRDEVoice pVRDEVoice, uint32_t cbSamples, const
 }
 
 
-STDMETHODIMP AudioVRDE::handleVRDESvrCmdAudioInputEventBegin(void *pvContext, int iSampleHz, int cChannels, int cBits, bool fUnsigned)
+STDMETHODIMP AudioVRDE::handleVRDESvrCmdAudioInputEventBegin(void *pvContext, int iSampleHz, int cChannels,
+                                                             int cBits, bool fUnsigned)
 {
     int bitIdx;
     PVRDEVoice pVRDEVoice = (PVRDEVoice)pvContext;

@@ -1304,7 +1304,8 @@ HRESULT NetworkAdapter::getBandwidthGroup(ComPtr<IBandwidthGroup> &aBandwidthGro
         ComObjPtr<BandwidthGroup> pBwGroup;
         hrc = mParent->getBandwidthGroup(mData->mBandwidthGroup, pBwGroup, true /* fSetError */);
 
-        Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of the group was checked when it was attached. */
+        Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence
+                                i  of the group was checked when it was attached. */
         if (SUCCEEDED(hrc))
             pBwGroup.queryInterfaceTo(aBandwidthGroup.asOutParam());
     }
@@ -1335,7 +1336,8 @@ HRESULT NetworkAdapter::setBandwidthGroup(const ComPtr<IBandwidthGroup> &aBandwi
         {
             HRESULT hrc = mParent->getBandwidthGroup(strBwGroup, pBwGroup, false /* fSetError */);
             NOREF(hrc);
-            Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of the group was checked when it was attached. */
+            Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence
+                                       of the group was checked when it was attached. */
         }
 
         i_updateBandwidthGroup(pBwGroup);
@@ -1366,7 +1368,8 @@ void NetworkAdapter::i_updateBandwidthGroup(BandwidthGroup *aBwGroup)
         {
             HRESULT hrc = mParent->getBandwidthGroup(mData->mBandwidthGroup, pOldBwGroup, false /* fSetError */);
             NOREF(hrc);
-            Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of the group was checked when it was attached. */
+            Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of
+                                       the group was checked when it was attached. */
         }
 
     mData.backup();

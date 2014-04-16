@@ -167,7 +167,8 @@ static DECLCALLBACK(int) notImpl_SetSize(void *pvUser, void *pvStorage, uint64_t
 }
 
 /** @interface_method_impl{VDINTERFACEIO,pfnWriteSync}  */
-static DECLCALLBACK(int) notImpl_WriteSync(void *pvUser, void *pvStorage, uint64_t off, const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
+static DECLCALLBACK(int) notImpl_WriteSync(void *pvUser, void *pvStorage, uint64_t off, const void *pvBuf,
+                                           size_t cbWrite, size_t *pcbWritten)
 {
     NOREF(pvUser); NOREF(pvStorage); NOREF(off); NOREF(pvBuf); NOREF(cbWrite); NOREF(pcbWritten);
     Log(("%s\n",  __FUNCTION__)); DEBUG_PRINT_FLOW();
@@ -506,7 +507,8 @@ typedef struct FSSRDONLYINTERFACEIO
 
 
 /** @interface_method_impl{VDINTERFACEIO,pfnOpen}  */
-static DECLCALLBACK(int) fssRdOnly_Open(void *pvUser, const char *pszLocation, uint32_t fOpen, PFNVDCOMPLETED pfnCompleted, void **ppInt)
+static DECLCALLBACK(int) fssRdOnly_Open(void *pvUser, const char *pszLocation, uint32_t fOpen,
+                                        PFNVDCOMPLETED pfnCompleted, void **ppInt)
 {
     PFSSRDONLYINTERFACEIO pThis = (PFSSRDONLYINTERFACEIO)pvUser;
 
@@ -612,7 +614,8 @@ static DECLCALLBACK(int) fssRdOnly_GetSize(void *pvUser, void *pvStorage, uint64
 }
 
 /** @interface_method_impl{VDINTERFACEIO,pfnRead}  */
-static DECLCALLBACK(int) fssRdOnly_ReadSync(void *pvUser, void *pvStorage, uint64_t off, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+static DECLCALLBACK(int) fssRdOnly_ReadSync(void *pvUser, void *pvStorage, uint64_t off, void *pvBuf,
+                                            size_t cbToRead, size_t *pcbRead)
 {
     PIOSRDONLYINTERNAL      pFile = (PIOSRDONLYINTERNAL)pvStorage;
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -866,7 +869,8 @@ DECLCALLBACK(int) shaCalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                             break;
                         size_t cbToWrite = cbMemRead - cbAllWritten;
                         size_t cbWritten = 0;
-                        rc = vdIfIoFileWriteSync(pIfIo, pInt->pvStorage, pInt->cbCurFile, &pcBuf[cbAllWritten], cbToWrite, &cbWritten);
+                        rc = vdIfIoFileWriteSync(pIfIo, pInt->pvStorage, pInt->cbCurFile, &pcBuf[cbAllWritten],
+                                                 cbToWrite, &cbWritten);
 //                        RTPrintf ("%lu %lu %lu %Rrc\n", pInt->cbCurFile, cbToRead, cbRead, rc);
                         if (RT_FAILURE(rc))
                         {
@@ -1076,7 +1080,8 @@ static int shaOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen
         if (RT_FAILURE(rc))
             break;
         /* Create the worker thread. */
-        rc = RTThreadCreate(&pInt->pWorkerThread, shaCalcWorkerThread, pInt, 0, RTTHREADTYPE_MAIN_HEAVY_WORKER, RTTHREADFLAGS_WAITABLE, "SHA-Worker");
+        rc = RTThreadCreate(&pInt->pWorkerThread, shaCalcWorkerThread, pInt, 0, RTTHREADTYPE_MAIN_HEAVY_WORKER,
+                            RTTHREADFLAGS_WAITABLE, "SHA-Worker");
         if (RT_FAILURE(rc))
             break;
 
@@ -1317,7 +1322,8 @@ static int shaWriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
     DEBUG_PRINT_FLOW();
 
     /* Check that the write is linear */
-    AssertMsgReturn(pInt->cbCurAll <= uOffset, ("Backward seeking is not allowed (uOffset: %7lu cbCurAll: %7lu)!", uOffset, pInt->cbCurAll), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pInt->cbCurAll <= uOffset, ("Backward seeking is not allowed (uOffset: %7lu cbCurAll: %7lu)!",
+                    uOffset, pInt->cbCurAll), VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
 

@@ -2377,7 +2377,8 @@ static int solarisWalkDeviceNodeForDVD(di_node_t Node, void *pvArg)
                                     PSOLARISDVD pDrive = (PSOLARISDVD)RTMemAllocZ(sizeof(SOLARISDVD));
                                     if (RT_LIKELY(pDrive))
                                     {
-                                        RTStrPrintf(pDrive->szDescription, sizeof(pDrive->szDescription), "%s %s", pszVendor, pszProduct);
+                                        RTStrPrintf(pDrive->szDescription, sizeof(pDrive->szDescription),
+                                                    "%s %s", pszVendor, pszProduct);
                                         RTStrCopy(pDrive->szRawDiskPath, sizeof(pDrive->szRawDiskPath), pszDevLinkPath);
                                         if (*ppDrives)
                                             pDrive->pNext = *ppDrives;
@@ -2550,13 +2551,15 @@ bool Host::i_getDVDInfoFromHal(std::list<ComObjPtr<Medium> > &list)
                     }
                     if (!gLibHalCtxShutdown(halContext, &dbusError))  /* what now? */
                     {
-                        LogRel(("Host::COMGETTER(DVDDrives): failed to shutdown the libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+                        LogRel(("Host::COMGETTER(DVDDrives): failed to shutdown the libhal context.  dbus error: %s (%s)\n",
+                                dbusError.name, dbusError.message));
                         gDBusErrorFree(&dbusError);
                     }
                 }
                 else
                 {
-                    LogRel(("Host::COMGETTER(DVDDrives): failed to initialise libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+                    LogRel(("Host::COMGETTER(DVDDrives): failed to initialise libhal context.  dbus error: %s (%s)\n",
+                            dbusError.name, dbusError.message));
                     gDBusErrorFree(&dbusError);
                 }
                 gLibHalCtxFree(halContext);
@@ -2574,7 +2577,8 @@ bool Host::i_getDVDInfoFromHal(std::list<ComObjPtr<Medium> > &list)
     }
     else
     {
-        LogRel(("Host::COMGETTER(DVDDrives): failed to connect to dbus.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+        LogRel(("Host::COMGETTER(DVDDrives): failed to connect to dbus.  dbus error: %s (%s)\n",
+                dbusError.name, dbusError.message));
         gDBusErrorFree(&dbusError);
     }
     return halSuccess;
@@ -2709,13 +2713,15 @@ bool Host::i_getFloppyInfoFromHal(std::list< ComObjPtr<Medium> > &list)
                     }
                     if (!gLibHalCtxShutdown(halContext, &dbusError))  /* what now? */
                     {
-                        LogRel(("Host::COMGETTER(FloppyDrives): failed to shutdown the libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+                        LogRel(("Host::COMGETTER(FloppyDrives): failed to shutdown the libhal context.  dbus error: %s (%s)\n",
+                                dbusError.name, dbusError.message));
                         gDBusErrorFree(&dbusError);
                     }
                 }
                 else
                 {
-                    LogRel(("Host::COMGETTER(FloppyDrives): failed to initialise libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+                    LogRel(("Host::COMGETTER(FloppyDrives): failed to initialise libhal context.  dbus error: %s (%s)\n",
+                            dbusError.name, dbusError.message));
                     gDBusErrorFree(&dbusError);
                 }
                 gLibHalCtxFree(halContext);
@@ -2733,7 +2739,8 @@ bool Host::i_getFloppyInfoFromHal(std::list< ComObjPtr<Medium> > &list)
     }
     else
     {
-        LogRel(("Host::COMGETTER(FloppyDrives): failed to connect to dbus.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+        LogRel(("Host::COMGETTER(FloppyDrives): failed to connect to dbus.  dbus error: %s (%s)\n",
+                dbusError.name, dbusError.message));
         gDBusErrorFree(&dbusError);
     }
     return halSuccess;
@@ -2820,8 +2827,10 @@ void Host::i_parseMountTable(char *mountTable, std::list< ComObjPtr<Medium> > &l
             if (mountName && mountPoint && mountFSType)
             {
                 // skip devices we are not interested in
-                if ((*mountName && mountName[0] == '/') &&                      // skip 'fake' devices (like -hosts, proc, fd, swap)
-                    (*mountFSType && (strncmp(mountFSType, RT_STR_TUPLE("devfs")) != 0 &&  // skip devfs (i.e. /devices)
+                if ((*mountName && mountName[0] == '/') &&                      // skip 'fake' devices (like -hosts,
+                                                                                // proc, fd, swap)
+                    (*mountFSType && (strncmp(mountFSType, RT_STR_TUPLE("devfs")) != 0 &&  // skip devfs
+                                                                                           // (i.e. /devices)
                                       strncmp(mountFSType, RT_STR_TUPLE("dev")) != 0 &&    // skip dev (i.e. /dev)
                                       strncmp(mountFSType, RT_STR_TUPLE("lofs")) != 0)))   // skip loop-back file-system (lofs)
                 {

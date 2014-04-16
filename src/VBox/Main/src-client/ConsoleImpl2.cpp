@@ -1025,13 +1025,16 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */
             else if (   osTypeId == "MacOS107"
                      || osTypeId == "MacOS107_64")
-                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure out what is required here. */
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure out
+                                                                                what is required here. */
             else if (   osTypeId == "MacOS108"
                      || osTypeId == "MacOS108_64")
-                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure out what is required here. */
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure out
+                                                                                what is required here. */
             else if (   osTypeId == "MacOS109"
                      || osTypeId == "MacOS109_64")
-                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure out what is required here. */
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure
+                                                                                out what is required here. */
             if (uMaxIntelFamilyModelStep != UINT32_MAX)
                 InsertConfigInteger(pCPUM, "MaxIntelFamilyModelStep", uMaxIntelFamilyModelStep);
         }
@@ -1140,7 +1143,8 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pREM, "64bitEnabled", 1);
 #endif
 
-            /** @todo Not exactly pretty to check strings; VBOXOSTYPE would be better, but that requires quite a bit of API change in Main. */
+            /** @todo Not exactly pretty to check strings; VBOXOSTYPE would be better,
+                but that requires quite a bit of API change in Main. */
             if (    fIOAPIC
                 &&  (   osTypeId == "WindowsNT4"
                      || osTypeId == "Windows2000"
@@ -2901,7 +2905,8 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     parm.u.pointer.addr = (IConsole *)(Console *)this;
                     parm.u.pointer.size = sizeof(IConsole *);
 
-                    rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_CONSOLE, SHCRGL_CPARMS_SET_CONSOLE, &parm);
+                    rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_CONSOLE,
+                                               SHCRGL_CPARMS_SET_CONSOLE, &parm);
                     if (!RT_SUCCESS(rc))
                         AssertMsgFailed(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));
 
@@ -3286,7 +3291,8 @@ int Console::configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachi
                     rc = CFGMR3InsertInteger(pNode, pszCFGMValueName, u64Value);
                 else
                     InsertConfigString(pNode, pszCFGMValueName, strCFGMValueUtf8);
-                AssertLogRelMsgRCBreak(rc, ("failed to insert CFGM value '%s' to key '%s'\n", strCFGMValueUtf8.c_str(), pszExtraDataKey));
+                AssertLogRelMsgRCBreak(rc, ("failed to insert CFGM value '%s' to key '%s'\n",
+                                            strCFGMValueUtf8.c_str(), pszExtraDataKey));
             }
         }
     }
@@ -3638,7 +3644,8 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 }
 
                 if (enmBus == StorageBus_USB)
-                    rc = PDMR3UsbDriverDetach(pUVM, pcszDevice, uInstance, uLUN, NULL, 0, fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
+                    rc = PDMR3UsbDriverDetach(pUVM, pcszDevice, uInstance, uLUN, NULL, 0,
+                                              fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
                 else
                     rc = PDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
                 if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
@@ -4069,7 +4076,7 @@ int Console::configMedium(PCFGMNODE pLunL0,
                     Bstr loc;
                     hrc = pMedium->COMGETTER(Location)(loc.asOutParam());                   H();
                     setVMRuntimeErrorCallbackF(0, "DvdOrFloppyImageInaccessible",
-                                               "The image file '%ls' is inaccessible and is being ignored. Please select a different image file for the virtual %s drive.",
+"The image file '%ls' is inaccessible and is being ignored. Please select a different image file for the virtual %s drive.",
                                                loc.raw(),
                                                enmType == DeviceType_DVD ? "DVD" : "floppy");
                     pMedium = NULL;
@@ -4684,7 +4691,8 @@ int Console::configNetwork(const char *pszDevice,
                 }
 
                 /* get the adapter's INetCfgComponent*/
-                hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.raw(), pAdaptorComponent.asOutParam());
+                hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.raw(),
+                                                      pAdaptorComponent.asOutParam());
                 if (hrc != S_OK)
                 {
                     VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
@@ -4711,7 +4719,9 @@ int Console::configNetwork(const char *pszDevice,
                             DWORD err = GetLastError();
                             hrc = HRESULT_FROM_WIN32(err);
                             AssertMsgFailed(("%hrc=%Rhrc %#x\n", hrc, hrc));
-                            AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n", hrc, hrc, err));
+                            AssertLogRelMsgFailed((
+                            "NetworkAttachmentType_Bridged: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n",
+                                                   hrc, hrc, err));
                         }
                     }
                     else
@@ -4734,7 +4744,8 @@ int Console::configNetwork(const char *pszDevice,
                 else
                 {
                     VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
-                    AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)", hrc));
+                    AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)",
+                                           hrc));
                     H();
                 }
 
@@ -4760,7 +4771,8 @@ int Console::configNetwork(const char *pszDevice,
                                                 "permissions of that node, and that the net.link.tap.user_open "
                                                 "sysctl is set.  Either run 'chmod 0666 /dev/%s' or "
                                                 "change the group of that node to vboxusers and make yourself "
-                                                "a member of that group.  Make sure that these changes are permanent."), pszBridgedIfName, pszBridgedIfName);
+                                                "a member of that group.  Make sure that these changes are permanent."),
+                                                pszBridgedIfName, pszBridgedIfName);
                             default:
                                 AssertMsgFailed(("Could not attach to tap interface! Bad!\n"));
                                 return VMSetError(VMR3GetVM(mpUVM), VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
@@ -5063,7 +5075,8 @@ int Console::configNetwork(const char *pszDevice,
                 }
 
                 /* get the adapter's INetCfgComponent*/
-                hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.raw(), pAdaptorComponent.asOutParam());
+                hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.raw(),
+                                                      pAdaptorComponent.asOutParam());
                 if (hrc != S_OK)
                 {
                     VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
@@ -5089,7 +5102,8 @@ int Console::configNetwork(const char *pszDevice,
                         {
                             DWORD err = GetLastError();
                             hrc = HRESULT_FROM_WIN32(err);
-                            AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n", hrc, hrc, err));
+                            AssertLogRelMsgFailed((
+                        "NetworkAttachmentType_HostOnly: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n", hrc, hrc, err));
                         }
                     }
                     else
@@ -5110,7 +5124,8 @@ int Console::configNetwork(const char *pszDevice,
                 else
                 {
                     VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
-                    AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n", hrc, hrc));
+                    AssertLogRelMsgFailed((
+                    "NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n", hrc, hrc));
                     H();
                 }
 
@@ -5126,7 +5141,8 @@ int Console::configNetwork(const char *pszDevice,
                 InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
                 InsertConfigString(pCfg, "Trunk", pszTrunk);
                 InsertConfigString(pCfg, "Network", szNetwork);
-                InsertConfigInteger(pCfg, "IgnoreConnectFailure", (uint64_t)fIgnoreConnectFailure); /** @todo why is this windows only?? */
+                InsertConfigInteger(pCfg, "IgnoreConnectFailure", (uint64_t)fIgnoreConnectFailure); /** @todo why is this
+                                                                                                        windows only?? */
                 networkName = Bstr(szNetwork);
                 trunkName   = Bstr(pszTrunk);
                 trunkType   = TRUNKTYPE_NETADP;

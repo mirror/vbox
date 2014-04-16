@@ -286,7 +286,8 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
                 m_fu32ThreadFlags = HGCMMSG_TF_INITIALIZING;
 
                 RTTHREAD thread;
-                rc = RTThreadCreate (&thread, hgcmWorkerThreadFunc, this, 0, /* default stack size; some service may need quite a bit */
+                rc = RTThreadCreate (&thread, hgcmWorkerThreadFunc, this, 0, /* default stack size; some service
+                                                                                may need quite a bit */
                                      RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
                                      pszThreadName);
 
@@ -695,7 +696,8 @@ int hgcmThreadWait (HGCMTHREADHANDLE hThread)
 
 int hgcmMsgAlloc (HGCMTHREADHANDLE hThread, HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage)
 {
-    LogFlow(("hgcmMsgAlloc: thread handle = 0x%08X, pHandle = %p, sizeof (HGCMMsgCore) = %d\n", hThread, pHandle, sizeof (HGCMMsgCore)));
+    LogFlow(("hgcmMsgAlloc: thread handle = 0x%08X, pHandle = %p, sizeof (HGCMMsgCore) = %d\n",
+             hThread, pHandle, sizeof (HGCMMsgCore)));
 
     if (!pHandle)
     {

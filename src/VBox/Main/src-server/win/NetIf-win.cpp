@@ -667,7 +667,8 @@ int netIfNetworkInterfaceHelperServer(SVCHlpClient *aClient,
             Bstr name;
             Bstr bstrErr;
 
-            hrc = VBoxNetCfgWinCreateHostOnlyNetworkInterface(NULL, false, guid.asOutParam(), name.asOutParam(), bstrErr.asOutParam());
+            hrc = VBoxNetCfgWinCreateHostOnlyNetworkInterface(NULL, false, guid.asOutParam(), name.asOutParam(),
+                                                              bstrErr.asOutParam());
 
             if (hrc == S_OK)
             {
@@ -1271,7 +1272,8 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
 #endif
 }
 
-int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN_BSTR aOldIPV6Address, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN_BSTR aOldIPV6Address,
+                                IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
 #ifndef VBOX_WITH_NETFLT
     return VERR_NOT_IMPLEMENTED;
@@ -1529,7 +1531,8 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                                                 {
                                                     if (uComponentStatus == 0)
                                                     {
-                                                        vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_Bridged, iDefault);
+                                                        vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_Bridged,
+                                                                               iDefault);
                                                     }
                                                 }
                                                 pMpNcc->Release();

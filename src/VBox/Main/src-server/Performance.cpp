@@ -72,7 +72,8 @@ int CollectorHAL::getRawHostDiskLoad(const char * /* name */, uint64_t * /* disk
     return VERR_NOT_IMPLEMENTED;
 }
 
-int CollectorHAL::getRawProcessCpuLoad(RTPROCESS  /* process */, uint64_t * /* user */, uint64_t * /* kernel */, uint64_t * /* total */)
+int CollectorHAL::getRawProcessCpuLoad(RTPROCESS  /* process */, uint64_t * /* user */,
+                                       uint64_t * /* kernel */, uint64_t * /* total */)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -82,7 +83,8 @@ int CollectorHAL::getHostMemoryUsage(ULONG * /* total */, ULONG * /* used */, UL
     return VERR_NOT_IMPLEMENTED;
 }
 
-int CollectorHAL::getHostFilesystemUsage(const char * /* name */, ULONG * /* total */, ULONG * /* used */, ULONG * /* available */)
+int CollectorHAL::getHostFilesystemUsage(const char * /* name */, ULONG * /* total */, ULONG * /* used */,
+                                         ULONG * /* available */)
 {
     return VERR_NOT_IMPLEMENTED;
 }

@@ -257,7 +257,8 @@ int USBProxyServiceLinux::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-bool USBProxyServiceLinux::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
+bool USBProxyServiceLinux::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
+                                             SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
@@ -276,7 +277,8 @@ bool USBProxyServiceLinux::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE 
  *
  * See USBProxyService::deviceAdded for details.
  */
-void USBProxyServiceLinux::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice)
+void USBProxyServiceLinux::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines,
+                                       PUSBDEVICE aUSBDevice)
 {
     AssertReturnVoid(aDevice);
     AssertReturnVoid(!aDevice->isWriteLockOnCurrentThread());

@@ -645,9 +645,10 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
 }
 
 STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
-                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared,
-                                          ULONG *aMemCache, ULONG *aPageTotal,
-                                          ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal)
+                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon,
+                                          ULONG *aMemShared, ULONG *aMemCache, ULONG *aPageTotal,
+                                          ULONG *aMemAllocTotal, ULONG *aMemFreeTotal,
+                                          ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal)
 {
     CheckComArgOutPointerValid(aCpuUser);
     CheckComArgOutPointerValid(aCpuKernel);

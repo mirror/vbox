@@ -111,7 +111,8 @@ struct Medium::Data
 
     // pParent and llChildren are protected by VirtualBox::i_getMediaTreeLockHandle()
     ComObjPtr<Medium> pParent;
-    MediaList llChildren;           // to add a child, just call push_back; to remove a child, call child->deparent() which does a lookup
+    MediaList llChildren;           // to add a child, just call push_back; to remove
+                                    // a child, call child->deparent() which does a lookup
 
     GuidList llRegistryIDs;         // media registries in which this medium is listed
 
@@ -895,7 +896,8 @@ void Medium::FinalRelease()
  * @param aVirtualBox   VirtualBox object.
  * @param aFormat
  * @param aLocation     Storage unit location.
- * @param uuidMachineRegistry The registry to which this medium should be added (global registry UUID or machine UUID or empty if none).
+ * @param uuidMachineRegistry The registry to which this medium should be added
+ *                            (global registry UUID or machine UUID or empty if none).
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      const Utf8Str &aFormat,
@@ -1109,9 +1111,11 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * @param aVirtualBox   VirtualBox object.
  * @param aParent       Parent medium disk or NULL for a root (base) medium.
  * @param aDeviceType   Device type of the medium.
- * @param uuidMachineRegistry The registry to which this medium should be added (global registry UUID or machine UUID).
+ * @param uuidMachineRegistry The registry to which this medium should be
+ *                            added (global registry UUID or machine UUID).
  * @param aNode         Configuration settings.
- * @param strMachineFolder The machine folder with which to resolve relative paths; if empty, then we use the VirtualBox home directory
+ * @param strMachineFolder The machine folder with which to resolve relative paths;
+ *                         if empty, then we use the VirtualBox home directory
  *
  * @note Locks the medium tree for writing.
  */
@@ -3885,7 +3889,8 @@ HRESULT Medium::i_createDiffStorage(ComObjPtr<Medium> &aTarget,
                 pProgress.createObject();
                 rc = pProgress->init(m->pVirtualBox,
                                      static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Creating differencing medium storage unit '%s'"), aTarget->m->strLocationFull.c_str()).raw(),
+                                     BstrFmt(tr("Creating differencing medium storage unit '%s'"),
+                                             aTarget->m->strLocationFull.c_str()).raw(),
                                      TRUE /* aCancelable */);
                 if (FAILED(rc))
                     throw rc;
@@ -3954,8 +3959,9 @@ Utf8Str Medium::i_getPreferredDiffFormat()
  * After this returns with success, uninit() has been called on the medium, and
  * the object is no longer usable ("not ready" state).
  *
- * @param autoCaller AutoCaller instance which must have been created on the caller's stack for this medium. This gets released here
- *                   upon which the Medium instance gets uninitialized.
+ * @param autoCaller AutoCaller instance which must have been created on the caller's
+ *                              stack for this medium. This gets released hereupon
+ *                              which the Medium instance gets uninitialized.
  * @return
  */
 HRESULT Medium::i_close(AutoCaller &autoCaller)
@@ -4005,7 +4011,8 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
         // may be a deadlock with someone else closing this object while we're
         // in i_saveModifiedRegistries(), which needs the media tree lock, which
         // the other thread holds until after uninit() below.
-        /// @todo redesign the locking here, as holding the locks over uninit causes lock order trouble which the lock validator can't detect
+        // @todo redesign the locking here, as holding the locks over uninit
+        // causes lock order trouble which the lock validator can't detect
         autoCaller.release();
         m->pVirtualBox->i_saveModifiedRegistries();
         multilock.acquire();
@@ -5348,7 +5355,8 @@ HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
  * @note Locks mParent for reading. Locks this object for writing.
  *
  * @param fSetImageId Whether to reset the UUID contained in the image file to the UUID in the medium instance data (see SetIDs())
- * @param fSetParentId Whether to reset the parent UUID contained in the image file to the parent UUID in the medium instance data (see SetIDs())
+ * @param fSetParentId Whether to reset the parent UUID contained in the image file to the parent
+ *                     UUID in the medium instance data (see SetIDs())
  * @return
  */
 HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId)
@@ -6757,7 +6765,8 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
             /* ensure the target directory exists */
             if (capabilities & MediumFormatCapabilities_File)
             {
-                HRESULT rc = VirtualBox::i_ensureFilePathExists(targetLocation, !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
+                HRESULT rc = VirtualBox::i_ensureFilePathExists(targetLocation,
+                                                                !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -7256,7 +7265,8 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
             /* ensure the target directory exists */
             if (capabilities & MediumFormatCapabilities_File)
             {
-                HRESULT rc = VirtualBox::i_ensureFilePathExists(targetLocation, !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
+                HRESULT rc = VirtualBox::i_ensureFilePathExists(targetLocation,
+                                                                !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -7937,7 +7947,8 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
             /* ensure the target directory exists */
             if (capabilities & MediumFormatCapabilities_File)
             {
-                rc = VirtualBox::i_ensureFilePathExists(targetLocation, !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
+                rc = VirtualBox::i_ensureFilePathExists(targetLocation,
+                                                        !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -8063,7 +8074,8 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
             /* ensure the target directory exists */
             if (capabilities & MediumFormatCapabilities_File)
             {
-                HRESULT rc = VirtualBox::i_ensureFilePathExists(targetLocation, !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
+                HRESULT rc = VirtualBox::i_ensureFilePathExists(targetLocation,
+                                                                !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
                 if (FAILED(rc))
                     throw rc;
             }

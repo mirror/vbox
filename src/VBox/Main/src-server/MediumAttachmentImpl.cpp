@@ -366,7 +366,8 @@ HRESULT MediumAttachment::getBandwidthGroup(ComPtr<IBandwidthGroup> &aBandwidthG
         ComObjPtr<BandwidthGroup> pBwGroup;
         hrc = m->pMachine->getBandwidthGroup(m->bd->strBandwidthGroup, pBwGroup, true /* fSetError */);
 
-        Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of the group was checked when it was attached. */
+        Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of the
+                                   group was checked when it was attached. */
 
         if (SUCCEEDED(hrc))
             pBwGroup.queryInterfaceTo(aBandwidthGroup.asOutParam());

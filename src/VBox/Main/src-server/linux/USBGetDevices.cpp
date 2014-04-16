@@ -465,7 +465,8 @@ static USBDEVICESTATE usbDeterminState(PCUSBDEVICE pDevice)
 
 
 /** Just a worker for USBProxyServiceLinux::getDevices that avoids some code duplication. */
-static int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, const char *pcszUsbfsRoot, bool testfs, int rc)
+static int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, const char *pcszUsbfsRoot,
+                            bool testfs, int rc)
 {
     /* usbDeterminState requires the address. */
     PUSBDEVICE pDevNew = (PUSBDEVICE)RTMemDup(pDev, sizeof(*pDev));

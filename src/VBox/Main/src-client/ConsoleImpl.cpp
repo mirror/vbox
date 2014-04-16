@@ -1141,7 +1141,8 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
 
                     if (RT_SUCCESS(rc))
                     {
-                        switch (u32GuestFlags & (VMMDEV_CREDENTIALS_JUDGE_OK | VMMDEV_CREDENTIALS_JUDGE_DENY | VMMDEV_CREDENTIALS_JUDGE_NOJUDGEMENT))
+                        switch (u32GuestFlags & (VMMDEV_CREDENTIALS_JUDGE_OK | VMMDEV_CREDENTIALS_JUDGE_DENY |
+                                                 VMMDEV_CREDENTIALS_JUDGE_NOJUDGEMENT))
                         {
                             case VMMDEV_CREDENTIALS_JUDGE_DENY:        guestJudgement = AuthGuestAccessDenied;  break;
                             case VMMDEV_CREDENTIALS_JUDGE_NOJUDGEMENT: guestJudgement = AuthGuestNoJudgement;   break;
@@ -1208,7 +1209,8 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     hrc = mVRDEServer->COMGETTER(ReuseSingleConnection)(&reuseSingleConnection);
     AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
 
-    LogFlowFunc(("allowMultiConnection %d, reuseSingleConnection = %d, mcVRDPClients = %d, mu32SingleRDPClientId = %d\n", allowMultiConnection, reuseSingleConnection, mcVRDPClients, mu32SingleRDPClientId));
+    LogFlowFunc(("allowMultiConnection %d, reuseSingleConnection = %d, mcVRDPClients = %d, mu32SingleRDPClientId = %d\n",
+                 allowMultiConnection, reuseSingleConnection, mcVRDPClients, mu32SingleRDPClientId));
 
     if (allowMultiConnection == FALSE)
     {
@@ -4286,7 +4288,8 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
                     if (RT_SUCCESS(vrc) && changeAdapter)
                     {
                         VMSTATE enmVMState = VMR3GetStateU(ptrVM.rawUVM());
-                        if (    enmVMState == VMSTATE_RUNNING    /** @todo LiveMigration: Forbid or deal correctly with the _LS variants */
+                        if (    enmVMState == VMSTATE_RUNNING    /** @todo LiveMigration: Forbid or deal
+                                                                     correctly with the _LS variants */
                             ||  enmVMState == VMSTATE_SUSPENDED)
                         {
                             if (fTraceEnabled && fCableConnected && pINetCfg)
@@ -6730,7 +6733,8 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                  */
                 vrc = RTDirCreateFullPath(pszDumpDir, 0700);
                 if (RT_FAILURE(vrc))
-                    throw setError(E_FAIL, "Failed to setup CoreDumper. Couldn't create dump directory '%s' (%Rrc)\n", pszDumpDir, vrc);
+                    throw setError(E_FAIL, "Failed to setup CoreDumper. Couldn't create dump directory '%s' (%Rrc)\n",
+                                   pszDumpDir, vrc);
             }
 
             vrc = RTCoreDumperSetup(pszDumpDir, fCoreFlags);
@@ -7897,7 +7901,8 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, V
                     break;
 
                 default:
-                    AssertMsgFailed(("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(enmOldState),  VMR3GetStateName(enmState) ));
+                    AssertMsgFailed(("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState),
+                                    VMR3GetStateName(enmOldState), VMR3GetStateName(enmState) ));
                     that->setMachineState(MachineState_Paused);
                     break;
             }
@@ -7936,12 +7941,14 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, V
         case VMSTATE_RUNNING_LS:
             AssertMsg(   that->mMachineState == MachineState_LiveSnapshotting
                       || that->mMachineState == MachineState_Teleporting,
-                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(enmOldState),  VMR3GetStateName(enmState) ));
+                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState),
+                      VMR3GetStateName(enmOldState), VMR3GetStateName(enmState) ));
             break;
 
         case VMSTATE_RUNNING_FT:
             AssertMsg(that->mMachineState == MachineState_FaultTolerantSyncing,
-                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(enmOldState),  VMR3GetStateName(enmState) ));
+                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState),
+                      VMR3GetStateName(enmOldState), VMR3GetStateName(enmState) ));
             break;
 
         case VMSTATE_FATAL_ERROR:
@@ -8701,7 +8708,8 @@ void Console::detachAllUSBDevices(bool aDone)
 void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevList, uint32_t cbDevList, bool fDescExt)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("u32ClientId = %d, pDevList=%p, cbDevList = %d, fDescExt = %d\n", u32ClientId, pDevList, cbDevList, fDescExt));
+    LogFlowThisFunc(("u32ClientId = %d, pDevList=%p, cbDevList = %d, fDescExt = %d\n",
+                     u32ClientId, pDevList, cbDevList, fDescExt));
 
     AutoCaller autoCaller(this);
     if (!autoCaller.isOk())
@@ -9061,7 +9069,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                  */
                 MachineDebugger *machineDebugger = pConsole->getMachineDebugger();
                 if (machineDebugger)
-                    machineDebugger->flushQueuedSettings();
+                    machineDebugger->i_flushQueuedSettings();
 
                 /*
                  * Shared Folders
@@ -9082,9 +9090,9 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         {
                             ErrorInfoKeeper eik;
                             pConsole->setVMRuntimeErrorCallbackF(0, "BrokenSharedFolder",
-                                    N_("The shared folder '%s' could not be set up: %ls.\n"
-                                       "The shared folder setup will not be complete. It is recommended to power down the virtual "
-                                       "machine and fix the shared folder settings while the machine is not running"),
+                                   N_("The shared folder '%s' could not be set up: %ls.\n"
+                                      "The shared folder setup will not be complete. It is recommended to power down the virtual "
+                                      "machine and fix the shared folder settings while the machine is not running"),
                                     it->first.c_str(), eik.getText().raw());
                         }
                     }
@@ -9512,7 +9520,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 throw ptrVM.rc();
 
             pTask->mProgress->SetNextOperation(Bstr(tr("Saving the machine state")).raw(),
-                                               pTask->ulMemSize);       // operation weight, same as computed when setting up progress object
+                                               pTask->ulMemSize);       // operation weight, same as computed
+                                                                        // when setting up progress object
             if (!pTask->bstrSavedStateFile.isEmpty())
             {
                 Utf8Str strSavedStateFile(pTask->bstrSavedStateFile);

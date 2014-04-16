@@ -121,7 +121,8 @@ const char* USBDeviceFilter::i_describeUSBFilterIdx(USBFILTERIDX aIdx)
                         u64 = 0xffff;
                     else
                     {
-                        aErrStr = Utf8StrFmt(tr("The %s value '%s' is too big (max 0xFFFF)"), i_describeUSBFilterIdx(aIdx), pcszValue);
+                        aErrStr = Utf8StrFmt(tr("The %s value '%s' is too big (max 0xFFFF)"),
+                                             i_describeUSBFilterIdx(aIdx), pcszValue);
                         return E_INVALIDARG;
                     }
                 }
@@ -154,11 +155,13 @@ const char* USBDeviceFilter::i_describeUSBFilterIdx(USBFILTERIDX aIdx)
         }
         if (vrc == VERR_BUFFER_OVERFLOW)
         {
-            aErrStr = Utf8StrFmt(tr("Insufficient expression space for the '%s' filter expression '%s'"), i_describeUSBFilterIdx(aIdx), aValue.c_str());
+            aErrStr = Utf8StrFmt(tr("Insufficient expression space for the '%s' filter expression '%s'"),
+                                 i_describeUSBFilterIdx(aIdx), aValue.c_str());
             return E_FAIL;
         }
         AssertRC(vrc);
-        aErrStr = Utf8StrFmt(tr("Encountered unexpected status %Rrc when setting '%s' to '%s'"), vrc, i_describeUSBFilterIdx(aIdx), aValue.c_str());
+        aErrStr = Utf8StrFmt(tr("Encountered unexpected status %Rrc when setting '%s' to '%s'"),
+                             vrc, i_describeUSBFilterIdx(aIdx), aValue.c_str());
         return E_FAIL;
     }
 
