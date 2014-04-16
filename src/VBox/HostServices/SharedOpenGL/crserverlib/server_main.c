@@ -3065,8 +3065,8 @@ static void crVBoxServerDefaultContextClear()
     cr_server.currentNativeWindow = 0;
     cr_server.currentMural = NULL;
 
-    crStateDestroy();
-//    crStateCleanupCurrent();
+//    crStateDestroy();
+    crStateCleanupCurrent();
 
     if (CrBltIsInitialized(&cr_server.Blitter))
     {
@@ -3085,8 +3085,8 @@ static void crVBoxServerDefaultContextSet()
 
     CRASSERT(!cr_server.MainContextInfo.SpuContext);
 
-//    crStateSetCurrent(NULL);
-    crStateInit();
+    crStateSetCurrent(NULL);
+//    crStateInit();
 
     CrPMgrEnable();
 }
