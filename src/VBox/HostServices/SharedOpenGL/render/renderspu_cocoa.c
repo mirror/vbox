@@ -228,7 +228,7 @@ void renderspuCtxInfoInitCurrent(CR_RENDER_CTX_INFO *pInfo)
 {
     GET_CONTEXT(pCurCtx);
     pInfo->pContext = pCurCtx;
-    pInfo->pWindow = pCurCtx->currentWindow;
+    pInfo->pWindow = pCurCtx ? pCurCtx->currentWindow : NULL;
 }
 
 void renderspuCtxInfoRestoreCurrent(CR_RENDER_CTX_INFO *pInfo)
@@ -253,7 +253,7 @@ GLboolean renderspuCtxSetCurrentWithAnyWindow(ContextInfo * pContext, CR_RENDER_
         window = renderspuGetDummyWindow(pContext->BltInfo.Base.visualBits);
         if (!window)
         {
-            crWarning("renderspuGetDummyWindow failed");
+            WARN(("renderspuGetDummyWindow failed"));
             return GL_FALSE;
         }
     }
@@ -284,7 +284,7 @@ void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, Conte
                 renderspuCtxInfoRestoreCurrent(&Info);
             }
             else
-                crWarning("renderspuCtxSetCurrentWithAnyWindow failed!");
+                WARN(("renderspuCtxSetCurrentWithAnyWindow failed!"));
         }
     }
     else
@@ -301,7 +301,7 @@ void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, Conte
         {
             int rc = CrGlslProgGenAllNoAlpha(&render_spu.GlobalShaders);
             if (!RT_SUCCESS(rc))
-                crWarning("CrGlslProgGenAllNoAlpha failed, rc %d", rc);
+                WARN(("CrGlslProgGenAllNoAlpha failed, rc %d", rc));
 
             renderspuCtxInfoRestoreCurrent(&Info);
         }

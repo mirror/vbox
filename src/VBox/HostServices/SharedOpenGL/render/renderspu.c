@@ -1772,13 +1772,8 @@ renderspuGetString(GLenum pname)
 static void renderspuReparentWindowCB(unsigned long key, void *data1, void *data2)
 {
     WindowInfo *pWindow = (WindowInfo *)data1;
-    CRHashTable *pTable = (CRHashTable*)data2;
 
-    crHashtableDelete(pTable, key, NULL);
-
-    renderspuWindowTerm(pWindow);
-
-    crFree(pWindow);
+    renderspu_SystemReparentWindow(pWindow);
 }
 
 DECLEXPORT(void) renderspuReparentWindow(GLint window)
