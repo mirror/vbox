@@ -852,6 +852,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitGuestUD;
     STAMCOUNTER             StatExitGuestSS;
     STAMCOUNTER             StatExitGuestNP;
+    STAMCOUNTER             StatExitGuestTS;
     STAMCOUNTER             StatExitGuestGP;
     STAMCOUNTER             StatExitGuestDE;
     STAMCOUNTER             StatExitGuestDB;
