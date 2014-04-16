@@ -1632,8 +1632,19 @@ typedef struct VBOXCMDVBVA_HDR
         int8_t i8Result;
         uint8_t u8PrimaryID;
     } u;
-    /* DXGK DDI fence ID */
-    uint32_t u32FenceID;
+    union
+    {
+        /* complex command (VBOXCMDVBVA_OPTYPE_COMPLEXCMD) element data */
+        struct
+        {
+            /* command length */
+            uint16_t u16CbCmdHost;
+            /* guest-specific data, host expects it to be NULL */
+            uint16_t u16CbCmdGuest;
+        } complexCmdEl;
+        /* DXGK DDI fence ID */
+        uint32_t u32FenceID;
+    } u2;
 } VBOXCMDVBVA_HDR;
 
 typedef uint32_t VBOXCMDVBVAOFFSET;
