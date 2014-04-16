@@ -441,19 +441,12 @@ static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
     for (i = 0; i < VHD_MAX_LOCATOR_ENTRIES; i++)
     {
         /* Skip empty locators */
-        if (ddh.ParentLocatorEntry[i].u32Code != RT_H2BE_U32(VHD_PLATFORM_CODE_NONE))
+        if (   ddh.ParentLocatorEntry[i].u32Code != RT_H2BE_U32(VHD_PLATFORM_CODE_NONE)
+            && pImage->pszParentFilename)
         {
-            if (pImage->pszParentFilename)
-            {
-                rc = vhdLocatorUpdate(pImage, &ddh.ParentLocatorEntry[i], pImage->pszParentFilename);
-                if (RT_FAILURE(rc))
-                    return rc;
-            }
-            else
-            {
-                /* The parent was deleted. */
-                ddh.ParentLocatorEntry[i].u32Code = RT_H2BE_U32(VHD_PLATFORM_CODE_NONE);
-            }
+            rc = vhdLocatorUpdate(pImage, &ddh.ParentLocatorEntry[i], pImage->pszParentFilename);
+            if (RT_FAILURE(rc))
+                return rc;
         }
     }
     /* Update parent's UUID */
