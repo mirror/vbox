@@ -3047,6 +3047,10 @@ static void crVBoxServerDefaultContextClear()
     if (cr_server.MainContextInfo.SpuContext)
     {
         cr_server.head_spu->dispatch_table.DestroyContext(cr_server.MainContextInfo.SpuContext);
+        crStateDestroyContext(cr_server.MainContextInfo.pContext);
+        if (cr_server.MainContextInfo.CreateInfo.pszDpyName)
+            crFree(cr_server.MainContextInfo.CreateInfo.pszDpyName);
+
         memset(&cr_server.MainContextInfo, 0, sizeof (cr_server.MainContextInfo));
     }
 
@@ -3061,7 +3065,8 @@ static void crVBoxServerDefaultContextClear()
     cr_server.currentNativeWindow = 0;
     cr_server.currentMural = NULL;
 
-    crStateCleanupCurrent();
+    crStateDestroy();
+//    crStateCleanupCurrent();
 
     if (CrBltIsInitialized(&cr_server.Blitter))
     {
@@ -3080,7 +3085,8 @@ static void crVBoxServerDefaultContextSet()
 
     CRASSERT(!cr_server.MainContextInfo.SpuContext);
 
-    crStateSetCurrent(NULL);
+//    crStateSetCurrent(NULL);
+    crStateInit();
 
     CrPMgrEnable();
 }
