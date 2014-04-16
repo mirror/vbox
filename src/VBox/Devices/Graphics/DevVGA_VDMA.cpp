@@ -1719,7 +1719,7 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
                     return -1;
                 }
 
-                cbCurCmd = pCmd->u32FenceID;
+                cbCurCmd = pCmd->u2.complexCmdEl.u16CbCmdHost;
                 if (cbCmd < cbCurCmd)
                 {
                     WARN(("invalid command size"));

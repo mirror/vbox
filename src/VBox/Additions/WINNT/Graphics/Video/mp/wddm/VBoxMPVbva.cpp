@@ -938,7 +938,7 @@ void VBoxCmdVbvaSubmitUnlock(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, VBOXCMD
 
     pCmd->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
 
-    pCmd->u32FenceID = u32FenceID;
+    pCmd->u2.u32FenceID = u32FenceID;
 
     VBoxVBVAExBufferEndUpdate(&pVbva->Vbva);
 
@@ -1059,7 +1059,7 @@ bool VBoxCmdVbvaPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32
 
         Assert(pCmd->u8State == VBOXCMDVBVA_STATE_IN_PROGRESS);
 
-        u32SubmitFence = ASMAtomicUoReadU32(&pCmd->u32FenceID);
+        u32SubmitFence = pCmd->u2.u32FenceID;
         break;
     }
 
@@ -1088,7 +1088,7 @@ bool VBoxCmdVbvaCheckCompletedIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva)
 
         VBOXCMDVBVA_HDR *pCmd = (VBOXCMDVBVA_HDR*)pu8Cmd;
         uint8_t u8State = pCmd->u8State;
-        uint32_t u32FenceID = pCmd->u32FenceID;
+        uint32_t u32FenceID = pCmd->u2.u32FenceID;
 
         Assert(u8State == VBOXCMDVBVA_STATE_IN_PROGRESS
                 || u8State == VBOXCMDVBVA_STATE_CANCELLED);
@@ -1301,7 +1301,7 @@ VBOXCMDVBVA_CRCMD_CMD* vboxCmdVbvaConCmdAlloc(PHGSMIGUESTCOMMANDCONTEXT pHGSMICt
     pCmd->Cmd.Cmd.u8Flags = 0;
     pCmd->Cmd.Cmd.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
     pCmd->Cmd.Cmd.u.i8Result = -1;
-    pCmd->Cmd.Cmd.u32FenceID = 0;
+    pCmd->Cmd.Cmd.u2.u32FenceID = 0;
 
     return (VBOXCMDVBVA_CRCMD_CMD*)(pCmd+1);
 }

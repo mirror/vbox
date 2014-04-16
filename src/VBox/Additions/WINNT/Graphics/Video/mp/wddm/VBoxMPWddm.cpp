@@ -3122,7 +3122,8 @@ DxgkDdiSubmitCommandNew(
         NopCmd.u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
         NopCmd.u8Flags = 0;
         NopCmd.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-        NopCmd.u32FenceID = sizeof (VBOXCMDVBVA_HDR);
+        NopCmd.u2.complexCmdEl.u16CbCmdHost = sizeof (VBOXCMDVBVA_HDR);
+        NopCmd.u2.complexCmdEl.u16CbCmdGuest = 0;
         cbCmd = sizeof (VBOXCMDVBVA_HDR);
         pHdr = &NopCmd;
         cbCurCmd = sizeof (VBOXCMDVBVA_HDR);
@@ -3131,8 +3132,8 @@ DxgkDdiSubmitCommandNew(
     else
     {
         pHdr = (VBOXCMDVBVA_HDR*)(((uint8_t*)pSubmitCommand->pDmaBufferPrivateData) + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
-        cbCurCmd = pHdr->u32FenceID & 0xff;
-        cbCurDma = pHdr->u32FenceID >> 16;
+        cbCurCmd = pHdr->u2.complexCmdEl.u16CbCmdHost;
+        cbCurDma = pHdr->u2.complexCmdEl.u16CbCmdGuest;
     }
 
 
@@ -3200,7 +3201,7 @@ DxgkDdiSubmitCommandNew(
         }
 
         memcpy(pCurDstCmd, pHdr, cbCurCmd);
-        pCurDstCmd->u32FenceID = cbCurCmd;
+        pCurDstCmd->u2.complexCmdEl.u16CbCmdGuest = 0;
 
         phAddr.QuadPart += cbCurDma;
         pHdr = (VBOXCMDVBVA_HDR*)(((uint8_t*)pHdr) + cbCurCmd);
@@ -3224,8 +3225,8 @@ DxgkDdiSubmitCommandNew(
             break;
         }
 
-        cbCurCmd = pHdr->u32FenceID & 0xff;
-        cbCurDma = pHdr->u32FenceID >> 16;
+        cbCurCmd = pHdr->u2.complexCmdEl.u16CbCmdHost;
+        cbCurDma = pHdr->u2.complexCmdEl.u16CbCmdGuest;
 
         if (cbCmd < cbCurCmd)
         {
@@ -3554,7 +3555,8 @@ DxgkDdiBuildPagingBufferNew(
                 pHdr->u8Flags = 0;
                 pHdr->u.u8PrimaryID = 0;
                 pHdr->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-                pHdr->u32FenceID = cbPrivateData | (cbBuffer << 16);
+                pHdr->u2.complexCmdEl.u16CbCmdHost = cbPrivateData;
+                pHdr->u2.complexCmdEl.u16CbCmdGuest = cbBuffer;
                 break;
             }
 
@@ -3629,7 +3631,8 @@ DxgkDdiBuildPagingBufferNew(
             pSysMemCmd->Hdr.u8Flags = cbBuffer & 0xff;
             pSysMemCmd->Hdr.u.u8PrimaryID = (cbBuffer >> 8) & 0xff;
             pSysMemCmd->Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-            pSysMemCmd->Hdr.u32FenceID = cbPrivateData | (cbBuffer << 16);
+            pSysMemCmd->Hdr.u2.complexCmdEl.u16CbCmdHost = cbPrivateData;
+            pSysMemCmd->Hdr.u2.complexCmdEl.u16CbCmdGuest = cbBuffer;
             pSysMemCmd->phCmd = 0;
 
             break;
@@ -3660,7 +3663,8 @@ DxgkDdiBuildPagingBufferNew(
             pHdr->u8Flags = 0;
             pHdr->u.u8PrimaryID = 0;
             pHdr->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-            pHdr->u32FenceID = cbPrivateData | (cbBuffer << 16);
+            pHdr->u2.complexCmdEl.u16CbCmdHost = cbPrivateData;
+            pHdr->u2.complexCmdEl.u16CbCmdGuest = cbBuffer;
 
             /** @todo: add necessary bits */
 //            WARN(("Impl!"));
@@ -6089,7 +6093,8 @@ DxgkDdiRenderNew(
         pRender->pDmaBuffer = ((uint8_t*)pRender->pDmaBuffer) + cbBuffer;
 
         pCmd->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-        pCmd->u32FenceID = cbPrivateData | (cbBuffer << 16);
+        pCmd->u2.complexCmdEl.u16CbCmdHost = cbPrivateData;
+        pCmd->u2.complexCmdEl.u16CbCmdGuest = cbBuffer;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
@@ -6642,7 +6647,8 @@ DxgkDdiPresentNew(
 
     pHdr->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
 
-    pHdr->u32FenceID = cbPrivateData | (cbBuffer << 16);
+    pHdr->u2.complexCmdEl.u16CbCmdHost = cbPrivateData;
+    pHdr->u2.complexCmdEl.u16CbCmdGuest = cbBuffer;
 
     Assert(cbBuffer);
     Assert(cbPrivateData);
