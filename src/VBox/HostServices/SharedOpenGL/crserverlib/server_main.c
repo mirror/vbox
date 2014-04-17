@@ -157,10 +157,15 @@ static void crServerTearDown( void )
 
     tearingdown = 1;
 
-    if (cr_server.DisableData.hNotifyTerm)
+    if (cr_server.fCrCmdEnabled)
     {
         VBOXCRCMDCTL_HGCMENABLE_DATA EnableData;
-        int rc = cr_server.DisableData.pfnNotifyTerm(cr_server.DisableData.hNotifyTerm, &EnableData);
+        /* crVBoxServerHgcmEnable will erase the DisableData, preserve it here */
+        VBOXCRCMDCTL_HGCMDISABLE_DATA DisableData = cr_server.DisableData;
+        int rc;
+
+        CRASSERT(DisableData.pfnNotifyTerm);
+        rc = DisableData.pfnNotifyTerm(DisableData.hNotifyTerm, &EnableData);
         if (!RT_SUCCESS(rc))
         {
             WARN(("pfnNotifyTerm failed %d", rc));
@@ -174,7 +179,10 @@ static void crServerTearDown( void )
             return;
         }
 
-        cr_server.DisableData.pfnNotifyTermDone(cr_server.DisableData.hNotifyTerm);
+        CRASSERT(DisableData.pfnNotifyTermDone);
+        DisableData.pfnNotifyTermDone(DisableData.hNotifyTerm);
+
+        Assert(!cr_server.fCrCmdEnabled);
     }
 
     crStateSetCurrent( NULL );
@@ -4228,6 +4236,8 @@ int32_t crVBoxServerHgcmEnable(VBOXCRCMDCTL_HGCMENABLE_DATA *pData)
     }
 
     crVBoxServerDefaultContextSet();
+
+    memset(&cr_server.DisableData, 0, sizeof (cr_server.DisableData));
 
     return VINF_SUCCESS;
 }

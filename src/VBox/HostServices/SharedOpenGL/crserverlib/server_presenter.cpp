@@ -4897,7 +4897,7 @@ static int8_t crVBoxServerCrCmdBltPrimaryProcess(const VBOXCMDVBVA_BLT_PRIMARY *
     HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32PrimaryID);
     if (!hFb)
     {
-        WARN(("request to present on disabled framebuffer, ignore"));
+        LOG(("request to present on disabled framebuffer, ignore"));
         return 0;
     }
 
