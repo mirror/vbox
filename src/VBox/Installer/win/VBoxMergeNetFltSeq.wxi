@@ -20,12 +20,12 @@
     <Custom Action="ca_RollbackInstallNetFltArgs" Before="ca_RollbackInstallNetFlt" ><![CDATA[UPGRADINGPRODUCTCODE OR (NOT Installed)]]></Custom>
     <Custom Action="ca_RollbackInstallNetFlt" Before="ca_InstallNetFlt" ><![CDATA[UPGRADINGPRODUCTCODE OR (NOT Installed)]]></Custom>
     <Custom Action="ca_InstallNetFltArgs" Before="ca_InstallNetFlt" ><![CDATA[UPGRADINGPRODUCTCODE OR (NOT Installed)]]></Custom>
-    <Custom Action="ca_InstallNetFlt" Before="InstallFinalize" ><![CDATA[UPGRADINGPRODUCTCODE OR (NOT Installed)]]></Custom>
+    <Custom Action="ca_InstallNetFlt" After="ca_UninstallNetFlt" ><![CDATA[UPGRADINGPRODUCTCODE OR (NOT Installed)]]></Custom>
 
-    <Custom Action="ca_RollbackUninstallNetFltArgs" Before="ca_RollbackUninstallNetFlt" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
-    <Custom Action="ca_RollbackUninstallNetFlt" Before="ca_UninstallNetFlt" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
-    <Custom Action="ca_UninstallNetFltArgs" Before="ca_UninstallNetFlt" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
-    <Custom Action="ca_UninstallNetFlt" After="InstallInitialize" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
+    <Custom Action="ca_RollbackUninstallNetFltArgs" Before="ca_RollbackUninstallNetFlt" ><![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]></Custom>
+    <Custom Action="ca_RollbackUninstallNetFlt" Before="ca_UninstallNetFlt" ><![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]></Custom>
+    <Custom Action="ca_UninstallNetFltArgs" Before="ca_UninstallNetFlt" ><![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]></Custom>
+    <Custom Action="ca_UninstallNetFlt" After="InstallInitialize" ><![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]></Custom>
 <?endif?>
 
 </Include>
