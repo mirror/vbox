@@ -415,11 +415,12 @@
         <LaunchConditions After="AppSearch" />
 
         <!-- First install the new version and then remove the old version. This is more efficient -->
-        <RemoveExistingProducts Before="InstallValidate" />
+        <RemoveExistingProducts After="InstallValidate">PREVIOUSVERSIONSINSTALLED</RemoveExistingProducts>
 
         <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
         <Custom Action="ca_DefaultTargetDir" Before="FileCost" ><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
 
+        <!-- Check + unininstall old TAP instances - we  don't need them anymore -->
         <Custom Action="ca_UninstallTAPInstances" Before="InstallFiles" >1</Custom>
 
         <Custom Action="ca_InstallBrandingArgs" Before="ca_InstallBranding" ><![CDATA[NOT REMOVE]]></Custom>
