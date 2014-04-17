@@ -32,6 +32,7 @@
 #include <iprt/asm.h>
 #include <iprt/time.h>
 #include <iprt/cpp/utils.h>
+#include <iprt/alloca.h>
 
 #include <VBox/vmm/pdmdrv.h>
 #if defined(DEBUG) || defined(VBOX_STRICT) /* for VM_ASSERT_EMT(). */
@@ -3632,30 +3633,28 @@ int Display::crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, UL
     if (!pVMMDev)
         return VERR_INVALID_STATE;
 
-    struct {
-        VBOXCRCMDCTL_HGCM data;
-        VBOXHGCMSVCPARM aParms[4];
-    } s;
+    size_t cbData = RT_UOFFSETOF(VBOXCRCMDCTL_HGCM, aParms[5]);
+    VBOXCRCMDCTL_HGCM *pData = (VBOXCRCMDCTL_HGCM*)alloca(cbData);
 
-    s.data.Hdr.enmType = VBOXCRCMDCTL_TYPE_HGCM;
-    s.data.Hdr.u32Function = SHCRGL_HOST_FN_VIEWPORT_CHANGED;
+    pData->Hdr.enmType = VBOXCRCMDCTL_TYPE_HGCM;
+    pData->Hdr.u32Function = SHCRGL_HOST_FN_VIEWPORT_CHANGED;
 
-    s.data.aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
-    s.data.aParms[0].u.uint32 = aScreenId;
+    pData->aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
+    pData->aParms[0].u.uint32 = aScreenId;
 
-    s.data.aParms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
-    s.data.aParms[1].u.uint32 = x;
+    pData->aParms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
+    pData->aParms[1].u.uint32 = x;
 
-    s.data.aParms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
-    s.data.aParms[2].u.uint32 = y;
+    pData->aParms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
+    pData->aParms[2].u.uint32 = y;
 
-    s.data.aParms[3].type = VBOX_HGCM_SVC_PARM_32BIT;
-    s.data.aParms[3].u.uint32 = width;
+    pData->aParms[3].type = VBOX_HGCM_SVC_PARM_32BIT;
+    pData->aParms[3].u.uint32 = width;
 
-    s.data.aParms[4].type = VBOX_HGCM_SVC_PARM_32BIT;
-    s.data.aParms[4].u.uint32 = height;
+    pData->aParms[4].type = VBOX_HGCM_SVC_PARM_32BIT;
+    pData->aParms[4].u.uint32 = height;
 
-    return crCtlSubmitSync(&s.data.Hdr, RT_OFFSETOF(VBOXCRCMDCTL_HGCM, aParms[5]));
+    return crCtlSubmitSync(&pData->Hdr, cbData);
 }
 #endif
 
