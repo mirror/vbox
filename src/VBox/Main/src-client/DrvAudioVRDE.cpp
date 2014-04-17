@@ -283,9 +283,6 @@ typedef struct VRDEVoiceOut
 };
 typedef VRDEVoiceOut * PVRDEVoiceOut;
 
-/** Makes a PDRVBLOCK out of a PPDMIBLOCK. */
-#define PDMIHOSTAUDIO_2_DRVAUDIOVRDE(pInterface)        ( (PDRVAUDIOVRDE)((uintptr_t)pInterface - RT_OFFSETOF(DRVAUDIOVRDE, IHostAudioR3)) )
-
 AudioVRDE::AudioVRDE(Console *console)
     : mpDrv(NULL),
       mParent(console)
@@ -683,7 +680,8 @@ void AudioVRDE::handleVRDESvrCmdAudioInputEventEnd(void *pvContext)
 
 static DECLCALLBACK(int)  drvAudioVRDEInitOut(PPDMIHOSTAUDIO pInterface, PPDMHOSTVOICEOUT pHostVoiceOut, audsettings_t *as)
 {
-    PDRVAUDIOVRDE pDrv =  PDMIHOSTAUDIO_2_DRVAUDIOVRDE(pInterface);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
+
     PVRDEVoiceOut pVRDEVoiceOut = (PVRDEVoiceOut)pHostVoiceOut;
     LogFlow(("DrvAudioVRDEInitOut: audio input begin cShift=%d\n", pHostVoiceOut->Props.cShift));
     pHostVoiceOut->cSamples =  6174;
@@ -695,7 +693,7 @@ static DECLCALLBACK(int)  drvAudioVRDEInitOut(PPDMIHOSTAUDIO pInterface, PPDMHOS
 static DECLCALLBACK(int) drvAudioVRDEInitIn (PPDMIHOSTAUDIO pInterface, PPDMHOSTVOICEIN pHostVoiceIn, audsettings_t *as)
 {
     LogFlow(("DrvAudioVRDE: drvAudioVRDEInitIn \n"));
-    PDRVAUDIOVRDE pDrv =  PDMIHOSTAUDIO_2_DRVAUDIOVRDE(pInterface);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
     PVRDEVoice pVRDEVoice = (PVRDEVoice)pHostVoiceIn;
     pHostVoiceIn->cSamples =  6174;
     drvAudioVRDEPcmInitInfo(&pVRDEVoice->pHostVoiceIn.Props, as);
@@ -780,7 +778,7 @@ static DECLCALLBACK(int) drvAudioVRDEPlayIn(PPDMIHOSTAUDIO pInterface, PPDMHOSTV
 
 static DECLCALLBACK(int) drvAudioVRDEPlayOut(PPDMIHOSTAUDIO pInterface, PPDMHOSTVOICEOUT pHostVoiceOut)
 {
-    PDRVAUDIOVRDE pDrv = PDMIHOSTAUDIO_2_DRVAUDIOVRDE(pInterface);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
     PVRDEVoiceOut pVRDEVoiceOut = (PVRDEVoiceOut)pHostVoiceOut;
     int live;
     uint8_t     *pu8Dst;
@@ -833,14 +831,14 @@ static DECLCALLBACK(int) drvAudioVRDEPlayOut(PPDMIHOSTAUDIO pInterface, PPDMHOST
 
 static DECLCALLBACK(void) drvAudioVRDEFiniIn(PPDMIHOSTAUDIO pInterface, PPDMHOSTVOICEIN hw)
 {
-    PDRVAUDIOVRDE pDrv = PDMIHOSTAUDIO_2_DRVAUDIOVRDE(pInterface);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
     LogFlow(("DrvAudioVRDE: drvAudioVRDEFiniIn \n"));
     pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL);
 }
 
 static DECLCALLBACK(void) drvAudioVRDEFiniOut(PPDMIHOSTAUDIO pInterface, PPDMHOSTVOICEOUT pHostVoiceOut)
 {
-    PDRVAUDIOVRDE pDrv = PDMIHOSTAUDIO_2_DRVAUDIOVRDE(pInterface);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
     LogFlow(("DrvAudioVRDE: audio input end\n"));
 }
 
@@ -852,7 +850,7 @@ static DECLCALLBACK(int) drvAudioVRDEDisableEnableOut(PPDMIHOSTAUDIO pInterface,
 
 static DECLCALLBACK(int) drvAudioVRDEDisableEnableIn(PPDMIHOSTAUDIO pInterface, PPDMHOSTVOICEIN pHostVoiceIn, int cmd)
 {
-    PDRVAUDIOVRDE pDrv = PDMIHOSTAUDIO_2_DRVAUDIOVRDE(pInterface);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
 
     /* Initialize  VRDEVoice and return to VRDP server which returns this struct back to us
      * in the form void * pvContext
