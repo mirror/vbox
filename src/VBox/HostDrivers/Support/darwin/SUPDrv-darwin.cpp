@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -454,6 +454,13 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
         return EACCES;
 
     /*
+     * The process issuing the request must be the current process.
+     */
+    RTPROCESS Process = RTProcSelf();
+    if (Process != proc_pid(pProcess))
+        return EIO;
+
+    /*
      * Find the session created by org_virtualbox_SupDrvClient, fail
      * if no such session, and mark it as opened. We set the uid & gid
      * here too, since that is more straight forward at this point.
@@ -471,7 +478,6 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
         RTUID           Uid = pCred->cr_ruid;
         RTGID           Gid = pCred->cr_rgid;
 #endif
-        RTPROCESS       Process = RTProcSelf();
         unsigned        iHash = SESSION_HASH(Process);
         RTSpinlockAcquire(g_Spinlock);
 
@@ -551,14 +557,16 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
      * Find the session.
      */
     RTSpinlockAcquire(g_Spinlock);
+
     pSession = g_apSessionHashTab[iHash];
-    while (pSession && pSession->Process != Process && pSession->fUnrestricted == fUnrestricted && pSession->fOpened)
+    while (pSession && (pSession->Process != Process || pSession->fUnrestricted != fUnrestricted || !pSession->fOpened))
         pSession = pSession->pNextHash;
 
     if (RT_LIKELY(pSession))
         supdrvSessionRetain(pSession);
+
     RTSpinlockReleaseNoInts(g_Spinlock);
-    if (!pSession)
+    if (RT_UNLIKELY(!pSession))
     {
         OSDBGPRINT(("VBoxDrvDarwinIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#lx\n",
                     (int)Process, iCmd));
@@ -1410,11 +1418,8 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
                 RTSpinlockAcquire(g_Spinlock);
 
                 PSUPDRVSESSION pCur = g_apSessionHashTab[iHash];
-                if (pCur && pCur->Process != m_pSession->Process)
-                {
-                    do pCur = pCur->pNextHash;
-                    while (pCur && pCur->Process != m_pSession->Process);
-                }
+                while (pCur && pCur->Process != m_pSession->Process)
+                    pCur = pCur->pNextHash;
                 if (!pCur)
                 {
                     m_pSession->pNextHash = g_apSessionHashTab[iHash];
