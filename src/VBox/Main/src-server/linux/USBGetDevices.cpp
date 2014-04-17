@@ -1421,8 +1421,8 @@ static void *testDLSym(void *handle, const char *symbol)
     if (!s_fHaveInotifyLibC)
         return NULL;
     if (s_fHaveInotifyKernel)
-        return (void *)testInotifyInitGood;
-    return (void *)testInotifyInitBad;
+        return (void *)(uintptr_t)testInotifyInitGood;
+    return (void *)(uintptr_t)testInotifyInitBad;
 }
 
 void TestUSBSetInotifyAvailable(bool fHaveInotifyLibC, bool fHaveInotifyKernel)
