@@ -60,9 +60,6 @@ typedef struct DRVMAINKEYBOARD
     uint32_t                    u32DevCaps;
 } DRVMAINKEYBOARD, *PDRVMAINKEYBOARD;
 
-/** Converts PDMIVMMDEVCONNECTOR pointer to a DRVMAINVMMDEV pointer. */
-#define PPDMIKEYBOARDCONNECTOR_2_MAINKEYBOARD(pInterface) ( (PDRVMAINKEYBOARD) ((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINKEYBOARD, IConnector)) )
-
 
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
@@ -286,7 +283,7 @@ STDMETHODIMP Keyboard::COMGETTER(EventSource)(IEventSource ** aEventSource)
 
 DECLCALLBACK(void) Keyboard::keyboardLedStatusChange(PPDMIKEYBOARDCONNECTOR pInterface, PDMKEYBLEDS enmLeds)
 {
-    PDRVMAINKEYBOARD pDrv = PPDMIKEYBOARDCONNECTOR_2_MAINKEYBOARD(pInterface);
+    PDRVMAINKEYBOARD pDrv = RT_FROM_MEMBER(pInterface, DRVMAINKEYBOARD, IConnector);
     pDrv->pKeyboard->getParent()->onKeyboardLedsChange(RT_BOOL(enmLeds & PDMKEYBLEDS_NUMLOCK),
                                                        RT_BOOL(enmLeds & PDMKEYBLEDS_CAPSLOCK),
                                                        RT_BOOL(enmLeds & PDMKEYBLEDS_SCROLLLOCK));
@@ -297,7 +294,7 @@ DECLCALLBACK(void) Keyboard::keyboardLedStatusChange(PPDMIKEYBOARDCONNECTOR pInt
  */
 DECLCALLBACK(void) Keyboard::keyboardSetActive(PPDMIKEYBOARDCONNECTOR pInterface, bool fActive)
 {
-    PDRVMAINKEYBOARD pDrv = PPDMIKEYBOARDCONNECTOR_2_MAINKEYBOARD(pInterface);
+    PDRVMAINKEYBOARD pDrv = RT_FROM_MEMBER(pInterface, DRVMAINKEYBOARD, IConnector);
     if (fActive)
         pDrv->u32DevCaps |= KEYBOARD_DEVCAP_ENABLED;
     else
