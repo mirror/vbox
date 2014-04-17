@@ -4771,7 +4771,7 @@ static RTRECT * crVBoxServerCrCmdBltRecsUnpack(const VBOXCMDVBVA_RECT *pPRects, 
     return pRects;
 }
 
-static void crVBoxServerCrCmdBltPrimaryUpdate(const RTRECT *pRects, uint32_t cRects, uint32_t u32PrimaryID)
+static void crVBoxServerCrCmdBltPrimaryUpdate(const VBVAINFOSCREEN *pScreen, const RTRECT *pRects, uint32_t cRects, uint32_t u32PrimaryID)
 {
     if (!cRects)
         return;
@@ -4826,7 +4826,7 @@ static void crVBoxServerCrCmdBltPrimaryUpdate(const RTRECT *pRects, uint32_t cRe
 
     if (dirtyRect.xRight - dirtyRect.xLeft)
     {
-        cr_server.CrCmdClientInfo.pfnCltScrUpdateEnd(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID, dirtyRect.xLeft, dirtyRect.yTop,
+        cr_server.CrCmdClientInfo.pfnCltScrUpdateEnd(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID, pScreen->i32OriginX + dirtyRect.xLeft, pScreen->i32OriginY + dirtyRect.yTop,
                                            dirtyRect.xRight - dirtyRect.xLeft, dirtyRect.yBottom - dirtyRect.yTop);
     }
     else
@@ -4936,6 +4936,8 @@ static int8_t crVBoxServerCrCmdBltPrimaryProcess(const VBOXCMDVBVA_BLT_PRIMARY *
         }
 
         crServerDispatchVBoxTexPresent(texId, u32PrimaryID, pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y, cRects, (const GLint*)pRects);
+
+        return 0;
     }
     else
     {
@@ -4955,7 +4957,7 @@ static int8_t crVBoxServerCrCmdBltPrimaryProcess(const VBOXCMDVBVA_BLT_PRIMARY *
             return 0;
     }
 
-    crVBoxServerCrCmdBltPrimaryUpdate(pRects, cRects, u32PrimaryID);
+    crVBoxServerCrCmdBltPrimaryUpdate(CrFbGetScreenInfo(hFb), pRects, cRects, u32PrimaryID);
 
     return 0;
 }
@@ -5106,6 +5108,8 @@ static int8_t crVBoxServerCrCmdBltPrimaryGenericBGRAProcess(const VBOXCMDVBVA_BL
         }
 
         crServerDispatchVBoxTexPresent(texId, u32PrimaryID, pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y, cRects, (const GLint*)pRects);
+
+        return 0;
     }
     else
     {
@@ -5136,7 +5140,7 @@ static int8_t crVBoxServerCrCmdBltPrimaryGenericBGRAProcess(const VBOXCMDVBVA_BL
             return 0;
     }
 
-    crVBoxServerCrCmdBltPrimaryUpdate(pRects, cRects, u32PrimaryID);
+    crVBoxServerCrCmdBltPrimaryUpdate(CrFbGetScreenInfo(hFb), pRects, cRects, u32PrimaryID);
 
     return 0;
 }
