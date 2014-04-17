@@ -327,10 +327,6 @@ define def_vbox_link_msi
 .NOTPARALLEL: $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi
 $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi: \
 		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj \
-		$(if $(VBOX_WITH_MSM_INSTALL), \
-			$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
-				$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
-					$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm)),)
 		$(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
 		$(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		$(PATH_STAGE_BIN)/VBoxInstallHelper.dll \
@@ -579,6 +575,9 @@ $(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
 define def_vbox_compile_msm
 $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj: \
 			$(PATH_SUB_CURRENT)/VBoxMerge$(module).wxs \
+			$(PATH_SUB_CURRENT)/UserInterface.wxi \
+			$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi \
+			$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \
 			$(if $(VBOX_WITH_32_ON_64_MAIN_API),$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi,) \
 			$(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi \
 			$(if $(VBOX_WITH_QTGUI),$(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi) \
