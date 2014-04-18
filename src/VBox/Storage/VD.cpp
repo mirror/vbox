@@ -4918,6 +4918,16 @@ static DECLCALLBACK(bool) vdIOIntIoCtxIsZero(void *pvUser, PVDIOCTX pIoCtx, size
     return fIsZero;
 }
 
+static DECLCALLBACK(size_t) vdIOIntIoCtxGetDataUnitSize(void *pvUser, PVDIOCTX pIoCtx)
+{
+    PVDIO    pVDIo = (PVDIO)pvUser;
+    PVBOXHDD pDisk = pVDIo->pDisk;
+
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, VD_LAST_IMAGE);
+    AssertPtrReturn(pImage, 0);
+    return pImage->Backend->pfnGetSectorSize(pImage->pBackendData);  
+}
+
 /**
  * VD I/O interface callback for opening a file (limited version for VDGetFormat).
  */
@@ -5180,27 +5190,28 @@ static void vdIfIoFallbackCallbacksSetup(PVDINTERFACEIO pIfIo)
  */
 static void vdIfIoIntCallbacksSetup(PVDINTERFACEIOINT pIfIoInt)
 {
-    pIfIoInt->pfnOpen                = vdIOIntOpen;
-    pIfIoInt->pfnClose               = vdIOIntClose;
-    pIfIoInt->pfnDelete              = vdIOIntDelete;
-    pIfIoInt->pfnMove                = vdIOIntMove;
-    pIfIoInt->pfnGetFreeSpace        = vdIOIntGetFreeSpace;
-    pIfIoInt->pfnGetModificationTime = vdIOIntGetModificationTime;
-    pIfIoInt->pfnGetSize             = vdIOIntGetSize;
-    pIfIoInt->pfnSetSize             = vdIOIntSetSize;
-    pIfIoInt->pfnReadUser            = vdIOIntReadUser;
-    pIfIoInt->pfnWriteUser           = vdIOIntWriteUser;
-    pIfIoInt->pfnReadMeta            = vdIOIntReadMeta;
-    pIfIoInt->pfnWriteMeta           = vdIOIntWriteMeta;
-    pIfIoInt->pfnMetaXferRelease     = vdIOIntMetaXferRelease;
-    pIfIoInt->pfnFlush               = vdIOIntFlush;
-    pIfIoInt->pfnIoCtxCopyFrom       = vdIOIntIoCtxCopyFrom;
-    pIfIoInt->pfnIoCtxCopyTo         = vdIOIntIoCtxCopyTo;
-    pIfIoInt->pfnIoCtxSet            = vdIOIntIoCtxSet;
-    pIfIoInt->pfnIoCtxSegArrayCreate = vdIOIntIoCtxSegArrayCreate;
-    pIfIoInt->pfnIoCtxCompleted      = vdIOIntIoCtxCompleted;
-    pIfIoInt->pfnIoCtxIsSynchronous  = vdIOIntIoCtxIsSynchronous;
-    pIfIoInt->pfnIoCtxIsZero         = vdIOIntIoCtxIsZero;
+    pIfIoInt->pfnOpen                 = vdIOIntOpen;
+    pIfIoInt->pfnClose                = vdIOIntClose;
+    pIfIoInt->pfnDelete               = vdIOIntDelete;
+    pIfIoInt->pfnMove                 = vdIOIntMove;
+    pIfIoInt->pfnGetFreeSpace         = vdIOIntGetFreeSpace;
+    pIfIoInt->pfnGetModificationTime  = vdIOIntGetModificationTime;
+    pIfIoInt->pfnGetSize              = vdIOIntGetSize;
+    pIfIoInt->pfnSetSize              = vdIOIntSetSize;
+    pIfIoInt->pfnReadUser             = vdIOIntReadUser;
+    pIfIoInt->pfnWriteUser            = vdIOIntWriteUser;
+    pIfIoInt->pfnReadMeta             = vdIOIntReadMeta;
+    pIfIoInt->pfnWriteMeta            = vdIOIntWriteMeta;
+    pIfIoInt->pfnMetaXferRelease      = vdIOIntMetaXferRelease;
+    pIfIoInt->pfnFlush                = vdIOIntFlush;
+    pIfIoInt->pfnIoCtxCopyFrom        = vdIOIntIoCtxCopyFrom;
+    pIfIoInt->pfnIoCtxCopyTo          = vdIOIntIoCtxCopyTo;
+    pIfIoInt->pfnIoCtxSet             = vdIOIntIoCtxSet;
+    pIfIoInt->pfnIoCtxSegArrayCreate  = vdIOIntIoCtxSegArrayCreate;
+    pIfIoInt->pfnIoCtxCompleted       = vdIOIntIoCtxCompleted;
+    pIfIoInt->pfnIoCtxIsSynchronous   = vdIOIntIoCtxIsSynchronous;
+    pIfIoInt->pfnIoCtxIsZero          = vdIOIntIoCtxIsZero;
+    pIfIoInt->pfnIoCtxGetDataUnitSize = vdIOIntIoCtxGetDataUnitSize;
 }
 
 /**
