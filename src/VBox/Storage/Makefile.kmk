@@ -50,17 +50,17 @@ StorageLib_SOURCES  = \
 	VHDX.cpp \
 	VCICache.cpp
 
-ifndef VBOX_OSE
- ifneq ($(KBUILD_TARGET),win)
-  DLLS += VDPluginCrypt
-  VDPluginCrypt_TEMPLATE = VBOXR3
-  VDPluginCrypt_LIBS = $(LIB_RUNTIME)
-  VDPluginCrypt_SDKS = VBOX_OPENSSL2
-
-  VDPluginCrypt_SOURCES = \
-  	VDFilterCrypt.cpp
- endif
-endif
+#ifndef VBOX_OSE
+# ifneq ($(KBUILD_TARGET),win)
+#  DLLS += VDPluginCrypt
+#  VDPluginCrypt_TEMPLATE = VBOXR3
+#  VDPluginCrypt_LIBS = $(LIB_RUNTIME)
+#  VDPluginCrypt_SDKS = VBOX_OPENSSL2
+#
+#  VDPluginCrypt_SOURCES = \
+#  	VDFilterCrypt.cpp
+# endif
+#endif
 
 #StorageLibNoDB_TEMPLATE = VBOXR3
 #StorageLibNoDB_DEFS     = IN_VBOXDDU VBOX_HDD_NO_DYNAMIC_BACKENDS
