@@ -615,6 +615,11 @@ static int drvvdCfgQuery(void *pvUser, const char *pszName, char *pszString, siz
     return CFGMR3QueryString((PCFGMNODE)pvUser, pszName, pszString, cchString);
 }
 
+static int drvvdCfgQueryBytes(void *pvUser, const char *pszName, void *ppvData, size_t cbData)
+{
+    return CFGMR3QueryBytes((PCFGMNODE)pvUser, pszName, ppvData, cbData);
+}
+
 
 #ifdef VBOX_WITH_INIP
 /*******************************************************************************
@@ -1925,6 +1930,45 @@ static int drvvdBlkCacheXferEnqueueDiscard(PPDMDRVINS pDrvIns, PCRTRANGE paRange
     return VINF_SUCCESS;
 }
 
+/**
+ * Sets up the disk filter chain.
+ *
+ * @returns VBox status code.
+ * @param   pThis    The disk instance.
+ * @param   pCfg     CFGM node holding the filter parameters.
+ */
+static int drvvdSetupFilters(PVBOXDISK pThis, PCFGMNODE pCfg)
+{
+    int rc = VINF_SUCCESS;
+    PCFGMNODE pCfgFilter = CFGMR3GetChild(pCfg, "Filters");
+
+    if (pCfgFilter)
+    {
+        PCFGMNODE pCfgFilterConfig = CFGMR3GetChild(pCfgFilter, "VDConfig");
+        char *pszFilterName = NULL;
+        VDINTERFACECONFIG VDIfConfig;
+        PVDINTERFACE pVDIfsFilter = NULL;
+
+        rc = CFGMR3QueryStringAlloc(pCfgFilter, "FilterName", &pszFilterName);
+        if (RT_SUCCESS(rc))
+        {
+            VDIfConfig.pfnAreKeysValid = drvvdCfgAreKeysValid;
+            VDIfConfig.pfnQuerySize    = drvvdCfgQuerySize;
+            VDIfConfig.pfnQuery        = drvvdCfgQuery;
+            VDIfConfig.pfnQueryBytes   = drvvdCfgQueryBytes;
+            rc = VDInterfaceAdd(&VDIfConfig.Core, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
+                                pCfgFilterConfig, sizeof(VDINTERFACECONFIG), &pVDIfsFilter);
+            AssertRC(rc);
+
+            rc = VDFilterAdd(pThis->pDisk, pszFilterName, pVDIfsFilter);
+
+            MMR3HeapFree(pszFilterName);
+        }
+    }
+
+    return rc;
+}
+
 /*******************************************************************************
 *   Base interface methods                                                     *
 *******************************************************************************/
@@ -2563,6 +2607,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         pImage->VDIfConfig.pfnAreKeysValid = drvvdCfgAreKeysValid;
         pImage->VDIfConfig.pfnQuerySize    = drvvdCfgQuerySize;
         pImage->VDIfConfig.pfnQuery        = drvvdCfgQuery;
+        pImage->VDIfConfig.pfnQueryBytes   = NULL;
         rc = VDInterfaceAdd(&pImage->VDIfConfig.Core, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
                             pCfgVDConfig, sizeof(VDINTERFACECONFIG), &pImage->pVDIfsImage);
         AssertRC(rc);
@@ -2850,6 +2895,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                                       N_("DrvVD: Out of memory when creating block cache"));
         }
     }
+
+    if (RT_SUCCESS(rc))
+        rc = drvvdSetupFilters(pThis, pCfg);
 
     /*
      * Register a load-done callback so we can undo TempReadOnly config before
