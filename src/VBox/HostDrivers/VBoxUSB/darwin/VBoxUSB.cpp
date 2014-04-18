@@ -598,7 +598,7 @@ org_virtualbox_VBoxUSBClient::free()
 {
     uint32_t cInstances = ASMAtomicDecU32(&g_cInstances); NOREF(cInstances);
     Log(("VBoxUSBClient::free([%p]) new g_cInstances=%d\n", this, cInstances));
-    IOService::free();
+    IOUserClient::free();
 }
 
 
