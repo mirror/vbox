@@ -1522,6 +1522,10 @@
 #define VERR_VD_ASYNC_IO_IN_PROGRESS                (-3210)
 /** The image is too small or too large for this format. */
 #define VERR_VD_INVALID_SIZE                        (-3211)
+/** Configuration value is unknown. This indicates misconfiguration. */
+#define VERR_VD_UNKNOWN_CFG_VALUES                  (-3212)
+/** Interface is unknown. This indicates misconfiguration. */
+#define VERR_VD_UNKNOWN_INTERFACE                   (-3213)
 /** Generic: Invalid image file header. Use this for plugins. */
 #define VERR_VD_GEN_INVALID_HEADER                  (-3220)
 /** VDI: Invalid image file header. */
@@ -1546,16 +1550,12 @@
 #define VERR_VD_VMDK_INVALID_WRITE                  (-3245)
 /** iSCSI: Invalid header, i.e. dummy for validity check. */
 #define VERR_VD_ISCSI_INVALID_HEADER                (-3250)
-/** iSCSI: Configuration value is unknown. This indicates misconfiguration. */
-#define VERR_VD_ISCSI_UNKNOWN_CFG_VALUES            (-3251)
-/** iSCSI: Interface is unknown. This indicates misconfiguration. */
-#define VERR_VD_ISCSI_UNKNOWN_INTERFACE             (-3252)
 /** iSCSI: Operation can't be done in current image state. */
-#define VERR_VD_ISCSI_INVALID_STATE                 (-3253)
+#define VERR_VD_ISCSI_INVALID_STATE                 (-3251)
 /** iSCSI: Invalid device type (not a disk). */
-#define VERR_VD_ISCSI_INVALID_TYPE                  (-3254)
+#define VERR_VD_ISCSI_INVALID_TYPE                  (-3252)
 /** iSCSI: Initiator secret not decrypted */
-#define VERR_VD_ISCSI_SECRET_ENCRYPTED              (-3255)
+#define VERR_VD_ISCSI_SECRET_ENCRYPTED              (-3253)
 /** VHD: Invalid image file header. */
 #define VERR_VD_VHD_INVALID_HEADER                  (-3260)
 /** Parallels HDD: Invalid image file header. */
