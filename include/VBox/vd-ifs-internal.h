@@ -406,6 +406,16 @@ typedef struct VDINTERFACEIOINT
     DECLR3CALLBACKMEMBER(bool, pfnIoCtxIsZero, (void *pvUser, PVDIOCTX pIoCtx,
                                                 size_t cbCheck, bool fAdvance));
 
+    /**
+     * Returns the data unit size, i.e. the smallest size for a transfer.
+     * (similar to the sector size of disks).
+     *
+     * @returns The data unit size.
+     * @param   pvUser         The opaque user data passed on container creation.
+     * @param   pIoCtx         The I/O context.
+     */
+    DECLR3CALLBACKMEMBER(size_t, pfnIoCtxGetDataUnitSize, (void *pvUser, PVDIOCTX pIoCtx));
+
 } VDINTERFACEIOINT, *PVDINTERFACEIOINT;
 
 /**
@@ -584,6 +594,10 @@ DECLINLINE(bool) vdIfIoIntIoCtxIsZero(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCt
     return pIfIoInt->pfnIoCtxIsZero(pIfIoInt->Core.pvUser, pIoCtx, cbCheck, fAdvance);
 }
 
+DECLINLINE(size_t) vdIfIoIntIoCtxGetDataUnitSize(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx)
+{
+    return pIfIoInt->pfnIoCtxGetDataUnitSize(pIfIoInt->Core.pvUser, pIoCtx);
+}
 
 /**
  * Interface for the metadata traverse callback.

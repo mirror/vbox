@@ -743,6 +743,19 @@ typedef struct VDINTERFACECONFIG
      */
     DECLR3CALLBACKMEMBER(int, pfnQuery, (void *pvUser, const char *pszName, char *pszValue, size_t cchValue));
 
+    /**
+     * Query the bytes value associated with a key.
+     *
+     * @return  VBox status code.
+     *          VERR_CFGM_VALUE_NOT_FOUND means that the key is not known.
+     *          VERR_CFGM_NOT_ENOUGH_SPACE means that the buffer is not big enough.
+     * @param   pvUser          The opaque user data associated with this interface.
+     * @param   pszName         Name of the key to query.
+     * @param   ppvData         Pointer to buffer where to store the data.
+     * @param   cbData          Length of data buffer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryBytes, (void *pvUser, const char *pszName, void *ppvData, size_t cbData));
+
 } VDINTERFACECONFIG, *PVDINTERFACECONFIG;
 
 /**
@@ -950,11 +963,15 @@ DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
         pbData = (char *)RTMemAlloc(cb);
         if (pbData)
         {
-            rc = pCfgIf->pfnQuery(pCfgIf->Core.pvUser, pszName, pbData, cb);
+            if(pCfgIf->pfnQueryBytes)
+                rc = pCfgIf->pfnQueryBytes(pCfgIf->Core.pvUser, pszName, pbData, cb);
+            else
+                rc = pCfgIf->pfnQuery(pCfgIf->Core.pvUser, pszName, pbData, cb);
+
             if (RT_SUCCESS(rc))
             {
                 *ppvData = pbData;
-                *pcbData = cb - 1; /* Exclude terminator of the queried string. */
+                *pcbData = cb;
             }
             else
                 RTMemFree(pbData);
@@ -963,6 +980,137 @@ DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
             rc = VERR_NO_MEMORY;
     }
     return rc;
+}
+
+/**
+ * Query configuration, dynamically allocated (RTMemAlloc) zero terminated
+ * character value - the memory is locked to prevent paging to disk,
+ * useful for memory which holds keys, passwords, etc.
+ *
+ * @return  VBox status code.
+ * @param   pCfgIf      Pointer to configuration callback table.
+ * @param   pszName     Name of an zero terminated character value
+ * @param   ppszString  Where to store the string pointer. Not set on failure.
+ *                      Free this using RTMemFree().
+ */
+DECLINLINE(int) VDCFGQueryStringAllocLocked(PVDINTERFACECONFIG pCfgIf,
+                                            const char *pszName, char **ppszString)
+{
+    size_t cb;
+    int rc = pCfgIf->pfnQuerySize(pCfgIf->Core.pvUser, pszName, &cb);
+    if (RT_SUCCESS(rc))
+    {
+        char *pszString = (char *)RTMemLockedAlloc(cb);
+        if (pszString)
+        {
+            rc = pCfgIf->pfnQuery(pCfgIf->Core.pvUser, pszName, pszString, cb);
+            if (RT_SUCCESS(rc))
+                *ppszString = pszString;
+            else
+                RTMemFree(pszString);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    return rc;
+}
+
+/**
+ * Query configuration, dynamically allocated (RTMemAlloc) zero terminated
+ * character value with default - the memory is locked to prevent paging to disk,
+ * useful for memory which holds keys, passwords, etc.
+ *
+ * @return  VBox status code.
+ * @param   pCfgIf      Pointer to configuration callback table.
+ * @param   pszName     Name of an zero terminated character value
+ * @param   ppszString  Where to store the string pointer. Not set on failure.
+ *                      Free this using RTMemFree().
+ * @param   pszDef      The default value.
+ */
+DECLINLINE(int) VDCFGQueryStringAllocLockedDef(PVDINTERFACECONFIG pCfgIf,
+                                               const char *pszName,
+                                               char **ppszString,
+                                               const char *pszDef)
+{
+    size_t cb;
+    int rc = pCfgIf->pfnQuerySize(pCfgIf->Core.pvUser, pszName, &cb);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+    {
+        cb = strlen(pszDef) + 1;
+        rc = VINF_SUCCESS;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        char *pszString = (char *)RTMemLockedAlloc(cb);
+        if (pszString)
+        {
+            rc = pCfgIf->pfnQuery(pCfgIf->Core.pvUser, pszName, pszString, cb);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+            {
+                memcpy(pszString, pszDef, cb);
+                rc = VINF_SUCCESS;
+            }
+            if (RT_SUCCESS(rc))
+                *ppszString = pszString;
+            else
+                RTMemFree(pszString);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    return rc;
+}
+
+/**
+ * Query configuration, dynamically allocated (RTMemAlloc) byte string value -
+ * the memory is locked to prevent paging to disk, useful for memory which holds
+ * keys, passwords, etc..
+ *
+ * @return  VBox status code.
+ * @param   pCfgIf      Pointer to configuration callback table.
+ * @param   pszName     Name of an zero terminated character value
+ * @param   ppvData     Where to store the byte string pointer. Not set on failure.
+ *                      Free this using RTMemFree().
+ * @param   pcbData     Where to store the byte string length.
+ */
+DECLINLINE(int) VDCFGQueryBytesAllocLocked(PVDINTERFACECONFIG pCfgIf,
+                                           const char *pszName, void **ppvData, size_t *pcbData)
+{
+    size_t cb;
+    int rc = pCfgIf->pfnQuerySize(pCfgIf->Core.pvUser, pszName, &cb);
+    if (RT_SUCCESS(rc))
+    {
+        char *pbData;
+        Assert(cb);
+
+        pbData = (char *)RTMemLockedAlloc(cb);
+        if (pbData)
+        {
+            if(pCfgIf->pfnQueryBytes)
+                rc = pCfgIf->pfnQueryBytes(pCfgIf->Core.pvUser, pszName, pbData, cb);
+            else
+                rc = pCfgIf->pfnQuery(pCfgIf->Core.pvUser, pszName, pbData, cb);
+
+            if (RT_SUCCESS(rc))
+            {
+                *ppvData = pbData;
+                *pcbData = cb;
+            }
+            else
+                RTMemFree(pbData);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    return rc;
+}
+
+/**
+ * Frees memory allocated using one of the VDCFGQuery*AllocLocked methods.
+ */
+DECLINLINE(void) VDCFGMemLockedFree(void *pvData)
+{
+    RTMemLockedFree(pvData);
 }
 
 /** Forward declaration of a VD socket. */
