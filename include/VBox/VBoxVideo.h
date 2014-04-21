@@ -1602,6 +1602,14 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
 #define VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_PRIMARY            4
 
 #define VBOXCMDVBVA_OPF_BLT_TYPE_MASK                       7
+
+
+#define VBOXCMDVBVA_OPF_CLRFILL_TYPE_PRIMARY                0
+#define VBOXCMDVBVA_OPF_CLRFILL_TYPE_GENERIC_A8R8G8B8       1
+
+#define VBOXCMDVBVA_OPF_CLRFILL_TYPE_MASK                   1
+
+
 /* blit direction is from first operand to second */
 #define VBOXCMDVBVA_OPF_BLT_DIR_IN_2                        0x10
 /* operand 1 contains host id */
@@ -1681,8 +1689,8 @@ typedef struct VBOXCMDVBVA_ALLOCINFO
 typedef struct VBOXCMDVBVA_ALLOCDESC
 {
     VBOXCMDVBVA_ALLOCINFO Info;
-    uint16_t width;
-    uint16_t height;
+    uint16_t u16Width;
+    uint16_t u16Height;
 } VBOXCMDVBVA_ALLOCDESC;
 
 typedef struct VBOXCMDVBVA_RECT
@@ -1748,12 +1756,26 @@ typedef struct VBOXCMDVBVA_FLIP
     VBOXCMDVBVA_ALLOCINFO src;
 } VBOXCMDVBVA_FLIP;
 
-typedef struct VBOXCMDVBVA_CLRFILL
+typedef struct VBOXCMDVBVA_CLRFILL_HDR
 {
     VBOXCMDVBVA_HDR Hdr;
-    VBOXCMDVBVA_ALLOCINFO dst;
+    uint32_t u32Color;
+} VBOXCMDVBVA_CLRFILL_HDR;
+
+typedef struct VBOXCMDVBVA_CLRFILL_PRIMARY
+{
+    VBOXCMDVBVA_CLRFILL_HDR Hdr;
     VBOXCMDVBVA_RECT aRects[1];
-} VBOXCMDVBVA_CLRFILL;
+} VBOXCMDVBVA_CLRFILL_PRIMARY;
+
+typedef struct VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8
+{
+    VBOXCMDVBVA_CLRFILL_HDR Hdr;
+    VBOXCMDVBVA_ALLOCDESC dst;
+    VBOXCMDVBVA_RECT aRects[1];
+} VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8;
+
+#define VBOXCMDVBVA_SIZEOF_CLRFILLSTRUCT_MAX (sizeof (VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8))
 
 #if 0
 #define VBOXCMDVBVA_SYSMEMEL_CPAGES_MAX  0x1000
@@ -1783,8 +1805,8 @@ typedef struct VBOXCMDVBVA_PAGING_TRANSFER
 typedef struct VBOXCMDVBVA_PAGING_FILL
 {
     VBOXCMDVBVA_HDR Hdr;
-    uint32_t cbFill;
-    uint32_t Pattern;
+    uint32_t u32CbFill;
+    uint32_t u32Pattern;
     /* paging transfer can NOT be initiated for allocations having host 3D object (hostID) associated */
     VBOXCMDVBVAOFFSET offVRAM;
 } VBOXCMDVBVA_PAGING_FILL;

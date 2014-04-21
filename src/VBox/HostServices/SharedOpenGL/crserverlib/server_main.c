@@ -3817,6 +3817,16 @@ static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, const VBOXCMDVBVA
 
             return crVBoxServerCrCmdBltProcess((const VBOXCMDVBVA_BLT_HDR*)pCmd, cbCmd);
         }
+        case VBOXCMDVBVA_OPTYPE_CLRFILL:
+        {
+            if (cbCmd < sizeof (VBOXCMDVBVA_CLRFILL_HDR))
+            {
+                WARN(("invalid buffer size"));
+                return -1;
+            }
+
+            return crVBoxServerCrCmdClrFillProcess((const VBOXCMDVBVA_CLRFILL_HDR*)pCmd, cbCmd);
+        }
         default:
             WARN(("unsupported command"));
             return -1;
