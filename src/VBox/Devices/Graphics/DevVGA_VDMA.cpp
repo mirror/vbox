@@ -1538,6 +1538,43 @@ static int8_t vboxVDMACrCmdVbvaPagingDataInit(PVGASTATE pVGAState, const VBOXCMD
     return 0;
 }
 
+static int8_t vboxVDMACrCmdVbvaPagingFill(PVGASTATE pVGAState, VBOXCMDVBVA_PAGING_FILL *pFill)
+{
+    VBOXCMDVBVAOFFSET offVRAM = pFill->offVRAM;
+    if (offVRAM & PAGE_OFFSET_MASK)
+    {
+        WARN(("offVRAM address is not on page boundary\n"));
+        return -1;
+    }
+
+    uint8_t * pu8VramBase = pVGAState->vram_ptrR3;
+    uint8_t *pu8VramMax = pu8VramBase + pVGAState->vram_size;
+    if (offVRAM >= pVGAState->vram_size)
+    {
+        WARN(("invalid vram offset"));
+        return -1;
+    }
+
+    uint32_t cbFill = pFill->u32CbFill;
+
+    if (offVRAM + cbFill >= pVGAState->vram_size)
+    {
+        WARN(("invalid cPages"));
+        return -1;
+    }
+
+    uint32_t *pu32Vram = (uint32_t*)(pu8VramBase + offVRAM);
+    uint32_t u32Color = pFill->u32Pattern;
+
+    Assert(!(cbFill % 4));
+    for (uint32_t i = 0; i < cbFill / 4; ++i)
+    {
+        pu32Vram[i] = u32Color;
+    }
+
+    return 0;
+}
+
 static int8_t vboxVDMACrCmdVbvaProcessCmdData(struct VBOXVDMAHOST *pVdma, const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd)
 {
     switch (pCmd->u8OpCode)
@@ -1571,8 +1608,16 @@ static int8_t vboxVDMACrCmdVbvaProcessCmdData(struct VBOXVDMAHOST *pVdma, const 
             return 0;
         }
         case VBOXCMDVBVA_OPTYPE_PAGING_FILL:
-            WARN(("VBOXCMDVBVA_OPTYPE_PAGING_FILL not implemented"));
-            return -1;
+        {
+            PVGASTATE pVGAState = pVdma->pVGAState;
+            if (cbCmd != sizeof (VBOXCMDVBVA_PAGING_FILL))
+            {
+                WARN(("cmd too small"));
+                return -1;
+            }
+
+            return vboxVDMACrCmdVbvaPagingFill(pVGAState, (VBOXCMDVBVA_PAGING_FILL*)pCmd);
+        }
         default:
             return pVdma->CrSrvInfo.pfnCmd(pVdma->CrSrvInfo.hSvr, pCmd, cbCmd);
     }

@@ -230,6 +230,32 @@ bool CrFbHas3DData(HCR_FRAMEBUFFER hFb)
     return !CrVrScrCompositorIsEmpty(&hFb->Compositor);
 }
 
+static void crFbClrFillMem(uint32_t *pu32Dst, int32_t cbDstPitch, uint32_t width, uint32_t height, uint32_t u32Color)
+{
+    for (uint32_t i = 0; i < height; ++i)
+    {
+        for (uint32_t j = 0; j < width; ++j)
+        {
+            pu32Dst[j] = u32Color;
+        }
+
+        pu32Dst = (uint32_t*)(((uint8_t*)pu32Dst) + cbDstPitch);
+    }
+}
+
+static void crFbClrFillImgRect(CR_BLITTER_IMG *pDst, const RTRECT *pCopyRect, uint32_t u32Color)
+{
+    int32_t x = pCopyRect->xLeft;
+    int32_t y = pCopyRect->yTop;
+    int32_t width = pCopyRect->xRight - pCopyRect->xLeft;
+    int32_t height = pCopyRect->yBottom - pCopyRect->yTop;
+    Assert(x >= 0);
+    Assert(y >= 0);
+    uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + pDst->pitch * y + x * 4;
+
+    crFbClrFillMem((uint32_t*)pu8Dst, pDst->pitch, width, height, u32Color);
+}
+
 static void crFbBltMem(uint8_t *pu8Src, int32_t cbSrcPitch, uint8_t *pu8Dst, int32_t cbDstPitch, uint32_t width, uint32_t height)
 {
     uint32_t cbCopyRow = width * 4;
@@ -243,7 +269,7 @@ static void crFbBltMem(uint8_t *pu8Src, int32_t cbSrcPitch, uint8_t *pu8Dst, int
     }
 }
 
-static void crFbBltImg(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, CR_BLITTER_IMG *pDst)
+static void crFbBltImgRect(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, CR_BLITTER_IMG *pDst)
 {
     int32_t srcX = pCopyRect->xLeft - pSrcDataPoint->x;
     int32_t srcY = pCopyRect->yTop - pSrcDataPoint->y;
@@ -271,7 +297,7 @@ static void crFbBltImg(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint,
     crFbBltMem(pu8Src, fSrcInvert ? -((int32_t)pSrc->pitch) : (int32_t)pSrc->pitch, pu8Dst, pDst->pitch, pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
 }
 
-static void crFbBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, float strX, float strY, CR_BLITTER_IMG *pDst)
+static void crFbBltImgRectScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, float strX, float strY, CR_BLITTER_IMG *pDst)
 {
     int32_t srcX = pCopyRect->xLeft - pSrcDataPoint->x;
     int32_t srcY = pCopyRect->yTop - pSrcDataPoint->y;
@@ -329,7 +355,7 @@ static void crFbBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcData
                         pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
 }
 
-static void crFbBltImgScaledRects(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, float strX, float strY, CR_BLITTER_IMG *pDst)
+static void crFbBltImgRectScaledRect(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, const RTPOINT *pDstDataPoint, float strX, float strY, CR_BLITTER_IMG *pDst)
 {
     int32_t srcX = pCopyRect->xLeft - pSrcDataPoint->x;
     int32_t srcY = pCopyRect->yTop - pSrcDataPoint->y;
@@ -398,7 +424,7 @@ static void crFbImgFromScreenVram(const VBVAINFOSCREEN *pScreen, void *pvVram, C
     pImg->pitch = pScreen->u32LineSize;
 }
 
-static void crFbImgFromDimVramBGRA(void *pvVram, uint32_t width, uint32_t height, CR_BLITTER_IMG *pImg)
+static void crFbImgFromDimPtrBGRA(void *pvVram, uint32_t width, uint32_t height, CR_BLITTER_IMG *pImg)
 {
     pImg->pvData = pvVram;
     pImg->cbData = width * height * 4;
@@ -407,6 +433,27 @@ static void crFbImgFromDimVramBGRA(void *pvVram, uint32_t width, uint32_t height
     pImg->height = height;
     pImg->bpp = 32;
     pImg->pitch = width * 4;
+}
+
+static int8_t crFbImgFromDimOffVramBGRA(VBOXCMDVBVAOFFSET offVRAM, uint32_t width, uint32_t height, CR_BLITTER_IMG *pImg)
+{
+    uint32_t cbBuff = width * height * 4;
+    if (offVRAM >= g_cbVRam
+            || offVRAM + cbBuff >= g_cbVRam)
+    {
+        WARN(("invalid param"));
+        return -1;
+    }
+
+    uint8_t *pu8Buf = g_pvVRamBase + offVRAM;
+    crFbImgFromDimPtrBGRA(pu8Buf, width, height, pImg);
+
+    return 0;
+}
+
+static int8_t crFbImgFromDescBGRA(const VBOXCMDVBVA_ALLOCDESC *pDesc, CR_BLITTER_IMG *pImg)
+{
+    return crFbImgFromDimOffVramBGRA(pDesc->Info.u.offVRAM, pDesc->u16Width, pDesc->u16Height, pImg);
 }
 
 static void crFbImgFromFb(HCR_FRAMEBUFFER hFb, CR_BLITTER_IMG *pImg)
@@ -455,7 +502,7 @@ static int crFbTexDataGetContents(CR_TEXDATA *pTex, const RTRECT *pSrcRect, cons
         if (VBoxRectIsZero(&Intersection))
             continue;
 
-        crFbBltImg(pSrcImg, &ScaledEntryPoint, false, &Intersection, &ZeroPoint, pImg);
+        crFbBltImgRect(pSrcImg, &ScaledEntryPoint, false, &Intersection, &ZeroPoint, pImg);
     }
 
     CrTdBltDataReleaseScaled(pTex, pSrcImg);
@@ -601,7 +648,7 @@ static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect,
 
                 bool fInvert = !(CrVrScrCompositorEntryFlagsGet(pEntry) & CRBLT_F_INVERT_SRC_YCOORDS);
 
-                crFbBltImg(pSrcImg, &ScaledEntryPoint, fInvert, &Intersection, &ZeroPoint, pImg);
+                crFbBltImgRect(pSrcImg, &ScaledEntryPoint, fInvert, &Intersection, &ZeroPoint, pImg);
 
                 CrTdBltDataReleaseScaled(pTex, pSrcImg);
             }
@@ -661,9 +708,9 @@ static int crFbBltGetContentsDirect(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect,
                     continue;
 
                 if (!fScale)
-                    crFbBltImg(&FbImg, &DstPoint, false, &Intersection, &ZeroPoint, pImg);
+                    crFbBltImgRect(&FbImg, &DstPoint, false, &Intersection, &ZeroPoint, pImg);
                 else
-                    crFbBltImgScaledRects(&FbImg, &DstPoint, false, &Intersection, &ZeroPoint, strX, strY, pImg);
+                    crFbBltImgRectScaledRect(&FbImg, &DstPoint, false, &Intersection, &ZeroPoint, strX, strY, pImg);
             }
         }
     }
@@ -748,14 +795,8 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRECT
     return crFbBltGetContentsScaleCPU(hFb, pSrcRect, pDstRect, cRects, pRects, pImg);
 }
 
-static void crFbBltPutContentsVram(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+static void crFbBltImg(CR_BLITTER_IMG *pDst, const RTRECT *pSrcRect, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
 {
-    const RTRECT *pCompRect = CrVrScrCompositorRectGet(&hFb->Compositor);
-
-    CR_BLITTER_IMG FbImg;
-
-    crFbImgFromFb(hFb, &FbImg);
-
     int32_t srcWidth = pSrcRect->xRight - pSrcRect->xLeft;
     int32_t srcHeight = pSrcRect->yBottom - pSrcRect->yTop;
     int32_t dstWidth = pDstRect->xRight - pDstRect->xLeft;
@@ -766,13 +807,18 @@ static void crFbBltPutContentsVram(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, 
     float strY = ((float)dstHeight) / srcHeight;
     bool fScale = (dstWidth != srcWidth || dstHeight != srcHeight);
 
+    RTRECT RestrictRect;
+    RestrictRect.xLeft = 0;
+    RestrictRect.yTop = 0;
+    RestrictRect.xRight = pDst->width;
+    RestrictRect.yBottom = pDst->height;
     RTRECT Intersection;
     const RTPOINT ZeroPoint = {0, 0};
 
     for (uint32_t i = 0; i < cRects; ++i)
     {
         const RTRECT * pRect = &pRects[i];
-        VBoxRectIntersected(pRect, pCompRect, &Intersection);
+        VBoxRectIntersected(pRect, &RestrictRect, &Intersection);
 
         if (VBoxRectIsZero(&Intersection))
             continue;
@@ -791,15 +837,99 @@ static void crFbBltPutContentsVram(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, 
             continue;
 
         if (!fScale)
-            crFbBltImg(pImg, &DstPoint, false, &Intersection, &ZeroPoint, &FbImg);
+            crFbBltImgRect(pImg, &DstPoint, false, &Intersection, &ZeroPoint, pDst);
         else
-            crFbBltImgScaled(pImg, &DstPoint, false, &Intersection, &ZeroPoint, strX, strY, &FbImg);
+            crFbBltImgRectScaled(pImg, &DstPoint, false, &Intersection, &ZeroPoint, strX, strY, pDst);
     }
+}
+
+static void crFbBltImgPos(CR_BLITTER_IMG *pDst, uint32_t xPos, uint32_t yPos, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+{
+    RTRECT SrcRect, DstRect;
+
+    SrcRect.xLeft = 0;
+    SrcRect.yTop = 0;
+    SrcRect.xRight = pImg->width;
+    SrcRect.yBottom = pImg->height;
+
+    DstRect.xLeft = xPos;
+    DstRect.yTop = yPos;
+    DstRect.xRight = DstRect.xLeft + pImg->width;
+    DstRect.yBottom = DstRect.yTop + pImg->height;
+
+    crFbBltImg(pDst, &SrcRect, &DstRect, cRects, pRects, pImg);
+}
+
+
+static void crFbBltPutContentsFbVram(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+{
+    const RTRECT *pCompRect = CrVrScrCompositorRectGet(&hFb->Compositor);
+
+    CR_BLITTER_IMG FbImg;
+
+    crFbImgFromFb(hFb, &FbImg);
+
+    crFbBltImg(&FbImg, pSrcRect, pDstRect, cRects, pRects, pImg);
+}
+
+static void crFbClrFillImg(CR_BLITTER_IMG *pImg, uint32_t cRects, const RTRECT *pRects, uint32_t u32Color)
+{
+    RTRECT Rect;
+    Rect.xLeft = 0;
+    Rect.yTop = 0;
+    Rect.xRight = pImg->width;
+    Rect.yBottom = pImg->height;
+
+
+    RTRECT Intersection;
+    const RTPOINT ZeroPoint = {0, 0};
+
+    for (uint32_t i = 0; i < cRects; ++i)
+    {
+        const RTRECT * pRect = &pRects[i];
+        VBoxRectIntersected(pRect, &Rect, &Intersection);
+
+        if (VBoxRectIsZero(&Intersection))
+            continue;
+
+        crFbClrFillImgRect(pImg, &Intersection, u32Color);
+    }
+}
+
+static void crFbClrFillFbVram(HCR_FRAMEBUFFER hFb, uint32_t cRects, const RTRECT *pRects, uint32_t u32Color)
+{
+    CR_BLITTER_IMG FbImg;
+
+    crFbImgFromFb(hFb, &FbImg);
+
+    crFbClrFillImg(&FbImg, cRects, pRects, u32Color);
+}
+
+int CrFbClrFill(HCR_FRAMEBUFFER hFb, uint32_t cRects, const RTRECT *pRects, uint32_t u32Color)
+{
+    if (!hFb->cUpdating)
+    {
+        WARN(("framebuffer not updating"));
+        return VERR_INVALID_STATE;
+    }
+
+    crFbClrFillFbVram(hFb, cRects, pRects, u32Color);
+
+    RTPOINT DstPoint = {0, 0};
+
+    int rc = CrFbEntryRegionsAdd(hFb, NULL, &DstPoint, cRects, pRects, false);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("CrFbEntryRegionsAdd failed %d", rc));
+        return rc;
+    }
+
+    return VINF_SUCCESS;
 }
 
 static int crFbBltPutContentsNonscaled(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
 {
-    crFbBltPutContentsVram(hFb, pSrcRect, pDstRect, cRects, pRects, pImg);
+    crFbBltPutContentsFbVram(hFb, pSrcRect, pDstRect, cRects, pRects, pImg);
 
     RTPOINT DstPoint = {pDstRect->xLeft, pDstRect->yTop};
 
@@ -836,20 +966,8 @@ int CrFbBltPutContents(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRECT
     return crFbBltPutContentsNonscaled(hFb, pSrcRect, pDstRect, cRects, pRects, pImg);
 }
 
-int CrFbBltPutContentsNe(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+static int crFbRegionsIsIntersectRects(HCR_FRAMEBUFFER hFb, uint32_t cRects, const RTRECT *pRects, bool *pfRegChanged)
 {
-    int32_t srcWidth = pSrcRect->xRight - pSrcRect->xLeft;
-    int32_t srcHeight = pSrcRect->yBottom - pSrcRect->yTop;
-    int32_t dstWidth = pDstRect->xRight - pDstRect->xLeft;
-    int32_t dstHeight = pDstRect->yBottom - pDstRect->yTop;
-
-    bool fScale = (dstWidth != srcWidth || dstHeight != srcHeight);
-    if (fScale)
-    {
-        WARN(("scaling not supported"));
-        return VERR_NOT_IMPLEMENTED;
-    }
-
     uint32_t cCompRects;
     const RTRECT *pCompRects;
     int rc = CrVrScrCompositorRegionsGet(&hFb->Compositor, &cCompRects, NULL, NULL, &pCompRects);
@@ -868,10 +986,36 @@ int CrFbBltPutContentsNe(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRE
             const RTRECT *pRect = &pRects[j];
             if (VBoxRectIsIntersect(pCompRect, pRect))
             {
-                fRegChanged = true;
-                break;
+                *pfRegChanged = true;
+                return VINF_SUCCESS;
             }
         }
+    }
+
+    *pfRegChanged = false;
+    return VINF_SUCCESS;
+}
+
+int CrFbBltPutContentsNe(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+{
+    int32_t srcWidth = pSrcRect->xRight - pSrcRect->xLeft;
+    int32_t srcHeight = pSrcRect->yBottom - pSrcRect->yTop;
+    int32_t dstWidth = pDstRect->xRight - pDstRect->xLeft;
+    int32_t dstHeight = pDstRect->yBottom - pDstRect->yTop;
+
+    bool fScale = (dstWidth != srcWidth || dstHeight != srcHeight);
+    if (fScale)
+    {
+        WARN(("scaling not supported"));
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    bool fRegChanged = false;
+    int rc = crFbRegionsIsIntersectRects(hFb, cRects, pRects, &fRegChanged);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("crFbRegionsIsIntersectRects failed rc %d", rc));
+        return rc;
     }
 
     if (fRegChanged)
@@ -890,7 +1034,37 @@ int CrFbBltPutContentsNe(HCR_FRAMEBUFFER hFb, const RTRECT *pSrcRect, const RTRE
         return rc;
     }
 
-    crFbBltPutContentsVram(hFb, pSrcRect, pDstRect, cRects, pRects, pImg);
+    crFbBltPutContentsFbVram(hFb, pSrcRect, pDstRect, cRects, pRects, pImg);
+    return VINF_SUCCESS;
+}
+
+int CrFbClrFillNe(HCR_FRAMEBUFFER hFb, uint32_t cRects, const RTRECT *pRects, uint32_t u32Color)
+{
+    bool fRegChanged = false;
+    int rc = crFbRegionsIsIntersectRects(hFb, cRects, pRects, &fRegChanged);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("crFbRegionsIsIntersectRects failed rc %d", rc));
+        return rc;
+    }
+
+    if (fRegChanged)
+    {
+        rc = CrFbUpdateBegin(hFb);
+        if (RT_SUCCESS(rc))
+        {
+            rc = CrFbClrFill(hFb, cRects, pRects, u32Color);
+            if (!RT_SUCCESS(rc))
+                WARN(("CrFbClrFill failed rc %d", rc));
+            CrFbUpdateEnd(hFb);
+        }
+        else
+            WARN(("CrFbUpdateBegin failed rc %d", rc));
+
+        return rc;
+    }
+
+    crFbClrFillFbVram(hFb, cRects, pRects, u32Color);
     return VINF_SUCCESS;
 }
 
@@ -4874,15 +5048,13 @@ static void crVBoxServerCrCmdBltPrimaryUpdate(const VBVAINFOSCREEN *pScreen, con
 static int8_t crVBoxServerCrCmdBltPrimaryVramGenericProcess(uint32_t u32PrimaryID, VBOXCMDVBVAOFFSET offVRAM, uint32_t width, uint32_t height, uint32_t xPos, uint32_t yPos, const RTRECT *pRects, uint32_t cRects, bool fToPrimary)
 {
     CR_BLITTER_IMG Img;
-    uint32_t cbBuff = width * height * 4;
-    if (offVRAM >= g_cbVRam
-            || offVRAM + cbBuff >= g_cbVRam)
+    int8_t i8Result = crFbImgFromDimOffVramBGRA(offVRAM, width, height, &Img);
+    if (i8Result)
     {
         WARN(("invalid param"));
         return -1;
     }
 
-    uint8_t *pu8Buf = g_pvVRamBase + offVRAM;
     RTRECT SrcRect, DstRect;
 
     SrcRect.xLeft = 0;
@@ -4894,8 +5066,6 @@ static int8_t crVBoxServerCrCmdBltPrimaryVramGenericProcess(uint32_t u32PrimaryI
     DstRect.yTop = yPos;
     DstRect.xRight = DstRect.xLeft + width;
     DstRect.yBottom = DstRect.yTop + height;
-
-    crFbImgFromDimVramBGRA(pu8Buf, width, height, &Img);
 
     HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32PrimaryID);
     if (!hFb)
@@ -4998,6 +5168,63 @@ static int8_t crVBoxServerCrCmdBltPrimaryProcess(const VBOXCMDVBVA_BLT_PRIMARY *
     return 0;
 }
 
+static int8_t crVBoxServerCrCmdBltIdToVram(uint32_t hostId, VBOXCMDVBVAOFFSET offVRAM, const VBOXCMDVBVA_POINT *pPos, uint32_t width, uint32_t height, uint32_t cRects, const RTRECT *pRects)
+{
+    CR_TEXDATA* pTex = CrFbTexDataAcquire(hostId);
+    if (!pTex)
+    {
+        WARN(("pTex failed for %d", hostId));
+        return -1;
+    }
+
+    const VBOXVR_TEXTURE *pVrTex = CrTdTexGet(pTex);
+    RTRECT SrcRect, DstRect;
+    if (!width)
+    {
+        width = pVrTex->width;
+        height = pVrTex->height;
+    }
+
+    SrcRect.xLeft = 0;
+    SrcRect.yTop = 0;
+    SrcRect.xRight = width;
+    SrcRect.yBottom = height;
+
+    DstRect.xLeft = pPos->x;
+    DstRect.yTop = pPos->y;
+    DstRect.xRight = DstRect.xLeft + width;
+    DstRect.yBottom = DstRect.yTop + height;
+
+    CR_BLITTER_IMG Img;
+    int8_t i8Result = crFbImgFromDimOffVramBGRA(offVRAM, width, height, &Img);
+    if (i8Result)
+    {
+        WARN(("invalid param"));
+        return -1;
+    }
+
+    int rc = CrTdBltEnter(pTex);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("CrTdBltEnter failed %d", rc));
+        return -1;
+    }
+
+    rc = crFbTexDataGetContents(pTex, &SrcRect, &DstRect, cRects, pRects, &Img);
+
+    CrTdBltLeave(pTex);
+
+    CrTdRelease(pTex);
+
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("crFbTexDataGetContents failed %d", rc));
+        return -1;
+    }
+
+    return 0;
+}
+
 static int8_t crVBoxServerCrCmdBltOffIdProcess(const VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID *pCmd, uint32_t cbCmd)
 {
     uint32_t cRects;
@@ -5040,61 +5267,9 @@ static int8_t crVBoxServerCrCmdBltOffIdProcess(const VBOXCMDVBVA_BLT_OFFPRIMSZFM
         return -1;
     }
 
-    CR_TEXDATA* pTex = CrFbTexDataAcquire(hostId);
-    if (!pTex)
-    {
-        WARN(("pTex failed for %d", hostId));
-        return -1;
-    }
-
-    const VBOXVR_TEXTURE *pVrTex = CrTdTexGet(pTex);
-    RTRECT SrcRect, DstRect;
-    uint32_t width = pVrTex->width;
-    uint32_t height = pVrTex->height;
-
-    SrcRect.xLeft = 0;
-    SrcRect.yTop = 0;
-    SrcRect.xRight = width;
-    SrcRect.yBottom = height;
-
-    DstRect.xLeft = pCmd->Hdr.Pos.x;
-    DstRect.yTop = pCmd->Hdr.Pos.y;
-    DstRect.xRight = DstRect.xLeft + width;
-    DstRect.yBottom = DstRect.yTop + height;
-
     VBOXCMDVBVAOFFSET offVRAM = pCmd->alloc.u.offVRAM;
-    uint32_t cbBuff = width * height * 4;
-    if (offVRAM >= g_cbVRam
-            || offVRAM + cbBuff >= g_cbVRam)
-    {
-        WARN(("invalid param"));
-        return -1;
-    }
 
-    int rc = CrTdBltEnter(pTex);
-    if (!RT_SUCCESS(rc))
-    {
-        WARN(("CrTdBltEnter failed %d", rc));
-        return -1;
-    }
-
-    uint8_t *pu8Buf = g_pvVRamBase + offVRAM;
-    CR_BLITTER_IMG Img;
-    crFbImgFromDimVramBGRA(pu8Buf, width, height, &Img);
-
-    rc = crFbTexDataGetContents(pTex, &SrcRect, &DstRect, cRects, pRects, &Img);
-
-    CrTdBltLeave(pTex);
-
-    CrTdRelease(pTex);
-
-    if (!RT_SUCCESS(rc))
-    {
-        WARN(("crFbTexDataGetContents failed %d", rc));
-        return -1;
-    }
-
-    return 0;
+    return crVBoxServerCrCmdBltIdToVram(hostId, offVRAM, &pCmd->Hdr.Pos, 0, 0, cRects, pRects);
 }
 
 static int8_t crVBoxServerCrCmdBltPrimaryGenericBGRAProcess(const VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8 *pCmd, uint32_t cbCmd)
@@ -5153,8 +5328,8 @@ static int8_t crVBoxServerCrCmdBltPrimaryGenericBGRAProcess(const VBOXCMDVBVA_BL
         uint32_t width, height;
         if (fToPrymary)
         {
-            width = pCmd->alloc.width;
-            height = pCmd->alloc.height;
+            width = pCmd->alloc.u16Width;
+            height = pCmd->alloc.u16Height;
         }
         else
         {
@@ -5202,8 +5377,57 @@ static int8_t crVBoxServerCrCmdBltGenericBGRAProcess(const VBOXCMDVBVA_BLT_GENER
 
     uint8_t u8Flags = pCmd->Hdr.Hdr.u8Flags;
 
-    WARN(("crVBoxServerCrCmdBltGenericBGRAProcess: not supported"));
-    return -1;
+    if (u8Flags & VBOXCMDVBVA_OPF_OPERAND2_ISID)
+    {
+        if (u8Flags & VBOXCMDVBVA_OPF_OPERAND1_ISID)
+        {
+            WARN(("blit from texture to texture not implemented"));
+            return -1;
+        }
+
+        if (u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2)
+        {
+            WARN(("blit to texture not implemented"));
+            return -1;
+        }
+
+        return crVBoxServerCrCmdBltIdToVram(pCmd->alloc2.Info.u.id, pCmd->alloc1.Info.u.offVRAM, &pCmd->Hdr.Pos, pCmd->alloc1.u16Width, pCmd->alloc1.u16Height, cRects, pRects);
+    }
+    else
+    {
+        if (u8Flags & VBOXCMDVBVA_OPF_OPERAND1_ISID)
+        {
+            if (!(u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2))
+            {
+                WARN(("blit to texture not implemented"));
+                return -1;
+            }
+
+            return crVBoxServerCrCmdBltIdToVram(pCmd->alloc1.Info.u.id, pCmd->alloc2.Info.u.offVRAM, &pCmd->Hdr.Pos, pCmd->alloc2.u16Width, pCmd->alloc2.u16Height, cRects, pRects);
+        }
+
+        CR_BLITTER_IMG Img1, Img2;
+        int8_t i8Result = crFbImgFromDescBGRA(&pCmd->alloc1, &Img1);
+        if (i8Result)
+        {
+            WARN(("crFbImgFromDescBGRA failed"));
+            return i8Result;
+        }
+
+        i8Result = crFbImgFromDescBGRA(&pCmd->alloc2, &Img2);
+        if (i8Result)
+        {
+            WARN(("crFbImgFromDescBGRA failed"));
+            return i8Result;
+        }
+
+        if (u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2)
+            crFbBltImgPos(&Img2, pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y, cRects, pRects, &Img1);
+        else
+            crFbBltImgPos(&Img1, pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y, cRects, pRects, &Img2);
+
+        return 0;
+    }
 }
 
 static int8_t crVBoxServerCrCmdBltPrimaryPrimaryProcess(const VBOXCMDVBVA_BLT_PRIMARY *pCmd, uint32_t cbCmd)
@@ -5237,6 +5461,144 @@ static int8_t crVBoxServerCrCmdBltPrimaryPrimaryProcess(const VBOXCMDVBVA_BLT_PR
 
     WARN(("crVBoxServerCrCmdBltPrimaryPrimaryProcess: not supported"));
     return -1;
+}
+
+static int8_t crVBoxServerCrCmdClrFillPrimaryGenericProcess(uint32_t u32PrimaryID, const RTRECT *pRects, uint32_t cRects, uint32_t u32Color)
+{
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32PrimaryID);
+    if (!hFb)
+    {
+        LOG(("request to present on disabled framebuffer, ignore"));
+        return 0;
+    }
+
+    int rc = CrFbClrFillNe(hFb, cRects, pRects, u32Color);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("CrFbBltPutContentsNe failed %d", rc));
+        return -1;
+    }
+
+    return 0;
+}
+
+static int8_t crVBoxServerCrCmdClrFillVramGenericProcess(VBOXCMDVBVAOFFSET offVRAM, uint32_t width, uint32_t height, const RTRECT *pRects, uint32_t cRects, uint32_t u32Color)
+{
+    CR_BLITTER_IMG Img;
+    int8_t i8Result = crFbImgFromDimOffVramBGRA(offVRAM, width, height, &Img);
+    if (i8Result)
+    {
+        WARN(("invalid param"));
+        return -1;
+    }
+
+    crFbClrFillImg(&Img, cRects, pRects, u32Color);
+
+    return 0;
+}
+
+static int8_t crVBoxServerCrCmdClrFillPrimaryProcess(const VBOXCMDVBVA_CLRFILL_PRIMARY *pCmd, uint32_t cbCmd)
+{
+    uint32_t u32PrimaryID = (uint32_t)pCmd->Hdr.Hdr.u.u8PrimaryID;
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32PrimaryID);
+    if (!hFb)
+    {
+        LOG(("request to present on disabled framebuffer, ignore"));
+        return 0;
+    }
+
+    uint32_t cRects;
+    const VBOXCMDVBVA_RECT *pPRects = pCmd->aRects;
+    if ((cbCmd - RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_PRIMARY, aRects)) % sizeof (VBOXCMDVBVA_RECT))
+    {
+        WARN(("invalid argument size"));
+        return -1;
+    }
+
+    cRects = (cbCmd - RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_PRIMARY, aRects)) / sizeof (VBOXCMDVBVA_RECT);
+
+    RTRECT *pRects = crVBoxServerCrCmdBltRecsUnpack(pPRects, cRects);
+    if (!pRects)
+    {
+        WARN(("crVBoxServerCrCmdBltRecsUnpack failed"));
+        return -1;
+    }
+
+//    uint8_t u8Flags = pCmd->Hdr.Hdr.u8Flags;
+    int8_t i8Result = crVBoxServerCrCmdClrFillPrimaryGenericProcess(u32PrimaryID, pRects, cRects, pCmd->Hdr.u32Color);
+    if (i8Result < 0)
+    {
+        WARN(("crVBoxServerCrCmdClrFillPrimaryGenericProcess failed"));
+        return i8Result;
+    }
+
+    crVBoxServerCrCmdBltPrimaryUpdate(CrFbGetScreenInfo(hFb), pRects, cRects, u32PrimaryID);
+
+    return 0;
+}
+
+static int8_t crVBoxServerCrCmdClrFillGenericBGRAProcess(const VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8 *pCmd, uint32_t cbCmd)
+{
+    uint32_t cRects;
+    const VBOXCMDVBVA_RECT *pPRects = pCmd->aRects;
+    if ((cbCmd - RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8, aRects)) % sizeof (VBOXCMDVBVA_RECT))
+    {
+        WARN(("invalid argument size"));
+        return -1;
+    }
+
+    cRects = (cbCmd - RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8, aRects)) / sizeof (VBOXCMDVBVA_RECT);
+
+    RTRECT *pRects = crVBoxServerCrCmdBltRecsUnpack(pPRects, cRects);
+    if (!pRects)
+    {
+        WARN(("crVBoxServerCrCmdBltRecsUnpack failed"));
+        return -1;
+    }
+
+//    uint8_t u8Flags = pCmd->Hdr.Hdr.u8Flags;
+    int8_t i8Result = crVBoxServerCrCmdClrFillVramGenericProcess(pCmd->dst.Info.u.offVRAM, pCmd->dst.u16Width, pCmd->dst.u16Height, pRects, cRects, pCmd->Hdr.u32Color);
+    if (i8Result < 0)
+    {
+        WARN(("crVBoxServerCrCmdClrFillVramGenericProcess failed"));
+        return i8Result;
+    }
+
+    return 0;
+}
+
+int8_t crVBoxServerCrCmdClrFillProcess(const VBOXCMDVBVA_CLRFILL_HDR *pCmd, uint32_t cbCmd)
+{
+    uint8_t u8Flags = pCmd->Hdr.u8Flags;
+    uint8_t u8Cmd = (VBOXCMDVBVA_OPF_CLRFILL_TYPE_MASK & u8Flags);
+
+    switch (u8Cmd)
+    {
+        case VBOXCMDVBVA_OPF_CLRFILL_TYPE_PRIMARY:
+        {
+            if (cbCmd < sizeof (VBOXCMDVBVA_CLRFILL_PRIMARY))
+            {
+                WARN(("VBOXCMDVBVA_CLRFILL_PRIMARY: invalid command size"));
+                return -1;
+            }
+
+            return crVBoxServerCrCmdClrFillPrimaryProcess((const VBOXCMDVBVA_CLRFILL_PRIMARY*)pCmd, cbCmd);
+        }
+        case VBOXCMDVBVA_OPF_CLRFILL_TYPE_GENERIC_A8R8G8B8:
+        {
+            if (cbCmd < sizeof (VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8))
+            {
+                WARN(("VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8: invalid command size"));
+                return -1;
+            }
+
+            return crVBoxServerCrCmdClrFillGenericBGRAProcess((const VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8*)pCmd, cbCmd);
+        }
+        default:
+            WARN(("unsupported command"));
+            return -1;
+    }
+
 }
 
 int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_BLT_HDR *pCmd, uint32_t cbCmd)

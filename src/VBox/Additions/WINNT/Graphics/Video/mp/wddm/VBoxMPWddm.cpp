@@ -3511,6 +3511,14 @@ DxgkDdiBuildPagingBufferNew(
 
     LOGF(("ENTER, context(0x%x)", hAdapter));
 
+    if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_HDR))
+    {
+        WARN(("private data too small"));
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    VBOXCMDVBVA_HDR *pHdr = (VBOXCMDVBVA_HDR*)pBuildPagingBuffer->pDmaBufferPrivateData;
+
     switch (pBuildPagingBuffer->Operation)
     {
         case DXGK_OPERATION_TRANSFER:
@@ -3546,8 +3554,6 @@ DxgkDdiBuildPagingBufferNew(
 
             if (pAlloc->AllocData.hostID)
             {
-                VBOXCMDVBVA_HDR *pHdr = (VBOXCMDVBVA_HDR*)pBuildPagingBuffer->pDmaBufferPrivateData;
-
                 cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
                 cbPrivateData = sizeof (*pHdr);
 
@@ -3555,8 +3561,6 @@ DxgkDdiBuildPagingBufferNew(
                 pHdr->u8Flags = 0;
                 pHdr->u.u8PrimaryID = 0;
                 pHdr->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-                pHdr->u2.complexCmdEl.u16CbCmdHost = cbPrivateData;
-                pHdr->u2.complexCmdEl.u16CbCmdGuest = cbBuffer;
                 break;
             }
 
@@ -3631,8 +3635,6 @@ DxgkDdiBuildPagingBufferNew(
             pSysMemCmd->Hdr.u8Flags = cbBuffer & 0xff;
             pSysMemCmd->Hdr.u.u8PrimaryID = (cbBuffer >> 8) & 0xff;
             pSysMemCmd->Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-            pSysMemCmd->Hdr.u2.complexCmdEl.u16CbCmdHost = cbPrivateData;
-            pSysMemCmd->Hdr.u2.complexCmdEl.u16CbCmdGuest = cbBuffer;
             pSysMemCmd->phCmd = 0;
 
             break;
@@ -3647,27 +3649,42 @@ DxgkDdiBuildPagingBufferNew(
                 return STATUS_INVALID_PARAMETER;
             }
 
-            if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_HDR))
+            if (pAlloc->AllocData.hostID || pBuildPagingBuffer->Fill.Destination.SegmentId != 1)
+            {
+                if (!pAlloc->AllocData.hostID)
+                {
+                    WARN(("unexpected segment id"));
+                }
+
+                cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+                cbPrivateData = sizeof (*pHdr);
+
+                pHdr->u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
+                pHdr->u8Flags = 0;
+                pHdr->u.u8PrimaryID = 0;
+                pHdr->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+                break;
+            }
+
+            if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_PAGING_FILL))
             {
                 WARN(("private data too small"));
                 return STATUS_INVALID_PARAMETER;
             }
 
+            VBOXCMDVBVA_PAGING_FILL *pFill = (VBOXCMDVBVA_PAGING_FILL*)pBuildPagingBuffer->pDmaBufferPrivateData;
+            pFill->Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_PAGING_FILL;
+            pFill->Hdr.u8Flags = 0;
+            pFill->Hdr.u.u8PrimaryID = 0;
+            pFill->Hdr.u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+            pFill->u32CbFill = (uint32_t)pBuildPagingBuffer->Fill.FillSize;
+            pFill->u32Pattern = pBuildPagingBuffer->Fill.FillPattern;
+            Assert(!pBuildPagingBuffer->Fill.Destination.SegmentAddress.HighPart);
+            pFill->offVRAM = pBuildPagingBuffer->Fill.Destination.SegmentAddress.LowPart;
+
             cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+            cbPrivateData = sizeof (*pFill);
 
-            VBOXCMDVBVA_HDR *pHdr = (VBOXCMDVBVA_HDR*)pBuildPagingBuffer->pDmaBufferPrivateData;
-
-            cbPrivateData = sizeof (*pHdr);
-
-            pHdr->u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
-            pHdr->u8Flags = 0;
-            pHdr->u.u8PrimaryID = 0;
-            pHdr->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
-            pHdr->u2.complexCmdEl.u16CbCmdHost = cbPrivateData;
-            pHdr->u2.complexCmdEl.u16CbCmdGuest = cbBuffer;
-
-            /** @todo: add necessary bits */
-//            WARN(("Impl!"));
             break;
         }
         case DXGK_OPERATION_DISCARD_CONTENT:
@@ -3693,6 +3710,10 @@ DxgkDdiBuildPagingBufferNew(
     Assert(cbBuffer <= pBuildPagingBuffer->DmaSize);
     Assert(cbBuffer == 0 || cbBuffer >= sizeof (VBOXCMDVBVA_PAGING_TRANSFER) || cbBuffer == VBOXWDDM_DUMMY_DMABUFFER_SIZE);
     AssertCompile(VBOXWDDM_DUMMY_DMABUFFER_SIZE < 8);
+
+    pHdr->u2.complexCmdEl.u16CbCmdHost = cbPrivateData;
+    pHdr->u2.complexCmdEl.u16CbCmdGuest = cbBuffer;
+
     pBuildPagingBuffer->pDmaBuffer = ((uint8_t*)pBuildPagingBuffer->pDmaBuffer) + cbBuffer;
     pBuildPagingBuffer->pDmaBufferPrivateData = ((uint8_t*)pBuildPagingBuffer->pDmaBufferPrivateData) + cbPrivateData;
 
@@ -6247,8 +6268,8 @@ DECLINLINE(void) VBoxCVDdiFillAllocDescHostID(VBOXCMDVBVA_ALLOCDESC *pDesc, cons
 {
     pDesc->Info.u.id = pAlloc->AllocData.hostID;
     /* we do not care about wdth and height, zero them up though */
-    pDesc->width = 0;
-    pDesc->height = 0;
+    pDesc->u16Width = 0;
+    pDesc->u16Height = 0;
 }
 
 DECLINLINE(void) VBoxCVDdiFillAllocInfoOffVRAM(VBOXCMDVBVA_ALLOCINFO *pInfo, const DXGK_ALLOCATIONLIST *pList)
@@ -6260,8 +6281,8 @@ DECLINLINE(void) VBoxCVDdiFillAllocInfoOffVRAM(VBOXCMDVBVA_ALLOCINFO *pInfo, con
 DECLINLINE(void) VBoxCVDdiFillAllocDescOffVRAM(VBOXCMDVBVA_ALLOCDESC *pDesc, const VBOXWDDM_ALLOCATION *pAlloc, const DXGK_ALLOCATIONLIST *pList)
 {
     VBoxCVDdiFillAllocInfoOffVRAM(&pDesc->Info, pList);
-    pDesc->width = (uint16_t)pAlloc->AllocData.SurfDesc.width;
-    pDesc->height = (uint16_t)pAlloc->AllocData.SurfDesc.height;
+    pDesc->u16Width = (uint16_t)pAlloc->AllocData.SurfDesc.width;
+    pDesc->u16Height = (uint16_t)pAlloc->AllocData.SurfDesc.height;
 }
 
 static NTSTATUS vboxWddmCmCmdBltPrimNotPrimFill(VBOXCMDVBVA_BLT_HDR *pBltHdr, const VBOXWDDM_ALLOCATION *pPrimary, const VBOXWDDM_ALLOCATION *pAlloc, const DXGK_ALLOCATIONLIST *pList,
@@ -6568,14 +6589,9 @@ DxgkDdiPresentNew(
     }
     else if (pPresent->Flags.ColorFill)
     {
+#ifdef DEBUG_misha
         WARN(("test color fill!"));
-#if 0
-        if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_CLRFILL))
-        {
-            WARN(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXCMDVBVA_CLRFILL (%d)", pPresent->DmaBufferPrivateDataSize , sizeof (VBOXCMDVBVA_CLRFILL)));
-            /* @todo: can this actually happen? what status to return? */
-            return STATUS_INVALID_PARAMETER;
-        }
+#endif
 
         fPatchDst = TRUE;
 
@@ -6590,17 +6606,58 @@ DxgkDdiPresentNew(
             return STATUS_INVALID_HANDLE;
         }
 
-        pHdr->u8OpCode = VBOXCMDVBVA_OPTYPE_CLRFILL;
-        pHdr->u8Flags = 0;
-        VBOXCMDVBVA_CLRFILL *pCFill = (VBOXCMDVBVA_CLRFILL*)pHdr;
+        if (pDstAlloc->AllocData.hostID)
+        {
+            WARN(("color fill present for texid not supported"));
+            pHdr->u8OpCode = VBOXCMDVBVA_OPTYPE_NOPCMD;
+            pHdr->u8Flags = 0;
+            pHdr->u8State = VBOXCMDVBVA_STATE_SUBMITTED;
+            cbPrivateData = sizeof (VBOXCMDVBVA_HDR);
+            cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+        }
+        else
+        {
+            BOOLEAN fDstPrimary = (!pDstAlloc->AllocData.hostID
+                    && pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
+                    && pDstAlloc->bAssigned);
 
-        if (VBoxCVDdiFillAllocInfo(pHdr, &pCFill->dst, pDstAlloc, pDst, true))
-            u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL, dst.u.offVRAM);
+            if (pPresent->DmaBufferPrivateDataSize < VBOXCMDVBVA_SIZEOF_CLRFILLSTRUCT_MAX)
+            {
+                WARN(("Present->DmaBufferPrivateDataSize(%d) < VBOXCMDVBVA_SIZEOF_CLRFILLSTRUCT_MAX (%d)", pPresent->DmaBufferPrivateDataSize , VBOXCMDVBVA_SIZEOF_CLRFILLSTRUCT_MAX));
+                /* @todo: can this actually happen? what status to return? */
+                return STATUS_INVALID_PARAMETER;
+            }
 
-        paRects = pCFill->aRects;
-        cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL, aRects);
-#endif
-        cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+            VBOXCMDVBVA_CLRFILL_HDR *pClrFillHdr = (VBOXCMDVBVA_CLRFILL_HDR*)pHdr;
+
+            pClrFillHdr->Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_CLRFILL;
+            pClrFillHdr->u32Color = pPresent->Color;
+
+            if (fDstPrimary)
+            {
+                pHdr->u8Flags = VBOXCMDVBVA_OPF_CLRFILL_TYPE_PRIMARY;
+                pHdr->u.u8PrimaryID = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
+
+                VBOXCMDVBVA_CLRFILL_PRIMARY *pCFill = (VBOXCMDVBVA_CLRFILL_PRIMARY*)pHdr;
+                paRects = pCFill->aRects;
+                cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_PRIMARY, aRects);
+            }
+            else
+            {
+                pHdr->u8Flags = VBOXCMDVBVA_OPF_CLRFILL_TYPE_GENERIC_A8R8G8B8;
+                pHdr->u.u8PrimaryID = 0;
+
+                VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8 *pCFill = (VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8*)pHdr;
+                VBoxCVDdiFillAllocInfoOffVRAM(&pCFill->dst.Info, pDst);
+                pCFill->dst.u16Width = (uint16_t)pDstAlloc->AllocData.SurfDesc.width;
+                pCFill->dst.u16Height = (uint16_t)pDstAlloc->AllocData.SurfDesc.height;
+                u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8, dst.Info.u.offVRAM);
+                paRects = pCFill->aRects;
+                cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8, aRects);
+            }
+
+            cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+        }
     }
     else
     {
