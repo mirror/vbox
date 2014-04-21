@@ -3420,6 +3420,8 @@ static DECLCALLBACK(int) crVBoxCrCmdEnable(HVBOXCRCMDSVR hSvr, VBOXCRCMD_SVRENAB
 
     cr_server.fCrCmdEnabled = GL_TRUE;
 
+    crInfo("crCmd ENABLED");
+
     return VINF_SUCCESS;
 }
 
@@ -3436,6 +3438,8 @@ static DECLCALLBACK(int) crVBoxCrCmdDisable(HVBOXCRCMDSVR hSvr)
     memset(&cr_server.CrCmdClientInfo, 0, sizeof (cr_server.CrCmdClientInfo));
 
     cr_server.fCrCmdEnabled = GL_FALSE;
+
+    crInfo("crCmd DISABLED");
 
     return VINF_SUCCESS;
 }
