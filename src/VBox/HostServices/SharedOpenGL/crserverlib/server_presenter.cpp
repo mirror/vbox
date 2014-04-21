@@ -1332,6 +1332,8 @@ void CrFbEntryRelease(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
     crFbEntryRelease(pFb, hEntry);
 }
 
+static int8_t crVBoxServerCrCmdBltPrimaryVramGenericProcess(uint32_t u32PrimaryID, VBOXCMDVBVAOFFSET offVRAM, uint32_t width, uint32_t height, uint32_t xPos, uint32_t yPos, const RTRECT *pRects, uint32_t cRects, bool fToPrimary);
+
 int CrFbRegionsClear(HCR_FRAMEBUFFER hFb)
 {
     if (!hFb->cUpdating)
@@ -1340,9 +1342,43 @@ int CrFbRegionsClear(HCR_FRAMEBUFFER hFb)
         return VERR_INVALID_STATE;
     }
 
+    uint32_t cRegions;
+    const RTRECT *pRegions;
+    int rc = CrVrScrCompositorRegionsGet(&hFb->Compositor, &cRegions, NULL, NULL, &pRegions);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("CrVrScrCompositorEntryRegionsGet failed rc %d", rc));
+        return rc;
+    }
+
+    const struct VBVAINFOSCREEN* pScreen = CrFbGetScreenInfo(hFb);
+    VBOXCMDVBVAOFFSET offVRAM = (VBOXCMDVBVAOFFSET)(((uintptr_t)CrFbGetVRAM(hFb)) - ((uintptr_t)g_pvVRamBase));
+    int8_t i8Result = crVBoxServerCrCmdBltPrimaryVramGenericProcess(pScreen->u32ViewIndex, offVRAM, pScreen->u32Width, pScreen->u32Height, 0, 0, pRegions, cRegions, false);
+    if (i8Result)
+    {
+        WARN(("crVBoxServerCrCmdBltPrimaryVramGenericProcess failed"));
+        return VERR_INTERNAL_ERROR;
+    }
+
+#ifdef DEBUG
+    {
+        uint32_t cTmpRegions;
+        const RTRECT *pTmpRegions;
+        int tmpRc = CrVrScrCompositorRegionsGet(&hFb->Compositor, &cTmpRegions, NULL, NULL, &pTmpRegions);
+        if (!RT_SUCCESS(tmpRc))
+        {
+            WARN(("CrVrScrCompositorEntryRegionsGet failed rc %d", tmpRc));
+        }
+        Assert(!cTmpRegions);
+    }
+#endif
+
+    /* just in case */
     bool fChanged = false;
     CrVrScrCompositorRegionsClear(&hFb->Compositor, &fChanged);
-    if (fChanged)
+    Assert(!fChanged);
+
+    if (cRegions)
     {
         if (hFb->pDisplay)
             hFb->pDisplay->RegionsChanged(hFb);
@@ -4450,7 +4486,7 @@ int CrPMgrSaveState(PSSMHANDLE pSSM)
             rc = SSMR3PutU16(pSSM, hFb->ScreenInfo.u16Flags);
             AssertRCReturn(rc, rc);
 
-            rc = SSMR3PutU32(pSSM, (uint32_t)(((uintptr_t)hFb->pvVram) - ((uintptr_t)g_pvVRamBase)));
+            rc = SSMR3PutU32(pSSM, (uint32_t)(((uintptr_t)CrFbGetVRAM(hFb)) - ((uintptr_t)g_pvVRamBase)));
             AssertRCReturn(rc, rc);
 
             rc = CrFbSaveState(hFb, pSSM);
