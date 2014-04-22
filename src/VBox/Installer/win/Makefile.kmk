@@ -68,7 +68,7 @@ endif
 #
 VBOX_INSTALLER_MERGE_MODULES = App USB NetAdp NetFlt Python
 # We only ship the merge modules in locale en_US for the moment.
-VBOX_INSTALLER_MERGE_LANGUAGES =  $(VBOX_INSTALLER_LANGUAGES)
+VBOX_INSTALLER_MERGE_LANGUAGES = $(VBOX_INSTALLER_LANGUAGES)
 
 #
 # We don't have the license text in another language than English yet,
