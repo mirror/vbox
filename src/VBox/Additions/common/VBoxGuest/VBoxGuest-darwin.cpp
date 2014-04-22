@@ -453,7 +453,7 @@ static int VbgdDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, st
      */
     RTSpinlockAcquire(g_Spinlock);
     pSession = g_apSessionHashTab[iHash];
-    while (pSession && pSession->Process != Process /*later: && pSession->fUnrestricted == fUnrestricted*/ && pSession->fOpened)
+    while (pSession && pSession->Process != Process && (/*later: pSession->fUnrestricted != fUnrestricted ||*/  !pSession->fOpened))
         pSession = pSession->pNextHash;
     RTSpinlockReleaseNoInts(g_Spinlock);
     if (!pSession)
