@@ -56,6 +56,8 @@ VBOX_INSTALLER_LANGUAGES += $(VBOX_INSTALLER_ADD_LANGUAGES)
 # List of merge modules to use.
 #
 VBOX_INSTALLER_MERGE_MODULES = App USB NetAdp NetFlt Python
+# We only ship the merge modules in locale en_US for the moment.
+VBOX_INSTALLER_MERGE_LANGUAGES = en_US
 
 #
 # Use merge modules if we're not doing an official release.
@@ -155,7 +157,7 @@ endif
 ifdef VBOX_WITH_MSM_INSTALL
  OTHER_CLEAN += \
   $(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
-   $(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
+   $(foreach lang,$(VBOX_INSTALLER_MERGE_LANGUAGES), \
 		$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module).msm.dep \
 		$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm \
 		$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj \
@@ -389,7 +391,7 @@ endef
 
 $(if $(VBOX_WITH_MSM_INSTALL), \
 	$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
-		$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
+		$(foreach lang,$(VBOX_INSTALLER_MERGE_LANGUAGES), \
 			$(eval $(def_vbox_link_msm)))),)
 
 #
@@ -652,7 +654,7 @@ endif
 endef
 
 $(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
-	$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
+	$(foreach lang,$(VBOX_INSTALLER_MERGE_LANGUAGES), \
 		$(eval $(def_vbox_compile_msm))))
 
 #
