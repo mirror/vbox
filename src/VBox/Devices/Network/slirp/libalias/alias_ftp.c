@@ -541,8 +541,11 @@ ParseFtp227Reply(struct libalias *la, char *sptr, int dlen)
     }
 
     if (state == 13) {
+        if (addr != INADDR_LOOPBACK)
+            la->true_addr.s_addr = htonl(addr);
+        else
+            la->true_addr.s_addr = la->pData->alias_addr.s_addr;
         la->true_port = port;
-        la->true_addr.s_addr = htonl(addr);
         return (1);
     } else
         return (0);
