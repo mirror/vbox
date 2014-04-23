@@ -19,7 +19,7 @@
     <Directory Id="dir_VBoxAppDocuments" Name="doc">
         <!-- The documentation is a separate component. This allows to split the install process
              into pieces if ever necessary. Maintenance is easier, too. The following component
-             will be installed in the "doc" folder. -->
+             will be installed in the "doc" folder -->
         <Component Id="cp_Docs" Guid="40BD12C5-89A8-4B81-8A5E-5EEE2C2763C4">
             <?include $(env.PATH_TARGET)\Files_Doc.wxi ?>
         </Component>
@@ -53,44 +53,8 @@
     </Directory>
 <?endif ?>
 
-<?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
-    <Directory Id="dir_VBoxAppX86" Name="x86">
-        <!-- The 32-bit client COM component (see also cp_MainCom below). -->
-        <Component Id="cp_MainCOM_x86" Guid="B600824E-4A25-2EB3-4B44-3D8CB7F9B92D" Win64="no">
-            <!-- Note: This file ID *must not* be changed because of our typelib template generation file! -->
-            <File Id="VBoxClient_x86" Name="VBoxClient-x86.dll"
-                  Source="$(env.PATH_OUT)\bin\x86\VBoxClient-x86.dll" KeyPath="yes"
-                  DiskId="$(var.Property_DiskIdCommon)">
-            </File>
-            <File Id="file_VBoxRT_x86" Name="VBoxRT-x86.dll"
-                  Source="$(env.PATH_OUT)\bin\x86\VBoxRT-x86.dll"
-                  DiskId="$(var.Property_DiskIdCommon)">
-            </File>
-            <?include $(env.PATH_TARGET)\VirtualBox_TypeLib_x86.wxi ?>
-    <?if $(env.VBOX_VCC_TOOL_STEM) = "VCC100" ?>
-            <!-- MS C/C++ v10.0 32 bit Runtime DLL files. -->
-            <File Id="file_msvcr100_x86" Name="msvcr100.dll"
-                  Source="$(env.PATH_OUT)\bin\x86\msvcr100.dll"
-                  DiskId="$(var.Property_DiskIdCommon)" />
-            <File Id="file_msvcp100_x86" Name="msvcp100.dll"
-                  Source="$(env.PATH_OUT)\bin\x86\msvcp100.dll"
-                  DiskId="$(var.Property_DiskIdCommon)" />
-    <?endif?>
-    <?if $(env.VBOX_VCC_TOOL_STEM) = "VCC110" ?>
-            <!-- MS C/C++ v11.0 Runtime DLL files. -->
-            <File Id="file_msvcr110_x86" Name="msvcr110.dll"
-                  Source="$(env.PATH_OUT)\bin\x86\msvcr110.dll"
-                  DiskId="$(var.Property_DiskIdCommon)" />
-            <File Id="file_msvcp110_x86" Name="msvcp110.dll"
-                  Source="$(env.PATH_OUT)\bin\x86\msvcp110.dll"
-                  DiskId="$(var.Property_DiskIdCommon)" />
-    <?endif?>
-        </Component>
-    </Directory>
-<?endif?>
-
     <!-- COM components have a separate entry mainly because of the KeyPath attribute (that hints the
-         TypeLib element where to take the TLB resource from) may appear only once per Component. -->
+         TypeLib element where to take the TLB resource from) may appear only once per component -->
     <Component Id="cp_MainCOM" Guid="CD4A3C6C-C2D5-428D-90A1-B6DA3D0777D6" Win64="$(var.Property_Win64)">
 
         <!-- Note: This file ID *must not* be changed because of our typelib template generation file! -->
@@ -124,11 +88,12 @@
     <!---->
 
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-    <Component Id="cp_RegisterExtensions" Guid="FEB8943E-5D60-4E2D-846F-458207019D40" Win64="$(var.Property_Win64)">
+    <Component Id="cp_RegisterExtensions" Guid="FEB8943E-5D60-4E2D-846F-458207019D40"
+               Win64="$(var.Property_Win64)" KeyPath="yes">
         <Condition>VBOX_REGISTERFILEEXTENSIONS</Condition>
-        <!-- Register file extensions. Note: Extension Id's *must not* be changed! These specify the actual
+        <!-- Register file extensions. Note: Extension IDs *must not* be changed! These specify the actual
              file extension to handle. Also, here would be the place to add more fancy DDE stuff later.
-             Important: The IDs in "IconIndex" *must* be matching "Resources\resource.h". -->
+             Important: The IDs in "IconIndex" *must* be matching "Resources\resource.h" -->
         <ProgId Id="progId_VirtualBox.Shell.vbox" Description="VirtualBox Machine Definition" Icon="file_VBoxRes.dll" IconIndex="-201">
             <Extension Id="vbox" ContentType="application/x-virtualbox-vbox">
                 <Verb Id="open" Command="Open" TargetFile="file_VirtualBox.exe" Argument="&quot;%1&quot;" />
@@ -161,23 +126,23 @@
         <ProgId Id="progId_VirtualBox.Shell.hdd" Description="Virtual Hard Disk" Icon="file_VBoxRes.dll" IconIndex="-306">
             <Extension Id="hdd" ContentType="application/x-virtualbox-hdd" />
         </ProgId>
-    </Component> <!-- RegisterExtensions -->
+    </Component> <!-- cp_RegisterExtensions -->
 <?endif ?>
 
     <!-- All Binaries, DLLs (except COM) and drivers are in one component because they belong together. Additional
-         binaries e.g. test tools, utilities etc. should be in another component so they"re clearly separated. -->
+         binaries e.g. test tools, utilities etc. should be in another component so they"re clearly separated -->
     <Component Id="cp_MainBinaries" Guid="5C8FE57A-F744-4DE0-AA3F-A563F486AD98" Win64="$(var.Property_Win64)">
 
-        <!-- Set required environment variables. -->
+        <!-- Set required environment variables -->
         <Environment Id="env_VBoxInstallDir" Action="set" Name="VBOX_MSI_INSTALL_PATH"
                      System="yes" Part="last" Permanent="no" Value="[MergeRedirectFolder]" />
 
         <!-- Files -->
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
-        <!-- Include all user manual .CHM files (file is generated by makefile). -->
+        <!-- Include all user manual .CHM files (file is generated by makefile) -->
         <?include $(env.PATH_TARGET)\Files_Main.wxi ?>
 <?endif ?>
-        <!-- Include all license files (file is generated by makefile). -->
+        <!-- Include all license files (file is generated by makefile) -->
         <?include $(env.PATH_TARGET)\Files_License.wxi ?>
 
         <!-- Frontends -->
@@ -290,14 +255,14 @@
 <?endif?>
 
 <?if $(env.VBOX_VCC_TOOL_STEM) = "VCC100" ?>
-        <!-- MS C/C++ v10.0 Runtime DLL files. -->
+        <!-- MS C/C++ v10.0 Runtime DLL files -->
         <File Id="file_msvcr100.dll" Name="msvcr100.dll"
               Source="$(env.PATH_OUT)\bin\msvcr100.dll" />
         <File Id="file_msvcp100.dll" Name="msvcp100.dll"
               Source="$(env.PATH_OUT)\bin\msvcp100.dll" />
 <?endif?>
 <?if $(env.VBOX_VCC_TOOL_STEM) = "VCC110" ?>
-        <!-- MS C/C++ v11.0 Runtime DLL files. -->
+        <!-- MS C/C++ v11.0 Runtime DLL files -->
         <File Id="file_msvcr110.dll" Name="msvcr110.dll"
               Source="$(env.PATH_OUT)\bin\msvcr110.dll" />
         <File Id="file_msvcp110.dll" Name="msvcp110.dll"
@@ -350,7 +315,8 @@
     </Component>
 <?endif?>
     <!-- SDL plugins -->
-    <Component Id="cp_VBoxSDLBinaries" Guid="F09D5FD9-E176-42B0-90A9-481BB18B0CB4" Win64="$(var.Property_Win64)">
+    <Component Id="cp_VBoxSDLBinaries" Guid="F09D5FD9-E176-42B0-90A9-481BB18B0CB4"
+               Win64="$(var.Property_Win64)">
         <File Id="file_VBoxSDL.exe" Name="VBoxSDL.exe"
               Source="$(env.PATH_OUT)\bin\VBoxSDL.exe" />
         <File Id="file_SDL.dll" Name="SDL.dll"
@@ -369,7 +335,8 @@
     </Component>
 <?endif?>
     <!-- C API (glue) bindings -->
-    <Component Id="cp_VBoxCAPI" Guid="097F7F53-7111-467F-8E0C-257D9926FDA0">
+    <Component Id="cp_VBoxCAPI" Guid="097F7F53-7111-467F-8E0C-257D9926FDA0"
+               Win64="$(var.Property_Win64)">
         <File Id="file_VBoxCAPI.dll" Name="VBoxCAPI.dll"
               Source="$(env.PATH_OUT)\bin\VBoxCAPI.dll" />
     </Component>

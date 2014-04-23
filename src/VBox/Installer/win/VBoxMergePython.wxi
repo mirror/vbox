@@ -33,7 +33,8 @@
         </Component>
     </Directory>
 <?endif?>
-    <Component Id="cp_VBoxPythonBinding" Guid="293D7E11-78DA-4C31-AEED-AE2FE42F6881">
+    <Component Id="cp_VBoxPythonBinding" KeyPath="yes"
+               Guid="293D7E11-78DA-4C31-AEED-AE2FE42F6881" Win64="$(var.Property_Win64)">
         <Condition>VBOX_PYTHON_IS_INSTALLED</Condition>
     </Component>
 
