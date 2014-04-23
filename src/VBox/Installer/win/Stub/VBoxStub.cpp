@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -819,6 +819,8 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     /* Parameter definitions. */
     static const RTGETOPTDEF s_aOptions[] =
     {
+        /** @todo Replace short parameters with enums since they're not
+         *        used (and not documented to the public). */
         { "--extract",          'x', RTGETOPT_REQ_NOTHING },
         { "-extract",           'x', RTGETOPT_REQ_NOTHING },
         { "/extract",           'x', RTGETOPT_REQ_NOTHING },
@@ -838,6 +840,9 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         { "/path",              'p', RTGETOPT_REQ_STRING  },
         { "--msiparams",        'm', RTGETOPT_REQ_STRING  },
         { "-msiparams",         'm', RTGETOPT_REQ_STRING  },
+        { "--reinstall",        "f", RTGETOPT_REQ_NOTHING },
+        { "-reinstall",         "f", RTGETOPT_REQ_NOTHING },
+        { "/reinstall",         "f", RTGETOPT_REQ_NOTHING },
         { "--version",          'V', RTGETOPT_REQ_NOTHING },
         { "-version",           'V', RTGETOPT_REQ_NOTHING },
         { "/version",           'V', RTGETOPT_REQ_NOTHING },
@@ -857,6 +862,16 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     {
         switch (ch)
         {
+            case 'f': /* Force re-installation. */
+                if (szMSIArgs[0])
+                    vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), " ");
+                if (RT_SUCCESS(vrc))
+                    vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs),
+                                   "REINSTALLMODE=vomus REINSTALL=ALL");
+                if (RT_FAILURE(vrc))
+                    return ShowError("MSI parameters are too long.");
+                break;
+
             case 'x':
                 fExtractOnly = true;
                 break;
@@ -899,13 +914,14 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 ShowInfo("-- %s v%d.%d.%d.%d --\n"
                          "\n"
                          "Command Line Parameters:\n\n"
+                         "--help                   - Print this help and exit\n"
                          "--extract                - Extract file contents to temporary directory\n"
-                         "--silent                 - Enables silent mode installation\n"
+                         "--logging                - Enables installer logging\n"
+                         "--msiparams <parameters> - Specifies extra parameters for the MSI installers\n"
                          "--no-silent-cert         - Do not install VirtualBox Certificate automatically when --silent option is specified\n"
                          "--path                   - Sets the path of the extraction directory\n"
-                         "--msiparams <parameters> - Specifies extra parameters for the MSI installers\n"
-                         "--logging                - Enables installer logging\n"
-                         "--help                   - Print this help and exit\n"
+                         "--reinstall              - Forces VirtualBox to get re-installed\n"
+                         "--silent                 - Enables silent mode installation\n"
                          "--version                - Print version number and exit\n\n"
                          "Examples:\n"
                          "%s --msiparams INSTALLDIR=C:\\VBox\n"
