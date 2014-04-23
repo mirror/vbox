@@ -793,16 +793,24 @@ typedef struct PDMIDISPLAYCONNECTOR
      *
      * @param   pInterface          Pointer to this interface.
      * @param   uScreenId           The screen updates are for.
-     * @thread  The emulation thread.
+     * @param   fRenderThreadMode   if true - the graphics device has a separate thread that does all rendering.
+     *                              This means that:
+     *                              1. all pfnVBVAXxx callbacks (including the current pfnVBVAEnable call), except displayVBVAMousePointerShape
+     *                                 will be called in the context of the render thread rather than the emulation thread
+     *                              2. PDMIDISPLAYCONNECTOR implementor (i.e. DisplayImpl) must NOT notify crogl backend
+     *                                 about vbva-originated events (e.g. resize), because crogl is working in CrCmd mode,
+     *                                 in the context of the render thread as part of the Graphics device, and gets notified about those events directly
+     * @thread  if fRenderThreadMode is TRUE - the render thread, otherwise - the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVBVAEnable,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags));
+    DECLR3CALLBACKMEMBER(int, pfnVBVAEnable,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags, bool fRenderThreadMode));
 
     /**
      * The specified screen leaves VBVA mode.
      *
      * @param   pInterface          Pointer to this interface.
      * @param   uScreenId           The screen updates are for.
-     * @thread  The emulation thread.
+     * @thread  if render thread mode is on (fRenderThreadMode that was passed to pfnVBVAEnable is TRUE) - the render thread pfnVBVAEnable was called in,
+     *          otherwise - the emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnVBVADisable,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId));
 
@@ -811,7 +819,8 @@ typedef struct PDMIDISPLAYCONNECTOR
      *
      * @param   pInterface          Pointer to this interface.
      * @param   uScreenId           The screen updates are for.
-     * @thread  The emulation thread.
+     * @thread  if render thread mode is on (fRenderThreadMode that was passed to pfnVBVAEnable is TRUE) - the render thread pfnVBVAEnable was called in,
+     *          otherwise - the emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateBegin,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId));
 
@@ -820,7 +829,8 @@ typedef struct PDMIDISPLAYCONNECTOR
      *
      * @param   pInterface          Pointer to this interface.
      * @param   pCmd                Video HW Acceleration Command to be processed.
-     * @thread  The emulation thread.
+     * @thread  if render thread mode is on (fRenderThreadMode that was passed to pfnVBVAEnable is TRUE) - the render thread pfnVBVAEnable was called in,
+     *          otherwise - the emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateProcess,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, const PVBVACMDHDR pCmd, size_t cbCmd));
 
@@ -833,7 +843,8 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   y                   The upper left corner y coordinate of the rectangle.
      * @param   cx                  The width of the rectangle.
      * @param   cy                  The height of the rectangle.
-     * @thread  The emulation thread.
+     * @thread  if render thread mode is on (fRenderThreadMode that was passed to pfnVBVAEnable is TRUE) - the render thread pfnVBVAEnable was called in,
+     *          otherwise - the emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateEnd,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, int32_t x, int32_t y, uint32_t cx, uint32_t cy));
 
@@ -852,7 +863,8 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   pView               The description of VRAM block for this screen.
      * @param   pScreen             The data of screen being resized.
      * @param   pvVRAM              Address of the guest VRAM.
-     * @thread  The emulation thread.
+     * @thread  if render thread mode is on (fRenderThreadMode that was passed to pfnVBVAEnable is TRUE) - the render thread pfnVBVAEnable was called in,
+     *          otherwise - the emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnVBVAResize,(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM));
 
@@ -897,7 +909,7 @@ typedef struct PDMIDISPLAYCONNECTOR
     /** @} */
 } PDMIDISPLAYCONNECTOR;
 /** PDMIDISPLAYCONNECTOR interface ID. */
-#define PDMIDISPLAYCONNECTOR_IID                "05ba9649-302e-43dd-b9ff-60b6fb311d97"
+#define PDMIDISPLAYCONNECTOR_IID                "906d0c25-091f-497e-908c-1d70cb7e6114"
 
 
 /** Pointer to a block port interface. */

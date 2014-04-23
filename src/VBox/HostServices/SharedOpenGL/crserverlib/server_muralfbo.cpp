@@ -394,7 +394,7 @@ void crVBoxServerMuralFbResizeBegin(HCR_FRAMEBUFFER hFb)
 }
 
 
-static int crVBoxServerResizeScreen(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM)
+int crVBoxServerResizeScreen(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM)
 {
     int rc;
     HCR_FRAMEBUFFER hFb = CrPMgrFbGet(pScreen->u32ViewIndex);
@@ -430,6 +430,12 @@ static int crVBoxServerResizeScreen(const struct VBVAINFOSCREEN *pScreen, void *
 
 DECLEXPORT(int) crVBoxServerNotifyResize(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM)
 {
+    if (cr_server.fCrCmdEnabled)
+    {
+        WARN(("crVBoxServerNotifyResize for enabled CrCmd"));
+        return VERR_INVALID_STATE;
+    }
+
     int rc = crVBoxServerResizeScreen(pScreen, pvVRAM);
     if (!RT_SUCCESS(rc))
     {

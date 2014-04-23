@@ -3568,6 +3568,12 @@ static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, 
     }
 }
 
+static DECLCALLBACK(int) crVBoxCrCmdResize(HVBOXCRCMDSVR hSvr, const struct VBVAINFOSCREEN *pScreen, void *pvVRAM)
+{
+    CRASSERT(cr_server.fCrCmdEnabled);
+    return crVBoxServerResizeScreen(pScreen, pvVRAM);
+}
+
 static const char* gszVBoxOGLSSMMagic = "***OpenGL state data***";
 
 static int crVBoxCrCmdSaveClients(PSSMHANDLE pSSM)
@@ -4194,6 +4200,7 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
             pSetup->CrCmdServerInfo.pfnCmd = crVBoxCrCmdCmd;
             pSetup->CrCmdServerInfo.pfnHostCtl = crVBoxCrCmdHostCtl;
             pSetup->CrCmdServerInfo.pfnGuestCtl = crVBoxCrCmdGuestCtl;
+            pSetup->CrCmdServerInfo.pfnResize = crVBoxCrCmdResize;
             pSetup->CrCmdServerInfo.pfnSaveState = crVBoxCrCmdSaveState;
             pSetup->CrCmdServerInfo.pfnLoadState = crVBoxCrCmdLoadState;
             rc = VINF_SUCCESS;

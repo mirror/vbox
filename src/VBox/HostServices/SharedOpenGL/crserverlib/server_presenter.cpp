@@ -1242,7 +1242,6 @@ static CR_FBTEX* crFbTexCreate(const VBOXVR_TEXTURE *pTex)
     return pFbTex;
 }
 
-
 CR_TEXDATA* CrFbTexDataCreate(const VBOXVR_TEXTURE *pTex)
 {
     CR_FBTEX *pFbTex = crFbTexCreate(pTex);

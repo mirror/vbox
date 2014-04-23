@@ -1340,4 +1340,39 @@ int VBoxCmdVbvaConCmdCompletionData(void *pvCmd, VBOXCMDVBVA_CRCMD_CMD **ppCmd)
         *ppCmd = (VBOXCMDVBVA_CRCMD_CMD*)(pCmd+1);
     return pCmd->Hdr.i32Result;
 }
+
+int VBoxCmdVbvaConCmdResize(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const POINT * pVScreenPos, uint16_t fFlags)
+{
+    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+
+    VBOXCMDVBVA_CTL_RESIZE *pResize = (VBOXCMDVBVA_CTL_RESIZE*)vboxCmdVbvaCtlCreate(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, sizeof (VBOXCMDVBVA_CTL_RESIZE));
+    if (!pResize)
+    {
+        WARN(("vboxCmdVbvaCtlCreate failed"));
+        return VERR_OUT_OF_RESOURCES;
+    }
+
+    pResize->Hdr.u32Type = VBOXCMDVBVACTL_TYPE_RESIZE;
+    pResize->Hdr.i32Result = VERR_NOT_IMPLEMENTED;
+
+    int rc = vboxWddmScreenInfoInit(&pResize->Resize.aEntries[0].Screen, pAllocData, pVScreenPos, fFlags);
+    if (RT_SUCCESS(rc))
+    {
+        rc = vboxCmdVbvaCtlSubmitSync(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, &pResize->Hdr);
+        if (RT_SUCCESS(rc))
+        {
+            rc = pResize->Hdr.i32Result;
+            if (RT_FAILURE(rc))
+                WARN(("VBOXCMDVBVACTL_TYPE_RESIZE failed %d", rc));
+        }
+        else
+            WARN(("vboxCmdVbvaCtlSubmitSync failed %d", rc));
+    }
+    else
+        WARN(("vboxWddmScreenInfoInit failed %d", rc));
+
+    vboxCmdVbvaCtlFree(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, &pResize->Hdr);
+
+    return rc;
+}
 #endif
