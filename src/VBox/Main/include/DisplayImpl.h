@@ -97,6 +97,7 @@ typedef struct _DISPLAYFBINFO
 #ifdef VBOX_WITH_HGSMI
     bool fVBVAEnabled;
     bool fVBVAForceResize;
+    bool fRenderThreadMode;
     uint32_t cVBVASkipUpdate;
     struct
     {
@@ -279,7 +280,7 @@ private:
     static DECLCALLBACK(void)  displayCrHgcmCtlSubmitCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
 #endif
 #ifdef VBOX_WITH_HGSMI
-    static DECLCALLBACK(int)   displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags);
+    static DECLCALLBACK(int)   displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags, bool fRenderThreadMode);
     static DECLCALLBACK(void)  displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
     static DECLCALLBACK(void)  displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
     static DECLCALLBACK(void)  displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, const PVBVACMDHDR pCmd, size_t cbCmd);

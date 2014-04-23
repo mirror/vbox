@@ -472,6 +472,8 @@ int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_BLT_HDR *pCmd, uint32_t cbC
 int8_t crVBoxServerCrCmdClrFillProcess(const VBOXCMDVBVA_CLRFILL_HDR *pCmd, uint32_t cbCmd);
 int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip);
 
+int crVBoxServerResizeScreen(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM);
+
 //#define VBOX_WITH_CRSERVER_DUMPER
 #ifdef VBOX_WITH_CRSERVER_DUMPER
 void crServerDumpCheckTerm();

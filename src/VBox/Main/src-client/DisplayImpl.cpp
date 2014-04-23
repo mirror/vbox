@@ -637,6 +637,7 @@ HRESULT Display::init(Console *aParent)
 #ifdef VBOX_WITH_HGSMI
         maFramebuffers[ul].fVBVAEnabled = false;
         maFramebuffers[ul].fVBVAForceResize = false;
+        maFramebuffers[ul].fRenderThreadMode = false;
         maFramebuffers[ul].cVBVASkipUpdate = 0;
         RT_ZERO(maFramebuffers[ul].vbvaSkippedRect);
         maFramebuffers[ul].pVBVAHostFlags = NULL;
@@ -871,6 +872,9 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId
 int Display::notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM)
 {
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+    if (maFramebuffers[pScreen->u32ViewIndex].fRenderThreadMode)
+        return VINF_SUCCESS; /* nop it */
+
     BOOL is3denabled;
     mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
 
@@ -4586,15 +4590,25 @@ DECLCALLBACK(void)  Display::displayVRecCompletion(int32_t result, uint32_t u32F
 
 
 #ifdef VBOX_WITH_HGSMI
-DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags)
+DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags, bool fRenderThreadMode)
 {
     LogRelFlowFunc(("uScreenId %d\n", uScreenId));
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
 
+    if (pThis->maFramebuffers[uScreenId].fVBVAEnabled && pThis->maFramebuffers[uScreenId].fRenderThreadMode != fRenderThreadMode)
+    {
+        LogRel(("enabling different vbva mode"));
+#ifdef DEBUG_misha
+        AssertMsgFailed(("enabling different vbva mode"));
+#endif
+        return VERR_INVALID_STATE;
+    }
+
     pThis->maFramebuffers[uScreenId].fVBVAEnabled = true;
     pThis->maFramebuffers[uScreenId].pVBVAHostFlags = pHostFlags;
+    pThis->maFramebuffers[uScreenId].fRenderThreadMode = fRenderThreadMode;
     pThis->maFramebuffers[uScreenId].fVBVAForceResize = true;
 
     vbvaSetMemoryFlagsHGSMI(uScreenId, pThis->mfu32SupportedOrders, pThis->mfVideoAccelVRDP, &pThis->maFramebuffers[uScreenId]);
@@ -4629,6 +4643,7 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
 
     pFBInfo->fVBVAEnabled = false;
     pFBInfo->fVBVAForceResize = false;
+    pFBInfo->fRenderThreadMode = false;
 
     vbvaSetMemoryFlagsHGSMI(uScreenId, 0, false, pFBInfo);
 
