@@ -67,6 +67,10 @@ endif
 # List of merge modules to use.
 #
 VBOX_INSTALLER_MERGE_MODULES = App USB NetAdp NetFlt Python
+ifeq ($(KBUILD_TARGET_ARCH),amd64)
+ VBOX_INSTALLER_MERGE_MODULES += COM32On64
+endif
+
 # We only ship the merge modules in locale en_US for the moment.
 VBOX_INSTALLER_MERGE_LANGUAGES = $(VBOX_INSTALLER_LANGUAGES)
 
@@ -188,12 +192,16 @@ ifdef VBOX_WITH_BUNDLED_INSTALLER
 endif
 
 #
-# Surpress/skip the following ICE (internal consistency evaluators):
+# Suppress/skip the following ICE (Internal Consistency Evaluators):
 # - ICE64: Checks that new directories in the user profile are removed correctly in roaming scenarios.
 #          -> We don't want to remove system folders (like "Microsoft/Internet Explorer/Quick Launch").
+# - ICE69: Checks if file references are within the same component.
+#          -> We reference to files within different components, but these components are installed using
+#             the same feature, so that's fine.
 #
 VBOX_MSI_ICE_IGNORE := \
-	-ice:64
+	-ice:64 \
+	-ice:69
 
 #
 # Create intermediate XML file for languages (needed for .MSI linking).
@@ -578,6 +586,9 @@ $(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
 define def_vbox_compile_msm
 $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj: \
 			$(PATH_SUB_CURRENT)/VBoxMerge$(module).wxs \
+			$(PATH_SUB_CURRENT)/VBoxMerge$(module).wxi \
+			$(PATH_SUB_CURRENT)/VBoxMerge$(module)CA.wxi \
+			$(PATH_SUB_CURRENT)/VBoxMerge$(module)Seq.wxi \
 			$(PATH_SUB_CURRENT)/UserInterface.wxi \
 			$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi \
 			$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \

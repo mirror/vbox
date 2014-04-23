@@ -21,14 +21,14 @@
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
     <!-- The merge module file names -->
     <?define Property_VBoxMergeApp = "$(env.VBOX_WIN_INST_MERGE_APP)" ?>
+    <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
+        <?define Property_VBoxMergeCOM32On64 = "$(env.VBOX_WIN_INST_MERGE_COM32ON64)" ?>
+    <?endif ?>
     <?define Property_VBoxMergeUSB = "$(env.VBOX_WIN_INST_MERGE_USB)" ?>
-
     <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
         <?define Property_VBoxMergeNetworkFlt = "$(env.VBOX_WIN_INST_MERGE_NETFLT)" ?>
     <?endif ?>
-
     <?define Property_VBoxMergeNetworkAdp = "$(env.VBOX_WIN_INST_MERGE_NETADP)" ?>
-
     <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
         <?define Property_VBoxMergePython = "$(env.VBOX_WIN_INST_MERGE_PYTHON)" ?>
     <?endif ?>
@@ -173,8 +173,17 @@
     <CustomAction Id="ca_UninstallBrandingArgs" Property="ca_UninstallBranding" Value="[INSTALLDIR]" Execute="immediate"/>
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
     <?include VBoxMergeAppCA.wxi ?>
-    <?include VBoxMergeNetFltCA.wxi ?>
-    <?include VBoxMergePythonCA.wxi ?>
+    <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
+        <?include VBoxMergeCOM32On64CA.wxi ?>
+    <?endif ?>
+    <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
+        <?include VBoxMergeNetFltCA.wxi ?>
+    <?endif ?>
+    <?include VBoxMergeNetAdpCA.wxi ?>
+    <?include VBoxMergeUSBCA.wxi ?>
+    <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
+        <?include VBoxMergePythonCA.wxi ?>
+    <?endif ?>
 <?endif ?>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -182,8 +191,14 @@
             <Directory Id="INSTALLDIR" Name="$(env.VBOX_PRODUCT)">
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                 <Merge Id="msm_VBoxApp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeApp)" DiskId="1" />
+    <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
+                <Merge Id="msm_VBoxCOM32On64" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeCOM32On64)" DiskId="1" />
+    <?endif ?>
 <?else ?>
                 <?include VBoxMergeApp.wxi ?>
+    <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
+                <?include VBoxMergeCOM32On64.wxi ?>
+    <?endif ?>
 <?endif ?>
                 <Directory Id="dir_Drivers" Name="drivers">
                     <Directory Id="dir_USB" Name="USB">
@@ -286,6 +301,9 @@
              the merge module -->
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
         <MergeRef Id="msm_VBoxApp" />
+        <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
+            <MergeRef Id="msm_VBoxCOM32On64" />
+        <?endif ?>
 <?else ?>
     <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <ComponentRef Id="cp_RegisterExtensions" />
@@ -432,8 +450,14 @@
 
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
         <?include VBoxMergeAppSeq.wxi ?>
-        <?include VBoxMergeNetFltSeq.wxi ?>
-        <?include VBoxMergePythonSeq.wxi ?>
+        <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
+            <?include VBoxMergeNetFltSeq.wxi ?>
+        <?endif ?>
+        <?include VBoxMergeNetAdpSeq.wxi ?>
+        <?include VBoxMergeUSBSeq.wxi ?>
+        <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
+            <?include VBoxMergePythonSeq.wxi ?>
+        <?endif ?>
 <?endif ?>
 
     </InstallExecuteSequence>

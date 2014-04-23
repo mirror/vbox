@@ -34,13 +34,13 @@
           <?define Property_DriverLegacy = "yes" ?>
       <?endif ?>
 
-      <?else ?>
-          <?define Property_ProgramFiles = "ProgramFilesFolder" ?>
-          <?define Property_Platform     = "x86" ?>
-          <?define Property_Win64        = "no" ?>
+  <?else ?>
+      <?define Property_ProgramFiles = "ProgramFilesFolder" ?>
+      <?define Property_Platform     = "x86" ?>
+      <?define Property_Win64        = "no" ?>
 
       <?if $(env.VBOX_SIGNING_MODE) != none ?>
-         <!-- Note: Settings this to 'no' breaks Windows 2000 installs (!) -->
+          <!-- Note: Settings this to 'no' breaks Windows 2000 installs (!) -->
           <?define Property_DriverLegacy = "yes" ?>
       <?else ?>
           <?define Property_DriverLegacy = "yes" ?>
