@@ -261,8 +261,8 @@
                 <para>Crossbow-based bridged networking on Solaris 11 hosts does
                 not work directly with aggregate links. However, you can manually
                 create a VNIC (using <computeroutput>dladm</computeroutput>) over
-                the aggregate link and use that with a VM. This limitation has
-                has been fixed in Solaris 11u1 build 17 and newer.</para>
+                the aggregate link and use that with a VM. This limitation does
+                not exist in Solaris 11u1 build 17 and newer.</para>
               </listitem>
             </itemizedlist></para>
         </listitem>
