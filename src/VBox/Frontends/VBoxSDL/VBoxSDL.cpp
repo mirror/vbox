@@ -743,13 +743,23 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      * gets inactive, that is KeyPress and KeyRelease are sent when pressing the lock key
      * to change the mode. The current lock mode is reflected in SDL_GetModState().
      *
-     * Debian patched libSDL to make the lock keys behave like normal keys generating a
-     * KeyPress/KeyRelease event if the lock key was pressed/released. But the lock status
-     * is not reflected in the mod status anymore. We disable the Debian-specific extension
-     * to ensure a defined environment and work around the missing KeyPress/KeyRelease
-     * events in ProcessKeys().
+     * Debian patched libSDL to make the lock keys behave like normal keys
+     * generating a KeyPress/KeyRelease event if the lock key was
+     * pressed/released.  With the new behaviour, the lock status is not
+     * reflected in the mod status anymore, but the user can request the old
+     * behaviour by setting an environment variable.  To confuse matters further
+     * version 1.2.14 (fortunately including the Debian packaged versions)
+     * adopted the Debian behaviour officially, but inverted the meaning of the
+     * environment variable to select the new behaviour, keeping the old as the
+     * default.  We disable the new behaviour to ensure a defined environment
+     * and work around the missing KeyPress/KeyRelease events in ProcessKeys().
      */
-    RTEnvSet("SDL_DISABLE_LOCK_KEYS", "1");
+    {
+        const SDL_version *pVersion = SDL_Linked_Version();
+        if (  SDL_VERSIONNUM(pVersion->major, pVersion->minor, pVersion->patch)
+            < SDL_VERSIONNUM(1, 2, 14))
+            RTEnvSet("SDL_DISABLE_LOCK_KEYS", "1");
+    }
 #endif
 
     /*
