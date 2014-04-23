@@ -73,13 +73,6 @@
               </listitem>
             </itemizedlist></para>
         </listitem>
-    
-        <listitem>
-          <para><emphasis role="bold">64-bit guests on some 32-bit host systems
-          with VT-x</emphasis> can cause instabilities to your system. If you
-          experience this, do not attempt to execute 64-bit guests. Refer to the
-          VirtualBox user forum for additional information.</para>
-        </listitem>
 
         <listitem>
           <para><emphasis role="bold">NX (no execute, data execution
@@ -268,8 +261,8 @@
                 <para>Crossbow-based bridged networking on Solaris 11 hosts does
                 not work directly with aggregate links. However, you can manually
                 create a VNIC (using <computeroutput>dladm</computeroutput>) over
-                the aggregate link and use that with a VM. This technical
-                limitation will be addressed in a future Solaris 11 release.</para>
+                the aggregate link and use that with a VM. This limitation has
+                has been fixed in Solaris 11u1 build 17 and newer.</para>
               </listitem>
             </itemizedlist></para>
         </listitem>
