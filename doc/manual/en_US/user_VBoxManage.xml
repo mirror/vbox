@@ -98,7 +98,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
       <listitem>
         <para>To change settings while a VM is powered off, use
         <computeroutput>VBoxManage modifyvm</computeroutput>, e.g. as
-        follows:<screen>VBoxManage modifyvm "Windows XP" --memory "512MB"</screen></para>
+        follows:<screen>VBoxManage modifyvm "Windows XP" --memory 512</screen></para>
 
         <para>For details, see <xref linkend="vboxmanage-modifyvm" />.</para>
       </listitem>
