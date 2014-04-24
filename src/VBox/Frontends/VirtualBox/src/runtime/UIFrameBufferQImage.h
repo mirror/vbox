@@ -54,11 +54,9 @@ private:
     void paintSeamless(QPaintEvent *pEvent);
     void paintScale(QPaintEvent *pEvent);
 
-    /* Static helpers: Drawing stuff: */
-    static void drawImageRectNarrow(QPainter &painter, const QImage &image,
-                                    const QRect &rect, int iContentsShiftX, int iContentsShiftY);
-    static void drawImageRectWide(QPainter &painter, const QImage &image,
-                                  const QRect &rect, int iContentsShiftX, int iContentsShiftY);
+    /** Draws corresponding @a rect of passed @a image with @a painter. */
+    static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
+                              int iContentsShiftX, int iContentsShiftY);
 
     /* Helper: Fallback stuff: */
     void goFallback();
