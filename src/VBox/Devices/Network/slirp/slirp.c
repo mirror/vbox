@@ -1612,7 +1612,7 @@ int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr,
             && rule->activated)
         {
             LogRel(("NAT: remove redirect %s host port %d => guest port %d @ %RTnaipv4\n",
-                   rule->proto == IPPROTO_UDP ? "UDP" : "TCP", rule->host_port, rule->guest_port, guest_addr));
+                   rule->proto == IPPROTO_UDP ? "UDP" : "TCP", rule->host_port, rule->guest_port, guest_addr.s_addr));
 
             LibAliasUninit(rule->so->so_la);
             if (is_udp)
