@@ -208,6 +208,11 @@ public:
 
     virtual void setView(UIMachineView * pView);
 
+    /** Return backing scale factor used by HiDPI frame-buffer. */
+    double backingScaleFactor() const { return m_dBackingScaleFactor; }
+    /** Define backing scale factor used by HiDPI frame-buffer. */
+    void setBackingScaleFactor(double dBackingScaleFactor);
+
 protected:
 
     UIMachineView *m_pMachineView;
@@ -241,6 +246,9 @@ private:
 #ifdef Q_OS_WIN
     long m_iRefCnt;
 #endif /* Q_OS_WIN */
+
+    /** Holds backing scale factor used by HiDPI frame-buffer. */
+    double m_dBackingScaleFactor;
 };
 
 #endif // !___UIFrameBuffer_h___
