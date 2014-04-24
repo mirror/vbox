@@ -173,6 +173,11 @@ bool darwinOpenFile(const QString& strFile)
     return ::darwinOpenFile(darwinToNativeString(strFile.toUtf8().constData()));
 }
 
+double darwinBackingScaleFactor(QWidget *pWidget)
+{
+    return ::darwinBackingScaleFactor(::darwinToNativeWindow(pWidget));
+}
+
 QString darwinSystemLanguage(void)
 {
     /* Get the locales supported by our bundle */

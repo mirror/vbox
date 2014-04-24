@@ -219,6 +219,31 @@ bool darwinScreensHaveSeparateSpaces()
         return false;
 }
 
+double darwinBackingScaleFactor(NativeNSWindowRef pWindow)
+{
+    /* If host window responds to 'backingScaleFactor' selector: */
+    if ([pWindow respondsToSelector :@selector(backingScaleFactor)])
+    {
+        /* Default scale-factor still '1': */
+        CGFloat dScaleFactor = 1.0;
+        /* Compose dynamical invocation: */
+        SEL selector = @selector(backingScaleFactor);
+        NSMethodSignature *signature = [pWindow methodSignatureForSelector :selector];
+        NSInvocation *invocation = [NSInvocation invocationWithMethodSignature :signature];
+        /* Configure invocation: */
+        [invocation setTarget :pWindow];
+        [invocation setSelector :selector];
+        /* Call for invocation: */
+        [invocation invoke];
+        /* And acquire invocation result finally: */
+        [invocation getReturnValue :&dScaleFactor];
+        /* Return scale-factor we have: */
+        return dScaleFactor;
+    }
+    /* Default scale-factor is '1': */
+    return 1.0;
+}
+
 void darwinSetDockIconMenu(QMenu* pMenu)
 {
     extern void qt_mac_set_dock_menu(QMenu *);
