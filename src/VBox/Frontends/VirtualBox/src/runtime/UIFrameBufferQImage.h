@@ -56,7 +56,8 @@ private:
 
     /** Draws corresponding @a rect of passed @a image with @a painter. */
     static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
-                              int iContentsShiftX, int iContentsShiftY);
+                              int iContentsShiftX, int iContentsShiftY,
+                              double dBackingScaleFactor);
 
     /* Helper: Fallback stuff: */
     void goFallback();

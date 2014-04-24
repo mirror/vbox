@@ -209,7 +209,8 @@ void UIFrameBufferQImage::paintDefault(QPaintEvent *pEvent)
 
     /* Draw image rectangle: */
     drawImageRect(painter, m_img, paintRect,
-                  m_pMachineView->contentsX(), m_pMachineView->contentsY());
+                  m_pMachineView->contentsX(), m_pMachineView->contentsY(),
+                  backingScaleFactor());
 }
 
 void UIFrameBufferQImage::paintSeamless(QPaintEvent *pEvent)
@@ -256,7 +257,8 @@ void UIFrameBufferQImage::paintSeamless(QPaintEvent *pEvent)
 
             /* Draw image rectangle: */
             drawImageRect(painter, m_img, rect,
-                          m_pMachineView->contentsX(), m_pMachineView->contentsY());
+                          m_pMachineView->contentsX(), m_pMachineView->contentsY(),
+                          backingScaleFactor());
         }
     }
 }
@@ -287,12 +289,14 @@ void UIFrameBufferQImage::paintScale(QPaintEvent *pEvent)
 
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
-                  m_pMachineView->contentsX(), m_pMachineView->contentsY());
+                  m_pMachineView->contentsX(), m_pMachineView->contentsY(),
+                  backingScaleFactor());
 }
 
 /* static */
 void UIFrameBufferQImage::drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
-                                        int iContentsShiftX, int iContentsShiftY)
+                                        int iContentsShiftX, int iContentsShiftY,
+                                        double dBackingScaleFactor)
 {
     /* Calculate offset: */
     size_t offset = (rect.x() + iContentsShiftX) * image.depth() / 8 +
@@ -307,11 +311,33 @@ void UIFrameBufferQImage::drawImageRect(QPainter &painter, const QImage &image, 
     /* Create sub-pixmap on the basis of sub-image above (1st copy involved): */
     QPixmap subPixmap = QPixmap::fromImage(subImage);
 
+    /* If HiDPI 'backing scale factor' defined: */
+    if (dBackingScaleFactor > 1.0)
+    {
+        /* Scale sub-pixmap (2nd copy involved): */
+        subPixmap = subPixmap.scaled(subPixmap.size() * dBackingScaleFactor,
+                                     Qt::IgnoreAspectRatio, Qt::FastTransformation);
+        subPixmap.setDevicePixelRatio(dBackingScaleFactor);
+    }
+
     /* Draw sub-pixmap: */
     painter.drawPixmap(rect.x(), rect.y(), subPixmap);
 #else /* QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT */
-    /* Directly draw sub-image (no copy involved): */
-    painter.drawImage(rect.x(), rect.y(), subImage);
+    /* If HiDPI 'backing scale factor' defined: */
+    if (dBackingScaleFactor > 1.0)
+    {
+        /* Create scaled-sub-image (1st copy involved): */
+        QImage scaledSubImage = subImage.scaled(subImage.size() * dBackingScaleFactor,
+                                                Qt::IgnoreAspectRatio, Qt::FastTransformation);
+        scaledSubImage.setDevicePixelRatio(dBackingScaleFactor);
+        /* Directly draw scaled-sub-image: */
+        painter.drawImage(rect.x(), rect.y(), scaledSubImage);
+    }
+    else
+    {
+        /* Directly draw sub-image: */
+        painter.drawImage(rect.x(), rect.y(), subImage);
+    }
 #endif /* QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT */
 }
 
