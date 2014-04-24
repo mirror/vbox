@@ -86,6 +86,8 @@ bool darwinScreensHaveSeparateSpaces();
 
 bool darwinOpenFile(NativeNSStringRef pstrFile);
 
+double darwinBackingScaleFactor(NativeNSWindowRef pWindow);
+
 float darwinSmallFontSize();
 bool darwinSetFrontMostProcess();
 uint64_t darwinGetCurrentProcessId();
@@ -249,6 +251,8 @@ void darwinEnableTransienceSupport(QWidget *pWidget);
 void darwinToggleFullscreenMode(QWidget *pWidget);
 bool darwinIsInFullscreenMode(QWidget *pWidget);
 bool darwinOpenFile(const QString &strFile);
+
+double darwinBackingScaleFactor(QWidget *pWidget);
 
 QString darwinSystemLanguage(void);
 QPixmap darwinCreateDragPixmap(const QPixmap& aPixmap, const QString &aText);
