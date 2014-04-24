@@ -1032,6 +1032,15 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 }
                 break;
             }
+#ifdef Q_WS_MAC
+            case QEvent::Move:
+            {
+                /* Update backing scale factor for underlying frame-buffer: */
+                if (m_pFrameBuffer)
+                    m_pFrameBuffer->setBackingScaleFactor(darwinBackingScaleFactor(machineWindow()));
+                break;
+            }
+#endif /* Q_WS_MAC */
             default:
                 break;
         }
