@@ -1940,9 +1940,9 @@ static inline int slirp_arp_cache_update(PNATState pData, uint32_t dst, const ui
             && memcmp(mac, zerro_ethaddr, ETH_ALEN)));
     LIST_FOREACH(ac, &pData->arp_cache, list)
     {
-        if (!memcmp(ac->ether, mac, ETH_ALEN))
+        if (ac->ip == dst)
         {
-            ac->ip = dst;
+            memcpy(ac->ether, mac, ETH_ALEN);
             return 0;
         }
     }
