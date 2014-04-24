@@ -1003,7 +1003,8 @@ IncrementalCleanup(struct libalias *la)
         la->cleanupIndex = 0;
 }
 
-#ifdef VBOX
+#if defined(VBOX) && !defined(NO_USE_SOCKETS)
+
 /**
  * when slirp delete the link we need inform libalias about it.
  */
@@ -1020,13 +1021,17 @@ void slirpDeleteLinkSocket(void *pvLnk)
         lnk->pSo = NULL;
     }
 }
-#endif /* !VBOX */
+#endif /* VBOX && !NO_USE_SOCKETS */
 
 static void
 DeleteLink(struct alias_link *lnk)
 {
     struct libalias *la = lnk->la;
+#ifndef NO_USE_SOCKETS
     LogFlowFunc(("ENTER: lnk->pSo:%R[natsock]\n", lnk->pSo));
+#else
+    LogFlowFuncEnter();
+#endif
 
     LIBALIAS_LOCK_ASSERT(la);
 /* Don't do anything if the link is marked permanent */
