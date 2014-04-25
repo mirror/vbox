@@ -1413,11 +1413,11 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
                 VBVAINFOSCREEN Screen = pEntry->Screen;
                 VBVAINFOVIEW View;
                 uint32_t u32StartOffsetPreserve = 0;
-                if (Screen.u32StartOffset == ~0UL)
+                if (Screen.u32StartOffset == 0xffffffff)
                 {
                     if (Screen.u16Flags & VBVA_SCREEN_F_DISABLED)
                     {
-                        u32StartOffsetPreserve = ~0UL;
+                        u32StartOffsetPreserve = 0xffffffff;
                         Screen.u32StartOffset = 0;
                     }
                     else

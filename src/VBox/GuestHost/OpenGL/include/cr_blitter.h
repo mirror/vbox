@@ -29,6 +29,23 @@
 #endif
 
 RT_C_DECLS_BEGIN
+typedef struct CR_BLITTER_IMG
+{
+    void *pvData;
+    GLuint cbData;
+    GLenum enmFormat;
+    GLuint width, height;
+    GLuint bpp;
+    GLuint pitch;
+} CR_BLITTER_IMG, *PCR_BLITTER_IMG;
+
+VBOXBLITTERDECL(void) CrMClrFillImgRect(CR_BLITTER_IMG *pDst, const RTRECT *pCopyRect, uint32_t u32Color);
+VBOXBLITTERDECL(void) CrMClrFillImg(CR_BLITTER_IMG *pImg, uint32_t cRects, const RTRECT *pRects, uint32_t u32Color);
+VBOXBLITTERDECL(void) CrMBltImgRect(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, CR_BLITTER_IMG *pDst);
+VBOXBLITTERDECL(void) CrMBltImg(const CR_BLITTER_IMG *pSrc, const RTPOINT *pPos, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pDst);
+VBOXBLITTERDECL(void) CrMBltImgRectScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pPos, bool fSrcInvert, const RTRECT *pCopyRect, float strX, float strY, CR_BLITTER_IMG *pDst);
+VBOXBLITTERDECL(void) CrMBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTRECTSIZE *pSrcRectSize, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pDst);
+
 /* GLSL Cache */
 typedef struct CR_GLSL_CACHE
 {
@@ -105,16 +122,6 @@ typedef struct CR_BLITTER_WINDOW
     CR_BLITTER_SPUITEM Base;
     GLuint width, height;
 } CR_BLITTER_WINDOW, *PCR_BLITTER_WINDOW;
-
-typedef struct CR_BLITTER_IMG
-{
-    void *pvData;
-    GLuint cbData;
-    GLenum enmFormat;
-    GLuint width, height;
-    GLuint bpp;
-    GLuint pitch;
-} CR_BLITTER_IMG, *PCR_BLITTER_IMG;
 
 typedef struct CR_BLITTER
 {

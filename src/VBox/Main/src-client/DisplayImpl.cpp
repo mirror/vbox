@@ -3658,7 +3658,7 @@ int Display::crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, UL
     pData->aParms[4].type = VBOX_HGCM_SVC_PARM_32BIT;
     pData->aParms[4].u.uint32 = height;
 
-    return crCtlSubmitSync(&pData->Hdr, cbData);
+    return crCtlSubmitSyncIfHasDataForScreen(aScreenId, &pData->Hdr, cbData);
 }
 #endif
 
@@ -4517,6 +4517,31 @@ int Display::crCtlSubmitSync(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
         RTCritSectRwLeaveShared(&mCrOglLock);
     }
     return rc;
+}
+
+int Display::crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
+{
+    if (mCrOglCallbacks.pfnHasDataForScreen(u32ScreenID))
+        return crCtlSubmitSync(pCmd, cbCmd);
+
+    VBOXCRCMDCTL* pCmdCopy = (VBOXCRCMDCTL*)RTMemAlloc(cbCmd);
+    if (!pCmdCopy)
+    {
+        LogRel(("RTMemAlloc failed\n"));
+        return VERR_NO_MEMORY;
+    }
+
+    memcpy(pCmdCopy, pCmd, cbCmd);
+
+    int rc = crCtlSubmit(pCmdCopy, cbCmd, displayCrCmdFree, pCmdCopy);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("crCtlSubmit failed %d\n", rc));
+        RTMemFree(pCmdCopy);
+        return rc;
+    }
+
+    return VINF_SUCCESS;
 }
 
 bool  Display::handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp)

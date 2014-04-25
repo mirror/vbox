@@ -377,6 +377,14 @@ public:
     static BOOL  displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreenId, uint8_t *pu8Data, uint32_t u32Width, uint32_t u32Height);
     int crCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion);
     int crCtlSubmitSync(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd);
+    /* performs synchronous request processing if 3D backend has something to display
+     * this is primarily to work-around 3d<->main thread deadlocks on OSX
+     * in case of async completion, the command is coppied to the allocated buffer,
+     * freeded on command completion
+     * can be used for "notification" commands, when client is not interested in command result,
+     * that must synchronize with 3D backend only when some 3D data is displayed.
+     * The routine does NOT provide any info on whether command is processed asynchronously or not */
+    int crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd);
 #endif
 
 private:
