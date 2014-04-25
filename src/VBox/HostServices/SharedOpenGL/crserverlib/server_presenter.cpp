@@ -557,7 +557,7 @@ static int crFbBltGetContentsScaledCPU(HCR_FRAMEBUFFER hFb, const RTRECTSIZE *pS
 #endif
 }
 
-int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pDst)
 {
     VBOXVR_LIST List;
     uint32_t c2DRects = 0;
@@ -675,7 +675,7 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects
 
                 bool fInvert = !(CrVrScrCompositorEntryFlagsGet(pEntry) & CRBLT_F_INVERT_SRC_YCOORDS);
 
-                CrMBltImgRect(pSrcImg, &EntryPoint, fInvert, &Intersection, pImg);
+                CrMBltImgRect(pSrcImg, &EntryPoint, fInvert, &Intersection, pDst);
 
                 CrTdBltDataRelease(pTex);
             }
@@ -716,7 +716,7 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects
 
         crFbImgFromFb(hFb, &FbImg);
 
-        CrMBltImg(&FbImg, pPos, c2DRects, p2DRects, pImg);
+        CrMBltImg(&FbImg, pPos, c2DRects, p2DRects, pDst);
     }
 
 end:
@@ -751,7 +751,7 @@ int CrFbBltGetContentsEx(HCR_FRAMEBUFFER hFb, const RTRECTSIZE *pSrcRectSize, co
     return crFbBltGetContentsScaledCPU(hFb, pSrcRectSize, pDstRect, cRects, pRects, pImg);
 }
 
-static void crFbBltPutContentsFbVram(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pImg)
+static void crFbBltPutContentsFbVram(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pSrc)
 {
     const RTRECT *pCompRect = CrVrScrCompositorRectGet(&hFb->Compositor);
 
@@ -759,7 +759,7 @@ static void crFbBltPutContentsFbVram(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, u
 
     crFbImgFromFb(hFb, &FbImg);
 
-    CrMBltImg(&FbImg, pPos, cRects, pRects, pImg);
+    CrMBltImg(pSrc, pPos, cRects, pRects, &FbImg);
 }
 
 static void crFbClrFillFbVram(HCR_FRAMEBUFFER hFb, uint32_t cRects, const RTRECT *pRects, uint32_t u32Color)
