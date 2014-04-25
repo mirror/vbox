@@ -20,7 +20,8 @@
         <!-- The documentation is a separate component. This allows to split the install process
              into pieces if ever necessary. Maintenance is easier, too. The following component
              will be installed in the "doc" folder -->
-        <Component Id="cp_Docs" Guid="40BD12C5-89A8-4B81-8A5E-5EEE2C2763C4">
+        <Component Id="cp_Docs" Guid="40BD12C5-89A8-4B81-8A5E-5EEE2C2763C4"
+                   Win64="$(var.Property_Win64)">
             <?include $(env.PATH_TARGET)\Files_Doc.wxi ?>
         </Component>
     </Directory>
@@ -329,7 +330,8 @@
 
 <?if $(env.VBOX_WITH_WEBSERVICES) = "yes" ?>
     <!-- Webservice -->
-    <Component Id="cp_VBoxWebService" Guid="DD404F04-9874-43E9-AEE2-7762924D922E">
+    <Component Id="cp_VBoxWebService" Guid="DD404F04-9874-43E9-AEE2-7762924D922E"
+               Win64="$(var.Property_Win64)">
         <File Id="file_VBoxWebSrv.exe" Name="VBoxWebSrv.exe"
               Source="$(env.PATH_OUT)\bin\vboxwebsrv.exe" />
     </Component>
