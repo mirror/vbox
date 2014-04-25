@@ -42,9 +42,9 @@ BEGINCODE
 BEGINPROC_EXPORTED ASMAtomicUoAndU32
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
-        and     [rcx], rdx
+        and     [rcx], edx
  %else
-        and     [rdi], rsi
+        and     [rdi], esi
  %endif
 %elifdef RT_ARCH_X86
         mov     ecx, [esp + 04h]
