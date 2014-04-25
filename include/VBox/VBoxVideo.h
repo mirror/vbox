@@ -1622,6 +1622,8 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
 #define VBOXCMDVBVA_OPF_OPERAND1_ISID                       0x20
 /* operand 2 contains host id */
 #define VBOXCMDVBVA_OPF_OPERAND2_ISID                       0x40
+/* primary hint id is src */
+#define VBOXCMDVBVA_OPF_PRIMARY_HINT_SRC                    0x80
 
 /* trying to make the header as small as possible,
  * we'd have pretty few op codes actually, so 8bit is quite enough,
