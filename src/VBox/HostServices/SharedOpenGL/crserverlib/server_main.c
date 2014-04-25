@@ -145,11 +145,14 @@ static void deleteMuralInfoCallback( void *data )
     crFree(m);
 }
 
+static int crVBoxServerCrCmdDisablePostProcess(VBOXCRCMDCTL_HGCMENABLE_DATA *pData);
+
 static void crServerTearDown( void )
 {
     GLint i;
     CRClientNode *pNode, *pNext;
     GLboolean fOldEnableDiff;
+    GLboolean fContextsDeleted = GL_FALSE;
 
     /* avoid a race condition */
     if (tearingdown)
@@ -172,12 +175,8 @@ static void crServerTearDown( void )
             return;
         }
 
-        rc = crVBoxServerHgcmEnable(&EnableData);
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("crVBoxServerHgcmEnable failed %d", rc));
-            return;
-        }
+        crVBoxServerCrCmdDisablePostProcess(&EnableData);
+        fContextsDeleted = GL_TRUE;
 
         CRASSERT(DisableData.pfnNotifyTermDone);
         DisableData.pfnNotifyTermDone(DisableData.hNotifyTerm);
@@ -200,9 +199,12 @@ static void crServerTearDown( void )
     cr_server.currentNativeWindow = 0;
     cr_server.currentMural = NULL;
 
-    /* sync our state with renderspu,
-     * do it before mural & context deletion to avoid deleting currently set murals/contexts*/
-    cr_server.head_spu->dispatch_table.MakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
+    if (!fContextsDeleted)
+    {
+        /* sync our state with renderspu,
+         * do it before mural & context deletion to avoid deleting currently set murals/contexts*/
+        cr_server.head_spu->dispatch_table.MakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
+    }
 
     /* Deallocate all semaphores */
     crFreeHashtable(cr_server.semaphores, crFree);
@@ -216,10 +218,13 @@ static void crServerTearDown( void )
     crFreeHashtable(cr_server.contextTable, deleteContextInfoCallback);
 
     /* synchronize with reality */
-    fOldEnableDiff = crStateEnableDiffOnMakeCurrent(GL_FALSE);
-    if(cr_server.MainContextInfo.pContext)
-        crStateMakeCurrent(cr_server.MainContextInfo.pContext);
-    crStateEnableDiffOnMakeCurrent(fOldEnableDiff);
+    if (!fContextsDeleted)
+    {
+        fOldEnableDiff = crStateEnableDiffOnMakeCurrent(GL_FALSE);
+        if(cr_server.MainContextInfo.pContext)
+            crStateMakeCurrent(cr_server.MainContextInfo.pContext);
+        crStateEnableDiffOnMakeCurrent(fOldEnableDiff);
+    }
 
     /* Free vertex programs */
     crFreeHashtable(cr_server.programTable, crFree);
@@ -4169,6 +4174,17 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
 }
 
+
+static DECLCALLBACK(bool) crVBoxServerHasDataForScreen(uint32_t u32ScreenID)
+{
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32ScreenID);
+    if (hFb)
+        return CrFbHas3DData(hFb);
+
+    return false;
+}
+
+
 static DECLCALLBACK(bool) crVBoxServerHasData()
 {
     HCR_FRAMEBUFFER hFb = CrPMgrFbGetFirstEnabled();
@@ -4217,6 +4233,7 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
             g_pfnCrHgsmiCompletion = pSetup->pfnCompletion;
 
             pSetup->MainInterface.pfnHasData = crVBoxServerHasData;
+            pSetup->MainInterface.pfnHasDataForScreen = crVBoxServerHasDataForScreen;
 
             rc = VINF_SUCCESS;
             break;
@@ -4235,7 +4252,7 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
     return rc;
 }
 
-int32_t crVBoxServerHgcmEnable(VBOXCRCMDCTL_HGCMENABLE_DATA *pData)
+static int crVBoxServerCrCmdDisablePostProcess(VBOXCRCMDCTL_HGCMENABLE_DATA *pData)
 {
     int rc = VINF_SUCCESS;
     uint8_t* pCtl;
@@ -4256,9 +4273,21 @@ int32_t crVBoxServerHgcmEnable(VBOXCRCMDCTL_HGCMENABLE_DATA *pData)
         rc = crVBoxCrCmdHostCtl(NULL, pCtl, cbCtl);
     }
 
-    crVBoxServerDefaultContextSet();
-
     memset(&cr_server.DisableData, 0, sizeof (cr_server.DisableData));
+
+    return VINF_SUCCESS;
+}
+
+int32_t crVBoxServerHgcmEnable(VBOXCRCMDCTL_HGCMENABLE_DATA *pData)
+{
+    int rc = crVBoxServerCrCmdDisablePostProcess(pData);
+    if (RT_FAILURE(rc))
+    {
+        WARN(("crVBoxServerCrCmdDisablePostProcess failed %d", rc));
+        return rc;
+    }
+
+    crVBoxServerDefaultContextSet();
 
     return VINF_SUCCESS;
 }

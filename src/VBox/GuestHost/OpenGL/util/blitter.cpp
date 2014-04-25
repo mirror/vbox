@@ -22,10 +22,241 @@
 #include "cr_rand.h"
 #include "cr_mem.h"
 #include "cr_string.h"
+#include "cr_bmpscale.h"
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/mem.h>
+
+static void crMClrFillMem(uint32_t *pu32Dst, int32_t cbDstPitch, uint32_t width, uint32_t height, uint32_t u32Color)
+{
+    for (uint32_t i = 0; i < height; ++i)
+    {
+        for (uint32_t j = 0; j < width; ++j)
+        {
+            pu32Dst[j] = u32Color;
+        }
+
+        pu32Dst = (uint32_t*)(((uint8_t*)pu32Dst) + cbDstPitch);
+    }
+}
+
+void CrMClrFillImgRect(CR_BLITTER_IMG *pDst, const RTRECT *pCopyRect, uint32_t u32Color)
+{
+    int32_t x = pCopyRect->xLeft;
+    int32_t y = pCopyRect->yTop;
+    int32_t width = pCopyRect->xRight - pCopyRect->xLeft;
+    int32_t height = pCopyRect->yBottom - pCopyRect->yTop;
+    Assert(x >= 0);
+    Assert(y >= 0);
+    uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + pDst->pitch * y + x * 4;
+
+    crMClrFillMem((uint32_t*)pu8Dst, pDst->pitch, width, height, u32Color);
+}
+
+void CrMClrFillImg(CR_BLITTER_IMG *pImg, uint32_t cRects, const RTRECT *pRects, uint32_t u32Color)
+{
+    RTRECT Rect;
+    Rect.xLeft = 0;
+    Rect.yTop = 0;
+    Rect.xRight = pImg->width;
+    Rect.yBottom = pImg->height;
+
+
+    RTRECT Intersection;
+    const RTPOINT ZeroPoint = {0, 0};
+
+    for (uint32_t i = 0; i < cRects; ++i)
+    {
+        const RTRECT * pRect = &pRects[i];
+        VBoxRectIntersected(pRect, &Rect, &Intersection);
+
+        if (VBoxRectIsZero(&Intersection))
+            continue;
+
+        CrMClrFillImgRect(pImg, &Intersection, u32Color);
+    }
+}
+
+static void crMBltMem(const uint8_t *pu8Src, int32_t cbSrcPitch, uint8_t *pu8Dst, int32_t cbDstPitch, uint32_t width, uint32_t height)
+{
+    uint32_t cbCopyRow = width * 4;
+
+    for (uint32_t i = 0; i < height; ++i)
+    {
+        memcpy(pu8Dst, pu8Src, cbCopyRow);
+
+        pu8Src += cbSrcPitch;
+        pu8Dst += cbDstPitch;
+    }
+}
+
+void CrMBltImgRect(const CR_BLITTER_IMG *pSrc, const RTPOINT *pSrcDataPoint, bool fSrcInvert, const RTRECT *pCopyRect, CR_BLITTER_IMG *pDst)
+{
+    int32_t srcX = pCopyRect->xLeft - pSrcDataPoint->x;
+    int32_t srcY = pCopyRect->yTop - pSrcDataPoint->y;
+    Assert(srcX >= 0);
+    Assert(srcY >= 0);
+    Assert(srcX < (int32_t)pSrc->width);
+    Assert(srcY < (int32_t)pSrc->height);
+
+    int32_t dstX = pCopyRect->xLeft;
+    int32_t dstY = pCopyRect->yTop;
+    Assert(dstX >= 0);
+    Assert(dstY >= 0);
+    Assert(dstX < (int32_t)pDst->width);
+    Assert(dstY < (int32_t)pDst->height);
+
+    uint8_t *pu8Src = ((uint8_t*)pSrc->pvData) + pSrc->pitch * (!fSrcInvert ? srcY : pSrc->height - srcY - 1) + srcX * 4;
+    uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + pDst->pitch * dstY + dstX * 4;
+
+    crMBltMem(pu8Src, fSrcInvert ? -((int32_t)pSrc->pitch) : (int32_t)pSrc->pitch, pu8Dst, pDst->pitch, pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop);
+}
+
+void CrMBltImg(const CR_BLITTER_IMG *pSrc, const RTPOINT *pPos, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pDst)
+{
+    RTRECT Intersection;
+    RTRECT RestrictSrcRect;
+    RestrictSrcRect.xLeft = 0;
+    RestrictSrcRect.yTop = 0;
+    RestrictSrcRect.xRight = pSrc->width;
+    RestrictSrcRect.yBottom = pSrc->height;
+    RTRECT RestrictDstRect;
+    RestrictDstRect.xLeft = 0;
+    RestrictDstRect.yTop = 0;
+    RestrictDstRect.xRight = pDst->width;
+    RestrictDstRect.yBottom = pDst->height;
+
+    for (uint32_t i = 0; i < cRects; ++i)
+    {
+        const RTRECT * pRect = &pRects[i];
+        VBoxRectIntersected(pRect, &RestrictDstRect, &Intersection);
+
+        RTRECT TranslatedSrc;
+        VBoxRectTranslated(&RestrictSrcRect, pPos->x, pPos->y, &TranslatedSrc);
+
+        VBoxRectIntersect(&Intersection, &TranslatedSrc);
+
+        if (VBoxRectIsZero(&Intersection))
+            continue;
+
+        CrMBltImgRect(pSrc, pPos, false, &Intersection, pDst);
+    }
+}
+
+void CrMBltImgRectScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pPos, bool fSrcInvert, const RTRECT *pCopyRect, float strX, float strY, CR_BLITTER_IMG *pDst)
+{
+    RTPOINT UnscaledPos;
+    UnscaledPos.x = CR_FLOAT_RCAST(int32_t, pPos->x / strX);
+    UnscaledPos.y = CR_FLOAT_RCAST(int32_t, pPos->y / strY);
+
+    RTRECT UnscaledCopyRect;
+
+    VBoxRectUnscaled(pCopyRect, strX, strY, &UnscaledCopyRect);
+
+    if (VBoxRectIsZero(&UnscaledCopyRect))
+    {
+        WARN(("ups"));
+        return;
+    }
+
+    int32_t srcX = UnscaledCopyRect.xLeft - UnscaledPos.x;
+    int32_t srcY = UnscaledCopyRect.yTop - UnscaledPos.y;
+    if (srcX < 0)
+    {
+        WARN(("ups"));
+        srcX = 0;
+    }
+    if (srcY < 0)
+    {
+        WARN(("ups"));
+        srcY = 0;
+    }
+
+    if (srcX >= pSrc->width)
+    {
+        WARN(("ups"));
+        return;
+    }
+
+    if (srcY >= pSrc->height)
+    {
+        WARN(("ups"));
+        return;
+    }
+
+    Assert(srcX >= 0);
+    Assert(srcY >= 0);
+    Assert(srcX < (int32_t)pSrc->width);
+    Assert(srcY < (int32_t)pSrc->height);
+
+    int32_t dstX = pCopyRect->xLeft;
+    int32_t dstY = pCopyRect->yTop;
+    Assert(dstX >= 0);
+    Assert(dstY >= 0);
+
+    int32_t UnscaledSrcWidth = UnscaledCopyRect.xRight - UnscaledCopyRect.xLeft;
+    int32_t UnscaledSrcHeight = UnscaledCopyRect.yBottom - UnscaledCopyRect.yTop;
+
+    UnscaledSrcWidth = RT_MIN(srcX + UnscaledSrcWidth, pSrc->width);
+    UnscaledSrcHeight = RT_MIN(srcY + UnscaledSrcHeight, pSrc->height);
+
+    uint8_t *pu8Src = ((uint8_t*)pSrc->pvData) + pSrc->pitch * (!fSrcInvert ? srcY : pSrc->height - srcY - 1) + srcX * 4;
+    uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + pDst->pitch * dstY + dstX * 4;
+
+    CrBmpScale32(pu8Dst, pDst->pitch,
+                        pCopyRect->xRight - pCopyRect->xLeft, pCopyRect->yBottom - pCopyRect->yTop,
+                        pu8Src,
+                        fSrcInvert ? -((int32_t)pSrc->pitch) : (int32_t)pSrc->pitch,
+                        UnscaledSrcWidth, UnscaledSrcHeight);
+}
+
+
+void CrMBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTRECTSIZE *pSrcRectSize, const RTRECT *pDstRect, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pDst)
+{
+    int32_t srcWidth = pSrcRectSize->cx;
+    int32_t srcHeight = pSrcRectSize->cy;
+    int32_t dstWidth = pDstRect->xRight - pDstRect->xLeft;
+    int32_t dstHeight = pDstRect->yBottom - pDstRect->yTop;
+
+    float strX = ((float)dstWidth) / srcWidth;
+    float strY = ((float)dstHeight) / srcHeight;
+    bool fScale = (dstWidth != srcWidth || dstHeight != srcHeight);
+    Assert(fScale);
+
+    RTRECT Intersection;
+    RTRECT UnscaledRestrictSrcRect;
+    UnscaledRestrictSrcRect.xLeft = 0;
+    UnscaledRestrictSrcRect.yTop = 0;
+    UnscaledRestrictSrcRect.xRight = CR_FLOAT_RCAST(int32_t, pSrc->width / strX);
+    UnscaledRestrictSrcRect.yBottom = CR_FLOAT_RCAST(int32_t, pSrc->height / strY);
+    RTRECT RestrictDstRect;
+    RestrictDstRect.xLeft = 0;
+    RestrictDstRect.yTop = 0;
+    RestrictDstRect.xRight = pDst->width;
+    RestrictDstRect.yBottom = pDst->height;
+
+    RTPOINT Pos = {pDstRect->xLeft, pDstRect->yTop};
+    RTPOINT UnscaledSrcPos;
+    UnscaledSrcPos.x = CR_FLOAT_RCAST(int32_t, Pos.x / strX);
+    UnscaledSrcPos.y = CR_FLOAT_RCAST(int32_t, Pos.y / strY);
+
+    for (uint32_t i = 0; i < cRects; ++i)
+    {
+        const RTRECT * pRect = &pRects[i];
+        VBoxRectIntersected(pRect, &RestrictDstRect, &Intersection);
+
+        RTRECT TranslatedSrc;
+        VBoxRectTranslated(&UnscaledRestrictSrcRect, UnscaledSrcPos.x, UnscaledSrcPos.y, &TranslatedSrc);
+
+        VBoxRectIntersect(&Intersection, &TranslatedSrc);
+
+        if (VBoxRectIsZero(&Intersection))
+            continue;
+
+        CrMBltImgRectScaled(pSrc, &Pos, false, &Intersection, strX, strY, pDst);
+    }
+}
 
 /* @param pCtxBase      - contains the blitter context info. Its value is treated differently depending on the fCreateNewCtx value
  * @param fCreateNewCtx - if true  - the pCtxBase must NOT be NULL. its visualBits is used as a visual bits info for the new context,
