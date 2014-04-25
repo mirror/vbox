@@ -198,8 +198,11 @@ void CrMBltImgRectScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pPos, bool f
     int32_t UnscaledSrcWidth = UnscaledCopyRect.xRight - UnscaledCopyRect.xLeft;
     int32_t UnscaledSrcHeight = UnscaledCopyRect.yBottom - UnscaledCopyRect.yTop;
 
-    UnscaledSrcWidth = RT_MIN(srcX + UnscaledSrcWidth, pSrc->width);
-    UnscaledSrcHeight = RT_MIN(srcY + UnscaledSrcHeight, pSrc->height);
+    if (UnscaledSrcWidth + srcX > pSrc->width)
+        UnscaledSrcWidth = pSrc->width - srcX;
+
+    if (UnscaledSrcHeight + srcY > pSrc->height)
+        UnscaledSrcHeight = pSrc->height - srcY;
 
     uint8_t *pu8Src = ((uint8_t*)pSrc->pvData) + pSrc->pitch * (!fSrcInvert ? srcY : pSrc->height - srcY - 1) + srcX * 4;
     uint8_t *pu8Dst = ((uint8_t*)pDst->pvData) + pDst->pitch * dstY + dstX * 4;
@@ -225,11 +228,11 @@ void CrMBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTRECTSIZE *pSrcRectSize,
     Assert(fScale);
 
     RTRECT Intersection;
-    RTRECT UnscaledRestrictSrcRect;
-    UnscaledRestrictSrcRect.xLeft = 0;
-    UnscaledRestrictSrcRect.yTop = 0;
-    UnscaledRestrictSrcRect.xRight = CR_FLOAT_RCAST(int32_t, pSrc->width / strX);
-    UnscaledRestrictSrcRect.yBottom = CR_FLOAT_RCAST(int32_t, pSrc->height / strY);
+    RTRECT ScaledRestrictSrcRect;
+    ScaledRestrictSrcRect.xLeft = 0;
+    ScaledRestrictSrcRect.yTop = 0;
+    ScaledRestrictSrcRect.xRight = CR_FLOAT_RCAST(int32_t, pSrc->width * strX);
+    ScaledRestrictSrcRect.yBottom = CR_FLOAT_RCAST(int32_t, pSrc->height * strY);
     RTRECT RestrictDstRect;
     RestrictDstRect.xLeft = 0;
     RestrictDstRect.yTop = 0;
@@ -237,9 +240,6 @@ void CrMBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTRECTSIZE *pSrcRectSize,
     RestrictDstRect.yBottom = pDst->height;
 
     RTPOINT Pos = {pDstRect->xLeft, pDstRect->yTop};
-    RTPOINT UnscaledSrcPos;
-    UnscaledSrcPos.x = CR_FLOAT_RCAST(int32_t, Pos.x / strX);
-    UnscaledSrcPos.y = CR_FLOAT_RCAST(int32_t, Pos.y / strY);
 
     for (uint32_t i = 0; i < cRects; ++i)
     {
@@ -247,7 +247,7 @@ void CrMBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTRECTSIZE *pSrcRectSize,
         VBoxRectIntersected(pRect, &RestrictDstRect, &Intersection);
 
         RTRECT TranslatedSrc;
-        VBoxRectTranslated(&UnscaledRestrictSrcRect, UnscaledSrcPos.x, UnscaledSrcPos.y, &TranslatedSrc);
+        VBoxRectTranslated(&ScaledRestrictSrcRect, Pos.x, Pos.y, &TranslatedSrc);
 
         VBoxRectIntersect(&Intersection, &TranslatedSrc);
 
