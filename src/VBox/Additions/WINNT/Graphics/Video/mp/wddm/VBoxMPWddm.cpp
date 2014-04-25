@@ -6498,83 +6498,58 @@ DxgkDdiPresentNew(
             return STATUS_INVALID_PARAMETER;
         }
 
-        if (fDstPrimary)
+        if (pSrcAlloc->AllocData.hostID)
         {
-            if (fSrcPrimary)
+            if (pDstAlloc->AllocData.hostID)
             {
-                pHdr->u.u8PrimaryID = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
-                pHdr->u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_PRIMARY;
-                VBOXCMDVBVA_BLT_PRIMARY *pBlt = (VBOXCMDVBVA_BLT_PRIMARY*)pBltHdr;
-                pBlt->alloc.u.id = pSrcAlloc->AllocData.SurfDesc.VidPnSourceId;
-                cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects);
+                VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID *pBlt = (VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID*)pBltHdr;
+                pHdr->u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_OFFPRIMSZFMT_OR_ID | VBOXCMDVBVA_OPF_OPERAND1_ISID | VBOXCMDVBVA_OPF_OPERAND2_ISID;
+                pBlt->id = pDstAlloc->AllocData.hostID;
+                pBlt->alloc.u.id = pSrcAlloc->AllocData.hostID;
+                cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, aRects);
             }
             else
             {
-                NTSTATUS Status = vboxWddmCmCmdBltPrimNotPrimFill(pBltHdr, pDstAlloc, pSrcAlloc, pSrc, TRUE, &u32SrcPatch, &cbPrivateData);
+                NTSTATUS Status = vboxWddmCmCmdBltIdNotIdFill(pBltHdr, pSrcAlloc, pDstAlloc, pDst, FALSE, &u32DstPatch, &cbPrivateData);
                 if (!NT_SUCCESS(Status))
                 {
-                    WARN(("vboxWddmCmCmdBltPrimNotPrimFill failed, %#x", Status));
+                    WARN(("vboxWddmCmCmdBltIdNotIdFill failed, %#x", Status));
                     return Status;
                 }
             }
         }
         else
         {
-            if (fSrcPrimary)
+            if (pDstAlloc->AllocData.hostID)
             {
-                NTSTATUS Status = vboxWddmCmCmdBltPrimNotPrimFill(pBltHdr, pSrcAlloc, pDstAlloc, pDst, FALSE, &u32DstPatch, &cbPrivateData);
+                NTSTATUS Status = vboxWddmCmCmdBltIdNotIdFill(pBltHdr, pDstAlloc, pSrcAlloc, pSrc, TRUE, &u32SrcPatch, &cbPrivateData);
                 if (!NT_SUCCESS(Status))
                 {
-                    WARN(("vboxWddmCmCmdBltPrimNotPrimFill failed, %#x", Status));
+                    WARN(("vboxWddmCmCmdBltIdNotIdFill failed, %#x", Status));
                     return Status;
                 }
             }
             else
             {
-                if (pSrcAlloc->AllocData.hostID)
-                {
-                    if (pDstAlloc->AllocData.hostID)
-                    {
-                        VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID *pBlt = (VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID*)pBltHdr;
-                        pHdr->u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_OFFPRIMSZFMT_OR_ID | VBOXCMDVBVA_OPF_OPERAND1_ISID | VBOXCMDVBVA_OPF_OPERAND2_ISID;
-                        pBlt->id = pDstAlloc->AllocData.hostID;
-                        pBlt->alloc.u.id = pSrcAlloc->AllocData.hostID;
-                        cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID, aRects);
-                    }
-                    else
-                    {
-                        NTSTATUS Status = vboxWddmCmCmdBltIdNotIdFill(pBltHdr, pSrcAlloc, pDstAlloc, pDst, FALSE, &u32DstPatch, &cbPrivateData);
-                        if (!NT_SUCCESS(Status))
-                        {
-                            WARN(("vboxWddmCmCmdBltIdNotIdFill failed, %#x", Status));
-                            return Status;
-                        }
-                    }
-                }
-                else
-                {
-                    if (pDstAlloc->AllocData.hostID)
-                    {
-                        NTSTATUS Status = vboxWddmCmCmdBltIdNotIdFill(pBltHdr, pDstAlloc, pSrcAlloc, pSrc, TRUE, &u32SrcPatch, &cbPrivateData);
-                        if (!NT_SUCCESS(Status))
-                        {
-                            WARN(("vboxWddmCmCmdBltIdNotIdFill failed, %#x", Status));
-                            return Status;
-                        }
-                    }
-                    else
-                    {
-                        pBltHdr->Hdr.u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8;
-                        VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8*)pBltHdr;
-                        VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc1, pDstAlloc, pDst);
-                        VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc2, pSrcAlloc, pSrc);
-                        u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc1.Info.u.offVRAM);
-                        u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc2.Info.u.offVRAM);
-                        cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, aRects);
-                    }
-                }
+                pBltHdr->Hdr.u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8;
+                VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8*)pBltHdr;
+                VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc1, pDstAlloc, pDst);
+                VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc2, pSrcAlloc, pSrc);
+                u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc1.Info.u.offVRAM);
+                u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc2.Info.u.offVRAM);
+                cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, aRects);
             }
         }
+
+        if (fDstPrimary)
+            pBltHdr->Hdr.u.u8PrimaryID = (uint8_t)pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
+        else if (fSrcPrimary)
+        {
+            pBltHdr->Hdr.u8Flags |= VBOXCMDVBVA_OPF_PRIMARY_HINT_SRC;
+            pBltHdr->Hdr.u.u8PrimaryID = (uint8_t)pSrcAlloc->AllocData.SurfDesc.VidPnSourceId;
+        }
+        else
+            pBltHdr->Hdr.u.u8PrimaryID = 0xff;
 
         paRects = (VBOXCMDVBVA_RECT*)(((uint8_t*)pPresent->pDmaBufferPrivateData) + cbPrivateData);
         cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
@@ -6670,28 +6645,21 @@ DxgkDdiPresentNew(
             pClrFillHdr->Hdr.u8OpCode = VBOXCMDVBVA_OPTYPE_CLRFILL;
             pClrFillHdr->u32Color = pPresent->Color;
 
+            pHdr->u8Flags = VBOXCMDVBVA_OPF_CLRFILL_TYPE_GENERIC_A8R8G8B8;
+            pHdr->u.u8PrimaryID = 0;
+
+            VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8 *pCFill = (VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8*)pHdr;
+            VBoxCVDdiFillAllocInfoOffVRAM(&pCFill->dst.Info, pDst);
+            pCFill->dst.u16Width = (uint16_t)pDstAlloc->AllocData.SurfDesc.width;
+            pCFill->dst.u16Height = (uint16_t)pDstAlloc->AllocData.SurfDesc.height;
+            u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8, dst.Info.u.offVRAM);
+            paRects = pCFill->aRects;
+            cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8, aRects);
+
             if (fDstPrimary)
-            {
-                pHdr->u8Flags = VBOXCMDVBVA_OPF_CLRFILL_TYPE_PRIMARY;
-                pHdr->u.u8PrimaryID = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
-
-                VBOXCMDVBVA_CLRFILL_PRIMARY *pCFill = (VBOXCMDVBVA_CLRFILL_PRIMARY*)pHdr;
-                paRects = pCFill->aRects;
-                cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_PRIMARY, aRects);
-            }
+                pCFill->Hdr.Hdr.u.u8PrimaryID = (uint8_t)pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
             else
-            {
-                pHdr->u8Flags = VBOXCMDVBVA_OPF_CLRFILL_TYPE_GENERIC_A8R8G8B8;
-                pHdr->u.u8PrimaryID = 0;
-
-                VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8 *pCFill = (VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8*)pHdr;
-                VBoxCVDdiFillAllocInfoOffVRAM(&pCFill->dst.Info, pDst);
-                pCFill->dst.u16Width = (uint16_t)pDstAlloc->AllocData.SurfDesc.width;
-                pCFill->dst.u16Height = (uint16_t)pDstAlloc->AllocData.SurfDesc.height;
-                u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8, dst.Info.u.offVRAM);
-                paRects = pCFill->aRects;
-                cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8, aRects);
-            }
+                pCFill->Hdr.Hdr.u.u8PrimaryID = 0xff;
 
             cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
         }

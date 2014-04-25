@@ -4835,11 +4835,12 @@ static RTRECT * crVBoxServerCrCmdBltRecsUnpack(const VBOXCMDVBVA_RECT *pPRects, 
     return pRects;
 }
 
-static void crVBoxServerCrCmdBltPrimaryUpdate(const VBVAINFOSCREEN *pScreen, const RTRECT *pRects, uint32_t cRects, uint32_t u32PrimaryID)
+static void crVBoxServerCrCmdBltPrimaryUpdate(const VBVAINFOSCREEN *pScreen, uint32_t cRects, const RTRECT *pRects)
 {
     if (!cRects)
         return;
 
+    uint32_t u32PrimaryID = pScreen->u32ViewIndex;
     bool fDirtyEmpty = true;
     RTRECT dirtyRect;
     cr_server.CrCmdClientInfo.pfnCltScrUpdateBegin(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID);
@@ -5005,7 +5006,7 @@ static int8_t crVBoxServerCrCmdBltPrimaryProcess(const VBOXCMDVBVA_BLT_PRIMARY *
             return 0;
     }
 
-    crVBoxServerCrCmdBltPrimaryUpdate(CrFbGetScreenInfo(hFb), pRects, cRects, u32PrimaryID);
+    crVBoxServerCrCmdBltPrimaryUpdate(CrFbGetScreenInfo(hFb), cRects, pRects);
 
     return 0;
 }
@@ -5104,7 +5105,19 @@ static int8_t crVBoxServerCrCmdBltVramToVram(VBOXCMDVBVAOFFSET offSrcVRAM, uint3
     if (hDstFb)
     {
         if (hSrcFb)
-            WARN(("blit from one framebuffer to another not supported properly"));
+        {
+            WARN(("blit from one framebuffer, wow"));
+
+            int rc = CrFbUpdateBegin(hSrcFb);
+            if (RT_SUCCESS(rc))
+            {
+                CrFbRegionsClear(hSrcFb);
+
+                CrFbUpdateEnd(hSrcFb);
+            }
+            else
+                WARN(("CrFbUpdateBegin failed %d", rc));
+        }
 
         CR_BLITTER_IMG Img;
         int8_t i8Result = crFbImgFromDimOffVramBGRA(offSrcVRAM, srcWidth, srcHeight, &Img);
@@ -5114,12 +5127,37 @@ static int8_t crVBoxServerCrCmdBltVramToVram(VBOXCMDVBVAOFFSET offSrcVRAM, uint3
             return -1;
         }
 
-        int rc = CrFbBltPutContentsNe(hDstFb, pPos, cRects, pRects, &Img);
-        if (RT_FAILURE(rc))
+        const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hDstFb);
+        if (pScreen->u32Width == dstWidth && pScreen->u32Height == dstHeight)
         {
-            WARN(("CrFbBltPutContentsNe failed %d", rc));
-            return -1;
+            int rc = CrFbBltPutContentsNe(hDstFb, pPos, cRects, pRects, &Img);
+            if (RT_FAILURE(rc))
+            {
+                WARN(("CrFbBltPutContentsNe failed %d", rc));
+                return -1;
+            }
         }
+        else
+        {
+            int rc = CrFbUpdateBegin(hDstFb);
+            if (RT_SUCCESS(rc))
+            {
+                CrFbRegionsClear(hDstFb);
+
+                CrFbUpdateEnd(hDstFb);
+            }
+            else
+                WARN(("CrFbUpdateBegin failed %d", rc));
+
+            rc = crVBoxServerCrCmdBltVramToVramMem(offSrcVRAM, srcWidth, srcHeight, offDstVRAM, dstWidth, dstHeight, pPos, cRects, pRects);
+            if (RT_FAILURE(rc))
+            {
+                WARN(("crVBoxServerCrCmdBltVramToVramMem failed, %d", rc));
+                return -1;
+            }
+        }
+
+        crVBoxServerCrCmdBltPrimaryUpdate(pScreen, cRects, pRects);
 
         return 0;
     }
@@ -5133,11 +5171,34 @@ static int8_t crVBoxServerCrCmdBltVramToVram(VBOXCMDVBVAOFFSET offSrcVRAM, uint3
             return -1;
         }
 
-        int rc = CrFbBltGetContents(hSrcFb, pPos, cRects, pRects, &Img);
-        if (RT_FAILURE(rc))
+        const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hSrcFb);
+        if (pScreen->u32Width == srcWidth && pScreen->u32Height == srcHeight)
         {
-            WARN(("CrFbBltGetContents failed %d", rc));
-            return -1;
+            int rc = CrFbBltGetContents(hSrcFb, pPos, cRects, pRects, &Img);
+            if (RT_FAILURE(rc))
+            {
+                WARN(("CrFbBltGetContents failed %d", rc));
+                return -1;
+            }
+        }
+        else
+        {
+            int rc = CrFbUpdateBegin(hSrcFb);
+            if (RT_SUCCESS(rc))
+            {
+                CrFbRegionsClear(hSrcFb);
+
+                CrFbUpdateEnd(hSrcFb);
+            }
+            else
+                WARN(("CrFbUpdateBegin failed %d", rc));
+
+            rc = crVBoxServerCrCmdBltVramToVramMem(offSrcVRAM, srcWidth, srcHeight, offDstVRAM, dstWidth, dstHeight, pPos, cRects, pRects);
+            if (RT_FAILURE(rc))
+            {
+                WARN(("crVBoxServerCrCmdBltVramToVramMem failed, %d", rc));
+                return -1;
+            }
         }
 
         return 0;
@@ -5274,7 +5335,7 @@ static int8_t crVBoxServerCrCmdBltPrimaryGenericBGRAProcess(const VBOXCMDVBVA_BL
             return 0;
     }
 
-    crVBoxServerCrCmdBltPrimaryUpdate(CrFbGetScreenInfo(hFb), pRects, cRects, u32PrimaryID);
+    crVBoxServerCrCmdBltPrimaryUpdate(CrFbGetScreenInfo(hFb), cRects, pRects);
 
     return 0;
 }
@@ -5444,7 +5505,7 @@ static int8_t crVBoxServerCrCmdClrFillPrimaryProcess(const VBOXCMDVBVA_CLRFILL_P
         return i8Result;
     }
 
-    crVBoxServerCrCmdBltPrimaryUpdate(CrFbGetScreenInfo(hFb), pRects, cRects, u32PrimaryID);
+    crVBoxServerCrCmdBltPrimaryUpdate(CrFbGetScreenInfo(hFb), cRects, pRects);
 
     return 0;
 }
