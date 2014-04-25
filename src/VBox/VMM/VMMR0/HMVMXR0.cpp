@@ -1817,6 +1817,9 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
     AssertPtr(pCpu);
     AssertPtr(pVCpu);
     Assert(pCpu->idCpu != NIL_RTCPUID);
+    AssertMsg(pCpu->uCurrentAsid >= 1 || pVCpu->hm.s.idLastCpu == NIL_RTCPUID,
+              ("hmR0VmxFlushTaggedTlbBoth: Cpu[%u] uCurrentAsid=%u pVCpu->idLastCpu=%u\n", pCpu->idCpu, pCpu->uCurrentAsid,
+               pVCpu->hm.s.idLastCpu));
     AssertMsg(pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid,
               ("hmR0VmxFlushTaggedTlbBoth cannot be invoked unless NestedPaging & VPID are enabled."
                "fNestedPaging=%RTbool fVpid=%RTbool", pVM->hm.s.fNestedPaging, pVM->hm.s.vmx.fVpid));
@@ -5534,8 +5537,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                      || uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
             {
                 /*
-                 * Ignore software interrupts (INT n), software exceptions (#BP, #OF) and privileged software exception
-                 * (whatever they are) as they reoccur when restarting the instruction.
+                 * Ignore software interrupts (INT n), software exceptions (#BP, #OF) and
+                 * privileged software exception (#DB from ICEBP) as they reoccur when restarting the instruction.
                  */
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
