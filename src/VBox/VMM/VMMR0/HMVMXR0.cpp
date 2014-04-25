@@ -1817,13 +1817,10 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
     AssertPtr(pCpu);
     AssertPtr(pVCpu);
     Assert(pCpu->idCpu != NIL_RTCPUID);
-    AssertMsg(pCpu->uCurrentAsid >= 1 || pVCpu->hm.s.idLastCpu == NIL_RTCPUID,
-              ("hmR0VmxFlushTaggedTlbBoth: Cpu[%u] uCurrentAsid=%u pVCpu->idLastCpu=%u\n", pCpu->idCpu, pCpu->uCurrentAsid,
-               pVCpu->hm.s.idLastCpu));
+
     AssertMsg(pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid,
               ("hmR0VmxFlushTaggedTlbBoth cannot be invoked unless NestedPaging & VPID are enabled."
                "fNestedPaging=%RTbool fVpid=%RTbool", pVM->hm.s.fNestedPaging, pVM->hm.s.vmx.fVpid));
-
 
     /*
      * Force a TLB flush for the first world-switch if the current CPU differs from the one we ran on last.
