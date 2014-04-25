@@ -450,6 +450,9 @@
 
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
         <?include VBoxMergeAppSeq.wxi ?>
+        <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
+            <?include VBoxMergeCOM32On64Seq.wxi ?>
+        <?endif ?>
         <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
             <?include VBoxMergeNetFltSeq.wxi ?>
         <?endif ?>
