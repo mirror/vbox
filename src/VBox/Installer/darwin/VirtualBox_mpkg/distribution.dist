@@ -66,7 +66,7 @@
                   event listeners to block VBoxSVC processes from exiting until
                   the waiting time was elapsed. In the extreme case this was
                   infinitely long, blocking updates. */
-               system.run('/bin/sh', '-c', 'pids=`/usr/bin/pgrep VBoxXPCOMIPCD` rc=0; [ -z "$pids" ] && rc=1; for i in $pids; do c=`/usr/sbin/lsof -p $i | /usr/bin/grep -E \'^[^ ]+ +[^ ]+ +[^ ]+ +[^ ]+ +unix\' | wc -l`; [ $c -le 2 ] || rc=1; done; if [ $rc -eq 0 ]; then pkill -KILL \'^(VirtualBox)|(VBoxNetDHCP)|(VBoxNetNAT)|(VBoxHeadless)|(VBoxXPCOMIPCD)|(VBoxSVC)$\'; sleep 1; fi');
+               system.run('/bin/sh', '-c', 'pids=`/usr/bin/pgrep VBoxXPCOMIPCD` rc=0; [ -z "$pids" ] && rc=1; for i in $pids; do c=`/usr/sbin/lsof -p $i | /usr/bin/grep -E \'^[^ ]+ +[^ ]+ +[^ ]+ +[^ ]+ +unix\' | wc -l`; [ $c -le 2 ] || rc=1; done; if [ $rc -eq 0 ]; then /usr/bin/pkill -KILL \'^(VirtualBox)|(VBoxNetDHCP)|(VBoxNetNAT)|(VBoxHeadless)|(VBoxXPCOMIPCD)|(VBoxSVC)$\'; sleep 1; fi');
            }
        } catch (e) { system.log(e); }
 
@@ -81,6 +81,15 @@
 
        if (!result)
        {
+           /* Temporary instrumentation for finding out with some probability
+            * who keeps VBoxSVC busy (unix socket to VBoxXPCOMIPCD open). Needs
+            * very little time (unlike a full lsof) and causes bearable amount
+            * of messages to install.log so that it can stay in for a while. */
+           try
+           {
+               system.run('/usr/sbin/lsof', '-l', '-U');
+           } catch (e) { system.log(e); }
+
            my.result.type = 'Fatal';
            my.result.title = system.localizedString('RUNNING_VMS_TLE');
            my.result.message = system.localizedString('RUNNING_VMS_MSG');
