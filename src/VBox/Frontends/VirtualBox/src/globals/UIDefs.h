@@ -152,6 +152,7 @@ namespace UIDefs
     extern const char* GUI_RestrictedStatusBarIndicators;
     extern const char* GUI_HidLedsSync;
     extern const char* GUI_GuruMeditationHandler;
+    extern const char* GUI_HiDPIOptimization;
 
     /* Settings dialogs stuff: */
     extern const char* GUI_RestrictedGlobalSettingsPages;
@@ -479,6 +480,13 @@ enum GuruMeditationHandlerType
     GuruMeditationHandlerType_Default,
     GuruMeditationHandlerType_PowerOff,
     GuruMeditationHandlerType_Ignore
+};
+
+/** Runtime UI: HiDPI optimization types. */
+enum HiDPIOptimizationType
+{
+    HiDPIOptimizationType_None,
+    HiDPIOptimizationType_Performance
 };
 
 #endif /* !___UIDefs_h___ */

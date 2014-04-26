@@ -210,7 +210,7 @@ void UIFrameBufferQImage::paintDefault(QPaintEvent *pEvent)
     /* Draw image rectangle: */
     drawImageRect(painter, m_img, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  backingScaleFactor());
+                  hiDPIOptimizationType(), backingScaleFactor());
 }
 
 void UIFrameBufferQImage::paintSeamless(QPaintEvent *pEvent)
@@ -258,7 +258,7 @@ void UIFrameBufferQImage::paintSeamless(QPaintEvent *pEvent)
             /* Draw image rectangle: */
             drawImageRect(painter, m_img, rect,
                           m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                          backingScaleFactor());
+                          hiDPIOptimizationType(), backingScaleFactor());
         }
     }
 }
@@ -290,12 +290,13 @@ void UIFrameBufferQImage::paintScale(QPaintEvent *pEvent)
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  backingScaleFactor());
+                  hiDPIOptimizationType(), backingScaleFactor());
 }
 
 /* static */
 void UIFrameBufferQImage::drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                                         int iContentsShiftX, int iContentsShiftY,
+                                        HiDPIOptimizationType hiDPIOptimizationType,
                                         double dBackingScaleFactor)
 {
     /* Calculate offset: */
@@ -314,12 +315,17 @@ void UIFrameBufferQImage::drawImageRect(QPainter &painter, const QImage &image, 
     /* If HiDPI 'backing scale factor' defined: */
     if (dBackingScaleFactor > 1.0)
     {
-        /* Scale sub-pixmap (2nd copy involved): */
-        subPixmap = subPixmap.scaled(subPixmap.size() * dBackingScaleFactor,
-                                     Qt::IgnoreAspectRatio, Qt::FastTransformation);
+        /* Should we optimize HiDPI output for performance? */
+        if (hiDPIOptimizationType == HiDPIOptimizationType_Performance)
+        {
+            /* Fast scale sub-pixmap (2nd copy involved): */
+            subPixmap = subPixmap.scaled(subPixmap.size() * dBackingScaleFactor,
+                                         Qt::IgnoreAspectRatio, Qt::FastTransformation);
 # ifdef Q_WS_MAC
-        subPixmap.setDevicePixelRatio(dBackingScaleFactor);
+            /* Mark sub-pixmap as HiDPI: */
+            subPixmap.setDevicePixelRatio(dBackingScaleFactor);
 # endif /* Q_WS_MAC */
+        }
     }
 
     /* Draw sub-pixmap: */
@@ -328,20 +334,23 @@ void UIFrameBufferQImage::drawImageRect(QPainter &painter, const QImage &image, 
     /* If HiDPI 'backing scale factor' defined: */
     if (dBackingScaleFactor > 1.0)
     {
-        /* Create scaled-sub-image (1st copy involved): */
-        QImage scaledSubImage = subImage.scaled(subImage.size() * dBackingScaleFactor,
-                                                Qt::IgnoreAspectRatio, Qt::FastTransformation);
+        /* Should we optimize HiDPI output for performance? */
+        if (hiDPIOptimizationType == HiDPIOptimizationType_Performance)
+        {
+            /* Create fast-scaled-sub-image (1st copy involved): */
+            QImage scaledSubImage = subImage.scaled(subImage.size() * dBackingScaleFactor,
+                                                    Qt::IgnoreAspectRatio, Qt::FastTransformation);
 # ifdef Q_WS_MAC
-        scaledSubImage.setDevicePixelRatio(dBackingScaleFactor);
+            /* Mark sub-pixmap as HiDPI: */
+            scaledSubImage.setDevicePixelRatio(dBackingScaleFactor);
 # endif /* Q_WS_MAC */
-        /* Directly draw scaled-sub-image: */
-        painter.drawImage(rect.x(), rect.y(), scaledSubImage);
+            /* Directly draw scaled-sub-image: */
+            painter.drawImage(rect.x(), rect.y(), scaledSubImage);
+            return;
+        }
     }
-    else
-    {
-        /* Directly draw sub-image: */
-        painter.drawImage(rect.x(), rect.y(), subImage);
-    }
+    /* Directly draw sub-image: */
+    painter.drawImage(rect.x(), rect.y(), subImage);
 #endif /* QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT */
 }
 

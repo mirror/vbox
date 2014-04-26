@@ -133,6 +133,9 @@ public:
     /** Returns redefined guru-meditation handler type. */
     GuruMeditationHandlerType guruMeditationHandlerType(const QString &strID) const;
 
+    /** Returns Runtime UI HiDPI optimization type. */
+    HiDPIOptimizationType hiDPIOptimizationType(const QString &strID) const;
+
 private:
 
     /** Prepare Extra-data Manager. */
