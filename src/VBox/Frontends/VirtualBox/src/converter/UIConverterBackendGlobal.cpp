@@ -50,6 +50,7 @@ template<> bool canConvert<MachineSettingsPageType>() { return true; }
 template<> bool canConvert<IndicatorType>() { return true; }
 template<> bool canConvert<MachineCloseAction>() { return true; }
 template<> bool canConvert<GuruMeditationHandlerType>() { return true; }
+template<> bool canConvert<HiDPIOptimizationType>() { return true; }
 
 /* QString <= SizeSuffix: */
 template<> QString toString(const SizeSuffix &sizeSuffix)
@@ -1077,5 +1078,37 @@ template<> GuruMeditationHandlerType fromInternalString<GuruMeditationHandlerTyp
         return GuruMeditationHandlerType_Default;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strGuruMeditationHandlerType, Qt::CaseInsensitive)));
+}
+
+/* QString <= HiDPIOptimizationType: */
+template<> QString toInternalString(const HiDPIOptimizationType &optimizationType)
+{
+    QString strResult;
+    switch (optimizationType)
+    {
+        case HiDPIOptimizationType_None:        strResult = "None"; break;
+        case HiDPIOptimizationType_Performance: strResult = "Performance"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for type=%d", optimizationType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* HiDPIOptimizationType <= QString: */
+template<> HiDPIOptimizationType fromInternalString<HiDPIOptimizationType>(const QString &strOptimizationType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;      QList<HiDPIOptimizationType> values;
+    keys << "None";        values << HiDPIOptimizationType_None;
+    keys << "Performance"; values << HiDPIOptimizationType_Performance;
+    /* 'Performance' type for empty/unknown words (for trunk): */
+    if (!keys.contains(strOptimizationType, Qt::CaseInsensitive))
+        return HiDPIOptimizationType_Performance;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strOptimizationType, Qt::CaseInsensitive)));
 }
 

@@ -448,6 +448,11 @@ GuruMeditationHandlerType UIExtraDataManager::guruMeditationHandlerType(const QS
     return gpConverter->fromInternalString<GuruMeditationHandlerType>(extraDataString(GUI_GuruMeditationHandler, strID));
 }
 
+HiDPIOptimizationType UIExtraDataManager::hiDPIOptimizationType(const QString &strID) const
+{
+    return gpConverter->fromInternalString<HiDPIOptimizationType>(extraDataString(GUI_HiDPIOptimization, strID));
+}
+
 void UIExtraDataManager::prepare()
 {
     /* Prepare Main event-listener: */

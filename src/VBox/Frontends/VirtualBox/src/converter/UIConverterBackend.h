@@ -77,6 +77,7 @@ template<> bool canConvert<MachineSettingsPageType>();
 template<> bool canConvert<IndicatorType>();
 template<> bool canConvert<MachineCloseAction>();
 template<> bool canConvert<GuruMeditationHandlerType>();
+template<> bool canConvert<HiDPIOptimizationType>();
 
 /* Declare COM canConvert specializations: */
 template<> bool canConvert<KMachineState>();
@@ -142,6 +143,8 @@ template<> QString toInternalString(const MachineCloseAction &machineCloseAction
 template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QString &strMachineCloseAction);
 template<> QString toInternalString(const GuruMeditationHandlerType &guruMeditationHandlerType);
 template<> GuruMeditationHandlerType fromInternalString<GuruMeditationHandlerType>(const QString &strGuruMeditationHandlerType);
+template<> QString toInternalString(const HiDPIOptimizationType &optimizationType);
+template<> HiDPIOptimizationType fromInternalString<HiDPIOptimizationType>(const QString &strOptimizationType);
 
 /* Declare COM conversion specializations: */
 template<> QColor toColor(const KMachineState &state);

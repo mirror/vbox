@@ -438,6 +438,7 @@ void UIMachineView::prepareFrameBuffer()
 # else /* VBOX_WITH_VIDEOHWACCEL */
                 pFrameBuffer = new UIFrameBufferQImage(this);
 # endif /* !VBOX_WITH_VIDEOHWACCEL */
+                pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
                 uisession()->setFrameBuffer(screenId(), pFrameBuffer);
             }
             m_pFrameBuffer = pFrameBuffer;

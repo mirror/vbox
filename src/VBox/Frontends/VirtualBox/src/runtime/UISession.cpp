@@ -134,6 +134,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_pMachineWindowIcon(0)
 #endif /* !Q_WS_MAC */
     , m_guruMeditationHandlerType(GuruMeditationHandlerType_Default)
+    , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
     , m_fIsExtensionPackUsable(false)
     , m_requestedVisualStateType(UIVisualStateType_Invalid)
 #ifdef Q_WS_WIN
@@ -1130,6 +1131,9 @@ void UISession::loadSessionSettings()
 
         /* Determine Guru Meditation handler type: */
         m_guruMeditationHandlerType = gEDataManager->guruMeditationHandlerType(vboxGlobal().managedVMUuid());
+
+        /* Determine HiDPI optimization type: */
+        m_hiDPIOptimizationType = gEDataManager->hiDPIOptimizationType(vboxGlobal().managedVMUuid());
 
         /* Is there should be First RUN Wizard? */
         strSettings = machine.GetExtraData(GUI_FirstRun);

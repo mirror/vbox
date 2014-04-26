@@ -108,6 +108,8 @@ public:
      ** @{ */
     /** Returns Guru Meditation handler type. */
     GuruMeditationHandlerType guruMeditationHandlerType() const { return m_guruMeditationHandlerType; }
+    /** Returns HiDPI optimization type. */
+    HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
     /** @} */
 
     /** @name Extension Pack stuff.
@@ -358,6 +360,8 @@ private:
      ** @{ */
     /** Holds Guru Meditation handler type. */
     GuruMeditationHandlerType m_guruMeditationHandlerType;
+    /** Holds HiDPI optimization type. */
+    HiDPIOptimizationType m_hiDPIOptimizationType;
     /** @} */
 
     /** @name Extension Pack variables.
