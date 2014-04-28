@@ -1548,8 +1548,7 @@ static void pcnetStart(PPCNETSTATE pThis)
 static void pcnetStop(PPCNETSTATE pThis)
 {
     Log(("#%d pcnetStop:\n", PCNET_INST_NR));
-    pThis->aCSR[0] &= ~0x7feb;
-    pThis->aCSR[0] |=  0x0014;
+    pThis->aCSR[0]  =  0x0004;
     pThis->aCSR[4] &= ~0x02c2;
     pThis->aCSR[5] &= ~0x0011;
     pcnetPollTimer(pThis);
