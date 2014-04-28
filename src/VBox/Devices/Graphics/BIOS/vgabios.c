@@ -633,6 +633,11 @@ void biosfn_set_video_mode(uint8_t mode)
  // The real mode
  mode=mode&0x7f;
 
+ // Display switching is not supported, and mono monitors aren't either.
+ // Requests to set mode 7 (mono) must set mode 0 instead (color).
+ if (mode == 7)
+     mode = 0;
+
  // find the entry in the video modes
  line=find_vga_entry(mode);
 
