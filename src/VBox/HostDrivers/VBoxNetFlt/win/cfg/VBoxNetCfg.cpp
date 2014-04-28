@@ -143,6 +143,9 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinQueryINetCfg(OUT INetCfg **ppNetCfg,
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinReleaseINetCfg(IN INetCfg *pNetCfg, IN BOOL fHasWriteLock)
 {
+    if (!pNetCfg) /* If network config has been released already, just bail out. */
+        return S_OK;
+
     HRESULT hr = pNetCfg->Uninitialize();
     if (FAILED(hr))
     {
