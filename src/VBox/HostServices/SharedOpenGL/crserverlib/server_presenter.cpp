@@ -5257,6 +5257,75 @@ static int8_t crVBoxServerCrCmdBltOffIdProcess(const VBOXCMDVBVA_BLT_OFFPRIMSZFM
     return crVBoxServerCrCmdBltIdToVram(hostId, offVRAM, 0, 0, &Pos, cRects, pRects);
 }
 
+static int8_t crVBoxServerCrCmdBltSameDimOrId(const VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8 *pCmd, uint32_t cbCmd)
+{
+    uint32_t cRects;
+    const VBOXCMDVBVA_RECT *pPRects = pCmd->aRects;
+    if ((cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8, aRects)) % sizeof (VBOXCMDVBVA_RECT))
+    {
+        WARN(("invalid argument size"));
+        return -1;
+    }
+
+    cRects = (cbCmd - RT_OFFSETOF(VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8, aRects)) / sizeof (VBOXCMDVBVA_RECT);
+
+    RTRECT *pRects = crVBoxServerCrCmdBltRecsUnpack(pPRects, cRects);
+    if (!pRects)
+    {
+        WARN(("crVBoxServerCrCmdBltRecsUnpack failed"));
+        return -1;
+    }
+
+    uint8_t u8Flags = pCmd->Hdr.Hdr.u8Flags;
+    VBOXCMDVBVAOFFSET offVRAM = pCmd->alloc1.Info.u.offVRAM;
+    uint32_t width = pCmd->alloc1.u16Width;
+    uint32_t height = pCmd->alloc1.u16Height;
+    RTPOINT Pos = {pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y};
+
+    if (u8Flags & VBOXCMDVBVA_OPF_OPERAND2_ISID)
+    {
+        uint32_t hostId = pCmd->info2.u.id;
+
+        if (!hostId)
+        {
+            WARN(("zero host id"));
+            return -1;
+        }
+
+        if (u8Flags & VBOXCMDVBVA_OPF_OPERAND1_ISID)
+        {
+            WARN(("blit from texture to texture not implemented"));
+            return -1;
+        }
+
+        if (u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2)
+        {
+            WARN(("blit to texture not implemented"));
+            return -1;
+        }
+
+        return crVBoxServerCrCmdBltIdToVram(hostId, offVRAM, width, height, &Pos, cRects, pRects);
+    }
+
+    if (u8Flags & VBOXCMDVBVA_OPF_OPERAND1_ISID)
+    {
+        if (!(u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2))
+        {
+            WARN(("blit to texture not implemented"));
+            return -1;
+        }
+
+        return crVBoxServerCrCmdBltIdToVram(pCmd->alloc1.Info.u.id, pCmd->info2.u.offVRAM, width, height, &Pos, cRects, pRects);
+    }
+
+    if (u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2)
+        crVBoxServerCrCmdBltVramToVram(offVRAM, width, height, pCmd->info2.u.offVRAM, width, height, &Pos, cRects, pRects);
+    else
+        crVBoxServerCrCmdBltVramToVram(pCmd->info2.u.offVRAM, width, height, offVRAM, width, height, &Pos, cRects, pRects);
+
+    return 0;
+}
+
 static int8_t crVBoxServerCrCmdBltPrimaryGenericBGRAProcess(const VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8 *pCmd, uint32_t cbCmd)
 {
     uint32_t u32PrimaryID = pCmd->Hdr.Hdr.u.u8PrimaryID;
@@ -5361,6 +5430,7 @@ static int8_t crVBoxServerCrCmdBltGenericBGRAProcess(const VBOXCMDVBVA_BLT_GENER
     }
 
     uint8_t u8Flags = pCmd->Hdr.Hdr.u8Flags;
+    RTPOINT Pos = {pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y};
 
     if (u8Flags & VBOXCMDVBVA_OPF_OPERAND2_ISID)
     {
@@ -5376,7 +5446,6 @@ static int8_t crVBoxServerCrCmdBltGenericBGRAProcess(const VBOXCMDVBVA_BLT_GENER
             return -1;
         }
 
-        RTPOINT Pos = {pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y};
         return crVBoxServerCrCmdBltIdToVram(pCmd->alloc2.Info.u.id, pCmd->alloc1.Info.u.offVRAM, pCmd->alloc1.u16Width, pCmd->alloc1.u16Height, &Pos, cRects, pRects);
     }
     else
@@ -5392,8 +5461,6 @@ static int8_t crVBoxServerCrCmdBltGenericBGRAProcess(const VBOXCMDVBVA_BLT_GENER
             RTPOINT Pos = {pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y};
             return crVBoxServerCrCmdBltIdToVram(pCmd->alloc1.Info.u.id, pCmd->alloc2.Info.u.offVRAM, pCmd->alloc2.u16Width, pCmd->alloc2.u16Height, &Pos, cRects, pRects);
         }
-
-        RTPOINT Pos = {pCmd->Hdr.Pos.x, pCmd->Hdr.Pos.y};
 
         if (u8Flags & VBOXCMDVBVA_OPF_BLT_DIR_IN_2)
             crVBoxServerCrCmdBltVramToVram(pCmd->alloc1.Info.u.offVRAM, pCmd->alloc1.u16Width, pCmd->alloc1.u16Height, pCmd->alloc2.Info.u.offVRAM, pCmd->alloc2.u16Width, pCmd->alloc2.u16Height, &Pos, cRects, pRects);
@@ -5548,16 +5615,6 @@ int8_t crVBoxServerCrCmdClrFillProcess(const VBOXCMDVBVA_CLRFILL_HDR *pCmd, uint
 
     switch (u8Cmd)
     {
-        case VBOXCMDVBVA_OPF_CLRFILL_TYPE_PRIMARY:
-        {
-            if (cbCmd < sizeof (VBOXCMDVBVA_CLRFILL_PRIMARY))
-            {
-                WARN(("VBOXCMDVBVA_CLRFILL_PRIMARY: invalid command size"));
-                return -1;
-            }
-
-            return crVBoxServerCrCmdClrFillPrimaryProcess((const VBOXCMDVBVA_CLRFILL_PRIMARY*)pCmd, cbCmd);
-        }
         case VBOXCMDVBVA_OPF_CLRFILL_TYPE_GENERIC_A8R8G8B8:
         {
             if (cbCmd < sizeof (VBOXCMDVBVA_CLRFILL_GENERIC_A8R8G8B8))
@@ -5582,15 +5639,15 @@ int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_BLT_HDR *pCmd, uint32_t cbC
 
     switch (u8Cmd)
     {
-        case VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY:
+        case VBOXCMDVBVA_OPF_BLT_TYPE_SAMEDIM_A8R8G8B8:
         {
-            if (cbCmd < sizeof (VBOXCMDVBVA_BLT_PRIMARY))
+            if (cbCmd < sizeof (VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8))
             {
-                WARN(("VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY: invalid command size"));
+                WARN(("VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8: invalid command size"));
                 return -1;
             }
 
-            return crVBoxServerCrCmdBltPrimaryProcess((const VBOXCMDVBVA_BLT_PRIMARY*)pCmd, cbCmd);
+            return crVBoxServerCrCmdBltSameDimOrId((const VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8 *)pCmd, cbCmd);
         }
         case VBOXCMDVBVA_OPF_BLT_TYPE_OFFPRIMSZFMT_OR_ID:
         {
@@ -5602,16 +5659,6 @@ int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_BLT_HDR *pCmd, uint32_t cbC
 
             return crVBoxServerCrCmdBltOffIdProcess((const VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID *)pCmd, cbCmd);
         }
-        case VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_GENERIC_A8R8G8B8:
-        {
-            if (cbCmd < sizeof (VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8))
-            {
-                WARN(("VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_GENERIC_A8R8G8B8: invalid command size"));
-                return -1;
-            }
-
-            return crVBoxServerCrCmdBltPrimaryGenericBGRAProcess((const VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8 *)pCmd, cbCmd);
-        }
         case VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8:
         {
             if (cbCmd < sizeof (VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8))
@@ -5621,16 +5668,6 @@ int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_BLT_HDR *pCmd, uint32_t cbC
             }
 
             return crVBoxServerCrCmdBltGenericBGRAProcess((const VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8 *)pCmd, cbCmd);
-        }
-        case VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_PRIMARY:
-        {
-            if (cbCmd < sizeof (VBOXCMDVBVA_BLT_PRIMARY))
-            {
-                WARN(("VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_PRIMARY: invalid command size"));
-                return -1;
-            }
-
-            return crVBoxServerCrCmdBltPrimaryPrimaryProcess((const VBOXCMDVBVA_BLT_PRIMARY *)pCmd, cbCmd);
         }
         default:
             WARN(("unsupported command"));
