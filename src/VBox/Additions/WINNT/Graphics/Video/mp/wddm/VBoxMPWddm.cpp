@@ -6322,53 +6322,6 @@ DECLINLINE(void) VBoxCVDdiFillAllocDescOffVRAM(VBOXCMDVBVA_ALLOCDESC *pDesc, con
     pDesc->u16Height = (uint16_t)pAlloc->AllocData.SurfDesc.height;
 }
 
-static NTSTATUS vboxWddmCmCmdBltPrimNotPrimFill(VBOXCMDVBVA_BLT_HDR *pBltHdr, const VBOXWDDM_ALLOCATION *pPrimary, const VBOXWDDM_ALLOCATION *pAlloc, const DXGK_ALLOCATIONLIST *pList,
-                            BOOLEAN fToPrimary, uint32_t *poffPatch, uint32_t *poffRects)
-{
-    uint8_t fFlags;
-    pBltHdr->Hdr.u.u8PrimaryID = pPrimary->AllocData.SurfDesc.VidPnSourceId;
-    if (pAlloc->AllocData.hostID)
-    {
-        fFlags = VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY | VBOXCMDVBVA_OPF_OPERAND2_ISID;
-        VBOXCMDVBVA_BLT_PRIMARY *pBlt = (VBOXCMDVBVA_BLT_PRIMARY*)pBltHdr;
-        pBlt->alloc.u.id = pAlloc->AllocData.hostID;
-        *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects);
-    }
-    else
-    {
-        D3DDDIFORMAT enmFormat = vboxWddmFmtNoAlphaFormat(pAlloc->AllocData.SurfDesc.format);
-        if (enmFormat != D3DDDIFMT_X8R8G8B8)
-        {
-            WARN(("unsupported format"));
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        if (pPrimary->AllocData.SurfDesc.width == pAlloc->AllocData.SurfDesc.width
-                && pPrimary->AllocData.SurfDesc.height == pAlloc->AllocData.SurfDesc.height)
-        {
-            fFlags = VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY;
-            VBOXCMDVBVA_BLT_PRIMARY *pBlt = (VBOXCMDVBVA_BLT_PRIMARY*)pBltHdr;
-            VBoxCVDdiFillAllocInfoOffVRAM(&pBlt->alloc, pList);
-            *poffPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, alloc.u.offVRAM);
-            *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY, aRects);
-        }
-        else
-        {
-            fFlags = VBOXCMDVBVA_OPF_BLT_TYPE_PRIMARY_GENERIC_A8R8G8B8;
-            VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8*)pBltHdr;
-            VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc, pAlloc, pList);
-            *poffPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8, alloc.Info.u.offVRAM);
-            *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_PRIMARY_GENERIC_A8R8G8B8, aRects);
-        }
-    }
-
-    if (!fToPrimary)
-        fFlags |= VBOXCMDVBVA_OPF_BLT_DIR_IN_2;
-
-    pBltHdr->Hdr.u8Flags |= fFlags;
-    return STATUS_SUCCESS;
-}
-
 static NTSTATUS vboxWddmCmCmdBltIdNotIdFill(VBOXCMDVBVA_BLT_HDR *pBltHdr, const VBOXWDDM_ALLOCATION *pIdAlloc, const VBOXWDDM_ALLOCATION *pAlloc, const DXGK_ALLOCATIONLIST *pList,
                             BOOLEAN fToId, uint32_t *poffPatch, uint32_t *poffRects)
 {
@@ -6395,12 +6348,12 @@ static NTSTATUS vboxWddmCmCmdBltIdNotIdFill(VBOXCMDVBVA_BLT_HDR *pBltHdr, const 
     }
     else
     {
-        fFlags = VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8 | VBOXCMDVBVA_OPF_OPERAND2_ISID;
-        VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8*)pBltHdr;
-        VBoxCVDdiFillAllocDescHostID(&pBlt->alloc2, pIdAlloc);
+        fFlags = VBOXCMDVBVA_OPF_BLT_TYPE_SAMEDIM_A8R8G8B8 | VBOXCMDVBVA_OPF_OPERAND2_ISID;
+        VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8*)pBltHdr;
         VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc1, pAlloc, pList);
-        *poffPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc1.Info.u.offVRAM);
-        *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, aRects);
+        pBlt->info2.u.id = pIdAlloc->AllocData.hostID;
+        *poffPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8, alloc1.Info.u.offVRAM);
+        *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8, aRects);
     }
 
     if (fToId)
@@ -6410,6 +6363,33 @@ static NTSTATUS vboxWddmCmCmdBltIdNotIdFill(VBOXCMDVBVA_BLT_HDR *pBltHdr, const 
     return STATUS_SUCCESS;
 }
 
+static NTSTATUS vboxWddmCmCmdBltNotIdNotIdFill(VBOXCMDVBVA_BLT_HDR *pBltHdr, const VBOXWDDM_ALLOCATION *pSrcAlloc, const DXGK_ALLOCATIONLIST *pSrcList,
+        const VBOXWDDM_ALLOCATION *pDstAlloc, const DXGK_ALLOCATIONLIST *pDstList,
+                            uint32_t *poffSrcPatch, uint32_t *poffDstPatch, uint32_t *poffRects)
+{
+    if (pDstAlloc->AllocData.SurfDesc.width == pSrcAlloc->AllocData.SurfDesc.width
+            && pDstAlloc->AllocData.SurfDesc.height == pSrcAlloc->AllocData.SurfDesc.height)
+    {
+        pBltHdr->Hdr.u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_SAMEDIM_A8R8G8B8;
+        VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8*)pBltHdr;
+        VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc1, pDstAlloc, pDstList);
+        VBoxCVDdiFillAllocInfoOffVRAM(&pBlt->info2, pSrcList);
+        *poffDstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8, alloc1.Info.u.offVRAM);
+        *poffSrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8, info2.u.offVRAM);
+        *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_SAMEDIM_A8R8G8B8, aRects);
+    }
+    else
+    {
+        pBltHdr->Hdr.u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8;
+        VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8*)pBltHdr;
+        VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc1, pDstAlloc, pDstList);
+        VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc2, pSrcAlloc, pSrcList);
+        *poffDstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc1.Info.u.offVRAM);
+        *poffSrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc2.Info.u.offVRAM);
+        *poffRects = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, aRects);
+    }
+    return STATUS_SUCCESS;
+}
 /**
  * DxgkDdiPresent
  */
@@ -6531,13 +6511,7 @@ DxgkDdiPresentNew(
             }
             else
             {
-                pBltHdr->Hdr.u8Flags |= VBOXCMDVBVA_OPF_BLT_TYPE_GENERIC_A8R8G8B8;
-                VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8 *pBlt = (VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8*)pBltHdr;
-                VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc1, pDstAlloc, pDst);
-                VBoxCVDdiFillAllocDescOffVRAM(&pBlt->alloc2, pSrcAlloc, pSrc);
-                u32DstPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc1.Info.u.offVRAM);
-                u32SrcPatch = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, alloc2.Info.u.offVRAM);
-                cbPrivateData = RT_OFFSETOF(VBOXCMDVBVA_BLT_GENERIC_A8R8G8B8, aRects);
+                vboxWddmCmCmdBltNotIdNotIdFill(pBltHdr, pSrcAlloc, pSrc, pDstAlloc, pDst, &u32SrcPatch, &u32DstPatch, &cbPrivateData);
             }
         }
 
