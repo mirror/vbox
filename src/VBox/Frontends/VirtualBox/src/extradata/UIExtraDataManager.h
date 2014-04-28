@@ -128,6 +128,8 @@ public:
 #ifndef Q_WS_MAC
     /** Except Mac OS X: Returns redefined machine-window icon names. */
     QStringList machineWindowIconNames(const QString &strID) const;
+    /** Except Mac OS X: Returns redefined machine-window name postfix. */
+    QString machineWindowNamePostfix(const QString &strID) const;
 #endif /* !Q_WS_MAC */
 
     /** Returns redefined guru-meditation handler type. */
