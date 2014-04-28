@@ -1366,7 +1366,8 @@ int CrFbRegionsClear(HCR_FRAMEBUFFER hFb)
 
     const struct VBVAINFOSCREEN* pScreen = CrFbGetScreenInfo(hFb);
     VBOXCMDVBVAOFFSET offVRAM = (VBOXCMDVBVAOFFSET)(((uintptr_t)CrFbGetVRAM(hFb)) - ((uintptr_t)g_pvVRamBase));
-    int8_t i8Result = crVBoxServerCrCmdBltPrimaryVramGenericProcess(pScreen->u32ViewIndex, offVRAM, pScreen->u32Width, pScreen->u32Height, NULL, cRegions, pRegions, true);
+    RTPOINT Pos = {0,0};
+    int8_t i8Result = crVBoxServerCrCmdBltPrimaryVramGenericProcess(pScreen->u32ViewIndex, offVRAM, pScreen->u32Width, pScreen->u32Height, &Pos, cRegions, pRegions, true);
     if (i8Result)
     {
         WARN(("crVBoxServerCrCmdBltPrimaryVramGenericProcess failed"));
@@ -4744,7 +4745,7 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
     HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(idScreen);
     if (!hFb)
     {
-        WARN(("request to present on disabled framebuffer, ignore"));
+        LOG(("request to present on disabled framebuffer, ignore"));
         return;
     }
 
