@@ -65,20 +65,6 @@ RT_C_DECLS_BEGIN
 extern void     *get_bsdtask_info(task_t);
 RT_C_DECLS_END
 
-/* Temporary: Extra logging */
-#ifdef Log
-# undef Log
-#endif
-#define Log LogRel
-#ifdef Log2
-# undef Log2
-#endif
-#define Log2 LogRel
-/* Temporary: needed for extra debug info */
-#define VBOX_PROC_SELFNAME_LEN  (20)
-#define VBOX_RETRIEVE_CUR_PROC_NAME(_name)    char _name[VBOX_PROC_SELFNAME_LEN]; \
-                                              proc_selfname(pszProcName, VBOX_PROC_SELFNAME_LEN)
-
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -123,18 +109,9 @@ public:
     virtual void close(IOService *pForClient, IOOptionBits fOptions = 0);
     virtual void stop(IOService *pProvider);
     virtual void free();
-
-    virtual bool terminateClient(IOService *pClient, IOOptionBits fOptions);
-    virtual bool finalize(IOOptionBits fOptions);
-    virtual void retain() const;
-    virtual void release(int freeWhen) const;
-    virtual void taggedRetain(const void *pTag=0) const;
-    virtual void taggedRelease(const void *pTag, const int freeWhen) const;
     /** @} */
 };
 OSDefineMetaClassAndStructors(org_virtualbox_VBoxUSB, IOService);
-
-
 
 
 /**
@@ -155,10 +132,6 @@ public:
     virtual bool finalize(IOOptionBits fOptions);
     virtual void stop(IOService *pProvider);
     virtual void free();
-    virtual void retain() const;
-    virtual void release(int freeWhen) const;
-    virtual void taggedRetain(const void *pTag=0) const;
-    virtual void taggedRelease(const void *pTag, const int freeWhen) const;
     virtual IOExternalMethod *getTargetAndMethodForIndex(IOService **ppService, UInt32 iMethod);
     /** @} */
 
@@ -216,17 +189,6 @@ public:
     virtual void stop(IOService *pProvider);
     virtual void free();
     virtual IOReturn message(UInt32 enmMsg, IOService *pProvider, void *pvArg = 0);
-
-    virtual bool open(IOService *pForClient, IOOptionBits fOptions = 0, void *pvArg = 0);
-    virtual void close(IOService *pForClient, IOOptionBits fOptions = 0);
-    virtual bool terminateClient(IOService *pClient, IOOptionBits fOptions);
-    virtual bool finalize(IOOptionBits fOptions);
-
-    virtual void retain() const;
-    virtual void release(int freeWhen) const;
-    virtual void taggedRetain(const void *pTag=0) const;
-    virtual void taggedRelease(const void *pTag, const int freeWhen) const;
-
     /** @} */
 
     static void  scheduleReleaseByOwner(RTPROCESS Owner);
@@ -287,18 +249,6 @@ public:
     virtual void stop(IOService *pProvider);
     virtual void free();
     virtual IOReturn message(UInt32 enmMsg, IOService *pProvider, void *pvArg = 0);
-
-    virtual bool open(IOService *pForClient, IOOptionBits fOptions = 0, void *pvArg = 0);
-    virtual void close(IOService *pForClient, IOOptionBits fOptions = 0);
-    virtual bool terminateClient(IOService *pClient, IOOptionBits fOptions);
-    virtual bool finalize(IOOptionBits fOptions);
-
-
-    virtual void retain() const;
-    virtual void release(int freeWhen) const;
-    virtual void taggedRetain(const void *pTag=0) const;
-    virtual void taggedRelease(const void *pTag, const int freeWhen) const;
-
     /** @} */
 
 private:
@@ -495,16 +445,13 @@ bool
 org_virtualbox_VBoxUSB::init(OSDictionary *pDictionary)
 {
     uint32_t cInstances = ASMAtomicIncU32(&g_cInstances);
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::init([%p], %p) new g_cInstances=%d pszProcName=[%s] [retain count: %d]\n", this, pDictionary, cInstances, pszProcName, getRetainCount()));
+    Log(("VBoxUSB::init([%p], %p) new g_cInstances=%d\n", this, pDictionary, cInstances));
     if (IOService::init(pDictionary))
     {
         /* init members. */
-        Log(("VBoxUSB::init([%p], %p) returns true pszProcName=[%s] [retain count: %d]\n", this, pDictionary, pszProcName, getRetainCount()));
         return true;
     }
     ASMAtomicDecU32(&g_cInstances);
-    Log(("VBoxUSB::init([%p], %p) returns false pszProcName=[%s] [retain count: %d]\n", this, pDictionary, pszProcName, getRetainCount()));
     return false;
 }
 
@@ -517,8 +464,7 @@ void
 org_virtualbox_VBoxUSB::free()
 {
     uint32_t cInstances = ASMAtomicDecU32(&g_cInstances); NOREF(cInstances);
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::free([%p]) new g_cInstances=%d pszProcName=[%s] [retain count: %d]\n", this, cInstances, pszProcName, getRetainCount()));
+    Log(("VBoxUSB::free([%p]) new g_cInstances=%d\n", this, cInstances));
     IOService::free();
 }
 
@@ -529,18 +475,14 @@ org_virtualbox_VBoxUSB::free()
 bool
 org_virtualbox_VBoxUSB::start(IOService *pProvider)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::start([%p], %p {%s}) pszProcName=[%s] [retain count: %d]\n", this, pProvider, pProvider->getName(), pszProcName, getRetainCount()));
+    Log(("VBoxUSB::start([%p], %p {%s})\n", this, pProvider, pProvider->getName()));
 
     if (IOService::start(pProvider))
     {
         /* register the service. */
         registerService();
-        Log(("VBoxUSB::start([%p], %p {%s}) pszProcName=[%s] returns true [retain count: %d]\n", this, pProvider, pProvider->getName(), pszProcName, getRetainCount()));
         return true;
     }
-
-    Log(("VBoxUSB::start([%p], %p {%s}) pszProcName=[%s] returns false [retain count: %d]\n", this, pProvider, pProvider->getName(), pszProcName, getRetainCount()));
     return false;
 }
 
@@ -552,10 +494,8 @@ org_virtualbox_VBoxUSB::start(IOService *pProvider)
 void
 org_virtualbox_VBoxUSB::stop(IOService *pProvider)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::stop([%p], %p (%s)) (1) pszProcName=[%s] [retain count: %d]\n", this, pProvider, pProvider->getName(), pszProcName, getRetainCount()));
+    Log(("VBoxUSB::stop([%p], %p (%s))\n", this, pProvider, pProvider->getName()));
     IOService::stop(pProvider);
-    Log(("VBoxUSB::stop([%p], %p (%s)) (2) pszProcName=[%s] [retain count: %d]\n", this, pProvider, pProvider->getName(), pszProcName, getRetainCount()));
 }
 
 
@@ -566,10 +506,9 @@ org_virtualbox_VBoxUSB::stop(IOService *pProvider)
 bool
 org_virtualbox_VBoxUSB::open(IOService *pForClient, IOOptionBits fOptions/* = 0*/, void *pvArg/* = 0*/)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::open([%p], %p, %#x, %p) pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pvArg, pszProcName, getRetainCount()));
+    Log(("VBoxUSB::open([%p], %p, %#x, %p)\n", this, pForClient, fOptions, pvArg));
     bool fRc = IOService::open(pForClient, fOptions, pvArg);
-    Log(("VBoxUSB::open([%p], %p, %#x, %p) -> %d pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pvArg, fRc, pszProcName, getRetainCount()));
+    Log(("VBoxUSB::open([%p], %p, %#x, %p) -> %d\n", this, pForClient, fOptions, pvArg, fRc));
     return fRc;
 }
 
@@ -581,9 +520,8 @@ org_virtualbox_VBoxUSB::open(IOService *pForClient, IOOptionBits fOptions/* = 0*
 void
 org_virtualbox_VBoxUSB::close(IOService *pForClient, IOOptionBits fOptions/* = 0*/)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
+    Log(("VBoxUSB::close([%p], %p, %#x)\n", this, pForClient, fOptions));
     IOService::close(pForClient, fOptions);
-    Log(("VBoxUSB::close([%p], %p, %#x) pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pszProcName, getRetainCount()));
 }
 
 
@@ -594,72 +532,12 @@ org_virtualbox_VBoxUSB::close(IOService *pForClient, IOOptionBits fOptions/* = 0
 bool
 org_virtualbox_VBoxUSB::terminate(IOOptionBits fOptions)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::terminate([%p], %#x): pszProcName=[%s] g_cInstances=%d [retain count: %d]\n", this, fOptions, pszProcName, g_cInstances, getRetainCount()));
+    Log(("VBoxUSB::terminate([%p], %#x): g_cInstances=%d\n", this, fOptions, g_cInstances));
     bool fRc = IOService::terminate(fOptions);
-    Log(("VBoxUSB::terminate([%p], %#x): pszProcName=[%s] returns %d [retain count: %d]\n", this, fOptions, pszProcName, fRc, getRetainCount()));
+    Log(("VBoxUSB::terminate([%p], %#x): returns %d\n", this, fOptions, fRc));
     return fRc;
 }
 
-
-bool
-org_virtualbox_VBoxUSB::terminateClient(IOService *pClient, IOOptionBits fOptions)
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::terminateClient([%p], pClient=%p, fOptions=%#x) pszProcName=[%s] [retain count: %d]\n", this, pClient, fOptions, pszProcName, getRetainCount()));
-    bool fRc = IOService::terminateClient(pClient, fOptions);
-    Log(("VBoxUSB::terminateClient([%p], pClient=%p, fOptions=%#x) returns %d pszProcName=[%s] [retain count: %d]\n", this, pClient, fOptions, fRc, pszProcName, getRetainCount()));
-    return fRc;
-}
-
-
-bool
-org_virtualbox_VBoxUSB::finalize(IOOptionBits fOptions)
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::finalize([%p], fOptions=%#x) pszProcName=[%s] [retain count: %d]\n", this, fOptions, pszProcName, getRetainCount()));
-    bool fRc = IOService::finalize(fOptions);
-    Log(("VBoxUSB::finalize([%p], fOptions=%#x) returns %d pszProcName=[%s] [retain count: %d]\n", this, fOptions, fRc, pszProcName, getRetainCount()));
-    return fRc;
-}
-
-
-void
-org_virtualbox_VBoxUSB::retain() const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::retain([%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
-    IOService::retain();
-    Log(("VBoxUSB::retain([%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
-}
-
-
-void
-org_virtualbox_VBoxUSB::release(int freeWhen) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::release([%p], freeWhen=[%d]) pszProcName=[%s] [retain count: %d]\n", this, freeWhen, pszProcName, getRetainCount()));
-    IOService::release(freeWhen);
-}
-
-
-void
-org_virtualbox_VBoxUSB::taggedRetain(const void *pTag) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::taggedRetain([%p], pTag=[%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
-    IOService::taggedRetain(pTag);
-    Log(("VBoxUSB::taggedRetain([%p], pTag=[%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
-}
-
-
-void
-org_virtualbox_VBoxUSB::taggedRelease(const void *pTag, const int freeWhen) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSB::taggedRelease([%p], pTag=[%p], freeWhen=[%d]) pszProcName=[%s] [retain count: %d]\n", this, pTag, freeWhen, pszProcName, getRetainCount()));
-    IOService::taggedRelease(pTag, freeWhen);
-}
 
 
 
@@ -685,15 +563,12 @@ org_virtualbox_VBoxUSBClient::initWithTask(task_t OwningTask, void *pvSecurityId
 {
     if (!OwningTask)
     {
-        Log(("VBoxUSBClient::initWithTask([%p], %p, %p, %#x) -> false (no task) [retain count: %d]\n", this, OwningTask, pvSecurityId, u32Type, getRetainCount()));
+        Log(("VBoxUSBClient::initWithTask([%p], %p, %p, %#x) -> false (no task)\n", this, OwningTask, pvSecurityId, u32Type));
         return false;
     }
-
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
     proc_t pProc = (proc_t)get_bsdtask_info(OwningTask); /* we need the pid */
-    Log(("VBoxUSBClient::initWithTask([%p], %p(->%p:{.pid=%d (%s)}, %p, %#x) [retain count: %d]\n",
-             this, OwningTask, pProc, pProc ? proc_pid(pProc) : -1, pszProcName, pvSecurityId, u32Type, getRetainCount()));
+    Log(("VBoxUSBClient::initWithTask([%p], %p(->%p:{.pid=%d}, %p, %#x)\n",
+             this, OwningTask, pProc, pProc ? proc_pid(pProc) : -1, pvSecurityId, u32Type));
 
     if (IOUserClient::initWithTask(OwningTask, pvSecurityId , u32Type))
     {
@@ -703,13 +578,13 @@ org_virtualbox_VBoxUSBClient::initWithTask(task_t OwningTask, void *pvSecurityId
         m_pNext = NULL;
 
         uint32_t cInstances = ASMAtomicIncU32(&g_cInstances);
-        Log(("VBoxUSBClient::initWithTask([%p], %p(->%p:{.pid=%d (%s)}, %p, %#x) -> true; new g_cInstances=%d [retain count: %d]\n",
-                 this, OwningTask, pProc, pProc ? proc_pid(pProc) : -1, pszProcName, pvSecurityId, u32Type, cInstances, getRetainCount()));
+        Log(("VBoxUSBClient::initWithTask([%p], %p(->%p:{.pid=%d}, %p, %#x) -> true; new g_cInstances=%d\n",
+                 this, OwningTask, pProc, pProc ? proc_pid(pProc) : -1, pvSecurityId, u32Type, cInstances));
         return true;
     }
 
-    Log(("VBoxUSBClient::initWithTask([%p], %p(->%p:{.pid=%d (%s)}, %p, %#x) -> false [retain count: %d]\n",
-             this, OwningTask, pProc, pProc ? proc_pid(pProc) : -1, pszProcName, pvSecurityId, u32Type, getRetainCount()));
+    Log(("VBoxUSBClient::initWithTask([%p], %p(->%p:{.pid=%d}, %p, %#x) -> false\n",
+             this, OwningTask, pProc, pProc ? proc_pid(pProc) : -1, pvSecurityId, u32Type));
     return false;
 }
 
@@ -722,67 +597,8 @@ void
 org_virtualbox_VBoxUSBClient::free()
 {
     uint32_t cInstances = ASMAtomicDecU32(&g_cInstances); NOREF(cInstances);
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBClient::free([%p]) new g_cInstances=%d pszProcName=[%s] [retain count: %d]\n", this, cInstances, pszProcName, getRetainCount()));
+    Log(("VBoxUSBClient::free([%p]) new g_cInstances=%d\n", this, cInstances));
     IOUserClient::free();
-}
-
-
-/**
- * Retain the object.
- * @remark  Only for logging.
- */
-void
-org_virtualbox_VBoxUSBClient::retain() const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
-    Log(("VBoxUSBClient::retain([%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
-    IOUserClient::retain();
-    Log(("VBoxUSBClient::retain([%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
-}
-
-
-/**
- * Release the object.
- * @remark  Only for logging.
- */
-void
-org_virtualbox_VBoxUSBClient::release(int freeWhen) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
-    Log(("VBoxUSBClient::release([%p], freeWhen=%d) pszProcName=[%s] [retain count: %d]\n", this, freeWhen, pszProcName, getRetainCount()));
-    IOUserClient::release(freeWhen);
-}
-
-
-/**
- * Tagged retain the object.
- * @remark  Only for logging.
- */
-void
-org_virtualbox_VBoxUSBClient::taggedRetain(const void *pTag) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
-    Log(("VBoxUSBClient::taggedRetain([%p], [pTag=%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
-    IOUserClient::taggedRetain(pTag);
-    Log(("VBoxUSBClient::taggedRetain([%p], [pTag=%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
-}
-
-
-/**
- * Tagged release the object.
- * @remark  Only for logging.
- */
-void
-org_virtualbox_VBoxUSBClient::taggedRelease(const void *pTag, const int freeWhen) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
-    Log(("VBoxUSBClient::taggedRelease([%p], [pTag=%p], [freeWhen=%d]) pszProcName=[%s] [retain count: %d]\n", this, pTag, freeWhen, pszProcName, getRetainCount()));
-    IOUserClient::taggedRelease(pTag, freeWhen);
 }
 
 
@@ -792,9 +608,7 @@ org_virtualbox_VBoxUSBClient::taggedRelease(const void *pTag, const int freeWhen
 bool
 org_virtualbox_VBoxUSBClient::start(IOService *pProvider)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
-    Log(("VBoxUSBClient::start([%p], %p) pszProcName=[%s] [retain count: %d]\n", this, pProvider, pszProcName, getRetainCount()));
+    Log(("VBoxUSBClient::start([%p], %p)\n", this, pProvider));
     if (IOUserClient::start(pProvider))
     {
         m_pProvider = OSDynamicCast(org_virtualbox_VBoxUSB, pProvider);
@@ -810,13 +624,10 @@ org_virtualbox_VBoxUSBClient::start(IOService *pProvider)
 
             VBOXUSB_UNLOCK();
 
-            Log(("VBoxUSBClient::start([%p]): returns true pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
             return true;
         }
-        Log(("VBoxUSBClient::start: %p isn't org_virtualbox_VBoxUSB pszProcName=[%s] [retain count: %d]\n", pProvider, pszProcName, getRetainCount()));
+        Log(("VBoxUSBClient::start: %p isn't org_virtualbox_VBoxUSB\n", pProvider));
     }
-
-    Log(("VBoxUSBClient::start([%p]): returns false pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
     return false;
 }
 
@@ -827,9 +638,7 @@ org_virtualbox_VBoxUSBClient::start(IOService *pProvider)
 IOReturn
 org_virtualbox_VBoxUSBClient::clientClose(void)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
-    Log(("VBoxUSBClient::clientClose([%p:{.m_Process=%d}]) pszProcName=[%s] [retain count: %d]\n", this, (int)m_Process, pszProcName, getRetainCount()));
+    Log(("VBoxUSBClient::clientClose([%p:{.m_Process=%d}])\n", this, (int)m_Process));
 
     /*
      * Remove this process from the client list.
@@ -872,8 +681,6 @@ org_virtualbox_VBoxUSBClient::clientClose(void)
     m_pProvider = NULL;
     terminate();
 
-    Log(("VBoxUSBClient::clientClose([%p:{.m_Process=%d}]) return kIOReturnSuccess pszProcName=[%s] [retain count: %d]\n", this, (int)m_Process, pszProcName, getRetainCount()));
-
     return kIOReturnSuccess;
 }
 
@@ -885,14 +692,11 @@ org_virtualbox_VBoxUSBClient::clientClose(void)
 IOReturn
 org_virtualbox_VBoxUSBClient::clientDied(void)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
+    Log(("VBoxUSBClient::clientDied([%p]) m_Task=%p R0Process=%p Process=%d\n",
+             this, m_Task, RTR0ProcHandleSelf(), RTProcSelf()));
 
-    Log(("VBoxUSBClient::clientDied([%p]) m_Task=%p R0Process=%p Process=%d pszProcName=[%s] [retain count: %d]\n",
-             this, m_Task, RTR0ProcHandleSelf(), RTProcSelf(), pszProcName, getRetainCount()));
     /* IOUserClient::clientDied() calls clientClose... */
-    bool fRc = IOUserClient::clientDied();
-    Log(("VBoxUSBClient::clientDied([%p]): returns %d pszProcName=[%s] [retain count: %d]\n", this, fRc, pszProcName, getRetainCount()));
-    return fRc;
+    return IOUserClient::clientDied();
 }
 
 
@@ -903,12 +707,9 @@ org_virtualbox_VBoxUSBClient::clientDied(void)
 bool
 org_virtualbox_VBoxUSBClient::terminate(IOOptionBits fOptions)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
     /* kIOServiceRecursing, kIOServiceRequired, kIOServiceTerminate, kIOServiceSynchronous - interesting option bits */
-    Log(("VBoxUSBClient::terminate([%p], %#x) pszProcName=[%s] [retain count: %d]\n", this, fOptions, pszProcName, getRetainCount()));
-    bool fRc = IOUserClient::terminate(fOptions);
-    Log(("VBoxUSBClient::terminate([%p]): returns %d pszProcName=[%s] [retain count: %d]\n", this, fRc, pszProcName, getRetainCount()));
-    return fRc;
+    Log(("VBoxUSBClient::terminate([%p], %#x)\n", this, fOptions));
+    return IOUserClient::terminate(fOptions);
 }
 
 
@@ -919,11 +720,8 @@ org_virtualbox_VBoxUSBClient::terminate(IOOptionBits fOptions)
 bool
 org_virtualbox_VBoxUSBClient::finalize(IOOptionBits fOptions)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBClient::finalize([%p], %#x) pszProcName=[%s] [retain count: %d]\n", this, fOptions, pszProcName, getRetainCount()));
-    bool fRc = IOUserClient::finalize(fOptions);
-    Log(("VBoxUSBClient::finalize([%p]): returns %d pszProcName=[%s] [retain count: %d]\n", this, fRc, pszProcName, getRetainCount()));
-    return fRc;
+    Log(("VBoxUSBClient::finalize([%p], %#x)\n", this, fOptions));
+    return IOUserClient::finalize(fOptions);
 }
 
 
@@ -933,10 +731,8 @@ org_virtualbox_VBoxUSBClient::finalize(IOOptionBits fOptions)
 void
 org_virtualbox_VBoxUSBClient::stop(IOService *pProvider)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBClient::stop([%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
+    Log(("VBoxUSBClient::stop([%p])\n", this));
     IOUserClient::stop(pProvider);
-    Log(("VBoxUSBClient::stop([%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
 
     /*
      * Paranoia.
@@ -1155,9 +951,7 @@ bool
 org_virtualbox_VBoxUSBDevice::init(OSDictionary *pDictionary)
 {
     uint32_t cInstances = ASMAtomicIncU32(&g_cInstances);
-
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::init([%p], %p) new g_cInstances=%d pszProcName=[%s] [retain count: %d]\n", this, pDictionary, cInstances, pszProcName, getRetainCount()));
+    Log(("VBoxUSBDevice::init([%p], %p) new g_cInstances=%d\n", this, pDictionary, cInstances));
 
     m_pDevice = NULL;
     m_Owner = NIL_RTPROCESS;
@@ -1183,9 +977,7 @@ void
 org_virtualbox_VBoxUSBDevice::free()
 {
     uint32_t cInstances = ASMAtomicDecU32(&g_cInstances); NOREF(cInstances);
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
-    Log(("VBoxUSBDevice::free([%p]) new g_cInstances=%d pszProcName=[%s] [retain count: %d]\n", this, cInstances, pszProcName, getRetainCount()));
+    Log(("VBoxUSBDevice::free([%p]) new g_cInstances=%d\n", this, cInstances));
     IOUSBUserClientInit::free();
 }
 
@@ -1313,9 +1105,8 @@ org_virtualbox_VBoxUSBDevice::probe(IOService *pProvider, SInt32 *pi32Score)
 bool
 org_virtualbox_VBoxUSBDevice::start(IOService *pProvider)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::start([%p:{.m_Owner=%d, .m_uId=%p}], %p {%s}) pszProcName=[%s] [retain count: %d]\n",
-             this, m_Owner, m_uId, pProvider, pProvider->getName(), pszProcName, getRetainCount()));
+    Log(("VBoxUSBDevice::start([%p:{.m_Owner=%d, .m_uId=%p}], %p {%s})\n",
+             this, m_Owner, m_uId, pProvider, pProvider->getName()));
 
     m_pDevice = OSDynamicCast(IOUSBDevice, pProvider);
     if (!m_pDevice)
@@ -1382,8 +1173,7 @@ org_virtualbox_VBoxUSBDevice::start(IOService *pProvider)
 void
 org_virtualbox_VBoxUSBDevice::stop(IOService *pProvider)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::stop([%p], %p {%s}) pszProcName=[%s] [retain count: %d]\n", this, pProvider, pProvider->getName(), pszProcName, getRetainCount()));
+    Log(("VBoxUSBDevice::stop([%p], %p {%s})\n", this, pProvider, pProvider->getName()));
 
     /*
      * Remove ourselves from the list of device.
@@ -1482,10 +1272,8 @@ org_virtualbox_VBoxUSBDevice::stop(IOService *pProvider)
 bool
 org_virtualbox_VBoxUSBDevice::terminate(IOOptionBits fOptions)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
     /* kIOServiceRecursing, kIOServiceRequired, kIOServiceTerminate, kIOServiceSynchronous - interesting option bits */
-    Log(("VBoxUSBDevice::terminate([%p], %#x) pszProcName=[%s] [retain count: %d]\n", this, fOptions, pszProcName, getRetainCount()));
+    Log(("VBoxUSBDevice::terminate([%p], %#x)\n", this, fOptions));
 
     /*
      * There aren't too many reasons why we gets terminated.
@@ -1506,9 +1294,7 @@ org_virtualbox_VBoxUSBDevice::terminate(IOOptionBits fOptions)
     if ((fOptions & 0xffff) == (kIOServiceRequired | kIOServiceSynchronous))
         m_fBeingUnloaded = true;
 
-    bool fRc = IOUSBUserClientInit::terminate(fOptions);
-    Log(("VBoxUSBDevice::terminate([%p]): returns %d\n", this, fRc));
-    return fRc;
+    return IOUSBUserClientInit::terminate(fOptions);
 }
 
 
@@ -1778,83 +1564,6 @@ org_virtualbox_VBoxUSBDevice::MyInterestHandler(void *pvTarget, void *pvRefCon, 
 #endif /* DEBUG */
 
 
-bool
-org_virtualbox_VBoxUSBDevice::open(IOService *pForClient, IOOptionBits fOptions, void *pvArg)
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::open([%p], pForClient=%p, fOptions=%#x, pvArg=%p) (1) pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pvArg, pszProcName, getRetainCount()));
-    bool fRc = IOUSBUserClientInit::open(pForClient, fOptions, pvArg);
-    Log(("VBoxUSBDevice::open([%p], pForClient=%p, fOptions=%#x, pvArg=%p) (2) returns %d pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pvArg, fRc, pszProcName, getRetainCount()));
-    return fRc;
-}
-
-void
-org_virtualbox_VBoxUSBDevice::close(IOService *pForClient, IOOptionBits fOptions)
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::close([%p], pForClient=%p, fOptions=%#x) (1) pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pszProcName, getRetainCount()));
-    IOUSBUserClientInit::close(pForClient, fOptions);
-    Log(("VBoxUSBDevice::close([%p], pForClient=%p, fOptions=%#x) (2) pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pszProcName, getRetainCount()));
-}
-
-bool
-org_virtualbox_VBoxUSBDevice::terminateClient(IOService *pClient, IOOptionBits fOptions)
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::terminateClient([%p], pClient=%p, fOptions=%#x) (1) pszProcName=[%s] [retain count: %d]\n", this, pClient, fOptions, pszProcName, getRetainCount()));
-    bool fRc = IOUSBUserClientInit::terminateClient(pClient, fOptions);
-    Log(("VBoxUSBDevice::terminateClient([%p], pClient=%p, fOptions=%#x) (2) returns %d pszProcName=[%s] [retain count: %d]\n", this, pClient, fOptions, fRc, pszProcName, getRetainCount()));
-    return fRc;
-}
-
-
-bool
-org_virtualbox_VBoxUSBDevice::finalize(IOOptionBits fOptions)
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::finalize([%p], fOptions=%#x) (1) pszProcName=[%s] [retain count: %d]\n", this, fOptions, pszProcName, getRetainCount()));
-    bool fRc = IOUSBUserClientInit::finalize(fOptions);
-    Log(("VBoxUSBDevice::finalize([%p], fOptions=%#x) (2) returns %d pszProcName=[%s] [retain count: %d]\n", this, fOptions, fRc, pszProcName, getRetainCount()));
-    return fRc;
-}
-
-
-void
-org_virtualbox_VBoxUSBDevice::retain() const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::retain([%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
-    IOUSBUserClientInit::retain();
-    Log(("VBoxUSBDevice::retain([%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
-}
-
-
-void
-org_virtualbox_VBoxUSBDevice::release(int freeWhen) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::release([%p], freeWhen=[%d]) pszProcName=[%s] [retain count: %d]\n", this, freeWhen, pszProcName, getRetainCount()));
-    IOUSBUserClientInit::release(freeWhen);
-}
-
-
-void
-org_virtualbox_VBoxUSBDevice::taggedRetain(const void *pTag) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::taggedRetain([%p], pTag=[%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
-    IOUSBUserClientInit::taggedRetain(pTag);
-    Log(("VBoxUSBDevice::taggedRetain([%p], pTag=[%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
-}
-
-
-void
-org_virtualbox_VBoxUSBDevice::taggedRelease(const void *pTag, const int freeWhen) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBDevice::taggedRelease([%p], pTag=[%p], freeWhen=[%d]) pszProcName=[%s] [retain count: %d]\n", this, pTag, freeWhen, pszProcName, getRetainCount()));
-    IOUSBUserClientInit::taggedRelease(pTag, freeWhen);
-}
 
 
 
@@ -1880,9 +1589,7 @@ bool
 org_virtualbox_VBoxUSBInterface::init(OSDictionary *pDictionary)
 {
     uint32_t cInstances = ASMAtomicIncU32(&g_cInstances);
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
-    Log(("VBoxUSBInterface::init([%p], %p) new g_cInstances=%d pszProcName=[%s] [retain count: %d]\n", this, pDictionary, cInstances, pszProcName, getRetainCount()));
+    Log(("VBoxUSBInterface::init([%p], %p) new g_cInstances=%d\n", this, pDictionary, cInstances));
 
     m_pInterface = NULL;
     m_fOpen = false;
@@ -1900,8 +1607,7 @@ void
 org_virtualbox_VBoxUSBInterface::free()
 {
     uint32_t cInstances = ASMAtomicDecU32(&g_cInstances); NOREF(cInstances);
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBInterfaces::free([%p]) new g_cInstances=%d pszProcName=[%s] [retain count: %d]\n", this, cInstances, pszProcName, getRetainCount()));
+    Log(("VBoxUSBInterfaces::free([%p]) new g_cInstances=%d\n", this, cInstances));
     IOUSBUserClientInit::free();
 }
 
@@ -1965,8 +1671,7 @@ org_virtualbox_VBoxUSBInterface::probe(IOService *pProvider, SInt32 *pi32Score)
 bool
 org_virtualbox_VBoxUSBInterface::start(IOService *pProvider)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBInterface::start([%p], %p {%s}) pszProcName=[%s] [retain count: %d]\n", this, pProvider, pProvider->getName(), pszProcName, getRetainCount()));
+    Log(("VBoxUSBInterface::start([%p], %p {%s})\n", this, pProvider, pProvider->getName()));
 
     /*
      * Exploit IOUSBUserClientInit to process IOProviderMergeProperties.
@@ -2003,8 +1708,7 @@ org_virtualbox_VBoxUSBInterface::start(IOService *pProvider)
 void
 org_virtualbox_VBoxUSBInterface::stop(IOService *pProvider)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("org_virtualbox_VBoxUSBInterface::stop([%p], %p {%s}) pszProcName=[%s] [retain count: %d]\\n", this, pProvider, pProvider->getName(), pszProcName, getRetainCount()));
+    Log(("org_virtualbox_VBoxUSBInterface::stop([%p], %p {%s})\n", this, pProvider, pProvider->getName()));
 
     /*
      * Close and release the IOUSBInterface if didn't do that already in message().
@@ -2036,12 +1740,9 @@ org_virtualbox_VBoxUSBInterface::stop(IOService *pProvider)
 bool
 org_virtualbox_VBoxUSBInterface::terminate(IOOptionBits fOptions)
 {
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
     /* kIOServiceRecursing, kIOServiceRequired, kIOServiceTerminate, kIOServiceSynchronous - interesting option bits */
-    Log(("VBoxUSBInterface::terminate([%p], %#x) pszProcName=[%s] [retain count: %d]\n", this, fOptions, pszProcName, getRetainCount()));
-    bool fRc = IOUSBUserClientInit::terminate(fOptions);
-    Log(("VBoxUSBInterface::terminate([%p]): returns %d\n", this, fRc));
-    return fRc;
+    Log(("VBoxUSBInterface::terminate([%p], %#x)\n", this, fOptions));
+    return IOUSBUserClientInit::terminate(fOptions);
 }
 
 
@@ -2138,82 +1839,5 @@ org_virtualbox_VBoxUSBInterface::message(UInt32 enmMsg, IOService *pProvider, vo
     Log(("VBoxUSBInterface::message([%p], %#x {%s}, %p {%s}, %p) -> %#x\n",
              this, enmMsg, DbgGetIOKitMessageName(enmMsg), pProvider, pProvider->getName(), pvArg, irc));
     return irc;
-}
-
-bool
-org_virtualbox_VBoxUSBInterface::open(IOService *pForClient, IOOptionBits fOptions, void *pvArg)
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBInterface::open([%p], pForClient=%p, fOptions=%#x, pvArg=%p) (1) pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pvArg, pszProcName, getRetainCount()));
-    bool fRc = IOUSBUserClientInit::open(pForClient, fOptions, pvArg);
-    Log(("VBoxUSBInterface::open([%p], pForClient=%p, fOptions=%#x, pvArg=%p) (2) returns %d pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pvArg, fRc, pszProcName, getRetainCount()));
-    return fRc;
-}
-
-void
-org_virtualbox_VBoxUSBInterface::close(IOService *pForClient, IOOptionBits fOptions)
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBInterface::close([%p], pForClient=%p, fOptions=%#x) (1) pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pszProcName, getRetainCount()));
-    IOUSBUserClientInit::close(pForClient, fOptions);
-    Log(("VBoxUSBInterface::close([%p], pForClient=%p, fOptions=%#x) (2) pszProcName=[%s] [retain count: %d]\n", this, pForClient, fOptions, pszProcName, getRetainCount()));
-}
-
-bool
-org_virtualbox_VBoxUSBInterface::terminateClient(IOService *pClient, IOOptionBits fOptions)
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBInterface::terminateClient([%p], pClient=%p, fOptions=%#x) (1) pszProcName=[%s] [retain count: %d]\n", this, pClient, fOptions, pszProcName, getRetainCount()));
-    bool fRc = IOUSBUserClientInit::terminateClient(pClient, fOptions);
-    Log(("VBoxUSBInterface::terminateClient([%p], pClient=%p, fOptions=%#x) (2) returns %d pszProcName=[%s] [retain count: %d]\n", this, pClient, fOptions, fRc, pszProcName, getRetainCount()));
-    return fRc;
-}
-
-
-bool
-org_virtualbox_VBoxUSBInterface::finalize(IOOptionBits fOptions)
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBInterface::finalize([%p], fOptions=%#x) (1) pszProcName=[%s] [retain count: %d]\n", this, fOptions, pszProcName, getRetainCount()));
-    bool fRc = IOUSBUserClientInit::finalize(fOptions);
-    Log(("VBoxUSBInterface::finalize([%p], fOptions=%#x) (2) returns %d pszProcName=[%s] [retain count: %d]\n", this, fOptions, fRc, pszProcName, getRetainCount()));
-    return fRc;
-}
-
-void
-org_virtualbox_VBoxUSBInterface::retain() const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBInterface::retain([%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
-    IOUSBUserClientInit::retain();
-    Log(("VBoxUSBInterface::retain([%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pszProcName, getRetainCount()));
-}
-
-
-void
-org_virtualbox_VBoxUSBInterface::release(int freeWhen) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBInterface::release([%p], freeWhen=[%d]) pszProcName=[%s] [retain count: %d]\n", this, freeWhen, pszProcName, getRetainCount()));
-    IOUSBUserClientInit::release(freeWhen);
-}
-
-
-void
-org_virtualbox_VBoxUSBInterface::taggedRetain(const void *pTag) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBInterface::taggedRetain([%p], pTag=[%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
-    IOUSBUserClientInit::taggedRetain(pTag);
-    Log(("VBoxUSBInterface::taggedRetain([%p], pTag=[%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
-}
-
-
-void
-org_virtualbox_VBoxUSBInterface::taggedRelease(const void *pTag, const int freeWhen) const
-{
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-    Log(("VBoxUSBInterface::taggedRelease([%p], pTag=[%p], freeWhen=[%d]) pszProcName=[%s] [retain count: %d]\n", this, pTag, freeWhen, pszProcName, getRetainCount()));
-    IOUSBUserClientInit::taggedRelease(pTag, freeWhen);
 }
 
