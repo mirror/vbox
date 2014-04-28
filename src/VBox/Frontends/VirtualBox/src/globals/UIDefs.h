@@ -121,6 +121,7 @@ namespace UIDefs
     /* Machine-window declarations: */
 #ifndef Q_WS_MAC
     extern const char* GUI_MachineWindowIcons;
+    extern const char* GUI_MachineWindowNamePostfix;
 #endif /* !Q_WS_MAC */
     extern const char* GUI_RestrictedRuntimeMenus;
 #ifdef Q_WS_MAC

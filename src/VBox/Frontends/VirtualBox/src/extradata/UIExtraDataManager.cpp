@@ -441,6 +441,11 @@ QStringList UIExtraDataManager::machineWindowIconNames(const QString &strID) con
 {
     return extraDataStringList(GUI_MachineWindowIcons, strID);
 }
+
+QString UIExtraDataManager::machineWindowNamePostfix(const QString &strID) const
+{
+    return extraDataString(GUI_MachineWindowNamePostfix, strID);
+}
 #endif /* !Q_WS_MAC */
 
 GuruMeditationHandlerType UIExtraDataManager::guruMeditationHandlerType(const QString &strID) const

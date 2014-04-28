@@ -52,6 +52,7 @@ const char* UIDefs::GUI_HideDetails = "GUI/HideDetails";
 /* Machine-window definitions: */
 #ifndef Q_WS_MAC
 const char* UIDefs::GUI_MachineWindowIcons = "GUI/MachineWindowIcons";
+const char* UIDefs::GUI_MachineWindowNamePostfix = "GUI/MachineWindowNamePostfix";
 #endif /* !Q_WS_MAC */
 const char* UIDefs::GUI_RestrictedRuntimeMenus = "GUI/RestrictedRuntimeMenus";
 #ifdef Q_WS_MAC

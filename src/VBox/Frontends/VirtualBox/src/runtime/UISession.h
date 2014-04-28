@@ -101,6 +101,8 @@ public:
      ** @{ */
     /** Returns redefined machine-window icon. */
     QIcon* machineWindowIcon() const { return m_pMachineWindowIcon; }
+    /** Returns redefined machine-window name postfix. */
+    QString machineWindowNamePostfix() const { return m_strMachineWindowNamePostfix; }
     /** @} */
 #endif /* !Q_WS_MAC */
 
@@ -353,6 +355,8 @@ private:
      ** @{ */
     /** Holds redefined machine-window icon. */
     QIcon *m_pMachineWindowIcon;
+    /** Holds redefined machine-window name postfix. */
+    QString m_strMachineWindowNamePostfix;
     /** @} */
 #endif /* !Q_WS_MAC */
 

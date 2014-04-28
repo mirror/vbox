@@ -1127,6 +1127,9 @@ void UISession::loadSessionSettings()
                 icon.addFile(strIconName);
         if (!icon.isNull())
             m_pMachineWindowIcon = new QIcon(icon);
+
+        /* Load user's machine-window name postfix: */
+        m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(vboxGlobal().managedVMUuid());
 #endif /* !Q_WS_MAC */
 
         /* Determine Guru Meditation handler type: */
