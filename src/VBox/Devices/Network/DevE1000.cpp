@@ -2815,8 +2815,14 @@ static int e1kRegWriteMDIC(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
     }
     else if (GET_BITS_V(value, MDIC, PHY) != 1)
     {
-        E1kLog(("%s ERROR! Access to invalid PHY detected, phy=%d.\n",
+        E1kLog(("%s WARNING! Access to invalid PHY detected, phy=%d.\n",
                 pThis->szPrf, GET_BITS_V(value, MDIC, PHY)));
+        /* 
+         * Some drivers scan the MDIO bus for a PHY. We can work with these
+         * drivers if we set MDIC_READY and MDIC_ERROR when there isn't a PHY
+         * at the requested address, see @bugref{7346}.
+         */
+        MDIC = MDIC_READY | MDIC_ERROR;
     }
     else
     {
@@ -3090,6 +3096,20 @@ static int e1kRegWriteRDT(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         E1kLog(("%s e1kRegWriteRDT\n",  pThis->szPrf));
+        /*
+         * Some drivers advance RDT too far, so that it equals RDH. This
+         * somehow manages to work with real hardware but not with this
+         * emulated device. We can work with these drivers if we just
+         * write 1 less when we see a driver writing RDT equal to RDH,
+         * see @bugref{7346}.
+         */
+        if (value == RDH)
+        {
+            if (RDH == 0)
+                value = (RDLEN / sizeof(E1KRXDESC)) - 1;
+            else
+                value = RDH - 1;
+        }
         rc = e1kRegWriteDefault(pThis, offset, index, value);
 #ifdef E1K_WITH_RXD_CACHE
         /*
