@@ -345,9 +345,6 @@ ifdef VBOX_WITH_RAW_MODE
  tstLdrObj_LIBS += \
  	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB)
  endif # PE
- ifeq ($(VBOX_LDR_FMT32),elf)
- tstLdrObj_LDFLAGS = -e Entrypoint
- endif
  ifeq ($(VBOX_LDR_FMT32),lx)
  tstLdrObj_LIBS += \
  	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB)
@@ -385,9 +382,6 @@ ifeq ($(VBOX_LDR_FMT),pe)
  tstLdrObjR0_LIBS += \
 	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB) \
 	$(TARGET_tstLdr-4Imp)
-endif
-ifeq ($(VBOX_LDR_FMT),elf)
- tstLdrObjR0_LDFLAGS = -e Entrypoint
 endif
 ifeq ($(VBOX_LDR_FMT),lx)
  tstLdrObjR0_LIBS += \
