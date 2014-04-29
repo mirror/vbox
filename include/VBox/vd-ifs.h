@@ -974,7 +974,7 @@ DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
                 /* Exclude terminator if the byte data was obtained using the string query callback. */
                 *pcbData = cb;
                 if (!pCfgIf->pfnQueryBytes)
-                    *pcbData--;
+                    (*pcbData)--;
             }
             else
                 RTMemFree(pbData);
@@ -1100,7 +1100,7 @@ DECLINLINE(int) VDCFGQueryBytesAllocLocked(PVDINTERFACECONFIG pCfgIf,
                 /* Exclude terminator if the byte data was obtained using the string query callback. */
                 *pcbData = cb;
                 if (!pCfgIf->pfnQueryBytes)
-                    *pcbData--;
+                    (*pcbData)--;
             }
             else
                 RTMemFree(pbData);
