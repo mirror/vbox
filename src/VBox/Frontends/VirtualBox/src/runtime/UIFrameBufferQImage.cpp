@@ -322,8 +322,10 @@ void UIFrameBufferQImage::drawImageRect(QPainter &painter, const QImage &image, 
             subPixmap = subPixmap.scaled(subPixmap.size() * dBackingScaleFactor,
                                          Qt::IgnoreAspectRatio, Qt::FastTransformation);
 # ifdef Q_WS_MAC
+#  ifdef VBOX_GUI_WITH_HIDPI
             /* Mark sub-pixmap as HiDPI: */
             subPixmap.setDevicePixelRatio(dBackingScaleFactor);
+#  endif /* VBOX_GUI_WITH_HIDPI */
 # endif /* Q_WS_MAC */
         }
     }
@@ -341,8 +343,10 @@ void UIFrameBufferQImage::drawImageRect(QPainter &painter, const QImage &image, 
             QImage scaledSubImage = subImage.scaled(subImage.size() * dBackingScaleFactor,
                                                     Qt::IgnoreAspectRatio, Qt::FastTransformation);
 # ifdef Q_WS_MAC
+#  ifdef VBOX_GUI_WITH_HIDPI
             /* Mark sub-pixmap as HiDPI: */
             scaledSubImage.setDevicePixelRatio(dBackingScaleFactor);
+#  endif /* VBOX_GUI_WITH_HIDPI */
 # endif /* Q_WS_MAC */
             /* Directly draw scaled-sub-image: */
             painter.drawImage(rect.x(), rect.y(), scaledSubImage);
