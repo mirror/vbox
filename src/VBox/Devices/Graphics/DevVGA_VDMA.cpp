@@ -1434,7 +1434,7 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
                 View.u32ViewSize = Screen.u32LineSize * Screen.u32Height + Screen.u32StartOffset;
                 View.u32MaxScreenSize = View.u32ViewSize + Screen.u32Width + 1; /* <- make VBVAInfoScreen logic (offEnd < pView->u32MaxScreenSize) happy */
 
-                int rc = VBVAInfoView(pVGAState, &View);
+                rc = VBVAInfoView(pVGAState, &View);
                 if (RT_SUCCESS(rc))
                 {
 
