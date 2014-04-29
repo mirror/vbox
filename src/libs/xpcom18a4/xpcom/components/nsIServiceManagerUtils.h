@@ -87,6 +87,8 @@ class NS_COM nsGetServiceByContractID : public nsCOMPtr_helper
         {
             // nothing else to do
         }
+    // Implement a dummy destructor to workaround linking issue on Solaris gcc 4.8.2 (see @bugref{5838})
+    ~nsGetServiceByContractID() {}
     
     virtual nsresult NS_FASTCALL operator()( const nsIID&, void** ) const;
     

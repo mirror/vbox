@@ -225,6 +225,11 @@ public:
     // *This is needed by the Irix implementation.*
     NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr);
 
+    // Implement dummy constructor, destructor to workaround Solaris gcc 4.8.2
+    // linking issue (see @bugref{5838}).
+    nsXPTCStubBase() {}
+    ~nsXPTCStubBase() {}
+
     // Include generated vtbl stub declarations.
     // These are virtual and *also* implemented by this class..
 #include "xptcstubsdecl.inc"
