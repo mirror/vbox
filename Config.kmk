@@ -4677,8 +4677,6 @@ ifdef VBOX_WITH_QTGUI
 
   TEMPLATE_VBOXQT4GUIEXE_DEFS.solaris = _REENTRANT
 
-  TEMPLATE_VBOXQT4GUIEXE_INCS += \
-	$(LIB_SDL_INC)
   ## @todo Use VBOX_GCC_PEDANTIC_CXX?
   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS = \
 	-g $(VBOX_GCC_pipe) $(filter-out -Wno-unused,$(VBOX_GCC_WARN)) -frtti -fno-exceptions -Wno-non-virtual-dtor \
