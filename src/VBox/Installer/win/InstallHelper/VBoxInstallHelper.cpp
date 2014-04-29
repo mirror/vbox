@@ -255,9 +255,8 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
         VBoxGetProperty(hModule, L"CustomActionData", wszPathTargetDir, sizeof(wszPathTargetDir));
         if (wcslen(wszPathTargetDir))
         {
-
             /* Set final path. */
-            swprintf_s(wszPath, RT_ELEMENTS(wszPath), L"%s\\sdk\\install", wszPathTargetDir);
+            swprintf_s(wszPath, RT_ELEMENTS(wszPath), L"%s", wszPathTargetDir);
 
             /* Install our API module. */
             swprintf_s(wszCmdLine, RT_ELEMENTS(wszCmdLine), L"%s\\python.exe vboxapisetup.py install", wszVal);
