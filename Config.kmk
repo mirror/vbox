@@ -2961,6 +2961,11 @@ ifeq ($(KBUILD_TARGET),solaris)
   # OSS audio support for Solaris
  VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_11_VERSION) >= 115,1,)
  endif
+
+ # XPCOM namespace cleanup issue with Solaris GCC 4.5.2 and newer, see @bugref{5838}.
+ if $(VBOX_GCC_VERSION_CXX) >= 40502
+  VBOX_WITH_XPCOM_NAMESPACE_CLEANUP =
+ endif
 endif
 
 #
