@@ -1453,7 +1453,7 @@ typedef DECLCALLBACK(int) FNCRHGSMICMDCOMPLETION(HCRHGSMICMDCOMPLETION hCompleti
 typedef FNCRHGSMICMDCOMPLETION *PFNCRHGSMICMDCOMPLETION;
 
 /* tells whether 3D backend has some 3D overlay data displayed */
-typedef DECLCALLBACK(bool) FNCROGLHASDATA();
+typedef DECLCALLBACK(bool) FNCROGLHASDATA(void);
 typedef FNCROGLHASDATA *PFNCROGLHASDATA;
 
 /* same as PFNCROGLHASDATA, but for specific screen */
