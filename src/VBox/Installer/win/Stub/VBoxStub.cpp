@@ -1039,7 +1039,9 @@ setvbuf( stdout, NULL, _IONBF, 0 );
     {
         RTPrintf("Silent installation      : %RTbool\n", g_fSilent);
         RTPrintf("Logging enabled          : %RTbool\n", fEnableLogging);
+#ifdef VBOX_WITH_CODE_SIGNING
         RTPrintf("Certificate installation : %RTbool\n", fEnableSilentCert);
+#endif
         RTPrintf("Additional MSI parameters: %s\n",
                  szMSIArgs[0] ? szMSIArgs : "<None>");
     }
