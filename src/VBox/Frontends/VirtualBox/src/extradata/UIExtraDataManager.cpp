@@ -403,6 +403,10 @@ HiDPIOptimizationType UIExtraDataManager::hiDPIOptimizationType(const QString &s
 
 void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)
 {
+    /* Re-cache value only if strMachineID known already: */
+    if (m_data.contains(strMachineID))
+        m_data[strMachineID][strKey] = strValue;
+
     /* Global extra-data 'change' event: */
     if (QUuid(strMachineID).isNull())
     {
@@ -410,7 +414,7 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
         {
             /* Language changed? */
             if (strKey == GUI_LanguageId)
-                emit sigLanguageChange(strValue);
+                emit sigLanguageChange(extraDataString(strKey));
             /* Selector UI shortcut changed? */
             else if (strKey == GUI_Input_SelectorShortcuts && gActionPool->type() == UIActionPoolType_Selector)
                 emit sigSelectorUIShortcutChange();
@@ -418,14 +422,9 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
             else if (strKey == GUI_Input_MachineShortcuts && gActionPool->type() == UIActionPoolType_Runtime)
                 emit sigRuntimeUIShortcutChange();
 #ifdef Q_WS_MAC
-            /* 'Presentation mode' status changed? */
+            /* 'Presentation mode' status changed (allowed if not restricted)? */
             else if (strKey == GUI_PresentationModeEnabled)
-            {
-                // TODO: Make it global..
-                /* Allowed what is not restricted: */
-                bool fEnabled = strValue.isEmpty() || strValue.toLower() != "false";
-                emit sigPresentationModeChange(fEnabled);
-            }
+                emit sigPresentationModeChange(!isFeatureRestricted(strKey));
 #endif /* Q_WS_MAC */
         }
     }
@@ -433,24 +432,14 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
     else if (   vboxGlobal().isVMConsoleProcess()
              && strMachineID == vboxGlobal().managedVMUuid())
     {
-        /* HID LEDs sync state changed? */
+        /* HID LEDs sync state changed (allowed if not restricted)? */
         if (strKey == GUI_HidLedsSync)
-        {
-            /* Allowed what is not restricted: */
-            // TODO: Make it global..
-            bool fEnabled = strValue.isEmpty() || strValue != "0";
-            emit sigHIDLedsSyncStateChange(fEnabled);
-        }
+            emit sigHIDLedsSyncStateChange(!isFeatureRestricted(strKey));
 #ifdef Q_WS_MAC
-        /* 'Dock icon' appearance changed? */
+        /* 'Dock icon' appearance changed (allowed if not restricted)? */
         else if (   strKey == GUI_RealtimeDockIconUpdateEnabled
                  || strKey == GUI_RealtimeDockIconUpdateMonitor)
-        {
-            /* Allowed what is not restricted: */
-            // TODO: Make it global..
-            bool fEnabled = strValue.isEmpty() || strValue.toLower() != "false";
-            emit sigDockIconAppearanceChange(fEnabled);
-        }
+            emit sigDockIconAppearanceChange(!isFeatureRestricted(strKey));
 #endif /* Q_WS_MAC */
     }
 }
