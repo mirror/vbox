@@ -142,12 +142,12 @@ private:
 
     /** Prepare Extra-data Manager. */
     void prepare();
-    /** Prepare Main event-listener. */
-    void prepareMainEventListener();
-    /** Prepare extra-data event-handler. */
-    void prepareExtraDataEventHandler();
     /** Prepare global extra-data map. */
     void prepareGlobalExtraDataMap();
+    /** Prepare extra-data event-handler. */
+    void prepareExtraDataEventHandler();
+    /** Prepare Main event-listener. */
+    void prepareMainEventListener();
 
     /** Cleanup Extra-data Manager. */
     void cleanup();

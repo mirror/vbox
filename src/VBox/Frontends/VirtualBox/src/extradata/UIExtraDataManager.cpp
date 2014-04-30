@@ -197,7 +197,7 @@ void UIExtraDataManager::destroy()
 }
 
 UIExtraDataManager::UIExtraDataManager()
-    : m_pHandler(new UIExtraDataEventHandler(this))
+    : m_pHandler(0)
 {
     /* Connect to static instance: */
     m_pInstance = this;
@@ -460,12 +460,65 @@ HiDPIOptimizationType UIExtraDataManager::hiDPIOptimizationType(const QString &s
 
 void UIExtraDataManager::prepare()
 {
-    /* Prepare Main event-listener: */
-    prepareMainEventListener();
-    /* Prepare extra-data event-handler: */
-    prepareExtraDataEventHandler();
     /* Prepare global extra-data map: */
     prepareGlobalExtraDataMap();
+    /* Prepare extra-data event-handler: */
+    prepareExtraDataEventHandler();
+}
+
+void UIExtraDataManager::prepareGlobalExtraDataMap()
+{
+    /* Get CVirtualBox: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+
+    /* Make sure at least empty map is created: */
+    m_data[QString()] = ExtraDataMap();
+
+    /* Load global extra-data map: */
+    foreach (const QString &strKey, vbox.GetExtraDataKeys())
+        m_data[QString()][strKey] = vbox.GetExtraData(strKey);
+}
+
+void UIExtraDataManager::prepareExtraDataEventHandler()
+{
+    /* Create extra-data event-handler: */
+    m_pHandler = new UIExtraDataEventHandler(this);
+    /* Configure extra-data event-handler: */
+    AssertPtrReturnVoid(m_pHandler);
+    {
+        /* Language change signal: */
+        connect(m_pHandler, SIGNAL(sigLanguageChange(QString)),
+                this, SIGNAL(sigLanguageChange(QString)),
+                Qt::QueuedConnection);
+
+        /* Selector/Runtime UI shortcut change signals: */
+        connect(m_pHandler, SIGNAL(sigSelectorUIShortcutChange()),
+                this, SIGNAL(sigSelectorUIShortcutChange()),
+                Qt::QueuedConnection);
+        connect(m_pHandler, SIGNAL(sigRuntimeUIShortcutChange()),
+                this, SIGNAL(sigRuntimeUIShortcutChange()),
+                Qt::QueuedConnection);
+
+        /* HID LED sync state change signal: */
+        connect(m_pHandler, SIGNAL(sigHIDLedsSyncStateChange(bool)),
+                this, SIGNAL(sigHIDLedsSyncStateChange(bool)),
+                Qt::QueuedConnection);
+
+#ifdef Q_WS_MAC
+        /* 'Presentation mode' status change signal: */
+        connect(m_pHandler, SIGNAL(sigPresentationModeChange(bool)),
+                this, SIGNAL(sigPresentationModeChange(bool)),
+                Qt::QueuedConnection);
+
+        /* 'Dock icon' appearance change signal: */
+        connect(m_pHandler, SIGNAL(sigDockIconAppearanceChange(bool)),
+                this, SIGNAL(sigDockIconAppearanceChange(bool)),
+                Qt::QueuedConnection);
+#endif /* Q_WS_MAC */
+
+        /* Prepare Main event-listener: */
+        prepareMainEventListener();
+    }
 }
 
 void UIExtraDataManager::prepareMainEventListener()
@@ -491,52 +544,6 @@ void UIExtraDataManager::prepareMainEventListener()
     connect(pListener->getWrapped(), SIGNAL(sigExtraDataChange(QString, QString, QString)),
             m_pHandler, SLOT(sltExtraDataChange(QString, QString, QString)),
             Qt::DirectConnection);
-}
-
-void UIExtraDataManager::prepareExtraDataEventHandler()
-{
-    /* Language change signal: */
-    connect(m_pHandler, SIGNAL(sigLanguageChange(QString)),
-            this, SIGNAL(sigLanguageChange(QString)),
-            Qt::QueuedConnection);
-
-    /* Selector/Runtime UI shortcut change signals: */
-    connect(m_pHandler, SIGNAL(sigSelectorUIShortcutChange()),
-            this, SIGNAL(sigSelectorUIShortcutChange()),
-            Qt::QueuedConnection);
-    connect(m_pHandler, SIGNAL(sigRuntimeUIShortcutChange()),
-            this, SIGNAL(sigRuntimeUIShortcutChange()),
-            Qt::QueuedConnection);
-
-    /* HID LED sync state change signal: */
-    connect(m_pHandler, SIGNAL(sigHIDLedsSyncStateChange(bool)),
-            this, SIGNAL(sigHIDLedsSyncStateChange(bool)),
-            Qt::QueuedConnection);
-
-#ifdef Q_WS_MAC
-    /* 'Presentation mode' status change signal: */
-    connect(m_pHandler, SIGNAL(sigPresentationModeChange(bool)),
-            this, SIGNAL(sigPresentationModeChange(bool)),
-            Qt::QueuedConnection);
-
-    /* 'Dock icon' appearance change signal: */
-    connect(m_pHandler, SIGNAL(sigDockIconAppearanceChange(bool)),
-            this, SIGNAL(sigDockIconAppearanceChange(bool)),
-            Qt::QueuedConnection);
-#endif /* Q_WS_MAC */
-}
-
-void UIExtraDataManager::prepareGlobalExtraDataMap()
-{
-    /* Get CVirtualBox: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-
-    /* Make sure at least empty map is created: */
-    m_data[QString()] = ExtraDataMap();
-
-    /* Load global extra-data map: */
-    foreach (const QString &strKey, vbox.GetExtraDataKeys())
-        m_data[QString()][strKey] = vbox.GetExtraData(strKey);
 }
 
 void UIExtraDataManager::cleanup()
