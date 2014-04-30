@@ -169,6 +169,9 @@ private:
     /** Determines whether feature corresponding to passed @a strKey is allowed.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
     bool isFeatureAllowed(const QString &strKey, const QString &strID = QString()) const;
+    /** Determines whether feature corresponding to passed @a strKey is restricted.
+      * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
+    bool isFeatureRestricted(const QString &strKey, const QString &strID = QString()) const;
 
     /** Returns extra-data value corresponding to passed @a strKey as QString.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
