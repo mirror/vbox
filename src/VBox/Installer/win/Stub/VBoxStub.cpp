@@ -18,6 +18,11 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#if defined(_WIN32_WINNT) && _WIN32_WINNT < 0x0501
+# undef  _WIN32_WINNT
+# define _WIN32_WINNT 0x0501 /* AttachConsole() / FreeConsole(). */
+#endif
+
 #include <Windows.h>
 #include <commctrl.h>
 #include <fcntl.h>
@@ -57,8 +62,8 @@
 # include "VBoxStubPublicCert.h"
 #endif
 
-#ifdef DEBUG
-/* Use an own console window if run in debug mode. */
+#ifndef TARGET_NT4
+/* Use an own console window if run in verbose mode. */
 # define VBOX_STUB_WITH_OWN_CONSOLE
 #endif
 
@@ -816,51 +821,6 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         return RTMsgInitFailure(vrc);
     }
 
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0501
-# ifndef VBOX_STUB_WITH_OWN_CONSOLE /* Use an own console window if run in debug mode. */
-    if (!AllocConsole())
-    {
-        DWORD dwErr = GetLastError();
-        ShowError("Unable to allocate console, error = %ld\n",
-                  dwErr);
-
-        /* Close the mutex for this application instance. */
-        CloseHandle(hMutexAppRunning);
-        hMutexAppRunning = NULL;
-        return RTEXITCODE_FAILURE;
-    }
-# else
-    if (!AttachConsole(ATTACH_PARENT_PROCESS))
-    {
-        DWORD dwErr = GetLastError();
-        /* Does the program have a console to attach to? */
-        if (dwErr != ERROR_INVALID_HANDLE)
-        {
-            ShowError("Unable to attach to console, error = %ld\n",
-                      dwErr);
-
-            /* Close the mutex for this application instance. */
-            CloseHandle(hMutexAppRunning);
-            hMutexAppRunning = NULL;
-            return RTEXITCODE_FAILURE;
-        }
-    }
-# endif /* DEBUG */
-
-    long lStdHandle = (long)GetStdHandle(STD_OUTPUT_HANDLE);
-    int iConHandleStdOut = _open_osfhandle(lStdHandle, _O_TEXT);
-    FILE *hFileStdOut = _fdopen(iConHandleStdOut, "w");
-    *stdout = *hFileStdOut;
-
-    lStdHandle = (long)GetStdHandle(STD_ERROR_HANDLE);
-    int iConHandleStdErr = _open_osfhandle(lStdHandle, _O_TEXT);
-    FILE *hFileStdErr = _fdopen(iConHandleStdErr, "w");
-    *stderr = *hFileStdErr;
-
-setvbuf( stdout, NULL, _IONBF, 0 );
-
-#endif
-
     /*
      * Parse arguments.
      */
@@ -1034,6 +994,31 @@ setvbuf( stdout, NULL, _IONBF, 0 );
     if (rcExit != RTEXITCODE_SUCCESS)
         vrc = VERR_PARSE_ERROR;
 
+#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0501
+# ifdef VBOX_STUB_WITH_OWN_CONSOLE /* Use an own console window if run in debug mode. */
+    if (   RT_SUCCESS(vrc)
+        && g_iVerbosity)
+    {
+        if (!AllocConsole())
+        {
+            DWORD dwErr = GetLastError();
+            ShowError("Unable to allocate console, error = %ld\n",
+                      dwErr);
+
+            /* Close the mutex for this application instance. */
+            CloseHandle(hMutexAppRunning);
+            hMutexAppRunning = NULL;
+            return RTEXITCODE_FAILURE;
+        }
+
+        freopen("CONOUT$", "w", stdout);
+        setvbuf(stdout, NULL, _IONBF, 0);
+
+        freopen("CONOUT$", "w", stderr);
+    }
+# endif /* VBOX_STUB_WITH_OWN_CONSOLE */
+#endif
+
     if (   RT_SUCCESS(vrc)
         && g_iVerbosity)
     {
@@ -1128,17 +1113,9 @@ setvbuf( stdout, NULL, _IONBF, 0 );
     }
 
 #if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0501
-# ifndef VBOX_STUB_WITH_OWN_CONSOLE
-    if (iConHandleStdErr)
-        _close(iConHandleStdErr);
-    if (hFileStdErr)
-        fclose(hFileStdErr);
-    if (iConHandleStdOut)
-        _close(iConHandleStdOut);
-    if (hFileStdOut)
-        fclose(hFileStdOut);
-# endif /* VBOX_STUB_WITH_OWN_CONSOLE */
+# ifdef VBOX_STUB_WITH_OWN_CONSOLE
     FreeConsole();
+# endif /* VBOX_STUB_WITH_OWN_CONSOLE */
 #endif
 
     /*
