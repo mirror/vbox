@@ -138,6 +138,11 @@ public:
     /** Returns Runtime UI HiDPI optimization type. */
     HiDPIOptimizationType hiDPIOptimizationType(const QString &strID) const;
 
+private slots:
+
+    /** Handles 'extra-data change' event: */
+    void sltExtraDataChange(QString strMachineID, QString strKey, QString strValue);
+
 private:
 
     /** Prepare Extra-data Manager. */
