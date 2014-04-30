@@ -20,6 +20,8 @@
 *******************************************************************************/
 #include <Windows.h>
 #include <commctrl.h>
+#include <fcntl.h>
+#include <io.h>
 #include <lmerr.h>
 #include <msiquery.h>
 #include <objbase.h>
@@ -55,6 +57,10 @@
 # include "VBoxStubPublicCert.h"
 #endif
 
+#ifdef DEBUG
+/* Use an own console window if run in debug mode. */
+# define VBOX_STUB_WITH_OWN_CONSOLE
+#endif
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -89,6 +95,8 @@ typedef STUBCLEANUPREC *PSTUBCLEANUPREC;
 static bool             g_fSilent = false;
 /** List of temporary files. */
 static RTLISTANCHOR     g_TmpFiles;
+/** Verbosity flag. */
+static int              g_iVerbosity = 0;
 
 
 
@@ -801,7 +809,57 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     /* Init IPRT. */
     int vrc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(vrc))
+    {
+        /* Close the mutex for this application instance. */
+        CloseHandle(hMutexAppRunning);
+        hMutexAppRunning = NULL;
         return RTMsgInitFailure(vrc);
+    }
+
+#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0501
+# ifndef VBOX_STUB_WITH_OWN_CONSOLE /* Use an own console window if run in debug mode. */
+    if (!AllocConsole())
+    {
+        DWORD dwErr = GetLastError();
+        ShowError("Unable to allocate console, error = %ld\n",
+                  dwErr);
+
+        /* Close the mutex for this application instance. */
+        CloseHandle(hMutexAppRunning);
+        hMutexAppRunning = NULL;
+        return RTEXITCODE_FAILURE;
+    }
+# else
+    if (!AttachConsole(ATTACH_PARENT_PROCESS))
+    {
+        DWORD dwErr = GetLastError();
+        /* Does the program have a console to attach to? */
+        if (dwErr != ERROR_INVALID_HANDLE)
+        {
+            ShowError("Unable to attach to console, error = %ld\n",
+                      dwErr);
+
+            /* Close the mutex for this application instance. */
+            CloseHandle(hMutexAppRunning);
+            hMutexAppRunning = NULL;
+            return RTEXITCODE_FAILURE;
+        }
+    }
+# endif /* DEBUG */
+
+    long lStdHandle = (long)GetStdHandle(STD_OUTPUT_HANDLE);
+    int iConHandleStdOut = _open_osfhandle(lStdHandle, _O_TEXT);
+    FILE *hFileStdOut = _fdopen(iConHandleStdOut, "w");
+    *stdout = *hFileStdOut;
+
+    lStdHandle = (long)GetStdHandle(STD_ERROR_HANDLE);
+    int iConHandleStdErr = _open_osfhandle(lStdHandle, _O_TEXT);
+    FILE *hFileStdErr = _fdopen(iConHandleStdErr, "w");
+    *stderr = *hFileStdErr;
+
+setvbuf( stdout, NULL, _IONBF, 0 );
+
+#endif
 
     /*
      * Parse arguments.
@@ -814,7 +872,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     bool fEnableSilentCert         = true;
 #endif
     char szExtractPath[RTPATH_MAX] = {0};
-    char szMSIArgs[4096]           = {0};
+    char szMSIArgs[_4K]            = {0};
 
     /* Parameter definitions. */
     static const RTGETOPTDEF s_aOptions[] =
@@ -843,6 +901,9 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         { "--reinstall",        'f', RTGETOPT_REQ_NOTHING },
         { "-reinstall",         'f', RTGETOPT_REQ_NOTHING },
         { "/reinstall",         'f', RTGETOPT_REQ_NOTHING },
+        { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
+        { "-verbose",           'v', RTGETOPT_REQ_NOTHING },
+        { "/verbose",           'v', RTGETOPT_REQ_NOTHING },
         { "--version",          'V', RTGETOPT_REQ_NOTHING },
         { "-version",           'V', RTGETOPT_REQ_NOTHING },
         { "/version",           'V', RTGETOPT_REQ_NOTHING },
@@ -853,12 +914,17 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         { "/?",                 'h', RTGETOPT_REQ_NOTHING },
     };
 
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+
     /* Parse the parameters. */
     int ch;
+    bool fParsingDone = false;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+           && rcExit == RTEXITCODE_SUCCESS
+           && !fParsingDone)
     {
         switch (ch)
         {
@@ -869,7 +935,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                     vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs),
                                    "REINSTALLMODE=vomus REINSTALL=ALL");
                 if (RT_FAILURE(vrc))
-                    return ShowError("MSI parameters are too long.");
+                    rcExit = ShowError("MSI parameters are too long.");
                 break;
 
             case 'x':
@@ -885,7 +951,6 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 fEnableSilentCert = false;
                 break;
 #endif
-
             case 'l':
                 fEnableLogging = true;
                 break;
@@ -893,7 +958,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
             case 'p':
                 vrc = RTStrCopy(szExtractPath, sizeof(szExtractPath), ValueUnion.psz);
                 if (RT_FAILURE(vrc))
-                    return ShowError("Extraction path is too long.");
+                    rcExit = ShowError("Extraction path is too long.");
                 break;
 
             case 'm':
@@ -902,13 +967,19 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 if (RT_SUCCESS(vrc))
                     vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), ValueUnion.psz);
                 if (RT_FAILURE(vrc))
-                    return ShowError("MSI parameters are too long.");
+                    rcExit = ShowError("MSI parameters are too long.");
                 break;
 
             case 'V':
                 ShowInfo("Version: %d.%d.%d.%d",
-                         VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
-                return VINF_SUCCESS;
+                         VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD,
+                         VBOX_SVN_REV);
+                fParsingDone = true;
+                break;
+
+            case 'v':
+                g_iVerbosity++;
+                break;
 
             case 'h':
                 ShowInfo("-- %s v%d.%d.%d.%d --\n"
@@ -928,89 +999,145 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                          "%s --extract -path C:\\VBox",
                          VBOX_STUB_TITLE, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
                          argv[0], argv[0]);
-                return VINF_SUCCESS;
+                fParsingDone = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                /* Are (optional) MSI parameters specified and this is the last
+                 * parameter? Append everything to the MSI parameter list then. */
+                if (szMSIArgs[0])
+                {
+                    vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), " ");
+                    if (RT_SUCCESS(vrc))
+                        vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), ValueUnion.psz);
+                    if (RT_FAILURE(vrc))
+                        rcExit = ShowError("MSI parameters are too long.");
+                    continue;
+                }
+                /* Fall through is intentional. */
 
             default:
                 if (g_fSilent)
-                    return RTGetOptPrintError(ch, &ValueUnion);
-                if (ch == VINF_GETOPT_NOT_OPTION || ch == VERR_GETOPT_UNKNOWN_OPTION)
-                    ShowError("Unknown option \"%s\"!\n"
-                              "Please refer to the command line help by specifying \"/?\"\n"
-                              "to get more information.", ValueUnion.psz);
+                    rcExit = RTGetOptPrintError(ch, &ValueUnion);
+                if (ch == VERR_GETOPT_UNKNOWN_OPTION)
+                    rcExit = ShowError("Unknown option \"%s\"\n"
+                                       "Please refer to the command line help by specifying \"/?\"\n"
+                                       "to get more information.", ValueUnion.psz);
                 else
-                    ShowError("Parameter parsing error: %Rrc\n"
-                              "Please refer to the command line help by specifying \"/?\"\n"
-                              "to get more information.", ch);
-                return RTEXITCODE_SYNTAX;
-
+                    rcExit = ShowError("Parameter parsing error: %Rrc\n"
+                                       "Please refer to the command line help by specifying \"/?\"\n"
+                                       "to get more information.", ch);
+                break;
         }
     }
 
-    /*
-     * Determine the extration path if not given by the user, and gather some
-     * other bits we'll be needing later.
-     */
-    if (szExtractPath[0] == '\0')
-    {
-        vrc = RTPathTemp(szExtractPath, sizeof(szExtractPath));
-        if (RT_SUCCESS(vrc))
-            vrc = RTPathAppend(szExtractPath, sizeof(szExtractPath), "VirtualBox");
-        if (RT_FAILURE(vrc))
-            return ShowError("Failed to determin extraction path (%Rrc)", vrc);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        vrc = VERR_PARSE_ERROR;
 
-    }
-    else
+    if (   RT_SUCCESS(vrc)
+        && g_iVerbosity)
     {
-        /** @todo should check if there is a .custom subdirectory there or not. */
+        RTPrintf("Silent installation      : %RTbool\n", g_fSilent);
+        RTPrintf("Logging enabled          : %RTbool\n", fEnableLogging);
+        RTPrintf("Certificate installation : %RTbool\n", fEnableSilentCert);
+        RTPrintf("Additional MSI parameters: %s\n",
+                 szMSIArgs[0] ? szMSIArgs : "<None>");
     }
-    RTPathChangeToDosSlashes(szExtractPath, true /* Force conversion. */); /* MSI requirement. */
+
+    if (RT_SUCCESS(vrc))
+    {
+        /*
+         * Determine the extration path if not given by the user, and gather some
+         * other bits we'll be needing later.
+         */
+        if (szExtractPath[0] == '\0')
+        {
+            vrc = RTPathTemp(szExtractPath, sizeof(szExtractPath));
+            if (RT_SUCCESS(vrc))
+                vrc = RTPathAppend(szExtractPath, sizeof(szExtractPath), "VirtualBox");
+            if (RT_FAILURE(vrc))
+                ShowError("Failed to determine extraction path (%Rrc)", vrc);
+
+        }
+        else
+        {
+            /** @todo should check if there is a .custom subdirectory there or not. */
+        }
+        RTPathChangeToDosSlashes(szExtractPath,
+                                 true /* Force conversion. */); /* MSI requirement. */
+    }
 
     /* Read our manifest. */
     PVBOXSTUBPKGHEADER pHeader;
-    vrc = FindData("MANIFEST", (PVOID *)&pHeader, NULL);
-    if (RT_FAILURE(vrc))
-        return ShowError("Internal package error: Manifest not found (%Rrc)", vrc);
-    /** @todo If we could, we should validate the header. Only the magic isn't
-     *        commonly defined, nor the version number... */
-
-    RTListInit(&g_TmpFiles);
-
-    /*
-     * Up to this point, we haven't done anything that requires any cleanup.
-     * From here on, we do everything in function so we can counter clean up.
-     */
-    bool fCreatedExtractDir;
-    RTEXITCODE rcExit = ExtractFiles(pHeader->byCntPkgs, szExtractPath, fExtractOnly, &fCreatedExtractDir);
-    if (rcExit == RTEXITCODE_SUCCESS)
+    if (RT_SUCCESS(vrc))
     {
-        if (fExtractOnly)
-            ShowInfo("Files were extracted to: %s", szExtractPath);
-        else
-        {
-            rcExit = CopyCustomDir(szExtractPath);
-#ifdef VBOX_WITH_CODE_SIGNING
-            if (rcExit == RTEXITCODE_SUCCESS && fEnableSilentCert && g_fSilent)
-                rcExit = InstallCertificate();
-#endif
-            unsigned iPackage = 0;
-            while (iPackage < pHeader->byCntPkgs && rcExit == RTEXITCODE_SUCCESS)
-            {
-                rcExit = ProcessPackage(iPackage, szExtractPath, szMSIArgs, fEnableLogging);
-                iPackage++;
-            }
+        vrc = FindData("MANIFEST", (PVOID *)&pHeader, NULL);
+        if (RT_FAILURE(vrc))
+            rcExit = ShowError("Internal package error: Manifest not found (%Rrc)", vrc);
+    }
+    if (RT_SUCCESS(vrc))
+    {
+        /** @todo If we could, we should validate the header. Only the magic isn't
+         *        commonly defined, nor the version number... */
 
-            /* Don't fail if cleanup fail. At least for now. */
-            CleanUp(pHeader->byCntPkgs, !fEnableLogging && fCreatedExtractDir ? szExtractPath : NULL);
+        RTListInit(&g_TmpFiles);
+
+        /*
+         * Up to this point, we haven't done anything that requires any cleanup.
+         * From here on, we do everything in function so we can counter clean up.
+         */
+        bool fCreatedExtractDir;
+        rcExit = ExtractFiles(pHeader->byCntPkgs, szExtractPath,
+                              fExtractOnly, &fCreatedExtractDir);
+        if (rcExit == RTEXITCODE_SUCCESS)
+        {
+            if (fExtractOnly)
+                ShowInfo("Files were extracted to: %s", szExtractPath);
+            else
+            {
+                rcExit = CopyCustomDir(szExtractPath);
+#ifdef VBOX_WITH_CODE_SIGNING
+                if (rcExit == RTEXITCODE_SUCCESS && fEnableSilentCert && g_fSilent)
+                    rcExit = InstallCertificate();
+#endif
+                unsigned iPackage = 0;
+                while (   iPackage < pHeader->byCntPkgs
+                       && rcExit == RTEXITCODE_SUCCESS)
+                {
+                    rcExit = ProcessPackage(iPackage, szExtractPath,
+                                            szMSIArgs, fEnableLogging);
+                    iPackage++;
+                }
+
+                /* Don't fail if cleanup fail. At least for now. */
+                CleanUp(pHeader->byCntPkgs,
+                           !fEnableLogging
+                        && fCreatedExtractDir ? szExtractPath : NULL);
+            }
+        }
+
+        /* Free any left behind cleanup records (not strictly needed). */
+        PSTUBCLEANUPREC pCur, pNext;
+        RTListForEachSafe(&g_TmpFiles, pCur, pNext, STUBCLEANUPREC, ListEntry)
+        {
+            RTListNodeRemove(&pCur->ListEntry);
+            RTMemFree(pCur);
         }
     }
 
-    /* Free any left behind cleanup records (not strictly needed). */
-    PSTUBCLEANUPREC pCur, pNext;
-    RTListForEachSafe(&g_TmpFiles, pCur, pNext, STUBCLEANUPREC, ListEntry)
-    {
-        RTListNodeRemove(&pCur->ListEntry);
-        RTMemFree(pCur);
-    }
+#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0501
+# ifndef VBOX_STUB_WITH_OWN_CONSOLE
+    if (iConHandleStdErr)
+        _close(iConHandleStdErr);
+    if (hFileStdErr)
+        fclose(hFileStdErr);
+    if (iConHandleStdOut)
+        _close(iConHandleStdOut);
+    if (hFileStdOut)
+        fclose(hFileStdOut);
+# endif /* VBOX_STUB_WITH_OWN_CONSOLE */
+    FreeConsole();
+#endif
 
     /*
      * Release instance mutex.
