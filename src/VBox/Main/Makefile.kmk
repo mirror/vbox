@@ -171,8 +171,10 @@ $(PATH_TARGET)/docs.Main: \
 	$(APPEND) $(PATH_TARGET)/docs.Main
 # aliases
 docs.main docs.Main: $(PATH_TARGET)/docs.Main
-if !defined(VBOX_ONLY_DOCS)
+if !defined(VBOX_ONLY_DOCS) && defined(VBOX_WITH_ALL_DOXYGEN_TARGETS)
 docs:                $(PATH_TARGET)/docs.Main
+else
+docs:
 endif
 
 
