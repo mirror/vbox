@@ -1114,7 +1114,8 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
 #if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0501
 # ifdef VBOX_STUB_WITH_OWN_CONSOLE
-    FreeConsole();
+    if (g_iVerbosity)
+        FreeConsole();
 # endif /* VBOX_STUB_WITH_OWN_CONSOLE */
 #endif
 
