@@ -41,23 +41,8 @@ class UIExtraDataEventHandler : public QObject
 
 signals:
 
-    /** Notifies about GUI language change. */
-    void sigLanguageChange(QString strLanguage);
-
-    /** Notifies about Selector UI keyboard shortcut change. */
-    void sigSelectorUIShortcutChange();
-    /** Notifies about Runtime UI keyboard shortcut change. */
-    void sigRuntimeUIShortcutChange();
-
-    /** Notifies about HID LED sync state change. */
-    void sigHIDLedsSyncStateChange(bool fEnabled);
-
-#ifdef RT_OS_DARWIN
-    /** Mac OS X: Notifies about 'presentation mode' status change. */
-    void sigPresentationModeChange(bool fEnabled);
-    /** Mac OS X: Notifies about 'dock icon' appearance change. */
-    void sigDockIconAppearanceChange(bool fEnabled);
-#endif /* RT_OS_DARWIN */
+    /** Notifies about 'extra-data change' event: */
+    void sigExtraDataChange(QString strMachineID, QString strKey, QString strValue);
 
 public:
 
@@ -66,27 +51,27 @@ public:
 
 public slots:
 
-    /** Handles extra-data 'can change' event: */
-    void sltExtraDataCanChange(QString strMachineID, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason);
-    /** Handles extra-data 'change' event: */
-    void sltExtraDataChange(QString strMachineID, QString strKey, QString strValue);
+    /** Preprocess 'extra-data can change' event: */
+    void sltPreprocessExtraDataCanChange(QString strMachineID, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason);
+    /** Preprocess 'extra-data change' event: */
+    void sltPreprocessExtraDataChange(QString strMachineID, QString strKey, QString strValue);
 
 private:
 
-    /** Protects sltExtraDataChange. */
+    /** Protects sltPreprocessExtraDataChange. */
     QMutex m_mutex;
 };
 
 UIExtraDataEventHandler::UIExtraDataEventHandler(QObject *pParent)
     : QObject(pParent)
-{}
-
-void UIExtraDataEventHandler::sltExtraDataCanChange(QString strMachineID, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason)
 {
-    /* Global extra-data 'can change' event: */
+}
+
+void UIExtraDataEventHandler::sltPreprocessExtraDataCanChange(QString strMachineID, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason)
+{
+    /* Preprocess global 'extra-data can change' event: */
     if (QUuid(strMachineID).isNull())
     {
-        /* It's a global extra-data key someone wants to change: */
         if (strKey.startsWith("GUI/"))
         {
             /* Try to set the global setting to check its syntax: */
@@ -102,39 +87,18 @@ void UIExtraDataEventHandler::sltExtraDataCanChange(QString strMachineID, QStrin
                     /* And disallow that change: */
                     fVeto = true;
                 }
-                return;
             }
         }
     }
 }
 
-void UIExtraDataEventHandler::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)
+void UIExtraDataEventHandler::sltPreprocessExtraDataChange(QString strMachineID, QString strKey, QString strValue)
 {
-    /* Global extra-data 'change' event: */
+    /* Preprocess global 'extra-data change' event: */
     if (QUuid(strMachineID).isNull())
     {
         if (strKey.startsWith("GUI/"))
         {
-            /* Language changed? */
-            if (strKey == GUI_LanguageId)
-                emit sigLanguageChange(strValue);
-            /* Selector UI shortcut changed? */
-            else if (strKey == GUI_Input_SelectorShortcuts && gActionPool->type() == UIActionPoolType_Selector)
-                emit sigSelectorUIShortcutChange();
-            /* Runtime UI shortcut changed? */
-            else if (strKey == GUI_Input_MachineShortcuts && gActionPool->type() == UIActionPoolType_Runtime)
-                emit sigRuntimeUIShortcutChange();
-#ifdef Q_WS_MAC
-            /* 'Presentation mode' status changed? */
-            else if (strKey == GUI_PresentationModeEnabled)
-            {
-                // TODO: Make it global..
-                /* Allowed what is not restricted: */
-                bool fEnabled = strValue.isEmpty() || strValue.toLower() != "false";
-                emit sigPresentationModeChange(fEnabled);
-            }
-#endif /* Q_WS_MAC */
-
             /* Apply global property: */
             m_mutex.lock();
             vboxGlobal().settings().setPublicProperty(strKey, strValue);
@@ -142,30 +106,9 @@ void UIExtraDataEventHandler::sltExtraDataChange(QString strMachineID, QString s
             AssertMsgReturnVoid(!!vboxGlobal().settings(), ("Failed to apply global property.\n"));
         }
     }
-    /* Make sure event came for the currently running VM: */
-    else if (   vboxGlobal().isVMConsoleProcess()
-             && strMachineID == vboxGlobal().managedVMUuid())
-    {
-        /* HID LEDs sync state changed? */
-        if (strKey == GUI_HidLedsSync)
-        {
-            /* Allowed what is not restricted: */
-            // TODO: Make it global..
-            bool fEnabled = strValue.isEmpty() || strValue != "0";
-            emit sigHIDLedsSyncStateChange(fEnabled);
-        }
-#ifdef Q_WS_MAC
-        /* 'Dock icon' appearance changed? */
-        else if (   strKey == GUI_RealtimeDockIconUpdateEnabled
-                 || strKey == GUI_RealtimeDockIconUpdateMonitor)
-        {
-            /* Allowed what is not restricted: */
-            // TODO: Make it global..
-            bool fEnabled = strValue.isEmpty() || strValue.toLower() != "false";
-            emit sigDockIconAppearanceChange(fEnabled);
-        }
-#endif /* Q_WS_MAC */
-    }
+
+    /* Motify listener about 'extra-data change' event: */
+    emit sigExtraDataChange(strMachineID, strKey, strValue);
 }
 
 
@@ -458,6 +401,60 @@ HiDPIOptimizationType UIExtraDataManager::hiDPIOptimizationType(const QString &s
     return gpConverter->fromInternalString<HiDPIOptimizationType>(extraDataString(GUI_HiDPIOptimization, strID));
 }
 
+void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)
+{
+    /* Global extra-data 'change' event: */
+    if (QUuid(strMachineID).isNull())
+    {
+        if (strKey.startsWith("GUI/"))
+        {
+            /* Language changed? */
+            if (strKey == GUI_LanguageId)
+                emit sigLanguageChange(strValue);
+            /* Selector UI shortcut changed? */
+            else if (strKey == GUI_Input_SelectorShortcuts && gActionPool->type() == UIActionPoolType_Selector)
+                emit sigSelectorUIShortcutChange();
+            /* Runtime UI shortcut changed? */
+            else if (strKey == GUI_Input_MachineShortcuts && gActionPool->type() == UIActionPoolType_Runtime)
+                emit sigRuntimeUIShortcutChange();
+#ifdef Q_WS_MAC
+            /* 'Presentation mode' status changed? */
+            else if (strKey == GUI_PresentationModeEnabled)
+            {
+                // TODO: Make it global..
+                /* Allowed what is not restricted: */
+                bool fEnabled = strValue.isEmpty() || strValue.toLower() != "false";
+                emit sigPresentationModeChange(fEnabled);
+            }
+#endif /* Q_WS_MAC */
+        }
+    }
+    /* Make sure event came for the currently running VM: */
+    else if (   vboxGlobal().isVMConsoleProcess()
+             && strMachineID == vboxGlobal().managedVMUuid())
+    {
+        /* HID LEDs sync state changed? */
+        if (strKey == GUI_HidLedsSync)
+        {
+            /* Allowed what is not restricted: */
+            // TODO: Make it global..
+            bool fEnabled = strValue.isEmpty() || strValue != "0";
+            emit sigHIDLedsSyncStateChange(fEnabled);
+        }
+#ifdef Q_WS_MAC
+        /* 'Dock icon' appearance changed? */
+        else if (   strKey == GUI_RealtimeDockIconUpdateEnabled
+                 || strKey == GUI_RealtimeDockIconUpdateMonitor)
+        {
+            /* Allowed what is not restricted: */
+            // TODO: Make it global..
+            bool fEnabled = strValue.isEmpty() || strValue.toLower() != "false";
+            emit sigDockIconAppearanceChange(fEnabled);
+        }
+#endif /* Q_WS_MAC */
+    }
+}
+
 void UIExtraDataManager::prepare()
 {
     /* Prepare global extra-data map: */
@@ -486,35 +483,10 @@ void UIExtraDataManager::prepareExtraDataEventHandler()
     /* Configure extra-data event-handler: */
     AssertPtrReturnVoid(m_pHandler);
     {
-        /* Language change signal: */
-        connect(m_pHandler, SIGNAL(sigLanguageChange(QString)),
-                this, SIGNAL(sigLanguageChange(QString)),
+        /* Extra-data change signal: */
+        connect(m_pHandler, SIGNAL(sigExtraDataChange(QString, QString, QString)),
+                this, SIGNAL(sltExtraDataChange(QString, QString, QString)),
                 Qt::QueuedConnection);
-
-        /* Selector/Runtime UI shortcut change signals: */
-        connect(m_pHandler, SIGNAL(sigSelectorUIShortcutChange()),
-                this, SIGNAL(sigSelectorUIShortcutChange()),
-                Qt::QueuedConnection);
-        connect(m_pHandler, SIGNAL(sigRuntimeUIShortcutChange()),
-                this, SIGNAL(sigRuntimeUIShortcutChange()),
-                Qt::QueuedConnection);
-
-        /* HID LED sync state change signal: */
-        connect(m_pHandler, SIGNAL(sigHIDLedsSyncStateChange(bool)),
-                this, SIGNAL(sigHIDLedsSyncStateChange(bool)),
-                Qt::QueuedConnection);
-
-#ifdef Q_WS_MAC
-        /* 'Presentation mode' status change signal: */
-        connect(m_pHandler, SIGNAL(sigPresentationModeChange(bool)),
-                this, SIGNAL(sigPresentationModeChange(bool)),
-                Qt::QueuedConnection);
-
-        /* 'Dock icon' appearance change signal: */
-        connect(m_pHandler, SIGNAL(sigDockIconAppearanceChange(bool)),
-                this, SIGNAL(sigDockIconAppearanceChange(bool)),
-                Qt::QueuedConnection);
-#endif /* Q_WS_MAC */
 
         /* Prepare Main event-listener: */
         prepareMainEventListener();
@@ -538,11 +510,11 @@ void UIExtraDataManager::prepareMainEventListener()
 
     /* This is a vetoable event, so we have to respond to the event and have to use a direct connection therefor: */
     connect(pListener->getWrapped(), SIGNAL(sigExtraDataCanChange(QString, QString, QString, bool&, QString&)),
-            m_pHandler, SLOT(sltExtraDataCanChange(QString, QString, QString, bool&, QString&)),
+            m_pHandler, SLOT(sltPreprocessExtraDataCanChange(QString, QString, QString, bool&, QString&)),
             Qt::DirectConnection);
     /* Use a direct connection to the helper class: */
     connect(pListener->getWrapped(), SIGNAL(sigExtraDataChange(QString, QString, QString)),
-            m_pHandler, SLOT(sltExtraDataChange(QString, QString, QString)),
+            m_pHandler, SLOT(sltPreprocessExtraDataChange(QString, QString, QString)),
             Qt::DirectConnection);
 }
 
