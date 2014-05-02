@@ -113,11 +113,18 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
     if (spwd)
         pw->pw_passwd = spwd->sp_pwdp;
 
-    /* be reentrant */
-    struct crypt_data *data = (struct crypt_data*)RTMemTmpAllocZ(sizeof(*data));
-    char *pszEncPasswd = crypt_r(pszPasswd, pw->pw_passwd, data);
-    int fCorrect = !strcmp(pszEncPasswd, pw->pw_passwd);
-    RTMemTmpFree(data);
+    /* Default fCorrect=true if no password specified. In that case, pw->pw_passwd
+     * must be NULL (no password set for this user). Fail if a password is specified
+     * but the user does not have one assigned. */
+    int fCorrect = !pszPasswd || !*pszPasswd;
+    if (pw->pw_passwd)
+    {
+        struct crypt_data *data = (struct crypt_data*)RTMemTmpAllocZ(sizeof(*data));
+        /* be reentrant */
+        char *pszEncPasswd = crypt_r(pszPasswd, pw->pw_passwd, data);
+        fCorrect = pszEncPasswd && !strcmp(pszEncPasswd, pw->pw_passwd);
+        RTMemTmpFree(data);
+    }
     if (!fCorrect)
         return VERR_PERMISSION_DENIED;
 
