@@ -274,6 +274,16 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             rc = emR3ExecuteInstruction(pVM, pVCpu, "EMUL: ");
             break;
 
+        case VINF_EM_RAW_INJECT_TRPM_EVENT:
+#ifdef VBOX_WITH_FIRST_IEM_STEP
+            rc = VBOXSTRICTRC_VAL(IEMInjectTrpmEvent(pVCpu));
+#else
+            /* Do the same thing as VINF_EM_RAW_EMULATE_INSTR. */
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "EMUL: ");
+#endif
+            break;
+
+
 #ifdef EMHANDLERC_WITH_PATM
         /*
          * Stale selector and iret traps => REM.

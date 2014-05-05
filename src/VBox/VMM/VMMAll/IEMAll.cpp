@@ -75,6 +75,7 @@
  * context. */
 //#define IEM_VERIFICATION_MODE_MINIMAL
 //#define IEM_LOG_MEMORY_WRITES
+//#define IEM_IMPLEMENTS_TASKSWITCH
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -268,6 +269,14 @@ typedef IEMSELDESC *PIEMSELDESC;
  * @param   a_pIemCpu       The IEM state of the current CPU.
  */
 #define IEM_IS_REAL_OR_V86_MODE(a_pIemCpu)  (CPUMIsGuestInRealOrV86ModeEx((a_pIemCpu)->CTX_SUFF(pCtx)))
+
+/**
+ * Check if we're currently executing in virtual 8086 mode.
+ *
+ * @returns @c true if it is, @c false if not.
+ * @param   a_pIemCpu       The IEM state of the current CPU.
+ */
+#define IEM_IS_V86_MODE(a_pIemCpu)          (CPUMIsGuestInV86ModeEx((a_pIemCpu)->CTX_SUFF(pCtx)))
 
 /**
  * Check if we're currently executing in long mode.
@@ -696,6 +705,7 @@ size_t g_cbIemWrote;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+static VBOXSTRICTRC     iemRaiseTaskSwitchFaultWithErr(PIEMCPU pIemCpu, uint16_t uErr);
 static VBOXSTRICTRC     iemRaiseTaskSwitchFaultCurrentTSS(PIEMCPU pIemCpu);
 static VBOXSTRICTRC     iemRaiseTaskSwitchFault0(PIEMCPU pIemCpu);
 static VBOXSTRICTRC     iemRaiseTaskSwitchFaultBySelector(PIEMCPU pIemCpu, uint16_t uSel);
@@ -703,6 +713,7 @@ static VBOXSTRICTRC     iemRaiseTaskSwitchFaultBySelector(PIEMCPU pIemCpu, uint1
 static VBOXSTRICTRC     iemRaiseSelectorNotPresentBySelector(PIEMCPU pIemCpu, uint16_t uSel);
 static VBOXSTRICTRC     iemRaiseSelectorNotPresentWithErr(PIEMCPU pIemCpu, uint16_t uErr);
 static VBOXSTRICTRC     iemRaiseStackSelectorNotPresentBySelector(PIEMCPU pIemCpu, uint16_t uSel);
+static VBOXSTRICTRC     iemRaiseStackSelectorNotPresentWithErr(PIEMCPU pIemCpu, uint16_t uErr);
 static VBOXSTRICTRC     iemRaiseGeneralProtectionFault(PIEMCPU pIemCpu, uint16_t uErr);
 static VBOXSTRICTRC     iemRaiseGeneralProtectionFault0(PIEMCPU pIemCpu);
 static VBOXSTRICTRC     iemRaiseGeneralProtectionFaultBySelector(PIEMCPU pIemCpu, RTSEL uSel);
@@ -719,9 +730,12 @@ static VBOXSTRICTRC     iemMemFetchSysU8(PIEMCPU pIemCpu, uint32_t *pu32Dst, uin
 static VBOXSTRICTRC     iemMemFetchSysU16(PIEMCPU pIemCpu, uint32_t *pu32Dst, uint8_t iSegReg, RTGCPTR GCPtrMem);
 static VBOXSTRICTRC     iemMemFetchSysU32(PIEMCPU pIemCpu, uint32_t *pu32Dst, uint8_t iSegReg, RTGCPTR GCPtrMem);
 static VBOXSTRICTRC     iemMemFetchSysU64(PIEMCPU pIemCpu, uint64_t *pu64Dst, uint8_t iSegReg, RTGCPTR GCPtrMem);
+static VBOXSTRICTRC     iemMemFetchSelDescWithErr(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint16_t uSel, uint8_t uXcpt, uint16_t uErrorCode);
 static VBOXSTRICTRC     iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint16_t uSel, uint8_t uXcpt);
 static VBOXSTRICTRC     iemMemStackPushCommitSpecial(PIEMCPU pIemCpu, void *pvMem, uint64_t uNewRsp);
 static VBOXSTRICTRC     iemMemStackPushBeginSpecial(PIEMCPU pIemCpu, size_t cbMem, void **ppvMem, uint64_t *puNewRsp);
+static VBOXSTRICTRC     iemMemStackPushU32(PIEMCPU pIemCpu, uint32_t u32Value);
+static VBOXSTRICTRC     iemMemStackPushU16(PIEMCPU pIemCpu, uint16_t u16Value);
 static VBOXSTRICTRC     iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel);
 static uint16_t         iemSRegFetchU16(PIEMCPU pIemCpu, uint8_t iSegReg);
 
@@ -2252,7 +2266,7 @@ iemRaiseXcptOrIntInRealMode(PIEMCPU     pIemCpu,
  * Loads a NULL data selector into when coming from V8086 mode.
  *
  * @param   pIemCpu         The IEM per CPU instance data.
- * @param   pSReg               Pointer to the segment register.
+ * @param   pSReg           Pointer to the segment register.
  */
 static void iemHlpLoadNullDataSelectorOnV86Xcpt(PIEMCPU pIemCpu, PCPUMSELREG pSReg)
 {
@@ -2271,6 +2285,880 @@ static void iemHlpLoadNullDataSelectorOnV86Xcpt(PIEMCPU pIemCpu, PCPUMSELREG pSR
         pSReg->u64Base  = 0;
         pSReg->u32Limit = 0;
     }
+}
+
+
+/**
+ * Loads a segment selector during a task switch in V8086 mode.
+ *
+ * @param   pIemCpu         The IEM per CPU instance data.
+ * @param   pSReg           Pointer to the segment register.
+ * @param   uSel            The selector value to load.
+ */
+static void iemHlpLoadSelectorInV86Mode(PIEMCPU pIemCpu, PCPUMSELREG pSReg, uint16_t uSel)
+{
+    /* See Intel spec. 26.3.1.2 "Checks on Guest Segment Registers". */
+    pSReg->Sel      = uSel;
+    pSReg->ValidSel = uSel;
+    pSReg->fFlags   = CPUMSELREG_FLAGS_VALID;
+    pSReg->u64Base  = uSel << 4;
+    pSReg->u32Limit = 0xffff;
+    pSReg->Attr.u   = 0xf3;
+}
+
+
+/**
+ * Loads a NULL data selector into a selector register, both the hidden and
+ * visible parts, in protected mode.
+ *
+ * @param   pIemCpu             The IEM state of the calling EMT.
+ * @param   pSReg               Pointer to the segment register.
+ * @param   uRpl                The RPL.
+ */
+static void iemHlpLoadNullDataSelectorProt(PIEMCPU pIemCpu, PCPUMSELREG pSReg, RTSEL uRpl)
+{
+    /** @todo Testcase: write a testcase checking what happends when loading a NULL
+     *        data selector in protected mode. */
+    pSReg->Sel      = uRpl;
+    pSReg->ValidSel = uRpl;
+    pSReg->fFlags   = CPUMSELREG_FLAGS_VALID;
+    if (IEM_IS_GUEST_CPU_INTEL(pIemCpu) && !IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
+    {
+        /* VT-x (Intel 3960x) observed doing something like this. */
+        pSReg->Attr.u   = X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | (pIemCpu->uCpl << X86DESCATTR_DPL_SHIFT);
+        pSReg->u32Limit = UINT32_MAX;
+        pSReg->u64Base  = 0;
+    }
+    else
+    {
+        pSReg->Attr.u   = X86DESCATTR_UNUSABLE;
+        pSReg->u32Limit = 0;
+        pSReg->u64Base  = 0;
+    }
+}
+
+
+/**
+ * Loads a segment selector during a task switch in protected mode. In this task
+ * switch scenario, we would throw #TS exceptions rather than #GPs.
+ *
+ * @returns VBox strict status code.
+ * @param   pIemCpu         The IEM per CPU instance data.
+ * @param   pSReg           Pointer to the segment register.
+ * @param   uSel            The new selector value.
+ *
+ * @remarks This does -NOT- handle CS or SS.
+ * @remarks This expects pIemCpu->uCpl to be up to date.
+ */
+static VBOXSTRICTRC iemHlpTaskSwitchLoadDataSelectorInProtMode(PIEMCPU pIemCpu, PCPUMSELREG pSReg, uint16_t uSel)
+{
+    Assert(pIemCpu->enmCpuMode != IEMMODE_64BIT);
+
+    /* Null data selector. */
+    if (!(uSel & X86_SEL_MASK_OFF_RPL))
+    {
+        iemHlpLoadNullDataSelectorProt(pIemCpu, pSReg, uSel);
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg));
+        CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
+        return VINF_SUCCESS;
+    }
+
+    /* Fetch the descriptor. */
+    IEMSELDESC Desc;
+    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uSel, X86_XCPT_TS);
+    if (rcStrict != VINF_SUCCESS)
+    {
+        Log(("iemHlpTaskSwitchLoadDataSelectorInProtMode: failed to fetch selector. uSel=%u rc=%Rrc\n", uSel,
+             VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
+    }
+
+    /* Must be a data segment or readable code segment. */
+    if (   !Desc.Legacy.Gen.u1DescType
+        || (Desc.Legacy.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ)) == X86_SEL_TYPE_CODE)
+    {
+        Log(("iemHlpTaskSwitchLoadDataSelectorInProtMode: invalid segment type. uSel=%u Desc.u4Type=%#x\n", uSel,
+             Desc.Legacy.Gen.u4Type));
+        return iemRaiseTaskSwitchFaultWithErr(pIemCpu, uSel & X86_SEL_MASK_OFF_RPL);
+    }
+
+    /* Check privileges for data segments and non-conforming code segments. */
+    if (   (Desc.Legacy.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
+        != (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
+    {
+        /* The RPL and the new CPL must be less than or equal to the DPL. */
+        if (   (unsigned)(uSel & X86_SEL_RPL) > Desc.Legacy.Gen.u2Dpl
+            || (pIemCpu->uCpl > Desc.Legacy.Gen.u2Dpl))
+        {
+            Log(("iemHlpTaskSwitchLoadDataSelectorInProtMode: Invalid priv. uSel=%u uSel.RPL=%u DPL=%u CPL=%u\n",
+                 uSel, (uSel & X86_SEL_RPL), Desc.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
+            return iemRaiseTaskSwitchFaultWithErr(pIemCpu, uSel & X86_SEL_MASK_OFF_RPL);
+        }
+    }
+
+    /* Is it there? */
+    if (!Desc.Legacy.Gen.u1Present)
+    {
+        Log(("iemHlpTaskSwitchLoadDataSelectorInProtMode: Segment not present. uSel=%u\n", uSel));
+        return iemRaiseSelectorNotPresentWithErr(pIemCpu, uSel & X86_SEL_MASK_OFF_RPL);
+    }
+
+    /* The base and limit. */
+    uint32_t cbLimit = X86DESC_LIMIT_G(&Desc.Legacy);
+    uint64_t u64Base = X86DESC_BASE(&Desc.Legacy);
+
+    /*
+     * Ok, everything checked out fine. Now set the accessed bit before
+     * committing the result into the registers.
+     */
+    if (!(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+    {
+        rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uSel);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        Desc.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+    }
+
+    /* Commit */
+    pSReg->Sel      = uSel;
+    pSReg->Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
+    pSReg->u32Limit = cbLimit;
+    pSReg->u64Base  = u64Base;
+    pSReg->ValidSel = uSel;
+    pSReg->fFlags   = CPUMSELREG_FLAGS_VALID;
+    if (IEM_IS_GUEST_CPU_INTEL(pIemCpu) && !IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
+        pSReg->Attr.u &= ~X86DESCATTR_UNUSABLE;
+
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg));
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Performs a task switch.
+ *
+ * If the task switch is the result of a JMP, CALL or IRET instruction, the
+ * caller is responsible for performing the necessary checks (like DPL, TSS
+ * present etc.) which are specific to JMP/CALL/IRET. See Intel Instruction
+ * reference for JMP, CALL, IRET.
+ *
+ * If the task switch is the due to a software interrupt or hardware exception,
+ * the caller is responsible for validating the TSS selector and descriptor. See
+ * Intel Instruction reference for INT n.
+ *
+ * @returns VBox strict status code.
+ * @param   pIemCpu         The IEM per CPU instance data.
+ * @param   pCtx            The CPU context.
+ * @param   enmTaskSwitch   What caused this task switch.
+ * @param   uNextEip        The EIP effective after the task switch.
+ * @param   fFlags          The flags.
+ * @param   uErr            The error value if IEM_XCPT_FLAGS_ERR is set.
+ * @param   uCr2            The CR2 value if IEM_XCPT_FLAGS_CR2 is set.
+ * @param   SelTSS          The TSS selector of the new task.
+ * @param   pNewDescTSS     Pointer to the new TSS descriptor.
+ */
+static VBOXSTRICTRC iemTaskSwitch(PIEMCPU         pIemCpu,
+                                  PCPUMCTX        pCtx,
+                                  IEMTASKSWITCH   enmTaskSwitch,
+                                  uint32_t        uNextEip,
+                                  uint32_t        fFlags,
+                                  uint16_t        uErr,
+                                  uint64_t        uCr2,
+                                  RTSEL           SelTSS,
+                                  PIEMSELDESC     pNewDescTSS)
+{
+    Assert(!IEM_IS_REAL_MODE(pIemCpu));
+    Assert(pIemCpu->enmCpuMode != IEMMODE_64BIT);
+
+    uint32_t const uNewTSSType = pNewDescTSS->Legacy.Gate.u4Type;
+    Assert(   uNewTSSType == X86_SEL_TYPE_SYS_286_TSS_AVAIL
+           || uNewTSSType == X86_SEL_TYPE_SYS_286_TSS_BUSY
+           || uNewTSSType == X86_SEL_TYPE_SYS_386_TSS_AVAIL
+           || uNewTSSType == X86_SEL_TYPE_SYS_386_TSS_BUSY);
+
+    bool const fIsNewTSS386 = (   uNewTSSType == X86_SEL_TYPE_SYS_386_TSS_AVAIL
+                               || uNewTSSType == X86_SEL_TYPE_SYS_386_TSS_BUSY);
+
+    Log(("iemTaskSwitch: enmTaskSwitch=%u NewTSS=%#x fIsNewTSS386=%RTbool EIP=%#RGv uNextEip=%#RGv\n", enmTaskSwitch, SelTSS,
+         fIsNewTSS386, pCtx->eip, uNextEip));
+
+    /* Update CR2 in case it's a page-fault. */
+    /** @todo This should probably be done much earlier in IEM/PGM. See
+     *        @bugref{5653} comment#49. */
+    if (fFlags & IEM_XCPT_FLAGS_CR2)
+        pCtx->cr2 = uCr2;
+
+    /*
+     * Check the new TSS limit. See Intel spec. 6.15 "Exception and Interrupt Reference"
+     * subsection "Interrupt 10 - Invalid TSS Exception (#TS)".
+     */
+    uint32_t const uNewTSSLimit    = pNewDescTSS->Legacy.Gen.u16LimitLow | (pNewDescTSS->Legacy.Gen.u4LimitHigh << 16);
+    uint32_t const uNewTSSLimitMin = fIsNewTSS386 ? X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN : X86_SEL_TYPE_SYS_286_TSS_LIMIT_MIN;
+    if (uNewTSSLimit < uNewTSSLimitMin)
+    {
+        Log(("iemTaskSwitch: Invalid new TSS limit. enmTaskSwitch=%u uNewTSSLimit=%#x uNewTSSLimitMin=%#x -> #TS\n",
+             enmTaskSwitch, uNewTSSLimit, uNewTSSLimitMin));
+        return iemRaiseTaskSwitchFaultWithErr(pIemCpu, SelTSS & X86_SEL_MASK_OFF_RPL);
+    }
+
+    /*
+     * Check the current TSS limit. The last written byte to the current TSS during the
+     * task switch will be 2 bytes at offset 0x5C (32-bit) and 1 byte at offset 0x28 (16-bit).
+     * See Intel spec. 7.2.1 "Task-State Segment (TSS)" for static and dynamic fields.
+     *
+     * The AMD docs doesn't mention anything about limit checks with LTR which suggests you can
+     * end up with smaller than "legal" TSS limits.
+     */
+    uint32_t const uCurTSSLimit    = pCtx->tr.u32Limit;
+    uint32_t const uCurTSSLimitMin = fIsNewTSS386 ? 0x5F : 0x29;
+    if (uCurTSSLimit < uCurTSSLimitMin)
+    {
+        Log(("iemTaskSwitch: Invalid current TSS limit. enmTaskSwitch=%u uCurTSSLimit=%#x uCurTSSLimitMin=%#x -> #TS\n",
+             enmTaskSwitch, uCurTSSLimit, uCurTSSLimitMin));
+        return iemRaiseTaskSwitchFaultWithErr(pIemCpu, SelTSS & X86_SEL_MASK_OFF_RPL);
+    }
+
+    /*
+     * Verify that the new TSS can be accessed and map it. Map only the required contents
+     * and not the entire TSS.
+     */
+    void     *pvNewTSS;
+    uint32_t  cbNewTSS    = uNewTSSLimitMin + 1;
+    RTGCPTR   GCPtrNewTSS = X86DESC_BASE(&pNewDescTSS->Legacy);
+    AssertCompile(RTASSERT_OFFSET_OF(X86TSS32, IntRedirBitmap) == X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN + 1);
+    /** @todo Handle if the TSS crosses a page boundary. Intel specifies that it may
+     *        not perform correct translation if this happens. See Intel spec. 7.2.1
+     *        "Task-State Segment" */
+    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, &pvNewTSS, cbNewTSS, UINT8_MAX, GCPtrNewTSS, IEM_ACCESS_SYS_RW);
+    if (rcStrict != VINF_SUCCESS)
+    {
+        Log(("iemTaskSwitch: Failed to read new TSS. enmTaskSwitch=%u cbNewTSS=%u uNewTSSLimit=%u rc=%Rrc\n", enmTaskSwitch,
+             cbNewTSS, uNewTSSLimit, VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
+    }
+
+    /*
+     * Clear the busy bit in current task's TSS descriptor if it's a task switch due to JMP/IRET.
+     */
+    uint32_t u32EFlags = pCtx->eflags.u32;
+    if (   enmTaskSwitch == IEMTASKSWITCH_JUMP
+        || enmTaskSwitch == IEMTASKSWITCH_IRET)
+    {
+        PX86DESC pDescCurTSS;
+        rcStrict = iemMemMap(pIemCpu, (void **)&pDescCurTSS, sizeof(*pDescCurTSS), UINT8_MAX,
+                             pCtx->gdtr.pGdt + (pCtx->tr.Sel & X86_SEL_MASK), IEM_ACCESS_SYS_RW);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: Failed to read new TSS descriptor in GDT. enmTaskSwitch=%u pGdt=%#RX64 rc=%Rrc\n",
+                 enmTaskSwitch, pCtx->gdtr.pGdt, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+
+        pDescCurTSS->Gate.u4Type &= ~X86_SEL_TYPE_SYS_TSS_BUSY_MASK;
+        rcStrict = iemMemCommitAndUnmap(pIemCpu, pDescCurTSS, IEM_ACCESS_SYS_RW);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: Failed to commit new TSS descriptor in GDT. enmTaskSwitch=%u pGdt=%#RX64 rc=%Rrc\n",
+                 enmTaskSwitch, pCtx->gdtr.pGdt, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+
+        /* Clear EFLAGS.NT (Nested Task) in the eflags memory image, if it's a task switch due to an IRET. */
+        if (enmTaskSwitch == IEMTASKSWITCH_IRET)
+        {
+            Assert(   uNewTSSType == X86_SEL_TYPE_SYS_286_TSS_BUSY
+                   || uNewTSSType == X86_SEL_TYPE_SYS_386_TSS_BUSY);
+            u32EFlags &= ~X86_EFL_NT;
+        }
+    }
+
+    /*
+     * Save the CPU state into the current TSS.
+     */
+    RTGCPTR GCPtrCurTSS = pCtx->tr.u64Base;
+    if (GCPtrNewTSS == GCPtrCurTSS)
+    {
+        Log(("iemTaskSwitch: Switching to the same TSS! enmTaskSwitch=%u GCPtr[Cur|New]TSS=%#RGv\n", enmTaskSwitch, GCPtrCurTSS));
+        Log(("uCurCr3=%#x uCurEip=%#x uCurEflags=%#x uCurEax=%#x uCurEsp=%#x uCurEbp=%#x uCurCS=%#04x uCurSS=%#04x uCurLdt=%#x\n",
+             pCtx->cr3, pCtx->eip, pCtx->eflags.u32, pCtx->eax, pCtx->esp, pCtx->ebp, pCtx->cs.Sel, pCtx->ss.Sel, pCtx->ldtr.Sel));
+    }
+    if (fIsNewTSS386)
+    {
+        /*
+         * Verify that the current TSS (32-bit) can be accessed, only the minimum required size.
+         * See Intel spec. 7.2.1 "Task-State Segment (TSS)" for static and dynamic fields.
+         */
+        void    *pvCurTSS32;
+        uint32_t offCurTSS = RT_OFFSETOF(X86TSS32, eip);
+        uint32_t cbCurTSS  = RT_OFFSETOF(X86TSS32, selLdt) - RT_OFFSETOF(X86TSS32, eip);
+        AssertCompile(RTASSERT_OFFSET_OF(X86TSS32, selLdt) - RTASSERT_OFFSET_OF(X86TSS32, eip) == 64);
+        rcStrict = iemMemMap(pIemCpu, &pvCurTSS32, cbCurTSS, UINT8_MAX, GCPtrCurTSS + offCurTSS, IEM_ACCESS_SYS_RW);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: Failed to read current 32-bit TSS. enmTaskSwitch=%u GCPtrCurTSS=%#RGv cb=%u rc=%Rrc\n",
+                 enmTaskSwitch, GCPtrCurTSS, cbCurTSS, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+
+        /* !! WARNING !! Access -only- the members (dynamic fields) that are mapped, i.e interval [offCurTSS..cbCurTSS). */
+        PX86TSS32 pCurTSS32 = (PX86TSS32)((uintptr_t)pvCurTSS32 - offCurTSS);
+        pCurTSS32->eip    = uNextEip;
+        pCurTSS32->eflags = u32EFlags;
+        pCurTSS32->eax    = pCtx->eax;
+        pCurTSS32->ecx    = pCtx->ecx;
+        pCurTSS32->edx    = pCtx->edx;
+        pCurTSS32->ebx    = pCtx->ebx;
+        pCurTSS32->esp    = pCtx->esp;
+        pCurTSS32->ebp    = pCtx->ebp;
+        pCurTSS32->esi    = pCtx->esi;
+        pCurTSS32->edi    = pCtx->edi;
+        pCurTSS32->es     = pCtx->es.Sel;
+        pCurTSS32->cs     = pCtx->cs.Sel;
+        pCurTSS32->ss     = pCtx->ss.Sel;
+        pCurTSS32->ds     = pCtx->ds.Sel;
+        pCurTSS32->fs     = pCtx->fs.Sel;
+        pCurTSS32->gs     = pCtx->gs.Sel;
+
+        rcStrict = iemMemCommitAndUnmap(pIemCpu, pvCurTSS32, IEM_ACCESS_SYS_RW);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: Failed to commit current 32-bit TSS. enmTaskSwitch=%u rc=%Rrc\n", enmTaskSwitch,
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
+    else
+    {
+        /*
+         * Verify that the current TSS (16-bit) can be accessed. Again, only the minimum required size.
+         */
+        void    *pvCurTSS16;
+        uint32_t offCurTSS = RT_OFFSETOF(X86TSS16, ip);
+        uint32_t cbCurTSS  = RT_OFFSETOF(X86TSS16, selLdt) - RT_OFFSETOF(X86TSS16, ip);
+        AssertCompile(RTASSERT_OFFSET_OF(X86TSS16, selLdt) - RTASSERT_OFFSET_OF(X86TSS16, ip) == 28);
+        rcStrict = iemMemMap(pIemCpu, &pvCurTSS16, cbCurTSS, UINT8_MAX, GCPtrCurTSS + offCurTSS, IEM_ACCESS_SYS_RW);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: Failed to read current 16-bit TSS. enmTaskSwitch=%u GCPtrCurTSS=%#RGv cb=%u rc=%Rrc\n",
+                 enmTaskSwitch, GCPtrCurTSS, cbCurTSS, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+
+        /* !! WARNING !! Access -only- the members (dynamic fields) that are mapped, i.e interval [offCurTSS..cbCurTSS). */
+        PX86TSS16 pCurTSS16 = (PX86TSS16)((uintptr_t)pvCurTSS16 - offCurTSS);
+        pCurTSS16->ip    = uNextEip;
+        pCurTSS16->flags = u32EFlags;
+        pCurTSS16->ax    = pCtx->ax;
+        pCurTSS16->cx    = pCtx->cx;
+        pCurTSS16->dx    = pCtx->dx;
+        pCurTSS16->bx    = pCtx->bx;
+        pCurTSS16->sp    = pCtx->sp;
+        pCurTSS16->bp    = pCtx->bp;
+        pCurTSS16->si    = pCtx->si;
+        pCurTSS16->di    = pCtx->di;
+        pCurTSS16->es    = pCtx->es.Sel;
+        pCurTSS16->cs    = pCtx->cs.Sel;
+        pCurTSS16->ss    = pCtx->ss.Sel;
+        pCurTSS16->ds    = pCtx->ds.Sel;
+
+        rcStrict = iemMemCommitAndUnmap(pIemCpu, pvCurTSS16, IEM_ACCESS_SYS_RW);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: Failed to commit current 16-bit TSS. enmTaskSwitch=%u rc=%Rrc\n", enmTaskSwitch,
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
+
+    /*
+     * Update the previous task link field for the new TSS, if the task switch is due to a CALL/INT_XCPT.
+     */
+    if (   enmTaskSwitch == IEMTASKSWITCH_CALL
+        || enmTaskSwitch == IEMTASKSWITCH_INT_XCPT)
+    {
+        /* 16 or 32-bit TSS doesn't matter, we only access the first, common 16-bit field (selPrev) here. */
+        PX86TSS32 pNewTSS = (PX86TSS32)pvNewTSS;
+        pNewTSS->selPrev  = pCtx->tr.Sel;
+    }
+
+    /*
+     * Read the state from the new TSS into temporaries. Setting it immediately as the new CPU state is tricky,
+     * it's done further below with error handling (e.g. CR3 changes will go through PGM).
+     */
+    uint32_t uNewCr3, uNewEip, uNewEflags, uNewEax, uNewEcx, uNewEdx, uNewEbx, uNewEsp, uNewEbp, uNewEsi, uNewEdi;
+    uint16_t uNewES,  uNewCS, uNewSS, uNewDS, uNewFS, uNewGS, uNewLdt;
+    bool     fNewDebugTrap;
+    if (fIsNewTSS386)
+    {
+        PX86TSS32 pNewTSS32 = (PX86TSS32)pvNewTSS;
+        uNewCr3       = (pCtx->cr0 & X86_CR0_PG) ? pNewTSS32->cr3 : 0;
+        uNewEip       = pNewTSS32->eip;
+        uNewEflags    = pNewTSS32->eflags;
+        uNewEax       = pNewTSS32->eax;
+        uNewEcx       = pNewTSS32->ecx;
+        uNewEdx       = pNewTSS32->edx;
+        uNewEbx       = pNewTSS32->ebx;
+        uNewEsp       = pNewTSS32->esp;
+        uNewEbp       = pNewTSS32->ebp;
+        uNewEsi       = pNewTSS32->esi;
+        uNewEdi       = pNewTSS32->edi;
+        uNewES        = pNewTSS32->es;
+        uNewCS        = pNewTSS32->cs;
+        uNewSS        = pNewTSS32->ss;
+        uNewDS        = pNewTSS32->ds;
+        uNewFS        = pNewTSS32->fs;
+        uNewGS        = pNewTSS32->gs;
+        uNewLdt       = pNewTSS32->selLdt;
+        fNewDebugTrap = RT_BOOL(pNewTSS32->fDebugTrap);
+    }
+    else
+    {
+        PX86TSS16 pNewTSS16 = (PX86TSS16)pvNewTSS;
+        uNewCr3       = 0;
+        uNewEip       = pNewTSS16->ip;
+        uNewEflags    = pNewTSS16->flags;
+        uNewEax       = UINT32_C(0xffff0000) | pNewTSS16->ax;
+        uNewEcx       = UINT32_C(0xffff0000) | pNewTSS16->cx;
+        uNewEdx       = UINT32_C(0xffff0000) | pNewTSS16->dx;
+        uNewEbx       = UINT32_C(0xffff0000) | pNewTSS16->bx;
+        uNewEsp       = UINT32_C(0xffff0000) | pNewTSS16->sp;
+        uNewEbp       = UINT32_C(0xffff0000) | pNewTSS16->bp;
+        uNewEsi       = UINT32_C(0xffff0000) | pNewTSS16->si;
+        uNewEdi       = UINT32_C(0xffff0000) | pNewTSS16->di;
+        uNewES        = pNewTSS16->es;
+        uNewCS        = pNewTSS16->cs;
+        uNewSS        = pNewTSS16->ss;
+        uNewDS        = pNewTSS16->ds;
+        uNewFS        = 0;
+        uNewGS        = 0;
+        uNewLdt       = pNewTSS16->selLdt;
+        fNewDebugTrap = false;
+    }
+
+    if (GCPtrNewTSS == GCPtrCurTSS)
+        Log(("uNewCr3=%#x uNewEip=%#x uNewEflags=%#x uNewEax=%#x uNewEsp=%#x uNewEbp=%#x uNewCS=%#04x uNewSS=%#04x uNewLdt=%#x\n",
+             uNewCr3, uNewEip, uNewEflags, uNewEax, uNewEsp, uNewEbp, uNewCS, uNewSS, uNewLdt));
+
+    /*
+     * We're done accessing the new TSS.
+     */
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, pvNewTSS, IEM_ACCESS_SYS_RW);
+    if (rcStrict != VINF_SUCCESS)
+    {
+        Log(("iemTaskSwitch: Failed to commit new TSS. enmTaskSwitch=%u rc=%Rrc\n", enmTaskSwitch, VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
+    }
+
+    /*
+     * Set the busy bit in the new TSS descriptor, if the task switch is a JMP/CALL/INT_XCPT.
+     */
+    if (enmTaskSwitch != IEMTASKSWITCH_IRET)
+    {
+        rcStrict = iemMemMap(pIemCpu, (void **)&pNewDescTSS, sizeof(*pNewDescTSS), UINT8_MAX,
+                             pCtx->gdtr.pGdt + (SelTSS & X86_SEL_MASK), IEM_ACCESS_SYS_RW);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: Failed to read new TSS descriptor in GDT (2). enmTaskSwitch=%u pGdt=%#RX64 rc=%Rrc\n",
+                 enmTaskSwitch, pCtx->gdtr.pGdt, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+
+        /* Check that the descriptor indicates the new TSS is available (not busy). */
+        AssertMsg(   pNewDescTSS->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_TSS_AVAIL
+                  || pNewDescTSS->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL,
+                     ("Invalid TSS descriptor type=%#x", pNewDescTSS->Legacy.Gate.u4Type));
+
+        pNewDescTSS->Legacy.Gate.u4Type |= X86_SEL_TYPE_SYS_TSS_BUSY_MASK;
+        rcStrict = iemMemCommitAndUnmap(pIemCpu, pNewDescTSS, IEM_ACCESS_SYS_RW);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: Failed to commit new TSS descriptor in GDT (2). enmTaskSwitch=%u pGdt=%#RX64 rc=%Rrc\n",
+                 enmTaskSwitch, pCtx->gdtr.pGdt, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
+
+    /*
+     * From this point on, we're technically in the new task. We will defer exceptions
+     * until the completion of the task switch but before executing any instructions in the new task.
+     */
+    pCtx->tr.Sel      = SelTSS;
+    pCtx->tr.ValidSel = SelTSS;
+    pCtx->tr.fFlags   = CPUMSELREG_FLAGS_VALID;
+    pCtx->tr.Attr.u   = X86DESC_GET_HID_ATTR(&pNewDescTSS->Legacy);
+    pCtx->tr.u32Limit = X86DESC_LIMIT_G(&pNewDescTSS->Legacy);
+    pCtx->tr.u64Base  = X86DESC_BASE(&pNewDescTSS->Legacy);
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_TR);
+
+    /* Set the busy bit in TR. */
+    pCtx->tr.Attr.n.u4Type |= X86_SEL_TYPE_SYS_TSS_BUSY_MASK;
+    /* Set EFLAGS.NT (Nested Task) in the eflags loaded from the new TSS, if it's a task switch due to a CALL/INT_XCPT. */
+    if (   enmTaskSwitch == IEMTASKSWITCH_CALL
+        || enmTaskSwitch == IEMTASKSWITCH_INT_XCPT)
+    {
+        uNewEflags |= X86_EFL_NT;
+    }
+
+    pCtx->dr[7] &= ~X86_DR7_LE_ALL;     /** @todo Should we clear DR7.LE bit too? */
+    pCtx->cr0   |= X86_CR0_TS;
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_CR0);
+
+    pCtx->eip    = uNewEip;
+    pCtx->eax    = uNewEax;
+    pCtx->ecx    = uNewEcx;
+    pCtx->edx    = uNewEdx;
+    pCtx->ebx    = uNewEbx;
+    pCtx->esp    = uNewEsp;
+    pCtx->ebp    = uNewEbp;
+    pCtx->esi    = uNewEsi;
+    pCtx->edi    = uNewEdi;
+
+    uNewEflags &= X86_EFL_LIVE_MASK;
+    uNewEflags |= X86_EFL_RA1_MASK;
+    IEMMISC_SET_EFL(pIemCpu, pCtx, uNewEflags);
+
+    /*
+     * Switch the selectors here and do the segment checks later. If we throw exceptions, the selectors
+     * will be valid in the exception handler. We cannot update the hidden parts until we've switched CR3
+     * due to the hidden part data originating from the guest LDT/GDT which is accessed through paging.
+     */
+    pCtx->es.Sel       = uNewES;
+    pCtx->es.fFlags    = CPUMSELREG_FLAGS_STALE;
+    pCtx->es.Attr.u   &= ~X86DESCATTR_P;
+
+    pCtx->cs.Sel       = uNewCS;
+    pCtx->cs.fFlags    = CPUMSELREG_FLAGS_STALE;
+    pCtx->cs.Attr.u   &= ~X86DESCATTR_P;
+
+    pCtx->ss.Sel       = uNewSS;
+    pCtx->ss.fFlags    = CPUMSELREG_FLAGS_STALE;
+    pCtx->ss.Attr.u   &= ~X86DESCATTR_P;
+
+    pCtx->ds.Sel       = uNewDS;
+    pCtx->ds.fFlags    = CPUMSELREG_FLAGS_STALE;
+    pCtx->ds.Attr.u   &= ~X86DESCATTR_P;
+
+    pCtx->fs.Sel       = uNewFS;
+    pCtx->fs.fFlags    = CPUMSELREG_FLAGS_STALE;
+    pCtx->fs.Attr.u   &= ~X86DESCATTR_P;
+
+    pCtx->gs.Sel       = uNewGS;
+    pCtx->gs.fFlags    = CPUMSELREG_FLAGS_STALE;
+    pCtx->gs.Attr.u   &= ~X86DESCATTR_P;
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
+
+    pCtx->ldtr.Sel     = uNewLdt;
+    pCtx->ldtr.fFlags  = CPUMSELREG_FLAGS_STALE;
+    pCtx->ldtr.Attr.u &= ~X86DESCATTR_P;
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_LDTR);
+
+    if (IEM_IS_GUEST_CPU_INTEL(pIemCpu) && !IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
+    {
+        pCtx->es.Attr.u   |= X86DESCATTR_UNUSABLE;
+        pCtx->cs.Attr.u   |= X86DESCATTR_UNUSABLE;
+        pCtx->ss.Attr.u   |= X86DESCATTR_UNUSABLE;
+        pCtx->ds.Attr.u   |= X86DESCATTR_UNUSABLE;
+        pCtx->fs.Attr.u   |= X86DESCATTR_UNUSABLE;
+        pCtx->gs.Attr.u   |= X86DESCATTR_UNUSABLE;
+        pCtx->ldtr.Attr.u |= X86DESCATTR_UNUSABLE;
+    }
+
+    /*
+     * Switch CR3 for the new task.
+     */
+    if (   fIsNewTSS386
+        && (pCtx->cr0 & X86_CR0_PG))
+    {
+        /** @todo Should we update and flush TLBs only if CR3 value actually changes? */
+        if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
+        {
+            int rc = CPUMSetGuestCR3(IEMCPU_TO_VMCPU(pIemCpu), uNewCr3);
+            AssertRCSuccessReturn(rc, rc);
+        }
+        else
+            pCtx->cr3 = uNewCr3;
+
+        /* Inform PGM. */
+        if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
+        {
+            int rc = PGMFlushTLB(IEMCPU_TO_VMCPU(pIemCpu), pCtx->cr3, !(pCtx->cr4 & X86_CR4_PGE));
+            AssertRCReturn(rc, rc);
+            /* ignore informational status codes */
+        }
+        CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_CR3);
+    }
+
+    /*
+     * Switch LDTR for the new task.
+     */
+    if (!(uNewLdt & X86_SEL_MASK_OFF_RPL))
+        iemHlpLoadNullDataSelectorProt(pIemCpu, &pCtx->ldtr, uNewLdt);
+    else
+    {
+        Assert(!pCtx->ldtr.Attr.n.u1Present);       /* Ensures that LDT.TI check passes in iemMemFetchSelDesc() below. */
+
+        IEMSELDESC DescNewLdt;
+        rcStrict = iemMemFetchSelDesc(pIemCpu, &DescNewLdt, uNewLdt, X86_XCPT_TS);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: fetching LDT failed. enmTaskSwitch=%u uNewLdt=%u cbGdt=%u rc=%Rrc\n", enmTaskSwitch,
+                 uNewLdt, pCtx->gdtr.cbGdt, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+        if (   !DescNewLdt.Legacy.Gen.u1Present
+            ||  DescNewLdt.Legacy.Gen.u1DescType
+            ||  DescNewLdt.Legacy.Gen.u4Type != X86_SEL_TYPE_SYS_LDT)
+        {
+            Log(("iemTaskSwitch: Invalid LDT. enmTaskSwitch=%u uNewLdt=%u DescNewLdt.Legacy.u=%#RX64 -> #TS\n", enmTaskSwitch,
+                 uNewLdt, DescNewLdt.Legacy.u));
+            return iemRaiseTaskSwitchFaultWithErr(pIemCpu, uNewLdt & X86_SEL_MASK_OFF_RPL);
+        }
+
+        pCtx->ldtr.ValidSel = uNewLdt;
+        pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
+        pCtx->ldtr.u64Base  = X86DESC_BASE(&DescNewLdt.Legacy);
+        pCtx->ldtr.u32Limit = X86DESC_LIMIT_G(&DescNewLdt.Legacy);
+        pCtx->ldtr.Attr.u   = X86DESC_GET_HID_ATTR(&DescNewLdt.Legacy);
+        if (IEM_IS_GUEST_CPU_INTEL(pIemCpu) && !IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
+            pCtx->ldtr.Attr.u &= ~X86DESCATTR_UNUSABLE;
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), &pCtx->ldtr));
+    }
+
+    IEMSELDESC DescSS;
+    if (IEM_IS_V86_MODE(pIemCpu))
+    {
+        pIemCpu->uCpl = 3;
+        iemHlpLoadSelectorInV86Mode(pIemCpu, &pCtx->es, uNewES);
+        iemHlpLoadSelectorInV86Mode(pIemCpu, &pCtx->cs, uNewCS);
+        iemHlpLoadSelectorInV86Mode(pIemCpu, &pCtx->ss, uNewSS);
+        iemHlpLoadSelectorInV86Mode(pIemCpu, &pCtx->ds, uNewDS);
+        iemHlpLoadSelectorInV86Mode(pIemCpu, &pCtx->fs, uNewFS);
+        iemHlpLoadSelectorInV86Mode(pIemCpu, &pCtx->gs, uNewGS);
+    }
+    else
+    {
+        uint8_t uNewCpl = (uNewCS & X86_SEL_RPL);
+
+        /*
+         * Load the stack segment for the new task.
+         */
+        if (!(uNewSS & X86_SEL_MASK_OFF_RPL))
+        {
+            Log(("iemTaskSwitch: Null stack segment. enmTaskSwitch=%u uNewSS=%#x -> #TS\n", enmTaskSwitch, uNewSS));
+            return iemRaiseTaskSwitchFaultWithErr(pIemCpu, uNewSS & X86_SEL_MASK_OFF_RPL);
+        }
+
+        /* Fetch the descriptor. */
+        rcStrict = iemMemFetchSelDesc(pIemCpu, &DescSS, uNewSS, X86_XCPT_TS);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: failed to fetch SS. uNewSS=%#x rc=%Rrc\n", uNewSS,
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+
+        /* SS must be a data segment and writable. */
+        if (    !DescSS.Legacy.Gen.u1DescType
+            ||  (DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE)
+            || !(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE))
+        {
+            Log(("iemTaskSwitch: SS invalid descriptor type. uNewSS=%#x u1DescType=%u u4Type=%#x\n",
+                 uNewSS, DescSS.Legacy.Gen.u1DescType, DescSS.Legacy.Gen.u4Type));
+            return iemRaiseTaskSwitchFaultWithErr(pIemCpu, uNewSS & X86_SEL_MASK_OFF_RPL);
+        }
+
+        /* The SS.RPL, SS.DPL, CS.RPL (CPL) must be equal. */
+        if (   (uNewSS & X86_SEL_RPL) != uNewCpl
+            || DescSS.Legacy.Gen.u2Dpl != uNewCpl)
+        {
+            Log(("iemTaskSwitch: Invalid priv. for SS. uNewSS=%#x SS.DPL=%u uNewCpl=%u -> #TS\n", uNewSS, DescSS.Legacy.Gen.u2Dpl,
+                 uNewCpl));
+            return iemRaiseTaskSwitchFaultWithErr(pIemCpu, uNewSS & X86_SEL_MASK_OFF_RPL);
+        }
+
+        /* Is it there? */
+        if (!DescSS.Legacy.Gen.u1Present)
+        {
+            Log(("iemTaskSwitch: SS not present. uNewSS=%#x -> #NP\n", uNewSS));
+            return iemRaiseSelectorNotPresentWithErr(pIemCpu, uNewSS & X86_SEL_MASK_OFF_RPL);
+        }
+
+        uint32_t cbLimit = X86DESC_LIMIT_G(&DescSS.Legacy);
+        uint64_t u64Base = X86DESC_BASE(&DescSS.Legacy);
+
+        /* Set the accessed bit before committing the result into SS. */
+        if (!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+        {
+            rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uNewSS);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+            DescSS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+        }
+
+        /* Commit SS. */
+        pCtx->ss.Sel      = uNewSS;
+        pCtx->ss.ValidSel = uNewSS;
+        pCtx->ss.Attr.u   = X86DESC_GET_HID_ATTR(&DescSS.Legacy);
+        pCtx->ss.u32Limit = cbLimit;
+        pCtx->ss.u64Base  = u64Base;
+        pCtx->ss.fFlags   = CPUMSELREG_FLAGS_VALID;
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), &pCtx->ss));
+
+        /* CPL has changed, update IEM before loading rest of segments. */
+        pIemCpu->uCpl = uNewCpl;
+
+        /*
+         * Load the data segments for the new task.
+         */
+        rcStrict = iemHlpTaskSwitchLoadDataSelectorInProtMode(pIemCpu, &pCtx->es, uNewES);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        rcStrict = iemHlpTaskSwitchLoadDataSelectorInProtMode(pIemCpu, &pCtx->ds, uNewDS);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        rcStrict = iemHlpTaskSwitchLoadDataSelectorInProtMode(pIemCpu, &pCtx->fs, uNewFS);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        rcStrict = iemHlpTaskSwitchLoadDataSelectorInProtMode(pIemCpu, &pCtx->gs, uNewGS);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        /*
+         * Load the code segment for the new task.
+         */
+        if (!(uNewCS & X86_SEL_MASK_OFF_RPL))
+        {
+            Log(("iemTaskSwitch #TS: Null code segment. enmTaskSwitch=%u uNewCS=%#x\n", enmTaskSwitch, uNewCS));
+            return iemRaiseTaskSwitchFaultWithErr(pIemCpu, uNewCS & X86_SEL_MASK_OFF_RPL);
+        }
+
+        /* Fetch the descriptor. */
+        IEMSELDESC DescCS;
+        rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCS, uNewCS, X86_XCPT_TS);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: failed to fetch CS. uNewCS=%u rc=%Rrc\n", uNewCS, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+
+        /* CS must be a code segment. */
+        if (   !DescCS.Legacy.Gen.u1DescType
+            || !(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE))
+        {
+            Log(("iemTaskSwitch: CS invalid descriptor type. uNewCS=%#x u1DescType=%u u4Type=%#x -> #TS\n", uNewCS,
+                 DescCS.Legacy.Gen.u1DescType, DescCS.Legacy.Gen.u4Type));
+            return iemRaiseTaskSwitchFaultWithErr(pIemCpu, uNewCS & X86_SEL_MASK_OFF_RPL);
+        }
+
+        /* For conforming CS, DPL must be less than or equal to the RPL. */
+        if (   (DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF)
+            && DescCS.Legacy.Gen.u2Dpl > (uNewCS & X86_SEL_RPL))
+        {
+            Log(("iemTaskSwitch: confirming CS DPL > RPL. uNewCS=%#x u4Type=%#x DPL=%u -> #TS\n", uNewCS, DescCS.Legacy.Gen.u4Type,
+                 DescCS.Legacy.Gen.u2Dpl));
+            return iemRaiseTaskSwitchFaultWithErr(pIemCpu, uNewCS & X86_SEL_MASK_OFF_RPL);
+        }
+
+        /* For non-conforming CS, DPL must match RPL. */
+        if (   !(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF)
+            && DescCS.Legacy.Gen.u2Dpl != (uNewCS & X86_SEL_RPL))
+        {
+            Log(("iemTaskSwitch: non-confirming CS DPL RPL mismatch. uNewCS=%#x u4Type=%#x DPL=%u -> #TS\n", uNewCS,
+                 DescCS.Legacy.Gen.u4Type, DescCS.Legacy.Gen.u2Dpl));
+            return iemRaiseTaskSwitchFaultWithErr(pIemCpu, uNewCS & X86_SEL_MASK_OFF_RPL);
+        }
+
+        /* Is it there? */
+        if (!DescCS.Legacy.Gen.u1Present)
+        {
+            Log(("iemTaskSwitch: CS not present. uNewCS=%#x -> #NP\n", uNewCS));
+            return iemRaiseSelectorNotPresentWithErr(pIemCpu, uNewCS & X86_SEL_MASK_OFF_RPL);
+        }
+
+        cbLimit = X86DESC_LIMIT_G(&DescCS.Legacy);
+        u64Base = X86DESC_BASE(&DescCS.Legacy);
+
+        /* Set the accessed bit before committing the result into CS. */
+        if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+        {
+            rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uNewCS);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+            DescCS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+        }
+
+        /* Commit CS. */
+        pCtx->cs.Sel      = uNewCS;
+        pCtx->cs.ValidSel = uNewCS;
+        pCtx->cs.Attr.u   = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
+        pCtx->cs.u32Limit = cbLimit;
+        pCtx->cs.u64Base  = u64Base;
+        pCtx->cs.fFlags   = CPUMSELREG_FLAGS_VALID;
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), &pCtx->cs));
+    }
+
+    /** @todo Debug trap. */
+    if (fIsNewTSS386 && fNewDebugTrap)
+        Log(("iemTaskSwitch: Debug Trap set in new TSS. Not implemented!\n"));
+
+    /*
+     * Construct the error code masks based on what caused this task switch.
+     * See Intel Instruction reference for INT.
+     */
+    uint16_t uExt;
+    if (   enmTaskSwitch == IEMTASKSWITCH_INT_XCPT
+        && !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT))
+    {
+        uExt = 1;
+    }
+    else
+        uExt = 0;
+
+    /*
+     * Push any error code on to the new stack.
+     */
+    if (fFlags & IEM_XCPT_FLAGS_ERR)
+    {
+        Assert(enmTaskSwitch == IEMTASKSWITCH_INT_XCPT);
+        uint32_t cbLimitSS = X86DESC_LIMIT_G(&DescSS.Legacy);
+        if (DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN)
+            IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Expand down segments\n")); /** @todo Implement expand down segment support. */
+
+        /* Check that there is sufficient space on the stack. */
+        uint8_t const cbStackFrame = fIsNewTSS386 ? 4 : 2;
+        if (   pCtx->esp - 1 > cbLimitSS
+            || pCtx->esp < cbStackFrame)
+        {
+            /** @todo Intel says #SS(EXT) for INT/XCPT, I couldn't figure out AMD yet. */
+            Log(("iemTaskSwitch: SS=%#x ESP=%#x cbStackFrame=%#x is out of bounds -> #SS\n", pCtx->ss.Sel, pCtx->esp,
+                 cbStackFrame));
+            return iemRaiseStackSelectorNotPresentWithErr(pIemCpu, uExt);
+        }
+
+        if (fIsNewTSS386)
+            rcStrict = iemMemStackPushU32(pIemCpu, uErr);
+        else
+            rcStrict = iemMemStackPushU16(pIemCpu, uErr);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("iemTaskSwitch: Can't push error code to new task's stack. %s-bit TSS. rc=%Rrc\n", fIsNewTSS386 ? "32" : "16",
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
+
+    /* Check the new EIP against the new CS limit. */
+    if (pCtx->eip > pCtx->cs.u32Limit)
+    {
+        Log(("iemHlpTaskSwitchLoadDataSelectorInProtMode: New EIP exceeds CS limit. uNewEIP=%#RGv CS limit=%u -> #GP(0)\n",
+             pCtx->eip, pCtx->cs.u32Limit));
+        /** @todo Intel says #GP(EXT) for INT/XCPT, I couldn't figure out AMD yet. */
+        return iemRaiseGeneralProtectionFault(pIemCpu, uExt);
+    }
+
+    Log(("iemTaskSwitch: Success! New CS:EIP=%#04x:%#x SS=%#04x\n", pCtx->cs.Sel, pCtx->eip, pCtx->ss.Sel));
+    return fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT ? VINF_IEM_RAISED_XCPT : VINF_SUCCESS;
 }
 
 
@@ -2324,6 +3212,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
         Log(("RaiseXcptOrIntInProtMode %#x - not system selector (%#x) -> #GP\n", u8Vector, Idte.Gate.u4Type));
         return iemRaiseGeneralProtectionFault(pIemCpu, X86_TRAP_ERR_IDT | ((uint16_t)u8Vector << X86_TRAP_ERR_SEL_SHIFT));
     }
+    bool     fTaskGate   = false;
     uint8_t  f32BitGate  = true;
     uint32_t fEflToClear = X86_EFL_TF | X86_EFL_NT | X86_EFL_RF | X86_EFL_VM;
     switch (Idte.Gate.u4Type)
@@ -2353,8 +3242,11 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
             break;
 
         case X86_SEL_TYPE_SYS_TASK_GATE:
-            /** @todo task gates. */
-            IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Task gates\n")); /** @todo Implement task gate support. */
+            fTaskGate = true;
+#ifndef IEM_IMPLEMENTS_TASKSWITCH
+            IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Task gates\n"));
+#endif
+            break;
 
         case X86_SEL_TYPE_SYS_286_TRAP_GATE:
             f32BitGate = false;
@@ -2379,6 +3271,50 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
     {
         Log(("RaiseXcptOrIntInProtMode %#x - not present -> #NP\n", u8Vector));
         return iemRaiseSelectorNotPresentWithErr(pIemCpu, X86_TRAP_ERR_IDT | ((uint16_t)u8Vector << X86_TRAP_ERR_SEL_SHIFT));
+    }
+
+    /* Is it a task-gate? */
+    if (fTaskGate)
+    {
+        /*
+         * Construct the error code masks based on what caused this task switch.
+         * See Intel Instruction reference for INT.
+         */
+        uint16_t const uExt     = (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? 0 : 1;
+        uint16_t const uSelMask = X86_SEL_MASK_OFF_RPL;
+        RTSEL          SelTSS   = Idte.Gate.u16Sel;
+
+        /*
+         * Fetch the TSS descriptor in the GDT.
+         */
+        IEMSELDESC DescTSS;
+        rcStrict = iemMemFetchSelDescWithErr(pIemCpu, &DescTSS, SelTSS, X86_XCPT_GP, (SelTSS & uSelMask) | uExt);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("RaiseXcptOrIntInProtMode %#x - failed to fetch TSS selector %#x, rc=%Rrc\n", u8Vector, SelTSS,
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+
+        /* The TSS descriptor must be a system segment and be available (not busy). */
+        if (   DescTSS.Legacy.Gen.u1DescType
+            || (   DescTSS.Legacy.Gen.u4Type != X86_SEL_TYPE_SYS_286_TSS_AVAIL
+                && DescTSS.Legacy.Gen.u4Type != X86_SEL_TYPE_SYS_386_TSS_AVAIL))
+        {
+            Log(("RaiseXcptOrIntInProtMode %#x - TSS selector %#x of task gate not a system descriptor or not available %#RX64\n",
+                 u8Vector, SelTSS, DescTSS.Legacy.au64));
+            return iemRaiseGeneralProtectionFault(pIemCpu, (SelTSS & uSelMask) | uExt);
+        }
+
+        /* The TSS must be present. */
+        if (!DescTSS.Legacy.Gen.u1Present)
+        {
+            Log(("RaiseXcptOrIntInProtMode %#x - TSS selector %#x not present %#RX64\n", u8Vector, SelTSS, DescTSS.Legacy.au64));
+            return iemRaiseSelectorNotPresentWithErr(pIemCpu, (SelTSS & uSelMask) | uExt);
+        }
+
+        /* Do the actual task switch. */
+        return iemTaskSwitch(pIemCpu, pCtx, IEMTASKSWITCH_INT_XCPT, pCtx->eip, fFlags, uErr, uCr2, SelTSS, &DescTSS);
     }
 
     /* A null CS is bad. */
@@ -3073,13 +4009,11 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseDeviceNotAvailable(PIEMCPU pIemCpu)
 }
 
 
-#ifdef SOME_UNUSED_FUNCTION
 /** \#TS(err) - 0a.  */
 DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseTaskSwitchFaultWithErr(PIEMCPU pIemCpu, uint16_t uErr)
 {
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_TS, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, uErr, 0);
 }
-#endif
 
 
 /** \#TS(tr) - 0a.  */
@@ -3134,6 +4068,13 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseStackSelectorNotPresentBySelector(P
 {
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_SS, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
                              uSel & ~X86_SEL_RPL, 0);
+}
+
+
+/** \#SS(err) - 0c.  */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseStackSelectorNotPresentWithErr(PIEMCPU pIemCpu, uint16_t uErr)
+{
+    return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_SS, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, uErr, 0);
 }
 
 
@@ -5886,7 +6827,7 @@ static VBOXSTRICTRC iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint
     /*
      * Check the input and figure out which mapping entry to use.
      */
-    Assert(cbMem <= 64 || cbMem == 512 || cbMem == 108 || cbMem == 94); /* 512 is the max! */
+    Assert(cbMem <= 64 || cbMem == 512 || cbMem == 108 || cbMem == 104 || cbMem == 94); /* 512 is the max! */
     Assert(~(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK)));
 
     unsigned iMemMap = pIemCpu->iNextMapping;
@@ -7138,16 +8079,19 @@ static VBOXSTRICTRC iemMemFetchSysU64(PIEMCPU pIemCpu, uint64_t *pu64Dst, uint8_
 
 
 /**
- * Fetches a descriptor table entry.
+ * Fetches a descriptor table entry with caller specified error code.
  *
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM per CPU.
  * @param   pDesc               Where to return the descriptor table entry.
  * @param   uSel                The selector which table entry to fetch.
  * @param   uXcpt               The exception to raise on table lookup error.
+ * @param   uErrorCode          The error code associated with the exception.
  */
-static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint16_t uSel, uint8_t uXcpt)
+static VBOXSTRICTRC iemMemFetchSelDescWithErr(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint16_t uSel, uint8_t uXcpt,
+                                              uint16_t uErrorCode)
 {
+    AssertPtr(pDesc);
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
     /** @todo did the 286 require all 8 bytes to be accessible? */
@@ -7163,7 +8107,7 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
             Log(("iemMemFetchSelDesc: LDT selector %#x is out of bounds (%3x) or ldtr is NP (%#x)\n",
                  uSel, pCtx->ldtr.u32Limit, pCtx->ldtr.Sel));
             return iemRaiseXcptOrInt(pIemCpu, 0, uXcpt, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
-                                     uSel & ~X86_SEL_RPL, 0);
+                                     uErrorCode, 0);
         }
 
         Assert(pCtx->ldtr.Attr.n.u1Present);
@@ -7175,7 +8119,7 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
         {
             Log(("iemMemFetchSelDesc: GDT selector %#x is out of bounds (%3x)\n", uSel, pCtx->gdtr.cbGdt));
             return iemRaiseXcptOrInt(pIemCpu, 0, uXcpt, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
-                                     uSel & ~X86_SEL_RPL, 0);
+                                     uErrorCode, 0);
         }
         GCPtrBase = pCtx->gdtr.pGdt;
     }
@@ -7196,11 +8140,25 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
         {
             Log(("iemMemFetchSelDesc: system selector %#x is out of bounds\n", uSel));
             /** @todo is this the right exception? */
-            return iemRaiseXcptOrInt(pIemCpu, 0, uXcpt, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
-                                     uSel & ~X86_SEL_RPL, 0);
+            return iemRaiseXcptOrInt(pIemCpu, 0, uXcpt, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, uErrorCode, 0);
         }
     }
     return rcStrict;
+}
+
+
+/**
+ * Fetches a descriptor table entry.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM per CPU.
+ * @param   pDesc               Where to return the descriptor table entry.
+ * @param   uSel                The selector which table entry to fetch.
+ * @param   uXcpt               The exception to raise on table lookup error.
+ */
+static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint16_t uSel, uint8_t uXcpt)
+{
+    return iemMemFetchSelDescWithErr(pIemCpu, pDesc, uSel, uXcpt, uSel & X86_SEL_MASK_OFF_RPL);
 }
 
 
@@ -8736,7 +9694,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
         RTGCUINT    uErrCode;
         RTGCPTR     uCr2;
         int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, NULL /* pu8InstLen */); AssertRC(rc2);
-        IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2);
+        IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2, 0 /* cbInstr */);
         if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             TRPMResetTrap(pVCpu);
         pIemCpu->uInjectCpl = pIemCpu->uCpl;
@@ -9533,13 +10491,13 @@ static void iemLogCurInstr(PVMCPU pVCpu, PCPUMCTX pCtx, bool fSameCtx)
 
         Log2(("****\n"
               " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
-              " eip=%08x esp=%08x ebp=%08x iopl=%d\n"
+              " eip=%08x esp=%08x ebp=%08x iopl=%d tr=%04x\n"
               " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
               " fsw=%04x fcw=%04x ftw=%02x mxcsr=%04x/%04x\n"
               " %s\n"
               ,
               pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
-              pCtx->eip, pCtx->esp, pCtx->ebp, pCtx->eflags.Bits.u2IOPL,
+              pCtx->eip, pCtx->esp, pCtx->ebp, pCtx->eflags.Bits.u2IOPL, pCtx->tr.Sel,
               pCtx->cs.Sel, pCtx->ss.Sel, pCtx->ds.Sel, pCtx->es.Sel,
               pCtx->fs.Sel, pCtx->gs.Sel, pCtx->eflags.u,
               pCtx->fpu.FSW, pCtx->fpu.FCW, pCtx->fpu.FTW, pCtx->fpu.MXCSR, pCtx->fpu.MXCSR_MASK,
@@ -9860,7 +10818,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
         RTGCUINT    uErrCode;
         RTGCPTR     uCr2;
         int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, NULL /* pu8InstLen */); AssertRC(rc2);
-        IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2);
+        IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2, 0 /* cbInstr */);
         if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             TRPMResetTrap(pVCpu);
     }
@@ -9897,7 +10855,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
     rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pIemCpu->CTX_SUFF(pCtx), rcStrict);
 #endif
     if (rcStrict != VINF_SUCCESS)
-        LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
+        LogFlow(("IEMExecLots: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
                  pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp, pCtx->eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
@@ -9916,8 +10874,11 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
  *                              interrupt or hardware interrupt.
  * @param   uErrCode            The error code if applicable.
  * @param   uCr2                The CR2 value if applicable.
+ * @param   cbInstr             The instruction length (only relevant for
+ *                              software interrupts).
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2)
+VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2,
+                                         uint8_t cbInstr)
 {
     iemInitDecoder(&pVCpu->iem.s, false);
 #ifdef DBGFTRACE_ENABLED
@@ -9961,7 +10922,29 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVE
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 
-    return iemRaiseXcptOrInt(&pVCpu->iem.s, 0, u8TrapNo, fFlags, uErrCode, uCr2);
+    return iemRaiseXcptOrInt(&pVCpu->iem.s, cbInstr, u8TrapNo, fFlags, uErrCode, uCr2);
+}
+
+
+/**
+ * Injects the active TRPM event.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               Pointer to the VMCPU.
+ */
+VMMDECL(VBOXSTRICTRC) IEMInjectTrpmEvent(PVMCPU pVCpu)
+{
+    uint8_t     u8TrapNo;
+    TRPMEVENT   enmType;
+    RTGCUINT    uErrCode;
+    RTGCUINTPTR uCr2;
+    uint8_t     cbInstr;
+    int rc = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, &cbInstr);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    TRPMResetTrap(pVCpu);
+    return IEMInjectTrap(pVCpu, u8TrapNo, enmType, uErrCode, uCr2, cbInstr);
 }
 
 

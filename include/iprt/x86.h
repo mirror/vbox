@@ -3066,6 +3066,16 @@ typedef PCX86DESC   PCX86DESCHC;
  */
 
 /**
+ * The minimum TSS descriptor limit for 286 tasks.
+ */
+#define X86_SEL_TYPE_SYS_286_TSS_LIMIT_MIN      0x2b
+
+/**
+ * The minimum TSS descriptor segment limit for 386 tasks.
+ */
+#define X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN      0x67
+
+/**
  * 16-bit Task Segment (TSS).
  */
 #pragma pack(1)
@@ -3117,7 +3127,7 @@ typedef struct X86TSS16
     RTSEL       selLdt;
 } X86TSS16;
 #ifndef VBOX_FOR_DTRACE_LIB
-AssertCompileSize(X86TSS16, 44);
+AssertCompileSize(X86TSS16, X86_SEL_TYPE_SYS_286_TSS_LIMIT_MIN + 1);
 #endif
 #pragma pack()
 /** Pointer to a 16-bit task segment. */
@@ -3207,7 +3217,6 @@ typedef X86TSS32 *PX86TSS32;
 /** Pointer to const task segment. */
 typedef const X86TSS32 *PCX86TSS32;
 
-
 /**
  * 64-bit Task segment.
  */
@@ -3288,23 +3297,6 @@ AssertCompileSize(X86TSS64, 136);
  * checks.
  */
 #define X86_SEL_RPL_LDT         0x0007U
-
-/** @} */
-
-
-/** @name Task Descriptors.
- * @{
- */
-
-/**
- * The minimum TSS descriptor limit for 286 tasks.
- */
-#define X86_SEL_TYPE_SYS_286_TSS_LIMIT      0x2c
-
-/**
- * The minimum TSS descriptor segment limit for 386 tasks.
- */
-#define X86_SEL_TYPE_SYS_386_TSS_LIMIT      0x67
 
 /** @} */
 

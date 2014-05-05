@@ -246,6 +246,8 @@
 /** The specified execution engine cannot execute guest code in the current
  *  state. */
 #define VERR_EM_CANNOT_EXEC_GUEST           (-1156)
+/** Reason for leaving RC: Inject a TRPM event. */
+#define VINF_EM_RAW_INJECT_TRPM_EVENT       1157
 /** @} */
 
 
