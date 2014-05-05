@@ -3875,22 +3875,22 @@ bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
 
 bool VBoxGlobal::isDebuggerEnabled(CMachine &aMachine)
 {
-    return isDebuggerWorker(&mDbgEnabled, aMachine, GUI_DbgEnabled);
+    return isDebuggerWorker(&mDbgEnabled, aMachine, GUI_Dbg_Enabled);
 }
 
 bool VBoxGlobal::isDebuggerAutoShowEnabled(CMachine &aMachine)
 {
-    return isDebuggerWorker(&mDbgAutoShow, aMachine, GUI_DbgAutoShow);
+    return isDebuggerWorker(&mDbgAutoShow, aMachine, GUI_Dbg_AutoShow);
 }
 
 bool VBoxGlobal::isDebuggerAutoShowCommandLineEnabled(CMachine &aMachine)
 {
-    return isDebuggerWorker(&mDbgAutoShowCommandLine, aMachine, GUI_DbgAutoShow);
+    return isDebuggerWorker(&mDbgAutoShowCommandLine, aMachine, GUI_Dbg_AutoShow);
 }
 
 bool VBoxGlobal::isDebuggerAutoShowStatisticsEnabled(CMachine &aMachine)
 {
-    return isDebuggerWorker(&mDbgAutoShowStatistics, aMachine, GUI_DbgAutoShow);
+    return isDebuggerWorker(&mDbgAutoShowStatistics, aMachine, GUI_Dbg_AutoShow);
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -4057,11 +4057,11 @@ void VBoxGlobal::prepare()
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # ifdef VBOX_WITH_DEBUGGER_GUI_MENU
-    initDebuggerVar(&mDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_DbgEnabled, true);
+    initDebuggerVar(&mDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_Dbg_Enabled, true);
 # else
-    initDebuggerVar(&mDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_DbgEnabled, false);
+    initDebuggerVar(&mDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_Dbg_Enabled, false);
 # endif
-    initDebuggerVar(&mDbgAutoShow, "VBOX_GUI_DBG_AUTO_SHOW", GUI_DbgAutoShow, false);
+    initDebuggerVar(&mDbgAutoShow, "VBOX_GUI_DBG_AUTO_SHOW", GUI_Dbg_AutoShow, false);
     mDbgAutoShowCommandLine = mDbgAutoShowStatistics = mDbgAutoShow;
     mStartPaused = false;
 #endif

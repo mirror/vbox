@@ -28,7 +28,6 @@ namespace UIExtraDataDefs
 {
     /* Global declarations: */
     extern const char* GUI_LanguageId;
-    extern const char* GUI_ExtPackName;
     extern const char* GUI_PreventBetaWarning;
     extern const char* GUI_RecentFolderHD;
     extern const char* GUI_RecentFolderCD;
@@ -60,11 +59,6 @@ namespace UIExtraDataDefs
     extern const char* GUI_UpdateCheckCount;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
-#ifdef Q_WS_X11
-    /* License GUI declarations: */
-    extern const char* GUI_LicenseKey;
-#endif /* Q_WS_X11 */
-
     /* Selector UI declarations: */
     extern const char* GUI_Input_SelectorShortcuts;
     extern const char* GUI_LastSelectorWindowPosition;
@@ -73,8 +67,6 @@ namespace UIExtraDataDefs
     extern const char* GUI_Statusbar;
     extern const char* GUI_PreviewUpdate;
     extern const char* GUI_DetailsPageBoxes;
-    extern const char* GUI_SelectorVMPositions;
-    extern const char* GUI_LastVMSelected;
     extern const char* GUI_LastItemSelected;
     extern const char* GUI_GroupDefinitions;
     extern const char* GUI_HideFromManager;
@@ -118,7 +110,7 @@ namespace UIExtraDataDefs
     extern const char* GUI_RestrictedStatusBarIndicators;
     extern const char* GUI_HidLedsSync;
     extern const char* GUI_GuruMeditationHandler;
-    extern const char* GUI_HiDPIOptimization;
+    extern const char* GUI_HiDPI_Optimization;
 
     /* Runtime UI: Mini-toolbar declarations: */
     extern const char* GUI_ShowMiniToolBar;
@@ -151,8 +143,8 @@ namespace UIExtraDataDefs
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Runtime UI: Debugger GUI declarations: */
-    extern const char* GUI_DbgEnabled;
-    extern const char* GUI_DbgAutoShow;
+    extern const char* GUI_Dbg_Enabled;
+    extern const char* GUI_Dbg_AutoShow;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 }
 using namespace UIExtraDataDefs /* if header included */;

@@ -20,7 +20,6 @@
 
 /* Global definitions: */
 const char* UIExtraDataDefs::GUI_LanguageId = "GUI/LanguageID";
-const char* UIExtraDataDefs::GUI_ExtPackName = "Oracle VM VirtualBox Extension Pack";
 const char* UIExtraDataDefs::GUI_PreventBetaWarning = "GUI/PreventBetaWarning";
 const char* UIExtraDataDefs::GUI_RecentFolderHD = "GUI/RecentFolderHD";
 const char* UIExtraDataDefs::GUI_RecentFolderCD = "GUI/RecentFolderCD";
@@ -52,11 +51,6 @@ const char* UIExtraDataDefs::GUI_UpdateDate = "GUI/UpdateDate";
 const char* UIExtraDataDefs::GUI_UpdateCheckCount = "GUI/UpdateCheckCount";
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
-#ifdef Q_WS_X11
-/* License GUI definitions: */
-const char* UIExtraDataDefs::GUI_LicenseKey = "GUI/LicenseAgreed";
-#endif /* Q_WS_X11 */
-
 /* Selector UI definitions: */
 const char* UIExtraDataDefs::GUI_Input_SelectorShortcuts = "GUI/Input/SelectorShortcuts";
 const char* UIExtraDataDefs::GUI_LastSelectorWindowPosition = "GUI/LastWindowPosition";
@@ -65,8 +59,6 @@ const char* UIExtraDataDefs::GUI_Toolbar = "GUI/Toolbar";
 const char* UIExtraDataDefs::GUI_Statusbar = "GUI/Statusbar";
 const char* UIExtraDataDefs::GUI_PreviewUpdate = "GUI/PreviewUpdate";
 const char* UIExtraDataDefs::GUI_DetailsPageBoxes = "GUI/DetailsPageBoxes";
-const char* UIExtraDataDefs::GUI_SelectorVMPositions = "GUI/SelectorVMPositions";
-const char* UIExtraDataDefs::GUI_LastVMSelected = "GUI/LastVMSelected";
 const char* UIExtraDataDefs::GUI_LastItemSelected = "GUI/LastItemSelected";
 const char* UIExtraDataDefs::GUI_GroupDefinitions = "GUI/GroupDefinitions";
 const char* UIExtraDataDefs::GUI_HideFromManager = "GUI/HideFromManager";
@@ -110,7 +102,7 @@ const char* UIExtraDataDefs::GUI_DefaultCloseAction = "GUI/DefaultCloseAction";
 const char* UIExtraDataDefs::GUI_RestrictedStatusBarIndicators = "GUI/RestrictedStatusBarIndicators";
 const char* UIExtraDataDefs::GUI_HidLedsSync = "GUI/HidLedsSync";
 const char* UIExtraDataDefs::GUI_GuruMeditationHandler = "GUI/GuruMeditationHandler";
-const char* UIExtraDataDefs::GUI_HiDPIOptimization = "GUI/HiDPI/Optimization";
+const char* UIExtraDataDefs::GUI_HiDPI_Optimization = "GUI/HiDPI/Optimization";
 
 /* Runtime UI: Mini-toolbar definitions: */
 const char* UIExtraDataDefs::GUI_ShowMiniToolBar = "GUI/ShowMiniToolBar";
@@ -143,7 +135,7 @@ const char* UIExtraDataDefs::GUI_InfoDlgState = "GUI/InfoDlgState";
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 /* Runtime UI: Debugger GUI definitions: */
-const char* UIExtraDataDefs::GUI_DbgEnabled = "GUI/Dbg/Enabled";
-const char* UIExtraDataDefs::GUI_DbgAutoShow = "GUI/Dbg/AutoShow";
+const char* UIExtraDataDefs::GUI_Dbg_Enabled = "GUI/Dbg/Enabled";
+const char* UIExtraDataDefs::GUI_Dbg_AutoShow = "GUI/Dbg/AutoShow";
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
