@@ -398,7 +398,7 @@ GuruMeditationHandlerType UIExtraDataManager::guruMeditationHandlerType(const QS
 
 HiDPIOptimizationType UIExtraDataManager::hiDPIOptimizationType(const QString &strID) const
 {
-    return gpConverter->fromInternalString<HiDPIOptimizationType>(extraDataString(GUI_HiDPIOptimization, strID));
+    return gpConverter->fromInternalString<HiDPIOptimizationType>(extraDataString(GUI_HiDPI_Optimization, strID));
 }
 
 void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)

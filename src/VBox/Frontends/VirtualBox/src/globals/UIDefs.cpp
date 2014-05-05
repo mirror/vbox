@@ -18,6 +18,9 @@
 /* GUI includes: */
 #include "UIDefs.h"
 
+/* Extension-pack definitions: */
+const char* UIDefs::GUI_ExtPackName = "Oracle VM VirtualBox Extension Pack";
+
 /* File extensions definitions: */
 QStringList UIDefs::VBoxFileExts = QStringList() << "xml" << "vbox";
 QStringList UIDefs::VBoxExtPackFileExts = QStringList() << "vbox-extpack";

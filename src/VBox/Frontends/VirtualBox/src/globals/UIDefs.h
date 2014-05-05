@@ -77,6 +77,9 @@ namespace UIDefs
         FormatSize_RoundUp
     };
 
+    /* Extension-pack declarations: */
+    extern const char* GUI_ExtPackName;
+
     /* File extensions declarations: */
     extern QStringList VBoxFileExts;
     extern QStringList VBoxExtPackFileExts;
