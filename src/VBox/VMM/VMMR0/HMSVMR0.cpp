@@ -4844,18 +4844,13 @@ HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT
     {
         /*
          * AMD-V does not provide us with the original exception but we have it in u64IntInfo since we
-         * injected the event during VM-entry. Software interrupts and exceptions will be regenerated
-         * when the recompiler restarts the instruction.
+         * injected the event during VM-entry.
          */
         SVMEVENT Event;
         Event.u = pVCpu->hm.s.Event.u64IntInfo;
-        if (   Event.n.u3Type == SVM_EVENT_EXCEPTION
-            || Event.n.u3Type == SVM_EVENT_SOFTWARE_INT)
-        {
-            pVCpu->hm.s.Event.fPending = false;
-        }
-        else
-            Log4(("hmR0SvmExitTaskSwitch: TS occurred during event delivery. Kept pending u8Vector=%#x\n", Event.n.u8Vector));
+        Log4(("hmR0SvmExitTaskSwitch: TS occurred during event delivery. u8Vector=%#x\n", Event.n.u8Vector));
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitTaskSwitch);
+        return VINF_EM_RAW_INJECT_TRPM_EVENT;
     }
 
     /** @todo Emulate task switch someday, currently just going back to ring-3 for

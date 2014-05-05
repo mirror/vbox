@@ -522,6 +522,23 @@ typedef IEMCPU const *PCIEMCPU;
 /** @} */
 
 /**
+ * Possible hardware task switch sources.
+ */
+typedef enum IEMTASKSWITCH
+{
+    /** Task switch caused by an interrupt/exception. */
+    IEMTASKSWITCH_INT_XCPT = 1,
+    /** Task switch caused by a far CALL. */
+    IEMTASKSWITCH_CALL,
+    /** Task switch caused by a far JMP. */
+    IEMTASKSWITCH_JUMP,
+    /** Task switch caused by an IRET. */
+    IEMTASKSWITCH_IRET
+} IEMTASKSWITCH;
+AssertCompileSize(IEMTASKSWITCH, 4);
+
+
+/**
  * Tests if verification mode is enabled.
  *
  * This expands to @c false when IEM_VERIFICATION_MODE is not defined and

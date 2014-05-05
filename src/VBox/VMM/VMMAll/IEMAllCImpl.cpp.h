@@ -189,37 +189,6 @@ static void iemHlpUpdateArithEFlagsU8(PIEMCPU pIemCpu, uint8_t u8Result, uint32_
 
 
 /**
- * Loads a NULL data selector into a selector register, both the hidden and
- * visible parts, in protected mode.
- *
- * @param   pIemCpu             The IEM state of the calling EMT.
- * @param   pSReg               Pointer to the segment register.
- * @param   uRpl                The RPL.
- */
-static void iemHlpLoadNullDataSelectorProt(PIEMCPU pIemCpu, PCPUMSELREG pSReg, RTSEL uRpl)
-{
-    /** @todo Testcase: write a testcase checking what happends when loading a NULL
-     *        data selector in protected mode. */
-    pSReg->Sel      = uRpl;
-    pSReg->ValidSel = uRpl;
-    pSReg->fFlags   = CPUMSELREG_FLAGS_VALID;
-    if (IEM_IS_GUEST_CPU_INTEL(pIemCpu) && !IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
-    {
-        /* VT-x (Intel 3960x) observed doing something like this. */
-        pSReg->Attr.u   = X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | (pIemCpu->uCpl << X86DESCATTR_DPL_SHIFT);
-        pSReg->u32Limit = UINT32_MAX;
-        pSReg->u64Base  = 0;
-    }
-    else
-    {
-        pSReg->Attr.u   = X86DESCATTR_UNUSABLE;
-        pSReg->u32Limit = 0;
-        pSReg->u64Base  = 0;
-    }
-}
-
-
-/**
  * Helper used by iret.
  *
  * @param   uCpl                The new CPL.
@@ -913,12 +882,39 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
  * @param   enmBranch       The kind of branching we're performing.
  * @param   enmEffOpSize    The effective operand size.
  * @param   pDesc           The descriptor corrsponding to @a uSel. The type is
- *                          call gate.
+ *                          task gate.
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchTaskSegment, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
 {
-    /* Call various functions to do the work.  Clear RF? */
+#ifndef IEM_IMPLEMENTS_TASKSWITCH
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
+#else
+    Assert(enmBranch == IEMBRANCH_JUMP || enmBranch == IEMBRANCH_CALL);
+    Assert(   pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_TSS_AVAIL
+           || pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL);
+
+    if (   pDesc->Legacy.Gate.u2Dpl < pIemCpu->uCpl
+        || pDesc->Legacy.Gate.u2Dpl < (uSel & X86_SEL_RPL))
+    {
+        Log(("BranchTaskSegment invalid priv. uSel=%04x TSS DPL=%d CPL=%u Sel RPL=%u -> #GP\n", uSel, pDesc->Legacy.Gate.u2Dpl,
+             pIemCpu->uCpl, (uSel & X86_SEL_RPL)));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel & X86_SEL_MASK_OFF_RPL);
+    }
+
+    /** @todo This is checked earlier for far jumps (see iemCImpl_FarJmp) but not
+     *        far calls (see iemCImpl_callf). Most likely in both cases it should be
+     *        checked here, need testcases. */
+    if (!pDesc->Legacy.Gen.u1Present)
+    {
+        Log(("BranchTaskSegment TSS not present uSel=%04x -> #NP\n", uSel));
+        return iemRaiseSelectorNotPresentBySelector(pIemCpu, uSel & X86_SEL_MASK_OFF_RPL);
+    }
+
+    PCPUMCTX pCtx     = pIemCpu->CTX_SUFF(pCtx);
+    uint32_t uNextEip = pCtx->eip + cbInstr;
+    return iemTaskSwitch(pIemCpu, pIemCpu->CTX_SUFF(pCtx), enmBranch == IEMBRANCH_JUMP ? IEMTASKSWITCH_JUMP : IEMTASKSWITCH_CALL,
+                         uNextEip, 0 /* fFlags */, 0 /* uErr */, 0 /* uCr2 */, uSel, pDesc);
+#endif
 }
 
 
@@ -929,12 +925,65 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskSegment, uint16_t, uSel, IEMBRANCH, enmBranch
  * @param   enmBranch       The kind of branching we're performing.
  * @param   enmEffOpSize    The effective operand size.
  * @param   pDesc           The descriptor corrsponding to @a uSel. The type is
- *                          call gate.
+ *                          task gate.
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchTaskGate, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
 {
-    /* Call various functions to do the work. Don't clear RF */
+#ifndef IEM_IMPLEMENTS_TASKSWITCH
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
+#else
+    Assert(enmBranch == IEMBRANCH_JUMP || enmBranch == IEMBRANCH_CALL);
+
+    if (   pDesc->Legacy.Gate.u2Dpl < pIemCpu->uCpl
+        || pDesc->Legacy.Gate.u2Dpl < (uSel & X86_SEL_RPL))
+    {
+        Log(("BranchTaskGate invalid priv. uSel=%04x TSS DPL=%d CPL=%u Sel RPL=%u -> #GP\n", uSel, pDesc->Legacy.Gate.u2Dpl,
+             pIemCpu->uCpl, (uSel & X86_SEL_RPL)));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel & X86_SEL_MASK_OFF_RPL);
+    }
+
+    /** @todo This is checked earlier for far jumps (see iemCImpl_FarJmp) but not
+     *        far calls (see iemCImpl_callf). Most likely in both cases it should be
+     *        checked here, need testcases. */
+    if (!pDesc->Legacy.Gen.u1Present)
+    {
+        Log(("BranchTaskSegment segment not present uSel=%04x -> #NP\n", uSel));
+        return iemRaiseSelectorNotPresentBySelector(pIemCpu, uSel & X86_SEL_MASK_OFF_RPL);
+    }
+
+    /*
+     * Fetch the new TSS descriptor from the GDT.
+     */
+    RTSEL uSelTss = pDesc->Legacy.Gate.u16Sel;
+    if (uSelTss  & X86_SEL_LDT)
+    {
+        Log(("BranchTaskGate TSS is in LDT. uSel=%04x uSelTss=%04x -> #GP\n", uSel, uSelTss));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel & X86_SEL_MASK_OFF_RPL);
+    }
+
+    IEMSELDESC TssDesc;
+    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, &TssDesc, uSelTss, X86_XCPT_GP);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    if (TssDesc.Legacy.Gate.u4Type & X86_SEL_TYPE_SYS_TSS_BUSY_MASK)
+    {
+        Log(("BranchTaskGate TSS is busy. uSel=%04x uSelTss=%04x DescType=%#x -> #GP\n", uSel, uSelTss,
+             TssDesc.Legacy.Gate.u4Type));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel & X86_SEL_MASK_OFF_RPL);
+    }
+
+    if (!TssDesc.Legacy.Gate.u1Present)
+    {
+        Log(("BranchTaskGate TSS is not present. uSel=%04x uSelTss=%04x -> #NP\n", uSel, uSelTss));
+        return iemRaiseSelectorNotPresentBySelector(pIemCpu, uSelTss & X86_SEL_MASK_OFF_RPL);
+    }
+
+    PCPUMCTX pCtx     = pIemCpu->CTX_SUFF(pCtx);
+    uint32_t uNextEip = pCtx->eip + cbInstr;
+    return iemTaskSwitch(pIemCpu, pIemCpu->CTX_SUFF(pCtx), enmBranch == IEMBRANCH_JUMP ? IEMTASKSWITCH_JUMP : IEMTASKSWITCH_CALL,
+                         uNextEip, 0 /* fFlags */, 0 /* uErr */, 0 /* uCr2 */, uSelTss, &TssDesc);
+#endif
 }
 
 
@@ -981,7 +1030,6 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchSysSel, uint16_t, uSel, IEMBRANCH, enmBranch, IEM
             case AMD64_SEL_TYPE_SYS_INT_GATE:
                 Log(("branch %04x -> wrong sys selector (64-bit): %d\n", uSel, pDesc->Legacy.Gen.u4Type));
                 return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
-
         }
 
     switch (pDesc->Legacy.Gen.u4Type)
@@ -2241,7 +2289,55 @@ IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, PCPUMCTX, pCtx, uint32_t, uNewEip, uin
  */
 IEM_CIMPL_DEF_1(iemCImpl_iret_prot_NestedTask, IEMMODE, enmEffOpSize)
 {
+#ifndef IEM_IMPLEMENTS_TASKSWITCH
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
+#else
+    /*
+     * Read the segment selector in the link-field of the current TSS.
+     */
+    RTSEL        uSelRet;
+    PCPUMCTX     pCtx = pIemCpu->CTX_SUFF(pCtx);
+    VBOXSTRICTRC rcStrict = iemMemFetchSysU16(pIemCpu, &uSelRet, UINT8_MAX, pCtx->tr.u64Base);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /*
+     * Fetch the returning task's TSS descriptor from the GDT.
+     */
+    if (uSelRet & X86_SEL_LDT)
+    {
+        Log(("iret_prot_NestedTask TSS not in LDT. uSelRet=%04x -> #TS\n", uSelRet));
+        return iemRaiseTaskSwitchFaultBySelector(pIemCpu, uSelRet);
+    }
+
+    IEMSELDESC TssDesc;
+    rcStrict = iemMemFetchSelDesc(pIemCpu, &TssDesc, uSelRet, X86_XCPT_GP);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    if (TssDesc.Legacy.Gate.u1DescType)
+    {
+        Log(("iret_prot_NestedTask Invalid TSS type. uSelRet=%04x -> #TS\n", uSelRet));
+        return iemRaiseTaskSwitchFaultBySelector(pIemCpu, uSelRet & X86_SEL_MASK_OFF_RPL);
+    }
+
+    if (   TssDesc.Legacy.Gate.u4Type != X86_SEL_TYPE_SYS_286_TSS_BUSY
+        && TssDesc.Legacy.Gate.u4Type != X86_SEL_TYPE_SYS_386_TSS_BUSY)
+    {
+        Log(("iret_prot_NestedTask TSS is not busy. uSelRet=%04x DescType=%#x -> #TS\n", uSelRet, TssDesc.Legacy.Gate.u4Type));
+        return iemRaiseTaskSwitchFaultBySelector(pIemCpu, uSelRet & X86_SEL_MASK_OFF_RPL);
+    }
+
+    if (!TssDesc.Legacy.Gate.u1Present)
+    {
+        Log(("iret_prot_NestedTask TSS is not present. uSelRet=%04x -> #NP\n", uSelRet));
+        return iemRaiseSelectorNotPresentBySelector(pIemCpu, uSelRet & X86_SEL_MASK_OFF_RPL);
+    }
+
+    uint32_t uNextEip = pCtx->eip + cbInstr;
+    return iemTaskSwitch(pIemCpu, pIemCpu->CTX_SUFF(pCtx), IEMTASKSWITCH_IRET, uNextEip, 0 /* fFlags */, 0 /* uErr */,
+                         0 /* uCr2 */, uSelRet, &TssDesc);
+#endif
 }
 
 
