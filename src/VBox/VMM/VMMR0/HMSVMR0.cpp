@@ -4840,7 +4840,7 @@ HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT
     /* Check if this task-switch occurred while delivery an event through the guest IDT. */
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     if (   !(pVmcb->ctrl.u64ExitInfo2 & (SVM_EXIT2_TASK_SWITCH_IRET | SVM_EXIT2_TASK_SWITCH_JMP))
-        && pVCpu->hm.s.Event.fPending)      /** @todo fPending cannot be 'true' here, see hmR0SvmInjectPendingEvent(). */
+        && pVCpu->hm.s.Event.fPending)  /** @todo fPending cannot be 'true', see hmR0SvmInjectPendingEvent(). See @bugref{7362}.*/
     {
         /*
          * AMD-V does not provide us with the original exception but we have it in u64IntInfo since we
