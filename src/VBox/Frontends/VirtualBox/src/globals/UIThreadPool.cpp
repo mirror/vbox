@@ -19,15 +19,8 @@
 #include <QThread>
 
 /* GUI includes: */
-#include "COMDefs.h"
 #include "UIThreadPool.h"
-
-/* Other VBox defines: */
-#define LOG_GROUP LOG_GROUP_GUI
-
-/* Other VBox includes: */
-#include <VBox/log.h>
-#include <VBox/sup.h>
+#include "UIDefs.h"
 
 /**
  * COM capable worker thread for the UIThreadPool.

@@ -32,7 +32,7 @@
 #include "UIGChooserModel.h"
 #include "UIGChooserItemGroup.h"
 #include "UIGChooserItemMachine.h"
-#include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UIExtraDataManager.h"
@@ -1705,7 +1705,7 @@ UIGChooserItem* UIGChooserModel::getGroupItem(const QString &strName, UIGChooser
 bool UIGChooserModel::shouldBeGroupOpened(UIGChooserItem *pParentItem, const QString &strName)
 {
     /* Prepare extra-data key for the parent-item: */
-    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + pParentItem->fullName();
+    QString strExtraDataKey = GUI_GroupDefinitions + pParentItem->fullName();
     /* Read group definitions: */
     QStringList definitions = vboxGlobal().virtualBox().GetExtraDataStringList(strExtraDataKey);
     /* Return 'false' if no definitions found: */
@@ -1776,7 +1776,7 @@ int UIGChooserModel::getDesiredPosition(UIGChooserItem *pParentItem, UIGChooserI
 int UIGChooserModel::positionFromDefinitions(UIGChooserItem *pParentItem, UIGChooserItemType type, const QString &strName)
 {
     /* Prepare extra-data key for the parent-item: */
-    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + pParentItem->fullName();
+    QString strExtraDataKey = GUI_GroupDefinitions + pParentItem->fullName();
     /* Read group definitions: */
     QStringList definitions = vboxGlobal().virtualBox().GetExtraDataStringList(strExtraDataKey);
     /* Return 'false' if no definitions found: */
@@ -1884,7 +1884,7 @@ void UIGChooserModel::gatherGroupOrders(QMap<QString, QStringList> &groups,
                                         UIGChooserItem *pParentItem)
 {
     /* Prepare extra-data key for current group: */
-    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + pParentItem->fullName();
+    QString strExtraDataKey = GUI_GroupDefinitions + pParentItem->fullName();
     /* Iterate over all the group-items: */
     foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Group))
     {
@@ -2094,7 +2094,7 @@ void UIGroupOrderSaveThread::run()
     /* Clear all the extra-data records related to group-definitions: */
     const QVector<QString> extraDataKeys = vboxGlobal().virtualBox().GetExtraDataKeys();
     foreach (const QString &strKey, extraDataKeys)
-        if (strKey.startsWith(UIDefs::GUI_GroupDefinitions))
+        if (strKey.startsWith(GUI_GroupDefinitions))
             vboxGlobal().virtualBox().SetExtraData(strKey, QString());
 
     /* For every particular group definition: */

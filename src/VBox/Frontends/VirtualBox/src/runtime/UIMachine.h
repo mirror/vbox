@@ -21,7 +21,7 @@
 #include <QObject>
 
 /* GUI includes: */
-#include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 #include "UIMachineDefs.h"
 
 /* COM includes: */

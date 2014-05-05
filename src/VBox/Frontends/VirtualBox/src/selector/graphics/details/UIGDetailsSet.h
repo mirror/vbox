@@ -21,7 +21,7 @@
 
 /* GUI includes: */
 #include "UIGDetailsItem.h"
-#include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 #include "UISettingsDefs.h"
 
 /* COM includes: */

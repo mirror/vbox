@@ -24,8 +24,8 @@
 #include <QEventLoop>
 
 /* GUI includes: */
-#include "UIDefs.h"
 #include "UIMachineDefs.h"
+#include "UIExtraDataDefs.h"
 #ifdef Q_WS_MAC
 # include <CoreFoundation/CFBase.h>
 #endif /* Q_WS_MAC */

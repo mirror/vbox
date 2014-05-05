@@ -32,6 +32,7 @@
 /* GUI includes: */
 #include "UIDefs.h"
 #include "UIMediumDefs.h"
+#include "UIExtraDataDefs.h"
 #include "VBoxGlobalSettings.h"
 
 /* COM includes: */

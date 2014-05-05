@@ -25,8 +25,8 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "UIDefs.h"
 #include "UISettingsDefs.h"
+#include "UIExtraDataDefs.h"
 #include "VBoxGlobalSettings.h"
 
 /* COM includes: */

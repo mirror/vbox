@@ -21,7 +21,7 @@
 
 /* GUI includes: */
 #include "QIStateIndicator.h"
-#include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
 class CSession;

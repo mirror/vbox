@@ -26,7 +26,7 @@
 #include <QSet>
 
 /* GUI includes: */
-#include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"

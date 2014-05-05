@@ -543,6 +543,7 @@ VirtualBox_SOURCES = \
 	src/extensions/QIWidgetValidator.cpp \
 	src/extensions/QIAdvancedToolBar.cpp \
 	src/extensions/graphics/QIGraphicsWidget.cpp \
+	src/extradata/UIExtraDataDefs.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/COMDefs.cpp \
