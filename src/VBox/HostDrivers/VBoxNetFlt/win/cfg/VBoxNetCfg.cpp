@@ -276,21 +276,19 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallComponent(IN INetCfg *pNetCfg, I
     return hr;
 }
 
-/** @todo r=bird: This function is not in the header file, why is it
- *        exported? */
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallInfAndComponent(IN INetCfg *pNetCfg, IN LPCWSTR pszwComponentId, IN const GUID *pguidClass,
-                                                                IN LPCWSTR const *apInfPaths, IN UINT cInfPaths,
-                                                                OUT INetCfgComponent **ppComponent)
+static HRESULT vboxNetCfgWinInstallInfAndComponent(IN INetCfg *pNetCfg, IN LPCWSTR pszwComponentId, IN const GUID *pguidClass,
+                                                   IN LPCWSTR const *apInfPaths, IN UINT cInfPaths,
+                                                   OUT INetCfgComponent **ppComponent)
 {
     HRESULT hr = S_OK;
-    UINT i = 0;
+    UINT cFilesProcessed = 0;
 
     NonStandardLogFlow(("Installing %u INF files ...\n", cInfPaths));
 
-    for (; i < cInfPaths; i++)
+    for (; cFilesProcessed < cInfPaths; cFilesProcessed++)
     {
-        NonStandardLogFlow(("Installing INF file \"%ws\" ...\n", apInfPaths[i]));
-        hr = VBoxDrvCfgInfInstall(apInfPaths[i]);
+        NonStandardLogFlow(("Installing INF file \"%ws\" ...\n", apInfPaths[cFilesProcessed]));
+        hr = VBoxDrvCfgInfInstall(apInfPaths[cFilesProcessed]);
         if (FAILED(hr))
         {
             NonStandardLogFlow(("VBoxNetCfgWinInfInstall failed, hr (0x%x)\n", hr));
@@ -307,8 +305,19 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallInfAndComponent(IN INetCfg *pNet
 
     if (FAILED(hr))
     {
-        for (UINT j = i - 1; j != 0; j--)
-            VBoxDrvCfgInfUninstall(apInfPaths[j], 0);
+        NonStandardLogFlow(("Installation failed, rolling back installation set ...\n"));
+
+        do
+        {
+            HRESULT hr2 = VBoxDrvCfgInfUninstall(apInfPaths[cFilesProcessed], 0);
+            if (FAILED(hr2))
+                NonStandardLogFlow(("VBoxDrvCfgInfUninstall failed, hr (0x%x)\n", hr2));
+                /* Keep going. */
+            if (!cFilesProcessed)
+                break;
+        } while (cFilesProcessed--);
+
+        NonStandardLogFlow(("Rollback complete\n"));
     }
 
     return hr;
@@ -2028,7 +2037,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc,
     if (SUCCEEDED(hr))
     {
         NonStandardLog("NetFlt will be installed ...\n");
-        hr = VBoxNetCfgWinInstallInfAndComponent(pNc, VBOXNETCFGWIN_NETFLT_ID,
+        hr = vboxNetCfgWinInstallInfAndComponent(pNc, VBOXNETCFGWIN_NETFLT_ID,
                                                  &GUID_DEVCLASS_NETSERVICE,
                                                  apInfFullPaths,
                                                  cInfFullPaths,
