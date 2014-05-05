@@ -238,7 +238,7 @@ $(addprefix $(VBOX_LNX_ADD_INST_BIN_DIR),$(VBOX_LNX_ADD_STRIP_BIN)): \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
-	$(QUIET)objcopy --add-gnu-debuglink=$@ $@
+	$(QUIET)objcopy --add-gnu-debuglink=$(subst $(VBOX_LNX_ADD_INST_BIN_DIR),$(VBOX_LNX_ADD_DBG_BIN_DIR),$@) $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_SBIN files to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),\
@@ -248,7 +248,7 @@ $(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),\
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
-	$(QUIET)objcopy --add-gnu-debuglink=$@ $@
+	$(QUIET)objcopy --add-gnu-debuglink=$(subst $(VBOX_LNX_ADD_INST_SBIN_DIR),$(VBOX_LNX_ADD_DBG_SBIN_DIR),$@) $@
 
 # pattern rule for stripping and copying vbox-greeter to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),vbox-greeter): \
@@ -264,7 +264,7 @@ $(addprefix $(VBOX_LNX_ADD_INST_LIB_DIR),$(VBOX_LNX_ADD_STRIP_LIB)): \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
-	$(QUIET)objcopy --add-gnu-debuglink=$@ $@
+	$(QUIET)objcopy --add-gnu-debuglink=$(subst $(VBOX_LNX_ADD_INST_LIB_DIR),$(VBOX_LNX_ADD_DBG_LIB_DIR),$@) $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_MOD files to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD)): \
@@ -273,7 +273,7 @@ $(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD)): \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
-	$(QUIET)objcopy --add-gnu-debuglink=$@ $@
+	$(QUIET)objcopy --add-gnu-debuglink=$(subst $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_DBG_MOD_DIR),$@) $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_OBJ files to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)): \
