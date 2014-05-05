@@ -24,7 +24,7 @@
 
 /* GUI includes: */
 #include "UIGDetailsItem.h"
-#include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
 class UIGDetailsSet;

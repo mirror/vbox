@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 
 /* COM includes: */
 #include "CFramebuffer.h"

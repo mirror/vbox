@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 #include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 
 /* Determines if 'Object of type X' can be converted to object of other type.
  * This function always returns 'false' until re-determined for specific object type. */

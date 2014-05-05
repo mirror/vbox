@@ -27,7 +27,7 @@
 #include <QPointer>
 
 /* GUI includes: */
-#include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
 class QWidget;
