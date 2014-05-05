@@ -28,6 +28,7 @@
 
 /* GUI includes: */
 #include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 #include "VBoxGlobalSettings.h"
 #include "UIHostComboEditor.h"
 

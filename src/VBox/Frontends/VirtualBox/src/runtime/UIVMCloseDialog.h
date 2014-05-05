@@ -22,10 +22,9 @@
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
-#include "UIDefs.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
-enum MachineCloseAction;
 class CMachine;
 class QLabel;
 class QRadioButton;
