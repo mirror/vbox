@@ -157,6 +157,66 @@ QString UIExtraDataManager::preventBETAwarningForVersion() const
     return extraDataString(GUI_PreventBetaWarning);
 }
 
+QString UIExtraDataManager::recentFolderForHardDrives() const
+{
+    return extraDataString(GUI_RecentFolderHD);
+}
+
+QString UIExtraDataManager::recentFolderForOpticalDisks() const
+{
+    return extraDataString(GUI_RecentFolderCD);
+}
+
+QString UIExtraDataManager::recentFolderForFloppyDisks() const
+{
+    return extraDataString(GUI_RecentFolderFD);
+}
+
+void UIExtraDataManager::setRecentFolderForHardDrives(const QString &strValue)
+{
+    setExtraDataString(GUI_RecentFolderHD, strValue);
+}
+
+void UIExtraDataManager::setRecentFolderForOpticalDisks(const QString &strValue)
+{
+    setExtraDataString(GUI_RecentFolderCD, strValue);
+}
+
+void UIExtraDataManager::setRecentFolderForFloppyDisks(const QString &strValue)
+{
+    setExtraDataString(GUI_RecentFolderFD, strValue);
+}
+
+QStringList UIExtraDataManager::recentListOfHardDrives() const
+{
+    return extraDataStringList(GUI_RecentListHD);
+}
+
+QStringList UIExtraDataManager::recentListOfOpticalDisks() const
+{
+    return extraDataStringList(GUI_RecentListCD);
+}
+
+QStringList UIExtraDataManager::recentListOfFloppyDisks() const
+{
+    return extraDataStringList(GUI_RecentListFD);
+}
+
+void UIExtraDataManager::setRecentListOfHardDrives(const QStringList &strValue)
+{
+    setExtraDataStringList(GUI_RecentListHD, strValue);
+}
+
+void UIExtraDataManager::setRecentListOfOpticalDisks(const QStringList &strValue)
+{
+    setExtraDataStringList(GUI_RecentListCD, strValue);
+}
+
+void UIExtraDataManager::setRecentListOfFloppyDisks(const QStringList &strValue)
+{
+    setExtraDataStringList(GUI_RecentListFD, strValue);
+}
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 bool UIExtraDataManager::shouldWeAllowApplicationUpdate() const
 {
