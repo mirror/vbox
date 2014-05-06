@@ -202,19 +202,29 @@ QStringList UIExtraDataManager::recentListOfFloppyDisks() const
     return extraDataStringList(GUI_RecentListFD);
 }
 
-void UIExtraDataManager::setRecentListOfHardDrives(const QStringList &strValue)
+void UIExtraDataManager::setRecentListOfHardDrives(const QStringList &value)
 {
-    setExtraDataStringList(GUI_RecentListHD, strValue);
+    setExtraDataStringList(GUI_RecentListHD, value);
 }
 
-void UIExtraDataManager::setRecentListOfOpticalDisks(const QStringList &strValue)
+void UIExtraDataManager::setRecentListOfOpticalDisks(const QStringList &value)
 {
-    setExtraDataStringList(GUI_RecentListCD, strValue);
+    setExtraDataStringList(GUI_RecentListCD, value);
 }
 
-void UIExtraDataManager::setRecentListOfFloppyDisks(const QStringList &strValue)
+void UIExtraDataManager::setRecentListOfFloppyDisks(const QStringList &value)
 {
-    setExtraDataStringList(GUI_RecentListFD, strValue);
+    setExtraDataStringList(GUI_RecentListFD, value);
+}
+
+QStringList UIExtraDataManager::suppressedMessages() const
+{
+    return extraDataStringList(GUI_SuppressMessages);
+}
+
+void UIExtraDataManager::setSuppressedMessages(const QStringList &value)
+{
+    setExtraDataStringList(GUI_SuppressMessages, value);
 }
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER

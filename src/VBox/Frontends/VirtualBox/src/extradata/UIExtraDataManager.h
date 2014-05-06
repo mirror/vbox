@@ -94,12 +94,17 @@ public:
     QStringList recentListOfOpticalDisks() const;
     /** Returns recent floppy-disk list. */
     QStringList recentListOfFloppyDisks() const;
-    /** Defines recent hard-drive list as @a strValue. */
-    void setRecentListOfHardDrives(const QStringList &strValue);
-    /** Defines recent optical-disk list as @a strValue. */
-    void setRecentListOfOpticalDisks(const QStringList &strValue);
-    /** Defines recent floppy-disk list as @a strValue. */
-    void setRecentListOfFloppyDisks(const QStringList &strValue);
+    /** Defines recent hard-drive list as @a value. */
+    void setRecentListOfHardDrives(const QStringList &value);
+    /** Defines recent optical-disk list as @a value. */
+    void setRecentListOfOpticalDisks(const QStringList &value);
+    /** Defines recent floppy-disk list as @a value. */
+    void setRecentListOfFloppyDisks(const QStringList &value);
+
+    /** Returns list of the supressed messages for the Message/Popup center frameworks. */
+    QStringList suppressedMessages() const;
+    /** Defines list of the supressed messages for the Message/Popup center frameworks as @a value. */
+    void setSuppressedMessages(const QStringList &value);
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /** Returns whether we should allow Application Update. */

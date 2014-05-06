@@ -39,6 +39,7 @@
 # include "UINetworkManagerDialog.h"
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #include "UIModalWindowManager.h"
+#include "UIExtraDataManager.h"
 #include "UIMedium.h"
 #ifdef VBOX_OSE
 # include "UIDownloaderUserManual.h"
@@ -2525,8 +2526,8 @@ void UIMessageCenter::sltShowHelpHelpDialog()
 
 void UIMessageCenter::sltResetSuppressedMessages()
 {
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    vbox.SetExtraData(GUI_SuppressMessages, QString());
+    /* Nullify suppressed message list: */
+    gEDataManager->setSuppressedMessages(QStringList());
 }
 
 void UIMessageCenter::sltShowUserManual(const QString &strLocation)
@@ -2712,7 +2713,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
     if (!strAutoConfirmId.isEmpty())
     {
         vbox = vboxGlobal().virtualBox();
-        confirmedMessageList = vbox.GetExtraData(GUI_SuppressMessages).split(',');
+        confirmedMessageList = gEDataManager->suppressedMessages();
         if (   confirmedMessageList.contains(strAutoConfirmId)
             || confirmedMessageList.contains("allMessageBoxes")
             || confirmedMessageList.contains("all") )
@@ -2799,7 +2800,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
         if (pMessageBox->flagChecked())
         {
             confirmedMessageList << strAutoConfirmId;
-            vbox.SetExtraData(GUI_SuppressMessages, confirmedMessageList.join(","));
+            gEDataManager->setSuppressedMessages(confirmedMessageList);
         }
     }
 
