@@ -24,6 +24,7 @@
 #include "QIMessageBox.h"
 #include "VBoxGlobal.h"
 #include "UIHostComboEditor.h"
+#include "UIExtraDataManager.h"
 
 /* Other VBox includes: */
 #include <VBox/sup.h>
@@ -245,7 +246,7 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
     /* Check if popup-pane was auto-confirmed before: */
     if ((iButton1 || iButton2) && fProposeAutoConfirmation)
     {
-        QStringList confirmedPopupList = vboxGlobal().virtualBox().GetExtraData(GUI_SuppressMessages).split(',');
+        const QStringList confirmedPopupList = gEDataManager->suppressedMessages();
         if (   confirmedPopupList.contains(strPopupPaneID)
             || confirmedPopupList.contains("allPopupPanes")
             || confirmedPopupList.contains("all") )
@@ -325,14 +326,9 @@ void UIPopupCenter::hidePopupPane(QWidget *pParent, const QString &strPopupPaneI
 
 void UIPopupCenter::sltPopupPaneDone(QString strPopupPaneID, int iResultCode)
 {
-    /* Was the result auto-confirmated? */
+    /* Remember auto-confirmation fact (if necessary): */
     if (iResultCode & AlertOption_AutoConfirmed)
-    {
-        /* Remember auto-confirmation fact: */
-        QStringList confirmedPopupList = vboxGlobal().virtualBox().GetExtraData(GUI_SuppressMessages).split(',');
-        confirmedPopupList << strPopupPaneID;
-        vboxGlobal().virtualBox().SetExtraData(GUI_SuppressMessages, confirmedPopupList.join(","));
-    }
+        gEDataManager->setSuppressedMessages(gEDataManager->suppressedMessages() << strPopupPaneID);
 
     /* Notify listeners: */
     emit sigPopupPaneDone(strPopupPaneID, iResultCode);
