@@ -168,6 +168,7 @@ DeleteRenderbuffersEXT
 LockArraysEXT
 UnlockArraysEXT
 GetUniformsLocations
+GetAttribsLocations
 GetTexImage
 GetCompressedTexImageARB
 GetPolygonStipple

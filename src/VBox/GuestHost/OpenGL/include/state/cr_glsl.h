@@ -71,7 +71,10 @@ typedef struct {
     CRGLSLUniform      *pUniforms;
     GLuint              cUniforms;
 #ifdef IN_GUEST
+    CRGLSLAttrib        *pAttribs;
+    GLuint              cAttribs;
     GLboolean           bUniformsSynced; /*uniforms info is updated since last link program call.*/
+    GLboolean           bAttribsSynced; /*attribs info is updated since last link program call.*/
 #endif
 } CRGLSLProgram;
 
@@ -102,11 +105,14 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateProgram(GLuint id);
 DECLEXPORT(GLuint) STATE_APIENTRY crStateDeleteObjectARB( VBoxGLhandleARB obj );
 
 DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsProgramUniformsCached(GLuint program);
+DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsProgramAttribsCached(GLuint program);
 
 #ifdef IN_GUEST
 DECLEXPORT(void) STATE_APIENTRY crStateGLSLProgramCacheUniforms(GLuint program, GLsizei cbData, GLvoid *pData);
+DECLEXPORT(void) STATE_APIENTRY crStateGLSLProgramCacheAttribs(GLuint program, GLsizei cbData, GLvoid *pData);
 #else
 DECLEXPORT(void) STATE_APIENTRY crStateGLSLProgramCacheUniforms(GLuint program, GLsizei maxcbData, GLsizei *cbData, GLvoid *pData);
+DECLEXPORT(void) STATE_APIENTRY crStateGLSLProgramCacheAttribs(GLuint program, GLsizei maxcbData, GLsizei *cbData, GLvoid *pData);
 #endif
 
 #ifdef __cplusplus

@@ -23,6 +23,8 @@
 # include "cr_dump.h"
 #endif
 
+extern uint32_t g_u32VBoxHostCaps;
+
 typedef struct thread_info_t ThreadInfo;
 typedef struct context_info_t ContextInfo;
 

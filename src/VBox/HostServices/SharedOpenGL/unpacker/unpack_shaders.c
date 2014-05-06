@@ -335,3 +335,12 @@ void crUnpackExtendGetUniformsLocations(void)
 	SET_WRITEBACK_PTR(24);
 	cr_unpackDispatch.GetUniformsLocations(program, maxcbData, NULL, NULL);
 }
+
+void crUnpackExtendGetAttribsLocations(void)
+{
+    GLuint program = READ_DATA(8, GLuint);
+    GLsizei maxcbData = READ_DATA(12, GLsizei);
+    SET_RETURN_PTR(16);
+    SET_WRITEBACK_PTR(24);
+    cr_unpackDispatch.GetAttribsLocations(program, maxcbData, NULL, NULL);
+}

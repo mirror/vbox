@@ -225,13 +225,16 @@ void crServerSetVBoxConfiguration()
     if (env && env[0] != '\0')
     {
         cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
-        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT | CR_VBOX_CAP_CMDVBVA | CR_VBOX_CAP_CMDBLOCKS);
+        cr_server.u32Caps &= CR_VBOX_CAPS_ALL;
     }
     else
     {
         cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT
                 | CR_VBOX_CAP_CMDVBVA
                 | CR_VBOX_CAP_CMDBLOCKS
+#ifdef DEBUG_misha
+                | CR_VBOX_CAP_GETATTRIBSLOCATIONS
+#endif
                 ;
 
     }
@@ -375,13 +378,16 @@ void crServerSetVBoxConfigurationHGCM()
     if (env && env[0] != '\0')
     {
         cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
-        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT | CR_VBOX_CAP_CMDVBVA | CR_VBOX_CAP_CMDBLOCKS);
+        cr_server.u32Caps &= CR_VBOX_CAPS_ALL;
     }
     else
     {
         cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT
                 | CR_VBOX_CAP_CMDVBVA
                 | CR_VBOX_CAP_CMDBLOCKS
+#ifdef DEBUG_misha
+                | CR_VBOX_CAP_GETATTRIBSLOCATIONS
+#endif
                 ;
     }
 

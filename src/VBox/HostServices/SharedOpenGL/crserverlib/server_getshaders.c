@@ -223,6 +223,29 @@ crServerDispatchGetUniformsLocations(GLuint program, GLsizei maxcbData, GLsizei 
     crFree(pLocal);
 }
 
+void SERVER_DISPATCH_APIENTRY
+crServerDispatchGetAttribsLocations(GLuint program, GLsizei maxcbData, GLsizei * cbData, GLvoid * pData)
+{
+    GLsizei *pLocal;
+
+    (void) cbData;
+    (void) pData;
+
+    pLocal = (GLsizei*) crAlloc(maxcbData+sizeof(GLsizei));
+    if (!pLocal)
+    {
+        GLsizei zero=0;
+        crServerReturnValue(&zero, sizeof(zero));
+    }
+
+    /* initial (fallback )value */
+    *pLocal = 0;
+    crStateGLSLProgramCacheAttribs(program, maxcbData, pLocal, (char*)&pLocal[1]);
+
+    crServerReturnValue(pLocal, (*pLocal)+sizeof(GLsizei));
+    crFree(pLocal);
+}
+
 static GLint __GetUniformSize(GLuint program, GLint location)
 {
     GLint  size = 0;

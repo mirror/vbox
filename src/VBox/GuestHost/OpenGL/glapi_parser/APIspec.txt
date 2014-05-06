@@ -8384,6 +8384,18 @@ props       nolist
 chromium    extpack
 chrelopcode 0
 
+# custom
+name        GetAttribsLocations
+return      void
+param       program     GLuint
+param       maxcbData   GLsizei
+param       cbData      GLsizei *
+param       pData       GLvoid *
+category    Chromium
+props       get
+chromium    extpack
+chrelopcode 1
+
 name        WindowShow
 return      void
 param       window      GLint
