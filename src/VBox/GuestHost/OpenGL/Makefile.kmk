@@ -116,6 +116,9 @@ VBoxOGLcrutil_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_S
 endif
 VBoxOGLcrutil_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
+if1of ($(KBUILD_TARGET), linux)
+VBoxOGLcrutil_LDFLAGS += -Wl,-z,nodelete
+endif
 
 # vc7 hangs during compilation of this file when optimizations are enabled.
 VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
@@ -156,6 +159,9 @@ VBoxOGLhostcrutil_EXTENDS  = VBoxOGLcrutil
 VBoxOGLhostcrutil_TEMPLATE = VBOXCROGLR3HOSTDLL
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
  VBoxOGLhostcrutil_INSTTYPE.win = both
+endif
+if1of ($(KBUILD_TARGET), linux)
+VBoxOGLhostcrutil_LDFLAGS = $(NO_SUCH_VARIABLE)
 endif
 VBoxOGLhostcrutil_LDFLAGS.darwin = $(VBoxOGLcrutil_LDFLAGS.darwin) \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib

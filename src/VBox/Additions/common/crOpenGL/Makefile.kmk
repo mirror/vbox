@@ -235,7 +235,9 @@ endif
 ifdef VBOX_WITH_WDDM
 VBoxOGL_DEFS.win   += VBOX_WITH_WDDM
 endif
-
+if1of ($(KBUILD_TARGET), linux)
+VBoxOGL_LDFLAGS += -Wl,-z,nodelete
+endif
 ifdef VBOX_WITH_WDDM
 #
 # VBoxOGL-x86 - x86 VBoxOGL version built for amd64 build
