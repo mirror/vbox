@@ -116,7 +116,7 @@ for func_name in keys:
 #ifdef CR_ARB_vertex_program
         || pname == GL_MAX_VERTEX_ATTRIBS_ARB
 #endif
-#ifndef GL_EXT_framebuffer_object
+#ifdef GL_EXT_framebuffer_object
         || pname == GL_FRAMEBUFFER_BINDING_EXT
         || pname == GL_READ_FRAMEBUFFER_BINDING_EXT
         || pname == GL_DRAW_FRAMEBUFFER_BINDING_EXT 
