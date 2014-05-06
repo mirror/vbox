@@ -117,7 +117,7 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
      * must be NULL (no password set for this user). Fail if a password is specified
      * but the user does not have one assigned. */
     int fCorrect = !pszPasswd || !*pszPasswd;
-    if (pw->pw_passwd)
+    if (pw->pw_passwd && *pw->pw_passwd)
     {
         struct crypt_data *data = (struct crypt_data*)RTMemTmpAllocZ(sizeof(*data));
         /* be reentrant */
