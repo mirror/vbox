@@ -376,6 +376,7 @@ UseProgram
 DeleteProgram
 ValidateProgram
 BindAttribLocation
+GetAttribLocation
 GetUniformLocation
 CopyTexImage2D
 GenFramebuffersEXT

@@ -83,7 +83,9 @@ CreateProgram
 LinkProgram
 DeleteProgram
 GetUniformLocation
+GetAttribLocation
 GetUniformsLocations
+GetAttribsLocations
 BindFramebufferEXT
 DeleteObjectARB
 BindFramebufferEXT

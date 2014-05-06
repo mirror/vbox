@@ -13,6 +13,8 @@
 #include "packspu.h"
 #include "packspu_proto.h"
 
+uint32_t g_u32VBoxHostCaps = 0;
+
 static void
 packspuWriteback( const CRMessageWriteback *wb )
 {
@@ -243,8 +245,8 @@ static void packspuFirstConnectToServer( CRNetServer *server
             );
     if (server->conn)
     {
-        uint32_t u32HostCaps = crNetHostCapsGet();
-        if (u32HostCaps & CR_VBOX_CAP_CMDBLOCKS)
+        g_u32VBoxHostCaps = crNetHostCapsGet();
+        if (g_u32VBoxHostCaps & CR_VBOX_CAP_CMDBLOCKS)
             crPackCmdBlocksEnable();
     }
 }

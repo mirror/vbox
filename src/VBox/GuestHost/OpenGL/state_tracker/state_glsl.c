@@ -57,6 +57,16 @@ static void crStateFreeGLSLShader(void *data)
     crFree(pShader);
 }
 
+#ifdef IN_GUEST
+static void crStateFreeProgramAttribsLocationCache(CRGLSLProgram* pProgram)
+{
+    if (pProgram->pAttribs) crFree(pProgram->pAttribs);
+
+    pProgram->pAttribs = NULL;
+    pProgram->cAttribs = 0;
+}
+#endif
+
 static void crStateFreeProgramAttribs(CRGLSLProgram* pProgram)
 {
     GLuint i;
@@ -76,6 +86,13 @@ static void crStateFreeProgramAttribs(CRGLSLProgram* pProgram)
 
     if (pProgram->currentState.pAttribs)
         crFree(pProgram->currentState.pAttribs);
+
+#ifdef IN_GUEST
+    crStateFreeProgramAttribsLocationCache(pProgram);
+
+    pProgram->bAttribsSynced = GL_FALSE;
+#endif
+
 }
 
 static void crStateFreeProgramUniforms(CRGLSLProgram* pProgram)
@@ -360,8 +377,13 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateProgram(GLuint hwid)
 
     pProgram->pUniforms = NULL;
     pProgram->cUniforms = 0;
+
 #ifdef IN_GUEST
+    pProgram->pAttribs = NULL;
+    pProgram->cAttribs = 0;
+
     pProgram->bUniformsSynced = GL_FALSE;
+    pProgram->bAttribsSynced = GL_FALSE;
 #endif
 
     crHashtableAdd(g->glsl.programs, stateId, pProgram);
@@ -600,6 +622,10 @@ DECLEXPORT(void) STATE_APIENTRY crStateLinkProgram(GLuint program)
         pProgram->activeState.pAttribs[i].name = crStrdup(pProgram->currentState.pAttribs[i].name);
     }
 
+#ifdef IN_GUEST
+    crStateFreeProgramAttribsLocationCache(pProgram);
+#endif
+
     crStateFreeProgramUniforms(pProgram);
 }
 
@@ -769,14 +795,32 @@ DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsProgramUniformsCached(GLuint progr
 
     if (!pProgram)
     {
-        crWarning("Unknown program %d", program);
+        WARN(("Unknown program %d", program));
         return GL_FALSE;
     }
 
 #ifdef IN_GUEST
     return pProgram->bUniformsSynced;
 #else
-    crWarning("crStateIsProgramUniformsCached called on host side!!");
+    WARN(("crStateIsProgramUniformsCached called on host side!!"));
+    return GL_FALSE;
+#endif
+}
+
+DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsProgramAttribsCached(GLuint program)
+{
+    CRGLSLProgram *pProgram = crStateGetProgramObj(program);
+
+    if (!pProgram)
+    {
+        WARN(("Unknown program %d", program));
+        return GL_FALSE;
+    }
+
+#ifdef IN_GUEST
+    return pProgram->bAttribsSynced;
+#else
+    WARN(("crStateIsProgramAttribsCached called on host side!!"));
     return GL_FALSE;
 #endif
 }
@@ -855,6 +899,81 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei cbData, GLvoid *pData)
     }
 
     pProgram->bUniformsSynced = GL_TRUE;
+
+    CRASSERT((pCurrent-((char*)pData))==cbRead);
+    CRASSERT(cbRead==cbData);
+}
+
+DECLEXPORT(void) STATE_APIENTRY
+crStateGLSLProgramCacheAttribs(GLuint program, GLsizei cbData, GLvoid *pData)
+{
+    CRGLSLProgram *pProgram = crStateGetProgramObj(program);
+    char *pCurrent = pData;
+    GLsizei cbRead, cbName;
+    GLuint i;
+
+    if (!pProgram)
+    {
+        WARN(("Unknown program %d", program));
+        return;
+    }
+
+    if (pProgram->bAttribsSynced)
+    {
+        WARN(("crStateGLSLProgramCacheAttribs: this shouldn't happen!"));
+        crStateFreeProgramAttribsLocationCache(pProgram);
+    }
+
+    if (cbData<sizeof(GLsizei))
+    {
+        WARN(("crStateGLSLProgramCacheAttribs: data too short"));
+        return;
+    }
+
+    pProgram->cAttribs = ((GLsizei*)pCurrent)[0];
+    pCurrent += sizeof(GLsizei);
+    cbRead = sizeof(GLsizei);
+
+    crDebug("crStateGLSLProgramCacheAttribs: %i active attribs", pProgram->cAttribs);
+
+    if (pProgram->cAttribs)
+    {
+        pProgram->pAttribs = crAlloc(pProgram->cAttribs*sizeof(CRGLSLAttrib));
+        if (!pProgram->pAttribs)
+        {
+            WARN(("crStateGLSLProgramCacheAttribs: no memory"));
+            pProgram->cAttribs = 0;
+            return;
+        }
+    }
+
+    for (i=0; i<pProgram->cAttribs; ++i)
+    {
+        cbRead += sizeof(GLuint)+sizeof(GLsizei);
+        if (cbRead>cbData)
+        {
+            crWarning("crStateGLSLProgramCacheAttribs: out of data reading attrib %i", i);
+            return;
+        }
+        pProgram->pAttribs[i].index = ((GLint*)pCurrent)[0];
+        pCurrent += sizeof(GLint);
+        cbName = ((GLsizei*)pCurrent)[0];
+        pCurrent += sizeof(GLsizei);
+
+        cbRead += cbName;
+        if (cbRead>cbData)
+        {
+            crWarning("crStateGLSLProgramCacheAttribs: out of data reading attrib's name %i", i);
+            return;
+        }
+
+        pProgram->pAttribs[i].name = crStrndup(pCurrent, cbName);
+        pCurrent += cbName;
+
+        crDebug("crStateGLSLProgramCacheAttribs: attribs[%i]=%d, %s", i, pProgram->pAttribs[i].index, pProgram->pAttribs[i].name);
+    }
+
+    pProgram->bAttribsSynced = GL_TRUE;
 
     CRASSERT((pCurrent-((char*)pData))==cbRead);
     CRASSERT(cbRead==cbData);
@@ -990,6 +1109,137 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei maxcbData, GLsizei *cbDa
 
     CRASSERT((pCurrent-((char*)pData))==cbWritten);
 }
+
+static GLboolean crStateGLSLProgramCacheOneAttrib(GLuint location, GLsizei cbName, GLchar *pName,
+                                                   char **pCurrent, GLsizei *pcbWritten, GLsizei maxcbData)
+{
+    *pcbWritten += sizeof(GLint)+sizeof(GLsizei)+cbName;
+    if (*pcbWritten>maxcbData)
+    {
+        WARN(("crStateGLSLProgramCacheOneAttrib: buffer too small"));
+        crFree(pName);
+        return GL_FALSE;
+    }
+
+    crDebug("crStateGLSLProgramCacheOneAttrib: attrib[%i]=%s.", location, pName);
+
+    ((GLint*)*pCurrent)[0] = location;
+    *pCurrent += sizeof(GLint);
+    ((GLsizei*)*pCurrent)[0] = cbName;
+    *pCurrent += sizeof(GLsizei);
+    crMemcpy(*pCurrent, pName, cbName);
+    *pCurrent += cbName;
+
+    return GL_TRUE;
+}
+
+DECLEXPORT(void) STATE_APIENTRY
+crStateGLSLProgramCacheAttribs(GLuint program, GLsizei maxcbData, GLsizei *cbData, GLvoid *pData)
+{
+    CRGLSLProgram *pProgram = crStateGetProgramObj(program);
+    GLint maxAttribLen, activeAttribs=0, fakeAttribsCount, i, j;
+    char *pCurrent = pData;
+    GLsizei cbWritten;
+
+    if (!pProgram)
+    {
+        crWarning("Unknown program %d", program);
+        return;
+    }
+
+    diff_api.GetProgramiv(pProgram->hwid, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxAttribLen);
+    diff_api.GetProgramiv(pProgram->hwid, GL_ACTIVE_ATTRIBUTES, &activeAttribs);
+
+    *cbData = 0;
+
+    cbWritten = sizeof(GLsizei);
+    if (cbWritten>maxcbData)
+    {
+        crWarning("crStateGLSLProgramCacheAttribs: buffer too small");
+        return;
+    }
+    ((GLsizei*)pCurrent)[0] = activeAttribs;
+    fakeAttribsCount = activeAttribs;
+    pCurrent += sizeof(GLsizei);
+
+    crDebug("crStateGLSLProgramCacheAttribs: %i active attribs", activeAttribs);
+
+    if (activeAttribs>0)
+    {
+        /*+8 to make sure our array attribs with higher indices and [] will fit in as well*/
+        GLchar *name = (GLchar *) crAlloc(maxAttribLen+8);
+        GLenum type;
+        GLint size;
+        GLsizei cbName;
+        GLint location;
+
+        if (!name)
+        {
+            crWarning("crStateGLSLProgramCacheAttribs: no memory");
+            return;
+        }
+
+        for (i=0; i<activeAttribs; ++i)
+        {
+            diff_api.GetActiveAttrib(pProgram->hwid, i, maxAttribLen, &cbName, &size, &type, name);
+            location = diff_api.GetAttribLocation(pProgram->hwid, name);
+
+            if (!crStateGLSLProgramCacheOneAttrib(location, cbName, name, &pCurrent, &cbWritten, maxcbData))
+                return;
+
+            /* Only one active attrib variable will be reported for a attrib array by glGetActiveAttrib,
+             * so we insert fake elements for other array elements.
+             */
+            if (size!=1)
+            {
+                char *pIndexStr = crStrchr(name, '[');
+                GLint firstIndex=1;
+                fakeAttribsCount += size;
+
+                crDebug("crStateGLSLProgramCacheAttribs: expanding array attrib, size=%i", size);
+
+                /*For array attribs it's valid to query location of 1st element as both attrib and attrib[0].
+                 *The name returned by glGetActiveAttrib is driver dependent,
+                 *atleast it's with [0] on win/ati and without [0] on linux/nvidia.
+                 */
+                if (!pIndexStr)
+                {
+                    pIndexStr = name+cbName;
+                    firstIndex=0;
+                }
+                else
+                {
+                    cbName = pIndexStr-name;
+                    if (!crStateGLSLProgramCacheOneAttrib(location, cbName, name, &pCurrent, &cbWritten, maxcbData))
+                        return;
+                }
+
+                for (j=firstIndex; j<size; ++j)
+                {
+                    sprintf(pIndexStr, "[%i]", j);
+                    cbName = crStrlen(name);
+
+                    location = diff_api.GetAttribLocation(pProgram->hwid, name);
+
+                    if (!crStateGLSLProgramCacheOneAttrib(location, cbName, name, &pCurrent, &cbWritten, maxcbData))
+                        return;
+                }
+            }
+        }
+
+        crFree(name);
+    }
+
+    if (fakeAttribsCount!=activeAttribs)
+    {
+        ((GLsizei*)pData)[0] = fakeAttribsCount;
+        crDebug("FakeCount %i", fakeAttribsCount);
+    }
+
+    *cbData = cbWritten;
+
+    CRASSERT((pCurrent-((char*)pData))==cbWritten);
+}
 #endif
 
 DECLEXPORT(GLint) STATE_APIENTRY crStateGetUniformLocation(GLuint program, const char * name)
@@ -1023,6 +1273,41 @@ DECLEXPORT(GLint) STATE_APIENTRY crStateGetUniformLocation(GLuint program, const
     return result;
 #else
     crWarning("crStateGetUniformLocation called on host side!!");
+    return -1;
+#endif
+}
+
+DECLEXPORT(GLint) STATE_APIENTRY crStateGetAttribLocation(GLuint program, const char * name)
+{
+#ifdef IN_GUEST
+    CRGLSLProgram *pProgram = crStateGetProgramObj(program);
+    GLint result=-1;
+    GLuint i;
+
+    if (!pProgram)
+    {
+        WARN(("Unknown program %d", program));
+        return -1;
+    }
+
+    if (!pProgram->bAttribsSynced)
+    {
+        WARN(("crStateGetAttribLocation called for uncached attribs"));
+        return -1;
+    }
+
+    for (i=0; i<pProgram->cAttribs; ++i)
+    {
+        if (!crStrcmp(name, pProgram->pAttribs[i].name))
+        {
+            result = pProgram->pAttribs[i].index;
+            break;
+        }
+    }
+
+    return result;
+#else
+    crWarning("crStateGetAttribLocation called on host side!!");
     return -1;
 #endif
 }

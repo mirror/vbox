@@ -220,6 +220,7 @@ ValidateProgram
 BindAttribLocation
 DeleteObjectARB
 GetUniformsLocations
+GetAttribsLocations
 GetPolygonStipple
 Flush
 Finish

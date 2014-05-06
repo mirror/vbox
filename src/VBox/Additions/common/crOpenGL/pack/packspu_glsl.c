@@ -114,13 +114,87 @@ GLint PACKSPU_APIENTRY packspu_GetUniformLocation(GLuint program, const char * n
     return crStateGetUniformLocation(program, name);
 }
 
+GLint PACKSPU_APIENTRY packspu_GetAttribLocationUnchached( GLuint program, const char * name )
+{
+    GET_THREAD(thread);
+    int writeback = 1;
+    GLint return_val = (GLint) 0;
+    if (!CRPACKSPU_IS_WDDM_CRHGSMI() && !(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
+    {
+        crError( "packspu_GetAttribLocation doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
+    }
+    if (pack_spu.swap)
+    {
+        crPackGetAttribLocationSWAP( program, name, &return_val, &writeback );
+    }
+    else
+    {
+        crPackGetAttribLocation( program, name, &return_val, &writeback );
+    }
+    packspuFlush( (void *) thread );
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
+    if (pack_spu.swap)
+    {
+        return_val = (GLint) SWAP32(return_val);
+    }
+    return return_val;
+}
+
+GLint PACKSPU_APIENTRY packspu_GetAttribLocation(GLuint program, const char * name)
+{
+    if (!(CR_VBOX_CAP_GETATTRIBSLOCATIONS & g_u32VBoxHostCaps))
+        return packspu_GetAttribLocationUnchached(program, name);
+
+    if (!crStateIsProgramAttribsCached(program))
+    {
+        GET_THREAD(thread);
+        int writeback = 1;
+        GLsizei maxcbData;
+        GLsizei *pData;
+        GLint mu;
+
+        packspu_GetIntegerv(GL_MAX_VERTEX_ATTRIBS, &mu);
+        maxcbData = 4*32*mu*sizeof(char);
+
+        pData = (GLsizei *) crAlloc(maxcbData+sizeof(GLsizei));
+        if (!pData)
+        {
+            crWarning("packspu_GetAttribLocation: not enough memory, fallback to single query");
+            return packspu_GetAttribLocationUnchached(program, name);
+        }
+
+        crPackGetAttribsLocations(program, maxcbData, pData, NULL, &writeback);
+
+        packspuFlush((void *) thread);
+        CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
+
+        crStateGLSLProgramCacheAttribs(program, pData[0], &pData[1]);
+
+        CRASSERT(crStateIsProgramAttribsCached(program));
+
+        crFree(pData);
+    }
+
+    /*crDebug("packspu_GetAttribLocation(%d, %s)=%i", program, name, crStateGetAttribLocation(program, name));*/
+    return crStateGetAttribLocation(program, name);
+}
+
 void PACKSPU_APIENTRY packspu_GetUniformsLocations(GLuint program, GLsizei maxcbData, GLsizei * cbData, GLvoid * pData)
 {
     (void) program;
     (void) maxcbData;
     (void) cbData;
     (void) pData;
-    crWarning("packspu_GetUniformsLocations shouldn't be called directly");
+    WARN(("packspu_GetUniformsLocations shouldn't be called directly"));
+}
+
+void PACKSPU_APIENTRY packspu_GetAttribsLocations(GLuint program, GLsizei maxcbData, GLsizei * cbData, GLvoid * pData)
+{
+    (void) program;
+    (void) maxcbData;
+    (void) cbData;
+    (void) pData;
+    WARN(("packspu_GetAttribsLocations shouldn't be called directly"));
 }
 
 void PACKSPU_APIENTRY packspu_DeleteProgram(GLuint program)
