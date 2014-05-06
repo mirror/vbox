@@ -651,8 +651,9 @@ QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const
     if (!data.contains(strKey))
         return QStringList();
 
-    /* Returns corresponding value: */
-    return data[strKey].split(',', QString::SkipEmptyParts);
+    /* Few old extra-data string-lists were separated with 'semicolon' symbol.
+     * All new separated by 'comma'. We have to take that into account. */
+    return data[strKey].split(QRegExp("[;,]"), QString::SkipEmptyParts);
 }
 
 void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID /* = QString() */)
