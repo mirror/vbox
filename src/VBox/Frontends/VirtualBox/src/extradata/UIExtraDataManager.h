@@ -75,6 +75,32 @@ public:
     /** Returns version for which user wants to prevent BETA warning. */
     QString preventBETAwarningForVersion() const;
 
+    /** Returns recent hard-drive folder. */
+    QString recentFolderForHardDrives() const;
+    /** Returns recent optical-disk folder. */
+    QString recentFolderForOpticalDisks() const;
+    /** Returns recent floppy-disk folder. */
+    QString recentFolderForFloppyDisks() const;
+    /** Defines recent hard-drive folder as @a strValue. */
+    void setRecentFolderForHardDrives(const QString &strValue);
+    /** Defines recent optical-disk folder as @a strValue. */
+    void setRecentFolderForOpticalDisks(const QString &strValue);
+    /** Defines recent floppy-disk folder as @a strValue. */
+    void setRecentFolderForFloppyDisks(const QString &strValue);
+
+    /** Returns recent hard-drive list. */
+    QStringList recentListOfHardDrives() const;
+    /** Returns recent optical-disk list. */
+    QStringList recentListOfOpticalDisks() const;
+    /** Returns recent floppy-disk list. */
+    QStringList recentListOfFloppyDisks() const;
+    /** Defines recent hard-drive list as @a strValue. */
+    void setRecentListOfHardDrives(const QStringList &strValue);
+    /** Defines recent optical-disk list as @a strValue. */
+    void setRecentListOfOpticalDisks(const QStringList &strValue);
+    /** Defines recent floppy-disk list as @a strValue. */
+    void setRecentListOfFloppyDisks(const QStringList &strValue);
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /** Returns whether we should allow Application Update. */
     bool shouldWeAllowApplicationUpdate() const;

@@ -1758,11 +1758,11 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidge
             filters = vboxGlobal().HDDBackends();
             strTitle = tr("Please choose a virtual hard drive file");
             allType = tr("All virtual hard drive files (%1)");
-            strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderHD);
+            strLastFolder = gEDataManager->recentFolderForHardDrives();
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderCD);
+                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderFD);
+                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
             break;
         }
         case UIMediumType_DVD:
@@ -1770,11 +1770,11 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidge
             filters = vboxGlobal().DVDBackends();
             strTitle = tr("Please choose a virtual optical disk file");
             allType = tr("All virtual optical disk files (%1)");
-            strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderCD);
+            strLastFolder = gEDataManager->recentFolderForOpticalDisks();
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderHD);
+                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderFD);
+                strLastFolder = gEDataManager->recentFolderForHardDrives();
             break;
         }
         case UIMediumType_Floppy:
@@ -1782,11 +1782,11 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidge
             filters = vboxGlobal().FloppyBackends();
             strTitle = tr("Please choose a virtual floppy disk file");
             allType = tr("All virtual floppy disk files (%1)");
-            strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderFD);
+            strLastFolder = gEDataManager->recentFolderForFloppyDisks();
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderCD);
+                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderHD);
+                strLastFolder = gEDataManager->recentFolderForHardDrives();
             break;
         }
         default:
@@ -1829,23 +1829,34 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     /* Remember the path of the last chosen medium: */
-    QString strRecentFolderKey = mediumType == UIMediumType_HardDisk ? GUI_RecentFolderHD :
-                                 mediumType == UIMediumType_DVD ? GUI_RecentFolderCD :
-                                 mediumType == UIMediumType_Floppy ? GUI_RecentFolderFD :
-                                 QString();
-    vbox.SetExtraData(strRecentFolderKey, QFileInfo(strMediumLocation).absolutePath());
+    switch (mediumType)
+    {
+        case UIMediumType_HardDisk: gEDataManager->setRecentFolderForHardDrives(QFileInfo(strMediumLocation).absolutePath()); break;
+        case UIMediumType_DVD:      gEDataManager->setRecentFolderForOpticalDisks(QFileInfo(strMediumLocation).absolutePath()); break;
+        case UIMediumType_Floppy:   gEDataManager->setRecentFolderForFloppyDisks(QFileInfo(strMediumLocation).absolutePath()); break;
+        default: break;
+    }
 
     /* Update recently used list: */
-    QString strRecentListKey = mediumType == UIMediumType_HardDisk ? GUI_RecentListHD :
-                               mediumType == UIMediumType_DVD ? GUI_RecentListCD :
-                               mediumType == UIMediumType_Floppy ? GUI_RecentListFD :
-                               QString();
-    QStringList recentMediumList = vbox.GetExtraData(strRecentListKey).split(';');
+    QStringList recentMediumList;
+    switch (mediumType)
+    {
+        case UIMediumType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
+        case UIMediumType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
+        case UIMediumType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
+        default: break;
+    }
     if (recentMediumList.contains(strMediumLocation))
         recentMediumList.removeAll(strMediumLocation);
     recentMediumList.prepend(strMediumLocation);
     while(recentMediumList.size() > 5) recentMediumList.removeLast();
-    vbox.SetExtraData(strRecentListKey, recentMediumList.join(";"));
+    switch (mediumType)
+    {
+        case UIMediumType_HardDisk: gEDataManager->setRecentListOfHardDrives(recentMediumList); break;
+        case UIMediumType_DVD:      gEDataManager->setRecentListOfOpticalDisks(recentMediumList); break;
+        case UIMediumType_Floppy:   gEDataManager->setRecentListOfFloppyDisks(recentMediumList); break;
+        default: break;
+    }
 
     /* Open corresponding medium: */
     CMedium cmedium = vbox.OpenMedium(strMediumLocation, mediumTypeToGlobal(mediumType), KAccessMode_ReadWrite, false);
@@ -2009,15 +2020,14 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
 
 
     /* Get recent-medium list: */
-    QString strRecentMediumAddress;
+    QStringList recentMediumList;
     switch (mediumType)
     {
-        case UIMediumType_HardDisk: strRecentMediumAddress = GUI_RecentListHD; break;
-        case UIMediumType_DVD:      strRecentMediumAddress = GUI_RecentListCD; break;
-        case UIMediumType_Floppy:   strRecentMediumAddress = GUI_RecentListFD; break;
+        case UIMediumType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
+        case UIMediumType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
+        case UIMediumType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
         default: break;
     }
-    const QStringList recentMediumList = vboxGlobal().virtualBox().GetExtraData(strRecentMediumAddress).split(';');
     /* Prepare choose-recent-medium actions: */
     foreach (const QString &strRecentMediumLocationBase, recentMediumList)
     {
