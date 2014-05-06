@@ -179,10 +179,16 @@ private:
     /** Returns extra-data value corresponding to passed @a strKey as QString.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
     QString extraDataString(const QString &strKey, const QString &strID = QString()) const;
+    /** Defines extra-data value corresponding to passed @a strKey as strValue.
+      * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
+    void setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID = QString());
 
     /** Returns extra-data value corresponding to passed @a strKey as QStringList.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
     QStringList extraDataStringList(const QString &strKey, const QString &strID = QString()) const;
+    /** Defines extra-data value corresponding to passed @a strKey as strValue.
+      * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
+    void setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID = QString());
 
     /** Singleton Extra-data Manager instance. */
     static UIExtraDataManager *m_pInstance;
