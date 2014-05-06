@@ -72,6 +72,9 @@ public:
     /** Static Extra-data Manager destructor. */
     static void destroy();
 
+    /** Returns version for which user wants to prevent BETA warning. */
+    QString preventBETAwarningForVersion() const;
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /** Returns whether we should allow Application Update. */
     bool shouldWeAllowApplicationUpdate() const;

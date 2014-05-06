@@ -152,6 +152,11 @@ UIExtraDataManager::~UIExtraDataManager()
     m_pInstance = 0;
 }
 
+QString UIExtraDataManager::preventBETAwarningForVersion() const
+{
+    return extraDataString(GUI_PreventBetaWarning);
+}
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 bool UIExtraDataManager::shouldWeAllowApplicationUpdate() const
 {

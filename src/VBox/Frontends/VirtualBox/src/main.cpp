@@ -28,6 +28,7 @@
 #include "UISelectorWindow.h"
 #include "VBoxUtils.h"
 #include "UIModalWindowManager.h"
+#include "UIExtraDataManager.h"
 #ifdef Q_WS_MAC
 # include "UICocoaApplication.h"
 #endif
@@ -530,8 +531,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
                 if (vboxVersion.contains("BETA"))
                 {
                     /* Allow to prevent this message: */
-                    QString str = vboxGlobal().virtualBox().GetExtraData(GUI_PreventBetaWarning);
-                    if (str != vboxVersion)
+                    if (gEDataManager->preventBETAwarningForVersion() != vboxVersion)
                         msgCenter().showBETAWarning();
                 }
 # endif /* !DEBUG */
