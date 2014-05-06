@@ -232,11 +232,8 @@ void crServerSetVBoxConfiguration()
         cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT
                 | CR_VBOX_CAP_CMDVBVA
                 | CR_VBOX_CAP_CMDBLOCKS
-#ifdef DEBUG_misha
                 | CR_VBOX_CAP_GETATTRIBSLOCATIONS
-#endif
                 ;
-
     }
 
     crInfo("Cfg: u32Caps(%#x), fVisualBitsDefault(%#x)",
@@ -385,9 +382,7 @@ void crServerSetVBoxConfigurationHGCM()
         cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT
                 | CR_VBOX_CAP_CMDVBVA
                 | CR_VBOX_CAP_CMDBLOCKS
-#ifdef DEBUG_misha
                 | CR_VBOX_CAP_GETATTRIBSLOCATIONS
-#endif
                 ;
     }
 
