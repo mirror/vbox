@@ -524,6 +524,8 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
     rc = VbglR3GuestCtrlProcCbStatus(&ctxStart,
                                      pProcess->uPID, PROC_STS_STARTED, 0 /* u32Flags */,
                                      NULL /* pvData */, 0 /* cbData */);
+    if (rc == VERR_INTERRUPTED)
+        rc = VINF_SUCCESS; /* SIGCHLD send by quick childs! */
     if (RT_FAILURE(rc))
         VBoxServiceError("[PID %RU32]: Error reporting starting status to host, rc=%Rrc\n",
                          pProcess->uPID, rc);
