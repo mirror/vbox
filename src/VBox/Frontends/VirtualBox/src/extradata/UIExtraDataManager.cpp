@@ -240,6 +240,16 @@ bool UIExtraDataManager::shouldWeAllowApplicationUpdate() const
 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
+bool UIExtraDataManager::isFirstRun(const QString &strId) const
+{
+    return isFeatureAllowed(GUI_FirstRun, strId);
+}
+
+void UIExtraDataManager::setFirstRun(bool fIsFirstRun, const QString &strId)
+{
+    setExtraDataString(GUI_FirstRun, toFeatureAllowed(fIsFirstRun), strId);
+}
+
 bool UIExtraDataManager::shouldWeShowMachine(const QString &strID) const
 {
     /* Show unless 'forbidden' flag is set: */

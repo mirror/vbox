@@ -1139,9 +1139,7 @@ void UISession::loadSessionSettings()
         m_hiDPIOptimizationType = gEDataManager->hiDPIOptimizationType(vboxGlobal().managedVMUuid());
 
         /* Is there should be First RUN Wizard? */
-        strSettings = machine.GetExtraData(GUI_FirstRun);
-        if (strSettings == "yes")
-            m_fIsFirstTimeStarted = true;
+        m_fIsFirstTimeStarted = gEDataManager->isFirstRun(vboxGlobal().managedVMUuid());
 
         /* Ignore mediums mounted at runtime? */
         strSettings = machine.GetExtraData(GUI_SaveMountedAtRuntime);
@@ -1187,8 +1185,8 @@ void UISession::saveSessionSettings()
 
     /* Save extra-data settings: */
     {
-        /* Disable First RUN Wizard for the since now: */
-        machine.SetExtraData(GUI_FirstRun, QString());
+        /* Disable First RUN Wizard: */
+        gEDataManager->setFirstRun(false, vboxGlobal().managedVMUuid());
 
         /* Remember if guest should autoresize: */
         machine.SetExtraData(GUI_AutoresizeGuest,

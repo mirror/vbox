@@ -114,6 +114,11 @@ public:
     bool shouldWeAllowApplicationUpdate() const;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
+    /** Returns whether this machine started for the first time. */
+    bool isFirstRun(const QString &strId) const;
+    /** Defines whether this machine started for the first time. */
+    void setFirstRun(bool fIsFirstRun, const QString &strId);
+
     /** Returns whether we should show machine. */
     bool shouldWeShowMachine(const QString &strID) const;
     /** Returns whether we should show machine details. */
