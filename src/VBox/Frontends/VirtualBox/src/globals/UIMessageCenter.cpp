@@ -794,7 +794,7 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                                 "if you do not do this the current state will be permanently lost. Do you wish to proceed?</p>")
                                 .arg(strSnapshotName),
                              tr("Create a snapshot of the current machine state"),
-                             !vboxGlobal().virtualBox().GetExtraDataStringList(GUI_InvertMessageOption).contains("confirmSnapshotRestoring"),
+                             !gEDataManager->messagesWithInvertedOption().contains("confirmSnapshotRestoring"),
                              AlertButton_Ok | AlertButtonOption_Default,
                              AlertButton_Cancel | AlertButtonOption_Escape,
                              0 /* 3rd button */,
