@@ -664,6 +664,16 @@ bool UIExtraDataManager::isFeatureRestricted(const QString &strKey, const QStrin
            || strValue == "0";
 }
 
+QString UIExtraDataManager::toFeatureAllowed(bool fAllowed)
+{
+    return fAllowed ? QString("true") : QString();
+}
+
+QString UIExtraDataManager::toFeatureRestricted(bool fRestricted)
+{
+    return fRestricted ? QString("false") : QString();
+}
+
 QString UIExtraDataManager::extraDataString(const QString &strKey, const QString &strID /* = QString() */) const
 {
     /* Hot-load machine extra-data map if necessary: */

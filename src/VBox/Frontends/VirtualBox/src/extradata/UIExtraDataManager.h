@@ -210,6 +210,11 @@ private:
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
     bool isFeatureRestricted(const QString &strKey, const QString &strID = QString()) const;
 
+    /** Translates bool flag into 'allowed' value. */
+    QString toFeatureAllowed(bool fAllowed);
+    /** Translates bool flag into 'restricted' value. */
+    QString toFeatureRestricted(bool fRestricted);
+
     /** Returns extra-data value corresponding to passed @a strKey as QString.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
     QString extraDataString(const QString &strKey, const QString &strID = QString()) const;
