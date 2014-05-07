@@ -828,10 +828,9 @@ void UISettingsDialogMachine::saveData()
                 m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
         }
 
-        /* Clear the "GUI_FirstRun" extra data key in case if
-         * the boot order or disk configuration were changed: */
+        /* Disable First RUN Wizard: */
         if (m_fResetFirstRunFlag)
-            m_machine.SetExtraData(GUI_FirstRun, QString::null);
+            gEDataManager->setFirstRun(false, m_strMachineId);
 
         /* Save settings finally: */
         m_machine.SaveSettings();
