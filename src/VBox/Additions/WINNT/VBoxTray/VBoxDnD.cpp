@@ -35,6 +35,11 @@
 #include <iprt/cpp/mtlist.h>
 
 #include <VBoxGuestInternal.h>
+#ifdef LOG_GROUP
+# undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/log.h>
 
 /* Enable this define to see the proxy window(s) when debugging
  * their behavior. Don't have this enabled in release builds! */
@@ -302,6 +307,13 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
         case WM_LBUTTONUP:
             LogFlowThisFunc(("WM_LBUTTONUP\n"));
             mfMouseButtonDown = false;
+
+            /* As the mouse button was released, Hide the proxy window again.
+             * This can happen if
+             * - the user bumped a guest window to the screen's edges
+             * - there was no drop data from the guest available and the user
+             *   enters the guest screen again after this unsuccessful operation */
+            reset();
             return 0;
 
         case WM_MOUSELEAVE:
@@ -950,40 +962,48 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
         if (!strFormats.isEmpty())
         {
             uDefAction = DND_COPY_ACTION;
-            /** @todo Support more than one action at a time. */
-            uAllActions = uDefAction;
 
             LogFlowFunc(("Acknowledging pDropTarget=0x%p, uDefAction=0x%x, uAllActions=0x%x, strFormats=%s\n",
                          pDropTarget, uDefAction, uAllActions, strFormats.c_str()));
-            rc = VbglR3DnDGHAcknowledgePending(mClientID,
-                                               uDefAction, uAllActions, strFormats.c_str());
-            if (RT_FAILURE(rc))
-            {
-                char szMsg[256]; /* Sizes according to MSDN. */
-                char szTitle[64];
-
-                /** @todo Add some translation macros here. */
-                RTStrPrintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions Drag'n Drop");
-                RTStrPrintf(szMsg, sizeof(szMsg), "Drag'n drop to the host either is not supported or disabled. "
-                                                  "Pleas enable Guest to Host or Bidirectional drag'n drop mode "
-                                                  "or re-install the VirtualBox Guest Additions.");
-                switch (rc)
-                {
-                    case VERR_ACCESS_DENIED:
-                        rc = hlpShowBalloonTip(ghInstance, ghwndToolWindow, ID_TRAYICON,
-                                               szMsg, szTitle,
-                                               15 * 1000 /* Time to display in msec */, NIIF_INFO);
-                        AssertRC(rc);
-                        break;
-
-                    default:
-                        break;
-                }
-            }
         }
         else
+        {
+            strFormats = "unknown"; /* Prevent VERR_IO_GEN_FAILURE for IOCTL. */
             LogFlowFunc(("No format data available yet\n"));
+        }
+
+        /** @todo Support more than one action at a time. */
+        uAllActions = uDefAction;
+
+        rc = VbglR3DnDGHAcknowledgePending(mClientID,
+                                           uDefAction, uAllActions, strFormats.c_str());
+        if (RT_FAILURE(rc))
+        {
+            char szMsg[256]; /* Sizes according to MSDN. */
+            char szTitle[64];
+
+            /** @todo Add some i18l tr() macros here. */
+            RTStrPrintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions Drag'n Drop");
+            RTStrPrintf(szMsg, sizeof(szMsg), "Drag'n drop to the host either is not supported or disabled. "
+                                              "Please enable Guest to Host or Bidirectional drag'n drop mode "
+                                              "or re-install the VirtualBox Guest Additions.");
+            switch (rc)
+            {
+                case VERR_ACCESS_DENIED:
+                    rc = hlpShowBalloonTip(ghInstance, ghwndToolWindow, ID_TRAYICON,
+                                           szMsg, szTitle,
+                                           15 * 1000 /* Time to display in msec */, NIIF_INFO);
+                    AssertRC(rc);
+                    break;
+
+                default:
+                    break;
+            }
+        }
     }
+
+    if (RT_FAILURE(rc))
+        reset(); /* Reset state on failure. */
 
     LogFlowFuncLeaveRC(rc);
     return rc;
