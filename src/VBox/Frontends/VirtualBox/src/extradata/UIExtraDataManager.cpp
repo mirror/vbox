@@ -227,6 +227,11 @@ void UIExtraDataManager::setSuppressedMessages(const QStringList &value)
     setExtraDataStringList(GUI_SuppressMessages, value);
 }
 
+QStringList UIExtraDataManager::messagesWithInvertedOption() const
+{
+    return extraDataStringList(GUI_InvertMessageOption);
+}
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 bool UIExtraDataManager::shouldWeAllowApplicationUpdate() const
 {

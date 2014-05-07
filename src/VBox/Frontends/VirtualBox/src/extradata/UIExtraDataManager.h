@@ -106,6 +106,9 @@ public:
     /** Defines list of the supressed messages for the Message/Popup center frameworks as @a value. */
     void setSuppressedMessages(const QStringList &value);
 
+    /** Returns list of the messages for the Message/Popup center frameworks with inverted check-box state. */
+    QStringList messagesWithInvertedOption() const;
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /** Returns whether we should allow Application Update. */
     bool shouldWeAllowApplicationUpdate() const;
