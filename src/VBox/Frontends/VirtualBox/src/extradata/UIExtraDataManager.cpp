@@ -549,7 +549,7 @@ void UIExtraDataManager::prepareExtraDataEventHandler()
     {
         /* Extra-data change signal: */
         connect(m_pHandler, SIGNAL(sigExtraDataChange(QString, QString, QString)),
-                this, SIGNAL(sltExtraDataChange(QString, QString, QString)),
+                this, SLOT(sltExtraDataChange(QString, QString, QString)),
                 Qt::QueuedConnection);
 
         /* Prepare Main event-listener: */
