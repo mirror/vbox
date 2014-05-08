@@ -240,6 +240,28 @@ bool UIExtraDataManager::shouldWeAllowApplicationUpdate() const
 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
+bool UIExtraDataManager::isDescriptionHiddenForWizard(const QString &strWizardName)
+{
+    /* True if wizard-name among the others: */
+    return extraDataStringList(GUI_HideDescriptionForWizards).contains(strWizardName);
+}
+
+void UIExtraDataManager::setDescriptionHiddenForWizard(const QString &strWizardName, bool fHidden)
+{
+    /* Get current value: */
+    QStringList oldValue = extraDataStringList(GUI_HideDescriptionForWizards);
+    QStringList newValue = oldValue;
+    /* Include wizard-name if necessary: */
+    if (fHidden && !newValue.contains(strWizardName))
+        newValue << strWizardName;
+    /* Exclude wizard-name if necessary: */
+    else if (!fHidden && newValue.contains(strWizardName))
+        newValue.removeAll(strWizardName);
+    /* Update extra-data if necessary: */
+    if (newValue != oldValue)
+        setExtraDataStringList(GUI_HideDescriptionForWizards, newValue);
+}
+
 bool UIExtraDataManager::isFirstRun(const QString &strId) const
 {
     return isFeatureAllowed(GUI_FirstRun, strId);
