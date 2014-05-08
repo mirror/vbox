@@ -183,8 +183,8 @@ void UIWizardImportApp::sltCurrentIdChanged(int iId)
     /* Call to base-class: */
     UIWizard::sltCurrentIdChanged(iId);
     /* Enable 2nd button (Reset to Defaults) for 2nd and Expert pages only! */
-    setOption(QWizard::HaveCustomButton2, (mode() == UIWizardMode_Basic && iId == Page2) ||
-                                          (mode() == UIWizardMode_Expert && iId == PageExpert));
+    setOption(QWizard::HaveCustomButton2, (mode() == WizardMode_Basic && iId == Page2) ||
+                                          (mode() == WizardMode_Expert && iId == PageExpert));
 }
 
 void UIWizardImportApp::sltCustomButtonClicked(int iId)
@@ -219,14 +219,14 @@ void UIWizardImportApp::prepare()
     /* Create corresponding pages: */
     switch (mode())
     {
-        case UIWizardMode_Basic:
+        case WizardMode_Basic:
         {
             if (m_strFileName.isEmpty())
                 setPage(Page1, new UIWizardImportAppPageBasic1);
             setPage(Page2, new UIWizardImportAppPageBasic2(m_strFileName));
             break;
         }
-        case UIWizardMode_Expert:
+        case WizardMode_Expert:
         {
             setPage(PageExpert, new UIWizardImportAppPageExpert(m_strFileName));
             break;

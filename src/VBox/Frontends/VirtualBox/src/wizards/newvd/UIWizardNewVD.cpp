@@ -36,7 +36,7 @@
 UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
                              const QString &strDefaultName, const QString &strDefaultPath,
                              qulonglong uDefaultSize,
-                             UIWizardMode mode)
+                             WizardMode mode)
     : UIWizard(pParent, WizardType_NewVD, mode)
     , m_strDefaultName(strDefaultName)
     , m_strDefaultPath(strDefaultPath)
@@ -124,14 +124,14 @@ void UIWizardNewVD::prepare()
     /* Create corresponding pages: */
     switch (mode())
     {
-        case UIWizardMode_Basic:
+        case WizardMode_Basic:
         {
             setPage(Page1, new UIWizardNewVDPageBasic1);
             setPage(Page2, new UIWizardNewVDPageBasic2);
             setPage(Page3, new UIWizardNewVDPageBasic3(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
             break;
         }
-        case UIWizardMode_Expert:
+        case WizardMode_Expert:
         {
             setPage(PageExpert, new UIWizardNewVDPageExpert(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
             break;

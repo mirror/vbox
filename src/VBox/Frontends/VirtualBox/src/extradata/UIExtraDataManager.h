@@ -114,10 +114,10 @@ public:
     bool shouldWeAllowApplicationUpdate() const;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
-    /** Returns whether description should be hidden for wizard @a strWizardName. */
-    bool isDescriptionHiddenForWizard(const QString &strWizardName);
-    /** Defines whether description should be @a fHidden for wizard @a strWizardName. */
-    void setDescriptionHiddenForWizard(const QString &strWizardName, bool fHidden);
+    /** Returns mode (basic/expert) for wizard of @a type. */
+    WizardMode modeForWizard(WizardType type);
+    /** Defines @a mode (basic/expert) for wizard of @a type. */
+    void setModeForWizard(WizardType type, WizardMode mode);
 
     /** Returns whether this machine started for the first time. */
     bool isFirstRun(const QString &strId) const;

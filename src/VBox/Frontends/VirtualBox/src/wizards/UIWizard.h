@@ -30,14 +30,6 @@
 /* Forward declarations: */
 class UIWizardPage;
 
-/* Wizard mode: */
-enum UIWizardMode
-{
-    UIWizardMode_Auto,
-    UIWizardMode_Basic,
-    UIWizardMode_Expert
-};
-
 /* QWizard class reimplementation with extended funtionality. */
 class UIWizard : public QIWithRetranslateUI<QWizard>
 {
@@ -46,7 +38,7 @@ class UIWizard : public QIWithRetranslateUI<QWizard>
 public:
 
     /* Mode related stuff: */
-    UIWizardMode mode() { return m_mode; }
+    WizardMode mode() { return m_mode; }
 
     /* Page related methods: */
     virtual void prepare();
@@ -61,7 +53,7 @@ protected slots:
 protected:
 
     /* Constructor: */
-    UIWizard(QWidget *pParent, WizardType type, UIWizardMode mode = UIWizardMode_Auto);
+    UIWizard(QWidget *pParent, WizardType type, WizardMode mode = WizardMode_Auto);
 
     /* Translation stuff: */
     void retranslateUi();
@@ -94,11 +86,10 @@ private:
     int proposedWatermarkHeight();
     void assignWatermarkHelper();
 #endif /* !Q_WS_MAC */
-    static UIWizardMode modeForType(WizardType type);
 
     /* Variables: */
     WizardType m_type;
-    UIWizardMode m_mode;
+    WizardMode m_mode;
 #ifndef Q_WS_MAC
     QString m_strWatermarkName;
 #endif /* !Q_WS_MAC */

@@ -120,7 +120,7 @@ void UIWizardCloneVD::prepare()
     /* Create corresponding pages: */
     switch (mode())
     {
-        case UIWizardMode_Basic:
+        case WizardMode_Basic:
         {
             setPage(Page1, new UIWizardCloneVDPageBasic1(m_sourceVirtualDisk));
             setPage(Page2, new UIWizardCloneVDPageBasic2);
@@ -128,7 +128,7 @@ void UIWizardCloneVD::prepare()
             setPage(Page4, new UIWizardCloneVDPageBasic4);
             break;
         }
-        case UIWizardMode_Expert:
+        case WizardMode_Expert:
         {
             setPage(PageExpert, new UIWizardCloneVDPageExpert(m_sourceVirtualDisk));
             break;
