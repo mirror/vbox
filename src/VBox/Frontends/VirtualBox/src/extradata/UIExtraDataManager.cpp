@@ -157,6 +157,39 @@ QString UIExtraDataManager::preventBETAwarningForVersion() const
     return extraDataString(GUI_PreventBetaWarning);
 }
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+QString UIExtraDataManager::applicationUpdateData() const
+{
+    return extraDataString(GUI_UpdateDate);
+}
+
+void UIExtraDataManager::setApplicationUpdateData(const QString &strValue)
+{
+    setExtraDataString(GUI_UpdateDate, strValue);
+}
+
+qulonglong UIExtraDataManager::applicationUpdateCheckCounter() const
+{
+    /* Read subsequent update check counter value: */
+    qulonglong uResult = 1;
+    const QString strCheckCount = extraDataString(GUI_UpdateCheckCount);
+    if (!strCheckCount.isEmpty())
+    {
+        bool ok = false;
+        int uCheckCount = strCheckCount.toULongLong(&ok);
+        if (ok) uResult = uCheckCount;
+    }
+    /* Return update check counter value: */
+    return uResult;
+}
+
+void UIExtraDataManager::incrementApplicationUpdateCheckCounter()
+{
+    /* Increment update check counter value: */
+    setExtraDataString(GUI_UpdateCheckCount, QString::number(applicationUpdateCheckCounter() + 1));
+}
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
 QString UIExtraDataManager::recentFolderForHardDrives() const
 {
     return extraDataString(GUI_RecentFolderHD);

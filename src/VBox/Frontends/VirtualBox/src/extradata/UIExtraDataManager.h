@@ -75,6 +75,17 @@ public:
     /** Returns version for which user wants to prevent BETA warning. */
     QString preventBETAwarningForVersion() const;
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    /** Returns last application update date. */
+    QString applicationUpdateData() const;
+    /** Defines last application update date as @a strValue. */
+    void setApplicationUpdateData(const QString &strValue);
+    /** Returns application update check counter. */
+    qulonglong applicationUpdateCheckCounter() const;
+    /** Increments application update check counter. */
+    void incrementApplicationUpdateCheckCounter();
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
     /** Returns recent hard-drive folder. */
     QString recentFolderForHardDrives() const;
     /** Returns recent optical-disk folder. */
