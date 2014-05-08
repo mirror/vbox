@@ -1141,8 +1141,8 @@
     <const name="SharedFolder"      value="6">
       <desc>Shared folder device.</desc>
     </const>
-    <const name="Graphics"          value="7">
-      <desc>Graphics device.</desc>
+    <const name="Graphics3D"          value="7">
+      <desc>Graphics device 3D activity.</desc>
     </const>  </enum>
 
   <enum
