@@ -35,7 +35,7 @@
 #include "CStorageController.h"
 
 UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strGroup /* = QString() */)
-    : UIWizard(pParent, UIWizardType_NewVM)
+    : UIWizard(pParent, WizardType_NewVM)
     , m_strGroup(strGroup)
     , m_iIDECount(0)
     , m_iSATACount(0)

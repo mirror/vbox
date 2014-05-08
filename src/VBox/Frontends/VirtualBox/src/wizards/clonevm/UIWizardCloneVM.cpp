@@ -30,7 +30,7 @@
 #include "CConsole.h"
 
 UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine, CSnapshot snapshot /* = CSnapshot() */)
-    : UIWizard(pParent, UIWizardType_CloneVM)
+    : UIWizard(pParent, WizardType_CloneVM)
     , m_machine(machine)
     , m_snapshot(snapshot)
 {

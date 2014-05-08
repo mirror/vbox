@@ -75,6 +75,7 @@ template<> bool canConvert<UIVisualStateType>();
 template<> bool canConvert<DetailsElementType>();
 template<> bool canConvert<GlobalSettingsPageType>();
 template<> bool canConvert<MachineSettingsPageType>();
+template<> bool canConvert<WizardType>();
 template<> bool canConvert<IndicatorType>();
 template<> bool canConvert<MachineCloseAction>();
 template<> bool canConvert<GuruMeditationHandlerType>();
@@ -138,6 +139,8 @@ template<> QPixmap toWarningPixmap(const GlobalSettingsPageType &globalSettingsP
 template<> QString toInternalString(const MachineSettingsPageType &machineSettingsPageType);
 template<> MachineSettingsPageType fromInternalString<MachineSettingsPageType>(const QString &strMachineSettingsPageType);
 template<> QPixmap toWarningPixmap(const MachineSettingsPageType &machineSettingsPageType);
+template<> QString toInternalString(const WizardType &wizardType);
+template<> WizardType fromInternalString<WizardType>(const QString &strWizardType);
 template<> QString toInternalString(const IndicatorType &indicatorType);
 template<> IndicatorType fromInternalString<IndicatorType>(const QString &strIndicatorType);
 template<> QString toInternalString(const MachineCloseAction &machineCloseAction);

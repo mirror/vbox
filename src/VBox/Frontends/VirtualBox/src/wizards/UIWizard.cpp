@@ -28,6 +28,7 @@
 #include "VBoxGlobal.h"
 #include "QIRichTextLabel.h"
 #include "UIExtraDataManager.h"
+#include "UIConverter.h"
 
 void UIWizard::sltCurrentIdChanged(int iId)
 {
@@ -37,7 +38,7 @@ void UIWizard::sltCurrentIdChanged(int iId)
     if (iId == 0)
         fIsHideShowDescriptionButtonAvailable = true;
     /* But first-run wizard has no such button anyway: */
-    if (m_type == UIWizardType_FirstRun)
+    if (m_type == WizardType_FirstRun)
         fIsHideShowDescriptionButtonAvailable = false;
     /* Set a flag for hide/show description button finally: */
     setOption(QWizard::HaveCustomButton1, fIsHideShowDescriptionButtonAvailable);
@@ -60,17 +61,17 @@ void UIWizard::sltCustomButtonClicked(int iId)
         }
 
         /* Save mode settings: */
-        gEDataManager->setDescriptionHiddenForWizard(nameForType(m_type), m_mode == UIWizardMode_Expert);
+        gEDataManager->setDescriptionHiddenForWizard(gpConverter->toInternalString(m_type), m_mode == UIWizardMode_Expert);
 
         /* Prepare: */
         prepare();
     }
 }
 
-UIWizard::UIWizard(QWidget *pParent, UIWizardType type, UIWizardMode mode)
+UIWizard::UIWizard(QWidget *pParent, WizardType type, UIWizardMode mode)
     : QIWithRetranslateUI<QWizard>(pParent)
     , m_type(type)
-    , m_mode(mode == UIWizardMode_Auto ? loadModeForType(m_type) : mode)
+    , m_mode(mode == UIWizardMode_Auto ? modeForType(m_type) : mode)
 {
 #ifdef Q_WS_WIN
     /* Hide window icon: */
@@ -381,17 +382,17 @@ double UIWizard::ratio()
 
     switch (m_type)
     {
-        case UIWizardType_CloneVM:
+        case WizardType_CloneVM:
             dRatio -= 0.4;
             break;
-        case UIWizardType_NewVD:
-        case UIWizardType_CloneVD:
+        case WizardType_NewVD:
+        case WizardType_CloneVD:
             dRatio += 0.1;
             break;
-        case UIWizardType_ExportAppliance:
+        case WizardType_ExportAppliance:
             dRatio += 0.3;
             break;
-        case UIWizardType_FirstRun:
+        case WizardType_FirstRun:
             dRatio += 0.3;
             break;
         default:
@@ -504,30 +505,13 @@ void UIWizard::assignWatermarkHelper()
 #endif /* !Q_WS_MAC */
 
 /* static */
-QString UIWizard::nameForType(UIWizardType type)
-{
-    QString strName;
-    switch (type)
-    {
-        case UIWizardType_NewVM: strName = "NewVM"; break;
-        case UIWizardType_CloneVM: strName = "CloneVM"; break;
-        case UIWizardType_ExportAppliance: strName = "ExportAppliance"; break;
-        case UIWizardType_ImportAppliance: strName = "ImportAppliance"; break;
-        case UIWizardType_FirstRun: strName = "FirstRun"; break;
-        case UIWizardType_NewVD: strName = "NewVD"; break;
-        case UIWizardType_CloneVD: strName = "CloneVD"; break;
-    }
-    return strName;
-}
-
-/* static */
-UIWizardMode UIWizard::loadModeForType(UIWizardType type)
+UIWizardMode UIWizard::modeForType(WizardType type)
 {
     /* Some wizard use only basic mode: */
-    if (type == UIWizardType_FirstRun)
+    if (type == WizardType_FirstRun)
         return UIWizardMode_Basic;
     /* Otherwise get mode from extra-data manager: */
-    return gEDataManager->isDescriptionHiddenForWizard(nameForType(type))
+    return gEDataManager->isDescriptionHiddenForWizard(gpConverter->toInternalString(type))
            ? UIWizardMode_Expert : UIWizardMode_Basic;
 }
 

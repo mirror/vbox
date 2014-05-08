@@ -36,7 +36,7 @@
 #include "CVFSExplorer.h"
 
 UIWizardExportApp::UIWizardExportApp(QWidget *pParent, const QStringList &selectedVMNames)
-    : UIWizard(pParent, UIWizardType_ExportAppliance)
+    : UIWizard(pParent, WizardType_ExportAppliance)
     , m_selectedVMNames(selectedVMNames)
 {
 #ifndef Q_WS_MAC

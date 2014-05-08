@@ -25,21 +25,10 @@
 
 /* Local includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
 class UIWizardPage;
-
-/* Wizard type: */
-enum UIWizardType
-{
-    UIWizardType_NewVM,
-    UIWizardType_CloneVM,
-    UIWizardType_ExportAppliance,
-    UIWizardType_ImportAppliance,
-    UIWizardType_FirstRun,
-    UIWizardType_NewVD,
-    UIWizardType_CloneVD
-};
 
 /* Wizard mode: */
 enum UIWizardMode
@@ -72,7 +61,7 @@ protected slots:
 protected:
 
     /* Constructor: */
-    UIWizard(QWidget *pParent, UIWizardType type, UIWizardMode mode = UIWizardMode_Auto);
+    UIWizard(QWidget *pParent, WizardType type, UIWizardMode mode = UIWizardMode_Auto);
 
     /* Translation stuff: */
     void retranslateUi();
@@ -105,11 +94,10 @@ private:
     int proposedWatermarkHeight();
     void assignWatermarkHelper();
 #endif /* !Q_WS_MAC */
-    static QString nameForType(UIWizardType type);
-    static UIWizardMode loadModeForType(UIWizardType type);
+    static UIWizardMode modeForType(WizardType type);
 
     /* Variables: */
-    UIWizardType m_type;
+    WizardType m_type;
     UIWizardMode m_mode;
 #ifndef Q_WS_MAC
     QString m_strWatermarkName;

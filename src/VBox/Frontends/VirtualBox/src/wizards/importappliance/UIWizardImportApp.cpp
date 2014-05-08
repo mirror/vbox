@@ -135,7 +135,7 @@ private:
 };
 
 UIWizardImportApp::UIWizardImportApp(QWidget *pParent, const QString &strFileName)
-    : UIWizard(pParent, UIWizardType_ImportAppliance)
+    : UIWizard(pParent, WizardType_ImportAppliance)
     , m_strFileName(strFileName)
 {
 #ifndef Q_WS_MAC

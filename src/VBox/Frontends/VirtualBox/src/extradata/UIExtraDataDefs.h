@@ -189,6 +189,19 @@ enum MachineSettingsPageType
 };
 Q_DECLARE_METATYPE(MachineSettingsPageType);
 
+/** Common UI: Wizard types. */
+enum WizardType
+{
+    WizardType_Invalid,
+    WizardType_NewVM,
+    WizardType_CloneVM,
+    WizardType_ExportAppliance,
+    WizardType_ImportAppliance,
+    WizardType_FirstRun,
+    WizardType_NewVD,
+    WizardType_CloneVD
+};
+
 
 /** Selector UI: Details-element types. */
 enum DetailsElementType
