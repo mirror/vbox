@@ -34,7 +34,7 @@
 #include "CMediumFormat.h"
 
 UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &sourceVirtualDisk)
-    : UIWizard(pParent, UIWizardType_CloneVD)
+    : UIWizard(pParent, WizardType_CloneVD)
     , m_sourceVirtualDisk(sourceVirtualDisk)
 {
 #ifndef Q_WS_MAC

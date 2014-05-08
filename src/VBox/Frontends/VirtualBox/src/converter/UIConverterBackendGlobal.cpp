@@ -47,6 +47,7 @@ template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
 template<> bool canConvert<GlobalSettingsPageType>() { return true; }
 template<> bool canConvert<MachineSettingsPageType>() { return true; }
+template<> bool canConvert<WizardType>() { return true; }
 template<> bool canConvert<IndicatorType>() { return true; }
 template<> bool canConvert<MachineCloseAction>() { return true; }
 template<> bool canConvert<GuruMeditationHandlerType>() { return true; }
@@ -960,6 +961,48 @@ template<> QPixmap toWarningPixmap(const MachineSettingsPageType &type)
         default: AssertMsgFailed(("No pixmap for %d", type)); break;
     }
     return QPixmap();
+}
+
+/* QString <= WizardType: */
+template<> QString toInternalString(const WizardType &wizardType)
+{
+    QString strResult;
+    switch (wizardType)
+    {
+        case WizardType_NewVM:           strResult = "NewVM"; break;
+        case WizardType_CloneVM:         strResult = "CloneVM"; break;
+        case WizardType_ExportAppliance: strResult = "ExportAppliance"; break;
+        case WizardType_ImportAppliance: strResult = "ImportAppliance"; break;
+        case WizardType_FirstRun:        strResult = "FirstRun"; break;
+        case WizardType_NewVD:           strResult = "NewVD"; break;
+        case WizardType_CloneVD:         strResult = "CloneVD"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for wizard type=%d", wizardType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* WizardType <= QString: */
+template<> WizardType fromInternalString<WizardType>(const QString &strWizardType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;          QList<WizardType> values;
+    keys << "NewVM";           values << WizardType_NewVM;
+    keys << "CloneVM";         values << WizardType_CloneVM;
+    keys << "ExportAppliance"; values << WizardType_ExportAppliance;
+    keys << "ImportAppliance"; values << WizardType_ImportAppliance;
+    keys << "FirstRun";        values << WizardType_FirstRun;
+    keys << "NewVD";           values << WizardType_NewVD;
+    keys << "CloneVD";         values << WizardType_CloneVD;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strWizardType, Qt::CaseInsensitive))
+        return WizardType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strWizardType, Qt::CaseInsensitive)));
 }
 
 /* QString <= IndicatorType: */

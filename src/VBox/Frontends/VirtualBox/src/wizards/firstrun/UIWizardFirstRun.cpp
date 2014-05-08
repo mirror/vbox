@@ -29,7 +29,7 @@
 #include "CMediumAttachment.h"
 
 UIWizardFirstRun::UIWizardFirstRun(QWidget *pParent, const CMachine &machine)
-    : UIWizard(pParent, UIWizardType_FirstRun)
+    : UIWizard(pParent, WizardType_FirstRun)
     , m_machine(machine)
     , m_fHardDiskWasSet(isBootHardDiskAttached(m_machine))
 {
