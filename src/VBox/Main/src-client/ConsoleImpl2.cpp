@@ -3398,6 +3398,8 @@ int Console::configGraphicsController(PCFGMNODE pDevices,
         NOREF(fHMEnabled);
 #endif
 
+        attachStatusDriver(pInst, &mapCrOglLed, 0, 0, NULL, NULL, 0);
+
 #ifdef VBOX_WITH_VMSVGA
         if (graphicsController == GraphicsControllerType_VMSVGA)
         {

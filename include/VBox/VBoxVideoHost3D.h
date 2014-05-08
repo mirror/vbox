@@ -28,6 +28,7 @@
 #include <iprt/cdefs.h>
 #include <VBox/VBoxVideo.h>
 #include <VBox/hgcmsvc.h>
+#include <VBox/vmm/pdmifs.h>
 
 /* screen update instance */
 typedef struct PDMIDISPLAYCONNECTOR *HVBOXCRCMDCLTSCR;
@@ -94,6 +95,7 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP
         uint64_t uAlignment;
     };
     uint64_t cbVRam;
+    PPDMLED pLed;
     /* out */
     struct VBOXCRCMD_SVRINFO CrCmdServerInfo;
 } VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP, *PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP;

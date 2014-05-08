@@ -2488,6 +2488,7 @@ public:
             {
                 mFlags.fForcePresentOnReenable = false;
                 cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, mpCompositor, NULL);
+                g_pLed->Asserted.s.fWriting = 1;
             }
 
             /* even if the above branch is entered due to mFlags.fForcePresentOnReenable,

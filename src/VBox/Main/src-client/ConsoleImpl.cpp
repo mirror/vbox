@@ -432,6 +432,7 @@ HRESULT Console::FinalConstruct()
     RT_ZERO(mapNetworkLeds);
     RT_ZERO(mapUSBLed);
     RT_ZERO(mapSharedFolderLed);
+    RT_ZERO(mapCrOglLed);
 
     for (unsigned i = 0; i < RT_ELEMENTS(maStorageDevType); ++i)
         maStorageDevType[i] = DeviceType_Null;
@@ -2876,6 +2877,12 @@ STDMETHODIMP Console::GetDeviceActivity(DeviceType_T aDeviceType,
         case DeviceType_SharedFolder:
         {
             SumLed.u32 |= readAndClearLed(mapSharedFolderLed);
+            break;
+        }
+
+        case DeviceType_Graphics:
+        {
+            SumLed.u32 |= readAndClearLed(mapCrOglLed);
             break;
         }
 

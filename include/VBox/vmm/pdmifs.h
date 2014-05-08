@@ -640,8 +640,8 @@ typedef struct VBVACMDHDR *PVBVACMDHDR;
 typedef struct VBVAINFOSCREEN *PVBVAINFOSCREEN;
 typedef struct VBVAINFOVIEW *PVBVAINFOVIEW;
 typedef struct VBVAHOSTFLAGS *PVBVAHOSTFLAGS;
-typedef struct VBOXVDMACMD_CHROMIUM_CMD *PVBOXVDMACMD_CHROMIUM_CMD; /* <- chromium [hgsmi] command */
-typedef struct VBOXVDMACMD_CHROMIUM_CTL *PVBOXVDMACMD_CHROMIUM_CTL; /* <- chromium [hgsmi] command */
+struct VBOXVDMACMD_CHROMIUM_CMD; /* <- chromium [hgsmi] command */
+struct VBOXVDMACMD_CHROMIUM_CTL; /* <- chromium [hgsmi] command */
 
 
 /** Pointer to a display connector interface. */
@@ -765,7 +765,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   pCmd                Video HW Acceleration Command to be processed.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnCrHgsmiCommandProcess, (PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd));
+    DECLR3CALLBACKMEMBER(void, pfnCrHgsmiCommandProcess, (PPDMIDISPLAYCONNECTOR pInterface, struct VBOXVDMACMD_CHROMIUM_CMD* pCmd, uint32_t cbCmd));
 
     /**
      * Process the guest chromium control command.
@@ -774,7 +774,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   pCmd                Video HW Acceleration Command to be processed.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnCrHgsmiControlProcess, (PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32_t cbCtl));
+    DECLR3CALLBACKMEMBER(void, pfnCrHgsmiControlProcess, (PPDMIDISPLAYCONNECTOR pInterface, struct VBOXVDMACMD_CHROMIUM_CTL* pCtl, uint32_t cbCtl));
 
     /**
      * Process the guest chromium control command.
@@ -3089,10 +3089,10 @@ typedef struct PDMIDISPLAYVBVACALLBACKS
                                                              PVBOXVHWACMD pCmd));
 
     DECLR3CALLBACKMEMBER(int, pfnCrHgsmiCommandCompleteAsync, (PPDMIDISPLAYVBVACALLBACKS pInterface,
-                                                               PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc));
+                                                               struct VBOXVDMACMD_CHROMIUM_CMD* pCmd, int rc));
 
     DECLR3CALLBACKMEMBER(int, pfnCrHgsmiControlCompleteAsync, (PPDMIDISPLAYVBVACALLBACKS pInterface,
-                                                               PVBOXVDMACMD_CHROMIUM_CTL pCmd, int rc));
+                                                               struct VBOXVDMACMD_CHROMIUM_CTL* pCmd, int rc));
 
     DECLR3CALLBACKMEMBER(int, pfnCrCtlSubmit, (PPDMIDISPLAYVBVACALLBACKS pInterface,
                                                                    struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
