@@ -26,6 +26,7 @@ RT_C_DECLS_BEGIN
 
 extern uint8_t* g_pvVRamBase;
 extern uint32_t g_cbVRam;
+extern PPDMLED g_pLed;
 extern HCRHGSMICMDCOMPLETION g_hCrHgsmiCompletion;
 extern PFNCRHGSMICMDCOMPLETION g_pfnCrHgsmiCompletion;
 

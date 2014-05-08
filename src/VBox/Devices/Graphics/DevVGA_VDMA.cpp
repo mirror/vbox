@@ -1943,6 +1943,7 @@ static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
         PVGASTATE pVGAState = pVdma->pVGAState;
         pCmd->pvVRamBase = pVGAState->vram_ptrR3;
         pCmd->cbVRam = pVGAState->vram_size;
+        pCmd->pLed = &pVGAState->Led3D;
         rc = vboxVDMACrCtlPost(pVGAState, &pCmd->Hdr, sizeof (*pCmd));
         if (RT_SUCCESS(rc))
         {

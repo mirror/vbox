@@ -37,6 +37,8 @@
 # include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 uint8_t* g_pvVRamBase = NULL;
 uint32_t g_cbVRam = 0;
+PPDMLED g_pLed = NULL;
+
 HCRHGSMICMDCOMPLETION g_hCrHgsmiCompletion = NULL;
 PFNCRHGSMICMDCOMPLETION g_pfnCrHgsmiCompletion = NULL;
 #endif
@@ -4210,6 +4212,9 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
             PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP pSetup = (PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP)pCtl;
             g_pvVRamBase = (uint8_t*)pSetup->pvVRamBase;
             g_cbVRam = pSetup->cbVRam;
+
+            g_pLed = pSetup->pLed;
+
             pSetup->CrCmdServerInfo.hSvr = NULL;
             pSetup->CrCmdServerInfo.pfnEnable = crVBoxCrCmdEnable;
             pSetup->CrCmdServerInfo.pfnDisable = crVBoxCrCmdDisable;

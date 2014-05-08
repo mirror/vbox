@@ -4460,9 +4460,41 @@ static DECLCALLBACK(void *) vgaPortQueryInterface(PPDMIBASE pInterface, const ch
 #if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI))
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIDISPLAYVBVACALLBACKS, &pThis->IVBVACallbacks);
 #endif
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }
 
+/* -=-=-=-=-=- Ring 3: ILeds -=-=-=-=-=- */
+#define ILEDPORTS_2_VGASTATE(pInterface) ( (PVGASTATE)((uintptr_t)pInterface - RT_OFFSETOF(VGASTATE, ILeds)) )
+
+/**
+ * Gets the pointer to the status LED of a unit.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   iLUN            The unit which status LED we desire.
+ * @param   ppLed           Where to store the LED pointer.
+ */
+static DECLCALLBACK(int) vgaPortQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
+{
+    PVGASTATE pThis = ILEDPORTS_2_VGASTATE(pInterface);
+    switch (iLUN)
+    {
+        /* LUN #0: Display port. */
+        case 0:
+        {
+            *ppLed = &pThis->Led3D;
+            Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
+            return VINF_SUCCESS;
+        }
+
+        default:
+            AssertMsgFailed(("Invalid LUN #%d\n", iLUN));
+            return VERR_PDM_NO_SUCH_LUN;
+    }
+
+    return VERR_PDM_LUN_NOT_FOUND;
+}
 
 /* -=-=-=-=-=- Ring 3: Dummy IDisplayConnector -=-=-=-=-=- */
 
@@ -5992,6 +6024,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->IVBVACallbacks.pfnCrCtlSubmitSync = vboxCmdVBVACmdHostCtlSync;
 # endif
 #endif
+
+    pThis->ILeds.pfnQueryStatusLed = vgaPortQueryStatusLed;
+
+    RT_ZERO(pThis->Led3D);
+    pThis->Led3D.u32Magic = PDMLED_MAGIC;
+
     /*
      * We use our own critical section to avoid unncessary pointer indirections
      * in interface methods (as we all as for historical reasons).
@@ -6752,6 +6790,26 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /* Init latched access mask. */
     pThis->uMaskLatchAccess = 0x3ff;
+
+    if (RT_SUCCESS(rc))
+    {
+        PPDMIBASE  pBase;
+        /*
+         * Attach status driver (optional).
+         */
+        rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+            pThis->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIANOTIFY);
+        }
+        else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
+        {
+            AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot attach to status driver"));
+        }
+    }
     return rc;
 }
 

@@ -892,6 +892,7 @@ private:
     PPDMLED      mapNetworkLeds[36];    /**< @todo adapt this to the maximum network card count */
     PPDMLED      mapSharedFolderLed;
     PPDMLED      mapUSBLed[2];
+    PPDMLED      mapCrOglLed;
 
     MediumAttachmentMap mapMediumAttachments;
 

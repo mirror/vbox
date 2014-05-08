@@ -1112,7 +1112,7 @@
 
   <enum
     name="DeviceType"
-    uuid="6d9420f7-0b56-4636-99f9-7346f1b01e57"
+    uuid="cb977be1-d1fb-41f8-ad7e-951736c6cb3e"
     >
     <desc>
       Device type.
@@ -1141,7 +1141,9 @@
     <const name="SharedFolder"      value="6">
       <desc>Shared folder device.</desc>
     </const>
-  </enum>
+    <const name="Graphics"          value="7">
+      <desc>Graphics device.</desc>
+    </const>  </enum>
 
   <enum
     name="DeviceActivity"
