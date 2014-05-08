@@ -2880,7 +2880,7 @@ STDMETHODIMP Console::GetDeviceActivity(DeviceType_T aDeviceType,
             break;
         }
 
-        case DeviceType_Graphics:
+        case DeviceType_Graphics3D:
         {
             SumLed.u32 |= readAndClearLed(mapCrOglLed);
             break;
