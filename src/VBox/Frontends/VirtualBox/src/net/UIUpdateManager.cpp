@@ -161,16 +161,6 @@ private:
     /* Prepare network request: */
     void prepareNetworkRequest()
     {
-        /* Calculate the count of checks left: */
-        int cCount = 1;
-        QString strCount = vboxGlobal().virtualBox().GetExtraData(GUI_UpdateCheckCount);
-        if (!strCount.isEmpty())
-        {
-            bool ok = false;
-            int c = strCount.toLongLong(&ok);
-            if (ok) cCount = c;
-        }
-
         /* Compose query: */
         QUrl url(m_url);
         url.addQueryItem("platform", vboxGlobal().virtualBox().GetPackageType());
@@ -189,8 +179,8 @@ private:
             url.addQueryItem("version", QString("%1_%2").arg(vboxGlobal().virtualBox().GetVersion())
                                                         .arg(vboxGlobal().virtualBox().GetRevision()));
         }
-        url.addQueryItem("count", QString::number(cCount));
-        url.addQueryItem("branch", VBoxUpdateData(vboxGlobal().virtualBox().GetExtraData(GUI_UpdateDate)).branchName());
+        url.addQueryItem("count", QString::number(gEDataManager->applicationUpdateCheckCounter()));
+        url.addQueryItem("branch", VBoxUpdateData(gEDataManager->applicationUpdateData()).branchName());
         QString strUserAgent(QString("VirtualBox %1 <%2>").arg(vboxGlobal().virtualBox().GetVersion()).arg(platformInfo()));
 
         /* Send GET request: */
@@ -226,16 +216,8 @@ private:
                 msgCenter().showUpdateNotFound();
         }
 
-        /* Save left count of checks: */
-        int cCount = 1;
-        QString strCount = vboxGlobal().virtualBox().GetExtraData(GUI_UpdateCheckCount);
-        if (!strCount.isEmpty())
-        {
-            bool ok = false;
-            int c = strCount.toLongLong(&ok);
-            if (ok) cCount = c;
-        }
-        vboxGlobal().virtualBox().SetExtraData(GUI_UpdateCheckCount, QString("%1").arg((qulonglong)cCount + 1));
+        /* Increment update check counter: */
+        gEDataManager->incrementApplicationUpdateCheckCounter();
 
         /* Notify about step completion: */
         emit sigStepComplete();
@@ -490,7 +472,7 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
     m_fIsRunning = true;
 
     /* Load/decode curent update data: */
-    VBoxUpdateData currentData(vboxGlobal().virtualBox().GetExtraData(GUI_UpdateDate));
+    VBoxUpdateData currentData(gEDataManager->applicationUpdateData());
 
     /* If update is really necessary: */
     if (fForceCall || currentData.isNeedToCheck())
@@ -508,10 +490,10 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
 void UIUpdateManager::sltHandleUpdateFinishing()
 {
     /* Load/decode curent update data: */
-    VBoxUpdateData currentData(vboxGlobal().virtualBox().GetExtraData(GUI_UpdateDate));
+    VBoxUpdateData currentData(gEDataManager->applicationUpdateData());
     /* Encode/save new update data: */
     VBoxUpdateData newData(currentData.periodIndex(), currentData.branchIndex());
-    vboxGlobal().virtualBox().SetExtraData(GUI_UpdateDate, newData.data());
+    gEDataManager->setApplicationUpdateData(newData.data());
 
 #ifdef VBOX_WITH_UPDATE_REQUEST
     /* Ask updater to check for the next time: */
