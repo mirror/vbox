@@ -202,6 +202,14 @@ enum WizardType
     WizardType_CloneVD
 };
 
+/** Common UI: Wizard modes. */
+enum WizardMode
+{
+    WizardMode_Auto,
+    WizardMode_Basic,
+    WizardMode_Expert
+};
+
 
 /** Selector UI: Details-element types. */
 enum DetailsElementType

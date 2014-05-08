@@ -28,7 +28,6 @@
 #include "VBoxGlobal.h"
 #include "QIRichTextLabel.h"
 #include "UIExtraDataManager.h"
-#include "UIConverter.h"
 
 void UIWizard::sltCurrentIdChanged(int iId)
 {
@@ -55,23 +54,23 @@ void UIWizard::sltCustomButtonClicked(int iId)
         /* Switch mode: */
         switch (m_mode)
         {
-            case UIWizardMode_Basic:  m_mode = UIWizardMode_Expert; break;
-            case UIWizardMode_Expert: m_mode = UIWizardMode_Basic;  break;
+            case WizardMode_Basic:  m_mode = WizardMode_Expert; break;
+            case WizardMode_Expert: m_mode = WizardMode_Basic;  break;
             default: AssertMsgFailed(("Invalid mode: %d", m_mode)); break;
         }
 
         /* Save mode settings: */
-        gEDataManager->setDescriptionHiddenForWizard(gpConverter->toInternalString(m_type), m_mode == UIWizardMode_Expert);
+        gEDataManager->setModeForWizard(m_type, m_mode);
 
         /* Prepare: */
         prepare();
     }
 }
 
-UIWizard::UIWizard(QWidget *pParent, WizardType type, UIWizardMode mode)
+UIWizard::UIWizard(QWidget *pParent, WizardType type, WizardMode mode /* = WizardMode_Auto */)
     : QIWithRetranslateUI<QWizard>(pParent)
     , m_type(type)
-    , m_mode(mode == UIWizardMode_Auto ? modeForType(m_type) : mode)
+    , m_mode(mode == WizardMode_Auto ? gEDataManager->modeForWizard(m_type) : mode)
 {
 #ifdef Q_WS_WIN
     /* Hide window icon: */
@@ -98,8 +97,8 @@ void UIWizard::retranslateUi()
     /* Translate basic/expert button: */
     switch (m_mode)
     {
-        case UIWizardMode_Basic: setButtonText(QWizard::CustomButton1, tr("Hide Description")); break;
-        case UIWizardMode_Expert: setButtonText(QWizard::CustomButton1, tr("Show Description")); break;
+        case WizardMode_Basic: setButtonText(QWizard::CustomButton1, tr("Hide Description")); break;
+        case WizardMode_Expert: setButtonText(QWizard::CustomButton1, tr("Show Description")); break;
         default: AssertMsgFailed(("Invalid mode: %d", m_mode)); break;
     }
 }
@@ -166,7 +165,7 @@ void UIWizard::cleanup()
 void UIWizard::resizeToGoldenRatio()
 {
     /* Check if wizard is in basic or expert mode: */
-    if (m_mode == UIWizardMode_Expert)
+    if (m_mode == WizardMode_Expert)
     {
         /* Unfortunately QWizard hides some of useful API in private part,
          * and also have few layouting bugs which could be easy fixed
@@ -419,7 +418,7 @@ int UIWizard::proposedWatermarkHeight()
 
     /* Acquire wizard-layout top-margin: */
     int iTopMargin = 0;
-    if (m_mode == UIWizardMode_Basic)
+    if (m_mode == WizardMode_Basic)
     {
         if (wizardStyle() == QWizard::ModernStyle)
             iTopMargin = pStyle->pixelMetric(QStyle::PM_LayoutTopMargin);
@@ -427,7 +426,7 @@ int UIWizard::proposedWatermarkHeight()
 
     /* Acquire wizard-header height: */
     int iTitleHeight = 0;
-    if (m_mode == UIWizardMode_Basic)
+    if (m_mode == WizardMode_Basic)
     {
         /* We have no direct access to QWizardHeader inside QWizard private data...
          * From Qt sources it seems title font is hardcoded as current font point-size + 4: */
@@ -439,7 +438,7 @@ int UIWizard::proposedWatermarkHeight()
 
     /* Acquire spacing between wizard-header and wizard-page: */
     int iMarginBetweenTitleAndPage = 0;
-    if (m_mode == UIWizardMode_Basic)
+    if (m_mode == WizardMode_Basic)
     {
         /* We have no direct access to margin between QWizardHeader and wizard-pages...
          * From Qt sources it seems its hardcoded as just 7 pixels: */
@@ -503,15 +502,4 @@ void UIWizard::assignWatermarkHelper()
     setPixmap(QWizard::WatermarkPixmap, pixWatermarkNew);
 }
 #endif /* !Q_WS_MAC */
-
-/* static */
-UIWizardMode UIWizard::modeForType(WizardType type)
-{
-    /* Some wizard use only basic mode: */
-    if (type == WizardType_FirstRun)
-        return UIWizardMode_Basic;
-    /* Otherwise get mode from extra-data manager: */
-    return gEDataManager->isDescriptionHiddenForWizard(gpConverter->toInternalString(type))
-           ? UIWizardMode_Expert : UIWizardMode_Basic;
-}
 

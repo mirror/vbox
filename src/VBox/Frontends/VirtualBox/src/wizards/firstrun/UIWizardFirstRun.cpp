@@ -102,12 +102,12 @@ void UIWizardFirstRun::prepare()
     /* Create corresponding pages: */
     switch (mode())
     {
-        case UIWizardMode_Basic:
+        case WizardMode_Basic:
         {
             setPage(Page, new UIWizardFirstRunPageBasic(m_machine.GetId(), m_fHardDiskWasSet));
             break;
         }
-        case UIWizardMode_Expert:
+        case WizardMode_Expert:
         {
             AssertMsgFailed(("First-run wizard has no expert-mode!"));
             break;

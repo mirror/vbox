@@ -240,22 +240,28 @@ bool UIExtraDataManager::shouldWeAllowApplicationUpdate() const
 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
-bool UIExtraDataManager::isDescriptionHiddenForWizard(const QString &strWizardName)
+WizardMode UIExtraDataManager::modeForWizard(WizardType type)
 {
-    /* True if wizard-name among the others: */
-    return extraDataStringList(GUI_HideDescriptionForWizards).contains(strWizardName);
+    /* Some wizard use only 'basic' mode: */
+    if (type == WizardType_FirstRun)
+        return WizardMode_Basic;
+    /* Otherwise get mode from cached extra-data: */
+    return extraDataStringList(GUI_HideDescriptionForWizards).contains(gpConverter->toInternalString(type))
+           ? WizardMode_Expert : WizardMode_Basic;
 }
 
-void UIExtraDataManager::setDescriptionHiddenForWizard(const QString &strWizardName, bool fHidden)
+void UIExtraDataManager::setModeForWizard(WizardType type, WizardMode mode)
 {
+    /* Get wizard name: */
+    const QString strWizardName = gpConverter->toInternalString(type);
     /* Get current value: */
     QStringList oldValue = extraDataStringList(GUI_HideDescriptionForWizards);
     QStringList newValue = oldValue;
-    /* Include wizard-name if necessary: */
-    if (fHidden && !newValue.contains(strWizardName))
+    /* Include wizard-name into expert-mode wizard list if necessary: */
+    if (mode == WizardMode_Expert && !newValue.contains(strWizardName))
         newValue << strWizardName;
-    /* Exclude wizard-name if necessary: */
-    else if (!fHidden && newValue.contains(strWizardName))
+    /* Exclude wizard-name from expert-mode wizard list if necessary: */
+    else if (mode == WizardMode_Basic && newValue.contains(strWizardName))
         newValue.removeAll(strWizardName);
     /* Update extra-data if necessary: */
     if (newValue != oldValue)
