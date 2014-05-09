@@ -195,9 +195,11 @@
                 <Merge Id="msm_VBoxCOM32On64" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeCOM32On64)" DiskId="1" />
     <?endif ?>
 <?else ?>
-                <?include VBoxMergeApp.wxi ?>
+                <Directory Id="msm_VBoxApplicationFolder" FileSource=".">
+                    <?include VBoxMergeApp.wxi ?>
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
-                <?include VBoxMergeCOM32On64.wxi ?>
+                    <?include VBoxMergeCOM32On64.wxi ?>
+                </Directory>
     <?endif ?>
 <?endif ?>
                 <Directory Id="dir_Drivers" Name="drivers">
@@ -205,7 +207,9 @@
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                         <Merge Id="msm_VBoxUSB" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeUSB)" DiskId="1" />
 <?else ?>
-                        <?include VBoxMergeUSB.wxi ?>
+                        <Directory Id="msm_VBoxUSBFolder" FileSource=".">
+                            <?include VBoxMergeUSB.wxi ?>
+                        </Directory>
 <?endif ?>
                     </Directory>
                     <Directory Id="dir_Network" Name="network">
@@ -214,7 +218,9 @@
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                             <Merge Id="msm_VBoxNetworkFlt" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkFlt)" DiskId="1" />
     <?else ?>
-                            <?include VBoxMergeNetFlt.wxi ?>
+                            <Directory Id="msm_VBoxNetworkFltFolder" FileSource=".">
+                                <?include VBoxMergeNetFlt.wxi ?>
+                            </Directory>
     <?endif ?>
                         </Directory>
 <?endif ?>
@@ -222,7 +228,9 @@
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                             <Merge Id="msm_VBoxNetworkAdp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkAdp)" DiskId="1" />
 <?else ?>
-                            <?include VBoxMergeNetAdp.wxi ?>
+                            <Directory Id="msm_VBoxNetworkAdpFolder" FileSource=".">
+                                <?include VBoxMergeNetAdp.wxi ?>
+                            </Directory>
 <?endif ?>
                         </Directory>
                     </Directory>
@@ -233,7 +241,9 @@
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                         <Merge Id="msm_VBoxPython" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergePython)" DiskId="1" />
     <?else ?>
-                        <?include VBoxMergePython.wxi ?>
+                        <Directory Id="msm_VBoxPythonFolder" FileSource=".">
+                            <?include VBoxMergePython.wxi ?>
+                        </Directory>
     <?endif ?>
                     </Directory>
                 </Directory>

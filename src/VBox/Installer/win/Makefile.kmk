@@ -63,6 +63,11 @@ ifneq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
  VBOX_INSTALLER_LANGUAGES = en_US
 endif
 
+ifeq ($(USERNAME),andy)
+ VBOX_WITH_MSM_INSTALL := 1
+ VBOX_INSTALLER_LANGUAGES = en_US
+endif
+
 #
 # List of merge modules to use.
 #
@@ -641,6 +646,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj: \
 		-E 'VBOX_WITH_VIDEOHWACCEL=$(if $(VBOX_WITH_VIDEOHWACCEL),yes,no)' \
 		-E 'VBOX_WITH_VRDP=$(if-expr defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL),yes,no)' \
 		-E 'VBOX_WITH_WEBSERVICES=$(if $(VBOX_WITH_WEBSERVICES),yes,no)' \
+		-E 'VBOX_WITH_MSM_INSTALL=$(if $(VBOX_WITH_MSM_INSTALL),yes,no)' \
 		-E 'VBOX_WITH_SECURELABEL=$(if $(VBOX_WITH_SECURELABEL),yes,no)' \
 		-E 'VBOX_WITH_SERIALNUMBER_INSTALL=$(if $(VBOX_WITH_SERIALNUMBER_INSTALL),yes,no)' \
 		-E 'VBOX_WITH_LICENSE_DISPLAY=$(if $(VBOX_WITH_LICENSE_DISPLAY),yes,no)' \

@@ -50,11 +50,11 @@
 
         <!-- Here comes the file/directory list -->
         <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="MergeRedirectFolder" FileSource=".">
+            <Directory Id="msm_VBoxApplicationFolder" FileSource=".">
 
                 <?include VBoxMergeApp.wxi ?>
 
-            </Directory> <!-- MergeRedirectFolder directory -->
+            </Directory> <!-- msm_VBoxApplicationFolder directory -->
         </Directory> <!-- TARGETDIR -->
 
         <!-- Custom actions -->

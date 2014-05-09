@@ -136,7 +136,7 @@
 
         <!-- Set required environment variables -->
         <Environment Id="env_VBoxInstallDir" Action="set" Name="VBOX_MSI_INSTALL_PATH"
-                     System="yes" Part="last" Permanent="no" Value="[MergeRedirectFolder]" />
+                     System="yes" Part="last" Permanent="no" Value="[msm_VBoxApplicationFolder]" />
 
         <!-- Files -->
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
