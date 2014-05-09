@@ -17,10 +17,10 @@
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
     <CustomAction Id="ca_CreateHostOnlyInterface" BinaryKey="VBoxInstallHelper" DllEntry="CreateHostOnlyInterface" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_CreateHostOnlyInterfaceArgs" Property="ca_CreateHostOnlyInterface" Value="[MergeRedirectFolder]" Execute="immediate"/>
+    <CustomAction Id="ca_CreateHostOnlyInterfaceArgs" Property="ca_CreateHostOnlyInterface" Value="[msm_VBoxNetworkAdpFolder]" Execute="immediate"/>
     <CustomAction Id="ca_RemoveHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="RemoveHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
     <CustomAction Id="ca_StopHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="StopHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
+    <CustomAction Id="ca_UpdateHostOnlyInterfacesArgs" Property="ca_UpdateHostOnlyInterfaces" Value="[msm_VBoxNetworkAdpFolder]" Execute="immediate"/>
     <CustomAction Id="ca_UpdateHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="UpdateHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_UpdateHostOnlyInterfacesArgs" Property="ca_UpdateHostOnlyInterfaces" Value="[MergeRedirectFolder]" Execute="immediate"/>
 
 </Include>

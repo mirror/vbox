@@ -16,7 +16,19 @@
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
-    <Custom Action="ca_InstallPythonAPIArgs" Before="ca_InstallPythonAPI" ><![CDATA[1]]></Custom>
-    <Custom Action="ca_InstallPythonAPI" Before="InstallFinalize" ><![CDATA[1]]></Custom>
+    <Custom Action="ca_InstallPythonAPIArgs" Before="ca_InstallPythonAPI" >
+        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+            <![CDATA[1]]>
+        <?else ?>
+            <![CDATA[&VBoxPython=3]]>
+        <?endif ?>
+    </Custom>
+    <Custom Action="ca_InstallPythonAPI" Before="InstallFinalize" >
+        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+            <![CDATA[1]]>
+        <?else ?>
+            <![CDATA[&VBoxPython=3]]>
+        <?endif ?>
+    </Custom>
 
 </Include>
