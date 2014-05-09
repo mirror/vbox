@@ -15,17 +15,6 @@
 #ifndef __VBoxGuestInternal_h__
 #define __VBoxGuestInternal_h__
 
-/** Uncomment to enable VRDP status checks */
-//#define VBOX_WITH_VRDP_SESSION_HANDLING
-
-/** Uncomment to enable the guest management extension in VBoxService */
-#define VBOX_WITH_MANAGEMENT
-
-/** IOCTL for VBoxGuest to enable a VRDP session */
-#define VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION     IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2100, METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
-
-/** IOCTL for VBoxGuest to disable a VRDP session */
-#define VBOXGUEST_IOCTL_DISABLE_VRDP_SESSION    IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2101, METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
-
+/* no global definitions right now */
 
 #endif /* __VBoxGuestInternal_h__ */

@@ -161,9 +161,6 @@ typedef struct VBOXGUESTDEVEXT
      * but do not search it, so a list data type should be fine.  Use under the
      * #SessionSpinlock lock. */
     RTLISTANCHOR                SessionList;
-#ifdef VBOX_WITH_VRDP_SESSION_HANDLING
-    bool                        fVRDPEnabled;
-#endif
     /** Flag indicating whether logging to the release log
      *  is enabled. */
     bool                        fLoggingEnabled;
