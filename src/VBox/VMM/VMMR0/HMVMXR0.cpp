@@ -44,6 +44,7 @@
 # define HMVMX_ALWAYS_TRAP_PF
 # define HMVMX_ALWAYS_SWAP_FPU_STATE
 # define HMVMX_ALWAYS_FLUSH_TLB
+# define HMVMX_ALWAYS_SWAP_EFER
 #endif
 
 
@@ -1302,9 +1303,6 @@ static bool hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGu
  * Removes a guest/host MSR pair to be swapped during the world-switch from the
  * auto-load/store MSR area in the VMCS.
  *
- * Does not fail if the MSR in @a uMsr is not found in the auto-load/store MSR
- * area.
- *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   uMsr        The MSR.
@@ -1327,13 +1325,13 @@ static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr)
 
             /* Remove it by swapping the last MSR in place of it, and reducing the count. */
             PVMXAUTOMSR pLastGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
-            pLastGuestMsr            += cMsrs;
+            pLastGuestMsr            += cMsrs - 1;
             pGuestMsr->u32Msr         = pLastGuestMsr->u32Msr;
             pGuestMsr->u64Value       = pLastGuestMsr->u64Value;
 
             PVMXAUTOMSR pHostMsr     = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
             PVMXAUTOMSR pLastHostMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
-            pLastHostMsr            += cMsrs;
+            pLastHostMsr            += cMsrs - 1;
             pHostMsr->u32Msr         = pLastHostMsr->u32Msr;
             pHostMsr->u64Value       = pLastHostMsr->u64Value;
             --cMsrs;
@@ -1351,9 +1349,12 @@ static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr)
         /* We're no longer swapping MSRs during the world-switch, intercept guest read/writes to them. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
             hmR0VmxSetMsrPermission(pVCpu, uMsr, VMXMSREXIT_INTERCEPT_READ, VMXMSREXIT_INTERCEPT_WRITE);
+
+        Log4(("Removed MSR %#RX32 new cMsrs=%u\n", uMsr, pVCpu->hm.s.vmx.cMsrs));
+        return VINF_SUCCESS;
     }
 
-    return VINF_SUCCESS;
+    return VERR_NOT_FOUND;
 }
 
 
@@ -1396,7 +1397,15 @@ static void hmR0VmxUpdateAutoLoadStoreHostMsrs(PVMCPU pVCpu)
     for (uint32_t i = 0; i < cMsrs; i++, pHostMsr++, pGuestMsr++)
     {
         AssertReturnVoid(pHostMsr->u32Msr == pGuestMsr->u32Msr);
-        pHostMsr->u64Value = ASMRdMsr(pHostMsr->u32Msr);
+
+        /*
+         * Performance hack for the host EFER MSR. We use the cached value rather than re-read it.
+         * Strict builds will catch mismatches in hmR0VmxCheckAutoLoadStoreMsrs(). See @bugref{7368}.
+         */
+        if (pHostMsr->u32Msr == MSR_K6_EFER)
+            pHostMsr->u64Value = pVCpu->CTX_SUFF(pVM)->hm.s.vmx.u64HostEfer;
+        else
+            pHostMsr->u64Value = ASMRdMsr(pHostMsr->u32Msr);
     }
 
     pVCpu->hm.s.vmx.fUpdatedHostMsrs = true;
@@ -1645,12 +1654,12 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
     for (uint32_t i = 0; i < cMsrs; i++, pHostMsr++, pGuestMsr++)
     {
         /* Verify that the MSRs are paired properly and that the host MSR has the correct value. */
-        AssertMsgReturnVoid(pHostMsr->u32Msr == pGuestMsr->u32Msr, ("HostMsr=%#RX32 GuestMsr=%#RX32\n", pHostMsr->u32Msr,
-                                                                    pGuestMsr->u32Msr));
+        AssertMsgReturnVoid(pHostMsr->u32Msr == pGuestMsr->u32Msr, ("HostMsr=%#RX32 GuestMsr=%#RX32 cMsrs=%u\n", pHostMsr->u32Msr,
+                                                                    pGuestMsr->u32Msr, cMsrs));
 
         uint64_t u64Msr = ASMRdMsr(pHostMsr->u32Msr);
-        AssertMsgReturnVoid(pHostMsr->u64Value == u64Msr, ("u32Msr=%#RX32 VMCS Value=%#RX64 ASMRdMsr=%#RX64\n", pHostMsr->u32Msr,
-                                                           pHostMsr->u64Value, u64Msr));
+        AssertMsgReturnVoid(pHostMsr->u64Value == u64Msr, ("u32Msr=%#RX32 VMCS Value=%#RX64 ASMRdMsr=%#RX64 cMsrs=%u\n",
+                                                           pHostMsr->u32Msr, pHostMsr->u64Value, u64Msr, cMsrs));
 
         /* Verify that the permissions are as expected in the MSR bitmap. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
@@ -1659,10 +1668,18 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
             VMXMSREXITWRITE enmWrite;
             rc = hmR0VmxGetMsrPermission(pVCpu, pGuestMsr->u32Msr, &enmRead, &enmWrite);
             AssertMsgReturnVoid(rc == VINF_SUCCESS, ("hmR0VmxGetMsrPermission! failed. rc=%Rrc\n", rc));
-            AssertMsgReturnVoid(enmRead == VMXMSREXIT_PASSTHRU_READ, ("u32Msr=%#RX32 No passthru read permission!\n",
-                                                                      pGuestMsr->u32Msr));
-            AssertMsgReturnVoid(enmWrite == VMXMSREXIT_PASSTHRU_WRITE, ("u32Msr=%#RX32 No passthru write permission!\n",
-                                                                        pGuestMsr->u32Msr));
+            if (pGuestMsr->u32Msr == MSR_K6_EFER)
+            {
+                AssertMsgReturnVoid(enmRead  == VMXMSREXIT_INTERCEPT_READ,  ("Passthru read for EFER!?\n"));
+                AssertMsgReturnVoid(enmWrite == VMXMSREXIT_INTERCEPT_WRITE, ("Passthru write for EFER!?\n"));
+            }
+            else
+            {
+                AssertMsgReturnVoid(enmRead  == VMXMSREXIT_PASSTHRU_READ,  ("u32Msr=%#RX32 cMsrs=%u No passthru read!\n",
+                                                                            pGuestMsr->u32Msr, cMsrs));
+                AssertMsgReturnVoid(enmWrite == VMXMSREXIT_PASSTHRU_WRITE, ("u32Msr=%#RX32 cMsrs=%u No passthru write!\n",
+                                                                            pGuestMsr->u32Msr, cMsrs));
+            }
         }
     }
 }
@@ -3154,7 +3171,9 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     AssertRCReturn(rc, rc);
 
     /*
+     * Host EFER MSR.
      * If the CPU supports the newer VMCS controls for managing EFER, use it.
+     * Otherwise it's done as part of auto-load/store MSR area in the VMCS, see hmR0VmxLoadGuestMsrs().
      */
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (   HMVMX_IS_64BIT_HOST_MODE()
@@ -3192,6 +3211,9 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
  */
 static bool hmR0VmxShouldSwapEferMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+#ifdef HMVMX_ALWAYS_SWAP_EFER
+    return true;
+#endif
     PVM      pVM          = pVCpu->CTX_SUFF(pVM);
     uint64_t u64HostEfer  = pVM->hm.s.vmx.u64HostEfer;
     uint64_t u64GuestEfer = pMixedCtx->msrEFER;
@@ -3200,7 +3222,7 @@ static bool hmR0VmxShouldSwapEferMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * For 64-bit guests, if EFER.SCE bit differs, we need to swap to ensure that the
      * guest's SYSCALL behaviour isn't screwed. See @bugref{7386}.
      */
-    if (   pVM->hm.s.fAllow64BitGuests
+    if (   CPUMIsGuestInLongMode(pVCpu)
         && (u64GuestEfer & MSR_K6_EFER_SCE) != (u64HostEfer & MSR_K6_EFER_SCE))
     {
         return true;
@@ -4654,6 +4676,7 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS))
     {
+        /* For 64-bit hosts, we load/restore them lazily, see hmR0VmxLazyLoadGuestMsrs(). */
 #if HC_ARCH_BITS == 32 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (pVM->hm.s.fAllow64BitGuests)
         {
@@ -4697,13 +4720,36 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_EFER_MSR))
     {
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (   HMVMX_IS_64BIT_HOST_MODE()
-            && pVM->hm.s.vmx.fSupportsVmcsEfer
-            && hmR0VmxShouldSwapEferMsr(pVCpu, pMixedCtx))  /* Not really needed here, but avoids a VM-write as a nested guest. */
+        if (HMVMX_IS_64BIT_HOST_MODE())
         {
-            int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_EFER_FULL, pMixedCtx->msrEFER);
-            AssertRCReturn(rc,rc);
-            Log4(("Load: VMX_VMCS64_GUEST_EFER_FULL=%#RX64\n", pMixedCtx->msrEFER));
+            /*
+             * If the CPU supports VMCS controls for swapping EFER, use it. Otherwise, we have no option
+             * but to use the auto-load store MSR area in the VMCS for swapping EFER. See @bugref{7368}.
+             */
+            if (pVM->hm.s.vmx.fSupportsVmcsEfer)
+            {
+                /* Not strictly necessary to check hmR0VmxShouldSwapEferMsr() here, but it avoids
+                   one VM-write when we're a nested guest. */
+                if (hmR0VmxShouldSwapEferMsr(pVCpu, pMixedCtx))
+                {
+                    int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_EFER_FULL, pMixedCtx->msrEFER);
+                    AssertRCReturn(rc,rc);
+                    Log4(("Load: VMX_VMCS64_GUEST_EFER_FULL=%#RX64\n", pMixedCtx->msrEFER));
+                }
+            }
+            else
+            {
+                if (hmR0VmxShouldSwapEferMsr(pVCpu, pMixedCtx))
+                {
+                    hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_EFER, pMixedCtx->msrEFER, false /* fUpdateHostMsr */);
+                    /* We need to intercept reads too, see @bugref{7386} comment #16. */
+                    hmR0VmxSetMsrPermission(pVCpu, MSR_K6_EFER, VMXMSREXIT_INTERCEPT_READ, VMXMSREXIT_INTERCEPT_WRITE);
+                    Log4(("Load: MSR[--]: u32Msr=%#RX32 u64Value=%#RX64 cMsrs=%u\n", MSR_K6_EFER, pMixedCtx->msrEFER,
+                          pVCpu->hm.s.vmx.cMsrs));
+                }
+                else
+                    hmR0VmxRemoveAutoLoadStoreMsr(pVCpu, MSR_K6_EFER);
+            }
         }
 #endif
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_EFER_MSR);
@@ -6136,9 +6182,16 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             case MSR_K6_STAR:           pMixedCtx->msrSTAR         = pMsr->u64Value;             break;
             case MSR_K8_SF_MASK:        pMixedCtx->msrSFMASK       = pMsr->u64Value;             break;
             case MSR_K8_KERNEL_GS_BASE: pMixedCtx->msrKERNELGSBASE = pMsr->u64Value;             break;
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+            case MSR_K6_EFER:
+            {
+                if (HMVMX_IS_64BIT_HOST_MODE())  /* Nothing to do here since we intercept writes, see hmR0VmxLoadGuestMsrs(). */
+                    break;
+            }
+#endif
             default:
             {
-                AssertFailed();
+                AssertMsgFailed(("Unexpected MSR in auto-load/store area. uMsr=%#RX32 cMsrs=%u\n", pMsr->u32Msr, cMsrs));
                 return VERR_HM_UNEXPECTED_LD_ST_MSR;
             }
         }
@@ -7114,6 +7167,7 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
             hmR0VmxLazyRestoreHostMsrs(pVCpu);
         }
 #endif
+        /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
         pVCpu->hm.s.vmx.fUpdatedHostMsrs = false;
         VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
         if (pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_ACTIVE)
@@ -10290,7 +10344,8 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 #ifdef VBOX_STRICT
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
     {
-        if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
+        if (   hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx)
+            && pMixedCtx->ecx != MSR_K6_EFER)
         {
             AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
             HMVMX_RETURN_UNEXPECTED_EXIT();
@@ -10381,6 +10436,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 case MSR_IA32_SYSENTER_ESP: HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_SYSENTER_ESP_MSR); break;
                 case MSR_K8_FS_BASE:        /* no break */
                 case MSR_K8_GS_BASE:        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS);     break;
+                case MSR_K6_EFER:           HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_EFER_MSR);         break;
                 default:
                 {
                     if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
@@ -10414,6 +10470,14 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 {
                     if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
                     {
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+                        /* EFER writes are always intercepted, see hmR0VmxLoadGuestMsrs(). */
+                        if (   HMVMX_IS_64BIT_HOST_MODE()
+                            && pMixedCtx->ecx == MSR_K6_EFER)
+                        {
+                            break;
+                        }
+#endif
                         AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
                                          pMixedCtx->ecx));
                         HMVMX_RETURN_UNEXPECTED_EXIT();
