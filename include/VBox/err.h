@@ -1940,18 +1940,30 @@
 #define VERR_VMX_INVALID_VMCS_PTR_TO_START_VM       (-4022)
 /** Internal VMX processing error no 1. */
 #define VERR_HMVMX_IPE_1                            (-4023)
-/** Internal VMX processing error no 1. */
+/** Internal VMX processing error no 2. */
 #define VERR_HMVMX_IPE_2                            (-4024)
-/** Internal VMX processing error no 1. */
+/** Internal VMX processing error no 3. */
 #define VERR_HMVMX_IPE_3                            (-4025)
-/** Internal VMX processing error no 1. */
+/** Internal VMX processing error no 4. */
 #define VERR_HMVMX_IPE_4                            (-4026)
-/** Internal VMX processing error no 1. */
+/** Internal VMX processing error no 5. */
 #define VERR_HMVMX_IPE_5                            (-4027)
 /** VT-x features for all modes (SMX and non-SMX) disabled by the BIOS. */
 #define VERR_VMX_MSR_ALL_VMXON_DISABLED             (-4028)
 /** VT-x features disabled by the BIOS. */
 #define VERR_VMX_MSR_VMXON_DISABLED                 (-4029)
+/** VM-Entry Controls internal cache invalid. */
+#define VERR_VMX_ENTRY_CTLS_CACHE_INVALID           (-4030)
+/** VM-Exit Controls internal cache invalid. */
+#define VERR_VMX_EXIT_CTLS_CACHE_INVALID            (-4031)
+/** VM-Execution Pin-based Controls internal cache invalid. */
+#define VERR_VMX_PIN_EXEC_CTLS_CACHE_INVALID        (-4032)
+/** VM-Execution Primary Processor-based Controls internal cache
+ *  invalid. */
+#define VERR_VMX_PROC_EXEC_CTLS_CACHE_INVALID       (-4033)
+/** VM-Execution Secondary Processor-based Controls internal
+ *  cache invalid. */
+#define VERR_VMX_PROC_EXEC2_CTLS_CACHE_INVALID      (-4034)
 /** @} */
 
 

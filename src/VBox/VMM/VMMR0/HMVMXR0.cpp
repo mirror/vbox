@@ -1555,7 +1555,70 @@ static void hmR0VmxLazyRestoreHostMsrs(PVMCPU pVCpu)
 #endif  /* HC_ARCH_BITS == 64 */
 
 
+/**
+ * Verifies that our cached values of the VMCS controls are all
+ * consistent with what's actually present in the VMCS.
+ *
+ * @returns VBox status code.
+ * @param pVCpu     Pointer to the VMCPU.
+ */
+static int hmR0VmxCheckVmcsCtls(PVMCPU pVCpu)
+{
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    uint32_t u32Val;
+    int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY, &u32Val);
+    AssertRCReturn(rc, rc);
+    AssertMsgReturn(pVCpu->hm.s.vmx.u32EntryCtls == u32Val, ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32EntryCtls, u32Val),
+                    VERR_VMX_ENTRY_CTLS_CACHE_INVALID);
+
+    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT, &u32Val);
+    AssertRCReturn(rc, rc);
+    AssertMsgReturn(pVCpu->hm.s.vmx.u32ExitCtls == u32Val, ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32ExitCtls, u32Val),
+                    VERR_VMX_EXIT_CTLS_CACHE_INVALID);
+
+    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PIN_EXEC, &u32Val);
+    AssertRCReturn(rc, rc);
+    AssertMsgReturn(pVCpu->hm.s.vmx.u32PinCtls == u32Val, ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32PinCtls, u32Val),
+                    VERR_VMX_PIN_EXEC_CTLS_CACHE_INVALID);
+
+    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);
+    AssertRCReturn(rc, rc);
+    AssertMsgReturn(pVCpu->hm.s.vmx.u32ProcCtls == u32Val, ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32ProcCtls, u32Val),
+                    VERR_VMX_PROC_EXEC_CTLS_CACHE_INVALID);
+
+    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, &u32Val);
+    AssertRCReturn(rc, rc);
+    AssertMsgReturn(pVCpu->hm.s.vmx.u32ProcCtls2 == u32Val, ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32ProcCtls2, u32Val),
+                    VERR_VMX_PROC_EXEC2_CTLS_CACHE_INVALID);
+
+    return VINF_SUCCESS;
+}
+
+
 #ifdef VBOX_STRICT
+/**
+ * Verifies that our cached host EFER value has not changed
+ * since we cached it.
+ *
+ * @param pVCpu         Pointer to the VMCPU.
+ */
+static void hmR0VmxCheckHostEferMsr(PVMCPU pVCpu)
+{
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    if (pVCpu->hm.s.vmx.u32ExitCtls & VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR)
+    {
+        uint64_t u64Val;
+        int rc = VMXReadVmcs64(VMX_VMCS64_HOST_FIELD_EFER_FULL, &u64Val);
+        AssertRC(rc);
+
+        uint64_t u64HostEferMsr = ASMRdMsr(MSR_K6_EFER);
+        AssertMsgReturnVoid(u64HostEferMsr == u64Val, ("u64HostEferMsr=%#RX64 u64Val=%#RX64\n", u64HostEferMsr, u64Val));
+    }
+}
+
+
 /**
  * Verifies whether the guest/host MSR pairs in the auto-load/store area in the
  * VMCS are correct.
@@ -2660,6 +2723,18 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         return rc;
     }
 
+    /* Check if we can use the VMCS controls for swapping the EFER MSR. */
+    Assert(!pVM->hm.s.vmx.fSupportsVmcsEfer);
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+    if (   HMVMX_IS_64BIT_HOST_MODE()
+        && (pVM->hm.s.vmx.Msrs.VmxEntry.n.allowed1 & VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR)
+        && (pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1  & VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR)
+        && (pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1  & VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR))
+    {
+        pVM->hm.s.vmx.fSupportsVmcsEfer = true;
+    }
+#endif
+
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
@@ -3078,9 +3153,72 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
 #endif
     AssertRCReturn(rc, rc);
 
-    /** @todo IA32_PERF_GLOBALCTRL, IA32_PAT, IA32_EFER, also see
-     *        hmR0VmxSetupExitCtls() !! */
+    /*
+     * If the CPU supports the newer VMCS controls for managing EFER, use it.
+     */
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+    if (   HMVMX_IS_64BIT_HOST_MODE()
+        && pVM->hm.s.vmx.fSupportsVmcsEfer)
+    {
+        rc = VMXWriteVmcs64(VMX_VMCS64_HOST_FIELD_EFER_FULL, pVM->hm.s.vmx.u64HostEfer);
+        AssertRCReturn(rc, rc);
+    }
+#endif
+
+    /** @todo IA32_PERF_GLOBALCTRL, IA32_PAT also see
+     *        hmR0VmxLoadGuestExitCtls() !! */
+
     return rc;
+}
+
+
+/**
+ * Figures out if we need to swap the EFER MSR which is
+ * particularly expensive.
+ *
+ * We check all relevant bits. For now, that's everything
+ * besides LMA/LME, as these two bits are handled by VM-entry,
+ * see hmR0VmxLoadGuestExitCtls() and
+ * hmR0VMxLoadGuestEntryCtls().
+ *
+ * @returns true if we need to load guest EFER, false otherwise.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
+ *                      out-of-sync. Make sure to update the required fields
+ *                      before using them.
+ *
+ * @remarks Requires EFER, CR4.
+ * @remarks No-long-jump zone!!!
+ */
+static bool hmR0VmxShouldSwapEferMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    PVM      pVM          = pVCpu->CTX_SUFF(pVM);
+    uint64_t u64HostEfer  = pVM->hm.s.vmx.u64HostEfer;
+    uint64_t u64GuestEfer = pMixedCtx->msrEFER;
+
+    /*
+     * For 64-bit guests, if EFER.SCE bit differs, we need to swap to ensure that the
+     * guest's SYSCALL behaviour isn't screwed. See @bugref{7386}.
+     */
+    if (   pVM->hm.s.fAllow64BitGuests
+        && (u64GuestEfer & MSR_K6_EFER_SCE) != (u64HostEfer & MSR_K6_EFER_SCE))
+    {
+        return true;
+    }
+
+    /*
+     * If the guest uses PAE and EFER.NXE bit differs, we need to swap as it affects guest paging.
+     * 64-bit paging implies CR4.PAE as well. See Intel spec. 4.5 "IA32e Paging".
+     */
+    if (   (pMixedCtx->cr4 & X86_CR4_PAE)
+        && (u64GuestEfer & MSR_K6_EFER_NXE) != (u64HostEfer & MSR_K6_EFER_NXE))
+    {
+        return true;
+    }
+
+    /** @todo Check the latest Intel spec. for any other bits,
+     *        like SMEP/SMAP? */
+    return false;
 }
 
 
@@ -3095,6 +3233,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
  *                      out-of-sync. Make sure to update the required fields
  *                      before using them.
  *
+ * @remarks Requires EFER.
  * @remarks No-long-jump zone!!!
  */
 DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
@@ -3111,9 +3250,23 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
         /* Set if the guest is in long mode. This will set/clear the EFER.LMA bit on VM-entry. */
         if (CPUMIsGuestInLongModeEx(pMixedCtx))
+        {
             val |= VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST;
+            Log4(("Load: VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST\n"));
+        }
         else
             Assert(!(val & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST));
+
+        /* If the CPU supports the newer VMCS controls for managing guest/host EFER, use it. */
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+        if (   HMVMX_IS_64BIT_HOST_MODE()
+            && pVM->hm.s.vmx.fSupportsVmcsEfer
+            && hmR0VmxShouldSwapEferMsr(pVCpu, pMixedCtx))
+        {
+            val |= VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR;
+            Log4(("Load: VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST\n"));
+        }
+#endif
 
         /*
          * The following should -not- be set (since we're not in SMM mode):
@@ -3122,8 +3275,7 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
          */
 
         /** @todo VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PERF_MSR,
-         *        VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PAT_MSR,
-         *        VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR */
+         *        VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PAT_MSR. */
 
         if ((val & zap) != val)
         {
@@ -3154,7 +3306,7 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *                      out-of-sync. Make sure to update the required fields
  *                      before using them.
  *
- * @remarks requires EFER.
+ * @remarks Requires EFER.
  */
 DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
@@ -3176,12 +3328,27 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
          */
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (HMVMX_IS_64BIT_HOST_MODE())
+        {
             val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;
+            Log4(("Load: VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE\n"));
+
+            /* If the newer VMCS fields for managing EFER exists, use it. */
+            if (   pVM->hm.s.vmx.fSupportsVmcsEfer
+                && hmR0VmxShouldSwapEferMsr(pVCpu, pMixedCtx))
+            {
+                val |=   VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR
+                       | VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR;
+            }
+        }
         else
             Assert(!(val & VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE));
 #elif HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
         if (CPUMIsGuestInLongModeEx(pMixedCtx))
-            val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;    /* The switcher goes to long mode. */
+        {
+            /* The switcher returns to long mode, EFER is managed by the switcher. */
+            val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;
+            Log4(("Load: VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE\n"));
+        }
         else
             Assert(!(val & VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE));
 #endif
@@ -3191,9 +3358,7 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
         /** @todo VMX_VMCS_CTRL_EXIT_LOAD_PERF_MSR,
          *        VMX_VMCS_CTRL_EXIT_SAVE_GUEST_PAT_MSR,
-         *        VMX_VMCS_CTRL_EXIT_LOAD_HOST_PAT_MSR,
-         *        VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR,
-         *        VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR. */
+         *        VMX_VMCS_CTRL_EXIT_LOAD_HOST_PAT_MSR. */
 
         if (pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1 & VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER)
             val |= VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER;
@@ -4529,6 +4694,21 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_SYSENTER_ESP_MSR);
     }
 
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_EFER_MSR))
+    {
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+        if (   HMVMX_IS_64BIT_HOST_MODE()
+            && pVM->hm.s.vmx.fSupportsVmcsEfer
+            && hmR0VmxShouldSwapEferMsr(pVCpu, pMixedCtx))  /* Not really needed here, but avoids a VM-write as a nested guest. */
+        {
+            int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_EFER_FULL, pMixedCtx->msrEFER);
+            AssertRCReturn(rc,rc);
+            Log4(("Load: VMX_VMCS64_GUEST_EFER_FULL=%#RX64\n", pMixedCtx->msrEFER));
+        }
+#endif
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_EFER_MSR);
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -4586,8 +4766,10 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             if (pVCpu->hm.s.vmx.pfnStartVM != NULL) /* Very first entry would have saved host-state already, ignore it. */
             {
                 /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
-                AssertMsg(HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS),
-                          ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
+                AssertMsg(HMCPU_CF_IS_SET(pVCpu,   HM_CHANGED_HOST_CONTEXT
+                                                 | HM_CHANGED_VMX_EXIT_CTLS
+                                                 | HM_CHANGED_VMX_ENTRY_CTLS
+                                                 | HM_CHANGED_GUEST_EFER_MSR), ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
             }
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
         }
@@ -4605,8 +4787,10 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             if (pVCpu->hm.s.vmx.pfnStartVM != NULL) /* Very first entry would have saved host-state already, ignore it. */
             {
                 /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
-                AssertMsg(HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS),
-                          ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
+                AssertMsg(HMCPU_CF_IS_SET(pVCpu,   HM_CHANGED_HOST_CONTEXT
+                                                 | HM_CHANGED_VMX_EXIT_CTLS
+                                                 | HM_CHANGED_VMX_ENTRY_CTLS
+                                                 | HM_CHANGED_GUEST_EFER_MSR), ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
             }
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
         }
@@ -7891,6 +8075,8 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = hmR0VmxLoadGuestSegmentRegs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestSegmentRegs: rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
+    /* This needs to be done after hmR0VmxLoadGuestEntryCtls() and hmR0VmxLoadGuestExitCtls() as it may alter controls if we
+       determine we don't have to swap EFER after all. */
     rc = hmR0VmxLoadGuestMsrs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadSharedMsrs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
@@ -8002,12 +8188,6 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
     AssertMsg(   !HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_ALL_GUEST)
               ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
               ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
-
-#ifdef HMVMX_ALWAYS_CHECK_GUEST_STATE
-    uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVM, pVCpu, pMixedCtx);
-    if (uInvalidReason != VMX_IGS_REASON_NOT_FOUND)
-        Log4(("hmR0VmxCheckGuestState returned %#x\n", uInvalidReason));
-#endif
 }
 
 
@@ -8281,8 +8461,16 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
             Assert(!pVCpu->hm.s.vmx.cMsrs || pVCpu->hm.s.vmx.fUpdatedHostMsrs);
         }
     }
+
 #ifdef VBOX_STRICT
     hmR0VmxCheckAutoLoadStoreMsrs(pVCpu);
+    hmR0VmxCheckHostEferMsr(pVCpu);
+    AssertRC(hmR0VmxCheckVmcsCtls(pVCpu));
+#endif
+#ifdef HMVMX_ALWAYS_CHECK_GUEST_STATE
+    uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVM, pVCpu, pMixedCtx);
+    if (uInvalidReason != VMX_IGS_REASON_NOT_FOUND)
+        Log4(("hmR0VmxCheckGuestState returned %#x\n", uInvalidReason));
 #endif
 }
 
@@ -8341,6 +8529,9 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;   /* Host state messed up by VT-x, we must restore. */
 #endif
     pVCpu->hm.s.vmx.uVmcsState |= HMVMX_VMCS_STATE_LAUNCHED;          /* Use VMRESUME instead of VMLAUNCH in the next run. */
+#ifdef VBOX_STRICT
+    hmR0VmxCheckHostEferMsr(pVCpu);                                   /* Verify that VMRUN/VMLAUNCH didn't modify host EFER. */
+#endif
     ASMSetFlags(pVmxTransient->uEflags);                              /* Enable interrupts. */
     VMMRZCallRing3Enable(pVCpu);                                      /* It is now safe to do longjmps to ring-3!!! */
 
@@ -8762,6 +8953,9 @@ DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
  * @param   pVM     Pointer to the VM.
  * @param   pVCpu   Pointer to the VMCPU.
  * @param   pCtx    Pointer to the guest-CPU state.
+ *
+ * @remarks This function assumes our cache of the VMCS controls
+ *          are valid, i.e. hmR0VmxCheckVmcsCtls() succeeded.
  */
 static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -8963,14 +9157,16 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          */
         if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR)
         {
+            Assert(pVM->hm.s.vmx.fSupportsVmcsEfer);
             rc = VMXReadVmcs64(VMX_VMCS64_GUEST_EFER_FULL, &u64Val);
             AssertRCBreak(rc);
             HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xfffffffffffff2fe)),
                               VMX_IGS_EFER_MSR_RESERVED);               /* Bits 63:12, bit 9, bits 7:1 MBZ. */
-            HMVMX_CHECK_BREAK((u64Val & MSR_K6_EFER_LMA) == (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST),
+            HMVMX_CHECK_BREAK(RT_BOOL(u64Val & MSR_K6_EFER_LMA) == RT_BOOL(pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST),
                               VMX_IGS_EFER_LMA_GUEST_MODE_MISMATCH);
             HMVMX_CHECK_BREAK(   fUnrestrictedGuest
-                              || (u64Val & MSR_K6_EFER_LMA) == (u32GuestCR0 & X86_CR0_PG), VMX_IGS_EFER_LMA_PG_MISMATCH);
+                              || RT_BOOL(u64Val & MSR_K6_EFER_LMA) == RT_BOOL(u32GuestCR0 & X86_CR0_PG),
+                              VMX_IGS_EFER_LMA_PG_MISMATCH);
         }
 
         /*
@@ -9957,6 +10153,9 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
     int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
+    rc = hmR0VmxCheckVmcsCtls(pVCpu);
+    AssertRCReturn(rc, rc);
+
     uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVCpu->CTX_SUFF(pVM), pVCpu, pMixedCtx);
     NOREF(uInvalidReason);
 
@@ -10162,6 +10361,15 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         }
         else if (pMixedCtx->ecx == MSR_IA32_TSC)        /* Windows 7 does this during bootup. See @bugref{6398}. */
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
+        else if (pMixedCtx->ecx == MSR_K6_EFER)
+        {
+            /*
+             * If the guest touches EFER we need to update the VM-Entry and VM-Exit controls as well,
+             * even if it is -not- touching bits that cause paging mode changes (LMA/LME). We care about
+             * the other bits as well, SCE and NXE. See @bugref{7368}.
+             */
+            HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_EFER_MSR | HM_CHANGED_VMX_ENTRY_CTLS | HM_CHANGED_VMX_EXIT_CTLS);
+        }
 
         /* Update MSRs that are part of the VMCS and auto-load/store area when MSR-bitmaps are not supported. */
         if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
