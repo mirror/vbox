@@ -65,6 +65,9 @@
 /** Win Symlink name for user access. */
 #define DEVICE_NAME_DOS_USR     L"\\DosDevices\\VBoxDrvU"
 
+/** Enables the fast I/O control code path. */
+#define VBOXDRV_WITH_FAST_IO
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -108,6 +111,11 @@ static void     _stdcall   VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj);
 static NTSTATUS _stdcall   VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS _stdcall   VBoxDrvNtCleanup(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS _stdcall   VBoxDrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+#ifdef VBOXDRV_WITH_FAST_IO
+static BOOLEAN  _stdcall   VBoxDrvNtFastIoDeviceControl(PFILE_OBJECT pFileObj, BOOLEAN fWait, PVOID pvInput, ULONG cbInput,
+                                                        PVOID pvOutput, ULONG cbOutput, ULONG uCmd,
+                                                        PIO_STATUS_BLOCK pIoStatus, PDEVICE_OBJECT pDevObj);
+#endif
 static NTSTATUS _stdcall   VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static int                 VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack);
 static NTSTATUS _stdcall   VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
@@ -131,6 +139,40 @@ RT_C_DECLS_END
 static PDEVICE_OBJECT g_pDevObjSys = NULL;
 /** Pointer to the user device instance. */
 static PDEVICE_OBJECT g_pDevObjUsr = NULL;
+#ifdef VBOXDRV_WITH_FAST_IO
+/** Fast I/O dispatch table. */
+static FAST_IO_DISPATCH const g_VBoxDrvFastIoDispatch =
+{
+    /* .SizeOfFastIoDispatch            = */ sizeof(g_VBoxDrvFastIoDispatch),
+    /* .FastIoCheckIfPossible           = */ NULL,
+    /* .FastIoRead                      = */ NULL,
+    /* .FastIoWrite                     = */ NULL,
+    /* .FastIoQueryBasicInfo            = */ NULL,
+    /* .FastIoQueryStandardInfo         = */ NULL,
+    /* .FastIoLock                      = */ NULL,
+    /* .FastIoUnlockSingle              = */ NULL,
+    /* .FastIoUnlockAll                 = */ NULL,
+    /* .FastIoUnlockAllByKey            = */ NULL,
+    /* .FastIoDeviceControl             = */ VBoxDrvNtFastIoDeviceControl,
+    /* .AcquireFileForNtCreateSection   = */ NULL,
+    /* .ReleaseFileForNtCreateSection   = */ NULL,
+    /* .FastIoDetachDevice              = */ NULL,
+    /* .FastIoQueryNetworkOpenInfo      = */ NULL,
+    /* .AcquireForModWrite              = */ NULL,
+    /* .MdlRead                         = */ NULL,
+    /* .MdlReadComplete                 = */ NULL,
+    /* .PrepareMdlWrite                 = */ NULL,
+    /* .MdlWriteComplete                = */ NULL,
+    /* .FastIoReadCompressed            = */ NULL,
+    /* .FastIoWriteCompressed           = */ NULL,
+    /* .MdlReadCompleteCompressed       = */ NULL,
+    /* .MdlWriteCompleteCompressed      = */ NULL,
+    /* .FastIoQueryOpen                 = */ NULL,
+    /* .ReleaseForModWrite              = */ NULL,
+    /* .AcquireForCcFlush               = */ NULL,
+    /* .ReleaseForCcFlush               = */ NULL,
+};
+#endif /* VBOXDRV_WITH_FAST_IO */
 
 
 /**
@@ -218,6 +260,18 @@ static void vboxdrvNtDestroyDevices(void)
 ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
     /*
+     * Sanity checks.
+     */
+#ifdef VBOXDRV_WITH_FAST_IO
+    if (g_VBoxDrvFastIoDispatch.FastIoDeviceControl != VBoxDrvNtFastIoDeviceControl)
+    {
+        DbgPrint("VBoxDrv: FastIoDeviceControl=%p instead of %p\n",
+                 g_VBoxDrvFastIoDispatch.FastIoDeviceControl, VBoxDrvNtFastIoDeviceControl);
+        return STATUS_INTERNAL_ERROR;
+    }
+#endif
+
+    /*
      * Create device.
      * (That means creating a device object and a symbolic link so the DOS
      * subsystems (OS/2, win32, ++) can access the device.)
@@ -252,6 +306,11 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 pDrvObj->MajorFunction[IRP_MJ_WRITE]                    = VBoxDrvNtNotSupportedStub;
 
                 /* more? */
+
+#ifdef VBOXDRV_WITH_FAST_IO
+                /* Fast I/O to speed up guest execution roundtrips. */
+                pDrvObj->FastIoDispatch = (PFAST_IO_DISPATCH)&g_VBoxDrvFastIoDispatch;
+#endif
 
                 /* Register ourselves for power state changes. */
                 UNICODE_STRING      CallbackName;
@@ -427,6 +486,190 @@ NTSTATUS _stdcall VBoxDrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 }
 
 
+#ifdef VBOXDRV_WITH_FAST_IO
+/**
+ * Fast I/O device control callback.
+ *
+ * This performs no buffering, neither on the way in or out.
+ *
+ * @returns TRUE if handled, FALSE if the normal I/O control routine should be
+ *          called.
+ * @param   pFileObj            The file object.
+ * @param   fWait               Whether it's a blocking call
+ * @param   pvInput             The input buffer as specified by the user.
+ * @param   cbInput             The size of the input buffer.
+ * @param   pvOutput            The output buffer as specfied by the user.
+ * @param   cbOutput            The size of the output buffer.
+ * @param   uFunction           The function.
+ * @param   pIoStatus           Where to return the status of the operation.
+ * @param   pDevObj             The device object..
+ */
+static BOOLEAN _stdcall VBoxDrvNtFastIoDeviceControl(PFILE_OBJECT pFileObj, BOOLEAN fWait, PVOID pvInput, ULONG cbInput,
+                                                     PVOID pvOutput, ULONG cbOutput, ULONG uCmd,
+                                                     PIO_STATUS_BLOCK pIoStatus, PDEVICE_OBJECT pDevObj)
+{
+    PSUPDRVDEVEXT   pDevExt  = SUPDRVNT_GET_DEVEXT(pDevObj);
+    PSUPDRVSESSION  pSession = (PSUPDRVSESSION)pFileObj->FsContext;
+
+    /*
+     * Check the input a little bit.
+     */
+    if (!pSession)
+    {
+        pIoStatus->Status      = STATUS_INVALID_PARAMETER;
+        pIoStatus->Information = 0;
+        return TRUE;
+    }
+
+    /*
+     * Deal with the 2-3 high-speed IOCtl that takes their arguments from
+     * the session and iCmd, and does not return anything.
+     */
+    if (   (   uCmd == SUP_IOCTL_FAST_DO_RAW_RUN
+            || uCmd == SUP_IOCTL_FAST_DO_HM_RUN
+            || uCmd == SUP_IOCTL_FAST_DO_NOP)
+        && pSession->fUnrestricted == true)
+    {
+        int rc = supdrvIOCtlFast(uCmd, (unsigned)(uintptr_t)pvInput/* VMCPU id */, pDevExt, pSession);
+        pIoStatus->Status      = RT_SUCCESS(rc) ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER;
+        pIoStatus->Information = 0; /* Could be used to pass rc if we liked. */
+        return TRUE;
+    }
+
+    /*
+     * The normal path.
+     */
+    NTSTATUS    rcNt;
+    unsigned    cbOut = 0;
+    int         rc = 0;
+    Log2(("VBoxDrvNtFastIoDeviceControl(%p): ioctl=%#x pvIn=%p cbIn=%#x pvOut=%p cbOut=%#x pSession=%p\n",
+          pDevExt, uCmd, pvInput, cbInput, pvOutput, cbOutput, pSession));
+
+#ifdef RT_ARCH_AMD64
+    /* Don't allow 32-bit processes to do any I/O controls. */
+    if (!IoIs32bitProcess(NULL))
+#endif
+    {
+        /*
+         * In this fast I/O device control path we have to do our own buffering.
+         */
+        /* Verify that the I/O control function matches our pattern. */
+        if ((uCmd & 0x3) == METHOD_BUFFERED)
+        {
+            /* Get the header so we can validate it a little bit against the
+               parameters before allocating any memory kernel for the reqest. */
+            SUPREQHDR Hdr;
+            if (cbInput >= sizeof(Hdr) && cbOutput >= sizeof(Hdr))
+            {
+                __try
+                {
+                    RtlCopyMemory(&Hdr, pvInput, sizeof(Hdr));
+                    rcNt = STATUS_SUCCESS;
+                }
+                __except(EXCEPTION_EXECUTE_HANDLER)
+                {
+                    rcNt = GetExceptionCode();
+                }
+            }
+            else
+                rcNt = STATUS_INVALID_PARAMETER;
+            if (NT_SUCCESS(rcNt))
+            {
+                /* Verify that the sizes in the request header are correct. */
+                ULONG cbBuf = RT_MAX(cbInput, cbOutput);
+                if (   cbInput  == Hdr.cbIn
+                    && cbOutput == Hdr.cbOut
+                    && cbBuf < _1M*16)
+                {
+                    /* Allocate a buffer and copy all the input into it. */
+                    PSUPREQHDR pHdr = (PSUPREQHDR)ExAllocatePoolWithTag(NonPagedPool, cbBuf, 'VBox');
+                    if (pHdr)
+                    {
+                        __try
+                        {
+                            RtlCopyMemory(pHdr, pvInput, cbInput);
+                            if (cbInput < cbBuf)
+                                RtlZeroMemory((uint8_t *)pHdr + cbInput, cbBuf - cbInput);
+                            rcNt = STATUS_SUCCESS;
+                        }
+                        __except(EXCEPTION_EXECUTE_HANDLER)
+                        {
+                            rcNt = GetExceptionCode();
+                        }
+                    }
+                    else
+                        rcNt = STATUS_NO_MEMORY;
+                    if (NT_SUCCESS(rcNt))
+                    {
+                        /*
+                         * Now call the common code to do the real work.
+                         */
+                        rc = supdrvIOCtl(uCmd, pDevExt, pSession, pHdr);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /*
+                             * Copy back the result.
+                             */
+                            cbOut = pHdr->cbOut;
+                            if (cbOut > cbOutput)
+                            {
+                                cbOut = cbOutput;
+                                OSDBGPRINT(("VBoxDrvNtFastIoDeviceControl: too much output! %#x > %#x; uCmd=%#x!\n",
+                                            pHdr->cbOut, cbOut, uCmd));
+                            }
+                            if (cbOut)
+                            {
+                                __try
+                                {
+                                    RtlCopyMemory(pvOutput, pHdr, cbOut);
+                                    rcNt = STATUS_SUCCESS;
+                                }
+                                __except(EXCEPTION_EXECUTE_HANDLER)
+                                {
+                                    rcNt = GetExceptionCode();
+                                }
+                            }
+                            else
+                                rcNt = STATUS_SUCCESS;
+                        }
+                        else if (rc == VERR_INVALID_PARAMETER)
+                            rcNt = STATUS_INVALID_PARAMETER;
+                        else
+                            rcNt = STATUS_NOT_SUPPORTED;
+                        Log2(("VBoxDrvNtFastIoDeviceControl: returns %#x cbOut=%d rc=%#x\n", rcNt, cbOut, rc));
+                    }
+                    ExFreePoolWithTag(pHdr, 'VBox');
+                }
+                else
+                {
+                    Log(("VBoxDrvNtFastIoDeviceControl: Mismatching sizes (%#x) - Hdr=%#lx/%#lx Irp=%#lx/%#lx!\n",
+                         uCmd, Hdr.cbIn, Hdr.cbOut, cbInput, cbOutput));
+                    rcNt = STATUS_INVALID_PARAMETER;
+                }
+            }
+        }
+        else
+        {
+            Log(("VBoxDrvNtFastIoDeviceControl: not buffered request (%#x) - not supported\n", uCmd));
+            rcNt = STATUS_NOT_SUPPORTED;
+        }
+    }
+#ifdef RT_ARCH_AMD64
+    else
+    {
+        Log(("VBoxDrvNtFastIoDeviceControl: WOW64 req - not supported\n"));
+        rcNt = STATUS_NOT_SUPPORTED;
+    }
+#endif
+
+    /* complete the request. */
+    pIoStatus->Status = rcNt;
+    pIoStatus->Information = cbOut;
+    return TRUE; /* handled. */
+}
+#endif /* VBOXDRV_WITH_FAST_IO */
+
+
 /**
  * Device I/O Control entry point.
  *
@@ -440,12 +683,8 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PSUPDRVSESSION      pSession = (PSUPDRVSESSION)pStack->FileObject->FsContext;
 
     /*
-     * Deal with the two high-speed IOCtl that takes it's arguments from
-     * the session and iCmd, and only returns a VBox status code.
-     *
-     * Note: The previous method of returning the rc prior to IOC version
-     *       7.4 has been abandond, we're no longer compatible with that
-     *       interface.
+     * Deal with the 2-3 high-speed IOCtl that takes their arguments from
+     * the session and iCmd, and does not return anything.
      */
     ULONG ulCmd = pStack->Parameters.DeviceIoControl.IoControlCode;
     if (   (   ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
@@ -454,15 +693,6 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         && pSession->fUnrestricted == true)
     {
         int rc = supdrvIOCtlFast(ulCmd, (unsigned)(uintptr_t)pIrp->UserBuffer /* VMCPU id */, pDevExt, pSession);
-
-#if 0   /* When preemption was not used i.e. !VBOX_WITH_VMMR0_DISABLE_PREEMPTION. That's no longer required. */
-        /* Raise the IRQL to DISPATCH_LEVEL to prevent Windows from rescheduling us to another CPU/core. */
-        Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
-        KIRQL oldIrql;
-        KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
-        int rc = supdrvIOCtlFast(ulCmd, (unsigned)(uintptr_t)pIrp->UserBuffer /* VMCPU id */, pDevExt, pSession);
-        KeLowerIrql(oldIrql);
-#endif
 
         /* Complete the I/O request. */
         NTSTATUS rcNt = pIrp->IoStatus.Status = RT_SUCCESS(rc) ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER;
