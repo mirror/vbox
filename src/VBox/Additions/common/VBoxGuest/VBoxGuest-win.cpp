@@ -741,85 +741,46 @@ static NTSTATUS vbgdNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         pSession = pDevExt->pKernelSession;
     }
 
-    /*
-     * First process Windows specific stuff which cannot be handled
-     * by the common code used on all other platforms. In the default case
-     * we then finally handle the common cases.
-     */
-    switch (uCmd)
+    /* Verify that it's a buffered CTL. */
+    if ((pStack->Parameters.DeviceIoControl.IoControlCode & 0x3) == METHOD_BUFFERED)
     {
-#ifdef VBOX_WITH_VRDP_SESSION_HANDLING
-        case VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION:
-        {
-            LogRelFunc(("ENABLE_VRDP_SESSION: Currently: %sabled\n",
-                        pDevExt->fVRDPEnabled? "en": "dis"));
-            if (!pDevExt->fVRDPEnabled)
-            {
-                KUSER_SHARED_DATA *pSharedUserData = (KUSER_SHARED_DATA *)KI_USER_SHARED_DATA;
+        /*
+         * Process the common IOCtls.
+         */
+        size_t cbDataReturned;
+        int vrc = VBoxGuestCommonIOCtl(uCmd, &pDevExt->Core, pSession, pBuf, cbData, &cbDataReturned);
 
-                pDevExt->fVRDPEnabled            = true;
-                LogRelFunc(("ENABLE_VRDP_SESSION: Current active console ID: 0x%08X\n",
-                            pSharedUserData->ActiveConsoleId));
-                pDevExt->ulOldActiveConsoleId    = pSharedUserData->ActiveConsoleId;
-                pSharedUserData->ActiveConsoleId = 2;
+        LogFlowFunc(("rc=%Rrc, pBuf=0x%p, cbData=%u, cbDataReturned=%u\n",
+                     vrc, pBuf, cbData, cbDataReturned));
+
+        if (RT_SUCCESS(vrc))
+        {
+            if (RT_UNLIKELY(   cbDataReturned > cbData
+                            || cbDataReturned > pStack->Parameters.DeviceIoControl.OutputBufferLength))
+            {
+                LogFlowFunc(("Too much output data %u - expected %u!\n", cbDataReturned, cbData));
+                cbDataReturned = cbData;
+                Status = STATUS_BUFFER_TOO_SMALL;
             }
-            break;
+            if (cbDataReturned > 0)
+                cbOut = cbDataReturned;
         }
-
-        case VBOXGUEST_IOCTL_DISABLE_VRDP_SESSION:
+        else
         {
-            LogRelFunc(("DISABLE_VRDP_SESSION: Currently: %sabled\n",
-                        pDevExt->fVRDPEnabled? "en": "dis"));
-            if (pDevExt->fVRDPEnabled)
-            {
-                KUSER_SHARED_DATA *pSharedUserData = (KUSER_SHARED_DATA *)KI_USER_SHARED_DATA;
-
-                pDevExt->fVRDPEnabled            = false;
-                LogFlowFunc(("DISABLE_VRDP_SESSION: Current active console ID: 0x%08X\n",
-                             pSharedUserData->ActiveConsoleId));
-                pSharedUserData->ActiveConsoleId = pDevExt->ulOldActiveConsoleId;
-                pDevExt->ulOldActiveConsoleId    = 0;
-            }
-            break;
-        }
-#else
-        /* Add at least one (bogus) fall through case to shut up MSVC! */
-        case 0:
-#endif
-        default:
-        {
-            /*
-             * Process the common IOCtls.
-             */
-            size_t cbDataReturned;
-            int vrc = VBoxGuestCommonIOCtl(uCmd, &pDevExt->Core, pSession, pBuf, cbData, &cbDataReturned);
-
-            LogFlowFunc(("rc=%Rrc, pBuf=0x%p, cbData=%u, cbDataReturned=%u\n",
-                         vrc, pBuf, cbData, cbDataReturned));
-
-            if (RT_SUCCESS(vrc))
-            {
-                if (RT_UNLIKELY(cbDataReturned > cbData))
-                {
-                    LogFlowFunc(("Too much output data %u - expected %u!\n", cbDataReturned, cbData));
-                    cbDataReturned = cbData;
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                }
-                if (cbDataReturned > 0)
-                    cbOut = cbDataReturned;
-            }
+            if (   vrc == VERR_NOT_SUPPORTED
+                || vrc == VERR_INVALID_PARAMETER)
+                Status = STATUS_INVALID_PARAMETER;
+            else if (vrc == VERR_OUT_OF_RANGE)
+                Status = STATUS_INVALID_BUFFER_SIZE;
             else
-            {
-                if (   vrc == VERR_NOT_SUPPORTED
-                    || vrc == VERR_INVALID_PARAMETER)
-                    Status = STATUS_INVALID_PARAMETER;
-                else if (vrc == VERR_OUT_OF_RANGE)
-                    Status = STATUS_INVALID_BUFFER_SIZE;
-                else
-                    Status = STATUS_UNSUCCESSFUL;
-            }
-            break;
+                Status = STATUS_UNSUCCESSFUL;
         }
+    }
+    else
+    {
+        LogFlowFunc(("Not buffered request (%#x) - not supported\n",
+                     pStack->Parameters.DeviceIoControl.IoControlCode));
+        Status = STATUS_NOT_SUPPORTED;
     }
 
     pIrp->IoStatus.Status = Status;

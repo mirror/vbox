@@ -37,7 +37,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
  VBoxGuest_DEFS.haiku    = VBOX_SVN_REV=$(VBOX_SVN_REV) _KERNEL_MODE=1
  VBoxGuest_DEFS.linux    = KBUILD_MODNAME=KBUILD_STR\(vboxguest\) KBUILD_BASENAME=KBUILD_STR\(vboxguest\) DEBUG_HASH=2 DEBUG_HASH2=3 EXPORT_SYMTAB
  VBoxGuest_DEFS.solaris  = VBOX_SVN_REV=$(VBOX_SVN_REV)
- VBoxGuest_DEFS.win      = VBOX_GUESTDRV_WITH_RELEASE_LOGGER # VBOX_WITH_VRDP_SESSION_HANDLING
+ VBoxGuest_DEFS.win      = VBOX_GUESTDRV_WITH_RELEASE_LOGGER
  VBoxGuest_DEFS.darwin   = VBOX_GUESTDRV_WITH_RELEASE_LOGGER
  ifeq ($(KBUILD_TYPE),release)
   # Allow stopping/removing the driver without a reboot

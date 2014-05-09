@@ -73,14 +73,6 @@
  * General VBoxTray messages.
  */
 #define WM_VBOXTRAY_TRAY_ICON                   WM_APP + 40
-/**
- * VM/VMMDev related messsages.
- */
-#define WM_VBOXTRAY_VM_RESTORED                 WM_APP + 100
-/**
- * VRDP messages.
- */
-#define WM_VBOXTRAY_VRDP_CHECK                  WM_APP + 301
 
 
 /* The tray icon's ID. */

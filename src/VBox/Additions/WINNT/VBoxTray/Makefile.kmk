@@ -36,7 +36,6 @@ VBoxTray_SOURCES  = \
 	VBoxClipboard.cpp \
 	VBoxDisplay.cpp \
 	VBoxVRDP.cpp \
-	VBoxRestore.cpp \
 	VBoxIPC.cpp \
 	VBoxHelpers.cpp \
 	VBoxTray.rc
