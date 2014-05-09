@@ -351,12 +351,13 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     /*
      * Misc initialisation.
      */
-    //pVM->hm.s.vmx.fSupported = false;
-    //pVM->hm.s.svm.fSupported = false;
-    //pVM->hm.s.vmx.fEnabled   = false;
-    //pVM->hm.s.svm.fEnabled   = false;
-    //pVM->hm.s.fNestedPaging  = false;
-
+#if 0
+    pVM->hm.s.vmx.fSupported = false;
+    pVM->hm.s.svm.fSupported = false;
+    pVM->hm.s.vmx.fEnabled   = false;
+    pVM->hm.s.svm.fEnabled   = false;
+    pVM->hm.s.fNestedPaging  = false;
+#endif
 
     /*
      * Read configuration.
@@ -1259,6 +1260,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         return VMSetError(pVM, rc, RT_SRC_POS, "VT-x setup failed: %Rrc", rc);
     }
 
+    LogRel(("HM: Supports VMCS EFER fields       = %RTbool\n", pVM->hm.s.vmx.fSupportsVmcsEfer));
     LogRel(("HM: VMX enabled!\n"));
     pVM->hm.s.vmx.fEnabled = true;
 

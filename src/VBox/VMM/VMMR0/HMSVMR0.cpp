@@ -1358,11 +1358,11 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
      * AMD-V requires guest EFER.SVME to be set. Weird.                                                                                 .
      * See AMD spec. 15.5.1 "Basic Operation" | "Canonicalization and Consistency Checks".
      */
-    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_SVM_GUEST_EFER_MSR))
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_EFER_MSR))
     {
         pVmcb->guest.u64EFER = pCtx->msrEFER | MSR_K6_EFER_SVME;
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
-        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_SVM_GUEST_EFER_MSR);
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_EFER_MSR);
     }
 
     /* 64-bit MSRs. */
@@ -4432,7 +4432,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
             HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
         }
         else if (pCtx->ecx == MSR_K6_EFER)
-            HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_EFER_MSR);
+            HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_EFER_MSR);
         else if (pCtx->ecx == MSR_IA32_TSC)
             pSvmTransient->fUpdateTscOffsetting = true;
     }
