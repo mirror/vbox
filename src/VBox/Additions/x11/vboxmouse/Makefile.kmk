@@ -74,9 +74,8 @@ vboxmouse_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_70_DEFS = \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT XORG_7X IN_XF86_MODULE DONT_DEFINE_WRAPPERS NO_ANSIC
 vboxmouse_drv_70_INCS := \
-	$(VBOX_PATH_X11_XORG_7_0) \
-	$(VBOX_PATH_X11_XORG_7_0)/X11 \
-	$(VBOX_PATH_X11_XORG_7_0)/xorg \
+	$(vboxmouse_xorg_INCS) \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.0.1 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_70_SOURCES = \
 	vboxmouse.c
@@ -89,9 +88,8 @@ DLLS += vboxmouse_drv_71
 vboxmouse_drv_71_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_71_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_71_INCS := \
-	$(VBOX_PATH_X11_XORG_7_1) \
-	$(VBOX_PATH_X11_XORG_7_1)/X11 \
-	$(VBOX_PATH_X11_XORG_7_1)/xorg \
+	$(vboxmouse_xorg_INCS) \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.1.0 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_71_SOURCES = \
 	vboxmouse.c
