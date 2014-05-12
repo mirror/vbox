@@ -1683,7 +1683,7 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
         }
     }
 }
-# endif /* VBOX_STRICT */
+#endif /* VBOX_STRICT */
 
 
 /**
@@ -10436,7 +10436,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 case MSR_IA32_SYSENTER_ESP: HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_SYSENTER_ESP_MSR); break;
                 case MSR_K8_FS_BASE:        /* no break */
                 case MSR_K8_GS_BASE:        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS);     break;
-                case MSR_K6_EFER:           HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_EFER_MSR);         break;
+                case MSR_K6_EFER:           /* already handled above */                             break;
                 default:
                 {
                     if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
