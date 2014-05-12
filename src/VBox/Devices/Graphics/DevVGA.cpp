@@ -6804,10 +6804,15 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
             pThis->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIANOTIFY);
         }
-        else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
+        else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        {
+            Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szName, pDevIns->iInstance));
+            rc = VINF_SUCCESS;
+        }
+        else
         {
             AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot attach to status driver"));
+            rc = PDMDEV_SET_ERROR(pDevIns, rc, N_("VGA cannot attach to status driver"));
         }
     }
     return rc;
