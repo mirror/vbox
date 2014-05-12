@@ -1052,7 +1052,89 @@ DECLCALLBACK(void) ahciCccTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUse
     int rc = ahciHbaSetInterrupt(pAhci, pAhci->uCccPortNr, VERR_IGNORED);
     AssertRC(rc);
 }
+
+/**
+ * Finishes the port reset of the given port.
+ *
+ * @returns nothing.
+ * @param   pAhciPort    The port to finish the reset on.
+ */
+static void ahciPortResetFinish(PAHCIPort pAhciPort)
+{
+    /* Cancel all tasks first. */
+    bool fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort);
+    Assert(fAllTasksCanceled);
+
+    /* Signature for SATA device. */
+    if (pAhciPort->fATAPI)
+        pAhciPort->regSIG = AHCI_PORT_SIG_ATAPI;
+    else
+        pAhciPort->regSIG = AHCI_PORT_SIG_DISK;
+
+    pAhciPort->regSSTS = (0x01 << 8)  | /* Interface is active. */
+                         (0x03 << 0);   /* Device detected and communication established. */
+
+    /*
+     * Use the maximum allowed speed.
+     * (Not that it changes anything really)
+     */
+    switch (AHCI_PORT_SCTL_SPD_GET(pAhciPort->regSCTL))
+    {
+        case 0x01:
+            pAhciPort->regSSTS |= (0x01 << 4); /* Generation 1 (1.5GBps) speed. */
+            break;
+        case 0x02:
+        case 0x00:
+        default:
+            pAhciPort->regSSTS |= (0x02 << 4); /* Generation 2 (3.0GBps) speed. */
+            break;
+    }
+
+    /* We received a COMINIT from the device. Tell the guest. */
+    ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_PCS);
+    pAhciPort->regSERR |= AHCI_PORT_SERR_X;
+    pAhciPort->regTFD  |= ATA_STAT_BUSY;
+
+    if ((pAhciPort->regCMD & AHCI_PORT_CMD_FRE) && (!pAhciPort->fFirstD2HFisSend))
+    {
+        ahciPostFirstD2HFisIntoMemory(pAhciPort);
+        ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
+
+        if (pAhciPort->regIE & AHCI_PORT_IE_DHRE)
+        {
+            int rc = ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
+            AssertRC(rc);
+        }
+    }
+
+    ASMAtomicXchgBool(&pAhciPort->fPortReset, false);
+}
 #endif
+
+/**
+ * Kicks the I/O thread from RC or R0.
+ *
+ * @returns nothing.
+ * @param   pAhci     The AHCI controller instance.
+ * @param   pAhciPort The port to kick.
+ */
+static void ahciIoThreadKick(PAHCI pAhci, PAHCIPort pAhciPort)
+{
+#ifdef IN_RC
+    PDEVPORTNOTIFIERQUEUEITEM pItem = (PDEVPORTNOTIFIERQUEUEITEM)PDMQueueAlloc(pAhci->CTX_SUFF(pNotifierQueue));
+    AssertMsg(VALID_PTR(pItem), ("Allocating item for queue failed\n"));
+
+    if (pItem)
+    {
+        pItem->iPort = pAhciPort->iLUN;
+        PDMQueueInsert(pAhci->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+    }
+#else
+    LogFlowFunc(("Signal event semaphore\n"));
+    int rc = SUPSemEventSignal(pAhci->pSupDrvSession, pAhciPort->hEvtProcess);
+    AssertRC(rc);
+#endif
+}
 
 static int PortCmdIssue_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
@@ -1075,21 +1157,9 @@ static int PortCmdIssue_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
 
         ASMAtomicOrU32(&pAhciPort->u32TasksNew, u32Value);
 
-        /* Send a notification to R3 if u32TasksNew was before our write. */
+        /* Send a notification to R3 if u32TasksNew was 0 before our write. */
         if (ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping))
-        {
-#ifdef IN_RC
-            PDEVPORTNOTIFIERQUEUEITEM pItem = (PDEVPORTNOTIFIERQUEUEITEM)PDMQueueAlloc(ahci->CTX_SUFF(pNotifierQueue));
-            AssertMsg(VALID_PTR(pItem), ("Allocating item for queue failed\n"));
-
-            pItem->iPort = pAhciPort->iLUN;
-            PDMQueueInsert(ahci->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
-#else
-            LogFlowFunc(("Signal event semaphore\n"));
-            int rc = SUPSemEventSignal(ahci->pSupDrvSession, pAhciPort->hEvtProcess);
-            AssertRC(rc);
-#endif
-        }
+            ahciIoThreadKick(ahci, pAhciPort);
     }
 
     pAhciPort->regCI |= u32Value;
@@ -1178,73 +1248,22 @@ static int PortSControl_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
             LogRel(("AHCI#%u: Port %d reset\n", ahci->CTX_SUFF(pDevIns)->iInstance,
                     pAhciPort->iLUN));
 
-        /* Make sure the async I/O thread is not working before we start to cancel active requests. */
-        while (   pAhciPort->u32TasksNew
-               || !pAhciPort->fWrkThreadSleeping)
-            RTThreadYield();
-
-        /* Cancel all tasks first. */
-        bool fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort);
-        Assert(fAllTasksCanceled);
-
         pAhciPort->regSSTS = 0;
         pAhciPort->regSIG  = ~0;
         pAhciPort->regTFD  = 0x7f;
         pAhciPort->fFirstD2HFisSend = false;
+        pAhciPort->regSCTL = u32Value;
     }
     else if (   (u32Value & AHCI_PORT_SCTL_DET) == AHCI_PORT_SCTL_DET_NINIT
              && (pAhciPort->regSCTL & AHCI_PORT_SCTL_DET) == AHCI_PORT_SCTL_DET_INIT
              && pAhciPort->pDrvBase)
     {
-        if (pAhciPort->pDrvBase)
-        {
-            ASMAtomicXchgBool(&pAhciPort->fPortReset, false);
+        pAhciPort->regSCTL = u32Value;  /* Update before kicking the I/O thread. */
+        pAhciPort->regSSTS = 0x1; /* Indicate device presence detected but communication not established. */
 
-            /* Signature for SATA device. */
-            if (pAhciPort->fATAPI)
-                pAhciPort->regSIG = AHCI_PORT_SIG_ATAPI;
-            else
-                pAhciPort->regSIG = AHCI_PORT_SIG_DISK;
-
-            pAhciPort->regSSTS = (0x01 << 8)  | /* Interface is active. */
-                                 (0x03 << 0);   /* Device detected and communication established. */
-
-            /*
-             * Use the maximum allowed speed.
-             * (Not that it changes anything really)
-             */
-            switch (AHCI_PORT_SCTL_SPD_GET(pAhciPort->regSCTL))
-            {
-                case 0x01:
-                    pAhciPort->regSSTS |= (0x01 << 4); /* Generation 1 (1.5GBps) speed. */
-                    break;
-                case 0x02:
-                case 0x00:
-                default:
-                    pAhciPort->regSSTS |= (0x02 << 4); /* Generation 2 (3.0GBps) speed. */
-                    break;
-            }
-
-            /* We received a COMINIT from the device. Tell the guest. */
-            ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_PCS);
-            pAhciPort->regSERR |= AHCI_PORT_SERR_X;
-            pAhciPort->regTFD  |= ATA_STAT_BUSY;
-
-            if ((pAhciPort->regCMD & AHCI_PORT_CMD_FRE) && (!pAhciPort->fFirstD2HFisSend))
-            {
-                ahciPostFirstD2HFisIntoMemory(pAhciPort);
-                ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
-
-                if (pAhciPort->regIE & AHCI_PORT_IE_DHRE)
-                {
-                    int rc = ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
-                    AssertRC(rc);
-                }
-            }
-        }
+        /* Kick the thread to finish the reset. */
+        ahciIoThreadKick(ahci, pAhciPort);
     }
-
-    pAhciPort->regSCTL = u32Value;
 
     return VINF_SUCCESS;
 #endif
@@ -5904,7 +5923,8 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
 
     ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
 
-    if (fXchg)
+    if (   fXchg
+        && !ASMAtomicReadBool(&pAhciPort->fPortReset))
     {
         if (pAhciReq->enmTxDir == AHCITXDIR_READ)
         {
@@ -6019,7 +6039,8 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
          * Task was canceled, do the cleanup but DO NOT access the guest memory!
          * The guest might use it for other things now because it doesn't know about that task anymore.
          */
-        AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_CANCELED,
+        AssertMsg(   pAhciReq->enmTxState == AHCITXSTATE_CANCELED
+                  || pAhciPort->fPortReset,
                   ("Task is not active but wasn't canceled!\n"));
 
         fCanceled = true;
@@ -6734,6 +6755,11 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             u32Tasks &= ~RT_BIT_32(idx); /* Clear task bit. */
             idx = ASMBitFirstSetU32(u32Tasks);
         } /* while tasks available */
+
+        /* Check whether a port reset was active. */
+        if (   ASMAtomicReadBool(&pAhciPort->fPortReset)
+            && (pAhciPort->regSCTL & AHCI_PORT_SCTL_DET) == AHCI_PORT_SCTL_DET_NINIT)
+            ahciPortResetFinish(pAhciPort);
 
         /*
          * Check whether a host controller reset is pending and execute the reset
