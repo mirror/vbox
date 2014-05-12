@@ -269,8 +269,6 @@ STDMETHODIMP Session::GetRemoteConsole(IConsole **aConsole)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    AssertReturn(mState != SessionState_Unlocked, VBOX_E_INVALID_VM_STATE);
-
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertMsgReturn(mType == SessionType_WriteLock && !!mConsole,
                     ("This is not a direct session!\n"),
