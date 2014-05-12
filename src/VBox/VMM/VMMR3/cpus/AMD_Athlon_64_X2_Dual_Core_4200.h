@@ -6,6 +6,7 @@
  * @remarks Possible that we're missing a few special MSRs due to no                                                                      .
  *          magic register value capabilities in the linux hosted                                                                         .
  *          MSR probing code.
+ * @todo Regenerate this using windows/whatever where we can get to the secret AMD MSRs.
  */
 
 /*
@@ -156,6 +157,45 @@ static CPUMMSRRANGE const g_aMsrRanges_AMD_Athlon_64_X2_Dual_Core_4200[] =
     MFX(0xc0010115, "AMD_K8_IGNNE", AmdK8IgnNe, AmdK8IgnNe, 0, ~(uint64_t)UINT32_MAX, UINT32_C(0xfffffffe)), /* value=0x0 */
     MFN(0xc0010116, "AMD_K8_SMM_CTL", WriteOnly, AmdK8SmmCtl),
     MFX(0xc0010117, "AMD_K8_VM_HSAVE_PA", AmdK8VmHSavePa, AmdK8VmHSavePa, 0, 0, UINT64_C(0xffffff0000000fff)), /* value=0x0 */
+
+    /* Copy & paste from the AMD_Athlon_64_3200 (130nm) profile: */
+    MVX(0xc0010118, "AMD_K8_UNK_c001_0118",0,0,0),
+    MVX(0xc0010119, "AMD_K8_UNK_c001_0119",0,0,0),
+    MVX(0xc001011a, "AMD_K8_UNK_c001_011a", 0, 0, UINT64_C(0xffffffff00000fff)),
+    MVX(0xc001011b, "AMD_K8_UNK_c001_011b", 0, 0, ~(uint64_t)UINT32_MAX),
+    MVX(0xc001011c, "AMD_K8_UNK_c001_011c", UINT32_C(0xdb1f5000), 0, UINT64_C(0xffffffff00000fff)),
+    MFX(0xc0011000, "AMD_K7_MCODE_CTL", AmdK7MicrocodeCtl, AmdK7MicrocodeCtl, 0, ~(uint64_t)UINT32_MAX, 0x204), /* value=0x0 */
+    MFX(0xc0011001, "AMD_K7_APIC_CLUSTER_ID", AmdK7ClusterIdMaybe, AmdK7ClusterIdMaybe, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x0 */
+    MFX(0xc0011004, "AMD_K8_CPUID_CTL_STD01", AmdK8CpuIdCtlStd01hEdcx, AmdK8CpuIdCtlStd01hEdcx, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x78bfbff */
+    MFX(0xc0011005, "AMD_K8_CPUID_CTL_EXT01", AmdK8CpuIdCtlExt01hEdcx, AmdK8CpuIdCtlExt01hEdcx, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0xf1f3fbff */
+    MFX(0xc0011006, "AMD_K7_DEBUG_STS?", AmdK7DebugStatusMaybe, AmdK7DebugStatusMaybe, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x0 */
+    MFN(0xc0011007, "AMD_K7_BH_TRACE_BASE?", AmdK7BHTraceBaseMaybe, AmdK7BHTraceBaseMaybe), /* value=0x0 */
+    MFN(0xc0011008, "AMD_K7_BH_TRACE_PTR?", AmdK7BHTracePtrMaybe, AmdK7BHTracePtrMaybe), /* value=0x0 */
+    MFN(0xc0011009, "AMD_K7_BH_TRACE_LIM?", AmdK7BHTraceLimitMaybe, AmdK7BHTraceLimitMaybe), /* value=0x0 */
+    MFX(0xc001100a, "AMD_K7_HDT_CFG?", AmdK7HardwareDebugToolCfgMaybe, AmdK7HardwareDebugToolCfgMaybe, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x0 */
+    MFX(0xc001100b, "AMD_K7_FAST_FLUSH_COUNT?", AmdK7FastFlushCountMaybe, AmdK7FastFlushCountMaybe, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x7c0 */
+    MFX(0xc001100c, "AMD_K7_NODE_ID", AmdK7NodeId, AmdK7NodeId, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x20906 */
+    MVX(0xc001100d, "AMD_K8_LOGICAL_CPUS_NUM?", 0x10a, 0, 0),
+    MVX(0xc001100e, "AMD_K8_WRMSR_BP?", 0, ~(uint64_t)UINT32_MAX, 0),
+    MVX(0xc001100f, "AMD_K8_WRMSR_BP_MASK?", 0, ~(uint64_t)UINT32_MAX, 0),
+    MVX(0xc0011010, "AMD_K8_BH_TRACE_CTL?", 0, ~(uint64_t)UINT32_MAX, 0),
+    MVX(0xc0011011, "AMD_K8_BH_TRACE_USRD?", 0, 0, 0), /* value=0xc0011011`00000283 */
+    MVX(0xc0011014, "AMD_K8_XCPT_BP_RIP?", 0, 0, 0),
+    MVX(0xc0011015, "AMD_K8_XCPT_BP_RIP_MASK?", 0, 0, 0),
+    MVX(0xc0011016, "AMD_K8_COND_HDT_VAL?", 0, 0, 0),
+    MVX(0xc0011017, "AMD_K8_COND_HDT_VAL_MASK?", 0, 0, 0),
+    MVX(0xc0011018, "AMD_K8_XCPT_BP_CTL?", 0, ~(uint64_t)UINT32_MAX, 0),
+    MVX(0xc001101d, "AMD_K8_NB_BIST?", 0, UINT64_C(0xfffffffffc000000), 0),
+    MVI(0xc001101e, "AMD_K8_THERMTRIP_2?", 0x521020), /* Villain? */
+    MVX(0xc001101f, "AMD_K8_NB_CFG?", UINT64_C(0x1100000008), UINT64_C(0xffffff0000000000), 0),
+    MFX(0xc0011020, "AMD_K7_LS_CFG", AmdK7LoadStoreCfg, AmdK7LoadStoreCfg, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x1000 */
+    MFX(0xc0011021, "AMD_K7_IC_CFG", AmdK7InstrCacheCfg, AmdK7InstrCacheCfg, 0x800, ~(uint64_t)UINT32_MAX, 0), /* value=0x800 */
+    MFX(0xc0011022, "AMD_K7_DC_CFG", AmdK7DataCacheCfg, AmdK7DataCacheCfg, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x24000008 */
+    MFN(0xc0011023, "AMD_K7_BU_CFG", AmdK7BusUnitCfg, AmdK7BusUnitCfg), /* Villain? value=0x2020 */
+    MFX(0xc0011024, "AMD_K7_DEBUG_CTL_2?", AmdK7DebugCtl2Maybe, AmdK7DebugCtl2Maybe, 0, UINT64_C(0xffffffffffffff00), 0), /* value=0x0 */
+    MFN(0xc0011025, "AMD_K7_DR0_DATA_MATCH?", AmdK7Dr0DataMatchMaybe, AmdK7Dr0DataMatchMaybe), /* value=0x0 */
+    MFN(0xc0011026, "AMD_K7_DR0_DATA_MATCH?", AmdK7Dr0DataMaskMaybe, AmdK7Dr0DataMaskMaybe), /* value=0x0 */
+    MFX(0xc0011027, "AMD_K7_DR0_ADDR_MASK", AmdK7DrXAddrMaskN, AmdK7DrXAddrMaskN, 0x0, UINT64_C(0xfffffffffffff000), 0), /* value=0x0 */
 };
 #endif /* !CPUM_DB_STANDALONE */
 
