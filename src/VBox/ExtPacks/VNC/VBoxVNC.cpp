@@ -66,6 +66,7 @@ class VNCServerImpl
 public:
     VNCServerImpl()
     {
+        mVNCServer = NULL;
         mFrameBuffer = NULL;
         mScreenBuffer = NULL;
         mCursor = NULL;
@@ -79,6 +80,8 @@ public:
         if (mCursor)
             rfbFreeCursor(mCursor);
         memset(szVNCPassword, '\0', sizeof(szVNCPassword));
+        if (mVNCServer)
+            rfbScreenCleanup(mVNCServer);
     }
 
     int Init(const VRDEINTERFACEHDR *pCallbacks, void *pvCallback);
