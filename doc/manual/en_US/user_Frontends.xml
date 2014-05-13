@@ -449,7 +449,7 @@
 
                       <listitem>
                         <para>To enable the library for a particular VM, you
-                        must then switch authentication to external:<screen>VBoxManage modifyvm &lt;vm&gt; --vrdeauthtype external</screen></para>
+                        must then switch authentication to external:<screen>VBoxManage modifyvm "VM name" --vrdeauthtype external</screen></para>
 
                         <para>Replace
                         <computeroutput>&lt;vm&gt;</computeroutput> with the
@@ -463,7 +463,7 @@
                         whose "extradata" section the password needs to be
                         written, is a plain text file, VirtualBox uses hashes
                         to encrypt passwords. The following command must be
-                        used:<screen>VBoxManage setextradata &lt;vm&gt; "VBoxAuthSimple/users/&lt;user&gt;" &lt;hash&gt;</screen></para>
+                        used:<screen>VBoxManage setextradata "VM name" "VBoxAuthSimple/users/&lt;user&gt;" &lt;hash&gt;</screen></para>
 
                         <para>Replace
                         <computeroutput>&lt;vm&gt;</computeroutput> with the

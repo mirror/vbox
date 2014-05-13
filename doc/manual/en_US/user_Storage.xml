@@ -774,7 +774,7 @@
     I/O cache is used for each I/O controller separately. Either uncheck the
     "Use host I/O cache" box in the "Storage" settings for a given virtual
     storage controller, or use the following VBoxManage command to disable the
-    host I/O cache for a virtual storage controller:<screen>VBoxManage storagectl &lt;vm&gt; --name &lt;controllername&gt; --hostiocache off</screen></para>
+    host I/O cache for a virtual storage controller:<screen>VBoxManage storagectl "VM name" --name &lt;controllername&gt; --hostiocache off</screen></para>
 
     <para>See <xref linkend="vboxmanage-storagectl" /> for details.</para>
 
@@ -794,9 +794,9 @@
     <computeroutput>VBoxManage</computeroutput>. The example below creates a
     bandwidth group named "Limit", sets the limit to 20 MB/s and assigns the
     group to the attached disks of the VM:<screen>VBoxManage bandwidthctl "VM name" add Limit --type disk --limit 20M
-VBoxManage storageattach "VM name" --controller "SATA" --port 0 --device 0 --type hdd
+VBoxManage storageattach "VM name" --storagectl "SATA" --port 0 --device 0 --type hdd
                                    --medium disk1.vdi --bandwidthgroup Limit
-VBoxManage storageattach "VM name" --controller "SATA" --port 1 --device 0 --type hdd
+VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --type hdd
                                    --medium disk2.vdi --bandwidthgroup Limit</screen></para>
 
     <para>All disks in a group share the bandwidth limit, meaning that in the
