@@ -132,6 +132,15 @@ extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,
 
 #define VBOXPTR(p) ((VBOXPtr)((p)->driverPrivate))
 
+/** Helper to work round different ways of getting the root window in different
+ * server versions. */
+#if defined(XORG_VERSION_CURRENT) && XORG_VERSION_CURRENT < 700000000 \
+    && XORG_VERSION_CURRENT >= 100900000
+# define ROOT_WINDOW(pScrn) screenInfo.screens[(pScrn)->scrnIndex]->root
+#else
+# define ROOT_WINDOW(pScrn) WindowTable[(pScrn)->scrnIndex]
+#endif
+
 /*XXX*/
 
 typedef struct VBOXRec
@@ -180,6 +189,10 @@ typedef struct VBOXRec
     /** The virtual crtcs */
     struct _xf86Crtc *paCrtcs[VBOX_VIDEO_MAX_SCREENS];
     struct _xf86Output *paOutputs[VBOX_VIDEO_MAX_SCREENS];
+#else
+    /** The original CreateScreenResources procedure which we wrap with our own.
+     */
+    CreateScreenResourcesProcPtr pfnCreateScreenResources;
 #endif
     /** Offsets of VBVA buffers in video RAM */
     uint32_t aoffVBVABuffer[VBOX_VIDEO_MAX_SCREENS];
@@ -211,25 +224,14 @@ extern Bool vbox_device_available(VBOXPtr pVBox);
 extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
 extern void vboxDisableVbva(ScrnInfoPtr pScrn);
 
-extern Bool vboxEnableGraphicsCap(VBOXPtr pVBox);
-extern Bool vboxDisableGraphicsCap(VBOXPtr pVBox);
-extern Bool vboxGuestIsSeamless(ScrnInfoPtr pScrn);
-
-extern Bool vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx,
-                                        uint32_t *pcy, uint32_t *pcBits,
-                                        uint32_t *piDisplay);
-extern Bool vboxHostLikesVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits);
-extern Bool vboxSaveVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits);
-extern Bool vboxRetrieveVideoMode(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
 extern unsigned vboxNextStandardMode(ScrnInfoPtr pScrn, unsigned cIndex,
-                                     uint32_t *pcx, uint32_t *pcy,
-                                     uint32_t *pcBits);
-extern void vboxGetPreferredMode(ScrnInfoPtr pScrn, uint32_t iScreen,
-                                 uint32_t *pcx, uint32_t *pcy,
-                                 uint32_t *pcBits);
-extern void vboxWriteHostModes(ScrnInfoPtr pScrn, DisplayModePtr pCurrent);
-extern void vboxAddModes(ScrnInfoPtr pScrn, uint32_t cxInit,
-                         uint32_t cyInit);
+                                     uint32_t *pcx, uint32_t *pcy);
+extern void vboxAddModes(ScrnInfoPtr pScrn);
+extern void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn);
+extern void VBoxUpdateSizeHints(ScrnInfoPtr pScrn);
+#ifndef VBOXVIDEO_13
+extern void VBoxSetUpRandR11(ScreenPtr pScreen);
+#endif
 
 /* DRI stuff */
 extern Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen,

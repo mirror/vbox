@@ -1,4 +1,5 @@
 ChangeWindowProperty
+CheckExtension
 DRI2CloseScreen
 DRI2ScreenInit
 DRICloseScreen
@@ -14,9 +15,13 @@ ErrorF
 FatalError
 GlxSetVisualConfigs
 LoaderRefSymLists
+LookupWindow
 MakeAtom
 PixmapWidthPaddingInfo
+ProcVector
 RRChangeOutputProperty
+SecurityLookupWindow
+SwappedProcVector
 ShadowFBInit2
 VErrorF
 WindowTable

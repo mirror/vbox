@@ -339,11 +339,6 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
     pVBox->aScreenLocation[cDisplay].cy = adjusted_mode->VDisplay;
     pVBox->aScreenLocation[cDisplay].x = x;
     pVBox->aScreenLocation[cDisplay].y = y;
-    /* Don't remember any modes set while we are seamless, as they are
-     * just temporary. */
-    if (!vboxGuestIsSeamless(crtc->scrn))
-        vboxSaveVideoMode(crtc->scrn, adjusted_mode->HDisplay,
-                          adjusted_mode->VDisplay, crtc->scrn->bitsPerPixel);
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
     if (!crtc->scrn->vtSema)
@@ -399,21 +394,7 @@ vbox_output_dpms (xf86OutputPtr output, int mode)
 static int
 vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
 {
-    ScrnInfoPtr pScrn = output->scrn;
-    int rc = MODE_OK;
-    TRACE_LOG("HDisplay=%d, VDisplay=%d\n", mode->HDisplay, mode->VDisplay);
-    /* We always like modes specified by the user in the configuration
-     * file and modes requested by the host, as doing otherwise is likely to
-     * annoy people. */
-    if (   !(mode->type & M_T_USERDEF)
-        && !(mode->type & M_T_PREFERRED)
-        && vbox_device_available(VBOXGetRec(pScrn))
-        && !vboxHostLikesVideoMode(pScrn, mode->HDisplay, mode->VDisplay,
-                                   pScrn->bitsPerPixel)
-       )
-        rc = MODE_BAD;
-    TRACE_LOG("returning %s\n", MODE_OK == rc ? "MODE_OK" : "MODE_BAD");
-    return rc;
+    return MODE_OK;
 }
 
 static Bool
@@ -480,15 +461,18 @@ vbox_output_get_modes (xf86OutputPtr output)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_ENTRY();
-    uint32_t x, y, bpp, iScreen;
+    uint32_t x, y, iScreen;
     iScreen = (uintptr_t)output->driver_private;
-    vboxGetPreferredMode(pScrn, iScreen, &x, &y, &bpp);
-    pMode = vbox_output_add_mode(pVBox, &pModes, NULL, x, y, TRUE, FALSE);
+    VBoxUpdateSizeHints(pScrn);
+    pMode = vbox_output_add_mode(pVBox, &pModes, NULL,
+                                 pVBox->aPreferredSize[iScreen].cx,
+                                 pVBox->aPreferredSize[iScreen].cy, TRUE,
+                                 FALSE);
     VBOXEDIDSet(output, pMode);
     /* Add standard modes supported by the host */
     for ( ; ; )
     {
-        cIndex = vboxNextStandardMode(pScrn, cIndex, &x, &y, NULL);
+        cIndex = vboxNextStandardMode(pScrn, cIndex, &x, &y);
         if (cIndex == 0)
             break;
         vbox_output_add_mode(pVBox, &pModes, NULL, x, y, FALSE, FALSE);
@@ -897,18 +881,9 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     pScrn->clockRanges->ClockMulFactor = 1;
     pScrn->clockRanges->ClockDivFactor = 1;
 
-    /* Query the host for the preferred colour depth */
-    {
-        uint32_t cx = 0, cy = 0, cBits = 0;
-
-        vboxGetPreferredMode(pScrn, 0, &cx, &cy, &cBits);
-        /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
-        if (cBits != 16)
-            cBits = 24;
-        if (!xf86SetDepthBpp(pScrn, cBits, 0, 0, Support32bppFb))
-            return FALSE;
-        vboxAddModes(pScrn, cx, cy);
-    }
+    if (!xf86SetDepthBpp(pScrn, 24, 0, 0, Support32bppFb))
+        return FALSE;
+    /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
     if (pScrn->bitsPerPixel != 32 && pScrn->bitsPerPixel != 16)
     {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
@@ -916,6 +891,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         return FALSE;
     }
     xf86PrintDepthBpp(pScrn);
+    vboxAddModes(pScrn);
 
 #ifdef VBOXVIDEO_13
     /* Work around a bug in the original X server modesetting code, which
@@ -987,35 +963,35 @@ vboxLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
     (void)pVisual;
 }
 
-#ifdef SET_HAVE_VT_PROPERTY
-# define HAS_VT_ATOM_NAME "XFree86_has_VT"
+#define HAS_VT_ATOM_NAME "XFree86_has_VT"
+#define VBOXVIDEO_DRIVER_ATOM_NAME "VBOXVIDEO_DRIVER_IN_USE"
 /* The memory storing the initial value of the XFree86_has_VT root window
  * property.  This has to remain available until server start-up, so we just
  * use a global. */
-static CARD32 HasVTValue = 1;
+static CARD32 InitialPropertyValue = 1;
 
 /** Initialise a flag property on the root window to say whether the server VT
  *  is currently the active one as some clients need to know this. */
-static void initialiseHasVTProperty(ScrnInfoPtr pScrn)
+static void initialiseProperties(ScrnInfoPtr pScrn)
 {
-    Atom HasVTAtom = -1;
-    CARD32 *HasVT = &HasVTValue;
-    HasVTAtom = MakeAtom(HAS_VT_ATOM_NAME, sizeof(HAS_VT_ATOM_NAME) - 1, TRUE);
-    if (!xf86RegisterRootWindowProperty(pScrn->scrnIndex, HasVTAtom, XA_INTEGER,
-                                        32, 1, HasVT))
+    Atom atom = -1;
+    CARD32 *PropertyValue = &InitialPropertyValue;
+#ifdef SET_HAVE_VT_PROPERTY
+    atom = MakeAtom(HAS_VT_ATOM_NAME, sizeof(HAS_VT_ATOM_NAME) - 1, TRUE);
+    if (!xf86RegisterRootWindowProperty(pScrn->scrnIndex, atom, XA_INTEGER,
+                                        32, 1, PropertyValue))
         xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
                    "Failed to register VT property\n");
+#endif /* SET_HAVE_VT_PROPERTY */
+    atom = MakeAtom(VBOXVIDEO_DRIVER_ATOM_NAME,
+                    sizeof(VBOXVIDEO_DRIVER_ATOM_NAME) - 1, TRUE);
+    if (!xf86RegisterRootWindowProperty(pScrn->scrnIndex, atom, XA_INTEGER,
+                                        32, 1, PropertyValue))
+        xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+                   "Failed to register driver in use property\n");
 }
 
-/** Helper to work round different ways of getting the root window in different
- * server versions. */
-#if defined(XORG_VERSION_CURRENT) && XORG_VERSION_CURRENT < 700000000 \
-    && XORG_VERSION_CURRENT >= 100900000
-# define ROOT_WINDOW(pScrn) xf86ScrnToScreen(pScrn)->root
-#else
-# define ROOT_WINDOW(pScrn) WindowTable[xf86ScrnToScreen(pScrn)->myNum]
-#endif
-
+#ifdef SET_HAVE_VT_PROPERTY
 /** Update a flag property on the root window to say whether the server VT
  *  is currently the active one as some clients need to know this. */
 static void updateHasVTProperty(ScrnInfoPtr pScrn, Bool hasVT)
@@ -1108,6 +1084,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     if (vbox_open (pScrn, pScreen, pVBox)) {
         vboxEnableVbva(pScrn);
     }
+    VBoxInitialiseSizeHints(pScrn);
 
 #ifdef VBOXVIDEO_13
     /* Initialise CRTC and output configuration for use with randr1.2. */
@@ -1177,6 +1154,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
         return FALSE;
     }
 #else /* !VBOXVIDEO_13 */
+    VBoxSetUpRandR11(pScreen);
     /* set first video mode */
     if (!VBOXSetMode(pScrn, 0, pScrn->currentMode->HDisplay,
                      pScrn->currentMode->VDisplay, pScrn->frameX0,
@@ -1189,9 +1167,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     pVBox->aScreenLocation[0].cy = pScrn->currentMode->VDisplay;
     pVBox->aScreenLocation[0].x = pScrn->frameX0;
     pVBox->aScreenLocation[0].y = pScrn->frameY0;
-    /* And make sure that a non-current dynamic mode is at the front of the
-     * list */
-    vboxWriteHostModes(pScrn, pScrn->currentMode);
 #endif /* !VBOXVIDEO_13 */
 
     /* software cursor */
@@ -1233,9 +1208,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
         pVBox->useDRI = VBOXDRIFinishScreenInit(pScreen);
 #endif
 
-#ifdef SET_HAVE_VT_PROPERTY
-    initialiseHasVTProperty(pScrn);
-#endif
+    initialiseProperties(pScrn);
 
     return (TRUE);
 }
@@ -1370,14 +1343,6 @@ static Bool VBOXSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     VBOXAdjustScreenPixmap(pScrn, pMode->HDisplay, pMode->VDisplay);
     rc = VBOXSetMode(pScrn, 0, pMode->HDisplay, pMode->VDisplay,
                      pScrn->frameX0, pScrn->frameY0);
-    if (rc)
-    {
-        vboxWriteHostModes(pScrn, pMode);
-        xf86PrintModes(pScrn);
-    }
-    if (rc && !vboxGuestIsSeamless(pScrn))
-        vboxSaveVideoMode(pScrn, pMode->HDisplay, pMode->VDisplay,
-                          pScrn->bitsPerPixel);
 #endif
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
