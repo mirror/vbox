@@ -1549,8 +1549,7 @@ Name: /VirtualBox/GuestInfo/OS/LoggedInUsersList, value: username,
     timestamp: 1229099826317386000, flags:</screen></para>
 
     <para>To query the value of a single property, use the "get" subcommand
-    like this:<screen>$ VBoxManage guestproperty get "Windows Vista III"
-         "/VirtualBox/GuestInfo/OS/Product"
+    like this:<screen>$ VBoxManage guestproperty get "Windows Vista III" "/VirtualBox/GuestInfo/OS/Product"
 VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
 (C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
 All rights reserved.
