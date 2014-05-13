@@ -40,6 +40,8 @@ signals:
     void sigNotifyAboutNativeFullscreenWillExit();
     /** Mac OS X: Notifies listener about native 'fullscreen' exited. */
     void sigNotifyAboutNativeFullscreenDidExit();
+    /** Mac OS X: Notifies listener about native 'fullscreen' fail to enter. */
+    void sigNotifyAboutNativeFullscreenFailToEnter();
 #endif /* RT_OS_DARWIN */
 
 protected:
