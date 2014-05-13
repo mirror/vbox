@@ -130,7 +130,8 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidEnter()
     /* Fade to normal if necessary: */
     QSet<UIMachineWindow*> visibleMachineWindows;
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        if (uisession()->isScreenVisible(pMachineWindow->screenId()))
+        if (   uisession()->isScreenVisible(pMachineWindow->screenId())
+            && hasHostScreenForGuestScreen(pMachineWindow->screenId()))
             visibleMachineWindows << pMachineWindow;
     if (   !darwinScreensHaveSeparateSpaces()
         || m_fullscreenMachineWindows == visibleMachineWindows)
