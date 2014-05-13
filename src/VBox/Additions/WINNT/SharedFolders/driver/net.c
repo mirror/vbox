@@ -282,7 +282,7 @@ NTSTATUS VBoxMRxFinalizeNetRoot(IN PMRX_NET_ROOT pNetRoot,
         int vboxRC = vboxCallUnmapFolder(pNetRootExtension->phgcmClient, &pNetRootExtension->map);
         if (vboxRC != VINF_SUCCESS)
         {
-            Log(("VBOXSF: MRxFinalizeVNetRoot: vboxCallMapFolder failed with %d\n",
+            Log(("VBOXSF: MRxFinalizeVNetRoot: vboxCallUnmapFolder failed with %d\n",
                  vboxRC));
         }
         pNetRootExtension->phgcmClient = NULL;
