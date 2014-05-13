@@ -446,11 +446,6 @@ vbox_use_hw_cursor_argb(ScreenPtr pScreen, CursorPtr pCurs)
            )
        )
         rc = FALSE;
-#ifndef VBOXVIDEO_13
-    /* Evil hack - we use this as another way of poking the driver to update
-     * our list of video modes. */
-    vboxWriteHostModes(pScrn, pScrn->currentMode);
-#endif
     return rc;
 }
 
