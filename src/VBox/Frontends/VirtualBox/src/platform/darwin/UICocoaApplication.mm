@@ -190,16 +190,18 @@
     NSString *pstrName = [notification name];
 
     /* Define known notification names: */
-    NSString *spstrWillEnterFullscreenNotification = @"NSWindowWillEnterFullScreenNotification";
-    NSString *spstrDidEnterFullscreenNotification  = @"NSWindowDidEnterFullScreenNotification";
-    NSString *spstrWillExitFullscreenNotification  = @"NSWindowWillExitFullScreenNotification";
-    NSString *spstrDidExitFullscreenNotification   = @"NSWindowDidExitFullScreenNotification";
+    NSString *spstrWillEnterFullscreenNotification      = @"NSWindowWillEnterFullScreenNotification";
+    NSString *spstrDidEnterFullscreenNotification       = @"NSWindowDidEnterFullScreenNotification";
+    NSString *spstrWillExitFullscreenNotification       = @"NSWindowWillExitFullScreenNotification";
+    NSString *spstrDidExitFullscreenNotification        = @"NSWindowDidExitFullScreenNotification";
+    NSString *spstrDidFailToEnterFullScreenNotification = @"NSWindowDidFailToEnterFullScreenNotification";
 
     /* Redirect known notifications to UICocoaApplication instance: */
     if (   [pstrName isEqualToString :spstrWillEnterFullscreenNotification]
         || [pstrName isEqualToString :spstrDidEnterFullscreenNotification]
         || [pstrName isEqualToString :spstrWillExitFullscreenNotification]
-        || [pstrName isEqualToString :spstrDidExitFullscreenNotification])
+        || [pstrName isEqualToString :spstrDidExitFullscreenNotification]
+        || [pstrName isEqualToString :spstrDidFailToEnterFullScreenNotification])
         UICocoaApplication::instance()->nativeNotificationProxy(pstrName, [notification object]);
 }
 @end /* @implementation UICocoaApplicationPrivate */

@@ -66,6 +66,8 @@ private slots:
     void sltHandleNativeFullscreenWillExit();
     /** Mac OS X: Handles native notification about 'fullscreen' exited. */
     void sltHandleNativeFullscreenDidExit();
+    /** Mac OS X: Handles native notification about 'fullscreen' fail to enter. */
+    void sltHandleNativeFullscreenFailToEnter();
 
     /** Mac OS X: Requests visual-state change from 'fullscreen' to 'normal' (window). */
     void sltChangeVisualStateToNormal();
@@ -73,6 +75,9 @@ private slots:
     void sltChangeVisualStateToSeamless();
     /** Mac OS X: Requests visual-state change from 'fullscreen' to 'scale'. */
     void sltChangeVisualStateToScale();
+
+    /** Mac OS X: Checks if some visual-state type was requested. */
+    void sltCheckForRequestedVisualStateType();
 #endif /* RT_OS_DARWIN */
 
     /* Handler: Console callback stuff: */

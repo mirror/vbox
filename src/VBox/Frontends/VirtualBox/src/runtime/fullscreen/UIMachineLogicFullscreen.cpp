@@ -162,8 +162,13 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
 
     /* Remove machine-window from corresponding set: */
     bool fResult = m_fullscreenMachineWindows.remove(pMachineWindow);
-    AssertReturnVoid(fResult && !m_fullscreenMachineWindows.contains(pMachineWindow));
-    Q_UNUSED(fResult);
+    AssertReturnVoid(!m_fullscreenMachineWindows.contains(pMachineWindow));
+
+    /* We have same signal if window did fail to enter native fullscreen.
+     * In that case window missed in m_fullscreenMachineWindows,
+     * ignore this signal silently: */
+    if (!fResult)
+        return;
 
     /* If that window was invalidated: */
     if (m_invalidFullscreenMachineWindows.contains(pMachineWindow))
@@ -209,6 +214,41 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
     }
 }
 
+void UIMachineLogicFullscreen::sltHandleNativeFullscreenFailToEnter()
+{
+    /* Make sure this method is only used for ML and next: */
+    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+
+    /* Get sender machine-window: */
+    UIMachineWindow *pMachineWindow = qobject_cast<UIMachineWindow*>(sender());
+    AssertReturnVoid(pMachineWindow);
+
+    /* Make sure this window is not registered somewhere: */
+    AssertReturnVoid(!m_fullscreenMachineWindows.remove(pMachineWindow));
+    AssertReturnVoid(!m_invalidFullscreenMachineWindows.remove(pMachineWindow));
+
+    /* If there are 'fullscreen' windows: */
+    if (!m_fullscreenMachineWindows.isEmpty())
+    {
+        LogRel(("UIMachineLogicFullscreen::sltHandleNativeFullscreenFailToEnter: "
+                "Machine-window #%d failed to enter native fullscreen, asking others to exit...\n",
+                (int)pMachineWindow->screenId()));
+
+        /* Ask window(s) to exit 'fullscreen' mode: */
+        emit sigNotifyAboutNativeFullscreenShouldBeExited();
+    }
+    /* If there are no 'fullscreen' windows: */
+    else
+    {
+        LogRel(("UIMachineLogicFullscreen::sltHandleNativeFullscreenFailToEnter: "
+                "Machine-window #%d failed to enter native fullscreen, requesting change visual-state to normal...\n",
+                (int)pMachineWindow->screenId()));
+
+        /* Ask session to change 'fullscreen' mode to 'normal': */
+        uisession()->setRequestedVisualState(UIVisualStateType_Normal);
+    }
+}
+
 void UIMachineLogicFullscreen::sltChangeVisualStateToNormal()
 {
     /* Base-class handling for Lion and previous: */
@@ -251,6 +291,29 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToScale()
         uisession()->setRequestedVisualState(UIVisualStateType_Scale);
         /* Ask window(s) to exit 'fullscreen' mode: */
         emit sigNotifyAboutNativeFullscreenShouldBeExited();
+    }
+}
+
+void UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType()
+{
+    /* Do not try to change visual-state type if machine was not started yet: */
+    if (!uisession()->isRunning() && !uisession()->isPaused())
+        return;
+
+    /* Check requested visual-state types: */
+    switch (uisession()->requestedVisualState())
+    {
+        /* If 'normal' visual-state type is requested: */
+        case UIVisualStateType_Normal:
+        {
+            LogRel(("UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType: "
+                    "Going 'normal' as requested...\n"));
+            uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
+            uisession()->changeVisualState(UIVisualStateType_Normal);
+            break;
+        }
+        default:
+            break;
     }
 }
 #endif /* RT_OS_DARWIN */
@@ -448,6 +511,9 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
                     Qt::QueuedConnection);
             connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidExit()),
                     this, SLOT(sltHandleNativeFullscreenDidExit()),
+                    Qt::QueuedConnection);
+            connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenFailToEnter()),
+                    this, SLOT(sltHandleNativeFullscreenFailToEnter()),
                     Qt::QueuedConnection);
         }
         /* Revalidate 'fullscreen' windows: */
