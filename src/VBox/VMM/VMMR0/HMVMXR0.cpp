@@ -9090,9 +9090,9 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffff00000000)), VMX_IGS_LONGMODE_RIP_INVALID);
             }
             /** @todo If the processor supports N < 64 linear-address bits, bits 63:N
-             *        must be identical if the "IA32e mode guest" VM-entry control is 1
-             *        and CS.L is 1. No check applies if the CPU supports 64
-             *        linear-address bits. */
+             *        must be identical if the "IA-32e mode guest" VM-entry
+             *        control is 1 and CS.L is 1. No check applies if the
+             *        CPU supports 64 linear-address bits. */
 
             /* Flags in pCtx can be different (real-on-v86 for instance). We are only concerned about the VMCS contents here. */
             rc = VMXReadVmcs64(VMX_VMCS_GUEST_RFLAGS, &u64Val);
