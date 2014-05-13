@@ -6176,16 +6176,13 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             case MSR_K6_STAR:           pMixedCtx->msrSTAR         = pMsr->u64Value;             break;
             case MSR_K8_SF_MASK:        pMixedCtx->msrSFMASK       = pMsr->u64Value;             break;
             case MSR_K8_KERNEL_GS_BASE: pMixedCtx->msrKERNELGSBASE = pMsr->u64Value;             break;
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-            case MSR_K6_EFER:
-            {
-                if (HMVMX_IS_64BIT_HOST_MODE())  /* Nothing to do here since we intercept writes, see hmR0VmxLoadGuestMsrs(). */
-                    break;
-            }
-#endif
+            case MSR_K6_EFER: /* Nothing to do here since we intercept writes, see hmR0VmxLoadGuestMsrs(). */
+                break;
+
             default:
             {
                 AssertMsgFailed(("Unexpected MSR in auto-load/store area. uMsr=%#RX32 cMsrs=%u\n", pMsr->u32Msr, cMsrs));
+                pVCpu->hm.s.u32HMError = pMsr->u32Msr;
                 return VERR_HM_UNEXPECTED_LD_ST_MSR;
             }
         }
@@ -10464,17 +10461,13 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 {
                     if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
                     {
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
                         /* EFER writes are always intercepted, see hmR0VmxLoadGuestMsrs(). */
-                        if (   HMVMX_IS_64BIT_HOST_MODE()
-                            && pMixedCtx->ecx == MSR_K6_EFER)
+                        if (pMixedCtx->ecx != MSR_K6_EFER)
                         {
-                            break;
+                            AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
+                                             pMixedCtx->ecx));
+                            HMVMX_RETURN_UNEXPECTED_EXIT();
                         }
-#endif
-                        AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
-                                         pMixedCtx->ecx));
-                        HMVMX_RETURN_UNEXPECTED_EXIT();
                     }
 
 #if HC_ARCH_BITS == 64
