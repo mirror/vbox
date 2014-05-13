@@ -122,9 +122,9 @@ private:
     void fadeToNormal();
 
     /** Mac OS X: Revalidates 'fullscreen' mode for @a pMachineWindow. */
-    void revalidateFullscreenWindow(UIMachineWindow *pMachineWindow);
+    void revalidateNativeFullScreen(UIMachineWindow *pMachineWindow);
     /** Mac OS X: Revalidates 'fullscreen' mode for all windows. */
-    void revalidateFullscreenWindows();
+    void revalidateNativeFullScreen();
 #endif /* Q_WS_MAC */
 
     /* Variables: */

@@ -117,7 +117,8 @@ void UIMachineLogicSeamless::sltCheckForRequestedVisualStateType()
     /* If 'seamless' visual-state type is no more supported: */
     if (!uisession()->isGuestSupportsSeamless())
     {
-        LogRel(("UIMachineLogicSeamless: Leaving 'seamless' as it is no more supported...\n"));
+        LogRel(("UIMachineLogicSeamless::sltCheckForRequestedVisualStateType: "
+                "Leaving 'seamless' as it is no more supported...\n"));
         uisession()->setRequestedVisualState(UIVisualStateType_Seamless);
         uisession()->changeVisualState(UIVisualStateType_Normal);
     }

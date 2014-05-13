@@ -55,7 +55,8 @@ void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
             /* And supported: */
             if (uisession()->isGuestSupportsSeamless())
             {
-                LogRel(("UIMachineLogicNormal: Going 'seamless' as requested...\n"));
+                LogRel(("UIMachineLogicNormal::sltCheckForRequestedVisualStateType: "
+                        "Going 'seamless' as requested...\n"));
                 uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
                 uisession()->changeVisualState(UIVisualStateType_Seamless);
             }
