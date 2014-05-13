@@ -437,13 +437,17 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
                     pMachineWindow, SLOT(sltExitNativeFullscreen(UIMachineWindow*)));
             /* Window => logic signals: */
             connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenWillEnter()),
-                    this, SLOT(sltHandleNativeFullscreenWillEnter()));
+                    this, SLOT(sltHandleNativeFullscreenWillEnter()),
+                    Qt::QueuedConnection);
             connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidEnter()),
-                    this, SLOT(sltHandleNativeFullscreenDidEnter()));
+                    this, SLOT(sltHandleNativeFullscreenDidEnter()),
+                    Qt::QueuedConnection);
             connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenWillExit()),
-                    this, SLOT(sltHandleNativeFullscreenWillExit()));
+                    this, SLOT(sltHandleNativeFullscreenWillExit()),
+                    Qt::QueuedConnection);
             connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidExit()),
-                    this, SLOT(sltHandleNativeFullscreenDidExit()));
+                    this, SLOT(sltHandleNativeFullscreenDidExit()),
+                    Qt::QueuedConnection);
         }
         /* Revalidate 'fullscreen' windows: */
         revalidateFullscreenWindows();
