@@ -87,6 +87,10 @@ RT_C_DECLS_END
 /** The user device node name. */
 #define DEVICE_NAME_USR     "vboxdrvu"
 
+/* Temporary debugging. */
+#define VBOX_PROC_SELFNAME_LEN  (20)
+#define VBOX_RETRIEVE_CUR_PROC_NAME(_name)    char _name[VBOX_PROC_SELFNAME_LEN]; \
+                                              proc_selfname(pszProcName, VBOX_PROC_SELFNAME_LEN)
 
 
 /*******************************************************************************
@@ -127,6 +131,8 @@ public:
     virtual void stop(IOService *pProvider);
     virtual IOService *probe(IOService *pProvider, SInt32 *pi32Score);
     virtual bool terminate(IOOptionBits fOptions);
+    virtual void taggedRetain(const void *pTag=0) const;
+    virtual void taggedRelease(const void *pTag, const int freeWhen) const;
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_SupDrv, IOService);
@@ -155,6 +161,8 @@ public:
     virtual bool terminate(IOOptionBits fOptions = 0);
     virtual bool finalize(IOOptionBits fOptions);
     virtual void stop(IOService *pProvider);
+    virtual void taggedRetain(const void *pTag=0) const;
+    virtual void taggedRelease(const void *pTag, const int freeWhen) const;
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_SupDrvClient, IOUserClient);
@@ -1354,6 +1362,21 @@ bool org_virtualbox_SupDrv::terminate(IOOptionBits fOptions)
 }
 
 
+void org_virtualbox_SupDrv::taggedRetain(const void *pTag) const
+{
+    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
+    LogRel(("org_virtualbox_SupDrv::taggedRetain([%p], pTag=[%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
+    IOService::taggedRetain(pTag);
+    LogRel(("org_virtualbox_SupDrv::taggedRetain([%p], pTag=[%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
+}
+
+void org_virtualbox_SupDrv::taggedRelease(const void *pTag, const int freeWhen) const
+{
+    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
+    LogRel(("org_virtualbox_SupDrv::taggedRelease([%p], pTag=[%p], freeWhen=[%d]) pszProcName=[%s] [retain count: %d]\n", this, pTag, freeWhen, pszProcName, getRetainCount()));
+    IOService::taggedRelease(pTag, freeWhen);
+}
+
 /*
  *
  * org_virtualbox_SupDrvClient
@@ -1588,3 +1611,18 @@ void org_virtualbox_SupDrvClient::stop(IOService *pProvider)
     IOUserClient::stop(pProvider);
 }
 
+
+void org_virtualbox_SupDrvClient::taggedRetain(const void *pTag) const
+{
+    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
+    LogRel(("org_virtualbox_SupDrvClient::taggedRetain([%p], pTag=[%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
+    IOUserClient::taggedRetain(pTag);
+    LogRel(("org_virtualbox_SupDrvClient::taggedRetain([%p], pTag=[%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
+}
+
+void org_virtualbox_SupDrvClient::taggedRelease(const void *pTag, const int freeWhen) const
+{
+    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
+    LogRel(("org_virtualbox_SupDrvClient::taggedRelease([%p], pTag=[%p], freeWhen=[%d]) pszProcName=[%s] [retain count: %d]\n", this, pTag, freeWhen, pszProcName, getRetainCount()));
+    IOUserClient::taggedRelease(pTag, freeWhen);
+}
