@@ -204,14 +204,14 @@ DECLINLINE(PSHFLSTRING) ShflStringInitBuffer(void *pvBuffer, uint32_t u32Size)
 }
 
 /**
- * Validates a HGCM string parameter.
+ * Validates a HGCM string output parameter.
  *
  * @returns true if valid, false if not.
  *
  * @param   pString     The string buffer pointer.
  * @param   cbBuf       The buffer size from the parameter.
  */
-DECLINLINE(bool) ShflStringIsValid(PCSHFLSTRING pString, uint32_t cbBuf)
+DECLINLINE(bool) ShflStringIsValidOut(PCSHFLSTRING pString, uint32_t cbBuf)
 {
     if (RT_UNLIKELY(cbBuf <= RT_UOFFSETOF(SHFLSTRING, String)))
         return false;
@@ -219,27 +219,61 @@ DECLINLINE(bool) ShflStringIsValid(PCSHFLSTRING pString, uint32_t cbBuf)
         return false;
     if (RT_UNLIKELY(pString->u16Length >= pString->u16Size))
         return false;
-    /** @todo r=bird: Check that u16Length is a multiple of two if UTF-16 input? */
-    /** @todo r=bird: Do we require the string to have a NUL terminator char, if
-     *        so check for it!! (Just had a problem with too small (/2) u16Length
-     *        and code behaving incorrectly because it worked up to the terminator
-     *        instead of the length.) */
-    /** @todo r=bird: Who checks for valid UTF-8 encoding of strings? */
     return true;
 }
 
 /**
- * Validates an optional HGCM string parameter.
+ * Validates a HGCM string input parameter.
+ *
+ * @returns true if valid, false if not.
+ *
+ * @param   pString     The string buffer pointer.
+ * @param   cbBuf       The buffer size from the parameter.
+ * @param   fUtf8Not16  Set if UTF-8 encoding, clear if UTF-16 encoding.
+ */
+DECLINLINE(bool) ShflStringIsValidIn(PCSHFLSTRING pString, uint32_t cbBuf, bool fUtf8Not16)
+{
+    int rc;
+    if (RT_UNLIKELY(cbBuf <= RT_UOFFSETOF(SHFLSTRING, String)))
+        return false;
+    if (RT_UNLIKELY((uint32_t)pString->u16Size + RT_UOFFSETOF(SHFLSTRING, String) > cbBuf))
+        return false;
+    if (fUtf8Not16)
+    {
+        /* UTF-8: */
+        if (RT_UNLIKELY(pString->u16Length >= pString->u16Size))
+            return false;
+        rc = RTStrValidateEncodingEx((const char *)&pString->String.utf8[0], pString->u16Length + 1,
+                                     RTSTR_VALIDATE_ENCODING_EXACT_LENGTH | RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+    }
+    else
+    {
+        /* UTF-16: */
+        if (RT_UNLIKELY(pString->u16Length & 1))
+            return false;
+        if (RT_UNLIKELY((uint32_t)sizeof(RTUTF16) + pString->u16Length > pString->u16Size))
+            return false;
+        rc = RTUtf16ValidateEncodingEx(&pString->String.ucs2[0], pString->u16Length / 2 + 1,
+                                       RTSTR_VALIDATE_ENCODING_EXACT_LENGTH | RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+    }
+    if (RT_FAILURE(rc))
+        return false;
+    return true;
+}
+
+/**
+ * Validates an optional HGCM string input parameter.
  *
  * @returns true if valid, false if not.
  *
  * @param   pString     The string buffer pointer. Can be NULL.
  * @param   cbBuf       The buffer size from the parameter.
+ * @param   fUtf8Not16  Set if UTF-8 encoding, clear if UTF-16 encoding.
  */
-DECLINLINE(bool) ShflStringIsValidOrNull(PCSHFLSTRING pString, uint32_t cbBuf)
+DECLINLINE(bool) ShflStringIsValidOrNullIn(PCSHFLSTRING pString, uint32_t cbBuf, bool fUtf8Not16)
 {
     if (pString)
-        return ShflStringIsValid(pString, cbBuf);
+        return ShflStringIsValidIn(pString, cbBuf, fUtf8Not16);
     if (RT_UNLIKELY(cbBuf > 0))
         return false;
     return true;

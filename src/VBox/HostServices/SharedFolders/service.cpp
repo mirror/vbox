@@ -384,7 +384,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 SHFLSTRING *pString    = (SHFLSTRING *)paParms[1].u.pointer.addr;
 
                 /* Verify parameters values. */
-                if (!ShflStringIsValid(pString, paParms[1].u.pointer.size))
+                if (!ShflStringIsValidOut(pString, paParms[1].u.pointer.size))
                 {
                     rc = VERR_INVALID_PARAMETER;
                 }
@@ -430,7 +430,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 uint32_t cbParms        = paParms[2].u.pointer.size;
 
                 /* Verify parameters values. */
-                if (   !ShflStringIsValid(pPath, cbPath)
+                if (   !ShflStringIsValidIn(pPath, cbPath, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8))
                     || (cbParms != sizeof (SHFLCREATEPARMS))
                    )
                 {
@@ -441,7 +441,6 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 {
                     /* Execute the function. */
-
                     rc = vbsfCreate (pClient, root, pPath, cbPath, pParms);
 
                     if (RT_SUCCESS(rc))
@@ -489,7 +488,6 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 {
                     /* Execute the function. */
-
                     rc = vbsfClose (pClient, root, Handle);
 
                     if (RT_SUCCESS(rc))
@@ -761,7 +759,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 /* Verify parameters values. */
                 if (   (length < sizeof (SHFLDIRINFO))
                     ||  length > paParms[5].u.pointer.size
-                    ||  !ShflStringIsValidOrNull(pPath, paParms[4].u.pointer.size)
+                    ||  !ShflStringIsValidOrNullIn(pPath, paParms[4].u.pointer.size, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8))
                    )
                 {
                     rc = VERR_INVALID_PARAMETER;
@@ -829,7 +827,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 uint32_t  cbBuffer = paParms[2].u.pointer.size;
 
                 /* Verify parameters values. */
-                if (!ShflStringIsValidOrNull(pPath, paParms[1].u.pointer.size))
+                if (!ShflStringIsValidOrNullIn(pPath, paParms[1].u.pointer.size, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8)))
                 {
                     rc = VERR_INVALID_PARAMETER;
                 }
@@ -874,7 +872,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 RTUTF16     delimiter  = (RTUTF16)paParms[2].u.uint32;
 
                 /* Verify parameters values. */
-                if (!ShflStringIsValid(pszMapName, paParms[0].u.pointer.size))
+                if (!ShflStringIsValidIn(pszMapName, paParms[0].u.pointer.size, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8)))
                 {
                     rc = VERR_INVALID_PARAMETER;
                 }
@@ -925,21 +923,36 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 bool        fCaseSensitive = !!paParms[3].u.uint32;
 
                 /* Verify parameters values. */
-                if (!ShflStringIsValid(pszMapName, paParms[0].u.pointer.size))
+                if (ShflStringIsValidIn(pszMapName, paParms[0].u.pointer.size, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8)))
                 {
-                    rc = VERR_INVALID_PARAMETER;
+                    rc = VINF_SUCCESS;
                 }
                 else
                 {
+                    rc = VERR_INVALID_PARAMETER;
 
-                    /* Execute the function. */
+                    /* Fudge for windows GAs getting the length wrong by one char. */
+                    if (   !(pClient->fu32Flags & SHFL_CF_UTF8)
+                        && paParms[0].u.pointer.size >= sizeof(SHFLSTRING)
+                        && pszMapName->u16Length >= 2
+                        && pszMapName->String.ucs2[pszMapName->u16Length / 2 - 1] == 0x0000)
+                    {
+                        pszMapName->u16Length -= 2;
+                        if (ShflStringIsValidIn(pszMapName, paParms[0].u.pointer.size, false /*fUtf8Not16*/))
+                            rc = VINF_SUCCESS;
+                        else
+                            pszMapName->u16Length += 2;
+                    }
+                }
+
+                /* Execute the function. */
+                if (RT_SUCCESS(rc))
                     rc = vbsfMapFolder (pClient, pszMapName, delimiter, fCaseSensitive, &root);
 
-                    if (RT_SUCCESS(rc))
-                    {
-                        /* Update parameters.*/
-                        paParms[1].u.uint32 = root;
-                    }
+                if (RT_SUCCESS(rc))
+                {
+                    /* Update parameters.*/
+                    paParms[1].u.uint32 = root;
                 }
             }
             Log(("SharedFolders host service: map operation result %Rrc\n", rc));
@@ -1064,7 +1077,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 uint32_t flags          = paParms[2].u.uint32;
 
                 /* Verify parameters values. */
-                if (!ShflStringIsValid(pPath, cbPath))
+                if (!ShflStringIsValidIn(pPath, cbPath, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8)))
                 {
                     rc = VERR_INVALID_PARAMETER;
                 }
@@ -1108,8 +1121,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 uint32_t    flags       = paParms[3].u.uint32;
 
                 /* Verify parameters values. */
-                if (    !ShflStringIsValid(pSrc, paParms[1].u.pointer.size)
-                    ||  !ShflStringIsValid(pDest, paParms[2].u.pointer.size)
+                if (    !ShflStringIsValidIn(pSrc, paParms[1].u.pointer.size, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8))
+                    ||  !ShflStringIsValidIn(pDest, paParms[2].u.pointer.size, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8))
                    )
                 {
                     rc = VERR_INVALID_PARAMETER;
@@ -1208,8 +1221,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 uint32_t     cbInfo   = paParms[3].u.pointer.size;
 
                 /* Verify parameters values. */
-                if (    !ShflStringIsValid(pNewPath, paParms[1].u.pointer.size)
-                    ||  !ShflStringIsValid(pOldPath, paParms[2].u.pointer.size)
+                if (    !ShflStringIsValidIn(pNewPath, paParms[1].u.pointer.size, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8))
+                    ||  !ShflStringIsValidIn(pOldPath, paParms[2].u.pointer.size, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8))
                     ||  (cbInfo != sizeof(SHFLFSOBJINFO))
                    )
                 {
@@ -1305,8 +1318,8 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             uint32_t fFlags         = paParms[2].u.uint32;
 
             /* Verify parameters values. */
-            if (    !ShflStringIsValid(pFolderName, paParms[0].u.pointer.size)
-                ||  !ShflStringIsValid(pMapName, paParms[1].u.pointer.size)
+            if (    !ShflStringIsValidIn(pFolderName, paParms[0].u.pointer.size, false /*fUtf8Not16*/)
+                ||  !ShflStringIsValidIn(pMapName, paParms[1].u.pointer.size, false /*fUtf8Not16*/)
                )
             {
                 rc = VERR_INVALID_PARAMETER;
@@ -1361,7 +1374,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             SHFLSTRING *pString = (SHFLSTRING *)paParms[0].u.pointer.addr;
 
             /* Verify parameters values. */
-            if (!ShflStringIsValid(pString, paParms[0].u.pointer.size))
+            if (!ShflStringIsValidIn(pString, paParms[0].u.pointer.size, false /*fUtf8Not16*/))
             {
                 rc = VERR_INVALID_PARAMETER;
             }
