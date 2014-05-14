@@ -148,6 +148,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_fAllCloseActionsRestricted(false)
     , m_fSnapshotOperationsAllowed(true)
     /* Common flags: */
+    , m_fIsStarted(false)
     , m_fIsFirstTimeStarted(false)
     , m_fIsIgnoreRuntimeMediumsChanging(false)
     , m_fIsGuestResizeIgnored(false)
@@ -370,7 +371,7 @@ void UISession::powerUp()
 #endif
 
     /* Warn listeners about machine was started: */
-    emit sigMachineStarted();
+    emit sigStarted();
 }
 
 bool UISession::saveState()
@@ -1014,6 +1015,7 @@ void UISession::prepareConsoleEventHandlers()
 
 void UISession::prepareConnections()
 {
+    connect(this, SIGNAL(sigStarted()), this, SLOT(sltMarkStarted()));
     connect(this, SIGNAL(sigCloseRuntimeUI()), this, SLOT(sltCloseRuntimeUI()));
 
 #ifdef Q_WS_MAC
