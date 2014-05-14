@@ -769,7 +769,7 @@ void UIMachineLogic::prepareRequiredFeatures()
 void UIMachineLogic::prepareSessionConnections()
 {
     /* We should check for entering/exiting requested modes: */
-    connect(uisession(), SIGNAL(sigMachineStarted()), this, SLOT(sltCheckForRequestedVisualStateType()));
+    connect(uisession(), SIGNAL(sigStarted()), this, SLOT(sltCheckForRequestedVisualStateType()));
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltCheckForRequestedVisualStateType()));
 
     /* Machine state-change updater: */

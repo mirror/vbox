@@ -180,6 +180,7 @@ public:
     bool isStuck() const { return machineState() == KMachineState_Stuck; }
     bool wasPaused() const { return machineStatePrevious() == KMachineState_Paused ||
                                     machineStatePrevious() == KMachineState_TeleportingPausedVM; }
+    bool isStarted() const { return m_fIsStarted; }
     bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
     bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRuntimeMediumsChanging; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
@@ -268,13 +269,16 @@ signals:
     void sigHostScreenGeometryChanged();
 
     /* Session signals: */
-    void sigMachineStarted();
+    void sigStarted();
 
 public slots:
 
     void sltInstallGuestAdditionsFrom(const QString &strSource);
 
 private slots:
+
+    /** Marks machine started. */
+    void sltMarkStarted() { m_fIsStarted = true; }
 
     /* Handler: Close Runtime UI stuff: */
     void sltCloseRuntimeUI();
@@ -431,6 +435,7 @@ private:
     /** @} */
 
     /* Common flags: */
+    bool m_fIsStarted : 1;
     bool m_fIsFirstTimeStarted : 1;
     bool m_fIsIgnoreRuntimeMediumsChanging : 1;
     bool m_fIsGuestResizeIgnored : 1;
