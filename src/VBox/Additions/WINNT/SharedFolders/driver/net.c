@@ -175,7 +175,7 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
         pNetRoot->MRxNetRootState = MRX_NET_ROOT_STATE_GOOD;
 
         RootNameLength = pNetRoot->pNetRootName->Length - pSrvCall->pSrvCallName->Length;
-        if (!RootNameLength)
+        if (RootNameLength < sizeof(WCHAR))
         {
             /* Refuse a netroot path with an empty shared folder name */
             Log(("VBOXSF: MRxCreateVNetRoot: Empty shared folder name!\n"));
@@ -186,19 +186,21 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
         }
 
         RootNameLength -= sizeof(WCHAR); /* Remove leading backslash. */
-
         pRootName = (PWCHAR)(pNetRoot->pNetRootName->Buffer + (pSrvCall->pSrvCallName->Length / sizeof(WCHAR)));
         pRootName++; /* Remove leading backslash. */
+
+        /* Strip the trailing \0. Sometimes there is one, sometimes not... */
+        if (   RootNameLength >= sizeof(WCHAR)
+            && pRootName[RootNameLength / sizeof(WCHAR) - 1] == 0)
+            RootNameLength -= sizeof(WCHAR);
 
         if (pNetRootExtension->phgcmClient == NULL)
         {
             Log(("VBOXSF: MRxCreateVNetRoot: Initialize netroot length = %d, name = %.*ls\n",
                  RootNameLength, RootNameLength / sizeof(WCHAR), pRootName));
 
-            /* Calculate length required for parsed path.
-             */
-            ParsedPathSize = sizeof(*ParsedPath) + RootNameLength + sizeof(WCHAR);
-
+            /* Calculate the length required for parsed path. */
+            ParsedPathSize = sizeof(SHFLSTRING) + RootNameLength + sizeof(WCHAR);
             ParsedPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
             if (!ParsedPath)
             {
@@ -208,7 +210,6 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
             memset(ParsedPath, 0, ParsedPathSize);
 
             ShflStringInitBuffer(ParsedPath, ParsedPathSize - sizeof(SHFLSTRING));
-
             ParsedPath->u16Size = (uint16_t)RootNameLength + sizeof(WCHAR);
             ParsedPath->u16Length = ParsedPath->u16Size - sizeof(WCHAR); /* without terminating null */
             RtlCopyMemory(ParsedPath->String.ucs2, pRootName, ParsedPath->u16Length);
