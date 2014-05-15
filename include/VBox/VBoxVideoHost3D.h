@@ -65,7 +65,7 @@ typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_HOSTCTL)(HVBOXCRCMDSVR hSvr, uint8
 /* process guest control */
 typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_GUESTCTL)(HVBOXCRCMDSVR hSvr, uint8_t* pCtl, uint32_t cbCmd);
 /* screen resize */
-typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_RESIZE)(HVBOXCRCMDSVR hSvr, const struct VBVAINFOSCREEN *pScreen, void *pvVRAM);
+typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_RESIZE)(HVBOXCRCMDSVR hSvr, const struct VBVAINFOSCREEN *pScreen, const uint32_t *pTargetMap);
 /* process SaveState */
 typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_SAVESTATE)(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM);
 /* process LoadState */

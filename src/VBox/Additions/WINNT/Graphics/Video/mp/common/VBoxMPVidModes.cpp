@@ -1445,10 +1445,6 @@ void VBoxWddmUpdateVideoMode(PVBOXMP_DEVEXT pExt, int i)
         return;
 
 #ifdef DEBUG_misha
-    g_VBoxDbgBreakModes = 0;
-#endif
-
-#ifdef DEBUG_misha
     LOGREL(("modes changed for target %d", i));
 #else
     LOG(("modes changed for target %d", i));
@@ -1480,7 +1476,6 @@ void VBoxWddmAdjustMode(PVBOXMP_DEVEXT pExt, PVBOXWDDM_ADJUSTVIDEOMODE pMode)
         return;
     }
 
-    PVBOXWDDM_TARGET pTarget = &pExt->aTargets[pMode->Mode.Id];
     /* @todo: this info should go from the target actually */
     PVBOXWDDM_SOURCE pSource = &pExt->aSources[pMode->Mode.Id];
 
@@ -1504,7 +1499,7 @@ void VBoxWddmAdjustMode(PVBOXMP_DEVEXT pExt, PVBOXWDDM_ADJUSTVIDEOMODE pMode)
         pMode->Mode.BitsPerPixel = newBpp;
     }
 
-    if (pTarget->HeightVisible /* <- active */
+    if (pSource->cTargets /* <- active */
             && pSource->AllocData.SurfDesc.width == pMode->Mode.Width
             && pSource->AllocData.SurfDesc.height == pMode->Mode.Height
             && pSource->AllocData.SurfDesc.bpp == pMode->Mode.BitsPerPixel)

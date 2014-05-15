@@ -1920,10 +1920,9 @@ NTSTATUS VBoxWddmSlGetScanLine(PVBOXMP_DEVEXT pDevExt, DXGKARG_GETSCANLINE *pGet
 {
     Assert((UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays > pGetScanLine->VidPnTargetId);
     VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[pGetScanLine->VidPnTargetId];
-    Assert(pTarget->HeightTotal);
-    Assert(pTarget->HeightVisible);
-    Assert(pTarget->HeightTotal >= pTarget->HeightVisible);
-    if (pTarget->HeightTotal)
+    Assert(pTarget->Size.cx);
+    Assert(pTarget->Size.cy);
+    if (pTarget->Size.cy)
     {
         uint32_t curScanLine;
         BOOL bVBlank;
@@ -1941,19 +1940,19 @@ NTSTATUS VBoxWddmSlGetScanLine(PVBOXMP_DEVEXT pDevExt, DXGKARG_GETSCANLINE *pGet
         {
             VSyncTime.QuadPart = VSyncTime.QuadPart - DevVSyncTime.QuadPart;
             /* time is in 100ns, */
-            curScanLine = (uint32_t)((pTarget->HeightTotal * VSyncTime.QuadPart) / DevVSyncTime.QuadPart);
+            curScanLine = (uint32_t)((pTarget->Size.cy * VSyncTime.QuadPart) / DevVSyncTime.QuadPart);
             if (pDevExt->bVSyncTimerEnabled)
             {
-                if (curScanLine >= pTarget->HeightTotal)
+                if (curScanLine >= pTarget->Size.cy)
                     curScanLine = 0;
             }
             else
             {
-                curScanLine %= pTarget->HeightTotal;
+                curScanLine %= pTarget->Size.cy;
             }
         }
 
-        bVBlank = (!curScanLine || curScanLine > pTarget->HeightVisible);
+        bVBlank = (!curScanLine || curScanLine > pTarget->Size.cy);
         pGetScanLine->ScanLine = curScanLine;
         pGetScanLine->InVerticalBlank = bVBlank;
     }
@@ -2066,9 +2065,9 @@ void vboxWddmDiToAllocData(PVBOXMP_DEVEXT pDevExt, const DXGK_DISPLAY_INFORMATIO
             vboxWddmVramAddrToOffset(pDevExt, pInfo->PhysicAddress));
 }
 
-void vboxWddmDmAdjustDefaultVramLocations(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID ModifiedVidPnSourceId)
+void vboxWddmDmAdjustDefaultVramLocations(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID ModifiedVidPnSourceId, VBOXWDDM_SOURCE *paSources)
 {
-    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[ModifiedVidPnSourceId];
+    PVBOXWDDM_SOURCE pSource = &paSources[ModifiedVidPnSourceId];
     PHYSICAL_ADDRESS PhAddr;
     AssertRelease(pSource->AllocData.Addr.SegmentId);
     AssertRelease(pSource->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
@@ -2079,7 +2078,7 @@ void vboxWddmDmAdjustDefaultVramLocations(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_P
         /* increaze the phaddr based on the previous source size info */
         PhAddr.QuadPart += pSource->AllocData.SurfDesc.cbSize;
         PhAddr.QuadPart = ROUND_TO_PAGES(PhAddr.QuadPart);
-        pSource = &pDevExt->aSources[i];
+        pSource = &paSources[i];
         if (pSource->AllocData.Addr.offVram != PhAddr.QuadPart
                 || pSource->AllocData.Addr.SegmentId != 1)
             pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;

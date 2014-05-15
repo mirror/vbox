@@ -3575,10 +3575,10 @@ static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, 
     }
 }
 
-static DECLCALLBACK(int) crVBoxCrCmdResize(HVBOXCRCMDSVR hSvr, const struct VBVAINFOSCREEN *pScreen, void *pvVRAM)
+static DECLCALLBACK(int) crVBoxCrCmdResize(HVBOXCRCMDSVR hSvr, const struct VBVAINFOSCREEN *pScreen, const uint32_t *pTargetMap)
 {
     CRASSERT(cr_server.fCrCmdEnabled);
-    return crVBoxServerResizeScreen(pScreen, pvVRAM);
+    return CrPMgrResize(pScreen, NULL, pTargetMap);
 }
 
 static const char* gszVBoxOGLSSMMagic = "***OpenGL state data***";

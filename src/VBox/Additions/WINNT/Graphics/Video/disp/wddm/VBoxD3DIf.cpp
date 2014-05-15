@@ -888,7 +888,8 @@ int vboxD3DIfSetHostId(PVBOXWDDMDISP_ALLOCATION pAlloc, uint32_t hostID, uint32_
     D3DDDICB_ESCAPE DdiEscape = {0};
     DdiEscape.hContext = pDevice->DefaultContext.ContextInfo.hContext;
     DdiEscape.hDevice = pDevice->hDevice;
-//    DdiEscape.Flags.Value = 0;
+    DdiEscape.Flags.Value = 0;
+    DdiEscape.Flags.HardwareAccess = 1;
     DdiEscape.pPrivateDriverData = &SetHostID;
     DdiEscape.PrivateDriverDataSize = sizeof (SetHostID);
     HRESULT hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);

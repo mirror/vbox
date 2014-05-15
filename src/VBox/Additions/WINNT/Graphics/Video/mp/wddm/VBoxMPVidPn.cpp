@@ -454,6 +454,149 @@ NTSTATUS vboxVidPnPopulateTargetModeInfoFromLegacy(D3DKMDT_VIDPN_TARGET_MODE *pN
     return vboxVidPnPopulateVideoSignalInfo(&pNewVidPnTargetModeInfo->VideoSignalInfo, pResolution, 60 /* ULONG VSync */);
 }
 
+void VBoxVidPnStTargetCleanup(PVBOXWDDM_SOURCE paSources, uint32_t cScreens, PVBOXWDDM_TARGET pTarget)
+{
+    if (pTarget->VidPnSourceId == D3DDDI_ID_UNINITIALIZED)
+        return;
+
+    Assert(pTarget->VidPnSourceId < cScreens);
+
+    PVBOXWDDM_SOURCE pSource = &paSources[pTarget->VidPnSourceId];
+    if (!pSource)
+        return;
+    Assert(pSource->cTargets);
+    Assert(ASMBitTest(pSource->aTargetMap, pTarget->u32Id));
+    ASMBitClear(pSource->aTargetMap, pTarget->u32Id);
+    pSource->cTargets--;
+    pTarget->VidPnSourceId = D3DDDI_ID_UNINITIALIZED;
+
+    pTarget->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY;
+    pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY;
+}
+
+void VBoxVidPnStSourceTargetAdd(PVBOXWDDM_SOURCE paSources, uint32_t cScreens, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_TARGET pTarget)
+{
+    if (pTarget->VidPnSourceId == pSource->AllocData.SurfDesc.VidPnSourceId)
+        return;
+
+    VBoxVidPnStTargetCleanup(paSources, cScreens, pTarget);
+
+    ASMBitSet(pSource->aTargetMap, pTarget->u32Id);
+    pSource->cTargets++;
+    pTarget->VidPnSourceId = pSource->AllocData.SurfDesc.VidPnSourceId;
+
+    pTarget->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY;
+    pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY;
+}
+
+void VBoxVidPnStTIterInit(PVBOXWDDM_SOURCE pSource, PVBOXWDDM_TARGET paTargets, uint32_t cTargets, VBOXWDDM_TARGET_ITER *pIter)
+{
+    pIter->pSource = pSource;
+    pIter->paTargets = paTargets;
+    pIter->cTargets = cTargets;
+    pIter->i = 0;
+    pIter->c = 0;
+}
+
+PVBOXWDDM_TARGET VBoxVidPnStTIterNext(VBOXWDDM_TARGET_ITER *pIter)
+{
+    PVBOXWDDM_SOURCE pSource = pIter->pSource;
+    if (pSource->cTargets <= pIter->c)
+        return NULL;
+
+    int i =  (!pIter->c) ? ASMBitFirstSet(pSource->aTargetMap, pIter->cTargets)
+            : ASMBitNextSet(pSource->aTargetMap, pIter->cTargets, pIter->i);
+    if (i < 0)
+        STOP_FATAL();
+
+    pIter->i = (uint32_t)i;
+    pIter->c++;
+    return &pIter->paTargets[i];
+}
+
+void VBoxVidPnStSourceCleanup(PVBOXWDDM_SOURCE paSources, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, PVBOXWDDM_TARGET paTargets, uint32_t cTargets)
+{
+    PVBOXWDDM_SOURCE pSource = &paSources[VidPnSourceId];
+    VBOXWDDM_TARGET_ITER Iter;
+    VBoxVidPnStTIterInit(pSource, paTargets, cTargets, &Iter);
+    for (PVBOXWDDM_TARGET pTarget = VBoxVidPnStTIterNext(&Iter);
+            pTarget;
+            pTarget = VBoxVidPnStTIterNext(&Iter))
+    {
+        Assert(pTarget->VidPnSourceId == pSource->AllocData.SurfDesc.VidPnSourceId);
+        VBoxVidPnStTargetCleanup(paSources, cTargets, pTarget);
+        /* iterator is not safe wrt target removal, reinit it */
+        VBoxVidPnStTIterInit(pSource, paTargets, cTargets, &Iter);
+    }
+}
+
+void VBoxVidPnStCleanup(PVBOXWDDM_SOURCE paSources, PVBOXWDDM_TARGET paTargets, uint32_t cScreens)
+{
+    for (UINT i = 0; i < cScreens; ++i)
+    {
+        PVBOXWDDM_TARGET pTarget = &paTargets[i];
+        VBoxVidPnStTargetCleanup(paSources, cScreens, pTarget);
+    }
+}
+
+void VBoxVidPnAllocDataInit(VBOXWDDM_ALLOC_DATA *pData, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    memset(pData, 0, sizeof (*pData));
+    pData->SurfDesc.VidPnSourceId = VidPnSourceId;
+    pData->Addr.offVram = VBOXVIDEOOFFSET_VOID;
+}
+
+void VBoxVidPnSourceInit(PVBOXWDDM_SOURCE pSource, const D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    memset(pSource, 0, sizeof (*pSource));
+    VBoxVidPnAllocDataInit(&pSource->AllocData, VidPnSourceId);
+}
+
+void VBoxVidPnTargetInit(PVBOXWDDM_TARGET pTarget, const D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
+{
+    memset(pTarget, 0, sizeof (*pTarget));
+    pTarget->u32Id = VidPnTargetId;
+    pTarget->VidPnSourceId = D3DDDI_ID_UNINITIALIZED;
+}
+
+void VBoxVidPnSourcesInit(PVBOXWDDM_SOURCE pSources, uint32_t cScreens)
+{
+    for (uint32_t i = 0; i < cScreens; ++i)
+        VBoxVidPnSourceInit(&pSources[i], i);
+}
+
+void VBoxVidPnTargetsInit(PVBOXWDDM_TARGET pTargets, uint32_t cScreens)
+{
+    for (uint32_t i = 0; i < cScreens; ++i)
+        VBoxVidPnTargetInit(&pTargets[i], i);
+}
+
+void VBoxVidPnSourceCopy(VBOXWDDM_SOURCE *pDst, const VBOXWDDM_SOURCE *pSrc)
+{
+    uint8_t u8SyncState = pDst->u8SyncState;
+    *pDst = *pSrc;
+    pDst->u8SyncState |= u8SyncState;
+}
+
+void VBoxVidPnTargetCopy(VBOXWDDM_TARGET *pDst, const VBOXWDDM_TARGET *pSrc)
+{
+    uint8_t u8SyncState = pDst->u8SyncState;
+    *pDst = *pSrc;
+    pDst->u8SyncState |= u8SyncState;
+}
+
+void VBoxVidPnSourcesCopy(VBOXWDDM_SOURCE *pDst, const VBOXWDDM_SOURCE *pSrc, uint32_t cScreens)
+{
+    for (uint32_t i = 0; i < cScreens; ++i)
+        VBoxVidPnSourceCopy(&pDst[i], &pSrc[i]);
+}
+
+void VBoxVidPnTargetsCopy(VBOXWDDM_TARGET *pDst, const VBOXWDDM_TARGET *pSrc, uint32_t cScreens)
+{
+    for (uint32_t i = 0; i < cScreens; ++i)
+        VBoxVidPnTargetCopy(&pDst[i], &pSrc[i]);
+}
+
 typedef struct VBOXVIDPNCHECKADDMONITORMODES
 {
     NTSTATUS Status;
@@ -2087,10 +2230,12 @@ NTSTATUS vboxVidPnEnumPaths(D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VI
     return Status;
 }
 
-NTSTATUS vboxVidPnSetupSourceInfo(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, PVBOXWDDM_SOURCE pSource, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation)
+NTSTATUS vboxVidPnSetupSourceInfo(PVBOXMP_DEVEXT pDevExt, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation,
+        D3DDDI_VIDEO_PRESENT_SOURCE_ID  VidPnSourceId, VBOXWDDM_SOURCE *paSources)
 {
+    PVBOXWDDM_SOURCE pSource = &paSources[VidPnSourceId];
     /* pVidPnSourceModeInfo could be null if STATUS_GRAPHICS_MODE_NOT_PINNED,
-     * see vboxVidPnCommitSourceModeForSrcId */
+     * see VBoxVidPnCommitSourceModeForSrcId */
     uint8_t fChanges = 0;
     if (pVidPnSourceModeInfo)
     {
@@ -2133,33 +2278,31 @@ NTSTATUS vboxVidPnSetupSourceInfo(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_S
 #ifdef VBOX_WDDM_WIN8
         if (g_VBoxDisplayOnly)
         {
-            vboxWddmDmAdjustDefaultVramLocations(pDevExt, srcId);
+            vboxWddmDmAdjustDefaultVramLocations(pDevExt, VidPnSourceId, paSources);
         }
 #endif
     }
     else
     {
+        VBoxVidPnAllocDataInit(&pSource->AllocData, VidPnSourceId);
         Assert(!pAllocation);
         fChanges |= VBOXWDDM_HGSYNC_F_SYNCED_ALL;
     }
 
-    vboxWddmAssignPrimary(pDevExt, pSource, pAllocation, srcId);
+    vboxWddmAssignPrimary(pSource, pAllocation, VidPnSourceId);
 
-    Assert(pSource->AllocData.SurfDesc.VidPnSourceId == srcId);
+    Assert(pSource->AllocData.SurfDesc.VidPnSourceId == VidPnSourceId);
     pSource->u8SyncState &= ~fChanges;
     return STATUS_SUCCESS;
 }
 
-NTSTATUS vboxVidPnCommitSourceMode(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation)
+NTSTATUS vboxVidPnCommitSourceMode(PVBOXMP_DEVEXT pDevExt, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation,
+        D3DDDI_VIDEO_PRESENT_SOURCE_ID  VidPnSourceId, VBOXWDDM_SOURCE *paSources)
 {
-    Assert(srcId < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
-    if (srcId < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays)
-    {
-        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[srcId];
-        return vboxVidPnSetupSourceInfo(pDevExt, srcId, pSource, pVidPnSourceModeInfo, pAllocation);
-    }
+    if (VidPnSourceId < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays)
+        return vboxVidPnSetupSourceInfo(pDevExt, pVidPnSourceModeInfo, pAllocation, VidPnSourceId, paSources);
 
-    LOGREL(("invalid srcId (%d), cSources(%d)", srcId, VBoxCommonFromDeviceExt(pDevExt)->cDisplays));
+    WARN(("invalid srcId (%d), cSources(%d)", VidPnSourceId, VBoxCommonFromDeviceExt(pDevExt)->cDisplays));
     return STATUS_INVALID_PARAMETER;
 }
 
@@ -2168,6 +2311,8 @@ typedef struct VBOXVIDPNCOMMITTARGETMODE
     NTSTATUS Status;
     D3DKMDT_HVIDPN hVidPn;
     const DXGK_VIDPN_INTERFACE* pVidPnInterface;
+    VBOXWDDM_SOURCE *paSources;
+    VBOXWDDM_TARGET *paTargets;
 } VBOXVIDPNCOMMITTARGETMODE;
 
 DECLCALLBACK(BOOLEAN) vboxVidPnCommitTargetModeEnum(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
@@ -2186,43 +2331,53 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCommitTargetModeEnum(PVBOXMP_DEVEXT pDevExt, D3DK
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
         {
-            VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[VidPnTargetId];
-            if (pTarget->HeightVisible != pPinnedVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy
-                    || pTarget->HeightTotal != pPinnedVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy)
-            {
-                pTarget->HeightVisible = pPinnedVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy;
-                pTarget->HeightTotal = pPinnedVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy;
-            }
+            VBOXWDDM_SOURCE *pSource = &pInfo->paSources[VidPnSourceId];
+            VBOXWDDM_TARGET *pTarget = &pInfo->paTargets[VidPnTargetId];
+            pTarget->Size.cx = pPinnedVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cx;
+            pTarget->Size.cy = pPinnedVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy;
+
+            VBoxVidPnStSourceTargetAdd(pInfo->paSources, VBoxCommonFromDeviceExt(pDevExt)->cDisplays, pSource, pTarget);
+
+            pTarget->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
+
             pVidPnTargetModeSetInterface->pfnReleaseModeInfo(hVidPnTargetModeSet, pPinnedVidPnTargetModeInfo);
         }
+        else
+            WARN(("pfnAcquirePinnedModeInfo failed Status(0x%x)", Status));
 
         pInfo->pVidPnInterface->pfnReleaseTargetModeSet(pInfo->hVidPn, hVidPnTargetModeSet);
     }
     else
-        LOGREL(("pfnAcquireTargetModeSet failed Status(0x%x)", Status));
+        WARN(("pfnAcquireTargetModeSet failed Status(0x%x)", Status));
 
     pInfo->Status = Status;
     return Status == STATUS_SUCCESS;
 }
 
-#ifdef DEBUG_misha
-DWORD g_VBoxDbgBreakModes = 0;
-#endif
-
-NTSTATUS vboxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, PVBOXWDDM_ALLOCATION pAllocation)
+NTSTATUS VBoxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
+        PVBOXWDDM_ALLOCATION pAllocation,
+        D3DDDI_VIDEO_PRESENT_SOURCE_ID  VidPnSourceId, VBOXWDDM_SOURCE *paSources, VBOXWDDM_TARGET *paTargets)
 {
     D3DKMDT_HVIDPNSOURCEMODESET hCurVidPnSourceModeSet;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pCurVidPnSourceModeSetInterface;
 
-#ifdef DEBUG_misha
-    if (pAllocation)
+    PVBOXWDDM_SOURCE pSource = &paSources[VidPnSourceId];
+    VBOXWDDM_TARGET_ITER Iter;
+    VBoxVidPnStTIterInit(pSource, paTargets, (uint32_t)VBoxCommonFromDeviceExt(pDevExt)->cDisplays, &Iter);
+    for (PVBOXWDDM_TARGET pTarget = VBoxVidPnStTIterNext(&Iter);
+            pTarget;
+            pTarget = VBoxVidPnStTIterNext(&Iter))
     {
-        Assert(pAllocation->AllocData.SurfDesc.VidPnSourceId == srcId);
+        Assert(pTarget->VidPnSourceId == pSource->AllocData.SurfDesc.VidPnSourceId);
+        pTarget->Size.cx = 0;
+        pTarget->Size.cy = 0;
+        pTarget->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_ALL;
     }
-#endif
+
+    VBoxVidPnStSourceCleanup(paSources, VidPnSourceId, paTargets, (uint32_t)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
 
     NTSTATUS Status = pVidPnInterface->pfnAcquireSourceModeSet(hDesiredVidPn,
-                srcId,
+                VidPnSourceId,
                 &hCurVidPnSourceModeSet,
                 &pCurVidPnSourceModeSetInterface);
     Assert(Status == STATUS_SUCCESS);
@@ -2234,7 +2389,7 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
         if (Status == STATUS_SUCCESS)
         {
             Assert(pPinnedVidPnSourceModeInfo);
-            Status = vboxVidPnCommitSourceMode(pDevExt, srcId, pPinnedVidPnSourceModeInfo, pAllocation);
+            Status = vboxVidPnCommitSourceMode(pDevExt, pPinnedVidPnSourceModeInfo, pAllocation, VidPnSourceId, paSources);
             Assert(Status == STATUS_SUCCESS);
             if (Status == STATUS_SUCCESS)
             {
@@ -2248,8 +2403,10 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
                     TgtModeInfo.Status = STATUS_SUCCESS; /* <- to ensure we're succeeded if no targets are set */
                     TgtModeInfo.hVidPn = hDesiredVidPn;
                     TgtModeInfo.pVidPnInterface = pVidPnInterface;
+                    TgtModeInfo.paSources = paSources;
+                    TgtModeInfo.paTargets = paTargets;
                     Status = vboxVidPnEnumTargetsForSource(pDevExt, hVidPnTopology, pVidPnTopologyInterface,
-                            srcId,
+                            VidPnSourceId,
                             vboxVidPnCommitTargetModeEnum, &TgtModeInfo);
                     Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_SOURCE_NOT_IN_TOPOLOGY);
                     if (Status == STATUS_SUCCESS)
@@ -2274,11 +2431,7 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
         }
         else if (Status == STATUS_GRAPHICS_MODE_NOT_PINNED)
         {
-#ifdef DEBUG_misha
-            Assert(!g_VBoxDbgBreakModes);
-            ++g_VBoxDbgBreakModes;
-#endif
-            Status = vboxVidPnCommitSourceMode(pDevExt, srcId, NULL, pAllocation);
+            Status = vboxVidPnCommitSourceMode(pDevExt, NULL, pAllocation, VidPnSourceId, paSources);
             Assert(Status == STATUS_SUCCESS);
         }
         else
@@ -2294,27 +2447,92 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
     return Status;
 }
 
+typedef struct VBOXVIDPNCOMMIT
+{
+    NTSTATUS Status;
+    PVBOXMP_DEVEXT pDevExt;
+    D3DKMDT_HVIDPN hVidPn;
+    const DXGK_VIDPN_INTERFACE* pVidPnInterface;
+    PVBOXWDDM_ALLOCATION pAllocation;
+    VBOXWDDM_SOURCE *paSources;
+    VBOXWDDM_TARGET *paTargets;
+} VBOXVIDPNCOMMIT, *PVBOXVIDPNCOMMIT;
+
 DECLCALLBACK(BOOLEAN) vboxVidPnCommitPathEnum(D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
         const D3DKMDT_VIDPN_PRESENT_PATH *pVidPnPresentPathInfo, PVOID pContext)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXVIDPNCOMMIT pCommitInfo = (PVBOXVIDPNCOMMIT)pContext;
     PVBOXMP_DEVEXT pDevExt = pCommitInfo->pDevExt;
-    const D3DKMDT_HVIDPN hDesiredVidPn = pCommitInfo->pCommitVidPnArg->hFunctionalVidPn;
+    const D3DKMDT_HVIDPN hDesiredVidPn = pCommitInfo->hVidPn;
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = pCommitInfo->pVidPnInterface;
 
-    if (pCommitInfo->pCommitVidPnArg->AffectedVidPnSourceId == D3DDDI_ID_ALL
-            || pCommitInfo->pCommitVidPnArg->AffectedVidPnSourceId == pVidPnPresentPathInfo->VidPnSourceId)
-    {
-        Status = vboxVidPnCommitSourceModeForSrcId(pDevExt, hDesiredVidPn, pVidPnInterface, pVidPnPresentPathInfo->VidPnSourceId, (PVBOXWDDM_ALLOCATION)pCommitInfo->pCommitVidPnArg->hPrimaryAllocation);
-        Assert(Status == STATUS_SUCCESS);
-        if (Status != STATUS_SUCCESS)
-            LOGREL(("vboxVidPnCommitSourceModeForSrcId failed Status(0x%x)", Status));
-    }
+    Status = VBoxVidPnCommitSourceModeForSrcId(pDevExt, hDesiredVidPn, pVidPnInterface, pCommitInfo->pAllocation,
+            pVidPnPresentPathInfo->VidPnSourceId, pCommitInfo->paSources, pCommitInfo->paTargets);
+    if (Status != STATUS_SUCCESS)
+        WARN(("VBoxVidPnCommitSourceModeForSrcId failed Status(0x%x)", Status));
 
     pCommitInfo->Status = Status;
     pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pVidPnPresentPathInfo);
     return Status == STATUS_SUCCESS;
+}
+
+NTSTATUS VBoxVidPnCommitAll(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
+        PVBOXWDDM_ALLOCATION pAllocation,
+        VBOXWDDM_SOURCE *paSources, VBOXWDDM_TARGET *paTargets)
+{
+    D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
+    const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
+    NTSTATUS Status = pVidPnInterface->pfnGetTopology(hDesiredVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("pfnGetTopology failed Status 0x%x", Status));
+        return Status;
+    }
+
+    for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+    {
+        PVBOXWDDM_TARGET pTarget = &paTargets[i];
+        pTarget->Size.cx = 0;
+        pTarget->Size.cy = 0;
+        pTarget->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_ALL;
+
+        if (pTarget->VidPnSourceId == D3DDDI_ID_UNINITIALIZED)
+            continue;
+
+        Assert(pTarget->VidPnSourceId < (D3DDDI_VIDEO_PRESENT_SOURCE_ID)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
+
+        VBOXWDDM_SOURCE *pSource = &paSources[pTarget->VidPnSourceId];
+        VBoxVidPnAllocDataInit(&pSource->AllocData, pTarget->VidPnSourceId);
+        pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_ALL;
+    }
+
+    VBoxVidPnStCleanup(paSources, paTargets, VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
+
+    VBOXVIDPNCOMMIT CbContext;
+    memset(&CbContext, 0, sizeof (CbContext));
+    CbContext.pDevExt = pDevExt;
+    CbContext.hVidPn = hDesiredVidPn;
+    CbContext.pVidPnInterface = pVidPnInterface;
+    CbContext.pAllocation = pAllocation;
+    CbContext.paSources = paSources;
+    CbContext.paTargets = paTargets;
+    Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface,
+                vboxVidPnCommitPathEnum, &CbContext);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVidPnEnumPaths failed Status 0x%x", Status));
+        return Status;
+    }
+
+    Status = CbContext.Status;
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVidPnCommitPathEnum failed Status 0x%x", Status));
+        return Status;
+    }
+
+    return Status;
 }
 
 #define VBOXVIDPNDUMP_STRCASE(_t) \

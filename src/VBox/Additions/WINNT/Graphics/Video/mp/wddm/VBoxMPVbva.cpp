@@ -1341,7 +1341,7 @@ int VBoxCmdVbvaConCmdCompletionData(void *pvCmd, VBOXCMDVBVA_CRCMD_CMD **ppCmd)
     return pCmd->Hdr.i32Result;
 }
 
-int VBoxCmdVbvaConCmdResize(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const POINT * pVScreenPos, uint16_t fFlags)
+int VBoxCmdVbvaConCmdResize(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const uint32_t *pTargetMap, const POINT * pVScreenPos, uint16_t fFlags)
 {
     Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
 
@@ -1358,6 +1358,7 @@ int VBoxCmdVbvaConCmdResize(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *p
     int rc = vboxWddmScreenInfoInit(&pResize->Resize.aEntries[0].Screen, pAllocData, pVScreenPos, fFlags);
     if (RT_SUCCESS(rc))
     {
+        memcpy(&pResize->Resize.aEntries[0].aTargetMap, pTargetMap, sizeof (pResize->Resize.aEntries[0].aTargetMap));
         rc = vboxCmdVbvaCtlSubmitSync(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, &pResize->Hdr);
         if (RT_SUCCESS(rc))
         {

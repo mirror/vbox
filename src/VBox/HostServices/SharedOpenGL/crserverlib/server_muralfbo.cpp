@@ -112,7 +112,7 @@ void crServerRedirMuralFbClear(CRMuralInfo *mural)
     }
     mural->cUsedFBDatas = 0;
 
-    for (i = 0; i < cr_server.screenCount; ++i)
+    for (i = 0; i < (uint32_t)cr_server.screenCount; ++i)
     {
         GLuint j;
         CR_FBDATA *pData = &mural->aFBDatas[i];
@@ -359,7 +359,7 @@ static void crVBoxServerMuralFbSetCB(unsigned long key, void *data1, void *data2
                 Assert(idCurScreen != idScreen);
             }
 
-            for (int j = pMI->cUsedFBDatas; j > i; --j)
+            for (uint32_t j = pMI->cUsedFBDatas; j > i; --j)
             {
                 pMI->apUsedFBDatas[j] = pMI->apUsedFBDatas[j-1];
             }
@@ -373,7 +373,7 @@ static void crVBoxServerMuralFbSetCB(unsigned long key, void *data1, void *data2
     {
         if (fFbWasUsed)
         {
-            for (int j = i; j < pMI->cUsedFBDatas - 1; ++j)
+            for (uint32_t j = i; j < pMI->cUsedFBDatas - 1; ++j)
             {
                 pMI->apUsedFBDatas[j] = pMI->apUsedFBDatas[j+1];
             }
@@ -393,41 +393,6 @@ void crVBoxServerMuralFbResizeBegin(HCR_FRAMEBUFFER hFb)
     crHashtableWalk(cr_server.muralTable, crVBoxServerMuralFbCleanCB, hFb);
 }
 
-
-int crVBoxServerResizeScreen(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM)
-{
-    int rc;
-    HCR_FRAMEBUFFER hFb = CrPMgrFbGet(pScreen->u32ViewIndex);
-    if (!hFb)
-    {
-        WARN(("CrPMgrFbGet failed"));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    rc = CrFbUpdateBegin(hFb);
-    if (!RT_SUCCESS(rc))
-    {
-        WARN(("CrFbUpdateBegin failed %d", rc));
-        return rc;
-    }
-
-    crVBoxServerMuralFbResizeBegin(hFb);
-
-    rc = CrFbResize(hFb, pScreen, pvVRAM);
-    if (!RT_SUCCESS(rc))
-    {
-        WARN(("CrFbResize failed %d", rc));
-    }
-
-    crVBoxServerMuralFbResizeEnd(hFb);
-
-    CrFbUpdateEnd(hFb);
-
-    CrPMgrNotifyResize(hFb);
-
-    return rc;
-}
-
 DECLEXPORT(int) crVBoxServerNotifyResize(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM)
 {
     if (cr_server.fCrCmdEnabled)
@@ -436,7 +401,19 @@ DECLEXPORT(int) crVBoxServerNotifyResize(const struct VBVAINFOSCREEN *pScreen, v
         return VERR_INVALID_STATE;
     }
 
-    int rc = crVBoxServerResizeScreen(pScreen, pvVRAM);
+    if (pScreen->u32ViewIndex >= (uint32_t)cr_server.screenCount)
+    {
+        WARN(("invalid view index"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aTargetMap);
+
+    memset(aTargetMap, 0, sizeof (aTargetMap));
+
+    ASMBitSet(aTargetMap, pScreen->u32ViewIndex);
+
+    int rc = CrPMgrResize(pScreen, pvVRAM, aTargetMap);
     if (!RT_SUCCESS(rc))
     {
         WARN(("err"));
