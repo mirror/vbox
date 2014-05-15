@@ -613,6 +613,7 @@ void VBVARaiseIrqNoWait(PVGASTATE pVGAState, uint32_t fFlags);
 
 int VBVAInfoView(PVGASTATE pVGAState, VBVAINFOVIEW *pView);
 int VBVAInfoScreen(PVGASTATE pVGAState, VBVAINFOSCREEN *pScreen);
+int VBVAGetInfoViewAndScreen(PVGASTATE pVGAState, uint32_t u32ViewIndex, VBVAINFOVIEW *pView, VBVAINFOSCREEN *pScreen);
 
 /* @return host-guest flags that were set on reset
  * this allows the caller to make further cleaning when needed,

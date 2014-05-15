@@ -889,18 +889,6 @@ int vboxVhwaHlpColorFill(PVBOXWDDM_OVERLAY pOverlay, PVBOXWDDM_DMA_PRIVATEDATA_C
 {
     PVBOXWDDM_ALLOCATION pAlloc = pCF->ClrFill.Alloc.pAlloc;
     Assert(pAlloc->pResource == pOverlay->pResource);
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
-    if (pAlloc->bAssigned)
-    {
-        /* check if this is a primary surf */
-        PVBOXWDDM_SOURCE pSource = &pOverlay->pDevExt->aSources[pOverlay->VidPnSourceId];
-        if (pSource->pPrimaryAllocation == pAlloc)
-        {
-            pAlloc = pSource->pShadowAllocation;
-            Assert(pAlloc->pResource == pOverlay->pResource);
-        }
-    }
-#endif
 
     if (pAlloc->AllocData.Addr.SegmentId != 1)
     {
@@ -1134,14 +1122,10 @@ int vboxVhwaHlpOverlayCreate(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE
             pOverlay->VidPnSourceId = VidPnSourceId;
 
             vboxVhwaHlpOverlayListAdd(pDevExt, pOverlay);
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+
             RECT DstRect;
             vboxVhwaHlpOverlayDstRectGet(pDevExt, pOverlay, &DstRect);
-            NTSTATUS Status = vboxVdmaHlpUpdatePrimary(pDevExt, VidPnSourceId, &DstRect);
-            Assert(Status == STATUS_SUCCESS);
-            /* ignore primary update failure */
-            Status = STATUS_SUCCESS;
-#endif
+
             rc = vboxVhwaHlpOverlayUpdate(pOverlay, pOverlayInfo, DstRect.right ? &DstRect : NULL);
             if (!RT_SUCCESS(rc))
             {

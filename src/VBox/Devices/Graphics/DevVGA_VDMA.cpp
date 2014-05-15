@@ -783,6 +783,14 @@ static int VBoxVBVAExHCtlSubmit(VBVAEXHOSTCONTEXT *pCmdVbva, VBVAEXHOSTCTL* pCtl
     return rc;
 }
 
+#ifdef VBOX_WITH_CRHGSMI
+typedef struct VBOXVDMA_SOURCE
+{
+    VBVAINFOSCREEN Screen;
+    VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aTargetMap);
+} VBOXVDMA_SOURCE;
+#endif
+
 typedef struct VBOXVDMAHOST
 {
     PHGSMIINSTANCE pHgsmi;
@@ -794,6 +802,7 @@ typedef struct VBOXVDMAHOST
     VBVAEXHOSTCTL* pCurRemainingHostCtl;
     RTSEMEVENTMULTI HostCrCtlCompleteEvent;
     int32_t volatile i32cHostCrCtlCompleted;
+//    VBOXVDMA_SOURCE aSources[VBOX_VIDEO_MAX_SCREENS];
 #endif
 #ifdef VBOX_VDMA_WITH_WATCHDOG
     PTMTIMERR3 WatchDogTimer;
@@ -1366,6 +1375,95 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
     }
 }
 
+static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOXCMDVBVA_RESIZE_ENTRY *pEntry)
+{
+    PVGASTATE pVGAState = pVdma->pVGAState;
+    VBVAINFOSCREEN Screen = pEntry->Screen;
+    VBVAINFOVIEW View;
+    VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aTargetMap);
+    uint32_t u32ViewIndex = Screen.u32ViewIndex;
+    uint16_t u16Flags = Screen.u16Flags;
+    bool fDisable = false;
+
+    memcpy(aTargetMap, pEntry->aTargetMap, sizeof (aTargetMap));
+
+    ASMBitClearRange(aTargetMap, pVGAState->cMonitors, VBOX_VIDEO_MAX_SCREENS);
+
+    if (u16Flags & VBVA_SCREEN_F_DISABLED)
+    {
+        fDisable = true;
+        memset(&Screen, 0, sizeof (Screen));
+        Screen.u32ViewIndex = u32ViewIndex;
+        Screen.u16Flags = VBVA_SCREEN_F_ACTIVE | VBVA_SCREEN_F_DISABLED;
+    }
+
+    if (u32ViewIndex > pVGAState->cMonitors)
+    {
+        if (u32ViewIndex != 0xffffffff)
+        {
+            WARN(("invalid view index\n"));
+            return VERR_INVALID_PARAMETER;
+        }
+        else if (!fDisable)
+        {
+            WARN(("0xffffffff view index only valid for disable requests\n"));
+            return VERR_INVALID_PARAMETER;
+        }
+    }
+
+    View.u32ViewOffset = 0;
+    View.u32ViewSize = Screen.u32LineSize * Screen.u32Height + Screen.u32StartOffset;
+    View.u32MaxScreenSize = View.u32ViewSize + Screen.u32Width + 1; /* <- make VBVAInfoScreen logic (offEnd < pView->u32MaxScreenSize) happy */
+
+    int rc = VINF_SUCCESS;
+
+    for (int i = ASMBitFirstSet(aTargetMap, pVGAState->cMonitors);
+            i >= 0;
+            i = ASMBitNextSet(aTargetMap, pVGAState->cMonitors, i))
+    {
+        Screen.u32ViewIndex = i;
+
+        VBVAINFOSCREEN CurScreen;
+        VBVAINFOVIEW CurView;
+
+        rc = VBVAGetInfoViewAndScreen(pVGAState, i, &CurView, &CurScreen);
+        AssertRC(rc);
+
+        if (!memcmp(&Screen, &CurScreen, sizeof (CurScreen)))
+            continue;
+
+        if (!fDisable || !CurView.u32ViewSize)
+        {
+            View.u32ViewIndex = Screen.u32ViewIndex;
+
+            rc = VBVAInfoView(pVGAState, &View);
+            if (RT_FAILURE(rc))
+            {
+                WARN(("VBVAInfoView failed %d\n", rc));
+                break;
+            }
+        }
+
+        rc = VBVAInfoScreen(pVGAState, &Screen);
+        if (RT_FAILURE(rc))
+        {
+            WARN(("VBVAInfoScreen failed %d\n", rc));
+            break;
+        }
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Screen.u32ViewIndex = u32ViewIndex;
+
+    rc = pVdma->CrSrvInfo.pfnResize(pVdma->CrSrvInfo.hSvr, &Screen, aTargetMap);
+    if (RT_FAILURE(rc))
+        WARN(("pfnResize failed %d\n", rc));
+
+    return rc;
+}
+
 static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *pCmd)
 {
     VBVAEXHOSTCTL_TYPE enmType = pCmd->enmType;
@@ -1404,64 +1502,16 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
             }
 
             VBOXCMDVBVA_RESIZE *pResize = (VBOXCMDVBVA_RESIZE*)pCmd->u.cmd.pu8Cmd;
-            PVGASTATE pVGAState = pVdma->pVGAState;
+
             int rc = VINF_SUCCESS;
 
             for (uint32_t i = 0; i < cElements; ++i)
             {
                 VBOXCMDVBVA_RESIZE_ENTRY *pEntry = &pResize->aEntries[i];
-                VBVAINFOSCREEN Screen = pEntry->Screen;
-                VBVAINFOVIEW View;
-                uint32_t u32StartOffsetPreserve = 0;
-                if (Screen.u32StartOffset == 0xffffffff)
+                rc = vboxVDMACrGuestCtlResizeEntryProcess(pVdma, pEntry);
+                if (RT_FAILURE(rc))
                 {
-                    if (Screen.u16Flags & VBVA_SCREEN_F_DISABLED)
-                    {
-                        u32StartOffsetPreserve = 0xffffffff;
-                        Screen.u32StartOffset = 0;
-                    }
-                    else
-                    {
-                        WARN(("invalid parameter\n"));
-                        rc = VERR_INVALID_PARAMETER;
-                        break;
-                    }
-                }
-
-
-                View.u32ViewIndex = Screen.u32ViewIndex;
-                View.u32ViewOffset = 0;
-                View.u32ViewSize = Screen.u32LineSize * Screen.u32Height + Screen.u32StartOffset;
-                View.u32MaxScreenSize = View.u32ViewSize + Screen.u32Width + 1; /* <- make VBVAInfoScreen logic (offEnd < pView->u32MaxScreenSize) happy */
-
-                rc = VBVAInfoView(pVGAState, &View);
-                if (RT_SUCCESS(rc))
-                {
-
-                    rc = VBVAInfoScreen(pVGAState, &Screen);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (u32StartOffsetPreserve)
-                            Screen.u32StartOffset = u32StartOffsetPreserve;
-
-                        rc = pVdma->CrSrvInfo.pfnResize(pVdma->CrSrvInfo.hSvr, &Screen, u32StartOffsetPreserve ? NULL : pVGAState->vram_ptrR3 + Screen.u32StartOffset);
-                        if (RT_SUCCESS(rc))
-                            continue;
-                        else
-                        {
-                            WARN(("pfnResize failed %d\n", rc));
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        WARN(("VBVAInfoScreen failed %d\n", rc));
-                        break;
-                    }
-                }
-                else
-                {
-                    WARN(("VBVAInfoView failed %d\n", rc));
+                    WARN(("vboxVDMACrGuestCtlResizeEntryProcess failed %d\n", rc));
                     break;
                 }
             }

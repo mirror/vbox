@@ -38,10 +38,6 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include <cr_vreg.h>
 #endif
 
-#ifdef DEBUG_misha
-extern DWORD g_VBoxDbgBreakModes;
-#endif
-
 #if 0
 #include <iprt/avl.h>
 #endif
@@ -118,17 +114,17 @@ typedef struct VBOXWDDM_ALLOC_DATA
 #define VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS 0x01
 #define VBOXWDDM_HGSYNC_F_SYNCED_LOCATION   0x02
 #define VBOXWDDM_HGSYNC_F_SYNCED_VISIBILITY 0x04
-#define VBOXWDDM_HGSYNC_F_SYNCED_ALL        (VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS | VBOXWDDM_HGSYNC_F_SYNCED_LOCATION | VBOXWDDM_HGSYNC_F_SYNCED_VISIBILITY)
+#define VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY   0x08
+#define VBOXWDDM_HGSYNC_F_SYNCED_ALL        (VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS | VBOXWDDM_HGSYNC_F_SYNCED_LOCATION | VBOXWDDM_HGSYNC_F_SYNCED_VISIBILITY | VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY)
 #define VBOXWDDM_HGSYNC_F_CHANGED_LOCATION_ONLY        (VBOXWDDM_HGSYNC_F_SYNCED_ALL & ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION)
+#define VBOXWDDM_HGSYNC_F_CHANGED_TOPOLOGY_ONLY        (VBOXWDDM_HGSYNC_F_SYNCED_ALL & ~VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY)
 
 typedef struct VBOXWDDM_SOURCE
 {
     struct VBOXWDDM_ALLOCATION * pPrimaryAllocation;
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
-    struct VBOXWDDM_ALLOCATION * pShadowAllocation;
-#endif
     VBOXWDDM_ALLOC_DATA AllocData;
     uint8_t u8SyncState;
+    BOOLEAN fTargetsReported;
     BOOLEAN bVisible;
 #ifdef VBOX_WITH_CROGL
     /* specifies whether the source has 3D overlay data visible */
@@ -147,15 +143,18 @@ typedef struct VBOXWDDM_SOURCE
     KSPIN_LOCK AllocationLock;
     POINT VScreenPos;
     VBOXWDDM_POINTER_INFO PointerInfo;
+    uint32_t cTargets;
+    VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aTargetMap);
 } VBOXWDDM_SOURCE, *PVBOXWDDM_SOURCE;
 
 typedef struct VBOXWDDM_TARGET
 {
-    uint32_t HeightVisible;
-    uint32_t HeightTotal;
+    RTRECTSIZE Size;
+    uint32_t u32Id;
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
     /* since there coul be multiple state changes on auto-resize,
      * we pend notifying host to avoid flickering */
-    volatile bool fStateSyncPening;
+    uint8_t u8SyncState;
     bool fConnected;
     bool fConfigured;
 } VBOXWDDM_TARGET, *PVBOXWDDM_TARGET;
@@ -166,7 +165,6 @@ typedef struct VBOXWDDM_ALLOCATION
 {
     LIST_ENTRY SwapchainEntry;
     VBOXWDDM_ALLOC_TYPE enmType;
-    volatile uint32_t cRefs;
     D3DDDI_RESOURCEFLAGS fRcFlags;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     VBOXVHWA_SURFHANDLE hHostHandle;
