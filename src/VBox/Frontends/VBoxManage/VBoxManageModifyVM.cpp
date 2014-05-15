@@ -1101,7 +1101,7 @@ int handleModifyVM(HandlerArg *a)
                     /* nothing to do, NULL object will cause unmount */
                 }
                 /* host drive? */
-                else if (!RTStrNICmp(ValueUnion.psz, "host:", 5))
+                else if (!RTStrNICmp(ValueUnion.psz, RT_STR_TUPLE("host:")))
                 {
                     ComPtr<IHost> host;
                     CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
@@ -1179,7 +1179,7 @@ int handleModifyVM(HandlerArg *a)
                         /* nothing to do, NULL object will cause unmount */
                     }
                     /* host drive? */
-                    else if (!RTStrNICmp(ValueUnion.psz, "host:", 5))
+                    else if (!RTStrNICmp(ValueUnion.psz, RT_STR_TUPLE("host:")))
                     {
                         ComPtr<IHost> host;
                         CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
@@ -1702,20 +1702,18 @@ int handleModifyVM(HandlerArg *a)
 
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
                 if (RTStrCmp(ValueUnion.psz, "default") == 0)
-                {
                     aliasMode = 0;
-                }
                 else
                 {
                     char *token = (char *)ValueUnion.psz;
-                    while(token)
+                    while (token)
                     {
-                        if (RTStrNCmp(token, "log", 3) == 0)
-                            aliasMode |= 0x1;
-                        else if (RTStrNCmp(token, "proxyonly", 9) == 0)
-                            aliasMode |= 0x2;
-                        else if (RTStrNCmp(token, "sameports", 9) == 0)
-                            aliasMode |= 0x4;
+                        if (RTStrNCmp(token, RT_STR_TUPLE("log")) == 0)
+                            aliasMode |= NATAliasMode_AliasLog;
+                        else if (RTStrNCmp(token, RT_STR_TUPLE("proxyonly")) == 0)
+                            aliasMode |= NATAliasMode_AliasProxyOnly;
+                        else if (RTStrNCmp(token, RT_STR_TUPLE("sameports")) == 0)
+                            aliasMode |= NATAliasMode_AliasUseSamePorts;
                         token = RTStrStr(token, ",");
                         if (token == NULL)
                             break;
