@@ -369,7 +369,7 @@
 
       <para><glosslist>
           <glossentry>
-            <glossterm>Snapshot folder</glossterm>
+            <glossterm>Snapshot Folder</glossterm>
 
             <glossdef>
               <para>By default, VirtualBox saves snapshot data together with
@@ -380,7 +380,7 @@
           </glossentry>
 
           <glossentry>
-            <glossterm>Shared clipboard</glossterm>
+            <glossterm>Shared Clipboard</glossterm>
 
             <glossdef>
               <para>You can select here whether the clipboard of the guest
@@ -395,7 +395,7 @@
               otherwise; see <xref linkend="guestadditions" /> for
               details.</para>
 
-            <para>The shared clipboard is disabled by default. See
+              <para>The shared clipboard is disabled by default. See
               <xref linkend="security_clipboard"/> for an explanation. This
               setting can be changed at any time using the "Shared Clipboard"
               menu item in the "Devices" menu of the virtual machine.</para>
@@ -405,29 +405,35 @@
           <glossentry>
             <glossterm>Drag'n'Drop</glossterm>
             <glossdef>
-              <para>This setting allows to enable Drag and Drop: Select a file
-                on the desktop, click the left mouse button, move the mouse
-                to the VM window and release the mouse button. The file is
-                copied from the host to the guest. This feature is currently
-                only implemented for Linux guests and only for copying files
-                from the host to the guest.<footnote><para>Support
-                for Drag'n'Drop was added with VirtualBox 4.2</para></footnote></para>
+              <para>This setting allows to enable support for drag'n drop: Select
+              an object (e.g. a file) from the host or guest and directly copy
+              or open it on the guest or host. Multiple per-VM drag'n drop modes
+              allow restricting access in either direction.</para>
+
+              <para>For drag'n drop to work the Guest Additions need to be
+              installed on the guest.</para>
+
+              <note>Drag'n drop is disabled by default. This setting can be
+              changed at any time using the "Drag'n'Drop" menu item in the
+              "Devices" menu of the virtual machine.</note>
+
+              <para>See <xref linkend="guestadd-dnd"/> for more information.</para>
+
+              <footnote><para>Experimental support for drag and drop was added
+              with VirtualBox 4.2.</para></footnote>
             </glossdef>
           </glossentry>
 
           <glossentry>
-            <glossterm>Removable media: remember runtime changes</glossterm>
-
+            <glossterm>Removable Media</glossterm>
             <glossdef>
               <para>If this is checked, VirtualBox will save the state of what
-              media has been mounted between several runs of a virtual
-              machine.</para>
+              media has been mounted between several runs of a virtual machine.</para>
             </glossdef>
           </glossentry>
 
           <glossentry>
-            <glossterm>Mini toolbar</glossterm>
-
+            <glossterm>Mini ToolBar</glossterm>
             <glossdef>
               <para>In full screen or seamless mode, VirtualBox can display a
               small toolbar that contains some of the items that are normally
@@ -716,7 +722,7 @@
           screen resolution and the color depth of the host display as well
           as of the activation of <emphasis>3D acceleration</emphasis> and
           <emphasis>2D video acceleration</emphasis>. A rough estimate
-          is (<emphasis>color depth</emphasis> / 8) x 
+          is (<emphasis>color depth</emphasis> / 8) x
           <emphasis>vertical pixels</emphasis> x
           <emphasis>horizontal pixels</emphasis> x
           <emphasis>number of screens</emphasis> = <emphasis>number of bytes</emphasis>.
@@ -1026,8 +1032,8 @@
     <para>Ever since the original IBM PC, personal computers have been
     equipped with one or two serial ports (also called COM ports by DOS and
     Windows). Serial ports were commonly used with modems, and some
-    computer mice used to be connected to serial ports before USB became 
-    commonplace. 
+    computer mice used to be connected to serial ports before USB became
+    commonplace.
     </para>
 
     <para>While serial ports are no longer as ubiquitous as they used to be,
@@ -1041,7 +1047,7 @@
 
     <para>If a virtual serial port is enabled, the guest operating system sees
     a standard 16550A compatible UART device. Both receiving and transmitting
-    data is supported. How this virtual serial port is then connected to the 
+    data is supported. How this virtual serial port is then connected to the
     host is configurable, and the details depend on your host operating system.
     </para>
 
@@ -1052,7 +1058,7 @@
     <computeroutput>--uart</computeroutput> and
     <computeroutput>--uartmode</computeroutput> options.</para>
 
-    <para>In either case, you can configure up to two virtual serial ports per 
+    <para>In either case, you can configure up to two virtual serial ports per
     virtual machine. For each such device, you will need to
     determine<orderedlist>
         <listitem>
@@ -1112,10 +1118,10 @@
                     <listitem>
                       <para>On a Windows host, data will be sent and received
                       through a named pipe. The pipe name must be in the format
-                      <computeroutput>\\.\pipe\&lt;name&gt;</computeroutput> 
+                      <computeroutput>\\.\pipe\&lt;name&gt;</computeroutput>
                       where <computeroutput>&lt;name&gt;</computeroutput> should
-                      identify the virtual machine but may be freely 
-                      chosen.</para> 
+                      identify the virtual machine but may be freely
+                      chosen.</para>
                       <para>For forwarding serial traffic, you can use a helper
                       program called VMware Serial Line Gateway, available for
                       download at
@@ -1131,12 +1137,12 @@
                     <listitem>
                       <para>On a Mac, Linux or Solaris host, a local
                       domain socket is used instead. The socket filename must be
-                      chosen such that the user running VirtualBox has 
-                      sufficient privileges to create and write to it. The 
-                      <computeroutput>/tmp</computeroutput> directory is often a 
+                      chosen such that the user running VirtualBox has
+                      sufficient privileges to create and write to it. The
+                      <computeroutput>/tmp</computeroutput> directory is often a
                       good candidate.</para>
-                      <para>On Linux there are various tools which can connect 
-                      to a local domain socket or create one in server mode. The 
+                      <para>On Linux there are various tools which can connect
+                      to a local domain socket or create one in server mode. The
                       most flexible tool is
                       <computeroutput>socat</computeroutput> and is available
                       as part of many distributions.</para>
@@ -1152,25 +1158,25 @@
                 respectively.</para>
 
                 <para>For a direct connection between two virtual machines
-                (corresponding to a null-modem cable), simply configure one VM 
+                (corresponding to a null-modem cable), simply configure one VM
                 to create a pipe/socket and another to attach to it.
                 </para>
               </listitem>
 
               <listitem>
-                <para>You can send the virtual serial port output to a file. 
-                This option is very useful for capturing diagnostic output from 
-                a guest. Any file may be used for this purpose, as long as the 
-                user running VirtualBox has sufficient privileges to create and 
+                <para>You can send the virtual serial port output to a file.
+                This option is very useful for capturing diagnostic output from
+                a guest. Any file may be used for this purpose, as long as the
+                user running VirtualBox has sufficient privileges to create and
                 write to the file.
                 </para>
               </listitem>
             </itemizedlist></para>
         </listitem>
-      </orderedlist>Up to two serial ports can be configured per virtual 
+      </orderedlist>Up to two serial ports can be configured per virtual
       machine, but you can pick any port numbers out of the above. However,
-      serial ports cannot reliably share interrupts; if both ports are to be 
-      used at the same time, they must use different interrupt levels, for 
+      serial ports cannot reliably share interrupts; if both ports are to be
+      used at the same time, they must use different interrupt levels, for
       example COM1 and COM2, but not COM1 and COM3.
     </para>
   </sect1>
