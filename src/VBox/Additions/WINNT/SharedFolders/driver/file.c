@@ -114,9 +114,7 @@ static int vbsfTransferCommon(VBSFTRANSFERCTX *pCtx)
                 cbToTransfer = cPagesToTransfer * PAGE_SIZE - offFirstPage;
 
                 if (cbToTransfer > pCtx->cbData - cbTransferred)
-                {
                     cbToTransfer = pCtx->cbData - cbTransferred;
-                }
 
                 if (cbToTransfer == 0)
                 {
@@ -130,9 +128,7 @@ static int vbsfTransferCommon(VBSFTRANSFERCTX *pCtx)
                      cPagesToTransfer, cPagesTransferred, cbToTransfer, cbTransferred));
 
                 for (iPage = 0; iPage < cPagesToTransfer; iPage++)
-                {
                     paPages[iPage] = (RTGCPHYS64)paPfns[iPage + cPagesTransferred] << PAGE_SHIFT;
-                }
 
                 rc = pCtx->pfnTransferPages(pCtx->pClient, pCtx->pMap, pCtx->hFile,
                                             pCtx->offset + cbTransferred, &cbIO,
@@ -143,9 +139,7 @@ static int vbsfTransferCommon(VBSFTRANSFERCTX *pCtx)
 
                     /* If some data was transferred, then it is no error. */
                     if (cbTransferred > 0)
-                    {
                         rc = VINF_SUCCESS;
-                    }
 
                     break;
                 }
@@ -163,9 +157,7 @@ static int vbsfTransferCommon(VBSFTRANSFERCTX *pCtx)
 
                 cPagesToTransfer = cPages - cPagesTransferred;
                 if (cPagesToTransfer > VBSF_MAX_READ_WRITE_PAGES)
-                {
                     cPagesToTransfer = VBSF_MAX_READ_WRITE_PAGES;
-                }
             }
 
             RTMemTmpFree(paPages);
@@ -200,9 +192,7 @@ static int vbsfTransferCommon(VBSFTRANSFERCTX *pCtx)
 
                 /* If some data was transferred, then it is no error. */
                 if (cbTransferred > 0)
-                {
                     rc = VINF_SUCCESS;
-                }
 
                 break;
             }
@@ -217,9 +207,7 @@ static int vbsfTransferCommon(VBSFTRANSFERCTX *pCtx)
 
             cbToTransfer = pCtx->cbData - cbTransferred;
             if (cbToTransfer > VBSF_MAX_READ_WRITE_PAGES * PAGE_SIZE)
-            {
                 cbToTransfer = VBSF_MAX_READ_WRITE_PAGES * PAGE_SIZE;
-            }
         }
     }
 
@@ -276,13 +264,11 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
         }
 
         if (ByteCount > FileSize - ByteOffset)
-        {
             ByteCount = (ULONG)(FileSize - ByteOffset);
-        }
     }
 
     /* @todo read 0 bytes == always success? */
-    if (   BufferMdl == NULL
+    if (   !BufferMdl
         || ByteCount == 0)
     {
         AssertFailed();
@@ -342,13 +328,10 @@ NTSTATUS VBoxMRxRead(IN PRX_CONTEXT RxContext)
                                                vbsfReadWorker,
                                                RxContext);
 
-    Log(("VBOXSF: MRxRead: RxDispatchToWorkerThread: Status 0x%08X\n",
-         Status));
+    Log(("VBOXSF: MRxRead: RxDispatchToWorkerThread: Status 0x%08X\n", Status));
 
     if (Status == STATUS_SUCCESS)
-    {
         Status = STATUS_PENDING;
-    }
 
     return Status;
 }
@@ -388,7 +371,7 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
          ByteCount, ByteOffset, FileSize));
 
     /* @todo allow to write 0 bytes. */
-    if (   BufferMdl == NULL
+    if (   !BufferMdl
         || ByteCount == 0)
     {
         AssertFailed();
@@ -451,9 +434,7 @@ NTSTATUS VBoxMRxWrite(IN PRX_CONTEXT RxContext)
          Status));
 
     if (Status == STATUS_SUCCESS)
-    {
         Status = STATUS_PENDING;
-    }
 
     return Status;
 }
@@ -504,21 +485,16 @@ NTSTATUS VBoxMRxLocks(IN PRX_CONTEXT RxContext)
     }
 
     if (LowIoContext->ParamsFor.Locks.Flags & LOWIO_LOCKSFLAG_FAIL_IMMEDIATELY)
-    {
         fu32Lock |= SHFL_LOCK_NOWAIT;
-    }
     else
-    {
         fu32Lock |= SHFL_LOCK_WAIT;
-    }
 
     vboxRC = vboxCallLock(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                           LowIoContext->ParamsFor.Locks.ByteOffset, LowIoContext->ParamsFor.Locks.Length, fu32Lock);
 
     Status = VBoxErrorToNTStatus(vboxRC);
 
-    Log(("VBOXSF: MRxLocks: Returned 0x%08X\n",
-         Status));
+    Log(("VBOXSF: MRxLocks: Returned 0x%08X\n", Status));
     return Status;
 }
 
@@ -550,8 +526,7 @@ NTSTATUS VBoxMRxFlush (IN PRX_CONTEXT RxContext)
 
     Status = VBoxErrorToNTStatus(vboxRC);
 
-    Log(("VBOXSF: MRxFlush: Returned 0x%08X\n",
-         Status));
+    Log(("VBOXSF: MRxFlush: Returned 0x%08X\n", Status));
     return Status;
 }
 
@@ -579,7 +554,7 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
 
     cbBuffer = sizeof(SHFLFSOBJINFO);
     pObjInfo = (SHFLFSOBJINFO *)vbsfAllocNonPagedMem(cbBuffer);
-    if (pObjInfo == NULL)
+    if (!pObjInfo)
     {
         AssertFailed();
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -591,8 +566,7 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     vboxRC = vboxCallFSInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                             SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer, (PSHFLDIRINFO)pObjInfo);
 
-    Log(("VBOXSF: vbsfSetEndOfFile: vboxCallFSInfo returned %Rrc\n",
-         vboxRC));
+    Log(("VBOXSF: vbsfSetEndOfFile: vboxCallFSInfo returned %Rrc\n", vboxRC));
 
     Status = VBoxErrorToNTStatus(vboxRC);
     if (Status == STATUS_SUCCESS)
@@ -605,12 +579,9 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     }
 
     if (pObjInfo)
-    {
         vbsfFreeNonPagedMem(pObjInfo);
-    }
 
-    Log(("VBOXSF: vbsfSetEndOfFile: Returned 0x%08X\n",
-         Status));
+    Log(("VBOXSF: vbsfSetEndOfFile: Returned 0x%08X\n", Status));
     return Status;
 }
 

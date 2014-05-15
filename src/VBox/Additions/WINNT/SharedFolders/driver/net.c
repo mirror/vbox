@@ -144,7 +144,7 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
         goto l_Exit;
     }
 
-    if (pNetRoot->Context == NULL)
+    if (!pNetRoot->Context)
     {
         /* MRxNetRootSize is not zero in VBoxSF, so it is expected
          * that the Context, which is NetRootExtension, is already allocated.
@@ -194,7 +194,7 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
             && pRootName[RootNameLength / sizeof(WCHAR) - 1] == 0)
             RootNameLength -= sizeof(WCHAR);
 
-        if (pNetRootExtension->phgcmClient == NULL)
+        if (!pNetRootExtension->phgcmClient)
         {
             Log(("VBOXSF: MRxCreateVNetRoot: Initialize netroot length = %d, name = %.*ls\n",
                  RootNameLength, RootNameLength / sizeof(WCHAR), pRootName));
@@ -208,9 +208,12 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
                 goto l_Exit;
             }
             memset(ParsedPath, 0, ParsedPathSize);
-
-            ShflStringInitBuffer(ParsedPath, ParsedPathSize - sizeof(SHFLSTRING));
-            ParsedPath->u16Size = (uint16_t)RootNameLength + sizeof(WCHAR);
+            if (!ShflStringInitBuffer(ParsedPath, ParsedPathSize))
+            {
+                vbsfFreeNonPagedMem(ParsedPath);
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                goto l_Exit;
+            }
             ParsedPath->u16Length = ParsedPath->u16Size - sizeof(WCHAR); /* without terminating null */
             RtlCopyMemory(ParsedPath->String.ucs2, pRootName, ParsedPath->u16Length);
 
@@ -229,26 +232,19 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
         }
     }
     else
-    {
         Log(("VBOXSF: MRxCreateVNetRoot: Creating V_NET_ROOT on existing NET_ROOT!\n"));
-    }
 
     vbsfUpdateNetRoot(pNetRoot);
 
 l_Exit:
     if (Status != STATUS_PENDING)
     {
-        Log(("VBOXSF: MRxCreateVNetRoot: Returning 0x%08X\n",
-             Status));
+        Log(("VBOXSF: MRxCreateVNetRoot: Returning 0x%08X\n", Status));
         pCreateNetRootContext->VirtualNetRootStatus = Status;
         if (fInitializeNetRoot)
-        {
             pCreateNetRootContext->NetRootStatus = Status;
-        }
         else
-        {
             pCreateNetRootContext->NetRootStatus = STATUS_SUCCESS;
-        }
 
         /* Inform RDBSS. */
         pCreateNetRootContext->Callback(pCreateNetRootContext);
@@ -275,17 +271,14 @@ NTSTATUS VBoxMRxFinalizeNetRoot(IN PMRX_NET_ROOT pNetRoot,
 {
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(pNetRoot);
 
-    Log(("VBOXSF: MRxFinalizeNetRoot: NET_ROOT %p\n",
-         pNetRoot));
+    Log(("VBOXSF: MRxFinalizeNetRoot: NET_ROOT %p\n", pNetRoot));
 
     if (pNetRootExtension->phgcmClient)
     {
         int vboxRC = vboxCallUnmapFolder(pNetRootExtension->phgcmClient, &pNetRootExtension->map);
         if (vboxRC != VINF_SUCCESS)
-        {
             Log(("VBOXSF: MRxFinalizeVNetRoot: vboxCallUnmapFolder failed with %d\n",
                  vboxRC));
-        }
         pNetRootExtension->phgcmClient = NULL;
     }
 
@@ -400,9 +393,7 @@ static VOID vbsfExecuteCreateSrvCall(PMRX_SRVCALL_CALLBACK_CONTEXT pCallbackCont
         Verifier &= (pSrvName[8] == L'\\') || (pSrvName[8] == 0);
     }
     else
-    {
         Verifier = FALSE;
-    }
 
     if (Verifier)
     {
@@ -424,8 +415,7 @@ NTSTATUS VBoxMRxCreateSrvCall(PMRX_SRV_CALL pSrvCall,
 {
     PMRX_SRVCALLDOWN_STRUCTURE SrvCalldownStructure = (PMRX_SRVCALLDOWN_STRUCTURE)(pCallbackContext->SrvCalldownStructure);
 
-    Log(("VBOXSF: MRxCreateSrvCall: %p.\n",
-         pSrvCall));
+    Log(("VBOXSF: MRxCreateSrvCall: %p.\n", pSrvCall));
 
     if (IoGetCurrentProcess() == RxGetRDBSSProcess())
     {
@@ -444,9 +434,7 @@ NTSTATUS VBoxMRxCreateSrvCall(PMRX_SRV_CALL pSrvCall,
                                           pCallbackContext);
 
         if (Status == STATUS_SUCCESS)
-        {
             Log(("VBOXSF: MRxCreateSrvCall: queued\n"));
-        }
         else
         {
             pCallbackContext->Status = Status;
@@ -461,8 +449,7 @@ NTSTATUS VBoxMRxCreateSrvCall(PMRX_SRV_CALL pSrvCall,
 NTSTATUS VBoxMRxFinalizeSrvCall (PMRX_SRV_CALL pSrvCall,
                                  BOOLEAN Force)
 {
-    Log(("VBOXSF: MRxFinalizeSrvCall %p, ctx = %p.\n",
-         pSrvCall, pSrvCall->Context));
+    Log(("VBOXSF: MRxFinalizeSrvCall %p, ctx = %p.\n", pSrvCall, pSrvCall->Context));
 
     pSrvCall->Context = NULL;
 
