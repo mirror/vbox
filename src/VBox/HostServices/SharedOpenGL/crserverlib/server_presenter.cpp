@@ -5273,15 +5273,13 @@ static RTRECT * crVBoxServerCrCmdBltRecsUnpack(const VBOXCMDVBVA_RECT *pPRects, 
     return pRects;
 }
 
-static void crVBoxServerCrCmdBltPrimaryUpdate(const VBVAINFOSCREEN *pScreen, uint32_t cRects, const RTRECT *pRects)
+static void crPMgrPrimaryUpdateScreen(HCR_FRAMEBUFFER hFb, uint32_t idScreen, uint32_t cRects, const RTRECT *pRects)
 {
-    if (!cRects)
-        return;
+    const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
 
-    uint32_t u32PrimaryID = pScreen->u32ViewIndex;
     bool fDirtyEmpty = true;
     RTRECT dirtyRect;
-    cr_server.CrCmdClientInfo.pfnCltScrUpdateBegin(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID);
+    cr_server.CrCmdClientInfo.pfnCltScrUpdateBegin(cr_server.CrCmdClientInfo.hCltScr, idScreen);
 
     VBVACMDHDR hdr;
     for (uint32_t i = 0; i < cRects; ++i)
@@ -5291,7 +5289,7 @@ static void crVBoxServerCrCmdBltPrimaryUpdate(const VBVAINFOSCREEN *pScreen, uin
         hdr.w = hdr.x + pRects[i].xRight;
         hdr.h = hdr.y + pRects[i].yBottom;
 
-        cr_server.CrCmdClientInfo.pfnCltScrUpdateProcess(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID, &hdr, sizeof (hdr));
+        cr_server.CrCmdClientInfo.pfnCltScrUpdateProcess(cr_server.CrCmdClientInfo.hCltScr, idScreen, &hdr, sizeof (hdr));
 
         if (fDirtyEmpty)
         {
@@ -5329,12 +5327,31 @@ static void crVBoxServerCrCmdBltPrimaryUpdate(const VBVAINFOSCREEN *pScreen, uin
 
     if (dirtyRect.xRight - dirtyRect.xLeft)
     {
-        cr_server.CrCmdClientInfo.pfnCltScrUpdateEnd(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID, pScreen->i32OriginX + dirtyRect.xLeft, pScreen->i32OriginY + dirtyRect.yTop,
+        cr_server.CrCmdClientInfo.pfnCltScrUpdateEnd(cr_server.CrCmdClientInfo.hCltScr, idScreen, pScreen->i32OriginX + dirtyRect.xLeft, pScreen->i32OriginY + dirtyRect.yTop,
                                            dirtyRect.xRight - dirtyRect.xLeft, dirtyRect.yBottom - dirtyRect.yTop);
     }
     else
     {
-        cr_server.CrCmdClientInfo.pfnCltScrUpdateEnd(cr_server.CrCmdClientInfo.hCltScr, u32PrimaryID, 0, 0, 0, 0);
+        cr_server.CrCmdClientInfo.pfnCltScrUpdateEnd(cr_server.CrCmdClientInfo.hCltScr, idScreen, 0, 0, 0, 0);
+    }
+
+}
+
+static void crPMgrPrimaryUpdate(HCR_FRAMEBUFFER hFb, uint32_t cRects, const RTRECT *pRects)
+{
+    if (!cRects)
+        return;
+
+    const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
+
+    uint32_t idFb = pScreen->u32ViewIndex;
+    CR_FB_INFO *pFbInfo = &g_CrPresenter.aFbInfos[idFb];
+
+    for (int i = ASMBitFirstSet(pFbInfo->aTargetMap, cr_server.screenCount);
+            i >= 0;
+            i = ASMBitNextSet(pFbInfo->aTargetMap, cr_server.screenCount, i))
+    {
+        crPMgrPrimaryUpdateScreen(hFb, i, cRects, pRects);
     }
 }
 
@@ -5444,7 +5461,7 @@ static int8_t crVBoxServerCrCmdBltPrimaryProcess(const VBOXCMDVBVA_BLT_PRIMARY *
             return 0;
     }
 
-    crVBoxServerCrCmdBltPrimaryUpdate(CrFbGetScreenInfo(hFb), cRects, pRects);
+    crPMgrPrimaryUpdate(hFb, cRects, pRects);
 
     return 0;
 }
@@ -5595,7 +5612,7 @@ static int8_t crVBoxServerCrCmdBltVramToVram(VBOXCMDVBVAOFFSET offSrcVRAM, uint3
             }
         }
 
-        crVBoxServerCrCmdBltPrimaryUpdate(pScreen, cRects, pRects);
+        crPMgrPrimaryUpdate(hDstFb, cRects, pRects);
 
         return 0;
     }

@@ -5052,9 +5052,9 @@ DxgkDdiIsSupportedVidPn(
 
     NTSTATUS Status = STATUS_SUCCESS;
 
-    PVBOXMP_DEVEXT pContext = (PVBOXMP_DEVEXT)hAdapter;
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
-    Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pIsSupportedVidPnArg->hDesiredVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pIsSupportedVidPnArg->hDesiredVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
     if (!NT_SUCCESS(Status))
     {
         WARN(("DxgkCbQueryVidPnInterface failed Status()0x%x\n", Status));
@@ -5062,7 +5062,7 @@ DxgkDdiIsSupportedVidPn(
     }
 
 #ifdef VBOXWDDM_DEBUG_VIDPN
-    vboxVidPnDumpVidPn("\n>>>>IS SUPPORTED VidPN : >>>>", pContext, pIsSupportedVidPnArg->hDesiredVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<");
+    vboxVidPnDumpVidPn("\n>>>>IS SUPPORTED VidPN : >>>>", pDevExt, pIsSupportedVidPnArg->hDesiredVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<");
 #endif
 
     D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
@@ -5075,10 +5075,10 @@ DxgkDdiIsSupportedVidPn(
     }
 
     BOOLEAN fSupported = FALSE;
-    Status = vboxVidPnCheckTopology(hVidPnTopology, pVidPnTopologyInterface, &fSupported);
+    Status = VBoxVidPnCheckTopology(pDevExt, hVidPnTopology, pVidPnTopologyInterface, &fSupported);
     if (!NT_SUCCESS(Status))
     {
-        WARN(("vboxVidPnCheckTopology failed Status()0x%x\n", Status));
+        WARN(("VBoxVidPnCheckTopology failed Status()0x%x\n", Status));
         return Status;
     }
 
@@ -5264,15 +5264,14 @@ DxgkDdiEnumVidPnCofuncModality(
     }
 
 #ifdef DEBUG_misha
-    BOOLEAN fSupported = FALSE;
-    Status = vboxVidPnCheckTopology(hVidPnTopology, pVidPnTopologyInterface, &fSupported);
-    if (!NT_SUCCESS(Status))
     {
-        WARN(("vboxVidPnCheckTopology failed Status()0x%x\n", Status));
-        return Status;
-    }
+        BOOLEAN fSupported = FALSE;
+        Status = VBoxVidPnCheckTopology(pDevExt, hVidPnTopology, pVidPnTopologyInterface, &fSupported);
+        if (!NT_SUCCESS(Status))
+            WARN(("VBoxVidPnCheckTopology failed Status()0x%x\n", Status));
 
-    Assert(fSupported);
+        Assert(fSupported);
+    }
 #endif
     VBOXVIDPNCOFUNCMODALITY CbContext = {0};
     CbContext.pDevExt = pDevExt;
