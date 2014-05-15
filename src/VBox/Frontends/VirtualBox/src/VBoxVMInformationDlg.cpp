@@ -87,8 +87,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow)
     setWindowIcon(QIcon());
 #else
     /* Apply window icons */
-    setWindowIcon(UIIconPool::iconSetFull(QSize (32, 32), QSize (16, 16),
-                                          ":/session_info_32px.png", ":/session_info_16px.png"));
+    setWindowIcon(UIIconPool::iconSetFull(":/session_info_32px.png", ":/session_info_16px.png"));
 #endif
 
     /* Setup focus-proxy for pages */
