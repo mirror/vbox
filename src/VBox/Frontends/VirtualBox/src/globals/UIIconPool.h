@@ -59,10 +59,9 @@ public:
     /** Creates icon from passed pixmap names for
       * @a strNormal, @a strDisabled, @a strActive icon states and
       * their analogs for small-icon case. Used for setting pages. */
-    static QIcon iconSetFull(const QSize &size, const QSize &smallSize,
-                             const QString &strNormal, const QString &strSmallNormal,
-                             const QString &strDisabled = QString(), const QString &strSmallDisabled = QString(),
-                             const QString &strActive = QString(), const QString &strSmallActive = QString());
+    static QIcon iconSetFull(const QString &strNormal, const QString &strSmall,
+                             const QString &strNormalDisabled = QString(), const QString &strSmallDisabled = QString(),
+                             const QString &strNormalActive = QString(), const QString &strSmallActive = QString());
 
     /** Creates icon from passed pixmaps for
       * @a normal, @a disabled and @a active icon states. */

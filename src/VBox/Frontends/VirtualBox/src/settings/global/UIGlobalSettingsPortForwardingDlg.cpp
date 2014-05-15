@@ -36,7 +36,7 @@ UIGlobalSettingsPortForwardingDlg::UIGlobalSettingsPortForwardingDlg(QWidget *pP
     , m_pButtonBox(0)
 {
     /* Set dialog icon: */
-    setWindowIcon(UIIconPool::iconSetFull(QSize(32, 32), QSize(16, 16), ":/nw_32px.png", ":/nw_16px.png"));
+    setWindowIcon(UIIconPool::iconSetFull(":/nw_32px.png", ":/nw_16px.png"));
 
     /* Create layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);

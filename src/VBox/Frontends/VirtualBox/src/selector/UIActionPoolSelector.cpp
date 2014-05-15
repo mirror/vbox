@@ -231,7 +231,7 @@ class UIActionSimpleGroupNew : public UIActionSimple
 public:
 
     UIActionSimpleGroupNew(UIActionPool *pParent)
-        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16), ":/vm_new_32px.png", ":/vm_new_16px.png")
+        : UIActionSimple(pParent, ":/vm_new_32px.png", ":/vm_new_16px.png")
     {
         retranslateUi();
     }
@@ -404,7 +404,7 @@ class UIActionSimpleMachineNew : public UIActionSimple
 public:
 
     UIActionSimpleMachineNew(UIActionPool *pParent)
-        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16), ":/vm_new_32px.png", ":/vm_new_16px.png")
+        : UIActionSimple(pParent, ":/vm_new_32px.png", ":/vm_new_16px.png")
     {
         retranslateUi();
     }
@@ -499,7 +499,7 @@ class UIActionSimpleMachineSettings : public UIActionSimple
 public:
 
     UIActionSimpleMachineSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16),
+        : UIActionSimple(pParent,
                          ":/vm_settings_32px.png", ":/vm_settings_16px.png",
                          ":/vm_settings_disabled_32px.png", ":/vm_settings_disabled_16px.png")
     {
@@ -565,7 +565,7 @@ class UIActionSimpleMachineRemove : public UIActionSimple
 public:
 
     UIActionSimpleMachineRemove(UIActionPool *pParent)
-        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16),
+        : UIActionSimple(pParent,
                          ":/vm_delete_32px.png", ":/vm_delete_16px.png",
                          ":/vm_delete_disabled_32px.png", ":/vm_delete_disabled_16px.png")
     {
@@ -599,7 +599,7 @@ class UIActionStateCommonStartOrShow : public UIActionState
 public:
 
     UIActionStateCommonStartOrShow(UIActionPool *pParent)
-        : UIActionState(pParent, QSize(32, 32), QSize(16, 16),
+        : UIActionState(pParent,
                         ":/vm_start_32px.png", ":/vm_start_16px.png",
                         ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png")
     {
@@ -646,7 +646,7 @@ class UIActionToggleCommonPauseAndResume : public UIActionToggle
 public:
 
     UIActionToggleCommonPauseAndResume(UIActionPool *pParent)
-        : UIActionToggle(pParent, QSize(32, 32), QSize(16, 16),
+        : UIActionToggle(pParent,
                          ":/vm_pause_32px.png", ":/vm_pause_16px.png",
                          ":/vm_pause_disabled_32px.png", ":/vm_pause_disabled_16px.png")
     {
@@ -710,7 +710,7 @@ class UIActionSimpleCommonDiscard : public UIActionSimple
 public:
 
     UIActionSimpleCommonDiscard(UIActionPool *pParent)
-        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16),
+        : UIActionSimple(pParent,
                          ":/vm_discard_32px.png", ":/vm_discard_16px.png",
                          ":/vm_discard_disabled_32px.png", ":/vm_discard_disabled_16px.png")
     {
@@ -746,7 +746,7 @@ class UIActionSimpleCommonRefresh : public UIActionSimple
 public:
 
     UIActionSimpleCommonRefresh(UIActionPool *pParent)
-        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16),
+        : UIActionSimple(pParent,
                          ":/refresh_32px.png", ":/refresh_16px.png",
                          ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
     {

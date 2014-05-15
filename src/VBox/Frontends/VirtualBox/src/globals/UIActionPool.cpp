@@ -163,48 +163,45 @@ bool UIMenu::event(QEvent *pEvent)
 
 /* UIActionSimple stuff: */
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
-                               const QString &strIcon, const QString &strIconDis)
+                               const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
     : UIAction(pParent, UIActionType_Simple)
 {
     if (!strIcon.isNull())
-        setIcon(UIIconPool::iconSet(strIcon, strIconDis));
+        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
 }
 
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
-                               const QSize &normalSize, const QSize &smallSize,
-                               const QString &strNormalIcon, const QString &strSmallIcon,
-                               const QString &strNormalIconDis, const QString &strSmallIconDis)
+                               const QString &strIconNormal, const QString &strIconSmall,
+                               const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
     : UIAction(pParent, UIActionType_Simple)
 {
-    setIcon(UIIconPool::iconSetFull(normalSize, smallSize, strNormalIcon, strSmallIcon, strNormalIconDis, strSmallIconDis));
+    setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
 }
 
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
                                const QIcon& icon)
     : UIAction(pParent, UIActionType_Simple)
 {
-    if (!icon.isNull())
-        setIcon(icon);
+    setIcon(icon);
 }
 
 /* UIActionState stuff: */
 UIActionState::UIActionState(UIActionPool *pParent,
-                             const QString &strIcon, const QString &strIconDis)
+                             const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
     : UIAction(pParent, UIActionType_State)
     , m_iState(0)
 {
     if (!strIcon.isNull())
-        setIcon(UIIconPool::iconSet(strIcon, strIconDis));
+        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
 }
 
 UIActionState::UIActionState(UIActionPool *pParent,
-                             const QSize &normalSize, const QSize &smallSize,
-                             const QString &strNormalIcon, const QString &strSmallIcon,
-                             const QString &strNormalIconDis, const QString &strSmallIconDis)
+                             const QString &strIconNormal, const QString &strIconSmall,
+                             const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
     : UIAction(pParent, UIActionType_State)
     , m_iState(0)
 {
-    setIcon(UIIconPool::iconSetFull(normalSize, smallSize, strNormalIcon, strSmallIcon, strNormalIconDis, strSmallIconDis));
+    setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
 }
 
 UIActionState::UIActionState(UIActionPool *pParent,
@@ -218,30 +215,20 @@ UIActionState::UIActionState(UIActionPool *pParent,
 
 /* UIActionToggle stuff: */
 UIActionToggle::UIActionToggle(UIActionPool *pParent,
-                               const QString &strIcon, const QString &strIconDis)
+                               const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
     : UIAction(pParent, UIActionType_Toggle)
 {
     if (!strIcon.isNull())
-        setIcon(UIIconPool::iconSet(strIcon, strIconDis));
+        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
     init();
 }
 
 UIActionToggle::UIActionToggle(UIActionPool *pParent,
-                               const QSize &normalSize, const QSize &smallSize,
-                               const QString &strNormalIcon, const QString &strSmallIcon,
-                               const QString &strNormalIconDis, const QString &strSmallIconDis)
+                               const QString &strIconOn, const QString &strIconOff,
+                               const QString &strIconOnDisabled, const QString &strIconOffDisabled)
     : UIAction(pParent, UIActionType_Toggle)
 {
-    setIcon(UIIconPool::iconSetFull(normalSize, smallSize, strNormalIcon, strSmallIcon, strNormalIconDis, strSmallIconDis));
-    init();
-}
-
-UIActionToggle::UIActionToggle(UIActionPool *pParent,
-               const QString &strIconOn, const QString &strIconOff,
-               const QString &strIconOnDis, const QString &strIconOffDis)
-    : UIAction(pParent, UIActionType_Toggle)
-{
-    setIcon(UIIconPool::iconSetOnOff(strIconOn, strIconOff, strIconOnDis, strIconOffDis));
+    setIcon(UIIconPool::iconSetOnOff(strIconOn, strIconOff, strIconOnDisabled, strIconOffDisabled));
     init();
 }
 
@@ -292,7 +279,7 @@ class UIActionSimpleLogDialog : public UIActionSimple
 public:
 
     UIActionSimpleLogDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16),
+        : UIActionSimple(pParent,
                          ":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png",
                          ":/vm_show_logs_disabled_32px.png", ":/vm_show_logs_disabled_16px.png")
     {

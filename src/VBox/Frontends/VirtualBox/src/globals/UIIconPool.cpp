@@ -87,33 +87,36 @@ QIcon UIIconPool::iconSetOnOff(const QString &strNormal, const QString strNormal
 }
 
 /* static */
-QIcon UIIconPool::iconSetFull(const QSize &size, const QSize &smallSize,
-                              const QString &strNormal, const QString &strSmallNormal,
-                              const QString &strDisabled /* = QString() */,
-                              const QString &strSmallDisabled /* = QString() */,
-                              const QString &strActive /* = QString() */,
-                              const QString &strSmallActive /* = QString() */)
+QIcon UIIconPool::iconSetFull(const QString &strNormal, const QString &strSmall,
+                              const QString &strNormalDisabled /* = QString() */, const QString &strSmallDisabled /* = QString() */,
+                              const QString &strNormalActive /* = QString() */, const QString &strSmallActive /* = QString() */)
 {
-    QIcon iconSet;
+    /* Prepare fallback icon: */
+    static QIcon nullIcon;
 
-    Assert(!strNormal.isEmpty());
-    Assert(!strSmallNormal.isEmpty());
-    iconSet.addFile(strNormal, size, QIcon::Normal);
-    iconSet.addFile(strSmallNormal, smallSize, QIcon::Normal);
+    /* Prepare icon: */
+    QIcon icon;
 
+    /* Add 'normal' & 'small normal' pixmaps: */
+    AssertReturn(!strNormal.isEmpty(), nullIcon);
+    addName(icon, strNormal, QIcon::Normal);
+    AssertReturn(!strSmall.isEmpty(), nullIcon);
+    addName(icon, strSmall, QIcon::Normal);
+
+    /* Add 'disabled' & 'small disabled' pixmaps (if any): */
+    if (!strNormalDisabled.isEmpty())
+        addName(icon, strNormalDisabled, QIcon::Disabled);
     if (!strSmallDisabled.isEmpty())
-    {
-        iconSet.addFile(strDisabled, size, QIcon::Disabled);
-        iconSet.addFile(strSmallDisabled, smallSize, QIcon::Disabled);
-    }
+        addName(icon, strSmallDisabled, QIcon::Disabled);
 
+    /* Add 'active' & 'small active' pixmaps (if any): */
+    if (!strNormalActive.isEmpty())
+        addName(icon, strNormalActive, QIcon::Active);
     if (!strSmallActive.isEmpty())
-    {
-        iconSet.addFile(strActive, size, QIcon::Active);
-        iconSet.addFile(strSmallActive, smallSize, QIcon::Active);
-    }
+        addName(icon, strSmallActive, QIcon::Active);
 
-    return iconSet;
+    /* Return icon: */
+    return icon;
 }
 
 /* static */

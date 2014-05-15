@@ -993,8 +993,7 @@ void UIMediumManager::prepareThis()
     setAttribute(Qt::WA_QuitOnClose, false);
 
     /* Apply window icons: */
-    setWindowIcon(UIIconPool::iconSetFull(QSize(32, 32), QSize(16, 16),
-                                          ":/diskimage_32px.png", ":/diskimage_16px.png"));
+    setWindowIcon(UIIconPool::iconSetFull(":/diskimage_32px.png", ":/diskimage_16px.png"));
 
     /* Prepare connections: */
     prepareConnections();
@@ -1463,32 +1462,27 @@ void UIMediumManager::updateActionIcons()
         }
     }
     if (m_pActionCopy)
-        m_pActionCopy->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                       QString(":/%1_copy_22px.png").arg(strPrefix),
+        m_pActionCopy->setIcon(UIIconPool::iconSetFull(QString(":/%1_copy_22px.png").arg(strPrefix),
                                                        QString(":/%1_copy_16px.png").arg(strPrefix),
                                                        QString(":/%1_copy_disabled_22px.png").arg(strPrefix),
                                                        QString(":/%1_copy_disabled_16px.png").arg(strPrefix)));
     if (m_pActionModify)
-        m_pActionModify->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                         QString(":/%1_modify_22px.png").arg(strPrefix),
+        m_pActionModify->setIcon(UIIconPool::iconSetFull(QString(":/%1_modify_22px.png").arg(strPrefix),
                                                          QString(":/%1_modify_16px.png").arg(strPrefix),
                                                          QString(":/%1_modify_disabled_22px.png").arg(strPrefix),
                                                          QString(":/%1_modify_disabled_16px.png").arg(strPrefix)));
     if (m_pActionRemove)
-        m_pActionRemove->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                         QString(":/%1_remove_22px.png").arg(strPrefix),
+        m_pActionRemove->setIcon(UIIconPool::iconSetFull(QString(":/%1_remove_22px.png").arg(strPrefix),
                                                          QString(":/%1_remove_16px.png").arg(strPrefix),
                                                          QString(":/%1_remove_disabled_22px.png").arg(strPrefix),
                                                          QString(":/%1_remove_disabled_16px.png").arg(strPrefix)));
     if (m_pActionRelease)
-        m_pActionRelease->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                          QString(":/%1_release_22px.png").arg(strPrefix),
+        m_pActionRelease->setIcon(UIIconPool::iconSetFull(QString(":/%1_release_22px.png").arg(strPrefix),
                                                           QString(":/%1_release_16px.png").arg(strPrefix),
                                                           QString(":/%1_release_disabled_22px.png").arg(strPrefix),
                                                           QString(":/%1_release_disabled_16px.png").arg(strPrefix)));
     if (m_pActionRefresh && m_pActionRefresh->icon().isNull())
-        m_pActionRefresh->setIcon(UIIconPool::iconSetFull(QSize(22, 22), QSize(16, 16),
-                                                          ":/refresh_22px.png", ":/refresh_16px.png",
+        m_pActionRefresh->setIcon(UIIconPool::iconSetFull(":/refresh_22px.png", ":/refresh_16px.png",
                                                           ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
 }
 
