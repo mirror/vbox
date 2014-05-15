@@ -249,7 +249,11 @@ VBGLR3DECL(int) VbglR3SharedFolderGetName(uint32_t u32ClientId, uint32_t u32Root
     if (pString)
     {
         RT_ZERO(*pString);
-        ShflStringInitBuffer(pString, SHFL_MAX_LEN);
+        if (!ShflStringInitBuffer(pString, SHFL_MAX_LEN))
+        {
+            RTMemFree(pString);
+            return VERR_INVALID_PARAMETER;
+        }
 
         VbglHGCMParmUInt32Set(&Msg.root, u32Root);
         VbglHGCMParmPtrSet(&Msg.name, pString, cbString);

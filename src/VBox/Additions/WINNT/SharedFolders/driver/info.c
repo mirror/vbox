@@ -53,46 +53,34 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
     PSHFLDIRINFO pDirEntry;
 
     ULONG *pNextOffset = 0;
-    PSHFLSTRING ParsedPath = 0;
+    PSHFLSTRING ParsedPath = NULL;
 
     Log(("VBOXSF: MrxQueryDirectory: FileInformationClass %d, pVBoxFobx %p, hFile %RX64, pInfoBuffer %p\n",
          FileInformationClass, pVBoxFobx, pVBoxFobx->hFile, pInfoBuffer));
 
-    if (NULL == pVBoxFobx)
+    if (!pVBoxFobx)
     {
         Log(("VBOXSF: MrxQueryDirectory: pVBoxFobx is invalid!\n"));
         return STATUS_INVALID_PARAMETER;
     }
 
-    if (NULL == DirectoryName)
-    {
+    if (!DirectoryName)
         return STATUS_INVALID_PARAMETER;
-    }
 
     if (DirectoryName->Length == 0)
-    {
         Log(("VBOXSF: MrxQueryDirectory: DirectoryName = \\ (null string)\n"));
-    }
     else
-    {
         Log(("VBOXSF: MrxQueryDirectory: DirectoryName = %.*ls\n",
              DirectoryName->Length / sizeof(WCHAR), DirectoryName->Buffer));
-    }
 
-    if (NULL == Template)
-    {
+    if (!Template)
         return STATUS_INVALID_PARAMETER;
-    }
 
     if (Template->Length == 0)
-    {
         Log(("VBOXSF: MrxQueryDirectory: Template = \\ (null string)\n"));
-    }
     else
-    {
         Log(("VBOXSF: MrxQueryDirectory: Template = %.*ls\n",
              Template->Length / sizeof(WCHAR), Template->Buffer));
-    }
 
     cbHGCMBuffer = RT_MAX(cbMaxSize, PAGE_SIZE);
 
@@ -100,7 +88,7 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
          cbHGCMBuffer));
 
     pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbHGCMBuffer);
-    if (pHGCMBuffer == NULL)
+    if (!pHGCMBuffer)
     {
         AssertFailed();
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -127,10 +115,8 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
         ULONG ParsedPathSize, len;
 
         /* Calculate length required for parsed path. */
-        ParsedPathSize = sizeof(*ParsedPath) + (DirectoryName->Length + Template->Length + 3 * sizeof(WCHAR));
-
-        Log(("VBOXSF: MrxQueryDirectory: ParsedPathSize = %d\n",
-             ParsedPathSize));
+        ParsedPathSize = sizeof(SHFLSTRING) + DirectoryName->Length + Template->Length + 3 * sizeof(WCHAR);
+        Log(("VBOXSF: MrxQueryDirectory: ParsedPathSize = %d\n", ParsedPathSize));
 
         ParsedPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
         if (!ParsedPath)
@@ -140,7 +126,11 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
         }
 
         RtlZeroMemory(ParsedPath, ParsedPathSize);
-        ShflStringInitBuffer(ParsedPath, ParsedPathSize - sizeof(SHFLSTRING));
+        if (!ShflStringInitBuffer(ParsedPath, ParsedPathSize))
+        {
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+            goto end;
+        }
 
         ParsedPath->u16Size = DirectoryName->Length + Template->Length + sizeof(WCHAR);
         ParsedPath->u16Length = ParsedPath->u16Size - sizeof(WCHAR); /* Without terminating null. */
@@ -222,9 +212,7 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
     }
 
     if (Status != STATUS_SUCCESS)
-    {
         goto end;
-    }
 
     /* Verify that the returned buffer length is not greater than the original one. */
     if (u32BufSize > (uint32_t)cbHGCMBuffer)
@@ -482,20 +470,14 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
             *pLengthRemaining -= cbToCopy;
         }
         else
-        {
             break;
-        }
 
         if (RxContext->QueryDirectory.ReturnSingleEntry)
-        {
             break;
-        }
 
         /* More left? */
         if (cbHGCMBuffer <= 0)
-        {
             break;
-        }
 
         index++; /* File Index. */
 
@@ -503,20 +485,14 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
     }
 
     if (pNextOffset)
-    {
         *pNextOffset = 0; /* Last pInfo->NextEntryOffset should be set to zero! */
-    }
 
 end:
     if (pHGCMBuffer)
-    {
         vbsfFreeNonPagedMem(pHGCMBuffer);
-    }
 
     if (ParsedPath)
-    {
         vbsfFreeNonPagedMem(ParsedPath);
-    }
 
     Log(("VBOXSF: MrxQueryDirectory: Returned 0x%08X\n",
          Status));
@@ -566,7 +542,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 
             Log(("VBOXSF: MrxQueryVolumeInfo: FileFsVolumeInformation\n"));
 
-            if (pVBoxFobx == NULL)
+            if (!pVBoxFobx)
             {
                 Log(("VBOXSF: MrxQueryVolumeInfo: pVBoxFobx is NULL!\n"));
                 Status = STATUS_INVALID_PARAMETER;
@@ -601,7 +577,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             /* Query serial number. */
             cbHGCMBuffer = sizeof(SHFLVOLINFO);
             pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbHGCMBuffer);
-            if (pHGCMBuffer == NULL)
+            if (!pHGCMBuffer)
             {
                 Status = STATUS_INSUFFICIENT_RESOURCES;
                 break;
@@ -757,7 +733,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
                 cbToCopy = sizeof(FILE_FS_SIZE_INFORMATION);
             }
 
-            if (pVBoxFobx == NULL)
+            if (!pVBoxFobx)
             {
                 Log(("VBOXSF: MrxQueryVolumeInfo: pVBoxFobx is NULL!\n"));
                 Status = STATUS_INVALID_PARAMETER;
@@ -774,7 +750,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 
             cbHGCMBuffer = sizeof(SHFLVOLINFO);
             pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbHGCMBuffer);
-            if (pHGCMBuffer == NULL)
+            if (!pHGCMBuffer)
             {
                 Status = STATUS_INSUFFICIENT_RESOURCES;
                 break;
@@ -915,9 +891,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
     }
 
     if (Status == STATUS_SUCCESS)
-    {
         RxContext->Info.LengthRemaining = cbInfoBuffer - cbToCopy;
-    }
     else if (Status == STATUS_BUFFER_TOO_SMALL)
     {
         Log(("VBOXSF: MrxQueryVolumeInfo: Insufficient buffer size %d, required %d\n",
@@ -955,7 +929,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
     uint32_t cbHGCMBuffer;
     PSHFLFSOBJINFO pFileEntry = NULL;
 
-    if (NULL == pLengthRemaining)
+    if (!pLengthRemaining)
     {
         Log(("VBOXSF: MrxQueryFileInfo: length pointer is NULL!\n"));
         return STATUS_INVALID_PARAMETER;
@@ -964,13 +938,13 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
     Log(("VBOXSF: MrxQueryFileInfo: InfoBuffer = %p, Size = %d bytes, LenRemain = %d bytes\n",
          pInfoBuffer, cbInfoBuffer, *pLengthRemaining));
 
-    if (NULL == pVBoxFobx)
+    if (!pVBoxFobx)
     {
         Log(("VBOXSF: MrxQueryFileInfo: pVBoxFobx is NULL!\n"));
         return STATUS_INVALID_PARAMETER;
     }
 
-    if (NULL == pInfoBuffer)
+    if (!pInfoBuffer)
     {
         Log(("VBOXSF: MrxQueryFileInfo: pInfoBuffer is NULL!\n"));
         return STATUS_INVALID_PARAMETER;
@@ -1011,13 +985,9 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 cbToCopy = sizeof(FILE_STANDARD_INFORMATION);
 
                 if (*pLengthRemaining >= cbToCopy)
-                {
                     *pInfo = pVBoxFobx->FileStandardInfo;
-                }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1040,9 +1010,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     pInfo->FileName[FileName->Length] = 0; /* FILE_NAMES_INFORMATION had space for the nul. */
                 }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1059,9 +1027,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     pInfo->IndexNumber.QuadPart = (ULONG_PTR)capFcb;
                 }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
             case FileEaInformation:
@@ -1076,9 +1042,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     pInfo->EaSize = 0;
                 }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1100,9 +1064,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     pInfo->FileAttributes = pVBoxFobx->FileBasicInfo.FileAttributes;
                 }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1123,10 +1085,8 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
         cbHGCMBuffer = RT_MAX(cbInfoBuffer, PAGE_SIZE);
         pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbHGCMBuffer);
 
-        if (pHGCMBuffer == NULL)
-        {
+        if (!pHGCMBuffer)
             return STATUS_INSUFFICIENT_RESOURCES;
-        }
 
         Assert(pVBoxFobx && pNetRootExtension && pDeviceExtension);
         vboxRC = vboxCallFSInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
@@ -1162,9 +1122,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                          pInfo->FileAttributes));
                 }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1183,18 +1141,12 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     pInfo->DeletePending           = FALSE;
 
                     if (pFileEntry->Attr.fMode & RTFS_DOS_DIRECTORY)
-                    {
                         pInfo->Directory = TRUE;
-                    }
                     else
-                    {
                         pInfo->Directory = FALSE;
-                    }
                 }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1217,9 +1169,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     pInfo->FileName[FileName->Length] = 0; /* FILE_NAMES_INFORMATION had space for the nul. */
                 }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1236,9 +1186,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     pInfo->IndexNumber.QuadPart = (ULONG_PTR)capFcb;
                 }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1250,13 +1198,9 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 cbToCopy = sizeof(FILE_EA_INFORMATION);
 
                 if (*pLengthRemaining >= cbToCopy)
-                {
                     pInfo->EaSize = 0;
-                }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1273,9 +1217,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     pInfo->ReparseTag = 0;
                 }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1287,13 +1229,9 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 cbToCopy = sizeof(FILE_END_OF_FILE_INFORMATION);
 
                 if (*pLengthRemaining >= cbToCopy)
-                {
                     pInfo->EndOfFile.QuadPart = pFileEntry->cbObject;
-                }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1305,13 +1243,9 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 cbToCopy = sizeof(FILE_ALLOCATION_INFORMATION);
 
                 if (*pLengthRemaining >= cbToCopy)
-                {
                     pInfo->AllocationSize.QuadPart = pFileEntry->cbAllocated;
-                }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1333,9 +1267,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     pInfo->FileAttributes          = VBoxToNTFileAttributes(pFileEntry->Attr.fMode);
                 }
                 else
-                {
                     Status = STATUS_BUFFER_TOO_SMALL;
-                }
                 break;
             }
 
@@ -1377,9 +1309,7 @@ end:
     }
 
     if (pHGCMBuffer)
-    {
         vbsfFreeNonPagedMem(pHGCMBuffer);
-    }
 
     if (Status == STATUS_SUCCESS)
     {
@@ -1387,8 +1317,7 @@ end:
              *pLengthRemaining));
     }
 
-    Log(("VBOXSF: MrxQueryFileInfo: Returned 0x%08X\n",
-         Status));
+    Log(("VBOXSF: MrxQueryFileInfo: Returned 0x%08X\n", Status));
     return Status;
 }
 
@@ -1453,7 +1382,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
 
             cbBuffer = sizeof(SHFLFSOBJINFO);
             pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbBuffer);
-            if (pHGCMBuffer == NULL)
+            if (!pHGCMBuffer)
             {
                 AssertFailed();
                 return STATUS_INSUFFICIENT_RESOURCES;
@@ -1503,25 +1432,15 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             {
                 /* Update our internal copy. Ignore zero fields! */
                 if (pInfo->CreationTime.QuadPart && !pVBoxFobx->fKeepCreationTime)
-                {
                     pVBoxFobx->FileBasicInfo.CreationTime = pInfo->CreationTime;
-                }
                 if (pInfo->LastAccessTime.QuadPart && !pVBoxFobx->fKeepLastAccessTime)
-                {
                     pVBoxFobx->FileBasicInfo.LastAccessTime = pInfo->LastAccessTime;
-                }
                 if (pInfo->LastWriteTime.QuadPart && !pVBoxFobx->fKeepLastWriteTime)
-                {
                     pVBoxFobx->FileBasicInfo.LastWriteTime = pInfo->LastWriteTime;
-                }
                 if (pInfo->ChangeTime.QuadPart && !pVBoxFobx->fKeepChangeTime)
-                {
                     pVBoxFobx->FileBasicInfo.ChangeTime = pInfo->ChangeTime;
-                }
                 if (pInfo->FileAttributes)
-                {
                     pVBoxFobx->FileBasicInfo.FileAttributes = pInfo->FileAttributes;
-                }
             }
 
             break;
@@ -1535,13 +1454,9 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
                  pInfo->DeleteFile));
 
             if (pInfo->DeleteFile && capFcb->OpenCount == 1)
-            {
                 Status = vbsfRemove(RxContext);
-            }
             else
-            {
                 Status = STATUS_SUCCESS;
-            }
             break;
         }
 
@@ -1628,12 +1543,9 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
 
 end:
     if (pHGCMBuffer)
-    {
         vbsfFreeNonPagedMem(pHGCMBuffer);
-    }
 
-    Log(("VBOXSF: MrxSetFileInfo: Returned 0x%08X\n",
-         Status));
+    Log(("VBOXSF: MrxSetFileInfo: Returned 0x%08X\n", Status));
     return Status;
 }
 

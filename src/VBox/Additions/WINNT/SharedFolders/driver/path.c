@@ -252,20 +252,22 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
         /* Calculate length required for parsed path.
          */
         ParsedPathSize = sizeof(*ParsedPath) + (RemainingName->Length + sizeof(WCHAR));
-
-        Log(("VBOXSF: vbsfProcessCreate: ParsedPathSize = %d\n",
-             ParsedPathSize));
+        Log(("VBOXSF: vbsfProcessCreate: ParsedPathSize = %d\n", ParsedPathSize));
 
         ParsedPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
-        if (ParsedPath == NULL)
+        if (!ParsedPath)
         {
             Status = STATUS_INSUFFICIENT_RESOURCES;
             goto failure;
         }
 
-        ShflStringInitBuffer(ParsedPath, ParsedPathSize - sizeof(SHFLSTRING));
+        if (!ShflStringInitBuffer(ParsedPath, ParsedPathSize))
+        {
+            vbsfFreeNonPagedMem(ParsedPath);
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+            goto failure;
+        }
 
-        ParsedPath->u16Size = RemainingName->Length + sizeof(WCHAR);
         ParsedPath->u16Length = ParsedPath->u16Size - sizeof(WCHAR); /* without terminating null */
         RtlCopyMemory (ParsedPath->String.ucs2, RemainingName->Buffer, ParsedPath->u16Length);
         Log(("VBOXSF: ParsedPath: %.*ls\n",
@@ -291,21 +293,22 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
                 *pulCreateAction = FILE_EXISTS;
                 Status = STATUS_OBJECT_NAME_COLLISION;
                 goto failure;
-            } break;
+            }
 
             /* On POSIX systems, the "mkdir" command returns VERR_FILE_NOT_FOUND when
                doing a recursive directory create. Handle this case. */
             case VERR_FILE_NOT_FOUND:
             {
                 pCreateParms->Result = SHFL_PATH_NOT_FOUND;
-            } break;
+                break;
+            }
 
             default:
             {
                 *pulCreateAction = FILE_DOES_NOT_EXIST;
                 Status = VBoxErrorToNTStatus(vboxRC);
                 goto failure;
-            } break;
+            }
         }
     }
 
@@ -369,7 +372,6 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
         case SHFL_FILE_CREATED:
         {
             /* A new file was created. */
-
             Assert(pCreateParms->Handle != SHFL_HANDLE_NIL);
 
             *pulCreateAction = FILE_CREATED;
@@ -381,17 +383,12 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
         case SHFL_FILE_REPLACED:
         {
             /* Existing file was replaced or overwriting. */
-
             Assert(pCreateParms->Handle != SHFL_HANDLE_NIL);
 
             if (CreateDisposition == FILE_SUPERSEDE)
-            {
                 *pulCreateAction = FILE_SUPERSEDED;
-            }
             else
-            {
                 *pulCreateAction = FILE_OVERWRITTEN;
-            }
             /* Go check flags and create FCB. */
             break;
         }
@@ -468,9 +465,7 @@ failure:
     }
 
     if (pCreateParms)
-    {
         vbsfFreeNonPagedMem(pCreateParms);
-    }
 
     return Status;
 }
@@ -548,7 +543,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
          FileStandardInfo.EndOfFile.QuadPart, FileStandardInfo.AllocationSize.QuadPart));
 
     RxContext->pFobx = RxCreateNetFobx(RxContext, SrvOpen);
-    if (RxContext->pFobx == NULL)
+    if (!RxContext->pFobx)
     {
         Log(("VBOXSF: MRxCreate: RxCreateNetFobx failed\n"));
         Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -656,10 +651,8 @@ NTSTATUS VBoxMRxCleanupFobx(IN PRX_CONTEXT RxContext)
     Log(("VBOXSF: MRxCleanupFobx: pVBoxFobx = %p, Handle = 0x%RX64\n",
           pVBoxFobx, pVBoxFobx? pVBoxFobx->hFile: 0));
 
-    if (NULL == pVBoxFobx)
-    {
+    if (!pVBoxFobx)
         return STATUS_INVALID_PARAMETER;
-    }
 
     return STATUS_SUCCESS;
 }
@@ -699,7 +692,7 @@ NTSTATUS vbsfSetFileInfo(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
 
     cbBuffer = sizeof(SHFLFSOBJINFO);
     pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbBuffer);
-    if (pHGCMBuffer == NULL)
+    if (!pHGCMBuffer)
     {
         AssertFailed();
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -709,41 +702,26 @@ NTSTATUS vbsfSetFileInfo(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
 
     /* The properties, that need to be changed, are set to something other than zero */
     if (pInfo->CreationTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_CREATION_TIME) != 0)
-    {
         RTTimeSpecSetNtTime(&pSHFLFileInfo->BirthTime, pInfo->CreationTime.QuadPart);
-    }
     if (pInfo->LastAccessTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_LASTACCESS_TIME) != 0)
-    {
         RTTimeSpecSetNtTime(&pSHFLFileInfo->AccessTime, pInfo->LastAccessTime.QuadPart);
-    }
     if (pInfo->LastWriteTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_LASTWRITE_TIME) != 0)
-    {
         RTTimeSpecSetNtTime(&pSHFLFileInfo->ModificationTime, pInfo->LastWriteTime.QuadPart);
-    }
     if (pInfo->ChangeTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_CHANGE_TIME) != 0)
-    {
         RTTimeSpecSetNtTime(&pSHFLFileInfo->ChangeTime, pInfo->ChangeTime.QuadPart);
-    }
     if (pInfo->FileAttributes && (SetAttrFlags & VBOX_FOBX_F_INFO_ATTRIBUTES) != 0)
-    {
         pSHFLFileInfo->Attr.fMode = NTToVBoxFileAttributes(pInfo->FileAttributes);
-    }
 
     vboxRC = vboxCallFSInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                             SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
 
     if (vboxRC != VINF_SUCCESS)
-    {
         Status = VBoxErrorToNTStatus(vboxRC);
-    }
 
     if (pHGCMBuffer)
-    {
         vbsfFreeNonPagedMem(pHGCMBuffer);
-    }
 
-    Log(("VBOXSF: vbsfSetFileInfo: Returned 0x%08X\n",
-         Status));
+    Log(("VBOXSF: vbsfSetFileInfo: Returned 0x%08X\n", Status));
     return Status;
 }
 
@@ -787,12 +765,9 @@ NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
     pVBoxFobx->hFile = SHFL_HANDLE_NIL;
 
     if (vboxRC != VINF_SUCCESS)
-    {
         Status = VBoxErrorToNTStatus(vboxRC);
-    }
 
-    Log(("VBOXSF: vbsfCloseFileHandle: Returned 0x%08X\n",
-         Status));
+    Log(("VBOXSF: vbsfCloseFileHandle: Returned 0x%08X\n", Status));
     return Status;
 }
 
@@ -819,10 +794,8 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
     Log(("VBOXSF: MRxCloseSrvOpen: Remaining name = %.*ls, Len = %d\n",
          RemainingName->Length / sizeof(WCHAR), RemainingName->Buffer, RemainingName->Length));
 
-    if (NULL == pVBoxFobx)
-    {
+    if (!pVBoxFobx)
         return STATUS_INVALID_PARAMETER;
-    }
 
     if (FlagOn(pSrvOpen->Flags, (SRVOPEN_FLAG_FILE_RENAMED | SRVOPEN_FLAG_FILE_DELETED)))
     {
@@ -835,9 +808,7 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
 
     /* Close file */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-    {
         vbsfCloseFileHandle(pDeviceExtension, pNetRootExtension, pVBoxFobx);
-    }
 
     if (capFcb->FcbState & FCB_STATE_DELETE_ON_CLOSE)
     {
@@ -846,9 +817,7 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
 
         /* Remove file or directory if delete action is pending. */
         if (capFcb->OpenCount == 0)
-        {
             Status = vbsfRemove(RxContext);
-        }
     }
 
     return Status;
@@ -876,27 +845,23 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
 
     /* Close file first if not already done. */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-    {
         vbsfCloseFileHandle(pDeviceExtension, pNetRootExtension, pVBoxFobx);
-    }
 
-    /* Calculate length required for parsed path.
-     */
-    ParsedPathSize = sizeof(*ParsedPath) + (RemainingName->Length + sizeof(WCHAR));
-
-    Log(("VBOXSF: vbsfRemove: ParsedPathSize %d\n",
-         ParsedPathSize));
+    /* Calculate length required for parsed path. */
+    ParsedPathSize = sizeof(SHFLSTRING) + RemainingName->Length + sizeof(WCHAR);
+    Log(("VBOXSF: vbsfRemove: ParsedPathSize %d\n", ParsedPathSize));
 
     ParsedPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
     if (!ParsedPath)
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    if (!ShflStringInitBuffer(ParsedPath, ParsedPathSize))
     {
+        vbsfFreeNonPagedMem(ParsedPath);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    ShflStringInitBuffer(ParsedPath, ParsedPathSize - sizeof(SHFLSTRING));
-
     Log(("VBOXSF: vbsfRemove: Setup ParsedPath\n"));
-    ParsedPath->u16Size = RemainingName->Length + sizeof(WCHAR);
     ParsedPath->u16Length = ParsedPath->u16Size - sizeof(WCHAR); /* without terminating null */
     RtlCopyMemory(ParsedPath->String.ucs2, RemainingName->Buffer, ParsedPath->u16Length);
 
@@ -906,24 +871,16 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
                             (pVBoxFobx->FileStandardInfo.Directory) ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
 
     if (ParsedPath)
-    {
         vbsfFreeNonPagedMem(ParsedPath);
-    }
 
     if (vboxRC == VINF_SUCCESS)
-    {
         SetFlag(capFobx->pSrvOpen->Flags, SRVOPEN_FLAG_FILE_DELETED);
-    }
 
     Status = VBoxErrorToNTStatus(vboxRC);
     if (vboxRC != VINF_SUCCESS)
-    {
-        Log(("VBOXSF: vbsfRemove: vboxCallRemove failed with %Rrc\n",
-             vboxRC));
-    }
+        Log(("VBOXSF: vbsfRemove: vboxCallRemove failed with %Rrc\n", vboxRC));
 
-    Log(("VBOXSF: vbsfRemove: Returned 0x%08X\n",
-         Status));
+    Log(("VBOXSF: vbsfRemove: Returned 0x%08X\n", Status));
     return Status;
 }
 
@@ -956,32 +913,27 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
 
     /* Must close the file before renaming it! */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-    {
         vbsfCloseFileHandle(pDeviceExtension, pNetRootExtension, pVBoxFobx);
-    }
 
     /* Mark it as renamed, so we do nothing during close */
     SetFlag(pSrvOpen->Flags, SRVOPEN_FLAG_FILE_RENAMED);
 
     /* Calculate length required for destination path. */
-    ParsedPathSize = sizeof(*DestPath) + (RenameInformation->FileNameLength + sizeof(WCHAR));
-
-    Log(("VBOXSF: vbsfRename: ParsedPathSize = %d\n",
-         ParsedPathSize));
+    ParsedPathSize = sizeof(SHFLSTRING) + RenameInformation->FileNameLength + sizeof(WCHAR);
+    Log(("VBOXSF: vbsfRename: ParsedPathSize = %d\n", ParsedPathSize));
 
     DestPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
+    if (!DestPath)
+        return STATUS_INSUFFICIENT_RESOURCES;
 
-    if (NULL == DestPath)
+    RtlZeroMemory(DestPath, ParsedPathSize);
+    if (!ShflStringInitBuffer(DestPath, ParsedPathSize))
     {
+        vbsfFreeNonPagedMem(DestPath);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    RtlZeroMemory(DestPath, ParsedPathSize);
-    ShflStringInitBuffer(DestPath, ParsedPathSize - sizeof(SHFLSTRING));
-
     Log(("VBOXSF: vbsfRename: Setting up destination path\n"));
-
-    DestPath->u16Size = (USHORT)(RenameInformation->FileNameLength + sizeof(WCHAR));
     DestPath->u16Length = DestPath->u16Size - sizeof(WCHAR); /* without terminating null */
     RtlCopyMemory(DestPath->String.ucs2, RenameInformation->FileName, DestPath->u16Length);
 
@@ -994,19 +946,22 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
     Log(("VBOXSF: vbsfRename: ParsedPathSize = %d\n", ParsedPathSize));
 
     SrcPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
-
-    if (NULL == SrcPath)
+    if (!SrcPath)
     {
         vbsfFreeNonPagedMem(DestPath);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
     RtlZeroMemory(SrcPath, ParsedPathSize);
-    ShflStringInitBuffer(SrcPath, ParsedPathSize - sizeof(SHFLSTRING));
+    if (!ShflStringInitBuffer(SrcPath, ParsedPathSize))
+    {
+        vbsfFreeNonPagedMem(DestPath);
+        vbsfFreeNonPagedMem(SrcPath);
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
 
     Log(("VBOXSF: vbsfRename: Setting up source path\n"));
 
-    SrcPath->u16Size = RemainingName->Length + sizeof(WCHAR);
     SrcPath->u16Length = SrcPath->u16Size - sizeof(WCHAR); /* without terminating null */
     RtlCopyMemory(SrcPath->String.ucs2, RemainingName->Buffer, SrcPath->u16Length);
 
@@ -1016,9 +971,7 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
     /* Call host. */
     flags = pVBoxFobx->FileStandardInfo.Directory? SHFL_RENAME_DIR : SHFL_RENAME_FILE;
     if (RenameInformation->ReplaceIfExists)
-    {
         flags |= SHFL_RENAME_REPLACE_IF_EXISTS;
-    }
 
     Log(("VBOXSF: vbsfRename: Calling vboxCallRename\n"));
     vboxRC = vboxCallRename(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, SrcPath, DestPath, flags);
@@ -1028,13 +981,9 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
 
     Status = VBoxErrorToNTStatus(vboxRC);
     if (vboxRC != VINF_SUCCESS)
-    {
-        Log(("VBOXSF: vbsfRename: vboxCallRename failed with %Rrc\n",
-             vboxRC));
-    }
+        Log(("VBOXSF: vbsfRename: vboxCallRename failed with %Rrc\n", vboxRC));
 
-    Log(("VBOXSF: vbsfRename: Returned 0x%08X\n",
-         Status));
+    Log(("VBOXSF: vbsfRename: Returned 0x%08X\n", Status));
     return Status;
 }
 
