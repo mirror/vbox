@@ -1271,8 +1271,8 @@ $</screen>
     <emphasis role="bold">target</emphasis>, which specifies where the data from
     the source should go to. Transferring data from the source to the target can
     be done in various ways, e.g. copying, moving or linking.<footnote><para>At
-    the moment VirtualBox only copying data is supported. Moving or linking from
-    data currently is not implemented yet.</para></footnote></para>
+    the moment only copying of data is supported. Moving or linking is not yet
+    implemented.</para></footnote></para>
 
     <para>When transferring data from the host to the guest OS, the host in this
     case is the source, whereas the guest OS is the target. However, when doing
