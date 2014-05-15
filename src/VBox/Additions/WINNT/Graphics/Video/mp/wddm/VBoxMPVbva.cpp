@@ -867,7 +867,10 @@ typedef struct VBOXCMDVBVA_CHECK_COMPLETED_CB
 {
     PVBOXMP_DEVEXT pDevExt;
     VBOXCMDVBVA *pVbva;
-    uint32_t u32FenceID;
+    /* last completted fence id */
+    uint32_t u32FenceCompleted;
+    /* last submitted fence id */
+    uint32_t u32FenceSubmitted;
 } VBOXCMDVBVA_CHECK_COMPLETED_CB;
 
 static BOOLEAN vboxCmdVbvaCheckCompletedIrqCb(PVOID pContext)
@@ -875,12 +878,21 @@ static BOOLEAN vboxCmdVbvaCheckCompletedIrqCb(PVOID pContext)
     VBOXCMDVBVA_CHECK_COMPLETED_CB *pCompleted = (VBOXCMDVBVA_CHECK_COMPLETED_CB*)pContext;
     BOOLEAN bRc = DxgkDdiInterruptRoutineNew(pCompleted->pDevExt, 0);
     if (pCompleted->pVbva)
-        pCompleted->u32FenceID = pCompleted->pVbva->u32FenceCompleted;
+    {
+        pCompleted->u32FenceCompleted = pCompleted->pVbva->u32FenceCompleted;
+        pCompleted->u32FenceSubmitted = pCompleted->pVbva->u32FenceSubmitted;
+    }
+    else
+    {
+        WARN(("no vbva"));
+        pCompleted->u32FenceCompleted = 0;
+        pCompleted->u32FenceSubmitted = 0;
+    }
     return bRc;
 }
 
 
-static uint32_t vboxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, bool fPingHost, HGSMIGUESTCOMMANDCONTEXT *pCtx, bool fBufferOverflow)
+static uint32_t vboxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, bool fPingHost, HGSMIGUESTCOMMANDCONTEXT *pCtx, bool fBufferOverflow, uint32_t *pu32FenceSubmitted)
 {
     if (fPingHost)
         vboxCmdVbvaFlush(pDevExt, pCtx, fBufferOverflow);
@@ -888,7 +900,8 @@ static uint32_t vboxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *p
     VBOXCMDVBVA_CHECK_COMPLETED_CB context;
     context.pDevExt = pDevExt;
     context.pVbva = pVbva;
-    context.u32FenceID = 0;
+    context.u32FenceCompleted = 0;
+    context.u32FenceSubmitted = 0;
     BOOLEAN bRet;
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
                             pDevExt->u.primary.DxgkInterface.DeviceHandle,
@@ -898,14 +911,17 @@ static uint32_t vboxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *p
                             &bRet);
     Assert(Status == STATUS_SUCCESS);
 
-    return context.u32FenceID;
+    if (pu32FenceSubmitted)
+        *pu32FenceSubmitted = context.u32FenceSubmitted;
+
+    return context.u32FenceCompleted;
 }
 
 DECLCALLBACK(void) voxCmdVbvaFlushCb(struct VBVAEXBUFFERCONTEXT *pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, void *pvFlush)
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvFlush;
 
-    vboxCmdVbvaCheckCompleted(pDevExt, NULL,  true /*fPingHost*/, pHGSMICtx, true /*fBufferOverflow*/);
+    vboxCmdVbvaCheckCompleted(pDevExt, NULL,  true /*fPingHost*/, pHGSMICtx, true /*fBufferOverflow*/, NULL);
 }
 
 int VBoxCmdVbvaCreate(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, ULONG offBuffer, ULONG cbBuffer)
@@ -1138,9 +1154,9 @@ bool VBoxCmdVbvaCheckCompletedIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva)
     return fHasCommandsCompletedPreempted;
 }
 
-uint32_t VBoxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, bool fPingHost)
+uint32_t VBoxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, bool fPingHost, uint32_t *pu32FenceSubmitted)
 {
-    return vboxCmdVbvaCheckCompleted(pDevExt, pVbva, fPingHost, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx, false /* fBufferOverflow */);
+    return vboxCmdVbvaCheckCompleted(pDevExt, pVbva, fPingHost, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx, false /* fBufferOverflow */, pu32FenceSubmitted);
 }
 
 #if 0
