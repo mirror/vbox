@@ -1385,5 +1385,17 @@ VBoxManage setextradata "VM name" VBoxInternal2/UgaVerticalResolution    900</sc
       <para>The video mode for both GOP and UGA can only be changed when the
       VM is powered off and remains persistent until changed.</para>
     </sect2>
+
+    <sect2 id="efibootargs">
+      <title>Specifying boot arguments</title>
+
+      <para>It is currently not possible to manipulate EFI variables from within a running guest
+      (e.g., setting the "boot-args" variable by running the <computeroutput>nvram</computeroutput> tool in a Mac OS X guest will not work).
+      As an alternative way, "VBoxInternal2/EfiBootArgs" extradata can be passed to a VM in order to set
+      the "boot-args" variable. To change the "boot-args" EFI variable:
+      <screen>VBoxManage setextradata "VM name" VBoxInternal2/EfiBootArgs &lt;value&gt;</screen>
+      </para>
+    </sect2>
+
   </sect1>
 </chapter>

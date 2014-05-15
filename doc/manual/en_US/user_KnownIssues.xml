@@ -225,6 +225,11 @@
                 messages by issuing this command:<screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" "  "</screen>To
                 revert to the previous behavior, use:<screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" ""</screen></para>
               </listitem>
+
+              <listitem>
+                <para>It is currently not possible to start a Mac OS X guest in safe mode by specifying "-x" option
+                in "VBoxInternal2/EfiBootArgs" extradata.</para>
+              </listitem>
             </itemizedlist></para>
         </listitem>
     
