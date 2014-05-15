@@ -379,23 +379,18 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
 
     /* Setup actions */
     mRestoreSnapshotAction->setIcon(UIIconPool::iconSetFull(
-        QSize (22, 22), QSize (16, 16),
         ":/snapshot_restore_22px.png", ":/snapshot_restore_16px.png",
         ":/snapshot_restore_disabled_22px.png", ":/snapshot_restore_disabled_16px.png"));
     mDeleteSnapshotAction->setIcon(UIIconPool::iconSetFull(
-        QSize (22, 22), QSize (16, 16),
         ":/snapshot_delete_22px.png", ":/snapshot_delete_16px.png",
         ":/snapshot_delete_disabled_22px.png", ":/snapshot_delete_disabled_16px.png"));
     mShowSnapshotDetailsAction->setIcon(UIIconPool::iconSetFull(
-        QSize (22, 22), QSize (16, 16),
         ":/snapshot_show_details_22px.png", ":/snapshot_show_details_16px.png",
         ":/snapshot_show_details_disabled_22px.png", ":/snapshot_details_show_disabled_16px.png"));
     mTakeSnapshotAction->setIcon(UIIconPool::iconSetFull(
-        QSize (22, 22), QSize (16, 16),
         ":/snapshot_take_22px.png", ":/snapshot_take_16px.png",
         ":/snapshot_take_disabled_22px.png", ":/snapshot_take_disabled_16px.png"));
     mCloneSnapshotAction->setIcon(UIIconPool::iconSetFull(
-        QSize (22, 22), QSize (16, 16),
         ":/vm_clone_22px.png", ":/vm_clone_16px.png",
         ":/vm_clone_disabled_22px.png", ":/vm_clone_disabled_16px.png"));
 

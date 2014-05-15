@@ -151,11 +151,10 @@ protected:
 
     /* Constructors: */
     UIActionSimple(UIActionPool *pParent,
-                   const QString &strIcon = QString(), const QString &strIconDis = QString());
+                   const QString &strIcon = QString(), const QString &strIconDisabled = QString());
     UIActionSimple(UIActionPool *pParent,
-                   const QSize &normalSize, const QSize &smallSize,
-                   const QString &strNormalIcon, const QString &strSmallIcon,
-                   const QString &strNormalIconDis = QString(), const QString &strSmallIconDis = QString());
+                   const QString &strIconNormal, const QString &strIconSmall,
+                   const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
     UIActionSimple(UIActionPool *pParent,
                    const QIcon& icon);
 };
@@ -174,11 +173,10 @@ protected:
 
     /* Constructors: */
     UIActionState(UIActionPool *pParent,
-                  const QString &strIcon = QString(), const QString &strIconDis = QString());
+                  const QString &strIcon = QString(), const QString &strIconDisabled = QString());
     UIActionState(UIActionPool *pParent,
-                  const QSize &normalSize, const QSize &smallSize,
-                  const QString &strNormalIcon, const QString &strSmallIcon,
-                  const QString &strNormalIconDis = QString(), const QString &strSmallIconDis = QString());
+                  const QString &strIconNormal, const QString &strIconSmall,
+                  const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
     UIActionState(UIActionPool *pParent,
                   const QIcon& icon);
 
@@ -195,13 +193,10 @@ protected:
 
     /* Constructors: */
     UIActionToggle(UIActionPool *pParent,
-                   const QString &strIcon = QString(), const QString &strIconDis = QString());
+                   const QString &strIcon = QString(), const QString &strIconDisabled = QString());
     UIActionToggle(UIActionPool *pParent,
-                   const QSize &normalSize, const QSize &smallSize,
-                   const QString &strNormalIcon, const QString &strSmallIcon,
-                   const QString &strNormalIconDis = QString(), const QString &strSmallIconDis = QString());
-    UIActionToggle(UIActionPool *pParent,
-                   const QString &strIconOn, const QString &strIconOff, const QString &strIconOnDis, const QString &strIconOffDis);
+                   const QString &strIconOn, const QString &strIconOff,
+                   const QString &strIconOnDisabled, const QString &strIconOffDisabled);
     UIActionToggle(UIActionPool *pParent,
                    const QIcon &icon);
 
