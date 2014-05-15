@@ -551,7 +551,7 @@ int handleStorageAttach(HandlerArg *a)
 
             // find the medium given
             /* host drive? */
-            if (!RTStrNICmp(pszMedium, "host:", 5))
+            if (!RTStrNICmp(pszMedium, RT_STR_TUPLE("host:")))
             {
                 ComPtr<IHost> host;
                 CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
