@@ -1405,7 +1405,7 @@ static NTSTATUS vboxVidPnCofuncModalityForPathTarget(PVBOXVIDPNCOFUNCMODALITY pC
     D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet = NULL;
     const DXGK_VIDPNTARGETMODESET_INTERFACE *pNewVidPnTargetModeSetInterface;
 
-    Assert(VidPnSourceId == VidPnTargetId);
+    Assert(pDevExt->fCmdVbvaEnabled || VidPnSourceId == VidPnTargetId);
 
     D3DKMDT_HVIDPNSOURCEMODESET hCurVidPnSourceModeSet;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pCurVidPnSourceModeSetInterface;
@@ -1445,7 +1445,7 @@ static NTSTATUS vboxVidPnCofuncModalityForPathTarget(PVBOXVIDPNCOFUNCMODALITY pC
         if (NT_SUCCESS(Status))
         {
             Assert(hNewVidPnTargetModeSet);
-            Assert(VidPnSourceId == VidPnTargetId);
+            Assert(pDevExt->fCmdVbvaEnabled || VidPnSourceId == VidPnTargetId);
 //            if (VidPnSourceId == VidPnTargetId && pCbContext->apPathInfos[VidPnTargetId].enmState == VBOXVIDPNPATHITEM_STATE_PRESENT)
             {
                 for (uint32_t i = 0; i < pInfo->cResolutions; ++i)
@@ -1536,7 +1536,7 @@ static NTSTATUS vboxVidPnCofuncModalityForPathSource(PVBOXVIDPNCOFUNCMODALITY pC
     D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet = NULL;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pNewVidPnSourceModeSetInterface;
 
-    Assert(VidPnSourceId == VidPnTargetId);
+    Assert(pDevExt->fCmdVbvaEnabled || VidPnSourceId == VidPnTargetId);
 
     D3DKMDT_HVIDPNTARGETMODESET hCurVidPnTargetModeSet;
     const DXGK_VIDPNTARGETMODESET_INTERFACE *pCurVidPnTargetModeSetInterface;
@@ -1576,7 +1576,7 @@ static NTSTATUS vboxVidPnCofuncModalityForPathSource(PVBOXVIDPNCOFUNCMODALITY pC
         if (NT_SUCCESS(Status))
         {
             Assert(hNewVidPnSourceModeSet);
-            Assert(VidPnSourceId == VidPnTargetId);
+            Assert(pDevExt->fCmdVbvaEnabled || VidPnSourceId == VidPnTargetId);
 //            if (VidPnSourceId == VidPnTargetId && pCbContext->apPathInfos[VidPnSourceId].enmState == VBOXVIDPNPATHITEM_STATE_PRESENT)
             {
                 for (uint32_t i = 0; i < pInfo->cModes; ++i)
@@ -1740,9 +1740,9 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityPathEnum(D3DKMDT_HVIDPNTOPOLOGY hVi
     return Status == STATUS_SUCCESS;
 }
 
-static BOOLEAN vboxVidPnIsPathSupported(const D3DKMDT_VIDPN_PRESENT_PATH *pNewVidPnPresentPathInfo)
+static BOOLEAN vboxVidPnIsPathSupported(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_VIDPN_PRESENT_PATH *pNewVidPnPresentPathInfo)
 {
-    if (pNewVidPnPresentPathInfo->VidPnSourceId != pNewVidPnPresentPathInfo->VidPnTargetId)
+    if (!pDevExt->fCmdVbvaEnabled && pNewVidPnPresentPathInfo->VidPnSourceId != pNewVidPnPresentPathInfo->VidPnTargetId)
     {
         LOG(("unsupported source(%d)->target(%d) pair", pNewVidPnPresentPathInfo->VidPnSourceId, pNewVidPnPresentPathInfo->VidPnTargetId));
         return FALSE;
@@ -1865,11 +1865,10 @@ static BOOLEAN vboxVidPnIsPathSupported(const D3DKMDT_VIDPN_PRESENT_PATH *pNewVi
 
 typedef struct VBOXVIDPNGETPATHSINFO
 {
+    PVBOXMP_DEVEXT pDevExt;
     NTSTATUS Status;
     BOOLEAN fBreakOnDisabled;
     BOOLEAN fDisabledFound;
-    UINT cItems;
-    PVBOXVIDPNPATHITEM paItems;
 } VBOXVIDPNGETPATHSINFO, *PVBOXVIDPNGETPATHSINFO;
 
 static DECLCALLBACK(BOOLEAN) vboxVidPnCheckTopologyEnum(D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
@@ -1879,53 +1878,7 @@ static DECLCALLBACK(BOOLEAN) vboxVidPnCheckTopologyEnum(D3DKMDT_HVIDPNTOPOLOGY h
     NTSTATUS Status = STATUS_SUCCESS;
     CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId = pNewVidPnPresentPathInfo->VidPnSourceId;
     CONST D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId = pNewVidPnPresentPathInfo->VidPnTargetId;
-    BOOLEAN fDisabledFound = !vboxVidPnIsPathSupported(pNewVidPnPresentPathInfo);
-    do
-    {
-        if (fDisabledFound)
-        {
-            if (pCbContext->cItems > VidPnSourceId)
-            {
-                pCbContext->paItems[VidPnSourceId].enmState = VBOXVIDPNPATHITEM_STATE_DISABLED;
-            }
-            else
-            {
-                WARN(("cItems(%d) <= VidPnSourceId(%d)", pCbContext->cItems, VidPnSourceId));
-                Status = STATUS_BUFFER_OVERFLOW;
-                break;
-            }
-
-            if (pCbContext->cItems > VidPnTargetId)
-            {
-                pCbContext->paItems[VidPnTargetId].enmState = VBOXVIDPNPATHITEM_STATE_DISABLED;
-            }
-            else
-            {
-                WARN(("cItems(%d) <= VidPnTargetId(%d)", pCbContext->cItems, VidPnTargetId));
-                Status = STATUS_BUFFER_OVERFLOW;
-                break;
-            }
-
-            break;
-        }
-
-        /* VidPnSourceId == VidPnTargetId */
-        Assert(VidPnSourceId == VidPnTargetId);
-        if (pCbContext->cItems > VidPnSourceId)
-        {
-            if (pCbContext->paItems[VidPnSourceId].enmState != VBOXVIDPNPATHITEM_STATE_DISABLED)
-            {
-                Assert(pCbContext->paItems[VidPnSourceId].enmState == VBOXVIDPNPATHITEM_STATE_NOT_EXISTS);
-                pCbContext->paItems[VidPnSourceId].enmState = VBOXVIDPNPATHITEM_STATE_PRESENT;
-            }
-        }
-        else
-        {
-            WARN(("cItems(%d) <= VidPnSource/TargetId(%d)", pCbContext->cItems, VidPnSourceId));
-            Status = STATUS_BUFFER_OVERFLOW;
-            break;
-        }
-    } while (0);
+    BOOLEAN fDisabledFound = !vboxVidPnIsPathSupported(pCbContext->pDevExt, pNewVidPnPresentPathInfo);
 
     pCbContext->fDisabledFound |= fDisabledFound;
     pCbContext->Status = Status;
@@ -1937,21 +1890,14 @@ static DECLCALLBACK(BOOLEAN) vboxVidPnCheckTopologyEnum(D3DKMDT_HVIDPNTOPOLOGY h
 
 /* we currently support only 0 -> 0, 1 -> 1, 2 -> 2 paths, AND 0 -> 0 must be present
  * this routine disables all paths unsupported */
-NTSTATUS vboxVidPnCheckTopology(D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface, BOOLEAN *pfSupported)
+NTSTATUS VBoxVidPnCheckTopology(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface, BOOLEAN *pfSupported)
 {
-    VBOXVIDPNPATHITEM aItems[VBOX_VIDEO_MAX_SCREENS];
-    const uint32_t cItems = RT_ELEMENTS(aItems);
     UINT i;
-    for (i = 0; i < cItems; ++i)
-    {
-        aItems[i].enmState = VBOXVIDPNPATHITEM_STATE_NOT_EXISTS;
-    }
     VBOXVIDPNGETPATHSINFO CbContext = {0};
+    CbContext.pDevExt = pDevExt;
     CbContext.Status = STATUS_SUCCESS;
     CbContext.fBreakOnDisabled = FALSE;
     CbContext.fDisabledFound = FALSE;
-    CbContext.cItems = cItems;
-    CbContext.paItems = aItems;
     NTSTATUS Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface, vboxVidPnCheckTopologyEnum, &CbContext);
     if (!NT_SUCCESS(Status))
     {
