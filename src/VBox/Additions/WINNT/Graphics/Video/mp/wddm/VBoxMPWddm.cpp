@@ -4967,7 +4967,37 @@ DxgkDdiQueryCurrentFenceNew(
     vboxVDbgBreakF();
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
-    pCurrentFence->CurrentFence = VBoxCmdVbvaCheckCompleted(pDevExt, &pDevExt->CmdVbva, false);
+
+    WARN(("=>DxgkDdiQueryCurrentFenceNew"));
+
+    uint32_t u32FenceSubmitted = 0;
+    uint32_t u32FenceCompleted = 0;
+
+    LARGE_INTEGER DelayInterval;
+    DelayInterval.QuadPart = -10LL * 1000LL * 1000LL;
+
+    for (;;)
+    {
+        u32FenceCompleted = VBoxCmdVbvaCheckCompleted(pDevExt, &pDevExt->CmdVbva, false, &u32FenceSubmitted);
+        if (!u32FenceCompleted)
+        {
+            WARN(("VBoxCmdVbvaCheckCompleted failed"));
+            return STATUS_UNSUCCESSFUL;
+        }
+
+        if (u32FenceSubmitted == u32FenceCompleted)
+            break;
+
+        WARN(("uncompleted fences, u32FenceSubmitted(%d), u32FenceCompleted(%d)", u32FenceSubmitted, u32FenceCompleted));
+
+        NTSTATUS Status = KeDelayExecutionThread(KernelMode, FALSE, &DelayInterval);
+        if (Status != STATUS_SUCCESS)
+            WARN(("KeDelayExecutionThread failed %#x", Status));
+    }
+
+    pCurrentFence->CurrentFence = u32FenceCompleted;
+
+    WARN(("<=DxgkDdiQueryCurrentFenceNew"));
 
     LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
 
