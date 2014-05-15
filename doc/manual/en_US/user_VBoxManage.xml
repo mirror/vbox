@@ -937,9 +937,10 @@ Statistics update:  disabled</screen></para>
     </sect2>
 
     <sect2 id="vboxmanage-modifyvm-other">
-      <title>Serial port, audio, clipboard and USB settings</title>
+      <title>Miscellaneous settings</title>
 
-      <para>The following other hardware settings are available through
+      <para>The following other hardware settings, such as serial port, audio,
+      clipboard, drag'n drop, monitor and USB settings are available through
       <computeroutput>VBoxManage modifyvm</computeroutput>:<itemizedlist>
           <listitem>
             <para><computeroutput>--uart&lt;1-N&gt; off|&lt;I/O base&gt;
@@ -1007,9 +1008,18 @@ Statistics update:  disabled</screen></para>
           <listitem>
             <para><computeroutput>--clipboard
             disabled|hosttoguest|guesttohost|bidirectional</computeroutput>:
-            With this setting, you can select whether the guest operating
-            system's clipboard should be shared with the host; see <xref
-            linkend="generalsettings" />. This requires that the Guest
+            With this setting, you can select if and how the guest or host
+            operating system's clipboard should be shared with the host or guest;
+            see <xref linkend="generalsettings" />. This requires that the Guest
+            Additions be installed in the virtual machine.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--draganddrop
+            disabled|hosttoguest|guesttohost|bidirectional</computeroutput>:
+            With this setting, you can select the current drag'n drop mode
+            being used between the host and the virtual machine;
+            see <xref linkend="guestadd-dnd" />. This requires that the Guest
             Additions be installed in the virtual machine.</para>
           </listitem>
 
@@ -1031,6 +1041,8 @@ Statistics update:  disabled</screen></para>
             see <xref linkend="settings-usb" /> for details.</para>
           </listitem>
         </itemizedlist></para>
+
+        <!-- @todo r=andy Document tracing-* commands -->
     </sect2>
 
     <sect2 id="vboxmanage-modifyvm-vrde">
@@ -1047,6 +1059,8 @@ Statistics update:  disabled</screen></para>
             <xref linkend="vboxheadless" />), VRDE is enabled by
             default.</para>
           </listitem>
+
+          <!-- @todo r=andy Document vrdeproperty -->
 
           <listitem>
             <para><computeroutput>--vrdeport
@@ -1509,6 +1523,8 @@ Virtual system 0:
     VM's running state:</para>
 
     <itemizedlist>
+      <!-- @todo r=andy Document keyboardputscancode -->
+
       <listitem>
         <para>The <computeroutput>setlinkstate&lt;1-N&gt;</computeroutput>
         operation connects or disconnects virtual network cables from their
@@ -1533,6 +1549,43 @@ Virtual system 0:
       </listitem>
 
       <listitem>
+        <para>With the "nictrace" options, you can optionally trace
+        network traffic by dumping it to a file, for debugging
+        purposes.</para>
+
+        <para>With <computeroutput>--nictrace&lt;1-N&gt;
+        on|off</computeroutput>, you can enable network tracing for a
+        particular virtual network card.</para>
+
+        <para>If enabled, you must specify with
+        <computeroutput>--nictracefile&lt;1-N&gt;
+        &lt;filename&gt;</computeroutput> what file the trace should be
+        logged to.</para>
+      </listitem>
+
+      <!-- @todo r=andy Document nicpromisc -->
+
+      <listitem>
+        <para><computeroutput>nicproperty&lt;1-N&gt;
+        &lt;paramname&gt;="paramvalue"</computeroutput>:
+        This option, in combination with "nicgenericdrv" allows you to
+        pass parameters to rarely-used network backends.</para><para>
+        Those parameters are backend engine-specific, and are different
+        between UDP Tunnel and the VDE backend drivers. For example,
+        please see <xref linkend="network_udp_tunnel" />.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>The <computeroutput>guestmemoryballoon</computeroutput>
+        operation changes the size of the guest memory balloon, that is,
+        memory allocated by the VirtualBox Guest Additions from the guest
+        operating system and returned to the hypervisor for re-use by other
+        virtual machines. This must be specified in megabytes. For details,
+        see <xref linkend="guestadd-balloon" />.</para>
+      </listitem>
+
+      <listitem>
         <para><computeroutput>usbattach</computeroutput> and
         <computeroutput>usbdettach</computeroutput> make host USB devices
         visible to the virtual machine on the fly, without the need for
@@ -1541,6 +1594,24 @@ Virtual system 0:
 
         <para>You can use <computeroutput>VBoxManage list
         usbhost</computeroutput> to locate this information.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>clipboard
+        disabled|hosttoguest|guesttohost|bidirectional</computeroutput>:
+        With this setting, you can select if and how the guest or host
+        operating system's clipboard should be shared with the host or guest;
+        see <xref linkend="generalsettings" />. This requires that the Guest
+        Additions be installed in the virtual machine.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>draganddrop
+        disabled|hosttoguest|guesttohost|bidirectional</computeroutput>:
+        With this setting, you can select the current drag'n drop mode
+        being used between the host and the virtual machine;
+        see <xref linkend="guestadd-dnd" />. This requires that the Guest
+        Additions be installed in the virtual machine.</para>
       </listitem>
 
       <listitem>
@@ -1557,6 +1628,7 @@ Virtual system 0:
         linkend="vboxmanage-modifyvm-other" />.</para>
       </listitem>
 
+
       <listitem>
         <para><computeroutput>setvideomodehint</computeroutput> requests that
         the guest system change to a particular video mode. This requires that
@@ -1569,19 +1641,23 @@ Virtual system 0:
         of the guest display and saves it in PNG format.</para>
       </listitem>
 
+      <!-- @todo r=andy Document vcpenabled + vcpscreens! -->
+
       <listitem>
         <para>The <computeroutput>setcredentials</computeroutput> operation is
         used for remote logons in Windows guests. For details, please refer to
         <xref linkend="autologon" />.</para>
       </listitem>
 
+      <!-- @todo r=andy Document teleport! -->
+
       <listitem>
-        <para>The <computeroutput>guestmemoryballoon</computeroutput>
-        operation changes the size of the guest memory balloon, that is,
-        memory allocated by the VirtualBox Guest Additions from the guest
-        operating system and returned to the hypervisor for re-use by other
-        virtual machines. This must be specified in megabytes. For details,
-        see <xref linkend="guestadd-balloon" />.</para>
+        <para><computeroutput>--plugcpu|unplugcpu
+        &lt;id&gt;</computeroutput>: If CPU hot-plugging is enabled, this adds
+        a virtual CPU to the virtual machines (or removes one).
+        <computeroutput>&lt;id&gt;</computeroutput> specifies the index of
+        the virtual CPU to be added or removed and must be a number from 0
+        to the maximum no. of CPUs configured. CPU 0 can never be removed.</para>
       </listitem>
 
       <listitem>
@@ -1590,6 +1666,9 @@ Virtual system 0:
         time a virtual CPU can use. A value of 50 implies a single virtual CPU
         can use up to 50% of a single host CPU.</para>
       </listitem>
+
+      <!-- @todo r=andy Document webcam! -->
+
     </itemizedlist>
   </sect1>
 
@@ -2732,8 +2811,8 @@ Value: 2006.01.01</screen>
   <sect1 id="vboxmanage-guestcontrol">
     <title>VBoxManage guestcontrol</title>
 
-    <para>The "guestcontrol" commands allow you to control certain things
-    inside a guest from the host. Please see <xref
+    <para>The <computeroutput>guestcontrol</computeroutput> commands allow you
+    to control certain things inside a guest from the host. Please see <xref
     linkend="guestadd-guestcontrol" /> for an introduction.</para>
 
     <para>Generally, the syntax is as follows:</para>

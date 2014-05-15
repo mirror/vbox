@@ -1247,6 +1247,110 @@ $</screen>
     </sect2>
   </sect1>
 
+  <sect1 id="guestadd-dnd">
+    <title>Drag'n Drop</title>
+
+    <para>Starting with version 4.4, VirtualBox supports to drag'n drop content
+    from the host to the guest and vice versa. For this to work the latest Guest
+    Additions must be installed on the guest.</para>
+
+    <para>Drag'n drop transparently allows copying or opening files, directories
+    and even certain clipboard formats from one end to the other, e.g. from the
+    host to the guest or from the guest to the host. One then can perform drag'n
+    drop operations between the host and a VM as it would be a native drag'n drop
+    operation on the host OS.</para>
+
+    <para>At the moment drag'n drop is implemented for Windows- and X-Windows-based
+    systems, both, on host and guest side. As X-Windows sports different drag'n drop
+    protocols only the most used one, XDND, is supported for now. Applications using
+    other protocols (such as Motif or OffiX) will not be recognized by VirtualBox.</para>
+
+    <para>In context of using drag'n drop the origin of the data is called
+    <emphasis role="bold">source</emphasis>, that is, where the actual data comes
+    from and is specified. On the other hand there is the
+    <emphasis role="bold">target</emphasis>, which specifies where the data from
+    the source should go to. Transferring data from the source to the target can
+    be done in various ways, e.g. copying, moving or linking.<footnote><para>At
+    the moment VirtualBox only copying data is supported. Moving or linking from
+    data currently is not implemented yet.</para></footnote></para>
+
+    <para>When transferring data from the host to the guest OS, the host in this
+    case is the source, whereas the guest OS is the target. However, when doing
+    it the other way around, that is, transferring data from the guest OS to the
+    host, the guest OS this time became the source and the host is the target.</para>
+
+    <para>For security reasons drag'n drop can be configured at runtime
+    on a per-VM basis either using the "Drag'n'Drop" menu item in the "Devices" menu
+    of the virtual machine or VBoxManage: The following four modes are available:
+
+    <para><mediaobject>
+      <imageobject>
+        <imagedata align="center" fileref="images/dnd-modes.png"
+                   width="10cm" />
+        </imageobject>
+      </mediaobject></para>
+
+    <itemizedlist>
+      <listitem>
+        <para><emphasis role="bold">Disabled</emphasis> disables the drag'n drop
+        entirely. This is the default when creating new VMs.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">Host To Guest</emphasis> enables performing
+        drag'n drop operations from the host to the guest only.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">Guest To Host</emphasis> enables performing
+        drag'n drop operations from the guest to the host only.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">Bidirectional</emphasis> enables performing
+        drag'n drop operations to both directions, e.g. from the host to the guest
+        and vice versa.</para>
+      </listitem>
+    </itemizedlist></para>
+
+    <note><para>Drag'n drop support depends on the frontend being used; at the
+    moment only the VirtualBox Manager frontend provides this
+    functionality.</para></note>
+
+    <para>To use VBoxManage for controlling the current drag'n drop mode, see <xref
+    linkend="vboxmanage" />. The commands <computeroutput>modifyvm</computeroutput>
+    and <computeroutput>controlvm</computeroutput> allow setting the VM's current
+    drag'n drop mode via command line.</para>
+
+    <sect2 id="guestadd-dnd-formats">
+      <title>Supported formats</title>
+
+      <para>As VirtualBox can run on a variety of host OSes and also supports a wide
+      range of guests, certain data formats must be translated after those
+      got transfered over so that the target OS (that is, the side which receiving the
+      data) is able to handle them in an appropriate manner.</para>
+
+      <note><para>When dragging files however, no data conversion is done in any way, e.g.
+      when transferring a file from a Linux guest to a Windows host the Linux-specific
+      line endings won't be converted to Windows ones.</para></note>
+
+      <para>The following formats are handled by the VirtualBox drag'n drop service:
+        <itemizedlist>
+          <listitem>
+            <para><emphasis role="bold">Plain text</emphasis>, from applications such as
+            text editors, internet browsers and terminal windows</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Files</emphasis>, from file managers such
+            as Windows explorer, Nautilus and Finder</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Directories</emphasis>, where the same applies
+            as for files</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </sect2>
+
+  </sect1>
+
   <sect1 id="guestadd-video">
     <title>Hardware-accelerated graphics</title>
 
