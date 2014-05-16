@@ -341,6 +341,17 @@ VMMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag,
 
 /**
  * Duplicates a block of memory.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pvSrc       The source memory block to copy from.
+ * @param   cb          Size of the source memory block.
+ * @param   uAlignment  Required memory alignment in bytes.
+ *                      Values are 0,8,16,32,64 and PAGE_SIZE.
+ *                      0 -> default alignment, i.e. 8 bytes.
+ * @param   enmTag      The statistics tag.
+ * @param   ppv         Where to store the address to the allocated
+ *                      memory.
  */
 VMMDECL(int) MMHyperDupMem(PVM pVM, const void *pvSrc, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv)
 {

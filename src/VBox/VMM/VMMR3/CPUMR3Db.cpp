@@ -22,6 +22,7 @@
 #include <VBox/vmm/cpum.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/mm.h>
 
 #include <VBox/err.h>
 #include <iprt/asm-amd64-x86.h>
@@ -296,22 +297,49 @@ static uint32_t cpumR3MsrRangesBinSearch(PCCPUMMSRRANGE paMsrRanges, uint32_t cM
  *
  * @returns Pointer to the MSR ranges on success, NULL on failure.  On failure
  *          @a *ppaMsrRanges is freed and set to NULL.
+ * @param   pVM             Pointer to the VM, used as the heap selector.
+ *                          Passing NULL uses the host-context heap, otherwise
+ *                          the VM's hyper heap is used.
  * @param   ppaMsrRanges    The variable pointing to the ranges (input/output).
  * @param   cMsrRanges      The current number of ranges.
  * @param   cNewRanges      The number of ranges to be added.
  */
-static PCPUMMSRRANGE cpumR3MsrRangesEnsureSpace(PCPUMMSRRANGE *ppaMsrRanges, uint32_t cMsrRanges, uint32_t cNewRanges)
+static PCPUMMSRRANGE cpumR3MsrRangesEnsureSpace(PVM pVM, PCPUMMSRRANGE *ppaMsrRanges, uint32_t cMsrRanges, uint32_t cNewRanges)
 {
     uint32_t cMsrRangesAllocated = RT_ALIGN_32(cMsrRanges, 16);
     if (cMsrRangesAllocated < cMsrRanges + cNewRanges)
     {
+        void    *pvNew;
         uint32_t cNew = RT_ALIGN_32(cMsrRanges + cNewRanges, 16);
-        void *pvNew = RTMemRealloc(*ppaMsrRanges, cNew * sizeof(**ppaMsrRanges));
-        if (!pvNew)
+        if (pVM)
         {
-            RTMemFree(*ppaMsrRanges);
-            *ppaMsrRanges = NULL;
-            return NULL;
+            Assert(ppaMsrRanges == &pVM->cpum.s.GuestInfo.paMsrRangesR3);
+            Assert(cMsrRanges   == pVM->cpum.s.GuestInfo.cMsrRanges);
+
+            size_t cb    = cMsrRangesAllocated * sizeof(**ppaMsrRanges);
+            size_t cbNew = cNew * sizeof(**ppaMsrRanges);
+            int rc = MMR3HyperRealloc(pVM, *ppaMsrRanges, cb, 32, MM_TAG_CPUM_MSRS, cbNew, &pvNew);
+            if (RT_FAILURE(rc))
+            {
+                *ppaMsrRanges = NULL;
+                pVM->cpum.s.GuestInfo.paMsrRangesR0 = NIL_RTR0PTR;
+                pVM->cpum.s.GuestInfo.paMsrRangesRC = NIL_RTRCPTR;
+                return NULL;
+            }
+
+            pVM->cpum.s.GuestInfo.paMsrRangesR0 = MMHyperR3ToR0(pVM, *ppaMsrRanges);
+            pVM->cpum.s.GuestInfo.paMsrRangesR0 = MMHyperR3ToRC(pVM, *ppaMsrRanges);
+            /** @todo Update R0 and RC pointers here?  */
+        }
+        else
+        {
+            pvNew = RTMemRealloc(*ppaMsrRanges, cNew * sizeof(**ppaMsrRanges));
+            if (!pvNew)
+            {
+                RTMemFree(*ppaMsrRanges);
+                *ppaMsrRanges = NULL;
+                return NULL;
+            }
         }
         *ppaMsrRanges = (PCPUMMSRRANGE)pvNew;
     }
@@ -329,11 +357,16 @@ static PCPUMMSRRANGE cpumR3MsrRangesEnsureSpace(PCPUMMSRRANGE *ppaMsrRanges, uin
  * @retval  VINF_SUCCESS
  * @retval  VERR_NO_MEMORY
  *
+ * @param   pVM             Pointer to the VM, used as the heap selector.
+ *                          Passing NULL uses the host-context heap, otherwise
+ *                          the hyper heap.
  * @param   ppaMsrRanges    The variable pointing to the ranges (input/output).
- * @param   pcMsrRanges     The variable holding number of ranges.
+ *                          Must be NULL if using the hyper heap.
+ * @param   pcMsrRanges     The variable holding number of ranges. Must be NULL
+ *                          if using the hyper heap.
  * @param   pNewRange       The new range.
  */
-int cpumR3MsrRangesInsert(PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PCCPUMMSRRANGE pNewRange)
+int cpumR3MsrRangesInsert(PVM pVM, PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PCCPUMMSRRANGE pNewRange)
 {
     uint32_t        cMsrRanges  = *pcMsrRanges;
     PCPUMMSRRANGE   paMsrRanges = *ppaMsrRanges;
@@ -343,12 +376,24 @@ int cpumR3MsrRangesInsert(PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PC
     Assert(pNewRange->enmWrFn > kCpumMsrWrFn_Invalid && pNewRange->enmWrFn < kCpumMsrWrFn_End);
 
     /*
+     * Validate and use the VM's MSR ranges array if we are using the hyper heap.
+     */
+    if (pVM)
+    {
+        AssertReturn(!ppaMsrRanges, VERR_INVALID_PARAMETER);
+        AssertReturn(!pcMsrRanges,  VERR_INVALID_PARAMETER);
+
+        ppaMsrRanges = &pVM->cpum.s.GuestInfo.paMsrRangesR3;
+        pcMsrRanges  = &pVM->cpum.s.GuestInfo.cMsrRanges;
+    }
+
+    /*
      * Optimize the linear insertion case where we add new entries at the end.
      */
     if (   cMsrRanges > 0
         && paMsrRanges[cMsrRanges - 1].uLast < pNewRange->uFirst)
     {
-        paMsrRanges = cpumR3MsrRangesEnsureSpace(ppaMsrRanges, cMsrRanges, 1);
+        paMsrRanges = cpumR3MsrRangesEnsureSpace(pVM, ppaMsrRanges, cMsrRanges, 1);
         if (!paMsrRanges)
             return VERR_NO_MEMORY;
         paMsrRanges[cMsrRanges] = *pNewRange;
@@ -366,7 +411,7 @@ int cpumR3MsrRangesInsert(PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PC
         if (   i >= cMsrRanges
             || pNewRange->uLast < paMsrRanges[i].uFirst)
         {
-            paMsrRanges = cpumR3MsrRangesEnsureSpace(ppaMsrRanges, cMsrRanges, 1);
+            paMsrRanges = cpumR3MsrRangesEnsureSpace(pVM, ppaMsrRanges, cMsrRanges, 1);
             if (!paMsrRanges)
                 return VERR_NO_MEMORY;
             if (i < cMsrRanges)
@@ -386,7 +431,7 @@ int cpumR3MsrRangesInsert(PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PC
         else if (   pNewRange->uFirst > paMsrRanges[i].uFirst
                  && pNewRange->uLast  < paMsrRanges[i].uLast)
         {
-            paMsrRanges = cpumR3MsrRangesEnsureSpace(ppaMsrRanges, cMsrRanges, 2);
+            paMsrRanges = cpumR3MsrRangesEnsureSpace(pVM, ppaMsrRanges, cMsrRanges, 2);
             if (!paMsrRanges)
                 return VERR_NO_MEMORY;
             if (i < cMsrRanges)
@@ -446,7 +491,7 @@ int cpumR3MsrRangesInsert(PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PC
             }
 
             /* Now, perform a normal insertion. */
-            paMsrRanges = cpumR3MsrRangesEnsureSpace(ppaMsrRanges, cMsrRanges, 1);
+            paMsrRanges = cpumR3MsrRangesEnsureSpace(pVM, ppaMsrRanges, cMsrRanges, 1);
             if (!paMsrRanges)
                 return VERR_NO_MEMORY;
             if (i < cMsrRanges)
@@ -474,7 +519,7 @@ static int cpumR3MsrApplyFudgeTable(PVM pVM, PCCPUMMSRRANGE paRanges, size_t cRa
         if (!cpumLookupMsrRange(pVM, paRanges[i].uFirst))
         {
             LogRel(("CPUM: MSR fudge: %#010x %s\n", paRanges[i].uFirst, paRanges[i].szName));
-            int rc = cpumR3MsrRangesInsert(&pVM->cpum.s.GuestInfo.paMsrRangesR3, &pVM->cpum.s.GuestInfo.cMsrRanges,
+            int rc = cpumR3MsrRangesInsert(pVM, &pVM->cpum.s.GuestInfo.paMsrRangesR3, &pVM->cpum.s.GuestInfo.cMsrRanges,
                                            &paRanges[i]);
             if (RT_FAILURE(rc))
                 return rc;
@@ -693,7 +738,7 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
     uint32_t        cLeft   = pEntry->cMsrRanges;
     while (cLeft-- > 0)
     {
-        rc = cpumR3MsrRangesInsert(&paMsrs, &cMsrs, pCurMsr);
+        rc = cpumR3MsrRangesInsert(NULL /* pVM */, &paMsrs, &cMsrs, pCurMsr);
         if (RT_FAILURE(rc))
         {
             Assert(!paMsrs); /* The above function frees this. */
@@ -708,6 +753,24 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
     pInfo->cMsrRanges      = cMsrs;
     return VINF_SUCCESS;
 }
+
+
+#if 0
+/**
+ * Insert an MSR range into the VM.
+ *
+ * If the new MSR range overlaps existing ranges, the existing ones will be
+ * adjusted/removed to fit in the new one.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   pNewRange           Pointer to the MSR range being inserted.
+ */
+VMMR3DECL(int) CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange)
+{
+    return cpumR3MsrRangesInsert(pVM, NULL /* ppaMsrRanges */, NULL /* pcMsrRanges */, pNewRange);
+}
+#endif
 
 
 /**

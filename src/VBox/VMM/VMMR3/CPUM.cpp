@@ -775,7 +775,8 @@ static int cpumR3LoadMsrOverrides(PVM pVM, PCFGMNODE pMsrNode)
          * Insert the range into the table (replaces/splits/shrinks existing
          * MSR ranges).
          */
-        rc = cpumR3MsrRangesInsert(&pVM->cpum.s.GuestInfo.paMsrRangesR3, &pVM->cpum.s.GuestInfo.cMsrRanges, &MsrRange);
+        rc = cpumR3MsrRangesInsert(NULL /* pVM */, &pVM->cpum.s.GuestInfo.paMsrRangesR3, &pVM->cpum.s.GuestInfo.cMsrRanges,
+                                   &MsrRange);
         if (RT_FAILURE(rc))
             return VMSetError(pVM, rc, RT_SRC_POS, "Error adding MSR entry '%s': %Rrc\n", MsrRange.szName, rc);
     }
@@ -869,7 +870,8 @@ static int cpumR3LoadCpuIdOverrides(PVM pVM, PCFGMNODE pParentNode, const char *
         /*
          * Insert the leaf into the table (replaces existing ones).
          */
-        rc = cpumR3CpuIdInsert(&pVM->cpum.s.GuestInfo.paCpuIdLeavesR3, &pVM->cpum.s.GuestInfo.cCpuIdLeaves, &Leaf);
+        rc = cpumR3CpuIdInsert(NULL /* pVM */, &pVM->cpum.s.GuestInfo.paCpuIdLeavesR3, &pVM->cpum.s.GuestInfo.cCpuIdLeaves,
+                               &Leaf);
         if (RT_FAILURE(rc))
             return VMSetError(pVM, rc, RT_SRC_POS, "Error adding CPUID leaf entry '%s': %Rrc\n", szName, rc);
     }
@@ -975,6 +977,7 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCPUM, PCPUMCPUIDLE
                            MM_TAG_CPUM_CPUID, (void **)&pCPUM->GuestInfo.paCpuIdLeavesR3);
 
     AssertLogRelRCReturn(rc, rc);
+
 
     pCPUM->GuestInfo.paCpuIdLeavesR0 = MMHyperR3ToR0(pVM, pCPUM->GuestInfo.paCpuIdLeavesR3);
     pCPUM->GuestInfo.paCpuIdLeavesRC = MMHyperR3ToRC(pVM, pCPUM->GuestInfo.paCpuIdLeavesR3);
@@ -1466,7 +1469,7 @@ static int cpumR3CpuIdInit(PVM pVM)
             NewLeaf.uEax |= ((pVM->cCpus - 1) << 26);   /* 6 bits only -> 64 cores! */
         }
 #endif
-        rc = cpumR3CpuIdInsert(&pCPUM->GuestInfo.paCpuIdLeavesR3, &pCPUM->GuestInfo.cCpuIdLeaves, &NewLeaf);
+        rc = cpumR3CpuIdInsert(NULL /* pVM */, &pCPUM->GuestInfo.paCpuIdLeavesR3, &pCPUM->GuestInfo.cCpuIdLeaves, &NewLeaf);
         AssertLogRelRCReturn(rc, rc);
     }
 
@@ -1667,7 +1670,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     NewLeaf.uEcx         = 0x786f4256 /* 'VBox' */;
     NewLeaf.uEdx         = 0x786f4256 /* 'VBox' */;
     NewLeaf.fFlags       = 0;
-    rc = cpumR3CpuIdInsert(&pCPUM->GuestInfo.paCpuIdLeavesR3, &pCPUM->GuestInfo.cCpuIdLeaves, &NewLeaf);
+    rc = cpumR3CpuIdInsert(NULL /* pVM */, &pCPUM->GuestInfo.paCpuIdLeavesR3, &pCPUM->GuestInfo.cCpuIdLeaves, &NewLeaf);
     AssertLogRelRCReturn(rc, rc);
 
     NewLeaf.uLeaf        = UINT32_C(0x40000001);
@@ -1676,7 +1679,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     NewLeaf.uEcx         = 0;
     NewLeaf.uEdx         = 0;
     NewLeaf.fFlags       = 0;
-    rc = cpumR3CpuIdInsert(&pCPUM->GuestInfo.paCpuIdLeavesR3, &pCPUM->GuestInfo.cCpuIdLeaves, &NewLeaf);
+    rc = cpumR3CpuIdInsert(NULL /* pVM */, &pCPUM->GuestInfo.paCpuIdLeavesR3, &pCPUM->GuestInfo.cCpuIdLeaves, &NewLeaf);
     AssertLogRelRCReturn(rc, rc);
 
     /*
@@ -2067,7 +2070,7 @@ static int cpumR3LoadCpuIdOneGuestArray(PSSMHANDLE pSSM, uint32_t uBase, PCPUMCP
                 NewLeaf.uEcx            = CpuId.ecx;
                 NewLeaf.uEdx            = CpuId.edx;
                 NewLeaf.fFlags          = 0;
-                rc = cpumR3CpuIdInsert(ppaLeaves, pcLeaves, &NewLeaf);
+                rc = cpumR3CpuIdInsert(NULL /* pVM */, ppaLeaves, pcLeaves, &NewLeaf);
             }
         }
         else
@@ -4716,3 +4719,4 @@ VMMR3DECL(void) CPUMR3LogCpuIds(PVM pVM)
     RTLogRelSetBuffering(fOldBuffered);
     LogRel(("******************** End of CPUID dump **********************\n"));
 }
+

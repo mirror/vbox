@@ -22,6 +22,7 @@
 #include <VBox/vmm/cpum.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/mm.h>
 
 #include <VBox/err.h>
 #include <iprt/asm-amd64-x86.h>
@@ -552,21 +553,54 @@ bool cpumR3CpuIdGetLeafLegacy(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, uint32_
  *
  * @returns Pointer to the CPUID leaf array (*ppaLeaves) on success.  NULL on
  *          failure.
- * @param   ppaLeaves           Pointer to the variable holding the array
- *                              pointer (input/output).
- * @param   cLeaves             The current array size.
+ * @param   pVM         Pointer to the VM, used as the heap selector. Passing
+ *                      NULL uses the host-context heap, otherwise the VM's
+ *                      hyper heap is used.
+ * @param   ppaLeaves   Pointer to the variable holding the array pointer
+ *                      (input/output).
+ * @param   cLeaves     The current array size.
+ *
+ * @remarks This function will automatically update the R0 and RC pointers when
+ *          using the hyper heap, which means @a ppaLeaves and @a cLeaves must
+ *          be the corresponding VM's CPUID arrays (which is asserted).
  */
-static PCPUMCPUIDLEAF cpumR3CpuIdEnsureSpace(PCPUMCPUIDLEAF *ppaLeaves, uint32_t cLeaves)
+static PCPUMCPUIDLEAF cpumR3CpuIdEnsureSpace(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t cLeaves)
 {
     uint32_t cAllocated = RT_ALIGN(cLeaves, 16);
     if (cLeaves + 1 > cAllocated)
     {
-        void *pvNew = RTMemRealloc(*ppaLeaves, (cAllocated + 16) * sizeof(**ppaLeaves));
-        if (!pvNew)
+        void *pvNew;
+#ifndef IN_VBOX_CPU_REPORT
+        if (pVM)
         {
-            RTMemFree(*ppaLeaves);
-            *ppaLeaves = NULL;
-            return NULL;
+            Assert(ppaLeaves == &pVM->cpum.s.GuestInfo.paCpuIdLeavesR3);
+            Assert(cLeaves == pVM->cpum.s.GuestInfo.cCpuIdLeaves);
+
+            size_t cb    = cAllocated * sizeof(**ppaLeaves);
+            size_t cbNew = (cAllocated + 16) * sizeof(**ppaLeaves);
+            int rc = MMR3HyperRealloc(pVM, *ppaLeaves, cb, 32, MM_TAG_CPUM_CPUID, cbNew, &pvNew);
+            if (RT_FAILURE(rc))
+            {
+                *ppaLeaves = NULL;
+                pVM->cpum.s.GuestInfo.paCpuIdLeavesR0 = NIL_RTR0PTR;
+                pVM->cpum.s.GuestInfo.paCpuIdLeavesRC = NIL_RTRCPTR;
+                return NULL;
+            }
+
+            /* Update the R0 and RC pointers. */
+            pVM->cpum.s.GuestInfo.paCpuIdLeavesR0 = MMHyperR3ToR0(pVM, *ppaLeaves);
+            pVM->cpum.s.GuestInfo.paCpuIdLeavesRC = MMHyperR3ToRC(pVM, *ppaLeaves);
+        }
+        else
+#endif
+        {
+            pvNew = RTMemRealloc(*ppaLeaves, (cAllocated + 16) * sizeof(**ppaLeaves));
+            if (!pvNew)
+            {
+                RTMemFree(*ppaLeaves);
+                *ppaLeaves = NULL;
+                return NULL;
+            }
         }
         *ppaLeaves   = (PCPUMCPUIDLEAF)pvNew;
     }
@@ -578,7 +612,7 @@ static PCPUMCPUIDLEAF cpumR3CpuIdEnsureSpace(PCPUMCPUIDLEAF *ppaLeaves, uint32_t
  * Append a CPUID leaf or sub-leaf.
  *
  * ASSUMES linear insertion order, so we'll won't need to do any searching or
- * replace anything.  Use cpumR3CpuIdInsert for those cases.
+ * replace anything.  Use cpumR3CpuIdInsert() for those cases.
  *
  * @returns VINF_SUCCESS or VERR_NO_MEMORY.  On error, *ppaLeaves is freed, so
  *          the caller need do no more work.
@@ -598,7 +632,7 @@ static int cpumR3CollectCpuIdInfoAddOne(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
                                         uint32_t uLeaf, uint32_t uSubLeaf, uint32_t fSubLeafMask,
                                         uint32_t uEax, uint32_t uEbx, uint32_t uEcx, uint32_t uEdx, uint32_t fFlags)
 {
-    if (!cpumR3CpuIdEnsureSpace(ppaLeaves, *pcLeaves))
+    if (!cpumR3CpuIdEnsureSpace(NULL /* pVM */, ppaLeaves, *pcLeaves))
         return VERR_NO_MEMORY;
 
     PCPUMCPUIDLEAF pNew = &(*ppaLeaves)[*pcLeaves];
@@ -626,20 +660,38 @@ static int cpumR3CollectCpuIdInfoAddOne(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
  * When inserting a simple leaf where we already got a series of subleaves with
  * the same leaf number (eax), the simple leaf will replace the whole series.
  *
- * This ASSUMES that the leave array is still on the normal heap and has only
- * been allocated/reallocated by the cpumR3CpuIdEnsureSpace function.
+ * When pVM is NULL, this ASSUMES that the leaves array is still on the normal
+ * host-context heap and has only been allocated/reallocated by the
+ * cpumR3CpuIdEnsureSpace function.
  *
  * @returns VBox status code.
+ * @param   pVM             Pointer to the VM, used as the heap selector.
+ *                          Passing NULL uses the host-context heap, otherwise
+ *                          the VM's hyper heap is used.
  * @param   ppaLeaves       Pointer to the the pointer to the array of sorted
- *                          CPUID leaves and sub-leaves.
- * @param   pcLeaves        Where we keep the leaf count for *ppaLeaves.
+ *                          CPUID leaves and sub-leaves. Must be NULL if using
+ *                          the hyper heap.
+ * @param   pcLeaves        Where we keep the leaf count for *ppaLeaves. Must be
+ *                          NULL if using the hyper heap.
  * @param   pNewLeaf        Pointer to the data of the new leaf we're about to
  *                          insert.
  */
-int cpumR3CpuIdInsert(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves, PCPUMCPUIDLEAF pNewLeaf)
+int cpumR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves, PCPUMCPUIDLEAF pNewLeaf)
 {
     PCPUMCPUIDLEAF  paLeaves = *ppaLeaves;
     uint32_t        cLeaves  = *pcLeaves;
+
+    /*
+     * Validate input parameters if we are using the hyper heap and use the VM's CPUID arrays.
+     */
+    if (pVM)
+    {
+        AssertReturn(!ppaLeaves, VERR_INVALID_PARAMETER);
+        AssertReturn(!pcLeaves, VERR_INVALID_PARAMETER);
+
+        ppaLeaves = &pVM->cpum.s.GuestInfo.paCpuIdLeavesR3;
+        pcLeaves  = &pVM->cpum.s.GuestInfo.cCpuIdLeaves;
+    }
 
     /*
      * Validate the new leaf a little.
@@ -648,7 +700,6 @@ int cpumR3CpuIdInsert(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves, PCPUMCPUIDL
     AssertReturn(pNewLeaf->fSubLeafMask != 0 || pNewLeaf->uSubLeaf == 0, VERR_INVALID_PARAMETER);
     AssertReturn(RT_IS_POWER_OF_TWO(pNewLeaf->fSubLeafMask + 1), VERR_INVALID_PARAMETER);
     AssertReturn((pNewLeaf->fSubLeafMask & pNewLeaf->uSubLeaf) == pNewLeaf->uSubLeaf, VERR_INVALID_PARAMETER);
-
 
     /*
      * Find insertion point. The lazy bird uses the same excuse as in
@@ -700,7 +751,7 @@ int cpumR3CpuIdInsert(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves, PCPUMCPUIDL
     /*
      * Adding a new leaf at 'i'.
      */
-    paLeaves = cpumR3CpuIdEnsureSpace(ppaLeaves, cLeaves);
+    paLeaves = cpumR3CpuIdEnsureSpace(pVM, ppaLeaves, cLeaves);
     if (!paLeaves)
         return VERR_NO_MEMORY;
 
@@ -863,6 +914,23 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
     *pcSubLeaves = uSubLeaf + 1 - cRepeats;
     return true;
 }
+
+
+#if 0
+/**
+ * Inserts a CPU ID leaf, replacing any existing ones.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pNewLeaf    Pointer to the leaf being inserted.
+ */
+VMMR3DECL(int) CPUMR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF pNewLeaf)
+{
+    /** @todo Should we disallow here inserting/replacing the standard leaves that
+     *        PATM relies on? See @bugref{7270}. */
+    return cpumR3CpuIdInsert(pVM, NULL /* ppaLeaves */, NULL /* pcLeaves */, pNewLeaf);
+}
+#endif
 
 
 /**
