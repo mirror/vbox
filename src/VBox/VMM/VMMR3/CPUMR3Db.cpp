@@ -519,7 +519,7 @@ static int cpumR3MsrApplyFudgeTable(PVM pVM, PCCPUMMSRRANGE paRanges, size_t cRa
         if (!cpumLookupMsrRange(pVM, paRanges[i].uFirst))
         {
             LogRel(("CPUM: MSR fudge: %#010x %s\n", paRanges[i].uFirst, paRanges[i].szName));
-            int rc = cpumR3MsrRangesInsert(pVM /* NULL */, &pVM->cpum.s.GuestInfo.paMsrRangesR3, &pVM->cpum.s.GuestInfo.cMsrRanges,
+            int rc = cpumR3MsrRangesInsert(NULL /* pVM */, &pVM->cpum.s.GuestInfo.paMsrRangesR3, &pVM->cpum.s.GuestInfo.cMsrRanges,
                                            &paRanges[i]);
             if (RT_FAILURE(rc))
                 return rc;
