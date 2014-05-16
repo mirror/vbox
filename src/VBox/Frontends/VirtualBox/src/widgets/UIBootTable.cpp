@@ -23,6 +23,7 @@
 /* Local includes */
 #include "UIBootTable.h"
 #include "UIConverter.h"
+#include "UIIconPool.h"
 
 UIBootTableItem::UIBootTableItem(KDeviceType type)
   : m_type(type)
@@ -30,26 +31,10 @@ UIBootTableItem::UIBootTableItem(KDeviceType type)
     setCheckState(Qt::Unchecked);
     switch(type)
     {
-        case KDeviceType_Floppy:
-        {
-            setIcon(QIcon(":fd_16px.png"));
-            break;
-        }
-        case KDeviceType_DVD:
-        {
-            setIcon(QIcon(":cd_16px.png"));
-            break;
-        }
-        case KDeviceType_HardDisk:
-        {
-            setIcon(QIcon(":hd_16px.png"));
-            break;
-        }
-        case KDeviceType_Network:
-        {
-            setIcon(QIcon(":nw_16px.png"));
-            break;
-        }
+        case KDeviceType_Floppy:   setIcon(UIIconPool::iconSet(":/fd_16px.png")); break;
+        case KDeviceType_DVD:      setIcon(UIIconPool::iconSet(":/cd_16px.png")); break;
+        case KDeviceType_HardDisk: setIcon(UIIconPool::iconSet(":/hd_16px.png")); break;
+        case KDeviceType_Network:  setIcon(UIIconPool::iconSet(":/nw_16px.png")); break;
     }
     retranslateUi();
 }
