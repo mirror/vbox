@@ -1378,6 +1378,7 @@ HRESULT CDECL wined3d_device_uninit_3d(struct wined3d_device *device)
     /* Destroy the shader backend. Note that this has to happen after all shaders are destroyed. */
     device->blitter->free_private(device);
     device->shader_backend->shader_free_private(device);
+    destroy_dummy_textures(device, gl_info);
 
     /* Release the buffers (with sanity checks)*/
     if (device->onscreen_depth_stencil)
@@ -5119,11 +5120,7 @@ HRESULT CDECL wined3d_device_reset(struct wined3d_device *device,
     }
     else if (swapchain_desc->windowed)
     {
-        m.width = swapchain->orig_width;
-        m.height = swapchain->orig_height;
-        m.refresh_rate = 0;
-        m.format_id = swapchain->desc.backbuffer_format;
-        m.scanline_ordering = WINED3D_SCANLINE_ORDERING_UNKNOWN;
+        m = swapchain->original_mode;
     }
     else
     {

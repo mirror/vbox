@@ -841,6 +841,8 @@ static BOOL context_set_gl_context(struct wined3d_context *ctx)
             context_set_current(NULL);
             return FALSE;
         }
+
+        ctx->valid = 1;
 #else
         return FALSE;
 #endif
@@ -1029,29 +1031,9 @@ static void context_update_window(struct wined3d_context *context
             context, context->win_handle, context->swapchain->win_handle);
 
     if (context->valid)
-    {
-        /* You'd figure ReleaseDC() would fail if the DC doesn't match the
-         * window. However, that's not what actually happens, and there are
-         * user32 tests that confirm ReleaseDC() with the wrong window is
-         * supposed to succeed. So explicitly check that the DC belongs to
-         * the window, since we want to avoid releasing a DC that belongs to
-         * some other window if the original window was already destroyed. */
-        if (WindowFromDC(context->hdc) != context->win_handle)
-        {
-            WARN("DC %p does not belong to window %p.\n",
-                    context->hdc, context->win_handle);
-        }
-#ifndef VBOX
-        else if (!ReleaseDC(context->win_handle, context->hdc))
-#else
-        else if (!VBoxExtReleaseDC(context->win_handle, context->hdc))
-#endif
-        {
-            ERR("Failed to release device context %p, last error %#x.\n",
-                    context->hdc, GetLastError());
-        }
-    }
-    else context->valid = 1;
+        wined3d_release_dc(context->win_handle, context->hdc);
+    else
+        context->valid = 1;
 
     context->win_handle = context->swapchain->win_handle;
 
@@ -1210,7 +1192,7 @@ static void context_destroy_gl_resources(struct wined3d_context *context)
 #ifndef VBOX_WITH_WDDM
 # ifndef VBOX_WINE_WITH_SINGLE_CONTEXT
 #  ifndef VBOX
-    ReleaseDC(context->win_handle, context->hdc);
+    wined3d_release_dc(context->win_handle, context->hdc);
 #  else
     VBoxExtReleaseDC(context->win_handle, context->hdc);
 #  endif

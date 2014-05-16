@@ -145,6 +145,7 @@ static const struct wined3d_extension_map gl_extension_map[] =
     {"GL_ARB_texture_env_dot3",             ARB_TEXTURE_ENV_DOT3          },
     {"GL_ARB_texture_float",                ARB_TEXTURE_FLOAT             },
     {"GL_ARB_texture_mirrored_repeat",      ARB_TEXTURE_MIRRORED_REPEAT   },
+    {"GL_ARB_texture_mirror_clamp_to_edge", ARB_TEXTURE_MIRROR_CLAMP_TO_EDGE},
 #ifdef VBOX_WITH_WINE_FIX_IBMTMR
     {"GL_IBM_texture_mirrored_repeat",      ARB_TEXTURE_MIRRORED_REPEAT   },
 #endif
@@ -193,6 +194,7 @@ static const struct wined3d_extension_map gl_extension_map[] =
     {"GL_EXT_texture_env_dot3",             EXT_TEXTURE_ENV_DOT3          },
     {"GL_EXT_texture_filter_anisotropic",   EXT_TEXTURE_FILTER_ANISOTROPIC},
     {"GL_EXT_texture_lod_bias",             EXT_TEXTURE_LOD_BIAS          },
+    {"GL_EXT_texture_mirror_clamp",         EXT_TEXTURE_MIRROR_CLAMP      },
     {"GL_EXT_texture_sRGB",                 EXT_TEXTURE_SRGB              },
     {"GL_EXT_texture_sRGB_decode",          EXT_TEXTURE_SRGB_DECODE       },
     {"GL_EXT_vertex_array_bgra",            EXT_VERTEX_ARRAY_BGRA         },
@@ -306,7 +308,7 @@ static void WineD3D_ReleaseFakeGLContext(const struct wined3d_fake_gl_ctx *ctx)
         ERR("wglDeleteContext(%p) failed, last error %#x.\n", ctx->gl_ctx, err);
     }
 
-    ReleaseDC(ctx->wnd, ctx->dc);
+    wined3d_release_dc(ctx->wnd, ctx->dc);
     DestroyWindow(ctx->wnd);
 
     if (ctx->restore_gl_ctx && !wglMakeCurrent(ctx->restore_dc, ctx->restore_gl_ctx))
@@ -1369,11 +1371,13 @@ static const struct gpu_description gpu_description_table[] =
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX650,     "NVIDIA GeForce GTX 650",           DRIVER_NVIDIA_GEFORCE6,  1024},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX650TI,   "NVIDIA GeForce GTX 650 Ti",        DRIVER_NVIDIA_GEFORCE6,  1024},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX660,     "NVIDIA GeForce GTX 660",           DRIVER_NVIDIA_GEFORCE6,  2048},
+    {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX660M,    "NVIDIA GeForce GTX 660M",          DRIVER_NVIDIA_GEFORCE6,  2048},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX660TI,   "NVIDIA GeForce GTX 660 Ti",        DRIVER_NVIDIA_GEFORCE6,  2048},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX670,     "NVIDIA GeForce GTX 670",           DRIVER_NVIDIA_GEFORCE6,  2048},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX670MX,   "NVIDIA GeForce GTX 670MX",         DRIVER_NVIDIA_GEFORCE6,  3072},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX680,     "NVIDIA GeForce GTX 680",           DRIVER_NVIDIA_GEFORCE6,  2048},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX770M,    "NVIDIA GeForce GTX 770M",          DRIVER_NVIDIA_GEFORCE6,  3072},
+    {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX770,     "NVIDIA GeForce GTX 770",           DRIVER_NVIDIA_GEFORCE6,  2048},
 
     /* AMD cards */
     {HW_VENDOR_AMD,        CARD_AMD_RAGE_128PRO,           "ATI Rage Fury",                    DRIVER_AMD_RAGE_128PRO,  16  },
@@ -1785,10 +1789,12 @@ static enum wined3d_pci_device select_card_nvidia_binary(const struct wined3d_gl
         cards[] =
         {
             {"GTX 770M",    CARD_NVIDIA_GEFORCE_GTX770M},   /* Geforce 700 - midend high mobile */
+            {"GTX 770",     CARD_NVIDIA_GEFORCE_GTX770},    /* Geforce 700 - highend */
             {"GTX 680",     CARD_NVIDIA_GEFORCE_GTX680},    /* Geforce 600 - highend */
             {"GTX 670MX",   CARD_NVIDIA_GEFORCE_GTX670MX},  /* Geforce 600 - highend */
             {"GTX 670",     CARD_NVIDIA_GEFORCE_GTX670},    /* Geforce 600 - midend high */
             {"GTX 660 Ti",  CARD_NVIDIA_GEFORCE_GTX660TI},  /* Geforce 600 - midend high */
+            {"GTX 660M",    CARD_NVIDIA_GEFORCE_GTX660M},   /* Geforce 600 - midend high mobile */
             {"GTX 660",     CARD_NVIDIA_GEFORCE_GTX660},    /* Geforce 600 - midend high */
             {"GTX 650 Ti",  CARD_NVIDIA_GEFORCE_GTX650TI},  /* Geforce 600 - lowend */
             {"GTX 650",     CARD_NVIDIA_GEFORCE_GTX650},    /* Geforce 600 - lowend */
@@ -3110,6 +3116,16 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter)
         if (!counter_bits)
             gl_info->supported[ARB_OCCLUSION_QUERY] = FALSE;
     }
+    if (!gl_info->supported[ATI_TEXTURE_MIRROR_ONCE] && gl_info->supported[EXT_TEXTURE_MIRROR_CLAMP])
+    {
+        TRACE(" IMPLIED: ATI_texture_mirror_once support (by EXT_texture_mirror_clamp).\n");
+        gl_info->supported[ATI_TEXTURE_MIRROR_ONCE] = TRUE;
+    }
+    if (!gl_info->supported[ARB_TEXTURE_MIRROR_CLAMP_TO_EDGE] && gl_info->supported[ATI_TEXTURE_MIRROR_ONCE])
+    {
+        TRACE(" IMPLIED: ARB_texture_mirror_clamp_to_edge support (by ATI_texture_mirror_once).\n");
+        gl_info->supported[ARB_TEXTURE_MIRROR_CLAMP_TO_EDGE] = TRUE;
+    }
 
     wined3d_adapter_init_limits(gl_info);
 
@@ -3227,7 +3243,7 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter)
     gl_info->wrap_lookup[WINED3D_TADDRESS_BORDER - WINED3D_TADDRESS_WRAP] =
             gl_info->supported[ARB_TEXTURE_BORDER_CLAMP] ? GL_CLAMP_TO_BORDER_ARB : GL_REPEAT;
     gl_info->wrap_lookup[WINED3D_TADDRESS_MIRROR_ONCE - WINED3D_TADDRESS_WRAP] =
-            gl_info->supported[ATI_TEXTURE_MIRROR_ONCE] ? GL_MIRROR_CLAMP_TO_EDGE_ATI : GL_REPEAT;
+            gl_info->supported[ARB_TEXTURE_MIRROR_CLAMP_TO_EDGE] ? GL_MIRROR_CLAMP_TO_EDGE : GL_REPEAT;
 
     adapter->d3d_info.valid_rt_mask = 0;
     for (i = 0; i < gl_info->limits.buffers; ++i)
@@ -4581,7 +4597,7 @@ HRESULT CDECL wined3d_get_device_caps(const struct wined3d *wined3d, UINT adapte
     {
         caps->TextureAddressCaps |= WINED3DPTADDRESSCAPS_MIRROR;
     }
-    if (gl_info->supported[ATI_TEXTURE_MIRROR_ONCE])
+    if (gl_info->supported[ARB_TEXTURE_MIRROR_CLAMP_TO_EDGE])
     {
         caps->TextureAddressCaps |= WINED3DPTADDRESSCAPS_MIRRORONCE;
     }
@@ -4599,7 +4615,7 @@ HRESULT CDECL wined3d_get_device_caps(const struct wined3d *wined3d, UINT adapte
         {
             caps->VolumeTextureAddressCaps |= WINED3DPTADDRESSCAPS_MIRROR;
         }
-        if (gl_info->supported[ATI_TEXTURE_MIRROR_ONCE])
+        if (gl_info->supported[ARB_TEXTURE_MIRROR_CLAMP_TO_EDGE])
         {
             caps->VolumeTextureAddressCaps |= WINED3DPTADDRESSCAPS_MIRRORONCE;
         }
