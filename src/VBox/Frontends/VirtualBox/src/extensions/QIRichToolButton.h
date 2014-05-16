@@ -19,10 +19,12 @@
 #ifndef __QIRichToolButton_h__
 #define __QIRichToolButton_h__
 
-/* Qt includes */
+/* Qt includes: */
 #include <QLabel>
 #include <QWidget>
-#include <QToolButton>
+
+/* GUI includes: */
+#include "QIToolButton.h"
 
 /** @class QIRichToolButton
  *
@@ -56,7 +58,7 @@ protected:
     bool eventFilter (QObject *aObject, QEvent *aEvent);
     void paintEvent (QPaintEvent *aEvent);
 
-    QToolButton *mButton;
+    QIToolButton *mButton;
     QLabel *mLabel;
 };
 
