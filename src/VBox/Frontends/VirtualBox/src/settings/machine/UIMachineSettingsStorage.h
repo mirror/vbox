@@ -47,98 +47,78 @@ Q_DECLARE_METATYPE (SlotsList);
 Q_DECLARE_METATYPE (DeviceTypeList);
 Q_DECLARE_METATYPE (ControllerTypeList);
 
+/** Known item states. */
 enum ItemState
 {
-    State_DefaultItem   = 0,
-    State_CollapsedItem = 1,
-    State_ExpandedItem  = 2,
+    State_DefaultItem,
+    State_CollapsedItem,
+    State_ExpandedItem,
     State_MAX
 };
 
-/* Pixmap Storage Pool */
-class PixmapPool : public QObject
+/** Known pixmap types. */
+enum PixmapType
 {
-    Q_OBJECT;
+    InvalidPixmap,
 
-public:
+    ControllerAddEn,
+    ControllerAddDis,
+    ControllerDelEn,
+    ControllerDelDis,
 
-    enum PixmapType
-    {
-        InvalidPixmap            = -1,
+    AttachmentAddEn,
+    AttachmentAddDis,
+    AttachmentDelEn,
+    AttachmentDelDis,
 
-        ControllerAddEn          =  0,
-        ControllerAddDis         =  1,
-        ControllerDelEn          =  2,
-        ControllerDelDis         =  3,
+    IDEControllerNormal,
+    IDEControllerExpand,
+    IDEControllerCollapse,
+    SATAControllerNormal,
+    SATAControllerExpand,
+    SATAControllerCollapse,
+    SCSIControllerNormal,
+    SCSIControllerExpand,
+    SCSIControllerCollapse,
+    USBControllerNormal,
+    USBControllerExpand,
+    USBControllerCollapse,
+    FloppyControllerNormal,
+    FloppyControllerExpand,
+    FloppyControllerCollapse,
 
-        AttachmentAddEn          =  4,
-        AttachmentAddDis         =  5,
-        AttachmentDelEn          =  6,
-        AttachmentDelDis         =  7,
+    IDEControllerAddEn,
+    IDEControllerAddDis,
+    SATAControllerAddEn,
+    SATAControllerAddDis,
+    SCSIControllerAddEn,
+    SCSIControllerAddDis,
+    USBControllerAddEn,
+    USBControllerAddDis,
+    FloppyControllerAddEn,
+    FloppyControllerAddDis,
 
-        IDEControllerNormal      =  8,
-        IDEControllerExpand      =  9,
-        IDEControllerCollapse    = 10,
-        SATAControllerNormal     = 11,
-        SATAControllerExpand     = 12,
-        SATAControllerCollapse   = 13,
-        SCSIControllerNormal     = 14,
-        SCSIControllerExpand     = 15,
-        SCSIControllerCollapse   = 16,
-        USBControllerNormal      = 17,
-        USBControllerExpand      = 18,
-        USBControllerCollapse    = 19,
-        FloppyControllerNormal   = 20,
-        FloppyControllerExpand   = 21,
-        FloppyControllerCollapse = 22,
+    HDAttachmentNormal,
+    CDAttachmentNormal,
+    FDAttachmentNormal,
 
-        IDEControllerAddEn       = 23,
-        IDEControllerAddDis      = 24,
-        SATAControllerAddEn      = 25,
-        SATAControllerAddDis     = 26,
-        SCSIControllerAddEn      = 27,
-        SCSIControllerAddDis     = 28,
-        USBControllerAddEn       = 29,
-        USBControllerAddDis      = 30,
-        FloppyControllerAddEn    = 31,
-        FloppyControllerAddDis   = 32,
+    HDAttachmentAddEn,
+    HDAttachmentAddDis,
+    CDAttachmentAddEn,
+    CDAttachmentAddDis,
+    FDAttachmentAddEn,
+    FDAttachmentAddDis,
 
-        HDAttachmentNormal       = 33,
-        CDAttachmentNormal       = 34,
-        FDAttachmentNormal       = 35,
+    ChooseExistingEn,
+    ChooseExistingDis,
+    HDNewEn,
+    HDNewDis,
+    CDUnmountEnabled,
+    CDUnmountDisabled,
+    FDUnmountEnabled,
+    FDUnmountDisabled,
 
-        HDAttachmentAddEn        = 36,
-        HDAttachmentAddDis       = 37,
-        CDAttachmentAddEn        = 38,
-        CDAttachmentAddDis       = 39,
-        FDAttachmentAddEn        = 40,
-        FDAttachmentAddDis       = 41,
-
-        ChooseExistingEn         = 42,
-        ChooseExistingDis        = 43,
-        HDNewEn                  = 44,
-        HDNewDis                 = 45,
-        CDUnmountEnabled         = 46,
-        CDUnmountDisabled        = 47,
-        FDUnmountEnabled         = 48,
-        FDUnmountDisabled        = 49,
-
-        MaxIndex
-    };
-
-    static PixmapPool* pool (QObject *aParent = 0);
-
-    QPixmap pixmap (PixmapType aType) const;
-
-protected:
-
-    PixmapPool (QObject *aParent);
-
-    static QPointer <PixmapPool> mThis;
-
-private:
-
-    QVector <QPixmap> mPool;
+    MaxIndex
 };
 
 /* Abstract Controller Type */
@@ -152,7 +132,7 @@ public:
     KStorageBus busType() const;
     KStorageControllerType ctrType() const;
     ControllerTypeList ctrTypes() const;
-    PixmapPool::PixmapType pixmap (ItemState aState) const;
+    PixmapType pixmap(ItemState aState) const;
 
     void setCtrType (KStorageControllerType aCtrType);
 
@@ -165,7 +145,7 @@ protected:
 
     KStorageBus mBusType;
     KStorageControllerType mCtrType;
-    QList <PixmapPool::PixmapType> mPixmaps;
+    QList<PixmapType> mPixmaps;
 };
 
 /* IDE Controller Type */
@@ -678,6 +658,7 @@ class UIMachineSettingsStorage : public UISettingsPageMachine,
 public:
 
     UIMachineSettingsStorage();
+    ~UIMachineSettingsStorage();
 
     void setChipsetType(KChipsetType type);
 
