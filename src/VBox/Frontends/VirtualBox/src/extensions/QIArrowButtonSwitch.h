@@ -49,6 +49,8 @@ private slots:
 
 private:
 
+    /** Performs initialization. */
+    void init();
     void updateIcon();
     bool eventFilter (QObject *aObject, QEvent *aEvent);
 

@@ -217,10 +217,6 @@
         <property name="whatsThis">
          <string>Generates a new random MAC address.</string>
         </property>
-        <property name="icon">
-         <iconset resource="../VirtualBox1.qrc">
-          <normaloff>:/refresh_16px.png</normaloff>:/refresh_16px.png</iconset>
-        </property>
        </widget>
       </item>
       <item row="6" column="0">
