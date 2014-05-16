@@ -29,6 +29,7 @@
 #include "UIToolBar.h"
 #include "QITreeWidget.h"
 #include "QITabWidget.h"
+#include "UIIconPool.h"
 
 enum
 {
@@ -218,7 +219,7 @@ QWidget *VBoxSettingsTreeViewSelector::addItem (const QString & /* aBigIcon */,
     QWidget *result = NULL;
     if (aPage != NULL)
     {
-        QIcon icon (aSmallIcon);
+        QIcon icon = UIIconPool::iconSet(aSmallIcon);
 
         SelectorItem *item = new SelectorItem (icon, "", aId, aLink, aPage, aParentId);
         mItemList.append (item);
@@ -405,7 +406,7 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
                                                UISettingsPage* aPage /* = NULL */,
                                                int aParentId /* = -1 */)
 {
-    QIcon icon (aBigIcon);
+    QIcon icon = UIIconPool::iconSet(aBigIcon);
 
     QWidget *result = NULL;
     SelectorActionItem *item = new SelectorActionItem (icon, "", aId, aLink, aPage, aParentId, this);
@@ -441,7 +442,7 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
             QTabWidget *tabWidget = parent->tabWidget();
             aPage->setContentsMargins (9, 5, 9, 9);
             aPage->layout()->setContentsMargins(0, 0, 0, 0);
-            QIcon icon1 (aSmallIcon);
+            QIcon icon1 = UIIconPool::iconSet(aSmallIcon);
             if (tabWidget)
                 tabWidget->addTab (aPage, icon1, "");
         }
