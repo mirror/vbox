@@ -157,7 +157,6 @@ static VOID swapchain_invalidate(struct wined3d_swapchain *swapchain)
 static void swapchain_cleanup(struct wined3d_swapchain *swapchain)
 {
 #ifndef VBOX_WITH_WDDM
-    struct wined3d_display_mode mode;
     HRESULT hr;
 #endif
     UINT i;
@@ -212,13 +211,8 @@ static void swapchain_cleanup(struct wined3d_swapchain *swapchain)
      * orig_height will be equal to the modes in the presentation params. */
     if (!swapchain->desc.windowed && swapchain->desc.auto_restore_display_mode)
     {
-        mode.width = swapchain->orig_width;
-        mode.height = swapchain->orig_height;
-        mode.refresh_rate = 0;
-        mode.format_id = swapchain->orig_fmt;
-        mode.scanline_ordering = WINED3D_SCANLINE_ORDERING_UNKNOWN;
         if (FAILED(hr = wined3d_set_adapter_display_mode(swapchain->device->wined3d,
-                swapchain->device->adapter->ordinal, &mode)))
+                swapchain->device->adapter->ordinal, &swapchain->original_mode)))
             ERR("Failed to restore display mode, hr %#x.\n", hr);
     }
 
@@ -226,7 +220,7 @@ static void swapchain_cleanup(struct wined3d_swapchain *swapchain)
     {
         TRACE("Destroying backup wined3d window %p, dc %p.\n", swapchain->backup_wnd, swapchain->backup_dc);
 
-        ReleaseDC(swapchain->backup_wnd, swapchain->backup_dc);
+        wined3d_release_dc(swapchain->backup_wnd, swapchain->backup_dc);
         DestroyWindow(swapchain->backup_wnd);
     }
 #endif
@@ -1019,8 +1013,6 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
 {
     const struct wined3d_adapter *adapter = device->adapter;
     struct wined3d_resource_desc surface_desc;
-    const struct wined3d_format *format;
-    struct wined3d_display_mode mode;
 #ifndef VBOX_WITH_WDDM
     BOOL displaymode_set = FALSE;
 #endif
@@ -1100,13 +1092,14 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
     swapchain->hDC = hDC;
 #endif
 
-    wined3d_get_adapter_display_mode(device->wined3d, adapter->ordinal, &mode, NULL);
 #ifndef VBOX_WITH_WDDM
-    swapchain->orig_width = mode.width;
-    swapchain->orig_height = mode.height;
-    swapchain->orig_fmt = mode.format_id;
+    if (FAILED(hr = wined3d_get_adapter_display_mode(device->wined3d,
+            adapter->ordinal, &swapchain->original_mode, NULL)))
+    {
+        ERR("Failed to get current display mode, hr %#x.\n", hr);
+        goto err;
+    }
 #endif
-    format = wined3d_get_format(&adapter->gl_info, mode.format_id);
 
     GetClientRect(window, &client_rect);
     if (desc->windowed
@@ -1128,8 +1121,8 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
 #ifndef VBOX_WITH_WDDM
         if (desc->backbuffer_format == WINED3DFMT_UNKNOWN)
         {
-            desc->backbuffer_format = swapchain->orig_fmt;
-            TRACE("Updating format to %s.\n", debug_d3dformat(swapchain->orig_fmt));
+            desc->backbuffer_format = swapchain->original_mode.format_id;
+            TRACE("Updating format to %s.\n", debug_d3dformat(swapchain->original_mode.format_id));
         }
 #endif
     }
@@ -1176,7 +1169,7 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
         mode.refresh_rate = desc->refresh_rate;
         mode.scanline_ordering = WINED3D_SCANLINE_ORDERING_UNKNOWN;
 
-        if (FAILED(hr = wined3d_set_adapter_display_mode(device->wined3d, device->adapter->ordinal, &mode)))
+        if (FAILED(hr = wined3d_set_adapter_display_mode(device->wined3d, adapter->ordinal, &mode)))
         {
             WARN("Failed to set display mode, hr %#x.\n", hr);
             goto err;
@@ -1197,7 +1190,7 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
             WINED3DFMT_S1_UINT_D15_UNORM
         };
 
-        const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
+        const struct wined3d_gl_info *gl_info = &adapter->gl_info;
 
         swapchain->context = HeapAlloc(GetProcessHeap(), 0, sizeof(*swapchain->context));
         if (!swapchain->context)
@@ -1311,18 +1304,10 @@ err:
 #ifndef VBOX_WITH_WDDM
     if (displaymode_set)
     {
-        DEVMODEW devmode;
-
+        if (FAILED(wined3d_set_adapter_display_mode(device->wined3d,
+                adapter->ordinal, &swapchain->original_mode)))
+            ERR("Failed to restore display mode.\n");
         ClipCursor(NULL);
-
-        /* Change the display settings */
-        memset(&devmode, 0, sizeof(devmode));
-        devmode.dmSize = sizeof(devmode);
-        devmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
-        devmode.dmBitsPerPel = format->byte_count * CHAR_BIT;
-        devmode.dmPelsWidth = swapchain->orig_width;
-        devmode.dmPelsHeight = swapchain->orig_height;
-        ChangeDisplaySettingsExW(adapter->DeviceName, &devmode, NULL, CDS_FULLSCREEN, NULL);
     }
 #endif
     if (swapchain->back_buffers)
