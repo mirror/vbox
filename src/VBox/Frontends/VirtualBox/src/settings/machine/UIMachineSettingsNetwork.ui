@@ -221,9 +221,6 @@
          <iconset resource="../VirtualBox1.qrc">
           <normaloff>:/refresh_16px.png</normaloff>:/refresh_16px.png</iconset>
         </property>
-        <property name="autoRaise">
-         <bool>true</bool>
-        </property>
        </widget>
       </item>
       <item row="6" column="0">

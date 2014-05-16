@@ -172,9 +172,6 @@
               <iconset>
                <normaloff>../images/list_moveup_16px.png</normaloff>../images/list_moveup_16px.png</iconset>
              </property>
-             <property name="autoRaise">
-              <bool>true</bool>
-             </property>
             </widget>
            </item>
            <item>
@@ -194,9 +191,6 @@
              <property name="icon">
               <iconset>
                <normaloff>../images/list_movedown_16px.png</normaloff>../images/list_movedown_16px.png</iconset>
-             </property>
-             <property name="autoRaise">
-              <bool>true</bool>
              </property>
             </widget>
            </item>
