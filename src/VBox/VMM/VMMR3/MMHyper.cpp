@@ -1436,3 +1436,64 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
     }
 }
 
+
+/**
+ * Re-allocates memory from the hyper heap.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the VM.
+ * @param   pvOld           The existing block of memory in the
+ *                          hyper heap to re-allocate (can be
+ *                          NULL).
+ * @param   cbOld           Size of the existing block.
+ * @param   uAlignmentNew   Required memory alignment in bytes.
+ *                          Values are 0,8,16,32 and PAGE_SIZE.
+ *                          0 -> default alignment, i.e. 8 bytes.
+ * @param   enmTagNew       The statistics tag.
+ * @param   cbNew           The required size of the new block.
+ * @param   ppv             Where to store the address to the
+ *                          re-allocated block.
+ *
+ * @remarks This does not work like normal realloc()
+ *          on failure, the memory pointed to by @a pvOld is
+ *          lost if there isn't sufficient space on the hyper
+ *          heap for the re-allocation to succeed.
+*/
+VMMR3DECL(int) MMR3HyperRealloc(PVM pVM, void *pvOld, size_t cbOld, unsigned uAlignmentNew, MMTAG enmTagNew, size_t cbNew,
+                                void **ppv)
+{
+    if (!pvOld)
+        return MMHyperAlloc(pVM, cbNew, uAlignmentNew, enmTagNew, ppv);
+
+    if (!cbNew && pvOld)
+        return MMHyperFree(pVM, pvOld);
+
+    if (cbOld == cbNew)
+        return VINF_SUCCESS;
+
+    size_t cbData = RT_MIN(cbNew, cbOld);
+    void *pvTmp = RTMemTmpAlloc(cbData);
+    if (RT_UNLIKELY(!pvTmp))
+    {
+        MMHyperFree(pVM, pvOld);
+        return VERR_NO_TMP_MEMORY;
+    }
+    memcpy(pvTmp, pvOld, cbData);
+
+    int rc = MMHyperFree(pVM, pvOld);
+    if (RT_SUCCESS(rc))
+    {
+        rc = MMHyperAlloc(pVM, cbNew, uAlignmentNew, enmTagNew, ppv);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(cbData <= cbNew);
+            memcpy(*ppv, pvTmp, cbData);
+        }
+    }
+    else
+        AssertMsgFailed(("Failed to free hyper heap block pvOld=%p cbOld=%u\n", pvOld, cbOld));
+
+    RTMemTmpFree(pvTmp);
+    return rc;
+}
+

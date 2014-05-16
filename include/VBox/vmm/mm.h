@@ -264,6 +264,7 @@ VMMR3DECL(int)      MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv);
  * @{ */
 VMMR3DECL(int)      MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
 VMMR3DECL(int)      MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, uint32_t fFlags, void **ppv);
+VMMR3DECL(int)      MMR3HyperRealloc(PVM pVM, void *pv, size_t cb, unsigned uAlignmentNew, MMTAG enmTagNew, size_t cbNew, void **ppv);
 /** @name  MMR3HyperAllocOnceNoRelEx flags
  * @{ */
 /** Must have kernel mapping.
