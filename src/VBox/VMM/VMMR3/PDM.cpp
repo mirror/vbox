@@ -2224,7 +2224,7 @@ VMMR3DECL(int) PDMR3QueryDevice(PUVM pUVM, const char *pszDevice, unsigned iInst
  */
 VMMR3DECL(int) PDMR3QueryDeviceLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
 {
-    LogFlow(("PDMR3QueryLun: pszDevice=%p:{%s} iInstance=%u iLun=%u ppBase=%p\n",
+    LogFlow(("PDMR3QueryDeviceLun: pszDevice=%p:{%s} iInstance=%u iLun=%u ppBase=%p\n",
              pszDevice, pszDevice, iInstance, iLun, ppBase));
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
