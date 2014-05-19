@@ -85,7 +85,7 @@ protected:
     virtual QString titleExtension() const;
 
     /* Add settings page: */
-    void addItem(const QString &strBigIcon, const QString &strSmallIcon,
+    void addItem(const QString &strBigIcon, const QString &strMediumIcon, const QString &strSmallIcon,
                  int cId, const QString &strLink,
                  UISettingsPage* pSettingsPage = 0, int iParentId = -1);
 

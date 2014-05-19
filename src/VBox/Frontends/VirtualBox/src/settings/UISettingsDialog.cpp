@@ -269,6 +269,7 @@ QString UISettingsDialog::titleExtension() const
 }
 
 void UISettingsDialog::addItem(const QString &strBigIcon,
+                               const QString &strMediumIcon,
                                const QString &strSmallIcon,
                                int cId,
                                const QString &strLink,
@@ -276,7 +277,7 @@ void UISettingsDialog::addItem(const QString &strBigIcon,
                                int iParentId /* = -1 */)
 {
     /* Add new selector item: */
-    if (QWidget *pPage = m_pSelector->addItem(strBigIcon, strSmallIcon,
+    if (QWidget *pPage = m_pSelector->addItem(strBigIcon, strMediumIcon, strSmallIcon,
                                               cId, strLink, pSettingsPage, iParentId))
     {
         /* Add stack-widget page if created: */
