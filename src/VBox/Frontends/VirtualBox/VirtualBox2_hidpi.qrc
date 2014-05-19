@@ -1,5 +1,17 @@
 <RCC>
     <qresource prefix="/">
+        <file alias="os_os2warp4_hidpi.png">images/hidpi/os_os2warp4_hidpi.png</file>
+        <file alias="os_other_64_hidpi.png">images/hidpi/os_other_64_hidpi.png</file>
+        <file alias="os_other_hidpi.png">images/hidpi/os_other_hidpi.png</file>
+        <file alias="os_qnx_hidpi.png">images/hidpi/os_qnx_hidpi.png</file>
+        <file alias="os_redhat_64_hidpi.png">images/hidpi/os_redhat_64_hidpi.png</file>
+        <file alias="os_redhat_hidpi.png">images/hidpi/os_redhat_hidpi.png</file>
+        <file alias="os_solaris_64_hidpi.png">images/hidpi/os_solaris_64_hidpi.png</file>
+        <file alias="os_solaris_hidpi.png">images/hidpi/os_solaris_hidpi.png</file>
+        <file alias="os_turbolinux_64_hidpi.png">images/hidpi/os_turbolinux_64_hidpi.png</file>
+        <file alias="os_turbolinux_hidpi.png">images/hidpi/os_turbolinux_hidpi.png</file>
+        <file alias="os_ubuntu_64_hidpi.png">images/hidpi/os_ubuntu_64_hidpi.png</file>
+        <file alias="os_ubuntu_hidpi.png">images/hidpi/os_ubuntu_hidpi.png</file>
         <file alias="os_win2k12_64_hidpi.png">images/hidpi/os_win2k12_64_hidpi.png</file>
         <file alias="os_win2k3_64_hidpi.png">images/hidpi/os_win2k3_64_hidpi.png</file>
         <file alias="os_win2k3_hidpi.png">images/hidpi/os_win2k3_hidpi.png</file>
@@ -28,6 +40,7 @@
         <file alias="parallel_port_warning_16px_hidpi.png">images/hidpi/parallel_port_warning_16px_hidpi.png</file>
         <file alias="pin_16px_hidpi.png">images/hidpi/pin_16px_hidpi.png</file>
         <file alias="previous_16px_hidpi.png">images/hidpi/previous_16px_hidpi.png</file>
+        <file alias="proxy_16px_hidpi.png">images/hidpi/proxy_16px_hidpi.png</file>
         <file alias="proxy_24px_hidpi.png">images/hidpi/proxy_24px_hidpi.png</file>
         <file alias="proxy_32px_hidpi.png">images/hidpi/proxy_32px_hidpi.png</file>
         <file alias="proxy_warning_16px_hidpi.png">images/hidpi/proxy_warning_16px_hidpi.png</file>
