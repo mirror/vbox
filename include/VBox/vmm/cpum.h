@@ -29,6 +29,7 @@
 #include <iprt/x86.h>
 #include <VBox/types.h>
 #include <VBox/vmm/cpumctx.h>
+#include <VBox/vmm/stam.h>
 
 RT_C_DECLS_BEGIN
 
@@ -328,6 +329,59 @@ typedef enum CPUMUKNOWNCPUID
 /** Pointer to unknown CPUID leaf method. */
 typedef CPUMUKNOWNCPUID *PCPUMUKNOWNCPUID;
 
+
+/**
+ * MSR range.
+ */
+typedef struct CPUMMSRRANGE
+{
+    /** The first MSR. [0] */
+    uint32_t    uFirst;
+    /** The last MSR. [4] */
+    uint32_t    uLast;
+    /** The read function (CPUMMSRRDFN). [8] */
+    uint16_t    enmRdFn;
+    /** The write function (CPUMMSRWRFN). [10] */
+    uint16_t    enmWrFn;
+    /** The offset of the 64-bit MSR value relative to the start of CPUMCPU.
+     * UINT16_MAX if not used by the read and write functions.  [12] */
+    uint16_t    offCpumCpu;
+    /** Reserved for future hacks. [14] */
+    uint16_t    fReserved;
+    /** The init/read value. [16]
+     * When enmRdFn is kCpumMsrRdFn_INIT_VALUE, this is the value returned on RDMSR.
+     * offCpumCpu must be UINT16_MAX in that case, otherwise it must be a valid
+     * offset into CPUM. */
+    uint64_t    uValue;
+    /** The bits to ignore when writing. [24]   */
+    uint64_t    fWrIgnMask;
+    /** The bits that will cause a GP(0) when writing. [32]
+     * This is always checked prior to calling the write function.  Using
+     * UINT64_MAX effectively marks the MSR as read-only. */
+    uint64_t    fWrGpMask;
+    /** The register name, if applicable. [40] */
+    char        szName[56];
+
+#ifdef VBOX_WITH_STATISTICS
+    /** The number of reads. */
+    STAMCOUNTER cReads;
+    /** The number of writes. */
+    STAMCOUNTER cWrites;
+    /** The number of times ignored bits were written. */
+    STAMCOUNTER cIgnoredBits;
+    /** The number of GPs generated. */
+    STAMCOUNTER cGps;
+#endif
+} CPUMMSRRANGE;
+#ifdef VBOX_WITH_STATISTICS
+AssertCompileSize(CPUMMSRRANGE, 128);
+#else
+AssertCompileSize(CPUMMSRRANGE, 96);
+#endif
+/** Pointer to an MSR range. */
+typedef CPUMMSRRANGE *PCPUMMSRRANGE;
+/** Pointer to a const MSR range. */
+typedef CPUMMSRRANGE const *PCCPUMMSRRANGE;
 
 
 /** @name Guest Register Getters.
@@ -723,6 +777,8 @@ VMMR3DECL(int)              CPUMR3CpuIdDetectUnknownLeafMethod(PCPUMUKNOWNCPUID 
 VMMR3DECL(const char *)     CPUMR3CpuIdUnknownLeafMethodName(CPUMUKNOWNCPUID enmUnknownMethod);
 VMMR3DECL(CPUMCPUVENDOR)    CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX);
 VMMR3DECL(const char *)     CPUMR3CpuVendorName(CPUMCPUVENDOR enmVendor);
+
+VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange);
 
 /** @} */
 #endif /* IN_RING3 */

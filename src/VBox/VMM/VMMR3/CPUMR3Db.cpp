@@ -755,7 +755,6 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
 }
 
 
-#if 0
 /**
  * Insert an MSR range into the VM.
  *
@@ -768,9 +767,11 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
  */
 VMMR3DECL(int) CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange)
 {
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+    AssertReturn(pNewRange, VERR_INVALID_PARAMETER);
+
     return cpumR3MsrRangesInsert(pVM, NULL /* ppaMsrRanges */, NULL /* pcMsrRanges */, pNewRange);
 }
-#endif
 
 
 /**
