@@ -20,6 +20,7 @@
 #include "QIStateIndicator.h"
 
 /* Qt includes */
+#include <QIcon>
 #include <QPainter>
 #ifdef Q_WS_MAC
 # include <QContextMenuEvent>
@@ -43,31 +44,26 @@ QSize QIStateIndicator::sizeHint() const
     return mSize;
 }
 
-QPixmap QIStateIndicator::stateIcon (int aState) const
+QPixmap QIStateIndicator::stateIcon(int state) const
 {
-    Icon *icon = mStateIcons [aState];
-    return icon ? icon->pixmap : QPixmap();
+    /* Check if state-icon was set before: */
+    Icon *pIcon = mStateIcons[state];
+    return pIcon ? pIcon->pixmap : QPixmap();
 }
 
-/**
- *  Sets an icon for the specified state. The first icon set by this method
- *  defines the preferred size of this indicator. All other icons will be
- *  scaled to fit this size.
- *
- *  @note If this widget is constructed with the WNoAutoErase flag, then all
- *  transparent areas of the new state icon are filled with the widget
- *  background color or pixmap (as taken from the widget palette), to provide
- *  flicker free state redraws in one single operation (which is useful for
- *  indicators that frequently change their state).
- */
-void QIStateIndicator::setStateIcon (int aState, const QPixmap &aPixmap)
+void QIStateIndicator::setStateIcon(int state, const QIcon &icon)
 {
-    /* Here we just set the original pixmap. All actual work from the @note
-     * above takes place in #drawContents(). */
-    mStateIcons.insert (aState, new Icon (aPixmap));
+    /* Get minimum size: */
+    QSize size = icon.availableSizes().first();
 
-    if (mSize.isNull())
-        mSize = aPixmap.size();
+    /* Get pixmap of size above: */
+    QPixmap pixmap = icon.pixmap(size);
+
+    /* Assign that pixmap to state-pixmap: */
+    mStateIcons.insert(state, new Icon(pixmap));
+
+    /* Adjust minimum size-hint: */
+    mSize = mSize.expandedTo(size);
 }
 
 void QIStateIndicator::setState (int aState)
@@ -86,7 +82,7 @@ void QIStateIndicator::drawContents (QPainter *aPainter)
 {
     Icon *icon = mStateIcons [mState];
     if (icon)
-        aPainter->drawPixmap (contentsRect(), icon->pixmap);
+        aPainter->drawPixmap(contentsRect().topLeft(), icon->pixmap);
 }
 
 #ifdef Q_WS_MAC
