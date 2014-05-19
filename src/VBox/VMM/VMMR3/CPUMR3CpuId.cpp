@@ -925,8 +925,24 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
  */
 VMMR3DECL(int) CPUMR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF pNewLeaf)
 {
-    /** @todo Should we disallow here inserting/replacing the standard leaves that
-     *        PATM relies on? See @bugref{7270}. */
+    /*
+     * Validate parameters.
+     */
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+    AssertReturn(pNewLeaf, VERR_INVALID_PARAMETER);
+
+    /*
+     * Disallow replacing CPU ID leaves that this API currently cannot manage.                                                                                .
+     * These leaves have dependencies on saved-states, see PATMCpuidReplacement().
+     * If you want to modify these leaves, use CPUMSetGuestCpuIdFeature().                                                                         .
+     */
+    if (   pNewLeaf->uLeaf == UINT32_C(0x00000000)  /* Standard */
+        || pNewLeaf->uLeaf == UINT32_C(0x80000000)  /* Extended */
+        || pNewLeaf->uLeaf == UINT32_C(0xc0000000)) /* Centaur */
+    {
+        return VERR_NOT_SUPPORTED;
+    }
+
     return cpumR3CpuIdInsert(pVM, NULL /* ppaLeaves */, NULL /* pcLeaves */, pNewLeaf);
 }
 
