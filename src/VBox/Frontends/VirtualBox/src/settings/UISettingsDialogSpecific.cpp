@@ -683,7 +683,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
         /* Search for a widget with the given name: */
         if (!strControl.isNull())
         {
-            if (QWidget *pWidget = m_pStack->currentWidget()->findChild<QWidget*>(strControl))
+            if (QWidget *pWidget = m_pStack->findChild<QWidget*>(strControl))
             {
                 QList<QWidget*> parents;
                 QWidget *pParentWidget = pWidget;
