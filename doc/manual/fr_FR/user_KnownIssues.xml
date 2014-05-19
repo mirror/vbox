@@ -77,14 +77,6 @@
         </listitem>
     
         <listitem>
-          <para><emphasis role="bold">Invités 64 bits sur des systèmes hôtes
-          32 bits avec VT-x</emphasis> peut provoquer des instabilités sur votre
-          système. Si vous vivez cela, n'essayez pas d'exécuter des invités 64 bits.
-          Reportez-vous au forum des utilisateurs de VirtualBox pour des
-          informations supplémentaires.</para>
-        </listitem>
-
-        <listitem>
           <para><emphasis role="bold">NX (empêche l'exécution et l'exécution de
           données)</emphasis> ne fonctionne que sur les invités en fonction
           sur des hôtes 64 bits ou sur des hôtes 32 bits ayant activé PAE et la
@@ -233,8 +225,14 @@
                 de démarrage. Remarquez qu'il y a de nombreux messages et toutes
                 les erreurs ne sont pas fatales (elles s'afficheraient aussi 
                 sur votre Mac physique). Vous pouvez désactiver ces messages en
-                lançant cette commande&#xA0;:<screen>VBoxManage setextradata "nom VM" "VBoxInternal2/EfiBootArgs" "  "</screen>To
-                revert to the previous behavior, use:<screen>VBoxManage setextradata "nom VM" "VBoxInternal2/EfiBootArgs" ""</screen></para>
+                lançant cette commande&#xA0;:<screen>VBoxManage setextradata "nom VM" "VBoxInternal2/EfiBootArgs" "  "</screen>Pour
+                revenir à l'ancien comportement, utilisez :<screen>VBoxManage setextradata "nom VM" "VBoxInternal2/EfiBootArgs" ""</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Il n'est actuellement pas possible de démarrer un invité
+                Mac OS X en mode sécurité en spécifiant l'option "-x" dans la donnée
+                externe "VBoxInternal2/EfiBootArgs".</para>
               </listitem>
             </itemizedlist></para>
         </listitem>
@@ -273,8 +271,8 @@
                 ne fonctionne pas directement avec les liens agrégés. Cependant,
                 vous pouvez créer à la main un VNIC (en utilisant
                 <computeroutput>dladm</computeroutput>) via le lien agrégé et
-                utilisez-le avec une VM. Cette limite technique sera corrigée
-                dans une future version de Solaris 11.</para>
+                utilisez-le avec une VM. Cette limite n'exfste pas dans Solaris
+              11u1 build 17 et supérieur.</para>
               </listitem>
             </itemizedlist></para>
         </listitem>

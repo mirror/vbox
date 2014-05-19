@@ -412,13 +412,23 @@
        <glossentry>
             <glossterm>Drag'n'Drop</glossterm>
             <glossdef>
-              <para>Ce paramètre permet d'activer le glisser/déplacer : sélectionnez
-              un fichier sur le bureau, cliquez sur le bouton gauche, amenez la
-              souris dans la fenêtre de la VM et cliquez de nouveau pur le bouton
-              de la souris. Le fichier est copié de l'hôte à l'invité. C'est
-              fonction n'est actuellement implémentée que pour la copie de fichiers
-              de l'hôte vers l'invité.<footnote><para>Le support du glisser/déplacer
-              a été ajouté avec VirtualBox 4.2</para></footnote></para>
+              <para>Ce paramètre permet d'activer le support du glisser/déplacer : sélectionnez
+              un objet (comme un fichier) sur le bureau de l'hôte ou de l'invité
+              et copiez-le ou ouvrez-le directement sur l'invité ou l'hôte. Plusieurs
+              modes de glisser/déplacer individuels à chaque VM vous permettent
+              de restreindre les accès dans tous les sens.</para>
+
+              <para>Pour que le glisser/déplacer fonctionne, les suppléments
+              invité doivent être installés sur l'invité.</para>
+
+              <note>Le glisser/déplacer est désactivé par défaut. Vous pouvez
+              changer ce réglage n'importe quand en utilisant l'icône Glisser/déplacer
+              du menu "Périphériques" de la machine virtuelle.</note>
+
+              <para>Voir <xref linkend="guestadd-dnd"/> pour plus d'informations.</para>
+
+              <footnote><para>Le support expérimental du glisser/déplacer a été 
+              introduit avec VirtualBox 4.2.</para></footnote>
             </glossdef>
           </glossentry>
 
@@ -1416,5 +1426,18 @@ VBoxManage setextradata "nom VM" VBoxInternal2/UgaVerticalResolution    900</scr
       <para>Le mode graphique pour GOP et UGA ne peut être modifié que quand la
       VM est éteinte il reste permandot jusqu'à ce qu'il soit modifié.</para>
     </sect2>
+    <sect2 id="efibootargs">
+      <title>Spécifier des arguments au démarrage</title>
+
+      <para>Il n'est actuellement pas possible de manipuler les variables EFI
+      depuis un invité en fonction (par exemple définir la variable "boot-args"
+      en lançant l'outil <computeroutput>nvram</computeroutput> dans un invité
+      Mac OS X ne fonctionnera pas). Comme alternative, la donnée externe
+      "VBoxInternal2/EfiBootArgs" peut être passée à la VM pour définir la
+      variable "boot-args". Pour modifier la  variable EFI "boot-args" :
+      <screen>VBoxManage setextradata "nom VM" VBoxInternal2/EfiBootArgs &lt;valeur&gt;</screen>
+      </para>
+    </sect2>
+
   </sect1>
 </chapter>

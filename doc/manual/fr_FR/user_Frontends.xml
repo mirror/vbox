@@ -484,10 +484,10 @@
 
                       <listitem>
                         <para>Pour activer la bibliothèque pour une VM en particulier,
-                        vous devez passer en authentification externe&#xA0;:<screen>VBoxManage modifyvm &lt;vm&gt; --vrdeauthtype external</screen></para>
+                        vous devez passer en authentification externe&#xA0;:<screen>VBoxManage modifyvm "nom VM" --vrdeauthtype external</screen></para>
 
                         <para>Remplacez
-                        <computeroutput>&lt;vm&gt;</computeroutput> par le nom
+                        <computeroutput>"nom VM"</computeroutput> par le nom
                         ou l'UUID de la VM.</para>
                       </listitem>
 
@@ -498,7 +498,7 @@
                         de la machine, dans lequel il faut écrire le mot de
                         passe à la section "extradata", est un fichier en texte
                         brut, VirtualBox utilise le hachage pour chiffrer les
-                        mots de passe. Il faut utiliser la commande suivante&#xA0;:<screen>VBoxManage setextradata &lt;vm&gt; "VBoxAuthSimple/users/&lt;utilisateur&gt;" &lt;hash&gt;</screen></para>
+                        mots de passe. Il faut utiliser la commande suivante&#xA0;:<screen>VBoxManage setextradata "nom VM" "VBoxAuthSimple/users/&lt;utilisateur&gt;" &lt;hash&gt;</screen></para>
 
                         <para>Remplacez
                         <computeroutput>&lt;vm&gt;</computeroutput> par le nom

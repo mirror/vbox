@@ -815,7 +815,7 @@
     la case "Utiliser la mise en cache des E/S de l'hôte" des paramètres de stockage,
     d'un contrôleur de stockage donné, soit utilisez la commande VBoxManage 
     suivante pour désactiver la mise en cache des E/S de l'hôte pour un contrôleur 
-   de stockage virtuel&#xA0;:<screen>VBoxManage storagectl &lt;vm&gt; --name &lt;nomcontrôleur&gt; --hostiocache off</screen></para>
+   de stockage virtuel&#xA0;:<screen>VBoxManage storagectl "nom VM" --name &lt;nomcontrôleur&gt; --hostiocache off</screen></para>
 
     <para>Voir <xref linkend="vboxmanage-storagectl" /> pour les détails.</para>
 
@@ -835,9 +835,9 @@
     <computeroutput>VBoxManage</computeroutput>. L'exemple ci-dessous crée un
     groupe de bandes passantes nommé "Limit", et pose la limite à 20 Mo/s et
     affecte le groupe aux disques attachés à la VM&#xA0;:<screen>VBoxManage bandwidthctl "nom VM" add Limit --type disk --limit 20M
-VBoxManage storageattach "nom VM" --controller "SATA" --port 0 --device 0 --type hdd
+VBoxManage storageattach "nom VM" --storagectl "SATA" --port 0 --device 0 --type hdd
                                    --medium disk1.vdi --bandwidthgroup Limit
-VBoxManage storageattach "nom VM" --controller "SATA" --port 1 --device 0 --type hdd
+VBoxManage storageattach "nom VM" --storagectl "SATA" --port 1 --device 0 --type hdd
                                    --medium disk2.vdi --bandwidthgroup Limit</screen></para>
 
     <para>Tous les disques d'un groupe partagent la limite de la bande passante,
