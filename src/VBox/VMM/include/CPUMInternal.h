@@ -600,61 +600,6 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_End
 } CPUMMSRWRFN;
 
-/**
- * MSR range.
- */
-typedef struct CPUMMSRRANGE
-{
-    /** The first MSR. [0] */
-    uint32_t    uFirst;
-    /** The last MSR. [4] */
-    uint32_t    uLast;
-    /** The read function (CPUMMSRRDFN). [8] */
-    uint16_t    enmRdFn;
-    /** The write function (CPUMMSRWRFN). [10] */
-    uint16_t    enmWrFn;
-    /** The offset of the 64-bit MSR value relative to the start of CPUMCPU.
-     * UINT16_MAX if not used by the read and write functions.  [12] */
-    uint16_t    offCpumCpu;
-    /** Reserved for future hacks. [14] */
-    uint16_t    fReserved;
-    /** The init/read value. [16]
-     * When enmRdFn is kCpumMsrRdFn_INIT_VALUE, this is the value returned on RDMSR.
-     * offCpumCpu must be UINT16_MAX in that case, otherwise it must be a valid
-     * offset into CPUM. */
-    uint64_t    uValue;
-    /** The bits to ignore when writing. [24]   */
-    uint64_t    fWrIgnMask;
-    /** The bits that will cause a GP(0) when writing. [32]
-     * This is always checked prior to calling the write function.  Using
-     * UINT64_MAX effectively marks the MSR as read-only. */
-    uint64_t    fWrGpMask;
-    /** The register name, if applicable. [40] */
-    char        szName[56];
-
-#ifdef VBOX_WITH_STATISTICS
-    /** The number of reads. */
-    STAMCOUNTER cReads;
-    /** The number of writes. */
-    STAMCOUNTER cWrites;
-    /** The number of times ignored bits were written. */
-    STAMCOUNTER cIgnoredBits;
-    /** The number of GPs generated. */
-    STAMCOUNTER cGps;
-#endif
-} CPUMMSRRANGE;
-#ifdef VBOX_WITH_STATISTICS
-AssertCompileSize(CPUMMSRRANGE, 128);
-#else
-AssertCompileSize(CPUMMSRRANGE, 96);
-#endif
-/** Pointer to an MSR range. */
-typedef CPUMMSRRANGE *PCPUMMSRRANGE;
-/** Pointer to a const MSR range. */
-typedef CPUMMSRRANGE const *PCCPUMMSRRANGE;
-
-
-
 
 /**
  * CPU features and quirks.
