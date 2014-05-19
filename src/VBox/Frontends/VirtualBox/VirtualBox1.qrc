@@ -64,6 +64,7 @@
         <file alias="exit_16px.png">images/exit_16px.png</file>
         <file alias="expanding_collapsing_16px.png">images/expanding_collapsing_16px.png</file>
         <file alias="export_16px.png">images/export_16px.png</file>
+        <file alias="extension_pack_16px.png">images/extension_pack_16px.png</file>
         <file alias="extension_pack_24px.png">images/extension_pack_24px.png</file>
         <file alias="extension_pack_32px.png">images/extension_pack_32px.png</file>
         <file alias="extension_pack_install_16px.png">images/extension_pack_install_16px.png</file>
