@@ -93,8 +93,8 @@ static CPUMMSRRANGE const g_aMsrRanges_VIA_QuadCore_L4700_1_2_GHz[] =
     MFX(0x0000011e, "BBL_CR_CTL3", IntelBblCrCtl3, IntelBblCrCtl3, 0, UINT64_MAX, 0), /* value=0x0 */
     RVI(0x0000011f, 0x00000173, "ZERO_0000_011f_THRU_0000_0173", 0),
     MFX(0x00000174, "IA32_SYSENTER_CS", Ia32SysEnterCs, Ia32SysEnterCs, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x10 */
-    MFX(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
-    MFX(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip, 0, 0, UINT64_C(0xffff800000000000)), /* value=0xffffffff`8166bfa0 */
+    MFN(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp), /* value=0x0 */
+    MFN(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip), /* value=0xffffffff`8166bfa0 */
     RVI(0x00000177, 0x00000178, "ZERO_0000_0177_THRU_0000_0178", 0),
     MFX(0x00000179, "IA32_MCG_CAP", Ia32McgCap, ReadOnly, 0, 0, 0), /* value=0x0 */
     MFX(0x0000017a, "IA32_MCG_STATUS", Ia32McgStatus, Ia32McgStatus, 0, UINT64_C(0xfffffffffffffff8), 0), /* value=0x0 */

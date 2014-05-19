@@ -93,8 +93,8 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i5_3570[] =
     MVX(0x00000140, "I7_IB_UNK_0000_0140", 0, 0, UINT64_C(0xfffffffffffffffe)),
     MVX(0x00000142, "I7_IB_UNK_0000_0142", 0, 0, UINT64_C(0xfffffffffffffffc)),
     MFX(0x00000174, "IA32_SYSENTER_CS", Ia32SysEnterCs, Ia32SysEnterCs, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x10 */
-    MFX(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
-    MFX(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip, 0, 0, UINT64_C(0xffff800000000000)), /* value=0xffffffff`8159cbe0 */
+    MFN(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp), /* value=0x0 */
+    MFN(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip), /* value=0xffffffff`8159cbe0 */
     MFX(0x00000179, "IA32_MCG_CAP", Ia32McgCap, ReadOnly, 0xc09, 0, 0), /* value=0xc09 */
     MFX(0x0000017a, "IA32_MCG_STATUS", Ia32McgStatus, Ia32McgStatus, 0, 0, UINT64_C(0xfffffffffffffff8)), /* value=0x0 */
     RSN(0x00000186, 0x0000018d, "IA32_PERFEVTSELn", Ia32PerfEvtSelN, Ia32PerfEvtSelN, 0x0, 0, UINT64_C(0xffffffff00080000)),
@@ -121,8 +121,8 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i5_3570[] =
     MFX(0x000001d9, "IA32_DEBUGCTL", Ia32DebugCtl, Ia32DebugCtl, 0, 0, UINT64_C(0xffffffffffff803c)), /* value=0x0 */
     MFO(0x000001db, "P6_LAST_BRANCH_FROM_IP", P6LastBranchFromIp), /* value=0x7fffffff`a061f4c9 */
     MFO(0x000001dc, "P6_LAST_BRANCH_TO_IP", P6LastBranchToIp), /* value=0xffffffff`810473c0 */
-    MFX(0x000001dd, "P6_LAST_INT_FROM_IP", P6LastIntFromIp, P6LastIntFromIp, 0, 0, UINT64_C(0x7fff800000000000)), /* value=0x0 */
-    MFX(0x000001de, "P6_LAST_INT_TO_IP", P6LastIntToIp, P6LastIntToIp, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
+    MFN(0x000001dd, "P6_LAST_INT_FROM_IP", P6LastIntFromIp, P6LastIntFromIp), /* value=0x0 */
+    MFN(0x000001de, "P6_LAST_INT_TO_IP", P6LastIntToIp, P6LastIntToIp), /* value=0x0 */
     MFO(0x000001f0, "I7_VLW_CAPABILITY", IntelI7VirtualLegacyWireCap), /* value=0x74 */
     MFO(0x000001f2, "IA32_SMRR_PHYSBASE", Ia32SmrrPhysBase), /* value=0xdb000006 */
     MFO(0x000001f3, "IA32_SMRR_PHYSMASK", Ia32SmrrPhysMask), /* value=0xff800800 */
@@ -213,7 +213,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i5_3570[] =
     MFX(0x0000048f, "IA32_VMX_TRUE_EXIT_CTLS", Ia32VmxTrueExitCtls, ReadOnly, UINT64_C(0x7fffff00036dfb), 0, 0), /* value=0x7fffff`00036dfb */
     MFX(0x00000490, "IA32_VMX_TRUE_ENTRY_CTLS", Ia32VmxTrueEntryCtls, ReadOnly, UINT64_C(0xffff000011fb), 0, 0), /* value=0xffff`000011fb */
     RSN(0x000004c1, 0x000004c8, "IA32_A_PMCn", Ia32PmcN, Ia32PmcN, 0x0, 0, UINT64_C(0xffff000000000000)),
-    MFX(0x00000600, "IA32_DS_AREA", Ia32DsArea, Ia32DsArea, 0, 0, UINT64_C(0xffff800000000000)), /* value=0xffff8804`07da1cc0 */
+    MFN(0x00000600, "IA32_DS_AREA", Ia32DsArea, Ia32DsArea), /* value=0xffff8804`07da1cc0 */
     MFX(0x00000601, "I7_SB_MSR_VR_CURRENT_CONFIG", IntelI7SandyVrCurrentConfig, IntelI7SandyVrCurrentConfig, 0, UINT32_C(0x80001fff), 0x7fffe000), /* value=0x18141494`80000380 */
     MVX(0x00000602, "I7_IB_UNK_0000_0602", UINT64_C(0x1814149480000170), UINT32_C(0x80001fff), 0x7fffe000),
     MFX(0x00000603, "I7_SB_MSR_VR_MISC_CONFIG", IntelI7SandyVrMiscConfig, IntelI7SandyVrMiscConfig, 0, UINT32_C(0x80ffffff), UINT64_C(0xffffffff7f000000)), /* value=0x802c2c2c */

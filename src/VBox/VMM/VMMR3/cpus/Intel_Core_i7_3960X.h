@@ -96,8 +96,8 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3960X[] =
     MFN(0x00000134, "CPUID80000001_FEATURE_MASK", IntelCpuId80000001FeatureMaskEcdx, IntelCpuId80000001FeatureMaskEcdx), /* value=0xffffffff`ffffffff */
     MFO(0x0000013c, "I7_SB_AES_NI_CTL", IntelI7SandyAesNiCtl), /* value=0x1 */
     MFX(0x00000174, "IA32_SYSENTER_CS", Ia32SysEnterCs, Ia32SysEnterCs, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x0 */
-    MFX(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
-    MFX(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
+    MFN(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp), /* value=0x0 */
+    MFN(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip), /* value=0x0 */
     MFX(0x00000179, "IA32_MCG_CAP", Ia32McgCap, ReadOnly, 0xc12, 0, 0), /* value=0xc12 */
     MFX(0x0000017a, "IA32_MCG_STATUS", Ia32McgStatus, Ia32McgStatus, 0, 0, UINT64_C(0xfffffffffffffff8)), /* value=0x0 */
     MFX(0x0000017f, "I7_SB_ERROR_CONTROL", IntelI7SandyErrorControl, IntelI7SandyErrorControl, 0, 0xc, UINT64_C(0xffffffffffffffe1)), /* value=0x0 */
@@ -124,8 +124,8 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3960X[] =
     MFX(0x000001d9, "IA32_DEBUGCTL", Ia32DebugCtl, Ia32DebugCtl, 0, 0, UINT64_C(0xffffffffffff803c)), /* value=0x0 */
     MFO(0x000001db, "P6_LAST_BRANCH_FROM_IP", P6LastBranchFromIp), /* value=0x7ffff880`093814ea */
     MFO(0x000001dc, "P6_LAST_BRANCH_TO_IP", P6LastBranchToIp), /* value=0xfffff880`093a60e0 */
-    MFX(0x000001dd, "P6_LAST_INT_FROM_IP", P6LastIntFromIp, P6LastIntFromIp, 0, 0, UINT64_C(0x7fff800000000000)), /* value=0x0 */
-    MFX(0x000001de, "P6_LAST_INT_TO_IP", P6LastIntToIp, P6LastIntToIp, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
+    MFN(0x000001dd, "P6_LAST_INT_FROM_IP", P6LastIntFromIp, P6LastIntFromIp), /* value=0x0 */
+    MFN(0x000001de, "P6_LAST_INT_TO_IP", P6LastIntToIp, P6LastIntToIp), /* value=0x0 */
     MVO(0x000001e1, "I7_SB_UNK_0000_01e1", 0x2),
     MVX(0x000001ef, "I7_SB_UNK_0000_01ef", 0xff, 0, UINT64_MAX),
     MFO(0x000001f0, "I7_VLW_CAPABILITY", IntelI7VirtualLegacyWireCap), /* value=0x74 */
@@ -211,7 +211,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3960X[] =
     MFX(0x00000490, "IA32_VMX_TRUE_ENTRY_CTLS", Ia32VmxTrueEntryCtls, ReadOnly, UINT64_C(0xffff000011fb), 0, 0), /* value=0xffff`000011fb */
     RSN(0x000004c1, 0x000004c4, "IA32_A_PMCn", Ia32PmcN, Ia32PmcN, 0x0, 0, UINT64_C(0xffff000000000000)),
     MVO(0x00000502, "I7_SB_UNK_0000_0502", 0),
-    MFX(0x00000600, "IA32_DS_AREA", Ia32DsArea, Ia32DsArea, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
+    MFN(0x00000600, "IA32_DS_AREA", Ia32DsArea, Ia32DsArea), /* value=0x0 */
     MFX(0x00000601, "I7_SB_MSR_VR_CURRENT_CONFIG", IntelI7SandyVrCurrentConfig, IntelI7SandyVrCurrentConfig, 0, UINT32_C(0x80001fff), 0x7fffe000), /* value=0x141494`80000640 */
     MFX(0x00000603, "I7_SB_MSR_VR_MISC_CONFIG", IntelI7SandyVrMiscConfig, IntelI7SandyVrMiscConfig, 0, UINT32_C(0x80ffffff), UINT64_C(0xffffffff7f000000)), /* value=0x80151515 */
     MFO(0x00000606, "I7_SB_MSR_RAPL_POWER_UNIT", IntelI7SandyRaplPowerUnit), /* value=0xa1003 */
