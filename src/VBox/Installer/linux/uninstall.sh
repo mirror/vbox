@@ -102,6 +102,7 @@ rm -f \
   /usr/bin/VBoxNetDHCP \
   /usr/bin/VBoxNetNAT \
   /usr/bin/vboxwebsrv \
+  /usr/bin/vbox-img \
   /usr/bin/VBoxAddIF \
   /usr/bin/VBoxDeleteIf \
   /usr/bin/VBoxTunctl \

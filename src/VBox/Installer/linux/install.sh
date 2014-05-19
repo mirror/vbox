@@ -111,6 +111,7 @@ check_previous() {
     check_binary "/usr/bin/VBoxBalloonCtrl" "$install_dir" &&
     check_binary "/usr/bin/VBoxAutostart" "$install_dir" &&
     check_binary "/usr/bin/vboxwebsrv" "$install_dir"
+    check_binary "/usr/bin/vbox-img" "$install_dir"
 }
 
 ##############################################################################
@@ -402,6 +403,7 @@ if [ "$ACTION" = "install" ]; then
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxBalloonCtrl
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxAutostart
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/vboxwebsrv
+    ln -sf $INSTALLATION_DIR/vbox-img /usr/bin/vbox-img
     ln -sf $INSTALLATION_DIR/VBox.png /usr/share/pixmaps/VBox.png
     # Unity and Nautilus seem to look here for their icons
     ln -sf $INSTALLATION_DIR/icons/128x128/virtualbox.png /usr/share/pixmaps/virtualbox.png
