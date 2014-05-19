@@ -3623,7 +3623,10 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 {
                     /* Unmount existing media only for floppy and DVD drives. */
                     PPDMIBASE pBase;
-                    rc = PDMR3QueryLun(pUVM, pcszDevice, uInstance, uLUN, &pBase);
+                    if (enmBus == StorageBus_USB)
+                        rc = PDMR3UsbQueryLun(pUVM, pcszDevice, uInstance, uLUN, &pBase);
+                    else
+                        rc = PDMR3QueryLun(pUVM, pcszDevice, uInstance, uLUN, &pBase);
                     if (RT_FAILURE(rc))
                     {
                         if (rc == VERR_PDM_LUN_NOT_FOUND || rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
