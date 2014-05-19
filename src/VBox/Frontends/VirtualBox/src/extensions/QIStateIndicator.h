@@ -39,8 +39,10 @@ public:
 
     int state () const { return mState; }
 
-    QPixmap stateIcon (int aState) const;
-    void setStateIcon (int aState, const QPixmap &aPixmap);
+    /** Returns state-icon for passed @a state. */
+    QPixmap stateIcon(int state) const;
+    /** Defines state-icon for passed @a state as @a icon. */
+    void setStateIcon(int state, const QIcon &icon);
 
     virtual void updateAppearance() {}
 

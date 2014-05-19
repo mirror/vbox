@@ -29,6 +29,7 @@
 #include "UIConverter.h"
 #include "UIAnimationFramework.h"
 #include "UIMedium.h"
+#include "UIIconPool.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -57,10 +58,10 @@ public:
     UIIndicatorHardDisks(CSession &session)
       : m_session(session)
     {
-        setStateIcon(KDeviceActivity_Idle, QPixmap(":/hd_16px.png"));
-        setStateIcon(KDeviceActivity_Reading, QPixmap(":/hd_read_16px.png"));
-        setStateIcon(KDeviceActivity_Writing, QPixmap(":/hd_write_16px.png"));
-        setStateIcon(KDeviceActivity_Null, QPixmap(":/hd_disabled_16px.png"));
+        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/hd_16px.png"));
+        setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/hd_read_16px.png"));
+        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/hd_write_16px.png"));
+        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/hd_disabled_16px.png"));
 
         retranslateUi();
     }
@@ -123,10 +124,10 @@ public:
     UIIndicatorOpticalDisks(CSession &session)
       : m_session(session)
     {
-        setStateIcon(KDeviceActivity_Idle, QPixmap(":/cd_16px.png"));
-        setStateIcon(KDeviceActivity_Reading, QPixmap(":/cd_read_16px.png"));
-        setStateIcon(KDeviceActivity_Writing, QPixmap(":/cd_write_16px.png"));
-        setStateIcon(KDeviceActivity_Null, QPixmap(":/cd_disabled_16px.png"));
+        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/cd_16px.png"));
+        setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/cd_read_16px.png"));
+        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/cd_write_16px.png"));
+        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/cd_disabled_16px.png"));
 
         retranslateUi();
     }
@@ -193,10 +194,10 @@ public:
     UIIndicatorFloppyDisks(CSession &session)
       : m_session(session)
     {
-        setStateIcon(KDeviceActivity_Idle, QPixmap(":/fd_16px.png"));
-        setStateIcon(KDeviceActivity_Reading, QPixmap(":/fd_read_16px.png"));
-        setStateIcon(KDeviceActivity_Writing, QPixmap(":/fd_write_16px.png"));
-        setStateIcon(KDeviceActivity_Null, QPixmap(":/fd_disabled_16px.png"));
+        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/fd_16px.png"));
+        setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/fd_read_16px.png"));
+        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/fd_write_16px.png"));
+        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/fd_disabled_16px.png"));
 
         retranslateUi();
     }
@@ -264,10 +265,10 @@ public:
       : m_session(session)
       , m_pUpdateTimer(new QTimer(this))
     {
-        setStateIcon(KDeviceActivity_Idle, QPixmap(":/nw_16px.png"));
-        setStateIcon(KDeviceActivity_Reading, QPixmap(":/nw_read_16px.png"));
-        setStateIcon(KDeviceActivity_Writing, QPixmap(":/nw_write_16px.png"));
-        setStateIcon(KDeviceActivity_Null, QPixmap(":/nw_disabled_16px.png"));
+        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/nw_16px.png"));
+        setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/nw_read_16px.png"));
+        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/nw_write_16px.png"));
+        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/nw_disabled_16px.png"));
 
         connect(m_pUpdateTimer, SIGNAL(timeout()), SLOT(sltUpdateNetworkIPs()));
         m_pUpdateTimer->start(5000);
@@ -369,10 +370,10 @@ public:
     UIIndicatorUSB(CSession &session)
       : m_session(session)
     {
-        setStateIcon(KDeviceActivity_Idle, QPixmap(":/usb_16px.png"));
-        setStateIcon(KDeviceActivity_Reading, QPixmap(":/usb_read_16px.png"));
-        setStateIcon(KDeviceActivity_Writing, QPixmap(":/usb_write_16px.png"));
-        setStateIcon(KDeviceActivity_Null, QPixmap(":/usb_disabled_16px.png"));
+        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/usb_16px.png"));
+        setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/usb_read_16px.png"));
+        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/usb_write_16px.png"));
+        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/usb_disabled_16px.png"));
 
         retranslateUi();
     }
@@ -434,10 +435,10 @@ public:
     UIIndicatorSharedFolders(CSession &session)
       : m_session(session)
     {
-        setStateIcon(KDeviceActivity_Idle, QPixmap(":/sf_16px.png"));
-        setStateIcon(KDeviceActivity_Reading, QPixmap(":/sf_read_16px.png"));
-        setStateIcon(KDeviceActivity_Writing, QPixmap(":/sf_write_16px.png"));
-        setStateIcon(KDeviceActivity_Null, QPixmap(":/sf_disabled_16px.png"));
+        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/sf_16px.png"));
+        setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/sf_read_16px.png"));
+        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/sf_write_16px.png"));
+        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/sf_disabled_16px.png"));
 
         retranslateUi();
     }
@@ -523,8 +524,8 @@ public:
         , m_dRotationAngle(0)
     {
         /* Assign state icons: */
-        setStateIcon(UIIndicatorStateVideoCapture_Disabled, QPixmap(":/video_capture_16px.png"));
-        setStateIcon(UIIndicatorStateVideoCapture_Enabled, QPixmap(":/movie_reel_16px.png"));
+        setStateIcon(UIIndicatorStateVideoCapture_Disabled, UIIconPool::iconSet(":/video_capture_16px.png"));
+        setStateIcon(UIIndicatorStateVideoCapture_Enabled,  UIIconPool::iconSet(":/movie_reel_16px.png"));
 
         /* Prepare *enabled* state animation: */
         m_pAnimation = UIAnimationLoop::installAnimationLoop(this, "rotationAngle",
@@ -640,8 +641,8 @@ public:
     UIIndicatorFeatures(CSession &session)
       : m_session(session)
     {
-        setStateIcon(0, QPixmap(":/vtx_amdv_disabled_16px.png"));
-        setStateIcon(1, QPixmap(":/vtx_amdv_16px.png"));
+        setStateIcon(0, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
+        setStateIcon(1, UIIconPool::iconSet(":/vtx_amdv_16px.png"));
 
         retranslateUi();
     }
@@ -714,11 +715,11 @@ public:
     UIIndicatorMouse(CSession &session)
       : m_session(session)
     {
-        setStateIcon(0, QPixmap(":/mouse_disabled_16px.png"));
-        setStateIcon(1, QPixmap(":/mouse_16px.png"));
-        setStateIcon(2, QPixmap(":/mouse_seamless_16px.png"));
-        setStateIcon(3, QPixmap(":/mouse_can_seamless_16px.png"));
-        setStateIcon(4, QPixmap(":/mouse_can_seamless_uncaptured_16px.png"));
+        setStateIcon(0, UIIconPool::iconSet(":/mouse_disabled_16px.png"));
+        setStateIcon(1, UIIconPool::iconSet(":/mouse_16px.png"));
+        setStateIcon(2, UIIconPool::iconSet(":/mouse_seamless_16px.png"));
+        setStateIcon(3, UIIconPool::iconSet(":/mouse_can_seamless_16px.png"));
+        setStateIcon(4, UIIconPool::iconSet(":/mouse_can_seamless_uncaptured_16px.png"));
 
         retranslateUi();
     }
@@ -765,10 +766,10 @@ public:
     UIIndicatorKeyboard(CSession &session)
       : m_session(session)
     {
-        setStateIcon(0, QPixmap(":/hostkey_16px.png"));
-        setStateIcon(1, QPixmap(":/hostkey_captured_16px.png"));
-        setStateIcon(2, QPixmap(":/hostkey_pressed_16px.png"));
-        setStateIcon(3, QPixmap(":/hostkey_captured_pressed_16px.png"));
+        setStateIcon(0, UIIconPool::iconSet(":/hostkey_16px.png"));
+        setStateIcon(1, UIIconPool::iconSet(":/hostkey_captured_16px.png"));
+        setStateIcon(2, UIIconPool::iconSet(":/hostkey_pressed_16px.png"));
+        setStateIcon(3, UIIconPool::iconSet(":/hostkey_captured_pressed_16px.png"));
 
         retranslateUi();
     }
