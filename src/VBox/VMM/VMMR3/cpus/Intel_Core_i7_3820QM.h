@@ -96,8 +96,8 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3820QM[] =
     MVX(0x00000140, "I7_IVY_UNK_0000_0140", 0, 0, UINT64_C(0xfffffffffffffffe)),
     MVX(0x00000142, "I7_IVY_UNK_0000_0142", 0, 0, UINT64_C(0xfffffffffffffffc)),
     MFX(0x00000174, "IA32_SYSENTER_CS", Ia32SysEnterCs, Ia32SysEnterCs, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0xb */
-    MFX(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp, 0, 0, UINT64_C(0xffff800000000000)), /* value=0xffffff80`21af5080 */
-    MFX(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip, 0, 0, UINT64_C(0xffff800000000000)), /* value=0xffffff80`214ce720 */
+    MFN(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp), /* value=0xffffff80`21af5080 */
+    MFN(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip), /* value=0xffffff80`214ce720 */
     MFX(0x00000179, "IA32_MCG_CAP", Ia32McgCap, ReadOnly, 0xc09, 0, 0), /* value=0xc09 */
     MFX(0x0000017a, "IA32_MCG_STATUS", Ia32McgStatus, Ia32McgStatus, 0, 0, UINT64_C(0xfffffffffffffff8)), /* value=0x0 */
     RSN(0x00000186, 0x00000189, "IA32_PERFEVTSELn", Ia32PerfEvtSelN, Ia32PerfEvtSelN, 0, 0, UINT64_C(0xffffffff00080000)),
@@ -124,8 +124,8 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3820QM[] =
     MFX(0x000001d9, "IA32_DEBUGCTL", Ia32DebugCtl, Ia32DebugCtl, 0, 0, UINT64_C(0xffffffffffff803c)), /* value=0x0 */
     MFO(0x000001db, "P6_LAST_BRANCH_FROM_IP", P6LastBranchFromIp), /* value=0x7fffff7f`a38c2298 */
     MFO(0x000001dc, "P6_LAST_BRANCH_TO_IP", P6LastBranchToIp), /* value=0xffffff80`214b24e0 */
-    MFX(0x000001dd, "P6_LAST_INT_FROM_IP", P6LastIntFromIp, P6LastIntFromIp, 0, 0, UINT64_C(0x7fff800000000000)), /* value=0x0 */
-    MFX(0x000001de, "P6_LAST_INT_TO_IP", P6LastIntToIp, P6LastIntToIp, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
+    MFN(0x000001dd, "P6_LAST_INT_FROM_IP", P6LastIntFromIp, P6LastIntFromIp), /* value=0x0 */
+    MFN(0x000001de, "P6_LAST_INT_TO_IP", P6LastIntToIp, P6LastIntToIp), /* value=0x0 */
     MVO(0x000001f0, "TODO_0000_01f0", 0x74),
     MVO(0x000001f2, "TODO_0000_01f2", UINT32_C(0x8b000006)),
     MVO(0x000001f3, "TODO_0000_01f3", UINT32_C(0xff800800)),
@@ -225,7 +225,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3820QM[] =
     MVX(0x000004c2, "TODO_0000_04c2", 0, 0, UINT64_C(0xffff000000000000)),
     MVX(0x000004c3, "TODO_0000_04c3", 0, 0, UINT64_C(0xffff000000000000)),
     MVX(0x000004c4, "TODO_0000_04c4", 0, 0, UINT64_C(0xffff000000000000)),
-    MFX(0x00000600, "IA32_DS_AREA", Ia32DsArea, Ia32DsArea, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
+    MFN(0x00000600, "IA32_DS_AREA", Ia32DsArea, Ia32DsArea), /* value=0x0 */
     MVX(0x00000601, "TODO_0000_0601", UINT64_C(0x1814149480000380), UINT32_C(0x80001fff), 0x7fffe000),
     MVX(0x00000602, "TODO_0000_0602", UINT64_C(0x1814149480000170), UINT32_C(0x80001fff), 0x7fffe000),
     MVX(0x00000603, "TODO_0000_0603", UINT32_C(0x80303030), UINT32_C(0x80ffffff), UINT64_C(0xffffffff7f000000)),
@@ -338,12 +338,12 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3820QM[] =
     MVX(0x00000c83, "TODO_0000_0c83", 0, ~(uint64_t)UINT32_MAX, 0),
     MFX(0xc0000080, "AMD64_EFER", Amd64Efer, Amd64Efer, 0xd01, 0x400, UINT64_C(0xfffffffffffff2fe)),
     MFX(0xc0000081, "AMD64_STAR", Amd64SyscallTarget, Amd64SyscallTarget, 0, 0, 0), /* value=0x1b0008`00000000 */
-    MFX(0xc0000082, "AMD64_STAR64", Amd64LongSyscallTarget, Amd64LongSyscallTarget, 0, 0, UINT64_C(0xffff800000000000)), /* value=0xffffff80`214ce6c0 */
-    MFX(0xc0000083, "AMD64_STARCOMPAT", Amd64CompSyscallTarget, Amd64CompSyscallTarget, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
+    MFN(0xc0000082, "AMD64_STAR64", Amd64LongSyscallTarget, Amd64LongSyscallTarget), /* value=0xffffff80`214ce6c0 */
+    MFN(0xc0000083, "AMD64_STARCOMPAT", Amd64CompSyscallTarget, Amd64CompSyscallTarget), /* value=0x0 */
     MFX(0xc0000084, "AMD64_SYSCALL_FLAG_MASK", Amd64SyscallFlagMask, Amd64SyscallFlagMask, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x4700 */
-    MFX(0xc0000100, "AMD64_FS_BASE", Amd64FsBase, Amd64FsBase, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
-    MFX(0xc0000101, "AMD64_GS_BASE", Amd64GsBase, Amd64GsBase, 0, 0, UINT64_C(0xffff800000000000)), /* value=0xffffff81`e942f000 */
-    MFX(0xc0000102, "AMD64_KERNEL_GS_BASE", Amd64KernelGsBase, Amd64KernelGsBase, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x7fff`7ccad1e0 */
+    MFN(0xc0000100, "AMD64_FS_BASE", Amd64FsBase, Amd64FsBase), /* value=0x0 */
+    MFN(0xc0000101, "AMD64_GS_BASE", Amd64GsBase, Amd64GsBase), /* value=0xffffff81`e942f000 */
+    MFN(0xc0000102, "AMD64_KERNEL_GS_BASE", Amd64KernelGsBase, Amd64KernelGsBase), /* value=0x7fff`7ccad1e0 */
     MFX(0xc0000103, "AMD64_TSC_AUX", Amd64TscAux, Amd64TscAux, 0, 0, ~(uint64_t)UINT32_MAX), /* value=0x0 */
 };
 #endif /* !CPUM_DB_STANDALONE */

@@ -107,8 +107,8 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Xeon_X5482_3_20GHz[] =
     MVX(0x0000015e, "C2_UNK_0000_015e", 0x6, 0, UINT64_C(0xfffffffffffffff0)),
     MFX(0x0000015f, "C1_DTS_CAL_CTRL", IntelCore1DtsCalControl, IntelCore1DtsCalControl, 0, UINT64_C(0xffffffffffc0ffff), 0), /* value=0x822 */
     MFX(0x00000174, "IA32_SYSENTER_CS", Ia32SysEnterCs, Ia32SysEnterCs, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0xb */
-    MFX(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp, 0, 0, UINT64_C(0xffff800000000000)), /* value=0xffffff82`0dce9190 */
-    MFX(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip, 0, 0, UINT64_C(0xffff800000000000)), /* value=0xffffff80`0d2ce720 */
+    MFN(0x00000175, "IA32_SYSENTER_ESP", Ia32SysEnterEsp, Ia32SysEnterEsp), /* value=0xffffff82`0dce9190 */
+    MFN(0x00000176, "IA32_SYSENTER_EIP", Ia32SysEnterEip, Ia32SysEnterEip), /* value=0xffffff80`0d2ce720 */
     MFX(0x00000179, "IA32_MCG_CAP", Ia32McgCap, ReadOnly, 0x806, 0, 0), /* value=0x806 */
     MFX(0x0000017a, "IA32_MCG_STATUS", Ia32McgStatus, Ia32McgStatus, 0, ~(uint64_t)UINT32_MAX, 0), /* value=0x0 */
     RSN(0x00000186, 0x00000187, "IA32_PERFEVTSELn", Ia32PerfEvtSelN, Ia32PerfEvtSelN, 0x0, 0, UINT64_C(0xffffffff00200000)),
@@ -132,8 +132,8 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Xeon_X5482_3_20GHz[] =
     MFX(0x000001d9, "IA32_DEBUGCTL", Ia32DebugCtl, Ia32DebugCtl, 0, 0, UINT64_C(0xffffffffffffa03c)), /* value=0x1 */
     MFO(0x000001db, "P6_LAST_BRANCH_FROM_IP", P6LastBranchFromIp), /* value=0xffffff7f`8f47ca6b */
     MFO(0x000001dc, "P6_LAST_BRANCH_TO_IP", P6LastBranchToIp), /* value=0xffffff80`0d2b24c0 */
-    MFX(0x000001dd, "P6_LAST_INT_FROM_IP", P6LastIntFromIp, P6LastIntFromIp, 0, 0x1, UINT64_C(0xffff800000000000)), /* value=0xffffff80`0d2ba20f */
-    MFX(0x000001de, "P6_LAST_INT_TO_IP", P6LastIntToIp, P6LastIntToIp, 0, 0x10, UINT64_C(0xffff800000000000)), /* value=0xffffff80`0d2ba200 */
+    MFN(0x000001dd, "P6_LAST_INT_FROM_IP", P6LastIntFromIp, P6LastIntFromIp), /* value=0xffffff80`0d2ba20f */
+    MFN(0x000001de, "P6_LAST_INT_TO_IP", P6LastIntToIp, P6LastIntToIp), /* value=0xffffff80`0d2ba200 */
     MVO(0x000001e0, "MSR_ROB_CR_BKUPTMPDR6", 0xff0),
     MFX(0x000001f8, "IA32_PLATFORM_DCA_CAP", Ia32PlatformDcaCap, Ia32PlatformDcaCap, 0, UINT64_C(0xfffffffffffffffe), 0), /* value=0x0 */
     MFO(0x000001f9, "IA32_CPU_DCA_CAP", Ia32CpuDcaCap), /* value=0x1 */
@@ -200,7 +200,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Xeon_X5482_3_20GHz[] =
     MVX(0x00000591, "C2_UNK_0000_0591", 0, ~(uint64_t)UINT32_MAX, 0),
     MFX(0x000005a0, "C2_PECI_CTL", IntelCore2PeciControl, IntelCore2PeciControl, 0, UINT64_C(0xfffffffffffffffe), 0), /* value=0x1 */
     MVI(0x000005a1, "C2_UNK_0000_05a1", 0x1),
-    MFX(0x00000600, "IA32_DS_AREA", Ia32DsArea, Ia32DsArea, 0, 0, UINT64_C(0xffff800000000000)), /* value=0x0 */
+    MFN(0x00000600, "IA32_DS_AREA", Ia32DsArea, Ia32DsArea), /* value=0x0 */
     MFX(0xc0000080, "AMD64_EFER", Amd64Efer, Amd64Efer, 0xd01, 0x400, UINT64_C(0xfffffffffffff2fe)),
     MFN(0xc0000081, "AMD64_STAR", Amd64SyscallTarget, Amd64SyscallTarget), /* value=0x1b0008`00000000 */
     MFN(0xc0000082, "AMD64_STAR64", Amd64LongSyscallTarget, Amd64LongSyscallTarget), /* value=0xffffff80`0d2ce6c0 */

@@ -2558,6 +2558,44 @@ static bool isMsrViaDummy(uint32_t uMsr, uint64_t uValue, uint32_t fFlags)
 }
 
 
+/**
+ * Adjusts the ignore and GP masks for MSRs which contains canonical addresses.
+ *
+ * @param   uMsr                The MSR.
+ * @param   pfIgn               Pointer to the ignore mask.
+ * @param   pfGp                Pointer to the GP mask.
+ */
+static void adjustCanonicalIgnAndGpMasks(uint32_t uMsr, uint64_t *pfIgn, uint64_t *pfGp)
+{
+    if (!vbCpuRepSupportsLongMode())
+        return;
+    switch (uMsr)
+    {
+        case 0x00000175:
+        case 0x00000176:
+        case 0x000001da:
+        case 0x000001db:
+        case 0x000001dc:
+        case 0x000001de:
+        case 0x00000600:
+            if (*pfGp == UINT64_C(0xffff800000000000))
+                *pfGp = 0;
+            break;
+        case 0x000001dd:
+            if (*pfGp == UINT64_C(0x7fff800000000000) || *pfGp == UINT64_C(0xffff800000000000)) /* why is the top bit writable? */
+                *pfGp = 0;
+            break;
+
+        case 0xc0000082:
+        case 0xc0000083:
+        case 0xc0000100:
+        case 0xc0000101:
+        case 0xc0000102:
+            *pfGp = 0;
+            break;
+    }
+}
+
 
 
 /**
@@ -2948,6 +2986,7 @@ static int reportMsr_Generic(uint32_t uMsr, uint32_t fFlags, uint64_t uValue)
                     rc = msrProberModifyBitChanges(uMsr, &fIgnMask, &fGpMask, fSkipMask);
                     if (RT_FAILURE(rc))
                         return rc;
+                    adjustCanonicalIgnAndGpMasks(uMsr, &fIgnMask, &fGpMask);
 
                     if (pszFnName)
                     {
@@ -4113,8 +4152,6 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
                                          annotateValue(uValue));
         else if (uMsr == 0xc0000080)
             rc = reportMsr_Amd64Efer(uMsr, uValue);
-        else if (uMsr == 0xc0000082 || uMsr == 0xc0000083 || uMsr == 0xc0000100 || uMsr == 0xc0000101 || uMsr == 0xc0000102)
-            rc = reportMsr_GenFunctionEx(uMsr, NULL, 0, UINT64_C(0xffff800000000000), 0, annotateValue(uValue)); /* Canoncial address hack. */
         else if (uMsr >= 0xc0000408 && uMsr <= 0xc000040f)
             rc = reportMsr_AmdFam10hMc4MiscN(&paMsrs[i], cMsrs - i, &i);
         else if (uMsr == 0xc0010000 && g_enmVendor == CPUMCPUVENDOR_AMD)
