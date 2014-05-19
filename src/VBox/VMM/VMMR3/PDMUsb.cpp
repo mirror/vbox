@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1393,6 +1393,46 @@ VMMR3DECL(int)  PDMR3UsbDriverDetach(PUVM pUVM, const char *pszDevice, unsigned 
     }
 
     LogFlow(("PDMR3UsbDriverDetach: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * Query the interface of the top level driver on a LUN.
+ *
+ * @returns VBox status code.
+ * @param   pUVM            The user mode VM handle.
+ * @param   pszDevice       Device name.
+ * @param   iInstance       Device instance.
+ * @param   iLun            The Logical Unit to obtain the interface of.
+ * @param   ppBase          Where to store the base interface pointer.
+ * @remark  We're not doing any locking ATM, so don't try call this at times when the
+ *          device chain is known to be updated.
+ */
+VMMR3DECL(int)  PDMR3UsbQueryLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
+{
+    LogFlow(("PDMR3UsbQueryLun: pszDevice=%p:{%s} iInstance=%u iLun=%u ppBase=%p\n",
+             pszDevice, pszDevice, iInstance, iLun, ppBase));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    /*
+     * Find the LUN.
+     */
+    PPDMLUN pLun;
+    int rc = pdmR3UsbFindLun(pVM, pszDevice, iInstance, iLun, &pLun);
+    if (RT_SUCCESS(rc))
+    {
+        if (pLun->pTop)
+        {
+            *ppBase = &pLun->pTop->IBase;
+            LogFlow(("PDMR3UsbQueryLun: return %Rrc and *ppBase=%p\n", VINF_SUCCESS, *ppBase));
+            return VINF_SUCCESS;
+        }
+        rc = VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN;
+    }
+    LogFlow(("PDMR3UsbQueryLun: returns %Rrc\n", rc));
     return rc;
 }
 
