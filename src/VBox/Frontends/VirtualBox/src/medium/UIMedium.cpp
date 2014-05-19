@@ -30,6 +30,7 @@
 #include "UIConverter.h"
 #include "UIMessageCenter.h"
 #include "UIExtraDataManager.h"
+#include "UIIconPool.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -449,7 +450,10 @@ QPixmap UIMedium::icon(bool fNoDiffs /* = false */, bool fCheckRO /* = false */)
         pixmap = result(fNoDiffs).isOk() ? vboxGlobal().warningIcon() : vboxGlobal().errorIcon();
 
     if (fCheckRO && m_fReadOnly)
-        pixmap = VBoxGlobal::joinPixmaps(pixmap, QPixmap(":/hd_new_16px.png"));
+    {
+        QIcon icon = UIIconPool::iconSet(":/hd_new_16px.png");
+        pixmap = VBoxGlobal::joinPixmaps(pixmap, icon.pixmap(icon.availableSizes().first()));
+    }
 
     return pixmap;
 }
