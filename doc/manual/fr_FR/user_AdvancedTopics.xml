@@ -3223,6 +3223,49 @@ VBoxManage setextradata "foo" "VBoxInternal2/SavestateOnBatteryLow" 0</screen>
        </glosslist>
      </para>
 
+      <sect2>
+        <title>Eléments pour gérer une Guru Meditation</title>
+
+        <para>Une VM tombe en Guru Meditation si elle rencontre un problème non
+          corrigible par d'autres moyens que celui de terminer le processus. Par
+          défaut, on affiche une fenêtre de message demandant à l'utilisateur
+          d'ouvrir un rapport de bogue.</para>
+        <para>Vous pouvez configurer ce comportement :</para>
+
+        <para><screen>VBoxManage setextradata "nom VM" GUI/GuruMeditationHandler MODE</screen></para>
+
+        <para>où <computeroutput>MODE</computeroutput> est un des mots-clés
+          qui suit :</para><glosslist>
+          <glossentry>
+            <glossterm><computeroutput>Default</computeroutput></glossterm>
+            <glossdef>
+              <para>Une fenêtre de message s'affiche. Après la confirmeation de
+                l'utilisateur, la VM se termine.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
+            <glossdef>
+              <para>La VM se coupe immédiatement sans afficher de fenêtre message.
+                Le fichier journal de la VM affichera des informations sur ce
+                qu'il s'est passé.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm><computeroutput>Ignore</computeroutput></glossterm>
+            <glossdef>
+              <para>On quitte la VM en mode dépannage. L'exécution s'arrête mais
+              aucune fenêtre de message ne s'affiche. Vous devez couper la VM
+              manuellement.</para>
+            </glossdef>
+          </glossentry>
+        </glosslist>
+
+        <para>C'est un paramètre individuel à chaque VM.</para>
+     </sect2>
+
    </sect1>
 
 </chapter>

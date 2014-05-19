@@ -100,7 +100,7 @@ Settings file: '/home/nomutilisateur/.config/VirtualBox/Machines/SUSE 10.2/SUSE 
       <listitem>
         <para>Pour modifier les paramètres pendant qu'une VM est éteinte, utilisez
         <computeroutput>VBoxManage modifyvm</computeroutput>, comme ceci&#xA0;:
-        <screen>VBoxManage modifyvm "Windows XP" --memory "512MB"</screen></para>
+        <screen>VBoxManage modifyvm "Windows XP" --memory 512</screen></para>
 
         <para>Pour des détails,voir <xref linkend="vboxmanage-modifyvm" />.</para>
       </listitem>
@@ -919,7 +919,7 @@ Statistics update:  disabled</screen></para>
             </listitem>
 
             <listitem>
-              <para><computeroutput>--natnatsettings&lt;1-N&gt;
+              <para><computeroutput>--natsettings&lt;1-N&gt;
               [&lt;mtu&gt;],[&lt;socksnd&gt;],[&lt;sockrcv&gt;],[&lt;tcpsnd&gt;],
               [&lt;tcprcv&gt;]</computeroutput>&#xA0;: Cette option contrôle
               plusieurs paramètres NAT (merci de voir <xref linkend="nat-adv-settings" />
@@ -941,9 +941,11 @@ Statistics update:  disabled</screen></para>
     </sect2>
 
     <sect2 id="vboxmanage-modifyvm-other">
-      <title>Options du port série, du son, du presse-papier et de l'USB</title>
+      <title>Paramètres divers</title>
 
-      <para>Les autres paramètres matériels suivants sont disponibles avec
+      <para>Les autres paramètres matériels suivants (tels que ceux du port série,
+      du son, du presse-papiers, du glisser/déplacer, de l'écran et de l'USB)
+      sont disponibles avec
       <computeroutput>VBoxManage modifyvm</computeroutput>&#xA0;:<itemizedlist>
           <listitem>
             <para><computeroutput>--uart&lt;1-N&gt; off|&lt;I/O base&gt;
@@ -1012,11 +1014,20 @@ Statistics update:  disabled</screen></para>
             <para><computeroutput>--clipboard
             disabled|hosttoguest|guesttohost|bidirectional</computeroutput>&#xA0;:
             Avec ce paramètre, vous pouvez sélectionner si le presse-papier du
-            système d'exploitation invité doit être partagé avec l'hôte&#xA0;; voir
+            système d'exploitation invité ou de l'hôte doit être partagé avec 
+            l'hôte ou l'invité et comment ; voir
             <xref linkend="generalsettings" />. Cela exige que les suppléments
             invité soient installés dans la machine virtuelle.</para>
           </listitem>
 
+          <listitem>
+            <para><computeroutput>--draganddrop
+            disabled|hosttoguest|guesttohost|bidirectional</computeroutput> :
+            Avec ce paramètre, vous pouvez sélectionner le mode actuel de
+            glisser/déplacer à utiliser entre l'hôte et la machine virtuelle ;
+        voir <xref linkend="guestadd-dnd" />. Cela exige que les suppléments
+            invité soient installés dans la machine virtuelle.</para>
+          </listitem>
           <listitem>
             <para><computeroutput>--monitorcount
             &lt;nombre&gt;</computeroutput>&#xA0;: Cela active le support multi-monitoeurs&#xA0;;
@@ -1546,6 +1557,15 @@ Virtual system 0:
       </listitem>
 
       <listitem>
+        <para>L'opération <computeroutput>guestmemoryballoon</computeroutput>
+        change la taille du ballon mémoire de l'invité, c'est-à-dire la mémoire
+        du système d'exploitation invité affectée par les suppléments invité de VirtualBox
+        et rendue à l'hyperviseur pour être réutilisée par d'autres 
+        machines virtuelles. Elle se spécifie en mégaoctets.  Pour des détails,
+        voir <xref linkend="guestadd-balloon" />.</para>
+      </listitem>
+
+      <listitem>
         <para><computeroutput>usbattach</computeroutput> et
         <computeroutput>usbdettach</computeroutput> rendent les pçriphériques
         USB de l'hôte, à la volée, visibles pour la machine virtuelle sans besoin de
@@ -1554,6 +1574,26 @@ Virtual system 0:
 
         <para>Vous pouvez utiliser <computeroutput>VBoxManage list
         usbhost</computeroutput> pour trouver ces informations.</para>
+      </listitem>
+
+       <listitem>
+        <para><computeroutput>clipboard
+        disabled|hosttoguest|guesttohost|bidirectional</computeroutput> :
+        Avec ce paramètre, vous pouvez sélectionner si le presse-papiers du
+        système d'exploitation de l'hôte ou de l'invité doit être partagé avec
+        l'hôte et l'invfté et comment ; voir <xref linkend="generalsettings" />. Ceci
+        exige que les suppléments invité soient installés dans la machine
+        virtuelle.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>draganddrop
+        disabled|hosttoguest|guesttohost|bidirectional</computeroutput> :
+        Avec ce paramètre, vous pouvez sélectionner le mode glisser/déplacer
+        actuel qui sera utilisé entre l'hôte et la machine virtuelle ;
+        voir <xref linkend="guestadd-dnd" />. Cela exige que les suppléments
+        invité soient installés dans la machine
+        virtuelle.</para>
       </listitem>
 
       <listitem>
@@ -1590,13 +1630,14 @@ Virtual system 0:
       </listitem>
 
       <listitem>
-        <para>L'opération <computeroutput>guestmemoryballoon</computeroutput>
-        modifie la taille du ballon de la mémoire de l'invité, c'est-à-dire la
-        mémoire affectée par les suppléments invité de VirtualBox au système
-        d'exploitation invité et rendue à l'hyperviseur pour être réutilisée
-        par d'autres machines virtuelles. Elle doit être spécifiée en mégaoctets.
-        Pour des détails, voir <xref linkend="guestadd-balloon" />.</para>
-      </listitem>
+        <para><computeroutput>--plugcpu|unplugcpu
+        &lt;id&gt;</computeroutput> : Si vous avez activé le montage à chaud de
+        processeurs, ceci ajoutera un processeur virtuel aux machines virtuelles
+        (ou en supprimera un).
+        <computeroutput>&lt;id&gt;</computeroutput> spécifie l'index du processeur
+        virtuel à ajouter ou à supprimer et il doit être un numéro de 0
+        au numéro maximum du nombre de processeurs configuré.</para>
+       </listitem>
 
       <listitem>
         <para><computeroutput>cpuexecutioncap
@@ -2762,7 +2803,7 @@ Value: 2006.01.01</screen>
   <sect1 id="vboxmanage-guestcontrol">
     <title>VBoxManage guestcontrol</title>
 
-    <para>Les commandes "guestcontrol" vous permettent de contrôler certaines
+    <para>Les commandes <computeroutput>guestcontrol</computeroutput> vous permettent de contrôler certaines
     choses de l'invité à partir de l'hôte. Merci de voir <xref
     linkend="guestadd-guestcontrol" /> pour une présentation.</para>
 

@@ -1288,6 +1288,118 @@ $</screen>
     </sect2>
   </sect1>
 
+  <sect1 id="guestadd-dnd">
+    <title>Glisser/Déplacer</title>
+
+    <para>À partir de la version 4.4, VirtualBox supporte le glisser/déplacer
+    d'un contenu de l'hôte à l'invité et vice versa. Pour que cela fonctionne
+    les derniers suppléments invité doivent être installés sur l'invité.</para>
+
+    <para>Le glisser/déplacer vous permet de façon transparente de copier ou
+    d'ouvrir des fichiers, des répertoires, et même certains formats de presse-papiers
+    entre eux (de l'hôte à l'invité ou de l'invité à l'hôte). Vous pouvez
+    ainsi effectuer des opérations de glisser/déplacer entre vhôte et une VM
+    comme si c'était un glisser/déplacer ordinaire sur l'OS de l'hôte.</para>
+
+    <para>Pour le moment, le glisser/déplacer est implémenté sur les systèmes Windows
+    et X-Windows, tant côté invité que côté hôtes. Comme X-Windows supporte
+    différents protocoles de glisser/déplacer, seul celui le plus utilisé, XDND,,
+    est supporté actuellement. Les applications qui utilisent d'autres protocoles
+    (telles que Motif ou OffiX) ne seront pas reconnues par VirtualBox.</para>
+
+    <para>Dans un contexte d'utilisation de glisser/déplacer, l'origine des
+    données s'appelle <emphasis role="bold">source</emphasis>, c'est-à-dire, le
+    point spécifié d'où viennent les données.  De l'autre côté, il y a la
+    <emphasis role="bold">cible</emphasis>, qui désigne là où devraient aller les
+    données de la source. Le transfert de données de la source à la cible peut
+    se faire de plusieurs manières, comme en copiant, déplaçant ou créant des
+    liens.<footnote><para>Pour le
+    moment, seule la copie de données est supportée. Le déplacement ou la création
+    de liens n'est pas encore implémenté.</para></footnote></para>
+
+    <para>Quand on transfère des données de l'hôte à l'OS invité, l'hôte est
+    dans ce cas la source, alors que l'OS invité est la cible. En revanche, quand
+    dans l'autre sens, à savoir lors d'un transfert de données de l'OS invité
+    vers l'hôte, l'OS invité devient cette fois la source et l'hôte est la cible.</para>
+
+    <para>Pour des raisons de sécurité, le glisser/déplacer peut se configurer
+    lors de l'exécution, individuellement pour chaque VM, en utilisant soit
+    l'élément "Glisser/déplacer" du menu "Périphériques" de la machine virtuelle
+    ou VBoxManage : Les quatre modes suivants sont disponibles :
+
+<para><mediaobject>
+      <imageobject>
+        <imagedata align="center" fileref="images/dnd-modes.png"
+                   width="10cm" />
+        </imageobject>
+      </mediaobject></para>
+
+    <itemizedlist>
+      <listitem>
+        <para><emphasis role="bold">Disabled</emphasis> désactive complètement
+        le glisser/déplacer. C'est le réglage par défaut à la création de
+        nouvelles VMs.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">Host To Guest</emphasis> active le
+        glisser/déplacer de vhôte vers l'invité seulement.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">Guest To Host</emphasis> active le
+        glisser/déplacer de l'invité à l'hôte seulement.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">Bidirectional</emphasis> active le
+        glisser/déplacer dans les deux sens, de l'hôte vers l'invité et
+        vice versa.</para>
+      </listitem>
+    </itemizedlist></para>
+
+    <note><para>Le support du glisser/déplacer dépend de l'interface
+     utilisée ; pour le moment, seule celle du gestionnaire VirtualBox offre
+    cette fonctionnalité.</para></note>
+
+    <para>Pour utiliser VBoxManage pour contrôler le mode actuel du glisser/déplacer,
+    voir <xref
+    linkend="vboxmanage" />. Les commandes <computeroutput>modifyvm</computeroutput>
+    et <computeroutput>controlvm</computeroutput> permettent de définir le mode
+    glisser/déplacer d'une VM en ligne de commande.</para>
+
+    <sect2 id="guestadd-dnd-formats">
+      <title>Formats supportés</title>
+
+      <para>Comme VirtualBox peut fonctionner sur divers OS hôtes et il supporte
+      une large gamme d'invités, certains formats de données doivent être
+      traduits après un transfert pour que l'OS cible (c'est-à-dire la partie qui
+      reçoit les données) puisse les gérer de la bonne manière.</para>
+
+      <note><para>Cependant, quand vous glissez des fichiers, on ne fait aucune
+      conversion de données, ainsi quand vous transférez un fichier d'un invité
+      Linux vers un hôte Windows, les ajouts spécifiques à Linux ne seront pas
+      convertis en ajouts Linux.</para></note>
+
+      <para>Les formats suivants sont gérés par le service glisser/déplacer de
+      VirtualBox :
+        <itemizedlist>
+          <listitem>
+            <para><emphasis role="bold">Text brut</emphasis>, issu d'applications
+            telles un éditeur de texte, des navigateurs internet et des fenêtres
+            de terminal</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Fichiers</emphasis>, issus de gestionnaires
+            de fichiers comme l'explorateur Windows, Nautilus et Finder</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Répertoires</emphasis>, où la même
+            chose que pour les fichiers s'applique</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </sect2>
+
+  </sect1>
+
   <sect1 id="guestadd-video">
     <title>L'accélération graphique matérielle</title>
 
