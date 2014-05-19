@@ -225,7 +225,9 @@ static struct pxtcp *pxtcp_chan_recv_strong(struct pollmgr_handler *, SOCKET, in
 static int pxtcp_pmgr_connect(struct pollmgr_handler *, SOCKET, int);
 static int pxtcp_pmgr_pump(struct pollmgr_handler *, SOCKET, int);
 
+/* get incoming traffic into ring buffer */
 static ssize_t pxtcp_sock_read(struct pxtcp *, int *);
+static ssize_t pxtcp_sock_recv(struct pxtcp *, IOVEC *, size_t); /* default */
 
 /* convenience functions for poll manager callbacks */
 static int pxtcp_schedule_delete(struct pxtcp *);
@@ -1769,24 +1771,13 @@ static ssize_t
 pxtcp_sock_read(struct pxtcp *pxtcp, int *pstop)
 {
     IOVEC iov[2];
-#ifndef RT_OS_WINDOWS
-    struct msghdr mh;
-#else
-    DWORD dwFlags;
-    int rc;
-#endif
-    int iovlen;
+    size_t iovlen;
     ssize_t nread;
 
     const size_t sz = pxtcp->inbuf.bufsize;
     size_t beg, lim, wrnew;
 
     *pstop = 0;
-
-#ifndef RT_OS_WINDOWS
-    memset(&mh, 0, sizeof(mh));
-    mh.msg_iov = iov;
-#endif
 
     beg = pxtcp->inbuf.vacant;
     IOVEC_SET_BASE(iov[0], &pxtcp->inbuf.buf[beg]);
@@ -1827,31 +1818,11 @@ pxtcp_sock_read(struct pxtcp *pxtcp, int *pstop)
         IOVEC_SET_LEN(iov[1], lim);
     }
 
-#ifndef RT_OS_WINDOWS
-    mh.msg_iovlen = iovlen;
-    nread = recvmsg(pxtcp->sock, &mh, 0);
-#else
-    dwFlags = 0;
-    /* We can't assign nread to -1 expecting, that we'll got it back in case of error,
-     * instead, WSARecv(,,,DWORD *,,,) will rewrite only half of the 64bit value.
+    /*
+     * TODO: This is where application-level proxy can hook into to
+     * process inbound traffic.
      */
-    nread = 0;
-    rc = WSARecv(pxtcp->sock, iov, iovlen, (DWORD *)&nread, &dwFlags, NULL, NULL);
-    if (rc == SOCKET_ERROR) {
-        warn("pxtcp_sock_read:WSARecv(%d) error:%d nread:%d\n",
-             pxtcp->sock,
-             WSAGetLastError(),
-             nread);
-        nread = -1;
-    }
-
-    if (dwFlags) {
-        warn("pxtcp_sock_read:WSARecv(%d) dwFlags:%x nread:%d\n",
-             pxtcp->sock,
-             WSAGetLastError(),
-             nread);
-    }
-#endif
+    nread = pxtcp_sock_recv(pxtcp, iov, iovlen);
 
     if (nread > 0) {
         wrnew = beg + nread;
@@ -1883,6 +1854,42 @@ pxtcp_sock_read(struct pxtcp *pxtcp, int *pstop)
         return -errno;
     }
 }
+
+
+#if !defined(RT_OS_WINDOWS)
+static ssize_t
+pxtcp_sock_recv(struct pxtcp *pxtcp, IOVEC *iov, size_t iovlen)
+{
+    struct msghdr mh;
+    ssize_t nread;
+
+    memset(&mh, 0, sizeof(mh));
+
+    mh.msg_iov = iov;
+    mh.msg_iovlen = iovlen;
+
+    nread = recvmsg(pxtcp->sock, &mh, 0);
+
+    return nread;
+}
+#else /* RT_OS_WINDOWS */
+static ssize_t
+pxtcp_sock_recv(struct pxtcp *pxtcp, IOVEC *iov, size_t iovlen)
+{
+    DWORD flags;
+    DWORD nread;
+    int status;
+
+    flags = 0;
+    status = WSARecv(pxtcp->sock, iov, (DWORD)iovlen, &nread,
+                     &flags, NULL, NULL);
+    if (status == SOCKET_ERROR) {
+        nread = -1;
+    }
+
+    return (ssize_t)nread;
+}
+#endif /* RT_OS_WINDOWS */
 
 
 /**
