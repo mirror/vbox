@@ -68,6 +68,7 @@ DEFAULT_FILE_NAMES=" \
     vboxefi.fv \
     vboxefi64.fv \
     vboxwebsrv \
+    vbox-img \
     components/comreg.dat \
     components/xpti.dat \
     components/VBoxC.so \
