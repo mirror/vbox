@@ -194,7 +194,7 @@ VMMR3DECL(CPUMMICROARCH) CPUMR3CpuIdDetermineMicroarchEx(CPUMCPUVENDOR enmVendor
                  *     - Egypt:         20F10/JH-E1, 20F12/JH-E6
                  *     - Toledo:        20F32/JH-E6, 30F72/DH-E6 (single code variant).
                  *     - Manchester:    20FB1/BH-E4, 30FF2/BH-E4.
-                 *  - 90nm 2nd gen opteron ++, AMD-V introduced (might be missing in some cheeper models):
+                 *  - 90nm 2nd gen opteron ++, AMD-V introduced (might be missing in some cheaper models):
                  *     - Santa Ana:     40F32/JH-F2, /-F3
                  *     - Santa Rosa:    40F12/JH-F2, 40F13/JH-F3
                  *     - Windsor:       40F32/JH-F2, 40F33/JH-F3, C0F13/JH-F3, 40FB2/BH-F2, ??20FB1/BH-E4??.
@@ -916,7 +916,6 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
 }
 
 
-#if 0
 /**
  * Inserts a CPU ID leaf, replacing any existing ones.
  *
@@ -930,7 +929,6 @@ VMMR3DECL(int) CPUMR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF pNewLeaf)
      *        PATM relies on? See @bugref{7270}. */
     return cpumR3CpuIdInsert(pVM, NULL /* ppaLeaves */, NULL /* pcLeaves */, pNewLeaf);
 }
-#endif
 
 
 /**
