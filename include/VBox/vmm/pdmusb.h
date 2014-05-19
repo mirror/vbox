@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -450,7 +450,7 @@ typedef struct PDMUSBHLP
     /**
      * Attaches a driver (chain) to the USB device.
      *
-     * The first call for a LUN this will serve as a registartion of the LUN. The pBaseInterface and
+     * The first call for a LUN this will serve as a registration of the LUN. The pBaseInterface and
      * the pszDesc string will be registered with that LUN and kept around for PDMR3QueryUSBDeviceLun().
      *
      * @returns VBox status code.
@@ -1066,6 +1066,7 @@ VMMR3DECL(int)  PDMR3UsbDriverAttach(PUVM pUVM, const char *pszDevice, unsigned 
                                      PPPDMIBASE ppBase);
 VMMR3DECL(int)  PDMR3UsbDriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
                                      const char *pszDriver, unsigned iOccurance, uint32_t fFlags);
+VMMR3DECL(int)  PDMR3UsbQueryLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase);
 
 /** @} */
 
