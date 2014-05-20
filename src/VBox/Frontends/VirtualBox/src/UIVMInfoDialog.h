@@ -22,7 +22,6 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "UIVMInfoDialog.gen.h"
 
 /* COM includes: */
 #include "COMEnums.h"
