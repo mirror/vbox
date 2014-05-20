@@ -450,8 +450,6 @@ typedef struct CPUM
     CPUMCPUID               aGuestCpuIdExt[10];
     /** The centaur set of CpuId leaves. */
     CPUMCPUID               aGuestCpuIdCentaur[4];
-    /** The hypervisor specific set of CpuId leaves. */
-    CPUMCPUID               aGuestCpuIdHyper[4];
     /** The default set of CpuId leaves. */
     CPUMCPUID               GuestCpuIdDef;
 

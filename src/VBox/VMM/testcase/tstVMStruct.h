@@ -39,7 +39,6 @@
     GEN_CHECK_OFF(CPUM, aGuestCpuIdStd);
     GEN_CHECK_OFF(CPUM, aGuestCpuIdExt);
     GEN_CHECK_OFF(CPUM, aGuestCpuIdCentaur);
-    GEN_CHECK_OFF(CPUM, aGuestCpuIdHyper);
     GEN_CHECK_OFF(CPUM, GuestCpuIdDef);
 
     GEN_CHECK_SIZE(CPUMCPU); // has .mac
