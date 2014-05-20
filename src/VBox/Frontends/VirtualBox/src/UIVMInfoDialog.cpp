@@ -33,6 +33,9 @@
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
+#include "QITabWidget.h"
+#include "VBoxUtils.h"
+#include "QIDialogButtonBox.h"
 
 /* COM includes: */
 #include "COMEnums.h"
