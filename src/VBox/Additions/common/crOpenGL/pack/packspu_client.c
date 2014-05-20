@@ -192,7 +192,7 @@ GLboolean packspuZvaCreate(ContextInfo *pCtx, const GLfloat *pValue, GLuint cVal
     /* quickly sort out if we can use the current value */
     if (pInfo->idBuffer
             && pInfo->cValues >= cValues
-            && !memcmp(pValue, &pInfo->Value, cbValue))
+            && !crMemcmp(pValue, &pInfo->Value, cbValue))
         return GL_FALSE;
 
     pBuffer = (GLfloat*)crAlloc(cbValues);
@@ -205,7 +205,7 @@ GLboolean packspuZvaCreate(ContextInfo *pCtx, const GLfloat *pValue, GLuint cVal
     pu8Buf = (uint8_t *)pBuffer;
     for (i = 0; i < cValues; ++i)
     {
-        memcpy(pu8Buf, pValue, cbValue);
+        crMemcpy(pu8Buf, pValue, cbValue);
         pu8Buf += cbValue;
     }
 
@@ -229,7 +229,7 @@ GLboolean packspuZvaCreate(ContextInfo *pCtx, const GLfloat *pValue, GLuint cVal
     }
 
     pInfo->cValues = cValues;
-    memcpy(&pInfo->Value, pValue, cbValue);
+    crMemcpy(&pInfo->Value, pValue, cbValue);
 
     crFree(pBuffer);
 
