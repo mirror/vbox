@@ -39,9 +39,6 @@ class UIVMInfoDialog : public QIWithRetranslateUI<QMainWindow>, public Ui::UIVMI
 
 public:
 
-    /** Instance pointer map. */
-    typedef QMap <QString, UIVMInfoDialog*> InfoDlgMap;
-
     /** VM statistics counter data map. */
     typedef QMap <QString, QString> DataMapType;
     /** VM statistics counter links map. */
@@ -49,8 +46,9 @@ public:
     /** VM statistics counter struct. */
     struct CounterElementType { QString type; DataMapType list; };
 
-    /** Factory function to create information-dialog for passed @a pMachineWindow. */
-    static void createInformationDlg(UIMachineWindow *pMachineWindow);
+    /** Shows (and creates if necessary)
+      * information-dialog for passed @a pMachineWindow. */
+    static void invoke(UIMachineWindow *pMachineWindow);
 
 protected:
 
@@ -63,72 +61,72 @@ protected:
     void retranslateUi();
 
     /** Common event-handler. */
-    virtual bool event (QEvent *aEvent);
+    virtual bool event(QEvent *pEvent);
     /** Resize event-handler. */
-    virtual void resizeEvent (QResizeEvent *aEvent);
+    virtual void resizeEvent(QResizeEvent *pEvent);
     /** Show event-handler. */
-    virtual void showEvent (QShowEvent *aEvent);
+    virtual void showEvent(QShowEvent *pEvent);
 
 private slots:
 
     /** Slot to update general VM details. */
-    void updateDetails();
+    void sltUpdateDetails();
     /** Slot to update runtime VM statistics. */
-    void processStatistics();
+    void sltProcessStatistics();
     /** Slot to handle tab-widget page change. */
-    void onPageChanged (int aIndex);
+    void sltHandlePageChanged(int iIndex);
 
 private:
 
     /** Helper to parse passed VM statistics @a aText. */
-    QString parseStatistics (const QString &aText);
+    QString parseStatistics(const QString &strText);
     /** Helper to re-acquire whole VM statistics. */
     void refreshStatistics();
 
     /** Helper to format common VM statistics value. */
-    QString formatValue (const QString &aValueName, const QString &aValue, int aMaxSize);
-    /** Helper to format VM storage-medium statistics value. */
-    QString formatMedium (const QString &aCtrName, LONG aPort, LONG aDevice, const QString &aBelongsTo);
-    /** Helper to format VM network-adapter statistics value. */
-    QString formatAdapter (ULONG aSlot, const QString &aBelongsTo);
+    QString formatValue(const QString &strValueName, const QString &strValue, int iMaxSize);
+    /** Helper to format VM storage-statistics value. */
+    QString formatStorageElement(const QString &strCtrName, LONG iPort, LONG iDevice, const QString &strBelongsTo);
+    /** Helper to format VM network-statistics value. */
+    QString formatNetworkElement(ULONG uSlot, const QString &strBelongsTo);
 
     /** Helper to compose user-oriented article. */
-    QString composeArticle (const QString &aBelongsTo, int aSpacesCount = 0);
+    QString composeArticle(const QString &strBelongsTo, int iSpacesCount = 0);
 
     /** @name General variables.
      * @{ */
-    /** Dialog instance array. */
-    static InfoDlgMap  mSelfArray;
+    /** Dialog instance pointer. */
+    static UIVMInfoDialog *m_spInstance;
     /** Widget to center dialog according. */
-    QWidget           *m_pPseudoParentWidget;
+    QWidget               *m_pPseudoParentWidget;
     /** Whether dialog was polished. */
-    bool               mIsPolished;
+    bool                   m_fIsPolished;
     /** @} */
 
     /** @name Geometry variables.
      * @{ */
     /** Current dialog width. */
-    int                mWidth;
+    int                m_iWidth;
     /** Current dialog height. */
-    int                mHeight;
+    int                m_iHeight;
     /** Whether dialog maximized. */
-    bool               mMax;
+    bool               m_fMax;
     /** @} */
 
     /** @name VM details/statistics variables.
      * @{ */
     /** Session to acquire VM details/statistics from. */
-    CSession           mSession;
+    CSession           m_session;
     /** VM statistics update timer. */
-    QTimer            *mStatTimer;
+    QTimer            *m_pTimer;
     /** VM statistics counter names. */
-    DataMapType        mNamesMap;
+    DataMapType        m_names;
     /** VM statistics counter values. */
-    DataMapType        mValuesMap;
+    DataMapType        m_values;
     /** VM statistics counter units. */
-    DataMapType        mUnitsMap;
+    DataMapType        m_units;
     /** VM statistics counter links. */
-    LinksMapType       mLinksMap;
+    LinksMapType       m_links;
     /** @} */
 };
 
