@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIVMInfoDialog class implementation
+ * VBox Qt GUI - UIVMInfoDialog class implementation.
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -75,8 +73,9 @@ void UIVMInfoDialog::createInformationDlg(UIMachineWindow *pMachineWindow)
 UIVMInfoDialog::UIVMInfoDialog (UIMachineWindow *pMachineWindow)
     : QIWithRetranslateUI<QMainWindow>(0)
     , m_pPseudoParentWidget(pMachineWindow)
-    , mSession (pMachineWindow->session())
     , mIsPolished (false)
+    , mWidth(0), mHeight(0), mMax(false)
+    , mSession (pMachineWindow->session())
     , mStatTimer (new QTimer (this))
 {
     /* Apply UI decorations */
