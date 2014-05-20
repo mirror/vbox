@@ -5592,3 +5592,4 @@ VMMR0_INT_DECL(void) CPUMR0SetGuestTscAux(PVMCPU pVCpu, uint64_t uValue)
 }
 
 #endif /* IN_RING0 */
+

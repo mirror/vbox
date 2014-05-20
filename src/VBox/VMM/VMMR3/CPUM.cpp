@@ -1008,7 +1008,6 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCPUM, PCPUMCPUIDLE
         { pCPUM->aGuestCpuIdStd,        RT_ELEMENTS(pCPUM->aGuestCpuIdStd),     0x00000000 },
         { pCPUM->aGuestCpuIdExt,        RT_ELEMENTS(pCPUM->aGuestCpuIdExt),     0x80000000 },
         { pCPUM->aGuestCpuIdCentaur,    RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur), 0xc0000000 },
-        { pCPUM->aGuestCpuIdHyper,      RT_ELEMENTS(pCPUM->aGuestCpuIdHyper),   0x40000000 },
     };
     for (uint32_t i = 0; i < RT_ELEMENTS(aOldRanges); i++)
     {
@@ -1020,7 +1019,8 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCPUM, PCPUMCPUIDLE
             uLeaf--;
             pLegacyLeaf--;
 
-            PCCPUMCPUIDLEAF pLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, uLeaf, 0);
+            PCCPUMCPUIDLEAF pLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, uLeaf,
+                                                       0 /* uSubLeaf */);
             if (pLeaf)
             {
                 pLegacyLeaf->eax = pLeaf->uEax;
