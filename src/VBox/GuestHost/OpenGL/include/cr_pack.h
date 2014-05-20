@@ -169,26 +169,26 @@ extern DECLEXPORT(void) crHugePacket( CR_PACKER_CONTEXT_ARGDECL CROpcode op, voi
 extern DECLEXPORT(void) crPackFree( CR_PACKER_CONTEXT_ARGDECL void *ptr );
 extern DECLEXPORT(void) crNetworkPointerWrite( CRNetworkPointer *, void * );
 
-extern DECLEXPORT(void) crPackExpandDrawArrays(GLenum mode, GLint first, GLsizei count, CRClientState *c);
-extern DECLEXPORT(void) crPackExpandDrawArraysSWAP(GLenum mode, GLint first, GLsizei count, CRClientState *c);
+extern DECLEXPORT(void) crPackExpandDrawArrays(GLenum mode, GLint first, GLsizei count, CRClientState *c, const GLfloat *pZva);
+extern DECLEXPORT(void) crPackExpandDrawArraysSWAP(GLenum mode, GLint first, GLsizei count, CRClientState *c, const GLfloat *pZva);
 
 extern DECLEXPORT(void) crPackUnrollDrawElements(GLsizei count, GLenum type, const GLvoid *indices);
 extern DECLEXPORT(void) crPackUnrollDrawElementsSWAP(GLsizei count, GLenum type, const GLvoid *indices);
 
-extern DECLEXPORT(void) crPackExpandDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c);
-extern DECLEXPORT(void) crPackExpandDrawElementsSWAP(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c);
+extern DECLEXPORT(void) crPackExpandDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c, const GLfloat *pZva);
+extern DECLEXPORT(void) crPackExpandDrawElementsSWAP(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c, const GLfloat *pZva);
 
-extern DECLEXPORT(void) crPackExpandDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c);
-extern DECLEXPORT(void) crPackExpandDrawRangeElementsSWAP(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c);
+extern DECLEXPORT(void) crPackExpandDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c, const GLfloat *pZva);
+extern DECLEXPORT(void) crPackExpandDrawRangeElementsSWAP(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c, const GLfloat *pZva);
 
-extern DECLEXPORT(void) crPackExpandArrayElement(GLint index, CRClientState *c);
-extern DECLEXPORT(void) crPackExpandArrayElementSWAP(GLint index, CRClientState *c);
+extern DECLEXPORT(void) crPackExpandArrayElement(GLint index, CRClientState *c, const GLfloat *pZva);
+extern DECLEXPORT(void) crPackExpandArrayElementSWAP(GLint index, CRClientState *c, const GLfloat *pZva);
 
-extern DECLEXPORT(void) crPackExpandMultiDrawArraysEXT( GLenum mode, GLint *first, GLsizei *count, GLsizei primcount, CRClientState *c );
-extern DECLEXPORT(void) crPackExpandMultiDrawArraysEXTSWAP( GLenum mode, GLint *first, GLsizei *count, GLsizei primcount, CRClientState *c );
+extern DECLEXPORT(void) crPackExpandMultiDrawArraysEXT( GLenum mode, GLint *first, GLsizei *count, GLsizei primcount, CRClientState *c, const GLfloat *pZva );
+extern DECLEXPORT(void) crPackExpandMultiDrawArraysEXTSWAP( GLenum mode, GLint *first, GLsizei *count, GLsizei primcount, CRClientState *c, const GLfloat *pZva );
 
-extern DECLEXPORT(void) crPackExpandMultiDrawElementsEXT( GLenum mode, const GLsizei *count, GLenum type, const GLvoid **indices, GLsizei primcount, CRClientState *c );
-extern DECLEXPORT(void) crPackExpandMultiDrawElementsEXTSWAP( GLenum mode, const GLsizei *count, GLenum type, const GLvoid **indices, GLsizei primcount, CRClientState *c );
+extern DECLEXPORT(void) crPackExpandMultiDrawElementsEXT( GLenum mode, const GLsizei *count, GLenum type, const GLvoid **indices, GLsizei primcount, CRClientState *c, const GLfloat *pZva );
+extern DECLEXPORT(void) crPackExpandMultiDrawElementsEXTSWAP( GLenum mode, const GLsizei *count, GLenum type, const GLvoid **indices, GLsizei primcount, CRClientState *c, const GLfloat *pZva );
 
 extern DECLEXPORT(void) crPackCmdBlocksEnable();
 
