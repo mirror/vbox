@@ -36,6 +36,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CMachine.h"
 #include "CConsole.h"
 #include "CSystemProperties.h"
 #include "CMachineDebugger.h"
@@ -50,230 +51,237 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-UIVMInfoDialog::InfoDlgMap UIVMInfoDialog::mSelfArray = InfoDlgMap();
+/* static */
+UIVMInfoDialog* UIVMInfoDialog::m_spInstance = 0;
 
-void UIVMInfoDialog::createInformationDlg(UIMachineWindow *pMachineWindow)
+void UIVMInfoDialog::invoke(UIMachineWindow *pMachineWindow)
 {
-    CMachine machine = pMachineWindow->machineLogic()->uisession()->session().GetMachine();
-    if (mSelfArray.find (machine.GetName()) == mSelfArray.end())
+    /* Make sure dialog instance exists: */
+    if (!m_spInstance)
     {
-        /* Creating new information dialog if there is no one existing */
-        UIVMInfoDialog *id = new UIVMInfoDialog(pMachineWindow);
-        id->setAttribute (Qt::WA_DeleteOnClose);
-        mSelfArray [machine.GetName()] = id;
+        /* Create new dialog instance if it doesn't exists yet: */
+        new UIVMInfoDialog(pMachineWindow);
     }
 
-    UIVMInfoDialog *info = mSelfArray [machine.GetName()];
-    info->show();
-    info->raise();
-    info->setWindowState (info->windowState() & ~Qt::WindowMinimized);
-    info->activateWindow();
+    /* Show dialog: */
+    m_spInstance->show();
+    /* Raise it: */
+    m_spInstance->raise();
+    /* De-miniaturize if necessary: */
+    m_spInstance->setWindowState(m_spInstance->windowState() & ~Qt::WindowMinimized);
+    /* And activate finally: */
+    m_spInstance->activateWindow();
 }
 
-UIVMInfoDialog::UIVMInfoDialog (UIMachineWindow *pMachineWindow)
+UIVMInfoDialog::UIVMInfoDialog(UIMachineWindow *pMachineWindow)
     : QIWithRetranslateUI<QMainWindow>(0)
     , m_pPseudoParentWidget(pMachineWindow)
-    , mIsPolished (false)
-    , mWidth(0), mHeight(0), mMax(false)
-    , mSession (pMachineWindow->session())
-    , mStatTimer (new QTimer (this))
+    , m_fIsPolished(false)
+    , m_iWidth(0), m_iHeight(0), m_fMax(false)
+    , m_session(pMachineWindow->session())
+    , m_pTimer(new QTimer(this))
 {
+    /* Initialize instance early: */
+    m_spInstance = this;
+
+    /* Delete dialog on close: */
+    setAttribute(Qt::WA_DeleteOnClose);
+
     /* Apply UI decorations */
-    Ui::UIVMInfoDialog::setupUi (this);
+    Ui::UIVMInfoDialog::setupUi(this);
 
 #ifdef Q_WS_MAC
     /* No icon for this window on the mac, cause this would act as proxy icon which isn't necessary here. */
     setWindowIcon(QIcon());
-#else
+#else /* !Q_WS_MAC */
     /* Apply window icons */
     setWindowIcon(UIIconPool::iconSetFull(":/session_info_32px.png", ":/session_info_16px.png"));
-#endif
+#endif /* !Q_WS_MAC */
 
     /* Setup tab icons: */
     mInfoStack->setTabIcon(0, UIIconPool::iconSet(":/session_info_details_16px.png"));
     mInfoStack->setTabIcon(1, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
 
-    /* Setup focus-proxy for pages */
-    mPage1->setFocusProxy (mDetailsText);
-    mPage2->setFocusProxy (mStatisticText);
+    /* Setup focus-proxy for pages: */
+    mPage1->setFocusProxy(mDetailsText);
+    mPage2->setFocusProxy(mStatisticText);
 
-    /* Setup browsers */
-    mDetailsText->viewport()->setAutoFillBackground (false);
-    mStatisticText->viewport()->setAutoFillBackground (false);
+    /* Setup browsers: */
+    mDetailsText->viewport()->setAutoFillBackground(false);
+    mStatisticText->viewport()->setAutoFillBackground(false);
 
-    /* Setup margins */
-    mDetailsText->setViewportMargins (5, 5, 5, 5);
-    mStatisticText->setViewportMargins (5, 5, 5, 5);
+    /* Setup margins: */
+    mDetailsText->setViewportMargins(5, 5, 5, 5);
+    mStatisticText->setViewportMargins(5, 5, 5, 5);
 
     /* Configure dialog button-box: */
     mButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
 
-    /* Setup handlers */
-    connect (pMachineWindow->uisession(), SIGNAL (sigMediumChange(const CMediumAttachment&)), this, SLOT (updateDetails()));
-    connect (pMachineWindow->uisession(), SIGNAL (sigSharedFolderChange()), this, SLOT (updateDetails()));
-    /* TODO_NEW_CORE: this is ofc not really right in the mm sense. There are
-     * more than one screens. */
-    connect (pMachineWindow->machineView(), SIGNAL (resizeHintDone()), this, SLOT (processStatistics()));
-    connect (mInfoStack, SIGNAL (currentChanged (int)), this, SLOT (onPageChanged (int)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(updateDetails()));
-    connect (mStatTimer, SIGNAL (timeout()), this, SLOT (processStatistics()));
+    /* Setup handlers: */
+    connect(pMachineWindow->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment&)), this, SLOT(sltUpdateDetails()));
+    connect(pMachineWindow->uisession(), SIGNAL(sigSharedFolderChange()), this, SLOT(sltUpdateDetails()));
+    /* TODO_NEW_CORE: this is ofc not really right in the mm sense. There are more than one screens. */
+    connect(pMachineWindow->machineView(), SIGNAL(resizeHintDone()), this, SLOT(sltProcessStatistics()));
+    connect(mInfoStack, SIGNAL(currentChanged(int)), this, SLOT(sltHandlePageChanged(int)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateDetails()));
+    connect(m_pTimer, SIGNAL(timeout()), this, SLOT(sltProcessStatistics()));
 
-    /* Loading language constants */
+    /* Loading language constants: */
     retranslateUi();
 
-    /* Details page update */
-    updateDetails();
+    /* Details page update: */
+    sltUpdateDetails();
 
-    /* Statistics page update */
-    processStatistics();
-    mStatTimer->start (5000);
+    /* Statistics page update: */
+    sltProcessStatistics();
+    m_pTimer->start(5000);
 
-    /* Preload dialog attributes for this vm */
-    QString dlgsize = mSession.GetMachine().GetExtraData(GUI_InfoDlgState);
-    if (dlgsize.isEmpty())
+    /* Load dialog attributes for this VM: */
+    QString strSize = m_session.GetMachine().GetExtraData(GUI_InfoDlgState);
+    if (strSize.isEmpty())
     {
-        mWidth = 400;
-        mHeight = 450;
-        mMax = false;
+        m_iWidth = 400;
+        m_iHeight = 450;
+        m_fMax = false;
     }
     else
     {
-        QStringList list = dlgsize.split (',');
-        mWidth = list [0].toInt(), mHeight = list [1].toInt();
-        mMax = list [2] == "max";
+        QStringList list = strSize.split(',');
+        m_iWidth = list[0].toInt(), m_iHeight = list[1].toInt();
+        m_fMax = list[2] == "max";
     }
 
-    /* Make statistics page the default one */
-    mInfoStack->setCurrentIndex (1);
+    /* Make statistics page the default one: */
+    mInfoStack->setCurrentIndex(1);
 }
 
 UIVMInfoDialog::~UIVMInfoDialog()
 {
-    /* Save dialog attributes for this vm */
-    QString dlgsize ("%1,%2,%3");
-    mSession.GetMachine().SetExtraData(GUI_InfoDlgState,
-                                       dlgsize.arg(mWidth).arg(mHeight).arg(isMaximized() ? "max" : "normal"));
+    /* Save dialog attributes for this VM: */
+    QString strSize("%1,%2,%3");
+    m_session.GetMachine().SetExtraData(GUI_InfoDlgState,
+                                        strSize.arg(m_iWidth).arg(m_iHeight).arg(isMaximized() ? "max" : "normal"));
 
-    if (!mSession.isNull() && !mSession.GetMachine().isNull())
-        mSelfArray.remove (mSession.GetMachine().GetName());
+    /* Deinitialize instance finally: */
+    m_spInstance = 0;
 }
 
 void UIVMInfoDialog::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIVMInfoDialog::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::UIVMInfoDialog::retranslateUi(this);
 
-    updateDetails();
+    sltUpdateDetails();
 
-    AssertReturnVoid (!mSession.isNull());
-    CMachine machine = mSession.GetMachine();
-    AssertReturnVoid (!machine.isNull());
+    AssertReturnVoid(!m_session.isNull());
+    CMachine machine = m_session.GetMachine();
+    AssertReturnVoid(!machine.isNull());
 
-    /* Setup a dialog caption */
-    setWindowTitle (tr ("%1 - Session Information").arg (machine.GetName()));
+    /* Setup a dialog caption: */
+    setWindowTitle(tr("%1 - Session Information").arg(machine.GetName()));
 
-    /* Clear counter names initially */
-    mNamesMap.clear();
-    mUnitsMap.clear();
-    mLinksMap.clear();
+    /* Clear counter names initially: */
+    m_names.clear();
+    m_units.clear();
+    m_links.clear();
 
-    /* Storage statistics */
+    /* Storage statistics: */
     CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
-    CStorageControllerVector controllers = mSession.GetMachine().GetStorageControllers();
-    int ideCount = 0, sataCount = 0, scsiCount = 0;
+    CStorageControllerVector controllers = m_session.GetMachine().GetStorageControllers();
+    int iIDECount = 0, iSATACount = 0, iSCSICount = 0;
     foreach (const CStorageController &controller, controllers)
     {
         switch (controller.GetBus())
         {
             case KStorageBus_IDE:
             {
-                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus (KStorageBus_IDE); ++ i)
+                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus(KStorageBus_IDE); ++i)
                 {
-                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus (KStorageBus_IDE); ++ j)
+                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus(KStorageBus_IDE); ++j)
                     {
-                        /* Names */
-                        mNamesMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/*DMA")
-                            .arg (ideCount).arg (i).arg (j)] = tr ("DMA Transfers");
-                        mNamesMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/*PIO")
-                            .arg (ideCount).arg (i).arg (j)] = tr ("PIO Transfers");
-                        mNamesMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/ReadBytes")
-                            .arg (ideCount).arg (i).arg (j)] = tr ("Data Read");
-                        mNamesMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/WrittenBytes")
-                            .arg (ideCount).arg (i).arg (j)] = tr ("Data Written");
+                        /* Names: */
+                        m_names[QString("/Devices/IDE%1/ATA%2/Unit%3/*DMA")
+                            .arg(iIDECount).arg(i).arg(j)] = tr("DMA Transfers");
+                        m_names[QString("/Devices/IDE%1/ATA%2/Unit%3/*PIO")
+                            .arg(iIDECount).arg(i).arg(j)] = tr("PIO Transfers");
+                        m_names[QString("/Devices/IDE%1/ATA%2/Unit%3/ReadBytes")
+                            .arg(iIDECount).arg(i).arg(j)] = tr("Data Read");
+                        m_names[QString("/Devices/IDE%1/ATA%2/Unit%3/WrittenBytes")
+                            .arg(iIDECount).arg(i).arg(j)] = tr("Data Written");
 
-                        /* Units */
-                        mUnitsMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/*DMA")
-                            .arg (ideCount).arg (i).arg (j)] = "[B]";
-                        mUnitsMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/*PIO")
-                            .arg (ideCount).arg (i).arg (j)] = "[B]";
-                        mUnitsMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/ReadBytes")
-                            .arg (ideCount).arg (i).arg (j)] = "B";
-                        mUnitsMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/WrittenBytes")
-                            .arg (ideCount).arg (i).arg (j)] = "B";
+                        /* Units: */
+                        m_units[QString("/Devices/IDE%1/ATA%2/Unit%3/*DMA")
+                            .arg(iIDECount).arg(i).arg(j)] = "[B]";
+                        m_units[QString("/Devices/IDE%1/ATA%2/Unit%3/*PIO")
+                            .arg(iIDECount).arg(i).arg(j)] = "[B]";
+                        m_units[QString("/Devices/IDE%1/ATA%2/Unit%3/ReadBytes")
+                            .arg(iIDECount).arg(i).arg(j)] = "B";
+                        m_units[QString("/Devices/IDE%1/ATA%2/Unit%3/WrittenBytes")
+                            .arg(iIDECount).arg(i).arg(j)] = "B";
 
                         /* Belongs to */
-                        mLinksMap [QString ("/Devices/IDE%1/ATA%2/Unit%3").arg (ideCount).arg (i).arg (j)] = QStringList()
-                                << QString ("/Devices/IDE%1/ATA%2/Unit%3/*DMA").arg (ideCount).arg (i).arg (j)
-                                << QString ("/Devices/IDE%1/ATA%2/Unit%3/*PIO").arg (ideCount).arg (i).arg (j)
-                                << QString ("/Devices/IDE%1/ATA%2/Unit%3/ReadBytes").arg (ideCount).arg (i).arg (j)
-                                << QString ("/Devices/IDE%1/ATA%2/Unit%3/WrittenBytes").arg (ideCount).arg (i).arg (j);
+                        m_links[QString("/Devices/IDE%1/ATA%2/Unit%3").arg(iIDECount).arg(i).arg(j)] = QStringList()
+                            << QString("/Devices/IDE%1/ATA%2/Unit%3/*DMA").arg(iIDECount).arg(i).arg(j)
+                            << QString("/Devices/IDE%1/ATA%2/Unit%3/*PIO").arg(iIDECount).arg(i).arg(j)
+                            << QString("/Devices/IDE%1/ATA%2/Unit%3/ReadBytes").arg(iIDECount).arg(i).arg(j)
+                            << QString("/Devices/IDE%1/ATA%2/Unit%3/WrittenBytes").arg(iIDECount).arg(i).arg(j);
                     }
                 }
-                ++ ideCount;
+                ++iIDECount;
                 break;
             }
             case KStorageBus_SATA:
             {
-                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus (KStorageBus_SATA); ++ i)
+                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus(KStorageBus_SATA); ++i)
                 {
-                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus (KStorageBus_SATA); ++ j)
+                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus(KStorageBus_SATA); ++j)
                     {
-                        /* Names */
-                        mNamesMap [QString ("/Devices/SATA%1/Port%2/DMA").arg (sataCount).arg (i)]
-                            = tr ("DMA Transfers");
-                        mNamesMap [QString ("/Devices/SATA%1/Port%2/ReadBytes").arg (sataCount).arg (i)]
-                            = tr ("Data Read");
-                        mNamesMap [QString ("/Devices/SATA%1/Port%2/WrittenBytes").arg (sataCount).arg (i)]
-                            = tr ("Data Written");
+                        /* Names: */
+                        m_names[QString("/Devices/SATA%1/Port%2/DMA").arg(iSATACount).arg(i)]
+                            = tr("DMA Transfers");
+                        m_names[QString("/Devices/SATA%1/Port%2/ReadBytes").arg(iSATACount).arg(i)]
+                            = tr("Data Read");
+                        m_names[QString("/Devices/SATA%1/Port%2/WrittenBytes").arg(iSATACount).arg(i)]
+                            = tr("Data Written");
 
-                        /* Units */
-                        mUnitsMap [QString ("/Devices/SATA%1/Port%2/DMA").arg (sataCount).arg (i)] = "[B]";
-                        mUnitsMap [QString ("/Devices/SATA%1/Port%2/ReadBytes").arg (sataCount).arg (i)] = "B";
-                        mUnitsMap [QString ("/Devices/SATA%1/Port%2/WrittenBytes").arg (sataCount).arg (i)] = "B";
+                        /* Units: */
+                        m_units[QString("/Devices/SATA%1/Port%2/DMA").arg(iSATACount).arg(i)] = "[B]";
+                        m_units[QString("/Devices/SATA%1/Port%2/ReadBytes").arg(iSATACount).arg(i)] = "B";
+                        m_units[QString("/Devices/SATA%1/Port%2/WrittenBytes").arg(iSATACount).arg(i)] = "B";
 
-                        /* Belongs to */
-                        mLinksMap [QString ("/Devices/SATA%1/Port%2").arg (sataCount).arg (i)] = QStringList()
-                                << QString ("/Devices/SATA%1/Port%2/DMA").arg (sataCount).arg (i)
-                                << QString ("/Devices/SATA%1/Port%2/ReadBytes").arg (sataCount).arg (i)
-                                << QString ("/Devices/SATA%1/Port%2/WrittenBytes").arg (sataCount).arg (i);
+                        /* Belongs to: */
+                        m_links[QString("/Devices/SATA%1/Port%2").arg(iSATACount).arg(i)] = QStringList()
+                            << QString("/Devices/SATA%1/Port%2/DMA").arg(iSATACount).arg(i)
+                            << QString("/Devices/SATA%1/Port%2/ReadBytes").arg(iSATACount).arg(i)
+                            << QString("/Devices/SATA%1/Port%2/WrittenBytes").arg(iSATACount).arg(i);
                     }
                 }
-                ++ sataCount;
+                ++iSATACount;
                 break;
             }
             case KStorageBus_SCSI:
             {
-                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus (KStorageBus_SCSI); ++ i)
+                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus(KStorageBus_SCSI); ++i)
                 {
-                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus (KStorageBus_SCSI); ++ j)
+                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus(KStorageBus_SCSI); ++j)
                     {
-                        /* Names */
-                        mNamesMap [QString ("/Devices/SCSI%1/%2/ReadBytes").arg (scsiCount).arg (i)]
-                            = tr ("Data Read");
-                        mNamesMap [QString ("/Devices/SCSI%1/%2/WrittenBytes").arg (scsiCount).arg (i)]
-                            = tr ("Data Written");
+                        /* Names: */
+                        m_names[QString("/Devices/SCSI%1/%2/ReadBytes").arg(iSCSICount).arg(i)]
+                            = tr("Data Read");
+                        m_names[QString("/Devices/SCSI%1/%2/WrittenBytes").arg(iSCSICount).arg(i)]
+                            = tr("Data Written");
 
-                        /* Units */
-                        mUnitsMap [QString ("/Devices/SCSI%1/%2/ReadBytes").arg (scsiCount).arg (i)] = "B";
-                        mUnitsMap [QString ("/Devices/SCSI%1/%2/WrittenBytes").arg (scsiCount).arg (i)] = "B";
+                        /* Units: */
+                        m_units[QString("/Devices/SCSI%1/%2/ReadBytes").arg(iSCSICount).arg(i)] = "B";
+                        m_units[QString("/Devices/SCSI%1/%2/WrittenBytes").arg(iSCSICount).arg(i)] = "B";
 
-                        /* Belongs to */
-                        mLinksMap [QString ("/Devices/SCSI%1/%2").arg (scsiCount).arg (i)] = QStringList()
-                                << QString ("/Devices/SCSI%1/%2/ReadBytes").arg (scsiCount).arg (i)
-                                << QString ("/Devices/SCSI%1/%2/WrittenBytes").arg (scsiCount).arg (i);
+                        /* Belongs to: */
+                        m_links[QString("/Devices/SCSI%1/%2").arg(iSCSICount).arg(i)] = QStringList()
+                            << QString("/Devices/SCSI%1/%2/ReadBytes").arg(iSCSICount).arg(i)
+                            << QString("/Devices/SCSI%1/%2/WrittenBytes").arg(iSCSICount).arg(i);
                     }
                 }
-                ++ scsiCount;
+                ++iSCSICount;
                 break;
             }
             default:
@@ -283,9 +291,9 @@ void UIVMInfoDialog::retranslateUi()
 
     /* Network statistics: */
     ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
-    for (ulong i = 0; i < count; ++ i)
+    for (ulong i = 0; i < count; ++i)
     {
-        CNetworkAdapter na = machine.GetNetworkAdapter (i);
+        CNetworkAdapter na = machine.GetNetworkAdapter(i);
         KNetworkAdapterType ty = na.GetAdapterType();
         const char *name;
 
@@ -304,179 +312,188 @@ void UIVMInfoDialog::retranslateUi()
                 break;
         }
 
-        /* Names */
-        mNamesMap [QString ("/Devices/%1%2/TransmitBytes")
-            .arg (name).arg (i)] = tr ("Data Transmitted");
-        mNamesMap [QString ("/Devices/%1%2/ReceiveBytes")
-            .arg (name).arg (i)] = tr ("Data Received");
+        /* Names: */
+        m_names[QString("/Devices/%1%2/TransmitBytes").arg(name).arg(i)] = tr("Data Transmitted");
+        m_names[QString("/Devices/%1%2/ReceiveBytes").arg(name).arg(i)] = tr("Data Received");
 
-        /* Units */
-        mUnitsMap [QString ("/Devices/%1%2/TransmitBytes")
-            .arg (name).arg (i)] = "B";
-        mUnitsMap [QString ("/Devices/%1%2/ReceiveBytes")
-            .arg (name).arg (i)] = "B";
+        /* Units: */
+        m_units[QString("/Devices/%1%2/TransmitBytes").arg(name).arg(i)] = "B";
+        m_units[QString("/Devices/%1%2/ReceiveBytes").arg(name).arg(i)] = "B";
 
-        /* Belongs to */
-        mLinksMap [QString ("NA%1").arg (i)] = QStringList()
-            << QString ("/Devices/%1%2/TransmitBytes").arg (name).arg (i)
-            << QString ("/Devices/%1%2/ReceiveBytes").arg (name).arg (i);
+        /* Belongs to: */
+        m_links[QString("NA%1").arg(i)] = QStringList()
+            << QString("/Devices/%1%2/TransmitBytes").arg(name).arg(i)
+            << QString("/Devices/%1%2/ReceiveBytes").arg(name).arg(i);
     }
 
-    /* Statistics page update. */
+    /* Statistics page update: */
     refreshStatistics();
 }
 
-bool UIVMInfoDialog::event (QEvent *aEvent)
+bool UIVMInfoDialog::event(QEvent *pEvent)
 {
-    bool result = QMainWindow::event (aEvent);
-    switch (aEvent->type())
+    /* Pre-process through base-class: */
+    bool fResult = QMainWindow::event(pEvent);
+
+    /* Process required events: */
+    switch (pEvent->type())
     {
+        /* Window state-change event: */
         case QEvent::WindowStateChange:
         {
-            if (mIsPolished)
-                mMax = isMaximized();
-            else if (mMax == isMaximized())
-                mIsPolished = true;
+            if (m_fIsPolished)
+                m_fMax = isMaximized();
+            else if (m_fMax == isMaximized())
+                m_fIsPolished = true;
             break;
         }
         default:
             break;
     }
-    return result;
+
+    /* Return result: */
+    return fResult;
 }
 
-void UIVMInfoDialog::resizeEvent (QResizeEvent *aEvent)
+void UIVMInfoDialog::resizeEvent(QResizeEvent *pEvent)
 {
-    QMainWindow::resizeEvent (aEvent);
+    /* Pre-process through base-class: */
+    QMainWindow::resizeEvent(pEvent);
 
-    /* Store dialog size for this vm */
-    if (mIsPolished && !isMaximized())
+    /* Store dialog size for this VM: */
+    if (m_fIsPolished && !isMaximized())
     {
-        mWidth = width();
-        mHeight = height();
+        m_iWidth = width();
+        m_iHeight = height();
     }
 }
 
-void UIVMInfoDialog::showEvent (QShowEvent *aEvent)
+void UIVMInfoDialog::showEvent(QShowEvent *pEvent)
 {
     /* One may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,
      * the widget style & layout are not fully done, at least the minimum
      * size hint is not properly calculated. Since this is sometimes necessary,
      * we provide our own "polish" implementation */
-    if (!mIsPolished)
+    if (!m_fIsPolished)
     {
         /* Load window size, adjust position and load window state finally: */
-        resize (mWidth, mHeight);
+        resize(m_iWidth, m_iHeight);
         vboxGlobal().centerWidget(this, m_pPseudoParentWidget, false);
-        if (mMax)
-            QTimer::singleShot (0, this, SLOT (showMaximized()));
+        if (m_fMax)
+            QTimer::singleShot(0, this, SLOT(showMaximized()));
         else
-            mIsPolished = true;
+            m_fIsPolished = true;
     }
 
-    QMainWindow::showEvent (aEvent);
+    /* Post-process through base-class: */
+    QMainWindow::showEvent(pEvent);
 }
 
-
-void UIVMInfoDialog::updateDetails()
+void UIVMInfoDialog::sltUpdateDetails()
 {
-    /* Details page update */
-    mDetailsText->setText (vboxGlobal().detailsReport (mSession.GetMachine(), false /* aWithLinks */));
+    /* Details page update: */
+    mDetailsText->setText(vboxGlobal().detailsReport(m_session.GetMachine(), false /* with links */));
 }
 
-void UIVMInfoDialog::processStatistics()
+void UIVMInfoDialog::sltProcessStatistics()
 {
-    CMachineDebugger dbg = mSession.GetConsole().GetDebugger();
-    QString info;
+    /* Get machine debugger: */
+    CMachineDebugger dbg = m_session.GetConsole().GetDebugger();
+    QString strInfo;
 
-    /* Process selected statistics: */
-    for (DataMapType::const_iterator it = mNamesMap.begin(); it != mNamesMap.end(); ++ it)
+    /* Process selected VM statistics: */
+    for (DataMapType::const_iterator it = m_names.begin(); it != m_names.end(); ++it)
     {
-        info = dbg.GetStats(it.key(), true);
-        mValuesMap[it.key()] = parseStatistics(info);
+        strInfo = dbg.GetStats(it.key(), true);
+        m_values[it.key()] = parseStatistics(strInfo);
     }
 
-    /* Statistics page update */
+    /* Update VM statistics page: */
     refreshStatistics();
 }
 
-void UIVMInfoDialog::onPageChanged (int aIndex)
+void UIVMInfoDialog::sltHandlePageChanged(int iIndex)
 {
-    /* Focusing the browser on shown page */
-    mInfoStack->widget (aIndex)->setFocus();
+    /* Focus the browser on shown page: */
+    mInfoStack->widget(iIndex)->setFocus();
 }
 
-QString UIVMInfoDialog::parseStatistics (const QString &aText)
+QString UIVMInfoDialog::parseStatistics(const QString &strText)
 {
-    /* Filters the statistic counters body */
-    QRegExp query ("^.+<Statistics>\n(.+)\n</Statistics>.*$");
-    if (query.indexIn (aText) == -1)
-        return QString::null;
+    /* Filters VM statistics counters body: */
+    QRegExp query("^.+<Statistics>\n(.+)\n</Statistics>.*$");
+    if (query.indexIn(strText) == -1)
+        return QString();
 
-    QStringList wholeList = query.cap (1).split ("\n");
+    /* Split whole VM statistics text to lines: */
+    const QStringList text = query.cap(1).split("\n");
 
-    ULONG64 summa = 0;
-    for (QStringList::Iterator lineIt = wholeList.begin(); lineIt != wholeList.end(); ++ lineIt)
+    /* Iterate through all VM statistics: */
+    ULONG64 uSumm = 0;
+    for (QStringList::const_iterator lineIt = text.begin(); lineIt != text.end(); ++lineIt)
     {
-        QString text = *lineIt;
-        text.remove (1, 1);
-        text.remove (text.length() - 2, 2);
+        /* Get current line: */
+        QString strLine = *lineIt;
+        strLine.remove(1, 1);
+        strLine.remove(strLine.length() -2, 2);
 
-        /* Parse incoming counter and fill the counter-element values. */
+        /* Parse incoming counter and fill the counter-element values: */
         CounterElementType counter;
-        counter.type = text.section (" ", 0, 0);
-        text = text.section (" ", 1);
-        QStringList list = text.split ("\" ");
-        for (QStringList::Iterator it = list.begin(); it != list.end(); ++ it)
+        counter.type = strLine.section(" ", 0, 0);
+        strLine = strLine.section(" ", 1);
+        QStringList list = strLine.split("\" ");
+        for (QStringList::Iterator it = list.begin(); it != list.end(); ++it)
         {
             QString pair = *it;
-            QRegExp regExp ("^(.+)=\"([^\"]*)\"?$");
-            regExp.indexIn (pair);
-            counter.list.insert (regExp.cap (1), regExp.cap (2));
+            QRegExp regExp("^(.+)=\"([^\"]*)\"?$");
+            regExp.indexIn(pair);
+            counter.list.insert(regExp.cap(1), regExp.cap(2));
         }
 
         /* Fill the output with the necessary counter's value.
          * Currently we are using "c" field of simple counter only. */
-        QString result = counter.list.contains ("c") ? counter.list ["c"] : "0";
-        summa += result.toULongLong();
+        QString result = counter.list.contains("c") ? counter.list["c"] : "0";
+        uSumm += result.toULongLong();
     }
 
-    return QString::number (summa);
+    return QString::number(uSumm);
 }
 
 void UIVMInfoDialog::refreshStatistics()
 {
-    if (mSession.isNull())
+    /* Skip for inactive session: */
+    if (m_session.isNull())
         return;
 
-    QString table = "<table width=100% cellspacing=1 cellpadding=0>%1</table>";
-    QString hdrRow = "<tr><td width=22><img src='%1'></td>"
-                     "<td colspan=2><nobr><b>%2</b></nobr></td></tr>";
-    QString paragraph = "<tr><td colspan=3></td></tr>";
-    QString result;
+    /* Prepare templates: */
+    QString strTable = "<table width=100% cellspacing=1 cellpadding=0>%1</table>";
+    QString strHeader = "<tr><td width=22><img src='%1'></td>"
+                        "<td colspan=2><nobr><b>%2</b></nobr></td></tr>";
+    QString strParagraph = "<tr><td colspan=3></td></tr>";
+    QString strResult;
 
-    CMachine m = mSession.GetMachine();
+    /* Get current machine: */
+    CMachine m = m_session.GetMachine();
 
-    /* Runtime Information */
+    /* Runtime Information: */
     {
-        CConsole console = mSession.GetConsole();
+        /* Get current console: */
+        CConsole console = m_session.GetConsole();
 
-        ULONG width = 0;
-        ULONG height = 0;
-        ULONG bpp = 0;
+        /* Determine resolution: */
+        ULONG uWidth = 0;
+        ULONG uHeight = 0;
+        ULONG uBpp = 0;
         LONG xOrigin = 0;
         LONG yOrigin = 0;
-        console.GetDisplay().GetScreenResolution(0, width, height, bpp, xOrigin, yOrigin);
-        QString resolution = QString ("%1x%2")
-            .arg (width)
-            .arg (height);
-        if (bpp)
-            resolution += QString ("x%1").arg (bpp);
-        resolution += QString (" @%1,%2")
-                          .arg (xOrigin)
-                          .arg (yOrigin);
-        /* this page is refreshed every 5 seconds, round */
+        console.GetDisplay().GetScreenResolution(0, uWidth, uHeight, uBpp, xOrigin, yOrigin);
+        QString strResolution = QString("%1x%2").arg(uWidth).arg(uHeight);
+        if (uBpp)
+            strResolution += QString("x%1").arg(uBpp);
+        strResolution += QString(" @%1,%2").arg(xOrigin).arg(yOrigin);
+
+        /* Calculate uptime: */
         uint32_t uUpSecs = (RTTimeProgramSecTS() / 5) * 5;
         char szUptime[32];
         uint32_t uUpDays = uUpSecs / (60 * 60 * 24);
@@ -487,193 +504,206 @@ void UIVMInfoDialog::refreshStatistics()
         uUpSecs -= uUpMins * 60;
         RTStrPrintf(szUptime, sizeof(szUptime), "%dd %02d:%02d:%02d",
                     uUpDays, uUpHours, uUpMins, uUpSecs);
-        QString uptime = QString(szUptime);
+        QString strUptime = QString(szUptime);
 
-        QString clipboardMode = gpConverter->toString(m.GetClipboardMode());
-        QString dragAndDropMode = gpConverter->toString(m.GetDragAndDropMode());
+        /* Determine clipboard mode: */
+        QString strClipboardMode = gpConverter->toString(m.GetClipboardMode());
+        /* Determine Drag&Drop mode: */
+        QString strDragAndDropMode = gpConverter->toString(m.GetDragAndDropMode());
 
+        /* Deterine virtualization attributes: */
         CMachineDebugger debugger = console.GetDebugger();
-        QString virtualization = debugger.GetHWVirtExEnabled() ?
-            VBoxGlobal::tr ("Enabled", "details report (VT-x/AMD-V)") :
-            VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
-        QString nested = debugger.GetHWVirtExNestedPagingEnabled() ?
-            VBoxGlobal::tr ("Enabled", "details report (Nested Paging)") :
-            VBoxGlobal::tr ("Disabled", "details report (Nested Paging)");
-        QString unrestricted = debugger.GetHWVirtExUXEnabled() ?
-            VBoxGlobal::tr ("Enabled", "details report (Unrestricted Execution)") :
-            VBoxGlobal::tr ("Disabled", "details report (Unrestricted Execution)");
+        QString strVirtualization = debugger.GetHWVirtExEnabled() ?
+            VBoxGlobal::tr("Enabled", "details report (VT-x/AMD-V)") :
+            VBoxGlobal::tr("Disabled", "details report (VT-x/AMD-V)");
+        QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
+            VBoxGlobal::tr("Enabled", "details report (Nested Paging)") :
+            VBoxGlobal::tr("Disabled", "details report (Nested Paging)");
+        QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
+            VBoxGlobal::tr("Enabled", "details report (Unrestricted Execution)") :
+            VBoxGlobal::tr("Disabled", "details report (Unrestricted Execution)");
 
+        /* Guest information: */
         CGuest guest = console.GetGuest();
-        QString addVersionStr = guest.GetAdditionsVersion();
-        if (addVersionStr.isEmpty())
-            addVersionStr = tr("Not Detected", "guest additions");
+        QString strGAVersion = guest.GetAdditionsVersion();
+        if (strGAVersion.isEmpty())
+            strGAVersion = tr("Not Detected", "guest additions");
         else
         {
-            ULONG revision = guest.GetAdditionsRevision();
-            if (revision != 0)
-                addVersionStr += QString(" r%1").arg(revision);
+            ULONG uRevision = guest.GetAdditionsRevision();
+            if (uRevision != 0)
+                strGAVersion += QString(" r%1").arg(uRevision);
         }
-        QString osType = guest.GetOSTypeId();
-        if (osType.isEmpty())
-            osType = tr ("Not Detected", "guest os type");
+        QString strOSType = guest.GetOSTypeId();
+        if (strOSType.isEmpty())
+            strOSType = tr("Not Detected", "guest os type");
         else
-            osType = vboxGlobal().vmGuestOSTypeDescription (osType);
+            strOSType = vboxGlobal().vmGuestOSTypeDescription(strOSType);
 
-        int vrdePort = console.GetVRDEServerInfo().GetPort();
-        QString vrdeInfo = (vrdePort == 0 || vrdePort == -1)?
-            tr ("Not Available", "details report (VRDE server port)") :
-            QString ("%1").arg (vrdePort);
+        /* VRDE information: */
+        int iVRDEPort = console.GetVRDEServerInfo().GetPort();
+        QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1)?
+            tr("Not Available", "details report (VRDE server port)") :
+            QString("%1").arg(iVRDEPort);
 
-        /* Searching for longest string */
-        QStringList valuesList;
-        valuesList << resolution << uptime << virtualization << nested << unrestricted << addVersionStr << osType << vrdeInfo;
-        int maxLength = 0;
-        foreach (const QString &value, valuesList)
-            maxLength = maxLength < fontMetrics().width (value) ?
-                        fontMetrics().width (value) : maxLength;
+        /* Searching for longest string: */
+        QStringList values;
+        values << strResolution << strUptime
+               << strVirtualization << strNestedPaging << strUnrestrictedExecution
+               << strGAVersion << strOSType << strVRDEInfo;
+        int iMaxLength = 0;
+        foreach (const QString &strValue, values)
+            iMaxLength = iMaxLength < fontMetrics().width(strValue)
+                         ? fontMetrics().width(strValue) : iMaxLength;
 
-        result += hdrRow.arg (":/state_running_16px.png").arg (tr ("Runtime Attributes"));
-        result += formatValue (tr ("Screen Resolution"), resolution, maxLength);
-        result += formatValue (tr ("VM Uptime"), uptime, maxLength);
-        result += formatValue (tr ("Clipboard Mode"), clipboardMode, maxLength);
-        result += formatValue (tr ("Drag'n'Drop Mode"), dragAndDropMode, maxLength);
-        result += formatValue (VBoxGlobal::tr ("VT-x/AMD-V", "details report"), virtualization, maxLength);
-        result += formatValue (VBoxGlobal::tr ("Nested Paging", "details report"), nested, maxLength);
-        result += formatValue (VBoxGlobal::tr ("Unrestricted Execution", "details report"), unrestricted, maxLength);
-        result += formatValue (tr ("Guest Additions"), addVersionStr, maxLength);
-        result += formatValue (tr ("Guest OS Type"), osType, maxLength);
-        result += formatValue (VBoxGlobal::tr ("Remote Desktop Server Port", "details report (VRDE Server)"), vrdeInfo, maxLength);
-        result += paragraph;
+        /* Summary: */
+        strResult += strHeader.arg(":/state_running_16px.png").arg(tr("Runtime Attributes"));
+        strResult += formatValue(tr("Screen Resolution"), strResolution, iMaxLength);
+        strResult += formatValue(tr("VM Uptime"), strUptime, iMaxLength);
+        strResult += formatValue(tr("Clipboard Mode"), strClipboardMode, iMaxLength);
+        strResult += formatValue(tr("Drag'n'Drop Mode"), strDragAndDropMode, iMaxLength);
+        strResult += formatValue(VBoxGlobal::tr("VT-x/AMD-V", "details report"), strVirtualization, iMaxLength);
+        strResult += formatValue(VBoxGlobal::tr("Nested Paging", "details report"), strNestedPaging, iMaxLength);
+        strResult += formatValue(VBoxGlobal::tr("Unrestricted Execution", "details report"), strUnrestrictedExecution, iMaxLength);
+        strResult += formatValue(tr("Guest Additions"), strGAVersion, iMaxLength);
+        strResult += formatValue(tr("Guest OS Type"), strOSType, iMaxLength);
+        strResult += formatValue(VBoxGlobal::tr("Remote Desktop Server Port", "details report (VRDE Server)"), strVRDEInfo, iMaxLength);
+        strResult += strParagraph;
     }
 
-    /* Storage statistics */
+    /* Storage statistics: */
     {
-        QString storageStat;
+        /* Prepare storage-statistics: */
+        QString strStorageStat;
 
-        result += hdrRow.arg (":/hd_16px.png").arg (tr ("Storage Statistics"));
+        /* Append result with storage-statistics header: */
+        strResult += strHeader.arg(":/hd_16px.png").arg(tr("Storage Statistics"));
 
-        CStorageControllerVector controllers = mSession.GetMachine().GetStorageControllers();
-        int ideCount = 0, sataCount = 0, scsiCount = 0;
+        /* Enumerate storage-controllers: */
+        CStorageControllerVector controllers = m.GetStorageControllers();
+        int iIDECount = 0, iSATACount = 0, iSCSICount = 0;
         foreach (const CStorageController &controller, controllers)
         {
-            QString ctrName = controller.GetName();
+            /* Get controller attributes: */
+            QString strName = controller.GetName();
             KStorageBus busType = controller.GetBus();
-            CMediumAttachmentVector attachments = mSession.GetMachine().GetMediumAttachmentsOfController (ctrName);
+            CMediumAttachmentVector attachments = m.GetMediumAttachmentsOfController(strName);
+            /* Skip empty and floppy attachments: */
             if (!attachments.isEmpty() && busType != KStorageBus_Floppy)
             {
-                QString header = "<tr><td></td><td colspan=2><nobr>%1</nobr></td></tr>";
+                /* Prepare storage templates: */
+                QString strHeaderStorage = "<tr><td></td><td colspan=2><nobr>%1</nobr></td></tr>";
+                /* Prepare full controller name: */
                 QString strControllerName = QApplication::translate("UIMachineSettingsStorage", "Controller: %1");
-                storageStat += header.arg(strControllerName.arg(controller.GetName()));
-                int scsiIndex = 0;
+                /* Append storage-statistics with controller name: */
+                strStorageStat += strHeaderStorage.arg(strControllerName.arg(controller.GetName()));
+                int iSCSIIndex = 0;
+                /* Enumerate storage-attachments: */
                 foreach (const CMediumAttachment &attachment, attachments)
                 {
-                    LONG attPort = attachment.GetPort();
-                    LONG attDevice = attachment.GetDevice();
+                    const LONG iPort = attachment.GetPort();
+                    const LONG iDevice = attachment.GetDevice();
                     switch (busType)
                     {
                         case KStorageBus_IDE:
                         {
-                            storageStat += formatMedium (ctrName, attPort, attDevice,
-                                                         QString ("/Devices/IDE%1/ATA%2/Unit%3").arg (ideCount).arg (attPort).arg (attDevice));
+                            /* Append storage-statistics with IDE controller statistics: */
+                            strStorageStat += formatStorageElement(strName, iPort, iDevice,
+                                                                   QString("/Devices/IDE%1/ATA%2/Unit%3")
+                                                                          .arg(iIDECount).arg(iPort).arg(iDevice));
                             break;
                         }
                         case KStorageBus_SATA:
                         {
-                            storageStat += formatMedium (ctrName, attPort, attDevice,
-                                                         QString ("/Devices/SATA%1/Port%2").arg (sataCount).arg (attPort));
+                            /* Append storage-statistics with SATA controller statistics: */
+                            strStorageStat += formatStorageElement(strName, iPort, iDevice,
+                                                                   QString("/Devices/SATA%1/Port%2")
+                                                                          .arg(iSATACount).arg(iPort));
                             break;
                         }
                         case KStorageBus_SCSI:
                         {
-                            storageStat += formatMedium (ctrName, attPort, attDevice,
-                                                         QString ("/Devices/SCSI%1/%2").arg (scsiCount).arg (scsiIndex));
-                            ++ scsiIndex;
+                            /* Append storage-statistics with SCSI controller statistics: */
+                            strStorageStat += formatStorageElement(strName, iPort, iDevice,
+                                                                   QString("/Devices/SCSI%1/%2")
+                                                                          .arg(iSCSICount).arg(iSCSIIndex));
+                            ++iSCSIIndex;
                             break;
                         }
                         default:
                             break;
                     }
-                    storageStat += paragraph;
+                    strStorageStat += strParagraph;
                 }
             }
-
+            /* Increment controller counters: */
             switch (busType)
             {
-                case KStorageBus_IDE:
-                {
-                    ++ ideCount;
-                    break;
-                }
-                case KStorageBus_SATA:
-                {
-                    ++ sataCount;
-                    break;
-                }
-                case KStorageBus_SCSI:
-                {
-                    ++ scsiCount;
-                    break;
-                }
-                default:
-                    break;
+                case KStorageBus_IDE:  ++iIDECount; break;
+                case KStorageBus_SATA: ++iSATACount; break;
+                case KStorageBus_SCSI: ++iSCSICount; break;
+                default: break;
             }
         }
 
-        /* If there are no Hard Disks */
-        if (storageStat.isNull())
+        /* If there are no storage devices: */
+        if (strStorageStat.isNull())
         {
-            storageStat = composeArticle (tr ("No Storage Devices"));
-            storageStat += paragraph;
+            strStorageStat = composeArticle(tr("No Storage Devices"));
+            strStorageStat += strParagraph;
         }
 
-        result += storageStat;
+        /* Append result with storage-statistics: */
+        strResult += strStorageStat;
     }
 
-    /* Network Adapters Statistics */
+    /* Network statistics: */
     {
-        QString networkStat;
+        /* Prepare netork-statistics: */
+        QString strNetworkStat;
 
-        result += hdrRow.arg (":/nw_16px.png").arg (tr ("Network Statistics"));
+        /* Append result with network-statistics header: */
+        strResult += strHeader.arg(":/nw_16px.png").arg(tr("Network Statistics"));
 
-        /* Network Adapters list */
-        ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
-        for (ulong slot = 0; slot < count; ++ slot)
+        /* Enumerate network-adapters: */
+        ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(m.GetChipsetType());
+        for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
         {
-            if (m.GetNetworkAdapter (slot).GetEnabled())
+            /* Skip disabled adapters: */
+            if (m.GetNetworkAdapter(uSlot).GetEnabled())
             {
-                networkStat += formatAdapter (slot, QString ("NA%1").arg (slot));
-                networkStat += paragraph;
+                /* Append network-statistics with adapter-statistics: */
+                strNetworkStat += formatNetworkElement(uSlot, QString("NA%1").arg(uSlot));
+                strNetworkStat += strParagraph;
             }
         }
 
-        /* If there are no Network Adapters */
-        if (networkStat.isNull())
+        /* If there are no network adapters: */
+        if (strNetworkStat.isNull())
         {
-            networkStat = composeArticle (tr ("No Network Adapters"));
-            networkStat += paragraph;
+            strNetworkStat = composeArticle(tr("No Network Adapters"));
+            strNetworkStat += strParagraph;
         }
 
-        result += networkStat;
+        /* Append result with network-statistics: */
+        strResult += strNetworkStat;
     }
 
-    /* Show full composed page & save/restore scroll-bar position */
-    int vv = mStatisticText->verticalScrollBar()->value();
-    mStatisticText->setText (table.arg (result));
-    mStatisticText->verticalScrollBar()->setValue (vv);
+    /* Show full composed page & save/restore scroll-bar position: */
+    int iScrollBarValue = mStatisticText->verticalScrollBar()->value();
+    mStatisticText->setText(strTable.arg(strResult));
+    mStatisticText->verticalScrollBar()->setValue(iScrollBarValue);
 }
 
-/**
- *  Allows left-aligned values formatting in right column.
- *
- *  aValueName - the name of value in the left column.
- *  aValue - left-aligned value itself in the right column.
- *  aMaxSize - maximum width (in pixels) of value in right column.
- */
-QString UIVMInfoDialog::formatValue (const QString &aValueName,
-                                           const QString &aValue, int aMaxSize)
+QString UIVMInfoDialog::formatValue(const QString &strValueName,
+                                    const QString &strValue,
+                                    int iMaxSize)
 {
+    if (m_session.isNull())
+        return QString();
+
     QString strMargin;
-    int size = aMaxSize - fontMetrics().width(aValue);
+    int size = iMaxSize - fontMetrics().width(strValue);
     for (int i = 0; i < size; ++i)
         strMargin += QString("<img width=1 height=1 src=:/tpixel.png>");
 
@@ -683,65 +713,68 @@ QString UIVMInfoDialog::formatValue (const QString &aValueName,
                      "<td align=right><nobr>%2%3</nobr></td>"
                      "</tr>";
 
-    return bdyRow.arg (aValueName).arg (aValue).arg (strMargin);
+    return bdyRow.arg(strValueName).arg(strValue).arg(strMargin);
 }
 
-QString UIVMInfoDialog::formatMedium (const QString &aCtrName,
-                                            LONG aPort, LONG aDevice,
-                                            const QString &aBelongsTo)
+QString UIVMInfoDialog::formatStorageElement(const QString &strControllerName,
+                                             LONG iPort, LONG iDevice,
+                                             const QString &strBelongsTo)
 {
-    if (mSession.isNull())
-        return QString::null;
+    if (m_session.isNull())
+        return QString();
 
-    QString header = "<tr><td></td><td colspan=2><nobr>&nbsp;&nbsp;%1:</nobr></td></tr>";
-    CStorageController ctr = mSession.GetMachine().GetStorageControllerByName (aCtrName);
-    QString name = gpConverter->toString (StorageSlot (ctr.GetBus(), aPort, aDevice));
-    return header.arg (name) + composeArticle (aBelongsTo, 2);
+    QString strHeader = "<tr><td></td><td colspan=2><nobr>&nbsp;&nbsp;%1:</nobr></td></tr>";
+    CStorageController ctr = m_session.GetMachine().GetStorageControllerByName(strControllerName);
+    QString strName = gpConverter->toString(StorageSlot(ctr.GetBus(), iPort, iDevice));
+
+    return strHeader.arg(strName) + composeArticle(strBelongsTo, 2);
 }
 
-QString UIVMInfoDialog::formatAdapter (ULONG aSlot,
-                                             const QString &aBelongsTo)
+QString UIVMInfoDialog::formatNetworkElement(ULONG uSlot,
+                                             const QString &strBelongsTo)
 {
-    if (mSession.isNull())
-        return QString::null;
+    if (m_session.isNull())
+        return QString();
 
-    QString header = "<tr><td></td><td colspan=2><nobr>%1</nobr></td></tr>";
-    QString name = VBoxGlobal::tr ("Adapter %1", "details report (network)").arg (aSlot + 1);
-    return header.arg (name) + composeArticle (aBelongsTo, 1);
+    QString strHeader = "<tr><td></td><td colspan=2><nobr>%1</nobr></td></tr>";
+    QString strName = VBoxGlobal::tr("Adapter %1", "details report (network)").arg(uSlot + 1);
+
+    return strHeader.arg(strName) + composeArticle(strBelongsTo, 1);
 }
 
-QString UIVMInfoDialog::composeArticle (const QString &aBelongsTo, int aSpacesCount)
+QString UIVMInfoDialog::composeArticle(const QString &strBelongsTo, int iSpacesCount /* = 0 */)
 {
-    QString body = "<tr><td></td><td width=50%><nobr>%1%2</nobr></td>"
-                   "<td align=right><nobr>%3%4</nobr></td></tr>";
-    QString indent;
-    for (int i = 0; i < aSpacesCount; ++ i)
-        indent += "&nbsp;&nbsp;";
-    body = body.arg (indent);
+    QFontMetrics fm = QApplication::fontMetrics();
 
-    QString result;
+    QString strBody = "<tr><td></td><td width=50%><nobr>%1%2</nobr></td>"
+                      "<td align=right><nobr>%3%4</nobr></td></tr>";
+    QString strIndent;
+    for (int i = 0; i < iSpacesCount; ++i)
+        strIndent += "&nbsp;&nbsp;";
+    strBody = strBody.arg(strIndent);
 
-    if (mLinksMap.contains (aBelongsTo))
+    QString strResult;
+
+    if (m_links.contains(strBelongsTo))
     {
-        QStringList keys = mLinksMap [aBelongsTo];
+        QStringList keys = m_links[strBelongsTo];
         foreach (const QString &key, keys)
         {
-            QString line (body);
-            if (mNamesMap.contains (key) && mValuesMap.contains (key) && mUnitsMap.contains (key))
+            QString line(strBody);
+            if (m_names.contains(key) && m_values.contains(key) && m_units.contains(key))
             {
-                line = line.arg (mNamesMap [key]).arg (QString ("%L1").arg (mValuesMap [key].toULongLong()));
-                line = mUnitsMap [key].contains (QRegExp ("\\[\\S+\\]")) ?
-                    line.arg (QString ("<img src=:/tpixel.png width=%1 height=1>")
-                              .arg (QApplication::fontMetrics().width (
-                              QString (" %1").arg (mUnitsMap [key]
-                              .mid (1, mUnitsMap [key].length() - 2))))) :
-                    line.arg (QString (" %1").arg (mUnitsMap [key]));
-                result += line;
+                line = line.arg(m_names[key]).arg(QString("%L1").arg(m_values[key].toULongLong()));
+                line = m_units[key].contains(QRegExp("\\[\\S+\\]")) ?
+                    line.arg(QString("<img src=:/tpixel.png width=%1 height=1>")
+                                    .arg(fm.width(QString(" %1").arg(m_units[key].mid(1, m_units[key].length() - 2))))) :
+                    line.arg(QString (" %1").arg(m_units[key]));
+                strResult += line;
             }
         }
     }
     else
-        result = body.arg (aBelongsTo).arg (QString::null).arg (QString::null);
+        strResult = strBody.arg(strBelongsTo).arg(QString()).arg(QString());
 
-    return result;
+    return strResult;
 }
+

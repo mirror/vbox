@@ -1382,7 +1382,8 @@ void UIMachineLogic::sltShowInformationDialog()
     if (!isMachineWindowsCreated())
         return;
 
-    UIVMInfoDialog::createInformationDlg(mainMachineWindow());
+    /* Invoke VM information dialog: */
+    UIVMInfoDialog::invoke(mainMachineWindow());
 }
 
 void UIMachineLogic::sltReset()
