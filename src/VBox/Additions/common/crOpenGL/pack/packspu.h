@@ -27,6 +27,26 @@ extern uint32_t g_u32VBoxHostCaps;
 
 typedef struct thread_info_t ThreadInfo;
 typedef struct context_info_t ContextInfo;
+typedef struct zvabuffer_info_t ZvaBufferInfo;
+
+struct zvabuffer_info_t
+{
+    /* GL_ARRAY_BUFFER_ARB buffer */
+    GLuint idBuffer;
+    /* buffer length */
+    GLuint cbBuffer;
+    /* number of values stored in the buffer currently */
+    GLuint cValues;
+    /* current buffer value */
+    union
+    {
+        GLfloat f[4];
+        GLuint ui[4];
+        GLubyte ub[4];
+        GLshort s[4];
+        GLushort us[4];
+    } Value;
+};
 
 struct thread_info_t {
     unsigned long id;
@@ -47,7 +67,9 @@ struct context_info_t {
     CRContext *clientState;  /* used to store client-side GL state */
     GLint serverCtx;         /* context ID returned by server */
     GLboolean  fAutoFlush;
+    GLboolean  fCheckZerroVertAttr;
     ThreadInfo *currentThread;
+    ZvaBufferInfo zvaBufferInfo;
     GLubyte glVersion[100];     /* GL_VERSION string */
     GLubyte pszRealVendor[100];
     GLubyte pszRealVersion[100];
@@ -75,9 +97,9 @@ typedef struct {
     bool bRunningUnderWDDM;
 #endif
 
-#ifdef VBOX_WITH_CRPACKSPU_DUMPER
     SPUDispatchTable self;
 
+#ifdef VBOX_WITH_CRPACKSPU_DUMPER
     CR_RECORDER Recorder;
     CR_DBGPRINT_DUMPER Dumper;
 #endif

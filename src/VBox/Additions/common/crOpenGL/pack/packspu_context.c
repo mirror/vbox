@@ -419,6 +419,8 @@ void PACKSPU_APIENTRY packspu_DestroyContext( GLint ctx )
     context->serverCtx = 0;
     context->currentThread = NULL;
 
+    memset (&context->zvaBufferInfo, 0, sizeof (context->zvaBufferInfo));
+
     if (curContext == context)
     {
         if (!CRPACKSPU_IS_WDDM_CRHGSMI())
@@ -499,6 +501,11 @@ void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLi
                 newCtx->currentThread = thread;
             }
 
+            if (thread->currentContext && newCtx != thread->currentContext && thread->currentContext->fCheckZerroVertAttr)
+            {
+                crStateCurrentRecoverNew(thread->currentContext->clientState, &thread->packer->current);
+                crStateResetCurrentPointers(&thread->packer->current);
+            }
             thread->currentContext = newCtx;
             crPackSetContext( thread->packer );
         }

@@ -89,12 +89,16 @@ DECLEXPORT(void) crStateCurrentInit( CRContext *ctx );
 
 DECLEXPORT(void) crStateCurrentRecover( void );
 
+DECLEXPORT(void) crStateCurrentRecoverNew(CRContext *g, CRCurrentStatePointers  *current);
+
 DECLEXPORT(void) crStateCurrentDiff(CRCurrentBits *bb, CRbitvalue *bitID,
                                     CRContext *fromCtx, CRContext *toCtx);
 DECLEXPORT(void) crStateCurrentSwitch(CRCurrentBits *bb, CRbitvalue *bitID,
                                     CRContext *fromCtx, CRContext *toCtx);
 
 DECLEXPORT(void) crStateRasterPosUpdate(GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+
+DECLEXPORT(GLuint) crStateNeedDummyZeroVertexArray(CRContext *g, CRCurrentStatePointers  *current, GLfloat *pZva);
 
 #ifdef __cplusplus
 }

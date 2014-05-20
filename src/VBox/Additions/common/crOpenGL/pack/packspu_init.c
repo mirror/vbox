@@ -79,12 +79,8 @@ packSPUInit( int id, SPU *child, SPU *self,
 static void
 packSPUSelfDispatch(SPUDispatchTable *self)
 {
-#ifdef VBOX_WITH_CRPACKSPU_DUMPER
     crSPUInitDispatchTable( &(pack_spu.self) );
     crSPUCopyDispatchTable( &(pack_spu.self), self );
-#else
-    (void)self;
-#endif
 }
 
 static int

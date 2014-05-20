@@ -58,6 +58,16 @@ current_fns = {
 	},
 }
 
+current_fns_new = {
+    'VertexAttrib': {
+        'types': ['s','f','d','b','i','ub','ui','us','Nub','Nus','Nui','Nb','Ns','Ni'],
+        'sizes': [1,2,3,4],
+        'default': [0,0,0,1],
+        'members': ['x', 'y', 'z', 'w'],
+        'array': 'CR_MAX_VERTEX_ATTRIBS'
+    },
+}
+
 current_vtx = {
 	'Vertex': {
 		'types': ['s','i','f','d'],

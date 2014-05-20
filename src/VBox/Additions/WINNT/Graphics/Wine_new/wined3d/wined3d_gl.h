@@ -189,6 +189,9 @@ enum wined3d_gl_extension
 /*configures host to create windows initially hidden*/
 #define GL_HOST_WND_CREATED_HIDDEN_CR 0x8B2B
 
+/* enable zero vertex attribute generation to work around wine bug */
+#define GL_CHECK_ZERO_VERT_ARRT       0x8B30
+
 typedef void (WINE_GLAPI *PGLFNCHROMIUMPARAMETERUCR)(GLenum param, GLint value);
 PGLFNCHROMIUMPARAMETERUCR pglChromiumParameteriCR;
 

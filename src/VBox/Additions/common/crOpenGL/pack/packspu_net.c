@@ -130,6 +130,12 @@ void packspuFlush(void *arg )
     buf = &(thread->buffer);
     CRASSERT(buf);
 
+    if (ctx && ctx->fCheckZerroVertAttr)
+    {
+        crStateCurrentRecoverNew(ctx->clientState, &thread->packer->current);
+        crStateResetCurrentPointers(&thread->packer->current);
+    }
+
     /* We're done packing into the current buffer, unbind it */
     crPackReleaseBuffer( thread->packer );
 

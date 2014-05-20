@@ -730,6 +730,9 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 /* inform renderspu about the current render thread */
 #define GL_HH_RENDERTHREAD_INFORM     0x8B2F
 
+/* enable zero vertex attribute generation to work around wine bug */
+#define GL_CHECK_ZERO_VERT_ARRT       0x8B30
+
 /**********************************************************************/
 /*****                Chromium-specific API                       *****/
 /**********************************************************************/

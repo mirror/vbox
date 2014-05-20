@@ -103,9 +103,10 @@ def UpdateCurrentPointer( func_name ):
         name = 'vertexAttrib'
         type = m.group(3) + m.group(2)
         # Add 12 to skip the packet length, opcode and index fields
-        print "\tpc->current.c.%s.%s[index] = data_ptr + 12;" % (name,type)
+        print "\tpc->current.c.%s.%s[index] = data_ptr + 4;" % (name,type)
         if m.group(4) == "ARB" or m.group(4) == "NV":
             print "\tpc->current.attribsUsedMask |= (1 << index);"
+            print "\tpc->current.changedVertexAttrib |= (1 << index);"
         return
 
 

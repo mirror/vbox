@@ -1918,6 +1918,7 @@ struct wined3d_context *context_create(struct wined3d_swapchain *swapchain,
      * for XPDM this is needed to at least support texture sharing between device contexts.
      * this is a kinda hack, but it is needed since our ogl driver currently does not support ShareLists */
     pglChromiumParameteriCR(GL_SHARE_CONTEXT_RESOURCES_CR, GL_TRUE);
+    pglChromiumParameteriCR(GL_CHECK_ZERO_VERT_ARRT, GL_TRUE);
 # if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
     pglChromiumParameteriCR(GL_FLUSH_ON_THREAD_SWITCH_CR,  GL_TRUE);
 # endif
