@@ -16328,7 +16328,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>Session Information Dialog</source>
         <translation type="obsolete">Diàleg Informatiu de la Sessió</translation>
@@ -16491,8 +16491,8 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
         <translation type="obsolete">Paginació imbricada</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
-        <translation>VBoxVMInformationDlg</translation>
+        <source>UIVMInfoDialog</source>
+        <translation>UIVMInfoDialog</translation>
     </message>
     <message>
         <source>Not Available</source>

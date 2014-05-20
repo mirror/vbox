@@ -13843,7 +13843,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
         <translation>%1 - sesijos informacija</translation>
@@ -13913,8 +13913,8 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation>Tinklo plokščių nėra</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
-        <translation>VBoxVMInformationDlg</translation>
+        <source>UIVMInfoDialog</source>
+        <translation>UIVMInfoDialog</translation>
     </message>
     <message>
         <source>Not Available</source>

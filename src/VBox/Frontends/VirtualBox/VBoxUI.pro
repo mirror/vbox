@@ -21,7 +21,7 @@ TEMPLATE	= app
 LANGUAGE	= C++
 
 FORMS = \
-    src/VBoxVMInformationDlg.ui \
+    src/UIVMInfoDialog.ui \
     src/VBoxSnapshotDetailsDlg.ui \
     src/VBoxTakeSnapshotDlg.ui \
     src/UIVMLogViewer.ui \

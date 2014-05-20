@@ -49,7 +49,7 @@
 #include "UIMessageCenter.h"
 #include "UIPopupCenter.h"
 #include "VBoxTakeSnapshotDlg.h"
-#include "VBoxVMInformationDlg.h"
+#include "UIVMInfoDialog.h"
 #include "UISettingsDialogSpecific.h"
 #include "UIVMLogViewer.h"
 #include "UIConverter.h"
@@ -1382,7 +1382,7 @@ void UIMachineLogic::sltShowInformationDialog()
     if (!isMachineWindowsCreated())
         return;
 
-    VBoxVMInformationDlg::createInformationDlg(mainMachineWindow());
+    UIVMInfoDialog::createInformationDlg(mainMachineWindow());
 }
 
 void UIMachineLogic::sltReset()

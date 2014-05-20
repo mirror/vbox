@@ -16915,7 +16915,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
         <translation>%1 - Informazione di sessione</translation>
@@ -16983,8 +16983,8 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation>Nessuna scheda di rete</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
-        <translation>VBoxVMInformationDlg</translation>
+        <source>UIVMInfoDialog</source>
+        <translation>UIVMInfoDialog</translation>
     </message>
     <message>
         <source>Storage Statistics</source>

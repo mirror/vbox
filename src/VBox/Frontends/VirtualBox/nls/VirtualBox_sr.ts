@@ -13791,7 +13791,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
         <translation>%1 - Информација сесије</translation>
@@ -13894,8 +13894,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Подметнуто записивање</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
-        <translation>VBoxVMInformationDlg</translation>
+        <source>UIVMInfoDialog</source>
+        <translation>UIVMInfoDialog</translation>
     </message>
     <message>
         <source>Not Available</source>

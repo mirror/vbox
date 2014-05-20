@@ -12,8 +12,8 @@
  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
- <class>VBoxVMInformationDlg</class>
- <widget class="QMainWindow" name="VBoxVMInformationDlg" >
+ <class>UIVMInfoDialog</class>
+ <widget class="QMainWindow" name="UIVMInfoDialog" >
   <property name="geometry" >
    <rect>
     <x>0</x>
@@ -23,7 +23,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>VBoxVMInformationDlg</string>
+   <string>UIVMInfoDialog</string>
   </property>
   <widget class="QWidget" name="centralwidget" >
    <layout class="QVBoxLayout" >
@@ -132,7 +132,7 @@
   <connection>
    <sender>mButtonBox</sender>
    <signal>rejected()</signal>
-   <receiver>VBoxVMInformationDlg</receiver>
+   <receiver>UIVMInfoDialog</receiver>
    <slot>close()</slot>
    <hints>
     <hint type="sourcelabel" >

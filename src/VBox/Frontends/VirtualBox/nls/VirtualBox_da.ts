@@ -13744,7 +13744,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
         <translation>%1 - Sessionsinformation</translation>
@@ -13847,9 +13847,9 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Nested Paging</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
+        <source>UIVMInfoDialog</source>
         <translatorcomment>Probably should not be translated</translatorcomment>
-        <translation>VBoxVMInformationDlg</translation>
+        <translation>UIVMInfoDialog</translation>
     </message>
     <message>
         <source>Not Available</source>

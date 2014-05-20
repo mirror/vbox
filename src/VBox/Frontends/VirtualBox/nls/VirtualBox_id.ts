@@ -14543,7 +14543,7 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>Session Information Dialog</source>
         <translation type="obsolete">Dialog Informasi Sesi</translation>
@@ -14662,8 +14662,8 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
         <translation type="obsolete">Mati</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
-        <translation>VBoxVMInformationDlg</translation>
+        <source>UIVMInfoDialog</source>
+        <translation>UIVMInfoDialog</translation>
     </message>
     <message>
         <source>Storage Statistics</source>

@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxVMInformationDlg class implementation
+ * UIVMInfoDialog class implementation
  */
 
 /*
@@ -33,7 +33,7 @@
 #include "UIMachineWindow.h"
 #include "UISession.h"
 #include "VBoxGlobal.h"
-#include "VBoxVMInformationDlg.h"
+#include "UIVMInfoDialog.h"
 #include "UIConverter.h"
 
 /* COM includes: */
@@ -52,27 +52,27 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-VBoxVMInformationDlg::InfoDlgMap VBoxVMInformationDlg::mSelfArray = InfoDlgMap();
+UIVMInfoDialog::InfoDlgMap UIVMInfoDialog::mSelfArray = InfoDlgMap();
 
-void VBoxVMInformationDlg::createInformationDlg(UIMachineWindow *pMachineWindow)
+void UIVMInfoDialog::createInformationDlg(UIMachineWindow *pMachineWindow)
 {
     CMachine machine = pMachineWindow->machineLogic()->uisession()->session().GetMachine();
     if (mSelfArray.find (machine.GetName()) == mSelfArray.end())
     {
         /* Creating new information dialog if there is no one existing */
-        VBoxVMInformationDlg *id = new VBoxVMInformationDlg(pMachineWindow);
+        UIVMInfoDialog *id = new UIVMInfoDialog(pMachineWindow);
         id->setAttribute (Qt::WA_DeleteOnClose);
         mSelfArray [machine.GetName()] = id;
     }
 
-    VBoxVMInformationDlg *info = mSelfArray [machine.GetName()];
+    UIVMInfoDialog *info = mSelfArray [machine.GetName()];
     info->show();
     info->raise();
     info->setWindowState (info->windowState() & ~Qt::WindowMinimized);
     info->activateWindow();
 }
 
-VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow)
+UIVMInfoDialog::UIVMInfoDialog (UIMachineWindow *pMachineWindow)
     : QIWithRetranslateUI<QMainWindow>(0)
     , m_pPseudoParentWidget(pMachineWindow)
     , mSession (pMachineWindow->session())
@@ -80,7 +80,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow)
     , mStatTimer (new QTimer (this))
 {
     /* Apply UI decorations */
-    Ui::VBoxVMInformationDlg::setupUi (this);
+    Ui::UIVMInfoDialog::setupUi (this);
 
 #ifdef Q_WS_MAC
     /* No icon for this window on the mac, cause this would act as proxy icon which isn't necessary here. */
@@ -148,7 +148,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow)
     mInfoStack->setCurrentIndex (1);
 }
 
-VBoxVMInformationDlg::~VBoxVMInformationDlg()
+UIVMInfoDialog::~UIVMInfoDialog()
 {
     /* Save dialog attributes for this vm */
     QString dlgsize ("%1,%2,%3");
@@ -159,10 +159,10 @@ VBoxVMInformationDlg::~VBoxVMInformationDlg()
         mSelfArray.remove (mSession.GetMachine().GetName());
 }
 
-void VBoxVMInformationDlg::retranslateUi()
+void UIVMInfoDialog::retranslateUi()
 {
     /* Translate uic generated strings */
-    Ui::VBoxVMInformationDlg::retranslateUi (this);
+    Ui::UIVMInfoDialog::retranslateUi (this);
 
     updateDetails();
 
@@ -327,7 +327,7 @@ void VBoxVMInformationDlg::retranslateUi()
     refreshStatistics();
 }
 
-bool VBoxVMInformationDlg::event (QEvent *aEvent)
+bool UIVMInfoDialog::event (QEvent *aEvent)
 {
     bool result = QMainWindow::event (aEvent);
     switch (aEvent->type())
@@ -346,7 +346,7 @@ bool VBoxVMInformationDlg::event (QEvent *aEvent)
     return result;
 }
 
-void VBoxVMInformationDlg::resizeEvent (QResizeEvent *aEvent)
+void UIVMInfoDialog::resizeEvent (QResizeEvent *aEvent)
 {
     QMainWindow::resizeEvent (aEvent);
 
@@ -358,7 +358,7 @@ void VBoxVMInformationDlg::resizeEvent (QResizeEvent *aEvent)
     }
 }
 
-void VBoxVMInformationDlg::showEvent (QShowEvent *aEvent)
+void UIVMInfoDialog::showEvent (QShowEvent *aEvent)
 {
     /* One may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,
@@ -380,13 +380,13 @@ void VBoxVMInformationDlg::showEvent (QShowEvent *aEvent)
 }
 
 
-void VBoxVMInformationDlg::updateDetails()
+void UIVMInfoDialog::updateDetails()
 {
     /* Details page update */
     mDetailsText->setText (vboxGlobal().detailsReport (mSession.GetMachine(), false /* aWithLinks */));
 }
 
-void VBoxVMInformationDlg::processStatistics()
+void UIVMInfoDialog::processStatistics()
 {
     CMachineDebugger dbg = mSession.GetConsole().GetDebugger();
     QString info;
@@ -402,13 +402,13 @@ void VBoxVMInformationDlg::processStatistics()
     refreshStatistics();
 }
 
-void VBoxVMInformationDlg::onPageChanged (int aIndex)
+void UIVMInfoDialog::onPageChanged (int aIndex)
 {
     /* Focusing the browser on shown page */
     mInfoStack->widget (aIndex)->setFocus();
 }
 
-QString VBoxVMInformationDlg::parseStatistics (const QString &aText)
+QString UIVMInfoDialog::parseStatistics (const QString &aText)
 {
     /* Filters the statistic counters body */
     QRegExp query ("^.+<Statistics>\n(.+)\n</Statistics>.*$");
@@ -446,7 +446,7 @@ QString VBoxVMInformationDlg::parseStatistics (const QString &aText)
     return QString::number (summa);
 }
 
-void VBoxVMInformationDlg::refreshStatistics()
+void UIVMInfoDialog::refreshStatistics()
 {
     if (mSession.isNull())
         return;
@@ -670,7 +670,7 @@ void VBoxVMInformationDlg::refreshStatistics()
  *  aValue - left-aligned value itself in the right column.
  *  aMaxSize - maximum width (in pixels) of value in right column.
  */
-QString VBoxVMInformationDlg::formatValue (const QString &aValueName,
+QString UIVMInfoDialog::formatValue (const QString &aValueName,
                                            const QString &aValue, int aMaxSize)
 {
     QString strMargin;
@@ -687,7 +687,7 @@ QString VBoxVMInformationDlg::formatValue (const QString &aValueName,
     return bdyRow.arg (aValueName).arg (aValue).arg (strMargin);
 }
 
-QString VBoxVMInformationDlg::formatMedium (const QString &aCtrName,
+QString UIVMInfoDialog::formatMedium (const QString &aCtrName,
                                             LONG aPort, LONG aDevice,
                                             const QString &aBelongsTo)
 {
@@ -700,7 +700,7 @@ QString VBoxVMInformationDlg::formatMedium (const QString &aCtrName,
     return header.arg (name) + composeArticle (aBelongsTo, 2);
 }
 
-QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot,
+QString UIVMInfoDialog::formatAdapter (ULONG aSlot,
                                              const QString &aBelongsTo)
 {
     if (mSession.isNull())
@@ -711,7 +711,7 @@ QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot,
     return header.arg (name) + composeArticle (aBelongsTo, 1);
 }
 
-QString VBoxVMInformationDlg::composeArticle (const QString &aBelongsTo, int aSpacesCount)
+QString UIVMInfoDialog::composeArticle (const QString &aBelongsTo, int aSpacesCount)
 {
     QString body = "<tr><td></td><td width=50%><nobr>%1%2</nobr></td>"
                    "<td align=right><nobr>%3%4</nobr></td></tr>";

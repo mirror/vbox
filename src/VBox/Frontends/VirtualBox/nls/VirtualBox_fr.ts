@@ -11982,7 +11982,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
         <translation>%1 - Détails de la session</translation>
@@ -12050,9 +12050,9 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Pas de cartes réseau</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
+        <source>UIVMInfoDialog</source>
         <translatorcomment>Again, mistake?</translatorcomment>
-        <translation>VBoxVMInformationDlg</translation>
+        <translation>UIVMInfoDialog</translation>
     </message>
     <message>
         <source>Not Available</source>

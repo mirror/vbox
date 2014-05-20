@@ -10890,7 +10890,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
         <translation>%1 - 的运行状态</translation>
@@ -10958,7 +10958,7 @@
         <translation>没有网络连接</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
+        <source>UIVMInfoDialog</source>
         <translation>虚拟电脑信息</translation>
     </message>
     <message>

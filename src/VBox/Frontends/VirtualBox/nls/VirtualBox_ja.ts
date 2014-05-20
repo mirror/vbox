@@ -7055,7 +7055,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ストレージコントローラー 1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="551"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="551"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1310"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="490"/>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="573"/>
@@ -13694,7 +13694,7 @@ Version %1</source>
         <translation>オーディオ</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="695"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="695"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1429"/>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
@@ -14184,7 +14184,7 @@ Version %1</source>
         <translation type="obsolete">カスタム ハードディスク</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="526"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="526"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1223"/>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="687"/>
         <source>VT-x/AMD-V</source>
@@ -14198,7 +14198,7 @@ Version %1</source>
         <translation>PAE/NX</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="484"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="484"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1191"/>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="665"/>
         <source>Enabled</source>
@@ -14206,7 +14206,7 @@ Version %1</source>
         <translation>有効</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="485"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="485"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1192"/>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="666"/>
         <source>Disabled</source>
@@ -14214,28 +14214,28 @@ Version %1</source>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="490"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="490"/>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="675"/>
         <source>Enabled</source>
         <comment>details report (Unrestricted Execution)</comment>
         <translation>有効</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="491"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="491"/>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="676"/>
         <source>Disabled</source>
         <comment>details report (Unrestricted Execution)</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="528"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="528"/>
         <source>Unrestricted Execution</source>
         <comment>details report</comment>
         <translatorcomment>CPUのレジスタ名なのでそのまま</translatorcomment>
         <translation>Unrestricted Execution</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="531"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="531"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1279"/>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
@@ -14629,14 +14629,14 @@ Version %1</source>
         <translation>差分</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="527"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="527"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1224"/>
         <source>Nested Paging</source>
         <comment>details report</comment>
         <translation>ネステッドページング</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="487"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="487"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1196"/>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="670"/>
         <source>Enabled</source>
@@ -14644,7 +14644,7 @@ Version %1</source>
         <translation>有効</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="488"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="488"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1197"/>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="671"/>
         <source>Disabled</source>
@@ -17807,7 +17807,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>Session Information Dialog</source>
         <translation type="obsolete">セッション情報ダイアログ</translation>
@@ -17817,7 +17817,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">閉じる(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="173"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="173"/>
         <source>%1 - Session Information</source>
         <translation>%1 - セッション情報</translation>
     </message>
@@ -17830,53 +17830,53 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">ランタイム(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="196"/>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="233"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="196"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="233"/>
         <source>DMA Transfers</source>
         <translation>DMA 転送</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="198"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="198"/>
         <source>PIO Transfers</source>
         <translation>PIO 転送</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="200"/>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="235"/>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="262"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="200"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="235"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="262"/>
         <source>Data Read</source>
         <translation>データ読み込み</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="202"/>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="237"/>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="264"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="202"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="237"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="264"/>
         <source>Data Written</source>
         <translation>データ書き込み</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="309"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="309"/>
         <source>Data Transmitted</source>
         <translation>データ送信</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="311"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="311"/>
         <source>Data Received</source>
         <translation>データ受信</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="511"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="511"/>
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
         <translation>利用不可</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="522"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="522"/>
         <source>Runtime Attributes</source>
         <translation>ランタイム属性</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="523"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="523"/>
         <source>Screen Resolution</source>
         <translation>画面解像度</translation>
     </message>
@@ -17894,34 +17894,34 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">バージョン %1.%2</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="496"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="496"/>
         <source>Not Detected</source>
         <comment>guest additions</comment>
         <translation>未検出</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="505"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="505"/>
         <source>Not Detected</source>
         <comment>guest os type</comment>
         <translation>未検出</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="524"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="524"/>
         <source>Clipboard Mode</source>
         <translation>クリップボードモード</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="525"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="525"/>
         <source>Drag&apos;n&apos;Drop Mode</source>
         <translation>ドラッグ＆ドロップモード</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="529"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="529"/>
         <source>Guest Additions</source>
         <translation>Guest Additions</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="530"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="530"/>
         <source>Guest OS Type</source>
         <translation>ゲストOSのタイプ</translation>
     </message>
@@ -17934,7 +17934,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">ハードディスクなし</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="638"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="638"/>
         <source>No Network Adapters</source>
         <translation>ネットワークアダプターなし</translation>
     </message>
@@ -17966,17 +17966,17 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">無効</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.ui" line="26"/>
-        <source>VBoxVMInformationDlg</source>
-        <translation>VBoxVMInformationDlg</translation>
+        <location filename="../src/UIVMInfoDialog.ui" line="26"/>
+        <source>UIVMInfoDialog</source>
+        <translation>UIVMInfoDialog</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.ui" line="37"/>
+        <location filename="../src/UIVMInfoDialog.ui" line="37"/>
         <source>Configuration &amp;Details</source>
         <translation>設定の詳細(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.ui" line="72"/>
+        <location filename="../src/UIVMInfoDialog.ui" line="72"/>
         <source>&amp;Runtime Information</source>
         <translation>ランタイム情報(&amp;R)</translation>
     </message>
@@ -17986,17 +17986,17 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">利用不可</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="539"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="539"/>
         <source>Storage Statistics</source>
         <translation>ストレージ統計</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="611"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="611"/>
         <source>No Storage Devices</source>
         <translation>ストレージデバイス なし</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="622"/>
+        <location filename="../src/UIVMInfoDialog.cpp" line="622"/>
         <source>Network Statistics</source>
         <translation>ネットワーク 統計</translation>
     </message>
