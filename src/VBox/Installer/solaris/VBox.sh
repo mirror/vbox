@@ -46,9 +46,13 @@ case "$APP" in
     VBoxQtconfig)
         exec "$INSTALL_DIR/VBoxQtconfig" "$@"
         ;;
+    vbox-img)
+        exec "$INSTALL_DIR/vbox-img" "$0"
+        ;;
     *)
         echo "Unknown application - $APP"
         exit 1
         ;;
 esac
 exit 0
+

@@ -410,7 +410,8 @@ SOLARIS_STRIP_EXES += \
 	VBoxBalloonCtrl \
 	VBoxAutostart \
 	$(if $(VBOX_WITH_WEBSERVICES),vboxwebsrv) \
-	$(if $(VBOX_WITH_WEBSERVICES),webtest)
+	$(if $(VBOX_WITH_WEBSERVICES),webtest) \
+	$(if $(VBOX_WITH_VBOX_IMG)$(VBOX_WITH_TESTCASES),vbox-img)
 
 # Guest Additions
 ifdef VBOX_WITH_ADDITIONS_PACKING
