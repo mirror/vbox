@@ -25,14 +25,14 @@
 #include <QPushButton>
 
 /* GUI includes: */
-#include "UIIconPool.h"
-#include "UIMachineLogic.h"
-#include "UIMachineView.h"
-#include "UIMachineWindow.h"
-#include "UISession.h"
-#include "VBoxGlobal.h"
 #include "UIVMInfoDialog.h"
+#include "UISession.h"
+#include "UIMachineLogic.h"
+#include "UIMachineWindow.h"
+#include "UIMachineView.h"
 #include "UIConverter.h"
+#include "UIIconPool.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -47,6 +47,7 @@
 #include "CNetworkAdapter.h"
 #include "CVRDEServerInfo.h"
 
+/* Other VBox includes: */
 #include <iprt/time.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -78,6 +79,7 @@ UIVMInfoDialog::UIVMInfoDialog(UIMachineWindow *pMachineWindow)
     , m_pMachineWindow(pMachineWindow)
     , m_fIsPolished(false)
     , m_iWidth(0), m_iHeight(0), m_fMax(false)
+    , m_pTabWidget(0)
     , m_session(pMachineWindow->session())
     , m_pTimer(new QTimer(this))
 {
@@ -99,17 +101,18 @@ UIVMInfoDialog::~UIVMInfoDialog()
 
 void UIVMInfoDialog::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIVMInfoDialog::retranslateUi(this);
-
     sltUpdateDetails();
 
     AssertReturnVoid(!m_session.isNull());
     CMachine machine = m_session.GetMachine();
     AssertReturnVoid(!machine.isNull());
 
-    /* Setup a dialog caption: */
+    /* Setup dialog title: */
     setWindowTitle(tr("%1 - Session Information").arg(machine.GetName()));
+
+    /* Translate tabs: */
+    m_pTabWidget->setTabText(0, tr("Configuration &Details"));
+    m_pTabWidget->setTabText(1, tr("&Runtime Information"));
 
     /* Clear counter names initially: */
     m_names.clear();
@@ -269,13 +272,11 @@ bool UIVMInfoDialog::event(QEvent *pEvent)
     /* Process required events: */
     switch (pEvent->type())
     {
-        /* Window state-change event: */
+        /* Store window state for this VM: */
         case QEvent::WindowStateChange:
         {
             if (m_fIsPolished)
                 m_fMax = isMaximized();
-            else if (m_fMax == isMaximized())
-                m_fIsPolished = true;
             break;
         }
         default:
@@ -308,13 +309,14 @@ void UIVMInfoDialog::showEvent(QShowEvent *pEvent)
      * we provide our own "polish" implementation */
     if (!m_fIsPolished)
     {
+        /* Mark as polished: */
+        m_fIsPolished = true;
+
         /* Load window size, adjust position and load window state finally: */
         resize(m_iWidth, m_iHeight);
         vboxGlobal().centerWidget(this, m_pMachineWindow, false);
         if (m_fMax)
             QTimer::singleShot(0, this, SLOT(showMaximized()));
-        else
-            m_fIsPolished = true;
     }
 
     /* Post-process through base-class: */
@@ -324,7 +326,7 @@ void UIVMInfoDialog::showEvent(QShowEvent *pEvent)
 void UIVMInfoDialog::sltUpdateDetails()
 {
     /* Details page update: */
-    mDetailsText->setText(vboxGlobal().detailsReport(m_session.GetMachine(), false /* with links */));
+    m_browsers[0]->setText(vboxGlobal().detailsReport(m_session.GetMachine(), false /* with links */));
 }
 
 void UIVMInfoDialog::sltProcessStatistics()
@@ -347,7 +349,7 @@ void UIVMInfoDialog::sltProcessStatistics()
 void UIVMInfoDialog::sltHandlePageChanged(int iIndex)
 {
     /* Focus the browser on shown page: */
-    mInfoStack->widget(iIndex)->setFocus();
+    m_pTabWidget->widget(iIndex)->setFocus();
 }
 
 void UIVMInfoDialog::prepare()
@@ -366,45 +368,26 @@ void UIVMInfoDialog::prepareThis()
     connect(m_pMachineWindow, SIGNAL(destroyed(QObject*)), this, SLOT(suicide()));
 
 #ifdef Q_WS_MAC
-    /* No icon for this window on the mac, cause this would act as proxy icon which isn't necessary here. */
+    /* No window-icon on Mac OX X, because it acts as proxy icon which isn't necessary here. */
     setWindowIcon(QIcon());
 #else /* !Q_WS_MAC */
-    /* Apply window icons */
+    /* Assign window-icon(s: */
     setWindowIcon(UIIconPool::iconSetFull(":/session_info_32px.png", ":/session_info_16px.png"));
 #endif /* !Q_WS_MAC */
 
-    /* Apply UI decorations */
-    Ui::UIVMInfoDialog::setupUi(this);
+    /* Prepare central-widget: */
+    prepareCentralWidget();
 
-    /* Setup tab icons: */
-    mInfoStack->setTabIcon(0, UIIconPool::iconSet(":/session_info_details_16px.png"));
-    mInfoStack->setTabIcon(1, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
-
-    /* Setup focus-proxy for pages: */
-    mPage1->setFocusProxy(mDetailsText);
-    mPage2->setFocusProxy(mStatisticText);
-
-    /* Setup browsers: */
-    mDetailsText->viewport()->setAutoFillBackground(false);
-    mStatisticText->viewport()->setAutoFillBackground(false);
-
-    /* Setup margins: */
-    mDetailsText->setViewportMargins(5, 5, 5, 5);
-    mStatisticText->setViewportMargins(5, 5, 5, 5);
-
-    /* Configure dialog button-box: */
-    mButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
-
-    /* Setup handlers: */
+    /* Configure handlers: */
     connect(m_pMachineWindow->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment&)), this, SLOT(sltUpdateDetails()));
     connect(m_pMachineWindow->uisession(), SIGNAL(sigSharedFolderChange()), this, SLOT(sltUpdateDetails()));
     /* TODO_NEW_CORE: this is ofc not really right in the mm sense. There are more than one screens. */
     connect(m_pMachineWindow->machineView(), SIGNAL(resizeHintDone()), this, SLOT(sltProcessStatistics()));
-    connect(mInfoStack, SIGNAL(currentChanged(int)), this, SLOT(sltHandlePageChanged(int)));
+    connect(m_pTabWidget, SIGNAL(currentChanged(int)), this, SLOT(sltHandlePageChanged(int)));
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateDetails()));
     connect(m_pTimer, SIGNAL(timeout()), this, SLOT(sltProcessStatistics()));
 
-    /* Loading language constants: */
+    /* Retranslate: */
     retranslateUi();
 
     /* Details page update: */
@@ -413,9 +396,88 @@ void UIVMInfoDialog::prepareThis()
     /* Statistics page update: */
     sltProcessStatistics();
     m_pTimer->start(5000);
+}
 
-    /* Make statistics page the default one: */
-    mInfoStack->setCurrentIndex(1);
+void UIVMInfoDialog::prepareCentralWidget()
+{
+    /* Create central-widget: */
+    setCentralWidget(new QWidget);
+    AssertPtrReturnVoid(centralWidget());
+    {
+        /* Create main-layout: */
+        new QVBoxLayout(centralWidget());
+        AssertPtrReturnVoid(centralWidget()->layout());
+        {
+            /* Create tab-widget: */
+            prepareTabWidget();
+            /* Create button-box: */
+            prepareButtonBox();
+        }
+    }
+}
+
+void UIVMInfoDialog::prepareTabWidget()
+{
+    /* Create tab-widget: */
+    m_pTabWidget = new QITabWidget;
+    AssertPtrReturnVoid(m_pTabWidget);
+    {
+        /* Create tabs: */
+        for (int iTabIndex = 0; iTabIndex < 2; ++iTabIndex)
+            prepareTab(iTabIndex);
+        /* Configure tab-widget: */
+        m_pTabWidget->setTabIcon(0, UIIconPool::iconSet(":/session_info_details_16px.png"));
+        m_pTabWidget->setTabIcon(1, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
+        m_pTabWidget->setCurrentIndex(1);
+        /* Add tab-widget into main-layout: */
+        centralWidget()->layout()->addWidget(m_pTabWidget);
+    }
+}
+
+void UIVMInfoDialog::prepareTab(int iTabIndex)
+{
+    /* Create tab: */
+    m_tabs.insert(iTabIndex, new QWidget);
+    AssertPtrReturnVoid(m_tabs.value(iTabIndex));
+    {
+        /* Create tab-layout: */
+        QVBoxLayout *pLayout = new QVBoxLayout(m_tabs.value(iTabIndex));
+        {
+            /* Configure tab-layout: */
+            pLayout->setContentsMargins(0, 0, 0, 0);
+            /* Create browser: */
+            m_browsers.insert(iTabIndex, new QRichTextEdit);
+            AssertPtrReturnVoid(m_browsers.value(iTabIndex));
+            {
+                /* Configure browser: */
+                m_browsers[iTabIndex]->setReadOnly(true);
+                m_browsers[iTabIndex]->setFrameShadow(QFrame::Plain);
+                m_browsers[iTabIndex]->setFrameShape(QFrame::NoFrame);
+                m_browsers[iTabIndex]->setViewportMargins(5, 5, 5, 5);
+                m_browsers[iTabIndex]->viewport()->setAutoFillBackground(false);
+                m_tabs[iTabIndex]->setFocusProxy(m_browsers.value(iTabIndex));
+                /* Add browser into tab-layout: */
+                pLayout->addWidget(m_browsers.value(iTabIndex));
+            }
+        }
+        /* Add tab into tab-widget: */
+        m_pTabWidget->addTab(m_tabs.value(iTabIndex), QString());
+    }
+}
+
+void UIVMInfoDialog::prepareButtonBox()
+{
+    /* Create button-box: */
+    m_pButtonBox = new QIDialogButtonBox;
+    AssertPtrReturnVoid(m_pButtonBox);
+    {
+        /* Configure button-box: */
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Close);
+        m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
+        connect(m_pButtonBox, SIGNAL(rejected()), this, SLOT(close()));
+        /* Add button-box into main-layout: */
+        centralWidget()->layout()->addWidget(m_pButtonBox);
+    }
 }
 
 void UIVMInfoDialog::loadSettings()
@@ -721,9 +783,9 @@ void UIVMInfoDialog::refreshStatistics()
     }
 
     /* Show full composed page & save/restore scroll-bar position: */
-    int iScrollBarValue = mStatisticText->verticalScrollBar()->value();
-    mStatisticText->setText(strTable.arg(strResult));
-    mStatisticText->verticalScrollBar()->setValue(iScrollBarValue);
+    int iScrollBarValue = m_browsers[1]->verticalScrollBar()->value();
+    m_browsers[1]->setText(strTable.arg(strResult));
+    m_browsers[1]->verticalScrollBar()->setValue(iScrollBarValue);
 }
 
 QString UIVMInfoDialog::formatValue(const QString &strValueName,

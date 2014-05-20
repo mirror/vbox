@@ -17966,17 +17966,14 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">無効</translation>
     </message>
     <message>
-        <location filename="../src/UIVMInfoDialog.ui" line="26"/>
         <source>UIVMInfoDialog</source>
         <translation>UIVMInfoDialog</translation>
     </message>
     <message>
-        <location filename="../src/UIVMInfoDialog.ui" line="37"/>
         <source>Configuration &amp;Details</source>
         <translation>設定の詳細(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/UIVMInfoDialog.ui" line="72"/>
         <source>&amp;Runtime Information</source>
         <translation>ランタイム情報(&amp;R)</translation>
     </message>

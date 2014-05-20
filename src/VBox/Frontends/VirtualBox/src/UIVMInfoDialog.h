@@ -29,11 +29,13 @@
 #include "CSession.h"
 
 /* Forward declarations: */
+class QITabWidget;
+class QIDialogButtonBox;
 class UIMachineWindow;
 class QTimer;
 
 /** QMainWindow based dialog providing user with VM details and statistics. */
-class UIVMInfoDialog : public QIWithRetranslateUI<QMainWindow>, public Ui::UIVMInfoDialog
+class UIVMInfoDialog : public QIWithRetranslateUI<QMainWindow>
 {
     Q_OBJECT;
 
@@ -61,11 +63,11 @@ protected:
     void retranslateUi();
 
     /** Common event-handler. */
-    virtual bool event(QEvent *pEvent);
+    bool event(QEvent *pEvent);
     /** Resize event-handler. */
-    virtual void resizeEvent(QResizeEvent *pEvent);
+    void resizeEvent(QResizeEvent *pEvent);
     /** Show event-handler. */
-    virtual void showEvent(QShowEvent *pEvent);
+    void showEvent(QShowEvent *pEvent);
 
 private slots:
 
@@ -82,15 +84,21 @@ private:
 
     /** General prepare helper. */
     void prepare();
-    /** Dialog prepare helper. */
+    /** Prepare helper for dialog itself. */
     void prepareThis();
+    /** Prepare helper for central-widget. */
+    void prepareCentralWidget();
+    /** Prepare helper for tab-widget. */
+    void prepareTabWidget();
+    /** Prepare helper for @a iTabIndex. */
+    void prepareTab(int iTabIndex);
+    /** Prepare helper for button-box. */
+    void prepareButtonBox();
     /** Load settings helper. */
     void loadSettings();
 
     /** Save settings helper. */
     void saveSettings();
-    // /** Dialog cleanup helper. */
-    // void cleanupThis() {}
     /** General cleanup helper. */
     void cleanup();
 
@@ -127,6 +135,18 @@ private:
     int                m_iHeight;
     /** Whether dialog maximized. */
     bool               m_fMax;
+    /** @} */
+
+    /** @name Widget variables.
+     * @{ */
+    /** Dialog tab-widget. */
+    QITabWidget               *m_pTabWidget;
+    /** Dialog tabs map. */
+    QMap<int, QWidget*>        m_tabs;
+    /** Dialog browsers map. */
+    QMap<int, QRichTextEdit*>  m_browsers;
+    /** Dialog button-box. */
+    QIDialogButtonBox         *m_pButtonBox;
     /** @} */
 
     /** @name VM details/statistics variables.

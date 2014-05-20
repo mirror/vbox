@@ -97,7 +97,7 @@ class QRichTextEdit : public QTextEdit
 
 public:
 
-    QRichTextEdit (QWidget *aParent) : QTextEdit (aParent) {}
+    QRichTextEdit (QWidget *aParent = 0) : QTextEdit (aParent) {}
 
     void setViewportMargins (int aLeft, int aTop, int aRight, int aBottom)
     {
