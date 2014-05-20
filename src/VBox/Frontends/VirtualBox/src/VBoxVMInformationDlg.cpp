@@ -90,6 +90,10 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow)
     setWindowIcon(UIIconPool::iconSetFull(":/session_info_32px.png", ":/session_info_16px.png"));
 #endif
 
+    /* Setup tab icons: */
+    mInfoStack->setTabIcon(0, UIIconPool::iconSet(":/session_info_details_16px.png"));
+    mInfoStack->setTabIcon(1, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
+
     /* Setup focus-proxy for pages */
     mPage1->setFocusProxy (mDetailsText);
     mPage2->setFocusProxy (mStatisticText);
