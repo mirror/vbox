@@ -1340,7 +1340,9 @@ HRESULT CDECL wined3d_device_uninit_3d(struct wined3d_device *device)
     context = context_acquire(device, NULL);
     gl_info = context->gl_info;
 
+#ifdef VBOX_WITH_WINE_FIX_ZEROVERTATTR
     zv_destroy(device);
+#endif
 
     if (device->logo_surface)
         wined3d_surface_decref(device->logo_surface);

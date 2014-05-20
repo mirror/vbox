@@ -27,9 +27,15 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
 {
     unsigned char *p = array->a[attr].p + index * array->a[attr].stride;
 
+#ifdef DEBUG_misha
+    Assert(index >= 0);
+#endif
+
 #ifdef CR_ARB_vertex_buffer_object
     if (array->a[attr].buffer && array->a[attr].buffer->data)
     {
+        Assert(((GLuint)p) < array->a[attr].buffer->size);
+        Assert(((GLint)p) >= 0);
         p = (unsigned char *)(array->a[attr].buffer->data) + (unsigned long)p;
     }
 #endif
@@ -297,7 +303,7 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
  * Expand glArrayElement into crPackVertex/Color/Normal/etc.
  */
 void
-crPackExpandArrayElement(GLint index, CRClientState *c)
+crPackExpandArrayElement(GLint index, CRClientState *c, const GLfloat *pZva)
 {
     unsigned char *p;
     unsigned int unit, attr;
@@ -560,6 +566,10 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
     {
         crPackVertexAttrib(array, VERT_ATTRIB_POS, index);
     }
+    else if (pZva)
+    {
+        crPackVertexAttrib4fvARB(VERT_ATTRIB_POS, pZva);
+    }
     else if (array->v.enabled)
     {
         p = array->v.p + index * array->v.stride;
@@ -612,7 +622,7 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
 
 
 void
-crPackExpandDrawArrays(GLenum mode, GLint first, GLsizei count, CRClientState *c)
+crPackExpandDrawArrays(GLenum mode, GLint first, GLsizei count, CRClientState *c, const GLfloat *pZva)
 {
     int i;
 
@@ -631,7 +641,7 @@ crPackExpandDrawArrays(GLenum mode, GLint first, GLsizei count, CRClientState *c
     crPackBegin(mode);
     for (i=0; i<count; i++)
     {
-        crPackExpandArrayElement(first + i, c);
+        crPackExpandArrayElement(first + i, c, pZva);
     }
     crPackEnd();
 }
@@ -752,7 +762,7 @@ crPackDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
  */
 void
 crPackExpandDrawElements(GLenum mode, GLsizei count, GLenum type,
-                                                 const GLvoid *indices, CRClientState *c)
+                                                 const GLvoid *indices, CRClientState *c, const GLfloat *pZva)
 {
     int i;
     GLubyte *p = (GLubyte *)indices;
@@ -800,20 +810,20 @@ crPackExpandDrawElements(GLenum mode, GLsizei count, GLenum type,
         case GL_UNSIGNED_BYTE:
             for (i=0; i<count; i++)
             {
-                crPackExpandArrayElement((GLint) *p++, c);
+                crPackExpandArrayElement((GLint) *p++, c, pZva);
             }
             break;
         case GL_UNSIGNED_SHORT:
             for (i=0; i<count; i++)
             {
-                crPackExpandArrayElement((GLint) * (GLushort *) p, c);
+                crPackExpandArrayElement((GLint) * (GLushort *) p, c, pZva);
                 p+=sizeof (GLushort);
             }
             break;
         case GL_UNSIGNED_INT:
             for (i=0; i<count; i++)
             {
-                crPackExpandArrayElement((GLint) * (GLuint *) p, c);
+                crPackExpandArrayElement((GLint) * (GLuint *) p, c, pZva);
                 p+=sizeof (GLuint);
             }
             break;
@@ -871,7 +881,7 @@ crPackUnrollDrawElements(GLsizei count, GLenum type,
  * glDrawRangeElements, expanded into crPackBegin/Vertex/End/etc.
  */
 void
-crPackExpandDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c)
+crPackExpandDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c, const GLfloat *pZva)
 {
     if (start>end)
     {
@@ -879,7 +889,7 @@ crPackExpandDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei cou
         return;
     }
 
-    crPackExpandDrawElements(mode, count, type, indices, c);
+    crPackExpandDrawElements(mode, count, type, indices, c, pZva);
 }
 
 
@@ -905,12 +915,12 @@ crPackMultiDrawArraysEXT( GLenum mode, GLint *first, GLsizei *count,
  */
 void
 crPackExpandMultiDrawArraysEXT( GLenum mode, GLint *first, GLsizei *count,
-                                                                GLsizei primcount, CRClientState *c )
+                                                                GLsizei primcount, CRClientState *c, const GLfloat *pZva )
 {
    GLint i;
    for (i = 0; i < primcount; i++) {
       if (count[i] > 0) {
-         crPackExpandDrawArrays(mode, first[i], count[i], c);
+         crPackExpandDrawArrays(mode, first[i], count[i], c, pZva);
       }
    }
 }
@@ -938,12 +948,12 @@ crPackMultiDrawElementsEXT( GLenum mode, const GLsizei *count, GLenum type,
 void
 crPackExpandMultiDrawElementsEXT( GLenum mode, const GLsizei *count,
                                   GLenum type, const GLvoid **indices,
-                                  GLsizei primcount, CRClientState *c )
+                                  GLsizei primcount, CRClientState *c, const GLfloat *pZva )
 {
    GLint i;
    for (i = 0; i < primcount; i++) {
       if (count[i] > 0) {
-         crPackExpandDrawElements(mode, count[i], type, indices[i], c);
+         crPackExpandDrawElements(mode, count[i], type, indices[i], c, pZva);
       }
    }
 }

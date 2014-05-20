@@ -434,6 +434,13 @@ static void packspuFluchOnThreadSwitch(GLboolean fEnable)
     thread->currentContext->currentThread = fEnable ? thread : NULL;
 }
 
+static void packspuCheckZerroVertAttr(GLboolean fEnable)
+{
+    GET_THREAD(thread);
+
+    thread->currentContext->fCheckZerroVertAttr = fEnable;
+}
+
 void PACKSPU_APIENTRY packspu_ChromiumParameteriCR(GLenum target, GLint value)
 {
     switch (target)
@@ -441,6 +448,9 @@ void PACKSPU_APIENTRY packspu_ChromiumParameteriCR(GLenum target, GLint value)
         case GL_FLUSH_ON_THREAD_SWITCH_CR:
             /* this is a pure packspu state, don't propagate it any further */
             packspuFluchOnThreadSwitch(value);
+            return;
+        case GL_CHECK_ZERO_VERT_ARRT:
+            packspuCheckZerroVertAttr(value);
             return;
         case GL_SHARE_CONTEXT_RESOURCES_CR:
             crStateShareContext(value);

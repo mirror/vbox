@@ -110,17 +110,11 @@ void crStateSetCurrentPointers( CRContext *ctx, CRCurrentStatePointers *current 
 
 void crStateResetCurrentPointers( CRCurrentStatePointers *current )
 {
-    crMemset(&(current->c.index), 0, sizeof(GLindex_p));
-    crMemset(&(current->c.vertexAttrib), 0, sizeof(GLvertexattrib_p));
-    crMemset(&(current->c.fogCoord), 0, sizeof(GLfogcoord_p));
-    crMemset(&(current->c.edgeFlag), 0, sizeof(GLedgeflag_p));
-    crMemset(&(current->c.normal), 0, sizeof(GLnormal_p));
-    crMemset(&(current->c.color), 0, sizeof(GLcolor_p));
-    crMemset(&(current->c.secondaryColor), 0, sizeof(GLsecondarycolor_p));
-    crMemset(&(current->c.texCoord), 0, sizeof(GLtexcoord_p));
-    /*
-    current->attribsUsedMask = 0;
-    */
+    uint32_t attribsUsedMask = current->attribsUsedMask;
+
+    crMemset(current, 0, sizeof (*current));
+
+    current->attribsUsedMask = attribsUsedMask;
 }
 
 void STATE_APIENTRY crStateBegin( GLenum mode )

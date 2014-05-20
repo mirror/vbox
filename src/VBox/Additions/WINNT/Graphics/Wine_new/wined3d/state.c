@@ -4135,6 +4135,9 @@ static void load_numbered_arrays(struct wined3d_context *context,
             else
 #endif
             {
+#ifdef DEBUG_misha
+                Assert(i);
+#endif
 
             if (context->numbered_array_mask & (1 << i))
                 unload_numbered_array(context, i);
@@ -4224,6 +4227,9 @@ static void load_numbered_arrays(struct wined3d_context *context,
             else
 #endif
             {
+#ifdef DEBUG_misha
+                Assert(i);
+#endif
 
             if (context->numbered_array_mask & (1 << i)) unload_numbered_array(context, i);
 

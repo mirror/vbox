@@ -56,7 +56,7 @@ print """
 	unsigned int vtx_max;
 	unsigned int vtx_count_begin;
 	unsigned int attribsUsedMask;
-
+    unsigned int changedVertexAttrib;
 } CRCurrentStatePointers;
 
 #endif /* CR_CURRENT_H */
