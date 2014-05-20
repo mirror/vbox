@@ -419,7 +419,7 @@ void PACKSPU_APIENTRY packspu_DestroyContext( GLint ctx )
     context->serverCtx = 0;
     context->currentThread = NULL;
 
-    memset (&context->zvaBufferInfo, 0, sizeof (context->zvaBufferInfo));
+    crMemset (&context->zvaBufferInfo, 0, sizeof (context->zvaBufferInfo));
 
     if (curContext == context)
     {
