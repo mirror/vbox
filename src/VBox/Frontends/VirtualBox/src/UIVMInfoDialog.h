@@ -69,6 +69,8 @@ protected:
 
 private slots:
 
+    /** Slot to destroy dialog immediately. */
+    void suicide() { delete this; }
     /** Slot to update general VM details. */
     void sltUpdateDetails();
     /** Slot to update runtime VM statistics. */
@@ -77,6 +79,20 @@ private slots:
     void sltHandlePageChanged(int iIndex);
 
 private:
+
+    /** General prepare helper. */
+    void prepare();
+    /** Dialog prepare helper. */
+    void prepareThis();
+    /** Load settings helper. */
+    void loadSettings();
+
+    /** Save settings helper. */
+    void saveSettings();
+    // /** Dialog cleanup helper. */
+    // void cleanupThis() {}
+    /** General cleanup helper. */
+    void cleanup();
 
     /** Helper to parse passed VM statistics @a aText. */
     QString parseStatistics(const QString &strText);
@@ -97,8 +113,8 @@ private:
      * @{ */
     /** Dialog instance pointer. */
     static UIVMInfoDialog *m_spInstance;
-    /** Widget to center dialog according. */
-    QWidget               *m_pPseudoParentWidget;
+    /** Machine-window to center dialog according. */
+    UIMachineWindow       *m_pMachineWindow;
     /** Whether dialog was polished. */
     bool                   m_fIsPolished;
     /** @} */

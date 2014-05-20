@@ -75,94 +75,25 @@ void UIVMInfoDialog::invoke(UIMachineWindow *pMachineWindow)
 
 UIVMInfoDialog::UIVMInfoDialog(UIMachineWindow *pMachineWindow)
     : QIWithRetranslateUI<QMainWindow>(0)
-    , m_pPseudoParentWidget(pMachineWindow)
+    , m_pMachineWindow(pMachineWindow)
     , m_fIsPolished(false)
     , m_iWidth(0), m_iHeight(0), m_fMax(false)
     , m_session(pMachineWindow->session())
     , m_pTimer(new QTimer(this))
 {
-    /* Initialize instance early: */
+    /* Initialize instance: */
     m_spInstance = this;
 
-    /* Delete dialog on close: */
-    setAttribute(Qt::WA_DeleteOnClose);
-
-    /* Apply UI decorations */
-    Ui::UIVMInfoDialog::setupUi(this);
-
-#ifdef Q_WS_MAC
-    /* No icon for this window on the mac, cause this would act as proxy icon which isn't necessary here. */
-    setWindowIcon(QIcon());
-#else /* !Q_WS_MAC */
-    /* Apply window icons */
-    setWindowIcon(UIIconPool::iconSetFull(":/session_info_32px.png", ":/session_info_16px.png"));
-#endif /* !Q_WS_MAC */
-
-    /* Setup tab icons: */
-    mInfoStack->setTabIcon(0, UIIconPool::iconSet(":/session_info_details_16px.png"));
-    mInfoStack->setTabIcon(1, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
-
-    /* Setup focus-proxy for pages: */
-    mPage1->setFocusProxy(mDetailsText);
-    mPage2->setFocusProxy(mStatisticText);
-
-    /* Setup browsers: */
-    mDetailsText->viewport()->setAutoFillBackground(false);
-    mStatisticText->viewport()->setAutoFillBackground(false);
-
-    /* Setup margins: */
-    mDetailsText->setViewportMargins(5, 5, 5, 5);
-    mStatisticText->setViewportMargins(5, 5, 5, 5);
-
-    /* Configure dialog button-box: */
-    mButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
-
-    /* Setup handlers: */
-    connect(pMachineWindow->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment&)), this, SLOT(sltUpdateDetails()));
-    connect(pMachineWindow->uisession(), SIGNAL(sigSharedFolderChange()), this, SLOT(sltUpdateDetails()));
-    /* TODO_NEW_CORE: this is ofc not really right in the mm sense. There are more than one screens. */
-    connect(pMachineWindow->machineView(), SIGNAL(resizeHintDone()), this, SLOT(sltProcessStatistics()));
-    connect(mInfoStack, SIGNAL(currentChanged(int)), this, SLOT(sltHandlePageChanged(int)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateDetails()));
-    connect(m_pTimer, SIGNAL(timeout()), this, SLOT(sltProcessStatistics()));
-
-    /* Loading language constants: */
-    retranslateUi();
-
-    /* Details page update: */
-    sltUpdateDetails();
-
-    /* Statistics page update: */
-    sltProcessStatistics();
-    m_pTimer->start(5000);
-
-    /* Load dialog attributes for this VM: */
-    QString strSize = m_session.GetMachine().GetExtraData(GUI_InfoDlgState);
-    if (strSize.isEmpty())
-    {
-        m_iWidth = 400;
-        m_iHeight = 450;
-        m_fMax = false;
-    }
-    else
-    {
-        QStringList list = strSize.split(',');
-        m_iWidth = list[0].toInt(), m_iHeight = list[1].toInt();
-        m_fMax = list[2] == "max";
-    }
-
-    /* Make statistics page the default one: */
-    mInfoStack->setCurrentIndex(1);
+    /* Prepare: */
+    prepare();
 }
 
 UIVMInfoDialog::~UIVMInfoDialog()
 {
-    /* Save dialog attributes for this VM: */
-    QString strSize("%1,%2,%3");
-    m_session.GetMachine().SetExtraData(GUI_InfoDlgState,
-                                        strSize.arg(m_iWidth).arg(m_iHeight).arg(isMaximized() ? "max" : "normal"));
+    /* Cleanup: */
+    cleanup();
 
-    /* Deinitialize instance finally: */
+    /* Deinitialize instance: */
     m_spInstance = 0;
 }
 
@@ -379,7 +310,7 @@ void UIVMInfoDialog::showEvent(QShowEvent *pEvent)
     {
         /* Load window size, adjust position and load window state finally: */
         resize(m_iWidth, m_iHeight);
-        vboxGlobal().centerWidget(this, m_pPseudoParentWidget, false);
+        vboxGlobal().centerWidget(this, m_pMachineWindow, false);
         if (m_fMax)
             QTimer::singleShot(0, this, SLOT(showMaximized()));
         else
@@ -417,6 +348,106 @@ void UIVMInfoDialog::sltHandlePageChanged(int iIndex)
 {
     /* Focus the browser on shown page: */
     mInfoStack->widget(iIndex)->setFocus();
+}
+
+void UIVMInfoDialog::prepare()
+{
+    /* Prepare dialog: */
+    prepareThis();
+    /* Load settings: */
+    loadSettings();
+}
+
+void UIVMInfoDialog::prepareThis()
+{
+    /* Delete dialog on close: */
+    setAttribute(Qt::WA_DeleteOnClose);
+    /* Delete dialog on machine-window destruction: */
+    connect(m_pMachineWindow, SIGNAL(destroyed(QObject*)), this, SLOT(suicide()));
+
+#ifdef Q_WS_MAC
+    /* No icon for this window on the mac, cause this would act as proxy icon which isn't necessary here. */
+    setWindowIcon(QIcon());
+#else /* !Q_WS_MAC */
+    /* Apply window icons */
+    setWindowIcon(UIIconPool::iconSetFull(":/session_info_32px.png", ":/session_info_16px.png"));
+#endif /* !Q_WS_MAC */
+
+    /* Apply UI decorations */
+    Ui::UIVMInfoDialog::setupUi(this);
+
+    /* Setup tab icons: */
+    mInfoStack->setTabIcon(0, UIIconPool::iconSet(":/session_info_details_16px.png"));
+    mInfoStack->setTabIcon(1, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
+
+    /* Setup focus-proxy for pages: */
+    mPage1->setFocusProxy(mDetailsText);
+    mPage2->setFocusProxy(mStatisticText);
+
+    /* Setup browsers: */
+    mDetailsText->viewport()->setAutoFillBackground(false);
+    mStatisticText->viewport()->setAutoFillBackground(false);
+
+    /* Setup margins: */
+    mDetailsText->setViewportMargins(5, 5, 5, 5);
+    mStatisticText->setViewportMargins(5, 5, 5, 5);
+
+    /* Configure dialog button-box: */
+    mButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
+
+    /* Setup handlers: */
+    connect(m_pMachineWindow->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment&)), this, SLOT(sltUpdateDetails()));
+    connect(m_pMachineWindow->uisession(), SIGNAL(sigSharedFolderChange()), this, SLOT(sltUpdateDetails()));
+    /* TODO_NEW_CORE: this is ofc not really right in the mm sense. There are more than one screens. */
+    connect(m_pMachineWindow->machineView(), SIGNAL(resizeHintDone()), this, SLOT(sltProcessStatistics()));
+    connect(mInfoStack, SIGNAL(currentChanged(int)), this, SLOT(sltHandlePageChanged(int)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateDetails()));
+    connect(m_pTimer, SIGNAL(timeout()), this, SLOT(sltProcessStatistics()));
+
+    /* Loading language constants: */
+    retranslateUi();
+
+    /* Details page update: */
+    sltUpdateDetails();
+
+    /* Statistics page update: */
+    sltProcessStatistics();
+    m_pTimer->start(5000);
+
+    /* Make statistics page the default one: */
+    mInfoStack->setCurrentIndex(1);
+}
+
+void UIVMInfoDialog::loadSettings()
+{
+    /* Load dialog geometry: */
+    QString strSize = m_session.GetMachine().GetExtraData(GUI_InfoDlgState);
+    if (strSize.isEmpty())
+    {
+        m_iWidth = 400;
+        m_iHeight = 450;
+        m_fMax = false;
+    }
+    else
+    {
+        QStringList list = strSize.split(',');
+        m_iWidth = list[0].toInt(), m_iHeight = list[1].toInt();
+        m_fMax = list[2] == "max";
+    }
+}
+
+void UIVMInfoDialog::saveSettings()
+{
+    /* Save dialog geometry: */
+    QString strSize("%1,%2,%3");
+    m_session.GetMachine().SetExtraData(GUI_InfoDlgState,
+                                        strSize.arg(m_iWidth).arg(m_iHeight).arg(isMaximized() ? "max" : "normal"));
+}
+
+void UIVMInfoDialog::cleanup()
+{
+    /* Save settings: */
+    saveSettings();
 }
 
 QString UIVMInfoDialog::parseStatistics(const QString &strText)
