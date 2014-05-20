@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxVMInformationDlg class declaration
+ * UIVMInfoDialog class declaration
  */
 
 /*
@@ -23,7 +23,7 @@
 #include <QMainWindow>
 
 /* GUI includes: */
-#include "VBoxVMInformationDlg.gen.h"
+#include "UIVMInfoDialog.gen.h"
 #include "QIWithRetranslateUI.h"
 
 /* COM includes: */
@@ -33,7 +33,7 @@
 class UIMachineWindow;
 class QTimer;
 
-class VBoxVMInformationDlg : public QIWithRetranslateUI<QMainWindow>, public Ui::VBoxVMInformationDlg
+class UIVMInfoDialog : public QIWithRetranslateUI<QMainWindow>, public Ui::UIVMInfoDialog
 {
     Q_OBJECT;
 
@@ -42,14 +42,14 @@ public:
     typedef QMap <QString, QString> DataMapType;
     typedef QMap <QString, QStringList> LinksMapType;
     struct CounterElementType { QString type; DataMapType list; };
-    typedef QMap <QString, VBoxVMInformationDlg*> InfoDlgMap;
+    typedef QMap <QString, UIVMInfoDialog*> InfoDlgMap;
 
     static void createInformationDlg(UIMachineWindow *pMachineWindow);
 
 protected:
 
-    VBoxVMInformationDlg(UIMachineWindow *pMachineWindow);
-   ~VBoxVMInformationDlg();
+    UIVMInfoDialog(UIMachineWindow *pMachineWindow);
+   ~UIVMInfoDialog();
 
     void retranslateUi();
 

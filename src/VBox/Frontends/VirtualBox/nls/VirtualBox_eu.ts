@@ -12058,7 +12058,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
         <translation type="unfinished"></translation>
@@ -12144,7 +12144,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
         <translation type="obsolete">Ezgaiturik</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
+        <source>UIVMInfoDialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -245,7 +245,7 @@
 #include "VBoxUtils-darwin.h"
 #include "VBoxUtils.h"
 #include "VBoxVMFirstRunWzd.h"
-#include "VBoxVMInformationDlg.h"
+#include "UIVMInfoDialog.h"
 #include "UIVMLogViewer.h"
 #include "UIMachineSettingsAudio.h"
 #include "UIMachineSettingsDisplay.h"

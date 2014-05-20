@@ -13882,7 +13882,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>Session Information Dialog</source>
         <translation type="obsolete">Oturum Bilgileri Penceresi</translation>
@@ -14005,7 +14005,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">Yerleşik Sayfalama</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
+        <source>UIVMInfoDialog</source>
         <translation>VBoxSMBilgiİletisi</translation>
     </message>
     <message>

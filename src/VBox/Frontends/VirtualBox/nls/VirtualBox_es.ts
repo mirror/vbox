@@ -16738,7 +16738,7 @@ cualquier valor.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>Session Information Dialog</source>
         <translation type="obsolete">Diálogo de Información de Sesión</translation>
@@ -16861,7 +16861,7 @@ cualquier valor.&lt;/qt&gt;</translation>
         <translation type="obsolete">Paginación anidada</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
+        <source>UIVMInfoDialog</source>
         <translation>VBoxVMInformacionDlg</translation>
     </message>
     <message>

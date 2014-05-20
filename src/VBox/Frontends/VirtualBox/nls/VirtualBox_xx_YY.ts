@@ -7691,7 +7691,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
         <translation type="unfinished"></translation>
@@ -7751,7 +7751,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
+        <source>UIVMInfoDialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -14242,7 +14242,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
         <translation>%1 - Информация о сессии</translation>
@@ -14345,7 +14345,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Функция Nested Paging</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
+        <source>UIVMInfoDialog</source>
         <translation></translation>
     </message>
     <message>

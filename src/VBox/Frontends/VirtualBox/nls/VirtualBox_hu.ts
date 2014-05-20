@@ -15862,7 +15862,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
+    <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
         <translation>%1 - Munkamenet információk</translation>
@@ -15977,7 +15977,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">Memóriavirtualizáció</translation>
     </message>
     <message>
-        <source>VBoxVMInformationDlg</source>
+        <source>UIVMInfoDialog</source>
         <translation></translation>
     </message>
     <message>
