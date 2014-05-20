@@ -31,6 +31,7 @@
 /* Forward declarations: */
 class QITabWidget;
 class QIDialogButtonBox;
+class QRichTextEdit;
 class UIMachineWindow;
 class QTimer;
 
