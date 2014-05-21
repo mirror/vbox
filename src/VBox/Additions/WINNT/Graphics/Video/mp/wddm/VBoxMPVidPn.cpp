@@ -1892,7 +1892,6 @@ static DECLCALLBACK(BOOLEAN) vboxVidPnCheckTopologyEnum(D3DKMDT_HVIDPNTOPOLOGY h
  * this routine disables all paths unsupported */
 NTSTATUS VBoxVidPnCheckTopology(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface, BOOLEAN *pfSupported)
 {
-    UINT i;
     VBOXVIDPNGETPATHSINFO CbContext = {0};
     CbContext.pDevExt = pDevExt;
     CbContext.Status = STATUS_SUCCESS;

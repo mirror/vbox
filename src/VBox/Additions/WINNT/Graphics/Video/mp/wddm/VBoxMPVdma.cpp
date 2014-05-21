@@ -1160,7 +1160,7 @@ static NTSTATUS vboxVdmaProcessVRegTexPresent(PVBOXMP_DEVEXT pDevExt,
         return STATUS_NOT_SUPPORTED;
     }
 
-    NTSTATUS Status = STATUS_UNSUCCESSFUL;
+    NTSTATUS Status = STATUS_SUCCESS;
     uint32_t hostID = pSrcAllocData->hostID;
     int rc;
     if (hostID)

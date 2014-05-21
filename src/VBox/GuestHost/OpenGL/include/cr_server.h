@@ -519,7 +519,8 @@ extern DECLEXPORT(void) crVBoxServerRemoveClient(uint32_t u32ClientID);
 extern DECLEXPORT(int32_t) crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t cbBuffer);
 extern DECLEXPORT(int32_t) crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t *pcbBuffer);
 extern DECLEXPORT(int32_t) crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint32_t vMinor);
-extern DECLEXPORT(int32_t) crVBoxServerClientGetCaps(uint32_t u32ClientID, uint32_t *pu32Caps);
+extern DECLEXPORT(int32_t) crVBoxServerClientGetCapsLegacy(uint32_t u32ClientID, uint32_t *pu32Caps);
+extern DECLEXPORT(int32_t) crVBoxServerClientGetCapsNew(uint32_t u32ClientID, CR_CAPS_INFO *pInfo);
 extern DECLEXPORT(int32_t) crVBoxServerClientSetPID(uint32_t u32ClientID, uint64_t pid);
 
 extern DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM);
