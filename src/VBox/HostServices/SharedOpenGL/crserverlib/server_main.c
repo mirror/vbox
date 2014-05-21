@@ -4179,7 +4179,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
 static DECLCALLBACK(bool) crVBoxServerHasDataForScreen(uint32_t u32ScreenID)
 {
-    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32ScreenID);
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabledForScreen(u32ScreenID);
     if (hFb)
         return CrFbHas3DData(hFb);
 
