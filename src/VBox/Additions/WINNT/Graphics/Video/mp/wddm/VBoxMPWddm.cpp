@@ -1461,6 +1461,13 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
     bNeedDpc |= VBoxCmdVbvaCheckCompletedIrq(pDevExt, &pDevExt->CmdVbva);
 
     do {
+        /* re-read flags right here to avoid host-guest racing,
+         * i.e. the situation:
+         * 1. guest reads flags ant it is HGSMIHOSTFLAGS_IRQ, i.e. HGSMIHOSTFLAGS_GCOMMAND_COMPLETED no set
+         * 2. host completes guest command, sets the HGSMIHOSTFLAGS_GCOMMAND_COMPLETED and raises IRQ
+         * 3. guest clleans IRQ and exits  */
+        flags = VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
+
         if (flags & HGSMIHOSTFLAGS_GCOMMAND_COMPLETED)
         {
             /* read the command offset */
@@ -1505,9 +1512,6 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
         }
         else
             break;
-
-        flags = VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
-
     } while (1);
 
     if (!vboxVtListIsEmpty(&CtlList))
