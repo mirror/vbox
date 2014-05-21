@@ -476,4 +476,5 @@ for k in current_fns_new.keys():
         print '\t\t}'
         print '\t\tcurrent->changed%s = 0;' % k
         print '\t}'
+print '\tcrStateResetCurrentPointers(current);'
 print '}'
