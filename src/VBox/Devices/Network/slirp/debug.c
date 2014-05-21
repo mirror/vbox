@@ -283,17 +283,16 @@ printSocket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
              void *pvUser)
 {
     struct socket *so = (struct socket*)pvValue;
-    struct sockaddr addr;
-    struct sockaddr_in *in_addr;
-    socklen_t socklen = sizeof(struct sockaddr);
     PNATState pData = (PNATState)pvUser;
-    int status = 0;
+    size_t cb = 0;
+
     NOREF(cchWidth);
     NOREF(cchPrecision);
     NOREF(fFlags);
     Assert(pData);
 
     AssertReturn(strcmp(pszType, "natsock") == 0, 0);
+
     if (so == NULL)
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                 "socket is null");
@@ -301,21 +300,13 @@ printSocket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                 "socket(%d)", so->s);
 
-    status = getsockname(so->s, &addr, &socklen);
-    if(status != 0 || addr.sa_family != AF_INET)
-    {
-        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                "socket(%d) is invalid(%s)", so->s, strerror(errno));
-    }
-
-    in_addr = (struct sockaddr_in *)&addr;
-    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %d:(proto:%u) exp. in %d "
-            "state=%R[natsockstate] "
-            "fUnderPolling:%RTbool "
-            "fShouldBeRemoved:%RTbool "
-            "f_(addr:port)=%RTnaipv4:%d "
-            "l_(addr:port)=%RTnaipv4:%d "
-            "name=%RTnaipv4:%d",
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+            "socket %d:(proto:%u) exp. in %d "
+            " state=%R[natsockstate]"
+            " fUnderPolling:%RTbool"
+            " fShouldBeRemoved:%RTbool"
+            " f_(addr:port)=%RTnaipv4:%d"
+            " l_(addr:port)=%RTnaipv4:%d",
             so->s, so->so_type,
             so->so_expire ? so->so_expire - curtime : 0,
             so->so_state,
@@ -324,9 +315,38 @@ printSocket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
             so->so_faddr.s_addr,
             RT_N2H_U16(so->so_fport),
             so->so_laddr.s_addr,
-            RT_N2H_U16(so->so_lport),
-            in_addr->sin_addr.s_addr,
-            RT_N2H_U16(in_addr->sin_port));
+            RT_N2H_U16(so->so_lport));
+
+    if (so->s != -1)
+    {
+        struct sockaddr addr;
+        socklen_t socklen;
+        int status;
+
+        socklen = sizeof(addr);
+        status = getsockname(so->s, &addr, &socklen);
+
+        if (status != 0)
+        {
+            cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                    " (getsockname failed)");
+        }
+        else if (addr.sa_family != AF_INET)
+        {
+            cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                    " (unexpected address family %d)",
+                    addr.sa_family);
+        }
+        else
+        {
+            struct sockaddr_in *in_addr = (struct sockaddr_in *)&addr;
+            cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                    " name=%RTnaipv4:%d",
+                    in_addr->sin_addr.s_addr,
+                    RT_N2H_U16(in_addr->sin_port));
+        }
+    }
+    return cb;
 }
 
 static DECLCALLBACK(size_t)
