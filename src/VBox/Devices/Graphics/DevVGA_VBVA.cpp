@@ -1891,15 +1891,20 @@ void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags)
     PDMCritSectLeave(&pVGAState->CritSect);
 }
 
+static DECLCALLBACK(int) vbvaRaiseIrqEMT(PVGASTATE pVGAState, uint32_t fFlags)
+{
+    VBVARaiseIrq(pVGAState, fFlags);
+    return VINF_SUCCESS;
+}
+
 void VBVARaiseIrqNoWait(PVGASTATE pVGAState, uint32_t fFlags)
 {
-    PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
-    PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
-
-    HGSMISetHostGuestFlags(pVGAState->pHGSMI, HGSMIHOSTFLAGS_IRQ | fFlags);
-    PDMDevHlpPCISetIrqNoWait(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
-
-    PDMCritSectLeave(&pVGAState->CritSect);
+    /* we can not use PDMDevHlpPCISetIrqNoWait here, because we need to set IRG host flag and raise IRQ atomically,
+     * otherwise there might be a situation, when:
+     * 1. Flag is set
+     * 2. guest issues an IRQ clean request, that cleans up the flag and the interrupt
+     * 3. IRQ is set */
+    VMR3ReqCallNoWait(PDMDevHlpGetVM(pVGAState->pDevInsR3), VMCPUID_ANY, (PFNRT)vbvaRaiseIrqEMT, 2, pVGAState, fFlags);
 }
 
 int VBVAInfoView(PVGASTATE pVGAState, VBVAINFOVIEW *pView)
