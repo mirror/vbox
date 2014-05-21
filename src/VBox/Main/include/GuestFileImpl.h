@@ -1,7 +1,6 @@
-
 /* $Id$ */
 /** @file
- * VirtualBox Main - Guest file handling.
+ * VirtualBox Main - Guest file handling implementation.
  */
 
 /*
@@ -29,9 +28,6 @@ class Console;
 class GuestSession;
 class GuestProcess;
 
-/**
- * TODO
- */
 class ATL_NO_VTABLE GuestFile :
     public GuestFileWrap,
     public GuestObject
@@ -47,7 +43,6 @@ public:
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
     /** @}  */
-
 
 public:
     /** @name Public internal methods.
@@ -76,7 +71,8 @@ public:
 
 private:
 
-    // Wrapped IGuestFile properties.
+    /** Wrapped @name IGuestFile properties.
+     * @{ */
     HRESULT getCreationMode(ULONG *aCreationMode);
     HRESULT getDisposition(com::Utf8Str &aDisposition);
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
@@ -86,8 +82,10 @@ private:
     HRESULT getOpenMode(com::Utf8Str &aOpenMode);
     HRESULT getOffset(LONG64 *aOffset);
     HRESULT getStatus(FileStatus_T *aStatus);
+    /** @}  */
 
-    // Wrapped IGuestFile methods.
+    /** Wrapped @name IGuestFile methods.
+     * @{ */
     HRESULT close();
     HRESULT queryInfo(ComPtr<IFsObjInfo> &aObjInfo);
     HRESULT read(ULONG aToRead,
@@ -107,6 +105,7 @@ private:
                     const std::vector<BYTE> &aData,
                     ULONG aTimeoutMS,
                     ULONG *aWritten);
+    /** @}  */
 
     /** This can safely be used without holding any locks.
      * An AutoCaller suffices to prevent it being destroy while in use and

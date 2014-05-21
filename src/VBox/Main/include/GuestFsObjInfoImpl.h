@@ -1,7 +1,6 @@
-
 /* $Id$ */
 /** @file
- * VirtualBox Main - XXX.
+ * VirtualBox Main - Guest file system object information implementation.
  */
 
 /*
@@ -22,9 +21,6 @@
 #include "GuestFsObjInfoWrap.h"
 #include "GuestCtrlImplPrivate.h"
 
-/**
- * TODO
- */
 class ATL_NO_VTABLE GuestFsObjInfo :
     public GuestFsObjInfoWrap
 {
@@ -38,10 +34,12 @@ public:
 
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
+    /** @}  */
 
 private:
 
-    // Wrapped GuestFsObjInfo properties.
+    /** Wrapped @name IGuestFsObjInfo properties.
+     * @{ */
     HRESULT getAccessTime(LONG64 *aAccessTime);
     HRESULT getAllocatedSize(LONG64 *aAllocatedSize);
     HRESULT getBirthTime(LONG64 *aBirthTime);
@@ -61,6 +59,7 @@ private:
     HRESULT getUID(ULONG *aUID);
     HRESULT getUserFlags(ULONG *aUserFlags);
     HRESULT getUserName(com::Utf8Str &aUserName);
+    /** @}  */
 
     GuestFsObjData mData;
 };
