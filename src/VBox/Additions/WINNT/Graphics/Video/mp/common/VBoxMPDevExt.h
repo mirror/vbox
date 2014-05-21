@@ -127,6 +127,7 @@ typedef struct _VBOXMP_DEVEXT
    BOOLEAN f3DEnabled;
    BOOLEAN fTexPresentEnabled;
    BOOLEAN fCmdVbvaEnabled;
+   BOOLEAN fComplexTopologiesEnabled;
 
    uint32_t u32CrConDefaultClientID;
 
