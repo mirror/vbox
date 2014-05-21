@@ -1405,7 +1405,7 @@ static NTSTATUS vboxVidPnCofuncModalityForPathTarget(PVBOXVIDPNCOFUNCMODALITY pC
     D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet = NULL;
     const DXGK_VIDPNTARGETMODESET_INTERFACE *pNewVidPnTargetModeSetInterface;
 
-    Assert(pDevExt->fCmdVbvaEnabled || VidPnSourceId == VidPnTargetId);
+    Assert(pDevExt->fComplexTopologiesEnabled || VidPnSourceId == VidPnTargetId);
 
     D3DKMDT_HVIDPNSOURCEMODESET hCurVidPnSourceModeSet;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pCurVidPnSourceModeSetInterface;
@@ -1445,7 +1445,7 @@ static NTSTATUS vboxVidPnCofuncModalityForPathTarget(PVBOXVIDPNCOFUNCMODALITY pC
         if (NT_SUCCESS(Status))
         {
             Assert(hNewVidPnTargetModeSet);
-            Assert(pDevExt->fCmdVbvaEnabled || VidPnSourceId == VidPnTargetId);
+            Assert(pDevExt->fComplexTopologiesEnabled || VidPnSourceId == VidPnTargetId);
 //            if (VidPnSourceId == VidPnTargetId && pCbContext->apPathInfos[VidPnTargetId].enmState == VBOXVIDPNPATHITEM_STATE_PRESENT)
             {
                 for (uint32_t i = 0; i < pInfo->cResolutions; ++i)
@@ -1536,7 +1536,7 @@ static NTSTATUS vboxVidPnCofuncModalityForPathSource(PVBOXVIDPNCOFUNCMODALITY pC
     D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet = NULL;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pNewVidPnSourceModeSetInterface;
 
-    Assert(pDevExt->fCmdVbvaEnabled || VidPnSourceId == VidPnTargetId);
+    Assert(pDevExt->fComplexTopologiesEnabled || VidPnSourceId == VidPnTargetId);
 
     D3DKMDT_HVIDPNTARGETMODESET hCurVidPnTargetModeSet;
     const DXGK_VIDPNTARGETMODESET_INTERFACE *pCurVidPnTargetModeSetInterface;
@@ -1576,7 +1576,7 @@ static NTSTATUS vboxVidPnCofuncModalityForPathSource(PVBOXVIDPNCOFUNCMODALITY pC
         if (NT_SUCCESS(Status))
         {
             Assert(hNewVidPnSourceModeSet);
-            Assert(pDevExt->fCmdVbvaEnabled || VidPnSourceId == VidPnTargetId);
+            Assert(pDevExt->fComplexTopologiesEnabled || VidPnSourceId == VidPnTargetId);
 //            if (VidPnSourceId == VidPnTargetId && pCbContext->apPathInfos[VidPnSourceId].enmState == VBOXVIDPNPATHITEM_STATE_PRESENT)
             {
                 for (uint32_t i = 0; i < pInfo->cModes; ++i)
@@ -1742,7 +1742,7 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityPathEnum(D3DKMDT_HVIDPNTOPOLOGY hVi
 
 static BOOLEAN vboxVidPnIsPathSupported(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_VIDPN_PRESENT_PATH *pNewVidPnPresentPathInfo)
 {
-    if (!pDevExt->fCmdVbvaEnabled && pNewVidPnPresentPathInfo->VidPnSourceId != pNewVidPnPresentPathInfo->VidPnTargetId)
+    if (!pDevExt->fComplexTopologiesEnabled && pNewVidPnPresentPathInfo->VidPnSourceId != pNewVidPnPresentPathInfo->VidPnTargetId)
     {
         LOG(("unsupported source(%d)->target(%d) pair", pNewVidPnPresentPathInfo->VidPnSourceId, pNewVidPnPresentPathInfo->VidPnTargetId));
         return FALSE;
