@@ -197,7 +197,7 @@ CPUWriteMemoryFunc *g_apfnHandlerWrite[3] =
 };
 
 
-#if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64))
+#ifdef VBOX_WITH_DEBUGGER
 /*
  * Debugger commands.
  */
@@ -360,7 +360,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     if (RT_FAILURE(rc))
         return rc;
 
-#if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64))
+#ifdef VBOX_WITH_DEBUGGER
     /*
      * Debugger commands.
      */
@@ -3950,11 +3950,12 @@ REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
 }
 
 
-#if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64))
+#ifdef VBOX_WITH_DEBUGGER
 /**
  * External Debugger Command: .remstep [on|off|1|0]
  */
-static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM,
+                                                     PCDBGCVAR paArgs, unsigned cArgs)
 {
     int rc;
     PVM pVM = pUVM->pVM;
@@ -3985,7 +3986,7 @@ static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP
     }
     return rc;
 }
-#endif /* VBOX_WITH_DEBUGGER && !win.amd64 */
+#endif /* VBOX_WITH_DEBUGGER */
 
 
 /**
