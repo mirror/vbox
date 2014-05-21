@@ -1575,11 +1575,10 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         if (   !flts.isNull()
             && aMachine.GetUSBProxyAvailable())
         {
-            /* the USB controller may be unavailable (i.e. in VirtualBox OSE) */
-
-            ULONG cOhciCtls = aMachine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
-
-            if (cOhciCtls)
+            /* The USB controller may be unavailable (i.e. in VirtualBox OSE): */
+            if (aMachine.GetUSBControllers().isEmpty())
+                item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (USB)"));
+            else
             {
                 CUSBDeviceFilterVector coll = flts.GetDeviceFilters();
                 uint active = 0;
@@ -1592,9 +1591,6 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                              tr ("%1 (%2 active)", "details report (USB)")
                                  .arg (coll.size()).arg (active));
             }
-            else
-                item = QString (sSectionItemTpl1)
-                       .arg (tr ("Disabled", "details report (USB)"));
 
             report += sectionTpl
                 .arg (2 + 1) /* rows */

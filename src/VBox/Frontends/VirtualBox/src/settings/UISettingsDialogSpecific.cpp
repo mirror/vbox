@@ -820,13 +820,9 @@ void UISettingsDialogMachine::saveData()
         }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-        /* Enable OHCI controller if HID is enabled: */
-        if (pSystemPage && pSystemPage->isHIDEnabled())
-        {
-            ULONG cOhciCtls = m_machine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
-            if (!cOhciCtls)
-                m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
-        }
+        /* Enable OHCI controller if HID is enabled but no USB controllers present: */
+        if (pSystemPage && pSystemPage->isHIDEnabled() && m_machine.GetUSBControllers().isEmpty())
+            m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
 
         /* Disable First RUN Wizard: */
         if (m_fResetFirstRunFlag)
@@ -1100,7 +1096,7 @@ bool UISettingsDialogMachine::isPageAvailable(int iPageId)
             /* Show the machine error message if any: */
             if (   !m_machine.isReallyOk()
                 && controllerColl.size() > 0
-                && m_machine.GetUSBControllerCountByType(KUSBControllerType_OHCI))
+                && !m_machine.GetUSBControllers().isEmpty())
                 msgCenter().warnAboutUnaccessibleUSB(m_machine, parentWidget());
             break;
         }

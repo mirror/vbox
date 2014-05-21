@@ -1552,10 +1552,10 @@ void UISession::reinitMenuPool()
 
     /* USB stuff: */
     {
-        /* Check whether there is at least one OHCI USB controllers with an available proxy. */
-        const CUSBDeviceFilters &filters = machine.GetUSBDeviceFilters();
-        ULONG cOhciCtls = machine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
-        bool fUSBEnabled = !filters.isNull() && cOhciCtls && machine.GetUSBProxyAvailable();
+        /* Check whether there is at least one USB controllers with an available proxy. */
+        bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
+                           && !machine.GetUSBControllers().isEmpty()
+                           && machine.GetUSBProxyAvailable();
 
         /* Show/Hide USB menu depending on controller availability, activity and USB-proxy presence: */
         gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->setVisible(fUSBEnabled);
@@ -1565,8 +1565,7 @@ void UISession::reinitMenuPool()
     {
         /* Check whether there is an accessible video input devices pool: */
         const CHostVideoInputDeviceVector &webcams = host.GetVideoInputDevices(); Q_UNUSED(webcams);
-        ULONG cOhciCtls = machine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
-        bool fWebCamsEnabled = host.isOk() && cOhciCtls;
+        bool fWebCamsEnabled = host.isOk() && !machine.GetUSBControllers().isEmpty();
 
         /* Show/Hide WebCams menu depending on ExtPack availability: */
         gActionPool->action(UIActionIndexRuntime_Menu_WebCams)->setVisible(fWebCamsEnabled);
