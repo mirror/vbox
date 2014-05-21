@@ -3985,7 +3985,7 @@ HCR_FRAMEBUFFER CrPMgrFbGetEnabled(uint32_t idFb)
 
 HCR_FRAMEBUFFER CrPMgrFbGetEnabledForScreen(uint32_t idScreen)
 {
-    if (idScreen >= cr_server.screenCount)
+    if (idScreen >= (uint32_t)cr_server.screenCount)
     {
         WARN(("invalid target id"));
         return NULL;
