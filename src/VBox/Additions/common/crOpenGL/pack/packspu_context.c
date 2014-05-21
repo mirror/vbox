@@ -502,10 +502,8 @@ void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLi
             }
 
             if (thread->currentContext && newCtx != thread->currentContext && thread->currentContext->fCheckZerroVertAttr)
-            {
                 crStateCurrentRecoverNew(thread->currentContext->clientState, &thread->packer->current);
-                crStateResetCurrentPointers(&thread->packer->current);
-            }
+
             thread->currentContext = newCtx;
             crPackSetContext( thread->packer );
         }

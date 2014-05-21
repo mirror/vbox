@@ -1664,7 +1664,6 @@ GLuint crStateNeedDummyZeroVertexArray(CRContext *g, CRCurrentStatePointers *cur
         Assert(!c->array.v.enabled);
 
         crStateCurrentRecoverNew(g, current);
-        crStateResetCurrentPointers(current);
 
         crMemcpy(pZva, &g->current.vertexAttrib[0][0], sizeof (*pZva) * 4);
     }
