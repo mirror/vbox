@@ -909,7 +909,7 @@ void UIGDetailsUpdateThreadUSB::run()
             if (!filters.isNull() && machine().GetUSBProxyAvailable())
             {
                 const CUSBDeviceFilters &flts = machine().GetUSBDeviceFilters();
-                if (!flts.isNull() && machine().GetUSBControllerCountByType(KUSBControllerType_OHCI))
+                if (!flts.isNull() && !machine().GetUSBControllers().isEmpty())
                 {
                     const CUSBDeviceFilterVector &coll = flts.GetDeviceFilters();
                     uint uActive = 0;

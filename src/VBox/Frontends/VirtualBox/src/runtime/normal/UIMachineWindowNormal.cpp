@@ -494,9 +494,9 @@ void UIMachineWindowNormal::loadSettings()
         /* USB Stuff: */
         if (indicatorsPool()->indicator(IndicatorType_USB))
         {
-            const CUSBDeviceFilters &filters = m.GetUSBDeviceFilters();
-            ULONG cOhciCtls = m.GetUSBControllerCountByType(KUSBControllerType_OHCI);
-            bool fUSBEnabled = !filters.isNull() && cOhciCtls && m.GetUSBProxyAvailable();
+            bool fUSBEnabled =    !m.GetUSBDeviceFilters().isNull()
+                               && !m.GetUSBControllers().isEmpty()
+                               && m.GetUSBProxyAvailable();
 
             if (!fUSBEnabled)
             {

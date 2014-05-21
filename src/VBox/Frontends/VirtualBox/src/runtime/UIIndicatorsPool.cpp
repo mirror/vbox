@@ -391,14 +391,10 @@ public:
                                 "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
         QString strFullData;
 
-
-        /*
-         * Check whether there is at least one OHCI USB controllers with
-         * an available proxy.
-         */
-        const CUSBDeviceFilters &filters = machine.GetUSBDeviceFilters();
-        ULONG cOhciCtls = machine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
-        bool fUSBEnabled = !filters.isNull() && cOhciCtls && machine.GetUSBProxyAvailable();
+        /* Check whether there is at least one USB controller with an available proxy. */
+        bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
+                           && !machine.GetUSBControllers().isEmpty()
+                           && machine.GetUSBProxyAvailable();
 
         setState(fUSBEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
         if (fUSBEnabled)
