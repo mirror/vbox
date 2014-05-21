@@ -1,11 +1,10 @@
-
 /* $Id$ */
 /** @file
- * VirtualBox Main - XXX.
+ * VirtualBox Main - Guest directory handling implementation.
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,7 +41,6 @@ public:
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
     /** @}  */
-
 
 public:
     /** @name Public internal methods.

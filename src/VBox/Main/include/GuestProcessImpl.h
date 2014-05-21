@@ -1,11 +1,10 @@
-
 /* $Id$ */
 /** @file
- * VirtualBox Main - Guest process handling.
+ * VirtualBox Main - Guest process handling implementation.
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,7 +41,6 @@ public:
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
     /** @}  */
-
 
 public:
     /** @name Public internal methods.
@@ -90,40 +88,42 @@ protected:
     /** @}  */
 
 private:
-    /** Wrapped @name IProcess data .
+    /** Wrapped @name IProcess properties.
      * @{ */
-     HRESULT getArguments(std::vector<com::Utf8Str> &aArguments);
-     HRESULT getEnvironment(std::vector<com::Utf8Str> &aEnvironment);
-     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
-     HRESULT getExecutablePath(com::Utf8Str &aExecutablePath);
-     HRESULT getExitCode(LONG *aExitCode);
-     HRESULT getName(com::Utf8Str &aName);
-     HRESULT getPID(ULONG *aPID);
-     HRESULT getStatus(ProcessStatus_T *aStatus);
+    HRESULT getArguments(std::vector<com::Utf8Str> &aArguments);
+    HRESULT getEnvironment(std::vector<com::Utf8Str> &aEnvironment);
+    HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
+    HRESULT getExecutablePath(com::Utf8Str &aExecutablePath);
+    HRESULT getExitCode(LONG *aExitCode);
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT getPID(ULONG *aPID);
+    HRESULT getStatus(ProcessStatus_T *aStatus);
+    /** @}  */
 
     /** Wrapped @name IProcess methods.
      * @{ */
-     HRESULT waitFor(ULONG aWaitFor,
-                     ULONG aTimeoutMS,
-                     ProcessWaitResult_T *aReason);
-     HRESULT waitForArray(const std::vector<ProcessWaitForFlag_T> &aWaitFor,
-                          ULONG aTimeoutMS,
-                          ProcessWaitResult_T *aReason);
-     HRESULT read(ULONG aHandle,
-                  ULONG aToRead,
+    HRESULT waitFor(ULONG aWaitFor,
+                    ULONG aTimeoutMS,
+                    ProcessWaitResult_T *aReason);
+    HRESULT waitForArray(const std::vector<ProcessWaitForFlag_T> &aWaitFor,
+                         ULONG aTimeoutMS,
+                         ProcessWaitResult_T *aReason);
+    HRESULT read(ULONG aHandle,
+                 ULONG aToRead,
+                 ULONG aTimeoutMS,
+                 std::vector<BYTE> &aData);
+    HRESULT write(ULONG aHandle,
+                  ULONG aFlags,
+                  const std::vector<BYTE> &aData,
                   ULONG aTimeoutMS,
-                  std::vector<BYTE> &aData);
-     HRESULT write(ULONG aHandle,
-                   ULONG aFlags,
-                   const std::vector<BYTE> &aData,
-                   ULONG aTimeoutMS,
-                   ULONG *aWritten);
-     HRESULT writeArray(ULONG aHandle,
-                        const std::vector<ProcessInputFlag_T> &aFlags,
-                        const std::vector<BYTE> &aData,
-                        ULONG aTimeoutMS,
-                        ULONG *aWritten);
-     HRESULT terminate();
+                  ULONG *aWritten);
+    HRESULT writeArray(ULONG aHandle,
+                       const std::vector<ProcessInputFlag_T> &aFlags,
+                       const std::vector<BYTE> &aData,
+                       ULONG aTimeoutMS,
+                       ULONG *aWritten);
+    HRESULT terminate(void);
+    /** @}  */
 
     /**
      * This can safely be used without holding any locks.
