@@ -903,24 +903,56 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             break;
         }
 
-        case SHCRGL_GUEST_FN_GET_CAPS:
+        case SHCRGL_GUEST_FN_GET_CAPS_NEW:
         {
-            Log(("svcCall: SHCRGL_GUEST_FN_GET_CAPS\n"));
+            Log(("svcCall: SHCRGL_GUEST_FN_GET_CAPS_NEW\n"));
 
             /* Verify parameter count and types. */
-            if (cParms != SHCRGL_CPARMS_GET_CAPS)
+            if (cParms != SHCRGL_CPARMS_GET_CAPS_NEW)
+            {
+                WARN(("invalid parameter count"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            if (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)
+            {
+                WARN(("invalid parameter"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            if (paParms[0].u.pointer.size < sizeof (CR_CAPS_INFO))
+            {
+                WARN(("invalid buffer size"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            CR_CAPS_INFO *pInfo = (CR_CAPS_INFO*)paParms[0].u.pointer.addr;
+            rc = crVBoxServerClientGetCapsNew(u32ClientID, pInfo);
+            AssertRC(rc);
+
+            break;
+        }
+
+        case SHCRGL_GUEST_FN_GET_CAPS_LEGACY:
+        {
+            Log(("svcCall: SHCRGL_GUEST_FN_GET_CAPS_LEGACY\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHCRGL_CPARMS_GET_CAPS_LEGACY)
             {
                 rc = VERR_INVALID_PARAMETER;
             }
-            else
-            if (paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT)
+            else if (paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT)
             {
                 rc = VERR_INVALID_PARAMETER;
             }
             else
             {
                 /* Execute the function. */
-                rc = crVBoxServerClientGetCaps(u32ClientID, &paParms[0].u.uint32);
+                rc = crVBoxServerClientGetCapsLegacy(u32ClientID, &paParms[0].u.uint32);
                 AssertRC(rc);
             }
 

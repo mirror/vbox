@@ -1286,15 +1286,15 @@ static int crVBoxHGCMSetVersion(CRConnection *conn, unsigned int vMajor, unsigne
     return rc;
 }
 
-static int crVBoxHGCMGetHostCaps(CRConnection *conn, uint32_t *pu32HostCaps)
+static int crVBoxHGCMGetHostCapsLegacy(CRConnection *conn, uint32_t *pu32HostCaps)
 {
     CRVBOXHGCMGETCAPS caps;
     int rc;
 
     caps.hdr.result      = VERR_WRONG_ORDER;
     caps.hdr.u32ClientID = conn->u32ClientID;
-    caps.hdr.u32Function = SHCRGL_GUEST_FN_GET_CAPS;
-    caps.hdr.cParms      = SHCRGL_CPARMS_GET_CAPS;
+    caps.hdr.u32Function = SHCRGL_GUEST_FN_GET_CAPS_LEGACY;
+    caps.hdr.cParms      = SHCRGL_CPARMS_GET_CAPS_LEGACY;
 
     caps.Caps.type       = VMMDevHGCMParmType_32bit;
     caps.Caps.u.value32  = 0;
@@ -1320,7 +1320,6 @@ static int crVBoxHGCMGetHostCaps(CRConnection *conn, uint32_t *pu32HostCaps)
 
     return rc;
 }
-
 
 static int crVBoxHGCMSetPID(CRConnection *conn, unsigned long long pid)
 {
@@ -1444,7 +1443,7 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
 
             if (!g_crvboxhgcm.fHostCapsInitialized)
             {
-                rc = crVBoxHGCMGetHostCaps(conn, &g_crvboxhgcm.u32HostCaps);
+                rc = crVBoxHGCMGetHostCapsLegacy(conn, &g_crvboxhgcm.u32HostCaps);
                 if (RT_FAILURE(rc))
                 {
                     WARN(("VBoxCrHgsmiCtlConGetHostCaps failed %d", rc));

@@ -24,12 +24,12 @@
 
 #include <cr_protocol.h>
 
-static uint32_t g_VBoxMpCrHostCaps = 0;
+CR_CAPS_INFO g_VBoxMpCrHostCapsInfo;
 static uint32_t g_VBoxMpCr3DSupported = 0;
 
 uint32_t VBoxMpCrGetHostCaps()
 {
-    return g_VBoxMpCrHostCaps;
+    return g_VBoxMpCrHostCapsInfo.u32Caps;
 }
 
 bool VBoxMpCrCtlConIs3DSupported()
@@ -814,15 +814,15 @@ static int vboxMpCrCtlConSetVersion(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32Clie
     return VINF_SUCCESS;
 }
 
-static int vboxMpCrCtlConGetCaps(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID, uint32_t *pu32Caps)
+static int vboxMpCrCtlConGetCapsLegacy(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID, uint32_t *pu32Caps)
 {
     CRVBOXHGCMGETCAPS parms;
     int rc;
 
     parms.hdr.result      = VERR_WRONG_ORDER;
     parms.hdr.u32ClientID = u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_GET_CAPS;
-    parms.hdr.cParms      = SHCRGL_CPARMS_GET_CAPS;
+    parms.hdr.u32Function = SHCRGL_GUEST_FN_GET_CAPS_LEGACY;
+    parms.hdr.cParms      = SHCRGL_CPARMS_GET_CAPS_LEGACY;
 
     parms.Caps.type      = VMMDevHGCMParmType_32bit;
     parms.Caps.u.value32 = 0;
@@ -838,11 +838,56 @@ static int vboxMpCrCtlConGetCaps(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientI
 
     if (RT_FAILURE(parms.hdr.result))
     {
-        WARN(("SHCRGL_GUEST_FN_GET_CAPS failed, rc (%d)", parms.hdr.result));
+        WARN(("SHCRGL_GUEST_FN_GET_CAPS_LEGACY failed, rc (%d)", parms.hdr.result));
         return parms.hdr.result;
     }
 
+    /* if host reports it supports CR_VBOX_CAP_CMDVBVA, clean it up,
+     * we only support CR_VBOX_CAP_CMDVBVA of the proper version reported by SHCRGL_GUEST_FN_GET_CAPS_NEW */
+    parms.Caps.u.value32 &= ~CR_VBOX_CAP_CMDVBVA;
+
     *pu32Caps = parms.Caps.u.value32;
+
+    return VINF_SUCCESS;
+}
+
+static int vboxMpCrCtlConGetCapsNew(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID, CR_CAPS_INFO *pCapsInfo)
+{
+    pCapsInfo->u32Caps = CR_VBOX_CAPS_ALL;
+    pCapsInfo->u32CmdVbvaVersion = CR_CMDVBVA_VERSION;
+
+    CRVBOXHGCMGETCAPS parms;
+    int rc;
+
+    parms.hdr.result      = VERR_WRONG_ORDER;
+    parms.hdr.u32ClientID = u32ClientID;
+    parms.hdr.u32Function = SHCRGL_GUEST_FN_GET_CAPS_NEW;
+    parms.hdr.cParms      = SHCRGL_CPARMS_GET_CAPS_NEW;
+
+    parms.Caps.type      = VMMDevHGCMParmType_LinAddr;
+    parms.Caps.u.Pointer.u.linearAddr = (uintptr_t)pCapsInfo;
+    parms.Caps.u.Pointer.size = sizeof (*pCapsInfo);
+
+    rc = vboxCrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
+    if (RT_FAILURE(rc))
+    {
+        WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
+        return rc;
+    }
+
+    if (RT_FAILURE(parms.hdr.result))
+    {
+        WARN(("SHCRGL_GUEST_FN_GET_CAPS_NEW failed, rc (%d)", parms.hdr.result));
+        return parms.hdr.result;
+    }
+
+    if (pCapsInfo->u32CmdVbvaVersion != CR_CMDVBVA_VERSION)
+    {
+        WARN(("CmdVbva version mismatch (%d), expected(%d)", pCapsInfo->u32CmdVbvaVersion, CR_CMDVBVA_VERSION));
+        pCapsInfo->u32Caps &= ~CR_VBOX_CAP_CMDVBVA;
+    }
+
+    pCapsInfo->u32Caps &= CR_VBOX_CAPS_ALL;
 
     return VINF_SUCCESS;
 }
@@ -1007,7 +1052,7 @@ int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo
 void VBoxMpCrCtlConInit()
 {
     g_VBoxMpCr3DSupported = 0;
-    g_VBoxMpCrHostCaps = 0;
+    memset(&g_VBoxMpCrHostCapsInfo, 0, sizeof (g_VBoxMpCrHostCapsInfo));
 
     VBOXMP_CRCTLCON CrCtlCon = {0};
     uint32_t u32ClientID = 0;
@@ -1020,15 +1065,22 @@ void VBoxMpCrCtlConInit()
 
     g_VBoxMpCr3DSupported = 1;
 
-    rc = vboxMpCrCtlConGetCaps(&CrCtlCon, u32ClientID, &g_VBoxMpCrHostCaps);
+    rc = vboxMpCrCtlConGetCapsNew(&CrCtlCon, u32ClientID, &g_VBoxMpCrHostCapsInfo);
     if (RT_FAILURE(rc))
     {
-        WARN(("vboxMpCrCtlConGetCaps failed rc (%d), ignoring..", rc));
-        g_VBoxMpCrHostCaps = 0;
+        WARN(("vboxMpCrCtlConGetCapsNew failed rc (%d), ignoring..", rc));
+        g_VBoxMpCrHostCapsInfo.u32CmdVbvaVersion = 0;
+        rc = vboxMpCrCtlConGetCapsLegacy(&CrCtlCon, u32ClientID, &g_VBoxMpCrHostCapsInfo.u32Caps);
+        if (RT_FAILURE(rc))
+        {
+            WARN(("vboxMpCrCtlConGetCapsLegacy failed rc (%d), ignoring..", rc));
+            g_VBoxMpCrHostCapsInfo.u32Caps = 0;
+        }
     }
 
 #if 0 //ndef DEBUG_misha
-    g_VBoxMpCrHostCaps &= ~CR_VBOX_CAP_CMDVBVA;
+    g_VBoxMpCrHostCapsInfo.u32Caps &= ~CR_VBOX_CAP_CMDVBVA;
+    g_VBoxMpCrHostCapsInfo.u32CmdVbvaVersion = 0;
 #endif
 
     rc = VBoxMpCrCtlConDisconnectHgcm(&CrCtlCon, u32ClientID);

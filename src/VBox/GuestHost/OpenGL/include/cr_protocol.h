@@ -17,6 +17,17 @@
 extern "C" {
 #endif
 
+#define CR_CMDVBVA_VERSION              1
+
+#pragma pack(1)
+typedef struct CR_CAPS_INFO
+{
+    uint32_t u32Caps;
+    uint32_t u32CmdVbvaVersion;
+} CR_CAPS_INFO;
+#pragma pack()
+
+
 /*For now guest is allowed to connect host opengl service if protocol version matches exactly*/
 /*Note: that after any change to this file, or glapi_parser\apispec.txt version should be changed*/
 #define CR_PROTOCOL_VERSION_MAJOR 9

@@ -839,9 +839,18 @@ int32_t crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t 
     return crVBoxServerInternalClientRead(pClient, pBuffer, pcbBuffer);
 }
 
-extern DECLEXPORT(int32_t) crVBoxServerClientGetCaps(uint32_t u32ClientID, uint32_t *pu32Caps)
+extern DECLEXPORT(int32_t) crVBoxServerClientGetCapsLegacy(uint32_t u32ClientID, uint32_t *pu32Caps)
 {
-    *pu32Caps = cr_server.u32Caps;
+    uint32_t u32Caps = cr_server.u32Caps;
+    u32Caps &= ~CR_VBOX_CAP_CMDVBVA;
+    *pu32Caps = u32Caps;
+    return VINF_SUCCESS;
+}
+
+extern DECLEXPORT(int32_t) crVBoxServerClientGetCapsNew(uint32_t u32ClientID, CR_CAPS_INFO *pInfo)
+{
+    pInfo->u32Caps = cr_server.u32Caps;
+    pInfo->u32CmdVbvaVersion = CR_CMDVBVA_VERSION;
     return VINF_SUCCESS;
 }
 
