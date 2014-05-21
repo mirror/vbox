@@ -155,7 +155,7 @@ static CR_PRESENTER_GLOBALS g_CrPresenter;
 
 /* FRAMEBUFFER */
 
-void CrFbInit(CR_FRAMEBUFFER *pFb, uint32_t idScreen)
+void CrFbInit(CR_FRAMEBUFFER *pFb, uint32_t idFb)
 {
     RTRECT Rect;
     Rect.xLeft = 0;
@@ -164,7 +164,7 @@ void CrFbInit(CR_FRAMEBUFFER *pFb, uint32_t idScreen)
     Rect.yBottom = 1;
     memset(pFb, 0, sizeof (*pFb));
     pFb->ScreenInfo.u16Flags = VBVA_SCREEN_F_DISABLED;
-    pFb->ScreenInfo.u32ViewIndex = idScreen;
+    pFb->ScreenInfo.u32ViewIndex = idFb;
     CrVrScrCompositorInit(&pFb->Compositor, &Rect);
     RTListInit(&pFb->EntriesList);
     CrHTableCreate(&pFb->SlotTable, 0);
@@ -956,7 +956,7 @@ void CrFbTerm(CR_FRAMEBUFFER *pFb)
         WARN(("update in progress"));
         return;
     }
-    uint32_t idScreen = pFb->ScreenInfo.u32ViewIndex;
+    uint32_t idFb = pFb->ScreenInfo.u32ViewIndex;
 
     CrVrScrCompositorClear(&pFb->Compositor);
     CrHTableDestroy(&pFb->SlotTable);
@@ -967,7 +967,7 @@ void CrFbTerm(CR_FRAMEBUFFER *pFb)
     memset(pFb, 0, sizeof (*pFb));
 
     pFb->ScreenInfo.u16Flags = VBVA_SCREEN_F_DISABLED;
-    pFb->ScreenInfo.u32ViewIndex = idScreen;
+    pFb->ScreenInfo.u32ViewIndex = idFb;
 }
 
 ICrFbDisplay* CrFbDisplayGet(CR_FRAMEBUFFER *pFb)
@@ -3936,51 +3936,66 @@ void CrPMgrTerm()
     memset(&g_CrPresenter, 0, sizeof (g_CrPresenter));
 }
 
-HCR_FRAMEBUFFER CrPMgrFbGet(uint32_t idScreen)
+HCR_FRAMEBUFFER CrPMgrFbGet(uint32_t idFb)
 {
-    if (idScreen >= CR_MAX_GUEST_MONITORS)
+    if (idFb >= CR_MAX_GUEST_MONITORS)
     {
-        WARN(("invalid idScreen %d", idScreen));
+        WARN(("invalid idFb %d", idFb));
         return NULL;
     }
 
-    if (!CrFBmIsSet(&g_CrPresenter.FramebufferInitMap, idScreen))
+    if (!CrFBmIsSet(&g_CrPresenter.FramebufferInitMap, idFb))
     {
-        CrFbInit(&g_CrPresenter.aFramebuffers[idScreen], idScreen);
-        CrFBmSetAtomic(&g_CrPresenter.FramebufferInitMap, idScreen);
+        CrFbInit(&g_CrPresenter.aFramebuffers[idFb], idFb);
+        CrFBmSetAtomic(&g_CrPresenter.FramebufferInitMap, idFb);
     }
     else
-        Assert(g_CrPresenter.aFramebuffers[idScreen].ScreenInfo.u32ViewIndex == idScreen);
+        Assert(g_CrPresenter.aFramebuffers[idFb].ScreenInfo.u32ViewIndex == idFb);
 
-    return &g_CrPresenter.aFramebuffers[idScreen];
+    return &g_CrPresenter.aFramebuffers[idFb];
 }
 
-HCR_FRAMEBUFFER CrPMgrFbGetInitialized(uint32_t idScreen)
+HCR_FRAMEBUFFER CrPMgrFbGetInitialized(uint32_t idFb)
 {
-    if (idScreen >= CR_MAX_GUEST_MONITORS)
+    if (idFb >= CR_MAX_GUEST_MONITORS)
     {
-        WARN(("invalid idScreen %d", idScreen));
+        WARN(("invalid idFb %d", idFb));
         return NULL;
     }
 
-    if (!CrFBmIsSet(&g_CrPresenter.FramebufferInitMap, idScreen))
+    if (!CrFBmIsSet(&g_CrPresenter.FramebufferInitMap, idFb))
     {
         return NULL;
     }
     else
-        Assert(g_CrPresenter.aFramebuffers[idScreen].ScreenInfo.u32ViewIndex == idScreen);
+        Assert(g_CrPresenter.aFramebuffers[idFb].ScreenInfo.u32ViewIndex == idFb);
 
-    return &g_CrPresenter.aFramebuffers[idScreen];
+    return &g_CrPresenter.aFramebuffers[idFb];
 }
 
-HCR_FRAMEBUFFER CrPMgrFbGetEnabled(uint32_t idScreen)
+HCR_FRAMEBUFFER CrPMgrFbGetEnabled(uint32_t idFb)
 {
-    HCR_FRAMEBUFFER hFb = CrPMgrFbGetInitialized(idScreen);
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetInitialized(idFb);
 
     if(hFb && CrFbIsEnabled(hFb))
         return hFb;
 
     return NULL;
+}
+
+HCR_FRAMEBUFFER CrPMgrFbGetEnabledForScreen(uint32_t idScreen)
+{
+    if (idScreen >= cr_server.screenCount)
+    {
+        WARN(("invalid target id"));
+        return NULL;
+    }
+
+    const CR_FBDISPLAY_INFO *pDpInfo = &g_CrPresenter.aDisplayInfos[idScreen];
+    if (pDpInfo->iFb < 0)
+        return NULL;
+
+    return CrPMgrFbGetEnabled(pDpInfo->iFb);
 }
 
 static HCR_FRAMEBUFFER crPMgrFbGetNextEnabled(uint32_t i)
@@ -5172,14 +5187,14 @@ int CrPMgrLoadState(PSSMHANDLE pSSM, uint32_t version)
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, const GLint *pRects)
 {
-    uint32_t idScreen = CR_PRESENT_GET_SCREEN(cfg);
-    if (idScreen >= CR_MAX_GUEST_MONITORS)
+    uint32_t idFb = CR_PRESENT_GET_SCREEN(cfg);
+    if (idFb >= CR_MAX_GUEST_MONITORS)
     {
         WARN(("Invalid guest screen"));
         return;
     }
 
-    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(idScreen);
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(idFb);
     if (!hFb)
     {
         WARN(("request to present on disabled framebuffer, ignore"));
@@ -5518,8 +5533,8 @@ static int8_t crVBoxServerCrCmdBltIdToVram(uint32_t hostId, VBOXCMDVBVAOFFSET of
     if (hFb)
     {
         const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
-        Assert(pScreen->u32Width == width);
-        Assert(pScreen->u32Height == height);
+        Assert(!width || pScreen->u32Width == width);
+        Assert(!height || pScreen->u32Height == height);
 
         crServerDispatchVBoxTexPresent(hostId, pScreen->u32ViewIndex, pPos->x, pPos->y, cRects, (const GLint*)pRects);
         return 0;
@@ -5990,8 +6005,8 @@ int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip)
         hostId = 0;
     }
 
-    uint32_t idScreen = pFlip->Hdr.u.u8PrimaryID;
-    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(idScreen);
+    uint32_t idFb = pFlip->Hdr.u.u8PrimaryID;
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(idFb);
     if (!hFb)
     {
         WARN(("request to present on disabled framebuffer, ignore"));
@@ -5999,6 +6014,6 @@ int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip)
     }
 
     const RTRECT *pRect = CrVrScrCompositorRectGet(&hFb->Compositor);
-    crServerDispatchVBoxTexPresent(hostId, idScreen, 0, 0, 1, (const GLint*)pRect);
+    crServerDispatchVBoxTexPresent(hostId, idFb, 0, 0, 1, (const GLint*)pRect);
     return 0;
 }

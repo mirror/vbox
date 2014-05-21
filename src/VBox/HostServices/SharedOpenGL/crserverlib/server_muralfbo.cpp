@@ -650,7 +650,7 @@ DECLEXPORT(void) crServerVBoxScreenshotRelease(CR_SCREENSHOT *pScreenshot)
 
 DECLEXPORT(int) crServerVBoxScreenshotGet(uint32_t u32Screen, uint32_t width, uint32_t height, uint32_t pitch, void *pvBuffer, CR_SCREENSHOT *pScreenshot)
 {
-    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabled(u32Screen);
+    HCR_FRAMEBUFFER hFb = CrPMgrFbGetEnabledForScreen(u32Screen);
     if (!hFb)
         return VERR_INVALID_STATE;
 
