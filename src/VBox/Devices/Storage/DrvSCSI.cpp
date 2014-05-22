@@ -122,7 +122,8 @@ static bool drvscsiIsRedoPossible(int rc)
     if (   rc == VERR_DISK_FULL
         || rc == VERR_FILE_TOO_BIG
         || rc == VERR_BROKEN_PIPE
-        || rc == VERR_NET_CONNECTION_REFUSED)
+        || rc == VERR_NET_CONNECTION_REFUSED
+        || rc == VERR_VD_DEK_MISSING)
         return true;
 
     return false;

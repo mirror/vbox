@@ -320,6 +320,22 @@ public:
 
     EmulatedUSB *getEmulatedUSB(void) { return mEmulatedUSB; }
 
+    /**
+     * Sets the disk encryption keys.
+     *
+     * @returns COM status code.
+     * @þaram   strCfg    The config for the disks.
+     *
+     * @note: One line in the config string contains all required data for one disk.
+     *        The format for one disk is some sort of comma separated value using
+     *        key=value pairs.
+     *        There are two keys defined at the moment:
+     *            - uuid: The uuid of the base image the key is for (with or without)
+     *                    the curly braces.
+     *            - dek: The data encryption key in base64 encoding
+     */
+    HRESULT setDiskEncryptionKeys(const Utf8Str &strCfg);
+
 private:
 
     /**
@@ -777,6 +793,14 @@ private:
 #endif
 
     bool isResetTurnedIntoPowerOff(void);
+
+    /** @name Disk encryption support
+     * @{ */
+    HRESULT consoleParseDiskEncryption(const char *psz, const char **ppszEnd);
+    HRESULT configureEncryptionForDisk(const char *pszUuid, const uint8_t *pbKey, size_t cbKey);
+    int consoleParseKeyValue(const char *psz, const char **ppszEnd,
+                             char **ppszKey, char **ppszVal);
+    /** @} */
 
     /** @name Teleporter support
      * @{ */

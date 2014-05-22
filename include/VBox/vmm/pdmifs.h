@@ -1327,6 +1327,19 @@ typedef struct PDMIMEDIA
     DECLR3CALLBACKMEMBER(int, pfnMerge,(PPDMIMEDIA pInterface, PFNSIMPLEPROGRESS pfnProgress, void *pvUser));
 
     /**
+     * Merge medium contents during a live snapshot deletion. All details
+     * must have been configured through CFGM or this will fail.
+     * This method is optional (i.e. the function pointer may be NULL).
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pbKey           Pointer to the key.
+     * @param   cbKey           Size of the key in bytes.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetKey,(PPDMIMEDIA pInterface, const uint8_t *pbKey, size_t cbKey));
+
+    /**
      * Get the media size in bytes.
      *
      * @returns Media size in bytes.
