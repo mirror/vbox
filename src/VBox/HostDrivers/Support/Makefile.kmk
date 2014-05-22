@@ -41,7 +41,7 @@ ifndef VBOX_ONLY_DOCS
 endif
 if  !defined(VBOX_ONLY_DOCS) \
  && !defined(VBOX_ONLY_EXTPACKS) \
- && !defined(VBOX_ONLY_TESTSUITE)
+ && !defined(VBOX_ONLY_VALIDATIONKIT)
  ifdef VBOX_WITH_SUPSVC
   PROGRAMS += VBoxSupSvc
  endif
@@ -67,7 +67,7 @@ if  !defined(VBOX_ONLY_DOCS) \
  ifeq ($(KBUILD_TARGET),freebsd)
   include $(PATH_SUB_CURRENT)/freebsd/files_vboxdrv
  endif
-endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_TESTSUITE
+endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_VALIDATIONKIT
 
 
 #
@@ -169,7 +169,7 @@ SUPR0IdcClient_SOURCES = \
 
 if  !defined(VBOX_ONLY_DOCS) \
  && !defined(VBOX_ONLY_EXTPACKS) \
- && !defined(VBOX_ONLY_TESTSUITE)
+ && !defined(VBOX_ONLY_VALIDATIONKIT)
 
 ifeq ($(KBUILD_TARGET),os2)
 
@@ -431,6 +431,6 @@ ifeq ($(KBUILD_TARGET), win)
 endif # win
 
 
-endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_TESTSUITE
+endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_VALIDATIONKIT
 include $(FILE_KBUILD_SUB_FOOTER)
 

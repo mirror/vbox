@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Target config.
 #
-if defined(VBOX_WITH_ADDITION_DRIVERS) && !defined(VBOX_ONLY_TESTSUITE)
+if defined(VBOX_WITH_ADDITION_DRIVERS) && !defined(VBOX_ONLY_VALIDATIONKIT)
  LIBRARIES += \
  	VBoxGuestR0Lib \
  	VBoxGuestR0LibBase
@@ -38,7 +38,7 @@ endif
 LIBRARIES += \
 	VBoxGuestR3Lib \
 	VBoxGuestR3LibShared
-ifndef VBOX_ONLY_TESTSUITE
+ifndef VBOX_ONLY_VALIDATIONKIT
  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd)
   LIBRARIES += \
   	VBoxGuestR3LibXFree86
