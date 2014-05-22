@@ -237,12 +237,10 @@ endif
 # Documentation
 ifdef VBOX_WITH_DOCS_PACKING
  VBOX_LNX_NO_STRIP += \
-	UserManual.pdf \
-	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),UserManual_$(f).pdf)
+	$(notdir $(wildcard $(PATH_STAGE_BIN)/UserManual*.pdf))
  ifdef VBOX_WITH_DOCS_CHM
   VBOX_LNX_NO_STRIP += \
-  	VirtualBox.chm \
-	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm)
+        $(notdir $(wildcard $(PATH_STAGE_BIN)/VirtualBox*.chm))  
  endif
  VBOX_LNX_STRIP_BIN += \
 	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,)
