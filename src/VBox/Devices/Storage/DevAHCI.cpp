@@ -81,16 +81,18 @@
 #define AHCI_MAX_ALLOC_TOO_MUCH 20
 
 /** The current saved state version. */
-#define AHCI_SAVED_STATE_VERSION                   7
+#define AHCI_SAVED_STATE_VERSION                        8
+/** The saved state version before changing the port reset logic in an incomptible way. */
+#define AHCI_SAVED_STATE_VERSION_PRE_PORT_RESET_CHANGES 7
 /** Saved state version before the per port hotplug port was added. */
-#define AHCI_SAVED_STATE_VERSION_PRE_HOTPLUG_FLAG  6
+#define AHCI_SAVED_STATE_VERSION_PRE_HOTPLUG_FLAG       6
 /** Saved state version before legacy ATA emulation was dropped. */
-#define AHCI_SAVED_STATE_VERSION_IDE_EMULATION     5
+#define AHCI_SAVED_STATE_VERSION_IDE_EMULATION          5
 /** Saved state version before ATAPI support was added. */
-#define AHCI_SAVED_STATE_VERSION_PRE_ATAPI         3
+#define AHCI_SAVED_STATE_VERSION_PRE_ATAPI              3
 /** The saved state version use in VirtualBox 3.0 and earlier.
  * This was before the config was added and ahciIOTasks was dropped. */
-#define AHCI_SAVED_STATE_VERSION_VBOX_30           2
+#define AHCI_SAVED_STATE_VERSION_VBOX_30                2
 /* for Older ATA state Read handling */
 #define ATA_CTL_SAVED_STATE_VERSION 3
 #define ATA_CTL_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE 1
@@ -691,6 +693,8 @@ typedef struct AHCI
     bool volatile                   fSignalIdle;
     /** Flag whether the controller has BIOS access enabled. */
     bool                            fBootable;
+    /** Flag whether the legacy port reset method should be used to make it work with saved states. */
+    bool                            fLegacyPortResetMethod;
 
     /** Number of usable ports on this controller. */
     uint32_t                        cPortsImpl;
@@ -1258,11 +1262,20 @@ static int PortSControl_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
              && (pAhciPort->regSCTL & AHCI_PORT_SCTL_DET) == AHCI_PORT_SCTL_DET_INIT
              && pAhciPort->pDrvBase)
     {
-        pAhciPort->regSCTL = u32Value;  /* Update before kicking the I/O thread. */
-        pAhciPort->regSSTS = 0x1; /* Indicate device presence detected but communication not established. */
+        /* Do the port reset here, so the guest sees the new status immediately. */
+        if (ahci->fLegacyPortResetMethod)
+        {
+            ahciPortResetFinish(pAhciPort);
+            pAhciPort->regSCTL = u32Value; /* Update after finishing the reset, so the I/O thread doesn't get a chance to do the reset. */
+        }
+        else
+        {
+            pAhciPort->regSSTS = 0x1; /* Indicate device presence detected but communication not established. */
+            pAhciPort->regSCTL = u32Value;  /* Update before kicking the I/O thread. */
 
-        /* Kick the thread to finish the reset. */
-        ahciIoThreadKick(ahci, pAhciPort);
+            /* Kick the thread to finish the reset. */
+            ahciIoThreadKick(ahci, pAhciPort);
+        }
     }
 
     return VINF_SUCCESS;
@@ -6976,6 +6989,7 @@ static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutBool(pSSM, pThis->f64BitAddr);
     SSMR3PutBool(pSSM, pThis->fR0Enabled);
     SSMR3PutBool(pSSM, pThis->fGCEnabled);
+    SSMR3PutBool(pSSM, pThis->fLegacyPortResetMethod);
 
     /* Now every port. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
@@ -7107,6 +7121,13 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         && SSMR3HandleRevision(pSSM) <  79201)
         uVersion++;
 
+    /*
+     * Check whether we have to resort to the legacy port reset method to
+     * prevent older BIOS versions from failing after a reset.
+     */
+    if (uVersion < AHCI_SAVED_STATE_VERSION_PRE_PORT_RESET_CHANGES)
+        pThis->fLegacyPortResetMethod = true;
+
     /* Verify config. */
     if (uVersion > AHCI_SAVED_STATE_VERSION_VBOX_30)
     {
@@ -7205,6 +7226,8 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         SSMR3GetBool(pSSM, &pThis->f64BitAddr);
         SSMR3GetBool(pSSM, &pThis->fR0Enabled);
         SSMR3GetBool(pSSM, &pThis->fGCEnabled);
+        if (uVersion > AHCI_SAVED_STATE_VERSION_PRE_PORT_RESET_CHANGES)
+            SSMR3GetBool(pSSM, &pThis->fLegacyPortResetMethod);
 
         /* Now every port. */
         for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
