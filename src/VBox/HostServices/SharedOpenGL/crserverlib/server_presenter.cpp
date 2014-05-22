@@ -4919,6 +4919,7 @@ int CrPMgrSaveState(PSSMHANDLE pSSM)
 {
     int rc;
     int cDisplays = 0, i;
+
     for (i = 0; i < cr_server.screenCount; ++i)
     {
         if (CrPMgrFbGetEnabled(i))
@@ -4967,14 +4968,14 @@ int CrPMgrSaveState(PSSMHANDLE pSSM)
             rc = SSMR3PutU16(pSSM, hFb->ScreenInfo.u16Flags);
             AssertRCReturn(rc, rc);
 
-            rc = SSMR3PutU32(pSSM, 0xffffffff);
-            AssertRCReturn(rc, rc);
-
-            rc = CrFbSaveState(hFb, pSSM);
+            rc = SSMR3PutU32(pSSM, hFb->ScreenInfo.u32StartOffset);
             AssertRCReturn(rc, rc);
 
             CR_FB_INFO *pFbInfo = &g_CrPresenter.aFbInfos[hFb->ScreenInfo.u32ViewIndex];
             rc = SSMR3PutMem(pSSM, pFbInfo->aTargetMap, sizeof (pFbInfo->aTargetMap));
+            AssertRCReturn(rc, rc);
+
+            rc = CrFbSaveState(hFb, pSSM);
             AssertRCReturn(rc, rc);
         }
     }
@@ -5153,20 +5154,32 @@ int CrPMgrLoadState(PSSMHANDLE pSSM, uint32_t version)
             rc = SSMR3GetU16(pSSM, &Screen.u16Flags);
             AssertRCReturn(rc, rc);
 
-            uint32_t offVram = 0;
-            rc = SSMR3GetU32(pSSM, &offVram);
+            rc = SSMR3GetU32(pSSM, &Screen.u32StartOffset);
             AssertRCReturn(rc, rc);
-            if (offVram != 0xffffffff)
+            if (Screen.u32StartOffset == 0xffffffff)
             {
                 WARN(("not expected offVram"));
-                Screen.u32StartOffset = offVram;
+                Screen.u32StartOffset = 0;
             }
 
-            rc = CrFbLoadState(pFb, pSSM, version);
-            AssertRCReturn(rc, rc);
-
-            if (version >= SHCROGL_SSM_VERSION_WITH_SCREEN_MAP)
+            if (version >= SHCROGL_SSM_VERSION_WITH_SCREEN_MAP_REORDERED)
             {
+                rc = SSMR3GetMem(pSSM, aTargetMap, sizeof (aTargetMap));
+                AssertRCReturn(rc, rc);
+            }
+
+            if (version == SHCROGL_SSM_VERSION_WITH_SCREEN_MAP)
+            {
+                VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aEmptyTargetMap);
+
+                memset(aEmptyTargetMap, 0, sizeof (aEmptyTargetMap));
+
+                rc = CrPMgrResize(&Screen, cr_server.fCrCmdEnabled ? NULL : CrFbGetVRAM(pFb), aEmptyTargetMap);
+                AssertRCReturn(rc, rc);
+
+                rc = CrFbLoadState(pFb, pSSM, version);
+                AssertRCReturn(rc, rc);
+
                 rc = SSMR3GetMem(pSSM, aTargetMap, sizeof (aTargetMap));
                 AssertRCReturn(rc, rc);
             }
@@ -5174,6 +5187,12 @@ int CrPMgrLoadState(PSSMHANDLE pSSM, uint32_t version)
 
         rc = CrPMgrResize(&Screen, cr_server.fCrCmdEnabled ? NULL : CrFbGetVRAM(pFb), aTargetMap);
         AssertRCReturn(rc, rc);
+
+        if (version >= SHCROGL_SSM_VERSION_WITH_FB_INFO && version != SHCROGL_SSM_VERSION_WITH_SCREEN_MAP)
+        {
+            rc = CrFbLoadState(pFb, pSSM, version);
+            AssertRCReturn(rc, rc);
+        }
     }
 
     return VINF_SUCCESS;

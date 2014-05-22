@@ -661,6 +661,7 @@ int vboxVDMASaveStateExecPrep(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM);
 int vboxVDMASaveStateExecDone(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM);
 int vboxVDMASaveStateExecPerform(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM);
 int vboxVDMASaveLoadExecPerform(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM, uint32_t u32Version);
+int vboxVDMASaveLoadDone(struct VBOXVDMAHOST *pVdma);
 # endif /* VBOX_WITH_VDMA */
 
 # ifdef VBOX_WITH_CRHGSMI
@@ -668,6 +669,7 @@ int vboxCmdVBVACmdSubmit(PVGASTATE pVGAState);
 int vboxCmdVBVACmdFlush(PVGASTATE pVGAState);
 void vboxCmdVBVACmdTimer(PVGASTATE pVGAState);
 int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL *pCtl, uint32_t cbCtl);
+bool vboxCmdVBVAIsEnabled(PVGASTATE pVGAState);
 # endif /* VBOX_WITH_CRHGSMI */
 #endif /* VBOX_WITH_HGSMI */
 

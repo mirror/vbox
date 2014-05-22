@@ -945,9 +945,9 @@ int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter, int32_t i32MakeCurre
     return VINF_SUCCESS;
 }
 
-PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window, int32_t i32MakeCurrentUserData )
+PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window, int32_t i32MakeCurrentUserData, bool fRedraw )
 {
-    PCR_BLITTER pBlitter = renderspuVBoxPresentBlitterGet(window);
+    PCR_BLITTER pBlitter = fRedraw ? window->pBlitter : renderspuVBoxPresentBlitterGet(window);
     if (pBlitter)
     {
         int rc = renderspuVBoxPresentBlitterEnter(pBlitter, i32MakeCurrentUserData);
@@ -1000,9 +1000,11 @@ PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window, int32_
     return window->pBlitter;
 }
 
-void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR * pCompositor, const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry, int32_t i32MakeCurrentUserData )
+void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR * pCompositor,
+        const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry, int32_t i32MakeCurrentUserData,
+        bool fRedraw )
 {
-    PCR_BLITTER pBlitter = renderspuVBoxPresentBlitterGetAndEnter(window, i32MakeCurrentUserData);
+    PCR_BLITTER pBlitter = renderspuVBoxPresentBlitterGetAndEnter(window, i32MakeCurrentUserData, fRedraw);
     if (!pBlitter)
         return;
 
