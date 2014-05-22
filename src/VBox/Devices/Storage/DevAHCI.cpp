@@ -5739,6 +5739,13 @@ bool ahciIsRedoSetWarning(PAHCIPort pAhciPort, int rc)
             ahciWarningISCSI(pAhciPort->CTX_SUFF(pDevIns));
         return true;
     }
+    if (rc == VERR_VD_DEK_MISSING)
+    {
+        /* Error message already set. */
+        ASMAtomicCmpXchgBool(&pAhciPort->fRedo, true, false);
+        return true;
+    }
+
     return false;
 }
 

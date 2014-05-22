@@ -1540,6 +1540,13 @@ static bool ataIsRedoSetWarning(ATADevState *s, int rc)
         ataWarningISCSI(ATADEVSTATE_2_DEVINS(s));
         return true;
     }
+    if (rc == VERR_VD_DEK_MISSING)
+    {
+        /* Error message already set. */
+        pCtl->fRedoIdle = true;
+        return true;
+    }
+
     return false;
 }
 

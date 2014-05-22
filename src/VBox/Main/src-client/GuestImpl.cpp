@@ -814,23 +814,34 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* forward the information to the VMM device */
-    VMMDev *pVMMDev = mParent->getVMMDev();
-    if (pVMMDev)
+    /* Check for magic domain names which are used to pass encryption keys to the disk. */
+    if (Utf8Str(aDomain) == "@@disk")
+        return mParent->setDiskEncryptionKeys(Utf8Str(aPassword));
+    else if (Utf8Str(aDomain) == "@@mem")
     {
-        PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
-        if (pVMMDevPort)
+        /** @todo */
+        return E_NOTIMPL;    
+    }
+    else
+    {
+        /* forward the information to the VMM device */
+        VMMDev *pVMMDev = mParent->getVMMDev();
+        if (pVMMDev)
         {
-            uint32_t u32Flags = VMMDEV_SETCREDENTIALS_GUESTLOGON;
-            if (!aAllowInteractiveLogon)
-                u32Flags = VMMDEV_SETCREDENTIALS_NOLOCALLOGON;
-
-            pVMMDevPort->pfnSetCredentials(pVMMDevPort,
-                                           Utf8Str(aUserName).c_str(),
-                                           Utf8Str(aPassword).c_str(),
-                                           Utf8Str(aDomain).c_str(),
-                                           u32Flags);
-            return S_OK;
+            PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
+            if (pVMMDevPort)
+            {
+                uint32_t u32Flags = VMMDEV_SETCREDENTIALS_GUESTLOGON;
+                if (!aAllowInteractiveLogon)
+                    u32Flags = VMMDEV_SETCREDENTIALS_NOLOCALLOGON;
+    
+                pVMMDevPort->pfnSetCredentials(pVMMDevPort,
+                                               Utf8Str(aUserName).c_str(),
+                                               Utf8Str(aPassword).c_str(),
+                                               Utf8Str(aDomain).c_str(),
+                                               u32Flags);
+                return S_OK;
+            }
         }
     }
 

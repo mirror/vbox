@@ -91,6 +91,7 @@
 #include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/system.h>
+#include <iprt/base64.h>
 
 #include <VBox/vmm/vmapi.h>
 #include <VBox/vmm/vmm.h>
@@ -4444,6 +4445,306 @@ DisplayMouseInterface *Console::getDisplayMouseInterface()
 }
 
 /**
+ * Parses one key value pair.
+ *
+ * @returns VBox status code.
+ * @param   psz     Configuration string.
+ * @param   ppszEnd Where to store the pointer to the string following the key value pair.
+ * @param   ppszKey Where to store the key on success.
+ * @param   ppszVal Where to store the value on success.
+ */
+int Console::consoleParseKeyValue(const char *psz, const char **ppszEnd,
+                                  char **ppszKey, char **ppszVal)
+{
+    int rc = VINF_SUCCESS;
+    const char *pszKeyStart = psz;
+    const char *pszValStart = NULL;
+    size_t cchKey = 0;
+    size_t cchVal = 0;
+
+    while (   *psz != '='
+           && *psz)
+        psz++;
+
+    /* End of string at this point is invalid. */
+    if (*psz == '\0')
+        return VERR_INVALID_PARAMETER;
+
+    cchKey = psz - pszKeyStart;
+    psz++; /* Skip = character */
+    pszValStart = psz;
+
+    while (   *psz != ','
+           && *psz != '\n'
+           && *psz != '\r'
+           && *psz)
+        psz++;
+
+    cchVal = psz - pszValStart;
+
+    if (cchKey && cchVal)
+    {
+        *ppszKey = RTStrDupN(pszKeyStart, cchKey);
+        if (*ppszKey)
+        {
+            *ppszVal = RTStrDupN(pszValStart, cchVal);
+            if (!*ppszVal)
+            {
+                RTStrFree(*ppszKey);
+                rc = VERR_NO_MEMORY;
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    if (RT_SUCCESS(rc))
+        *ppszEnd = psz;
+
+    return rc;
+}
+
+/**
+ * Configures the encryption support for the disk identified by the gien UUID with
+ * the given key.
+ *
+ * @returns COM status code.
+ * @param   pszUuid   The UUID of the disk to configure encryption for.
+ * @param   pbKey     The key to use
+ * @param   cbKey     Size of the key in bytes.
+ */
+HRESULT Console::configureEncryptionForDisk(const char *pszUuid, const uint8_t *pbKey, size_t cbKey)
+{
+    HRESULT hrc = S_OK;
+    SafeIfaceArray<IMediumAttachment> sfaAttachments;
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    /* Get the VM - must be done before the read-locking. */
+    SafeVMPtr ptrVM(this);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    hrc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
+    if (FAILED(hrc))
+        return hrc;
+
+    /* Find the correct attachment. */
+    for (unsigned i = 0; i < sfaAttachments.size(); i++)
+    {
+        const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[i];
+        ComPtr<IMedium> pMedium;
+        ComPtr<IMedium> pBase;
+        Bstr uuid;
+
+        hrc = pAtt->COMGETTER(Medium)(pMedium.asOutParam());
+        if (FAILED(hrc))
+            break;
+
+        /* Skip non hard disk attachments. */
+        if (pMedium.isNull())
+            continue;
+
+        /* Get the UUID of the base medium and compare. */
+        hrc = pMedium->COMGETTER(Base)(pBase.asOutParam());
+        if (FAILED(hrc))
+            break;
+
+        hrc = pBase->COMGETTER(Id)(uuid.asOutParam());
+        if (FAILED(hrc))
+            break;
+
+        if (!RTUuidCompare2Strs(Utf8Str(uuid).c_str(), pszUuid))
+        {
+            /*
+             * Found the matching medium, query storage controller, port and device
+             * to identify the correct driver.
+             */
+            ComPtr<IStorageController> pStorageCtrl;
+            Bstr storageCtrlName;
+            LONG lPort, lDev;
+            ULONG ulStorageCtrlInst;
+
+            hrc = pAtt->COMGETTER(Controller)(storageCtrlName.asOutParam());
+            if (FAILED(hrc))
+                break;
+
+            hrc = pAtt->COMGETTER(Port)(&lPort);
+            if (FAILED(hrc))
+                break;
+
+            hrc = pAtt->COMGETTER(Device)(&lDev);
+            if (FAILED(hrc))
+                break;
+
+            hrc = mMachine->GetStorageControllerByName(storageCtrlName.raw(), pStorageCtrl.asOutParam());
+            if (FAILED(hrc))
+                break;
+
+            hrc = pStorageCtrl->COMGETTER(Instance)(&ulStorageCtrlInst);
+            if (FAILED(hrc))
+                break;
+
+            StorageControllerType_T enmCtrlType;
+            hrc = pStorageCtrl->COMGETTER(ControllerType)(&enmCtrlType);
+            AssertComRC(hrc);
+            const char *pcszDevice = convertControllerTypeToDev(enmCtrlType);
+
+            StorageBus_T enmBus;
+            hrc = pStorageCtrl->COMGETTER(Bus)(&enmBus);
+            AssertComRC(hrc);
+
+            unsigned uLUN;
+            hrc = Console::convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
+            AssertComRCReturnRC(hrc);
+
+            PPDMIBASE pIBase = NULL;
+            PPDMIMEDIA pIMedium = NULL;
+            int rc = PDMR3QueryDriverOnLun(ptrVM.rawUVM(), pcszDevice, ulStorageCtrlInst, uLUN, "VD", &pIBase);
+            if (RT_SUCCESS(rc))
+            {
+                if (pIBase)
+                {
+                    pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
+                    if (!pIMedium)
+                        return setError(E_FAIL, tr("could not query medium interface of controller"));
+                }
+                else
+                    return setError(E_FAIL, tr("could not query base interface of controller"));
+            }
+
+            rc = pIMedium->pfnSetKey(pIMedium, pbKey, cbKey);
+            if (RT_FAILURE(rc))
+                return setError(E_FAIL, tr("Failed to set the encryption key (%Rrc)"), rc);
+        }
+    }
+
+    return hrc;
+}
+
+/**
+ * Parses the encryption configuration for one disk.
+ *
+ * @returns Pointer to the string following encryption configuration.
+ * @param   psz    Pointer to the configuration for the encryption of one disk.
+ */
+HRESULT Console::consoleParseDiskEncryption(const char *psz, const char **ppszEnd)
+{
+    char *pszUuid = NULL;
+    char *pszKeyEnc = NULL;
+    int rc = VINF_SUCCESS;
+    HRESULT hrc = S_OK;
+
+    while (   *psz
+           && RT_SUCCESS(rc))
+    {
+        char *pszKey = NULL;
+        char *pszVal = NULL;
+        const char *pszEnd = NULL;
+
+        rc = consoleParseKeyValue(psz, &pszEnd, &pszKey, &pszVal);
+        if (RT_SUCCESS(rc))
+        {
+            if (!RTStrCmp(pszKey, "uuid"))
+                pszUuid = pszVal;
+            else if (!RTStrCmp(pszKey, "dek"))
+                pszKeyEnc = pszVal;
+            else
+                rc = VERR_INVALID_PARAMETER;
+
+            RTStrFree(pszKey);
+
+            if (*pszEnd == ',')
+                psz = pszEnd + 1;
+            else
+            {
+                /*
+                 * End of the configuration for the current disk, skip linefeed and
+                 * carriage returns.
+                 */
+                while (   *pszEnd == '\n'
+                       || *pszEnd == '\r')
+                    pszEnd++;
+
+                psz = pszEnd;
+                break; /* Stop parsing */
+            }
+
+        }
+    }
+
+    if (   RT_SUCCESS(rc)
+        && pszUuid
+        && pszKeyEnc)
+    {
+        ssize_t cbKey = 0;
+
+        /* Decode the key. */
+        cbKey = RTBase64DecodedSize(pszKeyEnc, NULL);
+        if (cbKey != -1)
+        {
+            uint8_t *pbKey = (uint8_t *)RTMemLockedAlloc(cbKey);
+            if (pbKey)
+            {
+                rc = RTBase64Decode(pszKeyEnc, pbKey, cbKey, NULL, NULL);
+                if (RT_SUCCESS(rc))
+                    hrc = configureEncryptionForDisk(pszUuid, pbKey, cbKey);
+                else
+                    hrc = setError(E_FAIL,
+                                   tr("Failed to decode the key (%Rrc)"),
+                                   rc);
+
+                RTMemWipeThoroughly(pbKey, cbKey, 10 /* cMinPasses */);
+                RTMemLockedFree(pbKey);
+            }
+            else
+                hrc = setError(E_FAIL,
+                               tr("Failed to allocate secure memory for the key"));
+        }
+        else
+            hrc = setError(E_FAIL,
+                           tr("The base64 encoding of the passed key is incorrect"));
+    }
+    else if (RT_SUCCESS(rc))
+        hrc = setError(E_FAIL,
+                       tr("The encryption configuration is incomplete"));
+
+    if (pszUuid)
+        RTStrFree(pszUuid);
+    if (pszKeyEnc)
+    {
+        RTMemWipeThoroughly(pszKeyEnc, strlen(pszKeyEnc), 10 /* cMinPasses */);
+        RTStrFree(pszKeyEnc);
+    }
+
+    if (ppszEnd)
+        *ppszEnd = psz;
+
+    return hrc;
+}
+
+HRESULT Console::setDiskEncryptionKeys(const Utf8Str &strCfg)
+{
+    HRESULT hrc = S_OK;
+    const char *pszCfg = strCfg.c_str();
+
+    while (   *pszCfg
+           && SUCCEEDED(hrc))
+    {
+        const char *pszNext = NULL;
+        hrc = consoleParseDiskEncryption(pszCfg, &pszNext);
+        pszCfg = pszNext;
+    }
+
+    return hrc;
+}
+
+/**
  * Process a network adaptor change.
  *
  * @returns COM status code.
@@ -8653,6 +8954,16 @@ Console::setVMRuntimeErrorCallback(PUVM pUVM, void *pvUser, uint32_t fFlags,
 
     LogRel(("Console: VM runtime error: fatal=%RTbool, errorID=%s message=\"%s\"\n",
             fFatal, pszErrorId, message.c_str()));
+
+    /* Set guest property if the reason of the error is a missing DEK for a disk. */
+    if (!RTStrCmp(pszErrorId, "DrvVD_DEKMISSING"))
+    {
+        that->mMachine->DeleteGuestProperty(Bstr("/VirtualBox/HostInfo/DekMissing").raw());
+        that->mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/DekMissing").raw(),
+                                         Bstr("1").raw(), Bstr("RDONLYGUEST").raw());
+        that->mMachine->SaveSettings();
+    }
+
 
     that->onRuntimeError(BOOL(fFatal), Bstr(pszErrorId).raw(), Bstr(message).raw());
 
