@@ -3409,6 +3409,7 @@ int vboxVDMASaveLoadExecPerform(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM, uin
 
 int vboxVDMASaveLoadDone(struct VBOXVDMAHOST *pVdma)
 {
+#ifdef VBOX_WITH_CRHGSMI
     VBVAEXHOSTCTL* pHCtl = VBoxVBVAExHCtlCreate(&pVdma->CmdVbva, VBVAEXHOSTCTL_TYPE_HH_LOADSTATE_DONE);
     if (!pHCtl)
     {
@@ -3428,6 +3429,6 @@ int vboxVDMASaveLoadDone(struct VBOXVDMAHOST *pVdma)
         VBoxVBVAExHCtlFree(&pVdma->CmdVbva, pHCtl);
         return rc;
     }
-
+#endif
     return VINF_SUCCESS;
 }
