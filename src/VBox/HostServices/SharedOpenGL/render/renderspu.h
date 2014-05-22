@@ -417,11 +417,13 @@ extern int renderspuVBoxCompositorUnlock(WindowInfo *window);
 extern const struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo *window);
 extern int renderspuVBoxCompositorTryAcquire(WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR **ppCompositor);
 extern void renderspuVBoxCompositorRelease( WindowInfo *window);
-extern void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR * pCompositor, const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry, int32_t i32MakeCurrentUserData );
+extern void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR * pCompositor,
+        const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry, int32_t i32MakeCurrentUserData,
+        bool fRedraw);
 extern PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window );
 void renderspuVBoxPresentBlitterCleanup( WindowInfo *window );
 extern int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter, int32_t i32MakeCurrentUserData );
-extern PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window, int32_t i32MakeCurrentUserData );
+extern PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window, int32_t i32MakeCurrentUserData, bool fRedraw );
 extern PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window, int32_t i32MakeCurrentUserData );
 void renderspuWindowTermBase( WindowInfo *window );
 extern void renderspuWindowTerm( WindowInfo *window );

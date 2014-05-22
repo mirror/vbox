@@ -102,6 +102,7 @@ typedef enum
     VBVAEXHOSTCTL_TYPE_HH_INTERNAL_RESUME,
     VBVAEXHOSTCTL_TYPE_HH_SAVESTATE,
     VBVAEXHOSTCTL_TYPE_HH_LOADSTATE,
+    VBVAEXHOSTCTL_TYPE_HH_LOADSTATE_DONE,
     VBVAEXHOSTCTL_TYPE_HH_BE_OPAQUE,
     VBVAEXHOSTCTL_TYPE_HH_ON_HGCM_UNLOAD,
     VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE,
@@ -1306,30 +1307,6 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
 
     switch (pCmd->enmType)
     {
-        case VBVAEXHOSTCTL_TYPE_HH_SAVESTATE:
-        {
-            PVGASTATE pVGAState = pVdma->pVGAState;
-            uint8_t * pu8VramBase = pVGAState->vram_ptrR3;
-            int rc = VBoxVBVAExHSSaveState(&pVdma->CmdVbva, pu8VramBase, pCmd->u.state.pSSM);
-            if (RT_FAILURE(rc))
-            {
-                WARN(("VBoxVBVAExHSSaveState failed %d\n", rc));
-                return rc;
-            }
-            return pVdma->CrSrvInfo.pfnSaveState(pVdma->CrSrvInfo.hSvr, pCmd->u.state.pSSM);
-        }
-        case VBVAEXHOSTCTL_TYPE_HH_LOADSTATE:
-        {
-            PVGASTATE pVGAState = pVdma->pVGAState;
-            uint8_t * pu8VramBase = pVGAState->vram_ptrR3;
-            int rc = VBoxVBVAExHSLoadState(&pVdma->CmdVbva, pu8VramBase, pCmd->u.state.pSSM, pCmd->u.state.u32Version);
-            if (RT_FAILURE(rc))
-            {
-                WARN(("VBoxVBVAExHSSaveState failed %d\n", rc));
-                return rc;
-            }
-            return pVdma->CrSrvInfo.pfnLoadState(pVdma->CrSrvInfo.hSvr, pCmd->u.state.pSSM, pCmd->u.state.u32Version);
-        }
         case VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE:
         {
             if (!VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
@@ -1367,6 +1344,65 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
             }
 
             *pfContinue = false;
+            return VINF_SUCCESS;
+        }
+        case VBVAEXHOSTCTL_TYPE_HH_SAVESTATE:
+        {
+            PVGASTATE pVGAState = pVdma->pVGAState;
+            uint8_t * pu8VramBase = pVGAState->vram_ptrR3;
+            int rc = VBoxVBVAExHSSaveState(&pVdma->CmdVbva, pu8VramBase, pCmd->u.state.pSSM);
+            if (RT_FAILURE(rc))
+            {
+                WARN(("VBoxVBVAExHSSaveState failed %d\n", rc));
+                return rc;
+            }
+            return pVdma->CrSrvInfo.pfnSaveState(pVdma->CrSrvInfo.hSvr, pCmd->u.state.pSSM);
+        }
+        case VBVAEXHOSTCTL_TYPE_HH_LOADSTATE:
+        {
+            PVGASTATE pVGAState = pVdma->pVGAState;
+            uint8_t * pu8VramBase = pVGAState->vram_ptrR3;
+
+            int rc = VBoxVBVAExHSLoadState(&pVdma->CmdVbva, pu8VramBase, pCmd->u.state.pSSM, pCmd->u.state.u32Version);
+            if (RT_FAILURE(rc))
+            {
+                WARN(("VBoxVBVAExHSSaveState failed %d\n", rc));
+                return rc;
+            }
+
+            rc = pVdma->CrSrvInfo.pfnLoadState(pVdma->CrSrvInfo.hSvr, pCmd->u.state.pSSM, pCmd->u.state.u32Version);
+            if (RT_FAILURE(rc))
+            {
+                WARN(("pfnLoadState failed %d\n", rc));
+                return rc;
+            }
+
+            return VINF_SUCCESS;
+        }
+        case VBVAEXHOSTCTL_TYPE_HH_LOADSTATE_DONE:
+        {
+            PVGASTATE pVGAState = pVdma->pVGAState;
+
+            for (uint32_t i = 0; i < pVGAState->cMonitors; ++i)
+            {
+                VBVAINFOSCREEN CurScreen;
+                VBVAINFOVIEW CurView;
+
+                int rc = VBVAGetInfoViewAndScreen(pVGAState, i, &CurView, &CurScreen);
+                if (RT_FAILURE(rc))
+                {
+                    WARN(("VBVAGetInfoViewAndScreen failed %d\n", rc));
+                    return rc;
+                }
+
+                rc = VBVAInfoScreen(pVGAState, &CurScreen);
+                if (RT_FAILURE(rc))
+                {
+                    WARN(("VBVAInfoScreen failed %d\n", rc));
+                    return rc;
+                }
+            }
+
             return VINF_SUCCESS;
         }
         default:
@@ -3219,6 +3255,10 @@ void vboxCmdVBVACmdTimer(PVGASTATE pVGAState)
     vboxVDMACmdSubmitPerform(pVGAState->pVdma);
 }
 
+bool vboxCmdVBVAIsEnabled(PVGASTATE pVGAState)
+{
+    return VBoxVBVAExHSIsEnabled(&pVGAState->pVdma->CmdVbva);
+}
 #endif
 
 int vboxVDMASaveStateExecPrep(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
@@ -3354,6 +3394,31 @@ int vboxVDMASaveLoadExecPerform(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM, uin
         WARN(("Unsupported VBVACtl info!\n"));
         return VERR_VERSION_MISMATCH;
 #endif
+    }
+
+    return VINF_SUCCESS;
+}
+
+int vboxVDMASaveLoadDone(struct VBOXVDMAHOST *pVdma)
+{
+    VBVAEXHOSTCTL* pHCtl = VBoxVBVAExHCtlCreate(&pVdma->CmdVbva, VBVAEXHOSTCTL_TYPE_HH_LOADSTATE_DONE);
+    if (!pHCtl)
+    {
+        WARN(("VBoxVBVAExHCtlCreate failed\n"));
+        return VERR_NO_MEMORY;
+    }
+
+    /* sanity */
+    pHCtl->u.cmd.pu8Cmd = NULL;
+    pHCtl->u.cmd.cbCmd = 0;
+
+    /* NULL completion will just free the ctl up */
+    int rc = vdmaVBVACtlSubmit(pVdma, pHCtl, VBVAEXHOSTCTL_SOURCE_HOST, NULL, NULL);
+    if (RT_FAILURE(rc))
+    {
+        Log(("vdmaVBVACtlSubmit failed rc %d\n", rc));
+        VBoxVBVAExHCtlFree(&pVdma->CmdVbva, pHCtl);
+        return rc;
     }
 
     return VINF_SUCCESS;

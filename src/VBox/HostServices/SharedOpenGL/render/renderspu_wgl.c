@@ -445,7 +445,7 @@ MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
                         BOOL bRc;
                         pWindow->redraw_device_context = hDC;
 
-                        renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL, 1);
+                        renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL, 1, true);
 
                         bRc = EndPaint(pWindow->hWnd, &Paint);
 
@@ -1294,7 +1294,7 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, const struct VB
     int rc = renderspuVBoxCompositorTryAcquire(window, &pCompositor);
     if (RT_SUCCESS(rc))
     {
-        renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry, 0);
+        renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry, 0, false);
         renderspuVBoxCompositorRelease(window);
     }
     else if (rc == VERR_SEM_BUSY)

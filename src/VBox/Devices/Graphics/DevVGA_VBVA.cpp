@@ -1866,6 +1866,7 @@ int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
             if (pView->pVBVA)
             {
+                Assert(!vboxCmdVBVAIsEnabled(pVGAState));
                 vbvaEnable (iView, pVGAState, pCtx, pView->pVBVA, pView->u32VBVAOffset, true /* fRestored */);
                 vbvaResize (pVGAState, pView, &pView->screen);
             }
@@ -2135,6 +2136,13 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
 
         case VBVA_INFO_VIEW:
         {
+            if (vboxCmdVBVAIsEnabled(pVGAState))
+            {
+                AssertMsgFailed(("VBVA_INFO_VIEW is not acceptible for CmdVbva\n"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
             if (cbBuffer < sizeof (VBVAINFOVIEW))
             {
                 rc = VERR_INVALID_PARAMETER;
@@ -2193,6 +2201,13 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
                 break;
             }
 
+            if (vboxCmdVBVAIsEnabled(pVGAState))
+            {
+                AssertMsgFailed(("VBVA_INFO_SCREEN is not acceptible for CmdVbva\n"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
             VBVAINFOSCREEN *pScreen = (VBVAINFOSCREEN *)pvBuffer;
             VBVAINFOSCREEN Screen = *pScreen;
             rc = VBVAInfoScreen(pVGAState, &Screen);
@@ -2200,6 +2215,13 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
 
         case VBVA_ENABLE:
         {
+            if (vboxCmdVBVAIsEnabled(pVGAState))
+            {
+                AssertMsgFailed(("VBVA_ENABLE is not acceptible for CmdVbva\n"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
             if (cbBuffer < sizeof (VBVAENABLE))
             {
                 rc = VERR_INVALID_PARAMETER;

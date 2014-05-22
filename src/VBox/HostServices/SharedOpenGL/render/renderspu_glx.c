@@ -583,7 +583,7 @@ static DECLCALLBACK(int) renderspuWinCmdThreadProc(RTTHREAD ThreadSelf, void *pv
                         pCompositor = renderspuVBoxCompositorAcquire(pWindow);
                         if (pCompositor)
                         {
-                            renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL, 0);
+                            renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL, 0, true);
                             renderspuVBoxCompositorRelease(pWindow);
                         }
                     }
@@ -1980,7 +1980,7 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, const struct VB
     int rc = renderspuVBoxCompositorTryAcquire(window, &pCompositor);
     if (RT_SUCCESS(rc))
     {
-        renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry, 0);
+        renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry, 0, false);
         renderspuVBoxCompositorRelease(window);
     }
     else if (rc == VERR_SEM_BUSY)
