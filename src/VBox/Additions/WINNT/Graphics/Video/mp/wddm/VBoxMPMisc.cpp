@@ -1061,6 +1061,7 @@ typedef struct VBOXVIDEOCM_ALLOC_REF
     PKEVENT pSynchEvent;
     VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType;
     volatile uint32_t cRefs;
+    PVOID pvUm;
     MDL Mdl;
 } VBOXVIDEOCM_ALLOC_REF, *PVBOXVIDEOCM_ALLOC_REF;
 
@@ -1182,6 +1183,7 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
                           NormalPagePriority);
                 if (pvUm)
                 {
+                    pAllocRef->pvUm = pvUm;
                     pAllocRef->pContext = pContext;
                     pAllocRef->pAlloc = pAlloc;
                     pAllocRef->fUhgsmiType = pUmAlloc->fUhgsmiType;
@@ -1196,6 +1198,8 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
                         pUmAlloc->pvData = (uint64_t)pvUm;
                         return STATUS_SUCCESS;
                     }
+
+                    MmUnmapLockedPages(pvUm, &pAllocRef->Mdl);
                 }
                 else
                 {
@@ -1236,6 +1240,8 @@ NTSTATUS vboxVideoAMgrCtxAllocUnmap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDIS
     {
         /* wait for the dereference, i.e. for all commands involving this allocation to complete */
         vboxWddmCounterU32Wait(&pAllocRef->cRefs, 1);
+
+        MmUnmapLockedPages(pAllocRef->pvUm, &pAllocRef->Mdl);
 
         MmUnlockPages(&pAllocRef->Mdl);
         *ppAlloc = pAllocRef->pAlloc;
