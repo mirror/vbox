@@ -76,7 +76,7 @@ void crUnpackExtendShaderSource(void)
     }
 
 //    cr_unpackDispatch.ShaderSource(shader, count, ppStrings, length ? length : pLocalLength);
-    cr_unpackDispatch.ShaderSource(shader, 1, ppStrings, 0);
+    cr_unpackDispatch.ShaderSource(shader, 1, (const char**)ppStrings, 0);
 
     crFree(ppStrings);
 }
