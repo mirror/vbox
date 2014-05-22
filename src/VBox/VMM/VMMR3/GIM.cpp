@@ -27,8 +27,8 @@
  *
  * A GIM provider implements a particular hypervisor interface such as Microsoft
  * Hyper-V, Linux KVM and so on. It hooks into various components in the VMM to
- * ease the guest in running under a recognized virtualized environment. This is
- * also referred to as paravirtualization interfaces.
+ * ease the guest in running under a recognized, virtualized environment. This
+ * is also referred to as paravirtualization interfaces.
  *
  * The idea behind this is primarily for making guests more accurate and
  * efficient when operating in a virtualized environment.
@@ -38,7 +38,8 @@
  * correct TSC frequency and may therefore not have to caliberate the TSC
  * itself, resulting in higher accuracy and saving several CPU cycles.
  *
- * Only one provider can be active for a running VM.
+ * At most, only one GIM provider can be active for a running VM and cannot be
+ * changed during the lifetime of the VM.
  */
 
 /*******************************************************************************
@@ -104,26 +105,34 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     rc = CFGMR3QueryStringDef(pCfgNode, "Provider", szProvider, sizeof(szProvider), "None");
     AssertLogRelRCReturn(rc, rc);
 
+    /** @cfgm{GIM/Version, uint32_t}
+     * The interface version. The default is 0, which means "provide the most
+     * up-to-date implementation". */
+    uint32_t uVersion;
+    rc = CFGMR3QueryU32Def(pCfgNode, "Version", &uVersion, 0 /* default */);
+    AssertLogRelRCReturn(rc, rc);
+
     /*
      * Setup the GIM provider for this VM.
      */
-    LogRel(("GIM: Using provider \"%s\"\n", szProvider));
+    LogRel(("GIM: Using provider \"%s\" version %u\n", szProvider, uVersion));
     if (!RTStrCmp(szProvider, "None"))
     {
         Assert(!pVM->gim.s.fEnabled);
-        pVM->gim.s.enmProvider = GIMPROVIDER_NONE;
+        pVM->gim.s.enmProviderId = GIMPROVIDERID_NONE;
     }
     else
     {
         pVM->gim.s.fEnabled = true;
+        pVM->gim.s.u32Version = uVersion;
         if (!RTStrCmp(szProvider, "Minimal"))
         {
-            pVM->gim.s.enmProvider = GIMPROVIDER_MINIMAL;
+            pVM->gim.s.enmProviderId = GIMPROVIDERID_MINIMAL;
             rc = GIMR3MinimalInit(pVM);
         }
         else if (!RTStrCmp(szProvider, "HyperV"))
         {
-            pVM->gim.s.enmProvider = GIMPROVIDER_HYPERV;
+            pVM->gim.s.enmProviderId = GIMPROVIDERID_HYPERV;
             rc = GIMR3HvInit(pVM);
         }
         /** @todo KVM and others. */
@@ -156,24 +165,24 @@ VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         return;
     }
 
-    switch (pVM->gim.s.enmProvider)
+    switch (pVM->gim.s.enmProviderId)
     {
-        case GIMPROVIDER_MINIMAL:
+        case GIMPROVIDERID_MINIMAL:
         {
             GIMR3MinimalRelocate(pVM, offDelta);
             break;
         }
 
-        case GIMPROVIDER_HYPERV:
+        case GIMPROVIDERID_HYPERV:
         {
             GIMR3HvRelocate(pVM, offDelta);
             break;
         }
 
-        case GIMPROVIDER_KVM:            /** @todo KVM. */
+        case GIMPROVIDERID_KVM:            /** @todo KVM. */
         default:
         {
-            AssertMsgFailed(("Invalid provider id %#x\n", pVM->gim.s.enmProvider));
+            AssertMsgFailed(("Invalid provider Id %#x\n", pVM->gim.s.enmProviderId));
             break;
         }
     }

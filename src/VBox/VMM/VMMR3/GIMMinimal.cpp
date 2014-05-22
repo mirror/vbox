@@ -35,7 +35,7 @@
 VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
-    AssertReturn(pVM->gim.s.enmProvider == GIMPROVIDER_MINIMAL, VERR_INTERNAL_ERROR_5);
+    AssertReturn(pVM->gim.s.enmProviderId == GIMPROVIDERID_MINIMAL, VERR_INTERNAL_ERROR_5);
 
     Assert(CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP));
 

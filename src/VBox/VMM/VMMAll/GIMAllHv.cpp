@@ -29,3 +29,15 @@ DECLEXPORT(int) GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
     return VINF_SUCCESS;
 }
 
+
+DECLEXPORT(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    return VINF_SUCCESS;
+}
+
+
+DECLEXPORT(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+{
+    return VINF_SUCCESS;
+}
+

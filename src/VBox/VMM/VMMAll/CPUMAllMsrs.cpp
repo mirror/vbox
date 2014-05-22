@@ -23,6 +23,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/tm.h>
+#include <VBox/vmm/gim.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
@@ -4389,6 +4390,27 @@ static DECLCALLBACK(int) cpumMsrWr_AmdFam14hIbsBrTarget(PVMCPU pVCpu, uint32_t i
 
 
 
+/*
+ * GIM MSRs.
+ * GIM MSRs.
+ * GIM MSRs.
+ */
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(int) cpumMsrRd_Gim(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    return GIMReadMsr(pVCpu, idMsr, pRange, puValue);
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(int) cpumMsrWr_Gim(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+{
+    return GIMWriteMsr(pVCpu, idMsr, pRange, uValue, uRawValue);
+}
+
+
 /**
  * MSR read function table.
  */
@@ -4645,6 +4667,8 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_AmdFam10hIbsDcPhysAddr,
     cpumMsrRd_AmdFam10hIbsCtl,
     cpumMsrRd_AmdFam14hIbsBrTarget,
+
+    cpumMsrRd_Gim
 };
 
 
@@ -4859,6 +4883,8 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_AmdFam10hIbsDcPhysAddr,
     cpumMsrWr_AmdFam10hIbsCtl,
     cpumMsrWr_AmdFam14hIbsBrTarget,
+
+    cpumMsrWr_Gim
 };
 
 

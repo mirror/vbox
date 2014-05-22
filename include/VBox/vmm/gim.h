@@ -30,6 +30,12 @@
 #include <VBox/types.h>
 #include <VBox/param.h>
 
+#include <VBox/vmm/cpum.h>
+
+/** The value used to specify that VirtualBox must use the newest
+ *  implementation version of the GIM provider. */
+#define GIM_VERSION_LATEST                  UINT32_C(0)
+
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_gim   The Guest Interface Manager API
@@ -39,21 +45,22 @@ RT_C_DECLS_BEGIN
 /**
  * Providers identifiers.
  */
-typedef enum GIMPROVIDER
+typedef enum GIMPROVIDERID
 {
     /** None. */
-    GIMPROVIDER_NONE = 0,
+    GIMPROVIDERID_NONE = 0,
     /** Minimal. */
-    GIMPROVIDER_MINIMAL,
+    GIMPROVIDERID_MINIMAL,
     /** Microsoft Hyper-V. */
-    GIMPROVIDER_HYPERV,
+    GIMPROVIDERID_HYPERV,
     /** Linux KVM Interface. */
-    GIMPROVIDER_KVM,
+    GIMPROVIDERID_KVM,
     /** Ensure 32-bit type. */
-    GIMPROVIDER_32BIT_HACK = 0x7fffffff
-} GIMPROVIDER;
+    GIMPROVIDERID_32BIT_HACK = 0x7fffffff
+} GIMPROVIDERID;
 
 
+#if 0
 /**
  * A GIM Hypercall handler.
  *
@@ -63,6 +70,35 @@ typedef enum GIMPROVIDER
 typedef DECLCALLBACK(int) FNGIMHYPERCALL(PVMCPU pVCpu, PCPUMCTX pCtx);
 /** Pointer to a GIM hypercall handler. */
 typedef FNGIMHYPERCALL *PFNGIMHYPERCALL;
+
+/**
+ * A GIM MSR-read handler.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the VMCPU.
+ * @param   idMsr           The MSR being read.
+ * @param   pRange          The range that the MSR belongs to.
+ * @param   puValue         Where to store the value of the MSR.
+ */
+typedef DECLCALLBACK(int) FNGIMRDMSR(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
+/** Pointer to a GIM MSR-read handler. */
+typedef FNGIMRDMSR *PFNGIMRDMSR;
+
+/**
+ * A GIM MSR-write handler.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the VMCPU.
+ * @param   idMsr           The MSR being written.
+ * @param   pRange          The range that the MSR belongs to.
+ * @param   uValue          The value to set, ignored bits masked.
+ * @param   uRawValue       The raw value with the ignored bits not masked.
+ */
+typedef DECLCALLBACK(int) FNGIMWRMSR(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);
+/** Pointer to a GIM MSR-write handler. */
+typedef FNGIMWRMSR *PFNGIMWRMSR;
+#endif
+
 
 #ifdef IN_RC
 /** @defgroup grp_gim_rc  The GIM Raw-mode Context API
@@ -87,22 +123,15 @@ typedef FNGIMHYPERCALL *PFNGIMHYPERCALL;
  * @ingroup grp_gim
  * @{
  */
-VMMR3_INT_DECL(int)             GIMR3Init(PVM pVM);
-VMMR3_INT_DECL(int)             GIMR3Term(PVM pVM);
+VMMR3_INT_DECL(int)     GIMR3Init(PVM pVM);
+VMMR3_INT_DECL(int)     GIMR3Term(PVM pVM);
 /** @} */
 #endif /* IN_RING3 */
 
-
-/**
- * Checks whether GIM is being used by this VM.
- *
- * @retval  @c true if used.
- * @retval  @c false if no GIM provider ("none") is used.
- *
- * @param   pVM       Pointer to the VM.
- * @internal
- */
-VMMDECL(bool)                   GIMIsEnabled(PVM pVM);
+VMMDECL(bool)           GIMIsEnabled(PVM pVM);
+VMM_INT_DECL(int)       GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(int)       GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
+VMM_INT_DECL(int)       GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);
 
 /** @} */
 
