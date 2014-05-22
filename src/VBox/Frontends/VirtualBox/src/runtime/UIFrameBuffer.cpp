@@ -223,18 +223,16 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
                                           ULONG uWidth, ULONG uHeight,
                                           BOOL *pfFinished)
 {
-    LogRelFlow(("UIFrameBuffer::RequestResize: "
-                "Screen=%lu, Format=%lu, "
-                "BitsPerPixel=%lu, BytesPerLine=%lu, "
-                "Size=%lux%lu\n",
-                (unsigned long)uScreenId, (unsigned long)uPixelFormat,
-                (unsigned long)uBitsPerPixel, (unsigned long)uBytesPerLine,
-                (unsigned long)uWidth, (unsigned long)uHeight));
-
     /* Make sure result pointer is valid: */
     if (!pfFinished)
     {
-        LogRelFlow(("UIFrameBuffer::RequestResize: Invalid pfFinished pointer!\n"));
+        LogRel(("UIFrameBuffer::RequestResize: "
+                "Screen=%lu, Format=%lu, "
+                "BitsPerPixel=%lu, BytesPerLine=%lu, "
+                "Size=%lux%lu, Invalid pfFinished pointer!\n",
+                (unsigned long)uScreenId, (unsigned long)uPixelFormat,
+                (unsigned long)uBitsPerPixel, (unsigned long)uBytesPerLine,
+                (unsigned long)uWidth, (unsigned long)uHeight));
 
         return E_POINTER;
     }
@@ -245,7 +243,13 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
     /* Make sure frame-buffer is used: */
     if (m_fIsMarkedAsUnused)
     {
-        LogRelFlow(("UIFrameBuffer::RequestResize: Ignored!\n"));
+        LogRel(("UIFrameBuffer::RequestResize: "
+                "Screen=%lu, Format=%lu, "
+                "BitsPerPixel=%lu, BytesPerLine=%lu, "
+                "Size=%lux%lu, Ignored!\n",
+                (unsigned long)uScreenId, (unsigned long)uPixelFormat,
+                (unsigned long)uBitsPerPixel, (unsigned long)uBytesPerLine,
+                (unsigned long)uWidth, (unsigned long)uHeight));
 
         /* Mark request as finished.
          * It is required to report to the VM thread that we finished resizing and rely on the
@@ -264,7 +268,13 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
 
     /* Widget resize is NOT thread-safe and *probably* never will be,
      * We have to notify machine-view with the async-signal to perform resize operation. */
-    LogRelFlow(("UIFrameBuffer::RequestResize: Sending to async-handler...\n"));
+    LogRel(("UIFrameBuffer::RequestResize: "
+            "Screen=%lu, Format=%lu, "
+            "BitsPerPixel=%lu, BytesPerLine=%lu, "
+            "Size=%lux%lu, Sending to async-handler..\n",
+            (unsigned long)uScreenId, (unsigned long)uPixelFormat,
+            (unsigned long)uBitsPerPixel, (unsigned long)uBytesPerLine,
+            (unsigned long)uWidth, (unsigned long)uHeight));
     emit sigRequestResize(uPixelFormat, pVRAM, uBitsPerPixel, uBytesPerLine, uWidth, uHeight);
 
     /* Unlock access to frame-buffer: */
@@ -293,17 +303,15 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
     uWidth = qMin((int)m_width, (int)uWidth + 2);
     uHeight = qMin((int)m_height, (int)uHeight + 2);
 
-    LogRel2(("UIFrameBuffer::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu\n",
-             (unsigned long)uX, (unsigned long)uY,
-             (unsigned long)uWidth, (unsigned long)uHeight));
-
     /* Lock access to frame-buffer: */
     lock();
 
     /* Make sure frame-buffer is used: */
     if (m_fIsMarkedAsUnused)
     {
-        LogRel2(("UIFrameBuffer::NotifyUpdate: Ignored!\n"));
+        LogRel2(("UIFrameBuffer::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
+                 (unsigned long)uX, (unsigned long)uY,
+                 (unsigned long)uWidth, (unsigned long)uHeight));
 
         /* Unlock access to frame-buffer: */
         unlock();
@@ -314,7 +322,9 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
 
     /* Widget update is NOT thread-safe and *seems* never will be,
      * We have to notify machine-view with the async-signal to perform update operation. */
-    LogRel2(("UIFrameBuffer::NotifyUpdate: Sending to async-handler...\n"));
+    LogRel2(("UIFrameBuffer::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler..\n",
+             (unsigned long)uX, (unsigned long)uY,
+             (unsigned long)uWidth, (unsigned long)uHeight));
     emit sigNotifyUpdate(uX, uY, uWidth, uHeight);
 
     /* Unlock access to frame-buffer: */
@@ -335,13 +345,11 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
  */
 STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pfSupported)
 {
-    LogRel2(("UIFrameBuffer::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu\n",
-             (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
-
     /* Make sure result pointer is valid: */
     if (!pfSupported)
     {
-        LogRel2(("UIFrameBuffer::IsVideoModeSupported: Invalid pfSupported pointer!\n"));
+        LogRel2(("UIFrameBuffer::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Invalid pfSupported pointer!\n",
+                 (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
 
         return E_POINTER;
     }
@@ -352,7 +360,8 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
     /* Make sure frame-buffer is used: */
     if (m_fIsMarkedAsUnused)
     {
-        LogRel2(("UIFrameBuffer::IsVideoModeSupported: Ignored!\n"));
+        LogRel2(("UIFrameBuffer::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Ignored!\n",
+                 (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
 
         /* Unlock access to frame-buffer: */
         unlock();
@@ -372,8 +381,8 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
         && (uHeight > (ULONG)screenSize.height())
         && (uHeight > (ULONG)height()))
         *pfSupported = FALSE;
-
-    LogRel2(("UIFrameBuffer::IsVideoModeSupported: %s\n", *pfSupported ? "TRUE" : "FALSE"));
+    LogRel2(("UIFrameBuffer::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Supported=%s\n",
+             (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight, *pfSupported ? "TRUE" : "FALSE"));
 
     /* Unlock access to frame-buffer: */
     unlock();
@@ -404,13 +413,11 @@ STDMETHODIMP UIFrameBuffer::GetVisibleRegion(BYTE *pRectangles, ULONG uCount, UL
  */
 STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
 {
-    LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu\n",
-             (unsigned long)uCount));
-
     /* Make sure rectangles were passed: */
     if (!pRectangles)
     {
-        LogRel2(("UIFrameBuffer::SetVisibleRegion: Invalid pRectangles pointer!\n"));
+        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Invalid pRectangles pointer!\n",
+                 (unsigned long)uCount));
 
         return E_POINTER;
     }
@@ -421,7 +428,8 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
     /* Make sure frame-buffer is used: */
     if (m_fIsMarkedAsUnused)
     {
-        LogRel2(("UIFrameBuffer::SetVisibleRegion: Ignored!\n"));
+        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Ignored!\n",
+                 (unsigned long)uCount));
 
         /* Unlock access to frame-buffer: */
         unlock();
@@ -450,7 +458,8 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
     /* We are directly updating synchronous visible-region: */
     m_syncVisibleRegion = region;
     /* And send async-signal to update asynchronous one: */
-    LogRel2(("UIFrameBuffer::SetVisibleRegion: Sending to async-handler...\n"));
+    LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Sending to async-handler..\n",
+             (unsigned long)uCount));
     emit sigSetVisibleRegion(region);
 
     /* Unlock access to frame-buffer: */
@@ -475,8 +484,6 @@ STDMETHODIMP UIFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
  */
 STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pData)
 {
-    LogRel2(("UIFrameBuffer::Notify3DEvent\n"));
-
     /* Lock access to frame-buffer: */
     lock();
 

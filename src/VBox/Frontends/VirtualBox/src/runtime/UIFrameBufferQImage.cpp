@@ -53,6 +53,14 @@ UIFrameBufferQImage::UIFrameBufferQImage(UIMachineView *pMachineView)
 
 void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
 {
+    LogRel(("UIFrameBufferQImage::resizeEvent: "
+            "Format=%lu, BitsPerPixel=%lu, BytesPerLine=%lu, Size=%lux%lu\n",
+            (unsigned long)pEvent->pixelFormat(),
+            (unsigned long)pEvent->bitsPerPixel(),
+            (unsigned long)pEvent->bytesPerLine(),
+            (unsigned long)pEvent->width(),
+            (unsigned long)pEvent->height()));
+
     /* Invalidate visible-region if necessary: */
     if (m_pMachineView->machineLogic()->visualStateType() == UIVisualStateType_Seamless &&
         (m_width != pEvent->width() || m_height != pEvent->height()))
@@ -116,6 +124,7 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
         if (!bFallback)
         {
             /* Finally compose image using VRAM directly: */
+            LogRel(("UIFrameBufferQImage::resizeEvent: Resizing to directly use VGA device content..\n"));
             m_img = QImage((uchar *)pEvent->VRAM(), m_width, m_height, bitsPerLine / 8, format);
             m_uPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
             m_bUsesGuestVRAM = true;
@@ -127,14 +136,7 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
     /* Fallback if requested: */
     if (bFallback)
     {
-        LogRelFlow(("UIFrameBufferQImage::resizeEvent: "
-                    "Going fallback due to frame-buffer format become invalid: "
-                    "Format=%lu, BitsPerPixel=%lu, BytesPerLine=%lu, Size=%lux%lu\n",
-                    (unsigned long)pEvent->pixelFormat(),
-                    (unsigned long)pEvent->bitsPerPixel(),
-                    (unsigned long)pEvent->bytesPerLine(),
-                    (unsigned long)pEvent->width(),
-                    (unsigned long)pEvent->height()));
+        LogRel(("UIFrameBufferQImage::resizeEvent: Resizing to FALLBACK buffer due to format is invalid..\n"));
         goFallback();
     }
 
@@ -148,6 +150,13 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
 
 void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
 {
+    LogRel2(("UIFrameBufferQImage::paintEvent: "
+             "Origin=%lux%lu, Size=%lux%lu\n",
+             (unsigned long)pEvent->rect().x(),
+             (unsigned long)pEvent->rect().y(),
+             (unsigned long)pEvent->rect().width(),
+             (unsigned long)pEvent->rect().height()));
+
     /* On mode switch the enqueued paint event may still come
      * while the view is already null (before the new view gets set),
      * ignore paint event in that case. */
@@ -176,9 +185,9 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
         && machineState != KMachineState_Stuck
         )
     {
-        LogRelFlow(("UIFrameBufferQImage::paintEvent: "
-                    "Going fallback due to machine-state become invalid: "
-                    "%d.\n", (int)machineState));
+        LogRel2(("UIFrameBufferQImage::paintEvent: "
+                 "Going fallback due to machine-state become invalid: "
+                 "%d.\n", (int)machineState));
         goFallback();
     }
 
@@ -200,7 +209,7 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
 void UIFrameBufferQImage::paintDefault(QPaintEvent *pEvent)
 {
     /* Get rectangle to paint: */
-    QRect paintRect = pEvent->rect().intersected(m_img.rect());
+    QRect paintRect = pEvent->rect().intersected(m_img.rect()).intersected(m_pMachineView->viewport()->geometry());
     if (paintRect.isEmpty())
         return;
 
@@ -216,7 +225,7 @@ void UIFrameBufferQImage::paintDefault(QPaintEvent *pEvent)
 void UIFrameBufferQImage::paintSeamless(QPaintEvent *pEvent)
 {
     /* Get rectangle to paint: */
-    QRect paintRect = pEvent->rect().intersected(m_img.rect());
+    QRect paintRect = pEvent->rect().intersected(m_img.rect()).intersected(m_pMachineView->viewport()->geometry());
     if (paintRect.isEmpty())
         return;
 
@@ -280,7 +289,7 @@ void UIFrameBufferQImage::paintScale(QPaintEvent *pEvent)
     QImage &sourceImage = scaledImage.isNull() ? m_img : scaledImage;
 
     /* Get rectangle to paint: */
-    QRect paintRect = pEvent->rect().intersected(sourceImage.rect());
+    QRect paintRect = pEvent->rect().intersected(sourceImage.rect()).intersected(m_pMachineView->viewport()->geometry());
     if (paintRect.isEmpty())
         return;
 
