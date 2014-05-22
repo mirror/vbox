@@ -483,6 +483,8 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
 
 bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
 {
+    printf("UIMachineSettingsUSB::validate\n");
+
     Q_UNUSED(messages);
 
     /* Pass by default: */
@@ -795,9 +797,9 @@ void UIMachineSettingsUSB::prepareValidation()
 {
     /* Prepare validation: */
     connect(mGbUSB, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
-    connect(mRbUSB1, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
-    connect(mRbUSB2, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
-    connect(mRbUSB3, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+    connect(mRbUSB1, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
+    connect(mRbUSB2, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
+    connect(mRbUSB3, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
 }
 
 void UIMachineSettingsUSB::addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fIsNew)
