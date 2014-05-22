@@ -130,7 +130,7 @@ public:
     bool isHWVirtExEnabled() const;
     bool isHIDEnabled() const;
     KChipsetType chipsetType() const;
-    void setOHCIEnabled(bool fEnabled);
+    void setUSBEnabled(bool fEnabled);
 
 protected:
 
@@ -210,7 +210,7 @@ private:
     uint m_uMaxGuestCPUExecCap;
 
     /* Variable: Correlation stuff: */
-    bool m_fOHCIEnabled;
+    bool m_fIsUSBEnabled;
 
     /* Cache: */
     UICacheSettingsMachineSystem m_cache;

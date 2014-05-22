@@ -87,19 +87,19 @@ struct UIDataSettingsMachineUSB
     /* Default constructor: */
     UIDataSettingsMachineUSB()
         : m_fUSBEnabled(false)
-        , m_fEHCIEnabled(false) {}
+        , m_USBControllerType(KUSBControllerType_Null) {}
     /* Functions: */
     bool equal(const UIDataSettingsMachineUSB &other) const
     {
         return (m_fUSBEnabled == other.m_fUSBEnabled) &&
-               (m_fEHCIEnabled == other.m_fEHCIEnabled);
+               (m_USBControllerType == other.m_USBControllerType);
     }
     /* Operators: */
     bool operator==(const UIDataSettingsMachineUSB &other) const { return equal(other); }
     bool operator!=(const UIDataSettingsMachineUSB &other) const { return !equal(other); }
     /* Variables: */
     bool m_fUSBEnabled;
-    bool m_fEHCIEnabled;
+    KUSBControllerType m_USBControllerType;
 };
 typedef UISettingsCachePool<UIDataSettingsMachineUSB, UICacheSettingsMachineUSBFilter> UICacheSettingsMachineUSB;
 
@@ -120,7 +120,7 @@ public:
 
     UIMachineSettingsUSB();
 
-    bool isOHCIEnabled() const;
+    bool isUSBEnabled() const;
 
 protected:
 

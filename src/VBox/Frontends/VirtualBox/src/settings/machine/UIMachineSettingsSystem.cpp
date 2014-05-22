@@ -36,7 +36,7 @@
 UIMachineSettingsSystem::UIMachineSettingsSystem()
     : m_uMinGuestCPU(0), m_uMaxGuestCPU(0)
     , m_uMinGuestCPUExecCap(0), m_uMedGuestCPUExecCap(0), m_uMaxGuestCPUExecCap(0)
-    , m_fOHCIEnabled(false)
+    , m_fIsUSBEnabled(false)
 {
     /* Prepare: */
     prepare();
@@ -57,14 +57,14 @@ KChipsetType UIMachineSettingsSystem::chipsetType() const
     return (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt();
 }
 
-void UIMachineSettingsSystem::setOHCIEnabled(bool fEnabled)
+void UIMachineSettingsSystem::setUSBEnabled(bool fEnabled)
 {
-    /* Make sure OHCI status has changed: */
-    if (m_fOHCIEnabled == fEnabled)
+    /* Make sure USB status has changed: */
+    if (m_fIsUSBEnabled == fEnabled)
         return;
 
-    /* Update OHCI status value: */
-    m_fOHCIEnabled = fEnabled;
+    /* Update USB status value: */
+    m_fIsUSBEnabled = fEnabled;
 
     /* Revalidate: */
     revalidate();
@@ -324,8 +324,8 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
                 "It will be done automatically if you confirm your changes.");
         }
 
-        /* HID vs OHCI test: */
-        if (isHIDEnabled() && !m_fOHCIEnabled)
+        /* HID vs USB test: */
+        if (isHIDEnabled() && !m_fIsUSBEnabled)
         {
             message.second << tr(
                 "USB controller emulation is not currently enabled on the USB page. "

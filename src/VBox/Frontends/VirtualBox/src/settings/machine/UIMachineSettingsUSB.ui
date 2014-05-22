@@ -22,7 +22,7 @@
     <height>328</height>
    </rect>
   </property>
-  <layout class="QGridLayout" >
+  <layout class="QGridLayout" columnstretch="0,1,0">
    <item row="0" column="0" colspan="2" >
     <widget class="QCheckBox" name="mGbUSB" >
      <property name="whatsThis" >
@@ -47,14 +47,14 @@
      <property name="sizeHint" >
       <size>
        <width>20</width>
-       <height>20</height>
+       <height>0</height>
       </size>
      </property>
     </spacer>
    </item>
-   <item row="1" column="1" >
-    <widget class="QWidget" native="1" name="mUSBChild" >
-     <layout class="QGridLayout" >
+   <item row="1" column="1" colspan="2" >
+    <widget class="QWidget" name="mUSBChild" >
+     <layout class="QVBoxLayout" >
       <property name="leftMargin" >
        <number>0</number>
       </property>
@@ -67,17 +67,55 @@
       <property name="bottomMargin" >
        <number>0</number>
       </property>
-      <item row="0" column="0" >
-       <widget class="QCheckBox" name="mCbUSB2" >
-        <property name="whatsThis" >
-         <string>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</string>
-        </property>
-        <property name="text" >
-         <string>Enable USB 2.0 (E&amp;HCI) Controller</string>
-        </property>
+      <item>
+       <widget class="QWidget" native="1" name="mRbContainer" >
+        <layout class="QVBoxLayout">
+         <property name="leftMargin" >
+          <number>0</number>
+         </property>
+         <property name="topMargin" >
+          <number>0</number>
+         </property>
+         <property name="rightMargin" >
+          <number>0</number>
+         </property>
+         <property name="bottomMargin" >
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QRadioButton" name="mRbUSB1">
+           <property name="whatsThis">
+            <string>When checked, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</string>
+           </property>
+           <property name="text">
+            <string>USB &amp;1.0 (OHCI) Controller</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="mRbUSB2">
+           <property name="whatsThis">
+            <string>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</string>
+           </property>
+           <property name="text">
+            <string>USB &amp;2.0 (EHCI) Controller</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="mRbUSB3">
+           <property name="whatsThis">
+            <string>When checked, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</string>
+           </property>
+           <property name="text">
+            <string>USB &amp;3.0 (xHCI) Controller</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
-      <item row="1" column="0" >
+      <item>
        <widget class="QILabelSeparator" name="mGbUSBFilters" >
         <property name="text" >
          <string>USB Device &amp;Filters</string>
@@ -87,7 +125,7 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0" >
+      <item>
        <widget class="QWidget" native="1" name="mWtFilterHandler" >
         <layout class="QHBoxLayout" >
          <property name="leftMargin" >

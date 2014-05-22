@@ -943,7 +943,7 @@ void UISettingsDialogMachine::recorrelate(UISettingsPage *pSettingsPage)
             UIMachineSettingsUSB *pUsbPage = qobject_cast<UIMachineSettingsUSB*>(pSettingsPage);
             UIMachineSettingsSystem *pSystemPage = qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(MachineSettingsPageType_System));
             if (pUsbPage && pSystemPage)
-                pSystemPage->setOHCIEnabled(pUsbPage->isOHCIEnabled());
+                pSystemPage->setUSBEnabled(pUsbPage->isUSBEnabled());
             break;
         }
         default:
