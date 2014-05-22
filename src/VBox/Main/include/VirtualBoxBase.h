@@ -381,6 +381,19 @@ public:
     } while (0)
 
 /**
+ * Checks that the given pointer to an argument is valid and returns
+ * E_POINTER + extended error info otherwise.
+ * @param arg   Pointer argument.
+ */
+#define CheckComArgPointerValid(arg) \
+    do { \
+        if (RT_UNLIKELY(!RT_VALID_PTR(arg))) \
+            return setError(E_POINTER, \
+                tr("Argument %s points to invalid memory location (%p)"), \
+                #arg, (void *)(arg)); \
+    } while (0)
+
+/**
  * Checks that safe array argument is not NULL and returns E_INVALIDARG +
  * extended error info on failure.
  * @param arg   Input safe array argument (strings, interface pointers...)
