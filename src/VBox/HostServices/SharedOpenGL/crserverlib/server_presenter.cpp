@@ -5109,13 +5109,6 @@ int CrPMgrLoadState(PSSMHANDLE pSSM, uint32_t version)
         CR_FRAMEBUFFER *pFb = CrPMgrFbGet(iScreen);
         Assert(pFb);
 
-        rc = CrFbUpdateBegin(pFb);
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("CrFbUpdateBegin failed %d", rc));
-            return rc;
-        }
-
         VBVAINFOSCREEN Screen;
 
         Screen.u32ViewIndex = iScreen;
@@ -5168,6 +5161,9 @@ int CrPMgrLoadState(PSSMHANDLE pSSM, uint32_t version)
                 WARN(("not expected offVram"));
                 Screen.u32StartOffset = offVram;
             }
+
+            rc = CrFbLoadState(pFb, pSSM, version);
+            AssertRCReturn(rc, rc);
 
             if (version >= SHCROGL_SSM_VERSION_WITH_SCREEN_MAP)
             {
