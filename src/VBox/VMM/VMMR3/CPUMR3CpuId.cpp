@@ -566,7 +566,19 @@ bool cpumR3CpuIdGetLeafLegacy(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, uint32_
  */
 static PCPUMCPUIDLEAF cpumR3CpuIdEnsureSpace(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t cLeaves)
 {
-    uint32_t cAllocated = RT_ALIGN(cLeaves, 16);
+    uint32_t cAllocated;
+    if (!pVM)
+        cAllocated = RT_ALIGN(cLeaves, 16);
+    else
+    {
+        /*
+         * We're using the hyper heap now, but when the arrays were copied over to it from
+         * the host-context heap, we only copy the exact size and not the ensured size.
+         * See @bugref{7270}.
+         */
+        cAllocated = cLeaves;
+    }
+
     if (cLeaves + 1 > cAllocated)
     {
         void *pvNew;
@@ -584,12 +596,10 @@ static PCPUMCPUIDLEAF cpumR3CpuIdEnsureSpace(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves,
                 *ppaLeaves = NULL;
                 pVM->cpum.s.GuestInfo.paCpuIdLeavesR0 = NIL_RTR0PTR;
                 pVM->cpum.s.GuestInfo.paCpuIdLeavesRC = NIL_RTRCPTR;
+                LogRel(("CPUM: cpumR3CpuIdEnsureSpace: MMR3HyperRealloc failed. rc=%Rrc\n", rc));
                 return NULL;
             }
-
-            /* Update the R0 and RC pointers. */
-            pVM->cpum.s.GuestInfo.paCpuIdLeavesR0 = MMHyperR3ToR0(pVM, *ppaLeaves);
-            pVM->cpum.s.GuestInfo.paCpuIdLeavesRC = MMHyperR3ToRC(pVM, *ppaLeaves);
+            *ppaLeaves = (PCPUMCPUIDLEAF)pvNew;
         }
         else
 #endif
@@ -601,9 +611,20 @@ static PCPUMCPUIDLEAF cpumR3CpuIdEnsureSpace(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves,
                 *ppaLeaves = NULL;
                 return NULL;
             }
+            *ppaLeaves = (PCPUMCPUIDLEAF)pvNew;
         }
-        *ppaLeaves   = (PCPUMCPUIDLEAF)pvNew;
     }
+
+#ifndef IN_VBOX_CPU_REPORT
+    /* Update the R0 and RC pointers. */
+    if (pVM)
+    {
+        Assert(ppaLeaves == &pVM->cpum.s.GuestInfo.paCpuIdLeavesR3);
+        pVM->cpum.s.GuestInfo.paCpuIdLeavesR0 = MMHyperR3ToR0(pVM, *ppaLeaves);
+        pVM->cpum.s.GuestInfo.paCpuIdLeavesRC = MMHyperR3ToRC(pVM, *ppaLeaves);
+    }
+#endif
+
     return *ppaLeaves;
 }
 

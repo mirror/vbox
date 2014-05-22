@@ -306,7 +306,18 @@ static uint32_t cpumR3MsrRangesBinSearch(PCCPUMMSRRANGE paMsrRanges, uint32_t cM
  */
 static PCPUMMSRRANGE cpumR3MsrRangesEnsureSpace(PVM pVM, PCPUMMSRRANGE *ppaMsrRanges, uint32_t cMsrRanges, uint32_t cNewRanges)
 {
-    uint32_t cMsrRangesAllocated = RT_ALIGN_32(cMsrRanges, 16);
+    uint32_t cMsrRangesAllocated;
+    if (!pVM)
+        cMsrRangesAllocated = RT_ALIGN_32(cMsrRanges, 16);
+    else
+    {
+        /*
+         * We're using the hyper heap now, but when the range array was copied over to it from
+         * the host-context heap, we only copy the exact size and not the ensured size.
+         * See @bugref{7270}.
+         */
+        cMsrRangesAllocated = cMsrRanges;
+    }
     if (cMsrRangesAllocated < cMsrRanges + cNewRanges)
     {
         void    *pvNew;
@@ -324,12 +335,10 @@ static PCPUMMSRRANGE cpumR3MsrRangesEnsureSpace(PVM pVM, PCPUMMSRRANGE *ppaMsrRa
                 *ppaMsrRanges = NULL;
                 pVM->cpum.s.GuestInfo.paMsrRangesR0 = NIL_RTR0PTR;
                 pVM->cpum.s.GuestInfo.paMsrRangesRC = NIL_RTRCPTR;
+                LogRel(("CPUM: cpumR3MsrRangesEnsureSpace: MMR3HyperRealloc failed. rc=%Rrc\n", rc));
                 return NULL;
             }
-
-            pVM->cpum.s.GuestInfo.paMsrRangesR0 = MMHyperR3ToR0(pVM, *ppaMsrRanges);
-            pVM->cpum.s.GuestInfo.paMsrRangesR0 = MMHyperR3ToRC(pVM, *ppaMsrRanges);
-            /** @todo Update R0 and RC pointers here?  */
+            *ppaMsrRanges = (PCPUMMSRRANGE)pvNew;
         }
         else
         {
@@ -343,6 +352,15 @@ static PCPUMMSRRANGE cpumR3MsrRangesEnsureSpace(PVM pVM, PCPUMMSRRANGE *ppaMsrRa
         }
         *ppaMsrRanges = (PCPUMMSRRANGE)pvNew;
     }
+
+    if (pVM)
+    {
+        /* Update R0 and RC pointers. */
+        Assert(ppaMsrRanges == &pVM->cpum.s.GuestInfo.paMsrRangesR3);
+        pVM->cpum.s.GuestInfo.paMsrRangesR0 = MMHyperR3ToR0(pVM, *ppaMsrRanges);
+        pVM->cpum.s.GuestInfo.paMsrRangesRC = MMHyperR3ToRC(pVM, *ppaMsrRanges);
+    }
+
     return *ppaMsrRanges;
 }
 
