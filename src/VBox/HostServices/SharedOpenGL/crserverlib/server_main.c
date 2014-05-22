@@ -82,7 +82,7 @@ DECLINLINE(CRClient*) crVBoxServerClientById(uint32_t u32ClientID)
     return NULL;
 }
 
-DECLINLINE(int32_t) crVBoxServerClientGet(uint32_t u32ClientID, CRClient **ppClient)
+int32_t crVBoxServerClientGet(uint32_t u32ClientID, CRClient **ppClient)
 {
     CRClient *pClient = NULL;
 
@@ -1837,6 +1837,9 @@ static int32_t crVBoxServerSaveStatePerform(PSSMHANDLE pSSM)
         }
     }
 
+    rc = crServerPendSaveState(pSSM);
+    AssertRCReturn(rc, rc);
+
     rc = CrPMgrSaveState(pSSM);
     AssertRCReturn(rc, rc);
 
@@ -2731,6 +2734,9 @@ static int32_t crVBoxServerLoadStatePerform(PSSMHANDLE pSSM, uint32_t version)
     //crServerDispatchMakeCurrent(-1, 0, -1);
 
     cr_server.curClient = NULL;
+
+    rc = crServerPendLoadState(pSSM, version);
+    AssertRCReturn(rc, rc);
 
     if (version >= SHCROGL_SSM_VERSION_WITH_SCREEN_INFO)
     {
@@ -3646,7 +3652,6 @@ static int crVBoxCrCmdLoadClients(PSSMHANDLE pSSM, uint32_t u32Version)
     return VINF_SUCCESS;
 }
 
-
 static DECLCALLBACK(int) crVBoxCrCmdSaveState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM)
 {
     int rc = VINF_SUCCESS;
@@ -4310,11 +4315,11 @@ int32_t crVBoxServerHgcmDisable(VBOXCRCMDCTL_HGCMDISABLE_DATA *pData)
 {
     Assert(!cr_server.fCrCmdEnabled);
 
-    if (cr_server.numClients)
-    {
-        WARN(("cr_server.numClients(%d) is not NULL", cr_server.numClients));
-        return VERR_INVALID_STATE;
-    }
+    Assert(!cr_server.numClients);
+
+    crVBoxServerRemoveAllClients();
+
+    CRASSERT(!cr_server.numClients);
 
     crVBoxServerDefaultContextClear();
 

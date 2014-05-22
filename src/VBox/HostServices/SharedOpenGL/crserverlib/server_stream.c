@@ -418,21 +418,131 @@ getNextClient(GLboolean block)
 typedef struct CR_SERVER_PENDING_MSG
 {
     RTLISTNODE Node;
+    uint32_t cbMsg;
     CRMessage Msg;
 } CR_SERVER_PENDING_MSG;
 
 static int crServerPendMsg(CRConnection *conn, const CRMessage *msg, int cbMsg)
 {
-    CR_SERVER_PENDING_MSG *pMsg = (CR_SERVER_PENDING_MSG*)RTMemAlloc(cbMsg + RT_OFFSETOF(CR_SERVER_PENDING_MSG, Msg));
+    CR_SERVER_PENDING_MSG *pMsg;
+
+    if (!cbMsg)
+    {
+        WARN(("cbMsg is null!"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    pMsg = (CR_SERVER_PENDING_MSG*)RTMemAlloc(cbMsg + RT_OFFSETOF(CR_SERVER_PENDING_MSG, Msg));
     if (!pMsg)
     {
         WARN(("RTMemAlloc failed"));
         return VERR_NO_MEMORY;
     }
 
+    pMsg->cbMsg = cbMsg;
+
     memcpy(&pMsg->Msg, msg, cbMsg);
 
     RTListAppend(&conn->PendingMsgList, &pMsg->Node);
+
+    return VINF_SUCCESS;
+}
+
+int crServerPendSaveState(PSSMHANDLE pSSM)
+{
+    int i, rc;
+
+    for (i = 0; i < cr_server.numClients; i++)
+    {
+        CR_SERVER_PENDING_MSG *pIter;
+        CRClient *pClient = cr_server.clients[i];
+        CRConnection *pConn;
+        if (!pClient || !pClient->conn)
+        {
+            WARN(("invalid client state"));
+            continue;
+        }
+
+        pConn = pClient->conn;
+
+        if (RTListIsEmpty(&pConn->PendingMsgList))
+            continue;
+
+        CRASSERT(pConn->u32ClientID);
+
+        rc = SSMR3PutU32(pSSM, pConn->u32ClientID);
+        AssertRCReturn(rc, rc);
+
+        RTListForEach(&pConn->PendingMsgList, pIter, CR_SERVER_PENDING_MSG, Node)
+        {
+            CRASSERT(pIter->cbMsg);
+
+            rc = SSMR3PutU32(pSSM, pIter->cbMsg);
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3PutMem(pSSM, &pIter->Msg, pIter->cbMsg);
+            AssertRCReturn(rc, rc);
+        }
+
+        rc = SSMR3PutU32(pSSM, 0);
+        AssertRCReturn(rc, rc);
+    }
+
+    rc = SSMR3PutU32(pSSM, 0);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+int crServerPendLoadState(PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    int rc;
+    uint32_t u32;
+    CRClient *pClient;
+
+    if (u32Version < SHCROGL_SSM_VERSION_WITH_PEND_CMD_INFO)
+        return VINF_SUCCESS;
+
+    rc = SSMR3GetU32(pSSM, &u32);
+    AssertRCReturn(rc, rc);
+
+    if (!u32)
+        return VINF_SUCCESS;
+
+    do {
+        rc = crVBoxServerClientGet(u32, &pClient);
+        AssertRCReturn(rc, rc);
+
+        for(;;)
+        {
+            CR_SERVER_PENDING_MSG *pMsg;
+
+            rc = SSMR3GetU32(pSSM, &u32);
+            AssertRCReturn(rc, rc);
+
+            if (!u32)
+                break;
+
+            pMsg = (CR_SERVER_PENDING_MSG*)RTMemAlloc(u32 + RT_OFFSETOF(CR_SERVER_PENDING_MSG, Msg));
+            if (!pMsg)
+            {
+                WARN(("RTMemAlloc failed"));
+                return VERR_NO_MEMORY;
+            }
+
+            pMsg->cbMsg = u32;
+            rc = SSMR3GetMem(pSSM, &pMsg->Msg, u32);
+            AssertRCReturn(rc, rc);
+
+            RTListAppend(&pClient->conn->PendingMsgList, &pMsg->Node);
+        }
+
+        rc = SSMR3GetU32(pSSM, &u32);
+        AssertRCReturn(rc, rc);
+    } while (u32);
+
+    rc = SSMR3GetU32(pSSM, &u32);
+    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
