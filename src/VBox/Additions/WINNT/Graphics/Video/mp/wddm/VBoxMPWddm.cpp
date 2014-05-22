@@ -1323,6 +1323,9 @@ NTSTATUS DxgkDdiStopDevice(
     NTSTATUS Status = STATUS_SUCCESS;
 
 #ifdef VBOX_WITH_CROGL
+    if (pDevExt->u32CrConDefaultClientID)
+        VBoxMpCrCtlConDisconnect(pDevExt, &pDevExt->CrCtlCon, pDevExt->u32CrConDefaultClientID);
+
     VBoxMpCrShgsmiTransportTerm(&pDevExt->CrHgsmiTransport);
 #endif
 

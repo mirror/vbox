@@ -268,6 +268,12 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
 
     NOREF(pvClient);
 
+    if (g_u32fCrHgcmDisabled)
+    {
+        WARN(("connect not expected"));
+        return VERR_INVALID_STATE;
+    }
+
     Log(("SHARED_CROPENGL svcConnect: u32ClientID = %d\n", u32ClientID));
 
     rc = crVBoxServerAddClient(u32ClientID);
@@ -280,6 +286,12 @@ static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvCl
     int rc = VINF_SUCCESS;
 
     NOREF(pvClient);
+
+    if (g_u32fCrHgcmDisabled)
+    {
+        WARN(("disconnect not expected"));
+        return VINF_SUCCESS;
+    }
 
     Log(("SHARED_CROPENGL svcDisconnect: u32ClientID = %d\n", u32ClientID));
 
