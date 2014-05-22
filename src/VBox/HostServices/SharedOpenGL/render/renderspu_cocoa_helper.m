@@ -1226,16 +1226,16 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     
     if ([self lockFocusIfCanDraw])
     {
-        [self vboxPresent:pCompositor];
-        if (pCompositor != &TmpCompositor)
-            renderspuVBoxCompositorRelease(m_pWinInfo);
-            
+        [self vboxPresent:pCompositor];            
         [self unlockFocus];
     }
     else
     {
         [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(vboxTryDrawUI) userInfo:nil repeats:NO];
     }
+    
+    if (pCompositor != &TmpCompositor)
+        renderspuVBoxCompositorRelease(m_pWinInfo);
 }
 
 - (void)swapFBO
