@@ -4649,7 +4649,9 @@ static int updateDisplayAll(PVGASTATE pThis)
 static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
 {
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
-    PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
+    /* this can be called from CmdVbva thread as a result of VBVA disable,
+     * there should be no problem with calling it from there afaics */
+//    PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
 
     /* This is called both in VBVA mode and normal modes. */
 

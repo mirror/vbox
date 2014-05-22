@@ -277,11 +277,11 @@ RTDECL(void) VBoxVBVAExDisable(PVBVAEXBUFFERCONTEXT pCtx,
 {
     LogFlowFunc(("\n"));
 
+    vboxVBVAExCtlSubmitEnableDisable(pCtx, pHGSMICtx, false);
+
     pCtx->fHwBufferOverflow = false;
     pCtx->pRecord           = NULL;
     pCtx->pVBVA             = NULL;
-
-    vboxVBVAExCtlSubmitEnableDisable(pCtx, pHGSMICtx, false);
 
     return;
 }
