@@ -483,8 +483,6 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
 
 bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
 {
-    printf("UIMachineSettingsUSB::validate\n");
-
     Q_UNUSED(messages);
 
     /* Pass by default: */
