@@ -149,6 +149,10 @@ typedef enum
     VBVAEXHOST_DATA_TYPE_HOSTCTL,
     VBVAEXHOST_DATA_TYPE_GUESTCTL
 } VBVAEXHOST_DATA_TYPE;
+
+static DECLCALLBACK(int) vdmaVBVANotifyDisable(PVGASTATE pVGAState);
+
+
 static VBVAEXHOST_DATA_TYPE VBoxVBVAExHPDataGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppCmd, uint32_t *pcbCmd);
 
 static void VBoxVBVAExHPDataCompleteCmd(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint32_t cbCmd);
@@ -1279,14 +1283,18 @@ static int vdmaVBVADisableProcess(struct VBOXVDMAHOST *pVdma, bool fDoHgcmEnable
     {
         if (fDoHgcmEnable)
         {
+            PVGASTATE pVGAState = pVdma->pVGAState;
+
             /* disable is a bit tricky
              * we need to ensure the host ctl commands do not come out of order
              * and do not come over HGCM channel until after it is enabled */
             rc = vboxVDMACrHgcmHandleEnable(pVdma);
             if (RT_SUCCESS(rc))
-                return rc;
+            {
+                vdmaVBVANotifyDisable(pVGAState);
+                return VINF_SUCCESS;
+            }
 
-            PVGASTATE pVGAState = pVdma->pVGAState;
             VBOXCRCMD_SVRENABLE_INFO Info;
             Info.hCltScr = pVGAState->pDrv;
             Info.pfnCltScrUpdateBegin = pVGAState->pDrv->pfnVBVAUpdateBegin;

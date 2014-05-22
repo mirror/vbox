@@ -967,33 +967,50 @@ static int vboxWddmFreeDisplays(PVBOXMP_DEVEXT pDevExt)
     if (pDevExt->pvVisibleVram)
         VBoxMPCmnUnmapAdapterMemory(VBoxCommonFromDeviceExt(pDevExt), (void**)&pDevExt->pvVisibleVram);
 
-    for (int i = VBoxCommonFromDeviceExt(pDevExt)->cDisplays-1; i >= 0; --i)
+    if (pDevExt->fCmdVbvaEnabled)
     {
-        rc = vboxVbvaDisable(pDevExt, &pDevExt->aSources[i].Vbva);
+        rc = VBoxCmdVbvaDisable(pDevExt, &pDevExt->CmdVbva);
+        if (RT_SUCCESS(rc))
+        {
+            rc = VBoxCmdVbvaDestroy(pDevExt, &pDevExt->CmdVbva);
+            if (RT_FAILURE(rc))
+                WARN(("VBoxCmdVbvaDestroy failed %d", rc));
+        }
+        else
+            WARN(("VBoxCmdVbvaDestroy failed %d", rc));
+
+    }
+    else
+    {
+        for (int i = VBoxCommonFromDeviceExt(pDevExt)->cDisplays-1; i >= 0; --i)
+        {
+            rc = vboxVbvaDisable(pDevExt, &pDevExt->aSources[i].Vbva);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                rc = vboxVbvaDestroy(pDevExt, &pDevExt->aSources[i].Vbva);
+                AssertRC(rc);
+                if (RT_FAILURE(rc))
+                {
+                    /* @todo: */
+                }
+            }
+        }
+
+        vboxVideoAMgrDestroy(pDevExt, &pDevExt->AllocMgr);
+
+        rc = vboxVdmaDisable(pDevExt, &pDevExt->u.primary.Vdma);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-            rc = vboxVbvaDestroy(pDevExt, &pDevExt->aSources[i].Vbva);
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+            vboxWddmWdTerm(pDevExt);
+#endif
+            rc = vboxVdmaDestroy(pDevExt, &pDevExt->u.primary.Vdma);
             AssertRC(rc);
-            if (RT_FAILURE(rc))
-            {
-                /* @todo: */
-            }
         }
     }
 
-    vboxVideoAMgrDestroy(pDevExt, &pDevExt->AllocMgr);
-
-    rc = vboxVdmaDisable(pDevExt, &pDevExt->u.primary.Vdma);
-    AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-#ifdef VBOX_VDMA_WITH_WATCHDOG
-        vboxWddmWdTerm(pDevExt);
-#endif
-        rc = vboxVdmaDestroy(pDevExt, &pDevExt->u.primary.Vdma);
-        AssertRC(rc);
-    }
     return rc;
 }
 
