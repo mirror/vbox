@@ -594,6 +594,8 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_AmdFam10hIbsCtl,
     kCpumMsrRdFn_AmdFam14hIbsBrTarget,
 
+    kCpumMsrRdFn_Gim,
+
     /** End of valid MSR read function indexes. */
     kCpumMsrRdFn_End
 } CPUMMSRRDFN;
@@ -815,6 +817,8 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_AmdFam10hIbsDcPhysAddr,
     kCpumMsrWrFn_AmdFam10hIbsCtl,
     kCpumMsrWrFn_AmdFam14hIbsBrTarget,
+
+    kCpumMsrWrFn_Gim,
 
     /** End of valid MSR write function indexes. */
     kCpumMsrWrFn_End

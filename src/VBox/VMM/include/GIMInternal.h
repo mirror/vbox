@@ -20,9 +20,6 @@
 
 #include <VBox/vmm/gim.h>
 
-#define GIM_SSM_VERSION                 1
-
-
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_gim_int       Internal
@@ -40,13 +37,32 @@ typedef struct GIM
     /** Whether GIM is enabled for this VM or not. */
     bool                             fEnabled;
     /** The provider that is active for this VM. */
-    GIMPROVIDER                      enmProvider;
+    GIMPROVIDERID                    enmProviderId;
+    /** The interface version. */
+    uint32_t                         u32Version;
+
+#if 0
     /** Pointer to the provider's ring-3 hypercall handler. */
     R3PTRTYPE(PFNGIMHYPERCALL)       pfnHypercallR3;
     /** Pointer to the provider's ring-0 hypercall handler. */
     R0PTRTYPE(PFNGIMHYPERCALL)       pfnHypercallR0;
     /** Pointer to the provider's raw-mode context hypercall handler. */
     RCPTRTYPE(PFNGIMHYPERCALL)       pfnHypercallRC;
+
+    /** Pointer to the provider's ring-3 MSR-read handler. */
+    R3PTRTYPE(PFNGIMRDMSR)           pfnReadMsrR3;
+    /** Pointer to the provider's ring-0 MSR-read handler. */
+    R0PTRTYPE(PFNGIMRDMSR)           pfnReadMsrR0;
+    /** Pointer to the provider's raw-mode context MSR-read handler. */
+    RCPTRTYPE(PFNGIMRDMSR)           pfnReadMsrRC;
+
+    /** Pointer to the provider's ring-3 MSR-read handler. */
+    R3PTRTYPE(PFNGIMWDMSR)           pfnWriteMsrR3;
+    /** Pointer to the provider's ring-0 MSR-read handler. */
+    R0PTRTYPE(PFNGIMWDMSR)           pfnWriteMsrRR0;
+    /** Pointer to the provider's raw-mode context MSR-read handler. */
+    RCPTRTYPE(PFNGIMWDMSR)           pfnWriteMsrRRC;
+#endif
 
     union
     {
@@ -57,12 +73,12 @@ typedef struct GIM
         struct
         {
             /** Hypervisor system identity - Minor version number. */
-            uint16_t                 uVersionMinor;
+            uint16_t                 u16HyperIdVersionMinor;
             /** Hypervisor system identity - Major version number. */
-            uint16_t                 uVersionMajor;
-            /** Hypervisor system identify - Service branch (Bits 31-24) and number (Bits
-             *  23-0). */
-            uint32_t                 uVersionService;
+            uint16_t                 u16HyperIdVersionMajor;
+            /** Hypervisor system identify - Build number. */
+            uint32_t                 u32HyperIdBuildNumber;
+
             /** Guest OS identity MSR. */
             uint64_t                 u64GuestOsIdMsr;
             /** Reference TSC page MSR. */
