@@ -583,10 +583,9 @@ HRESULT GuestDnDPrivate::adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) c
     if (FAILED(hr))
         return hr;
 
-    ComPtr<IFramebuffer> pFramebuffer;
     LONG xShift, yShift;
-    hr = pDisplay->GetFramebuffer(uScreenId, pFramebuffer.asOutParam(),
-                                  &xShift, &yShift);
+    hr = pDisplay->GetScreenResolution(uScreenId, NULL, NULL, NULL,
+                                       &xShift, &yShift);
     if (FAILED(hr))
         return hr;
 
