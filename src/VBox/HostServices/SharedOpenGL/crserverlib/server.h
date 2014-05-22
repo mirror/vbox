@@ -475,6 +475,12 @@ int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_BLT_HDR *pCmd, uint32_t cbC
 int8_t crVBoxServerCrCmdClrFillProcess(const VBOXCMDVBVA_CLRFILL_HDR *pCmd, uint32_t cbCmd);
 int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip);
 
+
+int32_t crVBoxServerClientGet(uint32_t u32ClientID, CRClient **ppClient);
+
+int crServerPendSaveState(PSSMHANDLE pSSM);
+int crServerPendLoadState(PSSMHANDLE pSSM, uint32_t u32Version);
+
 //#define VBOX_WITH_CRSERVER_DUMPER
 #ifdef VBOX_WITH_CRSERVER_DUMPER
 void crServerDumpCheckTerm();
