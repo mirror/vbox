@@ -678,9 +678,6 @@ static int cpumR3CollectCpuIdInfoAddOne(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
  */
 int cpumR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves, PCPUMCPUIDLEAF pNewLeaf)
 {
-    PCPUMCPUIDLEAF  paLeaves = *ppaLeaves;
-    uint32_t        cLeaves  = *pcLeaves;
-
     /*
      * Validate input parameters if we are using the hyper heap and use the VM's CPUID arrays.
      */
@@ -692,6 +689,9 @@ int cpumR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves, PC
         ppaLeaves = &pVM->cpum.s.GuestInfo.paCpuIdLeavesR3;
         pcLeaves  = &pVM->cpum.s.GuestInfo.cCpuIdLeaves;
     }
+
+    PCPUMCPUIDLEAF  paLeaves = *ppaLeaves;
+    uint32_t        cLeaves  = *pcLeaves;
 
     /*
      * Validate the new leaf a little.
