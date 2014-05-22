@@ -81,9 +81,7 @@ ifdef VBOX_WITH_DOCS
  endif
 
  ifdef VBOX_WITH_DOCS_CHM
-  VBOX_PATH_BIN_CHM = \
-    $(PATH_STAGE_BIN)/VirtualBox.chm \
-   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm)
+  VBOX_PATH_BIN_CHM = $(PATH_STAGE_BIN)/VirtualBox.chm
  else
   VBOX_PATH_BIN_CHM =
         # do not build
@@ -101,8 +99,6 @@ ifdef VBOX_WITH_DOCS
   	$(VBOX_PATH_BIN_CHM)
 
   ifdef VBOX_WITH_DOCS_TRANSLATIONS
-   VBOX_MANUAL_PACK += \
-   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf)
    OTHERS += \
    	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf)
    ifdef VBOX_WITH_DOCS_CHM
