@@ -953,9 +953,9 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             else if (cpnt.y() > iCh - 1) cpnt.setY(iCh - 1);
 
             /* Determine shifting: */
-            CFramebuffer framebuffer;
             LONG xShift = 0, yShift = 0;
-            session().GetConsole().GetDisplay().GetFramebuffer(uScreenId, framebuffer, xShift, yShift);
+            ULONG dummy;
+            session().GetConsole().GetDisplay().GetScreenResolution(uScreenId, dummy, dummy, dummy, xShift, yShift);
             /* Set shifting: */
             cpnt.setX(cpnt.x() + xShift);
             cpnt.setY(cpnt.y() + yShift);
@@ -1017,9 +1017,9 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
 
     QVector<LONG64> contacts(pTouchEvent->touchPoints().size());
 
-    CFramebuffer framebuffer;
     LONG xShift = 0, yShift = 0;
-    session().GetConsole().GetDisplay().GetFramebuffer(uScreenId, framebuffer, xShift, yShift);
+    ULONG dummy;
+    session().GetConsole().GetDisplay().GetScreenResolution(uScreenId, dummy, dummy, dummy, xShift, yShift);
 
     /* Pass all multi-touch events into guest: */
     int iTouchPointIndex = 0;
