@@ -255,6 +255,8 @@ static void pxtcp_pcb_err(void *, err_t);
 static err_t pxtcp_pcb_forward_outbound(struct pxtcp *, struct pbuf *);
 static void pxtcp_pcb_forward_outbound_close(struct pxtcp *);
 
+static ssize_t pxtcp_sock_send(struct pxtcp *, IOVEC *, size_t);
+
 static void pxtcp_pcb_forward_inbound(struct pxtcp *);
 static void pxtcp_pcb_forward_inbound_close(struct pxtcp *);
 DECLINLINE(int) pxtcp_pcb_forward_inbound_done(const struct pxtcp *);
@@ -1427,13 +1429,6 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
     size_t forwarded;
     int sockerr;
 
-#if defined(MSG_NOSIGNAL)
-    const int send_flags = MSG_NOSIGNAL;
-#else
-    const int send_flags = 0;
-#endif
-
-
     LWIP_ASSERT1(pxtcp->unsent == NULL || pxtcp->unsent == p);
 
     forwarded = 0;
@@ -1444,11 +1439,6 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
 
     qs = p;
     while (qs != NULL) {
-#ifndef RT_OS_WINDOWS
-        struct msghdr mh;
-#else
-        int rc;
-#endif
         IOVEC iov[8];
         const size_t iovsize = sizeof(iov)/sizeof(iov[0]);
         size_t fwd1;
@@ -1463,30 +1453,11 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
             fwd1 += q->len;
         }
 
-#ifndef RT_OS_WINDOWS
-        memset(&mh, 0, sizeof(mh));
-        mh.msg_iov = iov;
-        mh.msg_iovlen = i;
-
-        nsent = sendmsg(pxtcp->sock, &mh, send_flags);
-#else
-        /**
-         * WSASend(,,,DWORD *,,,) - takes SSIZE_T (64bit value) ... so all nsent's
-         * bits should be zeroed before passing to WSASent.
+        /*
+         * TODO: This is where application-level proxy can hook into
+         * to process outbound traffic.
          */
-        nsent = 0;
-        rc = WSASend(pxtcp->sock, iov, (DWORD)i, (DWORD *)&nsent, 0, NULL, NULL);
-        if (rc == SOCKET_ERROR) {
-            /* WSASent reports SOCKET_ERROR and updates error accessible with
-             * WSAGetLastError(). We assign nsent to -1, enforcing code below
-             * to access error in BSD style.
-             */
-            warn("pxtcp_pcb_forward_outbound:WSASend error:%d nsent:%d\n",
-                 WSAGetLastError(),
-                 nsent);
-            nsent = -1;
-       }
-#endif
+        nsent = pxtcp_sock_send(pxtcp, iov, i);
 
         if (nsent == (ssize_t)fwd1) {
             /* successfully sent this chain fragment completely */
@@ -1580,6 +1551,46 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
     }
     return ERR_OK;
 }
+
+
+#if !defined(RT_OS_WINDOWS)
+static ssize_t
+pxtcp_sock_send(struct pxtcp *pxtcp, IOVEC *iov, size_t iovlen)
+{
+    struct msghdr mh;
+    ssize_t nsent;
+
+#ifdef MSG_NOSIGNAL
+    const int send_flags = MSG_NOSIGNAL;
+#else
+    const int send_flags = 0;
+#endif
+
+    memset(&mh, 0, sizeof(mh));
+
+    mh.msg_iov = iov;
+    mh.msg_iovlen = iovlen;
+
+    nsent = sendmsg(pxtcp->sock, &mh, send_flags);
+
+    return nsent;
+}
+#else /* RT_OS_WINDOWS */
+static ssize_t
+pxtcp_sock_send(struct pxtcp *pxtcp, IOVEC *iov, size_t iovlen)
+{
+    DWORD nsent;
+    int status;
+
+    status = WSASend(pxtcp->sock, iov, (DWORD)iovlen, &nsent,
+                     0, NULL, NULL);
+    if (status == SOCKET_ERROR) {
+        nsent = -1;
+    }
+
+    return nsent;
+}
+#endif /* RT_OS_WINDOWS */
 
 
 /**
