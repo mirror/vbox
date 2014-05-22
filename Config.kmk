@@ -1763,7 +1763,7 @@ VBOX_PYLINT_FLAGS   := --report=n \
 	--good-names='i,j,k,t,o,c,e,ch,s,_' \
 	$(if-expr !defined(VBOX_WITH_PYLINT_PRE_V1_0),--class-attribute-rgx='(k[abcdefhmnpilorstu]+[A-Z0-9][a-zA-Z0-9_]{0,32}|[A-Z_][A-Z0-9_]{2,32})',) \
        $(if-expr defined(VBOX_WITH_PYLINT_V1_1_PLUS),--disable=C0326,) \
-       $(if-expr defined(VBOX_WITH_PYLINT_V1_2_1_PLUS),--disable=C0330,) \
+       $(if-expr defined(VBOX_WITH_PYLINT_V1_2_1_PLUS),--disable=C0330,W0123) \
 	--disable=W0301,W0511,W0603,W0702,W0703,C0321,R0201,I0011 \
 	--ignored-classes=testdriver.vboxcon \
 
