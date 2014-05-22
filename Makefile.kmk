@@ -59,7 +59,7 @@ OTHER_CLEAN += \
 if  !defined(VBOX_ONLY_ADDITIONS) \
  && !defined(VBOX_ONLY_DOCS) \
  && !defined(VBOX_ONLY_EXTPACKS) \
- && !defined(VBOX_ONLY_TESTSUITE) # -> line 426b ;-)
+ && !defined(VBOX_ONLY_VALIDATIONKIT) # -> line 426b ;-)
 
  if !defined(VBOX_OSE) && defined(VBOX_LICENSE_FILES)
   #
@@ -395,7 +395,7 @@ ifn1of ($(KBUILD_TARGET), linux win)
 
 endif
 
-endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_TESTSUITE
+endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_VALIDATIONKIT
 
 
 ifdef VBOX_ONLY_DOCS
@@ -762,7 +762,7 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
 
 
 #
-# Alias for kmk_time.  Used by both the additions and testsuite build setups.
+# Alias for kmk_time.  Used by both the additions and validation kit build setups.
 #
 VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
 
@@ -1241,229 +1241,229 @@ extpacks-packing:
 # This is currently tailored (hardcoded) for the additions build box just like
 # the additions build above, which it in fact is a copy of.
 #
-testsuite-fetch:
-	+ $(KMK) -C tools fetch VBOX_ONLY_TESTSUITE=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=amd64 BUILD_TARGET=darwin    VBOX_ONLY_TESTSUITE=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=x86   BUILD_TARGET=darwin    VBOX_ONLY_TESTSUITE=1
-#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=amd64 BUILD_TARGET=freebsd   VBOX_ONLY_TESTSUITE=1
-#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=x86   BUILD_TARGET=freebsd   VBOX_ONLY_TESTSUITE=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=amd64 BUILD_TARGET=linux     VBOX_ONLY_TESTSUITE=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86   BUILD_TARGET=linux     VBOX_ONLY_TESTSUITE=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86   BUILD_TARGET=os2       VBOX_ONLY_TESTSUITE=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=solaris BUILD_TARGET_ARCH=amd64 BUILD_TARGET=solaris   VBOX_ONLY_TESTSUITE=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=solaris BUILD_TARGET_ARCH=x86   BUILD_TARGET=solaris   VBOX_ONLY_TESTSUITE=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=win     BUILD_TARGET_ARCH=amd64 BUILD_TARGET=win       VBOX_ONLY_TESTSUITE=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=win     BUILD_TARGET_ARCH=x86   BUILD_TARGET=win       VBOX_ONLY_TESTSUITE=1
+validationkit-fetch:
+	+ $(KMK) -C tools fetch VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=amd64 BUILD_TARGET=darwin    VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=x86   BUILD_TARGET=darwin    VBOX_ONLY_VALIDATIONKIT=1
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=amd64 BUILD_TARGET=freebsd   VBOX_ONLY_VALIDATIONKIT=1
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=x86   BUILD_TARGET=freebsd   VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=amd64 BUILD_TARGET=linux     VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86   BUILD_TARGET=linux     VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86   BUILD_TARGET=os2       VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=solaris BUILD_TARGET_ARCH=amd64 BUILD_TARGET=solaris   VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=solaris BUILD_TARGET_ARCH=x86   BUILD_TARGET=solaris   VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=win     BUILD_TARGET_ARCH=amd64 BUILD_TARGET=win       VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=win     BUILD_TARGET_ARCH=x86   BUILD_TARGET=win       VBOX_ONLY_VALIDATIONKIT=1
 
 
-testsuite-build: \
-	testsuite-build-rsync-into-vms \
-	testsuite-build-solaris.amd64 \
-	testsuite-build-solaris.x86 \
-	testsuite-build-win.x86 \
-	testsuite-build-win.amd64 \
-	testsuite-build-os2.x86 \
-	testsuite-build-linux.amd64 \
-	testsuite-build-linux.x86 \
-	testsuite-build-freebsd.amd64 \
-	testsuite-build-freebsd.x86 \
-	testsuite-build-darwin.amd64 \
-	testsuite-build-darwin.x86
+validationkit-build: \
+	validationkit-build-rsync-into-vms \
+	validationkit-build-solaris.amd64 \
+	validationkit-build-solaris.x86 \
+	validationkit-build-win.x86 \
+	validationkit-build-win.amd64 \
+	validationkit-build-os2.x86 \
+	validationkit-build-linux.amd64 \
+	validationkit-build-linux.x86 \
+	validationkit-build-freebsd.amd64 \
+	validationkit-build-freebsd.x86 \
+	validationkit-build-darwin.amd64 \
+	validationkit-build-darwin.x86
 
-testsuite-build-rsync-into-vms: \
-		testsuite-build-solaris.rsync-into-vm \
-		testsuite-build-os2.rsync-into-vm
+validationkit-build-rsync-into-vms: \
+		validationkit-build-solaris.rsync-into-vm \
+		validationkit-build-os2.rsync-into-vm
 	$(call MSG_L1,Rsynced the sources + tools into the VMs.)
-.NOTPARALLEL: testsuite-build-rsync-into-vms
+.NOTPARALLEL: validationkit-build-rsync-into-vms
 
 
-VBOX_TESTSUITE_BUILD.amd64 = VBOX_ONLY_TESTSUITE=1 \
+VBOX_VALIDATIONKIT_BUILD.amd64 = VBOX_ONLY_VALIDATIONKIT=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
 	KBUILD_TARGET_ARCH=amd64 BUILD_TARGET_ARCH=amd64 \
 	VBOX_SVN_REV=$(VBOX_SVN_REV)
 
-VBOX_TESTSUITE_BUILD.x86 = VBOX_ONLY_TESTSUITE=1 \
+VBOX_VALIDATIONKIT_BUILD.x86 = VBOX_ONLY_VALIDATIONKIT=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
 	KBUILD_TARGET_ARCH=x86 BUILD_TARGET_ARCH=x86 \
 	VBOX_SVN_REV=$(VBOX_SVN_REV)
 
-# Automatically determine the testsuite build subdir name. Used for figuring
+# Automatically determine the Validation Kit build subdir name. Used for figuring
 # out directory names inside the test suite building VMs.
-VBOX_TESTSUITE_BUILD_SUBDIRNAME := $(lastword $(subst /, ,$(PATH_ROOT)))
+VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME := $(lastword $(subst /, ,$(PATH_ROOT)))
 
 # When building in parallel on a Windows host, make sure we finish the host
 # bit before kicking off any UNIX guest or we'll run into file sharing issues.
 ifeq ($(KBUILD_TARGET),win)
-VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST = testsuite-build-win.x86 testsuite-build-win.amd64
+VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST = validationkit-build-win.x86 validationkit-build-win.amd64
 else
-VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST =
+VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST =
 endif
 
 # ASSUMES the 32-bit edition has been built already. Also for serializing VM access.
-testsuite-build-win.amd64: testsuite-build-win.x86
+validationkit-build-win.amd64: validationkit-build-win.x86
 ifeq ($(KBUILD_TARGET),win)
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.amd64) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 else
-	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/amd64 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_WIN_X86_IP) " echo $@ && cd e:/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_TESTSUITE_BUILD.amd64) all "
-	$(call VBOX_BLD_VM_MSG_END__,Windows/amd64 testsuite)
+	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/amd64 Validation Kit)
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_WIN_X86_IP) " echo $@ && cd e:/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all "
+	$(call VBOX_BLD_VM_MSG_END__,Windows/amd64 Validation Kit)
 endif
 
-testsuite-build-win.x86:
+validationkit-build-win.x86:
 ifeq ($(KBUILD_TARGET),win)
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.x86) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 else
-	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/x86 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_WIN_AMD64_IP) " echo $@ && cd e:/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_TESTSUITE_BUILD.x86) all"
-	$(call VBOX_BLD_VM_MSG_END__,Windows/x86 testsuite)
+	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/x86 Validation Kit)
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_WIN_AMD64_IP) " echo $@ && cd e:/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all"
+	$(call VBOX_BLD_VM_MSG_END__,Windows/x86 Validation Kit)
 endif
 
 ifeq ($(KBUILD_TARGET),solaris)
-testsuite-build-solaris.amd64:
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+validationkit-build-solaris.amd64:
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.amd64) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 
-testsuite-build-solaris.x86:
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86)   all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+validationkit-build-solaris.x86:
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.x86)   all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 
 else
-testsuite-build-solaris.rsync-into-vm: $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude=FetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)
+validationkit-build-solaris.rsync-into-vm: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
+	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude=FetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
 
-testsuite-build-solaris.build-it: testsuite-build-solaris.rsync-into-vm
-	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/amd64 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all"
-	$(call VBOX_BLD_VM_MSG_END__,Solaris/amd64 testsuite)
-	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/x86 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all "
-	$(call VBOX_BLD_VM_MSG_END__,Solaris/x86 testsuite)
+validationkit-build-solaris.build-it: validationkit-build-solaris.rsync-into-vm
+	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/amd64 Validation Kit)
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all"
+	$(call VBOX_BLD_VM_MSG_END__,Solaris/amd64 Validation Kit)
+	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/x86 Validation Kit)
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all "
+	$(call VBOX_BLD_VM_MSG_END__,Solaris/x86 Validation Kit)
 
-testsuite-build-solaris.rsync-out-of-vm: testsuite-build-solaris.build-it
-	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)/out/solaris.x86   out/
-	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
+validationkit-build-solaris.rsync-out-of-vm: validationkit-build-solaris.build-it
+	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/solaris.x86   out/
+	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
-.NOTPARALLEL: testsuite-build-solaris.rsync-into-vm
-.PHONY:       testsuite-build-solaris.rsync-out-of-vm testsuite-build-solaris.rsync-into-vm testsuite-build-solaris.build-it
+.NOTPARALLEL: validationkit-build-solaris.rsync-into-vm
+.PHONY:       validationkit-build-solaris.rsync-out-of-vm validationkit-build-solaris.rsync-into-vm validationkit-build-solaris.build-it
 
-testsuite-build-solaris.amd64: testsuite-build-solaris.rsync-out-of-vm
-testsuite-build-solaris.x86:   testsuite-build-solaris.rsync-out-of-vm
+validationkit-build-solaris.amd64: validationkit-build-solaris.rsync-out-of-vm
+validationkit-build-solaris.x86:   validationkit-build-solaris.rsync-out-of-vm
 endif
 
 ifeq ($(KBUILD_TARGET),os2)
-testsuite-build-os2.x86:
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
-testsuite-build-os2.rsync-into-vm:
+validationkit-build-os2.x86:
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.x86) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
+validationkit-build-os2.rsync-into-vm:
 else # !OS/2
-testsuite-build-os2.rsync-into-vm:
+validationkit-build-os2.rsync-into-vm:
 	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,os2,*) \
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Frontends/**' \
 		'--exclude=src/VBox/VMM/**' \
-		. rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)
+		. rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
 
-testsuite-build-os2.build-it: testsuite-build-os2.rsync-into-vm
-	$(call VBOX_BLD_VM_MSG_BEGIN,OS/2 TestSuite)
-	$(VBOX_KMK_TIME) rsh -l vbox $(VBOX_BLD_VM_OS2_IP) "cd e:\\tinderbox\\$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && e: && kbuild\\bin\\os2.x86\\kmk_ash tools\\env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all packing"
-	$(call VBOX_BLD_VM_MSG_END__,OS/2 TestSuite)
+validationkit-build-os2.build-it: validationkit-build-os2.rsync-into-vm
+	$(call VBOX_BLD_VM_MSG_BEGIN,OS/2 Validation Kit)
+	$(VBOX_KMK_TIME) rsh -l vbox $(VBOX_BLD_VM_OS2_IP) "cd e:\\tinderbox\\$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && e: && kbuild\\bin\\os2.x86\\kmk_ash tools\\env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all packing"
+	$(call VBOX_BLD_VM_MSG_END__,OS/2 Validation Kit)
 
-testsuite-build-os2.rsync-out-of-vm: testsuite-build-os2.build-it
-	$(VBOX_KMK_TIME) rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)/out/os2.x86 ./out
+validationkit-build-os2.rsync-out-of-vm: validationkit-build-os2.build-it
+	$(VBOX_KMK_TIME) rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
-.NOTPARALLEL: testsuite-build-os2.rsync-into-vm
-.PHONY:       testsuite-build-os2.rsync-into-vm testsuite-build-os2.rsync-out-of-vm testsuite-build-os2.build-it
+.NOTPARALLEL: validationkit-build-os2.rsync-into-vm
+.PHONY:       validationkit-build-os2.rsync-into-vm validationkit-build-os2.rsync-out-of-vm validationkit-build-os2.build-it
 
-testsuite-build-os2.x86: testsuite-build-os2.rsync-out-of-vm
+validationkit-build-os2.x86: validationkit-build-os2.rsync-out-of-vm
 endif # !OS/2
 
-testsuite-build-linux.amd64:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+validationkit-build-linux.amd64:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.amd64) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 else
-	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all"
-	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 testsuite)
+	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 Validation Kit)
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all"
+	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 Validation Kit)
 endif
 
-testsuite-build-linux.x86:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+validationkit-build-linux.x86:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.x86) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 else
-	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 testsuite)
-	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_NEW_X86_IP) "echo $@ && dchroot -c rhel3-i386 \"cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all\""'
-	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 testsuite)
+	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 Validation Kit)
+	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_NEW_X86_IP) "echo $@ && dchroot -c rhel3-i386 \"cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all\""'
+	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 Validation Kit)
 endif
 
-testsuite-build-freebsd.amd64:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+validationkit-build-freebsd.amd64:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
 #ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.amd64)
-#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.amd64) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 #else
-#	$(call VBOX_BLD_VM_MSG_BEGIN,Freebsd/amd64 testsuite)
-#	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_FBSD_AMD64_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all"
-#	$(call VBOX_BLD_VM_MSG_END__,Freebsd/amd64 testsuite)
+#	$(call VBOX_BLD_VM_MSG_BEGIN,Freebsd/amd64 Validation Kit)
+#	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_FBSD_AMD64_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all"
+#	$(call VBOX_BLD_VM_MSG_END__,Freebsd/amd64 Validation Kit)
 #endif
 
-testsuite-build-freebsd.x86:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+validationkit-build-freebsd.x86:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
 #ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.x86)
-#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.x86) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 #else
-#	$(call VBOX_BLD_VM_MSG_BEGIN,Freebsd/x86 testsuite)
-#	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_FBSD_X86_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all"
-#	$(call VBOX_BLD_VM_MSG_END__,Freebsd/x86 testsuite)
+#	$(call VBOX_BLD_VM_MSG_BEGIN,Freebsd/x86 Validation Kit)
+#	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_FBSD_X86_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all"
+#	$(call VBOX_BLD_VM_MSG_END__,Freebsd/x86 Validation Kit)
 #endif
 
-testsuite-build-darwin.amd64:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+validationkit-build-darwin.amd64:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.amd64) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 else
-	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 testsuite)
+	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 Validation Kit)
 	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,darwin,amd64) . $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) " echo $@ && cd /Users/vbox/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all"
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) " echo $@ && cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all"
 	$(VBOX_KMK_TIME) rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
-	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 testsuite)
+	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 Validation Kit)
 endif
 
-testsuite-build-darwin.x86:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+validationkit-build-darwin.x86:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.x86) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 else
-	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/x86 testsuite)
+	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/x86 Validation Kit)
 	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,darwin,x86) . $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) " echo $@ && cd /Users/vbox/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all"
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) " echo $@ && cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all"
 	$(VBOX_KMK_TIME) rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.x86 out/
-	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 testsuite)
+	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Validation Kit)
 endif
 
 
-testsuite-packing:
-	+ $(KMK) VBOX_ONLY_TESTSUITE=1 \
-		VBOX_WITH_TESTSUITE_PACKING.darwin.amd64=1 \
-		VBOX_WITH_TESTSUITE_PACKING.darwin.x86=2 \
-		VBOX_WITH_TESTSUITE_PACKING.freebsd.amd64= \
-		VBOX_WITH_TESTSUITE_PACKING.freebsd.x86= \
-		VBOX_WITH_TESTSUITE_PACKING.linux.amd64=1 \
-		VBOX_WITH_TESTSUITE_PACKING.linux.x86=1 \
-		VBOX_WITH_TESTSUITE_PACKING.os2.x86=1 \
-		VBOX_WITH_TESTSUITE_PACKING.solaris.amd64=1 \
-		VBOX_WITH_TESTSUITE_PACKING.solaris.x86=1 \
-		VBOX_WITH_TESTSUITE_PACKING.win.amd64=1 \
-		VBOX_WITH_TESTSUITE_PACKING.win.x86=1 \
+validationkit-packing:
+	+ $(KMK) VBOX_ONLY_VALIDATIONKIT=1 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.darwin.amd64=1 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.darwin.x86=2 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.freebsd.amd64= \
+		VBOX_WITH_VALIDATIONKIT_PACKING.freebsd.x86= \
+		VBOX_WITH_VALIDATIONKIT_PACKING.linux.amd64=1 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.linux.x86=1 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.os2.x86=1 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.solaris.amd64=1 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.solaris.x86=1 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.win.amd64=1 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.win.x86=1 \
 		-C src/VBox/Testsuite \
 		$(PATH_OUT)/VBoxTestSuite.zip \
 		$(PATH_OUT)/VBoxTestBoxScript.zip
 
 .PHONY: \
-	testsuite-build-win.x86 \
-	testsuite-build-win.amd64 \
-	testsuite-build-solaris.amd64 \
-	testsuite-build-solaris.x86 \
-	testsuite-build-os2.x86 \
-	testsuite-build-linux.amd64 \
-	testsuite-build-linux.x86 \
-	testsuite-build-freebsd.amd64 \
-	testsuite-build-freebsd.x86 \
-	testsuite-build-darwin.amd64 \
-	testsuite-build-darwin.x86 \
-	testsuite-packing
+	validationkit-build-win.x86 \
+	validationkit-build-win.amd64 \
+	validationkit-build-solaris.amd64 \
+	validationkit-build-solaris.x86 \
+	validationkit-build-os2.x86 \
+	validationkit-build-linux.amd64 \
+	validationkit-build-linux.x86 \
+	validationkit-build-freebsd.amd64 \
+	validationkit-build-freebsd.x86 \
+	validationkit-build-darwin.amd64 \
+	validationkit-build-darwin.x86 \
+	validationkit-packing
 
 
 #

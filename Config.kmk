@@ -137,7 +137,7 @@ else
 endif
 
 
-INST_TESTSUITE        = testsuite/
+INST_VALIDATIONKIT    = testsuite/
 INST_TESTBOXSCRIPT    = testboxscript/
 
 INST_DOC              = doc/
@@ -148,7 +148,7 @@ INST_PACKAGES         = packages/
 
 VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_STAGE)/$(INST_SDK))
 VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_STAGE)/$(INST_DIST))
-VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_STAGE)/$(INST_TESTSUITE))
+VBOX_PATH_VALIDATIONKIT = $(patsubst %/,%,$(PATH_STAGE)/$(INST_VALIDATIONKIT))
 VBOX_PATH_ADDITIONS   = $(patsubst %/,%,$(PATH_STAGE)/$(INST_ADDITIONS))
 VBOX_PATH_ADDITIONS_ISO = $(patsubst %/,%,$(PATH_STAGE)/$(INST_ADDITIONS_ISO))
 VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_STAGE)/$(INST_ADDITIONS_LIB))
@@ -507,6 +507,11 @@ endif
 VBOX_WITH_USB_CARDREADER = 1
 ## @}
 
+# legacy
+ifdef VBOX_ONLY_TESTSUITE
+ $(warning VBOX_ONLY_TESTSUITE was renamed to VBOX_ONLY_VALIDATIONKIT)
+ VBOX_ONLY_VALIDATIONKIT = $(VBOX_ONLY_TESTSUITE)
+endif
 
 ## @name Other Component
 ## @{
@@ -518,7 +523,7 @@ VBOX_WITH_VBOXDRV = 1
 VBOX_WITH_MAIN = 1
 # Whether to also ship 32-bit main API on 64-bit systems.
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.amd64 win.amd64)
- if !defined(VBOX_ONLY_TESTSUITE) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_DOCS)
+ if !defined(VBOX_ONLY_VALIDATIONKIT) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_DOCS)
   VBOX_WITH_32_ON_64_MAIN_API = 1
  endif
 endif
@@ -578,8 +583,8 @@ VBOX_WITH_JAVA_SUPPORT_IN_XPIDL ?=
 VBOX_WITH_MULTIVERSION_PYTHON ?= 1
 # Enable the kchmviewer.
 VBOX_WITH_KCHMVIEWER = 1
-# Build the testsuite.
-VBOX_WITH_TESTSUITE = 1
+# Build the Validation Kit.
+VBOX_WITH_VALIDATIONKIT = 1
 # Build the testcases.
 VBOX_WITH_TESTCASES = 1
 # Enable this to build vditool even if VBOX_WITH_TESTCASES is disabled
@@ -862,7 +867,7 @@ endif
 # VBOX_QUICK can be used by core developers to speed to the build
 ifdef VBOX_QUICK
  # undefine variables by assigning blank.
- VBOX_WITH_TESTSUITE=
+ VBOX_WITH_VALIDATIONKIT=
  VBOX_WITH_TESTCASES=
  VBOX_WITH_MAIN =
  VBOX_WITH_VBOXSDL =
@@ -916,7 +921,7 @@ ifeq ($(KBUILD_TARGET),os2)
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
- VBOX_WITH_TESTSUITE=
+ VBOX_WITH_VALIDATIONKIT=
  VBOX_WITH_QTGUI=
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=
@@ -956,7 +961,7 @@ ifn1of ($(KBUILD_TARGET_ARCH), x86 amd64)
  VBOX_WITH_QTGUI=
  VBOX_WITH_RAW_MODE=
  VBOX_WITH_SECURELABEL=
- VBOX_WITH_TESTSUITE=
+ VBOX_WITH_VALIDATIONKIT=
  VBOX_WITH_USB=
  VBOX_WITH_VBOXDRV=
  VBOX_WITH_VBOXSDL=
@@ -1013,7 +1018,7 @@ endif
 #
 # Indicate VBOX_ONLY build if any of the VBOX_ONLY_* variables are set.
 #
-VBOX_ONLY_BUILD := $(strip $(foreach x, ADDITIONS DOCS EXTPACKS SDK TESTSUITE\
+VBOX_ONLY_BUILD := $(strip $(foreach x, ADDITIONS DOCS EXTPACKS SDK VALIDATIONKIT\
 	, $(if-expr defined(VBOX_ONLY_$(x)),VBOX_ONLY_$(x))))
 if $(words $(VBOX_ONLY_BUILD)) > 1
  $(error VBox: More than one VBOX_ONLY build enabled! $(VBOX_ONLY_BUILD))
@@ -1048,7 +1053,7 @@ ifdef VBOX_OSE
  endif
  # Enable any translations in OSE, even partial ones.
  VBOX_WITH_DOCS_TRANSLATIONS=1
- VBOX_WITH_TESTSUITE=
+ VBOX_WITH_VALIDATIONKIT=
  VBOX_WITH_INTEL_PXE=
  # Disable for OSE, requires snv_159+.
  VBOX_WITH_NETFLT_CROSSBOW=
@@ -1171,6 +1176,11 @@ endif
 
 ifdef VBOX_WITH_EXTPACK_PUEL_BUILD
  VBOX_WITH_EXTPACK_PUEL = 1
+endif
+
+ifdef VBOX_WITH_TESTSUITE
+ $(warning VBOX_WITH_TESTSUITE was renamed to VBOX_WITH_VALIDATIONKIT)
+ VBOX_WITH_VALIDATIONKIT = $(VBOX_WITH_TESTSUITE)
 endif
 
 #

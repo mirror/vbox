@@ -18,7 +18,7 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifndef VBOX_ONLY_TESTSUITE
+ifndef VBOX_ONLY_VALIDATIONKIT
  LIBRARIES += VBox-libxml2
 endif
 VBox-libxml2_TEMPLATE       = VBOXR3NP

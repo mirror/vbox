@@ -17,7 +17,7 @@
 
 # don't build testcases to save time, they are not needed for the package
 VBOX_WITH_TESTCASES        :=
-VBOX_WITH_TESTSUITE        :=
+VBOX_WITH_VALIDATIONKIT    :=
 
 # required for VBOX_WITH_RUNPATH
 VBOX_WITH_ORIGIN           :=

@@ -54,7 +54,7 @@ else ifdef VBOX_ONLY_SDK
  include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Frontends/VBoxShell/Makefile.kmk
 
-else ifdef VBOX_ONLY_TESTSUITE
+else ifdef VBOX_ONLY_VALIDATIONKIT
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
@@ -86,7 +86,7 @@ else
  ifdef VBOX_WITH_ADDITIONS
   include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
  endif
- ifdef VBOX_WITH_TESTSUITE
+ ifdef VBOX_WITH_VALIDATIONKIT
   include $(PATH_SUB_CURRENT)/Testsuite/Makefile.kmk
  endif
  ifdef VBOX_WITH_MAIN
