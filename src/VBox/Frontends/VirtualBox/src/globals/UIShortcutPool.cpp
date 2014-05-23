@@ -59,7 +59,8 @@ QString UIShortcut::toString() const
 
 UIShortcutPool* UIShortcutPool::m_pInstance = 0;
 
-const QString UIShortcutPool::m_strShortcutKeyTemplate = QString("%1/%2");
+const QString UIShortcutPool::m_sstrShortcutKeyTemplate = QString("%1/%2");
+const QString UIShortcutPool::m_sstrShortcutKeyTemplateRuntime = m_sstrShortcutKeyTemplate.arg(GUI_Input_MachineShortcuts);
 
 UIShortcutPool* UIShortcutPool::instance()
 {
@@ -95,8 +96,8 @@ void UIShortcutPool::destroy()
 UIShortcut& UIShortcutPool::shortcut(UIActionPool *pActionPool, UIAction *pAction)
 {
     /* Compose shortcut key: */
-    const QString strShortcutKey(m_strShortcutKeyTemplate.arg(pActionPool->shortcutsExtraDataID(),
-                                                              pAction->shortcutExtraDataID()));
+    const QString strShortcutKey(m_sstrShortcutKeyTemplate.arg(pActionPool->shortcutsExtraDataID(),
+                                                               pAction->shortcutExtraDataID()));
     /* Return existing if any: */
     if (m_shortcuts.contains(strShortcutKey))
         return shortcut(strShortcutKey);
@@ -111,7 +112,7 @@ UIShortcut& UIShortcutPool::shortcut(UIActionPool *pActionPool, UIAction *pActio
 UIShortcut& UIShortcutPool::shortcut(const QString &strPoolID, const QString &strActionID)
 {
     /* Return if present, autocreate if necessary: */
-    return shortcut(m_strShortcutKeyTemplate.arg(strPoolID, strActionID));
+    return shortcut(m_sstrShortcutKeyTemplate.arg(strPoolID, strActionID));
 }
 
 void UIShortcutPool::setOverrides(const QMap<QString, QString> &overrides)
@@ -140,8 +141,8 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             continue;
 
         /* Compose shortcut key: */
-        const QString strShortcutKey = m_strShortcutKeyTemplate.arg(pActionPool->shortcutsExtraDataID(),
-                                                                    pAction->shortcutExtraDataID());
+        const QString strShortcutKey = m_sstrShortcutKeyTemplate.arg(pActionPool->shortcutsExtraDataID(),
+                                                                     pAction->shortcutExtraDataID());
         /* If shortcut key is already known: */
         if (m_shortcuts.contains(strShortcutKey))
         {
@@ -226,13 +227,19 @@ void UIShortcutPool::prepareConnections()
     connect(gEDataManager, SIGNAL(sigRuntimeUIShortcutChange()), this, SLOT(sltReloadMachineShortcuts()));
 }
 
+void UIShortcutPool::retranslateUi()
+{
+    /* Translate own defaults: */
+    m_shortcuts[m_sstrShortcutKeyTemplateRuntime.arg("PopupMenu")]
+        .setDescription(QApplication::translate("UIActionPool", "Popup Menu"));
+}
+
 void UIShortcutPool::loadDefaults()
 {
-    /* Runtime shortcut key template: */
-    const QString strRuntimeShortcutKeyTemplate(m_strShortcutKeyTemplate.arg(GUI_Input_MachineShortcuts));
     /* Default shortcut for the Runtime Popup Menu invokation: */
-    m_shortcuts.insert(strRuntimeShortcutKeyTemplate.arg("PopupMenu"),
-                       UIShortcut(QApplication::translate("UIActionPool", "Popup Menu"), QString("Home"), QString("Home")));
+    m_shortcuts.insert(m_sstrShortcutKeyTemplateRuntime.arg("PopupMenu"),
+                       UIShortcut(QApplication::translate("UIActionPool", "Popup Menu"),
+                                  QString("Home"), QString("Home")));
 }
 
 void UIShortcutPool::loadOverrides()
@@ -246,7 +253,7 @@ void UIShortcutPool::loadOverrides()
 void UIShortcutPool::loadOverridesFor(const QString &strPoolExtraDataID)
 {
     /* Compose shortcut key template: */
-    const QString strShortcutKeyTemplate(m_strShortcutKeyTemplate.arg(strPoolExtraDataID));
+    const QString strShortcutKeyTemplate(m_sstrShortcutKeyTemplate.arg(strPoolExtraDataID));
     /* Iterate over all the overrides: */
     const QStringList overrides = vboxGlobal().virtualBox().GetExtraDataStringList(strPoolExtraDataID);
     foreach (const QString &strKeyValuePair, overrides)
@@ -294,7 +301,7 @@ void UIShortcutPool::saveOverrides()
 void UIShortcutPool::saveOverridesFor(const QString &strPoolExtraDataID)
 {
     /* Compose shortcut prefix: */
-    const QString strShortcutPrefix(m_strShortcutKeyTemplate.arg(strPoolExtraDataID, QString()));
+    const QString strShortcutPrefix(m_sstrShortcutKeyTemplate.arg(strPoolExtraDataID, QString()));
     /* Populate the list of all the known overrides: */
     QStringList overrides;
     const QList<QString> shortcutKeys = m_shortcuts.keys();
