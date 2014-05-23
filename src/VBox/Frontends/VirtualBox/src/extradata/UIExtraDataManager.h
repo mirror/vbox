@@ -226,10 +226,10 @@ private:
 
     /** Determines whether feature corresponding to passed @a strKey is allowed.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    bool isFeatureAllowed(const QString &strKey, const QString &strID = QString()) const;
+    bool isFeatureAllowed(const QString &strKey, const QString &strID = m_sstrGlobalID) const;
     /** Determines whether feature corresponding to passed @a strKey is restricted.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    bool isFeatureRestricted(const QString &strKey, const QString &strID = QString()) const;
+    bool isFeatureRestricted(const QString &strKey, const QString &strID = m_sstrGlobalID) const;
 
     /** Translates bool flag into 'allowed' value. */
     QString toFeatureAllowed(bool fAllowed);
@@ -238,20 +238,23 @@ private:
 
     /** Returns extra-data value corresponding to passed @a strKey as QString.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    QString extraDataString(const QString &strKey, const QString &strID = QString()) const;
+    QString extraDataString(const QString &strKey, const QString &strID = m_sstrGlobalID) const;
     /** Defines extra-data value corresponding to passed @a strKey as strValue.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    void setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID = QString());
+    void setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID = m_sstrGlobalID);
 
     /** Returns extra-data value corresponding to passed @a strKey as QStringList.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    QStringList extraDataStringList(const QString &strKey, const QString &strID = QString()) const;
+    QStringList extraDataStringList(const QString &strKey, const QString &strID = m_sstrGlobalID) const;
     /** Defines extra-data value corresponding to passed @a strKey as strValue.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    void setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID = QString());
+    void setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID = m_sstrGlobalID);
 
     /** Singleton Extra-data Manager instance. */
     static UIExtraDataManager *m_pInstance;
+
+    /** Global extra-data ID. */
+    static QString m_sstrGlobalID;
 
     /** Main event-listener instance. */
     CEventListener m_listener;
