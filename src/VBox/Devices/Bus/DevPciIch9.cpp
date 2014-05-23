@@ -199,6 +199,7 @@ DECLINLINE(void) ich9pciStateToPciAddr(PICH9PCIGLOBALS pGlobals, RTGCPHYS addr, 
 
 PDMBOTHCBDECL(void) ich9pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
+    LogFlowFunc(("invoked by %p/%d: iIrq=%d iLevel=%d uTagSrc=%#x\n", pDevIns, pDevIns->iInstance, iIrq, iLevel, uTagSrc));
     ich9pciSetIrqInternal(PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS), pPciDev->devfn, pPciDev, iIrq, iLevel, uTagSrc);
 }
 
@@ -611,12 +612,14 @@ static void ich9pciSetIrqInternal(PICH9PCIGLOBALS pGlobals, uint8_t uDevFn, PPCI
     {
         if (MsiIsEnabled(pPciDev))
         {
+            LogFlowFunc(("PCI Dev %p : MSI\n", pPciDev));
             PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
             MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel, uTagSrc);
         }
 
         if (MsixIsEnabled(pPciDev))
         {
+            LogFlowFunc(("PCI Dev %p : MSI-X\n", pPciDev));
             PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
             MsixNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel, uTagSrc);
         }
@@ -626,6 +629,7 @@ static void ich9pciSetIrqInternal(PICH9PCIGLOBALS pGlobals, uint8_t uDevFn, PPCI
     PICH9PCIBUS     pBus      =     &pGlobals->aPciBus;
     const bool  fIsAcpiDevice = PCIDevGetDeviceId(pPciDev) == 0x7113;
 
+    LogFlowFunc(("PCI Dev %p : IRQ\n", pPciDev));
     /* Check if the state changed. */
     if (pPciDev->Int.s.uIrqPinState != iLevel)
     {
