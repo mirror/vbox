@@ -491,7 +491,7 @@ PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t 
 {
     PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
 
-    LogFlow(("ioapicSendMsi: Address=%p uValue=%\n", GCAddr, uValue));
+    LogFlow(("ioapicSendMsi: Address=%p uValue=%u\n", GCAddr, uValue));
 
     uint8_t  dest = (GCAddr & VBOX_MSI_ADDR_DEST_ID_MASK) >> VBOX_MSI_ADDR_DEST_ID_SHIFT;
     uint8_t  vector_num = (uValue & VBOX_MSI_DATA_VECTOR_MASK) >> VBOX_MSI_DATA_VECTOR_SHIFT;
