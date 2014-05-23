@@ -271,6 +271,11 @@ UIActionMenu::UIActionMenu(UIActionPool *pParent,
     setMenu(new UIMenu);
 }
 
+void UIActionMenu::updateText()
+{
+    setText(nameInMenu());
+}
+
 
 class UIActionSimpleLogDialog : public UIActionSimple
 {

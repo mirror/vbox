@@ -108,10 +108,10 @@ protected:
     /* Protected API: Menu stuff: */
     QString nameInMenu() const;
 
-private:
+    /** Updates action text accordingly. */
+    virtual void updateText();
 
-    /* Helper: Text stuff: */
-    void updateText();
+private:
 
     /* Variables: */
     UIActionPool *m_pActionPool;
@@ -229,6 +229,9 @@ protected:
                  const QString &strIcon = QString(), const QString &strIconDis = QString());
     UIActionMenu(UIActionPool *pParent,
                  const QIcon &icon);
+
+    /** Updates action text accordingly. */
+    virtual void updateText();
 };
 
 /* Singleton action pool: */
