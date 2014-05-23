@@ -4095,7 +4095,8 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
             }
             case SCSI_SYNCHRONIZE_CACHE:
             {
-                ATAPIPassthroughTrackListClear(pAhciPort->pTrackList);
+                if (pAhciPort->pTrackList)
+                    ATAPIPassthroughTrackListClear(pAhciPort->pTrackList);
                 break;
             }
         }
