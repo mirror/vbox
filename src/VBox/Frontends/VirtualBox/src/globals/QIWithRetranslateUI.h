@@ -97,16 +97,16 @@ protected:
 
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
     {
-        switch (pEvent->type())
+        /* Handle events for qApp only: */
+        if (pObject == qApp)
         {
-            case QEvent::LanguageChange:
+            switch (pEvent->type())
             {
-                retranslateUi();
-                break;
+                case QEvent::LanguageChange: retranslateUi(); break;
+                default: break;
             }
-            default:
-                break;
         }
+        /* Call to base-class: */
         return Base::eventFilter(pObject, pEvent);
     }
 
