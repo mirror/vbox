@@ -24,6 +24,7 @@
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
+#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class UIActionPool;
@@ -72,7 +73,7 @@ private:
 };
 
 /* Singleton shortcut pool: */
-class UIShortcutPool : public QObject
+class UIShortcutPool : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
@@ -117,6 +118,9 @@ private:
     /* Helper: Cleanup stuff: */
     void cleanup() {}
 
+    /** Translation handler. */
+    void retranslateUi();
+
     /* Helpers: Shortcuts stuff: */
     void loadDefaults();
     void loadOverrides();
@@ -129,7 +133,10 @@ private:
 
     /* Variables: */
     static UIShortcutPool *m_pInstance;
-    static const QString m_strShortcutKeyTemplate;
+    /** Shortcut key template. */
+    static const QString m_sstrShortcutKeyTemplate;
+    /** Shortcut key template for Runtime UI. */
+    static const QString m_sstrShortcutKeyTemplateRuntime;
     QMap<QString, UIShortcut> m_shortcuts;
 };
 
