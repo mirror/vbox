@@ -382,7 +382,11 @@ static int atapiTrackListUpdateFromReadTocPmaAtip(PTRACKLIST pTrackList, const u
         case 0x02:
         case 0x03:
         case 0x04:
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
         case 0x05:
+            rc = VINF_SUCCESS; /* Does not give information about the tracklist. */
+            break;
         default:
             rc = VERR_INVALID_PARAMETER;
     }
@@ -508,6 +512,8 @@ DECLHIDDEN(void) ATAPIPassthroughTrackListDestroy(PTRACKLIST pTrackList)
 
 DECLHIDDEN(void) ATAPIPassthroughTrackListClear(PTRACKLIST pTrackList)
 {
+    AssertPtrReturnVoid(pTrackList);
+
     pTrackList->cTracksCurrent = 0;
 
     /* Mark all tracks as undetected. */
