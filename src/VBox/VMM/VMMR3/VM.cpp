@@ -988,8 +988,8 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                     rc = PDMR3Init(pVM);
                                                                     if (RT_SUCCESS(rc))
                                                                     {
-                                                                        /* GIM must be init'd after PDM, relies on PDMR3 for
-                                                                           symbol resolution.*/
+                                                                        /* GIM must be init'd after PDM, may rely on PDMR3 for
+                                                                           symbol resolution. */
                                                                         rc = GIMR3Init(pVM);
                                                                         if (RT_SUCCESS(rc))
                                                                         {
