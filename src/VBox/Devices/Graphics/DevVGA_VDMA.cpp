@@ -3410,8 +3410,10 @@ int vboxVDMASaveLoadExecPerform(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM, uin
 int vboxVDMASaveLoadDone(struct VBOXVDMAHOST *pVdma)
 {
 #ifdef VBOX_WITH_CRHGSMI
-#if 0 /** @todo r=bird: This code is still busted. Getting VERR_INVALID_STATE when restoring a trunk state taken by
-       * 4.3.53 r92948 win.amd64. BTW. would be great if you put in a couple of comments here and there explaining what
+    if (!VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
+        return VINF_SUCCESS;
+
+/** @todo r=bird: BTW. would be great if you put in a couple of comments here and there explaining what
        * the purpose of this code is. */
     VBVAEXHOSTCTL* pHCtl = VBoxVBVAExHCtlCreate(&pVdma->CmdVbva, VBVAEXHOSTCTL_TYPE_HH_LOADSTATE_DONE);
     if (!pHCtl)
@@ -3432,7 +3434,6 @@ int vboxVDMASaveLoadDone(struct VBOXVDMAHOST *pVdma)
         VBoxVBVAExHCtlFree(&pVdma->CmdVbva, pHCtl);
         return rc;
     }
-#endif
 #endif
     return VINF_SUCCESS;
 }
