@@ -61,6 +61,7 @@ Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     unsigned i;
 
     memset(&DRI2Info, 0, sizeof(DRI2Info));
+    pVBox->drmFD = -1;
     for (i = 0; i < RT_ELEMENTS(devicePaths); ++i)
     {
         int fd = open(devicePaths[i], O_RDWR);
@@ -69,7 +70,8 @@ Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
             drmVersionPtr pVersion = drmGetVersion(fd);
             if (   pVersion
                 && pVersion->name_len
-                && !strcmp(pVersion->name, VBOX_DRM_DRIVER_NAME))
+                && !strcmp(pVersion->name, VBOX_DRM_DRIVER_NAME)
+                && drmSetMaster(fd) == 0)
             {
                 TRACE_LOG("Opened drm device %s\n", devicePaths[i]);
                 DRI2Info.deviceName = devicePaths[i];
@@ -85,7 +87,7 @@ Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     if (!DRI2Info.deviceName)
         return FALSE;
     DRI2Info.version = 3;
-    DRI2Info.fd = -1;
+    DRI2Info.fd = pVBox->drmFD;
     DRI2Info.driverName = VBOX_DRI_DRIVER_NAME;
     DRI2Info.CopyRegion = VBOXDRICopyRegion;
     DRI2Info.Wait = NULL;
@@ -97,6 +99,6 @@ Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 void VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox)
 {
     DRI2CloseScreen(pScreen);
-    if (pVBox->drmFD)
+    if (pVBox->drmFD >= 0)
         close(pVBox->drmFD);
 }
