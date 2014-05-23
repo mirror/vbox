@@ -4758,6 +4758,8 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
             Connector.pfnRefresh    = vgaDummyRefresh;
             Connector.pfnResize     = vgaDummyResize;
             Connector.pfnUpdateRect = vgaDummyUpdateRect;
+            /* keep the CtlSubmit unchanged */
+            Connector.pfnCrHgcmCtlSubmit = pThis->pDrv ? pThis->pDrv->pfnCrHgcmCtlSubmit : NULL;
 
             /* Save & replace state data. */
             PPDMIDISPLAYCONNECTOR pConnectorSaved = pThis->pDrv;
