@@ -985,8 +985,10 @@ void UIActionPoolSelector::retranslateUi()
     /* Translate all the actions: */
     foreach (const int iActionPoolKey, m_pool.keys())
         m_pool[iActionPoolKey]->retranslateUi();
-    /* Re-apply shortcuts: */
+    /* Re-apply Selector UI shortcuts: */
     sltApplyShortcuts();
+    /* Temporary create Runtime UI pool to do the same: */
+    UIActionPool::createTemporary(UIActionPoolType_Runtime);
 }
 
 QString UIActionPoolSelector::shortcutsExtraDataID() const
