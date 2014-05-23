@@ -1448,7 +1448,7 @@ validationkit-packing:
 		VBOX_WITH_VALIDATIONKIT_PACKING.win.amd64=1 \
 		VBOX_WITH_VALIDATIONKIT_PACKING.win.x86=1 \
 		-C src/VBox/ValidationKit \
-		$(PATH_OUT)/VBoxTestSuite.zip \
+		$(PATH_OUT)/VBoxValidationKit.zip \
 		$(PATH_OUT)/VBoxTestBoxScript.zip
 
 .PHONY: \

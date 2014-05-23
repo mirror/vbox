@@ -145,7 +145,7 @@
  *        maintained atm).
  *  - IPRT - Runtime Library for hiding host OS differences.
  *  - Validation Kit:
- *      - @ref pg_testsuite_guideline
+ *      - @ref pg_validationkit_guideline
  *
  * @todo Make links to the components.
  *

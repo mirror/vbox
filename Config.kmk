@@ -137,7 +137,7 @@ else
 endif
 
 
-INST_VALIDATIONKIT    = testsuite/
+INST_VALIDATIONKIT    = validationkit/
 INST_TESTBOXSCRIPT    = testboxscript/
 
 INST_DOC              = doc/
