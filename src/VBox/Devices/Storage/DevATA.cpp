@@ -2170,7 +2170,8 @@ static bool atapiPassthroughSS(ATADevState *s)
             }
             case SCSI_SYNCHRONIZE_CACHE:
             {
-                ATAPIPassthroughTrackListClear(s->pTrackList);
+                if (s->pTrackList)
+                    ATAPIPassthroughTrackListClear(s->pTrackList);
                 break;
             }
         }
