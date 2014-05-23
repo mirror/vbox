@@ -82,6 +82,9 @@ private:
     /* Constructor: */
     UIActionPoolSelector();
 
+    /** Translation handler. */
+    void retranslateUi();
+
     /* Helper: Shortcuts stuff: */
     QString shortcutsExtraDataID() const;
 
