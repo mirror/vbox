@@ -80,6 +80,7 @@ VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMM_INT_DECL(int) GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    Assert(pVCpu);
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(GIMIsEnabled(pVM));
     VMCPU_ASSERT_EMT(pVCpu);
@@ -108,6 +109,7 @@ VMM_INT_DECL(int) GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange
  */
 VMM_INT_DECL(int) GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    Assert(pVCpu);
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(GIMIsEnabled(pVM));
     VMCPU_ASSERT_EMT(pVCpu);

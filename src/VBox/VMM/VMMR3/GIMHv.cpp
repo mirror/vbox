@@ -35,7 +35,34 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define GIMHV_HYPERCALL                 "GIMHvHypercall"
+//#define GIMHV_HYPERCALL                 "GIMHvHypercall"
+#ifdef VBOX_WITH_STATISTICS
+# define GIMHV_MSRRANGE(a_uFirst, a_uLast, a_szName) \
+    { (a_uFirst), (a_uLast), kCpumMsrRdFn_Gim, kCpumMsrWrFn_Gim, 0, 0, 0, 0, 0, a_szName, { 0 }, { 0 }, { 0 }, { 0 } }
+#else
+# define GIMHV_MSRRANGE(a_uFirst, a_uLast, a_szName) \
+    { (a_uFirst), (a_uLast), kCpumMsrRdFn_Gim, kCpumMsrWrFn_Gim, 0, 0, 0, 0, 0, a_szName }
+#endif
+
+/**
+ * Array of MSR ranges supported by Hyper-V.
+ */
+static CPUMMSRRANGE const g_aMsrRanges_HyperV[] =
+{
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE0_START,  MSR_GIM_HV_RANGE0_END,  "Hyper-V range 0"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE1_START,  MSR_GIM_HV_RANGE1_END,  "Hyper-V range 1"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE2_START,  MSR_GIM_HV_RANGE2_END,  "Hyper-V range 2"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE3_START,  MSR_GIM_HV_RANGE3_END,  "Hyper-V range 3"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE4_START,  MSR_GIM_HV_RANGE4_END,  "Hyper-V range 4"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE5_START,  MSR_GIM_HV_RANGE5_END,  "Hyper-V range 5"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE6_START,  MSR_GIM_HV_RANGE6_END,  "Hyper-V range 6"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE7_START,  MSR_GIM_HV_RANGE7_END,  "Hyper-V range 7"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE8_START,  MSR_GIM_HV_RANGE8_END,  "Hyper-V range 8"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE9_START,  MSR_GIM_HV_RANGE9_END,  "Hyper-V range 9"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE10_START, MSR_GIM_HV_RANGE10_END, "Hyper-V range 10"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE11_START, MSR_GIM_HV_RANGE11_END, "Hyper-V range 11")
+};
+#undef GIMHV_MSR
 
 
 /**
@@ -72,7 +99,22 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
     uint32_t uHyperHints  = 0;
     if (!pVM->gim.s.u32Version)
     {
-        uBaseFeat = GIM_HV_BASE_FEAT_PART_REF_COUNT_MSR;
+        uBaseFeat = 0
+                  //| GIM_HV_BASE_FEAT_VP_RUNTIME_MSR
+                  | GIM_HV_BASE_FEAT_PART_REF_COUNT_MSR
+                  //| GIM_HV_BASE_FEAT_BASIC_SYNTH_IC
+                  //| GIM_HV_BASE_FEAT_SYNTH_TIMER_MSRS
+                  //| GIM_HV_BASE_FEAT_APIC_ACCESS_MSRS
+                  //| GIM_HV_BASE_FEAT_HYPERCALL_MSRS
+                  | GIM_HV_BASE_FEAT_VP_ID_MSR
+                  //| GIM_HV_BASE_FEAT_VIRT_SYS_RESET_MSR
+                  //| GIM_HV_BASE_FEAT_STAT_PAGES_MSR
+                  //| GIM_HV_BASE_FEAT_PART_REF_TSC_MSR
+                  //| GIM_HV_BASE_FEAT_GUEST_IDLE_STATE_MSR
+                  //| GIM_HV_BASE_FEAT_TIMER_FREQ_MSRS
+                  //| GIM_HV_BASE_FEAT_DEBUG_MSRS
+                  ;
+
         pVM->gim.s.u.hv.u16HyperIdVersionMajor = VBOX_VERSION_MAJOR;
         pVM->gim.s.u.hv.u16HyperIdVersionMajor = VBOX_VERSION_MINOR;
         pVM->gim.s.u.hv.u32HyperIdBuildNumber  = VBOX_VERSION_BUILD;
@@ -107,7 +149,7 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
     /*
      * Add Hyper-V specific leaves.
      */
-    HyperLeaf.uLeaf        = UINT32_C(0x40000002); /* MBZ until MSR_HV_GUEST_OS_ID is set by the guest. */
+    HyperLeaf.uLeaf        = UINT32_C(0x40000002); /* MBZ until MSR_GIM_HV_GUEST_OS_ID is set by the guest. */
     HyperLeaf.uEax         = 0;
     HyperLeaf.uEbx         = 0;
     HyperLeaf.uEcx         = 0;
@@ -124,26 +166,22 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
     AssertLogRelRCReturn(rc, rc);
 
     /*
-     * Register the complete MSR range for Hyper-V.
+     * Insert all MSR ranges of Hyper-V.
      */
-    CPUMMSRRANGE MsrRange;
-    RT_ZERO(MsrRange);
-    MsrRange.uFirst     = UINT32_C(0x40000000);
-    MsrRange.uLast      = UINT32_C(0x40000105);
-    MsrRange.enmRdFn    = kCpumMsrRdFn_Gim;
-    MsrRange.enmWrFn    = kCpumMsrWrFn_Gim;
-    RTStrCopy(MsrRange.szName, sizeof(MsrRange.szName), "Hyper-V");
-    rc = CPUMR3MsrRangesInsert(pVM, &MsrRange);
-    AssertLogRelRCReturn(rc, rc);
-
-
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aMsrRanges_HyperV); i++)
+    {
+        rc = CPUMR3MsrRangesInsert(pVM, &g_aMsrRanges_HyperV[i]);
+        AssertLogRelRCReturn(rc, rc);
+    }
     return VINF_SUCCESS;
 }
 
 
 VMMR3_INT_DECL(void) GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
 {
-//    int rc = PDMR3LdrGetSymbolRC(pVM, NULL /* pszModule */, GIMHV_HYPERCALL, &pVM->gim.s.pfnHypercallRC);
-//    AssertFatalRC(rc);
+#if 0
+    int rc = PDMR3LdrGetSymbolRC(pVM, NULL /* pszModule */, GIMHV_HYPERCALL, &pVM->gim.s.pfnHypercallRC);
+    AssertFatalRC(rc);
+#endif
 }
 
