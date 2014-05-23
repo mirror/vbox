@@ -980,6 +980,15 @@ UIActionPoolSelector::UIActionPoolSelector()
     connect(gShortcutPool, SIGNAL(sigSelectorShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
 }
 
+void UIActionPoolSelector::retranslateUi()
+{
+    /* Translate all the actions: */
+    foreach (const int iActionPoolKey, m_pool.keys())
+        m_pool[iActionPoolKey]->retranslateUi();
+    /* Re-apply shortcuts: */
+    sltApplyShortcuts();
+}
+
 QString UIActionPoolSelector::shortcutsExtraDataID() const
 {
     return GUI_Input_SelectorShortcuts;

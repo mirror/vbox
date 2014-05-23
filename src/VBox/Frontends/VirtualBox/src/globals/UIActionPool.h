@@ -68,7 +68,7 @@ enum UIActionIndex
 };
 
 /* Basic abstract QAction reimplemetation, extending interface: */
-class UIAction : public QIWithRetranslateUI3<QAction>
+class UIAction : public QAction
 {
     Q_OBJECT;
 
@@ -96,6 +96,9 @@ public:
     void setShortcut(const QKeySequence &shortcut);
     void showShortcut();
     void hideShortcut();
+
+    /** Calls for action translation handler. */
+    virtual void retranslateUi() = 0;
 
 protected:
 
@@ -229,7 +232,7 @@ protected:
 };
 
 /* Singleton action pool: */
-class UIActionPool : public QObject
+class UIActionPool : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
