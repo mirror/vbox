@@ -88,7 +88,7 @@
             <string>When checked, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</string>
            </property>
            <property name="text">
-            <string>USB &amp;1.0 (OHCI) Controller</string>
+            <string>USB &amp;1.1 (OHCI) Controller</string>
            </property>
           </widget>
          </item>
