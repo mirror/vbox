@@ -27,6 +27,16 @@
 #include <iprt/assert.h>
 
 /* static */
+QPixmap UIIconPool::pixmap(const QString &strName)
+{
+    /* Reuse iconSet API: */
+    QIcon icon = iconSet(strName);
+
+    /* Return pixmap of first available size: */
+    return icon.pixmap(icon.availableSizes().first());
+}
+
+/* static */
 QIcon UIIconPool::iconSet(const QString &strNormal,
                           const QString &strDisabled /* = QString() */,
                           const QString &strActive /* = QString() */)
