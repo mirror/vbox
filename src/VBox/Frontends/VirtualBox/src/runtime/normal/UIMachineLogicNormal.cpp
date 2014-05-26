@@ -92,6 +92,14 @@ void UIMachineLogicNormal::sltPrepareVideoCaptureMenu()
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VideoCapture));
 }
 
+void UIMachineLogicNormal::sltPrepareKeyboardMenu()
+{
+    QMenu *pMenu = qobject_cast<QMenu*>(sender());
+    AssertMsg(pMenu, ("This slot should be called only on Keyboard menu show!\n"));
+    pMenu->clear();
+    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_KeyboardSettings));
+}
+
 void UIMachineLogicNormal::sltPrepareMouseIntegrationMenu()
 {
     QMenu *menu = qobject_cast<QMenu*>(sender());
@@ -120,6 +128,8 @@ void UIMachineLogicNormal::prepareActionConnections()
             this, SLOT(sltPrepareSharedFoldersMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_VideoCapture)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareVideoCaptureMenu()));
+    connect(gActionPool->action(UIActionIndexRuntime_Menu_Keyboard)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareKeyboardMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_MouseIntegration)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareMouseIntegrationMenu()));
 }

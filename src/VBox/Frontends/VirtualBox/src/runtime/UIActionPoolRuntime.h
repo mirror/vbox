@@ -31,6 +31,8 @@ enum UIActionIndexRuntime
     UIActionIndexRuntime_Simple_TakeSnapshot,
     UIActionIndexRuntime_Simple_TakeScreenshot,
     UIActionIndexRuntime_Simple_InformationDialog,
+    UIActionIndexRuntime_Menu_Keyboard,
+    UIActionIndexRuntime_Simple_KeyboardSettings,
     UIActionIndexRuntime_Menu_MouseIntegration,
     UIActionIndexRuntime_Toggle_MouseIntegration,
     UIActionIndexRuntime_Simple_TypeCAD,

@@ -854,6 +854,8 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeScreenshot));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_InformationDialog));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_Keyboard));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_KeyboardSettings));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_MouseIntegration));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Pause));
@@ -890,6 +892,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltTakeScreenshot()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_InformationDialog), SIGNAL(triggered()),
             this, SLOT(sltShowInformationDialog()));
+    connect(gActionPool->action(UIActionIndexRuntime_Simple_KeyboardSettings), SIGNAL(triggered()),
+            this, SLOT(sltShowKeyboardSettings()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleMouseIntegration(bool)));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_TypeCAD), SIGNAL(triggered()),
@@ -1195,6 +1199,16 @@ void UIMachineLogic::sltAdjustWindow()
         /* Normalize window geometry: */
         pMachineWindow->normalizeGeometry(true);
     }
+}
+
+void UIMachineLogic::sltShowKeyboardSettings()
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Open Global Preferences: Input page: */
+    showGlobalPreferences("#input", "m_pMachineTable");
 }
 
 void UIMachineLogic::sltToggleMouseIntegration(bool fOff)
