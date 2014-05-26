@@ -39,6 +39,7 @@
 #include "UIWizardFirstRun.h"
 #include "UIConsoleEventHandler.h"
 #include "UIFrameBuffer.h"
+#include "UISettingsDialogSpecific.h"
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include "VBoxFBOverlay.h"
 #endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -695,6 +696,24 @@ void UISession::sltCloseRuntimeUI()
 
     /* Finally close the Runtime UI: */
     m_pMachine->deleteLater();
+}
+
+void UISession::sltOpenGlobalPreferences()
+{
+    /* Check that we do NOT handling that already: */
+    if (gActionPool->action(UIActionIndex_Simple_Preferences)->data().toBool())
+        return;
+    /* Remember that we handling that already: */
+    gActionPool->action(UIActionIndex_Simple_Preferences)->setData(true);
+
+    /* Create and execute global settings window: */
+    QPointer<UISettingsDialogGlobal> pDialog = new UISettingsDialogGlobal(machineLogic()->activeMachineWindow());
+    pDialog->execute();
+    if (pDialog)
+        delete pDialog;
+
+    /* Remember that we do NOT handling that already: */
+    gActionPool->action(UIActionIndex_Simple_Preferences)->setData(false);
 }
 
 void UISession::sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape)

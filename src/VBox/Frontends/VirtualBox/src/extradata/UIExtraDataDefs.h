@@ -248,9 +248,10 @@ enum RuntimeMenuType
 /** Runtime UI: Menu "Application": Action types. */
 enum RuntimeMenuApplicationActionType
 {
-    RuntimeMenuApplicationActionType_Invalid = 0,
-    RuntimeMenuApplicationActionType_About   = RT_BIT(0),
-    RuntimeMenuApplicationActionType_All     = 0xFFFF
+    RuntimeMenuApplicationActionType_Invalid     = 0,
+    RuntimeMenuApplicationActionType_About       = RT_BIT(0),
+    RuntimeMenuApplicationActionType_Preferences = RT_BIT(1),
+    RuntimeMenuApplicationActionType_All         = 0xFFFF
 };
 #endif /* Q_WS_MAC */
 
@@ -334,6 +335,7 @@ enum RuntimeMenuHelpActionType
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef Q_WS_MAC
     RuntimeMenuHelpActionType_About                = RT_BIT(4),
+    RuntimeMenuHelpActionType_Preferences          = RT_BIT(5),
 #endif /* !Q_WS_MAC */
     RuntimeMenuHelpActionType_All                  = 0xFFFF
 };

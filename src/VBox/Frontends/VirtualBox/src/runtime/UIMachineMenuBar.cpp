@@ -628,6 +628,20 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu)
     }
     else
         gActionPool->action(UIActionIndex_Simple_About)->setEnabled(false);
+
+    /* Preferences action: */
+#ifdef Q_WS_MAC
+    if (m_pSession->allowedActionsMenuApplication() & RuntimeMenuApplicationActionType_Preferences)
+#else /* !Q_WS_MAC */
+    if (m_pSession->allowedActionsMenuHelp() & RuntimeMenuHelpActionType_Preferences)
+#endif /* Q_WS_MAC */
+    {
+        pMenu->addAction(gActionPool->action(UIActionIndex_Simple_Preferences));
+        VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Preferences), SIGNAL(triggered()),
+                            m_pSession, SLOT(sltOpenGlobalPreferences()));
+    }
+    else
+        gActionPool->action(UIActionIndex_Simple_Preferences)->setEnabled(false);
 }
 
 #include "UIMachineMenuBar.moc"
