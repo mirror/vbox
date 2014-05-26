@@ -426,10 +426,8 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent,
         /* Search for a widget with the given name: */
         if (!strControl.isNull())
         {
-            printf("Looking for widget %s..\n", strControl.toAscii().constData());
             if (QWidget *pWidget = m_pStack->findChild<QWidget*>(strControl))
             {
-                printf("Widget %s found!\n", strControl.toAscii().constData());
                 QList<QWidget*> parents;
                 QWidget *pParentWidget = pWidget;
                 while ((pParentWidget = pParentWidget->parentWidget()) != 0)
