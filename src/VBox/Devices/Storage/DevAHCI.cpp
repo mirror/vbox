@@ -82,7 +82,7 @@
 
 /** The current saved state version. */
 #define AHCI_SAVED_STATE_VERSION                        8
-/** The saved state version before changing the port reset logic in an incomptible way. */
+/** The saved state version before changing the port reset logic in an incompatible way. */
 #define AHCI_SAVED_STATE_VERSION_PRE_PORT_RESET_CHANGES 7
 /** Saved state version before the per port hotplug port was added. */
 #define AHCI_SAVED_STATE_VERSION_PRE_HOTPLUG_FLAG       6
@@ -7133,7 +7133,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
      * Check whether we have to resort to the legacy port reset method to
      * prevent older BIOS versions from failing after a reset.
      */
-    if (uVersion < AHCI_SAVED_STATE_VERSION_PRE_PORT_RESET_CHANGES)
+    if (uVersion <= AHCI_SAVED_STATE_VERSION_PRE_PORT_RESET_CHANGES)
         pThis->fLegacyPortResetMethod = true;
 
     /* Verify config. */
