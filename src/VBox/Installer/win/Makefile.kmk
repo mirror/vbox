@@ -83,14 +83,22 @@ VBOX_INSTALLER_MERGE_LANGUAGES = $(VBOX_INSTALLER_LANGUAGES)
 # We don't have the license text in another language than English yet,
 # so just define the branding targets to use the English one for now.
 # The installer generation assumes that there is a translation for each
-# of VBOX_MANUAL_ADD_LANGUAGES.
+# of VBOX_LICENSE_ADD_LANGUAGES.
 #
-$(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
-	$(eval VBOX_BRAND_$(lang)_LICENSE_RTF := $(VBOX_BRAND_LICENSE_RTF)) \
+$(foreach lang,$(VBOX_LICENSE_ADD_LANGUAGES), \
+	$(eval VBOX_BRAND_$(lang)_LICENSE_RTF := $(VBOX_BRAND_LICENSE_RTF)))
+
+# Set the codepage for all languages to 1252, covers most cases.
+$(foreach lang,$(sort $(VBOX_INSTALLER_LANGUAGES) $(VBOX_LICENSE_ADD_LANGUAGES) $(VBOX_MANUAL_ADD_LANGUAGES)), \
 	$(eval VBOX_BRAND_$(lang)_LANGUAGE_CODEPAGE := 1252))
 
 # Some languages need another codepage than 1252. Override them here.
 VBOX_BRAND_zh_TW_LANGUAGE_CODEPAGE := 950
+
+# Standard language names (in the native language), to be extended as we go.
+# VBOX_BRAND_$(lang)_LANG_NAME must be defined for each language which occurs
+# in either # VBOX_LICENSE_ADD_LANGUAGES or VBOX_MANUAL_ADD_LANGUAGES.
+VBOX_BRAND_fr_FR_LANG_NAME := Français
 
 VBOX_PATH_WIN_INST_SRC := $(PATH_SUB_CURRENT)
 VBOX_WIN_INST_OUT_DIR := $(PATH_TARGET)/Installer/win
@@ -302,7 +310,7 @@ $(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi: $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
 	$(APPEND) $@ '	<File Id="file_License_en_US.rtf" Name="License_en_US.rtf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(VBOX_BRAND_LICENSE_RTF)">' \
 	             '	</File>'
-	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
+	$(APPEND) -n $@ $(foreach lang,$(VBOX_LICENSE_ADD_LANGUAGES), \
 	             '	<File Id="file_License_$(lang).rtf" Name="License_$(lang).rtf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(VBOX_BRAND_$(lang)_LICENSE_RTF)">' \
 	             '	</File>')
 	$(APPEND) $@ '</Include>'
@@ -331,7 +339,7 @@ endif
 	#
 	$(APPEND) $@ '	<Shortcut Id="sc_StartMenu_License_en_US" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_License) (English)" Description="!(loc.StartMenu_License)"' \
 	             '            Target="[INSTALLDIR]License_en_US.rtf" WorkingDirectory="INSTALLDIR" Advertise="no"/>'
-	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
+	$(APPEND) -n $@ $(foreach lang,$(VBOX_LICENSE_ADD_LANGUAGES), \
 	             '	<Shortcut Id="sc_StartMenu_License_$(lang)" Directory="dir_StartMenuVBox" Name="$!(loc.StartMenu_License) ($(VBOX_BRAND_$(lang)_LANG_NAME))"' \
 		     '            Description="$!(loc.StartMenu_License) ($(VBOX_BRAND_$(lang)_LANG_NAME))" Target="License_$(lang).rtf" WorkingDirectory="INSTALLDIR"/>')
 	$(APPEND) $@ '</Include>'
