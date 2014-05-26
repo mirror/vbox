@@ -2251,7 +2251,40 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
         LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds: restore host LED lock states does not supported on this platform.\n"));
 #endif
         m_pHostLedsState = NULL;
-	}
+    }
+}
+
+void UIMachineLogic::sltShowGlobalPreferences()
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Just show Global Preferences: */
+    showGlobalPreferences();
+}
+
+void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QString() */, const QString &strControl /* = QString() */)
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Check that we do NOT handling that already: */
+    if (gActionPool->action(UIActionIndex_Simple_Preferences)->data().toBool())
+        return;
+    /* Remember that we handling that already: */
+    gActionPool->action(UIActionIndex_Simple_Preferences)->setData(true);
+
+    /* Create and execute global settings window: */
+    QPointer<UISettingsDialogGlobal> pDialog = new UISettingsDialogGlobal(activeMachineWindow(),
+                                                                          strCategory, strControl);
+    pDialog->execute();
+    if (pDialog)
+        delete pDialog;
+
+    /* Remember that we do NOT handling that already: */
+    gActionPool->action(UIActionIndex_Simple_Preferences)->setData(false);
 }
 
 int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,

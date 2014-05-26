@@ -283,9 +283,6 @@ private slots:
     /* Handler: Close Runtime UI stuff: */
     void sltCloseRuntimeUI();
 
-    /** Open global preferences. */
-    void sltOpenGlobalPreferences();
-
     /* Console events slots */
     void sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
     void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
