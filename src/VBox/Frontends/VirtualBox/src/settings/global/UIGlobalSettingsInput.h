@@ -241,7 +241,7 @@ class UIHotKeyTable : public QTableView
 public:
 
     /* Constructor: */
-    UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel);
+    UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const QString &strObjectName);
 
 private slots:
 
