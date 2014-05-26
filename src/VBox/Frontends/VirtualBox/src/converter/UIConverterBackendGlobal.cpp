@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "UIConverterBackend.h"
+#include "UIIconPool.h"
 #include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -914,17 +915,17 @@ template<> QPixmap toWarningPixmap(const GlobalSettingsPageType &type)
 {
     switch (type)
     {
-        case GlobalSettingsPageType_General:    return QPixmap(":/machine_warning_16px.png");
-        case GlobalSettingsPageType_Input:      return QPixmap(":/hostkey_warning_16px.png");
+        case GlobalSettingsPageType_General:    return UIIconPool::pixmap(":/machine_warning_16px.png");
+        case GlobalSettingsPageType_Input:      return UIIconPool::pixmap(":/hostkey_warning_16px.png");
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-        case GlobalSettingsPageType_Update:     return QPixmap(":/refresh_warning_16px.png");
+        case GlobalSettingsPageType_Update:     return UIIconPool::pixmap(":/refresh_warning_16px.png");
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-        case GlobalSettingsPageType_Language:   return QPixmap(":/site_warning_16px.png");
-        case GlobalSettingsPageType_Display:    return QPixmap(":/vrdp_warning_16px.png");
-        case GlobalSettingsPageType_Network:    return QPixmap(":/nw_warning_16px.png");
-        case GlobalSettingsPageType_Extensions: return QPixmap(":/extension_pack_warning_16px.png");
+        case GlobalSettingsPageType_Language:   return UIIconPool::pixmap(":/site_warning_16px.png");
+        case GlobalSettingsPageType_Display:    return UIIconPool::pixmap(":/vrdp_warning_16px.png");
+        case GlobalSettingsPageType_Network:    return UIIconPool::pixmap(":/nw_warning_16px.png");
+        case GlobalSettingsPageType_Extensions: return UIIconPool::pixmap(":/extension_pack_warning_16px.png");
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-        case GlobalSettingsPageType_Proxy:      return QPixmap(":/proxy_warning_16px.png");
+        case GlobalSettingsPageType_Proxy:      return UIIconPool::pixmap(":/proxy_warning_16px.png");
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         default: AssertMsgFailed(("No pixmap for %d", type)); break;
     }
@@ -986,17 +987,17 @@ template<> QPixmap toWarningPixmap(const MachineSettingsPageType &type)
 {
     switch (type)
     {
-        case MachineSettingsPageType_General:  return QPixmap(":/machine_warning_16px.png");
-        case MachineSettingsPageType_System:   return QPixmap(":/chipset_warning_16px.png");
-        case MachineSettingsPageType_Display:  return QPixmap(":/vrdp_warning_16px.png");
-        case MachineSettingsPageType_Storage:  return QPixmap(":/hd_warning_16px.png");
-        case MachineSettingsPageType_Audio:    return QPixmap(":/sound_warning_16px.png");
-        case MachineSettingsPageType_Network:  return QPixmap(":/nw_warning_16px.png");
-        case MachineSettingsPageType_Ports:    return QPixmap(":/serial_port_warning_16px.png");
-        case MachineSettingsPageType_Serial:   return QPixmap(":/serial_port_warning_16px.png");
-        case MachineSettingsPageType_Parallel: return QPixmap(":/parallel_port_warning_16px.png");
-        case MachineSettingsPageType_USB:      return QPixmap(":/usb_warning_16px.png");
-        case MachineSettingsPageType_SF:       return QPixmap(":/sf_warning_16px.png");
+        case MachineSettingsPageType_General:  return UIIconPool::pixmap(":/machine_warning_16px.png");
+        case MachineSettingsPageType_System:   return UIIconPool::pixmap(":/chipset_warning_16px.png");
+        case MachineSettingsPageType_Display:  return UIIconPool::pixmap(":/vrdp_warning_16px.png");
+        case MachineSettingsPageType_Storage:  return UIIconPool::pixmap(":/hd_warning_16px.png");
+        case MachineSettingsPageType_Audio:    return UIIconPool::pixmap(":/sound_warning_16px.png");
+        case MachineSettingsPageType_Network:  return UIIconPool::pixmap(":/nw_warning_16px.png");
+        case MachineSettingsPageType_Ports:    return UIIconPool::pixmap(":/serial_port_warning_16px.png");
+        case MachineSettingsPageType_Serial:   return UIIconPool::pixmap(":/serial_port_warning_16px.png");
+        case MachineSettingsPageType_Parallel: return UIIconPool::pixmap(":/parallel_port_warning_16px.png");
+        case MachineSettingsPageType_USB:      return UIIconPool::pixmap(":/usb_warning_16px.png");
+        case MachineSettingsPageType_SF:       return UIIconPool::pixmap(":/sf_warning_16px.png");
         default: AssertMsgFailed(("No pixmap for %d", type)); break;
     }
     return QPixmap();
