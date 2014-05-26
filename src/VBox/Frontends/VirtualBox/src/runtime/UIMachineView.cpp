@@ -413,7 +413,6 @@ void UIMachineView::prepareFrameBuffer()
     RenderMode rm = gEDataManager->renderMode(vboxGlobal().managedVMUuid());
     switch (rm)
     {
-#ifdef VBOX_GUI_USE_QIMAGE
         case RenderMode_QImage:
         {
             UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(screenId());
@@ -446,7 +445,6 @@ void UIMachineView::prepareFrameBuffer()
             m_pFrameBuffer = pFrameBuffer;
             break;
         }
-#endif /* VBOX_GUI_USE_QIMAGE */
 
 #ifdef VBOX_GUI_USE_QUARTZ2D
         case RenderMode_Quartz2D:

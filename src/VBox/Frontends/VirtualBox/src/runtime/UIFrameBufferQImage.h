@@ -16,8 +16,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_GUI_USE_QIMAGE
-
 #ifndef ___UIFrameBufferQImage_h___
 #define ___UIFrameBufferQImage_h___
 
@@ -70,6 +68,3 @@ private:
 };
 
 #endif /* !___UIFrameBufferQImage_h___ */
-
-#endif /* VBOX_GUI_USE_QIMAGE */
-

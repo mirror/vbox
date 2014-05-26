@@ -223,25 +223,6 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
  */
 static void showHelp()
 {
-    QString mode = "", dflt = "";
-#ifdef VBOX_GUI_USE_QIMAGE
-    if (!mode.isEmpty())
-        mode += "|";
-    mode += "image";
-#endif /* VBOX_GUI_USE_QIMAGE */
-#ifdef VBOX_GUI_USE_QUARTZ2D
-    if (!mode.isEmpty())
-        mode += "|";
-    mode += "quartz2d";
-#endif /* VBOX_GUI_USE_QUARTZ2D */
-#if defined(Q_WS_MAC) && defined(VBOX_GUI_USE_QUARTZ2D)
-    dflt = "quartz2d";
-#elif defined(VBOX_GUI_USE_QIMAGE)
-    dflt = "image";
-#else
-# error "Cannot determine the default render mode!"
-#endif
-
     RTPrintf(VBOX_PRODUCT " Manager %s\n"
             "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
             "All rights reserved.\n"
@@ -250,7 +231,6 @@ static void showHelp()
             "  --startvm <vmname|UUID>    start a VM by specifying its UUID or name\n"
             "  --seamless                 switch to seamless mode during startup\n"
             "  --fullscreen               switch to fullscreen mode during startup\n"
-            "  --rmode %-18s select different render mode (default is %s)\n"
             "  --no-startvm-errormsgbox   do not show a message box for VM start errors\n"
             "  --restore-current          restore the current snapshot before starting\n"
             "  --no-aggressive-caching    delays caching media info in VM processes\n"
@@ -287,9 +267,7 @@ static void showHelp()
             "  VBOX_GUI_NO_DEBUGGER       disable the GUI debug menu and debug windows\n"
 # endif
             "\n",
-            RTBldCfgVersion(),
-            mode.toLatin1().constData(),
-            dflt.toLatin1().constData());
+            RTBldCfgVersion());
     /** @todo Show this as a dialog on windows. */
 }
 
