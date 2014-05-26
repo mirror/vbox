@@ -304,9 +304,7 @@ void UIExtraDataManager::setModeForWizard(WizardType type, WizardMode mode)
 
 RenderMode UIExtraDataManager::renderMode(const QString &strId) const
 {
-    RenderMode rm = gpConverter->fromInternalString<RenderMode>(extraDataString(GUI_RenderMode, strId));
-    printf("RenderMode=%d\n", (int)rm);
-    return rm;
+    return gpConverter->fromInternalString<RenderMode>(extraDataString(GUI_RenderMode, strId));
 }
 
 bool UIExtraDataManager::isFirstRun(const QString &strId) const
