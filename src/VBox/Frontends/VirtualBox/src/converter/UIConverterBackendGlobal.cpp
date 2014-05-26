@@ -704,9 +704,9 @@ template<> RenderMode fromInternalString<RenderMode>(const QString &strRenderMod
 #ifdef VBOX_GUI_USE_QUARTZ2D
     keys << "Quartz2D"; values << RenderMode_Quartz2D;
 #endif /* VBOX_GUI_USE_QUARTZ2D */
-    /* Invalid mode for unknown words: */
+    /* QImage mode for unknown words: */
     if (!keys.contains(strRenderMode, Qt::CaseInsensitive))
-        return RenderMode_Invalid;
+        return RenderMode_QImage;
     /* Corresponding mode for known words: */
     return values.at(keys.indexOf(QRegExp(strRenderMode, Qt::CaseInsensitive)));
 }
