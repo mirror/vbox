@@ -32,7 +32,6 @@
 /* GUI includes: */
 #include "UIDefs.h"
 #include "UIMediumDefs.h"
-#include "UIExtraDataDefs.h"
 #include "VBoxGlobalSettings.h"
 
 /* COM includes: */
@@ -126,8 +125,6 @@ public:
     QString managedVMUuid() const { return vmUuid; }
     QList<QUrl> &argUrlList() { return m_ArgUrlList; }
 
-    RenderMode vmRenderMode() const { return vm_render_mode; }
-    const char *vmRenderModeStr() const { return vm_render_mode_str; }
     bool isKWinManaged() const { return mIsKWinManaged; }
 
     const QRect availableGeometry(int iScreen = 0) const;
@@ -437,8 +434,6 @@ private:
     UIMediumEnumerator *m_pMediumEnumerator;
     mutable QReadWriteLock m_mediumEnumeratorDtorRwLock;
 
-    RenderMode vm_render_mode;
-    const char * vm_render_mode_str;
     bool mIsKWinManaged;
 
     /** The --aggressive-caching / --no-aggressive-caching option. */

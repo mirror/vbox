@@ -26,6 +26,7 @@
 /* GUI includes: */
 #include "UIGMachinePreview.h"
 #include "UIVirtualBoxEventHandler.h"
+#include "UIExtraDataDefs.h"
 #include "UIImageTools.h"
 #include "VBoxGlobal.h"
 

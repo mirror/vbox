@@ -30,6 +30,8 @@
 /* Local includes */
 # include "VBoxAboutDlg.h"
 # include "VBoxGlobal.h"
+# include "UIConverter.h"
+# include "UIExtraDataManager.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
@@ -104,13 +106,7 @@ void VBoxAboutDlg::retranslateUi()
     setWindowTitle(tr("VirtualBox - About"));
     QString strAboutText =  tr("VirtualBox Graphical User Interface");
 #ifdef DEBUG
-    QString strRenderingInfo(" (%1)");
-    QString strRenderingMode("QImage");
-# ifdef VBOX_GUI_USE_QUARTZ2D
-    if (vboxGlobal().vmRenderMode() == Quartz2DMode)
-        strRenderingMode = "Quartz2D";
-# endif /* VBOX_GUI_USE_QUARTZ2D */
-    strAboutText += strRenderingInfo.arg(strRenderingMode);
+    strAboutText += QString(" (%1)").arg(gpConverter->toString(gEDataManager->renderMode(vboxGlobal().managedVMUuid())));
 #endif /* DEBUG */
 #ifdef VBOX_BLEEDING_EDGE
     QString strVersionText = "EXPERIMENTAL build %1 - " + QString(VBOX_BLEEDING_EDGE);

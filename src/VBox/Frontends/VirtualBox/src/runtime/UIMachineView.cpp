@@ -48,6 +48,7 @@
 #include "UIMachineViewFullscreen.h"
 #include "UIMachineViewSeamless.h"
 #include "UIMachineViewScale.h"
+#include "UIExtraDataManager.h"
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # include "UIDnDHandler.h"
@@ -409,10 +410,11 @@ void UIMachineView::prepareViewport()
 void UIMachineView::prepareFrameBuffer()
 {
     /* Prepare frame-buffer depending on render-mode: */
-    switch (vboxGlobal().vmRenderMode())
+    RenderMode rm = gEDataManager->renderMode(vboxGlobal().managedVMUuid());
+    switch (rm)
     {
 #ifdef VBOX_GUI_USE_QIMAGE
-        case QImageMode:
+        case RenderMode_QImage:
         {
             UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(screenId());
             if (pFrameBuffer)
@@ -447,7 +449,7 @@ void UIMachineView::prepareFrameBuffer()
 #endif /* VBOX_GUI_USE_QIMAGE */
 
 #ifdef VBOX_GUI_USE_QUARTZ2D
-        case Quartz2DMode:
+        case RenderMode_Quartz2D:
         {
             /* Indicate that we are doing all drawing stuff ourself: */
             viewport()->setAttribute(Qt::WA_PaintOnScreen);
@@ -483,8 +485,8 @@ void UIMachineView::prepareFrameBuffer()
 #endif /* VBOX_GUI_USE_QUARTZ2D */
 
         default:
-            AssertReleaseMsgFailed(("Render mode must be valid: %d\n", vboxGlobal().vmRenderMode()));
-            LogRel(("Invalid render mode: %d\n", vboxGlobal().vmRenderMode()));
+            AssertReleaseMsgFailed(("Render mode must be valid: %d\n", rm));
+            LogRel(("Invalid render mode: %d\n", rm));
             qApp->exit(1);
             break;
     }
@@ -903,7 +905,7 @@ CGImageRef UIMachineView::vmContentImage()
     else
     {
 # ifdef VBOX_GUI_USE_QUARTZ2D
-        if (vboxGlobal().vmRenderMode() == Quartz2DMode)
+        if (gEDataManager->renderMode(vboxGlobal().managedVMUuid()) == RenderMode_Quartz2D)
         {
             /* If the render mode is Quartz2D we could use the CGImageRef
              * of the framebuffer for the dock icon creation. This saves
@@ -1077,7 +1079,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     }
 
 #ifdef VBOX_GUI_USE_QUARTZ2D
-    if (vboxGlobal().vmRenderMode() == Quartz2DMode && m_pFrameBuffer)
+    if (gEDataManager->renderMode(vboxGlobal().managedVMUuid()) == RenderMode_Quartz2D && m_pFrameBuffer)
     {
         m_pFrameBuffer->paintEvent(pPaintEvent);
         updateDockIcon();

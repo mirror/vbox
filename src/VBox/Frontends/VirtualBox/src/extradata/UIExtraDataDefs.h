@@ -344,10 +344,10 @@ enum RuntimeMenuHelpActionType
 /** Runtime UI: Rendering modes. */
 enum RenderMode
 {
-      InvalidRenderMode
-    , QImageMode
+    RenderMode_Invalid,
+    RenderMode_QImage,
 #ifdef VBOX_GUI_USE_QUARTZ2D
-    , Quartz2DMode
+    RenderMode_Quartz2D
 #endif /* VBOX_GUI_USE_QUARTZ2D */
 };
 

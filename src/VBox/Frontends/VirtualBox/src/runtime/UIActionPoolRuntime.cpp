@@ -19,6 +19,7 @@
 
 /* Local includes: */
 #include "UIActionPoolRuntime.h"
+#include "UIExtraDataDefs.h"
 #include "UIShortcutPool.h"
 #include "VBoxGlobal.h"
 
