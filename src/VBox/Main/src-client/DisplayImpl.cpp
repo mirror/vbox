@@ -4457,7 +4457,7 @@ int  Display::handleCrHgcmCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
                                     PFNCRCTLCOMPLETION pfnCompletion,
                                     void *pvCompletion)
 {
-    VMMDev *pVMMDev = mParent->getVMMDev();
+    VMMDev *pVMMDev = mParent ? mParent->getVMMDev() : NULL;
     if (!pVMMDev)
     {
         AssertMsgFailed(("no vmmdev\n"));
