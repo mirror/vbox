@@ -341,6 +341,11 @@ ifn1of ($(KBUILD_TARGET), linux)
 endif
 # Include translations
 VBOX_WITH_DOCS_TRANSLATIONS = 1
+# Default languages
+VBOX_MANUAL_LANGUAGES = en_US
+ifdef VBOX_WITH_DOCS_TRANSLATIONS
+ VBOX_MANUAL_ADD_LANGUAGES = fr_FR
+endif
 # Don't bother with documentation, overrides VBOX_WITH_DOCS.
 # This is not used by makefiles, only Config.kmk, see below.
 #VBOX_WITHOUT_DOCS = 1

@@ -64,12 +64,6 @@ BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE)
 #  Main targets
 #
 ##########################################################################################
-# Default language
-VBOX_MANUAL_LANGUAGES = en_US
-
-ifdef VBOX_WITH_DOCS_TRANSLATIONS
- VBOX_MANUAL_ADD_LANGUAGES = fr_FR
-endif
 
 ifdef VBOX_WITH_DOCS
  if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_DOCS_SDKREF)
