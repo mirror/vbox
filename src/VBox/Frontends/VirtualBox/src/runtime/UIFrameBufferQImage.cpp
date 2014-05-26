@@ -17,8 +17,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_GUI_USE_QIMAGE
-
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -382,6 +380,4 @@ void UIFrameBufferQImage::goFallback()
     m_uPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
     m_bUsesGuestVRAM = false;
 }
-
-#endif /* VBOX_GUI_USE_QIMAGE */
 

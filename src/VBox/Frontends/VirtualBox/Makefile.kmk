@@ -79,13 +79,8 @@ VirtualBox_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 
 VirtualBox_DEFS           =
 VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
-VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_QUARTZ2D VBOX_WITH_TRANSLUCENT_SEAMLESS
-VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE
-VirtualBox_DEFS.linux     = VBOX_GUI_USE_QIMAGE
-VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE
-VirtualBox_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE
-VirtualBox_DEFS.solaris   = VBOX_GUI_USE_QIMAGE
-VirtualBox_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
+VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QUARTZ2D VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBox_DEFS.win       = UNICODE QT_DLL
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
 endif
@@ -978,7 +973,6 @@ $$(VirtualBox_0_OUTDIR)/include/precomp.h.gch: \
 		'-DMAC_OS_X_VERSION_MIN_REQUIRED=1050' \
 		'-DMAC_OS_X_VERSION_MAX_ALLOWED=1050' \
 		'-DVBOX_GUI_USE_QUARTZ2D' \
-		'-DVBOX_GUI_USE_QIMAGE' \
 		'-o' $@ $<
 endif
 
