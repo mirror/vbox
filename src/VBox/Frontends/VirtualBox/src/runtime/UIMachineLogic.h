@@ -247,7 +247,13 @@ private slots:
     void sltSwitchKeyboardLedsToGuestLeds();
     void sltSwitchKeyboardLedsToPreviousLeds();
 
+    /** Show Global Preferences. */
+    void sltShowGlobalPreferences();
+
 private:
+
+    /** Show Global Preferences on the page defined by @a strCategory and tab defined by @a strControl. */
+    void showGlobalPreferences(const QString &strCategory = QString(), const QString &strControl = QString());
 
     /* Helpers: */
     static int searchMaxSnapshotIndex(const CMachine &machine, const CSnapshot &snapshot, const QString &strNameTemplate);
