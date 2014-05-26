@@ -50,6 +50,7 @@ enum UIActionType
 enum UIActionIndex
 {
     /* Various dialog actions: */
+    UIActionIndex_Simple_Preferences,
     UIActionIndex_Simple_LogDialog,
 
     /* 'Help' menu actions: */

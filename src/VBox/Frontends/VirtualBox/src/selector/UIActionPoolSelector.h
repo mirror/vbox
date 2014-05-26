@@ -30,7 +30,6 @@ enum UIActionIndexSelector
     UIActionIndexSelector_Simple_File_MediumManagerDialog,
     UIActionIndexSelector_Simple_File_ImportApplianceWizard,
     UIActionIndexSelector_Simple_File_ExportApplianceWizard,
-    UIActionIndexSelector_Simple_File_PreferencesDialog,
     UIActionIndexSelector_Simple_File_Exit,
 
     /* 'Group' menu actions: */

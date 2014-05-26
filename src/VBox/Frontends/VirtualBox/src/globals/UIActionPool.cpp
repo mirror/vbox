@@ -277,6 +277,43 @@ void UIActionMenu::updateText()
 }
 
 
+class UIActionSimplePreferences : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimplePreferences(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/global_settings_16px.png")
+    {
+        setMenuRole(QAction::PreferencesRole);
+        retranslateUi();
+    }
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("Preferences");
+    }
+
+    QKeySequence defaultShortcut(UIActionPoolType) const
+    {
+        switch (actionPool()->type())
+        {
+            case UIActionPoolType_Selector: return QKeySequence("Ctrl+G");
+            case UIActionPoolType_Runtime: break;
+        }
+        return QKeySequence();
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Preferences...", "global settings"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window"));
+    }
+};
+
 class UIActionSimpleLogDialog : public UIActionSimple
 {
     Q_OBJECT;
@@ -638,6 +675,7 @@ void UIActionPool::sltApplyShortcuts()
 void UIActionPool::createActions()
 {
     /* Various dialog actions: */
+    m_pool[UIActionIndex_Simple_Preferences] = new UIActionSimplePreferences(this);
     m_pool[UIActionIndex_Simple_LogDialog] = new UIActionSimpleLogDialog(this);
     /* 'Help' actions: */
     m_pool[UIActionIndex_Simple_Contents] = new UIActionSimpleContents(this);

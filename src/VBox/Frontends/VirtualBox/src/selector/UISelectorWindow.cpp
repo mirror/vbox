@@ -1161,7 +1161,7 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
 #endif /* Q_WS_MAC */
-    m_pPreferencesDialogAction = gActionPool->action(UIActionIndexSelector_Simple_File_PreferencesDialog);
+    m_pPreferencesDialogAction = gActionPool->action(UIActionIndex_Simple_Preferences);
     pMenu->addAction(m_pPreferencesDialogAction);
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
