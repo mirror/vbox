@@ -166,6 +166,49 @@ protected:
     }
 };
 
+class UIActionMenuKeyboard : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuKeyboard(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi() {}
+};
+
+class UIActionSimpleKeyboardSettings : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleKeyboardSettings(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/hostkey_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("KeyboardSettings");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Configure &Shortcuts"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window to configure shortcuts"));
+    }
+};
+
 class UIActionMenuMouseIntegration : public UIActionMenu
 {
     Q_OBJECT;
@@ -1273,6 +1316,7 @@ void UIActionPoolRuntime::createActions()
     m_pool[UIActionIndexRuntime_Simple_TakeSnapshot] = new UIActionSimplePerformTakeSnapshot(this);
     m_pool[UIActionIndexRuntime_Simple_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);
     m_pool[UIActionIndexRuntime_Simple_InformationDialog] = new UIActionSimpleShowInformationDialog(this);
+    m_pool[UIActionIndexRuntime_Simple_KeyboardSettings] = new UIActionSimpleKeyboardSettings(this);
     m_pool[UIActionIndexRuntime_Toggle_MouseIntegration] = new UIActionToggleMouseIntegration(this);
     m_pool[UIActionIndexRuntime_Simple_TypeCAD] = new UIActionSimplePerformTypeCAD(this);
 #ifdef Q_WS_X11
@@ -1334,6 +1378,9 @@ void UIActionPoolRuntime::createMenus()
     if (m_pool[UIActionIndexRuntime_Menu_Machine])
         delete m_pool[UIActionIndexRuntime_Menu_Machine];
     m_pool[UIActionIndexRuntime_Menu_Machine] = new UIActionMenuMachineRuntime(this);
+    if (m_pool[UIActionIndexRuntime_Menu_Keyboard])
+        delete m_pool[UIActionIndexRuntime_Menu_Keyboard];
+    m_pool[UIActionIndexRuntime_Menu_Keyboard] = new UIActionMenuKeyboard(this);
     if (m_pool[UIActionIndexRuntime_Menu_MouseIntegration])
         delete m_pool[UIActionIndexRuntime_Menu_MouseIntegration];
     m_pool[UIActionIndexRuntime_Menu_MouseIntegration] = new UIActionMenuMouseIntegration(this);

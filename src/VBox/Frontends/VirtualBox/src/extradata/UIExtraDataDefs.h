@@ -263,18 +263,19 @@ enum RuntimeMenuMachineActionType
     RuntimeMenuMachineActionType_TakeSnapshot      = RT_BIT(1),
     RuntimeMenuMachineActionType_TakeScreenshot    = RT_BIT(2),
     RuntimeMenuMachineActionType_InformationDialog = RT_BIT(3),
-    RuntimeMenuMachineActionType_MouseIntegration  = RT_BIT(4),
-    RuntimeMenuMachineActionType_TypeCAD           = RT_BIT(5),
+    RuntimeMenuMachineActionType_KeyboardSettings  = RT_BIT(4),
+    RuntimeMenuMachineActionType_MouseIntegration  = RT_BIT(5),
+    RuntimeMenuMachineActionType_TypeCAD           = RT_BIT(6),
 #ifdef Q_WS_X11
-    RuntimeMenuMachineActionType_TypeCABS          = RT_BIT(6),
+    RuntimeMenuMachineActionType_TypeCABS          = RT_BIT(7),
 #endif /* Q_WS_X11 */
-    RuntimeMenuMachineActionType_Pause             = RT_BIT(7),
-    RuntimeMenuMachineActionType_Reset             = RT_BIT(8),
-    RuntimeMenuMachineActionType_SaveState         = RT_BIT(9),
-    RuntimeMenuMachineActionType_Shutdown          = RT_BIT(10),
-    RuntimeMenuMachineActionType_PowerOff          = RT_BIT(11),
+    RuntimeMenuMachineActionType_Pause             = RT_BIT(8),
+    RuntimeMenuMachineActionType_Reset             = RT_BIT(9),
+    RuntimeMenuMachineActionType_SaveState         = RT_BIT(10),
+    RuntimeMenuMachineActionType_Shutdown          = RT_BIT(11),
+    RuntimeMenuMachineActionType_PowerOff          = RT_BIT(12),
 #ifndef Q_WS_MAC
-    RuntimeMenuMachineActionType_Close             = RT_BIT(12),
+    RuntimeMenuMachineActionType_Close             = RT_BIT(13),
 #endif /* !Q_WS_MAC */
     RuntimeMenuMachineActionType_All               = 0xFFFF
 };

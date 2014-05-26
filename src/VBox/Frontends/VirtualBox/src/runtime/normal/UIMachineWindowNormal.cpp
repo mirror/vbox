@@ -181,6 +181,12 @@ void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndi
         if (gActionPool->action(UIActionIndexRuntime_Menu_MouseIntegration)->isEnabled())
             gActionPool->action(UIActionIndexRuntime_Menu_MouseIntegration)->menu()->exec(pEvent->globalPos());
     }
+    /* Show keyboard LED context menu: */
+    else if (pIndicator == indicatorsPool()->indicator(IndicatorType_Keyboard))
+    {
+        if (gActionPool->action(UIActionIndexRuntime_Menu_Keyboard)->isEnabled())
+            gActionPool->action(UIActionIndexRuntime_Menu_Keyboard)->menu()->exec(pEvent->globalPos());
+    }
 }
 
 void UIMachineWindowNormal::sltProcessGlobalSettingChange(const char * /* aPublicName */, const char * /* aName */)
@@ -351,6 +357,8 @@ void UIMachineWindowNormal::prepareStatusBar()
             }
             pIndicatorBoxHLayout->addWidget(pContainerWidgetHostkey);
         }
+        connect(pLedKeyboard, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
+                this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
     }
 
     /* Add to status-bar: */

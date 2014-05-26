@@ -250,6 +250,15 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu)
     /* Separator #2? */
     bool fSeparator2 = false;
 
+    /* Keyboard Settings action: */
+    if (m_pSession->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_KeyboardSettings)
+    {
+//        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_KeyboardSettings));
+//        fSeparator2 = true;
+    }
+    else
+        gActionPool->action(UIActionIndexRuntime_Simple_KeyboardSettings)->setEnabled(false);
+
     /* Mouse Integration action: */
     if (m_pSession->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_MouseIntegration)
     {

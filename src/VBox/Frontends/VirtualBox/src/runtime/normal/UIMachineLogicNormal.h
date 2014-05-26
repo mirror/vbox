@@ -42,6 +42,7 @@ private slots:
     void sltPrepareHardDisksMenu();
     void sltPrepareSharedFoldersMenu();
     void sltPrepareVideoCaptureMenu();
+    void sltPrepareKeyboardMenu();
     void sltPrepareMouseIntegrationMenu();
 
 private:

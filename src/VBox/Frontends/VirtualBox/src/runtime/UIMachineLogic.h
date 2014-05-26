@@ -190,6 +190,7 @@ private slots:
     /* "Machine" menu functionality: */
     void sltToggleGuestAutoresize(bool fEnabled);
     void sltAdjustWindow();
+    void sltShowKeyboardSettings();
     void sltToggleMouseIntegration(bool fDisabled);
     void sltTypeCAD();
 #ifdef Q_WS_X11
