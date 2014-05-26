@@ -139,38 +139,6 @@ protected:
     }
 };
 
-class UIActionSimplePreferencesDialog : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionSimplePreferencesDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/global_settings_16px.png")
-    {
-        setMenuRole(QAction::PreferencesRole);
-        retranslateUi();
-    }
-
-protected:
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("Preferences");
-    }
-
-    QKeySequence defaultShortcut(UIActionPoolType) const
-    {
-        return QKeySequence("Ctrl+G");
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "&Preferences...", "global settings"));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window"));
-    }
-};
-
 class UIActionSimpleExit : public UIActionSimple
 {
     Q_OBJECT;
@@ -1005,7 +973,6 @@ void UIActionPoolSelector::createActions()
     m_pool[UIActionIndexSelector_Simple_File_MediumManagerDialog] = new UIActionSimpleMediumManagerDialog(this);
     m_pool[UIActionIndexSelector_Simple_File_ImportApplianceWizard] = new UIActionSimpleImportApplianceWizard(this);
     m_pool[UIActionIndexSelector_Simple_File_ExportApplianceWizard] = new UIActionSimpleExportApplianceWizard(this);
-    m_pool[UIActionIndexSelector_Simple_File_PreferencesDialog] = new UIActionSimplePreferencesDialog(this);
     m_pool[UIActionIndexSelector_Simple_File_Exit] = new UIActionSimpleExit(this);
 
     /* 'Group' actions: */
