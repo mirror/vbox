@@ -130,6 +130,9 @@ public:
     /** Defines @a mode (basic/expert) for wizard of @a type. */
     void setModeForWizard(WizardType type, WizardMode mode);
 
+    /** Returns render-mode for machine with passed @a strId. */
+    RenderMode renderMode(const QString &strId) const;
+
     /** Returns whether this machine started for the first time. */
     bool isFirstRun(const QString &strId) const;
     /** Defines whether this machine started for the first time. */

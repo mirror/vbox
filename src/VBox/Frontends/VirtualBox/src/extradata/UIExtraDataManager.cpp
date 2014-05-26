@@ -302,6 +302,13 @@ void UIExtraDataManager::setModeForWizard(WizardType type, WizardMode mode)
         setExtraDataStringList(GUI_HideDescriptionForWizards, newValue);
 }
 
+RenderMode UIExtraDataManager::renderMode(const QString &strId) const
+{
+    RenderMode rm = gpConverter->fromInternalString<RenderMode>(extraDataString(GUI_RenderMode, strId));
+    printf("RenderMode=%d\n", (int)rm);
+    return rm;
+}
+
 bool UIExtraDataManager::isFirstRun(const QString &strId) const
 {
     return isFeatureAllowed(GUI_FirstRun, strId);

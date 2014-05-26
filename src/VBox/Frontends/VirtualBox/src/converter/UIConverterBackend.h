@@ -71,6 +71,7 @@ template<> bool canConvert<RuntimeMenuDevicesActionType>();
 template<> bool canConvert<RuntimeMenuDebuggerActionType>();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 template<> bool canConvert<RuntimeMenuHelpActionType>();
+template<> bool canConvert<RenderMode>();
 template<> bool canConvert<UIVisualStateType>();
 template<> bool canConvert<DetailsElementType>();
 template<> bool canConvert<GlobalSettingsPageType>();
@@ -127,6 +128,8 @@ template<> RuntimeMenuDebuggerActionType fromInternalString<RuntimeMenuDebuggerA
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 template<> QString toInternalString(const RuntimeMenuHelpActionType &runtimeMenuHelpActionType);
 template<> RuntimeMenuHelpActionType fromInternalString<RuntimeMenuHelpActionType>(const QString &strRuntimeMenuHelpActionType);
+template<> QString toInternalString(const RenderMode &renderMode);
+template<> RenderMode fromInternalString<RenderMode>(const QString &strRenderMode);
 template<> QString toInternalString(const UIVisualStateType &visualStateType);
 template<> UIVisualStateType fromInternalString<UIVisualStateType>(const QString &strVisualStateType);
 template<> QString toString(const DetailsElementType &detailsElementType);

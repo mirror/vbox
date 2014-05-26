@@ -26,9 +26,10 @@
 
 /* GUI includes: */
 #include "UIHostComboEditor.h"
-#include "VBoxGlobal.h"
-#include "QIToolButton.h"
+#include "UIExtraDataDefs.h"
 #include "UIIconPool.h"
+#include "QIToolButton.h"
+#include "VBoxGlobal.h"
 
 #ifdef Q_WS_WIN
 # undef LOWORD

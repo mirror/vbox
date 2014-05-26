@@ -31,6 +31,7 @@
 #include "VBoxFBOverlay.h"
 #include "UIMessageCenter.h"
 #include "UIPopupCenter.h"
+#include "UIExtraDataDefs.h"
 #include "VBoxGlobal.h"
 
 /* COM includes: */

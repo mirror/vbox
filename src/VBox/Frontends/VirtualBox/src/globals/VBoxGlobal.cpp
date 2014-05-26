@@ -178,37 +178,6 @@ typedef unsigned long Q_ULONG;      /* word up to 64 bit unsigned */
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 
-/** @internal
- *
- *  Determines the rendering mode from the argument. Sets the appropriate
- *  default rendering mode if the argument is NULL.
- */
-static RenderMode vboxGetRenderMode (const char *aModeStr)
-{
-    RenderMode mode = InvalidRenderMode;
-
-#ifdef VBOX_GUI_USE_QIMAGE
-    mode = QImageMode;
-#else /* !VBOX_GUI_USE_QIMAGE */
-# error "Cannot determine the default render mode!"
-#endif /* !VBOX_GUI_USE_QIMAGE */
-
-    if (aModeStr)
-    {
-        if (0) ;
-#ifdef VBOX_GUI_USE_QIMAGE
-        else if (::strcmp(aModeStr, "image") == 0)
-            mode = QImageMode;
-#endif /* VBOX_GUI_USE_QIMAGE */
-#ifdef VBOX_GUI_USE_QUARTZ2D
-        else if (::strcmp(aModeStr, "quartz2d") == 0)
-            mode = Quartz2DMode;
-#endif /* VBOX_GUI_USE_QUARTZ2D */
-    }
-
-    return mode;
-}
-
 /* static */
 bool VBoxGlobal::m_sfCleanupInProgress = false;
 VBoxGlobal* VBoxGlobal::m_spInstance = 0;
@@ -4054,9 +4023,6 @@ void VBoxGlobal::prepare()
     bool bForceSeamless = false;
     bool bForceFullscreen = false;
 
-    vm_render_mode_str = RTStrDup (virtualBox()
-            .GetExtraData (GUI_RenderMode).toAscii().constData());
-
 #ifdef Q_WS_X11
     mIsKWinManaged = X11IsWindowManagerKWin();
 #endif
@@ -4111,11 +4077,6 @@ void VBoxGlobal::prepare()
         else if (!::strcmp (arg, "-comment") || !::strcmp (arg, "--comment"))
         {
             ++i;
-        }
-        else if (!::strcmp (arg, "-rmode") || !::strcmp (arg, "--rmode"))
-        {
-            if (++i < argc)
-                vm_render_mode_str = qApp->argv() [i];
         }
         else if (!::strcmp (arg, "--settingspw"))
         {
@@ -4282,8 +4243,6 @@ void VBoxGlobal::prepare()
     {
         mVBox.FindMachine(vmUuid).SetExtraData(GUI_Fullscreen, "on");
     }
-
-    vm_render_mode = vboxGetRenderMode (vm_render_mode_str);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* setup the debugger gui. */

@@ -19,6 +19,7 @@
 
 /* Local includes: */
 #include "UIActionPoolSelector.h"
+#include "UIExtraDataDefs.h"
 #include "UIShortcutPool.h"
 #include "UIDefs.h"
 
