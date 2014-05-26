@@ -35,7 +35,9 @@ class UISettingsDialogGlobal : public UISettingsDialog
 
 public:
 
-    UISettingsDialogGlobal(QWidget *pParent);
+    UISettingsDialogGlobal(QWidget *pParent,
+                           const QString &strCategory = QString(),
+                           const QString &strControl = QString());
     ~UISettingsDialogGlobal();
 
 protected:

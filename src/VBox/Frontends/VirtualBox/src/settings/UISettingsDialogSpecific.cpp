@@ -315,7 +315,9 @@ protected:
 
 UISettingsSerializer* UISettingsSerializer::m_pInstance = 0;
 
-UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
+UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent,
+                                               const QString &strCategory /* = QString() */,
+                                               const QString &strControl /* = QString() */)
     : UISettingsDialog(pParent)
 {
     /* Window icon: */
@@ -417,8 +419,40 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
     /* Retranslate UI: */
     retranslateUi();
 
-    /* Choose first item by default: */
-    m_pSelector->selectById(GlobalSettingsPageType_General);
+    /* Setup settings window: */
+    if (!strCategory.isNull())
+    {
+        m_pSelector->selectByLink(strCategory);
+        /* Search for a widget with the given name: */
+        if (!strControl.isNull())
+        {
+            printf("Looking for widget %s..\n", strControl.toAscii().constData());
+            if (QWidget *pWidget = m_pStack->findChild<QWidget*>(strControl))
+            {
+                printf("Widget %s found!\n", strControl.toAscii().constData());
+                QList<QWidget*> parents;
+                QWidget *pParentWidget = pWidget;
+                while ((pParentWidget = pParentWidget->parentWidget()) != 0)
+                {
+                    if (QTabWidget *pTabWidget = qobject_cast<QTabWidget*>(pParentWidget))
+                    {
+                        /* The tab contents widget is two steps down
+                         * (QTabWidget -> QStackedWidget -> QWidget): */
+                        QWidget *pTabPage = parents[parents.count() - 1];
+                        if (pTabPage)
+                            pTabPage = parents[parents.count() - 2];
+                        if (pTabPage)
+                            pTabWidget->setCurrentWidget(pTabPage);
+                    }
+                    parents.append(pParentWidget);
+                }
+                pWidget->setFocus();
+            }
+        }
+    }
+    /* First item as default: */
+    else
+        m_pSelector->selectById(GlobalSettingsPageType_General);
 }
 
 UISettingsDialogGlobal::~UISettingsDialogGlobal()
