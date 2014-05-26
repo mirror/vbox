@@ -43,6 +43,9 @@ public:
         UIDefaultIconType_ArrowForward
     };
 
+    /** Creates pixmap from passed pixmap @a strName. */
+    static QPixmap pixmap(const QString &strName);
+
     /** Creates icon from passed pixmap names for
       * @a strNormal, @a strDisabled and @a strActive icon states. */
     static QIcon iconSet(const QString &strNormal,
