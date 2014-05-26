@@ -59,7 +59,7 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
     unsigned j;
 
     pVBox = pScrn->driverPrivate;
-    if (pVBox->fHaveHGSMI == FALSE || !pScrn->vtSema)
+    if (!pScrn->vtSema)
         return;
 
     for (j = 0; j < pVBox->cScreens; ++j)
@@ -178,8 +178,6 @@ vboxSetupVRAMVbva(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     uint32_t offVRAMBaseMapping, offGuestHeapMemory, cbGuestHeapMemory;
     void *pvGuestHeapMemory;
 
-    if (!pVBox->fHaveHGSMI)
-        return FALSE;
     VBoxHGSMIGetBaseMappingInfo(pScrn->videoRam * 1024, &offVRAMBaseMapping,
                                 NULL, &offGuestHeapMemory, &cbGuestHeapMemory,
                                 NULL);
@@ -224,13 +222,13 @@ vboxSetupVRAMVbva(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     return TRUE;
 }
 
-Bool
+void
 vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 {
     TRACE_ENTRY();
 
-    pVBox->fHaveHGSMI = vboxInitVbva(pScrn->scrnIndex, pScreen, pVBox);
-    return pVBox->fHaveHGSMI;
+    if (!vboxInitVbva(pScrn->scrnIndex, pScreen, pVBox))
+        FatalError("failed to initialise vboxvideo graphics acceleration.\n");
 }
 
 Bool
@@ -293,8 +291,6 @@ vboxDisableVbva(ScrnInfoPtr pScrn)
     VBOXPtr pVBox = pScrn->driverPrivate;
 
     TRACE_ENTRY();
-    if (!pVBox->fHaveHGSMI)  /* Ths function should not have been called */
-        return;
     for (i = 0; i < pVBox->cScreens; ++i)
         VBoxVBVADisable(&pVBox->aVbvaCtx[i], &pVBox->guestCtx, i);
 }
