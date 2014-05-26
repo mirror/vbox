@@ -82,8 +82,10 @@ VBOX_INSTALLER_MERGE_LANGUAGES = $(VBOX_INSTALLER_LANGUAGES)
 #
 # We don't have the license text in another language than English yet,
 # so just define the branding targets to use the English one for now.
+# The installer generation assumes that there is a translation for each
+# of VBOX_MANUAL_ADD_LANGUAGES.
 #
-$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
+$(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
 	$(eval VBOX_BRAND_$(lang)_LICENSE_RTF := $(VBOX_BRAND_LICENSE_RTF)) \
 	$(eval VBOX_BRAND_$(lang)_LANGUAGE_CODEPAGE := 1252))
 
