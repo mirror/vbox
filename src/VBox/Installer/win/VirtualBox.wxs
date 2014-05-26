@@ -344,8 +344,9 @@
     <?if $(env.VBOX_WITH_WEBSERVICES) = "yes" ?>
         <ComponentRef Id="cp_VBoxWebService" />
     <?endif ?>
+        <ComponentRef Id="cp_VBoxCAPI" />
         <ComponentRef Id="cp_VBoxDrv" />
-    <?endif ?>
+<?endif ?>
 
         <Feature Id="VBoxUSB" Title="VirtualBox USB Support" Level="1"
                  Description="!(loc.VB_USBDriver)"
