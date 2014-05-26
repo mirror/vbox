@@ -52,7 +52,7 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     m_pTabWidget->insertTab(UIHotKeyTableIndex_Selector, pSelectorTab, QString());
     m_pSelectorFilterEditor = new QLineEdit(pSelectorTab);
     m_pSelectorModel = new UIHotKeyTableModel(this, UIActionPoolType_Selector);
-    m_pSelectorTable = new UIHotKeyTable(pSelectorTab, m_pSelectorModel);
+    m_pSelectorTable = new UIHotKeyTable(pSelectorTab, m_pSelectorModel, "m_pSelectorTable");
     connect(m_pSelectorFilterEditor, SIGNAL(textChanged(const QString &)),
             m_pSelectorModel, SLOT(sltHandleFilterTextChange(const QString &)));
     QVBoxLayout *pSelectorLayout = new QVBoxLayout(pSelectorTab);
@@ -68,7 +68,7 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, pMachineTab, QString());
     m_pMachineFilterEditor = new QLineEdit(pMachineTab);
     m_pMachineModel = new UIHotKeyTableModel(this, UIActionPoolType_Runtime);
-    m_pMachineTable = new UIHotKeyTable(pMachineTab, m_pMachineModel);
+    m_pMachineTable = new UIHotKeyTable(pMachineTab, m_pMachineModel, "m_pMachineTable");
     connect(m_pMachineFilterEditor, SIGNAL(textChanged(const QString &)),
             m_pMachineModel, SLOT(sltHandleFilterTextChange(const QString &)));
     QVBoxLayout *pMachineLayout = new QVBoxLayout(pMachineTab);
@@ -533,9 +533,12 @@ void UIHotKeyTableModel::applyFilter()
 }
 
 
-UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel)
+UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const QString &strObjectName)
     : QTableView(pParent)
 {
+    /* Set object name: */
+    setObjectName(strObjectName);
+
     /* Connect model: */
     setModel(pModel);
     connect(pModel, SIGNAL(sigShortcutsLoaded()), this, SLOT(sltHandleShortcutsLoaded()));
