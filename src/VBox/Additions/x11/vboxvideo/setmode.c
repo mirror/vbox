@@ -99,6 +99,7 @@ Bool VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     uint32_t offStart, cwReal = cWidth;
+    uint16_t fFlags;
 
     TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, displayWidth=%d\n",
               cDisplay, cWidth, cHeight, x, y, pScrn->displayWidth);
@@ -120,14 +121,11 @@ Bool VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     if (cDisplay == 0)
         VBoxVideoSetModeRegisters(cwReal, cHeight, pScrn->displayWidth,
                                   vboxBPP(pScrn), 0, x, y);
-    if (pVBox->fHaveHGSMI)
-    {
-        uint16_t fFlags = VBVA_SCREEN_F_ACTIVE;
-        fFlags |= (pVBox->afDisabled[cDisplay] ? VBVA_SCREEN_F_DISABLED : 0);
-        VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, x, y,
-                                    offStart, pVBox->cbLine, cwReal, cHeight,
-                                    vboxBPP(pScrn), fFlags);
-    }
+    fFlags = VBVA_SCREEN_F_ACTIVE;
+    fFlags |= (pVBox->afDisabled[cDisplay] ? VBVA_SCREEN_F_DISABLED : 0);
+    VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, x, y,
+                                offStart, pVBox->cbLine, cwReal, cHeight,
+                                vboxBPP(pScrn), fFlags);
     return TRUE;
 }
 

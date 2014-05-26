@@ -541,8 +541,6 @@ vbox_cursor_init(ScreenPtr pScreen)
     Bool rc = TRUE;
 
     TRACE_ENTRY();
-    if (!pVBox->fHaveHGSMI)
-        return FALSE;
     pVBox->pCurs = pCurs = xf86CreateCursorInfoRec();
     if (!pCurs) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,

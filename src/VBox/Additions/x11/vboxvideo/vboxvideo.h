@@ -174,8 +174,6 @@ typedef struct VBOXRec
     Bool forceSWCursor;
     /** Do we know that the guest can handle absolute co-ordinates? */
     Bool guestCanAbsolute;
-    /** Does this host support sending graphics commands using HGSMI? */
-    Bool fHaveHGSMI;
     /** Number of screens attached */
     uint32_t cScreens;
     /** Position information for each virtual screen for the purposes of
@@ -217,7 +215,7 @@ typedef struct VBOXRec
 
 extern Bool vbox_init(int scrnIndex, VBOXPtr pVBox);
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
-extern Bool vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox);
+extern void vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox);
 extern void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBox);
 extern Bool vbox_device_available(VBOXPtr pVBox);
 
