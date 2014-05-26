@@ -725,7 +725,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("paravirtprovider=\"%s\"\n", pszParavirtProvider);
     else
-        RTPrintf("Paravirt. Provider:  %s\n", pszParavirtProvider);
+        RTPrintf("Paravirt. Provider: %s\n", pszParavirtProvider);
 
 
     MachineState_T machineState;
