@@ -356,8 +356,9 @@ endif
 # Documentation (packed as DOCS as they are arch. neutral)
 ifdef VBOX_WITH_DOCS_PACKING
  SOLARIS_COMMON += \
-	$(notdir $(wildcard $(PATH_STAGE_BIN)/UserManual*.pdf)) \
-	$(notdir $(wildcard $(PATH_STAGE_BIN)/VirtualBox*.chm))
+	VirtualBox.chm \
+	UserManual.pdf \
+	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf)
 endif
 
 # Python XPCOM glue
