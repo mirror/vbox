@@ -120,6 +120,10 @@
 # include <VBox/com/array.h>
 #endif
 
+#ifdef VBOX_OPENSSL_FIPS
+# include <openssl/crypto.h>
+#endif
+
 #include <set>
 #include <algorithm>
 #include <memory> // for auto_ptr
@@ -6825,6 +6829,10 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         rc = consoleInitReleaseLog(mMachine);
         if (FAILED(rc))
             throw rc;
+
+#ifdef VBOX_OPENSSL_FIPS
+        LogRel(("crypto: FIPS mode %s\n", FIPS_mode() ? "enabled" : "FAILED"));
+#endif
 
         /* test and clear the TeleporterEnabled property  */
         BOOL fTeleporterEnabled;
