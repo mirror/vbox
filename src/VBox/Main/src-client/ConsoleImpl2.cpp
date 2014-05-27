@@ -1684,10 +1684,10 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 u32GopMode = strTmp.toUInt32();
 
             /* UGA mode settings */
-            uint32_t u32UgaHorisontal = 0;
+            uint32_t u32UgaHorizontal = 0;
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaHorizontalResolution", &strTmp);
             if (!strTmp.isEmpty())
-                u32UgaHorisontal = strTmp.toUInt32();
+                u32UgaHorizontal = strTmp.toUInt32();
 
             uint32_t u32UgaVertical = 0;
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaVerticalResolution", &strTmp);
@@ -1711,7 +1711,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigInteger(pCfg,  "64BitEntry", f64BitEntry); /* boolean */
             InsertConfigInteger(pCfg,  "GopMode", u32GopMode);
-            InsertConfigInteger(pCfg,  "UgaHorizontalResolution", u32UgaHorisontal);
+            InsertConfigInteger(pCfg,  "UgaHorizontalResolution", u32UgaHorizontal);
             InsertConfigInteger(pCfg,  "UgaVerticalResolution", u32UgaVertical);
 
             /* For OS X guests we'll force passing host's DMI info to the guest */
