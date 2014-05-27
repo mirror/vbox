@@ -1781,8 +1781,8 @@ VMM_INT_DECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
     int rc = CPUMSetGuestMsr(pVCpu, pRegFrame->ecx, RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx));
     if (rc != VINF_SUCCESS)
     {
-        Assert(rc == VERR_CPUM_RAISE_GP_0);
-        Log4(("EM: Refuse WRMSR: rc=%d\n", rc));
+        Assert(rc == VERR_CPUM_RAISE_GP_0 || rc == VERR_EM_INTERPRETER);
+        Log4(("EM: Refuse WRMSR: CPUMSetGuestMsr returned %Rrc\n", rc));
         return VERR_EM_INTERPRETER;
     }
     LogFlow(("EMInterpretWrmsr %s (%x) val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx,
