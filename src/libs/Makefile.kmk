@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2013 Oracle Corporation
+# Copyright (C) 2006-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -52,7 +52,7 @@ endif
 if !defined(VBOX_ONLY_SDK) \
  && (   "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)" \
      || defined(VBOX_WITH_EXTPACK_PUEL_BUILD))
- include $(PATH_SUB_CURRENT)/openssl-0.9.8y/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/openssl-1.0.1g/Makefile.kmk
 endif
 
 # libjpeg for VRDP video redirection
