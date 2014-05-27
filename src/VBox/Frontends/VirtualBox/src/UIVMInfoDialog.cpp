@@ -329,7 +329,7 @@ void UIVMInfoDialog::showEvent(QShowEvent *pEvent)
 void UIVMInfoDialog::sltUpdateDetails()
 {
     /* Details page update: */
-    m_browsers[0]->setText(vboxGlobal().detailsReport(m_session.GetMachine(), false /* with links */));
+    setText(m_browsers[0], vboxGlobal().detailsReport(m_session.GetMachine(), false /* with links */));
 }
 
 void UIVMInfoDialog::sltProcessStatistics()
@@ -564,7 +564,7 @@ void UIVMInfoDialog::refreshStatistics()
 
     /* Prepare templates: */
     QString strTable = "<table width=100% cellspacing=1 cellpadding=0>%1</table>";
-    QString strHeader = "<tr><td width=22><img src='%1'></td>"
+    QString strHeader = "<tr><td width=22><img width=16 height=16 src='%1'></td>"
                         "<td colspan=2><nobr><b>%2</b></nobr></td></tr>";
     QString strParagraph = "<tr><td colspan=3></td></tr>";
     QString strResult;
@@ -787,7 +787,7 @@ void UIVMInfoDialog::refreshStatistics()
 
     /* Show full composed page & save/restore scroll-bar position: */
     int iScrollBarValue = m_browsers[1]->verticalScrollBar()->value();
-    m_browsers[1]->setText(strTable.arg(strResult));
+    setText(m_browsers[1], strResult);
     m_browsers[1]->verticalScrollBar()->setValue(iScrollBarValue);
 }
 
@@ -872,5 +872,33 @@ QString UIVMInfoDialog::composeArticle(const QString &strBelongsTo, int iSpacesC
         strResult = strBody.arg(strBelongsTo).arg(QString()).arg(QString());
 
     return strResult;
+}
+
+/* static */
+void UIVMInfoDialog::setText(QRichTextEdit *pTextEdit, QString strText)
+{
+    /* Temporary replace ":/tpixel.png" with "__tpixel__": */
+    strText.replace(":/tpixel.png", "__tpixel__");
+    /* Search for all the mentioned pixmaps: */
+    QRegExp exp(":/([^/]+.png)");
+    exp.setMinimal(true);
+    /* Initialize iterator: */
+    int iPos = exp.indexIn(strText);
+    while (iPos != -1)
+    {
+        /* Replace pixmap record with HiDPI-aware analog: */
+        strText.replace(iPos, 2, "pixmaps://");
+        /* Load HiDPI-aware pixmap: */
+        QPixmap pixmap = UIIconPool::pixmap(exp.cap(0));
+        /* Register loaded pixmap in text-edit' document: */
+        pTextEdit->document()->addResource(QTextDocument::ImageResource,
+                                           QUrl(QString("pixmaps://%1").arg(exp.cap(1))), QVariant(pixmap));
+        /* Advance iterator: */
+        iPos = exp.indexIn(strText);
+    }
+    /* Replace "__tpixel__" with ":/tpixel.png" back: */
+    strText.replace("__tpixel__", ":/tpixel.png");
+    /* Assign text finally: */
+    pTextEdit->setText(strText);
 }
 
