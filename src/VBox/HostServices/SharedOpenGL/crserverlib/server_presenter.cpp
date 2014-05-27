@@ -2324,9 +2324,14 @@ public:
         mFlags.Value = 0;
     }
 
-    bool IsCreated()
+    bool IsCreated() const
     {
         return !!mSpuWindow;
+    }
+
+    bool IsVisivle() const
+    {
+        return mFlags.fVisible;
     }
 
     void Destroy()
@@ -2851,6 +2856,13 @@ public:
 
     int winVisibilityChanged()
     {
+        HCR_FRAMEBUFFER hFb = getFramebuffer();
+        if (!hFb || !CrFbIsEnabled(hFb))
+        {
+            Assert(!mpWindow->IsVisivle());
+            return VINF_SUCCESS;
+        }
+
         int rc = mpWindow->UpdateBegin();
         if (RT_SUCCESS(rc))
         {
@@ -2904,7 +2916,21 @@ protected:
 
             setRegionsChanged();
 
-            return mpWindow->SetSize((uint32_t)(pRect->xRight - pRect->xLeft), (uint32_t)(pRect->yBottom - pRect->yTop));
+            rc = mpWindow->SetSize((uint32_t)(pRect->xRight - pRect->xLeft), (uint32_t)(pRect->yBottom - pRect->yTop));
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("SetSize failed rc %d", rc));
+                return rc;
+            }
+
+            rc = mpWindow->SetVisible(!g_CrPresenter.fWindowsForceHidden);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("SetVisible failed rc %d", rc));
+                return rc;
+            }
+
+            return VINF_SUCCESS;
         }
 
         return mpWindow->SetVisible(false);
@@ -2996,7 +3022,8 @@ protected:
             return rc;
         }
 
-        rc = mpWindow->SetVisible(!g_CrPresenter.fWindowsForceHidden);
+        HCR_FRAMEBUFFER hFb = getFramebuffer();
+        rc = mpWindow->SetVisible(hFb && CrFbIsEnabled(hFb) && !g_CrPresenter.fWindowsForceHidden);
         if (!RT_SUCCESS(rc))
         {
             WARN(("err"));
@@ -4635,9 +4662,6 @@ int CrPMgrModeWinVisible(bool fEnable)
     for (int i = 0; i < cr_server.screenCount; ++i)
     {
         CR_FBDISPLAY_INFO *pDpInfo = &g_CrPresenter.aDisplayInfos[i];
-
-        if (pDpInfo->iFb < 0)
-            continue;
 
         if (pDpInfo->pDpWin)
             pDpInfo->pDpWin->winVisibilityChanged();
