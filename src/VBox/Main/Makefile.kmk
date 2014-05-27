@@ -634,6 +634,9 @@ VBoxC_SDKS = VBOX_LIBPNG VBOX_ZLIB
 ifdef VBOX_WITH_VPX
   VBoxC_SDKS += VBOX_VPX
 endif
+ifdef VBOX_WITH_OPENSSL_FIPS
+  VBoxC_SDKS += VBOX_OPENSSL2
+endif
 
 VBoxC_INCS          = \
 	include \
@@ -774,7 +777,8 @@ $$(VBoxC_0_OUTDIR)/VBoxC.def: $(MAKEFILE_CURRENT)
 endif
 
 src-client/ConsoleImpl.cpp_DEFS = \
-	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
+	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",) \
+	$(if $(VBOX_WITH_OPENSSL_FIPS), VBOX_OPENSSL_FIPS,)
 
 
 src-client/win/VBoxC.rc_DEPS = $(VBoxC_0_OUTDIR)/VBoxC.rgs $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
