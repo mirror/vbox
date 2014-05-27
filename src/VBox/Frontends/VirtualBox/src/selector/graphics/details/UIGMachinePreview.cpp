@@ -28,6 +28,7 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIExtraDataDefs.h"
 #include "UIImageTools.h"
+#include "UIIconPool.h"
 #include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -63,8 +64,8 @@ UIGMachinePreview::UIGMachinePreview(QIGraphicsWidget *pParent)
     m_session.createInstance(CLSID_Session);
 
     /* Create bg images: */
-    m_pbgEmptyImage = new QPixmap(":/preview_empty_228x168px.png");
-    m_pbgFullImage = new QPixmap(":/preview_full_228x168px.png");
+    m_pbgEmptyImage = new QPixmap(UIIconPool::pixmap(":/preview_empty_228x168px.png"));
+    m_pbgFullImage = new QPixmap(UIIconPool::pixmap(":/preview_full_228x168px.png"));
 
     /* Create the context menu: */
     m_pUpdateTimerMenu = new QMenu;

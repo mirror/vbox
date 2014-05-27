@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="os_os2warp4_hidpi.png">images/hidpi/os_os2warp4_hidpi.png</file>
         <file alias="os_other_64_hidpi.png">images/hidpi/os_other_64_hidpi.png</file>
         <file alias="os_other_hidpi.png">images/hidpi/os_other_hidpi.png</file>
         <file alias="os_qnx_hidpi.png">images/hidpi/os_qnx_hidpi.png</file>
@@ -39,6 +38,8 @@
         <file alias="parallel_port_32px_hidpi.png">images/hidpi/parallel_port_32px_hidpi.png</file>
         <file alias="parallel_port_warning_16px_hidpi.png">images/hidpi/parallel_port_warning_16px_hidpi.png</file>
         <file alias="pin_16px_hidpi.png">images/hidpi/pin_16px_hidpi.png</file>
+        <file alias="preview_empty_228x168px_hidpi.png">images/hidpi/preview_empty_228x168px_hidpi.png</file>
+        <file alias="preview_full_228x168px_hidpi.png">images/hidpi/preview_full_228x168px_hidpi.png</file>
         <file alias="previous_16px_hidpi.png">images/hidpi/previous_16px_hidpi.png</file>
         <file alias="proxy_16px_hidpi.png">images/hidpi/proxy_16px_hidpi.png</file>
         <file alias="proxy_24px_hidpi.png">images/hidpi/proxy_24px_hidpi.png</file>
