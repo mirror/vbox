@@ -4415,27 +4415,30 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
         else
         {
             rc = VBOXSTRICTRC_TODO(EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */));
-            if (RT_UNLIKELY(rc != VINF_SUCCESS))
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);     /* RIP updated by EMInterpretInstruction(). */
+            else
                 AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: WrMsr. EMInterpretInstruction failed rc=%Rrc\n", rc));
-            /* RIP updated by EMInterpretInstruction(). */
-            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
         }
 
-        /* If this is an X2APIC WRMSR access, update the APIC state as well. */
-        if (   pCtx->ecx >= MSR_IA32_X2APIC_START
-            && pCtx->ecx <= MSR_IA32_X2APIC_END)
+        if (rc == VINF_SUCCESS)
         {
-            /*
-             * We've already saved the APIC related guest-state (TPR) in hmR0SvmPostRunGuest(). When full APIC register
-             * virtualization is implemented we'll have to make sure APIC state is saved from the VMCB before
-             * EMInterpretWrmsr() changes it.
-             */
-            HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
+            /* If this is an X2APIC WRMSR access, update the APIC state as well. */
+            if (   pCtx->ecx >= MSR_IA32_X2APIC_START
+                && pCtx->ecx <= MSR_IA32_X2APIC_END)
+            {
+                /*
+                 * We've already saved the APIC related guest-state (TPR) in hmR0SvmPostRunGuest(). When full APIC register
+                 * virtualization is implemented we'll have to make sure APIC state is saved from the VMCB before
+                 * EMInterpretWrmsr() changes it.
+                 */
+                HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
+            }
+            else if (pCtx->ecx == MSR_K6_EFER)
+                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_EFER_MSR);
+            else if (pCtx->ecx == MSR_IA32_TSC)
+                pSvmTransient->fUpdateTscOffsetting = true;
         }
-        else if (pCtx->ecx == MSR_K6_EFER)
-            HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_EFER_MSR);
-        else if (pCtx->ecx == MSR_IA32_TSC)
-            pSvmTransient->fUpdateTscOffsetting = true;
     }
     else
     {
