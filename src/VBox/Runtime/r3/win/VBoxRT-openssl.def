@@ -51,7 +51,6 @@
     AES_cfb1_encrypt
     AES_cfb128_encrypt
     AES_cfb8_encrypt
-    AES_cfbr_encrypt_block
     AES_ctr128_encrypt
     AES_decrypt
     AES_ecb_encrypt
@@ -60,7 +59,6 @@
     AES_options
     AES_set_decrypt_key
     AES_set_encrypt_key
-    asc2uni
     asn1_add_error
     ASN1_BIT_STRING_free
     ASN1_BIT_STRING_get_bit
@@ -150,7 +148,6 @@
     ASN1_pack_string
     ASN1_parse
     ASN1_parse_dump
-    asn1_primitive_clear
     ASN1_primitive_free
     ASN1_primitive_new
     ASN1_PRINTABLE_free
@@ -308,12 +305,10 @@
     BN_BLINDING_create_param
     BN_BLINDING_free
     BN_BLINDING_get_flags
-    BN_BLINDING_get_thread_id
     BN_BLINDING_invert
     BN_BLINDING_invert_ex
     BN_BLINDING_new
     BN_BLINDING_set_flags
-    BN_BLINDING_set_thread_id
     BN_BLINDING_update
     BN_bn2bin
     BN_bn2dec
@@ -329,7 +324,6 @@
     BN_CTX_end
     BN_CTX_free
     BN_CTX_get
-    BN_CTX_init
     BN_CTX_new
     BN_CTX_start
     BN_dec2bn
@@ -338,7 +332,6 @@
     BN_div_word
     bn_div_words
     BN_dup
-    bn_dup_expand
     BN_exp
     bn_expand2
     BN_free
@@ -346,7 +339,6 @@
     BN_gcd
     BN_GENCB_call
     BN_generate_prime_ex
-    BN_get_params
     BN_get_word
     BN_get0_nist_prime_192
     BN_get0_nist_prime_224
@@ -443,7 +435,6 @@
     BN_rshift1
     BN_set_bit
     BN_set_negative
-    BN_set_params
     BN_set_word
     BN_sqr
     bn_sqr_comba4
@@ -495,10 +486,7 @@
     CRYPTO_dbg_free
     CRYPTO_dbg_get_options
     CRYPTO_dbg_malloc
-    CRYPTO_dbg_pop_info
-    CRYPTO_dbg_push_info
     CRYPTO_dbg_realloc
-    CRYPTO_dbg_remove_all_info
     CRYPTO_dbg_set_options
     CRYPTO_destroy_dynlockid
     CRYPTO_dup_ex_data
@@ -527,7 +515,6 @@
     CRYPTO_is_mem_check_on
     CRYPTO_lock
     CRYPTO_malloc
-    CRYPTO_malloc_debug_init
     CRYPTO_malloc_locked
     CRYPTO_mem_ctrl
     CRYPTO_mem_leaks
@@ -555,7 +542,6 @@
     CRYPTO_set_mem_debug_options
     CRYPTO_set_mem_ex_functions
     CRYPTO_set_mem_functions
-    CRYPTO_set_mem_info_functions
     CRYPTO_strdup
     CRYPTO_thread_id
     d2i_ACCESS_DESCRIPTION
@@ -594,17 +580,6 @@
     d2i_DISPLAYTEXT
     d2i_DIST_POINT
     d2i_DIST_POINT_NAME
-    d2i_EC_PRIVATEKEY
-    d2i_EC_PUBKEY
-    d2i_EC_PUBKEY_bio
-    d2i_EC_PUBKEY_fp
-    d2i_ECDSA_SIG
-    d2i_ECParameters
-    d2i_ECPKParameters
-    d2i_ECPKPARAMETERS
-    d2i_ECPrivateKey
-    d2i_ECPrivateKey_bio
-    d2i_ECPrivateKey_fp
     d2i_EDIPARTYNAME
     d2i_EXTENDED_KEY_USAGE
     d2i_GENERAL_NAME
@@ -731,214 +706,6 @@
     DIST_POINT_NAME_free
     DIST_POINT_NAME_new
     DIST_POINT_new
-    EC_EX_DATA_clear_free_all_data
-    EC_EX_DATA_clear_free_data
-    EC_EX_DATA_free_all_data
-    EC_EX_DATA_free_data
-    EC_EX_DATA_get_data
-    EC_EX_DATA_set_data
-    EC_get_builtin_curves
-    ec_GF2m_have_precompute_mult
-    ec_GF2m_precompute_mult
-    ec_GF2m_simple_add
-    ec_GF2m_simple_cmp
-    ec_GF2m_simple_dbl
-    ec_GF2m_simple_field_div
-    ec_GF2m_simple_field_mul
-    ec_GF2m_simple_field_sqr
-    ec_GF2m_simple_group_check_discriminant
-    ec_GF2m_simple_group_clear_finish
-    ec_GF2m_simple_group_copy
-    ec_GF2m_simple_group_finish
-    ec_GF2m_simple_group_get_curve
-    ec_GF2m_simple_group_get_degree
-    ec_GF2m_simple_group_init
-    ec_GF2m_simple_group_set_curve
-    ec_GF2m_simple_invert
-    ec_GF2m_simple_is_at_infinity
-    ec_GF2m_simple_is_on_curve
-    ec_GF2m_simple_make_affine
-    EC_GF2m_simple_method
-    ec_GF2m_simple_mul
-    ec_GF2m_simple_oct2point
-    ec_GF2m_simple_point_clear_finish
-    ec_GF2m_simple_point_copy
-    ec_GF2m_simple_point_finish
-    ec_GF2m_simple_point_get_affine_coordinates
-    ec_GF2m_simple_point_init
-    ec_GF2m_simple_point_set_affine_coordinates
-    ec_GF2m_simple_point_set_to_infinity
-    ec_GF2m_simple_point2oct
-    ec_GF2m_simple_points_make_affine
-    ec_GF2m_simple_set_compressed_coordinates
-    ec_GFp_mont_field_decode
-    ec_GFp_mont_field_encode
-    ec_GFp_mont_field_mul
-    ec_GFp_mont_field_set_to_one
-    ec_GFp_mont_field_sqr
-    ec_GFp_mont_group_clear_finish
-    ec_GFp_mont_group_copy
-    ec_GFp_mont_group_finish
-    ec_GFp_mont_group_init
-    ec_GFp_mont_group_set_curve
-    EC_GFp_mont_method
-    ec_GFp_nist_field_mul
-    ec_GFp_nist_field_sqr
-    ec_GFp_nist_group_copy
-    ec_GFp_nist_group_set_curve
-    EC_GFp_nist_method
-    ec_GFp_simple_add
-    ec_GFp_simple_cmp
-    ec_GFp_simple_dbl
-    ec_GFp_simple_field_mul
-    ec_GFp_simple_field_sqr
-    ec_GFp_simple_get_Jprojective_coordinates_GFp
-    ec_GFp_simple_group_check_discriminant
-    ec_GFp_simple_group_clear_finish
-    ec_GFp_simple_group_copy
-    ec_GFp_simple_group_finish
-    ec_GFp_simple_group_get_curve
-    ec_GFp_simple_group_get_degree
-    ec_GFp_simple_group_init
-    ec_GFp_simple_group_set_curve
-    ec_GFp_simple_invert
-    ec_GFp_simple_is_at_infinity
-    ec_GFp_simple_is_on_curve
-    ec_GFp_simple_make_affine
-    EC_GFp_simple_method
-    ec_GFp_simple_oct2point
-    ec_GFp_simple_point_clear_finish
-    ec_GFp_simple_point_copy
-    ec_GFp_simple_point_finish
-    ec_GFp_simple_point_get_affine_coordinates
-    ec_GFp_simple_point_init
-    ec_GFp_simple_point_set_affine_coordinates
-    ec_GFp_simple_point_set_to_infinity
-    ec_GFp_simple_point2oct
-    ec_GFp_simple_points_make_affine
-    ec_GFp_simple_set_compressed_coordinates
-    ec_GFp_simple_set_Jprojective_coordinates_GFp
-    EC_GROUP_check_discriminant
-    EC_GROUP_clear_free
-    EC_GROUP_cmp
-    EC_GROUP_copy
-    EC_GROUP_dup
-    EC_GROUP_free
-    EC_GROUP_get_asn1_flag
-    EC_GROUP_get_basis_type
-    EC_GROUP_get_cofactor
-    EC_GROUP_get_curve_GF2m
-    EC_GROUP_get_curve_GFp
-    EC_GROUP_get_curve_name
-    EC_GROUP_get_degree
-    EC_GROUP_get_order
-    EC_GROUP_get_pentanomial_basis
-    EC_GROUP_get_point_conversion_form
-    EC_GROUP_get_seed_len
-    EC_GROUP_get_trinomial_basis
-    EC_GROUP_get0_generator
-    EC_GROUP_get0_seed
-    EC_GROUP_have_precompute_mult
-    EC_GROUP_method_of
-    EC_GROUP_new
-    EC_GROUP_new_by_curve_name
-    EC_GROUP_new_curve_GF2m
-    EC_GROUP_new_curve_GFp
-    EC_GROUP_precompute_mult
-    EC_GROUP_set_asn1_flag
-    EC_GROUP_set_curve_GF2m
-    EC_GROUP_set_curve_GFp
-    EC_GROUP_set_curve_name
-    EC_GROUP_set_generator
-    EC_GROUP_set_point_conversion_form
-    EC_GROUP_set_seed
-    EC_KEY_check_key
-    EC_KEY_copy
-    EC_KEY_dup
-    EC_KEY_free
-    EC_KEY_generate_key
-    EC_KEY_get_conv_form
-    EC_KEY_get_enc_flags
-    EC_KEY_get_key_method_data
-    EC_KEY_get0_group
-    EC_KEY_get0_private_key
-    EC_KEY_get0_public_key
-    EC_KEY_insert_key_method_data
-    EC_KEY_new
-    EC_KEY_new_by_curve_name
-    EC_KEY_precompute_mult
-    EC_KEY_print
-    EC_KEY_print_fp
-    EC_KEY_set_asn1_flag
-    EC_KEY_set_conv_form
-    EC_KEY_set_enc_flags
-    EC_KEY_set_group
-    EC_KEY_set_private_key
-    EC_KEY_set_public_key
-    EC_KEY_up_ref
-    EC_METHOD_get_field_type
-    EC_POINT_add
-    EC_POINT_bn2point
-    EC_POINT_clear_free
-    EC_POINT_cmp
-    EC_POINT_copy
-    EC_POINT_dbl
-    EC_POINT_dup
-    EC_POINT_free
-    EC_POINT_get_affine_coordinates_GF2m
-    EC_POINT_get_affine_coordinates_GFp
-    EC_POINT_get_Jprojective_coordinates_GFp
-    EC_POINT_hex2point
-    EC_POINT_invert
-    EC_POINT_is_at_infinity
-    EC_POINT_is_on_curve
-    EC_POINT_make_affine
-    EC_POINT_method_of
-    EC_POINT_mul
-    EC_POINT_new
-    EC_POINT_oct2point
-    EC_POINT_point2bn
-    EC_POINT_point2hex
-    EC_POINT_point2oct
-    EC_POINT_set_affine_coordinates_GF2m
-    EC_POINT_set_affine_coordinates_GFp
-    EC_POINT_set_compressed_coordinates_GF2m
-    EC_POINT_set_compressed_coordinates_GFp
-    EC_POINT_set_Jprojective_coordinates_GFp
-    EC_POINT_set_to_infinity
-    EC_POINTs_make_affine
-    EC_POINTs_mul
-    EC_PRIVATEKEY_free
-    EC_PRIVATEKEY_new
-    ec_wNAF_have_precompute_mult
-    ec_wNAF_mul
-    ec_wNAF_precompute_mult
-    ecdsa_check
-    ECDSA_do_sign
-    ECDSA_do_sign_ex
-    ECDSA_do_verify
-    ECDSA_get_default_method
-    ECDSA_get_ex_data
-    ECDSA_get_ex_new_index
-    ECDSA_OpenSSL
-    ECDSA_set_default_method
-    ECDSA_set_ex_data
-    ECDSA_set_method
-    ECDSA_SIG_free
-    ECDSA_SIG_new
-    ECDSA_sign
-    ECDSA_sign_ex
-    ECDSA_sign_setup
-    ECDSA_size
-    ECDSA_verify
-    ECPARAMETERS_free
-    ECPARAMETERS_new
-    ECParameters_print
-    ECParameters_print_fp
-    ECPKPARAMETERS_free
-    ECPKPARAMETERS_new
-    ECPKParameters_print
-    ECPKParameters_print_fp
     EDIPARTYNAME_free
     EDIPARTYNAME_new
     ERR_add_error_data
@@ -1093,13 +860,11 @@
     EVP_PKEY_get_attr_by_OBJ
     EVP_PKEY_get_attr_count
     EVP_PKEY_get1_DH
-    EVP_PKEY_get1_EC_KEY
     EVP_PKEY_get1_RSA
     EVP_PKEY_missing_parameters
     EVP_PKEY_new
     EVP_PKEY_save_parameters
     EVP_PKEY_set1_DH
-    EVP_PKEY_set1_EC_KEY
     EVP_PKEY_set1_RSA
     EVP_PKEY_size
     EVP_PKEY_type
@@ -1173,17 +938,6 @@
     i2d_DISPLAYTEXT
     i2d_DIST_POINT
     i2d_DIST_POINT_NAME
-    i2d_EC_PRIVATEKEY
-    i2d_EC_PUBKEY
-    i2d_EC_PUBKEY_bio
-    i2d_EC_PUBKEY_fp
-    i2d_ECDSA_SIG
-    i2d_ECParameters
-    i2d_ECPKParameters
-    i2d_ECPKPARAMETERS
-    i2d_ECPrivateKey
-    i2d_ECPrivateKey_bio
-    i2d_ECPrivateKey_fp
     i2d_EDIPARTYNAME
     i2d_EXTENDED_KEY_USAGE
     i2d_GENERAL_NAME
@@ -1287,7 +1041,6 @@
     i2d_X509_REVOKED
     i2d_X509_SIG
     i2d_X509_VAL
-    i2o_ECPublicKey
     i2s_ASN1_ENUMERATED
     i2s_ASN1_ENUMERATED_TABLE
     i2s_ASN1_INTEGER
@@ -1312,7 +1065,6 @@
     MD5_Init
     MD5_Transform
     MD5_Update
-    MGF1
     name_cmp
     NAME_CONSTRAINTS_free
     NAME_CONSTRAINTS_new
@@ -1339,10 +1091,7 @@
     NETSCAPE_SPKI_verify
     NOTICEREF_free
     NOTICEREF_new
-    o2i_ECPublicKey
     OBJ_add_object
-    OBJ_bsearch
-    OBJ_bsearch_ex
     OBJ_cleanup
     OBJ_cmp
     OBJ_create
@@ -1422,9 +1171,6 @@
     PEM_proc_type
     PEM_read_bio
     PEM_read_bio_DHparams
-    PEM_read_bio_EC_PUBKEY
-    PEM_read_bio_ECPKParameters
-    PEM_read_bio_ECPrivateKey
     PEM_read_bio_NETSCAPE_CERT_SEQUENCE
     PEM_read_bio_PKCS7
     PEM_read_bio_PrivateKey
@@ -1439,9 +1185,6 @@
     PEM_read_bio_X509_REQ
     PEM_write_bio
     PEM_write_bio_DHparams
-    PEM_write_bio_EC_PUBKEY
-    PEM_write_bio_ECPKParameters
-    PEM_write_bio_ECPrivateKey
     PEM_write_bio_NETSCAPE_CERT_SEQUENCE
     PEM_write_bio_PKCS7
     PEM_write_bio_PrivateKey
@@ -1633,7 +1376,6 @@
     RSA_up_ref
     RSA_verify
     RSA_X931_hash_id
-    RSAPrivateKey_asn1_meth
     RSAPrivateKey_dup
     RSAPublicKey_dup
     s2i_ASN1_INTEGER
@@ -1743,7 +1485,6 @@
     UI_set_ex_data
     UI_set_method
     UI_set_result
-    uni2asc
     USERNOTICE_free
     USERNOTICE_new
     UTF8_getc
@@ -1763,7 +1504,6 @@
     X509_ALGOR_set0
     X509_alias_get0
     X509_alias_set1
-    X509_asn1_meth
     X509_ATTRIBUTE_count
     X509_ATTRIBUTE_create
     X509_ATTRIBUTE_create_by_NID
@@ -2136,10 +1876,6 @@
     X509V3_set_ctx
     X509V3_set_nconf
     X509V3_string_free
-    X9_62_CHARACTERISTIC_TWO_free
-    X9_62_CHARACTERISTIC_TWO_new
-    X9_62_PENTANOMIAL_free
-    X9_62_PENTANOMIAL_new
 
     ;
     ; OpenSSL ssl symbols
@@ -2150,7 +1886,6 @@
     BIO_new_ssl_connect
     BIO_ssl_copy_session_id
     BIO_ssl_shutdown
-    check_srvr_ecc_cert_and_alg
     d2i_SSL_SESSION
     do_dtls1_write
     dtls1_accept
@@ -2201,7 +1936,6 @@
     dtls1_stop_timer
     dtls1_write_app_data_bytes
     dtls1_write_bytes
-    dtlsv1_base_method
     DTLSv1_client_method
     DTLSv1_method
     DTLSv1_server_method
@@ -2381,14 +2115,12 @@
     SSL_rstate_string_long
     ssl_sess_cert_free
     ssl_sess_cert_new
-    SSL_SESSION_cmp
     SSL_SESSION_free
     SSL_SESSION_get_ex_data
     SSL_SESSION_get_ex_new_index
     SSL_SESSION_get_id
     SSL_SESSION_get_time
     SSL_SESSION_get_timeout
-    SSL_SESSION_hash
     SSL_SESSION_new
     SSL_SESSION_print
     SSL_SESSION_print_fp
@@ -2531,7 +2263,6 @@
     ssl3_get_server_done
     ssl3_get_server_hello
     ssl3_init_finished_mac
-    ssl3_mac
     ssl3_new
     ssl3_num_ciphers
     ssl3_output_cert_chain
@@ -2564,15 +2295,12 @@
     ssl3_write
     ssl3_write_bytes
     ssl3_write_pending
-    sslv2_base_method
     SSLv2_client_method
     SSLv2_method
     SSLv2_server_method
-    sslv23_base_method
     SSLv23_client_method
     SSLv23_method
     SSLv23_server_method
-    sslv3_base_method
     SSLv3_client_method
     SSLv3_method
     SSLv3_server_method
@@ -2589,7 +2317,6 @@
     tls1_new
     tls1_process_ticket
     tls1_setup_key_block
-    tlsv1_base_method
     TLSv1_client_method
     TLSv1_method
     TLSv1_server_method
