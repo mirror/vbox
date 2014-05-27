@@ -117,6 +117,9 @@ private:
     /** Helper to compose user-oriented article. */
     QString composeArticle(const QString &strBelongsTo, int iSpacesCount = 0);
 
+    /** Helper to set @a strText with HiDPI-aware pixmaps to corresponding @a pTextEdit. */
+    static void setText(QRichTextEdit *pTextEdit, QString strText);
+
     /** @name General variables.
      * @{ */
     /** Dialog instance pointer. */
