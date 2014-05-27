@@ -4205,7 +4205,8 @@
     name="IMachine" extends="$unknown"
     uuid="480cf695-2d8d-4256-9c7c-cce4184fa048"
     wsmap="managed"
-    wrap-hint-server="addinterface=IInternalMachineControl"
+    wrap-hint-server-addinterfaces="IInternalMachineControl"
+    wrap-hint-server="manualaddinterfaces"
     >
     <desc>
       The IMachine interface represents a virtual machine, or guest, created

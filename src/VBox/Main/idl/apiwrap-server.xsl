@@ -32,6 +32,8 @@
 
 <xsl:variable name="G_xsltFilename" select="'apiwrap-server.xsl'"/>
 
+<xsl:variable name="G_root" select="/"/>
+
 <xsl:include href="typemap-shared.inc.xsl"/>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -105,6 +107,7 @@ templates for file headers/footers
 </xsl:template>
 
 <xsl:template match="interface" mode="classheader">
+    <xsl:param name="addinterfaces"/>
     <xsl:value-of select="concat('#ifndef ', substring(@name, 2), 'Wrap_H_&#10;')"/>
     <xsl:value-of select="concat('#define ', substring(@name, 2), 'Wrap_H_')"/>
     <xsl:text>
@@ -117,7 +120,18 @@ templates for file headers/footers
     <xsl:text>
     public VirtualBoxBase,
 </xsl:text>
-    <xsl:value-of select="concat('    VBOX_SCRIPTABLE_IMPL(', @name, ')&#10;')"/>
+    <xsl:value-of select="concat('    VBOX_SCRIPTABLE_IMPL(', @name, ')')"/>
+    <xsl:if test="count(exsl:node-set($addinterfaces)/token) > 0">
+        <xsl:text>,</xsl:text>
+    </xsl:if>
+    <xsl:text>&#10;</xsl:text>
+    <xsl:for-each select="exsl:node-set($addinterfaces)/token">
+        <xsl:value-of select="concat('    VBOX_SCRIPTABLE_IMPL(', text(), ')')"/>
+        <xsl:if test="not(position()=last())">
+            <xsl:text>,</xsl:text>
+        </xsl:if>
+        <xsl:text>&#10;</xsl:text>
+    </xsl:for-each>
     <xsl:text>{
     Q_OBJECT
 
@@ -135,6 +149,26 @@ public:
         <xsl:with-param name="iface" select="."/>
     </xsl:call-template>
     <xsl:value-of select="concat('        COM_INTERFACE_ENTRY2(IDispatch, ', @name, ')&#10;')"/>
+    <xsl:variable name="manualAddInterfaces">
+        <xsl:call-template name="checkoption">
+            <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
+            <xsl:with-param name="option" select="'manualaddinterfaces'"/>
+        </xsl:call-template>
+    </xsl:variable>
+    <xsl:if test="not($manualAddInterfaces = 'true')">
+        <xsl:for-each select="exsl:node-set($addinterfaces)/token">
+            <!-- This is super tricky, as the for-each switches to the node
+                 set, which means the normal document isn't available any more.
+                 So need to use the global root node to get back into the
+                 documemt to find corresponding interface data. -->
+            <xsl:variable name="addifname">
+                <xsl:value-of select="string(.)"/>
+            </xsl:variable>
+            <xsl:call-template name="emitCOMInterfaces">
+                <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
+            </xsl:call-template>
+        </xsl:for-each>
+    </xsl:if>
     <xsl:text>        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
     END_COM_MAP()
 
@@ -143,6 +177,7 @@ public:
 </xsl:template>
 
 <xsl:template match="interface" mode="classfooter">
+    <xsl:param name="addinterfaces"/>
     <xsl:text>};
 
 </xsl:text>
@@ -150,6 +185,7 @@ public:
 </xsl:template>
 
 <xsl:template match="interface" mode="codeheader">
+    <xsl:param name="addinterfaces"/>
     <xsl:value-of select="concat('#define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_MAIN_', translate(substring(@name, 2), $G_lowerCase, $G_upperCase), '&#10;&#10;')"/>
     <xsl:value-of select="concat('#include &quot;', substring(@name, 2), 'Wrap.h&quot;&#10;')"/>
     <xsl:text>#include "Logging.h"
@@ -160,6 +196,7 @@ public:
 <xsl:template name="emitISupports">
     <xsl:param name="classname"/>
     <xsl:param name="extends"/>
+    <xsl:param name="addinterfaces"/>
     <xsl:param name="depth"/>
     <xsl:param name="interfacelist"/>
 
@@ -170,28 +207,69 @@ public:
             <xsl:call-template name="emitISupports">
                 <xsl:with-param name="classname" select="$classname"/>
                 <xsl:with-param name="extends" select="$newextends"/>
+                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
                 <xsl:with-param name="depth" select="$depth + 1"/>
                 <xsl:with-param name="interfacelist" select="$newiflist"/>
             </xsl:call-template>
         </xsl:when>
         <xsl:otherwise>
-            <xsl:value-of select="concat('NS_IMPL_THREADSAFE_ISUPPORTS', $depth, '_CI(', $classname, ', ', $interfacelist, ')&#10;')"/>
+            <xsl:variable name="addinterfaces_ns" select="exsl:node-set($addinterfaces)"/>
+            <xsl:choose>
+                <xsl:when test="count($addinterfaces_ns/token) > 0">
+                    <xsl:variable name="addifname" select="$addinterfaces_ns/token[1]"/>
+                    <xsl:variable name="addif" select="//interface[@name=$addifname]/@extends"/>
+                    <xsl:variable name="newextends" select="$addif/@extends"/>
+                    <xsl:variable name="newaddinterfaces" select="$addinterfaces_ns/token[position() > 1]"/>
+                    <xsl:variable name="newiflist" select="concat($interfacelist, ', ', $addifname)"/>
+                    <xsl:call-template name="emitISupports">
+                        <xsl:with-param name="classname" select="$classname"/>
+                        <xsl:with-param name="extends" select="$newextends"/>
+                        <xsl:with-param name="addinterfaces" select="$newaddinterfaces"/>
+                        <xsl:with-param name="depth" select="$depth + 1"/>
+                        <xsl:with-param name="interfacelist" select="$newiflist"/>
+                    </xsl:call-template>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="concat('NS_IMPL_THREADSAFE_ISUPPORTS', $depth, '_CI(', $classname, ', ', $interfacelist, ')&#10;')"/>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
 <xsl:template match="interface" mode="codefooter">
+    <xsl:param name="addinterfaces"/>
     <xsl:text>#ifdef VBOX_WITH_XPCOM
 </xsl:text>
     <xsl:value-of select="concat('NS_DECL_CLASSINFO(', substring(@name, 2), 'Wrap)&#10;')"/>
 
-    <xsl:call-template name="emitISupports">
-        <xsl:with-param name="classname" select="concat(substring(@name, 2), 'Wrap')"/>
-        <xsl:with-param name="extends" select="@extends"/>
-        <xsl:with-param name="depth" select="1"/>
-        <xsl:with-param name="interfacelist" select="@name"/>
-    </xsl:call-template>
-
+    <xsl:variable name="manualAddInterfaces">
+        <xsl:call-template name="checkoption">
+            <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
+            <xsl:with-param name="option" select="'manualaddinterfaces'"/>
+        </xsl:call-template>
+    </xsl:variable>
+    <xsl:choose>
+        <xsl:when test="$manualAddInterfaces = 'true'">
+            <xsl:variable name="nulladdinterfaces"></xsl:variable>
+            <xsl:call-template name="emitISupports">
+                <xsl:with-param name="classname" select="concat(substring(@name, 2), 'Wrap')"/>
+                <xsl:with-param name="extends" select="@extends"/>
+                <xsl:with-param name="addinterfaces" select="$nulladdinterfaces"/>
+                <xsl:with-param name="depth" select="1"/>
+                <xsl:with-param name="interfacelist" select="@name"/>
+            </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:call-template name="emitISupports">
+                <xsl:with-param name="classname" select="concat(substring(@name, 2), 'Wrap')"/>
+                <xsl:with-param name="extends" select="@extends"/>
+                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+                <xsl:with-param name="depth" select="1"/>
+                <xsl:with-param name="interfacelist" select="@name"/>
+            </xsl:call-template>
+        </xsl:otherwise>
+    </xsl:choose>
     <xsl:text>#endif // VBOX_WITH_XPCOM
 </xsl:text>
 </xsl:template>
@@ -210,6 +288,28 @@ public:
     <xsl:param name="optionlist"/>
     <xsl:param name="option"/>
     <xsl:value-of select="string-length($option) > 0 and contains(concat(',', translate($optionlist, ' ', ''), ','), concat(',', $option, ','))"/>
+</xsl:template>
+
+<xsl:template name="getattrlist">
+    <xsl:param name="val"/>
+    <xsl:param name="separator" select="','"/>
+
+    <xsl:if test="$val and $val != ''">
+        <xsl:choose>
+            <xsl:when test="contains($val,$separator)">
+                <token>
+                    <xsl:value-of select="substring-before($val,$separator)"/>
+                </token>
+                <xsl:call-template name="getattrlist">
+                    <xsl:with-param name="val" select="substring-after($val,$separator)"/>
+                    <xsl:with-param name="separator" select="$separator"/>
+                </xsl:call-template>
+            </xsl:when>
+            <xsl:otherwise>
+                <token><xsl:value-of select="$val"/></token>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:if>
 </xsl:template>
 
 <xsl:template name="translatepublictype">
@@ -350,12 +450,20 @@ public:
 <xsl:template name="emitInterface">
     <xsl:param name="iface"/>
 
+    <xsl:variable name="addinterfaces">
+        <xsl:call-template name="getattrlist">
+            <xsl:with-param name="val" select="$iface/@wrap-hint-server-addinterfaces"/>
+        </xsl:call-template>
+    </xsl:variable>
+
     <xsl:call-template name="emitHeader">
         <xsl:with-param name="iface" select="$iface"/>
+        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
     </xsl:call-template>
 
     <xsl:call-template name="emitCode">
         <xsl:with-param name="iface" select="$iface"/>
+        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
     </xsl:call-template>
 </xsl:template>
 
@@ -529,7 +637,7 @@ public:
         </xsl:call-template>
     </xsl:variable>
     <xsl:variable name="type" select="."/>
-    <xsl:variable name="thatif" select="../../../..//interface[@name=$type]"/>
+    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
     <xsl:choose>
         <xsl:when test="$type='$unknown'">
             <xsl:if test="../@safearray='yes'">
@@ -1236,6 +1344,7 @@ public:
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitHeader">
     <xsl:param name="iface"/>
+    <xsl:param name="addinterfaces"/>
 
     <xsl:variable name="filename" select="concat(substring(@name, 2), 'Wrap.h')"/>
 
@@ -1249,13 +1358,29 @@ public:
                 <xsl:with-param name="class" select="substring(@name, 2)"/>
                 <xsl:with-param name="type" select="'header'"/>
             </xsl:call-template>
-            <xsl:apply-templates select="." mode="classheader"/>
+            <xsl:apply-templates select="$iface" mode="classheader">
+                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+            </xsl:apply-templates>
 
             <!-- interface attributes/methods (public) -->
             <xsl:call-template name="emitInterfaceDecls">
                 <xsl:with-param name="iface" select="$iface"/>
                 <xsl:with-param name="pmode" select="'public'"/>
             </xsl:call-template>
+
+            <xsl:for-each select="exsl:node-set($addinterfaces)/token">
+                <!-- This is super tricky, as the for-each switches to the node
+                     set, which means the normal document isn't available any
+                     more. So need to use the global root node to get back into
+                     the documemt to find corresponding interface data. -->
+                <xsl:variable name="addifname">
+                    <xsl:value-of select="string(.)"/>
+                </xsl:variable>
+                <xsl:call-template name="emitInterfaceDecls">
+                    <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
+                    <xsl:with-param name="pmode" select="'public'"/>
+                </xsl:call-template>
+            </xsl:for-each>
 
             <!-- auxiliary methods (public) -->
             <xsl:call-template name="emitAuxMethodDecls">
@@ -1272,7 +1397,21 @@ private:</xsl:text>
                 <xsl:with-param name="pmode" select="'wrapped'"/>
             </xsl:call-template>
 
-            <xsl:apply-templates select="." mode="classfooter"/>
+            <xsl:for-each select="exsl:node-set($addinterfaces)/token">
+                <!-- This is super tricky, as the for-each switches to the node
+                     set, which means the normal document isn't available any
+                     more. So need to use the global root node to get back into
+                     the documemt to find corresponding interface data. -->
+                <xsl:variable name="addifname">
+                    <xsl:value-of select="string(.)"/>
+                </xsl:variable>
+                <xsl:call-template name="emitInterfaceDecls">
+                    <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
+                    <xsl:with-param name="pmode" select="'wrapped'"/>
+                </xsl:call-template>
+            </xsl:for-each>
+
+            <xsl:apply-templates select="$iface" mode="classfooter"/>
             <xsl:apply-templates select="$iface" mode="endfile">
                 <xsl:with-param name="file" select="$filename"/>
             </xsl:apply-templates>
@@ -1290,6 +1429,7 @@ private:</xsl:text>
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitInterfaceDefs">
     <xsl:param name="iface"/>
+    <xsl:param name="addinterfaces"/>
 
     <xsl:value-of select="concat('DEFINE_EMPTY_CTOR_DTOR(', substring($iface/@name, 2), 'Wrap)&#10;&#10;')"/>
 
@@ -1300,12 +1440,42 @@ private:</xsl:text>
         <xsl:with-param name="pmode" select="'code'"/>
     </xsl:call-template>
 
+    <xsl:for-each select="exsl:node-set($addinterfaces)/token">
+        <!-- This is super tricky, as the for-each switches to the node set,
+             which means the normal document isn't available any more. So need
+             to use the global root node to get back into the documemt to find
+             corresponding interface data. -->
+        <xsl:variable name="addifname">
+            <xsl:value-of select="string(.)"/>
+        </xsl:variable>
+        <xsl:call-template name="emitAttributes">
+            <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
+            <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
+            <xsl:with-param name="pmode" select="'code'"/>
+        </xsl:call-template>
+    </xsl:for-each>
+
     <!-- methods -->
     <xsl:call-template name="emitMethods">
         <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
         <xsl:with-param name="pmode" select="'code'"/>
     </xsl:call-template>
+
+    <xsl:for-each select="exsl:node-set($addinterfaces)/token">
+        <!-- This is super tricky, as the for-each switches to the node set,
+             which means the normal document isn't available any more. So need
+             to use the global root node to get back into the documemt to find
+             corresponding interface data. -->
+        <xsl:variable name="addifname">
+            <xsl:value-of select="string(.)"/>
+        </xsl:variable>
+        <xsl:call-template name="emitMethods">
+            <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
+            <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
+            <xsl:with-param name="pmode" select="'code'"/>
+        </xsl:call-template>
+    </xsl:for-each>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -1322,6 +1492,7 @@ private:</xsl:text>
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitCode">
     <xsl:param name="iface"/>
+    <xsl:param name="addinterfaces"/>
 
     <xsl:variable name="filename" select="concat(substring(@name, 2), 'Wrap.cpp')"/>
 
@@ -1335,13 +1506,14 @@ private:</xsl:text>
                 <xsl:with-param name="class" select="substring(@name, 2)"/>
                 <xsl:with-param name="type" select="'code'"/>
             </xsl:call-template>
-            <xsl:apply-templates select="." mode="codeheader"/>
-
-            <!-- @todo special thread logging for API methods returning IProgress??? would be very usefulcurrently nothing, maybe later some generic FinalConstruct/... implementation -->
+            <xsl:apply-templates select="$iface" mode="codeheader">
+                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+            </xsl:apply-templates>
 
             <!-- interface attributes/methods (public) -->
             <xsl:call-template name="emitInterfaceDefs">
                 <xsl:with-param name="iface" select="$iface"/>
+                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
             </xsl:call-template>
 
             <!-- auxiliary methods (public) -->
@@ -1349,7 +1521,9 @@ private:</xsl:text>
                 <xsl:with-param name="iface" select="$iface"/>
             </xsl:call-template>
 
-            <xsl:apply-templates select="." mode="codefooter"/>
+            <xsl:apply-templates select="$iface" mode="codefooter">
+                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+            </xsl:apply-templates>
             <xsl:apply-templates select="$iface" mode="endfile">
                 <xsl:with-param name="file" select="$filename"/>
             </xsl:apply-templates>
