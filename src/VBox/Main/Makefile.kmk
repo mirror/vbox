@@ -1058,7 +1058,7 @@ VBOX_JMSCOM_TARGET := $(PATH_TARGET)/vboxjmscom-gen
 VBOX_JMSCOM_GEN     = $(VBOX_JMSCOM_TARGET)/jmscomgen
 VBOX_JMSCOM_JDEST  := $(VBOX_JMSCOM_TARGET)/jdest
 VBOX_GLUE_XSLT_DIR := $(PATH_ROOT)/src/VBox/Main/glue
-VBOX_JACOB_DIR     := $(PATH_ROOT)/src/libs/jacob-1.15-M3
+VBOX_JACOB_DIR     := $(PATH_ROOT)/src/libs/jacob-1.17
 
 INSTALLS += VBoxJMscom-inst-jar
 VBoxJMscom-inst-jar_INST = $(INST_SDK)bindings/mscom/java/
@@ -1085,6 +1085,7 @@ $(VBOX_JMSCOM_GEN)/jmscomglue.list: \
 	$(call MSG_L1,Generating Java MSCOM glue files from XIDL)
 	$(QUIET)$(RM) -f $(wildcard $(VBOX_JMSCOM_GEN)/java/*.java)
 	$(QUIET)$(VBOX_XSLTPROC) \
+              --stringparam filelistonly ""                    \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
               --stringparam G_vboxGlueStyle mscom              \
               --stringparam G_vboxDirPrefix ""                 \
@@ -1093,15 +1094,14 @@ $(VBOX_JMSCOM_GEN)/jmscomglue.list: \
 	$(QUIET)echo $(VBOX_JMSCOM_GEN)/java/*.java > $@
 
 $$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
-	$(call MSG_TOOL,javac,$(notdir $@),jmscomgen.list,)
+	$(call MSG_TOOL,javac,$(notdir $@),jmscomglue.list,)
 	$(QUIET)$(RM) -Rf $(VBOX_JMSCOM_JDEST)
 	$(QUIET)$(MKDIR) -p $(VBOX_JMSCOM_JDEST)
 	$(call MSG_TOOL,javac,$(notdir $@),...,)
-	$(VBOX_JAVAC) $(VBOX_JAVAC_OPTS) \
-                @$(VBOX_JMSCOM_GEN)/jmscomglue.list \
+	$(QUIET)$(VBOX_JAVAC) $(VBOX_JAVAC_OPTS) @$(VBOX_JMSCOM_GEN)/jmscomglue.list \
 		-d $(VBOX_JMSCOM_JDEST) -classpath "$(VBOX_JMSCOM_JDEST)$(VBOX_SEP)$(VBOX_JACOB_DIR)/jacob.jar"
 	$(call MSG_LINK,$(notdir $@),$@)
-	$(VBOX_JAR) cf $@ -C $(VBOX_JMSCOM_JDEST) .
+	$(QUIET)$(VBOX_JAR) cf $@ -C $(VBOX_JMSCOM_JDEST) .
 
 ## @todo compile TestVBox.java (see below) to have sanity checking
 

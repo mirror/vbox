@@ -1366,7 +1366,10 @@
               <xsl:with-param name="forceelem" select="'yes'" />
             </xsl:call-template>
           </xsl:variable>
-          <xsl:value-of select="concat('Helper.unwrap2(', $elemgluetype, '.class, ', $elembacktype, '.class, ', $value, ')')"/>
+          <!-- Sometimes javac needs a boost of self-confidence regarding
+               varargs calls, and this (Object) cast makes sure that it calls
+               the varargs method - as if there is any other. -->
+          <xsl:value-of select="concat('(Object)Helper.unwrap2(', $elemgluetype, '.class, ', $elembacktype, '.class, ', $value, ')')"/>
         </xsl:when>
         <xsl:otherwise>
           <xsl:value-of select="concat('(', $value, ' != null) ? ', $value, '.getTypedWrapped() : null')" />
@@ -1453,7 +1456,7 @@
     </xsl:when>
 
     <xsl:when test="($idltype='octet') and ($safearray='yes')">
-      <xsl:value-of select="concat('Helper.encodeBase64(', $value, ')')"/>
+      <xsl:value-of select="$value"/>
     </xsl:when>
 
     <xsl:otherwise>
@@ -1579,7 +1582,7 @@
 
   <xsl:choose>
     <xsl:when test="($G_vboxGlueStyle='xpcom')">
-      <xsl:text>                </xsl:text>
+      <xsl:text>            </xsl:text>
       <xsl:if test="param[@dir='return']">
         <xsl:value-of select="concat($retval, ' = ')" />
       </xsl:if>
@@ -1624,7 +1627,7 @@
     </xsl:when>
 
     <xsl:when test="($G_vboxGlueStyle='mscom')">
-      <xsl:text>                </xsl:text>
+      <xsl:text>            </xsl:text>
       <xsl:if test="param[@dir='return']">
         <xsl:value-of select="concat($retval, ' = ')" />
       </xsl:if>
@@ -1994,7 +1997,7 @@
                                   '&gt;();&#10;')"/>
           </xsl:when>
           <xsl:otherwise>
-            <xsl:value-of select="concat('        ', $backrettype, ' retVal;&#10;')"/>
+            <xsl:value-of select="concat('            ', $backrettype, ' retVal;&#10;')"/>
           </xsl:otherwise>
         </xsl:choose>
       </xsl:if>
@@ -2045,7 +2048,7 @@
             <xsl:with-param name="safearray" select="$returnidlsafearray" />
           </xsl:call-template>
         </xsl:variable>
-        <xsl:value-of select="concat('        return ', $wrapped, ';&#10;')" />
+        <xsl:value-of select="concat('            return ', $wrapped, ';&#10;')" />
       </xsl:if>
       <xsl:call-template name="endExcWrapper"/>
 
@@ -2120,19 +2123,19 @@
           <xsl:with-param name="type" select="$ifname" />
         </xsl:call-template>
       </xsl:variable>
-      <xsl:text>      nsISupports nsobj = obj != null ? (nsISupports)obj.getWrapped() : null;&#10;</xsl:text>
-      <xsl:text>      if (nsobj == null) return null;&#10;</xsl:text>
-      <xsl:value-of select="concat('      ', $backtype, ' qiobj = Helper.queryInterface(nsobj, &quot;{', $uuid, '}&quot;, ', $backtype, '.class);&#10;')" />
-      <xsl:value-of select="concat('      return qiobj == null ? null : new ', $ifname, '(qiobj);&#10;')" />
+      <xsl:text>        nsISupports nsobj = obj != null ? (nsISupports)obj.getWrapped() : null;&#10;</xsl:text>
+      <xsl:text>        if (nsobj == null) return null;&#10;</xsl:text>
+      <xsl:value-of select="concat('        ', $backtype, ' qiobj = Helper.queryInterface(nsobj, &quot;{', $uuid, '}&quot;, ', $backtype, '.class);&#10;')" />
+      <xsl:value-of select="concat('        return qiobj == null ? null : new ', $ifname, '(qiobj);&#10;')" />
     </xsl:when>
 
     <xsl:when test="$G_vboxGlueStyle='mscom'">
-      <xsl:value-of select="concat('       return', ' obj == null ? null : new ', $ifname, '((com.jacob.com.Dispatch)obj.getWrapped());&#10;')" />
+      <xsl:value-of select="concat('        return', ' obj == null ? null : new ', $ifname, '((com.jacob.com.Dispatch)obj.getWrapped());&#10;')" />
     </xsl:when>
 
     <xsl:when test="$G_vboxGlueStyle='jaxws'">
       <!-- bad, need to check that we really can be casted to this type -->
-      <xsl:value-of select="concat('       return obj == null ?  null : new ', $ifname, '(obj.getWrapped(), obj.getRemoteWSPort());&#10;')" />
+      <xsl:value-of select="concat('        return obj == null ?  null : new ', $ifname, '(obj.getWrapped(), obj.getRemoteWSPort());&#10;')" />
     </xsl:when>
 
     <xsl:otherwise>
@@ -2331,14 +2334,14 @@
       <xsl:when test="($G_vboxGlueStyle='jaxws')">
         <xsl:value-of select="concat('    public ', $ifname, '(String wrapped, VboxPortType port)&#10;')" />
         <xsl:text>    {&#10;</xsl:text>
-        <xsl:text>          super(wrapped, port);&#10;</xsl:text>
+        <xsl:text>        super(wrapped, port);&#10;</xsl:text>
         <xsl:text>    }&#10;</xsl:text>
       </xsl:when>
 
       <xsl:when test="($G_vboxGlueStyle='xpcom') or ($G_vboxGlueStyle='mscom')">
         <xsl:value-of select="concat('    public ', $ifname, '(',  $wrappedType, ' wrapped)&#10;')" />
         <xsl:text>    {&#10;</xsl:text>
-        <xsl:text>          super(wrapped);&#10;</xsl:text>
+        <xsl:text>        super(wrapped);&#10;</xsl:text>
         <xsl:text>    }&#10;</xsl:text>
 
         <!-- Typed wrapped object accessor -->
@@ -3333,8 +3336,6 @@ public class Helper
     {
         if (values == null)
             return null;
-        if (values.length == 0)
-            return Collections.emptyList();
 
         List<Short> ret = new ArrayList<Short>(values.length);
         for (short v : values)
@@ -3348,8 +3349,6 @@ public class Helper
     {
         if (values == null)
             return null;
-        if (values.length == 0)
-            return Collections.emptyList();
 
         List<Integer> ret = new ArrayList<Integer>(values.length);
         for (int v : values)
@@ -3363,8 +3362,6 @@ public class Helper
     {
         if (values == null)
             return null;
-        if (values.length == 0)
-            return Collections.emptyList();
 
         List<Long> ret = new ArrayList<Long>(values.length);
         for (long v : values)
@@ -3378,8 +3375,6 @@ public class Helper
     {
         if (values == null)
             return null;
-        if (values.length == 0)
-            return Collections.emptyList();
 
         List<String> ret = new ArrayList<String>(values.length);
         for (String v : values)
@@ -3442,7 +3437,7 @@ public class Helper
             case Variant.VariantDispatch:
                 return wrapDispatch(wrapperClass, v.getDispatch());
             default:
-                throw new VBoxException("unhandled variant type " + vt);
+                throw new IllegalArgumentException("unhandled variant type " + vt);
         }
     }
 
