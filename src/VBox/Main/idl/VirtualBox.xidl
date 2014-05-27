@@ -4205,6 +4205,7 @@
     name="IMachine" extends="$unknown"
     uuid="480cf695-2d8d-4256-9c7c-cce4184fa048"
     wsmap="managed"
+    wrap-hint-server="addinterface=IInternalMachineControl"
     >
     <desc>
       The IMachine interface represents a virtual machine, or guest, created
@@ -18295,6 +18296,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="ISession" extends="$unknown"
     uuid="12F4DCDB-12B2-4EC1-B7CD-DDD9F6C5BF4D"
     wsmap="managed"
+    wrap-hint-server="addinterface=IInternalSessionControl"
     >
     <desc>
       The ISession interface represents a client process and allows for locking
