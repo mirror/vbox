@@ -7974,7 +7974,7 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
                              task.mVDOperationIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not create the clone medium '%s'%s"),
+                                   tr("Could not create the exported medium '%s'%s"),
                                    targetLocation.c_str(), i_vdError(vrc).c_str());
             }
             catch (HRESULT aRC) { rc = aRC; }
@@ -8144,7 +8144,7 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
                              task.mVDOperationIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not create the clone medium '%s'%s"),
+                                   tr("Could not create the imported medium '%s'%s"),
                                    targetLocation.c_str(), i_vdError(vrc).c_str());
 
                 size = VDGetFileSize(targetHdd, VD_LAST_IMAGE);
@@ -8177,7 +8177,7 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
 
         if (pParent)
         {
-            /* associate the clone with the parent and deassociate
+            /* associate the imported medium with the parent and deassociate
              * from VirtualBox */
             m->pParent = pParent;
             pParent->m->llChildren.push_back(this);
