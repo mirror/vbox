@@ -894,17 +894,31 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.15";
             break;
 
-        case SettingsVersion_Future:
-            // can be set if this code runs on XML files that were created by a future version of VBox;
-            // in that case, downgrade to current version when writing since we can't write future versions...
-            pcszVersion = "1.15";
-            m->sv = SettingsVersion_v1_15;
-            break;
-
         default:
+            // catch human error: the assertion below will trigger in debug
+            // or dbgopt builds, so hopefully this will get noticed sooner in
+            // the future, because it's easy to forget top update something.
+            AssertMsg(m->sv <= SettingsVersion_v1_7, ("Settings.cpp: unexpected settings version %d, unhandled future version?\n", m->sv));
             // silently upgrade if this is less than 1.7 because that's the oldest we can write
-            pcszVersion = "1.7";
-            m->sv = SettingsVersion_v1_7;
+            if (m->sv <= SettingsVersion_v1_7)
+            {
+                pcszVersion = "1.7";
+                m->sv = SettingsVersion_v1_7;
+            }
+            else
+            {
+                // This is reached for SettingsVersion_Future and forgotten
+                // settings version after SettingsVersion_v1_7, which should
+                // not happen (see assertion above). Set the version to the
+                // latest known version, to minimize loss of information, but
+                // as we can't predict the future we have to use some format
+                // we know, and latest should be the best choice. Note that
+                // for "forgotten settings" this may not be the best choice,
+                // but as it's an omission of someone who changed this file
+                // it's the only generic possibility.
+                pcszVersion = "1.15";
+                m->sv = SettingsVersion_v1_15;
+            }
             break;
     }
 
