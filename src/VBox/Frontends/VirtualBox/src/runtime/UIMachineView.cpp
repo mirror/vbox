@@ -550,7 +550,7 @@ void UIMachineView::prepareFrameBuffer()
         CFramebuffer fb(NULL);
         /* Check if the framebuffer is already assigned;
          * in this case we do not need to re-assign it neither do we need to AddRef. */
-        display.QueryFramebuffer(m_uScreenId, fb);
+        fb = display.QueryFramebuffer(m_uScreenId);
         if (fb.raw() != m_pFrameBuffer) /* <-this will evaluate to true iff no framebuffer is yet assigned */
         {
             m_pFrameBuffer->AddRef();
