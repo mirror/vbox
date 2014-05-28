@@ -85,16 +85,16 @@ static struct
 
     /** @name Ring-0 method table for AMD-V and VT-x specific operations.
      * @{ */
-    DECLR0CALLBACKMEMBER(int,  pfnEnterSession,(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu));
-    DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback,(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit));
-    DECLR0CALLBACKMEMBER(int,  pfnSaveHostState,(PVM pVM, PVMCPU pVCpu));
-    DECLR0CALLBACKMEMBER(int,  pfnRunGuestCode,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
-    DECLR0CALLBACKMEMBER(int,  pfnEnableCpu,(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
-                                             bool fEnabledByHost, void *pvArg));
-    DECLR0CALLBACKMEMBER(int,  pfnDisableCpu,(PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
-    DECLR0CALLBACKMEMBER(int,  pfnInitVM,(PVM pVM));
-    DECLR0CALLBACKMEMBER(int,  pfnTermVM,(PVM pVM));
-    DECLR0CALLBACKMEMBER(int,  pfnSetupVM,(PVM pVM));
+    DECLR0CALLBACKMEMBER(int,  pfnEnterSession, (PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu));
+    DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback, (RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit));
+    DECLR0CALLBACKMEMBER(int,  pfnSaveHostState, (PVM pVM, PVMCPU pVCpu));
+    DECLR0CALLBACKMEMBER(int,  pfnRunGuestCode, (PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
+    DECLR0CALLBACKMEMBER(int,  pfnEnableCpu, (PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
+                                              bool fEnabledByHost, void *pvArg));
+    DECLR0CALLBACKMEMBER(int,  pfnDisableCpu, (PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
+    DECLR0CALLBACKMEMBER(int,  pfnInitVM, (PVM pVM));
+    DECLR0CALLBACKMEMBER(int,  pfnTermVM, (PVM pVM));
+    DECLR0CALLBACKMEMBER(int,  pfnSetupVM ,(PVM pVM));
     /** @} */
 
     /** Maximum ASID allowed. */
@@ -1251,8 +1251,6 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     /*
      * Copy globals to the VM structure.
      */
-    /** @todo r=ramshankar: Why do we do this for MSRs? We never change them in the
-     *        per-VM structures anyway... */
     pVM->hm.s.vmx.fSupported            = g_HvmR0.vmx.fSupported;
     pVM->hm.s.svm.fSupported            = g_HvmR0.svm.fSupported;
 
