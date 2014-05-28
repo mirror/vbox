@@ -806,8 +806,8 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
          *       powerDown.
          */
         AssertLogRelMsg(enmVMState == VMSTATE_SUSPENDED, ("%s\n", VMR3GetStateName(enmVMState)));
-        AssertLogRelMsg(enmMachineState == MachineState_TeleportingPausedVM,("%s\n",
-                                                                             Global::stringifyMachineState(enmMachineState)));
+        AssertLogRelMsg(enmMachineState == MachineState_TeleportingPausedVM,
+                        ("%s\n", Global::stringifyMachineState(enmMachineState)));
 
         ptrVM.release();
 

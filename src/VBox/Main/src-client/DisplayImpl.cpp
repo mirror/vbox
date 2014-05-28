@@ -4369,10 +4369,9 @@ DECLCALLBACK(void) Display::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNEC
 
                  break;
              }
-             else if (pHdr->u8Type != VBOX_VIDEO_INFO_TYPE_NV_HEAP) /** @todo why is
-                                                                     Additions/WINNT/Graphics/Miniport/VBoxVideo. cpp
-                                                                     pushing this to us? */
+             else if (pHdr->u8Type != VBOX_VIDEO_INFO_TYPE_NV_HEAP)
              {
+                 /** @todo why is Additions/WINNT/Graphics/Miniport/VBoxVideo. cpp pushing this to us? */
                  LogRel(("Guest adapter information contains unsupported type %d. The block has been skipped.\n", pHdr->u8Type));
              }
 

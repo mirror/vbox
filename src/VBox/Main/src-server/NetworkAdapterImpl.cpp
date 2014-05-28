@@ -1305,7 +1305,7 @@ HRESULT NetworkAdapter::getBandwidthGroup(ComPtr<IBandwidthGroup> &aBandwidthGro
         hrc = mParent->getBandwidthGroup(mData->mBandwidthGroup, pBwGroup, true /* fSetError */);
 
         Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence
-                                i  of the group was checked when it was attached. */
+                                 * of the group was checked when it was attached. */
         if (SUCCEEDED(hrc))
             pBwGroup.queryInterfaceTo(aBandwidthGroup.asOutParam());
     }

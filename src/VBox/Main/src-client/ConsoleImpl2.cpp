@@ -4086,7 +4086,8 @@ int Console::configMedium(PCFGMNODE pLunL0,
                     Bstr loc;
                     hrc = pMedium->COMGETTER(Location)(loc.asOutParam());                   H();
                     setVMRuntimeErrorCallbackF(0, "DvdOrFloppyImageInaccessible",
-"The image file '%ls' is inaccessible and is being ignored. Please select a different image file for the virtual %s drive.",
+                                               "The image file '%ls' is inaccessible and is being ignored. "
+                                               "Please select a different image file for the virtual %s drive.",
                                                loc.raw(),
                                                enmType == DeviceType_DVD ? "DVD" : "floppy");
                     pMedium = NULL;
@@ -4729,8 +4730,7 @@ int Console::configNetwork(const char *pszDevice,
                             DWORD err = GetLastError();
                             hrc = HRESULT_FROM_WIN32(err);
                             AssertMsgFailed(("%hrc=%Rhrc %#x\n", hrc, hrc));
-                            AssertLogRelMsgFailed((
-                            "NetworkAttachmentType_Bridged: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n",
+                            AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n",
                                                    hrc, hrc, err));
                         }
                     }
@@ -5112,8 +5112,8 @@ int Console::configNetwork(const char *pszDevice,
                         {
                             DWORD err = GetLastError();
                             hrc = HRESULT_FROM_WIN32(err);
-                            AssertLogRelMsgFailed((
-                        "NetworkAttachmentType_HostOnly: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n", hrc, hrc, err));
+                            AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n",
+                                                   hrc, hrc, err));
                         }
                     }
                     else
@@ -5134,8 +5134,8 @@ int Console::configNetwork(const char *pszDevice,
                 else
                 {
                     VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
-                    AssertLogRelMsgFailed((
-                    "NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n", hrc, hrc));
+                    AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n",
+                                           hrc, hrc));
                     H();
                 }
 
