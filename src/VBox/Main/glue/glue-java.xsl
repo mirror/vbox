@@ -1906,6 +1906,11 @@
       <xsl:variable name="hasOutParms" select="param[@dir='out']" />
       <xsl:variable name="returnidltype" select="param[@dir='return']/@type" />
       <xsl:variable name="returnidlsafearray" select="param[@dir='return']/@safearray" />
+      <xsl:if test="$hasOutParms and not($hasReturnParms) and (count(param[@dir='out']) = 1)">
+        <xsl:call-template name="fatalError">
+          <xsl:with-param name="msg" select="concat('genMethod: ', $ifname, '::', $methodname, ' has exactly one out parameter and no return parameter, this causes trouble with JAX-WS and the out parameter needs to be converted to return')" />
+        </xsl:call-template>
+      </xsl:if>
       <xsl:variable name="returngluetype">
         <xsl:choose>
           <xsl:when test="$returnidltype">
