@@ -854,17 +854,15 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId
 {
     Assert (pFramebuffer);
 
+    NOREF(pixelFormat);
+    NOREF(pvVRAM);
+    NOREF(bpp);
+    NOREF(cbLine);
+
     /* Call the framebuffer to try and set required pixelFormat. */
-    BOOL finished = TRUE;
+    HRESULT hr = pFramebuffer->NotifyChange(uScreenId, 0, 0, w, h); /* @todo origin */
 
-    pFramebuffer->RequestResize (uScreenId, pixelFormat, (BYTE *) pvVRAM,
-                                 bpp, cbLine, w, h, &finished);
-
-    if (!finished)
-    {
-        LogRelFlowFunc(("External framebuffer wants us to wait!\n"));
-        return VINF_VGA_RESIZE_IN_PROGRESS;
-    }
+    Log(("pFramebuffer->NotifyChange hr %08x\n", hr));
 
     return VINF_SUCCESS;
 }
@@ -938,8 +936,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
             uScreenId, pvVRAM, w, h, bpp, cbLine, flags));
 
     /* If there is no framebuffer, this call is not interesting. */
-    if (   uScreenId >= mcMonitors
-        || maFramebuffers[uScreenId].pFramebuffer.isNull())
+    if (uScreenId >= mcMonitors)
     {
         return VINF_SUCCESS;
     }
@@ -952,6 +949,19 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
         mLastWidth = w;
         mLastHeight = h;
         mLastFlags = flags;
+
+        DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+        pFBInfo->w = w;
+        pFBInfo->h = h;
+
+        pFBInfo->u16BitsPerPixel = (uint16_t)bpp;
+        pFBInfo->pu8FramebufferVRAM = (uint8_t *)pvVRAM;
+        pFBInfo->u32LineSize = cbLine;
+    }
+
+    if (maFramebuffers[uScreenId].pFramebuffer.isNull())
+    {
+        return VINF_SUCCESS;
     }
 
     ULONG pixelFormat;
@@ -1000,7 +1010,17 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
 
     /* Framebuffer will be invalid during resize, make sure that it is not accessed. */
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
-        mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, false);
+    {
+        mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, false);
+
+        mpDrv->IConnector.pu8Data    = NULL;
+        mpDrv->IConnector.cbScanline = 0;
+        mpDrv->IConnector.cBits      = 32; /* DevVGA does not work with cBits == 0. */
+        mpDrv->IConnector.cx         = 0;
+        mpDrv->IConnector.cy         = 0;
+    }
+
+    maFramebuffers[uScreenId].pSourceBitmap.setNull();
 
     int rc = callFramebufferResize (maFramebuffers[uScreenId].pFramebuffer, uScreenId,
                                     pixelFormat, pvVRAM, bpp, cbLine, w, h);
@@ -1081,24 +1101,6 @@ void Display::handleResizeCompletedEMT(unsigned uScreenId)
         /* @todo Merge these two 'if's within one 'if (!pFBInfo->pFramebuffer.isNull())' */
         if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && !pFBInfo->pFramebuffer.isNull())
         {
-            /* Primary framebuffer has completed the resize. Update the connector data for VGA device. */
-            int rc2 = updateDisplayData();
-
-            /* Check the framebuffer pixel format to setup the rendering in VGA device. */
-            BOOL usesGuestVRAM = FALSE;
-            pFBInfo->pFramebuffer->COMGETTER(UsesGuestVRAM) (&usesGuestVRAM);
-
-            pFBInfo->fDefaultFormat = (usesGuestVRAM == FALSE);
-
-            /* If the primary framebuffer is disabled, tell the VGA device to not to copy
-             * pixels from VRAM to the framebuffer.
-             */
-            if (pFBInfo->fDisabled || RT_FAILURE(rc2))
-                mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, false);
-            else
-                mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort,
-                                                  pFBInfo->fDefaultFormat);
-
             /* If the screen resize was because of disabling, tell framebuffer to repaint.
              * The framebuffer if now in default format so it will not use guest VRAM
              * and will show usually black image which is there after framebuffer resize.
@@ -1108,11 +1110,6 @@ void Display::handleResizeCompletedEMT(unsigned uScreenId)
         }
         else if (!pFBInfo->pFramebuffer.isNull())
         {
-            BOOL usesGuestVRAM = FALSE;
-            pFBInfo->pFramebuffer->COMGETTER(UsesGuestVRAM) (&usesGuestVRAM);
-
-            pFBInfo->fDefaultFormat = (usesGuestVRAM == FALSE);
-
             /* If the screen resize was because of disabling, tell framebuffer to repaint.
              * The framebuffer if now in default format so it will not use guest VRAM
              * and will show usually black image which is there after framebuffer resize.
@@ -2385,12 +2382,13 @@ STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
 
     if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
-        CHECK_CONSOLE_DRV(mpDrv);
-
-        u32Width = mpDrv->IConnector.cx;
-        u32Height = mpDrv->IConnector.cy;
-        int rc = mpDrv->pUpPort->pfnQueryColorDepth(mpDrv->pUpPort, &u32BitsPerPixel);
-        AssertRC(rc);
+        if (mpDrv)
+        {
+            u32Width = mpDrv->IConnector.cx;
+            u32Height = mpDrv->IConnector.cy;
+            int rc = mpDrv->pUpPort->pfnQueryColorDepth(mpDrv->pUpPort, &u32BitsPerPixel);
+            AssertRC(rc);
+        }
     }
     else if (aScreenId < mcMonitors)
     {
@@ -2477,6 +2475,125 @@ STDMETHODIMP Display::SetFramebuffer(ULONG aScreenId, IFramebuffer *aFramebuffer
         int vrc = changeFramebuffer (this, aFramebuffer, aScreenId);
         ComAssertRCRet (vrc, E_FAIL);
     }
+
+    return S_OK;
+}
+
+STDMETHODIMP Display::AttachFramebuffer(ULONG aScreenId,
+                                        IFramebuffer *aFramebuffer)
+{
+    LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
+
+    CheckComArgPointerValid(aFramebuffer);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aScreenId >= mcMonitors)
+        return setError(E_INVALIDARG, tr("AttachFramebuffer: Invalid screen %d (total %d)"),
+                        aScreenId, mcMonitors);
+
+    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
+    if (!pFBInfo->pFramebuffer.isNull())
+        return setError(E_FAIL, tr("AttachFramebuffer: Framebuffer already attached to %d"),
+                        aScreenId);
+
+    pFBInfo->pFramebuffer = aFramebuffer;
+
+    /* The driver might not have been constructed yet */
+    if (mpDrv)
+    {
+        /* Setup the new framebuffer, the resize will lead to an updateDisplayData call. */
+
+#if defined(VBOX_WITH_CROGL)
+        /* Release the lock, because SHCRGL_HOST_FN_SCREEN_CHANGED will read current framebuffer */
+        /* @todo investigate */
+        {
+            BOOL is3denabled;
+            mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+
+            if (is3denabled)
+            {
+                alock.release();
+            }
+        }
+#endif
+
+        /* @todo generic code for all monitors. */
+        if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
+        {
+            /* This display in VBVA mode. Resize it to the last guest resolution,
+             * if it has been reported.
+             */
+            handleDisplayResize(aScreenId, pFBInfo->u16BitsPerPixel,
+                                pFBInfo->pu8FramebufferVRAM,
+                                pFBInfo->u32LineSize,
+                                pFBInfo->w,
+                                pFBInfo->h,
+                                pFBInfo->flags);
+        }
+        else if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+        {
+            /* VGA device mode, only for the primary screen. */
+            handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, mLastBitsPerPixel,
+                                mLastAddress,
+                                mLastBytesPerLine,
+                                mLastWidth,
+                                mLastHeight,
+                                mLastFlags);
+        }
+    }
+
+    LogRelFlowFunc(("Attached to %d\n", aScreenId));
+    return S_OK;
+}
+
+STDMETHODIMP Display::DetachFramebuffer(ULONG aScreenId)
+{
+    LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aScreenId >= mcMonitors)
+        return setError(E_INVALIDARG, tr("DetachFramebuffer: Invalid screen %d (total %d)"),
+                        aScreenId, mcMonitors);
+
+    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
+
+    pFBInfo->pFramebuffer.setNull();
+
+    return S_OK;
+}
+
+STDMETHODIMP Display::QueryFramebuffer(ULONG aScreenId,
+                                       IFramebuffer **aFramebuffer)
+{
+    LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
+
+    CheckComArgOutPointerValid(aFramebuffer);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aScreenId >= mcMonitors)
+        return setError(E_INVALIDARG, tr("QueryFramebuffer: Invalid screen %d (total %d)"),
+                        aScreenId, mcMonitors);
+
+    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
+
+    *aFramebuffer = pFBInfo->pFramebuffer;
+    if (!pFBInfo->pFramebuffer.isNull())
+        pFBInfo->pFramebuffer->AddRef();
 
     return S_OK;
 }
@@ -3238,9 +3355,20 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
                 if (   pFBInfo->fDefaultFormat
                     && !pFBInfo->fDisabled)
                 {
-                    address = NULL;
-                    HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
-                    if (SUCCEEDED(hrc) && address != NULL)
+                    BYTE *pAddress = NULL;
+                    ULONG ulWidth = 0;
+                    ULONG ulHeight = 0;
+                    ULONG ulBitsPerPixel = 0;
+                    ULONG ulBytesPerLine = 0;
+                    ULONG ulPixelFormat = 0;
+
+                    HRESULT hrc = pFBInfo->pSourceBitmap->QueryBitmapInfo(&pAddress,
+                                                                          &ulWidth,
+                                                                          &ulHeight,
+                                                                          &ulBitsPerPixel,
+                                                                          &ulBytesPerLine,
+                                                                          &ulPixelFormat);
+                    if (SUCCEEDED(hrc))
                     {
                         pu8Src       = pFBInfo->pu8FramebufferVRAM;
                         xSrc                = x;
@@ -3251,7 +3379,7 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
                         u32SrcBitsPerPixel = pFBInfo->u16BitsPerPixel;
 
                         /* Default format is 32 bpp. */
-                        pu8Dst             = address;
+                        pu8Dst             = pAddress;
                         xDst                = xSrc;
                         yDst                = ySrc;
                         u32DstWidth        = u32SrcWidth;
@@ -3373,15 +3501,22 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpda
                 /* Render complete VRAM screen to the framebuffer.
                  * When framebuffer uses VRAM directly, just notify it to update.
                  */
-                if (pFBInfo->fDefaultFormat)
+                if (pFBInfo->fDefaultFormat && !pFBInfo->pSourceBitmap.isNull())
                 {
-                    BYTE *address = NULL;
-                    ULONG uWidth = 0;
-                    ULONG uHeight = 0;
-                    pFBInfo->pFramebuffer->COMGETTER(Width) (&uWidth);
-                    pFBInfo->pFramebuffer->COMGETTER(Height) (&uHeight);
-                    HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
-                    if (SUCCEEDED(hrc) && address != NULL)
+                    BYTE *pAddress = NULL;
+                    ULONG ulWidth = 0;
+                    ULONG ulHeight = 0;
+                    ULONG ulBitsPerPixel = 0;
+                    ULONG ulBytesPerLine = 0;
+                    ULONG ulPixelFormat = 0;
+
+                    HRESULT hrc = pFBInfo->pSourceBitmap->QueryBitmapInfo(&pAddress,
+                                                                          &ulWidth,
+                                                                          &ulHeight,
+                                                                          &ulBitsPerPixel,
+                                                                          &ulBytesPerLine,
+                                                                          &ulPixelFormat);
+                    if (SUCCEEDED(hrc))
                     {
                         uint32_t width              = pFBInfo->w;
                         uint32_t height             = pFBInfo->h;
@@ -3395,7 +3530,7 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpda
                         uint32_t u32SrcBitsPerPixel = pFBInfo->u16BitsPerPixel;
 
                         /* Default format is 32 bpp. */
-                        uint8_t *pu8Dst             = address;
+                        uint8_t *pu8Dst             = pAddress;
                         int32_t xDst                = xSrc;
                         int32_t yDst                = ySrc;
                         uint32_t u32DstWidth        = u32SrcWidth;
@@ -3407,7 +3542,7 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpda
                          * implies resize of Framebuffer is in progress and
                          * copyrect should not be called.
                          */
-                        if (uWidth == pFBInfo->w && uHeight == pFBInfo->h)
+                        if (ulWidth == pFBInfo->w && ulHeight == pFBInfo->h)
                         {
 
                             pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
@@ -3548,8 +3683,100 @@ STDMETHODIMP Display::ViewportChanged(ULONG aScreenId, ULONG x, ULONG y, ULONG w
     return S_OK;
 }
 
+STDMETHODIMP Display::QuerySourceBitmap(ULONG aScreenId,
+                                        IDisplaySourceBitmap **aDisplaySourceBitmap)
+{
+    LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    Console::SafeVMPtr ptrVM(mParent);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aScreenId >= mcMonitors)
+        return setError(E_INVALIDARG, tr("QuerySourceBitmap: Invalid screen %d (total %d)"),
+                        aScreenId, mcMonitors);
+
+    HRESULT hr = querySourceBitmap(aScreenId, aDisplaySourceBitmap);
+
+    alock.release();
+
+    LogRelFlowFunc(("%Rhrc\n", hr));
+    return hr;
+}
+
 // private methods
 /////////////////////////////////////////////////////////////////////////////
+
+HRESULT Display::querySourceBitmap(ULONG aScreenId,
+                                   IDisplaySourceBitmap **ppDisplaySourceBitmap)
+{
+    HRESULT hr = S_OK;
+
+    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
+    if (pFBInfo->pSourceBitmap.isNull())
+    {
+        /* Create a new object. */
+        ComObjPtr<DisplaySourceBitmap> obj;
+        hr = obj.createObject();
+        if (SUCCEEDED(hr))
+        {
+            hr = obj->init(this, aScreenId, pFBInfo);
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            pFBInfo->pSourceBitmap = obj;
+
+            /* Whether VRAM must be copied to the internal buffer. */
+            pFBInfo->fDefaultFormat = !obj->usesVRAM();
+
+            if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+            {
+                /* Start buffer updates. */
+                BYTE *pAddress = NULL;
+                ULONG ulWidth = 0;
+                ULONG ulHeight = 0;
+                ULONG ulBitsPerPixel = 0;
+                ULONG ulBytesPerLine = 0;
+                ULONG ulPixelFormat = 0;
+
+                obj->QueryBitmapInfo(&pAddress,
+                                     &ulWidth,
+                                     &ulHeight,
+                                     &ulBitsPerPixel,
+                                     &ulBytesPerLine,
+                                     &ulPixelFormat);
+
+                mpDrv->IConnector.pu8Data    = pAddress;
+                mpDrv->IConnector.cbScanline = ulBytesPerLine;
+                mpDrv->IConnector.cBits      = ulBitsPerPixel;
+                mpDrv->IConnector.cx         = ulWidth;
+                mpDrv->IConnector.cy         = ulHeight;
+
+                if (pFBInfo->fDefaultFormat)
+                    mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, true);
+            }
+
+            if (pFBInfo->fDefaultFormat)
+            {
+                /* @todo make sure that the bitmap contains the latest image? */
+            }
+        }
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        pFBInfo->pSourceBitmap->AddRef();
+        *ppDisplaySourceBitmap = pFBInfo->pSourceBitmap;
+    }
+
+    return hr;
+}
 
 /**
  *  Helper to update the display information from the framebuffer.
@@ -3847,7 +4074,6 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     bool fNoUpdate = false; /* Do not update the display if any of the framebuffers is being resized. */
     unsigned uScreenId;
 
-    Log2(("DisplayRefreshCallback\n"));
     for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
     {
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
@@ -3894,7 +4120,6 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                 DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
                 if (!pFBInfo->pFramebuffer.isNull() && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
                 {
-                    Assert(pDrv->IConnector.pu8Data);
                     pDisplay->vbvaLock();
                     pDrv->pUpPort->pfnUpdateDisplay(pDrv->pUpPort);
                     pDisplay->vbvaUnlock();
@@ -4741,9 +4966,20 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
                      && !pFBInfo->fDisabled)
             {
                 /* Render VRAM content to the framebuffer. */
-                BYTE *address = NULL;
-                HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
-                if (SUCCEEDED(hrc) && address != NULL)
+                BYTE *pAddress = NULL;
+                ULONG ulWidth = 0;
+                ULONG ulHeight = 0;
+                ULONG ulBitsPerPixel = 0;
+                ULONG ulBytesPerLine = 0;
+                ULONG ulPixelFormat = 0;
+
+                HRESULT hrc = pFBInfo->pSourceBitmap->QueryBitmapInfo(&pAddress,
+                                                                      &ulWidth,
+                                                                      &ulHeight,
+                                                                      &ulBitsPerPixel,
+                                                                      &ulBytesPerLine,
+                                                                      &ulPixelFormat);
+                if (SUCCEEDED(hrc))
                 {
                     uint32_t width              = pCmd->w;
                     uint32_t height             = pCmd->h;
@@ -4756,7 +4992,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
                     uint32_t u32SrcLineSize     = pFBInfo->u32LineSize;
                     uint32_t u32SrcBitsPerPixel = pFBInfo->u16BitsPerPixel;
 
-                    uint8_t *pu8Dst             = address;
+                    uint8_t *pu8Dst             = pAddress;
                     int32_t xDst                = xSrc;
                     int32_t yDst                = ySrc;
                     uint32_t u32DstWidth        = u32SrcWidth;
@@ -5217,10 +5453,10 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     Display *pDisplay = (Display *)pv;      /** @todo Check this cast! */
     pThis->pDisplay = pDisplay;
     pThis->pDisplay->mpDrv = pThis;
-    /*
-     * Update our display information according to the framebuffer
-     */
-    pDisplay->updateDisplayData();
+
+    /* Disable VRAM to a buffer copy initially. */
+    pThis->pUpPort->pfnSetRenderVRAM (pThis->pUpPort, false);
+    pThis->IConnector.cBits = 32; /* DevVGA does nothing otherwise. */
 
     /*
      * Start periodic screen refreshes

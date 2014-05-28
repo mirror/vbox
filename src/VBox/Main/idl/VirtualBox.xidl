@@ -15153,8 +15153,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
+    name="IDisplaySourceBitmap" extends="$unknown" wsmap="suppress"
+    uuid="b00907f7-d85e-4dce-b1a6-16a2d91b0269"
+    >
+    <attribute name="screenId" type="unsigned long" readonly="yes"/>
+    <method name="queryBitmapInfo">
+      <desc>Information about the screen bitmap.</desc>
+      <param name="address" type="octet" mod="ptr" dir="out"/>
+      <param name="width" type="unsigned long" dir="out"/>
+      <param name="height" type="unsigned long" dir="out"/>
+      <param name="bitsPerPixel" type="unsigned long" dir="out"/>
+      <param name="bytesPerLine" type="unsigned long" dir="out"/>
+      <param name="pixelFormat" type="unsigned long" dir="out"/>
+    </method>
+
+  </interface>
+
+  <interface
     name="IFramebuffer" extends="$unknown"
-    uuid="e3f122c0-adab-4fc9-a8dc-da112fb48428"
+    uuid="29e4a04d-03a7-4860-977b-a987c3e92c2b"
     wsmap="managed"
     >
     <attribute name="address" type="octet" mod="ptr" readonly="yes" wsmap="suppress">
@@ -15264,6 +15281,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="height" type="unsigned long" dir="in"/>
     </method>
 
+  <!--
     <method name="requestResize" wsmap="suppress">
       <desc>
         Requests a size and pixel format change.
@@ -15297,7 +15315,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The @a pixelFormat parameter defines whether the direct mode is
         available or not. If @a pixelFormat is <link
         to="FramebufferPixelFormat_Opaque"/> then direct access to the guest
-        VRAM buffer is not available -- the @a VRAM, @a bitsPerPixel and
+        VRAM buffer is not available - the @a VRAM, @a bitsPerPixel and
         @a bytesPerLine parameters must be ignored and the implementation must use
         the indirect mode (where it provides its own buffer in one of the
         supported formats). In all other cases, @a pixelFormat together with
@@ -15380,6 +15398,30 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           after this method returns or it should wait for
           <link to="IDisplay::resizeCompleted"/>.
         </desc>
+      </param>
+    </method>
+  -->
+
+    <method name="notifyChange">
+      <desc>
+        Requests a size change.
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>
+          Logical guest screen number.
+        </desc>
+      </param>
+      <param name="xOrigin" type="unsigned long" dir="in">
+        <desc>Location of the screen in the guest.</desc>
+      </param>
+      <param name="yOrigin" type="unsigned long" dir="in">
+        <desc>Location of the screen in the guest.</desc>
+      </param>
+      <param name="width" type="unsigned long" dir="in">
+        <desc>Width of the guest display, in pixels.</desc>
+      </param>
+      <param name="height" type="unsigned long" dir="in">
+        <desc>Height of the guest display, in pixels.</desc>
       </param>
     </method>
 
@@ -15541,7 +15583,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="480b372c-c0b5-4c23-9bd7-dcbb85b1594c"
+    uuid="efd0567f-8697-4b4c-965a-7f3672d1909e"
     wsmap="managed"
     >
     <desc>
@@ -15555,6 +15597,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       IFramebuffer interface. Examples of the output target are a window on
       the host computer or an RDP session's display on a remote computer.
     </desc>
+
     <method name="getScreenResolution">
       <desc>Queries display width, height and color depth for given screen.</desc>
       <param name="screenId" type="unsigned long" dir="in"/>
@@ -15565,22 +15608,27 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="yOrigin" type="long" dir="out"/>
     </method>
 
-    <method name="setFramebuffer">
+    <method name="attachFramebuffer">
       <desc>
-        Sets the framebuffer for given screen.
+        Sets the graphics updates target for a screen.
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="framebuffer" type="IFramebuffer" dir="in"/>
     </method>
 
-    <method name="getFramebuffer">
+    <method name="detachFramebuffer">
       <desc>
-        Queries the framebuffer for given screen.
+        Removes the graphics updates target for a screen.
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in"/>
+    </method>
+
+    <method name="queryFramebuffer">
+      <desc>
+        Queries the graphics updates targets for a screen.
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="framebuffer" type="IFramebuffer" dir="out"/>
-      <param name="xOrigin" type="long" dir="out"/>
-      <param name="yOrigin" type="long" dir="out"/>
     </method>
 
     <method name="setVideoModeHint">
@@ -15809,6 +15857,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </method>
 
+  <!--
     <method name="resizeCompleted">
       <desc>
         Signals that a framebuffer has completed the resize operation.
@@ -15820,6 +15869,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
     </method>
+  -->
 
     <method name="completeVHWACommand">
       <desc>
@@ -15867,6 +15917,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </desc>
       </param>
     </method>
+
+    <method name="querySourceBitmap" wsmap="suppress">
+      <desc>
+         Obtains the guest screen bitmap parameters.
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in"/>
+      <param name="displaySourceBitmap" type="IDisplaySourceBitmap" dir="out"/>
+    </method>
+
   </interface>
 
   <!--

@@ -46,6 +46,7 @@
 #define SDL_USER_EVENT_GUEST_CAP_CHANGED  (SDL_USEREVENT + 12)
 /** custom SDL user event for window resize done */
 #define SDL_USER_EVENT_WINDOW_RESIZE_DONE (SDL_USEREVENT + 13)
+#define SDL_USER_EVENT_NOTIFYCHANGE       (SDL_USEREVENT + 14)
 
 
 /** The user.code field of the SDL_USER_EVENT_TERMINATE event.

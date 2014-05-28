@@ -27,6 +27,7 @@
 
 /* COM includes: */
 #include "CFramebuffer.h"
+#include "CDisplaySourceBitmap.h"
 
 /* Other VBox includes: */
 #include <iprt/critsect.h>
@@ -95,6 +96,7 @@ signals:
     void sigRequestResize(int iPixelFormat, uchar *pVRAM,
                           int iBitsPerPixel, int iBytesPerLine,
                           int iWidth, int iHeight);
+    void sigNotifyChange(ulong uScreenId, int iWidth, int iHeight);
     void sigNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
     void sigSetVisibleRegion(QRegion region);
     void sigNotifyAbout3DOverlayVisibilityChange(bool fVisible);
@@ -149,6 +151,11 @@ public:
                               BYTE *pVRAM, ULONG uBitsPerPixel, ULONG uBytesPerLine,
                               ULONG uWidth, ULONG uHeight,
                               BOOL *pbFinished);
+    STDMETHOD(NotifyChange)(ULONG aScreenId,
+                            ULONG aXOrigin,
+                            ULONG aYOrigin,
+                            ULONG aWidth,
+                            ULONG aHeight);
 
     STDMETHOD(NotifyUpdate) (ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight);
 
@@ -196,6 +203,8 @@ public:
     virtual void paintEvent(QPaintEvent *pEvent) = 0;
     virtual void applyVisibleRegion(const QRegion &region);
 
+    void notifyChange(ulong uScreenId);
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* this method is called from the GUI thread
      * to perform the actual Video HW Acceleration command processing
@@ -229,6 +238,10 @@ protected:
     int64_t m_WinId;
     bool m_fIsMarkedAsUnused;
     bool m_fIsAutoEnabled;
+
+    CDisplaySourceBitmap mpSourceBitmap;
+    CDisplaySourceBitmap mpPendingSourceBitmap;
+    bool mfUpdates;
 
     /* To avoid a seamless flicker,
      * which caused by the latency between the

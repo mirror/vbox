@@ -275,9 +275,6 @@ void UIMachineView::sltHandleRequestResize(int iPixelFormat, uchar *pVRAM,
         }
     }
 
-    /* Report to the VM thread that we finished resizing: */
-    session().GetConsole().GetDisplay().ResizeCompleted(screenId());
-
     /* Emit a signal about guest was resized: */
     emit resizeHintDone();
 
@@ -287,6 +284,65 @@ void UIMachineView::sltHandleRequestResize(int iPixelFormat, uchar *pVRAM,
                 "Size=%dx%d.\n",
                 (unsigned long)m_uScreenId, iPixelFormat,
                 iBitsPerPixel, iBytesPerLine, iWidth, iHeight));
+}
+
+void UIMachineView::sltHandleNotifyChange(ulong uScreenId, int iWidth, int iHeight)
+{
+    LogRelFlow(("UIMachineView::HandleNotifyChange: Screen=%d, Size=%dx%d.\n",
+                (unsigned long)m_uScreenId, iWidth, iHeight));
+
+    // TODO: Move to appropriate place!
+    /* Some situations require frame-buffer resize-events to be ignored at all,
+     * leaving machine-window, machine-view and frame-buffer sizes preserved: */
+    if (uisession()->isGuestResizeIgnored())
+        return;
+
+    /* If machine-window is visible: */
+    if (uisession()->isScreenVisible(m_uScreenId))
+    {
+        // TODO: Move to appropriate place!
+        /* Adjust 'scale' mode for current machine-view size: */
+        if (visualStateType() == UIVisualStateType_Scale)
+            frameBuffer()->setScaledSize(size());
+
+        /* Perform frame-buffer mode-change: */
+        frameBuffer()->notifyChange(uScreenId);
+
+        /* Scale-mode doesn't need this.. */
+        if (visualStateType() != UIVisualStateType_Scale)
+        {
+            /* Adjust maximum-size restriction for machine-view: */
+            setMaximumSize(sizeHint());
+
+            /* Disable the resize hint override hack: */
+            m_sizeHintOverride = QSize(-1, -1);
+
+            /* Force machine-window update own layout: */
+            QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+
+            /* Update machine-view sliders: */
+            updateSliders();
+
+            /* By some reason Win host forgets to update machine-window central-widget
+             * after main-layout was updated, let's do it for all the hosts: */
+            machineWindow()->centralWidget()->update();
+
+            /* Normalize machine-window geometry: */
+            if (visualStateType() == UIVisualStateType_Normal)
+                machineWindow()->normalizeGeometry(true /* adjust position */);
+        }
+
+#ifdef Q_WS_MAC
+        /* Update MacOS X dock icon size: */
+        machineLogic()->updateDockIconSize(screenId(), iWidth, iHeight);
+#endif /* Q_WS_MAC */
+    }
+
+    /* Emit a signal about guest was resized: */
+    emit resizeHintDone();
+
+    LogRelFlow(("UIMachineView::ResizeHandled: Screen=%d, Size=%dx%d.\n",
+                (unsigned long)m_uScreenId, iWidth, iHeight));
 }
 
 void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight)
@@ -353,12 +409,8 @@ void UIMachineView::sltMachineStateChanged()
                     resetPauseShot();
                     /* Ask for full guest display update (it will also update
                      * the viewport through IFramebuffer::NotifyUpdate): */
-                    if (m_previousState == KMachineState_Paused ||
-                        m_previousState == KMachineState_TeleportingPausedVM)
-                    {
-                        CDisplay dsp = session().GetConsole().GetDisplay();
-                        dsp.InvalidateAndUpdate();
-                    }
+                    CDisplay dsp = session().GetConsole().GetDisplay();
+                    dsp.InvalidateAndUpdate();
                 }
             }
             break;
@@ -496,16 +548,17 @@ void UIMachineView::prepareFrameBuffer()
         CDisplay display = session().GetConsole().GetDisplay();
         Assert(!display.isNull());
         CFramebuffer fb(NULL);
-        LONG XOrigin, YOrigin;
         /* Check if the framebuffer is already assigned;
          * in this case we do not need to re-assign it neither do we need to AddRef. */
-        display.GetFramebuffer(m_uScreenId, fb, XOrigin, YOrigin);
+        display.QueryFramebuffer(m_uScreenId, fb);
         if (fb.raw() != m_pFrameBuffer) /* <-this will evaluate to true iff no framebuffer is yet assigned */
         {
             m_pFrameBuffer->AddRef();
         }
-        /* Always perform SetFramebuffer to ensure 3D gets notified: */
-        display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
+        /* Always perform AttachFramebuffer to ensure 3D gets notified: */
+        if (!fb.isNull())
+            display.DetachFramebuffer(m_uScreenId);
+        display.AttachFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
     }
 
     QSize size;
@@ -628,10 +681,10 @@ void UIMachineView::cleanupFrameBuffer()
 
     /* Temporarily detach the framebuffer from IDisplay before detaching
      * from view in order to respect the thread synchonisation logic (see UIFrameBuffer.h).
-     * Note: VBOX_WITH_CROGL additionally requires us to call SetFramebuffer
+     * Note: VBOX_WITH_CROGL additionally requires us to call DetachFramebuffer
      * to ensure 3D gets notified of view being destroyed... */
     CDisplay display = session().GetConsole().GetDisplay();
-    display.SetFramebuffer(m_uScreenId, CFramebuffer(NULL));
+    display.DetachFramebuffer(m_uScreenId);
 
     /* Detach framebuffer from view: */
     m_pFrameBuffer->setView(NULL);

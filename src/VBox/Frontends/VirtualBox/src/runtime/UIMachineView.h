@@ -97,6 +97,9 @@ protected slots:
                                 int iBitsPerPixel, int iBytesPerLine,
                                 int iWidth, int iHeight);
 
+    /* Handler: Frame-buffer NotifyChange stuff: */
+    virtual void sltHandleNotifyChange(ulong uScreenId, int iWidth, int iHeight);
+
     /* Handler: Frame-buffer NotifyUpdate stuff: */
     virtual void sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
 

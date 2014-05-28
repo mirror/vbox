@@ -88,6 +88,11 @@ public:
     STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, BYTE *vram,
                              ULONG bitsPerPixel, ULONG bytesPerLine,
                              ULONG w, ULONG h, BOOL *finished);
+    STDMETHOD(NotifyChange)(ULONG aScreenId,
+                            ULONG aXOrigin,
+                            ULONG aYOrigin,
+                            ULONG aWidth,
+                            ULONG aHeight);
     STDMETHOD(VideoModeSupported)(ULONG width, ULONG height, ULONG bpp, BOOL *supported);
 
     STDMETHOD(GetVisibleRegion)(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
@@ -99,6 +104,7 @@ public:
 
     // internal public methods
     bool initialized() { return mfInitialized; }
+    void notifyChange(ULONG aScreenId);
     void resizeGuest();
     void resizeSDL();
     void update(int x, int y, int w, int h, bool fGuestRelative);
@@ -201,6 +207,10 @@ private:
     ULONG mPixelFormat;
     BOOL mUsesGuestVRAM;
     BOOL mfSameSizeRequested;
+
+    ComPtr<IDisplaySourceBitmap> mpSourceBitmap;
+    ComPtr<IDisplaySourceBitmap> mpPendingSourceBitmap;
+    bool mfUpdates;
 };
 
 class VBoxSDLFBOverlay :

@@ -41,10 +41,6 @@ VRDPFramebuffer::VRDPFramebuffer()
     mBuffer = NULL;
 
     RTCritSectInit (&m_CritSect);
-
-    // start with a standard size
-    RequestResize(0, FramebufferPixelFormat_Opaque,
-                  NULL, 0, 0, 640, 480, NULL);
 }
 
 VRDPFramebuffer::~VRDPFramebuffer()
@@ -240,6 +236,67 @@ STDMETHODIMP VRDPFramebuffer::RequestResize(ULONG aScreenId, ULONG pixelFormat, 
         *finished = TRUE;
 
     return S_OK;
+}
+
+extern ComPtr<IDisplay> display;
+
+STDMETHODIMP VRDPFramebuffer::NotifyChange(ULONG aScreenId,
+                                           ULONG aXOrigin,
+                                           ULONG aYOrigin,
+                                           ULONG aWidth,
+                                           ULONG aHeight)
+{
+    LogRelFlow(("NotifyChange: %d %d,%d %dx%d\n",
+                aScreenId, aXOrigin, aYOrigin, aWidth, aHeight));
+
+    HRESULT hr = S_OK;
+
+    hr = display->QuerySourceBitmap(aScreenId, mpSourceBitmap.asOutParam());
+    if (SUCCEEDED(hr))
+    {
+        BYTE *pAddress = NULL;
+        ULONG ulWidth = 0;
+        ULONG ulHeight = 0;
+        ULONG ulBitsPerPixel = 0;
+        ULONG ulBytesPerLine = 0;
+        ULONG ulPixelFormat = 0;
+
+        hr = mpSourceBitmap->QueryBitmapInfo(&pAddress,
+                                        &ulWidth,
+                                        &ulHeight,
+                                        &ulBitsPerPixel,
+                                        &ulBytesPerLine,
+                                        &ulPixelFormat);
+
+        if (SUCCEEDED(hr))
+        {
+            mScreen = pAddress;
+            mWidth = ulWidth;
+            mHeight = ulHeight;
+            mBitsPerPixel = ulBitsPerPixel;
+            mBytesPerLine = ulBytesPerLine;
+            mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+            mUsesGuestVRAM = TRUE;
+
+            Log(("Using screen bitmap, %d BPP\n", mBitsPerPixel));
+        }
+    }
+
+    if (FAILED(hr))
+    {
+        /* Just reset everything. */
+        mScreen = NULL;
+        mWidth = 0;
+        mHeight = 0;
+        mBitsPerPixel = 0;
+        mBytesPerLine = 0;
+        mPixelFormat = FramebufferPixelFormat_Opaque;
+        mUsesGuestVRAM = FALSE;
+
+        Log(("No screen w = %d, h = %d!!!\n", aWidth, aHeight));
+    }
+
+    return hr;
 }
 
 /**

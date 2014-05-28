@@ -196,7 +196,7 @@ private:
     int m_mousex;
     int m_mousey;
 
-    IFramebuffer *maFramebuffers[SchemaDefs::MaxGuestMonitors];
+    ComPtr<IDisplaySourceBitmap> maSourceBitmaps[SchemaDefs::MaxGuestMonitors];
 
     ComPtr<IEventListener> mConsoleListener;
 
