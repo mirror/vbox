@@ -40,15 +40,8 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
 
 void UIWizardExportAppPage3::chooseDefaultSettings()
 {
-    /* Select default settings: */
-#if 0
-    m_pUsernameEditor->setText(vboxGlobal().virtualBox().GetExtraData(GUI_Export_Username));
-    m_pHostnameEditor->setText(vboxGlobal().virtualBox().GetExtraData(GUI_Export_Hostname));
-    m_pBucketEditor->setText(vboxGlobal().virtualBox().GetExtraData(GUI_Export_Bucket));
-#else
-    /* Choose defalt format: */
+    /* Choose default format: */
     setFormat("ovf-1.0");
-#endif
 }
 
 void UIWizardExportAppPage3::refreshCurrentSettings()

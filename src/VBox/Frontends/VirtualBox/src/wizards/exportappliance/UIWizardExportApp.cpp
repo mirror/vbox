@@ -120,19 +120,7 @@ bool UIWizardExportApp::exportAppliance()
     }
 
     /* Export the VMs, on success we are finished: */
-    if (exportVMs(*pAppliance))
-    {
-#if 0
-        /* Save attributes to GUI extra data: */
-        StorageType storageType = field("storageType").value<StorageType>();
-        vboxGlobal().virtualBox().SetExtraData(GUI_Export_StorageType, QString::number(storageType));
-        vboxGlobal().virtualBox().SetExtraData(GUI_Export_Username, m_pLeUsername->text());
-        vboxGlobal().virtualBox().SetExtraData(GUI_Export_Hostname, m_pLeHostname->text());
-        vboxGlobal().virtualBox().SetExtraData(GUI_Export_Bucket, m_pLeBucket->text());
-#endif
-        return true;
-    }
-    return false;
+    return exportVMs(*pAppliance);
 }
 
 bool UIWizardExportApp::exportVMs(CAppliance &appliance)

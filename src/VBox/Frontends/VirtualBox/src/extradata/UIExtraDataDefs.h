@@ -47,10 +47,6 @@ namespace UIExtraDataDefs
     /* Wizard declarations: */
     extern const char* GUI_FirstRun;
     extern const char* GUI_HideDescriptionForWizards;
-    extern const char* GUI_Export_StorageType;
-    extern const char* GUI_Export_Username;
-    extern const char* GUI_Export_Hostname;
-    extern const char* GUI_Export_Bucket;
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* Update-manager declarations: */
