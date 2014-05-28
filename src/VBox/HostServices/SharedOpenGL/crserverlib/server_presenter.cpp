@@ -2904,36 +2904,14 @@ protected:
             return VERR_INVALID_STATE;
         }
 
-        if (CrFbIsEnabled(getFramebuffer()))
+        int rc = windowDimensionsSync();
+        if (!RT_SUCCESS(rc))
         {
-            const RTRECT* pRect = getRect();
-            int rc = mpWindow->SetPosition(pRect->xLeft - mViewportRect.xLeft, pRect->yTop - mViewportRect.yTop);
-            if (!RT_SUCCESS(rc))
-            {
-                WARN(("SetComposition failed rc %d", rc));
-                return rc;
-            }
-
-            setRegionsChanged();
-
-            rc = mpWindow->SetSize((uint32_t)(pRect->xRight - pRect->xLeft), (uint32_t)(pRect->yBottom - pRect->yTop));
-            if (!RT_SUCCESS(rc))
-            {
-                WARN(("SetSize failed rc %d", rc));
-                return rc;
-            }
-
-            rc = mpWindow->SetVisible(!g_CrPresenter.fWindowsForceHidden);
-            if (!RT_SUCCESS(rc))
-            {
-                WARN(("SetVisible failed rc %d", rc));
-                return rc;
-            }
-
-            return VINF_SUCCESS;
+            WARN(("windowDimensionsSync failed rc %d", rc));
+            return rc;
         }
 
-        return mpWindow->SetVisible(false);
+        return VINF_SUCCESS;
     }
 
     virtual int windowSetCompositor(bool fSet)
@@ -2955,7 +2933,7 @@ protected:
             return rc;
         }
 
-        rc = mpWindow->SetVisible(false);
+        rc = windowDimensionsSync(true);
         if (!RT_SUCCESS(rc))
         {
             WARN(("err"));
@@ -2987,10 +2965,53 @@ protected:
         return CrFbDisplayBase::fbCleanup();
     }
 
+    int windowDimensionsSync(bool fForceCleanup = false)
+    {
+        int rc = VINF_SUCCESS;
+
+        HCR_FRAMEBUFFER hFb = getFramebuffer();
+        if (!fForceCleanup && hFb && CrFbIsEnabled(hFb))
+        {
+            const RTRECT* pRect = getRect();
+
+            rc = mpWindow->SetPosition(pRect->xLeft - mViewportRect.xLeft, pRect->yTop - mViewportRect.yTop);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
+                return rc;
+            }
+
+            setRegionsChanged();
+
+            rc = mpWindow->SetSize((uint32_t)(pRect->xRight - pRect->xLeft), (uint32_t)(pRect->yBottom - pRect->yTop));
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
+                return rc;
+            }
+
+            rc = mpWindow->SetVisible(!g_CrPresenter.fWindowsForceHidden);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
+                return rc;
+            }
+        }
+        else
+        {
+            rc = mpWindow->SetVisible(false);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
+                return rc;
+            }
+        }
+
+        return rc;
+    }
+
     virtual int windowSync()
     {
-        const RTRECT* pRect = getRect();
-
         int rc = mpWindow->UpdateBegin();
         if (!RT_SUCCESS(rc))
         {
@@ -3006,24 +3027,7 @@ protected:
             return rc;
         }
 
-        rc = mpWindow->SetPosition(pRect->xLeft - mViewportRect.xLeft, pRect->yTop - mViewportRect.yTop);
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("err"));
-            mpWindow->UpdateEnd();
-            return rc;
-        }
-
-        rc = mpWindow->SetSize((uint32_t)(pRect->xRight - pRect->xLeft), (uint32_t)(pRect->yBottom - pRect->yTop));
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("err"));
-            mpWindow->UpdateEnd();
-            return rc;
-        }
-
-        HCR_FRAMEBUFFER hFb = getFramebuffer();
-        rc = mpWindow->SetVisible(hFb && CrFbIsEnabled(hFb) && !g_CrPresenter.fWindowsForceHidden);
+        rc = windowDimensionsSync();
         if (!RT_SUCCESS(rc))
         {
             WARN(("err"));
@@ -4609,9 +4613,10 @@ static int crPMgrModeModifyGlobal(uint32_t u32ModeAdd, uint32_t u32ModeRemove)
 
     g_CrPresenter.u32DisplayMode = u32DisplayMode;
 
-    for (HCR_FRAMEBUFFER hFb = CrPMgrFbGetFirstEnabled();
+    /* disabled framebuffers may still have displays attached */
+    for (HCR_FRAMEBUFFER hFb = CrPMgrFbGetFirstInitialized();
             hFb;
-            hFb = CrPMgrFbGetNextEnabled(hFb))
+            hFb = CrPMgrFbGetNextInitialized(hFb))
     {
         crPMgrModeModify(hFb, u32ModeAdd, u32ModeRemove);
     }
@@ -4793,24 +4798,43 @@ int CrPMgrResize(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM, const uint3
     CR_FB_INFO *pFbInfo = &g_CrPresenter.aFbInfos[pScreen->u32ViewIndex];
 
     VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aRemovedTargetMap);
+    VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aAddedTargetMap);
+
     bool fDisplaysAdded = false, fDisplaysRemoved = false;
 
     memcpy(aRemovedTargetMap, pFbInfo->aTargetMap, sizeof (aRemovedTargetMap));
-    for (int i = 0; i < RT_ELEMENTS(aRemovedTargetMap); ++i)
+
+    if (pScreen->u16Flags & VBVA_SCREEN_F_DISABLED)
     {
-        aRemovedTargetMap[i] = (aRemovedTargetMap[i] & ~pTargetMap[i]);
-        if (aRemovedTargetMap[i])
-            fDisplaysRemoved = true;
+        /* so far there is no need in keeping displays attached to disabled Framebffer,
+         * just disconnect everything */
+        for (int i = 0; i < RT_ELEMENTS(aRemovedTargetMap); ++i)
+        {
+            if (aRemovedTargetMap[i])
+            {
+                fDisplaysRemoved = true;
+                break;
+            }
+        }
+
+        memset(aAddedTargetMap, 0, sizeof (aAddedTargetMap));
     }
-
-    VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aAddedTargetMap);
-
-    memcpy(aAddedTargetMap, pFbInfo->aTargetMap, sizeof (aAddedTargetMap));
-    for (int i = 0; i < RT_ELEMENTS(aAddedTargetMap); ++i)
+    else
     {
-        aAddedTargetMap[i] = (pTargetMap[i] & ~aAddedTargetMap[i]);
-        if (aAddedTargetMap[i])
-            fDisplaysAdded = true;
+        for (int i = 0; i < RT_ELEMENTS(aRemovedTargetMap); ++i)
+        {
+            aRemovedTargetMap[i] = (aRemovedTargetMap[i] & ~pTargetMap[i]);
+            if (aRemovedTargetMap[i])
+                fDisplaysRemoved = true;
+        }
+
+        memcpy(aAddedTargetMap, pFbInfo->aTargetMap, sizeof (aAddedTargetMap));
+        for (int i = 0; i < RT_ELEMENTS(aAddedTargetMap); ++i)
+        {
+            aAddedTargetMap[i] = (pTargetMap[i] & ~aAddedTargetMap[i]);
+            if (aAddedTargetMap[i])
+                fDisplaysAdded = true;
+        }
     }
 
     if (!fFbInfoChanged && !fDisplaysRemoved && !fDisplaysAdded)
