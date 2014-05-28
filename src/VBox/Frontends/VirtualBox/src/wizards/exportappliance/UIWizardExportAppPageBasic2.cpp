@@ -33,17 +33,8 @@ UIWizardExportAppPage2::UIWizardExportAppPage2()
 
 void UIWizardExportAppPage2::chooseDefaultStorageType()
 {
-    /* Select default storage type: */
-#if 0
-    /* Load storage-type from GUI extra data: */
-    bool ok;
-    StorageType storageType = StorageType(vboxGlobal().virtualBox().GetExtraData(GUI_Export_StorageType).toInt(&ok));
-    if (ok)
-        setStorageType(storageType);
-#else
     /* Just select first of types: */
     setStorageType(Filesystem);
-#endif
 }
 
 StorageType UIWizardExportAppPage2::storageType() const

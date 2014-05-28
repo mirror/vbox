@@ -39,10 +39,6 @@ const char* UIExtraDataDefs::GUI_RestrictedMachineSettingsPages = "GUI/Restricte
 /* Wizards definitions: */
 const char* UIExtraDataDefs::GUI_FirstRun = "GUI/FirstRun";
 const char* UIExtraDataDefs::GUI_HideDescriptionForWizards = "GUI/HideDescriptionForWizards";
-const char* UIExtraDataDefs::GUI_Export_StorageType = "GUI/Export/StorageType";
-const char* UIExtraDataDefs::GUI_Export_Username = "GUI/Export/Username";
-const char* UIExtraDataDefs::GUI_Export_Hostname = "GUI/Export/Hostname";
-const char* UIExtraDataDefs::GUI_Export_Bucket = "GUI/Export/Bucket";
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 /* Update-manager definitions: */
