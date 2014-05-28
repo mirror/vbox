@@ -88,6 +88,9 @@ public:
     void incrementApplicationUpdateCheckCounter();
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
+    /** Returns shortcut overrides for shortcut-pool with @a strPoolExtraDataID. */
+    QStringList shortcutOverrides(const QString &strPoolExtraDataID) const;
+
     /** Returns recent hard-drive folder. */
     QString recentFolderForHardDrives() const;
     /** Returns recent optical-disk folder. */
