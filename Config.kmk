@@ -340,7 +340,9 @@ ifn1of ($(KBUILD_TARGET), linux)
  VBOX_WITH_DOCS_CHM = 1
 endif
 # Include translations
-VBOX_WITH_DOCS_TRANSLATIONS = 1
+ifndef VBOX_NO_DOCS_TRANSLATIONS
+ VBOX_WITH_DOCS_TRANSLATIONS = 1
+endif
 # Default languages
 VBOX_MANUAL_LANGUAGES = en_US
 ifdef VBOX_WITH_DOCS_TRANSLATIONS
@@ -1057,7 +1059,9 @@ ifdef VBOX_OSE
   VBOX_WITH_32_ON_64_MAIN_API=
  endif
  # Enable any translations in OSE, even partial ones.
- VBOX_WITH_DOCS_TRANSLATIONS=1
+ ifndef ($(VBOX_NO_DOCS_TRANSLATIONS))
+  VBOX_WITH_DOCS_TRANSLATIONS = 1
+ endif
  VBOX_WITH_VALIDATIONKIT=
  VBOX_WITH_INTEL_PXE=
  # Disable for OSE, requires snv_159+.
