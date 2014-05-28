@@ -1903,12 +1903,12 @@
     </xsl:when>
     <xsl:otherwise>
       <xsl:variable name="hasReturnParms" select="param[@dir='return']" />
-      <xsl:variable name="hasOutParms" select="param[@dir='out']" />
+      <xsl:variable name="hasOutParms" select="count(param[@dir='out']) > 0" />
       <xsl:variable name="returnidltype" select="param[@dir='return']/@type" />
       <xsl:variable name="returnidlsafearray" select="param[@dir='return']/@safearray" />
-      <xsl:if test="$hasOutParms and not($hasReturnParms) and (count(param[@dir='out']) = 1)">
+      <xsl:if test="$hasOutParms and not($hasReturnParms) and (string-length(@wsmap) = 0) and (count(param[@dir='out']) = 1)">
         <xsl:call-template name="fatalError">
-          <xsl:with-param name="msg" select="concat('genMethod: ', $ifname, '::', $methodname, ' has exactly one out parameter and no return parameter, this causes trouble with JAX-WS and the out parameter needs to be converted to return')" />
+          <xsl:with-param name="msg" select="concat('genMethod: ', $ifname, $hasOutParms, not($hasReturnParms), 'a', string-length(@wsmap) = 0, 'b', @wsmap, (count(param[@dir='out']) = 1), '::', $methodname, ' has exactly one out parameter and no return parameter, this causes trouble with JAX-WS and the out parameter needs to be converted to return')" />
         </xsl:call-template>
       </xsl:if>
       <xsl:variable name="returngluetype">
@@ -2164,7 +2164,6 @@
     </xsl:when>
     <xsl:otherwise>
       <xsl:variable name="hasReturnParms" select="param[@dir='return']" />
-      <xsl:variable name="hasOutParms" select="param[@dir='out']" />
       <xsl:variable name="returnidltype" select="param[@dir='return']/@type" />
       <xsl:variable name="returnidlsafearray" select="param[@dir='return']/@safearray" />
       <xsl:variable name="returnbacktype">
@@ -4602,7 +4601,7 @@ public class VirtualBoxManager
 
       <xsl:otherwise>
         <!-- We don't need WSDL-specific interfaces here -->
-        <xsl:if test="not($self_target='wsdl') and not($module)">
+        <xsl:if test="not(@internal='yes') and not($self_target='wsdl') and not($module)">
           <xsl:call-template name="genIface">
             <xsl:with-param name="ifname" select="@name" />
             <xsl:with-param name="filename" select="concat(@name, '.java')" />
