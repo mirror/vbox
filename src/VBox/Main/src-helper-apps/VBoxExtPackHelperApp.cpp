@@ -236,8 +236,19 @@ static RTEXITCODE CommonUninstallWorker(const char *pszExtPackDir)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct temporary extension pack path: %Rrc", rc);
 
     rc = RTDirRename(pszExtPackDir, szExtPackUnInstDir, RTPATHRENAME_FLAGS_NO_REPLACE);
+    if (rc == VERR_ALREADY_EXISTS)
+    {
+        /* Automatic cleanup and try again.  It's in theory possible that we're
+           racing another cleanup operation here, so just ignore errors and try
+           again. (There is no installation race due to the exclusive temporary
+           installation directory.) */
+        RemoveExtPackDir(szExtPackUnInstDir, false /*fTemporary*/);
+        rc = RTDirRename(pszExtPackDir, szExtPackUnInstDir, RTPATHRENAME_FLAGS_NO_REPLACE);
+    }
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to rename the extension pack directory: %Rrc", rc);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                              "Failed to rename the extension pack directory: %Rrc\n"
+                              "If the problem persists, try running the command: VBoxManage extpack cleanup", rc);
 
     /* Recursively delete the directory content. */
     return RemoveExtPackDir(szExtPackUnInstDir, false /*fTemporary*/);
