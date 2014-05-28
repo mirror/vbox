@@ -76,13 +76,15 @@ public:
     QString preventBETAwarningForVersion() const;
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /** Returns last application update date. */
+    /** Returns whether we should allow Application Update. */
+    bool shouldWeAllowApplicationUpdate() const;
+    /** Returns last Application Update date. */
     QString applicationUpdateData() const;
-    /** Defines last application update date as @a strValue. */
+    /** Defines last Application Update date as @a strValue. */
     void setApplicationUpdateData(const QString &strValue);
-    /** Returns application update check counter. */
+    /** Returns Application Update check counter. */
     qulonglong applicationUpdateCheckCounter() const;
-    /** Increments application update check counter. */
+    /** Increments Application Update check counter. */
     void incrementApplicationUpdateCheckCounter();
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
@@ -119,11 +121,6 @@ public:
 
     /** Returns list of the messages for the Message/Popup center frameworks with inverted check-box state. */
     QStringList messagesWithInvertedOption() const;
-
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /** Returns whether we should allow Application Update. */
-    bool shouldWeAllowApplicationUpdate() const;
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
     /** Returns mode (basic/expert) for wizard of @a type. */
     WizardMode modeForWizard(WizardType type);
