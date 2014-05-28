@@ -22,7 +22,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QDesktopWidget>
 #include <QDesktopServices>
 #include <QMenuBar>
 #include <QStatusBar>
@@ -1525,53 +1524,20 @@ void UISelectorWindow::loadSettings()
 
     /* Restore window position: */
     {
-        /* Loading geometry: */
-        QString strWinPos = vbox.GetExtraData(GUI_LastSelectorWindowPosition);
-        LogRelFlow(("UISelectorWindow: Loading geometry settings: {%s}\n", strWinPos.toAscii().constData()));
-
-        bool ok = false, max = false;
-        int x = 0, y = 0, w = 0, h = 0;
-        x = strWinPos.section(',', 0, 0).toInt(&ok);
-        if (ok)
-            y = strWinPos.section(',', 1, 1).toInt(&ok);
-        if (ok)
-            w = strWinPos.section(',', 2, 2).toInt(&ok);
-        if (ok)
-            h = strWinPos.section(',', 3, 3).toInt(&ok);
-        if (ok)
-            max = strWinPos.section(',', 4, 4) == GUI_LastWindowState_Max;
-
-        QRect ar = ok ? QApplication::desktop()->availableGeometry(QPoint(x, y)) :
-                        QApplication::desktop()->availableGeometry(this);
-
-        if (ok /* previous parameters were read correctly */
-            && (y > 0) && (y < ar.bottom()) /* check vertical bounds */
-            && (x + w > ar.left()) && (x < ar.right()) /* & horizontal bounds */)
-        {
-            /* Apply loaded geometry: */
-            m_normalGeo.moveTo(x, y);
-            m_normalGeo.setSize(QSize(w, h).expandedTo(minimumSizeHint()).boundedTo(ar.size()));
+        /* Load geometry: */
+        m_normalGeo = gEDataManager->selectorWindowGeometry(this);
 #ifdef Q_WS_MAC
-            move(m_normalGeo.topLeft());
-            resize(m_normalGeo.size());
+        move(m_normalGeo.topLeft());
+        resize(m_normalGeo.size());
 #else /* Q_WS_MAC */
-            setGeometry(m_normalGeo);
+        setGeometry(m_normalGeo);
 #endif /* !Q_WS_MAC */
-            LogRelFlow(("UISelectorWindow: Geometry set to: %dx%d @ %dx%d.\n",
-                        m_normalGeo.x(), m_normalGeo.y(), m_normalGeo.width(), m_normalGeo.height()));
-            if (max) /* maximize if needed */
-                showMaximized();
-        }
-        else
-        {
-            /* Apply default geometry: */
-            m_normalGeo.setSize(QSize(770, 550).expandedTo(minimumSizeHint()).boundedTo(ar.size()));
-            m_normalGeo.moveCenter(ar.center());
-            setGeometry(m_normalGeo);
-            LogRelFlow(("UISelectorWindow: Geometry set to default because something was wrong: "
-                        "(loaded correctly = '%s', x = %d, y = %d, w = %d, h = %d)!\n",
-                        ok ? "true" : "false", x, y, w, h));
-        }
+        LogRel(("UISelectorWindow: Geometry loaded to: %dx%d @ %dx%d.\n",
+                m_normalGeo.x(), m_normalGeo.y(), m_normalGeo.width(), m_normalGeo.height()));
+
+        /* Maximize (if necessary): */
+        if (gEDataManager->isSelectorWindowShouldBeMaximized())
+            showMaximized();
     }
 
     /* Restore splitter handle position: */
@@ -1608,18 +1574,13 @@ void UISelectorWindow::saveSettings()
 
     /* Save window position: */
     {
-        QRect save(m_normalGeo);
-        LogRelFlow(("UISelectorWindow: Saving geometry as %dx%d @ %dx%d.\n",
-                    save.x(), save.y(), save.width(), save.height()));
-        QString strWinPos = QString("%1,%2,%3,%4").arg(save.x()).arg(save.y()).arg(save.width()).arg(save.height());
 #ifdef Q_WS_MAC
-        if (::darwinIsWindowMaximized(this))
+        gEDataManager->setSelectorWindowGeometry(m_normalGeo, ::darwinIsWindowMaximized(this));
 #else /* Q_WS_MAC */
-        if (isMaximized())
+        gEDataManager->setSelectorWindowGeometry(m_normalGeo, isMaximized());
 #endif /* !Q_WS_MAC */
-            strWinPos += QString(",%1").arg(GUI_LastWindowState_Max);
-
-        vbox.SetExtraData(GUI_LastSelectorWindowPosition, strWinPos);
+        LogRel(("UISelectorWindow: Geometry saved as: %dx%d @ %dx%d.\n",
+                m_normalGeo.x(), m_normalGeo.y(), m_normalGeo.width(), m_normalGeo.height()));
     }
 }
 

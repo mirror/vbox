@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QMutex>
+#include <QDesktopWidget>
 
 /* GUI includes: */
 #include "UIExtraDataManager.h"
@@ -312,6 +313,73 @@ void UIExtraDataManager::setModeForWizard(WizardType type, WizardMode mode)
 RenderMode UIExtraDataManager::renderMode(const QString &strId) const
 {
     return gpConverter->fromInternalString<RenderMode>(extraDataString(GUI_RenderMode, strId));
+}
+
+QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pHintWidget /* = 0 */)
+{
+    /* Load corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_LastSelectorWindowPosition);
+
+    /* Parse loaded data: */
+    int iX = 0, iY = 0, iW = 0, iH = 0;
+    bool fOk = data.size() >= 4;
+    do
+    {
+        if (!fOk) break;
+        iX = data[0].toInt(&fOk);
+        if (!fOk) break;
+        iY = data[1].toInt(&fOk);
+        if (!fOk) break;
+        iW = data[2].toInt(&fOk);
+        if (!fOk) break;
+        iH = data[3].toInt(&fOk);
+    }
+    while (0);
+
+    /* Use geometry (loaded or default): */
+    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : QRect(0, 0, 770, 550);
+
+    /* Take hint-widget into account: */
+    if (pHintWidget)
+        geometry.setSize(geometry.size().expandedTo(pHintWidget->minimumSizeHint()));
+
+    /* Get screen-geometry [of screen with point (iX, iY) if possible]: */
+    const QRect screenGeometry = fOk ? QApplication::desktop()->availableGeometry(QPoint(iX, iY)) :
+                                       QApplication::desktop()->availableGeometry();
+
+    /* Make sure resulting geometry is within current bounds: */
+    geometry = geometry.intersected(screenGeometry);
+
+    /* Move default-geometry to screen-geometry' center: */
+    if (!fOk)
+        geometry.moveCenter(screenGeometry.center());
+
+    /* Return result: */
+    return geometry;
+}
+
+bool UIExtraDataManager::isSelectorWindowShouldBeMaximized()
+{
+    /* Load corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_LastSelectorWindowPosition);
+
+    /* Make sure 5th item has required value: */
+    return data.size() == 5 && data[4] == GUI_LastWindowState_Max;
+}
+
+void UIExtraDataManager::setSelectorWindowGeometry(const QRect &geometry, bool fMaximized)
+{
+    /* Serialize passed values: */
+    QStringList data;
+    data << QString::number(geometry.x());
+    data << QString::number(geometry.y());
+    data << QString::number(geometry.width());
+    data << QString::number(geometry.height());
+    if (fMaximized)
+        data << GUI_LastWindowState_Max;
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_LastSelectorWindowPosition, data);
 }
 
 bool UIExtraDataManager::isFirstRun(const QString &strId) const

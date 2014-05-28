@@ -130,6 +130,13 @@ public:
     /** Defines @a mode (basic/expert) for wizard of @a type. */
     void setModeForWizard(WizardType type, WizardMode mode);
 
+    /** Returns selector-window geometry using @a pHintWidget as the hint. */
+    QRect selectorWindowGeometry(QWidget *pHintWidget = 0);
+    /** Returns whether selector-window should be maximized or not. */
+    bool isSelectorWindowShouldBeMaximized();
+    /** Defines selector-window geometry to passed @a geometry which is @a fMaximized. */
+    void setSelectorWindowGeometry(const QRect &geometry, bool fMaximized);
+
     /** Returns render-mode for machine with passed @a strId. */
     RenderMode renderMode(const QString &strId) const;
 
