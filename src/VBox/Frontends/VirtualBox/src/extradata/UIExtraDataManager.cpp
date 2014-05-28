@@ -197,6 +197,15 @@ void UIExtraDataManager::incrementApplicationUpdateCheckCounter()
 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
+QStringList UIExtraDataManager::shortcutOverrides(const QString &strPoolExtraDataID) const
+{
+    if (strPoolExtraDataID == GUI_Input_SelectorShortcuts)
+        return extraDataStringList(GUI_Input_SelectorShortcuts);
+    if (strPoolExtraDataID == GUI_Input_MachineShortcuts)
+        return extraDataStringList(GUI_Input_MachineShortcuts);
+    return QStringList();
+}
+
 QString UIExtraDataManager::recentFolderForHardDrives() const
 {
     return extraDataString(GUI_RecentFolderHD);

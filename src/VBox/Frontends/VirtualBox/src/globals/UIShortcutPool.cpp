@@ -255,7 +255,7 @@ void UIShortcutPool::loadOverridesFor(const QString &strPoolExtraDataID)
     /* Compose shortcut key template: */
     const QString strShortcutKeyTemplate(m_sstrShortcutKeyTemplate.arg(strPoolExtraDataID));
     /* Iterate over all the overrides: */
-    const QStringList overrides = vboxGlobal().virtualBox().GetExtraDataStringList(strPoolExtraDataID);
+    const QStringList overrides = gEDataManager->shortcutOverrides(strPoolExtraDataID);
     foreach (const QString &strKeyValuePair, overrides)
     {
         /* Make sure override structure is valid: */
