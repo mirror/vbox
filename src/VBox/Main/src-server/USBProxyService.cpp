@@ -355,8 +355,9 @@ HRESULT USBProxyService::detachAllDevicesFromVM(SessionMachine *aMachine, bool a
             if (    SUCCEEDED(hrc)
                 &&  fRunFilters)
             {
-                Assert(aDone && pHostDevice->i_getUnistate() ==
-                    kHostUSBDeviceState_HeldByProxy && pHostDevice->i_getMachine().isNull());
+                Assert(   aDone
+                       && pHostDevice->i_getUnistate() == kHostUSBDeviceState_HeldByProxy
+                       && pHostDevice->i_getMachine().isNull());
                 devLock.release();
                 alock.release();
                 HRESULT hrc2 = runAllFiltersOnDevice(pHostDevice, llOpenedMachines, aMachine);
