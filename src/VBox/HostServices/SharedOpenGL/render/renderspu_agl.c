@@ -703,6 +703,11 @@ renderspu_SystemSwapBuffers(WindowInfo *window, GLint flags)
     }
 }
 
+GLboolean renderspu_SystemWindowNeedEmptyPresent(WindowInfo *window)
+{
+    return GL_FALSE;
+}
+
 void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, const GLint* pRects)
 {
     CRASSERT(window);

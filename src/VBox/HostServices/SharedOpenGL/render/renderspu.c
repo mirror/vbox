@@ -449,7 +449,6 @@ GLboolean renderspuWindowInitWithVisual( WindowInfo *window, VisualInfo *visual,
 {
     crMemset(window, 0, sizeof (*window));
     RTCritSectInit(&window->CompositorLock);
-    window->fCompositorPresentEmpty = GL_FALSE;
     window->pCompositor = NULL;
 
     window->BltInfo.Base.id = id;
@@ -776,14 +775,7 @@ renderspuVBoxPresentComposition( GLint win, const struct VBOXVR_SCR_COMPOSITOR *
     CRASSERT(win >= 0);
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
-        if (pCompositor && CrVrScrCompositorIsEmpty(pCompositor) && !window->fCompositorPresentEmpty)
-            pCompositor = NULL;
-
-        if (pCompositor)
-            window->fCompositorPresentEmpty = GL_FALSE;
-
-        renderspuVBoxCompositorSet( window, pCompositor);
-        if (pCompositor)
+        if (renderspuVBoxCompositorSet(window, pCompositor))
         {
             renderspu_SystemVBoxPresentComposition(window, pChangedEntry);
         }
@@ -1015,25 +1007,39 @@ void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, const struct VB
     CrBltLeave(pBlitter);
 }
 
-void renderspuVBoxCompositorSet( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR * pCompositor)
+GLboolean renderspuVBoxCompositorSet( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR * pCompositor)
 {
     int rc;
+    GLboolean fEmpty = pCompositor && CrVrScrCompositorIsEmpty(pCompositor);
+    GLboolean fNeedPresent;
+
     /* renderspuVBoxCompositorSet can be invoked from the chromium thread only and is not reentrant,
      * no need to synch here
      * the lock is actually needed to ensure we're in synch with the redraw thread */
-    if (window->pCompositor == pCompositor)
-        return;
+    if (window->pCompositor == pCompositor && ! fEmpty)
+        return !!pCompositor;
+
     rc = RTCritSectEnter(&window->CompositorLock);
     if (RT_SUCCESS(rc))
     {
+        if (!fEmpty)
+            fNeedPresent = !!pCompositor;
+        else
+        {
+            fNeedPresent = renderspu_SystemWindowNeedEmptyPresent(window);
+            pCompositor = NULL;
+        }
+
         window->pCompositor = pCompositor;
         RTCritSectLeave(&window->CompositorLock);
-        return;
+        return fNeedPresent;
     }
     else
     {
-        crWarning("RTCritSectEnter failed rc %d", rc);
+        WARN(("RTCritSectEnter failed rc %d", rc));
     }
+
+    return GL_FALSE;
 }
 
 static void renderspuVBoxCompositorClearAllCB(unsigned long key, void *data1, void *data2)
@@ -1059,7 +1065,10 @@ const struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo 
     {
         const VBOXVR_SCR_COMPOSITOR * pCompositor = window->pCompositor;
         if (pCompositor)
+        {
+            Assert(!CrVrScrCompositorIsEmpty(window->pCompositor));
             return pCompositor;
+        }
 
         /* if no compositor is set, release the lock and return */
         RTCritSectLeave(&window->CompositorLock);
@@ -1071,10 +1080,16 @@ const struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo 
     return NULL;
 }
 
-int renderspuVBoxCompositorLock(WindowInfo *window)
+int renderspuVBoxCompositorLock(WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR **ppCompositor)
 {
     int rc = RTCritSectEnter(&window->CompositorLock);
-    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        if (ppCompositor)
+            *ppCompositor = window->pCompositor;
+    }
+    else
+        WARN(("RTCritSectEnter failed %d", rc));
     return rc;
 }
 
@@ -1092,7 +1107,10 @@ int renderspuVBoxCompositorTryAcquire(WindowInfo *window, const struct VBOXVR_SC
     {
         *ppCompositor = window->pCompositor;
         if (*ppCompositor)
+        {
+            Assert(!CrVrScrCompositorIsEmpty(window->pCompositor));
             return VINF_SUCCESS;
+        }
 
         /* if no compositor is set, release the lock and return */
         RTCritSectLeave(&window->CompositorLock);
@@ -1109,8 +1127,7 @@ void renderspuVBoxCompositorRelease( WindowInfo *window)
 {
     int rc;
     Assert(window->pCompositor);
-    if (CrVrScrCompositorIsEmpty(window->pCompositor) && RTCritSectGetRecursion(&window->CompositorLock) == 1)
-        window->pCompositor = NULL;
+    Assert(!CrVrScrCompositorIsEmpty(window->pCompositor));
     rc = RTCritSectLeave(&window->CompositorLock);
     if (!RT_SUCCESS(rc))
     {

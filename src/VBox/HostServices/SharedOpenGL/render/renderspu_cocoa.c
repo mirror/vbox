@@ -179,6 +179,11 @@ void renderspu_SystemSwapBuffers(WindowInfo *pWinInfo, GLint flags)
     cocoaViewDisplay(pWinInfo->window);
 }
 
+GLboolean renderspu_SystemWindowNeedEmptyPresent(WindowInfo *pWinInfo)
+{
+    return cocoaViewNeedsEmptyPresent(pWinInfo->window);
+}
+
 void renderspu_SystemWindowVisibleRegion(WindowInfo *pWinInfo, GLint cRects, const GLint* paRects)
 {
     CRASSERT(pWinInfo);
