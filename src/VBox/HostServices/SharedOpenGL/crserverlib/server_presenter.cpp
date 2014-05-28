@@ -2500,7 +2500,21 @@ public:
             if (fPresentNeeded || mFlags.fForcePresentOnReenable)
             {
                 mFlags.fForcePresentOnReenable = false;
-                cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, mpCompositor, NULL);
+                if (mpCompositor)
+                    cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, mpCompositor, NULL);
+                else
+                {
+                    VBOXVR_SCR_COMPOSITOR TmpCompositor;
+                    RTRECT Rect;
+                    Rect.xLeft = 0;
+                    Rect.yTop = 0;
+                    Rect.xRight = mWidth;
+                    Rect.yBottom = mHeight;
+                    CrVrScrCompositorInit(&TmpCompositor, &Rect);
+                    /* this is a cleanup operation
+                     * empty compositor is guarantid to be released on VBoxPresentComposition return */
+                    cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, mpCompositor, NULL);
+                }
                 g_pLed->Asserted.s.fWriting = 1;
             }
 

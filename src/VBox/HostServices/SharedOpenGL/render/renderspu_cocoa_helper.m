@@ -348,6 +348,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     bool m_fNeedViewportUpdate;
     bool m_fNeedCtxUpdate;
     bool m_fDataVisible;
+    bool m_fCleanupNeeded;
     bool m_fEverSized;
 }
 - (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView*)pParentView winInfo:(WindowInfo*)pWinInfo;
@@ -385,6 +386,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
 - (void)clearVisibleRegions;
 - (void)setVisibleRegions:(GLint)cRects paRects:(const GLint*)paRects;
+- (GLboolean)vboxNeedsEmptyPresent;
 
 - (NSView*)dockTileScreen;
 - (void)reshapeDockTile;
@@ -795,6 +797,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     m_fNeedViewportUpdate     = true;        
     m_fNeedCtxUpdate          = true;
     m_fDataVisible            = false;
+    m_fCleanupNeeded          = false;
     m_fEverSized              = false;
     
     self = [super initWithFrame:frame];
@@ -899,14 +902,6 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
     if (m_fEverSized)
         [self performSelectorOnMainThread:@selector(vboxReshapePerform) withObject:nil waitUntilDone:NO];
-    
-    /* we need to redwar on regions change, however the compositor now is cleared 
-     * because all compositor&window data-related modifications are performed with compositor cleared
-     * the renderspu client will re-set the compositor after modifications are complete
-     * this way we indicate renderspu generic code not to ignore the empty compositor */
-     /* generally this should not be needed for setPos because compositor should not be zeroed with it,
-      * in any way setting this flag here should not hurt as it will be re-set on next present */
-    m_pWinInfo->fCompositorPresentEmpty = GL_TRUE;
 }
 
 - (NSPoint)pos
@@ -929,14 +924,6 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
     DEBUG_MSG(("OVIW(%p): setSize: new size: %dx%d\n", (void*)self, (int)size.width, (int)size.height));
     [self performSelectorOnMainThread:@selector(vboxReshapeOnResizePerform) withObject:nil waitUntilDone:NO];
-
-    /* we need to redwar on regions change, however the compositor now is cleared 
-     * because all compositor&window data-related modifications are performed with compositor cleared
-     * the renderspu client will re-set the compositor after modifications are complete
-     * this way we indicate renderspu generic code not to ignore the empty compositor */
-     /* generally this should not be needed for setSize because compositor should not be zeroed with it,
-      * in any way setting this flag here should not hurt as it will be re-set on next present */
-    m_pWinInfo->fCompositorPresentEmpty = GL_TRUE;
 }
 
 - (NSSize)size
@@ -1192,9 +1179,19 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
 - (void)vboxTryDrawUI
 {
-    const VBOXVR_SCR_COMPOSITOR *pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
-    if (!m_fDataVisible && !pCompositor)
+    const VBOXVR_SCR_COMPOSITOR *pCompositor;
+    int rc = renderspuVBoxCompositorLock(m_pWinInfo, &pCompositor);
+    if (RT_FAILURE(rc))
+    {
+        DEBUG_WARN(("renderspuVBoxCompositorLock failed\n"));
         return;
+    }
+
+    if (!pCompositor && !m_fCleanupNeeded)
+    {
+        renderspuVBoxCompositorUnlock(m_pWinInfo);
+        return;
+    }
 
     VBOXVR_SCR_COMPOSITOR TmpCompositor;
     
@@ -1203,6 +1200,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
         if (!m_pSharedGLCtx)
         {
             Assert(!m_fDataVisible);
+            Assert(!m_fCleanupNeeded);
             renderspuVBoxCompositorRelease(m_pWinInfo);
             if (![self vboxSharedCtxCreate])
             {
@@ -1214,12 +1212,14 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
             
             pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
             Assert(!m_fDataVisible);
+            Assert(!m_fCleanupNeeded);
             if (!pCompositor)
                 return;
         }
     }
     else
     {
+        Assert(m_fCleanupNeeded);
         CrVrScrCompositorInit(&TmpCompositor, NULL);
         pCompositor = &TmpCompositor;
     }
@@ -1234,8 +1234,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
         [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(vboxTryDrawUI) userInfo:nil repeats:NO];
     }
     
-    if (pCompositor != &TmpCompositor)
-        renderspuVBoxCompositorRelease(m_pWinInfo);
+    renderspuVBoxCompositorUnlock(m_pWinInfo);
 }
 
 - (void)swapFBO
@@ -1568,6 +1567,17 @@ static int g_cVBoxTgaCtr = 0;
     m_cClipRects = 0;
 }
 
+- (GLboolean)vboxNeedsEmptyPresent
+{
+    if (m_fDataVisible)
+    {
+        m_fCleanupNeeded = true;
+        return GL_TRUE;
+    }
+    
+    return GL_FALSE;
+}
+
 - (void)setVisibleRegions:(GLint)cRects paRects:(const GLint*)paRects
 {
     GLint cOldRects = m_cClipRects;
@@ -1588,12 +1598,6 @@ static int g_cVBoxTgaCtr = 0;
         m_cClipRects = cRects;
         memcpy(m_paClipRects, paRects, sizeof(GLint) * 4 * cRects);
     }
-
-    /* we need to redwar on regions change, however the compositor now is cleared 
-     * because all compositor&window data-related modifications are performed with compositor cleared
-     * the renderspu client will re-set the compositor after modifications are complete
-     * this way we indicate renderspu generic code not to ignore the empty compositor */
-    m_pWinInfo->fCompositorPresentEmpty = GL_TRUE;
 }
 
 - (NSView*)dockTileScreen
@@ -1933,6 +1937,15 @@ void cocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef
     {
     	[NSOpenGLContext clearCurrentContext];
     }
+
+    [pPool release];
+}
+
+GLboolean cocoaViewNeedsEmptyPresent(NativeNSViewRef pView)
+{
+    NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+
+    [(OverlayView*)pView vboxNeedsEmptyPresent];
 
     [pPool release];
 }
