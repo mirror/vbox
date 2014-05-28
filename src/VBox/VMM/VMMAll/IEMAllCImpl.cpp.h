@@ -4767,9 +4767,9 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
 #ifdef IN_RING3
         static uint32_t s_cTimes = 0;
         if (s_cTimes++ < 10)
-            LogRel(("IEM: rdmsr(%#x) -> GP(0)\n", pCtx->ecx));
+            LogRel(("IEM: rdmsr(%#x) -> #GP(0)\n", pCtx->ecx));
 #endif
-        Log(("IEM: rdmsr(%#x) -> GP(0)\n", pCtx->ecx));
+        Log(("IEM: rdmsr(%#x) -> #GP(0)\n", pCtx->ecx));
         AssertMsgReturn(rc == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_STATUS);
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
@@ -4820,9 +4820,9 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
 #ifdef IN_RING3
         static uint32_t s_cTimes = 0;
         if (s_cTimes++ < 10)
-            LogRel(("IEM: wrmsr(%#x,%#x`%08x) -> GP(0)\n", pCtx->ecx, uValue.s.Hi, uValue.s.Lo));
+            LogRel(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pCtx->ecx, uValue.s.Hi, uValue.s.Lo));
 #endif
-        Log(("IEM: wrmsr(%#x,%#x`%08x) -> GP(0)\n", pCtx->ecx, uValue.s.Hi, uValue.s.Lo));
+        Log(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pCtx->ecx, uValue.s.Hi, uValue.s.Lo));
         AssertMsgReturn(rc == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_STATUS);
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
@@ -5571,7 +5571,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
     PCX86FXSTATE pSrc = (PCX86FXSTATE)pvMem512;
 
     /*
-     * Check the state for stuff which will GP(0).
+     * Check the state for stuff which will #GP(0).
      */
     uint32_t const fMXCSR      = pSrc->MXCSR;
     uint32_t const fMXCSR_MASK = pCtx->fpu.MXCSR_MASK ? pCtx->fpu.MXCSR_MASK : UINT32_C(0xffbf);
