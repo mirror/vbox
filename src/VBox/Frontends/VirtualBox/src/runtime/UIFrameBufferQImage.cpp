@@ -144,6 +144,9 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
                                                       pEvent->bitsPerPixel(), 32);
     else
         popupCenter().forgetAboutWrongColorDepth(m_pMachineView->machineWindow());
+    lock();
+    mfUpdates = true;
+    unlock();
 }
 
 void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
@@ -160,6 +163,13 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
      * ignore paint event in that case. */
     if (!m_pMachineView)
         return;
+        
+    lock();
+    if (!mfUpdates)
+    {
+       unlock();
+       return;
+    }
 
     /* If the machine is NOT in 'running', 'paused' or 'saving' state,
      * the link between the framebuffer and the video memory is broken.
@@ -202,6 +212,7 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
             paintDefault(pEvent);
             break;
     }
+    unlock();
 }
 
 void UIFrameBufferQImage::paintDefault(QPaintEvent *pEvent)
@@ -375,9 +386,25 @@ void UIFrameBufferQImage::goFallback()
      * 1. don't support either the pixel format or the color depth;
      * 2. or the machine is in the state which breaks link between
      *    the framebuffer and the actual video-memory: */
-    m_img = QImage(m_width, m_height, QImage::Format_RGB32);
-    m_img.fill(0);
-    m_uPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
-    m_bUsesGuestVRAM = false;
+    if (!mpSourceBitmap.isNull())
+    {
+        BYTE *pAddress = NULL;
+        ULONG ulWidth = 0;
+        ULONG ulHeight = 0;
+        ULONG ulBitsPerPixel = 0;
+        ULONG ulBytesPerLine = 0;
+        ULONG ulPixelFormat = 0;
+
+        mpSourceBitmap.QueryBitmapInfo(pAddress,
+                                       ulWidth,
+                                       ulHeight,
+                                       ulBitsPerPixel,
+                                       ulBytesPerLine,
+                                       ulPixelFormat);
+
+        m_img = QImage(pAddress, ulWidth, ulHeight, ulBytesPerLine, QImage::Format_RGB32);
+        m_uPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+        m_bUsesGuestVRAM = true;
+    }
 }
 

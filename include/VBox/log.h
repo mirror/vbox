@@ -337,6 +337,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_DIRECTORY,
     /** Main group, IDisplay. */
     LOG_GROUP_MAIN_DISPLAY,
+    /** Main group, IDisplaySourceBitmap. */
+    LOG_GROUP_MAIN_DISPLAYSOURCEBITMAP,
     /** Main group, IDragAndDropModeChangedEvent. */
     LOG_GROUP_MAIN_DRAGANDDROPMODECHANGEDEVENT,
     /** Main group, IEmulatedUSB. */
@@ -897,6 +899,7 @@ typedef enum LOGGROUP
     "MAIN_DHCPSERVER", \
     "MAIN_DIRECTORY", \
     "MAIN_DISPLAY", \
+    "MAIN_DISPLAYSOURCEBITMAP", \
     "MAIN_DRAGANDDROPMODECHANGEDEVENT", \
     "MAIN_EMULATEDUSB",   \
     "MAIN_EVENT",   \

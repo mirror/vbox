@@ -708,6 +708,7 @@ VBoxC_SOURCES = \
 	src-client/ConsoleImplTeleporter.cpp \
 	src-client/ConsoleVRDPServer.cpp \
 	src-client/DisplayImpl.cpp \
+	src-client/DisplaySourceBitmapImpl.cpp \
 	src-client/EmulatedUSBImpl.cpp \
 	src-client/GuestImpl.cpp \
 	src-client/GuestDirectoryImpl.cpp \

@@ -201,7 +201,7 @@ static ComPtr<IConsole> gpConsole;
 static ComPtr<IMachineDebugger> gpMachineDebugger;
 static ComPtr<IKeyboard> gpKeyboard;
 static ComPtr<IMouse> gpMouse;
-static ComPtr<IDisplay> gpDisplay;
+ComPtr<IDisplay> gpDisplay;
 static ComPtr<IVRDEServer> gpVRDEServer;
 static ComPtr<IProgress> gpProgress;
 
@@ -1937,15 +1937,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     for (ULONG i = 0; i < gcMonitors; i++)
     {
         // register our framebuffer
-        rc = gpDisplay->SetFramebuffer(i, gpFramebuffer[i]);
+        rc = gpDisplay->AttachFramebuffer(i, gpFramebuffer[i]);
         if (FAILED(rc))
         {
             RTPrintf("Error: could not register framebuffer object!\n");
             goto leave;
         }
-        IFramebuffer *dummyFb;
         LONG xOrigin, yOrigin;
-        rc = gpDisplay->GetFramebuffer(i, &dummyFb, &xOrigin, &yOrigin);
+        rc = gpDisplay->GetScreenResolution(i, NULL, NULL, NULL, &xOrigin, &yOrigin);
         gpFramebuffer[i]->setOrigin(xOrigin, yOrigin);
     }
 
@@ -2217,14 +2216,11 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     case SDL_USER_EVENT_RESIZE:
                     {
                         LogFlow(("SDL_USER_EVENT_RESIZE\n"));
-                        IFramebuffer *dummyFb;
                         LONG xOrigin, yOrigin;
                         gpFramebuffer[event.user.code]->resizeGuest();
                         /* update xOrigin, yOrigin -> mouse */
-                        rc = gpDisplay->GetFramebuffer(event.user.code, &dummyFb, &xOrigin, &yOrigin);
+                        rc = gpDisplay->GetScreenResolution(event.user.code, NULL, NULL, NULL, &xOrigin, &yOrigin);
                         gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
-                        /* notify the display that the resize has been completed */
-                        gpDisplay->ResizeCompleted(event.user.code);
                         break;
                     }
 
@@ -2702,14 +2698,22 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case SDL_USER_EVENT_RESIZE:
             {
                 LogFlow(("SDL_USER_EVENT_RESIZE\n"));
-                IFramebuffer *dummyFb;
                 LONG xOrigin, yOrigin;
                 gpFramebuffer[event.user.code]->resizeGuest();
                 /* update xOrigin, yOrigin -> mouse */
-                rc = gpDisplay->GetFramebuffer(event.user.code, &dummyFb, &xOrigin, &yOrigin);
+                rc = gpDisplay->GetScreenResolution(event.user.code, NULL, NULL, NULL, &xOrigin, &yOrigin);
                 gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
-                /* notify the display that the resize has been completed */
-                gpDisplay->ResizeCompleted(event.user.code);
+                break;
+            }
+
+            case SDL_USER_EVENT_NOTIFYCHANGE:
+            {
+                LogFlow(("SDL_USER_EVENT_NOTIFYCHANGE\n"));
+                LONG xOrigin, yOrigin;
+                gpFramebuffer[event.user.code]->notifyChange(event.user.code);
+                /* update xOrigin, yOrigin -> mouse */
+                rc = gpDisplay->GetScreenResolution(event.user.code, NULL, NULL, NULL, &xOrigin, &yOrigin);
+                gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
                 break;
             }
 
@@ -2916,7 +2920,7 @@ leave:
     if (gpDisplay)
     {
         for (unsigned i = 0; i < gcMonitors; i++)
-            gpDisplay->SetFramebuffer(i, NULL);
+            gpDisplay->DetachFramebuffer(i);
     }
 
     gpMouse = NULL;

@@ -179,6 +179,15 @@ public:
             *finished = true;
         return S_OK;
     }
+    STDMETHOD(NotifyChange)(ULONG aScreenId,
+                            ULONG aXOrigin,
+                            ULONG aYOrigin,
+                            ULONG aWidth,
+                            ULONG aHeight)
+    {
+        /* Do nothing. */
+        return S_OK;
+    }
     STDMETHOD(VideoModeSupported)(ULONG width, ULONG height, ULONG bpp, BOOL *supported)
     {
         if (!supported)

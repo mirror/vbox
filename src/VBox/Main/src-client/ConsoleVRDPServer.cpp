@@ -1084,73 +1084,62 @@ DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery(void *pvCallb
 
     bool fAvailable = false;
 
-    IFramebuffer *pfb = NULL;
-    LONG xOrigin = 0;
-    LONG yOrigin = 0;
-
-    server->mConsole->getDisplay()->GetFramebuffer(uScreenId, &pfb, &xOrigin, &yOrigin);
-
-    if (pfb)
+    /* Obtain the new screen bitmap. */
+    HRESULT hr = server->mConsole->getDisplay()->QuerySourceBitmap(uScreenId, server->maSourceBitmaps[uScreenId].asOutParam());
+    if (SUCCEEDED(hr))
     {
-        pfb->Lock ();
+        LONG xOrigin = 0;
+        LONG yOrigin = 0;
+        BYTE *pAddress = NULL;
+        ULONG ulWidth = 0;
+        ULONG ulHeight = 0;
+        ULONG ulBitsPerPixel = 0;
+        ULONG ulBytesPerLine = 0;
+        ULONG ulPixelFormat = 0;
 
-        /* Query framebuffer parameters. */
-        ULONG lineSize = 0;
-        pfb->COMGETTER(BytesPerLine)(&lineSize);
+        hr = server->maSourceBitmaps[uScreenId]->QueryBitmapInfo(&pAddress,
+                                                                 &ulWidth,
+                                                                 &ulHeight,
+                                                                 &ulBitsPerPixel,
+                                                                 &ulBytesPerLine,
+                                                                 &ulPixelFormat);
 
-        ULONG bitsPerPixel = 0;
-        pfb->COMGETTER(BitsPerPixel)(&bitsPerPixel);
+        if (SUCCEEDED(hr))
+        {
+            hr = server->mConsole->getDisplay()->GetScreenResolution(uScreenId, NULL, NULL, NULL,
+                                                                     &xOrigin, &yOrigin);
 
-        BYTE *address = NULL;
-        pfb->COMGETTER(Address)(&address);
+            if (SUCCEEDED(hr))
+            {
+                /* Now fill the information as requested by the caller. */
+                pInfo->pu8Bits = pAddress;
+                pInfo->xOrigin = xOrigin;
+                pInfo->yOrigin = yOrigin;
+                pInfo->cWidth = ulWidth;
+                pInfo->cHeight = ulHeight;
+                pInfo->cBitsPerPixel = ulBitsPerPixel;
+                pInfo->cbLine = ulBytesPerLine;
 
-        ULONG height = 0;
-        pfb->COMGETTER(Height)(&height);
-
-        ULONG width = 0;
-        pfb->COMGETTER(Width)(&width);
-
-        /* Now fill the information as requested by the caller. */
-        pInfo->pu8Bits = address;
-        pInfo->xOrigin = xOrigin;
-        pInfo->yOrigin = yOrigin;
-        pInfo->cWidth = width;
-        pInfo->cHeight = height;
-        pInfo->cBitsPerPixel = bitsPerPixel;
-        pInfo->cbLine = lineSize;
-
-        pfb->Unlock();
-
-        fAvailable = true;
+                fAvailable = true;
+            }
+        }
     }
-
-    if (server->maFramebuffers[uScreenId])
-    {
-        server->maFramebuffers[uScreenId]->Release();
-    }
-    server->maFramebuffers[uScreenId] = pfb;
 
     return fAvailable;
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackFramebufferLock(void *pvCallback, unsigned uScreenId)
 {
-    ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
-
-    if (server->maFramebuffers[uScreenId])
-    {
-        server->maFramebuffers[uScreenId]->Lock();
-    }
+    NOREF(pvCallback);
+    NOREF(uScreenId);
+    /* Do nothing */
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackFramebufferUnlock(void *pvCallback, unsigned uScreenId)
 {
-    ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
-
-    if (server->maFramebuffers[uScreenId])
-    {
-        server->maFramebuffers[uScreenId]->Unlock();
-    }
+    NOREF(pvCallback);
+    NOREF(uScreenId);
+    /* Do nothing */
 }
 
 static void fixKbdLockStatus(VRDPInputSynch *pInputSynch, IKeyboard *pKeyboard)
@@ -1407,8 +1396,6 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     m_InputSynch.fClientCapsLock   = false;
     m_InputSynch.fClientScrollLock = false;
 
-    RT_ZERO(maFramebuffers);
-
     {
         ComPtr<IEventSource> es;
         console->COMGETTER(EventSource)(es.asOutParam());
@@ -1466,13 +1453,9 @@ ConsoleVRDPServer::~ConsoleVRDPServer()
     }
 
     unsigned i;
-    for (i = 0; i < RT_ELEMENTS(maFramebuffers); i++)
+    for (i = 0; i < RT_ELEMENTS(maSourceBitmaps); i++)
     {
-        if (maFramebuffers[i])
-        {
-            maFramebuffers[i]->Release();
-            maFramebuffers[i] = NULL;
-        }
+        maSourceBitmaps[i].setNull();
     }
 
     if (mEmWebcam)

@@ -130,6 +130,8 @@ VBoxSDLFB::VBoxSDLFB(uint32_t uScreenId,
     mLabelOffs      = 0;
 #endif
 
+    mfUpdates = false;
+
     rc = RTCritSectInit(&mUpdateLock);
     AssertMsg(rc == VINF_SUCCESS, ("Error from RTCritSectInit!\n"));
 
@@ -552,6 +554,99 @@ STDMETHODIMP VBoxSDLFB::RequestResize(ULONG aScreenId, ULONG pixelFormat, BYTE *
     return S_OK;
 }
 
+extern ComPtr<IDisplay> gpDisplay;
+
+/* This method runs on the main SDL thread. */
+void VBoxSDLFB::notifyChange(ULONG aScreenId)
+{
+    /* Disable screen updates. */
+    RTCritSectEnter(&mUpdateLock);
+
+    if (mpPendingSourceBitmap.isNull())
+    {
+        /* Do nothing. Change event already processed. */
+        RTCritSectLeave(&mUpdateLock);
+        return;
+    }
+
+    /* Disable screen updates. */
+    mfUpdates = false;
+
+    /* Release the current bitmap and keep the pending one. */
+    mpSourceBitmap = mpPendingSourceBitmap;
+    mpPendingSourceBitmap.setNull();
+
+    RTCritSectLeave(&mUpdateLock);
+
+    BYTE *pAddress = NULL;
+    ULONG ulWidth = 0;
+    ULONG ulHeight = 0;
+    ULONG ulBitsPerPixel = 0;
+    ULONG ulBytesPerLine = 0;
+    ULONG ulPixelFormat = 0;
+
+    mpSourceBitmap->QueryBitmapInfo(&pAddress,
+                                    &ulWidth,
+                                    &ulHeight,
+                                    &ulBitsPerPixel,
+                                    &ulBytesPerLine,
+                                    &ulPixelFormat);
+
+    if (   mGuestXRes    == ulWidth
+        && mGuestYRes    == ulHeight
+        && mBitsPerPixel == ulBitsPerPixel
+        && mBytesPerLine == ulBytesPerLine
+        && mPtrVRAM == pAddress
+       )
+    {
+        mfSameSizeRequested = true;
+    }
+    else
+    {
+        mfSameSizeRequested = false;
+    }
+
+    mGuestXRes   = ulWidth;
+    mGuestYRes   = ulHeight;
+    mPixelFormat = FramebufferPixelFormat_Opaque;
+    mPtrVRAM     = pAddress;
+    mBitsPerPixel = ulBitsPerPixel;
+    mBytesPerLine = ulBytesPerLine;
+    mUsesGuestVRAM = FALSE; /* yet */
+
+    resizeGuest();
+}
+
+STDMETHODIMP VBoxSDLFB::NotifyChange(ULONG aScreenId,
+                                     ULONG aXOrigin,
+                                     ULONG aYOrigin,
+                                     ULONG aWidth,
+                                     ULONG aHeight)
+{
+    LogRel(("NotifyChange: %d %d,%d %dx%d\n",
+             aScreenId, aXOrigin, aYOrigin, aWidth, aHeight));
+
+    /* Obtain the new screen bitmap. */
+    RTCritSectEnter(&mUpdateLock);
+
+    /* Save the new bitmap. */
+    mpPendingSourceBitmap.setNull();
+    gpDisplay->QuerySourceBitmap(aScreenId, mpPendingSourceBitmap.asOutParam());
+
+    RTCritSectLeave(&mUpdateLock);
+
+    SDL_Event event;
+    event.type       = SDL_USEREVENT;
+    event.user.type  = SDL_USER_EVENT_NOTIFYCHANGE;
+    event.user.code  = mScreenId;
+
+    PushSDLEventForSure(&event);
+
+    RTThreadYield();
+
+    return S_OK;
+}
+
 /**
  * Returns whether we like the given video mode.
  *
@@ -685,7 +780,7 @@ void VBoxSDLFB::resizeGuest()
     }
 
     /* is the guest in a linear framebuffer mode we support? */
-    if (mUsesGuestVRAM)
+    if (mPtrVRAM || mUsesGuestVRAM)
     {
         /* Create a source surface from guest VRAM. */
         mSurfVRAM = SDL_CreateRGBSurfaceFrom(mPtrVRAM, mGuestXRes, mGuestYRes, mBitsPerPixel,
@@ -709,11 +804,24 @@ void VBoxSDLFB::resizeGuest()
          */
         mfSameSizeRequested = false;
         LogFlow(("VBoxSDL:: the same resolution requested, skipping the resize.\n"));
+
+        /* Enable screen updates. */
+        RTCritSectEnter(&mUpdateLock);
+        mfUpdates = true;
+        RTCritSectLeave(&mUpdateLock);
+
         return;
     }
 
     /* now adjust the SDL resolution */
     resizeSDL();
+
+    /* Enable screen updates. */
+    RTCritSectEnter(&mUpdateLock);
+    mfUpdates = true;
+    RTCritSectLeave(&mUpdateLock);
+
+    repaint();
 }
 
 /**
@@ -960,6 +1068,13 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
     if (!mScreen || !mSurfVRAM)
         return;
 
+    RTCritSectEnter(&mUpdateLock);
+    Log(("Updates %d, %d,%d %dx%d\n", mfUpdates, x, y, w, h));
+    if (!mfUpdates)
+    {
+        RTCritSectLeave(&mUpdateLock);
+        return;
+    }
     /* the source and destination rectangles */
     SDL_Rect srcRect;
     SDL_Rect dstRect;
@@ -1038,6 +1153,7 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
     if (fPaintLabel)
         paintSecureLabel(0, 0, 0, 0, false);
 #endif
+    RTCritSectLeave(&mUpdateLock);
 }
 
 /**

@@ -1229,7 +1229,7 @@ void UISession::cleanupFramebuffers()
             pFb->setMarkAsUnused(true);
             /* Detach framebuffer from Display: */
             CDisplay display = session().GetConsole().GetDisplay();
-            display.SetFramebuffer(i, CFramebuffer(NULL));
+            display.DetachFramebuffer(i);
             /* Release framebuffer reference: */
             pFb->Release();
         }

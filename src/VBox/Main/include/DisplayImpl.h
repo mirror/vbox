@@ -31,6 +31,8 @@
 # include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 #endif
 
+#include "DisplaySourceBitmapWrap.h"
+
 class Console;
 struct VIDEORECCONTEXT;
 
@@ -48,6 +50,7 @@ typedef struct _DISPLAYFBINFO
     uint32_t u32InformationSize;
 
     ComPtr<IFramebuffer> pFramebuffer;
+    ComPtr<IDisplaySourceBitmap> pSourceBitmap;
     bool fDisabled;
 
     LONG xOrigin;
@@ -218,6 +221,11 @@ public:
     // IDisplay methods
     STDMETHOD(GetScreenResolution)(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel, LONG *aXOrigin, LONG *aYOrigin);
     STDMETHOD(SetFramebuffer)(ULONG aScreenId, IFramebuffer *aFramebuffer);
+    STDMETHOD(AttachFramebuffer)(ULONG aScreenId,
+                                 IFramebuffer *aFramebuffer);
+    STDMETHOD(DetachFramebuffer)(ULONG aScreenId);
+    STDMETHOD(QueryFramebuffer)(ULONG aScreenId,
+                                IFramebuffer **aFramebuffer);
     STDMETHOD(GetFramebuffer)(ULONG aScreenId, IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin);
     STDMETHOD(SetVideoModeHint)(ULONG aDisplay, BOOL aEnabled, BOOL aChangeOrigin, LONG aOriginX, LONG aOriginY, ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel);
     STDMETHOD(TakeScreenShot)(ULONG aScreenId, BYTE *address, ULONG width, ULONG height);
@@ -231,11 +239,15 @@ public:
     STDMETHOD(CompleteVHWACommand)(BYTE *pCommand);
 
     STDMETHOD(ViewportChanged)(ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height);
+    STDMETHOD(QuerySourceBitmap)(ULONG aScreenId,
+                                 IDisplaySourceBitmap **aDisplaySourceBitmap);
 
     static const PDMDRVREG  DrvReg;
 
 private:
 
+    HRESULT querySourceBitmap(ULONG aScreenId,
+                              IDisplaySourceBitmap **ppDisplaySourceBitmap);
     int updateDisplayData(void);
 
 #ifdef VBOX_WITH_CRHGSMI
@@ -421,6 +433,55 @@ void BitmapScale32(uint8_t *dst, int dstW, int dstH,
 int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
                    uint8_t **ppu8PNG, uint32_t *pcbPNG, uint32_t *pcxPNG, uint32_t *pcyPNG,
                    uint8_t fLimitSize);
+
+class ATL_NO_VTABLE DisplaySourceBitmap:
+    public DisplaySourceBitmapWrap
+{
+public:
+
+    DECLARE_EMPTY_CTOR_DTOR(DisplaySourceBitmap)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    /* Public initializer/uninitializer for internal purposes only. */
+    HRESULT init(ComObjPtr<Display> pDisplay, unsigned uScreenId, DISPLAYFBINFO *pFBInfo);
+    void uninit();
+
+    bool usesVRAM(void) { return m.pu8Allocated == NULL; }
+
+private:
+    // wrapped IDisplaySourceBitmap properties
+    virtual HRESULT getScreenId(ULONG *aScreenId);
+
+    // wrapped IDisplaySourceBitmap methods
+    virtual HRESULT queryBitmapInfo(BYTE **aAddress,
+                                    ULONG *aWidth,
+                                    ULONG *aHeight,
+                                    ULONG *aBitsPerPixel,
+                                    ULONG *aBytesPerLine,
+                                    ULONG *aPixelFormat);
+
+    int initSourceBitmap(unsigned aScreenId, DISPLAYFBINFO *pFBInfo);
+
+    struct Data
+    {
+        ComObjPtr<Display> pDisplay;
+        unsigned uScreenId;
+        DISPLAYFBINFO *pFBInfo;
+
+        uint8_t *pu8Allocated;
+
+        uint8_t *pu8Address;
+        ULONG ulWidth;
+        ULONG ulHeight;
+        ULONG ulBitsPerPixel;
+        ULONG ulBytesPerLine;
+        ULONG ulPixelFormat;
+    };
+
+    Data m;
+};
 
 #endif // ____H_DISPLAYIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

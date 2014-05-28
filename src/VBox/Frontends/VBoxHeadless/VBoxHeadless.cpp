@@ -639,6 +639,8 @@ static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const cha
 static CComModule _Module;
 #endif
 
+ComPtr<IDisplay> display;
+
 /**
  *  Entry point.
  */
@@ -967,7 +969,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         /* get the mutable machine */
         CHECK_ERROR_BREAK(console, COMGETTER(Machine)(machine.asOutParam()));
 
-        ComPtr<IDisplay> display;
         CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
 
 #ifdef VBOX_WITH_VIDEO_REC
@@ -1008,7 +1009,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             {
                 Log2(("VBoxHeadless: Registering framebuffer\n"));
                 pFramebuffer->AddRef();
-                display->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, pFramebuffer);
+                display->AttachFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, pFramebuffer);
             }
             if (!RT_SUCCESS(rrc) || rcc != S_OK)
                 rc = E_FAIL;
@@ -1038,7 +1039,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             }
             pVRDPFramebuffer->AddRef();
-            display->SetFramebuffer(uScreenId, pVRDPFramebuffer);
+            display->AttachFramebuffer(uScreenId, pVRDPFramebuffer);
         }
         if (uScreenId < cMonitors)
         {
@@ -1049,16 +1050,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
         {
             ComPtr<IFramebuffer> fb;
-            LONG xOrigin, yOrigin;
-            HRESULT hrc2 = display->GetFramebuffer(uScreenId,
-                                                   fb.asOutParam(),
-                                                   &xOrigin, &yOrigin);
+            HRESULT hrc2 = display->QueryFramebuffer(uScreenId,
+                                                     fb.asOutParam());
             if (hrc2 == S_OK && fb.isNull())
             {
                 NullFB *pNullFB =  new NullFB();
                 pNullFB->AddRef();
                 pNullFB->init();
-                display->SetFramebuffer(uScreenId, pNullFB);
+                display->AttachFramebuffer(uScreenId, pNullFB);
             }
         }
 
@@ -1328,6 +1327,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         /* we don't have to disable VRDE here because we don't save the settings of the VM */
     }
     while (0);
+
+    display.setNull();
 
     /*
      * Get the machine state.

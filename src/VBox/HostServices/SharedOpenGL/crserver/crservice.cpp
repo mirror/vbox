@@ -230,7 +230,6 @@ static DECLCALLBACK(void) svcNotifyEventCB(int32_t screenId, uint32_t uEvent, vo
 {
     ComPtr<IDisplay> pDisplay;
     ComPtr<IFramebuffer> pFramebuffer;
-    LONG xo, yo;
 
     if (!g_pConsole)
     {
@@ -240,7 +239,7 @@ static DECLCALLBACK(void) svcNotifyEventCB(int32_t screenId, uint32_t uEvent, vo
 
     CHECK_ERROR2_STMT(g_pConsole, COMGETTER(Display)(pDisplay.asOutParam()), return);
 
-    CHECK_ERROR2_STMT(pDisplay, GetFramebuffer(screenId, pFramebuffer.asOutParam(), &xo, &yo), return);
+    CHECK_ERROR2_STMT(pDisplay, QueryFramebuffer(screenId, pFramebuffer.asOutParam()), return);
 
     if (!pFramebuffer)
         return;
@@ -1105,7 +1104,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
 
                     for (i=0; i<monitorCount; ++i)
                     {
-                        CHECK_ERROR_RET(pDisplay, GetFramebuffer(i, pFramebuffer.asOutParam(), &xo, &yo), rc);
+                        CHECK_ERROR_RET(pDisplay, QueryFramebuffer(i, pFramebuffer.asOutParam()), rc);
 
                         if (!pFramebuffer)
                         {
@@ -1117,6 +1116,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
                             CHECK_ERROR_RET(pFramebuffer, COMGETTER(WinId)(&winId), rc);
                             CHECK_ERROR_RET(pFramebuffer, COMGETTER(Width)(&w), rc);
                             CHECK_ERROR_RET(pFramebuffer, COMGETTER(Height)(&h), rc);
+                            CHECK_ERROR_RET(pDisplay, GetScreenResolution(i, NULL, NULL, NULL, &xo, &yo), rc);
 
                             rc = crVBoxServerMapScreen(i, xo, yo, w, h, winId);
                             AssertRCReturn(rc, rc);
@@ -1212,7 +1212,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
 
                 Assert(g_pConsole);
                 CHECK_ERROR_RET(g_pConsole, COMGETTER(Display)(pDisplay.asOutParam()), rc);
-                CHECK_ERROR_RET(pDisplay, GetFramebuffer(screenId, pFramebuffer.asOutParam(), &xo, &yo), rc);
+                CHECK_ERROR_RET(pDisplay, QueryFramebuffer(screenId, pFramebuffer.asOutParam()), rc);
 
                 crServerVBoxCompositionSetEnableStateGlobal(GL_FALSE);
 
@@ -1244,6 +1244,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
                         {
                             CHECK_ERROR_BREAK(pFramebuffer, COMGETTER(Width)(&w));
                             CHECK_ERROR_BREAK(pFramebuffer, COMGETTER(Height)(&h));
+                            CHECK_ERROR_BREAK(pDisplay, GetScreenResolution(screenId, NULL, NULL, NULL, &xo, &yo));
 
                             rc = crVBoxServerMapScreen(screenId, xo, yo, w, h, winId);
                             AssertRCReturn(rc, rc);

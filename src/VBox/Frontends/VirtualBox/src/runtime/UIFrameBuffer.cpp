@@ -33,6 +33,9 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+#include "CConsole.h"
+#include "CDisplay.h"
+
 #if defined (Q_OS_WIN32)
 static CComModule _Module;
 #else
@@ -281,6 +284,83 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
     unlock();
 
     /* Confirm RequestResize: */
+    return S_OK;
+}
+
+void UIFrameBuffer::notifyChange(ULONG aScreenId)
+{
+    /* Disable screen updates. */
+    lock();
+
+    if (mpPendingSourceBitmap.isNull())
+    {
+        /* Do nothing. Change event already processed. */
+        LogRelFlow(("notifyChange: already processed.\n"));
+        unlock();
+        return;
+    }
+
+    /* Disable screen updates. */
+    mfUpdates = false;
+
+    /* Release the current bitmap and keep the pending one. */
+    mpSourceBitmap = mpPendingSourceBitmap;
+    mpPendingSourceBitmap = 0;
+
+    unlock();
+
+    BYTE *pAddress = NULL;
+    ULONG ulWidth = 0;
+    ULONG ulHeight = 0;
+    ULONG ulBitsPerPixel = 0;
+    ULONG ulBytesPerLine = 0;
+    ULONG ulPixelFormat = 0;
+
+    mpSourceBitmap.QueryBitmapInfo(pAddress,
+                                   ulWidth,
+                                   ulHeight,
+                                   ulBitsPerPixel,
+                                   ulBytesPerLine,
+                                   ulPixelFormat);
+
+    UIResizeEvent e(FramebufferPixelFormat_Opaque, pAddress,
+                    ulBitsPerPixel, ulBytesPerLine, ulWidth, ulHeight);
+    resizeEvent(&e);
+}
+
+STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG aScreenId,
+                                         ULONG aXOrigin,
+                                         ULONG aYOrigin,
+                                         ULONG aWidth,
+                                         ULONG aHeight)
+{
+    LogRelFlow(("NotifyChange: %d %d,%d %dx%d\n",
+                aScreenId, aXOrigin, aYOrigin, aWidth, aHeight));
+
+    /* Obtain the new screen bitmap. */
+    lock();
+
+    /* Make sure frame-buffer is used: @todo still required? */
+    if (m_fIsMarkedAsUnused)
+    {
+        LogRelFlow(("UIFrameBuffer::NotifyChange: Ignored!\n"));
+        unlock();
+        return E_FAIL;
+    }
+
+    /* Save the new bitmap. */
+    mpPendingSourceBitmap = 0;
+    m_pMachineView->session().GetConsole().GetDisplay().QuerySourceBitmap(aScreenId, mpPendingSourceBitmap);
+
+    unlock();
+
+    /* Widget resize is NOT thread-safe and *probably* never will be,
+     * We have to notify machine-view with the async-signal to perform resize operation. */
+    LogRelFlow(("UIFrameBuffer::NotifyChange: Sending to async-handler...\n"));
+    emit sigNotifyChange(aScreenId, aWidth, aHeight);
+
+    RTThreadYield();
+
     return S_OK;
 }
 
@@ -605,6 +685,9 @@ void UIFrameBuffer::prepareConnections()
     connect(this, SIGNAL(sigRequestResize(int, uchar*, int, int, int, int)),
             m_pMachineView, SLOT(sltHandleRequestResize(int, uchar*, int, int, int, int)),
             Qt::QueuedConnection);
+    connect(this, SIGNAL(sigNotifyChange(ulong, int, int)),
+            m_pMachineView, SLOT(sltHandleNotifyChange(ulong, int, int)),
+            Qt::QueuedConnection);
     connect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
             m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)),
             Qt::QueuedConnection);
@@ -620,6 +703,8 @@ void UIFrameBuffer::cleanupConnections()
 {
     disconnect(this, SIGNAL(sigRequestResize(int, uchar*, int, int, int, int)),
                m_pMachineView, SLOT(sltHandleRequestResize(int, uchar*, int, int, int, int)));
+    disconnect(this, SIGNAL(sigNotifyChange(ulong, int, int)),
+               m_pMachineView, SLOT(sltHandleNotifyChange(ulong, int, int)));
     disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
                m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
     disconnect(this, SIGNAL(sigSetVisibleRegion(QRegion)),

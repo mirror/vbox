@@ -62,6 +62,11 @@ public:
     STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, BYTE *vram,
                              ULONG bitsPerPixel, ULONG bytesPerLine, ULONG w, ULONG h,
                              BOOL *finished);
+    STDMETHOD(NotifyChange)(ULONG aScreenId,
+                            ULONG aXOrigin,
+                            ULONG aYOrigin,
+                            ULONG aWidth,
+                            ULONG aHeight);
     STDMETHOD(VideoModeSupported)(ULONG width, ULONG height, ULONG bpp, BOOL *supported);
 
     STDMETHOD(GetVisibleRegion)(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
@@ -91,6 +96,8 @@ private:
 #ifndef VBOX_WITH_XPCOM
     long refcnt;
 #endif
+
+    ComPtr<IDisplaySourceBitmap> mpSourceBitmap;
 };
 
 
