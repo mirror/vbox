@@ -130,6 +130,7 @@ private:
     void prepareConnections();
     void loadSettings();
     void saveSettings();
+    void cleanupConnections();
 
     /* Helpers: Current item stuff: */
     UIVMItem* currentItem() const;
