@@ -203,7 +203,7 @@ public:
     virtual void paintEvent(QPaintEvent *pEvent) = 0;
     virtual void applyVisibleRegion(const QRegion &region);
 
-    void notifyChange(ulong uScreenId);
+    void notifyChange(ULONG uScreenId);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* this method is called from the GUI thread
