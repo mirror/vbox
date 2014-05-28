@@ -108,6 +108,7 @@ typedef enum
     VBOXCRCMDCTL_TYPE_32bit = 0x7fffffff
 } VBOXCRCMDCTL_TYPE;
 
+#pragma pack(1)
 typedef struct VBOXCRCMDCTL
 {
     VBOXCRCMDCTL_TYPE enmType;
@@ -125,6 +126,7 @@ typedef struct VBOXCRCMDCTL_HGCM
     VBOXCRCMDCTL Hdr;
     VBOXHGCMSVCPARM aParms[1];
 } VBOXCRCMDCTL_HGCM;
+#pragma pack()
 
 typedef struct VBOXVDMAHOST * HVBOXCRCMDCTL_REMAINING_HOST_COMMAND;
 
@@ -149,6 +151,7 @@ typedef struct VBOXCRCMDCTL_HGCMDISABLE_DATA
     PFNVBOXCRCMDCTL_NOTIFY_TERMINATING_DONE pfnNotifyTermDone;
 } VBOXCRCMDCTL_HGCMDISABLE_DATA;
 
+#pragma pack(1)
 typedef struct VBOXCRCMDCTL_ENABLE
 {
     VBOXCRCMDCTL Hdr;
@@ -160,5 +163,6 @@ typedef struct VBOXCRCMDCTL_DISABLE
     VBOXCRCMDCTL Hdr;
     VBOXCRCMDCTL_HGCMDISABLE_DATA Data;
 } VBOXCRCMDCTL_DISABLE;
+#pragma pack()
 
 #endif /*#ifndef ___VBox_VBoxVideoHost3D_h*/
