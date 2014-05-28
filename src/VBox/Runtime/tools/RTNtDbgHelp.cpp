@@ -186,7 +186,7 @@ static RTEXITCODE loadModule(const char *pszFile)
     pMod->pszName  = RTPathFilename(pMod->szFullName);
     pMod->uModAddr = uModAddrGot;
     RTListAppend(&g_ModuleList, &pMod->ListEntry);
-    infoPrintf(1, "%#018x %s\n", pMod->uModAddr, pMod->pszName);
+    infoPrintf(1, "%#018RX64 %s\n", pMod->uModAddr, pMod->pszName);
 
     return RTEXITCODE_SUCCESS;
 }
@@ -228,7 +228,7 @@ static const char *symTypeName(SYM_TYPE enmType)
 static BOOL CALLBACK dumpSymbolCallback(PSYMBOL_INFO pSymInfo, ULONG cbSymbol, PVOID pvUser)
 {
     NOREF(pvUser);
-    RTPrintf("  %#018x LB %#07x  %s\n", pSymInfo->Address, cbSymbol, pSymInfo->Name);
+    RTPrintf("  %#018RX64 LB %#07x  %s\n", pSymInfo->Address, cbSymbol, pSymInfo->Name);
     return TRUE;
 }
 
@@ -242,7 +242,7 @@ static RTEXITCODE dumpAll(void)
     PRTNTDBGHELPMOD pMod;
     RTListForEach(&g_ModuleList, pMod, RTNTDBGHELPMOD, ListEntry)
     {
-        RTPrintf("*** %#018x - %s ***\n", pMod->uModAddr, pMod->szFullName);
+        RTPrintf("*** %#018RX64 - %s ***\n", pMod->uModAddr, pMod->szFullName);
 
         static const int8_t s_acbVariations[]  = { 0, -4, -8, -12, -16, -20, -24, -28, -32, 4, 8, 12, 16, 20, 24, 28, 32 };
         unsigned            iVariation = 0;
