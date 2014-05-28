@@ -159,6 +159,12 @@ QString UIExtraDataManager::preventBETAwarningForVersion() const
 }
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+bool UIExtraDataManager::shouldWeAllowApplicationUpdate() const
+{
+    /* Allow unless 'forbidden' flag is set: */
+    return !isFeatureAllowed(GUI_PreventApplicationUpdate);
+}
+
 QString UIExtraDataManager::applicationUpdateData() const
 {
     return extraDataString(GUI_UpdateDate);
@@ -265,14 +271,6 @@ QStringList UIExtraDataManager::messagesWithInvertedOption() const
 {
     return extraDataStringList(GUI_InvertMessageOption);
 }
-
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-bool UIExtraDataManager::shouldWeAllowApplicationUpdate() const
-{
-    /* Allow unless 'forbidden' flag is set: */
-    return !isFeatureAllowed(GUI_PreventApplicationUpdate);
-}
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 WizardMode UIExtraDataManager::modeForWizard(WizardType type)
 {
