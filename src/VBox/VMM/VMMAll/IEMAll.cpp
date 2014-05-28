@@ -7138,7 +7138,7 @@ static VBOXSTRICTRC iemMemFetchDataU128(PIEMCPU pIemCpu, uint128_t *pu128Dst, ui
  * Fetches a data dqword (double qword) at an aligned address, generally SSE
  * related.
  *
- * Raises GP(0) if not aligned.
+ * Raises \#GP(0) if not aligned.
  *
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM per CPU data.
