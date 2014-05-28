@@ -1378,7 +1378,7 @@ int DragInstance::ghIsDnDPending(void)
 
                 m_state = Dragging;
                 m_wndCur = wndSelection;
-                Assert(m_wndCur == pEventClient->data.l[0]);
+                Assert(m_wndCur == (Window)pEventClient->data.l[0]);
 
                 LogFlowThisFunc(("XA_XdndEnter\n"));
 #ifdef DEBUG
