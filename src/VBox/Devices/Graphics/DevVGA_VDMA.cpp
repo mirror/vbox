@@ -1135,7 +1135,16 @@ static int vdmaVBVACtlDisableSync(PVBOXVDMAHOST pVdma)
 {
     VBVAEXHOSTCTL HCtl;
     HCtl.enmType = VBVAEXHOSTCTL_TYPE_GHH_DISABLE;
-    return vdmaVBVACtlSubmitSync(pVdma, &HCtl, VBVAEXHOSTCTL_SOURCE_HOST);
+    int rc = vdmaVBVACtlSubmitSync(pVdma, &HCtl, VBVAEXHOSTCTL_SOURCE_HOST);
+    if (RT_FAILURE(rc))
+    {
+        WARN(("vdmaVBVACtlSubmitSync failed %d\n", rc));
+        return rc;
+    }
+
+    vgaUpdateDisplayAll(pVdma->pVGAState);
+
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(uint8_t*) vboxVDMACrHgcmHandleEnableRemainingHostCommand(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hClient, uint32_t *pcbCtl, int prevCmdRc)
@@ -1594,6 +1603,9 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
                 WARN(("vdmaVBVADisableProcess failed %d\n", rc));
                 return rc;
             }
+
+            /* do vgaUpdateDisplayAll right away */
+            vgaUpdateDisplayAll(pVdma->pVGAState);
 
             return VBoxVDMAThreadTerm(&pVdma->Thread, NULL, NULL, false);
         }
