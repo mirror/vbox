@@ -1138,7 +1138,7 @@ static int vdmaVBVACtlDisableSync(PVBOXVDMAHOST pVdma)
     int rc = vdmaVBVACtlSubmitSync(pVdma, &HCtl, VBVAEXHOSTCTL_SOURCE_HOST);
     if (RT_FAILURE(rc))
     {
-        WARN(("vdmaVBVACtlSubmitSync failed %d\n", rc));
+        Log(("vdmaVBVACtlSubmitSync failed %d\n", rc));
         return rc;
     }
 
