@@ -48,6 +48,7 @@ UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
     , m_width(0), m_height(0)
     , m_fIsMarkedAsUnused(false)
     , m_fIsAutoEnabled(false)
+    , m_fIsUpdatesAllowed(true)
 #ifdef Q_OS_WIN
     , m_iRefCnt(0)
 #endif /* Q_OS_WIN */
@@ -287,80 +288,105 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
     return S_OK;
 }
 
-void UIFrameBuffer::notifyChange(ULONG aScreenId)
+void UIFrameBuffer::notifyChange()
 {
-    /* Disable screen updates. */
+    /* Lock access to frame-buffer: */
     lock();
 
-    if (mpPendingSourceBitmap.isNull())
+    /* If there is NO pending source bitmap: */
+    if (m_pendingSourceBitmap.isNull())
     {
-        /* Do nothing. Change event already processed. */
-        LogRelFlow(("notifyChange: already processed.\n"));
+        /* Do nothing, change-event already processed: */
+        LogRelFlow(("UIFrameBuffer::notifyChange: Already processed.\n"));
+        /* Unlock access to frame-buffer: */
         unlock();
+        /* Return immediately: */
         return;
     }
 
-    /* Disable screen updates. */
-    mfUpdates = false;
+    /* Disable screen updates: */
+    m_fIsUpdatesAllowed = false;
 
-    /* Release the current bitmap and keep the pending one. */
-    mpSourceBitmap = mpPendingSourceBitmap;
-    mpPendingSourceBitmap = 0;
+    /* Release the current bitmap and keep the pending one: */
+    m_sourceBitmap = m_pendingSourceBitmap;
+    m_pendingSourceBitmap = 0;
 
+    /* Unlock access to frame-buffer: */
     unlock();
 
+    /* Acquire source bitmap: */
     BYTE *pAddress = NULL;
     ULONG ulWidth = 0;
     ULONG ulHeight = 0;
     ULONG ulBitsPerPixel = 0;
     ULONG ulBytesPerLine = 0;
     ULONG ulPixelFormat = 0;
-
-    mpSourceBitmap.QueryBitmapInfo(pAddress,
+    m_sourceBitmap.QueryBitmapInfo(pAddress,
                                    ulWidth,
                                    ulHeight,
                                    ulBitsPerPixel,
                                    ulBytesPerLine,
                                    ulPixelFormat);
 
+    /* Perform frame-buffer resize: */
     UIResizeEvent e(FramebufferPixelFormat_Opaque, pAddress,
                     ulBitsPerPixel, ulBytesPerLine, ulWidth, ulHeight);
     resizeEvent(&e);
 }
 
-STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG aScreenId,
-                                         ULONG aXOrigin,
-                                         ULONG aYOrigin,
-                                         ULONG aWidth,
-                                         ULONG aHeight)
+/**
+ * EMT callback: Informs about source bitmap change.
+ * @param uScreenId Guest screen number.
+ * @param uX        Horizontal origin of the update rectangle, in pixels.
+ * @param uY        Vertical origin of the update rectangle, in pixels.
+ * @param uWidth    Width of the guest display, in pixels.
+ * @param uHeight   Height of the guest display, in pixels.
+ * @note  Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
+ * @note  Calls to this and #setMarkAsUnused method are synchronized between calling threads (from GUI side).
+ */
+STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId,
+                                         ULONG uX,
+                                         ULONG uY,
+                                         ULONG uWidth,
+                                         ULONG uHeight)
 {
-    LogRelFlow(("NotifyChange: %d %d,%d %dx%d\n",
-                aScreenId, aXOrigin, aYOrigin, aWidth, aHeight));
-
-    /* Obtain the new screen bitmap. */
+    /* Lock access to frame-buffer: */
     lock();
 
-    /* Make sure frame-buffer is used: @todo still required? */
+    /* Make sure frame-buffer is used: */
     if (m_fIsMarkedAsUnused)
     {
-        LogRelFlow(("UIFrameBuffer::NotifyChange: Ignored!\n"));
+        LogRel(("UIFrameBuffer::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
+                (unsigned long)uScreenId,
+                (unsigned long)uX, (unsigned long)uY,
+                (unsigned long)uWidth, (unsigned long)uHeight));
+
+        /* Unlock access to frame-buffer: */
         unlock();
+
+        /* Ignore NotifyChange: */
         return E_FAIL;
     }
 
-    /* Save the new bitmap. */
-    mpPendingSourceBitmap = 0;
-    m_pMachineView->session().GetConsole().GetDisplay().QuerySourceBitmap(aScreenId, mpPendingSourceBitmap);
-
-    unlock();
+    /* Acquire new pending bitmap: */
+    m_pendingSourceBitmap = 0;
+    m_pMachineView->session().GetConsole().GetDisplay().QuerySourceBitmap(uScreenId, m_pendingSourceBitmap);
 
     /* Widget resize is NOT thread-safe and *probably* never will be,
      * We have to notify machine-view with the async-signal to perform resize operation. */
-    LogRelFlow(("UIFrameBuffer::NotifyChange: Sending to async-handler...\n"));
-    emit sigNotifyChange(aScreenId, aWidth, aHeight);
+    LogRel(("UIFrameBuffer::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Sending to async-handler..\n",
+            (unsigned long)uScreenId,
+            (unsigned long)uX, (unsigned long)uY,
+            (unsigned long)uWidth, (unsigned long)uHeight));
+    emit sigNotifyChange(uScreenId, uWidth, uHeight);
 
+    /* Unlock access to frame-buffer: */
+    unlock();
+
+    /* Give up control token to other thread: */
     RTThreadYield();
 
+    /* Confirm NotifyChange: */
     return S_OK;
 }
 
