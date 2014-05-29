@@ -1042,7 +1042,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
     AssertRelease(!maFramebuffers[uScreenId].pendingResize.fPending);
 
     /* The method also unlocks the framebuffer. */
-    handleResizeCompletedEMT(uScreenId);
+    handleResizeCompletedEMT(uScreenId, TRUE);
 
     return VINF_SUCCESS;
 }
@@ -1053,7 +1053,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
  *
  *  @thread EMT
  */
-void Display::handleResizeCompletedEMT(unsigned uScreenId)
+void Display::handleResizeCompletedEMT(unsigned uScreenId, BOOL fResizeContext)
 {
     LogRelFlowFunc(("\n"));
 
@@ -1160,7 +1160,10 @@ void Display::handleResizeCompletedEMT(unsigned uScreenId)
                 data.aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
                 data.aParms[0].u.uint32 = uScreenId;
 
-                crCtlSubmitSync(&data.Hdr, sizeof (data));
+                if (fResizeContext)
+                    crCtlSubmitAsyncCmdCopy(&data.Hdr, sizeof (data));
+                else
+                    crCtlSubmitSync(&data.Hdr, sizeof (data));
             }
         }
 #endif /* VBOX_WITH_CROGL */
@@ -4088,7 +4091,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             LogRelFlowFunc(("ResizeStatus_UpdateDisplayData %d\n", uScreenId));
             fNoUpdate = true; /* Always set it here, because pfnUpdateDisplayAll can cause a new resize. */
             /* The framebuffer was resized and display data need to be updated. */
-            pDisplay->handleResizeCompletedEMT(uScreenId);
+            pDisplay->handleResizeCompletedEMT(uScreenId, FALSE);
             if (pFBInfo->u32ResizeStatus != ResizeStatus_Void)
             {
                 /* The resize status could be not Void here because a pending resize is issued. */
@@ -4743,11 +4746,8 @@ int Display::crCtlSubmitSync(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
     return rc;
 }
 
-int Display::crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
+int Display::crCtlSubmitAsyncCmdCopy(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
 {
-    if (mCrOglCallbacks.pfnHasDataForScreen(u32ScreenID))
-        return crCtlSubmitSync(pCmd, cbCmd);
-
     VBOXCRCMDCTL* pCmdCopy = (VBOXCRCMDCTL*)RTMemAlloc(cbCmd);
     if (!pCmdCopy)
     {
@@ -4766,6 +4766,14 @@ int Display::crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VBOX
     }
 
     return VINF_SUCCESS;
+}
+
+int Display::crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
+{
+    if (mCrOglCallbacks.pfnHasDataForScreen(u32ScreenID))
+        return crCtlSubmitSync(pCmd, cbCmd);
+
+    return crCtlSubmitAsyncCmdCopy(pCmd, cbCmd);
 }
 
 bool  Display::handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp)
