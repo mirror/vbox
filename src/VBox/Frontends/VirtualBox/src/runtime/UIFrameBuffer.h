@@ -151,11 +151,11 @@ public:
                               BYTE *pVRAM, ULONG uBitsPerPixel, ULONG uBytesPerLine,
                               ULONG uWidth, ULONG uHeight,
                               BOOL *pbFinished);
-    STDMETHOD(NotifyChange)(ULONG aScreenId,
-                            ULONG aXOrigin,
-                            ULONG aYOrigin,
-                            ULONG aWidth,
-                            ULONG aHeight);
+    STDMETHOD(NotifyChange)(ULONG uScreenId,
+                            ULONG uX,
+                            ULONG uY,
+                            ULONG uWidth,
+                            ULONG uHeight);
 
     STDMETHOD(NotifyUpdate) (ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight);
 
@@ -203,7 +203,7 @@ public:
     virtual void paintEvent(QPaintEvent *pEvent) = 0;
     virtual void applyVisibleRegion(const QRegion &region);
 
-    void notifyChange(ULONG uScreenId);
+    void notifyChange();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* this method is called from the GUI thread
@@ -239,9 +239,12 @@ protected:
     bool m_fIsMarkedAsUnused;
     bool m_fIsAutoEnabled;
 
-    CDisplaySourceBitmap mpSourceBitmap;
-    CDisplaySourceBitmap mpPendingSourceBitmap;
-    bool mfUpdates;
+    /** Source bitmap from IDisplay. */
+    CDisplaySourceBitmap m_sourceBitmap;
+    /** Source bitmap from IDisplay acquired but not yet applied. */
+    CDisplaySourceBitmap m_pendingSourceBitmap;
+    /** Reflects whether screen-updates allowed. */
+    bool m_fIsUpdatesAllowed;
 
     /* To avoid a seamless flicker,
      * which caused by the latency between the

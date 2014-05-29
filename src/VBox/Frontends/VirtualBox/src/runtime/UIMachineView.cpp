@@ -306,7 +306,7 @@ void UIMachineView::sltHandleNotifyChange(ulong uScreenId, int iWidth, int iHeig
             frameBuffer()->setScaledSize(size());
 
         /* Perform frame-buffer mode-change: */
-        frameBuffer()->notifyChange(uScreenId);
+        frameBuffer()->notifyChange();
 
         /* Scale-mode doesn't need this.. */
         if (visualStateType() != UIVisualStateType_Scale)

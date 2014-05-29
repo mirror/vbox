@@ -144,8 +144,10 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
                                                       pEvent->bitsPerPixel(), 32);
     else
         popupCenter().forgetAboutWrongColorDepth(m_pMachineView->machineWindow());
+
+    /* Enable screen updates: */
     lock();
-    mfUpdates = true;
+    m_fIsUpdatesAllowed = true;
     unlock();
 }
 
@@ -163,12 +165,17 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
      * ignore paint event in that case. */
     if (!m_pMachineView)
         return;
-        
+
+    /* Lock access to frame-buffer: */
     lock();
-    if (!mfUpdates)
+
+    /* But if updates disabled: */
+    if (!m_fIsUpdatesAllowed)
     {
-       unlock();
-       return;
+        /* Unlock access to frame-buffer: */
+        unlock();
+        /* And return immediately: */
+        return;
     }
 
     /* If the machine is NOT in 'running', 'paused' or 'saving' state,
@@ -212,6 +219,8 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
             paintDefault(pEvent);
             break;
     }
+
+    /* Unlock access to frame-buffer: */
     unlock();
 }
 
@@ -386,7 +395,7 @@ void UIFrameBufferQImage::goFallback()
      * 1. don't support either the pixel format or the color depth;
      * 2. or the machine is in the state which breaks link between
      *    the framebuffer and the actual video-memory: */
-    if (!mpSourceBitmap.isNull())
+    if (!m_sourceBitmap.isNull())
     {
         BYTE *pAddress = NULL;
         ULONG ulWidth = 0;
@@ -395,7 +404,7 @@ void UIFrameBufferQImage::goFallback()
         ULONG ulBytesPerLine = 0;
         ULONG ulPixelFormat = 0;
 
-        mpSourceBitmap.QueryBitmapInfo(pAddress,
+        m_sourceBitmap.QueryBitmapInfo(pAddress,
                                        ulWidth,
                                        ulHeight,
                                        ulBitsPerPixel,
