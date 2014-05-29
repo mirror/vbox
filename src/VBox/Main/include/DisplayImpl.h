@@ -370,7 +370,7 @@ private:
     bool vbvaFetchCmd(VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
     void vbvaReleaseCmd(VBVACMDHDR *pHdr, int32_t cbCmd);
 
-    void handleResizeCompletedEMT(unsigned uScreenId);
+    void handleResizeCompletedEMT(unsigned uScreenId, BOOL fResizeContext);
 
     RTCRITSECT mVBVALock;
     volatile uint32_t mfu32PendingVideoAccelDisable;
@@ -389,6 +389,9 @@ public:
     static BOOL  displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreenId, uint8_t *pu8Data, uint32_t u32Width, uint32_t u32Height);
     int crCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion);
     int crCtlSubmitSync(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd);
+    /* copies the given command and submits it asynchronously,
+     * i.e. the pCmd data may be discarded right after the call returns */
+    int crCtlSubmitAsyncCmdCopy(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd);
     /* performs synchronous request processing if 3D backend has something to display
      * this is primarily to work-around 3d<->main thread deadlocks on OSX
      * in case of async completion, the command is coppied to the allocated buffer,
