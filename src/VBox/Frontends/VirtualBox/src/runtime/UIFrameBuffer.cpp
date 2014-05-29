@@ -168,7 +168,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(UsesGuestVRAM) (BOOL *pbUsesGuestVRAM)
 {
     if (!pbUsesGuestVRAM)
         return E_POINTER;
-    *pbUsesGuestVRAM = usesGuestVRAM();
+    *pbUsesGuestVRAM = true;
     return S_OK;
 }
 

@@ -1342,7 +1342,7 @@ public:
     template<class T> VBoxFBSizeInfo(T * fb) :
         mPixelFormat(fb->pixelFormat()), mVRAM(fb->address()), mBitsPerPixel(fb->bitsPerPixel()),
         mBytesPerLine(fb->bytesPerLine()), mWidth(fb->width()), mHeight(fb->height()),
-        mUsesGuestVram(fb->usesGuestVRAM()) {}
+        mUsesGuestVram(true) {}
 
     VBoxFBSizeInfo(ulong aPixelFormat, uchar *aVRAM,
                      ulong aBitsPerPixel, ulong aBytesPerLine,

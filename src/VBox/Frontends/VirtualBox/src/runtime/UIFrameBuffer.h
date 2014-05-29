@@ -185,11 +185,6 @@ public:
         return FramebufferPixelFormat_FOURCC_RGB;
     }
 
-    virtual bool usesGuestVRAM()
-    {
-        return false;
-    }
-
     void lock() const { RTCritSectEnter(&m_critSect); }
     void unlock() const { RTCritSectLeave(&m_critSect); }
 

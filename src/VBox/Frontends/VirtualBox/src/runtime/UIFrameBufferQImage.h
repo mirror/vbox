@@ -36,7 +36,6 @@ public:
 
     /* API: Frame-buffer stuff: */
     ulong pixelFormat() { return m_uPixelFormat; }
-    bool usesGuestVRAM() { return m_bUsesGuestVRAM; }
     uchar *address() { return m_img.bits(); }
     ulong bitsPerPixel() { return m_img.depth(); }
     ulong bytesPerLine() { return m_img.bytesPerLine(); }
@@ -64,7 +63,6 @@ private:
     /* Variables: */
     QImage m_img;
     ulong m_uPixelFormat;
-    bool m_bUsesGuestVRAM;
 };
 
 #endif /* !___UIFrameBufferQImage_h___ */
