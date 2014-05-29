@@ -43,7 +43,6 @@ public:
     ulong bitsPerPixel() { return CGImageGetBitsPerPixel(m_image); }
     ulong bytesPerLine() { return CGImageGetBytesPerRow(m_image); }
     ulong pixelFormat() { return m_uPixelFormat; };
-    bool usesGuestVRAM() { return m_pBitmapData == NULL; }
 
     const CGImageRef imageRef() const { return m_image; }
 
@@ -54,7 +53,6 @@ private:
 
     void clean(bool fPreserveRegions);
 
-    bool m_fUsesGuestVRAM;
     uchar *m_pDataAddress;
     void *m_pBitmapData;
     ulong m_uPixelFormat;
