@@ -144,12 +144,13 @@ DECLINLINE(int) vboxUhgsmiBaseDxLockData(PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BAS
 
 DECLINLINE(void) vboxUhgsmiBaseDxAllocInfoFill(D3DDDI_ALLOCATIONINFO *pDdiAllocInfo, VBOXWDDM_ALLOCINFO *pAllocInfo, uint32_t cbBuffer, VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType)
 {
+    memset(pDdiAllocInfo, 0, sizeof (*pDdiAllocInfo));
     pDdiAllocInfo->pPrivateDriverData = pAllocInfo;
     pDdiAllocInfo->PrivateDriverDataSize = sizeof (*pAllocInfo);
+    memset(pAllocInfo, 0, sizeof (*pAllocInfo));
     pAllocInfo->enmType = VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER;
     pAllocInfo->cbBuffer = cbBuffer;
     pAllocInfo->fUhgsmiType = fUhgsmiType;
-
 }
 
 DECLINLINE(int) vboxUhgsmiBaseDxDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers,
