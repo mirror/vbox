@@ -4882,6 +4882,8 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
 
     DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
 
+    bool fRenderThreadMode = pFBInfo->fRenderThreadMode;
+
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
         /* Make sure that the primary screen is visible now.
@@ -4906,7 +4908,7 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
 
     pFBInfo->pVBVAHostFlags = NULL;
 
-    if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+    if (!fRenderThreadMode && uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
         /* Force full screen update, because VGA device must take control, do resize, etc. */
         pThis->mpDrv->pUpPort->pfnUpdateDisplayAll(pThis->mpDrv->pUpPort);
