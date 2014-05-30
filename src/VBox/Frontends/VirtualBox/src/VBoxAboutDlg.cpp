@@ -32,6 +32,7 @@
 # include "VBoxGlobal.h"
 # include "UIConverter.h"
 # include "UIExtraDataManager.h"
+# include "UIIconPool.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
@@ -55,8 +56,10 @@ VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
             strPath = strTmpPath;
     }
 
-    /* Assign image: */
-    m_bgImage.load(strPath);
+    /* Load image: */
+    QIcon icon = UIIconPool::iconSet(strPath);
+    m_size = icon.availableSizes().first();
+    m_pixmap = icon.pixmap(m_size);
 
     /* Translate: */
     retranslateUi();
@@ -65,7 +68,7 @@ VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
 bool VBoxAboutDlg::event(QEvent *pEvent)
 {
     if (pEvent->type() == QEvent::Polish)
-        setFixedSize(m_bgImage.size());
+        setFixedSize(m_size);
     if (pEvent->type() == QEvent::WindowDeactivate)
         close();
     return QIDialog::event(pEvent);
@@ -74,7 +77,7 @@ bool VBoxAboutDlg::event(QEvent *pEvent)
 void VBoxAboutDlg::paintEvent(QPaintEvent* /* pEvent */)
 {
     QPainter painter(this);
-    painter.drawPixmap(0, 0, m_bgImage);
+    painter.drawPixmap(0, 0, m_pixmap);
     painter.setFont(font());
 
     /* Branding: Set a different text color (because splash also could be white),
