@@ -60,7 +60,11 @@
 #include "CDisplay.h"
 #include "CFramebuffer.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP
+# include "CDnDSource.h"
+# include "CDnDTarget.h"
 # include "CGuest.h"
+# include "CGuestDnDTarget.h"
+# include "CGuestDnDSource.h"
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* Other VBox includes: */
@@ -1159,20 +1163,22 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 #ifdef VBOX_WITH_DRAG_AND_DROP
 void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
 {
-    /* The guest object to talk to. */
-    CGuest guest = session().GetConsole().GetGuest();
+    AssertPtrReturnVoid(pEvent);
 
-    /* Get mouse-pointer location */
+    /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
-    /* Ask the guest for starting a DnD event. */
-    Qt::DropAction result = gDnD->dragHGEnter(guest,
-                                              screenId(),
-                                              frameBuffer()->convertHostXTo(cpnt.x()),
-                                              frameBuffer()->convertHostYTo(cpnt.y()),
-                                              pEvent->proposedAction(),
-                                              pEvent->possibleActions(),
-                                              pEvent->mimeData(), this);
+    CGuest guest = session().GetConsole().GetGuest();
+    CGuestDnDTarget dndTarget = guest.GetDnDTarget();
+
+    /* Ask the target for starting a DnD event. */
+    Qt::DropAction result = DnDHandler()->dragEnter(static_cast<CDnDTarget>(dndTarget),
+                                                    screenId(),
+                                                    frameBuffer()->convertHostXTo(cpnt.x()),
+                                                    frameBuffer()->convertHostYTo(cpnt.y()),
+                                                    pEvent->proposedAction(),
+                                                    pEvent->possibleActions(),
+                                                    pEvent->mimeData(), this /* pParent */);
 
     /* Set the DnD action returned by the guest. */
     pEvent->setDropAction(result);
@@ -1181,20 +1187,22 @@ void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
 
 void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
 {
-    /* The guest object to talk to. */
-    CGuest guest = session().GetConsole().GetGuest();
+    AssertPtrReturnVoid(pEvent);
 
-    /* Get mouse-pointer location */
+    /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
+    CGuest guest = session().GetConsole().GetGuest();
+    CGuestDnDTarget dndTarget = guest.GetDnDTarget();
+
     /* Ask the guest for moving the drop cursor. */
-    Qt::DropAction result = gDnD->dragHGMove(guest,
-                                             screenId(),
-                                             frameBuffer()->convertHostXTo(cpnt.x()),
-                                             frameBuffer()->convertHostYTo(cpnt.y()),
-                                             pEvent->proposedAction(),
-                                             pEvent->possibleActions(),
-                                             pEvent->mimeData(), this);
+    Qt::DropAction result = DnDHandler()->dragMove(static_cast<CDnDTarget>(dndTarget),
+                                                   screenId(),
+                                                   frameBuffer()->convertHostXTo(cpnt.x()),
+                                                   frameBuffer()->convertHostYTo(cpnt.y()),
+                                                   pEvent->proposedAction(),
+                                                   pEvent->possibleActions(),
+                                                   pEvent->mimeData(), this /* pParent */);
 
     /* Set the DnD action returned by the guest. */
     pEvent->setDropAction(result);
@@ -1203,44 +1211,53 @@ void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
 
 void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
 {
-    /* The guest object to talk to. */
+    AssertPtrReturnVoid(pEvent);
+
     CGuest guest = session().GetConsole().GetGuest();
+    CGuestDnDTarget dndTarget = guest.GetDnDTarget();
 
     /* Ask the guest for stopping this DnD event. */
-    gDnD->dragHGLeave(guest, screenId(), this);
+    DnDHandler()->dragLeave(static_cast<CDnDTarget>(dndTarget),
+                            screenId(), this /* pParent */);
     pEvent->accept();
+}
+
+void UIMachineView::dragIsPending(void)
+{
+    /* At the moment we only support guest->host DnD. */
+    /** @todo Add guest->guest DnD functionality here by getting
+     *        the source of guest B (when copying from B to A). */
+    CGuest guest = session().GetConsole().GetGuest();
+    CDnDSource &dndSource = static_cast<CDnDSource>(guest.GetDnDSource());
+
+    /* Check for a pending DnD event within the guest and if so, handle all the
+     * magic. */
+    DnDHandler()->dragIsPending(session(), dndSource, screenId(), this /* pParent */);
 }
 
 void UIMachineView::dropEvent(QDropEvent *pEvent)
 {
-    /* The guest object to talk to. */
-    CGuest guest = session().GetConsole().GetGuest();
+    AssertPtrReturnVoid(pEvent);
 
-    /* Get mouse-pointer location */
+    /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
+    CGuest guest = session().GetConsole().GetGuest();
+    CGuestDnDTarget dndTarget = guest.GetDnDTarget();
+
     /* Ask the guest for dropping data. */
-    Qt::DropAction result = gDnD->dragHGDrop(guest,
-                                             screenId(),
-                                             frameBuffer()->convertHostXTo(cpnt.x()),
-                                             frameBuffer()->convertHostYTo(cpnt.y()),
-                                             pEvent->proposedAction(),
-                                             pEvent->possibleActions(),
-                                             pEvent->mimeData(), this);
+    Qt::DropAction result = DnDHandler()->dragDrop(session(),
+                                                   static_cast<CDnDTarget>(dndTarget),
+                                                   screenId(),
+                                                   frameBuffer()->convertHostXTo(cpnt.x()),
+                                                   frameBuffer()->convertHostYTo(cpnt.y()),
+                                                   pEvent->proposedAction(),
+                                                   pEvent->possibleActions(),
+                                                   pEvent->mimeData(), this /* pParent */);
 
     /* Set the DnD action returned by the guest. */
     pEvent->setDropAction(result);
     pEvent->accept();
-}
-
-void UIMachineView::handleGHDnd(void)
-{
-    /* The guest object to talk to. */
-    CGuest guest = session().GetConsole().GetGuest();
-
-    /* Check for a pending DnD event within the guest and if so, handle all the
-     * magic. */
-    gDnD->dragGHPending(session(), screenId(), this);
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
@@ -1248,10 +1265,12 @@ void UIMachineView::handleGHDnd(void)
 
 bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
 {
-    /* Check if some system event should be filtered-out.
-     * Returning 'true' means filtering-out,
-     * Returning 'false' means passing event to Qt. */
-    bool fResult = false; /* Pass to Qt by default: */
+    AssertPtrReturn(pMsg, false);
+
+    /* Check if some system event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    bool fResult = false; /* Pass to Qt by default. */
     switch (pMsg->message)
     {
         case WM_KEYDOWN:
@@ -1259,16 +1278,17 @@ bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
         case WM_SYSKEYDOWN:
         case WM_SYSKEYUP:
         {
-            /* Filter using keyboard-filter: */
-            bool fKeyboardFilteringResult = machineLogic()->keyboardHandler()->winEventFilter(pMsg, screenId());
-            /* Keyboard filter rules the result: */
+            /* Filter using keyboard filter? */
+            bool fKeyboardFilteringResult =
+                machineLogic()->keyboardHandler()->winEventFilter(pMsg, screenId());
+            /* Keyboard filter rules the result? */
             fResult = fKeyboardFilteringResult;
             break;
         }
         default:
             break;
     }
-    /* Return result: */
+
     return fResult;
 }
 
@@ -1276,10 +1296,12 @@ bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
 
 bool UIMachineView::x11Event(XEvent *pEvent)
 {
-    /* Check if some system event should be filtered-out.
-     * Returning 'true' means filtering-out,
-     * Returning 'false' means passing event to Qt. */
-    bool fResult = false; /* Pass to Qt by default: */
+    AssertPtrReturn(pEvent, false);
+
+    /* Check if some system event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    bool fResult = false; /* Pass to Qt by default. */
     switch (pEvent->type)
     {
         case XFocusOut:
@@ -1287,20 +1309,22 @@ bool UIMachineView::x11Event(XEvent *pEvent)
         case XKeyPress:
         case XKeyRelease:
         {
-            /* Filter using keyboard-filter: */
-            bool fKeyboardFilteringResult = machineLogic()->keyboardHandler()->x11EventFilter(pEvent, screenId());
-            /* Filter using mouse-filter: */
-            bool fMouseFilteringResult = machineLogic()->mouseHandler()->x11EventFilter(pEvent, screenId());
-            /* If at least one of filters wants to filter event out then the result is 'true': */
+            /* Filter using keyboard-filter? */
+            bool fKeyboardFilteringResult =
+                machineLogic()->keyboardHandler()->x11EventFilter(pEvent, screenId());
+            /* Filter using mouse-filter? */
+            bool fMouseFilteringResult =
+                machineLogic()->mouseHandler()->x11EventFilter(pEvent, screenId());
+            /* If at least one of filters wants to filter event out then the result is true. */
             fResult = fKeyboardFilteringResult || fMouseFilteringResult;
             break;
         }
         default:
             break;
     }
-    /* Return result: */
+
     return fResult;
 }
 
-#endif
+#endif /* Q_WS_X11 */
 

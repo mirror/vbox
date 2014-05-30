@@ -38,6 +38,9 @@ class UISession;
 class UIMachineLogic;
 class UIMachineWindow;
 class UIFrameBuffer;
+#ifdef VBOX_WITH_DRAG_AND_DROP
+ class CDnDTarget;
+#endif
 class CSession;
 
 class UIMachineView : public QAbstractScrollArea
@@ -216,9 +219,8 @@ protected:
     void dragEnterEvent(QDragEnterEvent *pEvent);
     void dragLeaveEvent(QDragLeaveEvent *pEvent);
     void dragMoveEvent(QDragMoveEvent *pEvent);
+    void dragIsPending(void);
     void dropEvent(QDropEvent *pEvent);
-
-    void handleGHDnd();
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
     /* Platform specific event processors: */

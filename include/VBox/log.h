@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -339,8 +339,12 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_DISPLAY,
     /** Main group, IDisplaySourceBitmap. */
     LOG_GROUP_MAIN_DISPLAYSOURCEBITMAP,
-    /** Main group, IDragAndDropModeChangedEvent. */
-    LOG_GROUP_MAIN_DRAGANDDROPMODECHANGEDEVENT,
+    /** Main group, IDnDModeChangedEvent. */
+    LOG_GROUP_MAIN_DNDMODECHANGEDEVENT,
+    /** Main group, IDnDSource. */
+    LOG_GROUP_MAIN_DNDSOURCE,
+    /** Main group, IDnDTarget. */
+    LOG_GROUP_MAIN_DNDTARGET,
     /** Main group, IEmulatedUSB. */
     LOG_GROUP_MAIN_EMULATEDUSB,
     /** Main group, IEvent. */
@@ -377,6 +381,10 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_GUEST,
     /** Main group, IGuestDirectory. */
     LOG_GROUP_MAIN_GUESTDIRECTORY,
+    /** Main group, IGuestDnDSource. */
+    LOG_GROUP_MAIN_GUESTDNDSOURCE,
+    /** Main group, IGuestDnDTarget. */
+    LOG_GROUP_MAIN_GUESTDNDTARGET,
     /** Main group, IGuestErrorInfo. */
     LOG_GROUP_MAIN_GUESTERRORINFO,
     /** Main group, IGuestFile. */
@@ -900,7 +908,9 @@ typedef enum LOGGROUP
     "MAIN_DIRECTORY", \
     "MAIN_DISPLAY", \
     "MAIN_DISPLAYSOURCEBITMAP", \
-    "MAIN_DRAGANDDROPMODECHANGEDEVENT", \
+    "MAIN_DNDMODECHANGEDEVENT", \
+    "MAIN_DNDSOURCE", \
+    "MAIN_DNDTARGET", \
     "MAIN_EMULATEDUSB",   \
     "MAIN_EVENT",   \
     "MAIN_EVENTLISTENER", \
@@ -919,6 +929,8 @@ typedef enum LOGGROUP
     "MAIN_FSOBJINFO", \
     "MAIN_GUEST",   \
     "MAIN_GUESTDIRECTORY", \
+    "MAIN_GUESTDNDSOURCE", \
+    "MAIN_GUESTDNDTARGET", \
     "MAIN_GUESTERRORINFO", \
     "MAIN_GUESTFILE", \
     "MAIN_GUESTFILEEVENT", \

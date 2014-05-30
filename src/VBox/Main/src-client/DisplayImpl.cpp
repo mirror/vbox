@@ -2363,14 +2363,13 @@ int Display::videoAccelRefreshProcess(void)
     return rc;
 }
 
-
 // IDisplay methods
 /////////////////////////////////////////////////////////////////////////////
-STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
-    ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel,
-    LONG *aXOrigin, LONG *aYOrigin)
+STDMETHODIMP Display::GetScreenResolution(ULONG aScreenId,
+                                          ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel,
+                                          LONG *aXOrigin, LONG *aYOrigin)
 {
-    LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
+    LogRelFlowFunc(("aScreenId=%RU32\n", aScreenId));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2445,38 +2444,37 @@ STDMETHODIMP Display::SetFramebuffer(ULONG aScreenId, IFramebuffer *aFramebuffer
         int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
                                    (PFNRT)changeFramebuffer, 3, this, aFramebuffer, aScreenId);
 
+        ComAssertRCRet(vrc, E_FAIL);
         alock.acquire();
 
-        ComAssertRCRet (vrc, E_FAIL);
-
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+        BOOL fIs3DEnabled;
+        HRESULT hr = mParent->machine()->COMGETTER(Accelerate3DEnabled)(&fIs3DEnabled);
+        ComAssertComRC(hr);
+        if (fIs3DEnabled)
         {
-            BOOL is3denabled;
-            mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+            VBOXCRCMDCTL_HGCM data;
+            RT_ZERO(data);
+            data.Hdr.enmType = VBOXCRCMDCTL_TYPE_HGCM;
+            data.Hdr.u32Function = SHCRGL_HOST_FN_SCREEN_CHANGED;
 
-            if (is3denabled)
-            {
-                VBOXCRCMDCTL_HGCM data;
-                data.Hdr.enmType = VBOXCRCMDCTL_TYPE_HGCM;
-                data.Hdr.u32Function = SHCRGL_HOST_FN_SCREEN_CHANGED;
+            data.aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
+            data.aParms[0].u.uint32 = aScreenId;
 
-                data.aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
-                data.aParms[0].u.uint32 = aScreenId;
+            alock.release();
 
-                alock.release();
+            vrc = crCtlSubmitSync(&data.Hdr, sizeof(data));
+            AssertRC(vrc);
 
-                crCtlSubmitSync(&data.Hdr, sizeof (data));
-
-                alock.acquire();
-            }
+            alock.acquire();
         }
 #endif /* #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL) */
     }
     else
     {
         /* No VM is created (VM is powered off), do a direct call */
-        int vrc = changeFramebuffer (this, aFramebuffer, aScreenId);
-        ComAssertRCRet (vrc, E_FAIL);
+        int vrc = changeFramebuffer(this, aFramebuffer, aScreenId);
+        ComAssertRCRet(vrc, E_FAIL);
     }
 
     return S_OK;
@@ -2604,7 +2602,7 @@ STDMETHODIMP Display::QueryFramebuffer(ULONG aScreenId,
 STDMETHODIMP Display::GetFramebuffer(ULONG aScreenId,
                                      IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin)
 {
-    LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
+    LogRelFlowFunc(("aScreenId=%ld\n", aScreenId));
 
     CheckComArgOutPointerValid(aFramebuffer);
 
@@ -2616,12 +2614,13 @@ STDMETHODIMP Display::GetFramebuffer(ULONG aScreenId,
     if (aScreenId != 0 && aScreenId >= mcMonitors)
         return E_INVALIDARG;
 
-    /* @todo this should be actually done on EMT. */
+    /** @todo This should be actually done on EMT. */
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
+    AssertPtr(pFBInfo);
 
-    *aFramebuffer = pFBInfo->pFramebuffer;
+    *aFramebuffer = pFBInfo->pFramebuffer; /** @todo r=andy Race prone? Use a ComPtr instead? */
     if (*aFramebuffer)
-        (*aFramebuffer)->AddRef ();
+        (*aFramebuffer)->AddRef();
     if (aXOrigin)
         *aXOrigin = pFBInfo->xOrigin;
     if (aYOrigin)
@@ -2642,7 +2641,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aDisplay, BOOL aEnabled,
     CHECK_CONSOLE_DRV(mpDrv);
 
     /*
-     * Do some rough checks for valid input
+     * Do some rough checks for valid input.
      */
     ULONG width  = aWidth;
     if (!width)

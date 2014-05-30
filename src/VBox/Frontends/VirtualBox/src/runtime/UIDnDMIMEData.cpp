@@ -37,11 +37,13 @@
 #include "UIDnDDrag.h"
 #include "UIMessageCenter.h"
 
-UIDnDMimeData::UIDnDMimeData(CSession &session, 
+UIDnDMimeData::UIDnDMimeData(CSession &session,
+                             CDnDSource &dndSource,
                              QStringList formats,
                              Qt::DropAction defAction, Qt::DropActions actions,
                              QWidget *pParent)
     : m_Session(session)
+    , m_DnDSource(dndSource)
     , m_lstFormats(formats)
     , m_defAction(defAction)
     , m_actions(actions)
@@ -108,7 +110,7 @@ bool UIDnDMimeData::hasFormat(const QString &strMIMEType) const
 }
 
 QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
-                                     QVariant::Type vaType) const
+                                     QVariant::Type vaType)
 {
     LogFlowFunc(("m_enmState=%d, mimeType=%s, type=%d (%s)\n",
                  m_enmState, strMIMEType.toStdString().c_str(),
@@ -164,6 +166,7 @@ QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
     if (m_enmState == Dropped)
     {
         rc = UIDnDDrag::RetrieveData(m_Session,
+                                     m_DnDSource,
                                      m_defAction,
                                      strMIMEType, vaType, m_vaData,
                                      m_pParent);
@@ -197,7 +200,7 @@ bool UIDnDMimeData::eventFilter(QObject *pObject, QEvent *pEvent)
                 AssertPtr(pMouseEvent);
                 LogFlowFunc(("MouseMove: x=%d, y=%d\n",
                              pMouseEvent->globalX(), pMouseEvent->globalY()));
-                
+
                 return true;
                 /* Never reached. */
             }
@@ -206,7 +209,7 @@ bool UIDnDMimeData::eventFilter(QObject *pObject, QEvent *pEvent)
             {
                 LogFlowFunc(("MouseButtonRelease\n"));
                 m_enmState = Dropped;
-                
+
                 return true;
                 /* Never reached. */
             }
@@ -219,7 +222,7 @@ bool UIDnDMimeData::eventFilter(QObject *pObject, QEvent *pEvent)
                     LogFlowFunc(("ESC pressed, cancelling drag'n drop operation\n"));
                     m_enmState = Canceled;
                 }
-                
+
                 return true;
                 /* Never reached. */
             }

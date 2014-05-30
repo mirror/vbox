@@ -1174,8 +1174,8 @@
   </enum>
 
   <enum
-    name="DragAndDropMode"
-    uuid="b618ea0e-b6fb-4f8d-97f7-5e237e49b547"
+    name="DnDMode"
+    uuid="07af8800-f936-4b33-9172-cd400e83c148"
     >
     <desc>
       Drag'n'Drop interchange mode.
@@ -4203,7 +4203,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="480cf695-2d8d-4256-9c7c-cce4184fa048"
+    uuid="45b0357d-28f4-4f90-b02c-13f2940efdda"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -4789,9 +4789,9 @@
       </desc>
     </attribute>
 
-    <attribute name="dragAndDropMode" type="DragAndDropMode">
+    <attribute name="dnDMode" type="DnDMode">
       <desc>
-        Which mode is allowed for drag'n'drop.
+        Sets or retrieves the current drag'n drop mode.
       </desc>
     </attribute>
 
@@ -10350,11 +10350,11 @@
   </enum>
 
   <enum
-    name="DragAndDropAction"
-    uuid="47f3b162-c107-4fcd-bfa7-54b8135c441e"
+    name="DnDAction"
+    uuid="17609e74-778e-4d0e-8827-35f5230f287b"
   >
     <desc>
-      Possible actions within an Drag and Drop operation.
+      Possible actions of a drag'n drop operation.
     </desc>
 
     <const name="Ignore"                value="0">
@@ -10388,6 +10388,240 @@
       <desc>Don't allow symbolic links as part of the path.</desc>
     </const>
   </enum>
+
+  <interface
+    name="IDnDSource" extends="$unknown"
+    uuid="6bdc3f97-f6df-4357-b252-5fa16e0c1e24"
+    wsmap="managed"
+    >
+    <desc>Abstract interface for handling drag'n drop sources.</desc>
+
+    <method name="dragIsPending">
+      <desc>
+        Ask the source if there is any drag and drop operation pending.
+        If no drag and drop operation is pending currently, DnDAction_Ignore is returned.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen ID where the drag and drop event occurred.</desc>
+      </param>
+      <param name="formats" type="wstring" dir="out" safearray="yes">
+        <desc>On return the supported mime types.</desc>
+      </param>
+      <param name="allowedActions" type="DnDAction" dir="out" safearray="yes">
+        <desc>On return the actions which are allowed.</desc>
+      </param>
+      <param name="defaultAction" type="DnDAction" dir="return">
+        <desc>On return the default action to use.</desc>
+      </param>
+    </method>
+
+    <method name="drop">
+      <desc>
+        Informs the source that a drop event occurred for a pending
+        drag and drop operation.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+      </desc>
+
+      <param name="format" type="wstring" dir="in">
+        <desc>The mime type the data must be in.</desc>
+      </param>
+      <param name="action" type="DnDAction" dir="in">
+        <desc>The action to use.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="receiveData">
+      <desc>
+        Receive the data of a previously drag and drop event from the source.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+
+      <param name="data" type="octet" safearray="yes" dir="return">
+        <desc>The actual data.</desc>
+      </param>
+    </method>
+
+  </interface>
+
+  <interface
+    name="IGuestDnDSource" extends="IDnDSource"
+    uuid="280955c0-de67-4297-8179-6274a82a2fc0"
+    wsmap="managed"
+    >
+
+    <desc>
+      Implementation of the <link to="IDnDSource" /> object
+      for source drag'n drop operations on the guest.
+    </desc>
+  </interface>
+
+  <interface
+    name="IDnDTarget" extends="$unknown"
+    uuid="50862c12-7618-4542-a7c7-6a21de2644f7"
+    wsmap="managed"
+    >
+    <desc>Abstract interface for handling drag'n drop targets.</desc>
+
+    <method name="enter">
+      <desc>
+        Informs the target about a drag and drop enter event.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen ID where the drag and drop event occurred.</desc>
+      </param>
+      <param name="y" type="unsigned long" dir="in">
+        <desc>Y-position of the event.</desc>
+      </param>
+      <param name="x" type="unsigned long" dir="in">
+        <desc>X-position of the event.</desc>
+      </param>
+      <param name="defaultAction" type="DnDAction" dir="in">
+        <desc>The default action to use.</desc>
+      </param>
+      <param name="allowedActions" type="DnDAction" dir="in" safearray="yes">
+        <desc>The actions which are allowed.</desc>
+      </param>
+      <param name="formats" type="wstring" dir="in" safearray="yes">
+        <desc>The supported MIME types.</desc>
+      </param>
+      <param name="resultAction" type="DnDAction" dir="return">
+        <desc>The resulting action of this event.</desc>
+      </param>
+    </method>
+
+    <method name="move">
+      <desc>
+        Informs the target about a drag and drop move event.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen ID where the drag and drop event occurred.</desc>
+      </param>
+      <param name="x" type="unsigned long" dir="in">
+        <desc>X-position of the event.</desc>
+      </param>
+      <param name="y" type="unsigned long" dir="in">
+        <desc>Y-position of the event.</desc>
+      </param>
+      <param name="defaultAction" type="DnDAction" dir="in">
+        <desc>The default action to use.</desc>
+      </param>
+      <param name="allowedActions" type="DnDAction" dir="in" safearray="yes">
+        <desc>The actions which are allowed.</desc>
+      </param>
+      <param name="formats" type="wstring" dir="in" safearray="yes">
+        <desc>The supported MIME types.</desc>
+      </param>
+      <param name="resultAction" type="DnDAction" dir="return">
+        <desc>The resulting action of this event.</desc>
+      </param>
+    </method>
+
+    <method name="leave">
+      <desc>
+        Informs the target about a drag and drop leave event.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen ID where the drag and drop event occurred.</desc>
+      </param>
+    </method>
+
+    <method name="drop">
+      <desc>
+        Informs the target about a drop event.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen ID where the Drag and Drop event occurred.</desc>
+      </param>
+      <param name="x" type="unsigned long" dir="in">
+        <desc>X-position of the event.</desc>
+      </param>
+      <param name="y" type="unsigned long" dir="in">
+        <desc>Y-position of the event.</desc>
+      </param>
+      <param name="defaultAction" type="DnDAction" dir="in">
+        <desc>The default action to use.</desc>
+      </param>
+      <param name="allowedActions" type="DnDAction" dir="in" safearray="yes">
+        <desc>The actions which are allowed.</desc>
+      </param>
+      <param name="formats" type="wstring" dir="in" safearray="yes">
+        <desc>The supported MIME types.</desc>
+      </param>
+      <param name="format" type="wstring" dir="out">
+        <desc>The resulting format of this event.</desc>
+      </param>
+      <param name="resultAction" type="DnDAction" dir="return">
+        <desc>The resulting action of this event.</desc>
+      </param>
+    </method>
+
+    <method name="sendData">
+      <desc>
+        Sends data to the target.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen ID where the drag and drop event occurred.</desc>
+      </param>
+      <param name="format" type="wstring" dir="in">
+        <desc>The MIME type the data is in.</desc>
+      </param>
+      <param name="data" type="octet" dir="in" safearray="yes">
+        <desc>The actual data.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+  </interface>
+
+  <interface
+    name="IGuestDnDTarget" extends="IDnDTarget"
+    uuid="50ce4b51-0ff7-46b7-a138-3c6e5ac946b4"
+    wsmap="managed"
+    >
+
+    <desc>
+      Implementation of the <link to="IDnDTarget" /> object
+      for target drag'n drop operations on the guest.
+    </desc>
+  </interface>
 
   <interface
     name="IGuestSession" extends="$unknown"
@@ -11881,7 +12115,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="8011a1b1-6adb-4ffb-a37e-20abdaee4650"
+    uuid="97927199-7e1f-4094-97ab-92333e727843"
     wsmap="managed"
     >
     <desc>
@@ -11926,6 +12160,18 @@
         The internal build revision number of the additions.
 
         See also <link to="IVirtualBox::revision"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="dnDSource" type="IGuestDnDSource" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+
+    <attribute name="dnDTarget" type="IGuestDnDTarget" readonly="yes">
+      <desc>
+        TODO
       </desc>
     </attribute>
 
@@ -12059,219 +12305,6 @@
           interactively specify different credentials. This flag might
           not be supported by all versions of the Additions.
         </desc>
-      </param>
-    </method>
-
-    <method name="dragHGEnter">
-      <desc>
-        Informs the guest about a Drag and Drop enter event.
-
-        This is used in Host - Guest direction.
-
-        <result name="VBOX_E_VM_ERROR">
-          VMM device is not available.
-        </result>
-
-      </desc>
-      <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occurred.</desc>
-      </param>
-      <param name="y" type="unsigned long" dir="in">
-        <desc>y-position of the event.</desc>
-      </param>
-      <param name="x" type="unsigned long" dir="in">
-        <desc>x-position of the event.</desc>
-      </param>
-      <param name="defaultAction" type="DragAndDropAction" dir="in">
-        <desc>The default action to use.</desc>
-      </param>
-      <param name="allowedActions" type="DragAndDropAction" dir="in" safearray="yes">
-        <desc>The actions which are allowed.</desc>
-      </param>
-      <param name="formats" type="wstring" dir="in" safearray="yes">
-        <desc>The supported mime types.</desc>
-      </param>
-      <param name="resultAction" type="DragAndDropAction" dir="return">
-        <desc>The resulting action of this event.</desc>
-      </param>
-    </method>
-
-    <method name="dragHGMove">
-      <desc>
-        Informs the guest about a Drag and Drop move event.
-
-        This is used in Host - Guest direction.
-
-        <result name="VBOX_E_VM_ERROR">
-          VMM device is not available.
-        </result>
-
-      </desc>
-      <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occurred.</desc>
-      </param>
-      <param name="x" type="unsigned long" dir="in">
-        <desc>x-position of the event.</desc>
-      </param>
-      <param name="y" type="unsigned long" dir="in">
-        <desc>y-position of the event.</desc>
-      </param>
-      <param name="defaultAction" type="DragAndDropAction" dir="in">
-        <desc>The default action to use.</desc>
-      </param>
-      <param name="allowedActions" type="DragAndDropAction" dir="in" safearray="yes">
-        <desc>The actions which are allowed.</desc>
-      </param>
-      <param name="formats" type="wstring" dir="in" safearray="yes">
-        <desc>The supported mime types.</desc>
-      </param>
-      <param name="resultAction" type="DragAndDropAction" dir="return">
-        <desc>The resulting action of this event.</desc>
-      </param>
-    </method>
-
-    <method name="dragHGLeave">
-      <desc>
-        Informs the guest about a Drag and Drop leave event.
-
-        This is used in Host - Guest direction.
-
-        <result name="VBOX_E_VM_ERROR">
-          VMM device is not available.
-        </result>
-
-      </desc>
-      <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occurred.</desc>
-      </param>
-    </method>
-
-    <method name="dragHGDrop">
-      <desc>
-        Informs the guest about a drop event.
-
-        This is used in Host - Guest direction.
-
-        <result name="VBOX_E_VM_ERROR">
-          VMM device is not available.
-        </result>
-
-      </desc>
-      <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occurred.</desc>
-      </param>
-      <param name="x" type="unsigned long" dir="in">
-        <desc>x-position of the event.</desc>
-      </param>
-      <param name="y" type="unsigned long" dir="in">
-        <desc>y-position of the event.</desc>
-      </param>
-      <param name="defaultAction" type="DragAndDropAction" dir="in">
-        <desc>The default action to use.</desc>
-      </param>
-      <param name="allowedActions" type="DragAndDropAction" dir="in" safearray="yes">
-        <desc>The actions which are allowed.</desc>
-      </param>
-      <param name="formats" type="wstring" dir="in" safearray="yes">
-        <desc>The supported mime types.</desc>
-      </param>
-      <param name="format" type="wstring" dir="out">
-        <desc>The resulting format of this event.</desc>
-      </param>
-      <param name="resultAction" type="DragAndDropAction" dir="return">
-        <desc>The resulting action of this event.</desc>
-      </param>
-    </method>
-
-    <method name="dragHGPutData">
-      <desc>
-        Informs the guest about a drop data event.
-
-        This is used in Host - Guest direction.
-
-        <result name="VBOX_E_VM_ERROR">
-          VMM device is not available.
-        </result>
-
-      </desc>
-      <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occurred.</desc>
-      </param>
-      <param name="format" type="wstring" dir="in">
-        <desc>The mime type the data is in.</desc>
-      </param>
-      <param name="data" type="octet" dir="in" safearray="yes">
-        <desc>The actual data.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="dragGHPending">
-      <desc>
-        Ask the guest if there is any Drag and Drop operation pending in the guest.
-
-        If no Drag and Drop operation is pending currently, Ignore is returned.
-
-        This is used in Guest - Host direction.
-
-        <result name="VBOX_E_VM_ERROR">
-          VMM device is not available.
-        </result>
-
-      </desc>
-      <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occurred.</desc>
-      </param>
-      <param name="formats" type="wstring" dir="out" safearray="yes">
-        <desc>On return the supported mime types.</desc>
-      </param>
-      <param name="allowedActions" type="DragAndDropAction" dir="out" safearray="yes">
-        <desc>On return the actions which are allowed.</desc>
-      </param>
-      <param name="defaultAction" type="DragAndDropAction" dir="return">
-        <desc>On return the default action to use.</desc>
-      </param>
-    </method>
-
-    <method name="dragGHDropped">
-      <desc>
-        Informs the guest that a drop event occurred for a pending Drag and Drop event.
-
-        This is used in Guest - Host direction.
-
-        <result name="VBOX_E_VM_ERROR">
-          VMM device is not available.
-        </result>
-
-      </desc>
-
-      <param name="format" type="wstring" dir="in">
-        <desc>The mime type the data must be in.</desc>
-      </param>
-      <param name="action" type="DragAndDropAction" dir="in">
-        <desc>The action to use.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="dragGHGetData">
-      <desc>
-        Fetch the data of a previously Drag and Drop event from the guest.
-
-        This is used in Guest - Host direction.
-
-        <result name="VBOX_E_VM_ERROR">
-          VMM device is not available.
-        </result>
-
-      </desc>
-
-      <param name="data" type="octet" safearray="yes" dir="return">
-        <desc>The actual data.</desc>
       </param>
     </method>
 
@@ -15599,7 +15632,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
 
     <method name="getScreenResolution">
-      <desc>Queries display width, height and color depth for given screen.</desc>
+      <desc>
+        Queries certain attributes such as display width, height, color depth
+        and the X and Y origin for a given guest screen.
+
+        The parameters @a xOrigin and @a yOrigin return the X and Y
+        coordinates of the framebuffer's origin.
+
+        All return parameters are optional.</desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="width" type="unsigned long" dir="out"/>
       <param name="height" type="unsigned long" dir="out"/>
@@ -15610,7 +15650,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="attachFramebuffer">
       <desc>
-        Sets the graphics updates target for a screen.
+        Sets the graphics update target for a screen.
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="framebuffer" type="IFramebuffer" dir="in"/>
@@ -18012,12 +18052,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="onDragAndDropModeChange">
+    <method name="onDnDModeChange">
       <desc>
-        Notification when the drag'n'drop mode changes.
+        Notification when the drag'n drop mode changes.
       </desc>
-      <param name="dragAndDropMode" type="DragAndDropMode" dir="in">
-        <desc>The new mode for drag'n'drop.</desc>
+      <param name="dndMode" type="DnDMode" dir="in">
+        <desc>The new mode for drag'n drop.</desc>
       </param>
     </method>
 
@@ -19805,7 +19845,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="5248e377-e578-47d7-b07b-84b1db6db8a8"
+    uuid="1622f8d2-6c76-4410-9e78-86e083046efc"
     >
 
     <desc>
@@ -20068,9 +20108,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IClipboardModeChangedEvent">IClipboardModeChangedEvent</link>.
       </desc>
     </const>
-    <const name="OnDragAndDropModeChanged" value="73">
+    <const name="OnDnDModeChanged" value="73">
       <desc>
-        See <link to="IDragAndDropModeChangedEvent">IDragAndDropModeChangedEvent</link>.
+        See <link to="IDnDModeChangedEvent">IDnDModeChangedEvent</link>.
       </desc>
     </const>
     <const name="OnNATNetworkChanged" value="74">
@@ -20957,16 +20997,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-    name="IDragAndDropModeChangedEvent" extends="IEvent"
-    uuid="e90b8850-ac8e-4dff-8059-4100ae2c3c3d"
-    wsmap="managed" autogen="VBoxEvent" id="OnDragAndDropModeChanged"
+    name="IDnDModeChangedEvent" extends="IEvent"
+    uuid="b55cf856-1f8b-4692-abb4-462429fae5e9"
+    wsmap="managed" autogen="VBoxEvent" id="OnDnDModeChanged"
     >
     <desc>
-      Notification when the drag'n'drop mode changes.
+      Notification when the drag'n drop mode changes.
     </desc>
-    <attribute name="dragAndDropMode" type="DragAndDropMode" readonly="yes">
+    <attribute name="dndMode" type="DnDMode" readonly="yes">
       <desc>
-        The new drag'n'drop mode.
+        The new drag'n drop mode.
       </desc>
     </attribute>
   </interface>

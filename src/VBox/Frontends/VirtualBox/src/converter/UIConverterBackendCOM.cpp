@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,7 +33,7 @@ template<> bool canConvert<KMachineState>() { return true; }
 template<> bool canConvert<KSessionState>() { return true; }
 template<> bool canConvert<KDeviceType>() { return true; }
 template<> bool canConvert<KClipboardMode>() { return true; }
-template<> bool canConvert<KDragAndDropMode>() { return true; }
+template<> bool canConvert<KDnDMode>() { return true; }
 template<> bool canConvert<KPointingHIDType>() { return true; }
 template<> bool canConvert<KMediumType>() { return true; }
 template<> bool canConvert<KMediumVariant>() { return true; }
@@ -201,15 +201,15 @@ template<> QString toString(const KClipboardMode &mode)
     return QString();
 }
 
-/* QString <= KDragAndDropMode: */
-template<> QString toString(const KDragAndDropMode &mode)
+/* QString <= KDnDMode: */
+template<> QString toString(const KDnDMode &mode)
 {
     switch (mode)
     {
-        case KDragAndDropMode_Disabled:      return QApplication::translate("VBoxGlobal", "Disabled", "DragAndDropType");
-        case KDragAndDropMode_HostToGuest:   return QApplication::translate("VBoxGlobal", "Host To Guest", "DragAndDropType");
-        case KDragAndDropMode_GuestToHost:   return QApplication::translate("VBoxGlobal", "Guest To Host", "DragAndDropType");
-        case KDragAndDropMode_Bidirectional: return QApplication::translate("VBoxGlobal", "Bidirectional", "DragAndDropType");
+        case KDnDMode_Disabled:      return QApplication::translate("VBoxGlobal", "Disabled", "DragAndDropType");
+        case KDnDMode_HostToGuest:   return QApplication::translate("VBoxGlobal", "Host To Guest", "DragAndDropType");
+        case KDnDMode_GuestToHost:   return QApplication::translate("VBoxGlobal", "Guest To Host", "DragAndDropType");
+        case KDnDMode_Bidirectional: return QApplication::translate("VBoxGlobal", "Bidirectional", "DragAndDropType");
         default: AssertMsgFailed(("No text for %d", mode)); break;
     }
     return QString();

@@ -296,7 +296,7 @@ public:
         SharedFolderList    mSharedFolders;
 
         ClipboardMode_T     mClipboardMode;
-        DragAndDropMode_T   mDragAndDropMode;
+        DnDMode_T           mDnDMode;
 
         typedef std::map<Utf8Str, GuestProperty> GuestPropertyMap;
         GuestPropertyMap    mGuestProperties;
@@ -472,8 +472,8 @@ public:
     STDMETHOD(COMGETTER(SharedFolders))(ComSafeArrayOut(ISharedFolder *, aSharedFolders));
     STDMETHOD(COMGETTER(ClipboardMode))(ClipboardMode_T *aClipboardMode);
     STDMETHOD(COMSETTER(ClipboardMode))(ClipboardMode_T aClipboardMode);
-    STDMETHOD(COMGETTER(DragAndDropMode))(DragAndDropMode_T *aDragAndDropMode);
-    STDMETHOD(COMSETTER(DragAndDropMode))(DragAndDropMode_T aDragAndDropMode);
+    STDMETHOD(COMGETTER(DnDMode))(DnDMode_T *aDnDMode);
+    STDMETHOD(COMSETTER(DnDMode))(DnDMode_T aDnDMode);
     STDMETHOD(COMGETTER(GuestPropertyNotificationPatterns))(BSTR *aPattern);
     STDMETHOD(COMSETTER(GuestPropertyNotificationPatterns))(IN_BSTR aPattern);
     STDMETHOD(COMGETTER(StorageControllers))(ComSafeArrayOut(IStorageController *, aStorageControllers));
@@ -748,7 +748,7 @@ public:
     virtual HRESULT onMediumChange(IMediumAttachment * /* mediumAttachment */, BOOL /* force */) { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
     virtual HRESULT onClipboardModeChange(ClipboardMode_T /* aClipboardMode */) { return S_OK; }
-    virtual HRESULT onDragAndDropModeChange(DragAndDropMode_T /* aDragAndDropMode */) { return S_OK; }
+    virtual HRESULT onDnDModeChange(DnDMode_T /* aDnDMode */) { return S_OK; }
     virtual HRESULT onBandwidthGroupChange(IBandwidthGroup * /* aBandwidthGroup */) { return S_OK; }
     virtual HRESULT onStorageDeviceChange(IMediumAttachment * /* mediumAttachment */, BOOL /* remove */, BOOL /* silent */) { return S_OK; }
     virtual HRESULT onVideoCaptureChange() { return S_OK; }
@@ -1138,7 +1138,7 @@ public:
                               IVirtualBoxErrorInfo *aError);
     HRESULT onSharedFolderChange();
     HRESULT onClipboardModeChange(ClipboardMode_T aClipboardMode);
-    HRESULT onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode);
+    HRESULT onDnDModeChange(DnDMode_T aDnDMode);
     HRESULT onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
     HRESULT onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);
     HRESULT onCPUExecutionCapChange(ULONG aCpuExecutionCap);

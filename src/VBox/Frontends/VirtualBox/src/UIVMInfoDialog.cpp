@@ -605,7 +605,7 @@ void UIVMInfoDialog::refreshStatistics()
         /* Determine clipboard mode: */
         QString strClipboardMode = gpConverter->toString(m.GetClipboardMode());
         /* Determine Drag&Drop mode: */
-        QString strDragAndDropMode = gpConverter->toString(m.GetDragAndDropMode());
+        QString strDnDMode = gpConverter->toString(m.GetDnDMode());
 
         /* Deterine virtualization attributes: */
         CMachineDebugger debugger = console.GetDebugger();
@@ -657,7 +657,7 @@ void UIVMInfoDialog::refreshStatistics()
         strResult += formatValue(tr("Screen Resolution"), strResolution, iMaxLength);
         strResult += formatValue(tr("VM Uptime"), strUptime, iMaxLength);
         strResult += formatValue(tr("Clipboard Mode"), strClipboardMode, iMaxLength);
-        strResult += formatValue(tr("Drag'n'Drop Mode"), strDragAndDropMode, iMaxLength);
+        strResult += formatValue(tr("Drag'n'Drop Mode"), strDnDMode, iMaxLength);
         strResult += formatValue(VBoxGlobal::tr("VT-x/AMD-V", "details report"), strVirtualization, iMaxLength);
         strResult += formatValue(VBoxGlobal::tr("Nested Paging", "details report"), strNestedPaging, iMaxLength);
         strResult += formatValue(VBoxGlobal::tr("Unrestricted Execution", "details report"), strUnrestrictedExecution, iMaxLength);

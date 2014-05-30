@@ -40,9 +40,11 @@
 #include "UIDnDEnumFormat_win.h"
 
 UIDnDDataObject::UIDnDDataObject(CSession &session,
+                                 CDnDSource &dndSource,
                                  const QStringList &lstFormats,
                                  QWidget *pParent)
     : mSession(session),
+      mDnDSource(dndSource),
       mpParent(pParent),
       mStatus(Uninitialized),
       mRefCount(1),
@@ -64,7 +66,9 @@ UIDnDDataObject::UIDnDDataObject(CSession &session,
         mpStgMedium = new STGMEDIUM[cMaxFormats];
         RT_BZERO(mpStgMedium, sizeof(STGMEDIUM) * cMaxFormats);
 
-        for (int i = 0; i < lstFormats.size(); i++)
+        for (int i = 0;
+             (   i < lstFormats.size()
+              && i < cMaxFormats); i++)
         {
             const QString &strFormat = lstFormats.at(i);
             if (mlstFormats.contains(strFormat))
@@ -94,7 +98,7 @@ UIDnDDataObject::UIDnDDataObject(CSession &session,
             }
         }
 
-        LogFlowFunc(("Total registered formats: %RU32 (of %d total)\n",
+        LogFlowFunc(("Total registered native formats: %RU32 (for %d formats from guest)\n",
                      cRegisteredFormats, lstFormats.size()));
         hr = S_OK;
     }
@@ -289,6 +293,8 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
         if (!mVaData.isValid())
         {
             rc = UIDnDDrag::RetrieveData(mSession,
+                                         mDnDSource,
+                                         /** @todo Support other actions. */
                                          Qt::CopyAction,
                                          strMIMEType, vaType, mVaData,
                                          mpParent);

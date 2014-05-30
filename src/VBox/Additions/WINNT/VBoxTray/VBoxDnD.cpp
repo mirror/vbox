@@ -667,7 +667,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
 
     /*
      * Install our allowed MIME types.
-     ** @todo See todo for m_sstrAllowedMimeTypes in GuestDnDImpl.cpp.
+     ** @todo Also see GuestDnDPrivate.cpp.
      */
     const RTCList<RTCString> lstAllowedMimeTypes = RTCList<RTCString>()
         /* URI's */

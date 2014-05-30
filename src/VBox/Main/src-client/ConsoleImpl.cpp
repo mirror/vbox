@@ -5075,11 +5075,11 @@ HRESULT Console::onClipboardModeChange(ClipboardMode_T aClipboardMode)
 }
 
 /**
- * Called by IInternalSessionControl::OnDragAndDropModeChange().
+ * Called by IInternalSessionControl::OnDnDModeChange().
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode)
+HRESULT Console::onDnDModeChange(DnDMode_T aDnDMode)
 {
     LogFlowThisFunc(("\n"));
 
@@ -5097,7 +5097,7 @@ HRESULT Console::onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode)
         if (   mMachineState == MachineState_Running
             || mMachineState == MachineState_Teleporting
             || mMachineState == MachineState_LiveSnapshotting)
-            changeDragAndDropMode(aDragAndDropMode);
+            changeDnDMode(aDnDMode);
         else
             rc = setInvalidMachineStateError();
         ptrVM.release();
@@ -5107,7 +5107,7 @@ HRESULT Console::onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode)
     if (SUCCEEDED(rc))
     {
         alock.release();
-        fireDragAndDropModeChangedEvent(mEventSource, aDragAndDropMode);
+        fireDnDModeChangedEvent(mEventSource, aDnDMode);
     }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
@@ -8347,38 +8347,42 @@ void Console::changeClipboardMode(ClipboardMode_T aClipboardMode)
 /**
  * Changes the drag'n_drop mode.
  *
- * @param aDragAndDropMode  new drag'n'drop mode.
+ * @param aDnDMode  new drag'n'drop mode.
  */
-void Console::changeDragAndDropMode(DragAndDropMode_T aDragAndDropMode)
+int Console::changeDnDMode(DnDMode_T aDnDMode)
 {
     VMMDev *pVMMDev = m_pVMMDev;
-    Assert(pVMMDev);
+    AssertPtrReturn(pVMMDev, VERR_INVALID_POINTER);
 
     VBOXHGCMSVCPARM parm;
+    RT_ZERO(parm);
     parm.type = VBOX_HGCM_SVC_PARM_32BIT;
 
-    switch (aDragAndDropMode)
+    switch (aDnDMode)
     {
         default:
-        case DragAndDropMode_Disabled:
-            LogRel(("Drag'n'drop mode: Off\n"));
+        case DnDMode_Disabled:
+            LogRel(("Changed drag'n drop mode to: Off\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_OFF;
             break;
-        case DragAndDropMode_GuestToHost:
-            LogRel(("Drag'n'drop mode: Guest to Host\n"));
+        case DnDMode_GuestToHost:
+            LogRel(("Changed drag'n drop mode to: Guest to Host\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST;
             break;
-        case DragAndDropMode_HostToGuest:
-            LogRel(("Drag'n'drop mode: Host to Guest\n"));
+        case DnDMode_HostToGuest:
+            LogRel(("Changed drag'n drop mode to: Host to Guest\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST;
             break;
-        case DragAndDropMode_Bidirectional:
-            LogRel(("Drag'n'drop mode: Bidirectional\n"));
+        case DnDMode_Bidirectional:
+            LogRel(("Changed drag'n drop mode to: Bidirectional\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL;
             break;
     }
 
-    pVMMDev->hgcmHostCall("VBoxDragAndDropSvc", DragAndDropSvc::HOST_DND_SET_MODE, 1, &parm);
+    int rc = pVMMDev->hgcmHostCall("VBoxDragAndDropSvc",
+                                   DragAndDropSvc::HOST_DND_SET_MODE, 1, &parm);
+    LogFlowFunc(("rc=%Rrc\n", rc));
+    return rc;
 }
 
 #ifdef VBOX_WITH_USB

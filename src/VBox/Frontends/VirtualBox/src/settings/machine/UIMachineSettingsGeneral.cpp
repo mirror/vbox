@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,10 +43,10 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     mCbClipboard->addItem (""); /* KClipboardMode_Bidirectional */
 
     /* Drag'n'drop mode */
-    mCbDragAndDrop->addItem (""); /* KDragAndDropMode_Disabled */
-    mCbDragAndDrop->addItem (""); /* KDragAndDropMode_HostToGuest */
-    mCbDragAndDrop->addItem (""); /* KDragAndDropMode_GuestToHost */
-    mCbDragAndDrop->addItem (""); /* KDragAndDropMode_Bidirectional */
+    mCbDragAndDrop->addItem (""); /* KDnDMode_Disabled */
+    mCbDragAndDrop->addItem (""); /* KDnDMode_HostToGuest */
+    mCbDragAndDrop->addItem (""); /* KDnDMode_GuestToHost */
+    mCbDragAndDrop->addItem (""); /* KDnDMode_Bidirectional */
 
 #ifdef Q_WS_MAC
     mTeDescription->setMinimumHeight (150);
@@ -114,7 +114,7 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     generalData.m_strSnapshotsFolder = m_machine.GetSnapshotFolder();
     generalData.m_strSnapshotsHomeDir = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
     generalData.m_clipboardMode = m_machine.GetClipboardMode();
-    generalData.m_dragAndDropMode = m_machine.GetDragAndDropMode();
+    generalData.m_dndMode = m_machine.GetDnDMode();
     generalData.m_strDescription = m_machine.GetDescription();
 
     /* Cache general data: */
@@ -140,7 +140,7 @@ void UIMachineSettingsGeneral::getFromCache()
     mPsSnapshot->setPath(generalData.m_strSnapshotsFolder);
     mPsSnapshot->setHomeDir(generalData.m_strSnapshotsHomeDir);
     mCbClipboard->setCurrentIndex(generalData.m_clipboardMode);
-    mCbDragAndDrop->setCurrentIndex(generalData.m_dragAndDropMode);
+    mCbDragAndDrop->setCurrentIndex(generalData.m_dndMode);
     mTeDescription->setPlainText(generalData.m_strDescription);
 
     /* Polish page finally: */
@@ -165,7 +165,7 @@ void UIMachineSettingsGeneral::putToCache()
     generalData.m_fMiniToolBarAtTop = mCbToolBarAlignment->isChecked();
     generalData.m_strSnapshotsFolder = mPsSnapshot->path();
     generalData.m_clipboardMode = (KClipboardMode)mCbClipboard->currentIndex();
-    generalData.m_dragAndDropMode = (KDragAndDropMode)mCbDragAndDrop->currentIndex();
+    generalData.m_dndMode = (KDnDMode)mCbDragAndDrop->currentIndex();
     generalData.m_strDescription = mTeDescription->toPlainText().isEmpty() ?
                                    QString::null : mTeDescription->toPlainText();
 
@@ -191,7 +191,7 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
         {
             /* Advanced tab: */
             m_machine.SetClipboardMode(generalData.m_clipboardMode);
-            m_machine.SetDragAndDropMode(generalData.m_dragAndDropMode);
+            m_machine.SetDnDMode(generalData.m_dndMode);
             m_machine.SetExtraData(GUI_SaveMountedAtRuntime, generalData.m_fSaveMountedAtRuntime ? "yes" : "no");
             m_machine.SetExtraData(GUI_ShowMiniToolBar, generalData.m_fShowMiniToolBar ? "yes" : "no");
             m_machine.SetExtraData(GUI_MiniToolBarAlignment, generalData.m_fMiniToolBarAtTop ? "top" : "bottom");
@@ -291,10 +291,10 @@ void UIMachineSettingsGeneral::retranslateUi()
     mCbClipboard->setItemText (3, gpConverter->toString (KClipboardMode_Bidirectional));
 
     /* Drag'n'drop mode */
-    mCbDragAndDrop->setItemText (0, gpConverter->toString (KDragAndDropMode_Disabled));
-    mCbDragAndDrop->setItemText (1, gpConverter->toString (KDragAndDropMode_HostToGuest));
-    mCbDragAndDrop->setItemText (2, gpConverter->toString (KDragAndDropMode_GuestToHost));
-    mCbDragAndDrop->setItemText (3, gpConverter->toString (KDragAndDropMode_Bidirectional));
+    mCbDragAndDrop->setItemText (0, gpConverter->toString (KDnDMode_Disabled));
+    mCbDragAndDrop->setItemText (1, gpConverter->toString (KDnDMode_HostToGuest));
+    mCbDragAndDrop->setItemText (2, gpConverter->toString (KDnDMode_GuestToHost));
+    mCbDragAndDrop->setItemText (3, gpConverter->toString (KDnDMode_Bidirectional));
 }
 
 void UIMachineSettingsGeneral::prepareValidation()
