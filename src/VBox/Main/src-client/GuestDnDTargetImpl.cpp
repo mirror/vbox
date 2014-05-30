@@ -332,10 +332,10 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
-STDMETHODIMP GuestDnDTarget::sendData(ULONG aScreenId,
-                                      const com::Utf8Str &aFormat,
-                                      const std::vector<BYTE> &aData,
-                                      ComPtr<IProgress> &aProgress)
+HRESULT GuestDnDTarget::sendData(ULONG aScreenId,
+                                 const com::Utf8Str &aFormat,
+                                 const std::vector<BYTE> &aData,
+                                 ComPtr<IProgress> &aProgress)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
     ReturnComNotImplemented();
