@@ -32,6 +32,13 @@
 #include <iprt/mem.h>
 #include <VBoxGuestInternal.h>
 
+#include <VBox/VMMDev.h>
+#ifdef DEBUG
+# define LOG_ENABLED
+# define LOG_GROUP LOG_GROUP_DEFAULT
+#endif
+#include <VBox/log.h>
+
 
 
 /**
@@ -228,7 +235,7 @@ void VBoxIPCStop(const VBOXSERVICEENV *pEnv, void *pInstance)
     AssertPtrReturnVoid(pEnv);
     AssertPtrReturnVoid(pInstance);
 
-    LogFunc(("Stopping pInstance=%p\n", pInstance));
+    LogFlowFunc(("Stopping pInstance=%p\n", pInstance));
 
     /* Shut down local IPC server. */
     PVBOXIPCCONTEXT pCtx = (PVBOXIPCCONTEXT)pInstance;
@@ -238,7 +245,7 @@ void VBoxIPCStop(const VBOXSERVICEENV *pEnv, void *pInstance)
     {
         int rc2 = RTLocalIpcServerCancel(pCtx->hServer);
         if (RT_FAILURE(rc2))
-            LogFunc(("Cancelling current listening call failed with rc=%Rrc\n", rc2));
+            LogFlowFunc(("Cancelling current listening call failed with rc=%Rrc\n", rc2));
     }
 
     /* Stop all remaining session threads. */
@@ -251,7 +258,7 @@ void VBoxIPCStop(const VBOXSERVICEENV *pEnv, void *pInstance)
             int rc2 = vboxIPCSessionStop(pSession);
             if (RT_FAILURE(rc2))
             {
-                LogFunc(("Stopping IPC session %p failed with rc=%Rrc\n",
+                LogFlowFunc(("Stopping IPC session %p failed with rc=%Rrc\n",
                          pSession, rc2));
                 /* Keep going. */
             }
@@ -264,7 +271,7 @@ void VBoxIPCDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     AssertPtrReturnVoid(pEnv);
     AssertPtrReturnVoid(pInstance);
 
-    LogFunc(("Destroying pInstance=%p\n", pInstance));
+    LogFlowFunc(("Destroying pInstance=%p\n", pInstance));
 
     PVBOXIPCCONTEXT pCtx = (PVBOXIPCCONTEXT)pInstance;
     AssertPtr(pCtx);
@@ -275,14 +282,14 @@ void VBoxIPCDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     {
         rc = RTLocalIpcServerDestroy(pCtx->hServer);
         if (RT_FAILURE(rc))
-            LogFunc(("Unable to destroy IPC server, rc=%Rrc\n", rc));
+            LogFlowFunc(("Unable to destroy IPC server, rc=%Rrc\n", rc));
 
         int rc2 = RTCritSectLeave(&pCtx->CritSect);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
 
-    LogFunc(("Waiting for remaining IPC sessions to shut down ...\n"));
+    LogFlowFunc(("Waiting for remaining IPC sessions to shut down ...\n"));
 
     /* Wait for all IPC session threads to shut down. */
     bool fListIsEmpty = true;
@@ -306,13 +313,13 @@ void VBoxIPCDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     AssertMsg(fListIsEmpty,
               ("Session thread list is not empty when it should\n"));
 
-    LogFunc(("All remaining IPC sessions shut down\n"));
+    LogFlowFunc(("All remaining IPC sessions shut down\n"));
 
     int rc2 = RTCritSectDelete(&pCtx->CritSect);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
-    LogFunc(("Destroyed pInstance=%p, rc=%Rrc\n",
+    LogFlowFunc(("Destroyed pInstance=%p, rc=%Rrc\n",
              pInstance, rc));
 }
 
@@ -330,7 +337,7 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
     RTLOCALIPCSESSION hSession = pThis->hSession;
     AssertReturn(hSession != NIL_RTLOCALIPCSESSION, VERR_INVALID_PARAMETER);
 
-    LogFunc(("pThis=%p\n", pThis));
+    LogFlowFunc(("pThis=%p\n", pThis));
 
     int rc = VINF_SUCCESS;
 
@@ -346,12 +353,12 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
         {
             if (rc == VERR_CANCELLED)
             {
-                LogFunc(("Session %p: Waiting for data cancelled\n", pThis));
+                LogFlowFunc(("Session %p: Waiting for data cancelled\n", pThis));
                 rc = VINF_SUCCESS;
                 break;
             }
             else
-                LogFunc(("Session %p: Waiting for session data failed with rc=%Rrc\n",
+                LogFlowFunc(("Session %p: Waiting for session data failed with rc=%Rrc\n",
                          pThis, rc));
         }
         else
@@ -390,7 +397,7 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
                 }
 
                 if (RT_FAILURE(rc))
-                    LogFunc(("Session %p: Handling command %RU32 failed with rc=%Rrc\n",
+                    LogFlowFunc(("Session %p: Handling command %RU32 failed with rc=%Rrc\n",
                              pThis, ipcHdr.uMsgType, rc));
             }
 
@@ -422,7 +429,7 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
         }
     }
 
-    LogFunc(("Session %p: Handler ended with rc=%Rrc\n",
+    LogFlowFunc(("Session %p: Handler ended with rc=%Rrc\n",
              pThis, rc));
 
     /*
@@ -430,7 +437,7 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
      */
     int rc2 = RTLocalIpcSessionClose(hSession);
     if (RT_FAILURE(rc2))
-        LogFunc(("Session %p: Failed closing session %p, rc=%Rrc\n", pThis, rc2));
+        LogFlowFunc(("Session %p: Failed closing session %p, rc=%Rrc\n", pThis, rc2));
 
     /*
      * Clean up the session.
@@ -448,7 +455,7 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
             rc = rc2;
     }
 
-    LogFunc(("Session %p: Terminated with rc=%Rrc, freeing ...\n",
+    LogFlowFunc(("Session %p: Terminated with rc=%Rrc, freeing ...\n",
              pThis, rc));
 
     RTMemFree(pThis);
@@ -487,9 +494,9 @@ static int vboxIPCSessionCreate(PVBOXIPCCONTEXT pCtx, RTLOCALIPCSESSION hSession
             {
                 int rc2 = RTLocalIpcSessionClose(hSession);
                 if (RT_FAILURE(rc2))
-                    LogFunc(("Failed closing session %p, rc=%Rrc\n", pSession, rc2));
+                    LogFlowFunc(("Failed closing session %p, rc=%Rrc\n", pSession, rc2));
 
-                LogFunc(("Failed to create thread for session %p, rc=%Rrc\n", pSession, rc));
+                LogFlowFunc(("Failed to create thread for session %p, rc=%Rrc\n", pSession, rc));
                 RTMemFree(pSession);
             }
         }

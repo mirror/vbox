@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,13 @@
 #include "VBoxHelpers.h"
 
 #include <VBox/VBoxGuestLib.h>
+
+#ifdef DEBUG
+# define LOG_ENABLED
+# define LOG_GROUP LOG_GROUP_DEFAULT
+#endif
+#include <VBox/log.h>
+
 
 
 /** @todo Move this part in VbglR3 and just provide a callback for the platform-specific
@@ -54,7 +61,7 @@ int VBoxCheckHostVersion()
                                        szMsg, szTitle,
                                        5000 /* Time to display in msec */, NIIF_INFO);
                 if (RT_FAILURE(rc))
-                    Log(("VBoxTray: Guest Additions update found; however: could not show version notifier balloon tooltip! rc = %d\n", rc));
+                    LogFlowFunc(("Guest Additions update found; however: could not show version notifier balloon tooltip, rc=%Rrc\n", rc));
             }
 
             /* Store host version to not notify again. */

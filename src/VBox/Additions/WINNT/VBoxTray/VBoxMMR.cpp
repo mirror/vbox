@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,6 +18,14 @@
 #include "VBoxTray.h"
 #include "VBoxMMR.h"
 #include <iprt/ldr.h>
+
+#ifdef DEBUG
+# define LOG_ENABLED
+# define LOG_GROUP LOG_GROUP_DEFAULT
+#endif
+#include <VBox/log.h>
+
+
 
 struct VBOXMMRCONTEXT
 {
@@ -47,7 +55,7 @@ void VBoxMMRCleanup(VBOXMMRCONTEXT *pCtx)
 
 int VBoxMMRInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
-    LogRel2(("VBoxMMR: Initializing\n"));
+    LogFlowFuncEnter();
 
     int rc = RTLdrLoadAppPriv(g_pszMMRDLL, &gCtx.hModHook);
     if (RT_SUCCESS(rc))
@@ -65,11 +73,11 @@ int VBoxMMRInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
             }
 
             rc = RTErrConvertFromWin32(GetLastError());
-            LogRel2(("VBoxMMR: Error installing hooking proc: %Rrc\n", rc));
+            LogFlowFunc(("Error installing hooking proc: %Rrc\n", rc));
         }
         else
         {
-            LogRel2(("VBoxMMR: Hooking proc not found\n"));
+            LogFlowFunc(("Hooking proc not found\n"));
             rc = VERR_NOT_FOUND;
         }
 
@@ -77,7 +85,7 @@ int VBoxMMRInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
         gCtx.hModHook = NIL_RTLDRMOD;
     }
     else
-        LogRel2(("VBoxMMR: Hooking library not found (%Rrc)\n", rc));
+        LogFlowFunc(("Hooking library not found (%Rrc)\n", rc));
 
     return rc;
 }

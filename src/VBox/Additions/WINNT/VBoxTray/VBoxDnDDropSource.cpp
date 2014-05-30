@@ -17,6 +17,12 @@
 #include <windows.h>
 #include <new> /* For bad_alloc. */
 
+#ifdef LOG_GROUP
+# undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/log.h>
+
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
 #include "VBoxDnD.h"

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,23 +47,11 @@
 #include <iprt/string.h>
 
 #include <VBox/version.h>
-#include <VBox/Log.h>
 #include <VBox/VBoxGuest.h> /** @todo use the VbglR3 interface! */
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxDisplay.h>
 
 #include "VBoxDispIf.h"
-
-#ifdef DEBUG_misha
-#define WARN(_m) do { \
-            Assert(0); \
-            Log(_m); \
-        } while (0)
-#else
-#define WARN(_m) do { \
-            Log(_m); \
-        } while (0)
-#endif
 
 /*
  * Windows messsages.

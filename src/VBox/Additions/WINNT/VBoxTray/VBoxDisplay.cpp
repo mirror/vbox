@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,19 +14,29 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#define _WIN32_WINNT 0x0500
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
 #include "VBoxSeamless.h"
-#include <VBoxHook.h>
-#include <VBoxDisplay.h>
-#include <VBox/VMMDev.h>
-#include <iprt/assert.h>
+
 #include <malloc.h>
-#include <VBoxGuestInternal.h>
+
+#include <iprt/assert.h>
 #ifdef VBOX_WITH_WDDM
-#include <iprt/asm.h>
+# include <iprt/asm.h>
 #endif
+
+#ifdef DEBUG
+# define LOG_ENABLED
+# define LOG_GROUP LOG_GROUP_DEFAULT
+#endif
+#include <VBox/log.h>
+#include <VBox/VMMDev.h>
+
+#include <VBoxDisplay.h>
+#include <VBoxGuestInternal.h>
+#include <VBoxHook.h>
+
+
 
 typedef struct _VBOXDISPLAYCONTEXT
 {
@@ -56,7 +66,7 @@ static VBOXDISPLAY_DRIVER_TYPE getVBoxDisplayDriverType (VBOXDISPLAYCONTEXT *pCt
 
 int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
-    Log(("VBoxTray: VBoxDisplayInit ...\n"));
+    LogFlowFunc(("VBoxDisplayInit ...\n"));
 
     OSVERSIONINFO OSinfo;
     OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
@@ -68,33 +78,33 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
 
     if (NULL == hUser)
     {
-        Log(("VBoxTray: VBoxDisplayInit: Could not get module handle of USER32.DLL!\n"));
+        LogFlowFunc(("Could not get module handle of USER32.DLL!\n"));
         return VERR_NOT_IMPLEMENTED;
     }
     else if (OSinfo.dwMajorVersion >= 5)        /* APIs available only on W2K and up! */
     {
         *(uintptr_t *)&gCtx.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
-        Log(("VBoxTray: VBoxDisplayInit: pfnChangeDisplaySettingsEx = %p\n", gCtx.pfnChangeDisplaySettingsEx));
+        LogFlowFunc(("pfnChangeDisplaySettingsEx = %p\n", gCtx.pfnChangeDisplaySettingsEx));
 
         *(uintptr_t *)&gCtx.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA");
-        Log(("VBoxTray: VBoxDisplayInit: pfnEnumDisplayDevices = %p\n", gCtx.pfnEnumDisplayDevices));
+        LogFlowFunc(("pfnEnumDisplayDevices = %p\n", gCtx.pfnEnumDisplayDevices));
 
 #ifdef VBOX_WITH_WDDM
         if (OSinfo.dwMajorVersion >= 6)
         {
             /* this is vista and up, check if we need to switch the display driver if to WDDM mode */
-            Log(("VBoxTray: VBoxDisplayInit: this is Windows Vista and up\n"));
+            LogFlowFunc(("this is Windows Vista and up\n"));
             VBOXDISPLAY_DRIVER_TYPE enmType = getVBoxDisplayDriverType (&gCtx);
             if (enmType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
             {
-                Log(("VBoxTray: VBoxDisplayInit: WDDM driver is installed, switching display driver if to WDDM mode\n"));
+                LogFlowFunc(("WDDM driver is installed, switching display driver if to WDDM mode\n"));
                 /* this is hacky, but the most easiest way */
                 VBOXDISPIF_MODE enmMode = (OSinfo.dwMajorVersion > 6 || OSinfo.dwMinorVersion > 0) ? VBOXDISPIF_MODE_WDDM_W7 : VBOXDISPIF_MODE_WDDM;
                 DWORD err = VBoxDispIfSwitchMode(const_cast<PVBOXDISPIF>(&pEnv->dispIf), enmMode, NULL /* old mode, we don't care about it */);
                 if (err == NO_ERROR)
-                    Log(("VBoxTray: VBoxDisplayInit: DispIf switched to WDDM mode successfully\n"));
+                    LogFlowFunc(("DispIf switched to WDDM mode successfully\n"));
                 else
-                    Log(("VBoxTray: VBoxDisplayInit: Failed to switch DispIf to WDDM mode, err (%d)\n", err));
+                    LogFlowFunc(("Failed to switch DispIf to WDDM mode, err (%d)\n", err));
             }
         }
 #endif
@@ -105,7 +115,7 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
     }
     else                                /* Unsupported platform */
     {
-        Log(("VBoxTray: VBoxDisplayInit: Warning, display for platform not handled yet!\n"));
+        LogFlowFunc(("Warning, display for platform not handled yet!\n"));
         return VERR_NOT_IMPLEMENTED;
     }
 
@@ -117,7 +127,7 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
     else
         gCtx.fAnyX = TRUE;
 
-    Log(("VBoxTray: VBoxDisplayInit: Display init successful\n"));
+    LogFlowFunc(("Display init successful\n"));
 
     *pfStartThread = true;
     *ppInstance = (void *)&gCtx;
@@ -148,14 +158,14 @@ static bool isVBoxDisplayDriverActive(VBOXDISPLAYCONTEXT *pCtx)
         FillMemory(&dispDevice, sizeof(DISPLAY_DEVICE), 0);
         dispDevice.cb = sizeof(DISPLAY_DEVICE);
 
-        Log(("VBoxTray: isVBoxDisplayDriverActive: Checking for active VBox display driver (W2K+) ...\n"));
+        LogFlowFunc(("isVBoxDisplayDriverActive: Checking for active VBox display driver (W2K+) ...\n"));
 
         while (EnumDisplayDevices(NULL,
                                   devNum,
                                   &dispDevice,
                                   0))
         {
-            Log(("VBoxTray: isVBoxDisplayDriverActive: DevNum:%d\nName:%s\nString:%s\nID:%s\nKey:%s\nFlags=%08X\n\n",
+            LogFlowFunc(("isVBoxDisplayDriverActive: DevNum:%d\nName:%s\nString:%s\nID:%s\nKey:%s\nFlags=%08X\n\n",
                           devNum,
                           &dispDevice.DeviceName[0],
                           &dispDevice.DeviceString[0],
@@ -165,7 +175,7 @@ static bool isVBoxDisplayDriverActive(VBOXDISPLAYCONTEXT *pCtx)
 
             if (dispDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
             {
-                Log(("VBoxTray: isVBoxDisplayDriverActive: Primary device\n"));
+                LogFlowFunc(("isVBoxDisplayDriverActive: Primary device\n"));
 
                 if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter") == 0)
 #ifndef VBOX_WITH_WDDM
@@ -190,7 +200,7 @@ static bool isVBoxDisplayDriverActive(VBOXDISPLAYCONTEXT *pCtx)
     }
     else    /* This must be NT 4 or something really old, so don't use EnumDisplayDevices() here  ... */
     {
-        Log(("VBoxTray: isVBoxDisplayDriverActive: Checking for active VBox display driver (NT or older) ...\n"));
+        LogFlowFunc(("isVBoxDisplayDriverActive: Checking for active VBox display driver (NT or older) ...\n"));
 
         DEVMODE tempDevMode;
         ZeroMemory (&tempDevMode, sizeof (tempDevMode));
@@ -248,7 +258,7 @@ DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDe
             /* Special case for enabling the secondary monitor. */
             if(!(displayDevice.StateFlags & DISPLAY_DEVICE_ACTIVE))
             {
-                LogRel(("VBoxTray: Secondary Monitor with ID=%d and name=%s Not Enabled. Enabling it.\n", Id, displayDevice.DeviceName));
+                LogRel(("Secondary Monitor with ID=%d and name=%s Not Enabled. Enabling it.\n", Id, displayDevice.DeviceName));
                 deviceMode.dmPosition.x = paDeviceModes[0].dmPelsWidth;
                 deviceMode.dmPosition.y = 0;
                 deviceMode.dmBitsPerPel = 32;
@@ -271,7 +281,7 @@ DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDe
             {
                 if (aWidth !=0 && aHeight != 0)
                 {
-                    LogRel(("VBoxTray: Display : %s , Change Height: %d & Width: %d\n", displayDevice.DeviceName, aWidth, aHeight));
+                    LogRel(("Display : %s , Change Height: %d & Width: %d\n", displayDevice.DeviceName, aWidth, aHeight));
                     deviceMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL
                                           | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
                     deviceMode.dmPelsWidth = aWidth;
@@ -280,7 +290,7 @@ DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDe
                 }
                 if (aPosX != 0 || aPosY != 0)
                 {
-                    LogRel(("VBoxTray: Display: %s PosX: %d, PosY: %d\n", displayDevice.DeviceName, aPosX, aPosY));
+                    LogRel(("Display: %s PosX: %d, PosY: %d\n", displayDevice.DeviceName, aPosX, aPosY));
                     deviceMode.dmFields |=  DM_POSITION;
                     deviceMode.dmPosition.x = aPosX;
                     deviceMode.dmPosition.y = aPosY;
@@ -293,7 +303,7 @@ DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDe
         }
         else /* Request is there to disable the monitor with ID = Id*/
         {
-            LogRel(("VBoxTray: Disable the Display: %d\n", displayDevice.DeviceName));
+            LogRel(("Disable the Display: %d\n", displayDevice.DeviceName));
 
             DEVMODE deviceModeTmp;
             ZeroMemory(&deviceModeTmp, sizeof(DEVMODE));
@@ -321,17 +331,17 @@ DWORD VBoxGetDisplayConfigCount()
     DWORD i = 0;
     while (EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
     {
-        Log(("VBoxTray: ResizeDisplayDevice: [%d] %s\n", i, DisplayDevice.DeviceName));
+        LogFlowFunc(("ResizeDisplayDevice: [%d] %s\n", i, DisplayDevice.DeviceName));
 
         if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
         {
-            Log(("VBoxTray: ResizeDisplayDevice: Found primary device. err %d\n", GetLastError ()));
+            LogFlowFunc(("ResizeDisplayDevice: Found primary device. err %d\n", GetLastError ()));
             NumDevices++;
         }
         else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
         {
 
-            Log(("VBoxTray: ResizeDisplayDevice: Found secondary device. err %d\n", GetLastError ()));
+            LogFlowFunc(("ResizeDisplayDevice: Found secondary device. err %d\n", GetLastError ()));
             NumDevices++;
         }
 
@@ -357,20 +367,20 @@ DWORD VBoxGetDisplayConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD 
     DWORD i = 0;
     while (EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
     {
-        Log(("VBoxTray: ResizeDisplayDevice: [%d(%d)] %s\n", i, DevNum, DisplayDevice.DeviceName));
+        LogFlowFunc(("ResizeDisplayDevice: [%d(%d)] %s\n", i, DevNum, DisplayDevice.DeviceName));
 
         BOOL bFetchDevice = FALSE;
 
         if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
         {
-            Log(("VBoxTray: ResizeDisplayDevice: Found primary device. err %d\n", GetLastError ()));
+            LogFlowFunc(("ResizeDisplayDevice: Found primary device. err %d\n", GetLastError ()));
             DevPrimaryNum = DevNum;
             bFetchDevice = TRUE;
         }
         else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
         {
 
-            Log(("VBoxTray: ResizeDisplayDevice: Found secondary device. err %d\n", GetLastError ()));
+            LogFlowFunc(("ResizeDisplayDevice: Found secondary device. err %d\n", GetLastError ()));
             bFetchDevice = TRUE;
         }
 
@@ -378,7 +388,7 @@ DWORD VBoxGetDisplayConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD 
         {
             if (DevNum >= NumDevices)
             {
-                WARN(("VBoxTray: ResizeDisplayDevice: %d >= %d\n", NumDevices, DevNum));
+                LogFlowFunc(("ResizeDisplayDevice: %d >= %d\n", NumDevices, DevNum));
                 return ERROR_BUFFER_OVERFLOW;
             }
 
@@ -393,7 +403,7 @@ DWORD VBoxGetDisplayConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD 
             if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
                  ENUM_REGISTRY_SETTINGS, &paDeviceModes[DevNum]))
             {
-                Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings error %d\n", GetLastError ()));
+                LogFlowFunc(("ResizeDisplayDevice: EnumDisplaySettings error %d\n", GetLastError ()));
             }
 
             if (   paDeviceModes[DevNum].dmPelsWidth == 0
@@ -411,7 +421,7 @@ DWORD VBoxGetDisplayConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD 
                      * for example a disabled secondary display.
                      * Do not return here, ignore the error and set the display info to 0x0x0.
                      */
-                    Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings(ENUM_CURRENT_SETTINGS) error %d\n", GetLastError ()));
+                    LogFlowFunc(("ResizeDisplayDevice: EnumDisplaySettings(ENUM_CURRENT_SETTINGS) error %d\n", GetLastError ()));
                 }
             }
 
@@ -439,7 +449,7 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
                        dwNewPosX == 0 && dwNewPosY == 0);
     DWORD dmFields = 0;
 
-    Log(("VBoxTray: ResizeDisplayDevice Width= %d, Height=%d , PosX=%d and PosY=%d \
+    LogFlowFunc(("ResizeDisplayDevice Width= %d, Height=%d , PosX=%d and PosY=%d \
          fEnabled = %d, fExtDisSup = %d\n",
           Width, Height, dwNewPosX, dwNewPosY, fEnabled, fExtDispSup));
 
@@ -452,11 +462,11 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
 
     if (NumDevices == 0 || Id >= NumDevices)
     {
-        WARN(("VBoxTray: ResizeDisplayDevice: Requested identifier %d is invalid. err %d\n", Id, GetLastError ()));
+        LogFlowFunc(("ResizeDisplayDevice: Requested identifier %d is invalid. err %d\n", Id, GetLastError ()));
         return FALSE;
     }
 
-    Log(("VBoxTray: ResizeDisplayDevice: Found total %d devices. err %d\n", NumDevices, GetLastError ()));
+    LogFlowFunc(("ResizeDisplayDevice: Found total %d devices. err %d\n", NumDevices, GetLastError ()));
 
     DISPLAY_DEVICE *paDisplayDevices = (DISPLAY_DEVICE *)alloca (sizeof (DISPLAY_DEVICE) * NumDevices);
     DEVMODE *paDeviceModes = (DEVMODE *)alloca (sizeof (DEVMODE) * NumDevices);
@@ -466,12 +476,12 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
     DWORD dwStatus = VBoxGetDisplayConfig(NumDevices, &DevPrimaryNum, &DevNum, paDisplayDevices, paDeviceModes);
     if (dwStatus != NO_ERROR)
     {
-        WARN(("VBoxTray: ResizeDisplayDevice: VBoxGetDisplayConfig failed, %d\n", dwStatus));
+        LogFlowFunc(("ResizeDisplayDevice: VBoxGetDisplayConfig failed, %d\n", dwStatus));
         return dwStatus;
     }
 
     if (NumDevices != DevNum)
-        WARN(("VBoxTray: ResizeDisplayDevice: NumDevices(%d) != DevNum(%d)\n", NumDevices, DevNum));
+        LogFlowFunc(("ResizeDisplayDevice: NumDevices(%d) != DevNum(%d)\n", NumDevices, DevNum));
 
     DWORD i = 0;
 
@@ -479,8 +489,8 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
     {
         if (fExtDispSup)
         {
-            LogRel(("VBoxTray: Extended Display Support.\n"));
-            Log(("VBoxTray: ResizeDisplayDevice1: %dx%dx%d at %d,%d . Id = %d and DevNum=%d, fEnabled=%d\n",
+            LogRel(("Extended Display Support.\n"));
+            LogFlowFunc(("ResizeDisplayDevice1: %dx%dx%d at %d,%d . Id = %d and DevNum=%d, fEnabled=%d\n",
                   paDeviceModes[Id].dmPelsWidth,
                   paDeviceModes[Id].dmPelsHeight,
                   paDeviceModes[Id].dmBitsPerPel,
@@ -490,7 +500,7 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
         }
         else
         {
-            LogRel(("VBoxTray: NO Ext Display Support \n"));
+            LogRel(("NO Ext Display Support \n"));
         }
 
         paRects[i].left   = paDeviceModes[i].dmPosition.x;
@@ -502,7 +512,7 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
     /* Keep a record if the display with ID is already active or not. */
     if (paDisplayDevices[Id].StateFlags & DISPLAY_DEVICE_ACTIVE)
     {
-        LogRel(("VBoxTray: Display with ID=%d already enabled\n", Id));
+        LogRel(("Display with ID=%d already enabled\n", Id));
         fDispAlreadyEnabled = TRUE;
     }
 
@@ -558,7 +568,7 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
         && paRects[Id].bottom - paRects[Id].top == Height
         && paDeviceModes[Id].dmBitsPerPel == BitsPerPixel)
     {
-        LogRel(("VBoxTray: Already at desired resolution. No Change.\n"));
+        LogRel(("Already at desired resolution. No Change.\n"));
         return FALSE;
     }
 
@@ -567,7 +577,7 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
 #ifdef Log
     for (i = 0; i < NumDevices; i++)
     {
-        Log(("VBoxTray: ResizeDisplayDevice: [%d]: %d,%d %dx%d\n",
+        LogFlowFunc(("ResizeDisplayDevice: [%d]: %d,%d %dx%d\n",
                 i, paRects[i].left, paRects[i].top,
                 paRects[i].right - paRects[i].left,
                 paRects[i].bottom - paRects[i].top));
@@ -596,12 +606,12 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
              */
             if (!(paDeviceModes[i].dmFields & DM_BITSPERPEL))
             {
-                WARN(("VBoxTray: (WDDM) no DM_BITSPERPEL\n"));
+                LogFlowFunc(("no DM_BITSPERPEL\n"));
                 paDeviceModes[i].dmFields |= DM_BITSPERPEL;
                 paDeviceModes[i].dmBitsPerPel = 32;
             }
 
-            Log(("VBoxTray: (WDDM) ResizeDisplayDevice: pfnChangeDisplaySettingsEx %x: %dx%dx%d at %d,%d\n",
+            LogFlowFunc(("ResizeDisplayDevice: pfnChangeDisplaySettingsEx %x: %dx%dx%d at %d,%d\n",
                   gCtx.pfnChangeDisplaySettingsEx,
                   paDeviceModes[i].dmPelsWidth,
                   paDeviceModes[i].dmPelsHeight,
@@ -610,18 +620,18 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
                   paDeviceModes[i].dmPosition.y));
         }
 
-        Log(("VBoxTray: (WDDM) Request to resize the displa\n"));
+        LogFlowFunc(("Request to resize the displa\n"));
         DWORD err = VBoxDispIfResizeModes(&pCtx->pEnv->dispIf, Id, fEnabled, fExtDispSup, paDisplayDevices, paDeviceModes, DevNum);
         if (err == NO_ERROR || err != ERROR_RETRY)
         {
             if (err == NO_ERROR)
-                Log(("VBoxTray: VBoxDisplayThread: (WDDM) VBoxDispIfResizeModes succeeded\n"));
+                LogFlowFunc(("VBoxDispIfResizeModes succeeded\n"));
             else
-               WARN(("VBoxTray: VBoxDisplayThread: (WDDM) Failure VBoxDispIfResizeModes (%d)\n", err));
+               LogFlowFunc(("Failure VBoxDispIfResizeModes (%d)\n", err));
             return FALSE;
         }
 
-        Log(("VBoxTray: ResizeDisplayDevice: (WDDM) RETRY requested\n"));
+        LogFlowFunc(("ResizeDisplayDevice: RETRY requested\n"));
         return TRUE;
     }
 #endif
@@ -634,7 +644,7 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
         ZeroMemory (&tempDevMode, sizeof (tempDevMode));
         tempDevMode.dmSize = sizeof(DEVMODE);
         EnumDisplaySettings((LPSTR)paDisplayDevices[i].DeviceName, 0xffffff, &tempDevMode);
-        Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings last error %d\n", GetLastError ()));
+        LogFlowFunc(("ResizeDisplayDevice: EnumDisplaySettings last error %d\n", GetLastError ()));
     }
 
     /* Assign the new rectangles to displays. */
@@ -657,7 +667,7 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
             paDeviceModes[i].dmBitsPerPel = BitsPerPixel;
         }
 
-        Log(("VBoxTray: ResizeDisplayDevice: pfnChangeDisplaySettingsEx Current MonitorId=%d: %dx%dx%d at %d,%d\n",
+        LogFlowFunc(("ResizeDisplayDevice: pfnChangeDisplaySettingsEx Current MonitorId=%d: %dx%dx%d at %d,%d\n",
               i,
               paDeviceModes[i].dmPelsWidth,
               paDeviceModes[i].dmPelsHeight,
@@ -667,10 +677,10 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
 
         LONG status = gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName,
                                         &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
-        Log(("VBoxTray: ResizeDisplayDevice: ChangeDisplaySettingsEx position status %d, err %d\n", status, GetLastError ()));
+        LogFlowFunc(("ResizeDisplayDevice: ChangeDisplaySettingsEx position status %d, err %d\n", status, GetLastError ()));
     }
 
-    Log(("VBoxTray: Enable And Resize Device. Id = %d, Width=%d Height=%d, \
+    LogFlowFunc(("Enable And Resize Device. Id = %d, Width=%d Height=%d, \
          dwNewPosX = %d, dwNewPosY = %d fEnabled=%d & fExtDispSupport = %d \n",
          Id, Width, Height, dwNewPosX, dwNewPosY, fEnabled, fExtDispSup));
     dwStatus = EnableAndResizeDispDev(paDeviceModes, paDisplayDevices, DevNum, Id, Width, Height, BitsPerPixel,
@@ -692,7 +702,7 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
  */
 unsigned __stdcall VBoxDisplayThread(void *pInstance)
 {
-    Log(("VBoxTray: VBoxDisplayThread: Entered\n"));
+    LogFlowFunc(("Entered\n"));
 
     VBOXDISPLAYCONTEXT *pCtx = (VBOXDISPLAYCONTEXT *)pInstance;
     HANDLE gVBoxDriver = pCtx->pEnv->hDriver;
@@ -704,7 +714,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
     maskInfo.u32NotMask = 0;
     if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - or) failed, thread exiting\n"));
+        LogFlowFunc(("DeviceIOControl(CtlMask - or) failed, thread exiting\n"));
         return 0;
     }
 
@@ -721,15 +731,15 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            /*Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl succeeded\n"));*/
+            /*LogFlowFunc(("DeviceIOControl succeeded\n"));*/
 
             if (NULL == pCtx) {
-                Log(("VBoxTray: VBoxDisplayThread: Invalid context detected!\n"));
+                LogFlowFunc(("Invalid context detected!\n"));
                 break;
             }
 
             if (NULL == pCtx->pEnv) {
-                Log(("VBoxTray: VBoxDisplayThread: Invalid context environment detected!\n"));
+                LogFlowFunc(("Invalid context environment detected!\n"));
                 break;
             }
 
@@ -737,12 +747,12 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            /*Log(("VBoxTray: VBoxDisplayThread: checking event\n"));*/
+            /*LogFlowFunc(("checking event\n"));*/
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
             {
-                Log(("VBoxTray: VBoxDisplayThread: going to get display change information\n"));
+                LogFlowFunc(("going to get display change information\n"));
                 BOOL fDisplayChangeQueried;
 
 
@@ -762,7 +772,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
 
                if (!fDisplayChangeQueried)
                {
-                    Log(("VBoxTray: Extended Display Not Supported. Trying VMMDevDisplayChangeRequest2\n"));
+                    LogFlowFunc(("Extended Display Not Supported. Trying VMMDevDisplayChangeRequest2\n"));
                     fExtDispSup = FALSE; /* Extended display Change request is not supported */
 
                     displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequest2);
@@ -779,7 +789,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
 
                 if (!fDisplayChangeQueried)
                 {
-                    Log(("VBoxTray: Extended Display Not Supported. Trying VMMDevDisplayChangeRequest\n"));
+                    LogFlowFunc(("Extended Display Not Supported. Trying VMMDevDisplayChangeRequest\n"));
                     fExtDispSup = FALSE; /*Extended display Change request is not supported */
                     /* Try the old version of the request for old VBox hosts. */
                     displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequest);
@@ -800,7 +810,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                     /* Try to set the requested video mode. Repeat until it is successful or is rejected by the driver. */
                     for (;;)
                     {
-                        Log(("VBoxTray: VBoxDisplayThread: VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
+                        LogFlowFunc(("VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
 
                         /*
                          * Only try to change video mode if the active display driver is VBox additions.
@@ -809,20 +819,20 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                         VBOXDISPLAY_DRIVER_TYPE enmDriverType = getVBoxDisplayDriverType (pCtx);
 
                         if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
-                            Log(("VBoxTray: VBoxDisplayThread: Detected WDDM Driver\n"));
+                            LogFlowFunc(("Detected WDDM Driver\n"));
 
                         if (enmDriverType != VBOXDISPLAY_DRIVER_TYPE_UNKNOWN)
 #else
                         if (isVBoxDisplayDriverActive (pCtx))
 #endif
                         {
-                            Log(("VBoxTray: VBoxDisplayThread: Display driver is active!\n"));
+                            LogFlowFunc(("Display driver is active!\n"));
 
                             if (pCtx->pfnChangeDisplaySettingsEx != 0)
                             {
-                                Log(("VBoxTray: VBoxDisplayThread: Detected W2K or later\n"));
+                                LogFlowFunc(("Detected W2K or later\n"));
                                 /* W2K or later. */
-                                Log(("DisplayChangeReqEx parameters  aDisplay=%d x xRes=%d x yRes=%d x bpp=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
+                                LogFlowFunc(("DisplayChangeReqEx parameters  aDisplay=%d x xRes=%d x yRes=%d x bpp=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
                                      displayChangeRequest.display,
                                      displayChangeRequest.xres,
                                      displayChangeRequest.yres,
@@ -842,14 +852,14 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                                                          fExtDispSup
                                                          ))
                                 {
-                                    Log(("ResizeDipspalyDevice return 0\n"));
+                                    LogFlowFunc(("ResizeDipspalyDevice return 0\n"));
                                     break;
                                 }
 
                             }
                             else
                             {
-                                Log(("VBoxTray: VBoxDisplayThread: Detected NT\n"));
+                                LogFlowFunc(("Detected NT\n"));
 
                                 /* Single monitor NT. */
                                 DEVMODE devMode;
@@ -859,7 +869,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                                 /* get the current screen setup */
                                 if (EnumDisplaySettings(NULL, ENUM_REGISTRY_SETTINGS, &devMode))
                                 {
-                                    Log(("VBoxTray: VBoxDisplayThread: Current mode: %d x %d x %d at %d,%d\n",
+                                    LogFlowFunc(("Current mode: %d x %d x %d at %d,%d\n",
                                           devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y));
 
                                     /* Check whether a mode reset or a change is requested. */
@@ -878,7 +888,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                                     else
                                     {
                                         /* All zero values means a forced mode reset. Do nothing. */
-                                        Log(("VBoxTray: VBoxDisplayThread: Forced mode reset\n"));
+                                        LogFlowFunc(("Forced mode reset\n"));
                                     }
 
                                     /* Verify that the mode is indeed changed. */
@@ -886,7 +896,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                                         && devMode.dmPelsHeight == displayChangeRequest.yres
                                         && devMode.dmBitsPerPel == displayChangeRequest.bpp)
                                     {
-                                        Log(("VBoxTray: VBoxDisplayThread: already at desired resolution\n"));
+                                        LogFlowFunc(("already at desired resolution\n"));
                                         break;
                                     }
 
@@ -904,14 +914,14 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                                     if (displayChangeRequest.bpp)
                                         devMode.dmBitsPerPel = displayChangeRequest.bpp;
 
-                                    Log(("VBoxTray: VBoxDisplayThread: setting new mode %d x %d, %d BPP\n",
+                                    LogFlowFunc(("setting new mode %d x %d, %d BPP\n",
                                          devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
 
                                     /* set the new mode */
                                     LONG status = ChangeDisplaySettings(&devMode, CDS_UPDATEREGISTRY);
                                     if (status != DISP_CHANGE_SUCCESSFUL)
                                     {
-                                        Log(("VBoxTray: VBoxDisplayThread: error from ChangeDisplaySettings: %d\n", status));
+                                        LogFlowFunc(("error from ChangeDisplaySettings: %d\n", status));
 
                                         if (status == DISP_CHANGE_BADMODE)
                                         {
@@ -927,14 +937,14 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                                 }
                                 else
                                 {
-                                    Log(("VBoxTray: VBoxDisplayThread: error from EnumDisplaySettings: %d\n", GetLastError ()));
+                                    LogFlowFunc(("error from EnumDisplaySettings: %d\n", GetLastError ()));
                                     break;
                                 }
                             }
                         }
                         else
                         {
-                            Log(("VBoxTray: VBoxDisplayThread: vboxDisplayDriver is not active\n"));
+                            LogFlowFunc(("vboxDisplayDriver is not active\n"));
                         }
 
                         /* Retry the change a bit later. */
@@ -948,7 +958,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                 }
                 else
                 {
-                    Log(("VBoxTray: VBoxDisplayThread: error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
+                    LogFlowFunc(("error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
                     /* sleep a bit to not eat too much CPU while retrying */
                     /* are we supposed to stop? */
                     if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 50) == WAIT_OBJECT_0)
@@ -964,7 +974,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
         else
         {
 #ifndef DEBUG_andy /* Too noisy for me. */
-            Log(("VBoxTray: VBoxDisplayThread: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
+            LogFlowFunc(("error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
 #endif
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -981,9 +991,9 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
     maskInfo.u32OrMask = 0;
     maskInfo.u32NotMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
     if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
-        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - not) failed\n"));
+        LogFlowFunc(("DeviceIOControl(CtlMask - not) failed\n"));
     PostMessage(ghwndToolWindow, WM_VBOX_GRAPHICS_UNSUPPORTED, 0, 0);
 
-    Log(("VBoxTray: VBoxDisplayThread: finished display change request thread\n"));
+    LogFlowFunc(("finished display change request thread\n"));
     return 0;
 }
