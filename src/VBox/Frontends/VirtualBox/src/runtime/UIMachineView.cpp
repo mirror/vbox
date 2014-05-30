@@ -975,18 +975,21 @@ CGImageRef UIMachineView::vmContentImage()
 
 CGImageRef UIMachineView::frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer)
 {
+    CGImageRef ir = 0;
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-    Assert(cs);
-    /* Create the image copy of the framebuffer */
-    CGDataProviderRef dp = CGDataProviderCreateWithData(pFrameBuffer, pFrameBuffer->address(), pFrameBuffer->bitsPerPixel() / 8 * pFrameBuffer->width() * pFrameBuffer->height(), NULL);
-    Assert(dp);
-    CGImageRef ir = CGImageCreate(pFrameBuffer->width(), pFrameBuffer->height(), 8, 32, pFrameBuffer->bytesPerLine(), cs,
-                                  kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
-                                  kCGRenderingIntentDefault);
-    Assert(ir);
-    CGDataProviderRelease(dp);
-    CGColorSpaceRelease(cs);
-
+    if (cs)
+    {
+        /* Create the image copy of the framebuffer */
+        CGDataProviderRef dp = CGDataProviderCreateWithData(pFrameBuffer, pFrameBuffer->address(), pFrameBuffer->bitsPerPixel() / 8 * pFrameBuffer->width() * pFrameBuffer->height(), NULL);
+        if (dp)
+        {
+            ir = CGImageCreate(pFrameBuffer->width(), pFrameBuffer->height(), 8, 32, pFrameBuffer->bytesPerLine(), cs,
+                               kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
+                               kCGRenderingIntentDefault);
+            CGDataProviderRelease(dp);
+        }
+        CGColorSpaceRelease(cs);
+    }
     return ir;
 }
 #endif /* Q_WS_MAC */
