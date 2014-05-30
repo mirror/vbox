@@ -198,7 +198,7 @@ Machine::HWData::HWData()
         mBootOrder[i] = DeviceType_Null;
 
     mClipboardMode = ClipboardMode_Disabled;
-    mDragAndDropMode = DragAndDropMode_Disabled;
+    mDnDMode = DnDMode_Disabled;
     mGuestPropertyNotificationPatterns = "";
 
     mFirmwareType = FirmwareType_BIOS;
@@ -3035,21 +3035,21 @@ STDMETHODIMP Machine::COMSETTER(ClipboardMode)(ClipboardMode_T aClipboardMode)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(DragAndDropMode)(DragAndDropMode_T *aDragAndDropMode)
+STDMETHODIMP Machine::COMGETTER(DnDMode)(DnDMode_T *aDnDMode)
 {
-    CheckComArgOutPointerValid(aDragAndDropMode);
+    CheckComArgOutPointerValid(aDnDMode);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aDragAndDropMode = mHWData->mDragAndDropMode;
+    *aDnDMode = mHWData->mDnDMode;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(DragAndDropMode)(DragAndDropMode_T aDragAndDropMode)
+STDMETHODIMP Machine::COMSETTER(DnDMode)(DnDMode_T aDnDMode)
 {
     HRESULT rc = S_OK;
 
@@ -3059,13 +3059,13 @@ STDMETHODIMP Machine::COMSETTER(DragAndDropMode)(DragAndDropMode_T aDragAndDropM
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     alock.release();
-    rc = onDragAndDropModeChange(aDragAndDropMode);
+    rc = onDnDModeChange(aDnDMode);
     alock.acquire();
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mDragAndDropMode = aDragAndDropMode;
+    mHWData->mDnDMode = aDnDMode;
 
     /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
@@ -9514,7 +9514,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mClipboardMode = data.clipboardMode;
 
         // drag'n'drop
-        mHWData->mDragAndDropMode = data.dragAndDropMode;
+        mHWData->mDnDMode = data.dndMode;
 
         // guest settings
         mHWData->mMemoryBalloonSize = data.ulMemoryBalloonSize;
@@ -10807,7 +10807,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.clipboardMode = mHWData->mClipboardMode;
 
         // drag'n'drop
-        data.dragAndDropMode = mHWData->mDragAndDropMode;
+        data.dndMode = mHWData->mDnDMode;
 
         /* Guest */
         data.ulMemoryBalloonSize = mHWData->mMemoryBalloonSize;
@@ -14469,7 +14469,7 @@ HRESULT SessionMachine::onClipboardModeChange(ClipboardMode_T aClipboardMode)
 /**
  * @note Locks this object for reading.
  */
-HRESULT SessionMachine::onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode)
+HRESULT SessionMachine::onDnDModeChange(DnDMode_T aDnDMode)
 {
     LogFlowThisFunc(("\n"));
 
@@ -14486,7 +14486,7 @@ HRESULT SessionMachine::onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMo
     if (!directControl)
         return S_OK;
 
-    return directControl->OnDragAndDropModeChange(aDragAndDropMode);
+    return directControl->OnDnDModeChange(aDnDMode);
 }
 
 /**

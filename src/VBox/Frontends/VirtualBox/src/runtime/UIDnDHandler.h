@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIDnDHandler class declaration
+ * UIDnDHandler class declaration.
  */
 
 /*
@@ -25,8 +25,10 @@
 
 /* Forward declarations: */
 class QMimeData;
-class CSession;
+class CDnDSource;
+class CDnDTarget;
 class CGuest;
+class CSession;
 class UIDnDMimeData;
 
 class UIDnDHandler: public QObject
@@ -36,7 +38,7 @@ class UIDnDHandler: public QObject
 public:
 
     /* Singleton factory. */
-    static UIDnDHandler* instance(void)
+    static UIDnDHandler *instance(void)
     {
         if (!m_pInstance)
             m_pInstance = new UIDnDHandler();
@@ -55,43 +57,46 @@ public:
     /**
      * Current operation mode.
      */
-    enum Mode
+    enum Direction
     {
         /** Unknown mode. */
         Unknown = 0,
         /** Host to guest. */
-        HG,
+        HostToGuest,
         /** Guest to host. */
-        GH
+        GuestToHost
+        /** @todo Implement guest to guest. */
     };
 
-    /* Host -> Guest. */
-    Qt::DropAction dragHGEnter(CGuest &guest, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent = NULL);
-    Qt::DropAction dragHGMove (CGuest &guest, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent = NULL);
-    Qt::DropAction dragHGDrop (CGuest &guest, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent = NULL);
-    void           dragHGLeave(CGuest &guest, ulong screenId, QWidget *pParent = NULL);
+    /* Frontend -> Target. */
+    Qt::DropAction             dragEnter(CDnDTarget &dndTarget, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent = NULL);
+    Qt::DropAction             dragMove (CDnDTarget &dndTarget, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent = NULL);
+    Qt::DropAction             dragDrop (CSession &session, CDnDTarget &dndTarget, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent = NULL);
+    void                       dragLeave(CDnDTarget &dndTarget, ulong screenId, QWidget *pParent = NULL);
 
-    /* Guest -> Host. */
-    int            dragGHPending(CSession &session, ulong screenId, QWidget *pParent = NULL);
+    /* Source -> Frontend. */
+    int                        dragIsPending(CSession &session, CDnDSource &dndSource, ulong screenId, QWidget *pParent = NULL);
 
 public:
 
-    static KDragAndDropAction          toVBoxDnDAction(Qt::DropAction action);
-    static QVector<KDragAndDropAction> toVBoxDnDActions(Qt::DropActions actions);
-    static Qt::DropAction              toQtDnDAction(KDragAndDropAction action);
-    static Qt::DropActions             toQtDnDActions(const QVector<KDragAndDropAction> &vecActions);
+    static KDnDAction          toVBoxDnDAction(Qt::DropAction action);
+    static QVector<KDnDAction> toVBoxDnDActions(Qt::DropActions actions);
+    static Qt::DropAction      toQtDnDAction(KDnDAction action);
+    static Qt::DropActions     toQtDnDActions(const QVector<KDnDAction> &vecActions);
 
 private:
-    static UIDnDHandler *m_pInstance;
 
     UIDnDHandler(void);
     virtual ~UIDnDHandler(void) {}
 
-    /** The current operation mode. */
-    Mode mMode;
+private:
+
+    /** Static pointer to singleton instance. */
+    static UIDnDHandler *m_pInstance;
 };
 
-#define gDnD UIDnDHandler::instance()
+/** Gets the singleton instance of the drag'n drop UI helper class. */
+#define DnDHandler() UIDnDHandler::instance()
 
 #endif /* ___UIDnDHandler_h___ */
 

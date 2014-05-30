@@ -2565,7 +2565,7 @@
       </listitem>
 
       <listitem>
-        <para>Added experimental support for Drag'n'drop from the host to
+        <para>Added experimental support for drag'n'drop from the host to
           Linux guests. Support for more guests and for guest-to-host is
           planned. (bug #81)</para>
       </listitem>

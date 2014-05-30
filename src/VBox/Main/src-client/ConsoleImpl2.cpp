@@ -23,7 +23,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-// for some reason Windows burns in sdk\...\winsock.h if this isn't included first
+/* For some reason Windows burns in sdk\...\winsock.h if this isn't included first. */
 #include "VBox/com/ptr.h"
 
 #include "ConsoleImpl.h"
@@ -32,7 +32,7 @@
 # include "GuestImpl.h"
 #endif
 #ifdef VBOX_WITH_DRAG_AND_DROP
-# include "GuestDnDImpl.h"
+# include "GuestDnDPrivate.h"
 #endif
 #include "VMMDev.h"
 #include "Global.h"
@@ -64,8 +64,8 @@
 #include <VBox/vmm/vmapi.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/vmm/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach */
-#include <VBox/vmm/pdmusb.h> /* For PDMR3UsbCreateEmulatedDevice */
+#include <VBox/vmm/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach. */
+#include <VBox/vmm/pdmusb.h> /* For PDMR3UsbCreateEmulatedDevice. */
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #ifdef VBOX_WITH_CROGL
@@ -76,8 +76,8 @@
 # include <VBox/HostServices/GuestPropertySvc.h>
 # include <VBox/com/defs.h>
 # include <VBox/com/array.h>
-# include "HGCM.h" /** @todo it should be possible to register a service
-                          * extension using a VMMDev callback. */
+# include "HGCM.h" /** @todo It should be possible to register a service
+                    *        extension using a VMMDev callback. */
 # include <vector>
 #endif /* VBOX_WITH_GUEST_PROPS */
 #include <VBox/intnet.h>
@@ -2779,7 +2779,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
 
         /*
-         * Clipboard
+         * Shared Clipboard.
          */
         {
             ClipboardMode_T mode = ClipboardMode_Disabled;
@@ -2789,30 +2789,30 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 /* Load the service */
                 rc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
-
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("VBoxSharedClipboard is not available. rc = %Rrc\n", rc));
+                    LogRel(("Shared clipboard is not available, rc=%Rrc\n", rc));
                     /* That is not a fatal failure. */
                     rc = VINF_SUCCESS;
                 }
                 else
                 {
+                    LogRel(("Shared clipboard service loaded.\n"));
+
                     changeClipboardMode(mode);
 
                     /* Setup the service. */
                     VBOXHGCMSVCPARM parm;
                     parm.type = VBOX_HGCM_SVC_PARM_32BIT;
                     parm.setUInt32(!useHostClipboard());
-                    pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
-
-                    Log(("Set VBoxSharedClipboard mode\n"));
+                    pVMMDev->hgcmHostCall("VBoxSharedClipboard",
+                                          VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
                 }
             }
         }
 
         /*
-         * HGCM HostChannel
+         * HGCM HostChannel.
          */
         {
             Bstr value;
@@ -2823,10 +2823,9 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 && value == "1")
             {
                 rc = pVMMDev->hgcmLoadService("VBoxHostChannel", "VBoxHostChannel");
-
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("VBoxHostChannel is not available. rc = %Rrc\n", rc));
+                    LogRel(("VBoxHostChannel is not available, rc=%Rrc\n", rc));
                     /* That is not a fatal failure. */
                     rc = VINF_SUCCESS;
                 }
@@ -2835,18 +2834,17 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
         /*
-         * Drag & Drop
+         * Drag'n Drop.
          */
         {
-            DragAndDropMode_T mode = DragAndDropMode_Disabled;
-            hrc = pMachine->COMGETTER(DragAndDropMode)(&mode);                              H();
+            DnDMode_T enmMode = DnDMode_Disabled;
+            hrc = pMachine->COMGETTER(DnDMode)(&enmMode);                                   H();
 
             /* Load the service */
             rc = pVMMDev->hgcmLoadService("VBoxDragAndDropSvc", "VBoxDragAndDropSvc");
-
             if (RT_FAILURE(rc))
             {
-                LogRel(("VBoxDragAndDropService is not available. rc = %Rrc\n", rc));
+                LogRel(("Drag'n drop service is not available, rc=%Rrc\n", rc));
                 /* That is not a fatal failure. */
                 rc = VINF_SUCCESS;
             }
@@ -2854,14 +2852,14 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 HGCMSVCEXTHANDLE hDummy;
                 rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxDragAndDropSvc",
-                                                      &GuestDnD::notifyGuestDragAndDropEvent,
-                                                      getGuest());
+                                                      &GuestDnD::notifyDnDDispatcher,
+                                                      GuestDnDInst());
                 if (RT_FAILURE(rc))
-                    Log(("Cannot register VBoxDragAndDropSvc extension!\n"));
+                    Log(("Cannot register VBoxDragAndDropSvc extension, rc=%Rrc\n", rc));
                 else
                 {
-                    changeDragAndDropMode(mode);
-                    Log(("VBoxDragAndDropSvc loaded\n"));
+                    LogRel(("Drag'n drop service loaded.\n"));
+                    rc = changeDnDMode(enmMode);
                 }
             }
         }
@@ -2869,11 +2867,11 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
 #ifdef VBOX_WITH_CROGL
         /*
-         * crOpenGL
+         * crOpenGL.
          */
         {
             BOOL fEnabled3D = false;
-            hrc = pMachine->COMGETTER(Accelerate3DEnabled)(&fEnabled3D); H();
+            hrc = pMachine->COMGETTER(Accelerate3DEnabled)(&fEnabled3D);                    H();
 
             if (fEnabled3D)
             {
@@ -2886,11 +2884,11 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                                "fix the host 3D support (update the host graphics driver?) "
                                "or disable 3D acceleration in the VM settings"));
 
-                /* Load the service */
+                /* Load the service. */
                 rc = pVMMDev->hgcmLoadService("VBoxSharedCrOpenGL", "VBoxSharedCrOpenGL");
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("Failed to load Shared OpenGL service %Rrc\n", rc));
+                    LogRel(("Failed to load Shared OpenGL service, rc=%Rrc\n", rc));
                     /* That is not a fatal failure. */
                     rc = VINF_SUCCESS;
                 }
@@ -2912,28 +2910,26 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     parm.u.pointer.addr = pVM;
                     parm.u.pointer.size = sizeof(pVM);
-                    rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VM, SHCRGL_CPARMS_SET_VM, &parm);
+                    rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL",
+                                               SHCRGL_HOST_FN_SET_VM, SHCRGL_CPARMS_SET_VM, &parm);
                     if (!RT_SUCCESS(rc))
                         AssertMsgFailed(("SHCRGL_HOST_FN_SET_VM failed with %Rrc\n", rc));
                 }
-
             }
         }
 #endif
 
 #ifdef VBOX_WITH_GUEST_PROPS
         /*
-         * Guest property service
+         * Guest property service.
          */
-
         rc = configGuestProperties(this, pUVM);
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
         /*
-         * Guest control service
+         * Guest control service.
          */
-
         rc = configGuestControl(this);
 #endif /* VBOX_WITH_GUEST_CONTROL defined */
 
@@ -5619,7 +5615,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
         if (RT_FAILURE(rc))
             Log(("Cannot register VBoxGuestControlSvc extension!\n"));
         else
-            Log(("VBoxGuestControlSvc loaded\n"));
+            LogRel(("Guest Control service loaded.\n"));
     }
 
     return rc;

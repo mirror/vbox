@@ -1929,7 +1929,7 @@ Hardware::Hardware()
           paravirtProvider(ParavirtProvider_Legacy),
           fEmulatedUSBCardReader(false),
           clipboardMode(ClipboardMode_Disabled),
-          dragAndDropMode(DragAndDropMode_Disabled),
+          dndMode(DnDMode_Disabled),
           ulMemoryBalloonSize(0),
           fPageFusionEnabled(false)
 {
@@ -2012,7 +2012,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (audioAdapter              == h.audioAdapter)
                   && (llSharedFolders           == h.llSharedFolders)
                   && (clipboardMode             == h.clipboardMode)
-                  && (dragAndDropMode           == h.dragAndDropMode)
+                  && (dndMode           == h.dndMode)
                   && (ulMemoryBalloonSize       == h.ulMemoryBalloonSize)
                   && (fPageFusionEnabled        == h.fPageFusionEnabled)
                   && (llGuestProperties         == h.llGuestProperties)
@@ -3207,13 +3207,13 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if (pelmHwChild->getAttributeValue("mode", strTemp))
             {
                 if (strTemp == "Disabled")
-                    hw.dragAndDropMode = DragAndDropMode_Disabled;
+                    hw.dndMode = DnDMode_Disabled;
                 else if (strTemp == "HostToGuest")
-                    hw.dragAndDropMode = DragAndDropMode_HostToGuest;
+                    hw.dndMode = DnDMode_HostToGuest;
                 else if (strTemp == "GuestToHost")
-                    hw.dragAndDropMode = DragAndDropMode_GuestToHost;
+                    hw.dndMode = DnDMode_GuestToHost;
                 else if (strTemp == "Bidirectional")
-                    hw.dragAndDropMode = DragAndDropMode_Bidirectional;
+                    hw.dndMode = DnDMode_Bidirectional;
                 else
                     throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in DragAndDrop/@mode attribute"), strTemp.c_str());
             }
@@ -4681,12 +4681,12 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     xml::ElementNode *pelmDragAndDrop = pelmHardware->createChild("DragAndDrop");
     const char *pcszDragAndDrop;
-    switch (hw.dragAndDropMode)
+    switch (hw.dndMode)
     {
-        default: /*case DragAndDropMode_Disabled:*/ pcszDragAndDrop = "Disabled"; break;
-        case DragAndDropMode_HostToGuest: pcszDragAndDrop = "HostToGuest"; break;
-        case DragAndDropMode_GuestToHost: pcszDragAndDrop = "GuestToHost"; break;
-        case DragAndDropMode_Bidirectional: pcszDragAndDrop = "Bidirectional"; break;
+        default: /*case DnDMode_Disabled:*/ pcszDragAndDrop = "Disabled"; break;
+        case DnDMode_HostToGuest: pcszDragAndDrop = "HostToGuest"; break;
+        case DnDMode_GuestToHost: pcszDragAndDrop = "GuestToHost"; break;
+        case DnDMode_Bidirectional: pcszDragAndDrop = "Bidirectional"; break;
     }
     pelmDragAndDrop->setAttribute("mode", pcszDragAndDrop);
 

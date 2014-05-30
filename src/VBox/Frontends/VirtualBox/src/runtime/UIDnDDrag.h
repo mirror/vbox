@@ -27,6 +27,7 @@
 #include "COMEnums.h"
 #include "CSession.h"
 #include "CConsole.h"
+#include "CDnDSource.h"
 #include "CGuest.h"
 
 #include "UIDnDHandler.h"
@@ -44,7 +45,7 @@ class UIDnDDrag : public QObject
 
 public:
 
-    UIDnDDrag(CSession &session, 
+    UIDnDDrag(CSession &session, CDnDSource &dndSource,
               const QStringList &lstFormats, Qt::DropAction defAction, Qt::DropActions actions,
               QWidget *pParent = NULL);
 public:
@@ -53,11 +54,12 @@ public:
 
 public:
 
-    static int RetrieveData(const CSession &session, Qt::DropAction dropAction, const QString &strMimeType, QVariant::Type vaType, QVariant &vaData, QWidget *pParent);
+    static int RetrieveData(const CSession &session, CDnDSource &dndSource, Qt::DropAction dropAction, const QString &strMimeType, QVariant::Type vaType, QVariant &vaData, QWidget *pParent);
 
 private:
 
     CSession          m_session;
+    CDnDSource        m_dndSource;
     QStringList       m_lstFormats;
     Qt::DropAction    m_defAction;
     Qt::DropActions   m_actions;

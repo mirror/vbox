@@ -33,9 +33,9 @@
 #include "VBoxDnD.h"
 
 #ifdef DEBUG
- /* Enable the following line to get much more debug output about
-  * (un)known clipboard formats. */
- //#define VBOX_DND_DEBUG_FORMATS
+  /* Enable the following line to get much more debug output about
+   * (un)known clipboard formats. */
+//# define VBOX_DND_DEBUG_FORMATS
 #endif
 
 /** @todo Implement IDataObjectAsyncCapability interface? */
@@ -205,13 +205,13 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
     if (lIndex >= mcFormats) /* Paranoia. */
         return DV_E_FORMATETC;
 
-    LogFlowFunc(("pFormatEtc=%p, pMedium=%p\n", pFormatEtc, pMedium));
-
     FORMATETC *pThisFormat = &mpFormatEtc[lIndex];
     AssertPtr(pThisFormat);
 
     STGMEDIUM *pThisMedium = &mpStgMedium[lIndex];
     AssertPtr(pThisMedium);
+
+    LogFlowFunc(("Using pThisFormat=%p, pThisMedium=%p\n", pThisFormat, pThisMedium));
 
     HRESULT hr = DV_E_FORMATETC;
 
@@ -287,8 +287,6 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
                 pMedium->hGlobal = GlobalAlloc(GHND, mcbData + 1);
                 if (pMedium->hGlobal)
                 {
-                    /** @todo Not working yet -- needs URI to plain ASCII conversion. */
-
                     char *pcDst  = (char *)GlobalLock(pMedium->hGlobal);
                     memcpy(pcDst, mpvData, mcbData);
                     pcDst[mcbData] = '\0';
@@ -485,7 +483,7 @@ int VBoxDnDDataObject::Abort(void)
 /* static */
 const char* VBoxDnDDataObject::ClipboardFormatToString(CLIPFORMAT fmt)
 {
-#ifdef VBOX_DND_DEBUG_FORMATS
+#if 0
     char szFormat[128];
     if (GetClipboardFormatName(fmt, szFormat, sizeof(szFormat)))
         LogFlowFunc(("wFormat=%RI16, szName=%s\n", fmt, szFormat));

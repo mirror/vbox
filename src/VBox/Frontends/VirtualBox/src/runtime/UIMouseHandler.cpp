@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -935,11 +935,11 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                 || cpnt.y() < 0
                 || cpnt.y() > iCh - 1)
             {
-                bool fHandledGHDnD
+                bool fHandleDnDPending
                     = RT_BOOL(mouseButtons.testFlag(Qt::LeftButton));
-                if (fHandledGHDnD)
+                if (fHandleDnDPending)
                 {
-                    m_views[uScreenId]->handleGHDnd();
+                    m_views[uScreenId]->dragIsPending();
                     return true;
                 }
             }

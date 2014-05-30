@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -728,7 +728,7 @@ void UIMachineLogic::retranslateUi()
     if (m_pDragAndDropActions)
     {
         foreach (QAction *pAction, m_pDragAndDropActions->actions())
-            pAction->setText(gpConverter->toString(pAction->data().value<KDragAndDropMode>()));
+            pAction->setText(gpConverter->toString(pAction->data().value<KDnDMode>()));
     }
 }
 
@@ -1863,14 +1863,14 @@ void UIMachineLogic::sltPrepareDragAndDropMenu()
     if (!m_pDragAndDropActions)
     {
         m_pDragAndDropActions = new QActionGroup(this);
-        for (int i = KDragAndDropMode_Disabled; i < KDragAndDropMode_Max; ++i)
+        for (int i = KDnDMode_Disabled; i < KDnDMode_Max; ++i)
         {
-            KDragAndDropMode mode = (KDragAndDropMode)i;
+            KDnDMode mode = (KDnDMode)i;
             QAction *pAction = new QAction(gpConverter->toString(mode), m_pDragAndDropActions);
             pMenu->addAction(pAction);
             pAction->setData(QVariant::fromValue(mode));
             pAction->setCheckable(true);
-            pAction->setChecked(session().GetMachine().GetDragAndDropMode() == mode);
+            pAction->setChecked(session().GetMachine().GetDnDMode() == mode);
         }
         connect(m_pDragAndDropActions, SIGNAL(triggered(QAction*)),
                 this, SLOT(sltChangeDragAndDropType(QAction*)));
@@ -1878,7 +1878,7 @@ void UIMachineLogic::sltPrepareDragAndDropMenu()
     /* Subsequent runs: */
     else
         foreach (QAction *pAction, m_pDragAndDropActions->actions())
-            if (pAction->data().value<KDragAndDropMode>() == session().GetMachine().GetDragAndDropMode())
+            if (pAction->data().value<KDnDMode>() == session().GetMachine().GetDnDMode())
                 pAction->setChecked(true);
 }
 
@@ -1960,8 +1960,8 @@ void UIMachineLogic::sltToggleNetworkAdapterConnection()
 void UIMachineLogic::sltChangeDragAndDropType(QAction *pAction)
 {
     /* Assign new mode (without save): */
-    KDragAndDropMode mode = pAction->data().value<KDragAndDropMode>();
-    session().GetMachine().SetDragAndDropMode(mode);
+    KDnDMode mode = pAction->data().value<KDnDMode>();
+    session().GetMachine().SetDnDMode(mode);
 }
 
 void UIMachineLogic::sltToggleVRDE(bool fEnabled)

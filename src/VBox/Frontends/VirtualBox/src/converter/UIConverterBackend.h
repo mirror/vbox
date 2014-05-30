@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -87,7 +87,7 @@ template<> bool canConvert<KMachineState>();
 template<> bool canConvert<KSessionState>();
 template<> bool canConvert<KDeviceType>();
 template<> bool canConvert<KClipboardMode>();
-template<> bool canConvert<KDragAndDropMode>();
+template<> bool canConvert<KDnDMode>();
 template<> bool canConvert<KPointingHIDType>();
 template<> bool canConvert<KMediumType>();
 template<> bool canConvert<KMediumVariant>();
@@ -160,7 +160,7 @@ template<> QString toString(const KMachineState &state);
 template<> QString toString(const KSessionState &state);
 template<> QString toString(const KDeviceType &type);
 template<> QString toString(const KClipboardMode &mode);
-template<> QString toString(const KDragAndDropMode &mode);
+template<> QString toString(const KDnDMode &mode);
 template<> QString toString(const KPointingHIDType &type);
 template<> QString toString(const KMediumType &type);
 template<> QString toString(const KMediumVariant &variant);

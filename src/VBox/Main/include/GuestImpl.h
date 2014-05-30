@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,12 +25,12 @@
 
 #include "AdditionsFacilityImpl.h"
 #include "GuestCtrlImplPrivate.h"
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "GuestDnDSourceImpl.h"
+# include "GuestDnDTargetImpl.h"
+#endif
 #include "GuestSessionImpl.h"
 #include "HGCM.h"
-
-#ifdef VBOX_WITH_DRAG_AND_DROP
-class GuestDnD;
-#endif
 
 typedef enum
 {
@@ -47,9 +47,6 @@ typedef enum
 } GUESTSTATTYPE;
 
 class Console;
-#ifdef VBOX_WITH_GUEST_CONTROL
-class Progress;
-#endif
 
 class ATL_NO_VTABLE Guest :
     public VirtualBoxBase,
@@ -76,13 +73,15 @@ public:
     void uninit();
 
     // IGuest properties.
-    STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
-    STDMETHOD(COMGETTER(AdditionsRunLevel)) (AdditionsRunLevelType_T *aRunLevel);
+    STDMETHOD(COMGETTER(OSTypeId))(BSTR *aOSTypeId);
+    STDMETHOD(COMGETTER(AdditionsRunLevel))(AdditionsRunLevelType_T *aRunLevel);
     STDMETHOD(COMGETTER(AdditionsVersion))(BSTR *a_pbstrAdditionsVersion);
     STDMETHOD(COMGETTER(AdditionsRevision))(ULONG *a_puAdditionsRevision);
+    STDMETHOD(COMGETTER(DnDSource))(IGuestDnDSource ** aSource);
+    STDMETHOD(COMGETTER(DnDTarget))(IGuestDnDTarget ** aTarget);
     STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
-    STDMETHOD(COMGETTER(Facilities)) (ComSafeArrayOut(IAdditionsFacility *, aFacilities));
-    STDMETHOD(COMGETTER(Sessions)) (ComSafeArrayOut(IGuestSession *, aSessions));
+    STDMETHOD(COMGETTER(Facilities))(ComSafeArrayOut(IAdditionsFacility *, aFacilities));
+    STDMETHOD(COMGETTER(Sessions))(ComSafeArrayOut(IGuestSession *, aSessions));
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
@@ -92,15 +91,6 @@ public:
     STDMETHOD(GetAdditionsStatus)(AdditionsRunLevelType_T aLevel, BOOL *aActive);
     STDMETHOD(SetCredentials)(IN_BSTR aUsername, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
-    // Drag'n drop support.
-    STDMETHOD(DragHGEnter)(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAction_T defaultAction, ComSafeArrayIn(DragAndDropAction_T, allowedActions), ComSafeArrayIn(IN_BSTR, formats), DragAndDropAction_T *pResultAction);
-    STDMETHOD(DragHGMove)(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAction_T defaultAction, ComSafeArrayIn(DragAndDropAction_T, allowedActions), ComSafeArrayIn(IN_BSTR, formats), DragAndDropAction_T *pResultAction);
-    STDMETHOD(DragHGLeave)(ULONG uScreenId);
-    STDMETHOD(DragHGDrop)(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAction_T defaultAction, ComSafeArrayIn(DragAndDropAction_T, allowedActions), ComSafeArrayIn(IN_BSTR, formats), BSTR *pstrFormat, DragAndDropAction_T *pResultAction);
-    STDMETHOD(DragHGPutData)(ULONG uScreenId, IN_BSTR strFormat, ComSafeArrayIn(BYTE, data), IProgress **ppProgress);
-    STDMETHOD(DragGHPending)(ULONG uScreenId, ComSafeArrayOut(BSTR, formats), ComSafeArrayOut(DragAndDropAction_T, allowedActions), DragAndDropAction_T *pDefaultAction);
-    STDMETHOD(DragGHDropped)(IN_BSTR strFormat, DragAndDropAction_T action, IProgress **ppProgress);
-    STDMETHOD(DragGHGetData)(ComSafeArrayOut(BYTE, data));
     // Guest control.
     STDMETHOD(CreateSession)(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomain, IN_BSTR aSessionName, IGuestSession **aGuestSession);
     STDMETHOD(FindSession)(IN_BSTR aSessionName, ComSafeArrayOut(IGuestSession *, aSessions));
@@ -128,6 +118,7 @@ public:
     void setAdditionsInfo2(uint32_t a_uFullVersion, const char *a_pszName, uint32_t a_uRevision, uint32_t a_fFeatures);
     bool facilityIsActive(VBoxGuestFacilityType enmFacility);
     void facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilityStatus a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
+    ComObjPtr<Console> getConsole(void) { return mParent; }
     void setAdditionsStatus(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilityStatus a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
     void onUserStateChange(Bstr aUser, Bstr aDomain, VBoxGuestUserState enmState, const uint8_t *puDetails, uint32_t cbDetails);
     void setSupportedFeatures(uint32_t aCaps);
@@ -141,7 +132,6 @@ public:
 #ifdef VBOX_WITH_GUEST_CONTROL
     int         dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     uint32_t    getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }
-    Console    *getConsole(void) { return mParent; }
     int         sessionRemove(GuestSession *pSession);
     int         sessionCreate(const GuestSessionStartupInfo &ssInfo, const GuestCredentials &guestCreds, ComObjPtr<GuestSession> &pGuestSession);
     inline bool sessionExists(uint32_t uSessionID);
@@ -169,16 +159,16 @@ private:
             , mAdditionsVersionFull(0), mAdditionsRevision(0), mAdditionsFeatures(0)
         { }
 
-        Bstr                    mOSTypeId;
-        FacilityMap             mFacilityMap;
-        AdditionsRunLevelType_T mAdditionsRunLevel;
-        uint32_t                mAdditionsVersionFull;
-        Bstr                    mAdditionsVersionNew;
-        uint32_t                mAdditionsRevision;
-        uint32_t                mAdditionsFeatures;
-        Bstr                    mInterfaceVersion;
-        GuestSessions           mGuestSessions;
-        uint32_t                mNextSessionID;
+        Bstr                        mOSTypeId;
+        FacilityMap                 mFacilityMap;
+        AdditionsRunLevelType_T     mAdditionsRunLevel;
+        uint32_t                    mAdditionsVersionFull;
+        Bstr                        mAdditionsVersionNew;
+        uint32_t                    mAdditionsRevision;
+        uint32_t                    mAdditionsFeatures;
+        Bstr                        mInterfaceVersion;
+        GuestSessions               mGuestSessions;
+        uint32_t                    mNextSessionID;
     } mData;
 
     ULONG                           mMemoryBalloonSize;
@@ -191,7 +181,7 @@ private:
     BOOL                            mCollectVMMStats;
     BOOL                            mfPageFusionEnabled;
 
-    Console                        *mParent;
+    const ComObjPtr<Console>        mParent;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
     /**
@@ -205,15 +195,16 @@ private:
 #endif
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
-    GuestDnD         *m_pGuestDnD;
-    friend class GuestDnD;
-    friend class GuestDnDPrivate;
+    /** The guest's DnD source. */
+    const ComObjPtr<GuestDnDSource> mDnDSource;
+    /** The guest's DnD target. */
+    const ComObjPtr<GuestDnDTarget> mDnDTarget;
 #endif
 
-    RTTIMERLR         mStatTimer;
-    uint32_t          mMagic;
+    RTTIMERLR                       mStatTimer;
+    uint32_t                        mMagic; /** @todo r=andy Rename this to something more meaningful. */
 };
-#define GUEST_MAGIC 0xCEED2006u
+#define GUEST_MAGIC 0xCEED2006u /** @todo r=andy Not very well defined!? */
 
 #endif // ____H_GUESTIMPL
 

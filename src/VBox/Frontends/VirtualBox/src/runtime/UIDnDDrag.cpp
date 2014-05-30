@@ -43,11 +43,13 @@
 # include "UIDnDDataObject_win.h"
 #endif
 
-UIDnDDrag::UIDnDDrag(CSession &session, 
+UIDnDDrag::UIDnDDrag(CSession &session,
+                     CDnDSource &dndSource,
                      const QStringList &lstFormats,
                      Qt::DropAction defAction, Qt::DropActions actions,
                      QWidget *pParent /* = NULL */)
     : m_session(session)
+    , m_dndSource(dndSource)
     , m_lstFormats(lstFormats)
     , m_defAction(defAction)
     , m_actions(actions)
@@ -71,7 +73,7 @@ int UIDnDDrag::DoDragDrop(void)
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     UIDnDDropSource *pDropSource = new UIDnDDropSource(m_pParent);
-    UIDnDDataObject *pDataObject = new UIDnDDataObject(m_session, m_lstFormats, m_pParent);
+    UIDnDDataObject *pDataObject = new UIDnDDataObject(m_session, m_dndSource, m_lstFormats, m_pParent);
 
     DWORD dwOKEffects = DROPEFFECT_NONE;
     if (m_actions)
@@ -85,10 +87,11 @@ int UIDnDDrag::DoDragDrop(void)
     }
 
     DWORD dwEffect;
+    LogFlowFunc(("dwOKEffects=0x%x\n", dwOKEffects));
     HRESULT hr = ::DoDragDrop(pDataObject, pDropSource,
                               dwOKEffects, &dwEffect);
-    LogFlowThisFunc(("DoDragDrop ended with hr=%Rhrc, dwEffect=%RI32\n",
-                     hr, dwEffect));
+    LogFlowFunc(("DoDragDrop ended with hr=%Rhrc, dwEffect=%RI32\n",
+                 hr, dwEffect));
 
     if (pDropSource)
         pDropSource->Release();
@@ -98,7 +101,7 @@ int UIDnDDrag::DoDragDrop(void)
     QDrag *pDrag = new QDrag(m_pParent);
 
     /* pMData is transfered to the QDrag object, so no need for deletion. */
-    pMData = new UIDnDMimeData(m_session, 
+    pMData = new UIDnDMimeData(m_session, m_dndSource,
                                m_lstFormats, m_defAction, m_actions,
                                m_pParent);
 
@@ -128,6 +131,7 @@ int UIDnDDrag::DoDragDrop(void)
 
 /* static */
 int UIDnDDrag::RetrieveData(const CSession &session,
+                            CDnDSource &dndSource,
                             Qt::DropAction dropAction,
                             const QString &strMimeType,
                             QVariant::Type vaType, QVariant &vaData,
@@ -139,10 +143,10 @@ int UIDnDDrag::RetrieveData(const CSession &session,
     int rc = VINF_SUCCESS;
     CGuest guest = session.GetConsole().GetGuest();
 
-    /* Start getting the data from the guest. First inform the guest we
+    /* Start getting the data from the source. First inform the source we
      * want the data in the specified MIME type. */
-    CProgress progress = guest.DragGHDropped(strMimeType,
-                                             UIDnDHandler::toVBoxDnDAction(dropAction));
+    CProgress progress = dndSource.Drop(strMimeType,
+                                        UIDnDHandler::toVBoxDnDAction(dropAction));
     if (guest.isOk())
     {
         msgCenter().showModalProgressDialog(progress,
@@ -156,8 +160,9 @@ int UIDnDDrag::RetrieveData(const CSession &session,
 
             if (RT_SUCCESS(rc))
             {
-                /* After the data successfully arrived from the guest, we query it from Main. */
-                QVector<uint8_t> vecData = guest.DragGHGetData();
+                /* After we successfully retrieved data from
+                * the source, we query it from Main. */
+                QVector<uint8_t> vecData = dndSource.ReceiveData();
                 if (!vecData.isEmpty())
                 {
                     switch (vaType)

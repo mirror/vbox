@@ -746,7 +746,9 @@ ifdef VBOX_WITH_GUEST_CONTROL
 endif
 ifdef VBOX_WITH_DRAG_AND_DROP
  VBoxC_SOURCES += \
-	src-client/GuestDnDImpl.cpp
+	src-client/GuestDnDPrivate.cpp \
+	src-client/GuestDnDSourceImpl.cpp \
+	src-client/GuestDnDTargetImpl.cpp
 endif
 ifdef VBOX_WITH_XPCOM
  VBoxC_SOURCES += \

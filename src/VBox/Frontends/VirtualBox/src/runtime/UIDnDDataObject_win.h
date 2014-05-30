@@ -28,6 +28,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CDndSource.h"
 #include "CSession.h"
 
 /* Forward declarations: */
@@ -48,7 +49,7 @@ public:
 
 public:
 
-    UIDnDDataObject(CSession &session, const QStringList &lstFormats, QWidget *pParent);
+    UIDnDDataObject(CSession &session, CDnDSource &dndSource, const QStringList &lstFormats, QWidget *pParent);
     virtual ~UIDnDDataObject(void);
 
 public: /* IUnknown methods. */
@@ -86,6 +87,7 @@ protected:
 
     QWidget    *mpParent;
     CSession    mSession;
+    CDnDSource  mDnDSource;
     Status      mStatus;
     LONG        mRefCount;
     /** Number of native formats registered. This

@@ -25,9 +25,10 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CSession.h"
 #include "CConsole.h"
+#include "CDnDSource.h"
 #include "CGuest.h"
+#include "CSession.h"
 
 #include "UIDnDHandler.h"
 
@@ -60,7 +61,7 @@ class UIDnDMimeData: public QMimeData
 
 public:
 
-    UIDnDMimeData(CSession &session, QStringList formats, Qt::DropAction defAction, Qt::DropActions actions, QWidget *pParent);
+    UIDnDMimeData(CSession &session, CDnDSource &dndSource, QStringList formats, Qt::DropAction defAction, Qt::DropActions actions, QWidget *pParent);
 
 public:
 
@@ -77,7 +78,7 @@ protected:
 
     virtual bool hasFormat(const QString &mimeType) const;
 
-    virtual QVariant retrieveData(const QString &mimeType, QVariant::Type type) const;
+    virtual QVariant retrieveData(const QString &mimeType, QVariant::Type type);
 
 #ifndef RT_OS_WINDOWS
     bool eventFilter(QObject *pObject, QEvent *pEvent);
@@ -97,6 +98,7 @@ private slots:
 private:
 
     CSession          m_Session;
+    CDnDSource        m_DnDSource;
     QStringList       m_lstFormats;
     Qt::DropAction    m_defAction;
     Qt::DropActions   m_actions;
