@@ -139,6 +139,84 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
 
  endif # signing
 
+
+ #
+ # VBoxNetLwf.sys - The light-weight filter driver for NDIS6.
+ #
+ SYSMODS += VBoxNetLwf
+ VBoxNetLwf_TEMPLATE = VBOXR0DRV
+ VBoxNetLwf_INST = $(INST_VBOXNETFLT)
+ if defined(VBOX_SIGNING_MODE)
+  VBoxNetLwf_INSTTYPE = none
+  VBoxNetLwf_DEBUG_INSTTYPE = both
+ endif
+ VBoxNetLwf_DEFS = IN_RT_R0 IN_SUP_STATIC 
+ VBoxNetLwf_INCS = .
+ VBoxNetLwf_SOURCES = VBoxNetFlt.c
+ VBoxNetLwf_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK)INCS
+ VBoxNetLwf_SOURCES.win = \
+ 	win/ndis6/VBoxNetLwf-win.cpp
+# 	win/drv/VBoxNetLwfRt-win.cpp \
+# 	win/drv/VBoxNetLwf-win.rc
+ # with WINDDKWLH the WIN9X_COMPAT_SPINLOCK is needed to avoid inline declaration of KeInitializeSpinLock
+ # otherwise the linker would complain about dumplicate _KeInitializeSpinLock@4 definition
+ # in ntoskrnl.lib and our object files
+ VBoxNetLwf_DEFS.win += WIN9X_COMPAT_SPINLOCK=1 NDISLWF=1 DBG=1
+# VBoxNetLwf_DEFS.win += VBOXNETFLT_STATIC_CONFIG
+# VBoxNetLwf_DEFS.win += VBOXNETFLT_NO_PACKET_QUEUE
+# VBoxNetLwf_DEFS.win += NDIS_MINIPORT_DRIVER NDIS_WDM=1 BINARY_COMPATIBLE=0
+ VBoxNetLwf_DEFS.win += NDIS60=1
+# ifdef VBOX_LOOPBACK_USEFLAGS
+#  VBoxNetLwf_DEFS.win += VBOX_LOOPBACK_USEFLAGS
+# endif
+# VBoxNetLwf_SOURCES = VBoxNetLwf.c
+ VBoxNetLwf_LDFLAGS.win.x86 = -Entry:DriverEntry@8
+ VBoxNetLwf_LDFLAGS.win.amd64 = -Entry:DriverEntry
+ VBoxNetLwf_LIBS.win = \
+ 	$(PATH_SDK_$(VBOX_WINDDK_WLH)_LIB)/ntoskrnl.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_WLH)_LIB)/hal.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_WLH)_LIB)/ndis.lib \
+ 	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+ VBoxNetLwf_LIBS = \
+ 	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+ #
+ # VBoxNetLwf installation.
+ #
+ INSTALLS.win += VBoxNetLwf-inf
+ VBoxNetLwf-inf_INST = $(INST_BIN)
+ VBoxNetLwf-inf_SOURCES = \
+ 	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.inf
+ VBoxNetLwf-inf_CLEAN = $(VBoxNetLwf-inf_SOURCES)
+ VBoxNetLwf-inf_BLDDIRS = $(PATH_TARGET)/VBoxNetLwfCat.dir
+
+$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.inf: $(PATH_SUB_CURRENT)/win/ndis6/VBoxNetLwf.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,VBoxNetLwf-inf,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+ ifdef VBOX_SIGNING_MODE
+VBoxNetLwf-inf_SOURCES += \
+	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.sys \
+	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat
+
+#	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwfNobj.dll \
+
+$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.sys: $$(VBoxNetLwf_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+
+#$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwfNobj.dll: $$(VBoxNetLwfNobj_1_TARGET) | $$(dir $$@)
+#	$(INSTALL) -m 644 $< $(@D)
+
+$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
+		$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.sys \
+		$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.inf
+	$(call MSG_TOOL,Inf2Cat,VBoxNetLwf-inf,$@,$<)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+
+ endif # signing
+
+
+
+
  #
  # WinNetConfig - static library with host network interface config API
  #
@@ -202,6 +280,35 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  NetAdpUninstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
  NetAdpUninstall_SOURCES  = win/tools/VBoxNetAdpUninstall.cpp
  NetAdpUninstall_LIBS     = \
+ 	$(WinNetConfig_1_TARGET) \
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
+
+ #
+ # NetLwfInstall
+ #
+ PROGRAMS.win  += NetLwfInstall
+ NetLwfInstall_TEMPLATE = VBOXR3STATIC
+ NetLwfInstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
+ NetLwfInstall_SOURCES  = win/tools/VBoxNetLwfInstall.cpp
+ NetLwfInstall_LIBS     = \
+ 	$(WinNetConfig_1_TARGET) \
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
+
+
+ #
+ # NetLwfUninstall
+ #
+ PROGRAMS.win  += NetLwfUninstall
+ NetLwfUninstall_TEMPLATE = VBOXR3STATIC
+ NetLwfUninstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
+ NetLwfUninstall_SOURCES  = win/tools/VBoxNetLwfUninstall.cpp
+ NetLwfUninstall_LIBS     = \
  	$(WinNetConfig_1_TARGET) \
 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
  	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
