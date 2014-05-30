@@ -1169,10 +1169,10 @@ void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
     CGuest guest = session().GetConsole().GetGuest();
-    CGuestDnDTarget dndTarget = guest.GetDnDTarget();
+    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest.GetDnDTarget());
 
     /* Ask the target for starting a DnD event. */
-    Qt::DropAction result = DnDHandler()->dragEnter(static_cast<CDnDTarget>(dndTarget),
+    Qt::DropAction result = DnDHandler()->dragEnter(dndTarget,
                                                     screenId(),
                                                     frameBuffer()->convertHostXTo(cpnt.x()),
                                                     frameBuffer()->convertHostYTo(cpnt.y()),
@@ -1193,10 +1193,10 @@ void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
     CGuest guest = session().GetConsole().GetGuest();
-    CGuestDnDTarget dndTarget = guest.GetDnDTarget();
+    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest.GetDnDTarget());
 
     /* Ask the guest for moving the drop cursor. */
-    Qt::DropAction result = DnDHandler()->dragMove(static_cast<CDnDTarget>(dndTarget),
+    Qt::DropAction result = DnDHandler()->dragMove(dndTarget,
                                                    screenId(),
                                                    frameBuffer()->convertHostXTo(cpnt.x()),
                                                    frameBuffer()->convertHostYTo(cpnt.y()),
@@ -1214,10 +1214,10 @@ void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
     AssertPtrReturnVoid(pEvent);
 
     CGuest guest = session().GetConsole().GetGuest();
-    CGuestDnDTarget dndTarget = guest.GetDnDTarget();
+    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest.GetDnDTarget());
 
     /* Ask the guest for stopping this DnD event. */
-    DnDHandler()->dragLeave(static_cast<CDnDTarget>(dndTarget),
+    DnDHandler()->dragLeave(dndTarget,
                             screenId(), this /* pParent */);
     pEvent->accept();
 }
@@ -1228,7 +1228,7 @@ void UIMachineView::dragIsPending(void)
     /** @todo Add guest->guest DnD functionality here by getting
      *        the source of guest B (when copying from B to A). */
     CGuest guest = session().GetConsole().GetGuest();
-    CDnDSource &dndSource = static_cast<CDnDSource>(guest.GetDnDSource());
+    CDnDSource dndSource = static_cast<CDnDSource>(guest.GetDnDSource());
 
     /* Check for a pending DnD event within the guest and if so, handle all the
      * magic. */
@@ -1243,11 +1243,11 @@ void UIMachineView::dropEvent(QDropEvent *pEvent)
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
     CGuest guest = session().GetConsole().GetGuest();
-    CGuestDnDTarget dndTarget = guest.GetDnDTarget();
+    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest.GetDnDTarget());
 
     /* Ask the guest for dropping data. */
     Qt::DropAction result = DnDHandler()->dragDrop(session(),
-                                                   static_cast<CDnDTarget>(dndTarget),
+                                                   dndTarget,
                                                    screenId(),
                                                    frameBuffer()->convertHostXTo(cpnt.x()),
                                                    frameBuffer()->convertHostYTo(cpnt.y()),
