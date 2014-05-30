@@ -191,7 +191,7 @@ class UIActionSimpleKeyboardSettings : public UIActionSimple
 public:
 
     UIActionSimpleKeyboardSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/hostkey_16px.png")
+        : UIActionSimple(pParent, ":/keyboard_settings_16px.png", ":/keyboard_settings_disabled_16px.png")
     {
         retranslateUi();
     }
