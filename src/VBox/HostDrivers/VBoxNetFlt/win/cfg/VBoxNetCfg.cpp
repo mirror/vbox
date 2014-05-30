@@ -2046,6 +2046,61 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc,
     return hr;
 }
 
+/*
+ * Use the same id as does the old implementation for NDIS 5
+ * #define VBOXNETCFGWIN_NETLWF_ID    L"oracle_VBoxNetLwf"
+ */
+#define VBOXNETCFGWIN_NETLWF_ID    L"sun_VBoxNetFlt"
+
+static HRESULT vboxNetCfgWinNetLwfUninstall(IN INetCfg *pNc, DWORD InfRmFlags)
+{
+    INetCfgComponent * pNcc = NULL;
+    HRESULT hr = pNc->FindComponent(VBOXNETCFGWIN_NETLWF_ID, &pNcc);
+    if (hr == S_OK)
+    {
+        NonStandardLog("NetLwf is installed currently, uninstalling ...\n");
+
+        hr = VBoxNetCfgWinUninstallComponent(pNc, pNcc);
+
+        pNcc->Release();
+    }
+    else if (hr == S_FALSE)
+    {
+        NonStandardLog("NetLwf is not installed currently\n");
+        hr = S_OK;
+    }
+    else
+    {
+        NonStandardLogFlow(("FindComponent failed, hr (0x%x)\n", hr));
+        hr = S_OK;
+    }
+
+    VBoxDrvCfgInfUninstallAllF(L"NetService", VBOXNETCFGWIN_NETLWF_ID, InfRmFlags);
+
+    return hr;
+}
+
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetLwfUninstall(IN INetCfg *pNc)
+{
+    return vboxNetCfgWinNetLwfUninstall(pNc, 0);
+}
+
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetLwfInstall(IN INetCfg *pNc,
+                                                       IN LPCWSTR const pInfFullPath)
+{
+    HRESULT hr = vboxNetCfgWinNetLwfUninstall(pNc, SUOI_FORCEDELETE);
+    if (SUCCEEDED(hr))
+    {
+        NonStandardLog("NetLwf will be installed ...\n");
+        hr = vboxNetCfgWinInstallInfAndComponent(pNc, VBOXNETCFGWIN_NETLWF_ID,
+                                                 &GUID_DEVCLASS_NETSERVICE,
+                                                 &pInfFullPath,
+                                                 1,
+                                                 NULL);
+    }
+    return hr;
+}
+
 #define VBOX_CONNECTION_NAME L"VirtualBox Host-Only Network"
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostonlyConnectionName(PCWSTR DevName, WCHAR *pBuf, PULONG pcbBuf)
 {
