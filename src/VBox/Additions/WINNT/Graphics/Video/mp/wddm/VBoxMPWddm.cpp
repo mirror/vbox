@@ -3629,7 +3629,7 @@ DxgkDdiBuildPagingBufferNew(
             {
                 WARN(("pBuildPagingBuffer->DmaSize(%d) < sizeof VBOXCMDVBVA_PAGING_TRANSFER (%d)", pBuildPagingBuffer->DmaSize , sizeof (VBOXCMDVBVA_PAGING_TRANSFER)));
                 /* @todo: can this actually happen? what status to return? */
-                return STATUS_INVALID_PARAMETER;
+                return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
             }
 
             VBOXCMDVBVA_PAGING_TRANSFER *pPaging = (VBOXCMDVBVA_PAGING_TRANSFER*)pBuildPagingBuffer->pDmaBuffer;
