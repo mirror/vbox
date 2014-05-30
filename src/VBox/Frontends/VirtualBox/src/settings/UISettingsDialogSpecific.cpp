@@ -351,7 +351,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent,
                 case GlobalSettingsPageType_Input:
                 {
                     pSettingsPage = new UIGlobalSettingsInput;
-                    addItem(":/hostkey_32px.png", ":/hostkey_24px.png", ":/hostkey_16px.png",
+                    addItem(":/keyboard_32px.png", ":/keyboard_24px.png", ":/keyboard_16px.png",
                             iPageIndex, "#input", pSettingsPage);
                     break;
                 }

@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
+        <file alias="os_win31.png">images/os_win31.png</file>
+        <file alias="os_win7.png">images/os_win7.png</file>
         <file alias="os_win7_64.png">images/os_win7_64.png</file>
         <file alias="os_win8.png">images/os_win8.png</file>
         <file alias="os_win8_64.png">images/os_win8_64.png</file>

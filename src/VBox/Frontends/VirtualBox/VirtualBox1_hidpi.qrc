@@ -155,6 +155,9 @@
         <file alias="ide_collapse_16px_hidpi.png">images/hidpi/ide_collapse_16px_hidpi.png</file>
         <file alias="ide_expand_16px_hidpi.png">images/hidpi/ide_expand_16px_hidpi.png</file>
         <file alias="import_16px_hidpi.png">images/hidpi/import_16px_hidpi.png</file>
+        <file alias="keyboard_16px_hidpi.png">images/hidpi/keyboard_16px_hidpi.png</file>
+        <file alias="keyboard_24px_hidpi.png">images/hidpi/keyboard_24px_hidpi.png</file>
+        <file alias="keyboard_32px_hidpi.png">images/hidpi/keyboard_32px_hidpi.png</file>
         <file alias="list_movedown_16px_hidpi.png">images/hidpi/list_movedown_16px_hidpi.png</file>
         <file alias="list_movedown_disabled_16px_hidpi.png">images/hidpi/list_movedown_disabled_16px_hidpi.png</file>
         <file alias="list_moveup_16px_hidpi.png">images/hidpi/list_moveup_16px_hidpi.png</file>
@@ -231,6 +234,5 @@
         <file alias="os_os2ecs_hidpi.png">images/hidpi/os_os2ecs_hidpi.png</file>
         <file alias="os_os2warp3_hidpi.png">images/hidpi/os_os2warp3_hidpi.png</file>
         <file alias="os_os2warp45_hidpi.png">images/hidpi/os_os2warp45_hidpi.png</file>
-        <file alias="os_os2warp4_hidpi.png">images/hidpi/os_os2warp4_hidpi.png</file>
     </qresource>
 </RCC>
