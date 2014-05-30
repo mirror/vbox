@@ -158,6 +158,8 @@
         <file alias="keyboard_16px.png">images/keyboard_16px.png</file>
         <file alias="keyboard_24px.png">images/keyboard_24px.png</file>
         <file alias="keyboard_32px.png">images/keyboard_32px.png</file>
+        <file alias="keyboard_settings_16px.png">images/keyboard_settings_16px.png</file>
+        <file alias="keyboard_settings_disabled_16px.png">images/keyboard_settings_disabled_16px.png</file>
         <file alias="list_movedown_16px.png">images/list_movedown_16px.png</file>
         <file alias="list_movedown_disabled_16px.png">images/list_movedown_disabled_16px.png</file>
         <file alias="list_moveup_16px.png">images/list_moveup_16px.png</file>
@@ -251,6 +253,5 @@
         <file alias="os_win2k3.png">images/os_win2k3.png</file>
         <file alias="os_win2k3_64.png">images/os_win2k3_64.png</file>
         <file alias="os_win2k8.png">images/os_win2k8.png</file>
-        <file alias="os_win2k8_64.png">images/os_win2k8_64.png</file>
     </qresource>
 </RCC>

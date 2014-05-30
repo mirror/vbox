@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
+        <file alias="os_os2warp45_hidpi.png">images/hidpi/os_os2warp45_hidpi.png</file>
         <file alias="os_os2warp4_hidpi.png">images/hidpi/os_os2warp4_hidpi.png</file>
         <file alias="os_other_64_hidpi.png">images/hidpi/os_other_64_hidpi.png</file>
         <file alias="os_other_hidpi.png">images/hidpi/os_other_hidpi.png</file>
