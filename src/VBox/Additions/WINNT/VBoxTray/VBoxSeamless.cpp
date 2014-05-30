@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,15 +17,26 @@
 
 #define _WIN32_WINNT 0x0500
 #include <Windows.h>
+
+#include <iprt/assert.h>
+#include <iprt/ldr.h>
+
+#include <VBoxDisplay.h>
+#include <VBoxGuestInternal.h>
+#include <VBoxHook.h>
+
+#ifdef DEBUG
+# define LOG_ENABLED
+# define LOG_GROUP LOG_GROUP_DEFAULT
+#endif
+#include <VBox/log.h>
+#include <VBox/VMMDev.h>
+
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
 #include "VBoxSeamless.h"
-#include <VBoxHook.h>
-#include <VBoxDisplay.h>
-#include <VBox/VMMDev.h>
-#include <iprt/assert.h>
-#include <iprt/ldr.h>
-#include <VBoxGuestInternal.h>
+
+
 
 typedef struct _VBOXSEAMLESSCONTEXT
 {

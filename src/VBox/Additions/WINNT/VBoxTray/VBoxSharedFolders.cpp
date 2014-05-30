@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,14 @@
 
 #include <iprt/mem.h>
 #include <VBox/VBoxGuestLib.h>
+
+#ifdef DEBUG
+# define LOG_ENABLED
+# define LOG_GROUP LOG_GROUP_DEFAULT
+#endif
+#include <VBox/log.h>
+
+
 
 int VBoxSharedFoldersAutoMount(void)
 {
@@ -39,12 +47,12 @@ int VBoxSharedFoldersAutoMount(void)
             /* Check for a fixed/virtual auto-mount share. */
             if (VbglR3SharedFolderExists(u32ClientId, "vbsfAutoMount"))
             {
-                Log(("VBoxTray: Hosts supports auto-mount root\n"));
+                LogFlowFunc(("Hosts supports auto-mount root\n"));
             }
             else
             {
 #endif
-                Log(("VBoxTray: Got %u shared folder mappings\n", cMappings));
+                LogFlowFunc(("Got %u shared folder mappings\n", cMappings));
                 for (uint32_t i = 0; i < cMappings && RT_SUCCESS(rc); i++)
                 {
                     char *pszName = NULL;
@@ -52,7 +60,7 @@ int VBoxSharedFoldersAutoMount(void)
                     if (   RT_SUCCESS(rc)
                         && *pszName)
                     {
-                        Log(("VBoxTray: Connecting share %u (%s) ...\n", i+1, pszName));
+                        LogFlowFunc(("Connecting share %u (%s) ...\n", i+1, pszName));
 
                         char *pszShareName;
                         if (RTStrAPrintf(&pszShareName, "\\\\vboxsrv\\%s", pszName) >= 0)
@@ -76,12 +84,12 @@ int VBoxSharedFoldersAutoMount(void)
                                 DWORD dwErr = WNetAddConnection2A(&resource, NULL, NULL, 0);
                                 if (dwErr == NO_ERROR)
                                 {
-                                    LogRel(("VBoxTray: Shared folder \"%s\" was mounted to drive \"%s\"\n", pszName, szCurDrive));
+                                    LogRel(("Shared folder \"%s\" was mounted to drive \"%s\"\n", pszName, szCurDrive));
                                     break;
                                 }
                                 else
                                 {
-                                    LogRel(("VBoxTray: Mounting \"%s\" to \"%s\" resulted in dwErr = %ld\n", pszName, szCurDrive, dwErr));
+                                    LogRel(("Mounting \"%s\" to \"%s\" resulted in dwErr = %ld\n", pszName, szCurDrive, dwErr));
 
                                     switch (dwErr)
                                     {
@@ -93,7 +101,7 @@ int VBoxSharedFoldersAutoMount(void)
                                             break;
 
                                         default:
-                                            LogRel(("VBoxTray: Error while mounting shared folder \"%s\" to \"%s\", error = %ld\n",
+                                            LogRel(("Error while mounting shared folder \"%s\" to \"%s\", error = %ld\n",
                                                     pszName, szCurDrive, dwErr));
                                             break;
                                     }
@@ -102,7 +110,7 @@ int VBoxSharedFoldersAutoMount(void)
 
                             if (chDrive > 'Z')
                             {
-                                LogRel(("VBoxTray: No free driver letter found to assign shared folder \"%s\", aborting\n", pszName));
+                                LogRel(("No free driver letter found to assign shared folder \"%s\", aborting\n", pszName));
                                 break;
                             }
 
@@ -113,7 +121,7 @@ int VBoxSharedFoldersAutoMount(void)
                         RTStrFree(pszName);
                     }
                     else
-                        Log(("VBoxTray: Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
+                        LogFlowFunc(("Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
                              paMappings[i].u32Root, rc));
                 }
 #if 0
@@ -122,12 +130,12 @@ int VBoxSharedFoldersAutoMount(void)
             VbglR3SharedFolderFreeMappings(paMappings);
         }
         else
-            Log(("VBoxTray: Error while getting the shared folder mappings, rc = %Rrc\n", rc));
+            LogFlowFunc(("Error while getting the shared folder mappings, rc = %Rrc\n", rc));
         VbglR3SharedFolderDisconnect(u32ClientId);
     }
     else
     {
-        Log(("VBoxTray: Failed to connect to the shared folder service, error %Rrc\n", rc));
+        LogFlowFunc(("Failed to connect to the shared folder service, error %Rrc\n", rc));
         /* return success, otherwise VBoxTray will not start! */
         rc = VINF_SUCCESS;
     }
@@ -139,7 +147,7 @@ int VBoxSharedFoldersAutoUnmount(void)
     uint32_t u32ClientId;
     int rc = VbglR3SharedFolderConnect(&u32ClientId);
     if (!RT_SUCCESS(rc))
-        Log(("VBoxTray: Failed to connect to the shared folder service, error %Rrc\n", rc));
+        LogFlowFunc(("Failed to connect to the shared folder service, error %Rrc\n", rc));
     else
     {
         uint32_t cMappings;
@@ -156,7 +164,7 @@ int VBoxSharedFoldersAutoUnmount(void)
                 if (   RT_SUCCESS(rc)
                     && *pszName)
                 {
-                    Log(("VBoxTray: Disconnecting share %u (%s) ...\n", i+1, pszName));
+                    LogFlowFunc(("Disconnecting share %u (%s) ...\n", i+1, pszName));
 
                     char *pszShareName;
                     if (RTStrAPrintf(&pszShareName, "\\\\vboxsrv\\%s", pszName) >= 0)
@@ -164,13 +172,13 @@ int VBoxSharedFoldersAutoUnmount(void)
                         DWORD dwErr = WNetCancelConnection2(pszShareName, 0, FALSE /* Force disconnect */);
                         if (dwErr == NO_ERROR)
                         {
-                            LogRel(("VBoxTray: Share \"%s\" was disconnected\n", pszShareName));
+                            LogRel(("Share \"%s\" was disconnected\n", pszShareName));
                             RTStrFree(pszShareName);
                             RTStrFree(pszName);
                             break;
                         }
 
-                        LogRel(("VBoxTray: Disconnecting \"%s\" failed, dwErr = %ld\n", pszShareName, dwErr));
+                        LogRel(("Disconnecting \"%s\" failed, dwErr = %ld\n", pszShareName, dwErr));
 
                         switch (dwErr)
                         {
@@ -178,7 +186,7 @@ int VBoxSharedFoldersAutoUnmount(void)
                                 break;
 
                             default:
-                                LogRel(("VBoxTray: Error while disconnecting shared folder \"%s\", error = %ld\n",
+                                LogRel(("Error while disconnecting shared folder \"%s\", error = %ld\n",
                                         pszShareName, dwErr));
                                 break;
                         }
@@ -190,13 +198,13 @@ int VBoxSharedFoldersAutoUnmount(void)
                     RTStrFree(pszName);
                 }
                 else
-                    Log(("VBoxTray: Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
+                    LogFlowFunc(("Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
                          paMappings[i].u32Root, rc));
             }
             VbglR3SharedFolderFreeMappings(paMappings);
         }
         else
-            Log(("VBoxTray: Error while getting the shared folder mappings, rc = %Rrc\n", rc));
+            LogFlowFunc(("Error while getting the shared folder mappings, rc = %Rrc\n", rc));
         VbglR3SharedFolderDisconnect(u32ClientId);
     }
     return rc;

@@ -21,6 +21,13 @@
 #include "VBoxHelpers.h"
 #include "VBoxDnD.h"
 
+#ifdef DEBUG
+# define LOG_ENABLED
+# define LOG_GROUP LOG_GROUP_DEFAULT
+#endif
+#include <VBox/log.h>
+
+
 
 VBoxDnDEnumFormatEtc::VBoxDnDEnumFormatEtc(FORMATETC *pFormatEtc, ULONG cFormats)
     : m_lRefCount(1),
