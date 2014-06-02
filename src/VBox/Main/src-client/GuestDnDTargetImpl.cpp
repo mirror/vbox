@@ -352,9 +352,9 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId,
     VBOXHGCMSVCPARM paParms[8];
     int i = 0;
     paParms[i++].setUInt32(aScreenId);
-    paParms[i++].setPointer((void*)aFormat.c_str(), (uint32_t)aFormat.length() + 1);
+    paParms[i++].setPointer((void *)aFormat.c_str(), (uint32_t)aFormat.length() + 1);
     paParms[i++].setUInt32((uint32_t)aFormat.length() + 1);
-    paParms[i++].setPointer((void*)aData.data(), (uint32_t)aData.size());
+    paParms[i++].setPointer((void *)aData.front(), (uint32_t)aData.size());
     paParms[i++].setUInt32((uint32_t)aData.size());
 
     GuestDnDResponse *pResp = GuestDnDInst()->response();
