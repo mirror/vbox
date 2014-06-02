@@ -566,6 +566,12 @@ org_virtualbox_VBoxUSBClient::initWithTask(task_t OwningTask, void *pvSecurityId
         Log(("VBoxUSBClient::initWithTask([%p], %p, %p, %#x) -> false (no task)\n", this, OwningTask, pvSecurityId, u32Type));
         return false;
     }
+    if (u32Type != VBOXUSB_DARWIN_IOSERVICE_COOKIE)
+    {
+        Log(("VBoxUSBClient::initWithTask: Bade cookie %#x\n", u32Type));
+        return false;
+    }
+
     proc_t pProc = (proc_t)get_bsdtask_info(OwningTask); /* we need the pid */
     Log(("VBoxUSBClient::initWithTask([%p], %p(->%p:{.pid=%d}, %p, %#x)\n",
              this, OwningTask, pProc, pProc ? proc_pid(pProc) : -1, pvSecurityId, u32Type));

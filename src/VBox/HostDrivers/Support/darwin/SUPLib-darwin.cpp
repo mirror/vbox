@@ -170,7 +170,7 @@ static int suplibDarwinOpenService(PSUPLIBDATA pThis)
      * instantiated and create a session for this process.
      */
     io_connect_t Connection = NULL;
-    kr = IOServiceOpen(ServiceObject, mach_task_self(), 0, &Connection);
+    kr = IOServiceOpen(ServiceObject, mach_task_self(), SUP_DARWIN_IOSERVICE_COOKIE, &Connection);
     IOObjectRelease(ServiceObject);
     if (kr != kIOReturnSuccess)
     {

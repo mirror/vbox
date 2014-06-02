@@ -46,6 +46,8 @@ typedef struct VBOXUSBADDFILTEROUT
 /** Pointer to a VBOXUSBADDFILTEROUT. */
 typedef VBOXUSBADDFILTEROUT *PVBOXUSBADDFILTEROUT;
 
+/** Cookie used to fend off some unwanted clients to the IOService.  */
+#define VBOXUSB_DARWIN_IOSERVICE_COOKIE     UINT32_C(0x62735556) /* 'VUsb' */
 
 #endif
 

@@ -105,6 +105,10 @@
 /** Just a NOP call for profiling the latency of a fast ioctl call to VMMR0. */
 #define SUP_IOCTL_FAST_DO_NOP                   SUP_CTL_CODE_FAST(66)
 
+#ifdef RT_OS_DARWIN
+/** Cookie used to fend off some unwanted clients to the IOService.  */
+# define SUP_DARWIN_IOSERVICE_COOKIE            0x64726962 /* 'bird' */
+#endif
 
 
 /*******************************************************************************
