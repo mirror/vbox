@@ -1761,7 +1761,7 @@ print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
           <para>The sample program <computeroutput>tstCAPIGlue</computeroutput>
           can be built using the provided <computeroutput>Makefile</computeroutput>
           and can be run without arguments.</para>
-          
+
           <para>It uses the VBoxCAPIGlue library (source code is in directory
           <computeroutput>sdk/bindings/c/glue</computeroutput>, to be used in
           your API client code) to open the C binding layer during runtime,
@@ -1819,7 +1819,7 @@ if (VBoxCGlueInit())
             argv[0], g_szVBoxErrMsg);
     return EXIT_FAILURE;
 }
-    
+
 g_pVBoxFuncs-&gt;pfnClientInitialize(NULL, &amp;vboxclient);
 if (!vboxclient)
 {
@@ -1875,7 +1875,7 @@ if (!vboxclient)
           attribute name. Unless the attribute is read-only, an analogous
           <computeroutput>set_</computeroutput> method exists. Let's apply
           these rules to get the <computeroutput>IVirtualBox</computeroutput>
-          reference, an <computeroutput>ISession</computeroutput> instance 
+          reference, an <computeroutput>ISession</computeroutput> instance
           reference and read the <xref linkend="IVirtualBox__revision"
           xreflabel="IVirtualBox::revision" /> attribute:<screen>rc = IVirtualBoxClient_get_VirtualBox(vboxclient, &amp;vbox);
 if (FAILED(rc) || !vbox)
@@ -3760,11 +3760,70 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
+      <title>Incompatible API changes with version 4.4</title>
+
+      <itemizedlist>
+        <listitem><para>Drag'n drop APIs were changed as follows:<itemizedlist>
+
+          <listitem>
+            <para>Methods for providing host to guest drag'n drop functionality,
+              such as <computeroutput>IGuest::dragHGEnter</computeroutput>,
+              <computeroutput>IGuest::dragHGMove()</computeroutput>,
+              <computeroutput>IGuest::dragHGLeave()</computeroutput>,
+              <computeroutput>IGuest::dragHGDrop()</computeroutput> and
+              <computeroutput>IGuest::dragHGPutData()</computeroutput>,
+              have been moved to an abstract base class called
+              <xref linkend="IDnDTarget" xreflabel="IDnDTarget" />. VirtualBox implements
+              this base class in the <xref linkend="IGuestDnDTarget" xreflabel="IGuestDnDTarget" />
+              interface. The implementation can be used by using the
+              <xref linkend="IGuest__dnDTarget" xreflabel="IGuest::dnDTarget()" /> method.</para>
+            <para>Methods for providing guest to host drag'n drop functionality,
+              such as <computeroutput>IGuest::dragGHPending()</computeroutput>,
+              <computeroutput>IGuest::dragGHDropped()</computeroutput> and
+              <computeroutput>IGuest::dragGHGetData()</computeroutput>,
+              have been moved to an abstract base class called
+              <xref linkend="IDnDSource" xreflabel="IDnDSource" />. VirtualBox implements
+              this base class in the <xref linkend="IGuestDnDSource" xreflabel="IGuestDnDSource" />
+              interface. The implementation can be used by using the
+              <xref linkend="IGuest__dnDSource" xreflabel="IGuest::dnDSource()" /> method.</para>
+          </listitem>
+
+          <listitem>
+            <para>The <computeroutput>DragAndDropAction</computeroutput> enumeration has been
+              renamed to <xref linkend="DnDAction" xreflabel="DnDAction" />.</para>
+          </listitem>
+
+          <listitem>
+            <para>The <computeroutput>DragAndDropMode</computeroutput> enumeration has been
+              renamed to <xref linkend="DnDMode" xreflabel="DnDMode" />.</para>
+          </listitem>
+
+          <listitem>
+            <para>The attribute <computeroutput>IMachine::dragAndDropMode</computeroutput>
+              has been renamed to <xref linkend="IMachine__dnDMode" xreflabel="IMachine::dnDMode()" />.</para>
+          </listitem>
+
+          <listitem>
+            <para>The event <computeroutput>IDragAndDropModeChangedEvent</computeroutput>
+              has been renamed to <xref linkend="IDnDModeChangedEvent" xreflabel="IDnDModeChangedEvent" />.</para>
+          </listitem>
+
+          <listitem>
+            <para>The callback method <computeroutput>IInternalSessionControl::onDragAndDropModeChange</computeroutput>
+              has been renamed to <xref linkend="IInternalSessionControl__onDnDModeChange" xreflabel="IInternalSessionControl::onDnDModeChange()" />.</para>
+          </listitem>
+
+          </itemizedlist></para>
+        </listitem>
+      </itemizedlist>
+    </sect1>
+
+    <sect1>
       <title>Incompatible API changes with version 4.3</title>
 
       <itemizedlist>
         <listitem>
-          <para>The explicit medium locking methods 
+          <para>The explicit medium locking methods
             <xref linkend="IMedium__lockRead" xreflabel="IMedium::lockRead()" />
             and <xref linkend="IMedium__lockWrite" xreflabel="IMedium::lockWrite()" />
             have been redesigned. They return a lock token object reference
@@ -3915,7 +3974,7 @@ AuthResult AUTHCALL AuthEntry(
           event there needs to be at least the 4.3 Guest Additions installed on
           the guest. At the moment only the states "Idle" and "InUse" of the
           <xref linkend="GuestUserState"
-          xreflabel="GuestUserState" /> enum are supported on
+          xreflabel="GuestUserState" /> enumeration are supported on
           Windows guests, starting at Windows 2000 SP2.</para>
         </listitem>
 
