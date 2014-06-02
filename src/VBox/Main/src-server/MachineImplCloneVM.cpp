@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2013 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -207,7 +207,7 @@ HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, U
     if (!bstrSrcSaveStatePath.isEmpty())
     {
         SAVESTATETASK sst;
-        sst.snapshotUuid     = machine->getSnapshotId();
+        sst.snapshotUuid     = machine->i_getSnapshotId();
         sst.strSaveStateFile = bstrSrcSaveStatePath;
         uint64_t cbSize;
         int vrc = RTFileQuerySize(sst.strSaveStateFile.c_str(), &cbSize);
@@ -673,7 +673,7 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine>
         }
         ComObjPtr<Medium> diff;
         diff.createObject();
-        rc = diff->init(p->getVirtualBox(),
+        rc = diff->init(p->i_getVirtualBox(),
                         pParent->i_getPreferredDiffFormat(),
                         Utf8StrFmt("%s%c", strSnapshotFolder.c_str(), RTPATH_DELIMITER),
                                    Guid::Empty /* empty media registry */);
@@ -752,7 +752,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
     {
         /** @todo r=klaus this code cannot deal with someone crazy specifying
          * IMachine corresponding to a mutable machine as d->pSrcMachine */
-        if (d->pSrcMachine->isSessionMachine())
+        if (d->pSrcMachine->i_isSessionMachine())
             throw p->setError(E_INVALIDARG, "The source machine is mutable");
 
         /* Handle the special case that someone is requesting a _full_ clone
@@ -760,13 +760,13 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
          * machine (and not the current one) as source machine. In this case we
          * just replace the source (snapshot) machine with the current machine. */
         if (   d->mode == CloneMode_AllStates
-            && d->pSrcMachine->isSnapshotMachine())
+            && d->pSrcMachine->i_isSnapshotMachine())
         {
             Bstr bstrSrcMachineId;
             rc = d->pSrcMachine->COMGETTER(Id)(bstrSrcMachineId.asOutParam());
             if (FAILED(rc)) throw rc;
             ComPtr<IMachine> newSrcMachine;
-            rc = d->pSrcMachine->getVirtualBox()->FindMachine(bstrSrcMachineId.raw(), newSrcMachine.asOutParam());
+            rc = d->pSrcMachine->i_getVirtualBox()->FindMachine(bstrSrcMachineId.raw(), newSrcMachine.asOutParam());
             if (FAILED(rc)) throw rc;
             d->pSrcMachine = (Machine*)(IMachine*)newSrcMachine;
         }
@@ -774,14 +774,14 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
         ComObjPtr<Machine> pCurrState;
         if (d->mode == CloneMode_MachineAndChildStates)
         {
-            if (d->pSrcMachine->isSnapshotMachine())
+            if (d->pSrcMachine->i_isSnapshotMachine())
             {
                 /* find machine object for current snapshot of current state */
                 Bstr bstrSrcMachineId;
                 rc = d->pSrcMachine->COMGETTER(Id)(bstrSrcMachineId.asOutParam());
                 if (FAILED(rc)) throw rc;
                 ComPtr<IMachine> pCurr;
-                rc = d->pSrcMachine->getVirtualBox()->FindMachine(bstrSrcMachineId.raw(), pCurr.asOutParam());
+                rc = d->pSrcMachine->i_getVirtualBox()->FindMachine(bstrSrcMachineId.raw(), pCurr.asOutParam());
                 if (FAILED(rc)) throw rc;
                 if (pCurr.isNull())
                     throw p->setError(VBOX_E_OBJECT_NOT_FOUND);
@@ -826,8 +826,8 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
         /* Lock the target machine early (so nobody mess around with it in the meantime). */
         AutoWriteLock trgLock(d->pTrgMachine COMMA_LOCKVAL_SRC_POS);
 
-        if (d->pSrcMachine->isSnapshotMachine())
-            d->snapshotId = d->pSrcMachine->getSnapshotId();
+        if (d->pSrcMachine->i_isSnapshotMachine())
+            d->snapshotId = d->pSrcMachine->i_getSnapshotId();
 
         /* Add the current machine and all snapshot machines below this machine
          * in a list for further processing. */
@@ -911,7 +911,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
         /* Now create the progress project, so the user knows whats going on. */
         rc = d->pProgress.createObject();
         if (FAILED(rc)) throw rc;
-        rc = d->pProgress->init(p->getVirtualBox(),
+        rc = d->pProgress->init(p->i_getVirtualBox(),
                                 static_cast<IMachine*>(d->pSrcMachine) /* aInitiator */,
                                 Bstr(p->tr("Cloning Machine")).raw(),
                                 true /* fCancellable */,
@@ -957,7 +957,7 @@ HRESULT MachineCloneVM::run()
 
     /* Where should all the media go? */
     Utf8Str strTrgSnapshotFolder;
-    Utf8Str strTrgMachineFolder = d->pTrgMachine->getSettingsFileFull();
+    Utf8Str strTrgMachineFolder = d->pTrgMachine->i_getSettingsFileFull();
     strTrgMachineFolder.stripFilename();
 
     RTCList<ComObjPtr<Medium> > newMedia;   /* All created images */
@@ -1388,14 +1388,13 @@ HRESULT MachineCloneVM::run()
             /* After modifying the new machine config, we can copy the stuff
              * over to the new machine. The machine have to be mutable for
              * this. */
-            rc = d->pTrgMachine->checkStateDependency(p->MutableStateDep);
+            rc = d->pTrgMachine->i_checkStateDependency(p->MutableStateDep);
             if (FAILED(rc)) throw rc;
-            rc = d->pTrgMachine->loadMachineDataFromSettings(trgMCF,
-                                                             &d->pTrgMachine->mData->mUuid);
+            rc = d->pTrgMachine->i_loadMachineDataFromSettings(trgMCF, &d->pTrgMachine->mData->mUuid);
             if (FAILED(rc)) throw rc;
             /* save all VM data */
             bool fNeedsGlobalSaveSettings = false;
-            rc = d->pTrgMachine->saveSettings(&fNeedsGlobalSaveSettings, Machine::SaveS_Force);
+            rc = d->pTrgMachine->i_saveSettings(&fNeedsGlobalSaveSettings, Machine::SaveS_Force);
             if (FAILED(rc)) throw rc;
             /* Release all locks */
             trgLock.release();

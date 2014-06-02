@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -258,7 +258,7 @@ HRESULT NATEngine::setNetworkSettings(ULONG aMtu, ULONG aSockSnd, ULONG aSockRcv
         mData->m->mTcpRcv = aTcpWndRcv;
 
     if (m_fModified)
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
     return S_OK;
 }
 
@@ -326,15 +326,15 @@ HRESULT NATEngine::addRedirect(const com::Utf8Str &aName, NATProtocol_T aProto, 
     r.strGuestIP = aGuestIP;
     r.u16GuestPort = aGuestPort;
     mNATRules.insert(std::make_pair(name, r));
-    mParent->setModified(Machine::IsModified_NetworkAdapters);
+    mParent->i_setModified(Machine::IsModified_NetworkAdapters);
     m_fModified = true;
 
     ULONG ulSlot;
     mAdapter->COMGETTER(Slot)(&ulSlot);
 
     alock.release();
-    mParent->onNATRedirectRuleChange(ulSlot, FALSE, Bstr(name).raw(), aProto, Bstr(r.strHostIP).raw(),
-                                     r.u16HostPort, Bstr(r.strGuestIP).raw(), r.u16GuestPort);
+    mParent->i_onNATRedirectRuleChange(ulSlot, FALSE, Bstr(name).raw(), aProto, Bstr(r.strHostIP).raw(),
+                                       r.u16HostPort, Bstr(r.strGuestIP).raw(), r.u16GuestPort);
     return S_OK;
 }
 
@@ -355,12 +355,12 @@ HRESULT NATEngine::removeRedirect(const com::Utf8Str &aName)
     mAdapter->COMGETTER(Slot)(&ulSlot);
 
     mNATRules.erase(it);
-    mParent->setModified(Machine::IsModified_NetworkAdapters);
+    mParent->i_setModified(Machine::IsModified_NetworkAdapters);
     m_fModified = true;
     mData->m.commit();
     alock.release();
-    mParent->onNATRedirectRuleChange(ulSlot, TRUE, Bstr(aName).raw(), proto, Bstr(strHostIP).raw(),
-                                     u16HostPort, Bstr(strGuestIP).raw(), u16GuestPort);
+    mParent->i_onNATRedirectRuleChange(ulSlot, TRUE, Bstr(aName).raw(), proto, Bstr(strHostIP).raw(),
+                                       u16HostPort, Bstr(strGuestIP).raw(), u16GuestPort);
     return S_OK;
 }
 
@@ -442,7 +442,7 @@ HRESULT NATEngine::setNetwork(const com::Utf8Str &aNetwork)
     {
         mData->m.backup();
         mData->m->mNetwork = aNetwork;
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         m_fModified = true;
     }
     return S_OK;
@@ -467,7 +467,7 @@ HRESULT NATEngine::setHostIP(const com::Utf8Str &aHostIP)
     {
         mData->m.backup();
         mData->m->mBindIP = aHostIP;
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         m_fModified = true;
     }
     return S_OK;
@@ -489,7 +489,7 @@ HRESULT NATEngine::setTFTPPrefix(const com::Utf8Str &aTFTPPrefix)
     {
         mData->m.backup();
         mData->m->mTFTPPrefix = aTFTPPrefix;
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         m_fModified = true;
     }
     return S_OK;
@@ -515,7 +515,7 @@ HRESULT NATEngine::setTFTPBootFile(const com::Utf8Str &aTFTPBootFile)
     {
         mData->m.backup();
         mData->m->mTFTPBootFile = aTFTPBootFile;
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         m_fModified = true;
     }
     return S_OK;
@@ -541,7 +541,7 @@ HRESULT NATEngine::setTFTPNextServer(const com::Utf8Str &aTFTPNextServer)
     {
         mData->m.backup();
         mData->m->mTFTPNextServer = aTFTPNextServer;
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         m_fModified = true;
     }
     return S_OK;
@@ -567,7 +567,7 @@ HRESULT NATEngine::setDNSPassDomain(BOOL aDNSPassDomain)
     {
         mData->m.backup();
         mData->m->mDNSPassDomain = aDNSPassDomain;
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         m_fModified = true;
     }
     return S_OK;
@@ -589,7 +589,7 @@ HRESULT NATEngine::setDNSProxy(BOOL aDNSProxy)
     {
         mData->m.backup();
         mData->m->mDNSProxy = aDNSProxy;
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         m_fModified = true;
     }
     return S_OK;
@@ -617,7 +617,7 @@ HRESULT NATEngine::setDNSUseHostResolver(BOOL aDNSUseHostResolver)
     {
         mData->m.backup();
         mData->m->mDNSUseHostResolver = aDNSUseHostResolver;
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         m_fModified = true;
     }
     return S_OK;
@@ -631,7 +631,7 @@ HRESULT NATEngine::setAliasMode(ULONG aAliasMode)
     {
         mData->m.backup();
         mData->m->mAliasMode = aAliasMode;
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         m_fModified = true;
     }
     return S_OK;

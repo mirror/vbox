@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -364,7 +364,7 @@ HRESULT MediumAttachment::getBandwidthGroup(ComPtr<IBandwidthGroup> &aBandwidthG
     if (m->bd->strBandwidthGroup.isNotEmpty())
     {
         ComObjPtr<BandwidthGroup> pBwGroup;
-        hrc = m->pMachine->getBandwidthGroup(m->bd->strBandwidthGroup, pBwGroup, true /* fSetError */);
+        hrc = m->pMachine->i_getBandwidthGroup(m->bd->strBandwidthGroup, pBwGroup, true /* fSetError */);
 
         Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of the
                                    group was checked when it was attached. */

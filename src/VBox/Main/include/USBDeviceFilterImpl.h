@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -177,7 +177,7 @@ public:
     const Data& i_getData() { return *mData.data(); }
 
     // util::Lockable interface
-    RWLockHandle *i_lockHandle() const;
+    RWLockHandle *lockHandle() const;
 
 private:
 

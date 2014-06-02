@@ -414,7 +414,7 @@ HRESULT BandwidthControl::createBandwidthGroup(const com::Utf8Str &aName,
     rc = group->init(this, aName, aType, aMaxBytesPerSec);
     if (FAILED(rc)) return rc;
 
-    m->pParent->setModified(Machine::IsModified_BandwidthControl);
+    m->pParent->i_setModified(Machine::IsModified_BandwidthControl);
     m->llBandwidthGroups.backup();
     m->llBandwidthGroups->push_back(group);
 
@@ -438,7 +438,7 @@ HRESULT BandwidthControl::deleteBandwidthGroup(const com::Utf8Str &aName)
                         tr("The bandwidth group '%s' is still in use"), aName.c_str());
 
     /* We can remove it now. */
-    m->pParent->setModified(Machine::IsModified_BandwidthControl);
+    m->pParent->i_setModified(Machine::IsModified_BandwidthControl);
     m->llBandwidthGroups.backup();
 
     group->i_unshare();

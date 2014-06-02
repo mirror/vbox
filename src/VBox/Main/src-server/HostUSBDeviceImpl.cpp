@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2013 Oracle Corporation
+ * Copyright (C) 2005-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -331,7 +331,7 @@ HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSet
             AutoReadLock machLock(mMachine COMMA_LOCKVAL_SRC_POS);
             return setError(E_INVALIDARG,
                             tr("USB device '%s' with UUID {%RTuuid} is already captured by the virtual machine '%s'"),
-                            mName, mId.raw(), mMachine->getName().c_str());
+                            mName, mId.raw(), mMachine->i_getName().c_str());
         }
         if (mUniState >= kHostUSBDeviceState_FirstTransitional)
             return setError(E_INVALIDARG,
@@ -438,7 +438,7 @@ HRESULT HostUSBDevice::i_attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /
      */
     LogFlowThisFunc(("{%s} Calling machine->onUSBDeviceAttach()...\n", mName));
     alock.release();
-    HRESULT hrc = aMachine->onUSBDeviceAttach(d, NULL, aMaskedIfs);
+    HRESULT hrc = aMachine->i_onUSBDeviceAttach(d, NULL, aMaskedIfs);
     LogFlowThisFunc(("{%s} Done machine->onUSBDeviceAttach()=%08X\n", mName, hrc));
 
     /*
@@ -517,7 +517,7 @@ void HostUSBDevice::i_detachFromVM(HostUSBDeviceState aFinalState)
      */
     alock.release();
     LogFlowThisFunc(("{%s} Calling machine->onUSBDeviceDetach()...\n", mName));
-    HRESULT hrc = mMachine->onUSBDeviceDetach(mId.toUtf16().raw(), NULL);
+    HRESULT hrc = mMachine->i_onUSBDeviceDetach(mId.toUtf16().raw(), NULL);
     LogFlowThisFunc(("{%s} Done machine->onUSBDeviceDetach()=%Rhrc\n", mName, hrc));
     NOREF(hrc);
 
@@ -1700,8 +1700,9 @@ bool HostUSBDevice::i_hasAsyncOperationTimedOut() const
  *
  * @note    The caller must own the write lock for this object.
  */
-bool HostUSBDevice::i_setState(HostUSBDeviceState aNewState, HostUSBDeviceState aNewPendingState /*= kHostUSBDeviceState_Invalid*/,
-                             HostUSBDeviceSubState aNewSubState /*= kHostUSBDeviceSubState_Default*/)
+bool HostUSBDevice::i_setState(HostUSBDeviceState aNewState,
+                               HostUSBDeviceState aNewPendingState /*= kHostUSBDeviceState_Invalid*/,
+                               HostUSBDeviceSubState aNewSubState /*= kHostUSBDeviceSubState_Default*/)
 {
     Assert(isWriteLockOnCurrentThread());
     Assert(    aNewSubState == kHostUSBDeviceSubState_Default

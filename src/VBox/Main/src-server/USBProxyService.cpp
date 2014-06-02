@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -210,7 +210,7 @@ HRESULT USBProxyService::detachDeviceFromVM(SessionMachine *aMachine, IN_GUID aI
 {
     LogFlowThisFunc(("aMachine=%p{%s} aId={%RTuuid} aDone=%RTbool\n",
                      aMachine,
-                     aMachine->getName().c_str(),
+                     aMachine->i_getName().c_str(),
                      Guid(aId).raw(),
                      aDone));
 
@@ -273,7 +273,7 @@ HRESULT USBProxyService::autoCaptureDevicesForVM(SessionMachine *aMachine)
 {
     LogFlowThisFunc(("aMachine=%p{%s}\n",
                      aMachine,
-                     aMachine->getName().c_str()));
+                     aMachine->i_getName().c_str()));
 
     /*
      * Make a copy of the list because we cannot hold the lock protecting it.
@@ -523,7 +523,7 @@ bool USBProxyService::runMachineFilters(SessionMachine *aMachine, ComObjPtr<Host
      * Do the job.
      */
     ULONG ulMaskedIfs;
-    if (aMachine->hasMatchingUSBFilter(aDevice, &ulMaskedIfs))
+    if (aMachine->i_hasMatchingUSBFilter(aDevice, &ulMaskedIfs))
     {
         /* try to capture the device */
         HRESULT hrc = aDevice->i_requestCaptureForVM(aMachine, false /* aSetError */, ulMaskedIfs);

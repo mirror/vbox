@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -89,7 +89,7 @@ struct StorageController::Data
           pSystemProperties(NULL),
           pParent(aMachine)
     {
-        unconst(pVirtualBox) = aMachine->getVirtualBox();
+        unconst(pVirtualBox) = aMachine->i_getVirtualBox();
         unconst(pSystemProperties) = pVirtualBox->i_getSystemProperties();
     }
 
@@ -146,7 +146,8 @@ HRESULT StorageController::init(Machine *aParent,
     HRESULT rc = aParent->COMGETTER(ChipsetType)(&chipsetType);
     if (FAILED(rc))
         return rc;
-    rc = aParent->getVirtualBox()->i_getSystemProperties()->GetMaxInstancesOfStorageBus(chipsetType, aStorageBus, &maxInstances);
+    rc = aParent->i_getVirtualBox()->i_getSystemProperties()->
+        GetMaxInstancesOfStorageBus(chipsetType, aStorageBus, &maxInstances);
     if (FAILED(rc))
         return rc;
     if (aInstance >= maxInstances)
@@ -543,10 +544,10 @@ HRESULT StorageController::setPortCount(ULONG aPortCount)
 
         alock.release();
         AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);        // m->pParent is const, needs no locking
-        m->pParent->setModified(Machine::IsModified_Storage);
+        m->pParent->i_setModified(Machine::IsModified_Storage);
         mlock.release();
 
-        m->pParent->onStorageControllerChange();
+        m->pParent->i_onStorageControllerChange();
     }
 
     return S_OK;
@@ -600,10 +601,10 @@ HRESULT StorageController::setUseHostIOCache(BOOL fUseHostIOCache)
 
         alock.release();
         AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);        // m->pParent is const, needs no locking
-        m->pParent->setModified(Machine::IsModified_Storage);
+        m->pParent->i_setModified(Machine::IsModified_Storage);
         mlock.release();
 
-        m->pParent->onStorageControllerChange();
+        m->pParent->i_onStorageControllerChange();
     }
 
     return S_OK;
