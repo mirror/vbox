@@ -2354,18 +2354,28 @@ static void ich9pciBusInfo(PICH9PCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bo
              * For passthrough devices MSI/MSI-X mostly reflects the way interrupts delivered to the guest,
              * as host driver handles real devices interrupts.
              */
-            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s%s: %04x-%04x%s%s",
+            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s%s: %04x-%04x",
                             pBus->iBus, (iDev >> 3) & 0xff, iDev & 0x7,
                             pPciDev->name,
                             pciDevIsPassthrough(pPciDev) ? " (PASSTHROUGH)" : "",
-                            ich9pciGetWord(pPciDev, VBOX_PCI_VENDOR_ID), ich9pciGetWord(pPciDev, VBOX_PCI_DEVICE_ID),
-                            pciDevIsMsiCapable(pPciDev)  ? " MSI" : "",
-                            pciDevIsMsixCapable(pPciDev) ? " MSI-X" : ""
+                            ich9pciGetWord(pPciDev, VBOX_PCI_VENDOR_ID), ich9pciGetWord(pPciDev, VBOX_PCI_DEVICE_ID)
                             );
             if (ich9pciGetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN) != 0)
                 pHlp->pfnPrintf(pHlp, " IRQ%d", ich9pciGetByte(pPciDev, VBOX_PCI_INTERRUPT_LINE));
-
             pHlp->pfnPrintf(pHlp, "\n");
+
+            if (pciDevIsMsiCapable(pPciDev) || pciDevIsMsixCapable(pPciDev))
+            {
+                printIndent(pHlp, iIndent + 2);
+
+                if (pciDevIsMsiCapable(pPciDev))
+                    pHlp->pfnPrintf(pHlp, "MSI:%s ", MsiIsEnabled(pPciDev) ? "on" : "off");
+
+                if (pciDevIsMsixCapable(pPciDev))
+                    pHlp->pfnPrintf(pHlp, "MSI-X:%s ", MsixIsEnabled(pPciDev) ? "on" : "off");
+
+                pHlp->pfnPrintf(pHlp, "\n");
+            }
 
             uint16_t iCmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
             if ((iCmd & (VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY)) != 0)
@@ -2407,8 +2417,8 @@ static void ich9pciBusInfo(PICH9PCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bo
 
             printIndent(pHlp, iIndent + 2);
             uint16_t iStatus = ich9pciGetWord(pPciDev, VBOX_PCI_STATUS);
-            pHlp->pfnPrintf(pHlp, "Command: %.*Rhxs, Status: %.*Rhxs\n",
-                            sizeof(uint16_t), &iCmd, sizeof(uint16_t), &iStatus);
+            pHlp->pfnPrintf(pHlp, "Command: %04X, Status: %04X\n",
+                            iCmd, iStatus);
             printIndent(pHlp, iIndent + 2);
             pHlp->pfnPrintf(pHlp, "Bus master: %s\n",
                             iCmd & VBOX_PCI_COMMAND_MASTER ? "Yes" : "No");
@@ -2680,15 +2690,30 @@ static void ich9pciResetDevice(PPCIDEVICE pDev)
         PCIDevSetCommand(pDev,
                          PCIDevGetCommand(pDev)
                          &
-                         ~(VBOX_PCI_COMMAND_IO |
-                           VBOX_PCI_COMMAND_MEMORY |
-                           VBOX_PCI_COMMAND_MASTER));
+                         ~(VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY |
+                           VBOX_PCI_COMMAND_MASTER | VBOX_PCI_COMMAND_SPECIAL |
+                           VBOX_PCI_COMMAND_PARITY | VBOX_PCI_COMMAND_SERR |
+                           VBOX_PCI_COMMAND_FAST_BACK | VBOX_PCI_COMMAND_INTX_DISABLE));
 
         /* Bridge device reset handlers processed later */
         if (!pciDevIsPci2PciBridge(pDev))
         {
             PCIDevSetByte(pDev, VBOX_PCI_CACHE_LINE_SIZE, 0x0);
             PCIDevSetInterruptLine(pDev, 0x0);
+        }
+
+        /* Reset MSI message control. */
+        if (pciDevIsMsiCapable(pDev))
+        {
+            /* Extracted from MsiPciConfigWrite(). */
+            pDev->config[pDev->Int.s.u8MsiCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL] &= 0x8e;
+        }
+
+        /* Reset MSI-X message control. */
+        if (pciDevIsMsixCapable(pDev))
+        {
+            /* Extracted from MsixPciConfigWrite(); no side effects. */
+            pDev->config[pDev->Int.s.u8MsixCapOffset + VBOX_MSIX_CAP_MESSAGE_CONTROL + 1] &= 0x3f;
         }
     }
 }
