@@ -95,11 +95,6 @@ protected slots:
     /* Slot to perform guest resize: */
     void sltPerformGuestResize(const QSize &aSize = QSize());
 
-    /* Handler: Frame-buffer RequestResize stuff: */
-    virtual void sltHandleRequestResize(int iPixelFormat, uchar *pVRAM,
-                                int iBitsPerPixel, int iBytesPerLine,
-                                int iWidth, int iHeight);
-
     /* Handler: Frame-buffer NotifyChange stuff: */
     virtual void sltHandleNotifyChange(ulong uScreenId, int iWidth, int iHeight);
 
