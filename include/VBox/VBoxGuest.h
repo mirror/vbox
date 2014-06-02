@@ -78,6 +78,10 @@
 /** Fictive start address of the hypervisor physical memory for MmMapIoSpace. */
 #define VBOXGUEST_HYPERVISOR_PHYSICAL_START     UINT32_C(0xf8000000)
 
+#ifdef RT_OS_DARWIN
+/** Cookie used to fend off some unwanted clients to the IOService. */
+#define VBOXGUEST_DARWIN_IOSERVICE_COOKIE   0x56426F78 /* 'VBox' */
+#endif
 
 #if !defined(IN_RC) && !defined(IN_RING0_AGNOSTIC) && !defined(IPRT_NO_CRT)
 /** @name VBoxGuest IOCTL codes and structures.
