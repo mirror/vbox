@@ -1010,29 +1010,29 @@
   </enum>
 
   <enum
-	name="ParavirtProvider"
-	uuid="f9448c17-7caa-4ca7-9349-edafe369fcb5"
-	>
-	<desc>
-	  The paravirtualized guest interface provider. This enumeration represents possible
-	  values for the <link to="IMachine::paravirtProvider"/> attribute.
-	</desc>
-	<const name="None"     value="0">
-	  <desc>No provider is used.</desc>
-	</const>
-	<const name="Default"  value="1">
-	  <desc>A default provider is automatically chosen according to the guest OS type.</desc>
-	</const>
-	<const name="Legacy"   value="2">
+    name="ParavirtProvider"
+    uuid="f9448c17-7caa-4ca7-9349-edafe369fcb5"
+    >
+    <desc>
+      The paravirtualized guest interface provider. This enumeration represents possible
+      values for the <link to="IMachine::paravirtProvider"/> attribute.
+    </desc>
+    <const name="None"     value="0">
+      <desc>No provider is used.</desc>
+    </const>
+    <const name="Default"  value="1">
+      <desc>A default provider is automatically chosen according to the guest OS type.</desc>
+    </const>
+    <const name="Legacy"   value="2">
       <desc>Used for VMs which didn't used to have any provider settings. Usually
         interpreted as @c None for most VMs.</desc>
-	</const>
-	<const name="Minimal"  value="3">
-	  <desc>A minimal set of features to expose to the paravirtualized guest.</desc>
-	</const>
-	<const name="HyperV"   value="4">
-	  <desc>Microsoft Hyper-V.</desc>
-	</const>
+    </const>
+    <const name="Minimal"  value="3">
+      <desc>A minimal set of features to expose to the paravirtualized guest.</desc>
+    </const>
+    <const name="HyperV"   value="4">
+      <desc>Microsoft Hyper-V.</desc>
+    </const>
   </enum>
 
   <enum
@@ -4843,11 +4843,11 @@
       </desc>
     </attribute>
 
-	<attribute name="paravirtProvider" type="ParavirtProvider">
-	  <desc>
-	    The paravirtualized guest interface provider.
-	  </desc>
-	</attribute>
+    <attribute name="paravirtProvider" type="ParavirtProvider">
+      <desc>
+        The paravirtualized guest interface provider.
+      </desc>
+    </attribute>
 
     <attribute name="faultToleranceState" type="FaultToleranceState">
       <desc>
