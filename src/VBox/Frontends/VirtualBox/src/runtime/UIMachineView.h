@@ -268,9 +268,6 @@ protected:
     friend class UIMachineLogic;
     friend class UIFrameBuffer;
     friend class UIFrameBufferQImage;
-#ifdef VBOX_GUI_USE_QUARTZ2D
-    friend class UIFrameBufferQuartz2D;
-#endif /* VBOX_GUI_USE_QUARTZ2D */
     template<class, class, class> friend class VBoxOverlayFrameBuffer;
 };
 

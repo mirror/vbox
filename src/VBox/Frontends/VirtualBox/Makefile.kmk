@@ -79,7 +79,7 @@ VirtualBox_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 
 VirtualBox_DEFS           =
 VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
-VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QUARTZ2D VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBox_DEFS.darwin    = VBOX_WITH_TRANSLUCENT_SEAMLESS
 VirtualBox_DEFS.win       = UNICODE QT_DLL
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
@@ -728,7 +728,6 @@ VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIAbstractDockIconPreview.cpp \
 	src/platform/darwin/UICocoaDockIconPreview.mm \
 	src/platform/darwin/UIWindowMenuManager.cpp \
-	src/runtime/UIFrameBufferQuartz2D.cpp
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
  VirtualBox_SOURCES += \
@@ -973,7 +972,6 @@ $$(VirtualBox_0_OUTDIR)/include/precomp.h.gch: \
 		'-DQT_OPENGL_LIB' \
 		'-DMAC_OS_X_VERSION_MIN_REQUIRED=1050' \
 		'-DMAC_OS_X_VERSION_MAX_ALLOWED=1050' \
-		'-DVBOX_GUI_USE_QUARTZ2D' \
 		'-o' $@ $<
 endif
 

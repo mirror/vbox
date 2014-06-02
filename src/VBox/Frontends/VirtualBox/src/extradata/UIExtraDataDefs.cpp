@@ -63,7 +63,6 @@ const char* UIExtraDataDefs::GUI_PreventSnapshotOperations = "GUI/PreventSnapsho
 const char* UIExtraDataDefs::GUI_HideDetails = "GUI/HideDetails";
 
 /* Runtime UI definitions: */
-const char* UIExtraDataDefs::GUI_RenderMode = "GUI/RenderMode";
 #ifndef Q_WS_MAC
 const char* UIExtraDataDefs::GUI_MachineWindowIcons = "GUI/MachineWindowIcons";
 const char* UIExtraDataDefs::GUI_MachineWindowNamePostfix = "GUI/MachineWindowNamePostfix";
