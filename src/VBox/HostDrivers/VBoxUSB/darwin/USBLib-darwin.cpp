@@ -101,7 +101,7 @@ USBLIB_DECL(int) USBLibInit(void)
      * Open the service.
      * This will cause the user client class in VBoxUSB.cpp to be instantiated.
      */
-    kr = IOServiceOpen(ServiceObject, mach_task_self(), 0, &g_Connection);
+    kr = IOServiceOpen(ServiceObject, mach_task_self(), VBOXUSB_DARWIN_IOSERVICE_COOKIE, &g_Connection);
     IOObjectRelease(ServiceObject);
     if (kr != kIOReturnSuccess)
     {

@@ -1372,6 +1372,13 @@ bool org_virtualbox_SupDrvClient::initWithTask(task_t OwningTask, void *pvSecuri
 
     if (!OwningTask)
         return false;
+
+    if (u32Type != SUP_DARWIN_IOSERVICE_COOKIE)
+    {
+        Log(("org_virtualbox_SupDrvClient::initWithTask: Bade cookie %#x\n", u32Type));
+        return false;
+    }
+
     if (IOUserClient::initWithTask(OwningTask, pvSecurityId , u32Type))
     {
         m_Task = OwningTask;
