@@ -18,10 +18,15 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+/* Qt includes: */
+# include <QPainter>
 /* GUI includes: */
 # include "UIFrameBuffer.h"
+# include "UISession.h"
+# include "UIMachineLogic.h"
+# include "UIMachineWindow.h"
 # include "UIMachineView.h"
-# include "UIMessageCenter.h"
+# include "UIPopupCenter.h"
 # include "VBoxGlobal.h"
 # ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
 #  include "UIMachineWindow.h"
@@ -42,11 +47,12 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIFrameBuffer, IFramebuffer)
 #endif /* !Q_WS_WIN */
 
 UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
-    : m_pMachineView(pMachineView)
-    , m_width(0), m_height(0)
+    : m_iWidth(0), m_iHeight(0)
+    , m_pMachineView(pMachineView)
+    , m_iWinId(0)
+    , m_fUpdatesAllowed(true)
     , m_fUnused(false)
     , m_fAutoEnabled(false)
-    , m_fIsUpdatesAllowed(true)
 #ifdef Q_OS_WIN
     , m_iRefCnt(0)
 #endif /* Q_OS_WIN */
@@ -56,7 +62,7 @@ UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
     /* Assign mahine-view: */
     AssertMsg(m_pMachineView, ("UIMachineView must not be NULL\n"));
     /* Cache window ID: */
-    m_winId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
+    m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
     /* Initialize critical-section: */
     int rc = RTCritSectInit(&m_critSect);
@@ -65,6 +71,9 @@ UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
     /* Connect handlers: */
     if (m_pMachineView)
         prepareConnections();
+
+    /* Resize frame-buffer to default size: */
+    resizeEvent(640, 480);
 }
 
 UIFrameBuffer::~UIFrameBuffer()
@@ -86,7 +95,7 @@ void UIFrameBuffer::setView(UIMachineView *pMachineView)
     /* Reassign machine-view: */
     m_pMachineView = pMachineView;
     /* Recache window ID: */
-    m_winId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
+    m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
     /* Connect new handlers: */
     if (m_pMachineView)
@@ -176,7 +185,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(WinId)(LONG64 *pWinId)
 {
     if (!pWinId)
         return E_POINTER;
-    *pWinId = m_winId;
+    *pWinId = m_iWinId;
     return S_OK;
 }
 
@@ -222,7 +231,7 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
             (unsigned long)uScreenId,
             (unsigned long)uX, (unsigned long)uY,
             (unsigned long)uWidth, (unsigned long)uHeight));
-    emit sigNotifyChange(uScreenId, uWidth, uHeight);
+    emit sigNotifyChange(uWidth, uHeight);
 
     /* Unlock access to frame-buffer: */
     unlock();
@@ -241,8 +250,8 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
      * otherwise we have artifacts on the borders of incoming rectangle. */
     uX = qMax(0, (int)uX - 1);
     uY = qMax(0, (int)uY - 1);
-    uWidth = qMin((int)m_width, (int)uWidth + 2);
-    uHeight = qMin((int)m_height, (int)uHeight + 2);
+    uWidth = qMin(m_iWidth, (int)uWidth + 2);
+    uHeight = qMin(m_iHeight, (int)uHeight + 2);
 
     /* Lock access to frame-buffer: */
     lock();
@@ -454,16 +463,21 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pData)
     return E_INVALIDARG;
 }
 
-void UIFrameBuffer::notifyChange()
+void UIFrameBuffer::notifyChange(int iWidth, int iHeight)
 {
+    LogRel(("UIFrameBuffer::notifyChange: Size=%dx%d\n", iWidth, iHeight));
+
+    /* Make sure machine-view is assigned: */
+    AssertPtrReturnVoid(m_pMachineView);
+
     /* Lock access to frame-buffer: */
     lock();
 
-    /* If there is NO pending source bitmap: */
+    /* If there is NO pending source-bitmap: */
     if (m_pendingSourceBitmap.isNull())
     {
         /* Do nothing, change-event already processed: */
-        LogRelFlow(("UIFrameBuffer::notifyChange: Already processed.\n"));
+        LogRel2(("UIFrameBuffer::notifyChange: Already processed.\n"));
         /* Unlock access to frame-buffer: */
         unlock();
         /* Return immediately: */
@@ -471,7 +485,7 @@ void UIFrameBuffer::notifyChange()
     }
 
     /* Disable screen updates: */
-    m_fIsUpdatesAllowed = false;
+    m_fUpdatesAllowed = false;
 
     /* Release the current bitmap and keep the pending one: */
     m_sourceBitmap = m_pendingSourceBitmap;
@@ -480,24 +494,160 @@ void UIFrameBuffer::notifyChange()
     /* Unlock access to frame-buffer: */
     unlock();
 
-    /* Acquire source bitmap: */
-    BYTE *pAddress = NULL;
-    ULONG ulWidth = 0;
-    ULONG ulHeight = 0;
-    ULONG ulBitsPerPixel = 0;
-    ULONG ulBytesPerLine = 0;
-    ULONG ulPixelFormat = 0;
-    m_sourceBitmap.QueryBitmapInfo(pAddress,
-                                   ulWidth,
-                                   ulHeight,
-                                   ulBitsPerPixel,
-                                   ulBytesPerLine,
-                                   ulPixelFormat);
-
     /* Perform frame-buffer resize: */
-    UIResizeEvent e(FramebufferPixelFormat_Opaque, pAddress,
-                    ulBitsPerPixel, ulBytesPerLine, ulWidth, ulHeight);
-    resizeEvent(&e);
+    resizeEvent(iWidth, iHeight);
+}
+
+void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
+{
+    LogRel(("UIFrameBuffer::resizeEvent: Size=%dx%d\n", iWidth, iHeight));
+
+    /* Make sure machine-view is assigned: */
+    AssertPtrReturnVoid(m_pMachineView);
+
+    /* Invalidate visible-region (if necessary): */
+    if (m_pMachineView->machineLogic()->visualStateType() == UIVisualStateType_Seamless &&
+        (m_iWidth != iWidth || m_iHeight != iHeight))
+    {
+        lock();
+        m_syncVisibleRegion = QRegion();
+        m_asyncVisibleRegion = QRegion();
+        unlock();
+    }
+
+    /* If source-bitmap invalid: */
+    if (m_sourceBitmap.isNull())
+    {
+        LogRel(("UIFrameBuffer::resizeEvent: "
+                "Using FALLBACK buffer due to source-bitmap is not provided..\n"));
+
+        /* Remember new size came from hint: */
+        m_iWidth = iWidth;
+        m_iHeight = iHeight;
+
+        /* And go fallback: */
+        goFallback();
+    }
+    /* If source-bitmap valid: */
+    else
+    {
+        LogRel(("UIFrameBuffer::resizeEvent: "
+                "Directly using source-bitmap content..\n"));
+
+        /* Acquire source-bitmap attributes: */
+        BYTE *pAddress = NULL;
+        ULONG ulWidth = 0;
+        ULONG ulHeight = 0;
+        ULONG ulBitsPerPixel = 0;
+        ULONG ulBytesPerLine = 0;
+        ULONG ulPixelFormat = 0;
+        m_sourceBitmap.QueryBitmapInfo(pAddress,
+                                       ulWidth,
+                                       ulHeight,
+                                       ulBitsPerPixel,
+                                       ulBytesPerLine,
+                                       ulPixelFormat);
+        Assert(ulBitsPerPixel == 32);
+
+        /* Remember new actual size: */
+        m_iWidth = (int)ulWidth;
+        m_iHeight = (int)ulHeight;
+
+        /* Recreate QImage on the basis of source-bitmap content: */
+        m_image = QImage(pAddress, m_iWidth, m_iHeight, ulBytesPerLine, QImage::Format_RGB32);
+
+        /* Check whether guest color depth differs from the bitmap color depth: */
+        ULONG ulGuestBitsPerPixel = 0;
+        LONG xOrigin = 0;
+        LONG yOrigin = 0;
+        CDisplay display = m_pMachineView->uisession()->session().GetConsole().GetDisplay();
+        display.GetScreenResolution(m_pMachineView->screenId(),
+                                    ulWidth, ulHeight, ulGuestBitsPerPixel, xOrigin, yOrigin);
+
+        /* Remind user if necessary: */
+        if (   ulGuestBitsPerPixel != ulBitsPerPixel
+            && m_pMachineView->uisession()->isGuestAdditionsActive())
+            popupCenter().remindAboutWrongColorDepth(m_pMachineView->machineWindow(),
+                                                     ulGuestBitsPerPixel, ulBitsPerPixel);
+        else
+            popupCenter().forgetAboutWrongColorDepth(m_pMachineView->machineWindow());
+    }
+
+    /* Enable screen updates: */
+    lock();
+    m_fUpdatesAllowed = true;
+    unlock();
+}
+
+void UIFrameBuffer::paintEvent(QPaintEvent *pEvent)
+{
+    LogRel2(("UIFrameBuffer::paintEvent: Origin=%lux%lu, Size=%dx%d\n",
+             pEvent->rect().x(), pEvent->rect().y(),
+             pEvent->rect().width(), pEvent->rect().height()));
+
+    /* On mode switch the enqueued paint-event may still come
+     * while the machine-view is already null (before the new machine-view set),
+     * ignore paint-event in that case. */
+    if (!m_pMachineView)
+        return;
+
+    /* Lock access to frame-buffer: */
+    lock();
+
+    /* But if updates disabled: */
+    if (!m_fUpdatesAllowed)
+    {
+        /* Unlock access to frame-buffer: */
+        unlock();
+        /* And return immediately: */
+        return;
+    }
+
+    /* If the machine is NOT in 'running', 'paused' or 'saving' state,
+     * the link between the framebuffer and the video memory is broken.
+     * We should go fallback in that case.
+     * We should acquire actual machine-state to exclude
+     * situations when the state was changed already but
+     * GUI didn't received event about that or didn't processed it yet. */
+    KMachineState machineState = m_pMachineView->uisession()->session().GetConsole().GetState();
+    if (/* running */
+           machineState != KMachineState_Running
+        && machineState != KMachineState_Teleporting
+        && machineState != KMachineState_LiveSnapshotting
+        && machineState != KMachineState_DeletingSnapshotOnline
+        /* paused */
+        && machineState != KMachineState_Paused
+        && machineState != KMachineState_TeleportingPausedVM
+        /* saving */
+        && machineState != KMachineState_Saving
+        /* guru */
+        && machineState != KMachineState_Stuck
+        )
+    {
+        LogRel(("UIFrameBuffer::paintEvent: "
+                "Using FALLBACK buffer due to machine-state become invalid: "
+                "%d.\n", (int)machineState));
+
+        /* Go fallback: */
+        goFallback();
+    }
+
+    /* Depending on visual-state type: */
+    switch (m_pMachineView->machineLogic()->visualStateType())
+    {
+        case UIVisualStateType_Seamless:
+            paintSeamless(pEvent);
+            break;
+        case UIVisualStateType_Scale:
+            paintScaled(pEvent);
+            break;
+        default:
+            paintDefault(pEvent);
+            break;
+    }
+
+    /* Unlock access to frame-buffer: */
+    unlock();
 }
 
 void UIFrameBuffer::applyVisibleRegion(const QRegion &region)
@@ -532,8 +682,8 @@ void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
 
 void UIFrameBuffer::prepareConnections()
 {
-    connect(this, SIGNAL(sigNotifyChange(ulong, int, int)),
-            m_pMachineView, SLOT(sltHandleNotifyChange(ulong, int, int)),
+    connect(this, SIGNAL(sigNotifyChange(int, int)),
+            m_pMachineView, SLOT(sltHandleNotifyChange(int, int)),
             Qt::QueuedConnection);
     connect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
             m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)),
@@ -548,13 +698,188 @@ void UIFrameBuffer::prepareConnections()
 
 void UIFrameBuffer::cleanupConnections()
 {
-    disconnect(this, SIGNAL(sigNotifyChange(ulong, int, int)),
-               m_pMachineView, SLOT(sltHandleNotifyChange(ulong, int, int)));
+    disconnect(this, SIGNAL(sigNotifyChange(int, int)),
+               m_pMachineView, SLOT(sltHandleNotifyChange(int, int)));
     disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
                m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
     disconnect(this, SIGNAL(sigSetVisibleRegion(QRegion)),
                m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)));
     disconnect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
                m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)));
+}
+
+void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
+{
+    /* Get rectangle to paint: */
+    QRect paintRect = pEvent->rect().intersected(m_image.rect()).intersected(m_pMachineView->viewport()->geometry());
+    if (paintRect.isEmpty())
+        return;
+
+    /* Create painter: */
+    QPainter painter(m_pMachineView->viewport());
+
+    /* Draw image rectangle: */
+    drawImageRect(painter, m_image, paintRect,
+                  m_pMachineView->contentsX(), m_pMachineView->contentsY(),
+                  hiDPIOptimizationType(), backingScaleFactor());
+}
+
+void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
+{
+    /* Get rectangle to paint: */
+    QRect paintRect = pEvent->rect().intersected(m_image.rect()).intersected(m_pMachineView->viewport()->geometry());
+    if (paintRect.isEmpty())
+        return;
+
+    /* Create painter: */
+    QPainter painter(m_pMachineView->viewport());
+
+    /* Determine the region to erase: */
+    lock();
+    QRegion regionToErase = (QRegion)paintRect - m_syncVisibleRegion;
+    unlock();
+    if (!regionToErase.isEmpty())
+    {
+        /* Optimize composition-mode: */
+        painter.setCompositionMode(QPainter::CompositionMode_Clear);
+        /* Erase required region, slowly, rectangle-by-rectangle: */
+        foreach (const QRect &rect, regionToErase.rects())
+            painter.eraseRect(rect);
+        /* Restore composition-mode: */
+        painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    }
+
+    /* Determine the region to paint: */
+    lock();
+    QRegion regionToPaint = (QRegion)paintRect & m_syncVisibleRegion;
+    unlock();
+    if (!regionToPaint.isEmpty())
+    {
+        /* Paint required region, slowly, rectangle-by-rectangle: */
+        foreach (const QRect &rect, regionToPaint.rects())
+        {
+#if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS) && defined(Q_WS_WIN)
+            /* Replace translucent background with black one,
+             * that is necessary for window with Qt::WA_TranslucentBackground: */
+            painter.setCompositionMode(QPainter::CompositionMode_Source);
+            painter.fillRect(rect, QColor(Qt::black));
+            painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
+#endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
+
+            /* Draw image rectangle: */
+            drawImageRect(painter, m_image, rect,
+                          m_pMachineView->contentsX(), m_pMachineView->contentsY(),
+                          hiDPIOptimizationType(), backingScaleFactor());
+        }
+    }
+}
+
+void UIFrameBuffer::paintScaled(QPaintEvent *pEvent)
+{
+    /* Scaled image is NULL by default: */
+    QImage scaledImage;
+    /* But if scaled-factor is set and current image is NOT null: */
+    if (m_scaledSize.isValid() && !m_image.isNull())
+    {
+        /* We are doing a deep copy of the image to make sure it will not be
+         * detached during scale process, otherwise we can get a frozen frame-buffer. */
+        scaledImage = m_image.copy();
+        /* And scaling the image to predefined scaled-factor: */
+        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    }
+    /* Finally we are choosing image to paint from: */
+    QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
+
+    /* Get rectangle to paint: */
+    QRect paintRect = pEvent->rect().intersected(sourceImage.rect()).intersected(m_pMachineView->viewport()->geometry());
+    if (paintRect.isEmpty())
+        return;
+
+    /* Create painter: */
+    QPainter painter(m_pMachineView->viewport());
+
+    /* Draw image rectangle: */
+    drawImageRect(painter, sourceImage, paintRect,
+                  m_pMachineView->contentsX(), m_pMachineView->contentsY(),
+                  hiDPIOptimizationType(), backingScaleFactor());
+}
+
+/* static */
+void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
+                                  int iContentsShiftX, int iContentsShiftY,
+                                  HiDPIOptimizationType hiDPIOptimizationType,
+                                  double dBackingScaleFactor)
+{
+    /* Calculate offset: */
+    size_t offset = (rect.x() + iContentsShiftX) * image.depth() / 8 +
+                    (rect.y() + iContentsShiftY) * image.bytesPerLine();
+
+    /* Restrain boundaries: */
+    int iSubImageWidth = qMin(rect.width(), image.width() - rect.x() - iContentsShiftX);
+    int iSubImageHeight = qMin(rect.height(), image.height() - rect.y() - iContentsShiftY);
+
+    /* Create sub-image (no copy involved): */
+    QImage subImage = QImage(image.bits() + offset,
+                             iSubImageWidth, iSubImageHeight,
+                             image.bytesPerLine(), image.format());
+
+#ifndef QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT
+    /* Create sub-pixmap on the basis of sub-image above (1st copy involved): */
+    QPixmap subPixmap = QPixmap::fromImage(subImage);
+
+    /* If HiDPI 'backing scale factor' defined: */
+    if (dBackingScaleFactor > 1.0)
+    {
+        /* Should we optimize HiDPI output for performance? */
+        if (hiDPIOptimizationType == HiDPIOptimizationType_Performance)
+        {
+            /* Fast scale sub-pixmap (2nd copy involved): */
+            subPixmap = subPixmap.scaled(subPixmap.size() * dBackingScaleFactor,
+                                         Qt::IgnoreAspectRatio, Qt::FastTransformation);
+# ifdef Q_WS_MAC
+#  ifdef VBOX_GUI_WITH_HIDPI
+            /* Mark sub-pixmap as HiDPI: */
+            subPixmap.setDevicePixelRatio(dBackingScaleFactor);
+#  endif /* VBOX_GUI_WITH_HIDPI */
+# endif /* Q_WS_MAC */
+        }
+    }
+
+    /* Draw sub-pixmap: */
+    painter.drawPixmap(rect.x(), rect.y(), subPixmap);
+#else /* QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT */
+    /* If HiDPI 'backing scale factor' defined: */
+    if (dBackingScaleFactor > 1.0)
+    {
+        /* Should we optimize HiDPI output for performance? */
+        if (hiDPIOptimizationType == HiDPIOptimizationType_Performance)
+        {
+            /* Create fast-scaled-sub-image (1st copy involved): */
+            QImage scaledSubImage = subImage.scaled(subImage.size() * dBackingScaleFactor,
+                                                    Qt::IgnoreAspectRatio, Qt::FastTransformation);
+# ifdef Q_WS_MAC
+#  ifdef VBOX_GUI_WITH_HIDPI
+            /* Mark sub-pixmap as HiDPI: */
+            scaledSubImage.setDevicePixelRatio(dBackingScaleFactor);
+#  endif /* VBOX_GUI_WITH_HIDPI */
+# endif /* Q_WS_MAC */
+            /* Directly draw scaled-sub-image: */
+            painter.drawImage(rect.x(), rect.y(), scaledSubImage);
+            return;
+        }
+    }
+    /* Directly draw sub-image: */
+    painter.drawImage(rect.x(), rect.y(), subImage);
+#endif /* QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT */
+}
+
+void UIFrameBuffer::goFallback()
+{
+    /* We are going for FALLBACK buffer when:
+     * 1. Display did not provide the source-bitmap;
+     * 2. or the machine is in the state which breaks link between
+     *    the framebuffer and the actual video-memory: */
+    m_image = QImage(m_iWidth, m_iHeight, QImage::Format_RGB32);
+    m_image.fill(0);
 }
 

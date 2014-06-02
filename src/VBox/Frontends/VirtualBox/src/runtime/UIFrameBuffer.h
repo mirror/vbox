@@ -19,6 +19,7 @@
 
 /* Qt includes: */
 #include <QRegion>
+#include <QImage>
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -36,34 +37,6 @@ class QResizeEvent;
 class QPaintEvent;
 class UIMachineView;
 
-/** Frame-buffer resize-event. */
-class UIResizeEvent : public QEvent
-{
-public:
-
-    UIResizeEvent(ulong uPixelFormat, uchar *pVRAM,
-                  ulong uBitsPerPixel, ulong uBytesPerLine,
-                  ulong uWidth, ulong uHeight)
-        : QEvent((QEvent::Type)ResizeEventType)
-        , m_uPixelFormat(uPixelFormat), m_pVRAM(pVRAM), m_uBitsPerPixel(uBitsPerPixel)
-        , m_uBytesPerLine(uBytesPerLine), m_uWidth(uWidth), m_uHeight(uHeight) {}
-    ulong pixelFormat() { return m_uPixelFormat; }
-    uchar *VRAM() { return m_pVRAM; }
-    ulong bitsPerPixel() { return m_uBitsPerPixel; }
-    ulong bytesPerLine() { return m_uBytesPerLine; }
-    ulong width() { return m_uWidth; }
-    ulong height() { return m_uHeight; }
-
-private:
-
-    ulong m_uPixelFormat;
-    uchar *m_pVRAM;
-    ulong m_uBitsPerPixel;
-    ulong m_uBytesPerLine;
-    ulong m_uWidth;
-    ulong m_uHeight;
-};
-
 /** Common IFramebuffer implementation used to maintain VM display video memory. */
 class UIFrameBuffer : public QObject, VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
@@ -72,7 +45,7 @@ class UIFrameBuffer : public QObject, VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 signals:
 
     /** Notifies listener about guest-screen resolution changes. */
-    void sigNotifyChange(ulong uScreenId, int iWidth, int iHeight);
+    void sigNotifyChange(int iWidth, int iHeight);
     /** Notifies listener about guest-screen updates. */
     void sigNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
     /** Notifies listener about guest-screen visible-region changes. */
@@ -189,17 +162,17 @@ public:
     STDMETHOD(Notify3DEvent)(ULONG uType, BYTE *pData);
 
     /** Returns frame-buffer data address. */
-    virtual uchar *address() = 0;
+    uchar *address() { return m_image.bits(); }
     /** Returns frame-buffer width. */
-    ulong width() { return m_width; }
+    ulong width() { return m_iWidth; }
     /** Returns frame-buffer height. */
-    ulong height() { return m_height; }
+    ulong height() { return m_iHeight; }
     /** Returns frame-buffer bits-per-pixel value. */
-    virtual ulong bitsPerPixel() = 0;
+    ulong bitsPerPixel() { return m_image.depth(); }
     /** Returns frame-buffer bytes-per-line value. */
-    virtual ulong bytesPerLine() = 0;
+    ulong bytesPerLine() { return m_image.bytesPerLine(); }
     /** Returns default frame-buffer pixel-format. */
-    virtual ulong pixelFormat() { return FramebufferPixelFormat_FOURCC_RGB; }
+    ulong pixelFormat() { return FramebufferPixelFormat_FOURCC_RGB; }
 
     /** Locks frame-buffer access. */
     void lock() const { RTCritSectEnter(&m_critSect); }
@@ -211,22 +184,22 @@ public:
     /** Defines host-to-guest scale ratio as @a size. */
     void setScaledSize(const QSize &size = QSize()) { m_scaledSize = size; }
     /** Returns x-origin of the host (scaled) content corresponding to x-origin of guest (actual) content. */
-    inline int convertGuestXTo(int x) const { return m_scaledSize.isValid() ? qRound((double)m_scaledSize.width() / m_width * x) : x; }
+    inline int convertGuestXTo(int x) const { return m_scaledSize.isValid() ? qRound((double)m_scaledSize.width() / m_iWidth * x) : x; }
     /** Returns y-origin of the host (scaled) content corresponding to y-origin of guest (actual) content. */
-    inline int convertGuestYTo(int y) const { return m_scaledSize.isValid() ? qRound((double)m_scaledSize.height() / m_height * y) : y; }
+    inline int convertGuestYTo(int y) const { return m_scaledSize.isValid() ? qRound((double)m_scaledSize.height() / m_iHeight * y) : y; }
     /** Returns x-origin of the guest (actual) content corresponding to x-origin of host (scaled) content. */
-    inline int convertHostXTo(int x) const  { return m_scaledSize.isValid() ? qRound((double)m_width / m_scaledSize.width() * x) : x; }
+    inline int convertHostXTo(int x) const  { return m_scaledSize.isValid() ? qRound((double)m_iWidth / m_scaledSize.width() * x) : x; }
     /** Returns y-origin of the guest (actual) content corresponding to y-origin of host (scaled) content. */
-    inline int convertHostYTo(int y) const  { return m_scaledSize.isValid() ? qRound((double)m_height / m_scaledSize.height() * y) : y; }
+    inline int convertHostYTo(int y) const  { return m_scaledSize.isValid() ? qRound((double)m_iHeight / m_scaledSize.height() * y) : y; }
 
     /** Handles frame-buffer notify-change-event. */
-    void notifyChange();
+    virtual void notifyChange(int iWidth, int iHeight);
     /** Handles frame-buffer resize-event. */
-    virtual void resizeEvent(UIResizeEvent *pEvent) = 0;
+    virtual void resizeEvent(int iWidth, int iHeight);
     /** Handles frame-buffer paint-event. */
-    virtual void paintEvent(QPaintEvent *pEvent) = 0;
+    virtual void paintEvent(QPaintEvent *pEvent);
     /** Handles frame-buffer apply-visible-region-event. */
-    void applyVisibleRegion(const QRegion &region);
+    virtual void applyVisibleRegion(const QRegion &region);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /** Performs Video HW Acceleration command. */
@@ -249,21 +222,51 @@ public:
 
 protected:
 
-    /** Machine-view this frame-buffer is bounded to. */
+    /** Prepare connections routine. */
+    void prepareConnections();
+    /** Cleanup connections routine. */
+    void cleanupConnections();
+
+    /** Default paint routine. */
+    void paintDefault(QPaintEvent *pEvent);
+    /** Paint routine for seamless mode. */
+    void paintSeamless(QPaintEvent *pEvent);
+    /** Paint routine for scaled mode. */
+    void paintScaled(QPaintEvent *pEvent);
+
+    /** Draws corresponding @a rect of passed @a image with @a painter. */
+    static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
+                              int iContentsShiftX, int iContentsShiftY,
+                              HiDPIOptimizationType hiDPIOptimizationType,
+                              double dBackingScaleFactor);
+
+    /** Recreates own clean QImage buffer. */
+    void goFallback();
+
+    /** Holds the QImage buffer. */
+    QImage m_image;
+    /** Holds frame-buffer width. */
+    int m_iWidth;
+    /** Holds frame-buffer height. */
+    int m_iHeight;
+
+    /** Source bitmap from IDisplay. */
+    CDisplaySourceBitmap m_sourceBitmap;
+    /** Source bitmap from IDisplay (acquired but not yet applied). */
+    CDisplaySourceBitmap m_pendingSourceBitmap;
+
+    /** Holds machine-view this frame-buffer is bounded to. */
     UIMachineView *m_pMachineView;
-    /** Cached window ID. */
-    int64_t m_winId;
-    /** RTCRITSECT object to protect frame-buffer access. */
-    mutable RTCRITSECT m_critSect;
-    /** Frame-buffer width. */
-    ulong m_width;
-    /** Frame-buffer height. */
-    ulong m_height;
-    /** Frame-buffer scaled size. */
-    QSize m_scaledSize;
+    /** Holds window ID this frame-buffer referring to. */
+    int64_t m_iWinId;
+
+    /** Reflects whether screen-updates are allowed. */
+    bool m_fUpdatesAllowed;
+
     /** Defines whether frame-buffer is <b>unused</b>.
       * <b>Unused</b> status determines whether frame-buffer should ignore EMT events or not. */
     bool m_fUnused;
+
     /** Defines whether frame-buffer is <b>auto-enabled</b>.
       * <b>Auto-enabled</b> status means that guest-screen corresponding to this frame-buffer
       * was automatically enabled by the multi-screen layout (auto-mount guest-screen) functionality,
@@ -271,13 +274,22 @@ protected:
       * Machine-view will try to automatically adjust guest-screen size as soon as possible. */
     bool m_fAutoEnabled;
 
-    /** Source bitmap from IDisplay. */
-    CDisplaySourceBitmap m_sourceBitmap;
-    /** Source bitmap from IDisplay (acquired but not yet applied). */
-    CDisplaySourceBitmap m_pendingSourceBitmap;
-    /** Reflects whether screen-updates are allowed. */
-    bool m_fIsUpdatesAllowed;
+    /** RTCRITSECT object to protect frame-buffer access. */
+    mutable RTCRITSECT m_critSect;
 
+#ifdef Q_OS_WIN
+    /** Windows: Holds the reference counter. */
+    long m_iRefCnt;
+#endif /* Q_OS_WIN */
+
+    /** @name Scaled mode related variables.
+     * @{ */
+    /** Holds frame-buffer scaled size. */
+    QSize m_scaledSize;
+    /** @} */
+
+    /** @name Seamless mode related variables.
+     * @{ */
     /* To avoid a seamless flicker which caused by the latency between
      * the initial visible-region arriving from EMT thread
      * and actual visible-region appliance on GUI thread
@@ -289,24 +301,15 @@ protected:
       * Used to update viewport parts for visible-region changes,
       * because NotifyUpdate doesn't take into account these changes. */
     QRegion m_asyncVisibleRegion;
+    /** @} */
 
-private:
-
-    /** Prepare connections routine. */
-    void prepareConnections();
-    /** Cleanup connections routine. */
-    void cleanupConnections();
-
-#ifdef Q_OS_WIN
-    /** Windows: Holds the reference counter. */
-    long m_iRefCnt;
-#endif /* Q_OS_WIN */
-
+    /** @name HiDPI screens related variables.
+     * @{ */
     /** Holds HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType m_hiDPIOptimizationType;
-
     /** Holds backing scale factor used by HiDPI frame-buffer. */
     double m_dBackingScaleFactor;
+    /** @} */
 };
 
 #endif /* !___UIFrameBuffer_h___ */

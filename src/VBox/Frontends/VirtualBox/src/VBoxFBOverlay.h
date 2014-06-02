@@ -1818,9 +1818,9 @@ private:
     uint32_t m_id;
 };
 
-/* these two additional class V, class R are to workaround the [VBox|UI] duplication,
- * @todo: remove them once VBox stuff is removed */
-template <class T, class V, class R>
+/* this additional class V is to workaround the [VBox|UI] duplication,
+ * @todo: remove it once VBox stuff is removed */
+template <class T, class V>
 class VBoxOverlayFrameBuffer : public T
 {
 public:
@@ -1885,10 +1885,10 @@ public:
         return hr;
     }
 
-    void resizeEvent (R *re)
+    void resizeEvent(int iWidth, int iHeight)
     {
-        T::resizeEvent (re);
-        mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(this),
+        T::resizeEvent(iWidth, iHeight);
+        mOverlay.onResizeEventPostprocess(VBoxFBSizeInfo(this),
                 QPoint(mpView->contentsX(), mpView->contentsY()));
     }
 

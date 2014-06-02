@@ -560,7 +560,6 @@ VirtualBox_SOURCES = \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
-	src/runtime/UIFrameBufferQImage.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIKeyboardHandler.cpp \
 	src/runtime/UIMachine.cpp \

@@ -34,7 +34,6 @@
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UIFrameBuffer.h"
-#include "UIFrameBufferQImage.h"
 #include "VBoxFBOverlay.h"
 #include "UISession.h"
 #include "UIKeyboardHandler.h"
@@ -216,7 +215,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     machine.SetExtraData(strKey, isFullscreenOrSeamless() ? "true" : "");
 }
 
-void UIMachineView::sltHandleNotifyChange(ulong uScreenId, int iWidth, int iHeight)
+void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 {
     LogRelFlow(("UIMachineView::HandleNotifyChange: Screen=%d, Size=%dx%d.\n",
                 (unsigned long)m_uScreenId, iWidth, iHeight));
@@ -236,7 +235,7 @@ void UIMachineView::sltHandleNotifyChange(ulong uScreenId, int iWidth, int iHeig
             frameBuffer()->setScaledSize(size());
 
         /* Perform frame-buffer mode-change: */
-        frameBuffer()->notifyChange();
+        frameBuffer()->notifyChange(iWidth, iHeight);
 
         /* Scale-mode doesn't need this.. */
         if (visualStateType() != UIVisualStateType_Scale)
@@ -409,12 +408,12 @@ void UIMachineView::prepareFrameBuffer()
             /** these two additional template args is a workaround to
              * this [VBox|UI] duplication
              * @todo: they are to be removed once VBox stuff is gone */
-            pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &session(), (uint32_t)screenId());
+            pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBuffer, UIMachineView>(this, &session(), (uint32_t)screenId());
         }
         else
-            pFrameBuffer = new UIFrameBufferQImage(this);
+            pFrameBuffer = new UIFrameBuffer(this);
 # else /* VBOX_WITH_VIDEOHWACCEL */
-        pFrameBuffer = new UIFrameBufferQImage(this);
+        pFrameBuffer = new UIFrameBuffer(this);
 # endif /* !VBOX_WITH_VIDEOHWACCEL */
         pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
         uisession()->setFrameBuffer(screenId(), pFrameBuffer);
@@ -467,12 +466,8 @@ void UIMachineView::prepareFrameBuffer()
             size = QSize(guestWidth, guestHeight);
     }
     /* If we have a valid size, resize the framebuffer. */
-    if (   size.width() > 0
-        && size.height() > 0)
-    {
-        UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, size.width(), size.height());
-        frameBuffer()->resizeEvent(&event);
-    }
+    if (size.width() > 0 && size.height() > 0)
+        frameBuffer()->resizeEvent(size.width(), size.height());
 }
 
 void UIMachineView::prepareCommon()
