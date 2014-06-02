@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,36 +18,34 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* GUI includes: */
-# include "UIMachineView.h"
 # include "UIFrameBuffer.h"
+# include "UIMachineView.h"
 # include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 # ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
 #  include "UIMachineWindow.h"
 # endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
-
-/* Other VBox includes: */
-# include <VBox/VBoxVideo3D.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
+/* COM includes: */
 #include "CConsole.h"
 #include "CDisplay.h"
+/* Other VBox includes: */
+# include <VBox/VBoxVideo3D.h>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#if defined (Q_OS_WIN32)
+/* COM stuff: */
+#ifdef Q_WS_WIN
 static CComModule _Module;
-#else
-NS_DECL_CLASSINFO (UIFrameBuffer)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI (UIFrameBuffer, IFramebuffer)
-#endif
+#else /* !Q_WS_WIN */
+NS_DECL_CLASSINFO(UIFrameBuffer)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIFrameBuffer, IFramebuffer)
+#endif /* !Q_WS_WIN */
 
 UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
     : m_pMachineView(pMachineView)
     , m_width(0), m_height(0)
-    , m_fIsMarkedAsUnused(false)
-    , m_fIsAutoEnabled(false)
+    , m_fUnused(false)
+    , m_fAutoEnabled(false)
     , m_fIsUpdatesAllowed(true)
 #ifdef Q_OS_WIN
     , m_iRefCnt(0)
@@ -57,7 +55,8 @@ UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
 {
     /* Assign mahine-view: */
     AssertMsg(m_pMachineView, ("UIMachineView must not be NULL\n"));
-    m_WinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
+    /* Cache window ID: */
+    m_winId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
     /* Initialize critical-section: */
     int rc = RTCritSectInit(&m_critSect);
@@ -78,45 +77,30 @@ UIFrameBuffer::~UIFrameBuffer()
     RTCritSectDelete(&m_critSect);
 }
 
-/**
- * Sets the framebuffer <b>unused</b> status.
- * @param fIsMarkAsUnused determines whether framebuffer should ignore EMT events or not.
- * @note  Call to this (and any EMT callback) method is synchronized between calling threads (from GUI side).
- */
-void UIFrameBuffer::setMarkAsUnused(bool fIsMarkAsUnused)
+void UIFrameBuffer::setView(UIMachineView *pMachineView)
+{
+    /* Disconnect old handlers: */
+    if (m_pMachineView)
+        cleanupConnections();
+
+    /* Reassign machine-view: */
+    m_pMachineView = pMachineView;
+    /* Recache window ID: */
+    m_winId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
+
+    /* Connect new handlers: */
+    if (m_pMachineView)
+        prepareConnections();
+}
+
+void UIFrameBuffer::setMarkAsUnused(bool fUnused)
 {
     lock();
-    m_fIsMarkedAsUnused = fIsMarkAsUnused;
+    m_fUnused = fUnused;
     unlock();
 }
 
-/**
- * Returns the framebuffer <b>auto-enabled</b> status.
- * @returns @c true if guest-screen corresponding to this framebuffer was automatically enabled by
-            the auto-mount guest-screen auto-pilot, @c false otherwise.
- * @note    <i>Auto-enabled</i> status means the framebuffer was automatically enabled by the multi-screen layout
- *          and so have potentially incorrect guest size hint posted into guest event queue. Machine-view will try to
- *          automatically adjust guest-screen size as soon as possible.
- */
-bool UIFrameBuffer::isAutoEnabled() const
-{
-    return m_fIsAutoEnabled;
-}
-
-/**
- * Sets the framebuffer <b>auto-enabled</b> status.
- * @param fIsAutoEnabled determines whether guest-screen corresponding to this framebuffer
- *        was automatically enabled by the auto-mount guest-screen auto-pilot.
- * @note  <i>Auto-enabled</i> status means the framebuffer was automatically enabled by the multi-screen layout
- *        and so have potentially incorrect guest size hint posted into guest event queue. Machine-view will try to
- *        automatically adjust guest-screen size as soon as possible.
- */
-void UIFrameBuffer::setAutoEnabled(bool fIsAutoEnabled)
-{
-    m_fIsAutoEnabled = fIsAutoEnabled;
-}
-
-STDMETHODIMP UIFrameBuffer::COMGETTER(Address) (BYTE **ppAddress)
+STDMETHODIMP UIFrameBuffer::COMGETTER(Address)(BYTE **ppAddress)
 {
     if (!ppAddress)
         return E_POINTER;
@@ -124,7 +108,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Address) (BYTE **ppAddress)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(Width) (ULONG *puWidth)
+STDMETHODIMP UIFrameBuffer::COMGETTER(Width)(ULONG *puWidth)
 {
     if (!puWidth)
         return E_POINTER;
@@ -132,7 +116,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Width) (ULONG *puWidth)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(Height) (ULONG *puHeight)
+STDMETHODIMP UIFrameBuffer::COMGETTER(Height)(ULONG *puHeight)
 {
     if (!puHeight)
         return E_POINTER;
@@ -140,7 +124,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Height) (ULONG *puHeight)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(BitsPerPixel) (ULONG *puBitsPerPixel)
+STDMETHODIMP UIFrameBuffer::COMGETTER(BitsPerPixel)(ULONG *puBitsPerPixel)
 {
     if (!puBitsPerPixel)
         return E_POINTER;
@@ -148,7 +132,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(BitsPerPixel) (ULONG *puBitsPerPixel)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(BytesPerLine) (ULONG *puBytesPerLine)
+STDMETHODIMP UIFrameBuffer::COMGETTER(BytesPerLine)(ULONG *puBytesPerLine)
 {
     if (!puBytesPerLine)
         return E_POINTER;
@@ -156,7 +140,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(BytesPerLine) (ULONG *puBytesPerLine)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(PixelFormat) (ULONG *puPixelFormat)
+STDMETHODIMP UIFrameBuffer::COMGETTER(PixelFormat)(ULONG *puPixelFormat)
 {
     if (!puPixelFormat)
         return E_POINTER;
@@ -164,7 +148,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(PixelFormat) (ULONG *puPixelFormat)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(UsesGuestVRAM) (BOOL *pbUsesGuestVRAM)
+STDMETHODIMP UIFrameBuffer::COMGETTER(UsesGuestVRAM)(BOOL *pbUsesGuestVRAM)
 {
     if (!pbUsesGuestVRAM)
         return E_POINTER;
@@ -172,7 +156,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(UsesGuestVRAM) (BOOL *pbUsesGuestVRAM)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(HeightReduction) (ULONG *puHeightReduction)
+STDMETHODIMP UIFrameBuffer::COMGETTER(HeightReduction)(ULONG *puHeightReduction)
 {
     if (!puHeightReduction)
         return E_POINTER;
@@ -180,20 +164,19 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(HeightReduction) (ULONG *puHeightReduction
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(Overlay) (IFramebufferOverlay **ppOverlay)
+STDMETHODIMP UIFrameBuffer::COMGETTER(Overlay)(IFramebufferOverlay **ppOverlay)
 {
     if (!ppOverlay)
         return E_POINTER;
-    /* not yet implemented */
     *ppOverlay = 0;
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(WinId) (LONG64 *pWinId)
+STDMETHODIMP UIFrameBuffer::COMGETTER(WinId)(LONG64 *pWinId)
 {
     if (!pWinId)
         return E_POINTER;
-    *pWinId = m_WinId;
+    *pWinId = m_winId;
     return S_OK;
 }
 
@@ -209,152 +192,13 @@ STDMETHODIMP UIFrameBuffer::Unlock()
     return S_OK;
 }
 
-/**
- * EMT callback: Requests a size and pixel format change.
- * @param uScreenId     Guest screen number. Must be used in the corresponding call to CDisplay::ResizeCompleted if this call is made.
- * @param uPixelFormat  Pixel format of the memory buffer pointed to by @a pVRAM.
- * @param pVRAM         Pointer to the virtual video card's VRAM (may be <i>null</i>).
- * @param uBitsPerPixel Color depth, bits per pixel.
- * @param uBytesPerLine Size of one scan line, in bytes.
- * @param uWidth        Width of the guest display, in pixels.
- * @param uHeight       Height of the guest display, in pixels.
- * @param pfFinished    Can the VM start using the new frame buffer immediately after this method returns or it should wait for CDisplay::ResizeCompleted.
- * @note  Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
- * @note  Calls to this and #setMarkAsUnused method are synchronized between calling threads (from GUI side).
- */
-STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
-                                          BYTE *pVRAM, ULONG uBitsPerPixel, ULONG uBytesPerLine,
-                                          ULONG uWidth, ULONG uHeight,
-                                          BOOL *pfFinished)
-{
-    /* Make sure result pointer is valid: */
-    if (!pfFinished)
-    {
-        LogRel(("UIFrameBuffer::RequestResize: "
-                "Screen=%lu, Format=%lu, "
-                "BitsPerPixel=%lu, BytesPerLine=%lu, "
-                "Size=%lux%lu, Invalid pfFinished pointer!\n",
-                (unsigned long)uScreenId, (unsigned long)uPixelFormat,
-                (unsigned long)uBitsPerPixel, (unsigned long)uBytesPerLine,
-                (unsigned long)uWidth, (unsigned long)uHeight));
-
-        return E_POINTER;
-    }
-
-    /* Lock access to frame-buffer: */
-    lock();
-
-    /* Make sure frame-buffer is used: */
-    if (m_fIsMarkedAsUnused)
-    {
-        LogRel(("UIFrameBuffer::RequestResize: "
-                "Screen=%lu, Format=%lu, "
-                "BitsPerPixel=%lu, BytesPerLine=%lu, "
-                "Size=%lux%lu, Ignored!\n",
-                (unsigned long)uScreenId, (unsigned long)uPixelFormat,
-                (unsigned long)uBitsPerPixel, (unsigned long)uBytesPerLine,
-                (unsigned long)uWidth, (unsigned long)uHeight));
-
-        /* Mark request as finished.
-         * It is required to report to the VM thread that we finished resizing and rely on the
-         * later synchronisation when the new view is attached. */
-        *pfFinished = TRUE;
-
-        /* Unlock access to frame-buffer: */
-        unlock();
-
-        /* Ignore RequestResize: */
-        return E_FAIL;
-    }
-
-    /* Mark request as not-yet-finished: */
-    *pfFinished = FALSE;
-
-    /* Widget resize is NOT thread-safe and *probably* never will be,
-     * We have to notify machine-view with the async-signal to perform resize operation. */
-    LogRel(("UIFrameBuffer::RequestResize: "
-            "Screen=%lu, Format=%lu, "
-            "BitsPerPixel=%lu, BytesPerLine=%lu, "
-            "Size=%lux%lu, Sending to async-handler..\n",
-            (unsigned long)uScreenId, (unsigned long)uPixelFormat,
-            (unsigned long)uBitsPerPixel, (unsigned long)uBytesPerLine,
-            (unsigned long)uWidth, (unsigned long)uHeight));
-    emit sigRequestResize(uPixelFormat, pVRAM, uBitsPerPixel, uBytesPerLine, uWidth, uHeight);
-
-    /* Unlock access to frame-buffer: */
-    unlock();
-
-    /* Confirm RequestResize: */
-    return S_OK;
-}
-
-void UIFrameBuffer::notifyChange()
-{
-    /* Lock access to frame-buffer: */
-    lock();
-
-    /* If there is NO pending source bitmap: */
-    if (m_pendingSourceBitmap.isNull())
-    {
-        /* Do nothing, change-event already processed: */
-        LogRelFlow(("UIFrameBuffer::notifyChange: Already processed.\n"));
-        /* Unlock access to frame-buffer: */
-        unlock();
-        /* Return immediately: */
-        return;
-    }
-
-    /* Disable screen updates: */
-    m_fIsUpdatesAllowed = false;
-
-    /* Release the current bitmap and keep the pending one: */
-    m_sourceBitmap = m_pendingSourceBitmap;
-    m_pendingSourceBitmap = 0;
-
-    /* Unlock access to frame-buffer: */
-    unlock();
-
-    /* Acquire source bitmap: */
-    BYTE *pAddress = NULL;
-    ULONG ulWidth = 0;
-    ULONG ulHeight = 0;
-    ULONG ulBitsPerPixel = 0;
-    ULONG ulBytesPerLine = 0;
-    ULONG ulPixelFormat = 0;
-    m_sourceBitmap.QueryBitmapInfo(pAddress,
-                                   ulWidth,
-                                   ulHeight,
-                                   ulBitsPerPixel,
-                                   ulBytesPerLine,
-                                   ulPixelFormat);
-
-    /* Perform frame-buffer resize: */
-    UIResizeEvent e(FramebufferPixelFormat_Opaque, pAddress,
-                    ulBitsPerPixel, ulBytesPerLine, ulWidth, ulHeight);
-    resizeEvent(&e);
-}
-
-/**
- * EMT callback: Informs about source bitmap change.
- * @param uScreenId Guest screen number.
- * @param uX        Horizontal origin of the update rectangle, in pixels.
- * @param uY        Vertical origin of the update rectangle, in pixels.
- * @param uWidth    Width of the guest display, in pixels.
- * @param uHeight   Height of the guest display, in pixels.
- * @note  Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
- * @note  Calls to this and #setMarkAsUnused method are synchronized between calling threads (from GUI side).
- */
-STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId,
-                                         ULONG uX,
-                                         ULONG uY,
-                                         ULONG uWidth,
-                                         ULONG uHeight)
+STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
     /* Lock access to frame-buffer: */
     lock();
 
     /* Make sure frame-buffer is used: */
-    if (m_fIsMarkedAsUnused)
+    if (m_fUnused)
     {
         LogRel(("UIFrameBuffer::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
                 (unsigned long)uScreenId,
@@ -390,15 +234,6 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId,
     return S_OK;
 }
 
-/**
- * EMT callback: Informs about an update.
- * @param uX      Horizontal origin of the update rectangle, in pixels.
- * @param uY      Vertical origin of the update rectangle, in pixels.
- * @param uWidth  Width of the update rectangle, in pixels.
- * @param uHeight Height of the update rectangle, in pixels.
- * @note  Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
- * @note  Calls to this and #setMarkAsUnused method are synchronized between calling threads (from GUI side).
- */
 STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
     /* Retina screens with physical-to-logical scaling requires
@@ -413,7 +248,7 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
     lock();
 
     /* Make sure frame-buffer is used: */
-    if (m_fIsMarkedAsUnused)
+    if (m_fUnused)
     {
         LogRel2(("UIFrameBuffer::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
                  (unsigned long)uX, (unsigned long)uY,
@@ -440,15 +275,6 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
     return S_OK;
 }
 
-/**
- * EMT callback: Returns whether the framebuffer implementation is willing to support a given video mode.
- * @param uWidth      Width of the guest display, in pixels.
- * @param uHeight     Height of the guest display, in pixels.
- * @param uBPP        Color depth, bits per pixel.
- * @param pfSupported Is framebuffer able/willing to render the video mode or not.
- * @note  Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
- * @note  Calls to this and #setMarkAsUnused method are synchronized between calling threads (from GUI side).
- */
 STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pfSupported)
 {
     /* Make sure result pointer is valid: */
@@ -464,7 +290,7 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
     lock();
 
     /* Make sure frame-buffer is used: */
-    if (m_fIsMarkedAsUnused)
+    if (m_fUnused)
     {
         LogRel2(("UIFrameBuffer::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Ignored!\n",
                  (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
@@ -510,13 +336,6 @@ STDMETHODIMP UIFrameBuffer::GetVisibleRegion(BYTE *pRectangles, ULONG uCount, UL
     return S_OK;
 }
 
-/**
- * EMT callback: Suggests a new visible region to this framebuffer.
- * @param pRectangles Pointer to the RTRECT array.
- * @param uCount      Number of RTRECT elements in the rectangles array.
- * @note  Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
- * @note  Calls to this and #setMarkAsUnused method are synchronized between calling threads (from GUI side).
- */
 STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
 {
     /* Make sure rectangles were passed: */
@@ -532,7 +351,7 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
     lock();
 
     /* Make sure frame-buffer is used: */
-    if (m_fIsMarkedAsUnused)
+    if (m_fUnused)
     {
         LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Ignored!\n",
                  (unsigned long)uCount));
@@ -581,20 +400,13 @@ STDMETHODIMP UIFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
     return E_NOTIMPL;
 }
 
-/**
- * EMT callback: Notifies framebuffer about 3D backend event.
- * @param uType Event type. Currently only VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA is supported.
- * @param pData Event-specific data, depends on the supplied event type.
- * @note  Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
- * @note  Calls to this and #setMarkAsUnused method are synchronized between calling threads (from GUI side).
- */
 STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pData)
 {
     /* Lock access to frame-buffer: */
     lock();
 
     /* Make sure frame-buffer is used: */
-    if (m_fIsMarkedAsUnused)
+    if (m_fUnused)
     {
         LogRel2(("UIFrameBuffer::Notify3DEvent: Ignored!\n"));
 
@@ -626,7 +438,7 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pData)
 
         case VBOX3D_NOTIFY_EVENT_TYPE_TEST_FUNCTIONAL:
         {
-            HRESULT hr = m_fIsMarkedAsUnused ? E_FAIL : S_OK;
+            HRESULT hr = m_fUnused ? E_FAIL : S_OK;
             unlock();
             return hr;
         }
@@ -640,6 +452,52 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pData)
 
     /* Ignore Notify3DEvent: */
     return E_INVALIDARG;
+}
+
+void UIFrameBuffer::notifyChange()
+{
+    /* Lock access to frame-buffer: */
+    lock();
+
+    /* If there is NO pending source bitmap: */
+    if (m_pendingSourceBitmap.isNull())
+    {
+        /* Do nothing, change-event already processed: */
+        LogRelFlow(("UIFrameBuffer::notifyChange: Already processed.\n"));
+        /* Unlock access to frame-buffer: */
+        unlock();
+        /* Return immediately: */
+        return;
+    }
+
+    /* Disable screen updates: */
+    m_fIsUpdatesAllowed = false;
+
+    /* Release the current bitmap and keep the pending one: */
+    m_sourceBitmap = m_pendingSourceBitmap;
+    m_pendingSourceBitmap = 0;
+
+    /* Unlock access to frame-buffer: */
+    unlock();
+
+    /* Acquire source bitmap: */
+    BYTE *pAddress = NULL;
+    ULONG ulWidth = 0;
+    ULONG ulHeight = 0;
+    ULONG ulBitsPerPixel = 0;
+    ULONG ulBytesPerLine = 0;
+    ULONG ulPixelFormat = 0;
+    m_sourceBitmap.QueryBitmapInfo(pAddress,
+                                   ulWidth,
+                                   ulHeight,
+                                   ulBitsPerPixel,
+                                   ulBytesPerLine,
+                                   ulPixelFormat);
+
+    /* Perform frame-buffer resize: */
+    UIResizeEvent e(FramebufferPixelFormat_Opaque, pAddress,
+                    ulBitsPerPixel, ulBytesPerLine, ulWidth, ulHeight);
+    resizeEvent(&e);
 }
 
 void UIFrameBuffer::applyVisibleRegion(const QRegion &region)
@@ -668,49 +526,12 @@ void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
     Q_UNUSED(pEvent);
     /* should never be here */
     AssertBreakpoint();
+    // TODO: Is this required? ^
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-void UIFrameBuffer::setView(UIMachineView * pView)
-{
-    /* Disconnect handlers: */
-    if (m_pMachineView)
-        cleanupConnections();
-
-    /* Reassign machine-view: */
-    m_pMachineView = pView;
-    m_WinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
-
-    /* Connect handlers: */
-    if (m_pMachineView)
-        prepareConnections();
-}
-
-void UIFrameBuffer::setHiDPIOptimizationType(HiDPIOptimizationType optimizationType)
-{
-    /* Make sure 'HiDPI optimization type' changed: */
-    if (m_hiDPIOptimizationType == optimizationType)
-        return;
-
-    /* Update 'HiDPI optimization type': */
-    m_hiDPIOptimizationType = optimizationType;
-}
-
-void UIFrameBuffer::setBackingScaleFactor(double dBackingScaleFactor)
-{
-    /* Make sure 'backing scale factor' changed: */
-    if (m_dBackingScaleFactor == dBackingScaleFactor)
-        return;
-
-    /* Update 'backing scale factor': */
-    m_dBackingScaleFactor = dBackingScaleFactor;
-}
-
 void UIFrameBuffer::prepareConnections()
 {
-    connect(this, SIGNAL(sigRequestResize(int, uchar*, int, int, int, int)),
-            m_pMachineView, SLOT(sltHandleRequestResize(int, uchar*, int, int, int, int)),
-            Qt::QueuedConnection);
     connect(this, SIGNAL(sigNotifyChange(ulong, int, int)),
             m_pMachineView, SLOT(sltHandleNotifyChange(ulong, int, int)),
             Qt::QueuedConnection);
@@ -727,8 +548,6 @@ void UIFrameBuffer::prepareConnections()
 
 void UIFrameBuffer::cleanupConnections()
 {
-    disconnect(this, SIGNAL(sigRequestResize(int, uchar*, int, int, int, int)),
-               m_pMachineView, SLOT(sltHandleRequestResize(int, uchar*, int, int, int, int)));
     disconnect(this, SIGNAL(sigNotifyChange(ulong, int, int)),
                m_pMachineView, SLOT(sltHandleNotifyChange(ulong, int, int)));
     disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
