@@ -217,6 +217,8 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 
 void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 {
+    NOREF(uScreenId);
+
     LogRelFlow(("UIMachineView::HandleNotifyChange: Screen=%d, Size=%dx%d.\n",
                 (unsigned long)m_uScreenId, iWidth, iHeight));
 
