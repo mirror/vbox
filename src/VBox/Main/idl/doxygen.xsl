@@ -105,6 +105,17 @@
 </xsl:template>
 
 <!--
+ * same like desc//* but place <pre> at start of line otherwise Doxygen will not
+ * find it
+-->
+<xsl:template match="desc//pre">
+  <xsl:text>&#x0A;</xsl:text>
+  <xsl:copy>
+    <xsl:apply-templates/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
  *  paragraph
 -->
 <xsl:template match="desc//p">
