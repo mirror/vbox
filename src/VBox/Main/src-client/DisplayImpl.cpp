@@ -2546,6 +2546,15 @@ STDMETHODIMP Display::AttachFramebuffer(ULONG aScreenId,
                                 mLastHeight,
                                 mLastFlags);
         }
+
+        alock.release();
+
+        Console::SafeVMPtrQuiet ptrVM(mParent);
+        if (ptrVM.isOk())
+        {
+            VMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
+                               3, this, aScreenId, false);
+        }
     }
 
     LogRelFlowFunc(("Attached to %d\n", aScreenId));
