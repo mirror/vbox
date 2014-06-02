@@ -35,9 +35,6 @@
 #include "UIMessageCenter.h"
 #include "UIFrameBuffer.h"
 #include "UIFrameBufferQImage.h"
-#ifdef VBOX_GUI_USE_QUARTZ2D
-# include "UIFrameBufferQuartz2D.h"
-#endif /* VBOX_GUI_USE_QUARTZ2D */
 #include "VBoxFBOverlay.h"
 #include "UISession.h"
 #include "UIKeyboardHandler.h"
@@ -465,85 +462,35 @@ void UIMachineView::prepareViewport()
 
 void UIMachineView::prepareFrameBuffer()
 {
-    /* Prepare frame-buffer depending on render-mode: */
-    RenderMode rm = gEDataManager->renderMode(vboxGlobal().managedVMUuid());
-    switch (rm)
+    /* Prepare frame-buffer: */
+    UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(screenId());
+    if (pFrameBuffer)
     {
-        case RenderMode_QImage:
-        {
-            UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(screenId());
-            if (pFrameBuffer)
-            {
-                pFrameBuffer->setView(this);
-                /* Mark framebuffer as used again: */
-                LogRelFlow(("UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d.\n", screenId()));
-                pFrameBuffer->setMarkAsUnused(false);
-                uisession()->setFrameBuffer(screenId(), pFrameBuffer);
-            }
-            else
-            {
-# ifdef VBOX_WITH_VIDEOHWACCEL
-                if (m_fAccelerate2DVideo)
-                {
-                    /** these two additional template args is a workaround to
-                     * this [VBox|UI] duplication
-                     * @todo: they are to be removed once VBox stuff is gone */
-                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &session(), (uint32_t)screenId());
-                }
-                else
-                    pFrameBuffer = new UIFrameBufferQImage(this);
-# else /* VBOX_WITH_VIDEOHWACCEL */
-                pFrameBuffer = new UIFrameBufferQImage(this);
-# endif /* !VBOX_WITH_VIDEOHWACCEL */
-                pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
-                uisession()->setFrameBuffer(screenId(), pFrameBuffer);
-            }
-            m_pFrameBuffer = pFrameBuffer;
-            break;
-        }
-
-#ifdef VBOX_GUI_USE_QUARTZ2D
-        case RenderMode_Quartz2D:
-        {
-            /* Indicate that we are doing all drawing stuff ourself: */
-            viewport()->setAttribute(Qt::WA_PaintOnScreen);
-            UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(screenId());
-            if (pFrameBuffer)
-            {
-                pFrameBuffer->setView(this);
-                /* Mark framebuffer as used again: */
-                LogRelFlow(("UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d.\n", screenId()));
-                pFrameBuffer->setMarkAsUnused(false);
-                uisession()->setFrameBuffer(screenId(), pFrameBuffer);
-            }
-            else
-            {
-# ifdef VBOX_WITH_VIDEOHWACCEL
-                if (m_fAccelerate2DVideo)
-                {
-                    /** these two additional template args is a workaround to
-                     * this [VBox|UI] duplication
-                     * @todo: they are to be removed once VBox stuff is gone */
-                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &session(), (uint32_t)screenId());
-                }
-                else
-                    pFrameBuffer = new UIFrameBufferQuartz2D(this);
-# else /* VBOX_WITH_VIDEOHWACCEL */
-                pFrameBuffer = new UIFrameBufferQuartz2D(this);
-# endif /* !VBOX_WITH_VIDEOHWACCEL */
-                uisession()->setFrameBuffer(screenId(), pFrameBuffer);
-            }
-            m_pFrameBuffer = pFrameBuffer;
-            break;
-        }
-#endif /* VBOX_GUI_USE_QUARTZ2D */
-
-        default:
-            AssertReleaseMsgFailed(("Render mode must be valid: %d\n", rm));
-            LogRel(("Invalid render mode: %d\n", rm));
-            qApp->exit(1);
-            break;
+        pFrameBuffer->setView(this);
+        /* Mark framebuffer as used again: */
+        LogRelFlow(("UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d.\n", screenId()));
+        pFrameBuffer->setMarkAsUnused(false);
+        uisession()->setFrameBuffer(screenId(), pFrameBuffer);
     }
+    else
+    {
+# ifdef VBOX_WITH_VIDEOHWACCEL
+        if (m_fAccelerate2DVideo)
+        {
+            /** these two additional template args is a workaround to
+             * this [VBox|UI] duplication
+             * @todo: they are to be removed once VBox stuff is gone */
+            pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &session(), (uint32_t)screenId());
+        }
+        else
+            pFrameBuffer = new UIFrameBufferQImage(this);
+# else /* VBOX_WITH_VIDEOHWACCEL */
+        pFrameBuffer = new UIFrameBufferQImage(this);
+# endif /* !VBOX_WITH_VIDEOHWACCEL */
+        pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
+        uisession()->setFrameBuffer(screenId(), pFrameBuffer);
+    }
+    m_pFrameBuffer = pFrameBuffer;
 
     /* If frame-buffer was prepared: */
     if (m_pFrameBuffer)
@@ -951,30 +898,12 @@ void UIMachineView::updateDockIcon()
 
 CGImageRef UIMachineView::vmContentImage()
 {
+    /* Use pause-image if exists: */
     if (!m_pauseShot.isNull())
-    {
-        CGImageRef pauseImg = ::darwinToCGImageRef(&m_pauseShot);
-        /* Use the pause image as background */
-        return pauseImg;
-    }
-    else
-    {
-# ifdef VBOX_GUI_USE_QUARTZ2D
-        if (gEDataManager->renderMode(vboxGlobal().managedVMUuid()) == RenderMode_Quartz2D)
-        {
-            /* If the render mode is Quartz2D we could use the CGImageRef
-             * of the framebuffer for the dock icon creation. This saves
-             * some conversion time. */
-            CGImageRef image = static_cast<UIFrameBufferQuartz2D*>(m_pFrameBuffer)->imageRef();
-            CGImageRetain(image); /* Retain it, cause the consumer will release it. */
-            return image;
-        }
-# endif /* VBOX_GUI_USE_QUARTZ2D */
-        /* In image mode we have to create the image ref out of the
-         * framebuffer */
-        return frameBuffertoCGImageRef(m_pFrameBuffer);
-    }
-    return 0;
+        return darwinToCGImageRef(&m_pauseShot);
+
+    /* Create the image ref out of the frame-buffer: */
+    return frameBuffertoCGImageRef(m_pFrameBuffer);
 }
 
 CGImageRef UIMachineView::frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer)
@@ -1123,41 +1052,34 @@ void UIMachineView::moveEvent(QMoveEvent *pEvent)
 
 void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 {
-    if (m_pauseShot.isNull())
+    /* Use pause-image if exists: */
+    if (!m_pauseShot.isNull())
     {
-        /* Delegate the paint function to the VBoxFrameBuffer interface: */
-        if (m_pFrameBuffer)
-            m_pFrameBuffer->paintEvent(pPaintEvent);
+        /* We have a snapshot for the paused state: */
+        QRect rect = pPaintEvent->rect().intersect(viewport()->rect());
+        /* We have to disable paint on screen if we are using the regular painter: */
+        bool fPaintOnScreen = viewport()->testAttribute(Qt::WA_PaintOnScreen);
+        viewport()->setAttribute(Qt::WA_PaintOnScreen, false);
+        QPainter painter(viewport());
+        painter.drawPixmap(rect, m_pauseShot, QRect(rect.x() + contentsX(), rect.y() + contentsY(),
+                                                    rect.width(), rect.height()));
+        /* Restore the attribute to it's previous state: */
+        viewport()->setAttribute(Qt::WA_PaintOnScreen, fPaintOnScreen);
 #ifdef Q_WS_MAC
-        /* Update the dock icon if we are in the running state */
-        if (uisession()->isRunning())
-            updateDockIcon();
+        /* Update the dock icon: */
+        updateDockIcon();
 #endif /* Q_WS_MAC */
         return;
     }
 
-#ifdef VBOX_GUI_USE_QUARTZ2D
-    if (gEDataManager->renderMode(vboxGlobal().managedVMUuid()) == RenderMode_Quartz2D && m_pFrameBuffer)
-    {
+    /* Delegate the paint function to the UIFrameBuffer interface: */
+    if (m_pFrameBuffer)
         m_pFrameBuffer->paintEvent(pPaintEvent);
-        updateDockIcon();
-    }
-    else
-#endif /* VBOX_GUI_USE_QUARTZ2D */
-    {
-        /* We have a snapshot for the paused state: */
-        QRect r = pPaintEvent->rect().intersect(viewport()->rect());
-        /* We have to disable paint on screen if we are using the regular painter: */
-        bool paintOnScreen = viewport()->testAttribute(Qt::WA_PaintOnScreen);
-        viewport()->setAttribute(Qt::WA_PaintOnScreen, false);
-        QPainter pnt(viewport());
-        pnt.drawPixmap(r, m_pauseShot, QRect(r.x() + contentsX(), r.y() + contentsY(), r.width(), r.height()));
-        /* Restore the attribute to its previous state: */
-        viewport()->setAttribute(Qt::WA_PaintOnScreen, paintOnScreen);
 #ifdef Q_WS_MAC
+    /* Update the dock icon if we are in the running state: */
+    if (uisession()->isRunning())
         updateDockIcon();
 #endif /* Q_WS_MAC */
-    }
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP

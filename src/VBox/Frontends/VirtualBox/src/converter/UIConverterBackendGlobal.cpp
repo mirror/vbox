@@ -44,7 +44,6 @@ template<> bool canConvert<RuntimeMenuDevicesActionType>() { return true; }
 template<> bool canConvert<RuntimeMenuDebuggerActionType>() { return true; }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 template<> bool canConvert<RuntimeMenuHelpActionType>() { return true; }
-template<> bool canConvert<RenderMode>() { return true; }
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
 template<> bool canConvert<GlobalSettingsPageType>() { return true; }
@@ -674,42 +673,6 @@ template<> RuntimeMenuHelpActionType fromInternalString<RuntimeMenuHelpActionTyp
         return RuntimeMenuHelpActionType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuHelpActionType, Qt::CaseInsensitive)));
-}
-
-/* QString <= RenderMode: */
-template<> QString toInternalString(const RenderMode &renderMode)
-{
-    QString strResult;
-    switch (renderMode)
-    {
-        case RenderMode_QImage:   strResult = "QImage"; break;
-#ifdef VBOX_GUI_USE_QUARTZ2D
-        case RenderMode_Quartz2D: strResult = "Quartz2D"; break;
-#endif /* VBOX_GUI_USE_QUARTZ2D */
-        default:
-        {
-            AssertMsgFailed(("No text for render-mode=%d", renderMode));
-            break;
-        }
-    }
-    return strResult;
-}
-
-/* RenderMode <= QString: */
-template<> RenderMode fromInternalString<RenderMode>(const QString &strRenderMode)
-{
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;   QList<RenderMode> values;
-    keys << "QImage";   values << RenderMode_QImage;
-#ifdef VBOX_GUI_USE_QUARTZ2D
-    keys << "Quartz2D"; values << RenderMode_Quartz2D;
-#endif /* VBOX_GUI_USE_QUARTZ2D */
-    /* QImage mode for unknown words: */
-    if (!keys.contains(strRenderMode, Qt::CaseInsensitive))
-        return RenderMode_QImage;
-    /* Corresponding mode for known words: */
-    return values.at(keys.indexOf(QRegExp(strRenderMode, Qt::CaseInsensitive)));
 }
 
 /* QString <= UIVisualStateType: */

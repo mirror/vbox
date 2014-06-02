@@ -310,11 +310,6 @@ void UIExtraDataManager::setModeForWizard(WizardType type, WizardMode mode)
         setExtraDataStringList(GUI_HideDescriptionForWizards, newValue);
 }
 
-RenderMode UIExtraDataManager::renderMode(const QString &strId) const
-{
-    return gpConverter->fromInternalString<RenderMode>(extraDataString(GUI_RenderMode, strId));
-}
-
 QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pHintWidget /* = 0 */)
 {
     /* Load corresponding extra-data: */

@@ -137,9 +137,6 @@ public:
     /** Defines selector-window geometry to passed @a geometry which is @a fMaximized. */
     void setSelectorWindowGeometry(const QRect &geometry, bool fMaximized);
 
-    /** Returns render-mode for machine with passed @a strId. */
-    RenderMode renderMode(const QString &strId) const;
-
     /** Returns whether this machine started for the first time. */
     bool isFirstRun(const QString &strId) const;
     /** Defines whether this machine started for the first time. */

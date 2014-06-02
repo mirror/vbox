@@ -30,9 +30,6 @@
 #include "UIMachineViewScale.h"
 #include "UIFrameBuffer.h"
 #include "UIFrameBufferQImage.h"
-#ifdef VBOX_GUI_USE_QUARTZ2D
-# include "UIFrameBufferQuartz2D.h"
-#endif /* VBOX_GUI_USE_QUARTZ2D */
 
 /* COM includes: */
 #include "CConsole.h"

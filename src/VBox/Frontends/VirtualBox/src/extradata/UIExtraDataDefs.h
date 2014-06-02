@@ -71,7 +71,6 @@ namespace UIExtraDataDefs
     extern const char* GUI_HideDetails;
 
     /* Runtime UI declarations: */
-    extern const char* GUI_RenderMode;
 #ifndef Q_WS_MAC
     extern const char* GUI_MachineWindowIcons;
     extern const char* GUI_MachineWindowNamePostfix;
@@ -335,16 +334,6 @@ enum RuntimeMenuHelpActionType
     RuntimeMenuHelpActionType_Preferences          = RT_BIT(5),
 #endif /* !Q_WS_MAC */
     RuntimeMenuHelpActionType_All                  = 0xFFFF
-};
-
-/** Runtime UI: Rendering modes. */
-enum RenderMode
-{
-    RenderMode_Invalid,
-    RenderMode_QImage,
-#ifdef VBOX_GUI_USE_QUARTZ2D
-    RenderMode_Quartz2D
-#endif /* VBOX_GUI_USE_QUARTZ2D */
 };
 
 /** Runtime UI: Visual-state types. */
