@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -167,7 +167,7 @@ void HostPowerService::notify(Reason_T aReason)
                     rc = pControl->SaveStateWithReason(Reason_HostBatteryLow, progress.asOutParam());
                     if (FAILED(rc))
                     {
-                        LogRel(("SaveState '%s' failed with %Rhrc\n", pMachine->getName().c_str(), rc));
+                        LogRel(("SaveState '%s' failed with %Rhrc\n", pMachine->i_getName().c_str(), rc));
                         continue;
                     }
 
@@ -184,7 +184,7 @@ void HostPowerService::notify(Reason_T aReason)
 
                     if (SUCCEEDED(rc))
                     {
-                        LogRel(("SaveState '%s' succeeded\n", pMachine->getName().c_str()));
+                        LogRel(("SaveState '%s' succeeded\n", pMachine->i_getName().c_str()));
                         ++saved;
                     }
                 }

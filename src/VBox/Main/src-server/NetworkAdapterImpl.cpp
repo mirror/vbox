@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -69,7 +69,7 @@ HRESULT NetworkAdapter::init(Machine *aParent, ULONG aSlot)
     LogFlowThisFunc(("aParent=%p, aSlot=%d\n", aParent, aSlot));
 
     ComAssertRet(aParent, E_INVALIDARG);
-    uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(aParent->getChipsetType());
+    uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(aParent->i_getChipsetType());
     ComAssertRet(aSlot < maxNetworkAdapters, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -260,12 +260,12 @@ HRESULT NetworkAdapter::setAdapterType(NetworkAdapterType_T aAdapterType)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* Changing the network adapter type during runtime is not allowed,
          * therefore no immediate change in CFGM logic => changeAdapter=FALSE. */
-        mParent->onNetworkAdapterChange(this, FALSE);
+        mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -308,12 +308,12 @@ HRESULT NetworkAdapter::setEnabled(BOOL aEnabled)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* Disabling the network adapter during runtime is not allowed
          * therefore no immediate change in CFGM logic => changeAdapter=FALSE. */
-        mParent->onNetworkAdapterChange(this, FALSE);
+        mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -399,12 +399,12 @@ HRESULT NetworkAdapter::setMACAddress(const com::Utf8Str &aMACAddress)
 
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* Changing the MAC via the Main API during runtime is not allowed,
          * therefore no immediate change in CFGM logic => changeAdapter=FALSE. */
-        mParent->onNetworkAdapterChange(this, FALSE);
+        mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
     return rc;
@@ -453,7 +453,7 @@ HRESULT NetworkAdapter::setAttachmentType(NetworkAttachmentType_T aAttachmentTyp
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         if (oldAttachmentType == NetworkAttachmentType_NATNetwork)
@@ -463,7 +463,7 @@ HRESULT NetworkAdapter::setAttachmentType(NetworkAttachmentType_T aAttachmentTyp
             i_switchToNatNetworking(mData->mNATNetwork);
 
         /* Adapt the CFGM logic and notify the guest => changeAdapter=TRUE. */
-        mParent->onNetworkAdapterChange(this, TRUE);
+        mParent->i_onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
@@ -505,13 +505,13 @@ HRESULT NetworkAdapter::setBridgedInterface(const com::Utf8Str &aBridgedInterfac
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* When changing the host adapter, adapt the CFGM logic to make this
          * change immediately effect and to notify the guest that the network
          * might have changed, therefore changeAdapter=TRUE. */
-        mParent->onNetworkAdapterChange(this, TRUE);
+        mParent->i_onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
@@ -554,13 +554,13 @@ HRESULT NetworkAdapter::setHostOnlyInterface(const com::Utf8Str &aHostOnlyInterf
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* When changing the host adapter, adapt the CFGM logic to make this
          * change immediately effect and to notify the guest that the network
          * might have changed, therefore changeAdapter=TRUE. */
-        mParent->onNetworkAdapterChange(this, TRUE);
+        mParent->i_onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
@@ -601,13 +601,13 @@ HRESULT NetworkAdapter::setInternalNetwork(const com::Utf8Str &aInternalNetwork)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* When changing the internal network, adapt the CFGM logic to make this
          * change immediately effect and to notify the guest that the network
          * might have changed, therefore changeAdapter=TRUE. */
-        mParent->onNetworkAdapterChange(this, TRUE);
+        mParent->i_onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
@@ -652,7 +652,7 @@ HRESULT NetworkAdapter::setNATNetwork(const com::Utf8Str &aNATNetwork)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
         i_checkAndSwitchFromNatNetworking(oldNatNetworkName.raw());
 
@@ -660,7 +660,7 @@ HRESULT NetworkAdapter::setNATNetwork(const com::Utf8Str &aNATNetwork)
         /* When changing the host adapter, adapt the CFGM logic to make this
          * change immediately effect and to notify the guest that the network
          * might have changed, therefore changeAdapter=TRUE. */
-        mParent->onNetworkAdapterChange(this, TRUE);
+        mParent->i_onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
@@ -691,7 +691,7 @@ HRESULT NetworkAdapter::setGenericDriver(const com::Utf8Str &aGenericDriver)
         /* leave the lock before informing callbacks */
         alock.release();
 
-        mParent->onNetworkAdapterChange(this, FALSE);
+        mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -726,11 +726,11 @@ HRESULT NetworkAdapter::setCableConnected(BOOL aConnected)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* No change in CFGM logic => changeAdapter=FALSE. */
-        mParent->onNetworkAdapterChange(this, FALSE);
+        mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -764,11 +764,11 @@ HRESULT NetworkAdapter::setLineSpeed(ULONG aSpeed)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* No change in CFGM logic => changeAdapter=FALSE. */
-        mParent->onNetworkAdapterChange(this, FALSE);
+        mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -808,8 +808,8 @@ HRESULT NetworkAdapter::setPromiscModePolicy(NetworkAdapterPromiscModePolicy_T a
             m_fModified = true;
 
             alock.release();
-            mParent->setModifiedLock(Machine::IsModified_NetworkAdapters);
-            mParent->onNetworkAdapterChange(this, TRUE);
+            mParent->i_setModifiedLock(Machine::IsModified_NetworkAdapters);
+            mParent->i_onNetworkAdapterChange(this, TRUE);
         }
     }
 
@@ -845,11 +845,11 @@ HRESULT NetworkAdapter::setTraceEnabled(BOOL aEnabled)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* Adapt the CFGM logic changeAdapter=TRUE */
-        mParent->onNetworkAdapterChange(this, TRUE);
+        mParent->i_onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
@@ -883,11 +883,11 @@ HRESULT NetworkAdapter::setTraceFile(const com::Utf8Str &aTraceFile)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* No change in CFGM logic => changeAdapter=FALSE. */
-        mParent->onNetworkAdapterChange(this, FALSE);
+        mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -929,11 +929,11 @@ HRESULT NetworkAdapter::setBootPriority(ULONG aBootPriority)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* No change in CFGM logic => changeAdapter=FALSE. */
-        mParent->onNetworkAdapterChange(this, FALSE);
+        mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -980,14 +980,14 @@ HRESULT NetworkAdapter::setProperty(const com::Utf8Str &aKey, const com::Utf8Str
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* Avoid deadlock when the event triggers a call to a method of this
          * interface. */
         adep.release();
 
-        mParent->onNetworkAdapterChange(this, fGenericChange);
+        mParent->i_onNetworkAdapterChange(this, fGenericChange);
     }
 
     return S_OK;
@@ -1302,7 +1302,7 @@ HRESULT NetworkAdapter::getBandwidthGroup(ComPtr<IBandwidthGroup> &aBandwidthGro
     if (mData->mBandwidthGroup.isNotEmpty())
     {
         ComObjPtr<BandwidthGroup> pBwGroup;
-        hrc = mParent->getBandwidthGroup(mData->mBandwidthGroup, pBwGroup, true /* fSetError */);
+        hrc = mParent->i_getBandwidthGroup(mData->mBandwidthGroup, pBwGroup, true /* fSetError */);
 
         Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence
                                  * of the group was checked when it was attached. */
@@ -1334,7 +1334,7 @@ HRESULT NetworkAdapter::setBandwidthGroup(const ComPtr<IBandwidthGroup> &aBandwi
         ComObjPtr<BandwidthGroup> pBwGroup;
         if (!strBwGroup.isEmpty())
         {
-            HRESULT hrc = mParent->getBandwidthGroup(strBwGroup, pBwGroup, false /* fSetError */);
+            HRESULT hrc = mParent->i_getBandwidthGroup(strBwGroup, pBwGroup, false /* fSetError */);
             NOREF(hrc);
             Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence
                                        of the group was checked when it was attached. */
@@ -1347,11 +1347,11 @@ HRESULT NetworkAdapter::setBandwidthGroup(const ComPtr<IBandwidthGroup> &aBandwi
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
         /* TODO: changeAdapter=???. */
-        mParent->onNetworkAdapterChange(this, FALSE);
+        mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
     LogFlowThisFuncLeave();
@@ -1366,7 +1366,7 @@ void NetworkAdapter::i_updateBandwidthGroup(BandwidthGroup *aBwGroup)
     ComObjPtr<BandwidthGroup> pOldBwGroup;
     if (!mData->mBandwidthGroup.isEmpty())
         {
-            HRESULT hrc = mParent->getBandwidthGroup(mData->mBandwidthGroup, pOldBwGroup, false /* fSetError */);
+            HRESULT hrc = mParent->i_getBandwidthGroup(mData->mBandwidthGroup, pOldBwGroup, false /* fSetError */);
             NOREF(hrc);
             Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of
                                        the group was checked when it was attached. */
@@ -1404,7 +1404,7 @@ HRESULT NetworkAdapter::i_checkAndSwitchFromNatNetworking(com::Utf8Str networkNa
         Bstr bstrName;
         hrc = mParent->COMGETTER(Name)(bstrName.asOutParam());
         LogRel(("VM '%ls' stops using NAT network '%s'\n", bstrName.raw(), networkName.c_str()));
-        int natCount = mParent->getVirtualBox()->i_natNetworkRefDec(Bstr(networkName).raw());
+        int natCount = mParent->i_getVirtualBox()->i_natNetworkRefDec(Bstr(networkName).raw());
         if (natCount == -1)
             return E_INVALIDARG; /* no such network */
     }
@@ -1427,7 +1427,7 @@ HRESULT NetworkAdapter::i_switchToNatNetworking(const com::Utf8Str &aNatNetworkN
         Bstr bstrName;
         hrc = mParent->COMGETTER(Name)(bstrName.asOutParam());
         LogRel(("VM '%ls' starts using NAT network '%s'\n", bstrName.raw(), aNatNetworkName.c_str()));
-        int natCount = mParent->getVirtualBox()->i_natNetworkRefInc(Bstr(aNatNetworkName).raw());
+        int natCount = mParent->i_getVirtualBox()->i_natNetworkRefInc(Bstr(aNatNetworkName).raw());
         if (natCount == -1)
             return E_INVALIDARG; /* not found */
     }

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -920,9 +920,9 @@ HRESULT VirtualBox::getMachineGroups(std::vector<com::Utf8Str> &aMachineGroups)
             continue;
         AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
 
-        if (pMachine->isAccessible())
+        if (pMachine->i_isAccessible())
         {
-            const StringsList &thisGroups = pMachine->getGroups();
+            const StringsList &thisGroups = pMachine->i_getGroups();
             for (StringsList::const_iterator it2 = thisGroups.begin();
                  it2 != thisGroups.end(); ++it2)
                 allGroups.push_back(*it2);
@@ -1090,9 +1090,9 @@ HRESULT VirtualBox::getInternalNetworks(std::vector<com::Utf8Str> &aInternalNetw
             continue;
         AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
 
-        if (pMachine->isAccessible())
+        if (pMachine->i_isAccessible())
         {
-            uint32_t cNetworkAdapters = Global::getMaxNetworkAdapters(pMachine->getChipsetType());
+            uint32_t cNetworkAdapters = Global::getMaxNetworkAdapters(pMachine->i_getChipsetType());
             for (ULONG i = 0; i < cNetworkAdapters; i++)
             {
                 ComPtr<INetworkAdapter> pNet;
@@ -1141,9 +1141,9 @@ HRESULT VirtualBox::getGenericNetworkDrivers(std::vector<com::Utf8Str> &aGeneric
             continue;
         AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
 
-        if (pMachine->isAccessible())
+        if (pMachine->i_isAccessible())
         {
-            uint32_t cNetworkAdapters = Global::getMaxNetworkAdapters(pMachine->getChipsetType());
+            uint32_t cNetworkAdapters = Global::getMaxNetworkAdapters(pMachine->i_getChipsetType());
             for (ULONG i = 0; i < cNetworkAdapters; i++)
             {
                 ComPtr<INetworkAdapter> pNet;
@@ -1609,7 +1609,7 @@ HRESULT VirtualBox::registerMachine(const ComPtr<IMachine> &aMachine)
     rc = i_registerMachine(pMachine);
     /* fire an event */
     if (SUCCEEDED(rc))
-        i_onMachineRegistered(pMachine->getId(), TRUE);
+        i_onMachineRegistered(pMachine->i_getId(), TRUE);
 
     return rc;
 }
@@ -1679,9 +1679,9 @@ HRESULT VirtualBox::getMachinesByGroups(const std::vector<com::Utf8Str> &aGroups
             continue;
         AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
 
-        if (pMachine->isAccessible())
+        if (pMachine->i_isAccessible())
         {
-            const StringsList &thisGroups = pMachine->getGroups();
+            const StringsList &thisGroups = pMachine->i_getGroups();
             for (StringsList::const_iterator it2 = thisGroups.begin();
                  it2 != thisGroups.end();
                  ++it2)
@@ -2985,7 +2985,7 @@ void VirtualBox::i_getOpenedMachines(SessionMachinesList &aMachines,
     {
         ComObjPtr<SessionMachine> sm;
         ComPtr<IInternalSessionControl> ctl;
-        if ((*it)->isSessionOpen(sm, &ctl))
+        if ((*it)->i_isSessionOpen(sm, &ctl))
         {
             aMachines.push_back(sm);
             if (aControls)
@@ -3045,7 +3045,7 @@ HRESULT VirtualBox::i_findMachine(const Guid &aId,
                     continue;
             }
 
-            if (pMachine->getId() == aId)
+            if (pMachine->i_getId() == aId)
             {
                 rc = S_OK;
                 if (aMachine)
@@ -3089,14 +3089,14 @@ HRESULT VirtualBox::i_findMachineByName(const Utf8Str &aName,
             continue;       // we can't ask inaccessible machines for their names
 
         AutoReadLock machLock(pMachine COMMA_LOCKVAL_SRC_POS);
-        if (pMachine->getName() == aName)
+        if (pMachine->i_getName() == aName)
         {
             rc = S_OK;
             if (aMachine)
                 *aMachine = pMachine;
             break;
         }
-        if (!RTPathCompare(pMachine->getSettingsFileFull().c_str(), aName.c_str()))
+        if (!RTPathCompare(pMachine->i_getSettingsFileFull().c_str(), aName.c_str()))
         {
             rc = S_OK;
             if (aMachine)
@@ -4004,7 +4004,7 @@ HRESULT VirtualBox::i_saveSettings()
                 Machine *pMachine = *it;
                 // save actual machine registry entry
                 settings::MachineRegistryEntry mre;
-                rc = pMachine->saveRegistryEntry(mre);
+                rc = pMachine->i_saveRegistryEntry(mre);
                 m->pMainConfigFile->llMachines.push_back(mre);
             }
         }
@@ -4097,7 +4097,7 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
 
     {
         ComObjPtr<Machine> pMachine;
-        rc = i_findMachine(aMachine->getId(),
+        rc = i_findMachine(aMachine->i_getId(),
                            true /* fPermitInaccessible */,
                            false /* aDoSetError */,
                            &pMachine);
@@ -4109,8 +4109,8 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
 
             return setError(E_INVALIDARG,
                             tr("Registered machine with UUID {%RTuuid} ('%s') already exists"),
-                            aMachine->getId().raw(),
-                            pMachine->getSettingsFileFull().c_str());
+                            aMachine->i_getId().raw(),
+                            pMachine->i_getSettingsFileFull().c_str());
         }
 
         ComAssertRet(rc == VBOX_E_OBJECT_NOT_FOUND, rc);
@@ -4119,7 +4119,7 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
 
     if (autoCaller.state() != InInit)
     {
-        rc = aMachine->prepareRegister();
+        rc = aMachine->i_prepareRegister();
         if (FAILED(rc)) return rc;
     }
 
@@ -4511,8 +4511,8 @@ void VirtualBox::i_saveModifiedRegistries()
                 if (autoCaller.state() != Ready)
                     continue;
                 AutoWriteLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
-                rc = pMachine->saveSettings(&fNeedsGlobalSettings,
-                                            Machine::SaveS_Force);           // caller said save, so stop arguing
+                rc = pMachine->i_saveSettings(&fNeedsGlobalSettings,
+                                              Machine::SaveS_Force);           // caller said save, so stop arguing
             }
         }
     }

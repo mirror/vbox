@@ -244,7 +244,7 @@ HRESULT BandwidthGroup::setMaxBytesPerSec(LONG64 aMaxBytesPerSec)
     /* inform direct session if any. */
     ComObjPtr<Machine> pMachine = m->pParent->i_getMachine();
     alock.release();
-    pMachine->onBandwidthGroupChange(this);
+    pMachine->i_onBandwidthGroupChange(this);
 
     return S_OK;
 }

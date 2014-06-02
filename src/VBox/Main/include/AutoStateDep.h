@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -57,13 +57,13 @@
               mRegistered(FALSE)
         {
             Assert(aThat);
-            mRC = aThat->addStateDependency(taDepType, &mMachineState,
+            mRC = aThat->i_addStateDependency(taDepType, &mMachineState,
                                             &mRegistered);
         }
         ~AutoStateDependency()
         {
             if (SUCCEEDED(mRC))
-                mThat->releaseStateDependency();
+                mThat->i_releaseStateDependency();
         }
 
         /** Decreases the number of dependencies before the instance is
@@ -71,7 +71,7 @@
         void release()
         {
             AssertReturnVoid(SUCCEEDED(mRC));
-            mThat->releaseStateDependency();
+            mThat->i_releaseStateDependency();
             mRC = E_FAIL;
         }
 
@@ -81,7 +81,7 @@
         void add()
         {
             AssertReturnVoid(!SUCCEEDED(mRC));
-            mRC = mThat->addStateDependency(taDepType, &mMachineState,
+            mRC = mThat->i_addStateDependency(taDepType, &mMachineState,
                                             &mRegistered);
         }
 

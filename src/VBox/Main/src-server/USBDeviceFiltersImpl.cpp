@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2013 Oracle Corporation
+ * Copyright (C) 2005-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,7 +50,7 @@ struct USBDeviceFilters::Data
 {
     Data(Machine *pMachine)
         : pParent(pMachine),
-          pHost(pMachine->getVirtualBox()->i_host())
+          pHost(pMachine->i_getVirtualBox()->i_host())
     { }
 
     ~Data()
@@ -388,7 +388,7 @@ HRESULT USBDeviceFilters::insertDeviceFilter(ULONG aPosition,
 
     alock.release();
     AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
-    m->pParent->setModified(Machine::IsModified_USB);
+    m->pParent->i_setModified(Machine::IsModified_USB);
     mlock.release();
 
     return S_OK;
@@ -455,7 +455,7 @@ HRESULT USBDeviceFilters::removeDeviceFilter(ULONG aPosition,
 
     alock.release();
     AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
-    m->pParent->setModified(Machine::IsModified_USB);
+    m->pParent->i_setModified(Machine::IsModified_USB);
     mlock.release();
 
     return S_OK;
@@ -825,7 +825,7 @@ HRESULT USBDeviceFilters::i_onDeviceFilterChange(USBDeviceFilter *aFilter,
     /* we don't modify our data fields -- no need to lock */
 
     if (    aFilter->mInList
-         && m->pParent->isRegistered())
+         && m->pParent->i_isRegistered())
     {
         USBProxyService *pProxySvc = m->pHost->i_usbProxyService();
         ComAssertRet(pProxySvc, E_FAIL);
@@ -880,7 +880,7 @@ bool USBDeviceFilters::i_hasMatchingFilter(const ComObjPtr<HostUSBDevice> &aDevi
     AssertComRCReturn(autoCaller.rc(), false);
 
     /* It is not possible to work with USB device if there is no USB controller present. */
-    if (!m->pParent->isUSBControllerPresent())
+    if (!m->pParent->i_isUSBControllerPresent())
         return false;
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -921,7 +921,7 @@ bool USBDeviceFilters::i_hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaske
     AssertComRCReturn(autoCaller.rc(), false);
 
     /* It is not possible to work with USB device if there is no USB controller present. */
-    if (!m->pParent->isUSBControllerPresent())
+    if (!m->pParent->i_isUSBControllerPresent())
         return false;
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);

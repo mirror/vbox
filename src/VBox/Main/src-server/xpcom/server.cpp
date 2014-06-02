@@ -104,9 +104,6 @@ NS_DECL_CI_INTERFACE_GETTER(VirtualBoxWrap)
 // automatically generated wrappers makes them obsolete.
 
 /* implement nsISupports parts of our objects with support for nsIClassInfo */
-NS_DECL_CLASSINFO(Machine)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Machine, IMachine)
-
 NS_DECL_CLASSINFO(SessionMachine)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(SessionMachine, IMachine, IInternalMachineControl)
 

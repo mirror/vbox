@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -273,13 +273,13 @@ HRESULT VRDEServer::setEnabled(BOOL aEnabled)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, needs no locking
-        mParent->setModified(Machine::IsModified_VRDEServer);
+        mParent->i_setModified(Machine::IsModified_VRDEServer);
         mlock.release();
 
-        /* Avoid deadlock when onVRDEServerChange eventually calls SetExtraData. */
+        /* Avoid deadlock when i_onVRDEServerChange eventually calls SetExtraData. */
         adep.release();
 
-        rc = mParent->onVRDEServerChange(/* aRestart */ TRUE);
+        rc = mParent->i_onVRDEServerChange(/* aRestart */ TRUE);
     }
 
     return rc;
@@ -403,13 +403,13 @@ HRESULT VRDEServer::setVRDEProperty(const com::Utf8Str &aKey, const com::Utf8Str
             alock.release();
 
             AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, needs no locking
-            mParent->setModified(Machine::IsModified_VRDEServer);
+            mParent->i_setModified(Machine::IsModified_VRDEServer);
             mlock.release();
 
-            /* Avoid deadlock when onVRDEServerChange eventually calls SetExtraData. */
+            /* Avoid deadlock when i_onVRDEServerChange eventually calls SetExtraData. */
             adep.release();
 
-            mParent->onVRDEServerChange(/* aRestart */ TRUE);
+            mParent->i_onVRDEServerChange(/* aRestart */ TRUE);
         }
     }
     else
@@ -434,13 +434,13 @@ HRESULT VRDEServer::setVRDEProperty(const com::Utf8Str &aKey, const com::Utf8Str
             alock.release();
 
             AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);
-            mParent->setModified(Machine::IsModified_VRDEServer);
+            mParent->i_setModified(Machine::IsModified_VRDEServer);
             mlock.release();
 
-            /* Avoid deadlock when onVRDEServerChange eventually calls SetExtraData. */
+            /* Avoid deadlock when i_onVRDEServerChange eventually calls SetExtraData. */
             adep.release();
 
-            mParent->onVRDEServerChange(/* aRestart */ TRUE);
+            mParent->i_onVRDEServerChange(/* aRestart */ TRUE);
         }
     }
 
@@ -535,7 +535,7 @@ HRESULT VRDEServer::getVRDEProperties(std::vector<com::Utf8Str> &aProperties)
     else
     {
 #ifdef VBOX_WITH_EXTPACK
-        VirtualBox *pVirtualBox = mParent->getVirtualBox();
+        VirtualBox *pVirtualBox = mParent->i_getVirtualBox();
         ExtPackManager *pExtPackMgr = pVirtualBox->i_getExtPackManager();
         vrc = pExtPackMgr->i_getVrdeLibraryPathForExtPack(&strExtPack, &strVrdeLibrary);
 #else
@@ -617,10 +617,10 @@ HRESULT VRDEServer::setAuthType(AuthType_T aType)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, needs no locking
-        mParent->setModified(Machine::IsModified_VRDEServer);
+        mParent->i_setModified(Machine::IsModified_VRDEServer);
         mlock.release();
 
-        mParent->onVRDEServerChange(/* aRestart */ TRUE);
+        mParent->i_onVRDEServerChange(/* aRestart */ TRUE);
     }
 
     return S_OK;
@@ -653,7 +653,7 @@ HRESULT VRDEServer::setAuthTimeout(ULONG aTimeout)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, needs no locking
-        mParent->setModified(Machine::IsModified_VRDEServer);
+        mParent->i_setModified(Machine::IsModified_VRDEServer);
         mlock.release();
 
         /* sunlover 20060131: This setter does not require the notification
@@ -676,7 +676,7 @@ HRESULT VRDEServer::getAuthLibrary(com::Utf8Str &aLibrary)
     {
         /* Get the global setting. */
         ComPtr<ISystemProperties> systemProperties;
-        HRESULT hrc = mParent->getVirtualBox()->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+        HRESULT hrc = mParent->i_getVirtualBox()->COMGETTER(SystemProperties)(systemProperties.asOutParam());
         if (SUCCEEDED(hrc))
         {
             Bstr strlib;
@@ -710,10 +710,10 @@ HRESULT VRDEServer::setAuthLibrary(const com::Utf8Str &aLibrary)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);
-        mParent->setModified(Machine::IsModified_VRDEServer);
+        mParent->i_setModified(Machine::IsModified_VRDEServer);
         mlock.release();
 
-        mParent->onVRDEServerChange(/* aRestart */ TRUE);
+        mParent->i_onVRDEServerChange(/* aRestart */ TRUE);
     }
 
     return S_OK;
@@ -747,10 +747,10 @@ HRESULT VRDEServer::setAllowMultiConnection(BOOL aAllowMultiConnection)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, needs no locking
-        mParent->setModified(Machine::IsModified_VRDEServer);
+        mParent->i_setModified(Machine::IsModified_VRDEServer);
         mlock.release();
 
-        mParent->onVRDEServerChange(/* aRestart */ TRUE); // @todo does it need a restart?
+        mParent->i_onVRDEServerChange(/* aRestart */ TRUE); // @todo does it need a restart?
     }
 
     return S_OK;
@@ -782,10 +782,10 @@ HRESULT VRDEServer::setReuseSingleConnection(BOOL aReuseSingleConnection)
         alock.release();
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, needs no locking
-        mParent->setModified(Machine::IsModified_VRDEServer);
+        mParent->i_setModified(Machine::IsModified_VRDEServer);
         mlock.release();
 
-        mParent->onVRDEServerChange(/* aRestart */ TRUE); // @todo needs a restart?
+        mParent->i_onVRDEServerChange(/* aRestart */ TRUE); // @todo needs a restart?
     }
 
     return S_OK;
@@ -805,7 +805,7 @@ HRESULT VRDEServer::getVRDEExtPack(com::Utf8Str &aExtPack)
         else
         {
 #ifdef VBOX_WITH_EXTPACK
-            ExtPackManager *pExtPackMgr = mParent->getVirtualBox()->i_getExtPackManager();
+            ExtPackManager *pExtPackMgr = mParent->i_getVirtualBox()->i_getExtPackManager();
             hrc = pExtPackMgr->i_checkVrdeExtPack(&strExtPack);
 #else
             hrc = setError(E_FAIL, tr("Extension pack '%s' does not exist"), strExtPack.c_str());
@@ -818,7 +818,7 @@ HRESULT VRDEServer::getVRDEExtPack(com::Utf8Str &aExtPack)
     {
         /* Get the global setting. */
         ComPtr<ISystemProperties> systemProperties;
-        hrc = mParent->getVirtualBox()->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+        hrc = mParent->i_getVirtualBox()->COMGETTER(SystemProperties)(systemProperties.asOutParam());
         if (SUCCEEDED(hrc))
         {
             BSTR bstr;
@@ -850,7 +850,7 @@ HRESULT VRDEServer::setVRDEExtPack(const com::Utf8Str &aExtPack)
             else
             {
 #ifdef VBOX_WITH_EXTPACK
-                ExtPackManager *pExtPackMgr = mParent->getVirtualBox()->i_getExtPackManager();
+                ExtPackManager *pExtPackMgr = mParent->i_getVirtualBox()->i_getExtPackManager();
                 hrc = pExtPackMgr->i_checkVrdeExtPack(&aExtPack);
 #else
                 hrc = setError(E_FAIL, tr("Extension pack '%s' does not exist"), aExtPack.c_str());
@@ -873,10 +873,10 @@ HRESULT VRDEServer::setVRDEExtPack(const com::Utf8Str &aExtPack)
                 alock.release();
 
                 AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);
-                mParent->setModified(Machine::IsModified_VRDEServer);
+                mParent->i_setModified(Machine::IsModified_VRDEServer);
                 mlock.release();
 
-                mParent->onVRDEServerChange(/* aRestart */ TRUE);
+                mParent->i_onVRDEServerChange(/* aRestart */ TRUE);
             }
         }
     }

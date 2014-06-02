@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -206,7 +206,7 @@ HRESULT BIOSSettings::setLogoFadeIn(BOOL enable)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -235,7 +235,7 @@ HRESULT BIOSSettings::setLogoFadeOut(BOOL enable)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -267,7 +267,7 @@ HRESULT BIOSSettings::setLogoDisplayTime(ULONG displayTime)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -295,7 +295,7 @@ HRESULT BIOSSettings::setLogoImagePath(const com::Utf8Str &imagePath)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -322,7 +322,7 @@ HRESULT BIOSSettings::setBootMenuMode(BIOSBootMenuMode_T bootMenuMode)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -351,7 +351,7 @@ HRESULT BIOSSettings::setACPIEnabled(BOOL enable)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -380,7 +380,7 @@ HRESULT BIOSSettings::setIOAPICEnabled(BOOL aIOAPICEnabled)
     m->bd->fIOAPICEnabled = !!aIOAPICEnabled;
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -409,7 +409,7 @@ HRESULT BIOSSettings::setPXEDebugEnabled(BOOL enable)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -437,7 +437,7 @@ HRESULT BIOSSettings::setTimeOffset(LONG64 offset)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -205,10 +205,10 @@ HRESULT SerialPort::setEnabled(BOOL aEnabled)
         alock.release();
 
         AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        m->pMachine->i_setModified(Machine::IsModified_SerialPorts);
         mlock.release();
 
-        m->pMachine->onSerialPortChange(this);
+        m->pMachine->i_onSerialPortChange(this);
     }
 
     return S_OK;
@@ -269,10 +269,10 @@ HRESULT SerialPort::setHostMode(PortMode_T aHostMode)
         alock.release();
 
         AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        m->pMachine->i_setModified(Machine::IsModified_SerialPorts);
         mlock.release();
 
-        m->pMachine->onSerialPortChange(this);
+        m->pMachine->i_onSerialPortChange(this);
     }
 
     return S_OK;
@@ -323,10 +323,10 @@ HRESULT SerialPort::setIRQ(ULONG aIRQ)
         alock.release();
 
         AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        m->pMachine->i_setModified(Machine::IsModified_SerialPorts);
         mlock.release();
 
-        m->pMachine->onSerialPortChange(this);
+        m->pMachine->i_onSerialPortChange(this);
     }
 
     return S_OK;
@@ -372,10 +372,10 @@ HRESULT SerialPort::setIOBase(ULONG aIOBase)
         alock.release();
 
         AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        m->pMachine->i_setModified(Machine::IsModified_SerialPorts);
         mlock.release();
 
-        m->pMachine->onSerialPortChange(this);
+        m->pMachine->i_onSerialPortChange(this);
     }
 
     return rc;
@@ -412,10 +412,10 @@ HRESULT SerialPort::setPath(const com::Utf8Str &aPath)
         alock.release();
 
         AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        m->pMachine->i_setModified(Machine::IsModified_SerialPorts);
         mlock.release();
 
-        m->pMachine->onSerialPortChange(this);
+        m->pMachine->i_onSerialPortChange(this);
     }
 
     return S_OK;
@@ -448,10 +448,10 @@ HRESULT SerialPort::setServer(BOOL aServer)
         alock.release();
 
         AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        m->pMachine->i_setModified(Machine::IsModified_SerialPorts);
         mlock.release();
 
-        m->pMachine->onSerialPortChange(this);
+        m->pMachine->i_onSerialPortChange(this);
     }
 
     return S_OK;

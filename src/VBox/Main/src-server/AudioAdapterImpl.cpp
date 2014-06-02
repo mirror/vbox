@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -227,7 +227,7 @@ HRESULT AudioAdapter::setEnabled(BOOL aEnabled)
 
         alock.release();
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-        mParent->setModified(Machine::IsModified_AudioAdapter);
+        mParent->i_setModified(Machine::IsModified_AudioAdapter);
     }
 
     return S_OK;
@@ -261,7 +261,7 @@ HRESULT AudioAdapter::setAudioDriver(AudioDriverType_T aAudioDriver)
             mData->m->mAudioDriver = aAudioDriver;
             alock.release();
             AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-            mParent->setModified(Machine::IsModified_AudioAdapter);
+            mParent->i_setModified(Machine::IsModified_AudioAdapter);
         }
         else
         {
@@ -307,7 +307,7 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
                 mData->m->mAudioController = aAudioController;
                 alock.release();
                 AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-                mParent->setModified(Machine::IsModified_AudioAdapter);
+                mParent->i_setModified(Machine::IsModified_AudioAdapter);
                 break;
             }
 

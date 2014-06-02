@@ -56,26 +56,23 @@ using namespace std;
 * @param appliance
 * @return
 */
-STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtualSystemDescription **aDescription)
+HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8Str &aLocation,
+                          ComPtr<IVirtualSystemDescription> &aDescription)
 {
     HRESULT rc = S_OK;
 
     if (!aAppliance)
         return E_POINTER;
 
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     ComObjPtr<VirtualSystemDescription> pNewDesc;
 
     try
     {
-        Appliance *pAppliance = static_cast<Appliance*>(aAppliance);
-        AutoCaller autoCaller1(pAppliance);
-        if (FAILED(autoCaller1.rc())) return autoCaller1.rc();
+        IAppliance *iAppliance = aAppliance;
+        Appliance *pAppliance = static_cast<Appliance*>(iAppliance);
 
         LocationInfo locInfo;
-        i_parseURI(location, locInfo);
+        i_parseURI(aLocation, locInfo);
         // create a new virtual system to store in the appliance
         rc = pNewDesc.createObject();
         if (FAILED(rc)) throw rc;
@@ -91,7 +88,7 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
         rc = COMGETTER(USBControllers)(ComSafeArrayAsOutParam(usbControllers));
         if (SUCCEEDED(rc))
         {
-            for (unsigned i = 0; i < usbControllers.size(); i++)
+            for (unsigned i = 0; i < usbControllers.size(); ++i)
             {
                 USBControllerType_T enmType;
 
@@ -508,7 +505,7 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
         }
 
 //     <const name="NetworkAdapter" />
-        uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(getChipsetType());
+        uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(i_getChipsetType());
         size_t a;
         for (a = 0; a < maxNetworkAdapters; ++a)
         {
@@ -556,7 +553,7 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
 
         /* We return the new description to the caller */
         ComPtr<IVirtualSystemDescription> copy(pNewDesc);
-        copy.queryInterfaceTo(aDescription);
+        copy.queryInterfaceTo(aDescription.asOutParam());
 
         AutoWriteLock alock(pAppliance COMMA_LOCKVAL_SRC_POS);
         // finally, add the virtual system to the appliance
@@ -1843,7 +1840,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     {
         AutoWriteLock machineLock(vsdescThis->m->pMachine COMMA_LOCKVAL_SRC_POS);
         // fill the machine config
-        vsdescThis->m->pMachine->copyMachineDataToSettings(*pConfig);
+        vsdescThis->m->pMachine->i_copyMachineDataToSettings(*pConfig);
 
         // Apply export tweaks to machine settings
         bool fStripAllMACs = m->optListExport.contains(ExportOptions_StripAllMACs);
@@ -2285,7 +2282,8 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             Utf8Str strMfFilePath = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".mf");
             Utf8Str strMfFileName = Utf8Str(strMfFilePath).stripPath();
             pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), strMfFileName.c_str()).raw(),
-                                               m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
+                                               m->ulWeightForManifestOperation);     // operation's weight, as set up
+                                                                                     // with the IProgress originally);
             PRTMANIFESTTEST paManifestFiles = (PRTMANIFESTTEST)RTMemAlloc(sizeof(RTMANIFESTTEST) * fileList.size());
             size_t i = 0;
             list<STRPAIR>::const_iterator it1;
@@ -2414,12 +2412,14 @@ HRESULT Appliance::i_writeS3(TaskOVF *pTask)
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Cannot find source file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
         /* Add the OVF file */
-        filesList.push_back(pair<Utf8Str, ULONG>(strTmpOvf, m->ulWeightForXmlOperation)); /* Use 1% of the total for the OVF file upload */
+        filesList.push_back(pair<Utf8Str, ULONG>(strTmpOvf, m->ulWeightForXmlOperation)); /* Use 1% of the
+                                                                                             total for the OVF file upload */
         /* Add the manifest file */
         if (m->fManifest)
         {
             Utf8Str strMfFile = Utf8Str(strTmpOvf).stripSuffix().append(".mf");
-            filesList.push_back(pair<Utf8Str, ULONG>(strMfFile , m->ulWeightForXmlOperation)); /* Use 1% of the total for the manifest file upload */
+            filesList.push_back(pair<Utf8Str, ULONG>(strMfFile , m->ulWeightForXmlOperation)); /* Use 1% of the total
+                                                                                                  for the manifest file upload */
         }
 
         /* Now add every disks of every virtual system */
@@ -2429,7 +2429,8 @@ HRESULT Appliance::i_writeS3(TaskOVF *pTask)
              ++it)
         {
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
+            std::list<VirtualSystemDescriptionEntry*> avsdeHDs =
+                vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
             std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
             for (itH = avsdeHDs.begin();
                  itH != avsdeHDs.end();
@@ -2449,7 +2450,8 @@ HRESULT Appliance::i_writeS3(TaskOVF *pTask)
             }
         }
         /* Next we have to upload the OVF & all disk images */
-        vrc = RTS3Create(&hS3, pTask->locInfo.strUsername.c_str(), pTask->locInfo.strPassword.c_str(), pTask->locInfo.strHostname.c_str(), "virtualbox-agent/" VBOX_VERSION_STRING);
+        vrc = RTS3Create(&hS3, pTask->locInfo.strUsername.c_str(), pTask->locInfo.strPassword.c_str(),
+                         pTask->locInfo.strHostname.c_str(), "virtualbox-agent/" VBOX_VERSION_STRING);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Cannot create S3 service handler"));
