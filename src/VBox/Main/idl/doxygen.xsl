@@ -83,6 +83,28 @@
 </xsl:template>
 
 <!--
+ * same like desc//* but place <ol> at start of line otherwise Doxygen will not
+ * find it
+-->
+<xsl:template match="desc//ol">
+  <xsl:text>&#x0A;</xsl:text>
+  <xsl:copy>
+    <xsl:apply-templates/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
+ * same like desc//* but place <ul> at start of line otherwise Doxygen will not
+ * find it
+-->
+<xsl:template match="desc//ul">
+  <xsl:text>&#x0A;</xsl:text>
+  <xsl:copy>
+    <xsl:apply-templates/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
  *  paragraph
 -->
 <xsl:template match="desc//p">
