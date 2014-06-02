@@ -1178,7 +1178,7 @@
     uuid="07af8800-f936-4b33-9172-cd400e83c148"
     >
     <desc>
-      Drag'n'Drop interchange mode.
+      Drag and drop interchange mode.
     </desc>
 
     <const name="Disabled"          value="0"/>
