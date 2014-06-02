@@ -204,7 +204,7 @@
 <xsl:template match="desc" mode="results">
   <xsl:if test="result">
     <xsl:text>
-      @par Expected result codes:
+@par Expected result codes:
     </xsl:text>
       <table>
     <xsl:for-each select="result">
