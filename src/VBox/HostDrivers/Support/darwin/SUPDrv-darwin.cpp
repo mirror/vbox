@@ -77,6 +77,11 @@ RT_C_DECLS_BEGIN
 RT_C_DECLS_END
 #endif
 
+/* Temporary debugging. */
+#define VBOX_PROC_SELFNAME_LEN  (20)
+#define VBOX_RETRIEVE_CUR_PROC_NAME(_name)    char _name[VBOX_PROC_SELFNAME_LEN]; \
+                                              proc_selfname(pszProcName, VBOX_PROC_SELFNAME_LEN)
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -127,6 +132,7 @@ public:
     virtual void stop(IOService *pProvider);
     virtual IOService *probe(IOService *pProvider, SInt32 *pi32Score);
     virtual bool terminate(IOOptionBits fOptions);
+    virtual void taggedRetain(const void *pTag=0) const;
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_SupDrv, IOService);
@@ -155,6 +161,7 @@ public:
     virtual bool terminate(IOOptionBits fOptions = 0);
     virtual bool finalize(IOOptionBits fOptions);
     virtual void stop(IOService *pProvider);
+    virtual void taggedRetain(const void *pTag=0) const;
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_SupDrvClient, IOUserClient);
@@ -1373,11 +1380,15 @@ bool org_virtualbox_SupDrvClient::initWithTask(task_t OwningTask, void *pvSecuri
     if (!OwningTask)
         return false;
 
+    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName); 
+
     if (u32Type != SUP_DARWIN_IOSERVICE_COOKIE)
     {
-        Log(("org_virtualbox_SupDrvClient::initWithTask: Bade cookie %#x\n", u32Type));
+        LogRel(("org_virtualbox_SupDrvClient::initWithTask: Bade cookie %#x (%s)\n", u32Type, pszProcName));
         return false;
     }
+    else
+        LogRel(("org_virtualbox_SupDrvClient::initWithTask: Expected cookie %#x (%s)\n", u32Type, pszProcName));
 
     if (IOUserClient::initWithTask(OwningTask, pvSecurityId , u32Type))
     {
@@ -1387,6 +1398,21 @@ bool org_virtualbox_SupDrvClient::initWithTask(task_t OwningTask, void *pvSecuri
         return true;
     }
     return false;
+}
+
+void org_virtualbox_SupDrv::taggedRetain(const void *pTag) const
+{
+    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName); 
+    LogRel(("org_virtualbox_SupDrv::taggedRetain([%p], pTag=[%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
+    IOService::taggedRetain(pTag);
+    LogRel(("org_virtualbox_SupDrv::taggedRetain([%p], pTag=[%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
+}
+void org_virtualbox_SupDrvClient::taggedRetain(const void *pTag) const
+{
+    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
+    LogRel(("org_virtualbox_SupDrvClient::taggedRetain([%p], pTag=[%p]) (1) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
+    IOUserClient::taggedRetain(pTag);
+    LogRel(("org_virtualbox_SupDrvClient::taggedRetain([%p], pTag=[%p]) (2) pszProcName=[%s] [retain count: %d]\n", this, pTag, pszProcName, getRetainCount()));
 }
 
 
