@@ -96,7 +96,7 @@ protected slots:
     void sltPerformGuestResize(const QSize &aSize = QSize());
 
     /* Handler: Frame-buffer NotifyChange stuff: */
-    virtual void sltHandleNotifyChange(ulong uScreenId, int iWidth, int iHeight);
+    virtual void sltHandleNotifyChange(int iWidth, int iHeight);
 
     /* Handler: Frame-buffer NotifyUpdate stuff: */
     virtual void sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
@@ -262,8 +262,7 @@ protected:
     friend class UIMouseHandler;
     friend class UIMachineLogic;
     friend class UIFrameBuffer;
-    friend class UIFrameBufferQImage;
-    template<class, class, class> friend class VBoxOverlayFrameBuffer;
+    template<class, class> friend class VBoxOverlayFrameBuffer;
 };
 
 /* This maintenance class is a part of future roll-back mechanism.

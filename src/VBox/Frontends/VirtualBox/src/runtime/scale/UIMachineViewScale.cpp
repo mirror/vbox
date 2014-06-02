@@ -29,7 +29,6 @@
 #include "UIMachineWindow.h"
 #include "UIMachineViewScale.h"
 #include "UIFrameBuffer.h"
-#include "UIFrameBufferQImage.h"
 
 /* COM includes: */
 #include "CConsole.h"
