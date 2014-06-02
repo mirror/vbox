@@ -218,7 +218,7 @@ static int vbglR3Init(const char *pszDeviceName)
         return VERR_NOT_FOUND;
 
     io_connect_t uConnection;
-    kr = IOServiceOpen(ServiceObject, mach_task_self(), 0, &uConnection);
+    kr = IOServiceOpen(ServiceObject, mach_task_self(), VBOXGUEST_DARWIN_IOSERVICE_COOKIE, &uConnection);
     IOObjectRelease(ServiceObject);
     if (kr != kIOReturnSuccess)
         return VERR_OPEN_FAILED;
