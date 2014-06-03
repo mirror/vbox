@@ -221,22 +221,19 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
 
 void UISelectorWindow::sltShowSelectorContextMenu(const QPoint &pos)
 {
-    /* Load toolbar/statusbar availability settings: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString strToolbar = vbox.GetExtraData(GUI_Toolbar);
-    QString strStatusbar = vbox.GetExtraData(GUI_Statusbar);
-    bool fToolbar = strToolbar.isEmpty() || strToolbar == "true";
-    bool fStatusbar = strStatusbar.isEmpty() || strStatusbar == "true";
-
     /* Populate toolbar/statusbar acctions: */
     QList<QAction*> actions;
     QAction *pShowToolBar = new QAction(tr("Show Toolbar"), 0);
     pShowToolBar->setCheckable(true);
-    pShowToolBar->setChecked(fToolbar);
+#ifdef Q_WS_MAC
+    pShowToolBar->setChecked(mVMToolBar->isVisible());
+#else /* Q_WS_MAC */
+    pShowToolBar->setChecked(m_pBar->isVisible());
+#endif /* !Q_WS_MAC */
     actions << pShowToolBar;
     QAction *pShowStatusBar = new QAction(tr("Show Statusbar"), 0);
     pShowStatusBar->setCheckable(true);
-    pShowStatusBar->setChecked(fStatusbar);
+    pShowStatusBar->setChecked(statusBar()->isVisible());
     actions << pShowStatusBar;
 
     QPoint gpos = pos;
@@ -253,7 +250,6 @@ void UISelectorWindow::sltShowSelectorContextMenu(const QPoint &pos)
 #else /* Q_WS_MAC */
             m_pBar->show();
 #endif /* !Q_WS_MAC */
-            vbox.SetExtraData(GUI_Toolbar, "true");
         }
         else
         {
@@ -262,21 +258,14 @@ void UISelectorWindow::sltShowSelectorContextMenu(const QPoint &pos)
 #else /* Q_WS_MAC */
             m_pBar->hide();
 #endif /* !Q_WS_MAC */
-            vbox.SetExtraData(GUI_Toolbar, "false");
         }
     }
     else if (pResult == pShowStatusBar)
     {
         if (pResult->isChecked())
-        {
             statusBar()->show();
-            vbox.SetExtraData(GUI_Statusbar, "true");
-        }
         else
-        {
             statusBar()->hide();
-            vbox.SetExtraData(GUI_Statusbar, "false");
-        }
     }
 }
 
@@ -1024,14 +1013,6 @@ bool UISelectorWindow::event(QEvent *pEvent)
             return false;
             break;
         }
-        case QEvent::ToolBarChange:
-        {
-            CVirtualBox vbox = vboxGlobal().virtualBox();
-            /* We have to invert the isVisible check one time, cause this event
-             * is sent *before* the real toggle is done. Really intuitive Trolls. */
-            vbox.SetExtraData(GUI_Toolbar, !::darwinIsToolbarVisible(mVMToolBar) ? "true" : "false");
-            break;
-        }
 #endif /* Q_WS_MAC */
         default:
             break;
@@ -1547,22 +1528,26 @@ void UISelectorWindow::loadSettings()
 
     /* Restore toolbar and statusbar visibility: */
     {
-        QString strToolbar = vbox.GetExtraData(GUI_Toolbar);
-        QString strStatusbar = vbox.GetExtraData(GUI_Statusbar);
-
 #ifdef Q_WS_MAC
-        mVMToolBar->setVisible(strToolbar.isEmpty() || strToolbar == "true");
+        mVMToolBar->setHidden(!gEDataManager->selectorWindowToolBarVisible());
 #else /* Q_WS_MAC */
-        m_pBar->setVisible(strToolbar.isEmpty() || strToolbar == "true");
+        m_pBar->setHidden(!gEDataManager->selectorWindowToolBarVisible());
 #endif /* !Q_WS_MAC */
-        statusBar()->setVisible(strStatusbar.isEmpty() || strStatusbar == "true");
+        statusBar()->setHidden(!gEDataManager->selectorWindowStatusBarVisible());
     }
 }
 
 void UISelectorWindow::saveSettings()
 {
-    /* Get VBox object: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    /* Save toolbar and statusbar visibility: */
+    {
+#ifdef Q_WS_MAC
+        gEDataManager->setSelectorWindowToolBarVisible(!mVMToolBar->isHidden());
+#else /* Q_WS_MAC */
+        gEDataManager->setSelectorWindowToolBarVisible(!m_pBar->isHidden());
+#endif /* !Q_WS_MAC */
+        gEDataManager->setSelectorWindowStatusBarVisible(!statusBar()->isHidden());
+    }
 
     /* Save splitter handle position: */
     {
