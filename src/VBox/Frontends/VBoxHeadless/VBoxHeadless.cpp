@@ -43,6 +43,8 @@ using namespace com;
 #include <VBox/VBoxVideo.h>
 
 #ifdef VBOX_WITH_VPX
+#include <cstdlib>
+#include <cerrno>
 #include <iprt/process.h>
 #endif
 
