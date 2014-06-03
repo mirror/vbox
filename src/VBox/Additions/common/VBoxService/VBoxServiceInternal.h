@@ -45,13 +45,13 @@ typedef struct
     const char *pszOptions;
 
     /**
-     * Called before parsing arguments.
+     * Called before parsing arguments.  Optional.
      * @returns VBox status code.
      */
     DECLCALLBACKMEMBER(int, pfnPreInit)(void);
 
     /**
-     * Tries to parse the given command line option.
+     * Tries to parse the given command line option.  Optional.
      *
      * @returns 0 if we parsed, -1 if it didn't and anything else means exit.
      * @param   ppszShort   If not NULL it points to the short option iterator. a short argument.
@@ -63,7 +63,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnOption)(const char **ppszShort, int argc, char **argv, int *pi);
 
     /**
-     * Called before parsing arguments.
+     * Called before parsing arguments.  Optional.
      * @returns VBox status code.
      */
     DECLCALLBACKMEMBER(int, pfnInit)(void);
@@ -78,12 +78,13 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnWorker)(bool volatile *pfTerminate);
 
     /**
-     * Stop an service.
+     * Stop an service.  If the service can safely be stopped at any time this
+     * may be left NULL.
      */
     DECLCALLBACKMEMBER(void, pfnStop)(void);
 
     /**
-     * Does termination cleanups.
+     * Does termination cleanups.  Optional.
      *
      * @remarks This may be called even if pfnInit hasn't been called!
      */
