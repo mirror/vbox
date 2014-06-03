@@ -1,11 +1,10 @@
 /** @file
  *
  * VBox frontends: VRDE (headless Remote Desktop server):
- * Header file with registration call for VideoRec framebuffer
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,22 +27,5 @@
 
 #include <iprt/initterm.h>
 #include <iprt/critsect.h>
-
-/**
- * Callback function to register an VideoRec framebuffer.
- *
- * @returns COM status code.
- * @param   width        Framebuffer width.
- * @param   height       Framebuffer height.
- * @param   bitrate      Bitrate of mpeg file to be created.
- * @param   pixelFormat  Framebuffer pixel format
- * @param   filename     Name of mpeg file to be created
- * @retval  retVal       The new framebuffer
- */
-typedef DECLCALLBACK(HRESULT) FNREGISTERVIDEORECFB(ULONG width,
-                                     ULONG height, ULONG bitrate,
-                                     com::Bstr filename,
-                                     IFramebuffer **retVal);
-typedef FNREGISTERVIDEORECFB *PFNREGISTERVIDEORECFB;
 
 #endif // __H_VBOXHEADLESS
