@@ -86,27 +86,6 @@ const int XKeyRelease = KeyRelease;
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
-class UIViewport: public QWidget
-{
-public:
-
-    UIViewport(QWidget *pParent = 0) : QWidget(pParent)
-    {
-        /* No need for background drawing: */
-        setAttribute(Qt::WA_OpaquePaintEvent);
-        /* Enable multi-touch support: */
-        setAttribute(Qt::WA_AcceptTouchEvents);
-    }
-
-    QPaintEngine *paintEngine() const
-    {
-        if (testAttribute(Qt::WA_PaintOnScreen))
-            return NULL;
-        else
-            return QWidget::paintEngine();
-    }
-};
-
 UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                      , ulong uScreenId
                                      , UIVisualStateType visualStateType
@@ -385,7 +364,13 @@ UIMachineView::~UIMachineView()
 void UIMachineView::prepareViewport()
 {
     /* Prepare viewport: */
-    setViewport(new UIViewport);
+    AssertPtrReturnVoid(viewport());
+    {
+        /* Enable manual painting: */
+        viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
+        /* Enable multi-touch support: */
+        viewport()->setAttribute(Qt::WA_AcceptTouchEvents);
+    }
 }
 
 void UIMachineView::prepareFrameBuffer()
@@ -981,14 +966,9 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     {
         /* We have a snapshot for the paused state: */
         QRect rect = pPaintEvent->rect().intersect(viewport()->rect());
-        /* We have to disable paint on screen if we are using the regular painter: */
-        bool fPaintOnScreen = viewport()->testAttribute(Qt::WA_PaintOnScreen);
-        viewport()->setAttribute(Qt::WA_PaintOnScreen, false);
         QPainter painter(viewport());
         painter.drawPixmap(rect, m_pauseShot, QRect(rect.x() + contentsX(), rect.y() + contentsY(),
                                                     rect.width(), rect.height()));
-        /* Restore the attribute to it's previous state: */
-        viewport()->setAttribute(Qt::WA_PaintOnScreen, fPaintOnScreen);
 #ifdef Q_WS_MAC
         /* Update the dock icon: */
         updateDockIcon();
