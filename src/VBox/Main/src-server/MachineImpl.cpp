@@ -10063,7 +10063,7 @@ HRESULT Machine::i_saveStorageDevices(ComObjPtr<StorageController> aStorageContr
     if (FAILED(rc)) return rc;
 
     data.llAttachedDevices.clear();
-    for ( MediaData::AttachmentList::iterator it = atts.begin();
+    for (MediaData::AttachmentList::const_iterator it = atts.begin();
          it != atts.end();
          ++it)
     {
