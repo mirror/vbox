@@ -310,7 +310,7 @@ void UIExtraDataManager::setModeForWizard(WizardType type, WizardMode mode)
         setExtraDataStringList(GUI_HideDescriptionForWizards, newValue);
 }
 
-QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pHintWidget /* = 0 */)
+QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pHintWidget /* = 0 */) const
 {
     /* Load corresponding extra-data: */
     const QStringList data = extraDataStringList(GUI_LastSelectorWindowPosition);
@@ -353,7 +353,7 @@ QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pHintWidget /* = 0 */)
     return geometry;
 }
 
-bool UIExtraDataManager::isSelectorWindowShouldBeMaximized()
+bool UIExtraDataManager::isSelectorWindowShouldBeMaximized() const
 {
     /* Load corresponding extra-data: */
     const QStringList data = extraDataStringList(GUI_LastSelectorWindowPosition);
@@ -375,6 +375,31 @@ void UIExtraDataManager::setSelectorWindowGeometry(const QRect &geometry, bool f
 
     /* Re-cache corresponding extra-data: */
     setExtraDataStringList(GUI_LastSelectorWindowPosition, data);
+}
+
+QList<int> UIExtraDataManager::selectorWindowSplitterHints() const
+{
+    /* Load corresponding extra-data list: */
+    const QStringList data = extraDataStringList(GUI_SplitterSizes);
+
+    /* Parse loaded data: */
+    QList<int> hints;
+    hints << (data.size() > 0 ? data[0].toInt() : 0);
+    hints << (data.size() > 1 ? data[1].toInt() : 0);
+
+    /* Return hints: */
+    return hints;
+}
+
+void UIExtraDataManager::setSelectorWindowSplitterHints(const QList<int> &hints)
+{
+    /* Parse passed hints: */
+    QStringList data;
+    data << (hints.size() > 0 ? QString::number(hints[0]) : QString());
+    data << (hints.size() > 1 ? QString::number(hints[1]) : QString());
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_SplitterSizes, data);
 }
 
 bool UIExtraDataManager::isFirstRun(const QString &strId) const
