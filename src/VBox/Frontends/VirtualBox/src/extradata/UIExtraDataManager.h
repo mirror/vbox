@@ -131,11 +131,16 @@ public:
     void setModeForWizard(WizardType type, WizardMode mode);
 
     /** Returns selector-window geometry using @a pHintWidget as the hint. */
-    QRect selectorWindowGeometry(QWidget *pHintWidget = 0);
+    QRect selectorWindowGeometry(QWidget *pHintWidget = 0) const;
     /** Returns whether selector-window should be maximized or not. */
-    bool isSelectorWindowShouldBeMaximized();
+    bool isSelectorWindowShouldBeMaximized() const;
     /** Defines selector-window geometry to passed @a geometry which is @a fMaximized. */
     void setSelectorWindowGeometry(const QRect &geometry, bool fMaximized);
+
+    /** Returns selector-window splitter hints. */
+    QList<int> selectorWindowSplitterHints() const;
+    /** Defines selector-window splitter @a hints. */
+    void setSelectorWindowSplitterHints(const QList<int> &hints);
 
     /** Returns whether this machine started for the first time. */
     bool isFirstRun(const QString &strId) const;

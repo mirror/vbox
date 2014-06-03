@@ -1542,10 +1542,7 @@ void UISelectorWindow::loadSettings()
 
     /* Restore splitter handle position: */
     {
-        QList<int> sizes = vbox.GetExtraDataIntList(GUI_SplitterSizes);
-
-        if (sizes.size() == 2)
-            m_pSplitter->setSizes(sizes);
+        m_pSplitter->setSizes(gEDataManager->selectorWindowSplitterHints());
     }
 
     /* Restore toolbar and statusbar visibility: */
@@ -1569,7 +1566,7 @@ void UISelectorWindow::saveSettings()
 
     /* Save splitter handle position: */
     {
-        vbox.SetExtraDataIntList(GUI_SplitterSizes, m_pSplitter->sizes());
+        gEDataManager->setSelectorWindowSplitterHints(m_pSplitter->sizes());
     }
 
     /* Save window position: */
