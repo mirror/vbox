@@ -1699,7 +1699,7 @@ static const uint8_t cursor_glyph[32 * 4] = {
  * - flashing
  */
 static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, bool reset_dirty,
-        PDMIDISPLAYCONNECTOR *pDrv, bool fRenderVRAM)
+        PDMIDISPLAYCONNECTOR *pDrv)
 {
     int cx, cy, cheight, cw, ch, cattr, height, width, ch_attr;
     int cx_min, cx_max, linesize, x_incr;
@@ -1843,14 +1843,14 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
                 bgcol = palette[cattr >> 4];
                 fgcol = palette[cattr & 0x0f];
                 if (cw != 9) {
-                    if (fRenderVRAM)
+                    if (pThis->fRenderVRAM)
                         vga_draw_glyph8(d1, linesize,
                                         font_ptr, cheight, fgcol, bgcol, dscan);
                 } else {
                     dup9 = 0;
                     if (ch >= 0xb0 && ch <= 0xdf && (pThis->ar[0x10] & 0x04))
                         dup9 = 1;
-                    if (fRenderVRAM)
+                    if (pThis->fRenderVRAM)
                         vga_draw_glyph9(d1, linesize,
                                         font_ptr, cheight, fgcol, bgcol, dup9);
                 }
@@ -1867,11 +1867,11 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
                         h = line_last - line_start + 1;
                         d = d1 + (linesize * line_start << dscan);
                         if (cw != 9) {
-                            if (fRenderVRAM)
+                            if (pThis->fRenderVRAM)
                                 vga_draw_glyph8(d, linesize,
                                                 cursor_glyph, h, fgcol, bgcol, dscan);
                         } else {
-                            if (fRenderVRAM)
+                            if (pThis->fRenderVRAM)
                                 vga_draw_glyph9(d, linesize,
                                                 cursor_glyph, h, fgcol, bgcol, 1);
                         }
@@ -2154,7 +2154,7 @@ int vgaR3UpdateDisplay(VGAState *s, unsigned xStart, unsigned yStart, unsigned w
  * graphic modes
  */
 static int vmsvga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResize, bool reset_dirty,
-                PDMIDISPLAYCONNECTOR *pDrv, bool fRenderVRAM)
+                PDMIDISPLAYCONNECTOR *pDrv)
 {
     int y, page_min, page_max, linesize, y_start;
     int width, height, page0, page1, bwidth, bits;
@@ -2232,7 +2232,7 @@ static int vmsvga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnRe
                 page_min = page0;
             if (page1 > page_max)
                 page_max = page1;
-            if (fRenderVRAM)
+            if (pThis->fRenderVRAM)
                 vga_draw_line(pThis, d, pThis->CTX_SUFF(vram_ptr) + addr, width);
             if (pThis->cursor_draw_line)
                 pThis->cursor_draw_line(pThis, d, y);
@@ -2266,7 +2266,7 @@ static int vmsvga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnRe
  * graphic modes
  */
 static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResize, bool reset_dirty,
-                PDMIDISPLAYCONNECTOR *pDrv, bool fRenderVRAM)
+                PDMIDISPLAYCONNECTOR *pDrv)
 {
     int y1, y2, y, page_min, page_max, linesize, y_start, double_scan;
     int width, height, shift_control, line_offset, page0, page1, bwidth, bits;
@@ -2344,7 +2344,7 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
     if (    disp_width     != (int)pThis->last_width
         ||  height         != (int)pThis->last_height
         ||  pThis->get_bpp(pThis)  != (int)pThis->last_bpp
-        || (offsets_changed && !fRenderVRAM))
+        || (offsets_changed && !pThis->fRenderVRAM))
     {
         if (fFailOnResize)
         {
@@ -2357,7 +2357,7 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
         full_update = true;
     }
 
-    if (fRenderVRAM)
+    if (pThis->fRenderVRAM)
     {
         /* Do not update the destination buffer if it is not big enough.
          * Can happen if the resize request was ignored by the driver.
@@ -2419,7 +2419,7 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
                 page_min = page0;
             if (page1 > page_max)
                 page_max = page1;
-            if (fRenderVRAM)
+            if (pThis->fRenderVRAM)
                 vga_draw_line(pThis, d, pThis->CTX_SUFF(vram_ptr) + addr, width);
             if (pThis->cursor_draw_line)
                 pThis->cursor_draw_line(pThis, d, y);
@@ -2460,7 +2460,7 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
     return VINF_SUCCESS;
 }
 
-static void vga_draw_blank(PVGASTATE pThis, int full_update, PDMIDISPLAYCONNECTOR *pDrv, bool fRenderVRAM)
+static void vga_draw_blank(PVGASTATE pThis, int full_update, PDMIDISPLAYCONNECTOR *pDrv)
 {
     int i, w, val;
     uint8_t *d;
@@ -2478,7 +2478,7 @@ static void vga_draw_blank(PVGASTATE pThis, int full_update, PDMIDISPLAYCONNECTO
         val = 0;
     w = pThis->last_scr_width * ((pDrv->cBits + 7) >> 3);
     d = pDrv->pu8Data;
-    if (fRenderVRAM)
+    if (pThis->fRenderVRAM)
     {
         for(i = 0; i < (int)pThis->last_scr_height; i++) {
             memset(d, val, w);
@@ -2502,7 +2502,7 @@ static DECLCALLBACK(void) voidUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, uint3
 #endif
 
 static int vga_update_display(PVGASTATE pThis, bool fUpdateAll, bool fFailOnResize, bool reset_dirty,
-        PDMIDISPLAYCONNECTOR *pDrv, int32_t *pcur_graphic_mode, bool fRenderVRAM)
+        PDMIDISPLAYCONNECTOR *pDrv, int32_t *pcur_graphic_mode)
 {
     int rc = VINF_SUCCESS;
     int graphic_mode;
@@ -2557,16 +2557,16 @@ static int vga_update_display(PVGASTATE pThis, bool fUpdateAll, bool fFailOnResi
 #ifdef VBOX_WITH_VMSVGA
             if (pThis->svga.fEnabled) {
                 *pcur_graphic_mode = GMODE_SVGA;
-                rc = vmsvga_draw_graphic(pThis, 1, false, reset_dirty, pDrv, fRenderVRAM);
+                rc = vmsvga_draw_graphic(pThis, 1, false, reset_dirty, pDrv);
             }
             else
 #endif
             if (pThis->gr[6] & 1) {
                 *pcur_graphic_mode = GMODE_GRAPH;
-                rc = vga_draw_graphic(pThis, 1, false, reset_dirty, pDrv, fRenderVRAM);
+                rc = vga_draw_graphic(pThis, 1, false, reset_dirty, pDrv);
             } else {
                 *pcur_graphic_mode = GMODE_TEXT;
-                rc = vga_draw_text(pThis, 1, false, reset_dirty, pDrv, fRenderVRAM);
+                rc = vga_draw_text(pThis, 1, false, reset_dirty, pDrv);
             }
 
             if (fBlank) {
@@ -2596,19 +2596,19 @@ static int vga_update_display(PVGASTATE pThis, bool fUpdateAll, bool fFailOnResi
         }
         switch(graphic_mode) {
         case GMODE_TEXT:
-            rc = vga_draw_text(pThis, full_update, fFailOnResize, reset_dirty, pDrv, fRenderVRAM);
+            rc = vga_draw_text(pThis, full_update, fFailOnResize, reset_dirty, pDrv);
             break;
         case GMODE_GRAPH:
-            rc = vga_draw_graphic(pThis, full_update, fFailOnResize, reset_dirty, pDrv, fRenderVRAM);
+            rc = vga_draw_graphic(pThis, full_update, fFailOnResize, reset_dirty, pDrv);
             break;
 #ifdef VBOX_WITH_VMSVGA
         case GMODE_SVGA:
-            rc = vmsvga_draw_graphic(pThis, full_update, fFailOnResize, reset_dirty, pDrv, fRenderVRAM);
+            rc = vmsvga_draw_graphic(pThis, full_update, fFailOnResize, reset_dirty, pDrv);
             break;
 #endif
         case GMODE_BLANK:
         default:
-            vga_draw_blank(pThis, full_update, pDrv, fRenderVRAM);
+            vga_draw_blank(pThis, full_update, pDrv);
             break;
         }
     }
@@ -4610,7 +4610,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     }
 
     rc = vga_update_display(pThis, false, false, true,
-            pThis->pDrv, &pThis->graphic_mode, pThis->fRenderVRAM);
+            pThis->pDrv, &pThis->graphic_mode);
     PDMCritSectLeave(&pThis->CritSect);
     return rc;
 }
@@ -4643,7 +4643,7 @@ static int updateDisplayAll(PVGASTATE pThis)
     pThis->graphic_mode = -1; /* force full update */
 
     return vga_update_display(pThis, true, false, true,
-            pThis->pDrv, &pThis->graphic_mode, pThis->fRenderVRAM);
+            pThis->pDrv, &pThis->graphic_mode);
 }
 
 
@@ -4771,6 +4771,9 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
 
             int32_t cur_graphic_mode = -1;
 
+            bool fSavedRenderVRAM = pThis->fRenderVRAM;
+            pThis->fRenderVRAM = true;
+
             /*
              * Make the screenshot.
              *
@@ -4780,7 +4783,9 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
              * If there is a pending resize, the function will fail.
              */
             rc = vga_update_display(pThis, false, true, false,
-                    &Connector, &cur_graphic_mode, 1);
+                    &Connector, &cur_graphic_mode);
+
+            pThis->fRenderVRAM = fSavedRenderVRAM;
 
             if (rc == VINF_SUCCESS)
             {
