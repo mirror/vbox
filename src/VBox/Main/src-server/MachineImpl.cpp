@@ -5391,8 +5391,8 @@ HRESULT Machine::i_getGuestPropertyFromVM(const com::Utf8Str &aName,
                                           com::Utf8Str &aFlags) const
 {
     HRESULT rc = S_OK;
-    BSTR bValue;
-    BSTR bFlags;
+    BSTR bValue = NULL;
+    BSTR bFlags = NULL;
 
     ComPtr<IInternalSessionControl> directControl;
     directControl = mData->mSession.mDirectControl;
