@@ -2728,6 +2728,8 @@ int vboxVDMAReset(struct VBOXVDMAHOST *pVdma)
 
 int vboxVDMADestruct(struct VBOXVDMAHOST *pVdma)
 {
+    if (!pVdma)
+        return VINF_SUCCESS;
 #ifdef VBOX_WITH_CRHGSMI
     vdmaVBVACtlDisableSync(pVdma);
     VBoxVDMAThreadCleanup(&pVdma->Thread);
