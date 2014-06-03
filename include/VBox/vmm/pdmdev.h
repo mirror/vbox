@@ -2414,7 +2414,7 @@ typedef struct PDMDEVHLPR3
      * is configured for the VM, in which case we'll drop the base
      * memory pages. Presently we will make no attempt to preserve
      * anything that happens to be present in the base memory that
-     * is replaced, this is of course incorrectly but it's too much
+     * is replaced, this is of course incorrect but it's too much
      * effort.
      *
      * @returns VBox status code.
