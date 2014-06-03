@@ -5411,7 +5411,6 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
     if (RT_FAILURE (rc))
     {
-        LogRel(("Chipset cannot do MSI: %Rrc\n", rc));
         /* That's OK, we can work without MSI */
         PCIDevSetCapabilityList(&pThis->PciDev, 0x0);
     }
