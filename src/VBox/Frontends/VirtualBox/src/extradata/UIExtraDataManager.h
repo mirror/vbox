@@ -142,6 +142,15 @@ public:
     /** Defines selector-window splitter @a hints. */
     void setSelectorWindowSplitterHints(const QList<int> &hints);
 
+    /** Returns whether selector-window tool-bar visible. */
+    bool selectorWindowToolBarVisible() const;
+    /** Defines whether selector-window tool-bar @a fVisible. */
+    void setSelectorWindowToolBarVisible(bool fVisible);
+    /** Returns whether selector-window status-bar visible. */
+    bool selectorWindowStatusBarVisible() const;
+    /** Defines whether selector-window status-bar @a fVisible. */
+    void setSelectorWindowStatusBarVisible(bool fVisible);
+
     /** Returns whether this machine started for the first time. */
     bool isFirstRun(const QString &strId) const;
     /** Defines whether this machine started for the first time. */
