@@ -221,6 +221,9 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
         return E_FAIL;
     }
 
+    /* Disable screen updates: */
+    m_fUpdatesAllowed = false;
+
     /* Acquire new pending bitmap: */
     m_pendingSourceBitmap = 0;
     m_pMachineView->session().GetConsole().GetDisplay().QuerySourceBitmap(uScreenId, m_pendingSourceBitmap);
@@ -483,9 +486,6 @@ void UIFrameBuffer::notifyChange(int iWidth, int iHeight)
         /* Return immediately: */
         return;
     }
-
-    /* Disable screen updates: */
-    m_fUpdatesAllowed = false;
 
     /* Release the current bitmap and keep the pending one: */
     m_sourceBitmap = m_pendingSourceBitmap;
