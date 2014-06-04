@@ -1621,7 +1621,7 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
  */
 static int vboxVDMACrCmdVbvaProcessPagingEl(PPDMDEVINS pDevIns, VBOXCMDVBVAPAGEIDX iPage, uint8_t *pu8Vram, bool fIn)
 {
-    RTGCPHYS phPage = (RTGCPHYS)(iPage << PAGE_SHIFT);
+    RTGCPHYS phPage = (RTGCPHYS)iPage << PAGE_SHIFT;
     PGMPAGEMAPLOCK Lock;
     int rc;
 
@@ -1706,9 +1706,15 @@ static int8_t vboxVDMACrCmdVbvaPagingDataInit(PVGASTATE pVGAState, const VBOXCMD
         return -1;
     }
 
-    if (offVRAM + (cPages << PAGE_SHIFT) >= pVGAState->vram_size)
+    if (~(~(VBOXCMDVBVAPAGEIDX)0 >> PAGE_SHIFT) & cPages)
     {
-        WARN(("invalid cPages"));
+        WARN(("invalid cPages %d", cPages));
+        return -1;
+    }
+
+    if (offVRAM + ((VBOXCMDVBVAOFFSET)cPages << PAGE_SHIFT) >= pVGAState->vram_size)
+    {
+        WARN(("invalid cPages %d, exceeding vram size", cPages));
         return -1;
     }
 
@@ -1840,7 +1846,7 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
             VBOXCMDVBVA_SYSMEMCMD *pSysmemCmd = (VBOXCMDVBVA_SYSMEMCMD*)pCmd;
             const VBOXCMDVBVA_HDR *pRealCmdHdr;
             uint32_t cbRealCmd = pCmd->u8Flags;
-            cbRealCmd |= (pCmd->u.u8PrimaryID << 8);
+            cbRealCmd |= (uint32_t)pCmd->u.u8PrimaryID << 8;
             if (cbRealCmd < sizeof (VBOXCMDVBVA_HDR))
             {
                 WARN(("invalid sysmem cmd size"));
@@ -1956,7 +1962,7 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
                         Assert(!(phCmd & PAGE_OFFSET_MASK));
 
                         phCmd += PAGE_SIZE;
-                        pu8Vram += (cCurPages << PAGE_SHIFT);
+                        pu8Vram += (VBOXCMDVBVAOFFSET)cCurPages << PAGE_SHIFT;
 
                         rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, phCmd, 0, &pvCmd, &Lock);
                         if (!RT_SUCCESS(rc))

@@ -5653,7 +5653,7 @@ static int8_t crVBoxServerCrCmdBltVramToVram(VBOXCMDVBVAOFFSET offSrcVRAM, uint3
     {
         if (hSrcFb)
         {
-            WARN(("blit from one framebuffer, wow"));
+            LOG(("blit from one framebuffer, wow"));
 
             int rc = CrFbUpdateBegin(hSrcFb);
             if (RT_SUCCESS(rc))
