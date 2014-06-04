@@ -737,7 +737,8 @@
           For whoever decides to touch this enum: In order to keep the
           comparisons in the old source code valid, this state must immediately
           precede the Paused state.
-          TODO: Lift this spectacularly wonderful restriction.
+
+          @todo Lift this spectacularly wonderful restriction.
         </note>
       </desc>
     </const>
@@ -748,7 +749,8 @@
           For whoever decides to touch this enum: In order to keep the
           comparisons in the old source code valid, this state must immediately
           follow the Running state.
-          TODO: Lift this spectacularly wonderful restriction.
+
+          @todo Lift this spectacularly wonderful restriction.
         </note>
       </desc>
     </const>
@@ -8221,7 +8223,7 @@
       <desc>
         Teleport the VM to a different host machine or process.
 
-        TODO explain the details.
+        @todo Explain the details.
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine not running or paused.
@@ -12144,20 +12146,20 @@
 
     <attribute name="additionsRunLevel" type="AdditionsRunLevelType" readonly="yes">
       <desc>
-        Current run level of the Guest Additions.
+        Current run level of the installed Guest Additions.
       </desc>
     </attribute>
 
     <attribute name="additionsVersion" type="wstring" readonly="yes">
       <desc>
-        Version of the Guest Additions in the same format as
+        Version of the installed Guest Additions in the same format as
         <link to="IVirtualBox::version"/>.
       </desc>
     </attribute>
 
     <attribute name="additionsRevision" type="unsigned long" readonly="yes">
       <desc>
-        The internal build revision number of the additions.
+        The internal build revision number of the installed Guest Additions.
 
         See also <link to="IVirtualBox::revision"/>.
       </desc>
@@ -12165,13 +12167,16 @@
 
     <attribute name="dnDSource" type="IGuestDnDSource" readonly="yes">
       <desc>
-        TODO
+        Retrieves the drag'n drop source implementation for the guest side, that
+        is, handling and retrieving drag'n drop data from the guest.
       </desc>
     </attribute>
 
     <attribute name="dnDTarget" type="IGuestDnDTarget" readonly="yes">
       <desc>
-        TODO
+        Retrieves the drag'n drop source implementation for the host side. This
+        will allow the host to handle and initiate a drag'n drop operation to copy
+        data from the host to the guest.
       </desc>
     </attribute>
 
@@ -12183,8 +12188,8 @@
 
     <attribute name="facilities" type="IAdditionsFacility" readonly="yes" safearray="yes">
       <desc>
-        Array of current known facilities. Only returns facilities where a status is known,
-        e.g. facilities with an unknown status will not be returned.
+        Returns a collection of current known facilities. Only returns facilities where
+        a status is known, e.g. facilities with an unknown status will not be returned.
       </desc>
     </attribute>
 
@@ -19561,8 +19566,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Interface for managing VirtualBox Extension Packs.
 
-      TODO: Describe extension packs, how they are managed and how to create
-            one.
+      @todo Describe extension packs, how they are managed and how to create one.
     </desc>
 
     <attribute name="installedExtPacks" type="IExtPack" safearray="yes" readonly="yes">
@@ -21068,7 +21072,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <desc>
       The mode (relative, absolute, multi-touch) of a pointer event.
-      TODO: a clear pattern seems to be emerging that we should usually have
+
+      @todo A clear pattern seems to be emerging that we should usually have
       multiple input devices active for different types of reporting, so we
       should really have different event types for relative (including wheel),
       absolute (not including wheel) and multi-touch events.
