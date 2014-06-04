@@ -7350,6 +7350,15 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
      * safe to release the object lock now if needed)
      * ---------------------------------------------------------------------- */
 
+    if (mDisplay)
+    {
+        alock.release();
+
+        mDisplay->notifyPowerDown();
+
+        alock.acquire();
+    }
+
     /* Stop the VRDP server to prevent new clients connection while VM is being
      * powered off. */
     if (mConsoleVRDPServer)

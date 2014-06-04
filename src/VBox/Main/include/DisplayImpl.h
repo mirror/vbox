@@ -215,6 +215,8 @@ public:
     void VideoCaptureStop();
     int  VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens));
 
+    void notifyPowerDown(void);
+
     // IEventListener methods
     STDMETHOD(HandleEvent)(IEvent * aEvent);
 
@@ -329,6 +331,8 @@ private:
 
     unsigned mcMonitors;
     DISPLAYFBINFO maFramebuffers[SchemaDefs::MaxGuestMonitors];
+
+    bool mfSourceBitmapEnabled;
 
     /* arguments of the last handleDisplayResize() call */
     void       *mLastAddress;
