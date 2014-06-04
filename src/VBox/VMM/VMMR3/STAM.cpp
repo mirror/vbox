@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1654,7 +1654,7 @@ VMMR3DECL(int)  STAMR3Reset(PUVM pUVM, const char *pszPat)
             }
         if (!fGVMMMatched)
         {
-            /** @todo match cpu leaves some rainy day.  */
+            /** @todo match cpu leaves some rainy day. */
         }
 
         /* GMM */
@@ -2662,7 +2662,7 @@ static void stamR3Ring0StatsUpdateMultiU(PUVM pUVM, const char * const *papszExp
         }
     if (!fUpdate)
     {
-        /** @todo check the cpu leaves - rainy day.   */
+        /** @todo check the cpu leaves - rainy day. */
     }
     if (fUpdate)
     {

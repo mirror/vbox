@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -53,12 +53,12 @@
 /** The number of pages we reserve per CPU. */
 # define PGMR0DYNMAP_PAGES_PER_CPU          256
 /** The minimum number of pages we reserve per CPU.
- * This must be equal or larger than the autoset size.  */
+ * This must be equal or larger than the autoset size. */
 # define PGMR0DYNMAP_PAGES_PER_CPU_MIN      64
 /** Calcs the overload threshold (safety margin).  Current set at 50%. */
 # define PGMR0DYNMAP_CALC_OVERLOAD(cPages)  ((cPages) / 2)
 /** The number of guard pages.
- * @remarks Never do tuning of the hashing or whatnot with a strict build!  */
+ * @remarks Never do tuning of the hashing or whatnot with a strict build! */
 # if defined(VBOX_STRICT)
 #  define PGMR0DYNMAP_GUARD_PAGES           1
 # else
@@ -72,7 +72,7 @@
 #if 0
 /** Define this to just clear the present bit on guard pages.
  * The alternative is to replace the entire PTE with an bad not-present
- * PTE. Either way, XNU will screw us. :-/   */
+ * PTE. Either way, XNU will screw us. :-/ */
 # define PGMR0DYNMAP_GUARD_NP
 #endif
 /** The dummy PTE value for a page. */
@@ -199,7 +199,7 @@ typedef struct PGMR0DYNMAPENTRY
 {
     /** The physical address of the currently mapped page.
      * This is duplicate for three reasons: cache locality, cache policy of the PT
-     * mappings and sanity checks.   */
+     * mappings and sanity checks. */
     RTHCPHYS                    HCPhys;
     /** Pointer to the page. */
     void                       *pvPage;
@@ -219,7 +219,7 @@ typedef struct PGMR0DYNMAPENTRY
     RTCPUSET                    PendingSet;
 } PGMR0DYNMAPENTRY;
 /** Pointer a mapping cache entry for the ring-0.
- * @sa PPGMRZDYNMAPENTRY, PPGMRCDYNMAPENTRY,  */
+ * @sa PPGMRZDYNMAPENTRY, PPGMRCDYNMAPENTRY, */
 typedef PGMR0DYNMAPENTRY *PPGMR0DYNMAPENTRY;
 
 
@@ -239,7 +239,7 @@ typedef struct PGMR0DYNMAP
     uint32_t                    u32Magic;
     /** Spinlock serializing the normal operation of the cache. */
     RTSPINLOCK                  hSpinlock;
-    /** Array for tracking and managing the pages.  */
+    /** Array for tracking and managing the pages. */
     PPGMR0DYNMAPENTRY           paPages;
     /** The cache size given as a number of pages. */
     uint32_t                    cPages;
@@ -297,14 +297,14 @@ typedef PGMR0DYNMAPPGLVL *PPGMR0DYNMAPPGLVL;
 #endif
 
 /** Mapping cache entry for the current context.
- * @sa PGMR0DYNMAPENTRY, PGMRCDYNMAPENTRY  */
+ * @sa PGMR0DYNMAPENTRY, PGMRCDYNMAPENTRY */
 typedef CTX_MID(PGM,DYNMAPENTRY) PGMRZDYNMAPENTRY;
 /** Pointer a mapping cache entry for the current context.
- * @sa PGMR0DYNMAPENTRY, PGMRCDYNMAPENTRY  */
+ * @sa PGMR0DYNMAPENTRY, PGMRCDYNMAPENTRY */
 typedef PGMRZDYNMAPENTRY *PPGMRZDYNMAPENTRY;
 
 /** Pointer to the mapping cache instance for the current context.
- * @sa PGMR0DYNMAP, PGMRCDYNMAP  */
+ * @sa PGMR0DYNMAP, PGMRCDYNMAP */
 typedef CTX_MID(PGM,DYNMAP) *PPGMRZDYNMAP;
 
 
