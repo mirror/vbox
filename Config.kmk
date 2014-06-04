@@ -517,6 +517,8 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
 endif
 # Emulated USB smart card reader
 VBOX_WITH_USB_CARDREADER = 1
+# Disk crypt plugin
+VBOX_WITH_PLUGIN_CRYPT = 1
 ## @}
 
 # legacy
@@ -1057,6 +1059,7 @@ ifdef VBOX_OSE
  VBOX_WITH_OS2_ADDITIONS_BIN=
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_KCHMVIEWER=
+ VBOX_WITH_PLUGIN_CRYPT=
  ifn1of ($(KBUILD_TARGET), linux)
   VBOX_WITH_DOCS=
   VBOX_WITH_DOCS_PACKING=
