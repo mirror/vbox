@@ -1156,13 +1156,19 @@ static int vboxserviceVMInfoWriteNetwork(void)
     size_t          cbLeft = IfConf.ifc_len;
     while (cbLeft >= sizeof(*pCur))
     {
+# if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX)
+        /* These two do not provide the sa_len member but only support address
+         * families which do not need extra bytes on the end. */
+#  define SA_LEN(pAddr) sizeof(struct sockaddr)
+# elif !defined(SA_LEN)
+#  define SA_LEN(pAddr) (pAddr)->sa_len
+# endif
         /* Figure the size of the current request. */
-        size_t cbCur = RT_OFFSETOF(struct ifreq, ifr_addr);
-# if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) /* No sa_len on this platforms. */
+        size_t cbCur = RT_OFFSETOF(struct ifreq, ifr_addr)
+                     + SA_LEN(&pCur->ifr_addr);
+        cbCur = RT_MAX(cbCur, sizeof(struct ifreq));
+# if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX)
         Assert(pCur->ifr_addr.sa_family == AF_INET);
-        cbCur += sizeof(struct sockaddr);
-# else
-        cbCur += RT_MAX(sizeof(struct sockaddr), pCur->ifr_addr.sa_len);
 # endif
         AssertBreak(cbCur <= cbLeft);
 
