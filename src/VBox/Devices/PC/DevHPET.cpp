@@ -76,8 +76,8 @@
 
 /** @name Interrupt type
  * @{ */
-#define HPET_TIMER_TYPE_LEVEL       1
-#define HPET_TIMER_TYPE_EDGE        0
+#define HPET_TIMER_TYPE_LEVEL       (1 << 1)
+#define HPET_TIMER_TYPE_EDGE        (0 << 1)
 /** @} */
 
 /** @name Delivery mode
