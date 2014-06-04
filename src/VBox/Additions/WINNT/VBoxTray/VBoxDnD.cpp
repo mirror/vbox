@@ -676,7 +676,6 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
         << "text/plain;charset=utf-8"
         << "UTF8_STRING"
         << "text/plain"
-        << "COMPOUND_TEXT"
         << "TEXT"
         << "STRING"
         /* OpenOffice formats */
