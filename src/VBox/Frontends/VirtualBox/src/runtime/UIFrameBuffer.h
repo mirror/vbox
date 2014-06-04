@@ -240,9 +240,6 @@ protected:
                               HiDPIOptimizationType hiDPIOptimizationType,
                               double dBackingScaleFactor);
 
-    /** Recreates own clean QImage buffer. */
-    void goFallback();
-
     /** Holds the QImage buffer. */
     QImage m_image;
     /** Holds frame-buffer width. */
