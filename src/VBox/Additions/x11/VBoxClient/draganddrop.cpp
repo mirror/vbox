@@ -75,7 +75,7 @@
  * On a drop request from the host, we query for the selection and should get
  * the data in the specified mime-type. This data is send back to the host.
  * After that we send a XdndLeave event to the source window.
- * 
+ *
  * To-do:
  * - Cancelling (e.g. with ESC key) doesn't work.
  *
@@ -364,7 +364,7 @@ public:
     void reset(void);
 
     /* X11 message processing. */
-    int onX11ClientMessage(const XEvent &e);    
+    int onX11ClientMessage(const XEvent &e);
     int onX11SelectionNotify(const XEvent &e);
     int onX11SelectionRequest(const XEvent &e);
     int onX11Event(const XEvent &e);
@@ -577,7 +577,6 @@ const RTCList<RTCString> DragInstance::m_sstrStringMimeTypes = RTCList<RTCString
     << "text/plain;charset=utf-8"
     << "UTF8_STRING"
     << "text/plain"
-    << "COMPOUND_TEXT"
     << "TEXT"
     << "STRING"
     /* OpenOffice formates */
@@ -635,14 +634,14 @@ int DragInstance::init(uint32_t u32ScreenId)
          */
         XSetWindowAttributes attr;
         RT_ZERO(attr);
-        attr.event_mask            =   EnterWindowMask  | LeaveWindowMask 
+        attr.event_mask            =   EnterWindowMask  | LeaveWindowMask
                                      | ButtonMotionMask | ButtonPressMask | ButtonReleaseMask;
         attr.do_not_propagate_mask = NoEventMask;
         attr.override_redirect     = True;
 #ifdef VBOX_DND_DEBUG_WND
         attr.background_pixel      = WhitePixel(m_pDisplay, m_screenId);
 #endif
-        m_wndProxy = XCreateWindow(m_pDisplay, m_wndRoot                 /* Parent */, 
+        m_wndProxy = XCreateWindow(m_pDisplay, m_wndRoot                 /* Parent */,
                                    0, 0,                                 /* Position */
                                    1, 1,                                 /* Width + height */
                                    0,                                    /* Border width */
@@ -657,7 +656,7 @@ int DragInstance::init(uint32_t u32ScreenId)
             break;
         }
 
-        LogFlowThisFunc(("Created proxy window 0x%x at m_wndRoot=0x%x ...\n", 
+        LogFlowThisFunc(("Created proxy window 0x%x at m_wndRoot=0x%x ...\n",
                          m_wndProxy, m_wndRoot));
 
         /* Set the window's name for easier lookup. */
@@ -674,7 +673,7 @@ int DragInstance::init(uint32_t u32ScreenId)
         m_state = Initialized;
     }
     else
-        LogRel(("DnD: Initializing drag instance for screen %RU32 failed with rc=%Rrc\n", 
+        LogRel(("DnD: Initializing drag instance for screen %RU32 failed with rc=%Rrc\n",
                 u32ScreenId, rc));
 
     LogFlowFuncLeaveRC(rc);
@@ -881,7 +880,7 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
                     RTCString strFormat = xAtomToString(e.xselectionrequest.target);
                     Assert(strFormat.isNotEmpty());
                     rc = VbglR3DnDHGRequestData(m_uClientID, strFormat.c_str());
-                    LogFlowThisFunc(("Requesting data from host as \"%s\", rc=%Rrc\n", 
+                    LogFlowThisFunc(("Requesting data from host as \"%s\", rc=%Rrc\n",
                                      strFormat.c_str(), rc));
                 }
             }
@@ -930,17 +929,17 @@ int DragInstance::onX11Event(const XEvent &e)
     switch (e.type)
     {
         case ButtonPress:
-            LogFlowThisFunc(("ButtonPress\n")); 
+            LogFlowThisFunc(("ButtonPress\n"));
             rc = VINF_SUCCESS;
             break;
 
         case ButtonRelease:
-            LogFlowThisFunc(("ButtonRelease\n")); 
+            LogFlowThisFunc(("ButtonRelease\n"));
             rc = VINF_SUCCESS;
             break;
 
-        case ClientMessage:    
-            rc = onX11ClientMessage(e); 
+        case ClientMessage:
+            rc = onX11ClientMessage(e);
             break;
 
         case SelectionClear:
@@ -950,14 +949,14 @@ int DragInstance::onX11Event(const XEvent &e)
            break;
 
         case SelectionNotify:
-            rc = onX11SelectionNotify(e); 
+            rc = onX11SelectionNotify(e);
             break;
 
-        case SelectionRequest: 
-            rc = onX11SelectionRequest(e); 
+        case SelectionRequest:
+            rc = onX11SelectionRequest(e);
             break;
 
-        /*case MotionNotify: 
+        /*case MotionNotify:
           hide();
           break;*/
 
@@ -971,10 +970,10 @@ int DragInstance::onX11Event(const XEvent &e)
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-bool DragInstance::waitForX11Msg(XEvent &evX, int iType, 
+bool DragInstance::waitForX11Msg(XEvent &evX, int iType,
                                  RTMSINTERVAL uTimeoutMS /* = 100 */)
 {
-    LogFlowThisFunc(("iType=%d, uTimeoutMS=%RU32, cEventQueue=%zu\n", 
+    LogFlowThisFunc(("iType=%d, uTimeoutMS=%RU32, cEventQueue=%zu\n",
                      iType, uTimeoutMS, m_eventQueue.size()));
 
     bool fFound = false;
@@ -1017,15 +1016,15 @@ bool DragInstance::waitForX11Msg(XEvent &evX, int iType,
     }
     while (RTTimeMilliTS() - uiStart < uTimeoutMS);
 
-    LogFlowThisFunc(("Returning fFound=%RTbool, msRuntime=%RU64\n", 
+    LogFlowThisFunc(("Returning fFound=%RTbool, msRuntime=%RU64\n",
                      fFound, RTTimeMilliTS() - uiStart));
     return fFound;
 }
 
-bool DragInstance::waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType, 
+bool DragInstance::waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType,
                                        RTMSINTERVAL uTimeoutMS /*= 100 */)
 {
-    LogFlowThisFunc(("aType=%s, uTimeoutMS=%RU32, cEventQueue=%zu\n", 
+    LogFlowThisFunc(("aType=%s, uTimeoutMS=%RU32, cEventQueue=%zu\n",
                      xAtomToString(aType).c_str(), uTimeoutMS, m_eventQueue.size()));
 
     bool fFound = false;
@@ -1038,8 +1037,8 @@ bool DragInstance::waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType,
             int rc2 = RTCritSectEnter(&m_eventQueueCS);
             if (RT_SUCCESS(rc2))
             {
-                XEvent e = m_eventQueue.at(i);                
-                if (e.type == ClientMessage)                    
+                XEvent e = m_eventQueue.at(i);
+                if (e.type == ClientMessage)
                 {
                     m_eventQueue.removeAt(i);
                     evMsg = e.xclient;
@@ -1068,7 +1067,7 @@ bool DragInstance::waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType,
     }
     while (RTTimeMilliTS() - uiStart < uTimeoutMS);
 
-    LogFlowThisFunc(("Returning fFound=%RTbool, msRuntime=%RU64\n", 
+    LogFlowThisFunc(("Returning fFound=%RTbool, msRuntime=%RU64\n",
                      fFound, RTTimeMilliTS() - uiStart));
     return fFound;
 }
@@ -1159,7 +1158,7 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
     /*
      * Is the window under the cursor another one than our current one?
      */
-    if (   wndCursor != m_wndCur 
+    if (   wndCursor != m_wndCur
         && m_curVer != -1)
     {
         LogFlowThisFunc(("Leaving window=%#x\n", m_wndCur));
@@ -1238,7 +1237,7 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
             LogFlowThisFunc(("Error sending XA_XdndPosition to window=%#x\n", wndCursor));
     }
 
-    if (   wndCursor == None 
+    if (   wndCursor == None
         && newVer    == -1)
     {
         /* No window to process, so send a ignore ack event to the host. */
@@ -1364,7 +1363,7 @@ int DragInstance::ghIsDnDPending(void)
             XClientMessageEvent *pEventClient = reinterpret_cast<XClientMessageEvent*>(&e);
             AssertPtr(pEventClient);
 
-            LogFlowThisFunc(("Received event=%s\n", 
+            LogFlowThisFunc(("Received event=%s\n",
                              gX11->xAtomToString(pEventClient->message_type).c_str()));
 
             if (pEventClient->message_type == xAtom(XA_XdndEnter))
@@ -1384,7 +1383,7 @@ int DragInstance::ghIsDnDPending(void)
 #ifdef DEBUG
                 XWindowAttributes xwa;
                 XGetWindowAttributes(m_pDisplay, m_wndCur, &xwa);
-                LogFlowThisFunc(("m_wndCur=%#x, x=%d, y=%d, width=%d, height=%d\n", 
+                LogFlowThisFunc(("m_wndCur=%#x, x=%d, y=%d, width=%d, height=%d\n",
                                  m_wndCur, xwa.x, xwa.y, xwa.width, xwa.height));
 #endif
                 /* Check if the MIME types are in the message itself or if we need
@@ -1393,7 +1392,7 @@ int DragInstance::ghIsDnDPending(void)
                 {
                     for (int i = 2; i < 5; ++i)
                     {
-                        LogFlowThisFunc(("Received format via message: %s\n", 
+                        LogFlowThisFunc(("Received format via message: %s\n",
                                          gX11->xAtomToString(pEventClient->data.l[i]).c_str()));
 
                         m_formats.append(pEventClient->data.l[i]);
@@ -1401,9 +1400,9 @@ int DragInstance::ghIsDnDPending(void)
                 }
                 else
                 {
-                    xRc = XGetWindowProperty(m_pDisplay, wndSelection, 
-                                             xAtom(XA_XdndTypeList), 
-                                             0, VBOX_MAX_XPROPERTIES, 
+                    xRc = XGetWindowProperty(m_pDisplay, wndSelection,
+                                             xAtom(XA_XdndTypeList),
+                                             0, VBOX_MAX_XPROPERTIES,
                                              False, XA_ATOM, &type, &f, &n, &a, &ret);
                     if (   xRc == Success
                         && n > 0
@@ -1412,7 +1411,7 @@ int DragInstance::ghIsDnDPending(void)
                         Atom *data = reinterpret_cast<Atom*>(ret);
                         for (unsigned i = 0; i < RT_MIN(VBOX_MAX_XPROPERTIES, n); ++i)
                         {
-                            LogFlowThisFunc(("Received format via XdndTypeList: %s\n", 
+                            LogFlowThisFunc(("Received format via XdndTypeList: %s\n",
                                              gX11->xAtomToString(data[i]).c_str()));
 
                             m_formats.append(data[i]);
@@ -1423,9 +1422,9 @@ int DragInstance::ghIsDnDPending(void)
                 }
 
                 /* Fetch the possible list of actions, if this property is set. */
-                xRc = XGetWindowProperty(m_pDisplay, wndSelection, 
-                                         xAtom(XA_XdndActionList), 
-                                         0, VBOX_MAX_XPROPERTIES, 
+                xRc = XGetWindowProperty(m_pDisplay, wndSelection,
+                                         xAtom(XA_XdndActionList),
+                                         0, VBOX_MAX_XPROPERTIES,
                                          False, XA_ATOM, &type, &f, &n, &a, &ret);
                 if (   xRc == Success
                     && n > 0
@@ -1434,7 +1433,7 @@ int DragInstance::ghIsDnDPending(void)
                     Atom *data = reinterpret_cast<Atom*>(ret);
                     for (unsigned i = 0; i < RT_MIN(VBOX_MAX_XPROPERTIES, n); ++i)
                     {
-                        LogFlowThisFunc(("Received action: %s\n", 
+                        LogFlowThisFunc(("Received action: %s\n",
                                          gX11->xAtomToString(data[i]).c_str()));
 
                         m_actions.append(data[i]);
@@ -1456,7 +1455,7 @@ int DragInstance::ghIsDnDPending(void)
                 m.data.l[1]    = RT_BIT(0); /* Accept the drop. */
                 m.data.l[4]    = xAtom(XA_XdndActionCopy); /** @todo Make the accepted action configurable. */
 
-                xRc = XSendEvent(m_pDisplay, m_wndCur, 
+                xRc = XSendEvent(m_pDisplay, m_wndCur,
                                  False, 0, reinterpret_cast<XEvent*>(&m));
                 if (RT_UNLIKELY(xRc == 0))
                     LogFlowThisFunc(("Error sending xEvent\n"));
@@ -1479,7 +1478,7 @@ int DragInstance::ghIsDnDPending(void)
                 m.data.l[1]    = RT_BIT(0); /* Accept the drop. */
                 m.data.l[4]    = xAtom(XA_XdndActionCopy); /** @todo Make the accepted action configurable. */
 
-                xRc = XSendEvent(m_pDisplay, m_wndCur, 
+                xRc = XSendEvent(m_pDisplay, m_wndCur,
                                  False, 0, reinterpret_cast<XEvent*>(&m));
                 if (RT_UNLIKELY(xRc == 0))
                     LogFlowThisFunc(("Error sending xEvent\n"));
@@ -1498,7 +1497,7 @@ int DragInstance::ghIsDnDPending(void)
             uint32_t uAllActions = toHGCMActions(m_actions);
 
             rc = VbglR3DnDGHAcknowledgePending(m_uClientID, uDefAction, uAllActions, strFormats.c_str());
-            LogFlowThisFunc(("Acknowledging m_uClientID=%RU32, allActions=0x%x, strFormats=%s, rc=%Rrc\n", 
+            LogFlowThisFunc(("Acknowledging m_uClientID=%RU32, allActions=0x%x, strFormats=%s, rc=%Rrc\n",
                              m_uClientID, uAllActions, strFormats.c_str(), rc));
         }
     }
@@ -1509,7 +1508,7 @@ int DragInstance::ghIsDnDPending(void)
 
 int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
 {
-    LogFlowThisFunc(("strFormat=%s, uAction=%RU32\n", 
+    LogFlowThisFunc(("strFormat=%s, uAction=%RU32\n",
                      strFormat.c_str(), uAction));
 
     int rc = VINF_SUCCESS;
@@ -1524,7 +1523,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
 #ifdef DEBUG
     XWindowAttributes xwa;
     XGetWindowAttributes(m_pDisplay, m_wndCur, &xwa);
-    LogFlowThisFunc(("m_wndCur=%#x, x=%d, y=%d, width=%d, height=%d\n", 
+    LogFlowThisFunc(("m_wndCur=%#x, x=%d, y=%d, width=%d, height=%d\n",
                      m_wndCur, xwa.x, xwa.y, xwa.width, xwa.height));
 
     iRootX = xwa.x;
@@ -1533,16 +1532,16 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
 
     /* We send a fake release event to the current window, cause
      * this should have the grab. */
-    mouseButtonSet(m_wndCur /* Source window */, iRootX, iRootY, 
+    mouseButtonSet(m_wndCur /* Source window */, iRootX, iRootY,
                    1 /* Button */, false /* Release button */);
 
     /* The fake button release event should lead to a XdndDrop event from the
-     * source. Because of showing our proxy window, other Xdnd events can 
+     * source. Because of showing our proxy window, other Xdnd events can
      * occur before, e.g. a XdndPosition event. We are not interested
      * in those, so just try to get the right one. */
 
     XClientMessageEvent evDnDDrop;
-    bool fDrop = waitForX11ClientMsg(evDnDDrop, xAtom(XA_XdndDrop), 
+    bool fDrop = waitForX11ClientMsg(evDnDDrop, xAtom(XA_XdndDrop),
                                      5 * 1000 /* Timeout in ms */);
     if (fDrop)
     {
@@ -1552,8 +1551,8 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
         Assert(wndSource == m_wndCur);
         Atom aFormat  = gX11->stringToxAtom(strFormat.c_str());
 
-        XConvertSelection(m_pDisplay, xAtom(XA_XdndSelection), 
-                          aFormat, xAtom(XA_XdndSelection), 
+        XConvertSelection(m_pDisplay, xAtom(XA_XdndSelection),
+                          aFormat, xAtom(XA_XdndSelection),
                           m_wndProxy, evDnDDrop.data.l[2]);
 
         /* Wait for the selection notify event. */
@@ -1576,15 +1575,15 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                 int iPropFormat;
                 unsigned long cItems, cbRemaining;
                 unsigned char *pcData = NULL;
-                XGetWindowProperty(m_pDisplay, m_wndProxy, 
+                XGetWindowProperty(m_pDisplay, m_wndProxy,
                                    xAtom(XA_XdndSelection) /* Property */,
                                    0 /* Offset */,
                                    VBOX_MAX_XPROPERTIES /* Length of 32-bit multiples */,
-                                   True /* Delete property? */, 
+                                   True /* Delete property? */,
                                    AnyPropertyType, /* Property type */
                                    &aPropType, &iPropFormat, &cItems, &cbRemaining, &pcData);
 
-                LogFlowThisFunc(("strType=%s, iPropFormat=%d, cItems=%RU32, cbRemaining=%RU32\n", 
+                LogFlowThisFunc(("strType=%s, iPropFormat=%d, cItems=%RU32, cbRemaining=%RU32\n",
                                  gX11->xAtomToString(aPropType).c_str(), iPropFormat, cItems, cbRemaining));
 
                 if (   aPropType   != None
@@ -1607,8 +1606,8 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                         {
                             memcpy(pvDataTmp, pcData, cbData);
                             pvDataTmp[cbData++] = '\0';
-                            
-                            rc = VbglR3DnDGHSendData(m_uClientID, strFormat.c_str(), 
+
+                            rc = VbglR3DnDGHSendData(m_uClientID, strFormat.c_str(),
                                                      pvDataTmp, cbData);
                             RTMemFree(pvDataTmp);
                         }
@@ -1622,7 +1621,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                                                  pcData, cbData);
                     }
 
-                    LogFlowThisFunc(("Sent strFormat=%s with rc=%Rrc\n", 
+                    LogFlowThisFunc(("Sent strFormat=%s with rc=%Rrc\n",
                                      strFormat.c_str(), rc));
 
                     if (RT_SUCCESS(rc))
@@ -1656,7 +1655,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                     }
                     else
                     {
-                        AssertMsgFailed(("Not supported data type (%s)\n", 
+                        AssertMsgFailed(("Not supported data type (%s)\n",
                                          gX11->xAtomToString(aPropType).c_str()));
                         rc = VERR_INVALID_PARAMETER;
                     }
@@ -1664,7 +1663,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                     fCancel = true;
                 }
 
-                if (fCancel) 
+                if (fCancel)
                 {
                     LogFlowFunc(("Cancelling drop ...\n"));
 
@@ -1753,13 +1752,13 @@ void DragInstance::mouseButtonSet(Window wndDest, int rx, int ry, int iButton, b
     if (XSendEvent (m_pDisplay, PointerWindow, True, ButtonPressMask, &event) == 0)
         LogFlowThisFunc(("Error sending XTestFakeButtonEvent event\n"));
     XFlush (m_pDisplay);
-    
+
     // Release
     event.type = ButtonRelease;
     if (XSendEvent (m_pDisplay, PointerWindow, True, ButtonReleaseMask, &event) == 0)
         LogFlowThisFunc(("Error sending XTestFakeButtonEvent event\n"));
     XFlush (m_pDisplay);
-    
+
 #else
 #ifdef VBOX_DND_WITH_XTEST
     /** @todo Make this check run only once. */
@@ -1800,12 +1799,12 @@ void DragInstance::mouseButtonSet(Window wndDest, int rx, int ry, int iButton, b
 
         //XTranslateCoordinates(m_pDisplay, eBtn.root, eBtn.window, eBtn.x_root, eBtn.y_root, &eBtn.x, &eBtn.y, &eBtn.subwindow);
 #if 0
-        int xrc = XSendEvent(m_pDisplay, eBtn.window, True /* fPropagate */, 
-                               fPress 
-                             ? ButtonPressMask : ButtonReleaseMask, 
+        int xrc = XSendEvent(m_pDisplay, eBtn.window, True /* fPropagate */,
+                               fPress
+                             ? ButtonPressMask : ButtonReleaseMask,
                              reinterpret_cast<XEvent*>(&eBtn));
 #else
-        int xrc = XSendEvent(m_pDisplay, eBtn.window, False /* fPropagate */, 
+        int xrc = XSendEvent(m_pDisplay, eBtn.window, False /* fPropagate */,
                              0 /* Mask */,
                              reinterpret_cast<XEvent*>(&eBtn));
 #endif
@@ -1825,7 +1824,7 @@ void DragInstance::mouseButtonSet(Window wndDest, int rx, int ry, int iButton, b
 #endif
 }
 
-int DragInstance::proxyWinShow(int *piRootX /*= NULL*/, 
+int DragInstance::proxyWinShow(int *piRootX /*= NULL*/,
                                int *piRootY /*= NULL*/,
                                bool fMouseMove /*= false */) const
 {
@@ -1840,11 +1839,11 @@ int DragInstance::proxyWinShow(int *piRootX /*= NULL*/,
     Window wndRoot, wndChild;
 
 //    XTestGrabControl(m_pDisplay, False);
-    Bool fInRootWnd = XQueryPointer(m_pDisplay, m_wndRoot, &wndRoot, &wndChild, 
-                                    &iRootX, &iRootY, 
+    Bool fInRootWnd = XQueryPointer(m_pDisplay, m_wndRoot, &wndRoot, &wndChild,
+                                    &iRootX, &iRootY,
                                     &iChildX, &iChildY, &iMask);
 #ifdef DEBUG_andy
-    LogFlowThisFunc(("fInRootWnd=%RTbool, wndRoot=0x%x, wndChild=0x%x, iRootX=%d, iRootY=%d\n", 
+    LogFlowThisFunc(("fInRootWnd=%RTbool, wndRoot=0x%x, wndChild=0x%x, iRootX=%d, iRootY=%d\n",
                      RT_BOOL(fInRootWnd), wndRoot, wndChild, iRootX, iRootY));
 #endif
 
@@ -1900,16 +1899,16 @@ void DragInstance::registerForEvents(Window wndThis) const
     }
 }
 
-void DragInstance::setActionsWindowProperty(Window wndThis, 
+void DragInstance::setActionsWindowProperty(Window wndThis,
                                             const RTCList<Atom> &lstActions) const
 {
     if (lstActions.isEmpty())
         return;
 
-    XChangeProperty(m_pDisplay, wndThis, 
-                    xAtom(XA_XdndActionList), 
+    XChangeProperty(m_pDisplay, wndThis,
+                    xAtom(XA_XdndActionList),
                     XA_ATOM, 32, PropModeReplace,
-                    reinterpret_cast<const unsigned char*>(lstActions.raw()), 
+                    reinterpret_cast<const unsigned char*>(lstActions.raw()),
                     lstActions.size());
 }
 
@@ -1918,7 +1917,7 @@ void DragInstance::clearActionsWindowProperty(Window wndThis) const
     XDeleteProperty(m_pDisplay, wndThis, xAtom(XA_XdndActionList));
 }
 
-void DragInstance::setFormatsWindowProperty(Window wndThis, 
+void DragInstance::setFormatsWindowProperty(Window wndThis,
                                             Atom property) const
 {
     if (m_formats.isEmpty())
@@ -1930,15 +1929,15 @@ void DragInstance::setFormatsWindowProperty(Window wndThis,
     targets.append(m_formats);
 
     /* Add the property with the property data to the window. */
-    XChangeProperty(m_pDisplay, wndThis, property, 
+    XChangeProperty(m_pDisplay, wndThis, property,
                     XA_ATOM, 32, PropModeReplace,
-                    reinterpret_cast<const unsigned char*>(targets.raw()), 
+                    reinterpret_cast<const unsigned char*>(targets.raw()),
                     targets.size());
 }
 
 void DragInstance::clearFormatsWindowProperty(Window wndThis) const
 {
-    XDeleteProperty(m_pDisplay, wndThis, 
+    XDeleteProperty(m_pDisplay, wndThis,
                     xAtom(XA_XdndTypeList));
 }
 
@@ -2102,7 +2101,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
 
             LogFlowFunc(("Waiting for new event ...\n"));
             rc = RTSemEventWait(m_hEventSem, RT_INDEFINITE_WAIT);
-            if (RT_FAILURE(rc)) 
+            if (RT_FAILURE(rc))
                 break;
 
             AssertMsg(m_eventQueue.size(),
@@ -2118,9 +2117,9 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                 {
                     case DragAndDropSvc::HOST_DND_HG_EVT_ENTER:
                     {
-                        if (e.hgcm.cbFormats) 
+                        if (e.hgcm.cbFormats)
                         {
-                            RTCList<RTCString> lstFormats 
+                            RTCList<RTCString> lstFormats
                                 = RTCString(e.hgcm.pszFormats, e.hgcm.cbFormats - 1).split("\r\n");
                             m_pCurDnD->hgEnter(lstFormats, e.hgcm.u.a.uAllActions);
 
@@ -2132,7 +2131,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                     }
                     case DragAndDropSvc::HOST_DND_HG_EVT_MOVE:
                     {
-                        m_pCurDnD->hgMove(e.hgcm.u.a.uXpos, e.hgcm.u.a.uYpos, 
+                        m_pCurDnD->hgMove(e.hgcm.u.a.uXpos, e.hgcm.u.a.uYpos,
                                           e.hgcm.u.a.uDefAction);
                         break;
                     }
@@ -2161,7 +2160,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                     case DragAndDropSvc::HOST_DND_GH_EVT_DROPPED:
                     {
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-                        m_pCurDnD->ghDropped(e.hgcm.pszFormats, 
+                        m_pCurDnD->ghDropped(e.hgcm.pszFormats,
                                              e.hgcm.u.a.uDefAction);
 #endif
                         break;
@@ -2202,7 +2201,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
             }
             else if (e.type == DnDEvent::X11_Type)
             {
-                m_pCurDnD->onX11Event(e.x11); 
+                m_pCurDnD->onX11Event(e.x11);
             }
             else
                 AssertMsgFailed(("Unknown event queue type %d\n", e.type));
@@ -2258,7 +2257,7 @@ int DragAndDropService::x11DragAndDropInit(void)
 
     /* No clean-up code for now, as we have no good way of testing it and things
      * should get cleaned up when the user process/X11 client exits. */
-    if (RT_FAILURE(rc)) 
+    if (RT_FAILURE(rc))
         LogRel(("DnD: Failed to start, rc=%Rrc\n", rc));
 
     return rc;
@@ -2273,7 +2272,7 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
 
     uint32_t uClientID;
     int rc = VbglR3DnDConnect(&uClientID);
-    if (RT_FAILURE(rc)) 
+    if (RT_FAILURE(rc))
     {
         LogRel(("DnD: Unable to connect to drag'n drop service, rc=%Rrc\n", rc));
         return rc;
@@ -2335,13 +2334,13 @@ int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
     DnDEvent e;
     do
     {
-        /* 
+        /*
          * Wait for new events. We can't use XIfEvent here, cause this locks
          * the window connection with a mutex and if no X11 events occurs this
          * blocks any other calls we made to X11. So instead check for new
          * events and if there are not any new one, sleep for a certain amount
-         * of time. 
-         */ 
+         * of time.
+         */
         if (XEventsQueued(pThis->m_pDisplay, QueuedAfterFlush) > 0)
         {
             RT_ZERO(e);
@@ -2349,7 +2348,7 @@ int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
 
             /* XNextEvent will block until a new X event becomes available. */
             XNextEvent(pThis->m_pDisplay, &e.x11);
-            {           
+            {
 #ifdef DEBUG
                 switch (e.x11.type)
                 {
@@ -2367,7 +2366,7 @@ int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
                             int32_t dwPos = pEvent->data.l[2];
                             int32_t dwAction = pEvent->data.l[4];
 
-                            LogFlowFunc(("XA_XdndPosition x=%RI32, y=%RI32, dwAction=%RI32\n", 
+                            LogFlowFunc(("XA_XdndPosition x=%RI32, y=%RI32, dwAction=%RI32\n",
                                          RT_HIWORD(dwPos), RT_LOWORD(dwPos), dwAction));
                         }
                         else if (pEvent->message_type == xAtom(XA_XdndDrop))
@@ -2381,7 +2380,7 @@ int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
                     default:
                         LogFlowFunc(("Received X event type=%d\n", e.x11.type));
                         break;
-                }               
+                }
 #endif
                 LogFlowFunc(("Adding new X11 event ...\n"));
 
