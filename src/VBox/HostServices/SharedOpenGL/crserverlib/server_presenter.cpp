@@ -3633,7 +3633,7 @@ protected:
         uint32_t cRects;
         const RTRECT *pRects;
 
-        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRects, NULL, &pRects, NULL);
+        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRects, &pRects, NULL, NULL);
         if (!RT_SUCCESS(rc))
         {
             WARN(("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc));
