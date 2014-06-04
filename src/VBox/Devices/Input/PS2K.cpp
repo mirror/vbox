@@ -1165,10 +1165,6 @@ static DECLCALLBACK(int) ps2kPutEventWrapper(PPDMIKEYBOARDPORT pInterface, uint3
     }
     else
     {
-        /* Stupid Korean key hack: convert a lone break key into a press/release sequence. */
-        if (u32UsageCode == 0x80000090 || u32UsageCode == 0x80000091)
-            ps2kPutEventWorker(pThis, u32UsageCode & ~0x80000000);
-
         ps2kPutEventWorker(pThis, u32UsageCode);
     }
 

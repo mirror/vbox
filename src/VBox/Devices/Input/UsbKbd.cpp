@@ -168,9 +168,6 @@ typedef struct USBHID
     bool                fHaveDoneQueueWaiter;
     /** If device has pending changes. */
     bool                fHasPendingChanges;
-    /** Keypresses which have not yet been reported.  A workaround for the
-     * problem of keys being released before the keypress could be reported. */
-    uint8_t             abUnreportedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
     /** Currently depressed keys */
     uint8_t             abDepressedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
 
@@ -462,7 +459,6 @@ static void usbHidLinkDone(PUSBHID pThis, PVUSBURB pUrb)
 }
 
 
-
 /**
  * Completes the URB with a stalled state, halting the pipe.
  */
@@ -547,29 +543,6 @@ static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
     return VINF_SUCCESS;
 }
 
-#ifdef DEBUG
-# define HEX_DIGIT(x) (((x) < 0xa) ? ((x) + '0') : ((x) - 0xa + 'a'))
-static void usbHidComputePressed(PUSBHIDK_REPORT pReport, char* pszBuf, unsigned cbBuf)
-{
-    unsigned offBuf = 0;
-    unsigned i;
-    for (i = 0; i < RT_ELEMENTS(pReport->aKeys); ++i)
-    {
-        uint8_t uCode = pReport->aKeys[i];
-        if (uCode != 0)
-        {
-            if (offBuf + 4 >= cbBuf)
-                break;
-            pszBuf[offBuf++] = HEX_DIGIT(uCode >> 4);
-            pszBuf[offBuf++] = HEX_DIGIT(uCode & 0xf);
-            pszBuf[offBuf++] = ' ';
-        }
-    }
-    pszBuf[offBuf++] = '\0';
-}
-# undef HEX_DIGIT
-#endif
-
 /**
  * Returns true if the usage code corresponds to a keyboard modifier key
  * (left or right ctrl, shift, alt or GUI).  The usage codes for these keys
@@ -592,24 +565,17 @@ static uint8_t usbHidModifierToFlag(uint8_t u8Usage)
 }
 
 /**
- * Create a USB HID keyboard report based on a vector of keys which have been
- * pressed since the last report was created (so that we don't miss keys that
- * are only pressed briefly) and a vector of currently depressed keys.
- * The keys in the report aKeys array are in increasing order (important for
- * the test case).
+ * Create a USB HID keyboard report reflecting the current state of the
+ * keyboard (up/down keys).
  */
-static int usbHidFillReport(PUSBHIDK_REPORT pReport,
-                            uint8_t *pabUnreportedKeys,
-                            uint8_t *pabDepressedKeys)
+static void usbHidBuildReport(PUSBHIDK_REPORT pReport, uint8_t *pabDepressedKeys)
 {
-    int rc = false;
     unsigned iBuf = 0;
     RT_ZERO(*pReport);
     for (unsigned iKey = 0; iKey < VBOX_USB_USAGE_ARRAY_SIZE; ++iKey)
     {
-        AssertReturn(iBuf <= RT_ELEMENTS(pReport->aKeys),
-                     VERR_INTERNAL_ERROR);
-        if (pabUnreportedKeys[iKey] || pabDepressedKeys[iKey])
+        Assert(iBuf <= RT_ELEMENTS(pReport->aKeys));
+        if (pabDepressedKeys[iKey])
         {
             if (usbHidUsageCodeIsModifier(iKey))
                 pReport->ShiftState |= usbHidModifierToFlag(iKey);
@@ -626,124 +592,10 @@ static int usbHidFillReport(PUSBHIDK_REPORT pReport,
             {
                 pReport->aKeys[iBuf] = iKey;
                 ++iBuf;
-                /* More Korean keyboard hackery: Give the caller a hint that
-                 * a key release event needs reporting.
-                 */
-                if (iKey == 0x90 || iKey == 0x91)
-                    rc = true;
             }
-            /* Avoid "hanging" keys: If a key is unreported but no longer
-             * depressed, we'll need to report the key-up state, too.
-             */
-            if (pabUnreportedKeys[iKey] && !pabDepressedKeys[iKey])
-                rc = true;
-
-            pabUnreportedKeys[iKey] = 0;
         }
     }
-    return rc;
 }
-
-#ifdef DEBUG
-/** Test data for testing usbHidFillReport().  The format is:
- *   - Unreported keys (zero terminated array)
- *   - Depressed keys (zero terminated array)
- *   - Expected shift state in the report (single byte inside array)
- *   - Expected keys buffer contents (array of six bytes)
- */
-static const uint8_t testUsbHidFillReportData[][4][10] = {
-    /* Just unreported, no modifiers */
-    {{4, 9, 0}, {0}, {0}, {4, 9, 0, 0, 0, 0}},
-    /* Just unreported, one modifier */
-    {{4, 9, 0xe2, 0}, {0}, {4}, {4, 9, 0, 0, 0, 0}},
-    /* Just unreported, two modifiers */
-    {{4, 9, 0xe2, 0xe4, 0}, {0}, {20}, {4, 9, 0, 0, 0, 0}},
-    /* Just depressed, no modifiers */
-    {{0}, {7, 20, 0}, {0}, {7, 20, 0, 0, 0, 0}},
-    /* Just depressed, one modifier */
-    {{0}, {7, 20, 0xe3, 0}, {8}, {7, 20, 0, 0, 0, 0}},
-    /* Just depressed, two modifiers */
-    {{0}, {7, 20, 0xe3, 0xe6, 0}, {72}, {7, 20, 0, 0, 0, 0}},
-    /* Unreported and depressed, no overlap, no modifiers */
-    {{5, 10, 0}, {8, 21, 0}, {0}, {5, 8, 10, 21, 0, 0}},
-    /* Unreported and depressed, one overlap, no modifiers */
-    {{5, 10, 0}, {8, 10, 21, 0}, {0}, {5, 8, 10, 21, 0, 0}},
-    /* Unreported and depressed, no overlap, non-overlapping modifiers */
-    {{5, 10, 0xe2, 0xe4, 0}, {8, 21, 0xe3, 0xe6, 0}, {92},
-           {5, 8, 10, 21, 0, 0}},
-    /* Unreported and depressed, one overlap, non-overlapping modifiers */
-    {{5, 10, 21, 0xe2, 0xe4, 0}, {8, 21, 0xe3, 0xe6, 0}, {92},
-           {5, 8, 10, 21, 0, 0}},
-    /* Unreported and depressed, no overlap, overlapping modifiers */
-    {{5, 10, 0xe2, 0xe4, 0}, {8, 21, 0xe3, 0xe4, 0}, {28},
-           {5, 8, 10, 21, 0, 0}},
-    /* Unreported and depressed, one overlap, overlapping modifiers */
-    {{5, 10, 0xe2, 0xe4, 0}, {5, 8, 21, 0xe3, 0xe4, 0}, {28},
-           {5, 8, 10, 21, 0, 0}},
-    /* Just too many unreported, no modifiers */
-    {{4, 9, 11, 12, 16, 18, 20, 0}, {0}, {0}, {1, 1, 1, 1, 1, 1}},
-    /* Just too many unreported, two modifiers */
-    {{4, 9, 11, 12, 16, 18, 20, 0xe2, 0xe4, 0}, {0}, {20},
-           {1, 1, 1, 1, 1, 1}},
-    /* Just too many depressed, no modifiers */
-    {{0}, {7, 20, 22, 25, 27, 29, 34, 0}, {0}, {1, 1, 1, 1, 1, 1}},
-    /* Just too many depressed, two modifiers */
-    {{0}, {7, 20, 22, 25, 27, 29, 34, 0xe3, 0xe5, 0}, {40},
-           {1, 1, 1, 1, 1, 1}},
-    /* Too many unreported and depressed, no overlap, no modifiers */
-    {{5, 10, 12, 13, 0}, {8, 9, 21, 0}, {0}, {1, 1, 1, 1, 1, 1}},
-    /* Eight unreported and depressed total, one overlap, no modifiers */
-    {{5, 10, 12, 13, 0}, {8, 10, 21, 22, 0}, {0}, {1, 1, 1, 1, 1, 1}},
-    /* Seven unreported and depressed total, one overlap, no modifiers */
-    {{5, 10, 12, 13, 0}, {8, 10, 21, 0}, {0}, {5, 8, 10, 12, 13, 21}},
-    /* Too many unreported and depressed, no overlap, two modifiers */
-    {{5, 10, 12, 13, 0xe2, 0}, {8, 9, 21, 0xe4, 0}, {20},
-           {1, 1, 1, 1, 1, 1}},
-    /* Eight unreported and depressed total, one overlap, two modifiers */
-    {{5, 10, 12, 13, 0xe1, 0}, {8, 10, 21, 22, 0xe2, 0}, {6},
-           {1, 1, 1, 1, 1, 1}},
-    /* Seven unreported and depressed total, one overlap, two modifiers */
-    {{5, 10, 12, 13, 0xe2, 0}, {8, 10, 21, 0xe3, 0}, {12},
-           {5, 8, 10, 12, 13, 21}}
-};
-
-/** Test case for usbHidFillReport() */
-class testUsbHidFillReport
-{
-    USBHIDK_REPORT mReport;
-    uint8_t mabUnreportedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
-    uint8_t mabDepressedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
-    const uint8_t (*mTests)[4][10];
-
-    void doTest(unsigned cTest, const uint8_t *paiUnreportedKeys,
-                const uint8_t *paiDepressedKeys, uint8_t aExpShiftState,
-                const uint8_t *pabExpKeys)
-    {
-        RT_ZERO(mReport);
-        RT_ZERO(mabUnreportedKeys);
-        RT_ZERO(mabDepressedKeys);
-        for (unsigned i = 0; paiUnreportedKeys[i] != 0; ++i)
-            mabUnreportedKeys[paiUnreportedKeys[i]] = 1;
-        for (unsigned i = 0; paiDepressedKeys[i] != 0; ++i)
-            mabUnreportedKeys[paiDepressedKeys[i]] = 1;
-        int rc = usbHidFillReport(&mReport, mabUnreportedKeys, mabDepressedKeys);
-        AssertMsgRC(rc, ("test %u\n", cTest));
-        AssertMsg(mReport.ShiftState == aExpShiftState, ("test %u\n", cTest));
-        for (unsigned i = 0; i < RT_ELEMENTS(mReport.aKeys); ++i)
-            AssertMsg(mReport.aKeys[i] == pabExpKeys[i], ("test %u\n", cTest));
-    }
-
-public:
-    testUsbHidFillReport(void) : mTests(&testUsbHidFillReportData[0])
-    {
-        for (unsigned i = 0; i < RT_ELEMENTS(testUsbHidFillReportData); ++i)
-            doTest(i, mTests[i][0], mTests[i][1], mTests[i][2][0],
-                   mTests[i][3]);
-    }
-};
-
-static testUsbHidFillReport gsTestUsbHidFillReport;
-#endif
 
 /**
  * Handles a SET_REPORT request sent to the default control pipe. Note
@@ -774,29 +626,24 @@ static void usbHidSetReport(PUSBHID pThis, PVUSBURB pUrb)
 }
 
 /**
- * Sends a state report to the host if there is a pending URB.
+ * Sends a state report to the guest if there is a URB available.
  */
-static int usbHidSendReport(PUSBHID pThis)
+static void usbHidSendReport(PUSBHID pThis)
 {
     PVUSBURB pUrb = usbHidQueueRemoveHead(&pThis->ToHostQueue);
     if (pUrb)
     {
         PUSBHIDK_REPORT pReport = (PUSBHIDK_REPORT)&pUrb->abData[0];
 
-        int again = usbHidFillReport(pReport, pThis->abUnreportedKeys,
-                                      pThis->abDepressedKeys);
-        if (again)
-            pThis->fHasPendingChanges = true;
-        else
-            pThis->fHasPendingChanges = false;
-        return usbHidCompleteOk(pThis, pUrb, sizeof(*pReport));
+        usbHidBuildReport(pReport, pThis->abDepressedKeys);
+        pThis->fHasPendingChanges = false;
+        usbHidCompleteOk(pThis, pUrb, sizeof(*pReport));
     }
     else
     {
         Log2(("No available URB for USB kbd\n"));
         pThis->fHasPendingChanges = true;
     }
-    return VINF_EOF;
 }
 
 /**
@@ -824,73 +671,59 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
     uint8_t     u8HidCode;
-    int         fKeyDown;
+    bool        fKeyDown;
     bool        fHaveEvent = true;
+    int         rc = VINF_SUCCESS;
 
     RTCritSectEnter(&pThis->CritSect);
 
-    if (RT_UNLIKELY(u32UsageCode == KRSP_BAT_FAIL))
+    /* Let's see what we got... */
+    fKeyDown  = !(u32UsageCode & 0x80000000);
+    u8HidCode = u32UsageCode & 0xFF;
+    AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
+
+    LogFlowFunc(("key %s: 0x%x\n", fKeyDown ? "down" : "up", u8HidCode));
+
+    /*
+     * Due to host key repeat, we can get key events for keys which are
+     * already depressed. Drop those right here.
+     */
+    if (fKeyDown && pThis->abDepressedKeys[u8HidCode])
+        fHaveEvent = false;
+
+    /* If there is already a pending event, we won't accept a new one yet. */
+    if (pThis->fHasPendingChanges && fHaveEvent)
     {
-        /* Clear all currently depressed and unreported keys. */
-        RT_ZERO(pThis->abDepressedKeys);
-        RT_ZERO(pThis->abUnreportedKeys);
-        usbHidSendReport(pThis);
+        pThis->fHasPendingChanges = true;
+        rc = VERR_TRY_AGAIN;
     }
-    else
+    else if (fHaveEvent)
     {
-        fKeyDown = !(u32UsageCode & 0x80000000);
-        u8HidCode = u32UsageCode & 0xFF;
-        AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
-
-        LogFlowFunc(("key %s: 0x%x\n", fKeyDown ? "down" : "up", u8HidCode));
-
-        if (fKeyDown)
+        if (RT_UNLIKELY(u32UsageCode == KRSP_BAT_FAIL))
         {
-            /* Due to host key repeat, we can get key events for keys which are
-             * already depressed. */
-            if (!pThis->abDepressedKeys[u8HidCode])
-            {
-                pThis->abUnreportedKeys[u8HidCode] = 1;
-
-                /* If a non-modifier key is being marked as unreported, also set
-                 * all currently depressed modifer keys as unreported. This avoids
-                 * problems where a simulated key sequence is sent too fast and
-                 * by the time the key is reported, some previously reported
-                 * modifiers are already released. This helps ensure that the guest
-                 * sees the entire modifier(s)+key sequence in a single report.
-                 */
-                if (!usbHidUsageCodeIsModifier(u8HidCode))
-                {
-                    int     iModKey;
-
-                    for (iModKey = USBHID_MODIFIER_FIRST; iModKey <= USBHID_MODIFIER_LAST; ++iModKey)
-                        if (pThis->abDepressedKeys[iModKey])
-                            pThis->abUnreportedKeys[iModKey] = 1;
-                }
-            }
-            else
-                fHaveEvent = false;
-            pThis->abDepressedKeys[u8HidCode] = 1;
+            /* Clear all currently depressed and unreported keys. */
+            RT_ZERO(pThis->abDepressedKeys);
         }
         else
         {
-            /* For stupid Korean keyboards, we have to fake a key up/down sequence
-             * because they only send break codes for Hangul/Hanja keys.
-             */
-            if (u8HidCode == 0x90 || u8HidCode == 0x91)
-                pThis->abUnreportedKeys[u8HidCode] = 1;
-            pThis->abDepressedKeys[u8HidCode] = 0;
+            /* Regular key event - update keyboard state. */
+            if (fKeyDown)
+                pThis->abDepressedKeys[u8HidCode] = 1;
+            else
+                pThis->abDepressedKeys[u8HidCode] = 0;
         }
 
-
-        /* Send a report if the host is already waiting for it. */
-        if (fHaveEvent)
-            usbHidSendReport(pThis);
+        /*
+         * Try sending a report. Note that we already decided to consume the
+         * event regardless of whether a URB is available or not. If it's not,
+         * we will simply not accept any further events.
+         */
+        usbHidSendReport(pThis);
     }
 
     RTCritSectLeave(&pThis->CritSect);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -1000,8 +833,13 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
             usbHidQueueAddTail(&pThis->ToHostQueue, pUrb);
             /* If device was not set idle, send the current report right away. */
             if (pThis->bIdle != 0 || pThis->fHasPendingChanges)
+            {
                 usbHidSendReport(pThis);
-            LogFlow(("usbHidHandleIntrDevToHost: Sent report via %p:%s\n", pUrb, pUrb->pszDesc));
+                LogFlow(("usbHidHandleIntrDevToHost: Sent report via %p:%s\n", pUrb, pUrb->pszDesc));
+                Assert(!pThis->fHasPendingChanges); /* Since we just got a URB... */
+                /* There may be more input queued up. Ask for it now. */
+                pThis->Lun0.pDrv->pfnFlushQueue(pThis->Lun0.pDrv);
+            }
             return VINF_SUCCESS;
 
         /*

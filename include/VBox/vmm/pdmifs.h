@@ -468,6 +468,13 @@ typedef struct PDMIKEYBOARDCONNECTOR
      */
     DECLR3CALLBACKMEMBER(void, pfnSetActive,(PPDMIKEYBOARDCONNECTOR pInterface, bool fActive));
 
+    /**
+     * Flushes the keyboard queue if it contains pending events.
+     *
+     * @param   pInterface      Pointer to the this interface.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnFlushQueue,(PPDMIKEYBOARDCONNECTOR pInterface));
+
 } PDMIKEYBOARDCONNECTOR;
 /** PDMIKEYBOARDCONNECTOR interface ID. */
 #define PDMIKEYBOARDCONNECTOR_IID               "db3f7bd5-953e-436f-9f8e-077905a92d82"
