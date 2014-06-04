@@ -24,7 +24,7 @@
 #include "UIGDetailsGroup.h"
 #include "UIGDetailsSet.h"
 #include "UIGDetailsModel.h"
-#include "UIConverter.h"
+#include "UIExtraDataManager.h"
 #include "VBoxGlobal.h"
 #include "UIVMItem.h"
 
@@ -195,22 +195,22 @@ void UIGDetailsGroup::prepareConnections()
 void UIGDetailsGroup::loadSettings()
 {
     /* Load settings: */
-    m_settings = vboxGlobal().virtualBox().GetExtraDataStringList(GUI_DetailsPageBoxes);
+    m_settings = gEDataManager->selectorWindowDetailsElements();
     /* If settings are empty: */
     if (m_settings.isEmpty())
     {
         /* Propose the defaults: */
-        m_settings << gpConverter->toInternalString(DetailsElementType_General);
-        m_settings << gpConverter->toInternalString(DetailsElementType_Preview);
-        m_settings << gpConverter->toInternalString(DetailsElementType_System);
-        m_settings << gpConverter->toInternalString(DetailsElementType_Display);
-        m_settings << gpConverter->toInternalString(DetailsElementType_Storage);
-        m_settings << gpConverter->toInternalString(DetailsElementType_Audio);
-        m_settings << gpConverter->toInternalString(DetailsElementType_Network);
-        m_settings << gpConverter->toInternalString(DetailsElementType_USB);
-        m_settings << gpConverter->toInternalString(DetailsElementType_SF);
-        m_settings << gpConverter->toInternalString(DetailsElementType_Description);
-        vboxGlobal().virtualBox().SetExtraDataStringList(GUI_DetailsPageBoxes, m_settings);
+        m_settings[DetailsElementType_General] = true;
+        m_settings[DetailsElementType_Preview] = true;
+        m_settings[DetailsElementType_System] = true;
+        m_settings[DetailsElementType_Display] = true;
+        m_settings[DetailsElementType_Storage] = true;
+        m_settings[DetailsElementType_Audio] = true;
+        m_settings[DetailsElementType_Network] = true;
+        m_settings[DetailsElementType_USB] = true;
+        m_settings[DetailsElementType_SF] = true;
+        m_settings[DetailsElementType_Description] = true;
+        gEDataManager->setSelectorWindowDetailsElements(m_settings);
     }
 }
 

@@ -22,7 +22,6 @@
 #include "UIGDetailsModel.h"
 #include "UIGDetailsElements.h"
 #include "UIVMItem.h"
-#include "UIConverter.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "VBoxGlobal.h"
 
@@ -58,7 +57,7 @@ UIGDetailsSet::~UIGDetailsSet()
     parentItem()->removeItem(this);
 }
 
-void UIGDetailsSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QStringList &settings)
+void UIGDetailsSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QMap<DetailsElementType, bool> &settings)
 {
     /* Remember passed arguments: */
     m_pMachineItem = pMachineItem;
@@ -99,12 +98,7 @@ void UIGDetailsSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QStrin
     /* Fetch USB controller restrictions: */
     const CUSBDeviceFilters &filters = m_machine.GetUSBDeviceFilters();
     if (filters.isNull() || !m_machine.GetUSBProxyAvailable())
-    {
-        QString strElementTypeOpened = gpConverter->toInternalString(DetailsElementType_USB);
-        QString strElementTypeClosed = strElementTypeOpened + "Closed";
-        m_settings.removeAll(strElementTypeOpened);
-        m_settings.removeAll(strElementTypeClosed);
-    }
+        m_settings.remove(DetailsElementType_USB);
 
     /* Start building set: */
     rebuildSet();
@@ -125,12 +119,10 @@ void UIGDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
     {
         /* Load details settings: */
         DetailsElementType elementType = (DetailsElementType)iStepNumber;
-        QString strElementTypeOpened = gpConverter->toInternalString(elementType);
-        QString strElementTypeClosed = strElementTypeOpened + "Closed";
         /* Should the element be visible? */
-        bool fVisible = m_settings.contains(strElementTypeOpened) || m_settings.contains(strElementTypeClosed);
+        bool fVisible = m_settings.contains(elementType);
         /* Should the element be opened? */
-        bool fOpen = m_settings.contains(strElementTypeOpened);
+        bool fOpen = fVisible && m_settings[elementType];
 
         /* Check if element is present already: */
         UIGDetailsElement *pElement = element(elementType);

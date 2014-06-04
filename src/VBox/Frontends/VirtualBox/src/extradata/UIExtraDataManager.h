@@ -151,6 +151,11 @@ public:
     /** Defines whether selector-window status-bar @a fVisible. */
     void setSelectorWindowStatusBarVisible(bool fVisible);
 
+    /** Returns selector-window details-pane elements. */
+    QMap<DetailsElementType, bool> selectorWindowDetailsElements();
+    /** Defines selector-window details-pane @a elements. */
+    void setSelectorWindowDetailsElements(const QMap<DetailsElementType, bool> &elements);
+
     /** Returns selector-window preview update interval. */
     PreviewUpdateIntervalType selectorWindowPreviewUpdateInterval() const;
     /** Defines selector-window preview update @a interval. */

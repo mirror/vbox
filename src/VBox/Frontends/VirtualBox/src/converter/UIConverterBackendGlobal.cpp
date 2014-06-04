@@ -746,26 +746,28 @@ template<> QString toString(const DetailsElementType &detailsElementType)
 /* DetailsElementType <= QString: */
 template<> DetailsElementType fromString<DetailsElementType>(const QString &strDetailsElementType)
 {
-    QHash<QString, DetailsElementType> list;
-    list.insert(QApplication::translate("VBoxGlobal", "General", "DetailsElementType"),        DetailsElementType_General);
-    list.insert(QApplication::translate("VBoxGlobal", "Preview", "DetailsElementType"),        DetailsElementType_Preview);
-    list.insert(QApplication::translate("VBoxGlobal", "System", "DetailsElementType"),         DetailsElementType_System);
-    list.insert(QApplication::translate("VBoxGlobal", "Display", "DetailsElementType"),        DetailsElementType_Display);
-    list.insert(QApplication::translate("VBoxGlobal", "Storage", "DetailsElementType"),        DetailsElementType_Storage);
-    list.insert(QApplication::translate("VBoxGlobal", "Audio", "DetailsElementType"),          DetailsElementType_Audio);
-    list.insert(QApplication::translate("VBoxGlobal", "Network", "DetailsElementType"),        DetailsElementType_Network);
-    list.insert(QApplication::translate("VBoxGlobal", "Serial ports", "DetailsElementType"),   DetailsElementType_Serial);
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;                                                                      QList<DetailsElementType> values;
+    keys << QApplication::translate("VBoxGlobal", "General", "DetailsElementType");        values << DetailsElementType_General;
+    keys << QApplication::translate("VBoxGlobal", "Preview", "DetailsElementType");        values << DetailsElementType_Preview;
+    keys << QApplication::translate("VBoxGlobal", "System", "DetailsElementType");         values << DetailsElementType_System;
+    keys << QApplication::translate("VBoxGlobal", "Display", "DetailsElementType");        values << DetailsElementType_Display;
+    keys << QApplication::translate("VBoxGlobal", "Storage", "DetailsElementType");        values << DetailsElementType_Storage;
+    keys << QApplication::translate("VBoxGlobal", "Audio", "DetailsElementType");          values << DetailsElementType_Audio;
+    keys << QApplication::translate("VBoxGlobal", "Network", "DetailsElementType");        values << DetailsElementType_Network;
+    keys << QApplication::translate("VBoxGlobal", "Serial ports", "DetailsElementType");   values << DetailsElementType_Serial;
 #ifdef VBOX_WITH_PARALLEL_PORTS
-    list.insert(QApplication::translate("VBoxGlobal", "Parallel ports", "DetailsElementType"), DetailsElementType_Parallel);
+    keys << QApplication::translate("VBoxGlobal", "Parallel ports", "DetailsElementType"); values << DetailsElementType_Parallel;
 #endif /* VBOX_WITH_PARALLEL_PORTS */
-    list.insert(QApplication::translate("VBoxGlobal", "USB", "DetailsElementType"),            DetailsElementType_USB);
-    list.insert(QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"), DetailsElementType_SF);
-    list.insert(QApplication::translate("VBoxGlobal", "Description", "DetailsElementType"),    DetailsElementType_Description);
-    if (!list.contains(strDetailsElementType))
-    {
-        AssertMsgFailed(("No value for '%s'", strDetailsElementType.toAscii().constData()));
-    }
-    return list.value(strDetailsElementType);
+    keys << QApplication::translate("VBoxGlobal", "USB", "DetailsElementType");            values << DetailsElementType_USB;
+    keys << QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"); values << DetailsElementType_SF;
+    keys << QApplication::translate("VBoxGlobal", "Description", "DetailsElementType");    values << DetailsElementType_Description;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementType, Qt::CaseInsensitive))
+        return DetailsElementType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementType, Qt::CaseInsensitive)));
 }
 
 /* QString <= DetailsElementType: */
@@ -800,26 +802,28 @@ template<> QString toInternalString(const DetailsElementType &detailsElementType
 /* DetailsElementType <= QString: */
 template<> DetailsElementType fromInternalString<DetailsElementType>(const QString &strDetailsElementType)
 {
-    QHash<QString, DetailsElementType> list;
-    list.insert("general",       DetailsElementType_General);
-    list.insert("preview",       DetailsElementType_Preview);
-    list.insert("system",        DetailsElementType_System);
-    list.insert("display",       DetailsElementType_Display);
-    list.insert("storage",       DetailsElementType_Storage);
-    list.insert("audio",         DetailsElementType_Audio);
-    list.insert("network",       DetailsElementType_Network);
-    list.insert("serialPorts",   DetailsElementType_Serial);
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;        QList<DetailsElementType> values;
+    keys << "general";       values << DetailsElementType_General;
+    keys << "preview";       values << DetailsElementType_Preview;
+    keys << "system";        values << DetailsElementType_System;
+    keys << "display";       values << DetailsElementType_Display;
+    keys << "storage";       values << DetailsElementType_Storage;
+    keys << "audio";         values << DetailsElementType_Audio;
+    keys << "network";       values << DetailsElementType_Network;
+    keys << "serialPorts";   values << DetailsElementType_Serial;
 #ifdef VBOX_WITH_PARALLEL_PORTS
-    list.insert("parallelPorts", DetailsElementType_Parallel);
+    keys << "parallelPorts"; values << DetailsElementType_Parallel;
 #endif /* VBOX_WITH_PARALLEL_PORTS */
-    list.insert("usb",           DetailsElementType_USB);
-    list.insert("sharedFolders", DetailsElementType_SF);
-    list.insert("description",   DetailsElementType_Description);
-    if (!list.contains(strDetailsElementType))
-    {
-        AssertMsgFailed(("No value for '%s'", strDetailsElementType.toAscii().constData()));
-    }
-    return list.value(strDetailsElementType);
+    keys << "usb";           values << DetailsElementType_USB;
+    keys << "sharedFolders"; values << DetailsElementType_SF;
+    keys << "description";   values << DetailsElementType_Description;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementType, Qt::CaseInsensitive))
+        return DetailsElementType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementType, Qt::CaseInsensitive)));
 }
 
 /* QString <= PreviewUpdateIntervalType: */

@@ -51,7 +51,7 @@ public:
     ~UIGDetailsSet();
 
     /* API: Build stuff: */
-    void buildSet(UIVMItem *pMachineItem, bool fFullSet, const QStringList &settings);
+    void buildSet(UIVMItem *pMachineItem, bool fFullSet, const QMap<DetailsElementType, bool> &settings);
 
     /* API: Machine stuff: */
     const CMachine& machine() const { return m_machine; }
@@ -122,7 +122,7 @@ private:
     UIBuildStep *m_pBuildStep;
     int m_iLastStepNumber;
     QString m_strSetId;
-    QStringList m_settings;
+    QMap<DetailsElementType, bool> m_settings;
 };
 
 #endif /* __UIGDetailsSet_h__ */
