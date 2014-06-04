@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,7 +62,7 @@
 
 
 /** @def RT_MORE_STRICT
- * Enables more assertions in IPRT.  */
+ * Enables more assertions in IPRT. */
 #if !defined(RT_MORE_STRICT) && (defined(DEBUG) || defined(RT_STRICT) || defined(DOXYGEN_RUNNING)) && !defined(RT_OS_WINDOWS) /** @todo enable on windows after testing */
 # define RT_MORE_STRICT
 #endif
@@ -97,7 +97,7 @@
 /** @def RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED
  * Extended version of RT_ASSERT_PREEMPT_CPUID for use before
  * RTSpinlockAcquired* returns.  This macro works the idCpuOwner and idAssertCpu
- * members of the spinlock instance data.  */
+ * members of the spinlock instance data. */
 #ifdef RT_MORE_STRICT
 # define RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis) \
     do \
@@ -171,7 +171,7 @@
 
 
 /** @def RT_ASSERT_INTS_ON
- * Asserts that interrupts are disabled when RT_MORE_STRICT is defined.   */
+ * Asserts that interrupts are disabled when RT_MORE_STRICT is defined. */
 #ifdef RT_MORE_STRICT
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  define RT_ASSERT_INTS_ON()           Assert(ASMIntAreEnabled())
