@@ -2824,7 +2824,7 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount)
     for (i=0; i<cr_server.screenCount; ++i)
     {
         if (MAPPED(SCREEN(i)))
-            crWarning("Screen count is changing, but screen[%i] is still mapped", i);
+            WARN(("Screen count is changing, but screen[%i] is still mapped", i));
         return VERR_NOT_IMPLEMENTED;
     }
 
@@ -3405,21 +3405,21 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
 
         case SHCRGL_GUEST_FN_SET_VERSION:
         {
-            crWarning("invalid function");
+            WARN(("SHCRGL_GUEST_FN_SET_VERSION: invalid function"));
             rc = VERR_NOT_IMPLEMENTED;
             break;
         }
 
         case SHCRGL_GUEST_FN_SET_PID:
         {
-            crWarning("invalid function");
+            WARN(("SHCRGL_GUEST_FN_SET_PID: invalid function"));
             rc = VERR_NOT_IMPLEMENTED;
             break;
         }
 
         default:
         {
-            crWarning("invalid function");
+            WARN(("invalid function, %d", u32Function));
             rc = VERR_NOT_IMPLEMENTED;
             break;
         }
@@ -3585,7 +3585,7 @@ static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, 
             return crVBoxCrCmdCmd(NULL, &p3DCmd->Cmd, cbCmd - RT_OFFSETOF(VBOXCMDVBVA_3DCTL_CMD, Cmd));
         }
         default:
-            WARN(("invalid function"));
+            WARN(("crVBoxCrCmdGuestCtl: invalid function %d", pCtl->u32Type));
             return VERR_INVALID_PARAMETER;
     }
 }
@@ -4160,21 +4160,21 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
         case SHCRGL_GUEST_FN_SET_VERSION:
         {
-            crWarning("invalid function");
+            WARN(("crVBoxServerCrHgsmiCmd, SHCRGL_GUEST_FN_SET_VERSION: invalid function"));
             rc = VERR_NOT_IMPLEMENTED;
             break;
         }
 
         case SHCRGL_GUEST_FN_SET_PID:
         {
-            crWarning("invalid function");
+            WARN(("crVBoxServerCrHgsmiCmd, SHCRGL_GUEST_FN_SET_PID: invalid function"));
             rc = VERR_NOT_IMPLEMENTED;
             break;
         }
 
         default:
         {
-            crWarning("invalid function");
+            WARN(("crVBoxServerCrHgsmiCmd: invalid functionm %d", u32Function));
             rc = VERR_NOT_IMPLEMENTED;
             break;
         }

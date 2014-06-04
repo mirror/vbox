@@ -1017,7 +1017,7 @@ VBOXBLITTERDECL(int) CrBltImgGetMural(PCR_BLITTER pBlitter, bool fBb, CR_BLITTER
         return VERR_INVALID_STATE;
     }
 
-    crWarning("NOT IMPLEMENTED");
+    WARN(("NOT IMPLEMENTED"));
     return VERR_NOT_IMPLEMENTED;
 }
 

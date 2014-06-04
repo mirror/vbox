@@ -727,7 +727,10 @@ int crServerVBoxBlitterTexInit(CRContext *ctx, CRMuralInfo *mural, PVBOXVR_TEXTU
         GLuint hwid;
 
         if (!mural->fRedirected)
+        {
+            WARN(("mural not redirected!"));
             return VERR_NOT_IMPLEMENTED;
+        }
 
         enmBuf = fDraw ? ctx->buffer.drawBuffer : ctx->buffer.readBuffer;
         switch (enmBuf)
@@ -743,7 +746,7 @@ int crServerVBoxBlitterTexInit(CRContext *ctx, CRMuralInfo *mural, PVBOXVR_TEXTU
                 hwid = mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)];
                 break;
             default:
-                crWarning("unsupported enum buf");
+                WARN(("unsupported enum buf %d", enmBuf));
                 return VERR_NOT_IMPLEMENTED;
                 break;
         }
@@ -778,7 +781,7 @@ int crServerVBoxBlitterTexInit(CRContext *ctx, CRMuralInfo *mural, PVBOXVR_TEXTU
 
     if (pAp->level)
     {
-        crWarning("non-zero level not implemented");
+        WARN(("non-zero level not implemented"));
         return VERR_NOT_IMPLEMENTED;
     }
 
@@ -791,7 +794,7 @@ int crServerVBoxBlitterTexInit(CRContext *ctx, CRMuralInfo *mural, PVBOXVR_TEXTU
 
     if (tobj->target != GL_TEXTURE_2D && tobj->target != GL_TEXTURE_RECTANGLE_NV)
     {
-        crWarning("non-texture[rect|2d] not implemented");
+        WARN(("non-texture[rect|2d] not implemented"));
         return VERR_NOT_IMPLEMENTED;
     }
 
@@ -822,7 +825,7 @@ int crServerVBoxBlitterBlitCurrentCtx(GLint srcX0, GLint srcY0, GLint srcX1, GLi
 
     if (mask != GL_COLOR_BUFFER_BIT)
     {
-        crWarning("not supported blit mask %d", mask);
+        WARN(("not supported blit mask %d", mask));
         return VERR_NOT_IMPLEMENTED;
     }
 

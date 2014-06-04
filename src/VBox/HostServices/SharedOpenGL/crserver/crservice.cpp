@@ -972,6 +972,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         default:
         {
+            WARN(("svcCall: unexpected u32Function %d", u32Function));
             rc = VERR_NOT_IMPLEMENTED;
         }
     }
@@ -1516,6 +1517,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
             break;
         }
         default:
+            WARN(("svcHostCallPerform: unexpected u32Function %d", u32Function));
             rc = VERR_NOT_IMPLEMENTED;
             break;
     }
@@ -1591,7 +1593,7 @@ static DECLCALLBACK(int) svcHostCall(void *, uint32_t u32Function, uint32_t cPar
                     return rc;
                 }
                 default:
-                    WARN(("invalid function"));
+                    WARN(("svcHostCall: invalid function %d", pCtl->enmType));
                     return VERR_INVALID_PARAMETER;
             }
             WARN(("should not be here!"));
