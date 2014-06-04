@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -137,13 +137,13 @@ static struct AppleSMCData data[] =
 };
 #endif /* IN_RING3 */
 #ifdef IN_RING0
-/** Do once for the SMC ring-0 static data (g_abOsk0, g_abOsk1, g_fHaveOsk).  */
+/** Do once for the SMC ring-0 static data (g_abOsk0, g_abOsk1, g_fHaveOsk). */
 static RTONCE   g_SmcR0Once = RTONCE_INITIALIZER;
 /** Indicates whether we've successfully queried the OSK* keys. */
 static bool     g_fHaveOsk = false;
-/** The OSK0 value.   */
+/** The OSK0 value. */
 static uint8_t  g_abOsk0[32];
-/** The OSK1 value.  */
+/** The OSK1 value. */
 static uint8_t  g_abOsk1[32];
 #endif /* IN_RING0 */
 
