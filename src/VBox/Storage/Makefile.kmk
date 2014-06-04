@@ -50,7 +50,7 @@ StorageLib_SOURCES  = \
 	VHDX.cpp \
 	VCICache.cpp
 
-#ifndef VBOX_OSE
+#ifdef VBOX_WITH_PLUGIN_CRYPT
 # DLLS += VDPluginCrypt
 # VDPluginCrypt_TEMPLATE = VBOXR3
 # VDPluginCrypt_LIBS = $(LIB_RUNTIME)
