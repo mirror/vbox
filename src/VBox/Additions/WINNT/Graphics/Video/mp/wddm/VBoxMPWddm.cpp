@@ -3575,7 +3575,7 @@ DxgkDdiBuildPagingBufferNew(
     if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_HDR))
     {
         WARN(("private data too small"));
-        return STATUS_INVALID_PARAMETER;
+        return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
     }
 
     VBOXCMDVBVA_HDR *pHdr = (VBOXCMDVBVA_HDR*)pBuildPagingBuffer->pDmaBufferPrivateData;
@@ -3595,7 +3595,7 @@ DxgkDdiBuildPagingBufferNew(
             if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_SYSMEMCMD))
             {
                 WARN(("private data too small"));
-                return STATUS_INVALID_PARAMETER;
+                return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
             }
 
             Assert(!pBuildPagingBuffer->Transfer.MdlOffset);
@@ -3730,7 +3730,7 @@ DxgkDdiBuildPagingBufferNew(
             if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_PAGING_FILL))
             {
                 WARN(("private data too small"));
-                return STATUS_INVALID_PARAMETER;
+                return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
             }
 
             VBOXCMDVBVA_PAGING_FILL *pFill = (VBOXCMDVBVA_PAGING_FILL*)pBuildPagingBuffer->pDmaBufferPrivateData;
@@ -3826,7 +3826,7 @@ DxgkDdiBuildPagingBufferLegacy(
                 if (pBuildPagingBuffer->Transfer.Source.SegmentId)
                 {
                     uint64_t off = pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart;
-                    off += pBuildPagingBuffer->Transfer.TransferOffset + (pBuildPagingBuffer->MultipassOffset << 12);
+                    off += pBuildPagingBuffer->Transfer.TransferOffset + (pBuildPagingBuffer->MultipassOffset << PAGE_SHIFT);
                     pBody->offVramBuf = off;
                     pMdl = pBuildPagingBuffer->Transfer.Source.pMdl;
                     pBody->fFlags = 0;//VBOXVDMACMD_DMA_BPB_TRANSFER_VRAMSYS_SYS2VRAM
@@ -3834,7 +3834,7 @@ DxgkDdiBuildPagingBufferLegacy(
                 else
                 {
                     uint64_t off = pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart;
-                    off += pBuildPagingBuffer->Transfer.TransferOffset + (pBuildPagingBuffer->MultipassOffset << 12);
+                    off += pBuildPagingBuffer->Transfer.TransferOffset + (pBuildPagingBuffer->MultipassOffset << PAGE_SHIFT);
                     pBody->offVramBuf = off;
                     pMdl = pBuildPagingBuffer->Transfer.Destination.pMdl;
                     pBody->fFlags = VBOXVDMACMD_DMA_BPB_TRANSFER_VRAMSYS_SYS2VRAM;
@@ -3890,7 +3890,7 @@ DxgkDdiBuildPagingBufferLegacy(
                     else
                     {
                         UINT index = pBuildPagingBuffer->Transfer.MdlOffset + (UINT)(cbTransfered>>12);
-                        pBody->Src.phBuf = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[index] << 12;
+                        pBody->Src.phBuf = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[index] << PAGE_SHIFT;
                         PFN_NUMBER num = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[index];
                         cSrcPages = 1;
                         for (UINT i = 1; i < ((cbTransferSize - cbTransfered + 0xfff) >> 12); ++i)
@@ -3914,7 +3914,7 @@ DxgkDdiBuildPagingBufferLegacy(
                     else
                     {
                         UINT index = pBuildPagingBuffer->Transfer.MdlOffset + (UINT)(cbTransfered>>12);
-                        pBody->Dst.phBuf = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[index] << 12;
+                        pBody->Dst.phBuf = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[index] << PAGE_SHIFT;
                         PFN_NUMBER num = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[index];
                         cDstPages = 1;
                         for (UINT i = 1; i < ((cbTransferSize - cbTransfered + 0xfff) >> 12); ++i)
@@ -3929,8 +3929,8 @@ DxgkDdiBuildPagingBufferLegacy(
                     }
 
                     SIZE_T cbCurTransfer;
-                    cbCurTransfer = RT_MIN(cbTransferSize - cbTransfered, cSrcPages << 12);
-                    cbCurTransfer = RT_MIN(cbCurTransfer, cDstPages << 12);
+                    cbCurTransfer = RT_MIN(cbTransferSize - cbTransfered, (SIZE_T)cSrcPages << PAGE_SHIFT);
+                    cbCurTransfer = RT_MIN(cbCurTransfer, (SIZE_T)cDstPages << PAGE_SHIFT);
 
                     pBody->cbTransferSize = (UINT)cbCurTransfer;
                     Assert(!(cbCurTransfer & 0xfff));
