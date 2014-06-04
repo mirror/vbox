@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -336,7 +336,7 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                          */
                         /** @todo A more efficient strategy would be to combine buffers. However it
                          *        is probably going to be more massive than the current code, so
-                         *        it can wait till later.   */
+                         *        it can wait till later. */
                         bool fCopyIn = pSrcParm->type != VMMDevHGCMParmType_LinAddr_Out
                                     && pSrcParm->type != VMMDevHGCMParmType_LinAddr_Locked_Out;
                         if (cb <= PAGE_SIZE / 2 - 16)
