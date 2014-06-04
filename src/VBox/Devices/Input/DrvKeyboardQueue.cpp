@@ -227,8 +227,29 @@ static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, u
         PDRVKBDQUEUEITEM pItem = (PDRVKBDQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
         if (pItem)
         {
+            /*
+             * Work around incredibly poorly desgined Korean keyboards which
+             * only send break events for Hangul/Hanja keys -- convert a lone
+             * key up into a key up/key down sequence.
+             */
+            if (u32Usage == 0x80000090 || u32Usage == 0x80000091)
+            {
+                PDRVKBDQUEUEITEM pItem2 = (PDRVKBDQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
+                /*
+                 * NB: If there's no room in the queue, we will drop the faked
+                 * key down event. Probably less bad than the alternatives.
+                 */
+                if (pItem2)
+                {
+                    /* Manufacture a key down event. */
+                    pItem2->u32UsageCode = u32Usage & ~0x80000000;
+                    PDMQueueInsert(pDrv->pQueue, &pItem2->Core);
+                }
+            }
+
             pItem->u32UsageCode = u32Usage;
             PDMQueueInsert(pDrv->pQueue, &pItem->Core);
+
             return VINF_SUCCESS;
         }
         if (!pDrv->fSuspended)
@@ -269,6 +290,19 @@ static DECLCALLBACK(void) drvKbdPassThruSetActive(PPDMIKEYBOARDCONNECTOR pInterf
 
     AssertPtr(pDrv->pDownConnector->pfnSetActive);
     pDrv->pDownConnector->pfnSetActive(pDrv->pDownConnector, fActive);
+}
+
+/**
+ * Flush the keyboard queue if there are pending events.
+ *
+ * @param   pInterface  Pointer to the keyboard connector interface structure.
+ */
+static DECLCALLBACK(void) drvKbdFlushQueue(PPDMIKEYBOARDCONNECTOR pInterface)
+{
+    PDRVKBDQUEUE pDrv = PPDMIKEYBOARDCONNECTOR_2_DRVKBDQUEUE(pInterface);
+
+    AssertPtr(pDrv->pQueue);
+    PDMQueueFlushIfNecessary(pDrv->pQueue);
 }
 
 
@@ -386,6 +420,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /* IKeyboardConnector. */
     pDrv->IConnector.pfnLedStatusChange     = drvKbdPassThruLedsChange;
     pDrv->IConnector.pfnSetActive           = drvKbdPassThruSetActive;
+    pDrv->IConnector.pfnFlushQueue          = drvKbdFlushQueue;
     /* IKeyboardPort. */
     pDrv->IPort.pfnPutEventScan             = drvKbdQueuePutEventScan;
 
