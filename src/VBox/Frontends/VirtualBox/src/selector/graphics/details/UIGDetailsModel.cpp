@@ -26,6 +26,7 @@
 #include "UIGDetailsModel.h"
 #include "UIGDetailsGroup.h"
 #include "UIGDetailsElement.h"
+#include "UIExtraDataManager.h"
 #include "VBoxGlobal.h"
 #include "UIConverter.h"
 
@@ -155,19 +156,15 @@ void UIGDetailsModel::sltToggleAnimationFinished(DetailsElementType type, bool f
     /* Update layout: */
     updateLayout();
 
-    /* Update details settings: */
-    QStringList detailsSettings = vboxGlobal().virtualBox().GetExtraDataStringList(GUI_DetailsPageBoxes);
-    QString strOldElementName = gpConverter->toInternalString(type);
-    QString strNewElementName = strOldElementName;
-    if (fToggled)
-        strOldElementName += "Closed";
-    else
-        strNewElementName += "Closed";
-    int iIndex = detailsSettings.indexOf(strOldElementName);
-    if (iIndex != -1)
+    /* Load elements settings to modify: */
+    QMap<DetailsElementType, bool> settings = gEDataManager->selectorWindowDetailsElements();
+    /* If setting for corresponding element type exists: */
+    if (settings.contains(type))
     {
-        detailsSettings[iIndex] = strNewElementName;
-        vboxGlobal().virtualBox().SetExtraDataStringList(GUI_DetailsPageBoxes, detailsSettings);
+        /* Update element open/close status: */
+        settings[type] = fToggled;
+        /* Save elements settings back: */
+        gEDataManager->setSelectorWindowDetailsElements(settings);
     }
 }
 
@@ -175,23 +172,19 @@ void UIGDetailsModel::sltElementTypeToggled()
 {
     /* Which item was toggled? */
     QAction *pAction = qobject_cast<QAction*>(sender());
-    DetailsElementType elementType = pAction->data().value<DetailsElementType>();
-    QString strElementTypeOpened = gpConverter->toInternalString(elementType);
-    QString strElementTypeClosed = strElementTypeOpened + "Closed";
-    QStringList detailsSettings = vboxGlobal().virtualBox().GetExtraDataStringList(GUI_DetailsPageBoxes);
-    /* Update details settings: */
-    bool fElementExists = detailsSettings.contains(strElementTypeOpened) ||
-                          detailsSettings.contains(strElementTypeClosed);
-    if (fElementExists)
-    {
-        detailsSettings.removeAll(strElementTypeOpened);
-        detailsSettings.removeAll(strElementTypeClosed);
-    }
+    DetailsElementType type = pAction->data().value<DetailsElementType>();
+
+    /* Load elements settings to modify: */
+    QMap<DetailsElementType, bool> settings = gEDataManager->selectorWindowDetailsElements();
+    /* Toggle element visibility setting: */
+    if (settings.contains(type))
+        settings.remove(type);
     else
-    {
-        detailsSettings.append(strElementTypeOpened);
-    }
-    vboxGlobal().virtualBox().SetExtraDataStringList(GUI_DetailsPageBoxes, detailsSettings);
+        settings[type] = true;
+    /* Save elements settings back: */
+    gEDataManager->setSelectorWindowDetailsElements(settings);
+
+    /* Rebuild group: */
     m_pRoot->rebuildGroup();
 }
 
@@ -266,15 +259,14 @@ bool UIGDetailsModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
 
     /* Prepare context-menu: */
     QMenu contextMenu;
-    QStringList detailsSettings = vboxGlobal().virtualBox().GetExtraDataStringList(GUI_DetailsPageBoxes);
+    /* Load elements settings: */
+    QMap<DetailsElementType, bool> settings = gEDataManager->selectorWindowDetailsElements();
     for (int iType = DetailsElementType_General; iType <= DetailsElementType_Description; ++iType)
     {
         DetailsElementType currentElementType = (DetailsElementType)iType;
         QAction *pAction = contextMenu.addAction(gpConverter->toString(currentElementType), this, SLOT(sltElementTypeToggled()));
         pAction->setCheckable(true);
-        QString strTypeIdOpened = gpConverter->toInternalString(currentElementType);
-        QString strTypeIdClosed = strTypeIdOpened + "Closed";
-        pAction->setChecked(detailsSettings.contains(strTypeIdOpened) || detailsSettings.contains(strTypeIdClosed));
+        pAction->setChecked(settings.contains(currentElementType));
         pAction->setData(QVariant::fromValue(currentElementType));
     }
     /* Exec context-menu: */

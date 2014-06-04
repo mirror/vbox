@@ -21,6 +21,7 @@
 
 /* GUI includes: */
 #include "UIGDetailsItem.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
 class UIVMItem;
@@ -95,7 +96,7 @@ private:
     QList<UIVMItem*> m_machineItems;
     UIBuildStep *m_pBuildStep;
     QString m_strGroupId;
-    QStringList m_settings;
+    QMap<DetailsElementType, bool> m_settings;
 
     /* Friends: */
     friend class UIGDetailsModel;

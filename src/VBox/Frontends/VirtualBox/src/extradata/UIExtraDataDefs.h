@@ -209,6 +209,7 @@ enum WizardMode
 /** Selector UI: Details-element types. */
 enum DetailsElementType
 {
+    DetailsElementType_Invalid,
     DetailsElementType_General,
     DetailsElementType_System,
     DetailsElementType_Preview,
