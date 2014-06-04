@@ -525,8 +525,9 @@ void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
         m_iWidth = iWidth;
         m_iHeight = iHeight;
 
-        /* And go fallback: */
-        goFallback();
+        /* And recreate fallback buffer: */
+        m_image = QImage(m_iWidth, m_iHeight, QImage::Format_RGB32);
+        m_image.fill(0);
     }
     /* If source-bitmap valid: */
     else
@@ -601,35 +602,6 @@ void UIFrameBuffer::paintEvent(QPaintEvent *pEvent)
         unlock();
         /* And return immediately: */
         return;
-    }
-
-    /* If the machine is NOT in 'running', 'paused' or 'saving' state,
-     * the link between the framebuffer and the video memory is broken.
-     * We should go fallback in that case.
-     * We should acquire actual machine-state to exclude
-     * situations when the state was changed already but
-     * GUI didn't received event about that or didn't processed it yet. */
-    KMachineState machineState = m_pMachineView->uisession()->session().GetConsole().GetState();
-    if (/* running */
-           machineState != KMachineState_Running
-        && machineState != KMachineState_Teleporting
-        && machineState != KMachineState_LiveSnapshotting
-        && machineState != KMachineState_DeletingSnapshotOnline
-        /* paused */
-        && machineState != KMachineState_Paused
-        && machineState != KMachineState_TeleportingPausedVM
-        /* saving */
-        && machineState != KMachineState_Saving
-        /* guru */
-        && machineState != KMachineState_Stuck
-        )
-    {
-        LogRel(("UIFrameBuffer::paintEvent: "
-                "Using FALLBACK buffer due to machine-state become invalid: "
-                "%d.\n", (int)machineState));
-
-        /* Go fallback: */
-        goFallback();
     }
 
     /* Depending on visual-state type: */
@@ -871,15 +843,5 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
     /* Directly draw sub-image: */
     painter.drawImage(rect.x(), rect.y(), subImage);
 #endif /* QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT */
-}
-
-void UIFrameBuffer::goFallback()
-{
-    /* We are going for FALLBACK buffer when:
-     * 1. Display did not provide the source-bitmap;
-     * 2. or the machine is in the state which breaks link between
-     *    the framebuffer and the actual video-memory: */
-    m_image = QImage(m_iWidth, m_iHeight, QImage::Format_RGB32);
-    m_image.fill(0);
 }
 
