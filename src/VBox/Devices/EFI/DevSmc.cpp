@@ -10,7 +10,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -57,7 +57,7 @@
 
 /** The first Apple SMC port. */
 #define SMC_PORT_FIRST                          0x0300
-/** The number of registers (also ports).  */
+/** The number of registers (also ports). */
 #define SMC_REG_COUNT                           0x0020
 
 /** The data register. */
@@ -353,7 +353,7 @@ static const DEVSMCKEYDESC g_aSmcKeys[] =
 static RTONCE   g_SmcR0Once = RTONCE_INITIALIZER;
 /** Indicates whether we've successfully queried the OSK* keys. */
 static bool     g_fHaveOsk = false;
-/** The OSK0 and OSK1 values.   */
+/** The OSK0 and OSK1 values. */
 static uint8_t  g_abOsk0And1[32+32];
 
 
@@ -1275,7 +1275,7 @@ static DECLCALLBACK(int) smcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
 
-    /** @todo  */
+    /** @todo */
 
     return VINF_SUCCESS;
 }
@@ -1298,7 +1298,7 @@ static DECLCALLBACK(int) smcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
      */
     if (uVersion == SMC_SAVED_STATE_VERSION)
     {
-        /** @todo  */
+        /** @todo */
     }
 
     return VINF_SUCCESS;
