@@ -57,6 +57,13 @@ template<class X> QString toInternalString(const X & /* xobject */) { Assert(0);
  * This function returns default constructed object for any object type until re-determined for specific one. */
 template<class X> X fromInternalString(const QString & /* strData */) { Assert(0); return X(); }
 
+/* Converts passed 'Object of type X' to abstract integer.
+ * This function returns 0 for any object type until re-determined for specific one. */
+template<class X> int toInternalInteger(const X & /* xobject */) { Assert(0); return 0; }
+/* Converts passed abstract integer to 'Object of type X'.
+ * This function returns default constructed object for any object type until re-determined for specific one. */
+template<class X> X fromInternalInteger(const int & /* iData */) { Assert(0); return X(); }
+
 /* Declare global canConvert specializations: */
 template<> bool canConvert<SizeSuffix>();
 template<> bool canConvert<StorageSlot>();
@@ -73,6 +80,7 @@ template<> bool canConvert<RuntimeMenuDebuggerActionType>();
 template<> bool canConvert<RuntimeMenuHelpActionType>();
 template<> bool canConvert<UIVisualStateType>();
 template<> bool canConvert<DetailsElementType>();
+template<> bool canConvert<PreviewUpdateIntervalType>();
 template<> bool canConvert<GlobalSettingsPageType>();
 template<> bool canConvert<MachineSettingsPageType>();
 template<> bool canConvert<WizardType>();
@@ -133,6 +141,10 @@ template<> QString toString(const DetailsElementType &detailsElementType);
 template<> DetailsElementType fromString<DetailsElementType>(const QString &strDetailsElementType);
 template<> QString toInternalString(const DetailsElementType &detailsElementType);
 template<> DetailsElementType fromInternalString<DetailsElementType>(const QString &strDetailsElementType);
+template<> QString toInternalString(const PreviewUpdateIntervalType &previewUpdateIntervalType);
+template<> PreviewUpdateIntervalType fromInternalString<PreviewUpdateIntervalType>(const QString &strPreviewUpdateIntervalType);
+template<> int toInternalInteger(const PreviewUpdateIntervalType &previewUpdateIntervalType);
+template<> PreviewUpdateIntervalType fromInternalInteger<PreviewUpdateIntervalType>(const int &iPreviewUpdateIntervalType);
 template<> QString toInternalString(const GlobalSettingsPageType &globalSettingsPageType);
 template<> GlobalSettingsPageType fromInternalString<GlobalSettingsPageType>(const QString &strGlobalSettingsPageType);
 template<> QPixmap toWarningPixmap(const GlobalSettingsPageType &globalSettingsPageType);

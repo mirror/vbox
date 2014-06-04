@@ -151,6 +151,11 @@ public:
     /** Defines whether selector-window status-bar @a fVisible. */
     void setSelectorWindowStatusBarVisible(bool fVisible);
 
+    /** Returns selector-window preview update interval. */
+    PreviewUpdateIntervalType selectorWindowPreviewUpdateInterval() const;
+    /** Defines selector-window preview update @a interval. */
+    void setSelectorWindowPreviewUpdateInterval(PreviewUpdateIntervalType interval);
+
     /** Returns whether this machine started for the first time. */
     bool isFirstRun(const QString &strId) const;
     /** Defines whether this machine started for the first time. */
