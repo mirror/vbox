@@ -4814,10 +4814,17 @@ int Display::crCtlSubmitAsyncCmdCopy(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
 
 int Display::crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
 {
-    if (mCrOglCallbacks.pfnHasDataForScreen(u32ScreenID))
-        return crCtlSubmitSync(pCmd, cbCmd);
+    int rc = RTCritSectRwEnterShared(&mCrOglLock);
+    AssertRCReturn(rc, rc);
 
-    return crCtlSubmitAsyncCmdCopy(pCmd, cbCmd);
+    if (mCrOglCallbacks.pfnHasDataForScreen && mCrOglCallbacks.pfnHasDataForScreen(u32ScreenID))
+        rc = crCtlSubmitSync(pCmd, cbCmd);
+    else
+        rc = crCtlSubmitAsyncCmdCopy(pCmd, cbCmd);
+
+    RTCritSectRwLeaveShared(&mCrOglLock);
+
+    return rc;
 }
 
 bool  Display::handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp)
