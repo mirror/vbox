@@ -46,6 +46,7 @@ template<> bool canConvert<RuntimeMenuDebuggerActionType>() { return true; }
 template<> bool canConvert<RuntimeMenuHelpActionType>() { return true; }
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
+template<> bool canConvert<PreviewUpdateIntervalType>() { return true; }
 template<> bool canConvert<GlobalSettingsPageType>() { return true; }
 template<> bool canConvert<MachineSettingsPageType>() { return true; }
 template<> bool canConvert<WizardType>() { return true; }
@@ -819,6 +820,79 @@ template<> DetailsElementType fromInternalString<DetailsElementType>(const QStri
         AssertMsgFailed(("No value for '%s'", strDetailsElementType.toAscii().constData()));
     }
     return list.value(strDetailsElementType);
+}
+
+/* QString <= PreviewUpdateIntervalType: */
+template<> QString toInternalString(const PreviewUpdateIntervalType &previewUpdateIntervalType)
+{
+    /* Return corresponding QString representation for passed enum value: */
+    switch (previewUpdateIntervalType)
+    {
+        case PreviewUpdateIntervalType_Disabled: return "disabled";
+        case PreviewUpdateIntervalType_500ms:    return "500";
+        case PreviewUpdateIntervalType_1000ms:   return "1000";
+        case PreviewUpdateIntervalType_2000ms:   return "2000";
+        case PreviewUpdateIntervalType_5000ms:   return "5000";
+        case PreviewUpdateIntervalType_10000ms:  return "10000";
+        default: AssertMsgFailed(("No text for '%d'", previewUpdateIntervalType)); break;
+    }
+    /* Return QString() by default: */
+    return QString();
+}
+
+/* PreviewUpdateIntervalType <= QString: */
+template<> PreviewUpdateIntervalType fromInternalString<PreviewUpdateIntervalType>(const QString &strPreviewUpdateIntervalType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;   QList<PreviewUpdateIntervalType> values;
+    keys << "disabled"; values << PreviewUpdateIntervalType_Disabled;
+    keys << "500";      values << PreviewUpdateIntervalType_500ms;
+    keys << "1000";     values << PreviewUpdateIntervalType_1000ms;
+    keys << "2000";     values << PreviewUpdateIntervalType_2000ms;
+    keys << "5000";     values << PreviewUpdateIntervalType_5000ms;
+    keys << "10000";    values << PreviewUpdateIntervalType_10000ms;
+    /* 1000ms type for unknown words: */
+    if (!keys.contains(strPreviewUpdateIntervalType, Qt::CaseInsensitive))
+        return PreviewUpdateIntervalType_1000ms;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strPreviewUpdateIntervalType, Qt::CaseInsensitive)));
+}
+
+/* int <= PreviewUpdateIntervalType: */
+template<> int toInternalInteger(const PreviewUpdateIntervalType &previewUpdateIntervalType)
+{
+    /* Return corresponding integer representation for passed enum value: */
+    switch (previewUpdateIntervalType)
+    {
+        case PreviewUpdateIntervalType_Disabled: return 0;
+        case PreviewUpdateIntervalType_500ms:    return 500;
+        case PreviewUpdateIntervalType_1000ms:   return 1000;
+        case PreviewUpdateIntervalType_2000ms:   return 2000;
+        case PreviewUpdateIntervalType_5000ms:   return 5000;
+        case PreviewUpdateIntervalType_10000ms:  return 10000;
+        default: AssertMsgFailed(("No value for '%d'", previewUpdateIntervalType)); break;
+    }
+    /* Return 0 by default: */
+    return 0;
+}
+
+/* PreviewUpdateIntervalType <= int: */
+template<> PreviewUpdateIntervalType fromInternalInteger<PreviewUpdateIntervalType>(const int &iPreviewUpdateIntervalType)
+{
+    /* Add all the enum values into the hash: */
+    QHash<int, PreviewUpdateIntervalType> hash;
+    hash.insert(0,     PreviewUpdateIntervalType_Disabled);
+    hash.insert(500,   PreviewUpdateIntervalType_500ms);
+    hash.insert(1000,  PreviewUpdateIntervalType_1000ms);
+    hash.insert(2000,  PreviewUpdateIntervalType_2000ms);
+    hash.insert(5000,  PreviewUpdateIntervalType_5000ms);
+    hash.insert(10000, PreviewUpdateIntervalType_10000ms);
+    /* Make sure hash contains incoming integer representation: */
+    if (!hash.contains(iPreviewUpdateIntervalType))
+        AssertMsgFailed(("No value for '%d'", iPreviewUpdateIntervalType));
+    /* Return corresponding enum value for passed integer representation: */
+    return hash.value(iPreviewUpdateIntervalType);
 }
 
 /* QString <= GlobalSettingsPageType: */

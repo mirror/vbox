@@ -23,8 +23,9 @@
 #include <QHash>
 
 /* GUI includes: */
-#include "UIGDetailsItem.h"
 #include "QIWithRetranslateUI.h"
+#include "UIGDetailsItem.h"
+#include "UIExtraDataDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -37,19 +38,6 @@ class QImage;
 class QPixmap;
 class QMenu;
 class QTimer;
-
-/* Update interval type: */
-enum UpdateInterval
-{
-    UpdateInterval_Disabled,
-    UpdateInterval_500ms,
-    UpdateInterval_1000ms,
-    UpdateInterval_2000ms,
-    UpdateInterval_5000ms,
-    UpdateInterval_10000ms,
-    UpdateInterval_Max
-};
-typedef QMap<UpdateInterval, QString> UpdateIntervalMap;
 
 /* Preview window class: */
 class UIGMachinePreview : public QIWithRetranslateUI4<QIGraphicsWidget>
@@ -96,7 +84,7 @@ private:
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
 
     /* Helpers: Update stuff: */
-    void setUpdateInterval(UpdateInterval interval, bool fSave);
+    void setUpdateInterval(PreviewUpdateIntervalType interval, bool fSave);
     void recalculatePreviewRectangle();
     void restart();
     void stop();
@@ -106,14 +94,13 @@ private:
     CMachine m_machine;
     QTimer *m_pUpdateTimer;
     QMenu *m_pUpdateTimerMenu;
-    QHash<UpdateInterval, QAction*> m_actions;
+    QHash<PreviewUpdateIntervalType, QAction*> m_actions;
     const int m_iMargin;
     QRect m_vRect;
     QPixmap *m_pbgEmptyImage;
     QPixmap *m_pbgFullImage;
     QImage *m_pPreviewImg;
     QString m_strPreviewName;
-    static UpdateIntervalMap m_intervals;
 };
 
 #endif /* !__UIGMachinePreview_h__ */

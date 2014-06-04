@@ -426,6 +426,16 @@ void UIExtraDataManager::setSelectorWindowStatusBarVisible(bool fVisible)
     setExtraDataString(GUI_Statusbar, toFeatureRestricted(!fVisible));
 }
 
+PreviewUpdateIntervalType UIExtraDataManager::selectorWindowPreviewUpdateInterval() const
+{
+    return gpConverter->fromInternalString<PreviewUpdateIntervalType>(extraDataString(GUI_PreviewUpdate));
+}
+
+void UIExtraDataManager::setSelectorWindowPreviewUpdateInterval(PreviewUpdateIntervalType interval)
+{
+    setExtraDataString(GUI_PreviewUpdate, gpConverter->toInternalString(interval));
+}
+
 bool UIExtraDataManager::isFirstRun(const QString &strId) const
 {
     return isFeatureAllowed(GUI_FirstRun, strId);

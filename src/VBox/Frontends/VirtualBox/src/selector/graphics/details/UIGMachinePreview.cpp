@@ -26,27 +26,15 @@
 /* GUI includes: */
 #include "UIGMachinePreview.h"
 #include "UIVirtualBoxEventHandler.h"
-#include "UIExtraDataDefs.h"
+#include "UIExtraDataManager.h"
 #include "UIImageTools.h"
+#include "UIConverter.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
 
 /* COM includes: */
 #include "CConsole.h"
 #include "CDisplay.h"
-
-UpdateIntervalMap CreateUpdateIntervalMap()
-{
-    UpdateIntervalMap map;
-    map[UpdateInterval_Disabled] = "disabled";
-    map[UpdateInterval_500ms]    = "500";
-    map[UpdateInterval_1000ms]   = "1000";
-    map[UpdateInterval_2000ms]   = "2000";
-    map[UpdateInterval_5000ms]   = "5000";
-    map[UpdateInterval_10000ms]  = "10000";
-    return map;
-}
-UpdateIntervalMap UIGMachinePreview::m_intervals = CreateUpdateIntervalMap();
 
 UIGMachinePreview::UIGMachinePreview(QIGraphicsWidget *pParent)
     : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)
@@ -71,23 +59,19 @@ UIGMachinePreview::UIGMachinePreview(QIGraphicsWidget *pParent)
     m_pUpdateTimerMenu = new QMenu;
     QActionGroup *pUpdateTimeG = new QActionGroup(this);
     pUpdateTimeG->setExclusive(true);
-    for(int i = 0; i < UpdateInterval_Max; ++i)
+    for(int i = 0; i < PreviewUpdateIntervalType_Max; ++i)
     {
         QAction *pUpdateTime = new QAction(pUpdateTimeG);
         pUpdateTime->setData(i);
         pUpdateTime->setCheckable(true);
         pUpdateTimeG->addAction(pUpdateTime);
         m_pUpdateTimerMenu->addAction(pUpdateTime);
-        m_actions[static_cast<UpdateInterval>(i)] = pUpdateTime;
+        m_actions[static_cast<PreviewUpdateIntervalType>(i)] = pUpdateTime;
     }
-    m_pUpdateTimerMenu->insertSeparator(m_actions[static_cast<UpdateInterval>(UpdateInterval_500ms)]);
+    m_pUpdateTimerMenu->insertSeparator(m_actions[static_cast<PreviewUpdateIntervalType>(PreviewUpdateIntervalType_500ms)]);
 
-    /* Load preview update interval: */
-    QString strInterval = vboxGlobal().virtualBox().GetExtraData(GUI_PreviewUpdate);
-    /* Parse loaded value: */
-    UpdateInterval interval = m_intervals.key(strInterval, UpdateInterval_1000ms);
     /* Initialize with the new update interval: */
-    setUpdateInterval(interval, false);
+    setUpdateInterval(gEDataManager->selectorWindowPreviewUpdateInterval(), false);
 
     /* Setup connections: */
     connect(m_pUpdateTimer, SIGNAL(timeout()), this, SLOT(sltRecreatePreview()));
@@ -266,7 +250,7 @@ void UIGMachinePreview::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
     QAction *pReturn = m_pUpdateTimerMenu->exec(pEvent->screenPos(), 0);
     if (pReturn)
     {
-        UpdateInterval interval = static_cast<UpdateInterval>(pReturn->data().toInt());
+        PreviewUpdateIntervalType interval = static_cast<PreviewUpdateIntervalType>(pReturn->data().toInt());
         setUpdateInterval(interval, true);
         restart();
     }
@@ -274,12 +258,12 @@ void UIGMachinePreview::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
 
 void UIGMachinePreview::retranslateUi()
 {
-    m_actions.value(UpdateInterval_Disabled)->setText(tr("Update disabled"));
-    m_actions.value(UpdateInterval_500ms)->setText(tr("Every 0.5 s"));
-    m_actions.value(UpdateInterval_1000ms)->setText(tr("Every 1 s"));
-    m_actions.value(UpdateInterval_2000ms)->setText(tr("Every 2 s"));
-    m_actions.value(UpdateInterval_5000ms)->setText(tr("Every 5 s"));
-    m_actions.value(UpdateInterval_10000ms)->setText(tr("Every 10 s"));
+    m_actions.value(PreviewUpdateIntervalType_Disabled)->setText(tr("Update disabled"));
+    m_actions.value(PreviewUpdateIntervalType_500ms)->setText(tr("Every 0.5 s"));
+    m_actions.value(PreviewUpdateIntervalType_1000ms)->setText(tr("Every 1 s"));
+    m_actions.value(PreviewUpdateIntervalType_2000ms)->setText(tr("Every 2 s"));
+    m_actions.value(PreviewUpdateIntervalType_5000ms)->setText(tr("Every 5 s"));
+    m_actions.value(PreviewUpdateIntervalType_10000ms)->setText(tr("Every 10 s"));
 }
 
 QSizeF UIGMachinePreview::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
@@ -333,51 +317,33 @@ void UIGMachinePreview::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
     }
 }
 
-void UIGMachinePreview::setUpdateInterval(UpdateInterval interval, bool fSave)
+void UIGMachinePreview::setUpdateInterval(PreviewUpdateIntervalType interval, bool fSave)
 {
     switch (interval)
     {
-        case UpdateInterval_Disabled:
+        case PreviewUpdateIntervalType_Disabled:
         {
-            m_pUpdateTimer->setInterval(0);
+            /* Stop the timer: */
             m_pUpdateTimer->stop();
-            m_actions[interval]->setChecked(true);
-            break;
+            /* And continue with other cases: */
         }
-        case UpdateInterval_500ms:
+        case PreviewUpdateIntervalType_500ms:
+        case PreviewUpdateIntervalType_1000ms:
+        case PreviewUpdateIntervalType_2000ms:
+        case PreviewUpdateIntervalType_5000ms:
+        case PreviewUpdateIntervalType_10000ms:
         {
-            m_pUpdateTimer->setInterval(500);
+            /* Set the timer interval: */
+            m_pUpdateTimer->setInterval(gpConverter->toInternalInteger(interval));
+            /* Check corresponding action: */
             m_actions[interval]->setChecked(true);
             break;
         }
-        case UpdateInterval_1000ms:
-        {
-            m_pUpdateTimer->setInterval(1000);
-            m_actions[interval]->setChecked(true);
+        case PreviewUpdateIntervalType_Max:
             break;
-        }
-        case UpdateInterval_2000ms:
-        {
-            m_pUpdateTimer->setInterval(2000);
-            m_actions[interval]->setChecked(true);
-            break;
-        }
-        case UpdateInterval_5000ms:
-        {
-            m_pUpdateTimer->setInterval(5000);
-            m_actions[interval]->setChecked(true);
-            break;
-        }
-        case UpdateInterval_10000ms:
-        {
-            m_pUpdateTimer->setInterval(10000);
-            m_actions[interval]->setChecked(true);
-            break;
-        }
-        case UpdateInterval_Max: break;
     }
-    if (fSave && m_intervals.contains(interval))
-        vboxGlobal().virtualBox().SetExtraData(GUI_PreviewUpdate, m_intervals[interval]);
+    if (fSave)
+        gEDataManager->setSelectorWindowPreviewUpdateInterval(interval);
 }
 
 void UIGMachinePreview::recalculatePreviewRectangle()

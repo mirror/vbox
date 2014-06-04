@@ -226,6 +226,18 @@ enum DetailsElementType
 };
 Q_DECLARE_METATYPE(DetailsElementType);
 
+/** Selector UI: Preview update interval types. */
+enum PreviewUpdateIntervalType
+{
+    PreviewUpdateIntervalType_Disabled,
+    PreviewUpdateIntervalType_500ms,
+    PreviewUpdateIntervalType_1000ms,
+    PreviewUpdateIntervalType_2000ms,
+    PreviewUpdateIntervalType_5000ms,
+    PreviewUpdateIntervalType_10000ms,
+    PreviewUpdateIntervalType_Max
+};
+
 
 /** Runtime UI: Menu types. */
 enum RuntimeMenuType
