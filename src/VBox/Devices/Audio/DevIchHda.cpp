@@ -2430,7 +2430,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
      */
     uint32_t    offReg = GCPhysAddr - pThis->MMIOBaseAddr;
     int         idxRegDsc = hdaRegLookup(pThis, offReg);
-    uint32_t    idxRegMem = g_aHdaRegMap[idxRegDsc].mem_idx;
+    uint32_t    idxRegMem = idxRegDsc != -1 ? g_aHdaRegMap[idxRegDsc].mem_idx : UINT32_MAX;
     uint64_t    u64Value;
     if (cb == 4)        u64Value = *(uint32_t const *)pv;
     else if (cb == 2)   u64Value = *(uint16_t const *)pv;
@@ -2464,7 +2464,11 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
      * Try for a direct hit first.
      */
     if (idxRegDsc != -1 && g_aHdaRegMap[idxRegDsc].size == cb)
+    {
         rc = hdaWriteReg(pThis, idxRegDsc, u64Value, "");
+        Log(("hdaMMIOWrite: @%#05x %#x -> %#x\n", offRegLog, u32LogOldValue,
+             idxRegLog != -1 ? pThis->au32Regs[idxRegLog] : UINT32_MAX));
+    }
     /*
      * Partial or multiple register access, loop thru the requested memory.
      */
@@ -2500,7 +2504,10 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
                     Log(("hdaMMIOWrite: Supplying missing bits (%#x): %#llx -> %#llx ...\n",
                          g_afMasks[cbReg] & ~g_afMasks[cb], u64Value & g_afMasks[cb], u64Value));
                 }
+                uint32_t u32LogOldVal = pThis->au32Regs[idxRegMem];
                 rc = hdaWriteReg(pThis, idxRegDsc, u64Value, "*");
+                Log(("hdaMMIOWrite: @%#05x %#x -> %#x\n", offRegLog, u32LogOldVal,
+                     pThis->au32Regs[idxRegMem]));
             }
             else
             {
@@ -2579,9 +2586,10 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     }
     else
         rc = VINF_SUCCESS;
-#endif
+
     Log(("hdaMMIOWrite: @%#05x %#x -> %#x\n", offRegLog, u32LogOldValue,
          idxRegLog != -1 ? pThis->au32Regs[idxRegLog] : UINT32_MAX));
+#endif
     return rc;
 }
 
