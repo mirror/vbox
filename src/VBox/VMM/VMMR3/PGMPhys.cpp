@@ -2476,7 +2476,7 @@ DECLINLINE(PPGMMMIO2RANGE) pgmR3PhysMMIO2Find(PVM pVM, PPDMDEVINS pDevIns, uint3
  * A MMIO2 range may overlap with base memory if a lot of RAM is configured for
  * the VM, in which case we'll drop the base memory pages.  Presently we will
  * make no attempt to preserve anything that happens to be present in the base
- * memory that is replaced, this is of course incorrectly but it's too much
+ * memory that is replaced, this is of course incorrect but it's too much
  * effort.
  *
  * @returns VBox status code.
@@ -2746,6 +2746,8 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
  *
  * @param   pVM             Pointer to the VM.
  * @param   pDevIns         The device instance owning the region.
+ * @param   iRegion         The index of the registered region.
+ * @param   GCPhys          The guest-physical address to be remapped.
  */
 VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
 {

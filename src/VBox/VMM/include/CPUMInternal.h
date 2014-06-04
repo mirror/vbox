@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -96,7 +96,7 @@
 /** Sync the debug state on next entry (32->64 switcher only). */
 #define CPUM_SYNC_DEBUG_REGS_GUEST      RT_BIT(17)
 /** Sync the debug state on next entry (32->64 switcher only).
- * Almost the same as CPUM_USE_DEBUG_REGS_HYPER in the raw-mode switchers.  */
+ * Almost the same as CPUM_USE_DEBUG_REGS_HYPER in the raw-mode switchers. */
 #define CPUM_SYNC_DEBUG_REGS_HYPER      RT_BIT(18)
 /** Host CPU requires fxsave/fxrstor leaky bit handling. */
 #define CPUM_USE_FFXSR_LEAKY            RT_BIT(19)
@@ -128,17 +128,17 @@ typedef struct CPUMFEATURES
     CPUMMICROARCH   enmMicroarch;
     /** The maximum physical address with of the CPU. */
     uint8_t         cMaxPhysAddrWidth;
-    /** Alignment padding.  */
+    /** Alignment padding. */
     uint8_t         abPadding[3];
 
-    /** Supports MSRs.  */
+    /** Supports MSRs. */
     uint32_t        fMsr : 1;
     /** Supports the page size extension (4/2 MB pages). */
     uint32_t        fPse : 1;
     /** Supports 36-bit page size extension (4 MB pages can map memory above
      *  4GB). */
     uint32_t        fPse36 : 1;
-    /** Supports physical address extension (PAE).  */
+    /** Supports physical address extension (PAE). */
     uint32_t        fPae : 1;
     /** Page attribute table (PAT) support (page level cache control). */
     uint32_t        fPat : 1;
@@ -155,7 +155,7 @@ typedef struct CPUMFEATURES
     /** MWAIT & MONITOR instructions supported. */
     uint32_t        fMonitorMWait : 1;
 
-    /** AMD64: Supports long mode.  */
+    /** AMD64: Supports long mode. */
     uint32_t        fLongMode : 1;
     /** AMD64: SYSCALL/SYSRET support. */
     uint32_t        fSysCall : 1;
@@ -168,10 +168,10 @@ typedef struct CPUMFEATURES
 
     /** Indicates that FPU instruction and data pointers may leak.
      * This generally applies to recent AMD CPUs, where the FPU IP and DP pointer
-     * is only saved and restored if an exception is pending.   */
+     * is only saved and restored if an exception is pending. */
     uint32_t        fLeakyFxSR : 1;
 
-    /** Alignment padding.  */
+    /** Alignment padding. */
     uint32_t        fPadding : 9;
 
     uint64_t        auPadding[2];
@@ -199,7 +199,7 @@ typedef struct CPUMINFO
     /** The index of the first extended CPUID leaf in the array.
      *  Set to cCpuIdLeaves if none present. */
     uint32_t                    iFirstExtCpuIdLeaf;
-    /** Alignment padding.  */
+    /** Alignment padding. */
     uint32_t                    uPadding;
     /** How to handle unknown CPUID leaves. */
     CPUMUKNOWNCPUID             enmUnknownCpuIdMethod;
@@ -437,7 +437,7 @@ typedef struct CPUM
         uint32_t            OrMask;
     } CR4;
 
-    /** The (more) portable CPUID level.  */
+    /** The (more) portable CPUID level. */
     uint8_t                 u8PortableCpuIdLevel;
     /** Indicates that a state restore is pending.
      * This is used to verify load order dependencies (PGM). */
