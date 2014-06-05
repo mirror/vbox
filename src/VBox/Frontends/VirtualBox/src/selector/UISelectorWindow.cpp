@@ -1500,9 +1500,6 @@ void UISelectorWindow::prepareConnections()
 
 void UISelectorWindow::loadSettings()
 {
-    /* Get VBox object: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-
     /* Restore window position: */
     {
         /* Load geometry: */
@@ -1523,7 +1520,17 @@ void UISelectorWindow::loadSettings()
 
     /* Restore splitter handle position: */
     {
-        m_pSplitter->setSizes(gEDataManager->selectorWindowSplitterHints());
+        /* Read splitter hints: */
+        QList<int> sizes = gEDataManager->selectorWindowSplitterHints();
+        /* If both hints are zero, we have the 'default' case: */
+        if (sizes[0] == 0 && sizes[1] == 0)
+        {
+            /* Propose some 'default' based on current dialog width: */
+            sizes[0] = (double)width()     / 3 * .9;
+            sizes[1] = (double)width() * 2 / 3 * .9;
+        }
+        /* Pass hints to the splitter: */
+        m_pSplitter->setSizes(sizes);
     }
 
     /* Restore toolbar and statusbar visibility: */
