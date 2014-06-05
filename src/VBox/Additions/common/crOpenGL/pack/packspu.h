@@ -157,4 +157,8 @@ extern ThreadInfo *packspuNewThread(
 
 extern ThreadInfo *packspuNewCtxThread( struct VBOXUHGSMI *pHgsmi );
 
+
+
+#define MAGIC_OFFSET 3000
+
 #endif /* CR_PACKSPU_H */

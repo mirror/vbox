@@ -288,13 +288,6 @@ DECLEXPORT(int) WINAPI wglDescribePixelFormat_prox( HDC hdc, int pixelFormat, UI
     return 1;
 }
 
-DECLEXPORT(BOOL) WINAPI wglShareLists_prox( HGLRC hglrc1, HGLRC hglrc2 )
-{
-    CR_DDI_PROLOGUE();
-    crWarning( "wglShareLists: unsupported" );
-    return 0;
-}
-
 DECLEXPORT(void) WINAPI VBoxCtxChromiumParameteriCR(HGLRC hglrc, GLenum param, GLint value)
 {
     ContextInfo *context;
@@ -316,6 +309,46 @@ DECLEXPORT(void) WINAPI VBoxCtxChromiumParameteriCR(HGLRC hglrc, GLenum param, G
 
     crHashtableUnlock(stub.contextTable);
 //    crHashtableUnlock(stub.windowTable);
+}
+
+DECLEXPORT(BOOL) WINAPI wglShareLists_prox( HGLRC hglrc1, HGLRC hglrc2 )
+{
+    ContextInfo *context1, *context2;
+    GLint aSpuContexts[2];
+
+    CR_DDI_PROLOGUE();
+
+//    crHashtableLock(stub.windowTable);
+    crHashtableLock(stub.contextTable);
+
+    context1 = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) hglrc1);
+
+    if (!context1)
+    {
+        WARN(("invalid hglrc1"));
+        return FALSE;
+    }
+
+    stubCtxCheckCreate(context1);
+
+    context2 = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) hglrc2);
+
+    if (!context2)
+    {
+        WARN(("invalid hglrc2"));
+        return FALSE;
+    }
+
+    stubCtxCheckCreate(context2);
+
+    aSpuContexts[0] = context1->spuContext;
+    aSpuContexts[1] = context2->spuContext;
+
+    stubConChromiumParametervCR(CR_CTX_CON(context2), GL_SHARE_LISTS_CR, GL_INT, 2, aSpuContexts);
+
+    crHashtableUnlock(stub.contextTable);
+
+    return TRUE;
 }
 
 DECLEXPORT(HGLRC) WINAPI VBoxCreateContext( HDC hdc, struct VBOXUHGSMI *pHgsmi )

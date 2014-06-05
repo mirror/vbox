@@ -9,6 +9,8 @@
 #include "cr_error.h"
 #include "cr_spu.h"
 
+#include <iprt/asm.h>
+
 #ifdef CHROMIUM_THREADSAFE
 static bool __isContextTLSInited = false;
 CRtsd __contextTSD;
@@ -109,9 +111,10 @@ static void ReleaseRBOCallback(unsigned long key, void *data1, void *data2)
 DECLEXPORT(void)
 crStateFreeShared(CRContext *pContext, CRSharedState *s)
 {
-    s->refCount--;
-    Assert(s->refCount >= 0);
-    if (s->refCount <= 0) {
+    int32_t refCount = ASMAtomicDecS32(&s->refCount);
+
+    Assert(refCount >= 0);
+    if (refCount <= 0) {
         if (s==gSharedState)
         {
             gSharedState = NULL;
@@ -143,7 +146,7 @@ DECLEXPORT(CRSharedState *) crStateGlobalSharedAcquire()
         crWarning("No Global Shared State!");
         return NULL;
     }
-    gSharedState->refCount++;
+    ASMAtomicIncS32(&gSharedState->refCount);
     return gSharedState;
 }
 
@@ -175,7 +178,7 @@ crStateShareContext(GLboolean value)
         {
             crStateFreeShared(pCtx, pCtx->shared);
             pCtx->shared = gSharedState;
-            gSharedState->refCount++;
+            ASMAtomicIncS32(&gSharedState->refCount);
         }
     }
     else
@@ -198,6 +201,22 @@ crStateShareContext(GLboolean value)
             crStateFreeShared(pCtx, gSharedState);
         }
     }
+}
+
+DECLEXPORT(void) STATE_APIENTRY
+crStateShareLists(CRContext *pContext1, CRContext *pContext2)
+{
+    CRASSERT(pContext1->shared);
+    CRASSERT(pContext2->shared);
+
+    if (pContext2->shared == pContext1->shared)
+    {
+        return;
+    }
+
+    crStateFreeShared(pContext1, pContext1->shared);
+    pContext1->shared = pContext2->shared;
+    ASMAtomicIncS32(&pContext2->shared->refCount);
 }
 
 DECLEXPORT(GLboolean) STATE_APIENTRY
@@ -270,7 +289,7 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
     if (shareCtx) {
         CRASSERT(shareCtx->shared);
         ctx->shared = shareCtx->shared;
-        ctx->shared->refCount ++;
+        ASMAtomicIncS32(&ctx->shared->refCount);
     }
     else {
         ctx->shared = crStateAllocShared();

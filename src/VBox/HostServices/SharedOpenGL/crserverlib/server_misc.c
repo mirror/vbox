@@ -93,6 +93,54 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParametervCR(GLenum target
     static int gather_connect_count = 0;
 
     switch (target) {
+        case GL_SHARE_LISTS_CR:
+        {
+            CRContextInfo *pCtx[2];
+            GLint *ai32Values;
+            int i;
+            if (count != 2)
+            {
+                WARN(("GL_SHARE_LISTS_CR invalid cound %d", count));
+                return;
+            }
+
+            if (type != GL_UNSIGNED_INT && type != GL_INT)
+            {
+                WARN(("GL_SHARE_LISTS_CR invalid type %d", type));
+                return;
+            }
+
+            ai32Values = (GLint*)values;
+
+            for (i = 0; i < 2; ++i)
+            {
+                const int32_t val = ai32Values[i];
+
+                if (val == 0)
+                {
+                    WARN(("GL_SHARE_LISTS_CR invalid value[%d] %d", i, val));
+                    return;
+                }
+
+                pCtx[i] = (CRContextInfo *) crHashtableSearch(cr_server.contextTable, val);
+                if (!pCtx[i])
+                {
+                    WARN(("GL_SHARE_LISTS_CR invalid pCtx1 for value[%d] %d", i, val));
+                    return;
+                }
+
+                if (!pCtx[i]->pContext)
+                {
+                    WARN(("GL_SHARE_LISTS_CR invalid pCtx1 pContext for value[%d] %d", i, val));
+                    return;
+                }
+            }
+
+            crStateShareLists(pCtx[0]->pContext, pCtx[1]->pContext);
+
+            break;
+        }
+
     case GL_SET_MAX_VIEWPORT_CR:
         {
             GLint *maxDims = (GLint *)values;

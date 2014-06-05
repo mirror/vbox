@@ -307,11 +307,11 @@ BOOL APIENTRY DrvCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
     return 0;
 }
 
+DECLEXPORT(BOOL) WINAPI wglShareLists_prox( HGLRC hglrc1, HGLRC hglrc2 );
+
 BOOL APIENTRY DrvShareLists(HGLRC hglrc1, HGLRC hglrc2)
 {
-    CR_DDI_PROLOGUE();
-    crWarning( "DrvShareLists: unsupported" );
-    return 1;
+    return wglShareLists_prox(hglrc1, hglrc2);
 }
 
 int APIENTRY DrvSetLayerPaletteEntries(HDC hdc, int iLayerPlane,

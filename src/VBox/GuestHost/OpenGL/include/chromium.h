@@ -733,6 +733,9 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 /* enable zero vertex attribute generation to work around wine bug */
 #define GL_CHECK_ZERO_VERT_ARRT       0x8B30
 
+/* share lists */
+#define GL_SHARE_LISTS_CR             0x8B31
+
 /**********************************************************************/
 /*****                Chromium-specific API                       *****/
 /**********************************************************************/
