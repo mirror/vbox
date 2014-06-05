@@ -426,6 +426,16 @@ void UIExtraDataManager::setSelectorWindowStatusBarVisible(bool fVisible)
     setExtraDataString(GUI_Statusbar, toFeatureRestricted(!fVisible));
 }
 
+QString UIExtraDataManager::selectorWindowLastItemChosen() const
+{
+    return extraDataString(GUI_LastItemSelected);
+}
+
+void UIExtraDataManager::setSelectorWindowLastItemChosen(const QString &strItemID)
+{
+    setExtraDataString(GUI_LastItemSelected, strItemID);
+}
+
 QMap<DetailsElementType, bool> UIExtraDataManager::selectorWindowDetailsElements()
 {
     /* Load corresponding extra-data: */
