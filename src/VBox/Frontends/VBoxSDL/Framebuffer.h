@@ -85,9 +85,6 @@ public:
     STDMETHOD(COMGETTER(WinId)) (int64_t *winId);
 
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y, ULONG w, ULONG h);
-    STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, BYTE *vram,
-                             ULONG bitsPerPixel, ULONG bytesPerLine,
-                             ULONG w, ULONG h, BOOL *finished);
     STDMETHOD(NotifyChange)(ULONG aScreenId,
                             ULONG aXOrigin,
                             ULONG aYOrigin,
@@ -204,8 +201,6 @@ private:
     BYTE *mPtrVRAM;
     ULONG mBitsPerPixel;
     ULONG mBytesPerLine;
-    ULONG mPixelFormat;
-    BOOL mUsesGuestVRAM;
     BOOL mfSameSizeRequested;
 
     ComPtr<IDisplaySourceBitmap> mpSourceBitmap;

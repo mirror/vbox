@@ -2211,13 +2211,13 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     }
 
                     /*
-                     * User specific resize event.
+                     * User specific framebuffer change event.
                      */
-                    case SDL_USER_EVENT_RESIZE:
+                    case SDL_USER_EVENT_NOTIFYCHANGE:
                     {
-                        LogFlow(("SDL_USER_EVENT_RESIZE\n"));
+                        LogFlow(("SDL_USER_EVENT_NOTIFYCHANGE\n"));
                         LONG xOrigin, yOrigin;
-                        gpFramebuffer[event.user.code]->resizeGuest();
+                        gpFramebuffer[event.user.code]->notifyChange(event.user.code);
                         /* update xOrigin, yOrigin -> mouse */
                         rc = gpDisplay->GetScreenResolution(event.user.code, NULL, NULL, NULL, &xOrigin, &yOrigin);
                         gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
@@ -2693,19 +2693,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
 
             /*
-             * User specific resize event.
+             * User specific framebuffer change event.
              */
-            case SDL_USER_EVENT_RESIZE:
-            {
-                LogFlow(("SDL_USER_EVENT_RESIZE\n"));
-                LONG xOrigin, yOrigin;
-                gpFramebuffer[event.user.code]->resizeGuest();
-                /* update xOrigin, yOrigin -> mouse */
-                rc = gpDisplay->GetScreenResolution(event.user.code, NULL, NULL, NULL, &xOrigin, &yOrigin);
-                gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
-                break;
-            }
-
             case SDL_USER_EVENT_NOTIFYCHANGE:
             {
                 LogFlow(("SDL_USER_EVENT_NOTIFYCHANGE\n"));
@@ -4186,7 +4175,7 @@ void SaveState(void)
                 /*
                  * Ignore all other events.
                  */
-                case SDL_USER_EVENT_RESIZE:
+                case SDL_USER_EVENT_NOTIFYCHANGE:
                 case SDL_USER_EVENT_TERMINATE:
                 default:
                     break;

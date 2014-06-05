@@ -118,8 +118,6 @@ VBoxSDLFB::VBoxSDLFB(uint32_t uScreenId,
     /* Start with standard screen dimensions. */
     mGuestXRes      = 640;
     mGuestYRes      = 480;
-    mPixelFormat    = FramebufferPixelFormat_Opaque;
-    mUsesGuestVRAM  = FALSE;
     mPtrVRAM        = NULL;
     mBitsPerPixel   = 0;
     mBytesPerLine   = 0;
@@ -370,7 +368,7 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(PixelFormat) (ULONG *pixelFormat)
 {
     if (!pixelFormat)
         return E_POINTER;
-    *pixelFormat = mPixelFormat;
+    *pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
     return S_OK;
 }
 
@@ -378,7 +376,7 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(UsesGuestVRAM) (BOOL *usesGuestVRAM)
 {
     if (!usesGuestVRAM)
         return E_POINTER;
-    *usesGuestVRAM = mUsesGuestVRAM;
+    *usesGuestVRAM = TRUE;
     return S_OK;
 }
 
@@ -476,146 +474,7 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
     return S_OK;
 }
 
-/**
- * Request a display resize from the framebuffer.
- *
- * @returns COM status code.
- * @param   pixelFormat The requested pixel format.
- * @param   vram        Pointer to the guest VRAM buffer (can be NULL).
- * @param   bitsPerPixel Color depth in bits.
- * @param   bytesPerLine Size of a scanline in bytes.
- * @param   w           New display width in pixels.
- * @param   h           New display height in pixels.
- * @param   finished    Address of output flag whether the update
- *                      could be fully processed in this call (which
- *                      has to return immediately) or VBox should wait
- *                      for all call to the resize complete API before
- *                      continuing with display updates.
- */
-STDMETHODIMP VBoxSDLFB::RequestResize(ULONG aScreenId, ULONG pixelFormat, BYTE *vram,
-                                      ULONG bitsPerPixel, ULONG bytesPerLine,
-                                      ULONG w, ULONG h, BOOL *finished)
-{
-    LogFlowFunc (("w=%d, h=%d, pixelFormat=0x%08lX, vram=%p, "
-                  "bpp=%d, bpl=%d\n",
-                  w, h, pixelFormat, vram, bitsPerPixel, bytesPerLine));
-
-    /*
-     * SDL does not allow us to make this call from any other thread than
-     * the main thread (the one which initialized the video mode). So we
-     * have to send an event to the main SDL thread and tell VBox to wait.
-     */
-    if (!finished)
-    {
-        AssertMsgFailed(("RequestResize requires the finished flag!\n"));
-        return E_FAIL;
-    }
-
-    /*
-     * Optimize the case when the guest has changed only the VRAM ptr
-     * and the framebuffer uses the guest VRAM as the source bitmap.
-     */
-    if (   mGuestXRes    == w
-        && mGuestYRes    == h
-        && mPixelFormat  == pixelFormat
-        && mBitsPerPixel == bitsPerPixel
-        && mBytesPerLine == bytesPerLine
-        && mUsesGuestVRAM
-       )
-    {
-        mfSameSizeRequested = true;
-    }
-    else
-    {
-        mfSameSizeRequested = false;
-    }
-
-    mGuestXRes   = w;
-    mGuestYRes   = h;
-    mPixelFormat = pixelFormat;
-    mPtrVRAM     = vram;
-    mBitsPerPixel = bitsPerPixel;
-    mBytesPerLine = bytesPerLine;
-    mUsesGuestVRAM = FALSE; /* yet */
-
-    SDL_Event event;
-    event.type       = SDL_USEREVENT;
-    event.user.type  = SDL_USER_EVENT_RESIZE;
-    event.user.code  = mScreenId;
-
-    /* Try multiple times if necessary */
-    PushSDLEventForSure(&event);
-
-    /* we want this request to be processed quickly, so yield the CPU */
-    RTThreadYield();
-
-    *finished = false;
-
-    return S_OK;
-}
-
 extern ComPtr<IDisplay> gpDisplay;
-
-/* This method runs on the main SDL thread. */
-void VBoxSDLFB::notifyChange(ULONG aScreenId)
-{
-    /* Disable screen updates. */
-    RTCritSectEnter(&mUpdateLock);
-
-    if (mpPendingSourceBitmap.isNull())
-    {
-        /* Do nothing. Change event already processed. */
-        RTCritSectLeave(&mUpdateLock);
-        return;
-    }
-
-    /* Disable screen updates. */
-    mfUpdates = false;
-
-    /* Release the current bitmap and keep the pending one. */
-    mpSourceBitmap = mpPendingSourceBitmap;
-    mpPendingSourceBitmap.setNull();
-
-    RTCritSectLeave(&mUpdateLock);
-
-    BYTE *pAddress = NULL;
-    ULONG ulWidth = 0;
-    ULONG ulHeight = 0;
-    ULONG ulBitsPerPixel = 0;
-    ULONG ulBytesPerLine = 0;
-    ULONG ulPixelFormat = 0;
-
-    mpSourceBitmap->QueryBitmapInfo(&pAddress,
-                                    &ulWidth,
-                                    &ulHeight,
-                                    &ulBitsPerPixel,
-                                    &ulBytesPerLine,
-                                    &ulPixelFormat);
-
-    if (   mGuestXRes    == ulWidth
-        && mGuestYRes    == ulHeight
-        && mBitsPerPixel == ulBitsPerPixel
-        && mBytesPerLine == ulBytesPerLine
-        && mPtrVRAM == pAddress
-       )
-    {
-        mfSameSizeRequested = true;
-    }
-    else
-    {
-        mfSameSizeRequested = false;
-    }
-
-    mGuestXRes   = ulWidth;
-    mGuestYRes   = ulHeight;
-    mPixelFormat = FramebufferPixelFormat_Opaque;
-    mPtrVRAM     = pAddress;
-    mBitsPerPixel = ulBitsPerPixel;
-    mBytesPerLine = ulBytesPerLine;
-    mUsesGuestVRAM = FALSE; /* yet */
-
-    resizeGuest();
-}
 
 STDMETHODIMP VBoxSDLFB::NotifyChange(ULONG aScreenId,
                                      ULONG aXOrigin,
@@ -624,10 +483,12 @@ STDMETHODIMP VBoxSDLFB::NotifyChange(ULONG aScreenId,
                                      ULONG aHeight)
 {
     LogRel(("NotifyChange: %d %d,%d %dx%d\n",
-             aScreenId, aXOrigin, aYOrigin, aWidth, aHeight));
+            aScreenId, aXOrigin, aYOrigin, aWidth, aHeight));
 
-    /* Obtain the new screen bitmap. */
     RTCritSectEnter(&mUpdateLock);
+
+    /* Disable screen updates. */
+    mfUpdates = false;
 
     /* Save the new bitmap. */
     mpPendingSourceBitmap.setNull();
@@ -725,6 +586,71 @@ STDMETHODIMP VBoxSDLFB::Notify3DEvent(ULONG uType, BYTE *pReserved)
 // Internal public methods
 //
 
+/* This method runs on the main SDL thread. */
+void VBoxSDLFB::notifyChange(ULONG aScreenId)
+{
+    /* Disable screen updates. */
+    RTCritSectEnter(&mUpdateLock);
+
+    if (mpPendingSourceBitmap.isNull())
+    {
+        /* Do nothing. Change event already processed. */
+        RTCritSectLeave(&mUpdateLock);
+        return;
+    }
+
+    /* Release the current bitmap and keep the pending one. */
+    mpSourceBitmap = mpPendingSourceBitmap;
+    mpPendingSourceBitmap.setNull();
+
+    RTCritSectLeave(&mUpdateLock);
+
+    if (mpSourceBitmap.isNull())
+    {
+        mPtrVRAM      = NULL;
+        mBitsPerPixel = 32;
+        mBytesPerLine = mGuestXRes * 4;
+    }
+    else
+    {
+        BYTE *pAddress = NULL;
+        ULONG ulWidth = 0;
+        ULONG ulHeight = 0;
+        ULONG ulBitsPerPixel = 0;
+        ULONG ulBytesPerLine = 0;
+        ULONG ulPixelFormat = 0;
+
+        mpSourceBitmap->QueryBitmapInfo(&pAddress,
+                                        &ulWidth,
+                                        &ulHeight,
+                                        &ulBitsPerPixel,
+                                        &ulBytesPerLine,
+                                        &ulPixelFormat);
+
+        if (   mGuestXRes    == ulWidth
+            && mGuestYRes    == ulHeight
+            && mBitsPerPixel == ulBitsPerPixel
+            && mBytesPerLine == ulBytesPerLine
+            && mPtrVRAM == pAddress
+           )
+        {
+            mfSameSizeRequested = true;
+        }
+        else
+        {
+            mfSameSizeRequested = false;
+        }
+
+        mGuestXRes   = ulWidth;
+        mGuestYRes   = ulHeight;
+        mPtrVRAM     = pAddress;
+        mBitsPerPixel = ulBitsPerPixel;
+        mBytesPerLine = ulBytesPerLine;
+    }
+
+    resizeGuest();
+}
+
 /**
  * Method that does the actual resize of the guest framebuffer and
  * then changes the SDL framebuffer setup.
@@ -735,42 +661,7 @@ void VBoxSDLFB::resizeGuest()
     AssertMsg(gSdlNativeThread == RTThreadNativeSelf(),
               ("Wrong thread! SDL is not threadsafe!\n"));
 
-    uint32_t Rmask, Gmask, Bmask, Amask = 0;
-
-    mUsesGuestVRAM = FALSE;
-
-    /* pixel characteristics. if we don't support the format directly, we will
-     * fallback to the indirect 32bpp buffer (mUsesGuestVRAM will remain
-     * FALSE) */
-    if (mPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
-    {
-        switch (mBitsPerPixel)
-        {
-            case 16:
-            case 24:
-            case 32:
-                mUsesGuestVRAM = TRUE;
-                break;
-            default:
-                /* the fallback buffer is always 32bpp */
-                mBitsPerPixel = 32;
-                mBytesPerLine = mGuestXRes * 4;
-                break;
-        }
-    }
-    else
-    {
-        /* the fallback buffer is always RGB, 32bpp */
-        mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
-        mBitsPerPixel = 32;
-        mBytesPerLine = mGuestXRes * 4;
-    }
-
-    switch (mBitsPerPixel)
-    {
-        case 16: Rmask = 0x0000F800; Gmask = 0x000007E0; Bmask = 0x0000001F; break;
-        default: Rmask = 0x00FF0000; Gmask = 0x0000FF00; Bmask = 0x000000FF; break;
-    }
+    const uint32_t Rmask = 0x00FF0000, Gmask = 0x0000FF00, Bmask = 0x000000FF, Amask = 0;
 
     /* first free the current surface */
     if (mSurfVRAM)
@@ -779,42 +670,31 @@ void VBoxSDLFB::resizeGuest()
         mSurfVRAM = NULL;
     }
 
-    /* is the guest in a linear framebuffer mode we support? */
-    if (mPtrVRAM || mUsesGuestVRAM)
+    if (mPtrVRAM)
     {
-        /* Create a source surface from guest VRAM. */
+        /* Create a source surface from the source bitmap. */
         mSurfVRAM = SDL_CreateRGBSurfaceFrom(mPtrVRAM, mGuestXRes, mGuestYRes, mBitsPerPixel,
                                              mBytesPerLine, Rmask, Gmask, Bmask, Amask);
-        LogRel(("mSurfVRAM from guest %d x %d\n", mGuestXRes,  mGuestYRes));
+        LogFlow(("VBoxSDL:: using the source bitmap\n"));
     }
     else
     {
-        /* Create a software surface for which SDL allocates the RAM */
         mSurfVRAM = SDL_CreateRGBSurface(SDL_SWSURFACE, mGuestXRes, mGuestYRes, mBitsPerPixel,
                                          Rmask, Gmask, Bmask, Amask);
-        LogRel(("mSurfVRAM from SDL %d x %d\n", mGuestXRes,  mGuestYRes));
+        LogFlow(("VBoxSDL:: using SDL_SWSURFACE\n"));
     }
     LogFlow(("VBoxSDL:: created VRAM surface %p\n", mSurfVRAM));
 
-    if (mfSameSizeRequested && mUsesGuestVRAM)
+    if (mfSameSizeRequested)
     {
-        /*
-         * Same size has been requested and the framebuffer still uses the guest VRAM.
-         * Reset the condition and return.
-         */
         mfSameSizeRequested = false;
         LogFlow(("VBoxSDL:: the same resolution requested, skipping the resize.\n"));
-
-        /* Enable screen updates. */
-        RTCritSectEnter(&mUpdateLock);
-        mfUpdates = true;
-        RTCritSectLeave(&mUpdateLock);
-
-        return;
     }
-
-    /* now adjust the SDL resolution */
-    resizeSDL();
+    else
+    {
+        /* now adjust the SDL resolution */
+        resizeSDL();
+    }
 
     /* Enable screen updates. */
     RTCritSectEnter(&mUpdateLock);
@@ -1044,7 +924,6 @@ void VBoxSDLFB::resizeSDL(void)
             RTPrintf("Resized to %dx%d, screen surface type: %s\n", mScreen->w, mScreen->h,
                      ((mScreen->flags & SDL_HWSURFACE) == 0) ? "software" : "hardware");
     }
-    repaint();
 }
 
 /**
@@ -1180,6 +1059,7 @@ void VBoxSDLFB::setFullscreen(bool fFullscreen)
     mfFullscreen = fFullscreen;
     /* only change the SDL resolution, do not touch the guest framebuffer */
     resizeSDL();
+    repaint();
 }
 
 /**
