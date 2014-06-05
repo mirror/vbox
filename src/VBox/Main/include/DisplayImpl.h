@@ -218,7 +218,6 @@ public:
 
     // IDisplay methods
     STDMETHOD(GetScreenResolution)(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel, LONG *aXOrigin, LONG *aYOrigin);
-    STDMETHOD(SetFramebuffer)(ULONG aScreenId, IFramebuffer *aFramebuffer);
     STDMETHOD(AttachFramebuffer)(ULONG aScreenId,
                                  IFramebuffer *aFramebuffer);
     STDMETHOD(DetachFramebuffer)(ULONG aScreenId);
@@ -253,8 +252,6 @@ private:
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     int crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height);
 #endif
-
-    static DECLCALLBACK(int)   changeFramebuffer(Display *that, IFramebuffer *aFB, unsigned uScreenId);
 
     static DECLCALLBACK(void*) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(int)   drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);

@@ -2439,66 +2439,6 @@ STDMETHODIMP Display::GetScreenResolution(ULONG aScreenId,
     return S_OK;
 }
 
-STDMETHODIMP Display::SetFramebuffer(ULONG aScreenId, IFramebuffer *aFramebuffer)
-{
-    LogRelFlowFunc(("\n"));
-
-    if (aFramebuffer != NULL)
-        CheckComArgOutPointerValid(aFramebuffer);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    Console::SafeVMPtrQuiet ptrVM(mParent);
-    if (ptrVM.isOk())
-    {
-        /* Must release the lock here because the changeFramebuffer will
-         * also obtain it. */
-        alock.release();
-
-        /* send request to the EMT thread */
-        int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
-                                   (PFNRT)changeFramebuffer, 3, this, aFramebuffer, aScreenId);
-
-        ComAssertRCRet(vrc, E_FAIL);
-        alock.acquire();
-
-#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-        BOOL fIs3DEnabled;
-        HRESULT hr = mParent->machine()->COMGETTER(Accelerate3DEnabled)(&fIs3DEnabled);
-        ComAssertComRC(hr);
-        if (fIs3DEnabled)
-        {
-            VBOXCRCMDCTL_HGCM data;
-            RT_ZERO(data);
-            data.Hdr.enmType = VBOXCRCMDCTL_TYPE_HGCM;
-            data.Hdr.u32Function = SHCRGL_HOST_FN_SCREEN_CHANGED;
-
-            data.aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
-            data.aParms[0].u.uint32 = aScreenId;
-
-            alock.release();
-
-            vrc = crCtlSubmitSync(&data.Hdr, sizeof(data));
-            AssertRC(vrc);
-
-            alock.acquire();
-        }
-#endif /* #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL) */
-    }
-    else
-    {
-        /* No VM is created (VM is powered off), do a direct call */
-        int vrc = changeFramebuffer(this, aFramebuffer, aScreenId);
-        ComAssertRCRet(vrc, E_FAIL);
-    }
-
-    return S_OK;
-}
-
 STDMETHODIMP Display::AttachFramebuffer(ULONG aScreenId,
                                         IFramebuffer *aFramebuffer)
 {
@@ -2528,20 +2468,6 @@ STDMETHODIMP Display::AttachFramebuffer(ULONG aScreenId,
     {
         /* Setup the new framebuffer. */
 
-#if defined(VBOX_WITH_CROGL)
-        /* Release the lock, because SHCRGL_HOST_FN_SCREEN_CHANGED will read current framebuffer */
-        /* @todo investigate */
-        {
-            BOOL is3denabled;
-            mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-
-            if (is3denabled)
-            {
-                alock.release();
-            }
-        }
-#endif
-
         /* @todo generic code for all monitors. */
         if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
         {
@@ -2565,15 +2491,34 @@ STDMETHODIMP Display::AttachFramebuffer(ULONG aScreenId,
                                 mLastHeight,
                                 mLastFlags);
         }
+    }
 
-        alock.release();
+    alock.release();
 
-        Console::SafeVMPtrQuiet ptrVM(mParent);
-        if (ptrVM.isOk())
+    Console::SafeVMPtrQuiet ptrVM(mParent);
+    if (ptrVM.isOk())
+    {
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+        BOOL fIs3DEnabled = FALSE;
+        mParent->machine()->COMGETTER(Accelerate3DEnabled)(&fIs3DEnabled);
+
+        if (fIs3DEnabled)
         {
-            VMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
-                               3, this, aScreenId, false);
+            VBOXCRCMDCTL_HGCM data;
+            RT_ZERO(data);
+            data.Hdr.enmType = VBOXCRCMDCTL_TYPE_HGCM;
+            data.Hdr.u32Function = SHCRGL_HOST_FN_SCREEN_CHANGED;
+
+            data.aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
+            data.aParms[0].u.uint32 = aScreenId;
+
+            int vrc = crCtlSubmitSync(&data.Hdr, sizeof(data));
+            AssertRC(vrc);
         }
+#endif /* defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL) */
+
+        VMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
+                           3, this, aScreenId, false);
     }
 
     LogRelFlowFunc(("Attached to %d\n", aScreenId));
@@ -3829,79 +3774,6 @@ void Display::destructCrHgsmiData(void)
     RTCritSectRwLeaveExcl(&mCrOglLock);
 }
 #endif
-
-/**
- *  Changes the current frame buffer. Called on EMT to avoid both
- *  race conditions and excessive locking.
- *
- *  @note locks this object for writing
- *  @thread EMT
- */
-/* static */
-DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
-                                              unsigned uScreenId)
-{
-    LogRelFlowFunc(("uScreenId = %d\n", uScreenId));
-
-    AssertReturn(that, VERR_INVALID_PARAMETER);
-    AssertReturn(uScreenId < that->mcMonitors, VERR_INVALID_PARAMETER);
-
-    AutoCaller autoCaller(that);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
-
-    DISPLAYFBINFO *pDisplayFBInfo = &that->maFramebuffers[uScreenId];
-    pDisplayFBInfo->pFramebuffer = aFB;
-
-    that->mParent->consoleVRDPServer()->SendResize ();
-
-    /* The driver might not have been constructed yet */
-    if (that->mpDrv)
-    {
-        /* Setup the new framebuffer. */
-        DISPLAYFBINFO *pFBInfo = &that->maFramebuffers[uScreenId];
-
-#if defined(VBOX_WITH_CROGL)
-        /* Release the lock, because SHCRGL_HOST_FN_SCREEN_CHANGED will read current framebuffer */
-        {
-            BOOL is3denabled;
-            that->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-
-            if (is3denabled)
-            {
-                alock.release();
-            }
-        }
-#endif
-
-        if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
-        {
-            /* This display in VBVA mode. Resize it to the last guest resolution,
-             * if it has been reported.
-             */
-            that->handleDisplayResize(uScreenId, pFBInfo->u16BitsPerPixel,
-                                      pFBInfo->pu8FramebufferVRAM,
-                                      pFBInfo->u32LineSize,
-                                      pFBInfo->w,
-                                      pFBInfo->h,
-                                      pFBInfo->flags);
-        }
-        else if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
-        {
-            /* VGA device mode, only for the primary screen. */
-            that->handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, that->mLastBitsPerPixel,
-                                      that->mLastAddress,
-                                      that->mLastBytesPerLine,
-                                      that->mLastWidth,
-                                      that->mLastHeight,
-                                      that->mLastFlags);
-        }
-    }
-
-    LogRelFlowFunc(("leave\n"));
-    return VINF_SUCCESS;
-}
 
 /**
  * Handle display resize event issued by the VGA device for the primary screen.
