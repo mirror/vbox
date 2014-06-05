@@ -109,10 +109,18 @@ void stubForcedFlush(GLint con)
 
 void stubConChromiumParameteriCR(GLint con, GLenum param, GLint value)
 {
-    if (con)
+//    if (con)
         stub.spu->dispatch_table.VBoxConChromiumParameteriCR(con, param, value);
-    else
-        crError("VBoxConChromiumParameteriCR called with null connection");
+//    else
+//        crError("VBoxConChromiumParameteriCR called with null connection");
+}
+
+void stubConChromiumParametervCR(GLint con, GLenum target, GLenum type, GLsizei count, const GLvoid *values)
+{
+//    if (con)
+        stub.spu->dispatch_table.VBoxConChromiumParametervCR(con, target, type, count, values);
+//    else
+//        crError("VBoxConChromiumParameteriCR called with null connection");
 }
 
 void stubConFlush(GLint con)

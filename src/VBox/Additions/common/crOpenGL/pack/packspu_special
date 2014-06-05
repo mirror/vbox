@@ -110,6 +110,7 @@ VBoxAttachThread
 VBoxDetachThread
 VBoxCreateContext
 VBoxConChromiumParameteriCR
+VBoxConChromiumParametervCR
 VBoxWindowCreate
 VBoxWindowDestroy
 VBoxConCreate

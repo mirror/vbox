@@ -10,8 +10,6 @@
 #include "cr_string.h"
 #include "packspu_proto.h"
 
-#define MAGIC_OFFSET 3000
-
 /*
  * Allocate a new ThreadInfo structure, setup a connection to the
  * server, allocate/init a packer context, bind this ThreadInfo to
@@ -230,6 +228,64 @@ packspu_VBoxConChromiumParameteriCR(GLint con, GLenum param, GLint value)
     crPackSetContext( thread->packer );
 
     packspu_ChromiumParameteriCR(param, value);
+
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&_PackMutex);
+#endif
+
+    if (CRPACKSPU_IS_WDDM_CRHGSMI())
+    {
+        /* restore the packer context to the tls */
+        crPackSetContext(curPacker);
+    }
+}
+
+GLvoid PACKSPU_APIENTRY
+packspu_VBoxConChromiumParametervCR(GLint con, GLenum target, GLenum type, GLsizei count, const GLvoid *values)
+{
+    GET_THREAD(thread);
+    CRPackContext * curPacker = crPackGetContext();
+    ThreadInfo *curThread = thread;
+    int writeback = 1;
+    GLint serverCtx = (GLint) -1;
+
+    CRASSERT(!curThread == !curPacker);
+    CRASSERT(!curThread || !curPacker || curThread->packer == curPacker);
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&_PackMutex);
+#endif
+
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    CRASSERT(!con == !CRPACKSPU_IS_WDDM_CRHGSMI());
+#endif
+
+    if (CRPACKSPU_IS_WDDM_CRHGSMI())
+    {
+        if (!con)
+        {
+            crError("connection should be specified!");
+            return;
+        }
+        thread = GET_THREAD_VAL_ID(con);
+    }
+    else
+    {
+        CRASSERT(!con);
+        if (!thread)
+        {
+            thread = packspuNewThread(
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                NULL
+#endif
+                );
+        }
+    }
+    CRASSERT(thread);
+    CRASSERT(thread->packer);
+
+    crPackSetContext( thread->packer );
+
+    packspu_ChromiumParametervCR(target, type, count, values);
 
 #ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&_PackMutex);

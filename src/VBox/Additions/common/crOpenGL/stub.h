@@ -342,6 +342,7 @@ extern ContextInfo *stubNewContext( const char *dpyName, GLint visBits, ContextT
 #endif
         );
 extern void stubConChromiumParameteriCR(GLint con, GLenum param, GLint value);
+extern void stubConChromiumParametervCR(GLint con, GLenum target, GLenum type, GLsizei count, const GLvoid *values);
 extern GLboolean stubCtxCreate(ContextInfo *context);
 extern GLboolean stubCtxCheckCreate(ContextInfo *context);
 extern void stubDestroyContext( unsigned long contextId );

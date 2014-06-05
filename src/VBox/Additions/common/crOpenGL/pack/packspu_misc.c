@@ -14,7 +14,8 @@ void PACKSPU_APIENTRY packspu_ChromiumParametervCR(GLenum target, GLenum type, G
 
     CRMessage msg;
     int len;
-    
+    GLint ai32ServerValues[2];
+    GLboolean fFlush = GL_FALSE;
     GET_THREAD(thread);
 
     
@@ -29,16 +30,67 @@ void PACKSPU_APIENTRY packspu_ChromiumParametervCR(GLenum target, GLenum type, G
             msg.gather.offset = 69;
             len = sizeof(CRMessageGather);
             crNetSend(thread->netServer.conn, NULL, &msg, len);
+            return;
+
+        case GL_SHARE_LISTS_CR:
+        {
+            ContextInfo *pCtx[2];
+            GLint *ai32Values;
+            int i;
+            if (count != 2)
+            {
+                WARN(("GL_SHARE_LISTS_CR invalid cound %d", count));
+                return;
+            }
+
+            if (type != GL_UNSIGNED_INT && type != GL_INT)
+            {
+                WARN(("GL_SHARE_LISTS_CR invalid type %d", type));
+                return;
+            }
+
+            ai32Values = (GLint*)values;
+
+            for (i = 0; i < 2; ++i)
+            {
+                const int slot = ai32Values[i] - MAGIC_OFFSET;
+
+                if (slot < 0 || slot >= pack_spu.numContexts)
+                {
+                    WARN(("GL_SHARE_LISTS_CR invalid value[%d] %d", i, ai32Values[i]));
+                    return;
+                }
+
+                pCtx[i] = &pack_spu.context[slot];
+                if (!pCtx[i]->clientState)
+                {
+                    WARN(("GL_SHARE_LISTS_CR invalid pCtx1 for value[%d] %d", i, ai32Values[i]));
+                    return;
+                }
+
+                ai32ServerValues[i] = pCtx[i]->serverCtx;
+            }
+
+            crStateShareLists(pCtx[0]->clientState, pCtx[1]->clientState);
+
+            values = ai32ServerValues;
+
+            fFlush = GL_TRUE;
+
             break;
-            
+        }
+
         default:
-            if (pack_spu.swap)
-                crPackChromiumParametervCRSWAP(target, type, count, values);
-            else
-                crPackChromiumParametervCR(target, type, count, values);
+            break;
     }
 
+    if (pack_spu.swap)
+        crPackChromiumParametervCRSWAP(target, type, count, values);
+    else
+        crPackChromiumParametervCR(target, type, count, values);
 
+    if (fFlush)
+        packspuFlush( (void *) thread );
 }
 
 GLboolean packspuSyncOnFlushes()
