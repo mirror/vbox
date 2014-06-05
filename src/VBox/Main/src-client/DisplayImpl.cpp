@@ -2386,8 +2386,8 @@ void Display::notifyPowerDown(void)
         if (!pFBInfo->fDisabled)
         {
             handleDisplayResize(uScreenId, 32,
-                                NULL,
-                                0,
+                                pFBInfo->pu8FramebufferVRAM,
+                                pFBInfo->u32LineSize,
                                 pFBInfo->w,
                                 pFBInfo->h,
                                 0);
