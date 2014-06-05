@@ -431,6 +431,39 @@ void UIMachineWindowNormal::loadSettings()
     /* Get machine: */
     CMachine m = machine();
 
+    /* Load GUI customizations: */
+    {
+        VBoxGlobalSettings settings = vboxGlobal().settings();
+#ifndef Q_WS_MAC
+        menuBar()->setHidden(settings.isFeatureActive("noMenuBar"));
+#endif /* !Q_WS_MAC */
+        statusBar()->setHidden(settings.isFeatureActive("noStatusBar"));
+        if (statusBar()->isHidden())
+            m_pIdleTimer->stop();
+    }
+
+    /* Load availability settings: */
+    {
+        /* USB Stuff: */
+        if (indicatorsPool()->indicator(IndicatorType_USB))
+        {
+            bool fUSBEnabled =    !m.GetUSBDeviceFilters().isNull()
+                               && !m.GetUSBControllers().isEmpty()
+                               && m.GetUSBProxyAvailable();
+
+            if (!fUSBEnabled)
+            {
+                /* Hide USB menu: */
+                indicatorsPool()->indicator(IndicatorType_USB)->setHidden(true);
+            }
+            else
+            {
+                /* Toggle USB LED: */
+                indicatorsPool()->indicator(IndicatorType_USB)->setState(KDeviceActivity_Idle);
+            }
+        }
+    }
+
     /* Load window geometry: */
     {
         /* Load extra-data: */
@@ -483,39 +516,6 @@ void UIMachineWindowNormal::loadSettings()
 #else /* !Q_WS_X11 */
         normalizeGeometry(true);
 #endif /* !Q_WS_X11 */
-    }
-
-    /* Load availability settings: */
-    {
-        /* USB Stuff: */
-        if (indicatorsPool()->indicator(IndicatorType_USB))
-        {
-            bool fUSBEnabled =    !m.GetUSBDeviceFilters().isNull()
-                               && !m.GetUSBControllers().isEmpty()
-                               && m.GetUSBProxyAvailable();
-
-            if (!fUSBEnabled)
-            {
-                /* Hide USB menu: */
-                indicatorsPool()->indicator(IndicatorType_USB)->setHidden(true);
-            }
-            else
-            {
-                /* Toggle USB LED: */
-                indicatorsPool()->indicator(IndicatorType_USB)->setState(KDeviceActivity_Idle);
-            }
-        }
-    }
-
-    /* Load global settings: */
-    {
-        VBoxGlobalSettings settings = vboxGlobal().settings();
-#ifndef Q_WS_MAC
-        menuBar()->setHidden(settings.isFeatureActive("noMenuBar"));
-#endif /* !Q_WS_MAC */
-        statusBar()->setHidden(settings.isFeatureActive("noStatusBar"));
-        if (statusBar()->isHidden())
-            m_pIdleTimer->stop();
     }
 }
 
