@@ -509,6 +509,91 @@ void UIExtraDataManager::setSelectorWindowPreviewUpdateInterval(PreviewUpdateInt
     setExtraDataString(GUI_PreviewUpdate, gpConverter->toInternalString(interval));
 }
 
+QRect UIExtraDataManager::machineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strId) const
+{
+    /* Choose corresponding key: */
+    QString strKey;
+    switch (visualStateType)
+    {
+        case UIVisualStateType_Normal: strKey = GUI_LastNormalWindowPosition; break;
+        case UIVisualStateType_Scale:  strKey = GUI_LastScaleWindowPosition; break;
+        default: AssertFailedReturn(QRect());
+    }
+    /* Append with screen-index: */
+    if (uScreenIndex)
+        strKey += QString::number(uScreenIndex);
+
+    /* Load corresponding extra-data: */
+    const QStringList data = extraDataStringList(strKey, strId);
+
+    /* Parse loaded data: */
+    int iX = 0, iY = 0, iW = 0, iH = 0;
+    bool fOk = data.size() >= 4;
+    do
+    {
+        if (!fOk) break;
+        iX = data[0].toInt(&fOk);
+        if (!fOk) break;
+        iY = data[1].toInt(&fOk);
+        if (!fOk) break;
+        iW = data[2].toInt(&fOk);
+        if (!fOk) break;
+        iH = data[3].toInt(&fOk);
+    }
+    while (0);
+
+    /* Return geometry (loaded or null): */
+    return fOk ? QRect(iX, iY, iW, iH) : QRect();
+}
+
+bool UIExtraDataManager::isMachineWindowShouldBeMaximized(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strId) const
+{
+    /* Choose corresponding key: */
+    QString strKey;
+    switch (visualStateType)
+    {
+        case UIVisualStateType_Normal: strKey = GUI_LastNormalWindowPosition; break;
+        case UIVisualStateType_Scale:  strKey = GUI_LastScaleWindowPosition; break;
+        default: AssertFailedReturn(false);
+    }
+    /* Append with screen-index: */
+    if (uScreenIndex)
+        strKey += QString::number(uScreenIndex);
+
+    /* Load corresponding extra-data: */
+    const QStringList data = extraDataStringList(strKey, strId);
+
+    /* Make sure 5th item has required value: */
+    return data.size() == 5 && data[4] == GUI_LastWindowState_Max;
+}
+
+void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QString &strId)
+{
+    /* Choose corresponding key: */
+    QString strKey;
+    switch (visualStateType)
+    {
+        case UIVisualStateType_Normal: strKey = GUI_LastNormalWindowPosition; break;
+        case UIVisualStateType_Scale:  strKey = GUI_LastScaleWindowPosition; break;
+        default: AssertFailedReturnVoid();
+    }
+    /* Append with screen-index: */
+    if (uScreenIndex)
+        strKey += QString::number(uScreenIndex);
+
+    /* Serialize passed values: */
+    QStringList data;
+    data << QString::number(geometry.x());
+    data << QString::number(geometry.y());
+    data << QString::number(geometry.width());
+    data << QString::number(geometry.height());
+    if (fMaximized)
+        data << GUI_LastWindowState_Max;
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(strKey, data, strId);
+}
+
 bool UIExtraDataManager::isFirstRun(const QString &strId) const
 {
     return isFeatureAllowed(GUI_FirstRun, strId);

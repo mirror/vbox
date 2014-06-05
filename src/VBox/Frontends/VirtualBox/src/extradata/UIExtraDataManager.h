@@ -173,6 +173,13 @@ public:
     /** Defines selector-window preview update @a interval. */
     void setSelectorWindowPreviewUpdateInterval(PreviewUpdateIntervalType interval);
 
+    /** Returns geometry for machine-window with @a uScreenIndex in @a visualStateType. */
+    QRect machineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strId) const;
+    /** Returns whether machine-window with @a uScreenIndex in @a visualStateType should be maximized or not. */
+    bool isMachineWindowShouldBeMaximized(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strId) const;
+    /** Defines geometry for machine-window with @a uScreenIndex in @a visualStateType as @a geometry and @a fMaximized. */
+    void setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QString &strId);
+
     /** Returns whether this machine started for the first time. */
     bool isFirstRun(const QString &strId) const;
     /** Defines whether this machine started for the first time. */

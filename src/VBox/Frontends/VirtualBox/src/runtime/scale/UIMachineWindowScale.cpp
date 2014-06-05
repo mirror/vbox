@@ -104,49 +104,34 @@ void UIMachineWindowScale::loadSettings()
 
     /* Load extra-data settings: */
     {
-        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(GUI_LastScaleWindowPosition) :
-                                     QString("%1%2").arg(GUI_LastScaleWindowPosition).arg(m_uScreenId);
-        QStringList strPositionSettings = m.GetExtraDataStringList(strPositionAddress);
+        /* Load extra-data: */
+        QRect geo = gEDataManager->machineWindowGeometry(machineLogic()->visualStateType(),
+                                                         m_uScreenId, vboxGlobal().managedVMUuid());
 
-        bool ok = !strPositionSettings.isEmpty(), max = false;
-        int x = 0, y = 0, w = 0, h = 0;
-
-        if (ok && strPositionSettings.size() > 0)
-            x = strPositionSettings[0].toInt(&ok);
-        else ok = false;
-        if (ok && strPositionSettings.size() > 1)
-            y = strPositionSettings[1].toInt(&ok);
-        else ok = false;
-        if (ok && strPositionSettings.size() > 2)
-            w = strPositionSettings[2].toInt(&ok);
-        else ok = false;
-        if (ok && strPositionSettings.size() > 3)
-            h = strPositionSettings[3].toInt(&ok);
-        else ok = false;
-        if (ok && strPositionSettings.size() > 4)
-            max = strPositionSettings[4] == GUI_LastWindowState_Max;
-
-        QRect ar = ok ? QApplication::desktop()->availableGeometry(QPoint(x, y)) :
-                        QApplication::desktop()->availableGeometry(this);
-
-        /* If previous parameters were read correctly: */
-        if (ok)
+        /* If we do have proper geometry: */
+        if (!geo.isNull())
         {
-            /* Restore window size and position: */
-            m_normalGeometry = QRect(x, y, w, h);
+            /* Restore window geometry: */
+            m_normalGeometry = geo;
             setGeometry(m_normalGeometry);
-            /* Maximize if needed: */
-            if (max)
+
+            /* Maximize (if necessary): */
+            if (gEDataManager->isMachineWindowShouldBeMaximized(machineLogic()->visualStateType(),
+                                                                m_uScreenId, vboxGlobal().managedVMUuid()))
                 setWindowState(windowState() | Qt::WindowMaximized);
         }
+        /* If we do NOT have proper geometry: */
         else
         {
+            /* Get available geometry, for screen with (x,y) coords if possible: */
+            QRect availableGeo = !geo.isNull() ? QApplication::desktop()->availableGeometry(QPoint(geo.x(), geo.y())) :
+                                                 QApplication::desktop()->availableGeometry(this);
+
             /* Resize to default size: */
             resize(640, 480);
-            qApp->processEvents();
-            /* Move newly created window to the screen center: */
+            /* Move newly created window to the screen-center: */
             m_normalGeometry = geometry();
-            m_normalGeometry.moveCenter(ar.center());
+            m_normalGeometry.moveCenter(availableGeo.center());
             setGeometry(m_normalGeometry);
         }
     }
@@ -157,16 +142,11 @@ void UIMachineWindowScale::saveSettings()
     /* Get machine: */
     CMachine m = machine();
 
-    /* Save extra-data settings: */
+    /* Save window geometry: */
     {
-        QString strWindowPosition = QString("%1,%2,%3,%4")
-                                    .arg(m_normalGeometry.x()).arg(m_normalGeometry.y())
-                                    .arg(m_normalGeometry.width()).arg(m_normalGeometry.height());
-        if (isMaximizedChecked())
-            strWindowPosition += QString(",%1").arg(GUI_LastWindowState_Max);
-        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(GUI_LastScaleWindowPosition) :
-                                     QString("%1%2").arg(GUI_LastScaleWindowPosition).arg(m_uScreenId);
-        m.SetExtraData(strPositionAddress, strWindowPosition);
+        gEDataManager->setMachineWindowGeometry(machineLogic()->visualStateType(),
+                                                m_uScreenId, m_normalGeometry,
+                                                isMaximizedChecked(), vboxGlobal().managedVMUuid());
     }
 
     /* Call to base-class: */
