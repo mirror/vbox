@@ -923,10 +923,6 @@ int Display::notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN 
 
 /**
  *  Handles display resize event.
- *  Disables access to VGA device;
- *  calls the framebuffer RequestResize method;
- *  if framebuffer resizes synchronously,
- *      updates the display connector data and enables access to the VGA device.
  *
  *  @param w New display width
  *  @param h New display height
@@ -1024,17 +1020,8 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
 
     if (!maFramebuffers[uScreenId].pFramebuffer.isNull())
     {
-        int rc = callFramebufferResize (maFramebuffers[uScreenId].pFramebuffer, uScreenId,
-                                        pixelFormat, pvVRAM, bpp, cbLine, w, h);
-        if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
-        {
-            /* Immediately return to the caller. ResizeCompleted will be called back by the
-             * GUI thread. The ResizeCompleted callback will change the resize status from
-             * InProgress to UpdateDisplayData. The latter status will be checked by the
-             * display timer callback on EMT and all required adjustments will be done there.
-             */
-            return rc;
-        }
+        callFramebufferResize(maFramebuffers[uScreenId].pFramebuffer, uScreenId,
+                              pixelFormat, pvVRAM, bpp, cbLine, w, h);
     }
 
     /* Set the status so the 'handleResizeCompleted' would work.  */
@@ -3648,40 +3635,6 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     LogRelFlowFunc(("rc=%Rhrc\n", rc));
     return rc;
-}
-
-/**
- * Notification that the framebuffer has completed the
- * asynchronous resize processing
- *
- * @returns COM status code
- */
-STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
-{
-    LogRelFlowFunc(("\n"));
-
-    /// @todo (dmik) can we AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); here?
-    //  This will require general code review and may add some details.
-    //  In particular, we may want to check whether EMT is really waiting for
-    //  this notification, etc. It might be also good to obey the caller to make
-    //  sure this method is not called from more than one thread at a time
-    //  (and therefore don't use Display lock at all here to save some
-    //  milliseconds).
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* this is only valid for external framebuffers */
-    if (maFramebuffers[aScreenId].pFramebuffer == NULL)
-        return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Resize completed notification is valid only for external framebuffers"));
-
-    /* Set the flag indicating that the resize has completed and display
-     * data need to be updated. */
-    bool f = ASMAtomicCmpXchgU32 (&maFramebuffers[aScreenId].u32ResizeStatus,
-        ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
-    AssertRelease(f);NOREF(f);
-
-    return S_OK;
 }
 
 STDMETHODIMP Display::CompleteVHWACommand(BYTE *pCommand)
