@@ -426,6 +426,26 @@ void UIExtraDataManager::setSelectorWindowStatusBarVisible(bool fVisible)
     setExtraDataString(GUI_Statusbar, toFeatureRestricted(!fVisible));
 }
 
+void UIExtraDataManager::clearSelectorWindowGroupsDefinitions()
+{
+    /* Read-only access global extra-data map: */
+    const ExtraDataMap &data = m_data[m_sstrGlobalID];
+    /* Wipe-out each the group definition record: */
+    foreach (const QString &strKey, data.keys())
+        if (strKey.startsWith(GUI_GroupDefinitions))
+            setExtraDataString(strKey, QString());
+}
+
+QStringList UIExtraDataManager::selectorWindowGroupsDefinitions(const QString &strGroupID) const
+{
+    return extraDataStringList(GUI_GroupDefinitions + strGroupID);
+}
+
+void UIExtraDataManager::setSelectorWindowGroupsDefinitions(const QString &strGroupID, const QStringList &definitions)
+{
+    setExtraDataStringList(GUI_GroupDefinitions + strGroupID, definitions);
+}
+
 QString UIExtraDataManager::selectorWindowLastItemChosen() const
 {
     return extraDataString(GUI_LastItemSelected);
