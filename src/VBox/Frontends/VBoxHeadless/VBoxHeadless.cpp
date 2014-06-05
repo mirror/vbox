@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -52,10 +52,6 @@ using namespace com;
 #ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
 #include <signal.h>
 #endif
-
-#include "Framebuffer.h"
-
-#include "NullFramebuffer.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -635,8 +631,6 @@ static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const cha
 static CComModule _Module;
 #endif
 
-ComPtr<IDisplay> display;
-
 /**
  *  Entry point.
  */
@@ -965,6 +959,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         /* get the mutable machine */
         CHECK_ERROR_BREAK(console, COMGETTER(Machine)(machine.asOutParam()));
 
+        ComPtr<IDisplay> display;
         CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
 
 #ifdef VBOX_WITH_VPX
@@ -977,40 +972,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             CHECK_ERROR_BREAK(machine, COMSETTER(VideoCaptureEnabled)(TRUE));
         }
 #endif /* defined(VBOX_WITH_VPX) */
-        ULONG cMonitors = 1;
-        machine->COMGETTER(MonitorCount)(&cMonitors);
-
-        unsigned uScreenId;
-        for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
-        {
-            VRDPFramebuffer *pVRDPFramebuffer = new VRDPFramebuffer();
-            if (!pVRDPFramebuffer)
-            {
-                RTPrintf("Error: could not create framebuffer object %d\n", uScreenId);
-                break;
-            }
-            pVRDPFramebuffer->AddRef();
-            display->AttachFramebuffer(uScreenId, pVRDPFramebuffer);
-        }
-        if (uScreenId < cMonitors)
-        {
-            break;
-        }
-
-        // fill in remaining slots with null framebuffers
-        for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
-        {
-            ComPtr<IFramebuffer> fb;
-            HRESULT hrc2 = display->QueryFramebuffer(uScreenId,
-                                                     fb.asOutParam());
-            if (hrc2 == S_OK && fb.isNull())
-            {
-                NullFB *pNullFB =  new NullFB();
-                pNullFB->AddRef();
-                pNullFB->init();
-                display->AttachFramebuffer(uScreenId, pNullFB);
-            }
-        }
 
         /* get the machine debugger (isn't necessarily available) */
         ComPtr <IMachineDebugger> machineDebugger;
@@ -1278,8 +1239,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
     while (0);
 
-    display.setNull();
-
     /*
      * Get the machine state.
      */
@@ -1404,8 +1363,3 @@ int main(int argc, char **argv, char **envp)
     return TrustedMain(argc, argv, envp);
 }
 #endif /* !VBOX_WITH_HARDENING */
-
-#ifdef VBOX_WITH_XPCOM
-NS_DECL_CLASSINFO(NullFB)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(NullFB, IFramebuffer)
-#endif
