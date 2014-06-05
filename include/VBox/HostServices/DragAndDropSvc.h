@@ -51,7 +51,27 @@
 #define isDnDMoveAction(a)    ((a) == DND_MOVE_ACTION)
 #define isDnDLinkAction(a)    ((a) == DND_LINK_ACTION)
 
-/* Everything defined in this file lives in this namespace. */
+/** @def VBOX_DND_FORMATS_DEFAULT
+ * Default drag'n drop formats.
+ * Note: If you add new entries here, make sure you test those
+ *       with all supported guest OSes!
+ */
+#define VBOX_DND_FORMATS_DEFAULT                                                                \
+    "text/uri-list",                                                                            \
+    /* Text. */                                                                                 \
+    "text/html",                                                                                \
+    "text/plain;charset=utf-8",                                                                 \
+    "text/plain;charset=utf-16",                                                                \
+    "text/plain",                                                                               \
+    "text/richtext",                                                                            \
+    "UTF8_STRING",                                                                              \
+    "TEXT",                                                                                     \
+    "STRING",                                                                                   \
+    /* OpenOffice formats. */                                                                   \
+    /* See: https://wiki.openoffice.org/wiki/Documentation/DevGuide/OfficeDev/Common_Application_Features#OpenOffice.org_Clipboard_Data_Formats */ \
+    "application/x-openoffice-embed-source-xml;windows_formatname=\"Star Embed Source (XML)\""  \
+    "application/x-openoffice;windows_formatname=\"Bitmap\""
+
 namespace DragAndDropSvc {
 
 /******************************************************************************
@@ -527,7 +547,6 @@ typedef struct VBOXDNDCBEVTERRORDATA
     int32_t rc;
 } VBOXDNDCBEVTERRORDATA;
 typedef VBOXDNDCBEVTERRORDATA *PVBOXDNDCBEVTERRORDATA;
-
 
 } /* namespace DragAndDropSvc */
 

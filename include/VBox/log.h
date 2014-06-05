@@ -339,6 +339,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_DISPLAY,
     /** Main group, IDisplaySourceBitmap. */
     LOG_GROUP_MAIN_DISPLAYSOURCEBITMAP,
+    /** Main group, IDnDBase. */
+    LOG_GROUP_MAIN_DNDBASE,
     /** Main group, IDnDModeChangedEvent. */
     LOG_GROUP_MAIN_DNDMODECHANGEDEVENT,
     /** Main group, IDnDSource. */
@@ -908,6 +910,7 @@ typedef enum LOGGROUP
     "MAIN_DIRECTORY", \
     "MAIN_DISPLAY", \
     "MAIN_DISPLAYSOURCEBITMAP", \
+    "MAIN_DNDBASE", \
     "MAIN_DNDMODECHANGEDEVENT", \
     "MAIN_DNDSOURCE", \
     "MAIN_DNDTARGET", \
