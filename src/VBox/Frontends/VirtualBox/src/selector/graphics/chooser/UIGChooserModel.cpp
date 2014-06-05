@@ -1230,7 +1230,7 @@ void UIGChooserModel::prepareConnections()
 void UIGChooserModel::loadLastSelectedItem()
 {
     /* Load last selected item (choose first if unable to load): */
-    setCurrentItem(vboxGlobal().virtualBox().GetExtraData(GUI_LastItemSelected));
+    setCurrentItem(gEDataManager->selectorWindowLastItemChosen());
     if (!currentItem() && !navigationList().isEmpty())
         setCurrentItem(navigationList().first());
 }
@@ -1238,8 +1238,7 @@ void UIGChooserModel::loadLastSelectedItem()
 void UIGChooserModel::saveLastSelectedItem()
 {
     /* Save last selected item: */
-    vboxGlobal().virtualBox().SetExtraData(GUI_LastItemSelected,
-                                           currentItem() ? currentItem()->definition() : QString());
+    gEDataManager->setSelectorWindowLastItemChosen(currentItem() ? currentItem()->definition() : QString());
 }
 
 void UIGChooserModel::cleanupHandlers()

@@ -151,6 +151,11 @@ public:
     /** Defines whether selector-window status-bar @a fVisible. */
     void setSelectorWindowStatusBarVisible(bool fVisible);
 
+    /** Returns last item chosen in selector-window chooser-pane. */
+    QString selectorWindowLastItemChosen() const;
+    /** Returns last item chosen in selector-window chooser-pane as @a strItemID. */
+    void setSelectorWindowLastItemChosen(const QString &strItemID);
+
     /** Returns selector-window details-pane elements. */
     QMap<DetailsElementType, bool> selectorWindowDetailsElements();
     /** Defines selector-window details-pane @a elements. */
