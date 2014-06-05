@@ -91,7 +91,51 @@ void GuestDnDSource::uninit(void)
         return;
 }
 
-// implementation of wrapped private getters/setters for attributes
+// implementation of wrapped IDnDBase methods.
+/////////////////////////////////////////////////////////////////////////////
+
+HRESULT GuestDnDSource::isFormatSupported(const com::Utf8Str &aFormat,
+                                          BOOL *aSupported)
+{
+#if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_DRAG_AND_DROP */
+
+    return GuestDnDBase::isFormatSupported(aFormat, aSupported);
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+}
+
+HRESULT GuestDnDSource::getFormats(std::vector<com::Utf8Str> &aFormats)
+{
+#if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_DRAG_AND_DROP */
+
+    return GuestDnDBase::getFormats(aFormats);
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+}
+
+HRESULT GuestDnDSource::addFormats(const std::vector<com::Utf8Str> &aFormats)
+{
+#if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_DRAG_AND_DROP */
+
+    return GuestDnDBase::addFormats(aFormats);
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+}
+
+HRESULT GuestDnDSource::removeFormats(const std::vector<com::Utf8Str> &aFormats)
+{
+#if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_DRAG_AND_DROP */
+
+    return GuestDnDBase::removeFormats(aFormats);
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+}
+
+// implementation of wrapped IDnDTarget methods.
 /////////////////////////////////////////////////////////////////////////////
 
 HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId,
@@ -134,8 +178,7 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId,
             {
                 defaultAction = GuestDnD::toMainAction(pResp->defAction());
 
-                GuestDnD::toFormatVector(GuestDnDInst()->supportedFormats(),
-                                         pResp->format(), aFormats);
+                GuestDnD::toFormatVector(m_strFormats, pResp->format(), aFormats);
                 GuestDnD::toMainActions(pResp->allActions(), aAllowedActions);
             }
         }

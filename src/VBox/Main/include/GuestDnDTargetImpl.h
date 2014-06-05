@@ -22,7 +22,8 @@
 #include "GuestDnDPrivate.h"
 
 class ATL_NO_VTABLE GuestDnDTarget :
-    public GuestDnDTargetWrap
+    public GuestDnDTargetWrap,
+    protected GuestDnDBase
 {
 public:
     /** @name COM and internal init/term/mapping cruft.
@@ -38,7 +39,15 @@ public:
 
 private:
 
-    /** Wrapped @name IDnDTarget methods.
+    /** Private wrapped @name IDnDBase methods.
+     * @{ */
+    HRESULT isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported);
+    HRESULT getFormats(std::vector<com::Utf8Str> &aFormats);
+    HRESULT addFormats(const std::vector<com::Utf8Str> &aFormats);
+    HRESULT removeFormats(const std::vector<com::Utf8Str> &aFormats);
+    /** @}  */
+
+    /** Private wrapped @name IDnDTarget methods.
      * @{ */
     HRESULT enter(ULONG aScreenId, ULONG ax, ULONG aY, DnDAction_T aDefaultAction, const std::vector<DnDAction_T> &aAllowedActions, const std::vector<com::Utf8Str> &aFormats, DnDAction_T *aResultAction);
     HRESULT move(ULONG aScreenId, ULONG aX, ULONG aY, DnDAction_T aDefaultAction, const std::vector<DnDAction_T> &aAllowedActions, const std::vector<com::Utf8Str> &aFormats, DnDAction_T *aResultAction);
