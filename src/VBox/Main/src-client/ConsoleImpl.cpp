@@ -7365,8 +7365,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
     {
         LogFlowThisFunc(("Stopping VRDP server...\n"));
 
-        /* Leave the lock since EMT will call us back as addVMCaller()
-         * in updateDisplayData(). */
+        /* Leave the lock since EMT could call us back as addVMCaller() */
         alock.release();
 
         mConsoleVRDPServer->Stop();

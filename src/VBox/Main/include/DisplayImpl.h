@@ -192,10 +192,6 @@ public:
 
     int notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM);
 
-    IFramebuffer *getFramebuffer()
-    {
-        return maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer;
-    }
     void getFramebufferDimensions(int32_t *px1, int32_t *py1, int32_t *px2, int32_t *py2);
     int getScreenResolution(uint32_t cScreen, ULONG *pcx, ULONG *pcy,
                             ULONG *pcBPP, LONG *pXOrigin, LONG *pYOrigin)
@@ -228,7 +224,6 @@ public:
     STDMETHOD(DetachFramebuffer)(ULONG aScreenId);
     STDMETHOD(QueryFramebuffer)(ULONG aScreenId,
                                 IFramebuffer **aFramebuffer);
-    STDMETHOD(GetFramebuffer)(ULONG aScreenId, IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin);
     STDMETHOD(SetVideoModeHint)(ULONG aDisplay, BOOL aEnabled, BOOL aChangeOrigin, LONG aOriginX, LONG aOriginY, ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel);
     STDMETHOD(TakeScreenShot)(ULONG aScreenId, BYTE *address, ULONG width, ULONG height);
     STDMETHOD(TakeScreenShotToArray)(ULONG aScreenId, ULONG width, ULONG height, ComSafeArrayOut(BYTE, aScreenData));
@@ -249,7 +244,6 @@ private:
 
     HRESULT querySourceBitmap(ULONG aScreenId,
                               IDisplaySourceBitmap **ppDisplaySourceBitmap);
-    int updateDisplayData(void);
 
 #ifdef VBOX_WITH_CRHGSMI
     void setupCrHgsmiData(void);

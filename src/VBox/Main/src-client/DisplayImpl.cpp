@@ -2526,7 +2526,7 @@ STDMETHODIMP Display::AttachFramebuffer(ULONG aScreenId,
     /* The driver might not have been constructed yet */
     if (mpDrv)
     {
-        /* Setup the new framebuffer, the resize will lead to an updateDisplayData call. */
+        /* Setup the new framebuffer. */
 
 #if defined(VBOX_WITH_CROGL)
         /* Release the lock, because SHCRGL_HOST_FN_SCREEN_CHANGED will read current framebuffer */
@@ -2623,36 +2623,6 @@ STDMETHODIMP Display::QueryFramebuffer(ULONG aScreenId,
     *aFramebuffer = pFBInfo->pFramebuffer;
     if (!pFBInfo->pFramebuffer.isNull())
         pFBInfo->pFramebuffer->AddRef();
-
-    return S_OK;
-}
-
-STDMETHODIMP Display::GetFramebuffer(ULONG aScreenId,
-                                     IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin)
-{
-    LogRelFlowFunc(("aScreenId=%ld\n", aScreenId));
-
-    CheckComArgOutPointerValid(aFramebuffer);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (aScreenId != 0 && aScreenId >= mcMonitors)
-        return E_INVALIDARG;
-
-    /** @todo This should be actually done on EMT. */
-    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
-    AssertPtr(pFBInfo);
-
-    *aFramebuffer = pFBInfo->pFramebuffer; /** @todo r=andy Race prone? Use a ComPtr instead? */
-    if (*aFramebuffer)
-        (*aFramebuffer)->AddRef();
-    if (aXOrigin)
-        *aXOrigin = pFBInfo->xOrigin;
-    if (aYOrigin)
-        *aYOrigin = pFBInfo->yOrigin;
 
     return S_OK;
 }
@@ -3778,85 +3748,6 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
     return hr;
 }
 
-/**
- *  Helper to update the display information from the framebuffer.
- *
- *  @thread EMT
- */
-int Display::updateDisplayData(void)
-{
-    LogRelFlowFunc(("\n"));
-
-    /* the driver might not have been constructed yet */
-    if (!mpDrv)
-        return VINF_SUCCESS;
-
-#ifdef VBOX_STRICT
-    /*
-     *  Sanity check. Note that this method may be called on EMT after Console
-     *  has started the power down procedure (but before our #drvDestruct() is
-     *  called, in which case pVM will already be NULL but mpDrv will not). Since
-     *  we don't really need pVM to proceed, we avoid this check in the release
-     *  build to save some ms (necessary to construct SafeVMPtrQuiet) in this
-     *  time-critical method.
-     */
-    Console::SafeVMPtrQuiet ptrVM(mParent);
-    if (ptrVM.isOk())
-    {
-        PVM pVM = VMR3GetVM(ptrVM.rawUVM());
-        Assert(VM_IS_EMT(pVM));
-    }
-#endif
-
-    /* The method is only relevant to the primary framebuffer. */
-    IFramebuffer *pFramebuffer = maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer;
-
-    if (pFramebuffer)
-    {
-        HRESULT rc;
-        BYTE *address = 0;
-        rc = pFramebuffer->COMGETTER(Address) (&address);
-        AssertComRC (rc);
-        ULONG bytesPerLine = 0;
-        rc = pFramebuffer->COMGETTER(BytesPerLine) (&bytesPerLine);
-        AssertComRC (rc);
-        ULONG bitsPerPixel = 0;
-        rc = pFramebuffer->COMGETTER(BitsPerPixel) (&bitsPerPixel);
-        AssertComRC (rc);
-        ULONG width = 0;
-        rc = pFramebuffer->COMGETTER(Width) (&width);
-        AssertComRC (rc);
-        ULONG height = 0;
-        rc = pFramebuffer->COMGETTER(Height) (&height);
-        AssertComRC (rc);
-
-        if (   (width  != mLastWidth  && mLastWidth != 0)
-            || (height != mLastHeight && mLastHeight != 0))
-        {
-            LogRel(("updateDisplayData: size mismatch w %d(%d) h %d(%d)\n",
-                    width, mLastWidth, height, mLastHeight));
-            return VERR_INVALID_STATE;
-        }
-
-        mpDrv->IConnector.pu8Data = (uint8_t *) address;
-        mpDrv->IConnector.cbScanline = bytesPerLine;
-        mpDrv->IConnector.cBits = bitsPerPixel;
-        mpDrv->IConnector.cx = width;
-        mpDrv->IConnector.cy = height;
-    }
-    else
-    {
-        /* black hole */
-        mpDrv->IConnector.pu8Data = NULL;
-        mpDrv->IConnector.cbScanline = 0;
-        mpDrv->IConnector.cBits = 0;
-        mpDrv->IConnector.cx = 0;
-        mpDrv->IConnector.cy = 0;
-    }
-    LogRelFlowFunc(("leave\n"));
-    return VINF_SUCCESS;
-}
-
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
 int Display::crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
 {
@@ -3968,7 +3859,7 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
     /* The driver might not have been constructed yet */
     if (that->mpDrv)
     {
-        /* Setup the new framebuffer, the resize will lead to an updateDisplayData call. */
+        /* Setup the new framebuffer. */
         DISPLAYFBINFO *pFBInfo = &that->maFramebuffers[uScreenId];
 
 #if defined(VBOX_WITH_CROGL)
