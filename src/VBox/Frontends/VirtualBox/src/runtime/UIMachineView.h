@@ -174,7 +174,7 @@ protected:
     /* Protected setters: */
     /** Store a guest size hint value to extra data, called on switching to
      * fullscreen. */
-    void storeGuestSizeHint(const QSize &sizeHint);
+    void storeGuestSizeHint(const QSize &size);
 
     /* Protected helpers: */
     virtual void takePauseShotLive();
@@ -199,9 +199,6 @@ protected:
     UIVisualStateType visualStateType() const;
     /** Is this a fullscreen-type view? */
     bool isFullscreenOrSeamless() const;
-    /** Return a string consisting of @a base with a suffix for the active
-     * virtual monitor.  Used for storing monitor-specific extra data. */
-    QString makeExtraDataKeyPerMonitor(QString base) const;
 
     /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);

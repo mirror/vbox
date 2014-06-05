@@ -180,6 +180,15 @@ public:
     /** Defines geometry for machine-window with @a uScreenIndex in @a visualStateType as @a geometry and @a fMaximized. */
     void setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QString &strId);
 
+    /** Returns last guest-screen size-hint for screen with @a uScreenIndex. */
+    QSize lastGuestSizeHint(ulong uScreenIndex, const QString &strId) const;
+    /** Defines last guest-screen size-hint for screen with @a uScreenIndex as @a size. */
+    void setLastGuestSizeHint(ulong uScreenIndex, const QSize &size, const QString &strId);
+    /** Returns whether guest size hint was for full or seamless screen with @a uScreenIndex. */
+    bool wasLastGuestSizeHintForFullScreen(ulong uScreenIndex, const QString &strId) const;
+    /** Defines whether guest size hint @a fWas for full or seamless screen with @a uScreenIndex. */
+    void markLastGuestSizeHintAsFullScreen(ulong uScreenIndex, bool fWas, const QString &strId);
+
     /** Returns whether this machine started for the first time. */
     bool isFirstRun(const QString &strId) const;
     /** Defines whether this machine started for the first time. */
@@ -299,6 +308,10 @@ private:
     /** Defines extra-data value corresponding to passed @a strKey as strValue.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
     void setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID = m_sstrGlobalID);
+
+    /** Return a string consisting of @a strBase with a suffix for the passed screen.
+      * Used for storing per-screen extra-data. */
+    static QString extraDataKeyPerScreen(const QString &strBase, ulong uScreenIndex);
 
     /** Singleton Extra-data Manager instance. */
     static UIExtraDataManager *m_pInstance;
