@@ -63,7 +63,7 @@ public:
 
     /** Assigns machine-view frame-buffer will be bounded to.
       * @param pMachineView defines machine-view this frame-buffer is bounded to. */
-    void setView(UIMachineView *pMachineView);
+    virtual void setView(UIMachineView *pMachineView);
 
     /** Defines whether frame-buffer is <b>unused</b>.
       * @note Refer to m_fUnused for more information.
