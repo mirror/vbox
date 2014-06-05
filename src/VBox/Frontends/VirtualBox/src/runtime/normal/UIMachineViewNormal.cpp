@@ -32,6 +32,7 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineViewNormal.h"
+#include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
 
 UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
@@ -170,14 +171,8 @@ void UIMachineViewNormal::maybeResendResizeHint()
 {
     if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
     {
-        /* Get the current machine: */
-        CMachine machine = session().GetMachine();
-
-        /* We send a guest size hint if needed to reverse a transition
-         * to fullscreen or seamless. */
-        QString strKey = makeExtraDataKeyPerMonitor(GUI_LastGuestSizeHintWasFullscreen);
-        QString strHintSent = machine.GetExtraData(strKey);
-        if (!strHintSent.isEmpty())
+        /* Send guest-screen size-hint if needed to reverse a transition to fullscreen or seamless: */
+        if (gEDataManager->wasLastGuestSizeHintForFullScreen(m_uScreenId, vboxGlobal().managedVMUuid()))
         {
             QSize hint = guestSizeHint();
             /* Temporarily restrict the size to prevent a brief resize to the

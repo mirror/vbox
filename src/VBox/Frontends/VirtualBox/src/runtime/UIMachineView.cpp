@@ -188,10 +188,8 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     session().GetConsole().GetDisplay().SetVideoModeHint(screenId(),
                                                          uisession()->isScreenVisible(screenId()),
                                                          false, 0, 0, newSize.width(), newSize.height(), 0);
-    /* And track whether we have had a "normal" resize since the last
-     * fullscreen resize hint was sent: */
-    QString strKey = makeExtraDataKeyPerMonitor(GUI_LastGuestSizeHintWasFullscreen);
-    machine.SetExtraData(strKey, isFullscreenOrSeamless() ? "true" : "");
+    /* And track whether we have a "normal" or "fullscreen"/"seamless" size-hint sent: */
+    gEDataManager->markLastGuestSizeHintAsFullScreen(m_uScreenId, isFullscreenOrSeamless(), vboxGlobal().managedVMUuid());
 }
 
 void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
@@ -647,47 +645,17 @@ QSize UIMachineView::maxGuestSize()
 
 QSize UIMachineView::guestSizeHint()
 {
-    /* Result: */
-    QSize sizeHint;
+    /* Load guest-screen size-hint: */
+    QSize size = gEDataManager->lastGuestSizeHint(m_uScreenId, vboxGlobal().managedVMUuid());
 
-    /* Get current machine: */
-    CMachine machine = session().GetMachine();
-
-    /* Load machine view hint: */
-    QString strKey = makeExtraDataKeyPerMonitor(GUI_LastGuestSizeHint);
-    QString strValue = machine.GetExtraData(strKey);
-
-    bool ok = true;
-    int width = 0, height = 0;
-    if (ok)
-        width = strValue.section(',', 0, 0).toInt(&ok);
-    if (ok)
-        height = strValue.section(',', 1, 1).toInt(&ok);
-
-    if (ok /* If previous parameters were read correctly! */)
-    {
-        /* Compose guest size hint from loaded values: */
-        sizeHint = QSize(width, height);
-    }
-    else
-    {
-        /* Compose guest size hint from default attributes: */
-        sizeHint = QSize(800, 600);
-    }
-
-    /* Return result: */
-    return sizeHint;
+    /* Return loaded or default: */
+    return size.isValid() ? size : QSize(800, 600);
 }
 
-void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
+void UIMachineView::storeGuestSizeHint(const QSize &size)
 {
-    /* Get current machine: */
-    CMachine machine = session().GetMachine();
-
-    /* Save machine view hint: */
-    QString strKey = makeExtraDataKeyPerMonitor(GUI_LastGuestSizeHint);
-    QString strValue = QString("%1,%2").arg(sizeHint.width()).arg(sizeHint.height());
-    machine.SetExtraData(strKey, strValue);
+    /* Save guest-screen size-hint: */
+    gEDataManager->setLastGuestSizeHint(m_uScreenId, size, vboxGlobal().managedVMUuid());
 }
 
 void UIMachineView::takePauseShotLive()
@@ -845,12 +813,6 @@ bool UIMachineView::isFullscreenOrSeamless() const
 {
     return    visualStateType() == UIVisualStateType_Fullscreen
            || visualStateType() == UIVisualStateType_Seamless;
-}
-
-QString UIMachineView::makeExtraDataKeyPerMonitor(QString base) const
-{
-    return m_uScreenId == 0 ? QString("%1").arg(base)
-                            : QString("%1%2").arg(base).arg(m_uScreenId);
 }
 
 bool UIMachineView::event(QEvent *pEvent)

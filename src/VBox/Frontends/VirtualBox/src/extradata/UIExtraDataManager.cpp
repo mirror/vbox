@@ -515,13 +515,10 @@ QRect UIExtraDataManager::machineWindowGeometry(UIVisualStateType visualStateTyp
     QString strKey;
     switch (visualStateType)
     {
-        case UIVisualStateType_Normal: strKey = GUI_LastNormalWindowPosition; break;
-        case UIVisualStateType_Scale:  strKey = GUI_LastScaleWindowPosition; break;
+        case UIVisualStateType_Normal: strKey = extraDataKeyPerScreen(GUI_LastNormalWindowPosition, uScreenIndex); break;
+        case UIVisualStateType_Scale:  strKey = extraDataKeyPerScreen(GUI_LastScaleWindowPosition, uScreenIndex); break;
         default: AssertFailedReturn(QRect());
     }
-    /* Append with screen-index: */
-    if (uScreenIndex)
-        strKey += QString::number(uScreenIndex);
 
     /* Load corresponding extra-data: */
     const QStringList data = extraDataStringList(strKey, strId);
@@ -552,13 +549,10 @@ bool UIExtraDataManager::isMachineWindowShouldBeMaximized(UIVisualStateType visu
     QString strKey;
     switch (visualStateType)
     {
-        case UIVisualStateType_Normal: strKey = GUI_LastNormalWindowPosition; break;
-        case UIVisualStateType_Scale:  strKey = GUI_LastScaleWindowPosition; break;
+        case UIVisualStateType_Normal: strKey = extraDataKeyPerScreen(GUI_LastNormalWindowPosition, uScreenIndex); break;
+        case UIVisualStateType_Scale:  strKey = extraDataKeyPerScreen(GUI_LastScaleWindowPosition, uScreenIndex); break;
         default: AssertFailedReturn(false);
     }
-    /* Append with screen-index: */
-    if (uScreenIndex)
-        strKey += QString::number(uScreenIndex);
 
     /* Load corresponding extra-data: */
     const QStringList data = extraDataStringList(strKey, strId);
@@ -573,13 +567,10 @@ void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateT
     QString strKey;
     switch (visualStateType)
     {
-        case UIVisualStateType_Normal: strKey = GUI_LastNormalWindowPosition; break;
-        case UIVisualStateType_Scale:  strKey = GUI_LastScaleWindowPosition; break;
+        case UIVisualStateType_Normal: strKey = extraDataKeyPerScreen(GUI_LastNormalWindowPosition, uScreenIndex); break;
+        case UIVisualStateType_Scale:  strKey = extraDataKeyPerScreen(GUI_LastScaleWindowPosition, uScreenIndex); break;
         default: AssertFailedReturnVoid();
     }
-    /* Append with screen-index: */
-    if (uScreenIndex)
-        strKey += QString::number(uScreenIndex);
 
     /* Serialize passed values: */
     QStringList data;
@@ -592,6 +583,62 @@ void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateT
 
     /* Re-cache corresponding extra-data: */
     setExtraDataStringList(strKey, data, strId);
+}
+
+QSize UIExtraDataManager::lastGuestSizeHint(ulong uScreenIndex, const QString &strId) const
+{
+    /* Choose corresponding key: */
+    QString strKey = extraDataKeyPerScreen(GUI_LastGuestSizeHint, uScreenIndex);
+
+    /* Load corresponding extra-data: */
+    const QStringList data = extraDataStringList(strKey, strId);
+
+    /* Parse loaded data: */
+    int iW = 0, iH = 0;
+    bool fOk = data.size() == 2;
+    do
+    {
+        if (!fOk) break;
+        iW = data[0].toInt(&fOk);
+        if (!fOk) break;
+        iH = data[1].toInt(&fOk);
+    }
+    while (0);
+
+    /* Return size (loaded or invalid): */
+    return fOk ? QSize(iW, iH) : QSize();
+}
+
+void UIExtraDataManager::setLastGuestSizeHint(ulong uScreenIndex, const QSize &size, const QString &strId)
+{
+    /* Choose corresponding key: */
+    QString strKey = extraDataKeyPerScreen(GUI_LastGuestSizeHint, uScreenIndex);
+
+    /* Serialize passed values: */
+    QStringList data;
+    data << QString::number(size.width());
+    data << QString::number(size.height());
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(strKey, data, strId);
+}
+
+bool UIExtraDataManager::wasLastGuestSizeHintForFullScreen(ulong uScreenIndex, const QString &strId) const
+{
+    /* Choose corresponding key: */
+    const QString strKey = extraDataKeyPerScreen(GUI_LastGuestSizeHintWasFullscreen, uScreenIndex);
+
+    /* True only if was stated directly: */
+    return isFeatureAllowed(strKey, strId);
+}
+
+void UIExtraDataManager::markLastGuestSizeHintAsFullScreen(ulong uScreenIndex, bool fWas, const QString &strId)
+{
+    /* Choose corresponding key: */
+    const QString strKey = extraDataKeyPerScreen(GUI_LastGuestSizeHintWasFullscreen, uScreenIndex);
+
+    /* State directly only if was true: */
+    return setExtraDataString(strKey, toFeatureAllowed(fWas), strId);
 }
 
 bool UIExtraDataManager::isFirstRun(const QString &strId) const
@@ -1137,6 +1184,12 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
         /* Update machine extra-data: */
         machine.SetExtraDataStringList(strKey, strValue);
     }
+}
+
+/* static */
+QString UIExtraDataManager::extraDataKeyPerScreen(const QString &strBase, ulong uScreenIndex)
+{
+    return uScreenIndex ? strBase + QString::number(uScreenIndex) : strBase;
 }
 
 #include "UIExtraDataManager.moc"
