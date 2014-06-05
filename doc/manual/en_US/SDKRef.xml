@@ -835,7 +835,8 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
         <para>VirtualBox also comes with object-oriented web service (OOWS)
         wrappers for PHP5. These wrappers rely on the PHP SOAP
         Extension<footnote>
-            <para>See <ulink url="???">http://www.php.net/soap</ulink>.</para>
+            <para>See
+            <ulink url="https://www.php.net/soap">https://www.php.net/soap</ulink>.</para>
           </footnote>, which can be installed by configuring PHP with
         <computeroutput>--enable-soap</computeroutput>.</para>
       </sect2>
@@ -2266,7 +2267,7 @@ String name = machine.getName();</screen>Boolean attribute getters can
     </sect1>
 
     <sect1>
-      <title>Changing machine settings. Sessions</title>
+      <title>Changing machine settings: Sessions</title>
 
       <para>As said in the previous section, to read a machine's attribute,
       one invokes the corresponding "get" method. One would think that to
@@ -3489,6 +3490,97 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
     </sect1>
   </chapter>
 
+  <chapter id="dnd">
+    <title>Drag'n Drop</title>
+
+    <para>Since VirtualBox 4.2 it's possible to transfer files from host to the
+    Linux guests by dragging files, directories or text from the host into the
+    guest's screen. This is called <emphasis>drag'n drop (DnD)</emphasis>.</para>
+
+    <para>In version 4.4 support for Windows guests has been added, as well as
+    the ability to transfer data the other way around, that is, from the guest
+    to the host.</para>
+
+    <note><para>Currently only the VirtualBox Manager frontend supports drag'n
+      drop.</para></note>
+
+    <para>This chapter will show how to use the required interfaces provided
+    by VirtualBox for adding drag'n drop functionality to third-party
+    frontends.</para>
+
+    <sect1>
+      <title>Basic concepts</title>
+
+      <para>In order to use the interfaces provided by VirtualBox, some basic
+      concepts needs to be understood first: To successfully initiate a
+      drag'n drop operation at least two sides needs to be involved, a
+      <emphasis>source</emphasis> and a <emphasis>target</emphasis>:</para>
+
+      <para>The <emphasis>source</emphasis> is the side which provides the data,
+      e.g. is the origin of data. This data can be stored within the source directly
+      or can be retrieved on-demand by the source itself. Other interfaces don't
+      care where the data from this source actually came from.</para>
+
+      <para>The <emphasis>target</emphasis> on the other hand is the side which
+      provides the source a visual representation where the user can drop the
+      data the source offers. This representation can be a window (or just a certain
+      part of it), for example.</para>
+
+      <para>The source and the target have abstract interfaces called
+      <xref linkend="IDnDSource" xreflabel="IDnDSource" /> and
+      <xref linkend="IDnDTarget" xreflabel="IDnDTarget" />. VirtualBox also
+      provides implementations of both interfaces, called
+      <xref linkend="IGuestDnDSource" xreflabel="IGuestDnDSource" /> and
+      <xref linkend="IGuestDnDTarget" xreflabel="IGuestDnDTarget" />. Both
+      implementations are also used in the VirtualBox Manager frontend.</para>
+    </sect1>
+
+    <sect1>
+      <title>Supported formats</title>
+
+      <para>As the target needs to perform specific actions depending on the data
+      the source provided, the target first needs to know what type of data it
+      actually is going to retrieve. It might be that the source offers data the
+      target cannot (or intentionally does not want to) support.</para>
+
+      <para>VirtualBox handles those data types by providing so-called
+      <emphasis>MIME types</emphasis> -- these MIME types were originally defined
+      in <ulink url="https://tools.ietf.org/html/rfc2046">RFC 2046</ulink> and
+      are also called <emphasis>Content-types</emphasis>.
+      <xref linkend="IGuestDnDSource" xreflabel="IGuestDnDSource" /> and
+      <xref linkend="IGuestDnDTarget" xreflabel="IGuestDnDTarget" /> support
+      the following MIME types by default:<itemizedlist>
+          <listitem>
+            <para><emphasis role="bold">text/uri-list</emphasis> - A list of URIs
+            (Uniform Resource Identifier, see
+            <ulink url="https://tools.ietf.org/html/rfc3986">RFC 3986</ulink>)
+            pointing to the file and/or directory paths already transferred from
+            the source to the target.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">text/plain;charset=utf-8</emphasis> and
+            <emphasis role="bold">UTF8_STRING</emphasis> - text in UTF8 format.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">text/plain, TEXT</emphasis>
+            and <emphasis role="bold">STRING</emphasis> - plain ASCII text, depending
+            on the source's active ANSI page (if any).</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+
+      <para>If, for whatever reason, a certain default format should not be supported
+      or a new format should be registered,
+      <xref linkend="IDnDSource" xreflabel="IDnDSource" /> and
+      <xref linkend="IDnDTarget" xreflabel="IDnDTarget" /> have methods derived from
+      <xref linkend="IDnDBase" xreflabel="IDnDBase" /> which provide adding,
+      removing and enumerating specific formats.
+      <note><para>Registering new or removing default formats on the guest side
+      currently is not implemented.</para></note></para>
+    </sect1>
+
+  </chapter>
+
   <chapter id="vbox-auth">
     <title>VirtualBox external authentication modules</title>
 
@@ -3621,7 +3713,7 @@ AuthResult AUTHCALL AuthEntry(
       the package is named <computeroutput>org.virtualbox_3_2</computeroutput>
       for VirtualBox version 3.2. <itemizedlist>
           <listitem>
-            <para><emphasis role="bold">XPCOM:</emphasis> - for all platforms,
+            <para><emphasis role="bold">XPCOM</emphasis> - for all platforms,
             but Microsoft Windows. A Java bridge based on JavaXPCOM is shipped
             with VirtualBox. The classpath must contain
             <computeroutput>vboxjxpcom.jar</computeroutput> and the
@@ -3636,7 +3728,7 @@ AuthResult AUTHCALL AuthEntry(
           </listitem>
 
           <listitem>
-            <para><emphasis role="bold">COM:</emphasis> - for Microsoft
+            <para><emphasis role="bold">COM</emphasis> - for Microsoft
             Windows. We rely on <computeroutput>Jacob</computeroutput> - a
             generic Java to COM bridge - which has to be installed seperately.
             See <ulink
