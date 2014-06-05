@@ -140,6 +140,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  endif # signing
 
 
+ ifndef VBOX_OSE
  #
  # VBoxNetLwf.sys - The light-weight filter driver for NDIS6.
  #
@@ -213,7 +214,7 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
  endif # signing
-
+ endif
 
 
 
