@@ -1703,10 +1703,8 @@ UIGChooserItem* UIGChooserModel::getGroupItem(const QString &strName, UIGChooser
 
 bool UIGChooserModel::shouldBeGroupOpened(UIGChooserItem *pParentItem, const QString &strName)
 {
-    /* Prepare extra-data key for the parent-item: */
-    QString strExtraDataKey = GUI_GroupDefinitions + pParentItem->fullName();
     /* Read group definitions: */
-    QStringList definitions = vboxGlobal().virtualBox().GetExtraDataStringList(strExtraDataKey);
+    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentItem->fullName());
     /* Return 'false' if no definitions found: */
     if (definitions.isEmpty())
         return false;
@@ -1715,10 +1713,8 @@ bool UIGChooserModel::shouldBeGroupOpened(UIGChooserItem *pParentItem, const QSt
     QString strDefinitionTemplate = QString("g(\\S)*=%1").arg(strName);
     QRegExp definitionRegExp(strDefinitionTemplate);
     /* For each the group definition: */
-    for (int i = 0; i < definitions.size(); ++i)
+    foreach (const QString &strDefinition, definitions)
     {
-        /* Get current definition: */
-        const QString &strDefinition = definitions[i];
         /* Check if this is required definition: */
         if (definitionRegExp.indexIn(strDefinition) == 0)
         {
@@ -1774,10 +1770,8 @@ int UIGChooserModel::getDesiredPosition(UIGChooserItem *pParentItem, UIGChooserI
 
 int UIGChooserModel::positionFromDefinitions(UIGChooserItem *pParentItem, UIGChooserItemType type, const QString &strName)
 {
-    /* Prepare extra-data key for the parent-item: */
-    QString strExtraDataKey = GUI_GroupDefinitions + pParentItem->fullName();
     /* Read group definitions: */
-    QStringList definitions = vboxGlobal().virtualBox().GetExtraDataStringList(strExtraDataKey);
+    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentItem->fullName());
     /* Return 'false' if no definitions found: */
     if (definitions.isEmpty())
         return -1;
@@ -1802,10 +1796,8 @@ int UIGChooserModel::positionFromDefinitions(UIGChooserItem *pParentItem, UIGCho
 
     /* For each the definition: */
     int iDefinitionIndex = -1;
-    for (int i = 0; i < definitions.size(); ++i)
+    foreach (const QString &strDefinition, definitions)
     {
-        /* Get current definition: */
-        QString strDefinition = definitions[i];
         /* Check if this definition is of required type: */
         if (definitionRegExpShort.indexIn(strDefinition) == 0)
         {
@@ -1883,7 +1875,7 @@ void UIGChooserModel::gatherGroupOrders(QMap<QString, QStringList> &groups,
                                         UIGChooserItem *pParentItem)
 {
     /* Prepare extra-data key for current group: */
-    QString strExtraDataKey = GUI_GroupDefinitions + pParentItem->fullName();
+    const QString strExtraDataKey = pParentItem->fullName();
     /* Iterate over all the group-items: */
     foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Group))
     {
@@ -2090,15 +2082,11 @@ void UIGroupOrderSaveThread::run()
     /* COM prepare: */
     COMBase::InitializeCOM(false);
 
-    /* Clear all the extra-data records related to group-definitions: */
-    const QVector<QString> extraDataKeys = vboxGlobal().virtualBox().GetExtraDataKeys();
-    foreach (const QString &strKey, extraDataKeys)
-        if (strKey.startsWith(GUI_GroupDefinitions))
-            vboxGlobal().virtualBox().SetExtraData(strKey, QString());
-
+    /* Clear all the extra-data records related to group definitions: */
+    gEDataManager->clearSelectorWindowGroupsDefinitions();
     /* For every particular group definition: */
     foreach (const QString &strId, m_groups.keys())
-        vboxGlobal().virtualBox().SetExtraDataStringList(strId, m_groups[strId]);
+        gEDataManager->setSelectorWindowGroupsDefinitions(strId, m_groups[strId]);
 
     /* Notify listeners about completeness: */
     emit sigComplete();

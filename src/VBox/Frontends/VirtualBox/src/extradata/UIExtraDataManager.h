@@ -151,9 +151,16 @@ public:
     /** Defines whether selector-window status-bar @a fVisible. */
     void setSelectorWindowStatusBarVisible(bool fVisible);
 
+    /** Clears all the existing selector-window chooser-pane' group definitions. */
+    void clearSelectorWindowGroupsDefinitions();
+    /** Returns selector-window chooser-pane' groups definitions for passed @a strGroupID. */
+    QStringList selectorWindowGroupsDefinitions(const QString &strGroupID) const;
+    /** Defines selector-window chooser-pane' groups definitions for passed @a strGroupID as @a definitions. */
+    void setSelectorWindowGroupsDefinitions(const QString &strGroupID, const QStringList &definitions);
+
     /** Returns last item chosen in selector-window chooser-pane. */
     QString selectorWindowLastItemChosen() const;
-    /** Returns last item chosen in selector-window chooser-pane as @a strItemID. */
+    /** Defines last item chosen in selector-window chooser-pane as @a strItemID. */
     void setSelectorWindowLastItemChosen(const QString &strItemID);
 
     /** Returns selector-window details-pane elements. */
