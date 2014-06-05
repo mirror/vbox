@@ -63,8 +63,8 @@ private:
     /** @name Wrapped Private internal methods.
      * @{ */
     /** @}  */
-     HRESULT close();
-     HRESULT read(ComPtr<IFsObjInfo> &aObjInfo);
+    HRESULT close();
+    HRESULT read(ComPtr<IFsObjInfo> &aObjInfo);
 
     struct Data
     {

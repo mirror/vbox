@@ -138,7 +138,7 @@ public:
     int                        adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) const;
     int                        hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
     GuestDnDResponse          *response(void) { return m_pResponse; }
-    std::vector<com::Utf8Str>  supportedFormats(void) const { return m_strSupportedFormats; }
+    std::vector<com::Utf8Str>  defaultFormats(void) const { return m_strDefaultFormats; }
     /** @}  */
 
 public:
@@ -162,8 +162,8 @@ protected:
 
     /** @name Singleton properties.
      * @{ */
-    /** List of supported MIME types (formats). */
-    std::vector<com::Utf8Str>  m_strSupportedFormats;
+    /** List of supported default MIME/Content-type formats. */
+    std::vector<com::Utf8Str>  m_strDefaultFormats;
     /** Pointer to guest implementation. */
     const ComObjPtr<Guest>     m_pGuest;
     /** The current (last) response from the guest. At the
@@ -190,6 +190,37 @@ private:
 
 /** Access to the GuestDnD's singleton instance. */
 #define GuestDnDInst() GuestDnD::getInstance()
+
+/**
+ * IDnDBase class implementation for sharing code between
+ * IGuestDnDSource and IGuestDnDTarget implementation.
+ */
+class GuestDnDBase
+{
+protected:
+
+    GuestDnDBase(void);
+
+protected:
+
+    /** Shared IDnDBase method implementations.
+     * @{ */
+    HRESULT isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported);
+    HRESULT getFormats(std::vector<com::Utf8Str> &aFormats);
+    HRESULT addFormats(const std::vector<com::Utf8Str> &aFormats);
+    HRESULT removeFormats(const std::vector<com::Utf8Str> &aFormats);
+    /** @}  */
+
+protected:
+
+    /** @name Attributes.
+     * @{ */
+    /** Pointer to guest implementation. */
+    const ComObjPtr<Guest>     m_pGuest;
+    /** List of supported MIME/Content-type formats. */
+    std::vector<com::Utf8Str>  m_strFormats;
+    /** @}  */
+};
 
 #endif /* ____H_GUESTDNDPRIVATE */
 

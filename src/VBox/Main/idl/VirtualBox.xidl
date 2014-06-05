@@ -10392,8 +10392,51 @@
   </enum>
 
   <interface
-    name="IDnDSource" extends="$unknown"
-    uuid="6bdc3f97-f6df-4357-b252-5fa16e0c1e24"
+    name="IDnDBase" extends="$unknown"
+    uuid="b15cf9ca-4078-4786-a1be-af773a36e19f"
+    wsmap="managed"
+    >
+    <desc>Base abstract interface for drag'n drop.</desc>
+
+    <method name="isFormatSupported" >
+      <desc>
+        Checks if a specific drag'n drop MIME / Content-type format is supported.
+      </desc>
+      <param name="format" type="wstring" dir="in">
+        <desc>Format to check for.</desc>
+      </param>
+      <param name="supported" type="boolean" dir="return">
+        <desc>Returns @c true if the specified format is supported, @c false if not.</desc>
+      </param>
+    </method>
+
+    <method name="addFormats" >
+      <desc>
+        Adds MIME / Content-type formats to the supported formats.
+      </desc>
+      <param name="formats" type="wstring" safearray="yes" dir="in">
+        <desc>Collection of formats to add.</desc>
+      </param>
+    </method>
+
+    <method name="removeFormats" >
+      <desc>
+        Removes MIME / Content-type formats from the supported formats.
+      </desc>
+      <param name="formats" type="wstring" safearray="yes" dir="in">
+        <desc>Collection of formats to remove.</desc>
+      </param>
+    </method>
+
+    <attribute name="formats" type="wstring" safearray="yes" readonly="yes">
+      <desc>Returns all supported drag'n drop formats.</desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IDnDSource" extends="IDnDBase"
+    uuid="b69c400d-be63-4255-898a-e706d66b1637"
     wsmap="managed"
     >
     <desc>Abstract interface for handling drag'n drop sources.</desc>
@@ -10472,8 +10515,8 @@
   </interface>
 
   <interface
-    name="IDnDTarget" extends="$unknown"
-    uuid="50862c12-7618-4542-a7c7-6a21de2644f7"
+    name="IDnDTarget" extends="IDnDBase"
+    uuid="2366c45c-4633-41a1-9fa6-0ef9f244434c"
     wsmap="managed"
     >
     <desc>Abstract interface for handling drag'n drop targets.</desc>

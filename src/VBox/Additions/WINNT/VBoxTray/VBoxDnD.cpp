@@ -74,6 +74,10 @@ VBoxDnDWnd::VBoxDnDWnd(void)
       mState(Uninitialized)
 {
     RT_ZERO(startupInfo);
+
+    const RTCString arrEntries[] = { VBOX_DND_FORMATS_DEFAULT };
+    for (size_t i = 0; i < RT_ELEMENTS(arrEntries); i++)
+        this->lstAllowedFormats.append(arrEntries[i]);
 }
 
 VBoxDnDWnd::~VBoxDnDWnd(void)
@@ -666,30 +670,12 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
     this->uAllActions = uAllActions;
 
     /*
-     * Install our allowed MIME types.
-     ** @todo Also see GuestDnDPrivate.cpp.
+     * Check if requested formats are compatible with this client.
      */
-    const RTCList<RTCString> lstAllowedMimeTypes = RTCList<RTCString>()
-        /* URI's */
-        << "text/uri-list"
-        /* Text */
-        << "text/plain;charset=utf-8"
-        << "UTF8_STRING"
-        << "text/plain"
-        << "TEXT"
-        << "STRING"
-        /* OpenOffice formats */
-        << "application/x-openoffice-embed-source-xml;windows_formatname=\"Star Embed Source (XML)\""
-        << "application/x-openoffice-drawing;windows_formatname=\"Drawing Format\"";
-    this->lstAllowedFormats = lstAllowedMimeTypes;
-
-    /*
-     * Check MIME compatibility with this client.
-     */
-    LogFlowThisFunc(("Supported MIME types:\n"));
+    LogFlowThisFunc(("Supported formats:\n"));
     for (size_t i = 0; i < lstFormats.size(); i++)
     {
-        bool fSupported = lstAllowedFormats.contains(lstFormats.at(i));
+        bool fSupported = this->lstAllowedFormats.contains(lstFormats.at(i));
         if (fSupported)
             this->lstFormats.append(lstFormats.at(i));
         LogFlowThisFunc(("\t%s: %RTbool\n", lstFormats.at(i).c_str(), fSupported));

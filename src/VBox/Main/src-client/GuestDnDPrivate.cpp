@@ -448,26 +448,10 @@ GuestDnD::GuestDnD(const ComObjPtr<Guest> &pGuest)
 
     m_pResponse = new GuestDnDResponse(pGuest);
 
-    /* List of supported MIME types.
-     * Note: If you add something here, make sure you test it with all supported guest OSes!
-     ** @todo Make this MIME list configurable / extendable (by extra data?). Currently
-     *        this is done hardcoded on every guest platform (*NIX/Windows).
-     */
-    const com::Utf8Str arrEntries[] = {
-        "text/uri-list",
-        /* Text */
-        "text/plain;charset=utf-8",
-        "UTF8_STRING",
-        "text/plain",
-        "TEXT",
-        "STRING",
-        /* OpenOffice formats */
-        "application/x-openoffice-embed-source-xml;windows_formatname=\"Star Embed Source (XML)\"",
-        "application/x-openoffice-drawing;windows_formatname=\"Drawing Format\"",
-    };
-
+    /* List of supported default MIME types. */
+    const com::Utf8Str arrEntries[] = { VBOX_DND_FORMATS_DEFAULT };
     for (size_t i = 0; i < RT_ELEMENTS(arrEntries); i++)
-        m_strSupportedFormats.push_back(arrEntries[0]);
+        m_strDefaultFormats.push_back(arrEntries[i]);
 }
 
 GuestDnD::~GuestDnD(void)
@@ -839,6 +823,57 @@ int GuestDnD::onGHSendFile(GuestDnDResponse *pResp,
     return rc;
 }
 # endif /* VBOX_WITH_DRAG_AND_DROP_GH */
+
+///////////////////////////////////////////////////////////////////////////////
+
+GuestDnDBase::GuestDnDBase(void)
+{
+    m_strFormats = GuestDnDInst()->defaultFormats();
+}
+
+HRESULT GuestDnDBase::isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported)
+{
+    *aSupported = std::find(m_strFormats.begin(),
+                            m_strFormats.end(), aFormat) != m_strFormats.end()
+                ? TRUE : FALSE;
+    return S_OK;
+}
+
+HRESULT GuestDnDBase::getFormats(std::vector<com::Utf8Str> &aFormats)
+{
+    aFormats = m_strFormats;
+
+    return S_OK;
+}
+
+HRESULT GuestDnDBase::addFormats(const std::vector<com::Utf8Str> &aFormats)
+{
+    for (size_t i = 0; i < aFormats.size(); ++i)
+    {
+        Utf8Str strFormat = aFormats.at(i);
+        if (std::find(m_strFormats.begin(),
+                      m_strFormats.end(), strFormat) == m_strFormats.end())
+        {
+            m_strFormats.push_back(strFormat);
+        }
+    }
+
+    return S_OK;
+}
+
+HRESULT GuestDnDBase::removeFormats(const std::vector<com::Utf8Str> &aFormats)
+{
+    for (size_t i = 0; i < aFormats.size(); ++i)
+    {
+        Utf8Str strFormat = aFormats.at(i);
+        std::vector<com::Utf8Str>::iterator itFormat = std::find(m_strFormats.begin(),
+                                                                 m_strFormats.end(), strFormat);
+        if (itFormat != m_strFormats.end())
+            m_strFormats.erase(itFormat);
+    }
+
+    return S_OK;
+}
 
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 

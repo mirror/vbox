@@ -430,8 +430,8 @@ protected:
     /** Event for notifying this instance in case of a new
      *  event. */
     RTSEMEVENT          m_hEventSem;
-
-    static const RTCList<RTCString> m_sstrStringMimeTypes;
+    /** List of allowed formats. */
+    RTCList<RTCString>  m_lstAllowedFormats;
 };
 
 /*******************************************************************************
@@ -568,20 +568,6 @@ void DragInstance::reset(void)
     m_state  = Initialized;
     m_eventQueue.clear();
 }
-
-/** @todo Move this into VBox/GuestHost ? */
-const RTCList<RTCString> DragInstance::m_sstrStringMimeTypes = RTCList<RTCString>()
-    /* Uri's */
-    << "text/uri-list"
-    /* Text */
-    << "text/plain;charset=utf-8"
-    << "UTF8_STRING"
-    << "text/plain"
-    << "TEXT"
-    << "STRING"
-    /* OpenOffice formates */
-    << "application/x-openoffice-embed-source-xml;windows_formatname=\"Star Embed Source (XML)\""
-    << "application/x-openoffice-drawing;windows_formatname=\"Drawing Format\"";
 
 int DragInstance::init(uint32_t u32ScreenId)
 {
@@ -1598,7 +1584,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                     /* For whatever reason some of the string MIME types are not
                      * zero terminated. Check that and correct it when necessary,
                      * because the guest side wants this in any case. */
-                    if (   m_sstrStringMimeTypes.contains(strFormat)
+                    if (   m_lstAllowedFormats.contains(strFormat)
                         && pcData[cbData - 1] != '\0')
                     {
                         unsigned char *pvDataTmp = static_cast<unsigned char*>(RTMemAlloc(cbData + 1));
