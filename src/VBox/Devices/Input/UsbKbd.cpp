@@ -15,6 +15,36 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/** @page pg_usb_kbd    USB Keyboard Device Emulation.
+ *
+ * This module implements a standard USB keyboard which uses the boot
+ * interface. The keyboard sends reports which have room for up to six
+ * normal keys and all standard modifier keys. A report always reflects the
+ * current state of the keyboard and indicates which keys are held down.
+ *
+ * Software normally utilizes the keyboard's interrupt endpoint to request
+ * reports to be sent whenever a state change occurs. However, reports can
+ * also be sent whenever an interrupt transfer is initiated (the keyboard is
+ * not "idle") or requested via the control endpoint (polling).
+ *
+ * Because turnaround on USB is relatively slow, the keyboard often ends up
+ * in a situation where new input arrived but there is no URB available
+ * where a report could be written to. The PDM queue maintained by the
+ * keyboard driver is utilized to provide buffering and hold incoming events
+ * until they can be passed along. The USB keyboard can effectively buffer
+ * up to one event.
+ *
+ * If there is a pending event and a new URB becomes available, a report is
+ * built and the keyboard queue is flushed. This ensures that queued events
+ * are processed as quickly as possible.
+ *
+ *
+ * References:
+ *
+ * Device Class Definition for Human Interface Devices (HID), Version 1.11
+ *
+ */
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -694,7 +724,6 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     /* If there is already a pending event, we won't accept a new one yet. */
     if (pThis->fHasPendingChanges && fHaveEvent)
     {
-        pThis->fHasPendingChanges = true;
         rc = VERR_TRY_AGAIN;
     }
     else if (fHaveEvent)
