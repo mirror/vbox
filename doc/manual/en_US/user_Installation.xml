@@ -392,7 +392,7 @@
         Ubuntu Raring system. Use <computeroutput>dpkg</computeroutput> to
         install the Debian package:</para>
 
-        <screen>sudo dpkg -i VirtualBox-3.2_$VBOX_VERSION_STRING_Ubuntu_raring_i386.deb</screen>
+        <screen>sudo dpkg -i virtualbox-4.3_$VBOX_VERSION_STRING_Ubuntu_raring_i386.deb</screen>
 
         <para>You will be asked to accept the VirtualBox Personal Use and
         Evaluation License. Unless you answer "yes" here, the installation

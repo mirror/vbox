@@ -418,6 +418,10 @@
             </listitem>
 
             <listitem>
+              <para>Windows Server 2008 R2 (64-bit)</para>
+            </listitem>
+
+            <listitem>
               <para>Windows 7 (32-bit and 64-bit)</para>
             </listitem>
 
@@ -426,7 +430,15 @@
             </listitem>
             
             <listitem>
+              <para>Windows 8.1 (32-bit and 64-bit)</para>
+            </listitem>
+            
+            <listitem>
               <para>Windows Server 2012 (64-bit)</para>
+            </listitem>
+
+            <listitem>
+              <para>Windows Server 2012 R2 (64-bit)</para>
             </listitem>
 
           </itemizedlist></para>
@@ -469,10 +481,11 @@
             1.4.</para>
           </footnote>). Among others, this includes:<itemizedlist>
             <listitem>
-              <para>10.04 ("Lucid Lynx"), 10.10 ("Maverick Meerkat),
+              <para>Ubuntu 10.04 ("Lucid Lynx"), 10.10 ("Maverick Meerkat),
               11.04 ("Natty Narwhal"), 11.10 ("Oneiric Oncelot"),
               12.04 ("Precise Pangolin"), 12.10 ("Quantal Quetzal"),
-              13.04 ("Raring Ringtail"), 13.10 ("Saucy Salamander")</para>
+              13.04 ("Raring Ringtail"), 13.10 ("Saucy Salamander"),
+              14.04 ("Trusty Tahr")</para>
             </listitem>
 
             <listitem>
@@ -488,7 +501,7 @@
             </listitem>
 
             <listitem>
-              <para>Fedora Core 6 to 19</para>
+              <para>Fedora Core 6 to 20</para>
             </listitem>
 
             <listitem>
@@ -496,11 +509,11 @@
             </listitem>
 
             <listitem>
-              <para>openSUSE 11.0, 11.1, 11.2, 11.3, 11.4, 12.1, 12.2</para>
+              <para>openSUSE 11.0, 11.1, 11.2, 11.3, 11.4, 12.1, 12.2, 13.1</para>
             </listitem>
 
             <listitem>
-              <para>Mandriva 2010 and 2011</para>
+              <para>Mandriva 2011</para>
             </listitem>
           </itemizedlist></para>
 
