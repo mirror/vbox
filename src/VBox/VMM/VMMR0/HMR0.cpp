@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,7 +14,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -1228,7 +1227,7 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
 
 
 /**
- * Does Ring-0 per VM HM initialization.
+ * Does ring-0 per-VM HM initialization.
  *
  * This will copy HM global into the VM structure and call the CPU specific
  * init routine which will allocate resources for each virtual CPU and such.
@@ -1297,7 +1296,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
 
 
 /**
- * Does Ring-0 per VM HM termination.
+ * Does ring-0 per VM HM termination.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
@@ -1460,7 +1459,7 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
 VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_HM_WRONG_CPU_1);
+    VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_HM_WRONG_CPU);
 
     RTCPUID          idCpu = RTMpCpuId();
     PHMGLOBALCPUINFO pCpu  = &g_HvmR0.aCpuInfo[idCpu];

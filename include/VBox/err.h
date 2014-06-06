@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1087,9 +1087,9 @@
 #define VINF_IOM_R3_IOPORT_READ             2620
 /** Reason for leaving RZ: I/O port write. */
 #define VINF_IOM_R3_IOPORT_WRITE            2621
-/** Reason for leaving RZ: MMIO write. */
-#define VINF_IOM_R3_MMIO_READ               2623
 /** Reason for leaving RZ: MMIO read. */
+#define VINF_IOM_R3_MMIO_READ               2623
+/** Reason for leaving RZ: MMIO write. */
 #define VINF_IOM_R3_MMIO_WRITE              2624
 /** Reason for leaving RZ: MMIO read/write. */
 #define VINF_IOM_R3_MMIO_READ_WRITE         2625
@@ -2015,7 +2015,7 @@
 /** No 32-bit to 64-bit switcher in place. */
 #define VERR_HM_NO_32_TO_64_SWITCHER                (-4106)
 /** HMR0Leave was called on the wrong CPU. */
-#define VERR_HM_WRONG_CPU_1                         (-4107)
+#define VERR_HM_WRONG_CPU                           (-4107)
 /** Internal processing error \#1 in the HM code.  */
 #define VERR_HM_IPE_1                               (-4108)
 /** Internal processing error \#2 in the HM code.  */
@@ -2028,9 +2028,9 @@
 #define VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO       (-4112)
 /** Internal processing error \#3 in the HM code.  */
 #define VERR_HM_IPE_3                               (-4113)
-/** Internal processing error \#3 in the HM code.  */
+/** Internal processing error \#4 in the HM code.  */
 #define VERR_HM_IPE_4                               (-4114)
-/** Internal processing error \#3 in the HM code.  */
+/** Internal processing error \#5 in the HM code.  */
 #define VERR_HM_IPE_5                               (-4115)
 /** Invalid HM64ON32OP value.  */
 #define VERR_HM_INVALID_HM64ON32OP                  (-4116)
@@ -2307,9 +2307,8 @@
 #define VERR_DBGC_PARSE_COMMAND_NOT_FOUND           (VERR_DBGC_PARSE_LOWEST + 24)
 /** Syntax error - buggy parser. */
 #define VERR_DBGC_PARSE_BUG                         (VERR_DBGC_PARSE_LOWEST + 25)
-
-
 /** @} */
+
 
 /** @name VBox Extension Pack Status Codes
  * @{
@@ -2326,8 +2325,6 @@
 /** @} */
 
 
-/** @} */
-
 /** @name VBox Guest Control Status Codes
  * @{
  */
@@ -2335,6 +2332,26 @@
 #define VERR_GSTCTL_GUEST_ERROR                     (-6200)
 /** A guest control object has changed its overall status. */
 #define VWRN_GSTCTL_OBJECTSTATE_CHANGED             6220
+/** @} */
+
+
+/** @name GIM Status Codes
+ * @{
+ */
+/** No GIM provider is configured for this VM. */
+#define VERR_GIM_NOT_ENABLED                        (-6300)
+/** GIM internal processing error \#1. */
+#define VERR_GIM_IPE_1                              (-6301)
+/** GIM internal processing error \#2. */
+#define VERR_GIM_IPE_2                              (-6302)
+/** GIM internal processing error \#3. */
+#define VERR_GIM_IPE_3                              (-6303)
+/** The GIM provider does not support any paravirtualized TSC. */
+#define VERR_GIM_PVTSC_NOT_AVAILABLE                (-6304)
+/** The guest has not setup use of the paravirtualized TSC. */
+#define VERR_GIM_PVTSC_NOT_ENABLED                  (-6305)
+/** Unknown or invalid GIM provider. */
+#define VERR_GIM_INVALID_PROVIDER                   (-6306)
 /** @} */
 
 

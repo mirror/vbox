@@ -146,6 +146,7 @@ extern const PDMDRVREG g_DrvDiskIntegrity;
 #ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
 extern const PDMDRVREG g_DrvPciRaw;
 #endif
+extern const PDMDEVREG g_DeviceGIMDev;
 
 #ifdef VBOX_WITH_USB
 extern const PDMUSBREG g_UsbDevProxy;

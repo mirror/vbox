@@ -19,6 +19,7 @@
 #define ___GIMInternal_h
 
 #include <VBox/vmm/gim.h>
+#include "GIMHvInternal.h"
 
 RT_C_DECLS_BEGIN
 
@@ -41,6 +42,8 @@ typedef struct GIM
     /** The interface version. */
     uint32_t                         u32Version;
 
+    /** Pointer to the GIM device - ring-3 context. */
+    R3PTRTYPE(PPDMDEVINS)            pDevInsR3;
 #if 0
     /** Pointer to the provider's ring-3 hypercall handler. */
     R3PTRTYPE(PFNGIMHYPERCALL)       pfnHypercallR3;
@@ -66,24 +69,7 @@ typedef struct GIM
 
     union
     {
-        struct
-        {
-        } minimal;
-
-        struct
-        {
-            /** Hypervisor system identity - Minor version number. */
-            uint16_t                 u16HyperIdVersionMinor;
-            /** Hypervisor system identity - Major version number. */
-            uint16_t                 u16HyperIdVersionMajor;
-            /** Hypervisor system identify - Build number. */
-            uint32_t                 u32HyperIdBuildNumber;
-
-            /** Guest OS identity MSR. */
-            uint64_t                 u64GuestOsIdMsr;
-            /** Reference TSC page MSR. */
-            uint64_t                 u64TscPageMsr;
-        } hv;
+        GIMHV Hv;
 
         /** @todo KVM and others. */
     } u;
@@ -101,9 +87,10 @@ typedef struct GIMCPU
 /** Pointer to GIM VMCPU instance data. */
 typedef GIMCPU *PGIMCPU;
 
-
-#ifdef IN_RING0
-#endif /* IN_RING0 */
+#ifdef IN_RING3
+VMM_INT_DECL(int)           GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion);
+VMM_INT_DECL(int)           GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCPhysRegion, const char *pszDesc);
+#endif /* IN_RING3 */
 
 /** @} */
 
