@@ -156,10 +156,8 @@ public:
     bool isSnapshotOperationsAllowed() const { return m_fSnapshotOperationsAllowed; }
     /** @} */
 
-    /* API: Visual-state stuff: */
-    bool isVisualStateAllowedFullscreen() const;
-    bool isVisualStateAllowedSeamless() const;
-    bool isVisualStateAllowedScale() const;
+    /** Returns whether visual @a state is allowed. */
+    bool isVisualStateAllowed(UIVisualStateType state) const;
     /** Requests visual-state change. */
     void changeVisualState(UIVisualStateType visualStateType);
     /** Requests visual-state to be entered when possible. */
