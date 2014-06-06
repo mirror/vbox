@@ -154,6 +154,13 @@ int VBoxServiceVMInfoSignal(void)
 }
 
 
+/** @copydoc VBOXSERVICE::pfnPreInit */
+static DECLCALLBACK(int) VBoxServiceVMInfoPreInit(void)
+{
+    return VINF_SUCCESS;
+}
+
+
 /** @copydoc VBOXSERVICE::pfnOption */
 static DECLCALLBACK(int) VBoxServiceVMInfoOption(const char **ppszShort, int argc, char **argv, int *pi)
 {
@@ -1590,8 +1597,7 @@ VBOXSERVICE g_VMInfo =
     "                            is 5000 (5 seconds).\n"
     ,
     /* methods */
-    /* pfnPreInit */
-    NULL,
+    VBoxServiceVMInfoPreInit,
     VBoxServiceVMInfoOption,
     VBoxServiceVMInfoInit,
     VBoxServiceVMInfoWorker,
