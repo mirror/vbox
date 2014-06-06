@@ -275,6 +275,7 @@ typedef enum AHCITXSTATE
     /** 32bit hack. */
     AHCITXSTATE_32BIT_HACK = 0x7fffffff
 } AHCITXSTATE, *PAHCITXSTATE;
+AssertCompileSize(AHCITXSTATE, sizeof(uint32_t));
 
 /** Task encountered a buffer overflow. */
 #define AHCI_REQ_OVERFLOW   RT_BIT_32(0)
@@ -5658,8 +5659,7 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort)
 
         if (VALID_PTR(pAhciReq))
         {
-            bool fXchg = false;
-            ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_CANCELED, AHCITXSTATE_ACTIVE, fXchg);
+            bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_CANCELED, AHCITXSTATE_ACTIVE);
 
             if (fXchg)
             {
@@ -5908,7 +5908,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     LogFlowFunc(("pAhciPort=%p pAhciReq=%p rcReq=%d fFreeReq=%RTbool\n",
                  pAhciPort, pAhciReq, rcReq, fFreeReq));
 
-    ASMAtomicReadSize(&pAhciReq->enmTxState, &enmTxState);
+    enmTxState = (AHCITXSTATE)ASMAtomicReadU32((volatile uint32_t *)&pAhciReq->enmTxState);
     VBOXDD_AHCI_REQ_COMPLETED(pAhciReq, rcReq, enmTxState, pAhciReq->uOffset, pAhciReq->cbTransfer);
     VBOXDD_AHCI_REQ_COMPLETED_TIMESTAMP(pAhciReq, tsNow);
 
@@ -5942,7 +5942,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, pcszReq, (tsNow - pAhciReq->tsStart) / 1000));
     }
 
-    ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
+    fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE);
 
     if (   fXchg
         && !ASMAtomicReadBool(&pAhciPort->fPortReset))
@@ -6065,7 +6065,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                   ("Task is not active but wasn't canceled!\n"));
 
         fCanceled = true;
-        ASMAtomicXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE);
+        ASMAtomicXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_FREE);
 
         if (pAhciReq->enmTxDir == AHCITXDIR_TRIM)
             ahciTrimRangesDestroy(pAhciReq);
@@ -6608,8 +6608,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             else
                 pAhciReq = pAhciPort->aCachedTasks[idx];
 
-            bool fXchg;
-            ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_ACTIVE, AHCITXSTATE_FREE, fXchg);
+            bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_ACTIVE, AHCITXSTATE_FREE);
             AssertMsg(fXchg, ("Task is already active\n"));
 
             pAhciReq->tsStart = RTTimeMilliTS();
@@ -6632,7 +6631,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                  * Do the same here and ignore any corrupt FIS types, after all
                  * the guest messed up everything and this behavior is undefined.
                  */
-                ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
+                fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE);
                 Assert(fXchg);
                 u32Tasks &= ~RT_BIT_32(idx); /* Clear task bit. */
                 idx = ASMBitFirstSetU32(u32Tasks);
@@ -6660,7 +6659,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 else /* We are not in a reset state update the control registers. */
                     AssertMsgFailed(("%s: Update the control register\n", __FUNCTION__));
 
-                ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
+                fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE);
                 AssertMsg(fXchg, ("Task is not active\n"));
                 break;
             }
