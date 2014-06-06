@@ -234,6 +234,11 @@ public:
     /** Defines requested Runtime UI visual-state as @a visualState. */
     void setRequestedVisualState(UIVisualStateType visualState, const QString &strID);
 
+    /** Returns host-screen index corresponding to passed guest-screen @a iGuestScreenIndex. */
+    int hostScreenForPassedGuestScreen(int iGuestScreenIndex, const QString &strID);
+    /** Defines host-screen index corresponding to passed guest-screen @a iGuestScreenIndex as @a iHostScreenIndex. */
+    void setHostScreenForPassedGuestScreen(int iGuestScreenIndex, int iHostScreenIndex, const QString &strID);
+
     /** Returns default machine close action. */
     MachineCloseAction defaultMachineCloseAction(const QString &strID) const;
     /** Returns restricted machine close actions. */
@@ -314,9 +319,9 @@ private:
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
     void setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID = m_sstrGlobalID);
 
-    /** Return a string consisting of @a strBase with a suffix for the passed screen.
-      * Used for storing per-screen extra-data. */
-    static QString extraDataKeyPerScreen(const QString &strBase, ulong uScreenIndex);
+    /** Returns string consisting of @a strBase appended with @a uScreenIndex for the *non-primary* screen-index.
+      * If @a fSameRuleForPrimary is 'true' same rule will be used for *primary* screen-index. Used for storing per-screen extra-data. */
+    static QString extraDataKeyPerScreen(const QString &strBase, ulong uScreenIndex, bool fSameRuleForPrimary = false);
 
     /** Singleton Extra-data Manager instance. */
     static UIExtraDataManager *m_pInstance;

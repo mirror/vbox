@@ -825,6 +825,29 @@ MachineCloseAction UIExtraDataManager::defaultMachineCloseAction(const QString &
     return gpConverter->fromInternalString<MachineCloseAction>(extraDataString(GUI_DefaultCloseAction, strID));
 }
 
+int UIExtraDataManager::hostScreenForPassedGuestScreen(int iGuestScreenIndex, const QString &strID)
+{
+    /* Choose corresponding key: */
+    const QString strKey = extraDataKeyPerScreen(GUI_VirtualScreenToHostScreen, iGuestScreenIndex, true);
+
+    /* Load value and convert it to index: */
+    const QString strValue = extraDataString(strKey, strID);
+    bool fOk = false;
+    const int iHostScreenIndex = strValue.toULong(&fOk);
+
+    /* Return corresponding index: */
+    return fOk ? iHostScreenIndex : -1;
+}
+
+void UIExtraDataManager::setHostScreenForPassedGuestScreen(int iGuestScreenIndex, int iHostScreenIndex, const QString &strID)
+{
+    /* Choose corresponding key: */
+    const QString strKey = extraDataKeyPerScreen(GUI_VirtualScreenToHostScreen, iGuestScreenIndex, true);
+
+    /* Save passed index under corresponding value: */
+    setExtraDataString(strKey, iHostScreenIndex != -1 ? QString::number(iHostScreenIndex) : QString(), strID);
+}
+
 MachineCloseAction UIExtraDataManager::restrictedMachineCloseActions(const QString &strID) const
 {
     /* Prepare result: */
@@ -1202,9 +1225,9 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
 }
 
 /* static */
-QString UIExtraDataManager::extraDataKeyPerScreen(const QString &strBase, ulong uScreenIndex)
+QString UIExtraDataManager::extraDataKeyPerScreen(const QString &strBase, ulong uScreenIndex, bool fSameRuleForPrimary /* = false */)
 {
-    return uScreenIndex ? strBase + QString::number(uScreenIndex) : strBase;
+    return fSameRuleForPrimary || uScreenIndex ? strBase + QString::number(uScreenIndex) : strBase;
 }
 
 #include "UIExtraDataManager.moc"
