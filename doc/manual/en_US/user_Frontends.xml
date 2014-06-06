@@ -361,11 +361,10 @@
 
       <para>To make a remote USB device available to a VM,
       <computeroutput>rdesktop-vrdp</computeroutput> should be started as
-      follows:<screen>rdesktop-vrdp -r usb -a 16 -N my.host.address</screen>Note
-      that <computeroutput>rdesktop-vrdp</computeroutput> can access USB
-      devices only through <computeroutput>/proc/bus/usb</computeroutput>.
+      follows:<screen>rdesktop-vrdp -r usb -a 16 -N my.host.address</screen>
       Please refer to <xref linkend="ts_usb-linux" /> for further details on how
-      to properly set up the permissions. Furthermore it is advisable to
+      to properly set up the permissions for USB devices. Furthermore it is
+      advisable to
       disable automatic loading of any host driver on the remote host which
       might work on USB devices to ensure that the devices are accessible by
       the RDP client. If the setup was properly done on the remote host,
