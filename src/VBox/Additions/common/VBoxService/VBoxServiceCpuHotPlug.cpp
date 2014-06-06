@@ -396,32 +396,6 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
 #endif /* RT_OS_LINUX */
 
 
-/** @copydoc VBOXSERVICE::pfnPreInit */
-static DECLCALLBACK(int) VBoxServiceCpuHotPlugPreInit(void)
-{
-    return VINF_SUCCESS;
-}
-
-
-/** @copydoc VBOXSERVICE::pfnOption */
-static DECLCALLBACK(int) VBoxServiceCpuHotPlugOption(const char **ppszShort, int argc, char **argv, int *pi)
-{
-    NOREF(ppszShort);
-    NOREF(argc);
-    NOREF(argv);
-    NOREF(pi);
-
-    return -1;
-}
-
-
-/** @copydoc VBOXSERVICE::pfnInit */
-static DECLCALLBACK(int) VBoxServiceCpuHotPlugInit(void)
-{
-    return VINF_SUCCESS;
-}
-
-
 /**
  * Handles VMMDevCpuEventType_Plug.
  *
@@ -619,15 +593,8 @@ static DECLCALLBACK(void) VBoxServiceCpuHotPlugStop(void)
 }
 
 
-/** @copydoc VBOXSERVICE::pfnTerm */
-static DECLCALLBACK(void) VBoxServiceCpuHotPlugTerm(void)
-{
-    return;
-}
-
-
 /**
- * The 'timesync' service description.
+ * The 'CpuHotPlug' service description.
  */
 VBOXSERVICE g_CpuHotPlug =
 {
@@ -640,11 +607,11 @@ VBOXSERVICE g_CpuHotPlug =
     /* pszOptions. */
     NULL,
     /* methods */
-    VBoxServiceCpuHotPlugPreInit,
-    VBoxServiceCpuHotPlugOption,
-    VBoxServiceCpuHotPlugInit,
+    VBoxServiceDefaultPreInit,
+    VBoxServiceDefaultOption,
+    VBoxServiceDefaultInit,
     VBoxServiceCpuHotPlugWorker,
     VBoxServiceCpuHotPlugStop,
-    VBoxServiceCpuHotPlugTerm
+    VBoxServiceDefaultTerm
 };
 

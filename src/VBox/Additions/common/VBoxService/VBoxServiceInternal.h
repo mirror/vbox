@@ -94,6 +94,13 @@ typedef VBOXSERVICE *PVBOXSERVICE;
 /** Pointer to a const VBOXSERVICE. */
 typedef VBOXSERVICE const *PCVBOXSERVICE;
 
+/* Default call-backs for services which do not need special behaviour. */
+DECLCALLBACK(int) VBoxServiceDefaultPreInit(void);
+DECLCALLBACK(int) VBoxServiceDefaultOption(const char **ppszShort, int argc,
+                                           char **argv, int *pi);
+DECLCALLBACK(int) VBoxServiceDefaultInit(void);
+DECLCALLBACK(void) VBoxServiceDefaultTerm(void);
+
 /** The service name.
  * @note Used on windows to name the service as well as the global mutex. */
 #define VBOXSERVICE_NAME            "VBoxService"

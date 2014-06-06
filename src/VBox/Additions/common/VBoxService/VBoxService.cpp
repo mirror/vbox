@@ -139,6 +139,37 @@ static struct
 #endif
 };
 
+/* Default call-backs for services which do not need special behaviour. */
+
+/** @copydoc VBOXSERVICE::pfnPreInit */
+DECLCALLBACK(int) VBoxServiceDefaultPreInit(void)
+{
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VBOXSERVICE::pfnOption */
+DECLCALLBACK(int) VBoxServiceDefaultOption(const char **ppszShort, int argc,
+                                           char **argv, int *pi)
+{
+    NOREF(ppszShort);
+    NOREF(argc);
+    NOREF(argv);
+    NOREF(pi);
+
+    return -1;
+}
+
+/** @copydoc VBOXSERVICE::pfnInit */
+DECLCALLBACK(int) VBoxServiceDefaultInit(void)
+{
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VBOXSERVICE::pfnTerm */
+DECLCALLBACK(void) VBoxServiceDefaultTerm(void)
+{
+    return;
+}
 
 /**
  * Release logger callback.
@@ -600,6 +631,11 @@ int VBoxServiceStartServices(void)
          * the thread's actual worker loop. If the thread decides
          * to exit the loop before we skipped the fShutdown check
          * below the service will fail to start! */
+        /** @todo This presumably means either a one-shot service or that
+         * something has gone wrong.  In the second case treating it as failure
+         * to start is probably right, so we need a way to signal the first
+         * rather than leaving the idle thread hanging around.  A flag in the
+         * service description? */
         RTThreadUserWait(g_aServices[j].Thread, 60 * 1000);
         if (g_aServices[j].fShutdown)
         {
