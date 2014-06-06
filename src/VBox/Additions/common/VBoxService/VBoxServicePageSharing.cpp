@@ -524,6 +524,25 @@ void VBoxServicePageSharingInspectGuest()
 }
 #endif
 
+/** @copydoc VBOXSERVICE::pfnPreInit */
+static DECLCALLBACK(int) VBoxServicePageSharingPreInit(void)
+{
+    return VINF_SUCCESS;
+}
+
+
+/** @copydoc VBOXSERVICE::pfnOption */
+static DECLCALLBACK(int) VBoxServicePageSharingOption(const char **ppszShort, int argc, char **argv, int *pi)
+{
+    NOREF(ppszShort);
+    NOREF(argc);
+    NOREF(argv);
+    NOREF(pi);
+
+    return -1;
+}
+
+
 /** @copydoc VBOXSERVICE::pfnInit */
 static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
 {
@@ -711,6 +730,13 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
 
 #endif /* RT_OS_WINDOWS */
 
+/** @copydoc VBOXSERVICE::pfnTerm */
+static DECLCALLBACK(void) VBoxServicePageSharingTerm(void)
+{
+    VBoxServiceVerbose(3, "VBoxServicePageSharingTerm\n");
+}
+
+
 /** @copydoc VBOXSERVICE::pfnStop */
 static DECLCALLBACK(void) VBoxServicePageSharingStop(void)
 {
@@ -732,10 +758,8 @@ VBOXSERVICE g_PageSharing =
     /* pszOptions. */
     NULL,
     /* methods */
-    /* pfnPreInit */
-    NULL,
-    /* pfnOption */
-    NULL,
+    VBoxServicePageSharingPreInit,
+    VBoxServicePageSharingOption,
     VBoxServicePageSharingInit,
 #ifdef RT_OS_WINDOWS
     VBoxServicePageSharingWorkerProcess,
@@ -743,6 +767,5 @@ VBOXSERVICE g_PageSharing =
     VBoxServicePageSharingWorker,
 #endif
     VBoxServicePageSharingStop,
-    /* pfnTerm */
-    NULL
+    VBoxServicePageSharingTerm
 };

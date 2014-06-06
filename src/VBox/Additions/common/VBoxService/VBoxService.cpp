@@ -489,13 +489,9 @@ static RTEXITCODE vboxServiceLazyPreInit(void)
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
         if (!g_aServices[j].fPreInited)
         {
-            if (g_aServices[j].pDesc->pfnPreInit != NULL)
-            {
-                int rc = g_aServices[j].pDesc->pfnPreInit();
-                if (RT_FAILURE(rc))
-                    return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n",
-                                            g_aServices[j].pDesc->pszName, rc);
-            }
+            int rc = g_aServices[j].pDesc->pfnPreInit();
+            if (RT_FAILURE(rc))
+                return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName, rc);
             g_aServices[j].fPreInited = true;
         }
     return RTEXITCODE_SUCCESS;
@@ -559,7 +555,7 @@ int VBoxServiceStartServices(void)
      */
     VBoxServiceVerbose(2, "Initializing services ...\n");
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-        if (g_aServices[j].fEnabled && g_aServices[j].pDesc->pfnInit != NULL)
+        if (g_aServices[j].fEnabled)
         {
             rc = g_aServices[j].pDesc->pfnInit();
             if (RT_FAILURE(rc))
@@ -604,9 +600,6 @@ int VBoxServiceStartServices(void)
          * the thread's actual worker loop. If the thread decides
          * to exit the loop before we skipped the fShutdown check
          * below the service will fail to start! */
-        /** @todo This presumably means either a one-shot service or that
-         * something has gone wrong.  In the second case treating it as failure
-         * to start is probably right, so we need a way to signal the first. */
         RTThreadUserWait(g_aServices[j].Thread, 60 * 1000);
         if (g_aServices[j].fShutdown)
         {
@@ -646,7 +639,7 @@ int VBoxServiceStopServices(void)
      * Do the pfnStop callback on all running services.
      */
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-        if (g_aServices[j].fStarted && g_aServices[j].pDesc->pfnStop != NULL)
+        if (g_aServices[j].fStarted)
         {
             VBoxServiceVerbose(3, "Calling stop function for service '%s' ...\n", g_aServices[j].pDesc->pszName);
             g_aServices[j].pDesc->pfnStop();
@@ -662,8 +655,7 @@ int VBoxServiceStopServices(void)
     {
         if (!g_aServices[j].fEnabled) /* Only stop services which were started before. */
             continue;
-        if (   g_aServices[j].Thread != NIL_RTTHREAD
-            && g_aServices[j].pDesc->pfnStop != NULL)
+        if (g_aServices[j].Thread != NIL_RTTHREAD)
         {
             VBoxServiceVerbose(2, "Waiting for service '%s' to stop ...\n", g_aServices[j].pDesc->pszName);
             int rc2 = VINF_SUCCESS;
@@ -683,12 +675,8 @@ int VBoxServiceStopServices(void)
                 rc = rc2;
             }
         }
-        if (g_aServices[j].pDesc->pfnTerm != NULL)
-        {
-            VBoxServiceVerbose(3, "Terminating service '%s' (%d) ...\n",
-                               g_aServices[j].pDesc->pszName, j);
-            g_aServices[j].pDesc->pfnTerm();
-        }
+        VBoxServiceVerbose(3, "Terminating service '%s' (%d) ...\n", g_aServices[j].pDesc->pszName, j);
+        g_aServices[j].pDesc->pfnTerm();
     }
 
 #ifdef RT_OS_WINDOWS
@@ -917,8 +905,6 @@ int main(int argc, char **argv)
                         return rcExit;
                     for (unsigned j = 0; !fFound && j < RT_ELEMENTS(g_aServices); j++)
                     {
-                        if (g_aServices[j].pDesc->pfnOption == NULL)
-                            continue;
                         rc = g_aServices[j].pDesc->pfnOption(NULL, argc, argv, &i);
                         fFound = rc == VINF_SUCCESS;
                         if (fFound)
@@ -990,8 +976,6 @@ int main(int argc, char **argv)
                     bool fFound = false;
                     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
                     {
-                        if (g_aServices[j].pDesc->pfnOption == NULL)
-                            continue;
                         rc = g_aServices[j].pDesc->pfnOption(&psz, argc, argv, &i);
                         fFound = rc == VINF_SUCCESS;
                         if (fFound)
