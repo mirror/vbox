@@ -6576,10 +6576,14 @@ HRESULT Machine::getPCIDeviceAssignments(std::vector<ComPtr<IPCIDeviceAttachment
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SafeIfaceArray<IPCIDeviceAttachment> assignments(mHWData->mPCIDeviceAssignments);
-    aPCIDeviceAssignments.resize(assignments.size());
-    for (size_t i = 0; i < assignments.size(); ++i)
-        aPCIDeviceAssignments[i] = assignments[i];
+    aPCIDeviceAssignments.resize(mHWData->mPCIDeviceAssignments.size());
+
+    size_t i = 0;
+    for (std::list<ComObjPtr<PCIDeviceAttachment> >::const_iterator it = mHWData->mPCIDeviceAssignments.begin();
+         it != mHWData->mPCIDeviceAssignments.end();
+         ++i, ++it)
+        (*it).queryInterfaceTo(aPCIDeviceAssignments[i].asOutParam());
+
     return S_OK;
 }
 
