@@ -92,13 +92,9 @@ void UIMultiScreenLayout::update()
         if (!fValid)
         {
             /* If the user ever selected a combination in the view menu, we have the following entry: */
-            QString strTest = machine.GetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(iGuestScreen));
-            bool fOk;
-            /* Check is this value can be converted: */
-            iHostScreen = strTest.toInt(&fOk);
+            iHostScreen = gEDataManager->hostScreenForPassedGuestScreen(iGuestScreen, vboxGlobal().managedVMUuid());
             /* Revalidate: */
-            fValid =    fOk /* Valid data */
-                     && iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
+            fValid =    iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
                      && m_screenMap.key(iHostScreen, -1) == -1; /* Not taken already? */
         }
 
@@ -378,10 +374,7 @@ void UIMultiScreenLayout::updateMenuActions(bool fWithSave)
         int iGuestScreen = m_guestScreens[iViewAction];
         int iHostScreen = m_screenMap.value(iGuestScreen, -1);
         if (fWithSave)
-        {
-            QString strHostScreen(iHostScreen != -1 ? QString::number(iHostScreen) : QString());
-            machine.SetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(iViewAction), strHostScreen);
-        }
+            gEDataManager->setHostScreenForPassedGuestScreen(iViewAction, iHostScreen, vboxGlobal().managedVMUuid());
         QList<QAction*> screenActions = viewActions.at(iViewAction)->menu()->actions();
         /* Update screen actions: */
         for (int j = 0; j < screenActions.size(); ++j)
