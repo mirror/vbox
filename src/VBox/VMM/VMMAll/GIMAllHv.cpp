@@ -36,9 +36,22 @@
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtx            Pointer to the guest-CPU context.
  */
-VMMDECL(int) GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(int) GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Returns whether the guest has configured and enabled the use of Hyper-V's
+ * paravirtualized TSC.
+ *
+ * @returns true if paravirt. TSC is enabled, false otherwise.
+ * @param   pVM     Pointer to the VM.
+ */
+VMM_INT_DECL(bool) GIMHvIsParavirtTscEnabled(PVM pVM)
+{
+    return MSR_GIM_HV_REF_TSC_IS_ENABLED(pVM->gim.s.u.Hv.u64TscPageMsr);
 }
 
 
@@ -50,7 +63,7 @@ VMMDECL(int) GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   u64Offset   The computed TSC offset.
  * @thread EMT(pVCpu)
  */
-VMMDECL(int) GIMHvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
+VMM_INT_DECL(int) GIMHvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
 {
     Assert(GIMIsEnabled(pVM));
     bool fHvTscEnabled = MSR_GIM_HV_REF_TSC_IS_ENABLED(pVM->gim.s.u.Hv.u64TscPageMsr);
@@ -80,7 +93,7 @@ VMMDECL(int) GIMHvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
  * @param   pRange      The range this MSR belongs to.
  * @param   puValue     Where to store the MSR value read.
  */
-VMMDECL(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+VMM_INT_DECL(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     NOREF(pRange);
     PVM    pVM = pVCpu->CTX_SUFF(pVM);
@@ -139,12 +152,11 @@ VMMDECL(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, u
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   idMsr       The MSR being written.
  * @param   pRange      The range this MSR belongs to.
- * @param   uValue      The value to set, ignored bits masked.
  * @param   uRawValue   The raw value with the ignored bits not masked.
  */
-VMMDECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
 {
-    NOREF(pRange); NOREF(uValue);
+    NOREF(pRange);
     PVM    pVM = pVCpu->CTX_SUFF(pVM);
     PGIMHV pHv = &pVM->gim.s.u.Hv;
 
