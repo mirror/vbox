@@ -226,8 +226,13 @@ public:
     /** Returns restricted Runtime UI action types for Help menu. */
     RuntimeMenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QString &strID) const;
 
-    /** Returns restricted Runtime UI visual-state types. */
-    UIVisualStateType restrictedVisualStateTypes(const QString &strID) const;
+    /** Returns restricted Runtime UI visual-states. */
+    UIVisualStateType restrictedVisualStates(const QString &strID) const;
+
+    /** Returns requested Runtime UI visual-state. */
+    UIVisualStateType requestedVisualState(const QString &strID) const;
+    /** Defines requested Runtime UI visual-state as @a visualState. */
+    void setRequestedVisualState(UIVisualStateType visualState, const QString &strID);
 
     /** Returns default machine close action. */
     MachineCloseAction defaultMachineCloseAction(const QString &strID) const;

@@ -4020,8 +4020,7 @@ void VBoxGlobal::prepare()
 
     /* process command line */
 
-    bool bForceSeamless = false;
-    bool bForceFullscreen = false;
+    UIVisualStateType visualStateType = UIVisualStateType_Invalid;
 
 #ifdef Q_WS_X11
     mIsKWinManaged = X11IsWindowManagerKWin();
@@ -4066,13 +4065,17 @@ void VBoxGlobal::prepare()
                 m_strPidfile = QString(qApp->argv()[i]);
         }
 #endif /* VBOX_GUI_WITH_PIDFILE */
-        else if (!::strcmp(arg, "-seamless") || !::strcmp(arg, "--seamless"))
-        {
-            bForceSeamless = true;
-        }
         else if (!::strcmp(arg, "-fullscreen") || !::strcmp(arg, "--fullscreen"))
         {
-            bForceFullscreen = true;
+            visualStateType = UIVisualStateType_Fullscreen;
+        }
+        else if (!::strcmp(arg, "-seamless") || !::strcmp(arg, "--seamless"))
+        {
+            visualStateType = UIVisualStateType_Seamless;
+        }
+        else if (!::strcmp(arg, "-scale") || !::strcmp(arg, "--scale"))
+        {
+            visualStateType = UIVisualStateType_Scale;
         }
         else if (!::strcmp (arg, "-comment") || !::strcmp (arg, "--comment"))
         {
@@ -4235,14 +4238,8 @@ void VBoxGlobal::prepare()
     if (mSettingsPwSet)
         mVBox.SetSettingsSecret(mSettingsPw);
 
-    if (bForceSeamless && !vmUuid.isEmpty())
-    {
-        mVBox.FindMachine(vmUuid).SetExtraData(GUI_Seamless, "on");
-    }
-    else if (bForceFullscreen && !vmUuid.isEmpty())
-    {
-        mVBox.FindMachine(vmUuid).SetExtraData(GUI_Fullscreen, "on");
-    }
+    if (visualStateType != UIVisualStateType_Invalid && !vmUuid.isEmpty())
+        gEDataManager->setRequestedVisualState(visualStateType, vmUuid);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* setup the debugger gui. */

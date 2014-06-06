@@ -88,7 +88,7 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     , m_session(session)
     , m_pSession(0)
     , m_pVisualState(0)
-    , m_allowedVisualStateTypes(UIVisualStateType_Invalid)
+    , m_allowedVisualStates(UIVisualStateType_Invalid)
 {
     /* Store self pointer: */
     if (m_ppThis)
@@ -195,55 +195,26 @@ UIMachineLogic* UIMachine::machineLogic() const
 
 void UIMachine::loadMachineSettings()
 {
-    /* Load machine settings: */
-    CMachine machine = uisession()->session().GetMachine();
-    UIVisualStateType restrictedVisualStateTypes = gEDataManager->restrictedVisualStateTypes(vboxGlobal().managedVMUuid());
-    m_allowedVisualStateTypes = static_cast<UIVisualStateType>(UIVisualStateType_All ^ restrictedVisualStateTypes);
-
-    /* Load extra-data settings: */
+    /* Load 'visual state' option: */
     {
-        /* Machine while saving own settings will save "on" only for current
-         * visual representation mode if its differs from normal mode of course.
-         * But user can alter extra data manually in machine xml file and set there
-         * more than one visual representation mode flags. Shame on such user!
-         * There is no reason to enter in more than one visual representation mode
-         * at machine start, so we are choosing first of requested modes: */
-        bool fIsSomeExtendedModeChosen = false;
+        /* Load restricted visual states: */
+        UIVisualStateType restrictedVisualStates = gEDataManager->restrictedVisualStates(vboxGlobal().managedVMUuid());
+        /* Acquire allowed visual states: */
+        m_allowedVisualStates = static_cast<UIVisualStateType>(UIVisualStateType_All ^ restrictedVisualStates);
 
-        if (!fIsSomeExtendedModeChosen)
+        /* Load requested visual state: */
+        UIVisualStateType requestedVisualState = gEDataManager->requestedVisualState(vboxGlobal().managedVMUuid());
+        /* Check if requested visual state type allowed: */
+        if (isVisualStateAllowed(requestedVisualState))
         {
-            /* Test 'scale' flag: */
-            QString strScaleSettings = machine.GetExtraData(GUI_Scale);
-            if (strScaleSettings == "on" && isVisualStateAllowedScale())
+            switch (requestedVisualState)
             {
-                fIsSomeExtendedModeChosen = true;
-                /* We can enter scale mode initially: */
-                initialStateType = UIVisualStateType_Scale;
-            }
-        }
-
-        if (!fIsSomeExtendedModeChosen)
-        {
-            /* Test 'seamless' flag: */
-            QString strSeamlessSettings = machine.GetExtraData(GUI_Seamless);
-            if (strSeamlessSettings == "on" && isVisualStateAllowedSeamless())
-            {
-                fIsSomeExtendedModeChosen = true;
-                /* We can't enter seamless mode initially,
-                 * so we should ask ui-session for that: */
-                uisession()->setRequestedVisualState(UIVisualStateType_Seamless);
-            }
-        }
-
-        if (!fIsSomeExtendedModeChosen)
-        {
-            /* Test 'fullscreen' flag: */
-            QString strFullscreenSettings = machine.GetExtraData(GUI_Fullscreen);
-            if (strFullscreenSettings == "on" && isVisualStateAllowedFullscreen())
-            {
-                fIsSomeExtendedModeChosen = true;
-                /* We can enter fullscreen mode initially: */
-                initialStateType = UIVisualStateType_Fullscreen;
+                /* Direct transition to scale/fullscreen mode allowed: */
+                case UIVisualStateType_Scale: initialStateType = UIVisualStateType_Scale; break;
+                case UIVisualStateType_Fullscreen: initialStateType = UIVisualStateType_Fullscreen; break;
+                /* While to seamless is not, so we have to request transition on GA capability-change event: */
+                case UIVisualStateType_Seamless: uisession()->setRequestedVisualState(UIVisualStateType_Seamless); break;
+                default: break;
             }
         }
     }
@@ -251,41 +222,20 @@ void UIMachine::loadMachineSettings()
 
 void UIMachine::saveMachineSettings()
 {
-    /* Save machine settings: */
-    CMachine machine = uisession()->session().GetMachine();
-
-    /* Save extra-data settings: */
+    /* Save 'visual state' option: */
     {
-        /* Prepare extra-data values: */
-        QString strFullscreenRequested;
-        QString strSeamlessRequested;
-        QString strScaleRequested;
-        /* Check if some state was requested: */
-        if (uisession()->requestedVisualState() != UIVisualStateType_Invalid)
+        /* Get requested visual state: */
+        UIVisualStateType requestedVisualState = uisession()->requestedVisualState();
+
+        /* If requested state is invalid: */
+        if (requestedVisualState == UIVisualStateType_Invalid)
         {
-            switch (uisession()->requestedVisualState())
-            {
-                case UIVisualStateType_Fullscreen: strFullscreenRequested = "on"; break;
-                case UIVisualStateType_Seamless: strSeamlessRequested = "on"; break;
-                case UIVisualStateType_Scale: strScaleRequested = "on"; break;
-                default: break;
-            }
+            /* Get current if still exists or normal otherwise: */
+            requestedVisualState = m_pVisualState ? m_pVisualState->visualStateType() : UIVisualStateType_Normal;
         }
-        /* Check if some state still exists: */
-        else if (m_pVisualState)
-        {
-            switch (m_pVisualState->visualStateType())
-            {
-                case UIVisualStateType_Fullscreen: strFullscreenRequested = "on"; break;
-                case UIVisualStateType_Seamless: strSeamlessRequested = "on"; break;
-                case UIVisualStateType_Scale: strScaleRequested = "on"; break;
-                default: break;
-            }
-        }
-        /* Rewrite extra-data values: */
-        machine.SetExtraData(GUI_Fullscreen, strFullscreenRequested);
-        machine.SetExtraData(GUI_Seamless, strSeamlessRequested);
-        machine.SetExtraData(GUI_Scale, strScaleRequested);
+
+        /* Save requested visual state: */
+        gEDataManager->setRequestedVisualState(requestedVisualState, vboxGlobal().managedVMUuid());
     }
 }
 

@@ -355,11 +355,11 @@ void UIMachineMenuBar::prepareMenuView(QMenu *pMenu)
 
 
     /* Mode flags: */
-    bool fIsAllowedFullscreen = m_pSession->isVisualStateAllowedFullscreen() &&
+    bool fIsAllowedFullscreen = m_pSession->isVisualStateAllowed(UIVisualStateType_Fullscreen) &&
                                 (m_pSession->allowedActionsMenuView() & RuntimeMenuViewActionType_Fullscreen);
-    bool fIsAllowedSeamless = m_pSession->isVisualStateAllowedSeamless() &&
+    bool fIsAllowedSeamless = m_pSession->isVisualStateAllowed(UIVisualStateType_Seamless) &&
                               (m_pSession->allowedActionsMenuView() & RuntimeMenuViewActionType_Seamless);
-    bool fIsAllowedScale = m_pSession->isVisualStateAllowedScale() &&
+    bool fIsAllowedScale = m_pSession->isVisualStateAllowed(UIVisualStateType_Scale) &&
                            (m_pSession->allowedActionsMenuView() & RuntimeMenuViewActionType_Scale);
 
     /* Fullscreen action: */

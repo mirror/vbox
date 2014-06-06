@@ -790,7 +790,7 @@ RuntimeMenuHelpActionType UIExtraDataManager::restrictedRuntimeMenuHelpActionTyp
     return result;
 }
 
-UIVisualStateType UIExtraDataManager::restrictedVisualStateTypes(const QString &strID) const
+UIVisualStateType UIExtraDataManager::restrictedVisualStates(const QString &strID) const
 {
     /* Prepare result: */
     UIVisualStateType result = UIVisualStateType_Invalid;
@@ -803,6 +803,21 @@ UIVisualStateType UIExtraDataManager::restrictedVisualStateTypes(const QString &
     }
     /* Return result: */
     return result;
+}
+
+UIVisualStateType UIExtraDataManager::requestedVisualState(const QString &strID) const
+{
+    if (isFeatureAllowed(GUI_Fullscreen, strID)) return UIVisualStateType_Fullscreen;
+    if (isFeatureAllowed(GUI_Seamless, strID)) return UIVisualStateType_Seamless;
+    if (isFeatureAllowed(GUI_Scale, strID)) return UIVisualStateType_Scale;
+    return UIVisualStateType_Normal;
+}
+
+void UIExtraDataManager::setRequestedVisualState(UIVisualStateType visualState, const QString &strID)
+{
+    setExtraDataString(GUI_Fullscreen, toFeatureAllowed(visualState == UIVisualStateType_Fullscreen), strID);
+    setExtraDataString(GUI_Seamless, toFeatureAllowed(visualState == UIVisualStateType_Seamless), strID);
+    setExtraDataString(GUI_Scale, toFeatureAllowed(visualState == UIVisualStateType_Scale), strID);
 }
 
 MachineCloseAction UIExtraDataManager::defaultMachineCloseAction(const QString &strID) const

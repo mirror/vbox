@@ -53,10 +53,8 @@ public:
     QWidget* activeWindow() const;
     UISession *uisession() const { return m_pSession; }
 
-    /* API: Visual-state stuff: */
-    bool isVisualStateAllowedFullscreen() const { return m_allowedVisualStateTypes & UIVisualStateType_Fullscreen; }
-    bool isVisualStateAllowedSeamless() const { return m_allowedVisualStateTypes & UIVisualStateType_Seamless; }
-    bool isVisualStateAllowedScale() const { return m_allowedVisualStateTypes & UIVisualStateType_Scale; }
+    /** Returns whether requested visual @a state allowed. */
+    bool isVisualStateAllowed(UIVisualStateType state) const { return m_allowedVisualStates & state; }
 
     /** Requests async visual-state change. */
     void asyncChangeVisualState(UIVisualStateType visualStateType);
@@ -86,7 +84,7 @@ private:
     CSession m_session;
     UISession *m_pSession;
     UIVisualState *m_pVisualState;
-    UIVisualStateType m_allowedVisualStateTypes;
+    UIVisualStateType m_allowedVisualStates;
 
     /* Friend classes: */
     friend class UISession;
