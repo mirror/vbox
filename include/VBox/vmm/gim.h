@@ -43,7 +43,7 @@ RT_C_DECLS_BEGIN
  */
 
 /**
- * Providers identifiers.
+ * GIM Provider Identifiers.
  */
 typedef enum GIMPROVIDERID
 {
@@ -54,10 +54,47 @@ typedef enum GIMPROVIDERID
     /** Microsoft Hyper-V. */
     GIMPROVIDERID_HYPERV,
     /** Linux KVM Interface. */
-    GIMPROVIDERID_KVM,
-    /** Ensure 32-bit type. */
-    GIMPROVIDERID_32BIT_HACK = 0x7fffffff
+    GIMPROVIDERID_KVM
 } GIMPROVIDERID;
+AssertCompileSize(GIMPROVIDERID, 4);
+
+
+/**
+ * A GIM MMIO2 region record.
+ */
+typedef struct GIMMMIO2REGION
+{
+    /** The region index. */
+    uint8_t             iRegion;
+    /** Whether an RC mapping is required. */
+    bool                fRCMapping;
+    /** Whether this region has been registered. */
+    bool                fRegistered;
+    /** Whether this region is currently mapped. */
+    bool                fMapped;
+    /** Alignment padding. */
+    uint8_t             au8Alignment0[4];
+    /** Size of the region (must be page aligned). */
+    uint32_t            cbRegion;
+    /** Alignment padding. */
+    uint32_t            u32Alignment0;
+    /** The host ring-0 address of the first page in the region. */
+    R0PTRTYPE(void *)   pvPageR0;
+    /** The host ring-3 address of the first page in the region. */
+    R3PTRTYPE(void *)   pvPageR3;
+    /** The ring-context address of the first page in the region. */
+    RCPTRTYPE(void *)   pvPageRC;
+    /** The guest-physical address of the first page in the region. */
+    RTGCPHYS            GCPhysPage;
+    /** The description of the region. */
+    char                szDescription[32];
+} GIMMMIO2REGION;
+/** Pointer to a GIM MMIO2 region. */
+typedef GIMMMIO2REGION *PGIMMMIO2REGION;
+/** Pointer to a const GIM MMIO2 region. */
+typedef GIMMMIO2REGION const *PCGIMMMIO2REGION;
+AssertCompileMemberAlignment(GIMMMIO2REGION, cbRegion,   8);
+AssertCompileMemberAlignment(GIMMMIO2REGION, pvPageR0,   8);
 
 
 #if 0
@@ -113,7 +150,8 @@ typedef FNGIMWRMSR *PFNGIMWRMSR;
  * @ingroup grp_gim
  * @{
  */
-
+VMMR0_INT_DECL(int)         GIMR0InitVM(PVM pVM);
+VMMR0_INT_DECL(int)         GIMR0TermVM(PVM pVM);
 /** @} */
 #endif /* IN_RING0 */
 
@@ -123,19 +161,23 @@ typedef FNGIMWRMSR *PFNGIMWRMSR;
  * @ingroup grp_gim
  * @{
  */
-VMMR3_INT_DECL(int)     GIMR3Init(PVM pVM);
-VMMR3_INT_DECL(int)     GIMR3Term(PVM pVM);
+VMMR3_INT_DECL(int)         GIMR3Init(PVM pVM);
+VMMR3_INT_DECL(int)         GIMR3Term(PVM pVM);
+VMMR3_INT_DECL(void)        GIMR3Reset(PVM pVM);
+VMMR3DECL(void)             GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevIns);
+VMMR3DECL(PGIMMMIO2REGION)  GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 /** @} */
 #endif /* IN_RING3 */
 
-VMMDECL(bool)           GIMIsEnabled(PVM pVM);
-VMM_INT_DECL(int)       GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
-VMM_INT_DECL(int)       GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
-VMM_INT_DECL(int)       GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);
+VMMDECL(bool)               GIMIsEnabled(PVM pVM);
+VMMDECL(int)                GIMUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
+VMM_INT_DECL(int)           GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(int)           GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
+VMM_INT_DECL(int)           GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);
 
 /** @} */
 
 RT_C_DECLS_END
 
-#endif
+#endif  /* ___VBox_vmm_gim_h */
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,7 +35,6 @@
 #include <iprt/thread.h>
 #include <iprt/x86.h>
 #include <iprt/asm-amd64-x86.h>
-
 
 
 /**
@@ -78,6 +77,7 @@ static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
 #endif
 }
 
+
 /**
  * Invalidates a guest page
  *
@@ -102,6 +102,7 @@ VMM_INT_DECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 #endif
 }
 
+
 /**
  * Flushes the guest TLB.
  *
@@ -117,8 +118,8 @@ VMM_INT_DECL(int) HMFlushTLB(PVMCPU pVCpu)
     return VINF_SUCCESS;
 }
 
-#ifdef IN_RING0
 
+#ifdef IN_RING0
 /**
  * Dummy RTMpOnSpecific handler since RTMpPokeCpu couldn't be used.
  *
@@ -172,10 +173,10 @@ static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
             STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatSpinPokeFailed, z);
     }
 }
-
 #endif /* IN_RING0 */
-#ifndef IN_RC
 
+
+#ifndef IN_RC
 /**
  * Poke an EMT so it can perform the appropriate TLB shootdowns.
  *
@@ -269,7 +270,6 @@ VMM_INT_DECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
 
     return VINF_SUCCESS;
 }
-
 #endif /* !IN_RC */
 
 /**
@@ -445,5 +445,49 @@ VMM_INT_DECL(bool) HMSetSingleInstruction(PVMCPU pVCpu, bool fEnable)
     bool fOld = pVCpu->hm.s.fSingleInstruction;
     pVCpu->hm.s.fSingleInstruction = fEnable;
     return fOld;
+}
+
+
+/**
+ * Patches the instructions necessary for making a hypercall to the hypervisor.
+ * Used by GIM.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pvBuf       The buffer in the hypercall page(s) to be patched.
+ * @param   cbBuf       The size of the buffer.
+ * @param   pcbWritten  Where to store the number of bytes patched. This
+ *                      is reliably updated only when this function returns
+ *                      VINF_SUCCESS.
+ */
+VMM_INT_DECL(int) HMPatchHypercall(PVM pVM, void *pvBuf, size_t cbBuf, size_t *pcbWritten)
+{
+    AssertReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(pcbWritten, VERR_INVALID_POINTER);
+    AssertReturn(HMIsEnabled(pVM), VERR_HM_IPE_5);
+
+    if (pVM->hm.s.vmx.fSupported)
+    {
+        uint8_t abHypercall[] = { 0x0F, 0x01, 0xC1 };   /* VMCALL */
+        if (RT_LIKELY(cbBuf >= sizeof(abHypercall)))
+        {
+            memcpy(pvBuf, abHypercall, sizeof(abHypercall));
+            *pcbWritten = sizeof(abHypercall);
+            return VINF_SUCCESS;
+        }
+        return VERR_BUFFER_OVERFLOW;
+    }
+    else
+    {
+        Assert(pVM->hm.s.svm.fSupported);
+        uint8_t abHypercall[] = { 0x0F, 0x01, 0xD9 };   /* VMMCALL */
+        if (RT_LIKELY(cbBuf >= sizeof(abHypercall)))
+        {
+            memcpy(pvBuf, abHypercall, sizeof(abHypercall));
+            *pcbWritten = sizeof(abHypercall);
+            return VINF_SUCCESS;
+        }
+        return VERR_BUFFER_OVERFLOW;
+    }
 }
 

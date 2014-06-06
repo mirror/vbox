@@ -18,18 +18,17 @@
 #ifndef ___GIMHvInternal_h
 #define ___GIMHvInternal_h
 
-#include <iprt/cdefs.h>
-#include <VBox/types.h>
+#include <VBox/vmm/gim.h>
 #include <VBox/vmm/cpum.h>
 
 /** @name Hyper-V base feature identification.
- * Base features based on current partition privileges.
+ * Features based on current partition privileges (per-VM).
  * @{
  */
 /** Virtual processor runtime MSR available. */
 #define GIM_HV_BASE_FEAT_VP_RUNTIME_MSR           RT_BIT(0)
 /** Partition reference counter MSR available. */
-#define GIM_HV_BASE_FEAT_PART_REF_COUNT_MSR       RT_BIT(1)
+#define GIM_HV_BASE_FEAT_PART_TIME_REF_COUNT_MSR  RT_BIT(1)
 /** Basic Synthetic Interrupt Controller MSRs available. */
 #define GIM_HV_BASE_FEAT_BASIC_SYNTH_IC           RT_BIT(2)
 /** Synthetic Timer MSRs available. */
@@ -48,7 +47,7 @@
 #define GIM_HV_BASE_FEAT_PART_REF_TSC_MSR         RT_BIT(9)
 /** Virtual guest idle state MSR available. */
 #define GIM_HV_BASE_FEAT_GUEST_IDLE_STATE_MSR     RT_BIT(10)
-/** Timer frequency MSRs available. */
+/** Timer frequency MSRs (TSC and APIC) available. */
 #define GIM_HV_BASE_FEAT_TIMER_FREQ_MSRS          RT_BIT(11)
 /** Debug MSRs available. */
 #define GIM_HV_BASE_FEAT_DEBUG_MSRS               RT_BIT(12)
@@ -211,7 +210,7 @@
 #define MSR_GIM_HV_RANGE2_START                   UINT32_C(0x40000020)
 /** Per-VM reference counter (R) */
 #define MSR_GIM_HV_TIME_REF_COUNT                 UINT32_C(0x40000020)
-/** Per-VM TSC (R) */
+/** Per-VM TSC page (R/W) */
 #define MSR_GIM_HV_REF_TSC                        UINT32_C(0x40000021)
 /** Frequency of TSC in Hz as reported by the hypervisor (R) */
 #define MSR_GIM_HV_TSC_FREQ                       UINT32_C(0x40000022)
@@ -389,13 +388,106 @@ AssertCompile(MSR_GIM_HV_RANGE9_START  <= MSR_GIM_HV_RANGE9_END);
 AssertCompile(MSR_GIM_HV_RANGE10_START <= MSR_GIM_HV_RANGE10_END);
 AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 
+
+/** @name Hyper-V MSR - Hypercall (MSR_GIM_HV_HYPERCALL).
+ * @{
+ */
+/** Guest-physical page frame number of the hypercall-page. */
+#define MSR_GIM_HV_HYPERCALL_GUEST_PFN(a)         ((a) >> 12)
+/** The hypercall enable bit. */
+#define MSR_GIM_HV_HYPERCALL_ENABLE_BIT           RT_BIT_64(0)
+/** Whether the hypercall-page is enabled or not. */
+#define MSR_GIM_HV_HYPERCALL_IS_ENABLED(a)        RT_BOOL((a) & MSR_GIM_HV_HYPERCALL_ENABLE_BIT)
+/** @} */
+
+/** @name Hyper-V MSR - Reference TSC (MSR_GIM_HV_REF_TSC).
+ * @{
+ */
+/** Guest-physical page frame number of the TSC-page. */
+#define MSR_GIM_HV_REF_TSC_GUEST_PFN(a)           ((a) >> 12)
+/** The TSC-page enable bit. */
+#define MSR_GIM_HV_REF_TSC_ENABLE_BIT             RT_BIT_64(0)
+/** Whether the TSC-page is enabled or not. */
+#define MSR_GIM_HV_REF_TSC_IS_ENABLED(a)          RT_BOOL((a) & MSR_GIM_HV_REF_TSC_ENABLE_BIT)
+/** @} */
+
+/** Hyper-V page size.  */
+#define GIM_HV_PAGE_SIZE                          0x1000
+
+/**
+ * MMIO2 region indices.
+ */
+/** The hypercall page region. */
+#define GIM_HV_HYPERCALL_PAGE_REGION_IDX          UINT8_C(0)
+/** The TSC page region. */
+#define GIM_HV_REF_TSC_PAGE_REGION_IDX            UINT8_C(1)
+/** The maximum region index (must be <= UINT8_MAX). */
+#define GIM_HV_REGION_IDX_MAX                     GIM_HV_REF_TSC_PAGE_REGION_IDX
+
+/**
+ * Hyper-V TSC (HV_REFERENCE_TSC_PAGE) structure placed in the TSC reference
+ * page.
+ */
+typedef struct GIMHVREFTSC
+{
+    uint32_t volatile   u32TscSequence;
+    uint32_t            uReserved0;
+    uint64_t volatile   u64TscScale;
+    uint64_t volatile   u64TscOffset;
+} GIMHVTSCPAGE;
+/** Pointer to GIM VMCPU instance data. */
+typedef GIMHVREFTSC *PGIMHVREFTSC;
+
+/**
+ * GIM Hyper-V VM Instance data.
+ * Changes to this must checked against the padding of the gim union in VM!
+ */
+typedef struct GIMHV
+{
+    /** Guest OS identity MSR. */
+    uint64_t                    u64GuestOsIdMsr;
+    /** Hypercall MSR. */
+    uint64_t                    u64HypercallMsr;
+    /** Reference TSC page MSR. */
+    uint64_t                    u64TscPageMsr;
+
+    /** Basic features. */
+    uint32_t                    uBaseFeat;
+    /** Partition flags. */
+    uint32_t                    uPartFlags;
+    /** Power management features. */
+    uint32_t                    uPowMgmtFeat;
+    /** Miscellaneous features. */
+    uint32_t                    uMiscFeat;
+    /** Hypervisor hints. */
+    uint32_t                    uHyperHints;
+    /** Alignment padding. */
+    uint32_t                    u32Alignment0;
+
+    /** Array of MMIO2 regions. */
+    GIMMMIO2REGION              aMmio2Regions[GIM_HV_REGION_IDX_MAX + 1];
+} GIMHV;
+/** Pointer to per-VM GIM Hyper-V instance data. */
+typedef GIMHV *PGIMHV;
+/** Pointer to const per-VM GIM Hyper-V instance data. */
+typedef GIMHV const *PCGIMHV;
+AssertCompileMemberAlignment(GIMHV, aMmio2Regions, 8);
+
 RT_C_DECLS_BEGIN
+
+#ifdef IN_RING0
+VMMR0_INT_DECL(int)     GIMR0HvInitVM(PVM pVM);
+VMMR0_INT_DECL(int)     GIMR0HvTermVM(PVM pVM);
+#endif /* IN_RING0 */
 
 #ifdef IN_RING3
 VMMR3_INT_DECL(int)     GIMR3HvInit(PVM pVM);
 VMMR3_INT_DECL(void)    GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta);
+VMMR3_INT_DECL(void)    GIMR3HvReset(PVM pVM);
+VMMR3_INT_DECL(PGIMMMIO2REGION) GIMR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 #endif /* IN_RING3 */
 
+VMMDECL(int)            GIMHvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
 VMMDECL(int)            GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMDECL(int)            GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMMDECL(int)            GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);

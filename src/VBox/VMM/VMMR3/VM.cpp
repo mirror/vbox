@@ -985,12 +985,12 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                 rc = DBGFR3Init(pVM);
                                                                 if (RT_SUCCESS(rc))
                                                                 {
-                                                                    rc = PDMR3Init(pVM);
+                                                                    /* GIM must be init'd before PDM, DevGIM construction may
+                                                                       require GIM provider to be setup. */
+                                                                    rc = GIMR3Init(pVM);
                                                                     if (RT_SUCCESS(rc))
                                                                     {
-                                                                        /* GIM must be init'd after PDM, may rely on PDMR3 for
-                                                                           symbol resolution. */
-                                                                        rc = GIMR3Init(pVM);
+                                                                        rc = PDMR3Init(pVM);
                                                                         if (RT_SUCCESS(rc))
                                                                         {
                                                                             rc = PGMR3InitDynMap(pVM);
@@ -1010,7 +1010,6 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                             if (RT_SUCCESS(rc))
                                                                                 rc = REMR3InitFinalize(pVM);
 #endif
-
                                                                             if (RT_SUCCESS(rc))
                                                                             {
                                                                                 PGMR3MemSetup(pVM, false /*fAtReset*/);
@@ -1024,10 +1023,10 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                                 return VINF_SUCCESS;
                                                                             }
 
-                                                                            int rc2 = GIMR3Term(pVM);
+                                                                            int rc2 = PDMR3Term(pVM);
                                                                             AssertRC(rc2);
                                                                         }
-                                                                        int rc2 = PDMR3Term(pVM);
+                                                                        int rc2 = GIMR3Term(pVM);
                                                                         AssertRC(rc2);
                                                                     }
                                                                     int rc2 = DBGFR3Term(pVM);
@@ -2797,6 +2796,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
         PATMR3Reset(pVM);
         CSAMR3Reset(pVM);
 #endif
+        GIMR3Reset(pVM);                /* This must come *before* PDM. */
         PDMR3Reset(pVM);
         PGMR3Reset(pVM);
         SELMR3Reset(pVM);

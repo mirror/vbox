@@ -97,6 +97,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_EHCI,
     /** Floppy Controller Device group. */
     LOG_GROUP_DEV_FDC,
+    /** Guest Interface Manager Device group. */
+    LOG_GROUP_DEV_GIM,
     /** High Precision Event Timer Device group. */
     LOG_GROUP_DEV_HPET,
     /** IDE Device group. */
@@ -789,6 +791,7 @@ typedef enum LOGGROUP
     "DEV_EFI",      \
     "DEV_EHCI",     \
     "DEV_FDC",      \
+    "DEV_GIM",      \
     "DEV_HPET",     \
     "DEV_IDE",      \
     "DEV_INIP",     \

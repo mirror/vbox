@@ -36,7 +36,6 @@
  * @retval  @c false if no GIM provider ("none") is used.
  *
  * @param   pVM       Pointer to the VM.
- * @internal
  */
 VMMDECL(bool) GIMIsEnabled(PVM pVM)
 {
@@ -64,8 +63,41 @@ VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 
         default:
             AssertMsgFailed(("GIMHypercall: for unknown provider %u\n", pVM->gim.s.enmProviderId));
-            return VERR_INTERNAL_ERROR_5; /** @todo Define and use VERR_GIM_HYPERCALL_UNEXPECTED */;
+            return VERR_GIM_IPE_3;
     }
+}
+
+
+/**
+ * Updates the paravirtualized TSC supported by the GIM provider.
+ *
+ * @returns VBox status code.
+ * @retval VINF_SUCCESS if the paravirt. TSC is setup and in use.
+ * @retval VERR_GIM_NOT_ENABLED if no GIM provider is configured for this VM.
+ * @retval VERR_GIM_PVTSC_NOT_AVAILABLE if the GIM provider does not support any
+ *         paravirt. TSC.
+ * @retval VERR_GIM_PVTSC_NOT_IN_USE if the GIM provider supports paravirt. TSC
+ *         but the guest isn't currently using it.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   u64Offset   The computed TSC offset.
+ *
+ * @thread EMT(pVCpu)
+ */
+VMMDECL(int) GIMUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
+{
+    if (!pVM->gim.s.fEnabled)
+        return VERR_GIM_NOT_ENABLED;
+
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_HYPERV:
+            return GIMHvUpdateParavirtTsc(pVM, u64Offset);
+
+        default:
+            break;
+    }
+    return VERR_GIM_PVTSC_NOT_AVAILABLE;
 }
 
 

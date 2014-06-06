@@ -1193,14 +1193,17 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         PCFGMNODE pParavirtNode;
         InsertConfigNode(pRoot, "GIM", &pParavirtNode);
         const char *pcszParavirtProvider;
+        bool fGimDeviceNeeded = true;
         switch (paravirtProvider)
         {
             case ParavirtProvider_None:
                 pcszParavirtProvider = "None";
+                fGimDeviceNeeded = false;
                 break;
 
             case ParavirtProvider_Default:  /** @todo Choose a provider based on guest OS type. There is no "Default" provider. */
                 pcszParavirtProvider = "None";
+                fGimDeviceNeeded = false;
                 break;
 
             case ParavirtProvider_Legacy:
@@ -1208,7 +1211,10 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 if (fOsXGuest)
                     pcszParavirtProvider = "Minimal";
                 else
+                {
                     pcszParavirtProvider = "None";
+                    fGimDeviceNeeded = false;
+                }
                 break;
             }
 
@@ -1338,6 +1344,17 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         PCFGMNODE pNetBootCfg = NULL;   /* /Devices/pcbios/0/Config/NetBoot/ */
 
         InsertConfigNode(pRoot, "Devices", &pDevices);
+
+        /*
+         * GIM Device
+         */
+        if (fGimDeviceNeeded)
+        {
+            InsertConfigNode(pDevices, "GIMDev", &pDev);
+            InsertConfigNode(pDev,     "0", &pInst);
+            InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
+            //InsertConfigNode(pInst,    "Config", &pCfg);
+        }
 
         /*
          * PC Arch.
