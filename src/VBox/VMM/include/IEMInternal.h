@@ -189,11 +189,11 @@ typedef IEMVERIFYEVTREC *PIEMVERIFYEVTREC;
  */
 typedef struct IEMCPU
 {
-    /** Pointer to the CPU context - ring-3 contex. */
+    /** Pointer to the CPU context - ring-3 context. */
     R3PTRTYPE(PCPUMCTX)     pCtxR3;
-    /** Pointer to the CPU context - ring-0 contex. */
+    /** Pointer to the CPU context - ring-0 context. */
     R0PTRTYPE(PCPUMCTX)     pCtxR0;
-    /** Pointer to the CPU context - raw-mode contex. */
+    /** Pointer to the CPU context - raw-mode context. */
     RCPTRTYPE(PCPUMCTX)     pCtxRC;
 
     /** Offset of the VMCPU structure relative to this structure (negative). */
