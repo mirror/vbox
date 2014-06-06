@@ -476,21 +476,22 @@ AssertCompileMemberAlignment(GIMHV, aMmio2Regions, 8);
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING0
-VMMR0_INT_DECL(int)     GIMR0HvInitVM(PVM pVM);
-VMMR0_INT_DECL(int)     GIMR0HvTermVM(PVM pVM);
+VMMR0_INT_DECL(int)             GIMR0HvInitVM(PVM pVM);
+VMMR0_INT_DECL(int)             GIMR0HvTermVM(PVM pVM);
 #endif /* IN_RING0 */
 
 #ifdef IN_RING3
-VMMR3_INT_DECL(int)     GIMR3HvInit(PVM pVM);
-VMMR3_INT_DECL(void)    GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta);
-VMMR3_INT_DECL(void)    GIMR3HvReset(PVM pVM);
+VMMR3_INT_DECL(int)             GIMR3HvInit(PVM pVM);
+VMMR3_INT_DECL(void)            GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta);
+VMMR3_INT_DECL(void)            GIMR3HvReset(PVM pVM);
 VMMR3_INT_DECL(PGIMMMIO2REGION) GIMR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 #endif /* IN_RING3 */
 
-VMMDECL(int)            GIMHvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
-VMMDECL(int)            GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMDECL(int)            GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
-VMMDECL(int)            GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);
+VMM_INT_DECL(bool)              GIMHvIsParavirtTscEnabled(PVM pVM);
+VMM_INT_DECL(int)               GIMHvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
+VMM_INT_DECL(int)               GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(int)               GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
+VMM_INT_DECL(int)               GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
 
 RT_C_DECLS_END
 

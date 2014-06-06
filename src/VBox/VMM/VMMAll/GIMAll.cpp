@@ -101,6 +101,23 @@ VMMDECL(int) GIMUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
 }
 
 
+VMMDECL(bool) GIMIsParavirtTscEnabled(PVM pVM)
+{
+    if (!pVM->gim.s.fEnabled)
+        return false;
+
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_HYPERV:
+            return GIMHvIsParavirtTscEnabled(pVM);
+
+        default:
+            break;
+    }
+    return false;
+}
+
+
 /**
  * Invokes the read-MSR handler for the GIM provider configured for the VM.
  *
@@ -141,7 +158,9 @@ VMM_INT_DECL(int) GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange
  */
 VMM_INT_DECL(int) GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
-    Assert(pVCpu);
+    AssertPtr(pVCpu);
+    NOREF(uValue);
+
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(GIMIsEnabled(pVM));
     VMCPU_ASSERT_EMT(pVCpu);
@@ -149,7 +168,7 @@ VMM_INT_DECL(int) GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRang
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMHvWriteMsr(pVCpu, idMsr, pRange, uValue, uRawValue);
+            return GIMHvWriteMsr(pVCpu, idMsr, pRange, uRawValue);
 
         default:
             AssertMsgFailed(("GIMWriteMsr: for unknown provider %u idMsr=%#RX32 -> #GP(0)", pVM->gim.s.enmProviderId, idMsr));
