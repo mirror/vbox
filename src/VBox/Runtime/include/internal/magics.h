@@ -170,6 +170,8 @@
 #define RTSOCKET_MAGIC_DEAD             UINT32_C(0x20060326)
 /** Magic value for RTSPINLOCKINTERNAL::u32Magic. (Terry Pratchett) */
 #define RTSPINLOCK_MAGIC                UINT32_C(0x19480428)
+/** Magic value for generic RTSPINLOCKINTERNAL::u32Magic (Georges Prosper Remi). */
+#define RTSPINLOCK_GEN_MAGIC            UINT32_C(0x10970522)
 /** Magic value for RTSTRCACHE::u32Magic. (Sir Arthur Charles Clarke) */
 #define RTSTRCACHE_MAGIC                UINT32_C(0x19171216)
 /** Magic value for RTSTRCACHE::u32Magic after RTStrCacheDestroy. */
