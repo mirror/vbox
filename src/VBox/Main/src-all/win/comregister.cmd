@@ -90,22 +90,77 @@ cd "%_SCRIPT_SELF%\.."
 for /f "tokens=*" %%d in ('cd') do set _VBOX_DIR=%%d\
 cd "%_SCRIPT_CURDIR%"
 
+REM
+REM Check for 64-bitness.
+REM
+set fIs64BitWindows=0
+if not "%ProgramW6432%x"      == "x" set fIs64BitWindows=1
+if not "%ProgramFiles(x86)%x" == "x" set fIs64BitWindows=1
+
+REM
+REM Figure out the Windows version as the proxy stub requires 6.0 or later (at least for 64-bit).
+REM
+set WinVer=Version 4.0.1381
+set WinVerMajor=4
+set WinVerMinor=0
+set WinVerBuild=1381
+for /f "tokens=2 delims=[]" %%a in ('ver') do set WinVer=%%a
+for /f "tokens=2,3,4 delims=. " %%a in ("%WinVer%") do (
+    set WinVerMajor=%%a
+    set WinVerMinor=%%b
+    set WinVerBuild=%%c
+)
+REM echo WinVerMajor=%WinVerMajor% WinVerMinor=%WinVerMinor% WinVerBuild=%WinVerBuild%  WinVer=%WinVer%
+
+REM
+REM Parse arguments.
+REM
+set fNoProxy=0
+if "%WinVerMajor%" LSS "6" set fNoProxy=1
+set fUninstallOnly=0
+
+:arg_loop
+if "%1x" == "x"             goto arg_done
+
+if "%1" == "-u"             goto arg_uninstall
+if "%1" == "--uninstall"    goto arg_uninstall
+if "%1" == "--proxy"        goto arg_proxy
+if "%1" == "--no-proxy"     goto arg_no_proxy
+echo syntax error: Unknown option %1
+echo usage: comregister.cmd [-u,--uninstall] [--no-proxy] [--proxy]
+goto end
+
+:arg_uninstall
+set fUninstallOnly=1
+goto arg_next
+
+:arg_proxy
+set fNoProxy=0
+goto arg_next
+
+:arg_no_proxy
+set fNoProxy=1
+goto arg_next
+
+:arg_next
+shift
+goto arg_loop
+:arg_done
 
 REM
 REM Do the registrations.
 REM
-if "%ProgramW6432%x" == "x" goto register_x86
-goto register_amd64
+@if %fIs64BitWindows% == 1 goto register_amd64
 
 :register_x86
 @echo on
 %_VBOX_DIR%VBoxSVC.exe /UnregServer
 regsvr32 /s /u %_VBOX_DIR%VBoxC.dll
-if exist %_VBOX_DIR%VBoxProxyStub.dll     %windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub.dll
-@if "%1" == "-u" goto end
+%windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub.dll
+@if %fUninstallOnly% == 1 goto end
 %_VBOX_DIR%VBoxSVC.exe /RegServer
 regsvr32 /s    %_VBOX_DIR%VBoxC.dll
-@if "%1" == "--no-proxy" goto end
+@if %fNoProxy% == 1 goto end
 if exist %_VBOX_DIR%VBoxProxyStub.dll     %windir%\system32\regsvr32 /s %_VBOX_DIR%VBoxProxyStub.dll
 @echo off
 goto end
@@ -116,13 +171,13 @@ REM Unregister all first, then register them. The order matters here.
 %_VBOX_DIR%VBoxSVC.exe /UnregServer
 %windir%\syswow64\regsvr32 /s /u %_VBOX_DIR%x86\VBoxClient-x86.dll
 %windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxC.dll
-if exist %_VBOX_DIR%VBoxProxyStub.dll     %windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub.dll
-if exist %_VBOX_DIR%VBoxProxyStub-x86.dll %windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub-x86.dll
-@if "%1" == "-u" goto end
+%windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub.dll
+%windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub-x86.dll
+@if %fUninstallOnly% == 1 goto end
 %_VBOX_DIR%VBoxSVC.exe /RegServer
 %windir%\system32\regsvr32 /s    %_VBOX_DIR%VBoxC.dll
 %windir%\syswow64\regsvr32 /s    %_VBOX_DIR%x86\VBoxClient-x86.dll
-@if "%1" == "--no-proxy" goto end
+@if %fNoProxy% == 1 goto end
 if exist %_VBOX_DIR%VBoxProxyStub.dll     %windir%\system32\regsvr32 /s %_VBOX_DIR%VBoxProxyStub.dll
 if exist %_VBOX_DIR%VBoxProxyStub-x86.dll %windir%\system32\regsvr32 /s %_VBOX_DIR%VBoxProxyStub-x86.dll
 @echo off
