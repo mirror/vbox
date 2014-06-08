@@ -249,6 +249,7 @@ proxy_connected_socket(int sdom, int stype,
     LWIP_ASSERT1(sdom == PF_INET || sdom == PF_INET6);
     LWIP_ASSERT1(stype == SOCK_STREAM || stype == SOCK_DGRAM);
 
+    DPRINTF(("---> %s ", stype == SOCK_STREAM ? "TCP" : "UDP"));
     if (sdom == PF_INET6) {
         pdst_sa = (struct sockaddr *)&dst_sin6;
         pdst_addr = (void *)&dst_sin6.sin6_addr;
@@ -261,6 +262,8 @@ proxy_connected_socket(int sdom, int stype,
         dst_sin6.sin6_family = AF_INET6;
         memcpy(&dst_sin6.sin6_addr, &dst_addr->ip6, sizeof(ip6_addr_t));
         dst_sin6.sin6_port = htons(dst_port);
+
+        DPRINTF(("[%RTnaipv6]:%d ", &dst_sin6.sin6_addr, dst_port));
     }
     else { /* sdom = PF_INET */
         pdst_sa = (struct sockaddr *)&dst_sin;
@@ -274,22 +277,9 @@ proxy_connected_socket(int sdom, int stype,
         dst_sin.sin_family = AF_INET;
         dst_sin.sin_addr.s_addr = dst_addr->ip4.addr; /* byte-order? */
         dst_sin.sin_port = htons(dst_port);
-    }
 
-#if LWIP_PROXY_DEBUG && !RT_OS_WINDOWS
-    {
-        char addrbuf[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
-        const char *addrstr;
-
-        addrstr = inet_ntop(sdom, pdst_addr, addrbuf, sizeof(addrbuf));
-        DPRINTF(("---> %s %s%s%s:%d ",
-                 stype == SOCK_STREAM ? "TCP" : "UDP",
-                 sdom == PF_INET6 ? "[" : "",
-                 addrstr,
-                 sdom == PF_INET6 ? "]" : "",
-                 dst_port));
+        DPRINTF(("%RTnaipv4:%d ", dst_sin.sin_addr.s_addr, dst_port));
     }
-#endif
 
     s = proxy_create_socket(sdom, stype);
     if (s == INVALID_SOCKET) {
