@@ -11,6 +11,8 @@
  *
  * Ditto for IPv6, except that IPv6 only has one loopback address.
  */
+#define LOG_GROUP LOG_GROUP_NAT_SERVICE
+
 #include "winutils.h"
 #include "pxremap.h"
 #include "proxy.h"

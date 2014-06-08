@@ -2,6 +2,8 @@
 /**
  * Simple stateless DHCPv6 (RFC 3736) server.
  */
+#define LOG_GROUP LOG_GROUP_NAT_SERVICE
+
 #include "winutils.h"
 #include "dhcp6.h"
 #include "proxy.h"
