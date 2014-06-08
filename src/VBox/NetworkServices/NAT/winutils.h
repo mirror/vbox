@@ -36,50 +36,6 @@
 #  define __func__ __FUNCTION__
 #  define __attribute__(x) /* IGNORE */
 
-/*
- * XXX: inet_ntop() is only available starting from Vista.
- */
-DECLINLINE(PCSTR)
-inet_ntop(INT Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize)
-{
-    DWORD size = (DWORD)StringBufSize;
-    int status;
-
-    if (Family == AF_INET)
-    {
-        struct sockaddr_in sin;
-        memset(&sin, 0, sizeof(sin));
-        sin.sin_family = AF_INET;
-        memcpy(&sin.sin_addr, pAddr, sizeof(sin.sin_addr));
-        sin.sin_port = 0;
-        status = WSAAddressToStringA((LPSOCKADDR)&sin, sizeof(sin), NULL,
-                                     pStringBuf, &size);
-    }
-    else if (Family == AF_INET6)
-    {
-        struct sockaddr_in6 sin6;
-        memset(&sin6, 0, sizeof(sin6));
-        sin6.sin6_family = AF_INET6;
-        memcpy(&sin6.sin6_addr, pAddr, sizeof(sin6.sin6_addr));
-        sin6.sin6_port = 0;
-        status = WSAAddressToStringA((LPSOCKADDR)&sin6, sizeof(sin6), NULL,
-                                     pStringBuf, &size);
-    }
-    else
-    {
-        WSASetLastError(WSAEAFNOSUPPORT);
-        return NULL;
-    }
-
-    if (status == SOCKET_ERROR)
-    {
-        return NULL;
-    }
-
-    return pStringBuf;
-}
-
-
 /**
  * tftpd emulation we're using POSIX operations which needs "DOS errno". see proxy_tftpd.c
  */

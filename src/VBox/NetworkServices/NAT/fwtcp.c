@@ -201,8 +201,6 @@ fwtcp_pmgr_listen(struct pollmgr_handler *handler, SOCKET fd, int revents)
     struct fwtcp *fwtcp;
     struct sockaddr_storage ss;
     socklen_t sslen;
-    void *peer_addr;
-    uint16_t peer_port;
     struct pxtcp *pxtcp;
     SOCKET newsock;
     int status;
@@ -228,30 +226,14 @@ fwtcp_pmgr_listen(struct pollmgr_handler *handler, SOCKET fd, int revents)
 
     if (ss.ss_family == PF_INET) {
         struct sockaddr_in *peer4 = (struct sockaddr_in *)&ss;
-        peer_addr = &peer4->sin_addr;
-        peer_port = peer4->sin_port;
+        DPRINTF(("<--- TCP %RTnaipv4:%d\n",
+                 peer4->sin_addr.s_addr, ntohs(peer4->sin_port)));
     }
     else { /* PF_INET6 */
         struct sockaddr_in6 *peer6 = (struct sockaddr_in6 *)&ss;
-        peer_addr = &peer6->sin6_addr;
-        peer_port = peer6->sin6_port;
+        DPRINTF(("<--- TCP %RTnaipv6:%d\n",
+                 &peer6->sin6_addr, ntohs(peer6->sin6_port)));
     }
-    peer_port = ntohs(peer_port);
-
-#if PLEASE_ABSTAIN_FROM_DPRINFING > 1 /* DPRINTF */ && !defined(RT_OS_WINDOWS)
-    {
-        char addrbuf[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
-        const char *addrstr;
-
-        addrstr = inet_ntop(ss.ss_family, peer_addr, addrbuf, sizeof(addrbuf));
-        DPRINTF(("<--- TCP %s%s%s:%d\n",
-                 ss.ss_family == AF_INET6 ? "[" : "",
-                 addrstr,
-                 ss.ss_family == AF_INET6 ? "]" : "",
-                 peer_port));
-    }
-#endif  /* DPRINTF */
-
 
     pxtcp = pxtcp_create_forwarded(newsock);
     if (pxtcp == NULL) {
