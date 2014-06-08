@@ -86,16 +86,15 @@ err_t pxping_init(struct netif *, SOCKET, SOCKET);
 #endif
 
 #define LWIP_ASSERT1(condition) LWIP_ASSERT(#condition, condition)
-/* TODO: review debug levels and types */
-#if !LWIP_PROXY_DEBUG
-# define DPRINTF_LEVEL(y, x)      do {} while (0)
-#else
-# define DPRINTF_LEVEL(level, x) do { LWIP_DEBUGF(LWIP_PROXY_DEBUG | (level), x); } while (0)
-#endif
 
-#define DPRINTF(x) DPRINTF_LEVEL(0, x)
-#define DPRINTF0(x) DPRINTF_LEVEL(LWIP_DBG_LEVEL_WARNING, x)
-#define DPRINTF1(x) DPRINTF_LEVEL(LWIP_DBG_LEVEL_SERIOUS, x)
-#define DPRINTF2(x) DPRINTF_LEVEL(LWIP_DBG_LEVEL_SEVERE, x)
+/*
+ * TODO: DPRINTF0 should probably become LogRel but its usage needs to
+ * be cleaned up a bit before.
+ */
+#define DPRINTF0(a) Log(a)
+
+#define DPRINTF(a)  DPRINTF1(a)
+#define DPRINTF1(a) Log2(a)
+#define DPRINTF2(a) Log3(a)
 
 #endif /* _nat_proxy_h_ */
