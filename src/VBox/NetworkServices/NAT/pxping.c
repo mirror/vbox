@@ -6,6 +6,8 @@
 #include "proxy_pollmgr.h"
 #include "pxremap.h"
 
+#include <iprt/string.h>
+
 #ifndef RT_OS_WINDOWS
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -13,7 +15,6 @@
 # define __APPLE_USE_RFC_3542
 #endif
 #include <netinet/in.h>
-#include <arpa/inet.h>          /* XXX: inet_ntop */
 #include <poll.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -192,13 +193,13 @@ static struct ping_pcb *pxping_pcb_for_request(struct pxping *pxping,
 static struct ping_pcb *pxping_pcb_for_reply(struct pxping *pxping, int is_ipv6,
                                              ipX_addr_t *dst, u16_t host_id);
 
+static FNRTSTRFORMATTYPE pxping_pcb_rtstrfmt;
 static struct ping_pcb *pxping_pcb_allocate(struct pxping *pxping);
 static void pxping_pcb_register(struct pxping *pxping, struct ping_pcb *pcb);
 static void pxping_pcb_deregister(struct pxping *pxping, struct ping_pcb *pcb);
 static void pxping_pcb_delete(struct pxping *pxping, struct ping_pcb *pcb);
 static void pxping_timeout_add(struct pxping *pxping, struct ping_pcb *pcb);
 static void pxping_timeout_del(struct pxping *pxping, struct ping_pcb *pcb);
-static void pxping_pcb_debug_print(struct ping_pcb *pcb);
 
 static int pxping_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents);
 
@@ -328,6 +329,9 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
         ping6_proxy_accept(pxping_recv6, &g_pxping);
     }
 
+    status = RTStrFormatTypeRegister("ping_pcb", pxping_pcb_rtstrfmt, NULL);
+    AssertRC(status);
+
     return ERR_OK;
 }
 
@@ -454,8 +458,8 @@ pxping_recv4(void *arg, struct pbuf *p)
         return;
     }
 
-    pxping_pcb_debug_print(pcb); /* XXX */
-    DPRINTF((" seq %d len %u ttl %d\n",
+    DPRINTF(("ping %p: %R[ping_pcb] seq %d len %u ttl %d\n",
+             pcb, pcb,
              ntohs(icmph->seqno), (unsigned int)p->tot_len,
              IPH_TTL(iph)));
 
@@ -672,8 +676,8 @@ pxping_recv6(void *arg, struct pbuf *p)
         return;
     }
 
-    pxping_pcb_debug_print(pcb); /* XXX */
-    DPRINTF((" seq %d len %u hopl %d\n",
+    DPRINTF(("ping %p: %R[ping_pcb] seq %d len %u hopl %d\n",
+             pcb, pcb,
              ntohs(seq), (unsigned int)p->tot_len,
              IP6H_HOPLIM(iph)));
 
@@ -746,24 +750,45 @@ pxping_recv6(void *arg, struct pbuf *p)
 }
 
 
-static void
-pxping_pcb_debug_print(struct ping_pcb *pcb)
+/**
+ * Formatter for %R[ping_pcb].
+ */
+static DECLCALLBACK(size_t)
+pxping_pcb_rtstrfmt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                    const char *pszType, const void *pvValue,
+                    int cchWidth, int cchPrecision, unsigned int fFlags,
+                    void *pvUser)
 {
-    char addrbuf[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
-    const char *addrstr;
-    int sdom = pcb->is_ipv6 ? AF_INET6 : AF_INET;
+    const struct ping_pcb *pcb = (const struct ping_pcb *)pvValue;
+    size_t cb = 0;
 
-    DPRINTF(("ping %p:", (void *)pcb));
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
 
-    addrstr = inet_ntop(sdom, (void *)&pcb->src, addrbuf, sizeof(addrbuf));
-    DPRINTF((" %s", addrstr));
+    AssertReturn(strcmp(pszType, "ping_pcb") == 0, 0);
 
-    DPRINTF((" ->"));
+    if (pcb == NULL) {
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "(null)");
+    }
 
-    addrstr = inet_ntop(sdom, (void *)&pcb->dst, addrbuf, sizeof(addrbuf));
-    DPRINTF((" %s", addrstr));
+    /* XXX: %RTnaipv4 takes the value, but %RTnaipv6 takes the pointer */
+    if (pcb->is_ipv6) {
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
+                          "%RTnaipv6 -> %RTnaipv6", &pcb->src, &pcb->dst);
+    }
+    else {
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
+                          "%RTnaipv4 -> %RTnaipv4",
+                          ip4_addr_get_u32(ipX_2_ip(&pcb->src)),
+                          ip4_addr_get_u32(ipX_2_ip(&pcb->dst)));
+    }
+                      
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
+                      " id %04x->%04x", ntohs(pcb->guest_id), ntohs(pcb->host_id));
 
-    DPRINTF((" id %04x->%04x", ntohs(pcb->guest_id), ntohs(pcb->host_id)));
+    return cb;
 }
 
 
@@ -931,15 +956,14 @@ pxping_pcb_for_request(struct pxping *pxping,
         pxping_pcb_register(pxping, pcb);
         sys_mutex_unlock(&pxping->lock);
 
-        pxping_pcb_debug_print(pcb); /* XXX */
-        DPRINTF((" - created\n"));
+        DPRINTF(("ping %p: %R[ping_pcb] - created\n", pcb, pcb));
 
         pxping_timer_needed(pxping);
     }
     else {
         /* just bump up expiration timeout lazily */
-        pxping_pcb_debug_print(pcb); /* XXX */
-        DPRINTF((" - slot %d -> %d\n",
+        DPRINTF(("ping %p: %R[ping_pcb] - slot %d -> %d\n",
+                 pcb, pcb,
                  (unsigned int)pcb->timeout_slot,
                  (unsigned int)pxping->timeout_slot));
         pcb->timeout_slot = pxping->timeout_slot;
@@ -1194,15 +1218,8 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
     id  = icmph->id;
     seq = icmph->seqno;
 
-    {
-        char addrbuf[sizeof "255.255.255.255"];
-        const char *addrstr;
-
-        addrstr = inet_ntop(AF_INET, &peer->sin_addr, addrbuf, sizeof(addrbuf));
-        DPRINTF(("<--- PING %s id 0x%x seq %d\n",
-                 addrstr, ntohs(id), ntohs(seq)));
-    }
-
+    DPRINTF(("<--- PING %RTnaipv4 id 0x%x seq %d\n",
+             peer->sin_addr.s_addr, ntohs(id), ntohs(seq)));
 
     /*
      * Is this a reply to one of our pings?
@@ -1338,19 +1355,13 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
     id  = oicmph->id;
     seq = oicmph->seqno;
 
-    {
-        char addrbuf[sizeof "255.255.255.255"];
-        const char *addrstr;
-
-        addrstr = inet_ntop(AF_INET, &oiph->dest, addrbuf, sizeof(addrbuf));
-        DPRINTF2(("%s: ping %s id 0x%x seq %d",
-                  __func__, addrstr, ntohs(id), ntohs(seq)));
-        if (ICMPH_TYPE(icmph) == ICMP_DUR) {
-            DPRINTF2((" unreachable (code %d)\n", ICMPH_CODE(icmph)));
-        }
-        else {
-            DPRINTF2((" time exceeded\n"));
-        }
+    DPRINTF2(("%s: ping %RTnaipv4 id 0x%x seq %d",
+              __func__, ip4_addr_get_u32(&oiph->dest), ntohs(id), ntohs(seq)));
+    if (ICMPH_TYPE(icmph) == ICMP_DUR) {
+        DPRINTF2((" unreachable (code %d)\n", ICMPH_CODE(icmph)));
+    }
+    else {
+        DPRINTF2((" time exceeded\n"));
     }
 
 
@@ -1453,9 +1464,6 @@ pxping_pmgr_icmp6(struct pxping *pxping)
     int hopl, tclass;
     int status;
 
-    char addrbuf[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
-    const char *addrstr;
-
     /*
      * Reads from raw IPv6 sockets deliver only the payload.  Full
      * headers are available via recvmsg(2)/cmsg(3).
@@ -1496,9 +1504,7 @@ pxping_pmgr_icmp6(struct pxping *pxping)
 
     icmph = (struct icmp6_echo_hdr *)pollmgr_udpbuf;
 
-    addrstr = inet_ntop(AF_INET6, (void *)&sin6.sin6_addr,
-                        addrbuf, sizeof(addrbuf));
-    DPRINTF2(("%s: %s ICMPv6: ", __func__, addrstr));
+    DPRINTF2(("%s: %RTnaipv6 ICMPv6: ", __func__, &sin6.sin6_addr));
 
     if (icmph->type == ICMP6_TYPE_EREP) {
         DPRINTF2(("echo reply %04x %u\n",
