@@ -1,4 +1,5 @@
 /* -*- indent-tabs-mode: nil; -*- */
+#define LOG_GROUP LOG_GROUP_NAT_SERVICE
 
 #include "winutils.h"
 #include "proxy.h"
