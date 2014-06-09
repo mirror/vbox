@@ -793,15 +793,13 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
     AssertReturn(krc == KERN_SUCCESS, VERR_GENERAL_FAILURE);
 
     /*
-     * Create a matching dictionary for searching for DVD services in the IOKit.
+     * Create a matching dictionary for searching for CD, DVD and BlueRay services in the IOKit.
      *
-     * [If I understand this correctly, plain CDROMs doesn't show up as
-     * IODVDServices. Too keep things simple, we will only support DVDs
-     * until somebody complains about it and we get hardware to test it on.
-     * (Unless I'm much mistaken, there aren't any (orignal) intel macs with
-     * plain cdroms.)]
+     * The idea is to find all the devices which are of class IOCDBlockStorageDevice.
+     * CD devices are represented by IOCDBlockStorageDevice class itself, while DVD and BlueRay ones
+     * have it as a parent class.
      */
-    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IODVDServices");
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IOCDBlockStorageDevice");
     AssertReturn(RefMatchingDict, NULL);
 
     /*
@@ -813,8 +811,8 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     /*
-     * Enumerate the DVD drives (services).
-     * (This enumeration must be identical to the one performed in DrvHostBase.cpp.)
+     * Enumerate the matching drives (services).
+     * (This enumeration must be identical to the one performed in Main/src-server/darwin/iokit.cpp.)
      */
     int rc = VERR_FILE_NOT_FOUND;
     unsigned i = 0;

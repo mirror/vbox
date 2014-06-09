@@ -1275,7 +1275,7 @@ int DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur)
 
 
 /**
- * Enumerate the DVD drives returning a FIFO of device name strings.
+ * Enumerate the CD, DVD and BlueRay drives returning a FIFO of device name strings.
  *
  * @returns Pointer to the head.
  *          The caller is responsible for calling RTMemFree() on each of the nodes.
@@ -1285,15 +1285,13 @@ PDARWINDVD DarwinGetDVDDrives(void)
     AssertReturn(darwinOpenMasterPort(), NULL);
 
     /*
-     * Create a matching dictionary for searching for DVD services in the IOKit.
+     * Create a matching dictionary for searching for CD, DVD and BlueRay services in the IOKit.
      *
-     * [If I understand this correctly, plain CDROMs doesn't show up as
-     * IODVDServices. Too keep things simple, we will only support DVDs
-     * until somebody complains about it and we get hardware to test it on.
-     * (Unless I'm much mistaken, there aren't any (orignal) intel macs with
-     * plain cdroms.)]
+     * The idea is to find all the devices which are of class IOCDBlockStorageDevice.
+     * CD devices are represented by IOCDBlockStorageDevice class itself, while DVD and BlueRay ones
+     * have it as a parent class.
      */
-    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IODVDServices");
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IOCDBlockStorageDevice");
     AssertReturn(RefMatchingDict, NULL);
 
     /*
@@ -1305,7 +1303,7 @@ PDARWINDVD DarwinGetDVDDrives(void)
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     /*
-     * Enumerate the DVD services.
+     * Enumerate the matching services.
      * (This enumeration must be identical to the one performed in DrvHostBase.cpp.)
      */
     PDARWINDVD pHead = NULL;
