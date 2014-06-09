@@ -36,6 +36,8 @@
 #  define __func__ __FUNCTION__
 #  define __attribute__(x) /* IGNORE */
 
+#  define SOCKERRNO() (WSAGetLastError())
+
 /**
  * tftpd emulation we're using POSIX operations which needs "DOS errno". see proxy_tftpd.c
  */
@@ -108,6 +110,8 @@ RT_C_DECLS_END
 #  define SOCKET int
 #  define INVALID_SOCKET (-1)
 #  define SOCKET_ERROR (-1)
+
+#  define SOCKERRNO() (errno)
 
 #  define closesocket(s) close(s)
 #  define ioctlsocket(s, req, arg) ioctl((s), (req), (arg))

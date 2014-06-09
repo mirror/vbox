@@ -34,6 +34,8 @@
 # define __arraycount(a) (sizeof(a)/sizeof(a[0]))
 #endif
 
+static FNRTSTRFORMATTYPE proxy_sockerr_rtstrfmt;
+
 static SOCKET proxy_create_socket(int, int);
 
 volatile struct proxy_options *g_proxy_options;
@@ -41,6 +43,8 @@ static sys_thread_t pollmgr_tid;
 
 /* XXX: for mapping loopbacks to addresses in our network (ip4) */
 struct netif *g_proxy_netif;
+
+
 /*
  * Called on the lwip thread (aka tcpip thread) from tcpip_init() via
  * its "tcpip_init_done" callback.  Raw API is ok to use here
@@ -53,6 +57,9 @@ proxy_init(struct netif *proxy_netif, struct proxy_options *opts)
 
     LWIP_ASSERT1(opts != NULL);
     LWIP_UNUSED_ARG(proxy_netif);
+
+    status = RTStrFormatTypeRegister("sockerr", proxy_sockerr_rtstrfmt, NULL);
+    AssertRC(status);
 
     g_proxy_options = opts;
     g_proxy_netif = proxy_netif;
@@ -98,6 +105,124 @@ proxy_init(struct netif *proxy_netif, struct proxy_options *opts)
         /* NOTREACHED */
     }
 }
+
+
+#if !defined(RT_OS_WINDOWS)
+/**
+ * Formatter for %R[sockerr] - unix strerror_r() version.
+ */
+static DECLCALLBACK(size_t)
+proxy_sockerr_rtstrfmt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                       const char *pszType, const void *pvValue,
+                       int cchWidth, int cchPrecision, unsigned int fFlags,
+                       void *pvUser)
+{
+    const int error = (int)(intptr_t)pvValue;
+    size_t cb = 0;
+
+    const char *msg = NULL;
+    char buf[128];
+
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
+
+    AssertReturn(strcmp(pszType, "sockerr") == 0, 0);
+
+    /* make sure return type mismatch is caught */
+#if defined(RT_OS_LINUX) && defined(_GNU_SOURCE)
+    msg = strerror_r(error, buf, sizeof(buf));
+#else
+    {
+        int status = strerror_r(error, buf, sizeof(buf));
+        msg = buf;
+    }
+#endif
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "%s", msg);
+}
+
+#else /* RT_OS_WINDOWS */
+
+/**
+ * Formatter for %R[sockerr] - windows FormatMessage() version.
+ */
+static DECLCALLBACK(size_t)
+proxy_sockerr_rtstrfmt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                       const char *pszType, const void *pvValue,
+                       int cchWidth, int cchPrecision, unsigned int fFlags,
+                       void *pvUser)
+{
+    const int error = (int)(intptr_t)pvValue;
+    size_t cb = 0;
+
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
+
+    AssertReturn(strcmp(pszType, "sockerr") == 0, 0);
+
+    /*
+     * XXX: Windows strerror() doesn't handle posix error codes, but
+     * since winsock uses its own, it shouldn't be much of a problem.
+     * If you see a strange error message, it's probably from
+     * FormatMessage() for an error from <WinError.h> that has the
+     * same numeric value.
+     */
+    if (error < _sys_nerr) {
+        char buf[128] = "";
+        int status;
+
+        status = strerror_s(buf, sizeof(buf), error);
+        if (status == 0) {
+            if (strcmp(buf, "Unknown error") == 0) {
+                /* windows strerror() doesn't add the numeric value */
+                cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
+                                  "Unknown error: %d", error);
+            }
+            else {
+                cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
+                                  "%s", buf);
+            }
+        }
+        else {
+            cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
+                              "Unknown error: %d", error);
+        }
+    }
+    else {
+        DWORD nchars;
+        char *msg = NULL;
+
+        nchars = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM
+                                | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                                NULL, error, LANG_NEUTRAL,
+                                (LPSTR)&msg, 0,
+                                NULL);
+        if (nchars <= 0 || msg == NULL) {
+            cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
+                              "Unknown error: %d", error);
+        }
+        else {
+            /* FormatMessage() "helpfully" adds newline; get rid of it */
+            char *crpos = strchr(msg, '\r');
+            if (crpos != NULL) {
+                *crpos = '\0';
+            }
+
+            cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
+                              "%s", msg);
+        }
+
+        if (msg != NULL) {
+            LocalFree(msg);
+        }
+    }
+
+    return cb;
+}
+#endif /* RT_OS_WINDOWS */
 
 
 /**
@@ -299,15 +424,15 @@ proxy_connected_socket(int sdom, int stype,
     if (psrc_sa != NULL) {
         status = bind(s, psrc_sa, src_sa_len);
         if (status == SOCKET_ERROR) {
-            DPRINTF(("socket %d: bind: %s\n", s, strerror(errno)));
+            DPRINTF(("socket %d: bind: %R[sockerr]\n", s, SOCKERRNO()));
             closesocket(s);
             return INVALID_SOCKET;
         }
     }
 
     status = connect(s, pdst_sa, dst_sa_len);
-    if (status == SOCKET_ERROR && errno != EINPROGRESS) {
-        DPRINTF(("socket %d: connect: %s\n", s, strerror(errno)));
+    if (status == SOCKET_ERROR && SOCKERRNO() != EINPROGRESS) {
+        DPRINTF(("socket %d: connect: %R[sockerr]\n", s, SOCKERRNO()));
         closesocket(s);
         return INVALID_SOCKET;
     }
@@ -420,7 +545,7 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
          */
         dyniov = (IOVEC *)malloc(clen * sizeof(*dyniov));
         if (dyniov == NULL) {
-            error = -errno;
+            error = -errno;     /* sic: not a socket error */
             goto out;
         }
         iov = dyniov;
@@ -446,20 +571,19 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
     mh.msg_iovlen = clen;
 
     nsent = sendmsg(sock, &mh, 0);
-    if (nsent < 0) {
-        error = -errno;
-        DPRINTF(("%s: fd %d: sendmsg errno %d\n",
-                 __func__, sock, errno));
-    }
 #else
     rc = WSASendTo(sock, iov, (DWORD)clen, &nsent, 0,
                    name, (int)namelen, NULL, NULL);
     if (rc == SOCKET_ERROR) {
-         DPRINTF(("%s: fd %d: sendmsg errno %d\n",
-                  __func__, sock, WSAGetLastError()));
-         error = -WSAGetLastError();
+        nsent = -1;
     }
 #endif
+    if (nsent < 0) {
+        error = SOCKERRNO();
+        DPRINTF(("%s: socket %d: sendmsg: %R[sockerr]\n",
+                 __func__, sock, error));
+        error = -error;
+    }
 
   out:
     if (dyniov != NULL) {

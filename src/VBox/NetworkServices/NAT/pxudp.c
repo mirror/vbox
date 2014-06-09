@@ -563,11 +563,11 @@ pxudp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
         status = getsockopt(pxudp->sock, SOL_SOCKET,
                             SO_ERROR, (char *)&sockerr, &optlen);
         if (status < 0) {
-            DPRINTF(("%s: sock %d: SO_ERROR failed with errno %d\n",
-                     __func__, pxudp->sock, errno));
+            DPRINTF(("%s: sock %d: SO_ERROR failed:%R[sockerr]\n",
+                     __func__, pxudp->sock, SOCKERRNO()));
         }
         else {
-            DPRINTF(("%s: sock %d: errno %d\n",
+            DPRINTF(("%s: sock %d: %R[sockerr]\n",
                      __func__, pxudp->sock, sockerr));
         }
     }
