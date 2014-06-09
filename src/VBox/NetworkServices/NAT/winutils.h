@@ -104,11 +104,13 @@ int RTWinSocketPair(int domain, int type, int protocol, SOCKET socket_vector[2])
 RT_C_DECLS_END
 
 # else /* !RT_OS_WINDOWS */
-#  define ioctlsocket ioctl
-#  define closesocket close
+
 #  define SOCKET int
 #  define INVALID_SOCKET (-1)
 #  define SOCKET_ERROR (-1)
+
+#  define closesocket(s) close(s)
+#  define ioctlsocket(s, req, arg) ioctl((s), (req), (arg))
 
 typedef struct iovec IOVEC;
 
