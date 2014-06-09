@@ -39,23 +39,6 @@
 #  define SOCKERRNO() (WSAGetLastError())
 
 /**
- * tftpd emulation we're using POSIX operations which needs "DOS errno". see proxy_tftpd.c
- */
-#  ifndef _USE_WINSTD_ERRNO
-/**
- * http://msdn.microsoft.com/en-us/library/windows/desktop/ms737828(v=vs.85).aspx
- * "Error Codes - errno, h_errno and WSAGetLastError" says "Error codes set by Windows Sockets are
- *  not made available through the errno variable."
- */
-#   include <errno.h>
-#   ifdef errno
-#    undef errno
-#   endif
-#   define errno (WSAGetLastError())
-#  endif
-/* Missing errno codes */
-
-/**
  * "Windows Sockets Error Codes" obtained with WSAGetLastError().
  * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740668(v=vs.85).aspx
  */
