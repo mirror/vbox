@@ -934,7 +934,7 @@ pxtcp_pcb_accept_refuse(void *ctx)
 {
     struct pxtcp *pxtcp = (struct pxtcp *)ctx;
 
-    DPRINTF0(("%s: pxtcp %p, pcb %p, sock %d: errno %d\n",
+    DPRINTF0(("%s: pxtcp %p, pcb %p, sock %d: %R[sockerr]\n",
               __func__, (void *)pxtcp, (void *)pxtcp->pcb,
               pxtcp->sock, pxtcp->sockerr));
 
@@ -1005,7 +1005,7 @@ pxtcp_pcb_heard(void *arg, struct tcp_pcb *newpcb, err_t error)
     sock = proxy_connected_socket(sdom, SOCK_STREAM,
                                   &dst_addr, newpcb->local_port);
     if (sock == INVALID_SOCKET) {
-        sockerr = errno;
+        sockerr = SOCKERRNO();
         goto abort;
     }
 
@@ -1037,7 +1037,7 @@ pxtcp_pcb_heard(void *arg, struct tcp_pcb *newpcb, err_t error)
     return ERR_OK;
 
   abort:
-    DPRINTF0(("%s: pcb %p, sock %d: errno %d\n",
+    DPRINTF0(("%s: pcb %p, sock %d: %R[sockerr]\n",
               __func__, (void *)newpcb, sock, sockerr));
     pxtcp_pcb_reject(ip_current_netif(), newpcb, p, sockerr);
     return ERR_ABRT;
@@ -1079,7 +1079,6 @@ static int
 pxtcp_pmgr_connect(struct pollmgr_handler *handler, SOCKET fd, int revents)
 {
     struct pxtcp *pxtcp;
-    int sockerr;
 
     pxtcp = (struct pxtcp *)handler->data;
     LWIP_ASSERT1(handler == &pxtcp->pmhdl);
@@ -1091,24 +1090,19 @@ pxtcp_pmgr_connect(struct pollmgr_handler *handler, SOCKET fd, int revents)
             pxtcp->sockerr = ETIMEDOUT;
         }
         else {
-            socklen_t optlen = (socklen_t)sizeof(sockerr);
+            socklen_t optlen = (socklen_t)sizeof(pxtcp->sockerr);
             int status;
             SOCKET s;
 
             status = getsockopt(pxtcp->sock, SOL_SOCKET, SO_ERROR,
                                 (char *)&pxtcp->sockerr, &optlen);
-            if (status < 0) {       /* should not happen */
-                sockerr = errno;    /* ??? */
-                perror("connect: getsockopt");
+            if (status < 0) {   /* should not happen */
+                DPRINTF(("%s: sock %d: SO_ERROR failed: %R[sockerr]\n",
+                         __func__, fd, SOCKERRNO()));
             }
             else {
-#ifndef RT_OS_WINDOWS
-                errno = pxtcp->sockerr; /* to avoid strerror_r */
-#else
-                /* see winutils.h */
-                WSASetLastError(pxtcp->sockerr);
-#endif
-                perror("connect");
+                DPRINTF(("%s: sock %d: connect: %R[sockerr]\n",
+                         __func__, fd, pxtcp->sockerr));
             }
             s = pxtcp->sock;
             pxtcp->sock = INVALID_SOCKET;
@@ -1483,18 +1477,20 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
             break;
         }
         else {
+            sockerr = SOCKERRNO();
+
             /*
              * Some errors are really not errors - if we get them,
              * it's not different from getting nsent == 0, so filter
              * them out here.
              */
-            if (errno != EWOULDBLOCK
-                && errno != EAGAIN
-                && errno != ENOBUFS
-                && errno != ENOMEM
-                && errno != EINTR)
+            if (sockerr == EWOULDBLOCK
+                || sockerr == EAGAIN
+                || sockerr == ENOBUFS
+                || sockerr == ENOMEM
+                || sockerr == EINTR)
             {
-                sockerr = errno;
+                sockerr = 0;
             }
             q = qs;
             qoff = 0;
@@ -1639,11 +1635,12 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
         status = getsockopt(pxtcp->sock, SOL_SOCKET, SO_ERROR,
                             (char *)&sockerr, &optlen);
         if (status < 0) {       /* should not happen */
-            perror("getsockopt");
-            sockerr = ECONNRESET;
+            DPRINTF(("sock %d: SO_ERROR failed: %R[sockerr]\n",
+                     fd, SOCKERRNO()));
         }
-
-        DPRINTF0(("sock %d: errno %d\n", fd, sockerr));
+        else {
+            DPRINTF0(("sock %d: %R[sockerr]\n", fd, sockerr));
+        }
         return pxtcp_schedule_reset(pxtcp);
     }
 
@@ -1659,7 +1656,7 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
         nread = pxtcp_sock_read(pxtcp, &stop_pollin);
         if (nread < 0) {
             sockerr = -(int)nread;
-            DPRINTF0(("sock %d: errno %d\n", fd, sockerr));
+            DPRINTF0(("sock %d: %R[sockerr]\n", fd, sockerr));
             return pxtcp_schedule_reset(pxtcp);
         }
 
@@ -1731,7 +1728,8 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
 #endif
                 status = ioctlsocket(fd, FIONREAD, &unread);
                 if (status == SOCKET_ERROR) {
-                    perror("FIONREAD");
+                    DPRINTF2(("sock %d: FIONREAD: %R[sockerr]\n",
+                              fd, SOCKERRNO()));
                 }
                 else {
                     DPRINTF2(("sock %d: %d UNREAD bytes\n", fd, unread));
@@ -1854,17 +1852,21 @@ pxtcp_sock_read(struct pxtcp *pxtcp, int *pstop)
                  (void *)pxtcp, pxtcp->sock));
         return 1;
     }
-    else if (errno == EWOULDBLOCK || errno == EAGAIN || errno == EINTR) {
-        /* haven't read anything, just return */
-        DPRINTF2(("pxtcp %p: sock %d read cancelled\n",
-                  (void *)pxtcp, pxtcp->sock));
-        return 0;
-    }
     else {
-        /* socket error! */
-        DPRINTF0(("pxtcp %p: sock %d read errno %d\n",
-                  (void *)pxtcp, pxtcp->sock, errno));
-        return -errno;
+        int sockerr = SOCKERRNO();
+
+        if (sockerr == EWOULDBLOCK || sockerr == EAGAIN || sockerr == EINTR) {
+            /* haven't read anything, just return */
+            DPRINTF2(("pxtcp %p: sock %d read cancelled\n",
+                      (void *)pxtcp, pxtcp->sock));
+            return 0;
+        }
+        else {
+            /* socket error! */
+            DPRINTF0(("pxtcp %p: sock %d read: %R[sockerr]\n",
+                      (void *)pxtcp, pxtcp->sock, sockerr));
+            return -sockerr;
+        }
     }
 }
 
@@ -2264,7 +2266,7 @@ pxtcp_pcb_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
             if (nread < 0) {
                 int sockerr = -(int)nread;
                 LWIP_UNUSED_ARG(sockerr);
-                DPRINTF0(("%s: sock %d: errno %d\n",
+                DPRINTF0(("%s: sock %d: %R[sockerr]\n",
                           __func__, pxtcp->sock, sockerr));
 
                 /*

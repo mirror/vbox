@@ -593,7 +593,7 @@ pxping_recv4(void *arg, struct pbuf *p)
                           &pcb->peer.sin, sizeof(pcb->peer.sin));
     if (status != 0) {
         int error = -status;
-        DPRINTF(("%s: sendto errno %d\n", __func__, error));
+        DPRINTF(("%s: sendto: %R[sockerr]\n", __func__, error));
 
 #ifdef DF_WITH_IP_HDRINCL
         if (pxping->hdrincl) {
@@ -718,7 +718,7 @@ pxping_recv6(void *arg, struct pbuf *p)
                           &pcb->peer.sin6, sizeof(pcb->peer.sin6));
     if (status != 0) {
         int error = -status;
-        DPRINTF(("%s: sendto errno %d\n", __func__, error));
+        DPRINTF(("%s: sendto: %R[sockerr]\n", __func__, error));
 
         status = pbuf_header(p, iphlen); /* back to IP header */
         if (RT_UNLIKELY(status != 0)) {
@@ -1075,11 +1075,11 @@ pxping_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
         status = getsockopt(fd, SOL_SOCKET,
                             SO_ERROR, (char *)&sockerr, &optlen);
         if (status < 0) {
-            DPRINTF(("%s: sock %d: SO_ERROR failed with errno %d\n",
-                     __func__, fd, errno));
+            DPRINTF(("%s: sock %d: SO_ERROR failed: %R[sockerr]\n",
+                     __func__, fd, SOCKERRNO()));
         }
         else {
-            DPRINTF(("%s: sock %d: errno %d\n",
+            DPRINTF(("%s: sock %d: %R[sockerr]\n",
                      __func__, fd, sockerr));
         }
     }
