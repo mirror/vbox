@@ -213,11 +213,6 @@ public:
     QString toLPTPortName (ulong aIRQ, ulong aIOBase) const;
     bool toLPTPortNumbers (const QString &aName, ulong &aIRQ, ulong &aIOBase) const;
 
-    QPixmap snapshotIcon (bool online) const
-    {
-        return online ? mOnlineSnapshotIcon : mOfflineSnapshotIcon;
-    }
-
     static bool hasAllowedExtension(const QString &strExt, const QStringList &extList)
     {
         for (int i = 0; i < extList.size(); ++i)
@@ -483,8 +478,6 @@ private:
 
     QList <QString> mFamilyIDs;
     QList <QList <CGuestOSType> > mTypes;
-
-    QPixmap mOfflineSnapshotIcon, mOnlineSnapshotIcon;
 
     QString mDiskTypes_Differencing;
 

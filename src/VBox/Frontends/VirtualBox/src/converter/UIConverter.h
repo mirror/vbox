@@ -42,12 +42,12 @@ public:
         Assert(0); return QColor();
     }
 
-    /* QPixmap <= template class: */
-    template<class T> QPixmap toPixmap(const T &data) const
+    /* QIcon <= template class: */
+    template<class T> QIcon toIcon(const T &data) const
     {
         if (canConvert<T>())
-            return ::toPixmap(data);
-        Assert(0); return QPixmap();
+            return ::toIcon(data);
+        Assert(0); return QIcon();
     }
     /* QPixmap <= template class: */
     template<class T> QPixmap toWarningPixmap(const T &data) const

@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 #include <QTimer>
+#include <QIcon>
 
 /* GUI includes: */
 #include "VBoxSnapshotsWgt.gen.h"
@@ -52,6 +53,9 @@ public:
     VBoxSnapshotsWgt (QWidget *aParent);
 
     void setMachine (const CMachine &aMachine);
+
+    /** Returns cached snapshot-item icon depending on @a fOnline flag. */
+    const QIcon& snapshotItemIcon(bool fOnline) { return !fOnline ? m_offlineSnapshotIcon : m_onlineSnapshotIcon; }
 
 protected:
 
@@ -111,7 +115,11 @@ private:
     QTimer          mAgeUpdateTimer;
 
     bool            m_fShapshotOperationsAllowed;
+
+    /** Pointer to cached snapshot-item pixmap for 'offline' state. */
+    QIcon           m_offlineSnapshotIcon;
+    /** Pointer to cached snapshot-item pixmap for 'online' state. */
+    QIcon           m_onlineSnapshotIcon;
 };
 
 #endif // __VBoxSnapshotsWgt_h__
-

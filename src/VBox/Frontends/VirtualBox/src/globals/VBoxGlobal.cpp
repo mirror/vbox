@@ -4012,10 +4012,6 @@ void VBoxGlobal::prepare()
     /* Prepare general icon-pool: */
     m_pIconPool = new UIIconPoolGeneral;
 
-    /* online/offline snapshot icons */
-    mOfflineSnapshotIcon = QPixmap (":/snapshot_offline_16px.png");
-    mOnlineSnapshotIcon = QPixmap (":/snapshot_online_16px.png");
-
     qApp->installEventFilter (this);
 
     /* process command line */

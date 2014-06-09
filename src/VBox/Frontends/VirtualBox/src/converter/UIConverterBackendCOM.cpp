@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "UIConverterBackend.h"
+#include "UIIconPool.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -86,39 +87,39 @@ template<> QColor toColor(const KMachineState &state)
     return QColor();
 }
 
-/* QPixmap <= KMachineState: */
-template<> QPixmap toPixmap(const KMachineState &state)
+/* QIcon <= KMachineState: */
+template<> QIcon toIcon(const KMachineState &state)
 {
     switch (state)
     {
-        case KMachineState_PoweredOff:             return QPixmap(":/state_powered_off_16px.png");
-        case KMachineState_Saved:                  return QPixmap(":/state_saved_16px.png");
-        case KMachineState_Aborted:                return QPixmap(":/state_aborted_16px.png");
-        case KMachineState_Teleported:             return QPixmap(":/state_saved_16px.png");
-        case KMachineState_Running:                return QPixmap(":/state_running_16px.png");
-        case KMachineState_Paused:                 return QPixmap(":/state_paused_16px.png");
-        case KMachineState_Stuck:                  return QPixmap(":/state_stuck_16px.png");
-        case KMachineState_Teleporting:            return QPixmap(":/state_running_16px.png");
-        case KMachineState_LiveSnapshotting:       return QPixmap(":/state_running_16px.png");
-        case KMachineState_Starting:               return QPixmap(":/state_running_16px.png");
-        case KMachineState_Stopping:               return QPixmap(":/state_running_16px.png");
-        case KMachineState_Saving:                 return QPixmap(":/state_saving_16px.png");
-        case KMachineState_Restoring:              return QPixmap(":/state_restoring_16px.png");
-        case KMachineState_TeleportingPausedVM:    return QPixmap(":/state_saving_16px.png");
-        case KMachineState_TeleportingIn:          return QPixmap(":/state_restoring_16px.png");
+        case KMachineState_PoweredOff:             return UIIconPool::iconSet(":/state_powered_off_16px.png");
+        case KMachineState_Saved:                  return UIIconPool::iconSet(":/state_saved_16px.png");
+        case KMachineState_Aborted:                return UIIconPool::iconSet(":/state_aborted_16px.png");
+        case KMachineState_Teleported:             return UIIconPool::iconSet(":/state_saved_16px.png");
+        case KMachineState_Running:                return UIIconPool::iconSet(":/state_running_16px.png");
+        case KMachineState_Paused:                 return UIIconPool::iconSet(":/state_paused_16px.png");
+        case KMachineState_Stuck:                  return UIIconPool::iconSet(":/state_stuck_16px.png");
+        case KMachineState_Teleporting:            return UIIconPool::iconSet(":/state_running_16px.png");
+        case KMachineState_LiveSnapshotting:       return UIIconPool::iconSet(":/state_running_16px.png");
+        case KMachineState_Starting:               return UIIconPool::iconSet(":/state_running_16px.png");
+        case KMachineState_Stopping:               return UIIconPool::iconSet(":/state_running_16px.png");
+        case KMachineState_Saving:                 return UIIconPool::iconSet(":/state_saving_16px.png");
+        case KMachineState_Restoring:              return UIIconPool::iconSet(":/state_restoring_16px.png");
+        case KMachineState_TeleportingPausedVM:    return UIIconPool::iconSet(":/state_saving_16px.png");
+        case KMachineState_TeleportingIn:          return UIIconPool::iconSet(":/state_restoring_16px.png");
         // case KMachineState_FaultTolerantSyncing:
-        case KMachineState_DeletingSnapshotOnline: return QPixmap(":/state_discarding_16px.png");
-        case KMachineState_DeletingSnapshotPaused: return QPixmap(":/state_discarding_16px.png");
-        case KMachineState_RestoringSnapshot:      return QPixmap(":/state_discarding_16px.png");
-        case KMachineState_DeletingSnapshot:       return QPixmap(":/state_discarding_16px.png");
-        case KMachineState_SettingUp:              return QPixmap(":/vm_settings_16px.png"); // TODO: Change icon!
+        case KMachineState_DeletingSnapshotOnline: return UIIconPool::iconSet(":/state_discarding_16px.png");
+        case KMachineState_DeletingSnapshotPaused: return UIIconPool::iconSet(":/state_discarding_16px.png");
+        case KMachineState_RestoringSnapshot:      return UIIconPool::iconSet(":/state_discarding_16px.png");
+        case KMachineState_DeletingSnapshot:       return UIIconPool::iconSet(":/state_discarding_16px.png");
+        case KMachineState_SettingUp:              return UIIconPool::iconSet(":/vm_settings_16px.png"); // TODO: Change icon!
         // case KMachineState_FirstOnline:
         // case KMachineState_LastOnline:
         // case KMachineState_FirstTransient:
         // case KMachineState_LastTransient:
-        default: AssertMsgFailed(("No pixmap for %d", state)); break;
+        default: AssertMsgFailed(("No icon for %d", state)); break;
     }
-    return QPixmap();
+    return QIcon();
 }
 
 /* QString <= KMachineState: */

@@ -22,6 +22,7 @@
 /* Qt includes: */
 #include <QString>
 #include <QColor>
+#include <QIcon>
 #include <QPixmap>
 
 /* GUI includes: */
@@ -36,9 +37,10 @@ template<class X> bool canConvert() { return false; }
  * This function returns null QColor for any object type until re-determined for specific one. */
 template<class X> QColor toColor(const X & /* xobject */) { Assert(0); return QColor(); }
 
-/* Converts passed 'Object X' to QPixmap.
- * This function returns null QPixmap for any object type until re-determined for specific one. */
-template<class X> QPixmap toPixmap(const X & /* xobject */) { Assert(0); return QPixmap(); }
+/* Converts passed 'Object X' to QIcon.
+ * This function returns null QIcon for any object type until re-determined for specific one. */
+template<class X> QIcon toIcon(const X & /* xobject */) { Assert(0); return QIcon(); }
+
 /* Converts passed 'Object X' to QPixmap.
  * This function returns null QPixmap for any object type until re-determined for specific one. */
 template<class X> QPixmap toWarningPixmap(const X & /* xobject */) { Assert(0); return QPixmap(); }
@@ -164,7 +166,7 @@ template<> HiDPIOptimizationType fromInternalString<HiDPIOptimizationType>(const
 
 /* Declare COM conversion specializations: */
 template<> QColor toColor(const KMachineState &state);
-template<> QPixmap toPixmap(const KMachineState &state);
+template<> QIcon toIcon(const KMachineState &state);
 template<> QString toString(const KMachineState &state);
 template<> QString toString(const KSessionState &state);
 template<> QString toString(const KDeviceType &type);
