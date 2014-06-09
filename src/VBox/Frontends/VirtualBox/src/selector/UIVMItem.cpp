@@ -167,8 +167,8 @@ QString UIVMItem::machineStateName() const
 
 QIcon UIVMItem::machineStateIcon() const
 {
-    return m_fAccessible ? gpConverter->toPixmap(m_machineState) :
-                           QPixmap(":/state_aborted_16px.png");
+    return m_fAccessible ? gpConverter->toIcon(m_machineState) :
+                           gpConverter->toIcon(KMachineState_Aborted);
 }
 
 QString UIVMItem::sessionStateName() const

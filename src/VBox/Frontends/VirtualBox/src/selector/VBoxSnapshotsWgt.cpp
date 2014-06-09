@@ -58,24 +58,27 @@ public:
     enum { ItemType = QTreeWidgetItem::UserType + 1 };
 
     /* Normal snapshot item (child of tree-widget) */
-    SnapshotWgtItem (QTreeWidget *aTreeWidget, const CSnapshot &aSnapshot)
+    SnapshotWgtItem (VBoxSnapshotsWgt *pSnapshotWidget, QTreeWidget *aTreeWidget, const CSnapshot &aSnapshot)
         : QTreeWidgetItem (aTreeWidget, ItemType)
+        , m_pSnapshotWidget(pSnapshotWidget)
         , mIsCurrentState (false)
         , mSnapshot (aSnapshot)
     {
     }
 
     /* Normal snapshot item (child of tree-widget-item) */
-    SnapshotWgtItem (QTreeWidgetItem *aRootItem, const CSnapshot &aSnapshot)
+    SnapshotWgtItem (VBoxSnapshotsWgt *pSnapshotWidget, QTreeWidgetItem *aRootItem, const CSnapshot &aSnapshot)
         : QTreeWidgetItem (aRootItem, ItemType)
+        , m_pSnapshotWidget(pSnapshotWidget)
         , mIsCurrentState (false)
         , mSnapshot (aSnapshot)
     {
     }
 
     /* Current state item (child of tree-widget) */
-    SnapshotWgtItem (QTreeWidget *aTreeWidget, const CMachine &aMachine)
+    SnapshotWgtItem (VBoxSnapshotsWgt *pSnapshotWidget, QTreeWidget *aTreeWidget, const CMachine &aMachine)
         : QTreeWidgetItem (aTreeWidget, ItemType)
+        , m_pSnapshotWidget(pSnapshotWidget)
         , mIsCurrentState (true)
         , mMachine (aMachine)
     {
@@ -83,8 +86,9 @@ public:
     }
 
     /* Current state item (child of tree-widget-item) */
-    SnapshotWgtItem (QTreeWidgetItem *aRootItem, const CMachine &aMachine)
+    SnapshotWgtItem (VBoxSnapshotsWgt *pSnapshotWidget, QTreeWidgetItem *aRootItem, const CMachine &aMachine)
         : QTreeWidgetItem (aRootItem, ItemType)
+        , m_pSnapshotWidget(pSnapshotWidget)
         , mIsCurrentState (true)
         , mMachine (aMachine)
     {
@@ -170,7 +174,7 @@ public:
             mId = mSnapshot.GetId();
             setText (0, mSnapshot.GetName());
             mOnline = mSnapshot.GetOnline();
-            setIcon (0, vboxGlobal().snapshotIcon (mOnline));
+            setIcon(0, m_pSnapshotWidget->snapshotItemIcon(mOnline));
             mDesc = mSnapshot.GetDescription();
             mTimestamp.setTime_t (mSnapshot.GetTimeStamp() / 1000);
             mCurStateModified = false;
@@ -192,7 +196,7 @@ public:
         if (mMachine.isNull())
             return;
 
-        setIcon (0, gpConverter->toPixmap (aState));
+        setIcon(0, gpConverter->toIcon(aState));
         mMachineState = aState;
         mTimestamp.setTime_t (mMachine.GetLastStateChange() / 1000);
     }
@@ -291,6 +295,9 @@ private:
         setToolTip (0, toolTip);
     }
 
+    /** Holds pointer to snapshot-widget 'this' item belongs to. */
+    QPointer<VBoxSnapshotsWgt> m_pSnapshotWidget;
+
     bool mIsCurrentState;
 
     CSnapshot mSnapshot;
@@ -360,6 +367,10 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     mTreeWidget->setStyle (treeWidgetStyle);
     connect (mTreeWidget, SIGNAL (destroyed (QObject *)), treeWidgetStyle, SLOT (deleteLater()));
 // #endif
+
+    /* Cache pixmaps: */
+    m_offlineSnapshotIcon = UIIconPool::iconSet(":/snapshot_offline_16px.png");
+    m_onlineSnapshotIcon = UIIconPool::iconSet(":/snapshot_online_16px.png");
 
     /* ToolBar creation */
     UIToolBar *toolBar = new UIToolBar (this);
@@ -952,7 +963,7 @@ void VBoxSnapshotsWgt::refreshAll()
         Assert (mCurSnapshotItem);
 
         /* Add the "current state" item */
-        SnapshotWgtItem *csi = new SnapshotWgtItem (mCurSnapshotItem, mMachine);
+        SnapshotWgtItem *csi = new SnapshotWgtItem(this, mCurSnapshotItem, mMachine);
         csi->setBold (true);
         csi->recache();
 
@@ -971,7 +982,7 @@ void VBoxSnapshotsWgt::refreshAll()
         mCurSnapshotItem = 0;
 
         /* Add the "current state" item */
-        SnapshotWgtItem *csi = new SnapshotWgtItem (mTreeWidget, mMachine);
+        SnapshotWgtItem *csi = new SnapshotWgtItem(this, mTreeWidget, mMachine);
         csi->setBold (true);
         csi->recache();
 
@@ -1009,8 +1020,8 @@ SnapshotWgtItem *VBoxSnapshotsWgt::curStateItem()
 
 void VBoxSnapshotsWgt::populateSnapshots (const CSnapshot &aSnapshot, QTreeWidgetItem *aItem)
 {
-    SnapshotWgtItem *item = aItem ? new SnapshotWgtItem (aItem, aSnapshot) :
-                                    new SnapshotWgtItem (mTreeWidget, aSnapshot);
+    SnapshotWgtItem *item = aItem ? new SnapshotWgtItem(this, aItem, aSnapshot) :
+                                    new SnapshotWgtItem(this, mTreeWidget, aSnapshot);
     item->recache();
 
     CSnapshot curSnapshot = mMachine.GetCurrentSnapshot();

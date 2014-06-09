@@ -234,13 +234,13 @@ void UIGChooserItemMachine::updatePixmap()
 void UIGChooserItemMachine::updateStatePixmap()
 {
     /* Get new state-pixmap and state-pixmap size: */
-    QIcon stateIcon = machineStateIcon();
-    QSize stateIconSize = stateIcon.availableSizes().first();
-    QPixmap statePixmap = stateIcon.pixmap(stateIconSize);
+    const QIcon stateIcon = machineStateIcon();
+    const QSize statePixmapSize = stateIcon.availableSizes().first();
+    const QPixmap statePixmap = stateIcon.pixmap(statePixmapSize);
     /* Update linked values: */
-    if (m_statePixmapSize != stateIconSize)
+    if (m_statePixmapSize != statePixmapSize)
     {
-        m_statePixmapSize = stateIconSize;
+        m_statePixmapSize = statePixmapSize;
         updateGeometry();
     }
     if (m_statePixmap.toImage() != statePixmap.toImage())
