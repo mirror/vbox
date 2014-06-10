@@ -1140,9 +1140,8 @@ void UISession::loadSessionSettings()
             m_fIsIgnoreRuntimeMediumsChanging = true;
 
         /* Should guest autoresize? */
-        strSettings = machine.GetExtraData(GUI_AutoresizeGuest);
         QAction *pGuestAutoresizeSwitch = gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize);
-        pGuestAutoresizeSwitch->setChecked(strSettings != "off");
+        pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResize(vboxGlobal().managedVMUuid()));
 
         /* Should we allow reconfiguration? */
         m_fReconfigurable = gEDataManager->shouldWeAllowMachineReconfiguration(vboxGlobal().managedVMUuid());
@@ -1173,18 +1172,13 @@ void UISession::loadSessionSettings()
 
 void UISession::saveSessionSettings()
 {
-    /* Get uisession machine: */
-    CMachine machine = session().GetConsole().GetMachine();
-
     /* Save extra-data settings: */
     {
         /* Disable First RUN Wizard: */
         gEDataManager->setFirstRun(false, vboxGlobal().managedVMUuid());
 
         /* Remember if guest should autoresize: */
-        machine.SetExtraData(GUI_AutoresizeGuest,
-                             gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked() ?
-                             QString() : "off");
+        gEDataManager->setGuestScreenAutoResize(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked(), vboxGlobal().managedVMUuid());
 
 #if 0 /* Disabled for now! */
 # ifdef Q_WS_WIN
