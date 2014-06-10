@@ -78,7 +78,6 @@ void UIMultiScreenLayout::update()
     /* Load all combinations stored in the settings file.
      * We have to make sure they are valid, which means there have to be unique combinations
      * and all guests screens need there own host screen. */
-    CMachine machine = m_pMachineLogic->session().GetMachine();
     CDisplay display = m_pMachineLogic->session().GetConsole().GetDisplay();
     bool fShouldWeAutoMountGuestScreens = gEDataManager->shouldWeAutoMountGuestScreens(vboxGlobal().managedVMUuid());
     LogRelFlow(("UIMultiScreenLayout::update: GUI/AutomountGuestScreens is %s.\n", fShouldWeAutoMountGuestScreens ? "enabled" : "disabled"));
@@ -101,21 +100,19 @@ void UIMultiScreenLayout::update()
         if (!fValid)
         {
             /* Check the position of the guest window in normal mode.
-             * This makes sure that on first use the window opens on the same screen as the normal window was before.
-             * This even works with multi-screen. The user just have to move all the normal windows to the target screens
-             * and they will magically open there in seamless/fullscreen also. */
-            QString strTest1 = machine.GetExtraData(GUI_LastNormalWindowPosition + (iGuestScreen > 0 ? QString::number(iGuestScreen): ""));
-            QRegExp posParser("(-?\\d+),(-?\\d+),(-?\\d+),(-?\\d+)");
-            if (posParser.exactMatch(strTest1))
+             * This makes sure that on first use fullscreen/seamless window opens on the same host-screen as the normal window was before.
+             * This even works with multi-screen. The user just have to move all the normal windows to the target host-screens
+             * and they will magically open there in fullscreen/seamless also. */
+            QRect geo = gEDataManager->machineWindowGeometry(m_pMachineLogic->visualStateType(), iGuestScreen, vboxGlobal().managedVMUuid());
+            /* If geometry is valid: */
+            if (!geo.isNull())
             {
-                /* If parsing was successfully, convert it to a position: */
-                bool fOk1, fOk2;
-                QPoint p(posParser.cap(1).toInt(&fOk1), posParser.cap(2).toInt(&fOk2));
-                /* Check to which screen the position belongs: */
-                iHostScreen = pDW->screenNumber(p);
+                /* Get top-left corner position: */
+                QPoint topLeftPosition(geo.topLeft());
+                /* Check which host-screen the position belongs to: */
+                iHostScreen = pDW->screenNumber(topLeftPosition);
                 /* Revalidate: */
-                fValid =    fOk1 && fOk2 /* Valid data */
-                         && iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
+                fValid =    iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
                          && m_screenMap.key(iHostScreen, -1) == -1; /* Not taken already? */
             }
         }
