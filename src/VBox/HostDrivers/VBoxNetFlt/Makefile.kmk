@@ -287,6 +287,7 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
  	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 
+ ifndef VBOX_OSE
  #
  # NetLwfInstall
  #
@@ -315,6 +316,7 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
  	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
  	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
+ endif
 
  #
  # VBoxNetFltNobj
