@@ -1,8 +1,9 @@
 #ifndef __WINUTILS_H_
 # define __WINUTILS_H_
 
+# include <iprt/cdefs.h>
+
 # ifdef RT_OS_WINDOWS
-#  include <iprt/cdefs.h>
 #  include <WinSock2.h>
 #  include <ws2tcpip.h>
 #  include <mswsock.h>
@@ -146,6 +147,8 @@ int RTWinSocketPair(int domain, int type, int protocol, SOCKET socket_vector[2])
 RT_C_DECLS_END
 
 # else /* !RT_OS_WINDOWS */
+
+#  include <errno.h>
 
 #  define SOCKET int
 #  define INVALID_SOCKET (-1)
