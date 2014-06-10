@@ -341,6 +341,7 @@ proxy_create_socket(int sdom, int stype)
         status = ioctlsocket(s, FIONBIO, &mode);
         if (status == SOCKET_ERROR) {
             warn("ioctl error: %d\n", WSAGetLastError());
+            closesocket(s);
             return INVALID_SOCKET;
         }
     }
