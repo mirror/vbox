@@ -270,6 +270,9 @@ public:
     /** Returns Runtime UI HiDPI optimization type. */
     HiDPIOptimizationType hiDPIOptimizationType(const QString &strID) const;
 
+    /** Returns whether VM should pass CAD to guest. */
+    bool passCADtoGuest(const QString &strID) const;
+
 private slots:
 
     /** Handles 'extra-data change' event: */

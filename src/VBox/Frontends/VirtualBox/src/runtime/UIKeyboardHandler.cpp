@@ -38,6 +38,7 @@
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
 #include "UIHostComboEditor.h"
+#include "UIExtraDataManager.h"
 
 /* Other VBox includes: */
 #ifdef Q_WS_X11
@@ -761,7 +762,7 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_bIsHostComboPressed(false)
     , m_bIsHostComboAlone(false)
     , m_bIsHostComboProcessed(false)
-    , m_fPassCAD(false)
+    , m_fPassCADtoGuest(false)
     , m_fDebuggerActive(false)
 #if defined(Q_WS_WIN)
     , m_bIsHostkeyInCapture(false)
@@ -809,10 +810,8 @@ void UIKeyboardHandler::loadSettings()
 
     /* Extra data settings: */
     {
-        /* CAD settings: */
-        QString passCAD = session().GetConsole().GetMachine().GetExtraData(GUI_PassCAD);
-        if (!passCAD.isEmpty() && passCAD != "false" && passCAD != "no")
-            m_fPassCAD = true;
+        /* CAD setting: */
+        m_fPassCADtoGuest = gEDataManager->passCADtoGuest(vboxGlobal().managedVMUuid());
     }
 }
 
@@ -1227,8 +1226,8 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
  */
 bool UIKeyboardHandler::keyEventCADHandled(uint8_t uScan)
 {
-    /* Check if it's C-A-D and GUI/PassCAD is not true: */
-    if (!m_fPassCAD &&
+    /* Check if it's C-A-D and GUI/PassCAD is not set/allowed: */
+    if (!m_fPassCADtoGuest &&
         uScan == 0x53 /* Del */ &&
         ((m_pressedKeys[0x38] & IsKeyPressed) /* Alt */ ||
          (m_pressedKeys[0x38] & IsExtKeyPressed)) &&
