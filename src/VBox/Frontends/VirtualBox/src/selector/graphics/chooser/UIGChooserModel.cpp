@@ -1610,8 +1610,11 @@ void UIGChooserModel::loadGroupTree()
     /* Add all the approved machines we have into the group-tree: */
     LogRelFlow(("UIGChooserModel: Loading VMs...\n"));
     foreach (CMachine machine, vboxGlobal().virtualBox().GetMachines())
-        if (gEDataManager->shouldWeShowMachine(machine.GetId()))
+    {
+        const QString strMachineID = machine.GetId();
+        if (!strMachineID.isEmpty() && gEDataManager->shouldWeShowMachine(strMachineID))
             addMachineIntoTheTree(machine);
+    }
     LogRelFlow(("UIGChooserModel: VMs loaded.\n"));
 }
 
