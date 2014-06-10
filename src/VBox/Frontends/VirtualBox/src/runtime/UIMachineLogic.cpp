@@ -188,12 +188,14 @@ void UIMachineLogic::prepare()
     sltMachineStateChanged();
     sltAdditionsStateChanged();
     sltMouseCapabilityChanged();
-    sltSwitchKeyboardLedsToGuestLeds();
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Prepare debugger: */
     prepareDebugger();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
+    /* Load settings: */
+    loadSettings();
 
     /* Retranslate logic part: */
     retranslateUi();
@@ -201,8 +203,8 @@ void UIMachineLogic::prepare()
 
 void UIMachineLogic::cleanup()
 {
-    /* Deinitialization: */
-    sltSwitchKeyboardLedsToPreviousLeds();
+    /* Save settings: */
+    saveSettings();
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Cleanup debugger: */
@@ -526,7 +528,7 @@ void UIMachineLogic::sltMouseCapabilityChanged()
 
 void UIMachineLogic::sltHidLedsSyncStateChanged(bool fEnabled)
 {
-    m_isHidLedsSyncEnabled = fEnabled;
+    m_fIsHidLedsSyncEnabled = fEnabled;
 }
 
 void UIMachineLogic::sltKeyboardLedsChanged()
@@ -641,26 +643,8 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_DockIconPreviewMonitor(0)
 #endif /* Q_WS_MAC */
     , m_pHostLedsState(NULL)
-    , m_isHidLedsSyncEnabled(false)
+    , m_fIsHidLedsSyncEnabled(false)
 {
-    /* Setup HID LEDs synchronization. */
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
-    /* Read initial extradata value. */
-    QString strHidLedsSyncSettings = session().GetMachine().GetExtraData(GUI_HidLedsSync);
-
-    /* If extra data GUI/HidLedsSync is not present in VM config or set
-     * to 1 then sync is enabled. Otherwise, it is disabled. */
-    if (strHidLedsSyncSettings.isEmpty() || strHidLedsSyncSettings == "1")
-        m_isHidLedsSyncEnabled = true;
-    else
-        m_isHidLedsSyncEnabled = false;
-
-    /* Subscribe to GUI_HidLedsSync extradata changes in order to
-     * be able to enable or disable feature dynamically. */
-    connect(gEDataManager, SIGNAL(sigHIDLedsSyncStateChange(bool)), this, SLOT(sltHidLedsSyncStateChanged(bool)));
-#else
-    m_isHidLedsSyncEnabled = false;
-#endif
 }
 
 void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
@@ -1082,6 +1066,24 @@ void UIMachineLogic::prepareDebugger()
     }
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
+void UIMachineLogic::loadSettings()
+{
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+    /* Read cached extra-data value: */
+    m_fIsHidLedsSyncEnabled = gEDataManager->hidLedsSyncState(vboxGlobal().managedVMUuid());
+    /* Subscribe to extra-data changes to be able to enable/disable feature dynamically: */
+    connect(gEDataManager, SIGNAL(sigHidLedsSyncStateChange(bool)), this, SLOT(sltHidLedsSyncStateChanged(bool)));
+#endif /* Q_WS_MAC || Q_WS_WIN */
+    /* HID LEDs sync initialization: */
+    sltSwitchKeyboardLedsToGuestLeds();
+}
+
+void UIMachineLogic::saveSettings()
+{
+    /* HID LEDs sync deinitialization: */
+    sltSwitchKeyboardLedsToPreviousLeds();
+}
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 void UIMachineLogic::cleanupDebugger()

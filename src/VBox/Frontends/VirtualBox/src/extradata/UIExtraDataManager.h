@@ -55,8 +55,8 @@ signals:
     /** Notifies about Runtime UI keyboard shortcut change. */
     void sigRuntimeUIShortcutChange();
 
-    /** Notifies about HID LED sync state change. */
-    void sigHIDLedsSyncStateChange(bool fEnabled);
+    /** Notifies about HID LEDs synchronization state change. */
+    void sigHidLedsSyncStateChange(bool fEnabled);
 
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Notifies about 'presentation mode' status change. */
@@ -272,6 +272,9 @@ public:
 
     /** Returns whether VM should pass CAD to guest. */
     bool passCADtoGuest(const QString &strID) const;
+
+    /** Returns whether VM should perform HID LEDs synchronization. */
+    bool hidLedsSyncState(const QString &strID) const;
 
 private slots:
 
