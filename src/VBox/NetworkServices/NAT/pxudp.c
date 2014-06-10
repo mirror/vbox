@@ -578,7 +578,7 @@ pxudp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
 
     nread = recv(pxudp->sock, pollmgr_udpbuf, sizeof(pollmgr_udpbuf), 0);
     if (nread == SOCKET_ERROR) {
-        perror(__func__);
+        DPRINTF(("%s: %R[sockerr]\n", __func__, SOCKERRNO()));
         return POLLIN;
     }
 

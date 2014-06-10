@@ -271,7 +271,7 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
             status = setsockopt(sock4, IPPROTO_IP, IP_MTU_DISCOVER,
                                 &dont, sizeof(dont));
             if (status != 0) {
-                perror("IP_MTU_DISCOVER");
+                DPRINTF(("IP_MTU_DISCOVER: %R[sockerr]\n", SOCKERRNO()));
             }
         }
 #endif /* RT_OS_LINUX */
@@ -304,7 +304,7 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
         status = setsockopt(sock6, IPPROTO_IPV6, IPV6_RECVPKTINFO,
                             (const char *)&on, sizeof(on));
         if (status < 0) {
-            perror("IPV6_RECVPKTINFO");
+            DPRINTF(("IPV6_RECVPKTINFO: %R[sockerr]\n", SOCKERRNO()));
             /* XXX: for now this is fatal */
         }
 
@@ -314,7 +314,7 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
         status = setsockopt(sock6, IPPROTO_IPV6, IPV6_RECVHOPLIMIT,
                             (const char *)&on, sizeof(on));
         if (status < 0) {
-            perror("IPV6_RECVHOPLIMIT");
+            DPRINTF(("IPV6_RECVHOPLIMIT: %R[sockerr]\n", SOCKERRNO()));
         }
 
 #ifdef IPV6_RECVTCLASS  /* new in RFC 3542, there's no RFC 2292 counterpart */
@@ -494,7 +494,7 @@ pxping_recv4(void *arg, struct pbuf *p)
             pxping->hdrincl = df;
         }
         else {
-            perror("IP_HDRINCL");
+            DPRINTF(("IP_HDRINCL: %R[sockerr]\n", SOCKERRNO()));
         }
     }
 
@@ -553,7 +553,7 @@ pxping_recv4(void *arg, struct pbuf *p)
                 pxping->df = df;
             }
             else {
-                perror(dfoptname);
+                DPRINTF(("%s: %R[sockerr]\n", dfoptname, SOCKERRNO()));
             }
         }
 #endif /* !DF_WITH_IP_HDRINCL */
@@ -565,7 +565,7 @@ pxping_recv4(void *arg, struct pbuf *p)
                 pxping->ttl = ttl;
             }
             else {
-                perror("IP_TTL");
+                DPRINTF(("IP_TTL: %R[sockerr]\n", SOCKERRNO()));
             }
         }
 
@@ -577,7 +577,7 @@ pxping_recv4(void *arg, struct pbuf *p)
                 pxping->tos = tos;
             }
             else {
-                perror("IP_TOS");
+                DPRINTF(("IP_TOS: %R[sockerr]\n", SOCKERRNO()));
             }
         }
     }
@@ -710,7 +710,7 @@ pxping_recv6(void *arg, struct pbuf *p)
             pxping->hopl = hopl;
         }
         else {
-            perror("IPV6_HOPLIMIT");
+            DPRINTF(("IPV6_HOPLIMIT: %R[sockerr]\n", SOCKERRNO()));
         }
     }
 
@@ -1122,7 +1122,7 @@ pxping_pmgr_icmp4(struct pxping *pxping)
     nread = recvfrom(pxping->sock4, pollmgr_udpbuf, sizeof(pollmgr_udpbuf), 0,
                      (struct sockaddr *)&sin, &salen);
     if (nread < 0) {
-        perror(__func__);
+        DPRINTF(("%s: %R[sockerr]\n", __func__, SOCKERRNO()));
         return;
     }
 
@@ -1483,7 +1483,7 @@ pxping_pmgr_icmp6(struct pxping *pxping)
 
     nread = recvmsg(pxping->sock6, &mh, 0);
     if (nread < 0) {
-        perror(__func__);
+        DPRINTF(("%s: %R[sockerr]\n", __func__, SOCKERRNO()));
         return;
     }
 #else  /* RT_OS_WINDOWS */

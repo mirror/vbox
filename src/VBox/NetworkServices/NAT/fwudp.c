@@ -170,7 +170,6 @@ fwudp_create(struct fwspec *fwspec)
 
     sock = proxy_bound_socket(fwspec->sdom, fwspec->stype, &fwspec->src.sa);
     if (sock == INVALID_SOCKET) {
-        perror("socket");
         return NULL;
     }
 
@@ -266,7 +265,7 @@ fwudp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
     nread = recvfrom(fwudp->sock, pollmgr_udpbuf, sizeof(pollmgr_udpbuf), 0,
                      (struct sockaddr *)&ss, &sslen);
     if (nread < 0) {
-        perror(__func__);
+        DPRINTF(("%s: %R[sockerr]\n", __func__, SOCKERRNO()));
         return POLLIN;
     }
 

@@ -297,7 +297,7 @@ proxy_create_socket(int sdom, int stype)
 
     s = socket(sdom, stype_and_flags, 0);
     if (s == INVALID_SOCKET) {
-        perror("socket");
+        DPRINTF(("socket: %R[sockerr]\n", SOCKERRNO()));
         return INVALID_SOCKET;
     }
 
@@ -307,14 +307,14 @@ proxy_create_socket(int sdom, int stype)
 
         sflags = fcntl(s, F_GETFL, 0);
         if (sflags < 0) {
-            perror("F_GETFL");
+            DPRINTF(("F_GETFL: %R[sockerr]\n", SOCKERRNO()));
             closesocket(s);
             return INVALID_SOCKET;
         }
 
         status = fcntl(s, F_SETFL, sflags | O_NONBLOCK);
         if (status < 0) {
-            perror("O_NONBLOCK");
+            DPRINTF(("O_NONBLOCK: %R[sockerr]\n", SOCKERRNO()));
             closesocket(s);
             return INVALID_SOCKET;
         }
@@ -328,7 +328,7 @@ proxy_create_socket(int sdom, int stype)
 
         status = setsockopt(s, SOL_SOCKET, SO_NOSIGPIPE, &on, onlen);
         if (status < 0) {
-            perror("SO_NOSIGPIPE");
+            DPRINTF(("SO_NOSIGPIPE: %R[sockerr]\n", SOCKERRNO()));
             closesocket(s);
             return INVALID_SOCKET;
         }
@@ -340,7 +340,7 @@ proxy_create_socket(int sdom, int stype)
         u_long mode = 0;
         status = ioctlsocket(s, FIONBIO, &mode);
         if (status == SOCKET_ERROR) {
-            warn("ioctl error: %d\n", WSAGetLastError());
+            DPRINTF(("FIONBIO: %R[sockerr]\n", SOCKERRNO()));
             closesocket(s);
             return INVALID_SOCKET;
         }
@@ -470,7 +470,7 @@ proxy_bound_socket(int sdom, int stype, struct sockaddr *src_addr)
     on = 1;
     status = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&on, onlen);
     if (status < 0) {           /* not good, but not fatal */
-        warn("SO_REUSEADDR");
+        DPRINTF(("SO_REUSEADDR: %R[sockerr]\n", SOCKERRNO()));
     }
 
     status = bind(s, src_addr,
@@ -478,7 +478,7 @@ proxy_bound_socket(int sdom, int stype, struct sockaddr *src_addr)
                     sizeof(struct sockaddr_in)
                   : sizeof(struct sockaddr_in6));
     if (status < 0) {
-        perror("bind");
+        DPRINTF(("bind: %R[sockerr]\n", SOCKERRNO()));
         closesocket(s);
         return INVALID_SOCKET;
     }
@@ -486,7 +486,7 @@ proxy_bound_socket(int sdom, int stype, struct sockaddr *src_addr)
     if (stype == SOCK_STREAM) {
         status = listen(s, 5);
         if (status < 0) {
-            perror("listen");
+            DPRINTF(("listen: %R[sockerr]\n", SOCKERRNO()));
             closesocket(s);
             return INVALID_SOCKET;
         }

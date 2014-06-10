@@ -797,7 +797,7 @@ pxdns_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
 
     nread = recv(fd, pollmgr_udpbuf, sizeof(pollmgr_udpbuf), 0);
     if (nread < 0) {
-        perror(__func__);
+        DPRINTF(("%s: %R[sockerr]\n", __func__, SOCKERRNO()));
         return POLLIN;
     }
 

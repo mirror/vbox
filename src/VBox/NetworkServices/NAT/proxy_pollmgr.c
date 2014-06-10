@@ -82,15 +82,12 @@ pollmgr_init(void)
 #ifndef RT_OS_WINDOWS
         status = socketpair(PF_LOCAL, SOCK_DGRAM, 0, pollmgr.chan[i]);
         if (status < 0) {
-            perror("socketpair");
+            DPRINTF(("socketpair: %R[sockerr]\n", SOCKERRNO()));
             goto cleanup_close;
         }
 #else
         status = RTWinSocketPair(PF_INET, SOCK_DGRAM, 0, pollmgr.chan[i]);
-        AssertRCReturn(status, -1);
-
         if (RT_FAILURE(status)) {
-            perror("socketpair");
             goto cleanup_close;
         }
 #endif
@@ -103,14 +100,14 @@ pollmgr_init(void)
     newfds = (struct pollfd *)
         malloc(newcap * sizeof(*pollmgr.fds));
     if (newfds == NULL) {
-        perror("calloc");
+        DPRINTF(("%s: Failed to allocate fds array\n", __func__));
         goto cleanup_close;
     }
 
     newhdls = (struct pollmgr_handler **)
         malloc(newcap * sizeof(*pollmgr.handlers));
     if (newhdls == NULL) {
-        perror("malloc");
+        DPRINTF(("%s: Failed to allocate handlers array\n", __func__));
         free(newfds);
         goto cleanup_close;
     }
@@ -179,7 +176,7 @@ pollmgr_add(struct pollmgr_handler *handler, SOCKET fd, int events)
         newfds = (struct pollfd *)
             realloc(pollmgr.fds, newcap * sizeof(*pollmgr.fds));
         if (newfds == NULL) {
-            perror("realloc");
+            DPRINTF(("%s: Failed to reallocate fds array\n", __func__));
             handler->slot = -1;
             return -1;
         }
@@ -190,7 +187,7 @@ pollmgr_add(struct pollmgr_handler *handler, SOCKET fd, int events)
         newhdls = (struct pollmgr_handler **)
             realloc(pollmgr.handlers, newcap * sizeof(*pollmgr.handlers));
         if (newhdls == NULL) {
-            perror("realloc");
+            DPRINTF(("%s: Failed to reallocate handlers array\n", __func__));
             /* if we failed to realloc here, then fds points to the
              * new array, but we pretend we still has old capacity */
             handler->slot = -1;
@@ -241,12 +238,12 @@ pollmgr_chan_send(int slot, void *buf, size_t nbytes)
     fd = pollmgr.chan[slot][POLLMGR_CHFD_WR];
     nsent = send(fd, buf, (int)nbytes, 0);
     if (nsent == SOCKET_ERROR) {
-        warn("send on chan %d", slot);
+        DPRINTF(("send on chan %d: %R[sockerr]\n", slot, SOCKERRNO()));
         return -1;
     }
     else if ((size_t)nsent != nbytes) {
-        warnx("send on chan %d: datagram truncated to %u bytes",
-              slot, (unsigned int)nsent);
+        DPRINTF(("send on chan %d: datagram truncated to %u bytes",
+                 slot, (unsigned int)nsent));
         return -1;
     }
 
