@@ -1484,12 +1484,7 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
              * it's not different from getting nsent == 0, so filter
              * them out here.
              */
-            if (sockerr == EWOULDBLOCK
-                || sockerr == EAGAIN
-                || sockerr == ENOBUFS
-                || sockerr == ENOMEM
-                || sockerr == EINTR)
-            {
+            if (proxy_error_is_transient(sockerr)) {
                 sockerr = 0;
             }
             q = qs;
@@ -1774,7 +1769,7 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
  * Returns number of bytes read.  NB: EOF is reported as 1!
  *
  * Returns zero if nothing was read, either because buffer is full, or
- * if no data is available (EAGAIN, EINTR &c).
+ * if no data is available (EWOULDBLOCK, EINTR &c).
  *
  * Returns -errno on real socket errors.
  */
@@ -1855,7 +1850,7 @@ pxtcp_sock_read(struct pxtcp *pxtcp, int *pstop)
     else {
         int sockerr = SOCKERRNO();
 
-        if (sockerr == EWOULDBLOCK || sockerr == EAGAIN || sockerr == EINTR) {
+        if (proxy_error_is_transient(sockerr)) {
             /* haven't read anything, just return */
             DPRINTF2(("pxtcp %p: sock %d read cancelled\n",
                       (void *)pxtcp, pxtcp->sock));
