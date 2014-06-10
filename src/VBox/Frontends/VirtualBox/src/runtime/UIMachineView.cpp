@@ -170,9 +170,6 @@ double UIMachineView::aspectRatio() const
 
 void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 {
-    /* Get the current machine: */
-    CMachine machine = session().GetMachine();
-
     /* If this slot is invoked directly then use the passed size otherwise get
      * the available size for the guest display. We assume here that centralWidget()
      * contains this view only and gives it all available space: */
@@ -443,7 +440,7 @@ void UIMachineView::prepareFrameBuffer()
         /* Try to get the real guest dimensions from the save state */
         ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
         BOOL fEnabled = true;
-        machine.QuerySavedGuestScreenInfo(0, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+        machine.QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
         if (   guestWidth  > 0
             && guestHeight > 0)
             size = QSize(guestWidth, guestHeight);
@@ -682,7 +679,7 @@ void UIMachineView::takePauseShotSnapshot()
     {
         ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
         BOOL fEnabled = true;
-        machine.QuerySavedGuestScreenInfo(0, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+        machine.QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
         QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(guestWidth > 0 ? QSize(guestWidth, guestHeight) : guestSizeHint());
         dimImage(shot);
         m_pauseShot = QPixmap::fromImage(shot);
