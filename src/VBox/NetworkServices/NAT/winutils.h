@@ -21,8 +21,6 @@
 #   define PF_LOCAL AF_INET
 #  endif
 
-#  define warn(...) DPRINTF2((__VA_ARGS__))
-#  define warnx warn
 #  ifdef DEBUG
 #   define err(code,...) do { \
       AssertMsgFailed((__VA_ARGS__));           \

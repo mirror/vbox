@@ -143,7 +143,6 @@ fwtcp_create(struct fwspec *fwspec)
 
     lsock = proxy_bound_socket(fwspec->sdom, fwspec->stype, &fwspec->src.sa);
     if (lsock == INVALID_SOCKET) {
-        perror("socket");
         return NULL;
     }
 
