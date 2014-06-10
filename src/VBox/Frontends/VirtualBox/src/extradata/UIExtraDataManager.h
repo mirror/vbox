@@ -239,6 +239,11 @@ public:
     /** Defines host-screen index corresponding to passed guest-screen @a iGuestScreenIndex as @a iHostScreenIndex. */
     void setHostScreenForPassedGuestScreen(int iGuestScreenIndex, int iHostScreenIndex, const QString &strID);
 
+    /** Returns whether guest-screen should auto-resize according machine-window size. */
+    bool guestScreenAutoResize(const QString &strID) const;
+    /** Defines whether guest-screen auto-resize according machine-window size is @a fEnabled. */
+    void setGuestScreenAutoResize(bool fEnabled, const QString &strID);
+
     /** Returns default machine close action. */
     MachineCloseAction defaultMachineCloseAction(const QString &strID) const;
     /** Returns restricted machine close actions. */

@@ -820,6 +820,18 @@ void UIExtraDataManager::setRequestedVisualState(UIVisualStateType visualState, 
     setExtraDataString(GUI_Scale, toFeatureAllowed(visualState == UIVisualStateType_Scale), strID);
 }
 
+bool UIExtraDataManager::guestScreenAutoResize(const QString &strID) const
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_AutoresizeGuest, strID);
+}
+
+void UIExtraDataManager::setGuestScreenAutoResize(bool fEnabled, const QString &strID)
+{
+    /* 'False' if feature restricted, null-string otherwise: */
+    setExtraDataString(GUI_AutoresizeGuest, toFeatureRestricted(!fEnabled), strID);
+}
+
 MachineCloseAction UIExtraDataManager::defaultMachineCloseAction(const QString &strID) const
 {
     return gpConverter->fromInternalString<MachineCloseAction>(extraDataString(GUI_DefaultCloseAction, strID));
