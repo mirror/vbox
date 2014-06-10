@@ -404,7 +404,7 @@ void UIExtraDataManager::setSelectorWindowSplitterHints(const QList<int> &hints)
 
 bool UIExtraDataManager::selectorWindowToolBarVisible() const
 {
-    /* Show unless feature restricted: */
+    /* 'True' unless feature restricted: */
     return !isFeatureRestricted(GUI_Toolbar);
 }
 
@@ -416,7 +416,7 @@ void UIExtraDataManager::setSelectorWindowToolBarVisible(bool fVisible)
 
 bool UIExtraDataManager::selectorWindowStatusBarVisible() const
 {
-    /* Show unless feature restricted: */
+    /* 'True' unless feature restricted: */
     return !isFeatureRestricted(GUI_Statusbar);
 }
 
@@ -940,6 +940,12 @@ GuruMeditationHandlerType UIExtraDataManager::guruMeditationHandlerType(const QS
 HiDPIOptimizationType UIExtraDataManager::hiDPIOptimizationType(const QString &strID) const
 {
     return gpConverter->fromInternalString<HiDPIOptimizationType>(extraDataString(GUI_HiDPI_Optimization, strID));
+}
+
+bool UIExtraDataManager::passCADtoGuest(const QString &strID) const
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_PassCAD, strID);
 }
 
 void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)

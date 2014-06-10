@@ -171,7 +171,7 @@ protected:
     bool m_bIsHostComboPressed : 1;
     bool m_bIsHostComboAlone : 1;
     bool m_bIsHostComboProcessed : 1;
-    bool m_fPassCAD : 1;
+    bool m_fPassCADtoGuest : 1;
     /** Whether the debugger is active.
      * Currently only affects auto capturing. */
     bool m_fDebuggerActive : 1;
