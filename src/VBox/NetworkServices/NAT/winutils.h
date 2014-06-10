@@ -164,4 +164,23 @@ typedef struct iovec IOVEC;
 #  define IOVEC_GET_LEN(iov) ((iov).iov_len)
 #  define IOVEC_SET_LEN(iov, l) ((iov).iov_len = (l))
 # endif
+
+DECLINLINE(int)
+proxy_error_is_transient(int error)
+{
+# if !defined(RT_OS_WINDOWS)
+    return error == EWOULDBLOCK
+#  if EAGAIN != EWOULDBLOCK
+	|| error == EAGAIN
+#  endif
+	|| error == EINTR
+	|| error == ENOBUFS
+	|| error == ENOMEM;
+# else
+    return error == WSAEWOULDBLOCK
+	|| error == WSAEINTR	/* NB: we don't redefine EINTR above */
+	|| error == WSAENOBUFS;
+# endif
+}
+
 #endif
