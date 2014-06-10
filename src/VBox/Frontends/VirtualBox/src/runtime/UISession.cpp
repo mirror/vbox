@@ -151,7 +151,6 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     /* Common flags: */
     , m_fIsStarted(false)
     , m_fIsFirstTimeStarted(false)
-    , m_fIsIgnoreRuntimeMediumsChanging(false)
     , m_fIsGuestResizeIgnored(false)
     , m_fIsAutoCaptureDisabled(false)
     , m_fReconfigurable(false)
@@ -1133,11 +1132,6 @@ void UISession::loadSessionSettings()
 
         /* Is there should be First RUN Wizard? */
         m_fIsFirstTimeStarted = gEDataManager->isFirstRun(vboxGlobal().managedVMUuid());
-
-        /* Ignore mediums mounted at runtime? */
-        strSettings = machine.GetExtraData(GUI_SaveMountedAtRuntime);
-        if (strSettings == "no")
-            m_fIsIgnoreRuntimeMediumsChanging = true;
 
         /* Should guest autoresize? */
         QAction *pGuestAutoresizeSwitch = gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize);

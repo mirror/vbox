@@ -180,7 +180,6 @@ public:
                                     machineStatePrevious() == KMachineState_TeleportingPausedVM; }
     bool isStarted() const { return m_fIsStarted; }
     bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
-    bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRuntimeMediumsChanging; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
 
@@ -435,7 +434,6 @@ private:
     /* Common flags: */
     bool m_fIsStarted : 1;
     bool m_fIsFirstTimeStarted : 1;
-    bool m_fIsIgnoreRuntimeMediumsChanging : 1;
     bool m_fIsGuestResizeIgnored : 1;
     bool m_fIsAutoCaptureDisabled : 1;
     bool m_fReconfigurable : 1;

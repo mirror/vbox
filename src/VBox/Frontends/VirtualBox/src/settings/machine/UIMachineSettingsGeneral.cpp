@@ -105,8 +105,6 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* Gather general data: */
     generalData.m_strName = m_machine.GetName();
     generalData.m_strGuestOsTypeId = m_machine.GetOSTypeId();
-    QString strSaveMountedAtRuntime = m_machine.GetExtraData(GUI_SaveMountedAtRuntime);
-    generalData.m_fSaveMountedAtRuntime = strSaveMountedAtRuntime != "no";
     QString strShowMiniToolBar = m_machine.GetExtraData(GUI_ShowMiniToolBar);
     generalData.m_fShowMiniToolBar = strShowMiniToolBar != "no";
     QString strMiniToolBarAlignment = m_machine.GetExtraData(GUI_MiniToolBarAlignment);
@@ -134,7 +132,6 @@ void UIMachineSettingsGeneral::getFromCache()
     /* Load general data to page: */
     m_pNameAndSystemEditor->setName(generalData.m_strName);
     m_pNameAndSystemEditor->setType(vboxGlobal().vmGuestOSType(generalData.m_strGuestOsTypeId));
-    mCbSaveMounted->setChecked(generalData.m_fSaveMountedAtRuntime);
     mCbShowToolBar->setChecked(generalData.m_fShowMiniToolBar);
     mCbToolBarAlignment->setChecked(generalData.m_fMiniToolBarAtTop);
     mPsSnapshot->setPath(generalData.m_strSnapshotsFolder);
@@ -160,7 +157,6 @@ void UIMachineSettingsGeneral::putToCache()
     /* Gather general data: */
     generalData.m_strName = m_pNameAndSystemEditor->name();
     generalData.m_strGuestOsTypeId = m_pNameAndSystemEditor->type().GetId();
-    generalData.m_fSaveMountedAtRuntime = mCbSaveMounted->isChecked();
     generalData.m_fShowMiniToolBar = mCbShowToolBar->isChecked();
     generalData.m_fMiniToolBarAtTop = mCbToolBarAlignment->isChecked();
     generalData.m_strSnapshotsFolder = mPsSnapshot->path();
@@ -192,7 +188,6 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
             /* Advanced tab: */
             m_machine.SetClipboardMode(generalData.m_clipboardMode);
             m_machine.SetDnDMode(generalData.m_dndMode);
-            m_machine.SetExtraData(GUI_SaveMountedAtRuntime, generalData.m_fSaveMountedAtRuntime ? "yes" : "no");
             m_machine.SetExtraData(GUI_ShowMiniToolBar, generalData.m_fShowMiniToolBar ? "yes" : "no");
             m_machine.SetExtraData(GUI_MiniToolBarAlignment, generalData.m_fMiniToolBarAtTop ? "top" : "bottom");
             /* Description tab: */
@@ -265,8 +260,7 @@ void UIMachineSettingsGeneral::setOrderAfter (QWidget *aWidget)
     setTabOrder (m_pNameAndSystemEditor, mPsSnapshot);
     setTabOrder (mPsSnapshot, mCbClipboard);
     setTabOrder (mCbClipboard, mCbDragAndDrop);
-    setTabOrder (mCbDragAndDrop, mCbSaveMounted);
-    setTabOrder (mCbSaveMounted, mCbShowToolBar);
+    setTabOrder (mCbDragAndDrop, mCbShowToolBar);
     setTabOrder (mCbShowToolBar, mCbToolBarAlignment);
 
     /* Description tab-order */
@@ -315,8 +309,6 @@ void UIMachineSettingsGeneral::polishPage()
     mCbClipboard->setEnabled(isMachineInValidMode());
     mLbDragAndDrop->setEnabled(isMachineInValidMode());
     mCbDragAndDrop->setEnabled(isMachineInValidMode());
-    mLbMedia->setEnabled(isMachineInValidMode());
-    mCbSaveMounted->setEnabled(isMachineInValidMode());
     mLbToolBar->setEnabled(isMachineInValidMode());
     mCbShowToolBar->setEnabled(isMachineInValidMode());
     mCbToolBarAlignment->setEnabled(isMachineInValidMode() && mCbShowToolBar->isChecked());

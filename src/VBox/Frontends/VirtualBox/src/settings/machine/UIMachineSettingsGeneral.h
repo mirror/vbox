@@ -30,7 +30,6 @@ struct UIDataSettingsMachineGeneral
     UIDataSettingsMachineGeneral()
         : m_strName(QString())
         , m_strGuestOsTypeId(QString())
-        , m_fSaveMountedAtRuntime(false)
         , m_fShowMiniToolBar(false)
         , m_fMiniToolBarAtTop(false)
         , m_strSnapshotsFolder(QString())
@@ -43,7 +42,6 @@ struct UIDataSettingsMachineGeneral
     {
         return (m_strName == other.m_strName) &&
                (m_strGuestOsTypeId == other.m_strGuestOsTypeId) &&
-               (m_fSaveMountedAtRuntime == other.m_fSaveMountedAtRuntime) &&
                (m_fShowMiniToolBar == other.m_fShowMiniToolBar) &&
                (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop) &&
                (m_strSnapshotsFolder == other.m_strSnapshotsFolder) &&
@@ -58,7 +56,6 @@ struct UIDataSettingsMachineGeneral
     /* Variables: */
     QString m_strName;
     QString m_strGuestOsTypeId;
-    bool m_fSaveMountedAtRuntime;
     bool m_fShowMiniToolBar;
     bool m_fMiniToolBarAtTop;
     QString m_strSnapshotsFolder;

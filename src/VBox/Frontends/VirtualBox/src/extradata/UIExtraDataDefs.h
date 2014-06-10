@@ -99,7 +99,6 @@ namespace UIExtraDataDefs
     extern const char* GUI_VirtualScreenToHostScreen;
     extern const char* GUI_AutoresizeGuest;
     extern const char* GUI_AutomountGuestScreens;
-    extern const char* GUI_SaveMountedAtRuntime;
     extern const char* GUI_PassCAD;
     extern const char* GUI_DefaultCloseAction;
     extern const char* GUI_RestrictedStatusBarIndicators;

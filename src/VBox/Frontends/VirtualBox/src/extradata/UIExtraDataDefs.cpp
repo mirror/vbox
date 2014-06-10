@@ -91,7 +91,6 @@ const char* UIExtraDataDefs::GUI_Scale = "GUI/Scale";
 const char* UIExtraDataDefs::GUI_VirtualScreenToHostScreen = "GUI/VirtualScreenToHostScreen";
 const char* UIExtraDataDefs::GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
 const char* UIExtraDataDefs::GUI_AutomountGuestScreens = "GUI/AutomountGuestScreens";
-const char* UIExtraDataDefs::GUI_SaveMountedAtRuntime = "GUI/SaveMountedAtRuntime";
 const char* UIExtraDataDefs::GUI_PassCAD = "GUI/PassCAD";
 const char* UIExtraDataDefs::GUI_DefaultCloseAction = "GUI/DefaultCloseAction";
 const char* UIExtraDataDefs::GUI_RestrictedStatusBarIndicators = "GUI/RestrictedStatusBarIndicators";
