@@ -5174,7 +5174,11 @@ static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
      */
     Rh = *pRh;
     for (i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
-        pRh->aPorts[i].pDev = NULL;
+    {
+        if (   pRh->aPorts[i].pDev
+            && !VUSBIDevIsEmulated(pRh->aPorts[i].pDev))
+            pRh->aPorts[i].pDev = NULL;
+    }
 
     /*
      * Attach the devices.
