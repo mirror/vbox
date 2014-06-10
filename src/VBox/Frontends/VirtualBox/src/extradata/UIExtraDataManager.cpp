@@ -948,6 +948,12 @@ bool UIExtraDataManager::passCADtoGuest(const QString &strID) const
     return isFeatureAllowed(GUI_PassCAD, strID);
 }
 
+bool UIExtraDataManager::hidLedsSyncState(const QString &strID) const
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_HidLedsSync, strID);
+}
+
 void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)
 {
     /* Re-cache value only if strMachineID known already: */
@@ -981,12 +987,12 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
     {
         /* HID LEDs sync state changed (allowed if not restricted)? */
         if (strKey == GUI_HidLedsSync)
-            emit sigHIDLedsSyncStateChange(!isFeatureRestricted(strKey));
+            emit sigHidLedsSyncStateChange(!isFeatureRestricted(strKey, strMachineID));
 #ifdef Q_WS_MAC
         /* 'Dock icon' appearance changed (allowed if not restricted)? */
         else if (   strKey == GUI_RealtimeDockIconUpdateEnabled
                  || strKey == GUI_RealtimeDockIconUpdateMonitor)
-            emit sigDockIconAppearanceChange(!isFeatureRestricted(strKey));
+            emit sigDockIconAppearanceChange(!isFeatureRestricted(strKey, strMachineID));
 #endif /* Q_WS_MAC */
     }
 }

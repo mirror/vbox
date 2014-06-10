@@ -97,8 +97,8 @@ public:
     /* API: 3D overlay visibility stuff: */
     virtual void notifyAbout3DOverlayVisibilityChange(bool fVisible);
 
-    /** Performs HID LEDs sync. */
-    bool isHidLedsSyncEnabled() { return m_isHidLedsSyncEnabled; };
+    /** Returns whether VM should perform HID LEDs synchronization. */
+    bool isHidLedsSyncEnabled() const { return m_fIsHidLedsSyncEnabled; }
 
 protected slots:
 
@@ -165,8 +165,10 @@ protected:
 #ifdef VBOX_WITH_DEBUGGER_GUI
     virtual void prepareDebugger();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+    virtual void loadSettings();
 
     /* Cleanup helpers: */
+    virtual void saveSettings();
 #ifdef VBOX_WITH_DEBUGGER_GUI
     virtual void cleanupDebugger();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -296,7 +298,9 @@ private:
 #endif /* Q_WS_MAC */
 
     void *m_pHostLedsState;
-    bool m_isHidLedsSyncEnabled;
+
+    /** Holds whether VM should perform HID LEDs synchronization. */
+    bool m_fIsHidLedsSyncEnabled;
 
     /* Friend classes: */
     friend class UIMachineWindow;
