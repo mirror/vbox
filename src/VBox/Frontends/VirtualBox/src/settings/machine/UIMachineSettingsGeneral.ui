@@ -170,35 +170,6 @@
            </spacer>
           </item>
           <item row="3" column="0" >
-           <widget class="QLabel" name="mLbMedia" >
-            <property name="text" >
-             <string>Removable Media:</string>
-            </property>
-            <property name="alignment" >
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1" >
-           <widget class="QCheckBox" name="mCbSaveMounted" >
-            <property name="sizePolicy" >
-             <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="whatsThis" >
-             <string>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</string>
-            </property>
-            <property name="text" >
-             <string>&amp;Remember Runtime Changes</string>
-            </property>
-            <property name="checked" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0" >
            <widget class="QLabel" name="mLbToolBar" >
             <property name="text" >
              <string>Mini ToolBar:</string>
@@ -208,7 +179,7 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="1" >
+          <item row="3" column="1" >
            <widget class="QCheckBox" name="mCbShowToolBar" >
             <property name="sizePolicy" >
              <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -227,7 +198,7 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="1" >
+          <item row="4" column="1" >
            <widget class="QCheckBox" name="mCbToolBarAlignment" >
             <property name="sizePolicy" >
              <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
