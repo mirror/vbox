@@ -127,12 +127,6 @@ HRESULT Display::FinalConstruct()
     mpVMMDev = NULL;
     mfVMMDevInited = false;
 
-    mLastAddress = NULL;
-    mLastBytesPerLine = 0;
-    mLastBitsPerPixel = 0,
-    mLastWidth = 0;
-    mLastHeight = 0;
-
     int rc = RTCritSectInit(&mVBVALock);
     AssertRC(rc);
 
@@ -904,13 +898,6 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
 
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
-        mLastAddress = pvVRAM;
-        mLastBytesPerLine = cbLine;
-        mLastBitsPerPixel = bpp;
-        mLastWidth = w;
-        mLastHeight = h;
-        mLastFlags = flags;
-
         DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
         pFBInfo->w = w;
         pFBInfo->h = h;
@@ -918,6 +905,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
         pFBInfo->u16BitsPerPixel = (uint16_t)bpp;
         pFBInfo->pu8FramebufferVRAM = (uint8_t *)pvVRAM;
         pFBInfo->u32LineSize = cbLine;
+        pFBInfo->flags = flags;
     }
 
     /* Guest screen image will be invalid during resize, make sure that it is not updated. */
@@ -2194,7 +2182,7 @@ void Display::notifyPowerDown(void)
                                 pFBInfo->u32LineSize,
                                 pFBInfo->w,
                                 pFBInfo->h,
-                                0);
+                                pFBInfo->flags);
         }
     }
 }
@@ -2284,30 +2272,12 @@ STDMETHODIMP Display::AttachFramebuffer(ULONG aScreenId,
     if (mpDrv)
     {
         /* Setup the new framebuffer. */
-
-        /* @todo generic code for all monitors. */
-        if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
-        {
-            /* This display in VBVA mode. Resize it to the last guest resolution,
-             * if it has been reported.
-             */
-            handleDisplayResize(aScreenId, pFBInfo->u16BitsPerPixel,
-                                pFBInfo->pu8FramebufferVRAM,
-                                pFBInfo->u32LineSize,
-                                pFBInfo->w,
-                                pFBInfo->h,
-                                pFBInfo->flags);
-        }
-        else if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
-        {
-            /* VGA device mode, only for the primary screen. */
-            handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, mLastBitsPerPixel,
-                                mLastAddress,
-                                mLastBytesPerLine,
-                                mLastWidth,
-                                mLastHeight,
-                                mLastFlags);
-        }
+        handleDisplayResize(aScreenId, pFBInfo->u16BitsPerPixel,
+                            pFBInfo->pu8FramebufferVRAM,
+                            pFBInfo->u32LineSize,
+                            pFBInfo->w,
+                            pFBInfo->h,
+                            pFBInfo->flags);
     }
 
     alock.release();
@@ -4848,11 +4818,6 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
 #endif
         pThis->pDisplay->mpDrv = NULL;
         pThis->pDisplay->mpVMMDev = NULL;
-        pThis->pDisplay->mLastAddress = NULL;
-        pThis->pDisplay->mLastBytesPerLine = 0;
-        pThis->pDisplay->mLastBitsPerPixel = 0,
-        pThis->pDisplay->mLastWidth = 0;
-        pThis->pDisplay->mLastHeight = 0;
     }
 }
 
