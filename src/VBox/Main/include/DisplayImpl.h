@@ -292,14 +292,6 @@ private:
     bool mfSourceBitmapEnabled;
     bool volatile fVGAResizing;
 
-    /* arguments of the last handleDisplayResize() call */
-    void       *mLastAddress;
-    uint32_t    mLastBytesPerLine;
-    uint32_t    mLastBitsPerPixel;
-    uint32_t    mLastWidth;
-    uint32_t    mLastHeight;
-    uint16_t    mLastFlags;
-
     VBVAMEMORY *mpVbvaMemory;
     bool        mfVideoAccelEnabled;
     bool        mfVideoAccelVRDP;
