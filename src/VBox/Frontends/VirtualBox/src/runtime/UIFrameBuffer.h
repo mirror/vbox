@@ -298,6 +298,9 @@ protected:
       * Used to update viewport parts for visible-region changes,
       * because NotifyUpdate doesn't take into account these changes. */
     QRegion m_asyncVisibleRegion;
+    /** When the framebuffer is being resized, visible region is saved here.
+      * The saved region is applied when updates are enabled again. */
+    QRegion m_pendingSyncVisibleRegion;
     /** @} */
 
     /** @name HiDPI screens related variables.
