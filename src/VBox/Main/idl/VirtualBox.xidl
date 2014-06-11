@@ -4246,7 +4246,7 @@
       <see><link to="ISession"/>, <link to="IConsole"/></see>
     </desc>
 
-    <attribute name="parent" type="IVirtualBox" readonly="yes">
+    <attribute name="parent" type="IVirtualBox" readonly="yes" wrap-hint-server="limitedcaller">
       <desc>Associated parent object.</desc>
     </attribute>
 
@@ -4254,7 +4254,7 @@
       <desc>Overridden VM Icon details.</desc>
     </attribute>
 
-    <attribute name="accessible" type="boolean" readonly="yes">
+    <attribute name="accessible" type="boolean" readonly="yes" wrap-hint-server="limitedcaller">
       <desc>
         Whether this virtual machine is currently accessible or not.
 
@@ -4298,7 +4298,7 @@
       </desc>
     </attribute>
 
-    <attribute name="accessError" type="IVirtualBoxErrorInfo" readonly="yes">
+    <attribute name="accessError" type="IVirtualBoxErrorInfo" readonly="yes" wrap-hint-server="limitedcaller">
       <desc>
         Error information describing the reason of machine
         inaccessibility.
@@ -4361,7 +4361,7 @@
       </desc>
     </attribute>
 
-    <attribute name="id" type="uuid" mod="string" readonly="yes">
+    <attribute name="id" type="uuid" mod="string" readonly="yes" wrap-hint-server="limitedcaller">
       <desc>UUID of the virtual machine.</desc>
     </attribute>
 
@@ -4633,7 +4633,7 @@
       <desc>Array of storage controllers attached to this machine.</desc>
     </attribute>
 
-    <attribute name="settingsFilePath" type="wstring" readonly="yes">
+    <attribute name="settingsFilePath" type="wstring" readonly="yes" wrap-hint-server="limitedcaller">
       <desc>
         Full name of the file containing machine settings data.
       </desc>
@@ -6515,7 +6515,7 @@
       </desc>
     </method>
 
-    <method name="unregister">
+    <method name="unregister" wrap-hint-server="limitedcaller">
       <desc>
         Unregisters a machine previously registered with
         <link to="IVirtualBox::registerMachine"/> and optionally do additional

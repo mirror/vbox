@@ -871,6 +871,12 @@ public:
             <xsl:with-param name="str" select="@name"/>
         </xsl:call-template>
     </xsl:variable>
+    <xsl:variable name="limitedAutoCaller">
+        <xsl:call-template name="checkoption">
+            <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
+            <xsl:with-param name="option" select="'limitedcaller'"/>
+        </xsl:call-template>
+    </xsl:variable>
 
     <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::COMGETTER(', $attrbasename, ')(')"/>
     <xsl:apply-templates select="@type" mode="public">
@@ -901,7 +907,16 @@ public:
     <xsl:value-of select="$attrbasename"/>
     <xsl:text>);
 
-        AutoCaller autoCaller(this);
+        </xsl:text>
+    <xsl:choose>
+      <xsl:when test="$limitedAutoCaller = 'true'">
+        <xsl:text>AutoLimitedCaller</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>AutoCaller</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
+    <xsl:text> autoCaller(this);
         if (FAILED(autoCaller.rc()))
             throw autoCaller.rc();
 
@@ -973,7 +988,16 @@ public:
 
     try
     {
-        AutoCaller autoCaller(this);
+        </xsl:text>
+        <xsl:choose>
+          <xsl:when test="$limitedAutoCaller = 'true'">
+            <xsl:text>AutoLimitedCaller</xsl:text>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:text>AutoCaller</xsl:text>
+          </xsl:otherwise>
+        </xsl:choose>
+        <xsl:text> autoCaller(this);
         if (FAILED(autoCaller.rc()))
             throw autoCaller.rc();
 
@@ -1142,6 +1166,12 @@ public:
             <xsl:with-param name="str" select="@name"/>
         </xsl:call-template>
     </xsl:variable>
+    <xsl:variable name="limitedAutoCaller">
+        <xsl:call-template name="checkoption">
+            <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
+            <xsl:with-param name="option" select="'limitedcaller'"/>
+        </xsl:call-template>
+    </xsl:variable>
 
     <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::', $methodbasename, '(')"/>
     <xsl:for-each select="param">
@@ -1194,7 +1224,16 @@ public:
         </xsl:if>
     </xsl:for-each>
     <xsl:text>
-        AutoCaller autoCaller(this);
+        </xsl:text>
+    <xsl:choose>
+      <xsl:when test="$limitedAutoCaller = 'true'">
+        <xsl:text>AutoLimitedCaller</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>AutoCaller</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
+    <xsl:text> autoCaller(this);
         if (FAILED(autoCaller.rc()))
             throw autoCaller.rc();
 
