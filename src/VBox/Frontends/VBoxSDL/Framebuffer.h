@@ -73,13 +73,9 @@ public:
 
     STDMETHOD(COMGETTER(Width))(ULONG *width);
     STDMETHOD(COMGETTER(Height))(ULONG *height);
-    STDMETHOD(Lock)();
-    STDMETHOD(Unlock)();
-    STDMETHOD(COMGETTER(Address))(BYTE **address);
     STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *bitsPerPixel);
     STDMETHOD(COMGETTER(BytesPerLine))(ULONG *bytesPerLine);
     STDMETHOD(COMGETTER(PixelFormat)) (ULONG *pixelFormat);
-    STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *usesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
     STDMETHOD(COMGETTER(WinId)) (int64_t *winId);

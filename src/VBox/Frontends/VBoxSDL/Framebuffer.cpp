@@ -283,54 +283,6 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(Height)(ULONG *height)
 }
 
 /**
- * Lock the framebuffer (make its address immutable).
- *
- * @returns COM status code
- */
-STDMETHODIMP VBoxSDLFB::Lock()
-{
-    LogFlow(("VBoxSDLFB::Lock\n"));
-    RTCritSectEnter(&mUpdateLock);
-    return S_OK;
-}
-
-/**
- * Unlock the framebuffer.
- *
- * @returns COM status code
- */
-STDMETHODIMP VBoxSDLFB::Unlock()
-{
-    LogFlow(("VBoxSDLFB::Unlock\n"));
-    RTCritSectLeave(&mUpdateLock);
-    return S_OK;
-}
-
-/**
- * Return the framebuffer start address.
- *
- * @returns COM status code.
- * @param   address Pointer to result variable.
- */
-STDMETHODIMP VBoxSDLFB::COMGETTER(Address)(BYTE **address)
-{
-    LogFlow(("VBoxSDLFB::GetAddress\n"));
-    if (!address)
-        return E_INVALIDARG;
-
-    if (!mSurfVRAM)
-    {
-        /* That's actually rather bad. */
-        AssertMsgFailed(("mSurfVRAM is NULL!\n"));
-        return E_FAIL;
-    }
-
-    *address = (BYTE *) mSurfVRAM->pixels;
-    LogFlow(("VBoxSDL::GetAddress returning %p\n", *address));
-    return S_OK;
-}
-
-/**
  * Return the current framebuffer color depth.
  *
  * @returns COM status code
@@ -369,14 +321,6 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(PixelFormat) (ULONG *pixelFormat)
     if (!pixelFormat)
         return E_POINTER;
     *pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
-    return S_OK;
-}
-
-STDMETHODIMP VBoxSDLFB::COMGETTER(UsesGuestVRAM) (BOOL *usesGuestVRAM)
-{
-    if (!usesGuestVRAM)
-        return E_POINTER;
-    *usesGuestVRAM = TRUE;
     return S_OK;
 }
 

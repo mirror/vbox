@@ -15252,13 +15252,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IFramebuffer" extends="$unknown"
-    uuid="29e4a04d-03a7-4860-977b-a987c3e92c2b"
+    uuid="929e4228-f7cf-436d-99a0-dcf6596473b2"
     wsmap="managed"
     >
-    <attribute name="address" type="octet" mod="ptr" readonly="yes" wsmap="suppress">
-      <desc>Address of the start byte of the frame buffer.</desc>
-    </attribute>
-
     <attribute name="width" type="unsigned long" readonly="yes">
       <desc>Frame buffer width, in pixels.</desc>
     </attribute>
@@ -15295,13 +15291,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="usesGuestVRAM" type="boolean" readonly="yes">
-      <desc>
-        Defines whether this frame buffer uses the virtual video card's memory
-        buffer (guest VRAM) directly or not.
-      </desc>
-    </attribute>
-
     <attribute name="heightReduction" type="unsigned long" readonly="yes">
       <desc>
         Hint from the frame buffer about how much of the standard
@@ -15333,22 +15322,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         frame buffer is drawn, or zero if there's no such window.
       </desc>
     </attribute>
-
-    <method name="lock" wsmap="suppress">
-      <desc>
-        Locks the frame buffer.
-        Gets called by the IDisplay object where this frame buffer is
-        bound to.
-      </desc>
-    </method>
-
-    <method name="unlock" wsmap="suppress">
-      <desc>
-        Unlocks the frame buffer.
-        Gets called by the IDisplay object where this frame buffer is
-        bound to.
-      </desc>
-    </method>
 
     <method name="notifyUpdate" wsmap="suppress">
       <desc>
