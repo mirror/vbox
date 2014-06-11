@@ -3812,7 +3812,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                         pData->aParms[0].type = VBOX_HGCM_SVC_PARM_PTR;
                         pData->aParms[0].u.pointer.addr = &pDisplay->mCrOglScreenshotData;
                         pData->aParms[0].u.pointer.size = sizeof (pDisplay->mCrOglScreenshotData);
-                        int rc = pDisplay->crCtlSubmit(&pData->Hdr, sizeof (*pData), displayCrCmdFree, pData);
+                        rc = pDisplay->crCtlSubmit(&pData->Hdr, sizeof (*pData), displayCrCmdFree, pData);
                         if (!RT_SUCCESS(rc))
                             AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
                     }
@@ -3840,7 +3840,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                 if (   !pFBInfo->pFramebuffer.isNull()
                     && !pFBInfo->fDisabled)
                 {
-                    int rc = VERR_NOT_SUPPORTED;
+                    rc = VERR_NOT_SUPPORTED;
                     if (   pFBInfo->fVBVAEnabled
                         && pFBInfo->pu8FramebufferVRAM)
                     {
