@@ -224,6 +224,9 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
     /* Disable screen updates: */
     m_fUpdatesAllowed = false;
 
+    /* While updates are disabled, visible region will be saved:  */
+    m_pendingSyncVisibleRegion = QRegion();
+
     /* Acquire new pending bitmap: */
     m_pendingSourceBitmap = 0;
     m_pMachineView->session().GetConsole().GetDisplay().QuerySourceBitmap(uScreenId, m_pendingSourceBitmap);
@@ -392,12 +395,22 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
         ++rects;
     }
 
-    /* We are directly updating synchronous visible-region: */
-    m_syncVisibleRegion = region;
-    /* And send async-signal to update asynchronous one: */
-    LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Sending to async-handler..\n",
-             (unsigned long)uCount));
-    emit sigSetVisibleRegion(region);
+    if (m_fUpdatesAllowed)
+    {
+        /* We are directly updating synchronous visible-region: */
+        m_syncVisibleRegion = region;
+        /* And send async-signal to update asynchronous one: */
+        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Sending to async-handler..\n",
+                 (unsigned long)uCount));
+        emit sigSetVisibleRegion(region);
+    }
+    else
+    {
+        /* Save the region. */
+        m_pendingSyncVisibleRegion = region;
+        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Saved..\n",
+                 (unsigned long)uCount));
+    }
 
     /* Unlock access to frame-buffer: */
     unlock();
@@ -574,9 +587,23 @@ void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
             popupCenter().forgetAboutWrongColorDepth(m_pMachineView->machineWindow());
     }
 
-    /* Enable screen updates: */
     lock();
+
+    /* Enable screen updates: */
     m_fUpdatesAllowed = true;
+
+    if (!m_pendingSyncVisibleRegion.isEmpty())
+    {
+        /* Directly update synchronous visible-region: */
+        m_syncVisibleRegion = m_pendingSyncVisibleRegion;
+        m_pendingSyncVisibleRegion = QRegion();
+
+        /* And send async-signal to update asynchronous one: */
+        LogRel2(("UIFrameBuffer::resizeEvent: Rectangle count=%lu, Sending to async-handler..\n",
+                 (unsigned long)m_syncVisibleRegion.rectCount()));
+        emit sigSetVisibleRegion(m_syncVisibleRegion);
+    }
+
     unlock();
 }
 
