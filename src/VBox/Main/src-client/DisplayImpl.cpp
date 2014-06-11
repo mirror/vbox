@@ -585,6 +585,8 @@ HRESULT Display::init(Console *aParent)
     mfSourceBitmapEnabled = true;
     fVGAResizing = false;
 
+    mFramebufferUpdateMode = FramebufferUpdateMode_NotifyUpdate;
+
     ULONG ul;
     mParent->machine()->COMGETTER(MonitorCount)(&ul);
     mcMonitors = ul;
@@ -598,6 +600,9 @@ HRESULT Display::init(Console *aParent)
         maFramebuffers[ul].pFramebuffer = NULL;
         /* All secondary monitors are disabled at startup. */
         maFramebuffers[ul].fDisabled = ul > 0;
+
+        maFramebuffers[ul].updateImage.pu8Address = NULL;
+        maFramebuffers[ul].updateImage.cbLine = 0;
 
         maFramebuffers[ul].xOrigin = 0;
         maFramebuffers[ul].yOrigin = 0;
@@ -659,6 +664,9 @@ void Display::uninit()
     for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
     {
         maFramebuffers[uScreenId].pSourceBitmap.setNull();
+        maFramebuffers[uScreenId].updateImage.pSourceBitmap.setNull();
+        maFramebuffers[uScreenId].updateImage.pu8Address = NULL;
+        maFramebuffers[uScreenId].updateImage.cbLine = 0;
         maFramebuffers[uScreenId].pFramebuffer.setNull();
     }
 
@@ -896,6 +904,8 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
         return VINF_SUCCESS;
     }
 
+    COMSETTER(FramebufferUpdateMode)(FramebufferUpdateMode_NotifyUpdate);
+
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
         DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
@@ -1123,7 +1133,39 @@ void Display::handleDisplayUpdate (unsigned uScreenId, int x, int y, int w, int 
     if (pFramebuffer != NULL)
     {
         if (w != 0 && h != 0)
-            pFramebuffer->NotifyUpdate(x, y, w, h);
+        {
+            if (RT_LIKELY(mFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdate))
+            {
+                pFramebuffer->NotifyUpdate(x, y, w, h);
+            }
+            else if (mFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdateImage)
+            {
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+
+                if (!pFBInfo->updateImage.pSourceBitmap.isNull())
+                {
+                    Assert(pFBInfo->updateImage.pu8Address);
+
+                    size_t cbData = w * h * 4;
+                    com::SafeArray<BYTE> image(cbData);
+
+                    uint8_t *pu8Dst = image.raw();
+                    const uint8_t *pu8Src = pFBInfo->updateImage.pu8Address + pFBInfo->updateImage.cbLine * y + x * 4;
+
+                    int i;
+                    for (i = y; i < y + h; ++i)
+                    {
+                        memcpy(pu8Dst, pu8Src, w * 4);
+                        pu8Dst += w * 4;
+                        pu8Src += pFBInfo->updateImage.cbLine;
+                    }
+
+                    pFramebuffer->NotifyUpdateImage(x, y, w, h, ComSafeArrayAsInParam(image));
+                }
+            }
+        }
     }
 
 #ifndef VBOX_WITH_HGSMI
@@ -2181,6 +2223,87 @@ void Display::notifyPowerDown(void)
                                 pFBInfo->flags);
         }
     }
+}
+
+
+/*
+ * IDisplay properties
+ */
+
+STDMETHODIMP Display::COMGETTER(FramebufferUpdateMode)(FramebufferUpdateMode_T *aFramebufferUpdateMode)
+{
+    LogRelFlowFunc(("\n"));
+
+    CheckComArgPointerValid(aFramebufferUpdateMode);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aFramebufferUpdateMode = mFramebufferUpdateMode;
+
+    return S_OK;
+}
+
+STDMETHODIMP Display::COMSETTER(FramebufferUpdateMode)(FramebufferUpdateMode_T aFramebufferUpdateMode)
+{
+    LogRelFlowFunc(("aFramebufferUpdateMode %d\n", aFramebufferUpdateMode));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Reset the update mode. */
+    unsigned uScreenId;
+    for (uScreenId = 0; uScreenId < mcMonitors; ++uScreenId)
+    {
+        DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+        pFBInfo->updateImage.pu8Address = NULL;
+        pFBInfo->updateImage.cbLine = 0;
+        pFBInfo->updateImage.pSourceBitmap.setNull();
+    }
+
+    if (aFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdateImage)
+    {
+        /* Query source bitmaps. */
+        for (uScreenId = 0; uScreenId < mcMonitors; ++uScreenId)
+        {
+            DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+            HRESULT hr = querySourceBitmap(uScreenId, pFBInfo->updateImage.pSourceBitmap.asOutParam());
+            if (SUCCEEDED(hr))
+            {
+                BYTE *pAddress = NULL;
+                ULONG ulWidth = 0;
+                ULONG ulHeight = 0;
+                ULONG ulBitsPerPixel = 0;
+                ULONG ulBytesPerLine = 0;
+                ULONG ulPixelFormat = 0;
+
+                hr = pFBInfo->updateImage.pSourceBitmap->QueryBitmapInfo(&pAddress,
+                                                                         &ulWidth,
+                                                                         &ulHeight,
+                                                                         &ulBitsPerPixel,
+                                                                         &ulBytesPerLine,
+                                                                         &ulPixelFormat);
+                if (SUCCEEDED(hr))
+                {
+                    pFBInfo->updateImage.pu8Address = pAddress;
+                    pFBInfo->updateImage.cbLine = ulBytesPerLine;
+                }
+            }
+
+            if (FAILED(hr))
+            {
+                pFBInfo->updateImage.pSourceBitmap.setNull();
+            }
+        }
+    }
+
+    mFramebufferUpdateMode = aFramebufferUpdateMode;
+
+    return S_OK;
 }
 
 // IDisplay methods
