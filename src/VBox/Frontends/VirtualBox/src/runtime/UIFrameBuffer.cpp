@@ -109,14 +109,6 @@ void UIFrameBuffer::setMarkAsUnused(bool fUnused)
     unlock();
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(Address)(BYTE **ppAddress)
-{
-    if (!ppAddress)
-        return E_POINTER;
-    *ppAddress = address();
-    return S_OK;
-}
-
 STDMETHODIMP UIFrameBuffer::COMGETTER(Width)(ULONG *puWidth)
 {
     if (!puWidth)
@@ -157,14 +149,6 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(PixelFormat)(ULONG *puPixelFormat)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(UsesGuestVRAM)(BOOL *pbUsesGuestVRAM)
-{
-    if (!pbUsesGuestVRAM)
-        return E_POINTER;
-    *pbUsesGuestVRAM = true;
-    return S_OK;
-}
-
 STDMETHODIMP UIFrameBuffer::COMGETTER(HeightReduction)(ULONG *puHeightReduction)
 {
     if (!puHeightReduction)
@@ -186,18 +170,6 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(WinId)(LONG64 *pWinId)
     if (!pWinId)
         return E_POINTER;
     *pWinId = m_iWinId;
-    return S_OK;
-}
-
-STDMETHODIMP UIFrameBuffer::Lock()
-{
-    this->lock();
-    return S_OK;
-}
-
-STDMETHODIMP UIFrameBuffer::Unlock()
-{
-    this->unlock();
     return S_OK;
 }
 

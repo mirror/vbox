@@ -99,20 +99,14 @@ public:
     VBOX_SCRIPTABLE_DISPATCH_IMPL(IFramebuffer)
 
     /* IFramebuffer COM methods: */
-    STDMETHOD(COMGETTER(Address))(BYTE **ppAddress);
     STDMETHOD(COMGETTER(Width))(ULONG *puWidth);
     STDMETHOD(COMGETTER(Height))(ULONG *puHeight);
     STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *puBitsPerPixel);
     STDMETHOD(COMGETTER(BytesPerLine))(ULONG *puBytesPerLine);
     STDMETHOD(COMGETTER(PixelFormat))(ULONG *puPixelFormat);
-    STDMETHOD(COMGETTER(UsesGuestVRAM))(BOOL *pbUsesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction))(ULONG *puHeightReduction);
     STDMETHOD(COMGETTER(Overlay))(IFramebufferOverlay **ppOverlay);
     STDMETHOD(COMGETTER(WinId))(LONG64 *pWinId);
-
-    /* IFramebuffer sync methods: */
-    STDMETHOD(Lock)();
-    STDMETHOD(Unlock)();
 
     /** EMT callback: Notifies frame-buffer about guest-screen size change.
       * @param        uScreenId Guest screen number.
