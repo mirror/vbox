@@ -36,13 +36,6 @@
 class Console;
 struct VIDEORECCONTEXT;
 
-enum
-{
-    ResizeStatus_Void,
-    ResizeStatus_InProgress,
-    ResizeStatus_UpdateDisplayData
-};
-
 typedef struct _DISPLAYFBINFO
 {
     uint32_t u32Offset;
@@ -65,13 +58,7 @@ typedef struct _DISPLAYFBINFO
 
     uint16_t flags;
 
-    /** For saving the rectangles arrived during fb resize is in progress. */
-    PRTRECT mpSavedVisibleRegion;
-    uint32_t mcSavedVisibleRegion;
-
     VBOXVIDEOINFOHOSTEVENTS *pHostEvents;
-
-    volatile uint32_t u32ResizeStatus;
 
     /** The framebuffer has default format and must be updates immediately. */
     bool fDefaultFormat;
@@ -85,30 +72,10 @@ typedef struct _DISPLAYFBINFO
         int32_t yBottom;
     } dirtyRect;
 
-    struct
-    {
-        bool fPending;
-        ULONG pixelFormat;
-        void *pvVRAM;
-        uint32_t bpp;
-        uint32_t cbLine;
-        uint32_t w;
-        uint32_t h;
-        uint16_t flags;
-    } pendingResize;
-
 #ifdef VBOX_WITH_HGSMI
     bool fVBVAEnabled;
     bool fVBVAForceResize;
     bool fRenderThreadMode;
-    uint32_t cVBVASkipUpdate;
-    struct
-    {
-       int32_t xLeft;
-       int32_t yTop;
-       int32_t xRight;
-       int32_t yBottom;
-    } vbvaSkippedRect;
     PVBVAHOSTFLAGS pVBVAHostFlags;
 #endif /* VBOX_WITH_HGSMI */
 
@@ -323,6 +290,7 @@ private:
     DISPLAYFBINFO maFramebuffers[SchemaDefs::MaxGuestMonitors];
 
     bool mfSourceBitmapEnabled;
+    bool volatile fVGAResizing;
 
     /* arguments of the last handleDisplayResize() call */
     void       *mLastAddress;
@@ -371,10 +339,6 @@ private:
 
     int  vbvaLock(void);
     void vbvaUnlock(void);
-
-    RTCRITSECT mSaveSeamlessRectLock;
-    int  SaveSeamlessRectLock(void);
-    void SaveSeamlessRectUnLock(void);
 
 public:
     static int  displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height);
