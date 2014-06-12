@@ -1477,7 +1477,7 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
             break;
         }
         else {
-            sockerr = SOCKERRNO();
+            sockerr = -nsent;
 
             /*
              * Some errors are really not errors - if we get them,
@@ -1565,6 +1565,9 @@ pxtcp_sock_send(struct pxtcp *pxtcp, IOVEC *iov, size_t iovlen)
     mh.msg_iovlen = iovlen;
 
     nsent = sendmsg(pxtcp->sock, &mh, send_flags);
+    if (nsent < 0) {
+        nsent = -SOCKERRNO();
+    }
 
     return nsent;
 }
@@ -1578,7 +1581,7 @@ pxtcp_sock_send(struct pxtcp *pxtcp, IOVEC *iov, size_t iovlen)
     status = WSASend(pxtcp->sock, iov, (DWORD)iovlen, &nsent,
                      0, NULL, NULL);
     if (status == SOCKET_ERROR) {
-        nsent = -1;
+        nsent = -SOCKERRNO();
     }
 
     return nsent;
@@ -1848,7 +1851,7 @@ pxtcp_sock_read(struct pxtcp *pxtcp, int *pstop)
         return 1;
     }
     else {
-        int sockerr = SOCKERRNO();
+        int sockerr = -nread;
 
         if (proxy_error_is_transient(sockerr)) {
             /* haven't read anything, just return */
@@ -1879,6 +1882,9 @@ pxtcp_sock_recv(struct pxtcp *pxtcp, IOVEC *iov, size_t iovlen)
     mh.msg_iovlen = iovlen;
 
     nread = recvmsg(pxtcp->sock, &mh, 0);
+    if (nread < 0) {
+        nread = -SOCKERRNO();
+    }
 
     return nread;
 }
@@ -1894,7 +1900,7 @@ pxtcp_sock_recv(struct pxtcp *pxtcp, IOVEC *iov, size_t iovlen)
     status = WSARecv(pxtcp->sock, iov, (DWORD)iovlen, &nread,
                      &flags, NULL, NULL);
     if (status == SOCKET_ERROR) {
-        nread = -1;
+        nread = -SOCKERRNO();
     }
 
     return (ssize_t)nread;
