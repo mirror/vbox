@@ -81,7 +81,6 @@ public:
     STDMETHOD(COMGETTER(WinId)) (int64_t *winId);
 
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y, ULONG w, ULONG h);
-    STDMETHOD(NotifyUpdateImage)(ULONG x, ULONG y, ULONG w, ULONG h, ComSafeArrayIn(BYTE, aImage));
     STDMETHOD(NotifyChange)(ULONG aScreenId,
                             ULONG aXOrigin,
                             ULONG aYOrigin,

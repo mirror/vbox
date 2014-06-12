@@ -126,7 +126,6 @@ public:
       * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
       * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
     STDMETHOD(NotifyUpdate)(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight);
-    STDMETHOD(NotifyUpdateImage)(ULONG x, ULONG y, ULONG w, ULONG h, ComSafeArrayIn(BYTE, aImage));
 
     /** EMT callback: Returns whether the frame-buffer implementation is willing to support a given video-mode.
       * @param        uWidth      Width of the guest display, in pixels.

@@ -262,15 +262,6 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG aX,
-                                              ULONG aY,
-                                              ULONG aWidth,
-                                              ULONG aHeight,
-                                              ComSafeArrayIn(BYTE, aImage))
-{
-    return E_NOTIMPL;
-}
-
 STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pfSupported)
 {
     /* Make sure result pointer is valid: */
