@@ -17,7 +17,6 @@
  */
 
 #include <VBox/com/com.h>
-#include <VBox/com/array.h>
 #include <VBox/com/string.h>
 #include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
@@ -419,40 +418,6 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
     return S_OK;
 }
 
-STDMETHODIMP VBoxSDLFB::NotifyUpdateImage(ULONG aX,
-                                          ULONG aY,
-                                          ULONG aWidth,
-                                          ULONG aHeight,
-                                          ComSafeArrayIn(BYTE, aImage))
-{
-    LogFlow(("NotifyUpdateImage: %d,%d %dx%d\n", aX, aY, aWidth, aHeight));
-
-    com::SafeArray<BYTE> image(ComSafeArrayInArg(aImage));
-
-    /* Copy to mSurfVRAM. */
-    SDL_Rect srcRect;
-    SDL_Rect dstRect;
-    srcRect.x = 0;
-    srcRect.y = 0;
-    srcRect.w = (uint16_t)aWidth;
-    srcRect.h = (uint16_t)aHeight;
-    dstRect.x = (int16_t)aX;
-    dstRect.y = (int16_t)aY;
-    dstRect.w = (uint16_t)aWidth;
-    dstRect.h = (uint16_t)aHeight;
-
-    const uint32_t Rmask = 0x00FF0000, Gmask = 0x0000FF00, Bmask = 0x000000FF, Amask = 0;
-    SDL_Surface *surfSrc = SDL_CreateRGBSurfaceFrom(image.raw(), aWidth, aHeight, 32, aWidth * 4,
-                                                    Rmask, Gmask, Bmask, Amask);
-    if (surfSrc)
-    {
-        SDL_BlitSurface(surfSrc, &srcRect, mSurfVRAM, &dstRect);
-        SDL_FreeSurface(surfSrc);
-    }
-
-    return NotifyUpdate(aX, aY, aWidth, aHeight);
-}
-
 extern ComPtr<IDisplay> gpDisplay;
 
 STDMETHODIMP VBoxSDLFB::NotifyChange(ULONG aScreenId,
@@ -468,8 +433,6 @@ STDMETHODIMP VBoxSDLFB::NotifyChange(ULONG aScreenId,
 
     /* Disable screen updates. */
     mfUpdates = false;
-
-    // gpDisplay->COMSETTER(FramebufferUpdateMode)(FramebufferUpdateMode_NotifyUpdateImage);
 
     /* Save the new bitmap. */
     mpPendingSourceBitmap.setNull();
