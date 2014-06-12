@@ -588,7 +588,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
         case VRDE_QP_NETWORK_ADDRESS:
         {
             com::Bstr bstr;
-            server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("TCP/Address").raw(), bstr.asOutParam());
+            server->mConsole->i_getVRDEServer()->GetVRDEProperty(Bstr("TCP/Address").raw(), bstr.asOutParam());
 
             /* The server expects UTF8. */
             com::Utf8Str address = bstr;
@@ -619,7 +619,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
         {
             ULONG cMonitors = 1;
 
-            server->mConsole->machine()->COMGETTER(MonitorCount)(&cMonitors);
+            server->mConsole->i_machine()->COMGETTER(MonitorCount)(&cMonitors);
 
             if (cbBuffer >= sizeof(uint32_t))
             {
@@ -637,7 +637,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
         case VRDE_QP_NETWORK_PORT_RANGE:
         {
             com::Bstr bstr;
-            HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.asOutParam());
+            HRESULT hrc = server->mConsole->i_getVRDEServer()->GetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.asOutParam());
 
             if (hrc != S_OK)
             {
@@ -677,7 +677,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
         case VRDE_QP_VIDEO_CHANNEL:
         {
             com::Bstr bstr;
-            HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("VideoChannel/Enabled").raw(),
+            HRESULT hrc = server->mConsole->i_getVRDEServer()->GetVRDEProperty(Bstr("VideoChannel/Enabled").raw(),
                                                                              bstr.asOutParam());
 
             if (hrc != S_OK)
@@ -706,7 +706,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
         case VRDE_QP_VIDEO_CHANNEL_QUALITY:
         {
             com::Bstr bstr;
-            HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("VideoChannel/Quality").raw(),
+            HRESULT hrc = server->mConsole->i_getVRDEServer()->GetVRDEProperty(Bstr("VideoChannel/Quality").raw(),
                                                                              bstr.asOutParam());
 
             if (hrc != S_OK)
@@ -736,7 +736,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
             ULONG ulSunFlsh = 1;
 
             com::Bstr bstr;
-            HRESULT hrc = server->mConsole->machine()->GetExtraData(Bstr("VRDP/SunFlsh").raw(),
+            HRESULT hrc = server->mConsole->i_machine()->GetExtraData(Bstr("VRDP/SunFlsh").raw(),
                                                                     bstr.asOutParam());
             if (hrc == S_OK && !bstr.isEmpty())
             {
@@ -799,7 +799,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
                 com::Utf8Str extraData("VRDE/Feature/");
                 extraData += pFeature->achInfo;
 
-                HRESULT hrc = server->mConsole->machine()->GetExtraData(com::Bstr(extraData).raw(),
+                HRESULT hrc = server->mConsole->i_machine()->GetExtraData(com::Bstr(extraData).raw(),
                                                                         bstrValue.asOutParam());
                 if (FAILED(hrc) || bstrValue.isEmpty())
                 {
@@ -807,7 +807,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
                     extraData = "VRDP/Feature/";
                     extraData += pFeature->achInfo;
 
-                    hrc = server->mConsole->machine()->GetExtraData(com::Bstr(extraData).raw(),
+                    hrc = server->mConsole->i_machine()->GetExtraData(com::Bstr(extraData).raw(),
                                                                     bstrValue.asOutParam());
                     if (FAILED(hrc))
                     {
@@ -819,7 +819,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
             {
                 /* Generic properties. */
                 const char *pszPropertyName = &pFeature->achInfo[9];
-                HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr(pszPropertyName).raw(),
+                HRESULT hrc = server->mConsole->i_getVRDEServer()->GetVRDEProperty(Bstr(pszPropertyName).raw(),
                                                                                  bstrValue.asOutParam());
                 if (FAILED(hrc))
                 {
@@ -870,7 +870,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
                 *pcbOut = sizeof(uint32_t);
             }
 
-            server->mConsole->onVRDEServerInfoChange();
+            server->mConsole->i_onVRDEServerInfoChange();
         } break;
 
         case VRDE_SP_CLIENT_STATUS:
@@ -902,7 +902,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
 
             Log(("VRDE_SP_CLIENT_STATUS [%s]\n", pStatus->achStatus));
 
-            server->mConsole->VRDPClientStatusChange(pStatus->u32ClientId, pStatus->achStatus);
+            server->mConsole->i_VRDPClientStatusChange(pStatus->u32ClientId, pStatus->achStatus);
 
             rc = VINF_SUCCESS;
 
@@ -911,7 +911,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
                 *pcbOut = cbBuffer;
             }
 
-            server->mConsole->onVRDEServerInfoChange();
+            server->mConsole->i_onVRDEServerInfoChange();
         } break;
 
         default:
@@ -926,14 +926,14 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackClientLogon(void *pvCallback, u
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
-    return server->mConsole->VRDPClientLogon(u32ClientId, pszUser, pszPassword, pszDomain);
+    return server->mConsole->i_VRDPClientLogon(u32ClientId, pszUser, pszPassword, pszDomain);
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientConnect(void *pvCallback, uint32_t u32ClientId)
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
-    server->mConsole->VRDPClientConnect(u32ClientId);
+    server->mConsole->i_VRDPClientConnect(u32ClientId);
 
     /* Should the server report usage of an interface for each client?
      * Similar to Intercept.
@@ -951,7 +951,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
-    server->mConsole->VRDPClientDisconnect(u32ClientId, fu32Intercepted);
+    server->mConsole->i_VRDPClientDisconnect(u32ClientId, fu32Intercepted);
 
     if (ASMAtomicReadU32(&server->mu32AudioInputClientId) == u32ClientId)
     {
@@ -961,7 +961,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         server->mConsole->getAudioVRDE()->handleVRDESvrCmdAudioInputIntercept(false);
 #else
-        PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
+        PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->i_getAudioSniffer()->getAudioSnifferPort();
         if (pPort)
         {
              pPort->pfnAudioInputIntercept(pPort, false);
@@ -994,7 +994,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uin
     {
         case VRDE_CLIENT_INTERCEPT_AUDIO:
         {
-            server->mConsole->VRDPInterceptAudio(u32ClientId);
+            server->mConsole->i_VRDPInterceptAudio(u32ClientId);
             if (ppvIntercept)
             {
                 *ppvIntercept = server;
@@ -1004,13 +1004,13 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uin
 
         case VRDE_CLIENT_INTERCEPT_USB:
         {
-            server->mConsole->VRDPInterceptUSB(u32ClientId, ppvIntercept);
+            server->mConsole->i_VRDPInterceptUSB(u32ClientId, ppvIntercept);
             rc = VINF_SUCCESS;
         } break;
 
         case VRDE_CLIENT_INTERCEPT_CLIPBOARD:
         {
-            server->mConsole->VRDPInterceptClipboard(u32ClientId);
+            server->mConsole->i_VRDPInterceptClipboard(u32ClientId);
             if (ppvIntercept)
             {
                 *ppvIntercept = server;
@@ -1029,7 +1029,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uin
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
                 server->mConsole->getAudioVRDE()->handleVRDESvrCmdAudioInputIntercept(true);
 #else
-                PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
+                PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->i_getAudioSniffer()->getAudioSnifferPort();
                 if (pPort)
                 {
                      pPort->pfnAudioInputIntercept(pPort, true);
@@ -1085,7 +1085,7 @@ DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery(void *pvCallb
     bool fAvailable = false;
 
     /* Obtain the new screen bitmap. */
-    HRESULT hr = server->mConsole->getDisplay()->QuerySourceBitmap(uScreenId, server->maSourceBitmaps[uScreenId].asOutParam());
+    HRESULT hr = server->mConsole->i_getDisplay()->QuerySourceBitmap(uScreenId, server->maSourceBitmaps[uScreenId].asOutParam());
     if (SUCCEEDED(hr))
     {
         LONG xOrigin = 0;
@@ -1106,7 +1106,7 @@ DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery(void *pvCallb
 
         if (SUCCEEDED(hr))
         {
-            hr = server->mConsole->getDisplay()->GetScreenResolution(uScreenId, NULL, NULL, NULL,
+            hr = server->mConsole->i_getDisplay()->GetScreenResolution(uScreenId, NULL, NULL, NULL,
                                                                      &xOrigin, &yOrigin);
 
             if (SUCCEEDED(hr))
@@ -1171,7 +1171,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput(void *pvCallback, int ty
         {
             if (cbInput == sizeof(VRDEINPUTSCANCODE))
             {
-                IKeyboard *pKeyboard = pConsole->getKeyboard();
+                IKeyboard *pKeyboard = pConsole->i_getKeyboard();
 
                 const VRDEINPUTSCANCODE *pInputScancode = (VRDEINPUTSCANCODE *)pvInput;
 
@@ -1232,13 +1232,13 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput(void *pvCallback, int ty
 
                 if (server->m_fGuestWantsAbsolute)
                 {
-                    pConsole->getMouse()->PutMouseEventAbsolute(pInputPoint->x + 1, pInputPoint->y + 1, iWheel,
-                                                                0 /* Horizontal wheel */, mouseButtons);
+                    pConsole->i_getMouse()->PutMouseEventAbsolute(pInputPoint->x + 1, pInputPoint->y + 1, iWheel,
+                                                                  0 /* Horizontal wheel */, mouseButtons);
                 } else
                 {
-                    pConsole->getMouse()->PutMouseEvent(pInputPoint->x - server->m_mousex,
-                                                         pInputPoint->y - server->m_mousey,
-                                                         iWheel, 0 /* Horizontal wheel */, mouseButtons);
+                    pConsole->i_getMouse()->PutMouseEvent(pInputPoint->x - server->m_mousex,
+                                                          pInputPoint->y - server->m_mousey,
+                                                          iWheel, 0 /* Horizontal wheel */, mouseButtons);
                     server->m_mousex = pInputPoint->x;
                     server->m_mousey = pInputPoint->y;
                 }
@@ -1247,7 +1247,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput(void *pvCallback, int ty
 
         case VRDE_INPUT_CAD:
         {
-            pConsole->getKeyboard()->PutCAD();
+            pConsole->i_getKeyboard()->PutCAD();
         } break;
 
         case VRDE_INPUT_RESET:
@@ -1259,7 +1259,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput(void *pvCallback, int ty
         {
             if (cbInput == sizeof(VRDEINPUTSYNCH))
             {
-                IKeyboard *pKeyboard = pConsole->getKeyboard();
+                IKeyboard *pKeyboard = pConsole->i_getKeyboard();
 
                 const VRDEINPUTSYNCH *pInputSynch = (VRDEINPUTSYNCH *)pvInput;
 
@@ -1295,9 +1295,9 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint(void *pvCallback
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
-    server->mConsole->getDisplay()->SetVideoModeHint(uScreenId, TRUE /*=enabled*/,
-                                                     FALSE /*=changeOrigin*/, 0/*=OriginX*/, 0/*=OriginY*/,
-                                                     cWidth, cHeight, cBitsPerPixel);
+    server->mConsole->i_getDisplay()->SetVideoModeHint(uScreenId, TRUE /*=enabled*/,
+                                                       FALSE /*=changeOrigin*/, 0/*=OriginX*/, 0/*=OriginY*/,
+                                                       cWidth, cHeight, cBitsPerPixel);
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
@@ -1309,7 +1309,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 #ifndef VBOX_WITH_PDM_AUDIO_DRIVER
-    PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
+    PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->i_getAudioSniffer()->getAudioSnifferPort();
 #endif
 
     switch (u32Event)
@@ -1481,7 +1481,7 @@ int ConsoleVRDPServer::Launch(void)
 {
     LogFlowThisFunc(("\n"));
 
-    IVRDEServer *server = mConsole->getVRDEServer();
+    IVRDEServer *server = mConsole->i_getVRDEServer();
     AssertReturn(server, VERR_INTERNAL_ERROR_2);
 
     /*
@@ -1512,7 +1512,7 @@ int ConsoleVRDPServer::Launch(void)
     else
     {
 #ifdef VBOX_WITH_EXTPACK
-        ExtPackManager *pExtPackMgr = mConsole->getExtPackManager();
+        ExtPackManager *pExtPackMgr = mConsole->i_getExtPackManager();
         vrc = pExtPackMgr->i_getVrdeLibraryPathForExtPack(&strExtPack, &strVrdeLibrary);
 #else
         vrc = VERR_FILE_NOT_FOUND;
@@ -2097,7 +2097,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
 
     /* Check if 3D redirection has been enabled. It is enabled by default. */
     com::Bstr bstr;
-    HRESULT hrc = mConsole->getVRDEServer()->GetVRDEProperty(Bstr("H3DRedirect/Enabled").raw(), bstr.asOutParam());
+    HRESULT hrc = mConsole->i_getVRDEServer()->GetVRDEProperty(Bstr("H3DRedirect/Enabled").raw(), bstr.asOutParam());
 
     com::Utf8Str value = hrc == S_OK? bstr: "";
 
@@ -2137,7 +2137,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
     data.aParms[0].u.pointer.addr = &outputRedirect;
     data.aParms[0].u.pointer.size = sizeof(outputRedirect);
 
-    int rc = mConsole->getDisplay()->crCtlSubmitSync(&data.Hdr, sizeof (data));
+    int rc = mConsole->i_getDisplay()->crCtlSubmitSync(&data.Hdr, sizeof (data));
     if (!RT_SUCCESS(rc))
     {
         Log(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));
@@ -2203,7 +2203,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
 {
 #ifdef VBOX_WITH_USB_CARDREADER
     ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvContext);
-    UsbCardReader *pReader = pThis->mConsole->getUsbCardReader();
+    UsbCardReader *pReader = pThis->mConsole->i_getUsbCardReader();
     return pReader->VRDENotify(u32Id, pvData, cbData);
 #else
     NOREF(pvContext);
@@ -2223,7 +2223,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
 {
 #ifdef VBOX_WITH_USB_CARDREADER
     ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvContext);
-    UsbCardReader *pReader = pThis->mConsole->getUsbCardReader();
+    UsbCardReader *pReader = pThis->mConsole->i_getUsbCardReader();
     return pReader->VRDEResponse(rcRequest, pvUser, u32Function, pvData, cbData);
 #else
     NOREF(pvContext);
@@ -2523,7 +2523,7 @@ void ConsoleVRDPServer::setupTSMF(void)
     parms.iface.u.pointer.addr = &hostChannelInterface;
     parms.iface.u.pointer.size = sizeof(hostChannelInterface);
 
-    VMMDev *pVMMDev = mConsole->getVMMDev();
+    VMMDev *pVMMDev = mConsole->i_getVMMDev();
 
     if (!pVMMDev)
     {
@@ -2833,7 +2833,7 @@ int ConsoleVRDPServer::VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDL
 
             if (pHeader->u16EventId == VRDEINPUT_EVENTID_TOUCH)
             {
-                IMouse *pMouse = pThis->mConsole->getMouse();
+                IMouse *pMouse = pThis->mConsole->i_getMouse();
 
                 VRDEINPUT_TOUCH_EVENT_PDU *p = (VRDEINPUT_TOUCH_EVENT_PDU *)pHeader;
 
@@ -3244,7 +3244,7 @@ AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement 
     {
         /* Load the external authentication library. */
         Bstr authLibrary;
-        mConsole->getVRDEServer()->COMGETTER(AuthLibrary)(authLibrary.asOutParam());
+        mConsole->i_getVRDEServer()->COMGETTER(AuthLibrary)(authLibrary.asOutParam());
 
         Utf8Str filename = authLibrary;
 
@@ -4094,7 +4094,7 @@ void VRDEServerInfo::uninit()
         uint32_t value;                                                   \
         uint32_t cbOut = 0;                                               \
                                                                           \
-        mParent->consoleVRDPServer()->QueryInfo                           \
+        mParent->i_consoleVRDPServer()->QueryInfo                           \
             (_aIndex, &value, sizeof(value), &cbOut);                     \
                                                                           \
         *a##_aName = cbOut? !!value: FALSE;                               \
@@ -4118,7 +4118,7 @@ void VRDEServerInfo::uninit()
         _aType value;                                                     \
         uint32_t cbOut = 0;                                               \
                                                                           \
-        mParent->consoleVRDPServer()->QueryInfo                           \
+        mParent->i_consoleVRDPServer()->QueryInfo                           \
             (_aIndex, &value, sizeof(value), &cbOut);                     \
                                                                           \
         if (_aValueMask) value &= (_aValueMask);                          \
@@ -4142,7 +4142,7 @@ void VRDEServerInfo::uninit()
                                                                           \
         uint32_t cbOut = 0;                                               \
                                                                           \
-        mParent->consoleVRDPServer()->QueryInfo                           \
+        mParent->i_consoleVRDPServer()->QueryInfo                           \
             (_aIndex, NULL, 0, &cbOut);                                   \
                                                                           \
         if (cbOut == 0)                                                   \
@@ -4162,7 +4162,7 @@ void VRDEServerInfo::uninit()
             return E_OUTOFMEMORY;                                         \
         }                                                                 \
                                                                           \
-        mParent->consoleVRDPServer()->QueryInfo                           \
+        mParent->i_consoleVRDPServer()->QueryInfo                           \
             (_aIndex, pchBuffer, cbOut, &cbOut);                          \
                                                                           \
         Bstr str(pchBuffer);                                              \

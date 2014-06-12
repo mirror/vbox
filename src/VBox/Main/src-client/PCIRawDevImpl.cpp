@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -75,7 +75,7 @@ DECLCALLBACK(int) PCIRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pIn
 {
     PDRVMAINPCIRAWDEV pThis = RT_FROM_CPP_MEMBER(pInterface, DRVMAINPCIRAWDEV, IConnector);
     Console *pConsole = pThis->pPCIRawDev->getParent();
-    const ComPtr<IMachine>& machine = pConsole->machine();
+    const ComPtr<IMachine>& machine = pConsole->i_machine();
     ComPtr<IVirtualBox> vbox;
 
     HRESULT hrc = machine->COMGETTER(Parent)(vbox.asOutParam());

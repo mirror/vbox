@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -173,7 +173,7 @@ DECLCALLBACK(int) drvNvram_VarStoreSeqPut(PPDMINVRAMCONNECTOR pInterface, int id
                 strcpy(szExtraName + offValueNm, apszTodo[i]);
                 try
                 {
-                    HRESULT hrc = pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraName).raw(),
+                    HRESULT hrc = pThis->pNvram->getParent()->i_machine()->SetExtraData(Bstr(szExtraName).raw(),
                                                                                       Bstr(apszTodo[i + 1]).raw());
                     if (FAILED(hrc))
                     {
@@ -215,7 +215,7 @@ static void drvNvram_deleteVar(PNVRAM pThis, const char *pszVarNodeNm)
         strcpy(szExtraName + offValue, s_apszValueNames[i]);
         try
         {
-            HRESULT hrc = pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraName).raw(), Bstr().raw());
+            HRESULT hrc = pThis->pNvram->getParent()->i_machine()->SetExtraData(Bstr(szExtraName).raw(), Bstr().raw());
             if (FAILED(hrc))
                 LogRel(("drvNvram_deleteVar: SetExtraData(%s,) returned %Rhrc\n", szExtraName, hrc));
         }

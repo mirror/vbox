@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -692,7 +692,7 @@ typedef struct UCRREQCTX
 
 int UsbCardReader::vrdeSCardRequest(void *pvUser, uint32_t u32Function, const void *pvData, uint32_t cbData)
 {
-    int rc = mParent->consoleVRDPServer()->SCardRequest(pvUser, u32Function, pvData, cbData);
+    int rc = mParent->i_consoleVRDPServer()->SCardRequest(pvUser, u32Function, pvData, cbData);
     LogFlowFunc(("%d %Rrc\n", u32Function, rc));
     return rc;
 }

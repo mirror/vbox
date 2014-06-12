@@ -315,10 +315,10 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
         BOOL f3DSnapshot = FALSE;
         BOOL is3denabled;
-        that->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+        that->mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
         if (is3denabled && that->mCrOglCallbacks.pfnHasData())
         {
-            VMMDev *pVMMDev = that->mParent->getVMMDev();
+            VMMDev *pVMMDev = that->mParent->i_getVMMDev();
             if (pVMMDev)
             {
                 VBOX_DISPLAY_SAVESCREENSHOT_DATA *pScreenshot =
@@ -586,7 +586,7 @@ HRESULT Display::init(Console *aParent)
     fVGAResizing = false;
 
     ULONG ul;
-    mParent->machine()->COMGETTER(MonitorCount)(&ul);
+    mParent->i_machine()->COMGETTER(MonitorCount)(&ul);
     mcMonitors = ul;
 
     for (ul = 0; ul < mcMonitors; ul++)
@@ -739,13 +739,13 @@ int Display::crOglWindowsShow(bool fShow)
         /* no 3D */
 #ifdef DEBUG
         BOOL is3denabled;
-        mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+        mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
         Assert(!is3denabled);
 #endif
         return VERR_INVALID_STATE;
     }
 
-    VMMDev *pVMMDev = mParent->getVMMDev();
+    VMMDev *pVMMDev = mParent->i_getVMMDev();
     if (!pVMMDev)
     {
         AssertMsgFailed(("no vmmdev\n"));
@@ -834,14 +834,14 @@ int Display::notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN 
         return VINF_SUCCESS; /* nop it */
 
     BOOL is3denabled;
-    mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+    mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
 
     if (is3denabled)
     {
         int rc = VERR_INVALID_STATE;
         if (mhCrOglSvc)
         {
-            VMMDev *pVMMDev = mParent->getVMMDev();
+            VMMDev *pVMMDev = mParent->i_getVMMDev();
             if (pVMMDev)
             {
                 VBOXCRCMDCTL_HGCM *pCtl =
@@ -957,7 +957,7 @@ void Display::handleResizeCompletedEMT(unsigned uScreenId, BOOL fResizeContext)
          * Must be done before calling NotifyUpdate below.
          */
         LogRelFlowFunc(("Calling VRDP\n"));
-        mParent->consoleVRDPServer()->SendResize();
+        mParent->i_consoleVRDPServer()->SendResize();
 
         /* @todo Merge these two 'if's within one 'if (!pFBInfo->pFramebuffer.isNull())' */
         if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && !pFBInfo->pFramebuffer.isNull())
@@ -994,7 +994,7 @@ void Display::handleResizeCompletedEMT(unsigned uScreenId, BOOL fResizeContext)
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
         {
             BOOL is3denabled;
-            mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+            mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
 
             if (is3denabled)
             {
@@ -1136,7 +1136,7 @@ void Display::handleDisplayUpdate (unsigned uScreenId, int x, int y, int w, int 
         /* When VBVA is enabled, the VRDP server is informed in the VideoAccelFlush.
          * Inform the server here only if VBVA is disabled.
          */
-        mParent->consoleVRDPServer()->SendUpdateBitmap(uScreenId, x, y, w, h);
+        mParent->i_consoleVRDPServer()->SendUpdateBitmap(uScreenId, x, y, w, h);
     }
 }
 
@@ -1283,9 +1283,9 @@ int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     BOOL is3denabled = FALSE;
 
-    mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+    mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
 
-    VMMDev *vmmDev = mParent->getVMMDev();
+    VMMDev *vmmDev = mParent->i_getVMMDev();
     if (is3denabled && vmmDev)
     {
         if (mhCrOglSvc)
@@ -1614,7 +1614,7 @@ int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     /* Notify the VMMDev, which saves VBVA status in the saved state,
      * and needs to know current status.
      */
-    VMMDev *pVMMDev = mParent->getVMMDev();
+    VMMDev *pVMMDev = mParent->i_getVMMDev();
     if (pVMMDev)
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
@@ -2088,7 +2088,7 @@ void Display::videoAccelFlush (void)
             vbvaRgnDirtyRect (&rgn, uScreenId, phdr);
 
             /* Forward the command to VRDP server. */
-            mParent->consoleVRDPServer()->SendUpdate (uScreenId, phdr, cbCmd);
+            mParent->i_consoleVRDPServer()->SendUpdate (uScreenId, phdr, cbCmd);
 
             *phdr = hdrSaved;
         }
@@ -2283,7 +2283,7 @@ STDMETHODIMP Display::AttachFramebuffer(ULONG aScreenId,
     {
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
         BOOL fIs3DEnabled = FALSE;
-        mParent->machine()->COMGETTER(Accelerate3DEnabled)(&fIs3DEnabled);
+        mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&fIs3DEnabled);
 
         if (fIs3DEnabled)
         {
@@ -2384,7 +2384,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aDisplay, BOOL aEnabled,
         bpp = cBits;
     }
     ULONG cMonitors;
-    mParent->machine()->COMGETTER(MonitorCount)(&cMonitors);
+    mParent->i_machine()->COMGETTER(MonitorCount)(&cMonitors);
     if (cMonitors == 0 && aDisplay > 0)
         return E_INVALIDARG;
     if (aDisplay >= cMonitors)
@@ -2399,7 +2399,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aDisplay, BOOL aEnabled,
      * will call EMT.  */
     alock.release();
 
-    VMMDev *pVMMDev = mParent->getVMMDev();
+    VMMDev *pVMMDev = mParent->i_getVMMDev();
     if (pVMMDev)
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
@@ -2421,7 +2421,7 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
     /* Have to release the lock because the pfnRequestSeamlessChange will call EMT.  */
     alock.release();
 
-    VMMDev *pVMMDev = mParent->getVMMDev();
+    VMMDev *pVMMDev = mParent->i_getVMMDev();
     if (pVMMDev)
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
@@ -2434,9 +2434,9 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
     {
         BOOL is3denabled = FALSE;
 
-        mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+        mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
 
-        VMMDev *vmmDev = mParent->getVMMDev();
+        VMMDev *vmmDev = mParent->i_getVMMDev();
         if (is3denabled && vmmDev)
         {
             VBOXCRCMDCTL_HGCM *pData = (VBOXCRCMDCTL_HGCM*)RTMemAlloc(sizeof (VBOXCRCMDCTL_HGCM));
@@ -2470,10 +2470,10 @@ BOOL Display::displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreenId
                                               uint32_t u32Width, uint32_t u32Height)
 {
     BOOL is3denabled;
-    pDisplay->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+    pDisplay->mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
     if (is3denabled && pDisplay->mCrOglCallbacks.pfnHasData())
     {
-        VMMDev *pVMMDev = pDisplay->mParent->getVMMDev();
+        VMMDev *pVMMDev = pDisplay->mParent->i_getVMMDev();
         if (pVMMDev)
         {
             CRVBOXHGCMTAKESCREENSHOT *pScreenshot = (CRVBOXHGCMTAKESCREENSHOT*)RTMemAlloc(sizeof (*pScreenshot));
@@ -2932,7 +2932,7 @@ int Display::VideoCaptureStart()
         LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
         return rc;
     }
-    ComPtr<IMachine> pMachine = mParent->machine();
+    ComPtr<IMachine> pMachine = mParent->i_machine();
     com::SafeArray<BOOL> screens;
     HRESULT hrc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens));
     AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
@@ -3135,7 +3135,7 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
     }
 
     if (RT_SUCCESS(rc))
-        pDisplay->mParent->consoleVRDPServer()->SendUpdateBitmap(aScreenId, x, y, width, height);
+        pDisplay->mParent->i_consoleVRDPServer()->SendUpdateBitmap(aScreenId, x, y, width, height);
 
     pDisplay->vbvaUnlock();
     return rc;
@@ -3351,7 +3351,7 @@ STDMETHODIMP Display::ViewportChanged(ULONG aScreenId, ULONG x, ULONG y, ULONG w
     }
 
     BOOL is3denabled;
-    mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+    mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
 
     if (is3denabled)
     {
@@ -3480,7 +3480,7 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
 int Display::crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
 {
-    VMMDev *pVMMDev = mParent->getVMMDev();
+    VMMDev *pVMMDev = mParent->i_getVMMDev();
     if (!pVMMDev)
         return VERR_INVALID_STATE;
 
@@ -3512,7 +3512,7 @@ int Display::crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, UL
 #ifdef VBOX_WITH_CRHGSMI
 void Display::setupCrHgsmiData(void)
 {
-    VMMDev *pVMMDev = mParent->getVMMDev();
+    VMMDev *pVMMDev = mParent->i_getVMMDev();
     Assert(pVMMDev);
     int rc = RTCritSectRwEnterExcl(&mCrOglLock);
     AssertRC(rc);
@@ -3662,8 +3662,8 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         {
             DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
 
-            Assert (pDisplay->mParent && pDisplay->mParent->consoleVRDPServer());
-            pDisplay->mParent->consoleVRDPServer()->SendUpdate (uScreenId, NULL, 0);
+            Assert (pDisplay->mParent && pDisplay->mParent->i_consoleVRDPServer());
+            pDisplay->mParent->i_consoleVRDPServer()->SendUpdate (uScreenId, NULL, 0);
         }
     }
 
@@ -3673,7 +3673,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         do {
 # if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
             BOOL is3denabled;
-            pDisplay->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+            pDisplay->mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
             if (is3denabled)
             {
                 if (ASMAtomicCmpXchgU32(&pDisplay->mfCrOglVideoRecState, CRVREC_STATE_SUBMITTED, CRVREC_STATE_IDLE))
@@ -3965,7 +3965,7 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
                 if (pFBInfo->fDisabled)
                 {
                     pFBInfo->fDisabled = false;
-                    fireGuestMonitorChangedEvent(pDrv->pDisplay->mParent->getEventSource(),
+                    fireGuestMonitorChangedEvent(pDrv->pDisplay->mParent->i_getEventSource(),
                                                  GuestMonitorChangedEventType_Enabled,
                                                  uScreenId,
                                                  pFBInfo->xOrigin, pFBInfo->yOrigin,
@@ -4088,7 +4088,7 @@ void Display::handleCrHgsmiCommandProcess(PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32
 
     if (mhCrOglSvc)
     {
-        VMMDev *pVMMDev = mParent->getVMMDev();
+        VMMDev *pVMMDev = mParent->i_getVMMDev();
         if (pVMMDev)
         {
             /* no completion callback is specified with this call,
@@ -4116,7 +4116,7 @@ void Display::handleCrHgsmiControlProcess(PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32
 
     if (mhCrOglSvc)
     {
-        VMMDev *pVMMDev = mParent->getVMMDev();
+        VMMDev *pVMMDev = mParent->i_getVMMDev();
         if (pVMMDev)
         {
             bool fCheckPendingViewport = (pCtl->enmType == VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP);
@@ -4202,7 +4202,7 @@ int  Display::handleCrHgcmCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
                                     PFNCRCTLCOMPLETION pfnCompletion,
                                     void *pvCompletion)
 {
-    VMMDev *pVMMDev = mParent ? mParent->getVMMDev() : NULL;
+    VMMDev *pVMMDev = mParent ? mParent->i_getVMMDev() : NULL;
     if (!pVMMDev)
     {
         AssertMsgFailed(("no vmmdev\n"));
@@ -4417,7 +4417,7 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
         if (pFBInfo->fDisabled)
         {
             pFBInfo->fDisabled = false;
-            fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+            fireGuestMonitorChangedEvent(pThis->mParent->i_getEventSource(),
                                          GuestMonitorChangedEventType_Enabled,
                                          uScreenId,
                                          pFBInfo->xOrigin, pFBInfo->yOrigin,
@@ -4533,7 +4533,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
     pHdrUnconst->y -= (int16_t)pFBInfo->yOrigin;
 
     /* @todo new SendUpdate entry which can get a separate cmd header or coords. */
-    pThis->mParent->consoleVRDPServer()->SendUpdate (uScreenId, pCmd, (uint32_t)cbCmd);
+    pThis->mParent->i_consoleVRDPServer()->SendUpdate (uScreenId, pCmd, (uint32_t)cbCmd);
 
     *pHdrUnconst = hdrSaved;
 }
@@ -4651,7 +4651,7 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
         pThis->handleDisplayResize(pScreen->u32ViewIndex, 0, (uint8_t *)NULL, 0,
                                    u32Width, u32Height, pScreen->u16Flags);
 
-        fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+        fireGuestMonitorChangedEvent(pThis->mParent->i_getEventSource(),
                                      GuestMonitorChangedEventType_Disabled,
                                      pScreen->u32ViewIndex,
                                      0, 0, 0, 0);
@@ -4689,7 +4689,7 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
     if (pFBInfo->fDisabled)
     {
         pFBInfo->fDisabled = false;
-        fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+        fireGuestMonitorChangedEvent(pThis->mParent->i_getEventSource(),
                                      GuestMonitorChangedEventType_Enabled,
                                      pScreen->u32ViewIndex,
                                      pScreen->i32OriginX, pScreen->i32OriginY,
@@ -4715,7 +4715,7 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
 
     if (fNewOrigin)
     {
-        fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+        fireGuestMonitorChangedEvent(pThis->mParent->i_getEventSource(),
                                      GuestMonitorChangedEventType_NewOrigin,
                                      pScreen->u32ViewIndex,
                                      pScreen->i32OriginX, pScreen->i32OriginY,
@@ -4729,7 +4729,7 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
         {
             /* VRDP server still need this notification. */
             LogRelFlowFunc(("Calling VRDP\n"));
-            pThis->mParent->consoleVRDPServer()->SendResize();
+            pThis->mParent->i_consoleVRDPServer()->SendResize();
         }
         return VINF_SUCCESS;
     }
@@ -4763,8 +4763,8 @@ DECLCALLBACK(int) Display::displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR pI
         ::memcpy(shapeData.raw(), pvShape, cbShapeSize);
 
     /* Tell the console about it */
-    pDrv->pDisplay->mParent->onMousePointerShapeChange(fVisible, fAlpha,
-                                                       xHot, yHot, cx, cy, ComSafeArrayAsInParam(shapeData));
+    pDrv->pDisplay->mParent->i_onMousePointerShapeChange(fVisible, fAlpha,
+                                                         xHot, yHot, cx, cy, ComSafeArrayAsInParam(shapeData));
 
     return VINF_SUCCESS;
 }
@@ -4915,14 +4915,14 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 #endif
 
 #ifdef VBOX_WITH_VPX
-    ComPtr<IMachine> pMachine = pDisplay->mParent->machine();
+    ComPtr<IMachine> pMachine = pDisplay->mParent->i_machine();
     BOOL fEnabled = false;
     HRESULT hrc = pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
     AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
     if (fEnabled)
     {
         rc = pDisplay->VideoCaptureStart();
-        fireVideoCaptureChangedEvent(pDisplay->mParent->getEventSource());
+        fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
     }
 #endif
 

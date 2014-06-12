@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011-2013 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1238,7 +1238,7 @@ int GuestObject::sendCommand(uint32_t uFunction,
     int vrc = VERR_HGCM_SERVICE_NOT_FOUND;
 
     /* Forward the information to the VMM device. */
-    VMMDev *pVMMDev = pConsole->getVMMDev();
+    VMMDev *pVMMDev = pConsole->i_getVMMDev();
     if (pVMMDev)
     {
         LogFlowThisFunc(("uFunction=%RU32, uParms=%RU32\n", uFunction, uParms));
