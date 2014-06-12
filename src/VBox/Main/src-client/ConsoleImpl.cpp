@@ -3234,8 +3234,7 @@ HRESULT Console::deleteSnapshot(const com::Guid &aId, ComPtr<IProgress> &aProgre
                         Global::stringifyMachineState(mMachineState));
     ComObjPtr<IProgress> iProgress;
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, BSTR(aId.toString().c_str()), BSTR(aId.toString().c_str()),
-                                          FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
+    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, BSTR(aId.toString().c_str()), BSTR(aId.toString().c_str()), FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
     if (FAILED(rc)) return rc;
     iProgress.queryInterfaceTo(aProgress.asOutParam());
 
@@ -3255,8 +3254,7 @@ HRESULT Console::deleteSnapshotAndAllChildren(const com::Guid &aId, ComPtr<IProg
 
     ComObjPtr<IProgress> iProgress;
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, BSTR(aId.toString().c_str()), BSTR(aId.toString().c_str()),
-                                          TRUE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
+    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, BSTR(aId.toString().c_str()), BSTR(aId.toString().c_str()), TRUE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
     if (FAILED(rc)) return rc;
     iProgress.queryInterfaceTo(aProgress.asOutParam());
 
@@ -8463,7 +8461,7 @@ Console::i_usbDetachCallback(Console *that, PUVM pUVM, PCRTUUID aUuid)
  *
  * @todo Move this back into the driver!
  */
-HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
+HRESULT Console::i_attachToTapInterface(INetworkAdapter *networkAdapter)
 {
     LogFlowThisFunc(("\n"));
     /* sanity check */
@@ -8528,7 +8526,7 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
              */
             if (fcntl(RTFileToNative(maTapFD[slot]), F_SETFL, O_NONBLOCK) != -1)
             {
-                Log(("attachToTapInterface: %RTfile %ls\n", maTapFD[slot], tapDeviceName.raw()));
+                Log(("i_attachToTapInterface: %RTfile %ls\n", maTapFD[slot], tapDeviceName.raw()));
                 /*
                  * Here is the right place to communicate the TAP file descriptor and
                  * the host interface name to the server if/when it becomes really
@@ -8633,7 +8631,7 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
  *
  * @todo Move this back into the driver!
  */
-HRESULT Console::detachFromTapInterface(INetworkAdapter *networkAdapter)
+HRESULT Console::i_detachFromTapInterface(INetworkAdapter *networkAdapter)
 {
     /* sanity check */
     LogFlowThisFunc(("\n"));
@@ -8729,7 +8727,7 @@ HRESULT Console::i_powerDownHostInterfaces()
         if (attachment == NetworkAttachmentType_Bridged)
         {
 #if ((defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT))
-            HRESULT rc2 = detachFromTapInterface(pNetworkAdapter);
+            HRESULT rc2 = i_detachFromTapInterface(pNetworkAdapter);
             if (FAILED(rc2) && SUCCEEDED(rc))
                 rc = rc2;
 #endif /* (RT_OS_LINUX || RT_OS_FREEBSD) && !VBOX_WITH_NETFLT */
@@ -9279,7 +9277,7 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                                    N_("The shared folder '%s' could not be set up: %ls.\n"
                                       "The shared folder setup will not be complete. It is recommended to power down the virtual "
                                       "machine and fix the shared folder settings while the machine is not running"),
-                                      it->first.c_str(), eik.getText().raw());
+                                    it->first.c_str(), eik.getText().raw());
                         }
                     }
                     if (FAILED(rc))
