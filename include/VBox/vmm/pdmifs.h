@@ -377,12 +377,19 @@ typedef struct PDMIMOUSECONNECTOR
      * Notifies the the downstream driver of changes to the reporting modes
      * supported by the driver
      *
-     * @param   pInterface      Pointer to the this interface.
+     * @param   pInterface      Pointer to this interface structure.
      * @param   fRelative       Whether relative mode is currently supported.
      * @param   fAbsolute       Whether absolute mode is currently supported.
      * @param   fAbsolute       Whether multi-touch mode is currently supported.
      */
     DECLR3CALLBACKMEMBER(void, pfnReportModes,(PPDMIMOUSECONNECTOR pInterface, bool fRelative, bool fAbsolute, bool fMultiTouch));
+
+    /**
+     * Flushes the mouse queue if it contains pending events.
+     *
+     * @param   pInterface      Pointer to this interface structure.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnFlushQueue,(PPDMIMOUSECONNECTOR pInterface));
 
 } PDMIMOUSECONNECTOR;
 /** PDMIMOUSECONNECTOR interface ID.  */
@@ -455,7 +462,7 @@ typedef struct PDMIKEYBOARDCONNECTOR
     /**
      * Notifies the the downstream driver about an LED change initiated by the guest.
      *
-     * @param   pInterface      Pointer to the this interface.
+     * @param   pInterface      Pointer to this interface structure.
      * @param   enmLeds         The new led mask.
      */
     DECLR3CALLBACKMEMBER(void, pfnLedStatusChange,(PPDMIKEYBOARDCONNECTOR pInterface, PDMKEYBLEDS enmLeds));
@@ -463,7 +470,7 @@ typedef struct PDMIKEYBOARDCONNECTOR
     /**
      * Notifies the the downstream driver of changes in driver state.
      *
-     * @param   pInterface      Pointer to the this interface.
+     * @param   pInterface      Pointer to this interface structure.
      * @param   fActive         Whether interface wishes to get "focus".
      */
     DECLR3CALLBACKMEMBER(void, pfnSetActive,(PPDMIKEYBOARDCONNECTOR pInterface, bool fActive));
@@ -471,7 +478,7 @@ typedef struct PDMIKEYBOARDCONNECTOR
     /**
      * Flushes the keyboard queue if it contains pending events.
      *
-     * @param   pInterface      Pointer to the this interface.
+     * @param   pInterface      Pointer to this interface structure.
      */
     DECLR3CALLBACKMEMBER(void, pfnFlushQueue,(PPDMIKEYBOARDCONNECTOR pInterface));
 
