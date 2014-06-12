@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -268,7 +268,7 @@ struct BusAssignmentManager::State
 
     const char* findAlias(const char* pszName);
     void addMatchingRules(const char* pszName, PCIRulesList& aList);
-    void listAttachedPCIDevices(ComSafeArrayOut(IPCIDeviceAttachment*, aAttached));
+    void listAttachedPCIDevices(std::vector<ComPtr<IPCIDeviceAttachment> > &aAttached);
 };
 
 HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
@@ -394,24 +394,21 @@ bool BusAssignmentManager::State::checkAvailable(PCIBusAddress& Address)
     return (it == mPCIMap.end());
 }
 
-
-void BusAssignmentManager::State::listAttachedPCIDevices(ComSafeArrayOut(IPCIDeviceAttachment*, aAttached))
+void BusAssignmentManager::State::listAttachedPCIDevices(std::vector<ComPtr<IPCIDeviceAttachment> > &aAttached)
 {
-    com::SafeIfaceArray<IPCIDeviceAttachment> result(mPCIMap.size());
+    aAttached.resize(mPCIMap.size());
 
-    size_t iIndex = 0;
+    size_t i = 0;
     ComObjPtr<PCIDeviceAttachment> dev;
-    for (PCIMap::const_iterator it = mPCIMap.begin(); it !=  mPCIMap.end(); ++it)
+    for (PCIMap::const_iterator it = mPCIMap.begin(); it !=  mPCIMap.end(); ++it, ++i)
     {
         dev.createObject();
         com::Bstr devname(it->second.szDevName);
         dev->init(NULL, devname,
                   it->second.HostAddress.valid() ? it->second.HostAddress.asLong() : -1,
                   it->first.asLong(), it->second.HostAddress.valid());
-        result.setElement(iIndex++, dev);
+        dev.queryInterfaceTo(aAttached[i].asOutParam());
     }
-
-    result.detachTo(ComSafeArrayOutArg(aAttached));
 }
 
 BusAssignmentManager::BusAssignmentManager()
@@ -507,8 +504,7 @@ bool BusAssignmentManager::findPCIAddress(const char* pszDevName, int iInstance,
 {
     return pState->findPCIAddress(pszDevName, iInstance, Address);
 }
-
-void BusAssignmentManager::listAttachedPCIDevices(ComSafeArrayOut(IPCIDeviceAttachment*, aAttached))
+void BusAssignmentManager::listAttachedPCIDevices(std::vector<ComPtr<IPCIDeviceAttachment> > &aAttached)
 {
-    pState->listAttachedPCIDevices(ComSafeArrayOutArg(aAttached));
+    pState->listAttachedPCIDevices(aAttached);
 }

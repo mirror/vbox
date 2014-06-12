@@ -166,7 +166,7 @@ STDMETHODIMP Session::COMGETTER(Machine)(IMachine **aMachine)
     HRESULT rc;
 #ifndef VBOX_COM_INPROC_API_CLIENT
     if (mConsole)
-       rc = mConsole->machine().queryInterfaceTo(aMachine);
+       rc = mConsole->i_machine().queryInterfaceTo(aMachine);
     else
 #endif
        rc = mRemoteMachine.queryInterfaceTo(aMachine);
@@ -499,7 +499,7 @@ STDMETHODIMP Session::UpdateMachineState(MachineState_T aMachineState)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(!mConsole.isNull(), E_FAIL);
 
-    return mConsole->updateMachineState(aMachineState);
+    return mConsole->i_updateMachineState(aMachineState);
 #else
     return S_OK;
 #endif
@@ -568,7 +568,7 @@ STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter, BO
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onNetworkAdapterChange(networkAdapter, changeAdapter);
+    return mConsole->i_onNetworkAdapterChange(networkAdapter, changeAdapter);
 #else
     return S_OK;
 #endif
@@ -587,7 +587,7 @@ STDMETHODIMP Session::OnSerialPortChange(ISerialPort *serialPort)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onSerialPortChange(serialPort);
+    return mConsole->i_onSerialPortChange(serialPort);
 #else
     return S_OK;
 #endif
@@ -606,7 +606,7 @@ STDMETHODIMP Session::OnParallelPortChange(IParallelPort *parallelPort)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onParallelPortChange(parallelPort);
+    return mConsole->i_onParallelPortChange(parallelPort);
 #else
     return S_OK;
 #endif
@@ -625,7 +625,7 @@ STDMETHODIMP Session::OnStorageControllerChange()
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onStorageControllerChange();
+    return mConsole->i_onStorageControllerChange();
 #else
     return S_OK;
 #endif
@@ -644,7 +644,7 @@ STDMETHODIMP Session::OnMediumChange(IMediumAttachment *aMediumAttachment, BOOL 
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onMediumChange(aMediumAttachment, aForce);
+    return mConsole->i_onMediumChange(aMediumAttachment, aForce);
 #else
     return S_OK;
 #endif
@@ -663,7 +663,7 @@ STDMETHODIMP Session::OnCPUChange(ULONG aCPU, BOOL aRemove)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onCPUChange(aCPU, aRemove);
+    return mConsole->i_onCPUChange(aCPU, aRemove);
 #else
     return S_OK;
 #endif
@@ -682,7 +682,7 @@ STDMETHODIMP Session::OnCPUExecutionCapChange(ULONG aExecutionCap)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onCPUExecutionCapChange(aExecutionCap);
+    return mConsole->i_onCPUExecutionCapChange(aExecutionCap);
 #else
     return S_OK;
 #endif
@@ -701,7 +701,7 @@ STDMETHODIMP Session::OnVRDEServerChange(BOOL aRestart)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onVRDEServerChange(aRestart);
+    return mConsole->i_onVRDEServerChange(aRestart);
 #else
     return S_OK;
 #endif
@@ -720,7 +720,7 @@ STDMETHODIMP Session::OnVideoCaptureChange()
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onVideoCaptureChange();
+    return mConsole->i_onVideoCaptureChange();
 #else
     return S_OK;
 #endif
@@ -739,7 +739,7 @@ STDMETHODIMP Session::OnUSBControllerChange()
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onUSBControllerChange();
+    return mConsole->i_onUSBControllerChange();
 #else
     return S_OK;
 #endif
@@ -758,7 +758,7 @@ STDMETHODIMP Session::OnSharedFolderChange(BOOL aGlobal)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onSharedFolderChange(aGlobal);
+    return mConsole->i_onSharedFolderChange(aGlobal);
 #else
     return S_OK;
 #endif
@@ -777,7 +777,7 @@ STDMETHODIMP Session::OnClipboardModeChange(ClipboardMode_T aClipboardMode)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onClipboardModeChange(aClipboardMode);
+    return mConsole->i_onClipboardModeChange(aClipboardMode);
 #else
     return S_OK;
 #endif
@@ -795,7 +795,7 @@ STDMETHODIMP Session::OnDnDModeChange(DnDMode_T aDragAndDropMode)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onDnDModeChange(aDragAndDropMode);
+    return mConsole->i_onDnDModeChange(aDragAndDropMode);
 #else
     return S_OK;
 #endif
@@ -816,7 +816,7 @@ STDMETHODIMP Session::OnUSBDeviceAttach(IUSBDevice *aDevice,
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onUSBDeviceAttach(aDevice, aError, aMaskedIfs);
+    return mConsole->i_onUSBDeviceAttach(aDevice, aError, aMaskedIfs);
 #else
     return S_OK;
 #endif
@@ -836,7 +836,7 @@ STDMETHODIMP Session::OnUSBDeviceDetach(IN_BSTR aId,
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onUSBDeviceDetach(aId, aError);
+    return mConsole->i_onUSBDeviceDetach(aId, aError);
 #else
     return S_OK;
 #endif
@@ -866,7 +866,7 @@ STDMETHODIMP Session::OnShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
     }
 
 #ifndef VBOX_COM_INPROC_API_CLIENT
-    return mConsole->onShowWindow(aCheck, aCanShow, aWinId);
+    return mConsole->i_onShowWindow(aCheck, aCanShow, aWinId);
 #else
     return S_OK;
 #endif
@@ -885,7 +885,7 @@ STDMETHODIMP Session::OnBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onBandwidthGroupChange(aBandwidthGroup);
+    return mConsole->i_onBandwidthGroupChange(aBandwidthGroup);
 #else
     return S_OK;
 #endif
@@ -904,7 +904,7 @@ STDMETHODIMP Session::OnStorageDeviceChange(IMediumAttachment *aMediumAttachment
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onStorageDeviceChange(aMediumAttachment, aRemove, aSilent);
+    return mConsole->i_onStorageDeviceChange(aMediumAttachment, aRemove, aSilent);
 #else
     return S_OK;
 #endif
@@ -943,9 +943,9 @@ STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR
         return E_ACCESSDENIED;
 
     if (!aIsSetter)
-        return mConsole->getGuestProperty(aName, aRetValue, aRetTimestamp, aRetFlags);
+        return mConsole->i_getGuestProperty(aName, aRetValue, aRetTimestamp, aRetFlags);
     else
-        return mConsole->setGuestProperty(aName, aValue, aFlags);
+        return mConsole->i_setGuestProperty(aName, aValue, aFlags);
 
 # else  /* VBOX_COM_INPROC_API_CLIENT */
     /** @todo This is nonsense, non-VM API users shouldn't need to deal with this
@@ -990,11 +990,11 @@ STDMETHODIMP Session::EnumerateGuestProperties(IN_BSTR aPatterns,
     if (!mConsole)
         return E_ACCESSDENIED;
 
-    return mConsole->enumerateGuestProperties(aPatterns,
-                                              ComSafeArrayOutArg(aNames),
-                                              ComSafeArrayOutArg(aValues),
-                                              ComSafeArrayOutArg(aTimestamps),
-                                              ComSafeArrayOutArg(aFlags));
+    return mConsole->i_enumerateGuestProperties(aPatterns,
+                                                ComSafeArrayOutArg(aNames),
+                                                ComSafeArrayOutArg(aValues),
+                                                ComSafeArrayOutArg(aTimestamps),
+                                                ComSafeArrayOutArg(aFlags));
 #else /* VBOX_WITH_GUEST_PROPS not defined */
     ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_PROPS not defined */
@@ -1016,9 +1016,9 @@ STDMETHODIMP Session::OnlineMergeMedium(IMediumAttachment *aMediumAttachment,
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
     CheckComArgNotNull(aMediumAttachment);
 
-    return mConsole->onlineMergeMedium(aMediumAttachment,
-                                       aSourceIdx, aTargetIdx,
-                                       aProgress);
+    return mConsole->i_onlineMergeMedium(aMediumAttachment,
+                                         aSourceIdx, aTargetIdx,
+                                         aProgress);
 #else
     AssertFailed();
     return E_NOTIMPL;
@@ -1036,7 +1036,7 @@ STDMETHODIMP Session::EnableVMMStatistics(BOOL aEnable)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    mConsole->enableVMMStatistics(aEnable);
+    mConsole->i_enableVMMStatistics(aEnable);
 
     return S_OK;
 #else
@@ -1056,7 +1056,7 @@ STDMETHODIMP Session::PauseWithReason(Reason_T aReason)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->pause(aReason);
+    return mConsole->i_pause(aReason);
 #else
     AssertFailed();
     return E_NOTIMPL;
@@ -1074,7 +1074,7 @@ STDMETHODIMP Session::ResumeWithReason(Reason_T aReason)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->resume(aReason);
+    return mConsole->i_resume(aReason);
 #else
     AssertFailed();
     return E_NOTIMPL;
@@ -1092,7 +1092,7 @@ STDMETHODIMP Session::SaveStateWithReason(Reason_T aReason, IProgress **aProgres
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->saveState(aReason, aProgress);
+    return mConsole->i_saveState(aReason, aProgress);
 #else
     AssertFailed();
     return E_NOTIMPL;

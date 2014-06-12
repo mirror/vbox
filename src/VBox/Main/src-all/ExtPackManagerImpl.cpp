@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1550,7 +1550,7 @@ ExtPack::i_hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole)
     AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
 
     Console *pCon = (Console *)pConsole;
-    return pCon->hgcmLoadService(pszServiceLibrary, pszServiceName);
+    return pCon->i_hgcmLoadService(pszServiceLibrary, pszServiceName);
 #else
     NOREF(pHlp); NOREF(pConsole); NOREF(pszServiceLibrary); NOREF(pszServiceName);
 #endif

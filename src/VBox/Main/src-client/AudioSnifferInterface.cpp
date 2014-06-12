@@ -99,7 +99,7 @@ DECLCALLBACK(void) iface_AudioSamplesOut (PPDMIAUDIOSNIFFERCONNECTOR pInterface,
      * Just call the VRDP server with the data.
      */
     VRDEAUDIOFORMAT format = VRDE_AUDIO_FMT_MAKE(samplesPerSec, nChannels, bitsPerSample, !fUnsigned);
-    pDrv->pAudioSniffer->getParent()->consoleVRDPServer()->SendAudioSamples(pvSamples, cSamples, format);
+    pDrv->pAudioSniffer->getParent()->i_consoleVRDPServer()->SendAudioSamples(pvSamples, cSamples, format);
 }
 
 DECLCALLBACK(void) iface_AudioVolumeOut (PPDMIAUDIOSNIFFERCONNECTOR pInterface, uint16_t left, uint16_t right)
@@ -109,7 +109,7 @@ DECLCALLBACK(void) iface_AudioVolumeOut (PPDMIAUDIOSNIFFERCONNECTOR pInterface, 
     /*
      * Just call the VRDP server with the data.
      */
-    pDrv->pAudioSniffer->getParent()->consoleVRDPServer()->SendAudioVolume(left, right);
+    pDrv->pAudioSniffer->getParent()->i_consoleVRDPServer()->SendAudioVolume(left, right);
 }
 
 DECLCALLBACK(int) iface_AudioInputBegin (PPDMIAUDIOSNIFFERCONNECTOR pInterface,
@@ -122,7 +122,7 @@ DECLCALLBACK(int) iface_AudioInputBegin (PPDMIAUDIOSNIFFERCONNECTOR pInterface,
 {
     PDRVAUDIOSNIFFER pDrv = PDMIAUDIOSNIFFERCONNECTOR_2_MAINAUDIOSNIFFER(pInterface);
 
-    return pDrv->pAudioSniffer->getParent()->consoleVRDPServer()->SendAudioInputBegin(ppvUserCtx,
+    return pDrv->pAudioSniffer->getParent()->i_consoleVRDPServer()->SendAudioInputBegin(ppvUserCtx,
                                                                                       pvContext,
                                                                                       cSamples,
                                                                                       iSampleHz,
@@ -135,7 +135,7 @@ DECLCALLBACK(void) iface_AudioInputEnd (PPDMIAUDIOSNIFFERCONNECTOR pInterface,
 {
     PDRVAUDIOSNIFFER pDrv = PDMIAUDIOSNIFFERCONNECTOR_2_MAINAUDIOSNIFFER(pInterface);
 
-    pDrv->pAudioSniffer->getParent()->consoleVRDPServer()->SendAudioInputEnd(pvUserCtx);
+    pDrv->pAudioSniffer->getParent()->i_consoleVRDPServer()->SendAudioInputEnd(pvUserCtx);
 }
 
 

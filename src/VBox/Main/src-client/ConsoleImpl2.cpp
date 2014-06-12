@@ -604,13 +604,13 @@ static int SetBiosDiskInfo(ComPtr<IMachine> pMachine, PCFGMNODE pCfg, PCFGMNODE 
 }
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-HRESULT Console::attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr, PCFGMNODE pDevices)
+HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr, PCFGMNODE pDevices)
 {
     HRESULT hrc = S_OK;
     PCFGMNODE pInst, pCfg, pLunL0, pLunL1;
 
     SafeIfaceArray<IPCIDeviceAttachment> assignments;
-    ComPtr<IMachine> aMachine = machine();
+    ComPtr<IMachine> aMachine = i_machine();
 
     hrc = aMachine->COMGETTER(PCIDeviceAssignments)(ComSafeArrayAsOutParam(assignments));
     if (   hrc != S_OK
@@ -743,10 +743,10 @@ HRESULT Console::attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr, P
 #endif
 
 
-void Console::attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
-                                 uint64_t uFirst, uint64_t uLast,
-                                 Console::MediumAttachmentMap *pmapMediumAttachments,
-                                 const char *pcszDevice, unsigned uInstance)
+void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
+                                   uint64_t uFirst, uint64_t uLast,
+                                   Console::MediumAttachmentMap *pmapMediumAttachments,
+                                   const char *pcszDevice, unsigned uInstance)
 {
     PCFGMNODE pLunL0, pCfg;
     InsertConfigNode(pCtlInst,  "LUN#999", &pLunL0);
@@ -780,7 +780,7 @@ void Console::attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
  *
  *  @note Locks the Console object for writing.
  */
-DECLCALLBACK(int) Console::configConstructor(PUVM pUVM, PVM pVM, void *pvConsole)
+DECLCALLBACK(int) Console::i_configConstructor(PUVM pUVM, PVM pVM, void *pvConsole)
 {
     LogFlowFuncEnter();
 
@@ -802,7 +802,7 @@ DECLCALLBACK(int) Console::configConstructor(PUVM pUVM, PVM pVM, void *pvConsole
     int vrc;
     try
     {
-        vrc = pConsole->configConstructorInner(pUVM, pVM, &alock);
+        vrc = pConsole->i_configConstructorInner(pUVM, pVM, &alock);
     }
     catch (...)
     {
@@ -828,10 +828,10 @@ DECLCALLBACK(int) Console::configConstructor(PUVM pUVM, PVM pVM, void *pvConsole
  *                      to leave it in order to avoid deadlocks (ext packs and
  *                      more).
  */
-int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
+int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 {
     VMMDev         *pVMMDev   = m_pVMMDev; Assert(pVMMDev);
-    ComPtr<IMachine> pMachine = machine();
+    ComPtr<IMachine> pMachine = i_machine();
 
     int             rc;
     HRESULT         hrc;
@@ -1184,7 +1184,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         InsertConfigInteger(pHM, "EnableUX", fEnableUX);
 
         /* Reset overwrite. */
-        if (isResetTurnedIntoPowerOff())
+        if (i_isResetTurnedIntoPowerOff())
             InsertConfigInteger(pRoot, "PowerOffInsteadOfReset", 1);
 
         /*
@@ -1422,7 +1422,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
             /* Add PCI passthrough devices */
-            hrc = attachRawPCIDevices(pUVM, pBusMgr, pDevices);                             H();
+            hrc = i_attachRawPCIDevices(pUVM, pBusMgr, pDevices);                             H();
 #endif
         }
 
@@ -1584,8 +1584,8 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #ifdef VBOX_WITH_VMSVGA
             case GraphicsControllerType_VMSVGA:
 #endif
-                rc = configGraphicsController(pDevices, graphicsController, pBusMgr, pMachine, biosSettings,
-                                              RT_BOOL(fHMEnabled));
+                rc = i_configGraphicsController(pDevices, graphicsController, pBusMgr, pMachine, biosSettings,
+                                                RT_BOOL(fHMEnabled));
                 if (FAILED(rc))
                     return rc;
                 break;
@@ -1798,7 +1798,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     /*
                      * Attach the status driver.
                      */
-                    attachStatusDriver(pInst, &mapUSBLed[0], 0, 0, NULL, NULL, 0);
+                    i_attachStatusDriver(pInst, &mapUSBLed[0], 0, 0, NULL, NULL, 0);
                 }
 #ifdef VBOX_WITH_EHCI
                 else if (enmCtrlType == USBControllerType_EHCI)
@@ -1829,7 +1829,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         /*
                          * Attach the status driver.
                          */
-                        attachStatusDriver(pInst, &mapUSBLed[1], 0, 0, NULL, NULL, 0);
+                        i_attachStatusDriver(pInst, &mapUSBLed[1], 0, 0, NULL, NULL, 0);
                     }
 # ifdef VBOX_WITH_EXTPACK
                     else
@@ -1875,7 +1875,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         /*
                          * Attach the status driver.
                          */
-                        attachStatusDriver(pInst, &mapUSBLed[1], 0, 0, NULL, NULL, 0);
+                        i_attachStatusDriver(pInst, &mapUSBLed[1], 0, 0, NULL, NULL, 0);
                     }
 # ifdef VBOX_WITH_EXTPACK
                     else
@@ -2032,7 +2032,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             rc = ctrls[i]->COMGETTER(Bootable)(&fBootable);                                 H();
 
             PCFGMNODE pCtlInst = NULL;
-            const char *pszCtrlDev = convertControllerTypeToDev(enmCtrlType);
+            const char *pszCtrlDev = i_convertControllerTypeToDev(enmCtrlType);
             if (enmCtrlType != StorageControllerType_USB)
             {
                 /* /Devices/<ctrldev>/ */
@@ -2077,7 +2077,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     /* Attach the status driver */
                     Assert(cLedScsi >= 16);
-                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedScsi], 0, 15,
+                    i_attachStatusDriver(pCtlInst, &mapStorageLeds[iLedScsi], 0, 15,
                                        &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedScsi];
                     break;
@@ -2101,7 +2101,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     /* Attach the status driver */
                     Assert(cLedScsi >= 16);
-                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedScsi], 0, 15,
+                    i_attachStatusDriver(pCtlInst, &mapStorageLeds[iLedScsi], 0, 15,
                                        &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedScsi];
                     break;
@@ -2126,7 +2126,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     /* Attach the status driver */
                     AssertRelease(cPorts <= cLedSata);
-                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedSata], 0, cPorts - 1,
+                    i_attachStatusDriver(pCtlInst, &mapStorageLeds[iLedSata], 0, cPorts - 1,
                                        &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedSata];
                     break;
@@ -2143,7 +2143,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigString(pCfg,   "Type", controllerString(enmCtrlType));
                     /* Attach the status driver */
                     Assert(cLedIde >= 4);
-                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedIde], 0, 3,
+                    i_attachStatusDriver(pCtlInst, &mapStorageLeds[iLedIde], 0, 3,
                                        &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedIde];
 
@@ -2167,7 +2167,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     /* Attach the status driver */
                     Assert(cLedFloppy >= 2);
-                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedFloppy], 0, 1,
+                    i_attachStatusDriver(pCtlInst, &mapStorageLeds[iLedFloppy], 0, 1,
                                        &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedFloppy];
                     break;
@@ -2196,7 +2196,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     /* Attach the status driver */
                     Assert(cLedSas >= 8);
-                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedSas], 0, 7,
+                    i_attachStatusDriver(pCtlInst, &mapStorageLeds[iLedSas], 0, 7,
                                        &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedSas];
                     break;
@@ -2239,24 +2239,24 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             for (size_t j = 0; j < atts.size(); ++j)
             {
                 IMediumAttachment *pMediumAtt = atts[j];
-                rc = configMediumAttachment(pCtlInst,
-                                            pszCtrlDev,
-                                            ulInstance,
-                                            enmBus,
-                                            !!fUseHostIOCache,
-                                            !!fBuiltinIOCache,
-                                            false /* fSetupMerge */,
-                                            0 /* uMergeSource */,
-                                            0 /* uMergeTarget */,
-                                            pMediumAtt,
-                                            mMachineState,
-                                            NULL /* phrc */,
-                                            false /* fAttachDetach */,
-                                            false /* fForceUnmount */,
-                                            false /* fHotplug */,
-                                            pUVM,
-                                            paLedDevType,
-                                            NULL /* ppLunL0 */);
+                rc = i_configMediumAttachment(pCtlInst,
+                                              pszCtrlDev,
+                                              ulInstance,
+                                              enmBus,
+                                              !!fUseHostIOCache,
+                                              !!fBuiltinIOCache,
+                                              false /* fSetupMerge */,
+                                              0 /* uMergeSource */,
+                                              0 /* uMergeTarget */,
+                                              pMediumAtt,
+                                              mMachineState,
+                                              NULL /* phrc */,
+                                              false /* fAttachDetach */,
+                                              false /* fForceUnmount */,
+                                              false /* fHotplug */,
+                                              pUVM,
+                                              paLedDevType,
+                                              NULL /* ppLunL0 */);
                 if (RT_FAILURE(rc))
                     return rc;
             }
@@ -2444,21 +2444,21 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             /*
              * Attach the status driver.
              */
-            attachStatusDriver(pInst, &mapNetworkLeds[ulInstance], 0, 0, NULL, NULL, 0);
+            i_attachStatusDriver(pInst, &mapNetworkLeds[ulInstance], 0, 0, NULL, NULL, 0);
 
             /*
              * Configure the network card now
              */
             bool fIgnoreConnectFailure = mMachineState == MachineState_Restoring;
-            rc = configNetwork(pszAdapterName,
-                               ulInstance,
-                               0,
-                               networkAdapter,
-                               pCfg,
-                               pLunL0,
-                               pInst,
-                               false /*fAttachDetach*/,
-                               fIgnoreConnectFailure);
+            rc = i_configNetwork(pszAdapterName,
+                                 ulInstance,
+                                 0,
+                                 networkAdapter,
+                                 pCfg,
+                                 pLunL0,
+                                 pInst,
+                                 false /*fAttachDetach*/,
+                                 fIgnoreConnectFailure);
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -2612,7 +2612,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         /*
          * Attach the status driver.
          */
-        attachStatusDriver(pInst, &mapSharedFolderLed, 0, 0, NULL, NULL, 0);
+        i_attachStatusDriver(pInst, &mapSharedFolderLed, 0, 0, NULL, NULL, 0);
 
 #ifndef VBOX_WITH_PDM_AUDIO_DRIVER
         /*
@@ -2816,12 +2816,12 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 {
                     LogRel(("Shared clipboard service loaded.\n"));
 
-                    changeClipboardMode(mode);
+                    i_changeClipboardMode(mode);
 
                     /* Setup the service. */
                     VBOXHGCMSVCPARM parm;
                     parm.type = VBOX_HGCM_SVC_PARM_32BIT;
-                    parm.setUInt32(!useHostClipboard());
+                    parm.setUInt32(!i_useHostClipboard());
                     pVMMDev->hgcmHostCall("VBoxSharedClipboard",
                                           VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
                 }
@@ -2876,7 +2876,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 else
                 {
                     LogRel(("Drag'n drop service loaded.\n"));
-                    rc = changeDnDMode(enmMode);
+                    rc = i_changeDnDMode(enmMode);
                 }
             }
         }
@@ -2940,14 +2940,14 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         /*
          * Guest property service.
          */
-        rc = configGuestProperties(this, pUVM);
+        rc = i_configGuestProperties(this, pUVM);
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
         /*
          * Guest control service.
          */
-        rc = configGuestControl(this);
+        rc = i_configGuestControl(this);
 #endif /* VBOX_WITH_GUEST_CONTROL defined */
 
         /*
@@ -3104,13 +3104,13 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
      * Apply the CFGM overlay.
      */
     if (RT_SUCCESS(rc))
-        rc = configCfgmOverlay(pRoot, virtualBox, pMachine);
+        rc = i_configCfgmOverlay(pRoot, virtualBox, pMachine);
 
     /*
      * Dump all extradata API settings tweaks, both global and per VM.
      */
     if (RT_SUCCESS(rc))
-        rc = configDumpAPISettingsTweaks(virtualBox, pMachine);
+        rc = i_configDumpAPISettingsTweaks(virtualBox, pMachine);
 
 #undef H
 
@@ -3119,7 +3119,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     /*
      * Register VM state change handler.
      */
-    int rc2 = VMR3AtStateRegister(pUVM, Console::vmstateChangeCallback, this);
+    int rc2 = VMR3AtStateRegister(pUVM, Console::i_vmstateChangeCallback, this);
     AssertRC(rc2);
     if (RT_SUCCESS(rc))
         rc = rc2;
@@ -3127,7 +3127,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     /*
      * Register VM runtime error handler.
      */
-    rc2 = VMR3AtRuntimeErrorRegister(pUVM, Console::setVMRuntimeErrorCallback, this);
+    rc2 = VMR3AtRuntimeErrorRegister(pUVM, Console::i_setVMRuntimeErrorCallback, this);
     AssertRC(rc2);
     if (RT_SUCCESS(rc))
         rc = rc2;
@@ -3150,7 +3150,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
  * @param   pMachine        Pointer to the IMachine interface.
  */
 /* static */
-int Console::configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachine *pMachine)
+int Console::i_configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachine *pMachine)
 {
     /*
      * CFGM overlay handling.
@@ -3326,7 +3326,7 @@ int Console::configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachi
  * @param   pMachine        Pointer to the IMachine interface.
  */
 /* static */
-int Console::configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMachine)
+int Console::i_configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMachine)
 {
     {
         SafeArray<BSTR> aGlobalExtraDataKeys;
@@ -3377,12 +3377,12 @@ int Console::configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMa
     return VINF_SUCCESS;
 }
 
-int Console::configGraphicsController(PCFGMNODE pDevices,
-                                      const GraphicsControllerType_T graphicsController,
-                                      BusAssignmentManager *pBusMgr,
-                                      const ComPtr<IMachine> &pMachine,
-                                      const ComPtr<IBIOSSettings> &biosSettings,
-                                      bool fHMEnabled)
+int Console::i_configGraphicsController(PCFGMNODE pDevices,
+                                        const GraphicsControllerType_T graphicsController,
+                                        BusAssignmentManager *pBusMgr,
+                                        const ComPtr<IMachine> &pMachine,
+                                        const ComPtr<IBIOSSettings> &biosSettings,
+                                        bool fHMEnabled)
 {
     // InsertConfig* throws
     try
@@ -3411,7 +3411,7 @@ int Console::configGraphicsController(PCFGMNODE pDevices,
         NOREF(fHMEnabled);
 #endif
 
-        attachStatusDriver(pInst, &mapCrOglLed, 0, 0, NULL, NULL, 0);
+        i_attachStatusDriver(pInst, &mapCrOglLed, 0, 0, NULL, NULL, 0);
 
 #ifdef VBOX_WITH_VMSVGA
         if (graphicsController == GraphicsControllerType_VMSVGA)
@@ -3453,7 +3453,7 @@ int Console::configGraphicsController(PCFGMNODE pDevices,
         /* VESA height reduction */
         ULONG ulHeightReduction;
         IFramebuffer *pFramebuffer = NULL;
-        hrc = getDisplay()->QueryFramebuffer(0, &pFramebuffer);
+        hrc = i_getDisplay()->QueryFramebuffer(0, &pFramebuffer);
         if (SUCCEEDED(hrc) && pFramebuffer)
         {
             hrc = pFramebuffer->COMGETTER(HeightReduction)(&ulHeightReduction);             H();
@@ -3519,11 +3519,11 @@ int Console::configGraphicsController(PCFGMNODE pDevices,
 /**
  * Ellipsis to va_list wrapper for calling setVMRuntimeErrorCallback.
  */
-void Console::setVMRuntimeErrorCallbackF(uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
+void Console::i_setVMRuntimeErrorCallbackF(uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    setVMRuntimeErrorCallback(NULL, this, fFlags, pszErrorId, pszFormat, va);
+    i_setVMRuntimeErrorCallback(NULL, this, fFlags, pszErrorId, pszFormat, va);
     va_end(va);
 }
 
@@ -3547,24 +3547,24 @@ static uint64_t formatDiskSize(uint64_t u64Size, const char **pszUnit)
     }
 }
 
-int Console::configMediumAttachment(PCFGMNODE pCtlInst,
-                                    const char *pcszDevice,
-                                    unsigned uInstance,
-                                    StorageBus_T enmBus,
-                                    bool fUseHostIOCache,
-                                    bool fBuiltinIOCache,
-                                    bool fSetupMerge,
-                                    unsigned uMergeSource,
-                                    unsigned uMergeTarget,
-                                    IMediumAttachment *pMediumAtt,
-                                    MachineState_T aMachineState,
-                                    HRESULT *phrc,
-                                    bool fAttachDetach,
-                                    bool fForceUnmount,
-                                    bool fHotplug,
-                                    PUVM pUVM,
-                                    DeviceType_T *paLedDevType,
-                                    PCFGMNODE *ppLunL0)
+int Console::i_configMediumAttachment(PCFGMNODE pCtlInst,
+                                      const char *pcszDevice,
+                                      unsigned uInstance,
+                                      StorageBus_T enmBus,
+                                      bool fUseHostIOCache,
+                                      bool fBuiltinIOCache,
+                                      bool fSetupMerge,
+                                      unsigned uMergeSource,
+                                      unsigned uMergeTarget,
+                                      IMediumAttachment *pMediumAtt,
+                                      MachineState_T aMachineState,
+                                      HRESULT *phrc,
+                                      bool fAttachDetach,
+                                      bool fForceUnmount,
+                                      bool fHotplug,
+                                      PUVM pUVM,
+                                      DeviceType_T *paLedDevType,
+                                      PCFGMNODE *ppLunL0)
 {
     // InsertConfig* throws
     try
@@ -3589,7 +3589,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
 
         unsigned uLUN;
         PCFGMNODE pLunL0 = NULL;
-        hrc = Console::convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);                H();
+        hrc = Console::i_convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);                H();
 
         if (enmBus == StorageBus_USB)
         {
@@ -3625,7 +3625,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 /** @todo: No LED after hotplugging. */
                 /* Attach the status driver */
                 Assert(cLedUsb >= 8);
-                attachStatusDriver(pCtlInst, &mapStorageLeds[iLedUsb], 0, 7,
+                i_attachStatusDriver(pCtlInst, &mapStorageLeds[iLedUsb], 0, 7,
                                    &mapMediumAttachments, pcszDevice, 0);
                 paLedDevType = &maStorageDevType[iLedUsb];
             }
@@ -3755,7 +3755,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 hrc = pMedium->COMGETTER(Location)(strFile.asOutParam());                   H();
                 Utf8Str utfFile = Utf8Str(strFile);
                 Bstr strSnap;
-                ComPtr<IMachine> pMachine = machine();
+                ComPtr<IMachine> pMachine = i_machine();
                 hrc = pMachine->COMGETTER(SnapshotFolder)(strSnap.asOutParam());            H();
                 Utf8Str utfSnap = Utf8Str(strSnap);
                 RTFSTYPE enmFsTypeFile = RTFSTYPE_UNKNOWN;
@@ -3781,7 +3781,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 {
                     const char *pszUnit;
                     uint64_t u64Print = formatDiskSize((uint64_t)i64Size, &pszUnit);
-                    setVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
+                    i_setVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
                             N_("The medium '%ls' has a logical size of %RU64%s "
                             "but the file system the medium is located on seems "
                             "to be FAT(32) which cannot handle files bigger than 4GB.\n"
@@ -3812,7 +3812,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                             const char *pszUnitMax;
                             uint64_t u64PrintSiz = formatDiskSize((LONG64)i64Size, &pszUnitSiz);
                             uint64_t u64PrintMax = formatDiskSize(maxSize, &pszUnitMax);
-                            setVMRuntimeErrorCallbackF(0, "FatPartitionDetected", /* <= not exact but ... */
+                            i_setVMRuntimeErrorCallbackF(0, "FatPartitionDetected", /* <= not exact but ... */
                                     N_("The medium '%ls' has a logical size of %RU64%s "
                                     "but the file system the medium is located on can "
                                     "only handle files up to %RU64%s in theory.\n"
@@ -3835,7 +3835,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 {
                     const char *pszUnit;
                     uint64_t u64Print = formatDiskSize(i64Size, &pszUnit);
-                    setVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
+                    i_setVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
 #ifdef RT_OS_WINDOWS
                             N_("The snapshot folder of this VM '%ls' seems to be located on "
                             "a FAT(32) file system. The logical size of the medium '%ls' "
@@ -3876,7 +3876,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                     if (   enmFsTypeFile == RTFSTYPE_EXT4
                         || enmFsTypeFile == RTFSTYPE_XFS)
                     {
-                        setVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
+                        i_setVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
                                 N_("The host I/O cache for at least one controller is disabled "
                                    "and the medium '%ls' for this VM "
                                    "is located on an %s partition. There is a known Linux "
@@ -3893,7 +3893,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                                 || enmFsTypeSnap == RTFSTYPE_XFS)
                              && !mfSnapshotFolderExt4WarningShown)
                     {
-                        setVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
+                        i_setVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
                                 N_("The host I/O cache for at least one controller is disabled "
                                    "and the snapshot folder for this VM "
                                    "is located on an %s partition. There is a known Linux "
@@ -3946,19 +3946,19 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
             hrc = pBwGroup->COMGETTER(Name)(strBwGroup.asOutParam());                       H();
         }
 
-        rc = configMedium(pLunL0,
-                          !!fPassthrough,
-                          lType,
-                          fUseHostIOCache,
-                          fBuiltinIOCache,
-                          fSetupMerge,
-                          uMergeSource,
-                          uMergeTarget,
-                          strBwGroup.isEmpty() ? NULL : Utf8Str(strBwGroup).c_str(),
-                          !!fDiscard,
-                          pMedium,
-                          aMachineState,
-                          phrc);
+        rc = i_configMedium(pLunL0,
+                            !!fPassthrough,
+                            lType,
+                            fUseHostIOCache,
+                            fBuiltinIOCache,
+                            fSetupMerge,
+                            uMergeSource,
+                            uMergeTarget,
+                            strBwGroup.isEmpty() ? NULL : Utf8Str(strBwGroup).c_str(),
+                            !!fDiscard,
+                            pMedium,
+                            aMachineState,
+                            phrc);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -4004,19 +4004,19 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
     return VINF_SUCCESS;
 }
 
-int Console::configMedium(PCFGMNODE pLunL0,
-                          bool fPassthrough,
-                          DeviceType_T enmType,
-                          bool fUseHostIOCache,
-                          bool fBuiltinIOCache,
-                          bool fSetupMerge,
-                          unsigned uMergeSource,
-                          unsigned uMergeTarget,
-                          const char *pcszBwGroup,
-                          bool fDiscard,
-                          IMedium *pMedium,
-                          MachineState_T aMachineState,
-                          HRESULT *phrc)
+int Console::i_configMedium(PCFGMNODE pLunL0,
+                            bool fPassthrough,
+                            DeviceType_T enmType,
+                            bool fUseHostIOCache,
+                            bool fBuiltinIOCache,
+                            bool fSetupMerge,
+                            unsigned uMergeSource,
+                            unsigned uMergeTarget,
+                            const char *pcszBwGroup,
+                            bool fDiscard,
+                            IMedium *pMedium,
+                            MachineState_T aMachineState,
+                            HRESULT *phrc)
 {
     // InsertConfig* throws
     try
@@ -4098,11 +4098,11 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 {
                     Bstr loc;
                     hrc = pMedium->COMGETTER(Location)(loc.asOutParam());                   H();
-                    setVMRuntimeErrorCallbackF(0, "DvdOrFloppyImageInaccessible",
-                                               "The image file '%ls' is inaccessible and is being ignored. "
-                                               "Please select a different image file for the virtual %s drive.",
-                                               loc.raw(),
-                                               enmType == DeviceType_DVD ? "DVD" : "floppy");
+                    i_setVMRuntimeErrorCallbackF(0, "DvdOrFloppyImageInaccessible",
+                                                 "The image file '%ls' is inaccessible and is being ignored. "
+                                                 "Please select a different image file for the virtual %s drive.",
+                                                 loc.raw(),
+                                                 enmType == DeviceType_DVD ? "DVD" : "floppy");
                     pMedium = NULL;
                 }
             }
@@ -4324,15 +4324,15 @@ int Console::configMedium(PCFGMNODE pLunL0,
  *  @note   Locks this object for writing.
  *  @thread EMT
  */
-int Console::configNetwork(const char *pszDevice,
-                           unsigned uInstance,
-                           unsigned uLun,
-                           INetworkAdapter *aNetworkAdapter,
-                           PCFGMNODE pCfg,
-                           PCFGMNODE pLunL0,
-                           PCFGMNODE pInst,
-                           bool fAttachDetach,
-                           bool fIgnoreConnectFailure)
+int Console::i_configNetwork(const char *pszDevice,
+                             unsigned uInstance,
+                             unsigned uLun,
+                             INetworkAdapter *aNetworkAdapter,
+                             PCFGMNODE pCfg,
+                             PCFGMNODE pLunL0,
+                             PCFGMNODE pInst,
+                             bool fAttachDetach,
+                             bool fIgnoreConnectFailure)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), VERR_ACCESS_DENIED);
@@ -4353,7 +4353,7 @@ int Console::configNetwork(const char *pszDevice,
          */
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        ComPtr<IMachine> pMachine = machine();
+        ComPtr<IMachine> pMachine = i_machine();
 
         ComPtr<IVirtualBox> virtualBox;
         hrc = pMachine->COMGETTER(Parent)(virtualBox.asOutParam());                         H();
@@ -4826,9 +4826,9 @@ int Console::configNetwork(const char *pszDevice,
                         RTStrCopy(Req.ifr_name, sizeof(Req.ifr_name), pszBridgedIfName);
                         if (ioctl(iSock, SIOCGIFFLAGS, &Req) >= 0)
                             if ((Req.ifr_flags & IFF_UP) == 0)
-                                setVMRuntimeErrorCallbackF(0, "BridgedInterfaceDown",
-                                    N_("Bridged interface %s is down. Guest will not be able to use this interface"),
-                                    pszBridgedIfName);
+                                i_setVMRuntimeErrorCallbackF(0, "BridgedInterfaceDown",
+                                     N_("Bridged interface %s is down. Guest will not be able to use this interface"),
+                                     pszBridgedIfName);
 
                         close(iSock);
                     }
@@ -5451,7 +5451,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
  * Set up the Guest Property service, populate it with properties read from
  * the machine XML and set a couple of initial properties.
  */
-/* static */ int Console::configGuestProperties(void *pvConsole, PUVM pUVM)
+/* static */ int Console::i_configGuestProperties(void *pvConsole, PUVM pUVM)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
     AssertReturn(pvConsole, VERR_GENERAL_FAILURE);
@@ -5588,7 +5588,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
          */
         HGCMSVCEXTHANDLE hDummy;
         HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestPropSvc",
-                                         Console::doGuestPropNotification,
+                                         Console::i_doGuestPropNotification,
                                          pvConsole);
 
 #ifdef VBOX_WITH_GUEST_PROPS_RDONLY_GUEST
@@ -5608,7 +5608,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
 /**
  * Set up the Guest Control service.
  */
-/* static */ int Console::configGuestControl(void *pvConsole)
+/* static */ int Console::i_configGuestControl(void *pvConsole)
 {
 #ifdef VBOX_WITH_GUEST_CONTROL
     AssertReturn(pvConsole, VERR_GENERAL_FAILURE);
@@ -5628,7 +5628,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
         HGCMSVCEXTHANDLE hDummy;
         rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestControlSvc",
                                               &Guest::notifyCtrlDispatcher,
-                                              pConsole->getGuest());
+                                              pConsole->i_getGuest());
         if (RT_FAILURE(rc))
             Log(("Cannot register VBoxGuestControlSvc extension!\n"));
         else

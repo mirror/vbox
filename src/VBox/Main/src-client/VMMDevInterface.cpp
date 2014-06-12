@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -159,11 +159,11 @@ DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, uint
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* Store that information in IGuest */
-    Guest* guest = pConsole->getGuest();
+    Guest* guest = pConsole->i_getGuest();
     AssertPtrReturnVoid(guest);
 
     guest->setAdditionsStatus((VBoxGuestFacilityType)uFacility, (VBoxGuestFacilityStatus)uStatus, fFlags, pTimeSpecTS);
-    pConsole->onAdditionsStateChange();
+    pConsole->i_onAdditionsStateChange();
 }
 
 
@@ -181,7 +181,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestUserState(PPDMIVMMDEVCONNECTOR pInterface,
     AssertPtr(pConsole);
 
     /* Store that information in IGuest. */
-    Guest* pGuest = pConsole->getGuest();
+    Guest* pGuest = pConsole->i_getGuest();
     AssertPtrReturnVoid(pGuest);
 
     pGuest->onUserStateChange(Bstr(pszUser), Bstr(pszDomain), (VBoxGuestUserState)uState,
@@ -202,12 +202,12 @@ DECLCALLBACK(void) vmmdevUpdateGuestUserState(PPDMIVMMDEVCONNECTOR pInterface,
 DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestInfo *guestInfo)
 {
     AssertPtrReturnVoid(guestInfo);
-    
+
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* Store that information in IGuest */
-    Guest* guest = pConsole->getGuest();
+    Guest* guest = pConsole->i_getGuest();
     AssertPtrReturnVoid(guest);
 
     if (guestInfo->interfaceVersion != 0)
@@ -220,10 +220,10 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
          * Tell the console interface about the event
          * so that it can notify its consumers.
          */
-        pConsole->onAdditionsStateChange();
+        pConsole->i_onAdditionsStateChange();
 
         if (guestInfo->interfaceVersion < VMMDEV_VERSION)
-            pConsole->onAdditionsOutdated();
+            pConsole->i_onAdditionsOutdated();
     }
     else
     {
@@ -238,7 +238,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
         RTTIMESPEC TimeSpecTS;
         RTTimeNow(&TimeSpecTS);
         guest->setAdditionsStatus(VBoxGuestFacilityType_All, VBoxGuestFacilityStatus_Inactive, 0 /*fFlags*/, &TimeSpecTS);
-        pConsole->onAdditionsStateChange();
+        pConsole->i_onAdditionsStateChange();
     }
 }
 
@@ -253,7 +253,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, uint3
     Assert(uFullVersion);
 
     /* Store that information in IGuest. */
-    Guest *pGuest = pDrv->pVMMDev->getParent()->getGuest();
+    Guest *pGuest = pDrv->pVMMDev->getParent()->i_getGuest();
     AssertPtrReturnVoid(pGuest);
 
     /* Just pass it on... */
@@ -282,7 +282,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* store that information in IGuest */
-    Guest* pGuest = pConsole->getGuest();
+    Guest* pGuest = pConsole->i_getGuest();
     AssertPtrReturnVoid(pGuest);
 
     /*
@@ -294,7 +294,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
      * Tell the console interface about the event
      * so that it can notify its consumers.
      */
-    pConsole->onAdditionsStateChange();
+    pConsole->i_onAdditionsStateChange();
 }
 
 /**
@@ -315,7 +315,7 @@ DECLCALLBACK(void) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface
      * Tell the console interface about the event
      * so that it can notify its consumers.
      */
-    Mouse *pMouse = pConsole->getMouse();
+    Mouse *pMouse = pConsole->i_getMouse();
     if (pMouse)  /** @todo and if not?  Can that actually happen? */
         pMouse->i_onVMMDevGuestCapsChange(fNewCaps & VMMDEV_MOUSE_GUEST_MASK);
 }
@@ -355,7 +355,7 @@ DECLCALLBACK(void) vmmdevUpdatePointerShape(PPDMIVMMDEVCONNECTOR pInterface, boo
     com::SafeArray<BYTE> shapeData(cbShapeSize);
     if (pShape)
         ::memcpy(shapeData.raw(), pShape, cbShapeSize);
-    pConsole->onMousePointerShapeChange(fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shapeData));
+    pConsole->i_onMousePointerShapeChange(fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shapeData));
 }
 
 DECLCALLBACK(int) iface_VideoAccelEnable(PPDMIVMMDEVCONNECTOR pInterface, bool fEnable, VBVAMEMORY *pVbvaMemory)
@@ -363,7 +363,7 @@ DECLCALLBACK(int) iface_VideoAccelEnable(PPDMIVMMDEVCONNECTOR pInterface, bool f
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
 
-    Display *display = pConsole->getDisplay();
+    Display *display = pConsole->i_getDisplay();
 
     if (display)
     {
@@ -378,7 +378,7 @@ DECLCALLBACK(void) iface_VideoAccelFlush(PPDMIVMMDEVCONNECTOR pInterface)
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
 
-    Display *display = pConsole->getDisplay();
+    Display *display = pConsole->i_getDisplay();
 
     if (display)
     {
@@ -399,7 +399,7 @@ DECLCALLBACK(int) vmmdevVideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint
     Log(("vmmdevVideoModeSupported: [%d]: %dx%dx%d\n", display, width, height, bpp));
 #endif
     IFramebuffer *framebuffer = NULL;
-    HRESULT hrc = pConsole->getDisplay()->QueryFramebuffer(display, &framebuffer);
+    HRESULT hrc = pConsole->i_getDisplay()->QueryFramebuffer(display, &framebuffer);
     if (SUCCEEDED(hrc) && framebuffer)
     {
         framebuffer->VideoModeSupported(width, height, bpp, (BOOL*)fSupported);
@@ -423,7 +423,7 @@ DECLCALLBACK(int) vmmdevGetHeightReduction(PPDMIVMMDEVCONNECTOR pInterface, uint
     if (!heightReduction)
         return VERR_INVALID_PARAMETER;
     IFramebuffer *framebuffer = NULL;
-    HRESULT hrc = pConsole->getDisplay()->QueryFramebuffer(0, &framebuffer);
+    HRESULT hrc = pConsole->i_getDisplay()->QueryFramebuffer(0, &framebuffer);
     if (SUCCEEDED(hrc) && framebuffer)
     {
         framebuffer->COMGETTER(HeightReduction)((ULONG*)heightReduction);
@@ -450,7 +450,7 @@ DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* Forward to Display, which calls corresponding framebuffers. */
-    pConsole->getDisplay()->handleSetVisibleRegion(cRect, pRect);
+    pConsole->i_getDisplay()->handleSetVisibleRegion(cRect, pRect);
 
     return VINF_SUCCESS;
 }
@@ -461,7 +461,7 @@ DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* Forward to Display, which calls corresponding framebuffers. */
-    pConsole->getDisplay()->handleQueryVisibleRegion(pcRect, pRect);
+    pConsole->i_getDisplay()->handleQueryVisibleRegion(pcRect, pRect);
 
     return VINF_SUCCESS;
 }
@@ -484,7 +484,7 @@ DECLCALLBACK(int) vmmdevQueryStatisticsInterval(PPDMIVMMDEVCONNECTOR pInterface,
         return VERR_INVALID_POINTER;
 
     /* store that information in IGuest */
-    Guest* guest = pConsole->getGuest();
+    Guest* guest = pConsole->i_getGuest();
     AssertPtrReturn(guest, VERR_GENERAL_FAILURE);
 
     guest->COMGETTER(StatisticsUpdateInterval)(&val);
@@ -510,7 +510,7 @@ DECLCALLBACK(int) vmmdevQueryBalloonSize(PPDMIVMMDEVCONNECTOR pInterface, uint32
         return VERR_INVALID_POINTER;
 
     /* store that information in IGuest */
-    Guest* guest = pConsole->getGuest();
+    Guest* guest = pConsole->i_getGuest();
     AssertPtrReturn(guest, VERR_GENERAL_FAILURE);
 
     guest->COMGETTER(MemoryBalloonSize)(&val);
@@ -536,7 +536,7 @@ DECLCALLBACK(int) vmmdevIsPageFusionEnabled(PPDMIVMMDEVCONNECTOR pInterface, boo
         return VERR_INVALID_POINTER;
 
     /* store that information in IGuest */
-    Guest* guest = pConsole->getGuest();
+    Guest* guest = pConsole->i_getGuest();
     AssertPtrReturn(guest, VERR_GENERAL_FAILURE);
 
     *pfPageFusionEnabled = !!guest->isPageFusionEnabled();
@@ -559,7 +559,7 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
     AssertPtrReturn(pGuestStats, VERR_INVALID_POINTER);
 
     /* store that information in IGuest */
-    Guest* guest = pConsole->getGuest();
+    Guest* guest = pConsole->i_getGuest();
     AssertPtrReturn(guest, VERR_GENERAL_FAILURE);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_IDLE)
@@ -573,7 +573,7 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
 
 
     /** @todo r=bird: Convert from 4KB to 1KB units?
-     *        CollectorGuestHAL::getGuestMemLoad says it returns KB units to
+     *        CollectorGuestHAL::i_getGuestMemLoad says it returns KB units to
      *        preCollect().  I might be wrong ofc, this is convoluted code... */
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_TOTAL)
         guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMTOTAL, pGuestStats->u32PhysMemTotal);

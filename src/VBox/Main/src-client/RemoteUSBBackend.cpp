@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -819,7 +819,7 @@ void RemoteUSBBackend::PollRemoteDevices(void)
         && menmPollRemoteDevicesStatus != PollRemoteDevicesStatus_Dereferenced)
     {
         /* Unmount all remote USB devices. */
-        mConsole->processRemoteUSBDevices(mu32ClientId, NULL, 0, false);
+        mConsole->i_processRemoteUSBDevices(mu32ClientId, NULL, 0, false);
 
         menmPollRemoteDevicesStatus = PollRemoteDevicesStatus_Dereferenced;
 
@@ -879,7 +879,7 @@ void RemoteUSBBackend::PollRemoteDevices(void)
 
             if (mfHasDeviceList)
             {
-                mConsole->processRemoteUSBDevices(mu32ClientId, (VRDEUSBDEVICEDESC *)mpvDeviceList, mcbDeviceList, mfDescExt);
+                mConsole->i_processRemoteUSBDevices(mu32ClientId, (VRDEUSBDEVICEDESC *)mpvDeviceList, mcbDeviceList, mfDescExt);
                 LogFlow(("USB::PollRemoteDevices: WaitResponse after process\n"));
 
                 menmPollRemoteDevicesStatus = PollRemoteDevicesStatus_SendRequest;

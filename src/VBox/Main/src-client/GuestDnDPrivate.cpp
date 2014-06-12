@@ -500,7 +500,7 @@ int GuestDnD::hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM p
 
     /* Forward the information to the VMM device. */
     Assert(!pConsole.isNull());
-    VMMDev *pVMMDev = pConsole->getVMMDev();
+    VMMDev *pVMMDev = pConsole->i_getVMMDev();
     if (!pVMMDev)
         return VERR_COM_OBJECT_NOT_FOUND;
 

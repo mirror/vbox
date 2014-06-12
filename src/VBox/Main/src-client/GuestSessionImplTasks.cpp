@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -76,7 +76,7 @@ int GuestSessionTask::getGuestProperty(const ComObjPtr<Guest> &pGuest,
                                        const Utf8Str &strPath, Utf8Str &strValue)
 {
     ComObjPtr<Console> pConsole = pGuest->getConsole();
-    const ComPtr<IMachine> pMachine = pConsole->machine();
+    const ComPtr<IMachine> pMachine = pConsole->i_machine();
 
     Assert(!pMachine.isNull());
     Bstr strTemp, strFlags;
@@ -337,7 +337,8 @@ int SessionTaskCopyTo::Run(void)
 
             default:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Error while creating guest process for copying file \"%s\" from guest to host: %Rrc"),
+                                    Utf8StrFmt(GuestSession::tr(
+                                    "Error while creating guest process for copying file \"%s\" from guest to host: %Rrc"),
                                                mSource.c_str(), rc));
                 break;
         }
@@ -505,12 +506,14 @@ int SessionTaskCopyTo::Run(void)
                 {
                     if (RT_FAILURE(rc))
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Waiting on termination for copying file \"%s\" failed: %Rrc"),
+                                            Utf8StrFmt(
+                                            GuestSession::tr("Waiting on termination for copying file \"%s\" failed: %Rrc"),
                                                        mSource.c_str(), rc));
                     else
                     {
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Waiting on termination for copying file \"%s\" failed with wait result %ld"),
+                                            Utf8StrFmt(GuestSession::tr(
+                                            "Waiting on termination for copying file \"%s\" failed with wait result %ld"),
                                                        mSource.c_str(), waitRes));
                         rc = VERR_GENERAL_FAILURE; /* Fudge. */
                     }
@@ -527,7 +530,8 @@ int SessionTaskCopyTo::Run(void)
                        )
                     {
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Copying file \"%s\" failed with status %ld, exit code %ld"),
+                                            Utf8StrFmt(GuestSession::tr(
+                                            "Copying file \"%s\" failed with status %ld, exit code %ld"),
                                                        mSource.c_str(), procStatus, exitCode)); /**@todo Add stringify methods! */
                         rc = VERR_GENERAL_FAILURE; /* Fudge. */
                     }
@@ -656,7 +660,8 @@ int SessionTaskCopyFrom::Run(void)
 
                     default:
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Error while creating guest process for copying file \"%s\" from guest to host: %Rrc"),
+                                            Utf8StrFmt(GuestSession::tr(
+                                           "Error while creating guest process for copying file \"%s\" from guest to host: %Rrc"),
                                                        mSource.c_str(), rc));
                         break;
                 }

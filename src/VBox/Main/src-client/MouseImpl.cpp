@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -158,7 +158,7 @@ void Mouse::uninit()
 HRESULT Mouse::i_updateVMMDevMouseCaps(uint32_t fCapsAdded,
                                        uint32_t fCapsRemoved)
 {
-    VMMDevMouseInterface *pVMMDev = mParent->getVMMDevMouseInterface();
+    VMMDevMouseInterface *pVMMDev = mParent->i_getVMMDevMouseInterface();
     if (!pVMMDev)
         return E_FAIL;  /* No assertion, as the front-ends can send events
                          * at all sorts of inconvenient times. */
@@ -381,7 +381,7 @@ HRESULT Mouse::i_reportMultiTouchEventToDevice(uint8_t cContacts,
  */
 HRESULT Mouse::i_reportAbsEventToVMMDev(int32_t x, int32_t y)
 {
-    VMMDevMouseInterface *pVMMDev = mParent->getVMMDevMouseInterface();
+    VMMDevMouseInterface *pVMMDev = mParent->i_getVMMDevMouseInterface();
     ComAssertRet(pVMMDev, E_FAIL);
     PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
     ComAssertRet(pVMMDevPort, E_FAIL);
@@ -541,7 +541,7 @@ HRESULT Mouse::i_convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAd
     AssertPtrReturn(pxAdj, E_POINTER);
     AssertPtrReturn(pyAdj, E_POINTER);
     AssertPtrNullReturn(pfValid, E_POINTER);
-    DisplayMouseInterface *pDisplay = mParent->getDisplayMouseInterface();
+    DisplayMouseInterface *pDisplay = mParent->i_getDisplayMouseInterface();
     ComAssertRet(pDisplay, E_FAIL);
     /** The amount to add to the result (multiplied by the screen width/height)
      * to compensate for differences in guest methods for mapping back to
@@ -699,7 +699,7 @@ HRESULT Mouse::i_putEventMultiTouch(LONG aCount,
          return E_INVALIDARG;
     }
 
-    DisplayMouseInterface *pDisplay = mParent->getDisplayMouseInterface();
+    DisplayMouseInterface *pDisplay = mParent->i_getDisplayMouseInterface();
     ComAssertRet(pDisplay, E_FAIL);
 
     /* Touch events are mapped to the primary monitor, because the emulated USB
@@ -904,7 +904,7 @@ void Mouse::i_sendMouseCapsNotifications(void)
     /** @todo this call takes the Console lock in order to update the cached
      * callback data atomically.  However I can't see any sign that the cached
      * data is ever used again. */
-    mParent->onMouseCapabilityChange(fCanAbs, fRelDev, fMTDev, fNeedsHostCursor);
+    mParent->i_onMouseCapabilityChange(fCanAbs, fRelDev, fMTDev, fNeedsHostCursor);
 }
 
 

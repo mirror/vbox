@@ -80,14 +80,14 @@ HRESULT Guest::init(Console *aParent)
     autoInitSpan.setSucceeded();
 
     ULONG aMemoryBalloonSize;
-    HRESULT hr = mParent->machine()->COMGETTER(MemoryBalloonSize)(&aMemoryBalloonSize);
+    HRESULT hr = mParent->i_machine()->COMGETTER(MemoryBalloonSize)(&aMemoryBalloonSize);
     if (hr == S_OK) /** @todo r=andy SUCCEEDED? */
         mMemoryBalloonSize = aMemoryBalloonSize;
     else
         mMemoryBalloonSize = 0; /* Default is no ballooning */
 
     BOOL fPageFusionEnabled;
-    hr = mParent->machine()->COMGETTER(PageFusionEnabled)(&fPageFusionEnabled);
+    hr = mParent->i_machine()->COMGETTER(PageFusionEnabled)(&fPageFusionEnabled);
     if (hr == S_OK) /** @todo r=andy SUCCEEDED? */
         mfPageFusionEnabled = fPageFusionEnabled;
     else
@@ -336,23 +336,23 @@ void Guest::updateStats(uint64_t iTick)
         }
     }
 
-    mParent->reportVmStatistics(validStats,
-                                aGuestStats[GUESTSTATTYPE_CPUUSER],
-                                aGuestStats[GUESTSTATTYPE_CPUKERNEL],
-                                aGuestStats[GUESTSTATTYPE_CPUIDLE],
-                                /* Convert the units for RAM usage stats: page (4K) -> 1KB units */
-                                mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL] * (_4K/_1K),
-                                mCurrentGuestStat[GUESTSTATTYPE_MEMFREE] * (_4K/_1K),
-                                mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON] * (_4K/_1K),
-                                (ULONG)(cbSharedMem / _1K), /* bytes -> KB */
-                                mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K),
-                                mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K),
-                                (ULONG)(cbAllocTotal / _1K), /* bytes -> KB */
-                                (ULONG)(cbFreeTotal / _1K),
-                                (ULONG)(cbBalloonedTotal / _1K),
-                                (ULONG)(cbSharedTotal / _1K),
-                                uNetStatRx,
-                                uNetStatTx);
+    mParent->i_reportVmStatistics(validStats,
+                                  aGuestStats[GUESTSTATTYPE_CPUUSER],
+                                  aGuestStats[GUESTSTATTYPE_CPUKERNEL],
+                                  aGuestStats[GUESTSTATTYPE_CPUIDLE],
+                                  /* Convert the units for RAM usage stats: page (4K) -> 1KB units */
+                                  mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL] * (_4K/_1K),
+                                  mCurrentGuestStat[GUESTSTATTYPE_MEMFREE] * (_4K/_1K),
+                                  mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON] * (_4K/_1K),
+                                  (ULONG)(cbSharedMem / _1K), /* bytes -> KB */
+                                  mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K),
+                                  mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K),
+                                  (ULONG)(cbAllocTotal / _1K), /* bytes -> KB */
+                                  (ULONG)(cbFreeTotal / _1K),
+                                  (ULONG)(cbBalloonedTotal / _1K),
+                                  (ULONG)(cbSharedTotal / _1K),
+                                  uNetStatRx,
+                                  uNetStatTx);
 }
 
 // IGuest properties
@@ -372,7 +372,7 @@ STDMETHODIMP Guest::COMGETTER(OSTypeId)(BSTR *a_pbstrOSTypeId)
         else
         {
             /* Redirect the call to IMachine if no additions are installed. */
-            ComPtr<IMachine> ptrMachine(mParent->machine());
+            ComPtr<IMachine> ptrMachine(mParent->i_machine());
             alock.release();
             hrc = ptrMachine->COMGETTER(OSTypeId)(a_pbstrOSTypeId);
         }
@@ -415,7 +415,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion)(BSTR *a_pbstrAdditionsVersion)
              * the guest properties.  Detected switched around Version and
              * Revision in early 3.1.x releases (see r57115).
              */
-            ComPtr<IMachine> ptrMachine = mParent->machine();
+            ComPtr<IMachine> ptrMachine = mParent->i_machine();
             alock.release(); /* No need to hold this during the IPC fun. */
 
             Bstr bstr;
@@ -468,7 +468,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsRevision)(ULONG *a_puAdditionsRevision)
              * the guest properties. Detected switched around Version and
              * Revision in early 3.1.x releases (see r57115).
              */
-            ComPtr<IMachine> ptrMachine = mParent->machine();
+            ComPtr<IMachine> ptrMachine = mParent->i_machine();
             alock.release(); /* No need to hold this during the IPC fun. */
 
             Bstr bstr;
@@ -626,12 +626,12 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize)(ULONG aMemoryBalloonSize)
 
     /* We must be 100% sure that IMachine::COMSETTER(MemoryBalloonSize)
      * does not call us back in any way! */
-    HRESULT ret = mParent->machine()->COMSETTER(MemoryBalloonSize)(aMemoryBalloonSize);
+    HRESULT ret = mParent->i_machine()->COMSETTER(MemoryBalloonSize)(aMemoryBalloonSize);
     if (ret == S_OK)
     {
         mMemoryBalloonSize = aMemoryBalloonSize;
         /* forward the information to the VMM device */
-        VMMDev *pVMMDev = mParent->getVMMDev();
+        VMMDev *pVMMDev = mParent->i_getVMMDev();
         /* MUST release all locks before calling VMM device as its critsect
          * has higher lock order than anything in Main. */
         alock.release();
@@ -679,7 +679,7 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
         }
     mStatUpdateInterval = aUpdateInterval;
     /* forward the information to the VMM device */
-    VMMDev *pVMMDev = mParent->getVMMDev();
+    VMMDev *pVMMDev = mParent->i_getVMMDev();
     /* MUST release all locks before calling VMM device as its critsect
      * has higher lock order than anything in Main. */
     alock.release();
@@ -865,7 +865,7 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
 
     /* Check for magic domain names which are used to pass encryption keys to the disk. */
     if (Utf8Str(aDomain) == "@@disk")
-        return mParent->setDiskEncryptionKeys(Utf8Str(aPassword));
+        return mParent->i_setDiskEncryptionKeys(Utf8Str(aPassword));
     else if (Utf8Str(aDomain) == "@@mem")
     {
         /** @todo */
@@ -874,7 +874,7 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
     else
     {
         /* forward the information to the VMM device */
-        VMMDev *pVMMDev = mParent->getVMMDev();
+        VMMDev *pVMMDev = mParent->i_getVMMDev();
         if (pVMMDev)
         {
             PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
