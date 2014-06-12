@@ -203,6 +203,20 @@ static DECLCALLBACK(void) drvMousePassThruReportModes(PPDMIMOUSECONNECTOR pInter
 }
 
 
+/**
+ * Flush the mouse queue if there are pending events.
+ *
+ * @param   pInterface  Pointer to the mouse connector interface structure.
+ */
+static DECLCALLBACK(void) drvMouseFlushQueue(PPDMIMOUSECONNECTOR pInterface)
+{
+    PDRVMOUSEQUEUE pDrv = PPDMIMOUSECONNECTOR_2_DRVMOUSEQUEUE(pInterface);
+
+    AssertPtr(pDrv->pQueue);
+    PDMQueueFlushIfNecessary(pDrv->pQueue);
+}
+
+
 
 /* -=-=-=-=- queue -=-=-=-=- */
 
