@@ -2557,16 +2557,16 @@ static int vga_update_display(PVGASTATE pThis, bool fUpdateAll, bool fFailOnResi
 #ifdef VBOX_WITH_VMSVGA
             if (pThis->svga.fEnabled) {
                 *pcur_graphic_mode = GMODE_SVGA;
-                rc = vmsvga_draw_graphic(pThis, 1, false, reset_dirty, pDrv);
+                rc = vmsvga_draw_graphic(pThis, 1, fFailOnResize, reset_dirty, pDrv);
             }
             else
 #endif
             if (pThis->gr[6] & 1) {
                 *pcur_graphic_mode = GMODE_GRAPH;
-                rc = vga_draw_graphic(pThis, 1, false, reset_dirty, pDrv);
+                rc = vga_draw_graphic(pThis, 1, fFailOnResize, reset_dirty, pDrv);
             } else {
                 *pcur_graphic_mode = GMODE_TEXT;
-                rc = vga_draw_text(pThis, 1, false, reset_dirty, pDrv);
+                rc = vga_draw_text(pThis, 1, fFailOnResize, reset_dirty, pDrv);
             }
 
             if (fBlank) {
@@ -4642,7 +4642,7 @@ static int updateDisplayAll(PVGASTATE pThis)
 
     pThis->graphic_mode = -1; /* force full update */
 
-    return vga_update_display(pThis, true, false, true,
+    return vga_update_display(pThis, true, true, true,
             pThis->pDrv, &pThis->graphic_mode);
 }
 
