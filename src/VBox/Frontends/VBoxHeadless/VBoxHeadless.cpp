@@ -492,22 +492,24 @@ static void show_usage()
     RTPrintf("Usage:\n"
              "   -s, -startvm, --startvm <name|uuid>   Start given VM (required argument)\n"
              "   -v, -vrde, --vrde on|off|config       Enable (default) or disable the VRDE\n"
-             "                                         server or don't change the setting\n"
+             "                                           server or don't change the setting\n"
              "   -e, -vrdeproperty, --vrdeproperty <name=[value]> Set a VRDE property:\n"
-             "                                         \"TCP/Ports\" - comma-separated list of ports\n"
-             "                                         the VRDE server can bind to. Use a dash between\n"
-             "                                         two port numbers to specify a range\n"
-             "                                         \"TCP/Address\" - interface IP the VRDE server\n"
-             "                                         will bind to\n"
-             "   --settingspw <pw>                     Specify the settings password\n"
-             "   --settingspwfile <file>               Specify a file containing the settings password\n"
+             "                                     \"TCP/Ports\" - comma-separated list of\n"
+             "                                       ports the VRDE server can bind to; dash\n"
+             "                                       between two port numbers specifies range\n"
+             "                                     \"TCP/Address\" - interface IP the VRDE\n"
+             "                                       server will bind to\n"
+             "   --settingspw <pw>                 Specify the settings password\n"
+             "   --settingspwfile <file>           Specify a file containing the\n"
+             "                                       settings password\n"
+             "   -start-paused, --start-paused     Start the VM in paused state\n"
 #ifdef VBOX_WITH_VPX
-             "   -c, -capture, --capture               Record the VM screen output to a file\n"
-             "   -w, --width                           Frame width when recording\n"
-             "   -h, --height                          Frame height when recording\n"
-             "   -r, --bitrate                         Recording bit rate when recording\n"
-             "   -f, --filename                        File name when recording. The codec used\n"
-             "                                         will be chosen based on the file extension\n"
+             "   -c, -capture, --capture           Record the VM screen output to a file\n"
+             "   -w, --width                       Frame width when recording\n"
+             "   -h, --height                      Frame height when recording\n"
+             "   -r, --bitrate                     Recording bit rate when recording\n"
+             "   -f, --filename                    File name when recording. The codec used\n"
+             "                                       will be chosen based on file extension\n"
 #endif
              "\n");
 }
@@ -645,6 +647,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     unsigned fRawR3 = ~0U;
     unsigned fPATM  = ~0U;
     unsigned fCSAM  = ~0U;
+    unsigned fPaused = 0;
 #ifdef VBOX_WITH_VPX
     bool fVideoRec = 0;
     unsigned long ulFrameWidth = 800;
@@ -676,7 +679,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         OPT_NO_CSAM,
         OPT_SETTINGSPW,
         OPT_SETTINGSPW_FILE,
-        OPT_COMMENT
+        OPT_COMMENT,
+        OPT_PAUSED
     };
 
     static const RTGETOPTDEF s_aOptions[] =
@@ -720,7 +724,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--filename", 'f', RTGETOPT_REQ_STRING },
 #endif /* VBOX_WITH_VPX defined */
         { "-comment", OPT_COMMENT, RTGETOPT_REQ_STRING },
-        { "--comment", OPT_COMMENT, RTGETOPT_REQ_STRING }
+        { "--comment", OPT_COMMENT, RTGETOPT_REQ_STRING },
+        { "-start-paused", OPT_PAUSED, 0 },
+        { "--start-paused", OPT_PAUSED, 0 }
     };
 
     const char *pcszNameOrUUID = NULL;
@@ -785,6 +791,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             case OPT_SETTINGSPW_FILE:
                 pcszSettingsPwFile = ValueUnion.psz;
+                break;
+            case OPT_PAUSED:
+                fPaused = true;
                 break;
 #ifdef VBOX_WITH_VPX
             case 'c':
@@ -1149,7 +1158,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         Log(("VBoxHeadless: Powering up the machine...\n"));
 
         ComPtr <IProgress> progress;
-        CHECK_ERROR_BREAK(console, PowerUp(progress.asOutParam()));
+        if (!fPaused)
+            CHECK_ERROR_BREAK(console, PowerUp(progress.asOutParam()));
+        else
+            CHECK_ERROR_BREAK(console, PowerUpPaused(progress.asOutParam()));
 
         /*
          * Wait for the result because there can be errors.
