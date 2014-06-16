@@ -574,8 +574,13 @@ struct file_operations sf_reg_fops =
 # else
     .sendfile    = generic_file_sendfile,
 # endif
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+    .read_iter   = generic_file_read_iter,
+    .write_iter  = generic_file_write_iter,
+# else
     .aio_read    = generic_file_aio_read,
     .aio_write   = generic_file_aio_write,
+# endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
     .fsync       = noop_fsync,
 # else
