@@ -100,6 +100,11 @@ HRESULT GuestDnDTarget::isFormatSupported(const com::Utf8Str &aFormat,
     ReturnComNotImplemented();
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     return GuestDnDBase::isFormatSupported(aFormat, aSupported);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
@@ -109,6 +114,11 @@ HRESULT GuestDnDTarget::getFormats(std::vector<com::Utf8Str> &aFormats)
 #if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
     ReturnComNotImplemented();
 #else /* VBOX_WITH_DRAG_AND_DROP */
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     return GuestDnDBase::getFormats(aFormats);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
@@ -120,6 +130,11 @@ HRESULT GuestDnDTarget::addFormats(const std::vector<com::Utf8Str> &aFormats)
     ReturnComNotImplemented();
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     return GuestDnDBase::addFormats(aFormats);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
@@ -129,6 +144,11 @@ HRESULT GuestDnDTarget::removeFormats(const std::vector<com::Utf8Str> &aFormats)
 #if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
     ReturnComNotImplemented();
 #else /* VBOX_WITH_DRAG_AND_DROP */
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     return GuestDnDBase::removeFormats(aFormats);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
