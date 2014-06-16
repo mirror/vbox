@@ -277,6 +277,12 @@ struct VBOXHDD
      * Other flush or growing write requests need to wait until
      * the current one completes. - NIL_VDIOCTX if unlocked. */
     volatile PVDIOCTX      pIoCtxLockOwner;
+    /** If the disk was locked by a growing write, flush or discard request this
+     * contains the start offset to check for interfering I/O while it is in progress. */
+    uint64_t               uOffsetStartLocked;
+    /** If the disk was locked by a growing write, flush or discard request this contains
+     * the first non affected offset to check for interfering I/O while it is in progress. */
+    uint64_t               uOffsetEndLocked;
 
     /** Pointer to the L2 disk cache if any. */
     PVDCACHE               pCache;
@@ -1549,7 +1555,7 @@ DECLINLINE(void) vdIoCtxAddToWaitingList(volatile PVDIOCTX *ppList, PVDIOCTX pIo
 
 DECLINLINE(void) vdIoCtxDefer(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
 {
-    LogFlowFunc(("Deferring write pIoCtx=%#p\n", pIoCtx));
+    LogFlowFunc(("Deferring I/O context pIoCtx=%#p\n", pIoCtx));
 
     Assert(!pIoCtx->pIoCtxParent && !(pIoCtx->fFlags & VDIOCTX_FLAGS_BLOCKED));
     pIoCtx->fFlags |= VDIOCTX_FLAGS_BLOCKED;
@@ -1645,7 +1651,8 @@ static int vdIoCtxProcessLocked(PVDIOCTX pIoCtx)
 
     if (   RT_SUCCESS(rc)
         && !pIoCtx->cMetaTransfersPending
-        && !pIoCtx->cDataTransfersPending)
+        && !pIoCtx->cDataTransfersPending
+        && !(pIoCtx->fFlags & VDIOCTX_FLAGS_BLOCKED))
         rc = VINF_VD_ASYNC_IO_FINISHED;
     else if (   RT_SUCCESS(rc)
              || rc == VERR_VD_NOT_ENOUGH_METADATA
@@ -1972,6 +1979,22 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
     unsigned cImagesRead          = pIoCtx->Req.Io.cImagesRead;
     size_t cbThisRead;
 
+    /*
+     * Check whether there is a full block write in progress which was not allocated.
+     * Defer I/O if the range interferes but only if it does not belong to the
+     * write doing the allocation.
+     */
+    if (   pDisk->pIoCtxLockOwner != NIL_VDIOCTX
+        && uOffset >= pDisk->uOffsetStartLocked
+        && uOffset < pDisk->uOffsetEndLocked
+        && (   !pIoCtx->pIoCtxParent
+            || pIoCtx->pIoCtxParent != pDisk->pIoCtxLockOwner))
+    {
+        Log(("Interferring read while allocating a new block => deferring read\n"));
+        vdIoCtxDefer(pDisk, pIoCtx);
+        return VINF_SUCCESS;
+    }
+
     /* Loop until all reads started or we have a backend which needs to read metadata. */
     do
     {
@@ -2001,7 +2024,6 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
         }
         else
         {
-
             /*
              * Try to read from the given image.
              * If the block is not allocated read from override chain if present.
@@ -2920,12 +2942,26 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
          * to avoid unnecessarily allocating unchanged blocks. This prevents
          * unwanted expanding of images. VMDK is an example. */
         cbThisWrite = cbWrite;
+
+        /*
+         * Check whether there is a full block write in progress which was not allocated.
+         * Defer I/O if the range interferes.
+         */
+        if (   pDisk->pIoCtxLockOwner != NIL_VDIOCTX
+            && uOffset >= pDisk->uOffsetStartLocked
+            && uOffset < pDisk->uOffsetEndLocked)
+        {
+            Log(("Interferring write while allocating a new block => deferring write\n"));
+            vdIoCtxDefer(pDisk, pIoCtx);
+            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+            break;
+        }
+
         fWrite =   (pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME)
                  ? 0 : VD_WRITE_NO_ALLOC;
-        rc = pImage->Backend->pfnWrite(pImage->pBackendData, uOffset,
-                                            cbThisWrite, pIoCtx,
-                                            &cbThisWrite, &cbPreRead,
-                                            &cbPostRead, fWrite);
+        rc = pImage->Backend->pfnWrite(pImage->pBackendData, uOffset, cbThisWrite,
+                                       pIoCtx, &cbThisWrite, &cbPreRead, &cbPostRead,
+                                       fWrite);
         if (rc == VERR_VD_BLOCK_FREE)
         {
             /* Lock the disk .*/
@@ -2962,6 +2998,10 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
 
                 LogFlowFunc(("Disk is growing because of pIoCtx=%#p pIoCtxWrite=%#p\n",
                              pIoCtx, pIoCtxWrite));
+
+                /* Save the current range for the growing operation to check for intersecting requests later. */
+                pDisk->uOffsetStartLocked = uOffset - cbPreRead;
+                pDisk->uOffsetEndLocked = uOffset + cbThisWrite + cbPostRead;
 
                 pIoCtxWrite->Type.Child.cbPreRead  = cbPreRead;
                 pIoCtxWrite->Type.Child.cbPostRead = cbPostRead;
@@ -3049,6 +3089,10 @@ static int vdFlushHelperAsync(PVDIOCTX pIoCtx)
     rc = vdIoCtxLockDisk(pDisk, pIoCtx);
     if (RT_SUCCESS(rc))
     {
+        /* Mark the whole disk as locked. */
+        pDisk->uOffsetStartLocked = 0;
+        pDisk->uOffsetEndLocked = UINT64_C(0xffffffffffffffff);
+
         vdResetModifiedFlag(pDisk);
         rc = pImage->Backend->pfnFlush(pImage->pBackendData, pIoCtx);
         if (   (   RT_SUCCESS(rc)
@@ -3318,6 +3362,9 @@ static int vdDiscardHelperAsync(PVDIOCTX pIoCtx)
         uint64_t offStart      = pIoCtx->Req.Discard.offCur;
         size_t   cbDiscardLeft = pIoCtx->Req.Discard.cbDiscardLeft;
         size_t   cbThisDiscard;
+
+        pDisk->uOffsetStartLocked = offStart;
+        pDisk->uOffsetEndLocked = offStart + cbDiscardLeft;
 
         if (RT_UNLIKELY(!pDiscard))
         {
