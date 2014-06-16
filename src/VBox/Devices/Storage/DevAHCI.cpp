@@ -1278,6 +1278,8 @@ static int PortSControl_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
             ahciIoThreadKick(ahci, pAhciPort);
         }
     }
+    else /* Just update the value if there is no device attached. */
+        pAhciPort->regSCTL = u32Value;
 
     return VINF_SUCCESS;
 #endif
