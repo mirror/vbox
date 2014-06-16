@@ -1033,6 +1033,9 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
     pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
     AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
+    rc = qcowL2TblCacheCreate(pImage);
+    AssertRC(rc);
+
     /*
      * Open the image.
      */
@@ -1060,9 +1063,6 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
         {
             pImage->offNextCluster = RT_ALIGN_64(cbFile, 512); /* Align image to sector boundary. */
             Assert(pImage->offNextCluster >= cbFile);
-
-            rc = qcowL2TblCacheCreate(pImage);
-            AssertRC(rc);
 
             if (Header.u32Version == 1)
             {
