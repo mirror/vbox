@@ -103,7 +103,7 @@ void UIMultiScreenLayout::update()
              * This makes sure that on first use fullscreen/seamless window opens on the same host-screen as the normal window was before.
              * This even works with multi-screen. The user just have to move all the normal windows to the target host-screens
              * and they will magically open there in fullscreen/seamless also. */
-            QRect geo = gEDataManager->machineWindowGeometry(m_pMachineLogic->visualStateType(), iGuestScreen, vboxGlobal().managedVMUuid());
+            QRect geo = gEDataManager->machineWindowGeometry(UIVisualStateType_Normal, iGuestScreen, vboxGlobal().managedVMUuid());
             /* If geometry is valid: */
             if (!geo.isNull())
             {
