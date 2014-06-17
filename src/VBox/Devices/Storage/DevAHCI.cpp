@@ -941,7 +941,7 @@ static size_t ahciCopyToPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
                               void *pvBuf, size_t cbBuf);
 static size_t ahciCopyFromPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
                                 void *pvBuf, size_t cbBuf);
-static bool ahciCancelActiveTasks(PAHCIPort pAhciPort);
+static bool ahciCancelActiveTasks(PAHCIPort pAhciPort, PAHCIREQ pAhciReqExcept);
 #endif
 RT_C_DECLS_END
 
@@ -1067,7 +1067,7 @@ DECLCALLBACK(void) ahciCccTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUse
 static void ahciPortResetFinish(PAHCIPort pAhciPort)
 {
     /* Cancel all tasks first. */
-    bool fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort);
+    bool fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort, NULL);
     Assert(fAllTasksCanceled);
 
     /* Signature for SATA device. */
@@ -2013,7 +2013,7 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     bool fAllTasksCanceled;
 
     /* Cancel all tasks first. */
-    fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort);
+    fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort, NULL);
     Assert(fAllTasksCanceled);
 
     pAhciPort->regIS   = 0;
@@ -5651,15 +5651,18 @@ static void ahciIoBufFree(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
  * Cancels all active tasks on the port.
  *
  * @returns Whether all active tasks were canceled.
- * @param   pAhciPort   The ahci port.
+ * @param   pAhciPort        The ahci port.
+ * @param   pAhciReqExcept   The given request is excepted from the cancelling
+ *                           (used for error page reading).
  */
-static bool ahciCancelActiveTasks(PAHCIPort pAhciPort)
+static bool ahciCancelActiveTasks(PAHCIPort pAhciPort, PAHCIREQ pAhciReqExcept)
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pAhciPort->aCachedTasks); i++)
     {
         PAHCIREQ pAhciReq = pAhciPort->aCachedTasks[i];
 
-        if (VALID_PTR(pAhciReq))
+        if (   VALID_PTR(pAhciReq)
+            && pAhciReq != pAhciReqExcept)
         {
             bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_CANCELED, AHCITXSTATE_ACTIVE);
 
@@ -5684,7 +5687,8 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort)
         }
     }
 
-    AssertRelease(!ASMAtomicReadU32(&pAhciPort->cTasksActive));
+    AssertRelease(   !ASMAtomicReadU32(&pAhciPort->cTasksActive)
+                  || (pAhciReqExcept && ASMAtomicReadU32(&pAhciPort->cTasksActive) == 1));
     return true; /* always true for now because tasks don't use guest memory as the buffer which makes canceling a task impossible. */
 }
 
@@ -6360,12 +6364,25 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
 
                             aBuf[511] = (uint8_t)-(int8_t)uChkSum;
 
-                            /*
-                             * Reading this log page results in an abort of all outstanding commands
-                             * and clearing the SActive register and TaskFile register.
-                             */
-                            ahciSendSDBFis(pAhciPort, 0xffffffff, true);
+                            if (pTaskErr->enmTxDir == AHCITXDIR_TRIM)
+                                ahciTrimRangesDestroy(pTaskErr);
+                            else if (pTaskErr->enmTxDir != AHCITXDIR_FLUSH)
+                                ahciIoBufFree(pAhciPort->pDevInsR3, pTaskErr, false /* fCopyToGuest */);
+
+                            /* Finally free the error task state structure because it is completely unused now. */
+                            RTMemFree(pTaskErr);
                         }
+
+                        /*
+                         * Reading this log page results in an abort of all outstanding commands
+                         * and clearing the SActive register and TaskFile register.
+                         *
+                         * See SATA2 1.2 spec chapter 4.2.3.4
+                         */
+                        bool fAbortedAll = ahciCancelActiveTasks(pAhciPort, pAhciReq);
+                        Assert(fAbortedAll);
+                        ahciSendSDBFis(pAhciPort, 0xffffffff, true);
+
                         break;
                     }
                 }
