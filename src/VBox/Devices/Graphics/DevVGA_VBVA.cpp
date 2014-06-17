@@ -1868,7 +1868,7 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
 
                 for (uint32_t i = 0; i < pVGAState->cMonitors; ++i)
                 {
-                    rc = SSMR3PGetU32(pSSM, &u32);
+                    rc = SSMR3GetU32(pSSM, &u32);
                     AssertRCReturn(rc, rc);
 
                     if (u32 != VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC)
