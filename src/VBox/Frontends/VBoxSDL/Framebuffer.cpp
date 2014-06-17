@@ -17,6 +17,7 @@
  */
 
 #include <VBox/com/com.h>
+#include <VBox/com/array.h>
 #include <VBox/com/string.h>
 #include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
@@ -88,7 +89,8 @@ static RTNATIVETHREAD gSdlNativeThread = NIL_RTNATIVETHREAD; /**< the SDL thread
 VBoxSDLFB::VBoxSDLFB(uint32_t uScreenId,
                      bool fFullscreen, bool fResizable, bool fShowSDLConfig,
                      bool fKeepHostRes, uint32_t u32FixedWidth,
-                     uint32_t u32FixedHeight, uint32_t u32FixedBPP)
+                     uint32_t u32FixedHeight, uint32_t u32FixedBPP,
+                     bool fUpdateImage)
 {
     int rc;
     LogFlow(("VBoxSDLFB::VBoxSDLFB\n"));
@@ -98,6 +100,7 @@ VBoxSDLFB::VBoxSDLFB(uint32_t uScreenId,
 #endif
 
     mScreenId       = uScreenId;
+    mfUpdateImage   = fUpdateImage;
     mScreen         = NULL;
 #ifdef VBOX_WITH_SDL13
     mWindow         = 0;
@@ -424,7 +427,36 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdateImage(ULONG aX,
                                           ULONG aHeight,
                                           ComSafeArrayIn(BYTE, aImage))
 {
-    return E_NOTIMPL;
+    LogFlow(("NotifyUpdateImage: %d,%d %dx%d\n", aX, aY, aWidth, aHeight));
+
+    com::SafeArray<BYTE> image(ComSafeArrayInArg(aImage));
+
+    /* Copy to mSurfVRAM. */
+    SDL_Rect srcRect;
+    SDL_Rect dstRect;
+    srcRect.x = 0;
+    srcRect.y = 0;
+    srcRect.w = (uint16_t)aWidth;
+    srcRect.h = (uint16_t)aHeight;
+    dstRect.x = (int16_t)aX;
+    dstRect.y = (int16_t)aY;
+    dstRect.w = (uint16_t)aWidth;
+    dstRect.h = (uint16_t)aHeight;
+
+    const uint32_t Rmask = 0x00FF0000, Gmask = 0x0000FF00, Bmask = 0x000000FF, Amask = 0;
+    SDL_Surface *surfSrc = SDL_CreateRGBSurfaceFrom(image.raw(), aWidth, aHeight, 32, aWidth * 4,
+                                                    Rmask, Gmask, Bmask, Amask);
+    if (surfSrc)
+    {
+        RTCritSectEnter(&mUpdateLock);
+        if (mfUpdates)
+            SDL_BlitSurface(surfSrc, &srcRect, mSurfVRAM, &dstRect);
+        RTCritSectLeave(&mUpdateLock);
+
+        SDL_FreeSurface(surfSrc);
+    }
+
+    return NotifyUpdate(aX, aY, aWidth, aHeight);
 }
 
 extern ComPtr<IDisplay> gpDisplay;
@@ -438,14 +470,28 @@ STDMETHODIMP VBoxSDLFB::NotifyChange(ULONG aScreenId,
     LogRel(("NotifyChange: %d %d,%d %dx%d\n",
             aScreenId, aXOrigin, aYOrigin, aWidth, aHeight));
 
+    ComPtr<IDisplaySourceBitmap> pSourceBitmap;
+    if (!mfUpdateImage)
+        gpDisplay->QuerySourceBitmap(aScreenId, pSourceBitmap.asOutParam());
+
     RTCritSectEnter(&mUpdateLock);
 
     /* Disable screen updates. */
     mfUpdates = false;
 
-    /* Save the new bitmap. */
-    mpPendingSourceBitmap.setNull();
-    gpDisplay->QuerySourceBitmap(aScreenId, mpPendingSourceBitmap.asOutParam());
+    if (mfUpdateImage)
+    {
+        mGuestXRes   = aWidth;
+        mGuestYRes   = aHeight;
+        mPtrVRAM     = NULL;
+        mBitsPerPixel = 0;
+        mBytesPerLine = 0;
+    }
+    else
+    {
+        /* Save the new bitmap. */
+        mpPendingSourceBitmap = pSourceBitmap;
+    }
 
     RTCritSectLeave(&mUpdateLock);
 
@@ -545,7 +591,7 @@ void VBoxSDLFB::notifyChange(ULONG aScreenId)
     /* Disable screen updates. */
     RTCritSectEnter(&mUpdateLock);
 
-    if (mpPendingSourceBitmap.isNull())
+    if (!mfUpdateImage && mpPendingSourceBitmap.isNull())
     {
         /* Do nothing. Change event already processed. */
         RTCritSectLeave(&mUpdateLock);
@@ -602,6 +648,12 @@ void VBoxSDLFB::notifyChange(ULONG aScreenId)
     }
 
     resizeGuest();
+
+    if (mfUpdateImage)
+    {
+        gpDisplay->SetFramebufferUpdateMode(aScreenId, FramebufferUpdateMode_NotifyUpdateImage);
+        gpDisplay->InvalidateAndUpdate();
+    }
 }
 
 /**
@@ -613,6 +665,8 @@ void VBoxSDLFB::resizeGuest()
     LogFlowFunc (("mGuestXRes: %d, mGuestYRes: %d\n", mGuestXRes, mGuestYRes));
     AssertMsg(gSdlNativeThread == RTThreadNativeSelf(),
               ("Wrong thread! SDL is not threadsafe!\n"));
+
+    RTCritSectEnter(&mUpdateLock);
 
     const uint32_t Rmask = 0x00FF0000, Gmask = 0x0000FF00, Bmask = 0x000000FF, Amask = 0;
 
@@ -650,8 +704,8 @@ void VBoxSDLFB::resizeGuest()
     }
 
     /* Enable screen updates. */
-    RTCritSectEnter(&mUpdateLock);
     mfUpdates = true;
+
     RTCritSectLeave(&mUpdateLock);
 
     repaint();
@@ -895,11 +949,6 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
 #ifdef VBOXSDL_WITH_X11
     AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
 #endif
-    Assert(mScreen);
-    Assert(mSurfVRAM);
-    if (!mScreen || !mSurfVRAM)
-        return;
-
     RTCritSectEnter(&mUpdateLock);
     Log(("Updates %d, %d,%d %dx%d\n", mfUpdates, x, y, w, h));
     if (!mfUpdates)
@@ -907,6 +956,15 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
         RTCritSectLeave(&mUpdateLock);
         return;
     }
+
+    Assert(mScreen);
+    Assert(mSurfVRAM);
+    if (!mScreen || !mSurfVRAM)
+    {
+        RTCritSectLeave(&mUpdateLock);
+        return;
+    }
+
     /* the source and destination rectangles */
     SDL_Rect srcRect;
     SDL_Rect dstRect;
