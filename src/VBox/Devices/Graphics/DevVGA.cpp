@@ -4947,8 +4947,9 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
 #endif /* DEBUG_sunlover */
 
     Assert(pInterface);
-    Assert(pThis->pDrv);
-    Assert(pThis->pDrv->pu8Data);
+
+    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertRC(rc);
 
     /* Check if there is something to do at all. */
     if (!pThis->fRenderVRAM)
@@ -4957,11 +4958,12 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
 #ifdef DEBUG_sunlover
         LogFlow(("vgaPortUpdateDisplayRect: nothing to do fRender is false.\n"));
 #endif /* DEBUG_sunlover */
+        PDMCritSectLeave(&pThis->CritSect);
         return;
     }
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    AssertRC(rc);
+    Assert(pThis->pDrv);
+    Assert(pThis->pDrv->pu8Data);
 
     /* Correct negative x and y coordinates. */
     if (x < 0)
