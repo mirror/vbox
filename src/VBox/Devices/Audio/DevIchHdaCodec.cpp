@@ -2315,9 +2315,9 @@ int hdaCodecOpenVoice(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, audsetting
     }
     if (!rc)
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        LogRel(("HdaCodec: can't open %s fmt(freq: %d)\n", enmSoundSource == PI_INDEX? "in" : "out", uFrequency));
+        LogRel(("HdaCodec: Can't open %s fmt(freq: %d)\n", enmSoundSource == PI_INDEX? "in" : "out", uFrequency));
 #else
-        LogRel(("HdaCodec: can't open %s fmt(freq: %d)\n", enmSoundSource == PI_INDEX? "in" : "out", pAudioSettings->freq));
+        LogRel(("HdaCodec: Can't open %s fmt(freq: %d)\n", enmSoundSource == PI_INDEX? "in" : "out", pAudioSettings->freq));
 #endif
     return rc;
 }
