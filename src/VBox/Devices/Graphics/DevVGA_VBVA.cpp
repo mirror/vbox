@@ -1882,12 +1882,12 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                 {
                     rc = SSMR3GetU32(pSSM, &u32);
                     AssertRCReturn(rc, rc);
-                }
 
-                if (u32)
-                {
-                    LogRel(("2D pending command while 2D is not supported\n"));
-                    return VERR_NOT_SUPPORTED;
+                    if (u32)
+                    {
+                        LogRel(("2D pending command while 2D is not supported\n"));
+                        return VERR_NOT_SUPPORTED;
+                    }
                 }
 #endif
             }
