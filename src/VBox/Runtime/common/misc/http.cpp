@@ -65,7 +65,7 @@ typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
 
 typedef struct RTHTTPMEMCHUNK
 {
-    char *pszMem;
+    uint8_t *pu8Mem;
     size_t cb;
 } RTHTTPMEMCHUNK;
 typedef RTHTTPMEMCHUNK *PRTHTTPMEMCHUNK;
@@ -145,12 +145,12 @@ static DECLCALLBACK(size_t) rtHttpWriteData(void *pvBuf, size_t cb, size_t n, vo
     PRTHTTPMEMCHUNK pMem = (PRTHTTPMEMCHUNK)pvUser;
     size_t cbAll = cb * n;
 
-    pMem->pszMem = (char*)RTMemRealloc(pMem->pszMem, pMem->cb + cbAll + 1);
-    if (pMem->pszMem)
+    pMem->pu8Mem = (uint8_t*)RTMemRealloc(pMem->pu8Mem, pMem->cb + cbAll + 1);
+    if (pMem->pu8Mem)
     {
-        memcpy(&pMem->pszMem[pMem->cb], pvBuf, cbAll);
+        memcpy(&pMem->pu8Mem[pMem->cb], pvBuf, cbAll);
         pMem->cb += cbAll;
-        pMem->pszMem[pMem->cb] = '\0';
+        pMem->pu8Mem[pMem->cb] = '\0';
     }
     return cbAll;
 }
@@ -413,7 +413,7 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pHttpInt, int rcCurl)
     return rc;
 }
 
-RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
+RTR3DECL(int) rtHttpGet(RTHTTP hHttp, const char *pcszUrl, uint8_t **ppvResponse, size_t *pcb)
 {
     PRTHTTPINTERNAL pHttpInt = hHttp;
     RTHTTP_VALID_RETURN(pHttpInt);
@@ -459,9 +459,26 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
 
     rcCurl = curl_easy_perform(pHttpInt->pCurl);
     int rc = rtHttpGetCalcStatus(pHttpInt, rcCurl);
-    *ppszResponse = chunk.pszMem;
+    *ppvResponse = chunk.pu8Mem;
+    *pcb = chunk.cb;
 
     return rc;
+}
+
+
+RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
+{
+    uint8_t *pv;
+    size_t cb;
+    int rc = rtHttpGet(hHttp, pcszUrl, &pv, &cb);
+    *ppszResponse = (char*)pv;
+    return rc;
+}
+
+
+RTR3DECL(int) RTHttpGetBinary(RTHTTP hHttp, const char *pcszUrl, void **ppvResponse, size_t *pcb)
+{
+    return rtHttpGet(hHttp, pcszUrl, (uint8_t**)ppvResponse, pcb);
 }
 
 
