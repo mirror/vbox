@@ -790,14 +790,14 @@ static int vusbRhHubOpAttach(PVUSBHUB pHub, PVUSBDEV pDev)
     {
         pDev->pNext = pRh->pDevices;
         pRh->pDevices = pDev;
-        LogRel(("VUSB: attached '%s' to port %d\n", pDev->pUsbIns->pszName, iPort));
+        LogRel(("VUSB: Attached '%s' to port %d\n", pDev->pUsbIns->pszName, iPort));
     }
     else
     {
         ASMBitSet(&pRh->Bitmap, iPort);
         pHub->cDevices--;
         pDev->i16Port = -1;
-        LogRel(("VUSB: failed to attach '%s' to port %d, rc=%Rrc\n", pDev->pUsbIns->pszName, iPort, rc));
+        LogRel(("VUSB: Failed to attach '%s' to port %d, rc=%Rrc\n", pDev->pUsbIns->pszName, iPort, rc));
     }
     return rc;
 }
@@ -835,7 +835,7 @@ static void vusbRhHubOpDetach(PVUSBHUB pHub, PVUSBDEV pDev)
      */
     unsigned uPort = pDev->i16Port;
     pRh->pIRhPort->pfnDetach(pRh->pIRhPort, &pDev->IDevice, uPort);
-    LogRel(("VUSB: detached '%s' from port %u\n", pDev->pUsbIns->pszName, uPort));
+    LogRel(("VUSB: Detached '%s' from port %u\n", pDev->pUsbIns->pszName, uPort));
     ASMBitSet(&pRh->Bitmap, uPort);
     pHub->cDevices--;
 }
