@@ -268,9 +268,9 @@ int UINetworkReplyPrivateThread::performGetRequest(RTHTTP pHttp, const QNetworkR
 
     /* Perform blocking HTTP GET request: */
     char *pszBuf = 0;
-    int rc = RTHttpGet(pHttp,
-                       request.url().toString().toAscii().constData(),
-                       &pszBuf);
+    int rc = RTHttpGetText(pHttp,
+                           request.url().toString().toAscii().constData(),
+                           &pszBuf);
     reply = QByteArray(pszBuf);
     RTMemFree(pszBuf);
     return rc;

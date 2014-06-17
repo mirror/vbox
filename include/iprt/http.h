@@ -71,7 +71,19 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp);
  * @param    ppszResponse  HTTP response. It is guaranteed that this string is
  *                         '\0'-terminated.
  */
-RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse);
+RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse);
+
+/**
+ * Perform a simple blocking HTTP request.
+ *
+ * @returns iprt status code.
+ *
+ * @param    hHttp         HTTP interface handle.
+ * @param    pcszUrl       URL.
+ * @param    ppvResponse   HTTP response.
+ * @param    pcb           Size of the returned buffer.
+ */
+RTR3DECL(int) RTHttpGetBinary(RTHTTP hHttp, const char *pcszUrl, void **ppvResponse, size_t *pcb);
 
 /**
  * Perform a simple blocking HTTP request, writing the output to a file.

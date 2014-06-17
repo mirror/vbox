@@ -73,9 +73,9 @@ int main(int argc, char **argv)
     // fetch root CA certificate (new one, often avoided in cert chains by
     // using an intermediate cert which is signed by old root)
     if (RT_SUCCESS(rc))
-        rc = RTHttpGet(hHttp,
-                       "http://www.verisign.com/repository/roots/root-certificates/PCA-3G5.pem",
-                       &pszBuf);
+        rc = RTHttpGetText(hHttp,
+                           "http://www.verisign.com/repository/roots/root-certificates/PCA-3G5.pem",
+                           &pszBuf);
     if (RT_SUCCESS(rc) && pszBuf)
     {
         uint8_t *abSha1;
@@ -145,9 +145,9 @@ int main(int argc, char **argv)
 
     // fetch root CA certificate (old one, but still very widely used)
     if (RT_SUCCESS(rc))
-        rc = RTHttpGet(hHttp,
-                       "http://www.verisign.com/repository/roots/root-certificates/PCA-3.pem",
-                       &pszBuf);
+        rc = RTHttpGetText(hHttp,
+                           "http://www.verisign.com/repository/roots/root-certificates/PCA-3.pem",
+                           &pszBuf);
     if (RT_SUCCESS(rc) && pszBuf)
     {
         uint8_t *abSha1;
@@ -226,9 +226,9 @@ int main(int argc, char **argv)
         rc = RTHttpSetCAFile(hHttp, CAFILE_NAME);
 
     if (RT_SUCCESS(rc))
-        rc = RTHttpGet(hHttp,
-                       "https://update.virtualbox.org/query.php?platform=LINUX_32BITS_UBUNTU_12_04&version=4.1.18",
-                       &pszBuf);
+        rc = RTHttpGetText(hHttp,
+                           "https://update.virtualbox.org/query.php?platform=LINUX_32BITS_UBUNTU_12_04&version=4.1.18",
+                           &pszBuf);
 
     if (   RT_FAILURE(rc)
         && rc != VERR_HTTP_COULDNT_CONNECT)
@@ -244,6 +244,18 @@ int main(int argc, char **argv)
         RTMemFree(pszBuf);
         pszBuf = NULL;
     }
+
+    void *u8Buf;
+    size_t cb;
+    rc = RTHttpGetBinary(hHttp,
+                         "http://www.verisign.com/support/roots.zip",
+                         &u8Buf, &cb);
+    if (RT_SUCCESS(rc) && u8Buf)
+    {
+        RTPrintf("Got file length %zd\n", cb);
+    }
+    else
+        RTPrintf("Error code %Rrc\n", rc);
 
     RTHttpDestroy(hHttp);
 
