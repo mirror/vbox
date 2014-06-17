@@ -2883,7 +2883,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlRename(PGCTLCMDCTX pCtx)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
-    static const RTGETOPTDEF s_aOptions[] = { 0 };
+    static const RTGETOPTDEF s_aOptions[] = { { 0 } };
 
     int ch;
     RTGETOPTUNION ValueUnion;
@@ -3832,7 +3832,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlWatch(PGCTLCMDCTX pCtx)
     /*
      * Parse arguments.
      */
-    static const RTGETOPTDEF s_aOptions[] = { 0 };
+    static const RTGETOPTDEF s_aOptions[] = { { 0 } };
 
     int ch;
     RTGETOPTUNION ValueUnion;
