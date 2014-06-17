@@ -2695,7 +2695,7 @@ HRESULT Console::adoptSavedState(const com::Utf8Str &aSavedStateFile)
             tr("Cannot adopt the saved machine state as the machine is not in Powered Off, Teleported or Aborted state (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
 
-    return mControl->AdoptSavedState(BSTR(aSavedStateFile.c_str()));
+    return mControl->AdoptSavedState(Bstr(aSavedStateFile.c_str()).raw());
 }
 
 HRESULT Console::discardSavedState(BOOL aFRemoveFile)
@@ -2827,7 +2827,7 @@ HRESULT Console::attachUSBDevice(const com::Guid &aId)
     alock.release();
 
     /* Request the device capture */
-    return mControl->CaptureUSBDevice(BSTR(aId.toString().c_str()));
+    return mControl->CaptureUSBDevice(Bstr(aId.toString()).raw());
 
 #else   /* !VBOX_WITH_USB */
     return setError(VBOX_E_PDM_ERROR,
@@ -2866,7 +2866,7 @@ HRESULT Console::detachUSBDevice(const com::Guid &aId, ComPtr<IUSBDevice> &aDevi
      * Inform the USB device and USB proxy about what's cooking.
      */
     alock.release();
-    HRESULT rc = mControl->DetachUSBDevice(BSTR(aId.toString().c_str()), false /* aDone */);
+    HRESULT rc = mControl->DetachUSBDevice(Bstr(aId.toString()).raw(), false /* aDone */);
     if (FAILED(rc))
     {
         /* Re-add the device to the collection */
@@ -2881,7 +2881,7 @@ HRESULT Console::detachUSBDevice(const com::Guid &aId, ComPtr<IUSBDevice> &aDevi
     {
         /* Request the device release. Even if it fails, the device will
          * remain as held by proxy, which is OK for us (the VM process). */
-        rc = mControl->DetachUSBDevice(BSTR(aId.toString().c_str()), true /* aDone */);
+        rc = mControl->DetachUSBDevice(Bstr(aId.toString()).raw(), true /* aDone */);
     }
     else
     {
@@ -2948,7 +2948,7 @@ HRESULT Console::findUSBDeviceById(const com::Guid &aId, ComPtr<IUSBDevice> &aDe
         Bstr id;
         rc = devsvec[i]->COMGETTER(Id)(id.asOutParam());
         if (FAILED(rc)) return rc;
-        if (id == BSTR(aId.toString().c_str()))
+        if (Utf8Str(id) == aId.toString())
         {
             ComObjPtr<OUSBDevice> pUSBDevice;
             pUSBDevice.createObject();
@@ -3234,7 +3234,7 @@ HRESULT Console::deleteSnapshot(const com::Guid &aId, ComPtr<IProgress> &aProgre
                         Global::stringifyMachineState(mMachineState));
     ComObjPtr<IProgress> iProgress;
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, BSTR(aId.toString().c_str()), BSTR(aId.toString().c_str()), FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
+    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aId.toString()).raw(), Bstr(aId.toString()).raw(), FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
     if (FAILED(rc)) return rc;
     iProgress.queryInterfaceTo(aProgress.asOutParam());
 
@@ -3254,7 +3254,7 @@ HRESULT Console::deleteSnapshotAndAllChildren(const com::Guid &aId, ComPtr<IProg
 
     ComObjPtr<IProgress> iProgress;
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, BSTR(aId.toString().c_str()), BSTR(aId.toString().c_str()), TRUE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
+    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aId.toString()).raw(), Bstr(aId.toString()).raw(), TRUE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
     if (FAILED(rc)) return rc;
     iProgress.queryInterfaceTo(aProgress.asOutParam());
 
@@ -3273,7 +3273,7 @@ HRESULT Console::deleteSnapshotRange(const com::Guid &aStartId, const com::Guid 
 
     ComObjPtr<IProgress> iProgress;
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, BSTR(aStartId.toString().c_str()), BSTR(aEndId.toString().c_str()), FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
+    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aStartId.toString()).raw(), Bstr(aEndId.toString()).raw(), FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
     if (FAILED(rc)) return rc;
     iProgress.queryInterfaceTo(aProgress.asOutParam());
 
