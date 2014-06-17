@@ -418,6 +418,15 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
     return S_OK;
 }
 
+STDMETHODIMP VBoxSDLFB::NotifyUpdateImage(ULONG aX,
+                                          ULONG aY,
+                                          ULONG aWidth,
+                                          ULONG aHeight,
+                                          ComSafeArrayIn(BYTE, aImage))
+{
+    return E_NOTIMPL;
+}
+
 extern ComPtr<IDisplay> gpDisplay;
 
 STDMETHODIMP VBoxSDLFB::NotifyChange(ULONG aScreenId,
