@@ -599,6 +599,11 @@ HRESULT Display::init(Console *aParent)
         /* All secondary monitors are disabled at startup. */
         maFramebuffers[ul].fDisabled = ul > 0;
 
+        maFramebuffers[ul].enmFramebufferUpdateMode = FramebufferUpdateMode_NotifyUpdate;
+
+        maFramebuffers[ul].updateImage.pu8Address = NULL;
+        maFramebuffers[ul].updateImage.cbLine = 0;
+
         maFramebuffers[ul].xOrigin = 0;
         maFramebuffers[ul].yOrigin = 0;
 
@@ -659,6 +664,9 @@ void Display::uninit()
     for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
     {
         maFramebuffers[uScreenId].pSourceBitmap.setNull();
+        maFramebuffers[uScreenId].updateImage.pSourceBitmap.setNull();
+        maFramebuffers[uScreenId].updateImage.pu8Address = NULL;
+        maFramebuffers[uScreenId].updateImage.cbLine = 0;
         maFramebuffers[uScreenId].pFramebuffer.setNull();
     }
 
@@ -896,6 +904,8 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
         return VINF_SUCCESS;
     }
 
+    SetFramebufferUpdateMode(uScreenId, FramebufferUpdateMode_NotifyUpdate);
+
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
         DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
@@ -1123,7 +1133,39 @@ void Display::handleDisplayUpdate (unsigned uScreenId, int x, int y, int w, int 
     if (pFramebuffer != NULL)
     {
         if (w != 0 && h != 0)
-            pFramebuffer->NotifyUpdate(x, y, w, h);
+        {
+            if (RT_LIKELY(maFramebuffers[uScreenId].enmFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdate))
+            {
+                pFramebuffer->NotifyUpdate(x, y, w, h);
+            }
+            else if (maFramebuffers[uScreenId].enmFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdateImage)
+            {
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+
+                if (!pFBInfo->updateImage.pSourceBitmap.isNull())
+                {
+                    Assert(pFBInfo->updateImage.pu8Address);
+
+                    size_t cbData = w * h * 4;
+                    com::SafeArray<BYTE> image(cbData);
+
+                    uint8_t *pu8Dst = image.raw();
+                    const uint8_t *pu8Src = pFBInfo->updateImage.pu8Address + pFBInfo->updateImage.cbLine * y + x * 4;
+
+                    int i;
+                    for (i = y; i < y + h; ++i)
+                    {
+                        memcpy(pu8Dst, pu8Src, w * 4);
+                        pu8Dst += w * 4;
+                        pu8Src += pFBInfo->updateImage.cbLine;
+                    }
+
+                    pFramebuffer->NotifyUpdateImage(x, y, w, h, ComSafeArrayAsInParam(image));
+                }
+            }
+        }
     }
 
 #ifndef VBOX_WITH_HGSMI
@@ -3382,33 +3424,22 @@ STDMETHODIMP Display::QuerySourceBitmap(ULONG aScreenId,
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
+    bool fSetRenderVRAM = false;
+    bool fInvalidate = false;
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (aScreenId >= mcMonitors)
         return setError(E_INVALIDARG, tr("QuerySourceBitmap: Invalid screen %d (total %d)"),
                         aScreenId, mcMonitors);
 
-    HRESULT hr = querySourceBitmap(aScreenId, aDisplaySourceBitmap);
-
-    alock.release();
-
-    LogRelFlowFunc(("%Rhrc\n", hr));
-    return hr;
-}
-
-// private methods
-/////////////////////////////////////////////////////////////////////////////
-
-HRESULT Display::querySourceBitmap(ULONG aScreenId,
-                                   IDisplaySourceBitmap **ppDisplaySourceBitmap)
-{
-    HRESULT hr = S_OK;
-
     if (!mfSourceBitmapEnabled)
     {
-        *ppDisplaySourceBitmap = NULL;
+        *aDisplaySourceBitmap = NULL;
         return E_FAIL;
     }
+
+    HRESULT hr = S_OK;
 
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
     if (pFBInfo->pSourceBitmap.isNull())
@@ -3423,10 +3454,7 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
 
         if (SUCCEEDED(hr))
         {
-            pFBInfo->pSourceBitmap = obj;
-
-            /* Whether VRAM must be copied to the internal buffer. */
-            pFBInfo->fDefaultFormat = !obj->usesVRAM();
+            bool fDefaultFormat = !obj->usesVRAM();
 
             if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
             {
@@ -3451,31 +3479,105 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
                 mpDrv->IConnector.cx         = ulWidth;
                 mpDrv->IConnector.cy         = ulHeight;
 
-                if (pFBInfo->fDefaultFormat)
-                    mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, true);
+                fSetRenderVRAM = fDefaultFormat;
             }
 
-            if (pFBInfo->fDefaultFormat)
-            {
-                /* @todo make sure that the bitmap contains the latest image? */
-                Console::SafeVMPtrQuiet ptrVM(mParent);
-                if (ptrVM.isOk())
-                {
-//                    VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
-//                                     3, this, aScreenId, false);
-                }
-            }
+            /* Make sure that the bitmap contains the latest image. */
+            fInvalidate = fDefaultFormat;
+
+            pFBInfo->pSourceBitmap = obj;
+            pFBInfo->fDefaultFormat = fDefaultFormat;
         }
     }
 
     if (SUCCEEDED(hr))
     {
         pFBInfo->pSourceBitmap->AddRef();
-        *ppDisplaySourceBitmap = pFBInfo->pSourceBitmap;
+        *aDisplaySourceBitmap = pFBInfo->pSourceBitmap;
     }
 
+    /* Leave the IDisplay lock because the VGA device must not be called under it. */
+    alock.release();
+
+    if (SUCCEEDED(hr))
+    {
+        if (fSetRenderVRAM)
+            mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, true);
+
+        if (fInvalidate)
+            VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
+                             3, this, aScreenId, false);
+    }
+
+    LogRelFlowFunc(("%Rhrc\n", hr));
     return hr;
 }
+
+STDMETHODIMP Display::SetFramebufferUpdateMode(ULONG aScreenId,
+                                               FramebufferUpdateMode_T aFramebufferUpdateMode)
+{
+    LogRelFlowFunc(("aScreenId %d, aFramebufferUpdateMode %d\n", aScreenId, aFramebufferUpdateMode));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT hr = S_OK;
+
+    /* Prepare without taking a lock. API has it's own locking. */
+    ComPtr<IDisplaySourceBitmap> pSourceBitmap;
+    if (aFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdateImage)
+    {
+        /* A source bitmap will be needed. */
+        hr = QuerySourceBitmap(aScreenId, pSourceBitmap.asOutParam());
+    }
+
+    if (FAILED(hr))
+        return hr;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aScreenId >= mcMonitors)
+        return setError(E_INVALIDARG, tr("SetFramebufferUpdateMode: Invalid screen %d (total %d)"),
+                        aScreenId, mcMonitors);
+
+    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
+
+    /* Reset the update mode. */
+    pFBInfo->updateImage.pSourceBitmap.setNull();
+    pFBInfo->updateImage.pu8Address = NULL;
+    pFBInfo->updateImage.cbLine = 0;
+
+    if (aFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdateImage)
+    {
+        BYTE *pAddress = NULL;
+        ULONG ulWidth = 0;
+        ULONG ulHeight = 0;
+        ULONG ulBitsPerPixel = 0;
+        ULONG ulBytesPerLine = 0;
+        ULONG ulPixelFormat = 0;
+
+        hr = pSourceBitmap->QueryBitmapInfo(&pAddress,
+                                            &ulWidth,
+                                            &ulHeight,
+                                            &ulBitsPerPixel,
+                                            &ulBytesPerLine,
+                                            &ulPixelFormat);
+        if (SUCCEEDED(hr))
+        {
+            pFBInfo->updateImage.pSourceBitmap = pSourceBitmap;
+            pFBInfo->updateImage.pu8Address = pAddress;
+            pFBInfo->updateImage.cbLine = ulBytesPerLine;
+        }
+    }
+
+    pFBInfo->enmFramebufferUpdateMode = aFramebufferUpdateMode;
+
+    return S_OK;
+}
+
+
+// private methods
+/////////////////////////////////////////////////////////////////////////////
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
 int Display::crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
