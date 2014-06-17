@@ -256,7 +256,7 @@ static int pulse_open (int fIn, pa_stream **ppStream, pa_sample_spec *pSampleSpe
                 fIn ? "pcm_in" : "pcm_out",
                 stream_name ? ")" : "");
 
-    LogRel(("Pulse: open %s rate=%dHz channels=%d format=%s\n",
+    LogRel(("Pulse: Open %s rate=%dHz channels=%d format=%s\n",
                 fIn ? "PCM_IN" : "PCM_OUT", pSampleSpec->rate, pSampleSpec->channels,
                 pa_sample_format_to_string(pSampleSpec->format)));
 
@@ -336,12 +336,12 @@ static int pulse_open (int fIn, pa_stream **ppStream, pa_sample_spec *pSampleSpe
 
     if (fIn)
     {
-        LogRel(("Pulse:  Obtained record buffer attributes: maxlength=%d fragsize=%d\n",
+        LogRel(("Pulse: Obtained record buffer attributes: maxlength=%d fragsize=%d\n",
             pBufAttr->maxlength, pBufAttr->fragsize));
     }
     else
     {
-        LogRel(("Pulse:  Obtained playback buffer attributes: maxlength=%d tlength=%d prebuf=%d minreq=%d\n",
+        LogRel(("Pulse: Obtained playback buffer attributes: maxlength=%d tlength=%d prebuf=%d minreq=%d\n",
             pBufAttr->maxlength, pBufAttr->tlength, pBufAttr->prebuf, pBufAttr->minreq));
     }
 
