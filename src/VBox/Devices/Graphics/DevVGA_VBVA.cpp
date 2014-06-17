@@ -1477,8 +1477,10 @@ static DECLCALLBACK(bool) vboxVBVALoadStatePerformPreCb(PVGASTATE pVGAState, VBO
     switch (u32)
     {
         case VBOXVBVASAVEDSTATE_VHWAAVAILABLE_MAGIC:
+            pData->ab2DOn[iDisplay] = true;
             return true;
         case VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC:
+            pData->ab2DOn[iDisplay] = false;
             return false;
         default:
             pData->rc = VERR_INVALID_STATE;
@@ -1654,6 +1656,9 @@ int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             AssertRCReturn(rc, rc);
         }
     }
+
+    /* no pending commands */
+    SSMR3PutU32(pSSM, 0);
 #endif
     return rc;
 }
@@ -1829,17 +1834,61 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                     rc = VhwaData.rc;
                     vbvaVHWAHHCommandRelease(pCmd);
                     AssertRCReturn(rc, rc);
+                    bool fLoadCommands = false;
 
-                    rc = vbvaVHWACommandLoadPending(pVGAState, pSSM, u32Version);
-                    AssertRCReturn(rc, rc);
+                    if (u32Version < VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA)
+                    {
+                        /* prev versions have a bug that does not allow to distinguish between the sate made with VHWA not available (on solaris box)
+                         * and VHWA disabled */
+
+                        for (uint32_t i = 0; i < pVGAState->cMonitors; ++i)
+                        {
+                            if (VhwaData.ab2DOn[i])
+                            {
+                                fLoadCommands = true;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                        fLoadCommands = true;
+
+                    if (fLoadCommands)
+                    {
+                        rc = vbvaVHWACommandLoadPending(pVGAState, pSSM, u32Version);
+                        AssertRCReturn(rc, rc);
+                    }
                 }
                 else
                 {
                     rc = VERR_OUT_OF_RESOURCES;
                 }
 #else
-                rc = SSMR3SkipToEndOfUnit(pSSM);
-                AssertRCReturn(rc, rc);
+                uint32_t u32;
+
+                for (uint32_t i = 0; i < pVGAState->cMonitors; ++i)
+                {
+                    rc = SSMR3PGetU32(pSSM, &u32);
+                    AssertRCReturn(rc, rc);
+
+                    if (u32 != VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC)
+                    {
+                        LogRel(("2D data while 2D is not supported\n"));
+                        return VERR_NOT_SUPPORTED;
+                    }
+                }
+
+                if (u32Version >= VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA)
+                {
+                    rc = SSMR3GetU32(pSSM, &u32);
+                    AssertRCReturn(rc, rc);
+                }
+
+                if (u32)
+                {
+                    LogRel(("2D pending command while 2D is not supported\n"));
+                    return VERR_NOT_SUPPORTED;
+                }
 #endif
             }
 
