@@ -48,7 +48,8 @@ public:
     VBoxSDLFB(uint32_t uScreenId,
               bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,
               bool fKeepHostRes = false, uint32_t u32FixedWidth = ~(uint32_t)0,
-              uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
+              uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0,
+              bool fUpdateImage = false);
     virtual ~VBoxSDLFB();
 
     static bool init(bool fShowSDLConfig);
@@ -140,6 +141,8 @@ private:
     bool mfInitialized;
     /** the screen number of this framebuffer */
     uint32_t mScreenId;
+    /** use NotifyUpdateImage */
+    bool mfUpdateImage;
     /** maximum possible screen width in pixels (~0 = no restriction) */
     uint32_t mMaxScreenWidth;
     /** maximum possible screen height in pixels (~0 = no restriction) */
