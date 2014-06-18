@@ -205,7 +205,7 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
 
     /* Widget resize is NOT thread-safe and *probably* never will be,
      * We have to notify machine-view with the async-signal to perform resize operation. */
-    LogRel(("UIFrameBuffer::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Sending to async-handler..\n",
+    LogRel(("UIFrameBuffer::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
             (unsigned long)uScreenId,
             (unsigned long)uX, (unsigned long)uY,
             (unsigned long)uWidth, (unsigned long)uHeight));
@@ -250,7 +250,7 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
 
     /* Widget update is NOT thread-safe and *seems* never will be,
      * We have to notify machine-view with the async-signal to perform update operation. */
-    LogRel2(("UIFrameBuffer::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler..\n",
+    LogRel2(("UIFrameBuffer::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
              (unsigned long)uX, (unsigned long)uY,
              (unsigned long)uWidth, (unsigned long)uHeight));
     emit sigNotifyUpdate(uX, uY, uWidth, uHeight);
@@ -381,7 +381,7 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
         /* We are directly updating synchronous visible-region: */
         m_syncVisibleRegion = region;
         /* And send async-signal to update asynchronous one: */
-        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Sending to async-handler..\n",
+        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Sending to async-handler\n",
                  (unsigned long)uCount));
         emit sigSetVisibleRegion(region);
     }
@@ -389,7 +389,7 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
     {
         /* Save the region. */
         m_pendingSyncVisibleRegion = region;
-        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Saved..\n",
+        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Saved\n",
                  (unsigned long)uCount));
     }
 
@@ -527,7 +527,7 @@ void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
     else
     {
         LogRel(("UIFrameBuffer::resizeEvent: "
-                "Directly using source-bitmap content..\n"));
+                "Directly using source-bitmap content\n"));
 
         /* Acquire source-bitmap attributes: */
         BYTE *pAddress = NULL;
@@ -580,7 +580,7 @@ void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
         m_pendingSyncVisibleRegion = QRegion();
 
         /* And send async-signal to update asynchronous one: */
-        LogRel2(("UIFrameBuffer::resizeEvent: Rectangle count=%lu, Sending to async-handler..\n",
+        LogRel2(("UIFrameBuffer::resizeEvent: Rectangle count=%lu, Sending to async-handler\n",
                  (unsigned long)m_syncVisibleRegion.rectCount()));
         emit sigSetVisibleRegion(m_syncVisibleRegion);
     }

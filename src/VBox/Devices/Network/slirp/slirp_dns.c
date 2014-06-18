@@ -195,7 +195,7 @@ static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
                 address->IPv4.u = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
             else if (pData->fUseDnsProxy == 0) {
                 /* We detects that using some address in 127/8 network */
-                LogRel(("NAT: DNS server %RTnaipv4 registration detected, switching to the DNS proxy.\n", address->IPv4));
+                LogRel(("NAT: DNS server %RTnaipv4 registration detected, switching to the DNS proxy\n", address->IPv4));
                 pData->fUseDnsProxy = 1;
                 pData->fUseHostResolver = 0;
             }

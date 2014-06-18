@@ -851,7 +851,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
         PPDMLED       pLed;
         PPDMILEDPORTS pLedPort;
 
-        LogRel(("Shared Folders service loaded.\n"));
+        LogRel(("Shared Folders service loaded\n"));
         pLedPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
         AssertMsgReturn(pLedPort, ("Configuration error: No LED port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
         rc = pLedPort->pfnQueryStatusLed(pLedPort, 0, &pLed);
