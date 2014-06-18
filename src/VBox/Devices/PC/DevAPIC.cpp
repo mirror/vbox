@@ -1887,9 +1887,8 @@ static uint64_t apicR3InfoReadReg(APICDeviceInfo *pDev, APICState *pApic, uint32
     return u64Value;
 }
 
-
 /**
- * Print a 8-DWORD Local APIC bit map (256 bits).
+ * Print an 8-DWORD Local APIC bit map (256 bits).
  *
  * @param   pDev                The PDM device instance.
  * @param   pApic               The Local APIC in question.
@@ -1898,8 +1897,36 @@ static uint64_t apicR3InfoReadReg(APICDeviceInfo *pDev, APICState *pApic, uint32
  */
 static void apicR3DumpVec(APICDeviceInfo *pDev, APICState *pApic, PCDBGFINFOHLP pHlp, uint32_t iStartReg)
 {
-    for (uint32_t i = 0; i < 8; i++)
+    for (int i = 7; i >= 0; --i)
         pHlp->pfnPrintf(pHlp, "%08x", apicR3InfoReadReg(pDev, pApic, iStartReg + i));
+    pHlp->pfnPrintf(pHlp, "\n");
+}
+
+/**
+ * Print the set of pending interrupts in a 256-bit map.
+ *
+ * @param   pDev                The PDM device instance.
+ * @param   pApic               The Local APIC in question.
+ * @param   pHlp                The output helper.
+ * @param   iStartReg           The register to start at.
+ */
+static void apicR3DumpPending(APICDeviceInfo *pDev, APICState *pApic, PCDBGFINFOHLP pHlp, PCAPIC256BITREG pReg)
+{
+    APIC256BITREG       pending;
+    int                 iMax;
+    int                 cPending = 0;
+
+    pending = *pReg;
+    pHlp->pfnPrintf(pHlp, "    pending =");
+
+    while ((iMax = Apic256BitReg_FindLastSetBit(&pending, -1)) != -1)
+    {
+        pHlp->pfnPrintf(pHlp, " %02x", iMax);
+        Apic256BitReg_ClearBit(&pending, iMax);
+        ++cPending;
+    }
+    if (!cPending)
+        pHlp->pfnPrintf(pHlp, " none");
     pHlp->pfnPrintf(pHlp, "\n");
 }
 
@@ -1939,12 +1966,10 @@ static void apicR3InfoBasic(APICDeviceInfo *pDev, APICState *pApic, PCDBGFINFOHL
     pHlp->pfnPrintf(pHlp, "    vector  = %02x\n", (unsigned)RT_BYTE1(u64));
     pHlp->pfnPrintf(pHlp, "  ISR       : ");
     apicR3DumpVec(pDev, pApic, pHlp, 0x10);
-    int iMax = Apic256BitReg_FindLastSetBit(&pApic->isr, -1);
-    pHlp->pfnPrintf(pHlp, "    highest = %02x\n", iMax == -1 ? 0 : iMax);
+    apicR3DumpPending(pDev, pApic, pHlp, &pApic->isr);
     pHlp->pfnPrintf(pHlp, "  IRR       : ");
     apicR3DumpVec(pDev, pApic, pHlp, 0x20);
-    iMax = Apic256BitReg_FindLastSetBit(&pApic->irr, -1);
-    pHlp->pfnPrintf(pHlp, "    highest = %02X\n", iMax == -1 ? 0 : iMax);
+    apicR3DumpPending(pDev, pApic, pHlp, &pApic->irr);
 }
 
 
