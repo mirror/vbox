@@ -612,11 +612,12 @@ RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen, PRTVFSFILE p
 
 RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen, PRTVFSIOSTREAM phVfsIos, const char **ppszError)
 {
+    if (ppszError)
+        *ppszError = NULL;
+
     AssertPtrReturn(pszSpec, VERR_INVALID_POINTER);
     AssertReturn(*pszSpec != '\0', VERR_INVALID_PARAMETER);
     AssertPtrReturn(phVfsIos, VERR_INVALID_POINTER);
-    if (ppszError)
-        *ppszError = NULL;
 
     /*
      * If it's not a VFS chain spec, treat it as a file.
