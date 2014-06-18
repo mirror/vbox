@@ -22,13 +22,14 @@
 #include "GIMInternal.h"
 #include "GIMHvInternal.h"
 
-#include <iprt/err.h>
-#include <iprt/asm.h>
-#include <iprt/memobj.h>
+#include <VBox/err.h>
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/vm.h>
 
+#include <iprt/spinlock.h>
 
+
+#if 0
 /**
  * Allocates and maps one physically contiguous page. The allocated page is
  * zero'd out.
@@ -79,6 +80,40 @@ static void gimR0HvPageFree(PRTR0MEMOBJ pMemObj, PRTR0PTR ppVirt, PRTHCPHYS pHCP
         *pHCPhys = 0;
     }
 }
+#endif
+
+/**
+ * Updates Hyper-V's reference TSC page.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   u64Offset   The computed TSC offset.
+ * @thread  EMT.
+ */
+VMM_INT_DECL(int) GIMR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
+{
+    Assert(GIMIsEnabled(pVM));
+    bool fHvTscEnabled = MSR_GIM_HV_REF_TSC_IS_ENABLED(pVM->gim.s.u.Hv.u64TscPageMsr);
+    if (RT_UNLIKELY(!fHvTscEnabled))
+        return VERR_GIM_PVTSC_NOT_ENABLED;
+
+    PCGIMHV          pcHv     = &pVM->gim.s.u.Hv;
+    PCGIMMMIO2REGION pcRegion = &pcHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
+    PGIMHVREFTSC     pRefTsc  = (PGIMHVREFTSC)pcRegion->CTX_SUFF(pvPage);
+    Assert(pRefTsc);
+
+    RTSpinlockAcquire(pcHv->hSpinlockR0);
+    pRefTsc->i64TscOffset = u64Offset;
+    if (pRefTsc->u32TscSequence < UINT32_C(0xfffffffe))
+        ASMAtomicIncU32(&pRefTsc->u32TscSequence);
+    else
+        ASMAtomicWriteU32(&pRefTsc->u32TscSequence, 1);
+    RTSpinlockRelease(pcHv->hSpinlockR0);
+
+    Assert(pRefTsc->u32TscSequence != 0);
+    Assert(pRefTsc->u32TscSequence != UINT32_C(0xffffffff));
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -89,28 +124,14 @@ static void gimR0HvPageFree(PRTR0MEMOBJ pMemObj, PRTR0PTR ppVirt, PRTHCPHYS pHCP
  */
 VMMR0_INT_DECL(int) GIMR0HvInitVM(PVM pVM)
 {
-#if 0
     AssertPtr(pVM);
     Assert(GIMIsEnabled(pVM));
 
     PGIMHV pHv = &pVM->gim.s.u.Hv;
-    Assert(pHv->hMemObjTscPage == NIL_RTR0MEMOBJ);
+    Assert(pHv->hSpinlockR0 == NIL_RTSPINLOCK);
 
-    /*
-     * Allocate the TSC page.
-     */
-    int rc = gimR0HvPageAllocZ(&pHv->hMemObjTscPage, &pHv->pvTscPageR0, &pHv->HCPhysTscPage);
-    if (RT_FAILURE(rc))
-        goto cleanup;
-#endif
-
-    return VINF_SUCCESS;
-
-#if 0
-cleanup:
-    gimR0HvPageFree(&pHv->hMemObjTscPage, &pHv->pvTscPageR0, &pHv->HCPhysTscPage);
+    int rc = RTSpinlockCreate(&pHv->hSpinlockR0, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "Hyper-V");
     return rc;
-#endif
 }
 
 
@@ -124,10 +145,11 @@ VMMR0_INT_DECL(int) GIMR0HvTermVM(PVM pVM)
 {
     AssertPtr(pVM);
     Assert(GIMIsEnabled(pVM));
-#if 0
+
     PGIMHV pHv = &pVM->gim.s.u.Hv;
-    gimR0HvPageFree(&pHv->hMemObjTscPage, &pHv->pvTscPageR0, &pHv->HCPhysTscPage);
-#endif
+    RTSpinlockDestroy(pHv->hSpinlockR0);
+    pHv->hSpinlockR0 = NIL_RTSPINLOCK;
+
     return VINF_SUCCESS;
 }
 

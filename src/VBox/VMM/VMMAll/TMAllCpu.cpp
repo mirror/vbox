@@ -24,6 +24,7 @@
 #include <iprt/asm-amd64-x86.h> /* for SUPGetCpuHzFromGIP */
 #include "TMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/gim.h>
 #include <VBox/sup.h>
 
 #include <VBox/param.h>
@@ -139,17 +140,22 @@ DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
  * Checks if AMD-V / VT-x can use an offsetted hardware TSC or not.
  *
  * @returns true/false accordingly.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   poffRealTSC     The offset against the TSC of the current CPU.
  *                          Can be NULL.
- * @thread EMT.
+ * @param   pfParavirtTsc   Where to store whether paravirt. TSC can be used or
+ *                          not.
+ * @thread EMT(pVCpu).
  */
-VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC)
+VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfParavirtTsc)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
+    bool fParavirtTsc = false;
 
     /*
      * We require:
+     *     1. Use of a paravirtualized TSC is enabled by the guest.
+     *     (OR)
      *     1. A fixed TSC, this is checked at init time.
      *     2. That the TSC is ticking (we shouldn't be here if it isn't)
      *     3. Either that we're using the real TSC as time source or
@@ -157,13 +163,13 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC)
      *          b) the virtual sync clock hasn't been halted by an expired timer, and
      *          c) we're not using warp drive (accelerated virtual guest time).
      */
-    if (    pVM->tm.s.fMaybeUseOffsettedHostTSC
-        &&  RT_LIKELY(pVCpu->tm.s.fTSCTicking)
-        &&  (   pVM->tm.s.fTSCUseRealTSC
-             || (   !pVM->tm.s.fVirtualSyncCatchUp
-                 && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
-                 && !pVM->tm.s.fVirtualWarpDrive))
-       )
+    if (    (*pfParavirtTsc = GIMIsParavirtTscEnabled(pVM)) == true
+        ||  (    pVM->tm.s.fMaybeUseOffsettedHostTSC
+             &&  RT_LIKELY(pVCpu->tm.s.fTSCTicking)
+             &&  (   pVM->tm.s.fTSCUseRealTSC
+                 || (   !pVM->tm.s.fVirtualSyncCatchUp
+                     && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
+                     && !pVM->tm.s.fVirtualWarpDrive))))
     {
         if (!pVM->tm.s.fTSCUseRealTSC)
         {
@@ -232,17 +238,23 @@ DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(uint64_t cNsToDeadline)
  *
  * @returns The number of host CPU clock ticks to the next timer deadline.
  * @param   pVCpu           The current CPU.
+ * @param   pfParavirtTsc   Where to store whether paravirt. TSC can be used or
+ *                          not.
  * @param   poffRealTSC     The offset against the TSC of the current CPU.
+ *
  * @thread  EMT(pVCpu).
- * @remarks Superset of TMCpuTickCanUseRealTSC.
+ * @remarks Superset of TMCpuTickCanUseRealTSC().
  */
-VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOffsettedTsc, uint64_t *poffRealTSC)
+VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOffsettedTsc, bool *pfParavirtTsc,
+                                                        uint64_t *poffRealTSC)
 {
     PVM         pVM = pVCpu->CTX_SUFF(pVM);
     uint64_t    cTicksToDeadline;
 
     /*
      * We require:
+     *     1. Use of a paravirtualized TSC is enabled by the guest.
+     *     (OR)
      *     1. A fixed TSC, this is checked at init time.
      *     2. That the TSC is ticking (we shouldn't be here if it isn't)
      *     3. Either that we're using the real TSC as time source or
@@ -250,13 +262,13 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOf
      *          b) the virtual sync clock hasn't been halted by an expired timer, and
      *          c) we're not using warp drive (accelerated virtual guest time).
      */
-    if (    pVM->tm.s.fMaybeUseOffsettedHostTSC
-        &&  RT_LIKELY(pVCpu->tm.s.fTSCTicking)
-        &&  (   pVM->tm.s.fTSCUseRealTSC
-             || (   !pVM->tm.s.fVirtualSyncCatchUp
-                 && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
-                 && !pVM->tm.s.fVirtualWarpDrive))
-       )
+    if (    (*pfParavirtTsc = GIMIsParavirtTscEnabled(pVM)) == true
+        ||  (    pVM->tm.s.fMaybeUseOffsettedHostTSC
+             &&  RT_LIKELY(pVCpu->tm.s.fTSCTicking)
+             &&  (   pVM->tm.s.fTSCUseRealTSC
+                 || (   !pVM->tm.s.fVirtualSyncCatchUp
+                     && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
+                     && !pVM->tm.s.fVirtualWarpDrive))))
     {
         *pfOffsettedTsc = true;
         if (!pVM->tm.s.fTSCUseRealTSC)
@@ -292,6 +304,7 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOf
         *poffRealTSC     = 0;
         cTicksToDeadline = tmCpuCalcTicksToDeadline(TMVirtualSyncGetNsToDeadline(pVM));
     }
+
     return cTicksToDeadline;
 }
 
@@ -411,12 +424,12 @@ VMM_INT_DECL(int) TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick)
 }
 
 /**
- * Gets the last seen CPU timestamp counter.
+ * Gets the last seen CPU timestamp counter of the guest.
  *
- * @returns last seen TSC
+ * @returns the last seen TSC.
  * @param   pVCpu               Pointer to the VMCPU.
  *
- * @thread  EMT which TSC is to be set.
+ * @thread  EMT(pVCpu).
  */
 VMM_INT_DECL(uint64_t) TMCpuTickGetLastSeen(PVMCPU pVCpu)
 {

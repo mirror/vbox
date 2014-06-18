@@ -89,14 +89,12 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
      * Register the saved state data unit.
      */
     int rc;
-#if 0
-    rc = SSMR3RegisterInternal(pVM, "GIM", 0, GIM_SSM_VERSION, sizeof(GIM),
-                                    NULL, NULL, NULL,
-                                    NULL, gimR3Save, NULL,
-                                    NULL, gimR3Load, NULL);
+    rc = SSMR3RegisterInternal(pVM, "GIM", 0 /* uInstance */, GIM_SSM_VERSION, sizeof(GIM),
+                                    NULL /* pfnLivePrep */, NULL /* pfnLiveExec */, NULL /* pfnLiveVote*/,
+                                    NULL /* pfnSavePrep */, gimR3Save,              NULL /* pfnSaveDone */,
+                                    NULL /* pfnLoadPrep */, gimR3Load,              NULL /* pfnLoadDone */);
     if (RT_FAILURE(rc))
         return rc;
-#endif
 
     /*
      * Read configuration.
@@ -225,7 +223,7 @@ VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
 
 /**
- * Execute state save operation.
+ * Executes state-save operation.
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
@@ -233,8 +231,46 @@ VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  */
 DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    /** @todo save state. */
-    return VINF_SUCCESS;
+    AssertReturn(pVM,  VERR_INVALID_PARAMETER);
+    AssertReturn(pSSM, VERR_SSM_INVALID_STATE);
+
+    /** @todo Save per-CPU data. */
+    int rc;
+#if 0
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        rc = SSMR3PutXYZ(pSSM, pVM->aCpus[i].gim.s.XYZ);
+    }
+#endif
+
+    /*
+     * Save per-VM data.
+     */
+    rc = SSMR3PutBool(pSSM, pVM->gim.s.fEnabled);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pVM->gim.s.enmProviderId);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pVM->gim.s.u32Version);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Save provider-specific data.
+     */
+    if (pVM->gim.s.fEnabled)
+    {
+        switch (pVM->gim.s.enmProviderId)
+        {
+            case GIMPROVIDERID_HYPERV:
+                rc = GIMR3HvSave(pVM, pSSM);
+                AssertRCReturn(rc, rc);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    return rc;
 }
 
 
@@ -249,8 +285,46 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
  */
 DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    /** @todo load state. */
-    return VINF_SUCCESS;
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
+
+    /** @todo Load per-CPU data. */
+    int rc;
+#if 0
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        rc = SSMR3PutXYZ(pSSM, pVM->aCpus[i].gim.s.XYZ);
+    }
+#endif
+
+    /*
+     * Load per-VM data.
+     */
+    rc = SSMR3GetBool(pSSM, &pVM->gim.s.fEnabled);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, (uint32_t *)&pVM->gim.s.enmProviderId);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pVM->gim.s.u32Version);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Load provider-specific data.
+     */
+    if (pVM->gim.s.fEnabled)
+    {
+        switch (pVM->gim.s.enmProviderId)
+        {
+            case GIMPROVIDERID_HYPERV:
+                rc = GIMR3HvLoad(pVM, pSSM, uVersion);
+                AssertRCReturn(rc, rc);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    return rc;
 }
 
 
@@ -265,6 +339,17 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_
  */
 VMMR3_INT_DECL(int) GIMR3Term(PVM pVM)
 {
+    if (!pVM->gim.s.fEnabled)
+        return VINF_SUCCESS;
+
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_HYPERV:
+            return GIMR3HvTerm(pVM);
+
+        default:
+            break;
+    }
     return VINF_SUCCESS;
 }
 
@@ -349,7 +434,7 @@ VMMR3DECL(PGIMMMIO2REGION) GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions)
  * @param   pVM         Pointer to the VM.
  * @param   pRegion     Pointer to the GIM MMIO2 region.
  */
-VMM_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
+VMMR3_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
 {
     AssertPtr(pVM);
     AssertPtr(pRegion);
@@ -358,8 +443,10 @@ VMM_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
     AssertPtr(pDevIns);
     if (pRegion->fMapped)
     {
-        PGMHandlerPhysicalDeregister(pVM, pRegion->GCPhysPage);
-        int rc = PDMDevHlpMMIO2Unmap(pDevIns, pRegion->iRegion, pRegion->GCPhysPage);
+        int rc = PGMHandlerPhysicalDeregister(pVM, pRegion->GCPhysPage);
+        AssertRC(rc);
+
+        rc = PDMDevHlpMMIO2Unmap(pDevIns, pRegion->iRegion, pRegion->GCPhysPage);
         if (RT_SUCCESS(rc))
         {
             pRegion->fMapped    = false;
@@ -371,7 +458,11 @@ VMM_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
 
 
 /**
- * Write access handler for a mapped MMIO2 region that presently ignores writes.
+ * Write access handler for a mapped MMIO2 region. At present, this handler
+ * simply ignores writes.
+ *
+ * In the future we might want to let the GIM provider decide what the handler
+ * should do (like throwing #GP faults).
  *
  * @returns VBox status code.
  * @param pVM               Pointer to the VM.
@@ -382,8 +473,8 @@ VMM_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
  * @param enmAccessType     The type of access.
  * @param pvUser            User argument (NULL, not used).
  */
-static DECLCALLBACK(int) gimR3Mmio2PageWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                                    PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) gimR3Mmio2WriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                                PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     /*
      * Ignore writes to the mapped MMIO2 page.
@@ -401,9 +492,8 @@ static DECLCALLBACK(int) gimR3Mmio2PageWriteHandler(PVM pVM, RTGCPHYS GCPhys, vo
  * @param   pVM             Pointer to the VM.
  * @param   pRegion         Pointer to the GIM MMIO2 region.
  * @param   GCPhysRegion    Where in the guest address space to map the region.
- * @param   pszDesc         Description of the region being mapped.
  */
-VMM_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCPhysRegion, const char *pszDesc)
+VMMR3_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCPhysRegion)
 {
     PPDMDEVINS pDevIns = pVM->gim.s.pDevInsR3;
     AssertPtr(pDevIns);
@@ -411,7 +501,7 @@ VMM_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCPhy
     /* The guest-physical address must be page-aligned. */
     if (GCPhysRegion & PAGE_OFFSET_MASK)
     {
-        LogFunc(("%s: %#RGp not paging aligned\n", pszDesc, GCPhysRegion));
+        LogFunc(("%s: %#RGp not paging aligned\n", pRegion->szDescription, GCPhysRegion));
         return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
     }
 
@@ -420,18 +510,18 @@ VMM_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCPhy
      *        later if some guest really requires it. */
     if (!PGMPhysIsGCPhysNormal(pVM, GCPhysRegion))
     {
-        LogFunc(("%s: %#RGp is not normal memory\n", pszDesc, GCPhysRegion));
+        LogFunc(("%s: %#RGp is not normal memory\n", pRegion->szDescription, GCPhysRegion));
         return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
     }
 
-    if (pRegion->fMapped)
+    if (!pRegion->fRegistered)
     {
-        LogFunc(("%s: A mapping for %#RGp already exists.\n", pszDesc, GCPhysRegion));
-        return VERR_PGM_MAPPING_CONFLICT;
+        LogFunc(("%s: Region has not been registered.\n"));
+        return VERR_GIM_IPE_1;
     }
 
     /*
-     * Map the MMIO2 region over the guest-physical address.
+     * Map the MMIO2 region over the specified guest-physical address.
      */
     int rc = PDMDevHlpMMIO2Map(pDevIns, pRegion->iRegion, GCPhysRegion);
     if (RT_SUCCESS(rc))
@@ -442,15 +532,15 @@ VMM_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCPhy
         rc = PGMR3HandlerPhysicalRegister(pVM,
                                           PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
                                           GCPhysRegion, GCPhysRegion + (pRegion->cbRegion - 1),
-                                          gimR3Mmio2PageWriteHandler,  NULL /* pvUserR3 */,
+                                          gimR3Mmio2WriteHandler,  NULL /* pvUserR3 */,
                                           NULL /* pszModR0 */, NULL /* pszHandlerR0 */, NIL_RTR0PTR /* pvUserR0 */,
                                           NULL /* pszModRC */, NULL /* pszHandlerRC */, NIL_RTRCPTR /* pvUserRC */,
-                                          pszDesc);
+                                          pRegion->szDescription);
         if (RT_SUCCESS(rc))
         {
             pRegion->fMapped    = true;
             pRegion->GCPhysPage = GCPhysRegion;
-            return VINF_SUCCESS;
+            return rc;
         }
 
         PDMDevHlpMMIO2Unmap(pDevIns, pRegion->iRegion, GCPhysRegion);
@@ -458,4 +548,41 @@ VMM_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCPhy
 
     return rc;
 }
+
+#if 0
+/**
+ * Registers the physical handler for the registered and mapped MMIO2 region.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pRegion     Pointer to the GIM MMIO2 region.
+ */
+VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalRegister(PVM pVM, PGIMMMIO2REGION pRegion)
+{
+    AssertPtr(pRegion);
+    AssertReturn(pRegion->fRegistered, VERR_GIM_IPE_2);
+    AssertReturn(pRegion->fMapped, VERR_GIM_IPE_3);
+
+    return PGMR3HandlerPhysicalRegister(pVM,
+                                        PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
+                                        pRegion->GCPhysPage, pRegion->GCPhysPage + (pRegion->cbRegion - 1),
+                                        gimR3Mmio2WriteHandler,  NULL /* pvUserR3 */,
+                                        NULL /* pszModR0 */, NULL /* pszHandlerR0 */, NIL_RTR0PTR /* pvUserR0 */,
+                                        NULL /* pszModRC */, NULL /* pszHandlerRC */, NIL_RTRCPTR /* pvUserRC */,
+                                        pRegion->szDescription);
+}
+
+
+/**
+ * Deregisters the physical handler for the MMIO2 region.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pRegion     Pointer to the GIM MMIO2 region.
+ */
+VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalDeregister(PVM pVM, PGIMMMIO2REGION pRegion)
+{
+    return PGMHandlerPhysicalDeregister(pVM, pRegion->GCPhysPage);
+}
+#endif
 

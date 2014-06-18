@@ -388,6 +388,14 @@ AssertCompile(MSR_GIM_HV_RANGE9_START  <= MSR_GIM_HV_RANGE9_END);
 AssertCompile(MSR_GIM_HV_RANGE10_START <= MSR_GIM_HV_RANGE10_END);
 AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 
+/** @name Hyper-V MSR - Reset (MSR_GIM_HV_RESET).
+ * @{
+ */
+/** The hypercall enable bit. */
+#define MSR_GIM_HV_RESET_BIT                      RT_BIT_64(0)
+/** Whether the hypercall-page is enabled or not. */
+#define MSR_GIM_HV_RESET_IS_SET(a)                RT_BOOL((a) & MSR_GIM_HV_RESET_BIT)
+/** @} */
 
 /** @name Hyper-V MSR - Hypercall (MSR_GIM_HV_HYPERCALL).
  * @{
@@ -433,10 +441,13 @@ typedef struct GIMHVREFTSC
     uint32_t volatile   u32TscSequence;
     uint32_t            uReserved0;
     uint64_t volatile   u64TscScale;
-    uint64_t volatile   u64TscOffset;
+    int64_t  volatile   i64TscOffset;
 } GIMHVTSCPAGE;
-/** Pointer to GIM VMCPU instance data. */
+/** Pointer to Hyper-V reference TSC. */
 typedef GIMHVREFTSC *PGIMHVREFTSC;
+/** Pointer to a const Hyper-V reference TSC. */
+typedef GIMHVREFTSC const *PCGIMHVREFTSC;
+
 
 /**
  * GIM Hyper-V VM Instance data.
@@ -464,6 +475,12 @@ typedef struct GIMHV
     /** Alignment padding. */
     uint32_t                    u32Alignment0;
 
+    /** Per-VM R0 Spinlock for protecting EMT writes to the TSC page. */
+    RTSPINLOCK                  hSpinlockR0;
+#if HC_ARCH_BITS == 32
+    uint32_t                    u32Alignment1;
+#endif
+
     /** Array of MMIO2 regions. */
     GIMMMIO2REGION              aMmio2Regions[GIM_HV_REGION_IDX_MAX + 1];
 } GIMHV;
@@ -472,23 +489,32 @@ typedef GIMHV *PGIMHV;
 /** Pointer to const per-VM GIM Hyper-V instance data. */
 typedef GIMHV const *PCGIMHV;
 AssertCompileMemberAlignment(GIMHV, aMmio2Regions, 8);
+AssertCompileMemberAlignment(GIMHV, hSpinlockR0, sizeof(uintptr_t));
 
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING0
 VMMR0_INT_DECL(int)             GIMR0HvInitVM(PVM pVM);
 VMMR0_INT_DECL(int)             GIMR0HvTermVM(PVM pVM);
+VMMR0_INT_DECL(int)             GIMR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
 #endif /* IN_RING0 */
 
 #ifdef IN_RING3
 VMMR3_INT_DECL(int)             GIMR3HvInit(PVM pVM);
+VMMR3_INT_DECL(int)             GIMR3HvTerm(PVM pVM);
 VMMR3_INT_DECL(void)            GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(void)            GIMR3HvReset(PVM pVM);
 VMMR3_INT_DECL(PGIMMMIO2REGION) GIMR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions);
+VMMR3_INT_DECL(int)             GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM);
+VMMR3_INT_DECL(int)             GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion);
+
+VMMR3_INT_DECL(int)             GIMR3HvDisableTscPage(PVM pVM);
+VMMR3_INT_DECL(int)             GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage);
+VMMR3_INT_DECL(int)             GIMR3HvDisableHypercallPage(PVM pVM);
+VMMR3_INT_DECL(int)             GIMR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercallPage);
 #endif /* IN_RING3 */
 
 VMM_INT_DECL(bool)              GIMHvIsParavirtTscEnabled(PVM pVM);
-VMM_INT_DECL(int)               GIMHvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
 VMM_INT_DECL(int)               GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(int)               GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(int)               GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);

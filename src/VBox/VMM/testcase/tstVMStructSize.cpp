@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -407,14 +407,21 @@ int main()
 
     /* hm - 32-bit gcc won't align uint64_t naturally, so check. */
     CHECK_MEMBER_ALIGNMENT(HM, uMaxAsid, 8);
-    CHECK_MEMBER_ALIGNMENT(HM, vmx.u64HostCr4, 8);
-    CHECK_MEMBER_ALIGNMENT(HM, vmx.Msrs.u64FeatureCtrl, 8);
-    CHECK_MEMBER_ALIGNMENT(HM, StatTprPatchSuccess, 8);
-    CHECK_MEMBER_ALIGNMENT(HMCPU, StatEntry, 8);
-    CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.HCPhysVmcs, sizeof(RTHCPHYS));
-    CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.u32PinCtls, 8);
-    CHECK_MEMBER_ALIGNMENT(HMCPU, DisState, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, vmx, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, vmx.Msrs, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, svm, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, PatchTree, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, aPatches, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, vmx, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.pfnStartVM, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.HCPhysVmcs, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.LastError, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, svm, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, svm.pfnVMRun, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, Event, 8);
     CHECK_MEMBER_ALIGNMENT(HMCPU, Event.u64IntInfo, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, DisState, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, StatEntry, 8);
 
     /* Make sure the set is large enough and has the correct size. */
     CHECK_SIZE(VMCPUSET, 32);

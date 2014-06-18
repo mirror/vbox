@@ -732,6 +732,8 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatTlbShootdown,           "/HM/CPU%d/Flush/Shootdown/Page", "Inter-VCPU request to flush queued guest page.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatTlbShootdownFlush,      "/HM/CPU%d/Flush/Shootdown/TLB", "Inter-VCPU request to flush entire guest-TLB.");
 
+        HM_REG_COUNTER(&pVCpu->hm.s.StatTscOffsetAdjusted,      "/HM/CPU%d/TSC/OffsetAdjusted", "TSC offset overflowed for paravirt. TSC. Fudged.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatTscParavirt,            "/HM/CPU%d/TSC/Paravirt", "Paravirtualized TSC in effect.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatTscOffset,              "/HM/CPU%d/TSC/Offset", "TSC offsetting is in effect.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatTscIntercept,           "/HM/CPU%d/TSC/Intercept", "Guest is in catchup mode, intercept TSC accesses.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatTscInterceptOverFlow,   "/HM/CPU%d/TSC/InterceptOverflow", "TSC offset overflow, fallback to intercept TSC accesses.");
@@ -1171,7 +1173,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         && CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
     {
         CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP);
-        LogRel(("HM: RDTSCP disabled.\n"));
+        LogRel(("HM: RDTSCP disabled\n"));
     }
 
     /* Unrestricted guest execution also requires EPT. */
@@ -1240,8 +1242,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     }
 
     LogRel((pVM->hm.s.fAllow64BitGuests
-            ? "HM: Guest support: 32-bit and 64-bit.\n"
-            : "HM: Guest support: 32-bit only.\n"));
+            ? "HM: Guest support: 32-bit and 64-bit\n"
+            : "HM: Guest support: 32-bit only\n"));
 
     /*
      * Call ring-0 to set up the VM.
@@ -1286,7 +1288,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         if (pVM->hm.s.vmx.u64HostEfer & MSR_K6_EFER_NXE)
             CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
         else
-            LogRel(("HM: NX not enabled on the host, unavailable to PAE guest.\n"));
+            LogRel(("HM: NX not enabled on the host, unavailable to PAE guest\n"));
     }
 
     /*
@@ -1295,12 +1297,12 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     if (pVM->hm.s.fNestedPaging)
     {
         LogRel(("HM: Nested paging enabled!\n"));
-        if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_SINGLE_CONTEXT)
-            LogRel(("HM:   EPT flush type                = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
-        else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_ALL_CONTEXTS)
-            LogRel(("HM:   EPT flush type                = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
-        else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_NOT_SUPPORTED)
-            LogRel(("HM:   EPT flush type                = VMX_FLUSH_EPT_NOT_SUPPORTED\n"));
+        if (pVM->hm.s.vmx.enmFlushEpt == VMXFLUSHEPT_SINGLE_CONTEXT)
+            LogRel(("HM:   EPT flush type                = VMXFLUSHEPT_SINGLE_CONTEXT\n"));
+        else if (pVM->hm.s.vmx.enmFlushEpt == VMXFLUSHEPT_ALL_CONTEXTS)
+            LogRel(("HM:   EPT flush type                = VMXFLUSHEPT_ALL_CONTEXTS\n"));
+        else if (pVM->hm.s.vmx.enmFlushEpt == VMXFLUSHEPT_NOT_SUPPORTED)
+            LogRel(("HM:   EPT flush type                = VMXFLUSHEPT_NOT_SUPPORTED\n"));
         else
             LogRel(("HM:   EPT flush type                = %d\n", pVM->hm.s.vmx.enmFlushEpt));
 
@@ -1312,7 +1314,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         {
             /* Use large (2 MB) pages for our EPT PDEs where possible. */
             PGMSetLargePageUsage(pVM, true);
-            LogRel(("HM: Large page support enabled!\n"));
+            LogRel(("HM: Large page support enabled\n"));
         }
 #endif
     }
@@ -1322,19 +1324,19 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     if (pVM->hm.s.vmx.fVpid)
     {
         LogRel(("HM: VPID enabled!\n"));
-        if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_INDIV_ADDR)
-            LogRel(("HM:   VPID flush type               = VMX_FLUSH_VPID_INDIV_ADDR\n"));
-        else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_SINGLE_CONTEXT)
-            LogRel(("HM:   VPID flush type               = VMX_FLUSH_VPID_SINGLE_CONTEXT\n"));
-        else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_ALL_CONTEXTS)
-            LogRel(("HM:   VPID flush type               = VMX_FLUSH_VPID_ALL_CONTEXTS\n"));
-        else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
-            LogRel(("HM:   VPID flush type               = VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS\n"));
+        if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_INDIV_ADDR)
+            LogRel(("HM:   VPID flush type               = VMXFLUSHVPID_INDIV_ADDR\n"));
+        else if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_SINGLE_CONTEXT)
+            LogRel(("HM:   VPID flush type               = VMXFLUSHVPID_SINGLE_CONTEXT\n"));
+        else if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_ALL_CONTEXTS)
+            LogRel(("HM:   VPID flush type               = VMXFLUSHVPID_ALL_CONTEXTS\n"));
+        else if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
+            LogRel(("HM:   VPID flush type               = VMXFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS\n"));
         else
             LogRel(("HM:   VPID flush type               = %d\n", pVM->hm.s.vmx.enmFlushVpid));
     }
-    else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_NOT_SUPPORTED)
-        LogRel(("HM: Ignoring VPID capabilities of CPU.\n"));
+    else if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_NOT_SUPPORTED)
+        LogRel(("HM: Ignoring VPID capabilities of CPU\n"));
 
     /*
      * Check for preemption timer config override and log the state of it.
@@ -1346,9 +1348,9 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         AssertLogRelRCReturn(rc, rc);
     }
     if (pVM->hm.s.vmx.fUsePreemptTimer)
-        LogRel(("HM: VMX-preemption timer enabled (cPreemptTimerShift=%u).\n", pVM->hm.s.vmx.cPreemptTimerShift));
+        LogRel(("HM: VMX-preemption timer enabled (cPreemptTimerShift=%u)\n", pVM->hm.s.vmx.cPreemptTimerShift));
     else
-        LogRel(("HM: VMX-preemption timer disabled.\n"));
+        LogRel(("HM: VMX-preemption timer disabled\n"));
 
     return VINF_SUCCESS;
 }
@@ -1464,11 +1466,11 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     else if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
-    LogRel(("HM: TPR patching %s.\n", (pVM->hm.s.fTprPatchingAllowed) ? "enabled" : "disabled"));
+    LogRel(("HM: TPR patching %s\n", (pVM->hm.s.fTprPatchingAllowed) ? "enabled" : "disabled"));
 
     LogRel((pVM->hm.s.fAllow64BitGuests
-            ? "HM: Guest support: 32-bit and 64-bit.\n"
-            : "HM: Guest support: 32-bit only.\n"));
+            ? "HM: Guest support: 32-bit and 64-bit\n"
+            : "HM: Guest support: 32-bit only\n"));
 
     return VINF_SUCCESS;
 }

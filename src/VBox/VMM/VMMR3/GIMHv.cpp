@@ -25,8 +25,10 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
+#include <iprt/spinlock.h>
 
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/ssm.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/pdmapi.h>
@@ -110,17 +112,17 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
     AssertCompile(GIM_HV_PAGE_SIZE == PAGE_SIZE);
     PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
     pRegion->iRegion    = GIM_HV_HYPERCALL_PAGE_REGION_IDX;
+    pRegion->fRCMapping = false;
     pRegion->cbRegion   = PAGE_SIZE;
     pRegion->GCPhysPage = NIL_RTGCPHYS;
-    RTStrCopy(pRegion->szDescription, sizeof(pRegion->szDescription), "Hypercall Page");
-    Assert(!pRegion->fRCMapping);
-    Assert(!pRegion->fMapped);
+    RTStrCopy(pRegion->szDescription, sizeof(pRegion->szDescription), "Hyper-V hypercall page");
 
     pRegion = &pHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
     pRegion->iRegion    = GIM_HV_REF_TSC_PAGE_REGION_IDX;
+    pRegion->fRCMapping = false;
     pRegion->cbRegion   = PAGE_SIZE;
     pRegion->GCPhysPage = NIL_RTGCPHYS;
-    RTStrCopy(pRegion->szDescription, sizeof(pRegion->szDescription), "TSC Page");
+    RTStrCopy(pRegion->szDescription, sizeof(pRegion->szDescription), "Hyper-V TSC page");
 
     /*
      * Make sure the CPU ID bit are in accordance to the Hyper-V
@@ -218,6 +220,13 @@ VMMR3_INT_DECL(int) GIMR3HvInitFinalize(PVM pVM)
 #endif
 
 
+VMMR3_INT_DECL(int) GIMR3HvTerm(PVM pVM)
+{
+    GIMR3HvReset(pVM);
+    return VINF_SUCCESS;
+}
+
+
 VMMR3_INT_DECL(void) GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
 {
 #if 0
@@ -238,6 +247,7 @@ VMMR3_INT_DECL(void) GIMR3HvReset(PVM pVM)
     /*
      * Unmap MMIO2 pages that the guest may have setup.
      */
+    LogRelFunc(("Resetting Hyper-V MMIO2 regions and MSRs...\n"));
     PGIMHV pHv = &pVM->gim.s.u.Hv;
     for (unsigned i = 0; i < RT_ELEMENTS(pHv->aMmio2Regions); i++)
     {
@@ -269,5 +279,321 @@ VMMR3_INT_DECL(PGIMMMIO2REGION) GIMR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegi
     *pcRegions = RT_ELEMENTS(pHv->aMmio2Regions);
     Assert(*pcRegions <= UINT8_MAX);    /* See PGMR3PhysMMIO2Register(). */
     return pHv->aMmio2Regions;
+}
+
+
+/**
+ * Hyper-V state-save operation.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the VM.
+ * @param   pSSM    Pointer to the SSM handle.
+ */
+VMMR3_INT_DECL(int) GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM)
+{
+    PCGIMHV pcHv = &pVM->gim.s.u.Hv;
+
+    /** @todo Save per-VCPU data. */
+
+    /*
+     * Save per-VM MSRs.
+     */
+    int rc = SSMR3PutU64(pSSM, pcHv->u64GuestOsIdMsr);          AssertRCReturn(rc, rc);
+    rc = SSMR3PutU64(pSSM, pcHv->u64HypercallMsr);              AssertRCReturn(rc, rc);
+    rc = SSMR3PutU64(pSSM, pcHv->u64TscPageMsr);                AssertRCReturn(rc, rc);
+
+    /*
+     * Save Hyper-V features / capabilities.
+     */
+    rc = SSMR3PutU32(pSSM, pcHv->uBaseFeat);                    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pcHv->uPartFlags);                   AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pcHv->uPowMgmtFeat);                 AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pcHv->uMiscFeat);                    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pcHv->uHyperHints);                  AssertRCReturn(rc, rc);
+
+    /*
+     * Save per-VM MMIO2 regions.
+     */
+    rc = SSMR3PutU32(pSSM, RT_ELEMENTS(pcHv->aMmio2Regions));
+    for (unsigned i = 0; i < RT_ELEMENTS(pcHv->aMmio2Regions); i++)
+    {
+        /* Save the fields necessary to remap the regions upon load.*/
+        PCGIMMMIO2REGION pcRegion = &pcHv->aMmio2Regions[i];
+        rc = SSMR3PutU8(pSSM,     pcRegion->iRegion);           AssertRCReturn(rc, rc);
+        rc = SSMR3PutBool(pSSM,   pcRegion->fRCMapping);        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU32(pSSM,    pcRegion->cbRegion);          AssertRCReturn(rc, rc);
+        rc = SSMR3PutGCPhys(pSSM, pcRegion->GCPhysPage);        AssertRCReturn(rc, rc);
+        rc = SSMR3PutStrZ(pSSM,   pcRegion->szDescription);     AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Hyper-V state-load operation, final pass.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the VM.
+ * @param   pSSM            Pointer to the SSM handle.
+ * @param   uSSMVersion     The saved-state version.
+ */
+VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
+{
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+
+    /** @todo Load per-VCPU data. */
+
+    /*
+     * Load per-VM MSRs.
+     */
+    int rc = SSMR3GetU64(pSSM, &pHv->u64GuestOsIdMsr);          AssertRCReturn(rc, rc);
+    rc = SSMR3GetU64(pSSM, &pHv->u64HypercallMsr);              AssertRCReturn(rc, rc);
+    rc = SSMR3GetU64(pSSM, &pHv->u64TscPageMsr);                AssertRCReturn(rc, rc);
+
+    /*
+     * Save Hyper-V features / capabilities.
+     */
+    rc = SSMR3GetU32(pSSM, &pHv->uBaseFeat);                    AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pHv->uPartFlags);                   AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pHv->uPowMgmtFeat);                 AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pHv->uMiscFeat);                    AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pHv->uHyperHints);                  AssertRCReturn(rc, rc);
+
+    /*
+     * Load per-VM MMIO2 regions.
+     */
+    uint32_t cRegions;
+    rc = SSMR3GetU32(pSSM, &cRegions);
+    if (cRegions != RT_ELEMENTS(pHv->aMmio2Regions))
+    {
+        LogRelFunc(("MMIO2 region array size mismatch. size=%u expected=%u\n", cRegions, RT_ELEMENTS(pHv->aMmio2Regions)));
+        return VERR_SSM_FIELD_INVALID_VALUE;
+    }
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pHv->aMmio2Regions); i++)
+    {
+        /* The regions would have been registered while constructing the GIM device. */
+        PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[i];
+        rc = SSMR3GetU8(pSSM,     &pRegion->iRegion);           AssertRCReturn(rc, rc);
+        rc = SSMR3GetBool(pSSM,   &pRegion->fRCMapping);        AssertRCReturn(rc, rc);
+        rc = SSMR3GetU32(pSSM,    &pRegion->cbRegion);          AssertRCReturn(rc, rc);
+        rc = SSMR3GetGCPhys(pSSM, &pRegion->GCPhysPage);        AssertRCReturn(rc, rc);
+        rc = SSMR3GetStrZ(pSSM,    pRegion->szDescription, sizeof(pRegion->szDescription));
+        AssertRCReturn(rc, rc);
+    }
+
+    /*
+     * Enable the Hypercall-page.
+     */
+    PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
+    if (MSR_GIM_HV_HYPERCALL_IS_ENABLED(pHv->u64HypercallMsr))
+    {
+        Assert(pRegion->GCPhysPage != NIL_RTGCPHYS);
+        if (pRegion->fRegistered)
+        {
+            rc = GIMR3HvEnableHypercallPage(pVM, pRegion->GCPhysPage);
+            if (RT_FAILURE(rc))
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Failed to enable the hypercall page. GCPhys=%#RGp rc=%Rrc"),
+                                        pRegion->GCPhysPage, rc);
+        }
+        else
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Hypercall MMIO2 region not registered. Missing GIM device?!"));
+    }
+
+    /*
+     * Enable the TSC-page.
+     */
+    pRegion = &pHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
+    if (MSR_GIM_HV_REF_TSC_IS_ENABLED(pHv->u64TscPageMsr))
+    {
+        Assert(pRegion->GCPhysPage != NIL_RTGCPHYS);
+        if (pRegion->fRegistered)
+        {
+            rc = GIMR3HvEnableTscPage(pVM, pRegion->GCPhysPage);
+            if (RT_FAILURE(rc))
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Failed to enable the TSC page. GCPhys=%#RGp rc=%Rrc"),
+                                        pRegion->GCPhysPage, rc);
+        }
+        else
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("TSC-page MMIO2 region not registered. Missing GIM device?!"));
+    }
+
+    return rc;
+}
+
+
+/**
+ * Enables the Hyper-V TSC page.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the VM.
+ * @param   GCPhysTscPage   Where to map the TSC page.
+ */
+VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage)
+{
+    PPDMDEVINSR3    pDevIns = pVM->gim.s.pDevInsR3;
+    PGIMMMIO2REGION pRegion = &pVM->gim.s.u.Hv.aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
+    AssertPtrReturn(pDevIns, VERR_GIM_DEVICE_NOT_REGISTERED);
+
+    int rc;
+    if (pRegion->fMapped)
+    {
+        /*
+         * Is it already enabled at the given guest-address?
+         */
+        if (pRegion->GCPhysPage == GCPhysTscPage)
+            return VINF_SUCCESS;
+
+        /*
+         * If it's mapped at a different address, unmap the previous address.
+         */
+        rc = GIMR3HvDisableTscPage(pVM);
+        AssertRC(rc);
+    }
+
+    /*
+     * Map the TSC-page at the specified address.
+     */
+    Assert(!pRegion->fMapped);
+    rc = GIMR3Mmio2Map(pVM, pRegion, GCPhysTscPage);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pRegion->GCPhysPage == GCPhysTscPage);
+
+        /*
+         * Update the TSC scale. Windows guests expect a non-zero TSC sequence, otherwise
+         * they fallback to using the reference count MSR which is not ideal in terms of VM-exits.
+         *
+         * Also, Hyper-V normalizes the time in 10 MHz, see:
+         * http://technet.microsoft.com/it-it/sysinternals/dn553408%28v=vs.110%29
+         */
+        PGIMHVREFTSC pRefTsc = (PGIMHVREFTSC)pRegion->pvPageR3;
+        Assert(pRefTsc);
+
+        uint64_t const u64TscKHz = TMCpuTicksPerSecond(pVM) / UINT64_C(1000);
+        pRefTsc->u32TscSequence  = 1;
+        //pRefTsc->u64TscScale     = ((UINT64_C(10000) << 32) / u64TscKHz) << 32;
+        pRefTsc->u64TscScale     = 0xf4000000000000;
+
+        LogRel(("GIM: HyperV: Enabled TSC page at %#RGp (u64TscScale=%#RX64 u64TscKHz=%#RX64)\n", GCPhysTscPage,
+                pRefTsc->u64TscScale, u64TscKHz));
+        return VINF_SUCCESS;
+    }
+    else
+        LogRelFunc(("GIMR3Mmio2Map failed. rc=%Rrc\n", rc));
+
+    return VERR_GIM_OPERATION_FAILED;
+}
+
+
+/**
+ * Disables the Hyper-V TSC page.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the VM.
+ */
+VMMR3_INT_DECL(int) GIMR3HvDisableTscPage(PVM pVM)
+{
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
+    if (pRegion->fMapped)
+    {
+        GIMR3Mmio2Unmap(pVM, pRegion);
+        Assert(!pRegion->fMapped);
+        LogRel(("GIM: HyperV: Disabled TSC-page\n"));
+        return VINF_SUCCESS;
+    }
+    return VERR_GIM_PVTSC_NOT_ENABLED;
+}
+
+
+/**
+ * Disables the Hyper-V Hypercall page.
+ *
+ * @returns VBox status code.
+ */
+VMMR3_INT_DECL(int) GIMR3HvDisableHypercallPage(PVM pVM)
+{
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
+    if (pRegion->fMapped)
+    {
+        GIMR3Mmio2Unmap(pVM, pRegion);
+        Assert(!pRegion->fMapped);
+        LogRel(("GIM: HyperV: Disabled Hypercall-page\n"));
+        return VINF_SUCCESS;
+    }
+    return VERR_GIM_HYPERCALLS_NOT_ENABLED;
+}
+
+
+/**
+ * Enables the Hyper-V Hypercall page.
+ *
+ * @returns VBox status code.
+ * @param   pVM                     Pointer to the VM.
+ * @param   GCPhysHypercallPage     Where to map the hypercall page.
+ */
+VMMR3_INT_DECL(int) GIMR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercallPage)
+{
+    PPDMDEVINSR3    pDevIns = pVM->gim.s.pDevInsR3;
+    PGIMMMIO2REGION pRegion = &pVM->gim.s.u.Hv.aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
+    AssertPtrReturn(pDevIns, VERR_GIM_DEVICE_NOT_REGISTERED);
+
+    if (pRegion->fMapped)
+    {
+        /*
+         * Is it already enabled at the given guest-address?
+         */
+        if (pRegion->GCPhysPage == GCPhysHypercallPage)
+            return VINF_SUCCESS;
+
+        /*
+         * If it's mapped at a different address, unmap the previous address.
+         */
+        int rc2 = GIMR3HvDisableHypercallPage(pVM);
+        AssertRC(rc2);
+    }
+
+    /*
+     * Map the hypercall-page at the specified address.
+     */
+    Assert(!pRegion->fMapped);
+    int rc = GIMR3Mmio2Map(pVM, pRegion, GCPhysHypercallPage);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pRegion->GCPhysPage == GCPhysHypercallPage);
+
+        /*
+         * Patch the hypercall-page.
+         */
+        if (HMIsEnabled(pVM))
+        {
+            size_t cbWritten = 0;
+            rc = HMPatchHypercall(pVM, pRegion->pvPageR3, PAGE_SIZE, &cbWritten);
+            if (   RT_SUCCESS(rc)
+                && cbWritten < PAGE_SIZE - 1)
+            {
+                uint8_t *pbLast = (uint8_t *)pRegion->pvPageR3 + cbWritten;
+                *pbLast = 0xc3;  /* RET */
+
+                LogRel(("GIM: HyperV: Enabled hypercalls at %#RGp\n", GCPhysHypercallPage));
+                return VINF_SUCCESS;
+            }
+            else
+                LogRelFunc(("HMPatchHypercall failed. rc=%Rrc cbWritten=%u\n", rc, cbWritten));
+        }
+        else
+        {
+            /** @todo Handle raw-mode hypercall page patching. */
+            LogRelFunc(("Raw-mode not yet implemented!\n"));
+        }
+        GIMR3Mmio2Unmap(pVM, pRegion);
+    }
+    else
+        LogRelFunc(("GIMR3Mmio2Map failed. rc=%Rrc\n", rc));
+
+    return rc;
 }
 

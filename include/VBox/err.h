@@ -2352,6 +2352,14 @@
 #define VERR_GIM_PVTSC_NOT_ENABLED                  (-6305)
 /** Unknown or invalid GIM provider. */
 #define VERR_GIM_INVALID_PROVIDER                   (-6306)
+/** GIM generic operation failed. */
+#define VERR_GIM_OPERATION_FAILED                   (-6307)
+/** The GIM provider does not support any hypercalls. */
+#define VERR_GIM_HYPERCALLS_NOT_AVAILABLE           (-6308)
+/** The guest has not setup use of the hypercalls. */
+#define VERR_GIM_HYPERCALLS_NOT_ENABLED             (-6309)
+/** The GIM device is not registered with GIM when it ought to be. */
+#define VERR_GIM_DEVICE_NOT_REGISTERED              (-6310)
 /** @} */
 
 

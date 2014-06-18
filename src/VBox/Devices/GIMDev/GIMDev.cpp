@@ -114,6 +114,8 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
             }
             else
                 pCur->pvPageRC = NIL_RTRCPTR;
+
+            LogRel(("GIMDev: Registered %s\n", pCur->szDescription));
         }
     }
 

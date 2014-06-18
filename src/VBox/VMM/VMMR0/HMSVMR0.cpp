@@ -29,6 +29,7 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/tm.h>
+#include <VBox/vmm/gim.h>
 
 #ifdef DEBUG_ramshankar
 # define HMSVM_SYNC_FULL_GUEST_STATE
@@ -2233,11 +2234,25 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
  */
 static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
 {
+    bool     fParavirtTsc = false;
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    if (TMCpuTickCanUseRealTSC(pVCpu, &pVmcb->ctrl.u64TSCOffset))
+    if (TMCpuTickCanUseRealTSC(pVCpu, &pVmcb->ctrl.u64TSCOffset, &fParavirtTsc))
     {
-        uint64_t u64CurTSC = ASMReadTSC();
-        if (u64CurTSC + pVmcb->ctrl.u64TSCOffset > TMCpuTickGetLastSeen(pVCpu))
+        uint64_t u64CurTSC   = ASMReadTSC();
+        uint64_t u64LastTick = TMCpuTickGetLastSeen(pVCpu);
+        if (fParavirtTsc)
+        {
+            if (u64CurTSC + pVmcb->ctrl.u64TSCOffset > u64LastTick)
+            {
+                pVmcb->ctrl.u64TSCOffset = u64LastTick - u64CurTSC;
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffsetAdjusted);
+            }
+            int rc = GIMR0UpdateParavirtTsc(pVCpu->CTX_SUFF(pVM), pVmcb->ctrl.u64TSCOffset);
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
+        }
+
+        if (u64CurTSC + pVmcb->ctrl.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
         {
             pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
             pVmcb->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;
@@ -2252,6 +2267,7 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
     }
     else
     {
+        Assert(!fParavirtTsc);
         pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
         pVmcb->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);

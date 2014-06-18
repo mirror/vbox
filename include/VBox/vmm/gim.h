@@ -56,7 +56,7 @@ typedef enum GIMPROVIDERID
     /** Linux KVM Interface. */
     GIMPROVIDERID_KVM
 } GIMPROVIDERID;
-AssertCompileSize(GIMPROVIDERID, 4);
+AssertCompileSize(GIMPROVIDERID, sizeof(uint32_t));
 
 
 /**
@@ -73,7 +73,7 @@ typedef struct GIMMMIO2REGION
     /** Whether this region is currently mapped. */
     bool                fMapped;
     /** Alignment padding. */
-    uint8_t             au8Alignment0[4];
+    uint8_t             au8Alignment0[3];
     /** Size of the region (must be page aligned). */
     uint32_t            cbRegion;
     /** Alignment padding. */
@@ -93,8 +93,8 @@ typedef struct GIMMMIO2REGION
 typedef GIMMMIO2REGION *PGIMMMIO2REGION;
 /** Pointer to a const GIM MMIO2 region. */
 typedef GIMMMIO2REGION const *PCGIMMMIO2REGION;
-AssertCompileMemberAlignment(GIMMMIO2REGION, cbRegion,   8);
-AssertCompileMemberAlignment(GIMMMIO2REGION, pvPageR0,   8);
+AssertCompileMemberAlignment(GIMMMIO2REGION, cbRegion, 8);
+AssertCompileMemberAlignment(GIMMMIO2REGION, pvPageR0, 8);
 
 
 #if 0
@@ -152,6 +152,7 @@ typedef FNGIMWRMSR *PFNGIMWRMSR;
  */
 VMMR0_INT_DECL(int)         GIMR0InitVM(PVM pVM);
 VMMR0_INT_DECL(int)         GIMR0TermVM(PVM pVM);
+VMMR0_INT_DECL(int)         GIMR0UpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
 /** @} */
 #endif /* IN_RING0 */
 
@@ -170,7 +171,7 @@ VMMR3DECL(PGIMMMIO2REGION)  GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 #endif /* IN_RING3 */
 
 VMMDECL(bool)               GIMIsEnabled(PVM pVM);
-VMMDECL(int)                GIMUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
+VMMDECL(GIMPROVIDERID)      GIMGetProvider(PVM pVM);
 VMMDECL(bool)               GIMIsParavirtTscEnabled(PVM pVM);
 VMM_INT_DECL(int)           GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(int)           GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
