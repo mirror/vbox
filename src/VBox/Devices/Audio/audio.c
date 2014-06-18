@@ -1697,7 +1697,7 @@ static int AUD_init (PCFGMNODE pCfgHandle, PPDMDRVINS pDrvIns, const char *drvna
         s->nb_hw_voices_in = 0;
     }
 
-    LogRel(("Audio: Trying driver '%s'.\n", drvname));
+    LogRel(("Audio: Trying driver '%s'\n", drvname));
 
     if (drvname) {
         int found = 0;
