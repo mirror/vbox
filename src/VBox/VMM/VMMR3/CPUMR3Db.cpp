@@ -686,14 +686,14 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
         }
 
         if (pEntry)
-            LogRel(("CPUM: Matched host CPU %s %#x/%#x/%#x %s with CPU DB entry '%s' (%s %#x/%#x/%#x %s).\n",
+            LogRel(("CPUM: Matched host CPU %s %#x/%#x/%#x %s with CPU DB entry '%s' (%s %#x/%#x/%#x %s)\n",
                     CPUMR3CpuVendorName(enmVendor), uFamily, uModel, uStepping, CPUMR3MicroarchName(enmMicroarch),
                     pEntry->pszName,  CPUMR3CpuVendorName((CPUMCPUVENDOR)pEntry->enmVendor), pEntry->uFamily, pEntry->uModel,
                     pEntry->uStepping, CPUMR3MicroarchName(pEntry->enmMicroarch) ));
         else
         {
             pEntry = g_apCpumDbEntries[0];
-            LogRel(("CPUM: No matching processor database entry %s %#x/%#x/%#x %s, falling back on '%s'.\n",
+            LogRel(("CPUM: No matching processor database entry %s %#x/%#x/%#x %s, falling back on '%s'\n",
                     CPUMR3CpuVendorName(enmVendor), uFamily, uModel, uStepping, CPUMR3MicroarchName(enmMicroarch),
                     pEntry->pszName));
         }
@@ -732,7 +732,7 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
         pInfo->enmUnknownCpuIdMethod = pEntry->enmUnknownCpuId;
         pInfo->DefCpuId         = pEntry->DefUnknownCpuId;
 
-        LogRel(("CPUM: Using CPU DB entry '%s' (%s %#x/%#x/%#x %s).\n",
+        LogRel(("CPUM: Using CPU DB entry '%s' (%s %#x/%#x/%#x %s)\n",
                 pEntry->pszName, CPUMR3CpuVendorName((CPUMCPUVENDOR)pEntry->enmVendor),
                 pEntry->uFamily, pEntry->uModel, pEntry->uStepping, CPUMR3MicroarchName(pEntry->enmMicroarch) ));
     }
