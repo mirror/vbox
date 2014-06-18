@@ -57,62 +57,6 @@ setDefaults(void)
     cr_server.pfnNotifyEventCB = NULL;
 }
 
-int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal)
-{
-    int result = 0;
-    bool neg = false;
-    unsigned char iDigit = 0;
-    if (!pszStr || pszStr[0] == '\0')
-        return defaultVal;
-
-    for (;;)
-    {
-        if (pszStr[0] == '\0')
-            return defaultVal;
-
-        if (pszStr[0] == ' ' || pszStr[0] == '\t' || pszStr[0] == '\n')
-        {
-            ++pszStr;
-            continue;
-        }
-
-        if (pszStr[0] == '-')
-        {
-            if (neg)
-                return defaultVal;
-
-            neg = true;
-            ++pszStr;
-            continue;
-        }
-
-        break;
-    }
-
-    for (;;)
-    {
-        unsigned char digit;
-        if (pszStr[0] == '\0')
-        {
-            if (!iDigit)
-                return defaultVal;
-            break;
-        }
-
-        digit = pszStr[0] - '0';
-        if (digit > 9)
-            return defaultVal;
-
-        result *= 10;
-        result += digit;
-        ++iDigit;
-
-        ++pszStr;
-    }
-
-    return !neg ? result : -result;
-}
-
 void crServerSetVBoxConfiguration()
 {
     CRMuralInfo *defaultMural;
@@ -212,7 +156,7 @@ void crServerSetVBoxConfiguration()
     env = crGetenv( "CR_SERVER_DEFAULT_VISUAL_BITS" );
     if (env != NULL && env[0] != '\0')
     {
-        unsigned int bits = (unsigned int)crServerVBoxParseNumerics(env, 0);
+        unsigned int bits = (unsigned int)crStrParseI32(env, 0);
         if (bits <= CR_ALL_BITS)
             cr_server.fVisualBitsDefault = bits;
         else
@@ -224,7 +168,7 @@ void crServerSetVBoxConfiguration()
     env = crGetenv("CR_SERVER_CAPS");
     if (env && env[0] != '\0')
     {
-        cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
+        cr_server.u32Caps = crStrParseI32(env, 0);
         cr_server.u32Caps &= CR_VBOX_CAPS_ALL;
     }
     else
@@ -362,7 +306,7 @@ void crServerSetVBoxConfigurationHGCM()
     env = crGetenv( "CR_SERVER_DEFAULT_VISUAL_BITS" );
     if (env != NULL && env[0] != '\0')
     {
-        unsigned int bits = (unsigned int)crServerVBoxParseNumerics(env, 0);
+        unsigned int bits = (unsigned int)crStrParseI32(env, 0);
         if (bits <= CR_ALL_BITS)
             cr_server.fVisualBitsDefault = bits;
         else
@@ -374,7 +318,7 @@ void crServerSetVBoxConfigurationHGCM()
     env = crGetenv("CR_SERVER_CAPS");
     if (env && env[0] != '\0')
     {
-        cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
+        cr_server.u32Caps = crStrParseI32(env, 0);
         cr_server.u32Caps &= CR_VBOX_CAPS_ALL;
     }
     else

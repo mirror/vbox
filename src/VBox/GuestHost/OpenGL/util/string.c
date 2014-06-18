@@ -531,3 +531,59 @@ done:
 
     return iVer;
 }
+
+int32_t crStrParseI32(const char *pszStr, const int32_t defaultVal)
+{
+    int32_t result = 0;
+    bool neg = false;
+    unsigned char iDigit = 0;
+    if (!pszStr || pszStr[0] == '\0')
+        return defaultVal;
+
+    for (;;)
+    {
+        if (pszStr[0] == '\0')
+            return defaultVal;
+
+        if (pszStr[0] == ' ' || pszStr[0] == '\t' || pszStr[0] == '\n')
+        {
+            ++pszStr;
+            continue;
+        }
+
+        if (pszStr[0] == '-')
+        {
+            if (neg)
+                return defaultVal;
+
+            neg = true;
+            ++pszStr;
+            continue;
+        }
+
+        break;
+    }
+
+    for (;;)
+    {
+        unsigned char digit;
+        if (pszStr[0] == '\0')
+        {
+            if (!iDigit)
+                return defaultVal;
+            break;
+        }
+
+        digit = pszStr[0] - '0';
+        if (digit > 9)
+            return defaultVal;
+
+        result *= 10;
+        result += digit;
+        ++iDigit;
+
+        ++pszStr;
+    }
+
+    return !neg ? result : -result;
+}

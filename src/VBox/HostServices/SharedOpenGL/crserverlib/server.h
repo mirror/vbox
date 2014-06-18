@@ -371,8 +371,6 @@ DECLINLINE(void) crServerCtxSwitchPostprocess(CR_SERVER_CTX_SWITCH *pData)
 
 void crServerInitTmpCtxDispatch();
 
-int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal);
-
 typedef struct CR_FBMAP
 {
     uint8_t Map[(CR_MAX_GUEST_MONITORS+7)/8];

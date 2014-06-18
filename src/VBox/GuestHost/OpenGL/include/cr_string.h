@@ -8,6 +8,7 @@
 #define CR_STRING_H
 
 #include <iprt/cdefs.h>
+#include <iprt/types.h>
 
 RT_C_DECLS_BEGIN
 
@@ -60,6 +61,7 @@ DECLEXPORT(void)    crWordsToString( char *string, int nstring, void *data, int 
 #define CR_GLVERSION_GET_BUILD(_val) CR_GLVERSION_GET_EL((_val), BUILD)
 
 DECLEXPORT(int) crStrParseGlVersion(const char * ver);
+DECLEXPORT(int32_t) crStrParseI32(const char *pszStr, const int32_t defaultVal);
 RT_C_DECLS_END
 
 #endif /* CR_STRING_H */
