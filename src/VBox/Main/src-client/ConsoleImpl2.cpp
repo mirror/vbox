@@ -2814,7 +2814,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 }
                 else
                 {
-                    LogRel(("Shared clipboard service loaded.\n"));
+                    LogRel(("Shared clipboard service loaded\n"));
 
                     i_changeClipboardMode(mode);
 
@@ -2875,7 +2875,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     Log(("Cannot register VBoxDragAndDropSvc extension, rc=%Rrc\n", rc));
                 else
                 {
-                    LogRel(("Drag'n drop service loaded.\n"));
+                    LogRel(("Drag'n drop service loaded\n"));
                     rc = i_changeDnDMode(enmMode);
                 }
             }
@@ -2911,7 +2911,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 }
                 else
                 {
-                    LogRel(("Shared crOpenGL service loaded.\n"));
+                    LogRel(("Shared crOpenGL service loaded\n"));
 
                     /* Setup the service. */
                     VBOXHGCMSVCPARM parm;
@@ -5632,7 +5632,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
         if (RT_FAILURE(rc))
             Log(("Cannot register VBoxGuestControlSvc extension!\n"));
         else
-            LogRel(("Guest Control service loaded.\n"));
+            LogRel(("Guest Control service loaded\n"));
     }
 
     return rc;
