@@ -2306,6 +2306,8 @@ STDMETHODIMP Display::AttachFramebuffer(ULONG aScreenId,
 
     pFBInfo->pFramebuffer = aFramebuffer;
 
+    alock.release();
+
     /* The driver might not have been constructed yet */
     if (mpDrv)
     {
@@ -2317,8 +2319,6 @@ STDMETHODIMP Display::AttachFramebuffer(ULONG aScreenId,
                             pFBInfo->h,
                             pFBInfo->flags);
     }
-
-    alock.release();
 
     Console::SafeVMPtrQuiet ptrVM(mParent);
     if (ptrVM.isOk())
