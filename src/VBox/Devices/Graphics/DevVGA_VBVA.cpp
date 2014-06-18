@@ -1820,6 +1820,19 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
 
             if (u32Version > VGA_SAVEDSTATE_VERSION_WDDM)
             {
+#define VBOX_VHWA_SOLARIS_ARCH "solaris."
+
+                bool fLoadCommands;
+
+                if (u32Version < VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA)
+                {
+                    const char *pcszOsArch = SSMR3HandleHostOSAndArch(pSSM);
+                    Assert(pcszOsArch);
+                    fLoadCommands = !pcszOsArch || RTStrNCmp(pcszOsArch, VBOX_VHWA_SOLARIS_ARCH, sizeof (VBOX_VHWA_SOLARIS_ARCH) - 1);
+                }
+                else
+                    fLoadCommands = true;
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
                 uint32_t cbCmd = sizeof (VBOXVHWACMD_HH_SAVESTATE_LOADPERFORM); /* maximum cmd size */
                 VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_HH_SAVESTATE_LOADPERFORM, 0, cbCmd);
@@ -1834,24 +1847,6 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                     rc = VhwaData.rc;
                     vbvaVHWAHHCommandRelease(pCmd);
                     AssertRCReturn(rc, rc);
-                    bool fLoadCommands = false;
-
-                    if (u32Version < VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA)
-                    {
-                        /* prev versions have a bug that does not allow to distinguish between the sate made with VHWA not available (on solaris box)
-                         * and VHWA disabled */
-
-                        for (uint32_t i = 0; i < pVGAState->cMonitors; ++i)
-                        {
-                            if (VhwaData.ab2DOn[i])
-                            {
-                                fLoadCommands = true;
-                                break;
-                            }
-                        }
-                    }
-                    else
-                        fLoadCommands = true;
 
                     if (fLoadCommands)
                     {
@@ -1878,7 +1873,7 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                     }
                 }
 
-                if (u32Version >= VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA)
+                if (fLoadCommands)
                 {
                     rc = SSMR3GetU32(pSSM, &u32);
                     AssertRCReturn(rc, rc);
