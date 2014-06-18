@@ -22,7 +22,7 @@
 #include "GIMInternal.h"
 #include "GIMHvInternal.h"
 
-#include <iprt/err.h>
+#include <VBox/err.h>
 #include <VBox/vmm/vm.h>
 
 
@@ -69,5 +69,37 @@ VMMR0_INT_DECL(int) GIMR0TermVM(PVM pVM)
             break;
     }
     return VINF_SUCCESS;
+}
+
+/**
+ * Updates the paravirtualized TSC supported by the GIM provider.
+ *
+ * @returns VBox status code.
+ * @retval VINF_SUCCESS if the paravirt. TSC is setup and in use.
+ * @retval VERR_GIM_NOT_ENABLED if no GIM provider is configured for this VM.
+ * @retval VERR_GIM_PVTSC_NOT_AVAILABLE if the GIM provider does not support any
+ *         paravirt. TSC.
+ * @retval VERR_GIM_PVTSC_NOT_IN_USE if the GIM provider supports paravirt. TSC
+ *         but the guest isn't currently using it.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   u64Offset   The computed TSC offset.
+ *
+ * @thread EMT(pVCpu)
+ */
+VMMR0_INT_DECL(int) GIMR0UpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
+{
+    if (!pVM->gim.s.fEnabled)
+        return VERR_GIM_NOT_ENABLED;
+
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_HYPERV:
+            return GIMR0HvUpdateParavirtTsc(pVM, u64Offset);
+
+        default:
+            break;
+    }
+    return VERR_GIM_PVTSC_NOT_AVAILABLE;
 }
 

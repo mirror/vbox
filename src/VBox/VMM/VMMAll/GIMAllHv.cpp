@@ -27,6 +27,10 @@
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/vmm/pdmdev.h>
+
+#include <iprt/asm-amd64-x86.h>
+#include <iprt/spinlock.h>
 
 
 /**
@@ -56,35 +60,6 @@ VMM_INT_DECL(bool) GIMHvIsParavirtTscEnabled(PVM pVM)
 
 
 /**
- * Updates Hyper-V's reference TSC page.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   u64Offset   The computed TSC offset.
- * @thread EMT(pVCpu)
- */
-VMM_INT_DECL(int) GIMHvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
-{
-    Assert(GIMIsEnabled(pVM));
-    bool fHvTscEnabled = MSR_GIM_HV_REF_TSC_IS_ENABLED(pVM->gim.s.u.Hv.u64TscPageMsr);
-    if (!fHvTscEnabled)
-        return VERR_GIM_PVTSC_NOT_ENABLED;
-
-    PGIMHV          pHv      = &pVM->gim.s.u.Hv;
-    PGIMMMIO2REGION pRegion  = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
-    PGIMHVREFTSC    pRefTsc  = (PGIMHVREFTSC)pRegion->CTX_SUFF(pvPage);
-    Assert(pRefTsc);
-
-    /** @todo Protect this with a spinlock! */
-    pRefTsc->u64TscScale  = UINT64_C(0x1000000000000000);
-    pRefTsc->u64TscOffset = u64Offset;
-    ASMAtomicIncU32(&pRefTsc->u32TscSequence);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * MSR read handler for Hyper-V.
  *
  * @returns VBox status code.
@@ -103,7 +78,7 @@ VMM_INT_DECL(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRan
     {
         case MSR_GIM_HV_TIME_REF_COUNT:
         {
-            /* Hyper-V reports the time in 100ns units. */
+            /* Hyper-V reports the time in 100 ns units (10 MHz). */
             uint64_t u64Tsc      = TMCpuTickGet(pVCpu);
             uint64_t u64TscHz    = TMCpuTicksPerSecond(pVM);
             uint64_t u64Tsc100Ns = u64TscHz / UINT64_C(10000000); /* 100 ns */
@@ -128,12 +103,22 @@ VMM_INT_DECL(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRan
             return VINF_SUCCESS;
 
         case MSR_GIM_HV_TSC_FREQ:
-            *puValue = TMCpuTicksPerSecond(pVM);
+#ifndef IN_RING3
+            return VERR_EM_INTERPRETER;
+#else
+            LogRel(("GIM: MSR_GIM_HV_TSC_FREQ %u\n", TMCpuTicksPerSecond(pVM)));
+            //*puValue = TMCpuTicksPerSecond(pVM);
+            *puValue = 2690000000;
             return VINF_SUCCESS;
+#endif
 
         case MSR_GIM_HV_APIC_FREQ:
             /** @todo Fix this later! Get the information from DevApic. */
             *puValue = UINT32_C(1000000000); /* TMCLOCK_FREQ_VIRTUAL */
+            return VINF_SUCCESS;
+
+        case MSR_GIM_HV_RESET:
+            *puValue = 0;
             return VINF_SUCCESS;
 
         default:
@@ -170,9 +155,8 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
             /* Disable the hypercall-page if 0 is written to this MSR. */
             if (!uRawValue)
             {
-                GIMR3Mmio2Unmap(pVM, &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX]);
+                GIMR3HvDisableHypercallPage(pVM);
                 pHv->u64HypercallMsr &= ~MSR_GIM_HV_HYPERCALL_ENABLE_BIT;
-                Log4Func(("Disabled hypercalls\n"));
             }
             pHv->u64GuestOsIdMsr = uRawValue;
             return VINF_SUCCESS;
@@ -195,60 +179,22 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
                 return VINF_SUCCESS;
             }
 
-            PPDMDEVINSR3    pDevIns = pVM->gim.s.pDevInsR3;
-            PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
-            AssertPtr(pDevIns);
-            AssertPtr(pRegion);
-
-            /*
-             * Is the guest disabling the hypercall-page? Allow it regardless of the Guest-OS Id Msr.
-             */
+            /* Is the guest disabling the hypercall-page? Allow it regardless of the Guest-OS Id Msr. */
             if (!fEnable)
             {
-                GIMR3Mmio2Unmap(pVM, pRegion);
+                GIMR3HvDisableHypercallPage(pVM);
                 pHv->u64HypercallMsr = uRawValue;
-                Log4Func(("Disabled hypercalls\n"));
                 return VINF_SUCCESS;
             }
 
-            /*
-             * Map the hypercall-page.
-             */
+            /* Enable the hypercall-page. */
             RTGCPHYS GCPhysHypercallPage = MSR_GIM_HV_HYPERCALL_GUEST_PFN(uRawValue) << PAGE_SHIFT;
-            int rc = GIMR3Mmio2Map(pVM, pRegion, GCPhysHypercallPage, "Hyper-V Hypercall-page");
+            int rc = GIMR3HvEnableHypercallPage(pVM, GCPhysHypercallPage);
             if (RT_SUCCESS(rc))
             {
-                /*
-                 * Patch the hypercall-page.
-                 */
-                if (HMIsEnabled(pVM))
-                {
-                    size_t cbWritten = 0;
-                    rc = HMPatchHypercall(pVM, pRegion->pvPageR3, PAGE_SIZE, &cbWritten);
-                    if (   RT_SUCCESS(rc)
-                        && cbWritten < PAGE_SIZE - 1)
-                    {
-                        uint8_t *pbLast = (uint8_t *)pRegion->pvPageR3 + cbWritten;
-                        *pbLast = 0xc3;  /* RET */
-
-                        pHv->u64HypercallMsr = uRawValue;
-                        LogRelFunc(("Enabled hypercalls at %#RGp\n", GCPhysHypercallPage));
-                        LogRelFunc(("%.*Rhxd\n", cbWritten + 1, (uint8_t *)pRegion->pvPageR3));
-                        return VINF_SUCCESS;
-                    }
-
-                    LogFunc(("MSR_GIM_HV_HYPERCALL: HMPatchHypercall failed. rc=%Rrc cbWritten=%u\n", rc, cbWritten));
-                }
-                else
-                {
-                    /** @todo Handle raw-mode hypercall page patching. */
-                    LogRelFunc(("MSR_GIM_HV_HYPERCALL: raw-mode not yet implemented!\n"));
-                }
-
-                GIMR3Mmio2Unmap(pVM, pRegion);
+                pHv->u64HypercallMsr = uRawValue;
+                return VINF_SUCCESS;
             }
-            else
-                LogFunc(("MSR_GIM_HV_HYPERCALL: GIMR3Mmio2Map failed. rc=%Rrc -> #GP(0)\n", rc));
 
             return VERR_CPUM_RAISE_GP_0;
 #endif  /* !IN_RING3 */
@@ -262,37 +208,41 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
             /* First, update all but the TSC-page enable bit. */
             pHv->u64TscPageMsr = (uRawValue & ~MSR_GIM_HV_REF_TSC_ENABLE_BIT);
 
-            PPDMDEVINSR3    pDevIns = pVM->gim.s.pDevInsR3;
-            PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
-            AssertPtr(pDevIns);
-            AssertPtr(pRegion);
-
-            /*
-             * Is the guest disabling the TSC-page?
-             */
+            /* Is the guest disabling the TSC-page? */
             bool fEnable = RT_BOOL(uRawValue & MSR_GIM_HV_REF_TSC_ENABLE_BIT);
             if (!fEnable)
             {
-                GIMR3Mmio2Unmap(pVM, pRegion);
-                Log4Func(("Disabled TSC-page\n"));
+                GIMR3HvDisableTscPage(pVM);
+                pHv->u64TscPageMsr = uRawValue;
                 return VINF_SUCCESS;
             }
 
-            /*
-             * Map the TSC-page.
-             */
+            /* Enable the TSC-page. */
             RTGCPHYS GCPhysTscPage = MSR_GIM_HV_REF_TSC_GUEST_PFN(uRawValue) << PAGE_SHIFT;
-            int rc = GIMR3Mmio2Map(pVM, pRegion, GCPhysTscPage, "Hyper-V TSC-page");
+            int rc = GIMR3HvEnableTscPage(pVM, GCPhysTscPage);
             if (RT_SUCCESS(rc))
             {
                 pHv->u64TscPageMsr = uRawValue;
-                Log4Func(("MSR_GIM_HV_REF_TSC: Enabled Hyper-V TSC page at %#RGp\n", GCPhysTscPage));
                 return VINF_SUCCESS;
             }
-            else
-                LogFunc(("MSR_GIM_HV_REF_TSC: GIMR3Mmio2Map failed. rc=%Rrc -> #GP(0)\n", rc));
 
             return VERR_CPUM_RAISE_GP_0;
+#endif  /* !IN_RING3 */
+        }
+
+        case MSR_GIM_HV_RESET:
+        {
+#ifndef IN_RING3
+            return VERR_EM_INTERPRETER;
+#else
+            if (MSR_GIM_HV_RESET_IS_SET(uRawValue))
+            {
+                LogRel(("GIM: HyperV: Reset initiated by MSR.\n"));
+                int rc = PDMDevHlpVMReset(pVM->gim.s.pDevInsR3);
+                AssertRC(rc);
+            }
+            /* else: Ignore writes to other bits. */
+            return VINF_SUCCESS;
 #endif  /* !IN_RING3 */
         }
 

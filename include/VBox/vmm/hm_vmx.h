@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -133,6 +133,7 @@ AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr.uAddr, 16);
 AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr, 32);
 AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    40);
 AssertCompileSize(VMXRESTOREHOST, 56);
+AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 
 /** @name Host-state MSR lazy-restoration flags.
  * @{
@@ -778,53 +779,58 @@ typedef EPTPT *PEPTPT;
 /** Pointer to a const extended table. */
 typedef const EPTPT *PCEPTPT;
 
-/**
- * VPID flush types.
+/** @name VMX VPID flush types.
+ *  Warning!! Valid enum members are in accordance to the VT-x spec.
+ * @{
  */
 typedef enum
 {
     /** Invalidate a specific page. */
-    VMX_FLUSH_VPID_INDIV_ADDR                    = 0,
+    VMXFLUSHVPID_INDIV_ADDR                    = 0,
     /** Invalidate one context (specific VPID). */
-    VMX_FLUSH_VPID_SINGLE_CONTEXT                = 1,
+    VMXFLUSHVPID_SINGLE_CONTEXT                = 1,
     /** Invalidate all contexts (all VPIDs). */
-    VMX_FLUSH_VPID_ALL_CONTEXTS                  = 2,
+    VMXFLUSHVPID_ALL_CONTEXTS                  = 2,
     /** Invalidate a single VPID context retaining global mappings. */
-    VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS = 3,
+    VMXFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS = 3,
     /** Unsupported by VirtualBox. */
-    VMX_FLUSH_VPID_NOT_SUPPORTED                 = 0xbad,
+    VMXFLUSHVPID_NOT_SUPPORTED                 = 0xbad0,
     /** Unsupported by CPU. */
-    VMX_FLUSH_VPID_NONE                          = 0xb00,
-    /** 32bit hackishness. */
-    VMX_FLUSH_VPID_32BIT_HACK                    = 0x7fffffff
-} VMX_FLUSH_VPID;
+    VMXFLUSHVPID_NONE                          = 0xbad1
+} VMXFLUSHVPID;
+AssertCompileSize(VMXFLUSHVPID, 4);
+/** @} */
 
-/**
- * EPT flush types.
+/** @name VMX EPT flush types.
+ *  Warning!! Valid enums values below are in accordance to the VT-x spec.
+ * @{
  */
 typedef enum
 {
     /** Invalidate one context (specific EPT). */
-    VMX_FLUSH_EPT_SINGLE_CONTEXT                = 1,
+    VMXFLUSHEPT_SINGLE_CONTEXT                 = 1,
     /* Invalidate all contexts (all EPTs) */
-    VMX_FLUSH_EPT_ALL_CONTEXTS                  = 2,
+    VMXFLUSHEPT_ALL_CONTEXTS                   = 2,
     /** Unsupported by VirtualBox.   */
-    VMX_FLUSH_EPT_NOT_SUPPORTED                 = 0xbad,
+    VMXFLUSHEPT_NOT_SUPPORTED                  = 0xbad0,
     /** Unsupported by CPU. */
-    VMX_FLUSH_EPT_NONE                          = 0xb00,
-    /** 32bit hackishness. */
-    VMX_FLUSH_EPT_32BIT_HACK                    = 0x7fffffff
-} VMX_FLUSH_EPT;
+    VMXFLUSHEPT_NONE                           = 0xbad1
+} VMXFLUSHEPT;
+AssertCompileSize(VMXFLUSHEPT, 4);
 /** @} */
 
-/** @name MSR autoload/store elements
+/** @name VMX MSR autoload/store element.
+ *  In accordance to VT-x spec.
  * @{
  */
 #pragma pack(1)
 typedef struct
 {
+    /** The MSR Id. */
     uint32_t    u32Msr;
+    /** Reserved (MBZ). */
     uint32_t    u32Reserved;
+    /** The MSR value. */
     uint64_t    u64Value;
 } VMXAUTOMSR;
 #pragma pack()
@@ -876,6 +882,7 @@ typedef struct VMXMSRS
 } VMXMSRS;
 /** Pointer to a VMXMSRS struct. */
 typedef VMXMSRS *PVMXMSRS;
+AssertCompileSizeAlignment(VMXMSRS, 8);
 /** @} */
 
 /** @name VMX EFLAGS reserved bits.
@@ -2187,7 +2194,7 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
  * @param   enmFlush    Type of flush
  * @param   pDescriptor Descriptor
  */
-DECLASM(int) VMXR0InvEPT(VMX_FLUSH_EPT enmFlush, uint64_t *pDescriptor);
+DECLASM(int) VMXR0InvEPT(VMXFLUSHEPT enmFlush, uint64_t *pDescriptor);
 
 /**
  * Invalidate a page using invvpid
@@ -2195,7 +2202,7 @@ DECLASM(int) VMXR0InvEPT(VMX_FLUSH_EPT enmFlush, uint64_t *pDescriptor);
  * @param   enmFlush    Type of flush
  * @param   pDescriptor Descriptor
  */
-DECLASM(int) VMXR0InvVPID(VMX_FLUSH_VPID enmFlush, uint64_t *pDescriptor);
+DECLASM(int) VMXR0InvVPID(VMXFLUSHVPID enmFlush, uint64_t *pDescriptor);
 
 /**
  * Executes VMREAD

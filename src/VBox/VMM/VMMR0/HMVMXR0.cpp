@@ -33,6 +33,7 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/tm.h>
+#include <VBox/vmm/gim.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
@@ -335,8 +336,8 @@ typedef FNVMXEXITHANDLER *PFNVMXEXITHANDLER;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush);
-static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr);
+static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMXFLUSHEPT enmFlush);
+static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMXFLUSHVPID enmFlush, RTGCPTR GCPtr);
 static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
                                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntState);
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -1066,7 +1067,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
     PVMXMSRS pMsrs = (PVMXMSRS)pvMsrs;
     if (pMsrs->u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
     {
-        hmR0VmxFlushEpt(NULL /* pVCpu */, VMX_FLUSH_EPT_ALL_CONTEXTS);
+        hmR0VmxFlushEpt(NULL /* pVCpu */, VMXFLUSHEPT_ALL_CONTEXTS);
         pCpu->fFlushAsidBeforeUse = false;
     }
     else
@@ -1697,10 +1698,10 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
  *          supported by the CPU.
  * @remarks Can be called with interrupts disabled.
  */
-static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
+static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMXFLUSHEPT enmFlush)
 {
     uint64_t au64Descriptor[2];
-    if (enmFlush == VMX_FLUSH_EPT_ALL_CONTEXTS)
+    if (enmFlush == VMXFLUSHEPT_ALL_CONTEXTS)
         au64Descriptor[0] = 0;
     else
     {
@@ -1733,14 +1734,14 @@ static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
  *
  * @remarks Can be called with interrupts disabled.
  */
-static void hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr)
+static void hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMXFLUSHVPID enmFlush, RTGCPTR GCPtr)
 {
     NOREF(pVM);
     AssertPtr(pVM);
     Assert(pVM->hm.s.vmx.fVpid);
 
     uint64_t au64Descriptor[2];
-    if (enmFlush == VMX_FLUSH_VPID_ALL_CONTEXTS)
+    if (enmFlush == VMXFLUSHVPID_ALL_CONTEXTS)
     {
         au64Descriptor[0] = 0;
         au64Descriptor[1] = 0;
@@ -1794,7 +1795,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
         {
             if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
             {
-                hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, GCVirt);
+                hmR0VmxFlushVpid(pVM, pVCpu, VMXFLUSHVPID_INDIV_ADDR, GCVirt);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgVirt);
             }
             else
@@ -1960,7 +1961,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
         if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
         {
             for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
-                hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
+                hmR0VmxFlushVpid(pVM, pVCpu, VMXFLUSHVPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
         }
         else
             hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
@@ -2119,11 +2120,11 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
         pVCpu->hm.s.uCurrentAsid   = pCpu->uCurrentAsid;
         if (pCpu->fFlushAsidBeforeUse)
         {
-            if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_SINGLE_CONTEXT)
-                hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_SINGLE_CONTEXT, 0 /* GCPtr */);
-            else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_ALL_CONTEXTS)
+            if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_SINGLE_CONTEXT)
+                hmR0VmxFlushVpid(pVM, pVCpu, VMXFLUSHVPID_SINGLE_CONTEXT, 0 /* GCPtr */);
+            else if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_ALL_CONTEXTS)
             {
-                hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_ALL_CONTEXTS, 0 /* GCPtr */);
+                hmR0VmxFlushVpid(pVM, pVCpu, VMXFLUSHVPID_ALL_CONTEXTS, 0 /* GCPtr */);
                 pCpu->fFlushAsidBeforeUse = false;
             }
             else
@@ -2150,7 +2151,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
             if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
             {
                 for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
-                    hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
+                    hmR0VmxFlushVpid(pVM, pVCpu, VMXFLUSHVPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
             }
             else
                 hmR0VmxFlushVpid(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVpid, 0 /* GCPtr */);
@@ -2225,13 +2226,13 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
         if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT)
         {
             if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT)
-                pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_SINGLE_CONTEXT;
+                pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_SINGLE_CONTEXT;
             else if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
-                pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_ALL_CONTEXTS;
+                pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_ALL_CONTEXTS;
             else
             {
                 /* Shouldn't happen. EPT is supported but no suitable flush-types supported. */
-                pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_NOT_SUPPORTED;
+                pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
 
@@ -2239,14 +2240,14 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
             if (!(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB))
             {
                 LogRel(("hmR0VmxSetupTaggedTlb: Unsupported EPTP memory type %#x.\n", pVM->hm.s.vmx.Msrs.u64EptVpidCaps));
-                pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_NOT_SUPPORTED;
+                pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
         }
         else
         {
             /* Shouldn't happen. EPT is supported but INVEPT instruction is not supported. */
-            pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_NOT_SUPPORTED;
+            pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
     }
@@ -2259,9 +2260,9 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
         if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID)
         {
             if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT)
-                pVM->hm.s.vmx.enmFlushVpid = VMX_FLUSH_VPID_SINGLE_CONTEXT;
+                pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_SINGLE_CONTEXT;
             else if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS)
-                pVM->hm.s.vmx.enmFlushVpid = VMX_FLUSH_VPID_ALL_CONTEXTS;
+                pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_ALL_CONTEXTS;
             else
             {
                 /* Neither SINGLE nor ALL-context flush types for VPID is supported by the CPU. Ignore VPID capability. */
@@ -2269,7 +2270,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
                     LogRel(("hmR0VmxSetupTaggedTlb: Only INDIV_ADDR supported. Ignoring VPID.\n"));
                 if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
                     LogRel(("hmR0VmxSetupTaggedTlb: Only SINGLE_CONTEXT_RETAIN_GLOBALS supported. Ignoring VPID.\n"));
-                pVM->hm.s.vmx.enmFlushVpid = VMX_FLUSH_VPID_NOT_SUPPORTED;
+                pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_NOT_SUPPORTED;
                 pVM->hm.s.vmx.fVpid = false;
             }
         }
@@ -2277,7 +2278,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
         {
             /*  Shouldn't happen. VPID is supported but INVVPID is not supported by the CPU. Ignore VPID capability. */
             Log4(("hmR0VmxSetupTaggedTlb: VPID supported without INVEPT support. Ignoring VPID.\n"));
-            pVM->hm.s.vmx.enmFlushVpid = VMX_FLUSH_VPID_NOT_SUPPORTED;
+            pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_NOT_SUPPORTED;
             pVM->hm.s.vmx.fVpid = false;
         }
     }
@@ -2727,8 +2728,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 #endif
 
     /* Initialize these always, see hmR3InitFinalizeR0().*/
-    pVM->hm.s.vmx.enmFlushEpt  = VMX_FLUSH_EPT_NONE;
-    pVM->hm.s.vmx.enmFlushVpid = VMX_FLUSH_VPID_NONE;
+    pVM->hm.s.vmx.enmFlushEpt  = VMXFLUSHEPT_NONE;
+    pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_NONE;
 
     /* Setup the tagged-TLB flush handlers. */
     int rc = hmR0VmxSetupTaggedTlb(pVM);
@@ -5564,10 +5565,12 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
 {
     int  rc            = VERR_INTERNAL_ERROR_5;
     bool fOffsettedTsc = false;
+    bool fParavirtTsc  = false;
     PVM pVM            = pVCpu->CTX_SUFF(pVM);
     if (pVM->hm.s.vmx.fUsePreemptTimer)
     {
-        uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVCpu, &fOffsettedTsc, &pVCpu->hm.s.vmx.u64TSCOffset);
+        uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVCpu, &fOffsettedTsc, &fParavirtTsc,
+                                                                     &pVCpu->hm.s.vmx.u64TSCOffset);
 
         /* Make sure the returned values have sane upper and lower boundaries. */
         uint64_t u64CpuHz  = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
@@ -5579,7 +5582,32 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE, cPreemptionTickCount);          AssertRC(rc);
     }
     else
-        fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset);
+        fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset, &fParavirtTsc);
+
+    if (fParavirtTsc)
+    {
+        uint64_t const u64CurTsc   = ASMReadTSC();
+        uint64_t const u64LastTick = TMCpuTickGetLastSeen(pVCpu);
+        if (u64CurTsc + pVCpu->hm.s.vmx.u64TSCOffset < u64LastTick)
+        {
+            pVCpu->hm.s.vmx.u64TSCOffset = (u64LastTick - u64CurTsc);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffsetAdjusted);
+        }
+
+        Assert(u64CurTsc + pVCpu->hm.s.vmx.u64TSCOffset >= u64LastTick);
+        rc = GIMR0UpdateParavirtTsc(pVM, pVCpu->hm.s.vmx.u64TSCOffset);
+        if (RT_SUCCESS(rc))
+        {
+            /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
+            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, 0);                                  AssertRC(rc);
+
+            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+            rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);              AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
+            return;
+        }
+        /* else: Shouldn't really fail. If it does, fallback to offsetted TSC mode. */
+    }
 
     if (fOffsettedTsc)
     {
@@ -10357,7 +10385,6 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER,
               ("hmR0VmxExitRdmsr: failed, invalid error code %Rrc\n", rc));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
-
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);

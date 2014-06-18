@@ -35,6 +35,7 @@
 
 #include <VBox/vmm/gvmm.h>
 #include <VBox/vmm/gmm.h>
+#include <VBox/vmm/gim.h>
 #include <VBox/intnet.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/param.h>
@@ -378,16 +379,20 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
 #endif
                     if (RT_SUCCESS(rc))
                     {
-                        GVMMR0DoneInitVM(pVM);
-                        return rc;
+                        rc = GIMR0InitVM(pVM);
+                        if (RT_SUCCESS(rc))
+                        {
+                            GVMMR0DoneInitVM(pVM);
+                            return rc;
+                        }
+
+                        /* bail out*/
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                        PciRawR0TermVM(pVM);
+#endif
                     }
                 }
-
-                /* bail out */
             }
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
-            PciRawR0TermVM(pVM);
-#endif
             HMR0TermVM(pVM);
         }
     }
@@ -422,6 +427,8 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
      */
     if (GVMMR0DoingTermVM(pVM, pGVM))
     {
+        GIMR0TermVM(pVM);
+
         /** @todo I wish to call PGMR0PhysFlushHandyPages(pVM, &pVM->aCpus[idCpu])
          *        here to make sure we don't leak any shared pages if we crash... */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE

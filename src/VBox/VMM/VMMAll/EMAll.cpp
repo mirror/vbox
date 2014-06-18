@@ -1748,7 +1748,7 @@ VMM_INT_DECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
     int rc = CPUMQueryGuestMsr(pVCpu, pRegFrame->ecx, &uValue);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        Assert(rc == VERR_CPUM_RAISE_GP_0);
+        Assert(rc == VERR_CPUM_RAISE_GP_0 || rc == VERR_EM_INTERPRETER);
         Log4(("EM: Refuse RDMSR: rc=%Rrc\n", rc));
         return VERR_EM_INTERPRETER;
     }
