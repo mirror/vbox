@@ -130,7 +130,21 @@ extern CRtsd _PackTSD;
   GET_THREAD(thread);                       \
   ContextInfo *C = thread->currentContext
 
-#define CRPACKSPU_WRITEBACK_WAIT(_thread, _writeback)  CR_WRITEBACK_WAIT((_thread)->netServer.conn, _writeback)
+#ifdef DEBUG_misha
+# define CRPACKSPU_WRITEBACK_ASSERT_ZERO(_writeback) Assert(!(_writeback))
+#else
+# define CRPACKSPU_WRITEBACK_ASSERT_ZERO(_writeback) do {} while (0)
+#endif
+
+#define CRPACKSPU_WRITEBACK_WAIT(_thread, _writeback) do {\
+        if (g_u32VBoxHostCaps & CR_VBOX_CAP_CMDVBVA) { \
+            CRPACKSPU_WRITEBACK_ASSERT_ZERO(_writeback); \
+            (_writeback) = 0; \
+            break; \
+        } \
+        CR_WRITEBACK_WAIT((_thread)->netServer.conn, _writeback); \
+    } while (0)
+
 #if defined(WINDOWS) && defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
 # define CRPACKSPU_IS_WDDM_CRHGSMI() (pack_spu.bRunningUnderWDDM)
 #else
