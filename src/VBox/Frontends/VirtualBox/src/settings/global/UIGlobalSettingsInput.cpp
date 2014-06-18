@@ -533,6 +533,36 @@ void UIHotKeyTableModel::applyFilter()
 }
 
 
+/** Own QStyledItemDelegate implementation. */
+class UIStyledItemDelegate : public QStyledItemDelegate
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor. */
+    UIStyledItemDelegate(QObject *pParent) : QStyledItemDelegate(pParent) {}
+
+private:
+
+    /** Returns the widget used to edit the item specified by @a index for editing.
+      * The @a pParent widget and style @a option are used to control how the editor widget appears.
+      * Besides Qt description copy-pasted above we are installing the hook to redirect editor's sigCommitData signal. */
+    QWidget* createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+};
+
+QWidget* UIStyledItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    /* Call to base-class to get actual editor created: */
+    QWidget *pEditor = QStyledItemDelegate::createEditor(pParent, option, index);
+    /* All the stuff we actually need from UIStyledItemDelegate is to redirect this one signal: */
+    if (qobject_cast<UIHotKeyEditor*>(pEditor) || qobject_cast<UIHostComboEditor*>(pEditor))
+        connect(pEditor, SIGNAL(sigCommitData(QWidget*)), this, SIGNAL(commitData(QWidget*)));
+    /* Return actual editor: */
+    return pEditor;
+}
+
+
 UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const QString &strObjectName)
     : QTableView(pParent)
 {
@@ -557,28 +587,26 @@ UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const
     horizontalHeader()->setResizeMode(UIHotKeyTableSection_Name, QHeaderView::Interactive);
     horizontalHeader()->setResizeMode(UIHotKeyTableSection_Value, QHeaderView::Stretch);
 
-    /* Register delegate editor: */
-    if (QAbstractItemDelegate *pAbstractItemDelegate = itemDelegate())
-    {
-        if (QStyledItemDelegate *pStyledItemDelegate = qobject_cast<QStyledItemDelegate*>(pAbstractItemDelegate))
-        {
-            /* Create new item editor factory: */
-            QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
+    /* Reinstall delegate: */
+    delete itemDelegate();
+    UIStyledItemDelegate *pStyledItemDelegate = new UIStyledItemDelegate(this);
+    setItemDelegate(pStyledItemDelegate);
 
-            /* Register UIHotKeyEditor as the UIHotKey editor: */
-            int iHotKeyTypeId = qRegisterMetaType<UIHotKey>();
-            QStandardItemEditorCreator<UIHotKeyEditor> *pHotKeyItemEditorCreator = new QStandardItemEditorCreator<UIHotKeyEditor>();
-            pNewItemEditorFactory->registerEditor((QVariant::Type)iHotKeyTypeId, pHotKeyItemEditorCreator);
+    /* Create new item editor factory: */
+    QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
 
-            /* Register UIHostComboEditor as the UIHostComboWrapper: */
-            int iHostComboTypeId = qRegisterMetaType<UIHostComboWrapper>();
-            QStandardItemEditorCreator<UIHostComboEditor> *pHostComboItemEditorCreator = new QStandardItemEditorCreator<UIHostComboEditor>();
-            pNewItemEditorFactory->registerEditor((QVariant::Type)iHostComboTypeId, pHostComboItemEditorCreator);
+    /* Register UIHotKeyEditor as the UIHotKey editor: */
+    int iHotKeyTypeId = qRegisterMetaType<UIHotKey>();
+    QStandardItemEditorCreator<UIHotKeyEditor> *pHotKeyItemEditorCreator = new QStandardItemEditorCreator<UIHotKeyEditor>();
+    pNewItemEditorFactory->registerEditor((QVariant::Type)iHotKeyTypeId, pHotKeyItemEditorCreator);
 
-            /* Set configured item editor factory for table delegate: */
-            pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
-        }
-    }
+    /* Register UIHostComboEditor as the UIHostComboWrapper: */
+    int iHostComboTypeId = qRegisterMetaType<UIHostComboWrapper>();
+    QStandardItemEditorCreator<UIHostComboEditor> *pHostComboItemEditorCreator = new QStandardItemEditorCreator<UIHostComboEditor>();
+    pNewItemEditorFactory->registerEditor((QVariant::Type)iHostComboTypeId, pHostComboItemEditorCreator);
+
+    /* Set configured item editor factory for table delegate: */
+    pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
 }
 
 void UIHotKeyTable::sltHandleShortcutsLoaded()
@@ -590,4 +618,6 @@ void UIHotKeyTable::sltHandleShortcutsLoaded()
     sortByColumn(UIHotKeyTableSection_Name, Qt::AscendingOrder);
     setSortingEnabled(true);
 }
+
+#include "UIGlobalSettingsInput.moc"
 

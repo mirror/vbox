@@ -93,6 +93,11 @@ class UIHotKeyEditor : public QIWithRetranslateUI<QWidget>
     Q_OBJECT;
     Q_PROPERTY(UIHotKey hotKey READ hotKey WRITE setHotKey USER true);
 
+signals:
+
+    /** Notifies listener about data should be committed. */
+    void sigCommitData(QWidget *pThis);
+
 public:
 
     /* Constructor: */

@@ -151,6 +151,8 @@ void UIHotKeyEditor::sltReset()
     drawSequence();
     /* Move the focut to text-field: */
     m_pLineEdit->setFocus();
+    /* Commit data to the listener: */
+    emit sigCommitData(this);
 }
 
 void UIHotKeyEditor::sltClear()
@@ -161,6 +163,8 @@ void UIHotKeyEditor::sltClear()
     drawSequence();
     /* Move the focut to text-field: */
     m_pLineEdit->setFocus();
+    /* Commit data to the listener: */
+    emit sigCommitData(this);
 }
 
 void UIHotKeyEditor::retranslateUi()
@@ -435,6 +439,8 @@ void UIHotKeyEditor::reflectSequence()
     }
     /* Save what we've got: */
     m_hotKey.setSequence(strSequence);
+    /* Commit data to the listener: */
+    emit sigCommitData(this);
 }
 
 void UIHotKeyEditor::drawSequence()
