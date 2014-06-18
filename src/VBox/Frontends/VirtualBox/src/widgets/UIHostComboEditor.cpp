@@ -322,6 +322,12 @@ UIHostComboEditor::UIHostComboEditor(QWidget *pParent)
     prepare();
 }
 
+void UIHostComboEditor::sltCommitData()
+{
+    /* Commit data to the listener: */
+    emit sigCommitData(this);
+}
+
 void UIHostComboEditor::prepare()
 {
     /* Configure self: */
@@ -337,6 +343,7 @@ void UIHostComboEditor::prepare()
         {
             /* Configure UIHostComboEditorPrivate instance: */
             setFocusProxy(m_pEditor);
+            connect(m_pEditor, SIGNAL(sigDataChanged()), this, SLOT(sltCommitData()));
         }
         /* Create 'clear' tool-button: */
         m_pButtonClear = new QIToolButton;
@@ -445,6 +452,8 @@ void UIHostComboEditorPrivate::sltClear()
     updateText();
     /* Move the focus to text-field: */
     setFocus();
+    /* Notify data changed: */
+    emit sigDataChanged();
 }
 
 #ifdef Q_WS_WIN
@@ -703,6 +712,8 @@ void UIHostComboEditorPrivate::sltReleasePendingKeys()
         m_releasedKeys.clear();
         if (m_pressedKeys.isEmpty())
             m_fStartNewSequence = true;
+        /* Notify data changed: */
+        emit sigDataChanged();
     }
     /* Make sure the user see what happens: */
     updateText();
@@ -731,9 +742,10 @@ bool UIHostComboEditorPrivate::processKeyEvent(int iKeyCode, bool fKeyPress)
             /* Remember pressed symbol: */
             m_pressedKeys << iKeyCode;
             m_shownKeys.insert(iKeyCode, UINativeHotKey::toString(iKeyCode));
-
             /* Remember what we already started a sequence: */
             m_fStartNewSequence = false;
+            /* Notify data changed: */
+            emit sigDataChanged();
         }
     }
     /* Key release: */

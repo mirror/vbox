@@ -81,10 +81,20 @@ class UIHostComboEditor : public QIWithRetranslateUI<QWidget>
     Q_OBJECT;
     Q_PROPERTY(UIHostComboWrapper combo READ combo WRITE setCombo USER true);
 
+signals:
+
+    /** Notifies listener about data should be committed. */
+    void sigCommitData(QWidget *pThis);
+
 public:
 
     /** Constructs host-combo editor for passed @a pParent. */
     UIHostComboEditor(QWidget *pParent);
+
+private slots:
+
+    /** Notifies listener about data should be committed. */
+    void sltCommitData();
 
 private:
 
@@ -109,6 +119,11 @@ private:
 class UIHostComboEditorPrivate : public QLineEdit
 {
     Q_OBJECT;
+
+signals:
+
+    /** Notifies parent about data changed. */
+    void sigDataChanged();
 
 public:
 
