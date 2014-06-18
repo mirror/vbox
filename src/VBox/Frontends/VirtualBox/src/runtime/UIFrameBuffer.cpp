@@ -175,6 +175,9 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(WinId)(LONG64 *pWinId)
 
 STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
+    CDisplaySourceBitmap sourceBitmap;
+    m_pMachineView->session().GetConsole().GetDisplay().QuerySourceBitmap(uScreenId, sourceBitmap);
+
     /* Lock access to frame-buffer: */
     lock();
 
@@ -200,8 +203,7 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
     m_pendingSyncVisibleRegion = QRegion();
 
     /* Acquire new pending bitmap: */
-    m_pendingSourceBitmap = 0;
-    m_pMachineView->session().GetConsole().GetDisplay().QuerySourceBitmap(uScreenId, m_pendingSourceBitmap);
+    m_pendingSourceBitmap = sourceBitmap;
 
     /* Widget resize is NOT thread-safe and *probably* never will be,
      * We have to notify machine-view with the async-signal to perform resize operation. */
