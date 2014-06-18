@@ -273,13 +273,13 @@ proxy_rtadvd_send_multicast(struct netif *proxy_netif)
 
     ph = pbuf_alloc(PBUF_IP, 0, PBUF_RAM);
     if (ph == NULL) {
-        DPRINTF0(("%s: failed to allocate RA header pbuf", __func__));
+        DPRINTF0(("%s: failed to allocate RA header pbuf\n", __func__));
         return;
     }
 
     pp = pbuf_alloc(PBUF_RAW, unsolicited_ra_payload_length, PBUF_ROM);
     if (pp == NULL) {
-        DPRINTF0(("%s: failed to allocate RA payload pbuf", __func__));
+        DPRINTF0(("%s: failed to allocate RA payload pbuf\n", __func__));
         pbuf_free(ph);
         return;
     }
@@ -294,7 +294,7 @@ proxy_rtadvd_send_multicast(struct netif *proxy_netif)
                           IP6_NEXTH_ICMP6,
                           proxy_netif);
     if (error != ERR_OK) {
-        DPRINTF0(("%s: failed to send RA (err=%d)", __func__, error));
+        DPRINTF0(("%s: failed to send RA (err=%d)\n", __func__, error));
     }
 
     pbuf_free(pp);
