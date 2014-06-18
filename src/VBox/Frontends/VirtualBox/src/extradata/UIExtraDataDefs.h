@@ -405,5 +405,11 @@ enum HiDPIOptimizationType
     HiDPIOptimizationType_Performance
 };
 
+/** Runtime UI: Mini-toolbar alignment. */
+enum MiniToolbarAlignment
+{
+    MiniToolbarAlignment_Bottom,
+    MiniToolbarAlignment_Top
+};
 
 #endif /* !___UIExtraDataDefs_h___ */

@@ -276,6 +276,21 @@ public:
     /** Returns whether VM should perform HID LEDs synchronization. */
     bool hidLedsSyncState(const QString &strID) const;
 
+    /** Returns whether mini-toolbar should be shown for full and seamless screens. */
+    bool showMiniToolbar(const QString &strID) const;
+    /** Defines whether mini-toolbar should be @a fShown for full and seamless screens. */
+    void setShowMiniToolbar(bool fShown, const QString &strID);
+
+    /** Returns whether mini-toolbar should auto-hide itself. */
+    bool autoHideMiniToolbar(const QString &strID) const;
+    /** Defines whether mini-toolbar should @a fAutoHide itself. */
+    void setAutoHideMiniToolbar(bool fAutoHide, const QString &strID);
+
+    /** Returns mini-toolbar alignment. */
+    Qt::AlignmentFlag miniToolbarAlignment(const QString &strID) const;
+    /** Returns mini-toolbar @a alignment. */
+    void setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QString &strID);
+
 private slots:
 
     /** Handles 'extra-data change' event: */

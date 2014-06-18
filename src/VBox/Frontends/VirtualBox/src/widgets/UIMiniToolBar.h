@@ -70,8 +70,8 @@ public:
 
     /* Constructor/destructor: */
     UIRuntimeMiniToolBar(QWidget *pParent,
-                         Qt::Alignment alignment,
                          IntegrationMode integrationMode,
+                         Qt::Alignment alignment,
                          bool fAutoHide = true);
     ~UIRuntimeMiniToolBar();
 
@@ -130,8 +130,8 @@ private:
     void integrate();
 
     /* Variables: General stuff: */
-    Qt::Alignment m_alignment;
     IntegrationMode m_integrationMode;
+    Qt::Alignment m_alignment;
     bool m_fAutoHide;
 
     /* Variables: Contents stuff: */

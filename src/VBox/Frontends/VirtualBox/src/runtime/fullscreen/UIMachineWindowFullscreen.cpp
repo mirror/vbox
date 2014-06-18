@@ -233,23 +233,15 @@ void UIMachineWindowFullscreen::prepareVisualState()
 
 void UIMachineWindowFullscreen::prepareMiniToolbar()
 {
-    /* Get machine: */
-    CMachine m = machine();
-
-    /* Make sure mini-toolbar is necessary: */
-    bool fIsActive = m.GetExtraData(GUI_ShowMiniToolBar) != "no";
-    if (!fIsActive)
+    /* Make sure mini-toolbar is not restricted: */
+    if (!gEDataManager->showMiniToolbar(vboxGlobal().managedVMUuid()))
         return;
 
-    /* Get the mini-toolbar alignment: */
-    bool fIsAtTop = m.GetExtraData(GUI_MiniToolBarAlignment) == "top";
-    /* Get the mini-toolbar auto-hide feature availability: */
-    bool fIsAutoHide = m.GetExtraData(GUI_MiniToolBarAutoHide) != "off";
     /* Create mini-toolbar: */
     m_pMiniToolBar = new UIRuntimeMiniToolBar(this,
-                                              fIsAtTop ? Qt::AlignTop : Qt::AlignBottom,
                                               IntegrationMode_Embedded,
-                                              fIsAutoHide);
+                                              gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
+                                              gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
     QList<QMenu*> menus;
     RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
     RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
@@ -274,7 +266,7 @@ void UIMachineWindowFullscreen::cleanupMiniToolbar()
         return;
 
     /* Save mini-toolbar settings: */
-    machine().SetExtraData(GUI_MiniToolBarAutoHide, m_pMiniToolBar->autoHide() ? QString() : "off");
+    gEDataManager->setAutoHideMiniToolbar(m_pMiniToolBar->autoHide(), vboxGlobal().managedVMUuid());
     /* Delete mini-toolbar: */
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;

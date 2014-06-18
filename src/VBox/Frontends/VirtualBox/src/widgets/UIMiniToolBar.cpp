@@ -41,13 +41,13 @@
 #endif /* !Q_WS_X11 */
 
 UIRuntimeMiniToolBar::UIRuntimeMiniToolBar(QWidget *pParent,
-                                           Qt::Alignment alignment,
                                            IntegrationMode integrationMode,
-                                           bool fAutoHide /* = true*/)
+                                           Qt::Alignment alignment,
+                                           bool fAutoHide /* = true */)
     : QWidget(pParent)
     /* Variables: General stuff: */
-    , m_alignment(alignment)
     , m_integrationMode(integrationMode)
+    , m_alignment(alignment)
     , m_fAutoHide(fAutoHide)
     /* Variables: Contents stuff: */
     , m_pMdiArea(0)
