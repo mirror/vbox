@@ -54,6 +54,7 @@ template<> bool canConvert<IndicatorType>() { return true; }
 template<> bool canConvert<MachineCloseAction>() { return true; }
 template<> bool canConvert<GuruMeditationHandlerType>() { return true; }
 template<> bool canConvert<HiDPIOptimizationType>() { return true; }
+template<> bool canConvert<MiniToolbarAlignment>() { return true; }
 
 /* QString <= SizeSuffix: */
 template<> QString toString(const SizeSuffix &sizeSuffix)
@@ -931,7 +932,7 @@ template<> GlobalSettingsPageType fromInternalString<GlobalSettingsPageType>(con
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;    QList<GlobalSettingsPageType> values;
+    QStringList keys;     QList<GlobalSettingsPageType> values;
     keys << "General";    values << GlobalSettingsPageType_General;
     keys << "Input";      values << GlobalSettingsPageType_Input;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -1234,5 +1235,34 @@ template<> HiDPIOptimizationType fromInternalString<HiDPIOptimizationType>(const
         return HiDPIOptimizationType_Performance;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strOptimizationType, Qt::CaseInsensitive)));
+}
+
+/* QString <= MiniToolbarAlignment: */
+template<> QString toInternalString(const MiniToolbarAlignment &miniToolbarAlignment)
+{
+    /* Return corresponding QString representation for passed enum value: */
+    switch (miniToolbarAlignment)
+    {
+        case MiniToolbarAlignment_Bottom: return "Bottom";
+        case MiniToolbarAlignment_Top:    return "Top";
+        default: AssertMsgFailed(("No text for '%d'", miniToolbarAlignment)); break;
+    }
+    /* Return QString() by default: */
+    return QString();
+}
+
+/* MiniToolbarAlignment <= QString: */
+template<> MiniToolbarAlignment fromInternalString<MiniToolbarAlignment>(const QString &strMiniToolbarAlignment)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys; QList<MiniToolbarAlignment> values;
+    keys << "Bottom"; values << MiniToolbarAlignment_Bottom;
+    keys << "Top";    values << MiniToolbarAlignment_Top;
+    /* Bottom type for unknown words: */
+    if (!keys.contains(strMiniToolbarAlignment, Qt::CaseInsensitive))
+        return MiniToolbarAlignment_Bottom;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strMiniToolbarAlignment, Qt::CaseInsensitive)));
 }
 

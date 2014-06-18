@@ -22,9 +22,10 @@
 #include <QLineEdit>
 
 /* GUI includes: */
-#include "UIMachineSettingsGeneral.h"
-#include "UIMessageCenter.h"
 #include "QIWidgetValidator.h"
+#include "UIMachineSettingsGeneral.h"
+#include "UIExtraDataManager.h"
+#include "UIMessageCenter.h"
 #include "UIConverter.h"
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
@@ -105,10 +106,8 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* Gather general data: */
     generalData.m_strName = m_machine.GetName();
     generalData.m_strGuestOsTypeId = m_machine.GetOSTypeId();
-    QString strShowMiniToolBar = m_machine.GetExtraData(GUI_ShowMiniToolBar);
-    generalData.m_fShowMiniToolBar = strShowMiniToolBar != "no";
-    QString strMiniToolBarAlignment = m_machine.GetExtraData(GUI_MiniToolBarAlignment);
-    generalData.m_fMiniToolBarAtTop = strMiniToolBarAlignment == "top";
+    generalData.m_fShowMiniToolBar = gEDataManager->showMiniToolbar(m_machine.GetId());
+    generalData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
     generalData.m_strSnapshotsFolder = m_machine.GetSnapshotFolder();
     generalData.m_strSnapshotsHomeDir = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
     generalData.m_clipboardMode = m_machine.GetClipboardMode();
@@ -188,8 +187,8 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
             /* Advanced tab: */
             m_machine.SetClipboardMode(generalData.m_clipboardMode);
             m_machine.SetDnDMode(generalData.m_dndMode);
-            m_machine.SetExtraData(GUI_ShowMiniToolBar, generalData.m_fShowMiniToolBar ? "yes" : "no");
-            m_machine.SetExtraData(GUI_MiniToolBarAlignment, generalData.m_fMiniToolBarAtTop ? "top" : "bottom");
+            gEDataManager->setShowMiniToolbar(generalData.m_fShowMiniToolBar, m_machine.GetId());
+            gEDataManager->setMiniToolbarAlignment(generalData.m_fMiniToolBarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
             /* Description tab: */
             m_machine.SetDescription(generalData.m_strDescription);
         }

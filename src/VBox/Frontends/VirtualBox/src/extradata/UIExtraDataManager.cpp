@@ -954,6 +954,52 @@ bool UIExtraDataManager::hidLedsSyncState(const QString &strID) const
     return !isFeatureRestricted(GUI_HidLedsSync, strID);
 }
 
+bool UIExtraDataManager::showMiniToolbar(const QString &strID) const
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_ShowMiniToolBar, strID);
+}
+
+void UIExtraDataManager::setShowMiniToolbar(bool fShown, const QString &strID)
+{
+    /* 'False' if feature restricted, null-string otherwise: */
+    setExtraDataString(GUI_ShowMiniToolBar, toFeatureRestricted(!fShown), strID);
+}
+
+bool UIExtraDataManager::autoHideMiniToolbar(const QString &strID) const
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_MiniToolBarAutoHide, strID);
+}
+
+void UIExtraDataManager::setAutoHideMiniToolbar(bool fAutoHide, const QString &strID)
+{
+    /* 'False' if feature restricted, null-string otherwise: */
+    setExtraDataString(GUI_MiniToolBarAutoHide, toFeatureRestricted(!fAutoHide), strID);
+}
+
+Qt::AlignmentFlag UIExtraDataManager::miniToolbarAlignment(const QString &strID) const
+{
+    /* Return Qt::AlignBottom unless MiniToolbarAlignment_Top specified separately: */
+    switch (gpConverter->fromInternalString<MiniToolbarAlignment>(extraDataString(GUI_MiniToolBarAlignment, strID)))
+    {
+        case MiniToolbarAlignment_Top: return Qt::AlignTop;
+        default: break;
+    }
+    return Qt::AlignBottom;
+}
+
+void UIExtraDataManager::setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QString &strID)
+{
+    /* Remove record unless Qt::AlignTop specified separately: */
+    switch (alignment)
+    {
+        case Qt::AlignTop: setExtraDataString(GUI_MiniToolBarAlignment, gpConverter->toInternalString(MiniToolbarAlignment_Top), strID); return;
+        default: break;
+    }
+    setExtraDataString(GUI_MiniToolBarAlignment, QString(), strID);
+}
+
 void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)
 {
     /* Re-cache value only if strMachineID known already: */
