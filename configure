@@ -2116,6 +2116,26 @@ check_gsoap()
 
 
 #
+# Check Xcode path
+#
+check_xcode_sdk_path()
+{
+    # Check if WITH_XCODE_DIR is set.
+    if [ -z "$WITH_XCODE_DIR" ]; then
+        echo "Please specify --with-xcode-dir option."
+        return 0
+    fi
+
+    # Check if specified path exists and is a directory.
+    if [ -d "$1" ]; then
+        return 1
+    else
+        echo "Xcode path [$1] not found."
+        return 0
+    fi
+}
+
+#
 # Determines the Darwin version.
 # @todo This should really check the Xcode/SDK version.
 #
@@ -2124,6 +2144,33 @@ check_darwinversion()
   test_header "Darwin version"
   darwin_ver=`uname -r`
   case "$darwin_ver" in
+    14\.*)
+      check_xcode_sdk_path "$WITH_XCODE_SDK_DIR"
+      [ $? -eq 1 ] || fail
+      darwin_ver="10.10" # Yosemite
+      sdk=$WITH_XCODE_DIR/Developer/SDKs/MacOSX10.6.sdk
+      cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
+      cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$WITH_XCODE_DIR/Developer"
+      ;;
+    13\.*)
+      check_xcode_sdk_path "$WITH_XCODE_DIR"
+      [ $? -eq 1 ] || fail
+      darwin_ver="10.9" # Mavericks
+      sdk=$WITH_XCODE_DIR/Developer/SDKs/MacOSX10.6.sdk
+      cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
+      cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$WITH_XCODE_DIR/Developer"
+      ;;
+    12\.*)
+      darwin_ver="10.8" # Mountain Lion
+      if [ ! -z "$WITH_XCODE_DIR" ]; then
+        sdk=$WITH_XCODE_DIR/Developer/SDKs/MacOSX10.6.sdk
+        cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
+        cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$WITH_XCODE_DIR/Developer"
+      else
+        sdk=/Developer/SDKs/MacOSX10.6.sdk
+      fi
+      CXX_FLAGS="-mmacosx-version-min=10.6 -isysroot $sdk -Wl,-syslibroot,$sdk"
+      ;;
     11\.*)
       darwin_ver="10.7" # Lion
       sdk=/Developer/SDKs/MacOSX10.6.sdk
@@ -2258,6 +2305,9 @@ Paths:
   --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
   --with-makeself=PATH     location of makeself [$MAKESELF]
 EOF
+[ "$OS"   = "darwin" ] && echo "  --with-xcode-dir=DIR     custom path to Xcode root directory; it is assumed that Xcode"
+[ "$OS"   = "darwin" ] && echo "                           contains OS X 10.6 SDK (required for Mountain Lion and newer hosts"
+[ "$OS"   = "darwin" ] && echo "                           only, ignored for the rest)"
 [ "$OS"    = "linux" ] && echo "  --with-linux=DIR         Linux kernel source directory [$LINUX]"
 [ $WITH_QT4    -eq 1 ] && echo "  --with-qt-dir=DIR        directory for Qt4 headers/libraries [pkgconfig]"
 [ $WITH_GSOAP  -eq 1 ] && echo "  --with-gsoap-dir=PATH    directory for gSOAP compiler/headers/libraries"
@@ -2303,6 +2353,7 @@ if [ "$OS" = "darwin" ]; then
   BUILD_LIBVPX=1
   [ $OSE -eq 1 ] || BUILD_LIBCURL=1
   [ $OSE -eq 1 ] && WITH_LIBVPX=0
+  WITH_XCODE_DIR=""
 elif [ "$OS" = "haiku" ]; then
   #WITH_SDL=0
   WITH_SDL_TTF=0
@@ -2326,7 +2377,7 @@ elif [ "$OS" = "solaris" ]; then
 fi
 
 # scan command line options
-for option in $*; do
+for option in "$@"; do
   case "$option" in
     --help|-help|-h)
       show_help
@@ -2370,6 +2421,10 @@ for option in $*; do
       ;;
     --with-iasl=*)
       IASL=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-xcode-dir=*)
+      WITH_XCODE_DIR=`echo $option | cut -d'=' -f2`
+      echo $option
       ;;
     --with-linux=*)
       LINUX=`echo $option | cut -d'=' -f2`
