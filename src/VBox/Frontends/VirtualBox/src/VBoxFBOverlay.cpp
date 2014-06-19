@@ -31,7 +31,7 @@
 #include "VBoxFBOverlay.h"
 #include "UIMessageCenter.h"
 #include "UIPopupCenter.h"
-#include "UIExtraDataDefs.h"
+#include "UIExtraDataManager.h"
 #include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -5776,24 +5776,19 @@ int VBoxVHWATextureImage::setCKey (VBoxVHWAGlProgramVHWA * pProgram, const VBoxV
 
 VBoxVHWASettings::VBoxVHWASettings (CSession &session)
 {
-    CMachine machine = session.GetMachine();
+    const QString strMachineID = session.GetMachine().GetId();
 
-    QString str = machine.GetExtraData (GUI_Accelerate2D_StretchLinear);
-    mStretchLinearEnabled = str != "off";
+    mStretchLinearEnabled = gEDataManager->useLinearStretch(strMachineID);
 
     uint32_t aFourccs[VBOXVHWA_NUMFOURCC];
     int num = 0;
-    str = machine.GetExtraData (GUI_Accelerate2D_PixformatAYUV);
-    if (str != "off")
+    if (gEDataManager->usePixelFormatAYUV(strMachineID))
         aFourccs[num++] = FOURCC_AYUV;
-    str = machine.GetExtraData (GUI_Accelerate2D_PixformatUYVY);
-    if (str != "off")
+    if (gEDataManager->usePixelFormatUYVY(strMachineID))
         aFourccs[num++] = FOURCC_UYVY;
-    str = machine.GetExtraData (GUI_Accelerate2D_PixformatYUY2);
-    if (str != "off")
+    if (gEDataManager->usePixelFormatYUY2(strMachineID))
         aFourccs[num++] = FOURCC_YUY2;
-    str = machine.GetExtraData (GUI_Accelerate2D_PixformatYV12);
-    if (str != "off")
+    if (gEDataManager->usePixelFormatYV12(strMachineID))
         aFourccs[num++] = FOURCC_YV12;
 
     mFourccEnabledCount = num;
