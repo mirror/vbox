@@ -2242,6 +2242,7 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
         uint64_t u64LastTick = TMCpuTickGetLastSeen(pVCpu);
         if (fParavirtTsc)
         {
+#if 0
             if (u64CurTSC + pVmcb->ctrl.u64TSCOffset > u64LastTick)
             {
                 pVmcb->ctrl.u64TSCOffset = u64LastTick - u64CurTSC;
@@ -2249,6 +2250,7 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
             }
             int rc = GIMR0UpdateParavirtTsc(pVCpu->CTX_SUFF(pVM), pVmcb->ctrl.u64TSCOffset);
             AssertRC(rc);
+#endif
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
         }
 
