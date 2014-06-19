@@ -310,7 +310,7 @@ void UIExtraDataManager::setModeForWizard(WizardType type, WizardMode mode)
         setExtraDataStringList(GUI_HideDescriptionForWizards, newValue);
 }
 
-QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pHintWidget /* = 0 */) const
+QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget) const
 {
     /* Load corresponding extra-data: */
     const QStringList data = extraDataStringList(GUI_LastSelectorWindowPosition);
@@ -334,9 +334,9 @@ QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pHintWidget /* = 0 */)
     /* Use geometry (loaded or default): */
     QRect geometry = fOk ? QRect(iX, iY, iW, iH) : QRect(0, 0, 770, 550);
 
-    /* Take hint-widget into account: */
-    if (pHintWidget)
-        geometry.setSize(geometry.size().expandedTo(pHintWidget->minimumSizeHint()));
+    /* Take widget into account: */
+    if (pWidget)
+        geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
     /* Get screen-geometry [of screen with point (iX, iY) if possible]: */
     const QRect screenGeometry = fOk ? QApplication::desktop()->availableGeometry(QPoint(iX, iY)) :
@@ -359,7 +359,7 @@ bool UIExtraDataManager::isSelectorWindowShouldBeMaximized() const
     const QStringList data = extraDataStringList(GUI_LastSelectorWindowPosition);
 
     /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_LastWindowState_Max;
+    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
 void UIExtraDataManager::setSelectorWindowGeometry(const QRect &geometry, bool fMaximized)
@@ -371,7 +371,7 @@ void UIExtraDataManager::setSelectorWindowGeometry(const QRect &geometry, bool f
     data << QString::number(geometry.width());
     data << QString::number(geometry.height());
     if (fMaximized)
-        data << GUI_LastWindowState_Max;
+        data << GUI_Geometry_State_Max;
 
     /* Re-cache corresponding extra-data: */
     setExtraDataStringList(GUI_LastSelectorWindowPosition, data);
@@ -558,7 +558,7 @@ bool UIExtraDataManager::isMachineWindowShouldBeMaximized(UIVisualStateType visu
     const QStringList data = extraDataStringList(strKey, strId);
 
     /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_LastWindowState_Max;
+    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
 void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QString &strId)
@@ -579,7 +579,7 @@ void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateT
     data << QString::number(geometry.width());
     data << QString::number(geometry.height());
     if (fMaximized)
-        data << GUI_LastWindowState_Max;
+        data << GUI_Geometry_State_Max;
 
     /* Re-cache corresponding extra-data: */
     setExtraDataStringList(strKey, data, strId);
@@ -911,6 +911,73 @@ QString UIExtraDataManager::machineWindowNamePostfix(const QString &strID) const
     return extraDataString(GUI_MachineWindowNamePostfix, strID);
 }
 #endif /* !Q_WS_MAC */
+
+QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QString &strID) const
+{
+    /* Load corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_Geometry_InformationWindow, strID);
+
+    /* Parse loaded data: */
+    int iX = 0, iY = 0, iW = 0, iH = 0;
+    bool fOk = data.size() >= 4;
+    do
+    {
+        if (!fOk) break;
+        iX = data[0].toInt(&fOk);
+        if (!fOk) break;
+        iY = data[1].toInt(&fOk);
+        if (!fOk) break;
+        iW = data[2].toInt(&fOk);
+        if (!fOk) break;
+        iH = data[3].toInt(&fOk);
+    }
+    while (0);
+
+    /* Use geometry (loaded or default): */
+    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : QRect(0, 0, 600, 450);
+
+    /* Take hint-widget into account: */
+    if (pWidget)
+        geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
+
+    /* Get screen-geometry [of screen with point (iX, iY) if possible]: */
+    const QRect screenGeometry = fOk ? QApplication::desktop()->availableGeometry(QPoint(iX, iY)) :
+                                       QApplication::desktop()->availableGeometry();
+
+    /* Make sure resulting geometry is within current bounds: */
+    geometry = geometry.intersected(screenGeometry);
+
+    /* Move default-geometry to pParentWidget' geometry center: */
+    if (!fOk && pParentWidget)
+        geometry.moveCenter(pParentWidget->geometry().center());
+
+    /* Return result: */
+    return geometry;
+}
+
+bool UIExtraDataManager::isInformationWindowShouldBeMaximized(const QString &strID) const
+{
+    /* Load corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_Geometry_InformationWindow, strID);
+
+    /* Make sure 5th item has required value: */
+    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+}
+
+void UIExtraDataManager::setInformationWindowGeometry(const QRect &geometry, bool fMaximized, const QString &strID)
+{
+    /* Serialize passed values: */
+    QStringList data;
+    data << QString::number(geometry.x());
+    data << QString::number(geometry.y());
+    data << QString::number(geometry.width());
+    data << QString::number(geometry.height());
+    if (fMaximized)
+        data << GUI_Geometry_State_Max;
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_Geometry_InformationWindow, data, strID);
+}
 
 GuruMeditationHandlerType UIExtraDataManager::guruMeditationHandlerType(const QString &strID) const
 {

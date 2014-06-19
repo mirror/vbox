@@ -237,7 +237,7 @@ private:
     UIAction *m_pAboutAction;
 
     /* Other variables: */
-    QRect m_normalGeo;
+    QRect m_geometry;
 };
 
 #endif // __UISelectorWindow_h__

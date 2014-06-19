@@ -64,10 +64,6 @@ protected:
 
     /** Common event-handler. */
     bool event(QEvent *pEvent);
-    /** Resize event-handler. */
-    void resizeEvent(QResizeEvent *pEvent);
-    /** Show event-handler. */
-    void showEvent(QShowEvent *pEvent);
 
 private slots:
 
@@ -126,18 +122,8 @@ private:
     static UIVMInfoDialog *m_spInstance;
     /** Machine-window to center dialog according. */
     UIMachineWindow       *m_pMachineWindow;
-    /** Whether dialog was polished. */
-    bool                   m_fIsPolished;
-    /** @} */
-
-    /** @name Geometry variables.
-     * @{ */
-    /** Current dialog width. */
-    int                m_iWidth;
-    /** Current dialog height. */
-    int                m_iHeight;
-    /** Whether dialog maximized. */
-    bool               m_fMax;
+    /** Current dialog geometry. */
+    QRect                  m_geometry;
     /** @} */
 
     /** @name Widget variables.

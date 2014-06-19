@@ -26,16 +26,17 @@
 
 /* GUI includes: */
 #include "UIVMInfoDialog.h"
+#include "UIExtraDataManager.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
-#include "VBoxGlobal.h"
 #include "QITabWidget.h"
-#include "VBoxUtils.h"
 #include "QIDialogButtonBox.h"
+#include "VBoxGlobal.h"
+#include "VBoxUtils.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -80,8 +81,6 @@ void UIVMInfoDialog::invoke(UIMachineWindow *pMachineWindow)
 UIVMInfoDialog::UIVMInfoDialog(UIMachineWindow *pMachineWindow)
     : QIWithRetranslateUI<QMainWindow>(0)
     , m_pMachineWindow(pMachineWindow)
-    , m_fIsPolished(false)
-    , m_iWidth(0), m_iHeight(0), m_fMax(false)
     , m_pTabWidget(0)
     , m_session(pMachineWindow->session())
     , m_pTimer(new QTimer(this))
@@ -275,11 +274,27 @@ bool UIVMInfoDialog::event(QEvent *pEvent)
     /* Process required events: */
     switch (pEvent->type())
     {
-        /* Store window state for this VM: */
-        case QEvent::WindowStateChange:
+        /* Handle every Resize and Move we keep track of the geometry. */
+        case QEvent::Resize:
         {
-            if (m_fIsPolished)
-                m_fMax = isMaximized();
+            if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
+            {
+                QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
+                m_geometry.setSize(pResizeEvent->size());
+            }
+            break;
+        }
+        case QEvent::Move:
+        {
+            if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
+            {
+#ifdef Q_WS_MAC
+                QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
+                m_geometry.moveTo(pMoveEvent->pos());
+#else /* Q_WS_MAC */
+                m_geometry.moveTo(geometry().x(), geometry().y());
+#endif /* !Q_WS_MAC */
+            }
             break;
         }
         default:
@@ -288,42 +303,6 @@ bool UIVMInfoDialog::event(QEvent *pEvent)
 
     /* Return result: */
     return fResult;
-}
-
-void UIVMInfoDialog::resizeEvent(QResizeEvent *pEvent)
-{
-    /* Pre-process through base-class: */
-    QMainWindow::resizeEvent(pEvent);
-
-    /* Store dialog size for this VM: */
-    if (m_fIsPolished && !isMaximized())
-    {
-        m_iWidth = width();
-        m_iHeight = height();
-    }
-}
-
-void UIVMInfoDialog::showEvent(QShowEvent *pEvent)
-{
-    /* One may think that QWidget::polish() is the right place to do things
-     * below, but apparently, by the time when QWidget::polish() is called,
-     * the widget style & layout are not fully done, at least the minimum
-     * size hint is not properly calculated. Since this is sometimes necessary,
-     * we provide our own "polish" implementation */
-    if (!m_fIsPolished)
-    {
-        /* Mark as polished: */
-        m_fIsPolished = true;
-
-        /* Load window size, adjust position and load window state finally: */
-        resize(m_iWidth, m_iHeight);
-        vboxGlobal().centerWidget(this, m_pMachineWindow, false);
-        if (m_fMax)
-            QTimer::singleShot(0, this, SLOT(showMaximized()));
-    }
-
-    /* Post-process through base-class: */
-    QMainWindow::showEvent(pEvent);
 }
 
 void UIVMInfoDialog::sltUpdateDetails()
@@ -485,28 +464,38 @@ void UIVMInfoDialog::prepareButtonBox()
 
 void UIVMInfoDialog::loadSettings()
 {
-    /* Load dialog geometry: */
-    QString strSize = m_session.GetMachine().GetExtraData(GUI_InfoDlgState);
-    if (strSize.isEmpty())
+    /* Restore window geometry: */
     {
-        m_iWidth = 400;
-        m_iHeight = 450;
-        m_fMax = false;
-    }
-    else
-    {
-        QStringList list = strSize.split(',');
-        m_iWidth = list[0].toInt(), m_iHeight = list[1].toInt();
-        m_fMax = list[2] == "max";
+        /* Load geometry: */
+        m_geometry = gEDataManager->informationWindowGeometry(this, m_pMachineWindow, vboxGlobal().managedVMUuid());
+#ifdef Q_WS_MAC
+        move(m_geometry.topLeft());
+        resize(m_geometry.size());
+#else /* Q_WS_MAC */
+        setGeometry(m_geometry);
+#endif /* !Q_WS_MAC */
+        LogRel(("UIVMInfoDialog: Geometry loaded to: %dx%d @ %dx%d.\n",
+                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+
+        /* Maximize (if necessary): */
+        if (gEDataManager->isInformationWindowShouldBeMaximized(vboxGlobal().managedVMUuid()))
+            showMaximized();
     }
 }
 
 void UIVMInfoDialog::saveSettings()
 {
-    /* Save dialog geometry: */
-    QString strSize("%1,%2,%3");
-    m_session.GetMachine().SetExtraData(GUI_InfoDlgState,
-                                        strSize.arg(m_iWidth).arg(m_iHeight).arg(isMaximized() ? "max" : "normal"));
+    /* Save window geometry: */
+    {
+        /* Save geometry: */
+#ifdef Q_WS_MAC
+        gEDataManager->setInformationWindowGeometry(m_geometry, ::darwinIsWindowMaximized(this), vboxGlobal().managedVMUuid());
+#else /* Q_WS_MAC */
+        gEDataManager->setInformationWindowGeometry(m_geometry, isMaximized(), vboxGlobal().managedVMUuid());
+#endif /* !Q_WS_MAC */
+        LogRel(("UIVMInfoDialog: Geometry saved as: %dx%d @ %dx%d.\n",
+                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+    }
 }
 
 void UIVMInfoDialog::cleanup()

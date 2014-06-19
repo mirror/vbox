@@ -971,15 +971,13 @@ bool UISelectorWindow::event(QEvent *pEvent)
     /* Which event do we have? */
     switch (pEvent->type())
     {
-        /* By handling every Resize and Move we keep track of the normal
-         * (non-minimized and non-maximized) window geometry. Shame on Qt
-         * that it doesn't provide this geometry in its public APIs. */
+        /* Handle every Resize and Move we keep track of the geometry. */
         case QEvent::Resize:
         {
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
             {
                 QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-                m_normalGeo.setSize(pResizeEvent->size());
+                m_geometry.setSize(pResizeEvent->size());
             }
             break;
         }
@@ -989,9 +987,9 @@ bool UISelectorWindow::event(QEvent *pEvent)
             {
 #ifdef Q_WS_MAC
                 QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
-                m_normalGeo.moveTo(pMoveEvent->pos());
+                m_geometry.moveTo(pMoveEvent->pos());
 #else /* Q_WS_MAC */
-                m_normalGeo.moveTo(geometry().x(), geometry().y());
+                m_geometry.moveTo(geometry().x(), geometry().y());
 #endif /* !Q_WS_MAC */
             }
             break;
@@ -1500,18 +1498,18 @@ void UISelectorWindow::prepareConnections()
 
 void UISelectorWindow::loadSettings()
 {
-    /* Restore window position: */
+    /* Restore window geometry: */
     {
         /* Load geometry: */
-        m_normalGeo = gEDataManager->selectorWindowGeometry(this);
+        m_geometry = gEDataManager->selectorWindowGeometry(this);
 #ifdef Q_WS_MAC
-        move(m_normalGeo.topLeft());
-        resize(m_normalGeo.size());
+        move(m_geometry.topLeft());
+        resize(m_geometry.size());
 #else /* Q_WS_MAC */
-        setGeometry(m_normalGeo);
+        setGeometry(m_geometry);
 #endif /* !Q_WS_MAC */
         LogRel(("UISelectorWindow: Geometry loaded to: %dx%d @ %dx%d.\n",
-                m_normalGeo.x(), m_normalGeo.y(), m_normalGeo.width(), m_normalGeo.height()));
+                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
         /* Maximize (if necessary): */
         if (gEDataManager->isSelectorWindowShouldBeMaximized())
@@ -1561,15 +1559,15 @@ void UISelectorWindow::saveSettings()
         gEDataManager->setSelectorWindowSplitterHints(m_pSplitter->sizes());
     }
 
-    /* Save window position: */
+    /* Save window geometry: */
     {
 #ifdef Q_WS_MAC
-        gEDataManager->setSelectorWindowGeometry(m_normalGeo, ::darwinIsWindowMaximized(this));
+        gEDataManager->setSelectorWindowGeometry(m_geometry, ::darwinIsWindowMaximized(this));
 #else /* Q_WS_MAC */
-        gEDataManager->setSelectorWindowGeometry(m_normalGeo, isMaximized());
+        gEDataManager->setSelectorWindowGeometry(m_geometry, isMaximized());
 #endif /* !Q_WS_MAC */
         LogRel(("UISelectorWindow: Geometry saved as: %dx%d @ %dx%d.\n",
-                m_normalGeo.x(), m_normalGeo.y(), m_normalGeo.width(), m_normalGeo.height()));
+                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
     }
 }
 

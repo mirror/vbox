@@ -130,8 +130,8 @@ public:
     /** Defines @a mode (basic/expert) for wizard of @a type. */
     void setModeForWizard(WizardType type, WizardMode mode);
 
-    /** Returns selector-window geometry using @a pHintWidget as the hint. */
-    QRect selectorWindowGeometry(QWidget *pHintWidget = 0) const;
+    /** Returns selector-window geometry using @a pWidget as the hint. */
+    QRect selectorWindowGeometry(QWidget *pWidget) const;
     /** Returns whether selector-window should be maximized or not. */
     bool isSelectorWindowShouldBeMaximized() const;
     /** Defines selector-window geometry to passed @a geometry which is @a fMaximized. */
@@ -258,6 +258,13 @@ public:
     /** Except Mac OS X: Returns redefined machine-window name postfix. */
     QString machineWindowNamePostfix(const QString &strID) const;
 #endif /* !Q_WS_MAC */
+
+    /** Returns information-window geometry using @a pWidget and @a pParentWidget as hints. */
+    QRect informationWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QString &strID) const;
+    /** Returns whether information-window should be maximized or not. */
+    bool isInformationWindowShouldBeMaximized(const QString &strID) const;
+    /** Defines information-window geometry to passed @a geometry which is @a fMaximized. */
+    void setInformationWindowGeometry(const QRect &geometry, bool fMaximized, const QString &strID);
 
     /** Returns redefined guru-meditation handler type. */
     GuruMeditationHandlerType guruMeditationHandlerType(const QString &strID) const;
