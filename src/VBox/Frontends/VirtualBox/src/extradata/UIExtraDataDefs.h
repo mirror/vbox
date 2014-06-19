@@ -113,9 +113,9 @@ namespace UIExtraDataDefs
 
 #ifdef Q_WS_MAC
     /* Runtime UI: Mac-dock declarations: */
+    extern const char* GUI_PresentationModeEnabled;
     extern const char* GUI_RealtimeDockIconUpdateEnabled;
     extern const char* GUI_RealtimeDockIconUpdateMonitor;
-    extern const char* GUI_PresentationModeEnabled;
 #endif /* Q_WS_MAC */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL

@@ -105,9 +105,9 @@ const char* UIExtraDataDefs::GUI_MiniToolBarAutoHide = "GUI/MiniToolBarAutoHide"
 
 #ifdef Q_WS_MAC
 /* Runtime UI: Mac-dock definitions: */
+const char* UIExtraDataDefs::GUI_PresentationModeEnabled = "GUI/PresentationModeEnabled";
 const char* UIExtraDataDefs::GUI_RealtimeDockIconUpdateEnabled = "GUI/RealtimeDockIconUpdateEnabled";
 const char* UIExtraDataDefs::GUI_RealtimeDockIconUpdateMonitor = "GUI/RealtimeDockIconUpdateMonitor";
-const char* UIExtraDataDefs::GUI_PresentationModeEnabled = "GUI/PresentationModeEnabled";
 #endif /* Q_WS_MAC */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL

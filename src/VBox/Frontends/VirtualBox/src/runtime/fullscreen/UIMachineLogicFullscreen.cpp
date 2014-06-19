@@ -33,11 +33,6 @@
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
-#ifdef Q_WS_MAC
-/* Namespaces: */
-using namespace UIExtraDataDefs;
-#endif /* Q_WS_MAC */
-
 
 UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Fullscreen)
@@ -630,10 +625,7 @@ void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
              * only than the 'presentation mode' have to be changed. */
             if (m_pScreenLayout->isHostTaskbarCovert())
             {
-                /* Load 'presentation mode' preference: */
-                QString strPresentationMode = vboxGlobal().virtualBox().GetExtraData(GUI_PresentationModeEnabled).toLower();
-                /* Default to 'false' if it is an empty value: */
-                if (strPresentationMode.isEmpty() || strPresentationMode == "false")
+                if (gEDataManager->presentationModeEnabled(vboxGlobal().managedVMUuid()))
                     SetSystemUIMode(kUIModeAllHidden, 0);
                 else
                     SetSystemUIMode(kUIModeAllSuppressed, 0);
