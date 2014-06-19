@@ -31,6 +31,7 @@
 
 #include <VBox/hgcmsvc.h>
 #include <VBox/log.h>
+#include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/errorprint.h>
@@ -226,7 +227,7 @@ static int svcPresentFBOTearDown(void)
     return rc;
 }
 
-static DECLCALLBACK(void) svcNotifyEventCB(int32_t screenId, uint32_t uEvent, void*pvData)
+static DECLCALLBACK(void) svcNotifyEventCB(int32_t screenId, uint32_t uEvent, void* pvData, uint32_t cbData)
 {
     ComPtr<IDisplay> pDisplay;
     ComPtr<IFramebuffer> pFramebuffer;
@@ -244,7 +245,11 @@ static DECLCALLBACK(void) svcNotifyEventCB(int32_t screenId, uint32_t uEvent, vo
     if (!pFramebuffer)
         return;
 
-    pFramebuffer->Notify3DEvent(uEvent, (BYTE*)pvData);
+    com::SafeArray<BYTE> data(cbData);
+    if (cbData)
+        memcpy(data.raw(), pvData, cbData);
+
+    pFramebuffer->Notify3DEvent(uEvent, ComSafeArrayAsInParam(data));
 }
 
 
@@ -1230,7 +1235,8 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
 
                     do {
                         /* determine if the framebuffer is functional */
-                        rc = pFramebuffer->Notify3DEvent(VBOX3D_NOTIFY_EVENT_TYPE_TEST_FUNCTIONAL, NULL);
+                        com::SafeArray<BYTE> data;
+                        rc = pFramebuffer->Notify3DEvent(VBOX3D_NOTIFY_EVENT_TYPE_TEST_FUNCTIONAL, ComSafeArrayAsInParam(data));
 
                         if (rc == S_OK)
                             CHECK_ERROR_BREAK(pFramebuffer, COMGETTER(WinId)(&winId));

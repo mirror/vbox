@@ -2899,7 +2899,7 @@ protected:
         bool fVisible = isVisible();
         if (mFlags.fNeVisible != fVisible || mFlags.fNeForce)
         {
-            crVBoxServerNotifyEvent(mu32Screen, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, fVisible ? (void*)1 : NULL);
+            crVBoxServerNotifyEvent(mu32Screen, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, &fVisible, sizeof(fVisible));
             mFlags.fNeVisible = fVisible;
             mFlags.fNeForce = 0;
         }

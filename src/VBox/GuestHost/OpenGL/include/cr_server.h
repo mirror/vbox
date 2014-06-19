@@ -131,7 +131,7 @@ struct CR_SERVER_RPW_ENTRY;
 
 typedef DECLCALLBACKPTR(void, PFNCR_SERVER_RPW_DATA) (const struct CR_SERVER_RPW_ENTRY* pEntry, void *pvEntryTexData);
 
-typedef DECLCALLBACKPTR(void, PFNCRSERVERNOTIFYEVENT) (int32_t screenId, uint32_t uEvent, void*pvData);
+typedef DECLCALLBACKPTR(void, PFNCRSERVERNOTIFYEVENT) (int32_t screenId, uint32_t uEvent, void* pvData, uint32_t cbData);
 
 typedef struct CR_SERVER_RPW_ENTRY
 {

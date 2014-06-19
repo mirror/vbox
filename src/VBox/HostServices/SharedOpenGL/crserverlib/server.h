@@ -140,7 +140,7 @@ GLboolean crServerSupportRedirMuralFBO(void);
 void crVBoxServerMuralFbResizeBegin(HCR_FRAMEBUFFER hFb);
 void crVBoxServerMuralFbResizeEnd(HCR_FRAMEBUFFER hFb);
 
-void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void*pvData);
+void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void* pvData, uint32_t cbData);
 
 void crServerRedirMuralFbClear(CRMuralInfo *mural);
 
