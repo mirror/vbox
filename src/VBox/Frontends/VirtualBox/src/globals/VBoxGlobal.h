@@ -139,20 +139,15 @@ public:
     uint32_t getWarpPct()       const { return mWarpPct; }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    bool isDebuggerEnabled(CMachine &aMachine);
-    bool isDebuggerAutoShowEnabled(CMachine &aMachine);
-    bool isDebuggerAutoShowCommandLineEnabled(CMachine &aMachine);
-    bool isDebuggerAutoShowStatisticsEnabled(CMachine &aMachine);
-    RTLDRMOD getDebuggerModule() const { return mhVBoxDbg; }
+    bool isDebuggerEnabled() const;
+    bool isDebuggerAutoShowEnabled() const;
+    bool isDebuggerAutoShowCommandLineEnabled() const;
+    bool isDebuggerAutoShowStatisticsEnabled() const;
+
+    RTLDRMOD getDebuggerModule() const { return m_hVBoxDbg; }
 
     bool isStartPausedEnabled() const { return mStartPaused; }
-#else
-    bool isDebuggerAutoShowEnabled(CMachine & /*aMachine*/) const { return false; }
-    bool isDebuggerAutoShowCommandLineEnabled(CMachine & /*aMachine*/) const { return false; }
-    bool isDebuggerAutoShowStatisticsEnabled(CMachine & /*aMachine*/) const { return false; }
-
-    bool isStartPausedEnabled() const { return false; }
-#endif
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* VBox enum to/from string/icon/color convertors */
 
@@ -406,7 +401,7 @@ private:
 #ifdef VBOX_WITH_DEBUGGER_GUI
     void initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const char *pszExtraDataName, bool fDefault = false);
     void setDebuggerVar(int *piDbgCfgVar, bool fState);
-    bool isDebuggerWorker(int *piDbgCfgVar, CMachine &rMachine, const char *pszExtraDataName);
+    bool isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName) const;
 #endif
 
     bool mValid;
@@ -450,18 +445,18 @@ private:
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** Whether the debugger should be accessible or not.
-     * Use --dbg, the env.var. VBOX_GUI_DBG_ENABLED, --debug or the env.var.
-     * VBOX_GUI_DBG_AUTO_SHOW to enable. */
-    int mDbgEnabled;
+     * Use --dbg, the env.var. VBOX_GUI_DBG_ENABLED,
+     *     --debug or the env.var. VBOX_GUI_DBG_AUTO_SHOW to enable. */
+    mutable int m_fDbgEnabled;
     /** Whether to show the debugger automatically with the console.
      * Use --debug or the env.var. VBOX_GUI_DBG_AUTO_SHOW to enable. */
-    int mDbgAutoShow;
-    /** Whether to show the command line window when mDbgAutoShow is set. */
-    int mDbgAutoShowCommandLine;
-    /** Whether to show the statistics window when mDbgAutoShow is set. */
-    int mDbgAutoShowStatistics;
+    mutable int m_fDbgAutoShow;
+    /** Whether to show the command line window when m_fDbgAutoShow is set. */
+    mutable int m_fDbgAutoShowCommandLine;
+    /** Whether to show the statistics window when m_fDbgAutoShow is set. */
+    mutable int m_fDbgAutoShowStatistics;
     /** VBoxDbg module handle. */
-    RTLDRMOD mhVBoxDbg;
+    RTLDRMOD m_hVBoxDbg;
 
     /** Whether to start the VM in paused state or not. */
     bool mStartPaused;

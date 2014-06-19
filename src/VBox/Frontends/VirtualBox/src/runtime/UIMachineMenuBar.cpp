@@ -176,8 +176,7 @@ QList<QMenu*> UIMachineMenuBar::prepareSubMenus(RuntimeMenuType fOptions /* = Ru
     /* Debug submenu: */
     if (fOptions & RuntimeMenuType_Debug)
     {
-        CMachine machine = m_pSession->session().GetMachine();
-        if (vboxGlobal().isDebuggerEnabled(machine))
+        if (vboxGlobal().isDebuggerEnabled())
         {
             QMenu *pMenuDebug = gActionPool->action(UIActionIndexRuntime_Menu_Debug)->menu();
             prepareMenuDebug(pMenuDebug);

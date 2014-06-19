@@ -1046,19 +1046,11 @@ void UIMachineLogic::prepareDock()
 #ifdef VBOX_WITH_DEBUGGER_GUI
 void UIMachineLogic::prepareDebugger()
 {
-    CMachine machine = uisession()->session().GetMachine();
-    if (!machine.isNull() && vboxGlobal().isDebuggerAutoShowEnabled(machine))
+    if (vboxGlobal().isDebuggerAutoShowEnabled())
     {
-        /* console in upper left corner of the desktop. */
-//        QRect rct (0, 0, 0, 0);
-//        QDesktopWidget *desktop = QApplication::desktop();
-//        if (desktop)
-//            rct = desktop->availableGeometry(pos());
-//        move (QPoint (rct.x(), rct.y()));
-
-        if (vboxGlobal().isDebuggerAutoShowStatisticsEnabled(machine))
+        if (vboxGlobal().isDebuggerAutoShowStatisticsEnabled())
             sltShowDebugStatistics();
-        if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled(machine))
+        if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled())
             sltShowDebugCommandLine();
 
         if (!vboxGlobal().isStartPausedEnabled())
