@@ -97,6 +97,12 @@
 # include <QX11Info>
 #endif /* Q_WS_X11 */
 
+#ifdef Q_WS_MAC
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+#endif /* Q_WS_MAC */
+
+
 struct USBTarget
 {
     USBTarget() : attach(false), id(QString()) {}

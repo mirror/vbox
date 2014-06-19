@@ -36,6 +36,11 @@
 #include "COMEnums.h"
 #include "CVirtualBox.h"
 
+#ifdef Q_WS_MAC
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+#endif /* Q_WS_MAC */
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /** @class VBoxGlobalSettingsData
