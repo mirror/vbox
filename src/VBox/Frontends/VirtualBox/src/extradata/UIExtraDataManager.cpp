@@ -1010,6 +1010,11 @@ void UIExtraDataManager::setLastMachineCloseAction(MachineCloseAction machineClo
     setExtraDataString(GUI_LastCloseAction, gpConverter->toInternalString(machineCloseAction), strID);
 }
 
+QString UIExtraDataManager::machineCloseHookScript(const QString &strID) const
+{
+    return extraDataString(GUI_CloseActionHook, strID);
+}
+
 void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)
 {
     /* Re-cache value only if strMachineID known already: */
