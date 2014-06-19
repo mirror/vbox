@@ -2525,7 +2525,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!pVCpu->hm.s.Event.fPending);
     Log4Func(("\n"));
 
-    const bool fIntShadow = !!hmR0SvmGetGuestIntrShadow(pVCpu, pCtx);
+    const bool fIntShadow = RT_BOOL(hmR0SvmGetGuestIntrShadow(pVCpu, pCtx));
     const bool fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
     PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
