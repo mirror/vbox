@@ -244,11 +244,6 @@ public:
     /** Defines whether guest-screen auto-resize according machine-window size is @a fEnabled. */
     void setGuestScreenAutoResize(bool fEnabled, const QString &strID);
 
-    /** Returns default machine close action. */
-    MachineCloseAction defaultMachineCloseAction(const QString &strID) const;
-    /** Returns restricted machine close actions. */
-    MachineCloseAction restrictedMachineCloseActions(const QString &strID) const;
-
     /** Returns restricted Runtime UI status-bar indicators. */
     QList<IndicatorType> restrictedStatusBarIndicators(const QString &strID) const;
 
@@ -290,6 +285,16 @@ public:
     Qt::AlignmentFlag miniToolbarAlignment(const QString &strID) const;
     /** Returns mini-toolbar @a alignment. */
     void setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QString &strID);
+
+    /** Returns default machine close action. */
+    MachineCloseAction defaultMachineCloseAction(const QString &strID) const;
+    /** Returns restricted machine close actions. */
+    MachineCloseAction restrictedMachineCloseActions(const QString &strID) const;
+
+    /** Returns last machine close action. */
+    MachineCloseAction lastMachineCloseAction(const QString &strID) const;
+    /** Defines last @a machineCloseAction. */
+    void setLastMachineCloseAction(MachineCloseAction machineCloseAction, const QString &strID);
 
 private slots:
 
