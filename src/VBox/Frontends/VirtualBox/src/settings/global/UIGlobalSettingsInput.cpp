@@ -33,6 +33,10 @@
 #include "UIHostComboEditor.h"
 #include "VBoxGlobalSettings.h"
 
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+
+
 /* Input page constructor: */
 UIGlobalSettingsInput::UIGlobalSettingsInput()
     : m_pTabWidget(0)

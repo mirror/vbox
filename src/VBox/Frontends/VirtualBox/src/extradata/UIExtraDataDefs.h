@@ -141,7 +141,6 @@ namespace UIExtraDataDefs
     extern const char* GUI_Dbg_AutoShow;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 }
-using namespace UIExtraDataDefs /* if header included */;
 
 
 /** Common UI: Global settings page types. */

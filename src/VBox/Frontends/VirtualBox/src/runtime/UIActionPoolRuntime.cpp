@@ -23,6 +23,10 @@
 #include "UIShortcutPool.h"
 #include "VBoxGlobal.h"
 
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+
+
 class UIActionMenuMachineRuntime : public UIActionMenu
 {
     Q_OBJECT;

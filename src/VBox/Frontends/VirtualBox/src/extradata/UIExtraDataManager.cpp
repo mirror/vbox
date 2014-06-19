@@ -33,6 +33,9 @@
 #include "CVirtualBox.h"
 #include "CMachine.h"
 
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+
 
 /** QObject extension
   * notifying UIExtraDataManager whenever any of extra-data values changed. */

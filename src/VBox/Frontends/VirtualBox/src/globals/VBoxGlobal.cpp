@@ -175,6 +175,10 @@ typedef long Q_LONG;                /* word up to 64 bit signed */
 typedef unsigned long Q_ULONG;      /* word up to 64 bit unsigned */
 #endif
 
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+
+
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 

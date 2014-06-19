@@ -60,6 +60,9 @@
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+
 
 #ifdef Q_WS_X11
 namespace UINativeHotKey
