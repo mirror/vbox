@@ -38,6 +38,7 @@
 #include "UIVMCloseDialog.h"
 #include "UIConverter.h"
 #include "UIModalWindowManager.h"
+#include "UIExtraDataManager.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -261,7 +262,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     CMachine m = machine();
 
     /* If there is a close hook script defined: */
-    QString strScript = m.GetExtraData(GUI_CloseActionHook);
+    const QString strScript = gEDataManager->machineCloseHookScript(vboxGlobal().managedVMUuid());
     if (!strScript.isEmpty())
     {
         /* Execute asynchronously and leave: */

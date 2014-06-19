@@ -296,6 +296,9 @@ public:
     /** Defines last @a machineCloseAction. */
     void setLastMachineCloseAction(MachineCloseAction machineCloseAction, const QString &strID);
 
+    /** Returns machine close hook script name as simple string. */
+    QString machineCloseHookScript(const QString &strID) const;
+
 private slots:
 
     /** Handles 'extra-data change' event: */
