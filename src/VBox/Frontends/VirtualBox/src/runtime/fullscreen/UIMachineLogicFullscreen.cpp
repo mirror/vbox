@@ -33,6 +33,12 @@
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
+#ifdef Q_WS_MAC
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+#endif /* Q_WS_MAC */
+
+
 UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Fullscreen)
 #ifdef Q_WS_MAC
