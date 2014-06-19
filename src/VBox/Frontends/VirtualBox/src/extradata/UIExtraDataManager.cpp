@@ -832,11 +832,6 @@ void UIExtraDataManager::setGuestScreenAutoResize(bool fEnabled, const QString &
     setExtraDataString(GUI_AutoresizeGuest, toFeatureRestricted(!fEnabled), strID);
 }
 
-MachineCloseAction UIExtraDataManager::defaultMachineCloseAction(const QString &strID) const
-{
-    return gpConverter->fromInternalString<MachineCloseAction>(extraDataString(GUI_DefaultCloseAction, strID));
-}
-
 int UIExtraDataManager::hostScreenForPassedGuestScreen(int iGuestScreenIndex, const QString &strID)
 {
     /* Choose corresponding key: */
@@ -858,21 +853,6 @@ void UIExtraDataManager::setHostScreenForPassedGuestScreen(int iGuestScreenIndex
 
     /* Save passed index under corresponding value: */
     setExtraDataString(strKey, iHostScreenIndex != -1 ? QString::number(iHostScreenIndex) : QString(), strID);
-}
-
-MachineCloseAction UIExtraDataManager::restrictedMachineCloseActions(const QString &strID) const
-{
-    /* Prepare result: */
-    MachineCloseAction result = MachineCloseAction_Invalid;
-    /* Load restricted machine-close-actions: */
-    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedCloseActions, strID))
-    {
-        MachineCloseAction value = gpConverter->fromInternalString<MachineCloseAction>(strValue);
-        if (value != MachineCloseAction_Invalid)
-            result = static_cast<MachineCloseAction>(result | value);
-    }
-    /* Return result: */
-    return result;
 }
 
 QList<IndicatorType> UIExtraDataManager::restrictedStatusBarIndicators(const QString &strID) const
@@ -998,6 +978,36 @@ void UIExtraDataManager::setMiniToolbarAlignment(Qt::AlignmentFlag alignment, co
         default: break;
     }
     setExtraDataString(GUI_MiniToolBarAlignment, QString(), strID);
+}
+
+MachineCloseAction UIExtraDataManager::defaultMachineCloseAction(const QString &strID) const
+{
+    return gpConverter->fromInternalString<MachineCloseAction>(extraDataString(GUI_DefaultCloseAction, strID));
+}
+
+MachineCloseAction UIExtraDataManager::restrictedMachineCloseActions(const QString &strID) const
+{
+    /* Prepare result: */
+    MachineCloseAction result = MachineCloseAction_Invalid;
+    /* Load restricted machine-close-actions: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedCloseActions, strID))
+    {
+        MachineCloseAction value = gpConverter->fromInternalString<MachineCloseAction>(strValue);
+        if (value != MachineCloseAction_Invalid)
+            result = static_cast<MachineCloseAction>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+MachineCloseAction UIExtraDataManager::lastMachineCloseAction(const QString &strID) const
+{
+    return gpConverter->fromInternalString<MachineCloseAction>(extraDataString(GUI_LastCloseAction, strID));
+}
+
+void UIExtraDataManager::setLastMachineCloseAction(MachineCloseAction machineCloseAction, const QString &strID)
+{
+    setExtraDataString(GUI_LastCloseAction, gpConverter->toInternalString(machineCloseAction), strID);
 }
 
 void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)
