@@ -5584,6 +5584,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
     else
         fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset, &fParavirtTsc);
 
+#if 0
     if (fParavirtTsc)
     {
         uint64_t const u64CurTsc   = ASMReadTSC();
@@ -5596,19 +5597,19 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
 
         Assert(u64CurTsc + pVCpu->hm.s.vmx.u64TSCOffset >= u64LastTick);
         rc = GIMR0UpdateParavirtTsc(pVM, pVCpu->hm.s.vmx.u64TSCOffset);
-        if (RT_SUCCESS(rc))
-        {
-            /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
-            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, 0);                                  AssertRC(rc);
+        AssertRC(rc);
+        /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
+        rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, 0);                                  AssertRC(rc);
 
-            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
-            rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);              AssertRC(rc);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
-            return;
-        }
-        /* else: Shouldn't really fail. If it does, fallback to offsetted TSC mode. */
+        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);              AssertRC(rc);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
+    else
+#endif
 
+    if (fParavirtTsc)
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     if (fOffsettedTsc)
     {
         uint64_t u64CurTSC = ASMReadTSC();
