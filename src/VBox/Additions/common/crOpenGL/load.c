@@ -1133,6 +1133,7 @@ stubInit(void)
 
 #ifdef VDBG_VEHANDLER
 # include <dbghelp.h>
+# include <cr_string.h>
 static PVOID g_VBoxVehHandler = NULL;
 static DWORD g_VBoxVehEnable = 0;
 
@@ -1143,13 +1144,7 @@ static DWORD g_VBoxVehEnable = 0;
 /* exit on exception */
 #define VBOXVEH_F_EXIT  0x00000004
 
-static DWORD g_VBoxVehFlags = 0
-#ifdef DEBUG_misha
-                            | VBOXVEH_F_BREAK
-#else
-                            | VBOXVEH_F_DUMP
-#endif
-        ;
+static DWORD g_VBoxVehFlags = 0;
 
 typedef BOOL WINAPI FNVBOXDBG_MINIDUMPWRITEDUMP(HANDLE hProcess,
             DWORD ProcessId,
@@ -1162,7 +1157,7 @@ typedef FNVBOXDBG_MINIDUMPWRITEDUMP *PFNVBOXDBG_MINIDUMPWRITEDUMP;
 
 static HMODULE g_hVBoxMdDbgHelp = NULL;
 static PFNVBOXDBG_MINIDUMPWRITEDUMP g_pfnVBoxMdMiniDumpWriteDump = NULL;
-static uint32_t g_cVBoxMdFilePrefixLen = 0;
+static size_t g_cVBoxMdFilePrefixLen = 0;
 static WCHAR g_aszwVBoxMdFilePrefix[MAX_PATH];
 static WCHAR g_aszwVBoxMdDumpCount = 0;
 static MINIDUMP_TYPE g_enmVBoxMdDumpType = MiniDumpNormal
@@ -1190,7 +1185,8 @@ static MINIDUMP_TYPE g_enmVBoxMdDumpType = MiniDumpNormal
 
 
 
-#define VBOXMD_DUMP_DIR_PREFIX_DEFAULT L"C:\\dumps\\vboxdmp"
+#define VBOXMD_DUMP_DIR_DEFAULT "C:\\dumps"
+#define VBOXMD_DUMP_NAME_PREFIX_W L"VBoxDmp_"
 
 static HMODULE loadSystemDll(const char *pszName)
 {
@@ -1228,19 +1224,6 @@ static DWORD vboxMdMinidumpCreate(struct _EXCEPTION_POINTERS *pExceptionInfo)
         g_pfnVBoxMdMiniDumpWriteDump = (PFNVBOXDBG_MINIDUMPWRITEDUMP)GetProcAddress(g_hVBoxMdDbgHelp, "MiniDumpWriteDump");
         if (!g_pfnVBoxMdMiniDumpWriteDump)
             return GetLastError();
-    }
-
-    /* @todo: this is a tmp stuff until we get that info from the settings properly */
-    if (!g_cVBoxMdFilePrefixLen)
-    {
-        g_cVBoxMdFilePrefixLen = sizeof (VBOXMD_DUMP_DIR_PREFIX_DEFAULT)/sizeof (g_aszwVBoxMdFilePrefix[0]) - 1 /* <- don't include nul terminator */;
-        memcpy(g_aszwVBoxMdFilePrefix, VBOXMD_DUMP_DIR_PREFIX_DEFAULT, sizeof (VBOXMD_DUMP_DIR_PREFIX_DEFAULT));
-    }
-
-
-    if (RT_ELEMENTS(aszwMdFileName) <= g_cVBoxMdFilePrefixLen)
-    {
-        return ERROR_INVALID_STATE;
     }
 
     ++g_aszwVBoxMdDumpCount;
@@ -1340,6 +1323,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     case DLL_PROCESS_ATTACH:
     {
         CRNetServer ns;
+        const char * env;
 
 #ifdef CHROMIUM_THREADSAFE
         crInitTSD(&g_stubCurrentContextTSD);
@@ -1348,12 +1332,97 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         crInitMutex(&stub_init_mutex);
 
 #ifdef VDBG_VEHANDLER
-        g_VBoxVehEnable = !!crGetenv("CR_DBG_VEH_ENABLE");
+        env = crGetenv("CR_DBG_VEH_ENABLE");
+        g_VBoxVehEnable = crStrParseI32(env,
 # ifdef DEBUG_misha
-        g_VBoxVehEnable = 1;
+                1
+# else
+                0
 # endif
+                );
+
         if (g_VBoxVehEnable)
+        {
+            char procName[1024];
+            size_t cProcName;
+            size_t cChars;
+
+            env = crGetenv("CR_DBG_VEH_FLAGS");
+            g_VBoxVehFlags = crStrParseI32(env,
+                    0
+# ifdef DEBUG_misha
+                    | VBOXVEH_F_BREAK
+# else
+                    | VBOXVEH_F_DUMP
+# endif
+                    );
+
+            env = crGetenv("CR_DBG_VEH_DUMP_DIR");
+            if (!env)
+                env = VBOXMD_DUMP_DIR_DEFAULT;
+
+            g_cVBoxMdFilePrefixLen = strlen(env);
+
+            if (RT_ELEMENTS(g_aszwVBoxMdFilePrefix) <= g_cVBoxMdFilePrefixLen + 26 + (sizeof (VBOXMD_DUMP_NAME_PREFIX_W) - sizeof (WCHAR)) / sizeof (WCHAR))
+            {
+                g_cVBoxMdFilePrefixLen = 0;
+                env = "";
+            }
+
+            mbstowcs_s(&cChars, g_aszwVBoxMdFilePrefix, g_cVBoxMdFilePrefixLen + 1, env, _TRUNCATE);
+
+            Assert(cChars == g_cVBoxMdFilePrefixLen + 1);
+
+            g_cVBoxMdFilePrefixLen = cChars - 1;
+
+            if (g_cVBoxMdFilePrefixLen && g_aszwVBoxMdFilePrefix[g_cVBoxMdFilePrefixLen - 1] != L'\\')
+                g_aszwVBoxMdFilePrefix[g_cVBoxMdFilePrefixLen++] = L'\\';
+
+            memcpy(g_aszwVBoxMdFilePrefix + g_cVBoxMdFilePrefixLen, VBOXMD_DUMP_NAME_PREFIX_W, sizeof (VBOXMD_DUMP_NAME_PREFIX_W) - sizeof (WCHAR));
+            g_cVBoxMdFilePrefixLen += (sizeof (VBOXMD_DUMP_NAME_PREFIX_W) - sizeof (WCHAR)) / sizeof (WCHAR);
+
+            crGetProcName(procName, RT_ELEMENTS(procName));
+            cProcName = strlen(procName);
+
+            if (RT_ELEMENTS(g_aszwVBoxMdFilePrefix) > g_cVBoxMdFilePrefixLen + cProcName + 1 + 26)
+            {
+                mbstowcs_s(&cChars, g_aszwVBoxMdFilePrefix + g_cVBoxMdFilePrefixLen, cProcName + 1, procName, _TRUNCATE);
+                Assert(cChars == cProcName + 1);
+                g_cVBoxMdFilePrefixLen += cChars - 1;
+                g_aszwVBoxMdFilePrefix[g_cVBoxMdFilePrefixLen++] = L'_';
+            }
+
+            /* sanity */
+            g_aszwVBoxMdFilePrefix[g_cVBoxMdFilePrefixLen] = L'\0';
+
+            env = crGetenv("CR_DBG_VEH_DUMP_TYPE");
+
+            g_enmVBoxMdDumpType = crStrParseI32(env,
+                    MiniDumpNormal
+                    | MiniDumpWithDataSegs
+                    | MiniDumpWithFullMemory
+                    | MiniDumpWithHandleData
+            ////        | MiniDumpFilterMemory
+            ////        | MiniDumpScanMemory
+            //        | MiniDumpWithUnloadedModules
+            ////        | MiniDumpWithIndirectlyReferencedMemory
+            ////        | MiniDumpFilterModulePaths
+            //        | MiniDumpWithProcessThreadData
+            //        | MiniDumpWithPrivateReadWriteMemory
+            ////        | MiniDumpWithoutOptionalData
+            //        | MiniDumpWithFullMemoryInfo
+            //        | MiniDumpWithThreadInfo
+            //        | MiniDumpWithCodeSegs
+            //        | MiniDumpWithFullAuxiliaryState
+            //        | MiniDumpWithPrivateWriteCopyMemory
+            //        | MiniDumpIgnoreInaccessibleMemory
+            //        | MiniDumpWithTokenInformation
+            ////        | MiniDumpWithModuleHeaders
+            ////        | MiniDumpFilterTriage
+                    );
+
             vboxVDbgVEHandlerRegister();
+        }
 #endif
 
         crNetInit(NULL, NULL);
