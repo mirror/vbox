@@ -151,10 +151,10 @@ public:
 
     /** EMT callback: Notifies frame-buffer about 3D backend event.
       * @param        uType Event type. Currently only VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA is supported.
-      * @param        pData Event-specific data, depends on the supplied event type.
+      * @param        aData Event-specific data, depends on the supplied event type.
       * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
       * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
-    STDMETHOD(Notify3DEvent)(ULONG uType, BYTE *pData);
+    STDMETHOD(Notify3DEvent)(ULONG uType, ComSafeArrayIn(BYTE, aData));
 
     /** Returns frame-buffer data address. */
     uchar *address() { return m_image.bits(); }

@@ -15272,7 +15272,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IFramebuffer" extends="$unknown"
-    uuid="c42d2714-6263-473f-a6c4-3d3b38983e74"
+    uuid="16d73cd3-da84-4a11-a607-ebab57d050d0"
     wsmap="managed"
     >
     <attribute name="width" type="unsigned long" readonly="yes">
@@ -15343,7 +15343,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <method name="notifyUpdate" wsmap="suppress">
+    <method name="notifyUpdate">
       <desc>
         Informs about an update.
         Gets called by the display object where this buffer is
@@ -15496,7 +15496,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="type" type="unsigned long" dir="in">
         <desc>event type. Currently only VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA is supported.</desc>
       </param>
-      <param name="data" type="octet" mod="ptr" dir="in">
+      <param name="data" type="octet" dir="in" safearray="yes">
         <desc>event-specific data, depends on the supplied event type</desc>
       </param>
     </method>

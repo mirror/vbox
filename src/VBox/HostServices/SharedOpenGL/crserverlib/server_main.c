@@ -2783,7 +2783,7 @@ extern DECLEXPORT(void) crServerVBoxSetNotifyEventCB(PFNCRSERVERNOTIFYEVENT pfnC
     cr_server.pfnNotifyEventCB = pfnCb;
 }
 
-void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void*pvData)
+void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void* pvData, uint32_t cbData)
 {
     /* this is something unexpected, but just in case */
     if (idScreen >= cr_server.screenCount)
@@ -2792,7 +2792,7 @@ void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void*pvData)
         return;
     }
 
-    cr_server.pfnNotifyEventCB(idScreen, uEvent, pvData);
+    cr_server.pfnNotifyEventCB(idScreen, uEvent, pvData, cbData);
 }
 
 void crServerWindowReparent(CRMuralInfo *pMural)

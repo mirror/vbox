@@ -95,7 +95,7 @@ public:
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
 
-    STDMETHOD(Notify3DEvent)(ULONG uType, BYTE *pReserved);
+    STDMETHOD(Notify3DEvent)(ULONG uType, ComSafeArrayIn(BYTE, aData));
 
     // internal public methods
     bool initialized() { return mfInitialized; }
