@@ -473,7 +473,8 @@ VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage)
 
         uint64_t const u64TscKHz = TMCpuTicksPerSecond(pVM) / UINT64_C(1000);
         pRefTsc->u32TscSequence  = 1;
-        pRefTsc->u64TscScale     = (((uint64_t)(10000) << 32) / u64TscKHz) << 32;
+        pRefTsc->u64TscScale     = UINT64_C(10000) << 32;
+        pRefTsc->u64TscScale    /= (u64TscKHz << 32);
 
         LogRel(("GIM: HyperV: Enabled TSC page at %#RGp (u64TscScale=%#RX64 u64TscKHz=%#RX64)\n", GCPhysTscPage,
                 pRefTsc->u64TscScale, u64TscKHz));

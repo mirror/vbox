@@ -78,6 +78,7 @@ VMM_INT_DECL(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRan
     {
         case MSR_GIM_HV_TIME_REF_COUNT:
         {
+            /** @todo r=ramshankar: Shouldn't we add the TSC offset here? */
             /* Hyper-V reports the time in 100 ns units (10 MHz). */
             uint64_t u64Tsc      = TMCpuTickGet(pVCpu);
             uint64_t u64TscHz    = TMCpuTicksPerSecond(pVM);
