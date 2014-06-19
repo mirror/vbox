@@ -839,6 +839,38 @@ void UIExtraDataManager::setGuestScreenAutoResize(bool fEnabled, const QString &
     setExtraDataString(GUI_AutoresizeGuest, toFeatureRestricted(!fEnabled), strID);
 }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+bool UIExtraDataManager::useLinearStretch(const QString &strID) const
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_Accelerate2D_StretchLinear, strID);
+}
+
+bool UIExtraDataManager::usePixelFormatYV12(const QString &strID) const
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_Accelerate2D_PixformatYV12, strID);
+}
+
+bool UIExtraDataManager::usePixelFormatUYVY(const QString &strID) const
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_Accelerate2D_PixformatUYVY, strID);
+}
+
+bool UIExtraDataManager::usePixelFormatYUY2(const QString &strID) const
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_Accelerate2D_PixformatYUY2, strID);
+}
+
+bool UIExtraDataManager::usePixelFormatAYUV(const QString &strID) const
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_Accelerate2D_PixformatAYUV, strID);
+}
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+
 int UIExtraDataManager::hostScreenForPassedGuestScreen(int iGuestScreenIndex, const QString &strID)
 {
     /* Choose corresponding key: */

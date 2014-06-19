@@ -249,6 +249,19 @@ public:
     /** Defines whether guest-screen auto-resize according machine-window size is @a fEnabled. */
     void setGuestScreenAutoResize(bool fEnabled, const QString &strID);
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /** Returns whether 2D acceleration should use linear sretch. */
+    bool useLinearStretch(const QString &strID) const;
+    /** Returns whether 2D acceleration should use YV12 pixel format. */
+    bool usePixelFormatYV12(const QString &strID) const;
+    /** Returns whether 2D acceleration should use UYVY pixel format. */
+    bool usePixelFormatUYVY(const QString &strID) const;
+    /** Returns whether 2D acceleration should use YUY2 pixel format. */
+    bool usePixelFormatYUY2(const QString &strID) const;
+    /** Returns whether 2D acceleration should use AYUV pixel format. */
+    bool usePixelFormatAYUV(const QString &strID) const;
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+
     /** Returns restricted Runtime UI status-bar indicators. */
     QList<IndicatorType> restrictedStatusBarIndicators(const QString &strID) const;
 
