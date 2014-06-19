@@ -90,7 +90,7 @@ namespace UIExtraDataDefs
     extern const char* GUI_Input_MachineShortcuts;
     extern const char* GUI_LastNormalWindowPosition;
     extern const char* GUI_LastScaleWindowPosition;
-    extern const char* GUI_LastWindowState_Max;
+    extern const char* GUI_Geometry_State_Max;
     extern const char* GUI_LastGuestSizeHint;
     extern const char* GUI_LastGuestSizeHintWasFullscreen;
     extern const char* GUI_Fullscreen;
@@ -132,8 +132,8 @@ namespace UIExtraDataDefs
     extern const char* GUI_LastCloseAction;
     extern const char* GUI_CloseActionHook;
 
-    /* Runtime UI: Information-dialog declarations: */
-    extern const char* GUI_InfoDlgState;
+    /* Runtime UI: Information-window declarations: */
+    extern const char* GUI_Geometry_InformationWindow;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Runtime UI: Debugger GUI declarations: */

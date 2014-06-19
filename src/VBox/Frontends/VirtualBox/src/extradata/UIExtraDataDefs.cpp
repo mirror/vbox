@@ -82,7 +82,7 @@ const char* UIExtraDataDefs::GUI_RestrictedVisualStates = "GUI/RestrictedVisualS
 const char* UIExtraDataDefs::GUI_Input_MachineShortcuts = "GUI/Input/MachineShortcuts";
 const char* UIExtraDataDefs::GUI_LastNormalWindowPosition = "GUI/LastNormalWindowPosition";
 const char* UIExtraDataDefs::GUI_LastScaleWindowPosition = "GUI/LastScaleWindowPosition";
-const char* UIExtraDataDefs::GUI_LastWindowState_Max = "max";
+const char* UIExtraDataDefs::GUI_Geometry_State_Max = "max";
 const char* UIExtraDataDefs::GUI_LastGuestSizeHint = "GUI/LastGuestSizeHint";
 const char* UIExtraDataDefs::GUI_LastGuestSizeHintWasFullscreen = "GUI/LastGuestSizeHintWasFullscreen";
 const char* UIExtraDataDefs::GUI_Fullscreen = "GUI/Fullscreen";
@@ -124,8 +124,8 @@ const char* UIExtraDataDefs::GUI_RestrictedCloseActions = "GUI/RestrictedCloseAc
 const char* UIExtraDataDefs::GUI_LastCloseAction = "GUI/LastCloseAction";
 const char* UIExtraDataDefs::GUI_CloseActionHook = "GUI/CloseActionHook";
 
-/* Runtime UI: Information-dialog definitions: */
-const char* UIExtraDataDefs::GUI_InfoDlgState = "GUI/InfoDlgState";
+/* Runtime UI: Information-window definitions: */
+const char* UIExtraDataDefs::GUI_Geometry_InformationWindow = "GUI/Geometry/InformationWindow";
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 /* Runtime UI: Debugger GUI definitions: */
