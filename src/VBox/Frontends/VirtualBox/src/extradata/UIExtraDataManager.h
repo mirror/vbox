@@ -173,6 +173,11 @@ public:
     /** Defines selector-window preview update @a interval. */
     void setSelectorWindowPreviewUpdateInterval(PreviewUpdateIntervalType interval);
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Returns debug flag value for passed @a strDebugFlagKey. */
+    QString debugFlagValue(const QString &strDebugFlagKey) const;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
     /** Returns geometry for machine-window with @a uScreenIndex in @a visualStateType. */
     QRect machineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strId) const;
     /** Returns whether machine-window with @a uScreenIndex in @a visualStateType should be maximized or not. */

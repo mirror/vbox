@@ -509,6 +509,13 @@ void UIExtraDataManager::setSelectorWindowPreviewUpdateInterval(PreviewUpdateInt
     setExtraDataString(GUI_PreviewUpdate, gpConverter->toInternalString(interval));
 }
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+QString UIExtraDataManager::debugFlagValue(const QString &strDebugFlagKey) const
+{
+    return extraDataString(strDebugFlagKey).toLower().trimmed();
+}
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
 QRect UIExtraDataManager::machineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strId) const
 {
     /* Choose corresponding key: */

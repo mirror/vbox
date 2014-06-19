@@ -3848,24 +3848,24 @@ bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 
-bool VBoxGlobal::isDebuggerEnabled(CMachine &aMachine)
+bool VBoxGlobal::isDebuggerEnabled() const
 {
-    return isDebuggerWorker(&mDbgEnabled, aMachine, GUI_Dbg_Enabled);
+    return isDebuggerWorker(&m_fDbgEnabled, GUI_Dbg_Enabled);
 }
 
-bool VBoxGlobal::isDebuggerAutoShowEnabled(CMachine &aMachine)
+bool VBoxGlobal::isDebuggerAutoShowEnabled() const
 {
-    return isDebuggerWorker(&mDbgAutoShow, aMachine, GUI_Dbg_AutoShow);
+    return isDebuggerWorker(&m_fDbgAutoShow, GUI_Dbg_AutoShow);
 }
 
-bool VBoxGlobal::isDebuggerAutoShowCommandLineEnabled(CMachine &aMachine)
+bool VBoxGlobal::isDebuggerAutoShowCommandLineEnabled() const
 {
-    return isDebuggerWorker(&mDbgAutoShowCommandLine, aMachine, GUI_Dbg_AutoShow);
+    return isDebuggerWorker(&m_fDbgAutoShowCommandLine, GUI_Dbg_AutoShow);
 }
 
-bool VBoxGlobal::isDebuggerAutoShowStatisticsEnabled(CMachine &aMachine)
+bool VBoxGlobal::isDebuggerAutoShowStatisticsEnabled() const
 {
-    return isDebuggerWorker(&mDbgAutoShowStatistics, aMachine, GUI_Dbg_AutoShow);
+    return isDebuggerWorker(&m_fDbgAutoShowStatistics, GUI_Dbg_AutoShow);
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -4024,12 +4024,12 @@ void VBoxGlobal::prepare()
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # ifdef VBOX_WITH_DEBUGGER_GUI_MENU
-    initDebuggerVar(&mDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_Dbg_Enabled, true);
+    initDebuggerVar(&m_fDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_Dbg_Enabled, true);
 # else
-    initDebuggerVar(&mDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_Dbg_Enabled, false);
+    initDebuggerVar(&m_fDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_Dbg_Enabled, false);
 # endif
-    initDebuggerVar(&mDbgAutoShow, "VBOX_GUI_DBG_AUTO_SHOW", GUI_Dbg_AutoShow, false);
-    mDbgAutoShowCommandLine = mDbgAutoShowStatistics = mDbgAutoShow;
+    initDebuggerVar(&m_fDbgAutoShow, "VBOX_GUI_DBG_AUTO_SHOW", GUI_Dbg_AutoShow, false);
+    m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = m_fDbgAutoShow;
     mStartPaused = false;
 #endif
 
@@ -4146,35 +4146,35 @@ void VBoxGlobal::prepare()
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
         else if (!::strcmp(arg, "-dbg") || !::strcmp (arg, "--dbg"))
-            setDebuggerVar(&mDbgEnabled, true);
+            setDebuggerVar(&m_fDbgEnabled, true);
         else if (!::strcmp( arg, "-debug") || !::strcmp (arg, "--debug"))
         {
-            setDebuggerVar(&mDbgEnabled, true);
-            setDebuggerVar(&mDbgAutoShow, true);
-            setDebuggerVar(&mDbgAutoShowCommandLine, true);
-            setDebuggerVar(&mDbgAutoShowStatistics, true);
+            setDebuggerVar(&m_fDbgEnabled, true);
+            setDebuggerVar(&m_fDbgAutoShow, true);
+            setDebuggerVar(&m_fDbgAutoShowCommandLine, true);
+            setDebuggerVar(&m_fDbgAutoShowStatistics, true);
             mStartPaused = true;
         }
         else if (!::strcmp(arg, "--debug-command-line"))
         {
-            setDebuggerVar(&mDbgEnabled, true);
-            setDebuggerVar(&mDbgAutoShow, true);
-            setDebuggerVar(&mDbgAutoShowCommandLine, true);
+            setDebuggerVar(&m_fDbgEnabled, true);
+            setDebuggerVar(&m_fDbgAutoShow, true);
+            setDebuggerVar(&m_fDbgAutoShowCommandLine, true);
             mStartPaused = true;
         }
         else if (!::strcmp(arg, "--debug-statistics"))
         {
-            setDebuggerVar(&mDbgEnabled, true);
-            setDebuggerVar(&mDbgAutoShow, true);
-            setDebuggerVar(&mDbgAutoShowStatistics, true);
+            setDebuggerVar(&m_fDbgEnabled, true);
+            setDebuggerVar(&m_fDbgAutoShow, true);
+            setDebuggerVar(&m_fDbgAutoShowStatistics, true);
             mStartPaused = true;
         }
         else if (!::strcmp(arg, "-no-debug") || !::strcmp(arg, "--no-debug"))
         {
-            setDebuggerVar(&mDbgEnabled, false);
-            setDebuggerVar(&mDbgAutoShow, false);
-            setDebuggerVar(&mDbgAutoShowCommandLine, false);
-            setDebuggerVar(&mDbgAutoShowStatistics, false);
+            setDebuggerVar(&m_fDbgEnabled, false);
+            setDebuggerVar(&m_fDbgAutoShow, false);
+            setDebuggerVar(&m_fDbgAutoShowCommandLine, false);
+            setDebuggerVar(&m_fDbgAutoShowStatistics, false);
         }
         /* Not quite debug options, but they're only useful with the debugger bits. */
         else if (!::strcmp(arg, "--start-paused"))
@@ -4240,16 +4240,16 @@ void VBoxGlobal::prepare()
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* setup the debugger gui. */
     if (RTEnvExist("VBOX_GUI_NO_DEBUGGER"))
-        mDbgEnabled = mDbgAutoShow =  mDbgAutoShowCommandLine = mDbgAutoShowStatistics = false;
-    if (mDbgEnabled)
+        m_fDbgEnabled = m_fDbgAutoShow =  m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
+    if (m_fDbgEnabled)
     {
         RTERRINFOSTATIC ErrInfo;
         RTErrInfoInitStatic(&ErrInfo);
-        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &mhVBoxDbg, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
+        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &m_hVBoxDbg, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
         if (RT_FAILURE(vrc))
         {
-            mhVBoxDbg = NIL_RTLDRMOD;
-            mDbgAutoShow =  mDbgAutoShowCommandLine = mDbgAutoShowStatistics = false;
+            m_hVBoxDbg = NIL_RTLDRMOD;
+            m_fDbgAutoShow =  m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
             LogRel(("Failed to load VBoxDbg, rc=%Rrc - %s\n", vrc, ErrInfo.Core.pszMsg));
         }
     }
@@ -4469,14 +4469,13 @@ void VBoxGlobal::setDebuggerVar(int *piDbgCfgVar, bool fState)
  *
  * @returns true / false.
  * @param   piDbgCfgVar         The debugger config variable to consult.
- * @param   rMachine            Reference to the machine object.
  * @param   pszExtraDataName    The extra data name relating to this variable.
  */
-bool VBoxGlobal::isDebuggerWorker(int *piDbgCfgVar, CMachine &rMachine, const char *pszExtraDataName)
+bool VBoxGlobal::isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName) const
 {
-    if (!(*piDbgCfgVar & VBOXGLOBAL_DBG_CFG_VAR_DONE) && !rMachine.isNull())
+    if (!(*piDbgCfgVar & VBOXGLOBAL_DBG_CFG_VAR_DONE))
     {
-        QString str = mVBox.GetExtraData(pszExtraDataName).toLower().trimmed();
+        const QString str = gEDataManager->debugFlagValue(pszExtraDataName);
         if (str.contains("veto"))
             *piDbgCfgVar = VBOXGLOBAL_DBG_CFG_VAR_DONE | VBOXGLOBAL_DBG_CFG_VAR_FALSE;
         else if (str.isEmpty() || (*piDbgCfgVar & VBOXGLOBAL_DBG_CFG_VAR_CMD_LINE))
