@@ -311,6 +311,21 @@ public:
     /** Returns mini-toolbar @a alignment. */
     void setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QString &strID);
 
+#ifdef Q_WS_MAC
+    /** Mac OS X: Returns whether 'presentation mode' should be enabled. */
+    bool presentationModeEnabled(const QString &strID) const;
+
+    /** Mac OS X: Returns whether Dock icon should be updated at runtime. */
+    bool realtimeDockIconUpdateEnabled(const QString &strID) const;
+    /** Mac OS X: Defines whether Dock icon update should be fEnabled at runtime. */
+    void setRealtimeDockIconUpdateEnabled(bool fEnabled, const QString &strID);
+
+    /** Mac OS X: Returns guest-screen which Dock icon should reflect at runtime. */
+    int realtimeDockIconUpdateMonitor(const QString &strID) const;
+    /** Mac OS X: Defines guest-screen @a iIndex which Dock icon should reflect at runtime. */
+    void setRealtimeDockIconUpdateMonitor(int iIndex, const QString &strID);
+#endif /* Q_WS_MAC */
+
     /** Returns default machine close action. */
     MachineCloseAction defaultMachineCloseAction(const QString &strID) const;
     /** Returns restricted machine close actions. */

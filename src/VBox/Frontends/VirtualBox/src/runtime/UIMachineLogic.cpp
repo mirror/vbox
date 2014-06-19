@@ -97,11 +97,6 @@
 # include <QX11Info>
 #endif /* Q_WS_X11 */
 
-#ifdef Q_WS_MAC
-/* Namespaces: */
-using namespace UIExtraDataDefs;
-#endif /* Q_WS_MAC */
-
 
 struct USBTarget
 {
@@ -1007,7 +1002,8 @@ void UIMachineLogic::prepareDock()
     if (cGuestScreens > 1)
     {
         pDockSettingsMenu->addSeparator();
-        m_DockIconPreviewMonitor = qMin(session().GetMachine().GetExtraData(GUI_RealtimeDockIconUpdateMonitor).toInt(), cGuestScreens - 1);
+        m_DockIconPreviewMonitor = qMin(gEDataManager->realtimeDockIconUpdateMonitor(vboxGlobal().managedVMUuid()),
+                                        cGuestScreens - 1);
         m_pDockPreviewSelectMonitorGroup = new QActionGroup(this);
         for (int i = 0; i < cGuestScreens; ++i)
         {
@@ -1031,10 +1027,9 @@ void UIMachineLogic::prepareDock()
     QString osTypeId = session().GetConsole().GetGuest().GetOSTypeId();
     m_pDockIconPreview = new UIDockIconPreview(uisession(), vboxGlobal().vmGuestOSTypeIcon(osTypeId));
 
-    QString strTest = session().GetMachine().GetExtraData(GUI_RealtimeDockIconUpdateEnabled).toLower();
-    /* Default to true if it is an empty value */
-    bool f = (strTest.isEmpty() || strTest == "true");
-    if (f)
+    /* Should the dock-icon be updated at runtime? */
+    bool fEnabled = gEDataManager->realtimeDockIconUpdateEnabled(vboxGlobal().managedVMUuid());
+    if (fEnabled)
         pDockEnablePreviewMonitor->setChecked(true);
     else
     {
@@ -1042,9 +1037,7 @@ void UIMachineLogic::prepareDock()
         if(m_pDockPreviewSelectMonitorGroup)
             m_pDockPreviewSelectMonitorGroup->setEnabled(false);
     }
-
-    /* Default to true if it is an empty value */
-    setDockIconPreviewEnabled(f);
+    setDockIconPreviewEnabled(fEnabled);
     updateDockOverlay();
 }
 #endif /* Q_WS_MAC */
@@ -2172,11 +2165,8 @@ void UIMachineLogic::sltDockPreviewModeChanged(QAction *pAction)
     CMachine machine = session().GetMachine();
     if (!machine.isNull())
     {
-        bool fEnabled = true;
-        if (pAction == gActionPool->action(UIActionIndexRuntime_Toggle_DockDisableMonitor))
-            fEnabled = false;
-
-        machine.SetExtraData(GUI_RealtimeDockIconUpdateEnabled, fEnabled ? "true" : "false");
+        bool fEnabled = pAction != gActionPool->action(UIActionIndexRuntime_Toggle_DockDisableMonitor);
+        gEDataManager->setRealtimeDockIconUpdateEnabled(fEnabled, vboxGlobal().managedVMUuid());
         updateDockOverlay();
     }
 }
@@ -2186,8 +2176,7 @@ void UIMachineLogic::sltDockPreviewMonitorChanged(QAction *pAction)
     CMachine machine = session().GetMachine();
     if (!machine.isNull())
     {
-        int monitor = pAction->data().toInt();
-        machine.SetExtraData(GUI_RealtimeDockIconUpdateMonitor, QString::number(monitor));
+        gEDataManager->setRealtimeDockIconUpdateMonitor(pAction->data().toInt(), vboxGlobal().managedVMUuid());
         updateDockOverlay();
     }
 }
@@ -2201,7 +2190,8 @@ void UIMachineLogic::sltChangeDockIconUpdate(bool fEnabled)
         {
             m_pDockPreviewSelectMonitorGroup->setEnabled(fEnabled);
             CMachine machine = session().GetMachine();
-            m_DockIconPreviewMonitor = qMin(machine.GetExtraData(GUI_RealtimeDockIconUpdateMonitor).toInt(), (int)machine.GetMonitorCount() - 1);
+            m_DockIconPreviewMonitor = qMin(gEDataManager->realtimeDockIconUpdateMonitor(vboxGlobal().managedVMUuid()),
+                                            (int)machine.GetMonitorCount() - 1);
         }
         /* Resize the dock icon in the case the preview monitor has changed. */
         QSize size = machineWindows().at(m_DockIconPreviewMonitor)->machineView()->size();
