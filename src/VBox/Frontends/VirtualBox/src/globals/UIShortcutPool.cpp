@@ -22,6 +22,10 @@
 #include "UIActionPool.h"
 #include "UIExtraDataManager.h"
 
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+
+
 void UIShortcut::setDescription(const QString &strDescription)
 {
     m_strDescription = strDescription;

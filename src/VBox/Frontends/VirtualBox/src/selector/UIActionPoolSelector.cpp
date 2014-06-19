@@ -23,6 +23,10 @@
 #include "UIShortcutPool.h"
 #include "UIDefs.h"
 
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+
+
 class UIActionMenuFile : public UIActionMenu
 {
     Q_OBJECT;

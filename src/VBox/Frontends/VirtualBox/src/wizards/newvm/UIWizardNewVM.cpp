@@ -34,6 +34,10 @@
 #include "CExtPackManager.h"
 #include "CStorageController.h"
 
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+
+
 UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strGroup /* = QString() */)
     : UIWizard(pParent, WizardType_NewVM)
     , m_strGroup(strGroup)

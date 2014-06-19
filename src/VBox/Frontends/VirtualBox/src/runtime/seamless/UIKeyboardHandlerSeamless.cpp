@@ -27,6 +27,10 @@
 #include "UIMachineWindow.h"
 #include "UIShortcutPool.h"
 
+/* Namespaces: */
+using namespace UIExtraDataDefs;
+
+
 /* Fullscreen keyboard-handler constructor: */
 UIKeyboardHandlerSeamless::UIKeyboardHandlerSeamless(UIMachineLogic* pMachineLogic)
     : UIKeyboardHandler(pMachineLogic)
