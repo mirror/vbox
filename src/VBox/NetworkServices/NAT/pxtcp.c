@@ -42,11 +42,19 @@
 #include "lwip/icmp.h"
 #include "lwip/icmp6.h"
 
-/* NetBSD doesn't report POLLHUP for TCP sockets */
-#ifdef __NetBSD__
-# define HAVE_TCP_POLLHUP 0
+/*
+ * Different OSes have different quirks in reporting POLLHUP for TCP
+ * sockets.
+ *
+ * Using shutdown(2) "how" values here would be more readable, but
+ * since SHUT_RD is 0, we can't use 0 for "none", unfortunately.
+ */
+#if defined(RT_OS_NETBSD)
+# define HAVE_TCP_POLLHUP 0                     /* not reported */
+#elif defined(RT_OS_DARWIN)
+# define HAVE_TCP_POLLHUP POLLIN                /* reported when remote closes */
 #else
-# define HAVE_TCP_POLLHUP 1
+# define HAVE_TCP_POLLHUP (POLLIN|POLLOUT)      /* reported when both directions are closed */
 #endif
 
 
@@ -171,9 +179,6 @@ struct pxtcp {
      * the guest: lwIP may need to resend and the data are in pxtcp's
      * inbuf::buf.  We defer delete until all data are acked to
      * pxtcp_pcb_sent().
-     *
-     * It's also implied by inbound_pull.  It probably means that
-     * "deferred" is not a very fortunate name.
      */
     int deferred_delete;
 
@@ -212,7 +217,7 @@ static void pxtcp_pcb_dissociate(struct pxtcp *);
 static int pxtcp_pmgr_chan_add(struct pollmgr_handler *, SOCKET, int);
 static int pxtcp_pmgr_chan_pollout(struct pollmgr_handler *, SOCKET, int);
 static int pxtcp_pmgr_chan_pollin(struct pollmgr_handler *, SOCKET, int);
-#if !HAVE_TCP_POLLHUP
+#if !(HAVE_TCP_POLLHUP & POLLOUT)
 static int pxtcp_pmgr_chan_del(struct pollmgr_handler *, SOCKET, int);
 #endif
 static int pxtcp_pmgr_chan_reset(struct pollmgr_handler *, SOCKET, int);
@@ -272,7 +277,7 @@ DECLINLINE(void) pxtcp_pcb_maybe_deferred_delete(struct pxtcp *);
 static struct pollmgr_handler pxtcp_pmgr_chan_add_hdl;
 static struct pollmgr_handler pxtcp_pmgr_chan_pollout_hdl;
 static struct pollmgr_handler pxtcp_pmgr_chan_pollin_hdl;
-#if !HAVE_TCP_POLLHUP
+#if !(HAVE_TCP_POLLHUP & POLLOUT)
 static struct pollmgr_handler pxtcp_pmgr_chan_del_hdl;
 #endif
 static struct pollmgr_handler pxtcp_pmgr_chan_reset_hdl;
@@ -298,7 +303,7 @@ pxtcp_init(void)
     CHANNEL(POLLMGR_CHAN_PXTCP_ADD,     pxtcp_pmgr_chan_add);
     CHANNEL(POLLMGR_CHAN_PXTCP_POLLIN,  pxtcp_pmgr_chan_pollin);
     CHANNEL(POLLMGR_CHAN_PXTCP_POLLOUT, pxtcp_pmgr_chan_pollout);
-#if !HAVE_TCP_POLLHUP
+#if !(HAVE_TCP_POLLHUP & POLLOUT)
     CHANNEL(POLLMGR_CHAN_PXTCP_DEL,     pxtcp_pmgr_chan_del);
 #endif
     CHANNEL(POLLMGR_CHAN_PXTCP_RESET,   pxtcp_pmgr_chan_reset);
@@ -486,7 +491,7 @@ pxtcp_pmgr_chan_pollin(struct pollmgr_handler *handler, SOCKET fd, int revents)
 }
 
 
-#if !HAVE_TCP_POLLHUP
+#if !(HAVE_TCP_POLLHUP & POLLOUT)
 /**
  * POLLMGR_CHAN_PXTCP_DEL handler.
  *
@@ -517,7 +522,7 @@ pxtcp_pmgr_chan_del(struct pollmgr_handler *handler, SOCKET fd, int revents)
 
     return POLLIN;
 }
-#endif  /* !HAVE_TCP_POLLHUP  */
+#endif  /* !(HAVE_TCP_POLLHUP & POLLOUT)  */
 
 
 /**
@@ -1372,18 +1377,14 @@ pxtcp_pcb_forward_outbound_close(struct pxtcp *pxtcp)
              (void *)pxtcp, (void *)pcb, tcp_debug_state_str(pcb->state)));
 
 
-    /*
-     * NB: set the flag first, since shutdown() will trigger POLLHUP
-     * if inbound is already closed, and poll manager asserts
-     * outbound_close_done (may be it should not?).
-     */
+    /* set the flag first, since shutdown() may trigger POLLHUP */
     pxtcp->outbound_close_done = 1;
     shutdown(pxtcp->sock, SHUT_WR); /* half-close the socket */
 
-#if !HAVE_TCP_POLLHUP
+#if !(HAVE_TCP_POLLHUP & POLLOUT)
     /*
-     * On NetBSD POLLHUP is not reported for TCP sockets, so we need
-     * to nudge poll manager manually.
+     * We need to nudge poll manager manually, since OS will not
+     * report POLLHUP.
      */
     if (pxtcp->inbound_close) {
         pxtcp_chan_send_weak(POLLMGR_CHAN_PXTCP_DEL, pxtcp);
@@ -1681,80 +1682,45 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
     LWIP_ASSERT1((revents & POLLHUP) == 0);
 #else
     if (revents & POLLHUP) {
+#if HAVE_TCP_POLLHUP == POLLIN
         /*
-         * Linux and Darwin seems to report POLLHUP when both
-         * directions are shut down.  And they do report POLLHUP even
-         * when there's unread data (which they aslo report as POLLIN
-         * along with that POLLHUP).
-         *
-         * FreeBSD (from source inspection) seems to follow Linux,
-         * reporting POLLHUP when both directions are shut down, but
-         * POLLHUP is always accompanied with POLLIN.
-         *
-         * NetBSD never reports POLLHUP for sockets.
-         *
-         * ---
-         *
-         * If external half-closes first, we don't get POLLHUP, we
-         * recv 0 bytes from the socket as EOF indicator, stop polling
-         * for POLLIN and poll with events == 0 (with occasional
-         * one-shot POLLOUT).  When guest eventually closes, we get
-         * POLLHUP.
-         *
-         * If guest half-closes first things are more tricky.  As soon
-         * as host sees the FIN from external it will spam POLLHUP,
-         * even when there's unread data.  The problem is that we
-         * might have stopped polling for POLLIN because the ring
-         * buffer is full or we were polling POLLIN but can't read all
-         * of the data becuase buffer doesn't have enough space.
-         * Either way, there's unread data but we can't keep polling
-         * the socket.
+         * Remote closed inbound.
          */
-        DPRINTF(("sock %d: HUP\n", fd));
-        LWIP_ASSERT1(pxtcp->outbound_close_done);
-
-        if (pxtcp->inbound_close) {
-            /* there's no unread data, we are done */
-            return pxtcp_schedule_delete(pxtcp);
-        }
-        else {
-            /* DPRINTF */ {
-#ifndef RT_OS_WINDOWS
-                int unread;
-#else
-                u_long unread;
-#endif
-                status = ioctlsocket(fd, FIONREAD, &unread);
-                if (status == SOCKET_ERROR) {
-                    DPRINTF2(("sock %d: FIONREAD: %R[sockerr]\n",
-                              fd, SOCKERRNO()));
-                }
-                else {
-                    DPRINTF2(("sock %d: %d UNREAD bytes\n", fd, unread));
-                }
-            }
-
-            /*
-             * We cannot just set a flag here and let pxtcp_pcb_sent()
-             * notice and start pulling, because if we are preempted
-             * before setting the flag and all data in inbuf is ACKed
-             * there will be no more calls to pxtcp_pcb_sent() to
-             * notice the flag.
-             *
-             * We cannot set a flag and then send a message to make
-             * sure it noticed, because if it has and it has read all
-             * data while the message is in transit it will delete
-             * pxtcp.
-             *
-             * In a sense this message is like msg_delete (except we
-             * ask to pull some data first).
+        if (!pxtcp->outbound_close_done) {
+            /* 
+             * We might still need to poll for POLLOUT, but we can not
+             * poll for POLLIN anymore (even if not all data are read)
+             * because we will be spammed by POLLHUP.
              */
-            proxy_lwip_post(&pxtcp->msg_inpull);
-            pxtcp->pmhdl.slot = -1;
-            return -1;
+            pxtcp->events &= ~POLLIN;
+            if (!pxtcp->inbound_close) {
+                /* the rest of the input has to be pulled */
+                proxy_lwip_post(&pxtcp->msg_inpull);
+            }
         }
-        /* NOTREACHED */
-    } /* POLLHUP */
+        else
+#endif
+        /*
+         * Both directions are closed.
+         */
+        {
+            DPRINTF(("sock %d: HUP\n", fd));
+            LWIP_ASSERT1(pxtcp->outbound_close_done);
+
+            if (pxtcp->inbound_close) {
+                /* there's no unread data, we are done */
+                return pxtcp_schedule_delete(pxtcp);
+            }
+            else {
+                /* pull the rest of the input first (deferred_delete) */
+                pxtcp->pmhdl.slot = -1;
+                proxy_lwip_post(&pxtcp->msg_inpull);
+                return -1;
+            }
+            /* NOTREACHED */
+        }
+
+    }
 #endif  /* HAVE_TCP_POLLHUP */
 
     return pxtcp->events;
@@ -2226,7 +2192,6 @@ pxtcp_pcb_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
 
     if (/* __predict_false */ len == 0) {
         /* we are notified to start pulling */
-        LWIP_ASSERT1(pxtcp->outbound_close_done);
         LWIP_ASSERT1(!pxtcp->inbound_close);
         LWIP_ASSERT1(pxtcp->inbound_pull);
 
@@ -2342,10 +2307,17 @@ pxtcp_pcb_pull_inbound(void *ctx)
         return;
     }
 
-    DPRINTF(("%s: pxtcp %p: pcb %p\n",
-             __func__, (void *)pxtcp, (void *)pxtcp->pcb));
     pxtcp->inbound_pull = 1;
-    pxtcp->deferred_delete = 1;
+    if (pxtcp->outbound_close_done) {
+        DPRINTF(("%s: pxtcp %p: pcb %p (deferred delete)\n",
+                 __func__, (void *)pxtcp, (void *)pxtcp->pcb));
+        pxtcp->deferred_delete = 1;
+    }
+    else {
+        DPRINTF(("%s: pxtcp %p: pcb %p\n",
+                 __func__, (void *)pxtcp, (void *)pxtcp->pcb));
+    }
+
     pxtcp_pcb_sent(pxtcp, pxtcp->pcb, 0);
 }
 
