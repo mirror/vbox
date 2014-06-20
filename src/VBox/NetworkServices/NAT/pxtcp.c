@@ -49,7 +49,7 @@
  * Using shutdown(2) "how" values here would be more readable, but
  * since SHUT_RD is 0, we can't use 0 for "none", unfortunately.
  */
-#if defined(RT_OS_NETBSD)
+#if defined(RT_OS_NETBSD) || defined(RT_OS_SOLARIS)
 # define HAVE_TCP_POLLHUP 0                     /* not reported */
 #elif defined(RT_OS_DARWIN)
 # define HAVE_TCP_POLLHUP POLLIN                /* reported when remote closes */
