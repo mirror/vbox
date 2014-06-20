@@ -229,16 +229,13 @@ typedef struct VBOXDNDCONTEXT
     const VBOXSERVICEENV      *pEnv;
     /** Shutdown indicator. */
     bool                       fShutdown;
-    /** Thread handle for main event queue
-     *  processing. */
-    RTTHREAD                   hEvtQueue;
     /** The DnD main event queue. */
     RTCMTList<VBOXDNDEVENT>    lstEvtQueue;
     /** Semaphore for waiting on main event queue
      *  events. */
     RTSEMEVENT                 hEvtQueueSem;
-    /** List of drag'n drop windows. At
-     *  the moment only one source is supported. */
+    /** List of drag'n drop proxy windows.
+     *  Note: At the moment only one window is supported. */
     RTCMTList<VBoxDnDWnd*>     lstWnd;
 
 } VBOXDNDCONTEXT, *PVBOXDNDCONTEXT;
@@ -302,6 +299,7 @@ public:
 public:
 
     int Initialize(PVBOXDNDCONTEXT pContext);
+    void Destroy(void);
 
 public:
 
@@ -359,6 +357,9 @@ public: /** @todo Make protected! */
 
     /** Pointer to DnD context. */
     PVBOXDNDCONTEXT            pContext;
+    /** The proxy window's main thread for processing
+     *  window messages. */
+    RTTHREAD                   hThread;
     RTCRITSECT                 mCritSect;
     RTSEMEVENT                 mEventSem;
 #ifdef RT_OS_WINDOWS
@@ -382,6 +383,8 @@ public: /** @todo Make protected! */
      *  currently while being in this window? */
     bool                       mfMouseButtonDown;
 # ifdef VBOX_WITH_DRAG_AND_DROP_GH
+    /** IDropTarget implementation for guest -> host
+     *  support. */
     VBoxDnDDropTarget         *pDropTarget;
 # endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 #else
@@ -394,10 +397,8 @@ public: /** @todo Make protected! */
     Mode                       mMode;
     /** The current state. */
     State                      mState;
-    bool                       mInFlight;
+    /** Format being requested. */
     RTCString                  mFormatRequested;
-    RTCList<RTCString>         mLstFormats;
-    RTCList<RTCString>         mLstActions;
 };
 #endif /* __VBOXTRAYDND__H */
 
