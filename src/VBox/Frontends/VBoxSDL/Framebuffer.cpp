@@ -74,6 +74,20 @@ static RTNATIVETHREAD gSdlNativeThread = NIL_RTNATIVETHREAD; /**< the SDL thread
 // Constructor / destructor
 //
 
+VBoxSDLFB::VBoxSDLFB()
+{
+}
+
+HRESULT VBoxSDLFB::FinalConstruct()
+{
+    return 0;
+}
+
+void VBoxSDLFB::FinalRelease()
+{
+    return;
+}
+
 /**
  * SDL framebuffer constructor. It is called from the main
  * (i.e. SDL) thread. Therefore it is safe to use SDL calls
@@ -86,7 +100,7 @@ static RTNATIVETHREAD gSdlNativeThread = NIL_RTNATIVETHREAD; /**< the SDL thread
  * @param iFixedWidth    fixed SDL width (-1 means not set)
  * @param iFixedHeight   fixed SDL height (-1 means not set)
  */
-VBoxSDLFB::VBoxSDLFB(uint32_t uScreenId,
+HRESULT VBoxSDLFB::init(uint32_t uScreenId,
                      bool fFullscreen, bool fResizable, bool fShowSDLConfig,
                      bool fKeepHostRes, uint32_t u32FixedWidth,
                      uint32_t u32FixedHeight, uint32_t u32FixedBPP,
@@ -94,10 +108,6 @@ VBoxSDLFB::VBoxSDLFB(uint32_t uScreenId,
 {
     int rc;
     LogFlow(("VBoxSDLFB::VBoxSDLFB\n"));
-
-#if defined (RT_OS_WINDOWS)
-    refcnt = 0;
-#endif
 
     mScreenId       = uScreenId;
     mfUpdateImage   = fUpdateImage;
@@ -139,6 +149,13 @@ VBoxSDLFB::VBoxSDLFB(uint32_t uScreenId,
     resizeGuest();
     Assert(mScreen);
     mfInitialized = true;
+#ifdef RT_OS_WINDOWS
+    HRESULT hr = CoCreateFreeThreadedMarshaler(this, //GetControllingUnknown(),
+                                             &m_pUnkMarshaler.p);
+    Log(("CoCreateFreeThreadedMarshaler hr %08X\n", hr));
+#endif
+
+    return 0;
 }
 
 VBoxSDLFB::~VBoxSDLFB()
