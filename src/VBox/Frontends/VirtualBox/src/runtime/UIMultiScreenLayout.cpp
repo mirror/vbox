@@ -79,7 +79,7 @@ void UIMultiScreenLayout::update()
      * We have to make sure they are valid, which means there have to be unique combinations
      * and all guests screens need there own host screen. */
     CDisplay display = m_pMachineLogic->session().GetConsole().GetDisplay();
-    bool fShouldWeAutoMountGuestScreens = gEDataManager->shouldWeAutoMountGuestScreens(vboxGlobal().managedVMUuid());
+    bool fShouldWeAutoMountGuestScreens = gEDataManager->autoMountGuestScreensEnabled(vboxGlobal().managedVMUuid());
     LogRelFlow(("UIMultiScreenLayout::update: GUI/AutomountGuestScreens is %s.\n", fShouldWeAutoMountGuestScreens ? "enabled" : "disabled"));
     QDesktopWidget *pDW = QApplication::desktop();
     foreach (int iGuestScreen, m_guestScreens)

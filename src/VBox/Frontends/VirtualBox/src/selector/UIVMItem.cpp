@@ -261,11 +261,11 @@ bool UIVMItem::recache()
         m_configurationAccessLevel = ::configurationAccessLevel(m_sessionState, m_machineState);
         /* Also take restrictions into account: */
         if (   m_configurationAccessLevel != ConfigurationAccessLevel_Null
-            && !gEDataManager->shouldWeAllowMachineReconfiguration(m_strId))
+            && !gEDataManager->machineReconfigurationEnabled(m_strId))
             m_configurationAccessLevel = ConfigurationAccessLevel_Null;
 
         /* Should we show details for this item? */
-        m_fHasDetails = gEDataManager->shouldWeShowMachineDetails(m_strId);
+        m_fHasDetails = gEDataManager->showMachineInSelectorDetails(m_strId);
     }
     else
     {

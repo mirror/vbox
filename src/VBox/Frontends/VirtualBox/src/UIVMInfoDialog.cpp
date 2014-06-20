@@ -478,7 +478,7 @@ void UIVMInfoDialog::loadSettings()
                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
         /* Maximize (if necessary): */
-        if (gEDataManager->isInformationWindowShouldBeMaximized(vboxGlobal().managedVMUuid()))
+        if (gEDataManager->informationWindowShouldBeMaximized(vboxGlobal().managedVMUuid()))
             showMaximized();
     }
 }

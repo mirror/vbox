@@ -116,8 +116,8 @@ void UIMachineWindowScale::loadSettings()
             setGeometry(m_normalGeometry);
 
             /* Maximize (if necessary): */
-            if (gEDataManager->isMachineWindowShouldBeMaximized(machineLogic()->visualStateType(),
-                                                                m_uScreenId, vboxGlobal().managedVMUuid()))
+            if (gEDataManager->machineWindowShouldBeMaximized(machineLogic()->visualStateType(),
+                                                              m_uScreenId, vboxGlobal().managedVMUuid()))
                 setWindowState(windowState() | Qt::WindowMaximized);
         }
         /* If we do NOT have proper geometry: */

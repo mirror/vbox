@@ -373,14 +373,14 @@ void UIMessageCenter::cannotStartSelector() const
              "<p>The application will now terminate.</p>"));
 }
 
-void UIMessageCenter::showBETAWarning() const
+void UIMessageCenter::showBetaBuildWarning() const
 {
     alert(0, MessageType_Warning,
           tr("You are running a prerelease version of VirtualBox. "
              "This version is not suitable for production use."));
 }
 
-void UIMessageCenter::showBEBWarning() const
+void UIMessageCenter::showExperimentalBuildWarning() const
 {
     alert(0, MessageType_Warning,
           tr("You are running an EXPERIMENTAL build of VirtualBox. "

@@ -858,7 +858,7 @@ void UISettingsDialogMachine::saveData()
 
         /* Disable First RUN Wizard: */
         if (m_fResetFirstRunFlag)
-            gEDataManager->setFirstRun(false, m_strMachineId);
+            gEDataManager->setMachineFirstTimeStarted(false, m_strMachineId);
 
         /* Save settings finally: */
         m_machine.SaveSettings();

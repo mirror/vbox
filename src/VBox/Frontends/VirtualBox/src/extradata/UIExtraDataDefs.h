@@ -26,119 +26,224 @@
 /** Extra-data namespace. */
 namespace UIExtraDataDefs
 {
-    /* Global declarations: */
-    extern const char* GUI_LanguageId;
-    extern const char* GUI_PreventBetaWarning;
-    extern const char* GUI_RecentFolderHD;
-    extern const char* GUI_RecentFolderCD;
-    extern const char* GUI_RecentFolderFD;
-    extern const char* GUI_RecentListHD;
-    extern const char* GUI_RecentListCD;
-    extern const char* GUI_RecentListFD;
+    /** @name General
+      * @{ */
+        /** VBox language ID. */
+        extern const char* GUI_LanguageId;
+    /** @} */
 
-    /* Message-center declarations: */
-    extern const char* GUI_SuppressMessages;
-    extern const char* GUI_InvertMessageOption;
-
-    /* Settings-dialog declarations: */
-    extern const char* GUI_RestrictedGlobalSettingsPages;
-    extern const char* GUI_RestrictedMachineSettingsPages;
-
-    /* Wizard declarations: */
-    extern const char* GUI_FirstRun;
-    extern const char* GUI_HideDescriptionForWizards;
+    /** @name Messaging
+      * @{ */
+        /** Holds the list of supressed messages for the Message/Popup center frameworks. */
+        extern const char* GUI_SuppressMessages;
+        /** Holds the list of messages for the Message/Popup center frameworks with inverted check-box state. */
+        extern const char* GUI_InvertMessageOption;
+#if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
+        /** Holds version for which user wants to prevent BETA build warning. */
+        extern const char* GUI_PreventBetaWarning;
+#endif /* !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG) */
+    /** @} */
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* Update-manager declarations: */
-    extern const char* GUI_PreventApplicationUpdate;
-    extern const char* GUI_UpdateDate;
-    extern const char* GUI_UpdateCheckCount;
+    /** @name Application Update
+      * @{ */
+        /** Holds whether Application Update functionality enabled. */
+        extern const char* GUI_PreventApplicationUpdate;
+        /** Holds Application Update data. */
+        extern const char* GUI_UpdateDate;
+        /** Holds Application Update check counter. */
+        extern const char* GUI_UpdateCheckCount;
+    /** @} */
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
-    /* Selector UI declarations: */
-    extern const char* GUI_Input_SelectorShortcuts;
-    extern const char* GUI_LastSelectorWindowPosition;
-    extern const char* GUI_SplitterSizes;
-    extern const char* GUI_Toolbar;
-    extern const char* GUI_Statusbar;
-    extern const char* GUI_PreviewUpdate;
-    extern const char* GUI_DetailsPageBoxes;
-    extern const char* GUI_LastItemSelected;
-    extern const char* GUI_GroupDefinitions;
-    extern const char* GUI_HideFromManager;
-    extern const char* GUI_PreventReconfiguration;
-    extern const char* GUI_PreventSnapshotOperations;
-    extern const char* GUI_HideDetails;
+    /** @name Settings
+      * @{ */
+        /** Holds restricted Plobal Settings pages. */
+        extern const char* GUI_RestrictedGlobalSettingsPages;
+        /** Holds restricted Machine Settings pages. */
+        extern const char* GUI_RestrictedMachineSettingsPages;
+    /** @} */
 
-    /* Runtime UI declarations: */
+    /** @name Settings: Keyboard
+      * @{ */
+        /** Holds Selector UI shortcut overrides. */
+        extern const char* GUI_Input_SelectorShortcuts;
+        /** Holds Runtime UI shortcut overrides. */
+        extern const char* GUI_Input_MachineShortcuts;
+    /** @} */
+
+    /** @name Settings: Storage
+      * @{ */
+        /** Holds recent folder for hard-drives. */
+        extern const char* GUI_RecentFolderHD;
+        /** Holds recent folder for optical-disks. */
+        extern const char* GUI_RecentFolderCD;
+        /** Holds recent folder for floppy-disks. */
+        extern const char* GUI_RecentFolderFD;
+        /** Holds the list of recently used hard-drives. */
+        extern const char* GUI_RecentListHD;
+        /** Holds the list of recently used optical-disks. */
+        extern const char* GUI_RecentListCD;
+        /** Holds the list of recently used floppy-disks. */
+        extern const char* GUI_RecentListFD;
+    /** @} */
+
+    /** @name VirtualBox Manager
+      * @{ */
+        /** Holds selector-window geometry. */
+        extern const char* GUI_LastSelectorWindowPosition;
+        /** Holds selector-window splitter hints. */
+        extern const char* GUI_SplitterSizes;
+        /** Holds whether selector-window tool-bar visible. */
+        extern const char* GUI_Toolbar;
+        /** Holds whether selector-window status-bar visible. */
+        extern const char* GUI_Statusbar;
+        /** Prefix used by composite extra-data keys,
+          * which holds selector-window chooser-pane' groups definitions. */
+        extern const char* GUI_GroupDefinitions;
+        /** Holds last item chosen in selector-window chooser-pane. */
+        extern const char* GUI_LastItemSelected;
+        /** Holds selector-window details-pane' elements. */
+        extern const char* GUI_DetailsPageBoxes;
+        /** Holds selector-window details-pane' preview update interval. */
+        extern const char* GUI_PreviewUpdate;
+    /** @} */
+
+    /** @name Wizards
+      * @{ */
+        /** Holds wizard types for which descriptions should be hidden. */
+        extern const char* GUI_HideDescriptionForWizards;
+    /** @} */
+
+    /** @name Virtual Machine
+      * @{ */
+        /** Holds whether machine shouldn't be shown in selector-window chooser-pane. */
+        extern const char* GUI_HideFromManager;
+        /** Holds whether machine shouldn't be shown in selector-window details-pane. */
+        extern const char* GUI_HideDetails;
+        /** Holds whether machine reconfiguration disabled. */
+        extern const char* GUI_PreventReconfiguration;
+        /** Holds whether machine snapshot operations disabled. */
+        extern const char* GUI_PreventSnapshotOperations;
+        /** Holds whether this machine is first time started. */
+        extern const char* GUI_FirstRun;
 #ifndef Q_WS_MAC
-    extern const char* GUI_MachineWindowIcons;
-    extern const char* GUI_MachineWindowNamePostfix;
+        /** Except Mac OS X: Holds redefined machine-window icon names. */
+        extern const char* GUI_MachineWindowIcons;
+        /** Except Mac OS X: Holds redefined machine-window name postfix. */
+        extern const char* GUI_MachineWindowNamePostfix;
 #endif /* !Q_WS_MAC */
-    extern const char* GUI_RestrictedRuntimeMenus;
+        /** Prefix used by composite extra-data keys,
+          * which holds normal machine-window geometry per screen-index. */
+        extern const char* GUI_LastNormalWindowPosition;
+        /** Prefix used by composite extra-data keys,
+          * which holds scaled machine-window geometry per screen-index. */
+        extern const char* GUI_LastScaleWindowPosition;
+        /** Holds machine-window geometry maximized state flag. */
+        extern const char* GUI_Geometry_State_Max;
+        /** Holds restricted Runtime UI menu types. */
+        extern const char* GUI_RestrictedRuntimeMenus;
 #ifdef Q_WS_MAC
-    extern const char* GUI_RestrictedRuntimeApplicationMenuActions;
+        /** Mac OS X: Holds restricted Runtime UI action types for Application menu. */
+        extern const char* GUI_RestrictedRuntimeApplicationMenuActions;
 #endif /* Q_WS_MAC */
-    extern const char* GUI_RestrictedRuntimeMachineMenuActions;
-    extern const char* GUI_RestrictedRuntimeViewMenuActions;
-    extern const char* GUI_RestrictedRuntimeDevicesMenuActions;
+        /** Holds restricted Runtime UI action types for Machine menu. */
+        extern const char* GUI_RestrictedRuntimeMachineMenuActions;
+        /** Holds restricted Runtime UI action types for View menu. */
+        extern const char* GUI_RestrictedRuntimeViewMenuActions;
+        /** Holds restricted Runtime UI action types for Devices menu. */
+        extern const char* GUI_RestrictedRuntimeDevicesMenuActions;
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    extern const char* GUI_RestrictedRuntimeDebuggerMenuActions;
+        /** Holds restricted Runtime UI action types for Debugger menu. */
+        extern const char* GUI_RestrictedRuntimeDebuggerMenuActions;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-    extern const char* GUI_RestrictedRuntimeHelpMenuActions;
-    extern const char* GUI_RestrictedVisualStates;
-    extern const char* GUI_Input_MachineShortcuts;
-    extern const char* GUI_LastNormalWindowPosition;
-    extern const char* GUI_LastScaleWindowPosition;
-    extern const char* GUI_Geometry_State_Max;
-    extern const char* GUI_LastGuestSizeHint;
-    extern const char* GUI_LastGuestSizeHintWasFullscreen;
-    extern const char* GUI_Fullscreen;
-    extern const char* GUI_Seamless;
-    extern const char* GUI_Scale;
-    extern const char* GUI_VirtualScreenToHostScreen;
-    extern const char* GUI_AutoresizeGuest;
-    extern const char* GUI_AutomountGuestScreens;
-    extern const char* GUI_PassCAD;
-    extern const char* GUI_DefaultCloseAction;
-    extern const char* GUI_RestrictedStatusBarIndicators;
-    extern const char* GUI_HidLedsSync;
-    extern const char* GUI_GuruMeditationHandler;
-    extern const char* GUI_HiDPI_Optimization;
-
-    /* Runtime UI: Mini-toolbar declarations: */
-    extern const char* GUI_ShowMiniToolBar;
-    extern const char* GUI_MiniToolBarAlignment;
-    extern const char* GUI_MiniToolBarAutoHide;
-
-#ifdef Q_WS_MAC
-    /* Runtime UI: Mac-dock declarations: */
-    extern const char* GUI_PresentationModeEnabled;
-    extern const char* GUI_RealtimeDockIconUpdateEnabled;
-    extern const char* GUI_RealtimeDockIconUpdateMonitor;
-#endif /* Q_WS_MAC */
-
+        /** Holds restricted Runtime UI action types for Help menu. */
+        extern const char* GUI_RestrictedRuntimeHelpMenuActions;
+        /** Holds restricted Runtime UI visual-states. */
+        extern const char* GUI_RestrictedVisualStates;
+        /** Holds whether full screen visual-state is requested. */
+        extern const char* GUI_Fullscreen;
+        /** Holds whether seamless visual-state is requested. */
+        extern const char* GUI_Seamless;
+        /** Holds whether scaled visual-state is requested. */
+        extern const char* GUI_Scale;
+        /** Holds whether guest-screen auto-resize according machine-window size is enabled. */
+        extern const char* GUI_AutoresizeGuest;
+        /** Prefix used by composite extra-data keys,
+          * which holds last guest-screen size-hint per screen-index. */
+        extern const char* GUI_LastGuestSizeHint;
+        /** Prefix used by composite extra-data keys,
+          * which holds whether guest size-hint was for full or seamless screen per screen-index. */
+        extern const char* GUI_LastGuestSizeHintWasFullscreen;
+        /** Prefix used by composite extra-data keys,
+          * which holds host-screen index per guest-screen index. */
+        extern const char* GUI_VirtualScreenToHostScreen;
+        /** Holds whether automatic mounting/unmounting of guest-screens enabled. */
+        extern const char* GUI_AutomountGuestScreens;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    /* Runtime UI: Video-acceleration declarations: */
-    extern const char* GUI_Accelerate2D_StretchLinear;
-    extern const char* GUI_Accelerate2D_PixformatYV12;
-    extern const char* GUI_Accelerate2D_PixformatUYVY;
-    extern const char* GUI_Accelerate2D_PixformatYUY2;
-    extern const char* GUI_Accelerate2D_PixformatAYUV;
+        /** Holds whether 2D acceleration should use linear sretch. */
+        extern const char* GUI_Accelerate2D_StretchLinear;
+        /** Holds whether 2D acceleration should use YV12 pixel format. */
+        extern const char* GUI_Accelerate2D_PixformatYV12;
+        /** Holds whether 2D acceleration should use UYVY pixel format. */
+        extern const char* GUI_Accelerate2D_PixformatUYVY;
+        /** Holds whether 2D acceleration should use YUY2 pixel format. */
+        extern const char* GUI_Accelerate2D_PixformatYUY2;
+        /** Holds whether 2D acceleration should use AYUV pixel format. */
+        extern const char* GUI_Accelerate2D_PixformatAYUV;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+        /** Holds Runtime UI HiDPI optimization type. */
+        extern const char* GUI_HiDPI_Optimization;
+        /** Holds whether mini-toolbar is enabled for full and seamless screens. */
+        extern const char* GUI_ShowMiniToolBar;
+        /** Holds whether mini-toolbar should auto-hide itself. */
+        extern const char* GUI_MiniToolBarAutoHide;
+        /** Holds mini-toolbar alignment. */
+        extern const char* GUI_MiniToolBarAlignment;
+        /** Holds restricted Runtime UI status-bar indicators. */
+        extern const char* GUI_RestrictedStatusBarIndicators;
+#ifdef Q_WS_MAC
+        /** Mac OS X: Holds whether 'presentation mode' enabled. */
+        extern const char* GUI_PresentationModeEnabled;
+        /** Mac OS X: Holds whether Dock icon should be updated at runtime. */
+        extern const char* GUI_RealtimeDockIconUpdateEnabled;
+        /** Mac OS X: Holds guest-screen which Dock icon should reflect at runtime. */
+        extern const char* GUI_RealtimeDockIconUpdateMonitor;
+#endif /* Q_WS_MAC */
+        /** Holds whether machine should pass CAD to guest. */
+        extern const char* GUI_PassCAD;
+        /** Holds redefined guru-meditation handler type. */
+        extern const char* GUI_GuruMeditationHandler;
+        /** Holds whether machine should perform HID LEDs synchronization. */
+        extern const char* GUI_HidLedsSync;
+    /** @} */
 
-    /* Runtime UI: Close-dialog declarations: */
-    extern const char* GUI_RestrictedCloseActions;
-    extern const char* GUI_LastCloseAction;
-    extern const char* GUI_CloseActionHook;
+    /** @name Virtual Machine: Information dialog
+      * @{ */
+        /** Holds information-window geometry. */
+        extern const char* GUI_InformationWindowGeometry;
+    /** @} */
 
-    /* Runtime UI: Information-window declarations: */
-    extern const char* GUI_Geometry_InformationWindow;
+    /** @name Virtual Machine: Close dialog
+      * @{ */
+        /** Holds default machine close action. */
+        extern const char* GUI_DefaultCloseAction;
+        /** Holds restricted machine close actions. */
+        extern const char* GUI_RestrictedCloseActions;
+        /** Holds last machine close action. */
+        extern const char* GUI_LastCloseAction;
+        /** Holds machine close hook script name as simple string. */
+        extern const char* GUI_CloseActionHook;
+    /** @} */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /* Runtime UI: Debugger GUI declarations: */
-    extern const char* GUI_Dbg_Enabled;
-    extern const char* GUI_Dbg_AutoShow;
+    /** @name Virtual Machine Debug UI
+      * @{ */
+        /** Holds whether debugger UI enabled. */
+        extern const char* GUI_Dbg_Enabled;
+        /** Holds whether debugger UI should be auto-shown. */
+        extern const char* GUI_Dbg_AutoShow;
+    /** @} */
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 }
 

@@ -51,16 +51,15 @@ void UIWizard::sltCustomButtonClicked(int iId)
         /* Cleanup: */
         cleanup();
 
-        /* Switch mode: */
+        /* Toggle mode: */
         switch (m_mode)
         {
             case WizardMode_Basic:  m_mode = WizardMode_Expert; break;
             case WizardMode_Expert: m_mode = WizardMode_Basic;  break;
             default: AssertMsgFailed(("Invalid mode: %d", m_mode)); break;
         }
-
-        /* Save mode settings: */
-        gEDataManager->setModeForWizard(m_type, m_mode);
+        /* Save mode: */
+        gEDataManager->setModeForWizardType(m_type, m_mode);
 
         /* Prepare: */
         prepare();
@@ -70,7 +69,7 @@ void UIWizard::sltCustomButtonClicked(int iId)
 UIWizard::UIWizard(QWidget *pParent, WizardType type, WizardMode mode /* = WizardMode_Auto */)
     : QIWithRetranslateUI<QWizard>(pParent)
     , m_type(type)
-    , m_mode(mode == WizardMode_Auto ? gEDataManager->modeForWizard(m_type) : mode)
+    , m_mode(mode == WizardMode_Auto ? gEDataManager->modeForWizardType(m_type) : mode)
 {
 #ifdef Q_WS_WIN
     /* Hide window icon: */

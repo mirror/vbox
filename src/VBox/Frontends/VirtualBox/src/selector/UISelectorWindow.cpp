@@ -1319,7 +1319,7 @@ void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
     m_pNetworkAccessManager = gActionPool->action(UIActionIndex_Simple_NetworkAccessManager);
     pMenu->addAction(m_pNetworkAccessManager);
     m_pUpdateAction = gActionPool->action(UIActionIndex_Simple_CheckForUpdates);
-    if (gEDataManager->shouldWeAllowApplicationUpdate())
+    if (gEDataManager->applicationUpdateEnabled())
         pMenu->addAction(m_pUpdateAction);
     else
         m_pUpdateAction->setEnabled(false);
@@ -1512,7 +1512,7 @@ void UISelectorWindow::loadSettings()
                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
         /* Maximize (if necessary): */
-        if (gEDataManager->isSelectorWindowShouldBeMaximized())
+        if (gEDataManager->selectorWindowShouldBeMaximized())
             showMaximized();
     }
 
