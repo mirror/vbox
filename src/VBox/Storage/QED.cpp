@@ -831,7 +831,7 @@ static int qedFlushImage(PQEDIMAGE pImage)
                                              pImage->cTableEntries);
             rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
                                         pImage->offL1Table, paL1TblImg,
-                                        pImage->cbTable, NULL);
+                                        pImage->cbTable);
             RTMemFree(paL1TblImg);
         }
         else
