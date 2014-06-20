@@ -49,7 +49,7 @@ endif # darwin
 VBoxSharedCrOpenGL_TEMPLATE = VBOXCROGLR3HOSTDLL
 ifdef VBOX_WITH_XPCOM
  VBoxSharedCrOpenGL_DEFS = VBOX_WITH_XPCOM
- VBoxSharedCrOpenGL_CXXFLAGS = -Wno-non-virtual-dtor -fshort-wchar
+ VBoxSharedCrOpenGL_CXXFLAGS = -Wno-non-virtual-dtor -fshort-wchar $(VBOX_GCC_std)
 endif
 VBoxSharedCrOpenGL_INTERMEDIATES = \
 	$(TEMPLATE_VBOXMAINEXE_INTERMEDIATES)
