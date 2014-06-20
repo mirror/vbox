@@ -41,36 +41,35 @@ extern DECLSPEC void (SDLCALL *pTTF_Quit)(void);
 
 class VBoxSDLFBOverlay;
 
-class VBoxSDLFB :
+class ATL_NO_VTABLE VBoxSDLFB :
+    public CComObjectRootEx<CComMultiThreadModel>,
     VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
 public:
-    VBoxSDLFB(uint32_t uScreenId,
-              bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,
-              bool fKeepHostRes = false, uint32_t u32FixedWidth = ~(uint32_t)0,
-              uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0,
-              bool fUpdateImage = false);
-    virtual ~VBoxSDLFB();
+    VBoxSDLFB();
+    ~VBoxSDLFB();
+
+    HRESULT init(uint32_t uScreenId,
+                 bool fFullscreen, bool fResizable, bool fShowSDLConfig,
+                 bool fKeepHostRes, uint32_t u32FixedWidth,
+                 uint32_t u32FixedHeight, uint32_t u32FixedBPP,
+                 bool fUpdateImage);
 
     static bool init(bool fShowSDLConfig);
     static void uninit();
 
-#ifdef RT_OS_WINDOWS
-    STDMETHOD_(ULONG, AddRef)()
-    {
-        return ::InterlockedIncrement (&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement (&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IFramebuffer)
+    DECLARE_NOT_AGGREGATABLE(VBoxSDLFB)
 
-    NS_DECL_ISUPPORTS
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+    BEGIN_COM_MAP(VBoxSDLFB)
+        COM_INTERFACE_ENTRY(IFramebuffer)
+        COM_INTERFACE_ENTRY2(IDispatch,IFramebuffer)
+        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
+    END_COM_MAP()
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
 
     STDMETHOD(COMGETTER(Width))(ULONG *width);
     STDMETHOD(COMGETTER(Height))(ULONG *height);
@@ -193,9 +192,7 @@ private:
     uint32_t mLabelOffs;
 
 #endif
-#ifdef RT_OS_WINDOWS
-    long refcnt;
-#endif
+
     SDL_Surface *mSurfVRAM;
 
     BYTE *mPtrVRAM;
@@ -206,6 +203,10 @@ private:
     ComPtr<IDisplaySourceBitmap> mpSourceBitmap;
     ComPtr<IDisplaySourceBitmap> mpPendingSourceBitmap;
     bool mfUpdates;
+
+#ifdef RT_OS_WINDOWS
+     CComPtr <IUnknown>   m_pUnkMarshaler;
+#endif
 };
 
 class VBoxSDLFBOverlay :
