@@ -3504,9 +3504,10 @@ STDMETHODIMP Display::QuerySourceBitmap(ULONG aScreenId,
         if (fSetRenderVRAM)
             mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, true);
 
-        if (fInvalidate)
-            VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
-                             3, this, aScreenId, false);
+// @todo later
+//        if (fInvalidate)
+//            VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
+//                             3, this, aScreenId, false);
     }
 
     LogRelFlowFunc(("%Rhrc\n", hr));
