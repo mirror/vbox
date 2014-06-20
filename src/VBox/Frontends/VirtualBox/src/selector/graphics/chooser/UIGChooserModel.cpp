@@ -597,7 +597,7 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
         /* Search for corresponding machine: */
         CMachine machine = vboxGlobal().virtualBox().FindMachine(strId);
         /* Should we show this machine? */
-        if (gEDataManager->shouldWeShowMachine(strId))
+        if (gEDataManager->showMachineInSelectorChooser(strId))
         {
             /* Add new machine-item: */
             addMachineIntoTheTree(machine, true);
@@ -883,7 +883,7 @@ void UIGChooserModel::sltReloadMachine(const QString &strId)
 
     /* Show machine if we should: */
     CMachine machine = vboxGlobal().virtualBox().FindMachine(strId);
-    if (gEDataManager->shouldWeShowMachine(strId))
+    if (gEDataManager->showMachineInSelectorChooser(strId))
         addMachineIntoTheTree(machine);
 
     /* And update model: */
@@ -1612,7 +1612,7 @@ void UIGChooserModel::loadGroupTree()
     foreach (CMachine machine, vboxGlobal().virtualBox().GetMachines())
     {
         const QString strMachineID = machine.GetId();
-        if (!strMachineID.isEmpty() && gEDataManager->shouldWeShowMachine(strMachineID))
+        if (!strMachineID.isEmpty() && gEDataManager->showMachineInSelectorChooser(strMachineID))
             addMachineIntoTheTree(machine);
     }
     LogRelFlow(("UIGChooserModel: VMs loaded.\n"));

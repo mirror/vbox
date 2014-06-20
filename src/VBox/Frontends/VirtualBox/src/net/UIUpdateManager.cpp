@@ -441,8 +441,7 @@ UIUpdateManager::UIUpdateManager()
 
 #ifdef VBOX_WITH_UPDATE_REQUEST
     /* Ask updater to check for the first time: */
-    if (gEDataManager->shouldWeAllowApplicationUpdate() &&
-        !vboxGlobal().isVMConsoleProcess())
+    if (gEDataManager->applicationUpdateEnabled() && !vboxGlobal().isVMConsoleProcess())
         QTimer::singleShot(0, this, SLOT(sltCheckIfUpdateIsNecessary()));
 #endif /* VBOX_WITH_UPDATE_REQUEST */
 }

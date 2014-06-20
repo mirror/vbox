@@ -234,7 +234,7 @@ void UIMachineWindowFullscreen::prepareVisualState()
 void UIMachineWindowFullscreen::prepareMiniToolbar()
 {
     /* Make sure mini-toolbar is not restricted: */
-    if (!gEDataManager->showMiniToolbar(vboxGlobal().managedVMUuid()))
+    if (!gEDataManager->miniToolbarEnabled(vboxGlobal().managedVMUuid()))
         return;
 
     /* Create mini-toolbar: */

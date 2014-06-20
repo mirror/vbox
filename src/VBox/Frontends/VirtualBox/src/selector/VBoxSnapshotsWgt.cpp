@@ -455,7 +455,7 @@ void VBoxSnapshotsWgt::setMachine (const CMachine &aMachine)
     {
         mMachineId = aMachine.GetId();
         mSessionState = aMachine.GetSessionState();
-        m_fShapshotOperationsAllowed = gEDataManager->shouldWeAllowMachineSnapshotOperations(mMachineId);
+        m_fShapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(mMachineId);
     }
 
     refreshAll();

@@ -501,17 +501,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
                 }
 
 #ifdef VBOX_BLEEDING_EDGE
-                msgCenter().showBEBWarning();
+                msgCenter().showExperimentalBuildWarning();
 #else /* VBOX_BLEEDING_EDGE */
 # ifndef DEBUG
                 /* Check for BETA version: */
-                QString vboxVersion(vboxGlobal().virtualBox().GetVersion());
-                if (vboxVersion.contains("BETA"))
-                {
-                    /* Allow to prevent this message: */
-                    if (gEDataManager->preventBETAwarningForVersion() != vboxVersion)
-                        msgCenter().showBETAWarning();
-                }
+                const QString vboxVersion(vboxGlobal().virtualBox().GetVersion());
+                if (   vboxVersion.contains("BETA")
+                    && gEDataManager->preventBetaBuildWarningForVersion() != vboxVersion)
+                    msgCenter().showBetaBuildWarning();
 # endif /* !DEBUG */
 #endif /* !VBOX_BLEEDING_EDGE*/
 

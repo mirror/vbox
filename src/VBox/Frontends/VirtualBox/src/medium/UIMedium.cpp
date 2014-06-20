@@ -277,7 +277,7 @@ void UIMedium::refresh()
                 }
 
                 /* Finally, we are checking if current machine overrides this flag: */
-                if (m_fAttachedToHiddenMachinesOnly && gEDataManager->shouldWeShowMachine(strMachineID))
+                if (m_fAttachedToHiddenMachinesOnly && gEDataManager->showMachineInSelectorChooser(strMachineID))
                     m_fAttachedToHiddenMachinesOnly = false;
 
                 QString strName = machine.GetName();

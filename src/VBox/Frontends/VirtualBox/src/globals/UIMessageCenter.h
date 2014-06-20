@@ -152,8 +152,8 @@ public:
     void warnAboutWrongUSBMounted() const;
 #endif /* RT_OS_LINUX */
     void cannotStartSelector() const;
-    void showBETAWarning() const;
-    void showBEBWarning() const;
+    void showBetaBuildWarning() const;
+    void showExperimentalBuildWarning() const;
 
     /* API: COM startup warnings: */
     void cannotInitUserHome(const QString &strUserHome) const;

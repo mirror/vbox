@@ -1135,16 +1135,16 @@ void UISession::loadSessionSettings()
         m_hiDPIOptimizationType = gEDataManager->hiDPIOptimizationType(vboxGlobal().managedVMUuid());
 
         /* Is there should be First RUN Wizard? */
-        m_fIsFirstTimeStarted = gEDataManager->isFirstRun(vboxGlobal().managedVMUuid());
+        m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(vboxGlobal().managedVMUuid());
 
         /* Should guest autoresize? */
         QAction *pGuestAutoresizeSwitch = gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize);
-        pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResize(vboxGlobal().managedVMUuid()));
+        pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(vboxGlobal().managedVMUuid()));
 
         /* Should we allow reconfiguration? */
-        m_fReconfigurable = gEDataManager->shouldWeAllowMachineReconfiguration(vboxGlobal().managedVMUuid());
+        m_fReconfigurable = gEDataManager->machineReconfigurationEnabled(vboxGlobal().managedVMUuid());
         /* Should we allow snapshot operations? */
-        m_fSnapshotOperationsAllowed = gEDataManager->shouldWeAllowMachineSnapshotOperations(vboxGlobal().managedVMUuid());
+        m_fSnapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(vboxGlobal().managedVMUuid());
 
         /* What is the default close action and the restricted are? */
         m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(vboxGlobal().managedVMUuid());
@@ -1173,10 +1173,10 @@ void UISession::saveSessionSettings()
     /* Save extra-data settings: */
     {
         /* Disable First RUN Wizard: */
-        gEDataManager->setFirstRun(false, vboxGlobal().managedVMUuid());
+        gEDataManager->setMachineFirstTimeStarted(false, vboxGlobal().managedVMUuid());
 
         /* Remember if guest should autoresize: */
-        gEDataManager->setGuestScreenAutoResize(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked(), vboxGlobal().managedVMUuid());
+        gEDataManager->setGuestScreenAutoResizeEnabled(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked(), vboxGlobal().managedVMUuid());
 
 #if 0 /* Disabled for now! */
 # ifdef Q_WS_WIN
