@@ -63,7 +63,9 @@ static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wPar
 static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 VBoxDnDWnd::VBoxDnDWnd(void)
-    : hWnd(NULL),
+    : hThread(NIL_RTTHREAD),
+      mEventSem(NIL_RTSEMEVENT),
+      hWnd(NULL),
       uAllActions(DND_IGNORE_ACTION),
       mfMouseButtonDown(false),
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -82,11 +84,15 @@ VBoxDnDWnd::VBoxDnDWnd(void)
 
 VBoxDnDWnd::~VBoxDnDWnd(void)
 {
-    /** @todo Shutdown crit sect / event etc! */
-
-    reset();
+    Destroy();
 }
 
+/**
+ * Initializes the proxy window with a given DnD context.
+ *
+ * @return  IPRT status code.
+ * @param   pContext                Pointer to context to use.
+ */
 int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pContext)
 {
     AssertPtrReturn(pContext, VERR_INVALID_POINTER);
@@ -101,24 +107,51 @@ int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pContext)
     if (RT_SUCCESS(rc))
     {
         /* Message pump thread for our proxy window. */
-        rc = RTThreadCreate(&gCtx.hEvtQueue, VBoxDnDWnd::Thread, this,
+        rc = RTThreadCreate(&hThread, VBoxDnDWnd::Thread, this,
                             0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
                             "VBoxTrayDnDWnd");
-        if (RT_FAILURE(rc))
-            LogRel(("DnD: Failed to start proxy window thread, rc=%Rrc\n", rc));
-        /** @todo Wait for thread to be started! */
+        if (RT_SUCCESS(rc))
+            rc = RTThreadUserWait(hThread, 30 * 1000 /* Timeout in ms */);
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("DnD: Failed to initialize proxy window, rc=%Rrc\n", rc));
 
     LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
     return rc;
 }
 
 /**
+ * Destroys the proxy window and releases all remaining
+ * resources again.
+ *
+ */
+void VBoxDnDWnd::Destroy(void)
+{
+    if (hThread != NIL_RTTHREAD)
+    {
+        int rcThread = VERR_WRONG_ORDER;
+        int rc = RTThreadWait(hThread, 60 * 1000 /* Timeout in ms */, &rcThread);
+        LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n",
+                     rc, rcThread));
+    }
+
+    reset();
+
+    RTCritSectDelete(&mCritSect);
+    if (mEventSem != NIL_RTSEMEVENT)
+        RTSemEventDestroy(mEventSem);
+
+    LogFlowFuncLeave();
+}
+
+/**
  * Thread for handling the window's message pump.
  *
  * @return  IPRT status code.
- * @param   hThread
- * @param   pvUser
+ * @param   hThread                 Handle to this thread.
+ * @param   pvUser                  Pointer to VBoxDnDWnd instance which
+ *                                  is using the thread.
  */
 /* static */
 int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
@@ -150,6 +183,8 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
 #else
     wndClass.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
 #endif
+
+    bool fSignalled = false; /* Thread signalled? */
 
     int rc = VINF_SUCCESS;
     if (!RegisterClassEx(&wndClass))
@@ -222,8 +257,11 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
 
     if (RT_SUCCESS(rc))
     {
+        rc = RTThreadUserSignal(hThread);
+        fSignalled = RT_SUCCESS(rc);
+
         bool fShutdown = false;
-        do
+        while (RT_SUCCESS(rc))
         {
             MSG uMsg;
             while (GetMessage(&uMsg, 0, 0, 0))
@@ -242,8 +280,7 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
             }
 
             /** @todo Immediately drop on failure? */
-
-        } while (RT_SUCCESS(rc));
+        }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
         int rc2 = pThis->UnregisterAsDropTarget();
@@ -253,10 +290,28 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
         OleUninitialize();
     }
 
+    if (!fSignalled)
+    {
+        int rc2 = RTThreadUserSignal(hThread);
+        AssertRC(rc2);
+    }
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
+/**
+ * Monitor enumeration callback for building up a simple bounding
+ * box, capable of holding all enumerated monitors.
+ *
+ * @return  BOOL                    TRUE if enumeration should continue,
+ *                                  FALSE if not.
+ * @param   hMonitor                Handle to current monitor being enumerated.
+ * @param   hdcMonitor              The current monitor's DC (device context).
+ * @param   lprcMonitor             The current monitor's RECT.
+ * @param   lParam                  Pointer to a RECT structure holding the
+ *                                  bounding box to build.
+ */
 /* static */
 BOOL CALLBACK VBoxDnDWnd::MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor,
                                           LPRECT lprcMonitor, LPARAM lParam)
@@ -282,6 +337,9 @@ BOOL CALLBACK VBoxDnDWnd::MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor,
     return TRUE;
 }
 
+/**
+ * The proxy window's WndProc.
+ */
 LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
@@ -605,6 +663,11 @@ int VBoxDnDWnd::RegisterAsDropTarget(void)
     return rc;
 }
 
+/**
+ * Unregisters this proxy as a drop target.
+ *
+ * @return  IPRT status code.
+ */
 int VBoxDnDWnd::UnregisterAsDropTarget(void)
 {
     LogFlowFuncEnter();
@@ -632,6 +695,11 @@ int VBoxDnDWnd::UnregisterAsDropTarget(void)
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
+/**
+ * Handles the creation of a proxy window.
+ *
+ * @return  IPRT status code.
+ */
 int VBoxDnDWnd::OnCreate(void)
 {
     int rc = VbglR3DnDConnect(&mClientID);
@@ -645,12 +713,23 @@ int VBoxDnDWnd::OnCreate(void)
     return rc;
 }
 
+/**
+ * Handles the destruction of a proxy window.
+ */
 void VBoxDnDWnd::OnDestroy(void)
 {
     VbglR3DnDDisconnect(mClientID);
     LogFlowThisFuncLeave();
 }
 
+/**
+ * Handles actions required when the host cursor enters
+ * the guest's screen to initiate a host -> guest DnD operation.
+ *
+ * @return  IPRT status code.
+ * @param   lstFormats              Supported formats offered by the host.
+ * @param   uAllActions             Supported actions offered by the host.
+ */
 int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllActions)
 {
     if (mMode == GH) /* Wrong mode? Bail out. */
@@ -715,6 +794,18 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
     return rc;
 }
 
+/**
+ * Handles actions required when the host cursor moves inside
+ * the guest's screen.
+ *
+ * @return  IPRT status code.
+ * @param   u32xPos                 Absolute X position (in pixels) of the host cursor
+ *                                  inside the guest.
+ * @param   u32yPos                 Absolute Y position (in pixels) of the host cursor
+ *                                  inside the guest.
+ * @param   uAction                 Action the host wants to perform while moving.
+ *                                  Currently ignored.
+ */
 int VBoxDnDWnd::OnHgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
 {
     int rc;
@@ -752,6 +843,12 @@ int VBoxDnDWnd::OnHgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
     return rc;
 }
 
+/**
+ * Handles actions required when the host cursor leaves
+ * the guest's screen again.
+ *
+ * @return  IPRT status code.
+ */
 int VBoxDnDWnd::OnHgLeave(void)
 {
     if (mMode == GH) /* Wrong mode? Bail out. */
@@ -772,6 +869,12 @@ int VBoxDnDWnd::OnHgLeave(void)
     return rc;
 }
 
+/**
+ * Handles actions required when the host cursor wants to drop
+ * and therefore start a "drop" action in the guest.
+ *
+ * @return  IPRT status code.
+ */
 int VBoxDnDWnd::OnHgDrop(void)
 {
     if (mMode == GH)
@@ -811,6 +914,14 @@ int VBoxDnDWnd::OnHgDrop(void)
     return rc;
 }
 
+/**
+ * Handles actions required when the host has sent over DnD data
+ * to the guest after a "drop" event.
+ *
+ * @return  IPRT status code.
+ * @param   pvData                  Pointer to raw data received.
+ * @param   cbData                  Size of data (in bytes) received.
+ */
 int VBoxDnDWnd::OnHgDataReceived(const void *pvData, uint32_t cbData)
 {
     LogFlowThisFunc(("mState=%ld, pvData=%p, cbData=%RU32\n",
@@ -842,6 +953,12 @@ int VBoxDnDWnd::OnHgDataReceived(const void *pvData, uint32_t cbData)
     return rc;
 }
 
+/**
+ * Handles actions required when the host wants to cancel an action
+ * host -> guest operation.
+ *
+ * @return  IPRT status code.
+ */
 int VBoxDnDWnd::OnHgCancel(void)
 {
     int rc = RTCritSectEnter(&mCritSect);
@@ -863,6 +980,29 @@ int VBoxDnDWnd::OnHgCancel(void)
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
+/**
+ * Handles actions required to start a guest -> host DnD operation.
+ * This works by letting the host ask whether a DnD operation is pending
+ * on the guest. The guest must not know anything about the host's DnD state
+ * and/or operations due to security reasons.
+ *
+ * To capture a pending DnD operation on the guest which then can be communicated
+ * to the host the proxy window needs to be registered as a drop target. This drop
+ * target then will act as a proxy target between the guest OS and the host. In other
+ * words, the guest OS will use this proxy target as a regular (invisible) window
+ * which can be used by the regular guest OS' DnD mechanisms, independently of the
+ * host OS. To make sure this proxy target is able receive an in-progress DnD operation
+ * on the guest, it will be shown invisibly across all active guest OS screens. Just
+ * think of an opened umbrella across all screens here.
+ *
+ * As soon as the proxy target and its underlying data object receive appropriate
+ * DnD messages they'll be hidden again, and the control will be transferred back
+ * this class again.
+ *
+ * @return  IPRT status code.
+ * @param   uScreenID               Screen ID the host wants to query a pending operation
+ *                                  for. Currently not used/needed here.
+ */
 int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
 {
     LogFlowThisFunc(("mMode=%ld, mState=%ld, uScreenID=%RU32\n",
@@ -994,11 +1134,21 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
     return rc;
 }
 
-int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormats,
+/**
+ * Handles actions required to let the guest know that the host
+ * started a "drop" action on the host. This will tell the guest
+ * to send data in a specific format the host requested.
+ *
+ * @return  IPRT status code.
+ * @param   pszFormat               Format the host requests the data in.
+ * @param   cbFormat                Size (in bytes) of format string.
+ * @param   uDefAction              Default action on the host.
+ */
+int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormat,
                             uint32_t uDefAction)
 {
     AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
-    AssertReturn(cbFormats, VERR_INVALID_PARAMETER);
+    AssertReturn(cbFormat, VERR_INVALID_PARAMETER);
 
     LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, pszFormat=%s, uDefAction=0x%x\n",
                      mMode, mState, pDropTarget, pszFormat, uDefAction));
@@ -1042,16 +1192,44 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormats,
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
+/**
+ * Injects a DnD event in this proxy window's Windows
+ * event queue. The (allocated) event will be deleted by
+ * this class after processing.
+ *
+ * @return  IPRT status code.
+ * @param   pEvent                  Event to inject.
+ */
 int VBoxDnDWnd::ProcessEvent(PVBOXDNDEVENT pEvent)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    PostMessage(hWnd, WM_VBOXTRAY_DND_MESSAGE,
-                0 /* wParm */, (LPARAM)pEvent /* lParm */);
+    BOOL fRc = PostMessage(hWnd, WM_VBOXTRAY_DND_MESSAGE,
+                           0 /* wParm */, (LPARAM)pEvent /* lParm */);
+    if (!fRc)
+    {
+        static int s_iBitchedAboutFailedDnDMessages = 0;
+        if (s_iBitchedAboutFailedDnDMessages++ < 10)
+        {
+            DWORD dwErr = GetLastError();
+            LogRel(("DnD: Processing event %p failed with %ld (%Rrc), skpping\n",
+                    pEvent, dwErr, RTErrConvertFromWin32(dwErr)));
+        }
+
+        RTMemFree(pEvent);
+        pEvent = NULL;
+
+        return VERR_NO_MEMORY;
+    }
 
     return VINF_SUCCESS;
 }
 
+/**
+ * Hides the proxy window again.
+ *
+ * @return  IPRT status code.
+ */
 int VBoxDnDWnd::hide(void)
 {
 #ifdef DEBUG_andy
@@ -1062,6 +1240,12 @@ int VBoxDnDWnd::hide(void)
     return VINF_SUCCESS;
 }
 
+/**
+ * Shows the (invisible) proxy window in fullscreen,
+ * spawned across all active guest monitors.
+ *
+ * @return  IPRT status code.
+ */
 int VBoxDnDWnd::makeFullscreen(void)
 {
     int rc = VINF_SUCCESS;
@@ -1136,6 +1320,14 @@ int VBoxDnDWnd::makeFullscreen(void)
     return rc;
 }
 
+/**
+ * Moves the guest mouse cursor to a specific position.
+ *
+ * @return  IPRT status code.
+ * @param   x                       X position (in pixels) to move cursor to.
+ * @param   y                       Y position (in pixels) to move cursor to.
+ * @param   dwMouseInputFlags       Additional movement flags. @sa MOUSEEVENTF_ flags.
+ */
 int VBoxDnDWnd::mouseMove(int x, int y, DWORD dwMouseInputFlags)
 {
     int iScreenX = GetSystemMetrics(SM_CXSCREEN) - 1;
@@ -1174,6 +1366,11 @@ int VBoxDnDWnd::mouseMove(int x, int y, DWORD dwMouseInputFlags)
     return rc;
 }
 
+/**
+ * Releases a previously pressed left guest mouse button.
+ *
+ * @return  IPRT status code.
+ */
 int VBoxDnDWnd::mouseRelease(void)
 {
 #ifdef DEBUG_andy
@@ -1198,6 +1395,9 @@ int VBoxDnDWnd::mouseRelease(void)
     return rc;
 }
 
+/**
+ * Resets the proxy window.
+ */
 void VBoxDnDWnd::reset(void)
 {
     LogFlowThisFunc(("Resetting, old mMode=%ld, mState=%ld\n",
@@ -1213,6 +1413,12 @@ void VBoxDnDWnd::reset(void)
     hide();
 }
 
+/**
+ * Sets the current operation mode of this proxy window.
+ *
+ * @return  IPRT status code.
+ * @param   enmMode                 New mode to set.
+ */
 int VBoxDnDWnd::setMode(Mode enmMode)
 {
     LogFlowThisFunc(("Old mode=%ld, new mode=%ld\n",
@@ -1224,7 +1430,12 @@ int VBoxDnDWnd::setMode(Mode enmMode)
     return VINF_SUCCESS;
 }
 
-static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+/**
+ * Static helper function for having an own WndProc for proxy
+ * window instances.
+ */
+static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg,
+                                               WPARAM wParam, LPARAM lParam)
 {
     LONG_PTR pUserData = GetWindowLongPtr(hWnd, GWLP_USERDATA);
     AssertPtrReturn(pUserData, 0);
@@ -1236,7 +1447,12 @@ static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wPar
     return 0;
 }
 
-static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+/**
+ * Static helper function for routing Windows messages to a specific
+ * proxy window instance.
+ */
+static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg,
+                                       WPARAM wParam, LPARAM lParam)
 {
     /* Note: WM_NCCREATE is not the first ever message which arrives, but
      *       early enough for us. */
@@ -1345,8 +1561,6 @@ void VBoxDnDStop(const VBOXSERVICEENV *pEnv, void *pInstance)
 
     /* Set shutdown indicator. */
     ASMAtomicWriteBool(&pCtx->fShutdown, true);
-
-    /** @todo Notify / wait for HGCM thread! */
 }
 
 void VBoxDnDDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
