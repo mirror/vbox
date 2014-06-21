@@ -162,7 +162,7 @@ typedef RTEXITCODE (*PFNDOWITHMEMBER)(PRTZIPTARCMDOPS pOpts, RTVFSOBJ hVfsObj, c
  */
 static bool rtZipTarCmdIsNameInArray(const char *pszName, const char * const *papszNames, uint32_t *piName)
 {
-    for (uint32_t iName = 0; papszNames[iName]; iName)
+    for (uint32_t iName = 0; papszNames[iName]; iName++)
         if (!strcmp(papszNames[iName], pszName))
         {
             if (piName)
@@ -358,6 +358,8 @@ static RTEXITCODE rtZipTarDoWithMembers(PRTZIPTARCMDOPS pOpts, PFNDOWITHMEMBER p
                 RTMsgError("%s: Was not found in the archive", pOpts->papszFiles[iFile]);
                 rcExit = RTEXITCODE_FAILURE;
             }
+
+        RTVfsFsStrmRelease(hVfsFssIn);
     }
     RTMemFree(pbmFound);
     return rcExit;
