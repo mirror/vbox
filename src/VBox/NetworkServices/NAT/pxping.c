@@ -1210,6 +1210,7 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
     int mapped;
     struct ping_pcb *pcb;
     u16_t guest_id;
+    u16_t oipsum;
     u32_t sum;
 
     iph = (struct ip_hdr *)pollmgr_udpbuf;
@@ -1263,19 +1264,33 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
     icmph->chksum = ~sum;
 
     /* rewrite IP header */
-    sum = (u16_t)~IPH_CHKSUM(iph);
-    sum += chksum_update_32((u32_t *)&iph->dest,
-                                ip4_addr_get_u32(&guest_ip));
-    if (mapped == PXREMAP_MAPPED) {
-        sum += chksum_update_32((u32_t *)&iph->src,
-                                    ip4_addr_get_u32(&target_ip));
+    oipsum = IPH_CHKSUM(iph);
+    if (oipsum == 0) {
+        /* Solaris doesn't compute checksum for local replies */
+        ip_addr_copy(iph->dest, guest_ip);
+        if (mapped == PXREMAP_MAPPED) {
+            ip_addr_copy(iph->src, target_ip);
+        }
+        else {
+            IPH_TTL_SET(iph, IPH_TTL(iph) - 1);
+        }
+        IPH_CHKSUM_SET(iph, inet_chksum(iph, ntohs(IPH_LEN(iph))));
     }
     else {
-        IPH_TTL_SET(iph, IPH_TTL(iph) - 1);
-        sum += PP_NTOHS(~0x0100);
+        sum = (u16_t)~oipsum;
+        sum += chksum_update_32((u32_t *)&iph->dest,
+                                ip4_addr_get_u32(&guest_ip));
+        if (mapped == PXREMAP_MAPPED) {
+            sum += chksum_update_32((u32_t *)&iph->src,
+                                    ip4_addr_get_u32(&target_ip));
+        }
+        else {
+            IPH_TTL_SET(iph, IPH_TTL(iph) - 1);
+            sum += PP_NTOHS(~0x0100);
+        }
+        sum = FOLD_U32T(sum);
+        IPH_CHKSUM_SET(iph, ~sum);
     }
-    sum = FOLD_U32T(sum);
-    IPH_CHKSUM_SET(iph, ~sum);
 
     pxping_pmgr_forward_inbound(pxping, iplen);
 }
