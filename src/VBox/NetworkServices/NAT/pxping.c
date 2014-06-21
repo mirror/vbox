@@ -258,7 +258,7 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
     g_pxping.sock4 = sock4;
     if (g_pxping.sock4 != INVALID_SOCKET) {
 #ifdef DF_WITH_IP_HDRINCL
-        g_pxping.hdrincl = -1;
+        g_pxping.hdrincl = 0;
 #else
         g_pxping.df = -1;
 #endif
