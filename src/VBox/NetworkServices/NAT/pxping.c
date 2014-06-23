@@ -508,6 +508,10 @@ pxping_recv4(void *arg, struct pbuf *p)
         /* we will overwrite IP header, save original for ICMP errors */
         memcpy(&iph_orig, iph, iphlen);
 
+        if (pcb->is_mapped) {
+            ip4_addr_set_u32(&iph->dest, pcb->peer.sin.sin_addr.s_addr);
+        }
+
         if (g_proxy_options->src4 != NULL) {
             memcpy(&iph->src, &g_proxy_options->src4->sin_addr,
                    sizeof(g_proxy_options->src4->sin_addr));
