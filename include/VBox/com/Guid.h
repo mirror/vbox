@@ -102,24 +102,7 @@ public:
      */
     Guid(const char *that)
     {
-        if (!that || !*that)
-        {
-            ::RTUuidClear(&mUuid);
-            mGuidState = GUID_ZERO;
-        }
-        else
-        {
-            mGuidState = GUID_NORMAL;
-            int rc = ::RTUuidFromStr(&mUuid, that);
-            if (RT_FAILURE(rc))
-            {
-                ::RTUuidClear(&mUuid);
-                mGuidState = GUID_INVALID;
-            }
-            else if (isZero())
-                mGuidState = GUID_ZERO;
-        }
-        dbg_refresh();
+        initString(that);
     }
 
     /**
@@ -133,24 +116,7 @@ public:
      */
     Guid(CBSTR that)
     {
-        if (!that || !*that)
-        {
-            ::RTUuidClear(&mUuid);
-            mGuidState = GUID_ZERO;
-        }
-        else
-        {
-            mGuidState = GUID_NORMAL;
-            int rc = ::RTUuidFromUtf16(&mUuid, that);
-            if (RT_FAILURE(rc))
-            {
-                ::RTUuidClear(&mUuid);
-                mGuidState = GUID_INVALID;
-            }
-            else if (isZero())
-                mGuidState = GUID_ZERO;
-        }
-        dbg_refresh();
+        initBSTR(that);
     }
 
     /**
@@ -163,7 +129,7 @@ public:
      */
     Guid(const Utf8Str &that)
     {
-        Guid(that.c_str());
+        initString(that.c_str());
     }
 
     /**
@@ -176,7 +142,7 @@ public:
      */
     Guid(const RTCString &that)
     {
-        Guid(that.c_str());
+        initString(that.c_str());
     }
 
     /**
@@ -189,7 +155,7 @@ public:
      */
     Guid(const Bstr &that)
     {
-        Guid(that.raw());
+        initBSTR(that.raw());
     }
 
     Guid& operator=(const Guid &that)
@@ -397,12 +363,123 @@ public:
         return (PCRTUUID)&mUuid;
     }
 
+#if !defined(VBOX_WITH_XPCOM)
+
+    /** To assign instances to OUT_GUID parameters from within the interface
+     * method. */
+    const Guid &cloneTo(GUID *pguid) const
+    {
+        if (pguid)
+            ::memcpy(pguid, &mUuid, sizeof(GUID));
+        return *this;
+    }
+
+    /** To pass instances as OUT_GUID parameters to interface methods. */
+    GUID *asOutParam()
+    {
+        return (GUID *)&mUuid;
+    }
+
+#else
+
+    /** To assign instances to OUT_GUID parameters from within the
+     * interface method */
+    const Guid &cloneTo(nsID **ppGuid) const
+    {
+        if (ppGuid)
+            *ppGuid = (nsID *)nsMemory::Clone(&mUuid, sizeof(nsID));
+
+        return *this;
+    }
+
+    /**
+     * Internal helper class for asOutParam().
+     *
+     * This takes a GUID refrence in the constructor and copies the mUuid from
+     * the method to that instance in its destructor.
+     */
+    class GuidOutParam
+    {
+        GuidOutParam(Guid &guid)
+            : ptr(0),
+              outer(guid)
+        {
+            outer.clear();
+        }
+
+        nsID *ptr;
+        Guid &outer;
+        GuidOutParam(const GuidOutParam &that); // disabled
+        GuidOutParam &operator=(const GuidOutParam &that); // disabled
+    public:
+        operator nsID**() { return &ptr; }
+        ~GuidOutParam()
+        {
+            if (ptr && outer.isEmpty())
+            {
+                outer = *ptr;
+                outer.refresh();
+                nsMemory::Free(ptr);
+            }
+        }
+        friend class Guid;
+    };
+
+    /** to pass instances as OUT_GUID parameters to interface methods */
+    GuidOutParam asOutParam() { return GuidOutParam(*this); }
+
+#endif
+
     /**
      *  Static immutable empty (zero) object. May be used for comparison purposes.
      */
     static const Guid Empty;
 
 private:
+    void initString(const char *that)
+    {
+        if (!that || !*that)
+        {
+            ::RTUuidClear(&mUuid);
+            mGuidState = GUID_ZERO;
+        }
+        else
+        {
+            mGuidState = GUID_NORMAL;
+            int rc = ::RTUuidFromStr(&mUuid, that);
+            if (RT_FAILURE(rc))
+            {
+                ::RTUuidClear(&mUuid);
+                mGuidState = GUID_INVALID;
+            }
+            else if (isZero())
+                mGuidState = GUID_ZERO;
+        }
+        dbg_refresh();
+    }
+
+    void initBSTR(CBSTR that)
+    {
+        if (!that || !*that)
+        {
+            ::RTUuidClear(&mUuid);
+            mGuidState = GUID_ZERO;
+        }
+        else
+        {
+            mGuidState = GUID_NORMAL;
+            int rc = ::RTUuidFromUtf16(&mUuid, that);
+            if (RT_FAILURE(rc))
+            {
+                ::RTUuidClear(&mUuid);
+                mGuidState = GUID_INVALID;
+            }
+            else if (isZero())
+                mGuidState = GUID_ZERO;
+        }
+        dbg_refresh();
+    }
+
     /**
      * Refresh the debug-only UUID string.
      *
