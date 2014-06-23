@@ -437,7 +437,7 @@ static int rtZipPkzipParseCentrDirHeader(PRTZIPPKZIPREADER pThis, PRTZIPPKZIPCEN
  */
 static uint64_t rtZipPkzipReaderOffLocalHeader(PRTZIPPKZIPREADER pThis)
 {
-    if (pThis->fZip64Ex && pThis->cdh.offLocalFileHeader == -1U)
+    if (pThis->fZip64Ex && pThis->cdh.offLocalFileHeader == (uint32_t)-1)
         return pThis->cd64ex.offLocalFileHeader;
 
     return pThis->cdh.offLocalFileHeader;
@@ -449,7 +449,7 @@ static uint64_t rtZipPkzipReaderOffLocalHeader(PRTZIPPKZIPREADER pThis)
  */
 static uint64_t rtZipPkzipReaderUncompressed(PRTZIPPKZIPREADER pThis)
 {
-    if (pThis->fZip64Ex && pThis->cdh.cbUncompressed == -1U)
+    if (pThis->fZip64Ex && pThis->cdh.cbUncompressed == (uint32_t)-1)
         return pThis->cd64ex.cbUncompressed;
     
     return pThis->cdh.cbUncompressed;
@@ -461,7 +461,7 @@ static uint64_t rtZipPkzipReaderUncompressed(PRTZIPPKZIPREADER pThis)
  */
 static uint64_t rtZipPkzipReaderCompressed(PRTZIPPKZIPREADER pThis)
 {
-    if (pThis->fZip64Ex && pThis->cdh.cbCompressed == -1U)
+    if (pThis->fZip64Ex && pThis->cdh.cbCompressed == (uint32_t)-1)
         return pThis->cd64ex.cbCompressed;
     
     return pThis->cdh.cbCompressed;
