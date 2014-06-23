@@ -264,12 +264,15 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG aX,
-                                              ULONG aY,
-                                              ULONG aWidth,
-                                              ULONG aHeight,
-                                              ComSafeArrayIn(BYTE, aImage))
+STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
+                                              ULONG uWidth, ULONG uHeight,
+                                              ComSafeArrayIn(BYTE, image))
 {
+    Q_UNUSED(uX);
+    Q_UNUSED(uY);
+    Q_UNUSED(uWidth);
+    Q_UNUSED(uHeight);
+    Q_UNUSED(image);
     return E_NOTIMPL;
 }
 
@@ -408,7 +411,7 @@ STDMETHODIMP UIFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
     return E_NOTIMPL;
 }
 
-STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, aData))
+STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, data))
 {
     /* Lock access to frame-buffer: */
     lock();
@@ -425,14 +428,14 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, aDat
         return E_FAIL;
     }
 
-    com::SafeArray<BYTE> data(ComSafeArrayInArg(aData));
+    com::SafeArray<BYTE> eventData(ComSafeArrayInArg(data));
     switch (uType)
     {
         case VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA:
         {
             /* Notify machine-view with the async-signal
              * about 3D overlay visibility change: */
-            BOOL fVisible = data[0];
+            BOOL fVisible = eventData[0];
             LogRel2(("UIFrameBuffer::Notify3DEvent: Sending to async-handler: "
                      "(VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA = %s)\n",
                      fVisible ? "TRUE" : "FALSE"));

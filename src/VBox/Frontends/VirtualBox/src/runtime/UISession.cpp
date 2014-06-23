@@ -69,7 +69,6 @@
 #include "CStorageController.h"
 #include "CMediumAttachment.h"
 #include "CDisplay.h"
-#include "CFramebuffer.h"
 #include "CNetworkAdapter.h"
 #include "CHostNetworkInterface.h"
 #include "CVRDEServer.h"
