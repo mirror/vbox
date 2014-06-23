@@ -463,8 +463,10 @@ RuntimeR3_SOURCES       = \
 	common/vfs/vfsstdfile.cpp \
 	common/zip/tar.cpp \
 	common/zip/tarcmd.cpp \
+	common/zip/unzipcmd.cpp \
 	common/zip/tarvfs.cpp \
 	common/zip/gzipvfs.cpp \
+	common/zip/pkzipvfs.cpp \
 	common/zip/zip.cpp \
 	generic/createtemp-generic.cpp \
 	generic/critsect-generic.cpp \

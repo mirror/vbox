@@ -1711,6 +1711,22 @@ RT_C_DECLS_END
 #define VERR_POLL_SET_IS_FULL                   (-953)
 /** @} */
 
+/** @name Pkzip status codes
+ * @{ */
+/** No end of central directory record found. */
+#define VERR_PKZIP_NO_EOCB                      (-960)
+/** Too long name string. */
+#define VERR_PKZIP_NAME_TOO_LONG                (-961)
+/** Local file header corrupt. */
+#define VERR_PKZIP_BAD_LF_HEADER                (-962)
+/** Central directory file header corrupt. */
+#define VERR_PKZIP_BAD_CDF_HEADER               (-963)
+/** Encountered an unknown type flag. */
+#define VERR_PKZIP_UNKNOWN_TYPE_FLAG            (-964)
+/** Found a ZIP64 Extra Information Field in a ZIP32 file. */
+#define VERR_PKZIP_ZIP64EX_IN_ZIP32             (-965)
+
+
 /** @name RTZip status codes
  * @{ */
 /** Generic zip error. */
