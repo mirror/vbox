@@ -1111,7 +1111,7 @@ pxping_pmgr_icmp4(struct pxping *pxping)
     ssize_t nread;
     struct ip_hdr *iph;
     struct icmp_echo_hdr *icmph;
-    u16_t iplen;
+    u16_t iplen, ipoff;
 
     memset(&sin, 0, sizeof(sin));
 
@@ -1141,8 +1141,15 @@ pxping_pmgr_icmp4(struct pxping *pxping)
     }
 
     /* no fragmentation */
-    if ((IPH_OFFSET(iph) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
-        DPRINTF2(("%s: dropping fragmented datagram\n", __func__));
+    ipoff = IPH_OFFSET(iph);
+#if defined(RT_OS_DARWIN)
+    /* darwin reports IPH_OFFSET in host byte order */
+    ipoff = htons(ipoff);
+    IPH_OFFSET_SET(iph, ipoff);
+#endif
+    if ((ipoff & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
+        DPRINTF2(("%s: dropping fragmented datagram (0x%04x)\n",
+                  __func__, ntohs(IPH_OFFSET(iph))));
         return;
     }
 
@@ -1166,7 +1173,7 @@ pxping_pmgr_icmp4(struct pxping *pxping)
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
     /* darwin and solaris change IPH_LEN to payload length only */
     iplen += IP_HLEN;           /* we verified there are no options */
-    IPH_LEN(iph) = htons(iplen);
+    IPH_LEN_SET(iph, htons(iplen));
 #endif
     if (nread < iplen) {
         DPRINTF2(("%s: read %d bytes but total length is %d bytes\n",
