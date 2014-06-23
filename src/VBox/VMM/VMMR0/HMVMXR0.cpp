@@ -7400,7 +7400,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT);
             hmR0VmxClearIntWindowExitVmcs(pVCpu);
         }
-#if defined(VBOX_STRICT) || defined(VBOX_WITH_STATISTICS)
+#if defined(VBOX_STRICT)
         if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
             rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
