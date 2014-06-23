@@ -313,15 +313,15 @@ typedef struct RTZIPPKZIPIOSTREAM
     /** The basic PKZIP object data. */
     RTZIPPKZIPBASEOBJ       BaseObj;
     /** The number of (uncompressed) bytes in the file. */
-    RTFOFF                  cbFile;
+    uint64_t                cbFile;
     /** The current file position at uncompressed file data. */
-    RTFOFF                  offFile;
+    uint64_t                offFile;
     /** The start position of the compressed data in the hVfsIos. */
-    RTFOFF                  offCompStart;
+    uint64_t                offCompStart;
     /** The current position for decompressing bytes in the hVfsIos. */
-    RTFOFF                  offComp;
+    uint64_t                offComp;
     /** The number of compressed bytes starting at offCompStart. */
-    RTFOFF                  cbComp;
+    uint64_t                cbComp;
     /** Set if we have to pass the type function the next time the input
      * function is called. */
     bool                    fPassZipType;
@@ -354,9 +354,9 @@ typedef struct RTZIPPKZIPFSSTREAM
     PRTZIPPKZIPIOSTREAM     pCurIosData;
 
     /** The offset of the first Central Directory header. */
-    RTFOFF                  offFirstCdh;
+    uint64_t                offFirstCdh;
     /** The offset of the next Central Directory header. */
-    RTFOFF                  offNextCdh;
+    uint64_t                offNextCdh;
 
     /** Size of the central directory. */
     uint64_t                cbCentrDir;
@@ -435,7 +435,7 @@ static int rtZipPkzipParseCentrDirHeader(PRTZIPPKZIPREADER pThis, PRTZIPPKZIPCEN
 /**
  * Return the offset of the Local File Header.
  */
-static RTFOFF rtZipPkzipReaderOffLocalHeader(PRTZIPPKZIPREADER pThis)
+static uint64_t rtZipPkzipReaderOffLocalHeader(PRTZIPPKZIPREADER pThis)
 {
     if (pThis->fZip64Ex && pThis->cdh.offLocalFileHeader == -1U)
         return pThis->cd64ex.offLocalFileHeader;
@@ -447,7 +447,7 @@ static RTFOFF rtZipPkzipReaderOffLocalHeader(PRTZIPPKZIPREADER pThis)
 /**
  * Return the uncompressed object size.
  */
-static RTFOFF rtZipPkzipReaderUncompressed(PRTZIPPKZIPREADER pThis)
+static uint64_t rtZipPkzipReaderUncompressed(PRTZIPPKZIPREADER pThis)
 {
     if (pThis->fZip64Ex && pThis->cdh.cbUncompressed == -1U)
         return pThis->cd64ex.cbUncompressed;
@@ -459,7 +459,7 @@ static RTFOFF rtZipPkzipReaderUncompressed(PRTZIPPKZIPREADER pThis)
 /**
  * Return the compressed object size.
  */
-static RTFOFF rtZipPkzipReaderCompressed(PRTZIPPKZIPREADER pThis)
+static uint64_t rtZipPkzipReaderCompressed(PRTZIPPKZIPREADER pThis)
 {
     if (pThis->fZip64Ex && pThis->cdh.cbCompressed == -1U)
         return pThis->cd64ex.cbCompressed;
@@ -472,7 +472,7 @@ static RTFOFF rtZipPkzipReaderCompressed(PRTZIPPKZIPREADER pThis)
  * Parse the extra part of the Central Directory Header.
  */
 static int rtZipPkzipParseCentrDirHeaderExtra(PRTZIPPKZIPREADER pThis, uint8_t *pu8Buf, size_t cb,
-                                              RTZIPPKZIP_COMP_METHOD *penmCompMethod, PRTFOFF pcbCompressed)
+                                              RTZIPPKZIP_COMP_METHOD *penmCompMethod, uint64_t *pcbCompressed)
 {
     int rc = RTStrCopyEx(pThis->szName, sizeof(pThis->szName), (const char*)pu8Buf, pThis->cdh.cbFilename);
     if (RT_SUCCESS(rc))
@@ -581,10 +581,10 @@ static bool rtZipPkzipReaderScanEocd(const uint8_t *pu8Buf, size_t cb, int *piPo
  * Read the Local File Header. We ignore the content -- we trust the Central
  * Directory.
  */
-static int rtZipPkzipFssIosReadLfh(PRTZIPPKZIPFSSTREAM pThis, RTFOFF *poffStartData)
+static int rtZipPkzipFssIosReadLfh(PRTZIPPKZIPFSSTREAM pThis, uint64_t *poffStartData)
 {
     RTZIPPKZIPLOCALFILEHDR lfh;
-    RTFOFF offLocalFileHeader = rtZipPkzipReaderOffLocalHeader(&pThis->PkzipReader);
+    uint64_t offLocalFileHeader = rtZipPkzipReaderOffLocalHeader(&pThis->PkzipReader);
     int rc = RTVfsIoStrmReadAt(pThis->hVfsIos, offLocalFileHeader,
                                &lfh, sizeof(lfh) - 1, true /*fBlocking*/, NULL);
     if (RT_SUCCESS(rc))
@@ -613,12 +613,12 @@ static int rtZipPkzipFssIosReadLfh(PRTZIPPKZIPFSSTREAM pThis, RTFOFF *poffStartD
 /**
  * Scan the current Central Directory Header.
  */
-static int rtZipPkzipFssIosReadCdh(PRTZIPPKZIPFSSTREAM pThis, RTFOFF *poffStartData,
-                                    RTZIPPKZIP_COMP_METHOD *penmCompMethod, PRTFOFF pcbCompressed)
+static int rtZipPkzipFssIosReadCdh(PRTZIPPKZIPFSSTREAM pThis, uint64_t *poffStartData,
+                                    RTZIPPKZIP_COMP_METHOD *penmCompMethod, uint64_t *pcbCompressed)
 {
     int rc;
 
-    RTFOFF offCd = pThis->offNextCdh - pThis->offFirstCdh;
+    uint64_t offCd = pThis->offNextCdh - pThis->offFirstCdh;
     if (   pThis->iCentrDirEntry < pThis->cCentrDirEntries
         || offCd + sizeof(RTZIPPKZIPCENTRDIRHDR) - 1 <= pThis->cbCentrDir)
     {
@@ -687,9 +687,9 @@ static int rtZipPkzipFssIosReadEocb(PRTZIPPKZIPFSSTREAM pThis)
 
     /* maximum size of EOCD comment 2^16-1 */
     const size_t cbHdrMax = 0xffff + sizeof(RTZIPPKZIPENDOFCENTRDIRREC) - 1;
-    RTFOFF offMin = cbFile >= cbHdrMax ? cbFile - cbHdrMax : 0;
+    uint64_t offMin = cbFile >= cbHdrMax ? cbFile - cbHdrMax : 0;
 
-    RTFOFF off = cbFile - cbBuf;
+    uint64_t off = cbFile - cbBuf;
     while (off >= offMin)
     {
         rc = RTVfsIoStrmReadAt(pThis->hVfsIos, off, pu8Buf, cbBuf, true /*fBlocking*/, NULL);
@@ -708,7 +708,7 @@ static int rtZipPkzipFssIosReadEocb(PRTZIPPKZIPFSSTREAM pThis)
                 if (eocd.u32Magic == RTZIPPKZIPENDOFCENTRDIRREC_MAGIC)
                 {
                     /* sanity check */
-                    if (off + RT_UOFFSETOF(RTZIPPKZIPENDOFCENTRDIRREC, u8Comment) + eocd.cbComment == cbFile)
+                    if (off + RT_OFFSETOF(RTZIPPKZIPENDOFCENTRDIRREC, u8Comment) + eocd.cbComment == cbFile)
                     {
                         pThis->offFirstCdh = eocd.offCentrDir;
                         pThis->offNextCdh = eocd.offCentrDir;
@@ -895,7 +895,7 @@ static DECLCALLBACK(int) rtZipPkzipFssIos_Read(void *pvThis, RTFOFF off, PCRTSGB
 
     if (off < 0)
         off = pThis->offFile;
-    if (off >= pThis->cbFile)
+    if (off >= (RTFOFF)pThis->cbFile)
         return pcbRead ? VINF_EOF : VERR_EOF;
 
     Assert(pThis->cbFile >= pThis->offFile);
@@ -913,7 +913,7 @@ static DECLCALLBACK(int) rtZipPkzipFssIos_Read(void *pvThis, RTFOFF off, PCRTSGB
      */
     if (   !pThis->pZip
         || !off
-        || off < pThis->offFile)
+        || off < (RTFOFF)pThis->offFile)
     {
         switch (pThis->enmCompMethod)
         {
@@ -943,10 +943,10 @@ static DECLCALLBACK(int) rtZipPkzipFssIos_Read(void *pvThis, RTFOFF off, PCRTSGB
     /*
      * Skip bytes if necessary.
      */
-    if (off > pThis->offFile)
+    if (off > (RTFOFF)pThis->offFile)
     {
         uint8_t u8Buf[_1K];
-        while (off > pThis->offFile)
+        while (off > (RTFOFF)pThis->offFile)
         {
             size_t cbSkip = off - pThis->offFile;
             if (cbSkip > sizeof(u8Buf))
@@ -1104,13 +1104,13 @@ static DECLCALLBACK(int) rtZipPkzipFss_Next(void *pvThis, char **ppszName, RTVFS
      */
     if (!pThis->PkzipReader.fHaveEocd)
         rc = rtZipPkzipFssIosReadEocb(pThis);
-    RTFOFF offData = 0;
+    uint64_t offData = 0;
 
     /*
      * Parse the current Central Directory Header.
      */
     RTZIPPKZIP_COMP_METHOD enmCompMethod = RTZIPPKZIP_COMP_METHOD_STORED;
-    RTFOFF cbCompressed = 0;
+    uint64_t cbCompressed = 0;
     if (RT_SUCCESS(rc))
         rc = rtZipPkzipFssIosReadCdh(pThis, &offData, &enmCompMethod, &cbCompressed);
     if (RT_FAILURE(rc))
