@@ -513,12 +513,11 @@ pxping_recv4(void *arg, struct pbuf *p)
         }
 
         if (g_proxy_options->src4 != NULL) {
-            memcpy(&iph->src, &g_proxy_options->src4->sin_addr,
-                   sizeof(g_proxy_options->src4->sin_addr));
+            ip4_addr_set_u32(&iph->src, g_proxy_options->src4->sin_addr.s_addr);
         }
         else {
             /* let the kernel select suitable source address */
-            memset(&iph->src, 0, sizeof(iph->src));
+            ip_addr_set_any(&iph->src);
         }
 
         IPH_TTL_SET(iph, ttl);  /* already decremented */
@@ -1778,14 +1777,14 @@ pxping_pmgr_icmp6_error(struct pxping *pxping,
         return;
     }
 
-    memcpy(&target_ip, &oiph->dest, sizeof(target_ip)); /* inner (failed) */
+    ip6_addr_copy(target_ip, oiph->dest); /* inner (failed) */
     target_mapped = pxremap_inbound_ip6(&target_ip, &target_ip);
     if (target_mapped == PXREMAP_FAILED) {
         return;
     }
 
     sys_mutex_lock(&pxping->lock);
-    pcb = pxping_pcb_for_reply(pxping, 1, ip_2_ipX(&target_ip), oicmph->id);
+    pcb = pxping_pcb_for_reply(pxping, 1, ip6_2_ipX(&target_ip), oicmph->id);
     if (pcb == NULL) {
         sys_mutex_unlock(&pxping->lock);
         DPRINTF2(("%s: no match\n", __func__));
