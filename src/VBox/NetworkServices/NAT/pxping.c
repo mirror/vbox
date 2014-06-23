@@ -1161,7 +1161,7 @@ pxping_pmgr_icmp4(struct pxping *pxping)
 #endif
     if ((ipoff & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
         DPRINTF2(("%s: dropping fragmented datagram (0x%04x)\n",
-                  __func__, ntohs(IPH_OFFSET(iph))));
+                  __func__, ntohs(ipoff)));
         return;
     }
 
