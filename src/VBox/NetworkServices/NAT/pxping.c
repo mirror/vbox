@@ -1449,6 +1449,10 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
     oicmph->chksum = ~sum;
 
     /* rewrite inner IP header */
+#if defined(RT_OS_DARWIN)
+    /* darwin converts inner length to host byte order too */
+    IPH_LEN_SET(oiph, htons(IPH_LEN(oiph)));
+#endif
     sum = (u16_t)~IPH_CHKSUM(oiph);
     sum += chksum_update_32((u32_t *)&oiph->src, ip4_addr_get_u32(&guest_ip));
     if (target_mapped == PXREMAP_MAPPED) {
