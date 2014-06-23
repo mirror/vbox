@@ -609,8 +609,7 @@ HRESULT ExtPackFile::install(BOOL aReplace, const com::Utf8Str &aDisplayInfo, Co
 #endif
                                               static_cast<IExtPackFile *>(this),
                                               bstrDescription.raw(),
-                                              FALSE /*aCancelable*/,
-                                              NULL /*aId*/);
+                                              FALSE /*aCancelable*/);
             }
             if (SUCCEEDED(hrc))
             {
@@ -1988,8 +1987,7 @@ HRESULT ExtPackManager::uninstall(const com::Utf8Str &aName, BOOL aForcedRemoval
 #endif
                                           static_cast<IExtPackManager *>(this),
                                           bstrDescription.raw(),
-                                          FALSE /*aCancelable*/,
-                                          NULL /*aId*/);
+                                          FALSE /*aCancelable*/);
         }
         if (SUCCEEDED(hrc))
         {

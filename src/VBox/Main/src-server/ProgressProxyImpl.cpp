@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -82,8 +82,7 @@ HRESULT ProgressProxy::init(
                           1 /* cOperations */,
                           1 /* ulTotalOperationsWeight */,
                           bstrDescription /* bstrFirstOperationDescription */,
-                          1 /* ulFirstOperationWeight */,
-                          NULL /* pId */);
+                          1 /* ulFirstOperationWeight */);
 }
 
 /**
@@ -123,8 +122,7 @@ HRESULT ProgressProxy::init(
                           1 + cOtherProgressObjectOperations /* cOperations */,
                           uTotalOperationsWeight,
                           bstrFirstOperationDescription,
-                          uFirstOperationWeight,
-                          NULL);
+                          uFirstOperationWeight);
 }
 
 void ProgressProxy::FinalRelease()

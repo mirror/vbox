@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -418,16 +418,17 @@ void Progress::FinalRelease()
  * Even simpler, if you need no sub-operations at all, pass in cOperations =
  * ulTotalOperationsWeight = ulFirstOperationWeight = 1.
  *
- * @param aParent           See Progress::init().
- * @param aInitiator        See Progress::init().
- * @param aDescription      See Progress::init().
- * @param aCancelable       Flag whether the task maybe canceled.
- * @param cOperations       Number of operations within this task (at least 1).
+ * @param aParent       Parent object (only for server-side Progress objects).
+ * @param aInitiator    Initiator of the task (for server-side objects. Can be
+ *                      NULL which means initiator = parent, otherwise must not
+ *                      be NULL).
+ * @param aDescription  Overall task description.
+ * @param aCancelable   Flag whether the task maybe canceled.
+ * @param cOperations   Number of operations within this task (at least 1).
  * @param ulTotalOperationsWeight Total weight of operations; must be the sum of ulFirstOperationWeight and
  *                          what is later passed with each subsequent setNextOperation() call.
  * @param bstrFirstOperationDescription Description of the first operation.
  * @param ulFirstOperationWeight Weight of first sub-operation.
- * @param aId               See Progress::init().
  */
 HRESULT Progress::init(
 #if !defined(VBOX_COM_INPROC)
@@ -439,8 +440,7 @@ HRESULT Progress::init(
                        ULONG cOperations,
                        ULONG ulTotalOperationsWeight,
                        Utf8Str aFirstOperationDescription,
-                       ULONG ulFirstOperationWeight,
-                       OUT_GUID aId /* = NULL */)
+                       ULONG ulFirstOperationWeight)
 {
     LogFlowThisFunc(("aDescription=\"%s\", cOperations=%d, ulTotalOperationsWeight=%d, aFirstOperationDescription=\"%s\", ulFirstOperationWeight=%d\n",
                      aDescription.c_str(),
@@ -476,8 +476,8 @@ HRESULT Progress::init(
 
 #if !defined(VBOX_COM_INPROC)
     /* assign (and therefore addref) initiator only if it is not VirtualBox
- *      * (to avoid cycling); otherwise mInitiator will remain null which means
- *           * that it is the same as the parent */
+     * (to avoid cycling); otherwise mInitiator will remain null which means
+     * that it is the same as the parent */
     if (aInitiator)
     {
         ComObjPtr<VirtualBox> pVirtualBox(mParent);
@@ -489,12 +489,10 @@ HRESULT Progress::init(
 #endif
 
     unconst(mId).create();
-    if (aId)
-        mId.cloneTo(aId);
 
 #if !defined(VBOX_COM_INPROC)
     /* add to the global collection of progress operations (note: after
- *      * creating mId) */
+     * creating mId) */
     mParent->i_addProgress(this);
 #endif
 

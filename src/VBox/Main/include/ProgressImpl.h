@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -90,7 +90,6 @@ public:
      * @param aInitiator
      * @param aDescription
      * @param aCancelable
-     * @param aId
      * @return
      */
     HRESULT init(
@@ -99,8 +98,7 @@ public:
 #endif
                   IUnknown *aInitiator,
                   Utf8Str aDescription,
-                  BOOL aCancelable,
-                  OUT_GUID aId = NULL)
+                  BOOL aCancelable)
     {
         return init(
 #if !defined (VBOX_COM_INPROC)
@@ -112,8 +110,7 @@ public:
             1,      // cOperations
             1,      // ulTotalOperationsWeight
             aDescription, // aFirstOperationDescription
-            1,      // ulFirstOperationWeight
-            aId);
+            1);     // ulFirstOperationWeight
     }
 
     /**
@@ -125,7 +122,6 @@ public:
      * @param aCancelable
      * @param cOperations
      * @param bstrFirstOperationDescription
-     * @param aId
      * @return
      */
     HRESULT init(
@@ -135,8 +131,7 @@ public:
                   IUnknown *aInitiator,
                   Utf8Str aDescription, BOOL aCancelable,
                   ULONG cOperations,
-                  Utf8Str aFirstOperationDescription,
-                  OUT_GUID aId = NULL)
+                  Utf8Str aFirstOperationDescription)
     {
         return init(
 #if !defined (VBOX_COM_INPROC)
@@ -148,8 +143,7 @@ public:
             cOperations,      // cOperations
             cOperations,      // ulTotalOperationsWeight = cOperations
             aFirstOperationDescription, // aFirstOperationDescription
-            1,      // ulFirstOperationWeight: weigh them all the same
-            aId);
+            1);     // ulFirstOperationWeight: weigh them all the same
     }
 
     HRESULT init(
@@ -162,24 +156,13 @@ public:
                   ULONG cOperations,
                   ULONG ulTotalOperationsWeight,
                   Utf8Str aFirstOperationDescription,
-                  ULONG ulFirstOperationWeight,
-                  OUT_GUID aId = NULL);
+                  ULONG ulFirstOperationWeight);
 
     HRESULT init(BOOL aCancelable,
                  ULONG aOperationCount,
                  Utf8Str aOperationDescription);
 
-//   initializer/uninitializer for internal purposes only
-    HRESULT init(AutoInitSpan &aAutoInitSpan,
-#if !defined (VBOX_COM_INPROC)
-               VirtualBox *aParent,
-#endif
-               IUnknown *aInitiator,
-               Utf8Str aDescription, OUT_GUID aId = NULL);
-    HRESULT init(AutoInitSpan &aAutoInitSpan);
-    void init(AutoUninitSpan &aAutoUninitSpan);
     void uninit();
-    void uninit(AutoUninitSpan &aAutoUninitSpan);
 
 
     // public methods only for internal purposes
