@@ -272,7 +272,8 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
     Q_UNUSED(uY);
     Q_UNUSED(uWidth);
     Q_UNUSED(uHeight);
-    Q_UNUSED(image);
+    Q_UNUSED(image); // by ComSafeArrayIn
+    Q_UNUSED(imageSize); // by ComSafeArrayIn
     return E_NOTIMPL;
 }
 
