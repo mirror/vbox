@@ -214,7 +214,7 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
 
             /* Enable the TSC-page. */
             RTGCPHYS GCPhysTscPage = MSR_GIM_HV_REF_TSC_GUEST_PFN(uRawValue) << PAGE_SHIFT;
-            int rc = GIMR3HvEnableTscPage(pVM, GCPhysTscPage);
+            int rc = GIMR3HvEnableTscPage(pVM, GCPhysTscPage, false /* fUseThisTscSequence */, 0 /* uTscSequence */);
             if (RT_SUCCESS(rc))
             {
                 pHv->u64TscPageMsr = uRawValue;

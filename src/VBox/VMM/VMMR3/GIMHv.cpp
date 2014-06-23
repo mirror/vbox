@@ -95,7 +95,7 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
                        //| GIM_HV_BASE_FEAT_APIC_ACCESS_MSRS
                        | GIM_HV_BASE_FEAT_HYPERCALL_MSRS
                        | GIM_HV_BASE_FEAT_VP_ID_MSR
-                       //| GIM_HV_BASE_FEAT_VIRT_SYS_RESET_MSR
+                       | GIM_HV_BASE_FEAT_VIRT_SYS_RESET_MSR
                        //| GIM_HV_BASE_FEAT_STAT_PAGES_MSR
                        | GIM_HV_BASE_FEAT_PART_REF_TSC_MSR
                        //| GIM_HV_BASE_FEAT_GUEST_IDLE_STATE_MSR
@@ -247,7 +247,7 @@ VMMR3_INT_DECL(void) GIMR3HvReset(PVM pVM)
     /*
      * Unmap MMIO2 pages that the guest may have setup.
      */
-    LogRelFunc(("Resetting Hyper-V MMIO2 regions and MSRs...\n"));
+    LogRel(("GIM: HyperV: Resetting Hyper-V MMIO2 regions and MSRs\n"));
     PGIMHV pHv = &pVM->gim.s.u.Hv;
     for (unsigned i = 0; i < RT_ELEMENTS(pHv->aMmio2Regions); i++)
     {
@@ -312,19 +312,33 @@ VMMR3_INT_DECL(int) GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM)
     rc = SSMR3PutU32(pSSM, pcHv->uHyperHints);                  AssertRCReturn(rc, rc);
 
     /*
-     * Save per-VM MMIO2 regions.
+     * Save the Hypercall region.
      */
-    rc = SSMR3PutU32(pSSM, RT_ELEMENTS(pcHv->aMmio2Regions));
-    for (unsigned i = 0; i < RT_ELEMENTS(pcHv->aMmio2Regions); i++)
+    PCGIMMMIO2REGION pcRegion = &pcHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
+    rc = SSMR3PutU8(pSSM,     pcRegion->iRegion);           AssertRCReturn(rc, rc);
+    rc = SSMR3PutBool(pSSM,   pcRegion->fRCMapping);        AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM,    pcRegion->cbRegion);          AssertRCReturn(rc, rc);
+    rc = SSMR3PutGCPhys(pSSM, pcRegion->GCPhysPage);        AssertRCReturn(rc, rc);
+    rc = SSMR3PutStrZ(pSSM,   pcRegion->szDescription);     AssertRCReturn(rc, rc);
+
+    /*
+     * Save the reference TSC region.
+     */
+    pcRegion = &pcHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
+    rc = SSMR3PutU8(pSSM,     pcRegion->iRegion);           AssertRCReturn(rc, rc);
+    rc = SSMR3PutBool(pSSM,   pcRegion->fRCMapping);        AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM,    pcRegion->cbRegion);          AssertRCReturn(rc, rc);
+    rc = SSMR3PutGCPhys(pSSM, pcRegion->GCPhysPage);        AssertRCReturn(rc, rc);
+    rc = SSMR3PutStrZ(pSSM,   pcRegion->szDescription);     AssertRCReturn(rc, rc);
+    /* Save the TSC sequence so we can bump it on restore (as the CPU frequency/offset may change). */
+    uint32_t uTscSequence = 0;
+    if (   pcRegion->fMapped
+        && MSR_GIM_HV_REF_TSC_IS_ENABLED(pcHv->u64TscPageMsr))
     {
-        /* Save the fields necessary to remap the regions upon load.*/
-        PCGIMMMIO2REGION pcRegion = &pcHv->aMmio2Regions[i];
-        rc = SSMR3PutU8(pSSM,     pcRegion->iRegion);           AssertRCReturn(rc, rc);
-        rc = SSMR3PutBool(pSSM,   pcRegion->fRCMapping);        AssertRCReturn(rc, rc);
-        rc = SSMR3PutU32(pSSM,    pcRegion->cbRegion);          AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPhys(pSSM, pcRegion->GCPhysPage);        AssertRCReturn(rc, rc);
-        rc = SSMR3PutStrZ(pSSM,   pcRegion->szDescription);     AssertRCReturn(rc, rc);
+        PCGIMHVREFTSC pcRefTsc = (PCGIMHVREFTSC)pcRegion->pvPageR3;
+        uTscSequence = pcRefTsc->u32TscSequence;
     }
+    rc = SSMR3PutU32(pSSM,    uTscSequence);                AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
@@ -361,36 +375,19 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     rc = SSMR3GetU32(pSSM, &pHv->uHyperHints);                  AssertRCReturn(rc, rc);
 
     /*
-     * Load per-VM MMIO2 regions.
-     */
-    uint32_t cRegions;
-    rc = SSMR3GetU32(pSSM, &cRegions);
-    if (cRegions != RT_ELEMENTS(pHv->aMmio2Regions))
-    {
-        LogRelFunc(("MMIO2 region array size mismatch. size=%u expected=%u\n", cRegions, RT_ELEMENTS(pHv->aMmio2Regions)));
-        return VERR_SSM_FIELD_INVALID_VALUE;
-    }
-
-    for (unsigned i = 0; i < RT_ELEMENTS(pHv->aMmio2Regions); i++)
-    {
-        /* The regions would have been registered while constructing the GIM device. */
-        PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[i];
-        rc = SSMR3GetU8(pSSM,     &pRegion->iRegion);           AssertRCReturn(rc, rc);
-        rc = SSMR3GetBool(pSSM,   &pRegion->fRCMapping);        AssertRCReturn(rc, rc);
-        rc = SSMR3GetU32(pSSM,    &pRegion->cbRegion);          AssertRCReturn(rc, rc);
-        rc = SSMR3GetGCPhys(pSSM, &pRegion->GCPhysPage);        AssertRCReturn(rc, rc);
-        rc = SSMR3GetStrZ(pSSM,    pRegion->szDescription, sizeof(pRegion->szDescription));
-        AssertRCReturn(rc, rc);
-    }
-
-    /*
-     * Enable the Hypercall-page.
+     * Load and enable the Hypercall region.
      */
     PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
+    rc = SSMR3GetU8(pSSM,     &pRegion->iRegion);           AssertRCReturn(rc, rc);
+    rc = SSMR3GetBool(pSSM,   &pRegion->fRCMapping);        AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM,    &pRegion->cbRegion);          AssertRCReturn(rc, rc);
+    rc = SSMR3GetGCPhys(pSSM, &pRegion->GCPhysPage);        AssertRCReturn(rc, rc);
+    rc = SSMR3GetStrZ(pSSM,    pRegion->szDescription, sizeof(pRegion->szDescription));
+    AssertRCReturn(rc, rc);
     if (MSR_GIM_HV_HYPERCALL_IS_ENABLED(pHv->u64HypercallMsr))
     {
         Assert(pRegion->GCPhysPage != NIL_RTGCPHYS);
-        if (pRegion->fRegistered)
+        if (RT_LIKELY(pRegion->fRegistered))
         {
             rc = GIMR3HvEnableHypercallPage(pVM, pRegion->GCPhysPage);
             if (RT_FAILURE(rc))
@@ -402,15 +399,23 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     }
 
     /*
-     * Enable the TSC-page.
+     * Load and enable the reference TSC region.
      */
+    uint32_t uTscSequence;
     pRegion = &pHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
+    rc = SSMR3GetU8(pSSM,     &pRegion->iRegion);           AssertRCReturn(rc, rc);
+    rc = SSMR3GetBool(pSSM,   &pRegion->fRCMapping);        AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM,    &pRegion->cbRegion);          AssertRCReturn(rc, rc);
+    rc = SSMR3GetGCPhys(pSSM, &pRegion->GCPhysPage);        AssertRCReturn(rc, rc);
+    rc = SSMR3GetStrZ(pSSM,    pRegion->szDescription, sizeof(pRegion->szDescription));
+    rc = SSMR3GetU32(pSSM,    &uTscSequence);               AssertRCReturn(rc, rc);
+    AssertRCReturn(rc, rc);
     if (MSR_GIM_HV_REF_TSC_IS_ENABLED(pHv->u64TscPageMsr))
     {
         Assert(pRegion->GCPhysPage != NIL_RTGCPHYS);
         if (pRegion->fRegistered)
         {
-            rc = GIMR3HvEnableTscPage(pVM, pRegion->GCPhysPage);
+            rc = GIMR3HvEnableTscPage(pVM, pRegion->GCPhysPage, true /* fUseThisTscSeq */, uTscSequence);
             if (RT_FAILURE(rc))
                 return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Failed to enable the TSC page. GCPhys=%#RGp rc=%Rrc"),
                                         pRegion->GCPhysPage, rc);
@@ -427,10 +432,14 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
  * Enables the Hyper-V TSC page.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
- * @param   GCPhysTscPage   Where to map the TSC page.
- */
-VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage)
+ * @param   pVM                     Pointer to the VM.
+ * @param   GCPhysTscPage           Where to map the TSC page.
+ * @param   fUseThisTscSequence     Whether to set the TSC sequence number to
+ *                                  the one specified in @a uTscSequence.
+ * @param   uTscSequence            The TSC sequence value to use. Ignored if @a
+ *                                  fUseThisTscSequence is false.
+                                                                    */
+VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool fUseThisTscSequence, uint32_t uTscSequence)
 {
     PPDMDEVINSR3    pDevIns = pVM->gim.s.pDevInsR3;
     PGIMMMIO2REGION pRegion = &pVM->gim.s.u.Hv.aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
@@ -472,7 +481,13 @@ VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage)
         Assert(pRefTsc);
 
         uint64_t const u64TscKHz = TMCpuTicksPerSecond(pVM) / UINT64_C(1000);
-        pRefTsc->u32TscSequence  = 1;
+        uint32_t       u32TscSeq = 1;
+        if (   fUseThisTscSequence
+            && uTscSequence < UINT32_C(0xfffffffe))
+        {
+            u32TscSeq = uTscSequence + 1;
+        }
+        pRefTsc->u32TscSequence  = u32TscSeq;
         pRefTsc->u64TscScale     = ((INT64_C(10000) << 32) / u64TscKHz) << 32;
 
         LogRel(("GIM: HyperV: Enabled TSC page at %#RGp (u64TscScale=%#RX64 u64TscKHz=%#RX64)\n", GCPhysTscPage,

@@ -510,7 +510,7 @@ VMMR3_INT_DECL(int)             GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)             GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion);
 
 VMMR3_INT_DECL(int)             GIMR3HvDisableTscPage(PVM pVM);
-VMMR3_INT_DECL(int)             GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage);
+VMMR3_INT_DECL(int)             GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool fUseThisTscSequence, uint32_t uTscSequence);
 VMMR3_INT_DECL(int)             GIMR3HvDisableHypercallPage(PVM pVM);
 VMMR3_INT_DECL(int)             GIMR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercallPage);
 #endif /* IN_RING3 */
