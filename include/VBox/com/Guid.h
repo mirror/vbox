@@ -395,7 +395,7 @@ public:
     /**
      * Internal helper class for asOutParam().
      *
-     * This takes a GUID refrence in the constructor and copies the mUuid from
+     * This takes a GUID reference in the constructor and copies the mUuid from
      * the method to that instance in its destructor.
      */
     class GuidOutParam
@@ -415,10 +415,10 @@ public:
         operator nsID**() { return &ptr; }
         ~GuidOutParam()
         {
-            if (ptr && outer.isEmpty())
+            if (ptr && outer.isZero())
             {
                 outer = *ptr;
-                outer.refresh();
+                outer.dbg_refresh();
                 nsMemory::Free(ptr);
             }
         }
