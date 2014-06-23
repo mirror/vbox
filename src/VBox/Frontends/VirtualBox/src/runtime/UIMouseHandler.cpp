@@ -60,7 +60,6 @@ const int XKeyRelease = KeyRelease;
 /* COM includes: */
 #include "CConsole.h"
 #include "CMouse.h"
-#include "CFramebuffer.h"
 #include "CDisplay.h"
 
 #include <iprt/time.h>
