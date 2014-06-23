@@ -777,12 +777,20 @@ pxping_pcb_rtstrfmt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     if (pcb->is_ipv6) {
         cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
                           "%RTnaipv6 -> %RTnaipv6", &pcb->src, &pcb->dst);
+        if (pcb->is_mapped) {
+            cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
+                              " (%RTnaipv6)", &pcb->peer.sin6.sin6_addr);
+        }
     }
     else {
         cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
                           "%RTnaipv4 -> %RTnaipv4",
                           ip4_addr_get_u32(ipX_2_ip(&pcb->src)),
                           ip4_addr_get_u32(ipX_2_ip(&pcb->dst)));
+        if (pcb->is_mapped) {
+            cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
+                              " (%RTnaipv4)", pcb->peer.sin.sin_addr.s_addr);
+        }
     }
                       
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
