@@ -544,9 +544,15 @@ static int rtZipPkzipReaderGetFsObjInfo(PRTZIPPKZIPREADER pThis, PRTFSOBJINFO pO
     pObjInfo->BirthTime = ts;
     const char *pszEnd = strchr(pThis->szName, '\0');
     if (pszEnd == &pThis->szName[0] || pszEnd[-1] != '/')
-        pObjInfo->Attr.fMode = RTFS_TYPE_FILE | RTFS_UNIX_IRUSR | RTFS_UNIX_IRWXU;
+        pObjInfo->Attr.fMode = RTFS_TYPE_FILE \
+                             | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR \
+                             | RTFS_UNIX_IRGRP \
+                             | RTFS_UNIX_IROTH;
     else
-        pObjInfo->Attr.fMode = RTFS_TYPE_DIRECTORY | RTFS_UNIX_IRUSR | RTFS_UNIX_IRUSR | RTFS_UNIX_IXUSR;
+        pObjInfo->Attr.fMode = RTFS_TYPE_DIRECTORY \
+                             | RTFS_UNIX_IRWXU \
+                             | RTFS_UNIX_IRGRP | RTFS_UNIX_IXGRP \
+                             | RTFS_UNIX_IROTH | RTFS_UNIX_IXOTH;
     pObjInfo->Attr.enmAdditional = RTFSOBJATTRADD_UNIX;
     pObjInfo->Attr.u.Unix.cHardlinks = 1;
 
@@ -671,11 +677,12 @@ static int rtZipPkzipFssIosReadCdh(PRTZIPPKZIPFSSTREAM pThis, uint64_t *poffStar
  */
 static int rtZipPkzipFssIosReadEocb(PRTZIPPKZIPFSSTREAM pThis)
 {
-    uint64_t cbFile;
-    int rc = RTVfsFileSeek(RTVfsIoStrmToFile(pThis->hVfsIos), 0, RTFILE_SEEK_END, &cbFile);
+    RTFSOBJINFO Info;
+    int rc = RTVfsIoStrmQueryInfo(pThis->hVfsIos, &Info, RTFSOBJATTRADD_UNIX);
     if (RT_FAILURE(rc))
         return rc;
 
+    uint64_t cbFile = Info.cbObject;
     if (cbFile < sizeof(RTZIPPKZIPENDOFCENTRDIRREC)-1)
         return VERR_PKZIP_NO_EOCB;
 
@@ -1181,6 +1188,7 @@ static DECLCALLBACK(int) rtZipPkzipFss_Next(void *pvThis, char **ppszName, RTVFS
         default:
             return pThis->rcFatal = VERR_PKZIP_UNKNOWN_TYPE_FLAG;
     }
+    pThis->hVfsCurObj = hVfsObj;
 
     if (ppszName)
     {
