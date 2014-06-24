@@ -124,13 +124,6 @@ sfprov_disconnect(sfp_connection_t *conn)
 }
 
 
-/*
- * representation of an active mount point
- */
-struct sfp_mount {
-	VBSFMAP	map;
-};
-
 int
 sfprov_mount(sfp_connection_t *conn, char *path, sfp_mount_t **mnt)
 {
@@ -143,7 +136,7 @@ sfprov_mount(sfp_connection_t *conn, char *path, sfp_mount_t **mnt)
 	str = sfprov_string(path, &size);
 	rc = vboxCallMapFolder(&vbox_client, str, &m->map);
 	if (RT_FAILURE(rc)) {
-		cmn_err(CE_WARN, "sfprov_mount: vboxCallMapFolder() failed rc=%d\n", rc);
+		cmn_err(CE_WARN, "sfprov_mount: vboxCallMapFolder() failed. path=%s rc=%d\n", path, rc);
 		kmem_free(m, sizeof (*m));
 		*mnt = NULL;
 		rc = EINVAL;
@@ -202,19 +195,23 @@ sfprov_fmode_from_mode(RTFMODE *fMode, mode_t mode)
 {
 	RTFMODE m = 0;
 
-#define mode_set(r) ((mode & (S_##r)) ? RTFS_UNIX_##r : 0)
+#define mode_set(r) ((mode) & (S_##r)) ? RTFS_UNIX_##r : 0
 	m  = mode_set (ISUID);
 	m |= mode_set (ISGID);
 	m |= (mode & S_ISVTX) ? RTFS_UNIX_ISTXT : 0;
+
 	m |= mode_set (IRUSR);
 	m |= mode_set (IWUSR);
 	m |= mode_set (IXUSR);
+
 	m |= mode_set (IRGRP);
 	m |= mode_set (IWGRP);
 	m |= mode_set (IXGRP);
+
 	m |= mode_set (IROTH);
 	m |= mode_set (IWOTH);
 	m |= mode_set (IXOTH);
+#undef mode_set
 
 	if (S_ISDIR(mode))
 		m |= RTFS_TYPE_DIRECTORY;
@@ -237,49 +234,53 @@ sfprov_fmode_from_mode(RTFMODE *fMode, mode_t mode)
 }
 
 static void
-sfprov_mode_from_fmode(mode_t *mode, RTFMODE fMode)
+sfprov_mode_from_fmode(sfp_mount_t *mnt, mode_t *mode, RTFMODE fMode)
 {
 	mode_t m = 0;
 
-	if (RTFS_IS_DIRECTORY(fMode))
-		m |= S_IFDIR;
-	else if (RTFS_IS_FILE(fMode))
-		m |= S_IFREG;
-	else if (RTFS_IS_FIFO(fMode))
-		m |= S_IFIFO;
-	else if (RTFS_IS_DEV_CHAR(fMode))
-		m |= S_IFCHR;
-	else if (RTFS_IS_DEV_BLOCK(fMode))
-		m |= S_IFBLK;
-	else if (RTFS_IS_SYMLINK(fMode))
-		m |= S_IFLNK;
-	else if (RTFS_IS_SOCKET(fMode))
-		m |= S_IFSOCK;
+#define mode_set_from_rt(r) ((fMode) & (RTFS_UNIX_##r)) ? (S_##r) : 0;
+	m  = mode_set_from_rt(ISUID);
+	m |= mode_set_from_rt(ISGID);
+	m |= (fMode & RTFS_UNIX_ISTXT) ? S_ISVTX : 0;
 
-	if (fMode & RTFS_UNIX_IRUSR)
-		m |= S_IRUSR;
-	if (fMode & RTFS_UNIX_IWUSR)
-		m |= S_IWUSR;
-	if (fMode & RTFS_UNIX_IXUSR)
-		m |= S_IXUSR;
-	if (fMode & RTFS_UNIX_IRGRP)
-		m |= S_IRGRP;
-	if (fMode & RTFS_UNIX_IWGRP)
-		m |= S_IWGRP;
-	if (fMode & RTFS_UNIX_IXGRP)
-		m |= S_IXGRP;
-	if (fMode & RTFS_UNIX_IROTH)
-		m |= S_IROTH;
-	if (fMode & RTFS_UNIX_IWOTH)
-		m |= S_IWOTH;
-	if (fMode & RTFS_UNIX_IXOTH)
-		m |= S_IXOTH;
-	if (fMode & RTFS_UNIX_ISUID)
-		m |= S_ISUID;
-	if (fMode & RTFS_UNIX_ISGID)
-		m |= S_ISGID;
-	if (fMode & RTFS_UNIX_ISTXT)
-		m |= S_ISVTX;
+	m |= mode_set_from_rt(IRUSR);
+	m |= mode_set_from_rt(IWUSR);
+	m |= mode_set_from_rt(IXUSR);
+
+	m |= mode_set_from_rt(IRGRP);
+	m |= mode_set_from_rt(IWGRP);
+	m |= mode_set_from_rt(IXGRP);
+
+	m |= mode_set_from_rt(IROTH);
+	m |= mode_set_from_rt(IWOTH);
+	m |= mode_set_from_rt(IXOTH);
+#undef mode_set_from_rt
+
+	if (RTFS_IS_DIRECTORY(fMode))
+	{
+		m = mnt->sf_dmode != ~0U ? (mnt->sf_dmode & PERMMASK) : m;
+		m &= ~mnt->sf_dmask;
+		m |= S_IFDIR;
+	}
+	else
+	{
+		m = mnt->sf_fmode != ~0U ? (mnt->sf_fmode & PERMMASK) : m;
+		m &= ~mnt->sf_fmask;
+
+		if (RTFS_IS_FILE(fMode))
+			m |= S_IFREG;
+		else if (RTFS_IS_SYMLINK(fMode))
+			m |= S_IFLNK;
+		else if (RTFS_IS_FIFO(fMode))
+			m |= S_IFIFO;
+		else if (RTFS_IS_DEV_CHAR(fMode))
+			m |= S_IFCHR;
+		else if (RTFS_IS_DEV_BLOCK(fMode))
+			m |= S_IFBLK;
+		else if (RTFS_IS_SOCKET(fMode))
+			m |= S_IFSOCK;
+	}
+
 	*mode = m;
 }
 
@@ -292,9 +293,9 @@ sfprov_ftime_from_timespec(timestruc_t *time, RTTIMESPEC *ts)
 }
 
 static void
-sfprov_stat_from_info(sffs_stat_t *stat, SHFLFSOBJINFO *info)
+sfprov_stat_from_info(sfp_mount_t *mnt, sffs_stat_t *stat, SHFLFSOBJINFO *info)
 {
-	sfprov_mode_from_fmode(&stat->sf_mode, info->Attr.fMode);
+	sfprov_mode_from_fmode(mnt, &stat->sf_mode, info->Attr.fMode);
 	stat->sf_size  = info->cbObject;
 	stat->sf_alloc = info->cbAllocated;
 	sfprov_ftime_from_timespec(&stat->sf_atime, &info->AccessTime);
@@ -352,7 +353,7 @@ sfprov_create(
 	newfp->handle = parms.Handle;
 	newfp->map = mnt->map;
 	*fp = newfp;
-	sfprov_stat_from_info(stat, &parms.Info);
+	sfprov_stat_from_info(mnt, stat, &parms.Info);
 	return (0);
 }
 
@@ -541,7 +542,7 @@ sfprov_get_mode(sfp_mount_t *mnt, char *path, mode_t *mode)
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
 		return (rc);
-	sfprov_mode_from_fmode(mode, info.Attr.fMode);
+	sfprov_mode_from_fmode(mnt, mode, info.Attr.fMode);
 	return (0);
 }
 
@@ -607,7 +608,7 @@ sfprov_get_attr(sfp_mount_t *mnt, char *path, sffs_stat_t *attr)
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
 		return (rc);
-	sfprov_stat_from_info(attr, &info);
+	sfprov_stat_from_info(mnt, attr, &info);
 	return (0);
 }
 
@@ -783,7 +784,7 @@ sfprov_mkdir(
 	newfp->handle = parms.Handle;
 	newfp->map = mnt->map;
 	*fp = newfp;
-	sfprov_stat_from_info(stat, &parms.Info);
+	sfprov_stat_from_info(mnt, stat, &parms.Info);
 	return (0);
 }
 
@@ -859,7 +860,7 @@ sfprov_symlink(
 	}
 
 	if (stat != NULL)
-		sfprov_stat_from_info(stat, &info);
+		sfprov_stat_from_info(mnt, stat, &info);
 
 done:
 	kmem_free(lnk, lnk_size);
@@ -1028,7 +1029,7 @@ sfprov_readdir(
 			dirent->sf_entry.d_off = offset;
 
 			/* save the stats */
-			sfprov_stat_from_info(&dirent->sf_stat, &info->Info);
+			sfprov_stat_from_info(mnt, &dirent->sf_stat, &info->Info);
 
 			/* next info */
 			cur_buf->sf_len += entlen;

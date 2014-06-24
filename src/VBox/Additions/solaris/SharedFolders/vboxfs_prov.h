@@ -32,6 +32,9 @@
 extern "C" {
 #endif
 
+#include "../../common/VBoxGuestLib/VBoxGuestR0LibSharedFolders.h"
+
+
 /*
  * These are the provider interfaces used by sffs to access the underlying
  * shared file system.
@@ -62,8 +65,18 @@ extern void sfprov_disconnect(sfp_connection_t *);
  *
  * sfprov_unmount() unmounts the mounted file system. It returns 0 on
  * success and any relevant errno on failure.
+ * 
+ * spf_mount_t is the representation of an active mount point.
  */
-typedef struct sfp_mount sfp_mount_t;
+typedef struct spf_mount_t {
+	VBSFMAP		map;		/* guest<->host mapping */
+	uid_t		sf_uid;		/* owner of the mount point */
+	gid_t		sf_gid;		/* group of the mount point */
+	mode_t		sf_dmode;   /* mode of all directories if != ~0U */
+	mode_t		sf_fmode;   /* mode of all files if != ~0U */
+	mode_t		sf_dmask;   /* mask of all directories */
+	mode_t		sf_fmask;   /* mask of all files */
+} sfp_mount_t;
 
 extern int sfprov_mount(sfp_connection_t *, char *, sfp_mount_t **);
 extern int sfprov_unmount(sfp_mount_t *);
@@ -171,3 +184,4 @@ extern int sfprov_readdir(sfp_mount_t *mnt, char *path,
 #endif
 
 #endif	/* !___VBoxFS_prov_Solaris_h */
+
