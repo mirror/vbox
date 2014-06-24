@@ -262,6 +262,7 @@ int main(int argc, char **argv)
             RTMemFree(pszBuf);
             pszBuf = NULL;
         }
+        RTPrintf("Old way: rc=%Rrc\n", rc);
 
         /*
          * The new way:
@@ -292,6 +293,7 @@ int main(int argc, char **argv)
         }
         else
             checkError(hHttp, rc, "roots.zip");
+        RTPrintf("New way: rc=%Rrc\n", rc);
     }
 
     /*
