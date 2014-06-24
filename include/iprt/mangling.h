@@ -1906,6 +1906,7 @@
 # define RTZipTarFsStreamFromIoStream                   RT_MANGLER(RTZipTarFsStreamFromIoStream)
 # define RTZipXarFsStreamFromIoStream                   RT_MANGLER(RTZipXarFsStreamFromIoStream)
 # define RTZipPkzipFsStreamFromIoStream                 RT_MANGLER(RTZipPkzipFsStreamFromIoStream)
+# define RTZipPkzipMemDecompress                        RT_MANGLER(RTZipPkzipMemDecompress)
 /*
  * Stable variables (alphabetical order):
  */
