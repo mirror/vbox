@@ -393,7 +393,7 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pHttpInt, int rcCurl)
                 const char *pszRedirect;
                 curl_easy_getinfo(pHttpInt->pCurl, CURLINFO_REDIRECT_URL, &pszRedirect);
                 size_t cb = strlen(pszRedirect);
-                if (cb > 0 && cb < 4096)
+                if (cb > 0 && cb < 2048)
                     pHttpInt->pszRedirLocation = RTStrDup(pszRedirect);
                 rc = VERR_HTTP_REDIRECTED;
                 break;
