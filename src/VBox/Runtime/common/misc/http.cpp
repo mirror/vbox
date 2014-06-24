@@ -49,17 +49,20 @@
 *******************************************************************************/
 typedef struct RTHTTPINTERNAL
 {
-    /** magic value */
-    uint32_t u32Magic;
-    /** cURL handle */
-    CURL *pCurl;
-    long lLastResp;
+    /** Magic value. */
+    uint32_t            u32Magic;
+    /** cURL handle. */
+    CURL                *pCurl;
+    /** The last response code. */
+    long                lLastResp;
     /** custom headers */
-    struct curl_slist *pHeaders;
-    /** CA certificate for HTTPS authentication check */
-    char *pcszCAFile;
-    /** abort the current HTTP request if true */
-    bool fAbort;
+    struct curl_slist   *pHeaders;
+    /** CA certificate for HTTPS authentication check. */
+    char                *pcszCAFile;
+    /** Abort the current HTTP request if true. */
+    bool                fAbort;
+    /** The location field for 301 responses. */
+    char                *pszRedirLocation;
 } RTHTTPINTERNAL;
 typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
 
@@ -135,6 +138,9 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
     if (pHttpInt->pcszCAFile)
         RTStrFree(pHttpInt->pcszCAFile);
 
+    if (pHttpInt->pszRedirLocation)
+        RTStrFree(pHttpInt->pszRedirLocation);
+
     RTMemFree(pHttpInt);
 
     curl_global_cleanup();
@@ -171,6 +177,18 @@ RTR3DECL(int) RTHttpAbort(RTHTTP hHttp)
 
     pHttpInt->fAbort = true;
 
+    return VINF_SUCCESS;
+}
+
+RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation)
+{
+    PRTHTTPINTERNAL pHttpInt = hHttp;
+    RTHTTP_VALID_RETURN(pHttpInt);
+
+    if (!pHttpInt->pszRedirLocation)
+        return VERR_HTTP_NOT_FOUND;
+
+    *ppszRedirLocation = RTStrDup(pHttpInt->pszRedirLocation);
     return VINF_SUCCESS;
 }
 
@@ -353,6 +371,12 @@ RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile)
 static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pHttpInt, int rcCurl)
 {
     int rc = VERR_INTERNAL_ERROR;
+
+    if (pHttpInt->pszRedirLocation)
+    {
+        RTStrFree(pHttpInt->pszRedirLocation);
+        pHttpInt->pszRedirLocation = NULL;
+    }
     if (rcCurl == CURLE_OK)
     {
         curl_easy_getinfo(pHttpInt->pCurl, CURLINFO_RESPONSE_CODE, &pHttpInt->lLastResp);
@@ -364,6 +388,16 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pHttpInt, int rcCurl)
                 /* empty response */
                 rc = VINF_SUCCESS;
                 break;
+            case 301:
+            {
+                const char *pszRedirect;
+                curl_easy_getinfo(pHttpInt->pCurl, CURLINFO_REDIRECT_URL, &pszRedirect);
+                size_t cb = strlen(pszRedirect);
+                if (cb > 0 && cb < 4096)
+                    pHttpInt->pszRedirLocation = RTStrDup(pszRedirect);
+                rc = VERR_HTTP_REDIRECTED;
+                break;
+            }
             case 400:
                 /* bad request */
                 rc = VERR_HTTP_BAD_REQUEST;
