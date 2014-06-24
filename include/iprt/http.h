@@ -61,6 +61,16 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp);
  */
 RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp);
 
+
+/**
+ * Retrieve the redir location for 301 responses.
+ *
+ * @param   hHttp       Handle to the HTTP interface.
+ * @para    ppszRedirLocation   Where to store the string. To be freed with
+ *                              RTStrFree().
+ */
+RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation);
+
 /**
  * Perform a simple blocking HTTP request.
  *
