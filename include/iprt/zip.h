@@ -218,21 +218,6 @@ RTDECL(int)     RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
 
 
 /**
- * Opens a zip decompression I/O stream.
- *
- * @returns IPRT status code.
- *
- * @param   hVfsIosIn           The compressed input stream (must be readable).
- *                              The reference is not consumed, instead another
- *                              one is retained.
- * @param   fFlags              Flags, MBZ.
- * @param   phVfsIosUnzip       Where to return the handle to the gunzipped I/O
- *                              stream (read).
- */
-RTDECL(int) RTZipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSIOSTREAM phVfsIosUnzip);
-
-
-/**
  * Opens a gzip decompression I/O stream.
  *
  * @returns IPRT status code.
