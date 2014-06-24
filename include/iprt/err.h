@@ -1623,6 +1623,8 @@ RT_C_DECLS_END
 #define VERR_HTTP_CACERT_CANNOT_AUTHENTICATE    (-892)
 /** The current HTTP request was forcefully aborted */
 #define VERR_HTTP_ABORTED                       (-893)
+/** Request was redirected. */
+#define VERR_HTTP_REDIRECTED                    (-894)
 /** @} */
 
 /** @name RTManifest status codes
