@@ -130,99 +130,112 @@ void UIGMachinePreview::sltMachineStateChange(QString strId)
 
 void UIGMachinePreview::sltRecreatePreview()
 {
-    /* Only do this if we are visible: */
+    /* Skip invisible preview: */
     if (!isVisible())
         return;
 
-    /* Cleanup preview first: */
+    /* Cleanup previous image: */
     if (m_pPreviewImg)
     {
         delete m_pPreviewImg;
         m_pPreviewImg = 0;
     }
 
-    /* Fetch the latest machine-state: */
-    KMachineState machineState = m_machine.isNull() ? KMachineState_Null : m_machine.GetState();
+    /* Fetch actual machine-state: */
+    const KMachineState machineState = m_machine.isNull() ? KMachineState_Null : m_machine.GetState();
 
     /* We are creating preview only for assigned and accessible VMs: */
     if (!m_machine.isNull() && machineState != KMachineState_Null &&
         m_vRect.width() > 0 && m_vRect.height() > 0)
     {
-        QImage image(size().toSize(), QImage::Format_ARGB32);
-        image.fill(Qt::transparent);
-        QPainter painter(&image);
-        bool fDone = false;
+        /* Prepare image: */
+        QImage image;
 
-        /* Preview enabled? */
+        /* Preview update enabled? */
         if (m_pUpdateTimer->interval() > 0)
         {
-            /* Use the image which may be included in the save state. */
-            if (machineState == KMachineState_Saved || machineState == KMachineState_Restoring)
+            /* Depending on machine state: */
+            switch (machineState)
             {
-                ULONG width = 0, height = 0;
-                QVector<BYTE> screenData = m_machine.ReadSavedScreenshotPNGToArray(0, width, height);
-                if (screenData.size() != 0)
+                /* If machine is in SAVED/RESTORING state: */
+                case KMachineState_Saved:
+                case KMachineState_Restoring:
                 {
-                    QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG")
-                                  .scaled(m_vRect.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-                    dimImage(shot);
-                    painter.drawImage(m_vRect.x(), m_vRect.y(), shot);
-                    fDone = true;
-                }
-            }
-            /* Use the current VM output. */
-            else if (machineState == KMachineState_Running || machineState == KMachineState_Paused)
-            {
-                if (m_session.GetState() == KSessionState_Locked)
-                {
-                    CVirtualBox vbox = vboxGlobal().virtualBox();
-                    if (vbox.isOk())
+                    /* Use the screenshot from saved-state if possible: */
+                    ULONG uWidth = 0, uHeight = 0;
+                    QVector<BYTE> screenData = m_machine.ReadSavedScreenshotPNGToArray(0, uWidth, uHeight);
+                    if (m_machine.isOk() && !screenData.isEmpty())
                     {
-                        const CConsole& console = m_session.GetConsole();
-                        if (!console.isNull())
-                        {
-                            CDisplay display = console.GetDisplay();
-                            /* Todo: correct aspect radio */
-//                            ULONG w, h, bpp;
-//                            LONG xOrigin, yOrigin;
-//                            display.GetScreenResolution(0, w, h, bpp, xOrigin, yOrigin);
-//                            QImage shot = QImage(w, h, QImage::Format_RGB32);
-//                            shot.fill(Qt::black);
-//                            display.TakeScreenShot(0, shot.bits(), shot.width(), shot.height());
-                            QVector<BYTE> screenData = display.TakeScreenShotToArray(0, m_vRect.width(), m_vRect.height());
-                            if (display.isOk() && screenData.size() != 0)
-                            {
-                                /* Unfortunately we have to reorder the pixel
-                                 * data, cause the VBox API returns RGBA data,
-                                 * which is not a format QImage understand.
-                                 * Todo: check for 32bit alignment, for both
-                                 * the data and the scanlines. Maybe we need to
-                                 * copy the data in any case. */
-                                uint32_t *d = (uint32_t*)screenData.data();
-                                for (int i = 0; i < screenData.size() / 4; ++i)
-                                {
-                                    uint32_t e = d[i];
-                                    d[i] = RT_MAKE_U32_FROM_U8(RT_BYTE3(e), RT_BYTE2(e), RT_BYTE1(e), RT_BYTE4(e));
-                                }
-
-                                QImage shot = QImage((uchar*)d, m_vRect.width(), m_vRect.height(), QImage::Format_RGB32);
-
-                                if (machineState == KMachineState_Paused)
-                                    dimImage(shot);
-                                painter.drawImage(m_vRect.x(), m_vRect.y(), shot);
-                                fDone = true;
-                            }
-                        }
+                        /* Create image based on shallow copy or screenshot data,
+                         * scale image down if necessary to the size possible to reflect: */
+                        image = QImage::fromData(screenData.data(), screenData.size(), "PNG")
+                                .scaled(imageAspectRatioSize(m_vRect.size(), QSize(uWidth, uHeight)),
+                                        Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+                        /* Dim image to give it required look: */
+                        dimImage(image);
                     }
+                    break;
                 }
+                /* If machine is in RUNNING/PAUSED state: */
+                case KMachineState_Running:
+                case KMachineState_Paused:
+                {
+                    /* Make sure session state is Locked: */
+                    if (m_session.GetState() != KSessionState_Locked)
+                        break;
+
+                    /* Make sure console is OK: */
+                    CConsole console = m_session.GetConsole();
+                    if (!m_session.isOk() || console.isNull())
+                        break;
+                    /* Make sure display is OK: */
+                    CDisplay display = console.GetDisplay();
+                    if (!console.isOk() || display.isNull())
+                        break;
+
+                    /* Calculate aspect-ratio size: */
+                    ULONG uGuestWidth, uGuestHeight, uBpp;
+                    LONG iOriginX, iOriginY;
+                    display.GetScreenResolution(0, uGuestWidth, uGuestHeight, uBpp, iOriginX, iOriginY);
+                    const QSize size = imageAspectRatioSize(m_vRect.size(), QSize(uGuestWidth, uGuestHeight));
+
+                    /* Use direct VM content: */
+                    QVector<BYTE> screenData = display.TakeScreenShotToArray(0, size.width(), size.height());
+                    if (display.isOk() && !screenData.isEmpty())
+                    {
+                        /* Unfortunately we have to reorder the pixel data,
+                         * cause the VBox API returns RGBA data,
+                         * which is not a format QImage understand. */
+                        uint32_t *pData = (uint32_t*)screenData.data();
+                        for (int i = 0; i < screenData.size() / 4; ++i)
+                        {
+                            uint32_t e = pData[i];
+                            pData[i] = RT_MAKE_U32_FROM_U8(RT_BYTE3(e), RT_BYTE2(e), RT_BYTE1(e), RT_BYTE4(e));
+                        }
+                        /* Create image based on shallow copy or reordered data: */
+                        image = QImage((uchar*)pData, size.width(), size.height(), QImage::Format_RGB32);
+                        /* Dim image to give it required look for PAUSED state: */
+                        if (machineState == KMachineState_Paused)
+                            dimImage(image);
+                    }
+                    break;
+                }
+                default:
+                    break;
             }
         }
 
-        if (fDone)
+        /* If image initialized: */
+        if (!image.isNull())
+        {
+            /* Shallow copy that image: */
             m_pPreviewImg = new QImage(image);
+            /* And detach that copy: */
+            m_pPreviewImg->bits();
+        }
     }
 
-    /* Redraw preview in any case! */
+    /* Redraw preview in any case: */
     update();
 }
 
@@ -284,15 +297,21 @@ void UIGMachinePreview::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
     /* If there is a preview image available: */
     if (m_pPreviewImg)
     {
-        /* Draw empty background: */
+        /* Draw black background: */
+        pPainter->fillRect(m_vRect, Qt::black);
+
+        /* Draw empty monitor frame: */
         pPainter->drawPixmap(cr.x() + m_iMargin, cr.y() + m_iMargin, *m_pbgEmptyImage);
 
-        /* Draw that image: */
-        pPainter->drawImage(0, 0, *m_pPreviewImg);
+        /* Move image to viewport center: */
+        QRect imageRect(QPoint(0, 0), m_pPreviewImg->size());
+        imageRect.moveCenter(m_vRect.center());
+        /* Draw preview image: */
+        pPainter->drawImage(imageRect.topLeft(), *m_pPreviewImg);
     }
     else
     {
-        /* Draw full background: */
+        /* Draw full monitor frame: */
         pPainter->drawPixmap(cr.x() + m_iMargin, cr.y() + m_iMargin, *m_pbgFullImage);
 
         /* Paint preview name: */
@@ -383,5 +402,36 @@ void UIGMachinePreview::stop()
 {
     /* Stop the timer: */
     m_pUpdateTimer->stop();
+}
+
+/* static */
+QSize UIGMachinePreview::imageAspectRatioSize(const QSize &hostSize, const QSize &guestSize)
+{
+    /* Calculate host/guest aspect-ratio: */
+    const double dHostAspectRatio = (double)hostSize.width() / hostSize.height();
+    const double dGuestAspectRatio = (double)guestSize.width() / guestSize.height();
+    int iWidth = 0, iHeight = 0;
+    /* Guest-screen more thin by vertical than host-screen: */
+    if (dGuestAspectRatio >= dHostAspectRatio)
+    {
+        /* Get host width: */
+        iWidth = hostSize.width();
+        /* And calculate height based on guest aspect ratio: */
+        iHeight = (double)iWidth / dGuestAspectRatio;
+        /* But no more than host height: */
+        iHeight = qMin(iHeight, hostSize.height());
+    }
+    /* Host-screen more thin by vertical than guest-screen: */
+    else
+    {
+        /* Get host height: */
+        iHeight = hostSize.height();
+        /* And calculate width based on guest aspect ratio: */
+        iWidth = (double)iHeight * dGuestAspectRatio;
+        /* But no more than host width: */
+        iWidth = qMin(iWidth, hostSize.width());
+    }
+    /* Return actual size: */
+    return QSize(iWidth, iHeight);
 }
 
