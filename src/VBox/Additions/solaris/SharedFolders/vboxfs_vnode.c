@@ -91,6 +91,7 @@
 #include <sys/dirent.h>
 #include <sys/fs_subr.h>
 #include <sys/time.h>
+#include <sys/cmn_err.h>
 #include "vboxfs_prov.h"
 #include "vboxfs_vnode.h"
 #include "vboxfs_vfs.h"
@@ -670,14 +671,14 @@ sfnode_access(sfnode_t *node, mode_t mode, cred_t *cr)
 		error = 0;
 	else
 		error = sfnode_update_stat_cache(node);
-	m = (error == 0) ? node->sf_stat.sf_mode : 0;
+	m = (error == 0) ? (node->sf_stat.sf_mode & MODEMASK) : 0;
 
 	/*
 	 * mask off the permissions based on uid/gid
 	 */
-	if (crgetuid(cr) != sffs->sf_uid) {
+	if (crgetuid(cr) != sffs->sf_handle->sf_uid) {
 		shift += 3;
-		if (groupmember(sffs->sf_gid, cr) == 0)
+		if (groupmember(sffs->sf_handle->sf_gid, cr) == 0)
 			shift += 3;
 	}
 	mode &= ~(m << shift);
@@ -685,8 +686,11 @@ sfnode_access(sfnode_t *node, mode_t mode, cred_t *cr)
 	if (mode == 0) {
 		error = 0;
 	} else {
+		/** @todo r=ramshankar: This can probably be optimized by holding static vnode
+		 *  	  templates for dir/file, as it only checks the type rather than
+		 *  	  fetching/allocating the real vnode. */
 		vp = sfnode_get_vnode(node);
-		error = secpolicy_vnode_access(cr, vp, sffs->sf_uid, mode);
+		error = secpolicy_vnode_access(cr, vp, sffs->sf_handle->sf_uid, mode);
 		VN_RELE(vp);
 	}
 	return (error);
@@ -872,8 +876,8 @@ sffs_getattr(
 
 	mutex_enter(&sffs_lock);
 	vap->va_type = vp->v_type;
-	vap->va_uid = sffs->sf_uid;
-	vap->va_gid = sffs->sf_gid;
+	vap->va_uid = sffs->sf_handle->sf_uid;
+	vap->va_gid = sffs->sf_handle->sf_gid;
 	vap->va_fsid = sffs->sf_vfsp->vfs_dev;
 	vap->va_nodeid = node->sf_ino;
 	vap->va_nlink = 1;
@@ -892,35 +896,6 @@ sffs_getattr(
 
 	mode = node->sf_stat.sf_mode;
 	vap->va_mode = mode & MODEMASK;
-	if (S_ISDIR(mode))
-	{
-		vap->va_type = VDIR;
-		vap->va_mode = sffs->sf_dmode != ~0 ? (sffs->sf_dmode & 0777) : vap->va_mode;
-		vap->va_mode &= ~sffs->sf_dmask;
-		vap->va_mode |= S_IFDIR;
-	}
-	else if (S_ISREG(mode))
-	{
-		vap->va_type = VREG;
-		vap->va_mode = sffs->sf_fmode != ~0 ? (sffs->sf_fmode & 0777) : vap->va_mode;
-		vap->va_mode &= ~sffs->sf_fmask;
-		vap->va_mode |= S_IFREG;
-	}
-	else if (S_ISFIFO(mode))
-		vap->va_type = VFIFO;
-	else if (S_ISCHR(mode))
-		vap->va_type = VCHR;
-	else if (S_ISBLK(mode))
-		vap->va_type = VBLK;
-	else if (S_ISLNK(mode))
-	{
-		vap->va_type = VLNK;
-		vap->va_mode = sffs->sf_fmode != ~0 ? (sffs->sf_fmode & 0777) : vap->va_mode;
-		vap->va_mode &= ~sffs->sf_fmask;
-		vap->va_mode |= S_IFLNK;
-	}
-	else if (S_ISSOCK(mode))
-		vap->va_type = VSOCK;
 
 	vap->va_size = node->sf_stat.sf_size;
 	vap->va_blksize = 512;

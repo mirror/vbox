@@ -41,6 +41,7 @@
 #include <sys/vfs_opreg.h>
 #endif
 #include <sys/pathname.h>
+#include <sys/cmn_err.h>
 #include "vboxfs_prov.h"
 #include "vboxfs_vnode.h"
 #include "vboxfs_vfs.h"
@@ -238,6 +239,23 @@ sf_pn_get(char *rawpath, struct mounta *uap, char **outpath)
 	return (0);
 }
 
+static void 
+sffs_print(sffs_data_t *sffs)
+{
+	cmn_err(CE_NOTE, "sffs_data_t at 0x%p\n", sffs);
+	cmn_err(CE_NOTE, "    vfs_t *sf_vfsp = 0x%p\n", sffs->sf_vfsp);
+	cmn_err(CE_NOTE, "    vnode_t *sf_rootnode = 0x%p\n", sffs->sf_rootnode);
+	cmn_err(CE_NOTE, "    uid_t sf_uid = 0x%lu\n", (ulong_t)sffs->sf_handle->sf_uid);
+	cmn_err(CE_NOTE, "    gid_t sf_gid = 0x%lu\n", (ulong_t)sffs->sf_handle->sf_gid);
+	cmn_err(CE_NOTE, "    mode_t sf_dmode = 0x%lu\n", (ulong_t)sffs->sf_handle->sf_dmode);
+	cmn_err(CE_NOTE, "    mode_t sf_fmode = 0x%lu\n", (ulong_t)sffs->sf_handle->sf_fmode);
+	cmn_err(CE_NOTE, "    mode_t sf_dmask = 0x%lu\n", (ulong_t)sffs->sf_handle->sf_dmask);
+	cmn_err(CE_NOTE, "    mode_t sf_fmask = 0x%lu\n", (ulong_t)sffs->sf_handle->sf_fmask);
+	cmn_err(CE_NOTE, "    char *sf_share_name = %s\n", sffs->sf_share_name);
+	cmn_err(CE_NOTE, "    char *sf_mntpath = %s\n", sffs->sf_mntpath);
+	cmn_err(CE_NOTE, "    sfp_mount_t *sf_handle = 0x%p\n", sffs->sf_handle);
+}
+
 static int
 sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 {
@@ -248,8 +266,8 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	dev_t dev;
 	uid_t uid = 0;
 	gid_t gid = 0;
-	mode_t dmode = ~0;
-	mode_t fmode = ~0;
+	mode_t dmode = ~0U;
+	mode_t fmode = ~0U;
 	mode_t dmask = 0;
 	mode_t fmask = 0;
 	int stat_ttl = DEF_STAT_TTL_MS;
@@ -422,17 +440,17 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	 */
 	sffs = kmem_alloc(sizeof (*sffs), KM_SLEEP);
 	sffs->sf_vfsp = vfsp;
-	sffs->sf_uid = uid;
-	sffs->sf_gid = gid;
-	sffs->sf_dmode = dmode;
-	sffs->sf_fmode = fmode;
-	sffs->sf_dmask = dmask;
-	sffs->sf_fmask = fmask;
+	sffs->sf_handle = handle;
+	sffs->sf_handle->sf_uid = uid;
+	sffs->sf_handle->sf_gid = gid;
+	sffs->sf_handle->sf_dmode = dmode;
+	sffs->sf_handle->sf_fmode = fmode;
+	sffs->sf_handle->sf_dmask = dmask;
+	sffs->sf_handle->sf_fmask = fmask;
 	sffs->sf_stat_ttl = stat_ttl;
 	sffs->sf_fsync = fsync;
 	sffs->sf_share_name = share_name;
 	sffs->sf_mntpath = mount_point;
-	sffs->sf_handle = handle;
 	sffs->sf_ino = 3;	/* root mount point is always '3' */
 
 	/*
@@ -460,6 +478,9 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	mutex_exit(&sffs_lock);
 
 	LogFlowFunc(("sffs_mount() success sffs=0x%p\n", sffs));
+#ifdef DEBUG_ramshankar
+	sffs_print(sffs);
+#endif
 	return (error);
 }
 
@@ -555,21 +576,5 @@ sffs_statvfs(vfs_t *vfsp, statvfs64_t *sbp)
 
 	sbp->f_namemax = fsinfo.maxnamesize;
 	return (0);
-}
-
-static void sffs_print(sffs_data_t *sffs)
-{
-	Log(("sffs_data_t at 0x%p\n", sffs));
-	Log(("    vfs_t *sf_vfsp = 0x%p\n", sffs->sf_vfsp));
-	Log(("    vnode_t *sf_rootnode = 0x%p\n", sffs->sf_rootnode));
-	Log(("    uid_t sf_uid = 0x%l\n", (ulong_t)sffs->sf_uid));
-	Log(("    gid_t sf_gid = 0x%l\n", (ulong_t)sffs->sf_gid));
-	Log(("    mode_t sf_dmode = 0x%l\n", (ulong_t)sffs->sf_dmode));
-	Log(("    mode_t sf_fmode = 0x%l\n", (ulong_t)sffs->sf_fmode));
-	Log(("    mode_t sf_dmask = 0x%l\n", (ulong_t)sffs->sf_dmask));
-	Log(("    mode_t sf_fmask = 0x%l\n", (ulong_t)sffs->sf_fmask));
-	Log(("    char *sf_share_name = %s\n", sffs->sf_share_name));
-	Log(("    char *sf_mntpath = %s\n", sffs->sf_mntpath));
-	Log(("    sfp_mount_t *sf_handle = 0x%p\n", sffs->sf_handle));
 }
 
