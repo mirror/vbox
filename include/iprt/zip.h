@@ -306,6 +306,21 @@ RTDECL(int) RTZipPkzipFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFl
 RTDECL(RTEXITCODE) RTZipUnzipCmd(unsigned cArgs, char **papszArgs);
 
 /**
+ * Helper for decompressing files of a ZIP file located in memory.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   ppvDst              Where to store the pointer to the allocated
+ *                              buffer. To be freed with RTMemFree().
+ * @param   pcbDst              Where to store the pointer to the size of the
+ *                              allocated buffer.
+ * @param   pvSrc               Pointer to the buffer containing the .zip file.
+ * @param   cbSrc               Size of the buffer containing the .zip file.
+ * @param   pszObject           Name of the object to extract.
+ */
+RTDECL(int) RTZipPkzipMemDecompress(void **ppvDst, size_t *pcbDst, void *pvSrc, size_t cbSrc, const char *pszObject);
+
+/**
  * Opens a XAR filesystem stream.
  *
  * This is used to extract, list or check a XAR archive.
