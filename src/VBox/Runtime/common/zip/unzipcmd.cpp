@@ -73,15 +73,15 @@ typedef struct RTZIPUNZIPCMDOPS
     /** Array of files/directories, terminated by a NULL entry. */
     const char * const *papszFiles;
 } RTZIPUNZIPCMDOPS;
-/** Pointer to the IPRT tar options. */
+/** Pointer to the UNZIP options. */
 typedef RTZIPUNZIPCMDOPS *PRTZIPUNZIPCMDOPS;
 
 /**
- * Callback used by rtZipTarDoWithMembers
+ * Callback used by rtZipUnzipDoWithMembers
  *
  * @returns rcExit or RTEXITCODE_FAILURE.
- * @param   pOpts               The tar options.
- * @param   hVfsObj             The tar object to display
+ * @param   pOpts               The Unzip options.
+ * @param   hVfsObj             The Unzip object to display
  * @param   pszName             The name.
  * @param   rcExit              The current exit code.
  */
@@ -127,7 +127,7 @@ static RTEXITCODE rtZipUnzipCmdExtractFile(PRTZIPUNZIPCMDOPS pOpts, RTVFSOBJ hVf
      * Open the destination file and create a stream object for it.
      */
     uint32_t fOpen = RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_ACCESS_ATTR_DEFAULT
-                   | ((RTFS_UNIX_IWUSR | RTFS_UNIX_IRUSR) << RTFILE_O_CREATE_MODE_SHIFT);
+                   | (pUnixInfo->Attr.fMode << RTFILE_O_CREATE_MODE_SHIFT);
     RTFILE hFile;
     int rc = RTFileOpen(&hFile, pszDst, fOpen);
     if (RT_FAILURE(rc))
@@ -274,7 +274,7 @@ static RTEXITCODE rtZipUnzipCmdOpenInputArchive(PRTZIPUNZIPCMDOPS pOpts, PRTVFSF
     rc = RTZipPkzipFsStreamFromIoStream(hVfsIos, 0 /*fFlags*/, phVfsFss);
     RTVfsIoStrmRelease(hVfsIos);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open tar filesystem stream: %Rrc", rc);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open pkzip filesystem stream: %Rrc", rc);
 
     return RTEXITCODE_SUCCESS;
 }
@@ -284,7 +284,7 @@ static RTEXITCODE rtZipUnzipCmdOpenInputArchive(PRTZIPUNZIPCMDOPS pOpts, PRTVFSF
  * Worker for the --list and --extract commands.
  *
  * @returns The appropriate exit code.
- * @param   pOpts               The tar options.
+ * @param   pOpts               The Unzip options.
  * @param   pfnCallback         The command specific callback.
  */
 static RTEXITCODE rtZipUnzipDoWithMembers(PRTZIPUNZIPCMDOPS pOpts, PFNDOWITHMEMBER pfnCallback,
