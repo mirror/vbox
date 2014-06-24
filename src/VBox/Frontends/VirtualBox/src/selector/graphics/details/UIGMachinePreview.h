@@ -89,6 +89,9 @@ private:
     void restart();
     void stop();
 
+    /** Calculates image size suitable to passed @a hostSize and @a guestSize. */
+    static QSize imageAspectRatioSize(const QSize &hostSize, const QSize &guestSize);
+
     /* Variables: */
     CSession m_session;
     CMachine m_machine;
