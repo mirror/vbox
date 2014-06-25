@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1959,7 +1959,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     /*
      * Guest TR.
-     * Fixup TR attributes so it's compatible with Intel. Important when saved-states are used             .
+     * Fixup TR attributes so it's compatible with Intel. Important when saved-states are used
      * between Intel and AMD. See @bugref{6208} comment #39.
      */
     HMSVM_SAVE_SEG_REG(TR, tr);
