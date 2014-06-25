@@ -3497,7 +3497,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
 
                 if (rc == VINF_SUCCESS)
                 {
-                    VMX_CAPABILITY vtCaps;
+                    VMXCAPABILITY vtCaps;
 
                     *pfCaps |= SUPVTCAPS_VT_X;
 

@@ -855,7 +855,7 @@ typedef union
         uint32_t        allowed1;
     } n;
     uint64_t            u;
-} VMX_CAPABILITY;
+} VMXCAPABILITY;
 #pragma pack()
 /** @} */
 
@@ -866,11 +866,11 @@ typedef struct VMXMSRS
 {
     uint64_t                u64FeatureCtrl;
     uint64_t                u64BasicInfo;
-    VMX_CAPABILITY          VmxPinCtls;
-    VMX_CAPABILITY          VmxProcCtls;
-    VMX_CAPABILITY          VmxProcCtls2;
-    VMX_CAPABILITY          VmxExit;
-    VMX_CAPABILITY          VmxEntry;
+    VMXCAPABILITY           VmxPinCtls;
+    VMXCAPABILITY           VmxProcCtls;
+    VMXCAPABILITY           VmxProcCtls2;
+    VMXCAPABILITY           VmxExit;
+    VMXCAPABILITY           VmxEntry;
     uint64_t                u64Misc;
     uint64_t                u64Cr0Fixed0;
     uint64_t                u64Cr0Fixed1;
