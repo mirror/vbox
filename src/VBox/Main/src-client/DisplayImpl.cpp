@@ -86,11 +86,6 @@ typedef struct DRVMAINDISPLAY
 /** Converts PDMIDISPLAYCONNECTOR pointer to a DRVMAINDISPLAY pointer. */
 #define PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface)  RT_FROM_MEMBER(pInterface, DRVMAINDISPLAY, IConnector)
 
-#ifdef DEBUG_sunlover
-static STAMPROFILE g_StatDisplayRefresh;
-static int g_stam = 0;
-#endif /* DEBUG_sunlover */
-
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
@@ -989,17 +984,6 @@ void Display::handleResizeCompletedEMT(unsigned uScreenId, BOOL fResizeContext)
                 pFBInfo->pFramebuffer->NotifyUpdate(0, 0, pFBInfo->w, pFBInfo->h);
         }
         LogRelFlow(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
-
-#ifdef DEBUG_sunlover
-        if (!g_stam)
-        {
-            Console::SafeVMPtr ptrVM(mParent);
-            AssertComRC(ptrVM.rc());
-            STAMR3RegisterU(ptrVM.rawUVM(), &g_StatDisplayRefresh, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
-                            "/PROF/Display/Refresh", STAMUNIT_TICKS_PER_CALL, "Time spent in EMT for display updates.");
-            g_stam = 1;
-        }
-#endif /* DEBUG_sunlover */
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
         {
@@ -3731,10 +3715,6 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-#ifdef DEBUG_sunlover
-    STAM_PROFILE_START(&g_StatDisplayRefresh, a);
-#endif /* DEBUG_sunlover */
-
 #ifdef DEBUG_sunlover_2
     LogFlowFunc(("pDrv->pDisplay->mfVideoAccelEnabled = %d\n",
                  pDrv->pDisplay->mfVideoAccelEnabled));
@@ -3846,9 +3826,6 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     }
 #endif /* VBOX_WITH_VPX */
 
-#ifdef DEBUG_sunlover
-    STAM_PROFILE_STOP(&g_StatDisplayRefresh, a);
-#endif /* DEBUG_sunlover */
 #ifdef DEBUG_sunlover_2
     LogFlowFunc(("leave\n"));
 #endif /* DEBUG_sunlover_2 */
