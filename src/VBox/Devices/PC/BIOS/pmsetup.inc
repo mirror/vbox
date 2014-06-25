@@ -14,14 +14,15 @@
 ;; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;;
 
+SVR		equ	0FEE000F0h
 LVT_LINT0	equ	0FEE00350h
 LVT_LINT1	equ	0FEE00360h
 
 public		pmode_setup
 
-;; Program LINT0/LINT1 entries in the local APIC. Some Linux kernels (e.g.,
-;; RHEL4 SMP 32-bit) expect the entries to be unmasked in virtual wire mode.
-;; Also make sure APIC timer is masked.
+;; Enable the local APIC and program LINT0/LINT1 entries. Without that,
+;; virtual wire interrupts could not be delivered. Note that the APIC must
+;; be enabled first because when disabled, all LVTs are forced masked.
 
 pmode_setup	proc	near
 
@@ -35,6 +36,10 @@ pmode_setup	proc	near
 		mov	eax, cr0	; Clear CR0.CD and CR0.NW
 		and	eax, 09FFFFFFFh
 		mov	cr0, eax
+
+		mov	esi, SVR	; Program the SVR -- enable the APIC,
+		mov	eax, 010Fh	; set spurious interrupt vector to 15
+		mov	[esi], eax
 
 		mov	esi, LVT_LINT0	; Program LINT0 to ExtINT and unmask
 		mov	eax, [esi]
