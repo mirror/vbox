@@ -1561,18 +1561,15 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
             return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
         }
 #else /* !TRPM_FORWARD_TRAPS_IN_GC */
-        if (HMR3IsActive(pVCpu))
+        uint8_t u8Interrupt;
+        int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+        Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
+        if (RT_SUCCESS(rc))
         {
-            uint8_t u8Interrupt;
-            int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-            Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
-            if (RT_SUCCESS(rc))
-            {
-                rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
-                AssertRC(rc);
-                STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
-                return VINF_EM_RESCHEDULE_HM;
-            }
+            rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
+            return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM;
         }
 #endif /* !TRPM_FORWARD_TRAPS_IN_GC */
     }
