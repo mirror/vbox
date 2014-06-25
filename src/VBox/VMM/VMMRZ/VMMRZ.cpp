@@ -134,7 +134,7 @@ VMMRZDECL(void) VMMRZCallRing3Disable(PVMCPU pVCpu)
 
     Assert(pVCpu->vmm.s.cCallRing3Disabled < 16);
     if (ASMAtomicIncU32(&pVCpu->vmm.s.cCallRing3Disabled) == 1) /** @todo replace with unordered variant (ASMAtomicUoIncU32). */
-    {                                                           /** @todo See @bugref{6208} c36 for impl. diff. */
+    {                                                           /** @todo See @bugref{6208} comment #36 for impl. diff. */
         /** @todo it might make more sense to just disable logging here, then we
          * won't flush away important bits... but that goes both ways really. */
 #ifdef IN_RC
