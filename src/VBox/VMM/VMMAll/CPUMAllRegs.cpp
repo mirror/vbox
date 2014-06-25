@@ -902,7 +902,7 @@ static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
 
         case MSR_IA32_APICBASE:
         {
-            /* See @bugref{7097} comment 6. */
+            /* See @bugref{7097} comment #6. */
             PVM pVM = pVCpu->CTX_SUFF(pVM);
             if (PDMHasApic(pVM))
                 *puValue = pVCpu->cpum.s.Guest.msrApicBase;
