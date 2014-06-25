@@ -298,18 +298,18 @@ VMMR3_INT_DECL(int) GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save per-VM MSRs.
      */
-    int rc = SSMR3PutU64(pSSM, pcHv->u64GuestOsIdMsr);          AssertRCReturn(rc, rc);
-    rc = SSMR3PutU64(pSSM, pcHv->u64HypercallMsr);              AssertRCReturn(rc, rc);
-    rc = SSMR3PutU64(pSSM, pcHv->u64TscPageMsr);                AssertRCReturn(rc, rc);
+    int rc = SSMR3PutU64(pSSM, pcHv->u64GuestOsIdMsr);      AssertRCReturn(rc, rc);
+    rc = SSMR3PutU64(pSSM, pcHv->u64HypercallMsr);          AssertRCReturn(rc, rc);
+    rc = SSMR3PutU64(pSSM, pcHv->u64TscPageMsr);            AssertRCReturn(rc, rc);
 
     /*
      * Save Hyper-V features / capabilities.
      */
-    rc = SSMR3PutU32(pSSM, pcHv->uBaseFeat);                    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pcHv->uPartFlags);                   AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pcHv->uPowMgmtFeat);                 AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pcHv->uMiscFeat);                    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pcHv->uHyperHints);                  AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pcHv->uBaseFeat);                AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pcHv->uPartFlags);               AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pcHv->uPowMgmtFeat);             AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pcHv->uMiscFeat);                AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pcHv->uHyperHints);              AssertRCReturn(rc, rc);
 
     /*
      * Save the Hypercall region.
@@ -361,18 +361,18 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     /*
      * Load per-VM MSRs.
      */
-    int rc = SSMR3GetU64(pSSM, &pHv->u64GuestOsIdMsr);          AssertRCReturn(rc, rc);
-    rc = SSMR3GetU64(pSSM, &pHv->u64HypercallMsr);              AssertRCReturn(rc, rc);
-    rc = SSMR3GetU64(pSSM, &pHv->u64TscPageMsr);                AssertRCReturn(rc, rc);
+    int rc = SSMR3GetU64(pSSM, &pHv->u64GuestOsIdMsr);      AssertRCReturn(rc, rc);
+    rc = SSMR3GetU64(pSSM, &pHv->u64HypercallMsr);          AssertRCReturn(rc, rc);
+    rc = SSMR3GetU64(pSSM, &pHv->u64TscPageMsr);            AssertRCReturn(rc, rc);
 
     /*
      * Save Hyper-V features / capabilities.
      */
-    rc = SSMR3GetU32(pSSM, &pHv->uBaseFeat);                    AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pHv->uPartFlags);                   AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pHv->uPowMgmtFeat);                 AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pHv->uMiscFeat);                    AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pHv->uHyperHints);                  AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pHv->uBaseFeat);                AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pHv->uPartFlags);               AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pHv->uPowMgmtFeat);             AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pHv->uMiscFeat);                AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pHv->uHyperHints);              AssertRCReturn(rc, rc);
 
     /*
      * Load and enable the Hypercall region.
