@@ -154,6 +154,8 @@ typedef struct CPUMFEATURES
     uint32_t        fHypervisorPresent : 1;
     /** MWAIT & MONITOR instructions supported. */
     uint32_t        fMonitorMWait : 1;
+    /** MWAIT Extensions present. */
+    uint32_t        fMWaitExtensions : 1;
 
     /** AMD64: Supports long mode. */
     uint32_t        fLongMode : 1;
@@ -172,7 +174,7 @@ typedef struct CPUMFEATURES
     uint32_t        fLeakyFxSR : 1;
 
     /** Alignment padding. */
-    uint32_t        fPadding : 9;
+    uint32_t        fPadding : 8;
 
     uint64_t        auPadding[2];
 } CPUMFEATURES;

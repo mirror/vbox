@@ -65,6 +65,8 @@ typedef enum CPUMCPUIDFEATURE
     CPUMCPUIDFEATURE_RDTSCP,
     /** The Hypervisor Present bit. (Std) */
     CPUMCPUIDFEATURE_HVP,
+    /** The MWait Extensions bits (Std) */
+    CPUMCPUIDFEATURE_MWAIT_EXTS,
     /** 32bit hackishness. */
     CPUMCPUIDFEATURE_32BIT_HACK = 0x7fffffff
 } CPUMCPUIDFEATURE;

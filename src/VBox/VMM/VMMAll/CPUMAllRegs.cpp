@@ -2284,6 +2284,25 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled Hypervisor Present bit\n"));
             break;
 
+        /*
+         * Set the MWAIT Extensions Present bit in the MWAIT/MONITOR leaf.
+         * This currently includes the Present bit and MWAITBREAK bit as well.
+         */
+        case CPUMCPUIDFEATURE_MWAIT_EXTS:
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000005), 0);
+            if (   !pLeaf
+                || !pVM->cpum.s.HostFeatures.fMWaitExtensions)
+            {
+                LogRel(("CPUM: WARNING! Can't turn on MWAIT Extensions when the host doesn't support it!\n"));
+                return;
+            }
+
+            /* Valid for both Intel and AMD. */
+            pVM->cpum.s.aGuestCpuIdStd[5].ecx = pLeaf->uEcx |= X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0;
+            pVM->cpum.s.GuestFeatures.fMWaitExtensions = 1;
+            LogRel(("CPUM: SetGuestCpuIdFeature: Enabled MWAIT Extensions.\n"));
+            break;
+
         default:
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
@@ -2319,6 +2338,7 @@ VMMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_PAT:          return pVM->cpum.s.GuestFeatures.fPat;
         case CPUMCPUIDFEATURE_RDTSCP:       return pVM->cpum.s.GuestFeatures.fRdTscP;
         case CPUMCPUIDFEATURE_HVP:          return pVM->cpum.s.GuestFeatures.fHypervisorPresent;
+        case CPUMCPUIDFEATURE_MWAIT_EXTS:   return pVM->cpum.s.GuestFeatures.fMWaitExtensions;
 
         case CPUMCPUIDFEATURE_INVALID:
         case CPUMCPUIDFEATURE_32BIT_HACK:
@@ -2417,6 +2437,14 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdStd[1].ecx = pLeaf->uEcx &= ~X86_CPUID_FEATURE_ECX_HVP;
             pVM->cpum.s.GuestFeatures.fHypervisorPresent = 0;
+            break;
+
+        case CPUMCPUIDFEATURE_MWAIT_EXTS:
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000005), 0);
+            if (pLeaf)
+                pVM->cpum.s.aGuestCpuIdStd[5].ecx = pLeaf->uEcx &= ~(X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0);
+            pVM->cpum.s.GuestFeatures.fMWaitExtensions = 0;
+            Log(("CPUM: ClearGuestCpuIdFeature: Disabled MWAIT Extensions!\n"));
             break;
 
         default:
