@@ -92,6 +92,26 @@ void CExeModule::MonitorShutdown()
         /* timed out */
         if (!bActivity && m_nLockCnt == 0) /* if no activity let's really bail */
         {
+            /* Disable log rotation at this point, worst case a log file
+	     * becomes slightly bigger than it should. Avoids quirks with
+	     * log rotation: there might be another API service process
+	     * running at this point which would rotate the logs concurrently,
+	     * creating a mess. */
+            PRTLOGGER pReleaseLogger = RTLogRelDefaultInstance();
+            if (pReleaseLogger)
+            {
+                char szDest[1024];
+                int rc = RTLogGetDestinations(pReleaseLogger, szDest, sizeof(szDest));
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTStrCat(szDest, sizeof(szDest), " nohistory");
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTLogDestinations(pReleaseLogger, szDest);
+                        AssertRC(rc);
+                    }
+                }
+            }
 #if _WIN32_WINNT >= 0x0400 & defined(_ATL_FREE_THREADED)
             CoSuspendClassObjects();
             if (!bActivity && m_nLockCnt == 0)
