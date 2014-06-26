@@ -56,6 +56,15 @@ typedef MEMIOSTREAM *PMEMIOSTREAM;
 
 
 /**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) memFssIos_Close(void *pvThis)
+{
+    NOREF(pvThis);
+    return VINF_SUCCESS;
+}
+
+/**
  * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
  */
 static DECLCALLBACK(int) memFssIos_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
@@ -105,6 +114,40 @@ static DECLCALLBACK(int) memFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
 }
 
 /**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
+ */
+static DECLCALLBACK(int) memFssIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
+ */
+static DECLCALLBACK(int) memFssIos_Flush(void *pvThis)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnPollOne}
+ */
+static DECLCALLBACK(int) memFssIos_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr, uint32_t *pfRetEvents)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnTell}
+ */
+static DECLCALLBACK(int) memFssIos_Tell(void *pvThis, PRTFOFF poffActual)
+{
+    PMEMIOSTREAM pThis = (PMEMIOSTREAM)pvThis;
+    *poffActual = pThis->off;
+    return VINF_SUCCESS;
+}
+
+/**
  * Memory I/O object stream operations.
  */
 static const RTVFSIOSTREAMOPS g_memFssIosOps =
@@ -113,17 +156,17 @@ static const RTVFSIOSTREAMOPS g_memFssIosOps =
         RTVFSOBJOPS_VERSION,
         RTVFSOBJTYPE_IO_STREAM,
         "MemFsStream::IoStream",
-        NULL /*Close*/,
+        memFssIos_Close,
         memFssIos_QueryInfo,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,
     RTVFSIOSTREAMOPS_FEAT_NO_SG,
     memFssIos_Read,
-    NULL /*Write*/,
-    NULL /*Flush*/,
-    NULL /*PollOne*/,
-    NULL /*Tell*/,
+    memFssIos_Write,
+    memFssIos_Flush,
+    memFssIos_PollOne,
+    memFssIos_Tell,
     NULL /*Skip*/,
     NULL /*ZeroFill*/,
     RTVFSIOSTREAMOPS_VERSION
