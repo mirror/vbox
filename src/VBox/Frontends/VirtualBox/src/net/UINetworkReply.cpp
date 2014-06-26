@@ -72,7 +72,8 @@ private:
     static int applyProxyRules(RTHTTP pHttp, const QString &strHostName, int iPort);
     static int applyCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
     static int applyRawHeaders(RTHTTP pHttp, const QList<QByteArray> &headers, const QNetworkRequest &request);
-    static int performGetRequest(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply);
+    static int performGetRequestForText(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply);
+    static int performGetRequestForBinary(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply);
     static int checkCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
     static int downloadCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
     static int downloadCertificatePca3G5(RTHTTP pHttp, QFile &file);
@@ -157,7 +158,7 @@ int UINetworkReplyPrivateThread::applyRawHeaders()
 int UINetworkReplyPrivateThread::performMainRequest()
 {
     /* Perform GET request: */
-    return performGetRequest(m_pHttp, m_request, m_reply);
+    return performGetRequestForText(m_pHttp, m_request, m_reply);
 }
 
 void UINetworkReplyPrivateThread::run()
@@ -260,19 +261,37 @@ int UINetworkReplyPrivateThread::applyRawHeaders(RTHTTP pHttp, const QList<QByte
 }
 
 /* static */
-int UINetworkReplyPrivateThread::performGetRequest(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply)
+int UINetworkReplyPrivateThread::performGetRequestForText(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply)
 {
     /* Make sure HTTP is created: */
     if (!pHttp)
         return VERR_INVALID_POINTER;
 
     /* Perform blocking HTTP GET request: */
-    char *pszBuf = 0;
+    char *pszBuffer = 0;
     int rc = RTHttpGetText(pHttp,
                            request.url().toString().toAscii().constData(),
-                           &pszBuf);
-    reply = QByteArray(pszBuf);
-    RTMemFree(pszBuf);
+                           &pszBuffer);
+    reply = QByteArray(pszBuffer);
+    RTMemFree(pszBuffer);
+    return rc;
+}
+
+/* static */
+int UINetworkReplyPrivateThread::performGetRequestForBinary(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply)
+{
+    /* Make sure HTTP is created: */
+    if (!pHttp)
+        return VERR_INVALID_POINTER;
+
+    /* Perform blocking HTTP GET request: */
+    void *pBuffer = 0;
+    size_t size = 0;
+    int rc = RTHttpGetBinary(pHttp,
+                             request.url().toString().toAscii().constData(),
+                             &pBuffer, &size);
+    reply = QByteArray((const char*)pBuffer, (int)size);
+    RTMemFree(pBuffer);
     return rc;
 }
 
@@ -362,7 +381,7 @@ int UINetworkReplyPrivateThread::downloadCertificatePca3G5(RTHTTP pHttp, QFile &
     /* Receive certificate: */
     QByteArray certificate;
     const QNetworkRequest address(QUrl("http://www.verisign.com/repository/roots/root-certificates/PCA-3G5.pem"));
-    int rc = performGetRequest(pHttp, address, certificate);
+    int rc = performGetRequestForText(pHttp, address, certificate);
 
     /* Verify certificate: */
     if (RT_SUCCESS(rc))
@@ -382,7 +401,7 @@ int UINetworkReplyPrivateThread::downloadCertificatePca3(RTHTTP pHttp, QFile &fi
     /* Receive certificate: */
     QByteArray certificate;
     const QNetworkRequest address(QUrl("http://www.verisign.com/repository/roots/root-certificates/PCA-3.pem"));
-    int rc = performGetRequest(pHttp, address, certificate);
+    int rc = performGetRequestForText(pHttp, address, certificate);
 
     /* Verify certificate: */
     if (RT_SUCCESS(rc))
