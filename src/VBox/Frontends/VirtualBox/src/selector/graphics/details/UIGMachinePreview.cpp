@@ -41,19 +41,34 @@ UIGMachinePreview::UIGMachinePreview(QIGraphicsWidget *pParent)
     , m_pUpdateTimer(new QTimer(this))
     , m_pUpdateTimerMenu(0)
     , m_iMargin(0)
-    , m_pbgEmptyImage(0)
-    , m_pbgFullImage(0)
+    , m_preset(AspectRatioPreset_16x9)
     , m_pPreviewImg(0)
 {
-    /* Setup contents: */
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
     /* Create session instance: */
     m_session.createInstance(CLSID_Session);
 
-    /* Create bg images: */
-    m_pbgEmptyImage = new QPixmap(UIIconPool::pixmap(":/preview_empty_228x168px.png"));
-    m_pbgFullImage = new QPixmap(UIIconPool::pixmap(":/preview_full_228x168px.png"));
+    /* Cache aspect-ratio preset settings: */
+    const QIcon empty16x10 = UIIconPool::iconSet(":/preview_empty_16to10_242x167px.png");
+    const QIcon empty16x9 = UIIconPool::iconSet(":/preview_empty_16to9_242x155px.png");
+    const QIcon empty4x3 = UIIconPool::iconSet(":/preview_empty_4to3_242x192px.png");
+    const QIcon full16x10 = UIIconPool::iconSet(":/preview_full_16to10_242x167px.png");
+    const QIcon full16x9 = UIIconPool::iconSet(":/preview_full_16to9_242x155px.png");
+    const QIcon full4x3 = UIIconPool::iconSet(":/preview_full_4to3_242x192px.png");
+    m_sizes.insert(AspectRatioPreset_16x10, empty16x10.availableSizes().first());
+    m_sizes.insert(AspectRatioPreset_16x9, empty16x9.availableSizes().first());
+    m_sizes.insert(AspectRatioPreset_4x3, empty4x3.availableSizes().first());
+    m_ratios.insert(AspectRatioPreset_16x10, (double)16/10);
+    m_ratios.insert(AspectRatioPreset_16x9, (double)16/9);
+    m_ratios.insert(AspectRatioPreset_4x3, (double)4/3);
+    m_emptyPixmaps.insert(AspectRatioPreset_16x10, new QPixmap(empty16x10.pixmap(m_sizes.value(AspectRatioPreset_16x10))));
+    m_emptyPixmaps.insert(AspectRatioPreset_16x9, new QPixmap(empty16x9.pixmap(m_sizes.value(AspectRatioPreset_16x9))));
+    m_emptyPixmaps.insert(AspectRatioPreset_4x3, new QPixmap(empty4x3.pixmap(m_sizes.value(AspectRatioPreset_4x3))));
+    m_fullPixmaps.insert(AspectRatioPreset_16x10, new QPixmap(full16x10.pixmap(m_sizes.value(AspectRatioPreset_16x10))));
+    m_fullPixmaps.insert(AspectRatioPreset_16x9, new QPixmap(full16x9.pixmap(m_sizes.value(AspectRatioPreset_16x9))));
+    m_fullPixmaps.insert(AspectRatioPreset_4x3, new QPixmap(full4x3.pixmap(m_sizes.value(AspectRatioPreset_4x3))));
+
+    /* Setup contents (depends on presets above!): */
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     /* Create the context menu: */
     m_pUpdateTimerMenu = new QMenu;
@@ -87,10 +102,24 @@ UIGMachinePreview::~UIGMachinePreview()
     /* Close any open session: */
     if (m_session.GetState() == KSessionState_Locked)
         m_session.UnlockMachine();
-    delete m_pbgEmptyImage;
-    delete m_pbgFullImage;
+
+    /* Destroy background images: */
+    foreach (const AspectRatioPreset &preset, m_emptyPixmaps.keys())
+    {
+        delete m_emptyPixmaps.value(preset);
+        m_emptyPixmaps.remove(preset);
+    }
+    foreach (const AspectRatioPreset &preset, m_fullPixmaps.keys())
+    {
+        delete m_fullPixmaps.value(preset);
+        m_fullPixmaps.remove(preset);
+    }
+
+    /* Destroy preview image: */
     if (m_pPreviewImg)
         delete m_pPreviewImg;
+
+    /* Destroy update timer: */
     if (m_pUpdateTimerMenu)
         delete m_pUpdateTimerMenu;
 }
@@ -151,6 +180,9 @@ void UIGMachinePreview::sltRecreatePreview()
         /* Prepare image: */
         QImage image;
 
+        /* Use 10x9 as the aspect-ratio preset by default: */
+        AspectRatioPreset preset = AspectRatioPreset_16x9;
+
         /* Preview update enabled? */
         if (m_pUpdateTimer->interval() > 0)
         {
@@ -162,18 +194,25 @@ void UIGMachinePreview::sltRecreatePreview()
                 case KMachineState_Restoring:
                 {
                     /* Use the screenshot from saved-state if possible: */
-                    ULONG uWidth = 0, uHeight = 0;
-                    QVector<BYTE> screenData = m_machine.ReadSavedScreenshotPNGToArray(0, uWidth, uHeight);
-                    if (m_machine.isOk() && !screenData.isEmpty())
-                    {
-                        /* Create image based on shallow copy or screenshot data,
-                         * scale image down if necessary to the size possible to reflect: */
-                        image = QImage::fromData(screenData.data(), screenData.size(), "PNG")
-                                .scaled(imageAspectRatioSize(m_vRect.size(), QSize(uWidth, uHeight)),
-                                        Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-                        /* Dim image to give it required look: */
-                        dimImage(image);
-                    }
+                    ULONG uGuestWidth = 0, uGuestHeight = 0;
+                    QVector<BYTE> screenData = m_machine.ReadSavedScreenshotPNGToArray(0, uGuestWidth, uGuestHeight);
+
+                    /* Make sure screen-data is OK: */
+                    if (!m_machine.isOk() || screenData.isEmpty())
+                        break;
+
+                    /* Calculate aspect-ratio: */
+                    double dAspectRatio = (double)uGuestWidth / uGuestHeight;
+                    /* Look for the best aspect-ratio preset: */
+                    preset = bestAspectRatioPreset(dAspectRatio, m_ratios);
+
+                    /* Create image based on shallow copy or screenshot data,
+                     * scale image down if necessary to the size possible to reflect: */
+                    image = QImage::fromData(screenData.data(), screenData.size(), "PNG")
+                            .scaled(imageAspectRatioSize(m_vRect.size(), QSize(uGuestWidth, uGuestHeight)),
+                                    Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+                    /* Dim image to give it required look: */
+                    dimImage(image);
                     break;
                 }
                 /* If machine is in RUNNING/PAUSED state: */
@@ -193,31 +232,38 @@ void UIGMachinePreview::sltRecreatePreview()
                     if (!console.isOk() || display.isNull())
                         break;
 
-                    /* Calculate aspect-ratio size: */
-                    ULONG uGuestWidth, uGuestHeight, uBpp;
+                    /* Calculate aspect-ratio: */
                     LONG iOriginX, iOriginY;
+                    ULONG uGuestWidth, uGuestHeight, uBpp;
                     display.GetScreenResolution(0, uGuestWidth, uGuestHeight, uBpp, iOriginX, iOriginY);
+                    double dAspectRatio = (double)uGuestWidth / uGuestHeight;
+                    /* Look for the best aspect-ratio preset preset: */
+                    preset = bestAspectRatioPreset(dAspectRatio, m_ratios);
+
+                    /* Calculate size corresponding to aspect-ratio: */
                     const QSize size = imageAspectRatioSize(m_vRect.size(), QSize(uGuestWidth, uGuestHeight));
 
                     /* Use direct VM content: */
                     QVector<BYTE> screenData = display.TakeScreenShotToArray(0, size.width(), size.height());
-                    if (display.isOk() && !screenData.isEmpty())
+
+                    /* Make sure screen-data is OK: */
+                    if (!display.isOk() || screenData.isEmpty())
+                        break;
+
+                    /* Unfortunately we have to reorder the pixel data,
+                     * cause the VBox API returns RGBA data,
+                     * which is not a format QImage understand. */
+                    uint32_t *pData = (uint32_t*)screenData.data();
+                    for (int i = 0; i < screenData.size() / 4; ++i)
                     {
-                        /* Unfortunately we have to reorder the pixel data,
-                         * cause the VBox API returns RGBA data,
-                         * which is not a format QImage understand. */
-                        uint32_t *pData = (uint32_t*)screenData.data();
-                        for (int i = 0; i < screenData.size() / 4; ++i)
-                        {
-                            uint32_t e = pData[i];
-                            pData[i] = RT_MAKE_U32_FROM_U8(RT_BYTE3(e), RT_BYTE2(e), RT_BYTE1(e), RT_BYTE4(e));
-                        }
-                        /* Create image based on shallow copy or reordered data: */
-                        image = QImage((uchar*)pData, size.width(), size.height(), QImage::Format_RGB32);
-                        /* Dim image to give it required look for PAUSED state: */
-                        if (machineState == KMachineState_Paused)
-                            dimImage(image);
+                        uint32_t e = pData[i];
+                        pData[i] = RT_MAKE_U32_FROM_U8(RT_BYTE3(e), RT_BYTE2(e), RT_BYTE1(e), RT_BYTE4(e));
                     }
+                    /* Create image based on shallow copy or reordered data: */
+                    image = QImage((uchar*)pData, size.width(), size.height(), QImage::Format_RGB32);
+                    /* Dim image to give it required look for PAUSED state: */
+                    if (machineState == KMachineState_Paused)
+                        dimImage(image);
                     break;
                 }
                 default:
@@ -232,6 +278,16 @@ void UIGMachinePreview::sltRecreatePreview()
             m_pPreviewImg = new QImage(image);
             /* And detach that copy: */
             m_pPreviewImg->bits();
+        }
+
+        /* If preset changed: */
+        if (m_preset != preset)
+        {
+            /* Save new preset: */
+            m_preset = preset;
+            /* And update geometry: */
+            updateGeometry();
+            emit sigSizeHintChanged();
         }
     }
 
@@ -282,8 +338,17 @@ void UIGMachinePreview::retranslateUi()
 QSizeF UIGMachinePreview::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
 {
     if (which == Qt::MinimumSize)
-        return QSize(228 /* pixmap width */ + 2 * m_iMargin,
-                     168 /* pixmap height */ + 2 * m_iMargin);
+    {
+        AssertReturn(m_emptyPixmaps.contains(m_preset),
+                     QIGraphicsWidget::sizeHint(which, constraint));
+        QSize size = m_sizes.value(m_preset);
+        if (m_iMargin != 0)
+        {
+            size.setWidth(size.width() - 2 * m_iMargin);
+            size.setHeight(size.height() - 2 * m_iMargin);
+        }
+        return size;
+    }
     return QIGraphicsWidget::sizeHint(which, constraint);
 }
 
@@ -297,11 +362,8 @@ void UIGMachinePreview::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
     /* If there is a preview image available: */
     if (m_pPreviewImg)
     {
-        /* Draw black background: */
-        pPainter->fillRect(m_vRect, Qt::black);
-
         /* Draw empty monitor frame: */
-        pPainter->drawPixmap(cr.x() + m_iMargin, cr.y() + m_iMargin, *m_pbgEmptyImage);
+        pPainter->drawPixmap(cr.x() + m_iMargin, cr.y() + m_iMargin, *m_emptyPixmaps.value(m_preset));
 
         /* Move image to viewport center: */
         QRect imageRect(QPoint(0, 0), m_pPreviewImg->size());
@@ -312,7 +374,7 @@ void UIGMachinePreview::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
     else
     {
         /* Draw full monitor frame: */
-        pPainter->drawPixmap(cr.x() + m_iMargin, cr.y() + m_iMargin, *m_pbgFullImage);
+        pPainter->drawPixmap(cr.x() + m_iMargin, cr.y() + m_iMargin, *m_fullPixmaps.value(m_preset));
 
         /* Paint preview name: */
         QFont font = pPainter->font();
@@ -369,7 +431,7 @@ void UIGMachinePreview::recalculatePreviewRectangle()
 {
     /* Contents rectangle: */
     QRect cr = contentsRect().toRect();
-    m_vRect = cr.adjusted(21 + m_iMargin, 17 + m_iMargin, -21 - m_iMargin, -20 - m_iMargin);
+    m_vRect = cr.adjusted(21 + m_iMargin, 21 + m_iMargin, -21 - m_iMargin, -21 - m_iMargin);
 }
 
 void UIGMachinePreview::restart()
@@ -402,6 +464,34 @@ void UIGMachinePreview::stop()
 {
     /* Stop the timer: */
     m_pUpdateTimer->stop();
+}
+
+/* static */
+UIGMachinePreview::AspectRatioPreset UIGMachinePreview::bestAspectRatioPreset(const double dAspectRatio,
+                                                                              const QMap<AspectRatioPreset, double> &ratios)
+{
+    /* Use 16x9 preset as the 'best' by 'default': */
+    AspectRatioPreset bestPreset = AspectRatioPreset_16x9;
+    /* Calculate minimum diff based on 'default' preset: */
+    double dMinimumDiff = qAbs(dAspectRatio - ratios.value(bestPreset));
+    /* Now look for the 'best' aspect-ratio preset among existing: */
+    for (AspectRatioPreset currentPreset = AspectRatioPreset_16x10;
+         currentPreset <= AspectRatioPreset_4x3;
+         currentPreset = (AspectRatioPreset)(currentPreset + 1))
+    {
+        /* Calculate current diff based on 'current' preset: */
+        const double dDiff = qAbs(dAspectRatio - ratios.value(currentPreset));
+        /* If new 'best' preset found: */
+        if (dDiff < dMinimumDiff)
+        {
+            /* Remember new diff: */
+            dMinimumDiff = dDiff;
+            /* And new preset: */
+            bestPreset = currentPreset;
+        }
+    }
+    /* Return 'best' preset: */
+    return bestPreset;
 }
 
 /* static */

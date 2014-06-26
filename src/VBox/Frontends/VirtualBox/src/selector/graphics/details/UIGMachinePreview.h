@@ -44,6 +44,11 @@ class UIGMachinePreview : public QIWithRetranslateUI4<QIGraphicsWidget>
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies about size-hint changes. */
+    void sigSizeHintChanged();
+
 public:
 
     /* Graphics-item type: */
@@ -68,6 +73,14 @@ private slots:
 
 private:
 
+    /** Aspect ratio presets. */
+    enum AspectRatioPreset
+    {
+        AspectRatioPreset_16x10,
+        AspectRatioPreset_16x9,
+        AspectRatioPreset_4x3,
+    };
+
     /* Helpers: Event handlers: */
     void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
     void showEvent(QShowEvent *pEvent);
@@ -89,6 +102,8 @@ private:
     void restart();
     void stop();
 
+    /** Looks for the best aspect-ratio preset for the passed @a dAspectRatio among all the passed @a ratios. */
+    static AspectRatioPreset bestAspectRatioPreset(const double dAspectRatio, const QMap<AspectRatioPreset, double> &ratios);
     /** Calculates image size suitable to passed @a hostSize and @a guestSize. */
     static QSize imageAspectRatioSize(const QSize &hostSize, const QSize &guestSize);
 
@@ -100,8 +115,11 @@ private:
     QHash<PreviewUpdateIntervalType, QAction*> m_actions;
     const int m_iMargin;
     QRect m_vRect;
-    QPixmap *m_pbgEmptyImage;
-    QPixmap *m_pbgFullImage;
+    AspectRatioPreset m_preset;
+    QMap<AspectRatioPreset, QSize> m_sizes;
+    QMap<AspectRatioPreset, double> m_ratios;
+    QMap<AspectRatioPreset, QPixmap*> m_emptyPixmaps;
+    QMap<AspectRatioPreset, QPixmap*> m_fullPixmaps;
     QImage *m_pPreviewImg;
     QString m_strPreviewName;
 };

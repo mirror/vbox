@@ -186,11 +186,21 @@ UIGDetailsElementPreview::UIGDetailsElementPreview(UIGDetailsSet *pParent, bool 
 
     /* Create preview: */
     m_pPreview = new UIGMachinePreview(this);
+    connect(m_pPreview, SIGNAL(sigSizeHintChanged()),
+            this, SLOT(sltPreviewSizeHintChanged()));
     pLayout->addItem(m_pPreview);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     /* Translate: */
     retranslateUi();
+}
+
+void UIGDetailsElementPreview::sltPreviewSizeHintChanged()
+{
+    /* Recursively update size-hints: */
+    updateGeometry();
+    /* Update whole model layout: */
+    model()->updateLayout();
 }
 
 void UIGDetailsElementPreview::retranslateUi()
