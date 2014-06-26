@@ -1596,7 +1596,7 @@ dodata:
         else
         {
             tiflags = tcp_reass(pData, tp, &ti->ti_t, &tlen, m);
-            tiflags |= TF_ACKNOW;
+            tp->t_flags |= TF_ACKNOW;
         }
         /*
          * Note the amount of data that peer has sent into
