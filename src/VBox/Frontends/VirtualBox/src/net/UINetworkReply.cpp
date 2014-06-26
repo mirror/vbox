@@ -33,6 +33,7 @@
 #include <iprt/initterm.h>
 #include <iprt/http.h>
 #include <iprt/err.h>
+#include <iprt/zip.h>
 
 /* Our network-reply thread: */
 class UINetworkReplyPrivateThread : public QThread
@@ -75,6 +76,7 @@ private:
     static int performGetRequestForText(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply);
     static int performGetRequestForBinary(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply);
     static int checkCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
+    static int decompressCertificate(const QByteArray &package, QByteArray &certificate, const QString &strName);
     static int downloadCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
     static int downloadCertificatePca3G5(RTHTTP pHttp, QByteArray &certificate);
     static int downloadCertificatePca3(RTHTTP pHttp, QByteArray &certificate);
@@ -354,20 +356,65 @@ int UINetworkReplyPrivateThread::checkCertificates(RTHTTP pHttp, const QString &
 }
 
 /* static */
+int UINetworkReplyPrivateThread::decompressCertificate(const QByteArray &package, QByteArray &certificate, const QString &strName)
+{
+    /* Decompress certificate: */
+    void *pDecompressedBuffer;
+    size_t cDecompressedSize;
+    int rc = RTZipPkzipMemDecompress(&pDecompressedBuffer, &cDecompressedSize, package, package.size(), strName.toLatin1().constData());
+    if (RT_SUCCESS(rc))
+    {
+        /* Copy certificate: */
+        certificate = QByteArray((const char*)pDecompressedBuffer, (int)cDecompressedSize);
+        /* Free decompressed buffer: */
+        RTMemFree(pDecompressedBuffer);
+    }
+    /* Return result: */
+    return rc;
+}
+
+/* static */
 int UINetworkReplyPrivateThread::downloadCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName)
 {
     /* Prepare certificates: */
     QByteArray certificatePca3G5;
     QByteArray certificatePca3;
-    /* Prepare result: */
-    int rc = VINF_SUCCESS;
 
-    /* Download PCA-3G5 certificate: */
+    /* Receive certificate package: */
+    QByteArray package;
+    const QNetworkRequest address(QUrl("http://www.verisign.com/support/roots.zip"));
+    int rc = performGetRequestForBinary(pHttp, address, package);
+    /* UnZIP PCA-3G5 certificate: */
     if (RT_SUCCESS(rc))
-        rc = downloadCertificatePca3G5(pHttp, certificatePca3G5);
-    /* Download PCA-3 certificate: */
+    {
+        rc = decompressCertificate(package, certificatePca3G5,
+                                   "VeriSign Root Certificates/Generation 5 (G5) PCA/VeriSign Class 3 Public Primary Certification Authority - G5.pem");
+        /* Verify PCA-3G5 certificate: */
+        if (RT_SUCCESS(rc))
+            rc = verifyCertificatePca3G5(pHttp, certificatePca3G5);
+    }
+    /* UnZIP PCA-3 certificate: */
     if (RT_SUCCESS(rc))
-        rc = downloadCertificatePca3(pHttp, certificatePca3);
+    {
+        rc = decompressCertificate(package, certificatePca3,
+                                   "VeriSign Root Certificates/Generation 1 (G1) PCAs/Class 3 Public Primary Certification Authority.pem");
+        /* Verify PCA-3 certificate: */
+        if (RT_SUCCESS(rc))
+            rc = verifyCertificatePca3(pHttp, certificatePca3);
+    }
+
+    /* Fallback.. download certificates separately: */
+    if (!RT_SUCCESS(rc))
+    {
+        /* Reset result: */
+        rc = VINF_SUCCESS;
+        /* Download PCA-3G5 certificate: */
+        if (RT_SUCCESS(rc))
+            rc = downloadCertificatePca3G5(pHttp, certificatePca3G5);
+        /* Download PCA-3 certificate: */
+        if (RT_SUCCESS(rc))
+            rc = downloadCertificatePca3(pHttp, certificatePca3);
+    }
 
     /* Save certificates: */
     if (RT_SUCCESS(rc))
