@@ -76,11 +76,12 @@ private:
     static int performGetRequestForBinary(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply);
     static int checkCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
     static int downloadCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
-    static int downloadCertificatePca3G5(RTHTTP pHttp, QFile &file);
-    static int downloadCertificatePca3(RTHTTP pHttp, QFile &file);
+    static int downloadCertificatePca3G5(RTHTTP pHttp, QByteArray &certificate);
+    static int downloadCertificatePca3(RTHTTP pHttp, QByteArray &certificate);
     static int verifyCertificatePca3G5(RTHTTP pHttp, QByteArray &certificate);
     static int verifyCertificatePca3(RTHTTP pHttp, QByteArray &certificate);
     static int verifyCertificate(RTHTTP pHttp, QByteArray &certificate, const QByteArray &sha1, const QByteArray &sha512);
+    static int saveCertificates(const QString &strFullCertificateFileName, const QByteArray &certificatePca3G5, const QByteArray &certificatePca3);
     static int saveCertificate(QFile &file, const QByteArray &certificate);
 
     /* Variables: */
@@ -355,31 +356,31 @@ int UINetworkReplyPrivateThread::checkCertificates(RTHTTP pHttp, const QString &
 /* static */
 int UINetworkReplyPrivateThread::downloadCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName)
 {
-    /* Open certificates file: */
-    QFile file(strFullCertificateFileName);
-    bool fFileOpened = file.open(QIODevice::WriteOnly);
-    int rc = fFileOpened ? VINF_SUCCESS : VERR_OPEN_FAILED;
+    /* Prepare certificates: */
+    QByteArray certificatePca3G5;
+    QByteArray certificatePca3;
+    /* Prepare result: */
+    int rc = VINF_SUCCESS;
 
     /* Download PCA-3G5 certificate: */
     if (RT_SUCCESS(rc))
-        rc = downloadCertificatePca3G5(pHttp, file);
+        rc = downloadCertificatePca3G5(pHttp, certificatePca3G5);
     /* Download PCA-3 certificate: */
     if (RT_SUCCESS(rc))
-        rc = downloadCertificatePca3(pHttp, file);
+        rc = downloadCertificatePca3(pHttp, certificatePca3);
 
-    /* Close certificates file: */
-    if (fFileOpened)
-        file.close();
+    /* Save certificates: */
+    if (RT_SUCCESS(rc))
+        saveCertificates(strFullCertificateFileName, certificatePca3G5, certificatePca3);
 
     /* Return result-code: */
     return rc;
 }
 
 /* static */
-int UINetworkReplyPrivateThread::downloadCertificatePca3G5(RTHTTP pHttp, QFile &file)
+int UINetworkReplyPrivateThread::downloadCertificatePca3G5(RTHTTP pHttp, QByteArray &certificate)
 {
     /* Receive certificate: */
-    QByteArray certificate;
     const QNetworkRequest address(QUrl("http://www.verisign.com/repository/roots/root-certificates/PCA-3G5.pem"));
     int rc = performGetRequestForText(pHttp, address, certificate);
 
@@ -387,29 +388,20 @@ int UINetworkReplyPrivateThread::downloadCertificatePca3G5(RTHTTP pHttp, QFile &
     if (RT_SUCCESS(rc))
         rc = verifyCertificatePca3G5(pHttp, certificate);
 
-    /* Save certificate: */
-    if (RT_SUCCESS(rc))
-        rc = saveCertificate(file, certificate);
-
     /* Return result-code: */
     return rc;
 }
 
 /* static */
-int UINetworkReplyPrivateThread::downloadCertificatePca3(RTHTTP pHttp, QFile &file)
+int UINetworkReplyPrivateThread::downloadCertificatePca3(RTHTTP pHttp, QByteArray &certificate)
 {
     /* Receive certificate: */
-    QByteArray certificate;
     const QNetworkRequest address(QUrl("http://www.verisign.com/repository/roots/root-certificates/PCA-3.pem"));
     int rc = performGetRequestForText(pHttp, address, certificate);
 
     /* Verify certificate: */
     if (RT_SUCCESS(rc))
         rc = verifyCertificatePca3(pHttp, certificate);
-
-    /* Save certificate: */
-    if (RT_SUCCESS(rc))
-        rc = saveCertificate(file, certificate);
 
     /* Return result-code: */
     return rc;
@@ -499,6 +491,30 @@ int UINetworkReplyPrivateThread::verifyCertificate(RTHTTP pHttp, QByteArray &cer
     /* Cleanup digest: */
     RTMemFree(abSha1);
     RTMemFree(abSha512);
+
+    /* Return result-code: */
+    return rc;
+}
+
+/* static */
+int UINetworkReplyPrivateThread::saveCertificates(const QString &strFullCertificateFileName,
+                                                  const QByteArray &certificatePca3G5,
+                                                  const QByteArray &certificatePca3)
+{
+    /* Open certificates file: */
+    QFile file(strFullCertificateFileName);
+    bool fFileOpened = file.open(QIODevice::WriteOnly);
+    int rc = fFileOpened ? VINF_SUCCESS : VERR_OPEN_FAILED;
+
+    /* Save certificates: */
+    if (RT_SUCCESS(rc))
+        rc = saveCertificate(file, certificatePca3G5);
+    if (RT_SUCCESS(rc))
+        rc = saveCertificate(file, certificatePca3);
+
+    /* Close certificates file: */
+    if (fFileOpened)
+        file.close();
 
     /* Return result-code: */
     return rc;
