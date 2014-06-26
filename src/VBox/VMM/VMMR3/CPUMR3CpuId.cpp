@@ -533,15 +533,15 @@ PCPUMCPUIDLEAF cpumR3CpuIdGetLeaf(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, uin
  * @param   uSubLeaf            The subleaf to locate.  Pass 0 if no subleaves.
  * @param   pLegacy             The legacy output leaf.
  */
-bool cpumR3CpuIdGetLeafLegacy(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, uint32_t uLeaf, uint32_t uSubLeaf, PCPUMCPUID pLeagcy)
+bool cpumR3CpuIdGetLeafLegacy(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, uint32_t uLeaf, uint32_t uSubLeaf, PCPUMCPUID pLegacy)
 {
     PCPUMCPUIDLEAF pLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, uLeaf, uSubLeaf);
     if (pLeaf)
     {
-        pLeagcy->eax = pLeaf->uEax;
-        pLeagcy->ebx = pLeaf->uEbx;
-        pLeagcy->ecx = pLeaf->uEcx;
-        pLeagcy->edx = pLeaf->uEdx;
+        pLegacy->eax = pLeaf->uEax;
+        pLegacy->ebx = pLeaf->uEbx;
+        pLegacy->ecx = pLeaf->uEcx;
+        pLegacy->edx = pLeaf->uEdx;
         return true;
     }
     return false;
@@ -966,7 +966,6 @@ VMMR3DECL(int) CPUMR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF pNewLeaf)
 
     return cpumR3CpuIdInsert(pVM, NULL /* ppaLeaves */, NULL /* pcLeaves */, pNewLeaf);
 }
-
 
 /**
  * Collects CPUID leaves and sub-leaves, returning a sorted array of them.
