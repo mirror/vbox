@@ -728,8 +728,9 @@ static DECLCALLBACK(int) usbProxyWinUrbCancel(PUSBPROXYDEV pProxyDev, PVUSBURB p
         pProxyDev->fDetached = true;
         return VINF_SUCCESS; /* Fake success and deal with the unplugged device elsewhere. */
     }
-    else
-        AssertMsgFailed(("lasterr=%d\n", dwErr));
+
+    AssertMsgFailed(("lastErr=%ld\n", dwErr));
+    return RTErrConvertFromWin32(dwErr);
 }
 
 static DECLCALLBACK(int) usbProxyWinWakeup(PUSBPROXYDEV pProxyDev)
