@@ -318,7 +318,7 @@ RTDECL(RTEXITCODE) RTZipUnzipCmd(unsigned cArgs, char **papszArgs);
  * @param   cbSrc               Size of the buffer containing the .zip file.
  * @param   pszObject           Name of the object to extract.
  */
-RTDECL(int) RTZipPkzipMemDecompress(void **ppvDst, size_t *pcbDst, void *pvSrc, size_t cbSrc, const char *pszObject);
+RTDECL(int) RTZipPkzipMemDecompress(void **ppvDst, size_t *pcbDst, const void *pvSrc, size_t cbSrc, const char *pszObject);
 
 /**
  * Opens a XAR filesystem stream.
