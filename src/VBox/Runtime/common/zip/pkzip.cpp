@@ -129,7 +129,7 @@ static const RTVFSIOSTREAMOPS g_memFssIosOps =
     RTVFSIOSTREAMOPS_VERSION
 };
 
-RTDECL(int) RTZipPkzipMemDecompress(void **ppvDst, size_t *pcbDst, void *pvSrc, size_t cbSrc, const char *pszObject)
+RTDECL(int) RTZipPkzipMemDecompress(void **ppvDst, size_t *pcbDst, const void *pvSrc, size_t cbSrc, const char *pszObject)
 {
     PMEMIOSTREAM pIosData;
     RTVFSIOSTREAM hVfsIos;
