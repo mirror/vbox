@@ -136,6 +136,11 @@ public:
     /* Constructor: */
     UIGDetailsElementPreview(UIGDetailsSet *pParent, bool fOpened);
 
+private slots:
+
+    /** Handles preview size-hint changes. */
+    void sltPreviewSizeHintChanged();
+
 private:
 
     /* Helper: Translate stuff: */

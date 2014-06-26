@@ -1,7 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="os_win2k8_64.png">images/os_win2k8_64.png</file>
-        <file alias="os_win31.png">images/os_win31.png</file>
         <file alias="os_win7.png">images/os_win7.png</file>
         <file alias="os_win7_64.png">images/os_win7_64.png</file>
         <file alias="os_win8.png">images/os_win8.png</file>
@@ -22,8 +20,12 @@
         <file alias="parallel_port_32px.png">images/parallel_port_32px.png</file>
         <file alias="parallel_port_warning_16px.png">images/parallel_port_warning_16px.png</file>
         <file alias="pin_16px.png">images/pin_16px.png</file>
-        <file alias="preview_empty_228x168px.png">images/preview_empty_228x168px.png</file>
-        <file alias="preview_full_228x168px.png">images/preview_full_228x168px.png</file>
+        <file alias="preview_empty_16to10_242x167px.png">images/preview_empty_16to10_242x167px.png</file>
+        <file alias="preview_empty_16to9_242x155px.png">images/preview_empty_16to9_242x155px.png</file>
+        <file alias="preview_empty_4to3_242x192px.png">images/preview_empty_4to3_242x192px.png</file>
+        <file alias="preview_full_16to10_242x167px.png">images/preview_full_16to10_242x167px.png</file>
+        <file alias="preview_full_16to9_242x155px.png">images/preview_full_16to9_242x155px.png</file>
+        <file alias="preview_full_4to3_242x192px.png">images/preview_full_4to3_242x192px.png</file>
         <file alias="previous_16px.png">images/previous_16px.png</file>
         <file alias="progress_clone_90px.png">images/progress_clone_90px.png</file>
         <file alias="progress_delete_90px.png">images/progress_delete_90px.png</file>
