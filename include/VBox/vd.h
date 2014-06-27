@@ -472,6 +472,22 @@ VBOXDDU_DECL(int) VDInit(void);
 VBOXDDU_DECL(int) VDShutdown(void);
 
 /**
+ * Loads a single plugin given by filename.
+ *
+ * @returns VBox status code.
+ * @param   pszFilename     The plugin filename to load.
+ */
+VBOXDDU_DECL(int) VDPluginLoadFromFilename(const char *pszFilename);
+
+/**
+ * Load all plugins from a given path.
+ *
+ * @returns VBox statuse code.
+ * @param   pszPath         The path to load plugins from.
+ */
+VBOXDDU_DECL(int) VDPluginLoadFromPath(const char *pszPath);
+
+/**
  * Lists all HDD backends and their capabilities in a caller-provided buffer.
  *
  * @return  VBox status code.

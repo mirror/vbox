@@ -3530,7 +3530,7 @@ static DECLCALLBACK(int) vdPluginRegisterFilter(void *pvUser, PCVDFILTERBACKEND 
  * Adds a plugin to the list of loaded plugins.
  *
  * @returns VBox status code.
- * @param   hPlugin    PLugin handle to add.
+ * @param   hPlugin    Plugin handle to add.
  */
 static int vdAddPlugin(RTLDRMOD hPlugin)
 {
@@ -3550,29 +3550,73 @@ static int vdAddPlugin(RTLDRMOD hPlugin)
 #endif
 
 /**
- * internal: scans plugin directory and loads found plugins.
+ * Worker for VDPluginLoadFromFilename() and vdPluginLoadFromPath().
+ *
+ * @returns VBox status code.
+ * @param   pszFilename    The plugin filename to load.
  */
-static int vdLoadDynamicBackends()
+static int vdPluginLoadFromFilename(const char *pszFilename)
 {
 #ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
-    int rc = VINF_SUCCESS;
-    PRTDIR pPluginDir = NULL;
+    RTLDRMOD hPlugin = NIL_RTLDRMOD;
+    int rc = SUPR3HardenedLdrLoadPlugIn(pszFilename, &hPlugin, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        VDBACKENDREGISTER BackendRegister;
+        PFNVDPLUGINLOAD pfnVDPluginLoad = NULL;
 
-    /* Enumerate plugin backends. */
-    char szPath[RTPATH_MAX];
-    rc = RTPathAppPrivateArch(szPath, sizeof(szPath));
-    if (RT_FAILURE(rc))
-        return rc;
+        BackendRegister.pfnRegisterImage  = vdPluginRegisterImage;
+        BackendRegister.pfnRegisterCache  = vdPluginRegisterCache;
+        BackendRegister.pfnRegisterFilter = vdPluginRegisterFilter;
 
+        rc = RTLdrGetSymbol(hPlugin, VD_PLUGIN_LOAD_NAME, (void**)&pfnVDPluginLoad);
+        if (RT_FAILURE(rc) || !pfnVDPluginLoad)
+        {
+            LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnVDPluginLoad=%#p\n",
+                     VD_PLUGIN_LOAD_NAME, pszFilename, rc, pfnVDPluginLoad));
+            if (RT_SUCCESS(rc))
+                rc = VERR_SYMBOL_NOT_FOUND;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Get the function table. */
+            rc = pfnVDPluginLoad(NULL, &BackendRegister);
+        }
+        else
+            LogFunc(("ignored plugin '%s': rc=%Rrc\n", pszFilename, rc));
+
+        /* Create a plugin entry on success. */
+        if (RT_SUCCESS(rc))
+            vdAddPlugin(hPlugin);
+        else
+            RTLdrClose(hPlugin);
+    }
+
+    return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+/**
+ * Worker for VDPluginLoadFromPath() and vdLoadDynamicBackends().
+ *
+ * @returns VBox status code.
+ * @param   pszPath        The path to load plugins from.
+ */
+static int vdPluginLoadFromPath(const char *pszPath)
+{
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     /* To get all entries with VBoxHDD as prefix. */
-    char *pszPluginFilter = RTPathJoinA(szPath, VD_PLUGIN_PREFIX "*");
+    char *pszPluginFilter = RTPathJoinA(pszPath, VD_PLUGIN_PREFIX "*");
     if (!pszPluginFilter)
         return VERR_NO_STR_MEMORY;
 
     PRTDIRENTRYEX pPluginDirEntry = NULL;
+    PRTDIR pPluginDir = NULL;
     size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
-    /* The plugins are in the same directory as the other shared libs. */
-    rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0);
+    int rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0);
     if (RT_FAILURE(rc))
     {
         /* On Windows the above immediately signals that there are no
@@ -3590,7 +3634,6 @@ static int vdLoadDynamicBackends()
 
     while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
     {
-        RTLDRMOD hPlugin = NIL_RTLDRMOD;
         char *pszPluginPath = NULL;
 
         if (rc == VERR_BUFFER_OVERFLOW)
@@ -3616,46 +3659,14 @@ static int vdLoadDynamicBackends()
             continue;
 
         /* Prepend the path to the libraries. */
-        pszPluginPath = RTPathJoinA(szPath, pPluginDirEntry->szName);
+        pszPluginPath = RTPathJoinA(pszPath, pPluginDirEntry->szName);
         if (!pszPluginPath)
         {
             rc = VERR_NO_STR_MEMORY;
             break;
         }
 
-        rc = SUPR3HardenedLdrLoadPlugIn(pszPluginPath, &hPlugin, NULL);
-        if (RT_SUCCESS(rc))
-        {
-            VDBACKENDREGISTER BackendRegister;
-            PFNVDPLUGINLOAD pfnVDPluginLoad = NULL;
-
-            BackendRegister.pfnRegisterImage  = vdPluginRegisterImage;
-            BackendRegister.pfnRegisterCache  = vdPluginRegisterCache;
-            BackendRegister.pfnRegisterFilter = vdPluginRegisterFilter;
-
-            rc = RTLdrGetSymbol(hPlugin, VD_PLUGIN_LOAD_NAME, (void**)&pfnVDPluginLoad);
-            if (RT_FAILURE(rc) || !pfnVDPluginLoad)
-            {
-                LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnVDPluginLoad=%#p\n",
-                         VD_PLUGIN_LOAD_NAME, pPluginDirEntry->szName, rc, pfnVDPluginLoad));
-                if (RT_SUCCESS(rc))
-                    rc = VERR_SYMBOL_NOT_FOUND;
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                /* Get the function table. */
-                rc = pfnVDPluginLoad(NULL, &BackendRegister);
-            }
-            else
-                LogFunc(("ignored plugin '%s': rc=%Rrc\n", pszPluginPath, rc));
-
-            /* Create a plugin entry on success. */
-            if (RT_SUCCESS(rc))
-                vdAddPlugin(hPlugin);
-            else
-                RTLdrClose(hPlugin);
-        }
+        rc = vdPluginLoadFromFilename(pszPluginPath);
         RTStrFree(pszPluginPath);
     }
 out:
@@ -3667,6 +3678,27 @@ out:
     if (pPluginDir)
         RTDirClose(pPluginDir);
     return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+/**
+ * internal: scans plugin directory and loads found plugins.
+ */
+static int vdLoadDynamicBackends()
+{
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
+    /*
+     * Enumerate plugin backends from the application directory where the other
+     * shared libraries are.
+     */
+    char szPath[RTPATH_MAX];
+    int rc = RTPathAppPrivateArch(szPath, sizeof(szPath));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    return vdPluginLoadFromPath(szPath);
 #else
     return VINF_SUCCESS;
 #endif
@@ -5355,6 +5387,41 @@ VBOXDDU_DECL(int) VDShutdown(void)
     return VINF_SUCCESS;
 }
 
+/**
+ * Loads a single plugin given by filename.
+ *
+ * @returns VBox status code.
+ * @param   pszFilename     The plugin filename to load.
+ */
+VBOXDDU_DECL(int) VDPluginLoadFromFilename(const char *pszFilename)
+{
+    if (!g_apBackends)
+    {
+        int rc = VDInit();
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return vdPluginLoadFromFilename(pszFilename);
+}
+
+/**
+ * Load all plugins from a given path.
+ *
+ * @returns VBox statuse code.
+ * @param   pszPath         The path to load plugins from.
+ */
+VBOXDDU_DECL(int) VDPluginLoadFromPath(const char *pszPath)
+{
+    if (!g_apBackends)
+    {
+        int rc = VDInit();
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return vdPluginLoadFromPath(pszPath);
+}
 
 /**
  * Lists all HDD backends and their capabilities in a caller-provided buffer.
