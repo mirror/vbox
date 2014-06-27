@@ -2100,6 +2100,37 @@ static int drvvdBlkCacheXferEnqueueDiscard(PPDMDRVINS pDrvIns, PCRTRANGE paRange
 }
 
 /**
+ * Loads all configured plugins.
+ *
+ * @returns VBox status code.
+ * @param   pThis    The disk instance.
+ * @param   pCfg     CFGM node holding plugin list.
+ */
+static int drvvdLoadPlugins(PVBOXDISK pThis, PCFGMNODE pCfg)
+{
+    int rc = VINF_SUCCESS;
+    PCFGMNODE pCfgPlugins = CFGMR3GetChild(pCfg, "Plugins");
+
+    if (pCfgPlugins)
+    {
+        PCFGMNODE pPluginCur = CFGMR3GetFirstChild(pCfgPlugins);
+        while (   pPluginCur
+               && RT_SUCCESS(rc))
+        {
+            char *pszPluginFilename = NULL;
+            rc = CFGMR3QueryStringAlloc(pPluginCur, "Path", &pszPluginFilename);
+            if (RT_SUCCESS(rc))
+                rc = VDPluginLoadFromFilename(pszPluginFilename);
+
+            pPluginCur = CFGMR3GetNextChild(pPluginCur);
+        }
+    }
+
+    return rc;
+}
+
+
+/**
  * Sets up the disk filter chain.
  *
  * @returns VBox status code.
@@ -2430,6 +2461,11 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 
     /* Try to attach async media port interface above.*/
     pThis->pDrvMediaAsyncPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAASYNCPORT);
+
+    /* Before we access any VD API load all given plugins. */
+    rc = drvvdLoadPlugins(pThis, pCfg);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Loading VD plugins failed"));
 
     /*
      * Validate configuration and find all parent images.

@@ -602,6 +602,8 @@ typedef struct VDPLUGIN
     RTLISTNODE NodePlugin;
     /** Handle of loaded plugin library. */
     RTLDRMOD   hPlugin;
+    /** Filename of the loaded plugin. */
+    char       *pszFilename;
 } VDPLUGIN;
 /** Pointer to a plugin structure. */
 typedef VDPLUGIN *PVDPLUGIN;
@@ -3527,12 +3529,32 @@ static DECLCALLBACK(int) vdPluginRegisterFilter(void *pvUser, PCVDFILTERBACKEND 
 }
 
 /**
+ * Checks whether the given plugin filename was already loaded.
+ *
+ * @returns true if the plugin was already loaded, false otherwise.
+ * @param   pszFilename    The filename to check.
+ */
+static bool vdPluginFind(const char *pszFilename)
+{
+    PVDPLUGIN pIt = NULL;
+
+    RTListForEach(&g_ListPluginsLoaded, pIt, VDPLUGIN, NodePlugin);
+    {
+        if (!RTStrCmp(pIt->pszFilename, pszFilename))
+            return true;
+    }
+
+    return false;
+}
+
+/**
  * Adds a plugin to the list of loaded plugins.
  *
  * @returns VBox status code.
- * @param   hPlugin    Plugin handle to add.
+ * @param   hPlugin     Plugin handle to add.
+ * @param   pszFilename The associated filename, sued for finding duplicates.
  */
-static int vdAddPlugin(RTLDRMOD hPlugin)
+static int vdAddPlugin(RTLDRMOD hPlugin, const char *pszFilename)
 {
     int rc = VINF_SUCCESS;
     PVDPLUGIN pPlugin = (PVDPLUGIN)RTMemAllocZ(sizeof(VDPLUGIN));
@@ -3540,7 +3562,14 @@ static int vdAddPlugin(RTLDRMOD hPlugin)
     if (pPlugin)
     {
         pPlugin->hPlugin = hPlugin;
-        RTListAppend(&g_ListPluginsLoaded, &pPlugin->NodePlugin);
+        pPlugin->pszFilename = RTStrDup(pszFilename);
+        if (pPlugin->pszFilename)
+            RTListAppend(&g_ListPluginsLoaded, &pPlugin->NodePlugin);
+        else
+        {
+            RTMemFree(pPlugin);
+            rc = VERR_NO_MEMORY;
+        }
     }
     else
         rc = VERR_NO_MEMORY;
@@ -3558,6 +3587,10 @@ static int vdAddPlugin(RTLDRMOD hPlugin)
 static int vdPluginLoadFromFilename(const char *pszFilename)
 {
 #ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
+    /* Plugin loaded? Nothing to do. */
+    if (vdPluginFind(pszFilename))
+        return VINF_SUCCESS;
+
     RTLDRMOD hPlugin = NIL_RTLDRMOD;
     int rc = SUPR3HardenedLdrLoadPlugIn(pszFilename, &hPlugin, NULL);
     if (RT_SUCCESS(rc))
@@ -3588,7 +3621,7 @@ static int vdPluginLoadFromFilename(const char *pszFilename)
 
         /* Create a plugin entry on success. */
         if (RT_SUCCESS(rc))
-            vdAddPlugin(hPlugin);
+            vdAddPlugin(hPlugin, pszFilename);
         else
             RTLdrClose(hPlugin);
     }
@@ -5379,6 +5412,7 @@ VBOXDDU_DECL(int) VDShutdown(void)
     RTListForEachSafe(&g_ListPluginsLoaded, pPlugin, pPluginNext, VDPLUGIN, NodePlugin)
     {
         RTLdrClose(pPlugin->hPlugin);
+        RTStrFree(pPlugin->pszFilename);
         RTListNodeRemove(&pPlugin->NodePlugin);
         RTMemFree(pPlugin);
     }
