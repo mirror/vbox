@@ -8327,9 +8327,6 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     }
 #endif /* !IEM_VERIFICATION_MODE_FULL */
 
-    /* Load the guest state bits, we can handle longjmps/getting preempted here. */
-    hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
-
     /*
      * Evaluate events as pending-for-injection into the guest. Toggling of force-flags here is safe as long as
      * we update TRPM on premature exits to ring-3 before executing guest code. We must NOT restore the force-flags.
@@ -8349,6 +8346,15 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
         Assert(rc == VINF_EM_RESET);
         return rc;
     }
+
+    /*
+     * Load the guest state bits, we can handle longjmps/getting preempted here.
+     *
+     * If we are injecting events to a real-on-v86 mode guest, we will have to update
+     * RIP and some segment registers, i.e. hmR0VmxInjectPendingEvent()->hmR0VmxInjectEventVmcs().
+     * Hence, this needs to be done -after- injection of events.
+     */
+    hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
 
     /*
      * No longjmps to ring-3 from this point on!!!
@@ -8417,18 +8423,6 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
 
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);            /* Indicate the start of guest execution. */
-
-    /*
-     * If we are injecting events to a real-on-v86 mode guest, we may have to update
-     * RIP and some other registers, i.e. hmR0VmxInjectPendingEvent()->hmR0VmxInjectEventVmcs().
-     * Reload only the necessary state, the assertion will catch if other parts of the code
-     * change.
-     */
-    if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
-    {
-        hmR0VmxLoadGuestRipRspRflags(pVCpu, pMixedCtx);
-        hmR0VmxLoadGuestSegmentRegs(pVCpu, pMixedCtx);
-    }
 
 #ifdef HMVMX_ALWAYS_SWAP_FPU_STATE
     if (!CPUMIsGuestFPUStateActive(pVCpu))
