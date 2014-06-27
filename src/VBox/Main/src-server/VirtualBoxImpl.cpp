@@ -598,6 +598,13 @@ HRESULT VirtualBox::initMachines()
         const settings::MachineRegistryEntry &xmlMachine = *it;
         Guid uuid = xmlMachine.uuid;
 
+        /* Check if machine record has valid parameters. */
+        if (xmlMachine.strSettingsFile.isEmpty() || uuid.isZero())
+        {
+            LogRel(("Skipped invalid machine record.\n"));
+            continue;
+        }
+
         ComObjPtr<Machine> pMachine;
         if (SUCCEEDED(rc = pMachine.createObject()))
         {
