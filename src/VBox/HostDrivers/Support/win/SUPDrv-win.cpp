@@ -66,8 +66,7 @@
 #define DEVICE_NAME_DOS_USR     L"\\DosDevices\\VBoxDrvU"
 
 /** Enables the fast I/O control code path. */
-//@todo: Currently breaks guest SMP. Must be disabled until fixed.
-//#define VBOXDRV_WITH_FAST_IO
+#define VBOXDRV_WITH_FAST_IO
 
 
 /*******************************************************************************
@@ -531,7 +530,7 @@ static BOOLEAN _stdcall VBoxDrvNtFastIoDeviceControl(PFILE_OBJECT pFileObj, BOOL
             || uCmd == SUP_IOCTL_FAST_DO_NOP)
         && pSession->fUnrestricted == true)
     {
-        int rc = supdrvIOCtlFast(uCmd, (unsigned)(uintptr_t)pvInput/* VMCPU id */, pDevExt, pSession);
+        int rc = supdrvIOCtlFast(uCmd, (unsigned)(uintptr_t)pvOutput /* VMCPU id */, pDevExt, pSession);
         pIoStatus->Status      = RT_SUCCESS(rc) ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER;
         pIoStatus->Information = 0; /* Could be used to pass rc if we liked. */
         return TRUE;
