@@ -479,8 +479,13 @@ typedef struct VDIOCTX
 /** Don't free the I/O context when complete because
  * it was alloacted elsewhere (stack, ...). */
 #define VDIOCTX_FLAGS_DONT_FREE              RT_BIT_32(4)
-/* Don't set the modified flag for this I/O context when writing. */
+/** Don't set the modified flag for this I/O context when writing. */
 #define VDIOCTX_FLAGS_DONT_SET_MODIFIED_FLAG RT_BIT_32(5)
+/** The write filter was applied already and shouldn't be applied a second time.
+ * Used at the beginning of vdWriteHelperAsync() because it might be called
+ * multiple times.
+ */
+#define VDIOCTX_FLAGS_WRITE_FILTER_APPLIED   RT_BIT_32(6)
 
 /** NIL I/O context pointer value. */
 #define NIL_VDIOCTX ((PVDIOCTX)0)
@@ -966,6 +971,8 @@ static int vdFilterChainApplyWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWr
 {
     int rc = VINF_SUCCESS;
 
+    VD_IS_LOCKED(pDisk);
+
     if (pDisk->pFilterHead)
     {
         PVDFILTER pFilterCurr = pDisk->pFilterHead;
@@ -997,6 +1004,8 @@ static int vdFilterChainApplyRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRea
                                   PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
+
+    VD_IS_LOCKED(pDisk);
 
     if (pDisk->pFilterHead)
     {
@@ -1740,6 +1749,16 @@ static int vdDiskProcessWaitingIoCtx(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
         rcTmp = vdIoCtxProcessLocked(pTmp);
         if (pTmp == pIoCtxRc)
         {
+            if (   rcTmp == VINF_VD_ASYNC_IO_FINISHED
+                && RT_SUCCESS(pTmp->rcReq)
+                && pTmp->enmTxDir == VDIOCTXTXDIR_READ)
+            {
+                   int rc2 = vdFilterChainApplyRead(pDisk, pTmp->Req.Io.uOffsetXferOrig,
+                                                    pTmp->Req.Io.cbXferOrig, pTmp);
+                    if (RT_FAILURE(rc2))
+                        rcTmp = rc2;
+            }
+
             /* The given I/O context was processed, pass the return code to the caller. */
             if (   rcTmp == VINF_VD_ASYNC_IO_FINISHED
                 && (pTmp->fFlags & VDIOCTX_FLAGS_SYNC))
@@ -2208,9 +2227,6 @@ static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParent
     IoCtx.Type.Root.pvUser1     = pDisk;
     IoCtx.Type.Root.pvUser2     = hEventComplete;
     rc = vdIoCtxProcessSync(&IoCtx, hEventComplete);
-    if (RT_SUCCESS(rc))
-        rc = vdFilterChainApplyRead(pDisk, uOffset, cbRead, &IoCtx);
-
     RTSemEventDestroy(hEventComplete);
     return rc;
 }
@@ -2307,8 +2323,6 @@ static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
     IoCtx.Type.Root.pfnComplete = vdIoCtxSyncComplete;
     IoCtx.Type.Root.pvUser1     = pDisk;
     IoCtx.Type.Root.pvUser2     = hEventComplete;
-    /* Apply write filter chain here. */
-    rc = vdFilterChainApplyWrite(pDisk, uOffset, cbWrite, &IoCtx);
     if (RT_SUCCESS(rc))
         rc = vdIoCtxProcessSync(&IoCtx, hEventComplete);
 
@@ -2920,6 +2934,15 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
     unsigned fWrite;
     size_t cbThisWrite;
     size_t cbPreRead, cbPostRead;
+
+    /* Apply write filter chain here if it was not done already. */
+    if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_WRITE_FILTER_APPLIED))
+    {
+        rc = vdFilterChainApplyWrite(pDisk, uOffset, cbWrite, pIoCtx);
+        if (RT_FAILURE(rc))
+            return rc;
+        pIoCtx->fFlags |= VDIOCTX_FLAGS_WRITE_FILTER_APPLIED;
+    }
 
     if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_DONT_SET_MODIFIED_FLAG))
     {
@@ -10050,13 +10073,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
         if (rc == VINF_VD_ASYNC_IO_FINISHED)
         {
             if (ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
-            {
-                rc2 = vdFilterChainApplyRead(pDisk, pIoCtx->Req.Io.uOffsetXferOrig,
-                                             pIoCtx->Req.Io.cbXferOrig, pIoCtx);
-                if (RT_FAILURE(rc2))
-                    rc = rc2;
                 vdIoCtxFree(pDisk, pIoCtx);
-            }
             else
                 rc = VERR_VD_ASYNC_IO_IN_PROGRESS; /* Let the other handler complete the request. */
         }
@@ -10121,14 +10138,6 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
         if (!pIoCtx)
         {
             rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        /* Apply write filter chain here. */
-        rc = vdFilterChainApplyWrite(pDisk, uOffset, cbWrite, pIoCtx);
-        if (RT_FAILURE(rc))
-        {
-            vdIoCtxFree(pDisk, pIoCtx);
             break;
         }
 
