@@ -38,8 +38,9 @@
 # include <VBox/vmm/rem.h>
 #endif
 #ifdef DEBUG_ramshankar
-# define HMVMX_SAVE_FULL_GUEST_STATE
-# define HMVMX_SYNC_FULL_GUEST_STATE
+# define HMVMX_ALWAYS_SAVE_GUEST_RFLAGS
+# define HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE
+# define HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
 # define HMVMX_ALWAYS_CHECK_GUEST_STATE
 # define HMVMX_ALWAYS_TRAP_ALL_XCPTS
 # define HMVMX_ALWAYS_TRAP_PF
@@ -6747,7 +6748,7 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @param   pVCpu           Pointer to the VMCPU.
  */
-static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
+static int hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
 {
     Assert(TRPMHasTrap(pVCpu));
     Assert(!pVCpu->hm.s.Event.fPending);
@@ -6791,7 +6792,12 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
         if (uVector == X86_XCPT_NMI)
             u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
         else
+        {
+            uint32_t uEFlags = CPUMGetGuestEFlags(pVCpu);
+            if (!(uEFlags & X86_EFL_IF))
+                return VERR_HMVMX_IPE_5;
             u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+        }
     }
     else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
         u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
@@ -6805,6 +6811,7 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
 
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, uErrCode, GCPtrFaultAddress);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatInjectPendingReflect);
+    return VINF_SUCCESS;
 }
 
 
@@ -7400,13 +7407,12 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT);
             hmR0VmxClearIntWindowExitVmcs(pVCpu);
         }
-#if defined(VBOX_STRICT)
+#if 1 /* defined(VBOX_STRICT) */  /* Temporarily for debugging. */
         if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
-            rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
-            AssertRCReturn(rc, rc);
             const bool fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
-            Assert(!fBlockInt);
+            if (fBlockInt)
+                return VERR_HMVMX_IPE_4;
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
             Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT));
@@ -8241,7 +8247,7 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
     HMVMX_ASSERT_PREEMPT_SAFE();
 
     Log5(("LoadFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
-#ifdef HMVMX_SYNC_FULL_GUEST_STATE
+#ifdef HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
     HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 #endif
 
@@ -8332,7 +8338,11 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
      * we update TRPM on premature exits to ring-3 before executing guest code. We must NOT restore the force-flags.
      */
     if (TRPMHasTrap(pVCpu))
-        hmR0VmxTrpmTrapToPendingEvent(pVCpu);
+    {
+        rc = hmR0VmxTrpmTrapToPendingEvent(pVCpu);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
     else if (!pVCpu->hm.s.Event.fPending)
         hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
 
@@ -8343,7 +8353,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        Assert(rc == VINF_EM_RESET);
+        //Assert(rc == VINF_EM_RESET);
         return rc;
     }
 
@@ -8623,10 +8633,15 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     {
         /* Update the guest interruptibility-state from the VMCS. */
         hmR0VmxSaveGuestIntrState(pVCpu, pMixedCtx);
-#if defined(HMVMX_SYNC_FULL_GUEST_STATE) || defined(HMVMX_SAVE_FULL_GUEST_STATE)
+
+#if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
         rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
         AssertRC(rc);
+#elif defined(HMVMX_ALWAYS_SAVE_GUEST_RFLAGS)
+        rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+        AssertRC(rc);
 #endif
+
         /*
          * If the TPR was raised by the guest, it wouldn't cause a VM-exit immediately. Instead we sync the TPR lazily whenever
          * we eventually get a VM-exit for any reason. This maybe expensive as PDMApicSetTPR() can longjmp to ring-3 and which is
