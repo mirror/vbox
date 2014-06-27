@@ -50,15 +50,16 @@ StorageLib_SOURCES  = \
 	VHDX.cpp \
 	VCICache.cpp
 
-#ifdef VBOX_WITH_PLUGIN_CRYPT
-# DLLS += VDPluginCrypt
-# VDPluginCrypt_TEMPLATE = VBOXR3
-# VDPluginCrypt_LIBS = $(LIB_RUNTIME)
-# VDPluginCrypt_SDKS = VBOX_OPENSSL2
-#
-# VDPluginCrypt_SOURCES = \
-#	VDFilterCrypt.cpp
-#endif
+if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
+ if defined(VBOX_WITH_PLUGIN_CRYPT)
+  DLLS += VDPluginCrypt
+  VDPluginCrypt_TEMPLATE      = VBoxR3ExtPackPuel
+  VDPluginCrypt_SDKS          = VBoxOpenSslExtPack
+  VDPluginCrypt_LDFLAGS.linux = -Wl,--no-undefined
+
+  VDPluginCrypt_SOURCES  = VDFilterCrypt.cpp
+ endif
+endif # VBOX_WITH_EXTPACK_PUEL
 
 #StorageLibNoDB_TEMPLATE = VBOXR3
 #StorageLibNoDB_DEFS     = IN_VBOXDDU VBOX_HDD_NO_DYNAMIC_BACKENDS
