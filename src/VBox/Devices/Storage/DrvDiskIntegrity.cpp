@@ -195,6 +195,9 @@ typedef struct DRVDISKINTEGRITY
 
     /** Flag whether to do a immediate read after write for verification. */
     bool                    fReadAfterWrite;
+    /** Flag whether to record the data to write before the write completed successfully.
+     * Useful in case the data is modified in place later on (encryption for instance). */
+    bool                    fRecordWriteBeforeCompletion;
 
     /** I/O logger to use if enabled. */
     VDIOLOGGER              hIoLogger;
@@ -818,6 +821,17 @@ static DECLCALLBACK(int) drvdiskintWrite(PPDMIMEDIA pInterface,
         AssertRC(rc);
     }
 
+    if (pThis->fRecordWriteBeforeCompletion)
+    {
+        RTSGSEG Seg;
+        Seg.cbSeg = cbWrite;
+        Seg.pvSeg = (void *)pvBuf;
+
+        rc = drvdiskintWriteRecord(pThis, &Seg, 1, off, cbWrite);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
     rc = pThis->pDrvMedia->pfnWrite(pThis->pDrvMedia, off, pvBuf, cbWrite);
 
     if (pThis->hIoLogger)
@@ -829,7 +843,8 @@ static DECLCALLBACK(int) drvdiskintWrite(PPDMIMEDIA pInterface,
     if (RT_FAILURE(rc))
         return rc;
 
-    if (pThis->fCheckConsistency)
+    if (   pThis->fCheckConsistency
+        && !pThis->fRecordWriteBeforeCompletion)
     {
         /* Record the write. */
         RTSGSEG Seg;
@@ -917,12 +932,19 @@ static DECLCALLBACK(int) drvdiskintStartWrite(PPDMIMEDIAASYNC pInterface, uint64
         AssertRC(rc2);
     }
 
+    if (pThis->fRecordWriteBeforeCompletion)
+    {
+        int rc2 = drvdiskintWriteRecord(pThis, paSeg, cSeg, uOffset, cbWrite);
+        AssertRC(rc2);
+    }
+
     int rc = pThis->pDrvMediaAsync->pfnStartWrite(pThis->pDrvMediaAsync, uOffset, paSeg, cSeg,
                                                   cbWrite, pIoReq);
     if (rc == VINF_VD_ASYNC_IO_FINISHED)
     {
         /* Record the write. */
-        if  (pThis->fCheckConsistency)
+        if  (   pThis->fCheckConsistency
+             && !pThis->fRecordWriteBeforeCompletion)
         {
             int rc2 = drvdiskintWriteRecord(pThis, paSeg, cSeg, uOffset, cbWrite);
             AssertRC(rc2);
@@ -1152,14 +1174,17 @@ static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPO
     {
         if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_READ)
             rc = drvdiskintReadVerify(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
-        else if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_WRITE)
+        else if (   pIoReq->enmTxDir == DRVDISKAIOTXDIR_WRITE
+                 && !pThis->fRecordWriteBeforeCompletion)
             rc = drvdiskintWriteRecord(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
         else if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_DISCARD)
             rc = drvdiskintDiscardRecords(pThis, pIoReq->paRanges, pIoReq->cRanges);
         else if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_READ_AFTER_WRITE)
             rc = drvdiskintReadAfterWriteVerify(pThis, pIoReq);
         else
-            AssertMsg(pIoReq->enmTxDir == DRVDISKAIOTXDIR_FLUSH, ("Huh?\n"));
+            AssertMsg(   pIoReq->enmTxDir == DRVDISKAIOTXDIR_FLUSH
+                      || (   pIoReq->enmTxDir == DRVDISKAIOTXDIR_WRITE
+                          && pThis->fRecordWriteBeforeCompletion), ("Huh?\n"));
 
         AssertRC(rc);
     }
@@ -1315,7 +1340,8 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
                                     "HistorySize\0"
                                     "IoLog\0"
                                     "PrepopulateRamDisk\0"
-                                    "ReadAfterWrite\0"))
+                                    "ReadAfterWrite\0"
+                                    "RecordWriteBeforeCompletion\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBoolDef(pCfg, "CheckConsistency", &pThis->fCheckConsistency, false);
@@ -1333,6 +1359,8 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     rc = CFGMR3QueryBoolDef(pCfg, "PrepopulateRamDisk", &pThis->fPrepopulateRamDisk, false);
     AssertRC(rc);
     rc = CFGMR3QueryBoolDef(pCfg, "ReadAfterWrite", &pThis->fReadAfterWrite, false);
+    AssertRC(rc);
+    rc = CFGMR3QueryBoolDef(pCfg, "RecordWriteBeforeCompletion", &pThis->fRecordWriteBeforeCompletion, false);
     AssertRC(rc);
 
     char *pszIoLogFilename = NULL;
