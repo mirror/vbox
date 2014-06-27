@@ -569,8 +569,9 @@ void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
         display.GetScreenResolution(m_pMachineView->screenId(),
                                     ulWidth, ulHeight, ulGuestBitsPerPixel, xOrigin, yOrigin);
 
-        /* Remind user if necessary: */
+        /* Remind user if necessary, ignore text and VGA modes: */
         if (   ulGuestBitsPerPixel != ulBitsPerPixel
+            && ulGuestBitsPerPixel != 0
             && m_pMachineView->uisession()->isGuestAdditionsActive())
             popupCenter().remindAboutWrongColorDepth(m_pMachineView->machineWindow(),
                                                      ulGuestBitsPerPixel, ulBitsPerPixel);
