@@ -69,6 +69,8 @@ typedef enum VDINTERFACETYPE
     VDINTERFACETYPE_QUERYRANGEUSE,
     /** Interface for the metadata traverse callback. Per-operation. */
     VDINTERFACETYPE_TRAVERSEMETADATA,
+    /** Interface for crypto opertions. Per-disk. */
+    VDINTERFACETYPE_CRYPTO,
     /** invalid interface. */
     VDINTERFACETYPE_INVALID
 } VDINTERFACETYPE;
@@ -1475,6 +1477,84 @@ DECLINLINE(int) vdIfQueryRangeUse(PVDINTERFACEQUERYRANGEUSE pIfQueryRangeUse, ui
                                   bool *pfUsed)
 {
     return pIfQueryRangeUse->pfnQueryRangeUse(pIfQueryRangeUse->Core.pvUser, off, cb, pfUsed);
+}
+
+
+/**
+ * Interface used to retrieve keys for cryptographic operations.
+ *
+ * Per-module interface. Optional but cryptographic modules might fail and
+ * return an error if this is not present.
+ */
+typedef struct VDINTERFACECRYPTO
+{
+    /**
+     * Common interface header.
+     */
+    VDINTERFACE    Core;
+
+    /**
+     * Retains a key identified by the ID. The caller will only hold a reference
+     * to the key and must not modify the key buffer in any way.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          The opaque user data associated with this interface.
+     * @param   pszId           The alias/id for the key to retrieve.
+     * @param   ppbKey          Where to store the pointer to the key buffer on success.
+     * @param   pcbKey          Where to store the size of the key in bytes on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnKeyRetain, (void *pvUser, const char *pszId, const uint8_t **ppbKey, size_t *pcbKey));
+
+    /**
+     * Releases one reference of the key identified by the given identifier.
+     * The caller must not access the key buffer after calling this operation.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          The opaque user data associated with this interface.
+     * @param   pszId           The alias/id for the key to release.
+     *
+     * @note: It is advised to release the key whenever it is not used anymore so the entity
+     *        storing the key can do anything to make retrieving the key from memory more
+     *        difficult like scrambling the memory buffer for instance.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnKeyRelease, (void *pvUser, const char *pszId));
+
+} VDINTERFACECRYPTO, *PVDINTERFACECRYPTO;
+
+
+/**
+ * Get error interface from interface list.
+ *
+ * @return Pointer to the first error interface in the list.
+ * @param  pVDIfs    Pointer to the interface list.
+ */
+DECLINLINE(PVDINTERFACECRYPTO) VDIfCryptoGet(PVDINTERFACE pVDIfs)
+{
+    PVDINTERFACE pIf = VDInterfaceGet(pVDIfs, VDINTERFACETYPE_CRYPTO);
+
+    /* Check that the interface descriptor is a crypto interface. */
+    AssertMsgReturn(   !pIf
+                    || (   (pIf->enmInterface == VDINTERFACETYPE_CRYPTO)
+                        && (pIf->cbSize == sizeof(VDINTERFACECRYPTO))),
+                    ("Not an crypto interface\n"), NULL);
+
+    return (PVDINTERFACECRYPTO)pIf;
+}
+
+/**
+ * @copydoc VDINTERFACECRYPTOKEYS::pfnKeyRetain
+ */
+DECLINLINE(int) vdIfCryptoKeyRetain(PVDINTERFACECRYPTO pIfCrypto, const char *pszId, const uint8_t **ppbKey, size_t *pcbKey)
+{
+    return pIfCrypto->pfnKeyRetain(pIfCrypto->Core.pvUser, pszId, ppbKey, pcbKey);
+}
+
+/**
+ * @copydoc VDINTERFACECRYPTOKEYS::pfnKeyRelease
+ */
+DECLINLINE(int) vdIfCryptoKeyRelease(PVDINTERFACECRYPTO pIfCrypto, const char *pszId)
+{
+    return pIfCrypto->pfnKeyRelease(pIfCrypto->Core.pvUser, pszId);
 }
 
 RT_C_DECLS_END

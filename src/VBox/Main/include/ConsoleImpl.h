@@ -55,6 +55,7 @@ class VMMDevMouseInterface;
 class DisplayMouseInterface;
 
 #include <iprt/uuid.h>
+#include <iprt/mem.h>
 #include <VBox/RemoteDesktop/VRDE.h>
 #include <VBox/vmm/pdmdrv.h>
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -566,10 +567,43 @@ public:
         LONG     iPort;
     };
 
+    /**
+     * Class for managing cryptographic keys.
+     * @ŧodo: Replace with a keystore implementation once it is ready.
+     */
+    class SecretKey
+    {
+        public:
+            SecretKey() { }
+
+            SecretKey(uint8_t *pbKey, size_t cbKey)
+               : m_cRefs(0),
+                 m_pbKey(pbKey),
+                 m_cbKey(cbKey)
+            { }
+
+            ~SecretKey()
+            {
+                RTMemWipeThoroughly(m_pbKey, m_cbKey, 3 /* cPasses */);
+                RTMemLockedFree(m_pbKey);
+                m_cRefs = 0;
+                m_pbKey = NULL;
+                m_cbKey = 0;
+            }
+
+            /** Reference counter of the key. */
+            volatile uint32_t m_cRefs;
+            /** Key material. */
+            uint8_t *m_pbKey;
+            /** Size of the key in bytes. */
+            size_t   m_cbKey;
+    };
+
     typedef std::map<Utf8Str, ComObjPtr<SharedFolder> > SharedFolderMap;
     typedef std::map<Utf8Str, SharedFolderData> SharedFolderDataMap;
     typedef std::map<Utf8Str, ComPtr<IMediumAttachment> > MediumAttachmentMap;
     typedef std::list <USBStorageDevice> USBStorageDeviceList;
+    typedef std::map<Utf8Str, SecretKey *> SecretKeyMap;
 
 private:
 
@@ -765,6 +799,10 @@ private:
     static DECLCALLBACK(void)   i_drvStatus_Destruct(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(int)    i_drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
 
+    static DECLCALLBACK(int)    i_pdmIfSecKey_KeyRetain(PPDMISECKEY pInterface, const char *pszId, const uint8_t **ppbKey,
+                                                        size_t *pcbKey);
+    static DECLCALLBACK(int)    i_pdmIfSecKey_KeyRelease(PPDMISECKEY pInterface, const char *pszId);
+
     int mcAudioRefs;
     volatile uint32_t mcVRDPClients;
     uint32_t mu32SingleRDPClientId; /* The id of a connected client in the single connection mode. */
@@ -804,7 +842,7 @@ private:
     /** @name Disk encryption support
      * @{ */
     HRESULT i_consoleParseDiskEncryption(const char *psz, const char **ppszEnd);
-    HRESULT i_configureEncryptionForDisk(const char *pszUuid, const uint8_t *pbKey, size_t cbKey);
+    HRESULT i_configureEncryptionForDisk(const char *pszUuid);
     int i_consoleParseKeyValue(const char *psz, const char **ppszEnd,
                                char **ppszKey, char **ppszVal);
     /** @} */
@@ -929,6 +967,15 @@ private:
 
     /** List of attached USB storage devices. */
     USBStorageDeviceList mUSBStorageDevices;
+
+    /** Map of secret keys used for disk encryption. */
+    SecretKeyMap         m_mapSecretKeys;
+
+    /** Pointer to the key consumer -> provider (that's us) callbacks. */
+    struct MYPDMISECKEY : public PDMISECKEY
+    {
+        Console *pConsole;
+    } *mpIfSecKey;
 
 /* Note: FreeBSD needs this whether netflt is used or not. */
 #if ((defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)) || defined(RT_OS_FREEBSD))

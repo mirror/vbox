@@ -1243,6 +1243,43 @@ typedef struct PDMIMOUNT
 /** PDMIMOUNT interface ID. */
 #define PDMIMOUNT_IID                           "34fc7a4c-623a-4806-a6bf-5be1be33c99f"
 
+/** Pointer to a secret key interface. */
+typedef struct PDMISECKEY *PPDMISECKEY;
+
+/**
+ * Secret key interface to retrieve secret keys.
+ */
+typedef struct PDMISECKEY
+{
+    /**
+     * Retains a key identified by the ID. The caller will only hold a reference
+     * to the key and must not modify the key buffer in any way.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this interface.
+     * @param   pszId           The alias/id for the key to retrieve.
+     * @param   ppbKey          Where to store the pointer to the key buffer on success.
+     * @param   pcbKey          Where to store the size of the key in bytes on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnKeyRetain, (PPDMISECKEY pInterface, const char *pszId,
+                                             const uint8_t **pbKey, size_t *pcbKey));
+
+    /**
+     * Releases one reference of the key identified by the given identifier.
+     * The caller must not access the key buffer after calling this operation.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this interface.
+     * @param   pszId          The alias/id for the key to release.
+     *
+     * @note: It is advised to release the key whenever it is not used anymore so the entity
+     *        storing the key can do anything to make retrieving the key from memory more
+     *        difficult like scrambling the memory buffer for instance.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnKeyRelease, (PPDMISECKEY pInterface, const char *pszId));
+} PDMISECKEY;
+/** PDMISECKEY interface ID. */
+#define PDMISECKEY_IID                           "a7336c4a-2ca0-489d-ad2d-f740f215a1e6"
 
 /**
  * Media geometry structure.
@@ -1341,17 +1378,16 @@ typedef struct PDMIMEDIA
     DECLR3CALLBACKMEMBER(int, pfnMerge,(PPDMIMEDIA pInterface, PFNSIMPLEPROGRESS pfnProgress, void *pvUser));
 
     /**
-     * Merge medium contents during a live snapshot deletion. All details
-     * must have been configured through CFGM or this will fail.
-     * This method is optional (i.e. the function pointer may be NULL).
+     * Sets the secret key retrieval interface to use to get secret keys.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pbKey           Pointer to the key.
-     * @param   cbKey           Size of the key in bytes.
+     * @param   pIfSecKey       The secret key interface to use.
+     *                          Use NULL to clear the currently set interface and clear all secret
+     *                          keys from the user.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetKey,(PPDMIMEDIA pInterface, const uint8_t *pbKey, size_t cbKey));
+    DECLR3CALLBACKMEMBER(int, pfnSetSecKeyIf,(PPDMIMEDIA pInterface, PPDMISECKEY pIfSecKey));
 
     /**
      * Get the media size in bytes.
