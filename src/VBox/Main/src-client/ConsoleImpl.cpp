@@ -420,6 +420,7 @@ Console::Console()
     , mUsbCardReader(NULL)
 #endif
     , mBusMgr(NULL)
+    , mpIfSecKey(NULL)
     , mVMStateChangeCallbackDisabled(false)
     , mfUseHostClipboard(true)
     , mMachineState(MachineState_PoweredOff)
@@ -456,6 +457,14 @@ HRESULT Console::FinalConstruct()
     pVmm2UserMethods->u32EndMagic       = VMM2USERMETHODS_MAGIC;
     pVmm2UserMethods->pConsole          = this;
     mpVmm2UserMethods = pVmm2UserMethods;
+
+    MYPDMISECKEY *pIfSecKey = (MYPDMISECKEY *)RTMemAllocZ(sizeof(*mpIfSecKey) + sizeof(Console *));
+    if (!pIfSecKey)
+        return E_OUTOFMEMORY;
+    pIfSecKey->pfnKeyRetain             = Console::i_pdmIfSecKey_KeyRetain;
+    pIfSecKey->pfnKeyRelease            = Console::i_pdmIfSecKey_KeyRelease;
+    pIfSecKey->pConsole                 = this;
+    mpIfSecKey = pIfSecKey;
 
     return BaseFinalConstruct();
 }
@@ -686,6 +695,12 @@ void Console::uninit()
         mpVmm2UserMethods = NULL;
     }
 
+    if (mpIfSecKey)
+    {
+        RTMemFree((void *)mpIfSecKey);
+        mpIfSecKey = NULL;
+    }
+
     if (mNvram)
     {
         delete mNvram;
@@ -726,6 +741,12 @@ void Console::uninit()
 
     mRemoteUSBDevices.clear();
     mUSBDevices.clear();
+
+    for (SecretKeyMap::iterator it = m_mapSecretKeys.begin();
+         it != m_mapSecretKeys.end();
+         it++)
+        delete it->second;
+    m_mapSecretKeys.clear();
 
     if (mVRDEServerInfo)
     {
@@ -4360,10 +4381,8 @@ int Console::i_consoleParseKeyValue(const char *psz, const char **ppszEnd,
  *
  * @returns COM status code.
  * @param   pszUuid   The UUID of the disk to configure encryption for.
- * @param   pbKey     The key to use
- * @param   cbKey     Size of the key in bytes.
  */
-HRESULT Console::i_configureEncryptionForDisk(const char *pszUuid, const uint8_t *pbKey, size_t cbKey)
+HRESULT Console::i_configureEncryptionForDisk(const char *pszUuid)
 {
     HRESULT hrc = S_OK;
     SafeIfaceArray<IMediumAttachment> sfaAttachments;
@@ -4466,7 +4485,7 @@ HRESULT Console::i_configureEncryptionForDisk(const char *pszUuid, const uint8_t
                     return setError(E_FAIL, tr("could not query base interface of controller"));
             }
 
-            rc = pIMedium->pfnSetKey(pIMedium, pbKey, cbKey);
+            rc = pIMedium->pfnSetSecKeyIf(pIMedium, mpIfSecKey);
             if (RT_FAILURE(rc))
                 return setError(E_FAIL, tr("Failed to set the encryption key (%Rrc)"), rc);
         }
@@ -4541,14 +4560,16 @@ HRESULT Console::i_consoleParseDiskEncryption(const char *psz, const char **ppsz
             {
                 rc = RTBase64Decode(pszKeyEnc, pbKey, cbKey, NULL, NULL);
                 if (RT_SUCCESS(rc))
-                    hrc = i_configureEncryptionForDisk(pszUuid, pbKey, cbKey);
+                {
+                    SecretKey *pKey = new SecretKey(pbKey, cbKey);
+                    /* Add the key to the map */
+                    m_mapSecretKeys.insert(std::make_pair(Utf8Str(pszUuid), pKey));
+                    hrc = i_configureEncryptionForDisk(pszUuid);
+                }
                 else
                     hrc = setError(E_FAIL,
                                    tr("Failed to decode the key (%Rrc)"),
                                    rc);
-
-                RTMemWipeThoroughly(pbKey, cbKey, 10 /* cMinPasses */);
-                RTMemLockedFree(pbKey);
             }
             else
                 hrc = setError(E_FAIL,
@@ -10133,6 +10154,50 @@ Console::i_vmm2User_NotifyResetTurnedIntoPowerOff(PCVMM2USERMETHODS pThis, PUVM 
     NOREF(pUVM);
 
     pConsole->mfPowerOffCausedByReset = true;
+}
+
+
+
+
+/**
+ * @interface_method_impl{PDMISECKEY,pfnKeyRetain}
+ */
+/*static*/ DECLCALLBACK(int)
+Console::i_pdmIfSecKey_KeyRetain(PPDMISECKEY pInterface, const char *pszId, const uint8_t **ppbKey,
+                                 size_t *pcbKey)
+{
+    Console *pConsole = ((MYPDMISECKEY *)pInterface)->pConsole;
+
+    SecretKeyMap::const_iterator it = pConsole->m_mapSecretKeys.find(Utf8Str(pszId));
+    if (it != pConsole->m_mapSecretKeys.end())
+    {
+        SecretKey *pKey = (*it).second;
+
+        ASMAtomicIncU32(&pKey->m_cRefs);
+        *ppbKey = pKey->m_pbKey;
+        *pcbKey = pKey->m_cbKey;
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+/**
+ * @interface_method_impl{PDMISECKEY,pfnKeyRelease}
+ */
+/*static*/ DECLCALLBACK(int)
+Console::i_pdmIfSecKey_KeyRelease(PPDMISECKEY pInterface, const char *pszId)
+{
+    Console *pConsole = ((MYPDMISECKEY *)pInterface)->pConsole;
+    SecretKeyMap::const_iterator it = pConsole->m_mapSecretKeys.find(Utf8Str(pszId));
+    if (it != pConsole->m_mapSecretKeys.end())
+    {
+        SecretKey *pKey = (*it).second;
+        ASMAtomicDecU32(&pKey->m_cRefs);
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NOT_FOUND;
 }
 
 
