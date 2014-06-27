@@ -569,7 +569,7 @@ public:
 
     /**
      * Class for managing cryptographic keys.
-     * @ŧodo: Replace with a keystore implementation once it is ready.
+     * @todo: Replace with a keystore implementation once it is ready.
      */
     class SecretKey
     {
