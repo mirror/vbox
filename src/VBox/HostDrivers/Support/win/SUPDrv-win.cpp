@@ -66,7 +66,8 @@
 #define DEVICE_NAME_DOS_USR     L"\\DosDevices\\VBoxDrvU"
 
 /** Enables the fast I/O control code path. */
-#define VBOXDRV_WITH_FAST_IO
+//@todo: Currently breaks guest SMP. Must be disabled until fixed.
+//#define VBOXDRV_WITH_FAST_IO
 
 
 /*******************************************************************************
