@@ -226,29 +226,6 @@ bool USBProxyServiceWindows::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVIC
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
     /* Nothing special here so far, so fall back on parent */
     return USBProxyService::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
-
-/// @todo remove?
-#if 0
-
-    /*
-     * We're only called in the 'existing device' state, so if there is a pending async
-     * operation we can check if it completed here and suppress state changes if it hasn't.
-     */
-    /* TESTME */
-    if (aDevice->isStatePending())
-    {
-        bool fRc = aDevice->updateState(aUSBDevice);
-        if (fRc)
-        {
-            if (aDevice->state() != aDevice->pendingState())
-                fRc = false;
-        }
-        return fRc;
-    }
-
-    /* fall back on parent. */
-    return USBProxyService::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
-#endif
 }
 
 
