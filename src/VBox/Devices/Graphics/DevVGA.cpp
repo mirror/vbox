@@ -2030,7 +2030,9 @@ static int vga_resize_graphic(PVGASTATE pThis, int cx, int cy,
     AssertReturn(cx, VERR_INVALID_PARAMETER);
     AssertReturn(cy, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertReturn(pThis->line_offset, VERR_INTERNAL_ERROR);
+
+    if (!pThis->line_offset)
+        return VERR_INTERNAL_ERROR;
 
 #if 0 //def VBOX_WITH_VDMA
     /* @todo: we get a second resize here when VBVA is on, while we actually should not */
