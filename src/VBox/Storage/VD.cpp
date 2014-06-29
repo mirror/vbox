@@ -3538,7 +3538,7 @@ static bool vdPluginFind(const char *pszFilename)
 {
     PVDPLUGIN pIt = NULL;
 
-    RTListForEach(&g_ListPluginsLoaded, pIt, VDPLUGIN, NodePlugin);
+    RTListForEach(&g_ListPluginsLoaded, pIt, VDPLUGIN, NodePlugin)
     {
         if (!RTStrCmp(pIt->pszFilename, pszFilename))
             return true;
