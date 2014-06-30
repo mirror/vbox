@@ -5332,6 +5332,9 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
     AssertReturn(iRegion == 0 && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
 #endif
 
+    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertRC(rc);
+
     if (GCPhysAddress != NIL_RTGCPHYS)
     {
         /*
@@ -5371,6 +5374,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
         pThis->GCPhysVRAM = 0;
         /* NB: VBE_DISPI_INDEX_FB_BASE_HI is left unchanged here. */
     }
+    PDMCritSectLeave(&pThis->CritSect);
     return rc;
 }
 
