@@ -6795,7 +6795,7 @@ static int hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
         {
             uint32_t uEFlags = CPUMGetGuestEFlags(pVCpu);
             if (!(uEFlags & X86_EFL_IF))
-                return VERR_HMVMX_IPE_5;
+                return VERR_VMX_IPE_5;
             u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
         }
     }
@@ -7412,7 +7412,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             const bool fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
             if (fBlockInt)
-                return VERR_HMVMX_IPE_4;
+                return VERR_VMX_IPE_4;
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
             Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT));
@@ -10724,7 +10724,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
                           == VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT);
     bool     fIOString = VMX_EXIT_QUALIFICATION_IO_IS_STRING(pVmxTransient->uExitQualification);
     bool     fStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
-    AssertReturn(uIOWidth <= 3 && uIOWidth != 2, VERR_HMVMX_IPE_1);
+    AssertReturn(uIOWidth <= 3 && uIOWidth != 2, VERR_VMX_IPE_1);
 
     /* I/O operation lookup arrays. */
     static const uint32_t s_aIOSizes[4] = { 1, 2, 0, 4 };                   /* Size of the I/O accesses. */
@@ -10745,14 +10745,14 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
          * interpreting the instruction.
          */
         Log4(("CS:RIP=%04x:%#RX64 %#06x/%u %c str\n", pMixedCtx->cs.Sel, pMixedCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
-        AssertReturn(pMixedCtx->dx == uIOPort, VERR_HMVMX_IPE_2);
+        AssertReturn(pMixedCtx->dx == uIOPort, VERR_VMX_IPE_2);
         if (MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64BasicInfo))
         {
             rc2  = hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
             /** @todo optimize this, IEM should request the additional state if it needs it (GP, PF, ++). */
             rc2 |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
             AssertRCReturn(rc2, rc2);
-            AssertReturn(pVmxTransient->ExitInstrInfo.StrIo.u3AddrSize <= 2, VERR_HMVMX_IPE_3);
+            AssertReturn(pVmxTransient->ExitInstrInfo.StrIo.u3AddrSize <= 2, VERR_VMX_IPE_3);
             AssertCompile(IEMMODE_16BIT == 0 && IEMMODE_32BIT == 1 && IEMMODE_64BIT == 2);
             IEMMODE enmAddrMode = (IEMMODE)pVmxTransient->ExitInstrInfo.StrIo.u3AddrSize;
             bool    fRep        = VMX_EXIT_QUALIFICATION_IO_IS_REP(pVmxTransient->uExitQualification);
