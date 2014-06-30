@@ -334,6 +334,10 @@ private:
 
     void handleResizeCompletedEMT(unsigned uScreenId, BOOL fResizeContext);
 
+    /* Old guest additions (3.x?) use VMMDev for VBVA and the host VBVA code (VideoAccel*)
+     * can be executed concurrently by VGA refresh timer and the guest VMMDev request
+     * in SMP VMs. The lock serialized this.
+     */
     RTCRITSECT mVBVALock;
     volatile uint32_t mfu32PendingVideoAccelDisable;
 
@@ -341,6 +345,8 @@ private:
     void vbvaUnlock(void);
 
 public:
+    bool vbvaLockIsOwner(void);
+
     static int  displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height);
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
@@ -368,7 +374,7 @@ private:
 
     /* Functions run under VBVA lock. */
     int  videoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory);
-    void videoAccelFlush(void);
+    int videoAccelFlush(void);
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     int crOglWindowsShow(bool fShow);

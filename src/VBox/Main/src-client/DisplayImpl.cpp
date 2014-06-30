@@ -398,6 +398,7 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
                 }
 
                 /* This can be called from any thread. */
+                Assert(!that->vbvaLockIsOwner());
                 that->mpDrv->pUpPort->pfnFreeScreenshot(that->mpDrv->pUpPort, pu8Data);
             }
         }
@@ -916,6 +917,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
     /* Guest screen image will be invalid during resize, make sure that it is not updated. */
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
+        Assert(!vbvaLockIsOwner());
         mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, false);
 
         mpDrv->IConnector.pu8Data    = NULL;
@@ -1159,7 +1161,8 @@ void Display::handleDisplayUpdate (unsigned uScreenId, int x, int y, int w, int 
     if (!mfVideoAccelEnabled && !maFramebuffers[uScreenId].fVBVAEnabled)
     {
 #endif /* VBOX_WITH_HGSMI */
-        /* When VBVA is enabled, the VRDP server is informed in the VideoAccelFlush.
+        /* When VBVA is enabled, the VRDP server is informed
+         * either in VideoAccelFlush or displayVBVAUpdateProcess.
          * Inform the server here only if VBVA is disabled.
          */
         mParent->i_consoleVRDPServer()->SendUpdateBitmap(uScreenId, x, y, w, h);
@@ -1560,6 +1563,10 @@ void Display::vbvaUnlock(void)
     RTCritSectLeave(&mVBVALock);
 }
 
+bool Display::vbvaLockIsOwner(void)
+{
+    return RTCritSectIsOwner(&mVBVALock);
+}
 
 /**
  * @thread EMT
@@ -1567,14 +1574,31 @@ void Display::vbvaUnlock(void)
 int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
 {
     int rc;
+
+    if (fEnable)
+    {
+        /* Process any pending VGA device changes, resize. */
+        Assert(!vbvaLockIsOwner());
+        mpDrv->pUpPort->pfnUpdateDisplay(mpDrv->pUpPort);
+    }
+
     vbvaLock();
     rc = videoAccelEnable (fEnable, pVbvaMemory);
     vbvaUnlock();
+
+    if (!fEnable)
+    {
+        Assert(!vbvaLockIsOwner());
+        mpDrv->pUpPort->pfnUpdateDisplay(mpDrv->pUpPort);
+    }
+
     return rc;
 }
 
 int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
 {
+    Assert(vbvaLockIsOwner());
+
     int rc = VINF_SUCCESS;
 
     /* Called each time the guest wants to use acceleration,
@@ -1631,9 +1655,6 @@ int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     /* Safety precaution. There is no more VBVA until everything is setup! */
     mpVbvaMemory = NULL;
     mfVideoAccelEnabled = false;
-
-    /* Update entire display. */
-    mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
 
     /* Everything OK. VBVA status can be changed. */
 
@@ -2013,13 +2034,26 @@ void Display::vbvaReleaseCmd (VBVACMDHDR *pHdr, int32_t cbCmd)
 void Display::VideoAccelFlush (void)
 {
     vbvaLock();
-    videoAccelFlush();
+    int rc = videoAccelFlush();
+    if (RT_FAILURE(rc))
+    {
+        /* Disable on errors. */
+        videoAccelEnable(false, NULL);
+    }
     vbvaUnlock();
+
+    if (RT_FAILURE(rc))
+    {
+        /* VideoAccel was disabled because of a failure, switching back to VGA updates. Redraw the screen. */
+        Assert(!vbvaLockIsOwner());
+        mpDrv->pUpPort->pfnUpdateDisplay(mpDrv->pUpPort);
+    }
 }
 
-/* Under VBVA lock. DevVGA is not taken. */
-void Display::videoAccelFlush (void)
+int Display::videoAccelFlush (void)
 {
+    Assert(vbvaLockIsOwner());
+
 #ifdef DEBUG_sunlover_2
     LogFlowFunc(("mfVideoAccelEnabled = %d\n", mfVideoAccelEnabled));
 #endif /* DEBUG_sunlover_2 */
@@ -2027,7 +2061,7 @@ void Display::videoAccelFlush (void)
     if (!mfVideoAccelEnabled)
     {
         Log(("Display::VideoAccelFlush: called with disabled VBVA!!! Ignoring.\n"));
-        return;
+        return VINF_SUCCESS;
     }
 
     /* Here VBVA is enabled and we have the accelerator memory pointer. */
@@ -2042,7 +2076,7 @@ void Display::videoAccelFlush (void)
     /* Quick check for "nothing to update" case. */
     if (mpVbvaMemory->indexRecordFirst == mpVbvaMemory->indexRecordFree)
     {
-        return;
+        return VINF_SUCCESS;
     }
 
     /* Process the ring buffer */
@@ -2062,11 +2096,7 @@ void Display::videoAccelFlush (void)
         {
             Log(("Display::VideoAccelFlush: unable to fetch command. off32Data = %d, off32Free = %d. Disabling VBVA!!!\n",
                   mpVbvaMemory->off32Data, mpVbvaMemory->off32Free));
-
-            /* Disable VBVA on those processing errors. */
-            videoAccelEnable (false, NULL);
-
-            break;
+            return VERR_INVALID_STATE;
         }
 
         if (cbCmd == uint32_t(~0))
@@ -2127,6 +2157,7 @@ void Display::videoAccelFlush (void)
         /* Draw the framebuffer. */
         vbvaRgnUpdateFramebuffer (&rgn, uScreenId);
     }
+    return VINF_SUCCESS;
 }
 
 int Display::videoAccelRefreshProcess(void)
@@ -2142,8 +2173,7 @@ int Display::videoAccelRefreshProcess(void)
     else if (mfPendingVideoAccelEnable)
     {
         /* Acceleration was enabled while machine was not yet running
-         * due to restoring from saved state. Update entire display and
-         * actually enable acceleration.
+         * due to restoring from saved state. Actually enable acceleration.
          */
         Assert(mpPendingVbvaMemory);
 
@@ -2170,9 +2200,17 @@ int Display::videoAccelRefreshProcess(void)
         if (mfVideoAccelEnabled)
         {
             Assert(mpVbvaMemory);
-            videoAccelFlush ();
-
-            rc = VINF_SUCCESS; /* VBVA processed, no need to a display update. */
+            rc = videoAccelFlush();
+            if (RT_FAILURE(rc))
+            {
+                /* Disable on errors. */
+                videoAccelEnable(false, NULL);
+                rc = VWRN_INVALID_STATE; /* Do a display update in VGA device. */
+            }
+            else
+            {
+                rc = VINF_SUCCESS;
+            }
         }
     }
 
@@ -2234,8 +2272,14 @@ STDMETHODIMP Display::GetScreenResolution(ULONG aScreenId,
         {
             u32Width = mpDrv->IConnector.cx;
             u32Height = mpDrv->IConnector.cy;
+
+            alock.release();
+
+            Assert(!vbvaLockIsOwner());
             int rc = mpDrv->pUpPort->pfnQueryColorDepth(mpDrv->pUpPort, &u32BitsPerPixel);
             AssertRC(rc);
+
+            alock.acquire();
         }
     }
     else if (aScreenId < mcMonitors)
@@ -2404,10 +2448,15 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aDisplay, BOOL aEnabled,
     ULONG bpp    = aBitsPerPixel;
     if (!bpp)
     {
+        alock.release();
+
         uint32_t cBits = 0;
+        Assert(!vbvaLockIsOwner());
         int rc = mpDrv->pUpPort->pfnQueryColorDepth(mpDrv->pUpPort, &cBits);
         AssertRC(rc);
         bpp = cBits;
+
+        alock.acquire();
     }
     ULONG cMonitors;
     mParent->i_machine()->COMGETTER(MonitorCount)(&cMonitors);
@@ -2546,10 +2595,11 @@ int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_
                                       uint32_t *pu32Width, uint32_t *pu32Height)
 {
     int rc;
-    pDisplay->vbvaLock();
+
     if (   aScreenId == VBOX_VIDEO_PRIMARY_SCREEN
         && pDisplay->maFramebuffers[aScreenId].fVBVAEnabled == false) /* A non-VBVA mode. */
     {
+        Assert(!pDisplay->vbvaLockIsOwner());
         rc = pDisplay->mpDrv->pUpPort->pfnTakeScreenshot(pDisplay->mpDrv->pUpPort, ppu8Data, pcbData, pu32Width, pu32Height);
     }
     else if (aScreenId < pDisplay->mcMonitors)
@@ -2589,6 +2639,7 @@ int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_
                 uint32_t u32DstLineSize     = u32DstWidth * 4;
                 uint32_t u32DstBitsPerPixel = 32;
 
+                Assert(!pDisplay->vbvaLockIsOwner());
                 rc = pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
                                                            width, height,
                                                            pu8Src,
@@ -2614,6 +2665,7 @@ int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_
                     if (   rc == VERR_INVALID_STATE
                         && aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
                     {
+                        Assert(!pDisplay->vbvaLockIsOwner());
                         rc = pDisplay->mpDrv->pUpPort->pfnTakeScreenshot(pDisplay->mpDrv->pUpPort,
                                                                          ppu8Data, pcbData, pu32Width, pu32Height);
                     }
@@ -2634,7 +2686,7 @@ int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_
     {
         rc = VERR_INVALID_PARAMETER;
     }
-    pDisplay->vbvaUnlock();
+
     return rc;
 }
 
@@ -2699,6 +2751,7 @@ static int displayTakeScreenshot(PUVM pUVM, Display *pDisplay, struct DRVMAINDIS
         if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
         {
             /* This can be called from any thread. */
+            Assert(!pDisplay->vbvaLockIsOwner());
             pDrv->pUpPort->pfnFreeScreenshot(pDrv->pUpPort, pu8Data);
         }
         else
@@ -3059,12 +3112,12 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
                              ULONG x, ULONG y, ULONG width, ULONG height)
 {
     int rc = VINF_SUCCESS;
-    pDisplay->vbvaLock();
 
     DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[aScreenId];
 
     if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
+        Assert(!pDisplay->vbvaLockIsOwner());
         rc = pDisplay->mpDrv->pUpPort->pfnDisplayBlt(pDisplay->mpDrv->pUpPort, address, x, y, width, height);
     }
     else if (aScreenId < pDisplay->mcMonitors)
@@ -3086,6 +3139,7 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
         uint32_t u32DstLineSize     = pFBInfo->u32LineSize;
         uint32_t u32DstBitsPerPixel = pFBInfo->u16BitsPerPixel;
 
+        Assert(!pDisplay->vbvaLockIsOwner());
         rc = pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
                                                    width, height,
                                                    pu8Src,
@@ -3138,6 +3192,7 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
                         u32DstLineSize     = u32DstWidth * 4;
                         u32DstBitsPerPixel = 32;
 
+                        Assert(!pDisplay->vbvaLockIsOwner());
                         pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
                                                               width, height,
                                                               pu8Src,
@@ -3163,7 +3218,6 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
     if (RT_SUCCESS(rc))
         pDisplay->mParent->i_consoleVRDPServer()->SendUpdateBitmap(aScreenId, x, y, width, height);
 
-    pDisplay->vbvaUnlock();
     return rc;
 }
 
@@ -3230,7 +3284,6 @@ STDMETHODIMP Display::DrawToScreen(ULONG aScreenId, BYTE *address,
 
 void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll)
 {
-    pDisplay->vbvaLock();
     unsigned uScreenId;
     for (uScreenId = (fUpdateAll ? 0 : uId); uScreenId < pDisplay->mcMonitors; uScreenId++)
     {
@@ -3239,6 +3292,7 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpda
         if (   !pFBInfo->fVBVAEnabled
             && uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
         {
+            Assert(!pDisplay->vbvaLockIsOwner());
             pDisplay->mpDrv->pUpPort->pfnUpdateDisplayAll(pDisplay->mpDrv->pUpPort);
         }
         else
@@ -3292,6 +3346,7 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpda
                         if (ulWidth == pFBInfo->w && ulHeight == pFBInfo->h)
                         {
 
+                            Assert(!pDisplay->vbvaLockIsOwner());
                             pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
                                                                   width, height,
                                                                   pu8Src,
@@ -3312,7 +3367,6 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpda
         if (!fUpdateAll)
             break;
     }
-    pDisplay->vbvaUnlock();
 }
 
 /**
@@ -3486,12 +3540,14 @@ STDMETHODIMP Display::QuerySourceBitmap(ULONG aScreenId,
     if (SUCCEEDED(hr))
     {
         if (fSetRenderVRAM)
+        {
+            Assert(!vbvaLockIsOwner());
             mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, true);
+        }
 
-// @todo later
-//        if (fInvalidate)
-//            VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
-//                             3, this, aScreenId, false);
+        if (fInvalidate)
+            VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
+                             3, this, aScreenId, false);
     }
 
     LogRelFlowFunc(("%Rhrc\n", hr));
@@ -3730,9 +3786,8 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         {
             /* No VBVA do a display update. */
             DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
-            pDisplay->vbvaLock();
+            Assert(!pDisplay->vbvaLockIsOwner());
             pDrv->pUpPort->pfnUpdateDisplay(pDrv->pUpPort);
-            pDisplay->vbvaUnlock();
         }
 
         /* Inform the VRDP server that the current display update sequence is
@@ -4516,7 +4571,8 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
     if (!fRenderThreadMode && uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
         /* Force full screen update, because VGA device must take control, do resize, etc. */
-        pThis->mpDrv->pUpPort->pfnUpdateDisplayAll(pThis->mpDrv->pUpPort);
+        Assert(!pThis->vbvaLockIsOwner());
+        pThis->mpDrv->pUpPort->pfnUpdateDisplay(pThis->mpDrv->pUpPort);
     }
 }
 
@@ -4551,6 +4607,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
         if (   uScreenId == VBOX_VIDEO_PRIMARY_SCREEN
             && !pFBInfo->fDisabled)
         {
+            Assert(!pThis->vbvaLockIsOwner());
             pDrv->pUpPort->pfnUpdateDisplayRect (pDrv->pUpPort, pCmd->x, pCmd->y, pCmd->w, pCmd->h);
         }
         else if (   !pFBInfo->pSourceBitmap.isNull()
@@ -4591,6 +4648,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
                 uint32_t u32DstLineSize     = u32DstWidth * 4;
                 uint32_t u32DstBitsPerPixel = 32;
 
+                Assert(!pThis->vbvaLockIsOwner());
                 pDrv->pUpPort->pfnCopyRect(pDrv->pUpPort,
                                            width, height,
                                            pu8Src,
@@ -4875,6 +4933,9 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
     PDRVMAINDISPLAY pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
     LogRelFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
 
+    if (pThis->pDisplay)
+        Assert(!pThis->pDisplay->vbvaLockIsOwner());
+
     pThis->pUpPort->pfnSetRenderVRAM(pThis->pUpPort, false);
 
     pThis->IConnector.pu8Data    = NULL;
@@ -4982,12 +5043,14 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->pDisplay->mpDrv = pThis;
 
     /* Disable VRAM to a buffer copy initially. */
+    Assert(!pDisplay->vbvaLockIsOwner());
     pThis->pUpPort->pfnSetRenderVRAM (pThis->pUpPort, false);
     pThis->IConnector.cBits = 32; /* DevVGA does nothing otherwise. */
 
     /*
      * Start periodic screen refreshes
      */
+    Assert(!pDisplay->vbvaLockIsOwner());
     pThis->pUpPort->pfnSetRefreshRate(pThis->pUpPort, 20);
 
 #ifdef VBOX_WITH_CRHGSMI
