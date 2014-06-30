@@ -4141,11 +4141,14 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                     PCFGMNODE pCfgPlugins = NULL;
                     PCFGMNODE pCfgPlugin = NULL;
                     Utf8Str strPlugin;
-                    hrc = mptrExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin); H();
-
-                    InsertConfigNode(pCfg, "Plugins", &pCfgPlugins);
-                    InsertConfigNode(pCfgPlugins, s_pszVDPlugin, &pCfgPlugin);
-                    InsertConfigString(pCfgPlugin, "Path", strPlugin.c_str());
+                    hrc = mptrExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+                    // Don't fail, this is optional!
+                    if (SUCCEEDED(hrc))
+                    {
+                        InsertConfigNode(pCfg, "Plugins", &pCfgPlugins);
+                        InsertConfigNode(pCfgPlugins, s_pszVDPlugin, &pCfgPlugin);
+                        InsertConfigString(pCfgPlugin, "Path", strPlugin.c_str());
+                    }
                 }
 # endif
 
