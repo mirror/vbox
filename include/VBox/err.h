@@ -1941,15 +1941,15 @@
 /** Invalid VMCS pointer passed to VMLAUNCH/VMRESUME. */
 #define VERR_VMX_INVALID_VMCS_PTR_TO_START_VM       (-4022)
 /** Internal VMX processing error no 1. */
-#define VERR_HMVMX_IPE_1                            (-4023)
+#define VERR_VMX_IPE_1                              (-4023)
 /** Internal VMX processing error no 2. */
-#define VERR_HMVMX_IPE_2                            (-4024)
+#define VERR_VMX_IPE_2                              (-4024)
 /** Internal VMX processing error no 3. */
-#define VERR_HMVMX_IPE_3                            (-4025)
+#define VERR_VMX_IPE_3                              (-4025)
 /** Internal VMX processing error no 4. */
-#define VERR_HMVMX_IPE_4                            (-4026)
+#define VERR_VMX_IPE_4                              (-4026)
 /** Internal VMX processing error no 5. */
-#define VERR_HMVMX_IPE_5                            (-4027)
+#define VERR_VMX_IPE_5                              (-4027)
 /** VT-x features for all modes (SMX and non-SMX) disabled by the BIOS. */
 #define VERR_VMX_MSR_ALL_VMXON_DISABLED             (-4028)
 /** VT-x features disabled by the BIOS. */
