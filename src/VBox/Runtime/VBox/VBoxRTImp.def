@@ -709,6 +709,9 @@ EXPORTS
     RTMemExecAllocTag
     RTMemExecFree
     RTMemFree
+    RTMemLockedAllocTag
+    RTMemLockedAllocZTag
+    RTMemLockedFree
     RTMemPageAllocTag
     RTMemPageAllocZTag
     RTMemPageFree
