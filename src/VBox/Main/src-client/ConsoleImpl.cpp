@@ -1982,6 +1982,7 @@ HRESULT Console::getUSBDevices(std::vector<ComPtr<IUSBDevice> > &aUSBDevices)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     size_t i = 0;
+    aUSBDevices.resize(mUSBDevices.size());
     for (USBDeviceList::const_iterator it = mUSBDevices.begin(); it != mUSBDevices.end(); ++i, ++it)
         (*it).queryInterfaceTo(aUSBDevices[i].asOutParam());
 
@@ -1994,6 +1995,7 @@ HRESULT Console::getRemoteUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aRemo
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     size_t i = 0;
+    aRemoteUSBDevices.resize(mRemoteUSBDevices.size());
     for (RemoteUSBDeviceList::const_iterator it = mRemoteUSBDevices.begin(); it != mRemoteUSBDevices.end(); ++i, ++it)
         (*it).queryInterfaceTo(aRemoteUSBDevices[i].asOutParam());
 
@@ -2026,6 +2028,7 @@ HRESULT Console::getSharedFolders(std::vector<ComPtr<ISharedFolder> > &aSharedFo
     if (FAILED(rc)) return rc;
 
     size_t i = 0;
+    aSharedFolders.resize(m_mapSharedFolders.size());
     for (SharedFolderMap::const_iterator it = m_mapSharedFolders.begin(); it != m_mapSharedFolders.end(); ++i, ++it)
         (it)->second.queryInterfaceTo(aSharedFolders[i].asOutParam());
 
