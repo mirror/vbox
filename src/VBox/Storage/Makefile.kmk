@@ -36,20 +36,20 @@ if !defined(VBOX_ONLY_EXTPACKS)
  StorageLib_TEMPLATE = VBOXR3
  StorageLib_DEFS     = IN_VBOXDDU
  StorageLib_SOURCES  = \
- 	VD.cpp \
- 	VDVfs.cpp \
- 	VDIfVfs.cpp \
- 	VDI.cpp \
- 	VMDK.cpp \
- 	VHD.cpp \
- 	DMG.cpp \
- 	Parallels.cpp \
- 	ISCSI.cpp \
- 	RAW.cpp \
- 	QED.cpp \
- 	QCOW.cpp \
- 	VHDX.cpp \
- 	VCICache.cpp
+	VD.cpp \
+	VDVfs.cpp \
+	VDIfVfs.cpp \
+	VDI.cpp \
+	VMDK.cpp \
+	VHD.cpp \
+	DMG.cpp \
+	Parallels.cpp \
+	ISCSI.cpp \
+	RAW.cpp \
+	QED.cpp \
+	QCOW.cpp \
+	VHDX.cpp \
+	VCICache.cpp
 endif
 
 if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
