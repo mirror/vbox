@@ -20,35 +20,37 @@ include $(KBUILD_PATH)/subheader.kmk
 
 VBOX_PATH_STORAGE_SRC := $(PATH_SUB_CURRENT)
 
-include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-include $(PATH_SUB_CURRENT)/Debug/Makefile.kmk
+if !defined(VBOX_ONLY_EXTPACKS)
+ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Debug/Makefile.kmk
 
-ifndef VBOX_OSE
- include $(PATH_SUB_CURRENT)/VDFormats/Makefile.kmk
+ ifndef VBOX_OSE
+  include $(PATH_SUB_CURRENT)/VDFormats/Makefile.kmk
+ endif
+
+ #
+ # StorageLib - The storage Library.
+ #
+ LIBRARIES += StorageLib #StorageLibNoDB
+
+ StorageLib_TEMPLATE = VBOXR3
+ StorageLib_DEFS     = IN_VBOXDDU
+ StorageLib_SOURCES  = \
+ 	VD.cpp \
+ 	VDVfs.cpp \
+ 	VDIfVfs.cpp \
+ 	VDI.cpp \
+ 	VMDK.cpp \
+ 	VHD.cpp \
+ 	DMG.cpp \
+ 	Parallels.cpp \
+ 	ISCSI.cpp \
+ 	RAW.cpp \
+ 	QED.cpp \
+ 	QCOW.cpp \
+ 	VHDX.cpp \
+ 	VCICache.cpp
 endif
-
-#
-# StorageLib - The storage Library.
-#
-LIBRARIES += StorageLib #StorageLibNoDB
-
-StorageLib_TEMPLATE = VBOXR3
-StorageLib_DEFS     = IN_VBOXDDU
-StorageLib_SOURCES  = \
-	VD.cpp \
-	VDVfs.cpp \
-	VDIfVfs.cpp \
-	VDI.cpp \
-	VMDK.cpp \
-	VHD.cpp \
-	DMG.cpp \
-	Parallels.cpp \
-	ISCSI.cpp \
-	RAW.cpp \
-	QED.cpp \
-	QCOW.cpp \
-	VHDX.cpp \
-	VCICache.cpp
 
 if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
  if defined(VBOX_WITH_PLUGIN_CRYPT)
