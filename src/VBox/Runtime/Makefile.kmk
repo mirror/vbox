@@ -2316,6 +2316,8 @@ RuntimeGuestR0_EXTENDS    = RuntimeR0Drv
 RuntimeGuestR0_SOURCES   := $(filter-out generic/RTLogWriteUser-generic.cpp, $(RuntimeR0Drv_SOURCES))
 RuntimeGuestR0_SOURCES   += \
 	VBox/logbackdoor.cpp
+RuntimeGuestR0_SOURCES.win := \
+	$(filter-out common/hash/md% common/sha%, $(RuntimeR0Drv_SOURCES.win))
 
 
 #
