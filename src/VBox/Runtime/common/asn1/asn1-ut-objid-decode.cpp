@@ -266,8 +266,8 @@ RTDECL(int) RTAsn1ObjId_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRTAS
             /*
              * Validate and count things first.
              */
-            uint8_t cComponents;
-            uint8_t cchObjId;
+            uint8_t cComponents = 0; /* gcc maybe-crap */
+            uint8_t cchObjId = 0;    /* ditto */
             rc = rtAsn1ObjId_PreParse(pCursor->pbCur, pThis->Asn1Core.cb, pCursor, pszErrorTag, &cComponents, &cchObjId);
             if (RT_SUCCESS(rc))
             {
