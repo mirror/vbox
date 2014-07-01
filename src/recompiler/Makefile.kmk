@@ -142,7 +142,7 @@ VBoxRemPrimary_CLEAN           = \
 endif
 
 VBoxRemPrimary_LDFLAGS.solaris = -mimpure-text
-ifdef VBOX_WITH_HARDENING
+if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  VBoxRemPrimary_POST_CMDS      = \
  	$(VBOX_VCC_EDITBIN) /LargeAddressAware /DynamicBase /NxCompat /Release /IntegrityCheck \
  		/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) "$(out)" \
