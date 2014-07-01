@@ -468,7 +468,7 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
      */
 #ifdef VBOX
     unsigned cSets = 0;
-    struct { RTCRSTORE hStore; PCSUPTAENTRY paTAs; unsigned cTAs; } aSets[6];
+    struct STORESET { RTCRSTORE hStore; PCSUPTAENTRY paTAs; unsigned cTAs; } aSets[6];
 #endif
 
     switch (State.enmSignType)
