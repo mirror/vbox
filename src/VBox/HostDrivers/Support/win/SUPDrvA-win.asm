@@ -45,7 +45,9 @@ ENDPROC SUPR0Printf
 %endif
 
 
-%ifdef RT_ARCH_X86
+%ifdef VBOX_WITH_HARDENING
+
+ %ifdef RT_ARCH_X86
 ;
 ; Faking up ZwQueryVirtualMemory on XP and W2K3 where it's not exported.
 ; Using ZwQueryVolumeInformationFile as a helper.
@@ -53,11 +55,11 @@ ENDPROC SUPR0Printf
 extern  IMPNAME(ZwQueryVolumeInformationFile@20)
 
 BEGINPROC supdrvNtQueryVirtualMemory_Xxx
- %macro NtQueryVirtualMemorySyscall 1
- GLOBALNAME supdrvNtQueryVirtualMemory_ %+ %1
+  %macro NtQueryVirtualMemorySyscall 1
+  GLOBALNAME supdrvNtQueryVirtualMemory_ %+ %1
         mov     eax, %1
         jmp     supdrvNtQueryVirtualMemory_Jump
- %endm
+  %endm
     NtQueryVirtualMemorySyscall 0xAF
     NtQueryVirtualMemorySyscall 0xB0
     NtQueryVirtualMemorySyscall 0xB1
@@ -81,9 +83,9 @@ supdrvNtQueryVirtualMemory_Jump:
         jmp     edx
 ENDPROC   supdrvNtQueryVirtualMemory_Xxx
 
-%endif
+ %endif
 
-%ifdef RT_ARCH_AMD64
+ %ifdef RT_ARCH_AMD64
 ;
 ; Faking up ZwQueryVirtualMemory on XP64 and W2K3-64 where it's not exported.
 ; The C code locates and verifies the essentials in ZwRequestWaitReplyPort.
@@ -91,11 +93,11 @@ ENDPROC   supdrvNtQueryVirtualMemory_Xxx
 extern NAME(g_pfnKiServiceLinkage)
 extern NAME(g_pfnKiServiceInternal)
 BEGINPROC supdrvNtQueryVirtualMemory_Xxx
- %macro NtQueryVirtualMemorySyscall 1
- GLOBALNAME supdrvNtQueryVirtualMemory_ %+ %1
+  %macro NtQueryVirtualMemorySyscall 1
+  GLOBALNAME supdrvNtQueryVirtualMemory_ %+ %1
         mov     eax, %1
         jmp     supdrvNtQueryVirtualMemory_Jump
- %endm
+  %endm
 
     NtQueryVirtualMemorySyscall 0x1F
     NtQueryVirtualMemorySyscall 0x20
@@ -115,5 +117,7 @@ supdrvNtQueryVirtualMemory_Jump:
         push    r11                     ; r11 = KiServiceLinkage (ret w/ unwind info)
         jmp     qword [NAME(g_pfnKiServiceInternal) wrt rip]
 ENDPROC   supdrvNtQueryVirtualMemory_Xxx
-%endif
+ %endif
+
+%endif ; VBOX_WITH_HARDENING
 
