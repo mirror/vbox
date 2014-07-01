@@ -198,7 +198,7 @@ SUPR3HardenedStatic_SOURCES.win = \
        win/SUPHardenedVerifyImage-win.cpp \
 	$(VBOX_SUP_WIN_CERTS_FILE)
 
-if1of ($(KBUILD_TARGET),win) ## @todo some of this move up.
+if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of this move up.
  SUPR3HardenedStatic_SDKS += VBoxOpenSslHardened
  SUPR3HardenedStatic_DEFS += IN_RT IN_RT_R3 IN_RT_STATIC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES LOG_DISABLED IPRT_NO_ERROR_DATA
  SUPR3HardenedStatic_DEFS.win += LDR_ONLY_PE __STRALIGN_H_
@@ -350,7 +350,7 @@ endif
 #
 # VBoxSupLib - Windows DLL for catching thread creation and termination.
 #
-VBoxSupLib_TEMPLATE = $(if "$(KBUILD_TARGET)" == "win",VBOXR3HARDENEDLIB,VBOXR3)
+VBoxSupLib_TEMPLATE = $(if-expr "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING),VBOXR3HARDENEDLIB,VBOXR3)
 VBoxSupLib_LDFLAGS.win.amd64 = -Entry:DllMainEntrypoint
 VBoxSupLib_LDFLAGS.win.x86   = -Entry:DllMainEntrypoint
 VBoxSupLib_DEFS = \
