@@ -239,7 +239,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
     for (;;)
     {
         /* The first 6-bit group. */
-        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? *pszString : 0]) == BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? (uint8_t)*pszString : 0]) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -251,7 +251,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
         cchStringMax--;
 
         /* The second 6-bit group. */
-        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? *pszString : 0]) == BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? (uint8_t)*pszString : 0]) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -265,7 +265,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
 
         /* The third 6-bit group. */
         u8 = BASE64_INVALID;
-        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? *pszString : 0]) == BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? (uint8_t)*pszString : 0]) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -279,7 +279,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
 
         /* The fourth 6-bit group. */
         u8 = BASE64_INVALID;
-        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? *pszString : 0]) == BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? (uint8_t)*pszString : 0]) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -310,7 +310,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
         cbPad = 1;
         pszString++;
         cchStringMax--;
-        while (cchStringMax > 0 && (ch = *pszString))
+        while (cchStringMax > 0 && (ch = (uint8_t)*pszString))
         {
             u8 = g_au8CharToVal[ch];
             if (u8 != BASE64_SPACE)
