@@ -65,9 +65,6 @@ void UIGDetailsGroup::buildGroup(const QList<UIVMItem*> &machineItems)
 
 void UIGDetailsGroup::rebuildGroup()
 {
-    /* Load settings: */
-    loadSettings();
-
     /* Cleanup build-step: */
     delete m_pBuildStep;
     m_pBuildStep = 0;
@@ -110,7 +107,7 @@ void UIGDetailsGroup::sltBuildStep(QString strStepId, int iStepNumber)
         m_pBuildStep = new UIBuildStep(this, pSet, strStepId, iStepNumber + 1);
 
         /* Build set: */
-        pSet->buildSet(m_machineItems[iStepNumber], m_machineItems.size() == 1, m_settings);
+        pSet->buildSet(m_machineItems[iStepNumber], m_machineItems.size() == 1, model()->settings());
     }
     else
     {
@@ -190,28 +187,6 @@ void UIGDetailsGroup::prepareConnections()
             model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
     connect(this, SIGNAL(sigMinimumHeightHintChanged(int)),
             model(), SIGNAL(sigRootItemMinimumHeightHintChanged(int)));
-}
-
-void UIGDetailsGroup::loadSettings()
-{
-    /* Load settings: */
-    m_settings = gEDataManager->selectorWindowDetailsElements();
-    /* If settings are empty: */
-    if (m_settings.isEmpty())
-    {
-        /* Propose the defaults: */
-        m_settings[DetailsElementType_General] = true;
-        m_settings[DetailsElementType_Preview] = true;
-        m_settings[DetailsElementType_System] = true;
-        m_settings[DetailsElementType_Display] = true;
-        m_settings[DetailsElementType_Storage] = true;
-        m_settings[DetailsElementType_Audio] = true;
-        m_settings[DetailsElementType_Network] = true;
-        m_settings[DetailsElementType_USB] = true;
-        m_settings[DetailsElementType_SF] = true;
-        m_settings[DetailsElementType_Description] = true;
-        gEDataManager->setSelectorWindowDetailsElements(m_settings);
-    }
 }
 
 void UIGDetailsGroup::updateGeometry()
