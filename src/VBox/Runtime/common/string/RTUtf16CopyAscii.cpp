@@ -45,7 +45,7 @@ RTDECL(int) RTUtf16CopyAscii(PRTUTF16 pwszDst, size_t cwcDst, const char *pszSrc
     else if (cwcDst != 0)
     {
         rc = VERR_BUFFER_OVERFLOW;
-        cchSrc = cwcDst - 1;
+        cchCopy = cwcDst - 1;
     }
     else
         return VERR_BUFFER_OVERFLOW;
