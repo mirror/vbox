@@ -58,7 +58,7 @@
 #       define _interlockedbittestandset64    _interlockedbittestandset64_StupidDDKVsCompilerCrap
 #       define _interlockedbittestandreset64  _interlockedbittestandreset64_StupidDDKVsCompilerCrap
 #       pragma warning(disable : 4163)
-#       include <ntddk.h>
+#       include <iprt/nt/nt.h>
 #       pragma warning(default : 4163)
 #       undef  _InterlockedExchange
 #       undef  _InterlockedExchangeAdd
@@ -69,7 +69,7 @@
 #       undef  _interlockedbittestandset64
 #       undef  _interlockedbittestandreset64
 #   else
-#       include <ntddk.h>
+#       include <iprt/nt/nt.h>
 #   endif
 #   include <memory.h>
 #   define memcmp(a,b,c) mymemcmp(a,b,c)
@@ -176,6 +176,13 @@
  * OS debug print macro.
  */
 #define OSDBGPRINT(a) SUPR0Printf a
+
+/** Debug printf macro shared with the ring-3 part. */
+#ifdef DEBUG_bird
+# define SUP_DPRINTF(a) SUPR0Printf a
+#else
+# define SUP_DPRINTF(a) do { } while (0)
+#endif
 
 
 /** @name Context values for the per-session handle tables.
@@ -434,8 +441,24 @@ typedef struct SUPDRVSESSION
     uint32_t                        u32Cookie;
     /** Set if is an unrestricted session, clear if restricted. */
     bool                            fUnrestricted;
-    /* Reference counter. */
+
+    /** Set if we're in the hash table, clear if not.  Protected by the hash
+     * table spinlock. */
+    bool                            fInHashTable;
+    /** Reference counter. */
     uint32_t volatile               cRefs;
+    /** Pointer to the next session with the same hash (common hash table).
+     *  Protected by the hash table spinlock. */
+    PSUPDRVSESSION                  pCommonNextHash;
+    /** Pointer to the OS specific session pointer, if available and in use.
+     * This is atomically set and cleared as the session is inserted and removed
+     * from the hash table (protected by the session hash table spinlock). */
+    PSUPDRVSESSION                 *ppOsSessionPtr;
+    /** The process (id) of the session. */
+    RTPROCESS                       Process;
+    /** Which process this session is associated with.
+     * This is NIL_RTR0PROCESS for kernel sessions and valid for user ones. */
+    RTR0PROCESS                     R0Process;
 
     /** The VM associated with the session. */
     PVM                             pVM;
@@ -445,7 +468,9 @@ typedef struct SUPDRVSESSION
     /** Load usage records. (protected by SUPDRVDEVEXT::mtxLdr) */
     PSUPDRVLDRUSAGE volatile        pLdrUsage;
 
-    /** Spinlock protecting the bundles and the GIP members. */
+    /** Spinlock protecting the bundles, the GIP members and the
+     * fProcessCleanupDone flag.  It continues to be valid until the last
+     * reference to the session is released. */
     RTSPINLOCK                      Spinlock;
     /** The ring-3 mapping of the GIP (readonly). */
     RTR0MEMOBJ                      GipMapObjR3;
@@ -460,11 +485,6 @@ typedef struct SUPDRVSESSION
     RTUID                           Uid;
     /** The group id of the session. (Set by the OS part.) */
     RTGID                           Gid;
-    /** The process (id) of the session. */
-    RTPROCESS                       Process;
-    /** Which process this session is associated with.
-     * This is NIL_RTR0PROCESS for kernel sessions and valid for user ones. */
-    RTR0PROCESS                     R0Process;
     /** Per session tracer specfic data. */
     uintptr_t                       uTracerData;
     /** The thread currently actively talking to the tracer. (One at the time!) */
@@ -496,6 +516,10 @@ typedef struct SUPDRVSESSION
 # if defined(RT_OS_DARWIN) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
     /** Pointer to the next session with the same hash. */
     PSUPDRVSESSION                  pNextHash;
+# endif
+# if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_HARDENING)
+    /** Pointer to the process protection structure for this session. */
+    struct SUPDRVNTPROTECT         *pNtProtect;
 # endif
 #endif /* !SUPDRV_AGNOSTIC */
 } SUPDRVSESSION;
@@ -612,8 +636,21 @@ typedef struct SUPDRVDEVEXT
     /** Hash table for user tracer modules (SUPDRVVTGCOPY). */
     RTLISTANCHOR                    aTrackerUmodHash[128];
 
+    /** @name Session Handle Table.
+     * @{ */
+    /** Spinlock protecting apSessionHashTab, cSessions,
+     * SUPDRVSESSION::ppOsSessionPtr, SUPDRVSESSION::pCommonNextHash, and possibly
+     * others depending on the OS. */
+    RTSPINLOCK                      hSessionHashTabSpinlock;
+    /** Session hash table hash table.  The size of this table must make sense in
+     * comparison to GVMM_MAX_HANDLES. */
+    PSUPDRVSESSION                  apSessionHashTab[HC_ARCH_BITS == 64 ? 8191 : 127];
+    /** The number of open sessions. */
+    int32_t                         cSessions;
+    /** @} */
+
     /*
-     * Note! The non-agnostic bits must be a the very end of the structure!
+     * Note! The non-agnostic bits must be at the very end of the structure!
      */
 #ifndef SUPDRV_AGNOSTIC
 # ifdef RT_OS_WINDOWS
@@ -625,12 +662,43 @@ typedef struct SUPDRVDEVEXT
 #endif
 } SUPDRVDEVEXT;
 
+/** Calculates the index into g_apSessionHashTab.*/
+#define SUPDRV_SESSION_HASH(a_pid)     ( (a_pid) % RT_ELEMENTS(((SUPDRVDEVEXT *)NULL)->apSessionHashTab) )
+
 
 RT_C_DECLS_BEGIN
 
 /*******************************************************************************
 *   OS Specific Functions                                                      *
 *******************************************************************************/
+/**
+ * Called to clean up the session structure before it's freed.
+ *
+ * @param   pDevExt             The device globals.
+ * @param   pSession            The session that's being cleaned up.
+ */
+void VBOXCALL   supdrvOSCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
+
+/**
+ * Called to let the OS specfic code perform additional insertion work while
+ * still under the protection of the hash table spinlock.
+ *
+ * @param   pDevExt             The device globals.
+ * @param   pSession            The session that was inserted.
+ * @param   pvUser              User context specified to the insert call.
+ */
+void VBOXCALL   supdrvOSSessionHashTabInserted(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, void *pvUser);
+
+/**
+ * Called to let the OS specfic code perform additional removal work while still
+ * under the protection of the hash table spinlock.
+ *
+ * @param   pDevExt             The device globals.
+ * @param   pSession            The session that was removed.
+ * @param   pvUser              User context specified to the remove call.
+ */
+void VBOXCALL   supdrvOSSessionHashTabRemoved(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, void *pvUser);
+
 void VBOXCALL   supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession);
 bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, const char *pszObjName, int *prc);
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
@@ -762,6 +830,10 @@ int  VBOXCALL   supdrvIDC(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSIO
 int  VBOXCALL   supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession);
 void VBOXCALL   supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, bool fUnrestricted,  PSUPDRVSESSION *ppSession);
+int  VBOXCALL   supdrvSessionHashTabInsert(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVSESSION *ppOsSessionPtr, void *pvUser);
+int  VBOXCALL   supdrvSessionHashTabRemove(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, void *pvUser);
+PSUPDRVSESSION VBOXCALL supdrvSessionHashTabLookup(PSUPDRVDEVEXT pDevExt, RTPROCESS Process, RTR0PROCESS R0Process,
+                                                   PSUPDRVSESSION *ppOsSessionPtr);
 uint32_t VBOXCALL supdrvSessionRetain(PSUPDRVSESSION pSession);
 uint32_t VBOXCALL supdrvSessionRelease(PSUPDRVSESSION pSession);
 

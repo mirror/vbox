@@ -35,6 +35,7 @@ ifdef VBOX_WITH_HARDENING
  VBoxNetLwipNATHardened_DEFS += SERVICE_NAME=\"VBoxNetNAT\"
  VBoxNetLwipNATHardened_TEMPLATE=VBOXR3HARDENEDEXE
  VBoxNetLwipNATHardened_NAME = VBoxNetNAT
+ VBoxNetLwipNATHardened_LDFLAGS.win = /SUBSYSTEM:windows
 endif
 
 VBoxNetLwipNAT_TEMPLATE =

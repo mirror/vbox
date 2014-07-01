@@ -30,6 +30,7 @@
 #define LOG_GROUP LOG_GROUP_SUP
 #ifdef IN_SUP_HARDENED_R3
 # undef DEBUG /* Warning: disables RT_STRICT */
+# undef LOG_DISABLED
 # define LOG_DISABLED
   /** @todo RTLOGREL_DISABLED */
 # include <iprt/log.h>
@@ -38,11 +39,7 @@
 #endif
 
 #define USE_NT_DEVICE_IO_CONTROL_FILE
-#ifdef USE_NT_DEVICE_IO_CONTROL_FILE
-# include <iprt/nt/nt-and-windows.h>
-#else
-# include <Windows.h>
-#endif
+#include <iprt/nt/nt-and-windows.h>
 
 #include <VBox/sup.h>
 #include <VBox/types.h>
@@ -54,6 +51,9 @@
 #include <iprt/string.h>
 #include "../SUPLibInternal.h"
 #include "../SUPDrvIOC.h"
+#ifdef VBOX_WITH_HARDENING
+# include "win/SUPHardenedVerify-win.h"
+#endif
 
 
 /*******************************************************************************
@@ -74,11 +74,13 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+#ifndef IN_SUP_HARDENED_R3
 static int suplibOsCreateService(void);
 //unused: static int suplibOsUpdateService(void);
 static int suplibOsDeleteService(void);
 static int suplibOsStartService(void);
 static int suplibOsStopService(void);
+#endif
 #ifdef USE_NT_DEVICE_IO_CONTROL_FILE
 static int suplibConvertNtStatus(NTSTATUS rcNt);
 #else
@@ -86,64 +88,104 @@ static int suplibConvertWin32Err(int);
 #endif
 
 
-
-
 int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
 {
     /*
-     * Nothing to do if pre-inited.
+     * Almost nothing to do if pre-inited.
      */
     if (fPreInited)
+    {
+#if defined(VBOX_WITH_HARDENING) && !defined(IN_SUP_HARDENED_R3)
+# ifdef IN_SUP_R3_STATIC
+        return VERR_NOT_SUPPORTED;
+# else
+        supR3HardenedWinInitVersion();
+        return supHardenedWinInitImageVerifier(NULL);
+# endif
+#else
         return VINF_SUCCESS;
+#endif
+    }
 
     /*
      * Try open the device.
      */
-    HANDLE hDevice = CreateFile(fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR,
-                                GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                NULL,
-                                OPEN_EXISTING,
-                                FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-                                NULL);
-    if (hDevice == INVALID_HANDLE_VALUE)
-    {
 #ifndef IN_SUP_HARDENED_R3
-        /*
-         * Try start the service and retry opening it.
-         */
-        suplibOsStartService();
+    uint32_t cTry = 0;
+#endif
+    HANDLE hDevice;
+    for (;;)
+    {
+        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
 
-        hDevice = CreateFile(fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR,
-                             GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                             NULL,
-                             OPEN_EXISTING,
-                             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-                             NULL);
-        if (hDevice == INVALID_HANDLE_VALUE)
-#endif /* !IN_SUP_HARDENED_R3 */
+        static const WCHAR  s_wszName[] = L"\\Device\\VBoxDrvU";
+        UNICODE_STRING      NtName;
+        NtName.Buffer        = (PWSTR)s_wszName;
+        NtName.Length        = sizeof(s_wszName) - sizeof(WCHAR) * (fUnrestricted ? 2 : 1);
+        NtName.MaximumLength = NtName.Length;
+
+        OBJECT_ATTRIBUTES   ObjAttr;
+        InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+        hDevice = RTNT_INVALID_HANDLE_VALUE;
+
+        NTSTATUS rcNt = NtCreateFile(&hDevice,
+                                     GENERIC_READ | GENERIC_WRITE,
+                                     &ObjAttr,
+                                     &Ios,
+                                     NULL /* Allocation Size*/,
+                                     FILE_ATTRIBUTE_NORMAL,
+                                     FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                     FILE_OPEN,
+                                     FILE_NON_DIRECTORY_FILE,
+                                     NULL /*EaBuffer*/,
+                                     0 /*EaLength*/);
+        if (NT_SUCCESS(rcNt))
+            rcNt = Ios.Status;
+        if (!NT_SUCCESS(rcNt))
         {
-            int rc = GetLastError();
-            switch (rc)
+#ifndef IN_SUP_HARDENED_R3
+            /*
+             * Failed to open, try starting the service and reopen the device
+             * exactly once.
+             */
+            if (cTry == 0 && !NT_SUCCESS(rcNt))
+            {
+                cTry++;
+                suplibOsStartService();
+                continue;
+            }
+#endif
+            switch (rcNt)
             {
                 /** @todo someone must test what is actually returned. */
-                case ERROR_DEV_NOT_EXIST:
-                case ERROR_DEVICE_NOT_CONNECTED:
-                case ERROR_BAD_DEVICE:
-                case ERROR_DEVICE_REMOVED:
-                case ERROR_DEVICE_NOT_AVAILABLE:
+                case STATUS_DEVICE_DOES_NOT_EXIST:
+                case STATUS_DEVICE_NOT_CONNECTED:
+                //case ERROR_BAD_DEVICE:
+                case STATUS_DEVICE_REMOVED:
+                //case ERROR_DEVICE_NOT_AVAILABLE:
                     return VERR_VM_DRIVER_LOAD_ERROR;
-                case ERROR_PATH_NOT_FOUND:
-                case ERROR_FILE_NOT_FOUND:
+                case STATUS_OBJECT_PATH_NOT_FOUND:
+                case STATUS_NO_SUCH_DEVICE:
+                case STATUS_NO_SUCH_FILE:
+                case STATUS_OBJECT_NAME_NOT_FOUND:
                     return VERR_VM_DRIVER_NOT_INSTALLED;
-                case ERROR_ACCESS_DENIED:
-                case ERROR_SHARING_VIOLATION:
+                case STATUS_ACCESS_DENIED:
+                case STATUS_SHARING_VIOLATION:
                     return VERR_VM_DRIVER_NOT_ACCESSIBLE;
+                case STATUS_UNSUCCESSFUL:
+                    return VERR_SUPLIB_NT_PROCESS_UNTRUSTED_0;
+                case STATUS_TRUST_FAILURE:
+                    return VERR_SUPLIB_NT_PROCESS_UNTRUSTED_1;
+                case STATUS_TOO_LATE:
+                    return VERR_SUPDRV_HARDENING_EVIL_HANDLE;
                 default:
+
+                    return rcNt;
                     return VERR_VM_DRIVER_OPEN_ERROR;
             }
-
-            return -1 /** @todo define proper error codes for suplibOsInit failure. */;
         }
+        break;
     }
 
     /*
@@ -153,7 +195,6 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
     pThis->fUnrestricted = fUnrestricted;
     return VINF_SUCCESS;
 }
-
 
 #ifndef IN_SUP_HARDENED_R3
 
@@ -439,7 +480,9 @@ static int suplibOsStartService(void)
              */
             fRc = StartService(hService, 0, NULL);
             DWORD LastError = GetLastError(); NOREF(LastError);
+#ifndef DEBUG_bird
             AssertMsg(fRc, ("StartService failed with LastError=%Rwa\n", LastError));
+#endif
         }
 
         /*
@@ -650,6 +693,10 @@ static int suplibConvertNtStatus(NTSTATUS rcNt)
         case STATUS_ACCESS_DENIED:              return VERR_PERMISSION_DENIED;
         case STATUS_REVISION_MISMATCH:          return VERR_VERSION_MISMATCH;
     }
+
+    /* See VBoxDrvNtErr2NtStatus. */
+    if (((uint32_t)rcNt & 0xffff0000) == UINT32_C(0xe9860000)) /** @todo defines for these? */
+        return (int)((uint32_t)rcNt | UINT32_C(0xffff0000));
 
     /* Fall back on IPRT for the rest. */
     return RTErrConvertFromNtStatus(rcNt);

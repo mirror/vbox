@@ -103,7 +103,10 @@
  * @{
  */
 #if defined(IN_SUP_HARDENED_R3) && defined(RT_OS_WINDOWS)
+# define SUP_HARDENED_NEED_CRT_FUNCTIONS
+DECLHIDDEN(int)    suplibHardenedMemComp(void const *pvDst, const void *pvSrc, size_t cbToComp);
 DECLHIDDEN(void *) suplibHardenedMemCopy(void *pvDst, const void *pvSrc, size_t cbToCopy);
+DECLHIDDEN(void *) suplibHardenedMemSet(void *pvDst, int ch, size_t cbToSet);
 DECLHIDDEN(char *) suplibHardenedStrCopy(char *pszDst, const char *pszSrc);
 DECLHIDDEN(size_t) suplibHardenedStrLen(const char *psz);
 DECLHIDDEN(char *) suplibHardenedStrCat(char *pszDst, const char *pszSrc);
@@ -111,7 +114,10 @@ DECLHIDDEN(int)    suplibHardenedStrCmp(const char *psz1, const char *psz2);
 DECLHIDDEN(int)    suplibHardenedStrNCmp(const char *psz1, const char *psz2, size_t cchMax);
 DECLHIDDEN(int)    suplibHardenedStrICmp(const char *psz1, const char *psz2);
 #else
+# undef SUP_HARDENED_NEED_CRT_FUNCTIONS
+# define suplibHardenedMemComp memcmp
 # define suplibHardenedMemCopy memcpy
+# define suplibHardenedMemSet  memset
 # define suplibHardenedStrCopy strcpy
 # define suplibHardenedStrLen  strlen
 # define suplibHardenedStrCat  strcat
@@ -119,8 +125,22 @@ DECLHIDDEN(int)    suplibHardenedStrICmp(const char *psz1, const char *psz2);
 # define suplibHardenedStrNCmp strncmp
 # define suplibHardenedStrICmp stricmp
 #endif
-DECLNORETURN(void) suplibHardenedExit(RTEXITCODE rcExit);
+DECLNORETURN(void)  suplibHardenedExit(RTEXITCODE rcExit);
+DECLHIDDEN(void)    suplibHardenedPrintF(const char *pszFormat, ...);
+DECLHIDDEN(void)    suplibHardenedPrintFV(const char *pszFormat, va_list va);
+
 /** @} */
+
+/** Debug output macro. */
+#ifdef DEBUG_bird
+# ifdef IN_SUP_HARDENED_R3
+#  define SUP_DPRINTF(a)    suplibHardenedPrintF a
+# else
+#  define SUP_DPRINTF(a)    RTLogPrintf a
+# endif
+#else
+# define SUP_DPRINTF(a)     do { } while (0)
+#endif
 
 
 /*******************************************************************************
@@ -134,6 +154,7 @@ typedef enum SUPINSTFILETYPE
     kSupIFT_Invalid = 0,
     kSupIFT_Exe,
     kSupIFT_Dll,
+    kSupIFT_Rc,
     kSupIFT_Sys,
     kSupIFT_Script,
     kSupIFT_Data,
@@ -275,6 +296,17 @@ typedef DECLCALLBACK(int) FNSUPR3PREINIT(PSUPPREINITDATA pPreInitData, uint32_t 
 /** Pointer to supR3PreInit. */
 typedef FNSUPR3PREINIT *PFNSUPR3PREINIT;
 
+/** The current SUPR3HardenedMain state / location. */
+typedef enum SUPR3HARDENEDMAINSTATE
+{
+    SUPR3HARDENEDMAINSTATE_NOT_YET_CALLED = 0,
+    SUPR3HARDENEDMAINSTATE_VERIFY_TRUST_READY,
+    SUPR3HARDENEDMAINSTATE_INIT_RUNTIME,
+    SUPR3HARDENEDMAINSTATE_GET_TRUSTED_MAIN,
+    SUPR3HARDENEDMAINSTATE_CALLED_TRUSTED_MAIN,
+    SUPR3HARDENEDMAINSTATE_END
+} SUPR3HARDENEDMAINSTATE;
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -287,6 +319,7 @@ extern DECLHIDDEN(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPageR0;
 #ifdef ___SUPDrvIOC_h___
 extern DECLHIDDEN(PSUPQUERYFUNCS)       g_pSupFunctions;
 #endif
+extern DECLHIDDEN(SUPR3HARDENEDMAINSTATE) g_enmSupR3HardenedMainState;
 
 
 /*******************************************************************************
@@ -359,14 +392,29 @@ DECLHIDDEN(int)    supR3HardenedErrorV(int rc, bool fFatal, const char *pszForma
  * Display an error which may or may not be fatal.
  */
 DECLHIDDEN(int)     supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...);
+
 DECLHIDDEN(int)     supR3HardenedVerifyAll(bool fFatal, bool fLeaveFilesOpen, const char *pszProgName);
 DECLHIDDEN(int)     supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal);
 DECLHIDDEN(int)     supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFatal);
 DECLHIDDEN(int)     supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, PRTERRINFO pErrInfo);
-DECLHIDDEN(int)     supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)     supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile, bool fMaybe3rdParty,
+                                            PRTERRINFO pErrInfo);
 DECLHIDDEN(void)    supR3HardenedGetPreInitData(PSUPPREINITDATA pPreInitData);
 DECLHIDDEN(int)     supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData);
 
+#ifdef RT_OS_WINDOWS
+DECLHIDDEN(void)    supR3HardenedWinInit(uint32_t fFlags);
+DECLHIDDEN(void)    supR3HardenedWinInitVersion(void);
+DECLHIDDEN(void)    supR3HardenedWinVerifyProcess(void);
+DECLHIDDEN(void)    supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(void);
+DECLHIDDEN(bool)    supR3HardenedWinIsReSpawnNeeded(int cArgs, char **papszArgs);
+DECLHIDDEN(int)     supR3HardenedWinReSpawn(void);
+DECLHIDDEN(void *)  supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem32Only);
+extern RTUTF16      g_wszSupLibHardenedExePath[1024];
+# ifdef RTPATH_MAX
+extern char         g_szSupLibHardenedExePath[RTPATH_MAX];
+# endif
+#endif
 
 SUPR3DECL(int)      supR3PageLock(void *pvStart, size_t cPages, PSUPPAGE paPages);
 SUPR3DECL(int)      supR3PageUnlock(void *pvStart);

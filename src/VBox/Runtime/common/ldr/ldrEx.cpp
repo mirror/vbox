@@ -32,26 +32,43 @@
 #include <iprt/ldr.h>
 #include "internal/iprt.h"
 
-#include <iprt/alloc.h>
 #include <iprt/assert.h>
-#include <iprt/log.h>
-#include <iprt/string.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
+#include <iprt/md5.h>
+#include <iprt/mem.h>
+#include <iprt/sha.h>
+#include <iprt/string.h>
 #include "internal/ldr.h"
 #include "internal/ldrMZ.h"
 
+#ifdef LDR_ONLY_PE
+# undef LDR_WITH_PE
+# undef LDR_WITH_KLDR
+# undef LDR_WITH_ELF
+# undef LDR_WITH_LX
+# undef LDR_WITH_LE
+# undef LDR_WITH_NE
+# undef LDR_WITH_MZ
+# undef LDR_WITH_AOUT
+# define LDR_WITH_PE
+#endif
 
-/**
- * Open part with reader.
- *
- * @returns iprt status code.
- * @param   pReader     The loader reader instance which will provide the raw image bits.
- * @param   fFlags      Reserved, MBZ.
- * @param   enmArch     Architecture specifier.
- * @param   phMod       Where to store the handle.
- */
-int rtldrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phMod)
+
+RTDECL(int) RTLdrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phMod, PRTERRINFO pErrInfo)
 {
+    /*
+     * Resolve RTLDRARCH_HOST.
+     */
+    if (enmArch == RTLDRARCH_HOST)
+#if   defined(RT_ARCH_AMD64)
+        enmArch = RTLDRARCH_AMD64;
+#elif defined(RT_ARCH_X86)
+        enmArch = RTLDRARCH_X86_32;
+#else
+        enmArch = RTLDRARCH_WHATEVER;
+#endif
+
     /*
      * Read and verify the file signature.
      */
@@ -104,37 +121,37 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch
      */
     if (uSign.u32 == IMAGE_NT_SIGNATURE)
 #ifdef LDR_WITH_PE
-        rc = rtldrPEOpen(pReader, fFlags, enmArch, offHdr, phMod);
+        rc = rtldrPEOpen(pReader, fFlags, enmArch, offHdr, phMod, pErrInfo);
 #else
         rc = VERR_PE_EXE_NOT_SUPPORTED;
 #endif
     else if (uSign.u32 == IMAGE_ELF_SIGNATURE)
 #if defined(LDR_WITH_ELF)
-        rc = rtldrELFOpen(pReader, fFlags, enmArch, phMod);
+        rc = rtldrELFOpen(pReader, fFlags, enmArch, phMod, pErrInfo);
 #else
         rc = VERR_ELF_EXE_NOT_SUPPORTED;
 #endif
     else if (uSign.au16[0] == IMAGE_LX_SIGNATURE)
 #ifdef LDR_WITH_LX
-        rc = rtldrLXOpen(pReader, fFlags, enmArch, offHdr, phMod);
+        rc = rtldrLXOpen(pReader, fFlags, enmArch, offHdr, phMod, pErrInfo);
 #else
         rc = VERR_LX_EXE_NOT_SUPPORTED;
 #endif
     else if (uSign.au16[0] == IMAGE_LE_SIGNATURE)
 #ifdef LDR_WITH_LE
-        rc = rtldrLEOpen(pReader, fFlags, enmArch, phMod);
+        rc = rtldrLEOpen(pReader, fFlags, enmArch, phMod, pErrInfo);
 #else
         rc = VERR_LE_EXE_NOT_SUPPORTED;
 #endif
     else if (uSign.au16[0] == IMAGE_NE_SIGNATURE)
 #ifdef LDR_WITH_NE
-        rc = rtldrNEOpen(pReader, fFlags, enmArch, phMod);
+        rc = rtldrNEOpen(pReader, fFlags, enmArch, phMod, pErrInfo);
 #else
         rc = VERR_NE_EXE_NOT_SUPPORTED;
 #endif
     else if (uSign.au16[0] == IMAGE_DOS_SIGNATURE)
 #ifdef LDR_WITH_MZ
-        rc = rtldrMZOpen(pReader, fFlags, enmArch, phMod);
+        rc = rtldrMZOpen(pReader, fFlags, enmArch, phMod, pErrInfo);
 #else
         rc = VERR_MZ_EXE_NOT_SUPPORTED;
 #endif
@@ -142,7 +159,7 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch
              || uSign.u32 == IMAGE_AOUT_Z_SIGNATURE*/ /** @todo find the aout magics in emx or binutils. */
              0)
 #ifdef LDR_WITH_AOUT
-        rc = rtldrAOUTOpen(pReader, fFlags, enmArch, phMod);
+        rc = rtldrAOUTOpen(pReader, fFlags, enmArch, phMod, pErrInfo);
 #else
         rc = VERR_AOUT_EXE_NOT_SUPPORTED;
 #endif
@@ -157,7 +174,11 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch
 #ifdef LDR_WITH_KLDR
     /* Try kLdr if it's a format we don't recognize. */
     if (rc <= VERR_INVALID_EXE_SIGNATURE && rc > VERR_BAD_EXE_FORMAT)
-        rc = rtldrkLdrOpen(pReader, fFlags, enmArch, phMod);
+    {
+        int rc2 = rtldrkLdrOpen(pReader, fFlags, enmArch, phMod, pErrInfo);
+        if (rc2 == VERR_MZ_EXE_NOT_SUPPORTED) /* Quick fix for bad return code. */
+            rc = rc;
+    }
 #endif
 
     LogFlow(("rtldrOpenWithReader: %s: returns %Rrc *phMod=%p\n", pReader->pfnLogName(pReader), rc, *phMod));
@@ -541,8 +562,20 @@ RT_EXPORT_SYMBOL(RTLdrRvaToSegOffset);
 
 RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf)
 {
+    return RTLdrQueryPropEx(hLdrMod, enmProp, pvBuf, cbBuf, NULL);
+}
+RT_EXPORT_SYMBOL(RTLdrQueryProp);
+
+
+RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
     AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), RTLDRENDIAN_INVALID);
     PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+
+    AssertPtrNullReturn(pcbRet, VERR_INVALID_POINTER);
+    size_t cbRet;
+    if (!pcbRet)
+        pcbRet = &cbRet;
 
     /*
      * Do some pre screening of the input
@@ -550,11 +583,25 @@ RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, siz
     switch (enmProp)
     {
         case RTLDRPROP_UUID:
+            *pcbRet = sizeof(RTUUID);
             AssertReturn(cbBuf == sizeof(RTUUID), VERR_INVALID_PARAMETER);
             break;
         case RTLDRPROP_TIMESTAMP_SECONDS:
+            *pcbRet = sizeof(int64_t);
             AssertReturn(cbBuf == sizeof(int32_t) || cbBuf == sizeof(int64_t), VERR_INVALID_PARAMETER);
             break;
+        case RTLDRPROP_IS_SIGNED:
+            *pcbRet = sizeof(bool);
+            AssertReturn(cbBuf == sizeof(bool), VERR_INVALID_PARAMETER);
+            break;
+        case RTLDRPROP_PKCS7_SIGNED_DATA:
+            *pcbRet = 0;
+            break;
+        case RTLDRPROP_SIGNATURE_CHECKS_ENFORCED:
+            *pcbRet = sizeof(bool);
+            AssertReturn(cbBuf == sizeof(bool), VERR_INVALID_PARAMETER);
+            break;
+
         default:
             AssertFailedReturn(VERR_INVALID_FUNCTION);
     }
@@ -565,9 +612,57 @@ RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, siz
      */
     if (!pMod->pOps->pfnQueryProp)
         return VERR_NOT_SUPPORTED;
-    return pMod->pOps->pfnQueryProp(pMod, enmProp, pvBuf, cbBuf);
+    return pMod->pOps->pfnQueryProp(pMod, enmProp, pvBuf, cbBuf, pcbRet);
 }
-RT_EXPORT_SYMBOL(RTLdrQueryProp);
+RT_EXPORT_SYMBOL(RTLdrQueryPropEx);
+
+
+RTDECL(int) RTLdrVerifySignature(RTLDRMOD hLdrMod, PFNRTLDRVALIDATESIGNEDDATA pfnCallback, void *pvUser, PRTERRINFO pErrInfo)
+{
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+    AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
+
+    /*
+     * Call the image specific worker, if there is one.
+     */
+    if (!pMod->pOps->pfnVerifySignature)
+        return VERR_NOT_SUPPORTED;
+    return pMod->pOps->pfnVerifySignature(pMod, pfnCallback, pvUser, pErrInfo);
+}
+RT_EXPORT_SYMBOL(RTLdrVerifySignature);
+
+
+RTDECL(int) RTLdrHashImage(RTLDRMOD hLdrMod, RTDIGESTTYPE enmDigest, char *pszDigest, size_t cbDigest)
+{
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+
+    /*
+     * Make sure there is sufficient space for the wanted digest and that
+     * it's supported.
+     */
+    switch (enmDigest)
+    {
+        case RTDIGESTTYPE_MD5:      AssertReturn(cbDigest >= RTMD5_DIGEST_LEN    + 1, VERR_BUFFER_OVERFLOW); break;
+        case RTDIGESTTYPE_SHA1:     AssertReturn(cbDigest >= RTSHA1_DIGEST_LEN   + 1, VERR_BUFFER_OVERFLOW); break;
+        case RTDIGESTTYPE_SHA256:   AssertReturn(cbDigest >= RTSHA256_DIGEST_LEN + 1, VERR_BUFFER_OVERFLOW); break;
+        case RTDIGESTTYPE_SHA512:   AssertReturn(cbDigest >= RTSHA512_DIGEST_LEN + 1, VERR_BUFFER_OVERFLOW); break;
+        default:
+            if (enmDigest > RTDIGESTTYPE_INVALID && enmDigest < RTDIGESTTYPE_END)
+                return VERR_NOT_SUPPORTED;
+            AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+    AssertPtrReturn(pszDigest, VERR_INVALID_POINTER);
+
+    /*
+     * Call the image specific worker, if there is one.
+     */
+    if (!pMod->pOps->pfnHashImage)
+        return VERR_NOT_SUPPORTED;
+    return pMod->pOps->pfnHashImage(pMod, enmDigest, pszDigest, cbDigest);
+}
+RT_EXPORT_SYMBOL(RTLdrHashImage);
 
 
 /**

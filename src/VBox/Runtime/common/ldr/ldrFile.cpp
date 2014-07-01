@@ -217,6 +217,7 @@ static int rtldrFileCreate(PRTLDRREADER *ppReader, const char *pszFilename)
             rc = RTFileGetSize(pFileReader->hFile, (uint64_t *)&pFileReader->cbFile);
             if (RT_SUCCESS(rc))
             {
+                pFileReader->Core.uMagic     = RTLDRREADER_MAGIC;
                 pFileReader->Core.pfnRead    = rtldrFileRead;
                 pFileReader->Core.pfnTell    = rtldrFileTell;
                 pFileReader->Core.pfnSize    = rtldrFileSize;
@@ -257,25 +258,13 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArc
     AssertMsgReturn(enmArch > RTLDRARCH_INVALID && enmArch < RTLDRARCH_END, ("%d\n", enmArch), VERR_INVALID_PARAMETER);
 
     /*
-     * Resolve RTLDRARCH_HOST.
-     */
-    if (enmArch == RTLDRARCH_HOST)
-#if   defined(RT_ARCH_AMD64)
-        enmArch = RTLDRARCH_AMD64;
-#elif defined(RT_ARCH_X86)
-        enmArch = RTLDRARCH_X86_32;
-#else
-        enmArch = RTLDRARCH_WHATEVER;
-#endif
-
-    /*
      * Create file reader & invoke worker which identifies and calls the image interpreter.
      */
     PRTLDRREADER pReader;
     int rc = rtldrFileCreate(&pReader, pszFilename);
     if (RT_SUCCESS(rc))
     {
-        rc = rtldrOpenWithReader(pReader, fFlags, enmArch, phLdrMod);
+        rc = RTLdrOpenWithReader(pReader, fFlags, enmArch, phLdrMod, NULL);
         if (RT_SUCCESS(rc))
         {
             LogFlow(("RTLdrOpen: return %Rrc *phLdrMod\n", rc, *phLdrMod));
@@ -308,25 +297,13 @@ RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, uint32_t fFlags, RTLDRARCH en
     AssertMsgReturn(!(fFlags & ~RTLDR_O_VALID_MASK), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
 
     /*
-     * Resolve RTLDRARCH_HOST.
-     */
-    if (enmArch == RTLDRARCH_HOST)
-# if   defined(RT_ARCH_AMD64)
-        enmArch = RTLDRARCH_AMD64;
-# elif defined(RT_ARCH_X86)
-        enmArch = RTLDRARCH_X86_32;
-# else
-        enmArch = RTLDRARCH_WHATEVER;
-# endif
-
-    /*
      * Create file reader & invoke worker which identifies and calls the image interpreter.
      */
     PRTLDRREADER pReader;
     int rc = rtldrFileCreate(&pReader, pszFilename);
     if (RT_SUCCESS(rc))
     {
-        rc = rtldrkLdrOpen(pReader, fFlags, enmArch, phLdrMod);
+        rc = rtldrkLdrOpen(pReader, fFlags, enmArch, phLdrMod, NULL);
         if (RT_SUCCESS(rc))
         {
             LogFlow(("RTLdrOpenkLdr: return %Rrc *phLdrMod\n", rc, *phLdrMod));

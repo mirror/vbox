@@ -28,6 +28,17 @@
 
 #include <iprt/types.h>
 
+#if defined(_MSC_VER) && RT_INLINE_ASM_USES_INTRIN
+# include <intrin.h>
+  /* Emit the intrinsics at all optimization levels. */
+# pragma intrinsic(__emul)
+# pragma intrinsic(__emulu)
+# ifdef RT_ARCH_AMD64
+#  pragma intrinsic(_mul128)
+#  pragma intrinsic(_umul128)
+# endif
+#endif
+
 
 /** @defgroup grp_rt_asm_math   Interger Math Optimizations
  * @ingroup grp_rt_asm
@@ -38,7 +49,8 @@
  *
  * @returns u32F1 * u32F2.
  */
-#if RT_INLINE_ASM_EXTERNAL && defined(RT_ARCH_X86)
+
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_X86)
 DECLASM(uint64_t) ASMMult2xU32RetU64(uint32_t u32F1, uint32_t u32F2);
 #else
 DECLINLINE(uint64_t) ASMMult2xU32RetU64(uint32_t u32F1, uint32_t u32F2)
@@ -49,6 +61,8 @@ DECLINLINE(uint64_t) ASMMult2xU32RetU64(uint32_t u32F1, uint32_t u32F2)
     __asm__ __volatile__("mull %%edx"
                          : "=A" (u64)
                          : "a" (u32F2), "d" (u32F1));
+#  elif RT_INLINE_ASM_USES_INTRIN
+    u64 = __emulu(u32F1, u32F2);
 #  else
     __asm
     {
@@ -72,7 +86,7 @@ DECLINLINE(uint64_t) ASMMult2xU32RetU64(uint32_t u32F1, uint32_t u32F2)
  *
  * @returns u32F1 * u32F2.
  */
-#if RT_INLINE_ASM_EXTERNAL && defined(RT_ARCH_X86)
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_X86)
 DECLASM(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2);
 #else
 DECLINLINE(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2)
@@ -83,6 +97,8 @@ DECLINLINE(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2)
     __asm__ __volatile__("imull %%edx"
                          : "=A" (i64)
                          : "a" (i32F2), "d" (i32F1));
+#  elif RT_INLINE_ASM_USES_INTRIN
+    i64 = __emul(i32F1, i32F2);
 #  else
     __asm
     {
@@ -99,6 +115,67 @@ DECLINLINE(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2)
 # endif
 }
 #endif
+
+
+#if ARCH_BITS == 64
+DECLINLINE(uint64_t) ASMMult2xU64Ret2xU64(uint64_t u64F1, uint64_t u64F2, uint64_t *pu64ProdHi)
+{
+# if defined(RT_ARCH_AMD64) && (RT_INLINE_ASM_GNU_STYLE || RT_INLINE_ASM_USES_INTRIN)
+#  if RT_INLINE_ASM_GNU_STYLE
+    uint64_t u64Low, u64High;
+    __asm__ __volatile__("mull %%rdx"
+                         : "=a" (u64Low), "=d" (u64High)
+                         : "0" (u64F1), "1" (u64F2));
+    *pu64ProdHi = u64High;
+    return u64Low;
+#  elif RT_INLINE_ASM_USES_INTRIN
+    return _umul128(u64F1, u64F2, pu64ProdHi);
+#  else
+#   error "hmm"
+#  endif
+# else  /* generic: */
+    /*
+     *   F1 * F2 = Prod
+     *   --   --
+     *   ab * cd =  b*d + a*d*10  +  b*c*10 + a*c*100
+     *
+     * Where a, b, c and d are 'digits', and 10 is max digit + 1.
+     *
+     * Our digits are 32-bit wide, so instead of 10 we multiply by 4G.
+     *  Prod = F1.s.Lo*F2.s.Lo    + F1.s.Hi*F2.s.Lo*4G
+     *       + F1.s.Lo*F2.s.Hi*4G + F1.s.Hi*F2.s.Hi*4G*4G
+     */
+    RTUINT128U Prod;
+    RTUINT64U  Tmp1;
+    uint64_t   u64Tmp;
+    RTUINT64U  F1, F2;
+    F1.u = u64F1;
+    F2.u = u64F2;
+
+    Prod.s.Lo = ASMMult2xU32RetU64(F1.s.Lo, F2.s.Lo);
+
+    Tmp1.u = ASMMult2xU32RetU64(F1.s.Hi, F2.s.Lo);
+    u64Tmp = (uint64_t)Prod.DWords.dw1 + Tmp1.s.Lo;
+    Prod.DWords.dw1 = (uint32_t)u64Tmp;
+    Prod.s.Hi = Tmp1.s.Hi;
+    Prod.s.Hi += u64Tmp >> 32; /* carry */
+
+    Tmp1.u = ASMMult2xU32RetU64(F1.s.Lo, F2.s.Hi);
+    u64Tmp = (uint64_t)Prod.DWords.dw1 + Tmp1.s.Lo;
+    Prod.DWords.dw1 = (uint32_t)u64Tmp;
+    u64Tmp >>= 32;      /* carry */
+    u64Tmp += Prod.DWords.dw2;
+    u64Tmp += Tmp1.s.Hi;
+    Prod.DWords.dw2 = (uint32_t)u64Tmp;
+    Prod.DWords.dw3 += u64Tmp >> 32; /* carry */
+
+    Prod.s.Hi += ASMMult2xU32RetU64(F1.s.Hi, F2.s.Hi);
+    *pu64ProdHi  = Prod.s.Hi;
+    return Prod.s.Lo;
+# endif
+}
+#endif
+
 
 
 /**

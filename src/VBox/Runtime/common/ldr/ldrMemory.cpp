@@ -243,7 +243,7 @@ static int rtldrRdrMem_Create(PRTLDRREADER *ppReader, const char *pszName, size_
         pThis->pfnDtor      = pfnDtor ? pfnDtor : rtldrRdrMemDefaultDtor;
         pThis->pvMapping    = NULL;
         pThis->cMappings    = 0;
-        pThis->Core.pszName    = "rdrmem";
+        pThis->Core.uMagic     = RTLDRREADER_MAGIC;
         pThis->Core.pfnRead    = rtldrRdrMem_Read;
         pThis->Core.pfnTell    = rtldrRdrMem_Tell;
         pThis->Core.pfnSize    = rtldrRdrMem_Size;
@@ -304,7 +304,7 @@ RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH en
     int rc = rtldrRdrMem_Create(&pReader, pszName, cbImage, pfnRead, pfnDtor, pvUser);
     if (RT_SUCCESS(rc))
     {
-        rc = rtldrOpenWithReader(pReader, fFlags, enmArch, phLdrMod);
+        rc = RTLdrOpenWithReader(pReader, fFlags, enmArch, phLdrMod, NULL);
         if (RT_SUCCESS(rc))
         {
             LogFlow(("RTLdrOpen: return %Rrc *phLdrMod\n", rc, *phLdrMod));

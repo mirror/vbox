@@ -1092,6 +1092,19 @@ RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...)
 
 
 /**
+ * Dumper vprintf-like function outputting to a stream.
+ *
+ * @param   pvUser          The stream to print to.  NULL means standard output.
+ * @param   pszFormat       Runtime format string.
+ * @param   va              Arguments specified by pszFormat.
+ */
+RTDECL(void) RTStrmDumpPrintfV(void *pvUser, const char *pszFormat, va_list va)
+{
+    RTStrmPrintfV(pvUser ? (PRTSTREAM)pvUser : g_pStdOut, pszFormat, va);
+}
+
+
+/**
  * Prints a formatted string to the standard output stream (g_pStdOut).
  *
  * @returns Number of bytes printed.

@@ -1245,16 +1245,27 @@
 /** @def RTDATADECL(type)
  * Runtime Library export or import declaration.
  * Data declared using this macro exists in all contexts.
- * @param   type    The return type of the function declaration.
+ * @param   type    The data type.
+ */
+/** @def RT_DECL_DATA_CONST(type)
+ * Definition of a const variable. See DECL_HIDDEN_CONST.
+ * @param   type    The const data type.
  */
 #if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
-#  define RTDATADECL(type)  DECLHIDDEN(type)
+#  define RTDATADECL(type)          DECLHIDDEN(type)
+#  define RT_DECL_DATA_CONST(type)  DECL_HIDDEN_CONST(type)
 # else
-#  define RTDATADECL(type)  DECLEXPORT(type)
+#  define RTDATADECL(type)          DECLEXPORT(type)
+#  if defined(__cplusplus) && defined(__GNUC__)
+#   define RT_DECL_DATA_CONST(type) type
+#  else
+#   define RT_DECL_DATA_CONST(type) DECLEXPORT(type)
+#  endif
 # endif
 #else
-# define RTDATADECL(type)   DECLIMPORT(type)
+# define RTDATADECL(type)           DECLIMPORT(type)
+# define RT_DECL_DATA_CONST(type)   DECLIMPORT(type)
 #endif
 
 /** @def RT_DECL_CLASS

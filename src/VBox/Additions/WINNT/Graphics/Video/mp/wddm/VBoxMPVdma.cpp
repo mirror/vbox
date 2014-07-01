@@ -1262,16 +1262,18 @@ static NTSTATUS vboxVdmaProcessVReg(PVBOXMP_DEVEXT pDevExt,
 
 NTSTATUS vboxVdmaTexPresentSetAlloc(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData)
 {
-    VBOXMP_CRPACKER CrPacker;
-    VBoxMpCrPackerInit(&CrPacker);
     uint32_t u32CrConClientID;
-
     NTSTATUS Status = vboxVdmaCrCtlGetDefaultClientId(pDevExt, &u32CrConClientID);
     if (!NT_SUCCESS(Status))
     {
         WARN(("vboxVdmaCrCtlGetDefaultClientId failed Status 0x%x", Status));
         return Status;
     }
+
+    VBOXMP_CRPACKER *pCrPacker = (VBOXMP_CRPACKER *)RTMemTmpAlloc(sizeof(*pCrPacker));
+    if (!pCrPacker)
+        return STATUS_NO_MEMORY;
+    VBoxMpCrPackerInit(pCrPacker);
 
     RECT Rect;
     Rect.left = 0;
@@ -1280,21 +1282,23 @@ NTSTATUS vboxVdmaTexPresentSetAlloc(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC
     Rect.bottom = pAllocData->SurfDesc.height;
 
     if (pDevExt->fCmdVbvaEnabled)
-        return vboxVdmaTexPresentSubmit(pDevExt, &CrPacker, u32CrConClientID, pAllocData->hostID, pAllocData->SurfDesc.VidPnSourceId, 0, 0, 1, (RTRECT*)&Rect);
-
-    if (pDevExt->fTexPresentEnabled)
+        Status = vboxVdmaTexPresentSubmit(pDevExt, pCrPacker, u32CrConClientID, pAllocData->hostID, pAllocData->SurfDesc.VidPnSourceId, 0, 0, 1, (RTRECT*)&Rect);
+    else if (pDevExt->fTexPresentEnabled)
     {
         VBOXVDMAPIPE_RECTS RectInfo;
         RectInfo.ContextRect = Rect;
         RectInfo.UpdateRects.cRects = 1;
         RectInfo.UpdateRects.aRects[0] = Rect;
 
-        return vboxVdmaProcessVRegTexPresent(pDevExt, &CrPacker, u32CrConClientID,
+        Status = vboxVdmaProcessVRegTexPresent(pDevExt, pCrPacker, u32CrConClientID,
                 pAllocData, pAllocData,
                 &Rect, &RectInfo);
     }
+    else
+        Status = STATUS_NOT_IMPLEMENTED;
 
-    return STATUS_NOT_IMPLEMENTED;
+    RTMemTmpFree(pCrPacker);
+    return Status;
 }
 
 static NTSTATUS vboxVdmaProcessVRegCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext,

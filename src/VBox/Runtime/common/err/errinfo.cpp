@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Error Info.
+ * IPRT - Error Info, Setters.
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,44 +32,10 @@
 #include <iprt/err.h>
 
 #include <iprt/assert.h>
-#include <iprt/mem.h>
 #include <iprt/string.h>
 
 
-
-RTDECL(PRTERRINFO)  RTErrInfoAlloc(size_t cbMsg)
-{
-    PRTERRINFO pErrInfo;
-    RTErrInfoAllocEx(cbMsg, &pErrInfo);
-    return pErrInfo;
-}
-
-
-RTDECL(int)         RTErrInfoAllocEx(size_t cbMsg, PRTERRINFO *ppErrInfo)
-{
-    if (cbMsg == 0)
-        cbMsg = _4K;
-    else
-        cbMsg = RT_ALIGN_Z(cbMsg, 256);
-
-    PRTERRINFO pErrInfo;
-    *ppErrInfo = pErrInfo = (PRTERRINFO)RTMemTmpAlloc(sizeof(*pErrInfo) + cbMsg);
-    if (RT_UNLIKELY(!pErrInfo))
-        return VERR_NO_TMP_MEMORY;
-
-    RTErrInfoInit(pErrInfo, (char *)(pErrInfo + 1), cbMsg);
-    pErrInfo->fFlags = RTERRINFO_FLAGS_T_ALLOC | RTERRINFO_FLAGS_MAGIC;
-    return VINF_SUCCESS;
-}
-
-
-RTDECL(void)        RTErrInfoFree(PRTERRINFO pErrInfo)
-{
-    RTMemTmpFree(pErrInfo);
-}
-
-
-RTDECL(int)         RTErrInfoSet(PRTERRINFO pErrInfo, int rc, const char *pszMsg)
+RTDECL(int) RTErrInfoSet(PRTERRINFO pErrInfo, int rc, const char *pszMsg)
 {
     if (pErrInfo)
     {
@@ -84,7 +50,7 @@ RTDECL(int)         RTErrInfoSet(PRTERRINFO pErrInfo, int rc, const char *pszMsg
 }
 
 
-RTDECL(int)         RTErrInfoSetF(PRTERRINFO pErrInfo, int rc, const char *pszFormat, ...)
+RTDECL(int) RTErrInfoSetF(PRTERRINFO pErrInfo, int rc, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -94,7 +60,7 @@ RTDECL(int)         RTErrInfoSetF(PRTERRINFO pErrInfo, int rc, const char *pszFo
 }
 
 
-RTDECL(int)         RTErrInfoSetV(PRTERRINFO pErrInfo, int rc, const char *pszFormat, va_list va)
+RTDECL(int) RTErrInfoSetV(PRTERRINFO pErrInfo, int rc, const char *pszFormat, va_list va)
 {
     if (pErrInfo)
     {
@@ -104,6 +70,57 @@ RTDECL(int)         RTErrInfoSetV(PRTERRINFO pErrInfo, int rc, const char *pszFo
         RTStrPrintfV(pErrInfo->pszMsg, pErrInfo->cbMsg, pszFormat, va);
         pErrInfo->rc      = rc;
         pErrInfo->fFlags |= RTERRINFO_FLAGS_SET;
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTErrInfoAdd(PRTERRINFO pErrInfo, int rc, const char *pszMsg)
+{
+    if (pErrInfo)
+    {
+        AssertPtr(pErrInfo);
+        if (pErrInfo->fFlags & RTERRINFO_FLAGS_SET)
+            RTStrCat(pErrInfo->pszMsg, pErrInfo->cbMsg, pszMsg);
+        else
+        {
+            while (*pszMsg == ' ')
+                pszMsg++;
+            return RTErrInfoSet(pErrInfo, rc, pszMsg);
+        }
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTErrInfoAddF(PRTERRINFO pErrInfo, int rc, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTErrInfoAddV(pErrInfo, rc, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+RTDECL(int) RTErrInfoAddV(PRTERRINFO pErrInfo, int rc, const char *pszFormat, va_list va)
+{
+    if (pErrInfo)
+    {
+        AssertPtr(pErrInfo);
+        Assert((pErrInfo->fFlags & RTERRINFO_FLAGS_MAGIC_MASK) == RTERRINFO_FLAGS_MAGIC);
+        if (pErrInfo->fFlags & RTERRINFO_FLAGS_SET)
+        {
+            char *pszOut = (char *)memchr(pErrInfo->pszMsg, '\0', pErrInfo->cbMsg - 2);
+            if (pszOut)
+                RTStrPrintfV(pszOut, &pErrInfo->pszMsg[pErrInfo->cbMsg] - pszOut, pszFormat, va);
+        }
+        else
+        {
+            while (*pszFormat == ' ')
+                pszFormat++;
+            return RTErrInfoSetV(pErrInfo, rc, pszFormat, va);
+        }
     }
     return rc;
 }

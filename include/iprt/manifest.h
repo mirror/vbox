@@ -57,28 +57,6 @@ RT_C_DECLS_BEGIN
 #define RTMANIFEST_ATTR_ANY         UINT32_C(0xffffffff)
 /** @} */
 
-/** @name Digest types. */
-typedef enum RTDIGESTTYPE
-{
-    /** Invalid digest value.  */
-    RTDIGESTTYPE_INVALID = 0,
-    /** CRC32 checksum. */
-    RTDIGESTTYPE_CRC32,
-    /** CRC64 checksum. */
-    RTDIGESTTYPE_CRC64,
-    /** MD5 checksum (unsafe!). */
-    RTDIGESTTYPE_MD5,
-    /** SHA1 checksum (unsafe!). */
-    RTDIGESTTYPE_SHA1,
-    /** SHA256 checksum. */
-    RTDIGESTTYPE_SHA256,
-    /** SHA512 checksum. */
-    RTDIGESTTYPE_SHA512,
-    /** Usual 32-bit type blowup. */
-    RTDIGESTTYPE_32BIT_HACK = 0x7fffffff
-} RTDIGESTTYPE;
-/** @} */
-
 
 /**
  * Creates an empty manifest.

@@ -40,23 +40,6 @@
 #include "internal/ldr.h"
 
 
-RTDECL(bool) RTLdrIsLoadable(const char *pszFilename)
-{
-    /*
-     * Try to load the library.
-     */
-    RTLDRMOD hLib;
-    int rc = RTLdrLoad(pszFilename, &hLib);
-    if (RT_SUCCESS(rc))
-    {
-        RTLdrClose(hLib);
-        return true;
-    }
-    return false;
-}
-RT_EXPORT_SYMBOL(RTLdrIsLoadable);
-
-
 RTDECL(int) RTLdrGetSymbol(RTLDRMOD hLdrMod, const char *pszSymbol, void **ppvValue)
 {
     LogFlow(("RTLdrGetSymbol: hLdrMod=%RTldrm pszSymbol=%p:{%s} ppvValue=%p\n",

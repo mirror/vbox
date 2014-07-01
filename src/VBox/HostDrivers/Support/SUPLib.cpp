@@ -1541,7 +1541,7 @@ SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, PRT
     /*
      * Verify that the image file and parent directories are sane.
      */
-    rc = supR3HardenedVerifyFile(szExecPath, RTHCUINTPTR_MAX, pErrInfo);
+    rc = supR3HardenedVerifyFile(szExecPath, RTHCUINTPTR_MAX, false /*fMaybe3rdParty*/, pErrInfo);
     if (RT_FAILURE(rc))
         return rc;
 #endif
@@ -1585,7 +1585,7 @@ SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, PRTERRINFO pEr
      * Only do the actual check in hardened builds.
      */
 #ifdef VBOX_WITH_HARDENING
-    int rc = supR3HardenedVerifyFile(pszFilename, RTHCUINTPTR_MAX, pErrInfo);
+    int rc = supR3HardenedVerifyFile(pszFilename, RTHCUINTPTR_MAX, true /*fMaybe3rdParty*/, pErrInfo);
     if (RT_FAILURE(rc) && !RTErrInfoIsSet(pErrInfo))
         LogRel(("supR3HardenedVerifyFile: Verification of \"%s\" failed, rc=%Rrc\n", pszFilename, rc));
     return rc;
