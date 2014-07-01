@@ -261,6 +261,16 @@ typedef struct VERIFYEXESTATE
     uint64_t    uTimestamp;
 } VERIFYEXESTATE;
 
+#ifdef VBOX
+/** Certificate store load set.
+ * Declared outside HandleVerifyExe because of braindead gcc visibility crap. */
+struct STSTORESET
+{
+    RTCRSTORE       hStore;
+    PCSUPTAENTRY    paTAs;
+    unsigned        cTAs;
+};
+#endif
 
 /**
  * @callback_method_impl{RTCRPKCS7VERIFYCERTCALLBACK,
@@ -467,8 +477,8 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
      * Populate the certificate stores according to the signing type.
      */
 #ifdef VBOX
-    unsigned cSets = 0;
-    struct STORESET { RTCRSTORE hStore; PCSUPTAENTRY paTAs; unsigned cTAs; } aSets[6];
+    unsigned          cSets = 0;
+    struct STSTORESET aSets[6];
 #endif
 
     switch (State.enmSignType)
