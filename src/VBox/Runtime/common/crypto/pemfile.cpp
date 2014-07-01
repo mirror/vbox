@@ -203,8 +203,15 @@ static bool rtCrPemFindMarkerSection(uint8_t const *pbContent, size_t cbContent,
     PCRTCRPEMMARKER pMatch;
     if (rtCrPemFindMarker(pbContent, cbContent, offStart, "BEGIN", 5, paMarkers, cMarkers,
                           &pMatch, NULL /*poffStart*/, poffBegin))
-        return rtCrPemFindMarker(pbContent, cbContent, *poffBegin, "END", 3, pMatch, 1,
-                                 NULL /*ppMatch*/, poffEnd, poffResume);
+    {
+        if (rtCrPemFindMarker(pbContent, cbContent, *poffBegin, "END", 3, pMatch, 1,
+                              NULL /*ppMatch*/, poffEnd, poffResume))
+        {
+            *ppMatch = pMatch;
+            return true;
+        }
+    }
+    *ppMatch = NULL;
     return false;
 }
 
