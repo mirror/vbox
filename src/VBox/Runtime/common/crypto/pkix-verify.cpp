@@ -159,6 +159,8 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNT
         /* Cleanup and return.*/
         EVP_PKEY_free(pEvpPublicKey);
     }
+    else
+        rcOssl = RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", pEvpMdType->required_pkey_type[0]);
     EVP_MD_CTX_cleanup(&EvpMdCtx);
 
     /*
