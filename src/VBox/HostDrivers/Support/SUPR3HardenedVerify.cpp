@@ -1525,6 +1525,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
         hVerify = INVALID_HANDLE_VALUE;
     if (hVerify != INVALID_HANDLE_VALUE)
     {
+# ifdef VBOX_WITH_HARDENING
         uint32_t fFlags = SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING;
         if (!fMaybe3rdParty)
             fFlags = SUPHNTVI_F_REQUIRE_BUILD_CERT;
@@ -1536,8 +1537,9 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
             &&     RT_C_TO_LOWER(pszSuffix[2]) == 'c'
             &&                   pszSuffix[3]  == '\0' )
             fFlags |= SUPHNTVI_F_RC_IMAGE;
-# ifndef IN_SUP_R3_STATIC /* Not in VBoxCpuReport and friends. */
+#  ifndef IN_SUP_R3_STATIC /* Not in VBoxCpuReport and friends. */
         rc = supHardenedWinVerifyImageByHandleNoName(hVerify, fFlags, pErrInfo);
+#  endif
 # endif
         CloseHandle(hVerify);
     }
