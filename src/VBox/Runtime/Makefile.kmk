@@ -145,7 +145,7 @@ common/misc/buildconfig.cpp_DEFS = \
 	IPRT_BLDCFG_TYPE=\"$(KBUILD_TYPE)\"
 
 #
-# Unicode Specification reader used to regenerate unidata.cpp.
+# Unicode Specification reader used to regenerate unidata-*.cpp.
 #
 uniread_TEMPLATE = VBoxBldProg
 uniread_SOURCES  = common/string/uniread.cpp
@@ -225,7 +225,16 @@ endif
 RuntimeR3_TEMPLATE      = VBoxR3Static
 RuntimeR3_SDKS          = VBOX_OPENSSL VBOX_LIBXML2
 RuntimeR3_SDKS.win      = $(VBOX_WINPSDK) $(VBOX_WINDDK)
-RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX RT_NO_GIP
+RuntimeR3_DEFS          = \
+	IN_RT_R3 \
+	IN_SUP_R3 \
+	LDR_WITH_NATIVE \
+	LDR_WITH_ELF32 \
+	LDR_WITH_PE \
+	RT_WITH_VBOX \
+ 	RT_NO_GIP \
+	RT_WITHOUT_NOCRT_WRAPPERS \
+       IPRT_WITH_OPENSSL
 #RuntimeR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_DEFS        += LDR_WITH_KLDR
@@ -261,10 +270,37 @@ RuntimeR3_SOURCES       = \
 	common/alloc/heapoffset.cpp \
 	common/alloc/memcache.cpp \
 	common/alloc/memtracker.cpp \
+	common/asn1/asn1-basics.cpp \
+	common/asn1/asn1-cursor.cpp \
+	common/asn1/asn1-default-allocator.cpp \
+	common/asn1/asn1-dump.cpp \
+	common/asn1/asn1-encode.cpp \
+	common/asn1/asn1-ut-bitstring.cpp \
+	common/asn1/asn1-ut-bitstring-decode.cpp \
+	common/asn1/asn1-ut-boolean.cpp \
+	common/asn1/asn1-ut-boolean-decode.cpp \
+	common/asn1/asn1-ut-core.cpp \
+	common/asn1/asn1-ut-core-decode.cpp \
+	common/asn1/asn1-ut-dyntype.cpp \
+	common/asn1/asn1-ut-dyntype-decode.cpp \
+	common/asn1/asn1-ut-integer.cpp \
+	common/asn1/asn1-ut-integer-decode.cpp \
+	common/asn1/asn1-ut-null.cpp \
+	common/asn1/asn1-ut-null-decode.cpp \
+	common/asn1/asn1-ut-objid.cpp \
+	common/asn1/asn1-ut-objid-decode.cpp \
+	common/asn1/asn1-ut-octetstring.cpp \
+	common/asn1/asn1-ut-octetstring-decode.cpp \
+	common/asn1/asn1-ut-string.cpp \
+	common/asn1/asn1-ut-string-decode.cpp \
+	common/asn1/asn1-ut-time.cpp \
+	common/asn1/asn1-ut-time-decode.cpp \
 	common/checksum/adler32.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc32c.cpp \
 	common/checksum/crc64.cpp \
+	common/checksum/md2.cpp \
+	common/checksum/md2str.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/md5str.cpp \
 	common/checksum/ipv4.cpp \
@@ -282,6 +318,42 @@ RuntimeR3_SOURCES       = \
 	common/checksum/sha512.cpp \
 	common/checksum/sha512str.cpp \
 	common/checksum/x509.cpp \
+	common/crypto/digest-core.cpp \
+	common/crypto/digest-builtin.cpp \
+	common/crypto/iprt-openssl.cpp \
+	common/crypto/rsa-asn1-decoder.cpp \
+	common/crypto/rsa-core.cpp \
+	common/crypto/rsa-init.cpp \
+	common/crypto/rsa-sanity.cpp \
+	common/crypto/pemfile.cpp \
+	common/crypto/pkcs7-asn1-decoder.cpp \
+	common/crypto/pkcs7-core.cpp \
+	common/crypto/pkcs7-init.cpp \
+	common/crypto/pkcs7-sanity.cpp \
+	common/crypto/pkcs7-verify.cpp \
+	common/crypto/pkix-signature-builtin.cpp \
+	common/crypto/pkix-signature-core.cpp \
+	common/crypto/pkix-signature-rsa.cpp \
+	common/crypto/pkix-util.cpp \
+	common/crypto/pkix-verify.cpp \
+	common/crypto/spc-asn1-decoder.cpp \
+	common/crypto/spc-core.cpp \
+	common/crypto/spc-init.cpp \
+	common/crypto/spc-sanity.cpp \
+	common/crypto/x509-asn1-decoder.cpp \
+	common/crypto/x509-certpaths.cpp \
+	common/crypto/x509-core.cpp \
+	common/crypto/x509-file.cpp \
+	common/crypto/x509-init.cpp \
+	common/crypto/x509-sanity.cpp \
+	common/crypto/x509-verify.cpp \
+	common/crypto/taf-asn1-decoder.cpp \
+	common/crypto/taf-core.cpp \
+	common/crypto/taf-init.cpp \
+	common/crypto/taf-sanity.cpp \
+	common/crypto/store.cpp \
+	common/crypto/store-inmem.cpp \
+	common/crypto/RTCrStoreCertAddFromFile.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgas.cpp \
 	common/dbg/dbgcfg.cpp \
@@ -299,6 +371,7 @@ RuntimeR3_SOURCES       = \
 	common/dvm/dvmmbr.cpp \
 	common/dvm/dvmvfs.cpp \
 	common/err/errinfo.cpp \
+	common/err/errinfo-alloc.cpp \
 	common/err/errmsg.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/err/RTErrConvertToErrno.cpp \
@@ -319,6 +392,7 @@ RuntimeR3_SOURCES       = \
 	common/log/logformat.cpp \
 	common/log/tracebuf.cpp \
 	common/log/tracedefault.cpp \
+	common/math/bignum.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
 	common/misc/RTAssertMsg2.cpp \
 	common/misc/RTAssertMsg2Add.cpp \
@@ -408,6 +482,16 @@ RuntimeR3_SOURCES       = \
 	common/string/RTStrNLenEx.cpp \
 	common/string/RTStrPrintHexBytes.cpp \
 	common/string/RTStrStr.cpp \
+	common/string/RTUtf16Copy.cpp \
+	common/string/RTUtf16CopyAscii.cpp \
+	common/string/RTUtf16Cat.cpp \
+	common/string/RTUtf16CatAscii.cpp \
+	common/string/RTUtf16CmpAscii.cpp \
+	common/string/RTUtf16ICmpAscii.cpp \
+	common/string/RTUtf16End.cpp \
+	common/string/RTUtf16NLen.cpp \
+	common/string/RTUtf16NLenEx.cpp \
+	common/string/RTUtf16PrintHexBytes.cpp \
 	common/string/base64.cpp \
 	common/string/simplepattern.cpp \
 	common/string/straprintf.cpp \
@@ -424,10 +508,15 @@ RuntimeR3_SOURCES       = \
 	common/string/strtonum.cpp \
 	common/string/strversion.cpp \
 	common/string/uni.cpp \
-	common/string/unidata.cpp \
+	common/string/unidata-flags.cpp \
+	common/string/unidata-lower.cpp \
+	common/string/unidata-upper.cpp \
 	common/string/utf-16.cpp \
+	common/string/utf-16-case.cpp \
+	common/string/utf-16-latin-1.cpp \
 	common/string/utf-8.cpp \
 	common/string/utf-8-case.cpp \
+	common/string/utf-8-case2.cpp \
 	common/string/ministring.cpp \
 	common/table/avlgcptr.cpp \
 	common/table/avlhcphys.cpp \
@@ -489,6 +578,7 @@ RuntimeR3_SOURCES       = \
 	generic/RTProcessQueryUsernameA-generic.cpp \
 	generic/RTTimerLRCreate-generic.cpp \
 	generic/mempool-generic.cpp \
+	generic/memsafer-generic.cpp \
 	generic/semfastmutex-generic.cpp \
 	generic/semxroads-generic.cpp \
 	generic/spinlock-generic.cpp \
@@ -609,6 +699,7 @@ RuntimeR3_SOURCES.win = \
 	nt/RTErrConvertFromNtStatus.cpp \
  	r3/nt/fs-nt.cpp \
  	r3/nt/pathint-nt.cpp \
+ 	r3/nt/RTProcQueryParent-r3-nt.cpp \
 	r3/win/env-win.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \
 	r3/win/RTSystemQueryOSInfo-win.cpp \
@@ -646,7 +737,8 @@ RuntimeR3_SOURCES.win = \
 	r3/win/utf8-win.cpp \
 	r3/win/RTUuidCreate-win.cpp \
 	win/errmsgwin.cpp \
-	win/RTErrConvertFromWin32.cpp
+	win/RTErrConvertFromWin32.cpp \
+	common/string/mempcpy.asm
 
 RuntimeR3_SOURCES.win.amd64 := $(RuntimeWin64ASM_SOURCES)
 RuntimeR3_SOURCES.win.x86   := $(RuntimeWin32ASM_SOURCES)
@@ -1089,11 +1181,12 @@ RuntimeR3_SOURCES.haiku = \
 # Note! This is a bit of hacky since kBuild doesn't support building libraries
 #       for build programs.
 #
-RuntimeBldProg_TEMPLATE         := VBoxAdvBldProg
-RuntimeBldProg_EXTENDS          := RuntimeR3
-RuntimeBldProg_BLD_TRG          := $(KBUILD_HOST)
-RuntimeBldProg_BLD_TRG_ARCH     := $(KBUILD_HOST_ARCH)
-RuntimeBldProg_BLD_TRG_CPU      := $(KBUILD_HOST_CPU)
+RuntimeBldProg_TEMPLATE        := VBoxAdvBldProg
+RuntimeBldProg_EXTENDS         := RuntimeR3
+RuntimeBldProg_BLD_TRG         := $(KBUILD_HOST)
+RuntimeBldProg_BLD_TRG_ARCH    := $(KBUILD_HOST_ARCH)
+RuntimeBldProg_BLD_TRG_CPU     := $(KBUILD_HOST_CPU)
+RuntimeBldProg_DEFS            := $(RuntimeR3_DEFS) IPRT_WITHOUT_LDR_VERIFY
 RuntimeBldProg_SOURCES          = $(filter-out \
 	r3/xml.cpp \
 	common/zip/xarvfs.cpp \
@@ -1109,7 +1202,7 @@ RuntimeBldProg_SOURCES          = $(filter-out \
 RuntimeGuestR3_TEMPLATE                 := VBoxGuestR3Lib
 ## @todo change this to EXTEND the RuntimeR3 target.
 RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP, $(RuntimeR3_DEFS))
+RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP IPRT_WITH_OPENSSL, $(RuntimeR3_DEFS))
 RuntimeGuestR3_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR3_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
 RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
@@ -1122,6 +1215,7 @@ RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/checksum/RTSha1Digest.cpp \
 	common/checksum/RTSha256Digest.cpp \
 	common/checksum/sha% \
+	common/checksum/md2% \
 	common/checksum/x509.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	r3/xml.cpp \
@@ -1237,10 +1331,15 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/string/stringalloc.cpp \
 	common/string/strprintf.cpp \
 	common/string/strtonum.cpp \
-	common/string/unidata.cpp \
+	common/string/unidata-flags.cpp \
+	common/string/unidata-lower.cpp \
+	common/string/unidata-upper.cpp \
 	common/string/utf-8.cpp \
 	common/string/utf-8-case.cpp \
+	common/string/utf-8-case2.cpp \
 	common/string/utf-16.cpp \
+	common/string/utf-16-case.cpp \
+	common/string/utf-16-latin-1.cpp \
 	common/table/avlpv.cpp \
 	generic/critsect-generic.cpp \
 	generic/pathhost-generic.cpp \
@@ -1311,7 +1410,7 @@ ifdef VBOX_WITH_LIBCURL
 endif
 VBoxRT_SDKS                   += VBOX_OPENSSL
 VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
-if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win)
+if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win$(VBOX_WITH_HARDENING))
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
 VBoxRT_DEFS                   := $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SUP_R3 IN_SUP_R3 IPRT_WITH_XAR
@@ -1721,9 +1820,9 @@ RuntimeR0Stub_SOURCES.solaris = \
 # RuntimeR0Drv - Ring-0 library for host drivers.
 #
 RuntimeR0Drv_TEMPLATE   = VBoxR0DrvLib
-RuntimeR0Drv_SDKS.win   = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
+RuntimeR0Drv_SDKS.win   = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS VBOX_OPENSSL
 RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL
-RuntimeR0Drv_DEFS.win   = IN_SUP_R0
+RuntimeR0Drv_DEFS.win   = IN_SUP_R0 LDR_ONLY_PE
 RuntimeR0Drv_DEFS.linux = MODULE KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) IN_SUP_R0
 
 RuntimeR0Drv_INCS      := $(PATH_SUB_CURRENT) include
@@ -1770,6 +1869,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/term.cpp \
+	common/misc/RTMemWipeThoroughly.cpp \
 	common/path/rtPathVolumeSpecLen.cpp \
 	common/path/RTPathAbsDup.cpp \
 	common/path/RTPathAbsEx.cpp \
@@ -1809,8 +1909,15 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/strprintf.cpp \
 	common/string/strtonum.cpp \
 	common/string/stringalloc.cpp \
-	common/string/utf-16.cpp \
+	common/string/unidata-flags.cpp \
+	common/string/unidata-lower.cpp \
+	common/string/unidata-upper.cpp \
 	common/string/utf-8.cpp \
+	common/string/utf-8-case.cpp \
+	common/string/utf-8-case2.cpp \
+	common/string/utf-16.cpp \
+	common/string/utf-16-case.cpp \
+	common/string/utf-16-latin-1.cpp \
 	common/table/avlpv.cpp \
 	common/time/time.cpp \
 	generic/RTLogWriteStdErr-stub-generic.cpp \
@@ -1867,6 +1974,90 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/powernotification-r0drv.c
 
 RuntimeR0Drv_SOURCES.win = \
+	common/ldr/ldr.cpp \
+	common/ldr/ldrEx.cpp \
+	common/ldr/ldrPE.cpp \
+	common/asn1/asn1-basics.cpp \
+	common/asn1/asn1-dump.cpp \
+	common/asn1/asn1-cursor.cpp \
+	common/asn1/asn1-default-allocator.cpp \
+	common/asn1/asn1-encode.cpp \
+	common/asn1/asn1-ut-bitstring.cpp \
+	common/asn1/asn1-ut-bitstring-decode.cpp \
+	common/asn1/asn1-ut-boolean.cpp \
+	common/asn1/asn1-ut-boolean-decode.cpp \
+	common/asn1/asn1-ut-core.cpp \
+	common/asn1/asn1-ut-core-decode.cpp \
+	common/asn1/asn1-ut-dyntype.cpp \
+	common/asn1/asn1-ut-dyntype-decode.cpp \
+	common/asn1/asn1-ut-integer.cpp \
+	common/asn1/asn1-ut-integer-decode.cpp \
+	common/asn1/asn1-ut-null.cpp \
+	common/asn1/asn1-ut-null-decode.cpp \
+	common/asn1/asn1-ut-objid.cpp \
+	common/asn1/asn1-ut-objid-decode.cpp \
+	common/asn1/asn1-ut-octetstring.cpp \
+	common/asn1/asn1-ut-octetstring-decode.cpp \
+	common/asn1/asn1-ut-string.cpp \
+	common/asn1/asn1-ut-string-decode.cpp \
+	common/asn1/asn1-ut-time.cpp \
+	common/asn1/asn1-ut-time-decode.cpp \
+	common/crypto/digest-core.cpp \
+	common/crypto/digest-builtin.cpp \
+	common/crypto/rsa-asn1-decoder.cpp \
+	common/crypto/rsa-core.cpp \
+	common/crypto/rsa-init.cpp \
+	common/crypto/rsa-sanity.cpp \
+	common/crypto/pkcs7-asn1-decoder.cpp \
+	common/crypto/pkcs7-core.cpp \
+	common/crypto/pkcs7-init.cpp \
+	common/crypto/pkcs7-sanity.cpp \
+	common/crypto/pkcs7-verify.cpp \
+	common/crypto/pkix-signature-builtin.cpp \
+	common/crypto/pkix-signature-core.cpp \
+	common/crypto/pkix-signature-rsa.cpp \
+	common/crypto/pkix-util.cpp \
+	common/crypto/pkix-verify.cpp \
+	common/crypto/spc-asn1-decoder.cpp \
+	common/crypto/spc-core.cpp \
+	common/crypto/spc-init.cpp \
+	common/crypto/spc-sanity.cpp \
+	common/crypto/x509-asn1-decoder.cpp \
+	common/crypto/x509-certpaths.cpp \
+	common/crypto/x509-core.cpp \
+	common/crypto/x509-init.cpp \
+	common/crypto/x509-sanity.cpp \
+	common/crypto/x509-verify.cpp \
+	common/crypto/store.cpp \
+	common/crypto/store-inmem.cpp \
+	common/crypto/taf-asn1-decoder.cpp \
+	common/crypto/taf-core.cpp \
+	common/crypto/taf-init.cpp \
+	common/crypto/taf-sanity.cpp \
+	common/checksum/md2.cpp \
+	common/checksum/sha1.cpp \
+	common/checksum/sha256.cpp \
+	common/checksum/sha512.cpp \
+	common/checksum/md2str.cpp \
+	common/checksum/md5str.cpp \
+	common/checksum/sha1str.cpp \
+	common/checksum/sha256str.cpp \
+	common/checksum/sha512str.cpp \
+	common/err/errinfo.cpp \
+	common/path/RTPathChangeToUnixSlashes.cpp \
+	common/math/bignum.cpp \
+	common/string/RTStrPrintHexBytes.cpp \
+	common/string/RTUtf16Copy.cpp \
+	common/string/RTUtf16CopyAscii.cpp \
+	common/string/RTUtf16Cat.cpp \
+	common/string/RTUtf16CatAscii.cpp \
+	common/string/RTUtf16End.cpp \
+	common/string/RTUtf16NLen.cpp \
+	common/string/RTUtf16NLenEx.cpp \
+	common/string/RTUtf16PrintHexBytes.cpp \
+	common/string/strstrip.cpp \
+	generic/memsafer-generic.cpp \
+       \
 	common/misc/thread.cpp \
 	common/string/memcmp.asm \
 	common/string/memchr.asm \
@@ -1904,6 +2095,7 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/thread2-r0drv-nt.cpp \
 	r0drv/nt/time-r0drv-nt.cpp \
 	r0drv/nt/timer-r0drv-nt.cpp \
+	r0drv/nt/toxic-chkstk-r0drv-nt.asm \
 	r0drv/nt/RTTimerGetSystemGranularity-r0drv-nt.cpp
 
 RuntimeR0Drv_SOURCES.win.amd64 := $(RuntimeWin64ASM_SOURCES)
@@ -2265,17 +2457,37 @@ RuntimeEFCPP_SOURCES   := r3/alloc-ef-cpp.cpp
 #           later WINDDK ntdll.lib have and thus we may easily end up with
 #           images that does not load on older windows versions.
 #
+if1of (win,$(KBUILD_TARGET) $(KBUILD_HOST))
 RuntimeR3NtDll-amd64_TEMPLATE     = VBoxR3Dll
 RuntimeR3NtDll-amd64_BLD_TRG_ARCH = amd64
 RuntimeR3NtDll-amd64_ARFLAGS      = /NODEFAULTLIB /MACHINE:amd64
 RuntimeR3NtDll-amd64_SOURCES      = \
-	r3/win/ntdll-mini-implib.c \
 	r3/win/ntdll-mini-implib.def
 
-RuntimeR3NtDll-x86_EXTENDS        = RuntimeR3NtDll-amd64
+RuntimeR3NtDll-x86_TEMPLATE       = VBoxR3Dll
 RuntimeR3NtDll-x86_BLD_TRG_ARCH   = x86
 RuntimeR3NtDll-x86_ARFLAGS        = /NODEFAULTLIB /MACHINE:x86
+RuntimeR3NtDll-x86_SOURCES        = \
+	r3/win/ntdll-mini-implib.def \
+	$(RuntimeR3NtDll-x86_0_OUTDIR)/ntdll-mini-implib.asm
+RuntimeR3NtDll-x86_CLEAN          = \
+	$(RuntimeR3NtDll-x86_0_OUTDIR)/ntdll-mini-implib.asm
 
+$$(RuntimeR3NtDll-x86_0_OUTDIR)/ntdll-mini-implib.asm: $(PATH_SUB_CURRENT)/r3/win/ntdll-mini-implib.def | $$(dir $$@)
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)$(APPEND) -nt "$@" \
+		';Autogenerated, do not edit' \
+		'%include "iprt/asmdefs.mac"' \
+               'BEGINCODE' \
+               '%macro IMPLIB_EXPORT 1' \
+               'global %1:function' \
+               '%1: nop' \
+               '%endm' \
+               ''
+	$(QUIET)$(SED) -e '1,/EXPORTS/d' \
+		-e 's/^.*;;=[[:space:]]*\([^[:space:]]*\)[[:space:]]*$$/IMPLIB_EXPORT \1/' \
+		$< --append $@
+endif
 
 #
 # Bag of tricks required for making VCC100 output binaries work on NT4, W2K
@@ -2504,24 +2716,28 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 	$(call MSG_L1,IPRT: skipped mangling test.)
  else
 # Generate a SED script from mangling.h that checks for known symbols.
-	@$(SED) \
+	$(QUIET)$(SED) \
 		-e '/# *define.*RT_MANGLER/!d' \
 		-e 's/^.*RT_MANGLER(\([^)][^)]*\)).*$(DOLLAR)/\/^\1$(DOLLAR)\/b ok/' \
 		$(PATH_ROOT)/include/iprt/mangling.h \
 		--output "$@"
-	@$(APPEND) -n '$@' \
+	$(QUIET)$(APPEND) -n '$@' \
 		':bad' \
-		's/^\(.*\)$(DOLLAR)/error: Missing # define \1   RT_MANGLER(\1)/' \
+		's/^\(.*\)$(DOLLAR)/error: Missing # define \1 /' \
+               ':bad-pad' \
+               '/^.\{0,70\}$(DOLLAR)/ { s/$(DOLLAR)/ /; bbad-pad; }' \
+               's/define \([^ ]*\) \([ ]*\)$(DOLLAR)/define \1 \2RT_MANGLER(\1)/' \
 		'p' \
-		'q 1' \
+		$(if-expr !defined(IPRT_IGNORE_TEST_MANGLING),'q 1') \
 		'' \
 		':ok' \
 		'd'
 # Find the best way to generate a symbol list and subject it to mangling.h.
   if $(intersects $(KBUILD_TARGET), linux) && "$(VBOX_GCC_fvisibility-hidden)"
 	$(call MSG_L1,IPRT: Testing mangling and visiblity for newer gcc...)
-	@readelf -Ws $^ \
+	$(QUIET)readelf -Ws $^ \
 		| $(SED) \
+               	-e 's/[[:space:]]\+/ /g' \
 			-e '/^  *[[:digit:]]\+:/!d' \
 			-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+[[:digit:]]\+ \+//' \
 			-e '/^SECTION/d' \
@@ -2529,7 +2745,10 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e 's/^[[:alpha:]]\+ \+//' \
 			-e '/LOCAL/d' \
 			-e 's/^[[:alpha:]]\+ \+//' \
+                       -e '/^HIDDEN [[:xdigit:]]\+ RT/bkeep-hidden' \
+                       -e '/^HIDDEN [[:xdigit:]]\+ g_[a-z0-9]*RT/bkeep-hidden' \
 			-e '/^HIDDEN/d' \
+			-e ':keep-hidden' \
 			-e 's/^[[:alpha:]]\+ \+//' \
 			-e '/^UND/d' \
 			-e 's/^[[:digit:]]\+ \+//' \
@@ -2550,7 +2769,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e '/^strlen/d' \
 			-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
 			-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
-                       \
+			\
 			-e '/^_ZnwjPv/d' \
 			-e '/^_ZnwmPv/d' \
 			-e '/^_ZNSt9bad_allocC1Ev/d' \
@@ -2561,7 +2780,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
                        -e '/^_ZN[a-zA-Z]*[[:digit:]]*__gnu_cxx/d' \
                        -e '/^_ZNSa.*ElementNode.*/d' \
                        -e '/^_ZSt.*ElementNode.*/d' \
-                       \
+			\
 			-e '/^_Z[[:digit:]]\+dbus/d' \
 			-e '/^_Z13RTDBusLoadLibv/d' \
 			\
@@ -2569,11 +2788,14 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e '/^VBoxGuest_/d'\
 		| $(SED) -nf "$@"
   endif
-	$(call MSG_L1,IPRT: Testing mangling for older gcc...)
-	@nm $^ 	| $(SED) -n \
+	$(call MSG_L1,IPRT: Testing mangling using nm...)
+	$(QUIET)nm $^  2> /dev/null \
+		| $(SED) -n \
 			-e 's/^[0-9a-f][0-9a-f]* //' \
 			-e '/^[TUDB] /!d' \
 			-e 's/^. //' \
+			$(if-expr "$(KBUILD_TARGET)" == "darwin" || "$(KBUILD_TARGET)" == "os2" || "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86", \
+                       -e 's/^_//',) \
 			\
 			-e '/^g_cchrt/d'\
 			-e '/^g_frt/d'\
@@ -2585,6 +2807,8 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e '/^g_u64ProgramStart/d'\
 			-e '/^g_enmProcessPriority/d'\
 			-e '/^g_hDbgModStrCache/d'\
+			-e '/^g_pfnR0Darwin/d'\
+			-e '/^g_pDarwinLockGroup/d'\
 			\
 			-e '/^RTDBusLoadLib/d' \
 			\
@@ -2609,4 +2833,13 @@ endif
 # Generate the rules (we're the to sub-makefile).
 #
 include $(FILE_KBUILD_SUB_FOOTER)
+
+
+#
+# Aliases for code templates.
+#
+rsa-template.o rsa-template.obj: rsa-core.o rsa-asn1-decoder.o rsa-sanity.o rsa-init.o
+taf-template.o taf-template.obj: taf-core.o taf-asn1-decoder.o taf-sanity.o taf-init.o
+x509-template.o x509-template.obj: x509-core.o x509-asn1-decoder.o x509-sanity.o x509-init.o
+pkcs7-template.o pkcs7-template.obj: pkcs7-core.o pkcs7-asn1-decoder.o pkcs7-sanity.o pkcs7-init.o
 

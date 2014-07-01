@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,43 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <ntstatus.h>
-#define WIN32_NO_STATUS
-#include <Windows.h>
-#include <winternl.h>
-
-typedef enum
-{
-    MemoryBasicInformation = 0,
-    MemoryWorkingSetList,
-    MemorySectionName,
-    MemoryBasicVlmInformation
-} MEMORY_INFORMATION_CLASS;
-
-typedef struct
-{
-    UNICODE_STRING  SectionFileName;
-    WCHAR           NameBuffer[ANYSIZE_ARRAY];
-} MEMORY_SECTION_NAME;
-
-extern "C"
-NTSYSAPI NTSTATUS NTAPI NtQueryVirtualMemory(IN HANDLE hProcess,
-                                             IN LPCVOID pvWhere,
-                                             IN MEMORY_INFORMATION_CLASS MemoryInfo,
-                                             OUT PVOID pvBuf,
-                                             IN SIZE_T cbBuf,
-                                             OUT PSIZE_T pcbReturned OPTIONAL);
-
-#define ProcessDebugPort            ((PROCESSINFOCLASS)7 )
-#define ProcessHandleCount          ((PROCESSINFOCLASS)20)
-#define ProcessWow64Information     ((PROCESSINFOCLASS)26)
-#define ProcessImageFileName        ((PROCESSINFOCLASS)27)
-#define ProcessDebugObjectHandle    ((PROCESSINFOCLASS)30)
-#define ProcessExecuteFlags         ((PROCESSINFOCLASS)34)
-#define ProcessImageFileNameWin32   ((PROCESSINFOCLASS)43)
-#define ProcessImageFileMapping     ((PROCESSINFOCLASS)44)
-
-
+#include <iprt/nt/nt-and-windows.h>
 #include <iprt/test.h>
 #include <iprt/string.h>
 
@@ -303,21 +267,20 @@ static void tstQueryInformationProcess(void)
     RTTESTI_CHECK_MSG(NT_SUCCESS(rcNt), ("rcNt=%#x\n", rcNt));
     if (NT_SUCCESS(rcNt))
         RTTestIPrintf(RTTESTLVL_ALWAYS, "BasicInfo:\n"
-                                        "    UniqueProcessId = %#x (%6d)\n"
+                                        "    UniqueProcessId              = %#x (%6d)\n"
+                                        "    InheritedFromUniqueProcessId = %#x (%6d)\n"
+                                        "    ExitStatus      = %#x\n"
                                         "    PebBaseAddress  = %p\n"
-                                        "    Reserved1       = %p          ExitStatus?\n"
-                                        "    Reserved2a      = %p          AffinityMask?\n"
-                                        "    Reserved2b      = %p (%6d) BasePriority?\n"
-                                        "    Reserved3       = %p (%6d) InheritedFromUniqueProcessId?\n"
+                                        "    AffinityMask    = %#zx\n"
+                                        "    BasePriority    = %#zx\n"
                       ,
                       BasicInfo.UniqueProcessId, BasicInfo.UniqueProcessId,
+                      BasicInfo.InheritedFromUniqueProcessId, BasicInfo.InheritedFromUniqueProcessId,
+                      BasicInfo.ExitStatus,
                       BasicInfo.PebBaseAddress,
-                      BasicInfo.Reserved1,
-                      BasicInfo.Reserved2[0],
-                      BasicInfo.Reserved2[1], BasicInfo.Reserved2[1],
-                      BasicInfo.Reserved3, BasicInfo.Reserved3
+                      BasicInfo.AffinityMask,
+                      BasicInfo.BasePriority
                       );
-
 
     /* Debugger present? */
     DWORD_PTR uPtr = ~(DWORD_PTR)0;
@@ -434,7 +397,7 @@ static void tstQueryInformationProcess(void)
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
     RTEXITCODE rcExit = RTTestInitAndCreate("tstNtQueryStuff", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
@@ -442,10 +405,25 @@ int main()
     RTTestBanner(g_hTest);
 
     g_hProcess = GetCurrentProcess();
+    if (argc >= 2 && argv[1][0] != '-')
+    {
+        const char *pszPid = argv[1];
+        uint32_t idPid = RTStrToInt32(pszPid);
 
-    //tstQueryVirtualMemory();
+        uint32_t fAccess = PROCESS_QUERY_INFORMATION;
+        if (argc >= 3)
+            fAccess = RTStrToInt32(argv[2]);
+
+        g_hProcess = OpenProcess(fAccess, FALSE, idPid);
+        if (g_hProcess == NULL)
+        {
+            RTTestIFailed("Error %u opening process %u (%s)\n", GetLastError(), idPid, pszPid);
+            return RTTestSummaryAndDestroy(g_hTest);
+        }
+    }
+
+    tstQueryVirtualMemory();
     tstQueryInformationProcess();
-
 
     return RTTestSummaryAndDestroy(g_hTest);
 }

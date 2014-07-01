@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2010-2013 Oracle Corporation
+; Copyright (C) 2010-2014 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -26,18 +26,46 @@
 
 LIBRARY ntdll.dll
 EXPORTS
-    RtlNtStatusToDosError
-    NtQueryTimerResolution
-    NtQueryDirectoryFile
-    NtQueryDirectoryObject
-    NtQueryInformationFile
-    NtQueryInformationProcess
-    NtSetInformationFile
-    NtSetTimerResolution
-    NtQueryVolumeInformationFile
-    NtQueryVirtualMemory
-    NtCreateFile
-    NtClose
-    NtOpenDirectoryObject
-    NtDeviceIoControlFile
+  ; Exported name                           - The name x86 name sought by the linker.
+  ;                                         - This needs to be defined as a symbol, we generate assembly.
+    NtClose                               ;;= _NtClose@4
+    NtCreateFile                          ;;= _NtCreateFile@44
+    NtCreateSection                       ;;= _NtCreateSection@28
+    NtDelayExecution                      ;;= _NtDelayExecution@8
+    NtDeviceIoControlFile                 ;;= _NtDeviceIoControlFile@40
+    NtDuplicateObject                     ;;= _NtDuplicateObject@28
+    NtOpenDirectoryObject                 ;;= _NtOpenDirectoryObject@12
+    NtOpenProcess                         ;;= _NtOpenProcess@16
+    NtOpenProcessToken                    ;;= _NtOpenProcessToken@12
+    NtOpenThreadToken                     ;;= _NtOpenThreadToken@16
+    NtQueryDirectoryFile                  ;;= _NtQueryDirectoryFile@44
+    NtQueryDirectoryObject                ;;= _NtQueryDirectoryObject@28
+    NtQueryInformationFile                ;;= _NtQueryInformationFile@20
+    NtQueryInformationProcess             ;;= _NtQueryInformationProcess@20
+    NtQueryInformationThread              ;;= _NtQueryInformationThread@20
+    NtQueryInformationToken               ;;= _NtQueryInformationToken@20
+    NtQueryObject                         ;;= _NtQueryObject@20
+    NtQueryTimerResolution                ;;= _NtQueryTimerResolution@12
+    NtQueryVirtualMemory                  ;;= _NtQueryVirtualMemory@24
+    NtQueryVolumeInformationFile          ;;= _NtQueryVolumeInformationFile@20
+    NtReadFile                            ;;= _NtReadFile@36
+    NtReadVirtualMemory                   ;;= _NtReadVirtualMemory@20
+    NtSetInformationFile                  ;;= _NtSetInformationFile@20
+    NtSetInformationObject                ;;= _NtSetInformationObject@16
+    NtSetInformationThread                ;;= _NtSetInformationThread@16
+    NtSetTimerResolution                  ;;= _NtSetTimerResolution@12
+    NtWriteFile                           ;;= _NtWriteFile@36
+    NtWriteVirtualMemory                  ;;= _NtWriteVirtualMemory@20
+    NtYieldExecution                      ;;= _NtYieldExecution@0
+                                          ;;
+    RtlAddAccessAllowedAce                ;;= _RtlAddAccessAllowedAce@16
+    RtlAddAccessDeniedAce                 ;;= _RtlAddAccessDeniedAce@16
+    RtlCopySid                            ;;= _RtlCopySid@12
+    RtlCreateAcl                          ;;= _RtlCreateAcl@12
+    RtlCreateSecurityDescriptor           ;;= _RtlCreateSecurityDescriptor@8
+    RtlGetVersion                         ;;= _RtlGetVersion@4
+    RtlInitializeSid                      ;;= _RtlInitializeSid@12
+    RtlNtStatusToDosError                 ;;= _RtlNtStatusToDosError@4
+    RtlSetDaclSecurityDescriptor          ;;= _RtlSetDaclSecurityDescriptor@16
+    RtlSubAuthoritySid                    ;;= _RtlSubAuthoritySid@8
 

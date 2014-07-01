@@ -513,6 +513,23 @@ DECLINLINE(bool) RTTimeSpecIsEqual(PCRTTIMESPEC pTime1, PCRTTIMESPEC pTime2)
     return pTime1->i64NanosecondsRelativeToUnixEpoch == pTime2->i64NanosecondsRelativeToUnixEpoch;
 }
 
+
+/**
+ * Compare two time specs.
+ *
+ * @returns 0 if equal, -1 if @a pLeft is smaller, 1 if @a pLeft is larger.
+ * @returns false they are not equal.
+ * @param   pLeft       The 1st time spec.
+ * @param   pRight      The 2nd time spec.
+ */
+DECLINLINE(int) RTTimeSpecCompare(PCRTTIMESPEC pLeft, PCRTTIMESPEC pRight)
+{
+    if (pLeft->i64NanosecondsRelativeToUnixEpoch == pRight->i64NanosecondsRelativeToUnixEpoch)
+        return 0;
+    return pLeft->i64NanosecondsRelativeToUnixEpoch < pRight->i64NanosecondsRelativeToUnixEpoch ? -1 : 1;
+}
+
+
 /**
  * Converts a time spec to a ISO date string.
  *

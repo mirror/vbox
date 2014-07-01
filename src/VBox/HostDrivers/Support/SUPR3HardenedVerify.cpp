@@ -73,6 +73,10 @@
 #include <iprt/string.h>
 
 #include "SUPLibInternal.h"
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_HARDENING)
+# define SUPHNTVI_NO_NT_STUFF
+# include "win/SUPHardenedVerify-win.h"
+#endif
 
 
 /*******************************************************************************
@@ -83,6 +87,13 @@
 
 #ifdef RT_OS_SOLARIS
 # define dirfd(d) ((d)->d_fd)
+#endif
+
+/** Compare table file names with externally supplied names. */
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+# define SUP_COMP_FILENAME  suplibHardenedStrICmp
+#else
+# define SUP_COMP_FILENAME  suplibHardenedStrCmp
 #endif
 
 
@@ -106,9 +117,9 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Dll,  kSupID_AppPrivArch,       false, "VBoxDD2R0.r0" },
 
 #ifdef VBOX_WITH_RAW_MODE
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,       false, "VMMGC.gc" },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,       false, "VBoxDDGC.gc" },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,       false, "VBoxDD2GC.gc" },
+    {   kSupIFT_Rc,   kSupID_AppPrivArch,       false, "VMMGC.gc" },
+    {   kSupIFT_Rc,   kSupID_AppPrivArch,       false, "VBoxDDGC.gc" },
+    {   kSupIFT_Rc,   kSupID_AppPrivArch,       false, "VBoxDD2GC.gc" },
 #endif
 
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxRT" SUPLIB_DLL_SUFF },
@@ -153,7 +164,7 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
 #ifdef VBOX_WITH_MAIN
     {   kSupIFT_Exe,  kSupID_AppBin,            false, "VBoxSVC" SUPLIB_EXE_SUFF },
  #ifdef RT_OS_WINDOWS
-    {   kSupIFT_Dll,  kSupID_AppPrivArchComp,   false, "VBoxC" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxC" SUPLIB_DLL_SUFF },
  #else
     {   kSupIFT_Exe,  kSupID_AppPrivArch,       false, "VBoxXPCOMIPCD" SUPLIB_EXE_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxXPCOM" SUPLIB_DLL_SUFF },
@@ -346,7 +357,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal)
                                  GENERIC_READ,
                                  FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
                                  NULL,
-                                 OPEN_ALWAYS,
+                                 OPEN_EXISTING,
                                  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS,
                                  NULL);
         if (hDir != INVALID_HANDLE_VALUE)
@@ -465,17 +476,35 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
         rc = supR3HardenedMakeFilePath(pFile, szPath, sizeof(szPath), true /*fWithFilename*/, fFatal);
         if (RT_SUCCESS(rc))
         {
-#if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS) /** @todo Need to use WCHAR on windows! */
             HANDLE hFile = CreateFile(szPath,
                                       GENERIC_READ,
                                       FILE_SHARE_READ,
                                       NULL,
-                                      OPEN_ALWAYS,
+                                      OPEN_EXISTING,
                                       FILE_ATTRIBUTE_NORMAL,
                                       NULL);
             if (hFile != INVALID_HANDLE_VALUE)
             {
-                /** @todo Check the type, and verify the signature (separate function so we can skip it). */
+# if defined(VBOX_WITH_HARDENING) && !defined(IN_SUP_R3_STATIC) /* Latter: Not in VBoxCpuReport and friends. */
+
+                char szErr[1024];
+                RTERRINFO ErrInfo;
+                RTErrInfoInit(&ErrInfo, szErr, sizeof(szErr));
+
+                uint32_t fFlags = SUPHNTVI_F_REQUIRE_BUILD_CERT;
+                if (pFile->enmType == kSupIFT_Rc)
+                    fFlags |= SUPHNTVI_F_RC_IMAGE;
+
+                rc = supHardenedWinVerifyImageByHandleNoName(hFile, fFlags, &ErrInfo);
+                if (RT_FAILURE(rc))
+                {
+                    rc = supR3HardenedError(rc, fFatal, "supR3HardenedVerifyFileInternal: '%s': Image verify error rc=%Rrc: %s\n",
+                                            szPath, rc, szErr);
+                    CloseHandle(hFile);
+                }
+                else
+#endif
                 {
                     /* it's valid. */
                     if (fLeaveFileOpen)
@@ -490,8 +519,7 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
                 int err = GetLastError();
                 if (!pFile->fOptional || err != ERROR_FILE_NOT_FOUND)
                     rc = supR3HardenedError(VERR_PATH_NOT_FOUND, fFatal,
-                                            "supR3HardenedVerifyFileInternal: Failed to open \"%s\": err=%d\n",
-                                            szPath, err);
+                                            "supR3HardenedVerifyFileInternal: Failed to open '%s': err=%d\n", szPath, err);
             }
 #else /* UNIXY */
             int fd = open(szPath, O_RDONLY, 0);
@@ -580,11 +608,7 @@ static int supR3HardenedVerifySameFile(int iFile, const char *pszFilename, bool 
     int rc = supR3HardenedMakeFilePath(pFile, szName, sizeof(szName), true /*fWithFilename*/, fFatal);
     if (RT_FAILURE(rc))
         return rc;
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    if (suplibHardenedStrICmp(szName, pszFilename))
-#else
-    if (suplibHardenedStrCmp(szName, pszFilename))
-#endif
+    if (SUP_COMP_FILENAME(szName, pszFilename))
     {
         /*
          * Normalize the two paths and compare again.
@@ -595,14 +619,14 @@ static int supR3HardenedVerifySameFile(int iFile, const char *pszFilename, bool 
         char szName2[RTPATH_MAX];
         if (    GetFullPathName(szName, RT_ELEMENTS(szName2), &szName2[0], &pszIgnored)
             &&  GetFullPathName(pszFilename, RT_ELEMENTS(szName), &szName[0], &pszIgnored))
-            if (!suplibHardenedStrICmp(szName2, szName))
+            if (!SUP_COMP_FILENAME(szName2, szName))
                 rc = VINF_SUCCESS;
 #else
         AssertCompile(RTPATH_MAX >= PATH_MAX);
         char szName2[RTPATH_MAX];
         if (    realpath(szName, szName2) != NULL
             &&  realpath(pszFilename, szName) != NULL)
-            if (!suplibHardenedStrCmp(szName2, szName))
+            if (!SUP_COMP_FILENAME(szName2, szName))
                 rc = VINF_SUCCESS;
 #endif
 
@@ -644,7 +668,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFata
      */
     const char *pszName = supR3HardenedPathFilename(pszFilename);
     for (unsigned iFile = 0; iFile < RT_ELEMENTS(g_aSupInstallFiles); iFile++)
-        if (!suplibHardenedStrCmp(pszName, g_aSupInstallFiles[iFile].pszFile))
+        if (!SUP_COMP_FILENAME(pszName, g_aSupInstallFiles[iFile].pszFile))
         {
             int rc = supR3HardenedVerifySameFile(iFile, pszFilename, fFatal);
             if (RT_SUCCESS(rc))
@@ -903,7 +927,7 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, PRTERRINFO pErrInf
      * Check that it's an absolute path and copy the volume/root specifier.
      */
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    if (   RT_C_IS_ALPHA(pszSrc[0])
+    if (   !RT_C_IS_ALPHA(pszSrc[0])
         || pszSrc[1] != ':'
         || !RTPATH_IS_SLASH(pszSrc[2]))
         return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_ABSOLUTE, pErrInfo, "The path is not absolute: '", pszPath, "'");
@@ -1441,10 +1465,14 @@ DECLHIDDEN(int) supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, 
  * @param   hNativeFile         Handle to the file, verify that it's the same
  *                              as we ended up with when verifying the path.
  *                              RTHCUINTPTR_MAX means NIL here.
+ * @param   fMaybe3rdParty      Set if the file is could be a supplied by a
+ *                              third party.  Different validation rules may
+ *                              apply to 3rd party code on some platforms.
  * @param   pErrInfo            Where to return extended error information.
  *                              Optional.
  */
-DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile,
+                                        bool fMaybe3rdParty, PRTERRINFO pErrInfo)
 {
     /*
      * Validate the input path and parse it.
@@ -1476,10 +1504,50 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
     }
 
     /*
-     * Verify the file.
+     * Verify the file handle against the last component, if specified.
      */
     if (hNativeFile != RTHCUINTPTR_MAX)
-        return supR3HardenedVerifySameFsObject(hNativeFile, &FsObjState, Info.szPath, pErrInfo);
+    {
+        rc = supR3HardenedVerifySameFsObject(hNativeFile, &FsObjState, Info.szPath, pErrInfo);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * The files shall be signed on windows, verify that.
+     */
+    HANDLE hVerify;
+    if (hNativeFile == RTHCUINTPTR_MAX)
+        hVerify = CreateFile(pszFilename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    else if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hNativeFile, GetCurrentProcess(), &hVerify,
+                              GENERIC_READ, false /*bInheritHandle*/, 0 /*dwOptions*/))
+        hVerify = INVALID_HANDLE_VALUE;
+    if (hVerify != INVALID_HANDLE_VALUE)
+    {
+        uint32_t fFlags = SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING;
+        if (!fMaybe3rdParty)
+            fFlags = SUPHNTVI_F_REQUIRE_BUILD_CERT;
+        const char *pszSuffix = RTPathSuffix(pszFilename);
+        if (   pszSuffix
+            &&                   pszSuffix[0]  == '.'
+            && (   RT_C_TO_LOWER(pszSuffix[1]) == 'r'
+                || RT_C_TO_LOWER(pszSuffix[1]) == 'g')
+            &&     RT_C_TO_LOWER(pszSuffix[2]) == 'c'
+            &&                   pszSuffix[3]  == '\0' )
+            fFlags |= SUPHNTVI_F_RC_IMAGE;
+# ifndef IN_SUP_R3_STATIC /* Not in VBoxCpuReport and friends. */
+        rc = supHardenedWinVerifyImageByHandleNoName(hVerify, fFlags, pErrInfo);
+# endif
+        CloseHandle(hVerify);
+    }
+    else
+        rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromWin32(GetLastError()),
+                           "Error %u trying to open (or duplicate handle for) '%s'", GetLastError(), pszFilename);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+
     return VINF_SUCCESS;
 }
 

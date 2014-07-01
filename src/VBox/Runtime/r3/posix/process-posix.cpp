@@ -147,6 +147,17 @@ RTR3DECL(uint64_t) RTProcGetAffinityMask(void)
 }
 
 
+RTR3DECL(int) RTProcQueryParent(RTPROCESS hProcess, PRTPROCESS phParent)
+{
+    if (hProcess == RTProcSelf())
+    {
+        *phParent = getppid();
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_SUPPORTED;
+}
+
+
 RTR3DECL(int) RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUser,
                                   size_t *pcbUser)
 {

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -129,6 +129,94 @@ typedef enum RTLDRENDIAN
     /** Hack to blow the type up to 32-bit. */
     RTLDRENDIAN_32BIT_HACK = 0x7fffffff
 } RTLDRENDIAN;
+
+
+/** Pointer to a loader reader instance. */
+typedef struct RTLDRREADER *PRTLDRREADER;
+/**
+ * Loader image reader instance.
+ *
+ * @remarks The reader will typically have a larger structure wrapping this one
+ *          for storing necessary instance variables.
+ *
+ *          The loader ASSUMES the caller serializes all access to the
+ *          individual loader module handlers, thus no serialization is required
+ *          when implementing this interface.
+ */
+typedef struct RTLDRREADER
+{
+    /** Magic value (RTLDRREADER_MAGIC). */
+    uintptr_t           uMagic;
+
+    /**
+     * Reads bytes at a give place in the raw image.
+     *
+     * @returns iprt status code.
+     * @param   pReader     Pointer to the reader instance.
+     * @param   pvBuf       Where to store the bits.
+     * @param   cb          Number of bytes to read.
+     * @param   off         Where to start reading relative to the start of the raw image.
+     */
+    DECLCALLBACKMEMBER(int, pfnRead)(PRTLDRREADER pReader, void *pvBuf, size_t cb, RTFOFF off);
+
+    /**
+     * Tells end position of last read.
+     *
+     * @returns position relative to start of the raw image.
+     * @param   pReader     Pointer to the reader instance.
+     */
+    DECLCALLBACKMEMBER(RTFOFF, pfnTell)(PRTLDRREADER pReader);
+
+    /**
+     * Gets the size of the raw image bits.
+     *
+     * @returns size of raw image bits in bytes.
+     * @param   pReader     Pointer to the reader instance.
+     */
+    DECLCALLBACKMEMBER(RTFOFF, pfnSize)(PRTLDRREADER pReader);
+
+    /**
+     * Map the bits into memory.
+     *
+     * The mapping will be freed upon calling pfnDestroy() if not pfnUnmap()
+     * is called before that. The mapping is read only.
+     *
+     * @returns iprt status code.
+     * @param   pReader     Pointer to the reader instance.
+     * @param   ppvBits     Where to store the address of the memory mapping on success.
+     *                      The size of the mapping can be obtained by calling pfnSize().
+     */
+    DECLCALLBACKMEMBER(int, pfnMap)(PRTLDRREADER pReader, const void **ppvBits);
+
+    /**
+     * Unmap bits.
+     *
+     * @returns iprt status code.
+     * @param   pReader     Pointer to the reader instance.
+     * @param   pvBits      Memory pointer returned by pfnMap().
+     */
+    DECLCALLBACKMEMBER(int, pfnUnmap)(PRTLDRREADER pReader, const void *pvBits);
+
+    /**
+     * Gets the most appropriate log name.
+     *
+     * @returns Pointer to readonly log name.
+     * @param   pReader     Pointer to the reader instance.
+     */
+    DECLCALLBACKMEMBER(const char *, pfnLogName)(PRTLDRREADER pReader);
+
+    /**
+     * Releases all resources associated with the reader instance.
+     * The instance is invalid after this call returns.
+     *
+     * @returns iprt status code.
+     * @param   pReader     Pointer to the reader instance.
+     */
+    DECLCALLBACKMEMBER(int, pfnDestroy)(PRTLDRREADER pReader);
+} RTLDRREADER;
+
+/** Magic value for RTLDRREADER (Gordon Matthew Thomas Sumner / Sting). */
+#define RTLDRREADER_MAGIC   UINT32_C(0x19511002)
 
 
 /**
@@ -272,8 +360,10 @@ typedef RTLDRARCH *PRTLDRARCH;
 /** Open for debugging or introspection reasons.
  * This will skip a few of the stricter validations when loading images. */
 #define RTLDR_O_FOR_DEBUG       RT_BIT_32(0)
+/** Open for signature validation. */
+#define RTLDR_O_FOR_VALIDATION  RT_BIT_32(1)
 /** Mask of valid flags. */
-#define RTLDR_O_VALID_MASK      UINT32_C(0x00000001)
+#define RTLDR_O_VALID_MASK      UINT32_C(0x00000003)
 /** @} */
 
 /**
@@ -299,6 +389,20 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArc
  */
 RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);
 
+/**
+ * Open part with reader.
+ *
+ * @returns iprt status code.
+ * @param   pReader     The loader reader instance which will provide the raw
+ *                      image bits.  The reader instance will be consumed on
+ *                      success.  On failure, the caller has to do the cleaning
+ *                      up.
+ * @param   fFlags      Valid RTLDR_O_XXX combination.
+ * @param   enmArch     Architecture specifier.
+ * @param   phMod       Where to store the handle.
+ * @param   pErrInfo    Where to return extended error information. Optional.
+ */
+RTDECL(int) RTLdrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phMod, PRTERRINFO pErrInfo);
 
 /**
  * Called to read @a cb bytes at @a off into @a pvBuf.
@@ -839,6 +943,19 @@ typedef enum RTLDRPROP
     /** The image timestamp in seconds, genrally since unix epoc.
      * Returns a 32-bit or 64-bit signed integer value in the buffer. */
     RTLDRPROP_TIMESTAMP_SECONDS,
+    /** Checks if the image is signed.
+     * Returns a bool.  */
+    RTLDRPROP_IS_SIGNED,
+    /** Retrives the PKCS \#7 SignedData blob that signs the image.
+     * Returns variable sized buffer containing the ASN.1 BER encoding.
+     *
+     * @remarks This generally starts with a PKCS \#7 Content structure, the
+     *          SignedData bit is found a few levels down into this as per RFC. */
+    RTLDRPROP_PKCS7_SIGNED_DATA,
+
+    /** Query whether code signature checks are enabled.  */
+    RTLDRPROP_SIGNATURE_CHECKS_ENFORCED,
+
     /** End of valid properties.  */
     RTLDRPROP_END,
     /** Blow the type up to 32 bits. */
@@ -855,6 +972,8 @@ typedef enum RTLDRPROP
  *          must also normally deal with this.
  * @retval  VERR_INVALID_FUNCTION if the function value is wrong.
  * @retval  VERR_INVALID_PARAMETER if the buffer size is wrong.
+ * @retval  VERR_BUFFER_OVERFLOW if the function doesn't have a fixed size
+ *          buffer and the buffer isn't big enough.  Use RTLdrQueryPropEx.
  * @retval  VERR_INVALID_HANDLE if the handle is invalid.
  *
  * @param   hLdrMod         The module handle.
@@ -863,6 +982,95 @@ typedef enum RTLDRPROP
  * @param   cbBuf           The size of the return buffer.
  */
 RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf);
+
+/**
+ * Generic method for querying image properties, extended version.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if the property query isn't supported (either all
+ *          or that specific property).  The caller must handle this result.
+ * @retval  VERR_NOT_FOUND the property was not found in the module.  The caller
+ *          must also normally deal with this.
+ * @retval  VERR_INVALID_FUNCTION if the function value is wrong.
+ * @retval  VERR_INVALID_PARAMETER if the fixed buffer size is wrong. Correct
+ *          size in @a *pcbRet.
+ * @retval  VERR_BUFFER_OVERFLOW if the function doesn't have a fixed size
+ *          buffer and the buffer isn't big enough. Correct size in @a *pcbRet.
+ * @retval  VERR_INVALID_HANDLE if the handle is invalid.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   enmLdrProp      The property to query.
+ * @param   pvBuf           Pointer to the return buffer.
+ * @param   cbBuf           The size of the return buffer.
+ * @param   pcbRet          Where to return the amount of data returned.  On
+ *                          buffer size errors, this is set to the correct size.
+ *                          Optional.
+ */
+RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbBuf);
+
+
+/**
+ * Signature type, see FNRTLDRVALIDATESIGNEDDATA.
+ */
+typedef enum RTLDRSIGNATURETYPE
+{
+    /** Invalid value. */
+    RTLDRSIGNATURETYPE_INVALID = 0,
+    /** A RTPKCS7CONTENTINFO structure w/ RTPKCS7SIGNEDDATA inside.
+     * It's parsed, so the whole binary ASN.1 representation can be found by
+     * using RTASN1CORE_GET_RAW_ASN1_PTR() and RTASN1CORE_GET_RAW_ASN1_SIZE(). */
+    RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA,
+    /** End of valid values. */
+    RTLDRSIGNATURETYPE_END,
+    /** Make sure the size is 32-bit. */
+    RTLDRSIGNATURETYPE_32BIT_HACK = 0x7fffffff
+} RTLDRSIGNATURETYPE;
+
+/**
+ * Callback used by RTLdrVerifySignature to verify the signature and associated
+ * certificates.
+ *
+ * @returns IPRT status code.
+ * @param   hLdrMod         The module handle.
+ * @param   enmSignature    The signature format.
+ * @param   pvSignature     The signature data. Format given by @a enmSignature.
+ * @param   cbSignature     The size of the buffer @a pvSignature points to.
+ * @param   pErrInfo        Pointer to an error info buffer, optional.
+ * @param   pvUser          User argument.
+ *
+ */
+typedef DECLCALLBACK(int) FNRTLDRVALIDATESIGNEDDATA(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature, void const *pvSignature, size_t cbSignature,
+                                                    PRTERRINFO pErrInfo, void *pvUser);
+/** Pointer to a signature verification callback. */
+typedef FNRTLDRVALIDATESIGNEDDATA *PFNRTLDRVALIDATESIGNEDDATA;
+
+/**
+ * Verify the image signature.
+ *
+ * This may permform additional integrity checks on the image structures that
+ * was not done when opening the image.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_LDRVI_NOT_SIGNED if not signed.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   pfnCallback     Callback that does the signature and certificate
+ *                          verficiation.
+ * @param   pvUser          User argument for the callback.
+ * @param   pErrInfo        Pointer to an error info buffer. Optional.
+ */
+RTDECL(int) RTLdrVerifySignature(RTLDRMOD hLdrMod, PFNRTLDRVALIDATESIGNEDDATA pfnCallback, void *pvUser, PRTERRINFO pErrInfo);
+
+/**
+ * Calculate the image hash according the image signing rules.
+ *
+ * @returns IPRT status code.
+ * @param   hLdrMod         The module handle.
+ * @param   enmDigest       Which kind of digest.
+ * @param   pszDigest       Where to store the image digest.
+ * @param   cbDigest        Size of the buffer @a pszDigest points at.
+ */
+RTDECL(int) RTLdrHashImage(RTLDRMOD hLdrMod, RTDIGESTTYPE enmDigest, char *pszDigest, size_t cbDigest);
 
 RT_C_DECLS_END
 

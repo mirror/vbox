@@ -1816,6 +1816,16 @@ RTDECL(void) RTLogPrintf(const char *pszFormat, ...);
  */
 RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args);
 
+/**
+ * Dumper vprintf-like function outputting to a logger.
+ *
+ * @param   pvUser          Pointer to the logger instance to use, NULL for
+ *                          default instance.
+ * @param   pszFormat       Format string.
+ * @param   va              Format arguments.
+ */
+RTDECL(void) RTLogDumpPrintfV(void *pvUser, const char *pszFormat, va_list va);
+
 
 #ifndef DECLARED_FNRTSTROUTPUT          /* duplicated in iprt/string.h */
 #define DECLARED_FNRTSTROUTPUT

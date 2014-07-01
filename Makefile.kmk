@@ -21,10 +21,12 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Sub-makefiles / Sub-directories.
 #
-if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
- include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
+ifndef VBOX_ONLY_ROOT_MAKEFILE
+ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
+  include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
+ endif
+ include $(PATH_SUB_CURRENT)/src/Makefile.kmk
 endif
-include $(PATH_SUB_CURRENT)/src/Makefile.kmk
 
 #
 # Below we might need TOOL_ZIP_UNPACK (for the additions/docs/efifw packages
@@ -90,10 +92,10 @@ if1of ($(KBUILD_TARGET), win os2)
  ifdef VBOX_WITH_VBOXSDL
   include $(KBUILD_PATH)/sdks/LIBSDL.kmk
   InstallExternalLibs_SOURCES += \
-	$(DLL_SDK_LIBSDL_SDL)
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(DLL_SDK_LIBSDL_SDL))
   ifdef VBOX_WITH_SECURELABEL
    InstallExternalLibs_SOURCES += \
-	$(DLL_SDK_LIBSDL_SDLTTF)
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(DLL_SDK_LIBSDL_SDLTTF))
   endif
   ifeq ($(KBUILD_TARGET),os2)
    InstallExternalLibs_SOURCES += \
@@ -105,31 +107,34 @@ endif
 
 # The compiler runtime DLLs.
 ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
-  VBOX_PATH_VCC_REDIST         = $(PATH_TOOL_$(VBOX_VCC_TOOL))/redist/
-  VBOX_PATH_VCC_REDIST_CRT     = $(VBOX_PATH_VCC_REDIST)/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/Microsoft.VC100.CRT
-  VBOX_PATH_VCC_REDIST_CRT_DBG = $(VBOX_PATH_VCC_REDIST)/Debug_NonRedist/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/Microsoft.VC100.DebugCRT
-  InstallExternalLibs_SOURCES += \
-  	$(VBOX_PATH_VCC_REDIST_CRT)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
-  	$(VBOX_PATH_VCC_REDIST_CRT)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
-  	$(VBOX_PATH_VCC_REDIST_CRT)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll=>testcase/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
-  	$(VBOX_PATH_VCC_REDIST_CRT)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll=>testcase/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
+ include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk
+ include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL_STEM)X86.kmk
+ VBOX_PATH_VCC_REDIST             = $(PATH_TOOL_$(VBOX_VCC_TOOL))/redist/
+ VBOX_PATH_VCC_REDIST_CRT         = $(VBOX_PATH_VCC_REDIST)/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/Microsoft.VC100.CRT
+ VBOX_PATH_VCC_REDIST_CRT_DBG     = $(VBOX_PATH_VCC_REDIST)/Debug_NonRedist/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/Microsoft.VC100.DebugCRT
+ VBOX_PATH_VCC_REDIST_CRT_X86     = $(VBOX_PATH_VCC_REDIST)/x86/Microsoft.VC100.CRT
+ VBOX_PATH_VCC_REDIST_CRT_DBG_X86 = $(VBOX_PATH_VCC_REDIST)/Debug_NonRedist/x86/Microsoft.VC100.DebugCRT
+
+ InstallExternalLibs_SOURCES += \
+ 	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll) \
+ 	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll) \
+ 	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>testcase/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
+ 	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>testcase/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
  ifdef VBOX_WITH_32_ON_64_MAIN_API
-  VBOX_PATH_VCC_REDIST_CRT_X86 = $(VBOX_PATH_VCC_REDIST)/x86/Microsoft.VC100.CRT
-  VBOX_PATH_VCC_REDIST_CRT_DBG_X86 = $(VBOX_PATH_VCC_REDIST)/Debug_NonRedist/x86/Microsoft.VC100.DebugCRT
   InstallExternalLibs_SOURCES += \
-  	$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
-  	$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
  endif
  ifeq ($(VBOX_VCC_CRT_TYPE),d)
   InstallExternalLibs_SOURCES += \
-  	$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
-  	$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
-  	$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll=>testcase/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
-  	$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll=>testcase/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll) \
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll) \
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>testcase/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>testcase/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
   ifdef VBOX_WITH_32_ON_64_MAIN_API
   InstallExternalLibs_SOURCES += \
-  	$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
-  	$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
   endif
  endif
 endif
@@ -167,8 +172,8 @@ else
    qt4-bin_MODE = 755
    qt4-bin_INST = $(INST_BIN)
    qt4-bin_SOURCES = \
-	$(foreach qtmod,$(VBOX_QT4_MOD_NAMES),$(VBOX_PATH_QT4_LIB)/$(qtmod)4$(SUFF_DLL)) \
- 	$(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4$(SUFF_DLL)=>accessible/qtaccessiblewidgets4$(SUFF_DLL)
+   	$(foreach qtmod,$(VBOX_QT4_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt4-bin,$(VBOX_PATH_QT4_LIB)/$(qtmod)4$(SUFF_DLL))) \
+   	$(call VBOX_RE_SIGN_DLL_FN,qt4-bin,$(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4$(SUFF_DLL))=>accessible/qtaccessiblewidgets4$(SUFF_DLL)
   else
    INSTALLS += qt4-bin
    qt4-bin_MODE = 755

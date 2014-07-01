@@ -3165,6 +3165,19 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
             LogFlowThisFunc(("mSession.mPID=%d(0x%x)\n", mData->mSession.mPID, mData->mSession.mPID));
             LogFlowThisFunc(("session.pid=%d(0x%x)\n", pid, pid));
 
+#if defined(VBOX_WITH_HARDENING) && defined(RT_OS_WINDOWS)
+            /* Hardened windows builds have spawns two processes when a VM is
+               launched, the 2nd one is the one that will end up here.  */
+            RTPROCESS ppid;
+            int rc = RTProcQueryParent(pid, &ppid);
+            if (   (RT_SUCCESS(rc) && mData->mSession.mPID == ppid)
+                || rc == VERR_ACCESS_DENIED)
+            {
+                LogFlowThisFunc(("mSession.mPID => %d(%#x) - windows hardening stub\n", mData->mSession.mPID, pid));
+                mData->mSession.mPID = pid;
+            }
+#endif
+
             if (mData->mSession.mPID != pid)
                 return setError(E_ACCESSDENIED,
                                 tr("An unexpected process (PID=0x%08X) has tried to lock the "

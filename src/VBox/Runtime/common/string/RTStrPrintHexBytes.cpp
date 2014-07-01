@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,20 +37,23 @@
 
 RTDECL(int) RTStrPrintHexBytes(char *pszBuf, size_t cchBuf, void const *pv, size_t cb, uint32_t fFlags)
 {
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTSTRPRINTHEXBYTES_F_UPPER), VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszBuf, VERR_INVALID_POINTER);
     AssertReturn(cb * 2 >= cb, VERR_BUFFER_OVERFLOW);
     AssertReturn(cchBuf >= cb * 2 + 1, VERR_BUFFER_OVERFLOW);
     if (cb)
         AssertPtrReturn(pv, VERR_INVALID_POINTER);
 
+    static char const s_szHexDigitsLower[17] = "0123456789abcdef";
+    static char const s_szHexDigitsUpper[17] = "0123456789ABCDEF";
+    const char *pszHexDigits = !(fFlags & RTSTRPRINTHEXBYTES_F_UPPER) ? s_szHexDigitsLower : s_szHexDigitsUpper;
+
     uint8_t const *pb = (uint8_t const *)pv;
     while (cb-- > 0)
     {
-        static char const s_szHexDigits[17] = "0123456789abcdef";
         uint8_t b = *pb++;
-        *pszBuf++ = s_szHexDigits[b >> 4];
-        *pszBuf++ = s_szHexDigits[b & 0xf];
+        *pszBuf++ = pszHexDigits[b >> 4];
+        *pszBuf++ = pszHexDigits[b & 0xf];
     }
     *pszBuf = '\0';
     return VINF_SUCCESS;

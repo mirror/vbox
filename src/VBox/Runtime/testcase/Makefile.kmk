@@ -48,6 +48,7 @@ PROGRAMS += \
 	tstRTAvl \
 	tstRTBase64 \
 	tstRTBitOperations \
+	tstRTBigNum \
 	tstRTCidr \
 	tstRTCritSect \
 	tstRTCritSectRw \
@@ -78,6 +79,7 @@ PROGRAMS += \
 	tstIprtMiniString \
 	tstLdr \
 	tstLdrLoad \
+	tstRTLdrVerifyPeImage \
 	tstRTList \
 	tstRTLockValidator \
 	tstLog \
@@ -205,6 +207,9 @@ tstRTAvl_SOURCES = tstRTAvl.cpp
 
 tstRTBase64_TEMPLATE = VBOXR3TSTEXE
 tstRTBase64_SOURCES = tstRTBase64.cpp
+
+tstRTBigNum_TEMPLATE = VBOXR3TSTEXE
+tstRTBigNum_SOURCES = tstRTBigNum.cpp
 
 tstRTBitOperations_TEMPLATE = VBOXR3TSTEXE
 tstRTBitOperations_SOURCES = tstRTBitOperations.cpp
@@ -397,6 +402,9 @@ tstLdr-4_LIBS = \
 
 tstLdrLoad_TEMPLATE = VBOXR3TSTEXE
 tstLdrLoad_SOURCES = tstLdrLoad.cpp
+
+tstRTLdrVerifyPeImage_TEMPLATE = VBOXR3TSTEXE
+tstRTLdrVerifyPeImage_SOURCES = tstRTLdrVerifyPeImage.cpp
 
 tstRTList_TEMPLATE = VBOXR3TSTEXE
 tstRTList_SOURCES = tstRTList.cpp

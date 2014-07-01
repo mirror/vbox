@@ -2608,6 +2608,22 @@ RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args)
 }
 RT_EXPORT_SYMBOL(RTLogPrintfV);
 
+
+/**
+ * Dumper vprintf-like function outputting to a logger.
+ *
+ * @param   pvUser          Pointer to the logger instance to use, NULL for
+ *                          default instance.
+ * @param   pszFormat       Format string.
+ * @param   va              Format arguments.
+ */
+RTDECL(void) RTLogDumpPrintfV(void *pvUser, const char *pszFormat, va_list va)
+{
+    RTLogLoggerV((PRTLOGGER)pvUser, pszFormat, va);
+}
+RT_EXPORT_SYMBOL(RTLogDumpPrintfV);
+
+
 #ifdef IN_RING3
 
 /**

@@ -35,6 +35,7 @@ endif
 VBoxNetDHCPHardened_TEMPLATE = VBOXR3HARDENEDEXE
 VBoxNetDHCPHardened_SOURCES = VBoxNetDHCPHardened.cpp
 VBoxNetDHCPHardened_NAME = VBoxNetDHCP
+VBoxNetDHCPHardened_LDFLAGS.win = /SUBSYSTEM:windows
 
 
 #

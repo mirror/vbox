@@ -185,6 +185,8 @@
         <File Id="file_VBoxREM64.dll" Name="VBoxREM64.dll"
               Source="$(env.PATH_OUT)\bin\VBoxREM64.dll" />
 <?endif ?>
+        <File Id="file_VBoxSupLib.dll" Name="VBoxSupLib.dll"
+              Source="$(env.PATH_OUT)\bin\VBoxSupLib.dll" />
         <File Id="file_VBoxVMM.dll" Name="VBoxVMM.dll"
               Source="$(env.PATH_OUT)\bin\VBoxVMM.dll" />
 <?if $(env.VBOX_WITH_VRDP) = "yes" ?>

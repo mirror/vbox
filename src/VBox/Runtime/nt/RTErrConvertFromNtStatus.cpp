@@ -48,6 +48,7 @@ RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode)
         case STATUS_DATATYPE_MISALIGNMENT:  return VERR_INVALID_POINTER;
         case STATUS_NO_MORE_FILES:          return VERR_NO_MORE_FILES;
         case STATUS_NO_MORE_ENTRIES:        return VERR_NO_MORE_FILES;
+        case STATUS_NO_MEMORY:              return VERR_NO_MEMORY;
 
         case STATUS_INVALID_HANDLE:         return VERR_INVALID_HANDLE;
         case STATUS_INVALID_PARAMETER:      return VERR_INVALID_PARAMETER;
@@ -60,6 +61,7 @@ RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode)
         case STATUS_OBJECT_NAME_NOT_FOUND:  return VERR_FILE_NOT_FOUND;
         case STATUS_OBJECT_PATH_INVALID:    return VERR_INVALID_NAME;
         case STATUS_OBJECT_PATH_NOT_FOUND:  return VERR_PATH_NOT_FOUND;
+        case STATUS_OBJECT_PATH_SYNTAX_BAD: return VERR_INVALID_NAME;
         case STATUS_BAD_NETWORK_PATH:       return VERR_NET_PATH_NOT_FOUND;
         case STATUS_NOT_A_DIRECTORY:        return VERR_NOT_A_DIRECTORY;
     }

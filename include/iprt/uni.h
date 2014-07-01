@@ -417,6 +417,59 @@ DECLINLINE(RTUNICP) RTUniCpToLower(RTUNICP CodePoint)
 RTDECL(void) RTUniFree(PRTUNICP pusz);
 
 
+/**
+ * Checks if a code point valid.
+ *
+ * Any code point (defined or not) within the 17 unicode planes (0 thru 16),
+ * except surrogates will be considered valid code points by this function.
+ *
+ * @returns true if in range, false if not.
+ * @param   CodePoint       The unicode code point to validate.
+ */
+DECLINLINE(bool) RTUniCpIsValid(RTUNICP CodePoint)
+{
+    return CodePoint <= 0x00d7ff
+        || (   CodePoint <= 0x10ffff
+            && CodePoint >= 0x00e000);
+}
+
+
+/**
+ * Checks if the given code point is in the BMP range.
+ *
+ * Surrogates are not considered in the BMP range by this function.
+ *
+ * @returns true if in BMP, false if not.
+ * @param   CodePoint       The unicode code point to consider.
+ */
+DECLINLINE(bool) RTUniCpIsBMP(RTUNICP CodePoint)
+{
+    return CodePoint <= 0xd7ff
+        || (   CodePoint <= 0xffff
+            && CodePoint >= 0xe000);
+}
+
+
+/**
+ * Folds a unicode code point to lower case.
+ *
+ * @returns Folded code point.
+ * @param   CodePoint       The unicode code point to fold.
+ */
+DECLINLINE(size_t) RTUniCpCalcUtf8Len(RTUNICP CodePoint)
+{
+    if (CodePoint < 0x80)
+        return 1;
+    return 2
+        + (CodePoint >= 0x00000800)
+        + (CodePoint >= 0x00010000)
+        + (CodePoint >= 0x00200000)
+        + (CodePoint >= 0x04000000)
+        + (CodePoint >= 0x80000000) /* illegal */;
+}
+
+
+
 RT_C_DECLS_END
 /** @} */
 

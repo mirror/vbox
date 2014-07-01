@@ -94,6 +94,7 @@ hdrs.rc   := $(filter-out \
 	VBox/vmm/gvm.h \
 	iprt/thread.h \
 	iprt/mem.h \
+	iprt/memsafer.h \
 	iprt/alloc.h \
 	$(r3_cpp_hdrs) \
 	$(r3_only_hdrs) \

@@ -82,6 +82,8 @@ static const RTLDROPS g_rtldrNativeOps =
     NULL,
     NULL,
     NULL,
+    NULL,
+    NULL,
     42
 };
 
@@ -317,4 +319,21 @@ RTDECL(uintptr_t) RTLdrGetNativeHandle(RTLDRMOD hLdrMod)
     return pThis->hNative;
 }
 RT_EXPORT_SYMBOL(RTLdrGetNativeHandle);
+
+
+RTDECL(bool) RTLdrIsLoadable(const char *pszFilename)
+{
+    /*
+     * Try to load the library.
+     */
+    RTLDRMOD hLib;
+    int rc = RTLdrLoad(pszFilename, &hLib);
+    if (RT_SUCCESS(rc))
+    {
+        RTLdrClose(hLib);
+        return true;
+    }
+    return false;
+}
+RT_EXPORT_SYMBOL(RTLdrIsLoadable);
 

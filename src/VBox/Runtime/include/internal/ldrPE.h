@@ -72,15 +72,22 @@
 #define  IMAGE_SUBSYSTEM_OS2_CUI  0x5
 #define  IMAGE_SUBSYSTEM_POSIX_CUI  0x7
 
-#define  IMAGE_LIBRARY_PROCESS_INIT  0x0001
-#define  IMAGE_LIBRARY_PROCESS_TERM  0x0002
-#define  IMAGE_LIBRARY_THREAD_INIT  0x0004
-#define  IMAGE_LIBRARY_THREAD_TERM  0x0008
-#define  IMAGE_DLLCHARACTERISTICS_NO_ISOLATION  0x0200
-#define  IMAGE_DLLCHARACTERISTICS_NO_SEH  0x0400
-#define  IMAGE_DLLCHARACTERISTICS_NO_BIND  0x0800
-#define  IMAGE_DLLCHARACTERISTICS_WDM_DRIVER  0x2000
-#define  IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE  0x8000
+#define  IMAGE_LIBRARY_PROCESS_INIT                         0x0001
+#define  IMAGE_LIBRARY_PROCESS_TERM                         0x0002
+#define  IMAGE_LIBRARY_THREAD_INIT                          0x0004
+#define  IMAGE_LIBRARY_THREAD_TERM                          0x0008
+#define  IMAGE_DLLCHARACTERISTICS_RESERVED                  0x0010
+#define  IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA           0x0020
+#define  IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE              0x0040
+#define  IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY           0x0080
+#define  IMAGE_DLLCHARACTERISTICS_NX_COMPAT                 0x0100
+#define  IMAGE_DLLCHARACTERISTICS_NO_ISOLATION              0x0200
+#define  IMAGE_DLLCHARACTERISTICS_NO_SEH                    0x0400
+#define  IMAGE_DLLCHARACTERISTICS_NO_BIND                   0x0800
+#define  IMAGE_DLLCHARACTERISTICS_APPCONTAINER              0x1000
+#define  IMAGE_DLLCHARACTERISTICS_WDM_DRIVER                0x2000
+#define  IMAGE_DLLCHARACTERISTICS_GUARD_CF                  0x4000
+#define  IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE     0x8000
 
 #define  IMAGE_NUMBEROF_DIRECTORY_ENTRIES  0x10
 
@@ -207,6 +214,9 @@
 #define  WIN_CERT_TYPE_EFI_PKCS115          UINT16_C(0x0ef0)
 #define  WIN_CERT_TYPE_EFI_GUID             UINT16_C(0x0ef1)
 
+/** The alignment of the certificate table.
+ * @remarks Found thru signtool experiments.  */
+#define  WIN_CERTIFICATE_ALIGNMENT          8
 
 /* For .DBG files. */
 #define  IMAGE_SEPARATE_DEBUG_SIGNATURE     UINT16_C(0x4944)
@@ -516,7 +526,46 @@ typedef IMAGE_THUNK_DATA32 *PIMAGE_THUNK_DATA32;
 typedef IMAGE_THUNK_DATA32 const *PCIMAGE_THUNK_DATA32;
 
 
-typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32
+
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+#pragma pack()
+
+
+
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32_V1
+{
+    uint32_t  Size;
+    uint32_t  TimeDateStamp;
+    uint16_t  MajorVersion;
+    uint16_t  MinorVersion;
+    uint32_t  GlobalFlagsClear;
+    uint32_t  GlobalFlagsSet;
+    uint32_t  CriticalSectionDefaultTimeout;
+    uint32_t  DeCommitFreeBlockThreshold;
+    uint32_t  DeCommitTotalFreeThreshold;
+    uint32_t  LockPrefixTable;
+    uint32_t  MaximumAllocationSize;
+    uint32_t  VirtualMemoryThreshold;
+    uint32_t  ProcessHeapFlags;
+    uint32_t  ProcessAffinityMask;
+    uint16_t  CSDVersion;
+    uint16_t  Reserved1;
+    uint32_t  EditList;
+    uint32_t  SecurityCookie;
+} IMAGE_LOAD_CONFIG_DIRECTORY32_V1;
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY32_V1, 0x40);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V1 *PIMAGE_LOAD_CONFIG_DIRECTORY32_V1;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V1 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32_V1;
+
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32_V2
 {
     uint32_t  Size;
     uint32_t  TimeDateStamp;
@@ -538,11 +587,50 @@ typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32
     uint32_t  SecurityCookie;
     uint32_t  SEHandlerTable;
     uint32_t  SEHandlerCount;
-} IMAGE_LOAD_CONFIG_DIRECTORY32;
-typedef IMAGE_LOAD_CONFIG_DIRECTORY32 *PIMAGE_LOAD_CONFIG_DIRECTORY32;
-typedef IMAGE_LOAD_CONFIG_DIRECTORY32 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32;
+} IMAGE_LOAD_CONFIG_DIRECTORY32_V2;
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY32_V2, 0x48);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V2 *PIMAGE_LOAD_CONFIG_DIRECTORY32_V2;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V2 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32_V2;
 
-typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY64
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32_V3
+{
+    uint32_t  Size;
+    uint32_t  TimeDateStamp;
+    uint16_t  MajorVersion;
+    uint16_t  MinorVersion;
+    uint32_t  GlobalFlagsClear;
+    uint32_t  GlobalFlagsSet;
+    uint32_t  CriticalSectionDefaultTimeout;
+    uint32_t  DeCommitFreeBlockThreshold;
+    uint32_t  DeCommitTotalFreeThreshold;
+    uint32_t  LockPrefixTable;
+    uint32_t  MaximumAllocationSize;
+    uint32_t  VirtualMemoryThreshold;
+    uint32_t  ProcessHeapFlags;
+    uint32_t  ProcessAffinityMask;
+    uint16_t  CSDVersion;
+    uint16_t  Reserved1;
+    uint32_t  EditList;
+    uint32_t  SecurityCookie;
+    uint32_t  SEHandlerTable;
+    uint32_t  SEHandlerCount;
+    uint32_t  GuardCFCCheckFunctionPointer;
+    uint32_t  Reserved2;
+    uint32_t  GuardCFFunctionTable;
+    uint32_t  GuardCFFunctionCount;
+    uint32_t  GuardFlags;
+} IMAGE_LOAD_CONFIG_DIRECTORY32_V3;
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY32_V3, 0x5c);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V3 *PIMAGE_LOAD_CONFIG_DIRECTORY32_V3;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V3 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32_V3;
+
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V3   IMAGE_LOAD_CONFIG_DIRECTORY32;
+typedef PIMAGE_LOAD_CONFIG_DIRECTORY32_V3  PIMAGE_LOAD_CONFIG_DIRECTORY32;
+typedef PCIMAGE_LOAD_CONFIG_DIRECTORY32_V3 PCIMAGE_LOAD_CONFIG_DIRECTORY32;
+
+/* No _IMAGE_LOAD_CONFIG_DIRECTORY64_V1 exists. */
+
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY64_V2
 {
     uint32_t  Size;
     uint32_t  TimeDateStamp;
@@ -564,10 +652,48 @@ typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY64
     uint64_t  SecurityCookie;
     uint64_t  SEHandlerTable;
     uint64_t  SEHandlerCount;
-} IMAGE_LOAD_CONFIG_DIRECTORY64;
-typedef IMAGE_LOAD_CONFIG_DIRECTORY64 *PIMAGE_LOAD_CONFIG_DIRECTORY64;
-typedef IMAGE_LOAD_CONFIG_DIRECTORY64 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64;
+} IMAGE_LOAD_CONFIG_DIRECTORY64_V2;
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY64_V2, 0x70);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V2 *PIMAGE_LOAD_CONFIG_DIRECTORY64_V2;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V2 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64_V2;
 
+#pragma pack(4) /* Why not 8 byte alignment, baka microsofties?!? */
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY64_V3
+{
+    uint32_t  Size;
+    uint32_t  TimeDateStamp;
+    uint16_t  MajorVersion;
+    uint16_t  MinorVersion;
+    uint32_t  GlobalFlagsClear;
+    uint32_t  GlobalFlagsSet;
+    uint32_t  CriticalSectionDefaultTimeout;
+    uint64_t  DeCommitFreeBlockThreshold;
+    uint64_t  DeCommitTotalFreeThreshold;
+    uint64_t  LockPrefixTable;
+    uint64_t  MaximumAllocationSize;
+    uint64_t  VirtualMemoryThreshold;
+    uint64_t  ProcessAffinityMask;
+    uint32_t  ProcessHeapFlags;
+    uint16_t  CSDVersion;
+    uint16_t  Reserved1;
+    uint64_t  EditList;
+    uint64_t  SecurityCookie;
+    uint64_t  SEHandlerTable;
+    uint64_t  SEHandlerCount;
+    uint64_t  GuardCFCCheckFunctionPointer;
+    uint64_t  Reserved2;
+    uint64_t  GuardCFFunctionTable;
+    uint64_t  GuardCFFunctionCount;
+    uint32_t  GuardFlags;
+} IMAGE_LOAD_CONFIG_DIRECTORY64_V3;
+#pragma pack()
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY64_V3, 0x94);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V3 *PIMAGE_LOAD_CONFIG_DIRECTORY64_V3;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V3 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64_V3;
+
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V3   IMAGE_LOAD_CONFIG_DIRECTORY64;
+typedef PIMAGE_LOAD_CONFIG_DIRECTORY64_V3  PIMAGE_LOAD_CONFIG_DIRECTORY64;
+typedef PCIMAGE_LOAD_CONFIG_DIRECTORY64_V3 PCIMAGE_LOAD_CONFIG_DIRECTORY64;
 
 typedef struct _IMAGE_DEBUG_DIRECTORY
 {
@@ -580,6 +706,7 @@ typedef struct _IMAGE_DEBUG_DIRECTORY
     uint32_t  AddressOfRawData;
     uint32_t  PointerToRawData;
 } IMAGE_DEBUG_DIRECTORY;
+AssertCompileSize(IMAGE_DEBUG_DIRECTORY, 28);
 typedef IMAGE_DEBUG_DIRECTORY *PIMAGE_DEBUG_DIRECTORY;
 typedef IMAGE_DEBUG_DIRECTORY const *PCIMAGE_DEBUG_DIRECTORY;
 
@@ -591,6 +718,7 @@ typedef struct _IMAGE_DEBUG_MISC
     uint8_t    Reserved[3];
     uint8_t    Data[1];
 } IMAGE_DEBUG_MISC;
+AssertCompileSize(IMAGE_DEBUG_MISC, 16);
 typedef IMAGE_DEBUG_MISC *PIMAGE_DEBUG_MISC;
 typedef IMAGE_DEBUG_MISC const *PCIMAGE_DEBUG_MISC;
 
@@ -602,25 +730,9 @@ typedef struct WIN_CERTIFICATE
     uint16_t    wCertificateType;
     uint8_t     bCertificate[8];
 } WIN_CERTIFICATE;
+AssertCompileSize(WIN_CERTIFICATE, 16);
 typedef WIN_CERTIFICATE *PWIN_CERTIFICATE;
 typedef WIN_CERTIFICATE const *PCWIN_CERTIFICATE;
-
-
-
-
-/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
-/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
-/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
-/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
-/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
-/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
-/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
-/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
-/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
-#pragma pack()
-
-
-
 
 
 /** The header of a .DBG file (NT4). */
