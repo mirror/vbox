@@ -42,12 +42,18 @@ UIGDetailsModel::UIGDetailsModel(QObject *pParent)
     /* Prepare root: */
     prepareRoot();
 
+    /* Load settings: */
+    loadSettings();
+
     /* Register meta-type: */
     qRegisterMetaType<DetailsElementType>();
 }
 
 UIGDetailsModel::~UIGDetailsModel()
 {
+    /* Save settings: */
+    saveSettings();
+
     /* Cleanup root: */
     cleanupRoot();
 
@@ -156,16 +162,9 @@ void UIGDetailsModel::sltToggleAnimationFinished(DetailsElementType type, bool f
     /* Update layout: */
     updateLayout();
 
-    /* Load elements settings to modify: */
-    QMap<DetailsElementType, bool> settings = gEDataManager->selectorWindowDetailsElements();
-    /* If setting for corresponding element type exists: */
-    if (settings.contains(type))
-    {
-        /* Update element open/close status: */
-        settings[type] = fToggled;
-        /* Save elements settings back: */
-        gEDataManager->setSelectorWindowDetailsElements(settings);
-    }
+    /* Update element open/close status: */
+    if (m_settings.contains(type))
+        m_settings[type] = fToggled;
 }
 
 void UIGDetailsModel::sltElementTypeToggled()
@@ -174,15 +173,11 @@ void UIGDetailsModel::sltElementTypeToggled()
     QAction *pAction = qobject_cast<QAction*>(sender());
     DetailsElementType type = pAction->data().value<DetailsElementType>();
 
-    /* Load elements settings to modify: */
-    QMap<DetailsElementType, bool> settings = gEDataManager->selectorWindowDetailsElements();
-    /* Toggle element visibility setting: */
-    if (settings.contains(type))
-        settings.remove(type);
+    /* Toggle element visibility status: */
+    if (m_settings.contains(type))
+        m_settings.remove(type);
     else
-        settings[type] = true;
-    /* Save elements settings back: */
-    gEDataManager->setSelectorWindowDetailsElements(settings);
+        m_settings[type] = true;
 
     /* Rebuild group: */
     m_pRoot->rebuildGroup();
@@ -224,6 +219,34 @@ void UIGDetailsModel::prepareRoot()
     m_pRoot = new UIGDetailsGroup(scene());
 }
 
+void UIGDetailsModel::loadSettings()
+{
+    /* Load settings: */
+    m_settings = gEDataManager->selectorWindowDetailsElements();
+}
+
+void UIGDetailsModel::saveSettings()
+{
+    /* If settings are empty: */
+    if (m_settings.isEmpty())
+    {
+        /* Propose the defaults: */
+        m_settings[DetailsElementType_General] = true;
+        m_settings[DetailsElementType_Preview] = true;
+        m_settings[DetailsElementType_System] = true;
+        m_settings[DetailsElementType_Display] = true;
+        m_settings[DetailsElementType_Storage] = true;
+        m_settings[DetailsElementType_Audio] = true;
+        m_settings[DetailsElementType_Network] = true;
+        m_settings[DetailsElementType_USB] = true;
+        m_settings[DetailsElementType_SF] = true;
+        m_settings[DetailsElementType_Description] = true;
+    }
+
+    /* Save settings: */
+    gEDataManager->setSelectorWindowDetailsElements(m_settings);
+}
+
 void UIGDetailsModel::cleanupRoot()
 {
     delete m_pRoot;
@@ -259,14 +282,13 @@ bool UIGDetailsModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
 
     /* Prepare context-menu: */
     QMenu contextMenu;
-    /* Load elements settings: */
-    QMap<DetailsElementType, bool> settings = gEDataManager->selectorWindowDetailsElements();
+    /* Enumerate elements settings: */
     for (int iType = DetailsElementType_General; iType <= DetailsElementType_Description; ++iType)
     {
         DetailsElementType currentElementType = (DetailsElementType)iType;
         QAction *pAction = contextMenu.addAction(gpConverter->toString(currentElementType), this, SLOT(sltElementTypeToggled()));
         pAction->setCheckable(true);
-        pAction->setChecked(settings.contains(currentElementType));
+        pAction->setChecked(m_settings.contains(currentElementType));
         pAction->setData(QVariant::fromValue(currentElementType));
     }
     /* Exec context-menu: */
