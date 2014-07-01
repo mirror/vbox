@@ -231,6 +231,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
      */
     uint8_t     u8Trio[3] = { 0, 0, 0 }; /* shuts up gcc */
     uint8_t    *pbData    = (uint8_t *)pvData;
+    unsigned    ch;
     uint8_t     u8;
     unsigned    c6Bits    = 0;
     AssertCompile(sizeof(char) == sizeof(uint8_t));
@@ -238,7 +239,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
     for (;;)
     {
         /* The first 6-bit group. */
-        while ((u8 = cchStringMax > 0 ? g_au8CharToVal[*pszString] : BASE64_INVALID) == BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? *pszString : 0]) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -250,7 +251,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
         cchStringMax--;
 
         /* The second 6-bit group. */
-        while ((u8 = cchStringMax > 0 ? g_au8CharToVal[*pszString] : BASE64_INVALID) == BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? *pszString : 0]) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -264,7 +265,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
 
         /* The third 6-bit group. */
         u8 = BASE64_INVALID;
-        while ((u8 = cchStringMax > 0 ? g_au8CharToVal[*pszString] : BASE64_INVALID) == BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? *pszString : 0]) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -278,7 +279,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
 
         /* The fourth 6-bit group. */
         u8 = BASE64_INVALID;
-        while ((u8 = cchStringMax > 0 ? g_au8CharToVal[*pszString] : BASE64_INVALID) == BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = cchStringMax > 0 ? *pszString : 0]) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -304,7 +305,6 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
      * only 1 or 2 padding chars. Deal with it first.
      */
     unsigned cbPad = 0;
-    unsigned ch = 0;
     if (u8 == BASE64_PAD)
     {
         cbPad = 1;
@@ -325,8 +325,6 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
         if (cbPad >= 3)
             return VERR_INVALID_BASE64_ENCODING;
     }
-    else if (cchStringMax > 0)
-        ch = *pszString;
 
     /*
      * Invalid char and no where to indicate where the
