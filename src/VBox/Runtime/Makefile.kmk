@@ -2317,7 +2317,7 @@ RuntimeGuestR0_SOURCES   := $(filter-out generic/RTLogWriteUser-generic.cpp, $(R
 RuntimeGuestR0_SOURCES   += \
 	VBox/logbackdoor.cpp
 RuntimeGuestR0_SOURCES.win := \
-	$(filter-out common/hash/md% common/sha%, $(RuntimeR0Drv_SOURCES.win))
+	$(filter-out common/checksum/md% common/checksum/sha%, $(RuntimeR0Drv_SOURCES.win))
 
 
 #
