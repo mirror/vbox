@@ -66,8 +66,7 @@ static int rtCrPkcs7VerifySignedDataUsingOpenSsl(PCRTCRPKCS7CONTENTINFO pContent
         else
         {
             pAddCerts = sk_X509_new_null();
-            if (!pAddCerts)
-                rcOssl = VERR_NO_MEMORY;
+            rcOssl = RT_LIKELY(pAddCerts != NULL) ? VINF_SUCCESS : VERR_NO_MEMORY;
         }
         if (RT_SUCCESS(rcOssl))
         {
