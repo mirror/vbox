@@ -176,8 +176,11 @@ RTDECL(int) RTLdrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH
     if (rc <= VERR_INVALID_EXE_SIGNATURE && rc > VERR_BAD_EXE_FORMAT)
     {
         int rc2 = rtldrkLdrOpen(pReader, fFlags, enmArch, phMod, pErrInfo);
-        if (rc2 == VERR_MZ_EXE_NOT_SUPPORTED) /* Quick fix for bad return code. */
-            rc = rc;
+        if (   RT_SUCCESS(rc2)
+            || (rc == VERR_INVALID_EXE_SIGNATURE && rc2 != VERR_MZ_EXE_NOT_SUPPORTED /* Quick fix for bad return code. */)
+            || rc2 >  VERR_INVALID_EXE_SIGNATURE
+            || rc2 <= VERR_BAD_EXE_FORMAT)
+            rc = rc2;
     }
 #endif
 
