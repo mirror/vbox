@@ -1899,27 +1899,27 @@ RT_C_DECLS_END
 /** @name RTX509 status codes
  * @{ */
 /** Error reading a certificate in PEM format from BIO. */
-#define VERR_X509_READING_CERT_FROM_BIO                  (-23000)
+#define VERR_X509_READING_CERT_FROM_BIO                  (-23100)
 /** Error extracting a public key from the certificate. */
-#define VERR_X509_EXTRACT_PUBKEY_FROM_CERT               (-23001)
+#define VERR_X509_EXTRACT_PUBKEY_FROM_CERT               (-23101)
 /** Error extracting RSA from the public key. */
-#define VERR_X509_EXTRACT_RSA_FROM_PUBLIC_KEY            (-23002)
+#define VERR_X509_EXTRACT_RSA_FROM_PUBLIC_KEY            (-23102)
 /** Signature verification failed. */
-#define VERR_X509_RSA_VERIFICATION_FUILURE               (-23003)
+#define VERR_X509_RSA_VERIFICATION_FUILURE               (-23103)
 /** Basic constraints were not found. */
-#define VERR_X509_NO_BASIC_CONSTARAINTS                  (-23004)
+#define VERR_X509_NO_BASIC_CONSTARAINTS                  (-23104)
 /** Error getting extensions from the certificate. */
-#define VERR_X509_GETTING_EXTENSION_FROM_CERT            (-23005)
+#define VERR_X509_GETTING_EXTENSION_FROM_CERT            (-23105)
 /** Error getting a data from the extension. */
-#define VERR_X509_GETTING_DATA_FROM_EXTENSION            (-23006)
+#define VERR_X509_GETTING_DATA_FROM_EXTENSION            (-23106)
 /** Error formatting an extension. */
-#define VERR_X509_PRINT_EXTENSION_TO_BIO                 (-23007)
+#define VERR_X509_PRINT_EXTENSION_TO_BIO                 (-23107)
 /** X509 certificate verification error. */
-#define VERR_X509_CERTIFICATE_VERIFICATION_FAILURE       (-23008)
+#define VERR_X509_CERTIFICATE_VERIFICATION_FAILURE       (-23108)
 /** X509 certificate isn't self signed. */
-#define VERR_X509_NOT_SELFSIGNED_CERTIFICATE             (-23009)
+#define VERR_X509_NOT_SELFSIGNED_CERTIFICATE             (-23109)
 /** Warning X509 certificate isn't self signed.  */
-#define VINF_X509_NOT_SELFSIGNED_CERTIFICATE             23009
+#define VINF_X509_NOT_SELFSIGNED_CERTIFICATE             23109
 /** @} */
 
 /* SED-END */
