@@ -334,6 +334,7 @@ static int rtCrStoreInMemCreateInternal(PRTCRSTOREINMEM *ppStore)
         *ppStore = pStore;
         return VINF_SUCCESS;
     }
+    *pStore = NULL; /* shut up gcc-maybe-pita warning. */
     return VERR_NO_MEMORY;
 }
 
