@@ -304,9 +304,9 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
      * only 1 or 2 padding chars. Deal with it first.
      */
     unsigned cbPad = 0;
+    unsigned ch = 0;
     if (u8 == BASE64_PAD)
     {
-        unsigned ch;
         cbPad = 1;
         pszString++;
         cchStringMax--;
@@ -325,13 +325,16 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
         if (cbPad >= 3)
             return VERR_INVALID_BASE64_ENCODING;
     }
+    else if (cchStringMax > 0)
+        ch = *pszString;
 
     /*
      * Invalid char and no where to indicate where the
      * Base64 text ends? Return failure.
      */
     if (    u8 == BASE64_INVALID
-        &&  !ppszEnd)
+        &&  !ppszEnd
+        &&  ch != '\0')
         return VERR_INVALID_BASE64_ENCODING;
 
     /*
