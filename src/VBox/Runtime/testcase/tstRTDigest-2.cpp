@@ -87,7 +87,7 @@ static bool testGenericCheckResult(RTCRDIGEST hDigest, uint32_t iTest, TESTRTDIG
 
     if (strcmp(szDigest, pTest->pszDigest))
     {
-        RTTestIFailed("sub-test %#u (%s) failed: Expected %s, got %s.", iTest, pTest->pszDigest, szDigest);
+        RTTestIFailed("sub-test %#u (%s) failed: Expected %s, got %s.", iTest, pTest->pszTest, pTest->pszDigest, szDigest);
         return false;
     }
 

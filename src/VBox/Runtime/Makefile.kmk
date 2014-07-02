@@ -300,7 +300,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/crc32.cpp \
 	common/checksum/crc32c.cpp \
 	common/checksum/crc64.cpp \
-	common/checksum/md2.cpp \
+	common/checksum/md2-alt.cpp \
 	common/checksum/md2str.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/md5str.cpp \
@@ -2035,7 +2035,7 @@ RuntimeR0Drv_SOURCES.win = \
 	common/crypto/taf-core.cpp \
 	common/crypto/taf-init.cpp \
 	common/crypto/taf-sanity.cpp \
-	common/checksum/md2.cpp \
+	common/checksum/md2-alt.cpp \
 	common/checksum/sha1.cpp \
 	common/checksum/sha256.cpp \
 	common/checksum/sha512.cpp \
