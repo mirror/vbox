@@ -45,10 +45,13 @@ RT_C_DECLS_BEGIN
  */
 typedef union RTMD2CONTEXT
 {
-    uint64_t    u64BetterAlignment;
-    uint8_t     abPadding[4 + 16 + 16*4 + 16*4];
+    uint64_t            u64BetterAlignment;
+    uint8_t             abPadding[4 + 16 + 16*4 + 16*4];
 #ifdef RT_MD2_PRIVATE_CONTEXT
-    MD2_CTX     Private;
+    MD2_CTX             Private;
+#endif
+#ifdef RT_MD2_PRIVATE_ALT_CONTEXT
+    RTMD2ALTPRIVATECTX  AltPrivate;
 #endif
 } RTMD2CONTEXT;
 
