@@ -43,6 +43,33 @@ RT_C_DECLS_BEGIN
  */
 
 /**
+ * GIM Guest OS type Identifiers.
+ *
+ * Warning!! The enum values -must- be contiguous for less-than/greater-than
+ * range comparisons while casting from uint32_t.
+ *
+ * When adding OS X guest IDs, make sure to update GIMR3IsOSXGuest().
+ */
+typedef enum GIMOSID
+{
+    GIMOSID_UNKNOWN = 0,
+    GIMOSID_OSX,
+    GIMOSID_OSX_64,
+    GIMOSID_OSX_106,
+    GIMOSID_OSX_106_64,
+    GIMOSID_OSX_107,
+    GIMOSID_OSX_107_64,
+    GIMOSID_OSX_108,
+    GIMOSID_OSX_108_64,
+    GIMOSID_OSX_109,
+    GIMOSID_OSX_109_64,
+    /** End of valid Guest IDs. */
+    GIMOSID_END
+} GIMOSID;
+AssertCompileSize(GIMOSID, sizeof(uint32_t));
+
+
+/**
  * GIM Provider Identifiers.
  */
 typedef enum GIMPROVIDERID

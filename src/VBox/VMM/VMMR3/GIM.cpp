@@ -114,6 +114,20 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     rc = CFGMR3QueryU32Def(pCfgNode, "Version", &uVersion, 0 /* default */);
     AssertLogRelRCReturn(rc, rc);
 
+    /** @cfgm{GIM/GuestOsId, uint32_t}
+     * The guest OS identifier. The default is 0, implying an unknown Guest OS. */
+    GIMOSID GuestOsId = GIMOSID_END;
+    uint32_t uGuestOsId;
+    rc = CFGMR3QueryU32Def(pCfgNode, "GuestOsId", &uGuestOsId, GIMOSID_UNKNOWN);
+    AssertLogRelRCReturn(rc, rc);
+    if (uGuestOsId < GIMOSID_END)
+        GuestOsId = (GIMOSID)uGuestOsId;
+    else
+    {
+        LogRel(("GIM: GuestOsId %u invalid.", uGuestOsId));
+        return VERR_GIM_INVALID_GUESTOS_ID;
+    }
+
     /*
      * Setup the GIM provider for this VM.
      */
@@ -130,7 +144,7 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
         if (!RTStrCmp(szProvider, "Minimal"))
         {
             pVM->gim.s.enmProviderId = GIMPROVIDERID_MINIMAL;
-            rc = GIMR3MinimalInit(pVM);
+            rc = GIMR3MinimalInit(pVM, GuestOsId);
         }
         else if (!RTStrCmp(szProvider, "HyperV"))
         {
@@ -585,4 +599,35 @@ VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalDeregister(PVM pVM, PGIMMMIO2REGION
     return PGMHandlerPhysicalDeregister(pVM, pRegion->GCPhysPage);
 }
 #endif
+
+
+/**
+ * Checks if the given Guest OS identifier implies an OS X family of guests.
+ *
+ * @returns true if it's an OS X guest, false otherwise.
+ * @param   enmGuestOs      The Guest OS Id.
+ */
+VMMR3_INT_DECL(bool) GIMR3IsOSXGuest(GIMOSID enmGuestOs)
+{
+    switch (enmGuestOs)
+    {
+        case GIMOSID_OSX:
+        case GIMOSID_OSX_64:
+        case GIMOSID_OSX_106:
+        case GIMOSID_OSX_106_64:
+        case GIMOSID_OSX_107:
+        case GIMOSID_OSX_107_64:
+        case GIMOSID_OSX_108:
+        case GIMOSID_OSX_108_64:
+        case GIMOSID_OSX_109:
+        case GIMOSID_OSX_109_64:
+        {
+            return true;
+        }
+
+        default:    /* shut up gcc */
+            break;
+    }
+    return false;
+}
 
