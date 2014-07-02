@@ -477,50 +477,59 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
         if (RT_SUCCESS(rc))
         {
 #if defined(RT_OS_WINDOWS) /** @todo Need to use WCHAR on windows! */
-            HANDLE hFile = CreateFile(szPath,
-                                      GENERIC_READ,
-                                      FILE_SHARE_READ,
-                                      NULL,
-                                      OPEN_EXISTING,
-                                      FILE_ATTRIBUTE_NORMAL,
-                                      NULL);
-            if (hFile != INVALID_HANDLE_VALUE)
+            PRTUTF16 pwszPath;
+            rc = RTStrToUtf16(szPath, &pwszPath);
+            if (RT_SUCCESS(rc))
             {
+                HANDLE hFile = CreateFileW(pwszPath,
+                                           GENERIC_READ,
+                                           FILE_SHARE_READ,
+                                           NULL,
+                                           OPEN_EXISTING,
+                                           FILE_ATTRIBUTE_NORMAL,
+                                           NULL);
+                if (hFile != INVALID_HANDLE_VALUE)
+                {
 # if defined(VBOX_WITH_HARDENING) && !defined(IN_SUP_R3_STATIC) /* Latter: Not in VBoxCpuReport and friends. */
 
-                char szErr[1024];
-                RTERRINFO ErrInfo;
-                RTErrInfoInit(&ErrInfo, szErr, sizeof(szErr));
+                    char szErr[1024];
+                    RTERRINFO ErrInfo;
+                    RTErrInfoInit(&ErrInfo, szErr, sizeof(szErr));
 
-                uint32_t fFlags = SUPHNTVI_F_REQUIRE_BUILD_CERT;
-                if (pFile->enmType == kSupIFT_Rc)
-                    fFlags |= SUPHNTVI_F_RC_IMAGE;
+                    uint32_t fFlags = SUPHNTVI_F_REQUIRE_BUILD_CERT;
+                    if (pFile->enmType == kSupIFT_Rc)
+                        fFlags |= SUPHNTVI_F_RC_IMAGE;
 
-                rc = supHardenedWinVerifyImageByHandleNoName(hFile, fFlags, &ErrInfo);
-                if (RT_FAILURE(rc))
-                {
-                    rc = supR3HardenedError(rc, fFatal, "supR3HardenedVerifyFileInternal: '%s': Image verify error rc=%Rrc: %s\n",
-                                            szPath, rc, szErr);
-                    CloseHandle(hFile);
+                    rc = supHardenedWinVerifyImageByHandleNoName(hFile, fFlags, &ErrInfo);
+                    if (RT_FAILURE(rc))
+                    {
+                        rc = supR3HardenedError(rc, fFatal, "supR3HardenedVerifyFileInternal: '%s': Image verify error rc=%Rrc: %s\n",
+                                                szPath, rc, szErr);
+                        CloseHandle(hFile);
+                    }
+                    else
+# endif
+                    {
+                        /* it's valid. */
+                        if (fLeaveFileOpen)
+                            pVerified->hFile = (intptr_t)hFile;
+                        else
+                            CloseHandle(hFile);
+                        pVerified->fValidated = true;
+                    }
                 }
                 else
-#endif
                 {
-                    /* it's valid. */
-                    if (fLeaveFileOpen)
-                        pVerified->hFile = (intptr_t)hFile;
-                    else
-                        CloseHandle(hFile);
-                    pVerified->fValidated = true;
+                    int err = GetLastError();
+                    if (!pFile->fOptional || err != ERROR_FILE_NOT_FOUND)
+                        rc = supR3HardenedError(VERR_PATH_NOT_FOUND, fFatal,
+                                                "supR3HardenedVerifyFileInternal: Failed to open '%s': err=%d\n", szPath, err);
                 }
+                RTUtf16Free(pwszPath);
             }
             else
-            {
-                int err = GetLastError();
-                if (!pFile->fOptional || err != ERROR_FILE_NOT_FOUND)
-                    rc = supR3HardenedError(VERR_PATH_NOT_FOUND, fFatal,
-                                            "supR3HardenedVerifyFileInternal: Failed to open '%s': err=%d\n", szPath, err);
-            }
+                rc = supR3HardenedError(rc, fFatal, "supR3HardenedVerifyFileInternal: Failed to convert '%s' to UTF-16: %Rrc\n",
+                                        szPath, rc);
 #else /* UNIXY */
             int fd = open(szPath, O_RDONLY, 0);
             if (fd >= 0)
