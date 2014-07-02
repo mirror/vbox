@@ -307,6 +307,7 @@ static RTCRDIGESTDESC const g_rtCrDigestSha512Desc =
  */
 static PCRTCRDIGESTDESC const g_apDigestOps[] =
 {
+    &g_rtCrDigestMd2Desc,
     &g_rtCrDigestMd5Desc,
     &g_rtCrDigestSha1Desc,
     &g_rtCrDigestSha256Desc,
