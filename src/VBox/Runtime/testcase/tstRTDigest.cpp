@@ -29,6 +29,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/sha.h>
+#include <iprt/md2.h>
 #include <iprt/md5.h>
 #include <iprt/crc.h>
 
@@ -60,6 +61,24 @@ static int Error(const char *pszFormat, ...)
 }
 
 
+static int MyReadFile(RTFILE hFile, void *pvBuf, size_t cbToRead, size_t *pcbRead, uint64_t *pcbMaxLeft)
+{
+    int rc = VINF_SUCCESS;
+    if (*pcbMaxLeft > 0)
+    {
+        if (cbToRead > *pcbMaxLeft)
+            cbToRead = (size_t)*pcbMaxLeft;
+        rc = RTFileRead(hFile, pvBuf, cbToRead, pcbRead);
+        if (RT_SUCCESS(rc))
+            *pcbMaxLeft -= *pcbRead;
+    }
+    else
+        *pcbRead = 0;
+    return rc;
+}
+
+
+
 int main(int argc, char **argv)
 {
      RTR3InitExe(argc, &argv, 0);
@@ -69,11 +88,13 @@ int main(int argc, char **argv)
          kDigestType_NotSpecified,
          kDigestType_CRC32,
          kDigestType_CRC64,
+         kDigestType_MD2,
          kDigestType_MD5,
          kDigestType_SHA1,
          kDigestType_SHA256,
          kDigestType_SHA512
      } enmDigestType = kDigestType_NotSpecified;
+     const char *pszDigestType = "NotSpecified";
 
      enum
      {
@@ -82,34 +103,64 @@ int main(int argc, char **argv)
          kMethod_File
      } enmMethod = kMethod_Block;
 
+     uint64_t   offStart    = 0;
+     uint64_t   cbMax       = UINT64_MAX;
+     bool       fTestcase   = false;
+
      static const RTGETOPTDEF s_aOptions[] =
      {
          { "--type",   't', RTGETOPT_REQ_STRING },
          { "--method", 'm', RTGETOPT_REQ_STRING },
          { "--help",   'h', RTGETOPT_REQ_NOTHING },
+         { "--length", 'l', RTGETOPT_REQ_UINT64 },
+         { "--offset", 'o', RTGETOPT_REQ_UINT64 },
+         { "--testcase", 'x', RTGETOPT_REQ_NOTHING },
      };
 
      int ch;
      RTGETOPTUNION ValueUnion;
      RTGETOPTSTATE GetState;
-     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
      while ((ch = RTGetOpt(&GetState, &ValueUnion)))
      {
          switch (ch)
          {
              case 't':
                  if (!RTStrICmp(ValueUnion.psz, "crc32"))
+                 {
+                     pszDigestType = "CRC32";
                      enmDigestType = kDigestType_CRC32;
+                 }
                  else if (!RTStrICmp(ValueUnion.psz, "crc64"))
+                 {
+                     pszDigestType = "CRC64";
                      enmDigestType = kDigestType_CRC64;
+                 }
+                 else if (!RTStrICmp(ValueUnion.psz, "md2"))
+                 {
+                     pszDigestType = "MD2";
+                     enmDigestType = kDigestType_MD2;
+                 }
                  else if (!RTStrICmp(ValueUnion.psz, "md5"))
+                 {
+                     pszDigestType = "MD5";
                      enmDigestType = kDigestType_MD5;
+                 }
                  else if (!RTStrICmp(ValueUnion.psz, "sha1"))
+                 {
+                     pszDigestType = "SHA-1";
                      enmDigestType = kDigestType_SHA1;
+                 }
                  else if (!RTStrICmp(ValueUnion.psz, "sha256"))
+                 {
+                     pszDigestType = "SHA-256";
                      enmDigestType = kDigestType_SHA256;
+                 }
                  else if (!RTStrICmp(ValueUnion.psz, "sha512"))
+                 {
+                     pszDigestType = "SHA-512";
                      enmDigestType = kDigestType_SHA512;
+                 }
                  else
                  {
                      Error("Invalid digest type: %s\n", ValueUnion.psz);
@@ -131,8 +182,20 @@ int main(int argc, char **argv)
                  }
                  break;
 
+             case 'l':
+                 cbMax = ValueUnion.u64;
+                 break;
+
+             case 'o':
+                 offStart = ValueUnion.u64;
+                 break;
+
+             case 'x':
+                 fTestcase = true;
+                 break;
+
              case 'h':
-                 RTPrintf("syntax: tstRTDigest -t <digest-type> file [file2 [..]]\n");
+                 RTPrintf("usage: tstRTDigest -t <digest-type> [-o <offset>] [-l <length>] [-x] file [file2 [..]]\n");
                  return 1;
 
              case VINF_GETOPT_NOT_OPTION:
@@ -146,6 +209,8 @@ int main(int argc, char **argv)
                          return Error("Full file method is not implemented\n");
 
                      case kMethod_File:
+                         if (offStart != 0 || cbMax != UINT64_MAX)
+                             return Error("The -l and -o options do not work with the 'file' method.");
                          switch (enmDigestType)
                          {
                              case kDigestType_SHA1:
@@ -180,7 +245,14 @@ int main(int argc, char **argv)
                          int rc = RTFileOpen(&hFile, ValueUnion.psz, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
                          if (RT_FAILURE(rc))
                              return Error("RTFileOpen(,%s,) -> %Rrc\n", ValueUnion.psz, rc);
+                         if (offStart != 0)
+                         {
+                             rc = RTFileSeek(hFile, offStart, RTFILE_SEEK_BEGIN, NULL);
+                             if (RT_FAILURE(rc))
+                                 return Error("RTFileSeek(%s,%ull) -> %Rrc\n", ValueUnion.psz, offStart, rc);
+                         }
 
+                         uint64_t cbMaxLeft = cbMax;
                          size_t  cbRead;
                          uint8_t abBuf[_64K];
                          char   *pszDigest = (char *)&abBuf[0];
@@ -191,7 +263,7 @@ int main(int argc, char **argv)
                                  uint32_t uCRC32 = RTCrc32Start();
                                  for (;;)
                                  {
-                                     rc = RTFileRead(hFile, abBuf, sizeof(abBuf), &cbRead);
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
                                      if (RT_FAILURE(rc) || !cbRead)
                                          break;
                                      uCRC32 = RTCrc32Process(uCRC32, abBuf, cbRead);
@@ -206,7 +278,7 @@ int main(int argc, char **argv)
                                  uint64_t uCRC64 = RTCrc64Start();
                                  for (;;)
                                  {
-                                     rc = RTFileRead(hFile, abBuf, sizeof(abBuf), &cbRead);
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
                                      if (RT_FAILURE(rc) || !cbRead)
                                          break;
                                      uCRC64 = RTCrc64Process(uCRC64, abBuf, cbRead);
@@ -216,13 +288,30 @@ int main(int argc, char **argv)
                                  break;
                              }
 
+                             case kDigestType_MD2:
+                             {
+                                 RTMD2CONTEXT Ctx;
+                                 RTMd2Init(&Ctx);
+                                 for (;;)
+                                 {
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
+                                     if (RT_FAILURE(rc) || !cbRead)
+                                         break;
+                                     RTMd2Update(&Ctx, abBuf, cbRead);
+                                 }
+                                 uint8_t abDigest[RTMD2_HASH_SIZE];
+                                 RTMd2Final(&Ctx, abDigest);
+                                 RTMd2ToString(abDigest, pszDigest, sizeof(abBuf));
+                                 break;
+                             }
+
                              case kDigestType_MD5:
                              {
                                  RTMD5CONTEXT Ctx;
                                  RTMd5Init(&Ctx);
                                  for (;;)
                                  {
-                                     rc = RTFileRead(hFile, abBuf, sizeof(abBuf), &cbRead);
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
                                      if (RT_FAILURE(rc) || !cbRead)
                                          break;
                                      RTMd5Update(&Ctx, abBuf, cbRead);
@@ -239,7 +328,7 @@ int main(int argc, char **argv)
                                  RTSha1Init(&Ctx);
                                  for (;;)
                                  {
-                                     rc = RTFileRead(hFile, abBuf, sizeof(abBuf), &cbRead);
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
                                      if (RT_FAILURE(rc) || !cbRead)
                                          break;
                                      RTSha1Update(&Ctx, abBuf, cbRead);
@@ -256,7 +345,7 @@ int main(int argc, char **argv)
                                  RTSha256Init(&Ctx);
                                  for (;;)
                                  {
-                                     rc = RTFileRead(hFile, abBuf, sizeof(abBuf), &cbRead);
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
                                      if (RT_FAILURE(rc) || !cbRead)
                                          break;
                                      RTSha256Update(&Ctx, abBuf, cbRead);
@@ -273,7 +362,7 @@ int main(int argc, char **argv)
                                  RTSha512Init(&Ctx);
                                  for (;;)
                                  {
-                                     rc = RTFileRead(hFile, abBuf, sizeof(abBuf), &cbRead);
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
                                      if (RT_FAILURE(rc) || !cbRead)
                                          break;
                                      RTSha512Update(&Ctx, abBuf, cbRead);
@@ -293,7 +382,15 @@ int main(int argc, char **argv)
                              RTPrintf("Partial: %s  %s\n", pszDigest, ValueUnion.psz);
                              return Error("RTFileRead(%s) -> %Rrc\n", ValueUnion.psz, rc);
                          }
-                         RTPrintf("%s  %s\n", pszDigest, ValueUnion.psz);
+
+                         if (!fTestcase)
+                             RTPrintf("%s  %s\n", pszDigest, ValueUnion.psz);
+                         else if (offStart)
+                             RTPrintf("        { &g_abRandom72KB[%#4llx], %5llu, \"%s\", \"%s %llu bytes @%llu\" },\n",
+                                      offStart, cbMax - cbMaxLeft, pszDigest, pszDigestType, offStart, cbMax - cbMaxLeft);
+                         else
+                             RTPrintf("        { &g_abRandom72KB[0],     %5llu, \"%s\", \"%s %llu bytes\" },\n",
+                                      cbMax - cbMaxLeft, pszDigest, pszDigestType, cbMax - cbMaxLeft);
                          break;
                      }
 

@@ -54,6 +54,7 @@ PROGRAMS += \
 	tstRTCritSectRw \
 	tstRTCType \
 	tstRTDigest \
+	tstRTDigest-2 \
 	tstDir \
 	tstDir-2 \
 	tstDir-3 \
@@ -235,7 +236,11 @@ tstRTCritSectW32_DEFS = TRY_WIN32_CRIT
 tstRTCType_TEMPLATE = VBOXR3TSTEXE
 tstRTCType_SOURCES = tstRTCType.cpp
 
+tstRTDigest_TEMPLATE = VBOXR3TSTEXE
 tstRTDigest_SOURCES = tstRTDigest.cpp
+
+tstRTDigest-2_TEMPLATE = VBOXR3TSTEXE
+tstRTDigest-2_SOURCES = tstRTDigest-2.cpp
 
 ifdef VBOX_WITH_LIBCURL
 tstRTHttp_TEMPLATE = VBOXR3TSTEXE
