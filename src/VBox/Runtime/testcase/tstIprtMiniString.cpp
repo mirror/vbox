@@ -484,6 +484,7 @@ static void test2(RTTEST hTest)
         RTTESTI_CHECK_MSG(ucUpper2 == ucUpper, ("ucUpper2=%#x ucUpper=%#x\n", ucUpper2, ucUpper));
 
         RTUNICP const       ucLower2  = RTUniCpToLower(ucUpper);
+        RTTESTI_CHECK_MSG(ucLower2 == ucLower, ("ucLower2=%#x ucLower=%#x\n", ucLower2, ucLower));
         RTUNICP const       ucUpper3  = RTUniCpToUpper(ucLower2);
         RTTESTI_CHECK_MSG(ucUpper3 == ucUpper, ("ucUpper3=%#x ucUpper=%#x\n", ucUpper3, ucUpper));
 
@@ -529,6 +530,7 @@ static void test2(RTTEST hTest)
         RTTESTI_CHECK_MSG(ucLower2 == ucLower, ("ucLower2=%#x ucLower=%#x\n", ucLower2, ucLower));
 
         RTUNICP const       ucUpper2  = RTUniCpToUpper(ucLower);
+        RTTESTI_CHECK_MSG(ucUpper2 == ucUpper, ("ucUpper2=%#x ucUpper=%#x\n", ucUpper2, ucUpper));
         RTUNICP const       ucLower3  = RTUniCpToLower(ucUpper2);
         RTTESTI_CHECK_MSG(ucLower3 == ucLower, ("ucLower3=%#x ucLower=%#x\n", ucLower3, ucLower));
 
