@@ -150,7 +150,8 @@ uint32_t                    g_uNtVerCombined;
 #endif
 
 #ifdef IN_RING3
-/** Timestamp hack working around issues with old DLLs that we ship. */
+/** Timestamp hack working around issues with old DLLs that we ship.
+ * See supHardenedWinVerifyImageByHandle() for details.  */
 static uint64_t             g_uBuildTimestampHack = 0;
 #endif
 
@@ -865,18 +866,19 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
             rc = RTLdrQueryProp(hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &pNtViRdr->uTimestamp, sizeof(pNtViRdr->uTimestamp));
             if (RT_SUCCESS(rc))
             {
-#ifdef IN_RING3
-                if ((fFlags & SUPHNTVI_F_REQUIRE_BUILD_CERT) && pNtViRdr->uTimestamp < g_uBuildTimestampHack)
+#ifdef IN_RING3 /* Hack alert! (see above) */
+                if (   (fFlags & SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING)
+                    && (fFlags & SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT)
+                    && pNtViRdr->uTimestamp < g_uBuildTimestampHack)
                     pNtViRdr->uTimestamp = g_uBuildTimestampHack;
 #endif
 
                 rc = RTLdrVerifySignature(hLdrMod, supHardNtViCallback, pNtViRdr, pErrInfo);
 
-#ifdef IN_RING3
+#ifdef IN_RING3 /* Hack alert! (see above) */
                 if ((fFlags & SUPHNTVI_F_REQUIRE_BUILD_CERT) && g_uBuildTimestampHack == 0 && RT_SUCCESS(rc))
                     g_uBuildTimestampHack = pNtViRdr->uTimestamp;
 #endif
-
 
                 /*
                  * Microsoft doesn't sign a whole bunch of DLLs, so we have to
