@@ -22,6 +22,7 @@
 /* Qt includes: */
 #include <QValidator>
 #include <QPixmap>
+#include <QMap>
 
 /* External includes: */
 #ifdef Q_WS_X11
