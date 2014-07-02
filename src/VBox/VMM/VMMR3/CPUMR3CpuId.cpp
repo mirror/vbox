@@ -938,6 +938,29 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
 
 
 /**
+ * Gets a CPU ID leaf.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pLeaf       Where to store the found leaf.
+ * @param   uLeaf       The leaf to locate.
+ * @param   uSubLeaf    The subleaf to locate.  Pass 0 if no subleaves.
+ */
+VMMR3DECL(int) CPUMR3CpuIdGetLeaf(PVM pVM, PCPUMCPUIDLEAF pLeaf, uint32_t uLeaf, uint32_t uSubLeaf)
+{
+    PCPUMCPUIDLEAF pcLeaf = cpumR3CpuIdGetLeaf(pVM->cpum.s.GuestInfo.paCpuIdLeavesR3, pVM->cpum.s.GuestInfo.cCpuIdLeaves,
+                                               uLeaf, uSubLeaf);
+    if (pcLeaf)
+    {
+        memcpy(pLeaf, pcLeaf, sizeof(*pLeaf));
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+
+/**
  * Inserts a CPU ID leaf, replacing any existing ones.
  *
  * @returns VBox status code.

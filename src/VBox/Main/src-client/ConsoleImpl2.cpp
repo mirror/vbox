@@ -1001,6 +1001,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCPUM, "CMPXCHG16B", true);
         }
 
+#if 0
         /* Expose extended MWAIT features to Mac OS X guests. */
         if (fOsXGuest)
         {
@@ -1038,7 +1039,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             if (uMaxIntelFamilyModelStep != UINT32_MAX)
                 InsertConfigInteger(pCPUM, "MaxIntelFamilyModelStep", uMaxIntelFamilyModelStep);
         }
-
+#endif
 
         /* Synthetic CPU */
         BOOL fSyntheticCpu = false;
