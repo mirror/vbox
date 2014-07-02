@@ -26,6 +26,30 @@
 #include <QWidget>
 #include <QTextBrowser>
 
+/** QObject reimplementation,
+  * providing passed QObject with property assignation routine. */
+class QObjectPropertySetter : public QObject
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor. */
+    QObjectPropertySetter(QObject *pParent, const QString &strName)
+        : QObject(pParent), m_strName(strName) {}
+
+private slots:
+
+    /** Assigns property value. */
+    void sltAssignProperty(const QString &strValue)
+        { parent()->setProperty(m_strName.toAscii().constData(), strValue); }
+
+private:
+
+    /** Holds property name. */
+    const QString m_strName;
+};
+
 /**
  *  Simple class that filters out all key presses and releases
  *  got while the Alt key is pressed. For some very strange reason,
