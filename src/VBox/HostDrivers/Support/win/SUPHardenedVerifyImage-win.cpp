@@ -710,8 +710,15 @@ static DECLCALLBACK(int) supHardNtViCertVerifyCallback(PCRTCRX509CERTIFICATE pCe
                     PCRTCRCERTCTX pCertCtx;
                     while ((pCertCtx = RTCrStoreCertSearchNext(g_hNtKernelRootStore, &Search)) != NULL)
                     {
-                        if (RTCrX509SubjectPublicKeyInfo_Compare(&pCertCtx->pCert->TbsCertificate.SubjectPublicKeyInfo,
-                                                                 pPublicKeyInfo) == 0)
+                        PCRTCRX509SUBJECTPUBLICKEYINFO pCertPubKeyInfo = NULL;
+                        if (pCertCtx->pCert)
+                            pCertPubKeyInfo = &pCertCtx->pCert->TbsCertificate.SubjectPublicKeyInfo;
+                        else if (pCertCtx->pTaInfo)
+                            pCertPubKeyInfo = &pCertCtx->pTaInfo->PubKey;
+                        else
+                            pCertPubKeyInfo = NULL;
+                        if (   pCertPubKeyInfo
+                            && RTCrX509SubjectPublicKeyInfo_Compare(pCertPubKeyInfo, pPublicKeyInfo) == 0)
                             cFound++;
                         RTCrCertCtxRelease(pCertCtx);
                     }
