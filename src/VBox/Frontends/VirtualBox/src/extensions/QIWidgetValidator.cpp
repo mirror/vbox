@@ -17,10 +17,110 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "QIWidgetValidator.h"
-
 /* GUI includes: */
+#include "QIWidgetValidator.h"
 #include "UISettingsPage.h"
+
+
+QObjectValidator::QObjectValidator(QValidator *pValidator, QObject *pParent /* = 0 */)
+    : QObject(pParent)
+    , m_pValidator(pValidator)
+    , m_state(QValidator::Invalid)
+{
+    /* Prepare: */
+    prepare();
+}
+
+void QObjectValidator::sltValidate(QString strInput /* = QString() */)
+{
+    /* Make sure validator assigned: */
+    AssertPtrReturnVoid(m_pValidator);
+
+    /* Validate: */
+    int iPosition = 0;
+    const QValidator::State state = m_pValidator->validate(strInput, iPosition);
+
+    /* If validity state changed: */
+    if (m_state != state)
+    {
+        /* Update last validity state: */
+        m_state = state;
+
+        /* Notifies listener(s) about validity change: */
+        emit sigValidityChange(m_state);
+    }
+}
+
+void QObjectValidator::prepare()
+{
+    /* Make sure validator assigned: */
+    AssertPtrReturnVoid(m_pValidator);
+
+    /* Register validator as child: */
+    m_pValidator->setParent(this);
+
+    /* Validate: */
+    sltValidate();
+}
+
+
+QObjectValidatorGroup::QObjectValidatorGroup(QObject *pParent)
+    : QObject(pParent)
+    , m_fResult(false)
+{
+}
+
+void QObjectValidatorGroup::addObjectValidator(QObjectValidator *pObjectValidator)
+{
+    /* Make sure object-validator passed: */
+    AssertPtrReturnVoid(pObjectValidator);
+
+    /* Register object-validator as child: */
+    pObjectValidator->setParent(this);
+
+    /* Insert object-validator to internal map: */
+    m_group.insert(pObjectValidator, toResult(pObjectValidator->state()));
+
+    /* Attach object-validator to group: */
+    connect(pObjectValidator, SIGNAL(sigValidityChange(QValidator::State)),
+            this, SLOT(sltValidate(QValidator::State)));
+}
+
+void QObjectValidatorGroup::sltValidate(QValidator::State state)
+{
+    /* Determine sender object-validator: */
+    QObjectValidator *pObjectValidatorSender = qobject_cast<QObjectValidator*>(sender());
+    /* Make sure that is one of our senders: */
+    AssertReturnVoid(pObjectValidatorSender && m_group.contains(pObjectValidatorSender));
+
+    /* Update internal map: */
+    m_group[pObjectValidatorSender] = toResult(state);
+
+    /* Enumerate all the registered object-validators: */
+    bool fResult = true;
+    foreach (QObjectValidator *pObjectValidator, m_group.keys())
+        if (!toResult(pObjectValidator->state()))
+        {
+            fResult = false;
+            break;
+        }
+
+    /* If validity state changed: */
+    if (m_fResult != fResult)
+    {
+        /* Update last validity state: */
+        m_fResult = fResult;
+
+        /* Notifies listener(s) about validity change: */
+        emit sigValidityChange(m_fResult);
+    }
+}
+
+/* static */
+bool QObjectValidatorGroup::toResult(QValidator::State state)
+{
+    return state == QValidator::Acceptable;
+}
 
 
 UIPageValidator::UIPageValidator(QObject *pParent, UISettingsPage *pPage)
