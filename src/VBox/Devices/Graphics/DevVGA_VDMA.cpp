@@ -1902,6 +1902,7 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
 
                 cbCmdPart = sizeof (*pRealCmdHdr) - cbCmdPart;
                 memcpy(((uint8_t*)(&Hdr)) + cbCmdPart, pvCmd, cbCmdPart);
+                pRealCmdHdr = &Hdr;
                 pvCurCmdTail = (const void*)(((uint8_t*)pvCmd) + cbCmdPart);
                 cbCurCmdTail = PAGE_SIZE - cbCmdPart;
             }
