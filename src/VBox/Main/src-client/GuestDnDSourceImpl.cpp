@@ -332,7 +332,7 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
                                      lstURI.RootCount(), cbURIs));
 
                         aData.resize(cbURIs + 1 /* Include termination */);
-                        memcpy((void *)aData.front(), strURIs.c_str(), cbURIs);
+                        memcpy(&aData.front(), strURIs.c_str(), cbURIs);
                     }
                     else
                         hr = VBOX_E_IPRT_ERROR;
@@ -341,7 +341,7 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
                 {
                     /* Copy the data into a safe array of bytes. */
                     aData.resize(cbData);
-                    memcpy((void *)aData.front(), pvData, cbData);
+                    memcpy(&aData.front(), pvData, cbData);
                 }
             }
             catch (std::bad_alloc &)
