@@ -150,6 +150,11 @@ uint32_t                    g_uNtVerCombined;
 #endif
 
 #ifdef IN_RING3
+/** Timestamp hack working around issues with old DLLs that we ship. */
+static uint64_t             g_uBuildTimestampHack = 0;
+#endif
+
+#ifdef IN_RING3
 /** Pointer to WinVerifyTrust. */
 PFNWINVERIFYTRUST                       g_pfnWinVerifyTrust;
 /** Pointer to CryptCATAdminAcquireContext. */
@@ -851,11 +856,27 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
              * For the time being, we use the executable timestamp as the
              * certificate validation date.  We must query that first to avoid
              * potential issues re-entering the loader code from the callback.
+             *
+             * Update: Save the first timestamp we validate with build cert and
+             *         use this as a minimum timestamp for further build cert
+             *         validations.  This works around issues with old DLLs that
+             *         we sign against with our certificate (crt, sdl, qt).
              */
             rc = RTLdrQueryProp(hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &pNtViRdr->uTimestamp, sizeof(pNtViRdr->uTimestamp));
             if (RT_SUCCESS(rc))
             {
+#ifdef IN_RING3
+                if ((fFlags & SUPHNTVI_F_REQUIRE_BUILD_CERT) && pNtViRdr->uTimestamp < g_uBuildTimestampHack)
+                    pNtViRdr->uTimestamp = g_uBuildTimestampHack;
+#endif
+
                 rc = RTLdrVerifySignature(hLdrMod, supHardNtViCallback, pNtViRdr, pErrInfo);
+
+#ifdef IN_RING3
+                if ((fFlags & SUPHNTVI_F_REQUIRE_BUILD_CERT) && g_uBuildTimestampHack == 0 && RT_SUCCESS(rc))
+                    g_uBuildTimestampHack = pNtViRdr->uTimestamp;
+#endif
+
 
                 /*
                  * Microsoft doesn't sign a whole bunch of DLLs, so we have to
