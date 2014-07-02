@@ -2438,7 +2438,7 @@ RT_C_DECLS_END
 /** OpenSSL failed to initialize the digest algorithm contextn. */
 #define VERR_CR_DIGEST_OSSL_DIGEST_INIT_ERROR       (-24201)
 /** OpenSSL failed to clone the digest algorithm contextn. */
-#define VERR_CR_DIGEST_OSSL_DIGEST_CTX_COPY_ERROR   (-24201)
+#define VERR_CR_DIGEST_OSSL_DIGEST_CTX_COPY_ERROR   (-24202)
 /** @} */
 
 /* SED-END */
