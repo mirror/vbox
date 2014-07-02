@@ -266,7 +266,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/taf-core.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/taf-init.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/taf-sanity.cpp \
-	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/md2.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/md2-alt.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/md5.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/sha1.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/sha256.cpp \
