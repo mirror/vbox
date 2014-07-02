@@ -31,6 +31,85 @@
 /* Forward declarations: */
 class UISettingsPage;
 
+/** QObject reimplementation,
+  * providing passed QObject with validation routine. */
+class QObjectValidator : public QObject
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listener(s) about validity change. */
+    void sigValidityChange(QValidator::State state);
+
+public:
+
+    /** Constructor.
+      * @param pParent    is passed on to the QObject constructor,
+      * @param pValidator is passed on to the OObject children
+      *                   and used to perform validation itself. */
+    QObjectValidator(QValidator *pValidator, QObject *pParent = 0);
+
+    /** Returns last validation state. */
+    QValidator::State state() const { return m_state; }
+
+private slots:
+
+    /** Performs validation: */
+    void sltValidate(QString strInput = QString());
+
+private:
+
+    /** Prepare routine. */
+    void prepare();
+
+    /** Holds validator. */
+    QValidator *m_pValidator;
+    /** Holds validation state. */
+    QValidator::State m_state;
+};
+
+/** QObject reimplementation,
+  * which can group various QObjectValidator instances to operate on. */
+class QObjectValidatorGroup : public QObject
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listener(s) about validity change. */
+    void sigValidityChange(bool fValid);
+
+public:
+
+    /** Constructor.
+      * @param pParent is passed on to the QObject constructor. */
+    QObjectValidatorGroup(QObject *pParent);
+
+    /** Adds object-validator.
+      * @note The ownership of @a pObjectValidator is transferred to the group,
+      *       and it's the group's responsibility to delete it. */
+    void addObjectValidator(QObjectValidator *pObjectValidator);
+
+    /** Returns last validation result. */
+    bool result() const { return m_fResult; }
+
+private slots:
+
+    /** Performs validation: */
+    void sltValidate(QValidator::State state);
+
+private:
+
+    /** Converts QValidator::State to bool result. */
+    static bool toResult(QValidator::State state);
+
+    /** Holds object-validators and their states. */
+    QMap<QObjectValidator*, bool> m_group;
+    /** Holds validation result. */
+    bool m_fResult;
+};
+
 /* Page validator prototype: */
 class UIPageValidator : public QObject
 {
