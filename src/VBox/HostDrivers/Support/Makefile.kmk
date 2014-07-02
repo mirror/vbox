@@ -539,6 +539,9 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  ifdef VBOX_WITH_VISTA_NO_SP
   VBoxDrv_DEFS.win       += VBOX_WITH_VISTA_NO_SP
  endif
+ ifdef VBOX_WITH_HARDENING
+  VBoxDrv_ASDEFS         += VBOX_WITH_HARDENING
+ endif
 
  VBoxDrv_INCS             = . $(VBoxDrv_0_OUTDIR)
  VBoxDrv_INCS.darwin      = ./darwin
