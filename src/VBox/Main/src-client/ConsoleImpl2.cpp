@@ -1001,46 +1001,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCPUM, "CMPXCHG16B", true);
         }
 
-#if 0
-        /* Expose extended MWAIT features to Mac OS X guests. */
-        if (fOsXGuest)
-        {
-            LogRel(("Using MWAIT extensions\n"));
-            InsertConfigInteger(pCPUM, "MWaitExtensions", true);
-        }
-
-        if (fOsXGuest)
-        {
-            InsertConfigInteger(pCPUM, "EnableHVP", 1);
-
-            /* Fake the CPU family/model so the guest works.  This is partly
-               because older mac releases really doesn't work on newer cpus,
-               and partly because mac os x expects more from systems with newer
-               cpus (MSRs, power features, whatever). */
-            uint32_t uMaxIntelFamilyModelStep = UINT32_MAX;
-            if (   osTypeId == "MacOS"
-                || osTypeId == "MacOS_64")
-                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482. */
-            else if (   osTypeId == "MacOS106"
-                     || osTypeId == "MacOS106_64")
-                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */
-            else if (   osTypeId == "MacOS107"
-                     || osTypeId == "MacOS107_64")
-                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure out
-                                                                                what is required here. */
-            else if (   osTypeId == "MacOS108"
-                     || osTypeId == "MacOS108_64")
-                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure out
-                                                                                what is required here. */
-            else if (   osTypeId == "MacOS109"
-                     || osTypeId == "MacOS109_64")
-                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure
-                                                                                out what is required here. */
-            if (uMaxIntelFamilyModelStep != UINT32_MAX)
-                InsertConfigInteger(pCPUM, "MaxIntelFamilyModelStep", uMaxIntelFamilyModelStep);
-        }
-#endif
-
         /* Synthetic CPU */
         BOOL fSyntheticCpu = false;
         hrc = pMachine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);          H();
@@ -1202,20 +1162,29 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 fGimDeviceNeeded = false;
                 break;
 
-            case ParavirtProvider_Default:  /** @todo Choose a provider based on guest OS type. There is no "Default" provider. */
-                pcszParavirtProvider = "None";
-                fGimDeviceNeeded = false;
+            case ParavirtProvider_Default:
+            {
+                if (fOsXGuest)
+                {
+                    pcszParavirtProvider = "Minimal";
+                    fGimDeviceNeeded = false;
+                }
+                else
+                {
+                    /** @todo Choose a provider based on guest OS type. There is no "Default" provider. */
+                    pcszParavirtProvider = "None";
+                    fGimDeviceNeeded = false;
+                }
                 break;
+            }
 
             case ParavirtProvider_Legacy:
             {
                 if (fOsXGuest)
                     pcszParavirtProvider = "Minimal";
                 else
-                {
                     pcszParavirtProvider = "None";
-                    fGimDeviceNeeded = false;
-                }
+                fGimDeviceNeeded = false;
                 break;
             }
 
