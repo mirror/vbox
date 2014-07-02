@@ -1195,10 +1195,14 @@ DECLHIDDEN(int) supHardenedWinInitImageVerifier(PRTERRINFO pErrInfo)
                                           NULL, 0, NULL, 0, NULL, 0,
                                           pErrInfo, "SpcAndNtKernelSupplemental");
 
+#if 0 /* For the time being, always trust the build certificate. It bypasses the timestamp issues of CRT and SDL. */
         /* If the build certificate is a test singing certificate, it must be a
            trusted root or we'll fail to validate anything. */
         if (   RT_SUCCESS(rc)
             && RTCrX509Name_Compare(&g_BuildX509Cert.TbsCertificate.Subject, &g_BuildX509Cert.TbsCertificate.Issuer) == 0)
+#else
+        if (RT_SUCCESS(rc))
+#endif
             rc = RTCrStoreCertAddEncoded(g_hSpcAndNtKernelRootStore, RTCRCERTCTX_F_ENC_X509_DER,
                                          g_abSUPBuildCert, g_cbSUPBuildCert, pErrInfo);
 
