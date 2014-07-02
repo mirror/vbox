@@ -47,6 +47,7 @@ else ifdef VBOX_ONLY_VALIDATIONKIT
  LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub
  LIBRARIES.win.x86 += RuntimeR3VccTricks
+ include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
 else ifdef VBOX_ONLY_DOCS
  #
