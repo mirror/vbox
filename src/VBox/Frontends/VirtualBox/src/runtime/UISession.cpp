@@ -541,18 +541,14 @@ bool UISession::setPause(bool fOn)
 
 void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 {
-    CMachine machine = session().GetMachine();
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-
-    /*
-     * Flag indicating whether we want to do the usual .ISO mounting or not.
-     * First try updating the Guest Additions directly without mounting the .ISO.
-     */
+    /* This flag indicates whether we want to do the usual .ISO mounting or not.
+     * First try updating the Guest Additions directly without mounting the .ISO. */
     bool fDoMount = false;
+
     /* Auto-update in GUI currently is disabled. */
 #ifndef VBOX_WITH_ADDITIONS_AUTOUPDATE_UI
     fDoMount = true;
-#else
+#else /* VBOX_WITH_ADDITIONS_AUTOUPDATE_UI */
     CGuest guest = session().GetConsole().GetGuest();
     QVector<KAdditionsUpdateFlag> aFlagsUpdate;
     QVector<QString> aArgs;
@@ -588,79 +584,77 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     }
 #endif /* VBOX_WITH_ADDITIONS_AUTOUPDATE_UI */
 
-    if (fDoMount) /* Fallback to only mounting the .ISO file. */
+    /* Do we still want mounting? */
+    if (!fDoMount)
+        return;
+
+    /* Open corresponding medium: */
+    QString strMediumID;
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CMedium image = vbox.OpenMedium(strSource, KDeviceType_DVD, KAccessMode_ReadWrite, false /* fForceNewUuid */);
+    if (vbox.isOk() && !image.isNull())
+        strMediumID = image.GetId();
+    else
     {
-        QString strUuid;
-        CMedium image = vbox.OpenMedium(strSource, KDeviceType_DVD, KAccessMode_ReadWrite, false /* fForceNewUuid */);
-        if (image.isNull())
-        {
-            image = vbox.OpenMedium(strSource, KDeviceType_DVD, KAccessMode_ReadWrite, false /* fForceNewUuid */);
-            if (vbox.isOk())
-                strUuid = image.GetId();
-        }
-        else
-            strUuid = image.GetId();
+        msgCenter().cannotOpenMedium(vbox, UIMediumType_DVD, strSource, mainMachineWindow());
+        return;
+    }
 
-        if (!vbox.isOk())
-        {
-            msgCenter().cannotOpenMedium(vbox, UIMediumType_DVD, strSource, mainMachineWindow());
-            return;
-        }
+    /* Make sure GA medium ID is valid: */
+    AssertReturnVoid(!strMediumID.isNull());
 
-        AssertMsg(!strUuid.isNull(), ("Guest Additions image UUID should be valid!\n"));
+    /* Get machine: */
+    CMachine machine = session().GetMachine();
 
-        QString strCntName;
-        LONG iCntPort = -1, iCntDevice = -1;
-        /* Searching for the first suitable slot */
+    /* Searching for the first suitable controller/slot: */
+    QString strControllerName;
+    LONG iCntPort = -1, iCntDevice = -1;
+    foreach (const CStorageController &controller, machine.GetStorageControllers())
+    {
+        foreach (const CMediumAttachment &attachment, machine.GetMediumAttachmentsOfController(controller.GetName()))
         {
-            CStorageControllerVector controllers = machine.GetStorageControllers();
-            int i = 0;
-            while (i < controllers.size() && strCntName.isNull())
+            if (attachment.GetType() == KDeviceType_DVD)
             {
-                CStorageController controller = controllers[i];
-                CMediumAttachmentVector attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
-                int j = 0;
-                while (j < attachments.size() && strCntName.isNull())
-                {
-                    CMediumAttachment attachment = attachments[j];
-                    if (attachment.GetType() == KDeviceType_DVD)
-                    {
-                        strCntName = controller.GetName();
-                        iCntPort = attachment.GetPort();
-                        iCntDevice = attachment.GetDevice();
-                    }
-                    ++ j;
-                }
-                ++ i;
+                strControllerName = controller.GetName();
+                iCntPort = attachment.GetPort();
+                iCntDevice = attachment.GetDevice();
+                break;
             }
         }
+        if (!strControllerName.isNull())
+            break;
+    }
 
-        if (!strCntName.isNull())
+    /* Make sure suitable controller/slot were found: */
+    if (strControllerName.isNull())
+    {
+        msgCenter().cannotMountGuestAdditions(machine.GetName());
+        return;
+    }
+
+    /* Try to find UIMedium among cached: */
+    UIMedium medium = vboxGlobal().medium(strMediumID);
+    if (medium.isNull())
+    {
+        /* Create new one if necessary: */
+        medium = UIMedium(image, UIMediumType_DVD, KMediumState_Created);
+        vboxGlobal().createMedium(medium);
+    }
+
+    /* Mount medium to corresponding controller/slot: */
+    machine.MountMedium(strControllerName, iCntPort, iCntDevice, medium.medium(), false /* force */);
+    if (!machine.isOk())
+    {
+        /* Ask for force mounting: */
+        if (msgCenter().cannotRemountMedium(machine, medium, true /* mount? */,
+                                            true /* retry? */, mainMachineWindow()))
         {
-            /* Create new UIMedium: */
-            UIMedium medium(image, UIMediumType_DVD, KMediumState_Created);
-
-            /* Inform VBoxGlobal about it: */
-            vboxGlobal().createMedium(medium);
-
-            /* Mount medium to the predefined port/device: */
-            machine.MountMedium(strCntName, iCntPort, iCntDevice, medium.medium(), false /* force */);
+            /* Force mount medium to the predefined port/device: */
+            machine.MountMedium(strControllerName, iCntPort, iCntDevice, medium.medium(), true /* force */);
             if (!machine.isOk())
-            {
-                /* Ask for force mounting: */
-                if (msgCenter().cannotRemountMedium(machine, medium, true /* mount? */,
-                                                    true /* retry? */, mainMachineWindow()))
-                {
-                    /* Force mount medium to the predefined port/device: */
-                    machine.MountMedium(strCntName, iCntPort, iCntDevice, medium.medium(), true /* force */);
-                    if (!machine.isOk())
-                        msgCenter().cannotRemountMedium(machine, medium, true /* mount? */,
-                                                        false /* retry? */, mainMachineWindow());
-                }
-            }
+                msgCenter().cannotRemountMedium(machine, medium, true /* mount? */,
+                                                false /* retry? */, mainMachineWindow());
         }
-        else
-            msgCenter().cannotMountGuestAdditions(machine.GetName());
     }
 }
 
