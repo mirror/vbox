@@ -269,6 +269,9 @@ typedef struct RTCRX509CERTPATHSINT
 
     /** An object identifier initialized to anyPolicy. */
     RTASN1OBJID                         AnyPolicyObjId;
+
+    /** Temporary scratch space. */
+    char                                szTmp[1024];
 } RTCRX509CERTPATHSINT;
 typedef RTCRX509CERTPATHSINT *PRTCRX509CERTPATHSINT;
 
@@ -1962,8 +1965,13 @@ static bool rtCrX509CpvCheckBasicCertInfo(PRTCRX509CERTPATHSINT pThis, PRTCRX509
     /*
      * 6.1.3.a.2 - Verify that the certificate is valid at the specified time.
      */
+    AssertCompile(sizeof(pThis->szTmp) >= 36 * 3);
     if (!RTCrX509Validity_IsValidAtTimeSpec(&pNode->pCert->TbsCertificate.Validity, &pThis->ValidTime))
-        return rtCrX509CpvFailed(pThis, VERR_CR_X509_CPV_NOT_VALID_AT_TIME, "Certificate is not valid");
+        return rtCrX509CpvFailed(pThis, VERR_CR_X509_CPV_NOT_VALID_AT_TIME,
+                                 "Certificate is not valid (ValidTime=%s Validity=[%s...%s])",
+                                 RTTimeSpecToString(&pThis->ValidTime, &pThis->szTmp[0], 36),
+                                 RTTimeToString(&pNode->pCert->TbsCertificate.Validity.NotBefore.Time, &pThis->szTmp[36], 36),
+                                 RTTimeToString(&pNode->pCert->TbsCertificate.Validity.NotAfter.Time,  &pThis->szTmp[2*36], 36) );
 
     /*
      * 6.1.3.a.3 - Verified that the certficiate is not revoked.
