@@ -739,9 +739,7 @@ endif
 ## @{
 # Enables hardening.
 # Most developers will want to disable this in their LocalConfig.kmk.
-ifn1of ($(KBUILD_TARGET), win)
 VBOX_WITH_HARDENING = 1
-endif
 # Where the application files are (going to be) installed.
 #VBOX_PATH_APP_PRIVATE       = /usr/lib/virtualbox
 ifdef VBOX_WITH_HARDENING
