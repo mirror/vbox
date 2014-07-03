@@ -65,6 +65,10 @@
 # pragma intrinsic(_InterlockedExchangeAdd)
 # pragma intrinsic(_InterlockedCompareExchange)
 # pragma intrinsic(_InterlockedCompareExchange64)
+# pragma intrinsic(_rotl)
+# pragma intrinsic(_rotr)
+# pragma intrinsic(_rotl64)
+# pragma intrinsic(_rotr64)
 # ifdef RT_ARCH_AMD64
 #  pragma intrinsic(__stosq)
 #  pragma intrinsic(_byteswap_uint64)
@@ -4809,6 +4813,117 @@ DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64)
     return u64;
 }
 
+
+/**
+ * Rotate 32-bit unsigned value to the left by @a cShift.
+ *
+ * @returns Rotated value.
+ * @param   u32                 The value to rotate.
+ * @param   cShift              How many bits to rotate by.
+ */
+DECLINLINE(uint32_t) ASMRotateLeftU32(uint32_t u32, uint32_t cShift)
+{
+#if RT_INLINE_ASM_USES_INTRIN
+    return _rotl(u32, cShift);
+#elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+    __asm__ __volatile__("roll %1, %0" : "=r" (u32) : "Ir" (cShift), "0" (u32));
+#else
+    cShift &= 31;
+    return (u32 << cShift) | (u32 >> (32 - cShift));
+#endif
+}
+
+
+/**
+ * Rotate 32-bit unsigned value to the right by @a cShift.
+ *
+ * @returns Rotated value.
+ * @param   u32                 The value to rotate.
+ * @param   cShift              How many bits to rotate by.
+ */
+DECLINLINE(uint32_t) ASMRotateRightU32(uint32_t u32, uint32_t cShift)
+{
+#if RT_INLINE_ASM_USES_INTRIN
+    return _rotr(u32, cShift);
+#elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+    __asm__ __volatile__("rorl %1, %0" : "=r" (u32) : "Ir" (cShift), "0" (u32));
+#else
+    cShift &= 31;
+    return (u32 >> cShift) | (u32 << (32 - cShift));
+#endif
+}
+
+
+/**
+ * Rotate 64-bit unsigned value to the left by @a cShift.
+ *
+ * @returns Rotated value.
+ * @param   u64                 The value to rotate.
+ * @param   cShift              How many bits to rotate by.
+ */
+DECLINLINE(uint64_t) ASMRotateLeftU64(uint64_t u64, uint32_t cShift)
+{
+#if RT_INLINE_ASM_USES_INTRIN
+    return _rotl64(u64, cShift);
+#elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    __asm__ __volatile__("rolq %1, %0" : "=r" (u64) : "Ir" (cShift), "0" (u64));
+#elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_X86)
+    uint32_t uSpill;
+    __asm__ __volatile__("testb $0x20, %%cl\n\t"        /* if (cShift >= 0x20) { swap(u64.hi, u64lo); cShift -= 0x20; } */
+                         "jz    1f\n\t"
+                         "xchgl %%eax, %%edx\n\t"
+                         "1:\n\t"
+                         "andb  $0x1f, %%cl\n\t"        /* if (cShift & 0x1f) { */
+                         "jz    2f\n\t"
+                         "movl  %%edx, %2\n\t"          /*   save the hi value in %3. */
+                         "shldl %%cl,%%eax,%%edx\n\t"   /*   shift the hi value left, feeding MSBits from the low value. */
+                         "shldl %%cl,%2,%%eax\n\t"      /*   shift the lo value left, feeding MSBits from the saved hi value. */
+                         "2:\n\t"                       /* } */
+                         : "=A" (u64), "=c" (cShift), "=r" (uSpill)
+                         : "0" (u64),
+                           "1" (cShift));
+    return u64;
+#else
+    cShift &= 63;
+    return (u64 << cShift) | (u64 >> (64 - cShift));
+#endif
+}
+
+
+/**
+ * Rotate 64-bit unsigned value to the right by @a cShift.
+ *
+ * @returns Rotated value.
+ * @param   u64                 The value to rotate.
+ * @param   cShift              How many bits to rotate by.
+ */
+DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift)
+{
+#if RT_INLINE_ASM_USES_INTRIN
+    return _rotr64(u64, cShift);
+#elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    __asm__ __volatile__("rorq %1, %0" : "=r" (u64) : "Ir" (cShift), "0" (u64));
+#elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_X86)
+    uint32_t uSpill;
+    __asm__ __volatile__("testb $0x20, %%cl\n\t"        /* if (cShift >= 0x20) { swap(u64.hi, u64lo); cShift -= 0x20; } */
+                         "jz    1f\n\t"
+                         "xchgl %%eax, %%edx\n\t"
+                         "1:\n\t"
+                         "andb  $0x1f, %%cl\n\t"        /* if (cShift & 0x1f) { */
+                         "jz    2f\n\t"
+                         "movl  %%edx, %2\n\t"          /*   save the hi value in %3. */
+                         "shrdl %%cl,%%eax,%%edx\n\t"   /*   shift the hi value right, feeding LSBits from the low value. */
+                         "shrdl %%cl,%2,%%eax\n\t"      /*   shift the lo value right, feeding LSBits from the saved hi value. */
+                         "2:\n\t"                       /* } */
+                         : "=A" (u64), "=c" (cShift), "=r" (uSpill)
+                         : "0" (u64),
+                           "1" (cShift));
+    return u64;
+#else
+    cShift &= 63;
+    return (u64 >> cShift) | (u64 << (64 - cShift));
+#endif
+}
 
 /** @} */
 

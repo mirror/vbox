@@ -45,9 +45,13 @@ RT_C_DECLS_BEGIN
  */
 typedef union RTSHA1CONTEXT
 {
-    uint8_t abPadding[ARCH_BITS == 32 ? 96 : 128];
+    uint64_t                u64BetterAlignment;
+    uint8_t                 abPadding[8 + (5 + 80) * 4 + 4];
 #ifdef RT_SHA1_PRIVATE_CONTEXT
-    SHA_CTX Private;
+    SHA_CTX                 Private;
+#endif
+#ifdef RT_SHA1_PRIVATE_ALT_CONTEXT
+    RTSHA1ALTPRIVATECTX     AltPrivate;
 #endif
 } RTSHA1CONTEXT;
 /** Pointer to an SHA-1 context. */
@@ -148,9 +152,10 @@ RTR3DECL(int) RTSha1DigestFromFile(const char *pszFile, char **ppszDigest, PFNRT
  */
 typedef union RTSHA256CONTEXT
 {
-    uint8_t abPadding[ARCH_BITS == 32 ? 112 : 160];
+    uint64_t                u64BetterAlignment;
+    uint8_t                 abPadding[ARCH_BITS == 32 ? 112 : 160];
 #ifdef RT_SHA256_PRIVATE_CONTEXT
-    SHA256_CTX Private;
+    SHA256_CTX              Private;
 #endif
 } RTSHA256CONTEXT;
 /** Pointer to an SHA-256 context. */
@@ -252,9 +257,10 @@ RTR3DECL(int) RTSha256DigestFromFile(const char *pszFile, char **ppszDigest, PFN
  */
 typedef union RTSHA512CONTEXT
 {
-    uint8_t abPadding[ARCH_BITS == 32 ? 216 : 256];
+    uint64_t                u64BetterAlignment;
+    uint8_t                 abPadding[ARCH_BITS == 32 ? 216 : 256];
 #ifdef RT_SHA512_PRIVATE_CONTEXT
-    SHA512_CTX Private;
+    SHA512_CTX              Private;
 #endif
 } RTSHA512CONTEXT;
 /** Pointer to an SHA-512 context. */
