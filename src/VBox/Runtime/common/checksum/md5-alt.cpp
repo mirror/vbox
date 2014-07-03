@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - MD5 message digest functions.
+ * IPRT - MD5 message digest functions, alternative implementation.
  */
 
 /*
