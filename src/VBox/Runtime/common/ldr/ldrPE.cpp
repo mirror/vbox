@@ -2135,25 +2135,25 @@ static int rtldrPE_VerifySignatureDecode(PRTLDRMODPE pModPe, PRTLDRPESIGNATURE p
 }
 
 
-static int rtldrPE_VerifyAllPageHashesV2(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE pAttrib, RTDIGESTTYPE enmDigest,
-                                         void *pvScratch, size_t cbScratch, PRTERRINFO pErrInfo)
+static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE pAttrib, RTDIGESTTYPE enmDigest,
+                                       void *pvScratch, size_t cbScratch, PRTERRINFO pErrInfo)
 {
     AssertReturn(cbScratch >= _4K, VERR_INTERNAL_ERROR_3);
 
     /*
      * Calculate the special places.
      */
-    RTLDRPEHASHSPECIALS SpecialPlaces;
+    RTLDRPEHASHSPECIALS SpecialPlaces = { 0, 0, 0, 0, 0, 0 }; /* shut up gcc */
     int rc = rtldrPe_CalcSpecialHashPlaces(pModPe, &SpecialPlaces, pErrInfo);
     if (RT_FAILURE(rc))
         return rc;
 
     uint32_t const cbHash = rtLdrPE_HashGetHashSize(enmDigest);
-    uint32_t const cPages = pAttrib->u.pPageHashesV2->RawData.Asn1Core.cb / (cbHash + 4);
-    if (cPages * (cbHash + 4) != pAttrib->u.pPageHashesV2->RawData.Asn1Core.cb)
+    uint32_t const cPages = pAttrib->u.pPageHashes->RawData.Asn1Core.cb / (cbHash + 4);
+    if (cPages * (cbHash + 4) != pAttrib->u.pPageHashes->RawData.Asn1Core.cb)
         return RTErrInfoSetF(pErrInfo, VERR_LDRVI_PAGE_HASH_TAB_SIZE_OVERFLOW,
                              "Page Hashes V2 size issue: cb=%#x cbHash=%#x",
-                             pAttrib->u.pPageHashesV2->RawData.Asn1Core.cb, cbHash);
+                             pAttrib->u.pPageHashes->RawData.Asn1Core.cb, cbHash);
 
     /*
      * Walk the table.
@@ -2165,7 +2165,7 @@ static int rtldrPE_VerifyAllPageHashesV2(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZED
     uint32_t        offPrev    = 0;
     uint32_t        offSectEnd = pModPe->cbHeaders;
     uint32_t        iSh        = UINT32_MAX;
-    uint8_t const  *pbHashTab  = pAttrib->u.pPageHashesV2->RawData.Asn1Core.uData.pu8;
+    uint8_t const  *pbHashTab  = pAttrib->u.pPageHashes->RawData.Asn1Core.uData.pu8;
     for (uint32_t iPage = 0; iPage < cPages; iPage++)
     {
         /* Decode the page offset. */
@@ -2356,11 +2356,28 @@ static int rtldrPE_VerifySignatureValidateHash(PRTLDRMODPE pModPe, PRTLDRPESIGNA
         {
             /*
              * Compare the page hashes if present.
+             *
+             * Seems the difference between V1 and V2 page hash attributes is
+             * that v1 uses SHA-1 while v2 uses SHA-256. The data structures to
+             * be identical otherwise.  Initially we assumed the digest
+             * algorithm was supposed to be RTCRSPCINDIRECTDATACONTENT::DigestInfo,
+             * i.e. the same as for the whole image hash.  The initial approach
+             * worked just fine, but this makes more sense.
+             *
+             * (See also comments in osslsigncode.c (google it).)
              */
-            PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE pAttrib = RTCrSpcIndirectDataContent_GetPeImageHashesV2(pSignature->pIndData);
+            PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE pAttrib;
+            pAttrib = RTCrSpcIndirectDataContent_GetPeImageObjAttrib(pSignature->pIndData,
+                                                                     RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V2);
             if (pAttrib)
-                rc = rtldrPE_VerifyAllPageHashesV2(pModPe, pAttrib, pSignature->enmDigest, pvScratch, cbScratch, pErrInfo);
-
+                rc = rtldrPE_VerifyAllPageHashes(pModPe, pAttrib, RTDIGESTTYPE_SHA256, pvScratch, cbScratch, pErrInfo);
+            else
+            {
+                pAttrib = RTCrSpcIndirectDataContent_GetPeImageObjAttrib(pSignature->pIndData,
+                                                                         RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V1);
+                if (pAttrib)
+                    rc = rtldrPE_VerifyAllPageHashes(pModPe, pAttrib, RTDIGESTTYPE_SHA1, pvScratch, cbScratch, pErrInfo);
+            }
             return rc;
         }
         rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_IMAGE_HASH_MISMATCH,

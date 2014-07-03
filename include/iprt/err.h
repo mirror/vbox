@@ -2358,16 +2358,14 @@ RT_C_DECLS_END
 #define VERR_CR_SPC_BAD_MONIKER_CHOICE                          (-23411)
 /** Internal SPC error: Bad object moniker data pointer. */
 #define VERR_CR_SPC_MONIKER_BAD_DATA                            (-23412)
-/** Multiple v2 PE image page hash tables. */
-#define VERR_CR_SPC_PEIMAGE_MULTIPLE_V2_HASH_TABS               (-23413)
-/** Version 1 PE image page hash tables has not been implemented/tested. */
-#define VERR_CR_SPC_PEIMAGE_V1_HASH_TABS_NOT_IMPL               (-23414)
+/** Multiple PE image page hash tables. */
+#define VERR_CR_SPC_PEIMAGE_MULTIPLE_HASH_TABS                  (-23413)
 /** Unknown SPC PE image attribute. */
-#define VERR_CR_SPC_PEIMAGE_UNKNOWN_ATTRIBUTE                   (-23415)
+#define VERR_CR_SPC_PEIMAGE_UNKNOWN_ATTRIBUTE                   (-23414)
 /** URL not expected in SPC PE image data. */
-#define VERR_CR_SPC_PEIMAGE_URL_UNEXPECTED                      (-23416)
+#define VERR_CR_SPC_PEIMAGE_URL_UNEXPECTED                      (-23415)
 /** PE image data without any valid content was not expected. */
-#define VERR_CR_SPC_PEIMAGE_NO_CONTENT                          (-23417)
+#define VERR_CR_SPC_PEIMAGE_NO_CONTENT                          (-23416)
 /** @} */
 
 /** @name RTCrPkix status codes.

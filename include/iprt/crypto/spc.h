@@ -41,9 +41,12 @@ RT_C_DECLS_BEGIN
  */
 
 /**
- * PE Image page hash table, version 2.
+ * PE Image page hash table, generic union.
+ *
+ * @remarks This table isn't used by ldrPE.cpp, it walks the table in a generic
+ *          fashion using the hash size. So, we can ditch it if we feel like it.
  */
-typedef union RTCRSPCPEIMAGEPAGEHASHESV2
+typedef union RTCRSPCPEIMAGEPAGEHASHES
 {
     /** MD5 page hashes. */
     struct
@@ -80,17 +83,17 @@ typedef union RTCRSPCPEIMAGEPAGEHASHESV2
         /** The hash. */
         uint8_t         abHash[RTSHA512_HASH_SIZE];
     } aSha512[1];
-} RTCRSPCPEIMAGEPAGEHASHESV2;
-/** Pointer to a version 2 PE image hash table. */
-typedef RTCRSPCPEIMAGEPAGEHASHESV2 *PRTCRSPCPEIMAGEPAGEHASHESV2;
-/** Pointer to a const version 2 PE image hash table. */
-typedef RTCRSPCPEIMAGEPAGEHASHESV2 const *PCRTCRSPCPEIMAGEPAGEHASHESV2;
+} RTCRSPCPEIMAGEPAGEHASHES;
+/** Pointer to a PE image page hash table union. */
+typedef RTCRSPCPEIMAGEPAGEHASHES *PRTCRSPCPEIMAGEPAGEHASHES;
+/** Pointer to a const PE image page hash table union. */
+typedef RTCRSPCPEIMAGEPAGEHASHES const *PCRTCRSPCPEIMAGEPAGEHASHES;
 
 
 /**
- * Serialization wrapper for raw RTCRSPCPEIMAGEPAGEHASHESV2 data.
+ * Serialization wrapper for raw RTCRSPCPEIMAGEPAGEHASHES data.
  */
-typedef struct RTCRSPCSERIALIZEDPAGEHASHESV2
+typedef struct RTCRSPCSERIALIZEDPAGEHASHES
 {
     /** The page hashes are within a set. Dunno if there could be multiple
      * entries in this set, never seen it yet, so I doubt it. */
@@ -99,20 +102,20 @@ typedef struct RTCRSPCSERIALIZEDPAGEHASHESV2
     RTASN1OCTETSTRING               RawData;
 
     /** Pointer to the hash data within that string.
-     * The hash algorithm is the same as for the full image hash and given in
-     * RTCRPKCS7SIGNEDDATA::SignerInfos.paSignerInfos[0].DigestAlgorithm as well as
-     * in RTCRSPCINDIRECTDATACONTENT::DigestInfo.DigestAlgorithm. */
-    PCRTCRSPCPEIMAGEPAGEHASHESV2    pData;
+     * The hash algorithm is given by the object attribute type in
+     * RTCRSPCSERIALIZEDOBJECTATTRIBUTE.  It is generally the same as for the
+     * whole image hash. */
+    PCRTCRSPCPEIMAGEPAGEHASHES      pData;
     /** Field the user can use to store the number of pages in pData. */
     uint32_t                        cPages;
-} RTCRSPCSERIALIZEDPAGEHASHESV2;
-/** Pointer to a serialized object attribute.  */
-typedef RTCRSPCSERIALIZEDPAGEHASHESV2 *PRTCRSPCSERIALIZEDPAGEHASHESV2;
-/** Pointer to a const serialized object attribute.  */
-typedef RTCRSPCSERIALIZEDPAGEHASHESV2 const *PCRTCRSPCSERIALIZEDPAGEHASHESV2;
-RTASN1TYPE_STANDARD_PROTOTYPES(RTCRSPCSERIALIZEDPAGEHASHESV2, RTDECL, RTCrSpcSerializedPageHashesV2, SetCore.Asn1Core);
+} RTCRSPCSERIALIZEDPAGEHASHES;
+/** Pointer to a serialized wrapper for page hashes.  */
+typedef RTCRSPCSERIALIZEDPAGEHASHES *PRTCRSPCSERIALIZEDPAGEHASHES;
+/** Pointer to a const serialized wrapper for page hashes.  */
+typedef RTCRSPCSERIALIZEDPAGEHASHES const *PCRTCRSPCSERIALIZEDPAGEHASHES;
+RTASN1TYPE_STANDARD_PROTOTYPES(RTCRSPCSERIALIZEDPAGEHASHES, RTDECL, RTCrSpcSerializedPageHashes, SetCore.Asn1Core);
 
-RTDECL(int) RTCrSpcSerializedPageHashesV2_UpdateDerivedData(PRTCRSPCSERIALIZEDPAGEHASHESV2 pThis);
+RTDECL(int) RTCrSpcSerializedPageHashes_UpdateDerivedData(PRTCRSPCSERIALIZEDPAGEHASHES pThis);
 
 
 /**
@@ -126,7 +129,9 @@ typedef enum RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE
     RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_NOT_PRESENT,
     /** Unknown object. */
     RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_UNKNOWN,
-    /** Page hashes v2 (pPageHashesV2). */
+    /** SHA-1 page hashes (pPageHashes). */
+    RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V1,
+    /** SHA-256 page hashes (pPageHashes). */
     RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V2,
     /** End of valid values. */
     RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_END,
@@ -152,8 +157,9 @@ typedef struct RTCRSPCSERIALIZEDOBJECTATTRIBUTE
     {
         /** The unknown value (RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_UNKNOWN). */
         PRTASN1CORE                         pCore;
-        /** Page hashes v2 (RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V2).  */
-        PRTCRSPCSERIALIZEDPAGEHASHESV2      pPageHashesV2;
+        /** Page hashes (RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V1 or
+         *  RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V2). */
+        PRTCRSPCSERIALIZEDPAGEHASHES        pPageHashes;
     } u;
 } RTCRSPCSERIALIZEDOBJECTATTRIBUTE;
 /** Pointer to a serialized object attribute.  */
@@ -467,13 +473,14 @@ RTDECL(int) RTCrSpcIndirectDataContent_CheckSanityEx(PCRTCRSPCINDIRECTDATACONTEN
 /** @} */
 
 /**
- * Gets the PE image hash v2 SPC serialized object attribute if present.
+ * Gets the first SPC serialized object attribute in a SPC PE image.
  *
- * @returns Pointer to the attribute with Type RTCRSPC_PE_IMAGE_HASHES_V2_OID if
- *          found, NULL if not found.
- * @param   pIndData            The Authenticode SpcIndirectDataContent.
+ * @returns Pointer to the attribute with the given type, NULL if not found.
+ * @param   pThis               The Authenticode SpcIndirectDataContent.
  */
-RTDECL(PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE) RTCrSpcIndirectDataContent_GetPeImageHashesV2(PCRTCRSPCINDIRECTDATACONTENT pIndData);
+RTDECL(PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE)
+RTCrSpcIndirectDataContent_GetPeImageObjAttrib(PCRTCRSPCINDIRECTDATACONTENT pThis,
+                                               RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE enmType);
 
 /** @} */
 
