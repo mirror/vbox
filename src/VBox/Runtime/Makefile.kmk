@@ -314,7 +314,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/RTSha256Digest.cpp \
 	common/checksum/sha1-alt.cpp \
 	common/checksum/sha1str.cpp \
-	common/checksum/sha256.cpp \
+	common/checksum/sha256-alt.cpp \
 	common/checksum/sha256str.cpp \
 	common/checksum/sha512.cpp \
 	common/checksum/sha512str.cpp \
@@ -2037,7 +2037,7 @@ RuntimeR0Drv_SOURCES.win = \
 	common/crypto/taf-sanity.cpp \
 	common/checksum/md2-alt.cpp \
 	common/checksum/sha1-alt.cpp \
-	common/checksum/sha256.cpp \
+	common/checksum/sha256-alt.cpp \
 	common/checksum/sha512.cpp \
 	common/checksum/md2str.cpp \
 	common/checksum/md5str.cpp \
