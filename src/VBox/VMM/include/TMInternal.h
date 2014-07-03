@@ -373,6 +373,15 @@ typedef struct TM
      * i.e. since u64VirtualWarpDriveStart. */
     uint32_t                    u32VirtualWarpDrivePercentage;
 
+    /** CPU TSCs ticking indicator (one for each VCPU). */
+    uint32_t volatile           cTSCsTicking;
+
+    /** The TSC difference introduced by pausing the VM. */
+    uint64_t                    offTSCPause;
+
+    /** The TSC value when the last TSC was paused. */
+    uint64_t                    u64LastPausedTSC;
+
     /** The offset of the virtual clock relative to it's timesource.
      * Only valid if fVirtualTicking is set. */
     uint64_t                    u64VirtualOffset;
@@ -630,6 +639,10 @@ typedef struct TM
     /** Calls to TMCpuTickSet. */
     STAMCOUNTER                 StatTSCSet;
 
+    /** TSC starts and stops. */
+    STAMCOUNTER                 StatTSCPause;
+    STAMCOUNTER                 StatTSCResume;
+
     /** @name Reasons for refusing TSC offsetting in TMCpuTickCanUseRealTSC.
      * @{ */
     STAMCOUNTER                 StatTSCNotFixed;
@@ -728,7 +741,9 @@ void                    tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
 #endif
 
 int                     tmCpuTickPause(PVMCPU pVCpu);
+int                     tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu);
 int                     tmCpuTickResume(PVM pVM, PVMCPU pVCpu);
+int                     tmCpuTickResumeLocked(PVM pVM, PVMCPU pVCpu);
 
 int                     tmVirtualPauseLocked(PVM pVM);
 int                     tmVirtualResumeLocked(PVM pVM);

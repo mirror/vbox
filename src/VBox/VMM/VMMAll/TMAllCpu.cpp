@@ -79,6 +79,50 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
     return VERR_TM_TSC_ALREADY_TICKING;
 }
 
+/**
+ * Resumes the CPU timestamp counter ticking.
+ *
+ * @returns VINF_SUCCESS or VERR_TM_VIRTUAL_TICKING_IPE (asserted).
+ * @param   pVM     Pointer to the VM. 
+ * @param   pVCpu   Pointer to the VCPU. 
+ */
+int tmCpuTickResumeLocked(PVM pVM, PVMCPU pVCpu)
+{
+    if (!pVCpu->tm.s.fTSCTicking)
+    {
+        /* TSC must be ticking before calling tmCpuTickGetRawVirtual()! */
+        pVCpu->tm.s.fTSCTicking = true;
+        if (pVM->tm.s.fTSCVirtualized)
+        {
+            uint32_t c = ASMAtomicIncU32(&pVM->tm.s.cTSCsTicking);
+            AssertMsgReturn(c <= pVM->cCpus, ("%u vs %u\n", c, pVM->cCpus), VERR_TM_VIRTUAL_TICKING_IPE);
+            if (c == 1)
+            {
+                /* The first VCPU to resume. */
+                uint64_t    offTSCRawSrcOld = pVCpu->tm.s.offTSCRawSrc;
+
+                STAM_COUNTER_INC(&pVM->tm.s.StatTSCResume);
+
+                /* When resuming, use the TSC value of the last stopped VCPU to avoid the TSC going back. */
+                if (pVM->tm.s.fTSCUseRealTSC)
+                    pVCpu->tm.s.offTSCRawSrc = ASMReadTSC() - pVM->tm.s.u64LastPausedTSC;
+                else
+                    pVCpu->tm.s.offTSCRawSrc = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
+                                             - pVM->tm.s.u64LastPausedTSC;
+
+                /* Calculate the offset for other VCPUs to use. */
+                pVM->tm.s.offTSCPause = pVCpu->tm.s.offTSCRawSrc - offTSCRawSrcOld;
+            }
+            else
+            {
+                /* All other VCPUs (if any). */
+                pVCpu->tm.s.offTSCRawSrc += pVM->tm.s.offTSCPause;
+            }
+        }
+    }
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Pauses the CPU timestamp counter ticking.
@@ -93,6 +137,35 @@ int tmCpuTickPause(PVMCPU pVCpu)
     {
         pVCpu->tm.s.u64TSC = TMCpuTickGetNoCheck(pVCpu);
         pVCpu->tm.s.fTSCTicking = false;
+        return VINF_SUCCESS;
+    }
+    AssertFailed();
+    return VERR_TM_TSC_ALREADY_PAUSED;
+}
+
+/**
+ * Pauses the CPU timestamp counter ticking.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM. 
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @internal
+ */
+int tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu)
+{
+    if (pVCpu->tm.s.fTSCTicking)
+    {
+        pVCpu->tm.s.u64TSC = TMCpuTickGetNoCheck(pVCpu);
+        pVCpu->tm.s.fTSCTicking = false;
+
+        uint32_t c = ASMAtomicDecU32(&pVM->tm.s.cTSCsTicking);
+        AssertMsgReturn(c < pVM->cCpus, ("%u vs %u\n", c, pVM->cCpus), VERR_TM_VIRTUAL_TICKING_IPE);
+        if (c == 0)
+        {
+            /* When the last TSC stops, remember the value. */
+            STAM_COUNTER_INC(&pVM->tm.s.StatTSCPause);
+            pVM->tm.s.u64LastPausedTSC = pVCpu->tm.s.u64TSC;
+        }
         return VINF_SUCCESS;
     }
     AssertFailed();
