@@ -199,7 +199,6 @@ SUPR3HardenedStatic_SOURCES.win = \
 	$(VBOX_SUP_WIN_CERTS_FILE)
 
 if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of this move up.
- SUPR3HardenedStatic_SDKS += VBoxOpenSslHardened
  SUPR3HardenedStatic_DEFS += IN_RT IN_RT_R3 IN_RT_STATIC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES LOG_DISABLED IPRT_NO_ERROR_DATA
  SUPR3HardenedStatic_DEFS.win += LDR_ONLY_PE __STRALIGN_H_
 
@@ -509,9 +508,6 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBoxDrv_INST.darwin      = $(INST_VBOXDRV)Contents/MacOS/
  VBoxDrv_DEBUG_INST.darwin= $(patsubst %/,%,$(INST_VBOXDRV))
  VBoxDrv_SDKS.win         = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
- ifdef VBOX_WITH_HARDENING
-  VBoxDrv_SDKS.win       += VBoxOpenSslHardened
- endif
 
  VBoxDrv_DEFS            := IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
  ifdef VBOX_WITH_DTRACE_R0DRV

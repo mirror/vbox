@@ -2917,14 +2917,6 @@ SDK_VBoxOpenSslExtPack_LIBS    = \
 	$(PATH_STAGE_LIB)/VBoxExtPack-libssl$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxExtPack-libcrypto$(VBOX_SUFF_LIB)
 
-if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING)
- SDK_VBoxOpenSslHardened                = Only for VBoxDrv and Hardened Stub EXEs on windows.
- SDK_VBoxOpenSslHardened_INCS           = $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
- SDK_VBoxOpenSslHardened_ORDERDEPS      = $(crypto-headers_1_TARGET)
- SDK_VBoxOpenSslHardened_LIBS           = \
- 	$(PATH_STAGE_LIB)/VBoxHardened-libcrypto$(VBOX_SUFF_LIB)
-endif
-
 SDK_VBOX_BLD_OPENSSL      = .
 SDK_VBOX_BLD_OPENSSL_EXTENDS = VBOX_OPENSSL
 SDK_VBOX_BLD_OPENSSL_LIBS ?= \
@@ -4006,7 +3998,7 @@ ifeq ($(KBUILD_TARGET),linux)
 # TEMPLATE_VBOXR3HARDENEDEXE_LIBS += cap
 endif
 ifeq ($(KBUILD_TARGET),win) # No CRT!
- TEMPLATE_VBOXR3HARDENEDEXE_SDKS          = VBOX_NTDLL $(TEMPLATE_VBOXR3EXE_SDKS) VBoxOpenSslHardened
+ TEMPLATE_VBOXR3HARDENEDEXE_SDKS          = VBOX_NTDLL $(TEMPLATE_VBOXR3EXE_SDKS)
  TEMPLATE_VBOXR3HARDENEDEXE_LIBS.x86      = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib \
  	$(PATH_TOOL_$(TEMPLATE_VBOXR3HARDENEDEXE_TOOL.win.x86)_LIB)/chkstk.obj
