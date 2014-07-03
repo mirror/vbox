@@ -153,9 +153,12 @@ RTR3DECL(int) RTSha1DigestFromFile(const char *pszFile, char **ppszDigest, PFNRT
 typedef union RTSHA256CONTEXT
 {
     uint64_t                u64BetterAlignment;
-    uint8_t                 abPadding[ARCH_BITS == 32 ? 112 : 160];
+    uint8_t                 abPadding[8 + (8 + 80) * 4];
 #ifdef RT_SHA256_PRIVATE_CONTEXT
     SHA256_CTX              Private;
+#endif
+#ifdef RT_SHA256_PRIVATE_ALT_CONTEXT
+    RTSHA256ALTPRIVATECTX   AltPrivate;
 #endif
 } RTSHA256CONTEXT;
 /** Pointer to an SHA-256 context. */
@@ -246,6 +249,102 @@ RTR3DECL(int) RTSha256Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, PFNRT
  * @param   pvUser                user defined pointer for the callback
  */
 RTR3DECL(int) RTSha256DigestFromFile(const char *pszFile, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
+
+
+/** The size of a SHA-224 hash. */
+#define RTSHA224_HASH_SIZE      28
+/** The length of a SHA-224 digest string. The terminator is not included. */
+#define RTSHA224_DIGEST_LEN     56
+
+/** SHA-224 context (same as for SHA-256). */
+typedef RTSHA256CONTEXT RTSHA224CONTEXT;
+/** Pointer to an SHA-224 context. */
+typedef RTSHA256CONTEXT *PRTSHA224CONTEXT;
+
+/**
+ * Compute the SHA-224 hash of the data.
+ *
+ * @param   pvBuf       Pointer to the data.
+ * @param   cbBuf       The amount of data (in bytes).
+ * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ *                      the caller's buffer.)
+ */
+RTDECL(void) RTSha224(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA224_HASH_SIZE]);
+
+/**
+ * Initializes the SHA-224 context.
+ *
+ * @param   pCtx        Pointer to the SHA-224 context.
+ */
+RTDECL(void) RTSha224Init(PRTSHA224CONTEXT pCtx);
+
+/**
+ * Feed data into the SHA-224 computation.
+ *
+ * @param   pCtx        Pointer to the SHA-224 context.
+ * @param   pvBuf       Pointer to the data.
+ * @param   cbBuf       The length of the data (in bytes).
+ */
+RTDECL(void) RTSha224Update(PRTSHA224CONTEXT pCtx, const void *pvBuf, size_t cbBuf);
+
+/**
+ * Compute the SHA-224 hash of the data.
+ *
+ * @param   pCtx        Pointer to the SHA-224 context.
+ * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ *                      the caller's buffer.)
+ */
+RTDECL(void) RTSha224Final(PRTSHA224CONTEXT pCtx, uint8_t pabDigest[RTSHA224_HASH_SIZE]);
+
+/**
+ * Converts a SHA-224 hash to a digest string.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pabDigest   The binary digest returned by RTSha224Final or RTSha224.
+ * @param   pszDigest   Where to return the stringified digest.
+ * @param   cchDigest   The size of the output buffer. Should be at least
+ *                      RTSHA224_DIGEST_LEN + 1 bytes.
+ */
+RTDECL(int) RTSha224ToString(uint8_t const pabDigest[RTSHA224_HASH_SIZE], char *pszDigest, size_t cchDigest);
+
+/**
+ * Converts a SHA-224 hash to a digest string.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pszDigest   The stringified digest. Leading and trailing spaces are
+ *                      ignored.
+ * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ *                      the caller's buffer.)
+ */
+RTDECL(int) RTSha224FromString(char const *pszDigest, uint8_t pabDigest[RTSHA224_HASH_SIZE]);
+
+/**
+ * Creates a SHA224 digest for the given memory buffer.
+ *
+ * @returns iprt status code.
+ *
+ * @param   pvBuf                 Memory buffer to create a SHA224 digest for.
+ * @param   cbBuf                 The amount of data (in bytes).
+ * @param   ppszDigest            On success the SHA224 digest.
+ * @param   pfnProgressCallback   optional callback for the progress indication
+ * @param   pvUser                user defined pointer for the callback
+ */
+RTR3DECL(int) RTSha224Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
+
+/**
+ * Creates a SHA224 digest for the given file.
+ *
+ * @returns iprt status code.
+ *
+ * @param   pszFile               Filename to create a SHA224 digest for.
+ * @param   ppszDigest            On success the SHA224 digest.
+ * @param   pfnProgressCallback   optional callback for the progress indication
+ * @param   pvUser                user defined pointer for the callback
+ */
+RTR3DECL(int) RTSha224DigestFromFile(const char *pszFile, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
+
 
 /** The size of a SHA-512 hash. */
 #define RTSHA512_HASH_SIZE      64
