@@ -4827,6 +4827,7 @@ DECLINLINE(uint32_t) ASMRotateLeftU32(uint32_t u32, uint32_t cShift)
     return _rotl(u32, cShift);
 #elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     __asm__ __volatile__("roll %1, %0" : "=r" (u32) : "Ir" (cShift), "0" (u32));
+    return u32;
 #else
     cShift &= 31;
     return (u32 << cShift) | (u32 >> (32 - cShift));
@@ -4847,6 +4848,7 @@ DECLINLINE(uint32_t) ASMRotateRightU32(uint32_t u32, uint32_t cShift)
     return _rotr(u32, cShift);
 #elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     __asm__ __volatile__("rorl %1, %0" : "=r" (u32) : "Ir" (cShift), "0" (u32));
+    return u32;
 #else
     cShift &= 31;
     return (u32 >> cShift) | (u32 << (32 - cShift));
