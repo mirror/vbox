@@ -302,7 +302,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/crc64.cpp \
 	common/checksum/md2-alt.cpp \
 	common/checksum/md2str.cpp \
-	common/checksum/md5.cpp \
+	common/checksum/md5-alt.cpp \
 	common/checksum/md5str.cpp \
 	common/checksum/ipv4.cpp \
 	common/checksum/ipv6.cpp \
@@ -1841,7 +1841,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/alloc/heapoffset.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
-	common/checksum/md5.cpp \
+	common/checksum/md5-alt.cpp \
 	common/checksum/ipv4.cpp \
 	common/checksum/ipv6.cpp \
 	common/err/RTErrConvertToErrno.cpp \
@@ -2339,7 +2339,7 @@ ifdef VBOX_WITH_RAW_MODE
  RuntimeRC_SOURCES      := \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
-	common/checksum/md5.cpp \
+	common/checksum/md5-alt.cpp \
  	common/log/log.cpp \
  	common/log/logellipsis.cpp \
  	common/log/logrel.cpp \
