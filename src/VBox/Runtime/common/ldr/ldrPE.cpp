@@ -1822,7 +1822,7 @@ static int rtldrPE_HashImageCommon(PRTLDRMODPE pModPe, void *pvScratch, uint32_t
     /*
      * Calculate the special places.
      */
-    RTLDRPEHASHSPECIALS SpecialPlaces;
+    RTLDRPEHASHSPECIALS SpecialPlaces = { 0, 0, 0, 0, 0, 0 }; /* shut up gcc */
     rc = rtldrPe_CalcSpecialHashPlaces(pModPe, &SpecialPlaces, pErrInfo);
     if (RT_FAILURE(rc))
         return rc;
