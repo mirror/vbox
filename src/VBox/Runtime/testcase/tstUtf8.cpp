@@ -308,17 +308,12 @@ int mymemcmp(const void *pv1, const void *pv2, size_t cb, int cBits)
         {
             RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, "mismatch at %#x: ", off);
             whereami(cBits, off);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off-1, pb1[off-1], pb2[off-1]);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, "*%#x: %02x != %02x!\n", off, pb1[off], pb2[off]);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off+1, pb1[off+1], pb2[off+1]);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off+2, pb1[off+2], pb2[off+2]);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off+3, pb1[off+3], pb2[off+3]);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off+4, pb1[off+4], pb2[off+4]);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off+5, pb1[off+5], pb2[off+5]);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off+6, pb1[off+6], pb2[off+6]);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off+7, pb1[off+7], pb2[off+7]);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off+8, pb1[off+8], pb2[off+8]);
-            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off+9, pb1[off+9], pb2[off+9]);
+            if (off > 0)
+                RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off-1, pb1[off-1], pb2[off-1]);
+            RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, "*%#x: %02x != %02x!\n", off,   pb1[off], pb2[off]);
+            for (size_t i = 1; i < 10; i++)
+                if (off + i < cb)
+                    RTTestPrintf(NIL_RTTEST, RTTESTLVL_FAILURE, " %#x: %02x != %02x!\n", off+i, pb1[off+i], pb2[off+i]);
             return 1;
         }
     }
@@ -429,6 +424,7 @@ void test2(RTTEST hTest)
     int rc = RTUtf16ToUtf8(&g_wszAll[0], &pszUtf8);
     if (rc == VINF_SUCCESS)
     {
+        pszUtf8[0] = 1;
         if (mymemcmp(pszUtf8, g_szAll, sizeof(g_szAll), 8))
             RTTestFailed(hTest, "UTF-16 -> UTF-8 mismatch!");
 
