@@ -162,6 +162,7 @@
 #define TM_SAVED_STATE_VERSION  3
 
 
+//#define SYNC_TSC_PAUSE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -697,6 +698,8 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatTSCWarp,                             STAMTYPE_COUNTER, "/TM/TSC/Intercept/Warp",              STAMUNIT_OCCURENCES, "Warpdrive is active.");
     STAM_REG(pVM, &pVM->tm.s.StatTSCSet,                              STAMTYPE_COUNTER, "/TM/TSC/Sets",                        STAMUNIT_OCCURENCES, "Calls to TMCpuTickSet.");
     STAM_REG(pVM, &pVM->tm.s.StatTSCUnderflow,                        STAMTYPE_COUNTER, "/TM/TSC/Underflow",                   STAMUNIT_OCCURENCES, "TSC underflow; corrected with last seen value .");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualPause,                        STAMTYPE_COUNTER, "/TM/TSC/Pause",                       STAMUNIT_OCCURENCES, "The number of times the TSC was paused.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualResume,                       STAMTYPE_COUNTER, "/TM/TSC/Resume",                      STAMUNIT_OCCURENCES, "The number of times the TSC was resumed.");
 #endif /* VBOX_WITH_STATISTICS */
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -1153,6 +1156,7 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
     }
     Assert(!pVM->tm.s.cVirtualTicking);
     Assert(!pVM->tm.s.fVirtualSyncTicking);
+    Assert(!pVM->tm.s.cTSCsTicking);
 #endif
 
     /*
@@ -1204,6 +1208,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     }
     Assert(!pVM->tm.s.cVirtualTicking);
     Assert(!pVM->tm.s.fVirtualSyncTicking);
+    Assert(!pVM->tm.s.cTSCsTicking);
 #endif
 
     /*
@@ -1219,6 +1224,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
      * Load the virtual clock.
      */
     pVM->tm.s.cVirtualTicking = 0;
+    pVM->tm.s.cTSCsTicking    = 0;
     /* the virtual clock. */
     uint64_t u64Hz;
     int rc = SSMR3GetU64(pSSM, &u64Hz);
@@ -2675,11 +2681,20 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
 
     /*
      * Pause the TSC last since it is normally linked to the virtual
-     * sync clock, so the above code may actually stop both clock.
+     * sync clock, so the above code may actually stop both clocks.
      */
-    rc = tmCpuTickPause(pVCpu);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (!pVM->tm.s.fTSCTiedToExecution)
+    {
+#ifdef SYNC_TSC_PAUSE
+        TM_LOCK_TIMERS(pVM);    /* Paranoia: Exploiting the timer lock here. */
+        rc = tmCpuTickPauseLocked(pVM, pVCpu);
+        TM_UNLOCK_TIMERS(pVM);
+#else
+        rc = tmCpuTickPause(pVCpu);
+#endif
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     /*
@@ -2723,7 +2738,13 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
      */
     if (!pVM->tm.s.fTSCTiedToExecution)
     {
+#ifdef SYNC_TSC_PAUSE
+        TM_LOCK_TIMERS(pVM);                    /* Paranoia: Exploiting the timer lock here. */
+        rc = tmCpuTickResumeLocked(pVM, pVCpu);
+        TM_UNLOCK_TIMERS(pVM);
+#else
         rc = tmCpuTickResume(pVM, pVCpu);
+#endif
         if (RT_FAILURE(rc))
             return rc;
     }
