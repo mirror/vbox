@@ -52,14 +52,9 @@ typedef struct RTSHA1ALTPRIVATECTX
     uint32_t    auW[80];
     /** The message length (in bytes). */
     uint64_t    cbMessage;
-    /** @name The 5 hash values.
-     * @{ */
-    uint32_t    uH0;
-    uint32_t    uH1;
-    uint32_t    uH2;
-    uint32_t    uH3;
-    uint32_t    uH4;
-    /** @} */
+
+    /** The 5 hash values. */
+    uint32_t    auH[5];
 } RTSHA1ALTPRIVATECTX;
 
 #define RT_SHA1_PRIVATE_ALT_CONTEXT
@@ -67,11 +62,7 @@ typedef struct RTSHA1ALTPRIVATECTX
 
 
 AssertCompile(RT_SIZEOFMEMB(RTSHA1CONTEXT, abPadding) >= RT_SIZEOFMEMB(RTSHA1CONTEXT, AltPrivate));
-AssertCompileMemberSize(RTSHA1ALTPRIVATECTX, uH0, sizeof(uint32_t)); AssertCompileAdjacentMembers(RTSHA1ALTPRIVATECTX, uH0, uH1);
-AssertCompileMemberSize(RTSHA1ALTPRIVATECTX, uH1, sizeof(uint32_t)); AssertCompileAdjacentMembers(RTSHA1ALTPRIVATECTX, uH1, uH2);
-AssertCompileMemberSize(RTSHA1ALTPRIVATECTX, uH2, sizeof(uint32_t)); AssertCompileAdjacentMembers(RTSHA1ALTPRIVATECTX, uH2, uH3);
-AssertCompileMemberSize(RTSHA1ALTPRIVATECTX, uH3, sizeof(uint32_t)); AssertCompileAdjacentMembers(RTSHA1ALTPRIVATECTX, uH3, uH4);
-AssertCompileMemberSize(RTSHA1ALTPRIVATECTX, uH4, sizeof(uint32_t)); AssertCompile(sizeof(uint32_t) * 5 == RTSHA1_HASH_SIZE);
+AssertCompileMemberSize(RTSHA1ALTPRIVATECTX, auH, RTSHA1_HASH_SIZE);
 
 
 
@@ -79,11 +70,11 @@ AssertCompileMemberSize(RTSHA1ALTPRIVATECTX, uH4, sizeof(uint32_t)); AssertCompi
 RTDECL(void) RTSha1Init(PRTSHA1CONTEXT pCtx)
 {
     pCtx->AltPrivate.cbMessage = 0;
-    pCtx->AltPrivate.uH0 = UINT32_C(0x67452301);
-    pCtx->AltPrivate.uH1 = UINT32_C(0xefcdab89);
-    pCtx->AltPrivate.uH2 = UINT32_C(0x98badcfe);
-    pCtx->AltPrivate.uH3 = UINT32_C(0x10325476);
-    pCtx->AltPrivate.uH4 = UINT32_C(0xc3d2e1f0);
+    pCtx->AltPrivate.auH[0] = UINT32_C(0x67452301);
+    pCtx->AltPrivate.auH[1] = UINT32_C(0xefcdab89);
+    pCtx->AltPrivate.auH[2] = UINT32_C(0x98badcfe);
+    pCtx->AltPrivate.auH[3] = UINT32_C(0x10325476);
+    pCtx->AltPrivate.auH[4] = UINT32_C(0xc3d2e1f0);
 }
 RT_EXPORT_SYMBOL(RTSha1Init);
 
@@ -145,11 +136,11 @@ DECLINLINE(void) rtSha1BlockInitBuffered(PRTSHA1CONTEXT pCtx)
  */
 static void rtSha1BlockProcess(PRTSHA1CONTEXT pCtx)
 {
-    uint32_t uA = pCtx->AltPrivate.uH0;
-    uint32_t uB = pCtx->AltPrivate.uH1;
-    uint32_t uC = pCtx->AltPrivate.uH2;
-    uint32_t uD = pCtx->AltPrivate.uH3;
-    uint32_t uE = pCtx->AltPrivate.uH4;
+    uint32_t uA = pCtx->AltPrivate.auH[0];
+    uint32_t uB = pCtx->AltPrivate.auH[1];
+    uint32_t uC = pCtx->AltPrivate.auH[2];
+    uint32_t uD = pCtx->AltPrivate.auH[3];
+    uint32_t uE = pCtx->AltPrivate.auH[4];
 
 #if 1
     unsigned iWord = 0;
@@ -207,11 +198,11 @@ static void rtSha1BlockProcess(PRTSHA1CONTEXT pCtx)
     }
 #endif
 
-    pCtx->AltPrivate.uH0 += uA;
-    pCtx->AltPrivate.uH1 += uB;
-    pCtx->AltPrivate.uH2 += uC;
-    pCtx->AltPrivate.uH3 += uD;
-    pCtx->AltPrivate.uH4 += uE;
+    pCtx->AltPrivate.auH[0] += uA;
+    pCtx->AltPrivate.auH[1] += uB;
+    pCtx->AltPrivate.auH[2] += uC;
+    pCtx->AltPrivate.auH[3] += uD;
+    pCtx->AltPrivate.auH[4] += uE;
 }
 
 
@@ -323,14 +314,15 @@ RTDECL(void) RTSha1Final(PRTSHA1CONTEXT pCtx, uint8_t pabDigest[RTSHA1_HASH_SIZE
     /*
      * Convert the byte order of the hash words and we're done.
      */
-    pCtx->AltPrivate.uH0 = RT_H2BE_U32(pCtx->AltPrivate.uH0);
-    pCtx->AltPrivate.uH1 = RT_H2BE_U32(pCtx->AltPrivate.uH1);
-    pCtx->AltPrivate.uH2 = RT_H2BE_U32(pCtx->AltPrivate.uH2);
-    pCtx->AltPrivate.uH3 = RT_H2BE_U32(pCtx->AltPrivate.uH3);
-    pCtx->AltPrivate.uH4 = RT_H2BE_U32(pCtx->AltPrivate.uH4);
+    pCtx->AltPrivate.auH[0] = RT_H2BE_U32(pCtx->AltPrivate.auH[0]);
+    pCtx->AltPrivate.auH[1] = RT_H2BE_U32(pCtx->AltPrivate.auH[1]);
+    pCtx->AltPrivate.auH[2] = RT_H2BE_U32(pCtx->AltPrivate.auH[2]);
+    pCtx->AltPrivate.auH[3] = RT_H2BE_U32(pCtx->AltPrivate.auH[3]);
+    pCtx->AltPrivate.auH[4] = RT_H2BE_U32(pCtx->AltPrivate.auH[4]);
 
-    memcpy(pabDigest, &pCtx->AltPrivate.uH0, RTSHA1_HASH_SIZE);
+    memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA1_HASH_SIZE);
 
+    RT_ZERO(pCtx->AltPrivate);
     pCtx->AltPrivate.cbMessage = UINT64_MAX;
 }
 RT_EXPORT_SYMBOL(RTSha1Final);

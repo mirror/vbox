@@ -393,6 +393,7 @@ static void rtSha256FinalInternal(PRTSHA256CONTEXT pCtx)
     pCtx->AltPrivate.auH[6] = RT_H2BE_U32(pCtx->AltPrivate.auH[6]);
     pCtx->AltPrivate.auH[7] = RT_H2BE_U32(pCtx->AltPrivate.auH[7]);
 
+    RT_ZERO(pCtx->AltPrivate.auW);
     pCtx->AltPrivate.cbMessage = UINT64_MAX;
 }
 RT_EXPORT_SYMBOL(RTSha256Final);
@@ -402,6 +403,7 @@ RTDECL(void) RTSha256Final(PRTSHA256CONTEXT pCtx, uint8_t pabDigest[RTSHA256_HAS
 {
     rtSha256FinalInternal(pCtx);
     memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA256_HASH_SIZE);
+    RT_ZERO(pCtx->AltPrivate.auH);
 }
 RT_EXPORT_SYMBOL(RTSha256Final);
 
@@ -447,6 +449,7 @@ RTDECL(void) RTSha224Final(PRTSHA224CONTEXT pCtx, uint8_t pabDigest[RTSHA224_HAS
 {
     rtSha256FinalInternal(pCtx);
     memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA224_HASH_SIZE);
+    RT_ZERO(pCtx->AltPrivate.auH);
 }
 RT_EXPORT_SYMBOL(RTSha224Final);
 
