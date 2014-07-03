@@ -300,9 +300,12 @@ RuntimeR3_SOURCES       = \
 	common/checksum/crc32.cpp \
 	common/checksum/crc32c.cpp \
 	common/checksum/crc64.cpp \
-	common/checksum/md2-alt.cpp \
+	common/checksum/alt-md2.cpp \
+	common/checksum/alt-md5.cpp \
+	common/checksum/alt-sha1.cpp \
+	common/checksum/alt-sha256.cpp \
+	common/checksum/alt-sha512.cpp \
 	common/checksum/md2str.cpp \
-	common/checksum/md5-alt.cpp \
 	common/checksum/md5str.cpp \
 	common/checksum/ipv4.cpp \
 	common/checksum/ipv6.cpp \
@@ -312,11 +315,8 @@ RuntimeR3_SOURCES       = \
 	common/checksum/manifest-file.cpp \
 	common/checksum/RTSha1Digest.cpp \
 	common/checksum/RTSha256Digest.cpp \
-	common/checksum/sha1-alt.cpp \
 	common/checksum/sha1str.cpp \
-	common/checksum/sha256-alt.cpp \
 	common/checksum/sha256str.cpp \
-	common/checksum/sha512-alt.cpp \
 	common/checksum/sha512str.cpp \
 	common/checksum/x509.cpp \
 	common/crypto/digest-core.cpp \
@@ -1213,10 +1213,6 @@ RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
-	common/checksum/RTSha1Digest.cpp \
-	common/checksum/RTSha256Digest.cpp \
-	common/checksum/sha% \
-	common/checksum/md2% \
 	common/checksum/x509.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	r3/xml.cpp \
@@ -1424,7 +1420,8 @@ endif
 VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
-	$(filter-out common/checksum/crc32.cpp, $(RuntimeR3_SOURCES)) \
+	$(filter-out common/checksum/crc32.cpp, \
+		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeR3_SOURCES))) \
 	common/checksum/crc32-zlib.cpp \
 	common/misc/aiomgr.cpp
 ifdef VBOX_WITH_LIBCURL
@@ -1839,9 +1836,9 @@ RuntimeR0Drv_SOURCES    = \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
 	common/alloc/heapoffset.cpp \
+	common/checksum/alt-md5.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
-	common/checksum/md5-alt.cpp \
 	common/checksum/ipv4.cpp \
 	common/checksum/ipv6.cpp \
 	common/err/RTErrConvertToErrno.cpp \
@@ -2035,10 +2032,10 @@ RuntimeR0Drv_SOURCES.win = \
 	common/crypto/taf-core.cpp \
 	common/crypto/taf-init.cpp \
 	common/crypto/taf-sanity.cpp \
-	common/checksum/md2-alt.cpp \
-	common/checksum/sha1-alt.cpp \
-	common/checksum/sha256-alt.cpp \
-	common/checksum/sha512-alt.cpp \
+	common/checksum/alt-md2.cpp \
+	common/checksum/alt-sha1.cpp \
+	common/checksum/alt-sha256.cpp \
+	common/checksum/alt-sha512.cpp \
 	common/checksum/md2str.cpp \
 	common/checksum/md5str.cpp \
 	common/checksum/sha1str.cpp \
@@ -2337,9 +2334,9 @@ ifdef VBOX_WITH_RAW_MODE
  RuntimeRC_DEFS          = IN_RT_RC RT_WITH_VBOX
  RuntimeRC_INCS          = include
  RuntimeRC_SOURCES      := \
+	common/checksum/alt-md5.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
-	common/checksum/md5-alt.cpp \
  	common/log/log.cpp \
  	common/log/logellipsis.cpp \
  	common/log/logrel.cpp \
