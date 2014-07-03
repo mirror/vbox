@@ -4826,7 +4826,7 @@ DECLINLINE(uint32_t) ASMRotateLeftU32(uint32_t u32, uint32_t cShift)
 #if RT_INLINE_ASM_USES_INTRIN
     return _rotl(u32, cShift);
 #elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-    __asm__ __volatile__("roll %1, %0" : "=r" (u32) : "Ir" (cShift), "0" (u32));
+    __asm__ __volatile__("roll %b1, %0" : "=r" (u32) : "Ic" (cShift), "0" (u32));
     return u32;
 #else
     cShift &= 31;
@@ -4847,7 +4847,7 @@ DECLINLINE(uint32_t) ASMRotateRightU32(uint32_t u32, uint32_t cShift)
 #if RT_INLINE_ASM_USES_INTRIN
     return _rotr(u32, cShift);
 #elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-    __asm__ __volatile__("rorl %1, %0" : "=r" (u32) : "Ir" (cShift), "0" (u32));
+    __asm__ __volatile__("rorl %b1, %0" : "=r" (u32) : "Ic" (cShift), "0" (u32));
     return u32;
 #else
     cShift &= 31;
@@ -4868,7 +4868,7 @@ DECLINLINE(uint64_t) ASMRotateLeftU64(uint64_t u64, uint32_t cShift)
 #if RT_INLINE_ASM_USES_INTRIN
     return _rotl64(u64, cShift);
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
-    __asm__ __volatile__("rolq %1, %0" : "=r" (u64) : "Ir" (cShift), "0" (u64));
+    __asm__ __volatile__("rolq %b1, %0" : "=r" (u64) : "Jc" (cShift), "0" (u64));
     return u64;
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_X86)
     uint32_t uSpill;
@@ -4905,7 +4905,7 @@ DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift)
 #if RT_INLINE_ASM_USES_INTRIN
     return _rotr64(u64, cShift);
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
-    __asm__ __volatile__("rorq %1, %0" : "=r" (u64) : "Ir" (cShift), "0" (u64));
+    __asm__ __volatile__("rorq %b1, %0" : "=r" (u64) : "Jr" (cShift), "0" (u64));
     return u64;
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_X86)
     uint32_t uSpill;
