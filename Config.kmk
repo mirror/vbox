@@ -2917,13 +2917,6 @@ SDK_VBoxOpenSslExtPack_LIBS    = \
 	$(PATH_STAGE_LIB)/VBoxExtPack-libssl$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxExtPack-libcrypto$(VBOX_SUFF_LIB)
 
-SDK_VBOX_BLD_OPENSSL      = .
-SDK_VBOX_BLD_OPENSSL_EXTENDS = VBOX_OPENSSL
-SDK_VBOX_BLD_OPENSSL_LIBS ?= \
-	$(PATH_STAGE_LIB)/VBoxBldProg-libcrypto$(VBOX_SUFF_LIB)
-SDK_VBOX_BLD_OPENSSL_LIBS.linux ?= \
-	crypt
-
 ifdef VBOX_WITH_S3
 VBOX_WITH_LIBCURL = 1
 SDK_VBOX_LIBCURL       = .
@@ -5058,11 +5051,11 @@ endif # !win
 
 
 #
-# Advanced build programs using IPRT, openssl and worse stuff.
+# Advanced build programs using IPRT and stuff.
 #
 TEMPLATE_VBoxAdvBldProg = Advanced VBox Build Program
 TEMPLATE_VBoxAdvBldProg_EXTENDS = VBoxBldProg
-TEMPLATE_VBoxAdvBldProg_SDKS    = $(TEMPLATE_VBoxBldProg_SDKS) VBOX_BLD_OPENSSL
+TEMPLATE_VBoxAdvBldProg_SDKS    = $(TEMPLATE_VBoxBldProg_SDKS)
 TEMPLATE_VBoxAdvBldProg_SDKS.win= $(TEMPLATE_VBoxBldProg_SDKS.win) VBOX_NTDLL
 TEMPLATE_VBoxAdvBldProg_DEFS    = $(TEMPLATE_VBoxBldProg_DEFS) IN_RT_R3
 ifeq ($(KBUILD_HOST),win)
