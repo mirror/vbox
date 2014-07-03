@@ -39,8 +39,6 @@ if "$(KBUILD_TARGET_ARCH)" == "x86"
  	$(VBOX_LIB_RUNTIME_STATIC) \
  	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib
 
- VBoxStub_LDFLAGS = /IntegrityCheck:NO
-
  VBoxStub.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
  VBoxStub.cpp_DEPS  = $(VBOX_SVN_REV_KMK)
 
