@@ -480,3 +480,93 @@ RTDECL(void) RTSha384(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA38
 }
 RT_EXPORT_SYMBOL(RTSha384);
 
+
+/*
+ * SHA-512/224 is just SHA-512 with different initial values an a truncated result.
+ */
+
+RTDECL(void) RTSha512t224Init(PRTSHA512T224CONTEXT pCtx)
+{
+    pCtx->AltPrivate.cbMessage.s.Lo = 0;
+    pCtx->AltPrivate.cbMessage.s.Hi = 0;
+    pCtx->AltPrivate.auH[0] = UINT64_C(0x8c3d37c819544da2);
+    pCtx->AltPrivate.auH[1] = UINT64_C(0x73e1996689dcd4d6);
+    pCtx->AltPrivate.auH[2] = UINT64_C(0x1dfab7ae32ff9c82);
+    pCtx->AltPrivate.auH[3] = UINT64_C(0x679dd514582f9fcf);
+    pCtx->AltPrivate.auH[4] = UINT64_C(0x0f6d2b697bd44da8);
+    pCtx->AltPrivate.auH[5] = UINT64_C(0x77e36f7304c48942);
+    pCtx->AltPrivate.auH[6] = UINT64_C(0x3f9d85a86a1d36c8);
+    pCtx->AltPrivate.auH[7] = UINT64_C(0x1112e6ad91d692a1);
+}
+RT_EXPORT_SYMBOL(RTSha512t224Init);
+
+
+RTDECL(void) RTSha512t224Update(PRTSHA512T224CONTEXT pCtx, const void *pvBuf, size_t cbBuf)
+{
+    RTSha512Update(pCtx, pvBuf, cbBuf);
+}
+RT_EXPORT_SYMBOL(RTSha512t224Update);
+
+
+RTDECL(void) RTSha512t224Final(PRTSHA512T224CONTEXT pCtx, uint8_t pabDigest[RTSHA512T224_HASH_SIZE])
+{
+    rtSha512FinalInternal(pCtx);
+    memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA512T224_HASH_SIZE);
+}
+RT_EXPORT_SYMBOL(RTSha512t224Final);
+
+
+RTDECL(void) RTSha512t224(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA512T224_HASH_SIZE])
+{
+    RTSHA512T224CONTEXT Ctx;
+    RTSha512t224Init(&Ctx);
+    RTSha512t224Update(&Ctx, pvBuf, cbBuf);
+    RTSha512t224Final(&Ctx, pabDigest);
+}
+RT_EXPORT_SYMBOL(RTSha512t224);
+
+
+/*
+ * SHA-512/256 is just SHA-512 with different initial values an a truncated result.
+ */
+
+RTDECL(void) RTSha512t256Init(PRTSHA512T256CONTEXT pCtx)
+{
+    pCtx->AltPrivate.cbMessage.s.Lo = 0;
+    pCtx->AltPrivate.cbMessage.s.Hi = 0;
+    pCtx->AltPrivate.auH[0] = UINT64_C(0x22312194fc2bf72c);
+    pCtx->AltPrivate.auH[1] = UINT64_C(0x9f555fa3c84c64c2);
+    pCtx->AltPrivate.auH[2] = UINT64_C(0x2393b86b6f53b151);
+    pCtx->AltPrivate.auH[3] = UINT64_C(0x963877195940eabd);
+    pCtx->AltPrivate.auH[4] = UINT64_C(0x96283ee2a88effe3);
+    pCtx->AltPrivate.auH[5] = UINT64_C(0xbe5e1e2553863992);
+    pCtx->AltPrivate.auH[6] = UINT64_C(0x2b0199fc2c85b8aa);
+    pCtx->AltPrivate.auH[7] = UINT64_C(0x0eb72ddc81c52ca2);
+}
+RT_EXPORT_SYMBOL(RTSha512t256Init);
+
+
+RTDECL(void) RTSha512t256Update(PRTSHA512T256CONTEXT pCtx, const void *pvBuf, size_t cbBuf)
+{
+    RTSha512Update(pCtx, pvBuf, cbBuf);
+}
+RT_EXPORT_SYMBOL(RTSha512t256Update);
+
+
+RTDECL(void) RTSha512t256Final(PRTSHA512T256CONTEXT pCtx, uint8_t pabDigest[RTSHA512T256_HASH_SIZE])
+{
+    rtSha512FinalInternal(pCtx);
+    memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA512T256_HASH_SIZE);
+}
+RT_EXPORT_SYMBOL(RTSha512t256Final);
+
+
+RTDECL(void) RTSha512t256(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA512T256_HASH_SIZE])
+{
+    RTSHA512T256CONTEXT Ctx;
+    RTSha512t256Init(&Ctx);
+    RTSha512t256Update(&Ctx, pvBuf, cbBuf);
+    RTSha512t256Final(&Ctx, pabDigest);
+}
+RT_EXPORT_SYMBOL(RTSha512t256);
+
