@@ -1398,8 +1398,7 @@ HRESULT NetworkAdapter::i_checkAndSwitchFromNatNetworking(com::Utf8Str networkNa
     if (FAILED(hrc))
         return hrc;
 
-    if (   mData->mAttachmentType == NetworkAttachmentType_NATNetwork
-        && state == MachineState_Running)
+    if (state == MachineState_Running)
     {
         Bstr bstrName;
         hrc = mParent->COMGETTER(Name)(bstrName.asOutParam());
