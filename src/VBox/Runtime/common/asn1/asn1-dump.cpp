@@ -100,25 +100,23 @@ static void rtAsn1DumpPrintIdent(PRTASN1DUMPDATA pData, uint32_t uDepth)
  *
  * @param   pData               The dump data structure.
  * @param   pAsn1Core           The ASN.1 core object representation.
- * @param   pszName             The member name.
  * @param   pszType             The time type name.
  */
-static void rtAsn1DumpTime(PRTASN1DUMPDATA pData, PCRTASN1CORE pAsn1Core, const char *pszName, const char *pszType)
+static void rtAsn1DumpTime(PRTASN1DUMPDATA pData, PCRTASN1CORE pAsn1Core, const char *pszType)
 {
     if ((pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT))
     {
         PCRTASN1TIME pTime = (PCRTASN1TIME)pAsn1Core;
-        rtAsn1DumpPrintf(pData, "%-16s %s -- %04u-%02u-%02u %02u:%02u:%02.%09Z\n",
-                         pszName, pszType,
+        rtAsn1DumpPrintf(pData, "%s -- %04u-%02u-%02u %02u:%02u:%02.%09Z\n",
+                         pszType,
                          pTime->Time.i32Year, pTime->Time.u8Month,  pTime->Time.u8MonthDay,
                          pTime->Time.u8Hour, pTime->Time.u8Minute, pTime->Time.u8Second,
                          pTime->Time.u32Nanosecond);
     }
     else if (pAsn1Core->cb > 0 && pAsn1Core->cb < 32 && pAsn1Core->uData.pch)
-        rtAsn1DumpPrintf(pData, "%-16s %s '%.*s'\n",
-                         pszName, pszType, (size_t)pAsn1Core->cb, pAsn1Core->uData.pch);
+        rtAsn1DumpPrintf(pData, "%s '%.*s'\n", pszType, (size_t)pAsn1Core->cb, pAsn1Core->uData.pch);
     else
-        rtAsn1DumpPrintf(pData, "%-16s %s -- cb=%u\n", pszName, pszType, pAsn1Core->cb);
+        rtAsn1DumpPrintf(pData, "%s -- cb=%u\n", pszType, pAsn1Core->cb);
 }
 
 
@@ -127,14 +125,12 @@ static void rtAsn1DumpTime(PRTASN1DUMPDATA pData, PCRTASN1CORE pAsn1Core, const 
  *
  * @param   pData               The dump data structure.
  * @param   pAsn1Core           The ASN.1 core object representation.
- * @param   pszName             The member name.
  * @param   pszType             The string type name.
  * @param   uDepth              The current identation level.
  */
-static void rtAsn1DumpString(PRTASN1DUMPDATA pData, PCRTASN1CORE pAsn1Core, const char *pszName, const char *pszType,
-                             uint32_t uDepth)
+static void rtAsn1DumpString(PRTASN1DUMPDATA pData, PCRTASN1CORE pAsn1Core, const char *pszType, uint32_t uDepth)
 {
-    rtAsn1DumpPrintf(pData, "%-16s %s", pszName, pszType);
+    rtAsn1DumpPrintf(pData, "%s", pszType);
 
     const char     *pszPostfix  = "'\n";
     bool            fUtf8       = false;
@@ -150,7 +146,7 @@ static void rtAsn1DumpString(PRTASN1DUMPDATA pData, PCRTASN1CORE pAsn1Core, cons
     }
 
     if (cch == 0 || !pch)
-        rtAsn1DumpPrintf(pData, " -- cb=%u\n", pszName, pszType, pAsn1Core->cb);
+        rtAsn1DumpPrintf(pData, "-- cb=%u\n", pszType, pAsn1Core->cb);
     else
     {
         if (cch >= 48)
@@ -177,7 +173,7 @@ static void rtAsn1DumpString(PRTASN1DUMPDATA pData, PCRTASN1CORE pAsn1Core, cons
                        || (!fUtf8 ? (uint8_t)*pch >= 0x7f : (uint8_t)*pch == 0x7f)
                        || (uint8_t)*pch == '\'') )
             {
-                rtAsn1DumpPrintf(pData, "\\x%02", *pch);
+                rtAsn1DumpPrintf(pData, "\\x%02x", *pch);
                 cch--;
                 pch++;
             }
@@ -571,15 +567,16 @@ static const char *rtAsn1DumpLookupObjIdName(const char *pszObjId)
 }
 
 
-/** @callback_method_impl{FNRTASN1ENUMCALLBACK}  */
-static DECLCALLBACK(int) rtAsn1DumpEnumCallback(PRTASN1CORE pAsn1Core, const char *pszName, uint32_t uDepth, void *pvUser)
+/**
+ * Dumps the type and value of an universal ASN.1 type.
+ *
+ * @returns True if it opens a child, false if not.
+ * @param   pData               The dumper data.
+ * @param   pAsn1Core           The ASN.1 object to dump.
+ * @param   uDepth              The current depth (for indentation).
+ */
+static bool rtAsn1DumpUniversalTypeAndValue(PRTASN1DUMPDATA pData, PCRTASN1CORE pAsn1Core, uint32_t uDepth)
 {
-    PRTASN1DUMPDATA pData = (PRTASN1DUMPDATA)pvUser;
-    if (!pAsn1Core->fFlags)
-        return VINF_SUCCESS;
-
-    rtAsn1DumpPrintIdent(pData, uDepth);
-
     const char *pszValuePrefix = "-- value:";
     const char *pszDefault = "";
     if (pAsn1Core->fFlags & RTASN1CORE_F_DEFAULT)
@@ -589,182 +586,215 @@ static DECLCALLBACK(int) rtAsn1DumpEnumCallback(PRTASN1CORE pAsn1Core, const cha
     }
 
     bool fOpen = false;
+    switch (pAsn1Core->uRealTag)
+    {
+        case ASN1_TAG_BOOLEAN:
+            if (pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT)
+                rtAsn1DumpPrintf(pData, "BOOLEAN %s %RTbool\n", pszValuePrefix, ((PCRTASN1BOOLEAN)pAsn1Core)->fValue);
+            else if (pAsn1Core->cb == 1 && pAsn1Core->uData.pu8)
+                rtAsn1DumpPrintf(pData, "BOOLEAN %s %u\n", pszValuePrefix, *pAsn1Core->uData.pu8);
+            else
+                rtAsn1DumpPrintf(pData, "BOOLEAN -- cb=%u\n", pAsn1Core->cb);
+            break;
+
+        case ASN1_TAG_INTEGER:
+            if ((pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT) && pAsn1Core->cb <= 8)
+                rtAsn1DumpPrintf(pData, "INTEGER %s %llu / %#llx\n", pszValuePrefix,
+                                 ((PCRTASN1INTEGER)pAsn1Core)->uValue, ((PCRTASN1INTEGER)pAsn1Core)->uValue);
+            else if (pAsn1Core->cb == 0 || pAsn1Core->cb >= 512 || !pAsn1Core->uData.pu8)
+                rtAsn1DumpPrintf(pData, "INTEGER -- cb=%u\n", pAsn1Core->cb);
+            else if (pAsn1Core->cb <= 32)
+                rtAsn1DumpPrintf(pData, "INTEGER %s %.*Rhxs\n", pszValuePrefix, (size_t)pAsn1Core->cb, pAsn1Core->uData.pu8);
+            else
+                rtAsn1DumpPrintf(pData, "INTEGER %s\n%.*Rhxd\n", pszValuePrefix, (size_t)pAsn1Core->cb, pAsn1Core->uData.pu8);
+            break;
+
+        case ASN1_TAG_BIT_STRING:
+            if ((pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT))
+            {
+                PCRTASN1BITSTRING pBitString = (PCRTASN1BITSTRING)pAsn1Core;
+                rtAsn1DumpPrintf(pData, "BIT STRING %s-- cb=%u cBits=%#x cMaxBits=%#x",
+                                 pszDefault, pBitString->Asn1Core.cb, pBitString->cBits, pBitString->cMaxBits);
+                if (pBitString->cBits <= 64)
+                    rtAsn1DumpPrintf(pData, " value=%#llx\n", RTAsn1BitString_GetAsUInt64(pBitString));
+                else
+                    rtAsn1DumpPrintf(pData, "\n");
+            }
+            else
+                rtAsn1DumpPrintf(pData, "BIT STRING %s-- cb=%u\n", pszDefault, pAsn1Core->cb);
+            fOpen = pAsn1Core->pOps != NULL;
+            break;
+
+        case ASN1_TAG_OCTET_STRING:
+            rtAsn1DumpPrintf(pData, "OCTET STRING %s-- cb=%u\n", pszDefault, pAsn1Core->cb);
+            fOpen = pAsn1Core->pOps != NULL;
+            break;
+
+        case ASN1_TAG_NULL:
+            rtAsn1DumpPrintf(pData, "NULL\n");
+            break;
+
+        case ASN1_TAG_OID:
+            if ((pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT))
+            {
+                const char *pszObjIdName = rtAsn1DumpLookupObjIdName(((PCRTASN1OBJID)pAsn1Core)->szObjId);
+                if (pszObjIdName)
+                    rtAsn1DumpPrintf(pData, "OBJECT IDENTIFIER %s%s ('%s')\n",
+                                     pszDefault, pszObjIdName, ((PCRTASN1OBJID)pAsn1Core)->szObjId);
+                else
+                    rtAsn1DumpPrintf(pData, "OBJECT IDENTIFIER %s'%s'\n", pszDefault, ((PCRTASN1OBJID)pAsn1Core)->szObjId);
+            }
+            else
+                rtAsn1DumpPrintf(pData, "OBJECT IDENTIFIER %s -- cb=%u\n", pszDefault, pAsn1Core->cb);
+            break;
+
+        case ASN1_TAG_OBJECT_DESCRIPTOR:
+            rtAsn1DumpPrintf(pData, "OBJECT DESCRIPTOR -- cb=%u TODO\n", pAsn1Core->cb);
+            break;
+
+        case ASN1_TAG_EXTERNAL:
+            rtAsn1DumpPrintf(pData, "EXTERNAL -- cb=%u TODO\n", pAsn1Core->cb);
+            break;
+
+        case ASN1_TAG_REAL:
+            rtAsn1DumpPrintf(pData, "REAL -- cb=%u TODO\n", pAsn1Core->cb);
+            break;
+
+        case ASN1_TAG_ENUMERATED:
+            rtAsn1DumpPrintf(pData, "ENUMERATED -- cb=%u TODO\n", pAsn1Core->cb);
+            break;
+
+        case ASN1_TAG_EMBEDDED_PDV:
+            rtAsn1DumpPrintf(pData, "EMBEDDED PDV -- cb=%u TODO\n", pAsn1Core->cb);
+            break;
+
+        case ASN1_TAG_UTF8_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "UTF8 STRING", uDepth);
+            break;
+
+        case ASN1_TAG_RELATIVE_OID:
+            rtAsn1DumpPrintf(pData, "RELATIVE OBJECT IDENTIFIER -- cb=%u TODO\n", pAsn1Core->cb);
+            break;
+
+        case ASN1_TAG_SEQUENCE:
+            rtAsn1DumpPrintf(pData, "SEQUENCE -- cb=%u\n", pAsn1Core->cb);
+            fOpen = true;
+            break;
+        case ASN1_TAG_SET:
+            rtAsn1DumpPrintf(pData, "SET -- cb=%u\n", pAsn1Core->cb);
+            fOpen = true;
+            break;
+
+        case ASN1_TAG_NUMERIC_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "NUMERIC STRING", uDepth);
+            break;
+
+        case ASN1_TAG_PRINTABLE_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "PRINTABLE STRING", uDepth);
+            break;
+
+        case ASN1_TAG_T61_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "T61 STRING", uDepth);
+            break;
+
+        case ASN1_TAG_VIDEOTEX_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "VIDEOTEX STRING", uDepth);
+            break;
+
+        case ASN1_TAG_IA5_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "IA5 STRING", uDepth);
+            break;
+
+        case ASN1_TAG_GRAPHIC_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "GRAPHIC STRING", uDepth);
+            break;
+
+        case ASN1_TAG_VISIBLE_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "VISIBLE STRING", uDepth);
+            break;
+
+        case ASN1_TAG_GENERAL_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "GENERAL STRING", uDepth);
+            break;
+
+        case ASN1_TAG_UNIVERSAL_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "UNIVERSAL STRING", uDepth);
+            break;
+
+        case ASN1_TAG_BMP_STRING:
+            rtAsn1DumpString(pData, pAsn1Core, "BMP STRING", uDepth);
+            break;
+
+        case ASN1_TAG_UTC_TIME:
+            rtAsn1DumpTime(pData, pAsn1Core, "UTC TIME");
+            break;
+
+        case ASN1_TAG_GENERALIZED_TIME:
+            rtAsn1DumpTime(pData, pAsn1Core, "GENERALIZED TIME");
+            break;
+
+        case ASN1_TAG_CHARACTER_STRING:
+            rtAsn1DumpPrintf(pData, "CHARACTER STRING -- cb=%u TODO\n", pAsn1Core->cb);
+            break;
+
+        default:
+            rtAsn1DumpPrintf(pData, "[UNIVERSAL %u]\n", pAsn1Core->uTag);
+            break;
+    }
+    return fOpen;
+}
+
+
+/** @callback_method_impl{FNRTASN1ENUMCALLBACK}  */
+static DECLCALLBACK(int) rtAsn1DumpEnumCallback(PRTASN1CORE pAsn1Core, const char *pszName, uint32_t uDepth, void *pvUser)
+{
+    PRTASN1DUMPDATA pData = (PRTASN1DUMPDATA)pvUser;
+    if (!pAsn1Core->fFlags)
+        return VINF_SUCCESS;
+
+    bool fOpen = false;
+    rtAsn1DumpPrintIdent(pData, uDepth);
     switch (pAsn1Core->fClass & ASN1_TAGCLASS_MASK)
     {
         case ASN1_TAGCLASS_UNIVERSAL:
-            switch (pAsn1Core->fFlags & RTASN1CORE_F_TAG_IMPLICIT ? pAsn1Core->uRealTag : pAsn1Core->uTag)
+            rtAsn1DumpPrintf(pData, "%-16s ", pszName);
+            fOpen = rtAsn1DumpUniversalTypeAndValue(pData, pAsn1Core, uDepth);
+            break;
+
+        case ASN1_TAGCLASS_CONTEXT:
+            if ((pAsn1Core->fRealClass & ASN1_TAGCLASS_MASK) == ASN1_TAGCLASS_UNIVERSAL)
             {
-                case ASN1_TAG_BOOLEAN:
-                    if (pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT)
-                        rtAsn1DumpPrintf(pData, "%-16s BOOLEAN %s %RTbool\n",
-                                         pszName, pszValuePrefix, ((PCRTASN1BOOLEAN)pAsn1Core)->fValue);
-                    else if (pAsn1Core->cb == 1 && pAsn1Core->uData.pu8)
-                        rtAsn1DumpPrintf(pData, "%-16s BOOLEAN %s %u\n",
-                                         pszName, pszValuePrefix, *pAsn1Core->uData.pu8);
-                    else
-                        rtAsn1DumpPrintf(pData, "%-16s BOOLEAN -- cb=%u\n", pszName, pAsn1Core->cb);
-                    break;
-
-                case ASN1_TAG_INTEGER:
-                    if ((pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT) && pAsn1Core->cb <= 8)
-                        rtAsn1DumpPrintf(pData, "%-16s INTEGER %s %llu / %#llx\n", pszName, pszValuePrefix,
-                                         ((PCRTASN1INTEGER)pAsn1Core)->uValue, ((PCRTASN1INTEGER)pAsn1Core)->uValue);
-                    else if (pAsn1Core->cb == 0 || pAsn1Core->cb >= 512 || !pAsn1Core->uData.pu8)
-                        rtAsn1DumpPrintf(pData, "%-16s INTEGER -- cb=%u\n", pszName, pAsn1Core->cb);
-                    else if (pAsn1Core->cb <= 32)
-                        rtAsn1DumpPrintf(pData, "%-16s INTEGER %s %.*Rhxs\n",
-                                         pszName, pszValuePrefix, (size_t)pAsn1Core->cb, pAsn1Core->uData.pu8);
-                    else
-                        rtAsn1DumpPrintf(pData, "%-16s INTEGER %s\n%.*Rhxd\n",
-                                         pszName, pszValuePrefix, (size_t)pAsn1Core->cb, pAsn1Core->uData.pu8);
-                    break;
-
-                case ASN1_TAG_BIT_STRING:
-                    if ((pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT))
-                    {
-                        PCRTASN1BITSTRING pBitString = (PCRTASN1BITSTRING)pAsn1Core;
-                        rtAsn1DumpPrintf(pData, "%-16s BIT STRING %s-- cb=%u cBits=%#x cMaxBits=%#x",
-                                         pszName, pszDefault, pBitString->Asn1Core.cb, pBitString->cBits, pBitString->cMaxBits);
-                        if (pBitString->cBits <= 64)
-                            rtAsn1DumpPrintf(pData, " value=%#llx\n", RTAsn1BitString_GetAsUInt64(pBitString));
-                        else
-                            rtAsn1DumpPrintf(pData, "\n");
-                    }
-                    else
-                        rtAsn1DumpPrintf(pData, "%-16s BIT STRING %s-- cb=%u\n", pszName, pszDefault, pAsn1Core->cb);
-                    fOpen = pAsn1Core->pOps != NULL;
-                    break;
-
-                case ASN1_TAG_OCTET_STRING:
-                    rtAsn1DumpPrintf(pData, "%-16s OCTET STRING %s-- cb=%u\n", pszName, pszDefault, pAsn1Core->cb);
-                    fOpen = pAsn1Core->pOps != NULL;
-                    break;
-
-                case ASN1_TAG_NULL:
-                    rtAsn1DumpPrintf(pData, "%-16s NULL\n", pszName);
-                    break;
-
-                case ASN1_TAG_OID:
-                    if ((pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT))
-                    {
-                        const char *pszObjIdName = rtAsn1DumpLookupObjIdName(((PCRTASN1OBJID)pAsn1Core)->szObjId);
-                        if (pszObjIdName)
-                            rtAsn1DumpPrintf(pData, "%-16s OBJECT IDENTIFIER %s%s ('%s')\n",
-                                             pszName, pszDefault, pszObjIdName, ((PCRTASN1OBJID)pAsn1Core)->szObjId);
-                        else
-                            rtAsn1DumpPrintf(pData, "%-16s OBJECT IDENTIFIER %s'%s'\n",
-                                             pszName, pszDefault, ((PCRTASN1OBJID)pAsn1Core)->szObjId);
-                    }
-                    else
-                        rtAsn1DumpPrintf(pData, "%-16s OBJECT IDENTIFIER %s -- cb=%u\n",
-                                         pszName, pszDefault, pAsn1Core->cb);
-                    break;
-
-                case ASN1_TAG_OBJECT_DESCRIPTOR:
-                    rtAsn1DumpPrintf(pData, "%-16s OBJECT DESCRIPTOR -- cb=%u TODO\n", pszName, pAsn1Core->cb);
-                    break;
-
-                case ASN1_TAG_EXTERNAL:
-                    rtAsn1DumpPrintf(pData, "%-16s EXTERNAL -- cb=%u TODO\n", pszName, pAsn1Core->cb);
-                    break;
-
-                case ASN1_TAG_REAL:
-                    rtAsn1DumpPrintf(pData, "%-16s REAL -- cb=%u TODO\n", pszName, pAsn1Core->cb);
-                    break;
-
-                case ASN1_TAG_ENUMERATED:
-                    rtAsn1DumpPrintf(pData, "%-16s ENUMERATED -- cb=%u TODO\n", pszName, pAsn1Core->cb);
-                    break;
-
-                case ASN1_TAG_EMBEDDED_PDV:
-                    rtAsn1DumpPrintf(pData, "%-16s EMBEDDED PDV -- cb=%u TODO\n", pszName, pAsn1Core->cb);
-                    break;
-
-                case ASN1_TAG_UTF8_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "UTF8 STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_RELATIVE_OID:
-                    rtAsn1DumpPrintf(pData, "%-16s RELATIVE OBJECT IDENTIFIER -- cb=%u TODO\n", pszName, pAsn1Core->cb);
-                    break;
-
-                case ASN1_TAG_SEQUENCE:
-                    rtAsn1DumpPrintf(pData, "%-16s SEQUENCE -- cb=%u\n", pszName, pAsn1Core->cb);
-                    fOpen = true;
-                    break;
-                case ASN1_TAG_SET:
-                    rtAsn1DumpPrintf(pData, "%-16s SET -- cb=%u\n", pszName, pAsn1Core->cb);
-                    fOpen = true;
-                    break;
-
-                case ASN1_TAG_NUMERIC_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "NUMERIC STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_PRINTABLE_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "PRINTABLE STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_T61_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "T61 STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_VIDEOTEX_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "VIDEOTEX STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_IA5_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "IA5 STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_GRAPHIC_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "GRAPHIC STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_VISIBLE_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "VISIBLE STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_GENERAL_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "GENERAL STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_UNIVERSAL_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "UNIVERSAL STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_BMP_STRING:
-                    rtAsn1DumpString(pData, pAsn1Core, pszName, "BMP STRING", uDepth);
-                    break;
-
-                case ASN1_TAG_UTC_TIME:
-                    rtAsn1DumpTime(pData, pAsn1Core, pszName, "UTC TIME");
-                    break;
-
-                case ASN1_TAG_GENERALIZED_TIME:
-                    rtAsn1DumpTime(pData, pAsn1Core, pszName, "GENERALIZED TIME");
-                    break;
-
-                case ASN1_TAG_CHARACTER_STRING:
-                    rtAsn1DumpPrintf(pData, "%-16s CHARACTER STRING -- cb=%u TODO\n", pszName, pAsn1Core->cb);
-                    break;
-
-                default:
-                    rtAsn1DumpPrintf(pData, "[UNIVERSAL %u]\n", pAsn1Core->uTag);
-                    break;
+                rtAsn1DumpPrintf(pData, "%-16s [%u] ", pszName, pAsn1Core->uTag);
+                fOpen = rtAsn1DumpUniversalTypeAndValue(pData, pAsn1Core, uDepth);
+            }
+            else
+            {
+                rtAsn1DumpPrintf(pData, "%-16s [%u]\n", pszName, pAsn1Core->uTag);
+                fOpen = true;
             }
             break;
-        case ASN1_TAGCLASS_CONTEXT:
-            rtAsn1DumpPrintf(pData, "%-16s [%u]\n", pszName, pAsn1Core->uTag);
-            fOpen = true;
-            break;
+
         case ASN1_TAGCLASS_APPLICATION:
-            rtAsn1DumpPrintf(pData, "%-16s [APPLICATION %u]\n", pszName, pAsn1Core->uTag);
-            fOpen = true;
+            if ((pAsn1Core->fRealClass & ASN1_TAGCLASS_MASK) == ASN1_TAGCLASS_UNIVERSAL)
+            {
+                rtAsn1DumpPrintf(pData, "%-16s [APPLICATION %u] ", pszName, pAsn1Core->uTag);
+                fOpen = rtAsn1DumpUniversalTypeAndValue(pData, pAsn1Core, uDepth);
+            }
+            else
+            {
+                rtAsn1DumpPrintf(pData, "%-16s [APPLICATION %u]\n", pszName, pAsn1Core->uTag);
+                fOpen = true;
+            }
             break;
+
         case ASN1_TAGCLASS_PRIVATE:
-            rtAsn1DumpPrintf(pData, "%-16s [PRIVATE %u]\n", pszName, pAsn1Core->uTag);
-            fOpen = true;
+            if (RTASN1CORE_IS_DUMMY(pAsn1Core))
+                rtAsn1DumpPrintf(pData, "%-16s DUMMY\n", pszName);
+            else
+            {
+                rtAsn1DumpPrintf(pData, "%-16s [PRIVATE %u]\n", pszName, pAsn1Core->uTag);
+                fOpen = true;
+            }
             break;
     }
     /** @todo {} */
