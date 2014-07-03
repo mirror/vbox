@@ -46,13 +46,22 @@
 /**
  * MD5 hash algorithm context.
  */
-typedef struct RTMD5CONTEXT
+typedef union RTMD5CONTEXT
 {
-    uint32_t in[16];
-    uint32_t buf[4];
-    uint32_t bits[2];
+    uint64_t            u64BetterAlignment;
+    uint8_t             abPadding[(4 + 6 + 16 + 1) * sizeof(uint32_t)];
+    /** Context used by md5-alt.cpp. */
+    struct
+    {
+        uint32_t        in[16];
+        uint32_t        buf[4];
+        uint32_t        bits[2];
+    } AltPrivate;
+#ifdef RT_MD5_OPENSSL_PRIVATE_CONTEXT
+    /** Context used by md5-openssl.cpp. */
+    MD5_CTX         OsslPrivate;
+#endif
 } RTMD5CONTEXT;
-
 /** Pointer to MD5 hash algorithm context. */
 typedef RTMD5CONTEXT *PRTMD5CONTEXT;
 

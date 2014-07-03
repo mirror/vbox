@@ -211,15 +211,15 @@ static void rtMd5ByteReverse(uint32_t *buf, unsigned int longs)
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
-RTDECL(void) RTMd5Init(PRTMD5CONTEXT ctx)
+RTDECL(void) RTMd5Init(PRTMD5CONTEXT pCtx)
 {
-    ctx->buf[0] = 0x67452301;
-    ctx->buf[1] = 0xefcdab89;
-    ctx->buf[2] = 0x98badcfe;
-    ctx->buf[3] = 0x10325476;
+    pCtx->AltPrivate.buf[0] = 0x67452301;
+    pCtx->AltPrivate.buf[1] = 0xefcdab89;
+    pCtx->AltPrivate.buf[2] = 0x98badcfe;
+    pCtx->AltPrivate.buf[3] = 0x10325476;
 
-    ctx->bits[0] = 0;
-    ctx->bits[1] = 0;
+    pCtx->AltPrivate.bits[0] = 0;
+    pCtx->AltPrivate.bits[1] = 0;
 }
 RT_EXPORT_SYMBOL(RTMd5Init);
 
@@ -228,23 +228,23 @@ RT_EXPORT_SYMBOL(RTMd5Init);
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-RTDECL(void) RTMd5Update(PRTMD5CONTEXT ctx, const void *pvBuf, size_t len)
+RTDECL(void) RTMd5Update(PRTMD5CONTEXT pCtx, const void *pvBuf, size_t len)
 {
     const uint8_t  *buf = (const uint8_t *)pvBuf;
     uint32_t        t;
 
     /* Update bitcount */
-    t = ctx->bits[0];
-    if ((ctx->bits[0] = t + ((uint32_t) len << 3)) < t)
-    ctx->bits[1]++; /* Carry from low to high */
-    ctx->bits[1] += (uint32_t)(len >> 29);
+    t = pCtx->AltPrivate.bits[0];
+    if ((pCtx->AltPrivate.bits[0] = t + ((uint32_t) len << 3)) < t)
+    pCtx->AltPrivate.bits[1]++; /* Carry from low to high */
+    pCtx->AltPrivate.bits[1] += (uint32_t)(len >> 29);
 
     t = (t >> 3) & 0x3f;        /* Bytes already in shsInfo->data */
 
     /* Handle any leading odd-sized chunks */
     if (t)
     {
-        uint8_t *p = (uint8_t *) ctx->in + t;
+        uint8_t *p = (uint8_t *) pCtx->AltPrivate.in + t;
 
         t = 64 - t;
         if (len < t)
@@ -253,8 +253,8 @@ RTDECL(void) RTMd5Update(PRTMD5CONTEXT ctx, const void *pvBuf, size_t len)
             return;
         }
         memcpy(p, buf, t);
-        rtMd5ByteReverse(ctx->in, 16);
-        rtMd5Transform(ctx->buf, ctx->in);
+        rtMd5ByteReverse(pCtx->AltPrivate.in, 16);
+        rtMd5Transform(pCtx->AltPrivate.buf, pCtx->AltPrivate.in);
         buf += t;
         len -= t;
     }
@@ -264,7 +264,7 @@ RTDECL(void) RTMd5Update(PRTMD5CONTEXT ctx, const void *pvBuf, size_t len)
     if (!((uintptr_t)buf & 0x3))
     {
         while (len >= 64) {
-            rtMd5Transform(ctx->buf, (uint32_t const *)buf);
+            rtMd5Transform(pCtx->AltPrivate.buf, (uint32_t const *)buf);
             buf += 64;
             len -= 64;
         }
@@ -273,16 +273,16 @@ RTDECL(void) RTMd5Update(PRTMD5CONTEXT ctx, const void *pvBuf, size_t len)
 #endif
     {
         while (len >= 64) {
-            memcpy(ctx->in, buf, 64);
-            rtMd5ByteReverse(ctx->in, 16);
-            rtMd5Transform(ctx->buf, ctx->in);
+            memcpy(pCtx->AltPrivate.in, buf, 64);
+            rtMd5ByteReverse(pCtx->AltPrivate.in, 16);
+            rtMd5Transform(pCtx->AltPrivate.buf, pCtx->AltPrivate.in);
             buf += 64;
             len -= 64;
         }
     }
 
     /* Handle any remaining bytes of data */
-    memcpy(ctx->in, buf, len);
+    memcpy(pCtx->AltPrivate.in, buf, len);
 }
 RT_EXPORT_SYMBOL(RTMd5Update);
 
@@ -291,17 +291,17 @@ RT_EXPORT_SYMBOL(RTMd5Update);
  * Final wrapup - pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
-RTDECL(void) RTMd5Final(uint8_t digest[16], PRTMD5CONTEXT ctx)
+RTDECL(void) RTMd5Final(uint8_t digest[16], PRTMD5CONTEXT pCtx)
 {
     unsigned int count;
     uint8_t *p;
 
     /* Compute number of bytes mod 64 */
-    count = (ctx->bits[0] >> 3) & 0x3F;
+    count = (pCtx->AltPrivate.bits[0] >> 3) & 0x3F;
 
     /* Set the first char of padding to 0x80.  This is safe since there is
        always at least one byte free */
-    p = (uint8_t *)ctx->in + count;
+    p = (uint8_t *)pCtx->AltPrivate.in + count;
     *p++ = 0x80;
 
     /* Bytes of padding needed to make 64 bytes */
@@ -312,27 +312,27 @@ RTDECL(void) RTMd5Final(uint8_t digest[16], PRTMD5CONTEXT ctx)
     {
         /* Two lots of padding:  Pad the first block to 64 bytes */
         memset(p, 0, count);
-        rtMd5ByteReverse(ctx->in, 16);
-        rtMd5Transform(ctx->buf, ctx->in);
+        rtMd5ByteReverse(pCtx->AltPrivate.in, 16);
+        rtMd5Transform(pCtx->AltPrivate.buf, pCtx->AltPrivate.in);
 
         /* Now fill the next block with 56 bytes */
-        memset(ctx->in, 0, 56);
+        memset(pCtx->AltPrivate.in, 0, 56);
     }
     else
     {
         /* Pad block to 56 bytes */
         memset(p, 0, count - 8);
     }
-    rtMd5ByteReverse(ctx->in, 14);
+    rtMd5ByteReverse(pCtx->AltPrivate.in, 14);
 
     /* Append length in bits and transform */
-    ctx->in[14] = ctx->bits[0];
-    ctx->in[15] = ctx->bits[1];
+    pCtx->AltPrivate.in[14] = pCtx->AltPrivate.bits[0];
+    pCtx->AltPrivate.in[15] = pCtx->AltPrivate.bits[1];
 
-    rtMd5Transform(ctx->buf, ctx->in);
-    rtMd5ByteReverse(ctx->buf, 4);
-    memcpy(digest, ctx->buf, 16);
-    memset(ctx, 0, sizeof(*ctx));        /* In case it's sensitive */
+    rtMd5Transform(pCtx->AltPrivate.buf, pCtx->AltPrivate.in);
+    rtMd5ByteReverse(pCtx->AltPrivate.buf, 4);
+    memcpy(digest, pCtx->AltPrivate.buf, 16);
+    memset(pCtx, 0, sizeof(*pCtx));        /* In case it's sensitive */
 }
 RT_EXPORT_SYMBOL(RTMd5Final);
 
