@@ -1579,7 +1579,7 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     {
         /* Process any pending VGA device changes, resize. */
         Assert(!vbvaLockIsOwner());
-        mpDrv->pUpPort->pfnUpdateDisplay(mpDrv->pUpPort);
+        mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort, /* fFailOnResize = */ false);
     }
 
     vbvaLock();
@@ -1589,7 +1589,7 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     if (!fEnable)
     {
         Assert(!vbvaLockIsOwner());
-        mpDrv->pUpPort->pfnUpdateDisplay(mpDrv->pUpPort);
+        mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort, /* fFailOnResize = */ false);
     }
 
     return rc;
@@ -2046,7 +2046,7 @@ void Display::VideoAccelFlush (void)
     {
         /* VideoAccel was disabled because of a failure, switching back to VGA updates. Redraw the screen. */
         Assert(!vbvaLockIsOwner());
-        mpDrv->pUpPort->pfnUpdateDisplay(mpDrv->pUpPort);
+        mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort, /* fFailOnResize = */ false);
     }
 }
 
@@ -3293,7 +3293,7 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpda
             && uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
         {
             Assert(!pDisplay->vbvaLockIsOwner());
-            pDisplay->mpDrv->pUpPort->pfnUpdateDisplayAll(pDisplay->mpDrv->pUpPort);
+            pDisplay->mpDrv->pUpPort->pfnUpdateDisplayAll(pDisplay->mpDrv->pUpPort, /* fFailOnResize = */ true);
         }
         else
         {
@@ -4572,7 +4572,7 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
     {
         /* Force full screen update, because VGA device must take control, do resize, etc. */
         Assert(!pThis->vbvaLockIsOwner());
-        pThis->mpDrv->pUpPort->pfnUpdateDisplay(pThis->mpDrv->pUpPort);
+        pThis->mpDrv->pUpPort->pfnUpdateDisplayAll(pThis->mpDrv->pUpPort, /* fFailOnResize = */ false);
     }
 }
 

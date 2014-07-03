@@ -517,9 +517,10 @@ typedef struct PDMIDISPLAYPORT
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to this interface.
+     * @param   fFailOnResize       Fail is a resize is pending.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnUpdateDisplayAll,(PPDMIDISPLAYPORT pInterface));
+    DECLR3CALLBACKMEMBER(int, pfnUpdateDisplayAll,(PPDMIDISPLAYPORT pInterface, bool fFailOnResize));
 
     /**
      * Return the current guest color depth in bits per pixel (bpp).
@@ -646,7 +647,7 @@ typedef struct PDMIDISPLAYPORT
 
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
-#define PDMIDISPLAYPORT_IID                     "22d3d93d-3407-487a-8308-85367eae00bb"
+#define PDMIDISPLAYPORT_IID                     "dae29a50-5e24-4fd6-9a6a-65f6bf900acb"
 
 
 typedef struct VBOXVHWACMD *PVBOXVHWACMD; /**< @todo r=bird: A line what it is to make doxygen happy. */
