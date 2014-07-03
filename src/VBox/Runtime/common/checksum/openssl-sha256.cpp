@@ -70,3 +70,39 @@ RTDECL(void) RTSha256Final(PRTSHA256CONTEXT pCtx, uint8_t pabDigest[32])
 }
 RT_EXPORT_SYMBOL(RTSha256Final);
 
+
+/*
+ * We have to expose the same API as alt-sha256.cpp, so the SHA-224
+ * implementation also lives here. (SHA-224 is just a truncated SHA-256 with
+ * different initial values.)
+ */
+RTDECL(void) RTSha224(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA224_HASH_SIZE])
+{
+    RTSHA224CONTEXT Ctx;
+    RTSha224Init(&Ctx);
+    RTSha224Update(&Ctx, pvBuf, cbBuf);
+    RTSha224Final(&Ctx, pabDigest);
+}
+RT_EXPORT_SYMBOL(RTSha224);
+
+
+RTDECL(void) RTSha224Init(PRTSHA224CONTEXT pCtx)
+{
+    SHA224_Init(&pCtx->Private);
+}
+RT_EXPORT_SYMBOL(RTSha224Init);
+
+
+RTDECL(void) RTSha224Update(PRTSHA224CONTEXT pCtx, const void *pvBuf, size_t cbBuf)
+{
+    SHA224_Update(&pCtx->Private, pvBuf, cbBuf);
+}
+RT_EXPORT_SYMBOL(RTSha224Update);
+
+
+RTDECL(void) RTSha224Final(PRTSHA224CONTEXT pCtx, uint8_t pabDigest[32])
+{
+    SHA224_Final((unsigned char *)&pabDigest[0], &pCtx->Private);
+}
+RT_EXPORT_SYMBOL(RTSha224Final);
+

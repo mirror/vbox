@@ -153,17 +153,31 @@ static void testGeneric(const char *pszDigestObjId, TESTRTDIGEST const *paTests,
      * Do a quick benchmark.
      */
     RTTESTI_CHECK_RC_RETV(RTCrDigestCreateByObjIdString(&hDigest, pszDigestObjId), VINF_SUCCESS);
-    uint32_t const cChunks  = 64;
-    uint32_t       cLeft    = cChunks;
-    int            rc       = VINF_SUCCESS;
+    uint32_t cChunks  = 64;
+    uint32_t cLeft    = cChunks;
+    int      rc       = VINF_SUCCESS;
 
-    uint64_t       uStartTS = RTTimeNanoTS();
+    uint64_t uStartTS = RTTimeNanoTS();
     while (cLeft-- > 0)
         rc |= RTCrDigestUpdate(hDigest, g_abRandom72KB, sizeof(g_abRandom72KB));
     rc |= RTCrDigestFinal(hDigest, NULL, 0);
     uint64_t cNsElapsed = RTTimeNanoTS() - uStartTS;
-
     RTTESTI_CHECK(rc == VINF_SUCCESS);
+
+    /* If it was too quick, redo with more chunks. */
+    if (rc == VINF_SUCCESS && cNsElapsed < 100000000 /* 100 ms */)
+    {
+        cChunks  = 1024;
+        cLeft    = cChunks;
+        RTTESTI_CHECK_RC(RTCrDigestReset(hDigest), VINF_SUCCESS);
+
+        uStartTS = RTTimeNanoTS();
+        while (cLeft-- > 0)
+            rc |= RTCrDigestUpdate(hDigest, g_abRandom72KB, sizeof(g_abRandom72KB));
+        rc |= RTCrDigestFinal(hDigest, NULL, 0);
+        cNsElapsed = RTTimeNanoTS() - uStartTS;
+        RTTESTI_CHECK(rc == VINF_SUCCESS);
+    }
 
     RTTestIValueF((uint64_t)cChunks * sizeof(g_abRandom72KB) / _1K / (0.000000001 * cNsElapsed), RTTESTUNIT_KILOBYTES_PER_SEC,
                   "%s throughput", pszDigestName);
@@ -916,6 +930,44 @@ static void testSha256(void)
 
 
 /**
+ * Tests SHA-224
+ */
+static void testSha224(void)
+{
+    RTTestISub("SHA-224");
+
+    /*
+     * Some quick direct API tests.
+     */
+    uint8_t    *pabHash   = (uint8_t *)RTTestGuardedAllocTail(NIL_RTTEST, RTSHA224_HASH_SIZE);
+    char       *pszDigest = (char    *)RTTestGuardedAllocTail(NIL_RTTEST, RTSHA224_DIGEST_LEN + 1);
+    const char *pszString;
+
+    pszString = "abc";
+    RTSha224(pszString, strlen(pszString), pabHash);
+    RTTESTI_CHECK_RC_RETV(RTSha224ToString(pabHash, pszDigest, RTSHA224_DIGEST_LEN + 1), VINF_SUCCESS);
+    CHECK_STRING(pszDigest, "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7");
+
+
+    pszString = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+    RTSha224(pszString, strlen(pszString), pabHash);
+    RTTESTI_CHECK_RC_RETV(RTSha224ToString(pabHash, pszDigest, RTSHA224_DIGEST_LEN + 1), VINF_SUCCESS);
+    CHECK_STRING(pszDigest, "75388b16512776cc5dba5da1fd890150b0c6455cb4f58b1952522525");
+
+    /*
+     * Generic API tests.
+     */
+    static TESTRTDIGEST const s_abTests[] =
+    {
+        { RT_STR_TUPLE("abc"), "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7", "SHA-224 abc" },
+        { RT_STR_TUPLE("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"),
+          "75388b16512776cc5dba5da1fd890150b0c6455cb4f58b1952522525", "SHA-224 abcdbc..." },
+    };
+    testGeneric("2.16.840.1.101.3.4.2.4", s_abTests, RT_ELEMENTS(s_abTests), "SHA-224");
+}
+
+
+/**
  * Tests SHA-512
  */
 static void testSha512(void)
@@ -1083,6 +1135,118 @@ static void testSha512(void)
 }
 
 
+#ifndef IPRT_WITHOUT_SHA512T224
+/**
+ * Tests SHA-512/224
+ */
+static void testSha512t224(void)
+{
+    RTTestISub("SHA-512/224");
+
+    /*
+     * Some quick direct API tests.
+     */
+    uint8_t     abHash[RTSHA512T224_HASH_SIZE];
+    char        szDigest[RTSHA512T224_DIGEST_LEN + 1];
+    const char *pszString;
+
+    pszString = "abc";
+    RTSha512t224(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTSha512t224ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "4634270f707b6a54daae7530460842e20e37ed265ceee9a43e8924aa");
+
+    pszString = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu";
+    RTSha512t224(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTSha512t224ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "23fec5bb94d60b23308192640b0c453335d664734fe40e7268674af9");
+
+    /*
+     * Generic API tests.
+     */
+    static TESTRTDIGEST const s_abTests[] =
+    {
+        { RT_STR_TUPLE("abc"), "4634270f707b6a54daae7530460842e20e37ed265ceee9a43e8924aa", "SHA-512/224 abc" },
+        { RT_STR_TUPLE("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"),
+          "23fec5bb94d60b23308192640b0c453335d664734fe40e7268674af9", "SHA-512/256 abcdef..." },
+    };
+    testGeneric("2.16.840.1.101.3.4.2.5", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512/224");
+}
+#endif /* IPRT_WITHOUT_SHA512T224 */
+
+#ifndef IPRT_WITHOUT_SHA512T256
+/**
+ * Tests SHA-512/256
+ */
+static void testSha512t256(void)
+{
+    RTTestISub("SHA-512/256");
+
+    /*
+     * Some quick direct API tests.
+     */
+    uint8_t     abHash[RTSHA512T256_HASH_SIZE];
+    char        szDigest[RTSHA512T256_DIGEST_LEN + 1];
+    const char *pszString;
+
+    pszString = "abc";
+    RTSha512t256(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTSha512t256ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "53048e2681941ef99b2e29b76b4c7dabe4c2d0c634fc6d46e0e2f13107e7af23");
+
+    pszString = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu";
+    RTSha512t256(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTSha512t256ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "3928e184fb8690f840da3988121d31be65cb9d3ef83ee6146feac861e19b563a");
+
+    /*
+     * Generic API tests.
+     */
+    static TESTRTDIGEST const s_abTests[] =
+    {
+        { RT_STR_TUPLE("abc"), "53048e2681941ef99b2e29b76b4c7dabe4c2d0c634fc6d46e0e2f13107e7af23", "SHA-512/256 abc" },
+        { RT_STR_TUPLE("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"),
+          "3928e184fb8690f840da3988121d31be65cb9d3ef83ee6146feac861e19b563a", "SHA-512/256 abcdef..." },
+    };
+    testGeneric("2.16.840.1.101.3.4.2.6", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512/256");
+}
+#endif /* !IPRT_WITHOUT_SHA512T256 */
+
+/**
+ * Tests SHA-384
+ */
+static void testSha384(void)
+{
+    RTTestISub("SHA-384");
+
+    /*
+     * Some quick direct API tests.
+     */
+    uint8_t     abHash[RTSHA384_HASH_SIZE];
+    char        szDigest[RTSHA384_DIGEST_LEN + 1];
+    const char *pszString;
+
+    pszString = "abc";
+    RTSha384(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTSha384ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7");
+
+    pszString = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu";
+    RTSha384(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTSha384ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "09330c33f71147e83d192fc782cd1b4753111b173b3b05d22fa08086e3b0f712fcc7c71a557e2db966c3e9fa91746039");
+
+    /*
+     * Generic API tests.
+     */
+    static TESTRTDIGEST const s_abTests[] =
+    {
+        { RT_STR_TUPLE("abc"), "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7", "SHA-384 abc" },
+        { RT_STR_TUPLE("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"),
+          "09330c33f71147e83d192fc782cd1b4753111b173b3b05d22fa08086e3b0f712fcc7c71a557e2db966c3e9fa91746039", "SHA-384 abcdef..." },
+    };
+    testGeneric("2.16.840.1.101.3.4.2.2", s_abTests, RT_ELEMENTS(s_abTests), "SHA-384");
+}
+
 
 int main()
 {
@@ -1096,7 +1260,15 @@ int main()
     testMd5();
     testSha1();
     testSha256();
+    testSha224();
     testSha512();
+    testSha384();
+#ifndef IPRT_WITHOUT_SHA512T224
+    testSha512t224();
+#endif
+#ifndef IPRT_WITHOUT_SHA512T256
+    testSha512t256();
+#endif
 
     return RTTestSummaryAndDestroy(hTest);
 }

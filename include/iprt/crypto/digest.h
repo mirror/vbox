@@ -145,7 +145,7 @@ typedef RTCRDIGESTDESC const *PCRTCRDIGESTDESC;
  *                          RTCrDigestCreate.  This is optional, fewer
  *                          algortihms are available if not specified.
  */
-PCRTCRDIGESTDESC RTCrDigestFindByObjIdString(const char *pszObjId, void *ppvOpaque);
+RTDECL(PCRTCRDIGESTDESC) RTCrDigestFindByObjIdString(const char *pszObjId, void *ppvOpaque);
 
 /**
  * Finds a cryptographic hash / message digest descriptor by object identifier
@@ -159,11 +159,12 @@ PCRTCRDIGESTDESC RTCrDigestFindByObjIdString(const char *pszObjId, void *ppvOpaq
  *                          RTCrDigestCreate.  This is optional, fewer
  *                          algortihms are available if not specified.
  */
-PCRTCRDIGESTDESC RTCrDigestFindByObjId(PCRTASN1OBJID pObjId, void *ppvOpaque);
+RTDECL(PCRTCRDIGESTDESC) RTCrDigestFindByObjId(PCRTASN1OBJID pObjId, void *ppvOpaque);
 
+RTDECL(PCRTCRDIGESTDESC) RTCrDigestFindByType(RTDIGESTTYPE enmDigestType);
 RTDECL(int) RTCrDigestCreateByObjIdString(PRTCRDIGEST phDigest, const char *pszObjId);
 RTDECL(int) RTCrDigestCreateByObjId(PRTCRDIGEST phDigest, PCRTASN1OBJID pObjId);
-
+RTDECL(int) RTCrDigestCreateByType(PRTCRDIGEST phDigest, RTDIGESTTYPE enmDigestType);
 
 
 RTDECL(int) RTCrDigestCreate(PRTCRDIGEST phDigest, PCRTCRDIGESTDESC pDesc, void *pvOpaque);
