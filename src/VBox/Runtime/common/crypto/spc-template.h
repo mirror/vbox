@@ -30,13 +30,13 @@
 /*
  * One SPC Serialized Page Hashes V2 Object.
  */
-#define RTASN1TMPL_TYPE         RTCRSPCSERIALIZEDPAGEHASHESV2
-#define RTASN1TMPL_EXT_NAME     RTCrSpcSerializedPageHashesV2
-#define RTASN1TMPL_INT_NAME     rtCrSpcSerializedPageHashesV2
+#define RTASN1TMPL_TYPE         RTCRSPCSERIALIZEDPAGEHASHES
+#define RTASN1TMPL_EXT_NAME     RTCrSpcSerializedPageHashes
+#define RTASN1TMPL_INT_NAME     rtCrSpcSerializedPageHashes
 RTASN1TMPL_BEGIN_SETCORE();
 RTASN1TMPL_MEMBER(              RawData,               RTASN1OCTETSTRING,           RTAsn1OctetString);
-RTASN1TMPL_EXEC_DECODE(         rc = RTCrSpcSerializedPageHashesV2_UpdateDerivedData(pThis) ) /* no ; */
-RTASN1TMPL_EXEC_CLONE(          rc = RTCrSpcSerializedPageHashesV2_UpdateDerivedData(pThis) ) /* no ; */
+RTASN1TMPL_EXEC_DECODE(         rc = RTCrSpcSerializedPageHashes_UpdateDerivedData(pThis) ) /* no ; */
+RTASN1TMPL_EXEC_CLONE(          rc = RTCrSpcSerializedPageHashes_UpdateDerivedData(pThis) ) /* no ; */
 RTASN1TMPL_END_SETCORE();
 #undef RTASN1TMPL_TYPE
 #undef RTASN1TMPL_EXT_NAME
@@ -52,7 +52,9 @@ RTASN1TMPL_END_SETCORE();
 RTASN1TMPL_BEGIN_SEQCORE();
 RTASN1TMPL_MEMBER(              Type,               RTASN1OBJID,                    RTAsn1ObjId);
 RTASN1TMPL_MEMBER_DYN_BEGIN(    RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE, enmType, Allocation);
-RTASN1TMPL_MEMBER_DYN(          u, pPageHashesV2, RTCRSPCSERIALIZEDPAGEHASHESV2, RTCrSpcSerializedPageHashesV2, Allocation, enmType,
+RTASN1TMPL_MEMBER_DYN(          u, pPageHashes, RTCRSPCSERIALIZEDPAGEHASHES, RTCrSpcSerializedPageHashes, Allocation, enmType,
+    RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V1, RTAsn1ObjId_CompareWithString(&pThis->Type, RTCRSPC_PE_IMAGE_HASHES_V1_OID) == 0);
+RTASN1TMPL_MEMBER_DYN(          u, pPageHashes, RTCRSPCSERIALIZEDPAGEHASHES, RTCrSpcSerializedPageHashes, Allocation, enmType,
     RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V2, RTAsn1ObjId_CompareWithString(&pThis->Type, RTCRSPC_PE_IMAGE_HASHES_V2_OID) == 0);
 RTASN1TMPL_MEMBER_DYN_DEFAULT(  u, pCore, RTASN1CORE, RTAsn1Core, Allocation, enmType, RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_UNKNOWN);
 RTASN1TMPL_MEMBER_DYN_END(      RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE, enmType, Allocation);

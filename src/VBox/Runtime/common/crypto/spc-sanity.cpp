@@ -122,36 +122,25 @@ RTDECL(int) RTCrSpcIndirectDataContent_CheckSanityEx(PCRTCRSPCINDIRECTDATACONTEN
                 return RTErrInfoSet(pErrInfo, VERR_CR_SPC_MONIKER_BAD_DATA,
                                     "SpcIndirectDataContent...pMoniker->pData is NULL.");
 
-            uint32_t cPageHashV1 = 0;
-            uint32_t cPageHashV2 = 0;
+            uint32_t cPageHashTabs = 0;
             for (uint32_t i = 0; i < pObj->u.pData->cItems; i++)
             {
                 PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE pAttr = &pObj->u.pData->paItems[i];
-                if (RTAsn1ObjId_CompareWithString(&pAttr->Type, RTCRSPC_PE_IMAGE_HASHES_V2_OID) == 0)
+                if (   RTAsn1ObjId_CompareWithString(&pAttr->Type, RTCRSPC_PE_IMAGE_HASHES_V1_OID) == 0
+                    || RTAsn1ObjId_CompareWithString(&pAttr->Type, RTCRSPC_PE_IMAGE_HASHES_V2_OID) == 0 )
                 {
-                    if (cPageHashV2 > 0)
-                        return RTErrInfoSetF(pErrInfo, VERR_CR_SPC_PEIMAGE_MULTIPLE_V2_HASH_TABS,
-                                             "SpcIndirectDataContent...MonikerT1 multiple page hash v2 attributes (%u).", i);
-                    cPageHashV2++;
-                    AssertPtr(pAttr->u.pPageHashesV2->pData);
-                }
-                else if (RTAsn1ObjId_CompareWithString(&pAttr->Type, RTCRSPC_PE_IMAGE_HASHES_V1_OID) == 0)
-                {
-#if 1
-                    return RTErrInfoSetF(pErrInfo, VERR_CR_SPC_PEIMAGE_V1_HASH_TABS_NOT_IMPL,
-                                         "SpcIndirectDataContent...MonikerT1 implement page hash v1 attributes (%u).", i);
-#else
-                    if (cPageHashV1 > 0)
-                        return RTErrInfoSetF(pErrInfo, VERR_CR_SPC_PEIMAGE_MULTIPLE_V1_HASH_TABS,
-                                             "SpcIndirectDataContent...MonikerT1 multiple page hash v1 attributes (%u).", i);
-                    cPageHashV1++;
-#endif
+                    cPageHashTabs++;
+                    AssertPtr(pAttr->u.pPageHashes->pData);
                 }
                 else
                     return RTErrInfoSetF(pErrInfo, VERR_CR_SPC_PEIMAGE_UNKNOWN_ATTRIBUTE,
                                          "SpcIndirectDataContent...MonikerT1 unknown attribute %u: %s.",
                                          i, pAttr->Type.szObjId);
             }
+            if (cPageHashTabs > 0)
+                return RTErrInfoSetF(pErrInfo, VERR_CR_SPC_PEIMAGE_MULTIPLE_HASH_TABS,
+                                     "SpcIndirectDataContent...MonikerT1 multiple page hash attributes (%u).", cPageHashTabs);
+
         }
         else if (   pIndData->Data.uValue.pPeImage->T0.File.enmChoice == RTCRSPCLINKCHOICE_FILE
                  && RTCrSpcString_IsPresent(&pIndData->Data.uValue.pPeImage->T0.File.u.pT2->File) )

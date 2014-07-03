@@ -38,9 +38,9 @@
 #include "spc-internal.h"
 
 
-RTDECL(int) RTCrSpcSerializedPageHashesV2_UpdateDerivedData(PRTCRSPCSERIALIZEDPAGEHASHESV2 pThis)
+RTDECL(int) RTCrSpcSerializedPageHashes_UpdateDerivedData(PRTCRSPCSERIALIZEDPAGEHASHES pThis)
 {
-    pThis->pData = (PCRTCRSPCPEIMAGEPAGEHASHESV2)pThis->RawData.Asn1Core.uData.pv;
+    pThis->pData = (PCRTCRSPCPEIMAGEPAGEHASHES)pThis->RawData.Asn1Core.uData.pv;
     return VINF_SUCCESS;
 }
 
@@ -49,32 +49,27 @@ RTDECL(int) RTCrSpcSerializedPageHashesV2_UpdateDerivedData(PRTCRSPCSERIALIZEDPA
  * SPC Indirect Data Content.
  */
 
-RTDECL(PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE) RTCrSpcIndirectDataContent_GetPeImageHashesV2(PCRTCRSPCINDIRECTDATACONTENT pIndData)
+RTDECL(PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE)
+RTCrSpcIndirectDataContent_GetPeImageObjAttrib(PCRTCRSPCINDIRECTDATACONTENT pThis,
+                                               RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE enmType)
 {
-    if (pIndData->Data.enmType == RTCRSPCAAOVTYPE_PE_IMAGE_DATA)
+    if (pThis->Data.enmType == RTCRSPCAAOVTYPE_PE_IMAGE_DATA)
     {
-        Assert(RTAsn1ObjId_CompareWithString(&pIndData->Data.Type, RTCRSPCPEIMAGEDATA_OID) == 0);
+        Assert(RTAsn1ObjId_CompareWithString(&pThis->Data.Type, RTCRSPCPEIMAGEDATA_OID) == 0);
 
-        if (   pIndData->Data.uValue.pPeImage
-            && pIndData->Data.uValue.pPeImage->T0.File.enmChoice == RTCRSPCLINKCHOICE_MONIKER
-            && RTCrSpcSerializedObject_IsPresent(pIndData->Data.uValue.pPeImage->T0.File.u.pMoniker) )
+        if (   pThis->Data.uValue.pPeImage
+            && pThis->Data.uValue.pPeImage->T0.File.enmChoice == RTCRSPCLINKCHOICE_MONIKER
+            && RTCrSpcSerializedObject_IsPresent(pThis->Data.uValue.pPeImage->T0.File.u.pMoniker) )
         {
-            if (pIndData->Data.uValue.pPeImage->T0.File.u.pMoniker->enmType == RTCRSPCSERIALIZEDOBJECTTYPE_ATTRIBUTES)
+            if (pThis->Data.uValue.pPeImage->T0.File.u.pMoniker->enmType == RTCRSPCSERIALIZEDOBJECTTYPE_ATTRIBUTES)
             {
-                Assert(RTUuidCompareStr(pIndData->Data.uValue.pPeImage->T0.File.u.pMoniker->Uuid.Asn1Core.uData.pUuid,
+                Assert(RTUuidCompareStr(pThis->Data.uValue.pPeImage->T0.File.u.pMoniker->Uuid.Asn1Core.uData.pUuid,
                                         RTCRSPCSERIALIZEDOBJECT_UUID_STR) == 0);
-                PCRTCRSPCSERIALIZEDOBJECTATTRIBUTES pData = pIndData->Data.uValue.pPeImage->T0.File.u.pMoniker->u.pData;
+                PCRTCRSPCSERIALIZEDOBJECTATTRIBUTES pData = pThis->Data.uValue.pPeImage->T0.File.u.pMoniker->u.pData;
                 if (pData)
-                {
                     for (uint32_t i = 0; i < pData->cItems; i++)
-                    {
-                        if (pData->paItems[i].enmType == RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V2)
-                        {
-                            Assert(RTAsn1ObjId_CompareWithString(&pData->paItems[i].Type, RTCRSPC_PE_IMAGE_HASHES_V2_OID) == 0);
+                        if (pData->paItems[i].enmType == enmType)
                             return &pData->paItems[i];
-                        }
-                    }
-                }
             }
         }
     }
