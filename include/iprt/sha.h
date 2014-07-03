@@ -142,6 +142,7 @@ RTR3DECL(int) RTSha1Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, PFNRTPR
 RTR3DECL(int) RTSha1DigestFromFile(const char *pszFile, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 
+
 /** The size of a SHA-256 hash. */
 #define RTSHA256_HASH_SIZE      32
 /** The length of a SHA-256 digest string. The terminator is not included. */
@@ -251,6 +252,7 @@ RTR3DECL(int) RTSha256Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, PFNRT
 RTR3DECL(int) RTSha256DigestFromFile(const char *pszFile, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 
+
 /** The size of a SHA-224 hash. */
 #define RTSHA224_HASH_SIZE      28
 /** The length of a SHA-224 digest string. The terminator is not included. */
@@ -346,6 +348,7 @@ RTR3DECL(int) RTSha224Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, PFNRT
 RTR3DECL(int) RTSha224DigestFromFile(const char *pszFile, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 
+
 /** The size of a SHA-512 hash. */
 #define RTSHA512_HASH_SIZE      64
 /** The length of a SHA-512 digest string. The terminator is not included. */
@@ -357,9 +360,12 @@ RTR3DECL(int) RTSha224DigestFromFile(const char *pszFile, char **ppszDigest, PFN
 typedef union RTSHA512CONTEXT
 {
     uint64_t                u64BetterAlignment;
-    uint8_t                 abPadding[ARCH_BITS == 32 ? 216 : 256];
+    uint8_t                 abPadding[16 + (80 + 8) * 8];
 #ifdef RT_SHA512_PRIVATE_CONTEXT
     SHA512_CTX              Private;
+#endif
+#ifdef RT_SHA512_PRIVATE_ALT_CONTEXT
+    RTSHA512ALTPRIVATECTX   AltPrivate;
 #endif
 } RTSHA512CONTEXT;
 /** Pointer to an SHA-512 context. */
@@ -424,9 +430,107 @@ RTDECL(int) RTSha512ToString(uint8_t const pabDigest[RTSHA512_HASH_SIZE], char *
  */
 RTDECL(int) RTSha512FromString(char const *pszDigest, uint8_t pabDigest[RTSHA512_HASH_SIZE]);
 
+
+
+/** The size of a SHA-384 hash. */
+#define RTSHA384_HASH_SIZE      48
+/** The length of a SHA-384 digest string. The terminator is not included. */
+#define RTSHA384_DIGEST_LEN     96
+
+/** SHA-384 context (same as for SHA-512). */
+typedef RTSHA512CONTEXT RTSHA384CONTEXT;
+/** Pointer to an SHA-384 context. */
+typedef RTSHA512CONTEXT *PRTSHA384CONTEXT;
+
+/**
+ * Compute the SHA-384 hash of the data.
+ *
+ * @param   pvBuf       Pointer to the data.
+ * @param   cbBuf       The amount of data (in bytes).
+ * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ *                      the caller's buffer.)
+ */
+RTDECL(void) RTSha384(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA384_HASH_SIZE]);
+
+/**
+ * Initializes the SHA-384 context.
+ *
+ * @param   pCtx        Pointer to the SHA-384 context.
+ */
+RTDECL(void) RTSha384Init(PRTSHA384CONTEXT pCtx);
+
+/**
+ * Feed data into the SHA-384 computation.
+ *
+ * @param   pCtx        Pointer to the SHA-384 context.
+ * @param   pvBuf       Pointer to the data.
+ * @param   cbBuf       The length of the data (in bytes).
+ */
+RTDECL(void) RTSha384Update(PRTSHA384CONTEXT pCtx, const void *pvBuf, size_t cbBuf);
+
+/**
+ * Compute the SHA-384 hash of the data.
+ *
+ * @param   pCtx        Pointer to the SHA-384 context.
+ * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ *                      the caller's buffer.)
+ */
+RTDECL(void) RTSha384Final(PRTSHA384CONTEXT pCtx, uint8_t pabDigest[RTSHA384_HASH_SIZE]);
+
+/**
+ * Converts a SHA-384 hash to a digest string.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pabDigest   The binary digest returned by RTSha384Final or RTSha384.
+ * @param   pszDigest   Where to return the stringified digest.
+ * @param   cchDigest   The size of the output buffer. Should be at least
+ *                      RTSHA384_DIGEST_LEN + 1 bytes.
+ */
+RTDECL(int) RTSha384ToString(uint8_t const pabDigest[RTSHA384_HASH_SIZE], char *pszDigest, size_t cchDigest);
+
+/**
+ * Converts a SHA-384 hash to a digest string.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pszDigest   The stringified digest. Leading and trailing spaces are
+ *                      ignored.
+ * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ *                      the caller's buffer.)
+ */
+RTDECL(int) RTSha384FromString(char const *pszDigest, uint8_t pabDigest[RTSHA384_HASH_SIZE]);
+
+/**
+ * Creates a SHA384 digest for the given memory buffer.
+ *
+ * @returns iprt status code.
+ *
+ * @param   pvBuf                 Memory buffer to create a SHA384 digest for.
+ * @param   cbBuf                 The amount of data (in bytes).
+ * @param   ppszDigest            On success the SHA384 digest.
+ * @param   pfnProgressCallback   optional callback for the progress indication
+ * @param   pvUser                user defined pointer for the callback
+ */
+RTR3DECL(int) RTSha384Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
+
+/**
+ * Creates a SHA384 digest for the given file.
+ *
+ * @returns iprt status code.
+ *
+ * @param   pszFile               Filename to create a SHA384 digest for.
+ * @param   ppszDigest            On success the SHA384 digest.
+ * @param   pfnProgressCallback   optional callback for the progress indication
+ * @param   pvUser                user defined pointer for the callback
+ */
+RTR3DECL(int) RTSha384DigestFromFile(const char *pszFile, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
+
+
+
 /** @} */
 
 RT_C_DECLS_END
 
-#endif /* ___iprt_sha1_h */
+#endif
 
