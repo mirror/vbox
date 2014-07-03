@@ -144,20 +144,25 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinQueryINetCfg(OUT INetCfg **ppNetCfg,
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinReleaseINetCfg(IN INetCfg *pNetCfg, IN BOOL fHasWriteLock)
 {
     if (!pNetCfg) /* If network config has been released already, just bail out. */
+    {
+        NonStandardLogFlow(("Warning: No network config given but write lock is set to TRUE\n"));
         return S_OK;
+    }
 
     HRESULT hr = pNetCfg->Uninitialize();
     if (FAILED(hr))
     {
         NonStandardLogFlow(("Uninitialize failed, hr (0x%x)\n", hr));
-        return hr;
+        /* Try to release the write lock below. */
     }
 
     if (fHasWriteLock)
     {
-        hr = vboxNetCfgWinINetCfgUnlock(pNetCfg);
-        if (FAILED(hr))
-            NonStandardLogFlow(("vboxNetCfgWinINetCfgUnlock failed, hr (0x%x)\n", hr));
+        HRESULT hr2 = vboxNetCfgWinINetCfgUnlock(pNetCfg);
+        if (FAILED(hr2))
+            NonStandardLogFlow(("vboxNetCfgWinINetCfgUnlock failed, hr (0x%x)\n", hr2));
+        if (SUCCEEDED(hr))
+            hr = hr2;
     }
 
     pNetCfg->Release();
@@ -1998,25 +2003,24 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostOnlyNetworkNetworkIp(OUT PULONG 
 
 static HRESULT vboxNetCfgWinNetFltUninstall(IN INetCfg *pNc, DWORD InfRmFlags)
 {
-    INetCfgComponent * pNcc = NULL;
+    INetCfgComponent *pNcc = NULL;
     HRESULT hr = pNc->FindComponent(VBOXNETCFGWIN_NETFLT_ID, &pNcc);
     if (hr == S_OK)
     {
         NonStandardLog("NetFlt is installed currently, uninstalling ...\n");
 
         hr = VBoxNetCfgWinUninstallComponent(pNc, pNcc);
+        NonStandardLog("NetFlt component uninstallation ended with hr (0x%x)\n", hr));
 
         pNcc->Release();
     }
     else if (hr == S_FALSE)
     {
         NonStandardLog("NetFlt is not installed currently\n");
-        hr = S_OK;
     }
     else
     {
         NonStandardLogFlow(("FindComponent failed, hr (0x%x)\n", hr));
-        hr = S_OK;
     }
 
     VBoxDrvCfgInfUninstallAllF(L"NetService", VBOXNETCFGWIN_NETFLT_ID, InfRmFlags);

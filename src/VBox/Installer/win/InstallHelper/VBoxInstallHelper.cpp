@@ -699,9 +699,6 @@ UINT __stdcall UninstallNetFlt(MSIHANDLE hModule)
             VBoxNetCfgWinReleaseINetCfg(pNetCfg, TRUE);
 
             logStringW(hModule, L"Uninstalling NetFlt done, error = 0x%x", uErr);
-
-            /* Never fail on uninstall. */
-            uErr = ERROR_SUCCESS;
         }
         else
             logStringW(hModule, L"UninstallNetFlt: doNetCfgInit failed, error = 0x%x", uErr);
