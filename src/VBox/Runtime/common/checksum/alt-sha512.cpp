@@ -411,6 +411,7 @@ static void rtSha512FinalInternal(PRTSHA512CONTEXT pCtx)
     pCtx->AltPrivate.auH[6] = RT_H2BE_U64(pCtx->AltPrivate.auH[6]);
     pCtx->AltPrivate.auH[7] = RT_H2BE_U64(pCtx->AltPrivate.auH[7]);
 
+    RT_ZERO(pCtx->AltPrivate.auW);
     pCtx->AltPrivate.cbMessage.s.Lo = UINT64_MAX;
     pCtx->AltPrivate.cbMessage.s.Hi = UINT64_MAX;
 }
@@ -421,6 +422,7 @@ RTDECL(void) RTSha512Final(PRTSHA512CONTEXT pCtx, uint8_t pabDigest[RTSHA512_HAS
 {
     rtSha512FinalInternal(pCtx);
     memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA512_HASH_SIZE);
+    RT_ZERO(pCtx->AltPrivate.auH);
 }
 RT_EXPORT_SYMBOL(RTSha512Final);
 
@@ -467,6 +469,7 @@ RTDECL(void) RTSha384Final(PRTSHA384CONTEXT pCtx, uint8_t pabDigest[RTSHA384_HAS
 {
     rtSha512FinalInternal(pCtx);
     memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA384_HASH_SIZE);
+    RT_ZERO(pCtx->AltPrivate.auH);
 }
 RT_EXPORT_SYMBOL(RTSha384Final);
 
@@ -512,6 +515,7 @@ RTDECL(void) RTSha512t224Final(PRTSHA512T224CONTEXT pCtx, uint8_t pabDigest[RTSH
 {
     rtSha512FinalInternal(pCtx);
     memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA512T224_HASH_SIZE);
+    RT_ZERO(pCtx->AltPrivate.auH);
 }
 RT_EXPORT_SYMBOL(RTSha512t224Final);
 
@@ -557,6 +561,7 @@ RTDECL(void) RTSha512t256Final(PRTSHA512T256CONTEXT pCtx, uint8_t pabDigest[RTSH
 {
     rtSha512FinalInternal(pCtx);
     memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA512T256_HASH_SIZE);
+    RT_ZERO(pCtx->AltPrivate.auH);
 }
 RT_EXPORT_SYMBOL(RTSha512t256Final);
 

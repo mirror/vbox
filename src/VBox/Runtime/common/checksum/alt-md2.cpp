@@ -255,6 +255,7 @@ RTDECL(void) RTMd2Final(PRTMD2CONTEXT pCtx, uint8_t pabDigest[RTMD2_HASH_SIZE])
      */
     memcpy(pabDigest, pCtx->AltPrivate.abStateX, RTMD2_HASH_SIZE);
 
+    RT_ZERO(pCtx->AltPrivate);
     pCtx->AltPrivate.cbBuffer = UINT8_MAX;
 }
 RT_EXPORT_SYMBOL(RTMd2Final);
