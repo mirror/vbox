@@ -1685,6 +1685,8 @@ static int cpumR3CpuIdInit(PVM pVM)
     /*
      * Mini CPU selection support for making Mac OS X happy.
      */
+    /** @todo This should probably be removed, as GIM Minimal provider does this
+     *        work. */
     if (pCPUM->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL)
     {
         pStdFeatureLeaf = cpumR3CpuIdGetLeaf(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, 1, 0);
