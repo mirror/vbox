@@ -154,6 +154,11 @@
             <!-- Create a simple shortcut for VBoxVRDP, which is not present anymore, pointing to VBoxHeadless.exe -->
        <!--     <Shortcut Id="ShortcutVBoxVRDP" Directory="INSTALLDIR" Name="VBoxVRDP" Show="normal" WorkingDirectory="INSTALLDIR"/> -->
         </File>
+<?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
+        <File Id="file_VBoxHeadless.dll" Name="VBoxHeadless.dll"
+              Source="$(env.PATH_OUT)\bin\VBoxHeadless.dll">
+        </File>
+<?endif ?>
         <File Id="file_VBoxBalloonCtrl.exe" Name="VBoxBalloonCtrl.exe"
               Source="$(env.PATH_OUT)\bin\VBoxBalloonCtrl.exe"/>
         <File Id="file_vbox_img.exe" Name="vbox-img.exe"
@@ -162,8 +167,18 @@
         <!-- Misc tools -->
         <File Id="file_VBoxNetDHCP.exe" Name="VBoxNetDHCP.exe"
               Source="$(env.PATH_OUT)\bin\VBoxNetDHCP.exe"/>
+<?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
+        <File Id="file_VBoxNetDHCP.dll" Name="VBoxNetDHCP.dll"
+              Source="$(env.PATH_OUT)\bin\VBoxNetDHCP.dll">
+        </File>
+<?endif ?>
         <File Id="file_VBoxNetNAT.exe" Name="VBoxNetNAT.exe"
               Source="$(env.PATH_OUT)\bin\VBoxNetNAT.exe"/>
+<?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
+        <File Id="file_VBoxNetNAT.dll" Name="VBoxNetNAT.dll"
+              Source="$(env.PATH_OUT)\bin\VBoxNetNAT.dll">
+        </File>
+<?endif ?>
 <?if $(env.VBOX_WITH_EXTPACK) = "yes" ?>
         <File Id="file_VBoxExtPackHelperApp.exe" Name="VBoxExtPackHelperApp.exe"
               Source="$(env.PATH_OUT)\bin\VBoxExtPackHelperApp.exe"/>
@@ -243,6 +258,11 @@
         <File Id="file_VirtualBox.exe" Name="VirtualBox.exe"
               Source="$(env.PATH_OUT)\bin\VirtualBox.exe">
         </File>
+    <?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
+        <File Id="file_VirtualBox.dll" Name="VirtualBox.dll"
+              Source="$(env.PATH_OUT)\bin\VirtualBox.dll">
+        </File>
+    <?endif ?>
         <File Id="file_QtCoreVBox4.dll" Name="QtCoreVBox4.dll"
               Source="$(env.PATH_OUT)\bin\QtCoreVBox4.dll" />
         <File Id="file_QtGuiVBox4.dll" Name="QtGuiVBox4.dll"
@@ -324,6 +344,11 @@
                Win64="$(var.Property_Win64)">
         <File Id="file_VBoxSDL.exe" Name="VBoxSDL.exe"
               Source="$(env.PATH_OUT)\bin\VBoxSDL.exe" />
+<?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
+        <File Id="file_VBoxSDL.dll" Name="VBoxSDL.dll"
+              Source="$(env.PATH_OUT)\bin\VBoxSDL.dll">
+        </File>
+<?endif ?>
         <File Id="file_SDL.dll" Name="SDL.dll"
               Source="$(env.PATH_OUT)\bin\SDL.dll" />
 <?if $(env.VBOX_WITH_SECURELABEL) = "yes" ?>
