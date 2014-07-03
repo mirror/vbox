@@ -73,6 +73,15 @@ RTDECL(RTDIGESTTYPE) RTCrX509AlgorithmIdentifier_QueryDigestType(PCRTCRX509ALGOR
         return RTDIGESTTYPE_SHA256;
     if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512))
         return RTDIGESTTYPE_SHA512;
+
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA384))
+        return RTDIGESTTYPE_SHA384;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA224))
+        return RTDIGESTTYPE_SHA224;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224))
+        return RTDIGESTTYPE_SHA512T224;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256))
+        return RTDIGESTTYPE_SHA512T256;
     return RTDIGESTTYPE_INVALID;
 }
 
@@ -100,6 +109,10 @@ RTDECL(uint32_t) RTCrX509AlgorithmIdentifier_QueryDigestSize(PCRTCRX509ALGORITHM
         return 384 / 8;
     if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA224))
         return 224 / 8;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224))
+        return 224 / 8;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256))
+        return 256 / 8;
     if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL))
         return 512 / 8;
 

@@ -2347,6 +2347,10 @@ typedef enum RTDIGESTTYPE
     RTDIGESTTYPE_SHA384,
     /** SHA-512 checksum. */
     RTDIGESTTYPE_SHA512,
+    /** SHA-512/224 checksum. */
+    RTDIGESTTYPE_SHA512T224,
+    /** SHA-512/256 checksum. */
+    RTDIGESTTYPE_SHA512T256,
     /** End of valid types. */
     RTDIGESTTYPE_END,
     /** Usual 32-bit type blowup. */

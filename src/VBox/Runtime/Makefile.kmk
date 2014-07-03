@@ -316,8 +316,12 @@ RuntimeR3_SOURCES       = \
 	common/checksum/RTSha1Digest.cpp \
 	common/checksum/RTSha256Digest.cpp \
 	common/checksum/sha1str.cpp \
+	common/checksum/sha224str.cpp \
 	common/checksum/sha256str.cpp \
+	common/checksum/sha384str.cpp \
 	common/checksum/sha512str.cpp \
+	common/checksum/sha512t224str.cpp \
+	common/checksum/sha512t256str.cpp \
 	common/checksum/x509.cpp \
 	common/crypto/digest-core.cpp \
 	common/crypto/digest-builtin.cpp \
@@ -1410,7 +1414,9 @@ VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win$(VBOX_WITH_HARDENING))
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
-VBoxRT_DEFS                   := $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SUP_R3 IN_SUP_R3 IPRT_WITH_XAR
+VBoxRT_DEFS                   := $(filter-out RT_NO_GIP, $(RuntimeR3_DEFS)) \
+	IN_SUP_R3 IN_SUP_R3 IPRT_WITH_XAR \
+	$(if-expr !defined(VBOX_WITH_ALT_HASH_CODE),IPRT_WITHOUT_SHA512T224 IPRT_WITHOUT_SHA512T256,)
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  VBoxRT_DEFS                  += RT_NO_GIP
 endif
@@ -1421,7 +1427,8 @@ VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
 	$(filter-out common/checksum/crc32.cpp, \
-		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeR3_SOURCES))) \
+       	$(if-expr defined(VBOX_WITH_ALT_HASH_CODE), $(RuntimeR3_SOURCES), \
+		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeR3_SOURCES)) ) ) \
 	common/checksum/crc32-zlib.cpp \
 	common/misc/aiomgr.cpp
 ifdef VBOX_WITH_LIBCURL
@@ -2039,8 +2046,12 @@ RuntimeR0Drv_SOURCES.win = \
 	common/checksum/md2str.cpp \
 	common/checksum/md5str.cpp \
 	common/checksum/sha1str.cpp \
+	common/checksum/sha224str.cpp \
 	common/checksum/sha256str.cpp \
+	common/checksum/sha384str.cpp \
 	common/checksum/sha512str.cpp \
+	common/checksum/sha512t224str.cpp \
+	common/checksum/sha512t256str.cpp \
 	common/err/errinfo.cpp \
 	common/path/RTPathChangeToUnixSlashes.cpp \
 	common/math/bignum.cpp \

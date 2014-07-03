@@ -92,7 +92,7 @@ RTDECL(int) RTCrX509AlgorithmIdentifier_CompareWithString(PCRTCRX509ALGORITHMIDE
 RTDECL(int) RTCrX509AlgorithmIdentifier_CompareDigestAndEncryptedDigest(PCRTCRX509ALGORITHMIDENTIFIER pDigest,
                                                                         PCRTCRX509ALGORITHMIDENTIFIER pEncryptedDigest);
 
-/** @name Digest Algorithm OIDs.
+/** @name Typical Digest Algorithm OIDs.
  * @{ */
 #define RTCRX509ALGORITHMIDENTIFIERID_MD2               "1.2.840.113549.2.2"
 #define RTCRX509ALGORITHMIDENTIFIERID_MD4               "1.2.840.113549.2.4"
@@ -102,6 +102,8 @@ RTDECL(int) RTCrX509AlgorithmIdentifier_CompareDigestAndEncryptedDigest(PCRTCRX5
 #define RTCRX509ALGORITHMIDENTIFIERID_SHA384            "2.16.840.1.101.3.4.2.2"
 #define RTCRX509ALGORITHMIDENTIFIERID_SHA512            "2.16.840.1.101.3.4.2.3"
 #define RTCRX509ALGORITHMIDENTIFIERID_SHA224            "2.16.840.1.101.3.4.2.4"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA512T224        "2.16.840.1.101.3.4.2.5"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA512T256        "2.16.840.1.101.3.4.2.6"
 #define RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL         "1.0.10118.3.0.55"
 /** @} */
 

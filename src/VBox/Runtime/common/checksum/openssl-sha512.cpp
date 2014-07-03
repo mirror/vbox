@@ -70,3 +70,41 @@ RTDECL(void) RTSha512Final(PRTSHA512CONTEXT pCtx, uint8_t pabDigest[32])
 }
 RT_EXPORT_SYMBOL(RTSha512Final);
 
+
+/*
+ * We have to expose the same API as alt-sha512.cpp, so the SHA-384,
+ * SHA-512/224 and SHA-512/256 implementations also live here. (They are all
+ * just truncted SHA-512 with different initial values.)
+ */
+
+RTDECL(void) RTSha384(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA384_HASH_SIZE])
+{
+    RTSHA384CONTEXT Ctx;
+    RTSha384Init(&Ctx);
+    RTSha384Update(&Ctx, pvBuf, cbBuf);
+    RTSha384Final(&Ctx, pabDigest);
+}
+RT_EXPORT_SYMBOL(RTSha384);
+
+
+RTDECL(void) RTSha384Init(PRTSHA384CONTEXT pCtx)
+{
+    SHA384_Init(&pCtx->Private);
+}
+RT_EXPORT_SYMBOL(RTSha384Init);
+
+
+RTDECL(void) RTSha384Update(PRTSHA384CONTEXT pCtx, const void *pvBuf, size_t cbBuf)
+{
+    SHA384_Update(&pCtx->Private, pvBuf, cbBuf);
+}
+RT_EXPORT_SYMBOL(RTSha384Update);
+
+
+RTDECL(void) RTSha384Final(PRTSHA384CONTEXT pCtx, uint8_t pabDigest[32])
+{
+    SHA384_Final((unsigned char *)&pabDigest[0], &pCtx->Private);
+}
+RT_EXPORT_SYMBOL(RTSha384Final);
+
+

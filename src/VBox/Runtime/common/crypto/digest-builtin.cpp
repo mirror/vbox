@@ -302,6 +302,212 @@ static RTCRDIGESTDESC const g_rtCrDigestSha512Desc =
 };
 
 
+/*
+ * SHA-224
+ */
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
+static DECLCALLBACK(void) rtCrDigestSha224_Update(void *pvState, const void *pvData, size_t cbData)
+{
+    RTSha224Update((PRTSHA224CONTEXT)pvState, pvData, cbData);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnFinal} */
+static DECLCALLBACK(void) rtCrDigestSha224_Final(void *pvState, uint8_t *pbHash)
+{
+    RTSha224Final((PRTSHA224CONTEXT)pvState, pbHash);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
+static DECLCALLBACK(int) rtCrDigestSha224_Init(void *pvState, void *pvOpaque, bool fReInit)
+{
+    AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
+    RTSha224Init((PRTSHA224CONTEXT)pvState);
+    return VINF_SUCCESS;
+}
+
+/** SHA-224 alias ODIs. */
+static const char * const g_apszSha224Aliases[] =
+{
+    RTCR_PKCS1_SHA224_WITH_RSA_OID,
+    NULL
+};
+
+/** SHA-224 descriptor. */
+static RTCRDIGESTDESC const g_rtCrDigestSha224Desc =
+{
+    "sha-224",
+    "2.16.840.1.101.3.4.2.4",
+    g_apszSha224Aliases,
+    RTDIGESTTYPE_SHA224,
+    RTSHA224_HASH_SIZE,
+    sizeof(RTSHA224CONTEXT),
+    0,
+    rtCrDigestSha224_Update,
+    rtCrDigestSha224_Final,
+    rtCrDigestSha224_Init,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+
+
+/*
+ * SHA-384
+ */
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
+static DECLCALLBACK(void) rtCrDigestSha384_Update(void *pvState, const void *pvData, size_t cbData)
+{
+    RTSha384Update((PRTSHA384CONTEXT)pvState, pvData, cbData);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnFinal} */
+static DECLCALLBACK(void) rtCrDigestSha384_Final(void *pvState, uint8_t *pbHash)
+{
+    RTSha384Final((PRTSHA384CONTEXT)pvState, pbHash);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
+static DECLCALLBACK(int) rtCrDigestSha384_Init(void *pvState, void *pvOpaque, bool fReInit)
+{
+    AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
+    RTSha384Init((PRTSHA384CONTEXT)pvState);
+    return VINF_SUCCESS;
+}
+
+/** SHA-384 alias ODIs. */
+static const char * const g_apszSha384Aliases[] =
+{
+    RTCR_PKCS1_SHA384_WITH_RSA_OID,
+    NULL
+};
+
+/** SHA-384 descriptor. */
+static RTCRDIGESTDESC const g_rtCrDigestSha384Desc =
+{
+    "sha-384",
+    "2.16.840.1.101.3.4.2.2",
+    g_apszSha384Aliases,
+    RTDIGESTTYPE_SHA384,
+    RTSHA384_HASH_SIZE,
+    sizeof(RTSHA384CONTEXT),
+    0,
+    rtCrDigestSha384_Update,
+    rtCrDigestSha384_Final,
+    rtCrDigestSha384_Init,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+
+
+#ifndef IPRT_WITHOUT_SHA512T224
+/*
+ * SHA-512/224
+ */
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
+static DECLCALLBACK(void) rtCrDigestSha512t224_Update(void *pvState, const void *pvData, size_t cbData)
+{
+    RTSha512t224Update((PRTSHA512T224CONTEXT)pvState, pvData, cbData);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnFinal} */
+static DECLCALLBACK(void) rtCrDigestSha512t224_Final(void *pvState, uint8_t *pbHash)
+{
+    RTSha512t224Final((PRTSHA512T224CONTEXT)pvState, pbHash);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
+static DECLCALLBACK(int) rtCrDigestSha512t224_Init(void *pvState, void *pvOpaque, bool fReInit)
+{
+    AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
+    RTSha512t224Init((PRTSHA512T224CONTEXT)pvState);
+    return VINF_SUCCESS;
+}
+
+/** SHA-512/224 alias ODIs. */
+static const char * const g_apszSha512t224Aliases[] =
+{
+    NULL
+};
+
+/** SHA-512/224 descriptor. */
+static RTCRDIGESTDESC const g_rtCrDigestSha512t224Desc =
+{
+    "sha-512/224",
+    "2.16.840.1.101.3.4.2.5",
+    g_apszSha512t224Aliases,
+    RTDIGESTTYPE_SHA512T224,
+    RTSHA512T224_HASH_SIZE,
+    sizeof(RTSHA512T224CONTEXT),
+    0,
+    rtCrDigestSha512t224_Update,
+    rtCrDigestSha512t224_Final,
+    rtCrDigestSha512t224_Init,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+#endif /* !IPRT_WITHOUT_SHA512T224 */
+
+
+#ifndef IPRT_WITHOUT_SHA512T256
+/*
+ * SHA-512/256
+ */
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
+static DECLCALLBACK(void) rtCrDigestSha512t256_Update(void *pvState, const void *pvData, size_t cbData)
+{
+    RTSha512t256Update((PRTSHA512T256CONTEXT)pvState, pvData, cbData);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnFinal} */
+static DECLCALLBACK(void) rtCrDigestSha512t256_Final(void *pvState, uint8_t *pbHash)
+{
+    RTSha512t256Final((PRTSHA512T256CONTEXT)pvState, pbHash);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
+static DECLCALLBACK(int) rtCrDigestSha512t256_Init(void *pvState, void *pvOpaque, bool fReInit)
+{
+    AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
+    RTSha512t256Init((PRTSHA512T256CONTEXT)pvState);
+    return VINF_SUCCESS;
+}
+
+/** SHA-512/256 alias ODIs. */
+static const char * const g_apszSha512t256Aliases[] =
+{
+    NULL
+};
+
+/** SHA-512/256 descriptor. */
+static RTCRDIGESTDESC const g_rtCrDigestSha512t256Desc =
+{
+    "sha-512/256",
+    "2.16.840.1.101.3.4.2.6",
+    g_apszSha512t256Aliases,
+    RTDIGESTTYPE_SHA512T256,
+    RTSHA512T256_HASH_SIZE,
+    sizeof(RTSHA512T256CONTEXT),
+    0,
+    rtCrDigestSha512t256_Update,
+    rtCrDigestSha512t256_Final,
+    rtCrDigestSha512t256_Init,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+#endif /* !IPRT_WITHOUT_SHA512T256 */
+
+
 /**
  * Array of built in message digest vtables.
  */
@@ -312,6 +518,14 @@ static PCRTCRDIGESTDESC const g_apDigestOps[] =
     &g_rtCrDigestSha1Desc,
     &g_rtCrDigestSha256Desc,
     &g_rtCrDigestSha512Desc,
+    &g_rtCrDigestSha224Desc,
+    &g_rtCrDigestSha384Desc,
+#ifndef IPRT_WITHOUT_SHA512T224
+    &g_rtCrDigestSha512t224Desc,
+#endif
+#ifndef IPRT_WITHOUT_SHA512T256
+    &g_rtCrDigestSha512t256Desc,
+#endif
 };
 
 
@@ -413,7 +627,7 @@ static RTCRDIGESTDESC const g_rtCrDigestOpenSslDesc =
 #endif /* IPRT_WITH_OPENSSL */
 
 
-PCRTCRDIGESTDESC RTCrDigestFindByObjIdString(const char *pszObjId, void **ppvOpaque)
+RTDECL(PCRTCRDIGESTDESC) RTCrDigestFindByObjIdString(const char *pszObjId, void **ppvOpaque)
 {
     if (ppvOpaque)
         *ppvOpaque = NULL;
@@ -467,7 +681,7 @@ PCRTCRDIGESTDESC RTCrDigestFindByObjIdString(const char *pszObjId, void **ppvOpa
 }
 
 
-PCRTCRDIGESTDESC RTCrDigestFindByObjId(PCRTASN1OBJID pObjId, void **ppvOpaque)
+RTDECL(PCRTCRDIGESTDESC) RTCrDigestFindByObjId(PCRTASN1OBJID pObjId, void **ppvOpaque)
 {
     return RTCrDigestFindByObjIdString(pObjId->szObjId, ppvOpaque);
 }
@@ -489,6 +703,27 @@ RTDECL(int) RTCrDigestCreateByObjId(PRTCRDIGEST phDigest, PCRTASN1OBJID pObjId)
     PCRTCRDIGESTDESC pDesc = RTCrDigestFindByObjId(pObjId, &pvOpaque);
     if (pDesc)
         return RTCrDigestCreate(phDigest, pDesc, pvOpaque);
+    return VERR_NOT_FOUND;
+}
+
+
+RTDECL(PCRTCRDIGESTDESC) RTCrDigestFindByType(RTDIGESTTYPE enmDigestType)
+{
+    AssertReturn(enmDigestType > RTDIGESTTYPE_INVALID && enmDigestType <= RTDIGESTTYPE_END, NULL);
+
+    uint32_t i = RT_ELEMENTS(g_apDigestOps);
+    while (i-- > 0)
+        if (g_apDigestOps[i]->enmType == enmDigestType)
+            return g_apDigestOps[i];
+    return NULL;
+}
+
+
+RTDECL(int) RTCrDigestCreateByType(PRTCRDIGEST phDigest, RTDIGESTTYPE enmDigestType)
+{
+    PCRTCRDIGESTDESC pDesc = RTCrDigestFindByType(enmDigestType);
+    if (pDesc)
+        return RTCrDigestCreate(phDigest, pDesc, NULL);
     return VERR_NOT_FOUND;
 }
 
