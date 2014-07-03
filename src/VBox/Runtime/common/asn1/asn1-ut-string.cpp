@@ -1345,7 +1345,7 @@ static int rtAsn1String_CheckSanity(PCRTASN1STRING pThis, PRTERRINFO pErrInfo, c
                 cchUtf8 = 0;
                 while (cch > 0)
                 {
-                    RTUNICP uc = RT_MAKE_U32_FROM_U8(0, 0, pb[1], pb[0]); /* big endian */
+                    RTUNICP uc = RT_MAKE_U32_FROM_U8(pb[1], pb[0], 0, 0); /* big endian */
                     if (!RTUniCpIsValid(uc))
                         return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_BMP_STRING_ENCODING,
                                              "%s: Bad BMP string: uc=%#x", pszErrorTag, uc);
@@ -1543,10 +1543,23 @@ RTDECL(int) RTAsn1String_QueryUtf8(PCRTASN1STRING pThis, const char **ppsz, size
                     }
 
                     case ASN1_TAG_BMP_STRING:
-                        rc = RTUtf16ToUtf8Ex(pThis->Asn1Core.uData.pwc, pThis->Asn1Core.cb / sizeof(RTUTF16),
-                                             (char **)&pThis->pszUtf8, cch + 1, NULL);
-                        AssertReturnStmt(RT_SUCCESS(rc), RTAsn1MemFree(&pThisNC->Allocation, psz), VERR_INTERNAL_ERROR_3);
+                    {
+                        char           *pszDst = psz;
+                        size_t          cchSrc = pThis->Asn1Core.cb;
+                        uint8_t const  *pbSrc  = (uint8_t const *)psz;
+                        while (cchSrc > 0)
+                        {
+                            RTUNICP uc = RT_MAKE_U32_FROM_U8(pbSrc[1], pbSrc[0], 0, 0); /* big endian */
+                            AssertReturnStmt(RTUniCpIsValid(uc), RTAsn1MemFree(&pThisNC->Allocation, psz), VERR_INTERNAL_ERROR_2);
+                            pszDst = RTStrPutCp(pszDst, uc);
+
+                            /* next */
+                            pbSrc  += 2;
+                            cchSrc -= 2;
+                        }
+                        Assert((size_t)(pszDst - psz) == cch);
                         break;
+                    }
 
                     default:
                         RTAsn1MemFree(&pThisNC->Allocation, psz);

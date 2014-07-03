@@ -526,11 +526,11 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Enum)(RT_CONCAT(P,RTASN1TMPL
     { \
         default: rc = VERR_INTERNAL_ERROR_3; break
 # define RTASN1TMPL_PCHOICE_ITAG_EX(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api, a_fClue, a_Constraints) \
-        case a_enmChoice: rc = pfnCallback(RT_CONCAT(a_Api,_GetAsn1Core)(pThis->a_PtrName), #a_PtrName, uDepth, pvUser)
+        case a_enmChoice: rc = pfnCallback(RT_CONCAT(a_Api,_GetAsn1Core)(pThis->a_PtrName), #a_PtrName, uDepth, pvUser); break
 # define RTASN1TMPL_PCHOICE_XTAG_EX(a_uTag, a_enmChoice, a_PtrTnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_Constraints) \
         case a_enmChoice: \
             rc = pfnCallback(&pThis->a_PtrTnNm->a_CtxTagN.Asn1Core, "T" #a_uTag "." #a_CtxTagN, uDepth, pvUser); \
-            if (rc != VINF_SUCCESS) \
+            if (rc == VINF_SUCCESS) \
                 rc = pfnCallback(RT_CONCAT(a_Api, _GetAsn1Core)(&pThis->a_PtrTnNm->a_Name), \
                                  "T" #a_uTag "." #a_Name, uDepth + 1, pvUser); \
             break
