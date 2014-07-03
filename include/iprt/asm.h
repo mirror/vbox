@@ -4869,6 +4869,7 @@ DECLINLINE(uint64_t) ASMRotateLeftU64(uint64_t u64, uint32_t cShift)
     return _rotl64(u64, cShift);
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("rolq %1, %0" : "=r" (u64) : "Ir" (cShift), "0" (u64));
+    return u64;
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_X86)
     uint32_t uSpill;
     __asm__ __volatile__("testb $0x20, %%cl\n\t"        /* if (cShift >= 0x20) { swap(u64.hi, u64lo); cShift -= 0x20; } */
@@ -4905,6 +4906,7 @@ DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift)
     return _rotr64(u64, cShift);
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("rorq %1, %0" : "=r" (u64) : "Ir" (cShift), "0" (u64));
+    return u64;
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_X86)
     uint32_t uSpill;
     __asm__ __volatile__("testb $0x20, %%cl\n\t"        /* if (cShift >= 0x20) { swap(u64.hi, u64lo); cShift -= 0x20; } */
