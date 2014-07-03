@@ -2010,7 +2010,7 @@ static HRESULT vboxNetCfgWinNetFltUninstall(IN INetCfg *pNc, DWORD InfRmFlags)
         NonStandardLog("NetFlt is installed currently, uninstalling ...\n");
 
         hr = VBoxNetCfgWinUninstallComponent(pNc, pNcc);
-        NonStandardLog(("NetFlt component uninstallation ended with hr (0x%x)\n", hr));
+        NonStandardLogFlow(("NetFlt component uninstallation ended with hr (0x%x)\n", hr));
 
         pNcc->Release();
     }
