@@ -4621,7 +4621,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 /**
  * Internal vgaPortUpdateDisplayAll worker called under pThis->CritSect.
  */
-static int updateDisplayAll(PVGASTATE pThis)
+static int updateDisplayAll(PVGASTATE pThis, bool fFailOnResize)
 {
     PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
 
@@ -4644,12 +4644,12 @@ static int updateDisplayAll(PVGASTATE pThis)
 
     pThis->graphic_mode = -1; /* force full update */
 
-    return vga_update_display(pThis, true, true, true,
+    return vga_update_display(pThis, true, fFailOnResize, true,
             pThis->pDrv, &pThis->graphic_mode);
 }
 
 
-int vgaUpdateDisplayAll(PVGASTATE pThis)
+int vgaUpdateDisplayAll(PVGASTATE pThis, bool fFailOnResize)
 {
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortUpdateDisplayAll\n"));
@@ -4658,7 +4658,7 @@ int vgaUpdateDisplayAll(PVGASTATE pThis)
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
-    rc = updateDisplayAll(pThis);
+    rc = updateDisplayAll(pThis, fFailOnResize);
 
     PDMCritSectLeave(&pThis->CritSect);
     return rc;
@@ -4670,14 +4670,14 @@ int vgaUpdateDisplayAll(PVGASTATE pThis)
  * @param   pInterface          Pointer to this interface.
  * @see     PDMIKEYBOARDPORT::pfnUpdateDisplayAll() for details.
  */
-static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
+static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface, bool fFailOnResize)
 {
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
 
     /* This is called both in VBVA mode and normal modes. */
 
-    return vgaUpdateDisplayAll(pThis);
+    return vgaUpdateDisplayAll(pThis, fFailOnResize);
 }
 
 

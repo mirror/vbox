@@ -1142,7 +1142,7 @@ static int vdmaVBVACtlDisableSync(PVBOXVDMAHOST pVdma)
         return rc;
     }
 
-    vgaUpdateDisplayAll(pVdma->pVGAState);
+    vgaUpdateDisplayAll(pVdma->pVGAState, /* fFailOnResize = */ false);
 
     return VINF_SUCCESS;
 }
@@ -1605,7 +1605,7 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
             }
 
             /* do vgaUpdateDisplayAll right away */
-            vgaUpdateDisplayAll(pVdma->pVGAState);
+            vgaUpdateDisplayAll(pVdma->pVGAState, /* fFailOnResize = */ false);
 
             return VBoxVDMAThreadTerm(&pVdma->Thread, NULL, NULL, false);
         }
