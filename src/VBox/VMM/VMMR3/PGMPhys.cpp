@@ -2840,7 +2840,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
             rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPageDst, GCPhys);
             AssertLogRelRCReturn(rc, rc); /* We're done for if this goes wrong. */
 
-            RTHCPHYS const HCPhys = PGM_PAGE_GET_HCPHYS(pPageSrc);
+            RTHCPHYS const HCPhys  = PGM_PAGE_GET_HCPHYS(pPageSrc);
+            uint32_t const uPageId = PGM_PAGE_GET_PAGEID(pPageSrc);
+            PGM_PAGE_SET_PAGEID(pVM, pPageDst, uPageId);
             PGM_PAGE_SET_HCPHYS(pVM, pPageDst, HCPhys);
             PGM_PAGE_SET_TYPE(pVM, pPageDst, PGMPAGETYPE_MMIO2);
             PGM_PAGE_SET_STATE(pVM, pPageDst, PGM_PAGE_STATE_ALLOCATED);
