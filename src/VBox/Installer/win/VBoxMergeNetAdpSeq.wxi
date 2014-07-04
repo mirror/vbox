@@ -33,12 +33,20 @@
         <?endif ?>
     </Custom>
     <!-- Don't remove the host-only interfaces on update, only on uninstall -->
-    <Custom Action="ca_RemoveHostOnlyInterfaces" Before="InstallFinalize" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
+    <Custom Action="ca_RemoveHostOnlyInterfaces" After="InstallInitialize" >
+        <![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]>
+    </Custom>
     <!-- First stop the existing host-only interfaces on update ... -->
-    <Custom Action="ca_StopHostOnlyInterfaces" Before="ca_UpdateHostOnlyInterfaces" ><![CDATA[UPGRADINGPRODUCTCODE]]></Custom>
+    <Custom Action="ca_StopHostOnlyInterfaces" Before="ca_UpdateHostOnlyInterfaces" >
+        <![CDATA[UPGRADINGPRODUCTCODE]]>
+    </Custom>
     <!-- ... then do the actual driver update -->
-    <Custom Action="ca_UpdateHostOnlyInterfacesArgs" Before="ca_UpdateHostOnlyInterfaces" ><![CDATA[Installed AND UPGRADINGPRODUCTCODE AND (NOT REMOVE="ALL")]]></Custom>
-    <Custom Action="ca_UpdateHostOnlyInterfaces" Before="InstallFiles" ><![CDATA[Installed AND UPGRADINGPRODUCTCODE AND (NOT REMOVE="ALL")]]></Custom>
+    <Custom Action="ca_UpdateHostOnlyInterfacesArgs" Before="ca_UpdateHostOnlyInterfaces" >
+        <![CDATA[Installed AND UPGRADINGPRODUCTCODE AND (NOT REMOVE="ALL")]]>
+    </Custom>
+    <Custom Action="ca_UpdateHostOnlyInterfaces" Before="InstallFiles" >
+        <![CDATA[Installed AND UPGRADINGPRODUCTCODE AND (NOT REMOVE="ALL")]]>
+    </Custom>
 <?endif ?>
 
 </Include>
