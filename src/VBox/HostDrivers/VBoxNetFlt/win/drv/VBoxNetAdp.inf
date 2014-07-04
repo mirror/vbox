@@ -53,10 +53,9 @@ VBoxNetAdp.Files.Sys   = 12   ; %windir%\System32\drivers
 %VBoxNetAdp_Desc% = VBoxNetAdp.ndi, sun_VBoxNetAdp
 
 [VBoxNetAdp.ndi]
-Characteristics = 0x4 ; NCF_PHYSICAL 
+Characteristics = 0x1 ; NCF_VIRTUAL 
 CopyFiles = VBoxNetAdp.Files.Sys
 AddReg = VBoxNetAdp.AddReg
-BusType = 1
 
 [VBoxNetAdp.Files.Sys]
 VBoxNetAdp.sys,,,2
