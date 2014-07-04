@@ -162,7 +162,6 @@
 #define TM_SAVED_STATE_VERSION  3
 
 
-//#define SYNC_TSC_PAUSE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -2685,13 +2684,9 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
      */
     if (!pVM->tm.s.fTSCTiedToExecution)
     {
-#ifdef SYNC_TSC_PAUSE
-        TM_LOCK_TIMERS(pVM);    /* Paranoia: Exploiting the timer lock here. */
+        TM_LOCK_TIMERS(pVM);    /* Exploit the timer lock for synchronization. */
         rc = tmCpuTickPauseLocked(pVM, pVCpu);
         TM_UNLOCK_TIMERS(pVM);
-#else
-        rc = tmCpuTickPause(pVCpu);
-#endif
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -2738,13 +2733,9 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
      */
     if (!pVM->tm.s.fTSCTiedToExecution)
     {
-#ifdef SYNC_TSC_PAUSE
-        TM_LOCK_TIMERS(pVM);                    /* Paranoia: Exploiting the timer lock here. */
+        TM_LOCK_TIMERS(pVM);    /* Exploit the timer lock for synchronization. */
         rc = tmCpuTickResumeLocked(pVM, pVCpu);
         TM_UNLOCK_TIMERS(pVM);
-#else
-        rc = tmCpuTickResume(pVM, pVCpu);
-#endif
         if (RT_FAILURE(rc))
             return rc;
     }
