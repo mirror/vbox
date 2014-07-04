@@ -111,7 +111,6 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
 {
     int ret = 0;
     int mlen = 0;
-    caddr_t buf = NULL;
 
     STAM_PROFILE_START(&pData->StatIOSBAppend_pf, a);
     LogFlow(("sbappend: so = %lx, m = %lx, m->m_len = %d\n", (long)so, (long)m, m ? m->m_len : 0));
@@ -140,26 +139,30 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
 
     /*
      * We only write if there's nothing in the buffer,
-     * ottherwise it'll arrive out of order, and hence corrupt
+     * otherwise it'll arrive out of order, and hence corrupt
      */
-    if (m->m_next)
+    if (so->so_rcv.sb_cc == 0)
     {
-        buf = RTMemAlloc(mlen);
-        if (buf == NULL)
-        {
-            ret = 0;
-            goto no_sent;
-        }
-        m_copydata(m, 0, mlen, buf);
-    }
-    else
-        buf = mtod(m, char *);
+        caddr_t buf = NULL;
 
-    if(!so->so_rcv.sb_cc)
+        if (m->m_next)
+        {
+            buf = RTMemAlloc(mlen);
+            if (buf == NULL)
+            {
+                ret = 0;
+                goto no_sent;
+            }
+            m_copydata(m, 0, mlen, buf);
+        }
+        else
+            buf = mtod(m, char *);
+
         ret = send(so->s, buf, mlen, 0);
 
-    if (m->m_next)
-        RTMemFree(buf);
+        if (m->m_next)
+            RTMemFree(buf);
+    }
 no_sent:
 
     if (ret <= 0)
