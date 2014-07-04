@@ -2169,22 +2169,15 @@ static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOB
     uint32_t        iSh        = UINT32_MAX;
 #endif
     uint8_t const  *pbHashTab  = pAttrib->u.pPageHashes->RawData.Asn1Core.uData.pu8;
-    for (uint32_t iPage = 0; iPage < cPages; iPage++)
+    for (uint32_t iPage = 0; iPage < cPages - 1; iPage++)
     {
         /* Decode the page offset. */
         uint32_t const offPageInFile = RT_MAKE_U32_FROM_U8(pbHashTab[0], pbHashTab[1], pbHashTab[2], pbHashTab[3]);
-        if (offPageInFile >= SpecialPlaces.cbToHash)
-        {
-            /* The last entry is zero. */
-            if (   offPageInFile == SpecialPlaces.cbToHash
-                && iPage + 1 == cPages
-                && ASMMemIsAll8(pbHashTab + 4, cbHash, 0) == NULL)
-                return VINF_SUCCESS;
+        if (RT_UNLIKELY(offPageInFile >= SpecialPlaces.cbToHash))
             return RTErrInfoSetF(pErrInfo, VERR_LDRVI_PAGE_HASH_TAB_TOO_LONG,
                                  "Page hash entry #%u is beyond the signature table start: %#x, %#x",
                                  iPage, offPageInFile, SpecialPlaces.cbToHash);
-        }
-        if (offPageInFile < offPrev)
+        if (RT_UNLIKELY(offPageInFile < offPrev))
             return RTErrInfoSetF(pErrInfo, VERR_LDRVI_PAGE_HASH_TAB_NOT_STRICTLY_SORTED,
                                  "Page hash table is not strictly sorted: entry #%u @%#x, previous @%#x\n",
                                  iPage, offPageInFile, offPrev);
@@ -2326,6 +2319,14 @@ static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOB
         offPrev = offPageInFile;
     }
 
+    /*
+     * Check that the last table entry has a hash value of zero.
+     */
+    if (ASMMemIsAll8(pbHashTab + 4, cbHash, 0) != NULL)
+        return RTErrInfoSetF(pErrInfo, VERR_LDRVI_PAGE_HASH_TAB_TOO_LONG,
+                             "Maltform final page hash table entry: #%u %#010x %.*Rhxs",
+                             cPages - 1, RT_MAKE_U32_FROM_U8(pbHashTab[0], pbHashTab[1], pbHashTab[2], pbHashTab[3]),
+                             (size_t)cbHash, pbHashTab + 4);
     return VINF_SUCCESS;
 }
 
