@@ -708,7 +708,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
       <title>Performing the installation</title>
 
       <para>VirtualBox is available as a standard Solaris package. Download
-      the VirtualBox SunOS package which includes both the 32-bit and 64-bit
+      the VirtualBox SunOS package which includes the 64-bit
       versions of VirtualBox. <emphasis>The installation must be performed as
       root and from the global zone</emphasis> as the VirtualBox installer
       loads kernel drivers which cannot be done from non-global zones. To
