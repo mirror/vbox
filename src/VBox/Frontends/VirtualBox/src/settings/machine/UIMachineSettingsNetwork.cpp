@@ -59,13 +59,18 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     m_pMACEditor->setValidator(new QRegExpValidator(QRegExp("[0-9A-Fa-f]{12}"), this));
     m_pMACEditor->setMinimumWidthByText(QString().fill('0', 12));
     m_pMACButton->setIcon(UIIconPool::iconSet(":/refresh_16px.png"));
+    m_pAdvancedArrow->setIconSize(QSize(10, 10));
+    m_pAdvancedArrow->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Collapsed,
+                                            UIIconPool::iconSet(":/arrow_right_10px.png"));
+    m_pAdvancedArrow->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Expanded,
+                                            UIIconPool::iconSet(":/arrow_down_10px.png"));
 
     /* Setup connections: */
     connect(m_pEnableAdapterCheckBox, SIGNAL(toggled(bool)), this, SLOT(sltHandleAdapterActivityChange()));
     connect(m_pAttachmentTypeComboBox, SIGNAL(activated(int)), this, SLOT(sltHandleAttachmentTypeChange()));
     connect(m_pAdapterNameCombo, SIGNAL(activated(int)), this, SLOT(sltHandleAlternativeNameChange()));
     connect(m_pAdapterNameCombo, SIGNAL(editTextChanged(const QString&)), this, SLOT(sltHandleAlternativeNameChange()));
-    connect(m_pAdvancedArrow, SIGNAL(clicked()), this, SLOT(sltHandleAdvancedButtonStateChange()));
+    connect(m_pAdvancedArrow, SIGNAL(sigClicked()), this, SLOT(sltHandleAdvancedButtonStateChange()));
     connect(m_pMACButton, SIGNAL(clicked()), this, SLOT(sltGenerateMac()));
     connect(m_pPortForwardingButton, SIGNAL(clicked()), this, SLOT(sltOpenPortForwardingDlg()));
     connect(this, SIGNAL(sigTabUpdated()), m_pParent, SLOT(sltHandleUpdatedTab()));

@@ -267,7 +267,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QITabWidget.h \
 	src/extensions/QITableView.h \
 	src/extensions/QIToolButton.h \
-	src/extensions/QITextEdit.h \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/QIWidgetValidator.h \
@@ -464,6 +463,7 @@ VirtualBox_QT_MOCHDRS.darwin += \
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
 	src/UIVMLogViewer.cpp \
+	src/extensions/QIArrowSplitter.cpp \
 	src/extensions/QISplitter.cpp \
 	src/extensions/QIAdvancedToolBar.cpp \
 	src/extradata/UIExtraDataManager.cpp \
@@ -534,7 +534,6 @@ VirtualBox_SOURCES = \
 	src/extensions/QIStateIndicator.cpp \
 	src/extensions/QIStatusBar.cpp \
 	src/extensions/QITableView.cpp \
-	src/extensions/QITextEdit.cpp \
 	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \

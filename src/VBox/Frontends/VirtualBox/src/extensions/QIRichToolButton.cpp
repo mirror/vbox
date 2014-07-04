@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QIRichToolButton class implementation
+ * VBox Qt GUI - QIRichToolButton class declaration.
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,97 +15,118 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* VBox includes */
-#include "QIRichToolButton.h"
-
-/* Qt includes */
-#include <QApplication>
-#include <QLabel>
+/* Qt includes: */
 #include <QHBoxLayout>
-#include <QToolButton>
-#include <QKeyEvent>
+#include <QLabel>
 #include <QStylePainter>
 #include <QStyleOptionFocusRect>
+#include <QKeyEvent>
 
-QIRichToolButton::QIRichToolButton (QWidget *aParent)
-    : QWidget(aParent)
-    , mButton(new QIToolButton)
-    , mLabel(new QLabel)
+/* GUI includes: */
+#include "QIRichToolButton.h"
+#include "QIToolButton.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
+QIRichToolButton::QIRichToolButton(QWidget *pParent)
+    : QWidget(pParent)
+    , m_pButton(0)
+    , m_pLabel(0)
 {
-    init();
+    /* Prepare: */
+    prepare();
 }
 
-QIRichToolButton::QIRichToolButton (const QString &aName, QWidget *aParent)
-    : QWidget(aParent)
-    , mButton(new QIToolButton)
-    , mLabel(new QLabel(aName))
+void QIRichToolButton::setIconSize(const QSize &iconSize)
 {
-    init();
+    m_pButton->setIconSize(iconSize);
 }
 
-void QIRichToolButton::init()
+void QIRichToolButton::setIcon(const QIcon &icon)
 {
-    /* Setup itself */
-    setFocusPolicy (Qt::StrongFocus);
-
-    /* Setup tool-button */
-    mButton->removeBorder();
-    mButton->setFocusPolicy (Qt::NoFocus);
-    connect (mButton, SIGNAL (clicked (bool)), this, SLOT (buttonClicked()));
-
-    /* Setup text-label */
-    mLabel->setBuddy (mButton);
-    mLabel->setStyleSheet ("QLabel {padding: 2px 0px 2px 0px;}");
-
-    /* Setup main-layout */
-    QHBoxLayout *mainLayout = new QHBoxLayout (this);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing (0);
-    mainLayout->addWidget (mButton);
-    mainLayout->addWidget (mLabel);
-
-    /* Install event-filter */
-    qApp->installEventFilter (this);
+    m_pButton->setIcon(icon);
 }
 
-bool QIRichToolButton::eventFilter (QObject *aObject, QEvent *aEvent)
+void QIRichToolButton::animateClick()
 {
-    /* Process only QIRichToolButton or children */
-    if (!(aObject == this || children().contains (aObject)))
-        return QWidget::eventFilter (aObject, aEvent);
-
-    /* Process keyboard events */
-    if (aEvent->type() == QEvent::KeyPress)
-    {
-        QKeyEvent *kEvent = static_cast <QKeyEvent*> (aEvent);
-        if (kEvent->key() == Qt::Key_Space)
-            animateClick();
-    }
-
-    /* Process mouse events */
-    if ((aEvent->type() == QEvent::MouseButtonPress ||
-         aEvent->type() == QEvent::MouseButtonDblClick)
-        && aObject == mLabel)
-    {
-        /* Label click as toggle */
-        animateClick();
-    }
-
-    /* Default one handler */
-    return QWidget::eventFilter (aObject, aEvent);
+    m_pButton->animateClick();
 }
 
-void QIRichToolButton::paintEvent (QPaintEvent *aEvent)
+void QIRichToolButton::setText(const QString &strText)
 {
-    /* Draw focus around mLabel if focused */
+    m_pLabel->setText(strText);
+}
+
+void QIRichToolButton::paintEvent(QPaintEvent *pEvent)
+{
+    /* Draw focus around whole button if focused: */
     if (hasFocus())
     {
-        QStylePainter painter (this);
+        QStylePainter painter(this);
         QStyleOptionFocusRect option;
-        option.initFrom (this);
-        option.rect = mLabel->frameGeometry();
-        painter.drawPrimitive (QStyle::PE_FrameFocusRect, option);
+        option.initFrom(this);
+        option.rect = geometry();
+        painter.drawPrimitive(QStyle::PE_FrameFocusRect, option);
     }
-    QWidget::paintEvent (aEvent);
+
+    /* Call to base-class: */
+    QWidget::paintEvent(pEvent);
+}
+
+void QIRichToolButton::keyPressEvent(QKeyEvent *pEvent)
+{
+    /* Handle different keys: */
+    switch (pEvent->key())
+    {
+        /* Animate-click for the Space key: */
+        case Qt::Key_Space: return animateClick();
+        default: break;
+    }
+    /* Call to base-class: */
+    QWidget::keyPressEvent(pEvent);
+}
+
+void QIRichToolButton::mousePressEvent(QMouseEvent *pEvent)
+{
+    /* Animate-click: */
+    animateClick();
+}
+
+void QIRichToolButton::prepare()
+{
+    /* Enable string focus: */
+    setFocusPolicy(Qt::StrongFocus);
+
+    /* Create main-layout: */
+    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
+    AssertPtrReturnVoid(pMainLayout);
+    {
+        /* Configure main-layout: */
+        pMainLayout->setContentsMargins(0, 0, 0, 0);
+        pMainLayout->setSpacing(0);
+        /* Create tool-button: */
+        m_pButton = new QIToolButton;
+        AssertPtrReturnVoid(m_pButton);
+        {
+            /* Configure tool-button: */
+            m_pButton->removeBorder();
+            m_pButton->setFocusPolicy(Qt::NoFocus);
+            connect(m_pButton, SIGNAL(clicked(bool)), this, SLOT(sltButtonClicked()));
+            connect(m_pButton, SIGNAL(clicked(bool)), this, SIGNAL(sigClicked()));
+            /* Add tool-button into main-layout: */
+            pMainLayout->addWidget(m_pButton);
+        }
+        /* Create text-label: */
+        m_pLabel = new QLabel;
+        AssertPtrReturnVoid(m_pLabel);
+        {
+            /* Configure text-label: */
+            m_pLabel->setBuddy(m_pButton);
+            m_pLabel->setStyleSheet("QLabel {padding: 2px 0px 2px 0px;}");
+            /* Add text-label into main-layout: */
+            pMainLayout->addWidget(m_pLabel);
+        }
+    }
 }
 

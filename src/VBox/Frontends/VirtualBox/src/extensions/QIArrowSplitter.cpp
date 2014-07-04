@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QIArrowSplitter class implementation
+ * VBox Qt GUI - QIArrowSplitter class implementation.
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,165 +15,337 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* VBox includes */
-#include "QIArrowSplitter.h"
-
-/* Qt includes */
+/* Qt includes: */
 #include <QApplication>
+#include <QDesktopWidget>
+#include <QStyle>
 #include <QHBoxLayout>
-#include <QKeyEvent>
+#include <QTextEdit>
 
-QIArrowSplitter::QIArrowSplitter (QWidget *aChild, QWidget *aParent)
-    : QWidget (aParent)
-    , mMainLayout (new QVBoxLayout (this))
-    , mSwitchButton (new QIArrowButtonSwitch())
-    , mBackButton (new QIArrowButtonPress (false, tr ("&Back")))
-    , mNextButton (new QIArrowButtonPress (true,  tr ("&Next")))
-    , mChild (aChild)
+/* GUI includes: */
+#include "QIArrowSplitter.h"
+#include "QIArrowButtonSwitch.h"
+#include "QIArrowButtonPress.h"
+#include "UIIconPool.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
+
+/** QTextEdit extension
+  * taking into account text-document size-hint.
+  * @note Used with QIMessageBox class only.
+  * @todo Should be moved/renamed accordingly. */
+class QIDetailsBrowser : public QTextEdit
 {
-    /* Setup main-layout */
-    mMainLayout->setContentsMargins(0, 0, 0, 0);
-    mMainLayout->setSpacing(3);
+    Q_OBJECT;
 
-    /* Setup buttons */
-    mBackButton->setVisible (false);
-    mNextButton->setVisible (false);
+public:
 
-    /* Setup connections */
-    connect (mSwitchButton, SIGNAL (clicked()), this, SLOT (toggleWidget()));
-    connect (mBackButton, SIGNAL (clicked()), this, SIGNAL (showBackDetails()));
-    connect (mNextButton, SIGNAL (clicked()), this, SIGNAL (showNextDetails()));
+    /** Constructor, passes @a pParent to the QTextEdit constructor. */
+    QIDetailsBrowser(QWidget *pParent = 0);
 
-    /* Setup button layout */
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    buttonLayout->setContentsMargins(0, 0, 0, 0);
-    buttonLayout->setSpacing (0);
-    buttonLayout->addWidget (mSwitchButton);
-    buttonLayout->addStretch();
-    buttonLayout->addWidget (mBackButton);
-    buttonLayout->addWidget (mNextButton);
+    /** Returns minimum size-hint. */
+    QSize minimumSizeHint() const;
+    /** Returns size-hint. */
+    QSize sizeHint() const;
 
-    /* Append layout with children */
-    mMainLayout->addLayout (buttonLayout);
-    mMainLayout->addWidget (mChild);
+    /** Update scroll-bars. */
+    void updateScrollBars();
+};
 
-    /* Install event-filter */
-    qApp->installEventFilter (this);
-
-    /* Hide child initially: */
-    toggleWidget();
+QIDetailsBrowser::QIDetailsBrowser(QWidget *pParent /* = 0 */)
+    : QTextEdit(pParent)
+{
+    /* Prepare: */
+    setReadOnly(true);
 }
 
-void QIArrowSplitter::setMultiPaging (bool aMultiPage)
+QSize QIDetailsBrowser::minimumSizeHint() const
 {
-    mBackButton->setVisible (aMultiPage);
-    mNextButton->setVisible (aMultiPage);
+    /* Get document size as the basis: */
+    QSize documentSize = document()->size().toSize();
+    /* But only document ideal-width can advice wise width: */
+    const int iDocumentIdealWidth = document()->idealWidth();
+    /* Moreover we should take document margins into account: */
+    const int iDocumentMargin = document()->documentMargin();
+
+    /* Compose minimum size-hint on the basis of values above: */
+    documentSize.setWidth(iDocumentIdealWidth + iDocumentMargin);
+    documentSize.setHeight(documentSize.height() + iDocumentMargin);
+
+    /* Get 40% of the screen-area to limit the resulting hint: */
+    const QSize screenGeometryDot4 = QApplication::desktop()->screenGeometry(this).size() * .4;
+
+    /* Calculate minimum size-hint which is document-size limited by screen-area: */
+    QSize mSizeHint = documentSize.boundedTo(screenGeometryDot4);
+
+    /* If there is not enough of vertical space: */
+    if (mSizeHint.height() < documentSize.height())
+    {
+        /* We should also take into account vertical scroll-bar extent: */
+        int iExtent = QApplication::style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+        mSizeHint.setWidth(mSizeHint.width() + iExtent);
+    }
+
+    /* Always bound cached hint by 40% of current screen-area: */
+    return mSizeHint;
 }
 
-void QIArrowSplitter::setButtonEnabled (bool aNext, bool aEnabled)
+QSize QIDetailsBrowser::sizeHint() const
 {
-    aNext ? mNextButton->setEnabled (aEnabled)
-          : mBackButton->setEnabled (aEnabled);
+    /* Return minimum size-hint: */
+    return minimumSizeHint();
 }
 
-void QIArrowSplitter::setName (const QString &aName)
+void QIDetailsBrowser::updateScrollBars()
 {
-    mSwitchButton->setText (aName);
-    emit sigSizeChanged();
+    /* Some Qt issue prevents scroll-bars from update.. */
+    Qt::ScrollBarPolicy horizontalPolicy = horizontalScrollBarPolicy();
+    Qt::ScrollBarPolicy verticalPolicy = verticalScrollBarPolicy();
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setHorizontalScrollBarPolicy(horizontalPolicy);
+    setVerticalScrollBarPolicy(verticalPolicy);
+}
+
+
+QIArrowSplitter::QIArrowSplitter(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pMainLayout(0)
+    , m_pSwitchButton(0)
+    , m_pBackButton(0)
+    , m_pNextButton(0)
+    , m_pDetailsBrowser(0)
+    , m_iDetailsIndex(-1)
+{
+    /* Prepare: */
+    prepare();
 }
 
 QSize QIArrowSplitter::minimumSizeHint() const
 {
-    /* Get size-hints: */
-    QSize switchButtonHint = mSwitchButton->minimumSizeHint();
-    QSize backButtonHint = mBackButton->minimumSizeHint();
-    QSize nextButtonHint = mNextButton->minimumSizeHint();
-    int iChildWidthHint = 0;
-    int iChildHeightHint = 0;
-    if (mChild)
-    {
-        QSize childHint = mChild->minimumSize();
-        if (childHint.isNull())
-            childHint = mChild->minimumSizeHint();
-        iChildWidthHint = childHint.width();
-        iChildHeightHint = childHint.height();
-    }
+    /* Get minimum size-hints: */
+    const QSize switchButtonHint = m_pSwitchButton->minimumSizeHint();
+    const QSize backButtonHint = m_pBackButton->minimumSizeHint();
+    const QSize nextButtonHint = m_pNextButton->minimumSizeHint();
+    const QSize detailsBrowserHint = m_pDetailsBrowser->minimumSizeHint();
 
     /* Calculate width-hint: */
     int iWidthHint = 0;
     iWidthHint += switchButtonHint.width();
+    iWidthHint += 100 /* button spacing */;
     iWidthHint += backButtonHint.width();
     iWidthHint += nextButtonHint.width();
-    if (mChild)
-        iWidthHint = qMax(iWidthHint, iChildWidthHint);
+    iWidthHint = qMax(iWidthHint, detailsBrowserHint.width());
 
     /* Calculate height-hint: */
     int iHeightHint = 0;
     iHeightHint = qMax(iHeightHint, switchButtonHint.height());
     iHeightHint = qMax(iHeightHint, backButtonHint.height());
     iHeightHint = qMax(iHeightHint, nextButtonHint.height());
-    if (mChild && mChild->isVisible())
-        iHeightHint += mMainLayout->spacing() + iChildHeightHint;
+    if (m_pDetailsBrowser->isVisible())
+        iHeightHint += m_pMainLayout->spacing() + detailsBrowserHint.height();
 
     /* Return result: */
     return QSize(iWidthHint, iHeightHint);
 }
 
-void QIArrowSplitter::toggleWidget()
+void QIArrowSplitter::setName(const QString &strName)
 {
-    mChild->setVisible (mSwitchButton->isExpanded());
-    emit sigSizeChanged();
+    /* Assign name for the switch-button: */
+    m_pSwitchButton->setText(strName);
+    /* Update size-hints: */
+    sltUpdateSizeHints();
 }
 
-bool QIArrowSplitter::eventFilter (QObject *aObject, QEvent *aEvent)
+void QIArrowSplitter::setDetails(const QStringPairList &details)
 {
-    /* Process only parent window children */
-    if (!(aObject == window() || window()->children().contains (aObject)))
-        return QWidget::eventFilter (aObject, aEvent);
+    /* Assign new details: */
+    m_details = details;
+    /* Reset the details-list index: */
+    m_iDetailsIndex = m_details.isEmpty() ? -1 : 0;
+    /* Update navigation-buttons visibility: */
+    sltUpdateNavigationButtonsVisibility();
+    /* Update details-browser visibility: */
+    sltUpdateDetailsBrowserVisibility();
+    /* Update details: */
+    updateDetails();
+}
 
-    /* Do not process QIArrowButtonSwitch & QIArrowButtonPress children */
-    if (aObject == mSwitchButton ||
-        aObject == mBackButton ||
-        aObject == mNextButton ||
-        mSwitchButton->children().contains (aObject) ||
-        mBackButton->children().contains (aObject) ||
-        mNextButton->children().contains (aObject))
-        return QWidget::eventFilter (aObject, aEvent);
+void QIArrowSplitter::sltUpdateSizeHints()
+{
+    /* Let parent layout know our size-hint changed: */
+    updateGeometry();
+    /* Notify parent about our size-hint changed: */
+    emit sigSizeHintChange();
+    /* Update details-browser scroll-bars: */
+    m_pDetailsBrowser->updateScrollBars();
+}
 
-    /* Process some keyboard events */
-    if (aEvent->type() == QEvent::KeyPress)
+void QIArrowSplitter::sltUpdateNavigationButtonsVisibility()
+{
+    /* Depending on switch-button state: */
+    const bool fExpanded = m_pSwitchButton->isExpanded();
+    /* Update back/next button visibility: */
+    m_pBackButton->setVisible(m_details.size() > 1 && fExpanded);
+    m_pNextButton->setVisible(m_details.size() > 1 && fExpanded);
+}
+
+void QIArrowSplitter::sltUpdateDetailsBrowserVisibility()
+{
+    /* Update details-browser visibility according switch-button state: */
+    m_pDetailsBrowser->setVisible(m_details.size() > 0 && m_pSwitchButton->isExpanded());
+    /* Update size-hints: */
+    sltUpdateSizeHints();
+}
+
+void QIArrowSplitter::sltSwitchDetailsPageBack()
+{
+    /* Make sure details-page index feats the bounds: */
+    AssertReturnVoid(m_iDetailsIndex > 0);
+    /* Decrease details-list index: */
+    --m_iDetailsIndex;
+    /* Update details: */
+    updateDetails();
+}
+
+void QIArrowSplitter::sltSwitchDetailsPageNext()
+{
+    /* Make sure details-page index feats the bounds: */
+    AssertReturnVoid(m_iDetailsIndex < m_details.size() - 1);
+    /* Increase details-list index: */
+    ++m_iDetailsIndex;
+    /* Update details: */
+    updateDetails();
+}
+
+void QIArrowSplitter::prepare()
+{
+    /* Create main-layout: */
+    m_pMainLayout = new QVBoxLayout(this);
+    AssertPtrReturnVoid(m_pMainLayout);
     {
-        QKeyEvent *kEvent = static_cast <QKeyEvent*> (aEvent);
-        switch (kEvent->key())
+        /* Configure main-layout: */
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        m_pMainLayout->setSpacing(3);
+        /* Create button-layout: */
+        QHBoxLayout *pButtonLayout = new QHBoxLayout;
+        AssertPtrReturnVoid(pButtonLayout);
         {
-            case Qt::Key_Plus:
+            /* Configure button-layout: */
+            pButtonLayout->setContentsMargins(0, 0, 0, 0);
+            pButtonLayout->setSpacing(0);
+            /* Create switch-button: */
+            m_pSwitchButton = new QIArrowButtonSwitch;
+            AssertPtrReturnVoid(m_pSwitchButton);
             {
-                if (!mSwitchButton->isExpanded())
-                    mSwitchButton->animateClick();
-                break;
+                /* Configure switch-button: */
+                m_pSwitchButton->setIconSize(QSize(10, 10));
+                m_pSwitchButton->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Collapsed,
+                                                       UIIconPool::iconSet(":/arrow_right_10px.png"));
+                m_pSwitchButton->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Expanded,
+                                                       UIIconPool::iconSet(":/arrow_down_10px.png"));
+                connect(m_pSwitchButton, SIGNAL(sigClicked()), this, SLOT(sltUpdateNavigationButtonsVisibility()));
+                connect(m_pSwitchButton, SIGNAL(sigClicked()), this, SLOT(sltUpdateDetailsBrowserVisibility()));
+                /* Add switch-button into button-layout: */
+                pButtonLayout->addWidget(m_pSwitchButton);
             }
-            case Qt::Key_Minus:
+            /* Add stretch: */
+            pButtonLayout->addStretch();
+            /* Create back-button: */
+            m_pBackButton = new QIArrowButtonPress(QIArrowButtonPress::ButtonType_Back);
+            AssertPtrReturnVoid(m_pBackButton);
             {
-                if (mSwitchButton->isExpanded())
-                    mSwitchButton->animateClick();
-                break;
+                /* Configure back-button: */
+                m_pBackButton->setIconSize(QSize(10, 10));
+                m_pBackButton->setIcon(UIIconPool::iconSet(":/arrow_left_10px.png"));
+                connect(m_pBackButton, SIGNAL(sigClicked()), this, SLOT(sltSwitchDetailsPageBack()));
+                /* Add back-button into button-layout: */
+                pButtonLayout->addWidget(m_pBackButton);
             }
-            case Qt::Key_PageUp:
+            /* Create next-button: */
+            m_pNextButton = new QIArrowButtonPress(QIArrowButtonPress::ButtonType_Next);
+            AssertPtrReturnVoid(m_pNextButton);
             {
-                if (mNextButton->isEnabled())
-                    mNextButton->animateClick();
-                break;
+                /* Configure next-button: */
+                m_pNextButton->setIconSize(QSize(10, 10));
+                m_pNextButton->setIcon(UIIconPool::iconSet(":/arrow_right_10px.png"));
+                connect(m_pNextButton, SIGNAL(sigClicked()), this, SLOT(sltSwitchDetailsPageNext()));
+                /* Add next-button into button-layout: */
+                pButtonLayout->addWidget(m_pNextButton);
             }
-            case Qt::Key_PageDown:
-            {
-                if (mBackButton->isEnabled())
-                    mBackButton->animateClick();
-                break;
-            }
+            /* Add button layout into main-layout: */
+            m_pMainLayout->addLayout(pButtonLayout);
+            /* Update navigation-buttons visibility: */
+            sltUpdateNavigationButtonsVisibility();
+        }
+        /* Create details-browser: */
+        m_pDetailsBrowser = new QIDetailsBrowser;
+        AssertPtrReturnVoid(m_pDetailsBrowser);
+        {
+            /* Add details-browser into main-layout: */
+            m_pMainLayout->addWidget(m_pDetailsBrowser);
+            /* Update details-browser visibility: */
+            sltUpdateDetailsBrowserVisibility();
+            /* Update details: */
+            updateDetails();
         }
     }
 
-    /* Default one handler */
-    return QWidget::eventFilter (aObject, aEvent);
+    /* Apply size-policy finally: */
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 }
+
+void QIArrowSplitter::retranslateUi()
+{
+    /* Update details: */
+    updateDetails();
+}
+
+void QIArrowSplitter::updateDetails()
+{
+    /* If details are empty: */
+    if (m_details.isEmpty())
+    {
+        /* Make sure details-list index is invalid: */
+        AssertReturnVoid(m_iDetailsIndex == -1);
+
+        /* Reset name: */
+        setName(QString());
+    }
+    /* If details are NOT empty: */
+    else
+    {
+        /* Make sure details-list index feats the bounds: */
+        AssertReturnVoid(m_iDetailsIndex >= 0 && m_iDetailsIndex < m_details.size());
+
+        /* Single page: */
+        if (m_details.size() == 1)
+        {
+            setName(QApplication::translate("QIMessageBox", "&Details"));
+            m_pBackButton->setEnabled(false);
+            m_pNextButton->setEnabled(false);
+        }
+        /* Multi-paging: */
+        else if (m_details.size() > 1)
+        {
+            setName(QApplication::translate("QIMessageBox", "&Details (%1 of %2)").arg(m_iDetailsIndex + 1).arg(m_details.size()));
+            m_pBackButton->setEnabled(m_iDetailsIndex > 0);
+            m_pNextButton->setEnabled(m_iDetailsIndex < m_details.size() - 1);
+        }
+
+        /* Update details-browser: */
+        const QString strFirstPart = m_details[m_iDetailsIndex].first;
+        const QString strSecondPart = m_details[m_iDetailsIndex].second;
+        if (strFirstPart.isEmpty())
+            m_pDetailsBrowser->setText(strSecondPart);
+        else
+            m_pDetailsBrowser->setText(QString("%1<br>%2").arg(strFirstPart, strSecondPart));
+    }
+    /* Update size-hints: */
+    sltUpdateSizeHints();
+}
+
+#include "QIArrowSplitter.moc"
 

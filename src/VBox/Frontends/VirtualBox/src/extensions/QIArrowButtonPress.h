@@ -1,11 +1,9 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QIArrowButtonPress class declaration
+ * VBox Qt GUI - QIArrowButtonPress class declaration.
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,39 +14,42 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QIArrowButtonPress_h__
-#define __QIArrowButtonPress_h__
+#ifndef ___QIArrowButtonPress_h___
+#define ___QIArrowButtonPress_h___
 
-/* VBox includes */
+/* GUI includes: */
 #include "QIRichToolButton.h"
+#include "QIWithRetranslateUI.h"
 
-/* VBox forwards */
-class QIRichToolButton;
-
-/** @class QIArrowButtonPress
- *
- *  The QIArrowButtonPress class is an arrow tool-button with text-label,
- *  used as back/next buttons in QIMessageBox class.
- *
- */
-class QIArrowButtonPress : public QIRichToolButton
+/** QIRichToolButton extension
+  * representing arrow tool-button with text-label,
+  * can be used as back/next buttons in various places. */
+class QIArrowButtonPress : public QIWithRetranslateUI<QIRichToolButton>
 {
     Q_OBJECT;
 
 public:
 
-    QIArrowButtonPress (QWidget *aParent = 0);
-    QIArrowButtonPress (bool aNext, const QString &aName, QWidget *aParent = 0);
+    /** Button types. */
+    enum ButtonType { ButtonType_Back, ButtonType_Next };
 
-    void setNext (bool aNext) { mNext = aNext; }
+    /** Constructor, passes @a pParent to the QIRichToolButton constructor.
+      * @param buttonType is used to define which type of the button it is. */
+    QIArrowButtonPress(ButtonType buttonType, QWidget *pParent = 0);
+
+protected:
+
+    /** Retranslation routine.
+      * @todo Fix translation context. */
+    virtual void retranslateUi();
+
+    /** Key-press-event handler. */
+    virtual void keyPressEvent(QKeyEvent *pEvent);
 
 private:
 
-    void updateIcon();
-    bool eventFilter (QObject *aObject, QEvent *aEvent);
-
-    bool mNext;
+    /** Holds the button-type. */
+    ButtonType m_buttonType;
 };
 
-#endif
-
+#endif /* !___QIArrowButtonPress_h___ */
