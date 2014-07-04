@@ -417,108 +417,113 @@ static HRESULT vboxNetCfgWinEnumNetCfgComponents(IN INetCfg *pNetCfg,
  * Forward declarations of functions used in vboxNetCfgWinRemoveAllNetDevicesOfIdCallback.
  */
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostonlyConnectionName(PCWSTR DevName, WCHAR *pBuf, PULONG pcbBuf);
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameConnection (LPWSTR pGuid, PCWSTR NewName);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameConnection(LPWSTR pGuid, PCWSTR NewName);
 
 static BOOL vboxNetCfgWinRemoveAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext)
 {
-    HRESULT hr = S_OK;
     SP_REMOVEDEVICE_PARAMS rmdParams;
-    WCHAR pWCfgGuidString[50] = {L''};
-
+    memset(&rmdParams, 0, sizeof(SP_REMOVEDEVICE_PARAMS));
     rmdParams.ClassInstallHeader.cbSize = sizeof(SP_CLASSINSTALL_HEADER);
     rmdParams.ClassInstallHeader.InstallFunction = DIF_REMOVE;
     rmdParams.Scope = DI_REMOVEDEVICE_GLOBAL;
-    rmdParams.HwProfile = 0;
 
-    if (SetupDiSetClassInstallParams(hDevInfo,pDev,&rmdParams.ClassInstallHeader,sizeof(rmdParams)))
+    if (SetupDiSetClassInstallParams(hDevInfo,pDev,
+                                     &rmdParams.ClassInstallHeader, sizeof(rmdParams)))
     {
-        if (SetupDiSetSelectedDevice (hDevInfo, pDev))
+        if (SetupDiSetSelectedDevice(hDevInfo, pDev))
         {
-            /* Figure out NetCfgInstanceId */
-            HKEY hkey = SetupDiOpenDevRegKey(hDevInfo,
+            /* Figure out NetCfgInstanceId. */
+            HKEY hKey = SetupDiOpenDevRegKey(hDevInfo,
                                              pDev,
                                              DICS_FLAG_GLOBAL,
                                              0,
                                              DIREG_DRV,
                                              KEY_READ);
-            if (hkey == INVALID_HANDLE_VALUE)
-                NonStandardLogFlow(("SetupDiOpenDevRegKey failed (0x%08X)", GetLastError()));
+            if (hKey == INVALID_HANDLE_VALUE)
+            {
+                NonStandardLogFlow(("vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiOpenDevRegKey failed with error %ld\n",
+                                    GetLastError()));
+            }
             else
             {
-                DWORD cbSize = sizeof(pWCfgGuidString);
+                WCHAR wszCfgGuidString[50] = { L'' };
+                DWORD cbSize = sizeof(wszCfgGuidString);
                 DWORD dwValueType;
-                DWORD ret = RegQueryValueExW (hkey, L"NetCfgInstanceId", NULL,
-                                              &dwValueType, (LPBYTE) pWCfgGuidString, &cbSize);
+                DWORD ret = RegQueryValueExW(hKey, L"NetCfgInstanceId", NULL,
+                                             &dwValueType, (LPBYTE)wszCfgGuidString, &cbSize);
                 if (ret == ERROR_SUCCESS)
                 {
-                    /* Figure out device name */
-                    WCHAR DevName[256], TempName[256];
-                    ULONG cbName = sizeof(TempName);
+                    NonStandardLogFlow(("vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: Processing device ID \"%S\"\n",
+                                        wszCfgGuidString));
+
+                    /* Figure out device name. */
+                    WCHAR wszDevName[256], wszTempName[256];
+                    ULONG cbName = sizeof(wszTempName);
+
                     if (SetupDiGetDeviceRegistryPropertyW(hDevInfo, pDev,
-                                               SPDRP_FRIENDLYNAME , /* IN DWORD Property,*/
-                                               NULL, /*OUT PDWORD PropertyRegDataType, OPTIONAL*/
-                                               (PBYTE)DevName, /*OUT PBYTE PropertyBuffer,*/
-                                               sizeof(DevName), /* IN DWORD PropertyBufferSize,*/
-                                               NULL /*OUT PDWORD RequiredSize OPTIONAL*/))
+                                                          SPDRP_FRIENDLYNAME, /* IN  DWORD Property,*/
+                                                          NULL,               /* OUT PDWORD PropertyRegDataType, OPTIONAL*/
+                                                          (PBYTE)wszDevName,  /* OUT PBYTE PropertyBuffer,*/
+                                                          sizeof(wszDevName), /* IN  DWORD PropertyBufferSize,*/
+                                                          NULL                /* OUT PDWORD RequiredSize OPTIONAL*/))
                     {
                         /*
                          * Rename the connection before removing the device. This will
                          * hopefully prevent an error when we will be attempting
                          * to rename a newly created connection (see @bugref{6740}).
                          */
-                        HRESULT hr_tmp = VBoxNetCfgWinGenHostonlyConnectionName(DevName, TempName, &cbName);
-                        wcscat_s(TempName, sizeof(TempName), L" removed");
+                        HRESULT hr = VBoxNetCfgWinGenHostonlyConnectionName(wszDevName, wszTempName, &cbName);
+                        wcscat_s(wszTempName, sizeof(wszTempName), L" removed");
                         if (SUCCEEDED(hr))
-                            hr_tmp = VBoxNetCfgWinRenameConnection(pWCfgGuidString, TempName);
+                            hr = VBoxNetCfgWinRenameConnection(wszCfgGuidString, wszTempName);
                         //NonStandardLogFlow(("VBoxNetCfgWinRenameConnection(%S,%S) => 0x%x\n", pWCfgGuidString, TempName, hr_tmp));
                     }
                     else
                     {
-                        NonStandardLogFlow(("Failed to get 'friendly name' property for %S\n", pWCfgGuidString));
+                        NonStandardLogFlow(("vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: Failed to get friendly name for device \"%S\"\n",
+                                            wszCfgGuidString));
                     }
                 }
                 else
                 {
-                    NonStandardLogFlow(("RegQueryValueExW(L\"NetCfgInstanceId\") failed with %d\n", ret));
+                    NonStandardLogFlow(("vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: Querying instance ID failed with %d\n",
+                                        ret));
                 }
 
-                RegCloseKey (hkey);
+                RegCloseKey(hKey);
             }
 
-            if (SetupDiCallClassInstaller(DIF_REMOVE,hDevInfo,pDev))
+            if (SetupDiCallClassInstaller(DIF_REMOVE, hDevInfo, pDev))
             {
                 SP_DEVINSTALL_PARAMS devParams;
+                memset(&devParams, 0, sizeof(SP_DEVINSTALL_PARAMS));
                 devParams.cbSize = sizeof(devParams);
-                if (SetupDiGetDeviceInstallParams(hDevInfo,pDev,&devParams))
+
+                if (SetupDiGetDeviceInstallParams(hDevInfo, pDev, &devParams))
                 {
-                    if (devParams.Flags & (DI_NEEDRESTART|DI_NEEDREBOOT))
+                    if (   (devParams.Flags & DI_NEEDRESTART)
+                        || (devParams.Flags & DI_NEEDREBOOT))
                     {
-                        hr = S_FALSE;
-                        NonStandardLog(("!!!REBOOT REQUIRED!!!\n"));
+                        NonStandardLog(("vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: A reboot is required\n"));
                     }
                 }
+                else
+                    NonStandardLogFlow(("vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiGetDeviceInstallParams failed with %ld\n",
+                                        GetLastError()));
             }
             else
-            {
-                DWORD dwErr = GetLastError();
-                NonStandardLogFlow(("SetupDiCallClassInstaller failed with %ld\n", dwErr));
-                hr = HRESULT_FROM_WIN32(dwErr);
-            }
+                NonStandardLogFlow(("vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiCallClassInstaller failed with %ld\n",
+                                    GetLastError()));
         }
         else
-        {
-            DWORD dwErr = GetLastError();
-            NonStandardLogFlow(("SetupDiSetSelectedDevice failed with %ld\n", dwErr));
-            hr = HRESULT_FROM_WIN32(dwErr);
-        }
+            NonStandardLogFlow(("vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiSetSelectedDevice failed with %ld\n",
+                                GetLastError()));
     }
     else
-    {
-        DWORD dwErr = GetLastError();
-        NonStandardLogFlow(("SetupDiSetClassInstallParams failed with %ld\n", dwErr));
-        hr = HRESULT_FROM_WIN32(dwErr);
-    }
+        NonStandardLogFlow(("vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiSetClassInstallParams failed with %ld\n",
+                            GetLastError()));
 
+    /* Continue enumeration. */
     return TRUE;
 }
 
@@ -531,14 +536,13 @@ typedef struct VBOXNECTFGWINPROPCHANGE
 static BOOL vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext)
 {
     PVBOXNECTFGWINPROPCHANGE pPc = (PVBOXNECTFGWINPROPCHANGE)pContext;
-    HRESULT hr = S_OK;
+
     SP_PROPCHANGE_PARAMS PcParams;
     memset (&PcParams, 0, sizeof (PcParams));
-
-    PcParams.ClassInstallHeader.cbSize = sizeof (SP_CLASSINSTALL_HEADER);
+    PcParams.ClassInstallHeader.cbSize = sizeof(SP_CLASSINSTALL_HEADER);
     PcParams.ClassInstallHeader.InstallFunction = DIF_PROPERTYCHANGE;
     PcParams.Scope = DICS_FLAG_GLOBAL;
-    PcParams.HwProfile = 0;
+
     switch(pPc->enmPcType)
     {
         case VBOXNECTFGWINPROPCHANGE_TYPE_DISABLE:
@@ -548,13 +552,12 @@ static BOOL vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, 
             PcParams.StateChange = DICS_ENABLE;
             break;
         default:
-            NonStandardLogFlow(("unexpected prop change type: %d\n", pPc->enmPcType));
+            NonStandardLogFlow(("vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback: Unexpected prop change type: %d\n", pPc->enmPcType));
             pPc->hr = E_INVALIDARG;
             return FALSE;
     }
 
-
-    if (SetupDiSetClassInstallParams(hDevInfo, pDev, &PcParams.ClassInstallHeader, sizeof (PcParams)))
+    if (SetupDiSetClassInstallParams(hDevInfo, pDev, &PcParams.ClassInstallHeader, sizeof(PcParams)))
     {
         if (SetupDiSetSelectedDevice(hDevInfo, pDev))
         {
@@ -564,136 +567,148 @@ static BOOL vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, 
                 devParams.cbSize = sizeof(devParams);
                 if (SetupDiGetDeviceInstallParams(hDevInfo,pDev,&devParams))
                 {
-                    if (devParams.Flags & (DI_NEEDRESTART|DI_NEEDREBOOT))
+                    if (   (devParams.Flags & DI_NEEDRESTART)
+                        || (devParams.Flags & DI_NEEDREBOOT))
                     {
-                        hr = S_FALSE;
-                        NonStandardLogFlow(("PropChange: !!!REBOOT REQUIRED!!!\n"));
+                        NonStandardLog(("vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback: A reboot is required\n"));
                     }
                 }
+                else
+                    NonStandardLogFlow(("vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback: SetupDiGetDeviceInstallParams failed with %ld\n",
+                                        GetLastError()));
             }
             else
-            {
-                DWORD dwErr = GetLastError();
-                NonStandardLogFlow(("SetupDiCallClassInstaller failed with %ld\n", dwErr));
-                hr = HRESULT_FROM_WIN32(dwErr);
-            }
+                NonStandardLogFlow(("vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback: SetupDiCallClassInstaller failed with %ld\n",
+                                    GetLastError()));
         }
         else
-        {
-            DWORD dwErr = GetLastError();
-            NonStandardLogFlow(("SetupDiSetSelectedDevice failed with %ld\n", dwErr));
-            hr = HRESULT_FROM_WIN32(dwErr);
-        }
+            NonStandardLogFlow(("SetupDiSetSelectedDevice failed with %ld\n", GetLastError()));
     }
     else
-    {
-        DWORD dwErr = GetLastError();
-        NonStandardLogFlow(("SetupDiSetClassInstallParams failed with %ld\n", dwErr));
-        hr = HRESULT_FROM_WIN32(dwErr);
-    }
+        NonStandardLogFlow(("SetupDiSetClassInstallParams failed with %ld\n", GetLastError()));
 
+    /* Continue enumeration. */
     return TRUE;
 }
 
 typedef BOOL (*VBOXNETCFGWIN_NETENUM_CALLBACK) (HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext);
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pPnPId, VBOXNETCFGWIN_NETENUM_CALLBACK callback, PVOID pContext)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPID,
+                                                        VBOXNETCFGWIN_NETENUM_CALLBACK callback, PVOID pContext)
 {
-    DWORD winEr;
-    HRESULT hr = S_OK;
+    NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Searching for: %S\n", pwszPnPID));
 
-    HDEVINFO hDevInfo = SetupDiGetClassDevsExW(
-            &GUID_DEVCLASS_NET,
-            NULL, /* IN PCTSTR Enumerator, OPTIONAL*/
-            NULL, /*IN HWND hwndParent, OPTIONAL*/
-            DIGCF_PRESENT, /*IN DWORD Flags,*/
-            NULL, /*IN HDEVINFO DeviceInfoSet, OPTIONAL*/
-            NULL, /*IN PCTSTR MachineName, OPTIONAL*/
-            NULL /*IN PVOID Reserved*/
-        );
+    HRESULT hr;
+    HDEVINFO hDevInfo = SetupDiGetClassDevsExW(&GUID_DEVCLASS_NET,
+                                               NULL,            /* IN PCTSTR Enumerator, OPTIONAL */
+                                               NULL,            /* IN HWND hwndParent, OPTIONAL */
+                                               DIGCF_PRESENT,   /* IN DWORD Flags,*/
+                                               NULL,            /* IN HDEVINFO DeviceInfoSet, OPTIONAL */
+                                               NULL,            /* IN PCTSTR MachineName, OPTIONAL */
+                                               NULL             /* IN PVOID Reserved */);
     if (hDevInfo != INVALID_HANDLE_VALUE)
     {
-        DWORD iDev = 0;
-        SP_DEVINFO_DATA Dev;
+        DWORD winEr;
+
+        DWORD dwDevID = 0;
+        size_t cPnPId = wcslen(pwszPnPID);
+
         PBYTE pBuffer = NULL;
-        DWORD cbBuffer = 0;
-        DWORD cbRequired = 0;
-        BOOL bEnumCompleted;
-        size_t cPnPId = wcslen(pPnPId);
 
-        Dev.cbSize = sizeof(Dev);
-
-        for (; bEnumCompleted = SetupDiEnumDeviceInfo(hDevInfo, iDev, &Dev); iDev++)
+        for (;;)
         {
-            if (!SetupDiGetDeviceRegistryPropertyW(hDevInfo,&Dev,
-                      SPDRP_HARDWAREID, /* IN DWORD Property,*/
-                      NULL, /*OUT PDWORD PropertyRegDataType, OPTIONAL*/
-                      pBuffer, /*OUT PBYTE PropertyBuffer,*/
-                      cbBuffer, /* IN DWORD PropertyBufferSize,*/
-                      &cbRequired /*OUT PDWORD RequiredSize OPTIONAL*/
-                    ))
+            SP_DEVINFO_DATA Dev;
+            memset(&Dev, 0, sizeof(SP_DEVINFO_DATA));
+            Dev.cbSize = sizeof(SP_DEVINFO_DATA);
+
+            if (!SetupDiEnumDeviceInfo(hDevInfo, dwDevID, &Dev))
+            {
+                winEr = GetLastError();
+                if (winEr == ERROR_NO_MORE_ITEMS)
+                    winEr = ERROR_SUCCESS;
+                break;
+            }
+
+            NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Enumerating device %ld ... \n", dwDevID));
+            dwDevID++;
+
+            if (pBuffer)
+                free(pBuffer);
+            pBuffer = NULL;
+            DWORD cbBuffer = 0;
+            DWORD cbRequired = 0;
+
+            if (!SetupDiGetDeviceRegistryPropertyW(hDevInfo, &Dev,
+                                                   SPDRP_HARDWAREID, /* IN DWORD Property */
+                                                   NULL,             /* OUT PDWORD PropertyRegDataType OPTIONAL */
+                                                   pBuffer,          /* OUT PBYTE PropertyBuffer */
+                                                   cbBuffer,         /* IN DWORD PropertyBufferSize */
+                                                   &cbRequired       /* OUT PDWORD RequiredSize OPTIONAL */))
             {
                 winEr = GetLastError();
                 if (winEr != ERROR_INSUFFICIENT_BUFFER)
                 {
-                    NonStandardLogFlow(("SetupDiGetDeviceRegistryPropertyW (1) failed winErr(%d)\n", winEr));
-                    hr = HRESULT_FROM_WIN32(winEr);
+                    NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: SetupDiGetDeviceRegistryPropertyW (1) failed with %ld\n", winEr));
                     break;
                 }
 
-                if (pBuffer)
-                    free(pBuffer);
-
                 pBuffer = (PBYTE)malloc(cbRequired);
+                if (!pBuffer)
+                {
+                    NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Out of memory allocating %ld bytes\n",
+                                        cbRequired));
+                    winEr = ERROR_OUTOFMEMORY;
+                    break;
+                }
+
                 cbBuffer = cbRequired;
 
                 if (!SetupDiGetDeviceRegistryPropertyW(hDevInfo,&Dev,
-                                                       SPDRP_HARDWAREID, /* IN DWORD Property,*/
-                                                       NULL, /*OUT PDWORD PropertyRegDataType, OPTIONAL*/
-                                                       pBuffer, /*OUT PBYTE PropertyBuffer,*/
-                                                       cbBuffer, /* IN DWORD PropertyBufferSize,*/
-                                                       &cbRequired /*OUT PDWORD RequiredSize OPTIONAL*/
-                                                       ))
+                                                       SPDRP_HARDWAREID, /* IN DWORD Property */
+                                                       NULL,             /* OUT PDWORD PropertyRegDataType, OPTIONAL */
+                                                       pBuffer,          /* OUT PBYTE PropertyBuffer */
+                                                       cbBuffer,         /* IN DWORD PropertyBufferSize */
+                                                       &cbRequired       /* OUT PDWORD RequiredSize OPTIONAL */))
                 {
                     winEr = GetLastError();
-                    NonStandardLogFlow(("SetupDiGetDeviceRegistryPropertyW (2) failed winErr(%d)\n", winEr));
-                    hr = HRESULT_FROM_WIN32(winEr);
+                    NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: SetupDiGetDeviceRegistryPropertyW (2) failed with %ld\n",
+                                        winEr));
                     break;
                 }
             }
 
-            PWCHAR pCurId = (PWCHAR)pBuffer;
-            size_t cCurId = wcslen(pCurId);
+            PWSTR pCurID = (PWSTR)pBuffer;
+            size_t cCurId = wcslen(pCurID);
+
+            NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Device %ld: %S\n", dwDevID, pCurID));
+
             if (cCurId >= cPnPId)
             {
-                pCurId += cCurId - cPnPId;
-                if (!wcsnicmp(pCurId, pPnPId, cPnPId))
+                pCurID += cCurId - cPnPId;
+                if (!wcsnicmp(pCurID, pwszPnPID, cPnPId))
                 {
-
-                    if (!callback(hDevInfo,&Dev,pContext))
+                    if (!callback(hDevInfo, &Dev, pContext))
                         break;
                 }
             }
-
         }
+
+        NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Found %ld devices total\n", dwDevID));
 
         if (pBuffer)
             free(pBuffer);
 
-        if (bEnumCompleted)
-        {
-            winEr = GetLastError();
-            hr = winEr == ERROR_NO_MORE_ITEMS ? S_OK : HRESULT_FROM_WIN32(winEr);
-        }
+        hr = HRESULT_FROM_WIN32(winEr);
 
         SetupDiDestroyDeviceInfoList(hDevInfo);
     }
     else
     {
         DWORD winEr = GetLastError();
-        NonStandardLogFlow(("SetupDiGetClassDevsExW failed winErr(%d)\n", winEr));
+        NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: SetupDiGetClassDevsExW failed with %ld\n", winEr));
         hr = HRESULT_FROM_WIN32(winEr);
     }
 
+    NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Ended with hr (0x%x)\n", hr));
     return hr;
 }
 
