@@ -42,6 +42,7 @@
 #include <iprt/sha.h>
 #include <iprt/string.h>
 #ifndef IPRT_WITHOUT_LDR_VERIFY
+#include <iprt/zero.h>
 # include <iprt/crypto/pkcs7.h>
 # include <iprt/crypto/spc.h>
 # include <iprt/crypto/x509.h>
@@ -2152,7 +2153,7 @@ static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOB
     uint32_t const cPages = pAttrib->u.pPageHashes->RawData.Asn1Core.cb / (cbHash + 4);
     if (cPages * (cbHash + 4) != pAttrib->u.pPageHashes->RawData.Asn1Core.cb)
         return RTErrInfoSetF(pErrInfo, VERR_LDRVI_PAGE_HASH_TAB_SIZE_OVERFLOW,
-                             "Page Hashes V2 size issue: cb=%#x cbHash=%#x",
+                             "Page hashes size issue: cb=%#x cbHash=%#x",
                              pAttrib->u.pPageHashes->RawData.Asn1Core.cb, cbHash);
 
     /*
@@ -2163,68 +2164,89 @@ static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOB
     uint32_t        offScratchRead   = 0;
 
     uint32_t        offPrev    = 0;
+#ifdef COMPLICATED_AND_WRONG
     uint32_t        offSectEnd = pModPe->cbHeaders;
     uint32_t        iSh        = UINT32_MAX;
+#endif
     uint8_t const  *pbHashTab  = pAttrib->u.pPageHashes->RawData.Asn1Core.uData.pu8;
     for (uint32_t iPage = 0; iPage < cPages; iPage++)
     {
         /* Decode the page offset. */
-        uint32_t const offFile = RT_MAKE_U32_FROM_U8(pbHashTab[0], pbHashTab[1], pbHashTab[2], pbHashTab[3]);
-        if (offFile >= SpecialPlaces.cbToHash)
+        uint32_t const offPageInFile = RT_MAKE_U32_FROM_U8(pbHashTab[0], pbHashTab[1], pbHashTab[2], pbHashTab[3]);
+        if (offPageInFile >= SpecialPlaces.cbToHash)
         {
             /* The last entry is zero. */
-            if (   offFile   == SpecialPlaces.cbToHash
+            if (   offPageInFile == SpecialPlaces.cbToHash
                 && iPage + 1 == cPages
                 && ASMMemIsAll8(pbHashTab + 4, cbHash, 0) == NULL)
                 return VINF_SUCCESS;
             return RTErrInfoSetF(pErrInfo, VERR_LDRVI_PAGE_HASH_TAB_TOO_LONG,
                                  "Page hash entry #%u is beyond the signature table start: %#x, %#x",
-                                 iPage, offFile, SpecialPlaces.cbToHash);
+                                 iPage, offPageInFile, SpecialPlaces.cbToHash);
         }
-        if (offFile < offPrev)
+        if (offPageInFile < offPrev)
             return RTErrInfoSetF(pErrInfo, VERR_LDRVI_PAGE_HASH_TAB_NOT_STRICTLY_SORTED,
                                  "Page hash table is not strictly sorted: entry #%u @%#x, previous @%#x\n",
-                                 iPage, offFile, offPrev);
+                                 iPage, offPageInFile, offPrev);
 
+#ifdef COMPLICATED_AND_WRONG
         /* Figure out how much to read and how much to zero.  Need keep track
            of the on-disk section boundraries. */
-        if (offFile >= offSectEnd)
+        if (offPageInFile >= offSectEnd)
         {
             iSh++;
             if (   iSh < pModPe->cSections
-                && offFile - pModPe->paSections[iSh].PointerToRawData < pModPe->paSections[iSh].SizeOfRawData)
+                && offPageInFile - pModPe->paSections[iSh].PointerToRawData < pModPe->paSections[iSh].SizeOfRawData)
                 offSectEnd = pModPe->paSections[iSh].PointerToRawData + pModPe->paSections[iSh].SizeOfRawData;
             else
             {
                 iSh = 0;
                 while (   iSh < pModPe->cSections
-                       && offFile - pModPe->paSections[iSh].PointerToRawData >= pModPe->paSections[iSh].SizeOfRawData)
+                       && offPageInFile - pModPe->paSections[iSh].PointerToRawData >= pModPe->paSections[iSh].SizeOfRawData)
                     iSh++;
                 if (iSh < pModPe->cSections)
                     offSectEnd = pModPe->paSections[iSh].PointerToRawData + pModPe->paSections[iSh].SizeOfRawData;
                 else
                     return RTErrInfoSetF(pErrInfo, VERR_PAGE_HASH_TAB_HASHES_NON_SECTION_DATA,
-                                         "Page hash entry #%u isn't in any section: %#x", iPage, offFile);
+                                         "Page hash entry #%u isn't in any section: %#x", iPage, offPageInFile);
             }
         }
 
-        uint32_t cbRead = _4K;
-        if (offFile + cbRead > offSectEnd)
-            cbRead = offSectEnd - offFile;
+#else
+        /* Figure out how much to read and how much take as zero.  Use the next
+           page offset and the signature as upper boundraries.  */
+#endif
+        uint32_t cbPageInFile = _4K;
+#ifdef COMPLICATED_AND_WRONG
+        if (offPageInFile + cbPageInFile > offSectEnd)
+            cbPageInFile = offSectEnd - offPageInFile;
+#else
+        if (iPage + 1 < cPages)
+        {
+            uint32_t offNextPage = RT_MAKE_U32_FROM_U8(pbHashTab[0 + 4 + cbHash], pbHashTab[1 + 4 + cbHash],
+                                                       pbHashTab[2 + 4 + cbHash], pbHashTab[3 + 4 + cbHash]);
+            if (offNextPage - offPageInFile < cbPageInFile)
+                cbPageInFile = offNextPage - offPageInFile;
+        }
+#endif
 
-        if (offFile + cbRead > SpecialPlaces.cbToHash)
-            cbRead = SpecialPlaces.cbToHash - offFile;
+        if (offPageInFile + cbPageInFile > SpecialPlaces.cbToHash)
+            cbPageInFile = SpecialPlaces.cbToHash - offPageInFile;
 
         /* Did we get a cache hit? */
         uint8_t *pbCur = (uint8_t *)pvScratch;
-        if (   offFile + cbRead <= offScratchRead + cbScratchRead
-            && offFile          >= offScratchRead)
-            pbCur += offFile - offScratchRead;
+        if (   offPageInFile + cbPageInFile <= offScratchRead + cbScratchRead
+            && offPageInFile          >= offScratchRead)
+            pbCur += offPageInFile - offScratchRead;
         /* Missed, read more. */
         else
         {
-            offScratchRead = offFile;
-            cbScratchRead  = offSectEnd - offFile;
+            offScratchRead = offPageInFile;
+#ifdef COMPLICATED_AND_WRONG
+            cbScratchRead  = offSectEnd - offPageInFile;
+#else
+            cbScratchRead  = SpecialPlaces.cbToHash - offPageInFile;
+#endif
             if (cbScratchRead > cbScratchReadMax)
                 cbScratchRead = cbScratchReadMax;
             rc = pModPe->Core.pReader->pfnRead(pModPe->Core.pReader, pbCur, cbScratchRead, offScratchRead);
@@ -2234,10 +2256,6 @@ static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOB
                                      offScratchRead, rc, cbScratchRead);
         }
 
-        /* Zero any additional bytes in the page. */
-        if (cbRead != _4K)
-            memset(pbCur + cbRead, 0, _4K - cbRead);
-
         /*
          * Hash it.
          */
@@ -2246,10 +2264,10 @@ static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOB
         AssertRCReturn(rc, rc);
 
         /* Deal with special places. */
-        uint32_t       cbLeft = _4K;
-        if (offFile < SpecialPlaces.offEndSpecial)
+        uint32_t       cbLeft = cbPageInFile;
+        if (offPageInFile < SpecialPlaces.offEndSpecial)
         {
-            uint32_t off = offFile;
+            uint32_t off = offPageInFile;
             if (off < SpecialPlaces.offCksum)
             {
                 /* Hash everything up to the checksum. */
@@ -2290,6 +2308,8 @@ static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOB
         }
 
         rtLdrPE_HashUpdate(&HashCtx, enmDigest, pbCur, cbLeft);
+        if (cbPageInFile < _4K)
+            rtLdrPE_HashUpdate(&HashCtx, enmDigest, &g_abRTZero4K[cbPageInFile], _4K - cbPageInFile);
 
         /*
          * Finish the hash calculation and compare the result.
@@ -2300,10 +2320,10 @@ static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOB
         pbHashTab += 4;
         if (memcmp(pbHashTab, &HashRes, cbHash) != 0)
             return RTErrInfoSetF(pErrInfo, VERR_LDRVI_PAGE_HASH_MISMATCH,
-                                 "Page hash v2 failed for page #%u, @%#x, %#x bytes: %.*Rhxs != %.*Rhxs",
-                                 iPage, offFile, cbRead, (size_t)cbHash, pbHashTab, (size_t)cbHash, &HashRes);
+                                 "Page hash failed for page #%u, @%#x, %#x bytes: %.*Rhxs != %.*Rhxs",
+                                 iPage, offPageInFile, cbPageInFile, (size_t)cbHash, pbHashTab, (size_t)cbHash, &HashRes);
         pbHashTab += cbHash;
-        offPrev = offFile;
+        offPrev = offPageInFile;
     }
 
     return VINF_SUCCESS;
