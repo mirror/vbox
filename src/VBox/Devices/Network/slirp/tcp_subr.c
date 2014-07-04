@@ -125,13 +125,10 @@ void
 tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf *m, tcp_seq ack, tcp_seq seq, int flags)
 {
     register int tlen;
-    int win = 0;
 
     LogFlowFunc(("ENTER: tp = %R[tcpcb793], ti = %lx, m = %lx, ack = %u, seq = %u, flags = %x\n",
                  tp, (long)ti, (long)m, ack, seq, flags));
 
-    if (tp)
-        win = sbspace(&tp->t_socket->so_rcv);
     if (m == 0)
     {
         if ((m = m_gethdr(pData, M_DONTWAIT, MT_HEADER)) == NULL)
@@ -173,9 +170,12 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
     ti->ti_off = sizeof (struct tcphdr) >> 2;
     ti->ti_flags = flags;
     if (tp)
+    {
+        int win = sbspace(&tp->t_socket->so_rcv);
         ti->ti_win = RT_H2N_U16((u_int16_t) (win >> tp->rcv_scale));
+    }
     else
-        ti->ti_win = RT_H2N_U16((u_int16_t)win);
+        ti->ti_win = 0;
     ti->ti_urp = 0;
     ti->ti_sum = 0;
     ti->ti_sum = cksum(m, tlen);
