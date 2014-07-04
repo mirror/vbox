@@ -3934,6 +3934,9 @@ void VBoxGlobal::prepare()
     /* Create popup-center: */
     UIPopupCenter::create();
 
+    /* Prepare general icon-pool: */
+    m_pIconPool = new UIIconPoolGeneral;
+
     /* Load translation based on the current locale: */
     loadLanguage();
 
@@ -4012,9 +4015,6 @@ void VBoxGlobal::prepare()
             }
         }
     }
-
-    /* Prepare general icon-pool: */
-    m_pIconPool = new UIIconPoolGeneral;
 
     qApp->installEventFilter (this);
 
