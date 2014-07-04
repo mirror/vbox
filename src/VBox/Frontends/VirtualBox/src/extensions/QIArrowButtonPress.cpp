@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QIArrowButtonPress class implementation
+ * VBox Qt GUI - QIArrowButtonPress class implementation.
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,57 +15,43 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* VBox includes */
-#include "QIArrowButtonPress.h"
-#include "UIIconPool.h"
-
-/* Qt includes */
+/* Qt includes: */
 #include <QKeyEvent>
 
+/* GUI includes: */
+#include "QIArrowButtonPress.h"
 
-/** @class QIArrowButtonPress
- *
- *  The QIArrowButtonPress class is an arrow tool-button with text-label,
- *  used as back/next buttons in QIMessageBox class.
- *
- */
-
-QIArrowButtonPress::QIArrowButtonPress (QWidget *aParent)
-    : QIRichToolButton (aParent)
-    , mNext (true)
+QIArrowButtonPress::QIArrowButtonPress(QIArrowButtonPress::ButtonType buttonType,
+                                       QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QIRichToolButton>(pParent)
+    , m_buttonType(buttonType)
 {
-    updateIcon();
+    /* Retranslate UI: */
+    retranslateUi();
 }
 
-QIArrowButtonPress::QIArrowButtonPress (bool aNext, const QString &aName, QWidget *aParent)
-    : QIRichToolButton (aName, aParent)
-    , mNext (aNext)
+void QIArrowButtonPress::retranslateUi()
 {
-    updateIcon();
-}
-
-void QIArrowButtonPress::updateIcon()
-{
-    mButton->setIcon(UIIconPool::iconSet(mNext ?
-                                         ":/arrow_right_10px.png" : ":/arrow_left_10px.png"));
-}
-
-bool QIArrowButtonPress::eventFilter (QObject *aObject, QEvent *aEvent)
-{
-    /* Process only QIArrowButtonPress or children */
-    if (!(aObject == this || children().contains (aObject)))
-        return QIRichToolButton::eventFilter (aObject, aEvent);
-
-    /* Process keyboard events */
-    if (aEvent->type() == QEvent::KeyPress)
+    /* Retranslate: */
+    switch (m_buttonType)
     {
-        QKeyEvent *kEvent = static_cast <QKeyEvent*> (aEvent);
-        if ((mNext && kEvent->key() == Qt::Key_PageUp) ||
-            (!mNext && kEvent->key() == Qt::Key_PageDown))
-            animateClick();
+        case ButtonType_Back: setText(QApplication::translate("QIArrowSplitter", "&Back")); break;
+        case ButtonType_Next: setText(QApplication::translate("QIArrowSplitter", "&Next")); break;
+        default: break;
     }
+}
 
-    /* Default one handler */
-    return QIRichToolButton::eventFilter (aObject, aEvent);
+void QIArrowButtonPress::keyPressEvent(QKeyEvent *pEvent)
+{
+    /* Handle different keys: */
+    switch (pEvent->key())
+    {
+        /* Animate-click for the Space key: */
+        case Qt::Key_PageUp: if (m_buttonType == ButtonType_Next) return animateClick(); break;
+        case Qt::Key_PageDown: if (m_buttonType == ButtonType_Back) return animateClick(); break;
+        default: break;
+    }
+    /* Call to base-class: */
+    QIWithRetranslateUI<QIRichToolButton>::keyPressEvent(pEvent);
 }
 
