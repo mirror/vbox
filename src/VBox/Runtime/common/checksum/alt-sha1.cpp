@@ -130,9 +130,19 @@ DECLINLINE(void) rtSha1BlockInitBuffered(PRTSHA1CONTEXT pCtx)
 /** Function 4.1, Ch(x,y,z). */
 DECL_FORCE_INLINE(uint32_t) rtSha1Ch(uint32_t uX, uint32_t uY, uint32_t uZ)
 {
+#if 1
+    /* Optimization that saves one operation and probably a temporary variable. */
+    uint32_t uResult = uY;
+    uResult ^= uZ;
+    uResult &= uX;
+    uResult ^= uZ;
+    return uResult;
+#else
+    /* The original. */
     uint32_t uResult = uX & uY;
     uResult ^= ~uX & uZ;
     return uResult;
+#endif
 }
 
 
@@ -149,10 +159,20 @@ DECL_FORCE_INLINE(uint32_t) rtSha1Parity(uint32_t uX, uint32_t uY, uint32_t uZ)
 /** Function 4.1, Maj(x,y,z). */
 DECL_FORCE_INLINE(uint32_t) rtSha1Maj(uint32_t uX, uint32_t uY, uint32_t uZ)
 {
+#if 1
+    /* Optimization that save one operation and probably a temporary variable. */
+    uint32_t uResult = uY;
+    uResult ^= uZ;
+    uResult &= uX;
+    uResult ^= uY & uZ;
+    return uResult;
+#else
+    /* The original. */
     uint32_t uResult = (uX & uY);
     uResult |= (uX & uZ);
     uResult |= (uY & uZ);
     return uResult;
+#endif
 }
 
 
