@@ -127,6 +127,35 @@ DECLINLINE(void) rtSha1BlockInitBuffered(PRTSHA1CONTEXT pCtx)
 }
 
 
+/** Function 4.1, Ch(x,y,z). */
+DECL_FORCE_INLINE(uint32_t) rtSha1Ch(uint32_t uX, uint32_t uY, uint32_t uZ)
+{
+    uint32_t uResult = uX & uY;
+    uResult ^= ~uX & uZ;
+    return uResult;
+}
+
+
+/** Function 4.1, Parity(x,y,z). */
+DECL_FORCE_INLINE(uint32_t) rtSha1Parity(uint32_t uX, uint32_t uY, uint32_t uZ)
+{
+    uint32_t uResult = uX;
+    uResult ^= uY;
+    uResult ^= uZ;
+    return uResult;
+}
+
+
+/** Function 4.1, Maj(x,y,z). */
+DECL_FORCE_INLINE(uint32_t) rtSha1Maj(uint32_t uX, uint32_t uY, uint32_t uZ)
+{
+    uint32_t uResult = (uX & uY);
+    uResult |= (uX & uZ);
+    uResult |= (uY & uZ);
+    return uResult;
+}
+
+
 /**
  * Process the current block.
  *
@@ -142,7 +171,43 @@ static void rtSha1BlockProcess(PRTSHA1CONTEXT pCtx)
     uint32_t uD = pCtx->AltPrivate.auH[3];
     uint32_t uE = pCtx->AltPrivate.auH[4];
 
-#if 1
+#if 1 /* Fully unrolled version. */
+    register uint32_t const *puW = &pCtx->AltPrivate.auW[0];
+# define SHA1_BODY(a_uW, a_uK, a_fnFt, a_uA, a_uB, a_uC, a_uD, a_uE) \
+        do { \
+            a_uE += a_uW; \
+            a_uE += (a_uK); \
+            a_uE += ASMRotateLeftU32(a_uA, 5); \
+            a_uE += a_fnFt(a_uB, a_uC, a_uD); \
+            a_uB = ASMRotateLeftU32(a_uB, 30); \
+        } while (0)
+# define FIVE_ITERATIONS(a_iStart, a_uK, a_fnFt) \
+    do { \
+        SHA1_BODY(/*puW[a_iStart + 0]*/ *puW++, a_uK, a_fnFt, uA, uB, uC, uD, uE); \
+        SHA1_BODY(/*puW[a_iStart + 1]*/ *puW++, a_uK, a_fnFt, uE, uA, uB, uC, uD); \
+        SHA1_BODY(/*puW[a_iStart + 2]*/ *puW++, a_uK, a_fnFt, uD, uE, uA, uB, uC); \
+        SHA1_BODY(/*puW[a_iStart + 3]*/ *puW++, a_uK, a_fnFt, uC, uD, uE, uA, uB); \
+        SHA1_BODY(/*puW[a_iStart + 4]*/ *puW++, a_uK, a_fnFt, uB, uC, uD, uE, uA); \
+    } while (0)
+# if 0 /* Variation that reduces the code size by a factor of 4 without much loss in preformance. */
+#  define TWENTY_ITERATIONS(a_iFirst, a_uK, a_fnFt) \
+    do { unsigned i = 4; while (i-- > 0) FIVE_ITERATIONS(a_iFirst + (3 - i) * 5, a_uK, a_fnFt); } while (0)
+    /*for (unsigned i = a_iFirst; i < (a_iFirst + 20); i += 5) FIVE_ITERATIONS(i, a_uK, a_fnFt);*/
+# else
+#  define TWENTY_ITERATIONS(a_iFirst, a_uK, a_fnFt) \
+    do { \
+        FIVE_ITERATIONS(a_iFirst +  0, a_uK, a_fnFt); \
+        FIVE_ITERATIONS(a_iFirst +  5, a_uK, a_fnFt); \
+        FIVE_ITERATIONS(a_iFirst + 10, a_uK, a_fnFt); \
+        FIVE_ITERATIONS(a_iFirst + 15, a_uK, a_fnFt); \
+    } while (0)
+# endif
+    TWENTY_ITERATIONS( 0, UINT32_C(0x5a827999), rtSha1Ch);
+    TWENTY_ITERATIONS(20, UINT32_C(0x6ed9eba1), rtSha1Parity);
+    TWENTY_ITERATIONS(40, UINT32_C(0x8f1bbcdc), rtSha1Maj);
+    TWENTY_ITERATIONS(60, UINT32_C(0xca62c1d6), rtSha1Parity);
+
+#elif 0 /* Version avoiding the constant selection. */
     unsigned iWord = 0;
 # define TWENTY_ITERATIONS(a_iWordStop, a_uK, a_uExprBCD) \
         for (; iWord < a_iWordStop; iWord++) \
@@ -159,11 +224,12 @@ static void rtSha1BlockProcess(PRTSHA1CONTEXT pCtx)
             uB = uA; \
             uA = uTemp; \
         } do { } while (0)
-    TWENTY_ITERATIONS(20, UINT32_C(0x5a827999), (uB & uC) | (~uB & uD));
-    TWENTY_ITERATIONS(40, UINT32_C(0x6ed9eba1), uB ^ uC ^ uD);
-    TWENTY_ITERATIONS(60, UINT32_C(0x8f1bbcdc), (uB & uC) | (uB & uD) | (uC & uD));
-    TWENTY_ITERATIONS(80, UINT32_C(0xca62c1d6), uB ^ uC ^ uD);
-#else
+    TWENTY_ITERATIONS(20, UINT32_C(0x5a827999), rtSha1Ch(uB, uC, uD));
+    TWENTY_ITERATIONS(40, UINT32_C(0x6ed9eba1), rtSha1Parity(uB, uC, uD));
+    TWENTY_ITERATIONS(60, UINT32_C(0x8f1bbcdc), rtSha1Maj(uB, uC, uD));
+    TWENTY_ITERATIONS(80, UINT32_C(0xca62c1d6), rtSha1Parity(uB, uC, uD));
+
+#else /* Dead simple implementation. */
     for (unsigned iWord = 0; iWord < RT_ELEMENTS(pCtx->AltPrivate.auW); iWord++)
     {
         uint32_t uTemp = ASMRotateLeftU32(uA, 5);

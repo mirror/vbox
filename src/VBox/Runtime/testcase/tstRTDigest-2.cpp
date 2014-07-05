@@ -35,6 +35,7 @@
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/test.h>
+#include <iprt/thread.h>
 #include <iprt/string.h>
 
 
@@ -102,8 +103,10 @@ static bool testGenericCheckResult(RTCRDIGEST hDigest, uint32_t iTest, TESTRTDIG
  * @param   paTests         The test table.
  * @param   cTests          The number of tests in the table.
  * @param   pszDigestName   The name of the digest.
+ * @param   enmDigestType   The digest enum type value.
  */
-static void testGeneric(const char *pszDigestObjId, TESTRTDIGEST const *paTests, size_t cTests, const char *pszDigestName)
+static void testGeneric(const char *pszDigestObjId, TESTRTDIGEST const *paTests, size_t cTests, const char *pszDigestName,
+                        RTDIGESTTYPE enmDigestType)
 {
     /*
      * Execute the tests.
@@ -153,34 +156,34 @@ static void testGeneric(const char *pszDigestObjId, TESTRTDIGEST const *paTests,
      * Do a quick benchmark.
      */
     RTTESTI_CHECK_RC_RETV(RTCrDigestCreateByObjIdString(&hDigest, pszDigestObjId), VINF_SUCCESS);
-    uint32_t cChunks  = 64;
+
+    /* Warmup. */
+    uint32_t cChunks  = enmDigestType == RTDIGESTTYPE_MD2 ? 12 : 128;
     uint32_t cLeft    = cChunks;
     int      rc       = VINF_SUCCESS;
-
+    RTThreadYield();
     uint64_t uStartTS = RTTimeNanoTS();
     while (cLeft-- > 0)
         rc |= RTCrDigestUpdate(hDigest, g_abRandom72KB, sizeof(g_abRandom72KB));
-    rc |= RTCrDigestFinal(hDigest, NULL, 0);
+    uint64_t cNsPerChunk = (RTTimeNanoTS() - uStartTS) / cChunks;
+    if (!cNsPerChunk)
+        cNsPerChunk = 16000000 / cChunks; /* Time resolution kludge: 16ms. */
+    RTTESTI_CHECK_RETV(rc == VINF_SUCCESS);
+
+    /* Do it for real for about 2 seconds. */
+    RTTESTI_CHECK_RC(RTCrDigestReset(hDigest), VINF_SUCCESS);
+    cChunks = _2G32 / cNsPerChunk;
+    cLeft   = cChunks;
+    RTThreadYield();
+    uStartTS = RTTimeNanoTS();
+    while (cLeft-- > 0)
+        rc |= RTCrDigestUpdate(hDigest, g_abRandom72KB, sizeof(g_abRandom72KB));
     uint64_t cNsElapsed = RTTimeNanoTS() - uStartTS;
     RTTESTI_CHECK(rc == VINF_SUCCESS);
 
-    /* If it was too quick, redo with more chunks. */
-    if (rc == VINF_SUCCESS && cNsElapsed < 100000000 /* 100 ms */)
-    {
-        cChunks  = 1024;
-        cLeft    = cChunks;
-        RTTESTI_CHECK_RC(RTCrDigestReset(hDigest), VINF_SUCCESS);
-
-        uStartTS = RTTimeNanoTS();
-        while (cLeft-- > 0)
-            rc |= RTCrDigestUpdate(hDigest, g_abRandom72KB, sizeof(g_abRandom72KB));
-        rc |= RTCrDigestFinal(hDigest, NULL, 0);
-        cNsElapsed = RTTimeNanoTS() - uStartTS;
-        RTTESTI_CHECK(rc == VINF_SUCCESS);
-    }
-
     RTTestIValueF((uint64_t)cChunks * sizeof(g_abRandom72KB) / _1K / (0.000000001 * cNsElapsed), RTTESTUNIT_KILOBYTES_PER_SEC,
                   "%s throughput", pszDigestName);
+    RTTESTI_CHECK_RC(RTCrDigestRelease(hDigest), 0);
 }
 
 
@@ -379,7 +382,7 @@ static void testMd2(void)
         { &g_abRandom72KB[0],      73728, "2cf3570a90117130c8879cca30dafb39", "MD2 73728 bytes" },
         { &g_abRandom72KB[0x20c9],  9991, "bbba194efa81238e5b613e20e937144e", "MD2 8393 bytes @9991" },
     };
-    testGeneric("1.2.840.113549.2.2", s_abTests, RT_ELEMENTS(s_abTests), "MD2");
+    testGeneric("1.2.840.113549.2.2", s_abTests, RT_ELEMENTS(s_abTests), "MD2", RTDIGESTTYPE_MD2);
 }
 
 
@@ -578,7 +581,7 @@ static void testMd5(void)
         { &g_abRandom72KB[0],     73728, "aef57c3b2ec6e560b51b8094fe34def7", "MD5 73728 bytes" },
         { &g_abRandom72KB[0x20c9], 9991, "6461339c6615d23c704298a313e07cf5", "MD5 8393 bytes @9991" },
     };
-    testGeneric("1.2.840.113549.2.5", s_abTests, RT_ELEMENTS(s_abTests), "MD5");
+    testGeneric("1.2.840.113549.2.5", s_abTests, RT_ELEMENTS(s_abTests), "MD5", RTDIGESTTYPE_MD5);
 }
 
 
@@ -757,7 +760,7 @@ static void testSha1(void)
         { &g_abRandom72KB[0],     73728, "e89f36633ad2745ab2aac50ea7b2fe23e49ba69f", "SHA-1 73728 bytes" },
         { &g_abRandom72KB[0x20c9],  9991, "62001184bacacce3774566d916055d425a85eba5", "SHA-1 8393 bytes @9991" },
     };
-    testGeneric("1.3.14.3.2.26", s_abTests, RT_ELEMENTS(s_abTests), "SHA-1");
+    testGeneric("1.3.14.3.2.26", s_abTests, RT_ELEMENTS(s_abTests), "SHA-1", RTDIGESTTYPE_SHA1);
 }
 
 
@@ -925,7 +928,7 @@ static void testSha256(void)
         { &g_abRandom72KB[0],     73728, "930de9a012e41bcb650a12328a45e3b25f010c2e1b531376ffce4247b3b16faf", "SHA-256 73728 bytes" },
         { &g_abRandom72KB[0x20c9],  9991, "8bd4c6142e36f15385769ebdeb855dcdf542f72d067315472a52ff626946310e", "SHA-256 8393 bytes @9991" },
     };
-    testGeneric("2.16.840.1.101.3.4.2.1", s_abTests, RT_ELEMENTS(s_abTests), "SHA-256");
+    testGeneric("2.16.840.1.101.3.4.2.1", s_abTests, RT_ELEMENTS(s_abTests), "SHA-256", RTDIGESTTYPE_SHA256);
 }
 
 
@@ -963,7 +966,7 @@ static void testSha224(void)
         { RT_STR_TUPLE("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"),
           "75388b16512776cc5dba5da1fd890150b0c6455cb4f58b1952522525", "SHA-224 abcdbc..." },
     };
-    testGeneric("2.16.840.1.101.3.4.2.4", s_abTests, RT_ELEMENTS(s_abTests), "SHA-224");
+    testGeneric("2.16.840.1.101.3.4.2.4", s_abTests, RT_ELEMENTS(s_abTests), "SHA-224", RTDIGESTTYPE_SHA224);
 }
 
 
@@ -1131,7 +1134,7 @@ static void testSha512(void)
         { &g_abRandom72KB[0],     73728, "80bd83278c0a26e0f2f952b44ff31057a33e971ea4d6d2f45097e1ff289c9b3c927152ec8ef972929b9b3222abecc3ed64bebc31779c6178b60b91e00a71f542", "SHA-512 73728 bytes" },
         { &g_abRandom72KB[0x20c9],  9991, "d6ac7c68664df2e34dc6be233b33f8dad196348350b70a4c2c5a78eb54d6e297c819771313d798de7552b7a3cb85370aab25087e189f3be8560d49406ebb6280", "SHA-512 8393 bytes @9991" },
     };
-    testGeneric("2.16.840.1.101.3.4.2.3", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512");
+    testGeneric("2.16.840.1.101.3.4.2.3", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512", RTDIGESTTYPE_SHA512);
 }
 
 
@@ -1169,7 +1172,7 @@ static void testSha512t224(void)
         { RT_STR_TUPLE("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"),
           "23fec5bb94d60b23308192640b0c453335d664734fe40e7268674af9", "SHA-512/256 abcdef..." },
     };
-    testGeneric("2.16.840.1.101.3.4.2.5", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512/224");
+    testGeneric("2.16.840.1.101.3.4.2.5", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512/224", RTDIGESTTYPE_SHA512T224);
 }
 #endif /* IPRT_WITHOUT_SHA512T224 */
 
@@ -1207,7 +1210,7 @@ static void testSha512t256(void)
         { RT_STR_TUPLE("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"),
           "3928e184fb8690f840da3988121d31be65cb9d3ef83ee6146feac861e19b563a", "SHA-512/256 abcdef..." },
     };
-    testGeneric("2.16.840.1.101.3.4.2.6", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512/256");
+    testGeneric("2.16.840.1.101.3.4.2.6", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512/256", RTDIGESTTYPE_SHA512T256);
 }
 #endif /* !IPRT_WITHOUT_SHA512T256 */
 
@@ -1244,7 +1247,7 @@ static void testSha384(void)
         { RT_STR_TUPLE("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"),
           "09330c33f71147e83d192fc782cd1b4753111b173b3b05d22fa08086e3b0f712fcc7c71a557e2db966c3e9fa91746039", "SHA-384 abcdef..." },
     };
-    testGeneric("2.16.840.1.101.3.4.2.2", s_abTests, RT_ELEMENTS(s_abTests), "SHA-384");
+    testGeneric("2.16.840.1.101.3.4.2.2", s_abTests, RT_ELEMENTS(s_abTests), "SHA-384", RTDIGESTTYPE_SHA384);
 }
 
 
