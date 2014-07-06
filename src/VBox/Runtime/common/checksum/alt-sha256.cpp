@@ -31,6 +31,9 @@
 /** The SHA-256 block size (in bytes). */
 #define RTSHA256_BLOCK_SIZE   64U
 
+/** Enables the unrolled code. */
+#define RTSHA1_UNROLLED 1
+
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -67,6 +70,7 @@ AssertCompileMemberSize(RTSHA256ALTPRIVATECTX, auH, RTSHA256_HASH_SIZE);
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+#ifndef RTSHA1_UNROLLED
 /** The K constants */
 static uint32_t const g_auKs[] =
 {
@@ -87,6 +91,7 @@ static uint32_t const g_auKs[] =
     UINT32_C(0x748f82ee), UINT32_C(0x78a5636f), UINT32_C(0x84c87814), UINT32_C(0x8cc70208),
     UINT32_C(0x90befffa), UINT32_C(0xa4506ceb), UINT32_C(0xbef9a3f7), UINT32_C(0xc67178f2),
 };
+#endif /* !RTSHA1_UNROLLED */
 
 
 
@@ -108,19 +113,39 @@ RT_EXPORT_SYMBOL(RTSha256Init);
 /** Function 4.2. */
 DECL_FORCE_INLINE(uint32_t) rtSha256Ch(uint32_t uX, uint32_t uY, uint32_t uZ)
 {
+#if 1
+    /* Optimization that saves one operation and probably a temporary variable. */
+    uint32_t uResult = uY;
+    uResult ^= uZ;
+    uResult &= uX;
+    uResult ^= uZ;
+    return uResult;
+#else
+    /* The original. */
     uint32_t uResult = uX & uY;
     uResult ^= ~uX & uZ;
     return uResult;
+#endif
 }
 
 
 /** Function 4.3. */
 DECL_FORCE_INLINE(uint32_t) rtSha256Maj(uint32_t uX, uint32_t uY, uint32_t uZ)
 {
+#if 1
+    /* Optimization that save one operation and probably a temporary variable. */
+    uint32_t uResult = uY;
+    uResult ^= uZ;
+    uResult &= uX;
+    uResult ^= uY & uZ;
+    return uResult;
+#else
+    /* The original. */
     uint32_t uResult = uX & uY;
     uResult ^= uX & uZ;
     uResult ^= uY & uZ;
     return uResult;
+#endif
 }
 
 
@@ -180,6 +205,39 @@ DECL_FORCE_INLINE(uint32_t) rtSha256SmallSigma1(uint32_t uX)
  */
 DECLINLINE(void) rtSha256BlockInit(PRTSHA256CONTEXT pCtx, uint8_t const *pbBlock)
 {
+#ifdef RTSHA1_UNROLLED
+    uint32_t const *puSrc = (uint32_t const *)pbBlock;
+    uint32_t       *puW   = &pCtx->AltPrivate.auW[0];
+    Assert(!((uintptr_t)puSrc & 3));
+    Assert(!((uintptr_t)puW & 3));
+
+    /* Copy and byte-swap the block. Initializing the rest of the Ws are done
+       in the processing loop. */
+# ifdef RT_LITTLE_ENDIAN
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+# else
+    memcpy(puW, puSrc, RTSHA1_BLOCK_SIZE);
+# endif
+
+#else  /* !RTSHA1_UNROLLED */
     uint32_t const *pu32Block = (uint32_t const *)pbBlock;
     Assert(!((uintptr_t)pu32Block & 3));
 
@@ -195,6 +253,7 @@ DECLINLINE(void) rtSha256BlockInit(PRTSHA256CONTEXT pCtx, uint8_t const *pbBlock
         u32         += pCtx->AltPrivate.auW[iWord - 16];
         pCtx->AltPrivate.auW[iWord] = u32;
     }
+#endif /* !RTSHA1_UNROLLED */
 }
 
 
@@ -205,6 +264,35 @@ DECLINLINE(void) rtSha256BlockInit(PRTSHA256CONTEXT pCtx, uint8_t const *pbBlock
  */
 DECLINLINE(void) rtSha256BlockInitBuffered(PRTSHA256CONTEXT pCtx)
 {
+#ifdef RTSHA1_UNROLLED
+    uint32_t       *puW   = &pCtx->AltPrivate.auW[0];
+    Assert(!((uintptr_t)puW & 3));
+
+    /* Do the byte swap if necessary. Initializing the rest of the Ws are done
+       in the processing loop. */
+# ifdef RT_LITTLE_ENDIAN
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+# endif
+
+#else  /* !RTSHA1_UNROLLED */
     unsigned iWord;
     for (iWord = 0; iWord < 16; iWord++)
         pCtx->AltPrivate.auW[iWord] = RT_BE2H_U32(pCtx->AltPrivate.auW[iWord]);
@@ -217,6 +305,7 @@ DECLINLINE(void) rtSha256BlockInitBuffered(PRTSHA256CONTEXT pCtx)
         u32         += pCtx->AltPrivate.auW[iWord - 16];
         pCtx->AltPrivate.auW[iWord] = u32;
     }
+#endif /* !RTSHA1_UNROLLED */
 }
 
 
@@ -238,6 +327,59 @@ static void rtSha256BlockProcess(PRTSHA256CONTEXT pCtx)
     uint32_t uG = pCtx->AltPrivate.auH[6];
     uint32_t uH = pCtx->AltPrivate.auH[7];
 
+#ifdef RTSHA1_UNROLLED
+    uint32_t *puW = &pCtx->AltPrivate.auW[0];
+# define RTSHA256_BODY(a_iWord, a_uK, a_uA, a_uB, a_uC, a_uD, a_uE, a_uF, a_uG, a_uH) \
+        do { \
+            if ((a_iWord) < 16) \
+                a_uH += *puW++; \
+            else \
+            { \
+                uint32_t u32 = puW[-16]; \
+                u32 += rtSha256SmallSigma0(puW[-15]); \
+                u32 += puW[-7]; \
+                u32 += rtSha256SmallSigma1(puW[-2]); \
+                if (a_iWord < 64-2) *puW++ = u32; else puW++; \
+                a_uH += u32; \
+            } \
+            \
+            a_uH += rtSha256CapitalSigma1(a_uE); \
+            a_uH += a_uK; \
+            a_uH += rtSha256Ch(a_uE, a_uF, a_uG); \
+            a_uD += a_uH; \
+            \
+            a_uH += rtSha256CapitalSigma0(a_uA); \
+            a_uH += rtSha256Maj(a_uA, a_uB, a_uC); \
+        } while (0)
+# define RTSHA256_EIGHT(a_uK0, a_uK1, a_uK2, a_uK3, a_uK4, a_uK5, a_uK6, a_uK7, a_iFirst) \
+        do { \
+            RTSHA256_BODY(a_iFirst + 0, a_uK0, uA, uB, uC, uD, uE, uF, uG, uH); \
+            RTSHA256_BODY(a_iFirst + 1, a_uK1, uH, uA, uB, uC, uD, uE, uF, uG); \
+            RTSHA256_BODY(a_iFirst + 2, a_uK2, uG, uH, uA, uB, uC, uD, uE, uF); \
+            RTSHA256_BODY(a_iFirst + 3, a_uK3, uF, uG, uH, uA, uB, uC, uD, uE); \
+            RTSHA256_BODY(a_iFirst + 4, a_uK4, uE, uF, uG, uH, uA, uB, uC, uD); \
+            RTSHA256_BODY(a_iFirst + 5, a_uK5, uD, uE, uF, uG, uH, uA, uB, uC); \
+            RTSHA256_BODY(a_iFirst + 6, a_uK6, uC, uD, uE, uF, uG, uH, uA, uB); \
+            RTSHA256_BODY(a_iFirst + 7, a_uK7, uB, uC, uD, uE, uF, uG, uH, uA); \
+        } while (0)
+    RTSHA256_EIGHT(UINT32_C(0x428a2f98), UINT32_C(0x71374491), UINT32_C(0xb5c0fbcf), UINT32_C(0xe9b5dba5),
+                   UINT32_C(0x3956c25b), UINT32_C(0x59f111f1), UINT32_C(0x923f82a4), UINT32_C(0xab1c5ed5), 0);
+    RTSHA256_EIGHT(UINT32_C(0xd807aa98), UINT32_C(0x12835b01), UINT32_C(0x243185be), UINT32_C(0x550c7dc3),
+                   UINT32_C(0x72be5d74), UINT32_C(0x80deb1fe), UINT32_C(0x9bdc06a7), UINT32_C(0xc19bf174), 8);
+    RTSHA256_EIGHT(UINT32_C(0xe49b69c1), UINT32_C(0xefbe4786), UINT32_C(0x0fc19dc6), UINT32_C(0x240ca1cc),
+                   UINT32_C(0x2de92c6f), UINT32_C(0x4a7484aa), UINT32_C(0x5cb0a9dc), UINT32_C(0x76f988da), 16);
+    RTSHA256_EIGHT(UINT32_C(0x983e5152), UINT32_C(0xa831c66d), UINT32_C(0xb00327c8), UINT32_C(0xbf597fc7),
+                   UINT32_C(0xc6e00bf3), UINT32_C(0xd5a79147), UINT32_C(0x06ca6351), UINT32_C(0x14292967), 24);
+    RTSHA256_EIGHT(UINT32_C(0x27b70a85), UINT32_C(0x2e1b2138), UINT32_C(0x4d2c6dfc), UINT32_C(0x53380d13),
+                   UINT32_C(0x650a7354), UINT32_C(0x766a0abb), UINT32_C(0x81c2c92e), UINT32_C(0x92722c85), 32);
+    RTSHA256_EIGHT(UINT32_C(0xa2bfe8a1), UINT32_C(0xa81a664b), UINT32_C(0xc24b8b70), UINT32_C(0xc76c51a3),
+                   UINT32_C(0xd192e819), UINT32_C(0xd6990624), UINT32_C(0xf40e3585), UINT32_C(0x106aa070), 40);
+    RTSHA256_EIGHT(UINT32_C(0x19a4c116), UINT32_C(0x1e376c08), UINT32_C(0x2748774c), UINT32_C(0x34b0bcb5),
+                   UINT32_C(0x391c0cb3), UINT32_C(0x4ed8aa4a), UINT32_C(0x5b9cca4f), UINT32_C(0x682e6ff3), 48);
+    RTSHA256_EIGHT(UINT32_C(0x748f82ee), UINT32_C(0x78a5636f), UINT32_C(0x84c87814), UINT32_C(0x8cc70208),
+                   UINT32_C(0x90befffa), UINT32_C(0xa4506ceb), UINT32_C(0xbef9a3f7), UINT32_C(0xc67178f2), 56);
+
+#else  /* !RTSHA1_UNROLLED */
     for (unsigned iWord = 0; iWord < RT_ELEMENTS(pCtx->AltPrivate.auW); iWord++)
     {
         uint32_t uT1 = uH;
@@ -258,6 +400,7 @@ static void rtSha256BlockProcess(PRTSHA256CONTEXT pCtx)
         uB = uA;
         uA = uT1 + uT2;
     }
+#endif /* !RTSHA1_UNROLLED */
 
     pCtx->AltPrivate.auH[0] += uA;
     pCtx->AltPrivate.auH[1] += uB;
