@@ -38,9 +38,17 @@ BEGIN
     VALUE "CompanyName",     VBOX_RC_COMPANY_NAME
     VALUE "FileDescription", VBOX_PRODUCT " Manager\0"
     VALUE "FileVersion",     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
+#ifdef VBOXR3_HARDENED_DLL
     VALUE "InternalName",    "VirtualBox.exe\0"
+#else
+    VALUE "InternalName",    "VirtualBox.dll\0"
+#endif
     VALUE "LegalCopyright",  VBOX_RC_LEGAL_COPYRIGHT
+#ifdef VBOXR3_HARDENED_DLL
+    VALUE "OriginalFilename","VirtualBox.dll\0"
+#else
     VALUE "OriginalFilename","VirtualBox.exe\0"
+#endif
     VALUE "ProductName",     VBOX_PRODUCT "\0"
     VALUE "ProductVersion",  VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
     END

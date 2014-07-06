@@ -36,6 +36,7 @@ PROGRAMS += tstSDL
 #
 VBoxSDLHardened_TEMPLATE = VBOXR3HARDENEDEXE
 VBoxSDLHardened_SOURCES = VBoxSDLHardened.cpp
+VBoxSDLHardened_SOURCES.win = $(VBoxSDL_0_OUTDIR)/VBoxSDL-icon.rc
 VBoxSDLHardened_NAME = VBoxSDL
 
 
