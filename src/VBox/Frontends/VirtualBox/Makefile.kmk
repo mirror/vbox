@@ -54,6 +54,7 @@ include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
 #
 VirtualBoxHardened_TEMPLATE = VBOXR3HARDENEDEXE
 VirtualBoxHardened_SOURCES = src/hardenedmain.cpp
+VirtualBoxHardened_SOURCES.win = src/platform/win/VirtualBox.rc
 VirtualBoxHardened_NAME = VirtualBox
 VirtualBoxHardened_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 VirtualBoxHardened_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
@@ -97,6 +98,7 @@ VirtualBox_DEFS          += \
 	$(if $(VBOX_WITH_UDPTUNNEL),VBOX_WITH_UDPTUNNEL) \
 	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK) \
 	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI) \
+	$(if $(VBOX_WITH_HARDENING),VBOXR3_HARDENED_DLL) \
 	$(if $(VBOX_WITH_DRAG_AND_DROP),VBOX_WITH_DRAG_AND_DROP) \
 	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH) \
 	$(if $(VBOX_WITH_CRHGSMI),VBOX_WITH_CRHGSMI) \
@@ -133,6 +135,7 @@ VirtualBox_src/VBoxAboutDlg.cpp_DEFS += \
 VirtualBox_src/main.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
 endif
+
 
 
 VBOX_GUI_INC_DIRS = \

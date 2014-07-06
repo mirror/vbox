@@ -36,6 +36,7 @@ endif
 #
 VBoxHeadlessHardened_TEMPLATE = VBOXR3HARDENEDEXE
 VBoxHeadlessHardened_SOURCES = VBoxHeadlessHardened.cpp
+VBoxHeadlessHardened_SOURCES.win = $(VBoxHeadless_0_OUTDIR)/VBoxHeadless-icon.rc
 VBoxHeadlessHardened_NAME = VBoxHeadless
 
 
@@ -51,6 +52,14 @@ endif
 ifdef VBOX_WITH_HARDENING
  VBoxHeadless_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxHeadless.dylib
 endif
+
+
+# Icon include file.
+VBoxHeadless_SOURCES.win += $(VBoxHeadless_0_OUTDIR)/VBoxHeadless-icon.rc
+VBoxHeadless_CLEAN.win   += $(VBoxHeadless_0_OUTDIR)/VBoxHeadless-icon.rc
+$$(VBoxHeadless_0_OUTDIR)/VBoxHeadless-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxHeadless_DEFPATH)/Makefile.kmk | $$(dir $$@)
+	$(RM) -f $@
+	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
