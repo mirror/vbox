@@ -31,6 +31,11 @@
 /** The SHA-1 block size (in bytes). */
 #define RTSHA1_BLOCK_SIZE   64U
 
+/** Enables the unrolled init code. */
+#define RTSHA1_UNROLLED_INIT 1
+/** Enables the fully unrolled block processing code. */
+#define RTSHA1_FULLY_UNROLLED_BLOCK_PROCESSING 1
+
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -87,6 +92,88 @@ RT_EXPORT_SYMBOL(RTSha1Init);
  */
 DECLINLINE(void) rtSha1BlockInit(PRTSHA1CONTEXT pCtx, uint8_t const *pbBlock)
 {
+#ifdef RTSHA1_UNROLLED_INIT
+    uint32_t const *puSrc = (uint32_t const *)pbBlock;
+    uint32_t       *puW   = &pCtx->AltPrivate.auW[0];
+    Assert(!((uintptr_t)puSrc & 3));
+    Assert(!((uintptr_t)puW & 3));
+
+    /* Copy and byte-swap the block. */
+# ifdef RT_LITTLE_ENDIAN
+    uint32_t  uS1;
+    *puW++ = uS1 = ASMByteSwapU32(*puSrc++);
+    uint32_t uS2;
+    *puW++ = uS2 = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+# else
+    memcpy(puW, puSrc, RTSHA1_BLOCK_SIZE);
+    uint32_t uS1 = puW[-16];
+    uint32_t uS2 = puW[-15];
+# endif
+
+    /* Initialize W16...W79.*/
+/** The uS1/uS2 trick here doesn't save much, but it might shave a little bit
+ * off and we've got enough registers for it on AMD64. */
+# define RTSHA1_HIGH_INIT_TWO() \
+        do { \
+            u32          = uS1; /*puW[-16];*/ \
+            u32         ^= uS1 = puW[-14]; \
+            u32         ^= puW[ -8]; \
+            u32         ^= puW[ -3]; \
+            *puW++ = ASMRotateLeftU32(u32, 1); \
+            \
+            u32          = uS2; /*puW[-16];*/ \
+            u32         ^= uS2 = puW[-14]; \
+            u32         ^= puW[ -8]; \
+            u32         ^= puW[ -3]; \
+            *puW++ = ASMRotateLeftU32(u32, 1); \
+        } while (0)
+# define RTSHA1_HIGH_INIT_EIGHT() \
+        RTSHA1_HIGH_INIT_TWO(); RTSHA1_HIGH_INIT_TWO(); RTSHA1_HIGH_INIT_TWO(); RTSHA1_HIGH_INIT_TWO()
+
+/** This is a variation on the standard one which have some better alignment
+ *  properties (no -3 access), but probably more importantly, access memory
+ *  we've accessed before by going futher back. */
+# define RTSHA1_HIGH_INIT_ONE_HIGH() \
+        do { \
+            u32          = puW[-32]; \
+            u32         ^= puW[-28]; \
+            u32         ^= puW[-16]; \
+            u32         ^= puW[ -6]; \
+            *puW++ = ASMRotateLeftU32(u32, 2); \
+        } while (0)
+# define RTSHA1_HIGH_INIT_EIGHT_HIGH() \
+        RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH(); \
+        RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH()
+
+    uint32_t u32;
+    RTSHA1_HIGH_INIT_EIGHT();
+    RTSHA1_HIGH_INIT_EIGHT();
+    RTSHA1_HIGH_INIT_EIGHT();
+    RTSHA1_HIGH_INIT_EIGHT();
+
+    RTSHA1_HIGH_INIT_EIGHT_HIGH();
+    RTSHA1_HIGH_INIT_EIGHT_HIGH();
+    RTSHA1_HIGH_INIT_EIGHT_HIGH();
+    RTSHA1_HIGH_INIT_EIGHT_HIGH();
+
+#else  /* !RTSHA1_UNROLLED_INIT */
     uint32_t const *pu32Block = (uint32_t const *)pbBlock;
     Assert(!((uintptr_t)pu32Block & 3));
 
@@ -102,6 +189,7 @@ DECLINLINE(void) rtSha1BlockInit(PRTSHA1CONTEXT pCtx, uint8_t const *pbBlock)
         u32         ^= pCtx->AltPrivate.auW[iWord -  3];
         pCtx->AltPrivate.auW[iWord] = ASMRotateLeftU32(u32, 1);
     }
+#endif /* !RTSHA1_UNROLLED_INIT */
 }
 
 
@@ -112,6 +200,51 @@ DECLINLINE(void) rtSha1BlockInit(PRTSHA1CONTEXT pCtx, uint8_t const *pbBlock)
  */
 DECLINLINE(void) rtSha1BlockInitBuffered(PRTSHA1CONTEXT pCtx)
 {
+#ifdef RTSHA1_UNROLLED_INIT
+    uint32_t       *puW   = &pCtx->AltPrivate.auW[0];
+    Assert(!((uintptr_t)puW & 3));
+
+# ifdef RT_LITTLE_ENDIAN
+    /* Do the byte swap. */
+    uint32_t  uS1;
+    *puW = uS1 = ASMByteSwapU32(*puW); puW++;
+    uint32_t uS2;
+    *puW = uS2 = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+# else
+    uint32_t uS1 = puW[-16];
+    uint32_t uS2 = puW[-15];
+# endif
+
+    /* Initialize W16...W79. */
+    uint32_t u32;
+    RTSHA1_HIGH_INIT_EIGHT();
+    RTSHA1_HIGH_INIT_EIGHT();
+    RTSHA1_HIGH_INIT_EIGHT();
+    RTSHA1_HIGH_INIT_EIGHT();
+
+    RTSHA1_HIGH_INIT_EIGHT_HIGH();
+    RTSHA1_HIGH_INIT_EIGHT_HIGH();
+    RTSHA1_HIGH_INIT_EIGHT_HIGH();
+    RTSHA1_HIGH_INIT_EIGHT_HIGH();
+
+#else  /* !RTSHA1_UNROLLED_INIT */
     unsigned iWord;
     for (iWord = 0; iWord < 16; iWord++)
         pCtx->AltPrivate.auW[iWord] = RT_BE2H_U32(pCtx->AltPrivate.auW[iWord]);
@@ -124,6 +257,7 @@ DECLINLINE(void) rtSha1BlockInitBuffered(PRTSHA1CONTEXT pCtx)
         u32         ^= pCtx->AltPrivate.auW[iWord -  3];
         pCtx->AltPrivate.auW[iWord] = ASMRotateLeftU32(u32, 1);
     }
+#endif /* !RTSHA1_UNROLLED_INIT */
 }
 
 
@@ -191,8 +325,10 @@ static void rtSha1BlockProcess(PRTSHA1CONTEXT pCtx)
     uint32_t uD = pCtx->AltPrivate.auH[3];
     uint32_t uE = pCtx->AltPrivate.auH[4];
 
-#if 1 /* Fully unrolled version. */
-    register uint32_t const *puW = &pCtx->AltPrivate.auW[0];
+#ifdef RTSHA1_FULLY_UNROLLED_BLOCK_PROCESSING
+    /* This fully unrolled version will avoid the variable rotation by
+       embedding it into the loop unrolling. */
+    uint32_t const *puW = &pCtx->AltPrivate.auW[0];
 # define SHA1_BODY(a_uW, a_uK, a_fnFt, a_uA, a_uB, a_uC, a_uD, a_uE) \
         do { \
             a_uE += a_uW; \
