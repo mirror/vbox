@@ -32,7 +32,7 @@
 #define RTSHA256_BLOCK_SIZE   64U
 
 /** Enables the unrolled code. */
-#define RTSHA1_UNROLLED 1
+#define RTSHA256_UNROLLED 1
 
 
 /*******************************************************************************
@@ -70,7 +70,7 @@ AssertCompileMemberSize(RTSHA256ALTPRIVATECTX, auH, RTSHA256_HASH_SIZE);
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#ifndef RTSHA1_UNROLLED
+#ifndef RTSHA256_UNROLLED
 /** The K constants */
 static uint32_t const g_auKs[] =
 {
@@ -91,7 +91,7 @@ static uint32_t const g_auKs[] =
     UINT32_C(0x748f82ee), UINT32_C(0x78a5636f), UINT32_C(0x84c87814), UINT32_C(0x8cc70208),
     UINT32_C(0x90befffa), UINT32_C(0xa4506ceb), UINT32_C(0xbef9a3f7), UINT32_C(0xc67178f2),
 };
-#endif /* !RTSHA1_UNROLLED */
+#endif /* !RTSHA256_UNROLLED */
 
 
 
@@ -205,7 +205,7 @@ DECL_FORCE_INLINE(uint32_t) rtSha256SmallSigma1(uint32_t uX)
  */
 DECLINLINE(void) rtSha256BlockInit(PRTSHA256CONTEXT pCtx, uint8_t const *pbBlock)
 {
-#ifdef RTSHA1_UNROLLED
+#ifdef RTSHA256_UNROLLED
     uint32_t const *puSrc = (uint32_t const *)pbBlock;
     uint32_t       *puW   = &pCtx->AltPrivate.auW[0];
     Assert(!((uintptr_t)puSrc & 3));
@@ -234,10 +234,10 @@ DECLINLINE(void) rtSha256BlockInit(PRTSHA256CONTEXT pCtx, uint8_t const *pbBlock
     *puW++ = ASMByteSwapU32(*puSrc++);
     *puW++ = ASMByteSwapU32(*puSrc++);
 # else
-    memcpy(puW, puSrc, RTSHA1_BLOCK_SIZE);
+    memcpy(puW, puSrc, RTSHA256_BLOCK_SIZE);
 # endif
 
-#else  /* !RTSHA1_UNROLLED */
+#else  /* !RTSHA256_UNROLLED */
     uint32_t const *pu32Block = (uint32_t const *)pbBlock;
     Assert(!((uintptr_t)pu32Block & 3));
 
@@ -253,7 +253,7 @@ DECLINLINE(void) rtSha256BlockInit(PRTSHA256CONTEXT pCtx, uint8_t const *pbBlock
         u32         += pCtx->AltPrivate.auW[iWord - 16];
         pCtx->AltPrivate.auW[iWord] = u32;
     }
-#endif /* !RTSHA1_UNROLLED */
+#endif /* !RTSHA256_UNROLLED */
 }
 
 
@@ -264,7 +264,7 @@ DECLINLINE(void) rtSha256BlockInit(PRTSHA256CONTEXT pCtx, uint8_t const *pbBlock
  */
 DECLINLINE(void) rtSha256BlockInitBuffered(PRTSHA256CONTEXT pCtx)
 {
-#ifdef RTSHA1_UNROLLED
+#ifdef RTSHA256_UNROLLED
     uint32_t       *puW   = &pCtx->AltPrivate.auW[0];
     Assert(!((uintptr_t)puW & 3));
 
@@ -292,7 +292,7 @@ DECLINLINE(void) rtSha256BlockInitBuffered(PRTSHA256CONTEXT pCtx)
     *puW = ASMByteSwapU32(*puW); puW++;
 # endif
 
-#else  /* !RTSHA1_UNROLLED */
+#else  /* !RTSHA256_UNROLLED */
     unsigned iWord;
     for (iWord = 0; iWord < 16; iWord++)
         pCtx->AltPrivate.auW[iWord] = RT_BE2H_U32(pCtx->AltPrivate.auW[iWord]);
@@ -305,7 +305,7 @@ DECLINLINE(void) rtSha256BlockInitBuffered(PRTSHA256CONTEXT pCtx)
         u32         += pCtx->AltPrivate.auW[iWord - 16];
         pCtx->AltPrivate.auW[iWord] = u32;
     }
-#endif /* !RTSHA1_UNROLLED */
+#endif /* !RTSHA256_UNROLLED */
 }
 
 
@@ -327,7 +327,7 @@ static void rtSha256BlockProcess(PRTSHA256CONTEXT pCtx)
     uint32_t uG = pCtx->AltPrivate.auH[6];
     uint32_t uH = pCtx->AltPrivate.auH[7];
 
-#ifdef RTSHA1_UNROLLED
+#ifdef RTSHA256_UNROLLED
     uint32_t *puW = &pCtx->AltPrivate.auW[0];
 # define RTSHA256_BODY(a_iWord, a_uK, a_uA, a_uB, a_uC, a_uD, a_uE, a_uF, a_uG, a_uH) \
         do { \
@@ -379,7 +379,7 @@ static void rtSha256BlockProcess(PRTSHA256CONTEXT pCtx)
     RTSHA256_EIGHT(UINT32_C(0x748f82ee), UINT32_C(0x78a5636f), UINT32_C(0x84c87814), UINT32_C(0x8cc70208),
                    UINT32_C(0x90befffa), UINT32_C(0xa4506ceb), UINT32_C(0xbef9a3f7), UINT32_C(0xc67178f2), 56);
 
-#else  /* !RTSHA1_UNROLLED */
+#else  /* !RTSHA256_UNROLLED */
     for (unsigned iWord = 0; iWord < RT_ELEMENTS(pCtx->AltPrivate.auW); iWord++)
     {
         uint32_t uT1 = uH;
@@ -400,7 +400,7 @@ static void rtSha256BlockProcess(PRTSHA256CONTEXT pCtx)
         uB = uA;
         uA = uT1 + uT2;
     }
-#endif /* !RTSHA1_UNROLLED */
+#endif /* !RTSHA256_UNROLLED */
 
     pCtx->AltPrivate.auH[0] += uA;
     pCtx->AltPrivate.auH[1] += uB;
