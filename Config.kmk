@@ -802,6 +802,9 @@ endif
 # Enable the system wide support service/daemon.
 # Very sketchy work in progress.
 #VBOX_WITH_SUPSVC = 1
+
+# Continue to support Vista w/o any service pack, at least for now.
+VBOX_WITH_VISTA_NO_SP = 1
 ## @}
 
 
