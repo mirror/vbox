@@ -5545,6 +5545,86 @@ VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry
 }
 
 /**
+ * Lists all filters and their capabilities in a caller-provided buffer.
+ *
+ * @return  VBox status code.
+ *          VERR_BUFFER_OVERFLOW if not enough space is passed.
+ * @param   cEntriesAlloc   Number of list entries available.
+ * @param   pEntries        Pointer to array for the entries.
+ * @param   pcEntriesUsed   Number of entries returned.
+ */
+VBOXDDU_DECL(int) VDFilterInfo(unsigned cEntriesAlloc, PVDFILTERINFO pEntries,
+                               unsigned *pcEntriesUsed)
+{
+    int rc = VINF_SUCCESS;
+    unsigned cEntries = 0;
+
+    LogFlowFunc(("cEntriesAlloc=%u pEntries=%#p pcEntriesUsed=%#p\n", cEntriesAlloc, pEntries, pcEntriesUsed));
+    /* Check arguments. */
+    AssertMsgReturn(cEntriesAlloc,
+                    ("cEntriesAlloc=%u\n", cEntriesAlloc),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(pEntries),
+                    ("pEntries=%#p\n", pEntries),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(pcEntriesUsed),
+                    ("pcEntriesUsed=%#p\n", pcEntriesUsed),
+                    VERR_INVALID_PARAMETER);
+    if (!g_apBackends)
+        VDInit();
+
+    if (cEntriesAlloc < g_cFilterBackends)
+    {
+        *pcEntriesUsed = g_cFilterBackends;
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    for (unsigned i = 0; i < g_cFilterBackends; i++)
+    {
+        pEntries[i].pszFilter = g_apFilterBackends[i]->pszBackendName;
+        pEntries[i].paConfigInfo = g_apFilterBackends[i]->paConfigInfo;
+    }
+
+    LogFlowFunc(("returns %Rrc *pcEntriesUsed=%u\n", rc, cEntries));
+    *pcEntriesUsed = g_cFilterBackends;
+    return rc;
+}
+
+/**
+ * Lists the capabilities of a filter identified by its name.
+ *
+ * @return  VBox status code.
+ * @param   pszFilter       The filter name (case insensitive).
+ * @param   pEntries        Pointer to an entry.
+ */
+VBOXDDU_DECL(int) VDFilterInfoOne(const char *pszFilter, PVDFILTERINFO pEntry)
+{
+    LogFlowFunc(("pszFilter=%#p pEntry=%#p\n", pszFilter, pEntry));
+    /* Check arguments. */
+    AssertMsgReturn(VALID_PTR(pszFilter),
+                    ("pszFilter=%#p\n", pszFilter),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(pEntry),
+                    ("pEntry=%#p\n", pEntry),
+                    VERR_INVALID_PARAMETER);
+    if (!g_apBackends)
+        VDInit();
+
+    /* Go through loaded backends. */
+    for (unsigned i = 0; i < g_cFilterBackends; i++)
+    {
+        if (!RTStrICmp(pszFilter, g_apFilterBackends[i]->pszBackendName))
+        {
+            pEntry->pszFilter = g_apFilterBackends[i]->pszBackendName;
+            pEntry->paConfigInfo = g_apFilterBackends[i]->paConfigInfo;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+/**
  * Allocates and initializes an empty HDD container.
  * No image files are opened.
  *
