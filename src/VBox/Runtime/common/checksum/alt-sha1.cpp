@@ -31,10 +31,8 @@
 /** The SHA-1 block size (in bytes). */
 #define RTSHA1_BLOCK_SIZE   64U
 
-/** Enables the unrolled init code. */
-#define RTSHA1_UNROLLED_INIT 1
-/** Enables the fully unrolled block processing code. */
-#define RTSHA1_FULLY_UNROLLED_BLOCK_PROCESSING 1
+/** Enables the unrolled code. */
+#define RTSHA1_UNROLLED 1
 
 
 /*******************************************************************************
@@ -92,18 +90,17 @@ RT_EXPORT_SYMBOL(RTSha1Init);
  */
 DECLINLINE(void) rtSha1BlockInit(PRTSHA1CONTEXT pCtx, uint8_t const *pbBlock)
 {
-#ifdef RTSHA1_UNROLLED_INIT
+#ifdef RTSHA1_UNROLLED
     uint32_t const *puSrc = (uint32_t const *)pbBlock;
     uint32_t       *puW   = &pCtx->AltPrivate.auW[0];
     Assert(!((uintptr_t)puSrc & 3));
     Assert(!((uintptr_t)puW & 3));
 
-    /* Copy and byte-swap the block. */
+    /* Copy and byte-swap the block. Initializing the rest of the Ws are done
+       in the processing loop. */
 # ifdef RT_LITTLE_ENDIAN
-    uint32_t  uS1;
-    *puW++ = uS1 = ASMByteSwapU32(*puSrc++);
-    uint32_t uS2;
-    *puW++ = uS2 = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
+    *puW++ = ASMByteSwapU32(*puSrc++);
     *puW++ = ASMByteSwapU32(*puSrc++);
     *puW++ = ASMByteSwapU32(*puSrc++);
 
@@ -123,57 +120,9 @@ DECLINLINE(void) rtSha1BlockInit(PRTSHA1CONTEXT pCtx, uint8_t const *pbBlock)
     *puW++ = ASMByteSwapU32(*puSrc++);
 # else
     memcpy(puW, puSrc, RTSHA1_BLOCK_SIZE);
-    uint32_t uS1 = puW[-16];
-    uint32_t uS2 = puW[-15];
 # endif
 
-    /* Initialize W16...W79.*/
-/** The uS1/uS2 trick here doesn't save much, but it might shave a little bit
- * off and we've got enough registers for it on AMD64. */
-# define RTSHA1_HIGH_INIT_TWO() \
-        do { \
-            u32          = uS1; /*puW[-16];*/ \
-            u32         ^= uS1 = puW[-14]; \
-            u32         ^= puW[ -8]; \
-            u32         ^= puW[ -3]; \
-            *puW++ = ASMRotateLeftU32(u32, 1); \
-            \
-            u32          = uS2; /*puW[-16];*/ \
-            u32         ^= uS2 = puW[-14]; \
-            u32         ^= puW[ -8]; \
-            u32         ^= puW[ -3]; \
-            *puW++ = ASMRotateLeftU32(u32, 1); \
-        } while (0)
-# define RTSHA1_HIGH_INIT_EIGHT() \
-        RTSHA1_HIGH_INIT_TWO(); RTSHA1_HIGH_INIT_TWO(); RTSHA1_HIGH_INIT_TWO(); RTSHA1_HIGH_INIT_TWO()
-
-/** This is a variation on the standard one which have some better alignment
- *  properties (no -3 access), but probably more importantly, access memory
- *  we've accessed before by going futher back. */
-# define RTSHA1_HIGH_INIT_ONE_HIGH() \
-        do { \
-            u32          = puW[-32]; \
-            u32         ^= puW[-28]; \
-            u32         ^= puW[-16]; \
-            u32         ^= puW[ -6]; \
-            *puW++ = ASMRotateLeftU32(u32, 2); \
-        } while (0)
-# define RTSHA1_HIGH_INIT_EIGHT_HIGH() \
-        RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH(); \
-        RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH(); RTSHA1_HIGH_INIT_ONE_HIGH()
-
-    uint32_t u32;
-    RTSHA1_HIGH_INIT_EIGHT();
-    RTSHA1_HIGH_INIT_EIGHT();
-    RTSHA1_HIGH_INIT_EIGHT();
-    RTSHA1_HIGH_INIT_EIGHT();
-
-    RTSHA1_HIGH_INIT_EIGHT_HIGH();
-    RTSHA1_HIGH_INIT_EIGHT_HIGH();
-    RTSHA1_HIGH_INIT_EIGHT_HIGH();
-    RTSHA1_HIGH_INIT_EIGHT_HIGH();
-
-#else  /* !RTSHA1_UNROLLED_INIT */
+#else  /* !RTSHA1_UNROLLED */
     uint32_t const *pu32Block = (uint32_t const *)pbBlock;
     Assert(!((uintptr_t)pu32Block & 3));
 
@@ -189,7 +138,7 @@ DECLINLINE(void) rtSha1BlockInit(PRTSHA1CONTEXT pCtx, uint8_t const *pbBlock)
         u32         ^= pCtx->AltPrivate.auW[iWord -  3];
         pCtx->AltPrivate.auW[iWord] = ASMRotateLeftU32(u32, 1);
     }
-#endif /* !RTSHA1_UNROLLED_INIT */
+#endif /* !RTSHA1_UNROLLED */
 }
 
 
@@ -200,19 +149,13 @@ DECLINLINE(void) rtSha1BlockInit(PRTSHA1CONTEXT pCtx, uint8_t const *pbBlock)
  */
 DECLINLINE(void) rtSha1BlockInitBuffered(PRTSHA1CONTEXT pCtx)
 {
-#ifdef RTSHA1_UNROLLED_INIT
+#ifdef RTSHA1_UNROLLED
     uint32_t       *puW   = &pCtx->AltPrivate.auW[0];
     Assert(!((uintptr_t)puW & 3));
 
+    /* Do the byte swap if necessary. Initializing the rest of the Ws are done
+       in the processing loop. */
 # ifdef RT_LITTLE_ENDIAN
-    /* Do the byte swap. */
-    uint32_t  uS1;
-    *puW = uS1 = ASMByteSwapU32(*puW); puW++;
-    uint32_t uS2;
-    *puW = uS2 = ASMByteSwapU32(*puW); puW++;
-    *puW = ASMByteSwapU32(*puW); puW++;
-    *puW = ASMByteSwapU32(*puW); puW++;
-
     *puW = ASMByteSwapU32(*puW); puW++;
     *puW = ASMByteSwapU32(*puW); puW++;
     *puW = ASMByteSwapU32(*puW); puW++;
@@ -227,22 +170,12 @@ DECLINLINE(void) rtSha1BlockInitBuffered(PRTSHA1CONTEXT pCtx)
     *puW = ASMByteSwapU32(*puW); puW++;
     *puW = ASMByteSwapU32(*puW); puW++;
     *puW = ASMByteSwapU32(*puW); puW++;
-# else
-    uint32_t uS1 = puW[-16];
-    uint32_t uS2 = puW[-15];
+
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
 # endif
-
-    /* Initialize W16...W79. */
-    uint32_t u32;
-    RTSHA1_HIGH_INIT_EIGHT();
-    RTSHA1_HIGH_INIT_EIGHT();
-    RTSHA1_HIGH_INIT_EIGHT();
-    RTSHA1_HIGH_INIT_EIGHT();
-
-    RTSHA1_HIGH_INIT_EIGHT_HIGH();
-    RTSHA1_HIGH_INIT_EIGHT_HIGH();
-    RTSHA1_HIGH_INIT_EIGHT_HIGH();
-    RTSHA1_HIGH_INIT_EIGHT_HIGH();
 
 #else  /* !RTSHA1_UNROLLED_INIT */
     unsigned iWord;
@@ -325,45 +258,51 @@ static void rtSha1BlockProcess(PRTSHA1CONTEXT pCtx)
     uint32_t uD = pCtx->AltPrivate.auH[3];
     uint32_t uE = pCtx->AltPrivate.auH[4];
 
-#ifdef RTSHA1_FULLY_UNROLLED_BLOCK_PROCESSING
+#ifdef RTSHA1_UNROLLED
     /* This fully unrolled version will avoid the variable rotation by
        embedding it into the loop unrolling. */
-    uint32_t const *puW = &pCtx->AltPrivate.auW[0];
-# define SHA1_BODY(a_uW, a_uK, a_fnFt, a_uA, a_uB, a_uC, a_uD, a_uE) \
+    uint32_t *puW = &pCtx->AltPrivate.auW[0];
+# define SHA1_BODY(a_iWord, a_uK, a_fnFt, a_uA, a_uB, a_uC, a_uD, a_uE) \
         do { \
-            a_uE += a_uW; \
+            if (a_iWord < 16) \
+                a_uE += *puW++; \
+            else \
+            { \
+                uint32_t u32 = puW[-16]; \
+                u32         ^= puW[-14]; \
+                u32         ^= puW[-8]; \
+                u32         ^= puW[-3]; \
+                u32 = ASMRotateLeftU32(u32, 1); \
+                *puW++ = u32; \
+                a_uE += u32; \
+            } \
             a_uE += (a_uK); \
             a_uE += ASMRotateLeftU32(a_uA, 5); \
             a_uE += a_fnFt(a_uB, a_uC, a_uD); \
             a_uB = ASMRotateLeftU32(a_uB, 30); \
         } while (0)
-# define FIVE_ITERATIONS(a_iStart, a_uK, a_fnFt) \
+# define FIVE_ITERATIONS(a_iFirst, a_uK, a_fnFt) \
     do { \
-        SHA1_BODY(/*puW[a_iStart + 0]*/ *puW++, a_uK, a_fnFt, uA, uB, uC, uD, uE); \
-        SHA1_BODY(/*puW[a_iStart + 1]*/ *puW++, a_uK, a_fnFt, uE, uA, uB, uC, uD); \
-        SHA1_BODY(/*puW[a_iStart + 2]*/ *puW++, a_uK, a_fnFt, uD, uE, uA, uB, uC); \
-        SHA1_BODY(/*puW[a_iStart + 3]*/ *puW++, a_uK, a_fnFt, uC, uD, uE, uA, uB); \
-        SHA1_BODY(/*puW[a_iStart + 4]*/ *puW++, a_uK, a_fnFt, uB, uC, uD, uE, uA); \
+        SHA1_BODY(a_iFirst + 0, a_uK, a_fnFt, uA, uB, uC, uD, uE); \
+        SHA1_BODY(a_iFirst + 1, a_uK, a_fnFt, uE, uA, uB, uC, uD); \
+        SHA1_BODY(a_iFirst + 2, a_uK, a_fnFt, uD, uE, uA, uB, uC); \
+        SHA1_BODY(a_iFirst + 3, a_uK, a_fnFt, uC, uD, uE, uA, uB); \
+        SHA1_BODY(a_iFirst + 4, a_uK, a_fnFt, uB, uC, uD, uE, uA); \
     } while (0)
-# if 0 /* Variation that reduces the code size by a factor of 4 without much loss in preformance. */
-#  define TWENTY_ITERATIONS(a_iFirst, a_uK, a_fnFt) \
-    do { unsigned i = 4; while (i-- > 0) FIVE_ITERATIONS(a_iFirst + (3 - i) * 5, a_uK, a_fnFt); } while (0)
-    /*for (unsigned i = a_iFirst; i < (a_iFirst + 20); i += 5) FIVE_ITERATIONS(i, a_uK, a_fnFt);*/
-# else
-#  define TWENTY_ITERATIONS(a_iFirst, a_uK, a_fnFt) \
+# define TWENTY_ITERATIONS(a_iStart, a_uK, a_fnFt) \
     do { \
-        FIVE_ITERATIONS(a_iFirst +  0, a_uK, a_fnFt); \
-        FIVE_ITERATIONS(a_iFirst +  5, a_uK, a_fnFt); \
-        FIVE_ITERATIONS(a_iFirst + 10, a_uK, a_fnFt); \
-        FIVE_ITERATIONS(a_iFirst + 15, a_uK, a_fnFt); \
+        FIVE_ITERATIONS(a_iStart +  0, a_uK, a_fnFt); \
+        FIVE_ITERATIONS(a_iStart +  5, a_uK, a_fnFt); \
+        FIVE_ITERATIONS(a_iStart + 10, a_uK, a_fnFt); \
+        FIVE_ITERATIONS(a_iStart + 15, a_uK, a_fnFt); \
     } while (0)
-# endif
+
     TWENTY_ITERATIONS( 0, UINT32_C(0x5a827999), rtSha1Ch);
     TWENTY_ITERATIONS(20, UINT32_C(0x6ed9eba1), rtSha1Parity);
     TWENTY_ITERATIONS(40, UINT32_C(0x8f1bbcdc), rtSha1Maj);
     TWENTY_ITERATIONS(60, UINT32_C(0xca62c1d6), rtSha1Parity);
 
-#elif 0 /* Version avoiding the constant selection. */
+#elif 1 /* Version avoiding the constant selection. */
     unsigned iWord = 0;
 # define TWENTY_ITERATIONS(a_iWordStop, a_uK, a_uExprBCD) \
         for (; iWord < a_iWordStop; iWord++) \
