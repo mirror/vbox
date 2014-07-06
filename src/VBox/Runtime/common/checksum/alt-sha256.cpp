@@ -201,19 +201,37 @@ DECL_FORCE_INLINE(uint32_t) rtSha256SmallSigma1(uint32_t uX)
  * Initializes the auW array from the specfied input block.
  *
  * @param   pCtx                The SHA-256 context.
- * @param   pbBlock             The block.  Must be 32-bit aligned.
+ * @param   pbBlock             The block.  Must be arch-bit-width aligned.
  */
 DECLINLINE(void) rtSha256BlockInit(PRTSHA256CONTEXT pCtx, uint8_t const *pbBlock)
 {
 #ifdef RTSHA256_UNROLLED
+    /* Copy and byte-swap the block. Initializing the rest of the Ws are done
+       in the processing loop. */
+# ifdef RT_LITTLE_ENDIAN
+#  if ARCH_BITS == 64
+    uint64_t const *puSrc = (uint64_t const *)pbBlock;
+    uint64_t       *puW   = (uint64_t *)&pCtx->AltPrivate.auW[0];
+    Assert(!((uintptr_t)puSrc & 7));
+    Assert(!((uintptr_t)puW & 7));
+
+    /* b0 b1 b2 b3  b4 b5 b6 b7 --bwap--> b7 b6 b5 b4 b3 b2 b1 b0 --ror--> b3 b2 b1 b0  b7 b6 b5 b4; */
+    *puW++ = ASMRotateRightU64(ASMByteSwapU64(*puSrc++), 32);
+    *puW++ = ASMRotateRightU64(ASMByteSwapU64(*puSrc++), 32);
+    *puW++ = ASMRotateRightU64(ASMByteSwapU64(*puSrc++), 32);
+    *puW++ = ASMRotateRightU64(ASMByteSwapU64(*puSrc++), 32);
+
+    *puW++ = ASMRotateRightU64(ASMByteSwapU64(*puSrc++), 32);
+    *puW++ = ASMRotateRightU64(ASMByteSwapU64(*puSrc++), 32);
+    *puW++ = ASMRotateRightU64(ASMByteSwapU64(*puSrc++), 32);
+    *puW++ = ASMRotateRightU64(ASMByteSwapU64(*puSrc++), 32);
+
+#  else
     uint32_t const *puSrc = (uint32_t const *)pbBlock;
     uint32_t       *puW   = &pCtx->AltPrivate.auW[0];
     Assert(!((uintptr_t)puSrc & 3));
     Assert(!((uintptr_t)puW & 3));
 
-    /* Copy and byte-swap the block. Initializing the rest of the Ws are done
-       in the processing loop. */
-# ifdef RT_LITTLE_ENDIAN
     *puW++ = ASMByteSwapU32(*puSrc++);
     *puW++ = ASMByteSwapU32(*puSrc++);
     *puW++ = ASMByteSwapU32(*puSrc++);
@@ -233,9 +251,10 @@ DECLINLINE(void) rtSha256BlockInit(PRTSHA256CONTEXT pCtx, uint8_t const *pbBlock
     *puW++ = ASMByteSwapU32(*puSrc++);
     *puW++ = ASMByteSwapU32(*puSrc++);
     *puW++ = ASMByteSwapU32(*puSrc++);
-# else
-    memcpy(puW, puSrc, RTSHA256_BLOCK_SIZE);
-# endif
+#  endif
+# else  /* RT_BIG_ENDIAN */
+    memcpy(&pCtx->AltPrivate.auW[0], pbBlock, RTSHA256_BLOCK_SIZE);
+# endif /* RT_BIG_ENDIAN */
 
 #else  /* !RTSHA256_UNROLLED */
     uint32_t const *pu32Block = (uint32_t const *)pbBlock;
@@ -265,16 +284,26 @@ DECLINLINE(void) rtSha256BlockInit(PRTSHA256CONTEXT pCtx, uint8_t const *pbBlock
 DECLINLINE(void) rtSha256BlockInitBuffered(PRTSHA256CONTEXT pCtx)
 {
 #ifdef RTSHA256_UNROLLED
-    uint32_t       *puW   = &pCtx->AltPrivate.auW[0];
-    Assert(!((uintptr_t)puW & 3));
-
     /* Do the byte swap if necessary. Initializing the rest of the Ws are done
        in the processing loop. */
 # ifdef RT_LITTLE_ENDIAN
-    *puW = ASMByteSwapU32(*puW); puW++;
-    *puW = ASMByteSwapU32(*puW); puW++;
-    *puW = ASMByteSwapU32(*puW); puW++;
-    *puW = ASMByteSwapU32(*puW); puW++;
+#  if ARCH_BITS == 64
+    uint64_t *puW = (uint64_t *)&pCtx->AltPrivate.auW[0];
+    Assert(!((uintptr_t)puW & 7));
+    /* b0 b1 b2 b3  b4 b5 b6 b7 --bwap--> b7 b6 b5 b4 b3 b2 b1 b0 --ror--> b3 b2 b1 b0  b7 b6 b5 b4; */
+    *puW = ASMRotateRightU64(ASMByteSwapU64(*puW), 32); puW++;
+    *puW = ASMRotateRightU64(ASMByteSwapU64(*puW), 32); puW++;
+    *puW = ASMRotateRightU64(ASMByteSwapU64(*puW), 32); puW++;
+    *puW = ASMRotateRightU64(ASMByteSwapU64(*puW), 32); puW++;
+
+    *puW = ASMRotateRightU64(ASMByteSwapU64(*puW), 32); puW++;
+    *puW = ASMRotateRightU64(ASMByteSwapU64(*puW), 32); puW++;
+    *puW = ASMRotateRightU64(ASMByteSwapU64(*puW), 32); puW++;
+    *puW = ASMRotateRightU64(ASMByteSwapU64(*puW), 32); puW++;
+
+#  else
+    uint32_t *puW = &pCtx->AltPrivate.auW[0];
+    Assert(!((uintptr_t)puW & 3));
 
     *puW = ASMByteSwapU32(*puW); puW++;
     *puW = ASMByteSwapU32(*puW); puW++;
@@ -290,6 +319,12 @@ DECLINLINE(void) rtSha256BlockInitBuffered(PRTSHA256CONTEXT pCtx)
     *puW = ASMByteSwapU32(*puW); puW++;
     *puW = ASMByteSwapU32(*puW); puW++;
     *puW = ASMByteSwapU32(*puW); puW++;
+
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+    *puW = ASMByteSwapU32(*puW); puW++;
+#  endif
 # endif
 
 #else  /* !RTSHA256_UNROLLED */
@@ -443,7 +478,7 @@ RTDECL(void) RTSha256Update(PRTSHA256CONTEXT pCtx, const void *pvBuf, size_t cbB
         }
     }
 
-    if (!((uintptr_t)pbBuf & 3))
+    if (!((uintptr_t)pbBuf & (sizeof(void *) - 1)))
     {
         /*
          * Process full blocks directly from the input buffer.
