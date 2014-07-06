@@ -2196,7 +2196,8 @@ HRESULT Medium::setProperty(const com::Utf8Str &aName,
     }
 
     settings::StringsMap::iterator it = m->mapProperties.find(aName);
-    if (!aName.startsWith("Special/"))
+    if (   !aName.startsWith("Special/")
+        && !i_isPropertyForFilter(aName))
     {
         if (it == m->mapProperties.end())
             return setError(VBOX_E_OBJECT_NOT_FOUND,
@@ -2262,6 +2263,7 @@ HRESULT Medium::setProperties(const std::vector<com::Utf8Str> &aNames,
     {
         Utf8Str strName(aNames[i]);
         if (   !strName.startsWith("Special/")
+            && !i_isPropertyForFilter(strName)
             && m->mapProperties.find(strName) == m->mapProperties.end())
             return setError(VBOX_E_OBJECT_NOT_FOUND,
                             tr("Property '%s' does not exist"), strName.c_str());
@@ -2275,7 +2277,8 @@ HRESULT Medium::setProperties(const std::vector<com::Utf8Str> &aNames,
         Utf8Str strName(aNames[i]);
         Utf8Str strValue(aValues[i]);
         settings::StringsMap::iterator it = m->mapProperties.find(strName);
-        if (!strName.startsWith("Special/"))
+        if (   !strName.startsWith("Special/")
+            && !i_isPropertyForFilter(strName))
         {
             AssertReturn(it != m->mapProperties.end(), E_FAIL);
             it->second = strValue;
@@ -6243,6 +6246,44 @@ DeviceType_T Medium::i_convertToDeviceType(VDTYPE enmType)
     }
 
     return devType;
+}
+
+/**
+ * Internal method which checks whether a property name is for a filter plugin.
+ */
+bool Medium::i_isPropertyForFilter(const com::Utf8Str &aName)
+{
+    /* If the name contains "/" use the part before as a filter name and lookup the filter. */
+    size_t offSlash;
+    if ((offSlash = aName.find("/", 0)) != aName.npos)
+    {
+        com::Utf8Str strFilter;
+        com::Utf8Str strKey;
+
+        HRESULT rc = strFilter.assignEx(aName, 0, offSlash);
+        if (FAILED(rc))
+            return false;
+
+        rc = strKey.assignEx(aName, offSlash + 1, aName.length() - offSlash - 1); /* Skip slash */
+        if (FAILED(rc))
+            return false;
+
+        VDFILTERINFO FilterInfo;
+        int vrc = VDFilterInfoOne(strFilter.c_str(), &FilterInfo);
+        if (RT_SUCCESS(vrc))
+        {
+            /* Check that the property exists. */
+            PCVDCONFIGINFO paConfig = FilterInfo.paConfigInfo;
+            while (paConfig->pszKey)
+            {
+                if (strKey.equals(paConfig->pszKey))
+                    return true;
+                paConfig++;
+            }
+        }
+    }
+
+    return false;
 }
 
 /**
