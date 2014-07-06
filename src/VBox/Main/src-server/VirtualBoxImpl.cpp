@@ -431,6 +431,18 @@ HRESULT VirtualBox::init()
          */
         unconst(m->pAutostartDb) = new AutostartDb;
 
+#ifdef VBOX_WITH_EXTPACK
+        /*
+         * Initialize extension pack manager before system properties because
+         * it is required for the VD plugins.
+         */
+        rc = unconst(m->ptrExtPackManager).createObject();
+        if (SUCCEEDED(rc))
+            rc = m->ptrExtPackManager->initExtPackManager(this, VBOXEXTPACKCTX_PER_USER_DAEMON);
+        if (FAILED(rc))
+            throw rc;
+#endif
+
         /* create the system properties object, someone may need it too */
         unconst(m->pSystemProperties).createObject();
         rc = m->pSystemProperties->init(this);
@@ -506,15 +518,6 @@ HRESULT VirtualBox::init()
         if (SUCCEEDED(rc = unconst(m->pEventSource).createObject()))
             rc = m->pEventSource->init();
         if (FAILED(rc)) throw rc;
-
-#ifdef VBOX_WITH_EXTPACK
-        /* extension manager */
-        rc = unconst(m->ptrExtPackManager).createObject();
-        if (SUCCEEDED(rc))
-            rc = m->ptrExtPackManager->initExtPackManager(this, VBOXEXTPACKCTX_PER_USER_DAEMON);
-        if (FAILED(rc))
-            throw rc;
-#endif
     }
     catch (HRESULT err)
     {

@@ -112,6 +112,25 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
 
     HRESULT rc = S_OK;
 
+# ifdef VBOX_WITH_EXTPACK
+    /* Load all VD plugins from all extension packs first. */
+    /** @todo: Make generic for 4.4 (requires interface changes). */
+    static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
+    static const char *s_pszVDPlugin = "VDPluginCrypt";
+    if (mParent->i_getExtPackManager()->i_isExtPackUsable(strExtPackPuel.c_str()))
+    {
+        Utf8Str strPlugin;
+        rc = mParent->i_getExtPackManager()->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+        if (SUCCEEDED(rc))
+        {
+            int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
+            NOREF(vrc); /** @todo: Don't ignore errors. */
+        }
+        else
+            rc = S_OK; /* ignore errors */
+    }
+# endif
+
     /* Fetch info of all available hd backends. */
 
     /// @todo NEWMEDIA VDBackendInfo needs to be improved to let us enumerate
