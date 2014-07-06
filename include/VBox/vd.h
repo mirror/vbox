@@ -423,6 +423,19 @@ typedef struct VDBACKENDINFO
     DECLR3CALLBACKMEMBER(int, pfnComposeName, (PVDINTERFACE pConfig, char **pszName));
 } VDBACKENDINFO, *PVDBACKENDINFO;
 
+/**
+ * Data structure for returning a list of filter capabilities.
+ */
+typedef struct VDFILTERINFO
+{
+    /** Name of the filter. Must be unique even with case insensitive comparison. */
+    const char *pszFilter;
+    /** Pointer to an array of structs describing each supported config key.
+     * Terminated by a NULL config key. Note that some filters do not support
+     * the configuration interface, so this pointer may just contain NULL. */
+    PCVDCONFIGINFO paConfigInfo;
+} VDFILTERINFO, *PVDFILTERINFO;
+
 
 /**
  * Request completion callback for the async read/write API.
@@ -507,6 +520,27 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
  * @param   pEntries        Pointer to an entry.
  */
 VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry);
+
+/**
+ * Lists all filters and their capabilities in a caller-provided buffer.
+ *
+ * @return  VBox status code.
+ *          VERR_BUFFER_OVERFLOW if not enough space is passed.
+ * @param   cEntriesAlloc   Number of list entries available.
+ * @param   pEntries        Pointer to array for the entries.
+ * @param   pcEntriesUsed   Number of entries returned.
+ */
+VBOXDDU_DECL(int) VDFilterInfo(unsigned cEntriesAlloc, PVDFILTERINFO pEntries,
+                               unsigned *pcEntriesUsed);
+
+/**
+ * Lists the capabilities of a filter identified by its name.
+ *
+ * @return  VBox status code.
+ * @param   pszFilter       The filter name (case insensitive).
+ * @param   pEntries        Pointer to an entry.
+ */
+VBOXDDU_DECL(int) VDFilterInfoOne(const char *pszFilter, PVDFILTERINFO pEntry);
 
 /**
  * Allocates and initializes an empty HDD container.
