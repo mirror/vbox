@@ -614,6 +614,18 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--existing]\n"
                      "\n", SEP);
 
+    if (fCategory & USAGE_HDPROPERTY)
+        RTStrmPrintf(pStrm,
+                           "%s hdproperty %s      set <uuid|filename>\n"
+                     "                            <property> <value>\n"
+                     "\n"
+                     "                            get <uuid|filename>\n"
+                     "                            <property>\n"
+                     "\n"
+                     "                            delete <uuid|filename>\n"
+                     "                            <property>\n"
+                     "\n", SEP);
+
     if (fCategory & USAGE_CONVERTFROMRAW)
         RTStrmPrintf(pStrm,
                            "%s convertfromraw %s  <filename> <outputfile>\n"

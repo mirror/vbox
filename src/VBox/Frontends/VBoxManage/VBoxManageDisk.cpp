@@ -1351,4 +1351,57 @@ int handleCloseMedium(HandlerArg *a)
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
+
+int handleMediumProperty(HandlerArg *a)
+{
+    HRESULT rc = S_OK;
+    const char *pszAction = NULL;
+    const char *pszFilenameOrUuid = NULL;
+    const char *pszProperty = NULL;
+    ComPtr<IMedium> pMedium;
+
+    if (a->argc == 0)
+        return errorSyntax(USAGE_HDPROPERTY, "Missing action");
+
+    pszAction = a->argv[0];
+    if (   RTStrICmp(pszAction, "set")
+        && RTStrICmp(pszAction, "get")
+        && RTStrICmp(pszAction, "delete"))
+        return errorSyntax(USAGE_HDPROPERTY, "Invalid action given: %s", pszAction);
+
+    if (   (   !RTStrICmp(pszAction, "set")
+            && a->argc != 4)
+        || (   RTStrICmp(pszAction, "set")
+            && a->argc != 3))
+        return errorSyntax(USAGE_HDPROPERTY, "Invalid number of arguments given for action: %s", pszAction);
+
+    pszFilenameOrUuid = a->argv[1];
+    pszProperty       = a->argv[2];
+
+    rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
+                    AccessMode_ReadWrite, pMedium,
+                    false /* fForceNewUuidOnOpen */, false /* fSilent */);
+    if (SUCCEEDED(rc) && !pMedium.isNull())
+    {
+        if (!RTStrICmp(pszAction, "set"))
+        {
+            const char *pszValue = a->argv[3];
+            CHECK_ERROR(pMedium, SetProperty(Bstr(pszProperty).raw(), Bstr(pszValue).raw()));
+        }
+        else if (!RTStrICmp(pszAction, "get"))
+        {
+            Bstr strVal;
+            CHECK_ERROR(pMedium, GetProperty(Bstr(pszProperty).raw(), strVal.asOutParam()));
+            if (SUCCEEDED(rc))
+                RTPrintf("%s=%ls\n", pszProperty, strVal.raw());
+        }
+        else if (!RTStrICmp(pszAction, "delete"))
+        {
+            /** @todo */
+        }
+    }
+
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
 #endif /* !VBOX_ONLY_DOCS */

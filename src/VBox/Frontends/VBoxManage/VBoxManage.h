@@ -103,6 +103,7 @@
 #define USAGE_GUESTSTATS            RT_BIT_64(57)
 #define USAGE_REPAIRHD              RT_BIT_64(58)
 #define USAGE_NATNETWORK            RT_BIT_64(59)
+#define USAGE_HDPROPERTY            RT_BIT_64(60)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
@@ -259,6 +260,7 @@ HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,
 int handleCreateHardDisk(HandlerArg *a);
 int handleModifyHardDisk(HandlerArg *a);
 int handleCloneHardDisk(HandlerArg *a);
+int handleMediumProperty(HandlerArg *a);
 RTEXITCODE handleConvertFromRaw(int argc, char *argv[]);
 HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
                        const ComPtr<IMedium> &pMedium,
